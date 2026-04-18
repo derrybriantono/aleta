@@ -1,0 +1,706 @@
+import path from "node:path";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { migrate as drizzleMigrate } from "drizzle-orm/node-postgres/migrator";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
+
+import { schema, type DrizzleSchema } from "@/server/db/drizzle-schema";
+import { ensureAletaSchema } from "@/server/db/schema";
+import { seedDatabaseFromFrontendSource } from "@/server/db/seed";
+
+export type SqlInputValue =
+  | string
+  | number
+  | boolean
+  | null
+  | Date
+  | Buffer
+  | string[]
+  | number[]
+  | Record<string, unknown>;
+
+type CreateDatabaseOptions = {
+  connectionString?: string;
+  seed?: boolean;
+  useInMemory?: boolean;
+  runMigrations?: boolean;
+};
+
+type InMemorySnapshot = {
+  version: 1;
+  updatedAt: string;
+  tables: Record<string, Array<Record<string, unknown>>>;
+};
+
+type Queryable = Pool | PoolClient;
+type DatabaseCapabilities = {
+  supportsFullTextSearch: boolean;
+};
+
+type PgMemQueryConfig = {
+  rowMode?: string;
+  types?: {
+    getTypeParser?: unknown;
+  };
+};
+
+type PgMemQueryResult = {
+  rows: Array<Record<string, unknown>> | unknown[][];
+  [key: string]: unknown;
+};
+
+type PgMemCompatCtor = {
+  new (...args: unknown[]): unknown;
+  prototype: PgMemCompatPrototype;
+};
+
+type PgMemCompatPrototype = {
+  __aletaPgMemCompatPatched?: boolean;
+  adaptQuery?: (query: string | PgMemQueryConfig, values?: unknown[]) => unknown;
+  adaptResults?: (query: PgMemQueryConfig, result: PgMemQueryResult) => PgMemQueryResult;
+};
+
+function patchPgMemPgCompatibility(adapter: {
+  Pool: PgMemCompatCtor;
+  Client: PgMemCompatCtor;
+}) {
+  for (const ctor of [adapter.Pool, adapter.Client]) {
+    const prototype = ctor.prototype;
+    if (
+      prototype.__aletaPgMemCompatPatched ||
+      typeof prototype.adaptQuery !== "function" ||
+      typeof prototype.adaptResults !== "function"
+    ) {
+      continue;
+    }
+
+    const originalAdaptQuery = prototype.adaptQuery;
+    const originalAdaptResults = prototype.adaptResults;
+
+    prototype.adaptQuery = function (query: string | PgMemQueryConfig, values?: unknown[]) {
+      if (typeof query !== "string" && query?.types && typeof query.types.getTypeParser === "function") {
+        const nextQuery = { ...query };
+        delete nextQuery.types;
+        return originalAdaptQuery.call(this, nextQuery, values);
+      }
+
+      return originalAdaptQuery.call(this, query, values);
+    };
+
+    prototype.adaptResults = function (query: PgMemQueryConfig, result: PgMemQueryResult) {
+      if (query?.rowMode === "array") {
+        const baseResult = originalAdaptResults.call(this, { ...query, rowMode: undefined }, result);
+        const objectRows = baseResult.rows as Array<Record<string, unknown>>;
+
+        return {
+          ...baseResult,
+          rows: objectRows.map((row) => Object.keys(row).map((key) => row[key])),
+        };
+      }
+
+      return originalAdaptResults.call(this, query, result);
+    };
+
+    prototype.__aletaPgMemCompatPatched = true;
+  }
+
+  return adapter;
+}
+
+function toPostgresPlaceholders(sql: string) {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
+}
+
+class PreparedStatement {
+  constructor(
+    private readonly db: AletaDatabase,
+    private readonly sql: string
+  ) {}
+
+  async get<T extends QueryResultRow = QueryResultRow>(...params: SqlInputValue[]) {
+    return this.db.queryOne<T>(this.sql, params);
+  }
+
+  async all<T extends QueryResultRow = QueryResultRow>(...params: SqlInputValue[]) {
+    return this.db.queryAll<T>(this.sql, params);
+  }
+
+  async run(...params: SqlInputValue[]) {
+    return this.db.run(this.sql, params);
+  }
+}
+
+export class AletaDatabase {
+  constructor(
+    private readonly queryable: Queryable,
+    private readonly orm: NodePgDatabase<DrizzleSchema>,
+    private readonly closeHook?: () => Promise<void>,
+    private readonly transactional = false,
+    private readonly capabilities: DatabaseCapabilities = {
+      supportsFullTextSearch: true,
+    }
+  ) {}
+
+  prepare(sql: string) {
+    return new PreparedStatement(this, sql);
+  }
+
+  async exec(sql: string) {
+    await this.query(sql);
+  }
+
+  async query<T extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    params: SqlInputValue[] = []
+  ) {
+    const text = params.length > 0 ? toPostgresPlaceholders(sql) : sql;
+    return this.queryable.query<T>(text, params);
+  }
+
+  async queryOne<T extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    params: SqlInputValue[] = []
+  ) {
+    const result = await this.query<T>(sql, params);
+    return result.rows[0];
+  }
+
+  async queryAll<T extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    params: SqlInputValue[] = []
+  ) {
+    const result = await this.query<T>(sql, params);
+    return result.rows;
+  }
+
+  async run(sql: string, params: SqlInputValue[] = []) {
+    const result = await this.query(sql, params);
+    return {
+      changes: result.rowCount ?? 0,
+      rows: result.rows,
+    };
+  }
+
+  async close() {
+    await this.closeHook?.();
+  }
+
+  isTransactionClient() {
+    return this.transactional;
+  }
+
+  getQueryable() {
+    return this.queryable;
+  }
+
+  getOrm() {
+    return this.orm;
+  }
+
+  supportsFullTextSearch() {
+    return this.capabilities.supportsFullTextSearch;
+  }
+
+  getCapabilities() {
+    return this.capabilities;
+  }
+}
+
+const globalForAleta = globalThis as unknown as {
+  singletonDatabasePromise: Promise<AletaDatabase> | null;
+  sharedPool: Pool | null;
+  sharedDrizzle: NodePgDatabase<DrizzleSchema> | null;
+};
+
+const IN_MEMORY_SNAPSHOT_PATH = path.join(process.cwd(), "data", "dev-fallback-db.json");
+const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
+  "roles",
+  "positions",
+  "users",
+  "acting_assignments",
+  "ai_global_settings",
+  "ai_providers",
+  "whatsapp_web_settings",
+  "institution_identity",
+  "knowledge_base_regulations",
+  "letter_origin_references",
+  "classification_catalog",
+  "letters",
+  "letter_tags",
+  "letter_classification_tags",
+  "letter_attachments",
+  "letter_whatsapp_deliveries",
+  "dispositions",
+  "disposition_whatsapp_deliveries",
+  "audit_logs",
+  "accounts",
+  "sessions",
+  "verifications",
+] as const;
+
+let singletonDatabasePromise = globalForAleta.singletonDatabasePromise;
+let sharedPool = globalForAleta.sharedPool;
+let sharedDrizzle = globalForAleta.sharedDrizzle;
+
+function isInMemoryFallbackDisabled() {
+  return process.env.ALETA_DISABLE_IN_MEMORY_FALLBACK === "true";
+}
+
+function isRecoverablePostgresBootError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const candidate = error as {
+    code?: string;
+    cause?: { code?: string } | null;
+    message?: string;
+  };
+  const code = candidate.code ?? candidate.cause?.code ?? "";
+  const message = candidate.message ?? "";
+
+  return (
+    code === "ECONNREFUSED" ||
+    code === "ENOTFOUND" ||
+    code === "ECONNRESET" ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("connect")
+  );
+}
+
+async function resetSharedConnections() {
+  if (sharedPool) {
+    await sharedPool.end();
+    sharedPool = null;
+  }
+
+  sharedDrizzle = null;
+}
+
+export function getDatabaseUrl() {
+  return process.env.DATABASE_URL ?? "postgres://postgres:postgres@127.0.0.1:54329/aleta";
+}
+
+function quoteIdentifier(identifier: string) {
+  return `"${identifier.replace(/"/g, "\"\"")}"`;
+}
+
+function getSqlText(query: unknown) {
+  if (typeof query === "string") return query;
+  if (query && typeof query === "object" && "text" in query && typeof (query as { text?: unknown }).text === "string") {
+    return (query as { text: string }).text;
+  }
+  return "";
+}
+
+function classifySqlStatement(query: unknown) {
+  const sql = getSqlText(query).trim().replace(/^[;(]+/, "").toUpperCase();
+
+  if (!sql) return "read" as const;
+  if (sql.startsWith("BEGIN")) return "begin" as const;
+  if (sql.startsWith("COMMIT")) return "commit" as const;
+  if (sql.startsWith("ROLLBACK TO SAVEPOINT")) return "rollback-savepoint" as const;
+  if (sql.startsWith("ROLLBACK")) return "rollback" as const;
+  if (sql.startsWith("SAVEPOINT") || sql.startsWith("RELEASE SAVEPOINT")) return "savepoint" as const;
+  if (/^(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|REINDEX)/.test(sql)) return "mutation" as const;
+  return "read" as const;
+}
+
+function normalizeSnapshotValue(value: unknown): unknown {
+  if (value instanceof Date) {
+    return { __type: "date", value: value.toISOString() };
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return { __type: "buffer", value: value.toString("base64") };
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeSnapshotValue(item));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeSnapshotValue(item)])
+    );
+  }
+
+  return value;
+}
+
+function reviveSnapshotValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => reviveSnapshotValue(item));
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value as { __type?: string; value?: unknown };
+    if (candidate.__type === "date" && typeof candidate.value === "string") {
+      return new Date(candidate.value);
+    }
+    if (candidate.__type === "buffer" && typeof candidate.value === "string") {
+      return Buffer.from(candidate.value, "base64");
+    }
+
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, reviveSnapshotValue(item)])
+    );
+  }
+
+  return value;
+}
+
+async function persistInMemorySnapshot(memoryDb: {
+  public: {
+    getTable: (name: string, nullIfNotFound?: boolean) => { find: () => Array<Record<string, unknown>> } | null;
+  };
+}) {
+  const tables: Record<string, Array<Record<string, unknown>>> = {};
+
+  for (const tableName of IN_MEMORY_TABLE_PERSISTENCE_ORDER) {
+    const table = memoryDb.public.getTable(tableName, true);
+    if (!table) {
+      tables[tableName] = [];
+      continue;
+    }
+
+    tables[tableName] = table.find().map((row) =>
+      Object.fromEntries(Object.entries(row).map(([key, value]) => [key, normalizeSnapshotValue(value)]))
+    );
+  }
+
+  const snapshot: InMemorySnapshot = {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    tables,
+  };
+
+  await mkdir(path.dirname(IN_MEMORY_SNAPSHOT_PATH), { recursive: true });
+  const tempPath = `${IN_MEMORY_SNAPSHOT_PATH}.tmp`;
+  await writeFile(tempPath, JSON.stringify(snapshot, null, 2), "utf8");
+  await rm(IN_MEMORY_SNAPSHOT_PATH, { force: true });
+  await writeFile(IN_MEMORY_SNAPSHOT_PATH, await readFile(tempPath, "utf8"), "utf8");
+  await rm(tempPath, { force: true });
+}
+
+async function restoreInMemorySnapshot(
+  db: AletaDatabase,
+  memoryDb: {
+    public: {
+      getTable: (name: string, nullIfNotFound?: boolean) => { find: () => Array<Record<string, unknown>> } | null;
+    };
+  }
+) {
+  try {
+    const raw = await readFile(IN_MEMORY_SNAPSHOT_PATH, "utf8");
+    const snapshot = JSON.parse(raw) as InMemorySnapshot;
+
+    if (snapshot.version !== 1 || !snapshot.tables) {
+      return false;
+    }
+
+    const hasEssentialSeedBaseline =
+      (snapshot.tables.roles?.length ?? 0) > 0 &&
+      (snapshot.tables.positions?.length ?? 0) > 0 &&
+      (snapshot.tables.users?.length ?? 0) > 0 &&
+      (snapshot.tables.accounts?.length ?? 0) > 0;
+
+    if (!hasEssentialSeedBaseline) {
+      console.warn("[ALETA DB] Snapshot fallback terdeteksi parsial dan akan diabaikan agar baseline disusun ulang.");
+      return false;
+    }
+
+    for (const tableName of IN_MEMORY_TABLE_PERSISTENCE_ORDER) {
+      const existingTable = memoryDb.public.getTable(tableName, true);
+      if (!existingTable) continue;
+
+      for (const row of snapshot.tables[tableName] ?? []) {
+        const columns = Object.keys(row);
+        if (columns.length === 0) continue;
+
+        const sql = `INSERT INTO ${quoteIdentifier(tableName)} (${columns.map(quoteIdentifier).join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`;
+        await db.prepare(sql).run(...columns.map((column) => reviveSnapshotValue(row[column]) as SqlInputValue));
+      }
+    }
+
+    return true;
+  } catch (error) {
+    const candidate = error as NodeJS.ErrnoException;
+    if (candidate?.code === "ENOENT") {
+      return false;
+    }
+
+    console.warn("[ALETA DB] Snapshot fallback tidak dapat dimuat, sistem akan membuat baseline baru.", error);
+    return false;
+  }
+}
+
+function installInMemoryPersistenceHooks(
+  pool: Pool & { connect: Pool["connect"] },
+  persistSnapshot: () => Promise<void>
+) {
+  const trackedTargets = new WeakSet<object>();
+  let persistQueue = Promise.resolve();
+
+  const schedulePersist = async () => {
+    persistQueue = persistQueue
+      .then(() => persistSnapshot())
+      .catch((error) => {
+        console.error("[ALETA DB] Gagal menyimpan snapshot fallback.", error);
+      });
+    await persistQueue;
+  };
+
+  const wrapQueryable = (target: object & { query: (...args: unknown[]) => Promise<unknown> }) => {
+    if (trackedTargets.has(target)) {
+      return target;
+    }
+
+    trackedTargets.add(target);
+    let transactionDepth = 0;
+    const originalQuery = target.query.bind(target);
+
+    target.query = async (...args: unknown[]) => {
+      const statementType = classifySqlStatement(args[0]);
+      const result = await originalQuery(...args);
+
+      if (statementType === "begin") {
+        transactionDepth += 1;
+        return result;
+      }
+
+      if (statementType === "savepoint" || statementType === "rollback-savepoint") {
+        return result;
+      }
+
+      if (statementType === "commit") {
+        const wasRootTransaction = transactionDepth <= 1;
+        transactionDepth = Math.max(0, transactionDepth - 1);
+        if (wasRootTransaction) {
+          await schedulePersist();
+        }
+        return result;
+      }
+
+      if (statementType === "rollback") {
+        transactionDepth = Math.max(0, transactionDepth - 1);
+        return result;
+      }
+
+      if (statementType === "mutation" && transactionDepth === 0) {
+        await schedulePersist();
+      }
+
+      return result;
+    };
+
+    return target;
+  };
+
+  wrapQueryable(pool as unknown as object & { query: (...args: unknown[]) => Promise<unknown> });
+
+  const originalConnect = pool.connect.bind(pool);
+  pool.connect = ((callback?: (err: Error | undefined, client: PoolClient | undefined, done: (release?: unknown) => void) => void) => {
+    if (typeof callback === "function") {
+      return originalConnect((err, client, done) => {
+        callback(
+          err,
+          client
+            ? (wrapQueryable(
+                client as unknown as object & { query: (...args: unknown[]) => Promise<unknown> }
+              ) as PoolClient)
+            : client,
+          done
+        );
+      });
+    }
+
+    return originalConnect().then((client) =>
+      wrapQueryable(client as unknown as object & { query: (...args: unknown[]) => Promise<unknown> }) as PoolClient
+    );
+  }) as Pool["connect"];
+}
+
+export function getSharedPool() {
+  if (!sharedPool) {
+    sharedPool = new Pool({
+      connectionString: getDatabaseUrl(),
+    });
+    globalForAleta.sharedPool = sharedPool;
+  }
+
+  return sharedPool;
+}
+
+export function getSharedDrizzle() {
+  if (!sharedDrizzle) {
+    sharedDrizzle = drizzle(getSharedPool(), { schema });
+    globalForAleta.sharedDrizzle = sharedDrizzle;
+  }
+
+  return sharedDrizzle;
+}
+
+export async function runDatabaseMigrations(db: NodePgDatabase<DrizzleSchema>) {
+  await drizzleMigrate(db, {
+    migrationsFolder: path.join(process.cwd(), "drizzle"),
+  });
+}
+
+export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
+  if (options.useInMemory) {
+    const { newDb } = await import("pg-mem");
+    const memoryDb = newDb({
+      autoCreateForeignKeyIndices: true,
+    });
+    const { Pool: MemoryPool } = patchPgMemPgCompatibility(memoryDb.adapters.createPg());
+    const pool = new MemoryPool() as unknown as Pool;
+    const orm = drizzle(pool, { schema });
+    const db = new AletaDatabase(
+      pool,
+      orm,
+      async () => {
+        await pool.end();
+      },
+      false,
+      {
+        supportsFullTextSearch: false,
+      }
+    );
+
+    await ensureAletaSchema(db);
+    const shouldUsePersistentFallback = process.env.NODE_ENV !== "test";
+    const restoredFromSnapshot = shouldUsePersistentFallback
+      ? await restoreInMemorySnapshot(db, memoryDb)
+      : false;
+    if (options.seed ?? true) {
+      await seedDatabaseFromFrontendSource(db);
+    }
+    if (shouldUsePersistentFallback && !restoredFromSnapshot) {
+      await persistInMemorySnapshot(memoryDb);
+    }
+    if (shouldUsePersistentFallback) {
+      installInMemoryPersistenceHooks(pool, () => persistInMemorySnapshot(memoryDb));
+    }
+
+    return db;
+  }
+
+  const isSharedConnection =
+    !options.connectionString || options.connectionString === getDatabaseUrl();
+  const pool = isSharedConnection
+    ? getSharedPool()
+    : new Pool({
+        connectionString: options.connectionString,
+      });
+  const orm = isSharedConnection ? getSharedDrizzle() : drizzle(pool, { schema });
+  const db = new AletaDatabase(
+    pool,
+    orm,
+    async () => {
+      if (!isSharedConnection) {
+        await pool.end();
+      }
+    },
+    false,
+    {
+      supportsFullTextSearch: true,
+    }
+  );
+
+  if (options.runMigrations ?? true) {
+    await runDatabaseMigrations(orm);
+  }
+  if (options.seed ?? true) {
+    await seedDatabaseFromFrontendSource(db);
+  }
+
+  return db;
+}
+
+export async function getDatabase() {
+  if (!singletonDatabasePromise) {
+    singletonDatabasePromise = createAletaDatabase({ seed: true }).catch(async (error) => {
+      if (isInMemoryFallbackDisabled() || !isRecoverablePostgresBootError(error)) {
+        throw error;
+      }
+
+      await resetSharedConnections();
+      console.warn(
+        "[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory persisten."
+      );
+
+      return createAletaDatabase({
+        seed: true,
+        useInMemory: true,
+        runMigrations: false,
+      });
+    });
+    globalForAleta.singletonDatabasePromise = singletonDatabasePromise;
+  }
+
+  return singletonDatabasePromise;
+}
+
+export async function closeDatabase() {
+  const database = singletonDatabasePromise ? await singletonDatabasePromise : null;
+  await database?.close();
+  singletonDatabasePromise = null;
+  await resetSharedConnections();
+}
+
+export async function withTransaction<T>(
+  db: AletaDatabase,
+  callback: (tx: AletaDatabase) => Promise<T>
+) {
+  if (db.isTransactionClient()) {
+    const savepointId = `aleta_sp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    await db.exec(`SAVEPOINT ${savepointId}`);
+
+    try {
+      const result = await callback(db);
+      await db.exec(`RELEASE SAVEPOINT ${savepointId}`);
+      return result;
+    } catch (error) {
+      await db.exec(`ROLLBACK TO SAVEPOINT ${savepointId}`);
+      throw error;
+    }
+  }
+
+  const client = await (db.getQueryable() as Pool).connect();
+  const txDb = new AletaDatabase(
+    client,
+    drizzle(client, { schema }),
+    undefined,
+    true,
+    db.getCapabilities()
+  );
+  await client.query("BEGIN");
+
+  try {
+    const result = await callback(txDb);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function queryOne<T extends QueryResultRow = QueryResultRow>(
+  db: AletaDatabase,
+  sql: string,
+  ...params: SqlInputValue[]
+) {
+  return db.queryOne<T>(sql, params);
+}
+
+export async function queryAll<T extends QueryResultRow = QueryResultRow>(
+  db: AletaDatabase,
+  sql: string,
+  ...params: SqlInputValue[]
+) {
+  return db.queryAll<T>(sql, params);
+}

@@ -1,0 +1,95 @@
+@import "@fontsource/public-sans/latin.css";
+@import "@fontsource/source-serif-4/latin.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-public-sans: "Public Sans", sans-serif;
+    --font-source-serif-4: "Source Serif 4", serif;
+    --background: 36 38% 97%;
+    --foreground: 214 40% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 214 40% 12%;
+    --primary: 204 69% 25%;
+    --primary-foreground: 40 38% 97%;
+    --secondary: 36 44% 92%;
+    --secondary-foreground: 214 36% 16%;
+    --muted: 210 23% 94%;
+    --muted-foreground: 216 15% 34%;
+    --accent: 204 80% 96%;
+    --accent-foreground: 204 69% 25%;
+    --destructive: 0 73% 53%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 24% 79%;
+    --input: 214 24% 79%;
+    --ring: 204 69% 25%;
+    --radius: 1.25rem;
+    --shadow-panel: 0 20px 52px rgba(15, 23, 42, 0.12);
+  }
+
+  .dark {
+    --background: 220 28% 8%;
+    --foreground: 210 40% 98%;
+    --card: 218 26% 11%;
+    --card-foreground: 210 40% 98%;
+    --primary: 199 88% 72%;
+    --primary-foreground: 220 28% 10%;
+    --secondary: 217 19% 17%;
+    --secondary-foreground: 210 38% 96%;
+    --muted: 218 20% 15%;
+    --muted-foreground: 215 18% 78%;
+    --accent: 216 22% 18%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 17% 28%;
+    --input: 217 17% 28%;
+    --ring: 199 88% 72%;
+    --shadow-panel: 0 22px 56px rgba(2, 6, 23, 0.38);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 16px;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  html:not(.dark) {
+    color-scheme: light;
+  }
+
+  @media (max-width: 1024px) {
+    html {
+      font-size: 15.5px;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
+    min-height: 100vh;
+    line-height: 1.65;
+    text-rendering: optimizeLegibility;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
