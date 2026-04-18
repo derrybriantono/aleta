@@ -1,5 +1,6 @@
 import { Client, LocalAuth } from "whatsapp-web.js";
 import qrcode from "qrcode";
+import fs from "node:fs";
 
 import { getDatabase } from "@/server/db/client";
 import { whatsappWebSettings } from "@/server/db/drizzle-schema";
@@ -20,6 +21,37 @@ class WhatsAppService {
   private connectionStatus: WhatsAppConnectionStatus = "inactive";
   private isInitializing = false;
   private sessionName = "aleta-session";
+
+  private resolveBrowserExecutablePath() {
+    const candidatePaths = [
+      process.env.WHATSAPP_CHROME_PATH,
+      process.env.CHROME_PATH,
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+      "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    ].filter((value): value is string => Boolean(value?.trim()));
+
+    for (const candidate of candidatePaths) {
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    try {
+      // Reuse the already-installed Playwright browser in local workspace if available.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { chromium } = require("playwright");
+      const executablePath = chromium?.executablePath?.();
+      if (typeof executablePath === "string" && executablePath && fs.existsSync(executablePath)) {
+        return executablePath;
+      }
+    } catch {
+      // Ignore optional runtime dependency resolution failure.
+    }
+
+    return undefined;
+  }
 
   async initialize() {
     if (this.isInitializing) return;
@@ -48,12 +80,14 @@ class WhatsAppService {
     this.sessionName = nextSessionName;
 
     try {
+      const executablePath = this.resolveBrowserExecutablePath();
       this.client = new Client({
         authStrategy: new LocalAuth({
           clientId: this.sessionName,
         }),
         puppeteer: {
           headless: true,
+          executablePath,
           args: ["--no-sandbox", "--disable-setuid-sandbox"],
         },
       });

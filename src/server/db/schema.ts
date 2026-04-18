@@ -103,6 +103,14 @@ const schemaStatements = [
     map_url TEXT,
     updated_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS module_visibility_settings (
+    role_id TEXT NOT NULL,
+    module_id TEXT NOT NULL,
+    enabled SMALLINT NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (role_id, module_id),
+    CONSTRAINT fk_module_visibility_role FOREIGN KEY (role_id) REFERENCES roles(id)
+  )`,
   `CREATE TABLE IF NOT EXISTS knowledge_base_regulations (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,

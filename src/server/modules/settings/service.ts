@@ -1,7 +1,8 @@
 import { type QueryResultRow } from "pg";
 
+import { moduleVisibility as defaultModuleVisibility } from "@/lib/mock-data";
 import { isPrivilegedAdmin } from "@/lib/permissions";
-import { type InstitutionIdentity, type WhatsAppWebConfig } from "@/lib/types";
+import { type InstitutionIdentity, type ModuleId, type ModuleVisibility, type WhatsAppWebConfig } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
@@ -31,6 +32,12 @@ type WhatsAppSettingsRow = QueryResultRow & {
   updated_at: string;
 };
 
+type ModuleVisibilityRow = QueryResultRow & {
+  role_id: ModuleVisibility["roleId"];
+  module_id: ModuleId;
+  enabled: number;
+};
+
 function mapInstitutionRow(row: InstitutionIdentityRow): InstitutionIdentity {
   return {
     courtName: row.court_name,
@@ -56,6 +63,49 @@ function mapWhatsAppSettingsRow(row: WhatsAppSettingsRow): WhatsAppWebConfig {
   };
 }
 
+async function ensureModuleVisibilitySeeded(db: AletaDatabase) {
+  const existing = await db.prepare(
+    `SELECT COUNT(*)::int AS count
+     FROM module_visibility_settings`
+  ).get<{ count: number }>();
+
+  if ((existing?.count ?? 0) > 0) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+  for (const visibility of defaultModuleVisibility) {
+    for (const [moduleId, enabled] of Object.entries(visibility.modules)) {
+      await db.prepare(
+        `INSERT INTO module_visibility_settings (role_id, module_id, enabled, updated_at)
+         VALUES (?, ?, ?, ?)`
+      ).run(visibility.roleId, moduleId, enabled ? 1 : 0, now);
+    }
+  }
+}
+
+function buildDefaultModuleVisibilityMap() {
+  return new Map(
+    defaultModuleVisibility.map((item) => [
+      item.roleId,
+      { ...item, modules: { ...item.modules } },
+    ])
+  );
+}
+
+function mapModuleVisibilityRows(rows: ModuleVisibilityRow[]) {
+  const visibilityMap = buildDefaultModuleVisibilityMap();
+
+  for (const row of rows) {
+    const current = visibilityMap.get(row.role_id);
+    if (!current) continue;
+
+    current.modules[row.module_id] = Boolean(row.enabled);
+  }
+
+  return Array.from(visibilityMap.values());
+}
+
 export async function getInstitutionIdentityFromDb(db: AletaDatabase) {
   const row = await db.prepare(
     `SELECT court_name, court_short_name, address, phone_number, mobile_phone, email,
@@ -69,6 +119,18 @@ export async function getInstitutionIdentityFromDb(db: AletaDatabase) {
   }
 
   return mapInstitutionRow(row);
+}
+
+export async function getModuleVisibilityFromDb(db: AletaDatabase) {
+  await ensureModuleVisibilitySeeded(db);
+
+  const rows = await db.prepare(
+    `SELECT role_id, module_id, enabled
+     FROM module_visibility_settings
+     ORDER BY role_id ASC, module_id ASC`
+  ).all<ModuleVisibilityRow>();
+
+  return mapModuleVisibilityRows(rows);
 }
 
 export async function updateInstitutionIdentityInDb(
@@ -215,5 +277,54 @@ export async function updateWhatsAppSettingsInDb(
     });
 
     return getWhatsAppSettingsFromDb(tx);
+  });
+}
+
+export async function updateModuleVisibilityInDb(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    roleId,
+    moduleId,
+    enabled,
+  }: {
+    actorUserId: string;
+    roleId: ModuleVisibility["roleId"];
+    moduleId: ModuleId;
+    enabled: boolean;
+  }
+) {
+  const actor = await requireActorUser(db, actorUserId);
+
+  if (actor.roleId !== "super-admin") {
+    throw new ApiError(403, "Hanya Super Admin yang dapat mengubah visibilitas modul.");
+  }
+
+  return withTransaction(db, async (tx) => {
+    await ensureModuleVisibilitySeeded(tx);
+    const now = new Date().toISOString();
+
+    await tx.prepare(
+      `INSERT INTO module_visibility_settings (role_id, module_id, enabled, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(role_id, module_id) DO UPDATE SET
+         enabled = excluded.enabled,
+         updated_at = excluded.updated_at`
+    ).run(roleId, moduleId, enabled ? 1 : 0, now);
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "UPDATE_MODULE_VISIBILITY",
+      entityType: "module_visibility_settings",
+      entityId: `${roleId}:${moduleId}`,
+      payload: {
+        roleId,
+        moduleId,
+        enabled,
+      },
+    });
+
+    return getModuleVisibilityFromDb(tx);
   });
 }

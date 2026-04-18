@@ -268,10 +268,8 @@ export function LetterRegistrationPanel({
                           method: "POST",
                           headers: {
                             "content-type": "application/json",
-                            "x-aleta-user-id": currentUser.id,
                           },
                           body: JSON.stringify({
-                            actorUserId: currentUser.id,
                             type: defaultType,
                             extractedText: uploadedPdf.extractedText,
                           }),

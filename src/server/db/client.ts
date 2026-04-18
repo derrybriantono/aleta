@@ -224,6 +224,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "ai_providers",
   "whatsapp_web_settings",
   "institution_identity",
+  "module_visibility_settings",
   "knowledge_base_regulations",
   "letter_origin_references",
   "classification_catalog",
@@ -410,17 +411,50 @@ async function restoreInMemorySnapshot(
       return false;
     }
 
-    for (const tableName of IN_MEMORY_TABLE_PERSISTENCE_ORDER) {
-      const existingTable = memoryDb.public.getTable(tableName, true);
-      if (!existingTable) continue;
-
-      for (const row of snapshot.tables[tableName] ?? []) {
+    const restoreRows = async (tableName: string, rows: Array<Record<string, unknown>>) => {
+      for (const row of rows) {
         const columns = Object.keys(row);
         if (columns.length === 0) continue;
 
         const sql = `INSERT INTO ${quoteIdentifier(tableName)} (${columns.map(quoteIdentifier).join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`;
         await db.prepare(sql).run(...columns.map((column) => reviveSnapshotValue(row[column]) as SqlInputValue));
       }
+    };
+
+    for (const tableName of IN_MEMORY_TABLE_PERSISTENCE_ORDER) {
+      const existingTable = memoryDb.public.getTable(tableName, true);
+      if (!existingTable) continue;
+
+      if (tableName === "positions") {
+        const positionRows = snapshot.tables[tableName] ?? [];
+        const baseRows = positionRows.map((row) =>
+          row.reports_to_position_id
+            ? {
+                ...row,
+                reports_to_position_id: null,
+              }
+            : row
+        );
+
+        await restoreRows(tableName, baseRows);
+
+        for (const row of positionRows.filter((item) => item.reports_to_position_id)) {
+          await db
+            .prepare(
+              `UPDATE ${quoteIdentifier(tableName)}
+               SET reports_to_position_id = ?
+               WHERE id = ?`
+            )
+            .run(
+              reviveSnapshotValue(row.reports_to_position_id) as SqlInputValue,
+              reviveSnapshotValue(row.id) as SqlInputValue
+            );
+        }
+
+        continue;
+      }
+
+      await restoreRows(tableName, snapshot.tables[tableName] ?? []);
     }
 
     return true;

@@ -1,5 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 
 import { getDatabase } from "@/server/db/client";
 import { schema } from "@/server/db/drizzle-schema";
@@ -7,6 +10,7 @@ import { hashSecret } from "@/server/shared/security";
 
 let cachedAuth: ReturnType<typeof createAuthInstance> | undefined;
 let cachedOrm: unknown;
+let cachedLocalAuthSecret: string | undefined;
 
 function normalizeOrigin(input: string) {
   try {
@@ -38,6 +42,29 @@ function buildTrustedOrigins(baseURL: string) {
   return Array.from(trustedOrigins);
 }
 
+function getLocalAuthSecret() {
+  if (cachedLocalAuthSecret) {
+    return cachedLocalAuthSecret;
+  }
+
+  const configuredSecret = process.env.BETTER_AUTH_SECRET?.trim();
+  if (configuredSecret) {
+    cachedLocalAuthSecret = configuredSecret;
+    return configuredSecret;
+  }
+
+  const secretPath = path.join(process.cwd(), "data", ".better-auth-secret");
+  if (fs.existsSync(secretPath)) {
+    cachedLocalAuthSecret = fs.readFileSync(secretPath, "utf8").trim();
+    return cachedLocalAuthSecret;
+  }
+
+  fs.mkdirSync(path.dirname(secretPath), { recursive: true });
+  cachedLocalAuthSecret = crypto.randomBytes(48).toString("hex");
+  fs.writeFileSync(secretPath, `${cachedLocalAuthSecret}\n`, "utf8");
+  return cachedLocalAuthSecret;
+}
+
 function createAuthInstance(database: Parameters<typeof drizzleAdapter>[0]) {
   const baseURL =
     process.env.BETTER_AUTH_URL ??
@@ -46,7 +73,7 @@ function createAuthInstance(database: Parameters<typeof drizzleAdapter>[0]) {
 
   return betterAuth({
     appName: "ALETA",
-    secret: process.env.BETTER_AUTH_SECRET ?? "aleta-local-dev-secret-change-this",
+    secret: getLocalAuthSecret(),
     baseURL,
     trustedOrigins: buildTrustedOrigins(baseURL),
     database: drizzleAdapter(database, {

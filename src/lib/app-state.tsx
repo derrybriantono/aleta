@@ -188,6 +188,7 @@ type PortalAction =
   | { type: "sync-users"; payload: UserPersona[] }
   | { type: "sync-letters"; payload: LetterDetail[] }
   | { type: "sync-dispositions"; payload: DispositionNode[] }
+  | { type: "set-module-visibility"; payload: ModuleVisibility[] }
   | { type: "upsert-user"; payload: UserPersona }
   | { type: "upsert-letter"; payload: LetterDetail }
   | { type: "upsert-disposition"; payload: DispositionNode }
@@ -372,6 +373,11 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
       return {
         ...state,
         dispositions: action.payload,
+      };
+    case "set-module-visibility":
+      return {
+        ...state,
+        moduleVisibility: action.payload,
       };
     case "upsert-user": {
       const nextUsers = state.users.some((user) => user.id === action.payload.id)
@@ -870,14 +876,7 @@ export function PortalProvider({
           users: defaultState.users,
           letters: defaultState.letters,
           dispositions: defaultState.dispositions,
-          moduleVisibility: (parsed.moduleVisibility ?? defaultState.moduleVisibility).map((saved) => {
-            const def = defaultState.moduleVisibility.find((d) => d.roleId === saved.roleId);
-            if (!def) return saved;
-            return {
-              ...saved,
-              modules: { ...def.modules, ...saved.modules },
-            };
-          }),
+          moduleVisibility: defaultState.moduleVisibility,
           theme: parsed.theme ?? defaultState.theme,
           aiConfig: { ...defaultState.aiConfig, ...(parsed.aiConfig ?? {}) },
           whatsAppWeb: { ...defaultState.whatsAppWeb, ...(parsed.whatsAppWeb ?? {}) },
@@ -899,7 +898,6 @@ export function PortalProvider({
       STORAGE_KEY,
       JSON.stringify({
         currentUserId: nextState.currentUserId,
-        moduleVisibility: nextState.moduleVisibility,
         theme: nextState.theme,
         aiConfig: nextState.aiConfig,
         whatsAppWeb: nextState.whatsAppWeb,
@@ -964,7 +962,7 @@ export function PortalProvider({
     setIsSyncing(true);
 
     try {
-      const [usersPayload, lettersPayload, dispositionsPayload, aiConfigPayload, whatsAppPayload, institutionPayload] =
+      const [usersPayload, lettersPayload, dispositionsPayload, aiConfigPayload, whatsAppPayload, institutionPayload, moduleVisibilityPayload] =
         await Promise.all([
           requestBackendJson<{ items: BackendUserRecord[] }>("/api/users", undefined, actorUserId),
           requestBackendJson<{ items: LetterDetail[] }>("/api/surat", undefined, actorUserId),
@@ -972,6 +970,7 @@ export function PortalProvider({
           requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
           requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
           requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
+          requestBackendJson<{ items: ModuleVisibility[] }>("/api/settings/module-visibility", undefined, actorUserId),
         ]);
 
       startTransition(() => {
@@ -984,6 +983,7 @@ export function PortalProvider({
         dispatch({ type: "set-ai-config", payload: aiConfigPayload });
         dispatch({ type: "set-whatsapp-web", payload: whatsAppPayload });
         dispatch({ type: "set-institution-identity", payload: institutionPayload });
+        dispatch({ type: "set-module-visibility", payload: moduleVisibilityPayload.items ?? defaultState.moduleVisibility });
       });
     } catch (error) {
       if (error instanceof BackendRequestError && error.status === 401) {
@@ -1425,8 +1425,32 @@ export function PortalProvider({
             return null;
           }
         },
-        toggleModuleVisibility: (roleId, moduleId, enabled) =>
-          dispatch({ type: "toggle-module", roleId, moduleId, enabled }),
+        toggleModuleVisibility: (roleId, moduleId, enabled) => {
+          if (!currentUser) return;
+
+          void (async () => {
+            try {
+              const result = await requestBackendJson<{ items: ModuleVisibility[] }>(
+                "/api/settings/module-visibility",
+                {
+                  method: "PUT",
+                  body: JSON.stringify({
+                    roleId,
+                    moduleId,
+                    enabled,
+                  }),
+                },
+                currentUser.id
+              );
+
+              startTransition(() => {
+                dispatch({ type: "set-module-visibility", payload: result.items ?? defaultState.moduleVisibility });
+              });
+            } catch {
+              // Ignore UI toggle failures silently to avoid reverting unrelated work.
+            }
+          })();
+        },
         createLetter: async (payload) => {
           if (!currentUser) return { ok: false, message: "Sesi habis." };
           try {

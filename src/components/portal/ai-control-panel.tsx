@@ -212,10 +212,8 @@ export function AIControlPanel() {
                               method: "POST",
                               headers: {
                                 "content-type": "application/json",
-                                "x-aleta-user-id": currentUser.id,
                               },
                               body: JSON.stringify({
-                                actorUserId: currentUser.id,
                                 providerId: catalogProviderId,
                                 apiKey: apiKey.trim(),
                               }),

@@ -149,6 +149,19 @@ export const institutionIdentity = pgTable("institution_identity", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const moduleVisibilitySettings = pgTable(
+  "module_visibility_settings",
+  {
+    roleId: text("role_id").notNull().references(() => roles.id),
+    moduleId: text("module_id").notNull(),
+    enabled: integer("enabled").notNull().default(1),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.roleId, table.moduleId] }),
+  })
+);
+
 export const knowledgeBaseRegulations = pgTable("knowledge_base_regulations", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -404,6 +417,7 @@ export const schema = {
   aiProviders,
   whatsappWebSettings,
   institutionIdentity,
+  moduleVisibilitySettings,
   knowledgeBaseRegulations,
   letterOriginReferences,
   classificationCatalog,

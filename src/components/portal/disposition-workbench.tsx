@@ -229,10 +229,8 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
                               method: "POST",
                               headers: {
                                 "content-type": "application/json",
-                                "x-aleta-user-id": currentUser.id,
                               },
                               body: JSON.stringify({
-                                actorUserId: currentUser.id,
                                 letterSubject: letter.perihal,
                                 letterSummary: letter.ringkasan,
                                 currentInstruction: instruksi,

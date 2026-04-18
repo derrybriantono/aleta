@@ -5,6 +5,7 @@ import {
   defaultAIConfig,
   defaultInstitutionIdentity,
   defaultWhatsAppWeb,
+  moduleVisibility,
   personas,
   positions,
   roles,
@@ -235,6 +236,16 @@ export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
       defaultInstitutionIdentity.mapUrl ?? null,
       timestamp
     );
+
+    for (const visibility of moduleVisibility) {
+      for (const [moduleId, enabled] of Object.entries(visibility.modules)) {
+        await tx.prepare(
+          `INSERT INTO module_visibility_settings (
+            role_id, module_id, enabled, updated_at
+          ) VALUES (?, ?, ?, ?)`
+        ).run(visibility.roleId, moduleId, enabled ? 1 : 0, timestamp);
+      }
+    }
 
     for (const entry of regulationsKnowledgeBase) {
       await tx.prepare(
