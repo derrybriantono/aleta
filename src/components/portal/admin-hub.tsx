@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Landmark, MessageCircleMore, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
+import { Bot, LayoutDashboard, Landmark, MessageCircleMore, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -242,6 +242,13 @@ export function AdminHub() {
                 href="/admin/audit-trail"
                 title="Audit Trail"
                 description="Monitor seluruh perubahan penting sistem dan aktivitas administratif dalam satu jejak audit."
+                badge="Super Admin"
+              />
+              <AdminMenuAction
+                href="/admin/aleta-bot"
+                title="ALETA Bot"
+                description="Kelola bot WhatsApp notifikasi perkara, template pesan, query, log, dan manual test."
+                icon={<Bot className="h-5 w-5 text-cyan-600" />}
                 badge="Super Admin"
               />
             </div>

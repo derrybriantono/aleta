@@ -29,10 +29,12 @@ export type ModuleId =
   | "notifikasi"
   | "ai-settings"
   | "admin-hub"
-  | "whatsapp-settings";
+  | "whatsapp-settings"
+  | "aleta-bot";
 
 export type PortalAppId =
   | "manajemen-surat"
+  | "aleta-bot"
   | "e-kepegawaian"
   | "e-keuangan"
   | "manajemen-aset"

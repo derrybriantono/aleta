@@ -145,6 +145,136 @@ export const whatsappWebSettings = pgTable("whatsapp_web_settings", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const aletaBotSettings = pgTable("aleta_bot_settings", {
+  id: integer("id").primaryKey(),
+  botEnabled: integer("bot_enabled").notNull().default(0),
+  notificationsEnabled: integer("notifications_enabled").notNull().default(0),
+  adminWhatsappNumber: text("admin_whatsapp_number").notNull().default(""),
+  messageDelayMs: integer("message_delay_ms").notNull().default(1500),
+  retryLimit: integer("retry_limit").notNull().default(2),
+  dryRunEnabled: integer("dry_run_enabled").notNull().default(1),
+  scheduleCron: text("schedule_cron").notNull().default("00 07 * * Monday-Friday"),
+  testTargetNumber: text("test_target_number").notNull().default(""),
+  securityNotes: text("security_notes").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const aletaBotTemplates = pgTable(
+  "aleta_bot_templates",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    placeholdersJson: text("placeholders_json").notNull().default("[]"),
+    editable: integer("editable").notNull().default(1),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    categoryIdx: index("idx_aleta_bot_templates_category").on(table.category),
+  })
+);
+
+export const aletaBotJobs = pgTable("aleta_bot_jobs", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  enabled: integer("enabled").notNull().default(0),
+  scheduleCron: text("schedule_cron").notNull(),
+  lastRunAt: text("last_run_at"),
+  lastStatus: text("last_status").notNull().default("idle"),
+  lastMessage: text("last_message"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const aletaBotQueries = pgTable(
+  "aleta_bot_queries",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    category: text("category").notNull(),
+    description: text("description").notNull().default(""),
+    sqlText: text("sql_text").notNull(),
+    outputColumnsJson: text("output_columns_json").notNull().default("[]"),
+    recipientColumn: text("recipient_column").notNull().default(""),
+    isActive: integer("is_active").notNull().default(1),
+    lastTestedAt: text("last_tested_at"),
+    lastTestStatus: text("last_test_status").notNull().default("idle"),
+    lastTestError: text("last_test_error"),
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    categoryIdx: index("idx_aleta_bot_queries_category").on(table.category, table.isActive),
+  })
+);
+
+export const aletaBotNotifications = pgTable(
+  "aleta_bot_notifications",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    category: text("category").notNull(),
+    description: text("description").notNull().default(""),
+    queryId: text("query_id").notNull().references(() => aletaBotQueries.id),
+    templateId: text("template_id").notNull().references(() => aletaBotTemplates.id),
+    recipientSource: text("recipient_source").notNull(),
+    recipientMappingJson: text("recipient_mapping_json").notNull().default("{}"),
+    scheduleConfigJson: text("schedule_config_json").notNull().default("{}"),
+    isActive: integer("is_active").notNull().default(0),
+    delayMs: integer("delay_ms").notNull().default(1500),
+    retryLimit: integer("retry_limit").notNull().default(2),
+    lastRunAt: text("last_run_at"),
+    lastStatus: text("last_status").notNull().default("idle"),
+    lastMessage: text("last_message"),
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    categoryIdx: index("idx_aleta_bot_notifications_category").on(table.category, table.isActive),
+  })
+);
+
+export const aletaBotNotificationLogs = pgTable(
+  "aleta_bot_notification_logs",
+  {
+    id: text("id").primaryKey(),
+    notificationId: text("notification_id").references(() => aletaBotNotifications.id),
+    queryId: text("query_id").references(() => aletaBotQueries.id),
+    recipientNumber: text("recipient_number").notNull().default(""),
+    recipientName: text("recipient_name").notNull().default(""),
+    category: text("category").notNull(),
+    messagePreview: text("message_preview").notNull().default(""),
+    status: text("status").notNull(),
+    errorMessage: text("error_message"),
+    sentAt: text("sent_at"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    createdIdx: index("idx_aleta_bot_notification_logs_created").on(table.createdAt, table.status),
+  })
+);
+
+export const aletaBotLogs = pgTable(
+  "aleta_bot_logs",
+  {
+    id: text("id").primaryKey(),
+    level: text("level").notNull(),
+    eventType: text("event_type").notNull(),
+    message: text("message").notNull(),
+    metadataJson: text("metadata_json").notNull().default("{}"),
+    actorUserId: text("actor_user_id").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    createdIdx: index("idx_aleta_bot_logs_created").on(table.createdAt, table.eventType),
+  })
+);
+
 export const institutionIdentity = pgTable("institution_identity", {
   id: integer("id").primaryKey(),
   courtName: text("court_name").notNull(),
@@ -459,6 +589,13 @@ export const schema = {
   aiGlobalSettings,
   aiProviders,
   whatsappWebSettings,
+  aletaBotSettings,
+  aletaBotTemplates,
+  aletaBotJobs,
+  aletaBotQueries,
+  aletaBotNotifications,
+  aletaBotNotificationLogs,
+  aletaBotLogs,
   institutionIdentity,
   institutionIdentityEnrichments,
   moduleVisibilitySettings,

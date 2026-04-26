@@ -45,6 +45,15 @@ export const hybridModuleRegistry: HybridModuleDefinition[] = [
     sharedUtilities: ["module-registry", "organization-service", "aleta-intelligence-service"],
     intelligenceReady: true,
   },
+  {
+    id: "aleta-bot",
+    label: "ALETA Bot",
+    description: "Modul internal WhatsApp bot untuk notifikasi perkara, template pesan, query, log, dan manual test.",
+    routePrefix: "/admin/aleta-bot",
+    scope: "business",
+    sharedUtilities: ["notification-gateway", "whatsapp-gateway", "audit-policy"],
+    intelligenceReady: false,
+  },
 ];
 
 export function getHybridModuleDefinition(moduleId: string) {

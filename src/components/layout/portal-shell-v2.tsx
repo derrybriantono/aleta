@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Bell,
   BookOpenText,
+  Bot,
   BriefcaseBusiness,
   ChartColumn,
   GitBranchPlus,
@@ -73,6 +74,7 @@ const iconMap = {
   "user-cog": UserCog,
   landmark: Landmark,
   sparkles: Sparkles,
+  bot: Bot,
 };
 
 const primarySidebarIds: ReadonlySet<ModuleId> = new Set([
@@ -92,6 +94,7 @@ const adminSidebarIds: ReadonlySet<ModuleId> = new Set([
   "identity",
   "ai-settings",
   "whatsapp-settings",
+  "aleta-bot",
 ]);
 const DESKTOP_SIDEBAR_STORAGE_KEY = "aleta:portal-sidebar-collapsed";
 const primarySidebarOrder = [

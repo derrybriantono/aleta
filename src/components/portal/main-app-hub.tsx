@@ -5,6 +5,7 @@ import {
   Archive,
   ArrowRight,
   BookOpenText,
+  Bot,
   BriefcaseBusiness,
   Inbox,
   LibraryBig,
@@ -29,6 +30,7 @@ const iconMap = {
   "message-circle-more": MessageCircleMore,
   archive: Archive,
   "users-round": UsersRound,
+  bot: Bot,
 };
 
 export function MainAppHub({ apps }: { apps: PortalAppConfig[] }) {
