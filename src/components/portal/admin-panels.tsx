@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ArrowUpDown, Camera, Save, Smartphone, UserPlus, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUpDown, Camera, CheckCircle2, KeyRound, LoaderCircle, Save, Smartphone, UserPlus, UserRound, XCircle } from "lucide-react";
 
 import { UserAvatar } from "@/components/portal/user-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,41 +13,55 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePortal } from "@/lib/app-state";
 import { modules, positions, roles } from "@/lib/mock-data";
-import { getDefaultRoleForPosition, getRoleLabel, getUserPositionLabel, getUserRoleBadge } from "@/lib/permissions";
+import { getDefaultRoleForPosition, getRoleLabel, getUserPositionLabel, getUserRoleBadge, isPrivilegedAdmin } from "@/lib/permissions";
 import { type ModuleVisibility, type UserPersona } from "@/lib/types";
 
-type AccountSortKey = "name" | "username" | "position" | "nip" | "email" | "status";
+type AdminResetRequest = {
+  id: string;
+  userId: string;
+  username: string;
+  name: string;
+  nip: string;
+  status: "pending" | "approved" | "rejected";
+  note: string | null;
+  resolvedByUserId: string | null;
+  createdAt: string;
+  expiresAt: string;
+};
 
-function sortManagedUsers(users: UserPersona[], sortKey: AccountSortKey) {
-  return [...users].sort((left, right) => {
+type AccountSortKey = "name" | "username" | "position" | "nip" | "email" | "status" | "role";
+
+function sortManagedUsers(users: UserPersona[], sortKey: AccountSortKey, sortDir: "asc" | "desc") {
+  const sorted = [...users].sort((left, right) => {
     if (sortKey === "status") {
       if (left.isActive !== right.isActive) {
         return left.isActive ? -1 : 1;
       }
-
       return left.name.localeCompare(right.name);
     }
-
     if (sortKey === "position") {
       return getUserPositionLabel(left).localeCompare(getUserPositionLabel(right));
     }
-
     if (sortKey === "nip") {
       return (left.nip ?? "").localeCompare(right.nip ?? "");
     }
-
     if (sortKey === "email") {
       return (left.email ?? "").localeCompare(right.email ?? "");
     }
-
+    if (sortKey === "role") {
+      return getRoleLabel(left.roleId).localeCompare(getRoleLabel(right.roleId));
+    }
     return (left[sortKey] ?? "").localeCompare(right[sortKey] ?? "");
   });
+  return sortDir === "desc" ? sorted.reverse() : sorted;
 }
 
 export function MappingBoard() {
   const { createManagedUser, currentUser, updateManagedUser, users } = usePortal();
+  const isAdmin = isPrivilegedAdmin(currentUser);
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<AccountSortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const filteredUsers = useMemo(() => {
     const visibleUsers =
       currentUser?.roleId === "super-admin"
@@ -61,17 +75,104 @@ export function MappingBoard() {
         .includes(query.toLowerCase())
     );
 
-    return sortManagedUsers(searchedUsers, sortKey);
-  }, [currentUser?.roleId, query, sortKey, users]);
+    return sortManagedUsers(searchedUsers, sortKey, sortDir);
+  }, [currentUser?.roleId, query, sortDir, sortKey, users]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const selectedUser =
     filteredUsers.find((user) => user.id === selectedUserId) ??
     filteredUsers[0] ??
     null;
 
+  // Admin reset state
+  const [isResettingUserId, setIsResettingUserId] = useState<string | null>(null);
+  const [resetResult, setResetResult] = useState<{ userId: string; tempPassword: string } | null>(null);
+  const [resetError, setResetError] = useState("");
+
+  // Admin reset requests state
+  const [pendingRequests, setPendingRequests] = useState<AdminResetRequest[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [requestsTab, setRequestsTab] = useState(false);
+  const [resolveState, setResolveState] = useState<{ requestId: string; action: "approve" | "reject" } | null>(null);
+  const [resolveNote, setResolveNote] = useState("");
+  const [resolveResult, setResolveResult] = useState<{ requestId: string; tempPassword?: string; action: string } | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const loadResetRequests = async () => {
+    setIsLoadingRequests(true);
+    try {
+      const response = await fetch("/api/users/recovery/admin-requests", { credentials: "include" });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; data?: { requests: AdminResetRequest[] }; error?: { message?: string } }
+        | null;
+      if (response.ok && payload?.ok && payload.data?.requests) {
+        setPendingRequests(payload.data.requests);
+      }
+    } catch {
+      // non-blocking
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdmin && requestsTab) {
+      void loadResetRequests();
+    }
+  }, [isAdmin, requestsTab]);
+
+  const handleAdminReset = async (targetUserId: string) => {
+    setIsResettingUserId(targetUserId);
+    setResetResult(null);
+    setResetError("");
+    try {
+      const response = await fetch(`/api/users/${targetUserId}/reset-password`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; data?: { tempPassword: string; message: string }; error?: { message?: string } }
+        | null;
+      if (!response.ok || !payload?.ok || !payload.data) {
+        throw new Error(payload?.error?.message ?? "Reset password gagal diproses.");
+      }
+      setResetResult({ userId: targetUserId, tempPassword: payload.data.tempPassword });
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : "Reset password gagal diproses.");
+    } finally {
+      setIsResettingUserId(null);
+    }
+  };
+
+  const handleResolveRequest = async (requestId: string, action: "approve" | "reject") => {
+    setIsResolving(true);
+    try {
+      const response = await fetch(`/api/users/recovery/admin-requests/${requestId}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action, note: resolveNote }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; data?: { tempPassword?: string; action: string }; error?: { message?: string } }
+        | null;
+      if (!response.ok || !payload?.ok || !payload.data) {
+        throw new Error(payload?.error?.message ?? "Gagal memproses permintaan.");
+      }
+      setResolveResult({ requestId, tempPassword: payload.data.tempPassword, action });
+      setResolveState(null);
+      setResolveNote("");
+      await loadResetRequests();
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : "Gagal memproses permintaan.");
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-      <Card className="border-border/80">
+    <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr] xl:items-start">
+      <Card className="border-border/80 xl:sticky xl:top-4">
+
         <CardHeader>
           <CardTitle>Daftar Akun</CardTitle>
           <CardDescription>Pilih akun untuk diperbarui atau gunakan tab akun baru untuk menambah user terpusat.</CardDescription>
@@ -85,68 +186,127 @@ export function MappingBoard() {
               className="h-12 text-base"
             />
             <div className="flex items-center gap-2 rounded-[1.1rem] border border-border bg-muted/35 px-3">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
               <NativeSelect
                 value={sortKey}
                 onChange={(event) => setSortKey(event.target.value as AccountSortKey)}
                 className="h-12 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0"
               >
-                <option value="name">Sortir Nama</option>
-                <option value="username">Sortir Username</option>
-                <option value="position">Sortir Jabatan</option>
-                <option value="nip">Sortir NIP</option>
-                <option value="email">Sortir Email</option>
-                <option value="status">Sortir Status</option>
+                <option value="name">Nama</option>
+                <option value="username">Username</option>
+                <option value="position">Jabatan</option>
+                <option value="role">Role</option>
+                <option value="nip">NIP</option>
+                <option value="email">Email</option>
+                <option value="status">Status</option>
               </NativeSelect>
+              <button
+                type="button"
+                className="shrink-0 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                onClick={() => setSortDir((dir) => (dir === "asc" ? "desc" : "asc"))}
+              >
+                {sortDir === "asc" ? "A→Z" : "Z→A"}
+              </button>
             </div>
           </div>
 
-          <div className="space-y-3">
-            {filteredUsers.map((user) => (
-              <button
-                key={user.id}
-                type="button"
-                className={`w-full rounded-[1.2rem] border px-4 py-4 text-left transition ${
-                  selectedUserId === user.id
-                    ? "border-primary/40 bg-primary/10"
-                    : "border-border bg-card hover:border-primary/30 hover:bg-primary/5"
-                }`}
-                onClick={() => setSelectedUserId(user.id)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <UserAvatar
-                      name={user.name}
-                      profilePhotoUrl={user.profilePhotoUrl}
-                      className="h-11 w-11 rounded-2xl"
-                      textClassName="text-sm"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-semibold text-foreground">{user.name}</p>
-                      <p className="mt-1 truncate text-sm text-muted-foreground">{user.username}</p>
-                      <p className="mt-1 truncate text-sm text-muted-foreground">{user.email || "Data email dilindungi"}</p>
+          <div className="max-h-[calc(100vh-18rem)] space-y-2 overflow-y-auto pr-1">
+            {filteredUsers.map((user) => {
+              const canReset =
+                isAdmin &&
+                (currentUser?.roleId === "super-admin" || user.roleId !== "super-admin") &&
+                currentUser?.id !== user.id;
+              return (
+                <div key={user.id} className="space-y-1">
+                  <button
+                    type="button"
+                    className={`w-full rounded-[1.2rem] border px-4 py-4 text-left transition ${
+                      selectedUserId === user.id
+                        ? "border-primary/40 bg-primary/10"
+                        : "border-border bg-card hover:border-primary/30 hover:bg-primary/5"
+                    }`}
+                    onClick={() => setSelectedUserId(user.id)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <UserAvatar
+                          name={user.name}
+                          profilePhotoUrl={user.profilePhotoUrl}
+                          className="h-11 w-11 rounded-2xl"
+                          textClassName="text-sm"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-semibold text-foreground">{user.name}</p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{user.username}</p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{user.email || "Data email dilindungi"}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant="outline">{getUserRoleBadge(user)}</Badge>
+                        {!user.isActive ? <Badge variant="danger">Diblokir</Badge> : null}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant="outline">{getUserRoleBadge(user)}</Badge>
-                    {!user.isActive ? <Badge variant="danger">Diblokir</Badge> : null}
-                  </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      {user.nip?.trim() ? <span>NIP {user.nip}</span> : <span>Tanpa NIP</span>}
+                      <span>-</span>
+                      <span>{getUserPositionLabel(user)}</span>
+                    </div>
+                  </button>
+
+                  {canReset ? (
+                    <div className="px-1">
+                      <button
+                        type="button"
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+                        disabled={isResettingUserId === user.id}
+                        onClick={() => {
+                          setResetResult(null);
+                          setResetError("");
+                          void handleAdminReset(user.id);
+                        }}
+                      >
+                        {isResettingUserId === user.id ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <KeyRound className="h-3 w-3" />
+                        )}
+                        Reset Password
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {resetResult?.userId === user.id ? (
+                    <div className="mx-1 rounded-[1rem] border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/30">
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Password Sementara (tampil sekali — simpan sebelum ditutup)</p>
+                      <p className="mt-1 font-mono text-base font-bold tracking-widest text-amber-900 dark:text-amber-100">{resetResult.tempPassword}</p>
+                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">Sampaikan ke user secara langsung dan minta segera diganti.</p>
+                      <button
+                        type="button"
+                        className="mt-2 text-xs text-amber-600 underline dark:text-amber-400"
+                        onClick={() => setResetResult(null)}
+                      >
+                        Tutup
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  {user.nip?.trim() ? <span>NIP {user.nip}</span> : <span>Tanpa NIP</span>}
-                  <span>-</span>
-                  <span>{getUserPositionLabel(user)}</span>
-                </div>
-              </button>
-            ))}
+              );
+            })}
+            {resetError ? (
+              <div className="rounded-2xl border border-rose-300/60 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
+                {resetError}
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="edit">
-        <TabsList className="grid w-full grid-cols-2">
+      <div className="xl:sticky xl:top-4">
+      <Tabs defaultValue="edit" onValueChange={(value) => setRequestsTab(value === "requests")}>
+        <TabsList className={`grid w-full ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}>
           <TabsTrigger value="edit">Edit Akun</TabsTrigger>
           <TabsTrigger value="create">Buat Akun Baru</TabsTrigger>
+          {isAdmin ? <TabsTrigger value="requests">Permintaan Reset</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="edit">
@@ -178,7 +338,177 @@ export function MappingBoard() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isAdmin ? (
+          <TabsContent value="requests">
+            <Card className="border-border/80">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Permintaan Reset Password</CardTitle>
+                    <CardDescription>Permintaan dari user yang tidak bisa menggunakan OTP WhatsApp. Setujui untuk membuat password sementara otomatis.</CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoadingRequests}
+                    onClick={() => void loadResetRequests()}
+                  >
+                    {isLoadingRequests ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Refresh"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoadingRequests ? (
+                  <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                    <LoaderCircle className="h-5 w-5 animate-spin" />
+                    Memuat permintaan...
+                  </div>
+                ) : pendingRequests.length === 0 ? (
+                  <div className="rounded-[1.2rem] border border-border bg-muted/35 px-4 py-5 text-sm text-muted-foreground">
+                    Tidak ada permintaan reset password yang aktif saat ini.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingRequests.map((req) => (
+                      <div key={req.id} className="space-y-3 rounded-[1.2rem] border border-border bg-card p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <p className="truncate font-semibold text-foreground">{req.name}</p>
+                            <p className="text-sm text-muted-foreground">{req.username} — NIP {req.nip}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Diajukan {new Date(req.createdAt).toLocaleString("id-ID")}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              req.status === "approved"
+                                ? "success"
+                                : req.status === "rejected"
+                                ? "danger"
+                                : "outline"
+                            }
+                          >
+                            {req.status === "pending" ? "Menunggu" : req.status === "approved" ? "Disetujui" : "Ditolak"}
+                          </Badge>
+                        </div>
+
+                        {resolveResult?.requestId === req.id && resolveResult.action === "approve" && resolveResult.tempPassword ? (
+                          <div className="rounded-[1rem] border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/30">
+                            <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+                              Password Sementara (tampil sekali — simpan sebelum ditutup)
+                            </p>
+                            <p className="mt-1 font-mono text-base font-bold tracking-widest text-amber-900 dark:text-amber-100">
+                              {resolveResult.tempPassword}
+                            </p>
+                            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                              Sampaikan ke user secara langsung dan minta segera diganti.
+                            </p>
+                            <button
+                              type="button"
+                              className="mt-2 text-xs text-amber-600 underline dark:text-amber-400"
+                              onClick={() => setResolveResult(null)}
+                            >
+                              Tutup
+                            </button>
+                          </div>
+                        ) : null}
+
+                        {resolveResult?.requestId === req.id && resolveResult.action === "reject" ? (
+                          <div className="flex items-center gap-2 rounded-[1rem] border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                            <CheckCircle2 className="h-4 w-4 shrink-0" />
+                            Permintaan berhasil ditolak.
+                          </div>
+                        ) : null}
+
+                        {req.status === "pending" && resolveResult?.requestId !== req.id ? (
+                          resolveState?.requestId === req.id ? (
+                            <div className="space-y-3 rounded-[1rem] border border-border bg-muted/35 p-3">
+                              <p className="text-sm font-semibold text-foreground">
+                                {resolveState.action === "approve"
+                                  ? "Setujui permintaan ini?"
+                                  : "Tolak permintaan ini?"}
+                              </p>
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-muted-foreground">
+                                  Catatan (opsional)
+                                </label>
+                                <Input
+                                  value={resolveNote}
+                                  onChange={(event) => setResolveNote(event.target.value)}
+                                  placeholder="Alasan atau catatan untuk user..."
+                                  className="h-10 text-sm"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant={resolveState.action === "approve" ? "default" : "destructive"}
+                                  disabled={isResolving}
+                                  onClick={() => void handleResolveRequest(req.id, resolveState.action)}
+                                >
+                                  {isResolving ? (
+                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                  ) : resolveState.action === "approve" ? (
+                                    <CheckCircle2 className="h-4 w-4" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4" />
+                                  )}
+                                  {isResolving
+                                    ? "Memproses..."
+                                    : resolveState.action === "approve"
+                                    ? "Ya, Setujui"
+                                    : "Ya, Tolak"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isResolving}
+                                  onClick={() => {
+                                    setResolveState(null);
+                                    setResolveNote("");
+                                  }}
+                                >
+                                  Batal
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => setResolveState({ requestId: req.id, action: "approve" })}
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                Setujui
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setResolveState({ requestId: req.id, action: "reject" })}
+                              >
+                                <XCircle className="h-4 w-4" />
+                                Tolak
+                              </Button>
+                            </div>
+                          )
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {resetError ? (
+                  <div className="rounded-2xl border border-rose-300/60 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
+                    {resetError}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ) : null}
       </Tabs>
+      </div>
     </div>
   );
 }

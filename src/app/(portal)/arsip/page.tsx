@@ -298,7 +298,7 @@ export default function ArsipPage() {
               ))}
             </NativeSelect>
             <NativeSelect value={statusFilter} onChange={(event) => updateParam("status", event.target.value)} className="h-12 text-base">
-              {["Semua", "Baru", "Dalam Disposisi", "Ditindaklanjuti", "Selesai"].map((option) => (
+              {["Semua", "Baru", "Dalam Disposisi", "Selesai"].map((option) => (
                 <option key={option} value={option}>
                   {option === "Semua" ? "Semua Status" : option}
                 </option>

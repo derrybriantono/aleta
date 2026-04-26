@@ -44,13 +44,13 @@ export type ThemeMode = "light" | "dark";
 export type WhatsAppDeliveryStatus = "Terkirim" | "Gagal";
 
 export type LetterType = "masuk" | "keluar";
-export type LetterStatus = "Baru" | "Dalam Disposisi" | "Ditindaklanjuti" | "Selesai";
+export type LetterStatus = "Baru" | "Dalam Disposisi" | "Selesai";
 export type DispositionStatus =
-  | "Riwayat Awal Disposisi"
-  | "Menunggu Telaah"
-  | "Diteruskan"
+  | "Menunggu Tindak Lanjut"
   | "Sedang Dikerjakan"
-  | "Selesai";
+  | "Diteruskan"
+  | "Selesai"
+  | "Dikembalikan";
 export type ActingAssignmentType = "PLH" | "PLT";
 export type DispositionRoutingType = "standard" | "leadership-notification";
 export type AIModelId = string;
@@ -60,6 +60,79 @@ export type AIRecommendationType = "routing" | "instruction" | "regulation";
 export type AIProviderId = string;
 export type AIConnectionStatus = "idle" | "connected" | "failed";
 export type WhatsAppWebConnectionStatus = "active" | "inactive" | "failed";
+export type InstitutionIdentityEnrichmentStatus =
+  | "catalog_only"
+  | "cached"
+  | "enriched"
+  | "partial"
+  | "failed";
+export type InstitutionIdentityEnrichmentConfidence = "high" | "medium" | "low";
+export type InstitutionIdentityEnrichmentSourceType =
+  | "local"
+  | "google_places"
+  | "google_search"
+  | "official_website"
+  | "ai"
+  | "cache";
+
+export type AIFeatureModuleKey =
+  | "oneStopDisposition"
+  | "mailIntelligence"
+  | "draftMetadata"
+  | "institutionIdentity";
+
+export interface OneStopDispositionAIFlags {
+  enabled: boolean;
+  recommendation: boolean;
+  priorityDetection: boolean;
+  targetSuggestion: boolean;
+  instructionSuggestion: boolean;
+  autofill: boolean;
+  rationale: boolean;
+  diagnostics: boolean;
+}
+
+export interface MailIntelligenceAIFlags {
+  enabled: boolean;
+  summary: boolean;
+  findings: boolean;
+  recommendedActions: boolean;
+  relatedRegulations: boolean;
+  riskNotes: boolean;
+  diagnostics: boolean;
+}
+
+export interface DraftMetadataAIFlags {
+  enabled: boolean;
+  nomorSurat: boolean;
+  tanggalSurat: boolean;
+  tanggalTerima: boolean;
+  asalSurat: boolean;
+  perihal: boolean;
+  kodeKlasifikasi: boolean;
+  klasifikasiSurat: boolean;
+  tagSurat: boolean;
+  tagAsalSurat: boolean;
+  ocrCheck: boolean;
+  aiReviewNote: boolean;
+}
+
+export interface InstitutionIdentityAIFlags {
+  enabled: boolean;
+  courtNameSuggestion: boolean;
+  identityEnrichment: boolean;
+  googleDiscovery: boolean;
+  officialWebsiteExtraction: boolean;
+  aiNormalization: boolean;
+  diagnostics: boolean;
+}
+
+export interface AIFeatureFlags {
+  oneStopDisposition: OneStopDispositionAIFlags;
+  mailIntelligence: MailIntelligenceAIFlags;
+  draftMetadata: DraftMetadataAIFlags;
+  institutionIdentity: InstitutionIdentityAIFlags;
+}
 
 export interface Role {
   id: RoleId;
@@ -258,17 +331,31 @@ export interface AIGlobalConfig {
   modelId: AIModelId;
   primaryLanguage: AILanguage;
   providerId: AIProviderId;
+  activeConnectionId?: string | null;
   providers: AIProviderConfig[];
+  featureFlags: AIFeatureFlags;
+  featureDispositionAi: boolean;
+  featureMailIntelligence: boolean;
+  featureDraftMetadata: boolean;
+  featureManajemenSuratAi: boolean;
+  featureDisposisiAi: boolean;
 }
 
 export interface AIProviderConfig {
   id: AIProviderId;
   name: string;
   apiKey: string;
+  maskedApiKey?: string;
+  providerId?: AIProviderId;
+  providerName?: string;
+  modelId?: AIModelId;
   endpointUrl?: string;
   models: string[];
   connectionStatus?: AIConnectionStatus;
   builtin?: boolean;
+  lastTestedAt?: string;
+  lastConnectionMessage?: string;
+  isActive?: boolean;
 }
 
 export interface WhatsAppWebConfig {
@@ -290,6 +377,30 @@ export interface InstitutionIdentity {
   youtube?: string;
   website?: string;
   mapUrl?: string;
+}
+
+export interface InstitutionIdentityEnrichmentMetadata {
+  courtId: string;
+  courtName: string;
+  query?: string;
+  confidence?: InstitutionIdentityEnrichmentConfidence;
+  sources?: Array<{
+    type: InstitutionIdentityEnrichmentSourceType;
+    label: string;
+    url?: string;
+  }>;
+  fieldsFound?: Array<keyof InstitutionIdentity>;
+  fieldsMissing?: Array<keyof InstitutionIdentity>;
+  warnings?: string[];
+  sourceOfficialWebsite?: string;
+  sourceGooglePlace?: string;
+  sourceGoogleSearch?: string;
+  lastEnrichedAt?: string;
+  enrichmentStatus: InstitutionIdentityEnrichmentStatus;
+  fieldSources?: Partial<Record<keyof InstitutionIdentity, InstitutionIdentityEnrichmentSourceType>>;
+  fieldConfidence?: Partial<Record<keyof InstitutionIdentity, number>>;
+  fromCache?: boolean;
+  lastErrorMessage?: string;
 }
 
 export interface KnowledgeBaseEntry {
@@ -327,6 +438,98 @@ export interface AletaAIInsight {
   regulations: KnowledgeBaseEntry[];
   actions: AIRecommendedAction[];
   rationale: string;
+}
+
+export type MailIntelligencePriorityLevel = "low" | "medium" | "high" | "urgent";
+export type MailIntelligenceConfidenceLevel = "low" | "medium" | "high";
+export type MailIntelligenceSource = "ai-live" | "heuristic" | "disabled" | "error";
+
+export interface MailIntelligenceProviderMeta {
+  connectionId: string | null;
+  providerId: string;
+  providerName: string;
+  modelId: string;
+  providerModelId: string;
+  connectionLabel: string | null;
+  connectionStatus: AIConnectionStatus;
+  language: AILanguage;
+  hasActiveApiKey: boolean;
+  isLive: boolean;
+}
+
+export interface MailIntelligenceFollowUp {
+  id: string;
+  label: string;
+  detail: string;
+}
+
+export interface MailIntelligencePayload {
+  source: MailIntelligenceSource;
+  provider: MailIntelligenceProviderMeta;
+  summary: string;
+  keyFindings: string[];
+  priority: {
+    level: MailIntelligencePriorityLevel;
+    reason: string;
+  };
+  followUpSuggestions: MailIntelligenceFollowUp[];
+  regulations: KnowledgeBaseEntry[];
+  suggestedPositionIds: string[];
+  suggestedPositionLabels: string[];
+  verificationChecklist: string[];
+  confidence: {
+    score: number;
+    level: MailIntelligenceConfidenceLevel;
+    label: string;
+  };
+  rationale: string;
+  message: string | null;
+  generatedAt: string;
+}
+
+export type DispositionSuggestionSource = MailIntelligenceSource;
+export type DispositionSuggestionPriorityLevel = MailIntelligencePriorityLevel;
+export type DispositionSuggestionConfidenceLevel = MailIntelligenceConfidenceLevel;
+export type DispositionSuggestionProviderMeta = MailIntelligenceProviderMeta;
+
+export interface DispositionSuggestionFollowUp {
+  id: string;
+  label: string;
+  detail: string;
+}
+
+export interface DispositionSuggestionAutofill {
+  suggestedInstruction: string;
+  suggestedTargetPositionId: string | null;
+  suggestedTargetLabel: string;
+  allowDownload: boolean | null;
+  urgent: boolean | null;
+}
+
+export interface DispositionSuggestionPayload {
+  source: DispositionSuggestionSource;
+  provider: DispositionSuggestionProviderMeta;
+  summary: string;
+  keyFindings: string[];
+  priority: {
+    level: DispositionSuggestionPriorityLevel;
+    reason: string;
+  };
+  suggestedInstruction: string;
+  suggestedTargetPositionId: string | null;
+  suggestedTargetLabel: string;
+  autofill: DispositionSuggestionAutofill;
+  followUpSuggestions: DispositionSuggestionFollowUp[];
+  verificationChecklist: string[];
+  regulations: KnowledgeBaseEntry[];
+  confidence: {
+    score: number;
+    level: DispositionSuggestionConfidenceLevel;
+    label: string;
+  };
+  rationale: string;
+  message: string | null;
+  generatedAt: string;
 }
 
 export interface PortalStateData {

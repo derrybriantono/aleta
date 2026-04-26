@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     void whatsappService.initialize();
 
     return ok({
-      message: "Proses inisialisasi WhatsApp dimulai. Silakan cek status QR.",
+      message: "Proses inisialisasi WhatsApp dimulai. Pairing QR bisa dilakukan tanpa wajib mengisi nomor resmi terlebih dahulu.",
     });
   } catch (error) {
     return handleRouteError(error);

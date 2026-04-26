@@ -64,18 +64,25 @@ const schemaStatements = [
     enabled SMALLINT NOT NULL DEFAULT 1,
     active_provider_id TEXT NOT NULL,
     active_model_id TEXT NOT NULL,
+    active_connection_id TEXT,
     primary_language TEXT NOT NULL DEFAULT 'id',
+    feature_flags_json TEXT NOT NULL DEFAULT '{}',
     updated_at TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS ai_providers (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    provider_id TEXT,
     endpoint_url TEXT,
     api_key TEXT NOT NULL DEFAULT '',
+    masked_api_key TEXT NOT NULL DEFAULT '',
     models_json TEXT NOT NULL DEFAULT '[]',
+    model_id TEXT,
     builtin SMALLINT NOT NULL DEFAULT 0,
     connection_status TEXT NOT NULL DEFAULT 'idle',
     is_active SMALLINT NOT NULL DEFAULT 0,
+    last_tested_at TEXT,
+    last_connection_message TEXT,
     deleted_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -101,6 +108,36 @@ const schemaStatements = [
     youtube TEXT,
     website TEXT,
     map_url TEXT,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS institution_identity_enrichments (
+    court_id TEXT PRIMARY KEY,
+    query_text TEXT,
+    court_name TEXT NOT NULL,
+    court_short_name TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL DEFAULT '',
+    phone_number TEXT NOT NULL DEFAULT '',
+    mobile_phone TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    instagram TEXT,
+    facebook TEXT,
+    youtube TEXT,
+    website TEXT,
+    map_url TEXT,
+    source_official_website TEXT,
+    source_google_place TEXT,
+    source_google_search TEXT,
+    sources_json TEXT NOT NULL DEFAULT '[]',
+    fields_found_json TEXT NOT NULL DEFAULT '[]',
+    fields_missing_json TEXT NOT NULL DEFAULT '[]',
+    warnings_json TEXT NOT NULL DEFAULT '[]',
+    confidence TEXT NOT NULL DEFAULT 'low',
+    field_sources_json TEXT NOT NULL DEFAULT '{}',
+    field_confidence_json TEXT NOT NULL DEFAULT '{}',
+    enrichment_status TEXT NOT NULL DEFAULT 'catalog_only',
+    last_enriched_at TEXT,
+    last_error_message TEXT,
+    created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS module_visibility_settings (
@@ -295,6 +332,17 @@ const schemaStatements = [
     created_at TEXT,
     updated_at TEXT
   )`,
+  `CREATE TABLE IF NOT EXISTS password_reset_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    resolved_by_user_id TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    CONSTRAINT fk_prr_user FOREIGN KEY (user_id) REFERENCES users(id)
+  )`,
 ];
 
 const indexStatements = [
@@ -312,12 +360,40 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_disposition_whatsapp_disposition ON disposition_whatsapp_deliveries(disposition_id, status)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_provider_account ON accounts(provider_id, account_id)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`,
+  `CREATE INDEX IF NOT EXISTS idx_password_reset_requests_status ON password_reset_requests(user_id, status)`,
   `CREATE INDEX IF NOT EXISTS idx_letters_search_document_fts
     ON letters USING GIN (to_tsvector('simple', search_document))`,
 ];
 
+const migrationStatements = [
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS active_connection_id TEXT`,
+  `ALTER TABLE ai_providers ADD COLUMN IF NOT EXISTS provider_id TEXT`,
+  `ALTER TABLE ai_providers ADD COLUMN IF NOT EXISTS masked_api_key TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE ai_providers ADD COLUMN IF NOT EXISTS model_id TEXT`,
+  `ALTER TABLE ai_providers ADD COLUMN IF NOT EXISTS last_tested_at TEXT`,
+  `ALTER TABLE ai_providers ADD COLUMN IF NOT EXISTS last_connection_message TEXT`,
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS feature_disposition_ai SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS feature_mail_intelligence SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS feature_draft_metadata SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS feature_manajemen_surat_ai SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS feature_disposisi_ai SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE ai_global_settings ADD COLUMN IF NOT EXISTS feature_flags_json TEXT NOT NULL DEFAULT '{}'`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS query_text TEXT`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS source_google_place TEXT`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS source_google_search TEXT`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS sources_json TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS fields_found_json TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS fields_missing_json TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS warnings_json TEXT NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE institution_identity_enrichments ADD COLUMN IF NOT EXISTS confidence TEXT NOT NULL DEFAULT 'low'`,
+];
+
 export async function ensureAletaSchema(db: AletaDatabase) {
   for (const statement of schemaStatements) {
+    await db.exec(statement);
+  }
+
+  for (const statement of migrationStatements) {
     await db.exec(statement);
   }
 

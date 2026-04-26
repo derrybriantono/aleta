@@ -46,7 +46,7 @@ export function PortalFooter() {
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-border/90 bg-card/82 p-5">
+          <div className="rounded-[1.5rem] border border-border bg-card/96 p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-foreground">Kontak Utama</p>
               <Badge variant="muted">Resmi</Badge>
@@ -70,7 +70,7 @@ export function PortalFooter() {
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-border/90 bg-card/82 p-5">
+          <div className="rounded-[1.5rem] border border-border bg-card/96 p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-foreground">Kanal Digital</p>
               <Badge variant="outline">Tersinkron</Badge>
@@ -101,7 +101,7 @@ export function PortalFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-[1.35rem] border border-border/90 bg-card/78 px-5 py-4 text-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 rounded-[1.35rem] border border-border bg-card shadow-sm px-5 py-4 text-sm lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <p className="font-semibold text-foreground">{institutionIdentity.courtName}</p>
             <p className="text-muted-foreground">
@@ -111,7 +111,7 @@ export function PortalFooter() {
           <div className="flex flex-wrap items-center gap-2">
             {institutionIdentity.phoneNumber ? <Badge variant="outline">{institutionIdentity.phoneNumber}</Badge> : null}
             {institutionIdentity.email ? <Badge variant="outline">{institutionIdentity.email}</Badge> : null}
-            <Badge variant="muted">Portal ALETA aktif</Badge>
+            <Badge variant="success">Portal ALETA aktif</Badge>
           </div>
         </div>
       </div>

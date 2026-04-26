@@ -1,124 +1,140 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import { Loader2, MessageSquare, RefreshCcw, Smartphone } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { ArrowRight, MessageSquare, RefreshCcw, Smartphone } from "lucide-react";
+
+import {
+  getWhatsAppRuntimeLabel,
+  getWhatsAppRuntimeMessage,
+  useWhatsAppGateway,
+} from "@/components/portal/use-whatsapp-gateway";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+function runtimeVariant(status: ReturnType<typeof getWhatsAppRuntimeLabel>) {
+  if (status === "connected") return "success" as const;
+  if (status === "failed") return "danger" as const;
+  return "outline" as const;
+}
 
 export function WhatsAppControl() {
-  const [status, setStatus] = useState<"inactive" | "initializing" | "qr" | "authenticated" | "ready" | "failed">("inactive");
-  const [qr, setQr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [lastCheck, setLastCheck] = useState<Date>(new Date());
-
-  const fetchStatus = async () => {
-    try {
-      const res = await fetch("/api/whatsapp/qr");
-      const data = await res.json();
-      if (data.ok) {
-        setStatus(data.data.status);
-        setQr(data.data.qr);
-      }
-    } catch (err) {
-      console.error("Gagal mengambil status WhatsApp:", err);
-    } finally {
-      setLastCheck(new Date());
-    }
-  };
-
-  const initializeClient = async () => {
-    setLoading(true);
-    try {
-      await fetch("/api/whatsapp/init", { method: "POST" });
-      await fetchStatus();
-    } catch (err) {
-      console.error("Gagal inisialisasi WhatsApp:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 5000); // Poll every 5s
-    return () => clearInterval(interval);
-  }, []);
+  const { snapshot, refresh, isRefreshing } = useWhatsAppGateway(true);
+  const runtimeLabel = getWhatsAppRuntimeLabel(snapshot.runtimeStatus);
+  const phonePolicy = snapshot.requiresPhoneNumberBeforeInit
+    ? "Nomor resmi wajib diisi sebelum QR inisialisasi."
+    : "Nomor resmi tidak wajib diisi sebelum QR inisialisasi.";
 
   return (
-    <Card className="border-border/80 overflow-hidden">
-      <CardHeader className="bg-primary/5 border-b border-primary/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-xl">
+    <Card className="overflow-hidden border-border/80" data-testid="wa-summary-card">
+      <CardHeader className="border-b border-primary/10 bg-primary/5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-primary/10 p-2">
               <MessageSquare className="h-5 w-5 text-primary" />
             </div>
-            <div>
-              <CardTitle>Koneksi WhatsApp Web</CardTitle>
-              <CardDescription>Hubungkan nomor resmi instansi via scanner barcode terpusat.</CardDescription>
+            <div className="space-y-1">
+              <CardTitle>Ringkasan WhatsApp Gateway</CardTitle>
+              <CardDescription>
+                QR, inisialisasi, dan kontrol sesi dipusatkan hanya di halaman Status WhatsApp Gateway agar tidak ada dua alur koneksi yang membingungkan.
+              </CardDescription>
             </div>
           </div>
-          <Badge 
-            variant={status === "ready" ? "success" : status === "qr" ? "warning" : "outline"}
-            className="capitalize"
-          >
-            {status}
+          <Badge variant={runtimeVariant(runtimeLabel)} className="capitalize">
+            {runtimeLabel}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="flex flex-col items-center justify-center min-h-[300px] gap-6">
-          {status === "ready" ? (
-            <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto">
-                <Smartphone className="h-10 w-10 text-emerald-600" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold">Terhubung</h3>
-                <p className="text-sm text-muted-foreground">Sistem siap mengirim notifikasi otomatis.</p>
-              </div>
-            </div>
-          ) : status === "qr" && qr ? (
-            <div className="text-center space-y-4">
-              <div className="p-4 bg-white rounded-2xl border border-border inline-block">
-                <Image src={qr} alt="WhatsApp QR Code" width={224} height={224} className="w-56 h-56" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-semibold">Pindai QR Code</p>
-                <p className="text-sm text-muted-foreground">Gunakan WhatsApp di ponsel Anda untuk memindai.</p>
-              </div>
-            </div>
-          ) : status === "initializing" || loading ? (
-            <div className="text-center space-y-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-              <p className="text-sm text-muted-foreground">Menyiapkan browser headless di server...</p>
-            </div>
-          ) : (
-            <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto grayscale opacity-50">
-                <Smartphone className="h-10 w-10" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold">WhatsApp Belum Aktif</h3>
-                <p className="text-sm text-muted-foreground">Klik tombol di bawah untuk mulai menghubungkan.</p>
-              </div>
-              <Button onClick={initializeClient}>
-                Mulai Inisialisasi
-              </Button>
-            </div>
-          )}
+      <CardContent className="space-y-5 pt-6">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryItem
+            label="Runtime"
+            value={runtimeLabel}
+            description={getWhatsAppRuntimeMessage(snapshot.runtimeStatus)}
+            valueTestId="wa-summary-runtime-value"
+          />
+          <SummaryItem
+            label="Nomor Resmi"
+            value={snapshot.phoneNumber.trim() || "Belum disetel"}
+            description={phonePolicy}
+          />
+          <SummaryItem
+            label="Nama Sesi"
+            value={snapshot.sessionName}
+            description="Sumber status dibaca langsung dari backend gateway yang sama."
+          />
+          <SummaryItem
+            label="Terakhir Terhubung"
+            value={
+              snapshot.lastConnectedAt
+                ? new Date(snapshot.lastConnectedAt).toLocaleString("id-ID")
+                : "Belum pernah"
+            }
+            description="Riwayat koneksi terakhir yang tersimpan di backend."
+          />
+        </div>
 
-          <div className="w-full pt-6 border-t border-dashed border-border flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <RefreshCcw className={cn("h-3 w-3", status === "initializing" && "animate-spin")} />
-              <span>Update terakhir: {lastCheck.toLocaleTimeString()}</span>
+        <div className="rounded-[1.2rem] border border-dashed border-border bg-muted/35 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground">Alur koneksi tunggal</p>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Jika status sedang <strong className="text-foreground">waiting_qr</strong>, QR hanya ditampilkan di halaman pusat WhatsApp. Kartu ini sengaja menjadi ringkasan saja supaya tidak ada dua tombol inisialisasi yang saling bertentangan.
+              </p>
             </div>
-            <p>Sesi disimpan terpusat via LocalAuth</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card text-primary shadow-sm">
+              <Smartphone className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-border pt-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <RefreshCcw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            <span>{getWhatsAppRuntimeMessage(snapshot.runtimeStatus)}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs text-muted-foreground"
+              onClick={() => void refresh()}
+            >
+              Refresh Status
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/admin/status-whatsapp">
+                Buka Pusat Koneksi
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function SummaryItem({
+  label,
+  value,
+  description,
+  valueTestId,
+}: {
+  label: string;
+  value: string;
+  description: string;
+  valueTestId?: string;
+}) {
+  return (
+    <div className="rounded-[1.15rem] border border-border bg-card/80 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground" data-testid={valueTestId}>
+        {value}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p>
+    </div>
   );
 }

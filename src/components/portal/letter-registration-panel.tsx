@@ -31,6 +31,7 @@ import {
   getLeadershipRecipients,
   getPositionUsers,
   getUserPositionLabel,
+  isPrivilegedAdmin,
 } from "@/lib/permissions";
 import { type LetterDetail } from "@/lib/types";
 
@@ -75,6 +76,9 @@ export function LetterRegistrationPanel({
   const currentPositionId = getEffectivePositionId(currentUser);
   const canRegister =
     defaultType === "masuk" ? canCreateIncomingLetter(currentUser) : canCreateOutgoingLetter(currentUser);
+  const isAdmin = isPrivilegedAdmin(currentUser);
+  const draftMetadataFlags = aiConfig.featureFlags.draftMetadata;
+  const draftMetadataEnabled = aiConfig.enabled && aiConfig.featureManajemenSuratAi && draftMetadataFlags.enabled;
   const [open, setOpen] = useState(searchParams.get("compose") === "1");
   const [uploadedPdf, setUploadedPdf] = useState<UploadedPdfDraft | null>(null);
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
@@ -193,7 +197,7 @@ export function LetterRegistrationPanel({
           </CardTitle>
           <CardDescription>
             Upload PDF di bagian atas, deteksi AI bila diperlukan, lalu verifikasi draft sebelum menyimpan. Surat yang
-            tersimpan langsung masuk ke Riwayat Awal Disposisi.
+            tersimpan langsung masuk ke antrian disposisi dengan status Menunggu Tindak Lanjut.
           </CardDescription>
         </div>
         <Button type="button" variant={open ? "outline" : "default"} onClick={() => setOpen((value) => !value)}>
@@ -242,7 +246,12 @@ export function LetterRegistrationPanel({
                 {uploadedPdf ? (
                   <div className="rounded-xl border border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground">
                     <p className="font-semibold text-foreground">{uploadedPdf.fileName}</p>
-                    <p className="mt-1">{uploadedPdf.compressionNote}</p>
+                    {isAdmin ? <p className="mt-1">{uploadedPdf.compressionNote}</p> : null}
+                    {uploadedPdf.isImageBased ? (
+                      <p className="mt-2 font-medium text-amber-700">
+                        PDF ini terdeteksi sebagai scan gambar — tidak ada teks yang terbaca. OCR diperlukan sebelum deteksi metadata dapat dijalankan.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -250,6 +259,16 @@ export function LetterRegistrationPanel({
               {aiConfig.enabled && uploadedPdf ? (
                 <div className="rounded-[1.15rem] border border-primary/20 bg-primary/5 p-3">
                   <AletaAIMark label="Deteksi metadata draft surat" />
+                  {!draftMetadataEnabled ? (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      Fitur ini sedang dinonaktifkan oleh administrator.
+                    </p>
+                  ) : uploadedPdf.isImageBased ? (
+                    <div className="mt-3 rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                      <p className="font-semibold">File memerlukan OCR</p>
+                      <p className="mt-1 leading-6">PDF ini berupa scan gambar dan tidak dapat diproses untuk deteksi metadata. Silakan konversi ke teks terlebih dahulu.</p>
+                    </div>
+                  ) : (
                   <Button
                     type="button"
                     className="mt-3 w-full"
@@ -280,6 +299,8 @@ export function LetterRegistrationPanel({
                             draft: {
                               nomorSurat: string;
                               nomorUrut?: string;
+                              tanggalSurat?: string;
+                              tanggalAdministratif?: string;
                               pengirim: string;
                               perihal: string;
                               assignedUnit: string;
@@ -314,6 +335,8 @@ export function LetterRegistrationPanel({
                         setDraftMode("ai");
                         setNomorUrut((current) => current || draft.nomorUrut || nextNomorUrut);
                         setNomorSurat((current) => current || draft.nomorSurat);
+                        setTanggalSurat((current) => draft.tanggalSurat || current);
+                        setTanggalAdministratif((current) => draft.tanggalAdministratif || current);
                         setPengirim(draft.pengirim);
                         setPerihal(draft.perihal);
                         setAssignedUnit(draft.assignedUnit);
@@ -346,12 +369,13 @@ export function LetterRegistrationPanel({
                   >
                     {isDetectingAI ? "Mendeteksi..." : "Deteksi AI"}
                   </Button>
+                  )}
                 </div>
               ) : null}
             </div>
           </div>
 
-          {draftFeedback ? (
+          {isAdmin && draftFeedback ? (
             <div className="rounded-[1.2rem] border border-sky-300/60 bg-sky-500/10 px-4 py-3 text-sm text-sky-800 dark:text-sky-200">
               {draftFeedback}
             </div>

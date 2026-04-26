@@ -1,5 +1,4 @@
 import { regulationsKnowledgeBase } from "@/core/knowledge/regulations-db";
-import { popularAIProviderCatalog } from "@/lib/ai-catalog";
 import { letterClassificationCatalog, letterOriginSuggestions } from "@/lib/letter-taxonomy";
 import {
   defaultAIConfig,
@@ -19,33 +18,6 @@ function nowIso() {
 
 function json(value: unknown) {
   return JSON.stringify(value ?? []);
-}
-
-function getProviderEndpoint(providerId: string) {
-  const endpointMap: Record<string, string> = {
-    chatgpt: "https://api.openai.com/v1/chat/completions",
-    gemini: "https://generativelanguage.googleapis.com/v1beta/models",
-    claude: "https://api.anthropic.com/v1/messages",
-    perplexity: "https://api.perplexity.ai/chat/completions",
-    grok: "https://api.x.ai/v1/chat/completions",
-    copilot: "https://api.copilot.microsoft.com",
-    deepseek: "https://api.deepseek.com/chat/completions",
-    mistral: "https://api.mistral.ai/v1/chat/completions",
-    llama: "http://127.0.0.1:11434/api/chat",
-    qwen: "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
-    cohere: "https://api.cohere.com/v2/chat",
-    "amazon-q": "https://qbusiness.us-east-1.amazonaws.com",
-    watsonx: "https://us-south.ml.cloud.ibm.com/ml/v1/text/generation",
-    poe: "https://api.poe.com",
-    "meta-ai": "https://ai.meta.com",
-    notebooklm: "https://notebooklm.google.com",
-    blackbox: "https://api.blackbox.ai",
-    "replit-ai": "https://replit.com/agent",
-    you: "https://api.you.com",
-    "character-ai": "https://plus.character.ai",
-  };
-
-  return endpointMap[providerId] ?? "";
 }
 
 export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
@@ -172,38 +144,24 @@ export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
 
     await tx.prepare(
       `INSERT INTO ai_global_settings (
-        id, enabled, active_provider_id, active_model_id, primary_language, updated_at
-      ) VALUES (1, ?, ?, ?, ?, ?)`
+        id, enabled, active_provider_id, active_model_id, active_connection_id, primary_language,
+        feature_disposition_ai, feature_mail_intelligence, feature_draft_metadata,
+        feature_manajemen_surat_ai, feature_disposisi_ai, feature_flags_json, updated_at
+      ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       defaultAIConfig.enabled ? 1 : 0,
       defaultAIConfig.providerId,
       defaultAIConfig.modelId,
+      defaultAIConfig.activeConnectionId ?? null,
       defaultAIConfig.primaryLanguage,
+      defaultAIConfig.featureDispositionAi ? 1 : 0,
+      defaultAIConfig.featureMailIntelligence ? 1 : 0,
+      defaultAIConfig.featureDraftMetadata ? 1 : 0,
+      defaultAIConfig.featureManajemenSuratAi ? 1 : 0,
+      defaultAIConfig.featureDisposisiAi ? 1 : 0,
+      JSON.stringify(defaultAIConfig.featureFlags),
       timestamp
     );
-
-    for (const provider of popularAIProviderCatalog) {
-      await tx.prepare(
-        `INSERT INTO ai_providers (
-          id, name, endpoint_url, api_key, models_json, builtin, connection_status,
-          is_active, deleted_at, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        provider.id,
-        provider.name,
-        getProviderEndpoint(provider.id),
-        defaultAIConfig.providers.find((item) => item.id === provider.id)?.apiKey ?? "",
-        json(provider.models),
-        provider.builtin ? 1 : 0,
-        defaultAIConfig.providers.find((item) => item.id === provider.id)?.connectionStatus ??
-          provider.connectionStatus ??
-          "idle",
-        defaultAIConfig.providerId === provider.id ? 1 : 0,
-        null,
-        timestamp,
-        timestamp
-      );
-    }
 
     await tx.prepare(
       `INSERT INTO whatsapp_web_settings (

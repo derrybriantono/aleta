@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { mergeAIFeatureFlags, type PartialAIFeatureFlags } from "@/lib/ai-feature-flags";
 import {
   defaultAIConfig,
   defaultInstitutionIdentity,
@@ -172,15 +173,21 @@ type MutationResult = {
   message: string;
 };
 
-type UpdateAIConfigInput = Partial<AIGlobalConfig> & {
-  provider?: {
-    id: string;
-    name?: string;
+type UpdateAIConfigInput = Omit<Partial<AIGlobalConfig>, "featureFlags"> & {
+  featureFlags?: PartialAIFeatureFlags;
+  connection?: {
+    id?: string;
+    providerId: string;
+    label?: string;
+    modelId: string;
     apiKey?: string;
     endpointUrl?: string;
-    models?: string[];
     builtin?: boolean;
+    connectionStatus?: "idle" | "connected" | "failed";
+    lastTestedAt?: string;
+    lastConnectionMessage?: string;
   };
+  deleteConnectionId?: string;
 };
 
 type PortalAction =
@@ -195,7 +202,7 @@ type PortalAction =
   | { type: "sign-in"; userId: string }
   | { type: "sign-out" }
   | { type: "set-theme"; theme: ThemeMode }
-  | { type: "set-ai-config"; payload: Partial<AIGlobalConfig> }
+  | { type: "set-ai-config"; payload: UpdateAIConfigInput }
   | { type: "set-whatsapp-web"; payload: Partial<WhatsAppWebConfig> }
   | { type: "set-institution-identity"; payload: Partial<InstitutionIdentity> }
   | { type: "update-profile"; userId: string; payload: UpdateProfileInput }
@@ -209,6 +216,7 @@ type PortalAction =
   | { type: "create-letter"; currentUserId: string; payload: CreateLetterInput }
   | { type: "create-disposition"; currentUserId: string; payload: CreateDispositionInput }
   | { type: "forward-to-leadership"; currentUserId: string; payload: ForwardToLeadershipInput }
+  | { type: "start-disposition"; dispositionId: string }
   | { type: "complete-disposition"; payload: CompleteDispositionInput }
   | { type: "retry-whatsapp"; payload: RetryWhatsappInput };
 
@@ -216,6 +224,7 @@ type PortalContextValue = {
   isHydrated: boolean;
   isAuthPending: boolean;
   isSyncing: boolean;
+  syncError: string | null;
   currentUserId: string | null;
   currentUser: UserPersona | null;
   users: UserPersona[];
@@ -238,6 +247,7 @@ type PortalContextValue = {
   signOut: () => void;
   setTheme: (theme: ThemeMode) => void;
   setAIConfig: (payload: UpdateAIConfigInput) => Promise<MutationResult>;
+  refreshAIConfig: () => Promise<void>;
   updateWhatsAppWeb: (payload: Partial<WhatsAppWebConfig>) => Promise<MutationResult>;
   updateInstitutionIdentity: (payload: Partial<InstitutionIdentity>) => Promise<MutationResult>;
   updateProfile: (payload: UpdateProfileInput) => Promise<MutationResult>;
@@ -247,11 +257,13 @@ type PortalContextValue = {
   clearActingAssignment: (userId: string) => Promise<MutationResult>;
   resetUserPassword: (payload: ResetUserPasswordInput) => Promise<MutationResult>;
   deleteLetter: (letterId: string) => Promise<"soft" | "hard" | null>;
+  softDeleteLetter: (letterId: string) => Promise<"soft" | null>;
   toggleModuleVisibility: (roleId: UserPersona["roleId"], moduleId: ModuleId, enabled: boolean) => void;
   createLetter: (payload: CreateLetterInput) => Promise<MutationResult>;
   updateLetter: (letterId: string, payload: Partial<CreateLetterInput>) => Promise<MutationResult>;
   createDisposition: (payload: CreateDispositionInput) => void;
   forwardToLeadership: (payload: ForwardToLeadershipInput) => void;
+  startDisposition: (dispositionId: string) => Promise<MutationResult>;
   completeDisposition: (payload: CompleteDispositionInput) => void;
   retryWhatsappDelivery: (payload: RetryWhatsappInput) => Promise<MutationResult>;
   getLetterById: (letterId: string) => LetterDetail | null;
@@ -416,7 +428,14 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
     case "set-theme":
       return { ...state, theme: action.theme };
     case "set-ai-config":
-      return { ...state, aiConfig: { ...state.aiConfig, ...action.payload } };
+      return {
+        ...state,
+        aiConfig: {
+          ...state.aiConfig,
+          ...action.payload,
+          featureFlags: mergeAIFeatureFlags(state.aiConfig.featureFlags, action.payload.featureFlags),
+        },
+      };
     case "set-whatsapp-web":
       return { ...state, whatsAppWeb: { ...state.whatsAppWeb, ...action.payload } };
     case "set-institution-identity":
@@ -642,10 +661,10 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         penerimaId: action.payload.targetUserId,
         targetPositionId: action.payload.targetPositionId,
         instruksi: action.payload.aiGenerated
-          ? "Riwayat awal disposisi dibuat dari draft AI dan telah diverifikasi pengguna sebelum disimpan."
-          : "Riwayat awal disposisi dibuat saat registrasi surat oleh petugas.",
+          ? "Disposisi awal dibuat dari draft AI dan telah diverifikasi pengguna sebelum disimpan."
+          : "Disposisi awal dibuat saat registrasi surat oleh petugas.",
         parentDispositionId: null,
-        status: "Menunggu Telaah",
+        status: "Menunggu Tindak Lanjut",
         allowDownload: action.payload.viewerMode === "download",
         approvalQrCode: `QR-${nextDispositionId.toUpperCase()}`,
         createdAt: new Date().toISOString(),
@@ -680,7 +699,7 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         targetPositionId: action.payload.targetPositionId,
         instruksi: action.payload.instruksi,
         parentDispositionId: action.payload.parentDispositionId,
-        status: "Menunggu Telaah",
+        status: "Menunggu Tindak Lanjut",
         allowDownload: action.payload.allowDownload,
         approvalQrCode: `QR-${nextDispositionId.toUpperCase()}`,
         createdAt: new Date().toISOString(),
@@ -753,7 +772,7 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
           targetPositionId: recipient.actingAssignment?.positionId ?? recipient.positionId,
           instruksi: "Notifikasi cepat: surat masuk menunggu arahan pimpinan untuk disposisi lanjutan.",
           parentDispositionId: activeDisposition?.id ?? letter.currentDispositionId,
-          status: "Menunggu Telaah",
+          status: "Menunggu Tindak Lanjut",
           allowDownload: false,
           approvalQrCode: `QR-${id.toUpperCase()}`,
           createdAt: new Date().toISOString(),
@@ -795,25 +814,53 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         ),
       };
     }
+    case "start-disposition": {
+      return {
+        ...state,
+        dispositions: state.dispositions.map((item) =>
+          item.id === action.dispositionId && item.status === "Menunggu Tindak Lanjut"
+            ? { ...item, status: "Sedang Dikerjakan" as const }
+            : item
+        ),
+      };
+    }
     case "complete-disposition": {
       const current = state.dispositions.find((item) => item.id === action.payload.dispositionId);
       if (!current) return state;
 
+      const updatedDispositions = state.dispositions.map((item) =>
+        item.id === action.payload.dispositionId
+          ? {
+              ...item,
+              status: "Selesai" as const,
+              followUpNote: action.payload.note,
+              followUpFileName: action.payload.fileName,
+            }
+          : item
+      );
+
+      // Letter becomes Selesai only when all standard leaf nodes (no standard children) are Selesai.
+      const standardLeafNodes = updatedDispositions.filter(
+        (item) =>
+          item.suratId === current.suratId &&
+          item.routingType === "standard" &&
+          !updatedDispositions.some(
+            (child) =>
+              child.parentDispositionId === item.id &&
+              child.routingType === "standard" &&
+              child.suratId === current.suratId
+          )
+      );
+      const allLeafsDone = standardLeafNodes.length > 0 && standardLeafNodes.every((item) => item.status === "Selesai");
+
       return {
         ...state,
-        dispositions: state.dispositions.map((item) =>
-          item.id === action.payload.dispositionId
-            ? {
-                ...item,
-                status: "Selesai" as const,
-                followUpNote: action.payload.note,
-                followUpFileName: action.payload.fileName,
-              }
-            : item
-        ),
-        letters: state.letters.map((letter) =>
-          letter.id === current.suratId ? { ...letter, status: "Selesai" } : letter
-        ),
+        dispositions: updatedDispositions,
+        letters: allLeafsDone
+          ? state.letters.map((letter) =>
+              letter.id === current.suratId ? { ...letter, status: "Selesai" as const } : letter
+            )
+          : state.letters,
       };
     }
     case "retry-whatsapp":
@@ -853,6 +900,7 @@ export function PortalProvider({
   const [state, dispatch] = useReducer(portalReducer, initialState ?? defaultState);
   const [seenPendingDispositionIds, setSeenPendingDispositionIds] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(Boolean(initialState));
 
   useEffect(() => {
@@ -878,7 +926,11 @@ export function PortalProvider({
           dispositions: defaultState.dispositions,
           moduleVisibility: defaultState.moduleVisibility,
           theme: parsed.theme ?? defaultState.theme,
-          aiConfig: { ...defaultState.aiConfig, ...(parsed.aiConfig ?? {}) },
+          aiConfig: {
+            ...defaultState.aiConfig,
+            ...(parsed.aiConfig ?? {}),
+            featureFlags: mergeAIFeatureFlags(defaultState.aiConfig.featureFlags, parsed.aiConfig?.featureFlags),
+          },
           whatsAppWeb: { ...defaultState.whatsAppWeb, ...(parsed.whatsAppWeb ?? {}) },
           institutionIdentity: {
             ...defaultState.institutionIdentity,
@@ -960,17 +1012,29 @@ export function PortalProvider({
   async function runSyncDataFromBackend(actorUserId?: string) {
     if (!actorUserId) return;
     setIsSyncing(true);
+    setSyncError(null);
+
+    const SYNC_TIMEOUT_MS = 30_000;
+    const timeoutSignal = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Server tidak merespons dalam 30 detik. Periksa koneksi atau hubungi administrator.")),
+        SYNC_TIMEOUT_MS
+      )
+    );
 
     try {
       const [usersPayload, lettersPayload, dispositionsPayload, aiConfigPayload, whatsAppPayload, institutionPayload, moduleVisibilityPayload] =
-        await Promise.all([
-          requestBackendJson<{ items: BackendUserRecord[] }>("/api/users", undefined, actorUserId),
-          requestBackendJson<{ items: LetterDetail[] }>("/api/surat", undefined, actorUserId),
-          requestBackendJson<{ items: DispositionNode[] }>("/api/disposisi", undefined, actorUserId),
-          requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
-          requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
-          requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
-          requestBackendJson<{ items: ModuleVisibility[] }>("/api/settings/module-visibility", undefined, actorUserId),
+        await Promise.race([
+          Promise.all([
+            requestBackendJson<{ items: BackendUserRecord[] }>("/api/users", undefined, actorUserId),
+            requestBackendJson<{ items: LetterDetail[] }>("/api/surat", undefined, actorUserId),
+            requestBackendJson<{ items: DispositionNode[] }>("/api/disposisi", undefined, actorUserId),
+            requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
+            requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
+            requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
+            requestBackendJson<{ items: ModuleVisibility[] }>("/api/settings/module-visibility", undefined, actorUserId),
+          ]),
+          timeoutSignal,
         ]);
 
       startTransition(() => {
@@ -989,6 +1053,10 @@ export function PortalProvider({
       if (error instanceof BackendRequestError && error.status === 401) {
         void authClient.signOut();
         dispatch({ type: "sign-out" });
+      } else {
+        const message =
+          error instanceof Error ? error.message : "Gagal memuat data portal dari server.";
+        setSyncError(message);
       }
     } finally {
       setIsSyncing(false);
@@ -1035,6 +1103,7 @@ export function PortalProvider({
         isHydrated,
         isAuthPending,
         isSyncing,
+        syncError,
         currentUserId: state.currentUserId,
         currentUser,
         users: state.users,
@@ -1068,19 +1137,6 @@ export function PortalProvider({
             return { ok: false, message: "Silakan login ulang untuk mengubah konfigurasi AI." };
           }
 
-          const {
-            providers: _ignoredProviders,
-            provider: _ignoredProvider,
-            ...optimisticPayload
-          } = payload;
-
-          startTransition(() => {
-            dispatch({
-              type: "set-ai-config",
-              payload: optimisticPayload,
-            });
-          });
-
           try {
             const result = await requestBackendJson<AIGlobalConfig>(
               "/api/ai/settings",
@@ -1105,6 +1161,16 @@ export function PortalProvider({
               message: error instanceof Error ? error.message : "Konfigurasi AI gagal disimpan.",
             };
           }
+        },
+        refreshAIConfig: async () => {
+          if (!currentUser) {
+            return;
+          }
+
+          const result = await requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, currentUser.id);
+          startTransition(() => {
+            dispatch({ type: "set-ai-config", payload: result });
+          });
         },
         updateWhatsAppWeb: async (payload) => {
           if (!currentUser) {
@@ -1407,6 +1473,7 @@ export function PortalProvider({
                 method: "DELETE",
                 body: JSON.stringify({
                   actorUserId: currentUser.id,
+                  mode,
                 }),
               },
               currentUser.id
@@ -1422,6 +1489,34 @@ export function PortalProvider({
             return mode;
           } catch (error) {
             // Log removed for production
+            return null;
+          }
+        },
+        softDeleteLetter: async (letterId) => {
+          if (!currentUser || currentUser.roleId !== "super-admin") return null;
+
+          try {
+            await requestBackendJson(
+              `/api/surat/${letterId}`,
+              {
+                method: "DELETE",
+                body: JSON.stringify({
+                  actorUserId: currentUser.id,
+                  mode: "soft",
+                }),
+              },
+              currentUser.id
+            );
+
+            dispatch({
+              type: "delete-letter",
+              currentUserId: currentUser.id,
+              currentRoleId: "admin",
+              letterId,
+            });
+
+            return "soft";
+          } catch (error) {
             return null;
           }
         },
@@ -1610,6 +1705,30 @@ export function PortalProvider({
             return { ok: true, message: "Surat berhasil diteruskan ke Pimpinan." };
           } catch (error) {
             return { ok: false, message: error instanceof Error ? error.message : "Gagal meneruskan ke Pimpinan." };
+          }
+        },
+        startDisposition: async (dispositionId) => {
+          if (!currentUser) return { ok: false, message: "Sesi habis." };
+          try {
+            const result = await requestBackendJson<DispositionNode>(
+              "/api/disposisi/start",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  actorUserId: currentUser.id,
+                  dispositionId,
+                }),
+              },
+              currentUser.id
+            );
+
+            startTransition(() => {
+              dispatch({ type: "upsert-disposition", payload: result });
+            });
+
+            return { ok: true, message: "Disposisi dimulai." };
+          } catch (error) {
+            return { ok: false, message: error instanceof Error ? error.message : "Gagal memulai disposisi." };
           }
         },
         completeDisposition: async (payload) => {

@@ -7,6 +7,13 @@ import { whatsappWebSettings } from "@/server/db/drizzle-schema";
 import { getWhatsAppSettingsFromDb } from "@/server/modules/settings/service";
 import { eq } from "drizzle-orm";
 
+export type WhatsAppGatewayRuntimeStatus =
+  | "disconnected"
+  | "initializing"
+  | "waiting_qr"
+  | "connected"
+  | "failed";
+
 type WhatsAppConnectionStatus =
   | "inactive"
   | "initializing"
@@ -21,6 +28,7 @@ class WhatsAppService {
   private connectionStatus: WhatsAppConnectionStatus = "inactive";
   private isInitializing = false;
   private sessionName = "aleta-session";
+  private lastErrorMessage: string | null = null;
 
   private resolveBrowserExecutablePath() {
     const candidatePaths = [
@@ -77,6 +85,7 @@ class WhatsAppService {
 
     this.isInitializing = true;
     this.connectionStatus = "initializing";
+    this.lastErrorMessage = null;
     this.sessionName = nextSessionName;
 
     try {
@@ -95,23 +104,27 @@ class WhatsAppService {
       this.client.on("qr", async (qr) => {
         this.qrCode = await qrcode.toDataURL(qr);
         this.connectionStatus = "qr";
+        this.lastErrorMessage = null;
         await this.updateStatusInDb("inactive");
       });
 
       this.client.on("authenticated", async () => {
         this.connectionStatus = "authenticated";
         this.qrCode = null;
+        this.lastErrorMessage = null;
       });
 
       this.client.on("ready", async () => {
         this.connectionStatus = "ready";
         this.qrCode = null;
+        this.lastErrorMessage = null;
         await this.updateStatusInDb("active");
       });
 
       this.client.on("auth_failure", async (message) => {
         this.connectionStatus = "failed";
         this.qrCode = null;
+        this.lastErrorMessage = message;
         await this.updateStatusInDb("failed");
         console.error("[WhatsApp] Auth failure:", message);
       });
@@ -119,6 +132,7 @@ class WhatsAppService {
       this.client.on("disconnected", async (reason) => {
         this.connectionStatus = "inactive";
         this.qrCode = null;
+        this.lastErrorMessage = typeof reason === "string" ? reason : null;
         await this.updateStatusInDb("inactive");
         console.warn("[WhatsApp] Disconnected:", reason);
       });
@@ -127,6 +141,7 @@ class WhatsAppService {
     } catch (error) {
       this.connectionStatus = "failed";
       this.qrCode = null;
+      this.lastErrorMessage = error instanceof Error ? error.message : "Inisialisasi WhatsApp gagal diproses.";
       await this.updateStatusInDb("failed");
       console.error("[WhatsApp] Initialization error:", error);
     } finally {
@@ -140,6 +155,67 @@ class WhatsAppService {
 
   getStatus() {
     return this.connectionStatus;
+  }
+
+  getRuntimeStatus(): WhatsAppGatewayRuntimeStatus {
+    if (this.connectionStatus === "ready") {
+      return "connected";
+    }
+
+    if (this.connectionStatus === "qr") {
+      return "waiting_qr";
+    }
+
+    if (this.connectionStatus === "authenticated" || this.connectionStatus === "initializing") {
+      return "initializing";
+    }
+
+    if (this.connectionStatus === "failed") {
+      return "failed";
+    }
+
+    return "disconnected";
+  }
+
+  getLastErrorMessage() {
+    return this.lastErrorMessage;
+  }
+
+  async getGatewaySnapshot() {
+    const settings = await getWhatsAppSettingsFromDb(await getDatabase()).catch(() => null);
+
+    return {
+      runtimeStatus: this.getRuntimeStatus(),
+      internalStatus: this.connectionStatus,
+      qrCode: this.qrCode,
+      linked: this.connectionStatus === "ready",
+      phoneNumber: settings?.phoneNumber ?? "",
+      sessionName: settings?.sessionName ?? this.sessionName,
+      savedStatus: settings?.status ?? "inactive",
+      lastConnectedAt: settings?.lastConnectedAt ?? null,
+      requiresPhoneNumberBeforeInit: false,
+      lastErrorMessage: this.lastErrorMessage,
+    };
+  }
+
+  async deactivate() {
+    this.isInitializing = false;
+    this.qrCode = null;
+    this.lastErrorMessage = null;
+
+    if (this.client) {
+      try {
+        await this.client.destroy();
+      } catch (error) {
+        console.error("[WhatsApp] Failed to destroy client during deactivation:", error);
+      }
+    }
+
+    this.client = null;
+    this.connectionStatus = "inactive";
+    await this.updateStatusInDb("inactive");
+
+    return this.getGatewaySnapshot();
   }
 
   async sendMessage(to: string, message: string) {

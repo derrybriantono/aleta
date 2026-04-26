@@ -14,12 +14,14 @@ export function LetterList({
   title,
   onDelete,
   deleteLabel,
+  onSoftDelete,
   onRetryWhatsapp,
 }: {
   letters: LetterDetail[];
   title: string;
   onDelete?: (letter: LetterDetail) => void;
   deleteLabel?: string;
+  onSoftDelete?: (letter: LetterDetail) => void;
   onRetryWhatsapp?: (letter: LetterDetail, deliveryId: string) => void;
 }) {
   if (letters.length === 0) {
@@ -37,12 +39,12 @@ export function LetterList({
         <table className="w-full table-fixed divide-y divide-border text-left text-sm">
           <thead className="bg-muted/58 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             <tr>
-              <th className="w-[29%] px-5 py-3 font-semibold">Surat</th>
-              <th className="w-[17%] px-5 py-3 font-semibold">Pengirim</th>
-              <th className="w-[14%] px-5 py-3 font-semibold">Unit</th>
-              <th className="w-[13%] px-5 py-3 font-semibold">Status</th>
-              <th className="w-[17%] px-5 py-3 font-semibold">Status WhatsApp</th>
-              <th className="w-[10%] px-5 py-3 font-semibold">Aksi</th>
+              <th className="w-[26%] px-5 py-3 font-semibold">Surat</th>
+              <th className="w-[16%] px-5 py-3 font-semibold">Pengirim</th>
+              <th className="w-[13%] px-5 py-3 font-semibold">Unit</th>
+              <th className="w-[12%] px-5 py-3 font-semibold">Status</th>
+              <th className="w-[15%] px-5 py-3 font-semibold">Status WhatsApp</th>
+              <th className="w-[18%] px-5 py-3 font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -86,16 +88,22 @@ export function LetterList({
                   />
                 </td>
                 <td className="px-5 py-4">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-1.5">
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/surat/${letter.id}`}>
                         Detail
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
+                    {onSoftDelete ? (
+                      <Button variant="outline" size="sm" onClick={() => onSoftDelete(letter)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Hapus
+                      </Button>
+                    ) : null}
                     {onDelete ? (
                       <Button variant="destructive" size="sm" onClick={() => onDelete(letter)}>
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                         {deleteLabel ?? "Hapus"}
                       </Button>
                     ) : null}
@@ -133,13 +141,19 @@ export function LetterList({
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{letter.pengirim}</p>
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 <Button asChild variant="outline" className="w-full">
                   <Link href={`/surat/${letter.id}`}>
                     Buka detail
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
+                {onSoftDelete ? (
+                  <Button variant="outline" className="w-full" onClick={() => onSoftDelete(letter)}>
+                    <Trash2 className="h-4 w-4" />
+                    Hapus
+                  </Button>
+                ) : null}
                 {onDelete ? (
                   <Button variant="destructive" className="w-full" onClick={() => onDelete(letter)}>
                     <Trash2 className="h-4 w-4" />

@@ -1,3 +1,5 @@
+import { loadPdfJsModule } from "./pdfjs-client";
+
 export type UploadedPdfDraft = {
   file: File;
   optimizedFile: File;
@@ -5,6 +7,7 @@ export type UploadedPdfDraft = {
   fileSizeMb: number;
   extractedText: string;
   compressionNote: string;
+  isImageBased: boolean;
 };
 
 export async function processPdfUpload(file: File): Promise<UploadedPdfDraft> {
@@ -38,11 +41,14 @@ export async function processPdfUpload(file: File): Promise<UploadedPdfDraft> {
     compressionNote = "PDF tetap digunakan tanpa optimasi lanjutan untuk menjaga kompatibilitas dokumen.";
   }
 
+  // Extract text from the ORIGINAL sourceBuffer (before pdf-lib re-encoding).
+  // Using loadPdfJsModule() ensures the worker is properly configured in the browser,
+  // matching the same pdfjs setup used by document viewers.
   let extractedText = "";
 
   try {
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const documentTask = pdfjs.getDocument({ data: await optimizedFile.arrayBuffer() });
+    const pdfjs = await loadPdfJsModule();
+    const documentTask = pdfjs.getDocument({ data: sourceBuffer });
     const pdf = await documentTask.promise;
     const pageLimit = Math.min(pdf.numPages, 3);
     const pageTexts: string[] = [];
@@ -62,16 +68,26 @@ export async function processPdfUpload(file: File): Promise<UploadedPdfDraft> {
     }
 
     extractedText = pageTexts.join(" ").slice(0, 6000);
-  } catch {
-    extractedText = file.name.replace(/\.pdf$/i, "");
+
+    const nonWs = extractedText.replace(/\s/g, "").length;
+    console.debug(
+      `[ALETA PDF] pages=${pdf.numPages} scanned=${pageLimit} chars=${extractedText.length} nonWs=${nonWs}`
+    );
+  } catch (error) {
+    console.error("[ALETA PDF] Text extraction failed:", error);
+    extractedText = "";
   }
+
+  const nonWhitespaceChars = extractedText.replace(/\s/g, "").length;
+  const isImageBased = nonWhitespaceChars < 30;
 
   return {
     file,
     optimizedFile,
     fileName: optimizedFile.name,
     fileSizeMb: Number((optimizedFile.size / (1024 * 1024)).toFixed(2)),
-    extractedText,
+    extractedText: isImageBased ? "" : extractedText,
     compressionNote,
+    isImageBased,
   };
 }

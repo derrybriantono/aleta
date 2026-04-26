@@ -48,11 +48,11 @@ export const letterClassificationCatalog: LetterClassificationOption[] = [
   { value: "PR.2.1", label: "PR.2.1 - Statistik dan Evaluasi Kinerja", category: "Perencanaan", keywords: ["statistik", "kinerja", "evaluasi"] },
   { value: "TI.1.1", label: "TI.1.1 - Infrastruktur, Jaringan, dan Keamanan", category: "Teknologi Informasi", keywords: ["jaringan", "keamanan", "server", "audit"] },
   { value: "TI.2.1", label: "TI.2.1 - Aplikasi, Data, dan Integrasi", category: "Teknologi Informasi", keywords: ["aplikasi", "data", "integrasi", "database"] },
-  { value: "UM.1.1", label: "UM.1.1 - Tata Naskah Dinas dan Persuratan", category: "Umum", keywords: ["persuratan", "tata naskah dinas", "surat"] },
+  { value: "UM.1.1", label: "UM.1.1 - Tata Naskah Dinas dan Persuratan", category: "Umum", keywords: ["persuratan", "tata naskah dinas", "surat", "nota dinas", "surat tugas", "surat undangan", "surat edaran", "memo"] },
   { value: "UM.2.1", label: "UM.2.1 - Rumah Tangga Kantor dan Sarpras", category: "Umum", keywords: ["rumah tangga", "sarpras", "inventaris"] },
   { value: "UM.3.1", label: "UM.3.1 - Kearsipan dan Dokumentasi", category: "Umum", keywords: ["arsip", "dokumen", "arsiparis"] },
   { value: "PTSP.1.1", label: "PTSP.1.1 - Layanan PTSP dan Informasi", category: "Layanan", keywords: ["ptsp", "layanan", "informasi"] },
-  { value: "YD.1.1", label: "YD.1.1 - Pemeriksaan Berkas dan Administrasi Perkara", category: "Yudisial", keywords: ["perkara", "berkas", "pemeriksaan"] },
+  { value: "YD.1.1", label: "YD.1.1 - Pemeriksaan Berkas dan Administrasi Perkara", category: "Yudisial", keywords: ["perkara", "berkas", "pemeriksaan", "putusan", "salinan putusan", "penetapan", "minutasi", "berkas perkara"] },
 ];
 
 export const letterClassificationOptions = letterClassificationCatalog.map((item) => ({

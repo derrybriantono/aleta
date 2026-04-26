@@ -59,7 +59,7 @@ export default function SuratIndexPage() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { accessibleLetters, currentUser, deleteLetter, dispositions, pendingInbox, retryWhatsappDelivery } = usePortal();
+  const { accessibleLetters, currentUser, deleteLetter, softDeleteLetter, dispositions, pendingInbox, retryWhatsappDelivery } = usePortal();
   const metric = (searchParams.get("metric") ?? "visible") as "visible" | "inbox" | "completed";
   const typeFilter = (searchParams.get("type") ?? "semua") as "semua" | "masuk" | "keluar";
   const statusFilter = searchParams.get("status") ?? "Semua";
@@ -219,7 +219,7 @@ export default function SuratIndexPage() {
               onChange={(event) => updateParam("status", event.target.value)}
               className="h-12 text-base"
             >
-              {["Semua", "Baru", "Dalam Disposisi", "Ditindaklanjuti", "Selesai"].map((status) => (
+              {["Semua", "Baru", "Dalam Disposisi", "Selesai"].map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>
@@ -252,17 +252,26 @@ export default function SuratIndexPage() {
         <LetterList
           letters={filteredLetters}
           title={typeFilter === "masuk" ? "Surat Masuk" : typeFilter === "keluar" ? "Surat Keluar" : "Daftar Surat"}
+          onSoftDelete={
+            currentUser?.roleId === "super-admin"
+              ? (letter) => {
+                  const confirmed = window.confirm("Hapus surat ini dari daftar aktif? (Soft delete, masih bisa dipulihkan oleh sistem)");
+                  if (!confirmed) return;
+                  void softDeleteLetter(letter.id);
+                }
+              : undefined
+          }
           onDelete={
             isDeleteAllowed
               ? (letter) => {
                   const confirmed = window.confirm(
                     currentUser?.roleId === "super-admin"
-                      ? "Hapus surat ini secara permanen? Tindakan ini tidak dapat dibatalkan."
+                      ? "Hard Delete: hapus surat ini secara permanen? Tindakan ini tidak dapat dibatalkan."
                       : "Hapus surat ini dari daftar aktif?"
                   );
 
                   if (!confirmed) return;
-                  deleteLetter(letter.id);
+                  void deleteLetter(letter.id);
                 }
               : undefined
           }

@@ -2,7 +2,6 @@
 
 import { AccessDeniedCard, PageIntro } from "@/components/portal/shared";
 import { WhatsAppStatusPanel } from "@/components/portal/institution-settings-panel";
-import { WhatsAppControl } from "@/components/portal/whatsapp-control";
 import { usePortal } from "@/lib/app-state";
 
 export default function StatusWhatsAppPage() {
@@ -14,11 +13,10 @@ export default function StatusWhatsAppPage() {
       <PageIntro
         eyebrow="Portal Pengaturan Global"
         title="Status WhatsApp Gateway"
-        description="Pantau konektivitas sesi WhatsApp Web, lakukan pemindaian ulang QR Code, dan pastikan gateway notifikasi berjalan optimal."
+        description="Satu-satunya pusat koneksi WhatsApp ALETA. Inisialisasi QR, status runtime, nomor resmi kanal, dan kontrol sesi dipusatkan di halaman ini agar tidak ada alur ganda."
       />
       {isAllowed ? (
-        <div className="grid gap-6 xl:grid-cols-[1fr_400px]">
-          <WhatsAppControl />
+        <div className="max-w-5xl">
           <WhatsAppStatusPanel />
         </div>
       ) : (

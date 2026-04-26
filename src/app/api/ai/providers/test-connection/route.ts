@@ -11,12 +11,20 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await readJsonBody<{ actorUserId?: string; providerId: string; apiKey: string }>(request);
+    const body = await readJsonBody<{
+      actorUserId?: string;
+      connectionId?: string;
+      providerId?: string;
+      modelId?: string;
+      apiKey?: string;
+    }>(request);
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request, body.actorUserId);
     const result = await testAIProviderConnectionInDb(db, {
       actorUserId,
+      connectionId: body.connectionId,
       providerId: body.providerId,
+      modelId: body.modelId,
       apiKey: body.apiKey,
     });
 

@@ -40,8 +40,8 @@ export default function DisposisiDetailPage() {
         description="Viewer surat ditempatkan berdampingan dengan panel pengisian disposisi agar instruksi dapat ditulis sambil tetap merujuk isi dokumen."
       />
 
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(380px,0.84fr)]">
-        <div className="space-y-6">
+      <div className="grid gap-6 2xl:items-start 2xl:grid-cols-[minmax(0,1fr)_minmax(380px,0.84fr)]">
+        <div className="space-y-6 2xl:sticky 2xl:top-4">
           <Card className="overflow-hidden border-border/80">
             <LazyDocumentViewer letter={letter} currentUser={currentUser} />
           </Card>
@@ -65,7 +65,9 @@ export default function DisposisiDetailPage() {
           </Card>
         </div>
 
-        <DispositionWorkbench letter={letter} disposition={disposition} />
+        <div className="2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-5rem)] 2xl:overflow-y-auto 2xl:rounded-[1.4rem]">
+          <DispositionWorkbench letter={letter} disposition={disposition} />
+        </div>
       </div>
     </div>
   );

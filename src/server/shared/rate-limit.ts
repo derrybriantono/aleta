@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { ApiError } from "@/server/shared/errors";
 
-type RateLimitScope = "login" | "login-lookup" | "recovery-request" | "recovery-confirm";
+type RateLimitScope = "login" | "login-lookup" | "recovery-request" | "recovery-confirm" | "recovery-admin-request" | "recovery-admin-resolve" | "admin-manual-reset";
 
 type RateLimitBucket = {
   attempts: number;
@@ -43,6 +43,24 @@ const RATE_LIMIT_CONFIG: Record<RateLimitScope, RateLimitConfig> = {
     windowMs: 15 * 60 * 1000,
     blockMs: 15 * 60 * 1000,
     message: "Terlalu banyak percobaan verifikasi OTP. Coba lagi beberapa menit lagi.",
+  },
+  "recovery-admin-request": {
+    maxAttempts: 3,
+    windowMs: 60 * 60 * 1000,
+    blockMs: 60 * 60 * 1000,
+    message: "Permintaan bantuan reset terlalu sering. Coba lagi beberapa jam lagi.",
+  },
+  "recovery-admin-resolve": {
+    maxAttempts: 20,
+    windowMs: 10 * 60 * 1000,
+    blockMs: 5 * 60 * 1000,
+    message: "Terlalu banyak aksi resolusi. Coba lagi beberapa menit lagi.",
+  },
+  "admin-manual-reset": {
+    maxAttempts: 10,
+    windowMs: 10 * 60 * 1000,
+    blockMs: 5 * 60 * 1000,
+    message: "Terlalu banyak reset password manual. Coba lagi beberapa menit lagi.",
   },
 };
 

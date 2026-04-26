@@ -62,6 +62,11 @@ export type CompleteDispositionRequest = {
   fileName: string;
 };
 
+export type StartDispositionRequest = {
+  actorUserId: string;
+  dispositionId: string;
+};
+
 async function hydrateDispositions(db: AletaDatabase, rows: DispositionRow[]) {
   if (rows.length === 0) return [];
 
@@ -178,7 +183,7 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
       input.targetPositionId,
       input.instruksi.trim(),
       input.parentDispositionId,
-      "Menunggu Telaah",
+      "Menunggu Tindak Lanjut",
       toBooleanInt(input.allowDownload),
       `QR-${dispositionId.toUpperCase()}`,
       now,
@@ -245,6 +250,30 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
   });
 }
 
+export async function startDispositionInDb(db: AletaDatabase, input: StartDispositionRequest) {
+  const actor = await requireActorUser(db, input.actorUserId);
+  const disposition = await getDispositionByIdFromDb(db, input.dispositionId);
+
+  if (!disposition) {
+    throw new ApiError(404, "Node disposisi tidak ditemukan.");
+  }
+
+  if (!isPrivilegedAdmin(actor) && disposition.penerimaId !== actor.id) {
+    throw new ApiError(403, "Hanya penerima aktif atau admin yang dapat memulai disposisi ini.");
+  }
+
+  if (disposition.status !== "Menunggu Tindak Lanjut") {
+    throw new ApiError(400, "Disposisi hanya dapat dimulai dari status Menunggu Tindak Lanjut.");
+  }
+
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE dispositions SET status = 'Sedang Dikerjakan', updated_at = ? WHERE id = ?`
+  ).run(now, input.dispositionId);
+
+  return getDispositionByIdFromDb(db, input.dispositionId);
+}
+
 export async function completeDispositionInDb(db: AletaDatabase, input: CompleteDispositionRequest) {
   const actor = await requireActorUser(db, input.actorUserId);
   const disposition = await getDispositionByIdFromDb(db, input.dispositionId);
@@ -270,11 +299,32 @@ export async function completeDispositionInDb(db: AletaDatabase, input: Complete
        WHERE id = ?`
     ).run(input.note.trim(), input.fileName.trim() || null, now, input.dispositionId);
 
-    await tx.prepare(
-      `UPDATE letters
-       SET status = 'Selesai', updated_at = ?
-       WHERE id = ?`
-    ).run(now, disposition.suratId);
+    // Letter becomes Selesai only when ALL standard leaf nodes (no standard children) are Selesai.
+    // Leadership-notification nodes do not count toward completion.
+    const pendingLeafCount = await tx.prepare(
+      `SELECT COUNT(*) AS cnt
+       FROM dispositions
+       WHERE surat_id = ?
+         AND deleted_at IS NULL
+         AND routing_type = 'standard'
+         AND status != 'Selesai'
+         AND id NOT IN (
+           SELECT DISTINCT parent_disposition_id
+           FROM dispositions
+           WHERE surat_id = ?
+             AND deleted_at IS NULL
+             AND routing_type = 'standard'
+             AND parent_disposition_id IS NOT NULL
+         )`
+    ).get<{ cnt: number }>(disposition.suratId, disposition.suratId);
+
+    if ((pendingLeafCount?.cnt ?? 1) === 0) {
+      await tx.prepare(
+        `UPDATE letters
+         SET status = 'Selesai', updated_at = ?
+         WHERE id = ?`
+      ).run(now, disposition.suratId);
+    }
 
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
@@ -361,7 +411,7 @@ export async function forwardLetterToLeadershipInDb(
         recipient.actingAssignment?.positionId ?? recipient.positionId,
         "Notifikasi cepat: surat masuk menunggu arahan pimpinan untuk disposisi lanjutan.",
         currentDisposition?.id ?? null,
-        "Menunggu Telaah",
+        "Menunggu Tindak Lanjut",
         0,
         `QR-${dispositionId.toUpperCase()}`,
         now,

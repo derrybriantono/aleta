@@ -20,12 +20,16 @@ type ProviderTextResponse = {
   providerModelId: string;
 };
 
-function resolveSupportedProviderId(providerId: string): ProviderId | null {
+export function resolveSupportedProviderId(providerId: string): ProviderId | null {
   if (providerId === "chatgpt" || providerId === "gemini" || providerId === "claude" || providerId === "llama") {
     return providerId;
   }
 
   return null;
+}
+
+export function isProviderLiveSupported(providerId: string) {
+  return resolveSupportedProviderId(providerId) !== null;
 }
 
 function normalizeOpenAIModel(modelId: string) {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  AlertTriangle,
   Archive,
   ArrowLeft,
   Bell,
@@ -20,6 +21,7 @@ import {
   MessageCircleMore,
   Search,
   Send,
+  Settings,
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
@@ -50,7 +52,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePortal } from "@/lib/app-state";
 import { formatDateTime } from "@/lib/format";
 import type { ModuleId } from "@/lib/types";
-import { findModuleByRoute, getUserPositionLabel, getUserRoleBadge } from "@/lib/permissions";
+import { findModuleByRoute, getEffectiveRoleId, getUserPositionLabel, getUserRoleBadge } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 const iconMap = {
@@ -169,6 +171,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
     isHydrated,
     isAuthPending,
     isSyncing,
+    syncError,
     markPendingInboxSeen,
     pendingInbox,
     signOut,
@@ -206,6 +209,48 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
   }, [currentUser, currentUserId, isHydrated, isAuthPending, isSyncing, router]);
 
   if (!isMounted || !isHydrated || isAuthPending || isSyncing || !currentUser) {
+    // Stuck state: sync done, auth done, but still no user → show actionable error instead of
+    // loading forever. This happens when sync fails (non-401) or when the session user ID
+    // cannot be matched to any user record returned by the backend.
+    const isBootStuck = isMounted && isHydrated && !isAuthPending && !isSyncing && !currentUser;
+
+    if (isBootStuck) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+          <div className="w-full max-w-sm space-y-4 rounded-[1.4rem] border border-destructive/30 bg-destructive/5 p-6">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <p className="font-semibold">Portal gagal dimuat</p>
+            </div>
+            <p className="text-sm leading-6 text-destructive/80">
+              {syncError ??
+                "Sesi tidak dapat diverifikasi atau data gagal dimuat dari server. Coba muat ulang halaman atau login ulang."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+              >
+                Muat Ulang
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  signOut();
+                  router.replace("/login");
+                }}
+              >
+                <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                Login Ulang
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         {isMounted ? (
@@ -224,6 +269,8 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
 
   const currentRoleBadge = getUserRoleBadge(currentUser);
   const currentPositionLabel = getUserPositionLabel(currentUser);
+  const effectiveRoleId = getEffectiveRoleId(currentUser);
+  const isAdminTier = effectiveRoleId === "super-admin" || effectiveRoleId === "admin";
   const isSuratWorkspace = isSuratWorkspaceRoute(pathname);
   const isAdminArea = isAdminRoute(pathname);
   const suratType = searchParams.get("type");
@@ -418,11 +465,11 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
             </nav>
           )}
 
-          {adminModules.length > 0 && (
+          {adminModules.length > 0 && isAdminArea && (
             <div className="space-y-3">
               {!collapsed ? (
                 <p className="px-4 text-[11px] uppercase tracking-[0.22em] text-slate-400">
-                  {isAdminArea ? "Pusat Manajemen Global" : "Admin Internal"}
+                  Pusat Manajemen Global
                 </p>
               ) : null}
               <nav className="space-y-2">
@@ -475,7 +522,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
         </div>
       </ScrollArea>
 
-      <div className={cn("mt-6 rounded-[1.5rem] border border-white/10 bg-white/5", collapsed ? "p-3" : "p-4")}>
+      <div className={cn("mt-6 rounded-[1.5rem] border border-slate-700/70 bg-slate-900/50", collapsed ? "p-3" : "p-4")}>
         {!collapsed ? (
           <>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Sesi Aktif</p>
@@ -568,8 +615,8 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                   <div>
                     <h2 className="font-serif text-2xl text-foreground">{pageTitle}</h2>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline">{currentUser.name}</Badge>
-                      <Badge variant="outline">{currentRoleBadge}</Badge>
+                      <Badge variant="muted">{currentUser.name}</Badge>
+                      <Badge variant="default">{currentRoleBadge}</Badge>
                       <span>Fokus: {pageFocus}</span>
                     </div>
                   </div>
@@ -581,6 +628,14 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
 
                 <div className="flex items-center gap-3 self-end xl:self-auto">
                   <ThemeToggle />
+
+                  {isAdminTier ? (
+                    <Button variant="outline" size="icon" aria-label="Pengaturan" asChild>
+                      <Link href="/admin">
+                        <Settings className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  ) : null}
 
                   <DropdownMenu>
                       <DropdownMenuTrigger asChild>

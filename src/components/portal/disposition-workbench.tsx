@@ -3,13 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Clock3, Paperclip, Send, ShieldCheck, Sparkles, Users2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Clock3,
+  FileSearch,
+  Send,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 import { AletaAIMark } from "@/components/branding/aleta-ai-mark";
 import { statusVariant } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
@@ -18,14 +26,39 @@ import { usePortal } from "@/lib/app-state";
 import { formatDateTime } from "@/lib/format";
 import {
   getAllowedDispositionTargetPositions,
-  getEffectivePosition,
   getPosition,
   getUser,
   getUserPositionLabel,
   isDispositionAssignedToUser,
+  isPrivilegedAdmin,
 } from "@/lib/permissions";
-import { type DispositionNode, type LetterDetail, type Position } from "@/lib/types";
+import {
+  type DispositionNode,
+  type DispositionSuggestionPayload,
+  type DispositionSuggestionPriorityLevel,
+  type LetterDetail,
+} from "@/lib/types";
+import {
+  DispositionSuggestionRequestError,
+  fetchDispositionSuggestionInsight,
+} from "@/modules/manajemen-surat/services/aleta-disposition-intelligence";
 import { cn } from "@/lib/utils";
+
+type AiAssistState =
+  | { status: "idle"; insight: null; errorMessage: null }
+  | { status: "loading"; insight: null; errorMessage: null }
+  | { status: "ready"; insight: DispositionSuggestionPayload; errorMessage: null }
+  | { status: "error"; insight: null; errorMessage: string };
+
+const PRIORITY_COPY: Record<
+  DispositionSuggestionPriorityLevel,
+  { label: string; variant: "success" | "warning" | "danger" | "default" }
+> = {
+  low: { label: "Prioritas rendah", variant: "success" },
+  medium: { label: "Prioritas sedang", variant: "default" },
+  high: { label: "Prioritas tinggi", variant: "warning" },
+  urgent: { label: "Mendesak / urgent", variant: "danger" },
+};
 
 type ComposerProps = {
   letter: LetterDetail;
@@ -34,7 +67,10 @@ type ComposerProps = {
 
 export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
   const router = useRouter();
-  const { aiConfig, currentUser, createDisposition, completeDisposition, dispositions, getUsersByPosition, users } = usePortal();
+  const { currentUser, aiConfig, createDisposition, startDisposition, completeDisposition, dispositions, getUsersByPosition, users } = usePortal();
+  const isAdmin = isPrivilegedAdmin(currentUser);
+  const dispositionFlags = aiConfig.featureFlags.oneStopDisposition;
+  const dispositionAiEnabled = aiConfig.enabled && aiConfig.featureDisposisiAi && dispositionFlags.enabled;
   const [targetPositionId, setTargetPositionId] = useState("");
   const [penerimaId, setPenerimaId] = useState("");
   const [instruksi, setInstruksi] = useState("");
@@ -43,19 +79,21 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
   const [bypass, setBypass] = useState(false);
   const [note, setNote] = useState("");
   const [fileName, setFileName] = useState("laporan-tindak-lanjut.pdf");
-  const [isGeneratingAiAssist, setIsGeneratingAiAssist] = useState(false);
-  const [aiAssist, setAiAssist] = useState<{
-    summary: string;
-    suggestedInstruction: string;
-    suggestedTargetLabel: string;
-  } | null>(null);
-  const [aiAssistError, setAiAssistError] = useState("");
+  const [aiState, setAiState] = useState<AiAssistState>({
+    status: "idle",
+    insight: null,
+    errorMessage: null,
+  });
 
-  const currentPosition = getEffectivePosition(currentUser);
   const recipient = getUser(disposition.penerimaId, users);
-  const childCount = dispositions.filter((item) => item.parentDispositionId === disposition.id).length;
   const canForward = isDispositionAssignedToUser(currentUser, disposition);
-  const isFinalRecipient = canForward && childCount === 0;
+  // Active work children block the completion of this node.
+  const activeWorkChildren = dispositions.filter(
+    (item) =>
+      item.parentDispositionId === disposition.id &&
+      item.routingType === "standard" &&
+      item.status !== "Selesai"
+  );
   const targetPositions = useMemo(
     () => getAllowedDispositionTargetPositions(currentUser, { bypass }),
     [bypass, currentUser]
@@ -86,435 +124,344 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
     [dispositions, letter.id]
   );
 
-  useEffect(() => {
-    if (!aiConfig.enabled) {
-      setAiAssist(null);
-      setIsGeneratingAiAssist(false);
-      setAiAssistError("");
+  const requestDispositionSuggestion = async () => {
+    if (!dispositionAiEnabled || !dispositionFlags.recommendation) {
+      setAiState({
+        status: "error",
+        insight: null,
+        errorMessage: "AI sedang dinonaktifkan oleh administrator.",
+      });
+      return;
     }
-  }, [aiConfig.enabled]);
+    if (!currentUser) {
+      setAiState({
+        status: "error",
+        insight: null,
+        errorMessage: "Sesi pengguna tidak ditemukan. Silakan login ulang.",
+      });
+      return;
+    }
+    setAiState({ status: "loading", insight: null, errorMessage: null });
+    try {
+      const insight = await fetchDispositionSuggestionInsight({
+        letterId: letter.id,
+        actorUserId: currentUser.id,
+        currentInstruction: instruksi,
+        targetOptions: targetPositionOptions,
+      });
+      setAiState({ status: "ready", insight, errorMessage: null });
+    } catch (error) {
+      const message =
+        error instanceof DispositionSuggestionRequestError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "Saran AI disposisi tidak dapat dijalankan saat ini.";
+      setAiState({ status: "error", insight: null, errorMessage: message });
+    }
+  };
+
+  useEffect(() => {
+    setAiState({ status: "idle", insight: null, errorMessage: null });
+  }, [letter.id]);
+
+  const applyAiAutofill = () => {
+    if (aiState.status !== "ready" || !aiState.insight) return;
+    if (!dispositionFlags.autofill) return;
+    const autofill = aiState.insight.autofill;
+    if (autofill.suggestedInstruction) {
+      setInstruksi(autofill.suggestedInstruction);
+    }
+    const targetId = autofill.suggestedTargetPositionId;
+    if (targetId && targetPositions.some((position) => position.id === targetId)) {
+      const matchedUsers = getUsersByPosition(targetId);
+      setTargetPositionId(targetId);
+      setPenerimaId(matchedUsers[0]?.id ?? "");
+    }
+    if (typeof autofill.urgent === "boolean") {
+      setUrgent(autofill.urgent);
+    }
+    if (typeof autofill.allowDownload === "boolean") {
+      setAllowDownload(autofill.allowDownload);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <Card className="border-border/80">
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="space-y-5">
+      {/* Compact context card — Ringkasan + Timeline */}
+      <Card className={cn("border-border/80", disposition.urgent && "border-orange-400/60 bg-orange-50/30 dark:bg-orange-950/20")}>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <CardTitle>Ringkasan Disposisi</CardTitle>
-              <CardDescription>Node aktif yang sedang diproses pada surat ini.</CardDescription>
+              <CardTitle className="text-base">Disposisi Aktif</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {recipient?.name ?? "-"} · {getPosition(disposition.targetPositionId)?.name ?? "-"}
+              </p>
             </div>
-            <Badge variant={statusVariant(disposition.status)}>{disposition.status}</Badge>
+            <div className="flex items-center gap-2">
+              {disposition.urgent ? (
+                <Badge variant="danger">Prioritas Tinggi</Badge>
+              ) : null}
+              <Badge variant={statusVariant(disposition.status)}>{disposition.status}</Badge>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <Info label="Pengirim" value={getUser(disposition.pengirimId, users)?.name ?? "-"} />
-          <Info label="Penerima" value={recipient?.name ?? "-"} />
-          <Info label="Jabatan tujuan" value={getPosition(disposition.targetPositionId)?.name ?? "-"} />
-          <Info label="Dibuat" value={formatDateTime(disposition.createdAt)} />
-          <Info label="Instruksi" value={disposition.instruksi} className="md:col-span-2" />
+        <CardContent className="space-y-3">
+          <p className="rounded-[1.1rem] border border-border bg-muted/30 px-4 py-3 text-sm leading-7 text-foreground">
+            {disposition.instruksi || "Tidak ada instruksi."}
+          </p>
+          {timeline.length > 0 ? (
+            <div className="space-y-1.5">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Alur Disposisi
+              </p>
+              {timeline.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 rounded-xl border border-border bg-muted/25 px-3 py-2"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                    {index + 1}
+                  </span>
+                  <p className="min-w-0 flex-1 truncate text-sm text-foreground">
+                    {getUser(item.pengirimId, users)?.name} → {getUser(item.penerimaId, users)?.name}
+                  </p>
+                  <Badge variant={statusVariant(item.status)} className="shrink-0 text-xs">
+                    {item.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
+      {/* Main action card */}
       <Card className="border-border/80">
         <CardHeader>
-          <CardTitle>Timeline Rantai Disposisi</CardTitle>
-          <CardDescription>Menampilkan parent-child flow beserta status tindak lanjut.</CardDescription>
+          <CardTitle>One-Stop Disposition</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {timeline.map((item, index) => (
-            <div key={item.id} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  {index + 1}
+        <CardContent className="space-y-5">
+          {!canForward ? (
+            <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
+              Hanya penerima aktif, pejabat pengganti PLH/PLT, atau admin yang dapat meneruskan disposisi ini.
+            </p>
+          ) : targetPositions.length === 0 ? (
+            <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
+              Tidak ada target jabatan di bawah struktur aktif Anda untuk disposisi lanjutan.
+            </p>
+          ) : (
+            <>
+              {dispositionAiEnabled ? (
+                <DispositionAiPanel
+                  state={aiState}
+                  onRequest={requestDispositionSuggestion}
+                  onApplyAutofill={applyAiAutofill}
+                  isAdmin={isAdmin}
+                  canApplyAutofill={dispositionFlags.autofill}
+                />
+              ) : (
+                <div className="rounded-[1.35rem] border border-border bg-muted/25 px-5 py-4 text-sm text-muted-foreground">
+                  <AletaAIMark label="Asisten AI Disposisi" />
+                  <p className="mt-2">Fitur ini sedang dinonaktifkan oleh administrator.</p>
                 </div>
-                {index < timeline.length - 1 ? <div className="mt-2 h-full w-px bg-border" /> : null}
-              </div>
-              <div className="flex-1 rounded-2xl border border-border bg-muted/35 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold text-foreground">
-                    {getUser(item.pengirimId, users)?.name} <ArrowRight className="mx-1 inline h-4 w-4" />{" "}
-                    {getUser(item.penerimaId, users)?.name}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {item.routingType === "leadership-notification" ? (
-                      <Badge variant="outline">Notifikasi Pimpinan</Badge>
-                    ) : null}
-                    <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
-                  </div>
-                </div>
-                <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.instruksi}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>{formatDateTime(item.createdAt)}</span>
-                  <span>-</span>
-                  <span>{item.allowDownload ? "Unduh diizinkan" : "Preview only"}</span>
-                  {item.bypass ? (
-                    <>
-                      <span>-</span>
-                      <span>Bypass hierarchy</span>
-                    </>
+              )}
+
+              <div className="space-y-3 rounded-[1.3rem] border border-border bg-card/70 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">Pilih target jabatan</p>
+                  {currentUser?.canBypassHierarchy ? (
+                    <SwitchRow
+                      testId="switch-bypass"
+                      label="Bypass"
+                      checked={bypass}
+                      onCheckedChange={setBypass}
+                      inline
+                    />
                   ) : null}
                 </div>
-                {item.followUpNote ? (
-                  <div className="mt-3 rounded-xl border border-border bg-card/80 p-3 text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">Catatan Penyelesaian</p>
-                    <p className="mt-1">{item.followUpNote}</p>
-                    {item.followUpFileName ? (
-                      <p className="mt-2 flex items-center gap-2 text-xs">
-                        <Paperclip className="h-3.5 w-3.5" />
-                        {item.followUpFileName}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
 
-      <div>
-        <Card className="border-border/80">
-          <CardHeader>
-            <CardTitle>One-Stop Disposition</CardTitle>
-            <CardDescription>
-              Panel terpadu untuk memilih target jabatan, individu, instruksi, dan menutup tindak lanjut tanpa pindah
-              ke area lain.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <Users2 className="h-4 w-4 text-primary" />
-                Jalur aktif
-              </div>
-              <p className="mt-2 leading-7">
-                {currentUser?.name} sedang bekerja sebagai <strong className="text-foreground">{currentPosition?.name ?? "-"}</strong>.
-                Target di bawah mengikuti struktur jabatan efektif Anda.
-              </p>
-            </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {targetPositions.map((position) => {
+                    const users = getUsersByPosition(position.id);
 
-            {!canForward ? (
-              <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-                Hanya penerima aktif, pejabat pengganti PLH/PLT, atau admin yang dapat meneruskan disposisi ini.
-              </p>
-            ) : targetPositions.length === 0 ? (
-              <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-                Tidak ada target jabatan di bawah struktur aktif Anda untuk disposisi lanjutan.
-              </p>
-            ) : (
-              <>
-                {aiConfig.enabled ? (
-                  <div className="space-y-4 rounded-[1.35rem] border border-primary/20 bg-primary/5 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <AletaAIMark label="Asisten AI Disposisi" />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          Gunakan AI untuk ringkasan sangat singkat, saran instruksi, dan kandidat tujuan disposisi.
-                        </p>
-                      </div>
-                      <Button
+                    return (
+                      <button
+                        key={position.id}
                         type="button"
-                        variant="outline"
-                        disabled={isGeneratingAiAssist}
-                        onClick={async () => {
-                          setIsGeneratingAiAssist(true);
-                          setAiAssistError("");
-
-                          try {
-                            if (!currentUser) {
-                              throw new Error("Sesi pengguna tidak ditemukan. Silakan login ulang.");
-                            }
-
-                            const response = await fetch("/api/ai/suggest-disposisi", {
-                              method: "POST",
-                              headers: {
-                                "content-type": "application/json",
-                              },
-                              body: JSON.stringify({
-                                letterSubject: letter.perihal,
-                                letterSummary: letter.ringkasan,
-                                currentInstruction: instruksi,
-                                targetOptions: targetPositionOptions,
-                              }),
-                            });
-                            const payload = (await response.json()) as {
-                              ok?: boolean;
-                              data?: {
-                                suggestion?: {
-                                  summary: string;
-                                  suggestedInstruction: string;
-                                  suggestedTargetLabel: string;
-                                };
-                              };
-                              error?: { message?: string };
-                            };
-
-                            if (!response.ok || !payload.ok || !payload.data?.suggestion) {
-                              throw new Error(payload.error?.message ?? "Saran AI disposisi tidak dapat dijalankan.");
-                            }
-
-                            setAiAssist(payload.data.suggestion);
-                          } catch (error) {
-                            setAiAssist(null);
-                            setAiAssistError(
-                              error instanceof Error
-                                ? error.message
-                                : "Saran AI disposisi tidak dapat dijalankan."
-                            );
-                          } finally {
-                            setIsGeneratingAiAssist(false);
-                          }
+                        data-testid={`target-position-${position.id}`}
+                        className={cn(
+                          "rounded-[1.2rem] border px-4 py-3 text-left transition",
+                          selectedTargetPositionId === position.id
+                            ? "border-primary/40 bg-primary/10 shadow-sm"
+                            : "border-border bg-muted/20 hover:border-primary/30 hover:bg-primary/5"
+                        )}
+                        onClick={() => {
+                          setTargetPositionId(position.id);
+                          setPenerimaId(users[0]?.id ?? "");
                         }}
                       >
-                        <Sparkles className="h-4 w-4" />
-                        {isGeneratingAiAssist ? "Menyusun..." : "Saran AI"}
-                      </Button>
-                    </div>
-
-                    {aiAssist ? (
-                      <div className="grid gap-3 lg:grid-cols-[0.92fr_1.08fr]">
-                        <div className="rounded-[1.15rem] border border-border bg-card/80 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Ringkasan inti</p>
-                          <p className="mt-2 text-sm leading-7 text-muted-foreground">{aiAssist.summary}</p>
-                          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-primary">Target disarankan</p>
-                          <p className="mt-2 text-sm text-foreground">{aiAssist.suggestedTargetLabel}</p>
-                        </div>
-                        <div className="rounded-[1.15rem] border border-border bg-card/80 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Saran instruksi</p>
-                          <p className="mt-2 text-sm leading-7 text-muted-foreground">{aiAssist.suggestedInstruction}</p>
-                          <div className="mt-4">
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={() => {
-                                setInstruksi(aiAssist.suggestedInstruction);
-                                const matchedTarget = targetPositionOptions.find(
-                                  (option) => option.label === aiAssist.suggestedTargetLabel
-                                );
-
-                                if (matchedTarget) {
-                                  const matchedUsers = getUsersByPosition(matchedTarget.id);
-                                  setTargetPositionId(matchedTarget.id);
-                                  setPenerimaId(matchedUsers[0]?.id ?? "");
-                                }
-                              }}
-                            >
-                              Gunakan saran AI
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {aiAssistError ? (
-                      <div className="rounded-[1.15rem] border border-rose-300/60 bg-rose-500/10 px-4 py-3 text-sm text-rose-700 dark:text-rose-200">
-                        {aiAssistError}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <div className="space-y-3 rounded-[1.3rem] border border-border bg-card/70 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Pilih target jabatan</p>
-                      <p className="text-xs text-muted-foreground">Klik satu jabatan, lalu individu tujuan akan langsung tersedia.</p>
-                    </div>
-                    {currentUser?.canBypassHierarchy ? (
-                      <SwitchRow
-                        testId="switch-bypass"
-                        label="Bypass"
-                        checked={bypass}
-                        onCheckedChange={setBypass}
-                        inline
-                      />
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {targetPositions.map((position) => {
-                      const users = getUsersByPosition(position.id);
-
-                      return (
-                        <button
-                          key={position.id}
-                          type="button"
-                          data-testid={`target-position-${position.id}`}
-                          className={cn(
-                            "rounded-[1.2rem] border px-4 py-3 text-left transition",
-                            selectedTargetPositionId === position.id
-                              ? "border-primary/40 bg-primary/10 shadow-sm"
-                              : "border-border bg-muted/20 hover:border-primary/30 hover:bg-primary/5"
-                          )}
-                          onClick={() => {
-                            setTargetPositionId(position.id);
-                            setPenerimaId(users[0]?.id ?? "");
-                          }}
-                        >
-                          <p className="font-semibold text-foreground">{position.name}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{position.unitKerja}</p>
-                          <p className="mt-3 text-xs font-medium text-primary">{users.length} akun tersedia</p>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        <p className="font-semibold text-foreground">{position.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{position.unitKerja}</p>
+                        <p className="mt-3 text-xs font-medium text-primary">{users.length} akun tersedia</p>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Target individu</label>
-                  <NativeSelect
-                    data-testid="select-user"
-                    value={selectedRecipientId}
-                    onChange={(event) => setPenerimaId(event.target.value)}
-                  >
-                    {availableUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} - {getUserPositionLabel(user)}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                  {availableUsers.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      Belum ada user aktif pada jabatan ini. Pilih jabatan lain atau ubah mapping user terlebih dahulu.
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Instruksi</label>
-                  <Textarea
-                    data-testid="textarea-instruksi"
-                    value={instruksi}
-                    onChange={(event) => setInstruksi(event.target.value)}
-                    placeholder="Tuliskan arahan pimpinan atau tindak lanjut yang harus dikerjakan."
-                  />
-                </div>
-
-                <div className="grid gap-3 rounded-[1.3rem] border border-border bg-muted/35 p-4">
-                  <SwitchRow label="Izinkan unduh dokumen" checked={allowDownload} onCheckedChange={setAllowDownload} />
-                  <SwitchRow label="Tandai prioritas tinggi" checked={urgent} onCheckedChange={setUrgent} />
-                </div>
-
-                <Button
-                  data-testid="submit-disposition"
-                  className="w-full"
-                  disabled={!instruksi.trim() || !selectedRecipientId || !selectedTargetPositionId}
-                  onClick={() => {
-                    createDisposition({
-                      suratId: letter.id,
-                      parentDispositionId: disposition.id,
-                      penerimaId: selectedRecipientId,
-                      targetPositionId: selectedTargetPositionId,
-                      instruksi,
-                      allowDownload,
-                      urgent,
-                      bypass,
-                      routingType: "standard",
-                    });
-                    setInstruksi("");
-                    router.push(`/surat/${letter.id}`);
-                  }}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Target individu</label>
+                <NativeSelect
+                  data-testid="select-user"
+                  value={selectedRecipientId}
+                  onChange={(event) => setPenerimaId(event.target.value)}
                 >
-                  <Send className="h-4 w-4" />
-                  Kirim disposisi lanjutan
-                </Button>
-              </>
-            )}
+                  {availableUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} - {getUserPositionLabel(user)}
+                    </option>
+                  ))}
+                </NativeSelect>
+                {availableUsers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Belum ada user aktif pada jabatan ini. Pilih jabatan lain atau ubah mapping user terlebih dahulu.
+                  </p>
+                ) : null}
+              </div>
 
-            <div className="border-t border-border pt-5">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-serif text-xl text-foreground">Closed-Loop Completion</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Jika Anda adalah penerima terakhir, tindak lanjut dapat ditutup dari panel yang sama.
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Instruksi</label>
+                <Textarea
+                  data-testid="textarea-instruksi"
+                  value={instruksi}
+                  onChange={(event) => setInstruksi(event.target.value)}
+                  placeholder="Tuliskan arahan pimpinan atau tindak lanjut yang harus dikerjakan."
+                />
+              </div>
+
+              <div className="grid gap-3 rounded-[1.3rem] border border-border bg-muted/35 p-4">
+                <SwitchRow label="Izinkan unduh dokumen" checked={allowDownload} onCheckedChange={setAllowDownload} />
+                <SwitchRow label="Tandai prioritas tinggi" checked={urgent} onCheckedChange={setUrgent} />
+              </div>
+
+              <Button
+                data-testid="submit-disposition"
+                className="w-full"
+                disabled={!instruksi.trim() || !selectedRecipientId || !selectedTargetPositionId}
+                onClick={() => {
+                  createDisposition({
+                    suratId: letter.id,
+                    parentDispositionId: disposition.id,
+                    penerimaId: selectedRecipientId,
+                    targetPositionId: selectedTargetPositionId,
+                    instruksi,
+                    allowDownload,
+                    urgent,
+                    bypass,
+                    routingType: "standard",
+                  });
+                  setInstruksi("");
+                  router.push(`/surat/${letter.id}`);
+                }}
+              >
+                <Send className="h-4 w-4" />
+                Kirim disposisi lanjutan
+              </Button>
+            </>
+          )}
+
+          <div className="border-t border-border pt-5">
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-foreground">Tindak Lanjut</p>
+
+              {/* Explicit "Mulai Kerjakan" trigger */}
+              {canForward && disposition.status === "Menunggu Tindak Lanjut" ? (
+                <div className="rounded-[1.3rem] border border-primary/25 bg-primary/5 p-4 text-sm">
+                  <div className="flex items-center gap-2 font-medium text-foreground">
+                    <Clock3 className="h-4 w-4 text-primary" />
+                    Disposisi menunggu tindak lanjut
+                  </div>
+                  <Button
+                    data-testid="btn-start-disposition"
+                    className="mt-3 w-full"
+                    variant="outline"
+                    onClick={() => {
+                      void startDisposition(disposition.id);
+                    }}
+                  >
+                    <Clock3 className="h-4 w-4" />
+                    Mulai Kerjakan
+                  </Button>
+                </div>
+              ) : null}
+
+              {!canForward ? (
+                <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
+                  Hanya penerima aktif yang dapat menyelesaikan node ini.
+                </p>
+              ) : disposition.status === "Selesai" ? (
+                <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
+                  Node ini sudah ditandai selesai.
+                </p>
+              ) : activeWorkChildren.length > 0 ? (
+                <div className="rounded-[1.3rem] border border-amber-300/60 bg-amber-50/50 p-4 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+                  <p className="font-medium">Tidak dapat diselesaikan.</p>
+                  <p className="mt-1 leading-7">
+                    Masih ada {activeWorkChildren.length} disposisi turunan yang belum selesai. Selesaikan semua node kerja turunan terlebih dahulu.
                   </p>
                 </div>
-
-                {!isFinalRecipient ? (
-                  <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-                    Form penyelesaian aktif ketika node ini tidak lagi diteruskan ke turunan lain dan Anda adalah penerima terakhir.
-                  </p>
-                ) : (
-                  <>
-                    <div className="rounded-[1.3rem] border border-emerald-400/25 bg-emerald-500/10 p-4 text-sm text-emerald-900 dark:text-emerald-200">
-                      <div className="flex items-center gap-2 font-medium">
-                        <Clock3 className="h-4 w-4" />
-                        Penerima terakhir terdeteksi
-                      </div>
-                      <p className="mt-2 leading-7">
-                        {recipient?.name} dapat menutup surat ini dengan bukti tindak lanjut. Status surat akan berubah menjadi selesai.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Catatan tindak lanjut</label>
-                      <Textarea
-                        data-testid="textarea-followup"
-                        value={note}
-                        onChange={(event) => setNote(event.target.value)}
-                        placeholder="Jelaskan bukti penyelesaian atau ringkasan hasil tindak lanjut."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Nama berkas lampiran</label>
-                      <Input
-                        data-testid="input-followup-file"
-                        value={fileName}
-                        onChange={(event) => setFileName(event.target.value)}
-                      />
-                    </div>
-                    <Button
-                      data-testid="submit-followup"
-                      className="w-full"
-                      variant="secondary"
-                      disabled={!note.trim()}
-                      onClick={() => {
-                        completeDisposition({
-                          dispositionId: disposition.id,
-                          note,
-                          fileName,
-                        });
-                        router.push(`/surat/${letter.id}`);
-                      }}
-                    >
-                      <ShieldCheck className="h-4 w-4" />
-                      Tandai selesai
-                    </Button>
-                  </>
-                )}
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Catatan tindak lanjut <span className="text-destructive">*</span>
+                    </label>
+                    <Textarea
+                      data-testid="textarea-followup"
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder="Jelaskan bukti penyelesaian atau ringkasan hasil tindak lanjut."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Nama berkas lampiran</label>
+                    <Input
+                      data-testid="input-followup-file"
+                      value={fileName}
+                      onChange={(event) => setFileName(event.target.value)}
+                    />
+                  </div>
+                  <Button
+                    data-testid="submit-followup"
+                    className="w-full"
+                    variant="secondary"
+                    disabled={!note.trim()}
+                    onClick={() => {
+                      completeDisposition({
+                        dispositionId: disposition.id,
+                        note,
+                        fileName,
+                      });
+                      router.push(`/surat/${letter.id}`);
+                    }}
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Tandai selesai
+                  </Button>
+                </>
+              )}
             </div>
+          </div>
 
-            <div className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm leading-7 text-muted-foreground">
-              Kembali ke detail surat bila Anda ingin mengecek viewer atau metadata sebelum melanjutkan.
-              <div className="mt-4">
-                <Button asChild variant="outline" className="w-full">
-                  <Link href={`/surat/${letter.id}`}>
-                    Kembali ke detail surat
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function Info({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-sm leading-7 text-foreground">{value}</p>
+          <Button asChild variant="outline" className="w-full">
+            <Link href={`/surat/${letter.id}`}>
+              Kembali ke detail surat
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -542,5 +489,357 @@ function SwitchRow({
       </span>
       <Switch data-testid={testId} checked={checked} onCheckedChange={onCheckedChange} />
     </label>
+  );
+}
+
+function DispositionAiPanel({
+  state,
+  onRequest,
+  onApplyAutofill,
+  isAdmin,
+  canApplyAutofill,
+}: {
+  state: AiAssistState;
+  onRequest: () => void;
+  onApplyAutofill: () => void;
+  isAdmin: boolean;
+  canApplyAutofill: boolean;
+}) {
+  const isLoading = state.status === "loading";
+  const buttonLabel = isLoading
+    ? "Memanggil AI..."
+    : state.status === "ready"
+      ? "Minta ulang saran AI"
+      : state.status === "error"
+        ? "Coba lagi"
+        : "Minta saran AI";
+
+  return (
+    <div className="space-y-4 rounded-[1.35rem] border border-primary/20 bg-primary/5 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <AletaAIMark label="Asisten AI Disposisi" />
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isAdmin
+              ? "Backend memanggil provider/model AI aktif dari Pengaturan AI. Status sumber (AI live / heuristik / dimatikan / error) selalu ditampilkan jujur."
+              : "AI akan menyarankan instruksi dan target disposisi berdasarkan isi surat."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isLoading}
+          data-testid="btn-request-disposition-ai"
+          onClick={onRequest}
+        >
+          <Sparkles className="h-4 w-4" />
+          {buttonLabel}
+        </Button>
+      </div>
+
+      {state.status === "idle" ? (
+        <p className="rounded-[1.15rem] border border-dashed border-primary/30 bg-card/70 px-4 py-3 text-sm text-muted-foreground">
+          {isAdmin
+            ? "Tekan tombol untuk meminta analisis AI nyata. Jika provider sedang tidak aktif, panel akan tetap menampilkan fallback heuristik secara eksplisit."
+            : "Tekan tombol untuk mendapatkan saran AI."}
+        </p>
+      ) : null}
+
+      {state.status === "loading" ? <DispositionAiLoading /> : null}
+
+      {state.status === "error" ? (
+        <div className="rounded-[1.2rem] border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800 dark:text-rose-200">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" />
+            Saran AI tidak dapat dimuat.
+          </div>
+          <p className="mt-2">{state.errorMessage}</p>
+        </div>
+      ) : null}
+
+      {state.status === "ready" ? (
+        <DispositionAiBody
+          insight={state.insight}
+          onApplyAutofill={onApplyAutofill}
+          isAdmin={isAdmin}
+          canApplyAutofill={canApplyAutofill}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function DispositionAiBody({
+  insight,
+  onApplyAutofill,
+  isAdmin,
+  canApplyAutofill,
+}: {
+  insight: DispositionSuggestionPayload;
+  onApplyAutofill: () => void;
+  isAdmin: boolean;
+  canApplyAutofill: boolean;
+}) {
+  const priority = PRIORITY_COPY[insight.priority.level];
+  const providerLabel = insight.provider.connectionLabel ?? insight.provider.providerName;
+  const confidencePercent = Math.round(insight.confidence.score * 100);
+  const isLive = insight.source === "ai-live";
+  const sourceTone = isLive
+    ? "border-primary/40 bg-primary/10"
+    : insight.source === "error"
+      ? "border-rose-300 bg-rose-50"
+      : "border-amber-300 bg-amber-50";
+
+  return (
+    <div className="space-y-4">
+      {/* Source indicator — full for admin, simplified for regular user */}
+      {isAdmin ? (
+        <div className={cn("rounded-[1.25rem] border p-4 text-sm", sourceTone)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={isLive ? "default" : insight.source === "error" ? "danger" : "warning"}>
+              {isLive ? "Saran AI live" : insight.source === "disabled" ? "AI dimatikan" : insight.source === "error" ? "Provider AI gagal" : "Fallback heuristik"}
+            </Badge>
+            <Badge variant="outline">Provider: {providerLabel}</Badge>
+            <Badge variant="outline">
+              Model: {insight.provider.providerModelId || insight.provider.modelId}
+            </Badge>
+            <Badge variant="outline">
+              Bahasa: {insight.provider.language === "id" ? "Bahasa Indonesia" : "English"}
+            </Badge>
+            <Badge
+              variant={
+                insight.provider.connectionStatus === "connected"
+                  ? "success"
+                  : insight.provider.connectionStatus === "failed"
+                    ? "danger"
+                    : "outline"
+              }
+            >
+              Status koneksi: {insight.provider.connectionStatus}
+            </Badge>
+            <Badge variant={insight.provider.hasActiveApiKey ? "success" : "warning"}>
+              API key: {insight.provider.hasActiveApiKey ? "terisi" : "belum diisi"}
+            </Badge>
+          </div>
+          <p className="mt-3 text-muted-foreground">{insight.rationale}</p>
+          {insight.message ? (
+            <p className="mt-2 text-xs font-medium text-amber-700">{insight.message}</p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 rounded-[1.2rem] border border-border bg-muted/20 px-4 py-2.5 text-sm">
+          <Badge variant={isLive ? "default" : insight.source === "error" ? "danger" : "warning"}>
+            {isLive ? "Saran AI" : insight.source === "disabled" ? "AI tidak aktif" : insight.source === "error" ? "AI gagal" : "Analisis otomatis"}
+          </Badge>
+          {insight.message ? (
+            <span className="font-medium text-amber-700">{insight.message}</span>
+          ) : null}
+        </div>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="space-y-4 rounded-[1.3rem] border border-border bg-card/80 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                Ringkasan & prioritas
+              </p>
+            </div>
+            <Badge variant={priority.variant}>{priority.label}</Badge>
+          </div>
+
+          <p className="text-sm leading-7 text-foreground">{insight.summary}</p>
+
+          {isAdmin ? (
+            <div className="rounded-[1.1rem] border border-dashed border-primary/30 bg-muted/30 p-3 text-xs text-muted-foreground">
+              Alasan prioritas: {insight.priority.reason}
+            </div>
+          ) : null}
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Temuan utama</p>
+            {insight.keyFindings.length === 0 ? (
+              <p className="rounded-[1.1rem] border border-border bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+                AI belum menemukan poin konkret dari data yang tersedia.
+              </p>
+            ) : (
+              insight.keyFindings.map((point, index) => (
+                <div
+                  key={`${index}-${point.slice(0, 20)}`}
+                  className="rounded-[1.1rem] border border-border bg-muted/25 px-4 py-3 text-sm text-muted-foreground"
+                >
+                  {point}
+                </div>
+              ))
+            )}
+          </div>
+
+          {isAdmin ? (
+            <div>
+              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                <span>Confidence</span>
+                <span>
+                  {confidencePercent}% · {insight.confidence.label}
+                </span>
+              </div>
+              <div className="mt-2 h-2 w-full rounded-full bg-muted">
+                <div
+                  className={cn(
+                    "h-2 rounded-full",
+                    insight.confidence.level === "high"
+                      ? "bg-emerald-500"
+                      : insight.confidence.level === "medium"
+                        ? "bg-amber-500"
+                        : "bg-rose-500"
+                  )}
+                  style={{ width: `${Math.max(6, Math.min(100, confidencePercent))}%` }}
+                />
+              </div>
+              {insight.confidence.level === "low" ? (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Keyakinan rendah. Jangan jadikan keputusan final tanpa verifikasi manual.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Keyakinan:</span>
+              <Badge
+                variant={
+                  insight.confidence.level === "high"
+                    ? "success"
+                    : insight.confidence.level === "medium"
+                      ? "default"
+                      : "warning"
+                }
+              >
+                {insight.confidence.label}
+              </Badge>
+              {insight.confidence.level === "low" ? (
+                <span className="text-xs text-amber-700">Verifikasi manual diperlukan.</span>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4 rounded-[1.3rem] border border-border bg-card/80 p-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Saran instruksi</p>
+            <p className="mt-2 whitespace-pre-line rounded-[1.05rem] border border-border bg-muted/25 p-3 text-sm leading-7 text-foreground">
+              {insight.suggestedInstruction}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Saran target jabatan</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {insight.suggestedTargetLabel ? (
+                <Badge variant="warning">{insight.suggestedTargetLabel}</Badge>
+              ) : (
+                <Badge variant="outline">Belum ada saran target spesifik</Badge>
+              )}
+              {insight.autofill.urgent === true ? <Badge variant="danger">Tandai urgent</Badge> : null}
+              {insight.autofill.allowDownload === true ? (
+                <Badge variant="success">Izinkan unduh</Badge>
+              ) : insight.autofill.allowDownload === false ? (
+                <Badge variant="muted">Preview only</Badge>
+              ) : null}
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="secondary"
+            data-testid="btn-apply-disposition-ai"
+            onClick={onApplyAutofill}
+            disabled={
+              !canApplyAutofill ||
+              !insight.autofill.suggestedInstruction.trim() &&
+              !insight.autofill.suggestedTargetPositionId
+            }
+          >
+            Terapkan ke form
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Field form akan terisi otomatis. Periksa sebelum mengirim.
+          </p>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Saran tindak lanjut
+            </p>
+            <div className="mt-2 space-y-2">
+              {insight.followUpSuggestions.length === 0 ? (
+                <p className="rounded-[1.05rem] border border-dashed border-border bg-muted/25 p-3 text-sm text-muted-foreground">
+                  AI tidak menyarankan langkah tambahan.
+                </p>
+              ) : (
+                insight.followUpSuggestions.map((item) => (
+                  <div key={item.id} className="rounded-[1.05rem] border border-border bg-muted/25 p-3">
+                    <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                    <p className="mt-1 text-sm leading-7 text-muted-foreground">{item.detail}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {insight.regulations.length > 0 ? (
+        <div className="rounded-[1.3rem] border border-border bg-card/80 p-5">
+          <div className="flex items-center gap-2 text-primary">
+            <FileSearch className="h-4 w-4" />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em]">Regulasi rujukan</p>
+          </div>
+          <div className="mt-3 space-y-2">
+            {insight.regulations.map((regulation) => (
+              <div key={regulation.id} className="rounded-[1.05rem] border border-border bg-muted/25 p-3">
+                <p className="text-sm font-semibold text-foreground">{regulation.title}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  {regulation.citation}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{regulation.summary}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {isAdmin ? (
+        <div className="rounded-[1.3rem] border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center gap-2 text-amber-800">
+            <ShieldCheck className="h-4 w-4" />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em]">Verifikasi manual wajib</p>
+          </div>
+          <ul className="mt-3 space-y-2 text-sm leading-7 text-amber-900">
+            {insight.verificationChecklist.map((item, index) => (
+              <li key={`${index}-${item.slice(0, 24)}`} className="flex items-start gap-2">
+                <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-amber-600" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-amber-800">Saran AI ini harus diverifikasi manual sebelum disposisi dikirim.</p>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 rounded-[1.3rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <span>Verifikasi saran AI sebelum mengirim disposisi.</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DispositionAiLoading() {
+  return (
+    <div className="space-y-3 rounded-[1.25rem] border border-border bg-muted/30 p-4">
+      <div className="h-4 w-40 rounded-full bg-muted" />
+      <div className="h-4 w-full rounded-full bg-muted/80" />
+      <div className="h-4 w-[80%] rounded-full bg-muted/80" />
+      <div className="h-16 rounded-[1.1rem] bg-muted/70" />
+    </div>
   );
 }

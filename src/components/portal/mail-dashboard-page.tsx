@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, MessageSquare, SearchCheck, Send } from "lucide-react";
+import { AlertTriangle, ArrowRight, BellRing, MessageSquare, SearchCheck, Send } from "lucide-react";
 
 import { WhatsAppControl } from "@/components/portal/whatsapp-control";
 
@@ -34,14 +34,14 @@ export function MailDashboardPage() {
       id: "surat-masuk",
       label: "Surat Masuk (Total)",
       value: accessibleLetters.filter((letter) => letter.type === "masuk").length,
-      hint: "Jumlah surat masuk yang terlihat di sistem.",
+      hint: "",
       href: "/surat?type=masuk",
     },
     {
       id: "surat-keluar",
       label: "Surat Keluar (Total)",
       value: accessibleLetters.filter((letter) => letter.type === "keluar").length,
-      hint: "Jumlah surat keluar yang terlihat di sistem.",
+      hint: "",
       href: "/surat?type=keluar",
     },
     {
@@ -65,7 +65,7 @@ export function MailDashboardPage() {
       <PageIntro
         eyebrow="Manajemen Surat"
         title="Dashboard Manajemen Surat"
-        description={`Role aktif ${currentRoleBadge} sebagai ${position?.name ?? "-"}. Fokus halaman ini adalah statistik real-time, tugas mendesak, dan log aktivitas terbaru agar kerja harian tetap ringkas.`}
+        description={`${currentRoleBadge} · ${position?.name ?? "-"}`}
         actions={
           <>
             {canManageAssignments ? (
@@ -108,7 +108,11 @@ export function MailDashboardPage() {
                 <CardTitle className="text-3xl sm:text-4xl">{item.value}</CardTitle>
               </CardHeader>
               <CardContent className="flex items-center justify-between gap-4">
-                <p className="text-sm leading-7 text-muted-foreground">{item.hint}</p>
+                {item.hint ? (
+                  <p className="text-sm leading-7 text-muted-foreground">{item.hint}</p>
+                ) : (
+                  <span />
+                )}
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
               </CardContent>
             </Card>
@@ -129,9 +133,6 @@ export function MailDashboardPage() {
               <AlertTriangle className="h-5 w-5 text-primary" />
               Widget Tugas Mendesak
             </CardTitle>
-            <CardDescription>
-              Area ini adalah prioritas eksekusi. Item di sini perlu dikerjakan atau diarahkan lebih dulu, bukan sekadar catatan riwayat sistem.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {taskWidget.length === 0 ? (
@@ -172,17 +173,6 @@ export function MailDashboardPage() {
               })
             )}
 
-            <div className="rounded-[1.2rem] border border-border bg-muted/35 p-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-semibold text-foreground">Area eksekusi cepat</p>
-                  <p className="text-sm text-muted-foreground">
-                    Widget ini sengaja diperbesar karena fungsinya untuk aksi kerja, bukan laporan pasif.
-                  </p>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -192,9 +182,6 @@ export function MailDashboardPage() {
               <BellRing className="h-5 w-5 text-primary" />
               Log Aktivitas Terbaru
             </CardTitle>
-            <CardDescription>
-              Area ini adalah riwayat sistem. Fungsinya untuk melihat apa yang baru terjadi, bukan untuk menentukan urutan aksi kerja.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentActivities.length === 0 ? (

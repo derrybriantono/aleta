@@ -1,5 +1,6 @@
 import path from "node:path";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import net from "node:net";
 
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { migrate as drizzleMigrate } from "drizzle-orm/node-postgres/migrator";
@@ -36,6 +37,20 @@ type InMemorySnapshot = {
 type Queryable = Pool | PoolClient;
 type DatabaseCapabilities = {
   supportsFullTextSearch: boolean;
+};
+
+type RuntimeDatabaseMode = "postgres" | "fallback";
+
+type DatabaseConnectionTarget = {
+  host: string;
+  port: number;
+  database: string;
+  redactedUrl: string;
+};
+
+type DatabaseRuntimeTracker = {
+  activeMode: RuntimeDatabaseMode | null;
+  lastBootError: string | null;
 };
 
 type PgMemQueryConfig = {
@@ -212,6 +227,7 @@ const globalForAleta = globalThis as unknown as {
   singletonDatabasePromise: Promise<AletaDatabase> | null;
   sharedPool: Pool | null;
   sharedDrizzle: NodePgDatabase<DrizzleSchema> | null;
+  runtimeDatabaseTracker: DatabaseRuntimeTracker | null;
 };
 
 const IN_MEMORY_SNAPSHOT_PATH = path.join(process.cwd(), "data", "dev-fallback-db.json");
@@ -224,6 +240,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "ai_providers",
   "whatsapp_web_settings",
   "institution_identity",
+  "institution_identity_enrichments",
   "module_visibility_settings",
   "knowledge_base_regulations",
   "letter_origin_references",
@@ -244,6 +261,87 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
 let singletonDatabasePromise = globalForAleta.singletonDatabasePromise;
 let sharedPool = globalForAleta.sharedPool;
 let sharedDrizzle = globalForAleta.sharedDrizzle;
+let runtimeDatabaseTracker =
+  globalForAleta.runtimeDatabaseTracker ??
+  ({
+    activeMode: null,
+    lastBootError: null,
+  } satisfies DatabaseRuntimeTracker);
+
+function persistRuntimeTracker() {
+  globalForAleta.runtimeDatabaseTracker = runtimeDatabaseTracker;
+}
+
+function updateRuntimeDatabaseTracker(
+  next: Partial<DatabaseRuntimeTracker>
+) {
+  runtimeDatabaseTracker = {
+    ...runtimeDatabaseTracker,
+    ...next,
+  };
+  persistRuntimeTracker();
+}
+
+function parseDatabaseConnectionTarget(connectionString: string): DatabaseConnectionTarget | null {
+  try {
+    const parsed = new URL(connectionString);
+    return {
+      host: parsed.hostname,
+      port: Number(parsed.port || 5432),
+      database: parsed.pathname.replace(/^\//, "") || "postgres",
+      redactedUrl: `${parsed.protocol}//${parsed.hostname}:${parsed.port || "5432"}/${parsed.pathname.replace(/^\//, "") || "postgres"}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function checkTcpReachable(host: string, port: number) {
+  return new Promise<boolean>((resolve) => {
+    const socket = net.createConnection({ host, port });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      resolve(false);
+    }, 1200);
+
+    socket.once("connect", () => {
+      clearTimeout(timer);
+      socket.end();
+      resolve(true);
+    });
+
+    socket.once("error", () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
+  });
+}
+
+export async function getDatabaseRuntimeStatus() {
+  const configuredUrl = getDatabaseUrl();
+  const target = parseDatabaseConnectionTarget(configuredUrl);
+  const postgresReachable = target ? await checkTcpReachable(target.host, target.port) : false;
+
+  return {
+    activeMode: runtimeDatabaseTracker.activeMode ?? (postgresReachable ? "postgres" : "fallback"),
+    postgres: {
+      configured: Boolean(target),
+      reachable: postgresReachable,
+      host: target?.host ?? null,
+      port: target?.port ?? null,
+      database: target?.database ?? null,
+      redactedUrl: target?.redactedUrl ?? null,
+      lastBootError: runtimeDatabaseTracker.lastBootError,
+    },
+    fallback: {
+      enabled: !isInMemoryFallbackDisabled(),
+      snapshotPath: IN_MEMORY_SNAPSHOT_PATH,
+    },
+    persistence: {
+      userAndLetterDataPersisted: true,
+    },
+  };
+}
 
 function isInMemoryFallbackDisabled() {
   return process.env.ALETA_DISABLE_IN_MEMORY_FALLBACK === "true";
@@ -617,6 +715,10 @@ export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
       installInMemoryPersistenceHooks(pool, () => persistInMemorySnapshot(memoryDb));
     }
 
+    updateRuntimeDatabaseTracker({
+      activeMode: "fallback",
+    });
+
     return db;
   }
 
@@ -645,9 +747,15 @@ export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
   if (options.runMigrations ?? true) {
     await runDatabaseMigrations(orm);
   }
+  await ensureAletaSchema(db);
   if (options.seed ?? true) {
     await seedDatabaseFromFrontendSource(db);
   }
+
+  updateRuntimeDatabaseTracker({
+    activeMode: "postgres",
+    lastBootError: null,
+  });
 
   return db;
 }
@@ -658,6 +766,16 @@ export async function getDatabase() {
       if (isInMemoryFallbackDisabled() || !isRecoverablePostgresBootError(error)) {
         throw error;
       }
+
+      const target = parseDatabaseConnectionTarget(getDatabaseUrl());
+      updateRuntimeDatabaseTracker({
+        activeMode: "fallback",
+        lastBootError: target
+          ? `PostgreSQL utama belum terjangkau di ${target.host}:${target.port}/${target.database}. Runtime memakai fallback snapshot persisten.`
+          : error instanceof Error
+            ? error.message
+            : "PostgreSQL tidak dapat dijangkau saat boot runtime.",
+      });
 
       await resetSharedConnections();
       console.warn(
@@ -681,6 +799,9 @@ export async function closeDatabase() {
   await database?.close();
   singletonDatabasePromise = null;
   await resetSharedConnections();
+  updateRuntimeDatabaseTracker({
+    activeMode: null,
+  });
 }
 
 export async function withTransaction<T>(

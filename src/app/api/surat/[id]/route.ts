@@ -70,13 +70,14 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     const body = request.headers.get("content-type")?.includes("application/json")
-      ? await readJsonBody<{ actorUserId?: string }>(request)
+      ? await readJsonBody<{ actorUserId?: string; mode?: "soft" | "hard" }>(request)
       : {};
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const result = await deleteLetterInDb(db, {
       actorUserId,
       letterId: id,
+      mode: body.mode,
     });
 
     return ok(result);

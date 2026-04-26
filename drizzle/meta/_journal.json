@@ -15,6 +15,13 @@
       "when": 1775964151328,
       "tag": "0001_cloudy_swarm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777199000000,
+      "tag": "0002_ai_feature_flags",
+      "breakpoints": true
     }
   ]
 }

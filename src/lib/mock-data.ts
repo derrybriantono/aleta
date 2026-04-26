@@ -14,7 +14,7 @@ import {
   type WhatsAppDelivery,
   type WhatsAppStatusPreview,
 } from "@/lib/types";
-import { popularAIProviderCatalog } from "@/lib/ai-catalog";
+import { defaultAIFeatureFlags } from "@/lib/ai-feature-flags";
 
 function buildWhatsappDelivery(
   id: string,
@@ -306,9 +306,14 @@ export const defaultAIConfig: AIGlobalConfig = {
   modelId: "Gemini 2.0 Flash",
   primaryLanguage: "id",
   providerId: "gemini",
-  providers: ["gemini", "chatgpt", "claude"]
-    .map((providerId) => popularAIProviderCatalog.find((provider) => provider.id === providerId))
-    .filter((provider): provider is NonNullable<(typeof popularAIProviderCatalog)[number]> => Boolean(provider)),
+  activeConnectionId: null,
+  providers: [],
+  featureFlags: defaultAIFeatureFlags,
+  featureDispositionAi: true,
+  featureMailIntelligence: true,
+  featureDraftMetadata: true,
+  featureManajemenSuratAi: true,
+  featureDisposisiAi: true,
 };
 
 export const defaultWhatsAppWeb = {
@@ -1131,7 +1136,7 @@ export const letters: LetterDetail[] = [
     tanggal: "2026-04-10T08:10:00+08:00",
     pengirim: "Ketua Pengadilan Agama",
     perihal: "Instruksi pembaruan dashboard monitoring surat",
-    status: "Ditindaklanjuti",
+    status: "Dalam Disposisi",
     assignedUnit: "TI",
     confidentiality: "Penting",
     currentDispositionId: "dsp-007",
@@ -1280,7 +1285,7 @@ export const dispositions: DispositionNode[] = [
     targetPositionId: "pos-ketua",
     instruksi: "Mohon penetapan PIC audit keamanan dan jadwal koordinasi internal.",
     parentDispositionId: null,
-    status: "Menunggu Telaah",
+    status: "Menunggu Tindak Lanjut",
     allowDownload: false,
     approvalQrCode: "QR-DSP-006",
     createdAt: "2026-04-09T11:05:00+08:00",

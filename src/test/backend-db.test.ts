@@ -9,7 +9,9 @@ import { ApiError } from "@/server/shared/errors";
 import { stringifyJson } from "@/server/shared/json";
 import {
   extractSuratDraftInDb,
-  suggestDispositionInDb,
+  generateDispositionSuggestionInDb,
+  generateMailIntelligenceInDb,
+  getAISettingsFromDb,
   testAIProviderConnectionInDb,
   upsertAISettingsInDb,
 } from "@/server/modules/ai/service";
@@ -48,12 +50,37 @@ describe("backend modular monolith services", () => {
           contents?: Array<{ parts?: Array<{ text?: string }> }>;
         };
         const prompt = body.contents?.[0]?.parts?.[0]?.text ?? "";
-        const responseText = prompt.includes("summary, suggestedInstruction, suggestedTargetLabel")
+        const responseText = prompt.includes("targetOptions (whitelist untuk suggestedTargetPositionId")
           ? stringifyJson({
-              summary: "Audit keamanan aplikasi internal.",
+              summary:
+                "Surat meminta audit keamanan aplikasi internal dengan penetapan PIC TI dan jadwal jelas.",
+              keyFindings: [
+                "Mandat audit keamanan aplikasi internal dari Mahkamah Agung RI.",
+                "Wajib menetapkan PIC TI dan jadwal tindak lanjut.",
+              ],
+              priority: { level: "high", reason: "Klasifikasi Penting dan terkait keamanan sistem." },
               suggestedInstruction:
-                "Telaah hasil audit keamanan, tetapkan PIC TI, dan laporkan progres perbaikan secara singkat.",
+                "Tugaskan PIC TI untuk menyusun rencana kerja audit, siapkan dokumen pendukung, dan laporkan progres dalam 3 hari kerja.",
+              suggestedTargetPositionId: "pos-pranata-komputer",
               suggestedTargetLabel: "Pranata Komputer",
+              autofill: {
+                suggestedInstruction:
+                  "Tugaskan PIC TI untuk menyusun rencana kerja audit, siapkan dokumen pendukung, dan laporkan progres dalam 3 hari kerja.",
+                suggestedTargetPositionId: "pos-pranata-komputer",
+                suggestedTargetLabel: "Pranata Komputer",
+                allowDownload: true,
+                urgent: false,
+              },
+              followUpSuggestions: [
+                { label: "Susun rencana kerja audit", detail: "Libatkan tim TI dan anggaran terkait." },
+                { label: "Laporkan progres mingguan", detail: "Sampaikan ke pimpinan setiap Jumat." },
+              ],
+              verificationChecklist: [
+                "Pastikan PIC TI sesuai kewenangan audit.",
+                "Konfirmasi cakupan audit sesuai permintaan Mahkamah Agung.",
+              ],
+              confidence: 0.8,
+              rationale: "Data surat, klasifikasi, dan target jabatan cukup lengkap untuk menurunkan saran konkret.",
             })
           : stringifyJson({
               nomorSurat: "AI/2026/0001",
@@ -134,11 +161,11 @@ describe("backend modular monolith services", () => {
     expect(result.letter.viewerMode).toBe("download");
     expect(result.letter.whatsappDeliveries[0]?.recipientWhatsapp).toBeTruthy();
     expect(result.initialDisposition).toBeTruthy();
-    expect(result.initialDisposition?.status).toBe("Riwayat Awal Disposisi");
+    expect(result.initialDisposition?.status).toBe("Menunggu Tindak Lanjut");
 
     const timeline = await getDispositionsByLetterIdFromDb(db!, result.letter.id);
     expect(timeline).toHaveLength(1);
-    expect(timeline[0]?.status).toBe("Riwayat Awal Disposisi");
+    expect(timeline[0]?.status).toBe("Menunggu Tindak Lanjut");
     expect(timeline[0]?.penerimaId).toBe("usr-ketua");
   });
 
@@ -295,10 +322,55 @@ describe("backend modular monolith services", () => {
     expect(result.aiInsight).toBeTruthy();
   });
 
+  it("stores masked AI connections and can switch active connection", async () => {
+    const firstConnection = await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      connection: {
+        providerId: "gemini",
+        label: "Gemini 2.5 Flash Gratis",
+        modelId: "Gemini 2.5 Flash",
+        apiKey: "gemini-valid-key-1234567890",
+      },
+    });
+
+    const geminiConnection = firstConnection.providers.find((provider) => provider.name === "Gemini 2.5 Flash Gratis");
+    expect(geminiConnection).toBeTruthy();
+    expect(geminiConnection?.maskedApiKey).toContain("••••");
+    expect(geminiConnection?.apiKey).toBe("");
+
+    const secondConnection = await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      connection: {
+        providerId: "chatgpt",
+        label: "OpenAI Utama",
+        modelId: "GPT-4.1",
+        apiKey: "openai-valid-key-1234567890",
+      },
+    });
+
+    const openAiConnection = secondConnection.providers.find((provider) => provider.name === "OpenAI Utama");
+    expect(openAiConnection).toBeTruthy();
+
+    const activated = await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      activeConnectionId: openAiConnection?.id ?? null,
+    });
+
+    expect(activated.activeConnectionId).toBe(openAiConnection?.id);
+    expect(activated.providerId).toBe("chatgpt");
+    expect(activated.modelId).toBe("GPT-4.1");
+
+    const internalConfig = await getAISettingsFromDb(db!, { includeSecrets: true });
+    const activeConnection = internalConfig.providers.find((provider) => provider.id === internalConfig.activeConnectionId);
+    expect(activeConnection?.providerId).toBe("chatgpt");
+    expect(activeConnection?.apiKey).toBe("openai-valid-key-1234567890");
+  });
+
   it("stores dynamic AI provider settings and uses database regulations for AI drafts", async () => {
     const connection = await testAIProviderConnectionInDb(db!, {
       actorUserId: "usr-super",
       providerId: "gemini",
+      modelId: "Gemini 2.5 Pro",
       apiKey: "1234567890-valid-key",
     });
     expect(connection.status).toBe("connected");
@@ -306,13 +378,15 @@ describe("backend modular monolith services", () => {
     const settings = await upsertAISettingsInDb(db!, {
       actorUserId: "usr-super",
       enabled: true,
-      providerId: "gemini",
-      modelId: "Gemini 2.5 Pro",
       primaryLanguage: "id",
-      provider: {
-        id: "gemini",
+      connection: {
+        providerId: "gemini",
+        label: "Gemini Analisis Surat",
+        modelId: "Gemini 2.5 Pro",
         apiKey: "1234567890-valid-key",
-        models: ["Gemini 2.5 Pro"],
+        connectionStatus: "connected",
+        lastTestedAt: connection.testedAt,
+        lastConnectionMessage: connection.message,
       },
     });
     expect(settings.providerId).toBe("gemini");
@@ -327,10 +401,179 @@ describe("backend modular monolith services", () => {
     expect(draft.verifyBeforeSave).toBe(true);
     expect(draft.relatedRegulations.length).toBeGreaterThan(0);
 
-    const suggestion = await suggestDispositionInDb(db!, {
+  });
+
+  it("uses live AI connection for ALETA mail intelligence and returns honest fallback when disabled", async () => {
+    const letter = await createLetterInDb(db!, {
+      actorUserId: "usr-dina",
+      type: "masuk",
+      nomorUrut: "501",
+      nomorSurat: "B-501/ALETA/IV/2026",
+      tanggalSurat: "2026-04-12",
+      tanggalTerima: "2026-04-12",
+      pengirim: "Mahkamah Agung RI",
+      perihal: "Permintaan audit keamanan aplikasi internal",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Penting",
+      kodeKlasifikasi: "TI.1.1",
+      klasifikasi: "Infrastruktur, Jaringan, dan Keamanan",
+      klasifikasiTags: ["Audit", "Keamanan"],
+      ringkasan:
+        "Audit keamanan aplikasi internal, backup, enkripsi, dan penetapan PIC TI untuk Pengadilan Agama Makassar.",
+      asalSurat: "Mahkamah Agung RI",
+      tujuanSurat: "Ketua Pengadilan",
+      lampiran: ["laporan-audit.pdf"],
+      tags: ["Audit", "Keamanan", "TI"],
+      viewerMode: "download",
+      targetPositionId: "pos-ketua",
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input, init) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (!url.includes("generativelanguage.googleapis.com")) {
+          throw new Error(`Unhandled fetch URL in test: ${url}`);
+        }
+
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          contents?: Array<{ parts?: Array<{ text?: string }> }>;
+        };
+        const prompt = body.contents?.[0]?.parts?.[0]?.text ?? "";
+        expect(prompt).toContain(letter.letter.nomorSurat);
+        expect(prompt).toContain(letter.letter.ringkasan);
+
+        const aiJson = stringifyJson({
+          summary: "AI menyimpulkan surat menginstruksikan audit keamanan aplikasi internal dengan PIC TI.",
+          keyFindings: [
+            "Mandat audit keamanan aplikasi internal",
+            "Perlu backup dan enkripsi sesuai pedoman",
+            "PIC TI ditetapkan sebagai pelaksana",
+          ],
+          priority: { level: "high", reason: "Klasifikasi Penting dan berkaitan dengan keamanan sistem." },
+          followUpSuggestions: [
+            { label: "Tetapkan PIC TI", detail: "Tugaskan Pranata Komputer sebagai PIC audit dan minta rencana kerja." },
+            { label: "Susun jadwal audit", detail: "Rapatkan lingkup audit dengan pimpinan maksimal 3 hari." },
+          ],
+          suggestedPositionIds: ["pos-pranata-komputer"],
+          verificationChecklist: [
+            "Verifikasi nomor dan tanggal surat dengan naskah asli",
+            "Pastikan lampiran laporan-audit.pdf tersedia",
+          ],
+          confidence: 0.82,
+          rationale: "Data surat lengkap: klasifikasi, ringkasan audit, dan PIC TI eksplisit.",
+        });
+
+        return new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: aiJson }],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        );
+      }) as typeof fetch
+    );
+
+    await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      enabled: true,
+      primaryLanguage: "id",
+      connection: {
+        providerId: "gemini",
+        label: "Gemini Intelligence",
+        modelId: "Gemini 2.5 Pro",
+        apiKey: "gemini-live-key-intelligence",
+        connectionStatus: "connected",
+      },
+    });
+
+    const liveInsight = await generateMailIntelligenceInDb(db!, {
       actorUserId: "usr-ketua",
-      letterSubject: "Audit keamanan aplikasi internal",
-      letterSummary: "Audit keamanan aplikasi internal, backup, enkripsi, dan penetapan PIC TI.",
+      letterId: letter.letter.id,
+    });
+
+    expect(liveInsight.source).toBe("ai-live");
+    expect(liveInsight.provider.providerId).toBe("gemini");
+    expect(liveInsight.provider.modelId).toBe("Gemini 2.5 Pro");
+    expect(liveInsight.provider.providerModelId).toBe("gemini-2.5-pro");
+    expect(liveInsight.provider.isLive).toBe(true);
+    expect(liveInsight.provider.hasActiveApiKey).toBe(true);
+    expect(liveInsight.summary).toContain("audit keamanan aplikasi internal");
+    expect(liveInsight.keyFindings.length).toBeGreaterThanOrEqual(2);
+    expect(liveInsight.priority.level).toBe("high");
+    expect(liveInsight.followUpSuggestions.length).toBeGreaterThanOrEqual(2);
+    expect(liveInsight.confidence.score).toBeCloseTo(0.82, 2);
+    expect(liveInsight.confidence.level).toBe("high");
+    expect(liveInsight.suggestedPositionIds).toContain("pos-pranata-komputer");
+    expect(liveInsight.verificationChecklist.join(" ")).toContain("verifikasi manual");
+
+    await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      enabled: false,
+    });
+
+    const disabledInsight = await generateMailIntelligenceInDb(db!, {
+      actorUserId: "usr-ketua",
+      letterId: letter.letter.id,
+    });
+    expect(disabledInsight.source).toBe("disabled");
+    expect(disabledInsight.provider.isLive).toBe(false);
+    expect(disabledInsight.message ?? "").toContain("Pengaturan AI");
+    expect(disabledInsight.verificationChecklist.length).toBeGreaterThan(0);
+  });
+
+  it("uses live AI connection for One-Stop Disposition suggestions and falls back honestly", async () => {
+    const letter = await createLetterInDb(db!, {
+      actorUserId: "usr-dina",
+      type: "masuk",
+      nomorUrut: "611",
+      nomorSurat: "B-611/ALETA/IV/2026",
+      tanggalSurat: "2026-04-18",
+      tanggalTerima: "2026-04-18",
+      pengirim: "Mahkamah Agung RI",
+      perihal: "Permintaan audit keamanan aplikasi internal",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Penting",
+      kodeKlasifikasi: "TI.1.1",
+      klasifikasi: "Infrastruktur, Jaringan, dan Keamanan",
+      klasifikasiTags: ["Audit", "Keamanan"],
+      ringkasan:
+        "Audit keamanan aplikasi internal, backup, enkripsi, dan penetapan PIC TI untuk Pengadilan Agama Makassar.",
+      asalSurat: "Mahkamah Agung RI",
+      tujuanSurat: "Ketua Pengadilan",
+      lampiran: ["laporan-audit.pdf"],
+      tags: ["Audit", "Keamanan", "TI"],
+      viewerMode: "download",
+      targetPositionId: "pos-ketua",
+    });
+
+    await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      enabled: true,
+      primaryLanguage: "id",
+      connection: {
+        providerId: "gemini",
+        label: "Gemini Intelligence",
+        modelId: "Gemini 2.5 Pro",
+        apiKey: "gemini-live-key-disposition",
+        connectionStatus: "connected",
+      },
+    });
+
+    const liveInsight = await generateDispositionSuggestionInDb(db!, {
+      actorUserId: "usr-ketua",
+      letterId: letter.letter.id,
       currentInstruction: "",
       targetOptions: [
         { id: "pos-pranata-komputer", label: "Pranata Komputer" },
@@ -338,9 +581,43 @@ describe("backend modular monolith services", () => {
       ],
     });
 
-    expect(suggestion.verifyBeforeSave).toBe(true);
-    expect(suggestion.suggestion.relatedRegulations.length).toBeGreaterThan(0);
-    expect(suggestion.suggestion.suggestedInstruction.length).toBeGreaterThan(10);
+    expect(liveInsight.source).toBe("ai-live");
+    expect(liveInsight.provider.providerId).toBe("gemini");
+    expect(liveInsight.provider.modelId).toBe("Gemini 2.5 Pro");
+    expect(liveInsight.provider.providerModelId).toBe("gemini-2.5-pro");
+    expect(liveInsight.provider.isLive).toBe(true);
+    expect(liveInsight.provider.hasActiveApiKey).toBe(true);
+    expect(liveInsight.suggestedTargetPositionId).toBe("pos-pranata-komputer");
+    expect(liveInsight.suggestedTargetLabel).toContain("Pranata Komputer");
+    expect(liveInsight.suggestedInstruction).toContain("PIC TI");
+    expect(liveInsight.priority.level).toBe("high");
+    expect(liveInsight.confidence.score).toBeCloseTo(0.8, 2);
+    expect(liveInsight.confidence.level).toBe("high");
+    expect(liveInsight.followUpSuggestions.length).toBeGreaterThanOrEqual(2);
+    expect(liveInsight.autofill.suggestedTargetPositionId).toBe("pos-pranata-komputer");
+    expect(liveInsight.autofill.suggestedInstruction.length).toBeGreaterThan(20);
+    expect(liveInsight.verificationChecklist.join(" ")).toContain("verifikasi manual");
+
+    await upsertAISettingsInDb(db!, {
+      actorUserId: "usr-super",
+      enabled: false,
+    });
+
+    const disabledInsight = await generateDispositionSuggestionInDb(db!, {
+      actorUserId: "usr-ketua",
+      letterId: letter.letter.id,
+      currentInstruction: "",
+      targetOptions: [
+        { id: "pos-pranata-komputer", label: "Pranata Komputer" },
+        { id: "pos-kasubag-umum", label: "Kasubag Umum dan Keuangan" },
+      ],
+    });
+
+    expect(disabledInsight.source).toBe("disabled");
+    expect(disabledInsight.provider.isLive).toBe(false);
+    expect(disabledInsight.message ?? "").toContain("Pengaturan AI");
+    expect(disabledInsight.verificationChecklist.length).toBeGreaterThan(0);
+    expect(disabledInsight.suggestedInstruction.length).toBeGreaterThan(0);
   });
 
   it("creates managed users in PostgreSQL and mirrors credential accounts", async () => {
@@ -412,11 +689,11 @@ describe("backend modular monolith services", () => {
     expect(updatedUser.positionId).toBe("pos-ketua");
     expect(updatedUser.roleId).toBe("ketua");
 
-    const recoveryDraft = await createPasswordRecoveryDraftInDb(db!, "199001012026041002");
+    const recoveryDraft = await createPasswordRecoveryDraftInDb(db!, { identifier: "199001012026041002" });
     await confirmPasswordRecoveryInDb(db!, {
       userId: recoveryDraft.userId,
       otp: recoveryDraft.otp,
-      password: "ketua456",
+      password: "ketua456A1",
     });
 
     const updatedAccountRow = await db!.prepare(

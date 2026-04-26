@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, FileSearch, Inbox, ShieldAlert } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { type DashboardMetric, type LetterStatus } from "@/lib/types";
@@ -9,8 +8,10 @@ import { cn } from "@/lib/utils";
 
 export function statusVariant(status: LetterStatus | string) {
   if (status === "Selesai") return "success";
-  if (status === "Dalam Disposisi" || status === "Sedang Dikerjakan" || status === "Diteruskan") return "warning";
-  if (status === "Rahasia" || status === "Terputus") return "danger";
+  if (status === "Baru") return "default";
+  if (status === "Sedang Dikerjakan" || status === "Diteruskan" || status === "Dalam Disposisi") return "warning";
+  if (status === "Menunggu Tindak Lanjut" || status === "Menunggu Telaah") return "warning";
+  if (status === "Dikembalikan" || status === "Rahasia" || status === "Terputus") return "danger";
   return "muted";
 }
 
@@ -21,9 +22,11 @@ export function MetricCard({ metric }: { metric: DashboardMetric }) {
           <CardDescription className="uppercase tracking-[0.2em]">{metric.label}</CardDescription>
           <CardTitle className="text-3xl sm:text-4xl">{metric.value}</CardTitle>
         </CardHeader>
-      <CardContent>
-        <p className="text-base text-muted-foreground">{metric.hint}</p>
-      </CardContent>
+      {metric.hint ? (
+        <CardContent>
+          <p className="text-base text-muted-foreground">{metric.hint}</p>
+        </CardContent>
+      ) : null}
     </Card>
   );
 }
@@ -45,9 +48,11 @@ export function MetricLinkCard({
           </div>
           <CardTitle className="text-3xl sm:text-4xl">{metric.value}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-base text-muted-foreground">{metric.hint}</p>
-        </CardContent>
+        {metric.hint ? (
+          <CardContent>
+            <p className="text-base text-muted-foreground">{metric.hint}</p>
+          </CardContent>
+        ) : null}
       </Card>
     </Link>
   );
@@ -61,7 +66,7 @@ export function PageIntro({
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   actions?: React.ReactNode;
 }) {
   return (
@@ -69,7 +74,9 @@ export function PageIntro({
       <div className="space-y-2">
         <p className="text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
         <h1 className="font-serif text-3xl leading-tight text-foreground sm:text-[2.6rem]">{title}</h1>
-        <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">{description}</p>
+        {description ? (
+          <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">{description}</p>
+        ) : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
     </div>
@@ -137,9 +144,6 @@ export function EmptyState({
   return (
     <div className="rounded-[1.4rem] border border-dashed border-border bg-card/60 px-6 py-12 text-center">
       <div className="mx-auto max-w-xl space-y-3">
-        <Badge variant="muted" className="mx-auto w-fit">
-          Data mock frontend
-        </Badge>
         <h3 className="font-serif text-2xl text-foreground">{title}</h3>
         <p className="text-base text-muted-foreground">{description}</p>
       </div>

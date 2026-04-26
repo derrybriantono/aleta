@@ -22,6 +22,7 @@ import {
   getLeadershipRecipients,
   getPosition,
   getUser,
+  isPrivilegedAdmin,
 } from "@/lib/permissions";
 
 const LazyDocumentViewer = dynamic(
@@ -36,7 +37,6 @@ export default function SuratDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const {
-    aiConfig,
     currentUser,
     deleteLetter,
     forwardToLeadership,
@@ -49,6 +49,7 @@ export default function SuratDetailPage() {
   const letter = getLetterById(params.id);
   const deleteMode =
     currentUser?.roleId === "super-admin" ? "hard" : currentUser?.roleId === "admin" ? "soft" : null;
+  const isAdmin = isPrivilegedAdmin(currentUser);
 
   if (!letter) {
     return (
@@ -78,7 +79,7 @@ export default function SuratDetailPage() {
       <PageIntro
         eyebrow="Detail Surat"
         title={letter.perihal}
-        description="Metadata surat, viewer dokumen, dan tindak lanjut disposisi kini disusun lebih rapat agar pembacaan isi surat terasa utuh tanpa ruang kosong yang terbuang."
+        description={`${letter.type === "masuk" ? "Surat masuk" : "Surat keluar"} dari ${letter.pengirim}`}
         actions={
           <>
             {canOpenDisposition ? (
@@ -174,10 +175,12 @@ export default function SuratDetailPage() {
               <div className="rounded-[1.2rem] border border-border bg-card/70 p-4">
                 <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Kendali cepat</p>
                 <div className="mt-3 space-y-3 text-sm text-muted-foreground">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Node aktif</span>
-                    <strong className="text-foreground">{currentDisposition?.id ?? "-"}</strong>
-                  </div>
+                  {isAdmin ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Node aktif</span>
+                      <strong className="text-foreground">{currentDisposition?.id ?? "-"}</strong>
+                    </div>
+                  ) : null}
                   <div className="flex items-center justify-between gap-3">
                     <span>Mode viewer</span>
                     <strong className="text-foreground">{letter.viewerMode === "preview" ? "Preview" : "Download"}</strong>
@@ -230,8 +233,14 @@ export default function SuratDetailPage() {
               ) : null}
 
               {deleteMode === "hard" ? (
-                <div className="rounded-[1.2rem] border border-dashed border-amber-400/40 bg-amber-500/10 p-4 text-sm leading-7 text-amber-900 dark:text-amber-200">
-                  Akun Super Admin dapat menghapus surat ini secara permanen dari sistem.
+                <div className="rounded-[1.2rem] border border-rose-300/60 bg-rose-50 p-4 text-sm dark:border-rose-700/40 dark:bg-rose-950/30">
+                  <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="font-semibold">Hard Delete</span>
+                  </div>
+                  <p className="mt-1.5 leading-6 text-rose-800 dark:text-rose-200">
+                    Akun Super Admin dapat menghapus surat ini secara permanen. Tindakan ini tidak dapat dibatalkan.
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -243,7 +252,7 @@ export default function SuratDetailPage() {
         </div>
       </Card>
 
-      {aiConfig.enabled ? <AletaMailInsights letter={letter} timeline={timeline} /> : null}
+      <AletaMailInsights letter={letter} timeline={timeline} />
 
       <Card className="border-border/80">
         <CardHeader>

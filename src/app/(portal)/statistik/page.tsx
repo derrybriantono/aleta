@@ -255,7 +255,6 @@ export default function StatistikPage() {
                 <option value="Semua">Semua Status</option>
                 <option value="Baru">Baru</option>
                 <option value="Dalam Disposisi">Dalam Disposisi</option>
-                <option value="Ditindaklanjuti">Ditindaklanjuti</option>
                 <option value="Selesai">Selesai</option>
               </NativeSelect>
               <NativeSelect value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="h-12 text-base">
@@ -296,7 +295,6 @@ export default function StatistikPage() {
                 <option value="Semua">Semua Status</option>
                 <option value="Baru">Baru</option>
                 <option value="Dalam Disposisi">Dalam Disposisi</option>
-                <option value="Ditindaklanjuti">Ditindaklanjuti</option>
                 <option value="Selesai">Selesai</option>
               </NativeSelect>
             </div>

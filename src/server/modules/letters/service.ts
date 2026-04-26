@@ -507,10 +507,10 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
     input.tanggalAdministratif ??
     (input.type === "masuk" ? input.tanggalTerima : input.tanggalKirim) ??
     tanggalSurat;
-  const rootStatus = "Riwayat Awal Disposisi";
+  const rootStatus = "Menunggu Tindak Lanjut";
   const rootInstruction = input.aiGenerated
-    ? "Riwayat awal disposisi dibuat dari draft AI yang sudah diverifikasi pengguna sebelum disimpan."
-    : "Riwayat awal disposisi dibuat saat registrasi surat oleh petugas.";
+    ? "Disposisi awal dibuat dari draft AI yang sudah diverifikasi pengguna sebelum disimpan."
+    : "Disposisi awal dibuat saat registrasi surat oleh petugas.";
   const qrCodeLabel = `Validasi internal ${actor.name} - ${new Intl.DateTimeFormat("id-ID", {
     dateStyle: "medium",
   }).format(new Date(tanggalSurat))}`;
@@ -816,9 +816,11 @@ export async function deleteLetterInDb(
   {
     actorUserId,
     letterId,
+    mode,
   }: {
     actorUserId: string;
     letterId: string;
+    mode?: "soft" | "hard";
   }
 ) {
   const actor = await requireActorUser(db, actorUserId);
@@ -831,8 +833,17 @@ export async function deleteLetterInDb(
   }
 
   const now = new Date().toISOString();
+  const effectiveMode = mode ?? (actor.roleId === "super-admin" ? "hard" : "soft");
 
-  if (actor.roleId === "super-admin") {
+  if (actor.roleId !== "super-admin" && actor.roleId !== "admin") {
+    throw new ApiError(403, "Hanya Admin atau Super Admin yang dapat menghapus surat.");
+  }
+
+  if (effectiveMode === "hard" && actor.roleId !== "super-admin") {
+    throw new ApiError(403, "Hanya Super Admin yang dapat melakukan hard delete.");
+  }
+
+  if (effectiveMode === "hard") {
     return withTransaction(db, async (tx) => {
       await tx.prepare("DELETE FROM letters WHERE id = ?").run(letterId);
 
@@ -846,10 +857,6 @@ export async function deleteLetterInDb(
 
       return { mode: "hard" as const, deletedAt: now };
     });
-  }
-
-  if (actor.roleId !== "admin") {
-    throw new ApiError(403, "Hanya Admin atau Super Admin yang dapat menghapus surat.");
   }
 
   return withTransaction(db, async (tx) => {

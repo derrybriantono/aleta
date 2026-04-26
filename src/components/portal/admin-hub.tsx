@@ -1,10 +1,12 @@
 "use client";
 
-import { LayoutDashboard, Landmark, MessageCircleMore, ShieldCheck, Sparkles, UserCheck, Users, Wallet } from "lucide-react";
+import { LayoutDashboard, Landmark, MessageCircleMore, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { AletaAIMark } from "@/components/branding/aleta-ai-mark";
 import { PageIntro } from "@/components/portal/shared";
+import { getWhatsAppRuntimeMessage, useWhatsAppGateway } from "@/components/portal/use-whatsapp-gateway";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
@@ -12,9 +14,66 @@ import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 export function AdminHub() {
-  const { aiConfig, currentUser, institutionIdentity, users, whatsAppWeb } = usePortal();
+  const { aiConfig, currentUser, institutionIdentity, users } = usePortal();
   const effectiveRoleId = getEffectiveRoleId(currentUser);
   const isSuperAdmin = effectiveRoleId === "super-admin";
+  const canReadWhatsAppStatus = effectiveRoleId === "super-admin" || effectiveRoleId === "admin";
+  const { snapshot: whatsAppGatewaySnapshot } = useWhatsAppGateway(canReadWhatsAppStatus);
+  const [databaseRuntime, setDatabaseRuntime] = useState<{
+    activeMode: "postgres" | "fallback";
+    postgres: {
+      configured: boolean;
+      reachable: boolean;
+      host: string | null;
+      port: number | null;
+      database: string | null;
+      redactedUrl: string | null;
+      lastBootError: string | null;
+    };
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDatabaseRuntime = async () => {
+      try {
+        const response = await fetch("/api/system/db-status", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | {
+              ok?: boolean;
+              data?: {
+                activeMode: "postgres" | "fallback";
+                postgres: {
+                  configured: boolean;
+                  reachable: boolean;
+                  host: string | null;
+                  port: number | null;
+                  database: string | null;
+                  redactedUrl: string | null;
+                  lastBootError: string | null;
+                };
+              };
+            }
+          | null;
+
+        if (!cancelled && response.ok && payload?.ok && payload.data) {
+          setDatabaseRuntime(payload.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setDatabaseRuntime(null);
+        }
+      }
+    };
+
+    void loadDatabaseRuntime();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stats = [
     {
@@ -38,12 +97,53 @@ export function AdminHub() {
     },
     {
       label: "WhatsApp Gateway",
-      value: whatsAppWeb.status === "active" ? "Online" : "Offline",
-      hint: whatsAppWeb.status === "active" ? "Gateway siap mengirim notifikasi." : "Koneksi terputus.",
+      value:
+        whatsAppGatewaySnapshot.runtimeStatus === "connected"
+          ? "Online"
+          : whatsAppGatewaySnapshot.runtimeStatus === "waiting_qr"
+            ? "Menunggu QR"
+            : whatsAppGatewaySnapshot.runtimeStatus === "initializing"
+              ? "Inisialisasi"
+              : whatsAppGatewaySnapshot.runtimeStatus === "failed"
+                ? "Gagal"
+                : "Offline",
+      hint: getWhatsAppRuntimeMessage(whatsAppGatewaySnapshot.runtimeStatus),
       icon: MessageCircleMore,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-100 dark:bg-emerald-500/10",
+      color:
+        whatsAppGatewaySnapshot.runtimeStatus === "connected"
+          ? "text-emerald-600 dark:text-emerald-400"
+          : whatsAppGatewaySnapshot.runtimeStatus === "failed"
+            ? "text-rose-600 dark:text-rose-400"
+            : "text-amber-600 dark:text-amber-400",
+      bgColor:
+        whatsAppGatewaySnapshot.runtimeStatus === "connected"
+          ? "bg-emerald-100 dark:bg-emerald-500/10"
+          : whatsAppGatewaySnapshot.runtimeStatus === "failed"
+            ? "bg-rose-100 dark:bg-rose-500/10"
+            : "bg-amber-100 dark:bg-amber-500/10",
       href: "/admin/status-whatsapp",
+      testId: "admin-stat-whatsapp-value",
+    },
+    {
+      label: "Runtime Database",
+      value:
+        databaseRuntime?.activeMode === "postgres"
+          ? "PostgreSQL"
+          : databaseRuntime?.activeMode === "fallback"
+            ? "Fallback Snapshot"
+            : "Memeriksa...",
+      hint:
+        databaseRuntime?.activeMode === "postgres"
+          ? `Terhubung ke ${databaseRuntime.postgres.host}:${databaseRuntime.postgres.port}/${databaseRuntime.postgres.database}.`
+          : databaseRuntime?.activeMode === "fallback"
+            ? databaseRuntime.postgres.reachable
+              ? "Fallback masih aktif walau port PostgreSQL merespons. Periksa bootstrap runtime."
+              : `PostgreSQL belum terjangkau di ${databaseRuntime.postgres.host}:${databaseRuntime.postgres.port}/${databaseRuntime.postgres.database}.`
+            : "Status backend database sedang diperiksa.",
+      icon: Wallet,
+      color: databaseRuntime?.activeMode === "postgres" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
+      bgColor: databaseRuntime?.activeMode === "postgres" ? "bg-emerald-100 dark:bg-emerald-500/10" : "bg-amber-100 dark:bg-amber-500/10",
+      href: "/admin",
     },
   ].filter((s) => !s.hidden);
 
@@ -68,7 +168,9 @@ export function AdminHub() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{stat.label}</p>
-                      <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                      <p className="text-3xl font-bold text-foreground" data-testid={stat.testId}>
+                        {stat.value}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -153,17 +255,45 @@ export function AdminHub() {
           <div className="space-y-2">
             <p className="text-lg font-semibold text-foreground">{institutionIdentity.courtName}</p>
             <p className="max-w-xl text-sm leading-7 text-muted-foreground">
-              Perubahan pada Pusat Kendali ini bersifat real-time dan memengaruhi seluruh pengguna di dalam ekosistem ALETA. Pastikan data yang dimasukkan sudah valid.
+              Perubahan bersifat real-time dan memengaruhi seluruh pengguna. Pastikan data sudah valid.
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-semibold text-foreground">Status Infrastruktur</p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">Semua sistem beroperasi normal</p>
+              <p
+                className={cn(
+                  "text-xs",
+                  databaseRuntime?.activeMode === "postgres"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-amber-600 dark:text-amber-400"
+                )}
+              >
+                {databaseRuntime?.activeMode === "postgres"
+                  ? "Runtime memakai PostgreSQL utama"
+                  : databaseRuntime?.activeMode === "fallback"
+                    ? "Runtime memakai fallback snapshot persisten"
+                    : "Status database sedang diperiksa"}
+              </p>
+              {databaseRuntime?.activeMode === "fallback" && databaseRuntime.postgres.lastBootError ? (
+                <p className="mt-1 max-w-xs text-[11px] leading-5 text-muted-foreground">
+                  {databaseRuntime.postgres.lastBootError}
+                </p>
+              ) : null}
             </div>
             <div className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+              <span
+                className={cn(
+                  "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+                  databaseRuntime?.activeMode === "postgres" ? "bg-emerald-400" : "bg-amber-400"
+                )}
+              ></span>
+              <span
+                className={cn(
+                  "relative inline-flex h-3 w-3 rounded-full",
+                  databaseRuntime?.activeMode === "postgres" ? "bg-emerald-500" : "bg-amber-500"
+                )}
+              ></span>
             </div>
           </div>
         </CardContent>

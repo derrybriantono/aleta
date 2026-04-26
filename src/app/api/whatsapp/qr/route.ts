@@ -21,13 +21,18 @@ export async function GET(request: NextRequest) {
       throw new ApiError(403, "Hanya Admin atau Super Admin yang dapat mengakses scanner WhatsApp.");
     }
 
-    const qr = whatsappService.getQrCode();
-    const status = whatsappService.getStatus();
+    const snapshot = await whatsappService.getGatewaySnapshot();
 
     return ok({
-      qr,
-      status,
-      linked: status === "ready",
+      qr: snapshot.qrCode,
+      status: snapshot.internalStatus,
+      runtimeStatus: snapshot.runtimeStatus,
+      linked: snapshot.linked,
+      phoneNumber: snapshot.phoneNumber,
+      sessionName: snapshot.sessionName,
+      lastConnectedAt: snapshot.lastConnectedAt,
+      requiresPhoneNumberBeforeInit: snapshot.requiresPhoneNumberBeforeInit,
+      lastErrorMessage: snapshot.lastErrorMessage,
     });
   } catch (error) {
     return handleRouteError(error);

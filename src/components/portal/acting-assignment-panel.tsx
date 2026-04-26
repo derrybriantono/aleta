@@ -71,8 +71,8 @@ export function ActingAssignmentPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-        <div className="space-y-5 rounded-[1.5rem] border border-border bg-muted/30 p-5">
-          <div className="rounded-[1.2rem] border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-muted-foreground">
+        <div className="space-y-5 rounded-[1.5rem] border border-border bg-muted/40 p-5">
+          <div className="rounded-[1.2rem] border border-primary/40 bg-primary/10 p-4 text-sm text-foreground dark:bg-primary/[0.08]">
             PLH wajib menyertakan rentang waktu aktif, sedangkan PLT berjalan tanpa tanggal akhir sampai pejabat definitif tersedia.
           </div>
 
@@ -183,7 +183,7 @@ export function ActingAssignmentPanel() {
           </Button>
         </div>
 
-        <div className="space-y-4 rounded-[1.5rem] border border-border bg-card/80 p-5">
+        <div className="space-y-4 rounded-[1.5rem] border border-border bg-card/95 p-5">
           <div className="flex items-center gap-2 text-primary">
             <CalendarRange className="h-4 w-4" />
             <p className="text-xs font-semibold uppercase tracking-[0.2em]">Penugasan Aktif</p>
@@ -199,7 +199,7 @@ export function ActingAssignmentPanel() {
               const targetPosition = getPositionById(user.actingAssignment?.positionId ?? "");
 
               return (
-                <div key={user.id} className="rounded-[1.2rem] border border-border bg-muted/35 p-4">
+                <div key={user.id} className="rounded-[1.2rem] border border-border bg-card/90 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-foreground">

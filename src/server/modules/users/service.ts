@@ -34,7 +34,21 @@ type PasswordRecoveryDraft = {
   username: string;
   name: string;
   maskedWhatsapp: string;
+  whatsappNumber: string;
   otp: string;
+  expiresAt: string;
+};
+
+export type AdminResetRequest = {
+  id: string;
+  userId: string;
+  username: string;
+  name: string;
+  nip: string;
+  status: "pending" | "approved" | "rejected";
+  note: string | null;
+  resolvedByUserId: string | null;
+  createdAt: string;
   expiresAt: string;
 };
 
@@ -59,6 +73,43 @@ function normalizePhoneForLookup(value: string | undefined) {
 function maskWhatsappNumber(value: string) {
   if (value.length <= 6) return value;
   return `${value.slice(0, 4)}xxxx${value.slice(-3)}`;
+}
+
+function validatePasswordStrength(password: string): void {
+  if (password.length < 8) {
+    throw new ApiError(400, "Password baru minimal 8 karakter.");
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    throw new ApiError(400, "Password baru harus mengandung minimal satu huruf.");
+  }
+  if (!/[0-9]/.test(password)) {
+    throw new ApiError(400, "Password baru harus mengandung minimal satu angka.");
+  }
+}
+
+function generateTempPassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const pick = (set: string) => set[Math.floor(Math.random() * set.length)] ?? set[0];
+
+  const chars = [
+    pick(upper),
+    pick(upper),
+    pick(lower),
+    pick(lower),
+    pick(digits),
+    pick(digits),
+    pick(digits),
+    pick(digits),
+  ];
+
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j] ?? chars[i]!, chars[i]!];
+  }
+
+  return chars.join("");
 }
 
 function mapUserForApi(user: UserPersona, password = "") {
@@ -263,6 +314,49 @@ async function findUserByNip(db: AletaDatabase, nip: string) {
   }
 
   return (await getUsersFromDb(db)).find((item) => item.isActive && item.nip === normalizedNip) ?? null;
+}
+
+// Lookup active user by any recognized identifier (username, NIP, email, phone, name).
+// Full-name matches are rejected if ambiguous (>1 user with the same name).
+async function findUserForRecovery(db: AletaDatabase, identifier: string) {
+  const normalized = identifier.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const digitsOnly = normalizePhoneForLookup(identifier);
+  const activeUsers = (await getUsersFromDb(db)).filter((u) => u.isActive);
+
+  const uniqueMatches = activeUsers.filter((u) => {
+    const usernameMatch = u.username.toLowerCase() === normalized;
+    const emailMatch = u.email.toLowerCase() === normalized;
+    const nipMatch = u.nip.trim() === identifier.trim();
+    const phoneMatch = digitsOnly.length >= 8 && normalizePhoneForLookup(u.whatsappNumber) === digitsOnly;
+    return usernameMatch || emailMatch || nipMatch || phoneMatch;
+  });
+
+  if (uniqueMatches.length === 1) return uniqueMatches[0];
+  if (uniqueMatches.length > 1) {
+    throw new ApiError(400, "Identitas terlalu umum. Gunakan NIP, username, email, atau nomor WhatsApp.");
+  }
+
+  const nameMatches = activeUsers.filter((u) => u.name.toLowerCase() === normalized);
+  if (nameMatches.length === 0) return null;
+  if (nameMatches.length === 1) return nameMatches[0];
+  throw new ApiError(400, "Identitas terlalu umum. Gunakan NIP, username, email, atau nomor WhatsApp.");
+}
+
+// Verify identifier without generating OTP. Used when WhatsApp is not ready.
+async function verifyRecoveryIdentityInDb(db: AletaDatabase, { identifier }: { identifier: string }) {
+  const user = await findUserForRecovery(db, identifier);
+
+  if (!user) {
+    throw new ApiError(400, "Data akun tidak ditemukan atau tidak dapat diproses.");
+  }
+
+  return {
+    userId: user.id,
+    name: user.name,
+    maskedWhatsapp: maskWhatsappNumber(user.whatsappNumber),
+  };
 }
 
 export async function listUsersFromDb(db: AletaDatabase, actorUserId: string) {
@@ -534,14 +628,23 @@ export async function updateManagedUserInDb(
   });
 }
 
+// ─── Password Recovery — Jalur OTP WhatsApp ───────────────────────────────────
+
+export async function checkRecoveryIdentityInDb(
+  db: AletaDatabase,
+  { identifier }: { identifier: string }
+) {
+  return verifyRecoveryIdentityInDb(db, { identifier });
+}
+
 export async function createPasswordRecoveryDraftInDb(
   db: AletaDatabase,
-  nip: string
+  { identifier }: { identifier: string }
 ): Promise<PasswordRecoveryDraft> {
-  const user = await findUserByNip(db, nip);
+  const user = await findUserForRecovery(db, identifier);
 
   if (!user) {
-    throw new ApiError(404, "NIP tidak ditemukan atau akun sedang nonaktif.");
+    throw new ApiError(400, "Data akun tidak ditemukan atau tidak dapat diproses.");
   }
 
   return withTransaction(db, async (tx) => {
@@ -564,7 +667,7 @@ export async function createPasswordRecoveryDraftInDb(
       entityType: "user",
       entityId: user.id,
       payload: {
-        via: "nip-whatsapp-demo",
+        via: "identifier-whatsapp",
       },
     });
 
@@ -573,10 +676,15 @@ export async function createPasswordRecoveryDraftInDb(
       username: user.username,
       name: user.name,
       maskedWhatsapp: maskWhatsappNumber(user.whatsappNumber),
+      whatsappNumber: user.whatsappNumber,
       otp,
       expiresAt,
     };
   });
+}
+
+export async function cleanupPasswordRecoveryOtpInDb(db: AletaDatabase, userId: string) {
+  await db.prepare("DELETE FROM verifications WHERE identifier = ?").run(`password-reset:${userId}`);
 }
 
 export async function confirmPasswordRecoveryInDb(
@@ -592,9 +700,7 @@ export async function confirmPasswordRecoveryInDb(
   }
 ) {
   const normalizedPassword = normalizeRequired(password, "Password baru");
-  if (normalizedPassword.length < 6) {
-    throw new ApiError(400, "Password baru minimal 6 karakter.");
-  }
+  validatePasswordStrength(normalizedPassword);
 
   const verification = await db.prepare(
     `SELECT id, identifier, value, expires_at
@@ -646,6 +752,7 @@ export async function confirmPasswordRecoveryInDb(
       entityId: userId,
       payload: {
         recoveredAt: now,
+        via: "otp-whatsapp",
       },
     });
 
@@ -653,5 +760,253 @@ export async function confirmPasswordRecoveryInDb(
       userId,
       updatedAt: now,
     };
+  });
+}
+
+// ─── Password Recovery — Jalur Bantuan Admin ──────────────────────────────────
+
+export async function createAdminResetRequestInDb(
+  db: AletaDatabase,
+  { identifier }: { identifier: string }
+) {
+  const user = await findUserForRecovery(db, identifier);
+
+  if (!user) {
+    throw new ApiError(400, "Data akun tidak ditemukan atau tidak dapat diproses.");
+  }
+
+  return withTransaction(db, async (tx) => {
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const requestId = await nextPrefixedId(tx, "password_reset_requests", "prr");
+
+    // Replace any existing pending request for this user
+    await tx.prepare(
+      `DELETE FROM password_reset_requests WHERE user_id = ? AND status = 'pending'`
+    ).run(user.id);
+
+    await tx.prepare(
+      `INSERT INTO password_reset_requests (id, user_id, status, resolved_by_user_id, note, created_at, updated_at, expires_at)
+       VALUES (?, ?, 'pending', NULL, NULL, ?, ?, ?)`
+    ).run(requestId, user.id, now, now, expiresAt);
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: user.id,
+      action: "REQUEST_ADMIN_PASSWORD_RESET",
+      entityType: "user",
+      entityId: user.id,
+      payload: {
+        requestId,
+        via: "identifier-admin-request",
+      },
+    });
+
+    return {
+      requestId,
+      userId: user.id,
+      name: user.name,
+    };
+  });
+}
+
+export async function listAdminResetRequestsInDb(
+  db: AletaDatabase,
+  actorUserId: string
+): Promise<AdminResetRequest[]> {
+  await ensureAdminActor(db, actorUserId);
+
+  const rows = await db.prepare(
+    `SELECT
+       r.id, r.user_id, r.status, r.resolved_by_user_id, r.note, r.created_at, r.expires_at,
+       u.username, u.name, u.nip
+     FROM password_reset_requests r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.expires_at > ?
+     ORDER BY r.created_at DESC
+     LIMIT 50`
+  ).all<{
+    id: string;
+    user_id: string;
+    status: string;
+    resolved_by_user_id: string | null;
+    note: string | null;
+    created_at: string;
+    expires_at: string;
+    username: string;
+    name: string;
+    nip: string;
+  }>(new Date().toISOString());
+
+  return rows.map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    username: row.username,
+    name: row.name,
+    nip: row.nip,
+    status: row.status as AdminResetRequest["status"],
+    note: row.note,
+    resolvedByUserId: row.resolved_by_user_id,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+  }));
+}
+
+export async function resolveAdminResetRequestInDb(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    requestId,
+    action,
+    note,
+  }: {
+    actorUserId: string;
+    requestId: string;
+    action: "approve" | "reject";
+    note?: string;
+  }
+): Promise<{ tempPassword?: string }> {
+  const actor = await ensureAdminActor(db, actorUserId);
+
+  const request = await db.prepare(
+    `SELECT r.id, r.user_id, r.status, r.expires_at, u.username, u.name, u.email, u.role_id
+     FROM password_reset_requests r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.id = ?
+     LIMIT 1`
+  ).get<{
+    id: string;
+    user_id: string;
+    status: string;
+    expires_at: string;
+    username: string;
+    name: string;
+    email: string;
+    role_id: string;
+  }>(requestId);
+
+  if (!request) {
+    throw new ApiError(404, "Permintaan reset tidak ditemukan.");
+  }
+
+  if (request.status !== "pending") {
+    throw new ApiError(409, "Permintaan reset ini sudah diproses sebelumnya.");
+  }
+
+  if (new Date(request.expires_at).getTime() < Date.now()) {
+    throw new ApiError(400, "Permintaan reset sudah kedaluwarsa.");
+  }
+
+  // Admin cannot approve/reject super-admin requests unless actor is super-admin
+  if (request.role_id === "super-admin" && actor.roleId !== "super-admin") {
+    throw new ApiError(403, "Admin tidak dapat memproses permintaan reset untuk Super Admin.");
+  }
+
+  return withTransaction(db, async (tx) => {
+    const now = new Date().toISOString();
+
+    if (action === "reject") {
+      await tx.prepare(
+        `UPDATE password_reset_requests
+         SET status = 'rejected', resolved_by_user_id = ?, note = ?, updated_at = ?
+         WHERE id = ?`
+      ).run(actor.id, note?.trim() || null, now, requestId);
+
+      await appendAuditLog(tx, {
+        id: await nextPrefixedId(tx, "audit_logs", "adt"),
+        actorUserId: actor.id,
+        action: "REJECT_ADMIN_PASSWORD_RESET_REQUEST",
+        entityType: "user",
+        entityId: request.user_id,
+        payload: { requestId, note: note?.trim() || null },
+      });
+
+      return {};
+    }
+
+    // Approve: generate temp password, reset the user's password
+    const tempPassword = generateTempPassword();
+    const passwordHash = hashSecret(tempPassword);
+    const targetUser = await getUserByIdFromDb(tx, request.user_id);
+
+    if (!targetUser || !targetUser.isActive) {
+      throw new ApiError(404, "Akun target tidak ditemukan atau sudah dinonaktifkan.");
+    }
+
+    await tx.prepare(
+      `UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`
+    ).run(passwordHash, now, request.user_id);
+
+    await upsertCredentialAccount(tx, {
+      userId: request.user_id,
+      email: targetUser.email,
+      passwordHash,
+    });
+
+    await tx.prepare(
+      `UPDATE password_reset_requests
+       SET status = 'approved', resolved_by_user_id = ?, note = ?, updated_at = ?
+       WHERE id = ?`
+    ).run(actor.id, note?.trim() || null, now, requestId);
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "APPROVE_ADMIN_PASSWORD_RESET_REQUEST",
+      entityType: "user",
+      entityId: request.user_id,
+      payload: { requestId, note: note?.trim() || null, tempPasswordSet: true },
+    });
+
+    return { tempPassword };
+  });
+}
+
+// ─── Password Recovery — Jalur Reset Manual Admin ─────────────────────────────
+
+export async function adminManualResetPasswordInDb(
+  db: AletaDatabase,
+  { actorUserId, targetUserId }: { actorUserId: string; targetUserId: string }
+): Promise<{ tempPassword: string }> {
+  const actor = await ensureAdminActor(db, actorUserId);
+  const targetUser = await getUserByIdFromDb(db, targetUserId);
+
+  if (!targetUser) {
+    throw new ApiError(404, "Akun yang akan direset tidak ditemukan.");
+  }
+
+  if (!canActorManageManagedUser(actor, targetUser)) {
+    throw new ApiError(403, "Anda tidak memiliki hak untuk mereset password akun ini.");
+  }
+
+  const tempPassword = generateTempPassword();
+  const passwordHash = hashSecret(tempPassword);
+
+  return withTransaction(db, async (tx) => {
+    const now = new Date().toISOString();
+
+    await tx.prepare(
+      `UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`
+    ).run(passwordHash, now, targetUserId);
+
+    await upsertCredentialAccount(tx, {
+      userId: targetUserId,
+      email: targetUser.email,
+      passwordHash,
+    });
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "ADMIN_MANUAL_RESET_PASSWORD",
+      entityType: "user",
+      entityId: targetUserId,
+      payload: {
+        resetAt: now,
+        note: "Password sementara dibuat oleh admin. User disarankan segera menggantinya.",
+      },
+    });
+
+    return { tempPassword };
   });
 }

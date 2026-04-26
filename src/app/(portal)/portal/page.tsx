@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BellRing, BookOpenText, CheckCircle2, Clock, FolderArchive, FolderOpenDot, Grid2X2, ListTodo, Scale, Send, ShieldCheck, Sparkles, Waypoints } from "lucide-react";
-
-
+import { ArrowRight, BellRing, CheckCircle2, ListTodo, Send } from "lucide-react";
 
 import { MainAppHub } from "@/components/portal/main-app-hub";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { regulationsKnowledgeBase } from "@/core/knowledge/regulations-db";
 import { usePortal } from "@/lib/app-state";
 import { getEffectivePosition, getEffectiveRoleId, getUserRoleBadge } from "@/lib/permissions";
 
@@ -60,6 +57,7 @@ export default function PortalPage() {
     },
   ];
   const totalTaskCount = taskTiles.reduce((count, item) => count + item.value, 0);
+  const hasUrgentDisposition = pendingInbox.some((d) => d.urgent);
   const recommendationCandidates = [
     ...accessiblePortalApps.map((app) => ({
       id: `app-${app.id}`,
@@ -104,118 +102,107 @@ export default function PortalPage() {
     ])
     .filter((item, index, array) => array.findIndex((candidate) => candidate.href === item.href) === index)
     .slice(0, 3);
-  const workspaceTrackerCards = [
-    {
-      id: "workspace-surat",
-      title: "Workspace Surat",
-      description: "Masuk ke Manajemen Surat untuk inbox, registrasi, arsip, dan disposisi digital.",
-      href: "/manajemen-surat",
-      icon: FolderOpenDot,
-      badge: "Sub-modul aktif",
-    },
-    {
-      id: "workspace-arsip",
-      title: "Arsip & Statistik",
-      description: "Buka arsip dan statistik untuk menelusuri surat, memeriksa tren, dan membaca ringkasan kerja.",
-      href: "/arsip",
-      icon: FolderArchive,
-      badge: "Operasional",
-    },
-    {
-      id: "workspace-kb",
-      title: "Knowledge Base Regulasi",
-      description: "Akses regulasi dan pustaka digital untuk mempercepat telaah surat dan penelusuran dasar hukum.",
-      href: "/apps/perpustakaan",
-      icon: BookOpenText,
-      badge: "Rujukan",
-    },
-  ];
 
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="ALETA"
+        eyebrow="Portal ALETA"
         title="ALETA"
-        description={`ALETA adalah induk aplikasi kerja terpadu. Role aktif Anda ${currentRoleBadge} pada ${position?.name}, dengan Manajemen Surat sebagai sub-aplikasi utama untuk pekerjaan persuratan.`}
+        description={`ALETA adalah portal terpadu seluruh aplikasi. Role aktif Anda ${currentRoleBadge} pada ${position?.name}, dengan Manajemen Surat sebagai sub-aplikasi utama untuk pekerjaan persuratan.`}
       />
 
       <Card className="overflow-hidden border-border/80 bg-[linear-gradient(135deg,rgba(15,43,66,0.98),rgba(21,74,115,0.95))] text-white dark:border-slate-700/70 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(30,41,59,0.96))]">
-        <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.02fr_0.98fr] lg:p-8">
-          <div className="space-y-4">
+        <CardContent className="grid gap-4 p-4 lg:grid-cols-[1.02fr_0.98fr] lg:p-5">
+          {/* Left: identity + role context */}
+          <div className="space-y-3">
             <Badge variant="outline" className="w-fit border-white/20 bg-white/10 text-white">
-              Smart Workspace Tracker
+              Ringkasan Kerja
             </Badge>
-            <h2 className="font-serif text-3xl leading-tight sm:text-[2.3rem]">
+            <h2 className="font-serif text-2xl leading-tight">
               {isAdminTier
                 ? "ALETA menjadi hub utama untuk modul kerja, kontrol layanan, dan navigasi lintas ekosistem."
                 : "ALETA memusatkan aplikasi yang paling relevan dengan peran kerja Anda."}
             </h2>
-            <p className="max-w-2xl text-sm leading-7 text-slate-200">
-              Manajemen Surat tetap tampil sebagai sub-aplikasi aktif. Workspace tracker di bawah ini mengarahkan Anda
-              ke area kerja yang paling relevan tanpa membuat portal utama terasa padat.
+            <p className="max-w-2xl text-sm leading-6 text-slate-200">
+              {totalTaskCount > 0
+                ? `Ada ${totalTaskCount} item yang memerlukan perhatian Anda.`
+                : "Ringkasan tugas aktif dan akses cepat ke area yang relevan berdasarkan peran Anda."}
             </p>
             {isAdminTier && (
-              <div className="pt-2">
-                <Button 
-                  variant="outline" 
-                  className="group h-11 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white rounded-2xl px-6 transition-all duration-300"
-                  asChild
-                >
-                  <Link href="/admin">
-                    Pengaturan
-                    <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className="group h-9 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white rounded-2xl px-5 text-sm transition-all duration-300"
+                asChild
+              >
+                <Link href="/admin">
+                  Pengaturan
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                </Link>
+              </Button>
             )}
           </div>
 
-          <div className="grid gap-4">
-            <div className="grid gap-3 text-sm text-slate-100 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/10 p-4">
-                <div className="flex items-center gap-2 text-slate-200">
-                  <Grid2X2 className="h-4 w-4" />
-                  Aplikasi
+          {/* Right: task summary + quick actions */}
+          <div className="space-y-3">
+            {/* Task breakdown — live data, each row is a link */}
+            {totalTaskCount === 0 ? (
+              <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <div>
+                  <p className="text-sm font-semibold text-white">Tidak ada tugas mendesak</p>
+                  <p className="text-xs text-slate-300">Semua disposisi dan surat sudah ditangani.</p>
                 </div>
-                <p className="mt-3 text-3xl font-semibold">{accessiblePortalApps.length}</p>
               </div>
-              <div className="rounded-2xl bg-white/10 p-4">
-                <div className="flex items-center gap-2 text-slate-200">
-                  <FolderOpenDot className="h-4 w-4" />
-                  Tugas
-                </div>
-                <p className="mt-3 text-3xl font-semibold">{totalTaskCount}</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-4">
-                <div className="flex items-center gap-2 text-slate-200">
-                  <Scale className="h-4 w-4" />
-                  Regulasi
-                </div>
-                <p className="mt-3 text-3xl font-semibold">{regulationsKnowledgeBase.length}</p>
-              </div>
-            </div>
-            <div className="grid gap-3 rounded-[1.8rem] border border-white/10 bg-white/5 p-4 sm:grid-cols-3">
-              {workspaceTrackerCards.map((card) => {
-                const Icon = card.icon;
-
-                return (
-                  <Link key={card.id} href={card.href} className="rounded-[1.4rem] border border-white/10 bg-white/10 p-4 transition hover:bg-white/15">
-                    <div className="flex items-center justify-between gap-3">
-                      <Badge variant="outline" className="border-white/20 bg-white/10 text-white">
-                        {card.badge}
-                      </Badge>
-                      <Icon className="h-4 w-4 text-white" />
+            ) : (
+              <div className="space-y-1.5">
+                {taskTiles.map((tile) => (
+                  <Link
+                    key={tile.id}
+                    href={tile.href}
+                    className="flex items-center justify-between gap-3 rounded-2xl bg-white/10 px-4 py-2.5 text-sm transition hover:bg-white/15"
+                  >
+                    <span className="text-slate-200">{tile.label}</span>
+                    <div className="flex items-center gap-2">
+                      {tile.value > 0 ? (
+                        <span className="min-w-[1.75rem] rounded-xl bg-white/20 px-2 py-0.5 text-center text-sm font-semibold text-white">
+                          {tile.value}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                      <ArrowRight className="h-3 w-3 text-slate-400" />
                     </div>
-                    <p className="mt-4 text-lg font-semibold text-white">{card.title}</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-200">{card.description}</p>
                   </Link>
-                );
-              })}
+                ))}
+                {hasUrgentDisposition && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs text-amber-200">
+                    <BellRing className="h-3 w-3 shrink-0" />
+                    Ada disposisi urgent yang perlu segera ditindaklanjuti.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Quick actions — role-based via fallbackTiles, max 3 */}
+            <div className="grid gap-1.5 rounded-[1.5rem] border border-white/10 bg-white/5 p-2 sm:grid-cols-3">
+              {fallbackTiles.map((tile) => (
+                <Link
+                  key={tile.id}
+                  href={tile.href}
+                  className="rounded-xl border border-white/10 bg-white/10 p-3 transition hover:bg-white/15"
+                >
+                  <Badge variant="outline" className="border-white/20 bg-white/10 text-[10px] text-white">
+                    {tile.badge}
+                  </Badge>
+                  <p className="mt-2 text-sm font-semibold text-white">{tile.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-300">{tile.hint}</p>
+                </Link>
+              ))}
             </div>
           </div>
         </CardContent>
       </Card>
-      
+
       <div className="grid gap-6">
         <Card className="border-border/80">
           <CardContent className="space-y-5 p-6">
@@ -254,8 +241,8 @@ export default function PortalPage() {
               {pendingInbox.slice(0, 3).map((item) => {
                 const letter = accessibleLetters.find((l) => l.id === item.suratId);
                 return (
-                  <Link 
-                    key={item.id} 
+                  <Link
+                    key={item.id}
                     href={`/disposisi/${item.id}`}
                     className="group flex items-start gap-4 rounded-[1.6rem] border border-border/50 bg-card p-5 transition hover:border-primary/40 hover:shadow-panel"
                   >
@@ -279,8 +266,8 @@ export default function PortalPage() {
               })}
 
               {accessibleLetters.filter(l => l.type === "masuk" && l.status === "Baru").slice(0, 3).map((letter) => (
-                <Link 
-                  key={letter.id} 
+                <Link
+                  key={letter.id}
                   href={`/surat/${letter.id}`}
                   className="group flex items-start gap-4 rounded-[1.6rem] border border-border/50 bg-card p-5 transition hover:border-indigo-400/40 hover:shadow-panel"
                 >

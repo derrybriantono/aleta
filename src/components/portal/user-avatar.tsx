@@ -24,13 +24,13 @@ export function UserAvatar({
         width={48}
         height={48}
         unoptimized
-        className={cn("h-12 w-12 rounded-2xl object-cover", className)}
+        className={cn("h-12 w-12 rounded-2xl object-cover ring-2 ring-border/50", className)}
       />
     );
   }
 
   return (
-    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold", className, textClassName)}>
+    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary text-sm font-semibold", className, textClassName)}>
       {getInitials(name)}
     </div>
   );
