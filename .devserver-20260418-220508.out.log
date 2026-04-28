@@ -1,0 +1,21 @@
+
+> app_derry@1.0.0 dev
+> node scripts/dev-server.js
+
+[dev] Cleared legacy Turbopack cache to keep dev startup lighter.
+[dev] Cleared stale Next dev server artifacts to avoid manifest corruption.
+[dev] PostgreSQL belum terjangkau di 127.0.0.1:54329/aleta. Jika backend gagal konek, ALETA akan jatuh ke fallback in-memory khusus development.
+[dev] Starting Next.js dev server with Webpack and NODE_OPTIONS="--max-old-space-size=2048".
+▲ Next.js 16.2.3 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://172.29.48.1:3000
+- Environments: .env.local
+✓ Ready in 836ms
+[32m✔[0m [33mConsole Ninja[0m extension is connected to [33mNext.js[0m, see [36mhttps://tinyurl.com/2vt8jxzw[0m
+
+○ Compiling /login ...
+ GET /login 200 in 4.6s (next.js: 4.0s, application-code: 577ms)
+ GET /api/auth/get-session 200 in 4.6s (next.js: 4.1s, application-code: 523ms)
+ GET / 307 in 1023ms (next.js: 844ms, application-code: 179ms)
+ GET /login 200 in 95ms (next.js: 16ms, application-code: 79ms)
+ GET /login 200 in 127ms (next.js: 86ms, application-code: 42ms)

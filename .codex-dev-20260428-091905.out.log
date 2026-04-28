@@ -1,0 +1,15 @@
+
+> manajemen_surat@1.0.0 dev
+> node scripts/dev-server.js
+
+[dev] Cleared legacy Turbopack cache to keep dev startup lighter.
+[dev] Cleared stale Next dev server artifacts to avoid manifest corruption.
+[dev] PostgreSQL permanen terdeteksi di 127.0.0.1:54329/aleta. ALETA akan memakai Drizzle + better-auth ke database permanen.
+[dev] Starting Next.js dev server with Webpack and NODE_OPTIONS="--max-old-space-size=2048".
+▲ Next.js 16.2.3 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://10.144.246.196:3000
+- Environments: .env.local
+✓ Ready in 12.9s
+
+○ Compiling / ...

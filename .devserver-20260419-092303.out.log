@@ -1,0 +1,50 @@
+
+> app_derry@1.0.0 dev
+> node scripts/dev-server.js
+
+[dev] Cleared legacy Turbopack cache to keep dev startup lighter.
+[dev] Cleared stale Next dev server artifacts to avoid manifest corruption.
+[dev] PostgreSQL belum terjangkau di 127.0.0.1:54329/aleta. Jika backend gagal konek, ALETA akan jatuh ke fallback in-memory khusus development.
+[dev] Starting Next.js dev server with Webpack and NODE_OPTIONS="--max-old-space-size=2048".
+▲ Next.js 16.2.3 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.68.109:3000
+- Environments: .env.local
+✓ Ready in 870ms
+[32m✔[0m [33mConsole Ninja[0m extension is connected to [33mNext.js[0m, see [36mhttps://tinyurl.com/2vt8jxzw[0m
+
+○ Compiling /login ...
+ HEAD /login 200 in 4.4s (next.js: 4.1s, application-code: 255ms)
+ GET /login 200 in 79ms (next.js: 6ms, application-code: 73ms)
+ GET /api/auth/get-session 200 in 4.3s (next.js: 3.4s, application-code: 912ms)
+ GET /api/users/lookup?identifier=superadmin 200 in 1067ms (next.js: 1042ms, application-code: 25ms)
+ POST /api/auth/sign-in/email 200 in 297ms (next.js: 204ms, application-code: 93ms)
+ GET /api/auth/get-session 200 in 3.0s (next.js: 2.8s, application-code: 122ms)
+ GET /portal 200 in 3.1s (next.js: 2.8s, application-code: 316ms)
+ GET /portal 200 in 81ms (next.js: 4ms, application-code: 76ms)
+ GET /portal 200 in 145ms (next.js: 7ms, application-code: 138ms)
+○ Compiling /api/settings/institution ...
+ GET /api/settings/whatsapp 200 in 3.0s (next.js: 2.9s, application-code: 124ms)
+ GET /api/settings/institution 200 in 2.9s (next.js: 2.8s, application-code: 127ms)
+ GET /api/disposisi 200 in 3.0s (next.js: 2.9s, application-code: 139ms)
+ GET /api/ai/settings 200 in 3.0s (next.js: 2.9s, application-code: 142ms)
+ GET /api/users 200 in 3.2s (next.js: 2.9s, application-code: 283ms)
+ GET /api/surat 200 in 3.2s (next.js: 2.9s, application-code: 319ms)
+ GET /portal 200 in 192ms (next.js: 72ms, application-code: 120ms)
+ GET /api/system/db-status 200 in 1787ms (next.js: 1741ms, application-code: 46ms)
+ GET /api/settings/module-visibility 200 in 2.0s (next.js: 1965ms, application-code: 51ms)
+ GET /admin/status-whatsapp 200 in 2.1s (next.js: 1736ms, application-code: 381ms)
+ GET /api/auth/get-session 200 in 112ms (next.js: 26ms, application-code: 86ms)
+ GET /api/settings/whatsapp 200 in 77ms (next.js: 5ms, application-code: 72ms)
+ GET /api/disposisi 200 in 112ms (next.js: 5ms, application-code: 106ms)
+ GET /api/ai/settings 200 in 105ms (next.js: 12ms, application-code: 93ms)
+ GET /api/users 200 in 164ms (next.js: 8ms, application-code: 155ms)
+ GET /api/settings/institution 200 in 80ms (next.js: 5ms, application-code: 75ms)
+ GET /api/surat 200 in 159ms (next.js: 11ms, application-code: 148ms)
+ GET /api/settings/module-visibility 200 in 32ms (next.js: 6ms, application-code: 26ms)
+ GET /api/whatsapp/status 200 in 2.3s (next.js: 2.1s, application-code: 147ms)
+ GET /api/whatsapp/status 200 in 2.3s (next.js: 2.1s, application-code: 149ms)
+ GET /api/whatsapp/status 200 in 2.3s (next.js: 2.1s, application-code: 151ms)
+ GET /api/whatsapp/status 200 in 2.3s (next.js: 2.1s, application-code: 152ms)
+ GET /admin/status-whatsapp 200 in 133ms (next.js: 34ms, application-code: 99ms)
+[?25h

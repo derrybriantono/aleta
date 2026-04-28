@@ -1,0 +1,74 @@
+
+> app_derry@1.0.0 dev
+> node scripts/dev-server.js
+
+[dev] Cleared legacy Turbopack cache to keep dev startup lighter.
+[dev] Cleared stale Next dev server artifacts to avoid manifest corruption.
+[dev] PostgreSQL belum terjangkau di 127.0.0.1:54329/aleta. Jika backend gagal konek, ALETA akan jatuh ke fallback in-memory khusus development.
+[dev] Starting Next.js dev server with Webpack and NODE_OPTIONS="--max-old-space-size=2048".
+▲ Next.js 16.2.3 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://172.29.48.1:3000
+- Environments: .env.local
+✓ Ready in 927ms
+[32m✔[0m [33mConsole Ninja[0m extension is connected to [33mNext.js[0m, see [36mhttps://tinyurl.com/2vt8jxzw[0m
+
+○ Compiling /login ...
+ GET /login 200 in 5.0s (next.js: 4.4s, application-code: 637ms)
+ GET /login 200 in 1845ms (next.js: 1575ms, application-code: 269ms)
+ GET /api/auth/get-session 200 in 5.2s (next.js: 4.3s, application-code: 886ms)
+ GET /login 200 in 56ms (next.js: 4ms, application-code: 51ms)
+ GET /login 200 in 57ms (next.js: 5ms, application-code: 52ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 17ms, application-code: 12ms)
+ GET /login 200 in 121ms (next.js: 5ms, application-code: 116ms)
+ GET /api/auth/get-session 200 in 1518ms (next.js: 1451ms, application-code: 67ms)
+ GET /api/users/lookup?identifier=superadmin 200 in 2.2s (next.js: 1983ms, application-code: 175ms)
+ POST /api/auth/sign-in/email 200 in 73ms (next.js: 2ms, application-code: 71ms)
+ GET /api/auth/get-session 200 in 2.4s (next.js: 2.3s, application-code: 92ms)
+ GET /portal 200 in 2.5s (next.js: 2.3s, application-code: 273ms)
+ GET /portal 200 in 91ms (next.js: 4ms, application-code: 87ms)
+ GET /portal 200 in 146ms (next.js: 5ms, application-code: 141ms)
+○ Compiling /api/settings/institution ...
+ GET /api/surat 200 in 3.4s (next.js: 3.2s, application-code: 197ms)
+ GET /api/disposisi 200 in 3.4s (next.js: 3.2s, application-code: 201ms)
+ GET /api/settings/whatsapp 200 in 3.4s (next.js: 3.1s, application-code: 212ms)
+ GET /api/settings/institution 200 in 3.3s (next.js: 3.0s, application-code: 214ms)
+ GET /api/ai/settings 200 in 3.4s (next.js: 3.1s, application-code: 232ms)
+ GET /api/users 200 in 3.6s (next.js: 3.2s, application-code: 389ms)
+ GET /portal 200 in 195ms (next.js: 87ms, application-code: 108ms)
+ POST /api/whatsapp/init 200 in 2.7s (next.js: 1978ms, application-code: 705ms)
+ GET /login 200 in 268ms (next.js: 40ms, application-code: 228ms)
+ GET /portal 200 in 403ms (next.js: 69ms, application-code: 334ms)
+ GET /api/whatsapp/qr 200 in 3.2s (next.js: 3.2s, application-code: 52ms)
+ GET /api/whatsapp/qr 200 in 23ms (next.js: 2ms, application-code: 20ms)
+ GET /api/whatsapp/qr 200 in 26ms (next.js: 3ms, application-code: 23ms)
+ GET /api/whatsapp/qr 200 in 20ms (next.js: 3ms, application-code: 17ms)
+ GET /api/whatsapp/qr 200 in 31ms (next.js: 1955µs, application-code: 29ms)
+ GET /api/whatsapp/qr 200 in 20ms (next.js: 3ms, application-code: 18ms)
+ GET /api/whatsapp/qr 200 in 16ms (next.js: 1761µs, application-code: 14ms)
+ GET /login 200 in 241ms (next.js: 204ms, application-code: 37ms)
+ GET /login 200 in 99ms (next.js: 70ms, application-code: 29ms)
+ GET /login 200 in 62ms (next.js: 41ms, application-code: 21ms)
+ GET /login 200 in 71ms (next.js: 49ms, application-code: 22ms)
+ GET /login 200 in 67ms (next.js: 2ms, application-code: 65ms)
+ GET /login 200 in 163ms (next.js: 134ms, application-code: 29ms)
+ GET /login 200 in 26ms (next.js: 3ms, application-code: 23ms)
+ GET /login 200 in 28ms (next.js: 2ms, application-code: 26ms)
+ GET /login 200 in 1368ms (next.js: 1168ms, application-code: 200ms)
+ GET /api/auth/get-session 200 in 1051ms (next.js: 1024ms, application-code: 27ms)
+ GET /login 200 in 83ms (next.js: 54ms, application-code: 29ms)
+ GET /login 200 in 118ms (next.js: 83ms, application-code: 35ms)
+ GET /login 200 in 235ms (next.js: 4ms, application-code: 231ms)
+ GET /api/auth/get-session 200 in 261ms (next.js: 238ms, application-code: 23ms)
+ GET /login 200 in 228ms (next.js: 195ms, application-code: 33ms)
+ GET /login 200 in 27ms (next.js: 3ms, application-code: 24ms)
+ GET /login 200 in 26ms (next.js: 3ms, application-code: 23ms)
+ GET /login 200 in 33ms (next.js: 4ms, application-code: 30ms)
+ GET /login 200 in 85ms (next.js: 4ms, application-code: 81ms)
+ GET /login 200 in 29ms (next.js: 3ms, application-code: 26ms)
+ GET /login 200 in 24ms (next.js: 3ms, application-code: 21ms)
+ GET /login 200 in 100ms (next.js: 69ms, application-code: 31ms)
+ GET /login 200 in 68ms (next.js: 47ms, application-code: 22ms)
+ GET /login 200 in 25ms (next.js: 3ms, application-code: 22ms)
+ GET /login 200 in 39ms (next.js: 5ms, application-code: 34ms)
+ GET /login 200 in 25ms (next.js: 3ms, application-code: 22ms)

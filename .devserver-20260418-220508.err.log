@@ -1,0 +1,33 @@
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory persisten.
+[ALETA DB] Snapshot fallback tidak dapat dimuat, sistem akan membuat baseline baru. Error: insert or update on table "positions" violates foreign key constraint on table "fk_positions_reports_to"
+
+🐜 This seems to be an execution error, which means that your request syntax seems okay,
+    but the resulting statement cannot be executed → Probably not a pg-mem error.
+
+*️⃣ Failed SQL statement: INSERT INTO "positions" ("id", "name", "unit_kerja", "level_hierarchy", "reports_to_position_id", "disposition_target_position_ids_json", "can_forward_to_leadership", "deleted_at", "created_at", "updated_at") VALUES ('pos-panitera-muda-hukum', 'Panitera Muda Hukum', 'Kepaniteraan', '3', 'pos-panitera', '["pos-jurusita-pengganti"]', '0', null, '2026-04-18T09:05:13.120Z', '2026-04-18T09:05:13.120Z');
+
+👉 You can file an issue at https://github.com/oguimbal/pg-mem along with a way to reproduce this error (if you can), and  the stacktrace:
+
+
+    at enumerate.next (<anonymous>)
+    at doExecute.next (<anonymous>)
+    at AletaDatabase.query (src\server\db\client.ts:159:27)
+    at AletaDatabase.run (src\server\db\client.ts:179:31)
+    at PreparedStatement.run (src\server\db\client.ts:131:20)
+    at restoreInMemorySnapshot (src\server\db\client.ts:422:31)
+    at async createAletaDatabase (src\server\db\client.ts:574:9)
+    at async GET (src\app\api\auth\[...all]\route.ts:10:3)
+  157 |   ) {
+  158 |     const text = params.length > 0 ? toPostgresPlaceholders(sql) : sql;
+> 159 |     return this.queryable.query<T>(text, params);
+      |                           ^
+  160 |   }
+  161 |
+  162 |   async queryOne<T extends QueryResultRow = QueryResultRow>( {
+  data: {
+    error: 'insert or update on table "positions" violates foreign key constraint on table "fk_positions_reports_to"',
+    code: undefined
+  },
+  code: undefined,
+  location: { start: 0, end: 0 }
+}

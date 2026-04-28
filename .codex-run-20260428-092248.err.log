@@ -1,0 +1,2 @@
+⚠ Slow filesystem detected. The benchmark took 418ms. If D:\aleta\manajemen_surat\.next/dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development

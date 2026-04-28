@@ -1,0 +1,3441 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-26T15:45:08.679Z",
+  "tables": {
+    "roles": [
+      {
+        "id": "super-admin",
+        "name": "Super Admin",
+        "description": "Kontrol penuh infrastruktur, modul, dan database global."
+      },
+      {
+        "id": "admin",
+        "name": "Admin",
+        "description": "Operasional user, mapping jabatan, dan reset sandi."
+      },
+      {
+        "id": "ketua",
+        "name": "Ketua",
+        "description": "Pimpinan utama dengan hak disposisi berjenjang dan bypass."
+      },
+      {
+        "id": "wakil-ketua",
+        "name": "Wakil Ketua",
+        "description": "Pimpinan pendamping untuk monitoring dan disposisi prioritas."
+      },
+      {
+        "id": "hakim",
+        "name": "Hakim",
+        "description": "Pejabat yudisial yang dapat menerima penugasan dan telaah tertentu sesuai hierarki kerja."
+      },
+      {
+        "id": "sekretaris",
+        "name": "Sekretaris",
+        "description": "Telaah awal surat administratif dan pengantar ke pimpinan."
+      },
+      {
+        "id": "panitera",
+        "name": "Panitera",
+        "description": "Koordinasi surat pada lingkup kepaniteraan."
+      },
+      {
+        "id": "pejabat-struktural",
+        "name": "Pejabat Struktural",
+        "description": "Panitera Muda atau Kasubag yang meneruskan tugas ke pelaksana."
+      },
+      {
+        "id": "staf",
+        "name": "Staf Pelaksana",
+        "description": "Pelaksana akhir yang menyelesaikan tindak lanjut disposisi."
+      }
+    ],
+    "positions": [
+      {
+        "id": "pos-staf-kepegawaian",
+        "name": "Staf Kepegawaian",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-kepegawaian",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-kasubag-umum",
+        "name": "Kasubag Umum dan Keuangan",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 3,
+        "reports_to_position_id": "pos-sekretaris",
+        "disposition_target_position_ids_json": "[\"pos-pranata-komputer\",\"pos-arsiparis\",\"pos-bendahara\",\"pos-ptsp\",\"pos-pranata-humas\",\"pos-staf-umum\"]",
+        "can_forward_to_leadership": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-analis-kepegawaian",
+        "name": "Analis Kepegawaian",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-kepegawaian",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-kasubag-kepegawaian",
+        "name": "Kasubag Kepegawaian",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 3,
+        "reports_to_position_id": "pos-sekretaris",
+        "disposition_target_position_ids_json": "[\"pos-staf-kepegawaian\",\"pos-analis-kepegawaian\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-jurusita",
+        "name": "Jurusita",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-sekretaris",
+        "name": "Sekretaris",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 2,
+        "reports_to_position_id": "pos-ketua",
+        "disposition_target_position_ids_json": "[\"pos-kasubag-umum\",\"pos-kasubag-kepegawaian\",\"pos-pranata-komputer\",\"pos-arsiparis\",\"pos-bendahara\",\"pos-ptsp\",\"pos-pranata-humas\",\"pos-staf-umum\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-arsiparis",
+        "name": "Arsiparis",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-pengadministrasi-umum",
+        "name": "Pengadministrasi Umum",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-jurusita-pengganti",
+        "name": "Jurusita Pengganti",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-hakim",
+        "name": "Hakim",
+        "unit_kerja": "Yudisial",
+        "level_hierarchy": 2,
+        "reports_to_position_id": "pos-ketua",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-pranata-komputer",
+        "name": "Pranata Komputer",
+        "unit_kerja": "TI",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-panitera",
+        "name": "Panitera",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 2,
+        "reports_to_position_id": "pos-ketua",
+        "disposition_target_position_ids_json": "[\"pos-panitera-muda-hukum\",\"pos-panitera-muda-gugatan\",\"pos-panitera-muda-permohonan\",\"pos-panitera-pengganti\",\"pos-analis-perkara\",\"pos-jurusita\",\"pos-jurusita-pengganti\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-analis-keuangan",
+        "name": "Analis Pengelolaan Keuangan APBN",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-bendahara",
+        "name": "Bendahara Pengeluaran",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-pranata-humas",
+        "name": "Pranata Humas",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-ketua",
+        "name": "Ketua Pengadilan",
+        "unit_kerja": "Pimpinan",
+        "level_hierarchy": 1,
+        "reports_to_position_id": null,
+        "disposition_target_position_ids_json": "[\"pos-sekretaris\",\"pos-panitera\",\"pos-kasubag-umum\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-panitera-muda-hukum",
+        "name": "Panitera Muda Hukum",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 3,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[\"pos-jurusita-pengganti\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-staf-umum",
+        "name": "Staf Umum",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-panitera-muda-gugatan",
+        "name": "Panitera Muda Gugatan",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 3,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[\"pos-jurusita\",\"pos-jurusita-pengganti\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-wakil",
+        "name": "Wakil Ketua",
+        "unit_kerja": "Pimpinan",
+        "level_hierarchy": 1,
+        "reports_to_position_id": null,
+        "disposition_target_position_ids_json": "[\"pos-sekretaris\",\"pos-panitera\",\"pos-kasubag-umum\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-panitera-muda-permohonan",
+        "name": "Panitera Muda Permohonan",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 3,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[\"pos-jurusita\",\"pos-jurusita-pengganti\",\"pos-panitera-pengganti\"]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-ptsp",
+        "name": "Petugas PTSP",
+        "unit_kerja": "Kesekretariatan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-kasubag-umum",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-panitera-pengganti",
+        "name": "Panitera Pengganti",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "pos-analis-perkara",
+        "name": "Analis Perkara Peradilan",
+        "unit_kerja": "Kepaniteraan",
+        "level_hierarchy": 4,
+        "reports_to_position_id": "pos-panitera",
+        "disposition_target_position_ids_json": "[]",
+        "can_forward_to_leadership": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "users": [
+      {
+        "id": "usr-ptsp",
+        "username": "ptsp",
+        "password_hash": "dafc834fa104b6d83d5e1d564447dafccbde274c56937e979e5990cef267ca0d",
+        "name": "Lina Octavia",
+        "nip": "199405172020122002",
+        "email": "ptsp@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450019",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-ptsp",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-rina",
+        "username": "kasubag",
+        "password_hash": "8501bf28f753f2429d9091d59450b3deee22e086a69383aed7246bb62ec51749",
+        "name": "Rina Kartika",
+        "nip": "198705032010122002",
+        "email": "kasubag.umum@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450008",
+        "profile_photo_url": null,
+        "role_id": "pejabat-struktural",
+        "position_id": "pos-kasubag-umum",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-analiskp",
+        "username": "analiskp",
+        "password_hash": "dfae1147db4bbe19135e3120d34176e01e5ef2133891855c8f0fcbeb9f3ece62",
+        "name": "Salsabila",
+        "nip": "199207052018122011",
+        "email": "analis.kepegawaian@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450020",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-analis-kepegawaian",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-panitera",
+        "username": "panitera",
+        "password_hash": "df69f1d1869265ae35e43e0571a3e58e5b134d384ca2f28f5c0d1bf5b99cf852",
+        "name": "M. Ridwan",
+        "nip": "197811102004121003",
+        "email": "panitera@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450006",
+        "profile_photo_url": null,
+        "role_id": "panitera",
+        "position_id": "pos-panitera",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-super",
+        "username": "superadmin",
+        "password_hash": "4e4c56e4a15f89f05c2f4c72613da2a18c9665d4f0d6acce16415eb06f9be776",
+        "name": "Rahmawati",
+        "nip": "198001012005012001",
+        "email": "rahmawati@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450001",
+        "profile_photo_url": null,
+        "role_id": "super-admin",
+        "position_id": "pos-pranata-komputer",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-jsp",
+        "username": "jsp",
+        "password_hash": "1d2023685946d5021647eb892049111dc707a63fd07212e14d9cadf1b552299c",
+        "name": "Nurhuda",
+        "nip": "199206022018031003",
+        "email": "jurusita.pengganti@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450016",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-jurusita-pengganti",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-kepeg",
+        "username": "kasubagkepeg",
+        "password_hash": "bb20a54172ef7c3d8fdc22e1ed7889f547227e78edb50302ac2847ca4efe0064",
+        "name": "Farhan Akbar",
+        "nip": "198706212011011006",
+        "email": "kasubag.kepegawaian@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450013",
+        "profile_photo_url": null,
+        "role_id": "pejabat-struktural",
+        "position_id": "pos-kasubag-kepegawaian",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-hakim",
+        "username": "hakim",
+        "password_hash": "ab75eea1c07ebae19f644c36ce7309d20813f817f9fa26f03cfbc065923e4be1",
+        "name": "Hj. Nur Aisyah",
+        "nip": "197912142006042001",
+        "email": "hakim@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450021",
+        "profile_photo_url": null,
+        "role_id": "hakim",
+        "position_id": "pos-hakim",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-admin",
+        "username": "adminit",
+        "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+        "name": "Dian Saputra",
+        "nip": "198411182008011003",
+        "email": "dian.it@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450002",
+        "profile_photo_url": null,
+        "role_id": "admin",
+        "position_id": "pos-pranata-komputer",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-analiskeu",
+        "username": "analiskeu",
+        "password_hash": "aa790a5d80860f303f8258e8912c044ba5d5f8c794039f712fb001b1626c0e3e",
+        "name": "Wulan Sari",
+        "nip": "199001142016122001",
+        "email": "analis.keuangan@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450017",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-analis-keuangan",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-ahmad",
+        "username": "ahmad",
+        "password_hash": "306098fa01257f8e4809cbdfca258d8c22c7fb12937cc2616ef06aa20fd8008e",
+        "name": "Ahmad Rizki",
+        "nip": "199104122015031001",
+        "email": "ahmad@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450007",
+        "profile_photo_url": null,
+        "role_id": "pejabat-struktural",
+        "position_id": "pos-panitera-muda-hukum",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-dina",
+        "username": "stafumum",
+        "password_hash": "096888c34fee5223277faa73b8e1aaf1e9fc2620ad76f28c9cac067fad1b6040",
+        "name": "Dina Maharani",
+        "nip": "199502112019032005",
+        "email": "staf.umum@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450009",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-staf-umum",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-gugatan",
+        "username": "panmudgugatan",
+        "password_hash": "335094da127159375595fb802dee37d27c481194fc3576a94feeb6901d1915a0",
+        "name": "R. Hidayat",
+        "nip": "198112112007011002",
+        "email": "panmud.gugatan@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450011",
+        "profile_photo_url": null,
+        "role_id": "pejabat-struktural",
+        "position_id": "pos-panitera-muda-gugatan",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-ketua",
+        "username": "ketua",
+        "password_hash": "21f97d78461cad00411af4c8ce197774712ce22fd58869cd963fdb57eca078d8",
+        "name": "Drs. H. Malik",
+        "nip": "197202051999031001",
+        "email": "ketua@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450003",
+        "profile_photo_url": null,
+        "role_id": "ketua",
+        "position_id": "pos-ketua",
+        "is_active": 1,
+        "can_bypass_hierarchy": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-permohonan",
+        "username": "panmudpermohonan",
+        "password_hash": "335094da127159375595fb802dee37d27c481194fc3576a94feeb6901d1915a0",
+        "name": "Sri Lestari",
+        "nip": "198205192008012005",
+        "email": "panmud.permohonan@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450012",
+        "profile_photo_url": null,
+        "role_id": "pejabat-struktural",
+        "position_id": "pos-panitera-muda-permohonan",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-kepeg-staff",
+        "username": "stafkepeg",
+        "password_hash": "accabeca64299272b81bb6900bbfe0f3e69c2dd96da4b97d5dbe2cfdedc6b224",
+        "name": "Andi Fitriani",
+        "nip": "199311212019122004",
+        "email": "staf.kepegawaian@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450014",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-staf-kepegawaian",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-bendahara",
+        "username": "bendahara",
+        "password_hash": "dff9cd137cab8b96431ccd81f8bb433fc71f0329eefb54bd4380b3fc3a9fc5d1",
+        "name": "Ridho Pratama",
+        "nip": "198906072014021009",
+        "email": "bendahara@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450018",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-bendahara",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-wakil",
+        "username": "wakil",
+        "password_hash": "01d18150cde09514bb475692292c50856e40b4b26056d3834073621967b914ed",
+        "name": "Drs. H. Fauzi",
+        "nip": "197509182001121002",
+        "email": "wakil@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450004",
+        "profile_photo_url": null,
+        "role_id": "wakil-ketua",
+        "position_id": "pos-wakil",
+        "is_active": 1,
+        "can_bypass_hierarchy": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-ppg",
+        "username": "paniterapengganti",
+        "password_hash": "49affe0caa596033610416332925db9d7a6999ae88a4e408a0d886a9f855a5ca",
+        "name": "Muhammad Taufik",
+        "nip": "198508222010121007",
+        "email": "panitera.pengganti@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450022",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-panitera-pengganti",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-budi",
+        "username": "staf",
+        "password_hash": "d55ed37faf535e9b24d7baa04173735b9565d3421d4fb672b18f2730e27fc5c8",
+        "name": "Budi Santoso",
+        "nip": "199308102017011004",
+        "email": "budi@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450010",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-arsiparis",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-humas",
+        "username": "humas",
+        "password_hash": "c5f3a6cf918510d81064c6ab5c1850c7adeaab9f3518198e446e0b773feb2a54",
+        "name": "Rahmat Hidayat",
+        "nip": "199003112017121014",
+        "email": "humas@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450024",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-pranata-humas",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-sekretaris",
+        "username": "sekretaris",
+        "password_hash": "b266dd6db331e165a8be1a57d46b4f49572108e710d52ff9e92f608891e1d97b",
+        "name": "Siti Nurhayati",
+        "nip": "198603012009022004",
+        "email": "sekretaris@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450005",
+        "profile_photo_url": null,
+        "role_id": "sekretaris",
+        "position_id": "pos-sekretaris",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-analisperkara",
+        "username": "analisperkara",
+        "password_hash": "8d1defa2c512f4934a8d6206083318bfd8b4de704893919d640885d72c811f0c",
+        "name": "Nadia Salma",
+        "nip": "199112102018122015",
+        "email": "analis.perkara@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450023",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-analis-perkara",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "usr-jurusita",
+        "username": "jurusita",
+        "password_hash": "0f0e65848cca0d65e7695135583c17f498fa652aae96c8078ad9a3c8c1732063",
+        "name": "Muh. Iqbal",
+        "nip": "198910112015031008",
+        "email": "jurusita@pa.go.id",
+        "email_verified": true,
+        "whatsapp_number": "628123450015",
+        "profile_photo_url": null,
+        "role_id": "staf",
+        "position_id": "pos-jurusita",
+        "is_active": 1,
+        "can_bypass_hierarchy": 0,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "acting_assignments": [],
+    "ai_global_settings": [
+      {
+        "id": 1,
+        "enabled": 1,
+        "active_provider_id": "gemini",
+        "active_model_id": "Gemini 2.0 Flash",
+        "active_connection_id": null,
+        "primary_language": "id",
+        "feature_disposition_ai": 1,
+        "feature_mail_intelligence": 1,
+        "feature_draft_metadata": 1,
+        "feature_manajemen_surat_ai": 1,
+        "feature_disposisi_ai": 1,
+        "feature_flags_json": "{\"oneStopDisposition\":{\"enabled\":true,\"recommendation\":true,\"priorityDetection\":true,\"targetSuggestion\":true,\"instructionSuggestion\":true,\"autofill\":true,\"rationale\":true,\"diagnostics\":true},\"mailIntelligence\":{\"enabled\":true,\"summary\":true,\"findings\":true,\"recommendedActions\":true,\"relatedRegulations\":true,\"riskNotes\":true,\"diagnostics\":true},\"draftMetadata\":{\"enabled\":true,\"nomorSurat\":true,\"tanggalSurat\":true,\"tanggalTerima\":true,\"asalSurat\":true,\"perihal\":true,\"kodeKlasifikasi\":true,\"klasifikasiSurat\":true,\"tagSurat\":true,\"tagAsalSurat\":true,\"ocrCheck\":true,\"aiReviewNote\":true},\"institutionIdentity\":{\"enabled\":true,\"courtNameSuggestion\":true,\"identityEnrichment\":true,\"googleDiscovery\":true,\"officialWebsiteExtraction\":true,\"aiNormalization\":true,\"diagnostics\":true}}",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "ai_providers": [],
+    "whatsapp_web_settings": [
+      {
+        "id": 1,
+        "phone_number": "",
+        "session_name": "ALETA WhatsApp Web",
+        "status": "inactive",
+        "last_connected_at": "",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "aleta_bot_settings": [
+      {
+        "id": 1,
+        "bot_enabled": 0,
+        "notifications_enabled": 0,
+        "admin_whatsapp_number": "",
+        "message_delay_ms": 1500,
+        "retry_limit": 2,
+        "dry_run_enabled": 1,
+        "schedule_cron": "00 07 * * Monday-Friday",
+        "test_target_number": "",
+        "security_notes": "Modul ALETA Bot hanya aktif untuk Super Admin. Gunakan dry-run sebelum pengiriman produksi.",
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      }
+    ],
+    "aleta_bot_templates": [
+      {
+        "id": "admin-test",
+        "category": "admin",
+        "title": "Pesan Admin Test",
+        "body": "Tes ALETA Bot berhasil pada {{waktu}}. Mode: {{mode}}.",
+        "placeholders_json": "[\"waktu\",\"mode\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      },
+      {
+        "id": "pegawai-monitoring",
+        "category": "pegawai",
+        "title": "Notifikasi Pegawai / Monitoring",
+        "body": "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n\n{{ringkasan}}\n\nSumber: ALETA Bot.",
+        "placeholders_json": "[\"nama_pegawai\",\"judul_notifikasi\",\"ringkasan\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T15:31:59.317Z"
+      },
+      {
+        "id": "pihak-layanan",
+        "category": "pihak",
+        "title": "Notifikasi Pihak / Layanan Perkara",
+        "body": "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan otomatis ALETA Bot.",
+        "placeholders_json": "[\"nama_pihak\",\"nomor_perkara\",\"ringkasan\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T15:31:59.317Z"
+      },
+      {
+        "id": "perkara-baru",
+        "category": "notifikasi",
+        "title": "Notifikasi Perkara Baru",
+        "body": "Assalamu'alaikum.\n\nHalo, saya ALETA Bot. Perkara {{nomor_perkara}} atas nama {{nama_pihak}} telah terdaftar dengan agenda {{agenda}}.\n\nPesan ini adalah notifikasi otomatis.",
+        "placeholders_json": "[\"nomor_perkara\",\"nama_pihak\",\"agenda\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      },
+      {
+        "id": "jadwal-sidang",
+        "category": "notifikasi",
+        "title": "Notifikasi Jadwal Sidang",
+        "body": "Assalamu'alaikum.\n\nPerkara {{nomor_perkara}} dijadwalkan sidang pada {{hari_sidang}}, {{tanggal_sidang}} di ruang {{ruangan}} dengan agenda {{agenda}}.",
+        "placeholders_json": "[\"nomor_perkara\",\"hari_sidang\",\"tanggal_sidang\",\"ruangan\",\"agenda\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      },
+      {
+        "id": "akta-cerai",
+        "category": "notifikasi",
+        "title": "Notifikasi Akta Cerai",
+        "body": "Akta cerai untuk perkara {{nomor_perkara}} telah tersedia. Silakan mengikuti prosedur pengambilan pada layanan PTSP.",
+        "placeholders_json": "[\"nomor_perkara\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      },
+      {
+        "id": "sisa-panjar",
+        "category": "notifikasi",
+        "title": "Notifikasi Sisa Panjar",
+        "body": "Informasi biaya perkara {{nomor_perkara}}: sisa panjar saat ini {{sisa_panjar}}. Mohon hubungi petugas bila memerlukan rincian.",
+        "placeholders_json": "[\"nomor_perkara\",\"sisa_panjar\"]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      },
+      {
+        "id": "balasan-otomatis",
+        "category": "balasan",
+        "title": "Balasan Otomatis",
+        "body": "Halo, saya ALETA Bot. Ketik info lengkap, perkara, sidang hari ini, atau akta#nomor perkara untuk layanan informasi.",
+        "placeholders_json": "[]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      },
+      {
+        "id": "fallback-error",
+        "category": "error",
+        "title": "Fallback Error",
+        "body": "Maaf, ALETA Bot belum dapat memproses permintaan tersebut. Silakan coba beberapa saat lagi.",
+        "placeholders_json": "[]",
+        "editable": 1,
+        "updated_at": "2026-04-26T14:44:19.797Z"
+      }
+    ],
+    "aleta_bot_jobs": [
+      {
+        "id": "ketua-penerimaan-perkara",
+        "name": "Rekap Penerimaan Perkara Ketua",
+        "description": "Diambil dari app.js sendKetuaPenerimaanPerkara dan notifikasi.getTotalPenerimaanPerkaraSemuaHakimLengkap.",
+        "enabled": 0,
+        "schedule_cron": "50 07 1 * *",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      },
+      {
+        "id": "panitera-bulanan",
+        "name": "Rekap Panitera Bulanan",
+        "description": "Diambil dari app.js sendPanitera dan kumpulan query BAS, relaas, PBT, minutasi, e-court, dan publikasi.",
+        "enabled": 0,
+        "schedule_cron": "50 07 1 * *",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      },
+      {
+        "id": "penjaga-sidang-hari-ini",
+        "name": "Penjaga Sidang Hari Ini",
+        "description": "Diambil dari app.js sendPenjagaSidangHariIni dan notifikasi.getDataJadwalSidangPerdata.",
+        "enabled": 0,
+        "schedule_cron": "10 07 * * Monday-Friday",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      },
+      {
+        "id": "penjaga-sidang-besok",
+        "name": "Penjaga Sidang Besok",
+        "description": "Diambil dari app.js sendPenjagaSidangBesok dan notifikasi.getDataJadwalBesok.",
+        "enabled": 0,
+        "schedule_cron": "00 20 * * *",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      },
+      {
+        "id": "kasir-harian",
+        "name": "Pengingat Kasir Harian",
+        "description": "Diambil dari app.js sendPengingatKasir untuk pengingat sisa panjar dan layanan kasir.",
+        "enabled": 0,
+        "schedule_cron": "30 14 * * Monday-Thursday",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      },
+      {
+        "id": "pihak-hari-sidang",
+        "name": "Notifikasi Pihak Hari Sidang",
+        "description": "Diambil dari app.js sendMessageHariSidang dan notifikasi.getDataPihakHariSidang.",
+        "enabled": 0,
+        "schedule_cron": "00 07 * * *",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      },
+      {
+        "id": "pihak-sebelum-sidang",
+        "name": "Notifikasi Pihak Sebelum Sidang",
+        "description": "Diambil dari app.js sendMessageSebelumHariSidang dan notifikasi.getDataPihakSebelumHariSidang.",
+        "enabled": 0,
+        "schedule_cron": "00 09 * * *",
+        "last_status": "idle",
+        "updated_at": "2026-04-26T14:44:19.797Z",
+        "last_run_at": null,
+        "last_message": null
+      }
+    ],
+    "aleta_bot_queries": [
+      {
+        "id": "legacy-ketua-penerimaan-perkara",
+        "name": "legacy.notifikasi.ketuaPenerimaanPerkara",
+        "category": "employee",
+        "description": "Gabungan getTotalPenerimaanPerkaraSemuaHakimLengkap, Mediasi, Panitera, dan Jurusita dari app.js.",
+        "sql_text": "legacy:notifikasi.getTotalPenerimaanPerkaraSemuaHakimLengkap,getTotalPenerimaanMediasiSemuaHakim,getTotalPenerimaanPerkaraSemuaPanitera,getTotalPenerimaanPerkaraSemuaJurusita",
+        "output_columns_json": "[\"nama_pegawai\",\"judul_notifikasi\",\"ringkasan\"]",
+        "recipient_column": "",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-sisa-panjar",
+        "name": "legacy.notifikasi.pihakSisaPanjar",
+        "category": "party",
+        "description": "Notifikasi sisa panjar atau kekurangan biaya perkara.",
+        "sql_text": "legacy:notifikasi.getDataPihakSisaPanjar,getDataHabisBiaya",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"sisa_panjar\",\"ringkasan\",\"telepon\",\"nomor_hp\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-baru",
+        "name": "legacy.notifikasi.pihakBaru",
+        "category": "party",
+        "description": "Data pihak, kuasa, turut tergugat, dan intervensi untuk notifikasi perkara baru.",
+        "sql_text": "legacy:notifikasi.getDataPihakBaru",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"ringkasan\",\"telepon\",\"nomor_hp\",\"perkara_id\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-panitera-monitoring-bulanan",
+        "name": "legacy.notifikasi.paniteraMonitoringBulanan",
+        "category": "employee",
+        "description": "Monitoring BAS, minutasi, BHT, relaas, panjar, delegasi, e-doc, dan perkara tertunda untuk Panitera.",
+        "sql_text": "legacy:notifikasi.getDataBA,getDataPutusanBelumMinut,getDataBelumBhtPerdata,getDataBelumSerahHukum,getDataSaksiTidakLengkap,getDataSisaPanjarPn,getDataSisaPanjarBanding,getDataSisaPanjarKasasi,getStatistikDetail,getBelumPanggilan,getDataBanding,getDataKasasi,getDataPK,getDataEdocPetitum,getDataEdocAnonimisasi,getDataBelumDelegasi,getDataVerstek,getDataTundaMediasi",
+        "output_columns_json": "[\"nama_pegawai\",\"judul_notifikasi\",\"ringkasan\"]",
+        "recipient_column": "",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-putusan",
+        "name": "legacy.notifikasi.pihakPutusan",
+        "category": "party",
+        "description": "Notifikasi putusan kepada pihak/kuasa/turut/intervensi.",
+        "sql_text": "legacy:notifikasi.getDataPutusanPihak",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"ringkasan\",\"telepon\",\"nomor_hp\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-hari-sidang",
+        "name": "legacy.notifikasi.pihakHariSidang",
+        "category": "party",
+        "description": "Pengingat hari sidang untuk pihak/kuasa/turut/intervensi.",
+        "sql_text": "legacy:notifikasi.getDataPihakHariSidang",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"tanggal_sidang\",\"agenda\",\"ringkasan\",\"telepon\",\"nomor_hp\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-jadwal-sidang-internal",
+        "name": "legacy.notifikasi.jadwalSidangInternal",
+        "category": "employee",
+        "description": "Jadwal sidang dan mediasi hari ini/besok untuk penjaga sidang, hakim, dan panitera.",
+        "sql_text": "legacy:notifikasi.getDataJadwalSidangPerdata,getDataJadwalMediasi,getDataJadwalBesok,getDataJadwalMediasiBesok,getDataJadwalSidangPerdataHakim,getDataJadwalBesokHakim,getDataJadwalSidangPerdataPanitera,getDataJadwalBesokPaniteraNew",
+        "output_columns_json": "[\"nama_pegawai\",\"judul_notifikasi\",\"ringkasan\",\"tanggal_sidang\",\"agenda\"]",
+        "recipient_column": "",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-query-command-router",
+        "name": "legacy.query.commandRouter",
+        "category": "system",
+        "description": "Router command chat publik dari query.js, dipakai untuk balasan otomatis.",
+        "sql_text": "legacy:query.getData",
+        "output_columns_json": "[\"command\",\"nomor_perkara\",\"response_text\"]",
+        "recipient_column": "",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-sebelum-sidang",
+        "name": "legacy.notifikasi.pihakSebelumHariSidang",
+        "category": "party",
+        "description": "Pengingat sebelum hari sidang untuk pihak perkara.",
+        "sql_text": "legacy:notifikasi.getDataPihakSebelumHariSidang",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"tanggal_sidang\",\"agenda\",\"ringkasan\",\"telepon\",\"nomor_hp\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-kasir-panjar",
+        "name": "legacy.notifikasi.kasirPanjar",
+        "category": "employee",
+        "description": "Pengingat sisa panjar, meterai/redaksi, dan penetapan untuk kasir/PTSP.",
+        "sql_text": "legacy:notifikasi.getDataSisaPanjarPn,getDataMeteraiRedaksiPsp,getDataDaftarPenetapan",
+        "output_columns_json": "[\"nama_pegawai\",\"judul_notifikasi\",\"ringkasan\",\"nomor_perkara\",\"sisa_panjar\"]",
+        "recipient_column": "",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-tunda-cuti",
+        "name": "legacy.notifikasi.pihakTundaCuti",
+        "category": "party",
+        "description": "Notifikasi penundaan sidang/cuti.",
+        "sql_text": "legacy:notifikasi.getDataPihakTundaCuti",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"tanggal_sidang\",\"agenda\",\"ringkasan\",\"telepon\",\"nomor_hp\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-status-sidang-pegawai",
+        "name": "legacy.notifikasi.statusSidangPegawai",
+        "category": "employee",
+        "description": "Status minutasi, upload putusan, antrian sidang, relaas, delegasi, dan panggilan untuk Hakim/Panitera/Jurusita.",
+        "sql_text": "legacy:notifikasi.getDataPutusanBelumMinutHakim,getDataUploadPutusanHakim,getDataLupaTundaHakim,getDataPutusanBelumMinutPanitera,getDataTundaMediasiPanitera,getDataAntrianSidangHakim,getDataAntrianSidangPanitera,getDataPutusJurusitaNew,getDataTundaJurusitaNew,getBelumPanggilanJurusita,getDataBelumDelegasiJurusita,getDataPemberitahuanPutusanBelumJurusita",
+        "output_columns_json": "[\"nama_pegawai\",\"judul_notifikasi\",\"ringkasan\",\"nomor_perkara\"]",
+        "recipient_column": "",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "legacy-pihak-akta-cerai",
+        "name": "legacy.notifikasi.pihakAktaCerai",
+        "category": "party",
+        "description": "Notifikasi akta cerai untuk Penggugat/Pemohon dan Tergugat/Termohon.",
+        "sql_text": "legacy:notifikasi.getDataPihakAktaCerai",
+        "output_columns_json": "[\"nama_pihak\",\"nomor_perkara\",\"ringkasan\",\"telepon\",\"nomor_hp\"]",
+        "recipient_column": "telepon",
+        "is_active": 1,
+        "last_test_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_tested_at": null,
+        "last_test_error": null,
+        "created_by": null,
+        "updated_by": null
+      }
+    ],
+    "aleta_bot_notifications": [
+      {
+        "id": "pihak-sebelum-sidang",
+        "name": "Notifikasi Pihak Sebelum Sidang",
+        "category": "party",
+        "description": "Pengingat kepada pihak perkara sebelum jadwal sidang.",
+        "query_id": "legacy-pihak-sebelum-sidang",
+        "template_id": "jadwal-sidang",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 09 * * *\",\"trigger\":\"cron pagi\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "hakim-jadwal-sidang",
+        "name": "Pengingat Hakim",
+        "category": "employee",
+        "description": "Jadwal sidang/mediasi dan status minutasi/upload putusan untuk Hakim.",
+        "query_id": "legacy-status-sidang-pegawai",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"roleHints\":[\"hakim\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"15 07 * * Monday-Friday; 00 20 * * Sunday-Thursday\",\"trigger\":\"cron pagi dan malam\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "pihak-tunda-cuti",
+        "name": "Notifikasi Tunda/Cuti",
+        "category": "party",
+        "description": "Notifikasi penundaan sidang karena cuti atau jadwal khusus.",
+        "query_id": "legacy-pihak-tunda-cuti",
+        "template_id": "pihak-layanan",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 12 24 11 *\",\"trigger\":\"cron khusus\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "panitera-jadwal-sidang",
+        "name": "Pengingat Panitera Sidang",
+        "category": "employee",
+        "description": "Jadwal sidang, tunda mediasi, BAS, dan minutasi untuk Panitera/Panitera Pengganti.",
+        "query_id": "legacy-status-sidang-pegawai",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"roleHints\":[\"panitera\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 07 * * Monday-Friday; 00 20 * * *\",\"trigger\":\"cron pagi dan malam\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "pihak-akta-cerai",
+        "name": "Notifikasi Akta Cerai",
+        "category": "party",
+        "description": "Informasi akta cerai untuk pihak terkait.",
+        "query_id": "legacy-pihak-akta-cerai",
+        "template_id": "akta-cerai",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 16 * * *\",\"trigger\":\"cron sore\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "ketua-penerimaan-perkara",
+        "name": "Rekap Penerimaan Perkara Ketua",
+        "category": "employee",
+        "description": "Notifikasi internal Ketua dari sendKetuaPenerimaanPerkara pada app.js.",
+        "query_id": "legacy-ketua-penerimaan-perkara",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"roleHints\":[\"ketua\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"50 07 1 * *\",\"trigger\":\"cron bulanan\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "jurusita-status-relaas",
+        "name": "Status Sidang dan Relaas Jurusita",
+        "category": "employee",
+        "description": "Status putus/tunda, panggilan, delegasi, dan pemberitahuan putusan untuk Jurusita.",
+        "query_id": "legacy-status-sidang-pegawai",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"roleHints\":[\"jurusita\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 12 * * Monday-Friday; 15 16 * * Monday-Friday; 00 09 * * Friday\",\"trigger\":\"cron status dan relaas\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "pihak-sisa-panjar",
+        "name": "Notifikasi Sisa Panjar/Biaya",
+        "category": "party",
+        "description": "Informasi sisa panjar atau biaya perkara kepada pihak.",
+        "query_id": "legacy-pihak-sisa-panjar",
+        "template_id": "sisa-panjar",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 19 * * *; 30 15 * * *\",\"trigger\":\"cron sore\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "panitera-monitoring-bulanan",
+        "name": "Monitoring Bulanan Panitera",
+        "category": "employee",
+        "description": "Rekap BAS, minutasi, BHT, relaas, panjar, delegasi, dan e-doc untuk Panitera.",
+        "query_id": "legacy-panitera-monitoring-bulanan",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"roleHints\":[\"panitera\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"50 07 1 * *\",\"trigger\":\"cron bulanan\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "pihak-baru",
+        "name": "Notifikasi Perkara Baru",
+        "category": "party",
+        "description": "Notifikasi pendaftaran perkara untuk pihak, kuasa, turut tergugat, dan intervensi.",
+        "query_id": "legacy-pihak-baru",
+        "template_id": "perkara-baru",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 17 * * Monday-Friday\",\"trigger\":\"cron sore hari kerja\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "pihak-putusan",
+        "name": "Notifikasi Putusan",
+        "category": "party",
+        "description": "Informasi putusan kepada pihak, kuasa, turut tergugat, dan intervensi.",
+        "query_id": "legacy-pihak-putusan",
+        "template_id": "pihak-layanan",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"manual\",\"cron\":\"\",\"trigger\":\"manual/legacy app.js\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "penjaga-sidang-hari-ini",
+        "name": "Penjaga Sidang Hari Ini",
+        "category": "employee",
+        "description": "Jadwal sidang/mediasi hari ini dan panggilan belum lengkap untuk petugas sidang.",
+        "query_id": "legacy-jadwal-sidang-internal",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"positionHints\":[\"sidang\",\"ptsp\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"10 07 * * Monday-Friday\",\"trigger\":\"cron pagi hari kerja\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "pihak-hari-sidang",
+        "name": "Notifikasi Pihak Hari Sidang",
+        "category": "party",
+        "description": "Pengingat kepada pihak perkara pada hari sidang.",
+        "query_id": "legacy-pihak-hari-sidang",
+        "template_id": "jadwal-sidang",
+        "recipient_source": "query",
+        "recipient_mapping_json": "{\"recipientColumn\":\"telepon\",\"fallbackColumns\":[\"nomor_hp\",\"nomor_whatsapp\"]}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 07 * * *\",\"trigger\":\"cron pagi\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "penjaga-sidang-besok",
+        "name": "Penjaga Sidang Besok",
+        "category": "employee",
+        "description": "Jadwal sidang dan mediasi besok untuk petugas sidang.",
+        "query_id": "legacy-jadwal-sidang-internal",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"positionHints\":[\"sidang\",\"ptsp\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"00 20 * * *\",\"trigger\":\"cron malam\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      },
+      {
+        "id": "kasir-harian",
+        "name": "Pengingat Kasir Harian",
+        "category": "employee",
+        "description": "Pengingat sisa panjar, meterai/redaksi, dan penetapan untuk kasir/PTSP.",
+        "query_id": "legacy-kasir-panjar",
+        "template_id": "pegawai-monitoring",
+        "recipient_source": "users",
+        "recipient_mapping_json": "{\"positionHints\":[\"kasir\",\"ptsp\"],\"source\":\"users.whatsapp_number\"}",
+        "schedule_config_json": "{\"type\":\"cron\",\"cron\":\"30 14 * * Monday-Thursday\",\"trigger\":\"cron siang\"}",
+        "is_active": 0,
+        "delay_ms": 1500,
+        "retry_limit": 2,
+        "last_status": "idle",
+        "created_at": "2026-04-26T15:31:59.317Z",
+        "updated_at": "2026-04-26T15:31:59.317Z",
+        "last_run_at": null,
+        "last_message": null,
+        "created_by": null,
+        "updated_by": null
+      }
+    ],
+    "aleta_bot_notification_logs": [],
+    "aleta_bot_logs": [],
+    "institution_identity": [
+      {
+        "id": 1,
+        "court_name": "Pengadilan Agama Makassar Kelas IA",
+        "court_short_name": "PA Makassar",
+        "address": "Jl. Perintis Kemerdekaan Km. 14, Makassar, Sulawesi Selatan",
+        "phone_number": "(0411) 554122",
+        "mobile_phone": "0811-4411-2200",
+        "email": "pa.makassar@pta-makassar.go.id",
+        "instagram": "@pa_makassar",
+        "facebook": "Pengadilan Agama Makassar",
+        "youtube": "PA Makassar Official",
+        "website": "https://pa-makassar.go.id",
+        "map_url": "https://maps.google.com/?q=Pengadilan+Agama+Makassar",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "institution_identity_enrichments": [],
+    "module_visibility_settings": [
+      {
+        "role_id": "ketua",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "admin-hub",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "laporan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "search",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "identity",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "kepegawaian",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "disposisi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "whatsapp-settings",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "aset",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "identity",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "audit",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "admin-hub",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "laporan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "laporan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "notifikasi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "audit",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "laporan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "aleta-bot",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "whatsapp-settings",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "notifikasi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "laporan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "laporan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "laporan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "laporan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "aleta-bot",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "notifikasi",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "kepegawaian",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "search",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "visibility-role",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "laporan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "visibility-role",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "surat-masuk",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "mapping-user-jabatan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "hakim",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "penugasan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "whatsapp-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "dashboard",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "admin",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "penugasan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "ai-settings",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "statistik",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "wakil-ketua",
+        "module_id": "admin-hub",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "sekretaris",
+        "module_id": "aset",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "identity",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "ketua",
+        "module_id": "keuangan",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "keuangan",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "staf",
+        "module_id": "audit",
+        "enabled": 0,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "super-admin",
+        "module_id": "ai-settings",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "surat-keluar",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "panitera",
+        "module_id": "arsip",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "role_id": "pejabat-struktural",
+        "module_id": "disposisi",
+        "enabled": 1,
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "knowledge_base_regulations": [
+      {
+        "id": "reg-int-001",
+        "title": "SOP Disposisi Surat Masuk Pimpinan",
+        "source": "internal",
+        "jurisdiction": "Pengadilan Agama",
+        "module_ids_json": "[\"manajemen-surat\",\"dashboard\"]",
+        "keywords_json": "[\"disposisi\",\"surat masuk\",\"pimpinan\",\"ketua\",\"wakil\",\"instruksi\"]",
+        "summary": "Mengatur jalur telaah surat masuk dari pimpinan ke pejabat terkait berikut standar instruksi singkat dan monitoring tindak lanjut.",
+        "citation": "SOP Internal Persuratan Bab II",
+        "recommended_position_ids_json": "[\"pos-ketua\",\"pos-wakil\",\"pos-sekretaris\",\"pos-panitera\",\"pos-kasubag-umum\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "reg-int-002",
+        "title": "Pedoman Audit Keamanan Aplikasi Internal",
+        "source": "internal",
+        "jurisdiction": "Pengadilan Agama",
+        "module_ids_json": "[\"manajemen-surat\",\"dashboard\",\"sop\"]",
+        "keywords_json": "[\"audit\",\"keamanan\",\"aplikasi\",\"backup\",\"enkripsi\",\"ti\"]",
+        "summary": "Menetapkan PIC audit keamanan, jadwal verifikasi, dan kewajiban bukti kontrol TI untuk aplikasi internal.",
+        "citation": "Pedoman Audit TI Pasal 4-8",
+        "recommended_position_ids_json": "[\"pos-ketua\",\"pos-pranata-komputer\",\"pos-kasubag-umum\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "reg-int-003",
+        "title": "SOP Inventarisasi Sarpras dan Umum",
+        "source": "internal",
+        "jurisdiction": "Pengadilan Agama",
+        "module_ids_json": "[\"manajemen-surat\",\"dashboard\",\"sop\"]",
+        "keywords_json": "[\"sarpras\",\"inventarisasi\",\"umum\",\"verifikasi\",\"lapangan\",\"kesekretariatan\"]",
+        "summary": "Memuat pembagian tugas inventarisasi sarana prasarana antara Kasubag Umum dan Staf Umum beserta eskalasi ke pimpinan.",
+        "citation": "SOP Umum dan Keuangan Lampiran A",
+        "recommended_position_ids_json": "[\"pos-kasubag-umum\",\"pos-staf-umum\",\"pos-sekretaris\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "reg-int-004",
+        "title": "Pedoman Rekap Laporan Perkara Triwulanan",
+        "source": "internal",
+        "jurisdiction": "Badan Peradilan Agama",
+        "module_ids_json": "[\"manajemen-surat\",\"sop\"]",
+        "keywords_json": "[\"laporan\",\"perkara\",\"triwulan\",\"sla\",\"kepaniteraan\",\"rekap\"]",
+        "summary": "Mengatur penyusunan rekap SLA, perkara prioritas, dan alur validasi data pada unit kepaniteraan.",
+        "citation": "Pedoman Pelaporan Kinerja Triwulan Bab III",
+        "recommended_position_ids_json": "[\"pos-panitera\",\"pos-panitera-muda-hukum\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "reg-ext-001",
+        "title": "Undang-Undang Keterbukaan Informasi Publik",
+        "source": "external",
+        "jurisdiction": "Nasional",
+        "module_ids_json": "[\"manajemen-surat\",\"sop\"]",
+        "keywords_json": "[\"informasi\",\"publik\",\"rahasia\",\"klasifikasi\",\"akses\"]",
+        "summary": "Menjadi dasar penetapan klasifikasi keterbukaan dan pembatasan akses dokumen yang memuat informasi dikecualikan.",
+        "citation": "UU No. 14 Tahun 2008",
+        "recommended_position_ids_json": "[\"pos-sekretaris\",\"pos-ketua\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "reg-ext-002",
+        "title": "Pedoman Naskah Dinas dan Arsip Elektronik",
+        "source": "external",
+        "jurisdiction": "Mahkamah Agung RI",
+        "module_ids_json": "[\"manajemen-surat\",\"sop\",\"dashboard\"]",
+        "keywords_json": "[\"naskah dinas\",\"arsip\",\"elektronik\",\"watermark\",\"dokumen\"]",
+        "summary": "Mengatur pencatatan naskah dinas, keamanan arsip elektronik, dan validitas dokumen digital internal.",
+        "citation": "Pedoman Naskah Dinas MA RI",
+        "recommended_position_ids_json": "[\"pos-sekretaris\",\"pos-arsiparis\",\"pos-pranata-komputer\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "reg-int-005",
+        "title": "SOP Penyusunan dan Pemutakhiran SOP",
+        "source": "internal",
+        "jurisdiction": "Pengadilan Agama",
+        "module_ids_json": "[\"sop\"]",
+        "keywords_json": "[\"sop\",\"prosedur\",\"pemutakhiran\",\"standar operasional\",\"review\"]",
+        "summary": "Menjadi acuan penyusunan SOP baru, penelusuran dasar hukum, dan siklus review berkala lintas unit.",
+        "citation": "SOP Tata Kelola Dokumen Internal",
+        "recommended_position_ids_json": "[\"pos-sekretaris\",\"pos-kasubag-umum\"]",
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "letter_origin_references": [
+      {
+        "id": "origin-002",
+        "label": "Ditjen Badilag",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-003",
+        "label": "Pengadilan Tinggi Agama Makassar",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-004",
+        "label": "Pengadilan Agama Sewilayah",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-005",
+        "label": "Pengadilan Negeri / Instansi Peradilan Lain",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-006",
+        "label": "Badan Pengawasan Mahkamah Agung",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-007",
+        "label": "Badan Urusan Administrasi Mahkamah Agung",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-008",
+        "label": "Kementerian / Lembaga",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-009",
+        "label": "Pemerintah Provinsi",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-010",
+        "label": "Pemerintah Kabupaten / Kota",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-011",
+        "label": "KPPN / Kementerian Keuangan",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-012",
+        "label": "Vendor / Rekanan",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-013",
+        "label": "Internal Pengadilan",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "origin-001",
+        "label": "Mahkamah Agung RI",
+        "created_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "classification_catalog": [
+      {
+        "code": "HK.3.1",
+        "label": "HK.3.1 - Telaah / Pertimbangan Hukum",
+        "category": "Hukum",
+        "keywords_json": "[\"telaah\",\"pendapat hukum\",\"legal opinion\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "KP.1.1",
+        "label": "KP.1.1 - Formasi, Mutasi, dan Penempatan",
+        "category": "Kepegawaian",
+        "keywords_json": "[\"pegawai\",\"mutasi\",\"jabatan\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "KP.2.1",
+        "label": "KP.2.1 - Kenaikan Pangkat dan Karier",
+        "category": "Kepegawaian",
+        "keywords_json": "[\"kenaikan pangkat\",\"karier\",\"promosi\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "KP.3.1",
+        "label": "KP.3.1 - Cuti, Disiplin, dan Kehadiran",
+        "category": "Kepegawaian",
+        "keywords_json": "[\"cuti\",\"disiplin\",\"kehadiran\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "KU.1.1",
+        "label": "KU.1.1 - DIPA dan Perencanaan Anggaran",
+        "category": "Keuangan",
+        "keywords_json": "[\"dipa\",\"anggaran\",\"keuangan\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "KU.2.1",
+        "label": "KU.2.1 - Pembayaran dan Pencairan",
+        "category": "Keuangan",
+        "keywords_json": "[\"pembayaran\",\"pencairan\",\"spm\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "KU.3.1",
+        "label": "KU.3.1 - Laporan Keuangan",
+        "category": "Keuangan",
+        "keywords_json": "[\"laporan keuangan\",\"rekonsiliasi\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "PR.1.1",
+        "label": "PR.1.1 - Renstra, LKjIP, dan Monitoring",
+        "category": "Perencanaan",
+        "keywords_json": "[\"renstra\",\"lkjip\",\"monitoring\",\"triwulan\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "PR.2.1",
+        "label": "PR.2.1 - Statistik dan Evaluasi Kinerja",
+        "category": "Perencanaan",
+        "keywords_json": "[\"statistik\",\"kinerja\",\"evaluasi\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "TI.1.1",
+        "label": "TI.1.1 - Infrastruktur, Jaringan, dan Keamanan",
+        "category": "Teknologi Informasi",
+        "keywords_json": "[\"jaringan\",\"keamanan\",\"server\",\"audit\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "TI.2.1",
+        "label": "TI.2.1 - Aplikasi, Data, dan Integrasi",
+        "category": "Teknologi Informasi",
+        "keywords_json": "[\"aplikasi\",\"data\",\"integrasi\",\"database\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "UM.1.1",
+        "label": "UM.1.1 - Tata Naskah Dinas dan Persuratan",
+        "category": "Umum",
+        "keywords_json": "[\"persuratan\",\"tata naskah dinas\",\"surat\",\"nota dinas\",\"surat tugas\",\"surat undangan\",\"surat edaran\",\"memo\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "UM.2.1",
+        "label": "UM.2.1 - Rumah Tangga Kantor dan Sarpras",
+        "category": "Umum",
+        "keywords_json": "[\"rumah tangga\",\"sarpras\",\"inventaris\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "UM.3.1",
+        "label": "UM.3.1 - Kearsipan dan Dokumentasi",
+        "category": "Umum",
+        "keywords_json": "[\"arsip\",\"dokumen\",\"arsiparis\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "PTSP.1.1",
+        "label": "PTSP.1.1 - Layanan PTSP dan Informasi",
+        "category": "Layanan",
+        "keywords_json": "[\"ptsp\",\"layanan\",\"informasi\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "YD.1.1",
+        "label": "YD.1.1 - Pemeriksaan Berkas dan Administrasi Perkara",
+        "category": "Yudisial",
+        "keywords_json": "[\"perkara\",\"berkas\",\"pemeriksaan\",\"putusan\",\"salinan putusan\",\"penetapan\",\"minutasi\",\"berkas perkara\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "HK.1.1",
+        "label": "HK.1.1 - Undang-Undang / PERPU",
+        "category": "Hukum",
+        "keywords_json": "[\"hukum\",\"undang-undang\",\"perpu\",\"regulasi\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "HK.1.2",
+        "label": "HK.1.2 - Peraturan Pemerintah",
+        "category": "Hukum",
+        "keywords_json": "[\"hukum\",\"peraturan pemerintah\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "HK.1.3",
+        "label": "HK.1.3 - Peraturan Presiden",
+        "category": "Hukum",
+        "keywords_json": "[\"hukum\",\"perpres\",\"presiden\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "code": "HK.2.1",
+        "label": "HK.2.1 - Kebijakan / Pedoman Internal",
+        "category": "Hukum",
+        "keywords_json": "[\"pedoman\",\"kebijakan\",\"internal\"]",
+        "is_system": 1,
+        "deleted_at": null,
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "letters": [],
+    "letter_tags": [],
+    "letter_classification_tags": [],
+    "letter_attachments": [],
+    "letter_whatsapp_deliveries": [],
+    "dispositions": [],
+    "disposition_whatsapp_deliveries": [],
+    "audit_logs": [],
+    "accounts": [
+      {
+        "id": "acc-usr-kepeg-staff",
+        "account_id": "staf.kepegawaian@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-kepeg-staff",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "accabeca64299272b81bb6900bbfe0f3e69c2dd96da4b97d5dbe2cfdedc6b224",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-ptsp",
+        "account_id": "ptsp@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-ptsp",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "dafc834fa104b6d83d5e1d564447dafccbde274c56937e979e5990cef267ca0d",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-hakim",
+        "account_id": "hakim@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-hakim",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "ab75eea1c07ebae19f644c36ce7309d20813f817f9fa26f03cfbc065923e4be1",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-budi",
+        "account_id": "budi@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-budi",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "d55ed37faf535e9b24d7baa04173735b9565d3421d4fb672b18f2730e27fc5c8",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-jsp",
+        "account_id": "jurusita.pengganti@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-jsp",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "1d2023685946d5021647eb892049111dc707a63fd07212e14d9cadf1b552299c",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-ketua",
+        "account_id": "ketua@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-ketua",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "21f97d78461cad00411af4c8ce197774712ce22fd58869cd963fdb57eca078d8",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-ahmad",
+        "account_id": "ahmad@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-ahmad",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "306098fa01257f8e4809cbdfca258d8c22c7fb12937cc2616ef06aa20fd8008e",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-permohonan",
+        "account_id": "panmud.permohonan@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-permohonan",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "335094da127159375595fb802dee37d27c481194fc3576a94feeb6901d1915a0",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-rina",
+        "account_id": "kasubag.umum@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-rina",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "8501bf28f753f2429d9091d59450b3deee22e086a69383aed7246bb62ec51749",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-jurusita",
+        "account_id": "jurusita@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-jurusita",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "0f0e65848cca0d65e7695135583c17f498fa652aae96c8078ad9a3c8c1732063",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-analiskeu",
+        "account_id": "analis.keuangan@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-analiskeu",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "aa790a5d80860f303f8258e8912c044ba5d5f8c794039f712fb001b1626c0e3e",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-analiskp",
+        "account_id": "analis.kepegawaian@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-analiskp",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "dfae1147db4bbe19135e3120d34176e01e5ef2133891855c8f0fcbeb9f3ece62",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-gugatan",
+        "account_id": "panmud.gugatan@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-gugatan",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "335094da127159375595fb802dee37d27c481194fc3576a94feeb6901d1915a0",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-bendahara",
+        "account_id": "bendahara@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-bendahara",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "dff9cd137cab8b96431ccd81f8bb433fc71f0329eefb54bd4380b3fc3a9fc5d1",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-wakil",
+        "account_id": "wakil@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-wakil",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "01d18150cde09514bb475692292c50856e40b4b26056d3834073621967b914ed",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-super",
+        "account_id": "rahmawati@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-super",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "4e4c56e4a15f89f05c2f4c72613da2a18c9665d4f0d6acce16415eb06f9be776",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-kepeg",
+        "account_id": "kasubag.kepegawaian@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-kepeg",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "bb20a54172ef7c3d8fdc22e1ed7889f547227e78edb50302ac2847ca4efe0064",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-ppg",
+        "account_id": "panitera.pengganti@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-ppg",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "49affe0caa596033610416332925db9d7a6999ae88a4e408a0d886a9f855a5ca",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-sekretaris",
+        "account_id": "sekretaris@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-sekretaris",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "b266dd6db331e165a8be1a57d46b4f49572108e710d52ff9e92f608891e1d97b",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-humas",
+        "account_id": "humas@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-humas",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "c5f3a6cf918510d81064c6ab5c1850c7adeaab9f3518198e446e0b773feb2a54",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-dina",
+        "account_id": "staf.umum@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-dina",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "096888c34fee5223277faa73b8e1aaf1e9fc2620ad76f28c9cac067fad1b6040",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-admin",
+        "account_id": "dian.it@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-admin",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-panitera",
+        "account_id": "panitera@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-panitera",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "df69f1d1869265ae35e43e0571a3e58e5b134d384ca2f28f5c0d1bf5b99cf852",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      },
+      {
+        "id": "acc-usr-analisperkara",
+        "account_id": "analis.perkara@pa.go.id",
+        "provider_id": "credential",
+        "user_id": "usr-analisperkara",
+        "access_token": null,
+        "refresh_token": null,
+        "id_token": null,
+        "access_token_expires_at": null,
+        "refresh_token_expires_at": null,
+        "scope": "email password",
+        "password": "8d1defa2c512f4934a8d6206083318bfd8b4de704893919d640885d72c811f0c",
+        "created_at": "2026-04-26T14:37:58.793Z",
+        "updated_at": "2026-04-26T14:37:58.793Z"
+      }
+    ],
+    "sessions": [
+      {
+        "id": "rdSukZqXFqLc1dmBm1eLhobE0q36ECMX",
+        "expires_at": "2026-04-26T15:14:13.468Z",
+        "token": "9TjZDmxbq5ip3CalN7nyA8PBIUc45yqb",
+        "created_at": "2026-04-26T14:44:05.126Z",
+        "updated_at": "2026-04-26T15:04:13.468Z",
+        "ip_address": "0000:0000:0000:0000:0000:0000:0000:0000",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "user_id": "usr-super"
+      },
+      {
+        "id": "7gPiC3nrgqs3XRkBwvMDQY08MUwOVrZM",
+        "expires_at": "2026-04-26T15:55:08.667Z",
+        "token": "oe853mBIWvoFAPUXVuvh3mandif9krjX",
+        "created_at": "2026-04-26T15:30:31.949Z",
+        "updated_at": "2026-04-26T15:45:08.667Z",
+        "ip_address": "0000:0000:0000:0000:0000:0000:0000:0000",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "user_id": "usr-super"
+      }
+    ],
+    "verifications": []
+  }
+}

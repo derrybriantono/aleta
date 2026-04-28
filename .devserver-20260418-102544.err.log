@@ -1,0 +1,1032 @@
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory untuk mode development.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/qr/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from "127.0.0.1".
+Cross-origin access to Next.js dev resources is blocked by default for safety.
+
+To allow this host in development, add it to "allowedDevOrigins" in next.config.js and restart the dev server:
+
+// next.config.js
+module.exports = {
+  allowedDevOrigins: ['127.0.0.1'],
+}
+
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Uncaught TypeError: Object.defineProperty called on non-object
+    at Object.defineProperty (<anonymous>)
+    at (app-pages-browser)/./node_modules/pdfjs-dist/legacy/build/pdf.mjs (.next\dev\static\chunks\_app-pages-browser_src_components_portal_document-viewer_tsx.js:160:1)
+    at eval (webpack-internal:///(app-pages-browser)/./src/components/portal/document-viewer.tsx:18:89)
+    at (app-pages-browser)/./src/components/portal/document-viewer.tsx (.next\dev\static\chunks\_app-pages-browser_src_components_portal_document-viewer_tsx.js:182:1)
+    at SuratDetailPage (src\app\(portal)\surat\[id]\page.tsx:241:13)
+  239 |
+  240 |           <div className="min-w-0">
+> 241 |             <LazyDocumentViewer letter={letter} currentUser={currentUser} />
+      |             ^
+  242 |           </div>
+  243 |         </div>
+  244 |       </Card>
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ Server is approaching the used memory threshold, restarting...
+[browser] Failed to fetch RSC payload for http://localhost:3000/surat/srt-4aefa079-d345-46ca-951d-fd898e84dd84. Falling back to browser navigation. TypeError: Failed to fetch
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory untuk mode development.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ Server is approaching the used memory threshold, restarting...
+⚠ Server is approaching the used memory threshold, restarting...
+⚠ Server is approaching the used memory threshold, restarting...
+⚠ Server is approaching the used memory threshold, restarting...
+⚠ Server is approaching the used memory threshold, restarting...
+⚠ Server is approaching the used memory threshold, restarting...
+[browser] Failed to fetch RSC payload for http://localhost:3000/surat/srt-1af01e60-42c2-46be-a96f-544f21722560. Falling back to browser navigation. TypeError: network error
+TypeError: network error
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory untuk mode development.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/[id]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts

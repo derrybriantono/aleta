@@ -1,0 +1,514 @@
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory persisten.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+[WhatsApp] Initialization error: Error: The browser is already running for C:\Users\derry\Downloads\app_derry\app_derry\.wwebjs_auth\session-aleta-whatsapp-web. Use a different `userDataDir` or stop the running browser first.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:140:7)
+  138 |       });
+  139 |
+> 140 |       await this.client.initialize();
+      |       ^
+  141 |     } catch (error) {
+  142 |       this.connectionStatus = "failed";
+  143 |       this.qrCode = null;
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/whatsapp/status/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/surat/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/pdf-content/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/pdf-content/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/pdf-content/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/pdf-content/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/pdf-content/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/pdf-content/route.ts
+⚠ Server is approaching the used memory threshold, restarting...
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory persisten.
+[ALETA DB] Snapshot fallback tidak dapat dimuat, sistem akan membuat baseline baru. Error: insert or update on table "dispositions" violates foreign key constraint on table "fk_dispositions_parent"
+
+🐜 This seems to be an execution error, which means that your request syntax seems okay,
+    but the resulting statement cannot be executed → Probably not a pg-mem error.
+
+*️⃣ Failed SQL statement: INSERT INTO "dispositions" ("id", "surat_id", "pengirim_id", "penerima_id", "target_position_id", "instruksi", "parent_disposition_id", "status", "allow_download", "approval_qr_code", "created_at", "urgent", "bypass", "routing_type", "follow_up_note", "follow_up_file_name", "deleted_at", "updated_at") VALUES ('dsp-ec1aee9f-c6d0-4104-ac5e-7ceb8007c616', 'srt-68f96b2e-1277-49e1-aee3-0acdf163a307', 'usr-super', 'usr-ketua', 'pos-ketua', 'Telaah singkat surat "1776479623402-salinan_putusan_1776066333_3596739 (1)", tetapkan PIC pada Ketua Pengadilan - Pimpinan, dan laporkan progres inti secara ringkas.', 'dsp-2ec65419-f30a-498a-a1ec-75992ec6f183', 'Menunggu Telaah', '1', 'QR-DSP-EC1AEE9F-C6D0-4104-AC5E-7CEB8007C616', '2026-04-19T01:51:35.894Z', '0', '0', 'standard', null, null, null, '2026-04-19T01:51:35.894Z');
+
+👉 You can file an issue at https://github.com/oguimbal/pg-mem along with a way to reproduce this error (if you can), and  the stacktrace:
+
+
+    at enumerate.next (<anonymous>)
+    at doExecute.next (<anonymous>)
+    at AletaDatabase.query (src\server\db\client.ts:174:27)
+    at AletaDatabase.run (src\server\db\client.ts:194:31)
+    at PreparedStatement.run (src\server\db\client.ts:146:20)
+    at restoreRows (src\server\db\client.ts:517:31)
+    at async restoreInMemorySnapshot (src\server\db\client.ts:554:7)
+    at async createAletaDatabase (src\server\db\client.ts:705:9)
+  172 |   ) {
+  173 |     const text = params.length > 0 ? toPostgresPlaceholders(sql) : sql;
+> 174 |     return this.queryable.query<T>(text, params);
+      |                           ^
+  175 |   }
+  176 |
+  177 |   async queryOne<T extends QueryResultRow = QueryResultRow>( {
+  data: {
+    error: 'insert or update on table "dispositions" violates foreign key constraint on table "fk_dispositions_parent"',
+    code: undefined
+  },
+  code: undefined,
+  location: { start: 0, end: 0 }
+}
+2026-04-19T01:55:01.667Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }
+2026-04-19T01:55:04.517Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }
+2026-04-19T01:55:10.849Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }
+2026-04-19T01:55:19.016Z ERROR [Better Auth]: Credential account not found { email: 'ketua@pa.go.id' }
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+2026-04-19T02:29:10.789Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+2026-04-19T02:38:00.202Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }
+2026-04-19T02:38:02.544Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }
+2026-04-19T02:38:07.782Z ERROR [Better Auth]: Credential account not found { email: 'rahmawati@pa.go.id' }

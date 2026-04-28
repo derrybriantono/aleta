@@ -1,0 +1,10 @@
+
+> manajemen_surat@1.0.0 dev:turbo
+> next dev --port 3001
+
+▲ Next.js 16.2.3 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://10.144.246.196:3001
+- Environments: .env.local
+✓ Ready in 1477ms
+[?25h

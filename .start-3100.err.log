@@ -1,0 +1,2 @@
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory persisten.
+[ALETA DB] Snapshot fallback terdeteksi parsial dan akan diabaikan agar baseline disusun ulang.

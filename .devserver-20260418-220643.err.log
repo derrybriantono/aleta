@@ -1,0 +1,96 @@
+[ALETA DB] PostgreSQL belum tersedia, memakai fallback database in-memory persisten.
+[ALETA DB] Snapshot fallback terdeteksi parsial dan akan diabaikan agar baseline disusun ulang.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/auth/[...all]/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/mahkamah-agung-logo.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+[WhatsApp] Initialization error: Error: Could not find Chrome (ver. 146.0.7680.153). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+ 2. your cache path is incorrectly configured (which is: C:\Users\derry\.cache\puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+    at async WhatsAppService.initialize (src\server\modules\whatsapp\service.ts:92:7)
+  90 |       });
+  91 |
+> 92 |       await this.client.initialize();
+     |       ^
+  93 |     } catch (error) {
+  94 |       this.connectionStatus = "failed";
+  95 |       this.qrCode = null;
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
+⚠ ./node_modules/pg-mem/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/pg-mem/index.js
+./src/server/db/client.ts
+./src/app/api/users/lookup/route.ts
