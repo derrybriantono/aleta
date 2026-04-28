@@ -1,0 +1,54 @@
+{
+  "pnPalu": {
+    "courtName": "Pengadilan Negeri Palu",
+    "shortName": "PN Palu",
+    "address": "Jl. Dr. Samratulangi No. 46, Palu, Sulawesi Tengah",
+    "phone": "(0451) 421250",
+    "mobile": "",
+    "email": "pnpalu@gmail.com",
+    "website": "https://www.pn-palu.go.id",
+    "instagram": "@pengadilan_negeri_palu",
+    "facebook": "Pengadilan Negeri Palu",
+    "youtube": "Pengadilan Negeri Palu",
+    "satkerLabel": "Satuan kerja terpilih: Peradilan Umum Tingkat Pertama",
+    "enrichmentStatus": "Status enrichment identitas instansi\n\nSatker: Pengadilan Negeri Palu\n\ncached\n\nWebsite resmi: https://www.pn-palu.go.id\n\nWikipedia fallback: -\n\nTerakhir diperkaya: 19/4/2026, 16.02.35\n\nSumber data: Cache ALETA",
+    "sourceOfficial": "https://www.pn-palu.go.id",
+    "sourceWikipedia": null
+  },
+  "paSungguminasa": {
+    "courtName": "Pengadilan Agama Sungguminasa",
+    "shortName": "PA Sungguminasa",
+    "address": "Jl. Mesjid Raya, Kel. Sungguminasa Kec. Somba Opu, Kab. Gowa",
+    "phone": "0411864298",
+    "mobile": "082349538826",
+    "email": "",
+    "website": "https://pa-sungguminasa.go.id",
+    "instagram": "https://www.instagram.com/humaspasgm/",
+    "facebook": "https://www.facebook.com/pasungguminasa",
+    "youtube": "https://www.youtube.com/channel/UCU1q1AXxBN6rZ0tX3bsi_Cw",
+    "satkerLabel": "Satuan kerja terpilih: Peradilan Agama Tingkat Pertama",
+    "enrichmentStatus": "Status enrichment identitas instansi\n\nSatker: Pengadilan Agama Sungguminasa\n\npartial\n\nWebsite resmi: https://pa-sungguminasa.go.id\n\nWikipedia fallback: -\n\nTerakhir diperkaya: 19/4/2026, 16.12.38\n\nSumber data: Proses live setelah pemilihan satker",
+    "sourceOfficial": "https://pa-sungguminasa.go.id",
+    "sourceWikipedia": null
+  },
+  "manualEditBeforeSwitch": {
+    "shortName": "PA Sungguminasa Manual",
+    "instagram": "MANUAL-INSTAGRAM"
+  },
+  "ptaPalu": {
+    "courtName": "Pengadilan Tinggi Agama Palu",
+    "shortName": "PTA Palu",
+    "address": "Jln. Prof. Moh. Yamin No. 36, Palu, Sulawesi Tengah",
+    "phone": "(0451) 487285",
+    "mobile": "",
+    "email": "",
+    "website": "https://pta-palu.go.id",
+    "instagram": "https://www.instagram.com/pta_palu?igsh=Z2lvMWg2YWVoYm5w",
+    "facebook": "",
+    "youtube": "https://www.youtube.com/@mediacenterptapalu6082",
+    "satkerLabel": "Satuan kerja terpilih: Peradilan Agama Tingkat Banding",
+    "enrichmentStatus": "Status enrichment identitas instansi\n\nSatker: Pengadilan Tinggi Agama Palu\n\npartial\n\nWebsite resmi: https://pta-palu.go.id\n\nWikipedia fallback: -\n\nTerakhir diperkaya: 19/4/2026, 16.13.13\n\nSumber data: Proses live setelah pemilihan satker",
+    "sourceOfficial": "https://pta-palu.go.id",
+    "sourceWikipedia": null
+  }
+}
