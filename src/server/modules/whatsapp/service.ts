@@ -1,3 +1,6 @@
+// DEPRECATED: Gunakan aleta_bot sebagai satu-satunya WhatsApp gateway (WHATSAPP_RUNTIME_MODE=aleta_bot).
+// Service ini hanya digunakan saat WHATSAPP_RUNTIME_MODE=legacy_portal. Jangan inisialisasi client
+// ini berbarengan dengan aleta_bot untuk menghindari dua sesi QR aktif sekaligus.
 import { Client, LocalAuth } from "whatsapp-web.js";
 import qrcode from "qrcode";
 import fs from "node:fs";

@@ -197,6 +197,7 @@ export const aletaBotQueries = pgTable(
     sqlText: text("sql_text").notNull(),
     outputColumnsJson: text("output_columns_json").notNull().default("[]"),
     recipientColumn: text("recipient_column").notNull().default(""),
+    connectionKey: text("connection_key").notNull().default("sipp_primary"),
     isActive: integer("is_active").notNull().default(1),
     lastTestedAt: text("last_tested_at"),
     lastTestStatus: text("last_test_status").notNull().default("idle"),
@@ -208,6 +209,125 @@ export const aletaBotQueries = pgTable(
   },
   (table) => ({
     categoryIdx: index("idx_aleta_bot_queries_category").on(table.category, table.isActive),
+  })
+);
+
+export const aletaBotDbConnections = pgTable(
+  "aleta_bot_db_connections",
+  {
+    id: text("id").primaryKey(),
+    key: text("key").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    driver: text("driver").notNull().default("mysql"),
+    host: text("host").notNull(),
+    port: integer("port").notNull().default(3306),
+    databaseName: text("database_name").notNull(),
+    username: text("username").notNull(),
+    passwordEnvKey: text("password_env_key").notNull().default(""),
+    sslEnabled: integer("ssl_enabled").notNull().default(0),
+    connectionTimeoutMs: integer("connection_timeout_ms").notNull().default(5000),
+    isActive: integer("is_active").notNull().default(1),
+    isDefault: integer("is_default").notNull().default(0),
+    legacySource: text("legacy_source").notNull().default(""),
+    lastTestStatus: text("last_test_status").notNull().default("idle"),
+    lastTestError: text("last_test_error"),
+    lastTestAt: text("last_test_at"),
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    keyIdx: index("idx_aleta_bot_db_connections_key").on(table.key),
+    activeIdx: index("idx_aleta_bot_db_connections_active").on(table.isActive, table.isDefault),
+  })
+);
+
+export const aletaBotPublicQaIntents = pgTable(
+  "aleta_bot_public_qa_intents",
+  {
+    id: text("id").primaryKey(),
+    key: text("key").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    category: text("category").notNull().default("informasi_umum"),
+    audience: text("audience").notNull().default("party"),
+    isActive: integer("is_active").notNull().default(1),
+    aiEnabled: integer("ai_enabled").notNull().default(0),
+    exactTriggersJson: text("exact_triggers_json").notNull().default("[]"),
+    exampleQuestionsJson: text("example_questions_json").notNull().default("[]"),
+    requiredParametersJson: text("required_parameters_json").notNull().default("[]"),
+    queryKey: text("query_key").notNull().default(""),
+    legacyHandler: text("legacy_handler").notNull().default(""),
+    legacyCommand: text("legacy_command").notNull().default(""),
+    parameterizedLegacyCommand: text("parameterized_legacy_command").notNull().default(""),
+    templateKey: text("template_key").notNull().default(""),
+    responseMode: text("response_mode").notNull().default("legacy_handler"),
+    confidenceThreshold: integer("confidence_threshold").notNull().default(65),
+    requiresVerification: integer("requires_verification").notNull().default(0),
+    requiresCaseNumber: integer("requires_case_number").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(2),
+    fallbackMessage: text("fallback_message").notNull().default(""),
+    riskLevel: text("risk_level").notNull().default("low"),
+    notes: text("notes").notNull().default(""),
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    activeIdx: index("idx_aleta_bot_public_qa_intents_active").on(table.isActive, table.audience),
+  })
+);
+
+export const aletaBotPublicQaExamples = pgTable("aleta_bot_public_qa_examples", {
+  id: text("id").primaryKey(),
+  intentId: text("intent_id").notNull().references(() => aletaBotPublicQaIntents.id),
+  questionText: text("question_text").notNull(),
+  normalizedQuestion: text("normalized_question").notNull().default(""),
+  isActive: integer("is_active").notNull().default(1),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const aletaBotPublicQaLogs = pgTable(
+  "aleta_bot_public_qa_logs",
+  {
+    id: text("id").primaryKey(),
+    senderNumber: text("sender_number").notNull().default(""),
+    senderName: text("sender_name").notNull().default(""),
+    rawMessage: text("raw_message").notNull().default(""),
+    normalizedMessage: text("normalized_message").notNull().default(""),
+    matchedIntentKey: text("matched_intent_key").notNull().default(""),
+    matchedMethod: text("matched_method").notNull().default("fallback"),
+    confidence: integer("confidence").notNull().default(0),
+    parametersJson: text("parameters_json").notNull().default("{}"),
+    queryKey: text("query_key").notNull().default(""),
+    responsePreview: text("response_preview").notNull().default(""),
+    status: text("status").notNull().default("fallback"),
+    errorMessage: text("error_message"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    createdIdx: index("idx_aleta_bot_public_qa_logs_created").on(table.createdAt, table.status),
+  })
+);
+
+export const aletaBotPublicQaSessions = pgTable(
+  "aleta_bot_public_qa_sessions",
+  {
+    id: text("id").primaryKey(),
+    senderNumber: text("sender_number").notNull(),
+    currentIntentKey: text("current_intent_key").notNull().default(""),
+    state: text("state").notNull().default("collecting"),
+    collectedParamsJson: text("collected_params_json").notNull().default("{}"),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    senderIdx: index("idx_aleta_bot_public_qa_sessions_sender").on(table.senderNumber, table.expiresAt),
   })
 );
 
@@ -593,6 +713,11 @@ export const schema = {
   aletaBotTemplates,
   aletaBotJobs,
   aletaBotQueries,
+  aletaBotDbConnections,
+  aletaBotPublicQaIntents,
+  aletaBotPublicQaExamples,
+  aletaBotPublicQaLogs,
+  aletaBotPublicQaSessions,
   aletaBotNotifications,
   aletaBotNotificationLogs,
   aletaBotLogs,

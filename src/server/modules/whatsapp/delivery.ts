@@ -5,7 +5,7 @@ import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
 import { requireActorUser } from "@/server/modules/organization/service";
-import { getWhatsAppSettingsFromDb } from "@/server/modules/settings/service";
+import { sendPortalWhatsappMessage } from "@/server/modules/whatsapp/portal-whatsapp-sender";
 
 type DeliveryScope = "letter" | "disposition";
 
@@ -28,6 +28,7 @@ type LetterDeliveryRow = QueryResultRow & {
 
 type DispositionDeliveryRow = QueryResultRow & {
   disposition_id: string;
+  surat_id: string;
   delivery_id: string;
   nomor_surat: string;
   perihal: string;
@@ -65,18 +66,23 @@ async function attemptDelivery(
   {
     scope,
     deliveryId,
+    entityId,
     recipientWhatsapp,
+    recipientName,
     message,
+    metadata,
   }: {
     scope: DeliveryScope;
     deliveryId: string;
+    entityId: string;
     recipientWhatsapp: string;
+    recipientName: string;
     message: string;
+    metadata?: Record<string, unknown>;
   }
 ): Promise<DeliveryAttemptResult> {
   const attemptedAt = new Date().toISOString();
   const normalizedRecipient = normalizeRecipientNumber(recipientWhatsapp);
-  const settings = await getWhatsAppSettingsFromDb(db);
 
   if (!normalizedRecipient) {
     await updateDeliveryStatus(db, scope, deliveryId, "Gagal", attemptedAt);
@@ -88,36 +94,29 @@ async function attemptDelivery(
     };
   }
 
-  if (settings.status !== "active") {
-    await updateDeliveryStatus(db, scope, deliveryId, "Gagal", attemptedAt);
-    return {
-      deliveryId,
-      status: "Gagal",
-      attemptedAt,
-      message: "WhatsApp Web ALETA belum aktif atau belum siap dipakai mengirim pesan.",
-    };
-  }
+  const result = await sendPortalWhatsappMessage({
+    sourceFeature: scope === "letter" ? "letter_notification" : "disposition_notification",
+    entityType: scope === "letter" ? "letter" : "disposition",
+    entityId,
+    eventType: scope === "letter" ? "notifikasi_baru" : "disposisi_baru",
+    recipientNumber: normalizedRecipient,
+    recipientName,
+    message,
+    category: "employee",
+    priority: scope === "letter" ? 5 : 6,
+    metadata,
+  });
 
-  try {
-    const { whatsappService } = await import("@/server/modules/whatsapp/service");
-    await whatsappService.sendMessage(normalizedRecipient, message);
-    await updateDeliveryStatus(db, scope, deliveryId, "Terkirim", attemptedAt);
+  const dbStatus: "Terkirim" | "Gagal" =
+    result.ok && result.status !== "skipped" ? "Terkirim" : "Gagal";
+  await updateDeliveryStatus(db, scope, deliveryId, dbStatus, attemptedAt);
 
-    return {
-      deliveryId,
-      status: "Terkirim",
-      attemptedAt,
-      message: "Notifikasi WhatsApp berhasil dikirim.",
-    };
-  } catch (error) {
-    await updateDeliveryStatus(db, scope, deliveryId, "Gagal", attemptedAt);
-    return {
-      deliveryId,
-      status: "Gagal",
-      attemptedAt,
-      message: error instanceof Error ? error.message : "Pengiriman WhatsApp gagal diproses.",
-    };
-  }
+  return {
+    deliveryId,
+    status: dbStatus,
+    attemptedAt,
+    message: result.message,
+  };
 }
 
 export async function sendLetterNotification(
@@ -153,8 +152,16 @@ export async function sendLetterNotification(
   return attemptDelivery(db, {
     scope: "letter",
     deliveryId: row.delivery_id,
+    entityId: row.letter_id,
     recipientWhatsapp: row.recipient_whatsapp,
+    recipientName: row.recipient_name,
     message,
+    metadata: {
+      nomorSurat: row.nomor_surat,
+      perihal: row.perihal,
+      jenisSurat: row.jenis_surat,
+      recipientName: row.recipient_name,
+    },
   });
 }
 
@@ -169,7 +176,7 @@ export async function sendDispositionNotification(
   }
 ) {
   const row = await db.prepare(
-    `SELECT dsp.id AS disposition_id, d.id AS delivery_id, l.nomor_surat, l.perihal, dsp.instruksi,
+    `SELECT dsp.id AS disposition_id, l.id AS surat_id, d.id AS delivery_id, l.nomor_surat, l.perihal, dsp.instruksi,
       d.recipient_name, d.recipient_whatsapp
      FROM dispositions dsp
      INNER JOIN letters l ON l.id = dsp.surat_id
@@ -192,8 +199,18 @@ export async function sendDispositionNotification(
   return attemptDelivery(db, {
     scope: "disposition",
     deliveryId: row.delivery_id,
+    entityId: row.disposition_id,
     recipientWhatsapp: row.recipient_whatsapp,
+    recipientName: row.recipient_name,
     message,
+    metadata: {
+      suratId: row.surat_id,
+      nomorSurat: row.nomor_surat,
+      perihal: row.perihal,
+      disposisiDari: "ALETA",
+      instruksi: row.instruksi,
+      recipientName: row.recipient_name,
+    },
   });
 }
 

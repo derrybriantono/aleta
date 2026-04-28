@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { runAletaBotAction } from "@/server/modules/aleta-bot/service";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { getAISettingsFromDb, upsertAISettingsInDb } from "@/server/modules/ai/service";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -67,8 +68,17 @@ export async function PUT(request: NextRequest) {
       connection: body.connection,
       deleteConnectionId: body.deleteConnectionId,
     });
+    const aletaBotAiSync = await runAletaBotAction(db, {
+      actorUserId,
+      action: "sync-ai-config",
+    })
+      .then(() => ({ ok: true as const, message: "AI config ALETA Bot tersinkron." }))
+      .catch((error) => ({
+        ok: false as const,
+        message: error instanceof Error ? error.message : "AI config ALETA Bot belum tersinkron.",
+      }));
 
-    return ok(result);
+    return ok({ ...result, aletaBotAiSync });
   } catch (error) {
     return handleRouteError(error);
   }

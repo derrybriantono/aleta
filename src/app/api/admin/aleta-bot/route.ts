@@ -3,7 +3,9 @@ import { NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import {
   getAletaBotSnapshot,
+  updateAletaBotDbConnection,
   updateAletaBotNotification,
+  updateAletaBotPublicQaIntent,
   updateAletaBotQuery,
   updateAletaBotSettings,
   updateAletaBotTemplate,
@@ -70,6 +72,49 @@ export async function PUT(request: NextRequest) {
         delayMs?: number;
         retryLimit?: number;
       };
+      dbConnection?: {
+        id?: string;
+        key: string;
+        name: string;
+        description?: string;
+        driver?: "mysql";
+        host: string;
+        port?: number;
+        databaseName: string;
+        username: string;
+        passwordEnvKey?: string;
+        sslEnabled?: boolean;
+        connectionTimeoutMs?: number;
+        isActive?: boolean;
+        isDefault?: boolean;
+        legacySource?: string;
+      };
+      publicQaIntent?: {
+        id?: string;
+        key: string;
+        name: string;
+        description?: string;
+        category: "informasi_umum" | "status_perkara" | "jadwal_sidang" | "biaya_panjar" | "akta_cerai" | "layanan" | "pengaduan" | "ecourt" | "fallback";
+        audience: "party" | "public" | "employee" | "admin";
+        isActive?: boolean;
+        aiEnabled?: boolean;
+        exactTriggers?: string[] | string;
+        exampleQuestions?: string[] | string;
+        requiredParameters?: string[] | string;
+        queryKey?: string;
+        legacyHandler?: string;
+        legacyCommand?: string;
+        parameterizedLegacyCommand?: string;
+        templateKey?: string;
+        responseMode: "static_template" | "query_template" | "legacy_handler" | "ai_guided_template" | "fallback";
+        confidenceThreshold?: number;
+        requiresVerification?: boolean;
+        requiresCaseNumber?: boolean;
+        maxAttempts?: number;
+        fallbackMessage?: string;
+        riskLevel: "low" | "medium" | "high";
+        notes?: string;
+      };
     }>(request);
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
@@ -98,6 +143,24 @@ export async function PUT(request: NextRequest) {
         await updateAletaBotNotification(db, {
           actorUserId,
           notification: body.notification,
+        })
+      );
+    }
+
+    if (body.dbConnection) {
+      return ok(
+        await updateAletaBotDbConnection(db, {
+          actorUserId,
+          connection: body.dbConnection,
+        })
+      );
+    }
+
+    if (body.publicQaIntent) {
+      return ok(
+        await updateAletaBotPublicQaIntent(db, {
+          actorUserId,
+          intent: body.publicQaIntent,
         })
       );
     }

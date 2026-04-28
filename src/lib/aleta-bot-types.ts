@@ -2,10 +2,12 @@ export type AletaBotRuntimeState = "active" | "disabled" | "dry-run" | "error";
 export type AletaBotLogLevel = "info" | "warning" | "error" | "success";
 export type AletaBotLogType =
   | "connection"
+  | "database"
   | "message"
   | "settings"
   | "template"
   | "query"
+  | "public_qa"
   | "notification"
   | "admin";
 export type AletaBotNotificationCategory = "employee" | "party";
@@ -64,6 +66,7 @@ export type AletaBotQuery = {
   sqlText: string;
   outputColumns: string[];
   recipientColumn: string;
+  connectionKey: string;
   isActive: boolean;
   usedByNotifications: string[];
   lastTestedAt: string | null;
@@ -73,6 +76,105 @@ export type AletaBotQuery = {
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AletaBotDbConnection = {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  driver: "mysql";
+  host: string;
+  port: number;
+  databaseName: string;
+  username: string;
+  usernameMasked: string;
+  passwordEnvKey: string;
+  passwordConfigured: boolean;
+  sslEnabled: boolean;
+  connectionTimeoutMs: number;
+  isActive: boolean;
+  isDefault: boolean;
+  legacySource: string;
+  lastTestStatus: "idle" | "success" | "failed";
+  lastTestError: string | null;
+  lastTestAt: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AletaBotPublicQaIntent = {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  category:
+    | "informasi_umum"
+    | "status_perkara"
+    | "jadwal_sidang"
+    | "biaya_panjar"
+    | "akta_cerai"
+    | "layanan"
+    | "pengaduan"
+    | "ecourt"
+    | "fallback";
+  audience: "party" | "public" | "employee" | "admin";
+  isActive: boolean;
+  aiEnabled: boolean;
+  exactTriggers: string[];
+  exampleQuestions: string[];
+  requiredParameters: string[];
+  queryKey: string;
+  legacyHandler: string;
+  legacyCommand: string;
+  parameterizedLegacyCommand: string;
+  templateKey: string;
+  responseMode: "static_template" | "query_template" | "legacy_handler" | "ai_guided_template" | "fallback";
+  confidenceThreshold: number;
+  requiresVerification: boolean;
+  requiresCaseNumber: boolean;
+  maxAttempts: number;
+  fallbackMessage: string;
+  riskLevel: "low" | "medium" | "high";
+  notes: string;
+  aiAnswerEnabled: boolean;
+  aiAnswerMode: "off" | "template_only" | "template_rewrite" | "query_summarize" | "guided_answer";
+  answerPolicy: "public_info_only" | "case_status_limited" | "requires_verified_party" | "admin_only";
+  verificationPolicy: "none" | "case_number_only" | "phone_match" | "case_number_and_phone" | "manual_ptsp";
+  allowedDataFields: string[];
+  blockedDataFields: string[];
+  aiSystemPrompt: string;
+  aiUserPromptTemplate: string;
+  maxAiTokens: number;
+  temperature: number;
+  requiresApprovalBeforeActive: boolean;
+  version: number;
+  status: "draft" | "active" | "archived";
+  approvedBy: string | null;
+  approvedAt: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AletaBotPublicQaLogEntry = {
+  id: string;
+  senderNumber: string;
+  senderName: string;
+  rawMessage: string;
+  normalizedMessage: string;
+  matchedIntentKey: string;
+  matchedMethod: "exact" | "alias" | "ai" | "session" | "fallback";
+  confidence: number;
+  parameters: Record<string, unknown>;
+  queryKey: string;
+  responsePreview: string;
+  status: "answered" | "fallback" | "needs_more_info" | "blocked" | "error";
+  errorMessage: string | null;
+  createdAt: string;
 };
 
 export type AletaBotNotification = {
@@ -136,6 +238,75 @@ export type AletaBotLogEntry = {
   createdAt: string;
 };
 
+export type AletaBotApprovalStatus = "pending" | "approved" | "rejected";
+
+export type AletaBotApprovalRequest = {
+  id: string;
+  entityType: "public_qa_intent" | "notification" | "query" | "template";
+  entityId: string;
+  entityName: string;
+  requestedBy: string;
+  requestedAt: string;
+  status: AletaBotApprovalStatus;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  notes: string;
+  snapshotJson: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AletaBotDeadLetter = {
+  id: string;
+  idempotencyKey: string;
+  recipientNumber: string;
+  recipientName: string;
+  messagePreview: string;
+  category: string;
+  notificationKey: string;
+  priority: number;
+  status: string;
+  retryCount: number;
+  maxRetries: number;
+  lastError: string;
+  sourceApp: string;
+  sourceFeature: string;
+  entityType: string;
+  entityId: string;
+  scheduledAt: string | null;
+  processedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AletaBotWorkerState = {
+  enabled: boolean;
+  running: boolean;
+  paused: boolean;
+  intervalMs: number;
+  batchSize: number;
+  lastHeartbeatAt: string | null;
+  lastBatchProcessed: number;
+  lastError: string;
+  startedAt: string | null;
+  pausedAt: string | null;
+  pauseReason: string;
+  activeTimer: boolean;
+};
+
+export type AletaBotLegacyMigration = {
+  id: string;
+  feature: string;
+  legacySource: string;
+  portalEntity: string;
+  status: "pending" | "in_progress" | "migrated" | "skipped";
+  notes: string;
+  migratedAt: string | null;
+  migratedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AletaBotSnapshot = {
   settings: AletaBotSettings;
   runtimeState: AletaBotRuntimeState;
@@ -161,8 +332,15 @@ export type AletaBotSnapshot = {
   jobs: AletaBotJob[];
   notifications: AletaBotNotification[];
   queries: AletaBotQuery[];
+  dbConnections: AletaBotDbConnection[];
+  publicQaIntents: AletaBotPublicQaIntent[];
+  publicQaLogs: AletaBotPublicQaLogEntry[];
   employeeRecipients: AletaBotEmployeeRecipient[];
   notificationLogs: AletaBotNotificationLogEntry[];
   queryCatalog: AletaBotQueryCatalogItem[];
   logs: AletaBotLogEntry[];
+  approvalRequests: AletaBotApprovalRequest[];
+  deadLetters: AletaBotDeadLetter[];
+  workerState: AletaBotWorkerState | null;
+  legacyMigrations: AletaBotLegacyMigration[];
 };

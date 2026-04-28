@@ -6,7 +6,11 @@ import {
   cleanupPasswordRecoveryOtpInDb,
   createPasswordRecoveryDraftInDb,
 } from "@/server/modules/users/service";
-import { whatsappService } from "@/server/modules/whatsapp/service";
+import {
+  getWhatsappRuntimeMode,
+  getGatewayWhatsappStatus,
+} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { sendPortalWhatsappMessage } from "@/server/modules/whatsapp/portal-whatsapp-sender";
 import { isApiError } from "@/server/shared/errors";
 import { created, handleRouteError } from "@/server/shared/http";
 import { assertRateLimit, clearRateLimit, recordRateLimitFailure } from "@/server/shared/rate-limit";
@@ -24,7 +28,17 @@ export async function POST(request: NextRequest) {
     assertRateLimit("recovery-request", request, rateLimitKey);
 
     const db = await getDatabase();
-    const waReady = whatsappService.getRuntimeStatus() === "connected";
+    const runtimeMode = getWhatsappRuntimeMode();
+
+    let waReady = false;
+
+    if (runtimeMode === "aleta_bot") {
+      const statusResult = await getGatewayWhatsappStatus();
+      waReady = statusResult.ok && statusResult.data.status === "connected";
+    } else if (runtimeMode === "legacy_portal") {
+      const { whatsappService } = await import("@/server/modules/whatsapp/service");
+      waReady = whatsappService.getRuntimeStatus() === "connected";
+    }
 
     if (!waReady) {
       // Validate identity so user gets immediate feedback on bad identifier,
@@ -42,7 +56,20 @@ export async function POST(request: NextRequest) {
       `Berlaku selama *10 menit*. Jangan bagikan kode ini kepada siapa pun termasuk admin ALETA.`;
 
     try {
-      await whatsappService.sendMessage(recovery.whatsappNumber, otpMessage);
+      const sendResult = await sendPortalWhatsappMessage({
+        sourceFeature: "password_recovery",
+        entityType: "user",
+        entityId: recovery.userId,
+        eventType: "otp_request",
+        recipientNumber: recovery.whatsappNumber,
+        recipientName: recovery.name,
+        message: otpMessage,
+        priority: 1,
+        category: "employee",
+      });
+      if (!sendResult.ok || sendResult.status === "skipped") {
+        throw new Error(sendResult.message);
+      }
     } catch {
       // OTP was committed to DB — clean it up so it can't be used or brute-forced.
       await cleanupPasswordRecoveryOtpInDb(db, recovery.userId);
