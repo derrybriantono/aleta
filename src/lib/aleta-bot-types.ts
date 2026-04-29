@@ -297,8 +297,29 @@ export type AletaBotWorkerState = {
 export type AletaBotLegacyMigration = {
   id: string;
   feature: string;
+  /** Short unique key matching the source function/feature, e.g. "sendPihakBaru" */
+  legacyKey: string;
+  /** Exact function name in the source file */
+  sourceFunction: string;
+  /** Classification of the legacy feature */
+  legacyType: "party_notification" | "employee_notification" | "public_command" | "admin_command" | "infrastructure" | "ai_service" | "other";
+  /** Human-readable grouping category */
+  category: string;
+  /** Operational risk level if migration is done incorrectly */
+  riskLevel: "low" | "medium" | "high";
+  /** Source file and function path (e.g. "app.js → sendPihakBaru") */
   legacySource: string;
+  /** Original cron expression(s) from app.js; empty for event-driven/manual */
+  cronSchedule: string;
   portalEntity: string;
+  /** Which portal registry type this migrates to */
+  registryTargetType: string;
+  /** Key or id in the target registry */
+  registryTargetKey: string;
+  /** New service that replaces this legacy code */
+  replacementService: string;
+  /** Whether legacy source code can be safely archived/deleted */
+  canArchive: boolean;
   status: "pending" | "in_progress" | "migrated" | "skipped";
   notes: string;
   migratedAt: string | null;

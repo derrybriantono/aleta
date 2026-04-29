@@ -262,8 +262,18 @@ type ApprovalRequestRow = {
 type LegacyMigrationRow = {
   id: string;
   feature: string;
+  legacy_key: string;
+  source_function: string;
+  legacy_type: AletaBotLegacyMigration["legacyType"];
+  category: string;
+  risk_level: AletaBotLegacyMigration["riskLevel"];
   legacy_source: string;
+  cron_schedule: string;
   portal_entity: string;
+  registry_target_type: string;
+  registry_target_key: string;
+  replacement_service: string;
+  can_archive: number;
   status: AletaBotLegacyMigration["status"];
   notes: string;
   migrated_at: string | null;
@@ -1317,83 +1327,548 @@ export const ALETA_BOT_QUERY_CATALOG: AletaBotQueryCatalogItem[] = [
 ];
 
 const DEFAULT_LEGACY_MIGRATIONS: Array<Omit<AletaBotLegacyMigration, "migratedAt" | "migratedBy" | "createdAt" | "updatedAt">> = [
+  // ── PARTY NOTIFICATIONS ─────────────────────────────────────────────────────
   {
-    id: "mig-notif-kasir-harian",
-    feature: "Notifikasi Pengingat Kasir Harian",
-    legacySource: "app.js → sendPengingatKasir",
-    portalEntity: "notif-kasir-harian",
+    id: "mig-notif-pihak-baru",
+    feature: "Notifikasi Pihak Baru (Pendaftaran Perkara)",
+    legacyKey: "sendPihakBaru",
+    sourceFunction: "sendPihakBaru",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakBaru (notifikasi.js → getDataPihakBaru)",
+    cronSchedule: "00 17 * * Monday-Friday",
+    portalEntity: "notif-pihak-baru",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-registration",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
     status: "pending",
-    notes: "Notifikasi harian kasir dijadwalkan Senin-Kamis 14:30. Belum diaktifkan di portal.",
+    notes: "Notifikasi ke pihak baru yang mendaftar hari ini. Cron 17:00 Senin-Jumat.",
+  },
+  {
+    id: "mig-notif-pihak-akta-cerai",
+    feature: "Notifikasi Pihak Akta Cerai Terbit",
+    legacyKey: "sendPihakAktaCerai",
+    sourceFunction: "sendPihakAktaCerai",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakAktaCerai (notifikasi.js → getDataPihakAktaCerai)",
+    cronSchedule: "00 16 * * *",
+    portalEntity: "pihak-akta-cerai",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-akta-cerai",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi ke pihak saat akta cerai terbit. Cron 16:00 setiap hari. Masih dry-run, perlu approval.",
+  },
+  {
+    id: "mig-notif-pihak-sisa-panjar",
+    feature: "Notifikasi Sisa Panjar ke Pihak",
+    legacyKey: "sendPihakSisaPanjar",
+    sourceFunction: "sendPihakSisaPanjar",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakSisaPanjar (notifikasi.js → getDataPihakSisaPanjar)",
+    cronSchedule: "00 19 * * *",
+    portalEntity: "pihak-sisa-panjar",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-sisa-panjar",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi sisa panjar ke pihak setiap pukul 19:00. Masih dry-run, perlu approval.",
+  },
+  {
+    id: "mig-notif-pihak-panjar-belum",
+    feature: "Notifikasi Pihak Belum Bayar Panjar (Habis Biaya)",
+    legacyKey: "sendPihakPanjarBelum",
+    sourceFunction: "sendPihakPanjarBelum",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakPanjarBelum (notifikasi.js → getDataHabisBiaya)",
+    cronSchedule: "30 15 * * *",
+    portalEntity: "pihak-panjar-belum",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-panjar-habis",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi ke pihak yang belum bayar panjar pukul 15:30 setiap hari.",
+  },
+  {
+    id: "mig-notif-pihak-putusan",
+    feature: "Notifikasi Putusan ke Pihak",
+    legacyKey: "sendPihakPutusan",
+    sourceFunction: "sendPihakPutusan",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakPutusan (notifikasi.js → getDataPutusanPihak)",
+    cronSchedule: "30 23 * * *",
+    portalEntity: "pihak-putusan",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-putusan",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi detail putusan ke pihak setiap pukul 23:30. Masih dry-run, perlu approval.",
+  },
+  {
+    id: "mig-notif-pihak-hari-sidang",
+    feature: "Notifikasi Pihak Hari Sidang (hari-H)",
+    legacyKey: "sendPihakHariSidang",
+    sourceFunction: "sendPihakHariSidang",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakHariSidang (notifikasi.js → getDataPihakHariSidang)",
+    cronSchedule: "00 07 * * *",
+    portalEntity: "pihak-hari-sidang",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-hari-sidang",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi ke pihak pada hari-H sidang pukul 07:00 setiap hari. Masih dry-run.",
+  },
+  {
+    id: "mig-notif-pihak-sebelum-sidang",
+    feature: "Notifikasi Pihak 3 Hari Sebelum Sidang",
+    legacyKey: "sendPihakSebelumHariSidang",
+    sourceFunction: "sendPihakSebelumHariSidang",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "high",
+    legacySource: "app.js → sendPihakSebelumHariSidang (notifikasi.js → getDataPihakSebelumHariSidang)",
+    cronSchedule: "00 09 * * *",
+    portalEntity: "pihak-sebelum-sidang",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-sebelum-sidang",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi ke pihak 3 hari sebelum sidang pukul 09:00 setiap hari. Masih dry-run.",
+  },
+  {
+    id: "mig-notif-pihak-tunda-cuti",
+    feature: "Notifikasi Tunda Sidang karena Cuti Bersama",
+    legacyKey: "sendPihakTundaCuti",
+    sourceFunction: "sendPihakTundaCuti",
+    legacyType: "party_notification",
+    category: "Notifikasi Pihak",
+    riskLevel: "low",
+    legacySource: "app.js → sendPihakTundaCuti (notifikasi.js → getDataPihakTundaCuti)",
+    cronSchedule: "00 12 24 11 *",
+    portalEntity: "pihak-tunda-cuti",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "party-tunda-cuti",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: true,
+    status: "skipped",
+    notes: "Notifikasi satu-kali terkait cuti 27 Nov 2024 (KEPPRES No.3/2024). Sudah tidak relevan — arsip.",
+  },
+  // ── EMPLOYEE NOTIFICATIONS ──────────────────────────────────────────────────
+  {
+    id: "mig-notif-ketua-penerimaan",
+    feature: "Laporan Bulanan Penerimaan Perkara ke Ketua",
+    legacyKey: "sendKetuaPenerimaanPerkara",
+    sourceFunction: "sendKetuaPenerimaanPerkara",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → sendKetuaPenerimaanPerkara (notifikasi.js → getTotalPenerimaanPerkaraSemuaHakimLengkap)",
+    cronSchedule: "50 07 1 * *",
+    portalEntity: "notif-ketua-penerimaan",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-ketua-penerimaan",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Laporan bulanan penerimaan perkara ke ketua. Cron tanggal 1 setiap bulan pukul 07:50.",
+  },
+  {
+    id: "mig-notif-panitera-laporan",
+    feature: "Laporan Bulanan Penerimaan Perkara ke Panitera",
+    legacyKey: "sendPanitera",
+    sourceFunction: "sendPanitera",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → sendPanitera (notifikasi.js → getTotalPenerimaanPerkaraSemuaPaniteraLengkap)",
+    cronSchedule: "50 07 1 * *",
+    portalEntity: "notif-panitera-laporan",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-panitera-laporan",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Laporan bulanan penerimaan perkara ke panitera. Cron tanggal 1 setiap bulan pukul 07:50.",
   },
   {
     id: "mig-notif-penjaga-sidang",
     feature: "Notifikasi Penjaga Sidang Hari Ini",
-    legacySource: "app.js → sendPenjagaSidangHariIni",
+    legacyKey: "sendPenjagaSidangHariIni",
+    sourceFunction: "sendPenjagaSidangHariIni",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → sendPenjagaSidangHariIni (notifikasi.js → getDataJadwalSidangPerdata/Pidana)",
+    cronSchedule: "10 07 * * Monday-Friday",
     portalEntity: "notif-penjaga-sidang-hari-ini",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-penjaga-sidang",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
     status: "pending",
-    notes: "Notifikasi jadwal sidang internal pegawai pagi hari. Belum diaktifkan di portal.",
+    notes: "Notifikasi jadwal sidang harian ke penjaga sidang pukul 07:10 Senin-Jumat.",
   },
   {
-    id: "mig-notif-sisa-panjar",
-    feature: "Notifikasi Sisa Panjar / Biaya Perkara ke Pihak",
-    legacySource: "app.js → sendPihakSisaPanjar",
-    portalEntity: "pihak-sisa-panjar",
+    id: "mig-notif-penjaga-sidang-besok",
+    feature: "Notifikasi Penjaga Sidang Besok",
+    legacyKey: "sendPenjagaSidangBesok",
+    sourceFunction: "sendPenjagaSidangBesok",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → sendPenjagaSidangBesok (notifikasi.js → getDataJadwalBesok)",
+    cronSchedule: "00 20 * * *",
+    portalEntity: "notif-penjaga-sidang-besok",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-penjaga-sidang-besok",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
     status: "pending",
-    notes: "Notifikasi pihak sisa panjar dijadwalkan tiap pukul 19:00. Masih dry-run, perlu approval.",
+    notes: "Notifikasi jadwal sidang besok ke penjaga sidang pukul 20:00 setiap hari.",
   },
   {
-    id: "mig-notif-akta-cerai",
-    feature: "Notifikasi Akta Cerai ke Pihak",
-    legacySource: "app.js → sendPihakAktaCerai",
-    portalEntity: "pihak-akta-cerai",
+    id: "mig-notif-kasir-harian",
+    feature: "Notifikasi Pengingat Kasir Harian",
+    legacyKey: "sendPengingatKasir",
+    sourceFunction: "sendPengingatKasir",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "low",
+    legacySource: "app.js → sendPengingatKasir (notifikasi.js → getDataSisaPanjarPn)",
+    cronSchedule: "30 14 * * Monday-Thursday",
+    portalEntity: "notif-kasir-harian",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-kasir",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
     status: "pending",
-    notes: "Notifikasi akta cerai dijadwalkan tiap pukul 16:00. Masih dry-run, perlu approval.",
+    notes: "Notifikasi harian kasir dijadwalkan Senin-Kamis 14:30. Belum diaktifkan di portal.",
   },
   {
-    id: "mig-notif-hari-sidang",
-    feature: "Notifikasi Pihak Hari Sidang",
-    legacySource: "app.js → sendPihakHariSidang",
-    portalEntity: "pihak-hari-sidang",
+    id: "mig-notif-pengingat-hakim",
+    feature: "Notifikasi Pengingat Jadwal Hakim (pagi & malam)",
+    legacyKey: "pengingatHakim",
+    sourceFunction: "sendPengingatHakim",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → pengingatPagiHakim/pengingatMalamHakim (notifikasi.js → getDataJadwalBesokHakim)",
+    cronSchedule: "15 07 * * Monday-Friday; 00 20 * * Sunday-Thursday",
+    portalEntity: "notif-pengingat-hakim",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-hakim-jadwal",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
     status: "pending",
-    notes: "Notifikasi jadwal sidang hari-H ke pihak dijadwalkan pukul 07:00. Masih dry-run.",
+    notes: "Dua cron per-hakim: pagi 07:15 Senin-Jumat dan malam 20:00 Minggu-Kamis. Data dari hakimIds map.",
   },
+  {
+    id: "mig-notif-pengingat-panitera",
+    feature: "Notifikasi Pengingat Jadwal Panitera (pagi & malam)",
+    legacyKey: "pengingatPanitera",
+    sourceFunction: "sendPengingatPaniteraSidang",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → pengingatPagiPanitera/pengingatMalamPanitera (notifikasi.js → getDataJadwalBesokPanitera)",
+    cronSchedule: "00 07 * * Monday-Friday; 00 20 * * *",
+    portalEntity: "notif-pengingat-panitera",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-panitera-jadwal",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Dua cron per-panitera: pagi 07:00 Senin-Jumat dan malam 20:00 setiap hari. Data dari paniteraIds map.",
+  },
+  {
+    id: "mig-notif-status-hakim",
+    feature: "Status Sidang Harian Hakim (minutasi/upload/ANOM/lupa tunda)",
+    legacyKey: "statusSidangHakim",
+    sourceFunction: "sendStatusSidangHakim",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → statusSidangHakim (notifikasi.js → getDataPutusanBelumMinutHakim/getDataUploadPutusanHakim/getDataEdocAnonimisasiHakim/getDataLupaTundaHakim)",
+    cronSchedule: "30 14 * * Monday-Friday; 00 19 * * Monday-Friday",
+    portalEntity: "notif-status-hakim",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-hakim-status",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Dua cron per-hakim: 14:30 dan 19:00 Senin-Jumat. Monitoring minutasi, upload putusan, ANOM.",
+  },
+  {
+    id: "mig-notif-status-panitera",
+    feature: "Status Sidang Harian Panitera (minutasi/tunda mediasi/lupa tunda)",
+    legacyKey: "statusSidangPanitera",
+    sourceFunction: "sendStatusSidangPanitera",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → statusSidangPanitera (notifikasi.js → getDataPutusanBelumMinutPanitera/getDataTundaMediasiPanitera/getDataLupaTundaPanitera)",
+    cronSchedule: "30 14 * * Monday-Friday; 45 18 * * Monday-Friday",
+    portalEntity: "notif-status-panitera",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-panitera-status",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Dua cron per-panitera: 14:30 dan 18:45 Senin-Jumat. Monitoring minutasi, tunda mediasi.",
+  },
+  {
+    id: "mig-notif-antrian-sidang",
+    feature: "Antrian Sidang Hari Ini (Hakim & Panitera)",
+    legacyKey: "statusSidangHariIni",
+    sourceFunction: "sendAntrianSidangHariIni",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "low",
+    legacySource: "app.js → statusSidangHariIni (notifikasi.js → getDataAntrianSidangHakim/getDataAntrianSidangPanitera)",
+    cronSchedule: "55 08 * * Monday-Friday",
+    portalEntity: "notif-antrian-sidang",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-antrian-sidang",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Notifikasi antrian sidang yang hadir ke hakim/panitera pukul 08:55 Senin-Jumat.",
+  },
+  {
+    id: "mig-notif-status-jurusita",
+    feature: "Status Sidang Harian Jurusita (putus & tunda)",
+    legacyKey: "statusSidangJurusita",
+    sourceFunction: "sendStatusSidangJurusita",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → statusSidangJurusita (notifikasi.js → getDataPutusJurusitaNew/getDataTundaJurusitaNew)",
+    cronSchedule: "00 12 * * Monday-Friday; 15 16 * * Monday-Friday",
+    portalEntity: "notif-status-jurusita",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-jurusita-status",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Dua cron per-jurusita: 12:00 dan 16:15 Senin-Jumat. Monitoring putus dan tunda sidang.",
+  },
+  {
+    id: "mig-notif-relaas-jurusita",
+    feature: "Relaas, Delegasi & Pemberitahuan Putusan (Jurusita)",
+    legacyKey: "statusRelaasJurusita",
+    sourceFunction: "sendRelaasJurusita",
+    legacyType: "employee_notification",
+    category: "Notifikasi Pegawai",
+    riskLevel: "medium",
+    legacySource: "app.js → statusRelaasJurusita (notifikasi.js → getBelumPanggilanJurusita/getDataBelumDelegasiJurusita/getDataPemberitahuanPutusanBelumJurusita)",
+    cronSchedule: "00 09 * * Friday",
+    portalEntity: "notif-relaas-jurusita",
+    registryTargetType: "notification_registry",
+    registryTargetKey: "employee-jurusita-relaas",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Cron Jumat 09:00: panggilan belum, delegasi belum, pemberitahuan putusan belum.",
+  },
+  // ── PUBLIC COMMANDS ─────────────────────────────────────────────────────────
   {
     id: "mig-query-greeting",
-    feature: "Handler Balasan Otomatis (query.getData)",
-    legacySource: "query.js → getData",
+    feature: "Handler Salam/Sapaan (query.getData)",
+    legacyKey: "getData.greeting",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (keyword: halo, hai, hei, assalamualaikum, ass)",
+    cronSchedule: "",
     portalEntity: "qa-greeting",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "intent-greeting",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
     status: "in_progress",
-    notes: "Intent Public Q&A sudah dibuat di portal. Integrasi penuh dengan AI bridge sedang berjalan.",
+    notes: "Intent greeting sudah ada di portal. Integrasi penuh dengan AI bridge sedang berjalan.",
   },
   {
-    id: "mig-query-notifikasi",
-    feature: "Query Notifikasi SIPP (notifikasi.js)",
-    legacySource: "notifikasi.js → getDataJadwal*, getDataPihak*",
-    portalEntity: "query-catalog",
+    id: "mig-query-perkara",
+    feature: "Query Status Perkara (perkara#, jadwal#, akta#, putusan#, biaya#)",
+    legacyKey: "getData.perkara",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "medium",
+    legacySource: "query.js → getData (keyword: perkara, jadwal, akta, putusan, biaya, status, cek)",
+    cronSchedule: "",
+    portalEntity: "qa-perkara",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "intent-perkara",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
     status: "in_progress",
-    notes: "Query legacy terdaftar di katalog portal (legacy: prefix). Eksekusi live masih via runtime lama.",
+    notes: "Perintah status perkara, jadwal sidang, akta cerai, dan biaya. Terintegrasi sebagian.",
   },
+  {
+    id: "mig-query-sidang",
+    feature: "Query Jadwal Sidang Publik (sidang hari ini, sidang besok, sidang tanggal#)",
+    legacyKey: "getData.sidang",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (keyword: sidang hari ini, sidang besok, sidang tanggal#...)",
+    cronSchedule: "",
+    portalEntity: "qa-sidang",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "intent-sidang-public",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "in_progress",
+    notes: "Jadwal sidang publik. Sudah ada sebagian di intent tapi belum semua terpetakan.",
+  },
+  {
+    id: "mig-query-antrian",
+    feature: "Antrian Sidang Online (daftar antrian#, antrian online#)",
+    legacyKey: "getData.antrian",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "medium",
+    legacySource: "query.js → getData (keyword: daftar antrian#N.A.Y, antrian online#N.A.Y)",
+    cronSchedule: "",
+    portalEntity: "qa-antrian",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "intent-antrian",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Antrian sidang online dengan format nomor perkara. Belum diintegrasikan ke portal.",
+  },
+  {
+    id: "mig-query-info-layanan",
+    feature: "Informasi Layanan Publik (daftar, ecourt, survei, validasi, alamat)",
+    legacyKey: "getData.info",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (keyword: daftar, ecourt, survei, validasi, alamat, layanan, bapanjar)",
+    cronSchedule: "",
+    portalEntity: "qa-info-layanan",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "intent-info-layanan",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Informasi layanan pengadilan. Bisa ditulis sebagai intent statis di portal.",
+  },
+  // ── ADMIN/INTERNAL COMMANDS ─────────────────────────────────────────────────
+  {
+    id: "mig-query-monev",
+    feature: "Perintah Monitoring/Evaluasi Internal (monev *, hakim#, pp#, js#, sipp *)",
+    legacyKey: "getData.monev",
+    sourceFunction: "getData",
+    legacyType: "admin_command",
+    category: "Admin Command",
+    riskLevel: "medium",
+    legacySource: "query.js → getData (keyword: monev *, hakim#, pp#, js#, sipp *, kode hakim, nilai sipp)",
+    cronSchedule: "",
+    portalEntity: "admin-monev",
+    registryTargetType: "query_catalog",
+    registryTargetKey: "query-monev-legacy",
+    replacementService: "services/legacy/legacyCommandAdapter.js",
+    canArchive: false,
+    status: "in_progress",
+    notes: "Perintah monitoring internal untuk hakim, panitera, jurusita. ~80 keyword berbeda. Perlu admin panel.",
+  },
+  // ── INFRASTRUCTURE ──────────────────────────────────────────────────────────
   {
     id: "mig-db-config",
-    feature: "Konfigurasi Database (db_config.js)",
+    feature: "Konfigurasi Database (db_config.js / db_config4.js / db_config5.js)",
+    legacyKey: "dbConfig",
+    sourceFunction: "require('./db_config')",
+    legacyType: "infrastructure",
+    category: "Infrastruktur",
+    riskLevel: "high",
     legacySource: "db_config.js, db_config4.js, db_config5.js",
+    cronSchedule: "",
     portalEntity: "db-sipp-primary, db-antrian-sidang, db-aps-badilag",
+    registryTargetType: "db_connection",
+    registryTargetKey: "sipp_primary",
+    replacementService: "server/modules/aleta-bot/service.ts → DB connections",
+    canArchive: false,
     status: "migrated",
     notes: "Tiga koneksi DB sudah dipindahkan ke portal. Runtime lama masih memakai file config sendiri.",
   },
   {
     id: "mig-templates",
-    feature: "Template Pesan WhatsApp",
-    legacySource: "notifikasi.js → formatMessage*, format*",
+    feature: "Template Pesan WhatsApp (inline strings di notifikasi.js)",
+    legacyKey: "messageTemplates",
+    sourceFunction: "notifikasi.js inline strings",
+    legacyType: "infrastructure",
+    category: "Infrastruktur",
+    riskLevel: "low",
+    legacySource: "notifikasi.js → inline message template strings",
+    cronSchedule: "",
     portalEntity: "template catalog",
+    registryTargetType: "template",
+    registryTargetKey: "template-catalog",
+    replacementService: "services/templateService.js",
+    canArchive: false,
     status: "migrated",
     notes: "Seluruh template sudah didaftarkan di portal dan tersinkron ke runtime config.",
   },
   {
+    id: "mig-query-notifikasi",
+    feature: "Query Data SIPP untuk Notifikasi (notifikasi.js getDataJadwal*, getDataPihak*)",
+    legacyKey: "notifikasiQuery",
+    sourceFunction: "notifikasi.js → getDataJadwal*, getDataPihak*, getTotalPenerimaan*",
+    legacyType: "infrastructure",
+    category: "Infrastruktur",
+    riskLevel: "medium",
+    legacySource: "notifikasi.js → 90+ exported functions (getDataJadwalSidang*, getDataPihak*, getTotalPenerimaan*, dll)",
+    cronSchedule: "",
+    portalEntity: "query-catalog",
+    registryTargetType: "query_catalog",
+    registryTargetKey: "query-legacy-notif",
+    replacementService: "services/legacy/legacyNotificationAdapter.js",
+    canArchive: false,
+    status: "in_progress",
+    notes: "Query legacy terdaftar di katalog portal (legacy: prefix). Eksekusi live masih via runtime lama.",
+  },
+  {
     id: "mig-public-qa",
-    feature: "Public Q&A (query.getData triggers)",
-    legacySource: "query.js → getData",
+    feature: "Public Q&A Intent Registry (seluruh intent dari query.getData)",
+    legacyKey: "publicQa",
+    sourceFunction: "query.js → getData + publicQaIntentService",
+    legacyType: "ai_service",
+    category: "AI & Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (seluruh handler publik) + services/publicQaIntentService.js",
+    cronSchedule: "",
     portalEntity: "aleta_bot_public_qa_intents",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "intent-catalog",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
     status: "in_progress",
     notes: "Intent Public Q&A sudah ada, integrasi AI answer sedang dikembangkan.",
   },
@@ -1822,8 +2297,18 @@ function mapLegacyMigration(row: LegacyMigrationRow): AletaBotLegacyMigration {
   return {
     id: row.id,
     feature: row.feature,
+    legacyKey: row.legacy_key ?? "",
+    sourceFunction: row.source_function ?? "",
+    legacyType: row.legacy_type ?? "other",
+    category: row.category ?? "",
+    riskLevel: row.risk_level ?? "medium",
     legacySource: row.legacy_source,
+    cronSchedule: row.cron_schedule ?? "",
     portalEntity: row.portal_entity,
+    registryTargetType: row.registry_target_type ?? "",
+    registryTargetKey: row.registry_target_key ?? "",
+    replacementService: row.replacement_service ?? "",
+    canArchive: Boolean(row.can_archive),
     status: row.status,
     notes: row.notes,
     migratedAt: row.migrated_at,
@@ -2192,8 +2677,18 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_legacy_migrations (
     id TEXT PRIMARY KEY,
     feature TEXT NOT NULL DEFAULT '',
+    legacy_key TEXT NOT NULL DEFAULT '',
+    source_function TEXT NOT NULL DEFAULT '',
+    legacy_type TEXT NOT NULL DEFAULT 'other',
+    category TEXT NOT NULL DEFAULT '',
+    risk_level TEXT NOT NULL DEFAULT 'medium',
     legacy_source TEXT NOT NULL DEFAULT '',
+    cron_schedule TEXT NOT NULL DEFAULT '',
     portal_entity TEXT NOT NULL DEFAULT '',
+    registry_target_type TEXT NOT NULL DEFAULT '',
+    registry_target_key TEXT NOT NULL DEFAULT '',
+    replacement_service TEXT NOT NULL DEFAULT '',
+    can_archive INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'pending',
     notes TEXT NOT NULL DEFAULT '',
     migrated_at TEXT,
@@ -2201,6 +2696,21 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`);
+  // Add new columns for existing installations (idempotent)
+  for (const col of [
+    "legacy_key TEXT NOT NULL DEFAULT ''",
+    "source_function TEXT NOT NULL DEFAULT ''",
+    "legacy_type TEXT NOT NULL DEFAULT 'other'",
+    "category TEXT NOT NULL DEFAULT ''",
+    "risk_level TEXT NOT NULL DEFAULT 'medium'",
+    "cron_schedule TEXT NOT NULL DEFAULT ''",
+    "registry_target_type TEXT NOT NULL DEFAULT ''",
+    "registry_target_key TEXT NOT NULL DEFAULT ''",
+    "replacement_service TEXT NOT NULL DEFAULT ''",
+    "can_archive INTEGER NOT NULL DEFAULT 0",
+  ]) {
+    try { await db.exec(`ALTER TABLE aleta_bot_legacy_migrations ADD COLUMN ${col}`); } catch { /* column already exists */ }
+  }
 
   const settings = await db.prepare(`SELECT id FROM aleta_bot_settings WHERE id = 1`).get<{ id: number }>();
   if (!settings) {
@@ -2429,16 +2939,28 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     await db
       .prepare(
         `INSERT INTO aleta_bot_legacy_migrations (
-          id, feature, legacy_source, portal_entity, status, notes, created_at, updated_at
+          id, feature, legacy_key, source_function, legacy_type, category, risk_level,
+          legacy_source, cron_schedule, portal_entity, registry_target_type, registry_target_key,
+          replacement_service, can_archive, status, notes, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (id) DO NOTHING`
       )
       .run(
         migration.id,
         migration.feature,
+        migration.legacyKey,
+        migration.sourceFunction,
+        migration.legacyType,
+        migration.category,
+        migration.riskLevel,
         migration.legacySource,
+        migration.cronSchedule,
         migration.portalEntity,
+        migration.registryTargetType,
+        migration.registryTargetKey,
+        migration.replacementService,
+        migration.canArchive ? 1 : 0,
         migration.status,
         migration.notes,
         now,
@@ -2569,9 +3091,11 @@ export async function processApproval(
 async function getLegacyMigrations(db: AletaDatabase): Promise<AletaBotLegacyMigration[]> {
   const rows = await db
     .prepare(
-      `SELECT id, feature, legacy_source, portal_entity, status, notes, migrated_at, migrated_by, created_at, updated_at
+      `SELECT id, feature, legacy_key, source_function, legacy_type, category, risk_level,
+              legacy_source, cron_schedule, portal_entity, registry_target_type, registry_target_key,
+              replacement_service, can_archive, status, notes, migrated_at, migrated_by, created_at, updated_at
        FROM aleta_bot_legacy_migrations
-       ORDER BY status ASC, feature ASC`
+       ORDER BY legacy_type ASC, feature ASC`
     )
     .all<LegacyMigrationRow>();
   return rows.map(mapLegacyMigration);
@@ -2595,7 +3119,7 @@ export async function updateLegacyMigration(
   await ensureAletaBotSeeded(db);
   const now = new Date().toISOString();
   const existing = await db
-    .prepare(`SELECT id, feature, legacy_source, portal_entity, status, notes, migrated_at, migrated_by, created_at, updated_at FROM aleta_bot_legacy_migrations WHERE id = ?`)
+    .prepare(`SELECT id, feature, legacy_key, source_function, legacy_type, category, risk_level, legacy_source, cron_schedule, portal_entity, registry_target_type, registry_target_key, replacement_service, can_archive, status, notes, migrated_at, migrated_by, created_at, updated_at FROM aleta_bot_legacy_migrations WHERE id = ?`)
     .get<LegacyMigrationRow>(migrationId);
   if (!existing) throw new ApiError(404, "Entri migrasi tidak ditemukan.");
 
@@ -2623,7 +3147,7 @@ export async function updateLegacyMigration(
     metadata: { migrationId, feature: existing.feature, status },
   });
   const updated = await db
-    .prepare(`SELECT id, feature, legacy_source, portal_entity, status, notes, migrated_at, migrated_by, created_at, updated_at FROM aleta_bot_legacy_migrations WHERE id = ?`)
+    .prepare(`SELECT id, feature, legacy_key, source_function, legacy_type, category, risk_level, legacy_source, cron_schedule, portal_entity, registry_target_type, registry_target_key, replacement_service, can_archive, status, notes, migrated_at, migrated_by, created_at, updated_at FROM aleta_bot_legacy_migrations WHERE id = ?`)
     .get<LegacyMigrationRow>(migrationId);
   if (!updated) throw new ApiError(500, "Gagal memuat data migrasi yang diperbarui.");
   return mapLegacyMigration(updated);
@@ -3036,6 +3560,117 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
     deadLetters,
     workerState,
     legacyMigrations,
+  };
+}
+
+function maskExportPhone(value: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length < 6) return "";
+  return `${digits.slice(0, 4)}******${digits.slice(-2)}`;
+}
+
+export async function exportAletaBotConfig(
+  db: AletaDatabase,
+  actorUserId: string
+) {
+  const snapshot = await getAletaBotSnapshot(db, actorUserId);
+  const exportedAt = new Date().toISOString();
+
+  return {
+    version: 1,
+    exportedAt,
+    warning:
+      "Export ini hanya konfigurasi non-secret. File ini bukan backup database penuh dan tidak berisi token/API key/password/session WhatsApp.",
+    settings: {
+      ...snapshot.settings,
+      adminWhatsappNumber: maskExportPhone(snapshot.settings.adminWhatsappNumber),
+      testTargetNumber: maskExportPhone(snapshot.settings.testTargetNumber),
+    },
+    templates: snapshot.templates,
+    jobs: snapshot.jobs,
+    notifications: snapshot.notifications,
+    queries: snapshot.queries.map((query) => ({
+      ...query,
+      sqlText: query.sqlText,
+    })),
+    dbConnections: snapshot.dbConnections.map((connection) => ({
+      id: connection.id,
+      key: connection.key,
+      name: connection.name,
+      description: connection.description,
+      driver: connection.driver,
+      host: connection.host,
+      port: connection.port,
+      databaseName: connection.databaseName,
+      usernameMasked: connection.usernameMasked,
+      passwordConfigured: connection.passwordConfigured,
+      sslEnabled: connection.sslEnabled,
+      connectionTimeoutMs: connection.connectionTimeoutMs,
+      isActive: connection.isActive,
+      isDefault: connection.isDefault,
+      legacySource: connection.legacySource,
+      lastTestStatus: connection.lastTestStatus,
+      lastTestAt: connection.lastTestAt,
+    })),
+    publicQaIntents: snapshot.publicQaIntents,
+    employeeRecipients: snapshot.employeeRecipients.map((recipient) => ({
+      ...recipient,
+      whatsappNumber: maskExportPhone(recipient.whatsappNumber),
+    })),
+    legacyMigrations: snapshot.legacyMigrations,
+    approvalSummary: {
+      total: snapshot.approvalRequests.length,
+      pending: snapshot.approvalRequests.filter((item) => item.status === "pending").length,
+      approved: snapshot.approvalRequests.filter((item) => item.status === "approved").length,
+      rejected: snapshot.approvalRequests.filter((item) => item.status === "rejected").length,
+    },
+  };
+}
+
+async function countOlderThan(db: AletaDatabase, tableName: string, columnName: string, cutoffIso: string) {
+  try {
+    const row = await db
+      .prepare(`SELECT COUNT(*) AS count FROM ${tableName} WHERE ${columnName} < ?`)
+      .get<{ count: number | string }>(cutoffIso);
+    return Number(row?.count || 0);
+  } catch {
+    return 0;
+  }
+}
+
+export async function previewAletaBotRetentionCleanup(
+  db: AletaDatabase,
+  actorUserId: string,
+  retentionDays = 90
+) {
+  await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const safeDays = Math.max(7, Math.min(3650, Number(retentionDays || 90)));
+  const cutoff = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000).toISOString();
+
+  const targets = [
+    { table: "aleta_bot_logs", column: "created_at", label: "Portal ALETA Bot logs" },
+    { table: "aleta_bot_notification_logs", column: "created_at", label: "Portal notification logs" },
+    { table: "aleta_bot_public_qa_logs", column: "created_at", label: "Portal Public Q&A logs" },
+    { table: "aleta_bot_public_qa_ai_logs", column: "created_at", label: "Portal Public Q&A AI logs" },
+  ];
+
+  const tables = [];
+  for (const target of targets) {
+    tables.push({
+      ...target,
+      olderThan: cutoff,
+      count: await countOlderThan(db, target.table, target.column, cutoff),
+    });
+  }
+
+  return {
+    mode: "preview",
+    retentionDays: safeDays,
+    cutoff,
+    tables,
+    warning:
+      "Fase 4 hanya menyiapkan preview cleanup. Penghapusan agresif dan import/restore penuh ditunda sampai Fase 5.",
   };
 }
 

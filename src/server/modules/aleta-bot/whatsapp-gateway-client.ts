@@ -234,6 +234,46 @@ export async function resendGatewayDeadLetter(
   });
 }
 
+// ---- Phase 5: Legacy migration endpoints ----
+
+export type LegacyNotificationEntry = {
+  legacyKey: string;
+  feature: string;
+  legacyType: string;
+  cronSchedule: string;
+  riskLevel: string;
+  getDataFn: string;
+  recipientType: string;
+  requiresApproval: boolean;
+  canDryRun: boolean;
+  status: string;
+};
+
+export type LegacyCommandEntry = {
+  keywords: string[];
+  feature: string;
+  type: string;
+  hasParam: boolean;
+  paramExample?: string;
+  migrationTarget: string;
+  migrationStatus: string;
+  notes?: string;
+};
+
+export async function getGatewayLegacyNotifications(): Promise<GatewayResult<{ total: number; notifications: LegacyNotificationEntry[] }>> {
+  return gatewayFetch<{ total: number; notifications: LegacyNotificationEntry[] }>("/internal/aleta-bot/legacy/notifications");
+}
+
+export async function previewGatewayLegacyNotification(
+  legacyKey: string
+): Promise<GatewayResult<{ ok: boolean; legacyKey: string; feature: string; dataFn: string; rowCount: number; preview: unknown }>> {
+  return gatewayFetch(`/internal/aleta-bot/legacy/notifications/${encodeURIComponent(legacyKey)}/preview`);
+}
+
+export async function getGatewayLegacyCommands(): Promise<GatewayResult<{ total: number; totalKeywords: number; entries: LegacyCommandEntry[]; duplicates: unknown[]; duplicateCount: number }>> {
+  return gatewayFetch("/internal/aleta-bot/legacy/commands");
+}
+
 // ---- Snapshot builder ----
 
 function mapGatewayStatusToRuntime(gatewayStatus: string): string {

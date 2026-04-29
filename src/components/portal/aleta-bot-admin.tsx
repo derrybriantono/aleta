@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -2124,6 +2124,8 @@ function ApprovalRequestsCard({
 }
 
 function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotLegacyMigration[] }) {
+  const [groupBy, setGroupBy] = React.useState<"category" | "legacyType" | "status">("legacyType");
+
   const statusColor = (status: AletaBotLegacyMigration["status"]) => {
     if (status === "migrated") return "success" as const;
     if (status === "in_progress") return "warning" as const;
@@ -2132,47 +2134,130 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
   };
   const statusLabel = (status: AletaBotLegacyMigration["status"]) => {
     if (status === "migrated") return "Selesai";
-    if (status === "in_progress") return "Dalam Proses";
+    if (status === "in_progress") return "Proses";
     if (status === "skipped") return "Dilewati";
     return "Tertunda";
   };
+  const riskColor = (risk: AletaBotLegacyMigration["riskLevel"]) => {
+    if (risk === "high") return "danger" as const;
+    if (risk === "medium") return "warning" as const;
+    return "muted" as const;
+  };
+  const typeLabel = (type: AletaBotLegacyMigration["legacyType"]) => {
+    const labels: Record<string, string> = {
+      party_notification: "Notif Pihak",
+      employee_notification: "Notif Pegawai",
+      public_command: "Perintah Publik",
+      admin_command: "Perintah Admin",
+      infrastructure: "Infrastruktur",
+      ai_service: "AI/QA",
+      other: "Lainnya",
+    };
+    return labels[type] ?? type;
+  };
+
+  const grouped = React.useMemo(() => {
+    const groups: Record<string, AletaBotLegacyMigration[]> = {};
+    for (const m of legacyMigrations) {
+      const key = groupBy === "legacyType" ? typeLabel(m.legacyType)
+        : groupBy === "category" ? (m.category || "Tanpa Kategori")
+        : statusLabel(m.status);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(m);
+    }
+    return groups;
+  }, [legacyMigrations, groupBy]);
+
+  const migratedCount = legacyMigrations.filter((m) => m.status === "migrated").length;
+  const inProgressCount = legacyMigrations.filter((m) => m.status === "in_progress").length;
+  const pendingCount = legacyMigrations.filter((m) => m.status === "pending").length;
+  const highRiskPending = legacyMigrations.filter((m) => m.riskLevel === "high" && m.status === "pending").length;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tracker Migrasi Legacy</CardTitle>
-        <CardDescription>
-          Status migrasi fitur-fitur dari aleta_bot legacy (app.js, notifikasi.js, dll.) ke portal.{" "}
-          {legacyMigrations.filter((m) => m.status === "migrated").length}/{legacyMigrations.length} selesai.
-        </CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <CardTitle>Tracker Migrasi Legacy</CardTitle>
+            <CardDescription className="mt-1">
+              Inventaris lengkap 25+ fungsi legacy (app.js, notifikasi.js, query.js) yang perlu dimigrasikan ke portal.
+            </CardDescription>
+          </div>
+          <div className="flex gap-2 text-xs">
+            <Badge variant="success">{migratedCount} Selesai</Badge>
+            <Badge variant="warning">{inProgressCount} Proses</Badge>
+            <Badge variant="muted">{pendingCount} Tertunda</Badge>
+            {highRiskPending > 0 && <Badge variant="danger">{highRiskPending} Risiko Tinggi</Badge>}
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">Kelompokkan:</span>
+          {(["legacyType", "category", "status"] as const).map((g) => (
+            <button
+              key={g}
+              onClick={() => setGroupBy(g)}
+              className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${groupBy === g ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+            >
+              {g === "legacyType" ? "Tipe" : g === "category" ? "Kategori" : "Status"}
+            </button>
+          ))}
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         {legacyMigrations.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Data migrasi belum tersedia.</div>
         ) : (
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              <tr>
-                <th className="py-3 pr-4">Fitur</th>
-                <th className="py-3 pr-4">Sumber Legacy</th>
-                <th className="py-3 pr-4">Entitas Portal</th>
-                <th className="py-3 pr-4">Status</th>
-                <th className="py-3 pr-4">Catatan</th>
-                <th className="py-3 pr-4">Tanggal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {legacyMigrations.map((migration) => (
-                <tr key={migration.id} className="border-b border-border/70 align-top">
-                  <td className="py-4 pr-4 font-medium text-foreground">{migration.feature}</td>
-                  <td className="py-4 pr-4 text-xs text-muted-foreground">{migration.legacySource}</td>
-                  <td className="py-4 pr-4 text-xs text-muted-foreground">{migration.portalEntity}</td>
-                  <td className="py-4 pr-4"><Badge variant={statusColor(migration.status)}>{statusLabel(migration.status)}</Badge></td>
-                  <td className="py-4 pr-4 max-w-[240px]"><p className="text-xs text-muted-foreground line-clamp-2">{migration.notes || "—"}</p></td>
-                  <td className="py-4 pr-4 text-xs text-muted-foreground">{migration.migratedAt ? formatDateTime(migration.migratedAt) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-6">
+            {Object.entries(grouped).map(([groupKey, migrations]) => (
+              <div key={groupKey}>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  {groupKey} <span className="text-foreground/40">({migrations.length})</span>
+                </h4>
+                <table className="w-full min-w-[900px] text-left text-sm">
+                  <thead className="border-b border-border text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    <tr>
+                      <th className="py-2 pr-3">Fitur</th>
+                      <th className="py-2 pr-3">Fungsi Legacy</th>
+                      <th className="py-2 pr-3">Cron</th>
+                      <th className="py-2 pr-3">Target Portal</th>
+                      <th className="py-2 pr-3">Risiko</th>
+                      <th className="py-2 pr-3">Status</th>
+                      <th className="py-2 pr-3">Catatan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {migrations.map((migration) => (
+                      <tr key={migration.id} className="border-b border-border/50 align-top hover:bg-muted/30">
+                        <td className="py-3 pr-3">
+                          <div className="font-medium text-foreground">{migration.feature}</div>
+                          {migration.canArchive && <span className="text-[10px] text-muted-foreground">✓ Dapat diarsip</span>}
+                        </td>
+                        <td className="py-3 pr-3">
+                          <code className="rounded bg-muted px-1 py-0.5 text-xs text-foreground/80">{migration.sourceFunction || migration.legacyKey || "—"}</code>
+                          <div className="mt-0.5 text-[10px] text-muted-foreground">{migration.legacySource.split("(")[0]?.trim()}</div>
+                        </td>
+                        <td className="py-3 pr-3">
+                          {migration.cronSchedule
+                            ? <code className="text-[10px] text-muted-foreground">{migration.cronSchedule.split(";")[0]?.trim()}</code>
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="py-3 pr-3 text-xs">
+                          <div className="text-muted-foreground">{migration.registryTargetType || "—"}</div>
+                          {migration.registryTargetKey && <div className="text-[10px] text-muted-foreground/60">{migration.registryTargetKey}</div>}
+                        </td>
+                        <td className="py-3 pr-3"><Badge variant={riskColor(migration.riskLevel)} className="text-[10px]">{migration.riskLevel}</Badge></td>
+                        <td className="py-3 pr-3"><Badge variant={statusColor(migration.status)} className="text-[10px]">{statusLabel(migration.status)}</Badge></td>
+                        <td className="py-3 pr-3 max-w-[200px]">
+                          <p className="text-[11px] text-muted-foreground line-clamp-2">{migration.notes || "—"}</p>
+                          {migration.migratedAt && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{formatDateTime(migration.migratedAt)}</p>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>
