@@ -177,6 +177,7 @@ const emptySnapshot: AletaBotSnapshot = {
   deadLetters: [],
   workerState: null,
   legacyMigrations: [],
+  unknownQuestionReviews: [],
 };
 
 type NotificationForm = {
@@ -268,13 +269,29 @@ type AletaBotModal =
   | { type: "notification"; title: string }
   | { type: "query"; title: string }
   | { type: "database"; title: string }
-  | { type: "publicQa"; title: string };
+  | { type: "publicQa"; title: string }
+  | { type: "legacyAction"; title: string; migration: AletaBotLegacyMigration; action: LegacyMigrationAction };
+
+type LegacyMigrationAction = "preview" | "convert" | "dry-run" | "submit-approval" | "activate" | "disable-legacy" | "rollback";
 
 function statusVariant(status: string) {
   if (["active", "connected", "success", "dry-run"].includes(status)) return "success" as const;
   if (["error", "failed"].includes(status)) return "danger" as const;
   if (["disabled", "disconnected", "waiting_qr", "warning"].includes(status)) return "warning" as const;
   return "outline" as const;
+}
+
+function migrationActionTitle(action: LegacyMigrationAction) {
+  const labels: Record<LegacyMigrationAction, string> = {
+    preview: "Preview Migrasi",
+    convert: "Convert to Registry Draft",
+    "dry-run": "Run Dry-run Migrasi",
+    "submit-approval": "Submit Approval Migrasi",
+    activate: "Activate Registry",
+    "disable-legacy": "Disable Legacy Key",
+    rollback: "Rollback Migrasi",
+  };
+  return labels[action];
 }
 
 async function requestBot<T>(url: string, init?: RequestInit) {
@@ -501,9 +518,17 @@ export function AletaBotAdminPanel() {
   const [runtimeDashboard, setRuntimeDashboard] = useState<RuntimeDashboardSnapshot | null>(null);
   const [activeModal, setActiveModal] = useState<AletaBotModal | null>(null);
   const [modalDirty, setModalDirty] = useState(false);
+  const [legacyActionNotes, setLegacyActionNotes] = useState("");
+  const [legacyActionResult, setLegacyActionResult] = useState<string | null>(null);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
+  const [purgeConfirmText, setPurgeConfirmText] = useState("");
 
   const openModal = (modal: AletaBotModal) => {
     setModalDirty(false);
+    if (modal.type === "legacyAction") {
+      setLegacyActionNotes("");
+      setLegacyActionResult(null);
+    }
     setActiveModal(modal);
   };
 
@@ -752,6 +777,26 @@ export function AletaBotAdminPanel() {
     }
   };
 
+  const purgeLogs = async () => {
+    if (purgeConfirmText !== "HAPUS LOG LAMA") return;
+    setIsSaving(true);
+    setNotice(null);
+    try {
+      await requestBot<{ deletedCount: number }>("/api/admin/aleta-bot/actions", {
+        method: "POST",
+        body: JSON.stringify({ action: "purge-logs", payload: { olderThanDays: 30, safeOnly: true } }),
+      });
+      await loadSnapshot();
+      setNotice("Log lama berhasil dihapus. Hanya log aman (non-audit) yang dihapus.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Hapus log gagal.");
+    } finally {
+      setIsSaving(false);
+      setShowPurgeConfirm(false);
+      setPurgeConfirmText("");
+    }
+  };
+
   const runAction = async (
     action: "sync-config" | "sync-ai-config" | "test-ai-runtime" | "reconnect" | "logout" | "send-test" | "test-template" | "test-query" | "test-notification" | "test-connection" | "pause-worker" | "resume-worker",
     payload?: Record<string, unknown>
@@ -770,6 +815,41 @@ export function AletaBotAdminPanel() {
       setNotice("Aksi ALETA Bot berhasil diproses.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Aksi gagal diproses.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const runLegacyMigrationAction = async (action: LegacyMigrationAction, migration: AletaBotLegacyMigration) => {
+    setIsSaving(true);
+    setNotice(null);
+    setPreview(null);
+    try {
+      const data = await requestBot<Record<string, unknown>>("/api/admin/aleta-bot/legacy-migration", {
+        method: "POST",
+        body: JSON.stringify({ action, migrationId: migration.id, notes: legacyActionNotes }),
+      });
+      const nextSnapshot = (data.snapshot || data) as AletaBotSnapshot;
+      if (nextSnapshot?.settings && nextSnapshot?.legacyMigrations) {
+        setSnapshot(nextSnapshot);
+      } else {
+        await loadSnapshot();
+      }
+      if (typeof data.preview === "string") setPreview(data.preview);
+      setLegacyActionResult(JSON.stringify({
+        migration: data.migration,
+        draft: data.draft,
+        validation: data.validation,
+        approval: data.approval,
+        preview: data.preview,
+      }, null, 2));
+      if (!["preview", "dry-run"].includes(action)) {
+        setActiveModal(null);
+        setModalDirty(false);
+      }
+      setNotice("Aksi migrasi legacy berhasil diproses.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Aksi migrasi legacy gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1409,9 +1489,56 @@ export function AletaBotAdminPanel() {
         </TabsContent>
 
         <TabsContent value="logs">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <LogCard title="Log Pesan" logs={snapshot.logs.filter((log) => log.eventType === "message" || log.eventType === "notification")} />
-            <LogCard title="Log Sistem" logs={snapshot.logs.filter((log) => log.eventType !== "message" && log.eventType !== "notification")} />
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <LogCard title="Log Pesan" logs={snapshot.logs.filter((log) => log.eventType === "message" || log.eventType === "notification")} />
+              <LogCard title="Log Sistem" logs={snapshot.logs.filter((log) => log.eventType !== "message" && log.eventType !== "notification")} />
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Retensi Log</CardTitle>
+                <CardDescription>Hapus log lama yang bukan audit trail. Hanya log non-kritis (&gt;30 hari) yang akan dihapus. Audit trail tidak pernah dihapus.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!showPurgeConfirm ? (
+                  <Button
+                    variant="outline"
+                    disabled={isSaving}
+                    onClick={() => { setShowPurgeConfirm(true); setPurgeConfirmText(""); }}
+                  >
+                    Bersihkan Log Lama
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                    <p className="text-sm font-semibold text-foreground">Konfirmasi Hapus Log Lama</p>
+                    <p className="text-xs text-muted-foreground">
+                      Aksi ini akan menghapus log pesan, log sistem, dan log notifikasi yang berusia lebih dari 30 hari.
+                      Log audit trail dan riwayat approval <strong>tidak</strong> akan dihapus.
+                      Untuk melanjutkan, ketik <code className="rounded bg-muted px-1 py-0.5 font-bold">HAPUS LOG LAMA</code> di bawah ini.
+                    </p>
+                    <Input
+                      value={purgeConfirmText}
+                      onChange={(event) => setPurgeConfirmText(event.target.value)}
+                      placeholder="HAPUS LOG LAMA"
+                      className="max-w-xs font-mono"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={isSaving || purgeConfirmText !== "HAPUS LOG LAMA"}
+                        onClick={() => void purgeLogs()}
+                      >
+                        Hapus Sekarang
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={isSaving} onClick={() => { setShowPurgeConfirm(false); setPurgeConfirmText(""); }}>
+                        Batal
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -1510,7 +1637,12 @@ export function AletaBotAdminPanel() {
         </TabsContent>
 
         <TabsContent value="migration">
-          <LegacyMigrationCard legacyMigrations={snapshot.legacyMigrations} />
+          <LegacyMigrationCard
+            legacyMigrations={snapshot.legacyMigrations}
+            unknownQuestionReviews={snapshot.unknownQuestionReviews}
+            isSaving={isSaving}
+            onAction={(action, migration) => openModal({ type: "legacyAction", title: migrationActionTitle(action), migration, action })}
+          />
         </TabsContent>
       </Tabs>
 
@@ -1656,6 +1788,64 @@ export function AletaBotAdminPanel() {
               }
               void savePublicQaIntent();
             }} saveLabel={publicQaIntentForm.status === "active" ? "Simpan & Aktifkan" : "Simpan sebagai Draft"} />
+          </div>
+        ) : null}
+
+        {activeModal?.type === "legacyAction" ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
+              <p className="font-semibold text-foreground">{activeModal.migration.feature}</p>
+              <p className="mt-1 text-muted-foreground">
+                Legacy key: <code>{activeModal.migration.legacyKey || activeModal.migration.sourceFunction || "-"}</code>
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant={activeModal.migration.riskLevel === "high" ? "danger" : activeModal.migration.riskLevel === "medium" ? "warning" : "muted"}>{activeModal.migration.riskLevel}</Badge>
+                <Badge variant="outline">{activeModal.migration.status}</Badge>
+                <Badge variant="outline">{activeModal.migration.registryTargetType || "registry"}</Badge>
+              </div>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-foreground">
+              {activeModal.action === "disable-legacy"
+                ? "Aksi ini tidak menghapus kode legacy, tetapi menulis flag disabled ke runtime config agar adapter membaca legacy key sebagai nonaktif. Pastikan registry sudah aktif dan teruji."
+                : activeModal.action === "activate"
+                  ? "Aktivasi registry hanya tersedia setelah dry-run dan approval. Guard duplikasi jalur aktif: legacy key harus sudah di-disable lebih dulu untuk notifikasi."
+                  : activeModal.action === "rollback"
+                    ? (() => {
+                        const s = activeModal.migration.status;
+                        const transitions: Record<string, string> = {
+                          legacy_disabled: "legacy_disabled → active_registry (legacy key diaktifkan kembali sebagai fallback, registry tetap berjalan).",
+                          active_registry: "active_registry → dry_run (registry di-deactivate, ulangi approval sebelum aktifkan ulang).",
+                          pending_approval: "pending_approval → registry_draft (approval dibatalkan, kembali ke draft).",
+                        };
+                        return transitions[s] ?? `${s} → mapped (rollback penuh ke status terpetakan, legacy kembali aktif).`;
+                      })()
+                    : activeModal.action === "convert"
+                      ? "Konversi membuat draft query/template/notifikasi atau intent. Draft tidak langsung aktif."
+                      : "Aksi ini berjalan aman dan tidak mengirim pesan WhatsApp sungguhan."}
+            </div>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-foreground">Catatan aksi</span>
+              <Textarea
+                value={legacyActionNotes}
+                onChange={(event) => { markModalDirty(); setLegacyActionNotes(event.target.value); }}
+                rows={3}
+                placeholder="Opsional: alasan, hasil pengecekan, atau catatan approval."
+              />
+            </label>
+            {legacyActionResult ? (
+              <pre className="max-h-72 overflow-auto rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 whitespace-pre-wrap">{legacyActionResult}</pre>
+            ) : null}
+            <ModalActions
+              isSaving={isSaving}
+              onCancel={closeModal}
+              onSave={() => {
+                if (["activate", "disable-legacy", "rollback"].includes(activeModal.action)) {
+                  if (!window.confirm(`${migrationActionTitle(activeModal.action)} untuk ${activeModal.migration.feature}?`)) return;
+                }
+                void runLegacyMigrationAction(activeModal.action, activeModal.migration);
+              }}
+              saveLabel={migrationActionTitle(activeModal.action)}
+            />
           </div>
         ) : null}
       </ModalShell>
@@ -1958,6 +2148,12 @@ function WorkerControlCard({
   );
 }
 
+function maskNumber(n: string) {
+  const digits = n.replace(/\D/g, "");
+  if (digits.length <= 5) return "****";
+  return `${digits.slice(0, 3)}****${digits.slice(-2)}`;
+}
+
 function DeadLetterCard({
   deadLetters,
   isSaving,
@@ -1967,6 +2163,14 @@ function DeadLetterCard({
   isSaving: boolean;
   onResend: (id: string) => Promise<void>;
 }) {
+  const [pendingResend, setPendingResend] = React.useState<AletaBotDeadLetter | null>(null);
+
+  const handleConfirmResend = async () => {
+    if (!pendingResend) return;
+    await onResend(pendingResend.id);
+    setPendingResend(null);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -1977,43 +2181,71 @@ function DeadLetterCard({
         {deadLetters.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Tidak ada dead letter. Semua pesan berhasil terproses.</div>
         ) : (
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              <tr>
-                <th className="py-3 pr-4">Penerima</th>
-                <th className="py-3 pr-4">Pratinjau Pesan</th>
-                <th className="py-3 pr-4">Kategori</th>
-                <th className="py-3 pr-4">Retry</th>
-                <th className="py-3 pr-4">Error</th>
-                <th className="py-3 pr-4">Dibuat</th>
-                <th className="py-3 pr-4">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deadLetters.map((dl) => (
-                <tr key={dl.id} className="border-b border-border/70 align-top">
-                  <td className="py-4 pr-4">
-                    <p className="font-medium text-foreground">{dl.recipientName || dl.recipientNumber}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{dl.recipientNumber}</p>
-                  </td>
-                  <td className="py-4 pr-4 max-w-[240px]">
-                    <p className="text-muted-foreground line-clamp-2 text-xs">{dl.messagePreview}</p>
-                  </td>
-                  <td className="py-4 pr-4"><Badge variant="outline">{dl.category}</Badge></td>
-                  <td className="py-4 pr-4 text-center text-muted-foreground">{dl.retryCount}/{dl.maxRetries}</td>
-                  <td className="py-4 pr-4 max-w-[180px]">
-                    <p className="text-xs text-destructive line-clamp-2">{dl.lastError || "—"}</p>
-                  </td>
-                  <td className="py-4 pr-4 text-xs text-muted-foreground">{formatDateTime(dl.createdAt)}</td>
-                  <td className="py-4 pr-4">
-                    <Button variant="outline" size="sm" disabled={isSaving} onClick={() => void onResend(dl.id)}>
-                      Kirim Ulang
-                    </Button>
-                  </td>
+          <>
+            <table className="w-full min-w-[900px] text-left text-sm">
+              <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                <tr>
+                  <th className="py-3 pr-4">Penerima</th>
+                  <th className="py-3 pr-4">Pratinjau Pesan</th>
+                  <th className="py-3 pr-4">Kategori</th>
+                  <th className="py-3 pr-4">Retry</th>
+                  <th className="py-3 pr-4">Error</th>
+                  <th className="py-3 pr-4">Dibuat</th>
+                  <th className="py-3 pr-4">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {deadLetters.map((dl) => (
+                  <tr key={dl.id} className={cn("border-b border-border/70 align-top", pendingResend?.id === dl.id && "bg-amber-500/5")}>
+                    <td className="py-4 pr-4">
+                      <p className="font-medium text-foreground">{dl.recipientName || maskNumber(dl.recipientNumber)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{maskNumber(dl.recipientNumber)}</p>
+                    </td>
+                    <td className="py-4 pr-4 max-w-[240px]">
+                      <p className="text-muted-foreground line-clamp-2 text-xs">{dl.messagePreview}</p>
+                    </td>
+                    <td className="py-4 pr-4"><Badge variant="outline">{dl.category}</Badge></td>
+                    <td className="py-4 pr-4 text-center text-muted-foreground">{dl.retryCount}/{dl.maxRetries}</td>
+                    <td className="py-4 pr-4 max-w-[180px]">
+                      <p className="text-xs text-destructive line-clamp-2">{dl.lastError || "—"}</p>
+                    </td>
+                    <td className="py-4 pr-4 text-xs text-muted-foreground">{formatDateTime(dl.createdAt)}</td>
+                    <td className="py-4 pr-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isSaving}
+                        onClick={() => setPendingResend(pendingResend?.id === dl.id ? null : dl)}
+                      >
+                        {pendingResend?.id === dl.id ? "Batal" : "Kirim Ulang"}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {pendingResend ? (
+              <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Konfirmasi Kirim Ulang Dead Letter</p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><span className="font-medium">Penerima:</span> {maskNumber(pendingResend.recipientNumber)} ({pendingResend.recipientName || "—"})</p>
+                  <p><span className="font-medium">Kategori:</span> {pendingResend.category} / {pendingResend.notificationKey || "—"}</p>
+                  <p><span className="font-medium">Pratinjau:</span> {pendingResend.messagePreview?.slice(0, 120)}{pendingResend.messagePreview?.length > 120 ? "…" : ""}</p>
+                  <p><span className="font-medium">Retry sebelumnya:</span> {pendingResend.retryCount}/{pendingResend.maxRetries}</p>
+                  <p className="text-amber-700">Pesan baru akan diantrikan ulang dengan ID baru dan priority reset. Nomor penerima hanya ditampilkan dalam bentuk masked.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" disabled={isSaving} onClick={() => void handleConfirmResend()}>
+                    Konfirmasi Kirim Ulang
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={isSaving} onClick={() => setPendingResend(null)}>
+                    Batal
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </>
         )}
       </CardContent>
     </Card>
@@ -2123,12 +2355,22 @@ function ApprovalRequestsCard({
   );
 }
 
-function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotLegacyMigration[] }) {
+function LegacyMigrationCard({
+  legacyMigrations,
+  unknownQuestionReviews,
+  isSaving,
+  onAction,
+}: {
+  legacyMigrations: AletaBotLegacyMigration[];
+  unknownQuestionReviews: AletaBotSnapshot["unknownQuestionReviews"];
+  isSaving: boolean;
+  onAction: (action: LegacyMigrationAction, migration: AletaBotLegacyMigration) => void;
+}) {
   const [groupBy, setGroupBy] = React.useState<"category" | "legacyType" | "status">("legacyType");
 
   const statusColor = (status: AletaBotLegacyMigration["status"]) => {
-    if (status === "migrated") return "success" as const;
-    if (status === "in_progress") return "warning" as const;
+    if (["migrated", "active_registry", "legacy_disabled", "archivable"].includes(status)) return "success" as const;
+    if (["in_progress", "registry_draft", "needs_manual_mapping", "dry_run", "pending_approval", "mapped"].includes(status)) return "warning" as const;
     if (status === "skipped") return "outline" as const;
     return "muted" as const;
   };
@@ -2136,6 +2378,18 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
     if (status === "migrated") return "Selesai";
     if (status === "in_progress") return "Proses";
     if (status === "skipped") return "Dilewati";
+    const labels: Record<string, string> = {
+      not_migrated: "Belum Migrasi",
+      mapped: "Mapped",
+      registry_draft: "Draft Registry",
+      needs_manual_mapping: "Perlu Mapping",
+      dry_run: "Dry-run",
+      pending_approval: "Menunggu Approval",
+      active_registry: "Registry Aktif",
+      legacy_disabled: "Legacy Disabled",
+      archivable: "Bisa Arsip",
+    };
+    if (labels[status]) return labels[status];
     return "Tertunda";
   };
   const riskColor = (risk: AletaBotLegacyMigration["riskLevel"]) => {
@@ -2168,10 +2422,10 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
     return groups;
   }, [legacyMigrations, groupBy]);
 
-  const migratedCount = legacyMigrations.filter((m) => m.status === "migrated").length;
-  const inProgressCount = legacyMigrations.filter((m) => m.status === "in_progress").length;
-  const pendingCount = legacyMigrations.filter((m) => m.status === "pending").length;
-  const highRiskPending = legacyMigrations.filter((m) => m.riskLevel === "high" && m.status === "pending").length;
+  const migratedCount = legacyMigrations.filter((m) => ["migrated", "active_registry", "legacy_disabled", "archivable"].includes(m.status)).length;
+  const inProgressCount = legacyMigrations.filter((m) => ["in_progress", "registry_draft", "dry_run", "pending_approval", "mapped", "needs_manual_mapping"].includes(m.status)).length;
+  const pendingCount = legacyMigrations.filter((m) => ["pending", "not_migrated"].includes(m.status)).length;
+  const highRiskPending = legacyMigrations.filter((m) => m.riskLevel === "high" && ["pending", "not_migrated", "needs_manual_mapping"].includes(m.status)).length;
 
   return (
     <Card>
@@ -2213,7 +2467,7 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                   {groupKey} <span className="text-foreground/40">({migrations.length})</span>
                 </h4>
-                <table className="w-full min-w-[900px] text-left text-sm">
+                <table className="w-full min-w-[1180px] text-left text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-[0.14em] text-muted-foreground">
                     <tr>
                       <th className="py-2 pr-3">Fitur</th>
@@ -2223,6 +2477,7 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
                       <th className="py-2 pr-3">Risiko</th>
                       <th className="py-2 pr-3">Status</th>
                       <th className="py-2 pr-3">Catatan</th>
+                      <th className="py-2 pr-3">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2230,7 +2485,12 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
                       <tr key={migration.id} className="border-b border-border/50 align-top hover:bg-muted/30">
                         <td className="py-3 pr-3">
                           <div className="font-medium text-foreground">{migration.feature}</div>
-                          {migration.canArchive && <span className="text-[10px] text-muted-foreground">✓ Dapat diarsip</span>}
+                          {migration.canArchive && migration.status === "legacy_disabled" && (
+                            <Badge variant="success" className="mt-1 text-[10px]">Archive Ready</Badge>
+                          )}
+                          {migration.canArchive && migration.status !== "legacy_disabled" && (
+                            <span className="text-[10px] text-muted-foreground">Dapat diarsip setelah legacy_disabled</span>
+                          )}
                         </td>
                         <td className="py-3 pr-3">
                           <code className="rounded bg-muted px-1 py-0.5 text-xs text-foreground/80">{migration.sourceFunction || migration.legacyKey || "—"}</code>
@@ -2251,6 +2511,17 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
                           <p className="text-[11px] text-muted-foreground line-clamp-2">{migration.notes || "—"}</p>
                           {migration.migratedAt && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{formatDateTime(migration.migratedAt)}</p>}
                         </td>
+                        <td className="py-3 pr-3">
+                          <div className="flex max-w-[260px] flex-wrap gap-1.5">
+                            <Button size="sm" variant="outline" disabled={isSaving} onClick={() => onAction("preview", migration)}>Preview</Button>
+                            <Button size="sm" variant="outline" disabled={isSaving || ["active_registry", "legacy_disabled", "archivable"].includes(migration.status)} onClick={() => onAction("convert", migration)}>Convert</Button>
+                            <Button size="sm" variant="outline" disabled={isSaving || !["registry_draft", "needs_manual_mapping", "mapped", "in_progress"].includes(migration.status)} onClick={() => onAction("dry-run", migration)}>Dry-run</Button>
+                            <Button size="sm" variant="outline" disabled={isSaving || !["dry_run", "registry_draft"].includes(migration.status)} onClick={() => onAction("submit-approval", migration)}>Approval</Button>
+                            <Button size="sm" variant="outline" disabled={isSaving || !["pending_approval", "dry_run", "registry_draft"].includes(migration.status)} onClick={() => onAction("activate", migration)}>Activate</Button>
+                            <Button size="sm" variant="outline" disabled={isSaving || !["active_registry", "migrated", "archivable"].includes(migration.status)} onClick={() => onAction("disable-legacy", migration)}>Disable</Button>
+                            <Button size="sm" variant="outline" disabled={isSaving || ["pending", "not_migrated"].includes(migration.status)} onClick={() => onAction("rollback", migration)}>Rollback</Button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -2260,6 +2531,27 @@ function LegacyMigrationCard({ legacyMigrations }: { legacyMigrations: AletaBotL
           </div>
         )}
       </CardContent>
+      {unknownQuestionReviews.length > 0 ? (
+        <CardContent className="border-t border-border">
+          <div className="mb-3">
+            <h4 className="text-sm font-semibold text-foreground">AI Review Pertanyaan Tidak Dikenali</h4>
+            <p className="text-xs text-muted-foreground">Saran intent/alias berbasis log fallback. Pembuatan intent tetap harus via modal dan approval.</p>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {unknownQuestionReviews.slice(0, 8).map((item) => (
+              <div key={item.normalizedMessage} className="rounded-xl border border-border p-3 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="font-medium text-foreground">{item.rawMessage}</p>
+                  <Badge variant={item.safetyRisk === "high" ? "danger" : item.safetyRisk === "medium" ? "warning" : "muted"}>{item.safetyRisk}</Badge>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Frekuensi {item.frequency}x, terakhir {formatDateTime(item.lastAskedAt)}, pengirim {item.senderMasked || "masked"}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Saran: <code>{item.suggestedIntentKey}</code> ({Math.round(item.confidence * 100)}%) - {item.suggestedAction}</p>
+                {item.suggestedAction === "human_handoff" ? <p className="mt-2 text-xs text-amber-600">Human handoff disarankan untuk keamanan jawaban.</p> : null}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      ) : null}
     </Card>
   );
 }

@@ -336,7 +336,7 @@ export function getAccessiblePortalApps(user: UserPersona | null): PortalAppConf
 
   const roleId = getEffectiveRoleId(user);
 
-  return portalApps.filter((app) => !app.isDummy && (roleId ? app.roleIds.includes(roleId) : false));
+  return portalApps.filter((app) => (roleId ? app.roleIds.includes(roleId) : false));
 }
 
 export function getAccessibleLetters(

@@ -25,6 +25,7 @@ import {
   type AletaBotLegacyMigration,
   type AletaBotDeadLetter,
   type AletaBotWorkerState,
+  type AletaBotUnknownQuestionReview,
 } from "@/lib/aleta-bot-types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
@@ -42,6 +43,12 @@ import { sendPortalWhatsappMessage } from "@/server/modules/whatsapp/portal-what
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
+import {
+  convertLegacyToDraft,
+  validateConvertedDraft,
+  type ConvertedLegacyDraft,
+} from "@/server/modules/aleta-bot/legacy-conversion";
+import { buildSafeFallback, suggestIntentForQuestion } from "@/server/modules/aleta-bot/public-qa-safety";
 
 const DEFAULT_ALETA_BOT_RUNTIME_URL = "http://127.0.0.1:3003";
 
@@ -1689,7 +1696,7 @@ const DEFAULT_LEGACY_MIGRATIONS: Array<Omit<AletaBotLegacyMigration, "migratedAt
     status: "pending",
     notes: "Cron Jumat 09:00: panggilan belum, delegasi belum, pemberitahuan putusan belum.",
   },
-  // ── PUBLIC COMMANDS ─────────────────────────────────────────────────────────
+  // ── PUBLIC COMMANDS (12 individual entries — Phase 7 granular split) ─────────
   {
     id: "mig-query-greeting",
     feature: "Handler Salam/Sapaan (query.getData)",
@@ -1702,83 +1709,209 @@ const DEFAULT_LEGACY_MIGRATIONS: Array<Omit<AletaBotLegacyMigration, "migratedAt
     cronSchedule: "",
     portalEntity: "qa-greeting",
     registryTargetType: "public_qa_intent",
-    registryTargetKey: "intent-greeting",
+    registryTargetKey: "greeting",
     replacementService: "services/publicQaIntentService.js",
     canArchive: false,
-    status: "in_progress",
-    notes: "Intent greeting sudah ada di portal. Integrasi penuh dengan AI bridge sedang berjalan.",
+    status: "active_registry",
+    notes: "Intent greeting aktif di portal (Phase 7). Legacy key dinonaktifkan setelah registry aktif.",
   },
   {
-    id: "mig-query-perkara",
-    feature: "Query Status Perkara (perkara#, jadwal#, akta#, putusan#, biaya#)",
-    legacyKey: "getData.perkara",
+    id: "mig-query-cek-perkara",
+    feature: "Cek Status Perkara (cek nomor perkara#, status#)",
+    legacyKey: "getData.cek_perkara",
     sourceFunction: "getData",
     legacyType: "public_command",
     category: "Public Q&A",
     riskLevel: "medium",
-    legacySource: "query.js → getData (keyword: perkara, jadwal, akta, putusan, biaya, status, cek)",
+    legacySource: "query.js → getData (keyword: perkara, cek, status, nomor perkara#)",
     cronSchedule: "",
-    portalEntity: "qa-perkara",
+    portalEntity: "qa-cek-perkara",
     registryTargetType: "public_qa_intent",
-    registryTargetKey: "intent-perkara",
+    registryTargetKey: "cek_perkara",
     replacementService: "services/publicQaIntentService.js",
     canArchive: false,
-    status: "in_progress",
-    notes: "Perintah status perkara, jadwal sidang, akta cerai, dan biaya. Terintegrasi sebagian.",
+    status: "registry_draft",
+    notes: "Cek status perkara dengan nomor. Memerlukan verifikasi nomor perkara. Sedang di-draft.",
   },
   {
-    id: "mig-query-sidang",
-    feature: "Query Jadwal Sidang Publik (sidang hari ini, sidang besok, sidang tanggal#)",
-    legacyKey: "getData.sidang",
+    id: "mig-query-cek-jadwal-sidang",
+    feature: "Cek Jadwal Sidang Perkara (jadwal#, kapan sidang#)",
+    legacyKey: "getData.cek_jadwal_sidang",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "medium",
+    legacySource: "query.js → getData (keyword: jadwal#N.A.Y, kapan sidang#N.A.Y)",
+    cronSchedule: "",
+    portalEntity: "qa-cek-jadwal-sidang",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "cek_jadwal_sidang",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "registry_draft",
+    notes: "Jadwal sidang berdasarkan nomor perkara. Perlu verifikasi case_number_only.",
+  },
+  {
+    id: "mig-query-cek-akta-cerai",
+    feature: "Cek Akta Cerai (akta#, ambil akta#)",
+    legacyKey: "getData.cek_akta_cerai",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "high",
+    legacySource: "query.js → getData (keyword: akta#N.A.Y, akta cerai#N.A.Y, ambil akta#N.A.Y)",
+    cronSchedule: "",
+    portalEntity: "qa-cek-akta-cerai",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "cek_akta_cerai",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Cek akta cerai high-risk: akses data sensitif. Wajib verifikasi nomor perkara dan HP.",
+  },
+  {
+    id: "mig-query-cek-putusan",
+    feature: "Cek Putusan Perkara (putusan#, amar putusan#)",
+    legacyKey: "getData.cek_putusan",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "medium",
+    legacySource: "query.js → getData (keyword: putusan#N.A.Y, amar#N.A.Y)",
+    cronSchedule: "",
+    portalEntity: "qa-cek-putusan",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "cek_putusan",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Informasi putusan perkara. Hanya menampilkan data publik, bukan amar rahasia.",
+  },
+  {
+    id: "mig-query-biaya-panjar",
+    feature: "Cek Biaya Panjar Perkara (biaya#, sisa panjar#)",
+    legacyKey: "getData.biaya_panjar",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "medium",
+    legacySource: "query.js → getData (keyword: biaya#N.A.Y, sisa panjar#N.A.Y, bapanjar#N.A.Y)",
+    cronSchedule: "",
+    portalEntity: "qa-biaya-panjar",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "biaya_panjar",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "pending",
+    notes: "Cek biaya dan sisa panjar per nomor perkara. Perlu verifikasi nomor perkara.",
+  },
+  {
+    id: "mig-query-sidang-hari-ini",
+    feature: "Jadwal Sidang Hari Ini / Besok (publik tanpa nomor perkara)",
+    legacyKey: "getData.sidang_hari_ini",
     sourceFunction: "getData",
     legacyType: "public_command",
     category: "Public Q&A",
     riskLevel: "low",
-    legacySource: "query.js → getData (keyword: sidang hari ini, sidang besok, sidang tanggal#...)",
+    legacySource: "query.js → getData (keyword: sidang hari ini, sidang besok, sidang tanggal#)",
     cronSchedule: "",
-    portalEntity: "qa-sidang",
+    portalEntity: "qa-sidang-hari-ini",
     registryTargetType: "public_qa_intent",
-    registryTargetKey: "intent-sidang-public",
+    registryTargetKey: "sidang_hari_ini",
     replacementService: "services/publicQaIntentService.js",
     canArchive: false,
-    status: "in_progress",
-    notes: "Jadwal sidang publik. Sudah ada sebagian di intent tapi belum semua terpetakan.",
+    status: "registry_draft",
+    notes: "Informasi jadwal sidang publik hari ini/besok. Tidak membutuhkan nomor perkara.",
   },
   {
-    id: "mig-query-antrian",
+    id: "mig-query-antrian-online",
     feature: "Antrian Sidang Online (daftar antrian#, antrian online#)",
-    legacyKey: "getData.antrian",
+    legacyKey: "getData.antrian_online",
     sourceFunction: "getData",
     legacyType: "public_command",
     category: "Public Q&A",
     riskLevel: "medium",
     legacySource: "query.js → getData (keyword: daftar antrian#N.A.Y, antrian online#N.A.Y)",
     cronSchedule: "",
-    portalEntity: "qa-antrian",
+    portalEntity: "qa-antrian-online",
     registryTargetType: "public_qa_intent",
-    registryTargetKey: "intent-antrian",
+    registryTargetKey: "antrian_sidang",
     replacementService: "services/publicQaIntentService.js",
     canArchive: false,
     status: "pending",
-    notes: "Antrian sidang online dengan format nomor perkara. Belum diintegrasikan ke portal.",
+    notes: "Antrian sidang online dengan format nomor perkara. Dipisah dari jadwal sidang publik.",
   },
   {
-    id: "mig-query-info-layanan",
-    feature: "Informasi Layanan Publik (daftar, ecourt, survei, validasi, alamat)",
-    legacyKey: "getData.info",
+    id: "mig-query-alamat-pengadilan",
+    feature: "Alamat dan Lokasi Pengadilan",
+    legacyKey: "getData.alamat",
     sourceFunction: "getData",
     legacyType: "public_command",
     category: "Public Q&A",
     riskLevel: "low",
-    legacySource: "query.js → getData (keyword: daftar, ecourt, survei, validasi, alamat, layanan, bapanjar)",
+    legacySource: "query.js → getData (keyword: alamat, lokasi, kantor pengadilan)",
+    cronSchedule: "",
+    portalEntity: "qa-alamat",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "alamat_pengadilan",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "registry_draft",
+    notes: "Informasi alamat dan lokasi pengadilan. Intent statis, tidak butuh query SIPP.",
+  },
+  {
+    id: "mig-query-ecourt",
+    feature: "Informasi E-Court (ecourt, e-court, e court)",
+    legacyKey: "getData.ecourt",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (keyword: ecourt, e-court, e court, daftar ecourt)",
+    cronSchedule: "",
+    portalEntity: "qa-ecourt",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "ecourt",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "registry_draft",
+    notes: "Panduan e-court dan cara pendaftaran online. Intent statis, tidak butuh query SIPP.",
+  },
+  {
+    id: "mig-query-pengaduan",
+    feature: "Alur Pengaduan (pengaduan, adu, lapor)",
+    legacyKey: "getData.pengaduan",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (keyword: pengaduan, adu, lapor, keluhan)",
+    cronSchedule: "",
+    portalEntity: "qa-pengaduan",
+    registryTargetType: "public_qa_intent",
+    registryTargetKey: "pengaduan",
+    replacementService: "services/publicQaIntentService.js",
+    canArchive: false,
+    status: "registry_draft",
+    notes: "Informasi cara menyampaikan pengaduan. Arahkan ke SIWAS / kanal resmi MA.",
+  },
+  {
+    id: "mig-query-info-layanan",
+    feature: "Info Layanan Lengkap (info, menu, help, daftar layanan)",
+    legacyKey: "getData.info_layanan",
+    sourceFunction: "getData",
+    legacyType: "public_command",
+    category: "Public Q&A",
+    riskLevel: "low",
+    legacySource: "query.js → getData (keyword: info, menu, help, daftar, layanan, bapanjar survei)",
     cronSchedule: "",
     portalEntity: "qa-info-layanan",
     registryTargetType: "public_qa_intent",
-    registryTargetKey: "intent-info-layanan",
+    registryTargetKey: "info_lengkap",
     replacementService: "services/publicQaIntentService.js",
     canArchive: false,
-    status: "pending",
-    notes: "Informasi layanan pengadilan. Bisa ditulis sebagai intent statis di portal.",
+    status: "registry_draft",
+    notes: "Daftar layanan lengkap ALETA. Respons statis berisi menu pilihan fitur bot.",
   },
   // ── ADMIN/INTERNAL COMMANDS ─────────────────────────────────────────────────
   {
@@ -2944,7 +3077,28 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
           replacement_service, can_archive, status, notes, created_at, updated_at
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT (id) DO NOTHING`
+        ON CONFLICT (id) DO UPDATE SET
+          feature = excluded.feature,
+          legacy_key = excluded.legacy_key,
+          source_function = excluded.source_function,
+          legacy_type = excluded.legacy_type,
+          category = excluded.category,
+          risk_level = excluded.risk_level,
+          legacy_source = excluded.legacy_source,
+          cron_schedule = excluded.cron_schedule,
+          portal_entity = excluded.portal_entity,
+          registry_target_type = excluded.registry_target_type,
+          registry_target_key = CASE
+            WHEN COALESCE(aleta_bot_legacy_migrations.registry_target_key, '') = '' THEN excluded.registry_target_key
+            ELSE aleta_bot_legacy_migrations.registry_target_key
+          END,
+          replacement_service = excluded.replacement_service,
+          can_archive = excluded.can_archive,
+          notes = CASE
+            WHEN COALESCE(aleta_bot_legacy_migrations.notes, '') = '' THEN excluded.notes
+            ELSE aleta_bot_legacy_migrations.notes
+          END,
+          updated_at = excluded.updated_at`
       )
       .run(
         migration.id,
@@ -3101,6 +3255,18 @@ async function getLegacyMigrations(db: AletaDatabase): Promise<AletaBotLegacyMig
   return rows.map(mapLegacyMigration);
 }
 
+async function getLegacyMigrationById(db: AletaDatabase, migrationId: string): Promise<AletaBotLegacyMigration> {
+  const row = await db
+    .prepare(`SELECT id, feature, legacy_key, source_function, legacy_type, category, risk_level, legacy_source, cron_schedule, portal_entity, registry_target_type, registry_target_key, replacement_service, can_archive, status, notes, migrated_at, migrated_by, created_at, updated_at FROM aleta_bot_legacy_migrations WHERE id = ?`)
+    .get<LegacyMigrationRow>(migrationId);
+  if (!row) throw new ApiError(404, "Entri migrasi tidak ditemukan.");
+  return mapLegacyMigration(row);
+}
+
+function shouldTreatMigrationDone(status: AletaBotLegacyMigration["status"]) {
+  return ["migrated", "active_registry", "legacy_disabled", "archivable"].includes(status);
+}
+
 export async function updateLegacyMigration(
   db: AletaDatabase,
   {
@@ -3123,8 +3289,8 @@ export async function updateLegacyMigration(
     .get<LegacyMigrationRow>(migrationId);
   if (!existing) throw new ApiError(404, "Entri migrasi tidak ditemukan.");
 
-  const migratedAt = status === "migrated" ? now : existing.migrated_at;
-  const migratedBy = status === "migrated" ? actor.id : existing.migrated_by;
+  const migratedAt = shouldTreatMigrationDone(status) ? now : existing.migrated_at;
+  const migratedBy = shouldTreatMigrationDone(status) ? actor.id : existing.migrated_by;
   await db
     .prepare(
       `UPDATE aleta_bot_legacy_migrations
@@ -3151,6 +3317,528 @@ export async function updateLegacyMigration(
     .get<LegacyMigrationRow>(migrationId);
   if (!updated) throw new ApiError(500, "Gagal memuat data migrasi yang diperbarui.");
   return mapLegacyMigration(updated);
+}
+
+export async function previewLegacyMigrationConversion(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+): Promise<{ migration: AletaBotLegacyMigration; draft: ConvertedLegacyDraft; validation: { valid: boolean; issues: string[] } }> {
+  await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const migration = await getLegacyMigrationById(db, migrationId);
+  const draft = convertLegacyToDraft(migration);
+  return {
+    migration,
+    draft,
+    validation: validateConvertedDraft(draft),
+  };
+}
+
+async function upsertConvertedNotificationDraft(
+  db: AletaDatabase,
+  actorUserId: string,
+  draft: Extract<ConvertedLegacyDraft, { kind: "notification" }>
+) {
+  const now = new Date().toISOString();
+  const queryColumns = validateOutputColumns(draft.query.outputColumns);
+  validateReadOnlyQuery(draft.query.sqlText);
+  const placeholders = validateTemplateBody(draft.template.body, {
+    category: draft.template.category,
+    requiredPlaceholders: draft.template.placeholders,
+  });
+  const scheduleConfig = validateScheduleConfig(draft.notification.scheduleConfig);
+
+  await db
+    .prepare(
+      `INSERT INTO aleta_bot_templates (id, category, title, body, placeholders_json, editable, updated_at)
+       VALUES (?, ?, ?, ?, ?, 1, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         category = excluded.category,
+         title = excluded.title,
+         body = excluded.body,
+         placeholders_json = excluded.placeholders_json,
+         editable = 1,
+         updated_at = excluded.updated_at`
+    )
+    .run(draft.template.id, draft.template.category, draft.template.title, draft.template.body, JSON.stringify(placeholders), now);
+
+  await db
+    .prepare(
+      `INSERT INTO aleta_bot_queries (
+        id, name, category, description, sql_text, output_columns_json, recipient_column,
+        connection_key, is_active, last_test_status, created_by, updated_by, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        category = excluded.category,
+        description = excluded.description,
+        sql_text = excluded.sql_text,
+        output_columns_json = excluded.output_columns_json,
+        recipient_column = excluded.recipient_column,
+        connection_key = excluded.connection_key,
+        is_active = excluded.is_active,
+        updated_by = excluded.updated_by,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      draft.query.id,
+      draft.query.name,
+      draft.query.category,
+      draft.query.description,
+      draft.query.sqlText,
+      JSON.stringify(queryColumns),
+      draft.query.recipientColumn,
+      draft.query.connectionKey,
+      draft.query.isActive ? 1 : 0,
+      actorUserId,
+      actorUserId,
+      now,
+      now
+    );
+
+  await db
+    .prepare(
+      `INSERT INTO aleta_bot_notifications (
+        id, name, category, description, query_id, template_id, recipient_source,
+        recipient_mapping_json, schedule_config_json, is_active, delay_ms, retry_limit,
+        last_status, created_by, updated_by, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'idle', ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        category = excluded.category,
+        description = excluded.description,
+        query_id = excluded.query_id,
+        template_id = excluded.template_id,
+        recipient_source = excluded.recipient_source,
+        recipient_mapping_json = excluded.recipient_mapping_json,
+        schedule_config_json = excluded.schedule_config_json,
+        is_active = 0,
+        delay_ms = excluded.delay_ms,
+        retry_limit = excluded.retry_limit,
+        updated_by = excluded.updated_by,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      draft.notification.id,
+      draft.notification.name,
+      draft.notification.category,
+      draft.notification.description,
+      draft.notification.queryId,
+      draft.notification.templateId,
+      draft.notification.category === "party" ? "query" : "users",
+      JSON.stringify({ convertedFromLegacy: true, dryRunDefault: true, requiresApproval: true }),
+      JSON.stringify(scheduleConfig),
+      draft.notification.delayMs,
+      draft.notification.retryLimit,
+      actorUserId,
+      actorUserId,
+      now,
+      now
+    );
+}
+
+async function upsertConvertedIntentDraftDirect(
+  db: AletaDatabase,
+  actorUserId: string,
+  draft: Extract<ConvertedLegacyDraft, { kind: "public_qa_intent" }>
+) {
+  const now = new Date().toISOString();
+  const intent = draft.intent;
+  const id = String(intent.id || `draft-intent-${intent.key}`).trim();
+  const key = String(intent.key || "").trim().toLowerCase().replace(/[^a-z0-9_ -]/g, "_").replace(/\s+/g, "_");
+  const exactTriggers = parseListInput(intent.exactTriggers);
+  const exampleQuestions = parseListInput(intent.exampleQuestions);
+  const requiredParameters = parseListInput(intent.requiredParameters);
+  const allowedDataFields = parseListInput(intent.allowedDataFields);
+  const blockedDataFields = parseListInput(intent.blockedDataFields);
+  if (!key) throw new ApiError(400, "Key intent wajib diisi.");
+  if (["query_template", "legacy_handler"].includes(intent.responseMode) && !intent.queryKey && !intent.legacyHandler && !intent.legacyCommand) {
+    throw new ApiError(400, "Intent dinamis wajib punya query mapping atau legacy handler.");
+  }
+
+  await db
+    .prepare(
+      `INSERT INTO aleta_bot_public_qa_intents (
+        id, key, name, description, category, audience, is_active, ai_enabled,
+        exact_triggers_json, example_questions_json, required_parameters_json,
+        query_key, legacy_handler, legacy_command, parameterized_legacy_command,
+        template_key, response_mode, confidence_threshold, requires_verification,
+        requires_case_number, max_attempts, fallback_message, risk_level, notes,
+        ai_answer_enabled, ai_answer_mode, answer_policy, verification_policy,
+        allowed_data_fields_json, blocked_data_fields_json, ai_system_prompt,
+        ai_user_prompt_template, max_ai_tokens, temperature,
+        requires_approval_before_active, version, status, approved_by, approved_at,
+        created_by, updated_by, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'draft', NULL, NULL, ?, ?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET
+        name = excluded.name,
+        description = excluded.description,
+        category = excluded.category,
+        audience = excluded.audience,
+        is_active = 0,
+        ai_enabled = excluded.ai_enabled,
+        exact_triggers_json = excluded.exact_triggers_json,
+        example_questions_json = excluded.example_questions_json,
+        required_parameters_json = excluded.required_parameters_json,
+        query_key = excluded.query_key,
+        legacy_handler = excluded.legacy_handler,
+        legacy_command = excluded.legacy_command,
+        parameterized_legacy_command = excluded.parameterized_legacy_command,
+        template_key = excluded.template_key,
+        response_mode = excluded.response_mode,
+        confidence_threshold = excluded.confidence_threshold,
+        requires_verification = excluded.requires_verification,
+        requires_case_number = excluded.requires_case_number,
+        max_attempts = excluded.max_attempts,
+        fallback_message = excluded.fallback_message,
+        risk_level = excluded.risk_level,
+        notes = excluded.notes,
+        ai_answer_enabled = 0,
+        ai_answer_mode = excluded.ai_answer_mode,
+        answer_policy = excluded.answer_policy,
+        verification_policy = excluded.verification_policy,
+        allowed_data_fields_json = excluded.allowed_data_fields_json,
+        blocked_data_fields_json = excluded.blocked_data_fields_json,
+        ai_system_prompt = excluded.ai_system_prompt,
+        ai_user_prompt_template = excluded.ai_user_prompt_template,
+        max_ai_tokens = excluded.max_ai_tokens,
+        temperature = excluded.temperature,
+        requires_approval_before_active = 1,
+        status = 'draft',
+        updated_by = excluded.updated_by,
+        updated_at = excluded.updated_at`
+    )
+    .run(
+      id,
+      key,
+      String(intent.name || "").trim(),
+      String(intent.description || "").trim(),
+      intent.category,
+      intent.audience,
+      intent.aiEnabled ? 1 : 0,
+      JSON.stringify(exactTriggers),
+      JSON.stringify(exampleQuestions),
+      JSON.stringify(requiredParameters),
+      String(intent.queryKey || ""),
+      String(intent.legacyHandler || ""),
+      String(intent.legacyCommand || ""),
+      String(intent.parameterizedLegacyCommand || ""),
+      String(intent.templateKey || ""),
+      intent.responseMode,
+      Number(intent.confidenceThreshold || 0.72),
+      intent.requiresVerification ? 1 : 0,
+      intent.requiresCaseNumber ? 1 : 0,
+      Math.max(1, Math.min(5, Number(intent.maxAttempts || 3))),
+      String(intent.fallbackMessage || PUBLIC_QA_FALLBACK_MESSAGE),
+      intent.riskLevel,
+      String(intent.notes || ""),
+      intent.aiAnswerMode || "off",
+      intent.answerPolicy || "public_info_only",
+      intent.verificationPolicy || "none",
+      JSON.stringify(allowedDataFields),
+      JSON.stringify(blockedDataFields),
+      String(intent.aiSystemPrompt || ""),
+      String(intent.aiUserPromptTemplate || ""),
+      Number(intent.maxAiTokens || 400),
+      Number(intent.temperature || 0.2),
+      actorUserId,
+      actorUserId,
+      now,
+      now
+    );
+}
+
+export async function convertLegacyMigrationToDraft(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+): Promise<{ migration: AletaBotLegacyMigration; draft: ConvertedLegacyDraft; snapshot: AletaBotSnapshot }> {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  const conversion = await previewLegacyMigrationConversion(db, actor.id, migrationId);
+  if (!conversion.validation.valid) {
+    throw new ApiError(400, `Draft belum valid: ${conversion.validation.issues.join(", ")}`);
+  }
+  let convertedIntentKey = "";
+
+  const result = await withTransaction(db, async (tx) => {
+    if (conversion.draft.kind === "notification") {
+      await upsertConvertedNotificationDraft(tx, actor.id, conversion.draft);
+    } else {
+      convertedIntentKey = conversion.draft.intent.key;
+      await upsertConvertedIntentDraftDirect(tx, actor.id, conversion.draft);
+    }
+
+    const targetKey =
+      conversion.draft.kind === "notification"
+        ? conversion.draft.notification.id
+        : convertedIntentKey || conversion.draft.intent.key;
+    const nextStatus = conversion.draft.status;
+    const now = new Date().toISOString();
+    await tx
+      .prepare(
+        `UPDATE aleta_bot_legacy_migrations
+         SET status = ?, registry_target_key = ?, notes = ?, updated_at = ?
+         WHERE id = ?`
+      )
+      .run(
+        nextStatus,
+        targetKey,
+        [
+          `Draft registry dibuat dari legacy key ${conversion.migration.legacyKey}.`,
+          ...conversion.draft.warnings,
+        ].join(" "),
+        now,
+        migrationId
+      );
+    await appendAletaBotLog(tx, {
+      actorUserId: actor.id,
+      level: nextStatus === "needs_manual_mapping" ? "warning" : "success",
+      eventType: "admin",
+      message: `Legacy ${conversion.migration.feature} dikonversi menjadi draft registry.`,
+      metadata: { migrationId, targetKey, draftKind: conversion.draft.kind, warnings: conversion.draft.warnings },
+    });
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "CONVERT_ALETA_BOT_LEGACY_TO_DRAFT",
+      entityType: "aleta_bot_legacy_migrations",
+      entityId: migrationId,
+      payload: { targetKey, draftKind: conversion.draft.kind, status: nextStatus },
+    });
+    return {
+      migration: await getLegacyMigrationById(tx, migrationId),
+      draft: conversion.draft,
+    };
+  });
+  await writeAletaBotRuntimeConfig(db, await getAletaBotSettings(db), await getWhatsAppSettingsFromDb(db));
+  return {
+    ...result,
+    snapshot: await getAletaBotSnapshot(db, actor.id),
+  };
+}
+
+export async function runLegacyMigrationDryRun(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+): Promise<{ migration: AletaBotLegacyMigration; preview: string; snapshot: AletaBotSnapshot }> {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  const result = await withTransaction(db, async (tx) => {
+    const migration = await getLegacyMigrationById(tx, migrationId);
+    const conversion = convertLegacyToDraft(migration);
+    const preview = [
+      `DRY-RUN MIGRASI: ${migration.feature}`,
+      `Legacy key: ${migration.legacyKey || "-"}`,
+      `Target: ${migration.registryTargetType || conversion.kind} / ${migration.registryTargetKey || "-"}`,
+      `Status saat ini: ${migration.status}`,
+      "",
+      "Checklist:",
+      ...conversion.checklist.map((item) => `- ${item}`),
+      "",
+      "Peringatan:",
+      ...conversion.warnings.map((item) => `- ${item}`),
+      "",
+      "Tidak ada pesan WhatsApp yang dikirim.",
+    ].join("\n");
+    const now = new Date().toISOString();
+    await tx
+      .prepare(`UPDATE aleta_bot_legacy_migrations SET status = 'dry_run', notes = ?, updated_at = ? WHERE id = ?`)
+      .run(`Dry-run migrasi berhasil dipreview pada ${now}. Tidak ada pengiriman WhatsApp.`, now, migrationId);
+    await appendAletaBotLog(tx, {
+      actorUserId: actor.id,
+      level: "success",
+      eventType: "admin",
+      message: `Dry-run migrasi legacy diproses: ${migration.feature}.`,
+      metadata: { migrationId, legacyKey: migration.legacyKey, dryRun: true },
+    });
+    return {
+      migration: await getLegacyMigrationById(tx, migrationId),
+      preview,
+    };
+  });
+  return {
+    ...result,
+    snapshot: await getAletaBotSnapshot(db, actor.id),
+  };
+}
+
+export async function submitLegacyMigrationApproval(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  const result = await withTransaction(db, async (tx) => {
+    const migration = await getLegacyMigrationById(tx, migrationId);
+    const approval = await submitApprovalRequest(tx, {
+      actorUserId: actor.id,
+      entityType: migration.legacyType === "public_command" ? "public_qa_intent" : "notification",
+      entityId: migration.registryTargetKey || migration.id,
+      entityName: migration.feature,
+      snapshotJson: JSON.stringify({ migration }),
+      notes: "Approval migrasi legacy menuju registry aktif.",
+    });
+    const now = new Date().toISOString();
+    await tx
+      .prepare(`UPDATE aleta_bot_legacy_migrations SET status = 'pending_approval', notes = ?, updated_at = ? WHERE id = ?`)
+      .run("Menunggu approval Super Admin sebelum registry diaktifkan.", now, migrationId);
+    return {
+      approval,
+      migration: await getLegacyMigrationById(tx, migrationId),
+    };
+  });
+  return {
+    ...result,
+    snapshot: await getAletaBotSnapshot(db, actor.id),
+  };
+}
+
+export async function activateLegacyRegistry(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await withTransaction(db, async (tx) => {
+    const migration = await getLegacyMigrationById(tx, migrationId);
+    if (!["pending_approval", "dry_run", "registry_draft"].includes(migration.status)) {
+      throw new ApiError(400, "Registry hanya bisa diaktifkan setelah draft/dry-run/pending approval.");
+    }
+
+    // ── Duplicate-path guard ─────────────────────────────────────────────────
+    // For notification types: block activation if the same legacy key is still
+    // live (i.e., NOT yet disabled in another legacy_disabled migration row).
+    if (migration.legacyType === "party_notification" || migration.legacyType === "employee_notification") {
+      const alreadyDisabledRow = await tx
+        .prepare(
+          `SELECT id FROM aleta_bot_legacy_migrations
+           WHERE legacy_key = ? AND status = 'legacy_disabled' AND id != ? LIMIT 1`
+        )
+        .get<{ id: string }>(migration.legacyKey, migration.id);
+      // There is no separate "disabled" row for this key — meaning the same key
+      // is still live as legacy. Block to prevent dual-path delivery.
+      if (!alreadyDisabledRow && migration.legacyKey) {
+        throw new ApiError(
+          400,
+          `Duplicate path guard: legacy key "${migration.legacyKey}" masih aktif. ` +
+          `Jalankan aksi "Disable Legacy" pada migrasi yang sama sebelum mengaktifkan registry.`
+        );
+      }
+    }
+
+    // ── Approval requirement for high-risk ──────────────────────────────────
+    if (migration.riskLevel === "high") {
+      const approved = await tx
+        .prepare(`SELECT id FROM aleta_bot_approval_requests WHERE entity_id = ? AND status = 'approved' ORDER BY reviewed_at DESC LIMIT 1`)
+        .get<{ id: string }>(migration.registryTargetKey || migration.id);
+      if (!approved) throw new ApiError(400, "Migrasi high-risk wajib approval sebelum active registry.");
+    }
+
+    const now = new Date().toISOString();
+    await tx
+      .prepare(`UPDATE aleta_bot_legacy_migrations SET status = 'active_registry', notes = ?, migrated_at = ?, migrated_by = ?, updated_at = ? WHERE id = ?`)
+      .run("Registry sudah boleh berjalan. Legacy belum dinonaktifkan sampai aksi Disable Legacy dijalankan.", now, actor.id, now, migrationId);
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "ACTIVATE_ALETA_BOT_REGISTRY",
+      entityType: "aleta_bot_legacy_migrations",
+      entityId: migrationId,
+      payload: { migrationId, registryTargetKey: migration.registryTargetKey },
+    });
+  });
+  await writeAletaBotRuntimeConfig(db, await getAletaBotSettings(db), await getWhatsAppSettingsFromDb(db));
+  return getAletaBotSnapshot(db, actor.id);
+}
+
+export async function disableLegacyKey(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await withTransaction(db, async (tx) => {
+    const migration = await getLegacyMigrationById(tx, migrationId);
+    if (!["active_registry", "migrated", "archivable"].includes(migration.status)) {
+      throw new ApiError(400, "Legacy hanya bisa dinonaktifkan setelah registry aktif/tervalidasi.");
+    }
+    const now = new Date().toISOString();
+    await tx
+      .prepare(`UPDATE aleta_bot_legacy_migrations SET status = 'legacy_disabled', notes = ?, migrated_at = ?, migrated_by = ?, updated_at = ? WHERE id = ?`)
+      .run("Legacy key dinonaktifkan via runtime config. Kode legacy tetap ada sebagai fallback rollback.", now, actor.id, now, migrationId);
+    await appendAletaBotLog(tx, {
+      actorUserId: actor.id,
+      level: "warning",
+      eventType: "admin",
+      message: `Legacy key dinonaktifkan: ${migration.legacyKey}.`,
+      metadata: { migrationId, legacyKey: migration.legacyKey, sourceFunction: migration.sourceFunction },
+    });
+  });
+  await writeAletaBotRuntimeConfig(db, await getAletaBotSettings(db), await getWhatsAppSettingsFromDb(db));
+  return getAletaBotSnapshot(db, actor.id);
+}
+
+export async function rollbackLegacyMigration(
+  db: AletaDatabase,
+  actorUserId: string,
+  migrationId: string
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await withTransaction(db, async (tx) => {
+    const migration = await getLegacyMigrationById(tx, migrationId);
+    const now = new Date().toISOString();
+
+    // ── Rollback state machine ───────────────────────────────────────────────
+    // legacy_disabled  → active_registry  (re-enable legacy, keep registry live but
+    //                                       also restore legacy as fallback)
+    // active_registry  → dry_run          (deactivate registry, stay in dry-run)
+    // pending_approval → registry_draft   (cancel approval submission)
+    // dry_run/other    → mapped           (full rollback to mapped state)
+    let rollbackStatus: AletaBotLegacyMigration["status"] = "mapped";
+    let rollbackNotes = "Rollback penuh: registry tersimpan sebagai draft, legacy kembali sebagai fallback aktif.";
+
+    if (migration.status === "legacy_disabled") {
+      rollbackStatus = "active_registry";
+      rollbackNotes =
+        "Rollback dari legacy_disabled: legacy key diaktifkan kembali sebagai fallback. " +
+        "Registry masih aktif. Jalankan disable-legacy kembali setelah masalah teratasi.";
+    } else if (migration.status === "active_registry") {
+      rollbackStatus = "dry_run";
+      rollbackNotes =
+        "Rollback dari active_registry: registry dikembalikan ke status dry_run. " +
+        "Legacy key kembali menjadi fallback utama. Ulangi approval sebelum aktifkan ulang.";
+    } else if (migration.status === "pending_approval") {
+      rollbackStatus = "registry_draft";
+      rollbackNotes = "Rollback dari pending_approval: approval dibatalkan, kembali ke registry_draft.";
+    }
+
+    await tx
+      .prepare(`UPDATE aleta_bot_legacy_migrations SET status = ?, notes = ?, updated_at = ? WHERE id = ?`)
+      .run(rollbackStatus, rollbackNotes, now, migrationId);
+    await appendAletaBotLog(tx, {
+      actorUserId: actor.id,
+      level: "warning",
+      eventType: "admin",
+      message: `Rollback migrasi legacy: ${migration.feature} (${migration.status} → ${rollbackStatus}).`,
+      metadata: { migrationId, legacyKey: migration.legacyKey, previousStatus: migration.status, rollbackStatus },
+    });
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "ROLLBACK_ALETA_BOT_LEGACY_MIGRATION",
+      entityType: "aleta_bot_legacy_migrations",
+      entityId: migrationId,
+      payload: { migrationId, legacyKey: migration.legacyKey, previousStatus: migration.status, rollbackStatus },
+    });
+  });
+  // Re-write runtime config so disabledLegacyKeys reflects the rollback
+  // (e.g., if we rolled back from legacy_disabled, the key must be re-enabled).
+  await writeAletaBotRuntimeConfig(db, await getAletaBotSettings(db), await getWhatsAppSettingsFromDb(db));
+  return getAletaBotSnapshot(db, actor.id);
 }
 
 async function getWorkerStateFromGateway(): Promise<AletaBotWorkerState | null> {
@@ -3412,6 +4100,45 @@ async function getPublicQaLogs(db: AletaDatabase) {
   return rows.map(mapPublicQaLog);
 }
 
+async function getUnknownQuestionReviews(db: AletaDatabase): Promise<AletaBotUnknownQuestionReview[]> {
+  await ensureAletaBotSeeded(db);
+  const logs = await getPublicQaLogs(db);
+  const grouped = new Map<string, AletaBotUnknownQuestionReview>();
+  for (const log of logs) {
+    if (log.status !== "fallback" && log.status !== "error" && log.matchedMethod !== "fallback") continue;
+    const normalized = (log.normalizedMessage || log.rawMessage || "").trim().toLowerCase();
+    if (!normalized) continue;
+    const suggestion = suggestIntentForQuestion(log.rawMessage || normalized);
+    const existing = grouped.get(normalized);
+    const senderMasked = maskExportPhone(log.senderNumber || "");
+    if (existing) {
+      existing.frequency += 1;
+      if (log.createdAt > existing.lastAskedAt) {
+        existing.lastAskedAt = log.createdAt;
+        existing.rawMessage = log.rawMessage;
+        existing.senderMasked = senderMasked;
+        existing.fallbackReason = log.errorMessage || log.responsePreview || existing.fallbackReason;
+      }
+    } else {
+      grouped.set(normalized, {
+        normalizedMessage: normalized,
+        rawMessage: log.rawMessage,
+        frequency: 1,
+        lastAskedAt: log.createdAt,
+        senderMasked,
+        fallbackReason: log.errorMessage || log.responsePreview || "Fallback / tidak dikenali.",
+        suggestedIntentKey: suggestion.suggestedIntentKey,
+        confidence: suggestion.confidence,
+        safetyRisk: suggestion.safety.riskLevel,
+        suggestedAction: suggestion.suggestedAction,
+      });
+    }
+  }
+  return Array.from(grouped.values())
+    .sort((a, b) => b.frequency - a.frequency || b.lastAskedAt.localeCompare(a.lastAskedAt))
+    .slice(0, 30);
+}
+
 async function getEmployeeRecipients(db: AletaDatabase) {
   const rows = await db
     .prepare(
@@ -3508,7 +4235,7 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
   const runtimeMode = getWhatsappRuntimeMode();
   const [
     settings, templates, jobs, notifications, queries, dbConnections,
-    publicQaIntents, publicQaLogs, employeeRecipients, notificationLogs, logs,
+    publicQaIntents, publicQaLogs, unknownQuestionReviews, employeeRecipients, notificationLogs, logs,
     whatsappSnapshot, approvalRequests, legacyMigrations,
   ] = await Promise.all([
     getAletaBotSettings(db),
@@ -3519,6 +4246,7 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
     getDbConnections(db),
     getPublicQaIntents(db),
     getPublicQaLogs(db),
+    getUnknownQuestionReviews(db),
     getEmployeeRecipients(db),
     getNotificationLogs(db),
     getLogs(db),
@@ -3552,6 +4280,7 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
     dbConnections,
     publicQaIntents,
     publicQaLogs,
+    unknownQuestionReviews,
     employeeRecipients,
     notificationLogs,
     queryCatalog: ALETA_BOT_QUERY_CATALOG,
@@ -3679,14 +4408,23 @@ async function writeAletaBotRuntimeConfig(
   settings: AletaBotSettings,
   whatsappSettings: Awaited<ReturnType<typeof getWhatsAppSettingsFromDb>>
 ) {
-  const [templates, notifications, queries, dbConnections, publicQaIntents, employeeRecipients] = await Promise.all([
+  const [templates, notifications, queries, dbConnections, publicQaIntents, employeeRecipients, legacyMigrations] = await Promise.all([
     getTemplates(db),
     getNotifications(db),
     getQueries(db),
     getDbConnections(db),
     getPublicQaIntents(db),
     getEmployeeRecipients(db),
+    getLegacyMigrations(db),
   ]);
+  const disabledLegacyNotificationKeys = legacyMigrations
+    .filter((item) => item.status === "legacy_disabled" && (item.legacyType === "party_notification" || item.legacyType === "employee_notification"))
+    .map((item) => item.legacyKey || item.sourceFunction)
+    .filter(Boolean);
+  const disabledLegacyCommandKeys = legacyMigrations
+    .filter((item) => item.status === "legacy_disabled" && (item.legacyType === "public_command" || item.legacyType === "admin_command"))
+    .map((item) => item.legacyKey || item.sourceFunction)
+    .filter(Boolean);
   const payload = {
     version: 1,
     updatedAt: new Date().toISOString(),
@@ -3700,6 +4438,9 @@ async function writeAletaBotRuntimeConfig(
     dryRunEnabled: settings.dryRunEnabled,
     scheduleCron: settings.scheduleCron,
     testTargetNumber: settings.testTargetNumber,
+    disabledLegacyKeys: [...disabledLegacyNotificationKeys, ...disabledLegacyCommandKeys],
+    disabledLegacyNotificationKeys,
+    disabledLegacyCommandKeys,
     templates,
     notifications: notifications.filter((notification) => notification.isActive),
     queries: queries.filter((query) => query.isActive),
@@ -4653,7 +5394,8 @@ export async function runAletaBotAction(
       | "test-notification"
       | "test-connection"
       | "pause-worker"
-      | "resume-worker";
+      | "resume-worker"
+      | "purge-logs";
     payload?: Record<string, unknown>;
   }
 ) {
@@ -4932,6 +5674,39 @@ export async function runAletaBotAction(
   if (action === "resume-worker") {
     await controlWorker(db, actor.id, "resume");
     return getAletaBotSnapshot(db, actor.id);
+  }
+
+  if (action === "purge-logs") {
+    const olderThanDays = Math.max(7, Math.min(365, Number(payload?.olderThanDays ?? 30)));
+    const safeOnly = payload?.safeOnly !== false;
+    const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
+    // Only delete non-audit log types: message, notification, query, template, connection, public_qa
+    // Never delete: admin, settings — those are kept as operational trail
+    const safeEventTypes = safeOnly
+      ? ["message", "notification", "query", "public_qa"]
+      : ["message", "notification", "query", "template", "connection", "public_qa", "database"];
+    const placeholders = safeEventTypes.map(() => "?").join(", ");
+    const result = await db
+      .prepare(`DELETE FROM aleta_bot_logs WHERE created_at < ? AND event_type IN (${placeholders})`)
+      .run(cutoff, ...safeEventTypes);
+    const deletedCount = result.changes ?? 0;
+    await appendAletaBotLog(db, {
+      actorUserId: actor.id,
+      level: "info",
+      eventType: "admin",
+      message: `Retensi log: ${deletedCount} entri log lama (>${olderThanDays} hari) dihapus.`,
+      metadata: { olderThanDays, cutoff, safeOnly, safeEventTypes, deletedCount },
+    });
+    await appendAuditLog(db, {
+      id: await nextPrefixedId(db, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "PURGE_ALETA_BOT_LOGS",
+      entityType: "aleta_bot_logs",
+      entityId: "bulk",
+      payload: { olderThanDays, cutoff, safeOnly, deletedCount },
+    });
+    const snapshot = await getAletaBotSnapshot(db, actor.id);
+    return { ...snapshot, deletedCount };
   }
 
   throw new ApiError(400, "Aksi ALETA Bot tidak valid.");

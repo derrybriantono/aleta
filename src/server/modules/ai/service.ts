@@ -1074,14 +1074,15 @@ export async function generateDispositionSuggestionInDb(
   const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
   const featureFlags = getResolvedFeatureFlags(aiConfig);
 
-  assertGlobalAIEnabled(aiConfig);
-
-  if (!aiConfig.featureDisposisiAi || !featureFlags.oneStopDisposition.enabled) {
-    throw new ApiError(409, "Fitur One Stop Disposition AI sedang dinonaktifkan oleh administrator.");
-  }
-
-  if (!featureFlags.oneStopDisposition.recommendation) {
-    throw new ApiError(409, "Analisis rekomendasi disposisi AI sedang dinonaktifkan oleh administrator.");
+  // Global AI disabled → delegate to insight layer which returns source:"disabled" fallback.
+  // Feature-level disabled → still throw so callers know the specific feature is off.
+  if (aiConfig.enabled) {
+    if (!aiConfig.featureDisposisiAi || !featureFlags.oneStopDisposition.enabled) {
+      throw new ApiError(409, "Fitur One Stop Disposition AI sedang dinonaktifkan oleh administrator.");
+    }
+    if (!featureFlags.oneStopDisposition.recommendation) {
+      throw new ApiError(409, "Analisis rekomendasi disposisi AI sedang dinonaktifkan oleh administrator.");
+    }
   }
 
   const timeline = await getDispositionsByLetterIdFromDb(db, letterId);
@@ -1145,14 +1146,14 @@ export async function generateMailIntelligenceInDb(
   const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
   const featureFlags = getResolvedFeatureFlags(aiConfig);
 
-  assertGlobalAIEnabled(aiConfig);
-
-  if (!aiConfig.featureManajemenSuratAi || !featureFlags.mailIntelligence.enabled) {
-    throw new ApiError(409, "Fitur ALETA Intelligence Service sedang dinonaktifkan oleh administrator.");
-  }
-
-  if (!featureFlags.mailIntelligence.summary && !featureFlags.mailIntelligence.findings) {
-    throw new ApiError(409, "Subfitur utama ALETA Intelligence Service sedang dinonaktifkan oleh administrator.");
+  // Global AI disabled → delegate to insight layer which returns source:"disabled" fallback.
+  if (aiConfig.enabled) {
+    if (!aiConfig.featureManajemenSuratAi || !featureFlags.mailIntelligence.enabled) {
+      throw new ApiError(409, "Fitur ALETA Intelligence Service sedang dinonaktifkan oleh administrator.");
+    }
+    if (!featureFlags.mailIntelligence.summary && !featureFlags.mailIntelligence.findings) {
+      throw new ApiError(409, "Subfitur utama ALETA Intelligence Service sedang dinonaktifkan oleh administrator.");
+    }
   }
 
   const timeline = await getDispositionsByLetterIdFromDb(db, letterId);

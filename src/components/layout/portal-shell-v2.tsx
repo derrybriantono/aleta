@@ -193,6 +193,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
 
     const storedValue = window.localStorage.getItem(DESKTOP_SIDEBAR_STORAGE_KEY);
     if (storedValue) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDesktopSidebarCollapsed(storedValue === "true");
     }
   }, []);

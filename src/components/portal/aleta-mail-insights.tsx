@@ -91,7 +91,8 @@ export function AletaMailInsights({
       });
 
     return () => controller.abort();
-  }, [currentUser?.id, mailIntelligenceEnabled, requestKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, mailIntelligenceEnabled, requestKey]);
 
   return (
     <Card className="border-border/80">

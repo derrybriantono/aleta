@@ -162,6 +162,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAiState({ status: "idle", insight: null, errorMessage: null });
   }, [letter.id]);
 

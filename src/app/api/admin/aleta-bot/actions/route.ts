@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
         | "test-notification"
         | "test-connection"
         | "pause-worker"
-        | "resume-worker";
+        | "resume-worker"
+        | "purge-logs";
       payload?: Record<string, unknown>;
     }>(request);
     const db = await getDatabase();
