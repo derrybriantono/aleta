@@ -1,0 +1,15 @@
+# Node
+aleta_bot/node_modules/
+node_modules/
+
+# Runtime logs
+*.err.log
+*.out.log
+*.codex-*.err.log
+*.codex-*.out.log
+
+# Next.js build output (manajemen_surat managed by its own repo)
+manajemen_surat/
+
+# Docs folder (managed separately)
+docs/

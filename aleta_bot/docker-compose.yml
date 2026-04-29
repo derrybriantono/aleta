@@ -1,0 +1,17 @@
+version: '2.4'
+
+services:
+  aleta-container-bot-v2:
+    container_name: aleta-bot-v2-container
+    image: aleta-bot-v2
+    build:
+      context: /var/www/html/aleta_bot
+      dockerfile: Dockerfile
+    volumes:
+      - /var/www/html/aleta_bot/app.js:/usr/src/app/app.js
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3003:3003"
+    network_mode: "host"
+    privileged: true
+    command: sh -c "mkdir -p temp/resources/file/doc/ && node app.js"  # Menjalankan mkdir sebelum menjalankan app.js

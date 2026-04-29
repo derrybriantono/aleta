@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check d:/Aplikasi/app_derry/aleta_bot/app.js)"
+    ]
+  }
+}

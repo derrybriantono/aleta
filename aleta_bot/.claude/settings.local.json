@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"WHERE.*\\\\`\\\\|WHERE.*'\\\\|\\\\${.*perkara\\\\|WHERE.*+\\\\|INSERT.*+\\\\|UPDATE.*+\" \"d:\\\\Aplikasi\\\\app_derry\\\\aleta_bot\\\\detail.js\")"
+    ]
+  }
+}
