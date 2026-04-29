@@ -684,10 +684,13 @@ const legacyCommandAdapter = require("../services/legacy/legacyCommandAdapter");
 router.get("/legacy/notifications", requireInternalToken, (req, res) => {
   try {
     const snapshot = legacyNotificationAdapter.getRegistrySnapshot();
+    const duplicates = legacyNotificationAdapter.detectDuplicateNotificationPaths();
     return res.json({
       ok: true,
       total: snapshot.length,
       notifications: snapshot,
+      duplicates,
+      duplicateCount: duplicates.length,
     });
   } catch (error) {
     logService.logSystemEvent({

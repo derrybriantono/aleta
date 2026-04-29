@@ -23,6 +23,7 @@
 
 const notification = require("../../notifikasi");
 const logService = require("../logService");
+const { readRuntimeConfig } = require("../../config/runtime-config");
 
 /**
  * Registry of all legacy notification functions.
@@ -190,10 +191,20 @@ const LEGACY_NOTIFICATION_REGISTRY = {
  * Get the full registry snapshot.
  * Used by the portal dashboard for Phase 5 migration tracking.
  */
+function isLegacyKeyDisabled(legacyKey) {
+  const config = readRuntimeConfig();
+  const disabled = [
+    ...(Array.isArray(config.disabledLegacyKeys) ? config.disabledLegacyKeys : []),
+    ...(Array.isArray(config.disabledLegacyNotificationKeys) ? config.disabledLegacyNotificationKeys : []),
+  ].map((key) => String(key || ""));
+  return disabled.includes(legacyKey);
+}
+
 function getRegistrySnapshot() {
   return Object.values(LEGACY_NOTIFICATION_REGISTRY).map((entry) => ({
     ...entry,
-    status: "legacy_active", // these are still running in app.js crons
+    status: isLegacyKeyDisabled(entry.legacyKey) ? "legacy_disabled" : "legacy_active", // app.js crons may still need key-by-key binding
+    runtimeBinding: isLegacyKeyDisabled(entry.legacyKey) ? "adapter_disabled" : "legacy_fallback",
   }));
 }
 
@@ -203,7 +214,28 @@ function getRegistrySnapshot() {
  * @returns {object|null}
  */
 function getRegistryEntry(legacyKey) {
-  return LEGACY_NOTIFICATION_REGISTRY[legacyKey] ?? null;
+  const entry = LEGACY_NOTIFICATION_REGISTRY[legacyKey] ?? null;
+  return entry ? { ...entry, disabled: isLegacyKeyDisabled(legacyKey) } : null;
+}
+
+function detectDuplicateNotificationPaths(registryNotifications = []) {
+  const activeLegacy = getRegistrySnapshot().filter((entry) => entry.status !== "legacy_disabled");
+  const activeRegistry = Array.isArray(registryNotifications) ? registryNotifications : [];
+  return activeLegacy.flatMap((legacy) => {
+    return activeRegistry
+      .filter((registry) => {
+        const haystack = `${registry.id || ""} ${registry.name || ""} ${registry.scheduleConfig?.cron || ""} ${registry.schedule_config?.cron || ""}`.toLowerCase();
+        const needle = `${legacy.legacyKey} ${legacy.feature} ${legacy.cronSchedule}`.toLowerCase();
+        return haystack.includes(String(legacy.legacyKey).toLowerCase()) || (legacy.cronSchedule && needle.includes(String(registry.scheduleConfig?.cron || registry.schedule_config?.cron || "").toLowerCase()));
+      })
+      .map((registry) => ({
+        legacyKey: legacy.legacyKey,
+        legacyFeature: legacy.feature,
+        registryKey: registry.id || registry.key || registry.name || "unknown",
+        severity: "critical",
+        reason: "Legacy notification dan registry notification berpotensi aktif pada jalur/schedule yang sama.",
+      }));
+  });
 }
 
 /**
@@ -218,6 +250,16 @@ async function previewLegacyNotificationData(legacyKey) {
   const entry = LEGACY_NOTIFICATION_REGISTRY[legacyKey];
   if (!entry) {
     throw new Error(`Legacy notification key tidak dikenal: "${legacyKey}"`);
+  }
+  if (isLegacyKeyDisabled(legacyKey)) {
+    return {
+      ok: false,
+      legacyKey,
+      feature: entry.feature,
+      dataFn: entry.getDataFn,
+      skipped: true,
+      error: "Legacy key sudah dinonaktifkan melalui runtime config.",
+    };
   }
 
   const dataFn = notification[entry.getDataFn];
@@ -320,6 +362,8 @@ async function previewAllLegacyNotifications() {
 module.exports = {
   getRegistrySnapshot,
   getRegistryEntry,
+  isLegacyKeyDisabled,
+  detectDuplicateNotificationPaths,
   previewLegacyNotificationData,
   previewAllLegacyNotifications,
   LEGACY_NOTIFICATION_REGISTRY,

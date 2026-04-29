@@ -19,6 +19,7 @@
 
 const publicQaIntentService = require("../publicQaIntentService");
 const logService = require("../logService");
+const { readRuntimeConfig } = require("../../config/runtime-config");
 
 /**
  * Classification of all keyword handlers in query.js getData().
@@ -439,6 +440,15 @@ function buildKeywordMap() {
 
 const _keywordMap = buildKeywordMap();
 
+function isLegacyCommandDisabled(keywordOrKey) {
+  const config = readRuntimeConfig();
+  const disabled = [
+    ...(Array.isArray(config.disabledLegacyKeys) ? config.disabledLegacyKeys : []),
+    ...(Array.isArray(config.disabledLegacyCommandKeys) ? config.disabledLegacyCommandKeys : []),
+  ].map((key) => String(key || "").toLowerCase().trim());
+  return disabled.includes(String(keywordOrKey || "").toLowerCase().trim());
+}
+
 /**
  * Classify an incoming message against the legacy command catalog.
  *
@@ -452,12 +462,14 @@ function classifyCommand(rawMessage) {
   const param = parts.slice(1).join("#").trim();
 
   const entry = _keywordMap.get(keyword) ?? null;
+  const disabled = isLegacyCommandDisabled(keyword) || (entry?.keywords || []).some((kw) => isLegacyCommandDisabled(kw));
 
   return {
-    matched: entry !== null,
+    matched: entry !== null && !disabled,
     keyword,
     param,
     entry,
+    disabled,
     isPublic: entry?.type === "public",
     isAdmin: entry?.type === "admin",
     isLegacyOnly: entry?.type === "legacy_only",
@@ -528,13 +540,21 @@ function getCommandCatalogSnapshot() {
     admin: adminCount,
     legacyOnly: legacyOnlyCount,
     byStatus,
-    entries: COMMAND_CATALOG,
+    entries: COMMAND_CATALOG.map((entry) => {
+      const disabled = entry.keywords.some((kw) => isLegacyCommandDisabled(kw));
+      return {
+        ...entry,
+        disabled,
+        runtimeBinding: disabled ? "adapter_disabled" : "legacy_fallback",
+      };
+    }),
   };
 }
 
 module.exports = {
   COMMAND_CATALOG,
   classifyCommand,
+  isLegacyCommandDisabled,
   detectDuplicateCommandPaths,
   getCommandCatalogSnapshot,
 };
