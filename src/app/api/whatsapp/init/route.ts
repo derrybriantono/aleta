@@ -3,7 +3,10 @@ import { NextRequest } from "next/server";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
-import { getWhatsappRuntimeMode } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import {
+  connectGatewayWhatsapp,
+  getWhatsappRuntimeMode,
+} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { handleRouteError, ok } from "@/server/shared/http";
@@ -24,10 +27,19 @@ export async function POST(request: NextRequest) {
     const runtimeMode = getWhatsappRuntimeMode();
 
     if (runtimeMode === "aleta_bot") {
+      const result = await connectGatewayWhatsapp();
+      if (!result.ok) {
+        throw new ApiError(502, result.error);
+      }
+
       return ok({
-        message:
-          "Inisialisasi WhatsApp dikelola oleh aleta_bot gateway. Gunakan panel ALETA Bot untuk menghubungkan ulang sesi.",
+        message: result.data.message ?? "Connect WhatsApp Gateway diminta ke runtime ALETA Bot.",
+        gatewayStatus: result.data.status,
+        started: result.data.started ?? false,
+        qrAvailable: result.data.qrAvailable ?? false,
         runtimeMode,
+        runtimeLabel: "ALETA Bot Gateway",
+        singleGateway: true,
       });
     }
 

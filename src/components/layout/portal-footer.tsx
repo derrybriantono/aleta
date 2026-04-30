@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { AtSign, Globe, Link2, Mail, MapPin, Phone, Smartphone } from "lucide-react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { Badge } from "@/components/ui/badge";
 import { usePortal } from "@/lib/app-state";
+import { APP_VERSION } from "@/lib/patch-notes";
 
 export function PortalFooter() {
   const { institutionIdentity } = usePortal();
@@ -106,6 +108,16 @@ export function PortalFooter() {
             <p className="font-semibold text-foreground">{institutionIdentity.courtName}</p>
             <p className="text-muted-foreground">
               Identitas instansi, kontak, dan kanal digital dapat dikelola dari menu Identitas Instansi oleh Admin atau Super Admin.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              ALETA v{APP_VERSION} <span className="px-1">·</span>
+              <Link href="/patch-notes" className="font-medium text-primary underline-offset-4 transition hover:underline">
+                Patch Notes
+              </Link>
+              <span className="px-1">Â·</span>
+              <Link href="/panduan" className="font-medium text-primary underline-offset-4 transition hover:underline">
+                Panduan Penggunaan
+              </Link>
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

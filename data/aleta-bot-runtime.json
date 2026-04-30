@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-28T02:22:10.153Z",
+  "updatedAt": "2026-04-29T07:23:28.128Z",
   "source": "manajemen_surat",
   "botEnabled": false,
   "notificationsEnabled": false,
@@ -11,6 +11,9 @@
   "dryRunEnabled": true,
   "scheduleCron": "00 07 * * Monday-Friday",
   "testTargetNumber": "",
+  "disabledLegacyKeys": [],
+  "disabledLegacyNotificationKeys": [],
+  "disabledLegacyCommandKeys": [],
   "templates": [
     {
       "id": "admin-test",
@@ -32,6 +35,62 @@
       "placeholders": [],
       "editable": true,
       "updatedAt": "2026-04-27T05:18:38.031Z"
+    },
+    {
+      "id": "draft-template-employee-ketua-penerimaan",
+      "category": "employee",
+      "title": "[Draft] Laporan Bulanan Penerimaan Perkara ke Ketua",
+      "body": "[ALETA Bot - Notifikasi Pegawai]\nYth. Bapak/Ibu {{nama_pegawai}},\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nWaktu data: {{waktu}}",
+      "placeholders": [
+        "nama_pegawai",
+        "judul_notifikasi",
+        "ringkasan",
+        "waktu"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:07:34.535Z"
+    },
+    {
+      "id": "draft-template-employee-panitera-laporan",
+      "category": "employee",
+      "title": "[Draft] Laporan Bulanan Penerimaan Perkara ke Panitera",
+      "body": "[ALETA Bot - Notifikasi Pegawai]\nYth. Bapak/Ibu {{nama_pegawai}},\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nWaktu data: {{waktu}}",
+      "placeholders": [
+        "nama_pegawai",
+        "judul_notifikasi",
+        "ringkasan",
+        "waktu"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:07:45.923Z"
+    },
+    {
+      "id": "draft-template-employee-kasir",
+      "category": "employee",
+      "title": "[Draft] Notifikasi Pengingat Kasir Harian",
+      "body": "[ALETA Bot - Notifikasi Pegawai]\nYth. Bapak/Ibu {{nama_pegawai}},\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nWaktu data: {{waktu}}",
+      "placeholders": [
+        "nama_pegawai",
+        "judul_notifikasi",
+        "ringkasan",
+        "waktu"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:10:23.891Z"
+    },
+    {
+      "id": "draft-template-employee-penjaga-sidang",
+      "category": "employee",
+      "title": "[Draft] Notifikasi Penjaga Sidang Hari Ini",
+      "body": "[ALETA Bot - Notifikasi Pegawai]\nYth. Bapak/Ibu {{nama_pegawai}},\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nWaktu data: {{waktu}}",
+      "placeholders": [
+        "nama_pegawai",
+        "judul_notifikasi",
+        "ringkasan",
+        "waktu"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:10:11.171Z"
     },
     {
       "id": "fallback-error",
@@ -92,6 +151,58 @@
       ],
       "editable": true,
       "updatedAt": "2026-04-27T05:18:38.031Z"
+    },
+    {
+      "id": "draft-template-party-akta-cerai",
+      "category": "party",
+      "title": "[Draft] Notifikasi Pihak Akta Cerai Terbit",
+      "body": "Assalamualaikum Warahmatullahi Wabarakatuh.\n\nYth. Bapak/Ibu {{nama_pihak}}, berikut informasi terkait perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan ini merupakan notifikasi bantuan. Informasi resmi tetap mengikuti ketentuan pengadilan.",
+      "placeholders": [
+        "nama_pihak",
+        "nomor_perkara",
+        "ringkasan"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:06:56.097Z"
+    },
+    {
+      "id": "draft-template-party-registration",
+      "category": "party",
+      "title": "[Draft] Notifikasi Pihak Baru (Pendaftaran Perkara)",
+      "body": "Assalamualaikum Warahmatullahi Wabarakatuh.\n\nYth. Bapak/Ibu {{nama_pihak}}, berikut informasi terkait perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan ini merupakan notifikasi bantuan. Informasi resmi tetap mengikuti ketentuan pengadilan.",
+      "placeholders": [
+        "nama_pihak",
+        "nomor_perkara",
+        "ringkasan"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:06:05.937Z"
+    },
+    {
+      "id": "draft-template-party-putusan",
+      "category": "party",
+      "title": "[Draft] Notifikasi Putusan ke Pihak",
+      "body": "Assalamualaikum Warahmatullahi Wabarakatuh.\n\nYth. Bapak/Ibu {{nama_pihak}}, berikut informasi terkait perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan ini merupakan notifikasi bantuan. Informasi resmi tetap mengikuti ketentuan pengadilan.",
+      "placeholders": [
+        "nama_pihak",
+        "nomor_perkara",
+        "ringkasan"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:07:22.695Z"
+    },
+    {
+      "id": "draft-template-party-sisa-panjar",
+      "category": "party",
+      "title": "[Draft] Notifikasi Sisa Panjar ke Pihak",
+      "body": "Assalamualaikum Warahmatullahi Wabarakatuh.\n\nYth. Bapak/Ibu {{nama_pihak}}, berikut informasi terkait perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan ini merupakan notifikasi bantuan. Informasi resmi tetap mengikuti ketentuan pengadilan.",
+      "placeholders": [
+        "nama_pihak",
+        "nomor_perkara",
+        "ringkasan"
+      ],
+      "editable": true,
+      "updatedAt": "2026-04-29T07:07:08.720Z"
     },
     {
       "id": "pegawai-monitoring",
@@ -302,8 +413,8 @@
       "usedByNotifications": [
         "Notifikasi Perkara Baru"
       ],
-      "lastTestedAt": null,
-      "lastTestStatus": "idle",
+      "lastTestedAt": "2026-04-28T02:24:00.517Z",
+      "lastTestStatus": "success",
       "lastTestError": null,
       "createdBy": null,
       "updatedBy": null,
@@ -823,51 +934,47 @@
     {
       "id": "qa-greeting",
       "key": "greeting",
-      "name": "Salam dan Bantuan Awal",
-      "description": "Menyambut pengguna dan menampilkan menu utama ALETA Bot.",
+      "name": "Sapaan Awal",
+      "description": "Draft intent hasil konversi command legacy getData.greeting.",
       "category": "informasi_umum",
-      "audience": "public",
-      "isActive": true,
+      "audience": "party",
+      "isActive": false,
       "aiEnabled": true,
       "exactTriggers": [
         "halo",
         "hallo",
         "hai",
         "hei",
-        "assalamualaikum",
-        "aslmkm",
-        "ass"
+        "assalamualaikum"
       ],
       "exampleQuestions": [
-        "Halo admin",
-        "Assalamualaikum",
-        "Saya butuh bantuan",
-        "Apa saja layanan bot ini?"
+        "Halo Aleta",
+        "Assalamualaikum, saya mau bertanya"
       ],
       "requiredParameters": [],
       "queryKey": "",
-      "legacyHandler": "query.getData:greeting",
+      "legacyHandler": "getData",
       "legacyCommand": "halo",
       "parameterizedLegacyCommand": "",
       "templateKey": "",
-      "responseMode": "legacy_handler",
-      "confidenceThreshold": 0.65,
+      "responseMode": "static_template",
+      "confidenceThreshold": 0.72,
       "requiresVerification": false,
       "requiresCaseNumber": false,
-      "maxAttempts": 2,
-      "fallbackMessage": "Maaf, saya belum memahami pertanyaan Bapak/Ibu. Silakan ketik info lengkap untuk melihat daftar layanan, atau hubungi petugas Pengadilan Agama Donggala di 0822-7111-5021.",
+      "maxAttempts": 3,
+      "fallbackMessage": "Maaf, pertanyaan Bapak/Ibu belum dapat diproses otomatis. Silakan hubungi PTSP/petugas melalui kanal resmi pengadilan.",
       "riskLevel": "low",
-      "notes": "Seed dari trigger greeting query.js.",
+      "notes": "Draft hasil Smart Legacy Conversion. Aktifkan hanya setelah test intent dan approval.",
       "aiAnswerEnabled": false,
-      "aiAnswerMode": "off",
+      "aiAnswerMode": "template_only",
       "answerPolicy": "public_info_only",
       "verificationPolicy": "none",
       "allowedDataFields": [],
       "blockedDataFields": [
         "nik",
         "alamat",
-        "telepon",
         "nomor_hp",
+        "amar_lengkap",
         "catatan_internal"
       ],
       "aiSystemPrompt": "",
@@ -876,7 +983,7 @@
       "temperature": 0.2,
       "requiresApprovalBeforeActive": true,
       "version": 1,
-      "status": "active",
+      "status": "draft",
       "approvedBy": null,
       "approvedAt": null
     },
@@ -884,61 +991,168 @@
       "id": "qa-jadwal-sidang",
       "key": "cek_jadwal_sidang",
       "name": "Cek Jadwal Sidang",
-      "description": "Mengarahkan pertanyaan natural tentang jadwal sidang ke command jadwal.",
+      "description": "Draft intent hasil konversi command legacy getData.antrian.",
       "category": "jadwal_sidang",
       "audience": "party",
-      "isActive": true,
+      "isActive": false,
       "aiEnabled": true,
       "exactTriggers": [
+        "sidang",
         "jadwal"
       ],
       "exampleQuestions": [
-        "Saya mau tahu jadwal sidang saya",
         "Kapan sidang perkara saya?",
-        "Sidang saya tanggal berapa?"
+        "Saya mau tahu jadwal sidang"
       ],
       "requiredParameters": [
         "nomor_perkara"
       ],
-      "queryKey": "public_hearing_schedule",
-      "legacyHandler": "query.getData:jadwal",
-      "legacyCommand": "jadwal",
-      "parameterizedLegacyCommand": "jadwal",
+      "queryKey": "",
+      "legacyHandler": "getData",
+      "legacyCommand": "sidang",
+      "parameterizedLegacyCommand": "sidang",
       "templateKey": "",
       "responseMode": "legacy_handler",
       "confidenceThreshold": 0.72,
       "requiresVerification": true,
       "requiresCaseNumber": true,
-      "maxAttempts": 2,
-      "fallbackMessage": "Untuk cek jadwal sidang, silakan kirim nomor perkara. Contoh: jadwal#123.G.2021.",
+      "maxAttempts": 3,
+      "fallbackMessage": "Maaf, pertanyaan Bapak/Ibu belum dapat diproses otomatis. Silakan hubungi PTSP/petugas melalui kanal resmi pengadilan.",
       "riskLevel": "medium",
-      "notes": "Data dinamis tetap memakai handler legacy query.js.",
-      "aiAnswerEnabled": true,
+      "notes": "Draft hasil Smart Legacy Conversion. Aktifkan hanya setelah test intent dan approval.",
+      "aiAnswerEnabled": false,
       "aiAnswerMode": "guided_answer",
-      "answerPolicy": "case_status_limited",
+      "answerPolicy": "public_info_only",
       "verificationPolicy": "case_number_only",
       "allowedDataFields": [
-        "nomor_perkara",
-        "tanggal_sidang",
-        "agenda",
-        "ruangan",
-        "status_umum",
-        "keterangan"
+        "nomor_perkara"
       ],
       "blockedDataFields": [
         "nik",
         "alamat",
-        "telepon",
         "nomor_hp",
+        "amar_lengkap",
         "catatan_internal"
       ],
       "aiSystemPrompt": "",
       "aiUserPromptTemplate": "",
-      "maxAiTokens": 350,
+      "maxAiTokens": 400,
       "temperature": 0.2,
       "requiresApprovalBeforeActive": true,
       "version": 1,
-      "status": "active",
+      "status": "draft",
+      "approvedBy": null,
+      "approvedAt": null
+    },
+    {
+      "id": "draft-intent-antrian-sidang",
+      "key": "antrian_sidang",
+      "name": "Informasi Antrian Sidang",
+      "description": "Draft intent hasil konversi command legacy getData.antrian.",
+      "category": "jadwal_sidang",
+      "audience": "party",
+      "isActive": false,
+      "aiEnabled": true,
+      "exactTriggers": [
+        "antrian",
+        "antrian sidang",
+        "daftar antrian"
+      ],
+      "exampleQuestions": [
+        "Saya mau cek antrian sidang",
+        "Nomor antrian sidang saya berapa?"
+      ],
+      "requiredParameters": [
+        "nomor_perkara"
+      ],
+      "queryKey": "",
+      "legacyHandler": "getData",
+      "legacyCommand": "antrian",
+      "parameterizedLegacyCommand": "antrian",
+      "templateKey": "",
+      "responseMode": "legacy_handler",
+      "confidenceThreshold": 0.72,
+      "requiresVerification": true,
+      "requiresCaseNumber": true,
+      "maxAttempts": 3,
+      "fallbackMessage": "Maaf, pertanyaan Bapak/Ibu belum dapat diproses otomatis. Silakan hubungi PTSP/petugas melalui kanal resmi pengadilan.",
+      "riskLevel": "medium",
+      "notes": "Draft hasil Smart Legacy Conversion. Aktifkan hanya setelah test intent dan approval.",
+      "aiAnswerEnabled": false,
+      "aiAnswerMode": "guided_answer",
+      "answerPolicy": "public_info_only",
+      "verificationPolicy": "case_number_only",
+      "allowedDataFields": [
+        "nomor_perkara"
+      ],
+      "blockedDataFields": [
+        "nik",
+        "alamat",
+        "nomor_hp",
+        "amar_lengkap",
+        "catatan_internal"
+      ],
+      "aiSystemPrompt": "",
+      "aiUserPromptTemplate": "",
+      "maxAiTokens": 400,
+      "temperature": 0.2,
+      "requiresApprovalBeforeActive": true,
+      "version": 1,
+      "status": "draft",
+      "approvedBy": null,
+      "approvedAt": null
+    },
+    {
+      "id": "draft-intent-info-lengkap",
+      "key": "info_lengkap",
+      "name": "Info Lengkap Layanan",
+      "description": "Draft intent hasil konversi command legacy getData.info.",
+      "category": "layanan",
+      "audience": "party",
+      "isActive": false,
+      "aiEnabled": true,
+      "exactTriggers": [
+        "info lengkap",
+        "menu",
+        "help"
+      ],
+      "exampleQuestions": [
+        "Saya mau lihat daftar layanan",
+        "Ada menu apa saja di Aleta?"
+      ],
+      "requiredParameters": [],
+      "queryKey": "",
+      "legacyHandler": "getData",
+      "legacyCommand": "info lengkap",
+      "parameterizedLegacyCommand": "",
+      "templateKey": "",
+      "responseMode": "static_template",
+      "confidenceThreshold": 0.72,
+      "requiresVerification": false,
+      "requiresCaseNumber": false,
+      "maxAttempts": 3,
+      "fallbackMessage": "Maaf, pertanyaan Bapak/Ibu belum dapat diproses otomatis. Silakan hubungi PTSP/petugas melalui kanal resmi pengadilan.",
+      "riskLevel": "low",
+      "notes": "Draft hasil Smart Legacy Conversion. Aktifkan hanya setelah test intent dan approval.",
+      "aiAnswerEnabled": false,
+      "aiAnswerMode": "template_rewrite",
+      "answerPolicy": "public_info_only",
+      "verificationPolicy": "none",
+      "allowedDataFields": [],
+      "blockedDataFields": [
+        "nik",
+        "alamat",
+        "nomor_hp",
+        "amar_lengkap",
+        "catatan_internal"
+      ],
+      "aiSystemPrompt": "",
+      "aiUserPromptTemplate": "",
+      "maxAiTokens": 400,
+      "temperature": 0.2,
+      "requiresApprovalBeforeActive": true,
+      "version": 1,
+      "status": "draft",
       "approvedBy": null,
       "approvedAt": null
     },
@@ -1112,44 +1326,48 @@
       "id": "qa-cek-perkara",
       "key": "cek_perkara",
       "name": "Cek Perkara",
-      "description": "Mengarahkan pengguna ke menu status, biaya, jadwal, putusan, dan akta perkara.",
+      "description": "Draft intent hasil konversi command legacy getData.perkara.",
       "category": "status_perkara",
       "audience": "party",
-      "isActive": true,
+      "isActive": false,
       "aiEnabled": true,
       "exactTriggers": [
         "perkara",
-        "status"
+        "status",
+        "cek"
       ],
       "exampleQuestions": [
         "Saya mau cek perkara",
-        "Bagaimana status perkara saya?",
-        "Saya mau tahu perkembangan perkara"
+        "Bagaimana status perkara saya?"
       ],
-      "requiredParameters": [],
-      "queryKey": "public_case_status",
-      "legacyHandler": "query.getData:perkara/status",
+      "requiredParameters": [
+        "nomor_perkara"
+      ],
+      "queryKey": "",
+      "legacyHandler": "getData",
       "legacyCommand": "perkara",
-      "parameterizedLegacyCommand": "status",
+      "parameterizedLegacyCommand": "perkara",
       "templateKey": "",
       "responseMode": "legacy_handler",
       "confidenceThreshold": 0.72,
       "requiresVerification": true,
-      "requiresCaseNumber": false,
-      "maxAttempts": 2,
-      "fallbackMessage": "Untuk mengecek perkara, silakan kirim nomor perkara. Contoh: status#123.G.2021.",
+      "requiresCaseNumber": true,
+      "maxAttempts": 3,
+      "fallbackMessage": "Maaf, pertanyaan Bapak/Ibu belum dapat diproses otomatis. Silakan hubungi PTSP/petugas melalui kanal resmi pengadilan.",
       "riskLevel": "medium",
-      "notes": "Jika nomor perkara terdeteksi, diarahkan ke status#nomor_perkara.",
+      "notes": "Draft hasil Smart Legacy Conversion. Aktifkan hanya setelah test intent dan approval.",
       "aiAnswerEnabled": false,
-      "aiAnswerMode": "off",
+      "aiAnswerMode": "guided_answer",
       "answerPolicy": "public_info_only",
-      "verificationPolicy": "none",
-      "allowedDataFields": [],
+      "verificationPolicy": "case_number_only",
+      "allowedDataFields": [
+        "nomor_perkara"
+      ],
       "blockedDataFields": [
         "nik",
         "alamat",
-        "telepon",
         "nomor_hp",
+        "amar_lengkap",
         "catatan_internal"
       ],
       "aiSystemPrompt": "",
@@ -1158,7 +1376,7 @@
       "temperature": 0.2,
       "requiresApprovalBeforeActive": true,
       "version": 1,
-      "status": "active",
+      "status": "draft",
       "approvedBy": null,
       "approvedAt": null
     }

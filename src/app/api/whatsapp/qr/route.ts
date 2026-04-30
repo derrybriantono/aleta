@@ -43,11 +43,21 @@ export async function GET(request: NextRequest) {
           : null;
 
       const gatewayStatus = statusData?.status ?? "disconnected";
+      const runtimeStatus =
+        gatewayStatus === "connected"
+          ? "connected"
+          : gatewayStatus === "qr_needed"
+            ? "waiting_qr"
+            : gatewayStatus === "initializing"
+              ? "initializing"
+              : gatewayStatus === "auth_failure"
+                ? "failed"
+                : "disconnected";
 
       return ok({
         qr: qrData?.qr ?? null,
         status: gatewayStatus === "connected" ? "ready" : gatewayStatus === "qr_needed" ? "qr" : gatewayStatus,
-        runtimeStatus: gatewayStatus === "connected" ? "connected" : gatewayStatus === "qr_needed" ? "waiting_qr" : "disconnected",
+        runtimeStatus,
         linked: gatewayStatus === "connected",
         phoneNumber: statusData?.phoneNumber ?? "",
         sessionName: statusData?.sessionName ?? "aleta-whatsapp-main",

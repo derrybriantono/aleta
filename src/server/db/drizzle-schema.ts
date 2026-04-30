@@ -225,6 +225,8 @@ export const aletaBotDbConnections = pgTable(
     databaseName: text("database_name").notNull(),
     username: text("username").notNull(),
     passwordEnvKey: text("password_env_key").notNull().default(""),
+    passwordSecret: text("password_secret").notNull().default(""),
+    passwordSource: text("password_source").notNull().default("env"),
     sslEnabled: integer("ssl_enabled").notNull().default(0),
     connectionTimeoutMs: integer("connection_timeout_ms").notNull().default(5000),
     isActive: integer("is_active").notNull().default(1),

@@ -51,7 +51,6 @@ class WhatsAppService {
 
     try {
       // Reuse the already-installed Playwright browser in local workspace if available.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { chromium } = require("playwright");
       const executablePath = chromium?.executablePath?.();
       if (typeof executablePath === "string" && executablePath && fs.existsSync(executablePath)) {

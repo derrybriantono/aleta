@@ -12,8 +12,24 @@ export const dynamic = "force-dynamic";
 const DEFAULT_RUNTIME_URL = "http://127.0.0.1:3003";
 
 function getRuntimeUrl(path: string) {
-  const baseUrl = (process.env.ALETA_BOT_RUNTIME_URL || DEFAULT_RUNTIME_URL).replace(/\/+$/, "");
+  const baseUrl = (
+    process.env.ALETA_BOT_BASE_URL ||
+    process.env.ALETA_BOT_RUNTIME_URL ||
+    DEFAULT_RUNTIME_URL
+  ).replace(/\/+$/, "");
   return `${baseUrl}${path}`;
+}
+
+function getInternalHeaders(): HeadersInit {
+  const headers: HeadersInit = { "content-type": "application/json" };
+  const internalToken =
+    process.env.ALETA_BOT_INTERNAL_API_TOKEN ||
+    process.env.ALETA_BOT_INTERNAL_TOKEN ||
+    "";
+  if (internalToken) {
+    headers["x-aleta-internal-token"] = internalToken;
+  }
+  return headers;
 }
 
 export async function POST(request: NextRequest) {
@@ -28,18 +44,13 @@ export async function POST(request: NextRequest) {
       return ok({ status: false, message: "Aksi Pertanyaan Para Pihak tidak valid." }, { status: 400 });
     }
 
-    const headers: HeadersInit = { "content-type": "application/json" };
-    if (process.env.ALETA_BOT_INTERNAL_TOKEN) {
-      headers["x-aleta-bot-token"] = process.env.ALETA_BOT_INTERNAL_TOKEN;
-    }
-
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     try {
       const response = await fetch(getRuntimeUrl("/internal/aleta-bot/public-qa/test"), {
         method: "POST",
         cache: "no-store",
-        headers,
+        headers: getInternalHeaders(),
         body: JSON.stringify({ question: body.question }),
         signal: controller.signal,
       });

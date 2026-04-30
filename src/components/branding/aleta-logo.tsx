@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
 export function AletaLogo({
@@ -20,7 +22,7 @@ export function AletaLogo({
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className="flex shrink-0 items-center justify-center">
-        <img
+        <Image
           src="/mahkamah-agung-logo.png"
           alt="Logo Mahkamah Agung Republik Indonesia"
           width={imageSize}

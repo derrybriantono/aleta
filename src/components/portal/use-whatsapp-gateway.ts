@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type WhatsAppGatewayRuntimeStatus =
   | "disconnected"
@@ -58,7 +58,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
   const [isInitializing, setIsInitializing] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!canAccess) return;
 
     setIsRefreshing(true);
@@ -88,7 +88,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [canAccess]);
 
   const initialize = async () => {
     if (!canAccess) return false;
@@ -174,7 +174,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
     if (!canAccess) return;
 
     void refresh();
-  }, [canAccess]);
+  }, [canAccess, refresh]);
 
   useEffect(() => {
     if (!canAccess) return;
@@ -185,7 +185,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
     }, 2500);
 
     return () => globalThis.clearInterval(timer);
-  }, [canAccess, snapshot.runtimeStatus]);
+  }, [canAccess, refresh, snapshot.runtimeStatus]);
 
   return {
     snapshot,

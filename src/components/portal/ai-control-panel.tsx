@@ -166,7 +166,7 @@ export function AIControlPanel() {
       : { label: "AI Aktif", variant: "success" as const };
   const selectedProvider =
     liveProviders.find((provider) => provider.id === form.providerId) ?? defaultProvider;
-  const selectedModels = selectedProvider?.models ?? [];
+  const selectedModels = useMemo(() => selectedProvider?.models ?? [], [selectedProvider]);
   const editingConnection =
     aiConfig.providers.find((provider) => provider.id === editingConnectionId) ?? null;
 

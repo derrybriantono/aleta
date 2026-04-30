@@ -159,6 +159,8 @@ const schemaStatements = [
     database_name TEXT NOT NULL,
     username TEXT NOT NULL,
     password_env_key TEXT NOT NULL DEFAULT '',
+    password_secret TEXT NOT NULL DEFAULT '',
+    password_source TEXT NOT NULL DEFAULT 'env',
     ssl_enabled SMALLINT NOT NULL DEFAULT 0,
     connection_timeout_ms INTEGER NOT NULL DEFAULT 5000,
     is_active SMALLINT NOT NULL DEFAULT 1,

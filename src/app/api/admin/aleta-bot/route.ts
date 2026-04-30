@@ -83,6 +83,7 @@ export async function PUT(request: NextRequest) {
         databaseName: string;
         username: string;
         passwordEnvKey?: string;
+        newPassword?: string;
         sslEnabled?: boolean;
         connectionTimeoutMs?: number;
         isActive?: boolean;

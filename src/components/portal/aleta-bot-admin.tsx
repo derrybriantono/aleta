@@ -4,6 +4,8 @@ import {
   Bot,
   CheckCircle2,
   Database,
+  Eye,
+  EyeOff,
   FileText,
   MessageCircleMore,
   Play,
@@ -217,6 +219,7 @@ type DbConnectionForm = {
   databaseName: string;
   username: string;
   passwordEnvKey: string;
+  newPassword: string;
   sslEnabled: boolean;
   connectionTimeoutMs: number;
   isActive: boolean;
@@ -273,6 +276,45 @@ type AletaBotModal =
   | { type: "legacyAction"; title: string; migration: AletaBotLegacyMigration; action: LegacyMigrationAction };
 
 type LegacyMigrationAction = "preview" | "convert" | "dry-run" | "submit-approval" | "activate" | "disable-legacy" | "rollback";
+type ScheduleKind = "manual" | "event" | "daily" | "weekly" | "monthly" | "advanced";
+type ParsedCronSchedule = {
+  valid: boolean;
+  minute: string;
+  hour: string;
+  dayOfMonth: string;
+  month: string;
+  dayOfWeek: string;
+  time: string;
+};
+
+const DAY_OPTIONS = [
+  { value: "*", label: "Setiap hari" },
+  { value: "1", label: "Senin" },
+  { value: "2", label: "Selasa" },
+  { value: "3", label: "Rabu" },
+  { value: "4", label: "Kamis" },
+  { value: "5", label: "Jumat" },
+  { value: "6", label: "Sabtu" },
+  { value: "0", label: "Minggu" },
+  { value: "1-5", label: "Senin-Jumat" },
+  { value: "6-0", label: "Sabtu-Minggu" },
+];
+
+const MONTH_OPTIONS = [
+  { value: "*", label: "Setiap bulan" },
+  { value: "1", label: "Januari" },
+  { value: "2", label: "Februari" },
+  { value: "3", label: "Maret" },
+  { value: "4", label: "April" },
+  { value: "5", label: "Mei" },
+  { value: "6", label: "Juni" },
+  { value: "7", label: "Juli" },
+  { value: "8", label: "Agustus" },
+  { value: "9", label: "September" },
+  { value: "10", label: "Oktober" },
+  { value: "11", label: "November" },
+  { value: "12", label: "Desember" },
+];
 
 function statusVariant(status: string) {
   if (["active", "connected", "success", "dry-run"].includes(status)) return "success" as const;
@@ -281,17 +323,189 @@ function statusVariant(status: string) {
   return "outline" as const;
 }
 
+// Mapping display-only: status teknis → Bahasa Indonesia (tidak mengubah nilai DB)
+function displayStatus(status: string): string {
+  const map: Record<string, string> = {
+    active_registry: "Aktif di Registry",
+    legacy_disabled: "Dinonaktifkan (Migrasi)",
+    dry_run: "Mode Simulasi",
+    pending_approval: "Menunggu Persetujuan",
+    needs_manual_mapping: "Perlu Konfigurasi Manual",
+    registry_draft: "Draft Registry",
+    waiting_qr: "Scan QR Diperlukan",
+    qr_needed: "Scan QR Diperlukan",
+    disconnected: "Tidak Terhubung",
+    connected: "Terhubung",
+    initializing: "Menyiapkan Koneksi",
+    enabled: "Aktif",
+    disabled: "Nonaktif",
+    paused: "Dijeda",
+    running: "Berjalan",
+    stopped: "Berhenti",
+    ok: "OK",
+    error: "Error",
+    needs_sync: "Perlu Sinkronisasi",
+    active: "Aktif",
+    inactive: "Nonaktif",
+    online: "Online",
+    offline: "Offline",
+    failed: "Gagal",
+    success: "Berhasil",
+    unknown: "Tidak Diketahui",
+  };
+  return map[status] ?? status;
+}
+
+function getSimpleAiSummary(status?: string): { label: string; hint: string; level: "ok" | "warning" | "error" } {
+  switch (status) {
+    case "synced":
+      return { label: "AI Siap", hint: "AI siap membantu sesuai pengaturan yang aktif.", level: "ok" };
+    case "needs_sync":
+      return { label: "AI Perlu Sinkronisasi", hint: "AI perlu disinkronkan ulang oleh admin teknis.", level: "warning" };
+    case "disabled":
+      return { label: "AI Dinonaktifkan", hint: "AI tidak aktif untuk pertanyaan publik.", level: "warning" };
+    case "error":
+      return { label: "AI Bermasalah", hint: "Ada kendala pada layanan AI. Minta admin teknis memeriksa Mode Lanjutan.", level: "error" };
+    default:
+      return { label: "Status AI belum diketahui", hint: "Status AI belum tersedia dari runtime.", level: "warning" };
+  }
+}
+
+function getSimpleMachineSummary(runtimeDashboard: RuntimeDashboardSnapshot | null): { label: string; hint: string; level: "ok" | "warning" | "error" } {
+  if (!runtimeDashboard) {
+    return { label: "Status belum diketahui", hint: "Detail teknis tersedia di Mode Lanjutan.", level: "warning" };
+  }
+  if (!runtimeDashboard.online) {
+    return { label: "Bermasalah", hint: "ALETA Bot Gateway tidak dapat dihubungi. Detail teknis tersedia di Mode Lanjutan.", level: "error" };
+  }
+  return { label: "Aktif", hint: "Mesin bot dapat dihubungi. Detail teknis tersedia di Mode Lanjutan.", level: "ok" };
+}
+
+function isValidTime(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(value);
+}
+
+function isValidCronExpression(value: string) {
+  const parts = value.trim().split(/\s+/);
+  if (parts.length !== 5) return false;
+  return parts.every((part) => /^[\d*,/-]+$/.test(part));
+}
+
+function parseCronExpression(cronExpression: string): ParsedCronSchedule {
+  const fallback = {
+    valid: false,
+    minute: "0",
+    hour: "8",
+    dayOfMonth: "*",
+    month: "*",
+    dayOfWeek: "*",
+    time: "08:00:00",
+  };
+  const parts = cronExpression.trim().split(/\s+/);
+  if (parts.length !== 5) return fallback;
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  const minuteNumber = Number(minute);
+  const hourNumber = Number(hour);
+  const time =
+    Number.isInteger(minuteNumber) &&
+    Number.isInteger(hourNumber) &&
+    minuteNumber >= 0 &&
+    minuteNumber <= 59 &&
+    hourNumber >= 0 &&
+    hourNumber <= 23
+      ? `${String(hourNumber).padStart(2, "0")}:${String(minuteNumber).padStart(2, "0")}:00`
+      : fallback.time;
+  return {
+    valid: isValidCronExpression(cronExpression),
+    minute,
+    hour,
+    dayOfMonth,
+    month,
+    dayOfWeek,
+    time,
+  };
+}
+
+function scheduleKindFromCron(scheduleType: NotificationForm["scheduleType"], cronExpression: string): ScheduleKind {
+  if (scheduleType === "manual") return "manual";
+  if (scheduleType === "event") return "event";
+  const parsed = parseCronExpression(cronExpression);
+  if (!parsed.valid || !/^\d+$/.test(parsed.minute) || !/^\d+$/.test(parsed.hour)) return "advanced";
+  if (parsed.dayOfMonth !== "*") return "monthly";
+  if (parsed.dayOfWeek !== "*") return "weekly";
+  return "daily";
+}
+
+function scheduleFormToCron({
+  time,
+  dayOfMonth = "*",
+  month = "*",
+  dayOfWeek = "*",
+}: {
+  time: string;
+  dayOfMonth?: string;
+  month?: string;
+  dayOfWeek?: string;
+}) {
+  if (!isValidTime(time)) return "";
+  const [hour, minute] = time.split(":");
+  return `${Number(minute)} ${Number(hour)} ${dayOfMonth} ${month} ${dayOfWeek}`;
+}
+
+function getSchedulePartLabel(options: Array<{ value: string; label: string }>, value: string, fallbackPrefix: string) {
+  return options.find((option) => option.value === value)?.label ?? `${fallbackPrefix} ${value}`;
+}
+
+function humanizeSchedule(scheduleType: NotificationForm["scheduleType"], cronExpression: string, trigger?: string) {
+  if (scheduleType === "manual") return "Dipicu manual";
+  if (scheduleType === "event") return trigger ? `Dipicu event: ${trigger}` : "Berdasarkan event";
+  if (!cronExpression.trim()) return "Belum ada jadwal";
+  const parsed = parseCronExpression(cronExpression);
+  if (!parsed.valid || !/^\d+$/.test(parsed.minute) || !/^\d+$/.test(parsed.hour)) {
+    return "Format jadwal lama tidak dikenali";
+  }
+  const monthLabel = parsed.month === "*" ? "" : ` pada ${getSchedulePartLabel(MONTH_OPTIONS, parsed.month, "bulan")}`;
+  if (parsed.dayOfMonth !== "*") {
+    return `Setiap tanggal ${parsed.dayOfMonth}${monthLabel} pukul ${parsed.time}`;
+  }
+  if (parsed.dayOfWeek !== "*") {
+    return `${getSchedulePartLabel(DAY_OPTIONS, parsed.dayOfWeek, "Hari")} pukul ${parsed.time}${monthLabel}`;
+  }
+  return `Setiap hari${monthLabel} pukul ${parsed.time}`;
+}
+
+function humanizeLegacyCron(cronSchedule: string) {
+  const firstCron = cronSchedule.split(";")[0]?.trim() ?? "";
+  if (!firstCron) return "Tidak terjadwal";
+  return humanizeSchedule("cron", firstCron);
+}
+
 function migrationActionTitle(action: LegacyMigrationAction) {
   const labels: Record<LegacyMigrationAction, string> = {
-    preview: "Preview Migrasi",
-    convert: "Convert to Registry Draft",
-    "dry-run": "Run Dry-run Migrasi",
-    "submit-approval": "Submit Approval Migrasi",
-    activate: "Activate Registry",
-    "disable-legacy": "Disable Legacy Key",
-    rollback: "Rollback Migrasi",
+    preview: "Lihat Pratinjau",
+    convert: "Ubah ke Draft",
+    "dry-run": "Jalankan Simulasi",
+    "submit-approval": "Ajukan Persetujuan",
+    activate: "Aktifkan",
+    "disable-legacy": "Nonaktifkan",
+    rollback: "Kembalikan",
   };
   return labels[action];
+}
+
+function getSuggestedMigrationAction(status: AletaBotLegacyMigration["status"]): {
+  action: LegacyMigrationAction;
+  label: string;
+  step: string;
+  isHighRisk: boolean;
+} | null {
+  const map: Record<string, { action: LegacyMigrationAction; label: string; step: string; isHighRisk: boolean }> = {
+    mapped: { action: "convert", label: "Ubah ke Draft", step: "Tahap 1/5", isHighRisk: false },
+    registry_draft: { action: "dry-run", label: "Jalankan Simulasi", step: "Tahap 2/5", isHighRisk: false },
+    dry_run: { action: "submit-approval", label: "Ajukan Persetujuan", step: "Tahap 3/5", isHighRisk: false },
+    active_registry: { action: "disable-legacy", label: "Nonaktifkan Legacy", step: "Tahap 5/5", isHighRisk: true },
+  };
+  return map[status] ?? null;
 }
 
 async function requestBot<T>(url: string, init?: RequestInit) {
@@ -388,6 +602,7 @@ function makeEmptyDbConnectionForm(): DbConnectionForm {
     databaseName: "",
     username: "root",
     passwordEnvKey: "",
+    newPassword: "",
     sslEnabled: false,
     connectionTimeoutMs: 5000,
     isActive: true,
@@ -407,6 +622,7 @@ function dbConnectionToForm(connection: AletaBotDbConnection): DbConnectionForm 
     databaseName: connection.databaseName,
     username: connection.username,
     passwordEnvKey: connection.passwordEnvKey,
+    newPassword: "",
     sslEnabled: connection.sslEnabled,
     connectionTimeoutMs: connection.connectionTimeoutMs,
     isActive: connection.isActive,
@@ -522,9 +738,25 @@ export function AletaBotAdminPanel() {
   const [legacyActionResult, setLegacyActionResult] = useState<string | null>(null);
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState("");
+  const [showDbPassword, setShowDbPassword] = useState(false);
+  const [showAdvancedMode, setShowAdvancedMode] = useState<boolean>(() => {
+    try { return localStorage.getItem("aleta-bot-admin-advanced") === "true"; } catch { return false; }
+  });
+  const toggleAdvancedMode = () => {
+    setShowAdvancedMode((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("aleta-bot-admin-advanced", String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  const [notifCategoryFilter, setNotifCategoryFilter] = useState<"all" | "employee" | "party">("all");
+  const [logFilter, setLogFilter] = useState<"all" | "error" | "whatsapp" | "ai" | "queue" | "approval" | "migration">("all");
 
   const openModal = (modal: AletaBotModal) => {
     setModalDirty(false);
+    if (modal.type === "database") {
+      setShowDbPassword(false);
+    }
     if (modal.type === "legacyAction") {
       setLegacyActionNotes("");
       setLegacyActionResult(null);
@@ -575,6 +807,16 @@ export function AletaBotAdminPanel() {
     void loadSnapshot();
   }, [loadSnapshot]);
 
+  useEffect(() => {
+    if (!["initializing", "waiting_qr"].includes(snapshot.whatsapp.runtimeStatus)) return;
+
+    const timer = globalThis.setInterval(() => {
+      void loadSnapshot();
+    }, 2500);
+
+    return () => globalThis.clearInterval(timer);
+  }, [loadSnapshot, snapshot.whatsapp.runtimeStatus]);
+
   const saveSettings = async () => {
     setIsSaving(true);
     setNotice(null);
@@ -621,6 +863,10 @@ export function AletaBotAdminPanel() {
   };
 
   const saveNotification = async () => {
+    if (notificationForm.scheduleType === "cron" && notificationForm.scheduleCron && !isValidCronExpression(notificationForm.scheduleCron)) {
+      setNotice("Format cron tidak valid.");
+      return;
+    }
     setIsSaving(true);
     setNotice(null);
     try {
@@ -724,6 +970,30 @@ export function AletaBotAdminPanel() {
       });
       setSnapshot(data.snapshot);
       setNotice(data.result.status === "success" ? "Test koneksi SQL berhasil." : `Test koneksi SQL gagal: ${data.result.error || "unknown error"}`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Test koneksi SQL gagal.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const testDbConnectionDraft = async () => {
+    setIsSaving(true);
+    setNotice(null);
+    try {
+      const data = await requestBot<{ snapshot: AletaBotSnapshot; result: { status: string; error?: string } }>("/api/admin/aleta-bot/db-connections", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "test-draft",
+          connectionKey: dbConnectionForm.key,
+          connection: {
+            ...dbConnectionForm,
+            driver: "mysql",
+          },
+        }),
+      });
+      setSnapshot(data.snapshot);
+      setNotice(data.result.status === "success" ? "Test koneksi SQL berhasil dengan data form saat ini." : `Test koneksi SQL gagal: ${data.result.error || "Periksa host, port, username, password, dan nama database."}`);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Test koneksi SQL gagal.");
     } finally {
@@ -863,6 +1133,71 @@ export function AletaBotAdminPanel() {
   }, [snapshot.templates]);
 
   const publicQaRuntimeLogs = runtimeDashboard?.payload?.publicQa?.recentLogs ?? [];
+  const releaseChecks = useMemo(() => {
+    const archiveReadyCount = snapshot.legacyMigrations.filter((item) => item.canArchive && item.status === "legacy_disabled").length;
+    return [
+      {
+        name: "Penghubung WhatsApp",
+        status: runtimeDashboard?.online ? "ready" : "blocked",
+        detail: runtimeDashboard?.errorMessage ?? `HTTP ${runtimeDashboard?.statusCode ?? "-"}`,
+      },
+      {
+        name: "Status WhatsApp",
+        status: snapshot.whatsapp.runtimeStatus === "failed" ? "blocked" : "ready",
+        detail: displayStatus(snapshot.whatsapp.runtimeStatus),
+      },
+      {
+        name: "Koneksi QR",
+        status: ["connected", "waiting_qr", "initializing", "disconnected"].includes(snapshot.whatsapp.runtimeStatus) ? "ready" : "warning",
+        detail: snapshot.whatsapp.qrCode ? "QR tersedia dari gateway" : "QR belum tersedia atau tidak diperlukan",
+      },
+      {
+        name: "Pemroses Antrean",
+        status: runtimeDashboard?.payload?.worker?.enabled ? "ready" : "warning",
+        detail: runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Heartbeat ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : "Belum ada heartbeat",
+      },
+      {
+        name: "AI Bridge",
+        status: runtimeDashboard?.payload?.aiRuntime?.status === "error" ? "blocked" : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" ? "warning" : "ready",
+        detail: displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? "unknown"),
+      },
+      {
+        name: "Kesiapan Arsip",
+        status: archiveReadyCount > 0 ? "ready" : "warning",
+        detail: `${archiveReadyCount} legacy siap arsip`,
+      },
+      {
+        name: "Rollback tersedia",
+        status: "ready",
+        detail: "State machine rollback aktif untuk migrasi legacy",
+      },
+      {
+        name: "Runbook",
+        status: "ready",
+        detail: "docs/ALETA_BOT_RUNBOOK.md tersedia",
+      },
+    ];
+  }, [runtimeDashboard, snapshot.legacyMigrations, snapshot.whatsapp]);
+  const releaseStatus = releaseChecks.some((item) => item.status === "blocked")
+    ? "blocked"
+    : releaseChecks.some((item) => item.status === "warning")
+      ? "warning"
+      : "ready";
+  const aiSummary = getSimpleAiSummary(runtimeDashboard?.payload?.aiRuntime?.status);
+  const machineSummary = getSimpleMachineSummary(runtimeDashboard);
+
+  const filteredLogs = useMemo(() => {
+    return snapshot.logs.filter((log) => {
+      if (logFilter === "all") return true;
+      if (logFilter === "error") return ["error", "warning"].includes(log.level);
+      if (logFilter === "whatsapp") return ["message", "notification"].includes(log.eventType);
+      if (logFilter === "ai") return log.eventType === "public_qa";
+      if (logFilter === "queue") return log.eventType === "notification";
+      if (logFilter === "approval") return (log.eventType ?? "").includes("approval");
+      if (logFilter === "migration") return (log.eventType ?? "").includes("migration") || (log.message ?? "").toLowerCase().includes("legacy");
+      return true;
+    }).slice(0, 50);
+  }, [snapshot.logs, logFilter]);
 
   return (
     <div className="space-y-6">
@@ -872,6 +1207,9 @@ export function AletaBotAdminPanel() {
         description="Modul internal untuk mengelola bot WhatsApp notifikasi perkara, koneksi WhatsApp Web, template pesan, query, log, dan pengujian aman dari portal utama ALETA."
         actions={
           <>
+            <Button variant={showAdvancedMode ? "default" : "outline"} size="sm" onClick={toggleAdvancedMode}>
+              {showAdvancedMode ? "Mode Lanjutan" : "Mode Sederhana"}
+            </Button>
             <Button variant="outline" onClick={() => void loadSnapshot()} disabled={isLoading || isSaving}>
               <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
               Refresh
@@ -890,6 +1228,15 @@ export function AletaBotAdminPanel() {
         </Card>
       ) : null}
 
+      {showAdvancedMode ? (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+          <span className="text-amber-600">⚠</span>
+          <span className="text-amber-900 dark:text-amber-200">
+            <strong>Mode Lanjutan aktif</strong> — fitur teknis dan aksi berisiko ditampilkan. Gunakan dengan hati-hati.
+          </span>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard label="Status Bot" value={snapshot.runtimeState} icon={Bot} />
         <StatusCard label="WhatsApp" value={snapshot.whatsapp.runtimeStatus} icon={Smartphone} />
@@ -898,28 +1245,75 @@ export function AletaBotAdminPanel() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="flex max-w-full flex-wrap justify-start">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="connection">Koneksi WA</TabsTrigger>
-          <TabsTrigger value="settings">Pengaturan</TabsTrigger>
-          <TabsTrigger value="templates">Template</TabsTrigger>
+        <TabsList className="flex max-w-full flex-wrap items-center justify-start gap-x-1 gap-y-1">
+          {/* Utama — selalu tampil */}
+          <TabsTrigger value="dashboard">Ringkasan</TabsTrigger>
+          <TabsTrigger value="connection">WhatsApp</TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
-          <TabsTrigger value="queries">Query</TabsTrigger>
-          <TabsTrigger value="database">Sumber Data SQL</TabsTrigger>
-          <TabsTrigger value="public-qa">Pertanyaan Para Pihak</TabsTrigger>
-          <TabsTrigger value="logs">Log</TabsTrigger>
-          <TabsTrigger value="manual-test">Manual Test</TabsTrigger>
-          <TabsTrigger value="queue-recovery">Queue Recovery</TabsTrigger>
+          <TabsTrigger value="queue-recovery">Antrian & Pesan Gagal</TabsTrigger>
+          <TabsTrigger value="logs">Log Aktivitas</TabsTrigger>
+          <TabsTrigger value="public-qa">Pertanyaan Publik</TabsTrigger>
           <TabsTrigger value="approvals">Persetujuan</TabsTrigger>
-          <TabsTrigger value="migration">Migrasi Legacy</TabsTrigger>
+          {/* Konten Bot — hanya Mode Lanjutan */}
+          {showAdvancedMode ? (
+            <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">│</span>
+          ) : null}
+          {showAdvancedMode ? <TabsTrigger value="settings">Pengaturan</TabsTrigger> : null}
+          {showAdvancedMode ? <TabsTrigger value="templates">Template</TabsTrigger> : null}
+          {showAdvancedMode ? <TabsTrigger value="migration">Migrasi Legacy</TabsTrigger> : null}
+          {/* Konfigurasi — hanya Mode Lanjutan */}
+          {showAdvancedMode ? (
+            <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">│</span>
+          ) : null}
+          {showAdvancedMode ? <TabsTrigger value="queries">Kueri Terdaftar</TabsTrigger> : null}
+          {showAdvancedMode ? <TabsTrigger value="database">Koneksi Database</TabsTrigger> : null}
+          {/* Developer — hanya Mode Lanjutan */}
+          {showAdvancedMode ? <TabsTrigger value="manual-test">Uji Coba</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="dashboard">
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <HealthSummaryCard
+              label="WhatsApp"
+              status={snapshot.whatsapp.runtimeStatus === "connected" ? "ok" : ["waiting_qr", "initializing", "qr_needed"].includes(snapshot.whatsapp.runtimeStatus) ? "warning" : "error"}
+              value={displayStatus(snapshot.whatsapp.runtimeStatus)}
+            />
+            <HealthSummaryCard
+              label="Worker / Antrean"
+              status={runtimeDashboard?.payload?.worker?.enabled ? (runtimeDashboard.payload.worker.activeTimer ? "ok" : "warning") : "error"}
+              value={runtimeDashboard?.payload?.worker?.enabled ? `${runtimeDashboard?.payload?.queue?.pending ?? 0} pending` : "Nonaktif"}
+            />
+            <HealthSummaryCard
+              label="AI"
+              status={aiSummary.level}
+              value={aiSummary.label}
+            />
+            <HealthSummaryCard
+              label="Persetujuan Pending"
+              status={snapshot.approvalRequests.filter((r) => r.status === "pending").length > 0 ? "warning" : "ok"}
+              value={`${snapshot.approvalRequests.filter((r) => r.status === "pending").length} tertunda`}
+            />
+            <HealthSummaryCard
+              label="Pesan Gagal"
+              status={snapshot.deadLetters.length > 0 ? "warning" : "ok"}
+              value={`${snapshot.deadLetters.length} dead letter`}
+            />
+          </div>
+          {!showAdvancedMode ? (
+            <div className="mb-4 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+              Beberapa pengaturan teknis disembunyikan. Aktifkan Mode Lanjutan untuk mengelola AI, database, kueri, migrasi, dan uji coba manual.
+            </div>
+          ) : null}
           <div className="grid gap-4 lg:grid-cols-3">
             <InfoCard title="Nomor Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint="Dipakai sebagai admin/kontrol bot. Disimpan di database portal dan bridge config." />
-            <InfoCard title="Nomor Terhubung" value={snapshot.whatsapp.phoneNumber || "Belum disetel"} hint={`Session: ${snapshot.whatsapp.sessionName}`} />
+            <InfoCard
+              title="Nomor Terhubung"
+              value={snapshot.whatsapp.phoneNumber || "Belum disetel"}
+              hint={showAdvancedMode ? `Session: ${snapshot.whatsapp.sessionName}` : "Nomor WhatsApp yang sedang atau akan dipakai bot."}
+            />
             <InfoCard title="Notifikasi Terakhir" value={snapshot.metrics.lastNotificationAt ? formatDateTime(snapshot.metrics.lastNotificationAt) : "Belum ada"} hint={`${snapshot.metrics.activeJobs} job aktif, ${snapshot.metrics.enabledTemplates} template tersedia.`} />
           </div>
+          {showAdvancedMode ? (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle>Runtime `aleta_bot`</CardTitle>
@@ -937,12 +1331,12 @@ export function AletaBotAdminPanel() {
                 hint={runtimeDashboard?.payload?.whatsapp?.lastReadyAt ? `Ready: ${formatDateTime(runtimeDashboard.payload.whatsapp.lastReadyAt)}` : runtimeDashboard?.payload?.whatsapp?.lastErrorMessage ?? "Belum ada status runtime."}
               />
               <InfoCard
-                title="Queue DB"
+                title="Antrean Pesan"
                 value={`${runtimeDashboard?.payload?.queue?.pending ?? 0} pending`}
                 hint={`${runtimeDashboard?.payload?.queue?.failed ?? 0} failed, ${runtimeDashboard?.payload?.queue?.sent ?? 0} sent.`}
               />
               <InfoCard
-                title="Worker"
+                title="Pemroses Antrean"
                 value={runtimeDashboard?.payload?.worker?.enabled ? "enabled" : "disabled"}
                 hint={runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Heartbeat: ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : runtimeDashboard?.payload?.worker?.lastError ?? "Belum ada heartbeat."}
               />
@@ -978,9 +1372,27 @@ export function AletaBotAdminPanel() {
               />
             </CardContent>
           </Card>
+          ) : (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>AI Config Bridge</CardTitle>
+              <CardTitle>Status Operasional</CardTitle>
+              <CardDescription>Ringkasan sederhana untuk memantau bot tanpa detail teknis runtime.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 lg:grid-cols-3">
+              <InfoCard title="Mesin Bot" value={machineSummary.label} hint={machineSummary.hint} />
+              <InfoCard title="AI" value={aiSummary.label} hint={aiSummary.hint} />
+              <InfoCard
+                title="Antrean Pesan"
+                value={`${runtimeDashboard?.payload?.queue?.pending ?? 0} menunggu`}
+                hint="Pesan akan diproses oleh mesin bot. Detail teknis tersedia di Mode Lanjutan."
+              />
+            </CardContent>
+          </Card>
+          )}
+          {showAdvancedMode ? (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Konfigurasi AI Bridge</CardTitle>
               <CardDescription>Provider, model, toggle Public Q&A, dan hasil sync dari modul AI portal ke runtime `aleta_bot`.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1038,6 +1450,46 @@ export function AletaBotAdminPanel() {
               </div>
             </CardContent>
           </Card>
+          ) : null}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Kesiapan Pilot</CardTitle>
+              <CardDescription>Checklist terakhir sebelum pilot produksi terbatas. Status Siap hanya diberikan jika tidak ada blocker runtime.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge variant={releaseStatus === "ready" ? "success" : releaseStatus === "warning" ? "warning" : "danger"}>
+                  {releaseStatus === "ready" ? "Siap" : releaseStatus === "warning" ? "Perlu Perhatian" : "Terblokir"}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {releaseStatus === "ready"
+                    ? "Fondasi siap untuk pilot terbatas."
+                    : releaseStatus === "warning"
+                      ? "Ada catatan operasional yang perlu dipantau."
+                      : "Ada blocker yang harus diperbaiki sebelum pilot."}
+                </span>
+              </div>
+              {releaseStatus === "blocked" ? (
+                <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                  <strong>Terblokir:</strong>{" "}
+                  {releaseChecks.filter((c) => c.status === "blocked").map((c) => c.name).join(", ")} harus diselesaikan sebelum pilot dapat dilanjutkan.
+                </div>
+              ) : null}
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {releaseChecks.map((check) => (
+                  <div key={check.name} className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-foreground">{check.name}</p>
+                      <Badge variant={check.status === "ready" ? "success" : check.status === "warning" ? "warning" : "danger"}>
+                        {check.status === "ready" ? "Siap" : check.status === "warning" ? "Perhatian" : "Terblokir"}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="connection">
@@ -1045,17 +1497,35 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>Koneksi WhatsApp Web</CardTitle>
-                <CardDescription>Memakai WhatsApp Gateway portal sebagai satu pusat koneksi/session.</CardDescription>
+                <CardDescription>WhatsApp Runtime: ALETA Bot Gateway. Portal hanya menjadi control panel, bukan client WhatsApp kedua.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoCard title="Runtime" value={snapshot.whatsapp.runtimeStatus} hint={snapshot.whatsapp.lastErrorMessage ?? "Tidak ada error runtime tersimpan."} />
+                  <InfoCard title="Runtime" value={displayStatus(snapshot.whatsapp.runtimeStatus)} hint={snapshot.whatsapp.lastErrorMessage ?? "Tidak ada error runtime tersimpan."} />
                   <InfoCard title="Terakhir Terhubung" value={snapshot.whatsapp.lastConnectedAt ? formatDateTime(snapshot.whatsapp.lastConnectedAt) : "Belum pernah"} hint={snapshot.whatsapp.savedStatus} />
+                </div>
+                <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
+                  {snapshot.whatsapp.runtimeStatus === "connected" ? (
+                    <span className="text-emerald-700 dark:text-emerald-400">✓ WhatsApp sudah terhubung. QR tidak diperlukan.</span>
+                  ) : snapshot.whatsapp.runtimeStatus === "waiting_qr" || snapshot.whatsapp.runtimeStatus === "qr_needed" ? (
+                    <div className="space-y-1 text-amber-700 dark:text-amber-400">
+                      <p className="font-medium">Scan QR Diperlukan</p>
+                      <p>Buka <strong>WhatsApp</strong> di HP kantor → <strong>Perangkat Tertaut</strong> → <strong>Hubungkan Perangkat</strong> → Scan QR di bawah.</p>
+                    </div>
+                  ) : snapshot.whatsapp.runtimeStatus === "initializing" ? (
+                    <span className="text-muted-foreground">Menyiapkan Koneksi — menunggu QR dari ALETA Bot Gateway...</span>
+                  ) : (
+                    <span className="text-muted-foreground">Tidak Terhubung. Klik <strong>Connect WhatsApp Gateway</strong> untuk memulai sesi tanpa reset.</span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={() => void runAction("reconnect")} disabled={isSaving}>
                     <RefreshCcw className="h-4 w-4" />
-                    Reconnect
+                    Connect WhatsApp Gateway
+                  </Button>
+                  <Button variant="outline" onClick={() => void loadSnapshot()} disabled={isSaving || isLoading}>
+                    <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                    Refresh QR WhatsApp
                   </Button>
                   <Button variant="outline" onClick={() => void runAction("test-connection")} disabled={isSaving}>
                     <Play className="h-4 w-4" />
@@ -1080,7 +1550,7 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>QR Code</CardTitle>
-                <CardDescription>QR muncul saat gateway berada pada status waiting_qr.</CardDescription>
+                <CardDescription>QR berasal dari event QR runtime `aleta_bot`, bukan dari client portal.</CardDescription>
               </CardHeader>
               <CardContent>
                 {snapshot.whatsapp.qrCode ? (
@@ -1094,7 +1564,11 @@ export function AletaBotAdminPanel() {
                   />
                 ) : (
                   <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-                    QR belum tersedia. Tekan reconnect bila perlu pairing ulang.
+                    {snapshot.whatsapp.runtimeStatus === "connected"
+                      ? "WhatsApp sudah connected. QR tidak diperlukan."
+                      : snapshot.whatsapp.runtimeStatus === "initializing"
+                        ? "Menunggu QR dari ALETA Bot Gateway..."
+                        : "QR belum tersedia. Klik Connect WhatsApp Gateway, lalu tunggu beberapa detik."}
                   </div>
                 )}
               </CardContent>
@@ -1161,38 +1635,56 @@ export function AletaBotAdminPanel() {
                 <CardTitle>Manajemen Notifikasi</CardTitle>
                 <CardDescription>Notifikasi Pegawai mengambil nomor dari user portal. Notifikasi Pihak mengambil nomor dari kolom hasil query perkara/SIPP.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                <Button onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "employee")); openModal({ type: "notification", title: "Tambah Notifikasi Pegawai" }); }} disabled={isSaving}>Tambah Pegawai</Button>
-                <Button variant="outline" onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "party")); openModal({ type: "notification", title: "Tambah Notifikasi Pihak" }); }} disabled={isSaving}>Tambah Pihak</Button>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "employee")); openModal({ type: "notification", title: "Tambah Notifikasi Pegawai" }); }} disabled={isSaving}>Tambah Pegawai</Button>
+                  <Button variant="outline" onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "party")); openModal({ type: "notification", title: "Tambah Notifikasi Pihak" }); }} disabled={isSaving}>Tambah Pihak</Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Tampilkan:</span>
+                  {(["all", "employee", "party"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setNotifCategoryFilter(f)}
+                      className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${notifCategoryFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                    >
+                      {f === "all" ? "Semua" : f === "employee" ? "Pegawai" : "Pihak"}
+                    </button>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
-            <NotificationSection
-              title="Notifikasi Pegawai"
-              description={`${snapshot.employeeRecipients.length} user aktif memiliki nomor WhatsApp valid dari data manajemen_surat.`}
-              notifications={snapshot.notifications.filter((item) => item.category === "employee")}
-              queries={snapshot.queries}
-              templates={snapshot.templates}
-              onEdit={(notification) => {
-                setNotificationForm(notificationToForm(notification));
-                openModal({ type: "notification", title: `Edit Notifikasi ${notification.name}` });
-              }}
-              onTest={(notification) => void runAction("test-notification", { notificationId: notification.id })}
-              isSaving={isSaving}
-            />
-            <NotificationSection
-              title="Notifikasi Pihak"
-              description="Nomor tujuan berasal dari kolom hasil query perkara/SIPP, misalnya telepon, nomor_hp, atau nomor_whatsapp."
-              notifications={snapshot.notifications.filter((item) => item.category === "party")}
-              queries={snapshot.queries}
-              templates={snapshot.templates}
-              onEdit={(notification) => {
-                setNotificationForm(notificationToForm(notification));
-                openModal({ type: "notification", title: `Edit Notifikasi ${notification.name}` });
-              }}
-              onTest={(notification) => void runAction("test-notification", { notificationId: notification.id })}
-              isSaving={isSaving}
-            />
+            {(notifCategoryFilter === "all" || notifCategoryFilter === "employee") ? (
+              <NotificationSection
+                title="Notifikasi Pegawai"
+                description={`${snapshot.employeeRecipients.length} user aktif memiliki nomor WhatsApp valid dari data manajemen_surat.`}
+                notifications={snapshot.notifications.filter((item) => item.category === "employee")}
+                queries={snapshot.queries}
+                templates={snapshot.templates}
+                onEdit={(notification) => {
+                  setNotificationForm(notificationToForm(notification));
+                  openModal({ type: "notification", title: `Edit Notifikasi ${notification.name}` });
+                }}
+                onTest={(notification) => void runAction("test-notification", { notificationId: notification.id })}
+                isSaving={isSaving}
+              />
+            ) : null}
+            {(notifCategoryFilter === "all" || notifCategoryFilter === "party") ? (
+              <NotificationSection
+                title="Notifikasi Pihak"
+                description="Nomor tujuan berasal dari kolom hasil query perkara/SIPP, misalnya telepon, nomor_hp, atau nomor_whatsapp."
+                notifications={snapshot.notifications.filter((item) => item.category === "party")}
+                queries={snapshot.queries}
+                templates={snapshot.templates}
+                onEdit={(notification) => {
+                  setNotificationForm(notificationToForm(notification));
+                  openModal({ type: "notification", title: `Edit Notifikasi ${notification.name}` });
+                }}
+                onTest={(notification) => void runAction("test-notification", { notificationId: notification.id })}
+                isSaving={isSaving}
+              />
+            ) : null}
           </div>
         </TabsContent>
 
@@ -1269,12 +1761,12 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>Sumber Data SQL</CardTitle>
-                <CardDescription>Koneksi eksternal untuk query ALETA Bot. Password disimpan sebagai nama env dan tidak pernah ditampilkan ulang.</CardDescription>
+                <CardDescription>Koneksi eksternal untuk query ALETA Bot. Password lama tidak pernah ditampilkan ulang; isi password hanya jika ingin mengganti.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 lg:grid-cols-4">
                 <InfoCard title="Koneksi Aktif" value={String(snapshot.dbConnections.filter((item) => item.isActive).length)} hint={`${snapshot.dbConnections.length} koneksi terdaftar.`} />
                 <InfoCard title="Default" value={snapshot.dbConnections.find((item) => item.isDefault)?.key || "-"} hint="Dipakai sebagai fallback query baru." />
-                <InfoCard title="Test Gagal" value={String(snapshot.dbConnections.filter((item) => item.lastTestStatus === "failed").length)} hint="Periksa host/env password jika gagal." />
+                <InfoCard title="Test Gagal" value={String(snapshot.dbConnections.filter((item) => item.lastTestStatus === "failed").length)} hint="Periksa host, user, password, atau nama database jika gagal." />
                 <InfoCard title="Legacy Fallback" value={String(snapshot.dbConnections.filter((item) => item.legacySource).length)} hint="Masih kompatibel dengan db_config lama." />
               </CardContent>
             </Card>
@@ -1282,7 +1774,7 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>Kelola Koneksi</CardTitle>
-                <CardDescription>Gunakan env key untuk password, misalnya ALETA_BOT_DB_SIPP_PASSWORD. Field password asli tidak disimpan di database portal.</CardDescription>
+                <CardDescription>Gunakan password manual atau env key. Password manual tidak pernah dikirim balik ke browser dan tidak masuk export config.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={() => { setDbConnectionForm(makeEmptyDbConnectionForm()); openModal({ type: "database", title: "Tambah Koneksi SQL" }); }} disabled={isSaving}>Tambah Koneksi SQL</Button>
@@ -1322,7 +1814,9 @@ export function AletaBotAdminPanel() {
                         </td>
                         <td className="py-4 pr-4">{connection.usernameMasked || "***"}</td>
                         <td className="py-4 pr-4">
-                          <p className="text-xs text-muted-foreground">{connection.passwordEnvKey || "env belum diatur"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {connection.passwordSource === "manual" ? "manual password" : connection.passwordEnvKey || "env belum diatur"}
+                          </p>
                           <Badge variant={connection.passwordConfigured ? "success" : "warning"}>{connection.passwordConfigured ? "configured" : "missing"}</Badge>
                         </td>
                         <td className="py-4 pr-4">
@@ -1490,10 +1984,20 @@ export function AletaBotAdminPanel() {
 
         <TabsContent value="logs">
           <div className="space-y-4">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <LogCard title="Log Pesan" logs={snapshot.logs.filter((log) => log.eventType === "message" || log.eventType === "notification")} />
-              <LogCard title="Log Sistem" logs={snapshot.logs.filter((log) => log.eventType !== "message" && log.eventType !== "notification")} />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filter:</span>
+              {(["all", "error", "whatsapp", "ai", "queue", "approval", "migration"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setLogFilter(f)}
+                  className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${logFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                >
+                  {f === "all" ? "Semua" : f === "error" ? "Error" : f === "whatsapp" ? "WhatsApp" : f === "ai" ? "AI" : f === "queue" ? "Antrean" : f === "approval" ? "Persetujuan" : "Migrasi"}
+                </button>
+              ))}
+              <span className="ml-2 text-xs text-muted-foreground">{filteredLogs.length} entri ditampilkan</span>
             </div>
+            <LogCard title="Log Aktivitas" logs={filteredLogs} />
             <Card>
               <CardHeader>
                 <CardTitle>Retensi Log</CardTitle>
@@ -1642,6 +2146,7 @@ export function AletaBotAdminPanel() {
             unknownQuestionReviews={snapshot.unknownQuestionReviews}
             isSaving={isSaving}
             onAction={(action, migration) => openModal({ type: "legacyAction", title: migrationActionTitle(action), migration, action })}
+            showAdvanced={showAdvancedMode}
           />
         </TabsContent>
       </Tabs>
@@ -1689,13 +2194,15 @@ export function AletaBotAdminPanel() {
               />
               <SelectField label="Sumber query" value={notificationForm.queryId} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, queryId: value })); }} options={snapshot.queries.filter((query) => query.category === notificationForm.category || query.category === "system").map((query) => ({ value: query.id, label: query.name }))} />
               <SelectField label="Template pesan" value={notificationForm.templateId} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, templateId: value })); }} options={snapshot.templates.map((template) => ({ value: template.id, label: template.title }))} />
-              <SelectField label="Tipe trigger" value={notificationForm.scheduleType} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, scheduleType: value as NotificationForm["scheduleType"] })); }} options={[{ value: "cron", label: "Cron" }, { value: "manual", label: "Manual" }, { value: "event", label: "Event" }]} />
-              <Field label="Jadwal/cron" value={notificationForm.scheduleCron} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, scheduleCron: value })); }} placeholder="00 07 * * *" />
               <Field label="Delay (ms)" type="number" value={String(notificationForm.delayMs)} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, delayMs: Number(value) })); }} />
               <Field label="Retry" type="number" value={String(notificationForm.retryLimit)} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, retryLimit: Number(value) })); }} />
             </div>
             <Field label="Deskripsi" value={notificationForm.description} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, description: value })); }} />
-            <Field label="Trigger" value={notificationForm.scheduleTrigger} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, scheduleTrigger: value })); }} />
+            <ScheduleBuilder
+              form={notificationForm}
+              showAdvancedMode={showAdvancedMode}
+              onChange={(next) => { markModalDirty(); setNotificationForm((current) => ({ ...current, ...next })); }}
+            />
             <ToggleRow label="Status aktif" checked={notificationForm.isActive} onCheckedChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, isActive: value })); }} />
             <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveNotification()} saveLabel={notificationForm.category === "party" ? "Simpan sebagai Draft Aman" : "Simpan Notifikasi"} />
           </div>
@@ -1729,7 +2236,34 @@ export function AletaBotAdminPanel() {
               <Field label="Port" type="number" value={String(dbConnectionForm.port)} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, port: Number(value) })); }} />
               <Field label="Database" value={dbConnectionForm.databaseName} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, databaseName: value })); }} />
               <Field label="Username" value={dbConnectionForm.username} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, username: value })); }} />
-              <Field label="Env Password" value={dbConnectionForm.passwordEnvKey} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, passwordEnvKey: value })); }} placeholder="ALETA_BOT_DB_SIPP_PASSWORD" />
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold text-foreground">Password Database</span>
+                <div className="flex gap-2">
+                  <Input
+                    type={showDbPassword ? "text" : "password"}
+                    value={dbConnectionForm.newPassword}
+                    onChange={(event) => {
+                      markModalDirty();
+                      setDbConnectionForm((current) => ({ ...current, newPassword: event.target.value }));
+                    }}
+                    placeholder={dbConnectionForm.id ? "Password tersimpan. Isi hanya jika ingin mengganti." : "Isi password database jika diperlukan."}
+                    autoComplete="new-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={showDbPassword ? "Sembunyikan password" : "Lihat password"}
+                    onClick={() => setShowDbPassword((value) => !value)}
+                  >
+                    {showDbPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Demi keamanan, password lama tidak ditampilkan. Kosongkan saat edit untuk mempertahankan password lama.
+                </span>
+              </label>
+              <Field label="Env Password (opsional)" value={dbConnectionForm.passwordEnvKey} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, passwordEnvKey: value })); }} placeholder="ALETA_BOT_DB_SIPP_PASSWORD" />
               <Field label="Timeout (ms)" type="number" value={String(dbConnectionForm.connectionTimeoutMs)} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, connectionTimeoutMs: Number(value) })); }} />
               <Field label="Legacy Source" value={dbConnectionForm.legacySource} onChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, legacySource: value })); }} placeholder="db_config.js" />
             </div>
@@ -1739,7 +2273,13 @@ export function AletaBotAdminPanel() {
               <ToggleRow label="Default" checked={dbConnectionForm.isDefault} onCheckedChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, isDefault: value })); }} />
               <ToggleRow label="SSL" checked={dbConnectionForm.sslEnabled} onCheckedChange={(value) => { markModalDirty(); setDbConnectionForm((current) => ({ ...current, sslEnabled: value })); }} />
             </div>
-            <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveDbConnection()} saveLabel="Simpan Koneksi" />
+            <div className="flex flex-wrap justify-between gap-3">
+              <Button variant="outline" onClick={() => void testDbConnectionDraft()} disabled={isSaving}>
+                <Play className="h-4 w-4" />
+                Test Koneksi Form Ini
+              </Button>
+              <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveDbConnection()} saveLabel="Simpan Koneksi" />
+            </div>
           </div>
         ) : null}
 
@@ -1800,7 +2340,7 @@ export function AletaBotAdminPanel() {
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant={activeModal.migration.riskLevel === "high" ? "danger" : activeModal.migration.riskLevel === "medium" ? "warning" : "muted"}>{activeModal.migration.riskLevel}</Badge>
-                <Badge variant="outline">{activeModal.migration.status}</Badge>
+                <Badge variant="outline">{displayStatus(activeModal.migration.status)}</Badge>
                 <Badge variant="outline">{activeModal.migration.registryTargetType || "registry"}</Badge>
               </div>
             </div>
@@ -1813,11 +2353,11 @@ export function AletaBotAdminPanel() {
                     ? (() => {
                         const s = activeModal.migration.status;
                         const transitions: Record<string, string> = {
-                          legacy_disabled: "legacy_disabled → active_registry (legacy key diaktifkan kembali sebagai fallback, registry tetap berjalan).",
-                          active_registry: "active_registry → dry_run (registry di-deactivate, ulangi approval sebelum aktifkan ulang).",
-                          pending_approval: "pending_approval → registry_draft (approval dibatalkan, kembali ke draft).",
+                          legacy_disabled: "Dinonaktifkan (Migrasi) → Aktif di Registry — legacy key diaktifkan kembali sebagai fallback, registry tetap berjalan.",
+                          active_registry: "Aktif di Registry → Mode Simulasi — registry di-deactivate, ulangi approval sebelum aktifkan ulang.",
+                          pending_approval: "Menunggu Persetujuan → Draft Registry — approval dibatalkan, kembali ke draft.",
                         };
-                        return transitions[s] ?? `${s} → mapped (rollback penuh ke status terpetakan, legacy kembali aktif).`;
+                        return transitions[s] ?? `${displayStatus(s)} → Terpetakan (rollback penuh, legacy kembali aktif).`;
                       })()
                     : activeModal.action === "convert"
                       ? "Konversi membuat draft query/template/notifikasi atau intent. Draft tidak langsung aktif."
@@ -1917,7 +2457,7 @@ function StatusCard({ label, value, icon: Icon }: { label: string; value: string
       <CardContent className="flex items-center justify-between gap-4 p-5">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-          <Badge variant={statusVariant(value)}>{value}</Badge>
+          <Badge variant={statusVariant(value)}>{displayStatus(value)}</Badge>
         </div>
         <div className="rounded-2xl bg-primary/10 p-3 text-primary">
           <Icon className="h-5 w-5" />
@@ -1936,6 +2476,21 @@ function InfoCard({ title, value, hint }: { title: string; value: string; hint: 
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{hint}</p>
       </CardContent>
     </Card>
+  );
+}
+
+function HealthSummaryCard({ label, status, value }: { label: string; status: "ok" | "warning" | "error"; value: string }) {
+  const variant = status === "ok" ? "success" as const : status === "warning" ? "warning" as const : "danger" as const;
+  const dot = status === "ok" ? "bg-emerald-500" : status === "warning" ? "bg-amber-500" : "bg-destructive";
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
+        <span className={cn("h-2 w-2 rounded-full", dot)} />
+      </div>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
+      <Badge variant={variant} className="mt-2 text-[10px]">{status === "ok" ? "Normal" : status === "warning" ? "Perhatian" : "Masalah"}</Badge>
+    </div>
   );
 }
 
@@ -1981,6 +2536,134 @@ function SelectField({
         ))}
       </select>
     </label>
+  );
+}
+
+function ScheduleBuilder({
+  form,
+  showAdvancedMode,
+  onChange,
+}: {
+  form: NotificationForm;
+  showAdvancedMode: boolean;
+  onChange: (next: Partial<NotificationForm>) => void;
+}) {
+  const parsed = parseCronExpression(form.scheduleCron);
+  const kind = scheduleKindFromCron(form.scheduleType, form.scheduleCron);
+  const selectedKind = showAdvancedMode ? kind : kind === "advanced" ? "daily" : kind;
+  const dayOfMonth = parsed.dayOfMonth !== "*" && /^\d+$/.test(parsed.dayOfMonth) ? parsed.dayOfMonth : "1";
+  const month = MONTH_OPTIONS.some((option) => option.value === parsed.month) ? parsed.month : "*";
+  const dayOfWeek = DAY_OPTIONS.some((option) => option.value === parsed.dayOfWeek) ? parsed.dayOfWeek : "1-5";
+  const time = parsed.valid ? parsed.time : "08:00:00";
+
+  const updateCronSchedule = (next: { time?: string; dayOfMonth?: string; month?: string; dayOfWeek?: string }) => {
+    const cron = scheduleFormToCron({
+      time: next.time ?? time,
+      dayOfMonth: next.dayOfMonth ?? (selectedKind === "monthly" ? dayOfMonth : "*"),
+      month: next.month ?? month,
+      dayOfWeek: next.dayOfWeek ?? (selectedKind === "weekly" ? dayOfWeek : "*"),
+    });
+    onChange({ scheduleType: "cron", scheduleCron: cron, scheduleTrigger: "schedule" });
+  };
+
+  const changeKind = (nextKind: ScheduleKind) => {
+    if (nextKind === "manual") {
+      onChange({ scheduleType: "manual", scheduleCron: "", scheduleTrigger: "manual" });
+      return;
+    }
+    if (nextKind === "event") {
+      onChange({ scheduleType: "event", scheduleCron: "", scheduleTrigger: form.scheduleTrigger || "event" });
+      return;
+    }
+    if (nextKind === "advanced") {
+      onChange({ scheduleType: "cron", scheduleCron: form.scheduleCron || "0 8 * * *", scheduleTrigger: "schedule" });
+      return;
+    }
+    const cron = scheduleFormToCron({
+      time,
+      dayOfMonth: nextKind === "monthly" ? dayOfMonth : "*",
+      month,
+      dayOfWeek: nextKind === "weekly" ? dayOfWeek : "*",
+    });
+    onChange({ scheduleType: "cron", scheduleCron: cron, scheduleTrigger: "schedule" });
+  };
+
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="mb-4">
+        <p className="text-sm font-semibold text-foreground">Jadwal Pengiriman</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          Atur dengan jam, hari, tanggal, dan bulan. Cron tetap disimpan untuk kompatibilitas backend.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <SelectField
+          label="Tipe jadwal"
+          value={selectedKind}
+          onChange={(value) => changeKind(value as ScheduleKind)}
+          options={[
+            { value: "manual", label: "Tidak terjadwal / manual" },
+            { value: "daily", label: "Berulang harian" },
+            { value: "weekly", label: "Berulang mingguan" },
+            { value: "monthly", label: "Berulang bulanan" },
+            { value: "event", label: "Berdasarkan event" },
+            ...(showAdvancedMode ? [{ value: "advanced", label: "Cron lanjutan" }] : []),
+          ]}
+        />
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ringkasan Jadwal</p>
+          <p className="mt-2 text-sm font-semibold text-foreground">{humanizeSchedule(form.scheduleType, form.scheduleCron, form.scheduleTrigger)}</p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">Ringkasan ini yang ditampilkan kepada admin.</p>
+        </div>
+        {["daily", "weekly", "monthly"].includes(selectedKind) ? (
+          <>
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-foreground">Jam</span>
+              <Input type="time" step={1} value={time} onChange={(event) => updateCronSchedule({ time: event.target.value.length === 5 ? `${event.target.value}:00` : event.target.value })} />
+              <span className="block text-xs text-muted-foreground">Format HH:mm:ss, contoh 08:00:00. Detik disimpan sebagai metadata tampilan; cron backend memakai menit.</span>
+            </label>
+            {selectedKind === "monthly" ? (
+              <SelectField
+                label="Tanggal bulan"
+                value={dayOfMonth}
+                onChange={(value) => updateCronSchedule({ dayOfMonth: value })}
+                options={Array.from({ length: 31 }, (_, index) => ({ value: String(index + 1), label: `Tanggal ${index + 1}` }))}
+              />
+            ) : null}
+            {selectedKind === "weekly" ? (
+              <SelectField label="Hari minggu" value={dayOfWeek} onChange={(value) => updateCronSchedule({ dayOfWeek: value })} options={DAY_OPTIONS} />
+            ) : null}
+            <SelectField label="Bulan" value={month} onChange={(value) => updateCronSchedule({ month: value })} options={MONTH_OPTIONS} />
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-foreground">Tahun</span>
+              <Input value="Setiap tahun" disabled />
+              <span className="block text-xs text-muted-foreground">Tahun belum dipakai oleh cron 5-field dan diperlakukan sebagai metadata.</span>
+            </label>
+          </>
+        ) : null}
+        {selectedKind === "event" ? (
+          <Field label="Nama event / trigger" value={form.scheduleTrigger} onChange={(value) => onChange({ scheduleTrigger: value })} placeholder="case_created, manual_approval, dll." />
+        ) : null}
+      </div>
+      {selectedKind === "advanced" && showAdvancedMode ? (
+        <div className="mt-4 rounded-xl border border-dashed border-border p-4">
+          <p className="text-sm font-semibold text-foreground">Lanjutan - hanya untuk admin teknis</p>
+          <div className="mt-3">
+            <Field label="Cron Expression" value={form.scheduleCron} onChange={(value) => onChange({ scheduleType: "cron", scheduleCron: value, scheduleTrigger: "schedule" })} placeholder="0 8 * * *" />
+          </div>
+          {form.scheduleCron && !isValidCronExpression(form.scheduleCron) ? (
+            <p className="mt-2 text-xs text-destructive">Format cron tidak valid.</p>
+          ) : (
+            <p className="mt-2 text-xs text-muted-foreground">Cron mentah hanya ditampilkan di Mode Lanjutan.</p>
+          )}
+        </div>
+      ) : null}
+      {kind === "advanced" && !showAdvancedMode ? (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          Format jadwal lama tidak dikenali. Aktifkan Mode Lanjutan atau atur ulang jadwal melalui form.
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -2039,7 +2722,7 @@ function NotificationSection({
                 <td className="py-4 pr-4 text-muted-foreground">{templateTitle(notification.templateId)}</td>
                 <td className="py-4 pr-4 text-muted-foreground">{notification.recipientSource === "users" ? "User/pegawai portal" : String(notification.recipientMapping.recipientColumn ?? "query")}</td>
                 <td className="py-4 pr-4">
-                  <p>{notification.scheduleConfig.cron || notification.scheduleConfig.type}</p>
+                  <p>{humanizeSchedule(notification.scheduleConfig.type, notification.scheduleConfig.cron, notification.scheduleConfig.trigger)}</p>
                   <p className="text-xs text-muted-foreground">{notification.scheduleConfig.trigger || "-"}</p>
                 </td>
                 <td className="py-4 pr-4">{notification.lastRunAt ? formatDateTime(notification.lastRunAt) : "Belum berjalan"}</td>
@@ -2360,11 +3043,13 @@ function LegacyMigrationCard({
   unknownQuestionReviews,
   isSaving,
   onAction,
+  showAdvanced,
 }: {
   legacyMigrations: AletaBotLegacyMigration[];
   unknownQuestionReviews: AletaBotSnapshot["unknownQuestionReviews"];
   isSaving: boolean;
   onAction: (action: LegacyMigrationAction, migration: AletaBotLegacyMigration) => void;
+  showAdvanced: boolean;
 }) {
   const [groupBy, setGroupBy] = React.useState<"category" | "legacyType" | "status">("legacyType");
 
@@ -2375,22 +3060,21 @@ function LegacyMigrationCard({
     return "muted" as const;
   };
   const statusLabel = (status: AletaBotLegacyMigration["status"]) => {
-    if (status === "migrated") return "Selesai";
-    if (status === "in_progress") return "Proses";
-    if (status === "skipped") return "Dilewati";
     const labels: Record<string, string> = {
+      migrated: "Selesai",
+      in_progress: "Sedang Proses",
+      skipped: "Dilewati",
       not_migrated: "Belum Migrasi",
-      mapped: "Mapped",
+      mapped: "Terpetakan",
       registry_draft: "Draft Registry",
-      needs_manual_mapping: "Perlu Mapping",
-      dry_run: "Dry-run",
-      pending_approval: "Menunggu Approval",
-      active_registry: "Registry Aktif",
-      legacy_disabled: "Legacy Disabled",
-      archivable: "Bisa Arsip",
+      needs_manual_mapping: "Perlu Konfigurasi Manual",
+      dry_run: "Mode Simulasi",
+      pending_approval: "Menunggu Persetujuan",
+      active_registry: "Aktif di Registry",
+      legacy_disabled: "Dinonaktifkan (Migrasi)",
+      archivable: "Siap Diarsipkan",
     };
-    if (labels[status]) return labels[status];
-    return "Tertunda";
+    return labels[status] ?? "Tertunda";
   };
   const riskColor = (risk: AletaBotLegacyMigration["riskLevel"]) => {
     if (risk === "high") return "danger" as const;
@@ -2472,7 +3156,7 @@ function LegacyMigrationCard({
                     <tr>
                       <th className="py-2 pr-3">Fitur</th>
                       <th className="py-2 pr-3">Fungsi Legacy</th>
-                      <th className="py-2 pr-3">Cron</th>
+                      <th className="py-2 pr-3">Jadwal</th>
                       <th className="py-2 pr-3">Target Portal</th>
                       <th className="py-2 pr-3">Risiko</th>
                       <th className="py-2 pr-3">Status</th>
@@ -2486,10 +3170,10 @@ function LegacyMigrationCard({
                         <td className="py-3 pr-3">
                           <div className="font-medium text-foreground">{migration.feature}</div>
                           {migration.canArchive && migration.status === "legacy_disabled" && (
-                            <Badge variant="success" className="mt-1 text-[10px]">Archive Ready</Badge>
+                            <Badge variant="success" className="mt-1 text-[10px]">Siap Diarsipkan</Badge>
                           )}
                           {migration.canArchive && migration.status !== "legacy_disabled" && (
-                            <span className="text-[10px] text-muted-foreground">Dapat diarsip setelah legacy_disabled</span>
+                            <span className="text-[10px] text-muted-foreground">Dapat diarsip setelah dinonaktifkan</span>
                           )}
                         </td>
                         <td className="py-3 pr-3">
@@ -2498,7 +3182,7 @@ function LegacyMigrationCard({
                         </td>
                         <td className="py-3 pr-3">
                           {migration.cronSchedule
-                            ? <code className="text-[10px] text-muted-foreground">{migration.cronSchedule.split(";")[0]?.trim()}</code>
+                            ? <span className="text-xs text-muted-foreground">{humanizeLegacyCron(migration.cronSchedule)}</span>
                             : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="py-3 pr-3 text-xs">
@@ -2512,14 +3196,43 @@ function LegacyMigrationCard({
                           {migration.migratedAt && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{formatDateTime(migration.migratedAt)}</p>}
                         </td>
                         <td className="py-3 pr-3">
-                          <div className="flex max-w-[260px] flex-wrap gap-1.5">
-                            <Button size="sm" variant="outline" disabled={isSaving} onClick={() => onAction("preview", migration)}>Preview</Button>
-                            <Button size="sm" variant="outline" disabled={isSaving || ["active_registry", "legacy_disabled", "archivable"].includes(migration.status)} onClick={() => onAction("convert", migration)}>Convert</Button>
-                            <Button size="sm" variant="outline" disabled={isSaving || !["registry_draft", "needs_manual_mapping", "mapped", "in_progress"].includes(migration.status)} onClick={() => onAction("dry-run", migration)}>Dry-run</Button>
-                            <Button size="sm" variant="outline" disabled={isSaving || !["dry_run", "registry_draft"].includes(migration.status)} onClick={() => onAction("submit-approval", migration)}>Approval</Button>
-                            <Button size="sm" variant="outline" disabled={isSaving || !["pending_approval", "dry_run", "registry_draft"].includes(migration.status)} onClick={() => onAction("activate", migration)}>Activate</Button>
-                            <Button size="sm" variant="outline" disabled={isSaving || !["active_registry", "migrated", "archivable"].includes(migration.status)} onClick={() => onAction("disable-legacy", migration)}>Disable</Button>
-                            <Button size="sm" variant="outline" disabled={isSaving || ["pending", "not_migrated"].includes(migration.status)} onClick={() => onAction("rollback", migration)}>Rollback</Button>
+                          <div className="flex max-w-[220px] flex-col gap-1.5">
+                            {/* Langkah Berikutnya */}
+                            {(() => {
+                              const suggested = getSuggestedMigrationAction(migration.status);
+                              if (!suggested) {
+                                if (migration.status === "pending_approval") {
+                                  return <p className="text-[10px] text-amber-600 font-medium">⏳ Tahap 4/5 — Menunggu persetujuan</p>;
+                                }
+                                if (migration.status === "legacy_disabled") {
+                                  return <p className="text-[10px] text-emerald-600 font-medium">✓ Selesai — Siap diarsipkan</p>;
+                                }
+                                return null;
+                              }
+                              return (
+                                <div className={`rounded border px-2 py-1 text-[10px] font-medium ${suggested.isHighRisk ? "border-destructive/30 text-destructive" : "border-primary/30 text-primary"}`}>
+                                  {suggested.step}: {suggested.label}
+                                </div>
+                              );
+                            })()}
+                            {/* Aksi Aman */}
+                            <div className="flex flex-wrap gap-1">
+                              <Button size="sm" variant="outline" disabled={isSaving} onClick={() => onAction("preview", migration)}>Lihat Pratinjau</Button>
+                              <Button size="sm" variant="outline" disabled={isSaving || !["registry_draft", "needs_manual_mapping", "mapped", "in_progress"].includes(migration.status)} onClick={() => onAction("dry-run", migration)}>Simulasi</Button>
+                            </div>
+                            {/* Alur Kerja */}
+                            <div className="flex flex-wrap gap-1">
+                              <Button size="sm" variant="outline" disabled={isSaving || ["active_registry", "legacy_disabled", "archivable"].includes(migration.status)} onClick={() => onAction("convert", migration)}>Ubah ke Draft</Button>
+                              <Button size="sm" variant="outline" disabled={isSaving || !["dry_run", "registry_draft"].includes(migration.status)} onClick={() => onAction("submit-approval", migration)}>Ajukan</Button>
+                              <Button size="sm" variant="outline" disabled={isSaving || !["pending_approval", "dry_run", "registry_draft"].includes(migration.status)} onClick={() => onAction("activate", migration)}>Aktifkan</Button>
+                            </div>
+                            {/* Risiko Tinggi — hanya Mode Lanjutan */}
+                            {showAdvanced ? (
+                              <div className="flex flex-wrap gap-1 border-t border-destructive/20 pt-1">
+                                <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10" disabled={isSaving || !["active_registry", "migrated", "archivable"].includes(migration.status)} onClick={() => onAction("disable-legacy", migration)}>Nonaktifkan</Button>
+                                <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10" disabled={isSaving || ["pending", "not_migrated"].includes(migration.status)} onClick={() => onAction("rollback", migration)}>Kembalikan</Button>
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                       </tr>

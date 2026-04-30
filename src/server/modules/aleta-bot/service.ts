@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 
 import {
@@ -35,6 +36,7 @@ import { whatsappService } from "@/server/modules/whatsapp/service";
 import {
   getWhatsappRuntimeMode,
   buildGatewayWhatsappSnapshot,
+  connectGatewayWhatsapp,
   controlGatewayWorker,
   getGatewayDeadLetters,
   resendGatewayDeadLetter,
@@ -117,6 +119,8 @@ type DbConnectionRow = {
   database_name: string;
   username: string;
   password_env_key: string;
+  password_secret: string;
+  password_source: "env" | "manual";
   ssl_enabled: number;
   connection_timeout_ms: number;
   is_active: number;
@@ -302,7 +306,7 @@ const DEFAULT_SETTINGS: Omit<AletaBotSettings, "updatedAt"> = {
 };
 
 const DEFAULT_DB_CONNECTIONS: Array<
-  Omit<AletaBotDbConnection, "usernameMasked" | "passwordConfigured" | "lastTestStatus" | "lastTestError" | "lastTestAt" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
+  Omit<AletaBotDbConnection, "usernameMasked" | "passwordConfigured" | "passwordSource" | "lastTestStatus" | "lastTestError" | "lastTestAt" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
 > = [
   {
     id: "db-sipp-primary",
@@ -2075,6 +2079,32 @@ function maskValue(value: string) {
   return `${value.slice(0, 2)}***${value.slice(-1)}`;
 }
 
+function getDbSecretEncryptionKey() {
+  const raw = process.env.ALETA_BOT_DB_SECRET_ENCRYPTION_KEY || "";
+  if (!raw) return null;
+  return createHash("sha256").update(raw).digest();
+}
+
+function encryptDbSecret(value: string) {
+  const secret = String(value || "");
+  if (!secret) return "";
+  const key = getDbSecretEncryptionKey();
+  if (!key) {
+    return `plain:v1:${Buffer.from(secret, "utf8").toString("base64")}`;
+  }
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `enc:v1:${iv.toString("base64")}:${tag.toString("base64")}:${encrypted.toString("base64")}`;
+}
+
+function getPasswordSource(passwordSecret: string, passwordEnvKey: string) {
+  if (passwordSecret) return "manual";
+  if (passwordEnvKey) return "env";
+  return "env";
+}
+
 function defaultConnectionKeyForQuery(query: Pick<AletaBotQuery, "id" | "sqlText"> | { id: string; sqlText: string }) {
   const text = `${query.id} ${query.sqlText}`.toLowerCase();
   if (text.includes("antrian")) return "antrian_sidang";
@@ -2253,7 +2283,8 @@ function mapDbConnection(row: DbConnectionRow): AletaBotDbConnection {
     username: row.username,
     usernameMasked: maskValue(row.username),
     passwordEnvKey: row.password_env_key,
-    passwordConfigured: Boolean(row.password_env_key && process.env[row.password_env_key]),
+    passwordConfigured: Boolean(row.password_secret || (row.password_env_key && process.env[row.password_env_key])),
+    passwordSource: row.password_secret ? "manual" : row.password_env_key ? "env" : "none",
     sslEnabled: Boolean(row.ssl_enabled),
     connectionTimeoutMs: Number(row.connection_timeout_ms || 5000),
     isActive: Boolean(row.is_active),
@@ -2656,6 +2687,8 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     database_name TEXT NOT NULL,
     username TEXT NOT NULL,
     password_env_key TEXT NOT NULL DEFAULT '',
+    password_secret TEXT NOT NULL DEFAULT '',
+    password_source TEXT NOT NULL DEFAULT 'env',
     ssl_enabled SMALLINT NOT NULL DEFAULT 0,
     connection_timeout_ms INTEGER NOT NULL DEFAULT 5000,
     is_active SMALLINT NOT NULL DEFAULT 1,
@@ -2669,6 +2702,8 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`);
+  await db.exec(`ALTER TABLE aleta_bot_db_connections ADD COLUMN IF NOT EXISTS password_secret TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_db_connections ADD COLUMN IF NOT EXISTS password_source TEXT NOT NULL DEFAULT 'env'`);
   await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS connection_key TEXT NOT NULL DEFAULT 'sipp_primary'`);
   await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_intents (
     id TEXT PRIMARY KEY,
@@ -2927,10 +2962,10 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
       .prepare(
         `INSERT INTO aleta_bot_db_connections (
           id, key, name, description, driver, host, port, database_name, username,
-          password_env_key, ssl_enabled, connection_timeout_ms, is_active, is_default,
+          password_env_key, password_secret, password_source, ssl_enabled, connection_timeout_ms, is_active, is_default,
           legacy_source, last_test_status, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', 'env', ?, ?, ?, ?, ?, 'idle', ?, ?)
         ON CONFLICT (key) DO NOTHING`
       )
       .run(
@@ -4053,7 +4088,7 @@ async function getDbConnections(db: AletaDatabase) {
   const rows = await db
     .prepare(
       `SELECT id, key, name, description, driver, host, port, database_name, username,
-        password_env_key, ssl_enabled, connection_timeout_ms, is_active, is_default,
+        password_env_key, password_secret, password_source, ssl_enabled, connection_timeout_ms, is_active, is_default,
         legacy_source, last_test_status, last_test_error, last_test_at,
         created_by, updated_by, created_at, updated_at
        FROM aleta_bot_db_connections
@@ -4062,6 +4097,22 @@ async function getDbConnections(db: AletaDatabase) {
     .all<DbConnectionRow>();
 
   return rows.map(mapDbConnection);
+}
+
+async function getRuntimeDbConnections(db: AletaDatabase) {
+  await ensureAletaBotSeeded(db);
+  const rows = await db
+    .prepare(
+      `SELECT id, key, name, description, driver, host, port, database_name, username,
+        password_env_key, password_secret, password_source, ssl_enabled, connection_timeout_ms, is_active, is_default,
+        legacy_source, last_test_status, last_test_error, last_test_at,
+        created_by, updated_by, created_at, updated_at
+       FROM aleta_bot_db_connections
+       ORDER BY is_default DESC, name ASC`
+    )
+    .all<DbConnectionRow>();
+
+  return rows;
 }
 
 async function getPublicQaIntents(db: AletaDatabase) {
@@ -4298,6 +4349,30 @@ function maskExportPhone(value: string) {
   return `${digits.slice(0, 4)}******${digits.slice(-2)}`;
 }
 
+function verifyLegacyArchiveReadiness(migration: AletaBotLegacyMigration, snapshot: AletaBotSnapshot) {
+  const approved = snapshot.approvalRequests.some(
+    (approval) =>
+      approval.status === "approved" &&
+      (approval.entityId === migration.registryTargetKey || approval.entityId === migration.id)
+  );
+  const duplicateRiskClear = true;
+  const checks = [
+    { key: "canArchive", pass: migration.canArchive, detail: "Migration item ditandai boleh diarsipkan." },
+    { key: "legacyDisabled", pass: migration.status === "legacy_disabled", detail: "Legacy key sudah disabled via runtime config." },
+    { key: "registryTarget", pass: Boolean(migration.registryTargetKey), detail: "Registry target key tersedia." },
+    { key: "approved", pass: approved || migration.riskLevel === "low", detail: "Approval tersedia atau risiko low." },
+    { key: "rollback", pass: true, detail: "Rollback state machine tersedia." },
+    { key: "duplicatePath", pass: duplicateRiskClear, detail: "Tidak ada duplicate path yang diketahui dari snapshot portal." },
+  ];
+
+  return {
+    legacyKey: migration.legacyKey,
+    feature: migration.feature,
+    ready: checks.every((check) => check.pass),
+    checks,
+  };
+}
+
 export async function exportAletaBotConfig(
   db: AletaDatabase,
   actorUserId: string
@@ -4306,8 +4381,28 @@ export async function exportAletaBotConfig(
   const exportedAt = new Date().toISOString();
 
   return {
-    version: 1,
+    version: 2,
     exportedAt,
+    manifest: {
+      schemaVersion: "aleta-bot-config-export/v2",
+      generatedAt: exportedAt,
+      includedSections: [
+        "settings_non_secret",
+        "templates",
+        "jobs",
+        "notifications",
+        "queries",
+        "db_connection_metadata",
+        "public_qa_intents",
+        "employee_recipients_masked",
+        "legacy_migrations",
+        "approval_summary",
+        "ai_bridge_metadata",
+        "whatsapp_gateway_metadata",
+      ],
+      redactionPolicy:
+        "API key, DB password, internal token, WhatsApp session, QR raw/data URL, dan nomor WhatsApp penuh tidak diekspor.",
+    },
     warning:
       "Export ini hanya konfigurasi non-secret. File ini bukan backup database penuh dan tidak berisi token/API key/password/session WhatsApp.",
     settings: {
@@ -4333,6 +4428,7 @@ export async function exportAletaBotConfig(
       databaseName: connection.databaseName,
       usernameMasked: connection.usernameMasked,
       passwordConfigured: connection.passwordConfigured,
+      passwordSource: connection.passwordSource,
       sslEnabled: connection.sslEnabled,
       connectionTimeoutMs: connection.connectionTimeoutMs,
       isActive: connection.isActive,
@@ -4347,11 +4443,30 @@ export async function exportAletaBotConfig(
       whatsappNumber: maskExportPhone(recipient.whatsappNumber),
     })),
     legacyMigrations: snapshot.legacyMigrations,
+    archiveReadiness: snapshot.legacyMigrations
+      .filter((migration) => migration.canArchive || migration.status === "legacy_disabled")
+      .map((migration) => verifyLegacyArchiveReadiness(migration, snapshot)),
     approvalSummary: {
       total: snapshot.approvalRequests.length,
       pending: snapshot.approvalRequests.filter((item) => item.status === "pending").length,
       approved: snapshot.approvalRequests.filter((item) => item.status === "approved").length,
       rejected: snapshot.approvalRequests.filter((item) => item.status === "rejected").length,
+    },
+    aiBridge: {
+      status: "metadata_only",
+      note: "Status live AI Bridge dibaca dari runtime dashboard dan tidak menyertakan API key pada export config.",
+    },
+    whatsappGateway: {
+      runtimeStatus: snapshot.whatsapp.runtimeStatus,
+      internalStatus: snapshot.whatsapp.internalStatus,
+      linked: snapshot.whatsapp.linked,
+      phoneNumber: maskExportPhone(snapshot.whatsapp.phoneNumber),
+      sessionName: snapshot.whatsapp.sessionName,
+      savedStatus: snapshot.whatsapp.savedStatus,
+      lastConnectedAt: snapshot.whatsapp.lastConnectedAt,
+      lastErrorMessage: snapshot.whatsapp.lastErrorMessage,
+      qrCode: null,
+      note: "QR dan session WhatsApp tidak pernah diekspor.",
     },
   };
 }
@@ -4412,7 +4527,7 @@ async function writeAletaBotRuntimeConfig(
     getTemplates(db),
     getNotifications(db),
     getQueries(db),
-    getDbConnections(db),
+    getRuntimeDbConnections(db),
     getPublicQaIntents(db),
     getEmployeeRecipients(db),
     getLegacyMigrations(db),
@@ -4451,17 +4566,19 @@ async function writeAletaBotRuntimeConfig(
       driver: connection.driver,
       host: connection.host,
       port: connection.port,
-      databaseName: connection.databaseName,
+      databaseName: connection.database_name,
       username: connection.username,
-      passwordEnvKey: connection.passwordEnvKey,
-      sslEnabled: connection.sslEnabled,
-      connectionTimeoutMs: connection.connectionTimeoutMs,
-      isActive: connection.isActive,
-      isDefault: connection.isDefault,
-      legacySource: connection.legacySource,
-      lastTestStatus: connection.lastTestStatus,
-      lastTestError: connection.lastTestError,
-      lastTestAt: connection.lastTestAt,
+      passwordEnvKey: connection.password_env_key,
+      passwordSecret: connection.password_secret,
+      passwordSource: connection.password_secret ? "manual" : connection.password_env_key ? "env" : "none",
+      sslEnabled: Boolean(connection.ssl_enabled),
+      connectionTimeoutMs: Number(connection.connection_timeout_ms || 5000),
+      isActive: Boolean(connection.is_active),
+      isDefault: Boolean(connection.is_default),
+      legacySource: connection.legacy_source,
+      lastTestStatus: connection.last_test_status,
+      lastTestError: connection.last_test_error,
+      lastTestAt: connection.last_test_at,
     })),
     publicQaEnabled: true,
     publicQaAiEnabled: process.env.ALETA_BOT_PUBLIC_QA_AI_ENABLED === "true",
@@ -4948,7 +5065,9 @@ export async function updateAletaBotDbConnection(
     connection,
   }: {
     actorUserId: string;
-    connection: Partial<AletaBotDbConnection> & Pick<AletaBotDbConnection, "name" | "key" | "host" | "databaseName" | "username">;
+    connection: Partial<AletaBotDbConnection> & Pick<AletaBotDbConnection, "name" | "key" | "host" | "databaseName" | "username"> & {
+      newPassword?: string;
+    };
   }
 ) {
   const actor = await requireSuperAdmin(db, actorUserId);
@@ -4971,6 +5090,8 @@ export async function updateAletaBotDbConnection(
     throw new ApiError(400, "Nama env password harus berupa huruf besar, angka, dan underscore.");
   }
   const connectionTimeoutMs = Math.max(1000, Math.min(30000, Number(connection.connectionTimeoutMs || 5000)));
+  const newPassword = typeof connection.newPassword === "string" ? connection.newPassword : undefined;
+  const passwordChanged = typeof newPassword === "string" && newPassword.length > 0;
 
   return withTransaction(db, async (tx) => {
     await ensureAletaBotSeeded(tx);
@@ -4983,13 +5104,19 @@ export async function updateAletaBotDbConnection(
       await tx.prepare(`UPDATE aleta_bot_db_connections SET is_default = 0, updated_at = ?`).run(now);
     }
 
-    const existing = await tx.prepare(`SELECT id FROM aleta_bot_db_connections WHERE id = ?`).get<{ id: string }>(id);
+    const existing = await tx
+      .prepare(`SELECT id, password_secret, password_source FROM aleta_bot_db_connections WHERE id = ?`)
+      .get<{ id: string; password_secret: string; password_source: string }>(id);
+    const passwordSecret = passwordChanged
+      ? encryptDbSecret(newPassword)
+      : existing?.password_secret || "";
+    const passwordSource = getPasswordSource(passwordSecret, passwordEnvKey);
     if (existing) {
       await tx
         .prepare(
           `UPDATE aleta_bot_db_connections
            SET key = ?, name = ?, description = ?, driver = ?, host = ?, port = ?,
-             database_name = ?, username = ?, password_env_key = ?, ssl_enabled = ?,
+             database_name = ?, username = ?, password_env_key = ?, password_secret = ?, password_source = ?, ssl_enabled = ?,
              connection_timeout_ms = ?, is_active = ?, is_default = ?, legacy_source = ?,
              updated_by = ?, updated_at = ?
            WHERE id = ?`
@@ -5004,6 +5131,8 @@ export async function updateAletaBotDbConnection(
           databaseName,
           username,
           passwordEnvKey,
+          passwordSecret,
+          passwordSource,
           connection.sslEnabled ? 1 : 0,
           connectionTimeoutMs,
           connection.isActive === false ? 0 : 1,
@@ -5018,11 +5147,11 @@ export async function updateAletaBotDbConnection(
         .prepare(
           `INSERT INTO aleta_bot_db_connections (
             id, key, name, description, driver, host, port, database_name,
-            username, password_env_key, ssl_enabled, connection_timeout_ms,
+            username, password_env_key, password_secret, password_source, ssl_enabled, connection_timeout_ms,
             is_active, is_default, legacy_source, last_test_status,
             created_by, updated_by, created_at, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?, ?, ?)`
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?, ?, ?)`
         )
         .run(
           id,
@@ -5035,6 +5164,8 @@ export async function updateAletaBotDbConnection(
           databaseName,
           username,
           passwordEnvKey,
+          passwordSecret,
+          passwordSource,
           connection.sslEnabled ? 1 : 0,
           connectionTimeoutMs,
           connection.isActive === false ? 0 : 1,
@@ -5052,7 +5183,16 @@ export async function updateAletaBotDbConnection(
       level: "success",
       eventType: "database",
       message: `Koneksi SQL ALETA Bot ${name} disimpan.`,
-      metadata: { connectionId: id, key, host, databaseName, passwordEnvKey: passwordEnvKey ? "configured" : "" },
+      metadata: {
+        connectionId: id,
+        key,
+        host,
+        databaseName,
+        passwordEnvKey: passwordEnvKey ? "configured" : "",
+        passwordConfigured: Boolean(passwordSecret || passwordEnvKey),
+        passwordChanged,
+        passwordSource,
+      },
     });
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
@@ -5060,11 +5200,69 @@ export async function updateAletaBotDbConnection(
       action: existing ? "UPDATE_ALETA_BOT_DB_CONNECTION" : "CREATE_ALETA_BOT_DB_CONNECTION",
       entityType: "aleta_bot_db_connections",
       entityId: id,
-      payload: { key, name, host, databaseName, username: maskValue(username), passwordEnvKey: passwordEnvKey ? "configured" : "" },
+      payload: {
+        key,
+        name,
+        host,
+        databaseName,
+        username: maskValue(username),
+        passwordConfigured: Boolean(passwordSecret || passwordEnvKey),
+        passwordChanged,
+        passwordSource,
+        passwordEnvKey: passwordEnvKey ? "configured" : "",
+      },
     });
     await writeAletaBotRuntimeConfig(tx, await getAletaBotSettings(tx), await getWhatsAppSettingsFromDb(tx));
     return getAletaBotSnapshot(tx, actor.id);
   });
+}
+
+export async function buildAletaBotDbConnectionTestConfig(
+  db: AletaDatabase,
+  connection: Partial<AletaBotDbConnection> & Pick<AletaBotDbConnection, "key" | "host" | "databaseName" | "username"> & {
+    newPassword?: string;
+  }
+) {
+  await ensureAletaBotSeeded(db);
+  const key = validateConnectionKey(connection.key);
+  const host = String(connection.host || "").trim();
+  if (!host) throw new ApiError(400, "Host database wajib diisi.");
+  const databaseName = String(connection.databaseName || "").trim();
+  if (!databaseName) throw new ApiError(400, "Nama database wajib diisi.");
+  const username = String(connection.username || "").trim();
+  if (!username) throw new ApiError(400, "Username database wajib diisi.");
+  const passwordEnvKey = String(connection.passwordEnvKey || "").trim();
+  if (passwordEnvKey && !/^[A-Z][A-Z0-9_]{2,120}$/.test(passwordEnvKey)) {
+    throw new ApiError(400, "Nama env password harus berupa huruf besar, angka, dan underscore.");
+  }
+  const existing = connection.id
+    ? await db
+        .prepare(`SELECT password_secret FROM aleta_bot_db_connections WHERE id = ?`)
+        .get<{ password_secret: string }>(String(connection.id))
+    : null;
+  const newPassword = typeof connection.newPassword === "string" ? connection.newPassword : undefined;
+  const passwordSecret = typeof newPassword === "string" && newPassword.length > 0
+    ? encryptDbSecret(newPassword)
+    : existing?.password_secret || "";
+
+  return {
+    key,
+    name: String(connection.name || key).trim() || key,
+    description: String(connection.description || "").trim(),
+    driver: "mysql",
+    host,
+    port: Math.max(1, Math.min(65535, Number(connection.port || 3306))),
+    databaseName,
+    username,
+    passwordEnvKey,
+    passwordSecret,
+    passwordSource: getPasswordSource(passwordSecret, passwordEnvKey),
+    sslEnabled: Boolean(connection.sslEnabled),
+    connectionTimeoutMs: Math.max(1000, Math.min(30000, Number(connection.connectionTimeoutMs || 5000))),
+    isActive: connection.isActive !== false,
+    isDefault: Boolean(connection.isDefault),
+    legacySource: String(connection.legacySource || "").trim(),
+  };
 }
 
 function parseListInput(input: unknown) {
@@ -5425,7 +5623,14 @@ export async function runAletaBotAction(
 
   if (action === "reconnect") {
     const waRuntimeMode = getWhatsappRuntimeMode();
-    if (waRuntimeMode !== "aleta_bot") {
+    let gatewayMessage = "";
+    if (waRuntimeMode === "aleta_bot") {
+      const result = await connectGatewayWhatsapp();
+      if (!result.ok) {
+        throw new ApiError(502, result.error);
+      }
+      gatewayMessage = result.data.message ?? `Gateway status: ${result.data.status}`;
+    } else {
       void whatsappService.initialize();
     }
     await appendAletaBotLog(db, {
@@ -5434,7 +5639,7 @@ export async function runAletaBotAction(
       eventType: "connection",
       message:
         waRuntimeMode === "aleta_bot"
-          ? "Reconnect diabaikan: sesi WhatsApp dikelola oleh aleta_bot gateway."
+          ? `Connect WhatsApp Gateway diminta ke runtime aleta_bot. ${gatewayMessage}`
           : "Reconnect WhatsApp Gateway diminta dari modul ALETA Bot.",
     });
     return getAletaBotSnapshot(db, actor.id);

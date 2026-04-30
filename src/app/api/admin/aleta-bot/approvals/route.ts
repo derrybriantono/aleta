@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { processApproval, submitApprovalRequest } from "@/server/modules/aleta-bot/service";
 import { resolveActorUserId } from "@/server/shared/auth";
-import { handleRouteError, ok } from "@/server/shared/http";
+import { badRequest, handleRouteError, ok, unauthorized } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
 import type { AletaBotApprovalRequest } from "@/lib/aleta-bot-types";
 
@@ -12,6 +12,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await getDatabase();
+    const actorUserId = await resolveActorUserId(request);
+    if (!actorUserId) {
+      unauthorized();
+    }
     const body = await readJsonBody<{
       mode: "submit" | "review";
       entityType?: AletaBotApprovalRequest["entityType"];
@@ -22,19 +27,21 @@ export async function POST(request: NextRequest) {
       approvalId?: string;
       decision?: "approved" | "rejected";
     }>(request);
-    const db = await getDatabase();
-    const actorUserId = await resolveActorUserId(request);
 
     if (body.mode === "submit") {
       if (!body.entityType || !body.entityId || !body.entityName) {
-        return handleRouteError(new Error("entityType, entityId, entityName wajib diisi."));
+        badRequest("entityType, entityId, entityName wajib diisi.");
       }
+      const entityType = body.entityType;
+      const entityId = body.entityId;
+      const entityName = body.entityName;
+      if (!entityType || !entityId || !entityName) return;
       return ok(
         await submitApprovalRequest(db, {
           actorUserId,
-          entityType: body.entityType,
-          entityId: body.entityId,
-          entityName: body.entityName,
+          entityType,
+          entityId,
+          entityName,
           snapshotJson: body.snapshotJson,
           notes: body.notes,
         })
@@ -43,19 +50,22 @@ export async function POST(request: NextRequest) {
 
     if (body.mode === "review") {
       if (!body.approvalId || !body.decision) {
-        return handleRouteError(new Error("approvalId dan decision wajib diisi."));
+        badRequest("approvalId dan decision wajib diisi.");
       }
+      const approvalId = body.approvalId;
+      const decision = body.decision;
+      if (!approvalId || !decision) return;
       return ok(
         await processApproval(db, {
           actorUserId,
-          approvalId: body.approvalId,
-          decision: body.decision,
+          approvalId,
+          decision,
           notes: body.notes,
         })
       );
     }
 
-    return handleRouteError(new Error("mode tidak valid. Gunakan 'submit' atau 'review'."));
+    badRequest("mode tidak valid. Gunakan 'submit' atau 'review'.");
   } catch (error) {
     return handleRouteError(error);
   }

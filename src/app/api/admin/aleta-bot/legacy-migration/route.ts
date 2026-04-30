@@ -1,7 +1,16 @@
 import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
-import { updateLegacyMigration } from "@/server/modules/aleta-bot/service";
+import {
+  activateLegacyRegistry,
+  convertLegacyMigrationToDraft,
+  disableLegacyKey,
+  previewLegacyMigrationConversion,
+  rollbackLegacyMigration,
+  runLegacyMigrationDryRun,
+  submitLegacyMigrationApproval,
+  updateLegacyMigration,
+} from "@/server/modules/aleta-bot/service";
 import {
   getGatewayLegacyCommands,
   getGatewayLegacyNotifications,
@@ -81,8 +90,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/admin/aleta-bot/legacy-migration
- * Update migration status for a specific migration entry.
- * Body: { migrationId: string; status: AletaBotLegacyMigration["status"]; notes?: string }
+ * Update migration status or run a guarded migration workflow action.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -93,20 +101,62 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await readJsonBody<{
+      action?: "update-status" | "preview" | "convert" | "dry-run" | "submit-approval" | "activate" | "disable-legacy" | "rollback";
       migrationId?: string;
       status?: AletaBotLegacyMigration["status"];
       notes?: string;
     }>(request);
 
-    if (!body.migrationId || !body.status) {
-      badRequest("migrationId dan status wajib diisi.");
+    if (!body.migrationId) {
+      badRequest("migrationId wajib diisi.");
     }
 
     const migrationId = body.migrationId;
-    const status = body.status;
-    if (!migrationId || !status) return;
+    const action = body.action || "update-status";
+    if (!migrationId) return;
 
-    const validStatuses: AletaBotLegacyMigration["status"][] = ["pending", "in_progress", "migrated", "skipped"];
+    if (action === "preview") {
+      return ok(await previewLegacyMigrationConversion(db, actorUserId, migrationId));
+    }
+    if (action === "convert") {
+      return ok(await convertLegacyMigrationToDraft(db, actorUserId, migrationId));
+    }
+    if (action === "dry-run") {
+      return ok(await runLegacyMigrationDryRun(db, actorUserId, migrationId));
+    }
+    if (action === "submit-approval") {
+      return ok(await submitLegacyMigrationApproval(db, actorUserId, migrationId));
+    }
+    if (action === "activate") {
+      return ok(await activateLegacyRegistry(db, actorUserId, migrationId));
+    }
+    if (action === "disable-legacy") {
+      return ok(await disableLegacyKey(db, actorUserId, migrationId));
+    }
+    if (action === "rollback") {
+      return ok(await rollbackLegacyMigration(db, actorUserId, migrationId));
+    }
+
+    if (!body.status) {
+      badRequest("status wajib diisi untuk update-status.");
+    }
+    const status = body.status as AletaBotLegacyMigration["status"];
+
+    const validStatuses: AletaBotLegacyMigration["status"][] = [
+      "pending",
+      "in_progress",
+      "migrated",
+      "skipped",
+      "not_migrated",
+      "mapped",
+      "registry_draft",
+      "needs_manual_mapping",
+      "dry_run",
+      "pending_approval",
+      "active_registry",
+      "legacy_disabled",
+      "archivable",
+    ];
     if (!validStatuses.includes(status)) {
       badRequest(`Status tidak valid. Gunakan: ${validStatuses.join(", ")}.`);
     }

@@ -117,6 +117,14 @@ export type GatewayQrResponse = {
   message?: string;
 };
 
+export type GatewayConnectResponse = {
+  ok: boolean;
+  status: string;
+  started?: boolean;
+  qrAvailable?: boolean;
+  message?: string;
+};
+
 export type GatewayEnqueueRequest = {
   sourceApp: string;
   sourceFeature: string;
@@ -164,6 +172,13 @@ export async function getGatewayWhatsappStatus(): Promise<GatewayResult<GatewayS
 
 export async function getGatewayWhatsappQr(): Promise<GatewayResult<GatewayQrResponse>> {
   return gatewayFetch<GatewayQrResponse>("/internal/aleta-bot/whatsapp/qr");
+}
+
+export async function connectGatewayWhatsapp(): Promise<GatewayResult<GatewayConnectResponse>> {
+  return gatewayFetch<GatewayConnectResponse>("/internal/aleta-bot/whatsapp/connect", {
+    method: "POST",
+    body: JSON.stringify({ source: "manajemen_surat" }),
+  });
 }
 
 export async function enqueueGatewayMessage(

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Building2, CheckCircle2, Landmark, Link2, LoaderCircle, MessageCircleMore, RefreshCcw, Smartphone, Sparkles, Unplug } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -722,7 +723,7 @@ export function WhatsAppStatusPanel() {
           <div className="mt-4 rounded-[1.2rem] border border-dashed border-border bg-card/80 p-4">
             {snapshot.qrCode ? (
               <div className="flex flex-col items-center gap-3">
-                <img src={snapshot.qrCode} alt="QR WhatsApp Web ALETA" data-testid="wa-qr-image" className="h-56 w-56 rounded-2xl border border-border bg-white p-3" />
+                <Image src={snapshot.qrCode} alt="QR WhatsApp Web ALETA" width={224} height={224} unoptimized data-testid="wa-qr-image" className="h-56 w-56 rounded-2xl border border-border bg-white p-3" />
                 <p className="text-center text-sm text-muted-foreground">
                   Buka WhatsApp kantor, pilih <strong className="text-foreground">Perangkat Tertaut</strong>, lalu scan QR ini. QR hanya ditampilkan di area ini sebagai pusat koneksi tunggal.
                 </p>

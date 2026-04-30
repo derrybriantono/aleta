@@ -91,6 +91,7 @@ export type AletaBotDbConnection = {
   usernameMasked: string;
   passwordEnvKey: string;
   passwordConfigured: boolean;
+  passwordSource: "manual" | "env" | "none";
   sslEnabled: boolean;
   connectionTimeoutMs: number;
   isActive: boolean;
@@ -320,12 +321,38 @@ export type AletaBotLegacyMigration = {
   replacementService: string;
   /** Whether legacy source code can be safely archived/deleted */
   canArchive: boolean;
-  status: "pending" | "in_progress" | "migrated" | "skipped";
+  status:
+    | "pending"
+    | "in_progress"
+    | "migrated"
+    | "skipped"
+    | "not_migrated"
+    | "mapped"
+    | "registry_draft"
+    | "needs_manual_mapping"
+    | "dry_run"
+    | "pending_approval"
+    | "active_registry"
+    | "legacy_disabled"
+    | "archivable";
   notes: string;
   migratedAt: string | null;
   migratedBy: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AletaBotUnknownQuestionReview = {
+  normalizedMessage: string;
+  rawMessage: string;
+  frequency: number;
+  lastAskedAt: string;
+  senderMasked: string;
+  fallbackReason: string;
+  suggestedIntentKey: string;
+  confidence: number;
+  safetyRisk: "low" | "medium" | "high";
+  suggestedAction: "add_as_example" | "create_intent_draft" | "human_handoff" | "ignore";
 };
 
 export type AletaBotSnapshot = {
@@ -364,4 +391,5 @@ export type AletaBotSnapshot = {
   deadLetters: AletaBotDeadLetter[];
   workerState: AletaBotWorkerState | null;
   legacyMigrations: AletaBotLegacyMigration[];
+  unknownQuestionReviews: AletaBotUnknownQuestionReview[];
 };
