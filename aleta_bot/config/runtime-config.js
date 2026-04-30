@@ -67,7 +67,7 @@ const defaultConfig = {
   queries: [],
   employeeRecipients: [],
   whatsapp: {
-    sessionName: "aleta-whatsapp-main",
+    sessionName: process.env.ALETA_BOT_WHATSAPP_SESSION_NAME || "aleta-whatsapp-main",
   },
 };
 

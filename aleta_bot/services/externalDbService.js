@@ -1,4 +1,5 @@
 const mysql = require("mysql");
+const crypto = require("crypto");
 const { readRuntimeConfig } = require("../config/runtime-config");
 const logService = require("./logService");
 
@@ -72,6 +73,33 @@ function sanitizeError(error) {
     .slice(0, 500);
 }
 
+function getDbSecretEncryptionKey() {
+  const raw = process.env.ALETA_BOT_DB_SECRET_ENCRYPTION_KEY || "";
+  if (!raw) return null;
+  return crypto.createHash("sha256").update(raw).digest();
+}
+
+function decryptDbSecret(secretValue = "") {
+  const value = String(secretValue || "");
+  if (!value) return "";
+  if (value.startsWith("plain:v1:")) {
+    return Buffer.from(value.slice("plain:v1:".length), "base64").toString("utf8");
+  }
+  if (!value.startsWith("enc:v1:")) return "";
+
+  const key = getDbSecretEncryptionKey();
+  if (!key) {
+    throw new Error("Password manual koneksi database terenkripsi, tetapi ALETA_BOT_DB_SECRET_ENCRYPTION_KEY belum diset di runtime.");
+  }
+  const [, , ivRaw, tagRaw, encryptedRaw] = value.split(":");
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(ivRaw, "base64"));
+  decipher.setAuthTag(Buffer.from(tagRaw, "base64"));
+  return Buffer.concat([
+    decipher.update(Buffer.from(encryptedRaw, "base64")),
+    decipher.final(),
+  ]).toString("utf8");
+}
+
 function normalizeRegistryConnection(input = {}) {
   return {
     key: String(input.key || "").trim(),
@@ -83,6 +111,8 @@ function normalizeRegistryConnection(input = {}) {
     databaseName: String(input.databaseName || input.database_name || "").trim(),
     username: String(input.username || "").trim(),
     passwordEnvKey: String(input.passwordEnvKey || input.password_env_key || "").trim(),
+    passwordSecret: String(input.passwordSecret || input.password_secret || "").trim(),
+    passwordSource: String(input.passwordSource || input.password_source || "").trim(),
     fallbackPasswordEnvKey: String(input.fallbackPasswordEnvKey || input.fallback_password_env_key || "").trim(),
     sslEnabled: Boolean(input.sslEnabled ?? input.ssl_enabled),
     connectionTimeoutMs: Math.max(1000, Number(input.connectionTimeoutMs || input.connection_timeout_ms || 5000)),
@@ -96,6 +126,9 @@ function normalizeRegistryConnection(input = {}) {
 }
 
 function getPassword(config) {
+  if (config.passwordSecret) {
+    return decryptDbSecret(config.passwordSecret);
+  }
   if (config.passwordEnvKey && process.env[config.passwordEnvKey]) {
     return process.env[config.passwordEnvKey];
   }
@@ -117,8 +150,10 @@ function maskConnectionConfig(config) {
     ...config,
     hostMasked: config.host,
     usernameMasked: maskValue(config.username),
-    passwordConfigured: Boolean(getPassword(config)),
+    passwordConfigured: Boolean(config.passwordSecret || (config.passwordEnvKey && process.env[config.passwordEnvKey])),
+    passwordSource: config.passwordSecret ? "manual" : config.passwordEnvKey ? "env" : "none",
     password: undefined,
+    passwordSecret: undefined,
   };
 }
 
@@ -199,6 +234,30 @@ function query(connectionKey, sql, params = []) {
   });
 }
 
+function queryWithConfig(config, sql, params = []) {
+  return new Promise((resolve, reject) => {
+    const normalized = normalizeRegistryConnection(config);
+    const pool = mysql.createPool({
+      host: normalized.host,
+      port: normalized.port,
+      user: normalized.username,
+      password: getPassword(normalized),
+      database: normalized.databaseName,
+      ssl: normalized.sslEnabled ? {} : undefined,
+      connectTimeout: normalized.connectionTimeoutMs,
+      multipleStatements: false,
+    });
+    pool.query(sql, params, (error, result) => {
+      pool.end(() => null);
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(result);
+    });
+  });
+}
+
 async function testConnection(connectionKey = "sipp_primary") {
   const startedAt = Date.now();
   const config = getConnectionConfig(connectionKey);
@@ -224,12 +283,38 @@ async function testConnection(connectionKey = "sipp_primary") {
   }
 }
 
+async function testConnectionConfig(configInput = {}) {
+  const startedAt = Date.now();
+  const config = normalizeRegistryConnection(configInput);
+  try {
+    await queryWithConfig(config, "SELECT 1 AS ok", []);
+    return {
+      key: config.key,
+      status: "success",
+      error: "",
+      durationMs: Date.now() - startedAt,
+      testedAt: new Date().toISOString(),
+      source: "draft",
+    };
+  } catch (error) {
+    return {
+      key: config.key,
+      status: "failed",
+      error: sanitizeError(error),
+      durationMs: Date.now() - startedAt,
+      testedAt: new Date().toISOString(),
+      source: "draft",
+    };
+  }
+}
+
 module.exports = {
   legacyConnections,
   listConnections,
   getConnectionConfig,
   createConnectionPool,
   testConnection,
+  testConnectionConfig,
   maskConnectionConfig,
   resolveLegacyConnectionKey,
   query,

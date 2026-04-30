@@ -252,6 +252,19 @@ async function previewLegacyNotificationData(legacyKey) {
     throw new Error(`Legacy notification key tidak dikenal: "${legacyKey}"`);
   }
   if (isLegacyKeyDisabled(legacyKey)) {
+    void logService.logSystemEvent({
+      eventType: "legacy_call_after_disable",
+      severity: "warning",
+      message: `Legacy notification terpanggil setelah disabled: ${legacyKey}.`,
+      metadata: {
+        legacyKey,
+        sourceFile: "notifikasi.js",
+        sourceFunction: entry.getDataFn,
+        callSource: "legacyNotificationAdapter.previewLegacyNotificationData",
+        blocked: true,
+        reason: "legacy_key_disabled",
+      },
+    });
     return {
       ok: false,
       legacyKey,

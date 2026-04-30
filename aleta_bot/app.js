@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const { exec } = require('child_process');
 const http = require("http");
 const fs = require("fs");
@@ -35,8 +37,6 @@ const aiProviderAdapter = require("./services/aiProviderAdapter");
 const internalGatewayRoutes = require("./routes/internalGatewayRoutes");
 const app = express();
 const port = 3003;
-const { chatWithGPT3 } = require("./gpt");
-const { chatGeminiBot } = require("./gemini");
 const server = http.createServer(app);
 const {
   adminId,
@@ -87,20 +87,53 @@ app.get("/", (req, res) => {
 
 //inisiasi whatsapp
 const initialRuntimeConfig = readRuntimeConfig();
+const chromeExecutablePath =
+  String(process.env.ALETA_BOT_CHROME_EXECUTABLE_PATH || process.env.PUPPETEER_EXECUTABLE_PATH || "").trim();
+
+const puppeteerLaunchConfig = {
+  headless: true,
+  args: [
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-accelerated-2d-canvas",
+    "--no-first-run",
+    "--no-zygote",
+    "--disable-gpu",
+  ],
+};
+
+if (chromeExecutablePath) {
+  puppeteerLaunchConfig.executablePath = chromeExecutablePath;
+}
+
+function getWhatsappStartupErrorMessage(error) {
+  const rawMessage = error && error.message ? error.message : String(error || "");
+  const isChromeMissing =
+    /could not find chrome/i.test(rawMessage) ||
+    /chrome.*not.*found/i.test(rawMessage) ||
+    /browser was not found/i.test(rawMessage) ||
+    /failed to launch the browser process/i.test(rawMessage);
+
+  if (!isChromeMissing) {
+    return rawMessage || "Inisialisasi WhatsApp client gagal.";
+  }
+
+  const envHint = chromeExecutablePath
+    ? `Path Chrome dari env saat ini: ${chromeExecutablePath}. Pastikan file tersebut ada dan dapat dijalankan.`
+    : "Set PUPPETEER_EXECUTABLE_PATH atau ALETA_BOT_CHROME_EXECUTABLE_PATH ke lokasi chrome.exe.";
+
+  return [
+    "Chrome/Puppeteer belum terinstall atau tidak ditemukan.",
+    "Jalankan: npx puppeteer browsers install chrome",
+    "atau set PUPPETEER_EXECUTABLE_PATH.",
+    envHint,
+  ].join(" ");
+}
+
 const client = new Client({
   webVersionCache: { type: 'none' },
-  puppeteer: {
-    headless: true,
-    args: [
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--no-sandbox",
-      "--disable-accelerated-2d-canvas",
-      "--no-first-run",
-      "--no-zygote",
-      "--disable-gpu",
-    ],
-  },
+  puppeteer: puppeteerLaunchConfig,
   // session is deprecated
   // session: sessionCfg,
   authStrategy: new LocalAuth({
@@ -160,6 +193,105 @@ const safeSendTrackedMessage = async ({
     idempotencyKey,
     dryRun,
   });
+};
+
+async function resolveLegacyAiCommandResponse({ prompt, senderNumber, senderName, commandKey }) {
+  const question = String(prompt || "").trim();
+  if (!question) {
+    return "Tidak ada isi pertanyaan untuk diproses. Silakan tulis pertanyaan layanan yang ingin Bapak/Ibu tanyakan.";
+  }
+
+  try {
+    const publicQa = await publicQaIntentService.resolvePublicQaAnswer({
+      message: question,
+      senderNumber,
+      senderName,
+    });
+    const legacyResponse = publicQa.handled && publicQa.legacyCommand
+      ? await getData(publicQa.legacyCommand.toLocaleLowerCase())
+      : "";
+    const finalPublicQa = await publicQaIntentService.finalizePublicQaAnswer({
+      publicQa,
+      message: question,
+      senderNumber,
+      legacyResponse,
+    });
+
+    return (
+      finalPublicQa.answer ||
+      publicQa.answer ||
+      legacyResponse ||
+      "Maaf, pertanyaan belum dapat dikenali. Silakan pilih menu layanan atau hubungi PTSP/petugas resmi pengadilan."
+    );
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "legacy_ai_command_failed",
+      severity: "warning",
+      message: "Command AI legacy gagal diproses melalui Public Q&A.",
+      metadata: {
+        commandKey,
+        errorMessage: error.message,
+      },
+    });
+    return "Maaf, layanan AI belum dapat memproses pertanyaan saat ini. Silakan coba lagi atau hubungi PTSP/petugas resmi pengadilan.";
+  }
+}
+
+let whatsappInitializePromise = null;
+
+const startWhatsappClient = (source = "manual") => {
+  const currentState = whatsappStatusService.getStatus();
+  const currentStatus = currentState.status || "unknown";
+
+  if (["connected", "authenticated", "qr_needed"].includes(currentStatus)) {
+    return {
+      started: false,
+      status: currentStatus,
+      message:
+        currentStatus === "connected"
+          ? "WhatsApp sudah terhubung."
+          : "WhatsApp client sudah berjalan. QR akan tersedia jika login diperlukan.",
+    };
+  }
+
+  if (whatsappInitializePromise) {
+    return {
+      started: false,
+      status: "initializing",
+      message: "WhatsApp client sedang diinisialisasi. Tunggu status/QR beberapa detik.",
+    };
+  }
+
+  whatsappStatusService.setStatus("initializing", "initialize", {
+    message: `WhatsApp client diinisialisasi (${source}).`,
+    source,
+  });
+
+  whatsappInitializePromise = Promise.resolve()
+    .then(() => client.initialize())
+    .catch((error) => {
+      const friendlyMessage = getWhatsappStartupErrorMessage(error);
+      whatsappStatusService.setStatus("disconnected", "initialize_failed", {
+        severity: "error",
+        message: friendlyMessage,
+        errorMessage: friendlyMessage,
+        rawErrorMessage: error && error.message ? error.message : String(error),
+        source,
+        chromeExecutablePathConfigured: Boolean(chromeExecutablePath),
+        chromeExecutablePath: chromeExecutablePath ? "[configured]" : "",
+        puppeteerCacheDirConfigured: Boolean(process.env.PUPPETEER_CACHE_DIR),
+      });
+      console.error("Inisialisasi WhatsApp gagal:", friendlyMessage);
+    })
+    .finally(() => {
+      whatsappInitializePromise = null;
+    });
+
+  return {
+    started: true,
+    status: "initializing",
+    message: "WhatsApp client sedang diinisialisasi. QR akan tersedia jika login diperlukan.",
+  };
 };
 
 queueWorkerService.startQueueWorker((payload) =>
@@ -241,7 +373,8 @@ const reconnect = () => {
       console.log("Mencoba untuk menghubungkan kembali...");
       whatsappStatusService.setStatus("reconnecting", "reconnect_attempt", { message: "Mencoba reconnect WhatsApp client." });
       await client.destroy();
-      await client.initialize();
+      whatsappInitializePromise = null;
+      startWhatsappClient("reconnect");
     } catch (err) {
       whatsappStatusService.setStatus("disconnected", "reconnect_failed", {
         severity: "error",
@@ -256,8 +389,7 @@ const reconnect = () => {
 };
 
 if (readRuntimeConfig().botEnabled) {
-  whatsappStatusService.setStatus("initializing", "initialize", { message: "WhatsApp client diinisialisasi." });
-  client.initialize();
+  startWhatsappClient("startup");
 } else {
   whatsappStatusService.setStatus("disconnected", "initialize_skipped", { message: "Bot nonaktif dari konfigurasi portal." });
   console.log("[ALETA Bot] Bot nonaktif dari konfigurasi portal. WhatsApp client tidak diinisialisasi.");
@@ -279,11 +411,21 @@ client.on('message', async (msg) => {
               const response = await detailPerkara(prefix[1]);
               msg.reply(response, null, { ignoreQuoteErrors: true });
           } else if (prefix[0] === "ai") {
-              const response = await chatWithGPT3(prefix[1]);
+              const response = await resolveLegacyAiCommandResponse({
+                  prompt: prefix.slice(1).join("#"),
+                  senderNumber: msg.from || "",
+                  senderName: msg._data?.notifyName || "",
+                  commandKey: "ai",
+              });
               msg.reply(response, null, { ignoreQuoteErrors: true });
           } else if (prefix[0] === "bot") {
               if (prefix[1]) {
-                  const response = await chatGeminiBot(prefix[1]);
+                  const response = await resolveLegacyAiCommandResponse({
+                      prompt: prefix.slice(1).join("#"),
+                      senderNumber: msg.from || "",
+                      senderName: msg._data?.notifyName || "",
+                      commandKey: "bot",
+                  });
                   msg.reply(response, null, { ignoreQuoteErrors: true });
               } else {
                   msg.reply("Tidak ada isi untuk diproses setelah 'bot'.", null, { ignoreQuoteErrors: true });
@@ -3315,6 +3457,65 @@ app.get("/internal/aleta-bot/status", (req, res) => {
   });
 });
 
+app.post("/internal/aleta-bot/whatsapp/connect", (req, res) => {
+  if (!ensureInternalAccess(req, res, "whatsapp_connect")) return;
+
+  try {
+    const runtimeConfig = readRuntimeConfig();
+    const dryRun = Boolean(req.body?.dryRun || req.query?.dryRun === "true");
+
+    if (dryRun) {
+      const waState = whatsappStatusService.getStatus();
+      return res.status(200).json({
+        ok: true,
+        status: waState.status || "unknown",
+        started: false,
+        dryRun: true,
+        qrAvailable: waState.status === "qr_needed" && Boolean(waState.lastQrString),
+        botEnabled: Boolean(runtimeConfig.botEnabled),
+        message: "Dry-run connect berhasil: endpoint tersedia dan tidak menginisialisasi client.",
+      });
+    }
+
+    const result = startWhatsappClient("internal_connect");
+    const waState = whatsappStatusService.getStatus();
+    logService.logWhatsappEvent({
+      eventType: "internal_whatsapp_connect_requested",
+      severity: runtimeConfig.botEnabled ? "info" : "warning",
+      message: "Connect WhatsApp Gateway diminta dari endpoint internal.",
+      metadata: {
+        status: waState.status,
+        started: result.started,
+        botEnabled: Boolean(runtimeConfig.botEnabled),
+        note: runtimeConfig.botEnabled ? "" : "Bot disabled, tetapi koneksi WhatsApp tetap boleh dipairing dari control panel.",
+      },
+    });
+
+    return res.status(200).json({
+      ok: true,
+      status: waState.status || result.status,
+      started: result.started,
+      qrAvailable: waState.status === "qr_needed" && Boolean(waState.lastQrString),
+      botEnabled: Boolean(runtimeConfig.botEnabled),
+      message: runtimeConfig.botEnabled
+        ? result.message
+        : `${result.message} Bot masih nonaktif untuk pengiriman/notifikasi sampai diaktifkan dari pengaturan.`,
+    });
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "internal_whatsapp_connect_failed",
+      severity: "error",
+      message: "Endpoint connect WhatsApp internal gagal.",
+      metadata: { errorMessage: error.message },
+    });
+    return res.status(500).json({
+      ok: false,
+      error: "connect_failed",
+      message: "Connect WhatsApp Gateway gagal diproses.",
+    });
+  }
+});
+
 app.get("/internal/aleta-bot/ai-config", async (req, res) => {
   if (!ensureInternalAccess(req, res, "ai_config")) return;
   try {
@@ -3490,7 +3691,9 @@ app.get("/internal/aleta-bot/db-connections", (req, res) => {
 app.post("/internal/aleta-bot/db-connections/test", async (req, res) => {
   if (!ensureInternalAccess(req, res, "db_connection_test")) return;
   const connectionKey = req.body?.connectionKey || req.body?.key || "sipp_primary";
-  const result = await externalDbService.testConnection(connectionKey);
+  const result = req.body?.connection
+    ? await externalDbService.testConnectionConfig(req.body.connection)
+    : await externalDbService.testConnection(connectionKey);
   logService.logSystemEvent({
     eventType: "external_db_connection_test",
     severity: result.status === "success" ? "info" : "warning",

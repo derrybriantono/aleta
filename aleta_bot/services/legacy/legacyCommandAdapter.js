@@ -464,6 +464,22 @@ function classifyCommand(rawMessage) {
   const entry = _keywordMap.get(keyword) ?? null;
   const disabled = isLegacyCommandDisabled(keyword) || (entry?.keywords || []).some((kw) => isLegacyCommandDisabled(kw));
 
+  if (entry && disabled) {
+    void logService.logSystemEvent({
+      eventType: "legacy_call_after_disable",
+      severity: "warning",
+      message: `Legacy command terpanggil setelah disabled: ${keyword}.`,
+      metadata: {
+        legacyKey: keyword,
+        sourceFile: "query.js",
+        sourceFunction: "getData",
+        callSource: "legacyCommandAdapter.classifyCommand",
+        blocked: true,
+        reason: "legacy_command_disabled",
+      },
+    });
+  }
+
   return {
     matched: entry !== null && !disabled,
     keyword,
