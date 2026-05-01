@@ -1,0 +1,108 @@
+@import "@fontsource/public-sans/latin.css";
+@import "@fontsource/source-serif-4/latin.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-public-sans: "Public Sans", sans-serif;
+    --font-source-serif-4: "Source Serif 4", serif;
+    --background: 215 38% 93%;
+    --foreground: 214 42% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 214 42% 10%;
+    --primary: 204 69% 25%;
+    --primary-foreground: 40 38% 97%;
+    --secondary: 214 28% 88%;
+    --secondary-foreground: 214 36% 16%;
+    --muted: 213 24% 90%;
+    --muted-foreground: 215 18% 28%;
+    --accent: 204 68% 93%;
+    --accent-foreground: 204 69% 25%;
+    --destructive: 0 73% 53%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 22% 73%;
+    --input: 214 22% 73%;
+    --ring: 204 69% 25%;
+    --radius: 1.25rem;
+    --shadow-panel: 0 2px 8px rgba(15, 23, 42, 0.06), 0 20px 48px rgba(15, 23, 42, 0.14);
+  }
+
+  .dark {
+    --background: 220 28% 8%;
+    --foreground: 210 40% 98%;
+    --card: 218 26% 11%;
+    --card-foreground: 210 40% 98%;
+    --primary: 199 88% 72%;
+    --primary-foreground: 220 28% 10%;
+    --secondary: 217 19% 17%;
+    --secondary-foreground: 210 38% 96%;
+    --muted: 218 20% 15%;
+    --muted-foreground: 215 18% 78%;
+    --accent: 216 22% 18%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 17% 28%;
+    --input: 217 17% 28%;
+    --ring: 199 88% 72%;
+    --shadow-panel: 0 22px 56px rgba(2, 6, 23, 0.38);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 16px;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  html:not(.dark) {
+    color-scheme: light;
+  }
+
+  html:not(.dark) body {
+    background-image: radial-gradient(ellipse 90% 45% at 50% -8%, hsl(205 55% 89%) 0%, transparent 62%);
+  }
+
+  /* Native select dropdown popup inherits dark theme */
+  .dark select {
+    color-scheme: dark;
+  }
+  .dark select option {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
+
+  @media (max-width: 1024px) {
+    html {
+      font-size: 15.5px;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
+    min-height: 100vh;
+    line-height: 1.65;
+    text-rendering: optimizeLegibility;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

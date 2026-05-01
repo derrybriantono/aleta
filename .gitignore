@@ -1,15 +1,47 @@
-# Node
-aleta_bot/node_modules/
+# Dependencies
 node_modules/
+**/node_modules/
 
-# Runtime logs
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# WhatsApp / browser sessions and runtime caches
+.wwebjs_auth/
+**/.wwebjs_auth/
+.wwebjs_cache/
+**/.wwebjs_cache/
+**/.cache/
+**/config/aleta-runtime.json
+
+# Build output and generated artifacts
+.next/
+**/.next/
+dist/
+**/dist/
+build/
+**/build/
+coverage/
+**/coverage/
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
+
+# Runtime data snapshots / logs
+runtime-logs/
+**/data/
+**/public/uploads/
 *.err.log
 *.out.log
 *.codex-*.err.log
 *.codex-*.out.log
 
-# Next.js build output (manajemen_surat managed by its own repo)
-manajemen_surat/
-
-# Docs folder (managed separately)
-docs/
+# Local screenshots / manual test artifacts
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp4

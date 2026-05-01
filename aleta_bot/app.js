@@ -17,7 +17,7 @@ const notification = require("./notifikasi");
 const detailPerkara = require("./detail");
 const express = require("express");
 const { phoneNumberFormatter } = require("./helpers/formatter");
-const { readRuntimeConfig } = require("./config/runtime-config");
+const { readRuntimeConfig, getWhatsappSessionName } = require("./config/runtime-config");
 const messageService = require("./services/messageService");
 const messageQueueService = require("./services/messageQueueService");
 const logService = require("./services/logService");
@@ -87,6 +87,7 @@ app.get("/", (req, res) => {
 
 //inisiasi whatsapp
 const initialRuntimeConfig = readRuntimeConfig();
+const whatsappSessionName = getWhatsappSessionName(initialRuntimeConfig);
 const chromeExecutablePath =
   String(process.env.ALETA_BOT_CHROME_EXECUTABLE_PATH || process.env.PUPPETEER_EXECUTABLE_PATH || "").trim();
 
@@ -137,7 +138,7 @@ const client = new Client({
   // session is deprecated
   // session: sessionCfg,
   authStrategy: new LocalAuth({
-    clientId: initialRuntimeConfig.whatsapp?.sessionName || "aleta-session",
+    clientId: whatsappSessionName,
   }),
   qrTimeoutMs: 0,
 });
@@ -3426,7 +3427,10 @@ app.get("/internal/aleta-bot/status", (req, res) => {
     aiRuntimeConfigService.getAiRuntimeConfig().then(aiRuntimeConfigService.maskAiRuntimeConfig),
   ]).then(([queueStats, messageStatsToday, systemStatsToday, whatsappEvents, notificationRuns, publicQa, aiConfig]) => res.status(200).json({
     status: true,
-    whatsapp: whatsappStatusService.getStatus(),
+    whatsapp: {
+      ...whatsappStatusService.getStatus(),
+      sessionName: whatsappSessionName,
+    },
     db: botDbService.getDbStatus(),
     worker: queueWorkerService.getWorkerStatus(),
     bot: {

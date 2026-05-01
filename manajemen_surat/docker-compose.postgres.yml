@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aleta-postgres
+    restart: unless-stopped
+    ports:
+      - "54329:5432"
+    environment:
+      POSTGRES_DB: aleta
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aleta"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - aleta-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  aleta-postgres-data:

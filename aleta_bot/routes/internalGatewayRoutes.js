@@ -4,7 +4,7 @@ const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
 
-const { readRuntimeConfig } = require("../config/runtime-config");
+const { readRuntimeConfig, getWhatsappSessionName } = require("../config/runtime-config");
 const whatsappStatusService = require("../services/whatsappStatusService");
 const messageQueueService = require("../services/messageQueueService");
 const queueWorkerService = require("../services/queueWorkerService");
@@ -96,7 +96,7 @@ router.get("/whatsapp/status", requireInternalToken, (req, res) => {
   try {
     const runtimeConfig = readRuntimeConfig();
     const waState = whatsappStatusService.getStatus();
-    const sessionName = runtimeConfig.whatsapp?.sessionName || "aleta-whatsapp-main";
+    const sessionName = getWhatsappSessionName(runtimeConfig);
 
     logService.logSystemEvent({
       eventType: "internal_whatsapp_status_requested",

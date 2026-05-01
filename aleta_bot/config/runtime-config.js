@@ -7,6 +7,8 @@ const {
   toWhatsappChatId,
 } = require("../utils/phoneFormatter");
 
+const DEFAULT_WHATSAPP_SESSION_NAME = "aleta-whatsapp-main";
+
 const defaultConfig = {
   version: 1,
   botEnabled: true,
@@ -67,7 +69,7 @@ const defaultConfig = {
   queries: [],
   employeeRecipients: [],
   whatsapp: {
-    sessionName: process.env.ALETA_BOT_WHATSAPP_SESSION_NAME || "aleta-whatsapp-main",
+    sessionName: process.env.ALETA_BOT_WHATSAPP_SESSION_NAME || DEFAULT_WHATSAPP_SESSION_NAME,
   },
 };
 
@@ -128,7 +130,15 @@ function normalizeSessionName(sessionName) {
     .replace(/[^a-zA-Z0-9_-]/g, "")
     .toLowerCase();
 
-  return normalized || "aleta-session";
+  return normalized || DEFAULT_WHATSAPP_SESSION_NAME;
+}
+
+function getWhatsappSessionName(runtimeConfig = {}) {
+  return normalizeSessionName(
+    process.env.ALETA_BOT_WHATSAPP_SESSION_NAME ||
+    runtimeConfig.whatsapp?.sessionName ||
+    DEFAULT_WHATSAPP_SESSION_NAME
+  );
 }
 
 function readRuntimeConfig() {
@@ -140,7 +150,7 @@ function readRuntimeConfig() {
         parsed.adminWhatsappNumber || parsed.adminWhatsappChatId || defaultConfig.adminWhatsappNumber
       );
 
-      const sessionName = normalizeSessionName(parsed.whatsapp?.sessionName || defaultConfig.whatsapp.sessionName);
+      const sessionName = getWhatsappSessionName(parsed);
 
       return {
         ...defaultConfig,
@@ -200,7 +210,7 @@ function readRuntimeConfig() {
     adminWhatsappChatId: normalizeChatId(defaultConfig.adminWhatsappNumber),
     whatsapp: {
       ...defaultConfig.whatsapp,
-      sessionName: normalizeSessionName(defaultConfig.whatsapp.sessionName),
+      sessionName: getWhatsappSessionName(defaultConfig),
     },
   };
 }
@@ -211,6 +221,7 @@ function sleep(ms) {
 
 module.exports = {
   readRuntimeConfig,
+  getWhatsappSessionName,
   normalizeWhatsappNumber,
   normalizeChatId,
   normalizeSessionName,
