@@ -49,6 +49,13 @@ export type WhatsAppDeliveryStatus = "Terkirim" | "Gagal";
 
 export type LetterType = "masuk" | "keluar";
 export type LetterStatus = "Baru" | "Dalam Disposisi" | "Selesai";
+export type LetterWorkflowStatus = "draft" | "submitted" | "approved" | "sent" | "rejected";
+export type LetterTemplateCategory =
+  | "undangan"
+  | "permintaan_data"
+  | "balasan_surat"
+  | "surat_tugas"
+  | "lainnya";
 export type DispositionStatus =
   | "Menunggu Tindak Lanjut"
   | "Sedang Dikerjakan"
@@ -187,6 +194,8 @@ export interface WhatsAppDelivery {
   recipientWhatsapp: string;
   status: WhatsAppDeliveryStatus;
   lastAttemptAt: string;
+  sourceFeature?: string;
+  errorMessage?: string;
 }
 
 export interface LetterDeleteState {
@@ -279,6 +288,16 @@ export interface LetterSummary {
 
 export interface LetterDetail extends LetterSummary {
   nomorUrut?: string;
+  workflowStatus?: LetterWorkflowStatus;
+  submittedAt?: string | null;
+  submittedByUserId?: string | null;
+  approvedAt?: string | null;
+  approvedByUserId?: string | null;
+  sentAt?: string | null;
+  sentByUserId?: string | null;
+  rejectedAt?: string | null;
+  rejectedByUserId?: string | null;
+  rejectionNote?: string | null;
   tanggalAdministratif?: string;
   kodeKlasifikasi?: string;
   klasifikasiTags?: string[];
@@ -302,6 +321,19 @@ export interface LetterDetail extends LetterSummary {
   deletedState?: LetterDeleteState;
 }
 
+export interface LetterTemplate {
+  id: string;
+  name: string;
+  category: LetterTemplateCategory;
+  description: string;
+  body: string;
+  placeholders: string[];
+  isActive: boolean;
+  createdByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DispositionNode {
   id: string;
   suratId: string;
@@ -314,6 +346,9 @@ export interface DispositionNode {
   allowDownload: boolean;
   approvalQrCode: string;
   createdAt: string;
+  deadlineAt?: string | null;
+  readAt?: string | null;
+  readByUserId?: string | null;
   urgent: boolean;
   bypass: boolean;
   routingType?: DispositionRoutingType;

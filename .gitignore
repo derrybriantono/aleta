@@ -34,6 +34,7 @@ tsconfig.tsbuildinfo
 runtime-logs/
 **/data/
 **/public/uploads/
+**/institution-enrichment-runtime.json
 *.err.log
 *.out.log
 *.codex-*.err.log

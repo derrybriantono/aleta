@@ -1,8 +1,15 @@
 import { type QueryResultRow } from "pg";
 
-import { canCreateIncomingLetter, canCreateOutgoingLetter } from "@/lib/permissions";
+import { canCreateIncomingLetter, canCreateOutgoingLetter, getEffectiveRoleId } from "@/lib/permissions";
 import { letterClassificationCatalog } from "@/lib/letter-taxonomy";
-import { type LetterDetail, type WhatsAppDeliveryStatus } from "@/lib/types";
+import {
+  type LetterDetail,
+  type LetterTemplate,
+  type LetterTemplateCategory,
+  type LetterWorkflowStatus,
+  type RoleId,
+  type WhatsAppDeliveryStatus,
+} from "@/lib/types";
 import { type AletaDatabase, type SqlInputValue, withTransaction } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
@@ -24,6 +31,16 @@ type LetterRow = QueryResultRow & {
   pengirim: string;
   perihal: string;
   status: string;
+  workflow_status: LetterWorkflowStatus | null;
+  submitted_at: string | null;
+  submitted_by_user_id: string | null;
+  approved_at: string | null;
+  approved_by_user_id: string | null;
+  sent_at: string | null;
+  sent_by_user_id: string | null;
+  rejected_at: string | null;
+  rejected_by_user_id: string | null;
+  rejection_note: string | null;
   assigned_unit: string;
   confidentiality: LetterDetail["confidentiality"];
   current_disposition_id: string | null;
@@ -55,6 +72,19 @@ type DeliveryRow = QueryResultRow & {
   recipient_whatsapp: string;
   status: WhatsAppDeliveryStatus;
   last_attempt_at: string;
+};
+
+type LetterTemplateRow = QueryResultRow & {
+  id: string;
+  name: string;
+  category: LetterTemplateCategory;
+  description: string;
+  body: string;
+  placeholders_json: string;
+  is_active: number;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type CreateLetterRequest = {
@@ -112,6 +142,44 @@ export type LetterSearchFilters = {
   limit?: number;
 };
 
+export type LetterWorkflowAction = "submit" | "approve" | "reject" | "mark-sent" | "return-draft";
+
+export type LetterTemplateInput = {
+  actorUserId: string;
+  id?: string;
+  name: string;
+  category: LetterTemplateCategory;
+  description?: string;
+  body: string;
+  isActive?: boolean;
+};
+
+const outgoingApproverRoleIds = new Set<RoleId>([
+  "super-admin",
+  "admin",
+  "ketua",
+  "wakil-ketua",
+  "sekretaris",
+  "panitera",
+]);
+const letterTemplateCategories = new Set<LetterTemplateCategory>([
+  "undangan",
+  "permintaan_data",
+  "balasan_surat",
+  "surat_tugas",
+  "lainnya",
+]);
+export const allowedLetterTemplatePlaceholders = [
+  "nomor_surat",
+  "tanggal_surat",
+  "tujuan",
+  "perihal",
+  "nama_pengadilan",
+  "alamat_pengadilan",
+  "nama_penandatangan",
+  "jabatan_penandatangan",
+] as const;
+
 function placeholders(values: readonly SqlInputValue[]) {
   return values.map(() => "?").join(", ");
 }
@@ -147,6 +215,97 @@ function buildSearchDocument(input: {
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function getSequenceYear(dateValue: string) {
+  const date = new Date(dateValue);
+  return Number.isNaN(date.getTime()) ? new Date().getFullYear() : date.getFullYear();
+}
+
+function formatNomorAgenda(sequence: number, year: number) {
+  return `${String(sequence).padStart(3, "0")}/${year}`;
+}
+
+function getLetterTemplatePlaceholders(body: string) {
+  return Array.from(new Set(Array.from(body.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)).map((match) => match[1])));
+}
+
+function validateLetterTemplateBody(body: string) {
+  const text = body.trim();
+  if (text.length < 10 || text.length > 8000) {
+    throw new ApiError(400, "Isi template harus berisi 10-8000 karakter.");
+  }
+  if (text.includes("{{") || text.includes("}}")) {
+    const withoutValidPlaceholders = text.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, "");
+    if (withoutValidPlaceholders.includes("{{") || withoutValidPlaceholders.includes("}}")) {
+      throw new ApiError(400, "Template memiliki placeholder tidak valid. Gunakan format {{nama_placeholder}}.");
+    }
+  }
+
+  const placeholders = getLetterTemplatePlaceholders(text);
+  const allowed = new Set<string>(allowedLetterTemplatePlaceholders);
+  const unknown = placeholders.filter((placeholder) => !allowed.has(placeholder));
+
+  return { text, placeholders, unknown };
+}
+
+function mapLetterTemplate(row: LetterTemplateRow): LetterTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    description: row.description,
+    body: row.body,
+    placeholders: parseJsonArray<string>(row.placeholders_json),
+    isActive: row.is_active === 1,
+    createdByUserId: row.created_by_user_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function requireLetterTemplateManager(db: AletaDatabase, actorUserId: string) {
+  const actor = await requireActorUser(db, actorUserId);
+  if (!canCreateOutgoingLetter(actor)) {
+    throw new ApiError(403, "Role aktif tidak memiliki izin mengelola template surat keluar.");
+  }
+  return actor;
+}
+
+export async function generateNomorAgenda(
+  db: AletaDatabase,
+  type: LetterDetail["type"],
+  dateValue: string
+) {
+  const now = new Date().toISOString();
+  const year = getSequenceYear(dateValue);
+  const sequenceId = await nextPrefixedId(db, "letter_number_sequences", "seq");
+
+  const row = await db.prepare(
+    `INSERT INTO letter_number_sequences (id, type, year, last_sequence, created_at, updated_at)
+     VALUES (?, ?, ?, 1, ?, ?)
+     ON CONFLICT (type, year) DO UPDATE
+       SET last_sequence = letter_number_sequences.last_sequence + 1,
+           updated_at = EXCLUDED.updated_at
+     RETURNING last_sequence`
+  ).get<{ last_sequence: number }>(sequenceId, type, year, now, now);
+
+  const nextSequence = Number(row?.last_sequence ?? 1);
+  return formatNomorAgenda(nextSequence, year);
+}
+
+function getActorRoleId(actor: Awaited<ReturnType<typeof requireActorUser>>) {
+  return getEffectiveRoleId(actor);
+}
+
+function isOutgoingWorkflowApprover(actor: Awaited<ReturnType<typeof requireActorUser>>) {
+  const roleId = getActorRoleId(actor);
+  return roleId ? outgoingApproverRoleIds.has(roleId) : false;
+}
+
+function isLetterCreatorOrAdmin(actor: Awaited<ReturnType<typeof requireActorUser>>, letter: LetterDetail) {
+  const roleId = getActorRoleId(actor);
+  return roleId === "super-admin" || roleId === "admin" || letter.createdByUserId === actor.id;
 }
 
 async function hydrateLetters(db: AletaDatabase, rows: LetterRow[]) {
@@ -218,6 +377,16 @@ async function hydrateLetters(db: AletaDatabase, rows: LetterRow[]) {
     type: row.type,
     nomorSurat: row.nomor_surat,
     nomorUrut: row.nomor_urut ?? undefined,
+    workflowStatus: row.workflow_status ?? (row.type === "keluar" ? "draft" : "sent"),
+    submittedAt: row.submitted_at,
+    submittedByUserId: row.submitted_by_user_id,
+    approvedAt: row.approved_at,
+    approvedByUserId: row.approved_by_user_id,
+    sentAt: row.sent_at,
+    sentByUserId: row.sent_by_user_id,
+    rejectedAt: row.rejected_at,
+    rejectedByUserId: row.rejected_by_user_id,
+    rejectionNote: row.rejection_note,
     tanggal: row.tanggal_surat,
     tanggalAdministratif: row.tanggal_administratif ?? undefined,
     pengirim: row.pengirim,
@@ -432,6 +601,148 @@ export async function searchLettersInDb(db: AletaDatabase, filters: LetterSearch
   return hydrateLetters(db, rows);
 }
 
+export async function listLetterTemplatesInDb(db: AletaDatabase, actorUserId: string, options?: { activeOnly?: boolean }) {
+  await requireLetterTemplateManager(db, actorUserId);
+  const rows = await db
+    .prepare(
+      `SELECT id, name, category, description, body, placeholders_json, is_active,
+        created_by_user_id, created_at, updated_at
+       FROM letter_templates
+       WHERE (? = 0 OR is_active = 1)
+       ORDER BY is_active DESC, category ASC, name ASC`
+    )
+    .all<LetterTemplateRow>(options?.activeOnly ? 1 : 0);
+
+  return rows.map(mapLetterTemplate);
+}
+
+export async function upsertLetterTemplateInDb(db: AletaDatabase, input: LetterTemplateInput) {
+  const actor = await requireLetterTemplateManager(db, input.actorUserId);
+  const name = input.name.trim();
+  if (!name) throw new ApiError(400, "Nama template wajib diisi.");
+  if (!letterTemplateCategories.has(input.category)) {
+    throw new ApiError(400, "Kategori template surat keluar tidak valid.");
+  }
+
+  const validation = validateLetterTemplateBody(input.body);
+  if (input.isActive !== false && validation.unknown.length > 0) {
+    throw new ApiError(
+      400,
+      `Template aktif tidak boleh memakai placeholder tidak dikenal: ${validation.unknown.join(", ")}.`
+    );
+  }
+
+  return withTransaction(db, async (tx) => {
+    const now = new Date().toISOString();
+    const id = input.id?.trim() || (await nextPrefixedId(tx, "letter_templates", "ltpl"));
+    const duplicate = await tx
+      .prepare(`SELECT id FROM letter_templates WHERE lower(name) = lower(?) AND id <> ?`)
+      .get<{ id: string }>(name, id);
+    if (duplicate) {
+      throw new ApiError(400, "Nama template surat keluar sudah dipakai.");
+    }
+
+    const existing = await tx.prepare(`SELECT id FROM letter_templates WHERE id = ?`).get<{ id: string }>(id);
+    if (existing) {
+      await tx
+        .prepare(
+          `UPDATE letter_templates
+           SET name = ?, category = ?, description = ?, body = ?, placeholders_json = ?,
+             is_active = ?, updated_at = ?
+           WHERE id = ?`
+        )
+        .run(
+          name,
+          input.category,
+          String(input.description ?? "").trim(),
+          validation.text,
+          JSON.stringify(validation.placeholders),
+          input.isActive === false ? 0 : 1,
+          now,
+          id
+        );
+    } else {
+      await tx
+        .prepare(
+          `INSERT INTO letter_templates (
+            id, name, category, description, body, placeholders_json, is_active,
+            created_by_user_id, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          id,
+          name,
+          input.category,
+          String(input.description ?? "").trim(),
+          validation.text,
+          JSON.stringify(validation.placeholders),
+          input.isActive === false ? 0 : 1,
+          actor.id,
+          now,
+          now
+        );
+    }
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: existing ? "UPDATE_LETTER_TEMPLATE" : "CREATE_LETTER_TEMPLATE",
+      entityType: "letter_template",
+      entityId: id,
+      payload: {
+        name,
+        category: input.category,
+        isActive: input.isActive !== false,
+        placeholders: validation.placeholders,
+        unknownPlaceholders: validation.unknown,
+      },
+    });
+
+    const row = await tx
+      .prepare(
+        `SELECT id, name, category, description, body, placeholders_json, is_active,
+          created_by_user_id, created_at, updated_at
+         FROM letter_templates
+         WHERE id = ?`
+      )
+      .get<LetterTemplateRow>(id);
+    if (!row) throw new ApiError(500, "Template berhasil disimpan tetapi gagal dibaca ulang.");
+    return mapLetterTemplate(row);
+  });
+}
+
+export async function deactivateLetterTemplateInDb(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    templateId,
+  }: {
+    actorUserId: string;
+    templateId: string;
+  }
+) {
+  const actor = await requireLetterTemplateManager(db, actorUserId);
+  const now = new Date().toISOString();
+  const existing = await db
+    .prepare(`SELECT id FROM letter_templates WHERE id = ?`)
+    .get<{ id: string }>(templateId);
+  if (!existing) throw new ApiError(404, "Template surat keluar tidak ditemukan.");
+
+  await db
+    .prepare(`UPDATE letter_templates SET is_active = 0, updated_at = ? WHERE id = ?`)
+    .run(now, templateId);
+
+  await appendAuditLog(db, {
+    id: await nextPrefixedId(db, "audit_logs", "adt"),
+    actorUserId: actor.id,
+    action: "DEACTIVATE_LETTER_TEMPLATE",
+    entityType: "letter_template",
+    entityId: templateId,
+  });
+
+  return { id: templateId, isActive: false };
+}
+
 async function ensureClassificationExists(db: AletaDatabase, code: string) {
   if (!code.trim()) return;
 
@@ -489,8 +800,8 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
     throw new ApiError(403, "Role aktif tidak memiliki izin untuk menambah surat pada tipe ini.");
   }
 
-  if (!input.nomorUrut.trim() || !input.nomorSurat.trim() || !input.perihal.trim()) {
-    throw new ApiError(400, "Nomor urut, nomor surat, dan perihal wajib diisi.");
+  if (!input.nomorSurat.trim() || !input.perihal.trim()) {
+    throw new ApiError(400, "Nomor surat dan perihal wajib diisi.");
   }
 
   const recipient = await resolveTargetRecipientFromDb(db, {
@@ -523,9 +834,13 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
     const rootDispositionId = await nextPrefixedId(tx, "dispositions", "dsp");
     const deliveryId = await nextPrefixedId(tx, "letter_whatsapp_deliveries", "wa-letter");
     const rootDeliveryId = await nextPrefixedId(tx, "disposition_whatsapp_deliveries", "wa-dsp");
+    const nomorAgenda = input.nomorUrut.trim() || await generateNomorAgenda(tx, input.type, tanggalAdministratif);
+    const workflowStatus: LetterWorkflowStatus = input.type === "keluar" ? "draft" : "sent";
+    const sentAt = input.type === "keluar" ? null : now;
+    const sentByUserId = input.type === "keluar" ? null : actor.id;
     const searchDocument = buildSearchDocument({
       nomorSurat: input.nomorSurat,
-      nomorUrut: input.nomorUrut,
+      nomorUrut: nomorAgenda,
       pengirim: input.pengirim,
       perihal: input.perihal,
       asalSurat: input.asalSurat,
@@ -541,18 +856,21 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
     await tx.prepare(
       `INSERT INTO letters (
         id, type, nomor_surat, nomor_urut, tanggal_surat, tanggal_terima, tanggal_kirim,
-        tanggal_administratif, pengirim, perihal, status, assigned_unit, confidentiality,
+        tanggal_administratif, pengirim, perihal, status, workflow_status,
+        submitted_at, submitted_by_user_id, approved_at, approved_by_user_id,
+        sent_at, sent_by_user_id, rejected_at, rejected_by_user_id, rejection_note,
+        assigned_unit, confidentiality,
         current_disposition_id, ringkasan, asal_surat, tujuan_surat, klasifikasi_utama,
         kode_klasifikasi, lampiran_json, tags_json, klasifikasi_tags_json, viewer_mode,
         qr_code_label, document_aspect_ratio, document_file_name, document_size_mb,
         document_text_extract, document_file_path, target_position_id, target_user_id,
         created_by_user_id, search_document, deleted_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       letterId,
       input.type,
       input.nomorSurat.trim(),
-      input.nomorUrut.trim(),
+      nomorAgenda,
       tanggalSurat,
       input.type === "masuk" ? input.tanggalTerima ?? tanggalAdministratif : null,
       input.type === "keluar" ? input.tanggalKirim ?? tanggalAdministratif : null,
@@ -560,6 +878,16 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
       input.pengirim.trim(),
       input.perihal.trim(),
       "Dalam Disposisi",
+      workflowStatus,
+      null,
+      null,
+      null,
+      null,
+      sentAt,
+      sentByUserId,
+      null,
+      null,
+      null,
       input.assignedUnit.trim(),
       input.confidentiality,
       rootDispositionId,
@@ -619,8 +947,9 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
       `INSERT INTO dispositions (
         id, surat_id, pengirim_id, penerima_id, target_position_id, instruksi,
         parent_disposition_id, status, allow_download, approval_qr_code, created_at,
-        urgent, bypass, routing_type, follow_up_note, follow_up_file_name, deleted_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        deadline_at, read_at, read_by_user_id, urgent, bypass, routing_type,
+        follow_up_note, follow_up_file_name, deleted_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       rootDispositionId,
       letterId,
@@ -633,6 +962,9 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
       toBooleanInt(input.viewerMode === "download"),
       `QR-${rootDispositionId.toUpperCase()}`,
       now,
+      null,
+      null,
+      null,
       toBooleanInt(input.confidentiality !== "Biasa"),
       0,
       "standard",
@@ -811,6 +1143,122 @@ export async function updateLetterInDb(db: AletaDatabase, input: UpdateLetterReq
   });
 }
 
+export async function transitionOutgoingLetterWorkflowInDb(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    letterId,
+    action,
+    rejectionNote,
+  }: {
+    actorUserId: string;
+    letterId: string;
+    action: LetterWorkflowAction;
+    rejectionNote?: string | null;
+  }
+) {
+  const actor = await requireActorUser(db, actorUserId);
+  const existing = await getLetterByIdFromDb(db, letterId);
+
+  if (!existing) {
+    throw new ApiError(404, "Surat tidak ditemukan.");
+  }
+
+  if (existing.type !== "keluar") {
+    throw new ApiError(400, "Workflow review hanya berlaku untuk surat keluar.");
+  }
+
+  const roleId = getActorRoleId(actor);
+  const currentStatus = existing.workflowStatus ?? "draft";
+  const now = new Date().toISOString();
+  const updates: Record<string, SqlInputValue> = {
+    updated_at: now,
+  };
+
+  if (action === "submit") {
+    if (!["draft", "rejected"].includes(currentStatus)) {
+      throw new ApiError(400, "Surat keluar hanya bisa diajukan dari status Draft atau Ditolak.");
+    }
+    if (!isLetterCreatorOrAdmin(actor, existing)) {
+      throw new ApiError(403, "Hanya pembuat surat, Admin, atau Super Admin yang dapat mengajukan review.");
+    }
+
+    updates.workflow_status = "submitted";
+    updates.submitted_at = now;
+    updates.submitted_by_user_id = actor.id;
+    updates.rejected_at = null;
+    updates.rejected_by_user_id = null;
+    updates.rejection_note = null;
+  } else if (action === "approve") {
+    if (currentStatus !== "submitted") {
+      throw new ApiError(400, "Surat keluar hanya bisa disetujui setelah diajukan.");
+    }
+    if (!isOutgoingWorkflowApprover(actor)) {
+      throw new ApiError(403, "Role aktif tidak memiliki izin menyetujui surat keluar.");
+    }
+
+    updates.workflow_status = "approved";
+    updates.approved_at = now;
+    updates.approved_by_user_id = actor.id;
+  } else if (action === "reject") {
+    if (currentStatus !== "submitted") {
+      throw new ApiError(400, "Surat keluar hanya bisa ditolak saat status Diajukan.");
+    }
+    if (!isOutgoingWorkflowApprover(actor)) {
+      throw new ApiError(403, "Role aktif tidak memiliki izin menolak surat keluar.");
+    }
+
+    updates.workflow_status = "rejected";
+    updates.rejected_at = now;
+    updates.rejected_by_user_id = actor.id;
+    updates.rejection_note = rejectionNote?.trim() || "Perlu perbaikan sebelum diajukan kembali.";
+  } else if (action === "mark-sent") {
+    if (currentStatus !== "approved") {
+      throw new ApiError(400, "Surat keluar hanya dapat ditandai terbit/dikirim setelah disetujui.");
+    }
+    if (!isLetterCreatorOrAdmin(actor, existing) && roleId !== "sekretaris") {
+      throw new ApiError(403, "Hanya pembuat surat, Sekretaris, Admin, atau Super Admin yang dapat menandai terkirim.");
+    }
+
+    updates.workflow_status = "sent";
+    updates.sent_at = now;
+    updates.sent_by_user_id = actor.id;
+  } else if (action === "return-draft") {
+    if (!["submitted", "rejected"].includes(currentStatus)) {
+      throw new ApiError(400, "Surat keluar hanya bisa dikembalikan ke draft dari status Diajukan atau Ditolak.");
+    }
+    if (!isLetterCreatorOrAdmin(actor, existing)) {
+      throw new ApiError(403, "Hanya pembuat surat, Admin, atau Super Admin yang dapat mengembalikan ke draft.");
+    }
+
+    updates.workflow_status = "draft";
+  } else {
+    throw new ApiError(400, "Aksi workflow surat keluar tidak dikenali.");
+  }
+
+  return withTransaction(db, async (tx) => {
+    const keys = Object.keys(updates);
+    await tx.prepare(
+      `UPDATE letters SET ${keys.map((key) => `${key} = ?`).join(", ")} WHERE id = ?`
+    ).run(...Object.values(updates), letterId);
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: `LETTER_WORKFLOW_${action.toUpperCase().replace(/-/g, "_")}`,
+      entityType: "letter",
+      entityId: letterId,
+      payload: {
+        previousStatus: currentStatus,
+        nextStatus: updates.workflow_status,
+        rejectionNote: updates.rejection_note ? "[MASKED_NOTE_PRESENT]" : undefined,
+      },
+    });
+
+    return getLetterByIdFromDb(tx, letterId);
+  });
+}
+
 export async function deleteLetterInDb(
   db: AletaDatabase,
   {
@@ -841,6 +1289,22 @@ export async function deleteLetterInDb(
 
   if (effectiveMode === "hard" && actor.roleId !== "super-admin") {
     throw new ApiError(403, "Hanya Super Admin yang dapat melakukan hard delete.");
+  }
+
+  const activeDispositionCount = await db.prepare(
+    `SELECT COUNT(*) AS cnt
+     FROM dispositions
+     WHERE surat_id = ?
+       AND deleted_at IS NULL
+       AND status != 'Selesai'`
+  ).get<{ cnt: number }>(letterId);
+  const activeCount = Number(activeDispositionCount?.cnt ?? 0);
+
+  if (effectiveMode === "hard" && activeCount > 0) {
+    throw new ApiError(
+      400,
+      `Surat ini masih memiliki ${activeCount} disposisi aktif. Selesaikan disposisi terlebih dahulu sebelum hard delete.`
+    );
   }
 
   if (effectiveMode === "hard") {
@@ -874,6 +1338,7 @@ export async function deleteLetterInDb(
       entityId: letterId,
       payload: {
         previousDeletedAt: existing.deleted_at,
+        activeDispositionCount: activeCount,
       },
     });
 

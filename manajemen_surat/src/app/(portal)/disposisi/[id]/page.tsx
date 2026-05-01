@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
+import { useEffect } from "react";
 import { MessageCircleMore } from "lucide-react";
 
 import { DispositionWorkbench } from "@/components/portal/disposition-workbench";
@@ -9,6 +10,7 @@ import { EmptyState, PageIntro } from "@/components/portal/shared";
 import { WhatsAppStatusStack } from "@/components/portal/whatsapp-status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
+import { getEffectivePositionId, isPrivilegedAdmin } from "@/lib/permissions";
 
 const LazyDocumentViewer = dynamic(
   () => import("@/components/portal/document-viewer").then((module) => module.DocumentViewer),
@@ -19,9 +21,22 @@ const LazyDocumentViewer = dynamic(
 
 export default function DisposisiDetailPage() {
   const params = useParams<{ id: string }>();
-  const { currentUser, getDispositionById, getLetterById, retryWhatsappDelivery } = usePortal();
+  const { currentUser, getDispositionById, getLetterById, markDispositionRead, retryWhatsappDelivery } = usePortal();
   const disposition = getDispositionById(params.id);
   const letter = disposition ? getLetterById(disposition.suratId) : null;
+  const dispositionId = disposition?.id;
+  const shouldMarkRead = Boolean(
+    disposition &&
+      currentUser &&
+      !disposition.readAt &&
+      (disposition.penerimaId === currentUser.id ||
+        disposition.targetPositionId === getEffectivePositionId(currentUser))
+  );
+
+  useEffect(() => {
+    if (!dispositionId || !shouldMarkRead) return;
+    void markDispositionRead(dispositionId);
+  }, [dispositionId, markDispositionRead, shouldMarkRead]);
 
   if (!disposition || !letter) {
     return (
@@ -57,6 +72,7 @@ export default function DisposisiDetailPage() {
             <CardContent>
               <WhatsAppStatusStack
                 deliveries={disposition.whatsappDeliveries ?? []}
+                showFullNumber={isPrivilegedAdmin(currentUser)}
                 onRetry={(deliveryId) =>
                   retryWhatsappDelivery({ scope: "disposition", entityId: disposition.id, deliveryId })
                 }

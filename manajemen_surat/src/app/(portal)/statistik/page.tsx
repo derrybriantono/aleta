@@ -1,13 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChartColumn, LineChart, PieChart, SlidersHorizontal, TrendingUp } from "lucide-react";
 
 import { AletaAIMark } from "@/components/branding/aleta-ai-mark";
 import { MetricLinkCard, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { usePortal } from "@/lib/app-state";
 
@@ -18,6 +18,33 @@ const LazyStatisticsChart = dynamic(
     loading: () => <div className="min-h-[320px] rounded-[1.4rem] border border-border bg-muted/30" />,
   }
 );
+
+type SlaStats = {
+  totalActive: number;
+  overdue: number;
+  dueToday: number;
+  unread: number;
+  averageReadHours: number | null;
+  averageCompletionHours: number | null;
+  urgentActive: number;
+  byOverdueUnit: Array<{ label: string; count: number }>;
+};
+
+type LeadershipKpiStats = {
+  periodDays: number;
+  lettersInThisWeek: number;
+  lettersOutThisWeek: number;
+  activeDispositions: number;
+  overdueDispositions: number;
+  dueTodayDispositions: number;
+  unreadDispositions: number;
+  failedWhatsappMessages: number;
+  publicQaPendingReview: number;
+  newFeedback: number;
+  aletaBotStatus: "normal" | "warning" | "blocked";
+};
+
+const KPI_ALLOWED_ROLES = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "panitera", "sekretaris"]);
 
 function quarterFromDate(dateValue: string) {
   const month = new Date(dateValue).getMonth();
@@ -33,7 +60,7 @@ function monthLabel(value: string) {
 }
 
 export default function StatistikPage() {
-  const { accessibleLetters, aiConfig, metrics } = usePortal();
+  const { accessibleLetters, aiConfig, currentUser, metrics } = usePortal();
   const [manualFilterMode, setManualFilterMode] = useState<"simple" | "advanced">("simple");
   const [chartType, setChartType] = useState<"bar" | "line" | "pie">("bar");
   const [dimension, setDimension] = useState<"jenis" | "tahun" | "triwulan" | "klasifikasi" | "asal" | "status">(
@@ -46,6 +73,47 @@ export default function StatistikPage() {
   const [classificationFilter, setClassificationFilter] = useState("Semua");
   const [originFilter, setOriginFilter] = useState("Semua");
   const [statusFilter, setStatusFilter] = useState("Semua");
+  const [slaStats, setSlaStats] = useState<SlaStats | null>(null);
+  const [kpiPeriodDays, setKpiPeriodDays] = useState("7");
+  const [kpiStats, setKpiStats] = useState<LeadershipKpiStats | null>(null);
+  const canViewLeadershipKpi = Boolean(currentUser?.roleId && KPI_ALLOWED_ROLES.has(currentUser.roleId));
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/stats/surat/sla", { credentials: "include" })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (active && payload?.ok && payload.data) {
+          setSlaStats(payload.data as SlaStats);
+        }
+      })
+      .catch(() => {
+        if (active) setSlaStats(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!canViewLeadershipKpi) {
+      return;
+    }
+    let active = true;
+    void fetch(`/api/stats/kpi?periodDays=${encodeURIComponent(kpiPeriodDays)}`, { credentials: "include" })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (active && payload?.ok && payload.data) {
+          setKpiStats(payload.data as LeadershipKpiStats);
+        }
+      })
+      .catch(() => {
+        if (active) setKpiStats(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [canViewLeadershipKpi, kpiPeriodDays]);
 
   const classificationOptions = Array.from(new Set(accessibleLetters.map((letter) => letter.klasifikasi))).sort();
   const yearOptions = Array.from(
@@ -187,6 +255,99 @@ export default function StatistikPage() {
           />
         ))}
       </div>
+
+      {canViewLeadershipKpi ? (
+        <Card className="border-border/80">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Ringkasan Pimpinan
+                </CardTitle>
+                <CardDescription>KPI ringkas untuk pimpinan dan admin. Data tampil agregat dan tidak membuka detail sensitif.</CardDescription>
+              </div>
+              <NativeSelect value={kpiPeriodDays} onChange={(event) => setKpiPeriodDays(event.target.value)} className="w-[180px]">
+                <option value="1">Hari ini</option>
+                <option value="7">7 hari terakhir</option>
+                <option value="30">30 hari terakhir</option>
+              </NativeSelect>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {[
+                ["Surat Masuk", kpiStats?.lettersInThisWeek],
+                ["Surat Keluar", kpiStats?.lettersOutThisWeek],
+                ["Disposisi Aktif", kpiStats?.activeDispositions],
+                ["Terlambat", kpiStats?.overdueDispositions],
+                ["Jatuh Tempo Hari Ini", kpiStats?.dueTodayDispositions],
+                ["Belum Dibaca", kpiStats?.unreadDispositions],
+                ["WA Gagal", kpiStats?.failedWhatsappMessages],
+                ["Public Q&A Review", kpiStats?.publicQaPendingReview],
+                ["Bug Baru", kpiStats?.newFeedback],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-[1.2rem] border border-border bg-card p-4">
+                  <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-foreground">{value ?? "-"}</p>
+                </div>
+              ))}
+              <div className="rounded-[1.2rem] border border-border bg-card p-4">
+                <p className="text-xs font-medium text-muted-foreground">Status ALETA Bot</p>
+                <div className="mt-3">
+                  <Badge variant={kpiStats?.aletaBotStatus === "blocked" ? "danger" : kpiStats?.aletaBotStatus === "warning" ? "warning" : "success"}>
+                    {kpiStats?.aletaBotStatus === "blocked" ? "Terblokir" : kpiStats?.aletaBotStatus === "warning" ? "Perlu Perhatian" : "Normal"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card className="border-border/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            SLA Disposisi
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[1.2rem] border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">Terlambat</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{slaStats?.overdue ?? "-"}</p>
+            </div>
+            <div className="rounded-[1.2rem] border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">Jatuh Tempo Hari Ini</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{slaStats?.dueToday ?? "-"}</p>
+            </div>
+            <div className="rounded-[1.2rem] border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">Belum Dibaca</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{slaStats?.unread ?? "-"}</p>
+            </div>
+            <div className="rounded-[1.2rem] border border-border bg-card p-4">
+              <p className="text-xs font-medium text-muted-foreground">Rata-rata Penyelesaian</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">
+                {slaStats?.averageCompletionHours === null || slaStats?.averageCompletionHours === undefined ? "-" : `${slaStats.averageCompletionHours} jam`}
+              </p>
+            </div>
+          </div>
+          {(slaStats?.byOverdueUnit ?? []).length > 0 ? (
+            <div className="rounded-[1.2rem] border border-border p-4">
+              <p className="text-sm font-semibold text-foreground">Unit/Jabatan dengan disposisi terlambat terbanyak</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {slaStats?.byOverdueUnit.slice(0, 4).map((item) => (
+                  <div key={item.label} className="flex items-center justify-between rounded-lg bg-muted/35 px-3 py-2 text-sm">
+                    <span className="min-w-0 truncate">{item.label}</span>
+                    <Badge variant="warning">{item.count}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <Card className="border-border/80">
         <CardHeader>

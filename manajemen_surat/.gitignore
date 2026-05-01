@@ -17,3 +17,4 @@ data/*.sqlite-wal
 data/dev-fallback-db.json
 data/.better-auth-secret
 .wwebjs_auth/
+institution-enrichment-runtime.json

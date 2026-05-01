@@ -3,6 +3,13 @@ const { validateQuery } = require("./queryValidatorService");
 const { renderTemplate, validateTemplate } = require("./templateService");
 const messageQueueService = require("./messageQueueService");
 const { buildIdempotencyKey } = require("./idempotencyService");
+const logService = require("./logService");
+const runtimePolicyWarnings = new Set();
+const runtimePolicyStats = {
+  skippedCount: 0,
+  lastSkippedAt: null,
+  reasons: {},
+};
 
 // Hardcoded pilot fallback — used when runtime config has no notifications yet
 const pilotNotifications = [
@@ -136,7 +143,8 @@ function mapPortalNotificationToRegistry(portalNotification, queries, templates)
     },
     is_active: Boolean(portalNotification.isActive),
     dry_run: Boolean(portalNotification.dryRunEnabled ?? true),
-    requires_approval: false,
+    requires_approval: portalNotification.category === "party",
+    policy_status: portalNotification.policyStatus || null,
     max_recipients_per_run: 20,
     delay_ms: Number(portalNotification.delayMs || 1500),
     max_retries: Number(portalNotification.retryLimit || 2),
@@ -161,6 +169,54 @@ function getEffectiveNotifications() {
 
   // Fall back to hardcoded pilot
   return pilotNotifications;
+}
+
+function notificationPassesRuntimePolicy(notification) {
+  if (notification.category !== "party") return true;
+  const policy = notification.policy_status || {};
+  const reasons = [];
+  if (!policy.dryRunPassed) reasons.push("belum_dry_run");
+  if (!policy.recipientPreviewPassed) reasons.push("belum_preview");
+  if (!policy.approved) reasons.push("belum_approval");
+  if (policy.canActivate === false) reasons.push("belum_bisa_aktif");
+  const allowed = Boolean(
+    policy.dryRunPassed &&
+    policy.recipientPreviewPassed &&
+    policy.approved &&
+    policy.canActivate
+  );
+  if (!allowed && notification.is_active && !runtimePolicyWarnings.has(notification.key)) {
+    runtimePolicyWarnings.add(notification.key);
+    runtimePolicyStats.skippedCount += 1;
+    runtimePolicyStats.lastSkippedAt = new Date().toISOString();
+    for (const reason of reasons.length > 0 ? reasons : ["policy_tidak_lengkap"]) {
+      runtimePolicyStats.reasons[reason] = (runtimePolicyStats.reasons[reason] || 0) + 1;
+      void logService.logPolicySkip({
+        notificationKey: notification.key || "",
+        notificationId: notification.id || notification.key || "",
+        category: notification.category || "party",
+        reason,
+        sourceFeature: notification.key || "notification_registry",
+        entityType: "notification",
+        entityId: notification.key || "",
+        recipientType: "party",
+        metadata: {
+          policyStatus: {
+            dryRunPassed: Boolean(policy.dryRunPassed),
+            recipientPreviewPassed: Boolean(policy.recipientPreviewPassed),
+            approved: Boolean(policy.approved),
+            canActivate: Boolean(policy.canActivate),
+          },
+          source: notification._fromPortal ? "portal" : "runtime",
+        },
+      }).catch(() => {});
+    }
+    console.warn(
+      `[ALETA Bot] Notifikasi pihak ${notification.key || "unknown"} dilewati oleh runtime policy. ` +
+        "Simulasi, preview penerima, dan approval harus selesai sebelum aktif."
+    );
+  }
+  return allowed;
 }
 
 function getRegistrySnapshot() {
@@ -211,12 +267,31 @@ function getRegistrySnapshot() {
     active: notifications.filter((item) => item.is_active).length,
     dryRun: notifications.filter((item) => item.dry_run).length,
     requiresApproval: notifications.filter((item) => item.requires_approval).length,
+    skippedPolicy: notifications.filter((item) => item.is_active && !notificationPassesRuntimePolicy(item)).length,
+    policySkipStats: { ...runtimePolicyStats, reasons: { ...runtimePolicyStats.reasons } },
     notifications,
   };
 }
 
+async function getRegistrySnapshotAsync() {
+  const snapshot = getRegistrySnapshot();
+  try {
+    const persisted = await logService.getPolicySkipStats();
+    return {
+      ...snapshot,
+      policySkipStats: {
+        ...snapshot.policySkipStats,
+        ...persisted,
+        reasons: { ...(snapshot.policySkipStats?.reasons || {}), ...(persisted.reasons || {}) },
+      },
+    };
+  } catch {
+    return snapshot;
+  }
+}
+
 function getActiveNotifications() {
-  return getEffectiveNotifications().filter((notification) => notification.is_active);
+  return getEffectiveNotifications().filter((notification) => notification.is_active && notificationPassesRuntimePolicy(notification));
 }
 
 function makePilotSample(notification, overrides = {}) {
@@ -297,7 +372,17 @@ async function enqueuePilotDryRun(notificationKey, sampleData = {}) {
     notificationKey: notification.key,
     maxRetries: notification.max_retries,
     priority: notification.category === "party" ? 6 : 5,
+    sourceApp: "aleta_bot",
+    sourceFeature: notification.category === "party" ? "notification_party" : "notification_employee",
+    entityType: "notification",
+    entityId: notification.key,
     metadata: {
+      sourceApp: "aleta_bot",
+      sourceFeature: notification.category === "party" ? "notification_party" : "notification_employee",
+      entityType: "notification",
+      entityId: notification.key,
+      recipientType: notification.category === "party" ? "party" : "employee",
+      nomorPerkara: sample.nomor_perkara || "",
       dryRun: true,
       registryPilot: true,
       queryKey: notification.query_key,
@@ -310,7 +395,10 @@ async function enqueuePilotDryRun(notificationKey, sampleData = {}) {
 module.exports = {
   pilotNotifications,
   getRegistrySnapshot,
+  getRegistrySnapshotAsync,
   getActiveNotifications,
   getEffectiveNotifications,
+  notificationPassesRuntimePolicy,
+  runtimePolicyStats,
   enqueuePilotDryRun,
 };

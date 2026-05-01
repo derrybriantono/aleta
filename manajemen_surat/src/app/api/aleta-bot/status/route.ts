@@ -21,6 +21,18 @@ function getRuntimeStatusUrl() {
 function sanitizeError(msg: string | null | undefined): string | null {
   if (!msg) return null;
   const lower = msg.toLowerCase();
+  if (lower.includes("could not find chrome") || lower.includes("puppeteer")) {
+    return "Chrome/Puppeteer belum tersedia di server. Admin teknis perlu memasang browser atau mengatur executable path.";
+  }
+  if (lower.includes("target closed")) {
+    return "Browser WhatsApp tertutup. Coba hubungkan ulang WhatsApp Gateway dengan aman.";
+  }
+  if (lower.includes("session expired")) {
+    return "Sesi WhatsApp berakhir. Silakan hubungkan ulang WhatsApp Gateway.";
+  }
+  if (lower.includes("protocol error")) {
+    return "Terjadi gangguan komunikasi dengan browser WhatsApp.";
+  }
   if (lower.includes("econnrefused") || lower.includes("failed to connect")) {
     return "Koneksi ke layanan gagal.";
   }
@@ -145,7 +157,11 @@ export async function GET(request: NextRequest) {
         connected: runtimeOnline && waRaw === "connected",
         runtime: "ALETA Bot Gateway",
         lastConnectedAt: (wa?.lastConnectedAt as string | null) ?? null,
-        lastErrorMessage: sanitizeError(wa?.lastErrorMessage as string | null),
+        lastErrorMessage: sanitizeError((wa?.lastErrorMessage ?? wa?.lastError) as string | null),
+        sessionStartedAt: (wa?.sessionStartedAt as string | null) ?? null,
+        lastMessageSentAt: (wa?.lastMessageSentAt as string | null) ?? null,
+        sessionAgeHours: typeof wa?.sessionAgeHours === "number" ? wa.sessionAgeHours : null,
+        authFailureCount: Number(wa?.authFailureCount ?? 0),
       },
       queue: {
         pending: Number(queue?.pendingCount ?? 0),

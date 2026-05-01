@@ -40,6 +40,8 @@ export async function PUT(request: NextRequest) {
         scheduleCron?: string;
         testTargetNumber?: string;
         securityNotes?: string;
+        deadlineReminderEnabled?: boolean;
+        deadlineReminderMode?: "disabled" | "dry_run" | "pilot" | "production";
       };
       template?: {
         id: string;

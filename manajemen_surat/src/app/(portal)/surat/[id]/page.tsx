@@ -6,7 +6,19 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { BellRing, CheckCircle2, Circle, GitBranchPlus, History, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  BellRing,
+  CheckCircle2,
+  Circle,
+  FileCheck2,
+  GitBranchPlus,
+  History,
+  RotateCcw,
+  SendHorizontal,
+  ShieldCheck,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 
 import { AletaMailInsights } from "@/components/portal/aleta-mail-insights";
 import { EmptyState, PageIntro, statusVariant } from "@/components/portal/shared";
@@ -14,7 +26,14 @@ import { WhatsAppStatusStack } from "@/components/portal/whatsapp-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { usePortal } from "@/lib/app-state";
+import { type UserPersona } from "@/lib/types";
+import {
+  getDispositionDeadlineLabel,
+  getDispositionDeadlineState,
+  getDispositionReadLabel,
+} from "@/lib/disposition-status";
 import { formatDate, formatDateTime } from "@/lib/format";
 import {
   canUserAccessDispositionAction,
@@ -33,6 +52,51 @@ const LazyDocumentViewer = dynamic(
   }
 );
 
+const workflowLabels = {
+  draft: "Draft",
+  submitted: "Diajukan",
+  approved: "Disetujui",
+  sent: "Dikirim/Terbit",
+  rejected: "Ditolak",
+} as const;
+
+type WorkflowUiAction = "submit" | "approve" | "reject" | "mark-sent" | "return-draft";
+
+const workflowActionCopy: Record<WorkflowUiAction, { title: string; description: string; cta: string }> = {
+  submit: {
+    title: "Ajukan Review Surat Keluar",
+    description: "Surat keluar ini akan dikirim ke pejabat berwenang untuk ditinjau dan disetujui.",
+    cta: "Ajukan Review",
+  },
+  approve: {
+    title: "Setujui Surat Keluar",
+    description: "Surat ini akan berubah menjadi Disetujui dan dapat ditandai terbit/dikirim oleh petugas berwenang.",
+    cta: "Setujui",
+  },
+  reject: {
+    title: "Tolak Surat Keluar",
+    description: "Surat akan dikembalikan untuk diperbaiki. Catatan penolakan wajib diisi.",
+    cta: "Tolak Surat",
+  },
+  "mark-sent": {
+    title: "Tandai Terbit/Dikirim",
+    description: "Surat ini akan ditandai sebagai terbit/dikirim. Pastikan dokumen resmi sudah benar.",
+    cta: "Tandai Terbit/Dikirim",
+  },
+  "return-draft": {
+    title: "Kembalikan ke Draft",
+    description: "Status surat akan dikembalikan ke Draft untuk diperbaiki sebelum diajukan kembali.",
+    cta: "Kembalikan ke Draft",
+  },
+};
+
+function workflowBadgeVariant(status: keyof typeof workflowLabels): "success" | "warning" | "danger" | "outline" {
+  if (status === "sent" || status === "approved") return "success";
+  if (status === "submitted") return "warning";
+  if (status === "rejected") return "danger";
+  return "outline";
+}
+
 export default function SuratDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -43,9 +107,14 @@ export default function SuratDetailPage() {
     getLetterById,
     getLetterDispositionsById,
     retryWhatsappDelivery,
+    transitionLetterWorkflow,
     users,
   } = usePortal();
   const [forwardFeedback, setForwardFeedback] = useState("");
+  const [workflowFeedback, setWorkflowFeedback] = useState("");
+  const [isWorkflowSaving, setIsWorkflowSaving] = useState(false);
+  const [workflowModal, setWorkflowModal] = useState<WorkflowUiAction | null>(null);
+  const [workflowRejectionNote, setWorkflowRejectionNote] = useState("");
   const letter = getLetterById(params.id);
   const deleteMode =
     currentUser?.roleId === "super-admin" ? "hard" : currentUser?.roleId === "admin" ? "soft" : null;
@@ -62,6 +131,16 @@ export default function SuratDetailPage() {
 
   const timeline = getLetterDispositionsById(letter.id);
   const currentDisposition = timeline[timeline.length - 1];
+  const activeDispositionCount = timeline.filter((item) => item.status !== "Selesai").length;
+  const whatsappDeliveries = [
+    ...letter.whatsappDeliveries.map((delivery) => ({ ...delivery, sourceFeature: "Surat" })),
+    ...timeline.flatMap((item) =>
+      (item.whatsappDeliveries ?? []).map((delivery) => ({
+        ...delivery,
+        sourceFeature: `Disposisi ${item.id}`,
+      }))
+    ),
+  ];
   const canOpenDisposition = Boolean(currentDisposition) && canUserAccessDispositionAction(currentUser);
   const leadershipRecipients = getLeadershipRecipients(users).filter((recipient) => recipient.id !== currentUser?.id);
   const activeLeadershipNotifications = timeline.filter(
@@ -73,6 +152,38 @@ export default function SuratDetailPage() {
   );
   const canForwardLeadership =
     letter.type === "masuk" && canUserForwardToLeadership(currentUser) && remainingLeadershipRecipients.length > 0;
+  const workflowStatus = letter.workflowStatus ?? (letter.type === "keluar" ? "draft" : "sent");
+  const currentRoleId = currentUser?.roleId;
+  const isCreator = Boolean(currentUser?.id && letter.createdByUserId === currentUser.id);
+  const canSubmitWorkflow = isAdmin || isCreator;
+  const canApproveWorkflow =
+    isAdmin ||
+    ["ketua", "wakil-ketua", "sekretaris", "panitera"].includes(currentRoleId ?? "");
+  const canMarkSentWorkflow = isAdmin || isCreator || currentRoleId === "sekretaris";
+
+  const openWorkflowModal = (action: WorkflowUiAction) => {
+    setWorkflowFeedback("");
+    setWorkflowRejectionNote(action === "reject" ? letter.rejectionNote ?? "" : "");
+    setWorkflowModal(action);
+  };
+
+  const runWorkflowAction = async (action: WorkflowUiAction) => {
+    let rejectionNote: string | null = null;
+    if (action === "reject") {
+      rejectionNote = workflowRejectionNote.trim();
+      if (!rejectionNote) {
+        setWorkflowFeedback("Catatan penolakan wajib diisi agar pembuat surat memahami perbaikannya.");
+        return;
+      }
+    }
+
+    setIsWorkflowSaving(true);
+    setWorkflowFeedback("");
+    const result = await transitionLetterWorkflow(letter.id, { action, rejectionNote });
+    setIsWorkflowSaving(false);
+    setWorkflowFeedback(result.message);
+    setWorkflowModal(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -116,10 +227,19 @@ export default function SuratDetailPage() {
               <Button
                 variant="destructive"
                 onClick={() => {
+                  if (deleteMode === "hard" && activeDispositionCount > 0) {
+                    window.alert(
+                      `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Selesaikan disposisi terlebih dahulu sebelum hard delete.`
+                    );
+                    return;
+                  }
+
                   const confirmed = window.confirm(
-                    deleteMode === "hard"
-                      ? "Hard delete akan menghapus surat secara permanen. Lanjutkan?"
-                      : "Hapus surat ini dari daftar aktif? Lanjutkan?"
+                    activeDispositionCount > 0
+                      ? `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Menghapus surat dapat mengganggu tindak lanjut. Gunakan arsip/nonaktifkan hanya jika sudah yakin. Lanjutkan?`
+                      : deleteMode === "hard"
+                        ? "Hard delete akan menghapus surat secara permanen. Lanjutkan?"
+                        : "Hapus surat ini dari daftar aktif? Lanjutkan?"
                   );
 
                   if (!confirmed) return;
@@ -138,6 +258,12 @@ export default function SuratDetailPage() {
       {forwardFeedback ? (
         <div className="rounded-[1.35rem] border border-sky-300/60 bg-sky-500/10 px-4 py-3 text-sm text-sky-800 dark:text-sky-200">
           {forwardFeedback}
+        </div>
+      ) : null}
+
+      {workflowFeedback ? (
+        <div className="rounded-[1.35rem] border border-sky-300/60 bg-sky-500/10 px-4 py-3 text-sm text-sky-800 dark:text-sky-200">
+          {workflowFeedback}
         </div>
       ) : null}
 
@@ -192,6 +318,87 @@ export default function SuratDetailPage() {
                 </div>
               </div>
 
+              {letter.type === "keluar" ? (
+                <div className="rounded-[1.2rem] border border-border bg-card/70 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Workflow Surat Keluar</p>
+                    <Badge variant={workflowBadgeVariant(workflowStatus)}>
+                      {workflowLabels[workflowStatus] ?? workflowStatus}
+                    </Badge>
+                  </div>
+                  <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                    <WorkflowMetaRow label="Diajukan" at={letter.submittedAt} userId={letter.submittedByUserId} users={users} />
+                    <WorkflowMetaRow label="Disetujui" at={letter.approvedAt} userId={letter.approvedByUserId} users={users} />
+                    <WorkflowMetaRow label="Dikirim/Terbit" at={letter.sentAt} userId={letter.sentByUserId} users={users} />
+                    {letter.rejectionNote ? (
+                      <div className="rounded-xl border border-rose-300/50 bg-rose-500/10 p-3 text-rose-800 dark:text-rose-200">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em]">Catatan Penolakan</p>
+                        <p className="mt-1 leading-6">{letter.rejectionNote}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {["draft", "rejected"].includes(workflowStatus) && canSubmitWorkflow ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isWorkflowSaving}
+                        onClick={() => openWorkflowModal("submit")}
+                      >
+                        <SendHorizontal className="h-4 w-4" />
+                        Ajukan Review
+                      </Button>
+                    ) : null}
+                    {workflowStatus === "submitted" && canApproveWorkflow ? (
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={isWorkflowSaving}
+                          onClick={() => openWorkflowModal("approve")}
+                        >
+                          <FileCheck2 className="h-4 w-4" />
+                          Setujui
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={isWorkflowSaving}
+                          onClick={() => openWorkflowModal("reject")}
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Tolak
+                        </Button>
+                      </>
+                    ) : null}
+                    {workflowStatus === "approved" && canMarkSentWorkflow ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isWorkflowSaving}
+                        onClick={() => openWorkflowModal("mark-sent")}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Tandai Terbit/Dikirim
+                      </Button>
+                    ) : null}
+                    {["submitted", "rejected"].includes(workflowStatus) && canSubmitWorkflow ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isWorkflowSaving}
+                        onClick={() => openWorkflowModal("return-draft")}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Kembali ke Draft
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Lampiran</p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -208,6 +415,7 @@ export default function SuratDetailPage() {
                 <div className="mt-3">
                   <WhatsAppStatusStack
                     deliveries={letter.whatsappDeliveries}
+                    showFullNumber={isAdmin}
                     onRetry={(deliveryId) =>
                       void retryWhatsappDelivery({ scope: "letter", entityId: letter.id, deliveryId })
                     }
@@ -257,6 +465,45 @@ export default function SuratDetailPage() {
       <Card className="border-border/80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <BellRing className="h-4 w-4 text-primary" />
+            Notifikasi WhatsApp
+          </CardTitle>
+          <CardDescription>
+            Riwayat pengiriman WhatsApp yang terkait dengan surat dan disposisi ini.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.1rem] border border-border bg-muted/35 p-3 text-sm text-muted-foreground">
+            <span>Lihat konteks pengiriman lengkap di modul ALETA Bot bila perlu audit lebih lanjut.</span>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/aleta-bot?tab=riwayat-pengiriman&sourceFeature=disposition&entityId=${encodeURIComponent(letter.id)}`}>
+                Lihat di Riwayat ALETA Bot
+              </Link>
+            </Button>
+          </div>
+          <WhatsAppStatusStack
+            deliveries={whatsappDeliveries}
+            showFullNumber={isAdmin}
+            onRetry={(deliveryId) => {
+              const letterDelivery = letter.whatsappDeliveries.find((delivery) => delivery.id === deliveryId);
+              if (letterDelivery) {
+                void retryWhatsappDelivery({ scope: "letter", entityId: letter.id, deliveryId });
+                return;
+              }
+              const disposition = timeline.find((item) =>
+                (item.whatsappDeliveries ?? []).some((delivery) => delivery.id === deliveryId)
+              );
+              if (disposition) {
+                void retryWhatsappDelivery({ scope: "disposition", entityId: disposition.id, deliveryId });
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
             Riwayat Disposisi
           </CardTitle>
@@ -267,7 +514,7 @@ export default function SuratDetailPage() {
             {timeline.length > 0 ? (
               timeline.map((item, index) => {
                 const isLast = index === timeline.length - 1;
-                const isFirst = index === 0;
+                const deadlineState = getDispositionDeadlineState(item);
                 
                 return (
                   <div key={item.id} className="relative flex items-start gap-6 pl-2">
@@ -297,6 +544,16 @@ export default function SuratDetailPage() {
                           {item.routingType === "leadership-notification" ? (
                             <Badge variant="outline" className="bg-sky-500/5 text-sky-600 dark:text-sky-300 border-sky-200/50">Notifikasi Pimpinan</Badge>
                           ) : null}
+                          {!item.readAt && item.status !== "Selesai" ? (
+                            <Badge variant="warning">Belum Dibaca</Badge>
+                          ) : null}
+                          {deadlineState === "overdue" ? (
+                            <Badge variant="danger">Terlambat</Badge>
+                          ) : deadlineState === "due_today" ? (
+                            <Badge variant="warning">Jatuh Tempo Hari Ini</Badge>
+                          ) : item.deadlineAt ? (
+                            <Badge variant="outline">{getDispositionDeadlineLabel(item)}</Badge>
+                          ) : null}
                           <Badge variant={statusVariant(item.status)} className="shadow-sm">{item.status}</Badge>
                         </div>
                       </div>
@@ -305,6 +562,10 @@ export default function SuratDetailPage() {
                         <p className="text-sm leading-7 text-muted-foreground">
                           {item.instruksi || "Tidak ada instruksi khusus."}
                         </p>
+                        <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                          <span>{getDispositionDeadlineLabel(item)}</span>
+                          <span>{getDispositionReadLabel(item)}</span>
+                        </div>
                         
                         {item.followUpNote && (
                           <div className="mt-4 flex gap-3 rounded-xl border border-primary/10 bg-primary/5 p-3">
@@ -332,6 +593,47 @@ export default function SuratDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {workflowModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[1.35rem] border border-border bg-card p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Workflow Surat Keluar</p>
+                <h2 className="mt-2 text-xl font-semibold text-foreground">{workflowActionCopy[workflowModal].title}</h2>
+              </div>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setWorkflowModal(null)} disabled={isWorkflowSaving}>
+                Tutup
+              </Button>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">{workflowActionCopy[workflowModal].description}</p>
+            {workflowModal === "reject" ? (
+              <label className="mt-4 block space-y-2">
+                <span className="text-sm font-semibold text-foreground">Catatan penolakan</span>
+                <Textarea
+                  value={workflowRejectionNote}
+                  onChange={(event) => setWorkflowRejectionNote(event.target.value)}
+                  rows={4}
+                  placeholder="Jelaskan bagian yang perlu diperbaiki sebelum surat diajukan kembali."
+                />
+              </label>
+            ) : null}
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setWorkflowModal(null)} disabled={isWorkflowSaving}>
+                Batal
+              </Button>
+              <Button
+                type="button"
+                variant={workflowModal === "reject" ? "destructive" : "default"}
+                onClick={() => void runWorkflowAction(workflowModal)}
+                disabled={isWorkflowSaving}
+              >
+                {workflowActionCopy[workflowModal].cta}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -341,6 +643,27 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       <p className="mt-2 text-sm leading-7 text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function WorkflowMetaRow({
+  label,
+  at,
+  userId,
+  users,
+}: {
+  label: string;
+  at?: string | null;
+  userId?: string | null;
+  users: UserPersona[];
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span>{label}</span>
+      <strong className="text-right text-foreground">
+        {at ? `${formatDateTime(at)}${userId ? ` oleh ${getUser(userId, users)?.name ?? userId}` : ""}` : "-"}
+      </strong>
     </div>
   );
 }

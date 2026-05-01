@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useEffectEvent,
+  useMemo,
   useReducer,
   useState,
   type ReactNode,
@@ -62,8 +63,53 @@ import {
   type UserPersona,
   type WhatsAppWebConfig,
 } from "@/lib/types";
+import {
+  buildTaskSources,
+  finalizeTaskSource,
+  summarizeTaskSources,
+  type TaskItem,
+  type TaskSourcesPayload,
+} from "@/lib/task-sources";
 
 const STORAGE_KEY = "portal-terpadu-pa-v2";
+const SEEN_DISPOSITION_STORAGE_PREFIX = "aleta:seen-dispositions";
+
+function getSeenDispositionStorageKey(userId: string | null | undefined) {
+  return `${SEEN_DISPOSITION_STORAGE_PREFIX}:${userId ?? "anonymous"}`;
+}
+
+function readSeenDispositionIds(userId: string | null | undefined) {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = window.localStorage.getItem(getSeenDispositionStorageKey(userId));
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSeenDispositionIds(userId: string | null | undefined, ids: string[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(getSeenDispositionStorageKey(userId), JSON.stringify(ids));
+  } catch {
+    // localStorage can be unavailable in private/restricted contexts; keep in-memory state working.
+  }
+}
+
+type NotificationReadResponse = {
+  items?: Array<{
+    entityType?: string;
+    entityId?: string;
+    seenAt?: string;
+  }>;
+};
+
+type MarkSeenItemInput = Pick<TaskItem, "entityType" | "entityId">;
 
 type CreateDispositionInput = {
   suratId: string;
@@ -74,6 +120,7 @@ type CreateDispositionInput = {
   allowDownload: boolean;
   urgent: boolean;
   bypass: boolean;
+  deadlineAt?: string | null;
   routingType?: DispositionNode["routingType"];
 };
 
@@ -184,6 +231,8 @@ type MutationResult = {
   message: string;
 };
 
+type LetterWorkflowAction = "submit" | "approve" | "reject" | "mark-sent" | "return-draft";
+
 type UpdateAIConfigInput = Omit<Partial<AIGlobalConfig>, "featureFlags"> & {
   featureFlags?: PartialAIFeatureFlags;
   connection?: {
@@ -246,6 +295,9 @@ type PortalContextValue = {
   accessibleModules: ModuleConfig[];
   accessibleLetters: LetterDetail[];
   pendingInbox: DispositionNode[];
+  seenPendingDispositionIds: string[];
+  taskSources: TaskSourcesPayload["sources"];
+  taskSummary: TaskSourcesPayload["summary"];
   inboxNotificationCount: number;
   globalTaskCount: number;
   metrics: DashboardMetric[];
@@ -275,8 +327,13 @@ type PortalContextValue = {
   toggleModuleVisibility: (roleId: UserPersona["roleId"], moduleId: ModuleId, enabled: boolean) => void;
   createLetter: (payload: CreateLetterInput) => Promise<MutationResult>;
   updateLetter: (letterId: string, payload: Partial<CreateLetterInput>) => Promise<MutationResult>;
+  transitionLetterWorkflow: (
+    letterId: string,
+    payload: { action: LetterWorkflowAction; rejectionNote?: string | null }
+  ) => Promise<MutationResult>;
   createDisposition: (payload: CreateDispositionInput) => void;
   forwardToLeadership: (payload: ForwardToLeadershipInput) => void;
+  markDispositionRead: (dispositionId: string) => Promise<MutationResult>;
   startDisposition: (dispositionId: string) => Promise<MutationResult>;
   completeDisposition: (payload: CompleteDispositionInput) => void;
   retryWhatsappDelivery: (payload: RetryWhatsappInput) => Promise<MutationResult>;
@@ -285,6 +342,7 @@ type PortalContextValue = {
   getLetterDispositionsById: (letterId: string) => DispositionNode[];
   getSearchResults: (query: string) => SearchResult[];
   getUsersByPosition: (positionId: string) => UserPersona[];
+  markTaskItemsSeen: (items: MarkSeenItemInput[]) => void;
   markPendingInboxSeen: (dispositionIds?: string[]) => void;
 };
 
@@ -685,6 +743,9 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         allowDownload: action.payload.viewerMode === "download",
         approvalQrCode: `QR-${nextDispositionId.toUpperCase()}`,
         createdAt: new Date().toISOString(),
+        deadlineAt: null,
+        readAt: null,
+        readByUserId: null,
         urgent: action.payload.confidentiality !== "Biasa",
         bypass: false,
         routingType: "standard",
@@ -720,6 +781,9 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         allowDownload: action.payload.allowDownload,
         approvalQrCode: `QR-${nextDispositionId.toUpperCase()}`,
         createdAt: new Date().toISOString(),
+        deadlineAt: action.payload.deadlineAt ?? null,
+        readAt: null,
+        readByUserId: null,
         urgent: action.payload.urgent,
         bypass: action.payload.bypass,
         routingType: action.payload.routingType ?? "standard",
@@ -793,6 +857,9 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
           allowDownload: false,
           approvalQrCode: `QR-${id.toUpperCase()}`,
           createdAt: new Date().toISOString(),
+          deadlineAt: null,
+          readAt: null,
+          readByUserId: null,
           urgent: true,
           bypass: false,
           routingType: "leadership-notification",
@@ -916,6 +983,7 @@ export function PortalProvider({
 }) {
   const [state, dispatch] = useReducer(portalReducer, initialState ?? defaultState);
   const [seenPendingDispositionIds, setSeenPendingDispositionIds] = useState<string[]>([]);
+  const [taskSourcesSnapshot, setTaskSourcesSnapshot] = useState<TaskSourcesPayload | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(Boolean(initialState));
@@ -1109,9 +1177,19 @@ export function PortalProvider({
   const accessibleModules = getAccessibleModules(currentUser, state.moduleVisibility);
   const accessibleLetters = getAccessibleLetters(currentUser, state.letters, state.dispositions);
   const pendingInbox = getPendingInbox(currentUser, state.dispositions, state.letters);
-  const inboxNotificationCount = pendingInbox.filter(
-    (item) => !seenPendingDispositionIds.includes(item.id)
-  ).length;
+  const fallbackTaskSources = useMemo(
+    () =>
+      buildTaskSources({
+        accessibleLetters,
+        dispositions: state.dispositions,
+        pendingInbox,
+        currentUserId: currentUser?.id,
+        seenDispositionIds: seenPendingDispositionIds,
+      }),
+    [accessibleLetters, currentUser?.id, pendingInbox, seenPendingDispositionIds, state.dispositions]
+  );
+  const taskSources = taskSourcesSnapshot?.sources ?? fallbackTaskSources;
+  const taskSummary = taskSourcesSnapshot?.summary ?? summarizeTaskSources(fallbackTaskSources);
 
   const newLetterCount = accessibleLetters.filter(l => l.type === "masuk" && l.status === "Baru").length;
   const failedWaCount = (accessibleLetters.reduce((c, l) => c + (l.whatsappDeliveries ?? []).filter(d => d.status === "Gagal").length, 0)) +
@@ -1120,10 +1198,132 @@ export function PortalProvider({
       return isRelevant ? c + (d.whatsappDeliveries ?? []).filter(v => v.status === "Gagal").length : c;
     }, 0));
 
-  const globalTaskCount = pendingInbox.length + newLetterCount + failedWaCount;
+  const globalTaskCount = taskSummary.total;
+  const inboxNotificationCount = globalTaskCount;
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const localIds = readSeenDispositionIds(currentUser?.id);
+    setSeenPendingDispositionIds(localIds);
+    setTaskSourcesSnapshot(null);
+
+    if (!currentUser?.id || process.env.NODE_ENV === "test") return;
+
+    const controller = new AbortController();
+
+    fetch("/api/notifications/reads?entityType=disposition", {
+      cache: "no-store",
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json().catch(() => null)) as { ok?: boolean; data?: NotificationReadResponse } | null;
+      })
+      .then((payload) => {
+        if (!payload?.ok) return;
+        const dbIds =
+          payload.data?.items
+            ?.filter((item) => item.entityType === "disposition" && typeof item.entityId === "string")
+            .map((item) => item.entityId as string) ?? [];
+        const next = Array.from(new Set([...localIds, ...dbIds]));
+        setSeenPendingDispositionIds(next);
+        writeSeenDispositionIds(currentUser.id, next);
+      })
+      .catch((error) => {
+        if ((error as { name?: string })?.name === "AbortError") return;
+        console.warn("[ALETA] Gagal memuat read-state notifikasi dari backend; localStorage dipakai sebagai fallback.");
+      });
+
+    return () => controller.abort();
+  }, [currentUser?.id, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated || !currentUser?.id || process.env.NODE_ENV === "test") return;
+
+    const controller = new AbortController();
+
+    fetch("/api/tasks?limit=50", {
+      cache: "no-store",
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json().catch(() => null)) as { ok?: boolean; data?: TaskSourcesPayload } | null;
+      })
+      .then((payload) => {
+        if (!payload?.ok || !payload.data) return;
+        setTaskSourcesSnapshot(payload.data);
+      })
+      .catch((error) => {
+        if ((error as { name?: string })?.name === "AbortError") return;
+        setTaskSourcesSnapshot(null);
+        console.warn("[ALETA] Gagal memuat task source server; fallback lokal tetap dipakai.");
+      });
+
+    return () => controller.abort();
+  }, [currentUser?.id, isHydrated]);
 
   const metrics = getDashboardMetrics(currentUser, state.letters, state.dispositions);
   const operationalSummary = getOperationalSummary(currentUser, state.letters, state.dispositions);
+
+  const markTaskItemsSeen = (items: MarkSeenItemInput[]) => {
+    const uniqueItems = Array.from(
+      new Map(
+        items
+          .filter((item) => item.entityType && item.entityId)
+          .map((item) => [`${item.entityType}:${item.entityId}`, item])
+      ).values()
+    );
+
+    if (uniqueItems.length === 0) return;
+
+    const dispositionIds = uniqueItems
+      .filter((item) => item.entityType === "disposition")
+      .map((item) => item.entityId);
+
+    if (dispositionIds.length > 0) {
+      setSeenPendingDispositionIds((current) => {
+        const next = Array.from(new Set([...current, ...dispositionIds]));
+        writeSeenDispositionIds(currentUser?.id, next);
+        return next;
+      });
+    }
+
+    setTaskSourcesSnapshot((current) => {
+      if (!current) return current;
+      const seenKeys = new Set(uniqueItems.map((item) => `${item.entityType}:${item.entityId}`));
+      const sources = current.sources.map((source) =>
+        finalizeTaskSource({
+          appId: source.appId,
+          appName: source.appName,
+          appHref: source.appHref,
+          tasks: source.tasks.map((task) =>
+            seenKeys.has(`${task.entityType}:${task.entityId}`) ? { ...task, seen: true } : task
+          ),
+        })
+      );
+
+      return {
+        summary: summarizeTaskSources(sources),
+        sources,
+      };
+    });
+
+    void fetch("/api/notifications/mark-seen", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        items: uniqueItems,
+      }),
+    }).catch(() => {
+      console.warn("[ALETA] Gagal menyimpan read-state notifikasi ke backend; localStorage tetap dipakai.");
+    });
+  };
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1147,6 +1347,9 @@ export function PortalProvider({
         accessibleModules,
         accessibleLetters,
         pendingInbox,
+        seenPendingDispositionIds,
+        taskSources,
+        taskSummary,
         inboxNotificationCount,
         globalTaskCount,
         metrics,
@@ -1159,11 +1362,13 @@ export function PortalProvider({
         assistantJudgeConfig: state.assistantJudgeConfig,
         signIn: (userId) => {
           setSeenPendingDispositionIds([]);
+          setTaskSourcesSnapshot(null);
           dispatch({ type: "sign-in", userId });
         },
         signOut: () => {
           void authClient.signOut();
           setSeenPendingDispositionIds([]);
+          setTaskSourcesSnapshot(null);
           dispatch({ type: "sign-out" });
         },
         setTheme: (theme) => dispatch({ type: "set-theme", theme }),
@@ -1716,6 +1921,31 @@ export function PortalProvider({
             };
           }
         },
+        transitionLetterWorkflow: async (letterId, payload) => {
+          if (!currentUser) return { ok: false, message: "Sesi habis." };
+
+          try {
+            const result = await requestBackendJson<LetterDetail>(
+              `/api/surat/${letterId}/workflow`,
+              {
+                method: "POST",
+                body: JSON.stringify(payload),
+              },
+              currentUser.id
+            );
+
+            startTransition(() => {
+              dispatch({ type: "upsert-letter", payload: result });
+            });
+
+            return { ok: true, message: "Status workflow surat keluar berhasil diperbarui." };
+          } catch (error) {
+            return {
+              ok: false,
+              message: error instanceof Error ? error.message : "Gagal memperbarui workflow surat keluar.",
+            };
+          }
+        },
         createDisposition: async (payload) => {
           if (!currentUser) return { ok: false, message: "Sesi habis." };
           try {
@@ -1767,6 +1997,27 @@ export function PortalProvider({
             return { ok: true, message: "Surat berhasil diteruskan ke Pimpinan." };
           } catch (error) {
             return { ok: false, message: error instanceof Error ? error.message : "Gagal meneruskan ke Pimpinan." };
+          }
+        },
+        markDispositionRead: async (dispositionId) => {
+          if (!currentUser) return { ok: false, message: "Sesi habis." };
+          try {
+            const result = await requestBackendJson<DispositionNode>(
+              "/api/disposisi/read",
+              {
+                method: "POST",
+                body: JSON.stringify({ dispositionId }),
+              },
+              currentUser.id
+            );
+
+            startTransition(() => {
+              dispatch({ type: "upsert-disposition", payload: result });
+            });
+
+            return { ok: true, message: "Disposisi ditandai sudah dibaca." };
+          } catch (error) {
+            return { ok: false, message: error instanceof Error ? error.message : "Gagal menandai disposisi dibaca." };
           }
         },
         startDisposition: async (dispositionId) => {
@@ -1850,12 +2101,13 @@ export function PortalProvider({
         getLetterDispositionsById: (letterId) => getLetterDispositions(letterId, state.dispositions),
         getSearchResults: (query) => searchPortal(query, currentUser, state.letters, state.dispositions, state.users),
         getUsersByPosition: (positionId) => getPositionUsers(positionId, state.users),
+        markTaskItemsSeen,
         markPendingInboxSeen: (dispositionIds) => {
           const idsToMark = dispositionIds ?? pendingInbox.map((item) => item.id);
 
           if (idsToMark.length === 0) return;
 
-          setSeenPendingDispositionIds((current) => Array.from(new Set([...current, ...idsToMark])));
+          markTaskItemsSeen(idsToMark.map((entityId) => ({ entityType: "disposition", entityId })));
         },
       }}
     >

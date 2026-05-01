@@ -56,6 +56,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePortal } from "@/lib/app-state";
 import { ASSISTANT_JUDGE_PROVIDER_ORDER } from "@/lib/assistant-judge";
 import { formatDateTime } from "@/lib/format";
+import type { TaskItem } from "@/lib/task-sources";
 import type { ModuleId } from "@/lib/types";
 import {
   findModuleByRoute,
@@ -264,10 +265,11 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
     isAuthPending,
     isSyncing,
     syncError,
-    markPendingInboxSeen,
-    pendingInbox,
+    markTaskItemsSeen,
     signOut,
     assistantJudgeConfig,
+    taskSources,
+    taskSummary,
   } = usePortal();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
@@ -356,6 +358,25 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
   const effectiveRoleId = getEffectiveRoleId(currentUser);
   const isAdminTier = effectiveRoleId === "super-admin" || effectiveRoleId === "admin";
   const isSuperAdmin = effectiveRoleId === "super-admin";
+  const bellTasks = taskSources
+    .flatMap((source) => source.tasks)
+    .sort((left, right) => {
+      if ((left.priority === "urgent") !== (right.priority === "urgent")) {
+        return left.priority === "urgent" ? -1 : 1;
+      }
+      if (left.seen !== right.seen) return left.seen ? 1 : -1;
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+    });
+  const visibleBellTasks = bellTasks.slice(0, 5);
+  const unreadBellTasks = bellTasks.filter((task) => !task.seen);
+  const hasBellItems = visibleBellTasks.length > 0;
+  const taskBreakdownTitle = `${taskSummary.total} tugas: ${taskSummary.unread} belum dilihat, ${taskSummary.urgent} mendesak`;
+
+  const markVisibleTasksSeen = (items: TaskItem[]) => {
+    if (items.length === 0) return;
+    if (items.length > 10 && !window.confirm(`Tandai ${items.length} tugas sebagai sudah dilihat?`)) return;
+    markTaskItemsSeen(items.map((item) => ({ entityType: item.entityType, entityId: item.entityId })));
+  };
 
   const appContext = getAppContext(pathname);
   const isAdminArea = isAdminRoute(pathname);
@@ -1044,9 +1065,9 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                   <ThemeToggle />
 
                   {isAdminTier ? (
-                    <Button variant="outline" size="icon" aria-label="Pengaturan" asChild>
+                    <Button variant="outline" size="icon" aria-label="Buka Panel Admin" title="Panel Admin" asChild>
                       <Link href="/admin">
-                        <Settings className="h-4 w-4" />
+                        <UserCog className="h-4 w-4" />
                       </Link>
                     </Button>
                   ) : null}
@@ -1056,9 +1077,9 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                       <Button
                         variant="outline"
                         size="icon"
-                        aria-label="Notifikasi"
+                        aria-label="Pusat Tugas dan Notifikasi"
+                        title={taskBreakdownTitle}
                         className="relative"
-                        onClick={() => markPendingInboxSeen()}
                       >
                         {globalTaskCount > 0 ? (
                           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
@@ -1071,32 +1092,48 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                     <DropdownMenuContent align="end" className="w-[300px]">
                       <DropdownMenuLabel>Pusat Tugas & Notifikasi</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      {pendingInbox.length === 0 ? (
-                        <div className="px-2 py-4 text-center text-xs text-muted-foreground">
-                          Tidak ada tugas mendesak saat ini.
-                        </div>
+                      {hasBellItems ? (
+                        <>
+                          {visibleBellTasks.map((item) => (
+                            <DropdownMenuItem
+                              key={item.id}
+                              onSelect={() => {
+                                markTaskItemsSeen([{ entityType: item.entityType, entityId: item.entityId }]);
+                                router.push(item.href);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <div className="min-w-0 space-y-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <p className="line-clamp-1 font-medium">{item.title}</p>
+                                  {item.priority === "urgent" ? <Badge variant="warning">Mendesak</Badge> : null}
+                                  {!item.seen ? <Badge variant="default">Baru</Badge> : null}
+                                </div>
+                                <p className="line-clamp-1 text-xs text-muted-foreground">{item.sourceLabel}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDateTime(item.createdAt)}
+                                </p>
+                              </div>
+                            </DropdownMenuItem>
+                          ))}
+                        </>
                       ) : (
-                        pendingInbox.slice(0, 4).map((item) => (
-                          <DropdownMenuItem
-                            key={item.id}
-                            onSelect={() => {
-                              markPendingInboxSeen([item.id]);
-                              router.push(`/disposisi/${item.id}`);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <div className="space-y-1">
-                              <p className="font-medium line-clamp-1">{item.instruksi}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatDateTime(item.createdAt)}
-                              </p>
-                            </div>
-                          </DropdownMenuItem>
-                        ))
+                        <div className="px-2 py-4 text-center text-xs text-muted-foreground">
+                          Tidak ada tugas baru.
+                        </div>
                       )}
                       <DropdownMenuSeparator />
+                      {unreadBellTasks.length > 0 ? (
+                        <DropdownMenuItem
+                          className="justify-center text-xs font-semibold text-muted-foreground focus:bg-muted/50"
+                          onSelect={() => markVisibleTasksSeen(unreadBellTasks)}
+                        >
+                          Tandai Semua Sudah Dilihat
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuItem
                         className="justify-center text-xs font-semibold text-primary focus:bg-primary/5 active:bg-primary/10"
+                        aria-label="Buka Pusat Tugas Selengkapnya"
                         onSelect={() => router.push("/tugas")}
                       >
                         Buka Pusat Tugas Selengkapnya

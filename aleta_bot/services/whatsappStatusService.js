@@ -14,6 +14,9 @@ const state = {
   lastErrorMessage: "",
   lastState: "",
   phoneNumber: "",
+  sessionStartedAt: null,
+  lastMessageSentAt: null,
+  authFailureCount: 0,
   updatedAt: new Date().toISOString(),
 };
 
@@ -30,11 +33,15 @@ function setStatus(status, eventType, metadata = {}) {
   }
   if (status === "connected") {
     state.lastReadyAt = state.updatedAt;
+    if (!state.sessionStartedAt) state.sessionStartedAt = state.updatedAt;
     state.lastQrString = null;
     if (metadata.phoneNumber) state.phoneNumber = metadata.phoneNumber;
   }
   if (status === "authenticated") state.lastAuthenticatedAt = state.updatedAt;
-  if (status === "auth_failure") state.lastAuthFailureAt = state.updatedAt;
+  if (status === "auth_failure") {
+    state.lastAuthFailureAt = state.updatedAt;
+    state.authFailureCount += 1;
+  }
   if (status === "disconnected") state.lastDisconnectedAt = state.updatedAt;
   if (status === "reconnecting") state.lastReconnectAttemptAt = state.updatedAt;
 
@@ -55,10 +62,20 @@ function setStatus(status, eventType, metadata = {}) {
 }
 
 function getStatus() {
-  return { ...state };
+  const sessionAgeHours = state.sessionStartedAt
+    ? Math.max(0, Math.round(((Date.now() - new Date(state.sessionStartedAt).getTime()) / 3_600_000) * 10) / 10)
+    : null;
+  return { ...state, sessionAgeHours };
+}
+
+function recordMessageSent() {
+  state.lastMessageSentAt = new Date().toISOString();
+  state.updatedAt = state.lastMessageSentAt;
+  return getStatus();
 }
 
 module.exports = {
   setStatus,
   getStatus,
+  recordMessageSent,
 };

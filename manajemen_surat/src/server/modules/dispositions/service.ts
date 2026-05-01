@@ -1,6 +1,6 @@
 import { type QueryResultRow } from "pg";
 
-import { canUserForwardToLeadership, isPrivilegedAdmin } from "@/lib/permissions";
+import { canUserForwardToLeadership, getEffectivePositionId, isPrivilegedAdmin } from "@/lib/permissions";
 import { type DispositionNode } from "@/lib/types";
 import { sendDispositionNotification } from "@/server/modules/whatsapp/delivery";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
@@ -26,6 +26,9 @@ type DispositionRow = QueryResultRow & {
   allow_download: number;
   approval_qr_code: string;
   created_at: string;
+  deadline_at: string | null;
+  read_at: string | null;
+  read_by_user_id: string | null;
   urgent: number;
   bypass: number;
   routing_type: string;
@@ -52,6 +55,7 @@ export type CreateDispositionRequest = {
   allowDownload: boolean;
   urgent: boolean;
   bypass: boolean;
+  deadlineAt?: string | null;
   routingType?: "standard" | "leadership-notification";
 };
 
@@ -66,6 +70,22 @@ export type StartDispositionRequest = {
   actorUserId: string;
   dispositionId: string;
 };
+
+export type MarkDispositionReadRequest = {
+  actorUserId: string;
+  dispositionId: string;
+};
+
+function normalizeDeadlineAt(value?: string | null) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new ApiError(400, "Format deadline disposisi tidak valid.");
+  }
+  return parsed.toISOString();
+}
 
 async function hydrateDispositions(db: AletaDatabase, rows: DispositionRow[]) {
   if (rows.length === 0) return [];
@@ -104,6 +124,9 @@ async function hydrateDispositions(db: AletaDatabase, rows: DispositionRow[]) {
     allowDownload: Boolean(row.allow_download),
     approvalQrCode: row.approval_qr_code,
     createdAt: row.created_at,
+    deadlineAt: row.deadline_at,
+    readAt: row.read_at,
+    readByUserId: row.read_by_user_id,
     urgent: Boolean(row.urgent),
     bypass: Boolean(row.bypass),
     routingType: row.routing_type as DispositionNode["routingType"],
@@ -166,6 +189,7 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
 
   return withTransaction(db, async (tx) => {
     const now = new Date().toISOString();
+    const deadlineAt = normalizeDeadlineAt(input.deadlineAt);
     const dispositionId = await nextPrefixedId(tx, "dispositions", "dsp");
     const deliveryId = await nextPrefixedId(tx, "disposition_whatsapp_deliveries", "wa-dsp");
 
@@ -173,8 +197,9 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
       `INSERT INTO dispositions (
         id, surat_id, pengirim_id, penerima_id, target_position_id, instruksi,
         parent_disposition_id, status, allow_download, approval_qr_code, created_at,
-        urgent, bypass, routing_type, follow_up_note, follow_up_file_name, deleted_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        deadline_at, read_at, read_by_user_id, urgent, bypass, routing_type,
+        follow_up_note, follow_up_file_name, deleted_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       dispositionId,
       input.suratId,
@@ -187,6 +212,9 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
       toBooleanInt(input.allowDownload),
       `QR-${dispositionId.toUpperCase()}`,
       now,
+      deadlineAt,
+      null,
+      null,
       toBooleanInt(input.urgent),
       toBooleanInt(input.bypass),
       input.routingType ?? "standard",
@@ -243,6 +271,7 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
         parentDispositionId: input.parentDispositionId,
         recipientId: recipient.id,
         targetPositionId: input.targetPositionId,
+        deadlineAt,
       },
     });
 
@@ -270,6 +299,39 @@ export async function startDispositionInDb(db: AletaDatabase, input: StartDispos
   await db.prepare(
     `UPDATE dispositions SET status = 'Sedang Dikerjakan', updated_at = ? WHERE id = ?`
   ).run(now, input.dispositionId);
+
+  return getDispositionByIdFromDb(db, input.dispositionId);
+}
+
+export async function markDispositionReadInDb(db: AletaDatabase, input: MarkDispositionReadRequest) {
+  const actor = await requireActorUser(db, input.actorUserId);
+  const disposition = await getDispositionByIdFromDb(db, input.dispositionId);
+
+  if (!disposition) {
+    throw new ApiError(404, "Disposisi tidak ditemukan.");
+  }
+
+  const assignedToActor =
+    disposition.penerimaId === actor.id || disposition.targetPositionId === getEffectivePositionId(actor);
+  const canAccess =
+    assignedToActor ||
+    disposition.pengirimId === actor.id ||
+    isPrivilegedAdmin(actor);
+
+  if (!canAccess) {
+    throw new ApiError(404, "Disposisi tidak ditemukan.");
+  }
+
+  if (!assignedToActor || disposition.readAt) {
+    return disposition;
+  }
+
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE dispositions
+     SET read_at = ?, read_by_user_id = ?, updated_at = ?
+     WHERE id = ? AND read_at IS NULL AND deleted_at IS NULL`
+  ).run(now, actor.id, now, input.dispositionId);
 
   return getDispositionByIdFromDb(db, input.dispositionId);
 }
@@ -401,8 +463,9 @@ export async function forwardLetterToLeadershipInDb(
         `INSERT INTO dispositions (
           id, surat_id, pengirim_id, penerima_id, target_position_id, instruksi,
           parent_disposition_id, status, allow_download, approval_qr_code, created_at,
-          urgent, bypass, routing_type, follow_up_note, follow_up_file_name, deleted_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          deadline_at, read_at, read_by_user_id, urgent, bypass, routing_type,
+          follow_up_note, follow_up_file_name, deleted_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         dispositionId,
         suratId,
@@ -415,6 +478,9 @@ export async function forwardLetterToLeadershipInDb(
         0,
         `QR-${dispositionId.toUpperCase()}`,
         now,
+        null,
+        null,
+        null,
         1,
         0,
         "leadership-notification",

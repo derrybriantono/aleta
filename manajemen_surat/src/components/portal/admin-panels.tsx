@@ -73,6 +73,12 @@ function sortManagedUsers(users: UserPersona[], sortKey: AccountSortKey, sortDir
   return sortDir === "desc" ? sorted.reverse() : sorted;
 }
 
+function hasValidWhatsappNumber(value: string | undefined) {
+  const digits = String(value || "").replace(/\D/g, "");
+  const normalized = digits.startsWith("0") ? `62${digits.slice(1)}` : digits;
+  return /^62\d{8,15}$/.test(normalized);
+}
+
 // ─── Admin Level Selector ─────────────────────────────────────────────────────
 
 function AdminLevelSelector({
@@ -198,7 +204,7 @@ function UserRoleBadgeDisplay({ user }: { user: UserPersona }) {
 
 // ─── Mapping Board ────────────────────────────────────────────────────────────
 
-export function MappingBoard() {
+export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappOnly?: boolean }) {
   const { createManagedUser, currentUser, updateManagedUser, users } = usePortal();
   const isAdmin = isPrivilegedAdmin(currentUser);
   const [query, setQuery] = useState("");
@@ -212,7 +218,11 @@ export function MappingBoard() {
       ? users
       : users.filter((user) => user.roleId !== "super-admin");
 
-    const searchedUsers = visibleUsers.filter((user) =>
+    const scopedUsers = missingWhatsappOnly
+      ? visibleUsers.filter((user) => user.isActive && !hasValidWhatsappNumber(user.whatsappNumber))
+      : visibleUsers;
+
+    const searchedUsers = scopedUsers.filter((user) =>
       [user.name, user.username, user.email, user.nip, user.whatsappNumber]
         .join(" ")
         .toLowerCase()
@@ -220,7 +230,7 @@ export function MappingBoard() {
     );
 
     return sortManagedUsers(searchedUsers, sortKey, sortDir);
-  }, [isSuperAdmin, query, sortDir, sortKey, users]);
+  }, [isSuperAdmin, missingWhatsappOnly, query, sortDir, sortKey, users]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const selectedUser =
     filteredUsers.find((user) => user.id === selectedUserId) ??
@@ -322,6 +332,22 @@ export function MappingBoard() {
           <CardDescription>Pilih akun untuk diperbarui atau gunakan tab akun baru untuk menambah user terpusat.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {missingWhatsappOnly ? (
+            <div className="rounded-2xl border border-amber-300/70 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Badge variant="warning">Filter: Belum punya nomor WhatsApp</Badge>
+                  <p className="mt-2 font-semibold">{filteredUsers.length} pegawai aktif belum memiliki nomor WhatsApp.</p>
+                  <p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">
+                    Lengkapi nomor WhatsApp agar ALETA Bot tidak bergantung pada mapping lama.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => { window.location.href = "/admin/mapping-user-jabatan"; }}>
+                  Hapus Filter
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <div className="grid gap-3 md:grid-cols-[1fr_220px]">
             <Input
               value={query}

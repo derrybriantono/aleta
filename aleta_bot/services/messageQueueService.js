@@ -1,10 +1,50 @@
 const crypto = require("crypto");
+const { readRuntimeConfig } = require("../config/runtime-config");
 const botDb = require("./botDbService");
 const logService = require("./logService");
 const { getMessagePreview } = require("./messageService");
+const whatsappStatusService = require("./whatsappStatusService");
 
 function createId() {
   return crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(12).toString("hex");
+}
+
+function parseClockToMinutes(value, fallback) {
+  const match = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return fallback;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return fallback;
+  }
+  return hours * 60 + minutes;
+}
+
+function getSendingWindowState(now = new Date()) {
+  const runtimeConfig = readRuntimeConfig();
+  const config = runtimeConfig.sendingWindow || {};
+  const enabled = config.enabled !== false;
+  const start = String(config.start || "07:30");
+  const end = String(config.end || "21:00");
+  const startMinutes = parseClockToMinutes(start, 7 * 60 + 30);
+  const endMinutes = parseClockToMinutes(end, 21 * 60);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const inside =
+    !enabled ||
+    (startMinutes <= endMinutes
+      ? currentMinutes >= startMinutes && currentMinutes <= endMinutes
+      : currentMinutes >= startMinutes || currentMinutes <= endMinutes);
+
+  return {
+    enabled,
+    start,
+    end,
+    inside,
+    allowed: inside,
+    message: inside
+      ? "Pengiriman berada dalam jam aman."
+      : `Di luar jam aman (${start}-${end}). Pesan normal ditahan di antrean.`,
+  };
 }
 
 async function enqueueMessage(data = {}) {
@@ -150,10 +190,13 @@ async function markPendingRetry(id, retryCount, nextScheduledAt, error) {
 
 async function claimNextMessage() {
   await botDb.ensureSchema();
+  const sendingWindow = getSendingWindowState();
+  const categoryGuard = sendingWindow.allowed ? "" : "AND category IN ('system', 'critical')";
   const rows = await botDb.query(
     `SELECT *
      FROM aleta_bot_message_queue
      WHERE status = 'pending' AND scheduled_at <= NOW()
+       ${categoryGuard}
      ORDER BY priority ASC, scheduled_at ASC, created_at ASC
      LIMIT 1`
   );
@@ -193,6 +236,7 @@ async function processNextMessage(sender) {
       await markSkipped(item.id, "sender_returned_null");
     } else {
       await markSent(item.id);
+      whatsappStatusService.recordMessageSent();
     }
     return item;
   } catch (error) {
@@ -389,6 +433,7 @@ module.exports = {
   findByIdempotencyKey,
   processNextMessage,
   processQueueBatch,
+  getSendingWindowState,
   markSent,
   markFailed,
   markSkipped,

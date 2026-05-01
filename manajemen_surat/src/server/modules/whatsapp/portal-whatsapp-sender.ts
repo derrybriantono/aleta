@@ -26,12 +26,52 @@ export type PortalWhatsappSendResult = {
   message: string;
 };
 
+export type MessageEntityMetadataInput = {
+  sourceApp?: string;
+  sourceFeature: string;
+  entityType: string;
+  entityId: string;
+  letterId?: string | null;
+  dispositionId?: string | null;
+  nomorSurat?: string | null;
+  nomorPerkara?: string | null;
+  recipientType?: "employee" | "party" | "system";
+  recipientRole?: string | null;
+  recipientPosition?: string | null;
+  [key: string]: unknown;
+};
+
 function normalizeNumber(value: string): string {
   const digits = value.replace(/\D/g, "");
   if (!digits) return "";
   if (digits.startsWith("0")) return `62${digits.slice(1)}`;
   if (digits.startsWith("8")) return `62${digits}`;
   return digits;
+}
+
+function compactMetadata(input: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  );
+}
+
+export function buildMessageEntityMetadata(input: MessageEntityMetadataInput): Record<string, unknown> {
+  const base = {
+    ...input,
+    sourceApp: input.sourceApp ?? "manajemen_surat",
+    sourceFeature: input.sourceFeature,
+    entityType: input.entityType,
+    entityId: input.entityId,
+    letterId: input.letterId ?? (input.entityType === "letter" ? input.entityId : undefined),
+    dispositionId: input.dispositionId ?? (input.entityType === "disposition" ? input.entityId : undefined),
+    nomorSurat: input.nomorSurat ?? undefined,
+    nomorPerkara: input.nomorPerkara ?? undefined,
+    recipientType: input.recipientType ?? "employee",
+    recipientRole: input.recipientRole ?? undefined,
+    recipientPosition: input.recipientPosition ?? undefined,
+  };
+
+  return compactMetadata(base);
 }
 
 function slugify(value: string): string {
@@ -79,6 +119,14 @@ export async function sendPortalWhatsappMessage(
   const runtimeMode = getWhatsappRuntimeMode();
   const normalized = normalizeNumber(input.recipientNumber);
   const recipientName = input.recipientName ?? "";
+  const entityMetadata = buildMessageEntityMetadata({
+    ...(metadata ?? {}),
+    sourceApp: "manajemen_surat",
+    sourceFeature,
+    entityType,
+    entityId,
+    recipientType: category === "party" ? "party" : category === "system" ? "system" : "employee",
+  });
 
   if (!normalized) {
     return {
@@ -117,7 +165,7 @@ export async function sendPortalWhatsappMessage(
       priority,
       dryRun,
       idempotencyKey,
-      metadata,
+      metadata: entityMetadata,
     });
 
     if (!result.ok) {
@@ -128,10 +176,20 @@ export async function sendPortalWhatsappMessage(
       };
     }
 
+    const queueId = result.data.queueId ?? result.data.existingQueueId;
+    if (!queueId && !result.data.duplicate) {
+      return {
+        ok: false,
+        status: "error",
+        idempotencyKey,
+        message: "ALETA Bot Gateway merespons, tetapi antrean pesan tidak terkonfirmasi.",
+      };
+    }
+
     return {
       ok: true,
       status: "enqueued",
-      queueId: result.data.queueId ?? result.data.existingQueueId,
+      queueId,
       duplicate: result.data.duplicate,
       idempotencyKey,
       message: result.data.duplicate

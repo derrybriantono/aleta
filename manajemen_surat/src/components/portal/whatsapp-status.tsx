@@ -12,10 +12,12 @@ export function WhatsAppStatusStack({
   deliveries,
   onRetry,
   compact,
+  showFullNumber,
 }: {
   deliveries: WhatsAppDelivery[];
   onRetry?: (deliveryId: string) => void;
   compact?: boolean;
+  showFullNumber?: boolean;
 }) {
   if (deliveries.length === 0) {
     return <p className="text-xs text-muted-foreground">Belum ada notifikasi WhatsApp.</p>;
@@ -34,7 +36,12 @@ export function WhatsAppStatusStack({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">{delivery.recipientName}</p>
-              <p className="text-xs text-muted-foreground">{delivery.recipientWhatsapp}</p>
+              <p className="text-xs text-muted-foreground">
+                {showFullNumber ? delivery.recipientWhatsapp : maskPhoneNumber(delivery.recipientWhatsapp)}
+              </p>
+              {delivery.sourceFeature ? (
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{delivery.sourceFeature}</p>
+              ) : null}
             </div>
             {delivery.status === "Gagal" ? (
               <Button
@@ -61,4 +68,10 @@ export function WhatsAppStatusStack({
       ))}
     </div>
   );
+}
+
+function maskPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 6) return value;
+  return `${digits.slice(0, 4)}****${digits.slice(-3)}`;
 }

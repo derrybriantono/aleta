@@ -47,7 +47,8 @@ const {
   paniteraId,
   kasirId,
   ptspId,
-  penjagaSidangId
+  penjagaSidangId,
+  legacyWhatsappMappingStats
 } = require('./whatsapp');
 
 process.on('unhandledRejection', (reason) => {
@@ -3425,7 +3426,8 @@ app.get("/internal/aleta-bot/status", (req, res) => {
     logService.getRecentLogs("notification", 1),
     publicQaIntentService.getPublicQaSnapshot(),
     aiRuntimeConfigService.getAiRuntimeConfig().then(aiRuntimeConfigService.maskAiRuntimeConfig),
-  ]).then(([queueStats, messageStatsToday, systemStatsToday, whatsappEvents, notificationRuns, publicQa, aiConfig]) => res.status(200).json({
+    notificationRegistryService.getRegistrySnapshotAsync(),
+  ]).then(([queueStats, messageStatsToday, systemStatsToday, whatsappEvents, notificationRuns, publicQa, aiConfig, registrySnapshot]) => res.status(200).json({
     status: true,
     whatsapp: {
       ...whatsappStatusService.getStatus(),
@@ -3439,10 +3441,17 @@ app.get("/internal/aleta-bot/status", (req, res) => {
       dryRunEnabled: runtimeConfig.dryRunEnabled,
       messageDelayMs: runtimeConfig.messageDelayMs,
       retryLimit: runtimeConfig.retryLimit,
+      sendingWindow: messageQueueService.getSendingWindowState(),
+    },
+    whatsappNumberResolver: {
+      portalRecipientCount: legacyWhatsappMappingStats.portalRecipientCount,
+      legacyFallbackUsedCount: legacyWhatsappMappingStats.legacyWhatsappMappingUsedCount,
+      lastLegacyFallbackUsedAt: legacyWhatsappMappingStats.lastLegacyWhatsappMappingUsedAt,
+      legacyFallbackLabels: legacyWhatsappMappingStats.labels,
     },
     rateLimit: rateLimitService.getRateLimitStats(runtimeConfig),
     queue: queueStats,
-    registry: notificationRegistryService.getRegistrySnapshot(),
+    registry: registrySnapshot,
     dbConnections: externalDbService.listConnections(),
     publicQa,
     aiRuntime: aiConfig,

@@ -15,7 +15,7 @@ import {
   testAIProviderConnectionInDb,
   upsertAISettingsInDb,
 } from "@/server/modules/ai/service";
-import { getDispositionsByLetterIdFromDb } from "@/server/modules/dispositions/service";
+import { completeDispositionInDb, getDispositionsByLetterIdFromDb } from "@/server/modules/dispositions/service";
 import { createLetterInDb, deleteLetterInDb, getLetterByIdFromDb, searchLettersInDb } from "@/server/modules/letters/service";
 import { createActingAssignmentInDb } from "@/server/modules/organization/service";
 import { getLetterStatisticsInDb } from "@/server/modules/stats/service";
@@ -277,6 +277,21 @@ describe("backend modular monolith services", () => {
       tags: ["TagDeleteHard"],
       viewerMode: "download",
       targetPositionId: "pos-ketua",
+    });
+
+    await expect(
+      deleteLetterInDb(db!, {
+        actorUserId: "usr-super",
+        letterId: second.letter.id,
+      })
+    ).rejects.toThrow("disposisi aktif");
+
+    const secondTimeline = await getDispositionsByLetterIdFromDb(db!, second.letter.id);
+    await completeDispositionInDb(db!, {
+      actorUserId: "usr-ketua",
+      dispositionId: secondTimeline[0]!.id,
+      note: "Disposisi selesai sebelum hard delete.",
+      fileName: "",
     });
 
     const hardDelete = await deleteLetterInDb(db!, {

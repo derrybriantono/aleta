@@ -136,6 +136,25 @@ export const aiProviders = pgTable("ai_providers", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const aiSuggestionLogs = pgTable(
+  "ai_suggestion_logs",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => users.id),
+    feature: text("feature").notNull(),
+    status: text("status").notNull(),
+    providerId: text("provider_id"),
+    modelId: text("model_id"),
+    durationMs: integer("duration_ms").notNull().default(0),
+    fallbackReason: text("fallback_reason").notNull().default(""),
+    metadataJson: text("metadata_json").notNull().default("{}"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    createdIdx: index("idx_ai_suggestion_logs_created").on(table.createdAt, table.feature, table.status),
+  })
+);
+
 export const whatsappWebSettings = pgTable("whatsapp_web_settings", {
   id: integer("id").primaryKey(),
   phoneNumber: text("phone_number").notNull().default(""),
@@ -156,6 +175,22 @@ export const aletaBotSettings = pgTable("aleta_bot_settings", {
   scheduleCron: text("schedule_cron").notNull().default("00 07 * * Monday-Friday"),
   testTargetNumber: text("test_target_number").notNull().default(""),
   securityNotes: text("security_notes").notNull().default(""),
+  dispositionDeadlineReminderEnabled: integer("disposition_deadline_reminder_enabled").notNull().default(0),
+  dispositionDeadlineReminderMode: text("disposition_deadline_reminder_mode").notNull().default("dry_run"),
+  dispositionDeadlineReminderApprovedAt: text("disposition_deadline_reminder_approved_at"),
+  dispositionDeadlineReminderApprovedBy: text("disposition_deadline_reminder_approved_by"),
+  dispositionDeadlineReminderLastRunAt: text("disposition_deadline_reminder_last_run_at"),
+  dispositionDeadlineReminderLastStatus: text("disposition_deadline_reminder_last_status").notNull().default("idle"),
+  dispositionDeadlineReminderLastMessage: text("disposition_deadline_reminder_last_message"),
+  dispositionDeadlineReminderPilotUserIdsJson: text("disposition_deadline_reminder_pilot_user_ids_json").notNull().default("[]"),
+  dispositionDeadlineReminderPilotRoleIdsJson: text("disposition_deadline_reminder_pilot_role_ids_json").notNull().default("[]"),
+  dispositionDeadlineReminderPilotPositionIdsJson: text("disposition_deadline_reminder_pilot_position_ids_json").notNull().default("[]"),
+  dispositionDeadlineReminderSchedulerEnabled: integer("disposition_deadline_reminder_scheduler_enabled").notNull().default(0),
+  dispositionDeadlineReminderSchedulerMode: text("disposition_deadline_reminder_scheduler_mode").notNull().default("dry_run"),
+  dispositionDeadlineReminderSchedulerTime: text("disposition_deadline_reminder_scheduler_time").notNull().default("08:00:00"),
+  dispositionDeadlineReminderSchedulerLastRunAt: text("disposition_deadline_reminder_scheduler_last_run_at"),
+  dispositionDeadlineReminderSchedulerLastMessage: text("disposition_deadline_reminder_scheduler_last_message"),
+  dispositionDeadlineReminderKillSwitch: integer("disposition_deadline_reminder_kill_switch").notNull().default(0),
   updatedAt: text("updated_at").notNull(),
 });
 
@@ -309,10 +344,16 @@ export const aletaBotPublicQaLogs = pgTable(
     responsePreview: text("response_preview").notNull().default(""),
     status: text("status").notNull().default("fallback"),
     errorMessage: text("error_message"),
+    needsHumanReview: integer("needs_human_review").notNull().default(0),
+    reviewStatus: text("review_status").notNull().default("pending"),
+    reviewedByUserId: text("reviewed_by_user_id").references(() => users.id),
+    reviewedAt: text("reviewed_at"),
+    reviewNote: text("review_note").notNull().default(""),
     createdAt: text("created_at").notNull(),
   },
   (table) => ({
     createdIdx: index("idx_aleta_bot_public_qa_logs_created").on(table.createdAt, table.status),
+    reviewIdx: index("idx_aleta_bot_public_qa_logs_review").on(table.needsHumanReview, table.reviewStatus, table.createdAt),
   })
 );
 
@@ -373,11 +414,17 @@ export const aletaBotNotificationLogs = pgTable(
     messagePreview: text("message_preview").notNull().default(""),
     status: text("status").notNull(),
     errorMessage: text("error_message"),
+    sourceApp: text("source_app").notNull().default(""),
+    sourceFeature: text("source_feature").notNull().default(""),
+    entityType: text("entity_type").notNull().default(""),
+    entityId: text("entity_id").notNull().default(""),
+    metadataJson: text("metadata_json").notNull().default("{}"),
     sentAt: text("sent_at"),
     createdAt: text("created_at").notNull(),
   },
   (table) => ({
     createdIdx: index("idx_aleta_bot_notification_logs_created").on(table.createdAt, table.status),
+    entityIdx: index("idx_aleta_bot_notification_logs_entity").on(table.entityType, table.entityId, table.sourceFeature),
   })
 );
 
@@ -394,6 +441,50 @@ export const aletaBotLogs = pgTable(
   },
   (table) => ({
     createdIdx: index("idx_aleta_bot_logs_created").on(table.createdAt, table.eventType),
+  })
+);
+
+export const aletaBotPolicySkipLogs = pgTable(
+  "aleta_bot_policy_skip_logs",
+  {
+    id: text("id").primaryKey(),
+    notificationKey: text("notification_key").notNull().default(""),
+    notificationId: text("notification_id"),
+    category: text("category").notNull().default(""),
+    reason: text("reason").notNull().default("unknown"),
+    sourceFeature: text("source_feature").notNull().default(""),
+    entityType: text("entity_type").notNull().default(""),
+    entityId: text("entity_id").notNull().default(""),
+    recipientType: text("recipient_type").notNull().default(""),
+    recipientCount: integer("recipient_count").notNull().default(0),
+    metadataJson: text("metadata_json").notNull().default("{}"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    createdIdx: index("idx_aleta_bot_policy_skip_logs_created").on(table.createdAt, table.reason),
+    notificationIdx: index("idx_aleta_bot_policy_skip_logs_notification").on(table.notificationKey, table.createdAt),
+  })
+);
+
+export const aletaBotDispositionReminderRuns = pgTable(
+  "aleta_bot_disposition_reminder_runs",
+  {
+    id: text("id").primaryKey(),
+    mode: text("mode").notNull().default("dry_run"),
+    triggeredBy: text("triggered_by").notNull().default("manual"),
+    triggeredByUserId: text("triggered_by_user_id").references(() => users.id),
+    startedAt: text("started_at").notNull(),
+    finishedAt: text("finished_at"),
+    totalCandidates: integer("total_candidates").notNull().default(0),
+    dryRunCreated: integer("dry_run_created").notNull().default(0),
+    sentCount: integer("sent_count").notNull().default(0),
+    skippedCount: integer("skipped_count").notNull().default(0),
+    errorCount: integer("error_count").notNull().default(0),
+    status: text("status").notNull().default("simulated"),
+    summaryJson: text("summary_json").notNull().default("{}"),
+  },
+  (table) => ({
+    createdIdx: index("idx_aleta_bot_disposition_reminder_runs_created").on(table.startedAt, table.mode, table.status),
   })
 );
 
@@ -490,6 +581,23 @@ export const feedbackRequests = pgTable(
   })
 );
 
+export const userNotificationReads = pgTable(
+  "user_notification_reads",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    seenAt: text("seen_at").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    uniqueRead: uniqueIndex("idx_user_notification_reads_unique").on(table.userId, table.entityType, table.entityId),
+    userIdx: index("idx_user_notification_reads_user").on(table.userId, table.entityType, table.seenAt),
+  })
+);
+
 export const knowledgeBaseRegulations = pgTable("knowledge_base_regulations", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -528,6 +636,40 @@ export const classificationCatalog = pgTable("classification_catalog", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const letterNumberSequences = pgTable(
+  "letter_number_sequences",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    year: integer("year").notNull(),
+    lastSequence: integer("last_sequence").notNull().default(0),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    typeYearUnique: uniqueIndex("idx_letter_number_sequences_unique").on(table.type, table.year),
+  })
+);
+
+export const letterTemplates = pgTable(
+  "letter_templates",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    category: text("category").notNull(),
+    description: text("description").notNull().default(""),
+    body: text("body").notNull(),
+    placeholdersJson: text("placeholders_json").notNull().default("[]"),
+    isActive: integer("is_active").notNull().default(1),
+    createdByUserId: text("created_by_user_id").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    activeIdx: index("idx_letter_templates_active").on(table.isActive, table.category),
+  })
+);
+
 export const letters = pgTable(
   "letters",
   {
@@ -542,6 +684,16 @@ export const letters = pgTable(
     pengirim: text("pengirim").notNull(),
     perihal: text("perihal").notNull(),
     status: text("status").notNull(),
+    workflowStatus: text("workflow_status").notNull().default("sent"),
+    submittedAt: text("submitted_at"),
+    submittedByUserId: text("submitted_by_user_id").references(() => users.id),
+    approvedAt: text("approved_at"),
+    approvedByUserId: text("approved_by_user_id").references(() => users.id),
+    sentAt: text("sent_at"),
+    sentByUserId: text("sent_by_user_id").references(() => users.id),
+    rejectedAt: text("rejected_at"),
+    rejectedByUserId: text("rejected_by_user_id").references(() => users.id),
+    rejectionNote: text("rejection_note"),
     assignedUnit: text("assigned_unit").notNull(),
     confidentiality: text("confidentiality").notNull(),
     currentDispositionId: text("current_disposition_id"),
@@ -570,6 +722,7 @@ export const letters = pgTable(
   },
   (table) => ({
     typeStatusIdx: index("idx_letters_type_status").on(table.type, table.status, table.deletedAt),
+    workflowStatusIdx: index("idx_letters_workflow_status").on(table.type, table.workflowStatus, table.deletedAt),
     datesIdx: index("idx_letters_dates").on(table.tanggalSurat, table.tanggalTerima, table.tanggalKirim),
     originCodeIdx: index("idx_letters_origin_code").on(table.asalSurat, table.kodeKlasifikasi),
     searchDocumentFtsIdx: index("idx_letters_search_document_fts").using(
@@ -646,6 +799,9 @@ export const dispositions = pgTable(
     allowDownload: integer("allow_download").notNull().default(0),
     approvalQrCode: text("approval_qr_code").notNull(),
     createdAt: text("created_at").notNull(),
+    deadlineAt: text("deadline_at"),
+    readAt: text("read_at"),
+    readByUserId: text("read_by_user_id").references(() => users.id),
     urgent: integer("urgent").notNull().default(0),
     bypass: integer("bypass").notNull().default(0),
     routingType: text("routing_type").notNull().default("standard"),
@@ -657,6 +813,7 @@ export const dispositions = pgTable(
   (table) => ({
     letterStatusIdx: index("idx_dispositions_letter_status").on(table.suratId, table.status, table.deletedAt),
     recipientIdx: index("idx_dispositions_recipient").on(table.penerimaId, table.targetPositionId, table.createdAt),
+    deadlineIdx: index("idx_dispositions_deadline").on(table.deadlineAt, table.status, table.deletedAt),
   })
 );
 
@@ -760,9 +917,12 @@ export const schema = {
   institutionIdentityEnrichments,
   moduleVisibilitySettings,
   feedbackRequests,
+  userNotificationReads,
   knowledgeBaseRegulations,
   letterOriginReferences,
   classificationCatalog,
+  letterNumberSequences,
+  letterTemplates,
   letters,
   letterTags,
   letterClassificationTags,

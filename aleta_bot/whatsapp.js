@@ -11,6 +11,10 @@ const groupId = {
   };
 const socketUrl = "https://websocket.pa-bungku.go.id:4141";
 
+// DEPRECATED:
+// Mapping legacy berikut hanya fallback sementara. Lengkapi users.whatsapp_number
+// di portal manajemen_surat agar ALETA Bot memakai data pegawai dari runtime config.
+// Jangan tambahkan nomor baru di sini kecuali untuk emergency fallback yang terkontrol.
 // NOMOR TIAP PEJABAT DAN PEGAWAI TIAP JENIS JABATAN
 // Nomor Whatsapp Hakim
 const hakimIds = {
@@ -128,9 +132,37 @@ const honorerId = {
 };
 
 const employeeRecipients = runtimeConfig.employeeRecipients || [];
-function fromPortal(hints, fallback) {
+const legacyFallbackWarnings = new Set();
+const legacyWhatsappMappingStats = {
+  legacyWhatsappMappingUsedCount: 0,
+  lastLegacyWhatsappMappingUsedAt: null,
+  labels: {},
+  portalRecipientCount: employeeRecipients.length,
+};
+function warnLegacyFallback(label, fallback) {
+  if (Object.keys(fallback || {}).length === 0) return;
+  legacyWhatsappMappingStats.legacyWhatsappMappingUsedCount += 1;
+  legacyWhatsappMappingStats.lastLegacyWhatsappMappingUsedAt = new Date().toISOString();
+  legacyWhatsappMappingStats.labels[label] = (legacyWhatsappMappingStats.labels[label] || 0) + 1;
+  if (legacyFallbackWarnings.has(label)) return;
+  legacyFallbackWarnings.add(label);
+  console.warn(
+    `[ALETA Bot] Menggunakan mapping WhatsApp legacy untuk ${label}. ` +
+      "Lengkapi nomor WhatsApp pegawai di Manajemen Akun agar runtime memakai users.whatsapp_number."
+  );
+}
+
+function resolveEmployeeWhatsappNumber(hints, fallback, label) {
   const mapped = recipientsToMap(employeeRecipients, hints);
-  return Object.keys(mapped).length > 0 ? mapped : fallback;
+  if (Object.keys(mapped).length > 0) {
+    return { source: "users.whatsapp_number", recipients: mapped };
+  }
+  warnLegacyFallback(label, fallback);
+  return { source: "legacy_mapping", recipients: fallback || {} };
+}
+
+function fromPortal(hints, fallback, label) {
+  return resolveEmployeeWhatsappNumber(hints, fallback, label).recipients;
 }
 
 // Ekspor semua ID untuk digunakan di file lain
@@ -138,25 +170,27 @@ module.exports = {
   adminId,
   groupId,
   socketUrl,
-  hakimIds: fromPortal(["hakim"], hakimIds),
-  paniteraIds: fromPortal(["panitera"], paniteraIds),
-  jurusitaIds: fromPortal(["jurusita"], jurusitaIds),
-  ketuaId: fromPortal(["ketua"], ketuaId),
-  paniteraId: fromPortal(["panitera"], paniteraId),
-  sekretarisId: fromPortal(["sekretaris"], sekretarisId),
-  panmudGugatanId: fromPortal(["panmud gugatan", "gugatan"], panmudGugatanId),
-  panmudPermohonanId: fromPortal(["panmud permohonan", "permohonan"], panmudPermohonanId),
-  panmudHukumId: fromPortal(["panmud hukum", "hukum"], panmudHukumId),
-  paniteraPenggantiId: fromPortal(["panitera pengganti", "pp"], paniteraPenggantiId),
-  kasubagKepegawaianId: fromPortal(["kepegawaian"], kasubagKepegawaianId),
-  kasubagPtipId: fromPortal(["ptip"], kasubagPtipId),
-  kasubagUmumId: fromPortal(["umum"], kasubagUmumId),
-  kasirId: fromPortal(["kasir"], kasirId),
-  tabayunId: fromPortal(["tabayun"], tabayunId),
-  petugasArsipId: fromPortal(["arsip"], petugasArsipId),
-  ptspId: fromPortal(["ptsp"], ptspId),
-  produkId: fromPortal(["produk"], produkId),
-  publikasiId: fromPortal(["publikasi"], publikasiId),
-  penjagaSidangId: fromPortal(["sidang"], penjagaSidangId),
-  honorerId: fromPortal(["honorer"], honorerId)
+  hakimIds: fromPortal(["hakim"], hakimIds, "hakimIds"),
+  paniteraIds: fromPortal(["panitera"], paniteraIds, "paniteraIds"),
+  jurusitaIds: fromPortal(["jurusita"], jurusitaIds, "jurusitaIds"),
+  ketuaId: fromPortal(["ketua"], ketuaId, "ketuaId"),
+  paniteraId: fromPortal(["panitera"], paniteraId, "paniteraId"),
+  sekretarisId: fromPortal(["sekretaris"], sekretarisId, "sekretarisId"),
+  panmudGugatanId: fromPortal(["panmud gugatan", "gugatan"], panmudGugatanId, "panmudGugatanId"),
+  panmudPermohonanId: fromPortal(["panmud permohonan", "permohonan"], panmudPermohonanId, "panmudPermohonanId"),
+  panmudHukumId: fromPortal(["panmud hukum", "hukum"], panmudHukumId, "panmudHukumId"),
+  paniteraPenggantiId: fromPortal(["panitera pengganti", "pp"], paniteraPenggantiId, "paniteraPenggantiId"),
+  kasubagKepegawaianId: fromPortal(["kepegawaian"], kasubagKepegawaianId, "kasubagKepegawaianId"),
+  kasubagPtipId: fromPortal(["ptip"], kasubagPtipId, "kasubagPtipId"),
+  kasubagUmumId: fromPortal(["umum"], kasubagUmumId, "kasubagUmumId"),
+  kasirId: fromPortal(["kasir"], kasirId, "kasirId"),
+  tabayunId: fromPortal(["tabayun"], tabayunId, "tabayunId"),
+  petugasArsipId: fromPortal(["arsip"], petugasArsipId, "petugasArsipId"),
+  ptspId: fromPortal(["ptsp"], ptspId, "ptspId"),
+  produkId: fromPortal(["produk"], produkId, "produkId"),
+  publikasiId: fromPortal(["publikasi"], publikasiId, "publikasiId"),
+  penjagaSidangId: fromPortal(["sidang"], penjagaSidangId, "penjagaSidangId"),
+  honorerId: fromPortal(["honorer"], honorerId, "honorerId"),
+  resolveEmployeeWhatsappNumber,
+  legacyWhatsappMappingStats
 };

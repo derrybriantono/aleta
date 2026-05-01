@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
+import { getDispositionDeadlineState } from "@/lib/disposition-status";
 import { formatDateTime } from "@/lib/format";
 import {
   canCreateIncomingLetter,
@@ -29,6 +30,13 @@ export function MailDashboardPage() {
   const canManageAssignments = canManageActingAssignments(currentUser);
   const canAddIncomingLetter = canCreateIncomingLetter(currentUser);
   const canAddOutgoingLetter = canCreateOutgoingLetter(currentUser);
+  const visibleDispositions = dispositions.filter((item) => visibleLetterIds.has(item.suratId));
+  const lateDispositionCount = visibleDispositions.filter(
+    (item) => item.status !== "Selesai" && getDispositionDeadlineState(item) === "overdue"
+  ).length;
+  const dueTodayDispositionCount = visibleDispositions.filter(
+    (item) => item.status !== "Selesai" && getDispositionDeadlineState(item) === "due_today"
+  ).length;
   const stats = [
     {
       id: "surat-masuk",
@@ -50,6 +58,13 @@ export function MailDashboardPage() {
       value: pendingInbox.length,
       hint: "Disposisi yang masih menunggu tindak lanjut Anda.",
       href: "/surat?metric=inbox",
+    },
+    {
+      id: "disposisi-terlambat",
+      label: "Disposisi Terlambat",
+      value: lateDispositionCount,
+      hint: `${dueTodayDispositionCount} jatuh tempo hari ini.`,
+      href: "/tugas?filter=Mendesak",
     },
   ];
   const recentActivities = dispositions

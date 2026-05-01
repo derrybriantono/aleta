@@ -23,6 +23,22 @@ export type AletaBotSettings = {
   scheduleCron: string;
   testTargetNumber: string;
   securityNotes: string;
+  deadlineReminderEnabled: boolean;
+  deadlineReminderMode: "disabled" | "dry_run" | "pilot" | "production";
+  deadlineReminderApprovedAt: string | null;
+  deadlineReminderApprovedBy: string | null;
+  deadlineReminderLastRunAt: string | null;
+  deadlineReminderLastStatus: "idle" | "simulated" | "skipped" | "sent" | "blocked";
+  deadlineReminderLastMessage: string | null;
+  deadlineReminderPilotUserIds: string[];
+  deadlineReminderPilotRoleIds: string[];
+  deadlineReminderPilotPositionIds: string[];
+  deadlineReminderSchedulerEnabled: boolean;
+  deadlineReminderSchedulerMode: "disabled" | "dry_run" | "pilot" | "production";
+  deadlineReminderSchedulerTime: string;
+  deadlineReminderSchedulerLastRunAt: string | null;
+  deadlineReminderSchedulerLastMessage: string | null;
+  deadlineReminderKillSwitch: boolean;
   updatedAt: string;
 };
 
@@ -175,6 +191,11 @@ export type AletaBotPublicQaLogEntry = {
   responsePreview: string;
   status: "answered" | "fallback" | "needs_more_info" | "blocked" | "error";
   errorMessage: string | null;
+  needsHumanReview: boolean;
+  reviewStatus: "pending" | "reviewed" | "ignored" | "converted_to_intent";
+  reviewedByUserId: string | null;
+  reviewedAt: string | null;
+  reviewNote: string;
   createdAt: string;
 };
 
@@ -198,6 +219,13 @@ export type AletaBotNotification = {
   lastRunAt: string | null;
   lastStatus: "idle" | "success" | "failed" | "simulated";
   lastMessage: string | null;
+  policyStatus?: {
+    dryRunPassed: boolean;
+    recipientPreviewPassed: boolean;
+    approved: boolean;
+    canActivate: boolean;
+    reason: string;
+  };
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string;
@@ -215,6 +243,27 @@ export type AletaBotEmployeeRecipient = {
   whatsappChatId: string;
 };
 
+export type AletaBotWhatsappNumberCompleteness = {
+  totalActiveUsers: number;
+  withWhatsapp: number;
+  missingWhatsapp: number;
+  coveragePercent: number;
+  importantMissing: Array<{
+    id: string;
+    name: string;
+    roleId: string;
+    positionId: string;
+    positionName: string;
+    unitKerja: string;
+  }>;
+  roleBreakdown: Array<{
+    roleId: string;
+    total: number;
+    withWhatsapp: number;
+    missingWhatsapp: number;
+  }>;
+};
+
 export type AletaBotNotificationLogEntry = {
   id: string;
   notificationId: string | null;
@@ -225,6 +274,11 @@ export type AletaBotNotificationLogEntry = {
   messagePreview: string;
   status: "success" | "failed" | "simulated";
   errorMessage: string | null;
+  sourceApp: string;
+  sourceFeature: string;
+  entityType: string;
+  entityId: string;
+  metadata: Record<string, unknown>;
   sentAt: string | null;
   createdAt: string;
 };
@@ -343,16 +397,84 @@ export type AletaBotLegacyMigration = {
 };
 
 export type AletaBotUnknownQuestionReview = {
+  id: string;
+  logIds: string[];
   normalizedMessage: string;
   rawMessage: string;
   frequency: number;
   lastAskedAt: string;
   senderMasked: string;
   fallbackReason: string;
+  needsHumanReview: boolean;
+  reviewStatus: "pending" | "reviewed" | "ignored" | "converted_to_intent";
+  reviewNote: string;
+  reviewedByUserId: string | null;
+  reviewedAt: string | null;
   suggestedIntentKey: string;
   confidence: number;
   safetyRisk: "low" | "medium" | "high";
   suggestedAction: "add_as_example" | "create_intent_draft" | "human_handoff" | "ignore";
+};
+
+export type AletaBotDeadlineReminderDryRunResult = {
+  ok: boolean;
+  totalCandidates: number;
+  dryRunCreated: number;
+  skipped: number;
+  mode?: "disabled" | "dry_run" | "pilot" | "production";
+  productionSent?: number;
+  blocked?: boolean;
+  blockerReasons?: string[];
+  warnings: string[];
+  items: Array<{
+    dispositionId: string;
+    letterId: string;
+    recipientName: string;
+    recipientNumber: string;
+    perihal: string;
+    deadline: string;
+    status: "simulated" | "skipped" | "enqueued";
+    messagePreview: string;
+    idempotencyKey: string;
+    skipReason?: string;
+  }>;
+};
+
+export type AletaBotPolicySkipSummary = {
+  totalToday: number;
+  totalAllTime: number;
+  lastSkippedAt: string | null;
+  topReasons: Array<{ reason: string; count: number }>;
+  topNotifications: Array<{ notificationKey: string; count: number }>;
+  recent: Array<{
+    id: string;
+    notificationKey: string;
+    notificationId: string;
+    category: string;
+    reason: string;
+    sourceFeature: string;
+    entityType: string;
+    entityId: string;
+    recipientType: string;
+    recipientCount: number;
+    createdAt: string;
+  }>;
+};
+
+export type AletaBotDispositionReminderRun = {
+  id: string;
+  mode: "disabled" | "dry_run" | "pilot" | "production";
+  triggeredBy: "manual" | "manual_dry_run" | "manual_controlled" | "scheduler" | "scheduler_dry_run" | "scheduler_blocked";
+  triggeredByUserId: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+  totalCandidates: number;
+  dryRunCreated: number;
+  sentCount: number;
+  skippedCount: number;
+  errorCount: number;
+  status: "simulated" | "skipped" | "completed" | "failed" | "blocked";
+  summary: Record<string, unknown>;
 };
 
 export type AletaBotSnapshot = {
@@ -384,6 +506,9 @@ export type AletaBotSnapshot = {
   publicQaIntents: AletaBotPublicQaIntent[];
   publicQaLogs: AletaBotPublicQaLogEntry[];
   employeeRecipients: AletaBotEmployeeRecipient[];
+  whatsappNumberCompleteness: AletaBotWhatsappNumberCompleteness;
+  policySkipSummary: AletaBotPolicySkipSummary;
+  deadlineReminderRuns: AletaBotDispositionReminderRun[];
   notificationLogs: AletaBotNotificationLogEntry[];
   queryCatalog: AletaBotQueryCatalogItem[];
   logs: AletaBotLogEntry[];

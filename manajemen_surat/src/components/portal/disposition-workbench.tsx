@@ -23,6 +23,11 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { usePortal } from "@/lib/app-state";
+import {
+  getDispositionDeadlineLabel,
+  getDispositionDeadlineState,
+  getDispositionReadLabel,
+} from "@/lib/disposition-status";
 import { formatDateTime } from "@/lib/format";
 import {
   getAllowedDispositionTargetPositions,
@@ -77,6 +82,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
   const [allowDownload, setAllowDownload] = useState(disposition.allowDownload);
   const [urgent, setUrgent] = useState(false);
   const [bypass, setBypass] = useState(false);
+  const [deadlineAt, setDeadlineAt] = useState("");
   const [note, setNote] = useState("");
   const [fileName, setFileName] = useState("laporan-tindak-lanjut.pdf");
   const [aiState, setAiState] = useState<AiAssistState>({
@@ -87,6 +93,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
 
   const recipient = getUser(disposition.penerimaId, users);
   const canForward = isDispositionAssignedToUser(currentUser, disposition);
+  const deadlineState = getDispositionDeadlineState(disposition);
   // Active work children block the completion of this node.
   const activeWorkChildren = dispositions.filter(
     (item) =>
@@ -203,6 +210,14 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
               {disposition.urgent ? (
                 <Badge variant="danger">Prioritas Tinggi</Badge>
               ) : null}
+              {!disposition.readAt && disposition.status !== "Selesai" ? (
+                <Badge variant="warning">Belum Dibaca</Badge>
+              ) : null}
+              {deadlineState === "overdue" ? (
+                <Badge variant="danger">Terlambat</Badge>
+              ) : deadlineState === "due_today" ? (
+                <Badge variant="warning">Jatuh Tempo Hari Ini</Badge>
+              ) : null}
               <Badge variant={statusVariant(disposition.status)}>{disposition.status}</Badge>
             </div>
           </div>
@@ -211,6 +226,16 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
           <p className="rounded-[1.1rem] border border-border bg-muted/30 px-4 py-3 text-sm leading-7 text-foreground">
             {disposition.instruksi || "Tidak ada instruksi."}
           </p>
+          <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+            <div className="rounded-xl border border-border bg-muted/25 px-3 py-2">
+              <span className="font-medium text-foreground">Deadline:</span>{" "}
+              {getDispositionDeadlineLabel(disposition)}
+            </div>
+            <div className="rounded-xl border border-border bg-muted/25 px-3 py-2">
+              <span className="font-medium text-foreground">Status baca:</span>{" "}
+              {getDispositionReadLabel(disposition)}
+            </div>
+          </div>
           {timeline.length > 0 ? (
             <div className="space-y-1.5">
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
@@ -230,6 +255,11 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
                   <Badge variant={statusVariant(item.status)} className="shrink-0 text-xs">
                     {item.status}
                   </Badge>
+                  {!item.readAt && item.status !== "Selesai" ? (
+                    <Badge variant="warning" className="shrink-0 text-xs">
+                      Belum Dibaca
+                    </Badge>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -341,6 +371,18 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Deadline disposisi</label>
+                <Input
+                  type="datetime-local"
+                  value={deadlineAt}
+                  onChange={(event) => setDeadlineAt(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Opsional. Dipakai untuk badge Terlambat/Jatuh Tempo di daftar tugas dan detail surat.
+                </p>
+              </div>
+
               <div className="grid gap-3 rounded-[1.3rem] border border-border bg-muted/35 p-4">
                 <SwitchRow label="Izinkan unduh dokumen" checked={allowDownload} onCheckedChange={setAllowDownload} />
                 <SwitchRow label="Tandai prioritas tinggi" checked={urgent} onCheckedChange={setUrgent} />
@@ -360,9 +402,11 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
                     allowDownload,
                     urgent,
                     bypass,
+                    deadlineAt: deadlineAt ? new Date(deadlineAt).toISOString() : null,
                     routingType: "standard",
                   });
                   setInstruksi("");
+                  setDeadlineAt("");
                   router.push(`/surat/${letter.id}`);
                 }}
               >

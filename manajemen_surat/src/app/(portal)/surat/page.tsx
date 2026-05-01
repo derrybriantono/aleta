@@ -6,6 +6,7 @@ import { useMemo } from "react";
 
 import { LetterRegistrationPanel } from "@/components/portal/letter-registration-panel";
 import { LetterList } from "@/components/portal/letter-list";
+import { LetterTemplateManager } from "@/components/portal/letter-template-manager";
 import { EmptyState, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,7 @@ export default function SuratIndexPage() {
       />
 
       {typeFilter !== "semua" ? <LetterRegistrationPanel defaultType={typeFilter} /> : null}
+      {typeFilter === "keluar" ? <LetterTemplateManager currentUser={currentUser} /> : null}
 
       <Card className="border-border/90">
         <CardContent className="space-y-4 p-5">

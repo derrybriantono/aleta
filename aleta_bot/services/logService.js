@@ -215,6 +215,95 @@ async function logNotificationRun(data = {}) {
   );
 }
 
+async function logPolicySkip(data = {}) {
+  const now = new Date();
+  const record = {
+    id: data.id || createId("psk"),
+    notification_key: data.notificationKey || data.notification_key || "",
+    notification_id: data.notificationId || data.notification_id || null,
+    category: data.category || "",
+    reason: data.reason || "unknown",
+    source_feature: data.sourceFeature || data.source_feature || "",
+    entity_type: data.entityType || data.entity_type || "",
+    entity_id: data.entityId || data.entity_id || "",
+    recipient_type: data.recipientType || data.recipient_type || "",
+    recipient_count: Number(data.recipientCount || data.recipient_count || 0),
+    metadata_json: safeJson(data.metadata || {}),
+    created_at: data.createdAt || data.created_at || now,
+  };
+
+  return withDbFallback("notification", record, () =>
+    botDb.query(
+      `INSERT INTO aleta_bot_policy_skip_logs (
+        id, notification_key, notification_id, category, reason, source_feature,
+        entity_type, entity_id, recipient_type, recipient_count, metadata_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        record.id,
+        record.notification_key,
+        record.notification_id,
+        record.category,
+        record.reason,
+        record.source_feature,
+        record.entity_type,
+        record.entity_id,
+        record.recipient_type,
+        record.recipient_count,
+        record.metadata_json,
+        botDb.toMysqlDate(record.created_at),
+      ]
+    )
+  );
+}
+
+async function getPolicySkipStats() {
+  const dbReady = await botDb.ensureSchema();
+  if (!dbReady) {
+    return { skippedCount: 0, lastSkippedAt: null, reasons: {}, totalToday: 0, topNotifications: [], recent: [] };
+  }
+  const [totalRows, todayRows, lastRows, reasonRows, notificationRows, recentRows] = await Promise.all([
+    botDb.query(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs`),
+    botDb.query(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs WHERE DATE(created_at) = CURDATE()`),
+    botDb.query(`SELECT created_at FROM aleta_bot_policy_skip_logs ORDER BY created_at DESC LIMIT 1`),
+    botDb.query(
+      `SELECT reason, COUNT(*) AS count
+       FROM aleta_bot_policy_skip_logs
+       GROUP BY reason
+       ORDER BY COUNT(*) DESC, reason ASC
+       LIMIT 8`
+    ),
+    botDb.query(
+      `SELECT notification_key, COUNT(*) AS count
+       FROM aleta_bot_policy_skip_logs
+       GROUP BY notification_key
+       ORDER BY COUNT(*) DESC, notification_key ASC
+       LIMIT 8`
+    ),
+    botDb.query(
+      `SELECT id, notification_key, notification_id, category, reason, source_feature,
+        entity_type, entity_id, recipient_type, recipient_count, created_at
+       FROM aleta_bot_policy_skip_logs
+       ORDER BY created_at DESC
+       LIMIT 12`
+    ),
+  ]);
+  const reasons = {};
+  for (const row of reasonRows || []) {
+    reasons[row.reason || "unknown"] = Number(row.count || 0);
+  }
+  return {
+    skippedCount: Number(totalRows?.[0]?.count || 0),
+    totalToday: Number(todayRows?.[0]?.count || 0),
+    lastSkippedAt: lastRows?.[0]?.created_at || null,
+    reasons,
+    topNotifications: (notificationRows || []).map((row) => ({
+      notificationKey: row.notification_key || "",
+      count: Number(row.count || 0),
+    })),
+    recent: recentRows || [],
+  };
+}
+
 function logQueryError(data) {
   return insertSystemLog("query", "qry", { ...data, severity: data?.severity || "error", source: "query" });
 }
@@ -304,6 +393,8 @@ module.exports = {
   logSystemEvent,
   logWhatsappEvent,
   logNotificationRun,
+  logPolicySkip,
+  getPolicySkipStats,
   logQueryError,
   logSecurityEvent,
   hasSentIdempotencyKey,

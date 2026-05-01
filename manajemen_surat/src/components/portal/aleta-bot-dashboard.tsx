@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Activity,
   AlertCircle,
@@ -10,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Download,
   Eye,
   Filter,
   Loader2,
@@ -43,6 +45,10 @@ type BotStatusData = {
     runtime: string;
     lastConnectedAt: string | null;
     lastErrorMessage: string | null;
+    sessionStartedAt?: string | null;
+    lastMessageSentAt?: string | null;
+    sessionAgeHours?: number | null;
+    authFailureCount?: number;
   };
   queue: {
     pending: number;
@@ -74,12 +80,28 @@ type MessageItem = {
   statusLabel: string;
   sourceFeature: string;
   sourceFeatureLabel: string;
+  sourceApp: string;
+  entityType: string | null;
+  entityId: string | null;
   createdAt: string;
   sentAt: string | null;
   errorMessage: string | null;
 };
 
-type MessagesData = { items: MessageItem[]; total: number; limit: number; offset: number };
+type MessagesData = {
+  items: MessageItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  filters?: {
+    sourceFeature?: string | null;
+    sourceApp?: string | null;
+    entityType?: string | null;
+    entityId?: string | null;
+    entityFilterApplied?: boolean;
+    entityFilterFallback?: boolean;
+  };
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -312,7 +334,26 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
                 <p className="mt-0.5 text-sm font-semibold">{formatDt(data.whatsapp.lastConnectedAt)}</p>
               </div>
             ) : null}
+            {data.whatsapp.sessionAgeHours != null ? (
+              <div className="rounded-xl bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Umur Sesi</p>
+                <p className="mt-0.5 text-sm font-semibold">{data.whatsapp.sessionAgeHours} jam</p>
+              </div>
+            ) : null}
+            {data.whatsapp.lastMessageSentAt ? (
+              <div className="rounded-xl bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Kirim Terakhir</p>
+                <p className="mt-0.5 text-sm font-semibold">{formatDt(data.whatsapp.lastMessageSentAt)}</p>
+              </div>
+            ) : null}
           </div>
+          {(data.whatsapp.sessionAgeHours ?? 0) > 168 ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                Sesi WhatsApp sudah aktif lebih dari 7 hari. Pantau pengiriman dan lakukan reconnect aman jika diperlukan.
+              </p>
+            </div>
+          ) : null}
           {!waConnected ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
               <p className="text-sm text-amber-800 dark:text-amber-200">
@@ -422,12 +463,30 @@ const STATUS_OPTIONS = [
   { value: "dead_letter", label: "Gagal Permanen" },
 ];
 
+const SOURCE_FEATURE_OPTIONS = [
+  { value: "", label: "Semua Sumber" },
+  { value: "disposition", label: "Disposisi" },
+  { value: "letter", label: "Surat" },
+  { value: "employee", label: "Notifikasi Pegawai" },
+  { value: "party", label: "Notifikasi Pihak" },
+  { value: "public_qa", label: "Public Q&A" },
+  { value: "system", label: "Sistem" },
+  { value: "manajemen_surat", label: "Manajemen Surat" },
+  { value: "jadwal_sidang", label: "Jadwal Sidang" },
+  { value: "notifikasi_perkara", label: "Notifikasi Perkara" },
+];
+
 function MessagesTab() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<MessagesData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sourceFeatureFilter, setSourceFeatureFilter] = useState(searchParams.get("sourceFeature") ?? "");
+  const [sourceAppFilter, setSourceAppFilter] = useState(searchParams.get("sourceApp") ?? "");
+  const [entityTypeFilter, setEntityTypeFilter] = useState(searchParams.get("entityType") ?? "");
+  const [entityIdFilter, setEntityIdFilter] = useState(searchParams.get("entityId") ?? "");
   const [dateRange, setDateRange] = useState("7d");
   const [offset, setOffset] = useState(0);
   const [selectedItem, setSelectedItem] = useState<MessageItem | null>(null);
@@ -440,6 +499,10 @@ function MessagesTab() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
+      if (sourceFeatureFilter) params.set("sourceFeature", sourceFeatureFilter);
+      if (sourceAppFilter) params.set("sourceApp", sourceAppFilter);
+      if (entityTypeFilter) params.set("entityType", entityTypeFilter);
+      if (entityIdFilter) params.set("entityId", entityIdFilter);
       if (dateRange) params.set("dateRange", dateRange);
       params.set("limit", "50");
       params.set("offset", String(offset));
@@ -453,7 +516,29 @@ function MessagesTab() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, dateRange, offset]);
+  }, [search, statusFilter, sourceFeatureFilter, sourceAppFilter, entityTypeFilter, entityIdFilter, dateRange, offset]);
+
+  const exportCsv = () => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (statusFilter) params.set("status", statusFilter);
+    if (sourceFeatureFilter) params.set("sourceFeature", sourceFeatureFilter);
+    if (sourceAppFilter) params.set("sourceApp", sourceAppFilter);
+    if (entityTypeFilter) params.set("entityType", entityTypeFilter);
+    if (entityIdFilter) params.set("entityId", entityIdFilter);
+    if (dateRange) params.set("dateRange", dateRange);
+    params.set("format", "csv");
+    params.set("limit", "1000");
+    window.open(`/api/aleta-bot/messages?${params.toString()}`, "_blank", "noopener,noreferrer");
+  };
+
+  const clearEntityFilter = () => {
+    setEntityIdFilter("");
+    setEntityTypeFilter("");
+    setSourceAppFilter("");
+    setSourceFeatureFilter("");
+    setOffset(0);
+  };
 
   useEffect(() => {
     void fetchMessages();
@@ -489,6 +574,10 @@ function MessagesTab() {
           </Button>
           <Button variant="ghost" size="sm" onClick={() => void fetchMessages()} disabled={loading}>
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Muat Ulang"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportCsv}>
+            <Download className="h-3.5 w-3.5" />
+            Export CSV
           </Button>
         </div>
 
@@ -532,8 +621,38 @@ function MessagesTab() {
                 ))}
               </div>
             </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Sumber Fitur</p>
+              <div className="flex flex-wrap gap-1.5">
+                {SOURCE_FEATURE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setSourceFeatureFilter(opt.value); setOffset(0); }}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs transition",
+                      sourceFeatureFilter === opt.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-muted"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
+        {entityIdFilter ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground">
+            <Badge variant="outline">Filter surat/disposisi aktif</Badge>
+            <span className="break-all">
+              {sourceFeatureFilter || "riwayat"} / {entityTypeFilter || "entity"} / {entityIdFilter}
+            </span>
+            <Button type="button" variant="ghost" size="sm" onClick={clearEntityFilter} className="h-7 rounded-lg text-xs">
+              Hapus Filter
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {/* Error */}
@@ -557,8 +676,15 @@ function MessagesTab() {
         <div className="rounded-[1.8rem] border border-border/80 bg-card py-12 text-center">
           <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground/50" />
           <p className="mt-3 text-sm text-muted-foreground">
-            Tidak ada riwayat pengiriman pesan untuk filter yang dipilih.
+            {entityIdFilter
+              ? "Belum ada riwayat pesan untuk surat/disposisi ini."
+              : "Tidak ada riwayat pengiriman pesan untuk filter yang dipilih."}
           </p>
+          {data.filters?.entityFilterFallback ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Filter entity sudah diterapkan. Jika log lama belum menyimpan entityId, gunakan filter sumber fitur sebagai fallback.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -661,6 +787,7 @@ function MessagesTab() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function AletaBotDashboard() {
+  const searchParams = useSearchParams();
   const { currentUser } = usePortal();
   const roleId = getEffectiveRoleId(currentUser);
   const isSuperAdmin = roleId === "super-admin";
@@ -719,7 +846,17 @@ export function AletaBotDashboard() {
         </div>
       ) : null}
 
-      <Tabs defaultValue="status">
+      {statusData && !statusData.whatsapp.connected ? (
+        <div className="rounded-[1.4rem] border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">WhatsApp Bot belum terhubung.</p>
+          <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">
+            Pesan akan menunggu di antrean sampai koneksi aktif kembali.
+            {statusData.whatsapp.lastConnectedAt ? ` Terakhir terhubung: ${formatDt(statusData.whatsapp.lastConnectedAt)}.` : ""}
+          </p>
+        </div>
+      ) : null}
+
+      <Tabs defaultValue={["riwayat", "riwayat-pengiriman"].includes(searchParams.get("tab") ?? "") ? "riwayat" : "status"}>
         <TabsList className="mb-2">
           <TabsTrigger value="status">Status Bot</TabsTrigger>
           <TabsTrigger value="riwayat">Riwayat Pengiriman Pesan</TabsTrigger>

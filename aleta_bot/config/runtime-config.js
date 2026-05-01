@@ -30,6 +30,11 @@ const defaultConfig = {
     intervalMs: Number(process.env.ALETA_BOT_QUEUE_WORKER_INTERVAL_MS || 30000),
     batchSize: Number(process.env.ALETA_BOT_QUEUE_WORKER_BATCH_SIZE || 5),
   },
+  sendingWindow: {
+    enabled: String(process.env.ALETA_BOT_SENDING_WINDOW_ENABLED || "true") !== "false",
+    start: process.env.ALETA_BOT_SENDING_WINDOW_START || "07:30",
+    end: process.env.ALETA_BOT_SENDING_WINDOW_END || "21:00",
+  },
   useRegistryNotifications: false,
   registryPilotMode: true,
   registryDryRunDefault: true,
@@ -168,6 +173,10 @@ function readRuntimeConfig() {
         queueWorker: {
           ...defaultConfig.queueWorker,
           ...(parsed.queueWorker || {}),
+        },
+        sendingWindow: {
+          ...defaultConfig.sendingWindow,
+          ...(parsed.sendingWindow || {}),
         },
         useRegistryNotifications: Boolean(parsed.useRegistryNotifications ?? defaultConfig.useRegistryNotifications),
         registryPilotMode: Boolean(parsed.registryPilotMode ?? defaultConfig.registryPilotMode),

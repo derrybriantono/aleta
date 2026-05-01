@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { getUserByIdFromDb } from "@/server/modules/organization/service";
@@ -41,13 +41,42 @@ function maskNumber(number: string): string {
 function sanitizeError(msg: string | null | undefined): string | null {
   if (!msg) return null;
   const lower = msg.toLowerCase();
+  if (lower.includes("could not find chrome") || lower.includes("puppeteer")) {
+    return "Chrome/Puppeteer belum tersedia di server. Admin teknis perlu memasang browser atau mengatur executable path.";
+  }
+  if (lower.includes("target closed")) {
+    return "Browser WhatsApp tertutup. Coba hubungkan ulang WhatsApp Gateway dengan aman.";
+  }
+  if (lower.includes("session expired")) {
+    return "Sesi WhatsApp berakhir. Silakan hubungkan ulang WhatsApp Gateway.";
+  }
+  if (lower.includes("protocol error")) {
+    return "Terjadi gangguan komunikasi dengan browser WhatsApp.";
+  }
   if (lower.includes("econnrefused") || lower.includes("enotfound")) {
-    return "WhatsApp belum terhubung.";
+    return "WhatsApp Bot belum dapat dihubungi.";
   }
   if (lower.includes("invalid phone") || lower.includes("invalid number") || lower.includes("not a wa")) {
     return "Nomor tidak valid.";
   }
   return msg.slice(0, 200);
+}
+
+function csvEscape(value: unknown): string {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function parseMetadata(value: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(value || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
 }
 
 type MessageRow = {
@@ -59,6 +88,11 @@ type MessageRow = {
   message_preview: string;
   status: string;
   error_message: string | null;
+  source_app: string;
+  source_feature: string;
+  entity_type: string;
+  entity_id: string;
+  metadata_json: string;
   sent_at: string | null;
   created_at: string;
   position_name: string | null;
@@ -77,10 +111,15 @@ export async function GET(request: NextRequest) {
     const isPrivileged = roleId === "super-admin" || roleId === "admin";
 
     const { searchParams } = request.nextUrl;
+    const exportCsv = searchParams.get("format") === "csv";
     const statusFilter = searchParams.get("status") ?? "";
+    const sourceFeatureFilter = searchParams.get("sourceFeature") ?? "";
+    const sourceAppFilter = searchParams.get("sourceApp") ?? "";
+    const entityTypeFilter = searchParams.get("entityType") ?? "";
+    const entityIdFilter = searchParams.get("entityId") ?? "";
     const searchQuery = (searchParams.get("search") ?? "").trim();
     const dateRange = searchParams.get("dateRange") ?? "7d";
-    const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") ?? 50)));
+    const limit = Math.max(1, Math.min(exportCsv ? 1000 : 100, Number(searchParams.get("limit") ?? (exportCsv ? 1000 : 50))));
     const offset = Math.max(0, Number(searchParams.get("offset") ?? 0));
 
     // Build date filter
@@ -106,6 +145,41 @@ export async function GET(request: NextRequest) {
     const statusClause = statusFilter ? "AND n.status = ?" : "";
     const statusParams = statusFilter ? [statusFilter] : [];
 
+    const sourceFeatureAliases = sourceFeatureFilter === "disposition"
+      ? ["disposition", "disposition_notification", "disposition_deadline_reminder"]
+      : sourceFeatureFilter === "letter"
+        ? ["letter", "letter_notification"]
+        : sourceFeatureFilter
+          ? [sourceFeatureFilter]
+          : [];
+    const sourceFeaturePlaceholders = sourceFeatureAliases.map(() => "?").join(", ");
+    const sourceFeatureClause = sourceFeatureFilter
+      ? `AND (n.category IN (${sourceFeaturePlaceholders}) OR n.source_feature IN (${sourceFeaturePlaceholders}))`
+      : "";
+    const sourceFeatureParams = sourceFeatureFilter
+      ? [...sourceFeatureAliases, ...sourceFeatureAliases]
+      : [];
+    const sourceAppClause = sourceAppFilter ? "AND n.source_app = ?" : "";
+    const sourceAppParams = sourceAppFilter ? [sourceAppFilter] : [];
+    const entityTypeClause = entityTypeFilter ? "AND n.entity_type = ?" : "";
+    const entityTypeParams = entityTypeFilter ? [entityTypeFilter] : [];
+    const entityIdClause = entityIdFilter
+      ? "AND (n.entity_id = ? OR n.metadata_json LIKE ? OR n.metadata_json LIKE ? OR n.metadata_json LIKE ? OR n.metadata_json LIKE ? OR n.metadata_json LIKE ? OR n.metadata_json LIKE ? OR n.metadata_json LIKE ?)"
+      : "";
+    const metadataEntityPattern = (key: string) => `%"${key}"%"${entityIdFilter}"%`;
+    const entityIdParams = entityIdFilter
+      ? [
+          entityIdFilter,
+          metadataEntityPattern("entityId"),
+          metadataEntityPattern("entity_id"),
+          metadataEntityPattern("suratId"),
+          metadataEntityPattern("surat_id"),
+          metadataEntityPattern("letterId"),
+          metadataEntityPattern("dispositionId"),
+          metadataEntityPattern("disposition_id"),
+        ]
+      : [];
+
     // Build search filter
     let searchClause = "";
     const searchParams2: string[] = [];
@@ -114,7 +188,15 @@ export async function GET(request: NextRequest) {
       searchParams2.push(`%${searchQuery}%`, `%${searchQuery}%`);
     }
 
-    const allParams: unknown[] = [...dateParams, ...statusParams, ...searchParams2];
+    const allParams: unknown[] = [
+      ...dateParams,
+      ...statusParams,
+      ...sourceFeatureParams,
+      ...sourceAppParams,
+      ...entityTypeParams,
+      ...entityIdParams,
+      ...searchParams2,
+    ];
 
     const sql = `
       SELECT
@@ -126,6 +208,11 @@ export async function GET(request: NextRequest) {
         n.message_preview,
         n.status,
         n.error_message,
+        n.source_app,
+        n.source_feature,
+        n.entity_type,
+        n.entity_id,
+        n.metadata_json,
         n.sent_at,
         n.created_at,
         p.name AS position_name
@@ -135,6 +222,10 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
         ${dateClause}
         ${statusClause}
+        ${sourceFeatureClause}
+        ${sourceAppClause}
+        ${entityTypeClause}
+        ${entityIdClause}
         ${searchClause}
       ORDER BY n.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -146,25 +237,71 @@ export async function GET(request: NextRequest) {
       const numberMasked = !isPrivileged;
       const displayNumber = numberMasked ? maskNumber(row.recipient_number) : row.recipient_number;
 
+      const metadata = parseMetadata(row.metadata_json);
+      const sourceKey = row.source_feature || String(metadata.sourceFeature || metadata.source_feature || row.category);
+      const entityType = row.entity_type || String(metadata.entityType || metadata.entity_type || "") || null;
+      const entityId = row.entity_id || String(metadata.entityId || metadata.entity_id || "") || null;
+      const caseOrPosition =
+        String(metadata.nomorPerkara || metadata.nomor_perkara || metadata.recipientPosition || metadata.recipient_position || "").trim() ||
+        row.position_name ||
+        "—";
       return {
         id: row.id,
         recipientName: row.recipient_name || "—",
         recipientNumber: displayNumber,
         recipientNumberMasked: numberMasked,
-        caseOrPosition: row.position_name ?? "—",
+        caseOrPosition,
         messagePreview: row.message_preview
           ? row.message_preview.slice(0, 160) + (row.message_preview.length > 160 ? "…" : "")
           : "—",
         messageBody: isPrivileged ? (row.message_preview ?? null) : null,
         status: row.status,
         statusLabel: STATUS_LABELS[row.status] ?? row.status,
-        sourceFeature: row.category,
-        sourceFeatureLabel: CATEGORY_LABELS[row.category] ?? row.category,
+        sourceFeature: sourceKey,
+        sourceFeatureLabel: CATEGORY_LABELS[sourceKey] ?? CATEGORY_LABELS[row.category] ?? sourceKey,
+        sourceApp: row.source_app || "aleta_bot",
+        entityType,
+        entityId,
         createdAt: row.created_at,
         sentAt: row.sent_at ?? null,
         errorMessage: sanitizeError(row.error_message),
       };
     });
+
+    if (exportCsv) {
+      const headers = [
+        "Waktu",
+        "Nama penerima",
+        "Nomor",
+        "Nomor perkara/jabatan",
+        "Status",
+        "Sumber fitur",
+        "Isi preview",
+        "Error ringkas",
+      ];
+      const lines = [
+        headers.map(csvEscape).join(","),
+        ...items.map((item) =>
+          [
+            item.createdAt,
+            item.recipientName,
+            item.recipientNumber,
+            item.caseOrPosition,
+            item.statusLabel,
+            item.sourceFeatureLabel,
+            item.messageBody ?? item.messagePreview,
+            item.errorMessage ?? "",
+          ].map(csvEscape).join(",")
+        ),
+      ];
+      return new NextResponse(lines.join("\r\n"), {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="riwayat-pesan-aleta-bot.csv"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
 
     // Total count for pagination
     const countSql = `
@@ -173,6 +310,10 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
         ${dateClause}
         ${statusClause}
+        ${sourceFeatureClause}
+        ${sourceAppClause}
+        ${entityTypeClause}
+        ${entityIdClause}
         ${searchClause}
     `;
     type CountRow = { total: string | number };
@@ -182,7 +323,20 @@ export async function GET(request: NextRequest) {
     );
     const total = Number(countRow?.total ?? 0);
 
-    return ok({ items, total, limit, offset });
+    return ok({
+      items,
+      total,
+      limit,
+      offset,
+      filters: {
+        sourceFeature: sourceFeatureFilter || null,
+        sourceApp: sourceAppFilter || null,
+        entityType: entityTypeFilter || null,
+        entityId: entityIdFilter || null,
+        entityFilterApplied: Boolean(entityIdFilter),
+        entityFilterFallback: Boolean(entityIdFilter && total === 0 && sourceFeatureFilter),
+      },
+    });
   } catch (error) {
     return handleRouteError(error);
   }

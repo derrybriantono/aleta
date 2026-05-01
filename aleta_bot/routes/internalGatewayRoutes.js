@@ -11,6 +11,28 @@ const queueWorkerService = require("../services/queueWorkerService");
 const logService = require("../services/logService");
 const { validateWhatsappNumber } = require("../utils/phoneFormatter");
 
+function sanitizeWhatsappRuntimeError(value) {
+  const message = String(value || "");
+  const lower = message.toLowerCase();
+  if (!message) return null;
+  if (lower.includes("could not find chrome") || lower.includes("puppeteer")) {
+    return "Chrome/Puppeteer belum tersedia di server. Jalankan instalasi browser Puppeteer atau set PUPPETEER_EXECUTABLE_PATH.";
+  }
+  if (lower.includes("target closed")) {
+    return "Browser WhatsApp tertutup. Coba hubungkan ulang WhatsApp Gateway.";
+  }
+  if (lower.includes("session expired")) {
+    return "Sesi WhatsApp berakhir. Silakan scan QR ulang melalui WhatsApp Gateway.";
+  }
+  if (lower.includes("protocol error")) {
+    return "Terjadi gangguan komunikasi dengan browser WhatsApp.";
+  }
+  if (lower.includes("econnrefused")) {
+    return "WhatsApp Bot belum dapat dihubungi.";
+  }
+  return message.slice(0, 220);
+}
+
 // ── Internal Token Middleware ────────────────────────────────────────────────
 
 function getRequestToken(req) {
@@ -113,7 +135,13 @@ router.get("/whatsapp/status", requireInternalToken, (req, res) => {
       phoneNumber: waState.phoneNumber || "",
       lastConnectedAt: waState.lastReadyAt || null,
       lastDisconnectedAt: waState.lastDisconnectedAt || null,
-      lastError: waState.lastErrorMessage || null,
+      lastError: sanitizeWhatsappRuntimeError(waState.lastErrorMessage),
+      sessionStartedAt: waState.sessionStartedAt || null,
+      lastMessageSentAt: waState.lastMessageSentAt || null,
+      sessionAgeHours: waState.sessionAgeHours,
+      authFailureCount: waState.authFailureCount || 0,
+      lastAuthFailureAt: waState.lastAuthFailureAt || null,
+      sendingWindow: messageQueueService.getSendingWindowState(),
       qrAvailable: waState.status === "qr_needed" && Boolean(waState.lastQrString),
       runtime: "aleta_bot",
       gatewayMode: "single_gateway_candidate",

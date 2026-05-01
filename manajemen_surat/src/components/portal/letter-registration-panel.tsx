@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreatableMultiSelect } from "@/components/ui/creatable-multi-select";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { usePortal } from "@/lib/app-state";
 import {
@@ -33,7 +34,7 @@ import {
   getUserPositionLabel,
   isPrivilegedAdmin,
 } from "@/lib/permissions";
-import { type LetterDetail } from "@/lib/types";
+import { type LetterDetail, type LetterTemplate } from "@/lib/types";
 
 const confidentialityOptions = ["Biasa", "Penting", "Rahasia"].map((value) => ({ value }));
 const viewerOptions = [
@@ -60,9 +61,8 @@ function todayValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function buildDefaultNomorUrut(type: LetterDetail["type"], letters: LetterDetail[]) {
-  const nextIndex = letters.filter((letter) => letter.type === type).length + 1;
-  return String(nextIndex).padStart(3, "0");
+function renderLetterTemplatePreview(template: LetterTemplate, values: Record<string, string>) {
+  return template.body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => values[key] || `{{${key}}}`);
 }
 
 export function LetterRegistrationPanel({
@@ -71,7 +71,7 @@ export function LetterRegistrationPanel({
   defaultType: LetterDetail["type"];
 }) {
   const searchParams = useSearchParams();
-  const { aiConfig, createLetter, currentUser, getUsersByPosition, letters, users } = usePortal();
+  const { aiConfig, createLetter, currentUser, getUsersByPosition, users } = usePortal();
   const currentPosition = getEffectivePosition(currentUser);
   const currentPositionId = getEffectivePositionId(currentUser);
   const canRegister =
@@ -100,9 +100,13 @@ export function LetterRegistrationPanel({
   const [ringkasan, setRingkasan] = useState("");
   const [lampiran, setLampiran] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [aiSuggestionNotice, setAiSuggestionNotice] = useState("");
+  const [isAiSuggesting, setIsAiSuggesting] = useState(false);
   const [viewerMode, setViewerMode] = useState<LetterDetail["viewerMode"]>("download");
   const [targetPositionId, setTargetPositionId] = useState("");
   const [targetUserId, setTargetUserId] = useState("");
+  const [letterTemplates, setLetterTemplates] = useState<LetterTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [feedback, setFeedback] = useState("");
   const [draftFeedback, setDraftFeedback] = useState("");
   const [formError, setFormError] = useState("");
@@ -115,7 +119,6 @@ export function LetterRegistrationPanel({
     []
   );
   const incomingTargetUsers = useMemo(() => getLeadershipRecipients(users), [users]);
-  const nextNomorUrut = useMemo(() => buildDefaultNomorUrut(defaultType, letters), [defaultType, letters]);
   const targetPositions = useMemo(() => {
     if (defaultType === "masuk") {
       return positions
@@ -134,6 +137,23 @@ export function LetterRegistrationPanel({
 
     return getUsersByPosition(targetPositionId);
   }, [defaultType, getUsersByPosition, incomingTargetUsers, targetPositionId]);
+  const selectedTemplate = useMemo(
+    () => letterTemplates.find((template) => template.id === selectedTemplateId) ?? null,
+    [letterTemplates, selectedTemplateId]
+  );
+  const selectedTemplatePreview = useMemo(() => {
+    if (!selectedTemplate) return "";
+    return renderLetterTemplatePreview(selectedTemplate, {
+      nomor_surat: nomorSurat || "W19-A6/001/HK.05/I/2026",
+      tanggal_surat: tanggalSurat || todayValue(),
+      tujuan: tujuanSurat || "Pengadilan Tinggi Agama",
+      perihal: perihal || "Permintaan Data",
+      nama_pengadilan: "Pengadilan Agama Donggala",
+      alamat_pengadilan: "Jl. Vatu Bala, Donggala",
+      nama_penandatangan: currentUser?.name ?? "Pejabat Penandatangan",
+      jabatan_penandatangan: getUserPositionLabel(currentUser),
+    });
+  }, [currentUser, nomorSurat, perihal, selectedTemplate, tanggalSurat, tujuanSurat]);
 
   const resetForm = () => {
     setDraftMode("manual");
@@ -153,10 +173,78 @@ export function LetterRegistrationPanel({
     setRingkasan("");
     setLampiran([]);
     setTags([]);
+    setAiSuggestionNotice("");
     setViewerMode("download");
     setUploadedPdf(null);
     setDraftFeedback("");
     setFormError("");
+  };
+
+  const requestClassificationSuggestion = async () => {
+    setIsAiSuggesting(true);
+    setAiSuggestionNotice("");
+    try {
+      const response = await fetch("/api/ai/letters/classification-suggestion", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          perihal,
+          asalTujuan: defaultType === "masuk" ? asalSurat : tujuanSurat,
+          ringkasanIsi: ringkasan,
+          type: defaultType,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; data?: { suggestedClassificationCode?: string; suggestedClassificationLabel?: string; suggestedTags?: string[]; reason?: string; message?: string }; error?: { message?: string } }
+        | null;
+      if (!response.ok || !payload?.ok || !payload.data) {
+        throw new Error(payload?.error?.message ?? "Saran AI belum dapat diproses.");
+      }
+      const suggestion = payload.data;
+      if (suggestion.suggestedClassificationCode) {
+        setKodeKlasifikasi(suggestion.suggestedClassificationCode);
+      }
+      if (suggestion.suggestedClassificationLabel) {
+        const option = getClassificationOptionByValue(suggestion.suggestedClassificationCode || "");
+        setKlasifikasi(option ? getClassificationTitle(option) : suggestion.suggestedClassificationLabel);
+      }
+      if (suggestion.suggestedTags?.length) {
+        setKlasifikasiTags((current) => Array.from(new Set([...suggestion.suggestedTags!, ...current])).slice(0, 8));
+      }
+      setAiSuggestionNotice(suggestion.reason || suggestion.message || "Saran klasifikasi AI diterapkan sebagai draft.");
+    } catch (error) {
+      setAiSuggestionNotice(error instanceof Error ? error.message : "Saran AI belum tersedia.");
+    } finally {
+      setIsAiSuggesting(false);
+    }
+  };
+
+  const requestSummarySuggestion = async () => {
+    setIsAiSuggesting(true);
+    setAiSuggestionNotice("");
+    try {
+      const response = await fetch("/api/ai/letters/summary-suggestion", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ perihal, isiRingkas: ringkasan }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; data?: { summary?: string; message?: string }; error?: { message?: string } }
+        | null;
+      if (!response.ok || !payload?.ok || !payload.data) {
+        throw new Error(payload?.error?.message ?? "Ringkasan AI belum dapat diproses.");
+      }
+      if (payload.data.summary && !payload.data.summary.startsWith("Belum ada teks")) {
+        setRingkasan(payload.data.summary);
+      }
+      setAiSuggestionNotice(payload.data.message || "Ringkasan AI diterapkan sebagai draft.");
+    } catch (error) {
+      setAiSuggestionNotice(error instanceof Error ? error.message : "Ringkasan AI belum tersedia.");
+    } finally {
+      setIsAiSuggesting(false);
+    }
   };
 
   useEffect(() => {
@@ -166,16 +254,39 @@ export function LetterRegistrationPanel({
   }, [searchParams]);
 
   useEffect(() => {
-    if (!nomorUrut.trim()) {
-      setNomorUrut(nextNomorUrut);
-    }
-  }, [nextNomorUrut, nomorUrut]);
-
-  useEffect(() => {
     if (!targetPositions.some((position) => position.value === targetPositionId)) {
       setTargetPositionId(targetPositions[0]?.value ?? "");
     }
   }, [targetPositionId, targetPositions]);
+
+  useEffect(() => {
+    if (defaultType !== "keluar" || !canRegister) return;
+    let cancelled = false;
+
+    const loadTemplates = async () => {
+      try {
+        const response = await fetch("/api/surat/templates?activeOnly=true", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { ok?: boolean; data?: { items?: LetterTemplate[] } }
+          | null;
+        if (!cancelled && response.ok && payload?.ok) {
+          const items = payload.data?.items ?? [];
+          setLetterTemplates(items);
+          setSelectedTemplateId((current) => current || items[0]?.id || "");
+        }
+      } catch {
+        if (!cancelled) setLetterTemplates([]);
+      }
+    };
+
+    void loadTemplates();
+    return () => {
+      cancelled = true;
+    };
+  }, [canRegister, defaultType]);
 
   useEffect(() => {
     if (!availableTargetUsers.some((user) => user.id === targetUserId)) {
@@ -333,7 +444,7 @@ export function LetterRegistrationPanel({
                         const detectedClassification = getClassificationOptionByValue(draft.kodeKlasifikasi);
 
                         setDraftMode("ai");
-                        setNomorUrut((current) => current || draft.nomorUrut || nextNomorUrut);
+                        setNomorUrut((current) => current || draft.nomorUrut || "");
                         setNomorSurat((current) => current || draft.nomorSurat);
                         setTanggalSurat((current) => draft.tanggalSurat || current);
                         setTanggalAdministratif((current) => draft.tanggalAdministratif || current);
@@ -387,9 +498,47 @@ export function LetterRegistrationPanel({
             </div>
           ) : null}
 
+          {defaultType === "keluar" && letterTemplates.length > 0 ? (
+            <div className="rounded-[1.2rem] border border-border bg-muted/25 p-4">
+              <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <Field label="Template Surat Keluar">
+                  <NativeSelect
+                    value={selectedTemplateId}
+                    onChange={(event) => setSelectedTemplateId(event.target.value)}
+                    className="h-12 text-base"
+                  >
+                    {letterTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>{template.name}</option>
+                    ))}
+                  </NativeSelect>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Template hanya membantu pratinjau isi surat. Simpan surat tetap memakai metadata resmi di bawah.
+                  </p>
+                </Field>
+                <div className="min-w-0 rounded-xl border border-border bg-card p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-foreground">Pratinjau Template</p>
+                    {selectedTemplate ? <Badge variant="outline">{selectedTemplate.placeholders.length} placeholder</Badge> : null}
+                  </div>
+                  <pre className="mt-3 max-h-52 overflow-auto whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                    {selectedTemplatePreview || "Pilih template untuk melihat pratinjau."}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid gap-5 lg:grid-cols-4">
-            <Field label="Nomor Urut" required>
-              <Input value={nomorUrut} onChange={(event) => setNomorUrut(event.target.value)} className="h-12 text-base" />
+            <Field label="Nomor Agenda">
+              <Input
+                value={nomorUrut}
+                onChange={(event) => setNomorUrut(event.target.value)}
+                placeholder="Kosongkan untuk nomor otomatis"
+                className="h-12 text-base"
+              />
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Jika dikosongkan, sistem membuat nomor agenda otomatis per jenis surat dan tahun.
+              </p>
             </Field>
             <Field label="Nomor Surat" required>
               <Input value={nomorSurat} onChange={(event) => setNomorSurat(event.target.value)} className="h-12 text-base" />
@@ -466,6 +615,24 @@ export function LetterRegistrationPanel({
             <Field label="Tujuan Surat" required>
               <Input value={tujuanSurat} onChange={(event) => setTujuanSurat(event.target.value)} className="h-12 text-base" />
             </Field>
+          </div>
+
+          <div className="rounded-[1.2rem] border border-border bg-muted/25 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Saran AI Administrasi</p>
+                <p className="mt-1 text-xs text-muted-foreground">Hasil AI hanya draft bantuan dan tidak otomatis disimpan sebelum tombol registrasi ditekan.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={() => void requestClassificationSuggestion()} disabled={isAiSuggesting || !perihal.trim()}>
+                  Minta Saran AI
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void requestSummarySuggestion()} disabled={isAiSuggesting || (!perihal.trim() && !ringkasan.trim())}>
+                  Buat Ringkasan AI
+                </Button>
+              </div>
+            </div>
+            {aiSuggestionNotice ? <p className="mt-3 text-xs leading-5 text-muted-foreground">{aiSuggestionNotice}</p> : null}
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -581,7 +748,6 @@ export function LetterRegistrationPanel({
                 type="button"
                 onClick={async () => {
                   if (
-                    !nomorUrut.trim() ||
                     !nomorSurat.trim() ||
                     !tanggalSurat.trim() ||
                     !tanggalAdministratif.trim() ||

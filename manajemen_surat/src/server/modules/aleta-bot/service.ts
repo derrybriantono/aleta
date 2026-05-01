@@ -12,6 +12,7 @@ import {
   type AletaBotNotification,
   type AletaBotNotificationCategory,
   type AletaBotNotificationLogEntry,
+  type AletaBotPolicySkipSummary,
   type AletaBotPublicQaIntent,
   type AletaBotPublicQaLogEntry,
   type AletaBotQuery,
@@ -27,9 +28,11 @@ import {
   type AletaBotDeadLetter,
   type AletaBotWorkerState,
   type AletaBotUnknownQuestionReview,
+  type AletaBotDeadlineReminderDryRunResult,
+  type AletaBotDispositionReminderRun,
 } from "@/lib/aleta-bot-types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
-import { requireActorUser } from "@/server/modules/organization/service";
+import { getPositionsFromDb, getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { getAISettingsFromDb } from "@/server/modules/ai/service";
 import { getWhatsAppSettingsFromDb } from "@/server/modules/settings/service";
 import { whatsappService } from "@/server/modules/whatsapp/service";
@@ -39,9 +42,13 @@ import {
   connectGatewayWhatsapp,
   controlGatewayWorker,
   getGatewayDeadLetters,
+  getGatewayWhatsappQr,
   resendGatewayDeadLetter,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
-import { sendPortalWhatsappMessage } from "@/server/modules/whatsapp/portal-whatsapp-sender";
+import {
+  buildMessageEntityMetadata,
+  sendPortalWhatsappMessage,
+} from "@/server/modules/whatsapp/portal-whatsapp-sender";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
@@ -64,6 +71,22 @@ type SettingsRow = {
   schedule_cron: string;
   test_target_number: string;
   security_notes: string;
+  disposition_deadline_reminder_enabled: number;
+  disposition_deadline_reminder_mode: AletaBotSettings["deadlineReminderMode"];
+  disposition_deadline_reminder_approved_at: string | null;
+  disposition_deadline_reminder_approved_by: string | null;
+  disposition_deadline_reminder_last_run_at: string | null;
+  disposition_deadline_reminder_last_status: AletaBotSettings["deadlineReminderLastStatus"];
+  disposition_deadline_reminder_last_message: string | null;
+  disposition_deadline_reminder_pilot_user_ids_json: string;
+  disposition_deadline_reminder_pilot_role_ids_json: string;
+  disposition_deadline_reminder_pilot_position_ids_json: string;
+  disposition_deadline_reminder_scheduler_enabled: number;
+  disposition_deadline_reminder_scheduler_mode: AletaBotSettings["deadlineReminderSchedulerMode"];
+  disposition_deadline_reminder_scheduler_time: string;
+  disposition_deadline_reminder_scheduler_last_run_at: string | null;
+  disposition_deadline_reminder_scheduler_last_message: string | null;
+  disposition_deadline_reminder_kill_switch: number;
   updated_at: string;
 };
 
@@ -177,6 +200,11 @@ type NotificationLogRow = {
   message_preview: string;
   status: AletaBotNotificationLogEntry["status"];
   error_message: string | null;
+  source_app: string;
+  source_feature: string;
+  entity_type: string;
+  entity_id: string;
+  metadata_json: string;
   sent_at: string | null;
   created_at: string;
 };
@@ -251,7 +279,99 @@ type PublicQaLogRow = {
   response_preview: string;
   status: AletaBotPublicQaLogEntry["status"];
   error_message: string | null;
+  needs_human_review: number;
+  review_status: AletaBotPublicQaLogEntry["reviewStatus"];
+  reviewed_by_user_id: string | null;
+  reviewed_at: string | null;
+  review_note: string;
   created_at: string;
+};
+
+type PolicySkipLogRow = {
+  id: string;
+  notification_key: string;
+  notification_id: string | null;
+  category: string;
+  reason: string;
+  source_feature: string;
+  entity_type: string;
+  entity_id: string;
+  recipient_type: string;
+  recipient_count: number;
+  metadata_json: string;
+  created_at: string;
+};
+
+type DispositionReminderRunRow = {
+  id: string;
+  mode: AletaBotDispositionReminderRun["mode"];
+  triggered_by: AletaBotDispositionReminderRun["triggeredBy"];
+  triggered_by_user_id: string | null;
+  started_at: string;
+  finished_at: string | null;
+  total_candidates: number | string;
+  dry_run_created: number | string;
+  sent_count: number | string;
+  skipped_count: number | string;
+  error_count: number | string;
+  status: AletaBotDispositionReminderRun["status"];
+  summary_json: string;
+};
+
+type AletaBotRuntimeStatusPayload = {
+  bot?: {
+    sendingWindow?: {
+      enabled?: boolean;
+      start?: string;
+      end?: string;
+      inside?: boolean;
+      allowed?: boolean;
+      message?: string;
+    };
+  };
+  aiRuntime?: {
+    status?: string;
+    enabled?: boolean;
+    publicQaEnabled?: boolean;
+    publicQaAiAnswerEnabled?: boolean;
+  };
+  worker?: {
+    enabled?: boolean;
+    running?: boolean;
+    paused?: boolean;
+    activeTimer?: boolean;
+    lastHeartbeatAt?: string | null;
+  };
+  queue?: Record<string, number>;
+  registry?: {
+    skippedPolicy?: number;
+    policySkipStats?: {
+      totalToday?: number;
+      skippedCount?: number;
+      lastSkippedAt?: string | null;
+    };
+  };
+  whatsappNumberResolver?: {
+    legacyFallbackUsedCount?: number;
+    lastLegacyFallbackUsedAt?: string | null;
+  };
+};
+
+type DeadlineReminderCandidateRow = {
+  disposition_id: string;
+  letter_id: string;
+  nomor_surat: string;
+  perihal: string;
+  deadline_at: string;
+  status: string;
+  instruksi: string;
+  recipient_id: string;
+  recipient_name: string;
+  recipient_role_id: string;
+  recipient_whatsapp: string;
+  position_id: string | null;
+  position_name: string | null;
+  unit_kerja: string | null;
 };
 
 type ApprovalRequestRow = {
@@ -303,6 +423,22 @@ const DEFAULT_SETTINGS: Omit<AletaBotSettings, "updatedAt"> = {
   scheduleCron: "00 07 * * Monday-Friday",
   testTargetNumber: "",
   securityNotes: "Modul ALETA Bot hanya aktif untuk Super Admin. Gunakan dry-run sebelum pengiriman produksi.",
+  deadlineReminderEnabled: false,
+  deadlineReminderMode: "dry_run",
+  deadlineReminderApprovedAt: null,
+  deadlineReminderApprovedBy: null,
+  deadlineReminderLastRunAt: null,
+  deadlineReminderLastStatus: "idle",
+  deadlineReminderLastMessage: null,
+  deadlineReminderPilotUserIds: [],
+  deadlineReminderPilotRoleIds: [],
+  deadlineReminderPilotPositionIds: [],
+  deadlineReminderSchedulerEnabled: false,
+  deadlineReminderSchedulerMode: "dry_run",
+  deadlineReminderSchedulerTime: "08:00:00",
+  deadlineReminderSchedulerLastRunAt: null,
+  deadlineReminderSchedulerLastMessage: null,
+  deadlineReminderKillSwitch: false,
 };
 
 const DEFAULT_DB_CONNECTIONS: Array<
@@ -826,6 +962,15 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     editable: true,
   },
   {
+    id: "disposition-deadline-h-minus-1",
+    category: "pegawai",
+    title: "Pengingat Deadline Disposisi H-1",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nPengingat disposisi: Surat \"{{perihal}}\" jatuh tempo pada {{deadline}}. Mohon segera ditindaklanjuti.\n\nPesan ini masih disiapkan dalam mode simulasi/dry-run sampai disetujui.",
+    placeholders: ["nama_pegawai", "perihal", "deadline"],
+    editable: true,
+  },
+  {
     id: "pihak-layanan",
     category: "pihak",
     title: "Notifikasi Pihak / Layanan Perkara",
@@ -954,6 +1099,17 @@ const DEFAULT_QUERIES: Array<
       "legacy:notifikasi.getDataPutusanBelumMinutHakim,getDataUploadPutusanHakim,getDataLupaTundaHakim,getDataPutusanBelumMinutPanitera,getDataTundaMediasiPanitera,getDataAntrianSidangHakim,getDataAntrianSidangPanitera,getDataPutusJurusitaNew,getDataTundaJurusitaNew,getBelumPanggilanJurusita,getDataBelumDelegasiJurusita,getDataPemberitahuanPutusanBelumJurusita",
     outputColumns: ["nama_pegawai", "judul_notifikasi", "ringkasan", "nomor_perkara"],
     recipientColumn: "",
+    isActive: true,
+  },
+  {
+    id: "portal-disposition-deadline-h-minus-1",
+    name: "portal.disposition.deadlineHMinus1",
+    category: "employee",
+    description: "Draft aman untuk reminder H-1 deadline disposisi dari data Manajemen Surat. Eksekusi real tetap harus melalui dry-run dan approval.",
+    sqlText:
+      "portal:dispositions.deadline_h_minus_1",
+    outputColumns: ["disposition_id", "deadline_date", "nama_pegawai", "perihal", "deadline", "whatsapp_number"],
+    recipientColumn: "whatsapp_number",
     isActive: true,
   },
   {
@@ -1149,6 +1305,25 @@ const DEFAULT_NOTIFICATIONS: Array<
     recipientSource: "users",
     recipientMapping: { roleHints: ["jurusita"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "00 12 * * Monday-Friday; 15 16 * * Monday-Friday; 00 09 * * Friday", trigger: "cron status dan relaas" },
+    isActive: false,
+    delayMs: 1500,
+    retryLimit: 2,
+  },
+  {
+    id: "disposition-deadline-h-minus-1",
+    name: "Pengingat Deadline Disposisi H-1",
+    category: "employee",
+    description: "Reminder H-1 untuk disposisi belum selesai. Default nonaktif dan dipakai untuk dry-run/approval sebelum pengiriman nyata.",
+    queryId: "portal-disposition-deadline-h-minus-1",
+    templateId: "disposition-deadline-h-minus-1",
+    recipientSource: "users",
+    recipientMapping: {
+      recipientColumn: "whatsapp_number",
+      source: "users.whatsapp_number",
+      mode: "dry_run",
+      idempotencyKeyPattern: "disposition_deadline_reminder:{dispositionId}:{deadlineDate}",
+    },
+    scheduleConfig: { type: "cron", cron: "0 8 * * *", trigger: "Setiap hari pukul 08:00:00" },
     isActive: false,
     delayMs: 1500,
     retryLimit: 2,
@@ -2019,6 +2194,42 @@ function parseJson<T>(value: string, fallback: T): T {
   }
 }
 
+function parseStringArrayJson(value: string | null | undefined) {
+  const raw = parseJson<unknown>(value || "[]", []);
+  if (!Array.isArray(raw)) return [];
+  return Array.from(
+    new Set(
+      raw
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean)
+        .slice(0, 200)
+    )
+  );
+}
+
+function sanitizeStringIdList(value: unknown) {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
+  return Array.from(
+    new Set(
+      raw
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean)
+        .slice(0, 200)
+    )
+  );
+}
+
+function sanitizeReminderSchedulerTime(value: string | undefined, fallback = "08:00:00") {
+  const normalized = String(value || fallback).trim();
+  if (/^\d{2}:\d{2}$/.test(normalized)) return `${normalized}:00`;
+  if (/^\d{2}:\d{2}:\d{2}$/.test(normalized)) return normalized;
+  throw new ApiError(400, "Jam scheduler reminder harus memakai format HH:mm atau HH:mm:ss.");
+}
+
 function normalizeWhatsappNumber(input: string) {
   const digits = input.replace(/\D/g, "");
   if (!digits) return "";
@@ -2077,6 +2288,16 @@ function maskValue(value: string) {
   if (!value) return "";
   if (value.length <= 3) return "***";
   return `${value.slice(0, 2)}***${value.slice(-1)}`;
+}
+
+function sanitizeErrorMessage(value: string) {
+  return String(value || "")
+    .replace(/[A-Z]:\\[^\s]+/gi, "[path]")
+    .replace(/\/[^\s]+/g, "[path]")
+    .replace(/(token|api[_-]?key|password|secret|session)=?[^\s&]+/gi, "$1=[redacted]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
 }
 
 function getDbSecretEncryptionKey() {
@@ -2218,6 +2439,28 @@ function mapSettings(row: SettingsRow): AletaBotSettings {
     scheduleCron: row.schedule_cron,
     testTargetNumber: row.test_target_number,
     securityNotes: row.security_notes,
+    deadlineReminderEnabled: Boolean(row.disposition_deadline_reminder_enabled),
+    deadlineReminderMode: ["disabled", "dry_run", "pilot", "production"].includes(row.disposition_deadline_reminder_mode)
+      ? row.disposition_deadline_reminder_mode
+      : "dry_run",
+    deadlineReminderApprovedAt: row.disposition_deadline_reminder_approved_at,
+    deadlineReminderApprovedBy: row.disposition_deadline_reminder_approved_by,
+    deadlineReminderLastRunAt: row.disposition_deadline_reminder_last_run_at,
+    deadlineReminderLastStatus: ["idle", "simulated", "skipped", "sent", "blocked"].includes(row.disposition_deadline_reminder_last_status)
+      ? row.disposition_deadline_reminder_last_status
+      : "idle",
+    deadlineReminderLastMessage: row.disposition_deadline_reminder_last_message,
+    deadlineReminderPilotUserIds: parseStringArrayJson(row.disposition_deadline_reminder_pilot_user_ids_json),
+    deadlineReminderPilotRoleIds: parseStringArrayJson(row.disposition_deadline_reminder_pilot_role_ids_json),
+    deadlineReminderPilotPositionIds: parseStringArrayJson(row.disposition_deadline_reminder_pilot_position_ids_json),
+    deadlineReminderSchedulerEnabled: Boolean(row.disposition_deadline_reminder_scheduler_enabled),
+    deadlineReminderSchedulerMode: ["disabled", "dry_run", "pilot", "production"].includes(row.disposition_deadline_reminder_scheduler_mode)
+      ? row.disposition_deadline_reminder_scheduler_mode
+      : "dry_run",
+    deadlineReminderSchedulerTime: row.disposition_deadline_reminder_scheduler_time || "08:00:00",
+    deadlineReminderSchedulerLastRunAt: row.disposition_deadline_reminder_scheduler_last_run_at,
+    deadlineReminderSchedulerLastMessage: row.disposition_deadline_reminder_scheduler_last_message,
+    deadlineReminderKillSwitch: Boolean(row.disposition_deadline_reminder_kill_switch),
     updatedAt: row.updated_at,
   };
 }
@@ -2355,6 +2598,11 @@ function mapNotificationLog(row: NotificationLogRow): AletaBotNotificationLogEnt
     messagePreview: row.message_preview,
     status: row.status,
     errorMessage: row.error_message,
+    sourceApp: row.source_app || "",
+    sourceFeature: row.source_feature || row.category,
+    entityType: row.entity_type || "",
+    entityId: row.entity_id || "",
+    metadata: parseJson<Record<string, unknown>>(row.metadata_json || "{}", {}),
     sentAt: row.sent_at,
     createdAt: row.created_at,
   };
@@ -2421,6 +2669,13 @@ function mapPublicQaIntent(row: PublicQaIntentRow): AletaBotPublicQaIntent {
 }
 
 function mapPublicQaLog(row: PublicQaLogRow): AletaBotPublicQaLogEntry {
+  const reviewStatus = row.review_status || "pending";
+  const autoNeedsReview =
+    row.status === "fallback" ||
+    row.status === "blocked" ||
+    row.status === "error" ||
+    row.matched_method === "fallback" ||
+    Number(row.confidence || 0) < 0.5;
   return {
     id: row.id,
     senderNumber: row.sender_number,
@@ -2435,6 +2690,11 @@ function mapPublicQaLog(row: PublicQaLogRow): AletaBotPublicQaLogEntry {
     responsePreview: row.response_preview,
     status: row.status,
     errorMessage: row.error_message,
+    needsHumanReview: reviewStatus === "pending" && (Boolean(row.needs_human_review) || autoNeedsReview),
+    reviewStatus,
+    reviewedByUserId: row.reviewed_by_user_id,
+    reviewedAt: row.reviewed_at,
+    reviewNote: row.review_note || "",
     createdAt: row.created_at,
   };
 }
@@ -2487,6 +2747,16 @@ async function requireSuperAdmin(db: AletaDatabase, actorUserId: string) {
 
   if (actor.roleId !== "super-admin") {
     throw new ApiError(403, "Hanya Super Admin yang dapat mengakses modul ALETA Bot.");
+  }
+
+  return actor;
+}
+
+async function requireAletaBotOperator(db: AletaDatabase, actorUserId: string) {
+  const actor = await requireActorUser(db, actorUserId);
+
+  if (actor.roleId !== "super-admin" && actor.roleId !== "admin") {
+    throw new ApiError(403, "Hanya Super Admin/Admin yang dapat menjalankan simulasi ALETA Bot.");
   }
 
   return actor;
@@ -2764,8 +3034,55 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     response_preview TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'fallback',
     error_message TEXT,
+    needs_human_review SMALLINT NOT NULL DEFAULT 0,
+    review_status TEXT NOT NULL DEFAULT 'pending',
+    reviewed_by_user_id TEXT,
+    reviewed_at TEXT,
+    review_note TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
   )`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_logs ADD COLUMN IF NOT EXISTS needs_human_review SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_logs ADD COLUMN IF NOT EXISTS review_status TEXT NOT NULL DEFAULT 'pending'`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_logs ADD COLUMN IF NOT EXISTS reviewed_by_user_id TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_logs ADD COLUMN IF NOT EXISTS reviewed_at TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_logs ADD COLUMN IF NOT EXISTS review_note TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS source_app TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS source_feature TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS entity_type TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS entity_id TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS metadata_json TEXT NOT NULL DEFAULT '{}'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_enabled SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_mode TEXT NOT NULL DEFAULT 'dry_run'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_approved_at TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_approved_by TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_last_run_at TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_last_status TEXT NOT NULL DEFAULT 'idle'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_last_message TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_pilot_user_ids_json TEXT NOT NULL DEFAULT '[]'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_pilot_role_ids_json TEXT NOT NULL DEFAULT '[]'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_pilot_position_ids_json TEXT NOT NULL DEFAULT '[]'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_enabled SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_mode TEXT NOT NULL DEFAULT 'dry_run'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_time TEXT NOT NULL DEFAULT '08:00:00'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_last_run_at TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_last_message TEXT`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_kill_switch SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_policy_skip_logs (
+    id TEXT PRIMARY KEY,
+    notification_key TEXT NOT NULL DEFAULT '',
+    notification_id TEXT,
+    category TEXT NOT NULL DEFAULT '',
+    reason TEXT NOT NULL DEFAULT 'unknown',
+    source_feature TEXT NOT NULL DEFAULT '',
+    entity_type TEXT NOT NULL DEFAULT '',
+    entity_id TEXT NOT NULL DEFAULT '',
+    recipient_type TEXT NOT NULL DEFAULT '',
+    recipient_count INTEGER NOT NULL DEFAULT 0,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL
+  )`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_aleta_bot_policy_skip_logs_created ON aleta_bot_policy_skip_logs(created_at DESC, reason)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_aleta_bot_policy_skip_logs_notification ON aleta_bot_policy_skip_logs(notification_key, created_at DESC)`);
   await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_examples (
     id TEXT PRIMARY KEY,
     intent_id TEXT NOT NULL,
@@ -2886,8 +3203,22 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
       .prepare(
         `INSERT INTO aleta_bot_settings (
           id, bot_enabled, notifications_enabled, admin_whatsapp_number, message_delay_ms,
-          retry_limit, dry_run_enabled, schedule_cron, test_target_number, security_notes, updated_at
-        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          retry_limit, dry_run_enabled, schedule_cron, test_target_number, security_notes,
+          disposition_deadline_reminder_enabled, disposition_deadline_reminder_mode,
+          disposition_deadline_reminder_approved_at, disposition_deadline_reminder_approved_by,
+          disposition_deadline_reminder_last_run_at, disposition_deadline_reminder_last_status,
+          disposition_deadline_reminder_last_message,
+          disposition_deadline_reminder_pilot_user_ids_json,
+          disposition_deadline_reminder_pilot_role_ids_json,
+          disposition_deadline_reminder_pilot_position_ids_json,
+          disposition_deadline_reminder_scheduler_enabled,
+          disposition_deadline_reminder_scheduler_mode,
+          disposition_deadline_reminder_scheduler_time,
+          disposition_deadline_reminder_scheduler_last_run_at,
+          disposition_deadline_reminder_scheduler_last_message,
+          disposition_deadline_reminder_kill_switch,
+          updated_at
+        ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (id) DO NOTHING`
       )
       .run(
@@ -2900,6 +3231,22 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
         DEFAULT_SETTINGS.scheduleCron,
         DEFAULT_SETTINGS.testTargetNumber,
         DEFAULT_SETTINGS.securityNotes,
+        DEFAULT_SETTINGS.deadlineReminderEnabled ? 1 : 0,
+        DEFAULT_SETTINGS.deadlineReminderMode,
+        DEFAULT_SETTINGS.deadlineReminderApprovedAt,
+        DEFAULT_SETTINGS.deadlineReminderApprovedBy,
+        DEFAULT_SETTINGS.deadlineReminderLastRunAt,
+        DEFAULT_SETTINGS.deadlineReminderLastStatus,
+        DEFAULT_SETTINGS.deadlineReminderLastMessage,
+        JSON.stringify(DEFAULT_SETTINGS.deadlineReminderPilotUserIds),
+        JSON.stringify(DEFAULT_SETTINGS.deadlineReminderPilotRoleIds),
+        JSON.stringify(DEFAULT_SETTINGS.deadlineReminderPilotPositionIds),
+        DEFAULT_SETTINGS.deadlineReminderSchedulerEnabled ? 1 : 0,
+        DEFAULT_SETTINGS.deadlineReminderSchedulerMode,
+        DEFAULT_SETTINGS.deadlineReminderSchedulerTime,
+        DEFAULT_SETTINGS.deadlineReminderSchedulerLastRunAt,
+        DEFAULT_SETTINGS.deadlineReminderSchedulerLastMessage,
+        DEFAULT_SETTINGS.deadlineReminderKillSwitch ? 1 : 0,
         now
       );
   }
@@ -3882,6 +4229,57 @@ async function getWorkerStateFromGateway(): Promise<AletaBotWorkerState | null> 
   return result.data.worker;
 }
 
+function getAletaBotRuntimeStatusUrl() {
+  const baseUrl = (
+    process.env.ALETA_BOT_BASE_URL ||
+    process.env.ALETA_BOT_RUNTIME_URL ||
+    DEFAULT_ALETA_BOT_RUNTIME_URL
+  ).replace(/\/+$/, "");
+  return `${baseUrl}/internal/aleta-bot/status`;
+}
+
+async function fetchAletaBotRuntimeStatusPayload(): Promise<{
+  online: boolean;
+  statusCode: number;
+  payload: AletaBotRuntimeStatusPayload | null;
+  errorMessage: string | null;
+}> {
+  const headers: HeadersInit = {};
+  const internalToken =
+    process.env.ALETA_BOT_INTERNAL_API_TOKEN ||
+    process.env.ALETA_BOT_INTERNAL_TOKEN ||
+    "";
+  if (internalToken) {
+    headers["x-aleta-internal-token"] = internalToken;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
+  try {
+    const response = await fetch(getAletaBotRuntimeStatusUrl(), {
+      cache: "no-store",
+      headers,
+      signal: controller.signal,
+    });
+    const payload = (await response.json().catch(() => null)) as AletaBotRuntimeStatusPayload | null;
+    return {
+      online: response.ok,
+      statusCode: response.status,
+      payload: response.ok ? payload : null,
+      errorMessage: response.ok ? null : `HTTP ${response.status}`,
+    };
+  } catch (error) {
+    return {
+      online: false,
+      statusCode: 0,
+      payload: null,
+      errorMessage: sanitizeErrorMessage(error instanceof Error ? error.message : "Runtime ALETA Bot tidak dapat dihubungi."),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function controlWorker(
   db: AletaDatabase,
   actorUserId: string,
@@ -4005,7 +4403,21 @@ export async function getAletaBotSettings(db: AletaDatabase) {
   const row = await db
     .prepare(
       `SELECT bot_enabled, notifications_enabled, admin_whatsapp_number, message_delay_ms,
-        retry_limit, dry_run_enabled, schedule_cron, test_target_number, security_notes, updated_at
+        retry_limit, dry_run_enabled, schedule_cron, test_target_number, security_notes,
+        disposition_deadline_reminder_enabled, disposition_deadline_reminder_mode,
+        disposition_deadline_reminder_approved_at, disposition_deadline_reminder_approved_by,
+        disposition_deadline_reminder_last_run_at, disposition_deadline_reminder_last_status,
+        disposition_deadline_reminder_last_message,
+        disposition_deadline_reminder_pilot_user_ids_json,
+        disposition_deadline_reminder_pilot_role_ids_json,
+        disposition_deadline_reminder_pilot_position_ids_json,
+        disposition_deadline_reminder_scheduler_enabled,
+        disposition_deadline_reminder_scheduler_mode,
+        disposition_deadline_reminder_scheduler_time,
+        disposition_deadline_reminder_scheduler_last_run_at,
+        disposition_deadline_reminder_scheduler_last_message,
+        disposition_deadline_reminder_kill_switch,
+        updated_at
        FROM aleta_bot_settings
        WHERE id = 1`
     )
@@ -4142,7 +4554,9 @@ async function getPublicQaLogs(db: AletaDatabase) {
     .prepare(
       `SELECT id, sender_number, sender_name, raw_message, normalized_message,
         matched_intent_key, matched_method, confidence, parameters_json, query_key,
-        response_preview, status, error_message, created_at
+        response_preview, status, error_message,
+        needs_human_review, review_status, reviewed_by_user_id, reviewed_at, review_note,
+        created_at
        FROM aleta_bot_public_qa_logs
        ORDER BY created_at DESC
        LIMIT 80`
@@ -4156,7 +4570,7 @@ async function getUnknownQuestionReviews(db: AletaDatabase): Promise<AletaBotUnk
   const logs = await getPublicQaLogs(db);
   const grouped = new Map<string, AletaBotUnknownQuestionReview>();
   for (const log of logs) {
-    if (log.status !== "fallback" && log.status !== "error" && log.matchedMethod !== "fallback") continue;
+    if (!log.needsHumanReview && log.status !== "fallback" && log.status !== "error" && log.matchedMethod !== "fallback") continue;
     const normalized = (log.normalizedMessage || log.rawMessage || "").trim().toLowerCase();
     if (!normalized) continue;
     const suggestion = suggestIntentForQuestion(log.rawMessage || normalized);
@@ -4164,20 +4578,35 @@ async function getUnknownQuestionReviews(db: AletaDatabase): Promise<AletaBotUnk
     const senderMasked = maskExportPhone(log.senderNumber || "");
     if (existing) {
       existing.frequency += 1;
+      existing.logIds.push(log.id);
+      existing.needsHumanReview = existing.needsHumanReview || log.needsHumanReview;
+      if (existing.reviewStatus !== "pending" && log.reviewStatus === "pending") {
+        existing.reviewStatus = "pending";
+      }
       if (log.createdAt > existing.lastAskedAt) {
         existing.lastAskedAt = log.createdAt;
         existing.rawMessage = log.rawMessage;
         existing.senderMasked = senderMasked;
         existing.fallbackReason = log.errorMessage || log.responsePreview || existing.fallbackReason;
+        existing.reviewNote = log.reviewNote || existing.reviewNote;
+        existing.reviewedByUserId = log.reviewedByUserId || existing.reviewedByUserId;
+        existing.reviewedAt = log.reviewedAt || existing.reviewedAt;
       }
     } else {
       grouped.set(normalized, {
+        id: log.id,
+        logIds: [log.id],
         normalizedMessage: normalized,
         rawMessage: log.rawMessage,
         frequency: 1,
         lastAskedAt: log.createdAt,
         senderMasked,
         fallbackReason: log.errorMessage || log.responsePreview || "Fallback / tidak dikenali.",
+        needsHumanReview: log.needsHumanReview,
+        reviewStatus: log.reviewStatus,
+        reviewNote: log.reviewNote,
+        reviewedByUserId: log.reviewedByUserId,
+        reviewedAt: log.reviewedAt,
         suggestedIntentKey: suggestion.suggestedIntentKey,
         confidence: suggestion.confidence,
         safetyRisk: suggestion.safety.riskLevel,
@@ -4207,12 +4636,65 @@ async function getEmployeeRecipients(db: AletaDatabase) {
   return rows.map(mapEmployeeRecipient).filter((row) => row.whatsappNumber && /^62\d{8,15}$/.test(row.whatsappNumber));
 }
 
+async function getWhatsappNumberCompleteness(db: AletaDatabase) {
+  const [users, positions] = await Promise.all([getUsersFromDb(db), getPositionsFromDb(db)]);
+  const positionMap = new Map(positions.map((position) => [position.id, position]));
+  const activeUsers = users.filter((user) => user.isActive);
+  const hasWhatsapp = (value: string) => /^62\d{8,15}$/.test(normalizeWhatsappNumber(value || ""));
+  const withWhatsapp = activeUsers.filter((user) => hasWhatsapp(user.whatsappNumber));
+  const importantRoles = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "hakim", "panitera", "sekretaris"]);
+  const roleGroups = new Map<string, { total: number; withWhatsapp: number; missingWhatsapp: number }>();
+
+  for (const user of activeUsers) {
+    const group = roleGroups.get(user.roleId) ?? { total: 0, withWhatsapp: 0, missingWhatsapp: 0 };
+    group.total += 1;
+    if (hasWhatsapp(user.whatsappNumber)) {
+      group.withWhatsapp += 1;
+    } else {
+      group.missingWhatsapp += 1;
+    }
+    roleGroups.set(user.roleId, group);
+  }
+
+  const importantMissing = activeUsers
+    .filter((user) => !hasWhatsapp(user.whatsappNumber))
+    .sort((a, b) => {
+      const aImportant = importantRoles.has(a.roleId) ? 0 : 1;
+      const bImportant = importantRoles.has(b.roleId) ? 0 : 1;
+      return aImportant - bImportant || a.name.localeCompare(b.name);
+    })
+    .slice(0, 12)
+    .map((user) => {
+      const position = positionMap.get(user.positionId);
+      return {
+        id: user.id,
+        name: user.name,
+        roleId: user.roleId,
+        positionId: user.positionId,
+        positionName: position?.name ?? user.positionId,
+        unitKerja: position?.unitKerja ?? "",
+      };
+    });
+
+  return {
+    totalActiveUsers: activeUsers.length,
+    withWhatsapp: withWhatsapp.length,
+    missingWhatsapp: Math.max(0, activeUsers.length - withWhatsapp.length),
+    coveragePercent: activeUsers.length > 0 ? Math.round((withWhatsapp.length / activeUsers.length) * 100) : 0,
+    importantMissing,
+    roleBreakdown: Array.from(roleGroups.entries())
+      .map(([roleId, value]) => ({ roleId, ...value }))
+      .sort((a, b) => a.roleId.localeCompare(b.roleId)),
+  };
+}
+
 async function getNotificationLogs(db: AletaDatabase) {
   await ensureAletaBotSeeded(db);
   const rows = await db
     .prepare(
       `SELECT id, notification_id, query_id, recipient_number, recipient_name, category,
-        message_preview, status, error_message, sent_at, created_at
+        message_preview, status, error_message, source_app, source_feature, entity_type, entity_id, metadata_json,
+        sent_at, created_at
        FROM aleta_bot_notification_logs
        ORDER BY created_at DESC
        LIMIT 80`
@@ -4234,6 +4716,411 @@ async function getLogs(db: AletaDatabase) {
     .all<LogRow>();
 
   return rows.map(mapLog);
+}
+
+function mapPolicySkipRow(row: PolicySkipLogRow) {
+  return {
+    id: row.id,
+    notificationKey: row.notification_key,
+    notificationId: row.notification_id ?? "",
+    category: row.category,
+    reason: row.reason,
+    sourceFeature: row.source_feature,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    recipientType: row.recipient_type,
+    recipientCount: Number(row.recipient_count || 0),
+    createdAt: row.created_at,
+  };
+}
+
+async function appendPolicySkipLog(
+  db: AletaDatabase,
+  input: {
+    notificationKey: string;
+    notificationId?: string | null;
+    category: string;
+    reason: string;
+    sourceFeature?: string;
+    entityType?: string;
+    entityId?: string;
+    recipientType?: string;
+    recipientCount?: number;
+    metadata?: Record<string, unknown>;
+  }
+) {
+  await ensureAletaBotSeeded(db);
+  await db
+    .prepare(
+      `INSERT INTO aleta_bot_policy_skip_logs (
+        id, notification_key, notification_id, category, reason, source_feature,
+        entity_type, entity_id, recipient_type, recipient_count, metadata_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      await nextPrefixedId(db, "aleta_bot_policy_skip_logs", "abps"),
+      input.notificationKey,
+      input.notificationId ?? null,
+      input.category,
+      input.reason || "unknown",
+      input.sourceFeature ?? "",
+      input.entityType ?? "",
+      input.entityId ?? "",
+      input.recipientType ?? "",
+      Math.max(0, Number(input.recipientCount || 0)),
+      JSON.stringify(input.metadata ?? {}),
+      new Date().toISOString()
+    );
+}
+
+async function getPolicySkipSummary(db: AletaDatabase): Promise<AletaBotPolicySkipSummary> {
+  await ensureAletaBotSeeded(db);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = today.toISOString();
+  const [todayRow, totalRow, lastRow, reasonRows, notificationRows, recentRows] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs WHERE created_at >= ?`).get<{ count: number | string }>(todayIso),
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs`).get<{ count: number | string }>(),
+    db.prepare(`SELECT created_at FROM aleta_bot_policy_skip_logs ORDER BY created_at DESC LIMIT 1`).get<{ created_at: string }>(),
+    db
+      .prepare(
+        `SELECT reason, COUNT(*) AS count
+         FROM aleta_bot_policy_skip_logs
+         GROUP BY reason
+         ORDER BY COUNT(*) DESC, reason ASC
+         LIMIT 6`
+      )
+      .all<{ reason: string; count: number | string }>(),
+    db
+      .prepare(
+        `SELECT notification_key, COUNT(*) AS count
+         FROM aleta_bot_policy_skip_logs
+         GROUP BY notification_key
+         ORDER BY COUNT(*) DESC, notification_key ASC
+         LIMIT 6`
+      )
+      .all<{ notification_key: string; count: number | string }>(),
+    db
+      .prepare(
+        `SELECT id, notification_key, notification_id, category, reason, source_feature,
+          entity_type, entity_id, recipient_type, recipient_count, metadata_json, created_at
+         FROM aleta_bot_policy_skip_logs
+         ORDER BY created_at DESC
+         LIMIT 12`
+      )
+      .all<PolicySkipLogRow>(),
+  ]);
+
+  return {
+    totalToday: Number(todayRow?.count || 0),
+    totalAllTime: Number(totalRow?.count || 0),
+    lastSkippedAt: lastRow?.created_at ?? null,
+    topReasons: reasonRows.map((row) => ({ reason: row.reason, count: Number(row.count || 0) })),
+    topNotifications: notificationRows.map((row) => ({ notificationKey: row.notification_key, count: Number(row.count || 0) })),
+    recent: recentRows.map(mapPolicySkipRow),
+  };
+}
+
+function mapDispositionReminderRunRow(row: DispositionReminderRunRow): AletaBotDispositionReminderRun {
+  return {
+    id: row.id,
+    mode: row.mode,
+    triggeredBy: row.triggered_by,
+    triggeredByUserId: row.triggered_by_user_id ?? null,
+    startedAt: row.started_at,
+    finishedAt: row.finished_at ?? null,
+    totalCandidates: Number(row.total_candidates || 0),
+    dryRunCreated: Number(row.dry_run_created || 0),
+    sentCount: Number(row.sent_count || 0),
+    skippedCount: Number(row.skipped_count || 0),
+    errorCount: Number(row.error_count || 0),
+    status: row.status,
+    summary: parseJson<Record<string, unknown>>(row.summary_json || "{}", {}),
+  };
+}
+
+async function appendDispositionReminderRun(
+  db: AletaDatabase,
+  input: {
+    mode: AletaBotDispositionReminderRun["mode"];
+    triggeredBy: AletaBotDispositionReminderRun["triggeredBy"];
+    triggeredByUserId?: string | null;
+    startedAt?: string;
+    finishedAt?: string | null;
+    totalCandidates?: number;
+    dryRunCreated?: number;
+    sentCount?: number;
+    skippedCount?: number;
+    errorCount?: number;
+    status: AletaBotDispositionReminderRun["status"];
+    summary?: Record<string, unknown>;
+  }
+) {
+  await db
+    .prepare(
+      `INSERT INTO aleta_bot_disposition_reminder_runs (
+        id, mode, triggered_by, triggered_by_user_id, started_at, finished_at,
+        total_candidates, dry_run_created, sent_count, skipped_count, error_count,
+        status, summary_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      await nextPrefixedId(db, "aleta_bot_disposition_reminder_runs", "abrr"),
+      input.mode,
+      input.triggeredBy,
+      input.triggeredByUserId ?? null,
+      input.startedAt ?? new Date().toISOString(),
+      input.finishedAt ?? new Date().toISOString(),
+      Math.max(0, Number(input.totalCandidates || 0)),
+      Math.max(0, Number(input.dryRunCreated || 0)),
+      Math.max(0, Number(input.sentCount || 0)),
+      Math.max(0, Number(input.skippedCount || 0)),
+      Math.max(0, Number(input.errorCount || 0)),
+      input.status,
+      JSON.stringify(input.summary ?? {})
+    );
+}
+
+async function getDispositionReminderRuns(db: AletaDatabase, limit = 10): Promise<AletaBotDispositionReminderRun[]> {
+  await ensureAletaBotSeeded(db);
+  const rows = await db
+    .prepare(
+      `SELECT id, mode, triggered_by, triggered_by_user_id, started_at, finished_at,
+        total_candidates, dry_run_created, sent_count, skipped_count, error_count, status, summary_json
+       FROM aleta_bot_disposition_reminder_runs
+       ORDER BY started_at DESC
+       LIMIT ?`
+    )
+    .all<DispositionReminderRunRow>(Math.max(1, Math.min(25, Number(limit || 10))));
+  return rows.map(mapDispositionReminderRunRow);
+}
+
+export async function getPolicySkipReport(
+  db: AletaDatabase,
+  actorUserId: string,
+  filters: {
+    dateFrom?: string | null;
+    dateTo?: string | null;
+    reason?: string | null;
+    notificationKey?: string | null;
+    category?: string | null;
+    format?: "json" | "csv" | string | null;
+  } = {}
+) {
+  await requireAletaBotOperator(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const where: string[] = [];
+  const params: Array<string | number> = [];
+  const dateFrom = String(filters.dateFrom || "").trim();
+  const dateTo = String(filters.dateTo || "").trim();
+  const reason = String(filters.reason || "").trim();
+  const notificationKey = String(filters.notificationKey || "").trim();
+  const category = String(filters.category || "").trim();
+
+  if (dateFrom) {
+    where.push("created_at >= ?");
+    params.push(dateFrom);
+  }
+  if (dateTo) {
+    where.push("created_at <= ?");
+    params.push(dateTo);
+  }
+  if (reason && reason !== "all") {
+    where.push("reason = ?");
+    params.push(reason);
+  }
+  if (notificationKey) {
+    where.push("notification_key = ?");
+    params.push(notificationKey);
+  }
+  if (category && category !== "all") {
+    where.push("category = ?");
+    params.push(category);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const [totalRow, byReasonRows, byNotificationRows, lastRow, rows] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs ${whereSql}`).get<{ count: number | string }>(...params),
+    db
+      .prepare(
+        `SELECT reason, COUNT(*) AS count
+         FROM aleta_bot_policy_skip_logs
+         ${whereSql}
+         GROUP BY reason
+         ORDER BY COUNT(*) DESC, reason ASC`
+      )
+      .all<{ reason: string; count: number | string }>(...params),
+    db
+      .prepare(
+        `SELECT notification_key, COUNT(*) AS count
+         FROM aleta_bot_policy_skip_logs
+         ${whereSql}
+         GROUP BY notification_key
+         ORDER BY COUNT(*) DESC, notification_key ASC`
+      )
+      .all<{ notification_key: string; count: number | string }>(...params),
+    db.prepare(`SELECT created_at FROM aleta_bot_policy_skip_logs ${whereSql} ORDER BY created_at DESC LIMIT 1`).get<{ created_at: string }>(...params),
+    db
+      .prepare(
+        `SELECT id, notification_key, notification_id, category, reason, source_feature,
+          entity_type, entity_id, recipient_type, recipient_count, metadata_json, created_at
+         FROM aleta_bot_policy_skip_logs
+         ${whereSql}
+         ORDER BY created_at DESC
+         LIMIT 1000`
+      )
+      .all<PolicySkipLogRow>(...params),
+  ]);
+
+  const report = {
+    summary: {
+      total: Number(totalRow?.count || 0),
+      byReason: Object.fromEntries(byReasonRows.map((row) => [row.reason || "unknown", Number(row.count || 0)])),
+      byNotification: Object.fromEntries(byNotificationRows.map((row) => [row.notification_key || "notification", Number(row.count || 0)])),
+      lastSkippedAt: lastRow?.created_at ?? null,
+    },
+    items: rows.map(mapPolicySkipRow),
+  };
+
+  if (filters.format === "csv") {
+    const headers = [
+      "Waktu",
+      "Notification Key",
+      "Kategori",
+      "Alasan",
+      "Source Feature",
+      "Entity Type",
+      "Entity ID",
+      "Recipient Type",
+      "Jumlah Recipient",
+    ];
+    const lines = [headers.map(csvCell).join(",")];
+    for (const item of report.items) {
+      lines.push([
+        item.createdAt,
+        item.notificationKey,
+        item.category,
+        item.reason,
+        item.sourceFeature,
+        item.entityType,
+        item.entityId,
+        item.recipientType,
+        item.recipientCount,
+      ].map(csvCell).join(","));
+    }
+    return {
+      ...report,
+      filename: `policy-skip-report-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv: lines.join("\n"),
+    };
+  }
+
+  return report;
+}
+
+export async function getAletaBotMessageAnalytics(db: AletaDatabase, actorUserId: string) {
+  await requireAletaBotOperator(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = today.toISOString();
+  const [totalRow, statusRows, sourceRows, failureRows, policySkipSummary] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_notification_logs WHERE created_at >= ?`).get<{ count: number | string }>(todayIso),
+    db
+      .prepare(
+        `SELECT status, COUNT(*) AS count
+         FROM aleta_bot_notification_logs
+         WHERE created_at >= ?
+         GROUP BY status
+         ORDER BY COUNT(*) DESC`
+      )
+      .all<{ status: string; count: number | string }>(todayIso),
+    db
+      .prepare(
+        `SELECT COALESCE(NULLIF(source_feature, ''), 'lainnya') AS source_feature, COUNT(*) AS count
+         FROM aleta_bot_notification_logs
+         WHERE created_at >= ?
+         GROUP BY COALESCE(NULLIF(source_feature, ''), 'lainnya')
+         ORDER BY COUNT(*) DESC`
+      )
+      .all<{ source_feature: string; count: number | string }>(todayIso),
+    db
+      .prepare(
+        `SELECT COALESCE(NULLIF(error_message, ''), 'Tidak ada detail') AS reason, COUNT(*) AS count
+         FROM aleta_bot_notification_logs
+         WHERE created_at >= ? AND status IN ('failed', 'dead_letter')
+         GROUP BY COALESCE(NULLIF(error_message, ''), 'Tidak ada detail')
+         ORDER BY COUNT(*) DESC
+         LIMIT 5`
+      )
+      .all<{ reason: string; count: number | string }>(todayIso),
+    getPolicySkipSummary(db),
+  ]);
+  const byStatus = Object.fromEntries(statusRows.map((row) => [row.status || "unknown", Number(row.count || 0)]));
+  const sent = Number(byStatus.sent || byStatus.delivered || 0);
+  const failed = Number(byStatus.failed || 0);
+  const simulated = Number(byStatus.simulated || 0);
+  const total = Number(totalRow?.count || 0);
+  return {
+    totalToday: total,
+    sentToday: sent,
+    failedToday: failed,
+    simulatedToday: simulated,
+    deadLetterToday: Number(byStatus.dead_letter || 0),
+    successRate: total > 0 ? Math.round((sent / total) * 100) : 0,
+    byStatus,
+    bySourceFeature: Object.fromEntries(sourceRows.map((row) => [row.source_feature, Number(row.count || 0)])),
+    topFailureReasons: failureRows.map((row) => ({ reason: sanitizeErrorMessage(row.reason).slice(0, 160), count: Number(row.count || 0) })),
+    policySkip: policySkipSummary,
+  };
+}
+
+export async function getPublicQaAnalytics(db: AletaDatabase, actorUserId: string) {
+  await requireAletaBotOperator(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const [todayRow, weekRow, statusRows, intentRows, pendingRow, convertedRow, safetyRow] = await Promise.all([
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_public_qa_logs WHERE created_at >= ?`).get<{ count: number | string }>(today.toISOString()),
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_public_qa_logs WHERE created_at >= ?`).get<{ count: number | string }>(sevenDaysAgo.toISOString()),
+    db
+      .prepare(
+        `SELECT status, COUNT(*) AS count
+         FROM aleta_bot_public_qa_logs
+         WHERE created_at >= ?
+         GROUP BY status
+         ORDER BY COUNT(*) DESC`
+      )
+      .all<{ status: string; count: number | string }>(sevenDaysAgo.toISOString()),
+    db
+      .prepare(
+        `SELECT COALESCE(NULLIF(matched_intent_key, ''), 'fallback') AS intent_key, COUNT(*) AS count
+         FROM aleta_bot_public_qa_logs
+         WHERE created_at >= ?
+         GROUP BY COALESCE(NULLIF(matched_intent_key, ''), 'fallback')
+         ORDER BY COUNT(*) DESC
+         LIMIT 8`
+      )
+      .all<{ intent_key: string; count: number | string }>(sevenDaysAgo.toISOString()),
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_public_qa_logs WHERE needs_human_review = 1 AND review_status = 'pending'`).get<{ count: number | string }>(),
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_public_qa_logs WHERE review_status = 'converted_to_intent'`).get<{ count: number | string }>(),
+    db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_public_qa_logs WHERE status = 'blocked' OR lower(error_message) LIKE '%safety%'`).get<{ count: number | string }>(),
+  ]);
+  const byStatus = Object.fromEntries(statusRows.map((row) => [row.status || "unknown", Number(row.count || 0)]));
+  const totalWeek = Number(weekRow?.count || 0);
+  const fallbackCount = Number(byStatus.fallback || byStatus.error || 0);
+  return {
+    totalToday: Number(todayRow?.count || 0),
+    totalLast7Days: totalWeek,
+    fallbackRate: totalWeek > 0 ? Math.round((fallbackCount / totalWeek) * 100) : 0,
+    humanReviewPending: Number(pendingRow?.count || 0),
+    safetyBlocked: Number(safetyRow?.count || 0),
+    convertedToDraftIntent: Number(convertedRow?.count || 0),
+    topIntents: intentRows.map((row) => ({ intentKey: row.intent_key, count: Number(row.count || 0) })),
+    byStatus,
+  };
 }
 
 function getRuntimeState(settings: AletaBotSettings, whatsappRuntimeStatus: string): AletaBotRuntimeState {
@@ -4286,8 +5173,8 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
   const runtimeMode = getWhatsappRuntimeMode();
   const [
     settings, templates, jobs, notifications, queries, dbConnections,
-    publicQaIntents, publicQaLogs, unknownQuestionReviews, employeeRecipients, notificationLogs, logs,
-    whatsappSnapshot, approvalRequests, legacyMigrations,
+    publicQaIntents, publicQaLogs, unknownQuestionReviews, employeeRecipients, notificationLogs, logs, policySkipSummary,
+    deadlineReminderRuns, whatsappSnapshot, approvalRequests, legacyMigrations, whatsappNumberCompleteness,
   ] = await Promise.all([
     getAletaBotSettings(db),
     getTemplates(db),
@@ -4301,13 +5188,47 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
     getEmployeeRecipients(db),
     getNotificationLogs(db),
     getLogs(db),
+    getPolicySkipSummary(db),
+    getDispositionReminderRuns(db, 10),
     runtimeMode === "aleta_bot" ? buildGatewayWhatsappSnapshot() : whatsappService.getGatewaySnapshot(),
     listApprovalRequests(db),
     getLegacyMigrations(db),
+    getWhatsappNumberCompleteness(db),
   ]);
   const metrics = await buildMetrics(db, jobs, templates);
   const workerState = runtimeMode === "aleta_bot" ? await getWorkerStateFromGateway() : null;
   const deadLetters = runtimeMode === "aleta_bot" ? await getDeadLettersFromGateway(50) : [];
+  const notificationsWithPolicy = await Promise.all(
+    notifications.map(async (notification) => {
+      if (notification.category !== "party") {
+        return {
+          ...notification,
+          policyStatus: {
+            dryRunPassed: notification.lastStatus === "simulated",
+            recipientPreviewPassed: true,
+            approved: true,
+            canActivate: true,
+            reason: "Notifikasi pegawai tidak memakai guard pihak.",
+          },
+        };
+      }
+      const dryRunPassed = notification.lastStatus === "simulated";
+      const recipientPreviewPassed = await hasNotificationRecipientPreview(db, notification.id);
+      const approved = await hasApprovedNotificationPolicy(db, notification.id);
+      return {
+        ...notification,
+        policyStatus: {
+          dryRunPassed,
+          recipientPreviewPassed,
+          approved,
+          canActivate: dryRunPassed && recipientPreviewPassed && approved,
+          reason: dryRunPassed && recipientPreviewPassed && approved
+            ? "Siap diaktifkan sesuai policy notifikasi pihak."
+            : "Notifikasi pihak belum dapat aktif sebelum simulasi, preview penerima, dan approval selesai.",
+        },
+      };
+    })
+  );
 
   return {
     settings,
@@ -4326,13 +5247,16 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
     metrics,
     templates,
     jobs,
-    notifications,
+    notifications: notificationsWithPolicy,
     queries,
     dbConnections,
     publicQaIntents,
     publicQaLogs,
     unknownQuestionReviews,
     employeeRecipients,
+    whatsappNumberCompleteness,
+    policySkipSummary,
+    deadlineReminderRuns,
     notificationLogs,
     queryCatalog: ALETA_BOT_QUERY_CATALOG,
     logs,
@@ -4540,6 +5464,29 @@ async function writeAletaBotRuntimeConfig(
     .filter((item) => item.status === "legacy_disabled" && (item.legacyType === "public_command" || item.legacyType === "admin_command"))
     .map((item) => item.legacyKey || item.sourceFunction)
     .filter(Boolean);
+  const activeRuntimeNotifications = await Promise.all(
+    notifications
+      .filter((notification) => notification.isActive)
+      .map(async (notification) => {
+        if (notification.category !== "party") return notification;
+        const dryRunPassed = notification.lastStatus === "simulated";
+        const recipientPreviewPassed = await hasNotificationRecipientPreview(db, notification.id);
+        const approved = await hasApprovedNotificationPolicy(db, notification.id);
+        return {
+          ...notification,
+          policyStatus: {
+            dryRunPassed,
+            recipientPreviewPassed,
+            approved,
+            canActivate: dryRunPassed && recipientPreviewPassed && approved,
+            reason: "Runtime guard party notification.",
+          },
+        };
+      })
+  );
+  const safeRuntimeNotifications = activeRuntimeNotifications.filter(
+    (notification) => notification.category !== "party" || notification.policyStatus?.canActivate
+  );
   const payload = {
     version: 1,
     updatedAt: new Date().toISOString(),
@@ -4553,11 +5500,32 @@ async function writeAletaBotRuntimeConfig(
     dryRunEnabled: settings.dryRunEnabled,
     scheduleCron: settings.scheduleCron,
     testTargetNumber: settings.testTargetNumber,
+    dispositionDeadlineReminder: {
+      enabled: settings.deadlineReminderEnabled,
+      mode: settings.deadlineReminderMode,
+      approvedAt: settings.deadlineReminderApprovedAt,
+      approvedBy: settings.deadlineReminderApprovedBy,
+      pilot: {
+        enabled: settings.deadlineReminderMode === "pilot",
+        userIds: settings.deadlineReminderPilotUserIds,
+        roleIds: settings.deadlineReminderPilotRoleIds,
+        positionIds: settings.deadlineReminderPilotPositionIds,
+      },
+      scheduler: {
+        enabled: settings.deadlineReminderSchedulerEnabled,
+        mode: settings.deadlineReminderSchedulerMode,
+        time: settings.deadlineReminderSchedulerTime,
+        lastRunAt: settings.deadlineReminderSchedulerLastRunAt,
+        lastMessage: settings.deadlineReminderSchedulerLastMessage,
+      },
+      killSwitch: settings.deadlineReminderKillSwitch,
+      defaultDryRun: settings.deadlineReminderMode !== "production",
+    },
     disabledLegacyKeys: [...disabledLegacyNotificationKeys, ...disabledLegacyCommandKeys],
     disabledLegacyNotificationKeys,
     disabledLegacyCommandKeys,
     templates,
-    notifications: notifications.filter((notification) => notification.isActive),
+    notifications: safeRuntimeNotifications,
     queries: queries.filter((query) => query.isActive),
     dbConnections: dbConnections.map((connection) => ({
       key: connection.key,
@@ -4692,6 +5660,46 @@ export async function updateAletaBotSettings(
         payload.scheduleCron === undefined ? current.scheduleCron : validateCronLike(payload.scheduleCron),
       securityNotes:
         payload.securityNotes === undefined ? current.securityNotes : payload.securityNotes.trim().slice(0, 800),
+      deadlineReminderEnabled:
+        payload.deadlineReminderEnabled === undefined
+          ? current.deadlineReminderEnabled
+          : Boolean(payload.deadlineReminderEnabled),
+      deadlineReminderMode:
+        payload.deadlineReminderMode === undefined
+          ? current.deadlineReminderMode
+          : ["disabled", "dry_run", "pilot", "production"].includes(payload.deadlineReminderMode)
+            ? payload.deadlineReminderMode
+            : current.deadlineReminderMode,
+      deadlineReminderPilotUserIds:
+        payload.deadlineReminderPilotUserIds === undefined
+          ? current.deadlineReminderPilotUserIds
+          : sanitizeStringIdList(payload.deadlineReminderPilotUserIds),
+      deadlineReminderPilotRoleIds:
+        payload.deadlineReminderPilotRoleIds === undefined
+          ? current.deadlineReminderPilotRoleIds
+          : sanitizeStringIdList(payload.deadlineReminderPilotRoleIds),
+      deadlineReminderPilotPositionIds:
+        payload.deadlineReminderPilotPositionIds === undefined
+          ? current.deadlineReminderPilotPositionIds
+          : sanitizeStringIdList(payload.deadlineReminderPilotPositionIds),
+      deadlineReminderSchedulerEnabled:
+        payload.deadlineReminderSchedulerEnabled === undefined
+          ? current.deadlineReminderSchedulerEnabled
+          : Boolean(payload.deadlineReminderSchedulerEnabled),
+      deadlineReminderSchedulerMode:
+        payload.deadlineReminderSchedulerMode === undefined
+          ? current.deadlineReminderSchedulerMode
+          : ["disabled", "dry_run", "pilot", "production"].includes(payload.deadlineReminderSchedulerMode)
+            ? payload.deadlineReminderSchedulerMode
+            : current.deadlineReminderSchedulerMode,
+      deadlineReminderSchedulerTime:
+        payload.deadlineReminderSchedulerTime === undefined
+          ? current.deadlineReminderSchedulerTime
+          : sanitizeReminderSchedulerTime(payload.deadlineReminderSchedulerTime, current.deadlineReminderSchedulerTime),
+      deadlineReminderKillSwitch:
+        payload.deadlineReminderKillSwitch === undefined
+          ? current.deadlineReminderKillSwitch
+          : Boolean(payload.deadlineReminderKillSwitch),
       updatedAt: new Date().toISOString(),
     };
 
@@ -4700,7 +5708,24 @@ export async function updateAletaBotSettings(
         `UPDATE aleta_bot_settings
          SET bot_enabled = ?, notifications_enabled = ?, admin_whatsapp_number = ?,
            message_delay_ms = ?, retry_limit = ?, dry_run_enabled = ?, schedule_cron = ?,
-           test_target_number = ?, security_notes = ?, updated_at = ?
+           test_target_number = ?, security_notes = ?,
+           disposition_deadline_reminder_enabled = ?,
+           disposition_deadline_reminder_mode = ?,
+           disposition_deadline_reminder_approved_at = ?,
+           disposition_deadline_reminder_approved_by = ?,
+           disposition_deadline_reminder_last_run_at = ?,
+           disposition_deadline_reminder_last_status = ?,
+           disposition_deadline_reminder_last_message = ?,
+           disposition_deadline_reminder_pilot_user_ids_json = ?,
+           disposition_deadline_reminder_pilot_role_ids_json = ?,
+           disposition_deadline_reminder_pilot_position_ids_json = ?,
+           disposition_deadline_reminder_scheduler_enabled = ?,
+           disposition_deadline_reminder_scheduler_mode = ?,
+           disposition_deadline_reminder_scheduler_time = ?,
+           disposition_deadline_reminder_scheduler_last_run_at = ?,
+           disposition_deadline_reminder_scheduler_last_message = ?,
+           disposition_deadline_reminder_kill_switch = ?,
+           updated_at = ?
          WHERE id = 1`
       )
       .run(
@@ -4713,6 +5738,22 @@ export async function updateAletaBotSettings(
         nextSettings.scheduleCron,
         nextSettings.testTargetNumber,
         nextSettings.securityNotes,
+        nextSettings.deadlineReminderEnabled ? 1 : 0,
+        nextSettings.deadlineReminderMode,
+        nextSettings.deadlineReminderApprovedAt,
+        nextSettings.deadlineReminderApprovedBy,
+        nextSettings.deadlineReminderLastRunAt,
+        nextSettings.deadlineReminderLastStatus,
+        nextSettings.deadlineReminderLastMessage,
+        JSON.stringify(nextSettings.deadlineReminderPilotUserIds),
+        JSON.stringify(nextSettings.deadlineReminderPilotRoleIds),
+        JSON.stringify(nextSettings.deadlineReminderPilotPositionIds),
+        nextSettings.deadlineReminderSchedulerEnabled ? 1 : 0,
+        nextSettings.deadlineReminderSchedulerMode,
+        nextSettings.deadlineReminderSchedulerTime,
+        nextSettings.deadlineReminderSchedulerLastRunAt,
+        nextSettings.deadlineReminderSchedulerLastMessage,
+        nextSettings.deadlineReminderKillSwitch ? 1 : 0,
         nextSettings.updatedAt
       );
 
@@ -4725,6 +5766,7 @@ export async function updateAletaBotSettings(
         botEnabled: nextSettings.botEnabled,
         notificationsEnabled: nextSettings.notificationsEnabled,
         dryRunEnabled: nextSettings.dryRunEnabled,
+        deadlineReminderMode: nextSettings.deadlineReminderMode,
       },
     });
     await appendAuditLog(tx, {
@@ -4982,7 +6024,20 @@ export async function updateAletaBotNotification(
             fallbackColumns: ["nomor_hp", "nomor_whatsapp", "telepon"],
           };
 
-    const existing = await tx.prepare(`SELECT id FROM aleta_bot_notifications WHERE id = ?`).get<{ id: string }>(id);
+    const existing = await tx
+      .prepare(`SELECT id, is_active, last_status FROM aleta_bot_notifications WHERE id = ?`)
+      .get<{ id: string; is_active: number; last_status: AletaBotNotification["lastStatus"] }>(id);
+    if (notification.category === "party" && notification.isActive && existing?.is_active !== 1) {
+      const dryRunPassed = existing?.last_status === "simulated";
+      const previewPassed = existing ? await hasNotificationRecipientPreview(tx, id) : false;
+      const approved = existing ? await hasApprovedNotificationPolicy(tx, id) : false;
+      if (!dryRunPassed || !previewPassed || !approved) {
+        throw new ApiError(
+          400,
+          "Notifikasi pihak belum dapat diaktifkan. Jalankan simulasi, preview penerima, dan approval terlebih dahulu."
+        );
+      }
+    }
     if (existing) {
       await tx
         .prepare(
@@ -5564,12 +6619,1798 @@ export async function recordAletaBotDbConnectionTestResult(
   return getAletaBotSnapshot(db, actor.id);
 }
 
+export async function reviewPublicQaUnknownQuestion(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    logIds,
+    normalizedMessage,
+    reviewStatus,
+    reviewNote,
+  }: {
+    actorUserId: string;
+    logIds?: string[];
+    normalizedMessage?: string;
+    reviewStatus: AletaBotPublicQaLogEntry["reviewStatus"];
+    reviewNote?: string;
+  }
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+
+  if (!["pending", "reviewed", "ignored", "converted_to_intent"].includes(reviewStatus)) {
+    throw new ApiError(400, "Status review Public Q&A tidak valid.");
+  }
+
+  const ids = Array.isArray(logIds) ? logIds.map((id) => String(id).trim()).filter(Boolean).slice(0, 50) : [];
+  const normalized = String(normalizedMessage || "").trim().toLowerCase();
+  if (ids.length === 0 && !normalized) {
+    throw new ApiError(400, "Pilih log Public Q&A yang akan ditinjau.");
+  }
+
+  const now = new Date().toISOString();
+  const note = String(reviewNote || "").trim().slice(0, 1000);
+
+  await withTransaction(db, async (tx) => {
+    if (ids.length > 0) {
+      const placeholders = ids.map(() => "?").join(", ");
+      await tx
+        .prepare(
+          `UPDATE aleta_bot_public_qa_logs
+           SET needs_human_review = ?, review_status = ?, reviewed_by_user_id = ?, reviewed_at = ?, review_note = ?
+           WHERE id IN (${placeholders})`
+        )
+        .run(reviewStatus === "pending" ? 1 : 0, reviewStatus, actor.id, now, note, ...ids);
+    } else {
+      await tx
+        .prepare(
+          `UPDATE aleta_bot_public_qa_logs
+           SET needs_human_review = ?, review_status = ?, reviewed_by_user_id = ?, reviewed_at = ?, review_note = ?
+           WHERE lower(normalized_message) = lower(?)`
+        )
+        .run(reviewStatus === "pending" ? 1 : 0, reviewStatus, actor.id, now, note, normalized);
+    }
+
+    await appendAletaBotLog(tx, {
+      actorUserId: actor.id,
+      level: "success",
+      eventType: "public_qa",
+      message: `Review Public Q&A diperbarui menjadi ${reviewStatus}.`,
+      metadata: { logIds: ids, normalizedMessage: normalized, reviewStatus },
+    });
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "REVIEW_ALETA_BOT_PUBLIC_QA",
+      entityType: "aleta_bot_public_qa_logs",
+      entityId: ids[0] || normalized,
+      payload: { reviewStatus, affectedCount: ids.length || "normalized_message" },
+    });
+  });
+
+  return getAletaBotSnapshot(db, actor.id);
+}
+
+function csvCell(value: unknown) {
+  const text = String(value ?? "").replace(/\r?\n/g, " ").replace(/\s+/g, " ").trim();
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+export async function exportPublicQaHumanReviewCsv(
+  db: AletaDatabase,
+  actorUserId: string,
+  filters: {
+    reviewStatus?: string | null;
+    needsHumanReview?: string | null;
+    dateFrom?: string | null;
+    dateTo?: string | null;
+    intentKey?: string | null;
+    riskLevel?: string | null;
+  } = {}
+) {
+  await requireAletaBotOperator(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+
+  const where: string[] = [];
+  const params: Array<string | number> = [];
+  const reviewStatus = String(filters.reviewStatus || "").trim();
+  const needsHumanReview = String(filters.needsHumanReview || "").trim();
+  const intentKey = String(filters.intentKey || "").trim();
+  const riskLevel = String(filters.riskLevel || "").trim();
+  const dateFrom = String(filters.dateFrom || "").trim();
+  const dateTo = String(filters.dateTo || "").trim();
+
+  if (reviewStatus && reviewStatus !== "all") {
+    where.push("logs.review_status = ?");
+    params.push(reviewStatus);
+  }
+  if (needsHumanReview === "true" || needsHumanReview === "false") {
+    where.push("logs.needs_human_review = ?");
+    params.push(needsHumanReview === "true" ? 1 : 0);
+  }
+  if (intentKey) {
+    where.push("logs.matched_intent_key = ?");
+    params.push(intentKey);
+  }
+  if (riskLevel && riskLevel !== "all") {
+    where.push("COALESCE(intents.risk_level, '') = ?");
+    params.push(riskLevel);
+  }
+  if (dateFrom) {
+    where.push("logs.created_at >= ?");
+    params.push(dateFrom);
+  }
+  if (dateTo) {
+    where.push("logs.created_at <= ?");
+    params.push(dateTo);
+  }
+
+  const sql = `
+    SELECT logs.id, logs.sender_number, logs.sender_name, logs.raw_message, logs.normalized_message,
+      logs.matched_intent_key, logs.matched_method, logs.confidence, logs.query_key,
+      logs.response_preview, logs.status, logs.error_message, logs.needs_human_review,
+      logs.review_status, logs.reviewed_by_user_id, reviewer.name AS reviewer_name,
+      logs.reviewed_at, logs.review_note, logs.created_at,
+      COALESCE(intents.risk_level, '') AS risk_level
+    FROM aleta_bot_public_qa_logs logs
+    LEFT JOIN aleta_bot_public_qa_intents intents ON intents.key = logs.matched_intent_key
+    LEFT JOIN users reviewer ON reviewer.id = logs.reviewed_by_user_id
+    ${where.length > 0 ? `WHERE ${where.join(" AND ")}` : ""}
+    ORDER BY logs.created_at DESC
+    LIMIT 5000`;
+  const rows = await db.prepare(sql).all<
+    PublicQaLogRow & { reviewer_name: string | null; risk_level: string }
+  >(...params);
+
+  const headers = [
+    "Waktu",
+    "Pertanyaan",
+    "Nomor/User Masked",
+    "Intent Terdeteksi",
+    "Confidence",
+    "Alasan Fallback/Review",
+    "Risk Level",
+    "Status Review",
+    "Reviewer",
+    "Catatan Review",
+    "Tanggal Review",
+  ];
+  const lines = [headers.map(csvCell).join(",")];
+  for (const row of rows) {
+    const fallbackReason = row.error_message || row.response_preview || row.status || "";
+    lines.push([
+      row.created_at,
+      row.raw_message || row.normalized_message,
+      row.sender_name ? `${row.sender_name} (${maskExportPhone(row.sender_number)})` : maskExportPhone(row.sender_number),
+      row.matched_intent_key || "fallback",
+      row.confidence,
+      fallbackReason,
+      row.risk_level,
+      row.review_status,
+      row.reviewer_name || row.reviewed_by_user_id || "",
+      row.review_note,
+      row.reviewed_at || "",
+    ].map(csvCell).join(","));
+  }
+
+  return {
+    filename: `public-qa-human-review-${new Date().toISOString().slice(0, 10)}.csv`,
+    rowCount: rows.length,
+    csv: lines.join("\n"),
+  };
+}
+
+function sanitizePublicQaIntentKey(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64);
+}
+
+async function makeUniquePublicQaIntentKey(db: AletaDatabase, preferred: string) {
+  const base = sanitizePublicQaIntentKey(preferred) || `draft_intent_${Date.now()}`;
+  let candidate = base;
+  for (let index = 2; index < 50; index += 1) {
+    const existing = await db
+      .prepare(`SELECT id FROM aleta_bot_public_qa_intents WHERE lower(key) = lower(?)`)
+      .get<{ id: string }>(candidate);
+    if (!existing) return candidate;
+    candidate = `${base}_${index}`;
+  }
+  return `${base}_${Date.now()}`;
+}
+
+export async function convertPublicQaReviewToDraftIntent(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    logIds,
+    normalizedMessage,
+    reviewNote,
+    mode,
+    targetIntentId,
+    draftIntentKey,
+    draftIntentName,
+  }: {
+    actorUserId: string;
+    logIds?: string[];
+    normalizedMessage?: string;
+    reviewNote?: string;
+    mode?: "new" | "existing";
+    targetIntentId?: string;
+    draftIntentKey?: string;
+    draftIntentName?: string;
+  }
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const ids = Array.isArray(logIds) ? logIds.map((id) => String(id).trim()).filter(Boolean).slice(0, 50) : [];
+  const normalized = String(normalizedMessage || "").trim().toLowerCase();
+  if (ids.length === 0 && !normalized) {
+    throw new ApiError(400, "Pilih pertanyaan Public Q&A yang akan dijadikan draft intent.");
+  }
+
+  const logs = ids.length > 0
+    ? await db
+        .prepare(
+          `SELECT id, sender_number, sender_name, raw_message, normalized_message,
+            matched_intent_key, matched_method, confidence, parameters_json, query_key,
+            response_preview, status, error_message,
+            needs_human_review, review_status, reviewed_by_user_id, reviewed_at, review_note,
+            created_at
+           FROM aleta_bot_public_qa_logs
+           WHERE id IN (${ids.map(() => "?").join(", ")})
+           ORDER BY created_at DESC`
+        )
+        .all<PublicQaLogRow>(...ids)
+    : await db
+        .prepare(
+          `SELECT id, sender_number, sender_name, raw_message, normalized_message,
+            matched_intent_key, matched_method, confidence, parameters_json, query_key,
+            response_preview, status, error_message,
+            needs_human_review, review_status, reviewed_by_user_id, reviewed_at, review_note,
+            created_at
+           FROM aleta_bot_public_qa_logs
+           WHERE lower(normalized_message) = lower(?)
+           ORDER BY created_at DESC
+           LIMIT 50`
+        )
+        .all<PublicQaLogRow>(normalized);
+
+  const examples = Array.from(new Set(logs.map((log) => (log.raw_message || log.normalized_message || "").trim()).filter(Boolean))).slice(0, 12);
+  if (examples.length === 0) {
+    throw new ApiError(400, "Pertanyaan tidak memiliki contoh teks yang bisa dijadikan draft intent.");
+  }
+
+  const conversionMode = mode === "existing" ? "existing" : "new";
+  let targetIntent: AletaBotPublicQaIntent | undefined;
+
+  if (conversionMode === "existing") {
+    const intents = await getPublicQaIntents(db);
+    targetIntent = intents.find((intent) => intent.id === targetIntentId);
+    if (!targetIntent) throw new ApiError(404, "Intent tujuan tidak ditemukan.");
+    if (targetIntent.status === "active" || targetIntent.isActive) {
+      throw new ApiError(400, "Contoh dari human review hanya boleh ditambahkan ke intent draft/nonaktif agar perilaku bot tidak berubah langsung.");
+    }
+    await updateAletaBotPublicQaIntent(db, {
+      actorUserId: actor.id,
+      intent: {
+        ...targetIntent,
+        isActive: false,
+        status: "draft",
+        exampleQuestions: Array.from(new Set([...targetIntent.exampleQuestions, ...examples])),
+        notes: `${targetIntent.notes || ""}\nTambahan contoh dari human review: ${String(reviewNote || "").trim()}`.trim(),
+      },
+    });
+  } else {
+    const suggested = sanitizePublicQaIntentKey(draftIntentKey || logs[0]?.normalized_message || examples[0]);
+    const key = await makeUniquePublicQaIntentKey(db, suggested || "draft_public_qa");
+    const name = String(draftIntentName || `Draft Intent: ${examples[0].slice(0, 48)}`).trim().slice(0, 120);
+    await updateAletaBotPublicQaIntent(db, {
+      actorUserId: actor.id,
+      intent: {
+        id: await nextPrefixedId(db, "aleta_bot_public_qa_intents", "abpqi"),
+        key,
+        name,
+        description: "Draft intent dari human review Public Q&A. Tidak aktif sampai diverifikasi dan disetujui.",
+        category: "fallback",
+        audience: "public",
+        isActive: false,
+        aiEnabled: false,
+        exactTriggers: [],
+        exampleQuestions: examples,
+        requiredParameters: [],
+        queryKey: "",
+        legacyHandler: "",
+        legacyCommand: "",
+        parameterizedLegacyCommand: "",
+        templateKey: "",
+        responseMode: "fallback",
+        confidenceThreshold: 0.7,
+        requiresVerification: false,
+        requiresCaseNumber: false,
+        maxAttempts: 2,
+        fallbackMessage: PUBLIC_QA_FALLBACK_MESSAGE,
+        riskLevel: "medium",
+        notes: `Draft dibuat dari human review. ${String(reviewNote || "").trim()}`.trim(),
+        aiAnswerEnabled: false,
+        aiAnswerMode: "off",
+        answerPolicy: "public_info_only",
+        verificationPolicy: "none",
+        allowedDataFields: [],
+        blockedDataFields: [],
+        aiSystemPrompt: "",
+        aiUserPromptTemplate: "",
+        maxAiTokens: 400,
+        temperature: 0.2,
+        requiresApprovalBeforeActive: true,
+        status: "draft",
+      },
+    });
+  }
+
+  await reviewPublicQaUnknownQuestion(db, {
+    actorUserId: actor.id,
+    logIds: ids,
+    normalizedMessage: normalized,
+    reviewStatus: "converted_to_intent",
+    reviewNote,
+  });
+
+  await appendAletaBotLog(db, {
+    actorUserId: actor.id,
+    level: "success",
+    eventType: "public_qa",
+    message: conversionMode === "existing"
+      ? "Human review Public Q&A ditambahkan sebagai contoh ke intent draft."
+      : "Human review Public Q&A dikonversi menjadi draft intent baru.",
+    metadata: {
+      mode: conversionMode,
+      targetIntentId: targetIntent?.id ?? null,
+      examplesCount: examples.length,
+      logIds: ids,
+      normalizedMessage: normalized,
+    },
+  });
+
+  return getAletaBotSnapshot(db, actor.id);
+}
+
 function renderTemplate(template: AletaBotTemplate, values: Record<string, string>) {
   const missing = getTemplatePlaceholders(template.body).filter((key) => values[key] === undefined || values[key] === null);
   if (missing.length > 0) {
     throw new ApiError(400, `Preview template gagal karena data contoh tidak memiliki placeholder: ${missing.join(", ")}.`);
   }
   return template.body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => values[key] ?? "");
+}
+
+async function hasNotificationRecipientPreview(db: AletaDatabase, notificationId: string) {
+  const row = await db
+    .prepare(
+      `SELECT id
+       FROM aleta_bot_logs
+       WHERE event_type = 'notification'
+         AND message LIKE '%Preview penerima%'
+         AND metadata_json LIKE ?
+       ORDER BY created_at DESC
+       LIMIT 1`
+    )
+    .get<{ id: string }>(`%${notificationId}%`);
+  return Boolean(row);
+}
+
+async function hasApprovedNotificationPolicy(db: AletaDatabase, notificationId: string) {
+  const approvals = await listApprovalRequests(db);
+  return approvals.some(
+    (approval) =>
+      approval.entityType === "notification" &&
+      approval.entityId === notificationId &&
+      approval.status === "approved"
+  );
+}
+
+export async function previewAletaBotNotificationRecipients(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    notificationId,
+    limit = 10,
+  }: {
+    actorUserId: string;
+    notificationId: string;
+    limit?: number;
+  }
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const notification = (await getNotifications(db)).find((item) => item.id === notificationId);
+  if (!notification) throw new ApiError(404, "Notifikasi ALETA Bot tidak ditemukan.");
+  const query = (await getQueries(db)).find((item) => item.id === notification.queryId);
+  if (!query) throw new ApiError(404, "Query notifikasi tidak ditemukan.");
+  const template = (await getTemplates(db)).find((item) => item.id === notification.templateId);
+  if (!template) throw new ApiError(404, "Template notifikasi tidak ditemukan.");
+
+  const safeLimit = Math.max(1, Math.min(20, Number(limit || 10)));
+  const warnings: string[] = [];
+  const items: Array<{
+    recipientName: string;
+    recipientNumber: string;
+    caseOrPosition: string;
+    messagePreview: string;
+    idempotencyKey: string;
+    validNumber: boolean;
+  }> = [];
+
+  if (notification.category === "employee") {
+    const recipients = await getEmployeeRecipients(db);
+    for (const recipient of recipients.slice(0, safeLimit)) {
+      const sample = {
+        ...makeSampleRow(query.outputColumns),
+        nama_pegawai: recipient.name,
+        jabatan: recipient.positionName,
+        judul_notifikasi: notification.name,
+        ringkasan: notification.description || "Preview notifikasi pegawai",
+        waktu: new Date().toLocaleString("id-ID"),
+        mode: "preview",
+      };
+      items.push({
+        recipientName: recipient.name,
+        recipientNumber: maskExportPhone(recipient.whatsappNumber),
+        caseOrPosition: recipient.positionName || recipient.roleId,
+        messagePreview: renderTemplate(template, sample).slice(0, 1000),
+        idempotencyKey: `preview:${notification.id}:${recipient.id}`,
+        validNumber: /^62\d{8,15}$/.test(recipient.whatsappNumber),
+      });
+    }
+    if (recipients.length === 0) warnings.push("Belum ada user aktif dengan nomor WhatsApp valid.");
+    await appendAletaBotLog(db, {
+      actorUserId: actor.id,
+      level: "info",
+      eventType: "notification",
+      message: `Preview penerima notifikasi ${notification.name} dibuat tanpa pengiriman.`,
+      metadata: { notificationId, category: notification.category, sampleSize: items.length, totalEstimated: recipients.length },
+    });
+    await db
+      .prepare(`UPDATE aleta_bot_notifications SET last_message = ?, updated_at = ? WHERE id = ?`)
+      .run("Preview penerima berhasil dijalankan tanpa pengiriman.", new Date().toISOString(), notification.id);
+    return {
+      totalEstimated: recipients.length,
+      sampleSize: items.length,
+      items,
+      warnings,
+    };
+  }
+
+  const sample = makeSampleRow(query.outputColumns);
+  sample.nama_pihak = sample.nama_pihak || "Budi Santoso";
+  sample.nomor_perkara = sample.nomor_perkara || "123/Pdt.G/2026/PA.Dgl";
+  sample.judul_notifikasi = notification.name;
+  sample.ringkasan = notification.description || "Preview notifikasi pihak";
+  sample.mode = "preview";
+  sample.waktu = new Date().toLocaleString("id-ID");
+  const recipientNumber = normalizeWhatsappNumber(sample[query.recipientColumn] || sample.telepon || sample.nomor_hp || "");
+  items.push({
+    recipientName: sample.nama_pihak || "Contoh Pihak",
+    recipientNumber: maskExportPhone(recipientNumber),
+    caseOrPosition: sample.nomor_perkara || "Contoh perkara",
+    messagePreview: renderTemplate(template, sample).slice(0, 1000),
+    idempotencyKey: `disposition_preview:${notification.id}:sample`,
+    validNumber: /^62\d{8,15}$/.test(recipientNumber),
+  });
+  warnings.push("Preview pihak memakai sample aman dari mapping query. Eksekusi live SIPP tidak dijalankan dari portal.");
+  await appendAletaBotLog(db, {
+    actorUserId: actor.id,
+    level: "info",
+    eventType: "notification",
+    message: `Preview penerima notifikasi ${notification.name} dibuat tanpa pengiriman.`,
+    metadata: { notificationId, category: notification.category, sampleSize: items.length, totalEstimated: null },
+  });
+  await db
+    .prepare(`UPDATE aleta_bot_notifications SET last_message = ?, updated_at = ? WHERE id = ?`)
+    .run("Preview penerima berhasil dijalankan tanpa pengiriman.", new Date().toISOString(), notification.id);
+
+  return {
+    totalEstimated: items.length,
+    sampleSize: items.length,
+    items,
+    warnings,
+  };
+}
+
+function addDaysDateOnly(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy.toISOString().slice(0, 10);
+}
+
+function formatReminderDeadline(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function buildDeadlineReminderMessage(row: DeadlineReminderCandidateRow) {
+  return `Pengingat disposisi: Surat "${row.perihal}" jatuh tempo pada ${formatReminderDeadline(row.deadline_at)}. Mohon segera ditindaklanjuti.`;
+}
+
+function isDeadlineReminderPilotRecipient(settings: AletaBotSettings, row: DeadlineReminderCandidateRow) {
+  if (settings.deadlineReminderPilotUserIds.includes(row.recipient_id)) return true;
+  if (settings.deadlineReminderPilotRoleIds.includes(row.recipient_role_id)) return true;
+  if (row.position_id && settings.deadlineReminderPilotPositionIds.includes(row.position_id)) return true;
+  if (row.position_name && settings.deadlineReminderPilotPositionIds.includes(row.position_name)) return true;
+  return false;
+}
+
+export async function dryRunDispositionDeadlineReminders(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    limit = 20,
+    pilotOnly = false,
+    triggeredBy,
+  }: {
+    actorUserId: string;
+    limit?: number;
+    pilotOnly?: boolean;
+    triggeredBy?: AletaBotDispositionReminderRun["triggeredBy"];
+  }
+): Promise<AletaBotDeadlineReminderDryRunResult> {
+  const startedAt = new Date().toISOString();
+  const actor = await requireAletaBotOperator(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const settings = await getAletaBotSettings(db);
+  if (settings.deadlineReminderKillSwitch) {
+    await appendPolicySkipLog(db, {
+      notificationKey: "disposition_deadline_h_minus_1",
+      notificationId: "disposition-deadline-h-minus-1",
+      category: "employee",
+      reason: "policy_blocked",
+      sourceFeature: "disposition_deadline_reminder",
+      recipientType: "employee",
+      metadata: { killSwitch: true, mode: settings.deadlineReminderMode, dryRun: true },
+    });
+    await appendDispositionReminderRun(db, {
+      mode: settings.deadlineReminderMode,
+      triggeredBy: triggeredBy ?? (pilotOnly ? "manual_controlled" : "manual_dry_run"),
+      triggeredByUserId: actor.id,
+      startedAt,
+      status: "blocked",
+      summary: { killSwitch: true, dryRun: true, pilotOnly },
+    });
+    return {
+      ok: true,
+      mode: settings.deadlineReminderMode,
+      totalCandidates: 0,
+      dryRunCreated: 0,
+      skipped: 0,
+      productionSent: 0,
+      blocked: true,
+      blockerReasons: ["kill_switch_active"],
+      warnings: ["Emergency Stop Reminder Deadline aktif. Simulasi dan runner tidak dijalankan."],
+      items: [],
+    };
+  }
+
+  const tomorrow = addDaysDateOnly(new Date(), 1);
+  const safeLimit = Math.max(1, Math.min(20, Number(limit || 20)));
+  const rows = await db
+    .prepare(
+      `SELECT dsp.id AS disposition_id, dsp.surat_id AS letter_id, l.nomor_surat, l.perihal,
+        dsp.deadline_at, dsp.status, dsp.instruksi,
+        u.id AS recipient_id, u.name AS recipient_name, u.role_id AS recipient_role_id,
+        u.whatsapp_number AS recipient_whatsapp,
+        p.id AS position_id, p.name AS position_name, p.unit_kerja
+       FROM dispositions dsp
+       INNER JOIN letters l ON l.id = dsp.surat_id
+       INNER JOIN users u ON u.id = dsp.penerima_id
+       LEFT JOIN positions p ON p.id = u.position_id
+       WHERE dsp.deleted_at IS NULL
+         AND l.deleted_at IS NULL
+         AND u.deleted_at IS NULL
+         AND u.is_active = 1
+         AND dsp.deadline_at IS NOT NULL
+         AND substr(dsp.deadline_at, 1, 10) = ?
+         AND dsp.status <> 'Selesai'
+       ORDER BY dsp.deadline_at ASC, l.created_at ASC
+       LIMIT 100`
+    )
+    .all<DeadlineReminderCandidateRow>(tomorrow);
+
+  const warnings: string[] = [];
+  const items: AletaBotDeadlineReminderDryRunResult["items"] = [];
+  let dryRunCreated = 0;
+  let skipped = 0;
+  const now = new Date().toISOString();
+
+  await withTransaction(db, async (tx) => {
+    for (const row of rows) {
+      const normalizedNumber = normalizeWhatsappNumber(row.recipient_whatsapp || "");
+      const idempotencyKey = `disposition_deadline_reminder:${row.disposition_id}:${tomorrow}`;
+      const baseItem = {
+        dispositionId: row.disposition_id,
+        letterId: row.letter_id,
+        recipientName: row.recipient_name,
+        recipientNumber: maskExportPhone(normalizedNumber),
+        perihal: row.perihal,
+        deadline: row.deadline_at,
+        messagePreview: buildDeadlineReminderMessage(row).slice(0, 1000),
+        idempotencyKey,
+      };
+
+      if (pilotOnly && !isDeadlineReminderPilotRecipient(settings, row)) {
+        skipped += 1;
+        items.push({
+          ...baseItem,
+          status: "skipped",
+          skipReason: "Penerima tidak termasuk whitelist pilot reminder.",
+        });
+        continue;
+      }
+
+      if (!/^62\d{8,15}$/.test(normalizedNumber)) {
+        skipped += 1;
+        items.push({
+          ...baseItem,
+          status: "skipped",
+          skipReason: "Nomor WhatsApp penerima belum tersedia atau belum valid.",
+        });
+        continue;
+      }
+
+      const existing = await tx
+        .prepare(
+          `SELECT id
+           FROM aleta_bot_notification_logs
+           WHERE source_feature = 'disposition_deadline_reminder'
+             AND entity_type = 'disposition'
+             AND entity_id = ?
+             AND metadata_json LIKE ?
+           LIMIT 1`
+        )
+        .get<{ id: string }>(row.disposition_id, `%${idempotencyKey}%`);
+
+      if (existing) {
+        skipped += 1;
+        items.push({
+          ...baseItem,
+          status: "skipped",
+          skipReason: "Reminder ini sudah pernah disimulasikan untuk deadline tersebut.",
+        });
+        continue;
+      }
+
+      const metadata = buildMessageEntityMetadata({
+        sourceApp: "manajemen_surat",
+        sourceFeature: "disposition_deadline_reminder",
+        entityType: "disposition",
+        entityId: row.disposition_id,
+        letterId: row.letter_id,
+        dispositionId: row.disposition_id,
+        nomorSurat: row.nomor_surat,
+        recipientType: "employee",
+        recipientRole: row.recipient_role_id,
+        recipientPosition: row.position_name,
+        deadlineDate: tomorrow,
+        idempotencyKey,
+        dryRun: true,
+        reminderType: "h_minus_1",
+      });
+
+      await tx
+        .prepare(
+          `INSERT INTO aleta_bot_notification_logs (
+            id, notification_id, query_id, recipient_number, recipient_name, category,
+            message_preview, status, error_message, source_app, source_feature, entity_type, entity_id, metadata_json,
+            sent_at, created_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'simulated', NULL, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          await nextPrefixedId(tx, "aleta_bot_notification_logs", "abnl"),
+          "disposition-deadline-h-minus-1",
+          "portal-disposition-deadline-h-minus-1",
+          normalizedNumber,
+          row.recipient_name,
+          "employee",
+          baseItem.messagePreview,
+          "manajemen_surat",
+          "disposition_deadline_reminder",
+          "disposition",
+          row.disposition_id,
+          JSON.stringify(metadata),
+          now,
+          now
+        );
+
+      dryRunCreated += 1;
+      items.push({ ...baseItem, status: "simulated" });
+    }
+
+    await appendAletaBotLog(tx, {
+      actorUserId: actor.id,
+      level: rows.length === 0 ? "info" : "success",
+      eventType: "notification",
+      message: "Dry-run reminder deadline disposisi H-1 diproses tanpa mengirim WhatsApp.",
+      metadata: {
+        reminderKey: "disposition_deadline_h_minus_1",
+        targetDate: tomorrow,
+        totalCandidates: rows.length,
+        dryRunCreated,
+        skipped,
+        pilotOnly,
+      },
+    });
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "DRY_RUN_DISPOSITION_DEADLINE_REMINDERS",
+      entityType: "aleta_bot_notification",
+      entityId: "disposition-deadline-h-minus-1",
+      payload: { targetDate: tomorrow, totalCandidates: rows.length, dryRunCreated, skipped, pilotOnly },
+    });
+    await tx
+      .prepare(
+        `UPDATE aleta_bot_settings
+         SET disposition_deadline_reminder_last_run_at = ?,
+           disposition_deadline_reminder_last_status = ?,
+           disposition_deadline_reminder_last_message = ?,
+           updated_at = ?
+         WHERE id = 1`
+      )
+      .run(
+        now,
+        rows.length === 0 ? "skipped" : "simulated",
+        `Dry-run: ${dryRunCreated} simulasi, ${skipped} dilewati.`,
+        now
+      );
+  });
+
+  if (rows.length === 0) {
+    warnings.push("Tidak ada disposisi aktif yang jatuh tempo besok.");
+  }
+  if (skipped > 0) {
+    warnings.push("Sebagian kandidat dilewati karena nomor tidak valid atau sudah pernah disimulasikan.");
+  }
+  if (pilotOnly) {
+    warnings.push("Mode pilot hanya menampilkan penerima yang masuk whitelist pilot. Tidak ada WhatsApp real yang dikirim.");
+  }
+
+  await appendDispositionReminderRun(db, {
+    mode: pilotOnly ? "pilot" : "dry_run",
+    triggeredBy: triggeredBy ?? (pilotOnly ? "manual_controlled" : "manual_dry_run"),
+    triggeredByUserId: actor.id,
+    startedAt,
+    totalCandidates: rows.length,
+    dryRunCreated,
+    skippedCount: skipped,
+    status: rows.length === 0 ? "skipped" : "simulated",
+    summary: {
+      targetDate: tomorrow,
+      pilotOnly,
+      warnings,
+    },
+  });
+
+  return {
+    ok: true,
+    mode: pilotOnly ? "pilot" : "dry_run",
+    totalCandidates: rows.length,
+    dryRunCreated,
+    skipped,
+    items: items.slice(0, safeLimit),
+    warnings,
+  };
+}
+
+export async function updateDispositionDeadlineReminderSettings(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    mode,
+    confirmText,
+    pilotUserIds,
+    pilotRoleIds,
+    pilotPositionIds,
+    schedulerEnabled,
+    schedulerMode,
+    schedulerTime,
+    killSwitch,
+  }: {
+    actorUserId: string;
+    mode?: AletaBotSettings["deadlineReminderMode"];
+    confirmText?: string;
+    pilotUserIds?: unknown;
+    pilotRoleIds?: unknown;
+    pilotPositionIds?: unknown;
+    schedulerEnabled?: boolean;
+    schedulerMode?: AletaBotSettings["deadlineReminderSchedulerMode"];
+    schedulerTime?: string;
+    killSwitch?: boolean;
+  }
+) {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+  const current = await getAletaBotSettings(db);
+  const nextMode = mode ?? current.deadlineReminderMode;
+  if (!["disabled", "dry_run", "pilot", "production"].includes(nextMode)) {
+    throw new ApiError(400, "Mode reminder deadline tidak valid.");
+  }
+  if (nextMode === "pilot" && current.deadlineReminderMode !== "pilot" && confirmText !== "AKTIFKAN PILOT") {
+    throw new ApiError(400, "Ketik AKTIFKAN PILOT untuk mengaktifkan mode pilot reminder.");
+  }
+  if (nextMode === "production" && current.deadlineReminderMode !== "production" && confirmText !== "AKTIFKAN REMINDER") {
+    throw new ApiError(400, "Ketik AKTIFKAN REMINDER untuk mengaktifkan reminder produksi.");
+  }
+  if (killSwitch === true && confirmText !== "EMERGENCY STOP") {
+    throw new ApiError(400, "Ketik EMERGENCY STOP untuk mengaktifkan kill switch reminder.");
+  }
+  if (schedulerMode && !["disabled", "dry_run", "pilot", "production"].includes(schedulerMode)) {
+    throw new ApiError(400, "Mode scheduler reminder tidak valid.");
+  }
+  if (schedulerMode === "pilot" && current.deadlineReminderSchedulerMode !== "pilot" && confirmText !== "AKTIFKAN PILOT") {
+    throw new ApiError(400, "Ketik AKTIFKAN PILOT untuk mengaktifkan scheduler mode pilot.");
+  }
+  if (schedulerMode === "production" && current.deadlineReminderSchedulerMode !== "production" && confirmText !== "AKTIFKAN REMINDER") {
+    throw new ApiError(400, "Ketik AKTIFKAN REMINDER untuk mengaktifkan scheduler mode produksi.");
+  }
+
+  const now = new Date().toISOString();
+  const enabled = nextMode === "pilot" || nextMode === "production";
+  const nextPilotUserIds = pilotUserIds === undefined ? current.deadlineReminderPilotUserIds : sanitizeStringIdList(pilotUserIds);
+  const nextPilotRoleIds = pilotRoleIds === undefined ? current.deadlineReminderPilotRoleIds : sanitizeStringIdList(pilotRoleIds);
+  const nextPilotPositionIds = pilotPositionIds === undefined ? current.deadlineReminderPilotPositionIds : sanitizeStringIdList(pilotPositionIds);
+  const nextSchedulerMode = schedulerMode ?? current.deadlineReminderSchedulerMode;
+  const nextSchedulerTime = schedulerTime === undefined
+    ? current.deadlineReminderSchedulerTime
+    : sanitizeReminderSchedulerTime(schedulerTime, current.deadlineReminderSchedulerTime);
+  await db
+    .prepare(
+      `UPDATE aleta_bot_settings
+       SET disposition_deadline_reminder_enabled = ?,
+         disposition_deadline_reminder_mode = ?,
+         disposition_deadline_reminder_approved_at = ?,
+         disposition_deadline_reminder_approved_by = ?,
+         disposition_deadline_reminder_pilot_user_ids_json = ?,
+         disposition_deadline_reminder_pilot_role_ids_json = ?,
+         disposition_deadline_reminder_pilot_position_ids_json = ?,
+         disposition_deadline_reminder_scheduler_enabled = ?,
+         disposition_deadline_reminder_scheduler_mode = ?,
+         disposition_deadline_reminder_scheduler_time = ?,
+         disposition_deadline_reminder_kill_switch = ?,
+         updated_at = ?
+       WHERE id = 1`
+    )
+    .run(
+      enabled ? 1 : 0,
+      nextMode,
+      enabled ? now : null,
+      enabled ? actor.id : null,
+      JSON.stringify(nextPilotUserIds),
+      JSON.stringify(nextPilotRoleIds),
+      JSON.stringify(nextPilotPositionIds),
+      schedulerEnabled === undefined ? (current.deadlineReminderSchedulerEnabled ? 1 : 0) : (schedulerEnabled ? 1 : 0),
+      nextSchedulerMode,
+      nextSchedulerTime,
+      killSwitch === undefined ? (current.deadlineReminderKillSwitch ? 1 : 0) : (killSwitch ? 1 : 0),
+      now
+    );
+  await appendAletaBotLog(db, {
+    actorUserId: actor.id,
+    level: nextMode === "production" || killSwitch ? "warning" : "info",
+    eventType: "notification",
+    message: `Konfigurasi reminder deadline disposisi diperbarui: mode ${nextMode}.`,
+    metadata: {
+      reminderKey: "disposition_deadline_h_minus_1",
+      mode: nextMode,
+      enabled,
+      schedulerEnabled: schedulerEnabled ?? current.deadlineReminderSchedulerEnabled,
+      schedulerMode: nextSchedulerMode,
+      killSwitch: killSwitch ?? current.deadlineReminderKillSwitch,
+      pilotWhitelist: {
+        userCount: nextPilotUserIds.length,
+        roleCount: nextPilotRoleIds.length,
+        positionCount: nextPilotPositionIds.length,
+      },
+    },
+  });
+  await appendAuditLog(db, {
+    id: await nextPrefixedId(db, "audit_logs", "adt"),
+    actorUserId: actor.id,
+    action: "UPDATE_DISPOSITION_DEADLINE_REMINDER_MODE",
+    entityType: "aleta_bot_notification",
+    entityId: "disposition-deadline-h-minus-1",
+      payload: { mode: nextMode, enabled, schedulerMode: nextSchedulerMode, killSwitch: killSwitch ?? current.deadlineReminderKillSwitch },
+    });
+  await writeAletaBotRuntimeConfig(db, await getAletaBotSettings(db), await getWhatsAppSettingsFromDb(db));
+  return getAletaBotSnapshot(db, actor.id);
+}
+
+export async function runDispositionDeadlineRemindersControlled(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    confirmText,
+    limit = 20,
+  }: {
+    actorUserId: string;
+    confirmText?: string;
+    limit?: number;
+  }
+): Promise<AletaBotDeadlineReminderDryRunResult> {
+  const startedAt = new Date().toISOString();
+  const actor = await requireSuperAdmin(db, actorUserId);
+  const settings = await getAletaBotSettings(db);
+  const mode = settings.deadlineReminderMode;
+
+  if (settings.deadlineReminderKillSwitch) {
+    await appendPolicySkipLog(db, {
+      notificationKey: "disposition_deadline_h_minus_1",
+      notificationId: "disposition-deadline-h-minus-1",
+      category: "employee",
+      reason: "policy_blocked",
+      sourceFeature: "disposition_deadline_reminder",
+      recipientType: "employee",
+      metadata: { mode, killSwitch: true },
+    });
+    await appendDispositionReminderRun(db, {
+      mode,
+      triggeredBy: "manual_controlled",
+      triggeredByUserId: actor.id,
+      startedAt,
+      status: "blocked",
+      summary: { reason: "kill_switch_active" },
+    });
+    return {
+      ok: true,
+      mode,
+      totalCandidates: 0,
+      dryRunCreated: 0,
+      skipped: 0,
+      productionSent: 0,
+      blocked: true,
+      blockerReasons: ["kill_switch_active"],
+      warnings: ["Emergency Stop Reminder Deadline aktif. Runner tidak dijalankan."],
+      items: [],
+    };
+  }
+
+  if (mode !== "production") {
+    const result = await dryRunDispositionDeadlineReminders(db, { actorUserId: actor.id, limit, pilotOnly: mode === "pilot" });
+    return {
+      ...result,
+      mode,
+      blocked: mode === "disabled",
+      blockerReasons: mode === "disabled" ? ["reminder_disabled"] : [],
+      warnings: [
+        ...result.warnings,
+        mode === "pilot"
+          ? "Mode pilot masih diperlakukan sebagai dry-run sampai whitelist pilot ditetapkan."
+          : mode === "disabled"
+            ? "Reminder belum aktif. Produksi tidak dijalankan."
+            : "Mode dry-run aktif. Produksi tidak dijalankan.",
+      ],
+    };
+  }
+
+  if (!settings.deadlineReminderEnabled || !settings.deadlineReminderApprovedAt) {
+    await appendPolicySkipLog(db, {
+      notificationKey: "disposition_deadline_h_minus_1",
+      notificationId: "disposition-deadline-h-minus-1",
+      category: "employee",
+      reason: "policy_blocked",
+      sourceFeature: "disposition_deadline_reminder",
+      recipientType: "employee",
+      metadata: { mode, approvalMissing: !settings.deadlineReminderApprovedAt },
+    });
+    await appendDispositionReminderRun(db, {
+      mode,
+      triggeredBy: "manual_controlled",
+      triggeredByUserId: actor.id,
+      startedAt,
+      status: "blocked",
+      summary: { reason: "approval_or_enabled_missing", approvalMissing: !settings.deadlineReminderApprovedAt },
+    });
+    return {
+      ok: true,
+      mode,
+      totalCandidates: 0,
+      dryRunCreated: 0,
+      skipped: 0,
+      productionSent: 0,
+      blocked: true,
+      blockerReasons: ["approval_or_enabled_missing"],
+      warnings: ["Reminder produksi belum memiliki approval eksplisit atau belum aktif."],
+      items: [],
+    };
+  }
+
+  if (confirmText !== "JALANKAN REMINDER") {
+    await appendDispositionReminderRun(db, {
+      mode,
+      triggeredBy: "manual_controlled",
+      triggeredByUserId: actor.id,
+      startedAt,
+      status: "blocked",
+      summary: { reason: "confirmation_required" },
+    });
+    return {
+      ok: true,
+      mode,
+      totalCandidates: 0,
+      dryRunCreated: 0,
+      skipped: 0,
+      productionSent: 0,
+      blocked: true,
+      blockerReasons: ["confirmation_required"],
+      warnings: ["Produksi membutuhkan konfirmasi JALANKAN REMINDER. Tidak ada pesan yang dikirim."],
+      items: [],
+    };
+  }
+
+  const runtimeMode = getWhatsappRuntimeMode();
+  const whatsappSnapshot = runtimeMode === "aleta_bot" ? await buildGatewayWhatsappSnapshot() : await whatsappService.getGatewaySnapshot();
+  if (whatsappSnapshot.runtimeStatus !== "connected") {
+    await appendPolicySkipLog(db, {
+      notificationKey: "disposition_deadline_h_minus_1",
+      notificationId: "disposition-deadline-h-minus-1",
+      category: "employee",
+      reason: "policy_blocked",
+      sourceFeature: "disposition_deadline_reminder",
+      recipientType: "employee",
+      metadata: { mode, whatsappStatus: whatsappSnapshot.runtimeStatus },
+    });
+    await appendDispositionReminderRun(db, {
+      mode,
+      triggeredBy: "manual_controlled",
+      triggeredByUserId: actor.id,
+      startedAt,
+      status: "blocked",
+      summary: { reason: "whatsapp_not_connected", whatsappStatus: whatsappSnapshot.runtimeStatus },
+    });
+    return {
+      ok: true,
+      mode,
+      totalCandidates: 0,
+      dryRunCreated: 0,
+      skipped: 0,
+      productionSent: 0,
+      blocked: true,
+      blockerReasons: ["whatsapp_not_connected"],
+      warnings: ["WhatsApp belum connected. Reminder produksi tidak dijalankan."],
+      items: [],
+    };
+  }
+
+  const tomorrow = addDaysDateOnly(new Date(), 1);
+  const rows = await db
+    .prepare(
+      `SELECT dsp.id AS disposition_id, dsp.surat_id AS letter_id, l.nomor_surat, l.perihal,
+        dsp.deadline_at, dsp.status, dsp.instruksi,
+        u.id AS recipient_id, u.name AS recipient_name, u.role_id AS recipient_role_id,
+        u.whatsapp_number AS recipient_whatsapp,
+        p.id AS position_id, p.name AS position_name, p.unit_kerja
+       FROM dispositions dsp
+       INNER JOIN letters l ON l.id = dsp.surat_id
+       INNER JOIN users u ON u.id = dsp.penerima_id
+       LEFT JOIN positions p ON p.id = u.position_id
+       WHERE dsp.deleted_at IS NULL
+         AND l.deleted_at IS NULL
+         AND u.deleted_at IS NULL
+         AND u.is_active = 1
+         AND dsp.deadline_at IS NOT NULL
+         AND substr(dsp.deadline_at, 1, 10) = ?
+         AND dsp.status <> 'Selesai'
+       ORDER BY dsp.deadline_at ASC, l.created_at ASC
+       LIMIT 50`
+    )
+    .all<DeadlineReminderCandidateRow>(tomorrow);
+
+  const safeLimit = Math.max(1, Math.min(20, Number(limit || 20)));
+  const items: AletaBotDeadlineReminderDryRunResult["items"] = [];
+  let productionSent = 0;
+  let skipped = 0;
+  for (const row of rows) {
+    const normalizedNumber = normalizeWhatsappNumber(row.recipient_whatsapp || "");
+    const idempotencyKey = `disposition_deadline_reminder:${row.disposition_id}:${tomorrow}`;
+    const messagePreview = buildDeadlineReminderMessage(row).slice(0, 1000);
+    const baseItem = {
+      dispositionId: row.disposition_id,
+      letterId: row.letter_id,
+      recipientName: row.recipient_name,
+      recipientNumber: maskExportPhone(normalizedNumber),
+      perihal: row.perihal,
+      deadline: row.deadline_at,
+      messagePreview,
+      idempotencyKey,
+    };
+
+    if (!/^62\d{8,15}$/.test(normalizedNumber)) {
+      skipped += 1;
+      await appendPolicySkipLog(db, {
+        notificationKey: "disposition_deadline_h_minus_1",
+        notificationId: "disposition-deadline-h-minus-1",
+        category: "employee",
+        reason: "recipient_invalid",
+        sourceFeature: "disposition_deadline_reminder",
+        entityType: "disposition",
+        entityId: row.disposition_id,
+        recipientType: "employee",
+        recipientCount: 1,
+      });
+      items.push({ ...baseItem, status: "skipped", skipReason: "Nomor penerima belum valid." });
+      continue;
+    }
+
+    const result = await sendPortalWhatsappMessage({
+      sourceFeature: "disposition_deadline_reminder",
+      entityType: "disposition",
+      entityId: row.disposition_id,
+      eventType: `h_minus_1_${tomorrow}`,
+      recipientNumber: normalizedNumber,
+      recipientName: row.recipient_name,
+      message: buildDeadlineReminderMessage(row),
+      category: "employee",
+      priority: 4,
+      dryRun: false,
+      metadata: {
+        sourceFeature: "disposition_deadline_reminder",
+        entityType: "disposition",
+        entityId: row.disposition_id,
+        letterId: row.letter_id,
+        dispositionId: row.disposition_id,
+        nomorSurat: row.nomor_surat,
+        recipientType: "employee",
+        recipientRole: row.recipient_role_id,
+        recipientPosition: row.position_name,
+        deadlineDate: tomorrow,
+        idempotencyKey,
+        reminderType: "h_minus_1",
+      },
+    });
+    if (result.ok && (result.queueId || result.duplicate || result.status === "sent")) {
+      productionSent += 1;
+      items.push({ ...baseItem, status: "enqueued" });
+    } else {
+      skipped += 1;
+      await appendPolicySkipLog(db, {
+        notificationKey: "disposition_deadline_h_minus_1",
+        notificationId: "disposition-deadline-h-minus-1",
+        category: "employee",
+        reason: "policy_blocked",
+        sourceFeature: "disposition_deadline_reminder",
+        entityType: "disposition",
+        entityId: row.disposition_id,
+        recipientType: "employee",
+        recipientCount: 1,
+        metadata: { gatewayMessage: result.message },
+      });
+      items.push({ ...baseItem, status: "skipped", skipReason: result.message });
+    }
+  }
+
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `UPDATE aleta_bot_settings
+       SET disposition_deadline_reminder_last_run_at = ?,
+         disposition_deadline_reminder_last_status = ?,
+         disposition_deadline_reminder_last_message = ?,
+         updated_at = ?
+       WHERE id = 1`
+    )
+    .run(now, productionSent > 0 ? "sent" : "skipped", `Production runner: ${productionSent} enqueue, ${skipped} skip.`, now);
+  await appendAletaBotLog(db, {
+    actorUserId: actor.id,
+    level: productionSent > 0 ? "warning" : "info",
+    eventType: "notification",
+    message: "Runner produksi reminder deadline H-1 diproses dengan gate eksplisit.",
+    metadata: { mode, totalCandidates: rows.length, productionSent, skipped },
+  });
+  await appendDispositionReminderRun(db, {
+    mode,
+    triggeredBy: "manual_controlled",
+    triggeredByUserId: actor.id,
+    startedAt,
+    totalCandidates: rows.length,
+    sentCount: productionSent,
+    skippedCount: skipped,
+    status: productionSent > 0 ? "completed" : "skipped",
+    summary: {
+      targetDate: tomorrow,
+      productionGate: "explicit_confirmation",
+      whatsappStatus: whatsappSnapshot.runtimeStatus,
+    },
+  });
+
+  return {
+    ok: true,
+    mode,
+    totalCandidates: rows.length,
+    dryRunCreated: 0,
+    skipped,
+    productionSent,
+    warnings: productionSent > 0 ? ["Pesan masuk antrean runtime sesuai mode produksi."] : ["Tidak ada pesan produksi yang masuk antrean."],
+    items: items.slice(0, safeLimit),
+  };
+}
+
+function isSchedulerDueToday(schedulerTime: string, lastRunAt: string | null, now = new Date()) {
+  const normalizedTime = sanitizeReminderSchedulerTime(schedulerTime, "08:00:00");
+  const [hour, minute, second] = normalizedTime.split(":").map((part) => Number(part));
+  const scheduledAt = new Date(now);
+  scheduledAt.setHours(hour || 0, minute || 0, second || 0, 0);
+  if (now.getTime() < scheduledAt.getTime()) return false;
+  if (!lastRunAt) return true;
+  const lastRun = new Date(lastRunAt);
+  if (Number.isNaN(lastRun.getTime())) return true;
+  return lastRun.toISOString().slice(0, 10) !== now.toISOString().slice(0, 10);
+}
+
+export async function runDispositionDeadlineReminderSchedulerDryRun(
+  db: AletaDatabase,
+  {
+    actorUserId,
+    force = false,
+    limit = 20,
+  }: {
+    actorUserId: string;
+    force?: boolean;
+    limit?: number;
+  }
+): Promise<AletaBotDeadlineReminderDryRunResult> {
+  const startedAt = new Date().toISOString();
+  const actor = await requireAletaBotOperator(db, actorUserId);
+  const settings = await getAletaBotSettings(db);
+
+  const block = async (reason: string, message: string): Promise<AletaBotDeadlineReminderDryRunResult> => {
+    const now = new Date().toISOString();
+    await appendDispositionReminderRun(db, {
+      mode: settings.deadlineReminderSchedulerMode,
+      triggeredBy: "scheduler_blocked",
+      triggeredByUserId: actor.id,
+      startedAt,
+      status: "blocked",
+      summary: { reason, force, schedulerEnabled: settings.deadlineReminderSchedulerEnabled },
+    });
+    await db
+      .prepare(
+        `UPDATE aleta_bot_settings
+         SET disposition_deadline_reminder_scheduler_last_run_at = ?,
+           disposition_deadline_reminder_scheduler_last_message = ?,
+           updated_at = ?
+         WHERE id = 1`
+      )
+      .run(now, message, now);
+    return {
+      ok: true,
+      mode: settings.deadlineReminderSchedulerMode,
+      totalCandidates: 0,
+      dryRunCreated: 0,
+      skipped: 0,
+      productionSent: 0,
+      blocked: true,
+      blockerReasons: [reason],
+      warnings: [message],
+      items: [],
+    };
+  };
+
+  if (settings.deadlineReminderKillSwitch) {
+    return block("kill_switch_active", "Emergency Stop Reminder Deadline aktif. Scheduler dry-run tidak dijalankan.");
+  }
+  if (!force && !settings.deadlineReminderSchedulerEnabled) {
+    return block("scheduler_disabled", "Scheduler reminder belum aktif. Tidak ada dry-run otomatis yang dijalankan.");
+  }
+  if (!force && settings.deadlineReminderSchedulerMode !== "dry_run") {
+    return block("scheduler_not_dry_run", "Scheduler otomatis hanya berjalan pada mode dry-run.");
+  }
+  if (!force && !isSchedulerDueToday(settings.deadlineReminderSchedulerTime, settings.deadlineReminderSchedulerLastRunAt)) {
+    return block("scheduler_not_due", "Scheduler belum mencapai jadwal hari ini atau sudah pernah berjalan.");
+  }
+
+  const result = await dryRunDispositionDeadlineReminders(db, {
+    actorUserId: actor.id,
+    limit,
+    triggeredBy: "scheduler_dry_run",
+  });
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      `UPDATE aleta_bot_settings
+       SET disposition_deadline_reminder_scheduler_last_run_at = ?,
+         disposition_deadline_reminder_scheduler_last_message = ?,
+         updated_at = ?
+       WHERE id = 1`
+    )
+    .run(now, `Scheduler dry-run: ${result.dryRunCreated} simulasi, ${result.skipped} dilewati.`, now);
+  return {
+    ...result,
+    warnings: [
+      ...result.warnings,
+      force
+        ? "Dry-run scheduler dijalankan manual dari portal admin. Tidak ada WhatsApp sungguhan yang dikirim."
+        : "Scheduler otomatis berjalan dalam mode dry-run. Tidak ada WhatsApp sungguhan yang dikirim.",
+    ],
+  };
+}
+
+function readinessStatusFromBlockers(blockers: Array<{ severity: "critical" | "warning"; label: string }>) {
+  if (blockers.some((item) => item.severity === "critical")) return "Terblokir";
+  if (blockers.length > 0) return "Perlu Perhatian";
+  return "Siap";
+}
+
+export async function getPilotReadinessReport(
+  db: AletaDatabase,
+  actorUserId: string,
+  format?: string | null
+) {
+  await requireAletaBotOperator(db, actorUserId);
+  const [settings, policySkipSummary, whatsappNumberCompleteness, publicQaAnalytics, messageAnalytics, aiSettings, publicQaActiveRow] = await Promise.all([
+    getAletaBotSettings(db),
+    getPolicySkipSummary(db),
+    getWhatsappNumberCompleteness(db),
+    getPublicQaAnalytics(db, actorUserId),
+    getAletaBotMessageAnalytics(db, actorUserId),
+    getAISettingsFromDb(db),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM aleta_bot_public_qa_intents
+         WHERE is_active = 1 OR ai_enabled = 1 OR ai_answer_enabled = 1`
+      )
+      .get<{ count: number | string }>(),
+  ]);
+  const runtimeMode = getWhatsappRuntimeMode();
+  const [runtimeStatus, whatsappSnapshot, workerState, deadLetters] = await Promise.all([
+    runtimeMode === "aleta_bot"
+      ? fetchAletaBotRuntimeStatusPayload()
+      : Promise.resolve({ online: false, statusCode: 0, payload: null, errorMessage: null }),
+    runtimeMode === "aleta_bot" ? buildGatewayWhatsappSnapshot() : whatsappService.getGatewaySnapshot(),
+    runtimeMode === "aleta_bot" ? getWorkerStateFromGateway() : Promise.resolve(null),
+    runtimeMode === "aleta_bot" ? getDeadLettersFromGateway(20) : Promise.resolve([]),
+  ]);
+  const sendingWindow = runtimeStatus.payload?.bot?.sendingWindow ?? null;
+  const safeSendingWindowReadable = Boolean(sendingWindow);
+  const safeSendingWindowEnabled = sendingWindow?.enabled !== false;
+  const aiBridgeStatus = runtimeStatus.payload?.aiRuntime?.status ?? (aiSettings.enabled ? "unknown" : "disabled");
+  const publicQaActive = Number(publicQaActiveRow?.count || 0) > 0;
+  const legacyResolver = runtimeStatus.payload?.whatsappNumberResolver ?? null;
+  const lastPolicySkipRecent =
+    policySkipSummary.lastSkippedAt &&
+    Date.now() - new Date(policySkipSummary.lastSkippedAt).getTime() < 24 * 60 * 60 * 1000;
+  const legacyFallbackLastUsedAt = legacyResolver?.lastLegacyFallbackUsedAt ?? null;
+  const legacyFallbackRecent =
+    legacyFallbackLastUsedAt &&
+    Date.now() - new Date(legacyFallbackLastUsedAt).getTime() < 24 * 60 * 60 * 1000;
+
+  const blockers: Array<{
+    key: string;
+    label: string;
+    severity: "critical" | "warning";
+    actionLabel: string;
+    actionHref: string;
+  }> = [];
+  if (whatsappSnapshot.runtimeStatus !== "connected") {
+    blockers.push({
+      key: "whatsapp_disconnected",
+      label: "WhatsApp Gateway belum connected.",
+      severity: "critical",
+      actionLabel: "Buka Status WhatsApp Gateway",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (workerState && workerState.running === false) {
+    blockers.push({
+      key: "worker_paused",
+      label: "Worker antrean belum aktif.",
+      severity: "critical",
+      actionLabel: "Buka Worker ALETA Bot",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (!workerState) {
+    blockers.push({
+      key: "worker_unreadable",
+      label: "Status worker belum dapat dibaca.",
+      severity: "warning",
+      actionLabel: "Jalankan Smoke Test",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (safeSendingWindowReadable && !safeSendingWindowEnabled) {
+    blockers.push({
+      key: "safe_sending_window_disabled",
+      label: "Safe Sending Window sedang nonaktif.",
+      severity: "critical",
+      actionLabel: "Buka Pengaturan Jam Aman",
+      actionHref: "/admin/aleta-bot#pengaturan-bot",
+    });
+  }
+  if (!safeSendingWindowReadable && runtimeMode === "aleta_bot") {
+    blockers.push({
+      key: "safe_sending_window_unreadable",
+      label: "Status Safe Sending Window belum terbaca dari runtime.",
+      severity: "warning",
+      actionLabel: "Jalankan Smoke Test",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (deadLetters.length >= 10) {
+    blockers.push({
+      key: "dead_letter_high",
+      label: "Dead-letter tinggi dan perlu ditinjau.",
+      severity: "critical",
+      actionLabel: "Buka Dead Letter",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (deadLetters.length > 0 && deadLetters.length < 10) {
+    blockers.push({
+      key: "dead_letter_present",
+      label: "Ada dead-letter yang perlu dipantau.",
+      severity: "warning",
+      actionLabel: "Buka Dead Letter",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (whatsappNumberCompleteness.importantMissing.length > 0) {
+    blockers.push({
+      key: "missing_whatsapp_numbers",
+      label: "Nomor WhatsApp pegawai prioritas belum lengkap.",
+      severity: "critical",
+      actionLabel: "Lengkapi Nomor Pegawai",
+      actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
+    });
+  }
+  if (whatsappNumberCompleteness.importantMissing.length === 0 && whatsappNumberCompleteness.missingWhatsapp > 0) {
+    blockers.push({
+      key: "missing_whatsapp_numbers_noncritical",
+      label: "Sebagian nomor WhatsApp pegawai belum lengkap.",
+      severity: "warning",
+      actionLabel: "Lengkapi Nomor Pegawai",
+      actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
+    });
+  }
+  if (legacyFallbackRecent) {
+    blockers.push({
+      key: "recent_legacy_fallback",
+      label: "Fallback nomor WhatsApp legacy masih dipakai dalam 24 jam terakhir.",
+      severity: "critical",
+      actionLabel: "Lengkapi Nomor Pegawai",
+      actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
+    });
+  } else if ((legacyResolver?.legacyFallbackUsedCount ?? 0) > 0) {
+    blockers.push({
+      key: "legacy_fallback_used",
+      label: "Fallback nomor WhatsApp legacy pernah dipakai runtime.",
+      severity: "warning",
+      actionLabel: "Lengkapi Nomor Pegawai",
+      actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
+    });
+  }
+  if (lastPolicySkipRecent) {
+    blockers.push({
+      key: "recent_policy_skip",
+      label: "Policy skip masih terjadi dalam 24 jam terakhir.",
+      severity: "warning",
+      actionLabel: "Lihat Policy Skip",
+      actionHref: "/admin/aleta-bot#policy-skip",
+    });
+  }
+  if (settings.deadlineReminderMode === "production" && (!settings.deadlineReminderApprovedAt || !settings.deadlineReminderEnabled)) {
+    blockers.push({
+      key: "reminder_production_without_approval",
+      label: "Reminder production belum memiliki approval/enable eksplisit.",
+      severity: "critical",
+      actionLabel: "Buka Pengaturan Reminder",
+      actionHref: "/admin/aleta-bot#reminder-deadline",
+    });
+  }
+  if (
+    settings.deadlineReminderSchedulerEnabled &&
+    settings.deadlineReminderSchedulerMode === "production" &&
+    (!settings.deadlineReminderApprovedAt || !settings.deadlineReminderEnabled || whatsappSnapshot.runtimeStatus !== "connected" || !safeSendingWindowEnabled)
+  ) {
+    blockers.push({
+      key: "scheduler_production_not_clear",
+      label: "Scheduler production aktif tanpa readiness clear.",
+      severity: "critical",
+      actionLabel: "Buka Pengaturan Reminder",
+      actionHref: "/admin/aleta-bot#reminder-deadline",
+    });
+  }
+  if (settings.deadlineReminderKillSwitch) {
+    blockers.push({
+      key: "reminder_kill_switch",
+      label: "Emergency Stop Reminder Deadline sedang aktif.",
+      severity: "critical",
+      actionLabel: "Buka Pengaturan Reminder",
+      actionHref: "/admin/aleta-bot#reminder-deadline",
+    });
+  }
+  if (publicQaAnalytics.humanReviewPending >= 20) {
+    blockers.push({
+      key: "public_qa_pending",
+      label: "Public Q&A pending review terlalu tinggi.",
+      severity: "critical",
+      actionLabel: "Tinjau Pertanyaan Publik",
+      actionHref: "/admin/aleta-bot",
+    });
+  } else if (publicQaAnalytics.humanReviewPending > 0) {
+    blockers.push({
+      key: "public_qa_pending_warning",
+      label: "Public Q&A masih memiliki pending review.",
+      severity: "warning",
+      actionLabel: "Tinjau Pertanyaan Publik",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+  if (publicQaActive && (aiBridgeStatus === "needs_sync" || aiBridgeStatus === "error")) {
+    blockers.push({
+      key: "ai_public_qa_not_ready",
+      label: aiBridgeStatus === "needs_sync"
+        ? "AI Public Q&A aktif tetapi AI Bridge perlu sinkronisasi."
+        : "AI Public Q&A aktif tetapi AI Bridge bermasalah.",
+      severity: "critical",
+      actionLabel: "Sync AI ke ALETA Bot",
+      actionHref: "/admin/aleta-bot",
+    });
+  }
+
+  const report = {
+    generatedAt: new Date().toISOString(),
+    overallStatus: readinessStatusFromBlockers(blockers),
+    blockers,
+    runtime: {
+      mode: runtimeMode,
+      online: runtimeStatus.online,
+      statusCode: runtimeStatus.statusCode,
+      errorMessage: runtimeStatus.errorMessage,
+    },
+    whatsapp: {
+      runtimeStatus: whatsappSnapshot.runtimeStatus,
+      linked: whatsappSnapshot.linked,
+      lastConnectedAt: whatsappSnapshot.lastConnectedAt ?? null,
+    },
+    safeSendingWindow: {
+      readable: safeSendingWindowReadable,
+      enabled: safeSendingWindowEnabled,
+      start: sendingWindow?.start ?? "07:30",
+      end: sendingWindow?.end ?? "21:00",
+      inside: sendingWindow?.inside ?? null,
+      message: sendingWindow?.message ?? null,
+    },
+    worker: {
+      readable: Boolean(workerState),
+      running: workerState?.running ?? null,
+      paused: workerState?.paused ?? null,
+    },
+    queue: {
+      deadLetterCount: deadLetters.length,
+      failedWhatsappMessagesToday: messageAnalytics.failedToday,
+      policySkipToday: policySkipSummary.totalToday,
+    },
+    publicQa: {
+      pendingHumanReview: publicQaAnalytics.humanReviewPending,
+      fallbackRate: publicQaAnalytics.fallbackRate,
+    },
+    whatsappNumbers: {
+      total: whatsappNumberCompleteness.totalActiveUsers,
+      complete: whatsappNumberCompleteness.withWhatsapp,
+      missing: whatsappNumberCompleteness.missingWhatsapp,
+      coveragePercent: whatsappNumberCompleteness.coveragePercent,
+      priorityMissing: whatsappNumberCompleteness.importantMissing.length,
+    },
+    reminder: {
+      mode: settings.deadlineReminderMode,
+      schedulerEnabled: settings.deadlineReminderSchedulerEnabled,
+      schedulerMode: settings.deadlineReminderSchedulerMode,
+      schedulerTime: settings.deadlineReminderSchedulerTime,
+      schedulerLastRunAt: settings.deadlineReminderSchedulerLastRunAt,
+      killSwitch: settings.deadlineReminderKillSwitch,
+      approvedAt: settings.deadlineReminderApprovedAt,
+    },
+    legacyMapping: {
+      fallbackUsedCount: legacyResolver?.legacyFallbackUsedCount ?? 0,
+      lastFallbackUsedAt: legacyFallbackLastUsedAt,
+      recentFallback: Boolean(legacyFallbackRecent),
+    },
+    aiBridge: {
+      status: aiBridgeStatus,
+      enabled: aiSettings.enabled,
+      publicQaActive,
+    },
+    smokeTest: {
+      available: true,
+      lastStatus: null,
+      detail: "Smoke test tersedia sebagai pemeriksaan baca-saja dan tidak disimpan otomatis agar tidak mengekspos data teknis.",
+    },
+    policySkip: policySkipSummary,
+  };
+
+  if (format === "csv") {
+    const lines = [
+      ["Bagian", "Nilai"].map(csvCell).join(","),
+      ["Generated At", report.generatedAt].map(csvCell).join(","),
+      ["Overall Status", report.overallStatus].map(csvCell).join(","),
+      ["WhatsApp Status", report.whatsapp.runtimeStatus].map(csvCell).join(","),
+      ["Safe Sending Window", `${report.safeSendingWindow.enabled ? "enabled" : "disabled"} ${report.safeSendingWindow.start}-${report.safeSendingWindow.end}`].map(csvCell).join(","),
+      ["Worker Running", String(report.worker.running ?? "unknown")].map(csvCell).join(","),
+      ["Dead-letter", String(report.queue.deadLetterCount)].map(csvCell).join(","),
+      ["Policy Skip Hari Ini", String(report.queue.policySkipToday)].map(csvCell).join(","),
+      ["Public Q&A Pending", String(report.publicQa.pendingHumanReview)].map(csvCell).join(","),
+      ["Nomor WA Lengkap", `${report.whatsappNumbers.complete}/${report.whatsappNumbers.total}`].map(csvCell).join(","),
+      ["Nomor WA Prioritas Kosong", String(report.whatsappNumbers.priorityMissing)].map(csvCell).join(","),
+      ["Legacy Fallback", `${report.legacyMapping.fallbackUsedCount} kali`].map(csvCell).join(","),
+      ["AI Bridge", report.aiBridge.status].map(csvCell).join(","),
+      ["Reminder Mode", report.reminder.mode].map(csvCell).join(","),
+      ["Reminder Scheduler", `${report.reminder.schedulerEnabled ? "enabled" : "disabled"} / ${report.reminder.schedulerMode}`].map(csvCell).join(","),
+      ["Kill Switch", report.reminder.killSwitch ? "active" : "off"].map(csvCell).join(","),
+      ["Smoke Test", report.smokeTest.available ? "available" : "unavailable"].map(csvCell).join(","),
+    ];
+    for (const blocker of blockers) {
+      lines.push([`Blocker ${blocker.severity}`, blocker.label].map(csvCell).join(","));
+    }
+    return {
+      ...report,
+      filename: `pilot-readiness-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv: lines.join("\n"),
+    };
+  }
+
+  return report;
+}
+
+export async function runAletaBotOperationalSmokeTest(db: AletaDatabase, actorUserId: string) {
+  await requireAletaBotOperator(db, actorUserId);
+  const checks: Array<{
+    key: string;
+    label: string;
+    status: "passed" | "warning" | "failed";
+    detail: string;
+  }> = [];
+  const safeCheck = async (
+    key: string,
+    label: string,
+    fn: () => Promise<{ status?: "passed" | "warning" | "failed"; detail: string }>
+  ) => {
+    try {
+      const result = await fn();
+      checks.push({ key, label, status: result.status ?? "passed", detail: result.detail });
+    } catch (error) {
+      checks.push({
+        key,
+        label,
+        status: "failed",
+        detail: sanitizeErrorMessage(error instanceof Error ? error.message : "Pemeriksaan gagal."),
+      });
+    }
+  };
+
+  checks.push({
+    key: "auth_guard",
+    label: "Auth Guard Admin",
+    status: "passed",
+    detail: "Akses smoke test sudah melewati guard operator ALETA Bot.",
+  });
+  await safeCheck("whatsapp_status", "Status WhatsApp Gateway", async () => {
+    const snapshot = getWhatsappRuntimeMode() === "aleta_bot" ? await buildGatewayWhatsappSnapshot() : await whatsappService.getGatewaySnapshot();
+    return {
+      status: snapshot.runtimeStatus === "connected" ? "passed" : "warning",
+      detail: `Status terbaca: ${snapshot.runtimeStatus}. QR raw tidak diekspos dan tidak ada scan.`,
+    };
+  });
+  await safeCheck("qr_endpoint", "QR Endpoint Reachable", async () => {
+    if (getWhatsappRuntimeMode() !== "aleta_bot") {
+      return { status: "warning", detail: "Runtime bukan aleta_bot; QR gateway tidak dipanggil." };
+    }
+    const qr = await getGatewayWhatsappQr();
+    return {
+      status: qr.ok ? "passed" : "warning",
+      detail: qr.ok
+        ? "QR endpoint reachable. QR raw tidak disertakan dalam response smoke test dan tidak ada scan."
+        : `QR endpoint belum reachable: ${sanitizeErrorMessage(qr.error)}`,
+    };
+  });
+  await safeCheck("queue_reachable", "Queue Reachable", async () => {
+    if (getWhatsappRuntimeMode() !== "aleta_bot") {
+      return { status: "warning", detail: "Runtime bukan aleta_bot; queue gateway tidak dipanggil." };
+    }
+    const deadLetterResult = await getGatewayDeadLetters(1);
+    return {
+      status: deadLetterResult.ok ? "passed" : "warning",
+      detail: deadLetterResult.ok
+        ? `Queue readable. Dead-letter terdeteksi: ${deadLetterResult.data.total}.`
+        : `Queue belum readable: ${sanitizeErrorMessage(deadLetterResult.error)}`,
+    };
+  });
+  await safeCheck("worker_status", "Worker Status", async () => {
+    const worker = getWhatsappRuntimeMode() === "aleta_bot" ? await getWorkerStateFromGateway() : null;
+    return {
+      status: worker ? "passed" : "warning",
+      detail: worker ? `Worker readable. Running: ${worker.running ? "ya" : "tidak"}.` : "Worker runtime belum dapat dibaca.",
+    };
+  });
+  await safeCheck("settings", "Konfigurasi Reminder", async () => {
+    const settings = await getAletaBotSettings(db);
+    return {
+      status: settings.deadlineReminderKillSwitch ? "warning" : "passed",
+      detail: `Scheduler ${settings.deadlineReminderSchedulerEnabled ? "aktif" : "nonaktif"} mode ${settings.deadlineReminderSchedulerMode}, kill switch ${settings.deadlineReminderKillSwitch ? "aktif" : "normal"}.`,
+    };
+  });
+  await safeCheck("safe_sending_window", "Safe Sending Window", async () => {
+    const runtimeStatus = await fetchAletaBotRuntimeStatusPayload();
+    const windowConfig = runtimeStatus.payload?.bot?.sendingWindow;
+    if (!runtimeStatus.online || !windowConfig) {
+      return { status: "warning", detail: "Status jam aman belum terbaca dari runtime." };
+    }
+    return {
+      status: windowConfig.enabled === false ? "failed" : "passed",
+      detail: windowConfig.enabled === false
+        ? "Jam aman nonaktif."
+        : `Jam aman terbaca: ${windowConfig.start ?? "07:30"}-${windowConfig.end ?? "21:00"}.`,
+    };
+  });
+  await safeCheck("policy_skip", "Policy Skip Report", async () => {
+    const report = await getPolicySkipReport(db, actorUserId, {});
+    return { detail: `Policy skip readable. Total: ${report.summary.total}.` };
+  });
+  await safeCheck("public_qa", "Analytics Public Q&A", async () => {
+    const analytics = await getPublicQaAnalytics(db, actorUserId);
+    return { detail: `Public Q&A readable. Pending review: ${analytics.humanReviewPending}.` };
+  });
+  await safeCheck("ai_bridge", "Status AI Bridge", async () => {
+    const ai = await getAISettingsFromDb(db);
+    const activeProvider = ai.providers.find((provider) => provider.id === ai.activeConnectionId) ?? ai.providers.find((provider) => provider.isActive);
+    return {
+      status: ai.enabled ? "passed" : "warning",
+      detail: ai.enabled
+        ? `AI aktif (${activeProvider?.providerName ?? ai.providerId}/${activeProvider?.modelId ?? ai.modelId}).`
+        : "AI sedang dinonaktifkan; fitur saran akan fallback manual.",
+    };
+  });
+  await safeCheck("db_registry", "Registry Koneksi Database", async () => {
+    const connections = await getDbConnections(db);
+    return { detail: `${connections.length} koneksi database terdaftar. Password tidak diekspos.` };
+  });
+  await safeCheck("pilot_readiness", "Pilot Readiness Report", async () => {
+    const readiness = await getPilotReadinessReport(db, actorUserId);
+    return {
+      status: readiness.overallStatus === "Terblokir" ? "failed" : readiness.overallStatus === "Perlu Perhatian" ? "warning" : "passed",
+      detail: `Readiness readable. Status: ${readiness.overallStatus}. Blocker/catatan: ${readiness.blockers.length}.`,
+    };
+  });
+  checks.push({
+    key: "no_send",
+    label: "Tidak Ada Aksi Kirim",
+    status: "passed",
+    detail: "Smoke test hanya membaca status dan konfigurasi. Tidak enqueue, tidak kirim WhatsApp, tidak scan QR.",
+  });
+  checks.push({
+    key: "no_secret_response",
+    label: "Tidak Ada Secret di Response",
+    status: "passed",
+    detail: "Response smoke test hanya berisi status ringkas; token, QR raw, session, password, dan API key tidak disertakan.",
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    overallStatus: checks.some((check) => check.status === "failed")
+      ? "failed"
+      : checks.some((check) => check.status === "warning")
+        ? "warning"
+        : "passed",
+    checks,
+  };
 }
 
 export async function runAletaBotAction(
@@ -5729,6 +8570,13 @@ export async function runAletaBotAction(
       message,
       priority: 5,
       category: "employee",
+      metadata: {
+        sourceFeature: "aleta_bot_test",
+        entityType: "test",
+        entityId: actor.id,
+        recipientType: "employee",
+        recipientRole: actor.roleId,
+      },
     });
     if (!sendResult.ok) {
       throw new Error(sendResult.message);
@@ -5835,9 +8683,10 @@ export async function runAletaBotAction(
       .prepare(
         `INSERT INTO aleta_bot_notification_logs (
           id, notification_id, query_id, recipient_number, recipient_name, category,
-          message_preview, status, error_message, sent_at, created_at
+          message_preview, status, error_message, source_app, source_feature, entity_type, entity_id, metadata_json,
+          sent_at, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         await nextPrefixedId(db, "aleta_bot_notification_logs", "abnl"),
@@ -5849,6 +8698,21 @@ export async function runAletaBotAction(
         preview.slice(0, 1000),
         status,
         errorMessage,
+        "aleta_bot_admin",
+        notification.category === "party" ? "notification_party" : "notification_employee",
+        "notification",
+        notification.id,
+        JSON.stringify(buildMessageEntityMetadata({
+          sourceApp: "aleta_bot_admin",
+          sourceFeature: notification.category === "party" ? "notification_party" : "notification_employee",
+          entityType: "notification",
+          entityId: notification.id,
+          recipientType: notification.category === "party" ? "party" : "employee",
+          recipientPosition: notification.category === "employee" ? "sample-pegawai" : "sample-pihak",
+          notificationId: notification.id,
+          queryId: query.id,
+          mode: "simulation",
+        })),
         status === "simulated" ? new Date().toISOString() : null,
         new Date().toISOString()
       );

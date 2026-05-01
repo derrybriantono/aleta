@@ -107,8 +107,11 @@ async function attemptDelivery(
     metadata,
   });
 
+  const enqueueAccepted =
+    result.status === "enqueued" && Boolean(result.queueId || result.duplicate);
+  const directSendAccepted = result.status === "sent";
   const dbStatus: "Terkirim" | "Gagal" =
-    result.ok && result.status !== "skipped" ? "Terkirim" : "Gagal";
+    result.ok && (enqueueAccepted || directSendAccepted) ? "Terkirim" : "Gagal";
   await updateDeliveryStatus(db, scope, deliveryId, dbStatus, attemptedAt);
 
   return {
@@ -157,9 +160,14 @@ export async function sendLetterNotification(
     recipientName: row.recipient_name,
     message,
     metadata: {
+      sourceFeature: "letter_notification",
+      entityType: "letter",
+      entityId: row.letter_id,
+      letterId: row.letter_id,
       nomorSurat: row.nomor_surat,
       perihal: row.perihal,
       jenisSurat: row.jenis_surat,
+      recipientType: "employee",
       recipientName: row.recipient_name,
     },
   });
@@ -204,11 +212,17 @@ export async function sendDispositionNotification(
     recipientName: row.recipient_name,
     message,
     metadata: {
+      sourceFeature: "disposition_notification",
+      entityType: "disposition",
+      entityId: row.disposition_id,
+      letterId: row.surat_id,
+      dispositionId: row.disposition_id,
       suratId: row.surat_id,
       nomorSurat: row.nomor_surat,
       perihal: row.perihal,
       disposisiDari: "ALETA",
       instruksi: row.instruksi,
+      recipientType: "employee",
       recipientName: row.recipient_name,
     },
   });

@@ -1,4 +1,4 @@
-export const APP_VERSION = "0.1.0-beta.2";
+export const APP_VERSION = "0.1.0-beta.5";
 export const APP_VERSION_LABEL = "ALETA 0.1.0 Beta - Internal Pilot";
 
 export type PatchNote = {
@@ -16,6 +16,127 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "0.1.0-beta.5",
+    title: "Final Pilot Verification dan Data Readiness",
+    date: "2026-05-01",
+    status: "Beta",
+    summary:
+      "Rilis beta internal untuk memperketat verifikasi pilot terbatas, readiness report, smoke test final, runbook pilot, dan data readiness nomor WhatsApp sebelum operasional terbatas.",
+    added: [
+      "Runbook Pilot Terbatas ALETA di Panduan Penggunaan.",
+      "Smoke test final dengan pemeriksaan auth guard, queue, safe sending window, pilot readiness, dan no-secret response.",
+      "Readiness report yang memuat safe sending window, AI Bridge, legacy fallback terbaru, smoke test availability, dan prioritas nomor WhatsApp kosong.",
+    ],
+    changed: [
+      "Kesiapan Pilot di Admin ALETA Bot dibuat lebih jelas dengan timestamp, tombol Jalankan Smoke Test, dan Export Readiness.",
+      "Blocker readiness diperketat agar status Siap tidak muncul saat ada blocker kritis seperti safe sending window nonaktif, kill switch aktif, legacy fallback baru, atau AI Public Q&A needs_sync.",
+      "Run history reminder menampilkan ringkasan aman dari hasil run tanpa nomor penuh, isi pesan penuh, atau secret.",
+    ],
+    fixed: [
+      "Operational smoke test kini membaca pilot readiness dan queue state tanpa melakukan enqueue atau pengiriman WhatsApp.",
+      "Readiness CSV mencantumkan status safe sending window, AI Bridge, legacy fallback, dan smoke test availability.",
+    ],
+    security: [
+      "Smoke test tetap baca-saja: tidak scan QR, tidak enqueue, dan tidak mengirim WhatsApp.",
+      "Readiness report tidak mengekspor token, QR raw, session, password, API key, atau nomor WhatsApp penuh.",
+      "Reminder production tetap terkunci oleh approval, Super Admin, idempotency, dan konfirmasi eksplisit.",
+    ],
+    operationalNotes: [
+      "Gunakan Kesiapan Pilot dan Export Readiness sebelum memulai pilot harian.",
+      "Jalankan Smoke Test dari Admin ALETA Bot untuk memeriksa koneksi dan guard tanpa aksi berisiko.",
+      "Lengkapi nomor WhatsApp pegawai prioritas sebelum melepas pilot lebih luas.",
+    ],
+    knownLimitations: [
+      "Scheduler production tetap belum dilepas otomatis.",
+      "Smoke test tidak menggantikan uji pilot manual dengan skenario operasional nyata.",
+      "Status Siap tetap bergantung pada data runtime terbaru dan kelengkapan nomor WhatsApp pegawai.",
+    ],
+  },
+  {
+    version: "0.1.0-beta.4",
+    title: "Finalisasi Pilot Readiness, KPI Pimpinan, dan Smoke Test Operasional",
+    date: "2026-05-01",
+    status: "Beta",
+    summary:
+      "Rilis beta internal untuk menyelesaikan finishing pilot: KPI pimpinan, scheduler dry-run reminder H-1, run history, export readiness, smoke test operasional, dan logging saran AI yang lebih aman.",
+    added: [
+      "Dashboard KPI Pimpinan di halaman Statistik.",
+      "Scheduler dry-run reminder deadline disposisi H-1 yang bisa diuji dari admin.",
+      "Run history reminder deadline disposisi.",
+      "Export CSV Pilot Readiness.",
+      "Operational Smoke Test baca-saja tanpa scan QR, tanpa enqueue, dan tanpa kirim WhatsApp.",
+      "Logging penggunaan saran AI klasifikasi dan ringkasan surat.",
+    ],
+    changed: [
+      "Panel Reminder Deadline Disposisi menampilkan status scheduler, kill switch, dan riwayat run lebih jelas.",
+      "Fallback saran AI kini membedakan AI disabled, perlu sinkronisasi, dan kondisi error/provider belum siap.",
+      "Pilot readiness dapat diekspor untuk bahan koordinasi internal.",
+    ],
+    fixed: [
+      "Insight run reminder tidak hanya terlihat pada preview sesaat, tetapi tersimpan sebagai run history.",
+      "Smoke test operasional tidak memicu aksi berisiko pada WhatsApp Gateway.",
+    ],
+    security: [
+      "Scheduler otomatis tetap dibatasi pada dry-run; production tetap membutuhkan Super Admin, approval, dan konfirmasi eksplisit.",
+      "AI suggestion log tidak menyimpan prompt penuh, API key, token, atau data sensitif mentah.",
+      "Export readiness tidak menyertakan secret, QR raw, session WhatsApp, atau nomor penuh.",
+    ],
+    operationalNotes: [
+      "Jalankan Operational Smoke Test sebelum pilot harian.",
+      "Gunakan Export Readiness untuk melaporkan blocker pilot kepada tim internal.",
+      "Gunakan Run History Reminder untuk memastikan dry-run scheduler berjalan tanpa pengiriman real.",
+    ],
+    knownLimitations: [
+      "Reminder production belum dilepas otomatis dan tetap harus diaktifkan melalui gate Super Admin.",
+      "AI klasifikasi/ringkasan tetap berupa saran manual, bukan keputusan otomatis.",
+      "Smoke test membaca status runtime, tetapi tidak menggantikan uji pilot operasional terjadwal.",
+    ],
+  },
+  {
+    version: "0.1.0-beta.3",
+    title: "Pilot Control, SLA, Analytics, dan Saran AI Administrasi",
+    date: "2026-05-01",
+    status: "Beta",
+    summary:
+      "Rilis beta internal untuk memperkuat kontrol pilot reminder, laporan policy skip, SLA disposisi, analitik ALETA Bot/Public Q&A, dan saran AI manual untuk klasifikasi serta ringkasan surat.",
+    added: [
+      "Pilot whitelist untuk reminder deadline disposisi H-1.",
+      "Scheduler reminder H-1 dengan default disabled/dry-run dan kill switch khusus reminder.",
+      "Report dan export CSV Policy Skip.",
+      "Filter pegawai tanpa nomor WhatsApp di Mapping User/Jabatan.",
+      "Dashboard SLA Disposisi.",
+      "Analitik Pengiriman ALETA Bot.",
+      "Analitik Public Q&A.",
+      "Endpoint saran AI klasifikasi surat dan ringkasan surat.",
+    ],
+    changed: [
+      "Pilot readiness dibuat lebih actionable dengan tombol menuju area perbaikan.",
+      "Reminder H-1 tetap aman: production membutuhkan approval, konfirmasi, idempotency, dan blocker clear.",
+      "Admin ALETA Bot menampilkan kontrol whitelist, scheduler, dan emergency stop reminder.",
+    ],
+    fixed: [
+      "Insight policy skip tidak hanya bergantung pada runtime memory.",
+      "Link missingWhatsapp=true kini memfilter daftar akun yang belum memiliki nomor WhatsApp.",
+      "SLA disposisi lebih mudah dipantau dari halaman statistik.",
+    ],
+    security: [
+      "Reminder tetap default dry-run dan tidak aktif production tanpa Super Admin.",
+      "Nomor WhatsApp tetap dimasking di area analitik dan preview.",
+      "Saran AI tidak auto-apply dan tidak menyimpan perubahan tanpa konfirmasi manusia.",
+      "Kill switch reminder hanya memengaruhi reminder deadline, bukan fitur lain.",
+    ],
+    operationalNotes: [
+      "Gunakan mode dry-run untuk menguji reminder deadline sebelum pilot terbatas.",
+      "Lengkapi nomor WhatsApp pegawai dari Mapping User/Jabatan agar fallback legacy bisa dikurangi.",
+      "Pantau Policy Skip dan SLA Disposisi sebelum menyatakan pilot siap.",
+    ],
+    knownLimitations: [
+      "Reminder production belum dijalankan otomatis pada validasi.",
+      "AI klasifikasi/ringkasan masih berupa saran manual dan bukan keputusan final.",
+      "Legacy mapping WhatsApp tetap ada sebagai fallback sampai data nomor pegawai lengkap.",
+    ],
+  },
   {
     version: "0.1.0-beta.2",
     title: "UX, Navigasi Aplikasi, Feedback, dan Penguatan ALETA Bot",

@@ -110,6 +110,25 @@ async function initializeSchema() {
     `);
 
     await query(`
+      CREATE TABLE IF NOT EXISTS aleta_bot_policy_skip_logs (
+        id VARCHAR(64) PRIMARY KEY,
+        notification_key VARCHAR(191) NOT NULL DEFAULT '',
+        notification_id VARCHAR(191),
+        category VARCHAR(64) NOT NULL DEFAULT '',
+        reason VARCHAR(64) NOT NULL DEFAULT 'unknown',
+        source_feature VARCHAR(191) NOT NULL DEFAULT '',
+        entity_type VARCHAR(191) NOT NULL DEFAULT '',
+        entity_id VARCHAR(191) NOT NULL DEFAULT '',
+        recipient_type VARCHAR(64) NOT NULL DEFAULT '',
+        recipient_count INT NOT NULL DEFAULT 0,
+        metadata_json MEDIUMTEXT,
+        created_at DATETIME NOT NULL,
+        INDEX idx_abps_created_reason (created_at, reason),
+        INDEX idx_abps_notification (notification_key, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
+    await query(`
       CREATE TABLE IF NOT EXISTS aleta_bot_settings (
         id VARCHAR(64) PRIMARY KEY,
         \`key\` VARCHAR(191) NOT NULL UNIQUE,

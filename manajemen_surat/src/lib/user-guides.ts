@@ -288,6 +288,29 @@ export const USER_GUIDES: UserGuide[] = [
     troubleshooting: ["Jika user tidak melihat menu yang seharusnya, periksa role, jabatan, dan visibility role."],
   },
   {
+    id: "pilot-terbatas-aleta",
+    title: "Pilot Terbatas ALETA",
+    module: "admin",
+    audiences: ["super_admin", "admin", "pimpinan"],
+    summary: "Runbook singkat untuk memastikan pilot terbatas berjalan aman, tetap dry-run untuk fitur berisiko, dan tidak melepas pengiriman massal tanpa kesiapan.",
+    steps: [
+      "Sebelum pilot: cek WhatsApp Gateway, safe sending window, worker, dead-letter, nomor WhatsApp pegawai, Public Q&A pending review, lalu jalankan Operational Smoke Test.",
+      "Export readiness dari Admin ALETA Bot dan pastikan status tidak Terblokir sebelum pilot harian.",
+      "Saat pilot: gunakan dry-run untuk reminder deadline, pantau policy skip, run history reminder, dead-letter, dan pertanyaan publik yang perlu ditinjau.",
+      "Setelah pilot: cek log, feedback, pengiriman gagal, notifikasi yang di-skip, dan lengkapi nomor WhatsApp pegawai yang masih kosong.",
+    ],
+    notes: [
+      "Jangan aktifkan notifikasi pihak massal saat pilot terbatas.",
+      "Production reminder hanya boleh dibuka setelah approval eksplisit, readiness clear, dan konfirmasi Super Admin.",
+      "Smoke test tidak melakukan scan QR, tidak enqueue pesan, dan tidak mengirim WhatsApp.",
+    ],
+    troubleshooting: [
+      "Jika status readiness Terblokir, ikuti tombol aksi pada kartu Kesiapan Pilot.",
+      "Jika banyak policy skip, buka Policy Skip Report dan selesaikan alasan seperti belum dry-run, belum preview, belum approval, atau nomor invalid.",
+      "Jika nomor WhatsApp belum lengkap, buka Manajemen Akun dengan filter Belum punya nomor WhatsApp.",
+    ],
+  },
+  {
     id: "technical-admin",
     title: "Pengaturan Teknis ALETA Bot",
     module: "admin",

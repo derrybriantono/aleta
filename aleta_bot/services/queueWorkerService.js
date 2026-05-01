@@ -14,6 +14,7 @@ const state = {
   startedAt: null,
   pausedAt: null,
   pauseReason: "",
+  sendingWindow: null,
 };
 
 let timer = null;
@@ -34,6 +35,7 @@ async function processOnce(sender) {
   state.intervalMs = config.intervalMs;
   state.batchSize = config.batchSize;
   state.lastHeartbeatAt = new Date().toISOString();
+  state.sendingWindow = messageQueueService.getSendingWindowState();
 
   if (!state.enabled || state.running || state.paused) {
     return [];

@@ -2,6 +2,7 @@ const { readRuntimeConfig, sleep } = require("../config/runtime-config");
 const { validateWhatsappRecipient } = require("../utils/phoneFormatter");
 const logService = require("./logService");
 const rateLimitService = require("./rateLimitService");
+const whatsappStatusService = require("./whatsappStatusService");
 
 function getMessagePreview(message) {
   if (typeof message === "string") {
@@ -115,6 +116,7 @@ async function safeSendMessage({
 
       const response = await sendMessage(validation.chatId, message, options);
       rateLimitService.recordSend();
+      whatsappStatusService.recordMessageSent();
       logService.logMessageSent({ ...baseLog, retryCount: attempt });
       return response;
     } catch (error) {

@@ -4,6 +4,7 @@ import {
   Bot,
   CheckCircle2,
   Database,
+  Download,
   Eye,
   EyeOff,
   FileText,
@@ -27,11 +28,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type AletaBotApprovalRequest,
+  type AletaBotDispositionReminderRun,
+  type AletaBotDeadlineReminderDryRunResult,
   type AletaBotDeadLetter,
   type AletaBotLegacyMigration,
   type AletaBotNotification,
@@ -42,6 +46,7 @@ import {
   type AletaBotQueryCategory,
   type AletaBotSnapshot,
   type AletaBotTemplate,
+  type AletaBotUnknownQuestionReview,
   type AletaBotWorkerState,
 } from "@/lib/aleta-bot-types";
 import { formatDateTime } from "@/lib/format";
@@ -68,6 +73,21 @@ type RuntimeDashboardSnapshot = {
       status?: string;
       lastReadyAt?: string | null;
       lastErrorMessage?: string;
+      sessionStartedAt?: string | null;
+      lastMessageSentAt?: string | null;
+      sessionAgeHours?: number | null;
+      authFailureCount?: number;
+      lastAuthFailureAt?: string | null;
+    };
+    bot?: {
+      sendingWindow?: {
+        enabled?: boolean;
+        start?: string;
+        end?: string;
+        inside?: boolean;
+        allowed?: boolean;
+        message?: string;
+      };
     };
     db?: {
       schemaReady?: boolean;
@@ -86,6 +106,21 @@ type RuntimeDashboardSnapshot = {
       active?: number;
       dryRun?: number;
       requiresApproval?: number;
+      skippedPolicy?: number;
+      policySkipStats?: {
+        skippedCount?: number;
+        totalToday?: number;
+        lastSkippedAt?: string | null;
+        reasons?: Record<string, number>;
+        topNotifications?: Array<{ notificationKey: string; count: number }>;
+        recent?: Array<{ notification_key?: string; reason?: string; created_at?: string }>;
+      };
+    };
+    whatsappNumberResolver?: {
+      portalRecipientCount?: number;
+      legacyFallbackUsedCount?: number;
+      lastLegacyFallbackUsedAt?: string | null;
+      legacyFallbackLabels?: Record<string, number>;
     };
     publicQa?: {
       total?: number;
@@ -132,6 +167,17 @@ type RuntimeDashboardSnapshot = {
   } | null;
 };
 
+type OperationalSmokeTestResult = {
+  generatedAt: string;
+  overallStatus: "passed" | "warning" | "failed";
+  checks: Array<{
+    key: string;
+    label: string;
+    status: "passed" | "warning" | "failed";
+    detail: string;
+  }>;
+};
+
 const emptySnapshot: AletaBotSnapshot = {
   settings: {
     botEnabled: false,
@@ -143,6 +189,22 @@ const emptySnapshot: AletaBotSnapshot = {
     scheduleCron: "00 07 * * Monday-Friday",
     testTargetNumber: "",
     securityNotes: "",
+    deadlineReminderEnabled: false,
+    deadlineReminderMode: "dry_run",
+    deadlineReminderApprovedAt: null,
+    deadlineReminderApprovedBy: null,
+    deadlineReminderLastRunAt: null,
+    deadlineReminderLastStatus: "idle",
+    deadlineReminderLastMessage: null,
+    deadlineReminderPilotUserIds: [],
+    deadlineReminderPilotRoleIds: [],
+    deadlineReminderPilotPositionIds: [],
+    deadlineReminderSchedulerEnabled: false,
+    deadlineReminderSchedulerMode: "dry_run",
+    deadlineReminderSchedulerTime: "08:00:00",
+    deadlineReminderSchedulerLastRunAt: null,
+    deadlineReminderSchedulerLastMessage: null,
+    deadlineReminderKillSwitch: false,
     updatedAt: new Date(0).toISOString(),
   },
   runtimeState: "disabled",
@@ -172,6 +234,23 @@ const emptySnapshot: AletaBotSnapshot = {
   publicQaIntents: [],
   publicQaLogs: [],
   employeeRecipients: [],
+  whatsappNumberCompleteness: {
+    totalActiveUsers: 0,
+    withWhatsapp: 0,
+    missingWhatsapp: 0,
+    coveragePercent: 0,
+    importantMissing: [],
+    roleBreakdown: [],
+  },
+  policySkipSummary: {
+    totalToday: 0,
+    totalAllTime: 0,
+    lastSkippedAt: null,
+    topReasons: [],
+    topNotifications: [],
+    recent: [],
+  },
+  deadlineReminderRuns: [],
   notificationLogs: [],
   queryCatalog: [],
   logs: [],
@@ -270,12 +349,29 @@ type AletaBotModal =
   | { type: "settings"; title: string }
   | { type: "template"; title: string; template: AletaBotTemplate }
   | { type: "notification"; title: string }
+  | { type: "recipientPreview"; title: string }
+  | { type: "deadlineReminderPreview"; title: string }
   | { type: "query"; title: string }
   | { type: "database"; title: string }
   | { type: "publicQa"; title: string }
+  | { type: "publicQaReview"; title: string; review: AletaBotUnknownQuestionReview }
+  | { type: "publicQaConvert"; title: string; review: AletaBotUnknownQuestionReview }
   | { type: "legacyAction"; title: string; migration: AletaBotLegacyMigration; action: LegacyMigrationAction };
 
 type LegacyMigrationAction = "preview" | "convert" | "dry-run" | "submit-approval" | "activate" | "disable-legacy" | "rollback";
+type RecipientPreviewResult = {
+  totalEstimated: number;
+  sampleSize: number;
+  items: Array<{
+    recipientName: string;
+    recipientNumber: string;
+    caseOrPosition: string;
+    messagePreview: string;
+    idempotencyKey: string;
+    validNumber: boolean;
+  }>;
+  warnings: string[];
+};
 type ScheduleKind = "manual" | "event" | "daily" | "weekly" | "monthly" | "advanced";
 type ParsedCronSchedule = {
   valid: boolean;
@@ -329,6 +425,8 @@ function displayStatus(status: string): string {
     active_registry: "Aktif di Registry",
     legacy_disabled: "Dinonaktifkan (Migrasi)",
     dry_run: "Mode Simulasi",
+    pilot: "Pilot",
+    production: "Produksi",
     pending_approval: "Menunggu Persetujuan",
     needs_manual_mapping: "Perlu Konfigurasi Manual",
     registry_draft: "Draft Registry",
@@ -350,10 +448,31 @@ function displayStatus(status: string): string {
     online: "Online",
     offline: "Offline",
     failed: "Gagal",
+    blocked: "Terblokir",
+    simulated: "Simulasi",
+    skipped: "Dilewati",
+    completed: "Selesai",
+    manual_dry_run: "Manual Dry-run",
+    manual_controlled: "Manual Terkontrol",
+    scheduler_dry_run: "Scheduler Dry-run",
+    scheduler_blocked: "Scheduler Diblokir",
     success: "Berhasil",
     unknown: "Tidak Diketahui",
   };
   return map[status] ?? status;
+}
+
+function formatRunSummary(summary: Record<string, unknown>) {
+  const parts: string[] = [];
+  const targetDate = typeof summary.targetDate === "string" ? summary.targetDate : "";
+  const reason = typeof summary.reason === "string" ? summary.reason : "";
+  const warnings = Array.isArray(summary.warnings)
+    ? summary.warnings.filter((item): item is string => typeof item === "string").slice(0, 2)
+    : [];
+  if (targetDate) parts.push(`Target ${targetDate}`);
+  if (reason) parts.push(`Alasan: ${displayStatus(reason)}`);
+  if (warnings.length > 0) parts.push(warnings.join(" "));
+  return parts.join(" · ").slice(0, 220);
 }
 
 function getSimpleAiSummary(status?: string): { label: string; hint: string; level: "ok" | "warning" | "error" } {
@@ -478,6 +597,41 @@ function humanizeLegacyCron(cronSchedule: string) {
   const firstCron = cronSchedule.split(";")[0]?.trim() ?? "";
   if (!firstCron) return "Tidak terjadwal";
   return humanizeSchedule("cron", firstCron);
+}
+
+function extractTemplatePlaceholders(body: string) {
+  return Array.from(new Set(Array.from(body.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)).map((match) => match[1])));
+}
+
+function renderAletaBotTemplatePreview(body: string) {
+  const sample: Record<string, string> = {
+    waktu: new Date().toLocaleString("id-ID"),
+    mode: "dry-run",
+    nomor_perkara: "123/Pdt.G/2026/PA.Dgl",
+    nama_pihak: "Budi Santoso",
+    nama_pegawai: "Contoh Pegawai",
+    agenda: "Mediasi",
+    hari_sidang: "Senin",
+    tanggal_sidang: "12 Januari 2026",
+    ruang_sidang: "Ruang Sidang 1",
+    ruangan: "Ruang Sidang 1",
+    sisa_panjar: "Rp125.000",
+    judul_notifikasi: "Contoh Notifikasi",
+    ringkasan: "Data contoh untuk pratinjau aman.",
+  };
+
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => sample[key] ?? `{{${key}}}`);
+}
+
+function makePublicQaDraftKey(value: string) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
 }
 
 function migrationActionTitle(action: LegacyMigrationAction) {
@@ -719,6 +873,7 @@ export function AletaBotAdminPanel() {
   const [isSaving, setIsSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [recipientPreview, setRecipientPreview] = useState<RecipientPreviewResult | null>(null);
   const [settingsDraft, setSettingsDraft] = useState(emptySnapshot.settings);
   const [templateDraft, setTemplateDraft] = useState<Record<string, string>>({});
   const [testMessage, setTestMessage] = useState("Tes ALETA Bot dari portal berhasil.");
@@ -731,7 +886,22 @@ export function AletaBotAdminPanel() {
   const [publicQaIntentForm, setPublicQaIntentForm] = useState<PublicQaIntentForm>(() => makeEmptyPublicQaIntentForm());
   const [publicQaQuestion, setPublicQaQuestion] = useState("Saya mau tahu jadwal sidang saya");
   const [publicQaTestResult, setPublicQaTestResult] = useState<string | null>(null);
+  const [publicQaReviewFilter, setPublicQaReviewFilter] = useState<"all" | "needs_review" | "reviewed" | "ignored" | "converted_to_intent">("needs_review");
+  const [publicQaReviewNote, setPublicQaReviewNote] = useState("");
+  const [publicQaConvertMode, setPublicQaConvertMode] = useState<"new" | "existing">("new");
+  const [publicQaConvertIntentId, setPublicQaConvertIntentId] = useState("");
+  const [publicQaDraftIntentKey, setPublicQaDraftIntentKey] = useState("");
+  const [publicQaDraftIntentName, setPublicQaDraftIntentName] = useState("");
+  const [deadlineReminderPreview, setDeadlineReminderPreview] = useState<AletaBotDeadlineReminderDryRunResult | null>(null);
+  const [deadlineConfirmText, setDeadlineConfirmText] = useState("");
+  const [deadlinePilotUserIdsText, setDeadlinePilotUserIdsText] = useState("");
+  const [deadlinePilotRoleIdsText, setDeadlinePilotRoleIdsText] = useState("");
+  const [deadlinePilotPositionIdsText, setDeadlinePilotPositionIdsText] = useState("");
+  const [deadlineSchedulerTime, setDeadlineSchedulerTime] = useState("08:00:00");
+  const [policySkipReasonFilter, setPolicySkipReasonFilter] = useState("all");
+  const [smokeTestResult, setSmokeTestResult] = useState<OperationalSmokeTestResult | null>(null);
   const [runtimeDashboard, setRuntimeDashboard] = useState<RuntimeDashboardSnapshot | null>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [activeModal, setActiveModal] = useState<AletaBotModal | null>(null);
   const [modalDirty, setModalDirty] = useState(false);
   const [legacyActionNotes, setLegacyActionNotes] = useState("");
@@ -752,6 +922,25 @@ export function AletaBotAdminPanel() {
   const [notifCategoryFilter, setNotifCategoryFilter] = useState<"all" | "employee" | "party">("all");
   const [logFilter, setLogFilter] = useState<"all" | "error" | "whatsapp" | "ai" | "queue" | "approval" | "migration">("all");
 
+  const navigateAdminAction = (href: string) => {
+    if (!href.startsWith("#")) {
+      window.location.href = href;
+      return;
+    }
+    const targetId = href.slice(1);
+    const tabByAnchor: Record<string, string> = {
+      "status-whatsapp": "connection",
+      "pengaturan-bot": "settings",
+      "public-qa": "public-qa",
+      "policy-skip": "dashboard",
+      "reminder-deadline": "dashboard",
+    };
+    setActiveTab(tabByAnchor[targetId] ?? "dashboard");
+    window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const openModal = (modal: AletaBotModal) => {
     setModalDirty(false);
     if (modal.type === "database") {
@@ -760,6 +949,14 @@ export function AletaBotAdminPanel() {
     if (modal.type === "legacyAction") {
       setLegacyActionNotes("");
       setLegacyActionResult(null);
+    }
+    if (modal.type === "publicQaConvert") {
+      const key = makePublicQaDraftKey(modal.review.suggestedIntentKey || modal.review.rawMessage);
+      setPublicQaConvertMode("new");
+      setPublicQaConvertIntentId(snapshot.publicQaIntents.find((intent) => intent.status === "draft" && !intent.isActive)?.id ?? "");
+      setPublicQaDraftIntentKey(key || "draft_public_qa");
+      setPublicQaDraftIntentName(`Draft Intent: ${modal.review.rawMessage.slice(0, 48)}`);
+      setPublicQaReviewNote(modal.review.reviewNote || "");
     }
     setActiveModal(modal);
   };
@@ -787,6 +984,10 @@ export function AletaBotAdminPanel() {
       const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot");
       setSnapshot(data);
       setSettingsDraft(data.settings);
+      setDeadlinePilotUserIdsText(data.settings.deadlineReminderPilotUserIds.join(", "));
+      setDeadlinePilotRoleIdsText(data.settings.deadlineReminderPilotRoleIds.join(", "));
+      setDeadlinePilotPositionIdsText(data.settings.deadlineReminderPilotPositionIds.join(", "));
+      setDeadlineSchedulerTime(data.settings.deadlineReminderSchedulerTime);
       setTemplateDraft(Object.fromEntries(data.templates.map((template) => [template.id, template.body])));
       setSelectedTemplateId(data.templates.find((template) => template.id === "admin-test")?.id ?? data.templates[0]?.id ?? "");
       setSelectedQueryId(data.queries[0]?.id ?? data.queryCatalog[0]?.id ?? "");
@@ -1047,6 +1248,248 @@ export function AletaBotAdminPanel() {
     }
   };
 
+  const submitPublicQaReview = async (reviewStatus: AletaBotUnknownQuestionReview["reviewStatus"]) => {
+    if (activeModal?.type !== "publicQaReview") return;
+    setIsSaving(true);
+    setNotice(null);
+    try {
+      const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot/public-qa", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "review",
+          logIds: activeModal.review.logIds,
+          normalizedMessage: activeModal.review.normalizedMessage,
+          reviewStatus,
+          reviewNote: publicQaReviewNote,
+        }),
+      });
+      setSnapshot(data);
+      setPublicQaReviewNote("");
+      setActiveModal(null);
+      setModalDirty(false);
+      setNotice("Status human review Public Q&A berhasil diperbarui tanpa mengirim WhatsApp.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Review Public Q&A gagal disimpan.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const convertPublicQaReview = async () => {
+    if (activeModal?.type !== "publicQaConvert") return;
+    setIsSaving(true);
+    setNotice(null);
+    try {
+      const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot/public-qa", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "convert-to-intent",
+          logIds: activeModal.review.logIds,
+          normalizedMessage: activeModal.review.normalizedMessage,
+          reviewNote: publicQaReviewNote,
+          mode: publicQaConvertMode,
+          targetIntentId: publicQaConvertMode === "existing" ? publicQaConvertIntentId : undefined,
+          draftIntentKey: publicQaConvertMode === "new" ? publicQaDraftIntentKey : undefined,
+          draftIntentName: publicQaConvertMode === "new" ? publicQaDraftIntentName : undefined,
+        }),
+      });
+      setSnapshot(data);
+      setPublicQaReviewNote("");
+      setActiveModal(null);
+      setModalDirty(false);
+      setNotice("Pertanyaan Public Q&A berhasil disimpan sebagai draft intent tanpa mengaktifkan jawaban otomatis.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Konversi Public Q&A ke draft intent gagal.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const runDeadlineReminderDryRun = async () => {
+    setIsSaving(true);
+    setNotice(null);
+    setDeadlineReminderPreview(null);
+    try {
+      const data = await requestBot<AletaBotDeadlineReminderDryRunResult>(
+        "/api/admin/aleta-bot/disposition-deadline-reminders/dry-run?limit=20",
+        { method: "POST" }
+      );
+      setDeadlineReminderPreview(data);
+      openModal({ type: "deadlineReminderPreview", title: "Simulasi Reminder Deadline H-1" });
+      await loadSnapshot();
+      setNotice("Simulasi reminder deadline H-1 selesai. Tidak ada WhatsApp sungguhan yang dikirim.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Simulasi reminder deadline gagal.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateDeadlineReminderMode = async (mode: AletaBotSnapshot["settings"]["deadlineReminderMode"]) => {
+    setIsSaving(true);
+    setNotice(null);
+    try {
+      const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot/disposition-deadline-reminders/settings", {
+        method: "PATCH",
+        body: JSON.stringify({
+          mode,
+          confirmText: deadlineConfirmText,
+        }),
+      });
+      setSnapshot(data);
+      setSettingsDraft(data.settings);
+      setDeadlineConfirmText("");
+      setNotice(`Mode reminder deadline diperbarui menjadi ${displayStatus(mode)}.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Mode reminder deadline gagal diperbarui.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateDeadlineReminderAdvancedSettings = async (overrides: Partial<{
+    schedulerEnabled: boolean;
+    schedulerMode: AletaBotSnapshot["settings"]["deadlineReminderSchedulerMode"];
+    killSwitch: boolean;
+    confirmText: string;
+  }> = {}) => {
+    setIsSaving(true);
+    setNotice(null);
+    try {
+      const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot/disposition-deadline-reminders/settings", {
+        method: "PATCH",
+        body: JSON.stringify({
+          confirmText: overrides.confirmText ?? deadlineConfirmText,
+          pilotUserIds: deadlinePilotUserIdsText,
+          pilotRoleIds: deadlinePilotRoleIdsText,
+          pilotPositionIds: deadlinePilotPositionIdsText,
+          schedulerTime: deadlineSchedulerTime,
+          schedulerEnabled: overrides.schedulerEnabled,
+          schedulerMode: overrides.schedulerMode,
+          killSwitch: overrides.killSwitch,
+        }),
+      });
+      setSnapshot(data);
+      setSettingsDraft(data.settings);
+      setDeadlinePilotUserIdsText(data.settings.deadlineReminderPilotUserIds.join(", "));
+      setDeadlinePilotRoleIdsText(data.settings.deadlineReminderPilotRoleIds.join(", "));
+      setDeadlinePilotPositionIdsText(data.settings.deadlineReminderPilotPositionIds.join(", "));
+      setDeadlineSchedulerTime(data.settings.deadlineReminderSchedulerTime);
+      setDeadlineConfirmText("");
+      setNotice("Kontrol pilot/scheduler reminder diperbarui.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Kontrol reminder gagal diperbarui.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const exportPolicySkipCsv = () => {
+    const params = new URLSearchParams({ format: "csv" });
+    if (policySkipReasonFilter !== "all") params.set("reason", policySkipReasonFilter);
+    window.location.href = `/api/admin/aleta-bot/policy-skip-report?${params.toString()}`;
+  };
+
+  const exportPilotReadinessCsv = () => {
+    window.open("/api/admin/aleta-bot/pilot-readiness?format=csv", "_blank", "noopener,noreferrer");
+  };
+
+  const runOperationalSmokeTest = async () => {
+    setIsSaving(true);
+    setNotice(null);
+    setSmokeTestResult(null);
+    try {
+      const data = await requestBot<OperationalSmokeTestResult>("/api/admin/aleta-bot/operational-smoke-test");
+      setSmokeTestResult(data);
+      setNotice(
+        data.overallStatus === "passed"
+          ? "Smoke test operasional lulus tanpa mengirim WhatsApp."
+          : "Smoke test selesai dengan catatan. Tidak ada WhatsApp yang dikirim."
+      );
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Smoke test operasional gagal.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const runDeadlineReminderSchedulerDryRun = async () => {
+    setIsSaving(true);
+    setNotice(null);
+    setDeadlineReminderPreview(null);
+    try {
+      const data = await requestBot<AletaBotDeadlineReminderDryRunResult>(
+        "/api/admin/aleta-bot/disposition-deadline-reminders/scheduler-run",
+        {
+          method: "POST",
+          body: JSON.stringify({ force: true, limit: 20 }),
+        }
+      );
+      setDeadlineReminderPreview(data);
+      openModal({ type: "deadlineReminderPreview", title: "Hasil Scheduler Dry-run Reminder H-1" });
+      await loadSnapshot();
+      setNotice("Scheduler dry-run dijalankan manual. Tidak ada WhatsApp sungguhan yang dikirim.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Scheduler dry-run reminder gagal.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const runDeadlineReminderControlled = async () => {
+    setIsSaving(true);
+    setNotice(null);
+    setDeadlineReminderPreview(null);
+    try {
+      const data = await requestBot<AletaBotDeadlineReminderDryRunResult>(
+        "/api/admin/aleta-bot/disposition-deadline-reminders/run",
+        {
+          method: "POST",
+          body: JSON.stringify({ confirmText: deadlineConfirmText, limit: 20 }),
+        }
+      );
+      setDeadlineReminderPreview(data);
+      openModal({ type: "deadlineReminderPreview", title: "Hasil Runner Reminder Deadline H-1" });
+      await loadSnapshot();
+      setDeadlineConfirmText("");
+      setNotice(data.productionSent ? "Runner produksi memproses antrean sesuai gate eksplisit." : "Runner reminder selesai tanpa pengiriman produksi.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Runner reminder deadline gagal.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const exportPublicQaHumanReview = () => {
+    const params = new URLSearchParams({ format: "csv" });
+    if (publicQaReviewFilter === "needs_review") {
+      params.set("needsHumanReview", "true");
+      params.set("reviewStatus", "pending");
+    } else if (publicQaReviewFilter !== "all") {
+      params.set("reviewStatus", publicQaReviewFilter);
+    }
+    window.open(`/api/admin/aleta-bot/public-qa?${params.toString()}`, "_blank", "noopener,noreferrer");
+  };
+
+  const previewNotificationRecipients = async (notification: AletaBotNotification) => {
+    setIsSaving(true);
+    setNotice(null);
+    setRecipientPreview(null);
+    try {
+      const data = await requestBot<RecipientPreviewResult>(
+        `/api/admin/aleta-bot/notifications/${encodeURIComponent(notification.id)}/preview-recipients?limit=10`
+      );
+      setRecipientPreview(data);
+      openModal({ type: "recipientPreview", title: `Preview Penerima ${notification.name}` });
+      await loadSnapshot();
+      setNotice("Preview penerima berhasil dibuat tanpa mengirim atau mengantrekan pesan.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Preview penerima gagal dibuat.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const purgeLogs = async () => {
     if (purgeConfirmText !== "HAPUS LOG LAMA") return;
     setIsSaving(true);
@@ -1133,6 +1576,69 @@ export function AletaBotAdminPanel() {
   }, [snapshot.templates]);
 
   const publicQaRuntimeLogs = runtimeDashboard?.payload?.publicQa?.recentLogs ?? [];
+  const publicQaNeedsReviewCount = snapshot.unknownQuestionReviews.filter(
+    (item) => item.needsHumanReview && item.reviewStatus === "pending"
+  ).length;
+  const filteredUnknownQuestionReviews = useMemo(() => {
+    return snapshot.unknownQuestionReviews.filter((item) => {
+      if (publicQaReviewFilter === "all") return true;
+      if (publicQaReviewFilter === "needs_review") return item.needsHumanReview && item.reviewStatus === "pending";
+      return item.reviewStatus === publicQaReviewFilter;
+    });
+  }, [snapshot.unknownQuestionReviews, publicQaReviewFilter]);
+  const employeeWhatsappReadyCount = snapshot.whatsappNumberCompleteness.withWhatsapp;
+  const employeeWhatsappCoverage = snapshot.whatsappNumberCompleteness.coveragePercent / 100;
+  const employeeWhatsappTotal = snapshot.whatsappNumberCompleteness.totalActiveUsers;
+  const employeeWhatsappMissing = snapshot.whatsappNumberCompleteness.missingWhatsapp;
+  const legacyFallbackUsedCount = runtimeDashboard?.payload?.whatsappNumberResolver?.legacyFallbackUsedCount ?? 0;
+  const legacyFallbackLastUsedAt = runtimeDashboard?.payload?.whatsappNumberResolver?.lastLegacyFallbackUsedAt ?? null;
+  const legacyFallbackRecent = legacyFallbackLastUsedAt
+    ? Date.now() - new Date(legacyFallbackLastUsedAt).getTime() < 24 * 60 * 60 * 1000
+    : false;
+  const runtimePolicySkipStats = runtimeDashboard?.payload?.registry?.policySkipStats;
+  const policySkipToday = runtimePolicySkipStats?.totalToday ?? snapshot.policySkipSummary.totalToday;
+  const policySkipAllTime = runtimePolicySkipStats?.skippedCount ?? snapshot.policySkipSummary.totalAllTime;
+  const reminderMode = snapshot.settings.deadlineReminderMode;
+  const messageAnalytics = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+    const todayLogs = snapshot.notificationLogs.filter((item) => new Date(item.createdAt).getTime() >= todayMs);
+    const sent = todayLogs.filter((item) => item.status === "success").length;
+    const failed = todayLogs.filter((item) => item.status === "failed").length;
+    const simulated = todayLogs.filter((item) => item.status === "simulated").length;
+    const bySource = todayLogs.reduce<Record<string, number>>((acc, item) => {
+      const key = item.sourceFeature || "lainnya";
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
+    return {
+      totalToday: todayLogs.length,
+      sent,
+      failed,
+      simulated,
+      successRate: todayLogs.length > 0 ? Math.round((sent / todayLogs.length) * 100) : 0,
+      topSource: Object.entries(bySource).sort((a, b) => b[1] - a[1])[0],
+    };
+  }, [snapshot.notificationLogs]);
+  const publicQaAnalytics = useMemo(() => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sinceMs = sevenDaysAgo.getTime();
+    const logs = snapshot.publicQaLogs.filter((item) => new Date(item.createdAt).getTime() >= sinceMs);
+    const fallback = logs.filter((item) => item.status === "fallback" || item.status === "error").length;
+    const pending = snapshot.unknownQuestionReviews.filter((item) => item.needsHumanReview && item.reviewStatus === "pending").length;
+    const converted = snapshot.publicQaLogs.filter((item) => item.reviewStatus === "converted_to_intent").length;
+    return {
+      totalLast7Days: logs.length,
+      fallbackRate: logs.length > 0 ? Math.round((fallback / logs.length) * 100) : 0,
+      pending,
+      converted,
+    };
+  }, [snapshot.publicQaLogs, snapshot.unknownQuestionReviews]);
+  const reminderProductionWithoutApproval =
+    snapshot.settings.deadlineReminderMode === "production" &&
+    (!snapshot.settings.deadlineReminderEnabled || !snapshot.settings.deadlineReminderApprovedAt);
   const releaseChecks = useMemo(() => {
     const archiveReadyCount = snapshot.legacyMigrations.filter((item) => item.canArchive && item.status === "legacy_disabled").length;
     return [
@@ -1174,7 +1680,7 @@ export function AletaBotAdminPanel() {
       {
         name: "Runbook",
         status: "ready",
-        detail: "docs/ALETA_BOT_RUNBOOK.md tersedia",
+        detail: "Panduan Pilot Terbatas tersedia di halaman Panduan Penggunaan.",
       },
     ];
   }, [runtimeDashboard, snapshot.legacyMigrations, snapshot.whatsapp]);
@@ -1198,6 +1704,229 @@ export function AletaBotAdminPanel() {
       return true;
     }).slice(0, 50);
   }, [snapshot.logs, logFilter]);
+  const whatsappDisconnected =
+    !["connected", "ready"].includes(runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus);
+  const setupChecks = useMemo(() => {
+    const workerReady = Boolean(runtimeDashboard?.payload?.worker?.enabled && runtimeDashboard.payload.worker.activeTimer);
+    const safeWindow = runtimeDashboard?.payload?.bot?.sendingWindow;
+    return [
+      {
+        label: "WhatsApp Gateway terhubung",
+        ok: !whatsappDisconnected,
+        href: "#",
+        detail: displayStatus(runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus),
+      },
+      {
+        label: "AI Bridge tersinkron",
+        ok: runtimeDashboard?.payload?.aiRuntime?.status === "synced",
+        href: "#",
+        detail: displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? "unknown"),
+      },
+      {
+        label: "Koneksi database utama berhasil",
+        ok: snapshot.dbConnections.some((item) => item.isActive && item.lastTestStatus === "success"),
+        href: "#",
+        detail: `${snapshot.dbConnections.filter((item) => item.isActive).length} koneksi aktif`,
+      },
+      {
+        label: "Worker antrean aktif",
+        ok: workerReady,
+        href: "#",
+        detail: runtimeDashboard?.payload?.worker?.lastHeartbeatAt
+          ? `Heartbeat ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}`
+          : "Belum ada heartbeat",
+      },
+      {
+        label: "Template aktif tersedia",
+        ok: snapshot.templates.some((template) => template.editable),
+        href: "#",
+        detail: `${snapshot.metrics.enabledTemplates} template tersedia`,
+      },
+      {
+        label: "Notifikasi pegawai siap simulasi/aktif",
+        ok: snapshot.notifications.some((item) => item.category === "employee" && (item.isActive || item.lastStatus === "simulated")),
+        href: "#",
+        detail: "Mulai pilot dari notifikasi internal pegawai.",
+      },
+      {
+        label: "Nomor WhatsApp pegawai memakai data Manajemen Akun",
+        ok: employeeWhatsappCoverage >= 0.8 && legacyFallbackUsedCount === 0,
+        href: "#",
+        detail: employeeWhatsappReadyCount > 0
+          ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor WhatsApp. ${employeeWhatsappMissing} belum lengkap. Fallback legacy runtime: ${legacyFallbackUsedCount} kali.`
+          : "Belum ada nomor pegawai dari database. Runtime masih dapat memakai fallback legacy.",
+      },
+      {
+        label: "Jam aman pengiriman aktif",
+        ok: safeWindow?.enabled !== false,
+        href: "#",
+        detail: safeWindow?.enabled === false ? "Belum aktif" : `${safeWindow?.start ?? "07:30"}-${safeWindow?.end ?? "21:00"}`,
+      },
+      {
+        label: "Tidak ada pesan gagal kritis",
+        ok: snapshot.deadLetters.length === 0,
+        href: "#",
+        detail: `${snapshot.deadLetters.length} pesan gagal permanen`,
+      },
+    ];
+  }, [employeeWhatsappCoverage, employeeWhatsappMissing, employeeWhatsappReadyCount, employeeWhatsappTotal, legacyFallbackUsedCount, runtimeDashboard, snapshot, whatsappDisconnected]);
+
+  const pilotReadinessChecks = useMemo(() => {
+    const safeWindow = runtimeDashboard?.payload?.bot?.sendingWindow;
+    const queuePending = runtimeDashboard?.payload?.queue?.pending ?? 0;
+    const skippedPolicy = runtimeDashboard?.payload?.registry?.skippedPolicy ?? 0;
+    const partyPolicyBlocked = snapshot.notifications.some((item) => item.category === "party" && item.isActive && item.policyStatus && !item.policyStatus.canActivate);
+    const publicQaActive = snapshot.publicQaIntents.some((item) => item.isActive || item.aiEnabled || item.aiAnswerEnabled);
+    return [
+      {
+        group: "WhatsApp",
+        name: "Gateway reachable dan status jelas",
+        status: runtimeDashboard?.online ? (whatsappDisconnected ? "blocked" : "ready") : "blocked",
+        detail: runtimeDashboard?.online ? displayStatus(snapshot.whatsapp.runtimeStatus) : runtimeDashboard?.errorMessage ?? "Runtime tidak reachable.",
+        actionLabel: "Buka Status WhatsApp Gateway",
+        actionHref: "#status-whatsapp",
+      },
+      {
+        group: "WhatsApp",
+        name: "Safe Sending Window aktif",
+        status: safeWindow?.enabled === false ? "blocked" : "ready",
+        detail: safeWindow?.enabled === false ? "Jam aman nonaktif" : `${safeWindow?.start ?? "07:30"}-${safeWindow?.end ?? "21:00"}`,
+        actionLabel: "Buka Pengaturan Jam Aman",
+        actionHref: "#pengaturan-bot",
+      },
+      {
+        group: "Queue",
+        name: "Worker dan antrean terkendali",
+        status: runtimeDashboard?.payload?.worker?.enabled ? (queuePending > 50 ? "warning" : "ready") : "blocked",
+        detail: `${queuePending} pending, ${snapshot.deadLetters.length} dead-letter.`,
+      },
+      {
+        group: "Data",
+        name: "Nomor WhatsApp pegawai lengkap",
+        status: employeeWhatsappCoverage >= 0.9 && !legacyFallbackRecent ? "ready" : employeeWhatsappCoverage >= 0.7 ? "warning" : "blocked",
+        detail: `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor. ${employeeWhatsappMissing} belum lengkap.`,
+        actionLabel: "Lengkapi Nomor Pegawai",
+        actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
+      },
+      {
+        group: "Policy",
+        name: "Notifikasi pihak terkunci policy",
+        status: partyPolicyBlocked || skippedPolicy > 0 ? "warning" : "ready",
+        detail: skippedPolicy > 0
+          ? `${skippedPolicy} notifikasi dilewati runtime policy.`
+          : "Simulasi, preview, dan approval menjadi syarat aktivasi pihak.",
+        actionLabel: "Lihat Policy Skip",
+        actionHref: "#policy-skip",
+      },
+      {
+        group: "Policy",
+        name: "Reminder deadline terkendali",
+        status: reminderProductionWithoutApproval ? "blocked" : reminderMode === "production" ? "warning" : "ready",
+        detail: reminderMode === "production"
+          ? "Mode production aktif; pastikan approval dan blocker dipantau."
+          : `Mode ${displayStatus(reminderMode)}. Default aman dan tidak mengirim produksi tanpa gate.`,
+        actionLabel: "Buka Pengaturan Reminder",
+        actionHref: "#reminder-deadline",
+      },
+      {
+        group: "Public Q&A",
+        name: "Human review terpantau",
+        status: publicQaNeedsReviewCount > 20 ? "blocked" : publicQaNeedsReviewCount > 0 ? "warning" : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" && publicQaActive ? "blocked" : "ready",
+        detail: publicQaNeedsReviewCount > 0
+          ? `${publicQaNeedsReviewCount} pertanyaan perlu ditinjau.`
+          : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" && publicQaActive
+            ? "AI Public Q&A perlu sinkronisasi."
+            : "Tidak ada pertanyaan publik pending review.",
+        actionLabel: "Tinjau Pertanyaan Publik",
+        actionHref: "#public-qa",
+      },
+    ] as const;
+  }, [
+    employeeWhatsappCoverage,
+    employeeWhatsappMissing,
+    employeeWhatsappReadyCount,
+    employeeWhatsappTotal,
+    publicQaNeedsReviewCount,
+    reminderMode,
+    reminderProductionWithoutApproval,
+    runtimeDashboard,
+    legacyFallbackRecent,
+    snapshot.deadLetters.length,
+    snapshot.notifications,
+    snapshot.publicQaIntents,
+    snapshot.whatsapp.runtimeStatus,
+    whatsappDisconnected,
+  ]);
+  const pilotReadinessStatus = pilotReadinessChecks.some((item) => item.status === "blocked")
+    ? "blocked"
+    : pilotReadinessChecks.some((item) => item.status === "warning")
+      ? "warning"
+      : "ready";
+
+  const operationalAlerts = useMemo(() => {
+    const alerts: Array<{ title: string; detail: string; tone: "warning" | "danger" | "muted" }> = [];
+    if (whatsappDisconnected) {
+      alerts.push({
+        title: "WhatsApp Gateway belum terhubung",
+        detail: "Pesan akan menunggu di antrean sampai gateway aktif kembali.",
+        tone: "danger",
+      });
+    }
+    if (runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync") {
+      alerts.push({
+        title: "AI perlu sinkronisasi",
+        detail: "Sync AI ke ALETA Bot dari Mode Lanjutan sebelum mengandalkan Public Q&A.",
+        tone: "warning",
+      });
+    }
+    if (snapshot.deadLetters.length > 0) {
+      alerts.push({
+        title: "Ada pesan gagal permanen",
+        detail: `${snapshot.deadLetters.length} pesan perlu ditinjau sebelum retry.`,
+        tone: "warning",
+      });
+    }
+    if (publicQaNeedsReviewCount > 0) {
+      alerts.push({
+        title: "Pertanyaan publik perlu tinjauan",
+        detail: `${publicQaNeedsReviewCount} pertanyaan masuk antrean human review.`,
+        tone: "warning",
+      });
+    }
+    if (employeeWhatsappCoverage < 0.8 || legacyFallbackUsedCount > 0) {
+      alerts.push({
+        title: "Nomor pegawai belum lengkap",
+        detail: legacyFallbackUsedCount > 0
+          ? `Runtime memakai fallback legacy ${legacyFallbackUsedCount} kali. Lengkapi nomor di Manajemen Akun.`
+          : "Sebagian mapping WhatsApp masih bisa jatuh ke fallback legacy. Lengkapi nomor di Manajemen Akun.",
+        tone: "warning",
+      });
+    }
+    if (runtimeDashboard?.payload?.bot?.sendingWindow?.enabled === false) {
+      alerts.push({
+        title: "Jam aman pengiriman nonaktif",
+        detail: "Aktifkan safe sending window agar pesan normal tidak terkirim di luar jam kerja.",
+        tone: "muted",
+      });
+    }
+    if ((runtimeDashboard?.payload?.registry?.skippedPolicy ?? 0) > 0 || policySkipToday > 0) {
+      const reasons = runtimeDashboard?.payload?.registry?.policySkipStats?.reasons ?? Object.fromEntries(snapshot.policySkipSummary.topReasons.map((item) => [item.reason, item.count]));
+      const reasonText = Object.entries(reasons).slice(0, 3).map(([key, count]) => `${key}: ${count}`).join(", ");
+      alerts.push({
+        title: "Notifikasi pihak ditahan policy",
+        detail: `${runtimeDashboard?.payload?.registry?.skippedPolicy ?? policySkipToday} notifikasi pihak dilewati runtime/log karena belum memenuhi policy.${reasonText ? ` Alasan: ${reasonText}.` : ""}`,
+        tone: "warning",
+      });
+    }
+    if (snapshot.settings.deadlineReminderLastRunAt && snapshot.settings.deadlineReminderMode !== "production") {
+      alerts.push({
+        title: "Reminder deadline masih aman",
+        detail: `Run terakhir ${formatDateTime(snapshot.settings.deadlineReminderLastRunAt)} berstatus ${displayStatus(snapshot.settings.deadlineReminderLastStatus)} dalam mode ${displayStatus(snapshot.settings.deadlineReminderMode)}.`,
+        tone: "warning",
+      });
+    }
+    return alerts.slice(0, 6);
+  }, [employeeWhatsappCoverage, legacyFallbackUsedCount, policySkipToday, publicQaNeedsReviewCount, runtimeDashboard, snapshot, whatsappDisconnected]);
 
   return (
     <div className="space-y-6">
@@ -1237,6 +1966,38 @@ export function AletaBotAdminPanel() {
         </div>
       ) : null}
 
+      {whatsappDisconnected ? (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="space-y-1 p-4 text-sm text-amber-900 dark:text-amber-200">
+            <p className="font-semibold">WhatsApp Bot belum terhubung.</p>
+            <p>
+              Pesan akan menunggu di antrean sampai koneksi aktif kembali.
+              {snapshot.whatsapp.lastConnectedAt ? ` Terakhir terhubung: ${formatDateTime(snapshot.whatsapp.lastConnectedAt)}.` : ""}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {operationalAlerts.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Perlu Perhatian</CardTitle>
+            <CardDescription>Alert operasional ringan. Panel ini tidak mengirim WhatsApp dan hanya membantu admin menentukan prioritas pengecekan.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {operationalAlerts.map((alert) => (
+              <div key={alert.title} className="rounded-xl border border-border p-3 text-sm">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <p className="font-semibold text-foreground">{alert.title}</p>
+                  <Badge variant={alert.tone}>{alert.tone === "danger" ? "Penting" : alert.tone === "warning" ? "Cek" : "Info"}</Badge>
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">{alert.detail}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard label="Status Bot" value={snapshot.runtimeState} icon={Bot} />
         <StatusCard label="WhatsApp" value={snapshot.whatsapp.runtimeStatus} icon={Smartphone} />
@@ -1244,7 +2005,7 @@ export function AletaBotAdminPanel() {
         <StatusCard label="Gagal Hari Ini" value={String(snapshot.metrics.failedToday)} icon={TerminalSquare} />
       </div>
 
-      <Tabs defaultValue="dashboard" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="flex max-w-full flex-wrap items-center justify-start gap-x-1 gap-y-1">
           {/* Utama — selalu tampil */}
           <TabsTrigger value="dashboard">Ringkasan</TabsTrigger>
@@ -1331,6 +2092,16 @@ export function AletaBotAdminPanel() {
                 hint={runtimeDashboard?.payload?.whatsapp?.lastReadyAt ? `Ready: ${formatDateTime(runtimeDashboard.payload.whatsapp.lastReadyAt)}` : runtimeDashboard?.payload?.whatsapp?.lastErrorMessage ?? "Belum ada status runtime."}
               />
               <InfoCard
+                title="Umur Sesi WA"
+                value={runtimeDashboard?.payload?.whatsapp?.sessionAgeHours != null ? `${runtimeDashboard.payload.whatsapp.sessionAgeHours} jam` : "Belum aktif"}
+                hint={runtimeDashboard?.payload?.whatsapp?.sessionStartedAt ? `Aktif sejak ${formatDateTime(runtimeDashboard.payload.whatsapp.sessionStartedAt)}` : "Sesi aktif dihitung sejak WhatsApp ready."}
+              />
+              <InfoCard
+                title="Kirim Terakhir"
+                value={runtimeDashboard?.payload?.whatsapp?.lastMessageSentAt ? formatDateTime(runtimeDashboard.payload.whatsapp.lastMessageSentAt) : "Belum ada"}
+                hint={`Auth failure: ${runtimeDashboard?.payload?.whatsapp?.authFailureCount ?? 0}`}
+              />
+              <InfoCard
                 title="Antrean Pesan"
                 value={`${runtimeDashboard?.payload?.queue?.pending ?? 0} pending`}
                 hint={`${runtimeDashboard?.payload?.queue?.failed ?? 0} failed, ${runtimeDashboard?.payload?.queue?.sent ?? 0} sent.`}
@@ -1364,6 +2135,11 @@ export function AletaBotAdminPanel() {
                 title="Pesan Hari Ini"
                 value={`${runtimeDashboard?.payload?.messageStatsToday?.sent ?? 0} sent`}
                 hint={`${runtimeDashboard?.payload?.messageStatsToday?.failed ?? 0} failed, ${runtimeDashboard?.payload?.messageStatsToday?.skipped ?? 0} skipped.`}
+              />
+              <InfoCard
+                title="Jam Aman Kirim"
+                value={runtimeDashboard?.payload?.bot?.sendingWindow?.enabled === false ? "nonaktif" : runtimeDashboard?.payload?.bot?.sendingWindow?.inside === false ? "di luar jam" : "aktif"}
+                hint={runtimeDashboard?.payload?.bot?.sendingWindow?.message ?? `${runtimeDashboard?.payload?.bot?.sendingWindow?.start ?? "07:30"}-${runtimeDashboard?.payload?.bot?.sendingWindow?.end ?? "21:00"}`}
               />
               <InfoCard
                 title="Error Sistem"
@@ -1453,6 +2229,348 @@ export function AletaBotAdminPanel() {
           ) : null}
           <Card className="mt-4">
             <CardHeader>
+              <CardTitle>Langkah Setup ALETA Bot</CardTitle>
+              <CardDescription>Checklist operasional untuk memastikan pilot berjalan aman tanpa aksi berisiko langsung dari kartu ini.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {setupChecks.map((check) => (
+                <div key={check.label} className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground">{check.label}</p>
+                    <Badge variant={check.ok ? "success" : "warning"}>{check.ok ? "Selesai" : "Perlu dicek"}</Badge>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Kesiapan Pilot</CardTitle>
+                    <CardDescription>
+                      Checklist lintas WhatsApp, antrean, data, policy, dan Public Q&A. Status Siap tidak muncul jika ada blocker kritis.
+                    </CardDescription>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Terakhir diperbarui: {runtimeDashboard?.fetchedAt ? formatDateTime(runtimeDashboard.fetchedAt) : formatDateTime(snapshot.settings.updatedAt)}
+                    </p>
+                  </div>
+                  <Badge variant={pilotReadinessStatus === "ready" ? "success" : pilotReadinessStatus === "warning" ? "warning" : "danger"}>
+                    {pilotReadinessStatus === "ready" ? "Siap" : pilotReadinessStatus === "warning" ? "Perlu Perhatian" : "Terblokir"}
+                  </Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => void runOperationalSmokeTest()} disabled={isSaving}>
+                      <Play className="h-4 w-4" />
+                      Jalankan Smoke Test
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={exportPilotReadinessCsv}>
+                      <Download className="h-4 w-4" />
+                      Export Readiness
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-2">
+                {pilotReadinessChecks.map((check) => (
+                  <div key={`${check.group}-${check.name}`} className="rounded-xl border border-border bg-card p-3 text-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground">{check.group}</p>
+                        <p className="font-semibold text-foreground">{check.name}</p>
+                      </div>
+                      <Badge variant={check.status === "ready" ? "success" : check.status === "warning" ? "warning" : "danger"}>
+                        {check.status === "ready" ? "Siap" : check.status === "warning" ? "Perhatian" : "Blokir"}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                    {"actionHref" in check && check.actionHref ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => {
+                          navigateAdminAction(check.actionHref);
+                        }}
+                      >
+                        {check.actionLabel}
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Kelengkapan Nomor WhatsApp Pegawai</CardTitle>
+                <CardDescription>Dipakai untuk mengurangi ketergantungan pada mapping legacy di runtime.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-xl border border-border p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground">{employeeWhatsappReadyCount} dari {employeeWhatsappTotal} pegawai punya nomor</p>
+                    <Badge variant={employeeWhatsappCoverage >= 0.9 ? "success" : employeeWhatsappCoverage >= 0.7 ? "warning" : "danger"}>
+                      {snapshot.whatsappNumberCompleteness.coveragePercent}%
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    {employeeWhatsappMissing} pegawai belum memiliki nomor. Lengkapi dari Manajemen Akun agar fallback legacy bisa dihapus bertahap.
+                  </p>
+                </div>
+                {snapshot.whatsappNumberCompleteness.importantMissing.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Prioritas nomor belum lengkap</p>
+                    {snapshot.whatsappNumberCompleteness.importantMissing.slice(0, 6).map((user) => (
+                      <div key={user.id} className="rounded border border-border p-2 text-xs">
+                        <p className="font-medium text-foreground">{user.name}</p>
+                        <p className="text-muted-foreground">{user.positionName} · {user.unitKerja || user.roleId}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Tidak ada pegawai prioritas yang kosong nomornya.</p>
+                )}
+                <Button variant="outline" onClick={() => void runDeadlineReminderDryRun()} disabled={isSaving}>
+                  <Play className="h-4 w-4" />
+                  Simulasikan Reminder Deadline H-1
+                </Button>
+                <Button variant="outline" onClick={() => { window.location.href = "/admin/mapping-user-jabatan?missingWhatsapp=true"; }}>
+                  Lengkapi Nomor di Manajemen Akun
+                </Button>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Simulasi ini hanya membuat log dry-run dan preview. Tidak ada WhatsApp sungguhan yang dikirim.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <Card className="mt-4">
+            <CardHeader>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Operational Smoke Test</CardTitle>
+                  <CardDescription>Pemeriksaan baca-saja untuk status WhatsApp, worker, policy, AI, dan registry database. Tidak scan QR, tidak enqueue, dan tidak kirim WhatsApp.</CardDescription>
+                </div>
+                <Button type="button" variant="outline" onClick={() => void runOperationalSmokeTest()} disabled={isSaving}>
+                  <Play className="h-4 w-4" />
+                  Jalankan Smoke Test
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {smokeTestResult ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <Badge variant={smokeTestResult.overallStatus === "passed" ? "success" : smokeTestResult.overallStatus === "warning" ? "warning" : "danger"}>
+                      {smokeTestResult.overallStatus === "passed" ? "Lulus" : smokeTestResult.overallStatus === "warning" ? "Perlu Perhatian" : "Gagal"}
+                    </Badge>
+                    <span className="text-muted-foreground">Dijalankan {formatDateTime(smokeTestResult.generatedAt)}</span>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {smokeTestResult.checks.map((check) => (
+                      <div key={check.key} className="rounded-xl border border-border p-3 text-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold text-foreground">{check.label}</p>
+                          <Badge variant={check.status === "passed" ? "success" : check.status === "warning" ? "warning" : "danger"}>
+                            {check.status === "passed" ? "Lulus" : check.status === "warning" ? "Perhatian" : "Gagal"}
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Belum ada smoke test pada sesi ini. Jalankan saat ingin memeriksa kesiapan operasional tanpa aksi berisiko.</p>
+              )}
+            </CardContent>
+          </Card>
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Analitik Pengiriman</CardTitle>
+                <CardDescription>Ringkasan ringan dari riwayat pengiriman hari ini. Nomor dan metadata sensitif tidak ditampilkan.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <InfoCard title="Total Hari Ini" value={String(messageAnalytics.totalToday)} hint={`${messageAnalytics.sent} terkirim, ${messageAnalytics.failed} gagal`} />
+                <InfoCard title="Success Rate" value={`${messageAnalytics.successRate}%`} hint={`${messageAnalytics.simulated} simulasi tercatat`} />
+                <InfoCard title="Sumber Teratas" value={messageAnalytics.topSource?.[0] ? displayStatus(messageAnalytics.topSource[0]) : "-"} hint={messageAnalytics.topSource ? `${messageAnalytics.topSource[1]} pesan` : "Belum ada data hari ini"} />
+                <InfoCard title="Policy Skip" value={String(policySkipToday)} hint="Skip tidak dianggap failed dan tidak mengirim WhatsApp." />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Analitik Public Q&A</CardTitle>
+                <CardDescription>Tren ringkas pertanyaan publik dan tindak lanjut manusia.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <InfoCard title="7 Hari Terakhir" value={String(publicQaAnalytics.totalLast7Days)} hint="Jumlah pertanyaan/log Public Q&A." />
+                <InfoCard title="Fallback Rate" value={`${publicQaAnalytics.fallbackRate}%`} hint="Fallback perlu dipantau agar intent makin matang." />
+                <InfoCard title="Perlu Review" value={String(publicQaAnalytics.pending)} hint="Masuk antrean human review admin." />
+                <InfoCard title="Draft Intent" value={String(publicQaAnalytics.converted)} hint="Pertanyaan yang sudah dikonversi menjadi draft intent." />
+              </CardContent>
+            </Card>
+            <Card id="policy-skip">
+              <CardHeader>
+                <CardTitle>Policy Skip</CardTitle>
+                <CardDescription>Skip policy tersimpan di log terstruktur agar insight tidak hilang setelah runtime restart.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <InfoCard title="Hari Ini" value={String(policySkipToday)} hint="Dibaca dari runtime/log policy skip." />
+                  <InfoCard title="Total" value={String(policySkipAllTime)} hint={runtimePolicySkipStats?.lastSkippedAt || snapshot.policySkipSummary.lastSkippedAt ? `Terakhir ${formatDateTime(runtimePolicySkipStats?.lastSkippedAt || snapshot.policySkipSummary.lastSkippedAt || "")}` : "Belum ada skip."} />
+                  <InfoCard title="Alasan Utama" value={(runtimePolicySkipStats?.reasons && Object.keys(runtimePolicySkipStats.reasons)[0]) || snapshot.policySkipSummary.topReasons[0]?.reason || "-"} hint="Contoh: belum_dry_run, belum_preview, belum_approval." />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <NativeSelect value={policySkipReasonFilter} onChange={(event) => setPolicySkipReasonFilter(event.target.value)} className="max-w-xs">
+                    <option value="all">Semua alasan</option>
+                    <option value="belum_dry_run">Belum dry-run</option>
+                    <option value="belum_preview">Belum preview</option>
+                    <option value="belum_approval">Belum approval</option>
+                    <option value="safe_sending_window">Safe sending window</option>
+                    <option value="recipient_invalid">Recipient invalid</option>
+                    <option value="policy_blocked">Policy blocked</option>
+                  </NativeSelect>
+                  <Button variant="outline" onClick={exportPolicySkipCsv}>
+                    <Download className="h-4 w-4" />
+                    Export CSV Policy Skip
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {(runtimePolicySkipStats?.topNotifications ?? snapshot.policySkipSummary.topNotifications).slice(0, 4).map((item) => (
+                    <div key={item.notificationKey} className="flex items-center justify-between rounded border border-border p-2 text-xs">
+                      <span className="font-medium text-foreground">{item.notificationKey || "notification"}</span>
+                      <Badge variant="warning">{item.count} skip</Badge>
+                    </div>
+                  ))}
+                  {(runtimePolicySkipStats?.topNotifications ?? snapshot.policySkipSummary.topNotifications).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Belum ada policy skip tercatat.</p>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+            <Card id="reminder-deadline">
+              <CardHeader>
+                <CardTitle>Reminder Deadline Disposisi</CardTitle>
+                <CardDescription>Jalur produksi tersedia, tetapi default tetap aman dan membutuhkan approval/konfirmasi eksplisit.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InfoCard title="Mode" value={displayStatus(snapshot.settings.deadlineReminderMode)} hint={snapshot.settings.deadlineReminderEnabled ? "Enabled" : "Tidak aktif produksi."} />
+                  <InfoCard title="Approval" value={snapshot.settings.deadlineReminderApprovedAt ? "Ada" : "Belum ada"} hint={snapshot.settings.deadlineReminderApprovedAt ? formatDateTime(snapshot.settings.deadlineReminderApprovedAt) : "Production/pilot butuh Super Admin."} />
+                  <InfoCard title="Run Terakhir" value={snapshot.settings.deadlineReminderLastRunAt ? formatDateTime(snapshot.settings.deadlineReminderLastRunAt) : "Belum pernah"} hint={snapshot.settings.deadlineReminderLastMessage || "Belum ada hasil runner."} />
+                  <InfoCard title="Status Terakhir" value={displayStatus(snapshot.settings.deadlineReminderLastStatus)} hint="Dry-run tidak mengirim WhatsApp real." />
+                  <InfoCard title="Scheduler" value={snapshot.settings.deadlineReminderSchedulerEnabled ? "Aktif" : "Nonaktif"} hint={`${displayStatus(snapshot.settings.deadlineReminderSchedulerMode)} pukul ${snapshot.settings.deadlineReminderSchedulerTime}`} />
+                  <InfoCard title="Kill Switch" value={snapshot.settings.deadlineReminderKillSwitch ? "Aktif" : "Normal"} hint={snapshot.settings.deadlineReminderKillSwitch ? "Semua runner reminder diblokir." : "Runner mengikuti mode dan approval."} />
+                </div>
+                <div className="rounded-xl border border-border p-4">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <Field label="Whitelist User ID Pilot" value={deadlinePilotUserIdsText} onChange={setDeadlinePilotUserIdsText} placeholder="user-a, user-b" />
+                    <Field label="Whitelist Role Pilot" value={deadlinePilotRoleIdsText} onChange={setDeadlinePilotRoleIdsText} placeholder="hakim, panitera" />
+                    <Field label="Whitelist Jabatan/Posisi Pilot" value={deadlinePilotPositionIdsText} onChange={setDeadlinePilotPositionIdsText} placeholder="position-id atau nama jabatan" />
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">Mode pilot hanya memproses penerima internal yang cocok dengan whitelist. Pihak eksternal tidak masuk whitelist reminder ini.</p>
+                </div>
+                <div className="rounded-xl border border-border p-4">
+                  <div className="grid gap-3 md:grid-cols-[1fr_180px]">
+                    <NativeSelect
+                      value={snapshot.settings.deadlineReminderSchedulerMode}
+                      onChange={(event) => void updateDeadlineReminderAdvancedSettings({ schedulerMode: event.target.value as AletaBotSnapshot["settings"]["deadlineReminderSchedulerMode"] })}
+                    >
+                      <option value="dry_run">Scheduler Dry-run</option>
+                      <option value="pilot">Scheduler Pilot</option>
+                      <option value="production">Scheduler Produksi</option>
+                      <option value="disabled">Scheduler Disabled</option>
+                    </NativeSelect>
+                    <Input value={deadlineSchedulerTime} onChange={(event) => setDeadlineSchedulerTime(event.target.value)} placeholder="08:00:00" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={() => void updateDeadlineReminderAdvancedSettings()} disabled={isSaving}>
+                      Simpan Whitelist/Jadwal
+                    </Button>
+                    <Button variant="outline" onClick={() => void updateDeadlineReminderAdvancedSettings({ schedulerEnabled: true, schedulerMode: "dry_run" })} disabled={isSaving}>
+                      Aktifkan Scheduler Dry-run
+                    </Button>
+                    <Button variant="outline" onClick={() => void updateDeadlineReminderAdvancedSettings({ schedulerEnabled: false, schedulerMode: "disabled" })} disabled={isSaving}>
+                      Nonaktifkan Scheduler
+                    </Button>
+                    <Button
+                      variant={snapshot.settings.deadlineReminderKillSwitch ? "outline" : "destructive"}
+                      onClick={() => void updateDeadlineReminderAdvancedSettings({ killSwitch: !snapshot.settings.deadlineReminderKillSwitch, confirmText: snapshot.settings.deadlineReminderKillSwitch ? deadlineConfirmText : "EMERGENCY STOP" })}
+                      disabled={isSaving || (!snapshot.settings.deadlineReminderKillSwitch && deadlineConfirmText !== "EMERGENCY STOP")}
+                    >
+                      {snapshot.settings.deadlineReminderKillSwitch ? "Matikan Emergency Stop" : "Emergency Stop Reminder"}
+                    </Button>
+                  </div>
+                </div>
+                <Input
+                  value={deadlineConfirmText}
+                  onChange={(event) => setDeadlineConfirmText(event.target.value)}
+                  placeholder="AKTIFKAN PILOT / AKTIFKAN REMINDER / JALANKAN REMINDER / EMERGENCY STOP"
+                  className="font-mono text-xs"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => void runDeadlineReminderDryRun()} disabled={isSaving}>
+                    Simulasikan
+                  </Button>
+                  <Button variant="outline" onClick={() => void runDeadlineReminderSchedulerDryRun()} disabled={isSaving}>
+                    Jalankan Dry-run Sekarang
+                  </Button>
+                  <Button variant="outline" onClick={() => void updateDeadlineReminderMode("dry_run")} disabled={isSaving}>
+                    Mode Dry-run
+                  </Button>
+                  <Button variant="outline" onClick={() => void updateDeadlineReminderMode("pilot")} disabled={isSaving || deadlineConfirmText !== "AKTIFKAN PILOT"}>
+                    Aktifkan Pilot
+                  </Button>
+                  <Button variant="outline" onClick={() => void updateDeadlineReminderMode("production")} disabled={isSaving || deadlineConfirmText !== "AKTIFKAN REMINDER"}>
+                    Aktifkan Produksi
+                  </Button>
+                  <Button variant="destructive" onClick={() => void updateDeadlineReminderMode("disabled")} disabled={isSaving}>
+                    Nonaktifkan
+                  </Button>
+                  <Button onClick={() => void runDeadlineReminderControlled()} disabled={isSaving || deadlineConfirmText !== "JALANKAN REMINDER"}>
+                    Jalankan Runner Terkontrol
+                  </Button>
+                </div>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Tombol produksi tetap role-guarded. Selama tidak mengetik konfirmasi, runner hanya melaporkan blocker dan tidak mengirim WhatsApp.
+                </p>
+                <div className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Run History Reminder</p>
+                      <p className="text-xs text-muted-foreground">5 run terakhir, termasuk dry-run scheduler dan blocker. Nomor/isi pesan penuh tidak disimpan.</p>
+                    </div>
+                    <Badge variant="muted">{snapshot.deadlineReminderRuns.length} log</Badge>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {snapshot.deadlineReminderRuns.slice(0, 5).map((run: AletaBotDispositionReminderRun) => (
+                      <div key={run.id} className="rounded-lg border border-border bg-muted/20 p-3 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-semibold text-foreground">{displayStatus(run.mode)} · {displayStatus(run.triggeredBy)}</span>
+                          <Badge variant={run.status === "completed" || run.status === "simulated" ? "success" : run.status === "blocked" || run.status === "failed" ? "danger" : "warning"}>
+                            {displayStatus(run.status)}
+                          </Badge>
+                        </div>
+                        {formatRunSummary(run.summary) ? (
+                          <p className="mt-1 text-muted-foreground">{formatRunSummary(run.summary)}</p>
+                        ) : null}
+                        <p className="mt-1 text-muted-foreground">
+                          {formatDateTime(run.startedAt)} · kandidat {run.totalCandidates} · dry-run {run.dryRunCreated} · terkirim {run.sentCount} · skip {run.skippedCount} · error {run.errorCount}
+                        </p>
+                      </div>
+                    ))}
+                    {snapshot.deadlineReminderRuns.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Belum ada run history reminder.</p>
+                    ) : null}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <Card className="mt-4">
+            <CardHeader>
               <CardTitle>Kesiapan Pilot</CardTitle>
               <CardDescription>Checklist terakhir sebelum pilot produksi terbatas. Status Siap hanya diberikan jika tidak ada blocker runtime.</CardDescription>
             </CardHeader>
@@ -1492,7 +2610,7 @@ export function AletaBotAdminPanel() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="connection">
+        <TabsContent value="connection" id="status-whatsapp">
           <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
             <Card>
               <CardHeader>
@@ -1576,7 +2694,7 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="settings">
+        <TabsContent value="settings" id="pengaturan-bot">
           <Card>
             <CardHeader>
               <CardTitle>Pengaturan Bot</CardTitle>
@@ -1667,6 +2785,7 @@ export function AletaBotAdminPanel() {
                   openModal({ type: "notification", title: `Edit Notifikasi ${notification.name}` });
                 }}
                 onTest={(notification) => void runAction("test-notification", { notificationId: notification.id })}
+                onPreviewRecipients={(notification) => void previewNotificationRecipients(notification)}
                 isSaving={isSaving}
               />
             ) : null}
@@ -1682,6 +2801,7 @@ export function AletaBotAdminPanel() {
                   openModal({ type: "notification", title: `Edit Notifikasi ${notification.name}` });
                 }}
                 onTest={(notification) => void runAction("test-notification", { notificationId: notification.id })}
+                onPreviewRecipients={(notification) => void previewNotificationRecipients(notification)}
                 isSaving={isSaving}
               />
             ) : null}
@@ -1845,18 +2965,19 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="public-qa">
+        <TabsContent value="public-qa" id="public-qa">
           <div className="grid gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Pertanyaan Para Pihak</CardTitle>
                 <CardDescription>Intent natural language yang aman. AI hanya memilih intent aktif dan tidak membuat jawaban bebas.</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 lg:grid-cols-4">
+              <CardContent className="grid gap-4 lg:grid-cols-5">
                 <InfoCard title="Intent Aktif" value={String(snapshot.publicQaIntents.filter((item) => item.isActive).length)} hint={`${snapshot.publicQaIntents.length} intent terdaftar.`} />
                 <InfoCard title="AI Matcher" value={String(snapshot.publicQaIntents.filter((item) => item.aiEnabled).length)} hint="Aktif hanya jika env runtime mengizinkan." />
                 <InfoCard title="Butuh Verifikasi" value={String(snapshot.publicQaIntents.filter((item) => item.requiresVerification).length)} hint="Intent perkara/panjar/akta perlu hati-hati." />
                 <InfoCard title="Fallback Hari Ini" value={String(runtimeDashboard?.payload?.publicQa?.stats?.fallbackToday ?? 0)} hint={`${runtimeDashboard?.payload?.publicQa?.stats?.totalToday ?? 0} interaksi tercatat hari ini.`} />
+                <InfoCard title="Perlu Tinjauan" value={String(publicQaNeedsReviewCount)} hint={publicQaNeedsReviewCount > 0 ? "Butuh tindak lanjut petugas." : "Tidak ada pertanyaan publik yang perlu ditinjau."} />
               </CardContent>
             </Card>
 
@@ -1968,6 +3089,7 @@ export function AletaBotAdminPanel() {
                             <Badge variant={statusVariant(log.status)}>{log.status}</Badge>
                             <Badge variant="outline">{log.matchedIntentKey || "fallback"}</Badge>
                             <Badge variant="outline">{log.matchedMethod}</Badge>
+                            {log.needsHumanReview ? <Badge variant="warning">Perlu Tinjauan</Badge> : null}
                           </div>
                           <span className="text-xs text-muted-foreground">{formatDateTime(log.createdAt)}</span>
                         </div>
@@ -1979,6 +3101,87 @@ export function AletaBotAdminPanel() {
                 </CardContent>
               </Card>
             </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Human Review Pertanyaan Publik</CardTitle>
+                    <CardDescription>Fallback/unknown yang perlu tindak lanjut manusia. Aksi di sini tidak membalas WhatsApp.</CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={publicQaNeedsReviewCount > 0 ? "warning" : "success"}>
+                      {publicQaNeedsReviewCount > 0 ? `${publicQaNeedsReviewCount} menunggu` : "Tidak ada pending"}
+                    </Badge>
+                    <Button variant="outline" size="sm" onClick={exportPublicQaHumanReview}>
+                      Export CSV
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["all", "Semua"],
+                    ["needs_review", "Perlu Tindak Lanjut"],
+                    ["reviewed", "Sudah Ditinjau"],
+                    ["ignored", "Diabaikan"],
+                    ["converted_to_intent", "Sudah Jadi Intent"],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      onClick={() => setPublicQaReviewFilter(value)}
+                      className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${publicQaReviewFilter === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {filteredUnknownQuestionReviews.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    Tidak ada pertanyaan untuk filter ini.
+                  </div>
+                ) : (
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {filteredUnknownQuestionReviews.slice(0, 12).map((item) => (
+                      <div key={item.id || item.normalizedMessage} className="rounded-xl border border-border p-4 text-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="break-words font-medium text-foreground">{item.rawMessage}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Frekuensi {item.frequency}x, terakhir {formatDateTime(item.lastAskedAt)}, pengirim {item.senderMasked || "masked"}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant={item.needsHumanReview && item.reviewStatus === "pending" ? "warning" : "muted"}>
+                              {item.reviewStatus === "pending" ? "Menunggu Tinjauan" : item.reviewStatus === "reviewed" ? "Sudah Ditinjau" : item.reviewStatus === "ignored" ? "Diabaikan" : "Sudah Jadi Intent"}
+                            </Badge>
+                            <Badge variant={item.safetyRisk === "high" ? "danger" : item.safetyRisk === "medium" ? "warning" : "muted"}>{item.safetyRisk}</Badge>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                          Saran: <code>{item.suggestedIntentKey}</code> ({Math.round(item.confidence * 100)}%) - {item.suggestedAction}
+                        </p>
+                        {item.reviewNote ? <p className="mt-2 text-xs text-muted-foreground">Catatan: {item.reviewNote}</p> : null}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isSaving}
+                            onClick={() => {
+                              setPublicQaReviewNote(item.reviewNote || "");
+                              openModal({ type: "publicQaReview", title: "Review Pertanyaan Publik", review: item });
+                            }}
+                          >
+                            Review
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -2177,8 +3380,74 @@ export function AletaBotAdminPanel() {
         {activeModal?.type === "template" ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">Placeholder: {activeModal.template.placeholders.join(", ") || "tanpa placeholder"}</p>
-            <Textarea value={templateDraft[activeModal.template.id] ?? activeModal.template.body} rows={12} onChange={(event) => { markModalDirty(); setTemplateDraft((current) => ({ ...current, [activeModal.template.id]: event.target.value })); }} disabled={!activeModal.template.editable} />
+            {(() => {
+              const body = templateDraft[activeModal.template.id] ?? activeModal.template.body;
+              const detected = extractTemplatePlaceholders(body);
+              const unknown = detected.filter((placeholder) => !activeModal.template.placeholders.includes(placeholder));
+              const missingRequired = activeModal.template.placeholders.filter((placeholder) => !detected.includes(placeholder));
+
+              return (
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <div className="space-y-3">
+                    <Textarea value={body} rows={14} onChange={(event) => { markModalDirty(); setTemplateDraft((current) => ({ ...current, [activeModal.template.id]: event.target.value })); }} disabled={!activeModal.template.editable} />
+                    <div className="rounded-xl border border-border p-3 text-sm">
+                      <p className="font-semibold text-foreground">Placeholder terdeteksi</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {detected.length > 0 ? detected.map((placeholder) => (
+                          <Badge key={placeholder} variant={unknown.includes(placeholder) ? "danger" : "success"}>{placeholder}</Badge>
+                        )) : <span className="text-muted-foreground">Belum ada placeholder.</span>}
+                      </div>
+                      {unknown.length > 0 ? <p className="mt-2 text-destructive">Placeholder tidak dikenal: {unknown.join(", ")}.</p> : null}
+                      {missingRequired.length > 0 ? <p className="mt-2 text-amber-700 dark:text-amber-300">Placeholder wajib belum dipakai: {missingRequired.join(", ")}.</p> : null}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/30 p-4">
+                    <p className="text-sm font-semibold text-foreground">Pratinjau Pesan</p>
+                    <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-sm leading-6 text-foreground">
+                      {renderAletaBotTemplatePreview(body)}
+                    </pre>
+                  </div>
+                </div>
+              );
+            })()}
             <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveTemplate(activeModal.template)} saveLabel="Simpan Template" />
+          </div>
+        ) : null}
+
+        {activeModal?.type === "recipientPreview" ? (
+          <div className="space-y-4">
+            {recipientPreview ? (
+              <>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <InfoCard title="Estimasi" value={String(recipientPreview.totalEstimated)} hint="Tidak ada pesan yang dikirim." />
+                  <InfoCard title="Sample" value={String(recipientPreview.sampleSize)} hint="Maksimal 10 penerima di modal ini." />
+                  <InfoCard title="Nomor Invalid" value={String(recipientPreview.items.filter((item) => !item.validNumber).length)} hint="Perbaiki data nomor sebelum aktivasi." />
+                </div>
+                {recipientPreview.warnings.length > 0 ? (
+                  <div className="rounded-xl border border-amber-300/60 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200">
+                    {recipientPreview.warnings.join(" ")}
+                  </div>
+                ) : null}
+                <div className="grid gap-3">
+                  {recipientPreview.items.map((item) => (
+                    <div key={item.idempotencyKey} className="rounded-xl border border-border p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-foreground">{item.recipientName}</p>
+                          <p className="text-xs text-muted-foreground">{item.caseOrPosition} · {item.recipientNumber || "nomor belum tersedia"}</p>
+                        </div>
+                        <Badge variant={item.validNumber ? "success" : "danger"}>{item.validNumber ? "Nomor valid" : "Nomor invalid"}</Badge>
+                      </div>
+                      <pre className="mt-3 max-h-44 overflow-auto whitespace-pre-wrap rounded-xl bg-muted/35 p-3 text-xs leading-5 text-muted-foreground">{item.messagePreview}</pre>
+                      <p className="mt-2 break-all text-xs text-muted-foreground">Idempotency sample: {item.idempotencyKey}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Belum ada hasil preview penerima.</p>
+            )}
+            <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={closeModal} saveLabel="Tutup Preview" />
           </div>
         ) : null}
 
@@ -2328,6 +3597,143 @@ export function AletaBotAdminPanel() {
               }
               void savePublicQaIntent();
             }} saveLabel={publicQaIntentForm.status === "active" ? "Simpan & Aktifkan" : "Simpan sebagai Draft"} />
+          </div>
+        ) : null}
+
+        {activeModal?.type === "publicQaReview" ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
+              <p className="font-semibold text-foreground">Pertanyaan</p>
+              <p className="mt-2 leading-6 text-muted-foreground">{activeModal.review.rawMessage}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant={activeModal.review.safetyRisk === "high" ? "danger" : activeModal.review.safetyRisk === "medium" ? "warning" : "muted"}>
+                  Risiko {activeModal.review.safetyRisk}
+                </Badge>
+                <Badge variant="outline">Frekuensi {activeModal.review.frequency}x</Badge>
+                <Badge variant="outline">{activeModal.review.suggestedAction}</Badge>
+              </div>
+            </div>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-foreground">Catatan Review</span>
+              <Textarea
+                value={publicQaReviewNote}
+                onChange={(event) => setPublicQaReviewNote(event.target.value)}
+                rows={4}
+                placeholder="Tuliskan tindak lanjut singkat. Jangan masukkan data sensitif."
+              />
+            </label>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="outline" onClick={closeModal} disabled={isSaving}>Batal</Button>
+              <Button variant="outline" onClick={() => void submitPublicQaReview("ignored")} disabled={isSaving}>Abaikan</Button>
+              <Button
+                variant="outline"
+                onClick={() => openModal({ type: "publicQaConvert", title: "Jadikan Draft Intent", review: activeModal.review })}
+                disabled={isSaving}
+              >
+                Jadikan Draft Intent
+              </Button>
+              <Button onClick={() => void submitPublicQaReview("reviewed")} disabled={isSaving}>Tandai Sudah Ditinjau</Button>
+            </div>
+          </div>
+        ) : null}
+
+        {activeModal?.type === "publicQaConvert" ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
+              <p className="font-semibold text-foreground">Pertanyaan asli</p>
+              <p className="mt-2 leading-6 text-muted-foreground">{activeModal.review.rawMessage}</p>
+              <p className="mt-2 text-xs text-muted-foreground">Draft tidak langsung aktif dan tetap perlu dicek/approval sebelum digunakan.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+                <input
+                  type="radio"
+                  checked={publicQaConvertMode === "new"}
+                  onChange={() => setPublicQaConvertMode("new")}
+                />
+                Buat intent draft baru
+              </label>
+              <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+                <input
+                  type="radio"
+                  checked={publicQaConvertMode === "existing"}
+                  onChange={() => setPublicQaConvertMode("existing")}
+                />
+                Tambahkan ke intent draft existing
+              </label>
+            </div>
+            {publicQaConvertMode === "new" ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Key draft intent" value={publicQaDraftIntentKey} onChange={setPublicQaDraftIntentKey} placeholder="cek_status_layanan" />
+                <Field label="Nama draft intent" value={publicQaDraftIntentName} onChange={setPublicQaDraftIntentName} placeholder="Draft Intent Baru" />
+              </div>
+            ) : (
+              <SelectField
+                label="Intent draft tujuan"
+                value={publicQaConvertIntentId}
+                onChange={setPublicQaConvertIntentId}
+                options={snapshot.publicQaIntents
+                  .filter((intent) => intent.status === "draft" && !intent.isActive)
+                  .map((intent) => ({ value: intent.id, label: `${intent.name} (${intent.key})` }))}
+              />
+            )}
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-foreground">Catatan konversi</span>
+              <Textarea
+                value={publicQaReviewNote}
+                onChange={(event) => setPublicQaReviewNote(event.target.value)}
+                rows={3}
+                placeholder="Opsional: alasan intent dibuat, batasan jawaban, atau catatan petugas."
+              />
+            </label>
+            <ModalActions
+              isSaving={isSaving}
+              onCancel={closeModal}
+              onSave={() => void convertPublicQaReview()}
+              saveLabel="Simpan sebagai Draft"
+            />
+          </div>
+        ) : null}
+
+        {activeModal?.type === "deadlineReminderPreview" ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <InfoCard title="Kandidat" value={String(deadlineReminderPreview?.totalCandidates ?? 0)} hint="Disposisi aktif yang jatuh tempo besok." />
+              <InfoCard title={deadlineReminderPreview?.productionSent ? "Masuk Antrean" : "Dry-run dibuat"} value={String(deadlineReminderPreview?.productionSent ?? deadlineReminderPreview?.dryRunCreated ?? 0)} hint={deadlineReminderPreview?.productionSent ? "Terkonfirmasi oleh gateway dengan gate eksplisit." : "Tercatat sebagai simulasi, bukan kirim WA."} />
+              <InfoCard title="Dilewati" value={String(deadlineReminderPreview?.skipped ?? 0)} hint="Nomor kosong/invalid atau sudah pernah simulasi." />
+            </div>
+            {(deadlineReminderPreview?.warnings ?? []).length > 0 ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-900 dark:text-amber-200">
+                {(deadlineReminderPreview?.warnings ?? []).map((warning) => <p key={warning}>{warning}</p>)}
+              </div>
+            ) : null}
+            <div className="space-y-3">
+              {(deadlineReminderPreview?.items ?? []).length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                  Tidak ada item preview.
+                </div>
+              ) : (
+                deadlineReminderPreview?.items.map((item) => (
+                  <div key={`${item.dispositionId}-${item.idempotencyKey}`} className="rounded-xl border border-border p-4 text-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground">{item.recipientName}</p>
+                        <p className="text-xs text-muted-foreground">{item.recipientNumber || "Nomor masked"} · deadline {formatDateTime(item.deadline)}</p>
+                      </div>
+                      <Badge variant={item.status === "simulated" || item.status === "enqueued" ? "success" : "warning"}>
+                        {item.status === "enqueued" ? "Antrean" : item.status === "simulated" ? "Simulasi" : "Dilewati"}
+                      </Badge>
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-muted-foreground">{item.messagePreview}</p>
+                    <p className="mt-2 break-all text-[11px] text-muted-foreground">Idempotency: {item.idempotencyKey}</p>
+                    {item.skipReason ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">{item.skipReason}</p> : null}
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={closeModal} disabled={isSaving}>Tutup</Button>
+            </div>
           </div>
         ) : null}
 
@@ -2675,6 +4081,7 @@ function NotificationSection({
   templates,
   onEdit,
   onTest,
+  onPreviewRecipients,
   isSaving,
 }: {
   title: string;
@@ -2684,6 +4091,7 @@ function NotificationSection({
   templates: AletaBotTemplate[];
   onEdit: (notification: AletaBotNotification) => void;
   onTest: (notification: AletaBotNotification) => void;
+  onPreviewRecipients: (notification: AletaBotNotification) => void;
   isSaving: boolean;
 }) {
   const queryTitle = (id: string) => queries.find((query) => query.id === id)?.name ?? id;
@@ -2728,14 +4136,25 @@ function NotificationSection({
                 <td className="min-w-0 break-words py-4 pr-3">{notification.lastRunAt ? formatDateTime(notification.lastRunAt) : "Belum berjalan"}</td>
                 <td className="min-w-0 break-words py-4 pr-3">
                   <div className="space-y-2">
-                    <Badge variant={notification.isActive ? "success" : "muted"}>{notification.isActive ? "Active" : "Disabled"}</Badge>
-                    <Badge variant={statusVariant(notification.lastStatus)}>{notification.lastStatus}</Badge>
+                    <Badge variant={notification.isActive ? "success" : "muted"}>{notification.isActive ? "Aktif" : "Nonaktif"}</Badge>
+                    <Badge variant={statusVariant(notification.lastStatus)}>{displayStatus(notification.lastStatus)}</Badge>
+                    {notification.category === "party" && notification.policyStatus ? (
+                      <div className="mt-2 space-y-1 text-[10px] leading-4 text-muted-foreground">
+                        <div className="flex flex-wrap gap-1">
+                          <Badge variant={notification.policyStatus.dryRunPassed ? "success" : "warning"}>Simulasi {notification.policyStatus.dryRunPassed ? "Selesai" : "Belum"}</Badge>
+                          <Badge variant={notification.policyStatus.recipientPreviewPassed ? "success" : "warning"}>Preview {notification.policyStatus.recipientPreviewPassed ? "Selesai" : "Belum"}</Badge>
+                          <Badge variant={notification.policyStatus.approved ? "success" : "warning"}>Approval {notification.policyStatus.approved ? "Disetujui" : "Belum"}</Badge>
+                        </div>
+                        <p>{notification.policyStatus.canActivate ? "Bisa aktif sesuai policy." : "Belum bisa aktif."}</p>
+                      </div>
+                    ) : null}
                   </div>
                 </td>
                 <td className="min-w-0 py-4 pr-3">
                   <div className="flex flex-wrap gap-1.5">
                     <Button variant="outline" size="sm" onClick={() => onEdit(notification)} disabled={isSaving}>Edit</Button>
                     <Button variant="outline" size="sm" onClick={() => onTest(notification)} disabled={isSaving}>Test</Button>
+                    <Button variant="outline" size="sm" onClick={() => onPreviewRecipients(notification)} disabled={isSaving}>Preview Penerima</Button>
                   </div>
                 </td>
               </tr>
