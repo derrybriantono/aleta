@@ -24,9 +24,9 @@ export function getDispositionDeadlineLabel(disposition: Pick<DispositionNode, "
 
   if (state === "completed") return "Selesai";
   if (state === "overdue") return "Terlambat";
-  if (state === "due_today") return "Jatuh Tempo Hari Ini";
-  if (state === "upcoming" && disposition.deadlineAt) return `Deadline ${formatDate(disposition.deadlineAt)}`;
-  return "Belum Ada Deadline";
+  if (state === "due_today") return "Tenggat Hari Ini";
+  if (state === "upcoming" && disposition.deadlineAt) return `Tenggat ${formatDate(disposition.deadlineAt)}`;
+  return "Belum Ada Tenggat";
 }
 
 export function getDispositionReadLabel(disposition: Pick<DispositionNode, "readAt">) {

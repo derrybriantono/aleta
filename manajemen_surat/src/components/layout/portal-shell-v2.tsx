@@ -54,7 +54,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePortal } from "@/lib/app-state";
-import { ASSISTANT_JUDGE_PROVIDER_ORDER } from "@/lib/assistant-judge";
+import { getVisibleAssistantJudgeLinks } from "@/lib/assistant-judge";
 import { formatDateTime } from "@/lib/format";
 import type { TaskItem } from "@/lib/task-sources";
 import type { ModuleId } from "@/lib/types";
@@ -85,6 +85,7 @@ const iconMap = {
   "library-big": LibraryBig,
   "user-cog": UserCog,
   landmark: Landmark,
+  scale: Scale,
   sparkles: Sparkles,
   bot: Bot,
 };
@@ -157,6 +158,7 @@ const adminSidebarIds: ReadonlySet<ModuleId> = new Set([
   "visibility-role",
   "identity",
   "ai-settings",
+  "assistant-judge-settings",
   "whatsapp-settings",
   "aleta-bot",
   "feedback",
@@ -243,7 +245,7 @@ function getSidebarDescription(ctx: AppContext, isAdminArea: boolean): string {
   if (ctx === "asisten_hakim")
     return "Akses cepat ke asisten AI yudisial yang telah disetujui admin.";
   if (ctx === "patch_notes") return "Catatan pembaruan dan informasi rilis ALETA.";
-  if (ctx === "panduan") return "Panduan penggunaan ALETA sesuai role dan hak akses.";
+  if (ctx === "panduan") return "Panduan penggunaan ALETA sesuai peran dan hak akses.";
   if (ctx === "feedback")
     return "Kirim laporan bug, saran fitur, atau usulan aplikasi baru tanpa membuka area teknis.";
   return "Inbox, surat, arsip, statistik, dan disposisi dipusatkan dalam satu workspace.";
@@ -436,7 +438,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
       : pathname === "/patch-notes"
       ? "Catatan pembaruan internal dan status rilis ALETA."
       : pathname === "/panduan"
-      ? "Panduan penggunaan ALETA sesuai role dan hak akses aktif."
+      ? "Panduan penggunaan ALETA sesuai peran dan hak akses aktif."
       : pathname === "/masukan"
       ? "Laporan bug, saran fitur, dan usulan aplikasi baru untuk pengembangan ALETA."
       : pathname === "/asisten-hakim"
@@ -444,7 +446,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
       : pathname === "/admin/feedback"
       ? "Tinjau, filter, dan tindak lanjuti masukan pengguna ALETA."
       : pathname === "/admin/asisten-hakim"
-      ? "Pengaturan link AI yudisial dan role yang dapat melihatnya."
+      ? "Pengaturan link AI yudisial dan peran yang dapat melihatnya."
       : pathname === "/manajemen-surat"
       ? "Ringkasan surat, tugas mendesak, dan log aktivitas."
       : pathname === "/surat"
@@ -522,18 +524,23 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
           },
         ];
         if (assistantJudgeConfig.enabled) {
-          for (const pid of ASSISTANT_JUDGE_PROVIDER_ORDER) {
-            const link = assistantJudgeConfig.links[pid];
-            if (link?.enabled && link.url) {
-              items.push({
-                label: link.label ?? pid,
-                description: "Buka di tab baru",
-                href: link.url,
-                external: true,
-                icon: Sparkles,
-              });
-            }
+          for (const link of getVisibleAssistantJudgeLinks(assistantJudgeConfig, effectiveRoleId, currentUser.id)) {
+            items.push({
+              label: link.label,
+              description: "Buka di tab baru",
+              href: link.url,
+              external: true,
+              icon: link.iconKey === "scale" ? Scale : Sparkles,
+            });
           }
+        }
+        if (isSuperAdmin) {
+          items.push({
+            label: "Pengaturan Asisten Hakim",
+            description: "Kelola menu AI yudisial",
+            href: "/admin/asisten-hakim",
+            icon: Settings,
+          });
         }
         items.push({
           label: "Panduan Penggunaan",

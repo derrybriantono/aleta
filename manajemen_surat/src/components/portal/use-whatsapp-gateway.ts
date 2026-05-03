@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { humanizeErrorMessage, humanizeStatus } from "@/lib/humanized-labels";
+
 export type WhatsAppGatewayRuntimeStatus =
   | "disconnected"
   | "initializing"
@@ -43,12 +45,16 @@ export function getWhatsAppRuntimeLabel(status: WhatsAppGatewayRuntimeStatus) {
   return "disconnected";
 }
 
+export function getWhatsAppRuntimeDisplayLabel(status: WhatsAppGatewayRuntimeStatus) {
+  return humanizeStatus(getWhatsAppRuntimeLabel(status));
+}
+
 export function getWhatsAppRuntimeMessage(status: WhatsAppGatewayRuntimeStatus) {
-  if (status === "waiting_qr") return "QR siap dipindai";
-  if (status === "initializing") return "Sedang menyiapkan sesi WhatsApp Web";
-  if (status === "connected") return "WhatsApp kantor sudah tertaut";
-  if (status === "failed") return "Inisialisasi WhatsApp gagal";
-  return "Sesi WhatsApp belum diinisialisasi";
+  if (status === "waiting_qr") return "QR sudah tersedia di pusat koneksi WhatsApp.";
+  if (status === "initializing") return "Layanan WhatsApp sedang menyiapkan koneksi.";
+  if (status === "connected") return "Layanan WhatsApp kantor sudah terhubung.";
+  if (status === "failed") return "Koneksi WhatsApp belum berhasil. Periksa pusat koneksi.";
+  return "Layanan WhatsApp belum terhubung.";
 }
 
 export function useWhatsAppGateway(canAccess: boolean) {
@@ -76,15 +82,15 @@ export function useWhatsAppGateway(canAccess: boolean) {
         | null;
 
       if (!response.ok || !payload?.ok || !payload.data) {
-        throw new Error(payload?.error?.message ?? "Status WhatsApp gateway tidak dapat dibaca.");
+        throw new Error(humanizeErrorMessage(payload?.error?.message, "Status WhatsApp belum dapat dibaca."));
       }
 
       setSnapshot(payload.data);
       if (payload.data.linked) {
-        setFeedback("WhatsApp kantor sudah tertaut dan siap digunakan untuk notifikasi.");
+        setFeedback("WhatsApp kantor sudah terhubung dan siap dipantau.");
       }
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Status WhatsApp gateway tidak dapat dibaca.");
+      setFeedback(error instanceof Error ? humanizeErrorMessage(error.message) : "Status WhatsApp belum dapat dibaca.");
     } finally {
       setIsRefreshing(false);
     }
@@ -110,14 +116,14 @@ export function useWhatsAppGateway(canAccess: boolean) {
         | null;
 
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error?.message ?? "Inisialisasi WhatsApp gagal diproses.");
+        throw new Error(humanizeErrorMessage(payload?.error?.message, "Koneksi WhatsApp belum dapat dimulai."));
       }
 
-      setFeedback(payload.data?.message ?? "Inisialisasi WhatsApp dimulai.");
+      setFeedback(humanizeErrorMessage(payload.data?.message, "Koneksi WhatsApp sedang disiapkan."));
       await refresh();
       return true;
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Inisialisasi WhatsApp gagal diproses.");
+      setFeedback(error instanceof Error ? humanizeErrorMessage(error.message) : "Koneksi WhatsApp belum dapat dimulai.");
       setSnapshot((current) => ({
         ...current,
         runtimeStatus: "failed",
@@ -148,7 +154,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
         | null;
 
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error?.message ?? "Penonaktifan WhatsApp gagal diproses.");
+        throw new Error(humanizeErrorMessage(payload?.error?.message, "Layanan WhatsApp belum dapat dinonaktifkan."));
       }
 
       if (payload.data?.snapshot) {
@@ -159,11 +165,11 @@ export function useWhatsAppGateway(canAccess: boolean) {
 
       setFeedback(
         payload.data?.message ??
-          "Sesi WhatsApp gateway berhasil dinonaktifkan dari runtime aktif."
+          "Layanan WhatsApp berhasil dinonaktifkan dari sesi aktif."
       );
       return true;
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Penonaktifan WhatsApp gagal diproses.");
+      setFeedback(error instanceof Error ? humanizeErrorMessage(error.message) : "Layanan WhatsApp belum dapat dinonaktifkan.");
       return false;
     } finally {
       setIsDeactivating(false);

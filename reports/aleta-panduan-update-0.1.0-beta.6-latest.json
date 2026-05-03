@@ -1,0 +1,67 @@
+{
+  "overall": "PASS",
+  "version": "0.1.0-beta.6",
+  "date": "2026-05-03",
+  "guideUpdated": true,
+  "patchNotesAlreadyAvailable": true,
+  "guideFilesChanged": [
+    "D:\\aleta\\manajemen_surat\\src\\lib\\user-guides.ts",
+    "D:\\aleta\\manajemen_surat\\src\\app\\(portal)\\panduan\\page.tsx"
+  ],
+  "reportFiles": [
+    "D:\\aleta\\reports\\aleta-panduan-update-0.1.0-beta.6-latest.md",
+    "D:\\aleta\\reports\\aleta-panduan-update-0.1.0-beta.6-latest.json"
+  ],
+  "sectionsAdded": [
+    "Panduan Login",
+    "Panduan Portal ALETA",
+    "Panduan Manajemen Surat",
+    "Panduan Pusat Tugas",
+    "Panduan Pusat Masukan",
+    "Panduan Patch Notes",
+    "Panduan ALETA Bot / WhatsApp",
+    "Panduan Safe Sending Window",
+    "Panduan Monitoring Admin",
+    "Panduan Rollback / Safe Mode",
+    "Panduan Asisten Hakim",
+    "Panduan PLH/PLT",
+    "Panduan Production Status"
+  ],
+  "sectionsRevised": [
+    "Guide module categories expanded",
+    "Guide category count made dynamic for new modules"
+  ],
+  "claimsHeld": [
+    "WhatsApp Production Automation is not claimed as final active",
+    "Canary production is not claimed as PASS",
+    "Surat pagination 5/10/25/50/100/Semua is not claimed in the guide update",
+    "Broadcast remains approval-gated",
+    "External notification remains approval-gated",
+    "Mass resend remains approval-gated"
+  ],
+  "productionStatusInGuide": {
+    "internalAppOperational": true,
+    "officeServerLaunch": "GO",
+    "whatsappGateway": "connected",
+    "whatsappProductionAutomation": "waiting_for_canary_in_safe_sending_window",
+    "safeSendingWindow": "07:30-21:00"
+  },
+  "validation": {
+    "tsc": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "test": "PASS",
+    "testCount": 59
+  },
+  "risks": [
+    "Guide should be updated again after WhatsApp production canary PASS and final activation",
+    "More detailed per-role walkthroughs may be useful later",
+    "Surat pagination and PLH/PLT details should only be expanded after those features are confirmed in the release scope"
+  ],
+  "actionsTaken": [
+    "Updated user guide content for ALETA 0.1.0-beta.6",
+    "Expanded guide categories",
+    "Kept old guide content by restructuring and extending the guide list",
+    "Created panduan update report"
+  ]
+}

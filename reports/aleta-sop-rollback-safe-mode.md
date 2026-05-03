@@ -1,35 +1,39 @@
-# SOP: Rollback / Safe Mode
+# SOP: Kembali Ke Mode Aman
 
-## Goal
+## Tujuan
 
-Keep ALETA usable internally while stopping risky automation.
+Menjaga ALETA tetap dapat digunakan secara internal sambil menahan pengiriman WhatsApp otomatis yang berisiko.
 
-## Safe Mode Checklist
+## Checklist Mode Aman
 
-1. Confirm `botEnabled=false`.
-2. Confirm scheduler/reminder production is disabled/dry_run.
-3. Confirm no broadcast or external party notification is active.
-4. Pause any new WhatsApp pilot tests.
-5. Keep Manajemen Surat and Pusat Tugas available if portal is healthy.
-6. Keep Admin ALETA Bot monitoring available.
-7. Run preflight and smoke dry-run.
+1. Matikan pengiriman otomatis sementara (`botEnabled=false`).
+2. Matikan notifikasi otomatis sementara (`notificationsEnabled=false`) jika insiden luas.
+3. Tahan Penjadwal/Pengingat production bila sumber masalah berasal dari jadwal otomatis.
+4. Pause Pemroses Pesan jika Antrean Pesan gagal bertambah.
+5. Pastikan tidak ada broadcast atau pengiriman pihak luar tanpa persetujuan.
+6. Tetap jalankan Manajemen Surat dan Pusat Tugas jika portal sehat.
+7. Tetap buka Admin ALETA Bot untuk monitoring.
+8. Jalankan preflight dan smoke dry-run setelah kondisi stabil.
 
-## When To Enter Safe Mode
+## Kapan Masuk Mode Aman
 
-- WhatsApp browser_locked.
-- Worker is inactive or paused unexpectedly.
-- Queue failed is greater than 0.
-- Active dead-letter is greater than 0.
-- Approval pending appears unexpectedly.
-- Production automation was enabled without approval.
+- WhatsApp tidak terhubung lama.
+- Sesi WhatsApp dipakai proses lain.
+- Pemroses Pesan tidak aktif atau dijeda tanpa alasan jelas.
+- Antrean Pesan gagal lebih dari 0.
+- Pesan Gagal aktif lebih dari 0.
+- Persetujuan tertunda muncul tidak wajar.
+- Salah penerima, kirim ganda, atau pengiriman massal tidak wajar terindikasi.
+- Penjadwal mengirim di luar Jam Aman Pengiriman.
+- Persetujuan wajib terlewati.
 
-## Recovery Exit Criteria
+## Kriteria Keluar Mode Aman
 
-- Preflight has no blocker.
-- Smoke dry-run has no blocker.
-- WhatsApp is connected if WhatsApp pilot will resume.
-- Queue pending/processing/failed are 0.
-- Dead-letter active is 0.
-- Approval pending is 0.
-- `botEnabled=false`.
-- Scheduler/reminder production remains disabled/dry_run.
+- Preflight tidak memiliki blocker.
+- Smoke dry-run tidak memiliki blocker.
+- WhatsApp terhubung.
+- Antrean Pesan menunggu/diproses/gagal sehat.
+- Pesan Gagal aktif 0.
+- Persetujuan tertunda sudah jelas.
+- Batas pengiriman dan persetujuan wajib tetap aktif.
+- Super Admin menyetujui pengiriman otomatis berjalan kembali.

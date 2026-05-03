@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-03T00:03:59.029Z",
+  "generatedAt": "2026-05-03T11:34:04.633Z",
   "overall": "PASS",
   "safeForNonWaPilot": true,
   "safeForLimitedWhatsAppPilot": true,
@@ -199,10 +199,10 @@
         "paused": false,
         "intervalMs": 30000,
         "batchSize": 5,
-        "lastHeartbeatAt": "2026-05-03T00:03:55.041Z",
+        "lastHeartbeatAt": "2026-05-03T11:33:45.939Z",
         "lastBatchProcessed": 0,
         "lastError": "",
-        "startedAt": "2026-05-02T21:40:52.225Z",
+        "startedAt": "2026-05-03T05:53:10.325Z",
         "pausedAt": null,
         "pauseReason": "",
         "sendingWindow": {

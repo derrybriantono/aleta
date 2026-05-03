@@ -32,21 +32,25 @@ export async function POST(request: NextRequest) {
   try {
     const body = await readJsonBody<{
       actorUserId?: string;
+      supervisorUserId?: string;
       userIdPengganti: string;
       jabatanIdTarget: string;
       tipe: "PLH" | "PLT";
       tanggalMulai?: string;
       tanggalSelesai?: string | null;
+      reason?: string | null;
     }>(request);
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const result = await createActingAssignmentInDb(db, {
       actorUserId,
+      supervisorUserId: body.supervisorUserId,
       userIdPengganti: body.userIdPengganti,
       jabatanIdTarget: body.jabatanIdTarget,
       tipe: body.tipe,
       tanggalMulai: body.tanggalMulai,
       tanggalSelesai: body.tanggalSelesai,
+      reason: body.reason,
     });
 
     return created(result);

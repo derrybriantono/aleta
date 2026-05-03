@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 
-import { getAccessibleLetters } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
-import { listDispositionsFromDb } from "@/server/modules/dispositions/service";
-import { readLetterSearchFiltersFromRequest } from "@/server/modules/letters/http";
-import { createLetterInDb, searchLettersInDb, type CreateLetterRequest } from "@/server/modules/letters/service";
+import {
+  readLetterPaginationFromRequest,
+  readLetterSearchFiltersFromRequest,
+  readLetterSortFromRequest,
+} from "@/server/modules/letters/http";
+import { createLetterInDb, searchLettersPageForActorInDb, type CreateLetterRequest } from "@/server/modules/letters/service";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { created, handleRouteError, ok } from "@/server/shared/http";
@@ -19,16 +21,21 @@ export async function GET(request: NextRequest) {
     const actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
     const filters = readLetterSearchFiltersFromRequest(request);
-    const [letters, dispositions] = await Promise.all([
-      searchLettersInDb(db, filters),
-      listDispositionsFromDb(db),
-    ]);
-    const items = getAccessibleLetters(actor, letters, dispositions);
+    const paginationInput = readLetterPaginationFromRequest(request);
+    const sort = readLetterSortFromRequest(request);
+    const result = await searchLettersPageForActorInDb(db, actor, filters, {
+      ...paginationInput,
+      ...sort,
+    });
 
     return ok({
-      items,
-      total: items.length,
+      items: result.items,
+      data: result.items,
+      total: result.pagination.total,
+      pagination: result.pagination,
       filters,
+      sort: result.sort,
+      meta: result.meta,
     });
   } catch (error) {
     return handleRouteError(error);

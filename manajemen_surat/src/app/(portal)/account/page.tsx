@@ -134,7 +134,7 @@ function AccountEditor({
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground" htmlFor="account-role">
-                  Role Dasar
+                  Peran Dasar
                 </label>
                 <Input id="account-role" value={getRoleLabel(currentUser.roleId)} disabled />
               </div>
@@ -184,7 +184,7 @@ function AccountEditor({
                 <div>
                   <p className="font-medium text-foreground">Penugasan Sementara PLH / PLT</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Penugasan kini dikelola terpusat dari Dashboard Manajemen Surat oleh Admin atau Super Admin dengan validasi hierarki langsung.
+                    Penugasan dikelola dari Dashboard Manajemen Surat oleh Admin atau Super Admin sesuai kewenangan.
                   </p>
                 </div>
                 <Badge variant={activeActingAssignment ? "warning" : "outline"}>
@@ -196,7 +196,7 @@ function AccountEditor({
                 {activeActingAssignment ? (
                   <>
                     Akses efektif saat ini: <strong className="text-foreground">{getUserRoleBadge(currentUser)}</strong>.
-                    Penugasan aktif mengikuti jabatan sementara yang sudah diset dari dashboard manajemen surat.
+                    Penugasan aktif mengikuti jabatan sementara yang sudah disimpan dari Dashboard Manajemen Surat.
                   </>
                 ) : (
                   <>

@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { eq } from "drizzle-orm";
+import type { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { users as usersTable } from "@/server/db/drizzle-schema";
@@ -16,8 +17,19 @@ import {
   upsertAISettingsInDb,
 } from "@/server/modules/ai/service";
 import { completeDispositionInDb, getDispositionsByLetterIdFromDb } from "@/server/modules/dispositions/service";
-import { createLetterInDb, deleteLetterInDb, getLetterByIdFromDb, searchLettersInDb } from "@/server/modules/letters/service";
-import { createActingAssignmentInDb } from "@/server/modules/organization/service";
+import { readLetterPaginationFromRequest, readLetterSortFromRequest } from "@/server/modules/letters/http";
+import {
+  createLetterInDb,
+  deleteLetterInDb,
+  getLetterByIdFromDb,
+  searchLettersInDb,
+  searchLettersPageForActorInDb,
+} from "@/server/modules/letters/service";
+import { createActingAssignmentInDb, requireActorUser } from "@/server/modules/organization/service";
+import {
+  getAssistantJudgeSettingsForActorFromDb,
+  updateAssistantJudgeSettingsInDb,
+} from "@/server/modules/settings/service";
 import { getLetterStatisticsInDb } from "@/server/modules/stats/service";
 import {
   confirmPasswordRecoveryInDb,
@@ -29,6 +41,11 @@ import {
 
 describe("backend modular monolith services", () => {
   let db: AletaDatabase | null = null;
+
+  const makeLetterRequest = (path: string) =>
+    ({
+      nextUrl: new URL(path, "http://localhost"),
+    }) as NextRequest;
 
   beforeEach(async () => {
     db = await createAletaDatabase({ useInMemory: true, seed: true });
@@ -203,6 +220,222 @@ describe("backend modular monolith services", () => {
     expect(results.some((item) => item.id === created.letter.id)).toBe(true);
   });
 
+  it("parses surat pagination and sort query safely", () => {
+    expect(readLetterPaginationFromRequest(makeLetterRequest("/api/surat"))).toEqual({
+      page: 1,
+      pageSize: 25,
+    });
+    expect(readLetterPaginationFromRequest(makeLetterRequest("/api/surat?page=3&pageSize=50"))).toEqual({
+      page: 3,
+      pageSize: 50,
+    });
+    expect(readLetterPaginationFromRequest(makeLetterRequest("/api/surat?page=-2&pageSize=999"))).toEqual({
+      page: 1,
+      pageSize: 25,
+    });
+    expect(readLetterPaginationFromRequest(makeLetterRequest("/api/surat?pageSize=all"))).toEqual({
+      page: 1,
+      pageSize: "all",
+    });
+
+    expect(readLetterSortFromRequest(makeLetterRequest("/api/surat?sortBy=asalTujuan&sortDirection=asc"))).toEqual({
+      sortBy: "asalTujuan",
+      sortDirection: "asc",
+    });
+    expect(
+      readLetterSortFromRequest(makeLetterRequest("/api/surat?sortBy=DROP%20TABLE&sortDirection=sideways"))
+    ).toEqual({
+      sortBy: "tanggal",
+      sortDirection: "desc",
+    });
+  });
+
+  it("pages lightweight surat lists server-side", async () => {
+    const actor = await requireActorUser(db!, "usr-super");
+    await createLetterInDb(db!, {
+      actorUserId: "usr-dina",
+      type: "masuk",
+      nomorUrut: "031",
+      nomorSurat: "B-031/ALETA/PAGE/2026",
+      tanggalSurat: "2026-04-20",
+      tanggalTerima: "2026-04-20",
+      pengirim: "Mahkamah Agung RI",
+      perihal: "Uji pagination surat backend pertama",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Biasa",
+      kodeKlasifikasi: "UM.1.1",
+      klasifikasi: "Tata Naskah Dinas dan Persuratan",
+      klasifikasiTags: ["Pagination"],
+      ringkasan: "Surat pertama untuk memastikan limit dan offset berjalan di server.",
+      asalSurat: "Mahkamah Agung RI",
+      tujuanSurat: "Ketua Pengadilan",
+      lampiran: ["page-one.pdf"],
+      tags: ["PaginationBackend"],
+      viewerMode: "download",
+      targetPositionId: "pos-ketua",
+    });
+    await createLetterInDb(db!, {
+      actorUserId: "usr-dina",
+      type: "masuk",
+      nomorUrut: "032",
+      nomorSurat: "B-032/ALETA/PAGE/2026",
+      tanggalSurat: "2026-04-21",
+      tanggalTerima: "2026-04-21",
+      pengirim: "Mahkamah Agung RI",
+      perihal: "Uji pagination surat backend kedua",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Biasa",
+      kodeKlasifikasi: "UM.1.1",
+      klasifikasi: "Tata Naskah Dinas dan Persuratan",
+      klasifikasiTags: ["Pagination"],
+      ringkasan: "Surat kedua untuk memastikan halaman berikutnya memakai offset.",
+      asalSurat: "Mahkamah Agung RI",
+      tujuanSurat: "Ketua Pengadilan",
+      lampiran: ["page-two.pdf"],
+      tags: ["PaginationBackend"],
+      viewerMode: "download",
+      targetPositionId: "pos-ketua",
+    });
+    for (const index of [3, 4, 5, 6]) {
+      await createLetterInDb(db!, {
+        actorUserId: "usr-dina",
+        type: "masuk",
+        nomorUrut: `03${index}`,
+        nomorSurat: `B-03${index}/ALETA/PAGE/2026`,
+        tanggalSurat: `2026-04-2${index}`,
+        tanggalTerima: `2026-04-2${index}`,
+        pengirim: "Mahkamah Agung RI",
+        perihal: `Uji pagination surat backend ${index}`,
+        assignedUnit: "Kesekretariatan",
+        confidentiality: "Biasa",
+        kodeKlasifikasi: "UM.1.1",
+        klasifikasi: "Tata Naskah Dinas dan Persuratan",
+        klasifikasiTags: ["Pagination"],
+        ringkasan: `Surat ${index} untuk memastikan offset server tetap stabil.`,
+        asalSurat: "Mahkamah Agung RI",
+        tujuanSurat: "Ketua Pengadilan",
+        lampiran: [`page-${index}.pdf`],
+        tags: ["PaginationBackend"],
+        viewerMode: "download",
+        targetPositionId: "pos-ketua",
+      });
+    }
+
+    const pageOne = await searchLettersPageForActorInDb(
+      db!,
+      actor,
+      { query: "Uji pagination surat backend" },
+      { page: 1, pageSize: 5, sortBy: "tanggal", sortDirection: "desc" }
+    );
+    const pageTwo = await searchLettersPageForActorInDb(
+      db!,
+      actor,
+      { query: "Uji pagination surat backend" },
+      { page: 2, pageSize: 5, sortBy: "tanggal", sortDirection: "desc" }
+    );
+
+    expect(pageOne.pagination).toMatchObject({
+      page: 1,
+      pageSize: 5,
+      hasNextPage: true,
+      hasPreviousPage: false,
+    });
+    expect(pageTwo.pagination).toMatchObject({
+      page: 2,
+      pageSize: 5,
+      hasPreviousPage: true,
+    });
+    expect(pageOne.pagination.total).toBeGreaterThan(5);
+    expect(pageOne.items).toHaveLength(5);
+    expect(pageTwo.items.length).toBeGreaterThan(0);
+    expect(pageOne.items.map((item) => item.id)).not.toContain(pageTwo.items[0]?.id);
+    expect(pageOne.items[0]?.lampiran).toEqual([]);
+    expect(pageOne.items[0]?.whatsappDeliveries).toEqual([]);
+    expect(pageOne.meta.lightweight).toBe(true);
+  });
+
+  it("filters paginated surat lists by type and search on the server", async () => {
+    const actor = await requireActorUser(db!, "usr-super");
+    const created = await createLetterInDb(db!, {
+      actorUserId: "usr-kepeg-staff",
+      type: "keluar",
+      nomorUrut: "033",
+      nomorSurat: "B-033/ALETA/FILTER/2026",
+      tanggalSurat: "2026-04-22",
+      tanggalKirim: "2026-04-22",
+      pengirim: "Pengadilan Agama Makassar",
+      perihal: "KinerjaPaginated surat keluar backend",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Penting",
+      kodeKlasifikasi: "KP.1.1",
+      klasifikasi: "Formasi, Mutasi, dan Penempatan",
+      klasifikasiTags: ["Filter"],
+      ringkasan: "Surat keluar unik untuk memastikan filter type dan search diproses di server.",
+      asalSurat: "Pengadilan Agama Makassar",
+      tujuanSurat: "Mahkamah Agung RI",
+      lampiran: [],
+      tags: ["FilterBackend"],
+      viewerMode: "download",
+      targetPositionId: "pos-kasubag-kepegawaian",
+    });
+
+    const results = await searchLettersPageForActorInDb(
+      db!,
+      actor,
+      { type: "keluar", query: "KinerjaPaginated" },
+      { page: 1, pageSize: 25, sortBy: "createdAt", sortDirection: "desc" }
+    );
+
+    expect(results.pagination.total).toBe(1);
+    expect(results.items).toHaveLength(1);
+    expect(results.items[0]?.id).toBe(created.letter.id);
+    expect(results.items[0]?.type).toBe("keluar");
+  });
+
+  it("keeps surat list RBAC filtering on the server", async () => {
+    const superActor = await requireActorUser(db!, "usr-super");
+    const dinaActor = await requireActorUser(db!, "usr-dina");
+    const created = await createLetterInDb(db!, {
+      actorUserId: "usr-super",
+      type: "masuk",
+      nomorUrut: "034",
+      nomorSurat: "B-034/ALETA/RBAC/2026",
+      tanggalSurat: "2026-04-23",
+      tanggalTerima: "2026-04-23",
+      pengirim: "Badan Pengawasan Mahkamah Agung",
+      perihal: "RBAC paginated private leadership letter",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Rahasia",
+      kodeKlasifikasi: "TI.1.1",
+      klasifikasi: "Infrastruktur, Jaringan, dan Keamanan",
+      klasifikasiTags: ["RBAC"],
+      ringkasan: "Surat khusus pimpinan untuk membuktikan filter akses tidak dipindahkan ke frontend.",
+      asalSurat: "Badan Pengawasan Mahkamah Agung",
+      tujuanSurat: "Ketua Pengadilan",
+      lampiran: [],
+      tags: ["RBACPaginated"],
+      viewerMode: "download",
+      targetPositionId: "pos-ketua",
+    });
+
+    const visibleForSuper = await searchLettersPageForActorInDb(
+      db!,
+      superActor,
+      { query: "RBAC paginated private leadership letter" },
+      { page: 1, pageSize: "all", sortBy: "createdAt", sortDirection: "desc" }
+    );
+    const hiddenForStaff = await searchLettersPageForActorInDb(
+      db!,
+      dinaActor,
+      { query: "RBAC paginated private leadership letter" },
+      { page: 1, pageSize: "all", sortBy: "createdAt", sortDirection: "desc" }
+    );
+
+    expect(visibleForSuper.items.map((item) => item.id)).toContain(created.letter.id);
+    expect(hiddenForStaff.pagination.total).toBe(0);
+    expect(hiddenForStaff.items).toHaveLength(0);
+  });
+
   it("rejects PLH assignment outside direct hierarchy with 403", async () => {
     try {
       await createActingAssignmentInDb(db!, {
@@ -212,6 +445,7 @@ describe("backend modular monolith services", () => {
         tipe: "PLH",
         tanggalMulai: "2026-04-11",
         tanggalSelesai: "2026-04-18",
+        reason: "Pejabat definitif berhalangan sementara.",
       });
     } catch (error) {
       expect(error).toBeInstanceOf(ApiError);
@@ -220,6 +454,66 @@ describe("backend modular monolith services", () => {
     }
 
     throw new Error("Penugasan PLH seharusnya ditolak bila bukan bawahan langsung.");
+  });
+
+  it("creates audited court-leadership PLH for an active Hakim through Super Admin recording", async () => {
+    const created = await createActingAssignmentInDb(db!, {
+      actorUserId: "usr-super",
+      supervisorUserId: "usr-ketua",
+      userIdPengganti: "usr-hakim",
+      jabatanIdTarget: "pos-ketua",
+      tipe: "PLH",
+      tanggalMulai: "2026-05-03",
+      tanggalSelesai: "2026-05-10",
+      reason: "Pejabat definitif berhalangan sementara.",
+    });
+
+    expect(created.roleIdTarget).toBe("ketua");
+    expect(created.authorizedByName).toBe("Drs. H. Malik");
+    expect(created.ruleApplied).toBe("court_leadership_judge");
+
+    const row = await db!.prepare(
+      `SELECT assigned_by_user_id, authorized_by_user_id
+       FROM acting_assignments
+       WHERE id = ?`
+    ).get<{ assigned_by_user_id: string; authorized_by_user_id: string }>(created.id);
+    expect(row?.assigned_by_user_id).toBe("usr-super");
+    expect(row?.authorized_by_user_id).toBe("usr-ketua");
+
+    const audit = await db!.prepare(
+      `SELECT payload_json
+       FROM audit_logs
+       WHERE entity_id = ? AND action = 'ASSIGN_ACTING_ROLE'`
+    ).get<{ payload_json: string }>(created.id);
+    const payload = JSON.parse(audit?.payload_json ?? "{}") as { ruleApplied?: string; reason?: string };
+    expect(payload.ruleApplied).toBe("court_leadership_judge");
+    expect(payload.reason).toContain("berhalangan sementara");
+  });
+
+  it("rejects acting-only officer attempts to create another acting assignment", async () => {
+    await createActingAssignmentInDb(db!, {
+      actorUserId: "usr-super",
+      supervisorUserId: "usr-ketua",
+      userIdPengganti: "usr-hakim",
+      jabatanIdTarget: "pos-ketua",
+      tipe: "PLH",
+      tanggalMulai: "2026-05-03",
+      tanggalSelesai: "2026-05-10",
+      reason: "Pejabat definitif berhalangan sementara.",
+    });
+
+    await expect(
+      createActingAssignmentInDb(db!, {
+        actorUserId: "usr-hakim",
+        supervisorUserId: "usr-panitera",
+        userIdPengganti: "usr-ahmad",
+        jabatanIdTarget: "pos-panitera",
+        tipe: "PLH",
+        tanggalMulai: "2026-05-04",
+        tanggalSelesai: "2026-05-11",
+        reason: "Pejabat definitif berhalangan sementara.",
+      })
+    ).rejects.toThrow("hanya bertindak sebagai PLH/PLT");
   });
 
   it("soft deletes for admin and hard deletes for super admin", async () => {
@@ -789,6 +1083,69 @@ describe("backend modular monolith services", () => {
         payload: { name: "Tampered Name" },
       })
     ).rejects.toThrow();
+  });
+
+  it("stores Assistant Hakim menu settings with Super Admin-only RBAC and filtered user access", async () => {
+    const current = await getAssistantJudgeSettingsForActorFromDb(db!, "usr-super");
+    const payload = {
+      ...current,
+      links: {
+        ...current.links,
+        "legal-research": {
+          id: "legal-research",
+          provider: "legal-research",
+          enabled: true,
+          label: "Legal Research AI",
+          url: "https://example.com/legal-research",
+          description: "Asisten tambahan untuk riset hukum internal.",
+          iconKey: "sparkles",
+          sortOrder: 40,
+          allowedRoles: ["hakim" as const],
+          allowedUserIds: [],
+          openInNewTab: true,
+        },
+      },
+    };
+
+    await expect(
+      updateAssistantJudgeSettingsInDb(db!, {
+        actorUserId: "usr-admin",
+        payload,
+      })
+    ).rejects.toThrow();
+
+    const updated = await updateAssistantJudgeSettingsInDb(db!, {
+      actorUserId: "usr-super",
+      payload,
+    });
+    expect(updated.links["legal-research"]?.enabled).toBe(true);
+
+    const hakimView = await getAssistantJudgeSettingsForActorFromDb(db!, "usr-hakim");
+    const staffView = await getAssistantJudgeSettingsForActorFromDb(db!, "usr-budi");
+
+    expect(hakimView.links["legal-research"]).toBeTruthy();
+    expect(staffView.links["legal-research"]).toBeUndefined();
+  });
+
+  it("rejects unsafe Assistant Hakim URLs server-side", async () => {
+    const current = await getAssistantJudgeSettingsForActorFromDb(db!, "usr-super");
+
+    await expect(
+      updateAssistantJudgeSettingsInDb(db!, {
+        actorUserId: "usr-super",
+        payload: {
+          ...current,
+          links: {
+            ...current.links,
+            chatgpt: {
+              ...current.links.chatgpt,
+              enabled: true,
+              url: "javascript:alert(1)",
+            },
+          },
+        },
+      })
+    ).rejects.toThrow("URL harus memakai http:// atau https://.");
   });
 
   it("prevents blocking or demoting the last active super-admin", async () => {

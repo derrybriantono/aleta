@@ -127,8 +127,8 @@ export function AccessDeniedCard() {
   return (
     <SectionHint
       icon="security"
-      title="Akses modul dibatasi"
-      description="Role aktif saat ini tidak memiliki akses ke halaman ini. Masuk dengan akun yang memiliki izin admin untuk membuka area ini."
+      title="Anda tidak memiliki akses"
+      description="Peran aktif akun Anda belum memiliki izin untuk membuka halaman ini. Gunakan akun yang berwenang bila perlu."
       href="/portal"
     />
   );

@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
-import { getAssistantJudgeSettingsFromDb, updateAssistantJudgeSettingsInDb } from "@/server/modules/settings/service";
-import { requireActorUser } from "@/server/modules/organization/service";
+import { getAssistantJudgeSettingsForActorFromDb, updateAssistantJudgeSettingsInDb } from "@/server/modules/settings/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
@@ -15,8 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
-    await requireActorUser(db, actorUserId);
-    return ok(await getAssistantJudgeSettingsFromDb(db));
+    return ok(await getAssistantJudgeSettingsForActorFromDb(db, actorUserId));
   } catch (error) {
     return handleRouteError(error);
   }

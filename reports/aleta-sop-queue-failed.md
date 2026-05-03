@@ -1,30 +1,31 @@
-# SOP: Queue Failed
+# SOP: Antrean Pesan Gagal
 
-## Goal
+## Tujuan
 
-Prevent retry storms and isolate the cause of queue failure.
+Mencegah percobaan ulang yang berlebihan dan menemukan penyebab Antrean Pesan gagal.
 
-## Do Not
+## Jangan Lakukan
 
-- Do not retry mass messages.
-- Do not enable production scheduler.
-- Do not enable production reminder.
-- Do not change `botEnabled` permanently.
+- Jangan retry pesan massal.
+- Jangan kirim ulang otomatis.
+- Jangan broadcast.
+- Jangan ubah pengamanan pengiriman.
+- Jangan bypass persetujuan wajib.
 
-## Steps
+## Langkah
 
-1. Check queue counts: pending, processing, failed, dead-letter.
-2. Check worker: enabled, active timer, paused.
-3. Check WhatsApp status.
-4. Check Safe Sending Window.
-5. Check policy skip report.
-6. If failed remains greater than 0, pause new WhatsApp tests.
-7. Review one failed item at a time.
-8. Only retry after source, recipient, and policy are confirmed safe.
-9. Run preflight and smoke dry-run after recovery.
+1. Cek Antrean Pesan: menunggu, diproses, gagal, dan Pesan Gagal.
+2. Cek Pemroses Pesan: aktif, timer berjalan, tidak dijeda.
+3. Cek WhatsApp Gateway.
+4. Cek Jam Aman Pengiriman.
+5. Cek batas pengiriman dan laporan pengiriman tidak wajar.
+6. Jika gagal masih lebih dari 0, kembali ke mode aman.
+7. Review satu item gagal dalam satu waktu.
+8. Kirim ulang hanya setelah sumber, penerima, template, dan persetujuan dinyatakan aman.
+9. Jalankan preflight dan smoke dry-run setelah recovery.
 
-## Launch Decision Impact
+## Dampak Operasional
 
-- Queue failed greater than 0 blocks WhatsApp limited pilot.
-- If Manajemen Surat is unaffected, non-WA operations may continue.
-- Production automation remains disabled.
+- Antrean Pesan gagal lebih dari 0 yang tidak jelas adalah alasan rollback.
+- Manajemen Surat tetap boleh berjalan bila tidak terkait masalah WhatsApp.
+- Jangan menambah pengiriman baru sampai penyebab jelas.

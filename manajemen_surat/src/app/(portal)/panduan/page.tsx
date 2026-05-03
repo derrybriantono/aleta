@@ -72,17 +72,14 @@ export default function UserGuidePage() {
   }, [audiences, moduleFilter, search]);
 
   const guideCountByModule = useMemo(() => {
+    const emptyCount = Object.fromEntries(
+      (Object.keys(GUIDE_MODULE_LABELS) as GuideModule[]).map((module) => [module, 0])
+    ) as Record<GuideModule, number>;
+
     return USER_GUIDES.filter((guide) => guideMatchesAudience(guide, audiences)).reduce<Record<GuideModule, number>>((acc, guide) => {
       acc[guide.module] = (acc[guide.module] ?? 0) + 1;
       return acc;
-    }, {
-      general: 0,
-      mail: 0,
-      bot: 0,
-      ai: 0,
-      admin: 0,
-      troubleshooting: 0,
-    });
+    }, emptyCount);
   }, [audiences]);
 
   return (
@@ -113,7 +110,7 @@ export default function UserGuidePage() {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="success">ALETA v{APP_VERSION}</Badge>
-            <Badge variant="outline">Role aktif: {roleLabel}</Badge>
+          <Badge variant="outline">Peran aktif: {roleLabel}</Badge>
             <Badge variant="muted">{positionLabel}</Badge>
           </div>
           <CardTitle className="flex items-center gap-2">
@@ -121,7 +118,7 @@ export default function UserGuidePage() {
             Panduan untuk Anda
           </CardTitle>
           <CardDescription>
-            Halaman ini hanya menampilkan panduan yang relevan dengan role dan jabatan aktif Anda. Panduan teknis seperti database, kueri, migrasi, dan AI Bridge hanya muncul untuk role yang berwenang.
+          Halaman ini menampilkan panduan yang relevan dengan peran dan jabatan aktif Anda. Panduan teknis hanya muncul untuk akun yang berwenang.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">

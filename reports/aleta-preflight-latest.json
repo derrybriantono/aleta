@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-03T00:03:59.053Z",
+  "generatedAt": "2026-05-03T11:29:38.174Z",
   "overall": "WARN",
   "safeToRunSmokeTest": true,
   "safeForNonWaPilot": true,
@@ -234,7 +234,7 @@
       "cwd": "D:\\aleta",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 1652,
+      "durationMs": 1380,
       "stdoutTail": "",
       "stderrTail": ""
     },
@@ -243,7 +243,7 @@
       "cwd": "D:\\aleta\\aleta_bot",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 1319,
+      "durationMs": 1398,
       "stdoutTail": "",
       "stderrTail": ""
     },
@@ -252,7 +252,7 @@
       "cwd": "D:\\aleta\\aleta_bot",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 1292,
+      "durationMs": 1327,
       "stdoutTail": "",
       "stderrTail": ""
     },
@@ -261,7 +261,7 @@
       "cwd": "D:\\aleta\\aleta_bot",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 1282,
+      "durationMs": 1318,
       "stdoutTail": "",
       "stderrTail": ""
     },
@@ -270,7 +270,7 @@
       "cwd": "D:\\aleta\\aleta_bot",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 1580,
+      "durationMs": 1381,
       "stdoutTail": "",
       "stderrTail": ""
     },
@@ -279,7 +279,7 @@
       "cwd": "D:\\aleta\\manajemen_surat",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 15427,
+      "durationMs": 16019,
       "stdoutTail": "",
       "stderrTail": ""
     },
@@ -288,7 +288,7 @@
       "cwd": "D:\\aleta\\manajemen_surat",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 58433,
+      "durationMs": 62643,
       "stdoutTail": "> manajemen_surat@1.0.0 lint\n> eslint . --max-warnings=0",
       "stderrTail": ""
     },
@@ -297,7 +297,7 @@
       "cwd": "D:\\aleta\\manajemen_surat",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 86963,
+      "durationMs": 92340,
       "stdoutTail": "├ ƒ /statistik\n├ ƒ /surat\n├ ƒ /surat/[id]\n├ ƒ /surat/keluar\n├ ƒ /surat/masuk\n└ ƒ /tugas\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand",
       "stderrTail": ""
     },
@@ -306,8 +306,8 @@
       "cwd": "D:\\aleta\\manajemen_surat",
       "status": "PASS",
       "exitCode": 0,
-      "durationMs": 51115,
-      "stdoutTail": "   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22msupports Drizzle ORM user lookups in the in-memory fallback used by Better Auth \u001b[33m765\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mupdates managed users and password recovery against backend records \u001b[33m969\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22menforces admin-level RBAC: admin cannot create super-admin, super-admin can promote \u001b[33m1016\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mprevents blocking or demoting the last active super-admin \u001b[33m945\u001b[2mms\u001b[22m\u001b[39m\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m11 passed\u001b[39m\u001b[22m\u001b[90m (11)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m38 passed\u001b[39m\u001b[22m\u001b[90m (38)\u001b[39m\n\u001b[2m   Start at \u001b[22m 08:06:56\n\u001b[2m   Duration \u001b[22m 42.83s\u001b[2m (transform 14.46s, setup 11.76s, collect 44.65s, tests 27.66s, environment 44.83s, prepare 7.81s)\u001b[22m",
+      "durationMs": 71029,
+      "stdoutTail": "   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22menforces admin-level RBAC: admin cannot create super-admin, super-admin can promote \u001b[33m869\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mstores Assistant Hakim menu settings with Super Admin-only RBAC and filtered user access \u001b[33m920\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mrejects unsafe Assistant Hakim URLs server-side \u001b[33m764\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mprevents blocking or demoting the last active super-admin \u001b[33m980\u001b[2mms\u001b[22m\u001b[39m\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m16 passed\u001b[39m\u001b[22m\u001b[90m (16)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m62 passed\u001b[39m\u001b[22m\u001b[90m (62)\u001b[39m\n\u001b[2m   Start at \u001b[22m 19:32:54\n\u001b[2m   Duration \u001b[22m 61.57s\u001b[2m (transform 16.81s, setup 27.44s, collect 48.42s, tests 47.31s, environment 62.61s, prepare 11.33s)\u001b[22m",
       "stderrTail": "\u001b[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.\u001b[39m"
     }
   ],
@@ -327,10 +327,10 @@
         "paused": false,
         "intervalMs": 30000,
         "batchSize": 5,
-        "lastHeartbeatAt": "2026-05-03T00:03:55.041Z",
+        "lastHeartbeatAt": "2026-05-03T11:29:15.889Z",
         "lastBatchProcessed": 0,
         "lastError": "",
-        "startedAt": "2026-05-02T21:40:52.225Z",
+        "startedAt": "2026-05-03T05:53:10.325Z",
         "pausedAt": null,
         "pauseReason": "",
         "sendingWindow": {

@@ -56,7 +56,7 @@ export default function PatchNotesPage() {
         <CardHeader className="border-b border-border/80 bg-muted/30">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="success">Versi saat ini: {APP_VERSION}</Badge>
-            <Badge variant="outline">Internal Pilot</Badge>
+            <Badge variant="outline">Internal Launch</Badge>
             <Badge variant="muted">{APP_VERSION_LABEL}</Badge>
           </div>
           <CardTitle className="mt-4 text-2xl">{current.title}</CardTitle>
@@ -71,7 +71,7 @@ export default function PatchNotesPage() {
           <div className="rounded-2xl border border-border bg-card p-4">
             <CheckCircle2 className="mb-3 h-5 w-5 text-primary" />
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</p>
-            <p className="mt-2 font-semibold text-foreground">{current.status} - pilot internal</p>
+            <p className="mt-2 font-semibold text-foreground">{current.status}</p>
           </div>
           <div className="rounded-2xl border border-border bg-card p-4">
             <ShieldCheck className="mb-3 h-5 w-5 text-primary" />
@@ -98,6 +98,19 @@ export default function PatchNotesPage() {
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">{section.description}</p>
                 <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
                   {note[section.key].map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-primary" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+            {note.details?.map((section) => (
+              <section key={section.title} className="rounded-2xl border border-border bg-card p-4">
+                <h2 className="font-semibold text-foreground">{section.title}</h2>
+                <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
+                  {section.items.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-primary" />
                       <span>{item}</span>

@@ -1,7 +1,10 @@
 import { type QueryResultRow } from "pg";
 
 import {
+  ASSISTANT_JUDGE_KNOWN_ROLE_IDS,
   DEFAULT_ASSISTANT_JUDGE_CONFIG,
+  filterAssistantJudgeConfigForUser,
+  getAssistantJudgeOrderedLinks,
   normalizeAssistantJudgeConfig,
   validateAssistantJudgeUrl,
 } from "@/lib/assistant-judge";
@@ -18,7 +21,7 @@ import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
-import { requireActorUser } from "@/server/modules/organization/service";
+import { getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 
 type InstitutionIdentityRow = QueryResultRow & {
   court_name: string;
@@ -296,6 +299,17 @@ export async function getAssistantJudgeSettingsFromDb(db: AletaDatabase) {
   return mapAssistantJudgeSettingsRow(row);
 }
 
+export async function getAssistantJudgeSettingsForActorFromDb(db: AletaDatabase, actorUserId: string | null | undefined) {
+  const actor = await requireActorUser(db, actorUserId);
+  const config = await getAssistantJudgeSettingsFromDb(db);
+
+  if (actor.roleId === "super-admin") {
+    return config;
+  }
+
+  return filterAssistantJudgeConfigForUser(config, actor);
+}
+
 export async function updateAssistantJudgeSettingsInDb(
   db: AletaDatabase,
   {
@@ -313,8 +327,20 @@ export async function updateAssistantJudgeSettingsInDb(
   }
 
   const nextValue = normalizeAssistantJudgeConfig(payload);
-  for (const providerId of Object.keys(nextValue.links) as Array<keyof AssistantJudgeConfig["links"]>) {
-    const link = nextValue.links[providerId];
+  const activeUserIds = new Set((await getUsersFromDb(db)).filter((user) => user.isActive).map((user) => user.id));
+  const validRoles = new Set(ASSISTANT_JUDGE_KNOWN_ROLE_IDS);
+
+  for (const link of getAssistantJudgeOrderedLinks(nextValue)) {
+    const invalidRole = (link.allowedRoles ?? []).find((roleId) => !validRoles.has(roleId));
+    if (invalidRole) {
+      throw new ApiError(400, `Role ${invalidRole} tidak dikenali untuk akses Asisten Hakim.`);
+    }
+
+    const invalidUserId = (link.allowedUserIds ?? []).find((userId) => !activeUserIds.has(userId));
+    if (invalidUserId) {
+      throw new ApiError(400, `User ${invalidUserId} tidak aktif atau tidak ditemukan.`);
+    }
+
     if (!link.enabled) continue;
 
     const validation = validateAssistantJudgeUrl(link.url);
@@ -322,7 +348,7 @@ export async function updateAssistantJudgeSettingsInDb(
       throw new ApiError(400, validation.message ?? "URL Asisten Hakim tidak valid.");
     }
     if (!link.label.trim() || !link.description.trim()) {
-      throw new ApiError(400, "Label dan deskripsi provider Asisten Hakim wajib diisi.");
+      throw new ApiError(400, "Label dan deskripsi menu Asisten Hakim wajib diisi.");
     }
   }
 
@@ -351,7 +377,7 @@ export async function updateAssistantJudgeSettingsInDb(
       payload: {
         enabled: nextValue.enabled,
         visibleRoles: nextValue.visibleRoles,
-        linkProviders: Object.entries(nextValue.links).map(([providerId, link]) => {
+        linkProviders: getAssistantJudgeOrderedLinks(nextValue).map((link) => {
           let urlHost = "";
           try {
             urlHost = new URL(link.url).hostname;
@@ -360,10 +386,13 @@ export async function updateAssistantJudgeSettingsInDb(
           }
 
           return {
-            providerId,
+            providerId: link.provider ?? link.id,
             enabled: link.enabled,
             label: link.label,
             urlHost,
+            allowedRoles: link.allowedRoles,
+            allowedUserCount: link.allowedUserIds?.length ?? 0,
+            sortOrder: link.sortOrder,
           };
         }),
       },

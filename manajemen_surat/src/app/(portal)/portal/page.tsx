@@ -129,7 +129,7 @@ export default function PortalPage() {
       <PageIntro
         eyebrow="Portal ALETA"
         title="ALETA"
-        description={`ALETA adalah portal terpadu seluruh aplikasi. Role aktif Anda ${currentRoleBadge} pada ${position?.name}, dengan Manajemen Surat sebagai sub-aplikasi utama untuk pekerjaan persuratan.`}
+        description={`ALETA adalah portal terpadu seluruh aplikasi. Peran aktif Anda ${currentRoleBadge} pada ${position?.name}, dengan Manajemen Surat sebagai aplikasi utama untuk pekerjaan persuratan.`}
       />
 
       <WorkSummaryHero

@@ -29,6 +29,7 @@ export type ModuleId =
   | "notifikasi"
   | "ai-settings"
   | "admin-hub"
+  | "assistant-judge-settings"
   | "whatsapp-settings"
   | "aleta-bot"
   | "feedback";
@@ -239,13 +240,24 @@ export interface PortalAppConfig {
   isDummy?: boolean;
 }
 
-export type AssistantJudgeProviderId = "chatgpt" | "gemini" | "claude";
+export type AssistantJudgeProviderId = string;
 
 export interface AssistantJudgeLinkConfig {
+  id?: string;
+  provider?: string;
   enabled: boolean;
   label: string;
   url: string;
   description: string;
+  iconKey?: string;
+  sortOrder?: number;
+  allowedRoles?: RoleId[];
+  allowedUserIds?: string[];
+  openInNewTab?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface AssistantJudgeConfig {

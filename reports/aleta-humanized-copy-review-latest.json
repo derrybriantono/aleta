@@ -1,0 +1,152 @@
+{
+  "overall": "PASS",
+  "date": "2026-05-03",
+  "project": "aleta",
+  "app": "manajemen_surat",
+  "scope": "copywriting_ui_text_only",
+  "functionalityChanged": false,
+  "apiContractChanged": false,
+  "databaseSchemaChanged": false,
+  "rbacChanged": false,
+  "authChanged": false,
+  "whatsappConfigChanged": false,
+  "schedulerChanged": false,
+  "areasAudited": [
+    "login",
+    "portal",
+    "manajemen_surat",
+    "disposisi",
+    "pusat_tugas",
+    "aleta_bot_admin",
+    "patch_notes",
+    "panduan",
+    "pusat_masukan",
+    "asisten_hakim",
+    "plh_plt",
+    "admin_user_management",
+    "global_errors"
+  ],
+  "standardizedTerms": {
+    "Runtime": "Layanan",
+    "Queue": "Antrean Pesan",
+    "Dead-letter": "Pesan Gagal",
+    "Worker": "Pemroses Pesan",
+    "Safe Sending Window": "Jam Aman Pengiriman",
+    "Dry-run": "Simulasi",
+    "Production": "Aktif Operasional",
+    "Canary": "Uji Terbatas",
+    "Shadow-run": "Simulasi Tanpa Kirim",
+    "botEnabled": "Pengiriman Bot",
+    "AI Bridge": "Jembatan AI",
+    "Public Q&A": "Pertanyaan Publik",
+    "Role": "Peran",
+    "Visibility": "Akses Tampilan"
+  },
+  "examples": [
+    {
+      "before": "Identitas login atau password tidak valid.",
+      "after": "Masukkan identitas akun dan password."
+    },
+    {
+      "before": "Runtime",
+      "after": "Layanan"
+    },
+    {
+      "before": "Queue",
+      "after": "Antrean Pesan"
+    },
+    {
+      "before": "Dead-letter",
+      "after": "Pesan Gagal"
+    },
+    {
+      "before": "Worker",
+      "after": "Pemroses Pesan"
+    },
+    {
+      "before": "Safe Sending Window",
+      "after": "Jam Aman Pengiriman"
+    },
+    {
+      "before": "Dry-run",
+      "after": "Simulasi"
+    },
+    {
+      "before": "Production",
+      "after": "Aktif Operasional"
+    },
+    {
+      "before": "Inbox Tugas",
+      "after": "Tugas Masuk"
+    },
+    {
+      "before": "Hard Delete",
+      "after": "Hapus Permanen"
+    },
+    {
+      "before": "Invalid payload",
+      "after": "Data yang dikirim belum lengkap atau tidak sesuai."
+    },
+    {
+      "before": "Forbidden",
+      "after": "Anda tidak memiliki izin untuk membuka halaman ini."
+    }
+  ],
+  "filesChanged": [
+    "D:\\aleta\\manajemen_surat\\src\\lib\\humanized-labels.ts",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\use-whatsapp-gateway.ts",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\whatsapp-control.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\institution-settings-panel.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\whatsapp-status.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\lib\\disposition-status.ts",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\shared.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\app\\login\\page.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\mail-dashboard-page.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\letter-list.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\app\\(portal)\\surat\\page.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\aleta-bot-admin.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\aleta-bot-dashboard.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\admin-hub.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\admin-panels.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\feedback-center.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\feedback-admin-panel.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\lib\\feedback.ts",
+    "D:\\aleta\\manajemen_surat\\src\\server\\shared\\http.ts",
+    "D:\\aleta\\manajemen_surat\\src\\components\\layout\\portal-shell-v2.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\ai-control-panel.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\components\\pdf\\pdf-live-viewer.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\lib\\patch-notes.ts",
+    "D:\\aleta\\manajemen_surat\\src\\lib\\user-guides.ts",
+    "D:\\aleta\\manajemen_surat\\src\\test\\humanized-labels.test.ts",
+    "D:\\aleta\\manajemen_surat\\src\\test\\login-page.test.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\test\\mail-dashboard-page.test.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\test\\whatsapp-control.test.tsx"
+  ],
+  "validation": {
+    "tsc": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "test": "PASS",
+    "testSummary": "16 test files, 62 tests"
+  },
+  "intentionallyUnchanged": [
+    "internal_status_values",
+    "api_contract",
+    "database_schema",
+    "rbac",
+    "auth_guard",
+    "whatsapp_production_config",
+    "botEnabled",
+    "scheduler_reminder",
+    "routes",
+    "business_logic"
+  ],
+  "remainingRisks": [
+    "Some technical terms remain in advanced admin/debug contexts by design.",
+    "Dynamic messages returned directly by external runtime services may still need backend-side copy review."
+  ],
+  "reports": [
+    "D:\\aleta\\reports\\aleta-humanized-copy-review-latest.md",
+    "D:\\aleta\\reports\\aleta-humanized-copy-review-latest.json"
+  ]
+}

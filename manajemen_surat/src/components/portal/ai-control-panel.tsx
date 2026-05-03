@@ -99,7 +99,7 @@ const AI_FEATURE_MODULE_GROUPS: Array<{
     label: "Identitas Instansi",
     desc: "Kontrol AI untuk saran nama pengadilan dan normalisasi enrichment identitas.",
     subfeatures: [
-      { key: "courtNameSuggestion", label: "Saran nama pengadilan", desc: "Mengizinkan AI fallback untuk autocomplete nama pengadilan." },
+      { key: "courtNameSuggestion", label: "Saran nama pengadilan", desc: "Mengizinkan AI memakai saran cadangan untuk melengkapi nama pengadilan." },
       { key: "identityEnrichment", label: "Enrichment identitas", desc: "Mengizinkan alur enrichment identitas instansi." },
       { key: "googleDiscovery", label: "Discovery Google", desc: "Mengizinkan discovery eksternal jika API key tersedia." },
       { key: "officialWebsiteExtraction", label: "Ekstraksi website resmi", desc: "Mengizinkan pembacaan kontak dari website resmi." },
@@ -329,8 +329,8 @@ export function AIControlPanel() {
     if (result.ok) {
       setPanelFeedback(
         editingConnectionId
-          ? "Koneksi AI berhasil diperbarui dan disimpan ke backend ALETA."
-          : "Koneksi AI baru berhasil disimpan ke backend ALETA."
+          ? "Koneksi AI berhasil diperbarui dan disimpan ke layanan ALETA."
+          : "Koneksi AI baru berhasil disimpan ke layanan ALETA."
       );
       resetForm();
       await syncConfigFromBackend();
@@ -423,7 +423,7 @@ export function AIControlPanel() {
         </CardTitle>
         <CardDescription>
           Pengaturan AI kini dipisah antara <strong className="text-foreground">form tambah/edit koneksi</strong> dan
-          <strong className="text-foreground"> daftar koneksi AI tersimpan</strong>. ALETA hanya memakai koneksi aktif dari backend.
+          <strong className="text-foreground"> daftar koneksi AI tersimpan</strong>. ALETA hanya memakai koneksi aktif dari layanan.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
@@ -716,7 +716,7 @@ export function AIControlPanel() {
             </div>
             <p className="mt-4 text-3xl font-semibold text-foreground">{aiConfig.providers.length}</p>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Daftar koneksi AI yang benar-benar tersimpan di backend ALETA. Setelah disimpan, API key hanya ditampilkan dalam bentuk masked.
+              Daftar koneksi AI yang benar-benar tersimpan di layanan ALETA. Setelah disimpan, API key hanya ditampilkan dalam bentuk tersamarkan.
             </p>
           </div>
 

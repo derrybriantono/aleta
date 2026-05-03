@@ -42,7 +42,7 @@ export default function DisposisiDetailPage() {
     return (
       <EmptyState
         title="Disposisi tidak ditemukan"
-        description="Node disposisi ini mungkin belum ada untuk akun aktif atau ID yang dibuka tidak valid."
+        description="Disposisi ini belum tersedia untuk akun Anda atau tautan yang dibuka tidak sesuai."
       />
     );
   }
@@ -52,7 +52,7 @@ export default function DisposisiDetailPage() {
       <PageIntro
         eyebrow="Workbench"
         title="Disposisi digital berjenjang"
-        description="Viewer surat ditempatkan berdampingan dengan panel pengisian disposisi agar instruksi dapat ditulis sambil tetap merujuk isi dokumen."
+        description="Dokumen surat ditampilkan berdampingan dengan form disposisi agar instruksi dapat ditulis sambil membaca isi surat."
       />
 
       <div className="grid gap-6 2xl:items-start 2xl:grid-cols-[minmax(0,1fr)_minmax(380px,0.84fr)]">
@@ -67,7 +67,7 @@ export default function DisposisiDetailPage() {
                 <MessageCircleMore className="h-4 w-4 text-primary" />
                 Status WhatsApp
               </CardTitle>
-              <CardDescription>Riwayat notifikasi WA untuk node disposisi ini, lengkap dengan retry bila pengiriman gagal.</CardDescription>
+          <CardDescription>Riwayat notifikasi WhatsApp untuk disposisi ini, termasuk opsi kirim ulang bila pengiriman gagal.</CardDescription>
             </CardHeader>
             <CardContent>
               <WhatsAppStatusStack

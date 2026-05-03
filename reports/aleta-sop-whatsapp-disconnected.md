@@ -1,30 +1,31 @@
-# SOP: WhatsApp Disconnected
+# SOP: WhatsApp Tidak Terhubung
 
-## Goal
+## Tujuan
 
-Restore visibility safely without resetting session or creating duplicate clients.
+Memulihkan layanan WhatsApp dengan aman tanpa reset sesi dan tanpa membuat koneksi ganda.
 
-## Do Not
+## Jangan Lakukan
 
-- Do not scan QR from shell/script.
-- Do not logout.
-- Do not reset session.
-- Do not delete auth/session folders.
-- Do not change session name.
-- Do not start a second ALETA Bot instance.
+- Jangan scan QR dari shell/script.
+- Jangan logout.
+- Jangan reset session.
+- Jangan hapus folder autentikasi/sesi.
+- Jangan ganti session name.
+- Jangan jalankan instance ALETA Bot kedua.
+- Jangan kirim ulang pesan otomatis saat status belum stabil.
 
-## Steps
+## Langkah
 
-1. Check Admin ALETA Bot Status WhatsApp.
-2. Run `node scripts/aleta-preflight.mjs`.
-3. Confirm whether runtime is reachable on port 3003.
-4. Confirm diagnostics does not show `browser_locked`, `initialize_timeout`, or stuck initializing.
-5. If disconnected but runtime is healthy, use the Super Admin UI flow to reconnect.
-6. If `browser_locked`, stop the old ALETA Bot/Chrome process carefully, then start one ALETA Bot instance. Do not delete session data.
-7. After reconnect, run smoke dry-run.
+1. Buka Admin ALETA Bot dan cek Status WhatsApp.
+2. Jalankan `node scripts/aleta-preflight.mjs`.
+3. Pastikan ALETA Bot dapat diakses pada port 3003.
+4. Cek diagnostics: pastikan tidak ada `browser_locked`, `initialize_timeout`, atau proses yang macet.
+5. Jika WhatsApp terputus tetapi layanan sehat, gunakan alur Super Admin di UI untuk menghubungkan ulang.
+6. Jika sesi terkunci, hentikan proses ALETA Bot/Chrome lama dengan hati-hati, lalu jalankan satu instance ALETA Bot. Jangan hapus data sesi.
+7. Setelah terhubung, jalankan smoke dry-run.
 
-## Launch Decision Impact
+## Dampak Operasional
 
-- Non-WA internal operations may continue.
-- WhatsApp limited pilot is paused.
-- Production automation remains disabled.
+- Manajemen Surat dan Pusat Tugas tetap dapat digunakan bila portal sehat.
+- Pengiriman WhatsApp otomatis harus dipantau ketat setelah koneksi pulih.
+- Jika antrean atau Pesan Gagal muncul, kembali ke mode aman dan jangan kirim ulang otomatis.

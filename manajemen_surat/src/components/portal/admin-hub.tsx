@@ -125,21 +125,21 @@ export function AdminHub() {
       testId: "admin-stat-whatsapp-value",
     },
     {
-      label: "Runtime Database",
+        label: "Layanan Database",
       value:
         databaseRuntime?.activeMode === "postgres"
           ? "PostgreSQL"
           : databaseRuntime?.activeMode === "fallback"
-            ? "Fallback Snapshot"
+            ? "Mode Cadangan"
             : "Memeriksa...",
       hint:
         databaseRuntime?.activeMode === "postgres"
           ? `Terhubung ke ${databaseRuntime.postgres.host}:${databaseRuntime.postgres.port}/${databaseRuntime.postgres.database}.`
           : databaseRuntime?.activeMode === "fallback"
             ? databaseRuntime.postgres.reachable
-              ? "Fallback masih aktif walau port PostgreSQL merespons. Periksa bootstrap runtime."
+          ? "Mode cadangan masih aktif walau PostgreSQL merespons. Periksa proses awal layanan."
               : `PostgreSQL belum terjangkau di ${databaseRuntime.postgres.host}:${databaseRuntime.postgres.port}/${databaseRuntime.postgres.database}.`
-            : "Status backend database sedang diperiksa.",
+            : "Status layanan database sedang diperiksa.",
       icon: Wallet,
       color: databaseRuntime?.activeMode === "postgres" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
       bgColor: databaseRuntime?.activeMode === "postgres" ? "bg-emerald-100 dark:bg-emerald-500/10" : "bg-amber-100 dark:bg-amber-500/10",
@@ -202,13 +202,13 @@ export function AdminHub() {
             <AdminMenuAction
               href="/admin/mapping-user-jabatan"
               title="Direktori Pengguna"
-              description="Kelola akun personil, pembaruan jabatan, NIP, serta sinkronisasi role sistem."
+      description="Kelola akun personil, pembaruan jabatan, NIP, dan peran sistem."
               badge="Users"
             />
             <AdminMenuAction
               href="/admin/status-whatsapp"
               title="WhatsApp Gateway"
-              description="Otentikasi nomor resmi dan monitoring detak jantung gateway notifikasi."
+      description="Kelola nomor resmi dan pantau koneksi layanan notifikasi."
               badge="Gateway"
             />
             <AdminMenuAction
@@ -242,7 +242,7 @@ export function AdminHub() {
               <AdminMenuAction
                 href="/admin/visibility-role"
                 title="Kontrol Akses (RBAC)"
-                description="Atur visibilitas modul dan hak akses fitur berdasarkan role jabatan."
+      description="Atur akses tampilan modul dan hak akses fitur berdasarkan peran jabatan."
                 badge="Security"
               />
               <AdminMenuAction
@@ -261,7 +261,7 @@ export function AdminHub() {
               <AdminMenuAction
                 href="/admin/asisten-hakim"
                 title="Pengaturan Asisten Hakim"
-                description="Atur link AI yudisial dan role yang dapat melihat aplikasi Asisten Hakim."
+      description="Atur link AI yudisial dan peran yang dapat melihat Asisten Hakim."
                 icon={<Scale className="h-5 w-5 text-violet-600" />}
                 badge="Super Admin"
               />
@@ -291,9 +291,9 @@ export function AdminHub() {
                 )}
               >
                 {databaseRuntime?.activeMode === "postgres"
-                  ? "Runtime memakai PostgreSQL utama"
+              ? "Layanan memakai PostgreSQL utama"
                   : databaseRuntime?.activeMode === "fallback"
-                    ? "Runtime memakai fallback snapshot persisten"
+              ? "Layanan memakai data cadangan persisten"
                     : "Status database sedang diperiksa"}
               </p>
               {databaseRuntime?.activeMode === "fallback" && databaseRuntime.postgres.lastBootError ? (

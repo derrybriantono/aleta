@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-05-03T18:32:47+08:00",
+  "decision": "WARN_GO",
+  "summary": {
+    "bugsFound": 1,
+    "bugsFixed": 0,
+    "bugsDeferred": 1,
+    "largeStructureSafe": true,
+    "sourceCodeChanged": false
+  },
+  "criticalHighBugs": [],
+  "mediumLowCosmeticBugs": [
+    {
+      "id": "DBG-001",
+      "severity": "Low",
+      "status": "deferred",
+      "title": "Status aktual production berbeda dari baseline prompt"
+    }
+  ],
+  "humanizedCopyAudit": {
+    "internalValuesChanged": false,
+    "wrongLabelsFound": false,
+    "layoutOverflowFound": false,
+    "falseProductionClaimsFound": false,
+    "apiContractChanged": false
+  },
+  "filesChanged": [
+    "D:\\aleta\\reports\\aleta-post-copy-debug-baseline-latest.md",
+    "D:\\aleta\\reports\\aleta-post-copy-debug-baseline-latest.json",
+    "D:\\aleta\\reports\\aleta-post-copy-debug-findings-latest.md",
+    "D:\\aleta\\reports\\aleta-post-copy-debug-findings-latest.json",
+    "D:\\aleta\\reports\\aleta-post-copy-debugging-round-latest.md",
+    "D:\\aleta\\reports\\aleta-post-copy-debugging-round-latest.json"
+  ],
+  "areasTouched": {
+    "authLogin": "audited_no_code_change",
+    "portal": "audited_no_code_change",
+    "manajemenSurat": "validated_no_code_change",
+    "disposisi": "audited_no_code_change",
+    "pusatTugas": "audited_no_code_change",
+    "aletaBotAdmin": "audited_no_code_change",
+    "patchNotesPanduan": "audited_no_code_change",
+    "productionGuard": "validated_no_code_change",
+    "reports": "created"
+  },
+  "intentionallyUnchanged": [
+    "large_structure",
+    "auth_library",
+    "rbac_core",
+    "api_contract",
+    "database_schema",
+    "whatsapp_production_config",
+    "scheduler_reminder_config",
+    "botEnabled",
+    "internal_status_values"
+  ],
+  "validation": {
+    "tsc": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "test": "PASS",
+    "testFilesPassed": 16,
+    "testsPassed": 62,
+    "nodeCheck": "PASS",
+    "preflight": "WARN",
+    "smokeDryRun": "PASS",
+    "numberQuality": "PASS",
+    "riskCheck": "PASS",
+    "shadowRun": "PASS"
+  },
+  "finalStatus": {
+    "portal": "reachable",
+    "manajemenSurat": "PASS",
+    "aletaBot": "reachable",
+    "whatsapp": "connected",
+    "worker": "enabled_active_not_paused",
+    "queue": {
+      "pending": 0,
+      "processing": 0,
+      "failed": 0
+    },
+    "deadLetterActive": 0,
+    "approvalPending": 0,
+    "productionGuard": "PASS",
+    "safeSendingWindow": {
+      "allowed": true,
+      "start": "07:30",
+      "end": "21:00"
+    }
+  },
+  "risksRemaining": [
+    "Operational narrative may need alignment with actual production-active runtime state.",
+    "Preflight WARN remains for auth-guarded portal proxy access from shell.",
+    "Scheduler/reminder production status needs day-one monitoring even though risk-check passes."
+  ],
+  "recommendations": [
+    "Confirm whether WhatsApp production-active runtime is the intended baseline.",
+    "If production remains active, update user-facing operational notes accordingly.",
+    "If production should be off, run a separate explicit rollback/safe-mode task.",
+    "Continue monitoring worker, queue, dead-letter, approval, cap, and rate-limit."
+  ]
+}

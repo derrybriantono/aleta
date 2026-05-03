@@ -50,6 +50,7 @@ import {
   type AletaBotWorkerState,
 } from "@/lib/aleta-bot-types";
 import { formatDateTime } from "@/lib/format";
+import { humanizeErrorMessage, humanizeStatus } from "@/lib/humanized-labels";
 import { cn } from "@/lib/utils";
 
 type ApiEnvelope<T> = {
@@ -424,45 +425,45 @@ function statusVariant(status: string) {
 // Mapping display-only: status teknis → Bahasa Indonesia (tidak mengubah nilai DB)
 function displayStatus(status: string): string {
   const map: Record<string, string> = {
-    active_registry: "Aktif di Registry",
-    legacy_disabled: "Dinonaktifkan (Migrasi)",
-    dry_run: "Mode Simulasi",
+    active_registry: "Aktif di Daftar Pengiriman",
+    legacy_disabled: "Jalur Lama Dinonaktifkan",
+    dry_run: "Simulasi",
     pilot: "Pilot",
-    production: "Produksi",
+    production: "Aktif Operasional",
     pending_approval: "Menunggu Persetujuan",
-    needs_manual_mapping: "Perlu Konfigurasi Manual",
-    registry_draft: "Draft Registry",
-    waiting_qr: "Scan QR Diperlukan",
-    qr_needed: "Scan QR Diperlukan",
-    browser_locked: "Session WhatsApp Terkunci",
+    needs_manual_mapping: "Perlu Pengaturan Manual",
+    registry_draft: "Draft Daftar Pengiriman",
+    waiting_qr: "Perlu Scan QR",
+    qr_needed: "Perlu Scan QR",
+    browser_locked: "Sesi WhatsApp sedang dipakai proses lain",
     disconnected: "Tidak Terhubung",
     connected: "Terhubung",
     initializing: "Menyiapkan Koneksi",
     enabled: "Aktif",
-    disabled: "Nonaktif",
+    disabled: "Tidak Aktif",
     paused: "Dijeda",
     running: "Berjalan",
     stopped: "Berhenti",
     ok: "OK",
-    error: "Error",
+    error: "Bermasalah",
     needs_sync: "Perlu Sinkronisasi",
     active: "Aktif",
-    inactive: "Nonaktif",
+    inactive: "Tidak Aktif",
     online: "Online",
     offline: "Offline",
     failed: "Gagal",
-    blocked: "Terblokir",
+    blocked: "Diblokir",
     simulated: "Simulasi",
     skipped: "Dilewati",
     completed: "Selesai",
-    manual_dry_run: "Manual Dry-run",
+    manual_dry_run: "Simulasi Manual",
     manual_controlled: "Manual Terkontrol",
-    scheduler_dry_run: "Scheduler Dry-run",
-    scheduler_blocked: "Scheduler Diblokir",
+    scheduler_dry_run: "Simulasi Penjadwal",
+    scheduler_blocked: "Penjadwal Ditahan",
     success: "Berhasil",
     unknown: "Tidak Diketahui",
   };
-  return map[status] ?? status;
+  return map[status] ?? humanizeStatus(status);
 }
 
 function formatRunSummary(summary: Record<string, unknown>) {
@@ -489,7 +490,7 @@ function getSimpleAiSummary(status?: string): { label: string; hint: string; lev
     case "error":
       return { label: "AI Bermasalah", hint: "Ada kendala pada layanan AI. Minta admin teknis memeriksa Mode Lanjutan.", level: "error" };
     default:
-      return { label: "Status AI belum diketahui", hint: "Status AI belum tersedia dari runtime.", level: "warning" };
+      return { label: "Status AI belum diketahui", hint: "Status AI belum tersedia dari layanan.", level: "warning" };
   }
 }
 
@@ -500,7 +501,7 @@ function getSimpleMachineSummary(runtimeDashboard: RuntimeDashboardSnapshot | nu
   if (!runtimeDashboard.online) {
     return { label: "Bermasalah", hint: "ALETA Bot Gateway tidak dapat dihubungi. Detail teknis tersedia di Mode Lanjutan.", level: "error" };
   }
-  return { label: "Aktif", hint: "Mesin bot dapat dihubungi. Detail teknis tersedia di Mode Lanjutan.", level: "ok" };
+  return { label: "Aktif", hint: "Layanan bot dapat dihubungi. Detail teknis tersedia di Mode Lanjutan.", level: "ok" };
 }
 
 function isValidTime(value: string) {
@@ -660,7 +661,7 @@ function getSuggestedMigrationAction(status: AletaBotLegacyMigration["status"]):
     mapped: { action: "convert", label: "Ubah ke Draft", step: "Tahap 1/5", isHighRisk: false },
     registry_draft: { action: "dry-run", label: "Jalankan Simulasi", step: "Tahap 2/5", isHighRisk: false },
     dry_run: { action: "submit-approval", label: "Ajukan Persetujuan", step: "Tahap 3/5", isHighRisk: false },
-    active_registry: { action: "disable-legacy", label: "Nonaktifkan Legacy", step: "Tahap 5/5", isHighRisk: true },
+    active_registry: { action: "disable-legacy", label: "Nonaktifkan Jalur Lama", step: "Tahap 5/5", isHighRisk: true },
   };
   return map[status] ?? null;
 }
@@ -677,7 +678,7 @@ async function requestBot<T>(url: string, init?: RequestInit) {
   });
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.message ?? "Request ALETA Bot gagal diproses.");
+    throw new Error(humanizeErrorMessage(payload?.message, "Permintaan ke ALETA Bot belum berhasil diproses."));
   }
   return payload.data;
 }
@@ -936,7 +937,7 @@ export function AletaBotAdminPanel() {
       "pengaturan-bot": "settings",
       "public-qa": "public-qa",
       "queue-recovery": "queue-recovery",
-      "policy-skip": "dashboard",
+    "policy-skip": "dashboard",
       "reminder-deadline": "dashboard",
     };
     setActiveTab(tabByAnchor[targetId] ?? "dashboard");
@@ -1051,7 +1052,7 @@ export function AletaBotAdminPanel() {
         body: JSON.stringify({
           template: {
             id: template.id,
-            body: templateDraft[template.id] ?? template.body,
+          body: templateDraft[template.id] ?? template.body,
           },
         }),
       });
@@ -1100,7 +1101,7 @@ export function AletaBotAdminPanel() {
       setNotificationForm(makeEmptyNotificationForm(data, notificationForm.category));
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Notifikasi ALETA Bot berhasil disimpan dan disinkronkan ke runtime.");
+      setNotice("Notifikasi ALETA Bot berhasil disimpan dan disinkronkan ke layanan.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Notifikasi gagal disimpan.");
     } finally {
@@ -1132,7 +1133,7 @@ export function AletaBotAdminPanel() {
       setQueryForm(makeEmptyQueryForm(queryForm.category));
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Query ALETA Bot berhasil disimpan dan disinkronkan ke runtime.");
+      setNotice("Kueri ALETA Bot berhasil disimpan dan disinkronkan ke layanan.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Query gagal disimpan.");
     } finally {
@@ -1174,9 +1175,9 @@ export function AletaBotAdminPanel() {
         body: JSON.stringify({ action: "test", connectionKey }),
       });
       setSnapshot(data.snapshot);
-      setNotice(data.result.status === "success" ? "Test koneksi SQL berhasil." : `Test koneksi SQL gagal: ${data.result.error || "unknown error"}`);
+      setNotice(data.result.status === "success" ? "Uji koneksi SQL berhasil." : `Uji koneksi SQL gagal: ${data.result.error || "Kesalahan tidak diketahui."}`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Test koneksi SQL gagal.");
+      setNotice(error instanceof Error ? error.message : "Uji koneksi SQL gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1198,9 +1199,9 @@ export function AletaBotAdminPanel() {
         }),
       });
       setSnapshot(data.snapshot);
-      setNotice(data.result.status === "success" ? "Test koneksi SQL berhasil dengan data form saat ini." : `Test koneksi SQL gagal: ${data.result.error || "Periksa host, port, username, password, dan nama database."}`);
+      setNotice(data.result.status === "success" ? "Uji koneksi SQL berhasil dengan data form saat ini." : `Uji koneksi SQL gagal: ${data.result.error || "Periksa host, port, username, password, dan nama database."}`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Test koneksi SQL gagal.");
+      setNotice(error instanceof Error ? error.message : "Uji koneksi SQL gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1226,9 +1227,9 @@ export function AletaBotAdminPanel() {
       setPublicQaIntentForm(saved ? publicQaIntentToForm(saved) : makeEmptyPublicQaIntentForm());
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Intent Pertanyaan Para Pihak berhasil disimpan dan disinkronkan.");
+      setNotice("Aturan Pertanyaan Publik berhasil disimpan dan disinkronkan.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Intent Pertanyaan Para Pihak gagal disimpan.");
+      setNotice(error instanceof Error ? error.message : "Aturan Pertanyaan Publik gagal disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1244,9 +1245,9 @@ export function AletaBotAdminPanel() {
         body: JSON.stringify({ action: "test", question: publicQaQuestion }),
       });
       setPublicQaTestResult(JSON.stringify(data.result, null, 2));
-      setNotice("Test intent Pertanyaan Para Pihak berhasil diproses tanpa mengirim WhatsApp.");
+      setNotice("Uji aturan Pertanyaan Publik berhasil diproses tanpa mengirim WhatsApp.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Test intent Pertanyaan Para Pihak gagal.");
+      setNotice(error instanceof Error ? error.message : "Uji aturan Pertanyaan Publik gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1271,9 +1272,9 @@ export function AletaBotAdminPanel() {
       setPublicQaReviewNote("");
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Status human review Public Q&A berhasil diperbarui tanpa mengirim WhatsApp.");
+      setNotice("Status tinjauan Pertanyaan Publik berhasil diperbarui tanpa mengirim WhatsApp.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Review Public Q&A gagal disimpan.");
+      setNotice(error instanceof Error ? error.message : "Tinjauan Pertanyaan Publik gagal disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1301,9 +1302,9 @@ export function AletaBotAdminPanel() {
       setPublicQaReviewNote("");
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Pertanyaan Public Q&A berhasil disimpan sebagai draft intent tanpa mengaktifkan jawaban otomatis.");
+      setNotice("Pertanyaan publik berhasil disimpan sebagai draft aturan tanpa mengaktifkan jawaban otomatis.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Konversi Public Q&A ke draft intent gagal.");
+      setNotice(error instanceof Error ? error.message : "Pertanyaan publik gagal dijadikan draft aturan.");
     } finally {
       setIsSaving(false);
     }
@@ -1319,11 +1320,11 @@ export function AletaBotAdminPanel() {
         { method: "POST" }
       );
       setDeadlineReminderPreview(data);
-      openModal({ type: "deadlineReminderPreview", title: "Simulasi Reminder Deadline H-1" });
+      openModal({ type: "deadlineReminderPreview", title: "Simulasi Pengingat Tenggat H-1" });
       await loadSnapshot();
-      setNotice("Simulasi reminder deadline H-1 selesai. Tidak ada WhatsApp sungguhan yang dikirim.");
+      setNotice("Simulasi pengingat tenggat H-1 selesai. Tidak ada WhatsApp sungguhan yang dikirim.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Simulasi reminder deadline gagal.");
+      setNotice(error instanceof Error ? error.message : "Simulasi pengingat tenggat gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1343,9 +1344,9 @@ export function AletaBotAdminPanel() {
       setSnapshot(data);
       setSettingsDraft(data.settings);
       setDeadlineConfirmText("");
-      setNotice(`Mode reminder deadline diperbarui menjadi ${displayStatus(mode)}.`);
+      setNotice(`Mode pengingat tenggat diperbarui menjadi ${displayStatus(mode)}.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Mode reminder deadline gagal diperbarui.");
+      setNotice(error instanceof Error ? error.message : "Mode pengingat tenggat gagal diperbarui.");
     } finally {
       setIsSaving(false);
     }
@@ -1380,9 +1381,9 @@ export function AletaBotAdminPanel() {
       setDeadlinePilotPositionIdsText(data.settings.deadlineReminderPilotPositionIds.join(", "));
       setDeadlineSchedulerTime(data.settings.deadlineReminderSchedulerTime);
       setDeadlineConfirmText("");
-      setNotice("Kontrol pilot/scheduler reminder diperbarui.");
+      setNotice("Kontrol pilot dan penjadwal pengingat diperbarui.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Kontrol reminder gagal diperbarui.");
+      setNotice(error instanceof Error ? error.message : "Kontrol pengingat gagal diperbarui.");
     } finally {
       setIsSaving(false);
     }
@@ -1407,11 +1408,11 @@ export function AletaBotAdminPanel() {
       setSmokeTestResult(data);
       setNotice(
         data.overallStatus === "passed"
-          ? "Smoke test operasional lulus tanpa mengirim WhatsApp."
-          : "Smoke test selesai dengan catatan. Tidak ada WhatsApp yang dikirim."
+          ? "Pemeriksaan operasional lulus tanpa mengirim WhatsApp."
+          : "Pemeriksaan selesai dengan catatan. Tidak ada WhatsApp yang dikirim."
       );
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Smoke test operasional gagal.");
+      setNotice(error instanceof Error ? error.message : "Pemeriksaan operasional gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1430,11 +1431,11 @@ export function AletaBotAdminPanel() {
         }
       );
       setDeadlineReminderPreview(data);
-      openModal({ type: "deadlineReminderPreview", title: "Hasil Scheduler Dry-run Reminder H-1" });
+      openModal({ type: "deadlineReminderPreview", title: "Hasil Simulasi Penjadwal Pengingat H-1" });
       await loadSnapshot();
-      setNotice("Scheduler dry-run dijalankan manual. Tidak ada WhatsApp sungguhan yang dikirim.");
+      setNotice("Simulasi penjadwal dijalankan manual. Tidak ada WhatsApp sungguhan yang dikirim.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Scheduler dry-run reminder gagal.");
+      setNotice(error instanceof Error ? error.message : "Simulasi penjadwal pengingat gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1453,12 +1454,12 @@ export function AletaBotAdminPanel() {
         }
       );
       setDeadlineReminderPreview(data);
-      openModal({ type: "deadlineReminderPreview", title: "Hasil Runner Reminder Deadline H-1" });
+      openModal({ type: "deadlineReminderPreview", title: "Hasil Pengingat Tenggat H-1" });
       await loadSnapshot();
       setDeadlineConfirmText("");
-      setNotice(data.productionSent ? "Runner produksi memproses antrean sesuai gate eksplisit." : "Runner reminder selesai tanpa pengiriman produksi.");
+      setNotice(data.productionSent ? "Pengingat aktif operasional memproses antrean sesuai persetujuan." : "Pengingat selesai tanpa pengiriman aktif operasional.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Runner reminder deadline gagal.");
+      setNotice(error instanceof Error ? error.message : "Pengingat tenggat gagal dijalankan.");
     } finally {
       setIsSaving(false);
     }
@@ -1564,9 +1565,9 @@ export function AletaBotAdminPanel() {
         setActiveModal(null);
         setModalDirty(false);
       }
-      setNotice("Aksi migrasi legacy berhasil diproses.");
+      setNotice("Aksi migrasi jalur lama berhasil diproses.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Aksi migrasi legacy gagal.");
+      setNotice(error instanceof Error ? error.message : "Aksi migrasi jalur lama gagal.");
     } finally {
       setIsSaving(false);
     }
@@ -1664,22 +1665,22 @@ export function AletaBotAdminPanel() {
       {
         name: "Pemroses Antrean",
         status: runtimeDashboard?.payload?.worker?.enabled ? "ready" : "warning",
-        detail: runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Heartbeat ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : "Belum ada heartbeat",
+        detail: runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Sinyal terakhir ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : "Belum ada sinyal pemroses",
       },
       {
-        name: "AI Bridge",
+        name: "Jembatan AI",
         status: runtimeDashboard?.payload?.aiRuntime?.status === "error" ? "blocked" : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" ? "warning" : "ready",
         detail: displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? "unknown"),
       },
       {
         name: "Kesiapan Arsip",
         status: archiveReadyCount > 0 ? "ready" : "warning",
-        detail: `${archiveReadyCount} legacy siap arsip`,
+        detail: `${archiveReadyCount} jalur lama siap diarsipkan`,
       },
       {
-        name: "Rollback tersedia",
+        name: "Mode aman tersedia",
         status: "ready",
-        detail: "State machine rollback aktif untuk migrasi legacy",
+        detail: "Alur kembali ke mode aman tersedia untuk migrasi jalur lama.",
       },
       {
         name: "Runbook",
@@ -1724,7 +1725,7 @@ export function AletaBotAdminPanel() {
         detail: displayStatus(runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus),
       },
       {
-        label: "AI Bridge tersinkron",
+        label: "Jembatan AI tersinkron",
         ok: runtimeDashboard?.payload?.aiRuntime?.status === "synced",
         href: "#",
         detail: displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? "unknown"),
@@ -1736,12 +1737,12 @@ export function AletaBotAdminPanel() {
         detail: `${snapshot.dbConnections.filter((item) => item.isActive).length} koneksi aktif`,
       },
       {
-        label: "Worker antrean aktif",
+        label: "Pemroses antrean aktif",
         ok: workerReady,
         href: "#",
         detail: runtimeDashboard?.payload?.worker?.lastHeartbeatAt
-          ? `Heartbeat ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}`
-          : "Belum ada heartbeat",
+          ? `Sinyal terakhir ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}`
+          : "Belum ada sinyal pemroses",
       },
       {
         label: "Template aktif tersedia",
@@ -1761,7 +1762,7 @@ export function AletaBotAdminPanel() {
         href: "#",
         detail: employeeWhatsappTotal > 0
           ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor WhatsApp. ${employeeWhatsappMissing} belum lengkap.`
-          : "Belum ada nomor pegawai dari database. Runtime masih dapat memakai fallback legacy.",
+          : "Belum ada nomor pegawai dari database. Layanan masih dapat memakai data lama.",
       },
       {
         label: "Jam aman pengiriman aktif",
@@ -1787,25 +1788,25 @@ export function AletaBotAdminPanel() {
     return [
       {
         group: "WhatsApp",
-        name: "Gateway reachable dan status jelas",
+        name: "Gateway dapat dihubungi dan status jelas",
         status: runtimeDashboard?.online ? (whatsappDisconnected ? "blocked" : "ready") : "blocked",
-        detail: runtimeDashboard?.online ? displayStatus(snapshot.whatsapp.runtimeStatus) : runtimeDashboard?.errorMessage ?? "Runtime tidak reachable.",
-        actionLabel: "Buka Status WhatsApp Gateway",
+        detail: runtimeDashboard?.online ? displayStatus(snapshot.whatsapp.runtimeStatus) : runtimeDashboard?.errorMessage ?? "Layanan tidak dapat dihubungi.",
+        actionLabel: "Buka Status WhatsApp",
         actionHref: "#status-whatsapp",
       },
       {
         group: "WhatsApp",
-        name: "Safe Sending Window aktif",
+        name: "Jam Aman Pengiriman aktif",
         status: safeWindow?.enabled === false ? "blocked" : "ready",
         detail: safeWindow?.enabled === false ? "Jam aman nonaktif" : `${safeWindow?.start ?? "07:30"}-${safeWindow?.end ?? "21:00"}`,
         actionLabel: "Buka Pengaturan Jam Aman",
         actionHref: "#pengaturan-bot",
       },
       {
-        group: "Queue",
-        name: "Worker dan antrean terkendali",
+        group: "Antrean Pesan",
+        name: "Pemroses pesan dan antrean terkendali",
         status: runtimeDashboard?.payload?.worker?.enabled ? (queuePending > 50 ? "warning" : "ready") : "blocked",
-        detail: `${queuePending} pending, ${snapshot.deadLetters.length} dead-letter.`,
+        detail: `${queuePending} menunggu, ${snapshot.deadLetters.length} pesan gagal.`,
       },
       {
         group: "Data",
@@ -1816,34 +1817,34 @@ export function AletaBotAdminPanel() {
         actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
       },
       {
-        group: "Policy",
-        name: "Notifikasi pihak terkunci policy",
+        group: "Kebijakan",
+        name: "Notifikasi pihak luar wajib persetujuan",
         status: partyPolicyBlocked || skippedPolicy > 0 ? "warning" : "ready",
         detail: skippedPolicy > 0
-          ? `${skippedPolicy} notifikasi dilewati runtime policy.`
-          : "Simulasi, preview, dan approval menjadi syarat aktivasi pihak.",
-        actionLabel: "Lihat Policy Skip",
+          ? `${skippedPolicy} notifikasi ditahan oleh kebijakan layanan.`
+          : "Pengiriman ke pihak luar hanya berjalan setelah pratinjau, batas pengiriman, dan persetujuan.",
+        actionLabel: "Lihat Notifikasi yang Ditahan",
         actionHref: "#policy-skip",
       },
       {
-        group: "Policy",
-        name: "Reminder deadline terkendali",
-        status: reminderProductionWithoutApproval ? "blocked" : reminderMode === "production" ? "warning" : "ready",
+        group: "Kebijakan",
+        name: "Pengingat tenggat terkendali",
+        status: reminderProductionWithoutApproval ? "blocked" : "ready",
         detail: reminderMode === "production"
-          ? "Mode production aktif; pastikan approval dan blocker dipantau."
-          : `Mode ${displayStatus(reminderMode)}. Default aman dan tidak mengirim produksi tanpa gate.`,
-        actionLabel: "Buka Pengaturan Reminder",
+          ? "Aktif dengan pengamanan. Pantau persetujuan, batas pengiriman, dan Jam Aman Pengiriman."
+          : `Mode ${displayStatus(reminderMode)}. Aman secara default dan tidak mengirim otomatis tanpa syarat.`,
+        actionLabel: "Buka Pengaturan Pengingat",
         actionHref: "#reminder-deadline",
       },
       {
-        group: "Public Q&A",
-        name: "Human review terpantau",
+        group: "Pertanyaan Publik",
+        name: "Tinjauan admin terpantau",
         status: publicQaNeedsReviewCount > 20 ? "blocked" : publicQaNeedsReviewCount > 0 ? "warning" : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" && publicQaActive ? "blocked" : "ready",
         detail: publicQaNeedsReviewCount > 0
           ? `${publicQaNeedsReviewCount} pertanyaan perlu ditinjau.`
           : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" && publicQaActive
-            ? "AI Public Q&A perlu sinkronisasi."
-            : "Tidak ada pertanyaan publik pending review.",
+            ? "AI Pertanyaan Publik perlu sinkronisasi."
+            : "Tidak ada pertanyaan publik yang menunggu tinjauan.",
         actionLabel: "Tinjau Pertanyaan Publik",
         actionHref: "#public-qa",
       },
@@ -1874,8 +1875,8 @@ export function AletaBotAdminPanel() {
     const alerts: Array<{ title: string; detail: string; tone: "warning" | "danger" | "muted" }> = [];
     if (whatsappBrowserLocked) {
       alerts.push({
-        title: "Session WhatsApp sedang dipakai proses lain",
-        detail: "Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu klik Refresh Status. Jangan hapus session WhatsApp kecuali benar-benar diperlukan.",
+        title: "Sesi WhatsApp sedang dipakai proses lain",
+        detail: "Tutup proses browser lama atau restart ALETA Bot dengan aman, lalu perbarui status. Jangan hapus sesi WhatsApp kecuali benar-benar diperlukan.",
         tone: "danger",
       });
     } else if (whatsappDisconnected) {
@@ -1888,21 +1889,21 @@ export function AletaBotAdminPanel() {
     if (runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync") {
       alerts.push({
         title: "AI perlu sinkronisasi",
-        detail: "Sync AI ke ALETA Bot dari Mode Lanjutan sebelum mengandalkan Public Q&A.",
+        detail: "Sinkronkan AI ke ALETA Bot dari Mode Lanjutan sebelum memakai Pertanyaan Publik.",
         tone: "warning",
       });
     }
     if (snapshot.deadLetters.length > 0) {
       alerts.push({
         title: "Ada pesan gagal permanen",
-        detail: `${snapshot.deadLetters.length} pesan perlu ditinjau sebelum retry.`,
+        detail: `${snapshot.deadLetters.length} pesan perlu ditinjau sebelum dikirim ulang.`,
         tone: "warning",
       });
     }
     if (publicQaNeedsReviewCount > 0) {
       alerts.push({
         title: "Pertanyaan publik perlu tinjauan",
-        detail: `${publicQaNeedsReviewCount} pertanyaan masuk antrean human review.`,
+        detail: `${publicQaNeedsReviewCount} pertanyaan masuk antrean tinjauan admin.`,
         tone: "warning",
       });
     }
@@ -1910,15 +1911,15 @@ export function AletaBotAdminPanel() {
       alerts.push({
         title: "Nomor pegawai belum lengkap",
         detail: legacyFallbackUsedCount > 0
-          ? `Runtime memakai fallback legacy ${legacyFallbackUsedCount} kali. Lengkapi nomor di Manajemen Akun.`
-          : "Sebagian mapping WhatsApp masih bisa jatuh ke fallback legacy. Lengkapi nomor WhatsApp pegawai prioritas sebelum pilot WhatsApp.",
+          ? `Layanan memakai data lama ${legacyFallbackUsedCount} kali. Lengkapi nomor di Manajemen Akun.`
+          : "Sebagian pemetaan WhatsApp masih dapat memakai data lama. Lengkapi nomor pegawai prioritas sebelum pilot WhatsApp.",
         tone: "warning",
       });
     }
     if (runtimeDashboard?.payload?.bot?.sendingWindow?.enabled === false) {
       alerts.push({
         title: "Jam aman pengiriman nonaktif",
-        detail: "Aktifkan safe sending window agar pesan normal tidak terkirim di luar jam kerja.",
+        detail: "Aktifkan Jam Aman Pengiriman agar pesan tidak terkirim di luar jam kerja.",
         tone: "muted",
       });
     }
@@ -1926,15 +1927,15 @@ export function AletaBotAdminPanel() {
       const reasons = runtimeDashboard?.payload?.registry?.policySkipStats?.reasons ?? Object.fromEntries(snapshot.policySkipSummary.topReasons.map((item) => [item.reason, item.count]));
       const reasonText = Object.entries(reasons).slice(0, 3).map(([key, count]) => `${key}: ${count}`).join(", ");
       alerts.push({
-        title: "Notifikasi pihak ditahan policy",
-        detail: `${runtimeDashboard?.payload?.registry?.skippedPolicy ?? policySkipToday} notifikasi pihak dilewati runtime/log karena belum memenuhi policy.${reasonText ? ` Alasan: ${reasonText}.` : ""}`,
+        title: "Notifikasi pihak luar ditahan kebijakan",
+        detail: `${runtimeDashboard?.payload?.registry?.skippedPolicy ?? policySkipToday} notifikasi pihak luar ditahan karena belum memenuhi syarat.${reasonText ? ` Alasan: ${reasonText}.` : ""}`,
         tone: "warning",
       });
     }
     if (snapshot.settings.deadlineReminderLastRunAt && snapshot.settings.deadlineReminderMode !== "production") {
       alerts.push({
-        title: "Reminder deadline masih aman",
-        detail: `Run terakhir ${formatDateTime(snapshot.settings.deadlineReminderLastRunAt)} berstatus ${displayStatus(snapshot.settings.deadlineReminderLastStatus)} dalam mode ${displayStatus(snapshot.settings.deadlineReminderMode)}.`,
+        title: "Pengingat tenggat masih aman",
+        detail: `Jalankan terakhir ${formatDateTime(snapshot.settings.deadlineReminderLastRunAt)} berstatus ${displayStatus(snapshot.settings.deadlineReminderLastStatus)} dalam mode ${displayStatus(snapshot.settings.deadlineReminderMode)}.`,
         tone: "warning",
       });
     }
@@ -1944,9 +1945,9 @@ export function AletaBotAdminPanel() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Super Admin Only"
+        eyebrow="Khusus Super Admin"
         title="ALETA Bot"
-        description="Modul internal untuk mengelola bot WhatsApp notifikasi perkara, koneksi WhatsApp Web, template pesan, query, log, dan pengujian aman dari portal utama ALETA."
+        description="Modul internal untuk memantau layanan WhatsApp, template pesan, kueri, log, dan pengujian aman dari Portal ALETA."
         actions={
           <>
             <Button variant={showAdvancedMode ? "default" : "outline"} size="sm" onClick={toggleAdvancedMode}>
@@ -1954,11 +1955,11 @@ export function AletaBotAdminPanel() {
             </Button>
             <Button variant="outline" onClick={() => void loadSnapshot()} disabled={isLoading || isSaving}>
               <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-              Refresh
+              Perbarui
             </Button>
             <Button onClick={() => void runAction("sync-config")} disabled={isSaving}>
               <CheckCircle2 className="h-4 w-4" />
-              Sync Config
+              Sinkronkan Config
             </Button>
           </>
         }
@@ -1982,17 +1983,17 @@ export function AletaBotAdminPanel() {
       {whatsappBrowserLocked ? (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="space-y-1 p-4 text-sm text-destructive">
-            <p className="font-semibold">Session WhatsApp sedang dipakai proses browser lain.</p>
+            <p className="font-semibold">Sesi WhatsApp sedang dipakai proses browser lain.</p>
             <p>
-              Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu klik Refresh Status.
-              Jangan hapus session WhatsApp kecuali benar-benar diperlukan.
+              Tutup proses browser lama atau restart ALETA Bot dengan aman, lalu perbarui status.
+              Jangan hapus sesi WhatsApp kecuali benar-benar diperlukan.
             </p>
           </CardContent>
         </Card>
       ) : whatsappDisconnected ? (
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="space-y-1 p-4 text-sm text-amber-900 dark:text-amber-200">
-            <p className="font-semibold">WhatsApp Bot belum terhubung.</p>
+            <p className="font-semibold">WhatsApp Gateway belum terhubung.</p>
             <p>
               Pesan akan menunggu di antrean sampai koneksi aktif kembali.
               {snapshot.whatsapp.lastConnectedAt ? ` Terakhir terhubung: ${formatDateTime(snapshot.whatsapp.lastConnectedAt)}.` : ""}
@@ -2005,7 +2006,7 @@ export function AletaBotAdminPanel() {
         <Card>
           <CardHeader>
             <CardTitle>Perlu Perhatian</CardTitle>
-            <CardDescription>Alert operasional ringan. Panel ini tidak mengirim WhatsApp dan hanya membantu admin menentukan prioritas pengecekan.</CardDescription>
+            <CardDescription>Peringatan operasional ringan. Panel ini tidak mengirim WhatsApp dan hanya membantu admin menentukan prioritas pengecekan.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {operationalAlerts.map((alert) => (
@@ -2034,7 +2035,7 @@ export function AletaBotAdminPanel() {
           <TabsTrigger value="dashboard">Ringkasan</TabsTrigger>
           <TabsTrigger value="connection">WhatsApp</TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
-          <TabsTrigger value="queue-recovery">Antrian & Pesan Gagal</TabsTrigger>
+          <TabsTrigger value="queue-recovery">Antrean & Pesan Gagal</TabsTrigger>
           <TabsTrigger value="logs">Log Aktivitas</TabsTrigger>
           <TabsTrigger value="public-qa">Pertanyaan Publik</TabsTrigger>
           <TabsTrigger value="approvals">Persetujuan</TabsTrigger>
@@ -2044,7 +2045,7 @@ export function AletaBotAdminPanel() {
           ) : null}
           {showAdvancedMode ? <TabsTrigger value="settings">Pengaturan</TabsTrigger> : null}
           {showAdvancedMode ? <TabsTrigger value="templates">Template</TabsTrigger> : null}
-          {showAdvancedMode ? <TabsTrigger value="migration">Migrasi Legacy</TabsTrigger> : null}
+          {showAdvancedMode ? <TabsTrigger value="migration">Migrasi Jalur Lama</TabsTrigger> : null}
           {/* Konfigurasi — hanya Mode Lanjutan */}
           {showAdvancedMode ? (
             <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">│</span>
@@ -2063,9 +2064,9 @@ export function AletaBotAdminPanel() {
               value={displayStatus(snapshot.whatsapp.runtimeStatus)}
             />
             <HealthSummaryCard
-              label="Worker / Antrean"
+              label="Pemroses / Antrean"
               status={runtimeDashboard?.payload?.worker?.enabled ? (runtimeDashboard.payload.worker.activeTimer ? "ok" : "warning") : "error"}
-              value={runtimeDashboard?.payload?.worker?.enabled ? `${runtimeDashboard?.payload?.queue?.pending ?? 0} pending` : "Nonaktif"}
+              value={runtimeDashboard?.payload?.worker?.enabled ? `${runtimeDashboard?.payload?.queue?.pending ?? 0} menunggu` : "Tidak Aktif"}
             />
             <HealthSummaryCard
               label="AI"
@@ -2073,14 +2074,14 @@ export function AletaBotAdminPanel() {
               value={aiSummary.label}
             />
             <HealthSummaryCard
-              label="Persetujuan Pending"
+              label="Persetujuan Menunggu"
               status={snapshot.approvalRequests.filter((r) => r.status === "pending").length > 0 ? "warning" : "ok"}
               value={`${snapshot.approvalRequests.filter((r) => r.status === "pending").length} tertunda`}
             />
             <HealthSummaryCard
               label="Pesan Gagal"
               status={snapshot.deadLetters.length > 0 ? "warning" : "ok"}
-              value={`${snapshot.deadLetters.length} dead letter`}
+              value={`${snapshot.deadLetters.length} pesan gagal`}
             />
           </div>
           {!showAdvancedMode ? (
@@ -2089,75 +2090,75 @@ export function AletaBotAdminPanel() {
             </div>
           ) : null}
           <div className="grid gap-4 lg:grid-cols-3">
-            <InfoCard title="Nomor Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint="Dipakai sebagai admin/kontrol bot. Disimpan di database portal dan bridge config." />
+            <InfoCard title="Nomor Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint="Dipakai sebagai nomor kontrol bot. Disimpan di Portal ALETA dan konfigurasi penghubung." />
             <InfoCard
               title="Nomor Terhubung"
               value={snapshot.whatsapp.phoneNumber || "Belum disetel"}
-              hint={showAdvancedMode ? `Session: ${snapshot.whatsapp.sessionName}` : "Nomor WhatsApp yang sedang atau akan dipakai bot."}
+              hint={showAdvancedMode ? `Sesi: ${snapshot.whatsapp.sessionName}` : "Nomor WhatsApp yang sedang atau akan dipakai bot."}
             />
             <InfoCard title="Notifikasi Terakhir" value={snapshot.metrics.lastNotificationAt ? formatDateTime(snapshot.metrics.lastNotificationAt) : "Belum ada"} hint={`${snapshot.metrics.activeJobs} job aktif, ${snapshot.metrics.enabledTemplates} template tersedia.`} />
           </div>
           {showAdvancedMode ? (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Runtime `aleta_bot`</CardTitle>
-              <CardDescription>Status read-only dari worker, queue DB, registry pilot, dan koneksi WhatsApp runtime Node.js.</CardDescription>
+              <CardTitle>Layanan `aleta_bot`</CardTitle>
+              <CardDescription>Status baca-saja dari pemroses, antrean database, daftar pilot, dan koneksi WhatsApp.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 lg:grid-cols-4">
               <InfoCard
-                title="Runtime"
-                value={runtimeDashboard?.online ? "online" : "offline"}
+                title="Layanan"
+                value={runtimeDashboard?.online ? "Terhubung" : "Tidak Terhubung"}
                 hint={runtimeDashboard?.errorMessage ?? `HTTP ${runtimeDashboard?.statusCode ?? "-"}`}
               />
               <InfoCard
-                title="WhatsApp Runtime"
-                value={runtimeDashboard?.payload?.whatsapp?.status ?? "unknown"}
-                hint={runtimeDashboard?.payload?.whatsapp?.lastReadyAt ? `Ready: ${formatDateTime(runtimeDashboard.payload.whatsapp.lastReadyAt)}` : runtimeDashboard?.payload?.whatsapp?.lastErrorMessage ?? "Belum ada status runtime."}
+                title="Layanan WhatsApp"
+                value={displayStatus(runtimeDashboard?.payload?.whatsapp?.status ?? "unknown")}
+                hint={runtimeDashboard?.payload?.whatsapp?.lastReadyAt ? `Siap: ${formatDateTime(runtimeDashboard.payload.whatsapp.lastReadyAt)}` : runtimeDashboard?.payload?.whatsapp?.lastErrorMessage ?? "Belum ada status layanan."}
               />
               <InfoCard
                 title="Umur Sesi WA"
                 value={runtimeDashboard?.payload?.whatsapp?.sessionAgeHours != null ? `${runtimeDashboard.payload.whatsapp.sessionAgeHours} jam` : "Belum aktif"}
-                hint={runtimeDashboard?.payload?.whatsapp?.sessionStartedAt ? `Aktif sejak ${formatDateTime(runtimeDashboard.payload.whatsapp.sessionStartedAt)}` : "Sesi aktif dihitung sejak WhatsApp ready."}
+                hint={runtimeDashboard?.payload?.whatsapp?.sessionStartedAt ? `Aktif sejak ${formatDateTime(runtimeDashboard.payload.whatsapp.sessionStartedAt)}` : "Sesi aktif dihitung sejak WhatsApp siap."}
               />
               <InfoCard
                 title="Kirim Terakhir"
                 value={runtimeDashboard?.payload?.whatsapp?.lastMessageSentAt ? formatDateTime(runtimeDashboard.payload.whatsapp.lastMessageSentAt) : "Belum ada"}
-                hint={`Auth failure: ${runtimeDashboard?.payload?.whatsapp?.authFailureCount ?? 0}`}
+                hint={`Gagal autentikasi: ${runtimeDashboard?.payload?.whatsapp?.authFailureCount ?? 0}`}
               />
               <InfoCard
                 title="Antrean Pesan"
-                value={`${runtimeDashboard?.payload?.queue?.pending ?? 0} pending`}
-                hint={`${runtimeDashboard?.payload?.queue?.failed ?? 0} failed, ${runtimeDashboard?.payload?.queue?.sent ?? 0} sent.`}
+                value={`${runtimeDashboard?.payload?.queue?.pending ?? 0} menunggu`}
+                hint={`${runtimeDashboard?.payload?.queue?.failed ?? 0} gagal, ${runtimeDashboard?.payload?.queue?.sent ?? 0} terkirim.`}
               />
               <InfoCard
                 title="Pemroses Antrean"
-                value={runtimeDashboard?.payload?.worker?.enabled ? "enabled" : "disabled"}
-                hint={runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Heartbeat: ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : runtimeDashboard?.payload?.worker?.lastError ?? "Belum ada heartbeat."}
+                value={runtimeDashboard?.payload?.worker?.enabled ? "Aktif" : "Tidak Aktif"}
+                hint={runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Sinyal terakhir: ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : runtimeDashboard?.payload?.worker?.lastError ?? "Belum ada sinyal pemroses."}
               />
               <InfoCard
-                title="DB Schema"
-                value={runtimeDashboard?.payload?.db?.schemaReady ? "ready" : "not ready"}
-                hint={runtimeDashboard?.payload?.db?.lastError || "Status schema runtime ALETA Bot."}
+                title="Skema Database"
+                value={runtimeDashboard?.payload?.db?.schemaReady ? "Siap" : "Belum Siap"}
+                hint={runtimeDashboard?.payload?.db?.lastError || "Status skema database ALETA Bot."}
               />
               <InfoCard
-                title="Registry Pilot"
+                title="Daftar Pilot"
                 value={`${runtimeDashboard?.payload?.registry?.total ?? 0} notifikasi`}
-                hint={`${runtimeDashboard?.payload?.registry?.dryRun ?? 0} dry-run, ${runtimeDashboard?.payload?.registry?.requiresApproval ?? 0} butuh approval.`}
+                hint={`${runtimeDashboard?.payload?.registry?.dryRun ?? 0} simulasi, ${runtimeDashboard?.payload?.registry?.requiresApproval ?? 0} butuh persetujuan.`}
               />
               <InfoCard
                 title="Sumber Data SQL"
                 value={`${snapshot.dbConnections.filter((item) => item.isActive).length} aktif`}
-                hint={`${snapshot.dbConnections.filter((item) => item.lastTestStatus === "failed").length} gagal test, ${snapshot.dbConnections.filter((item) => item.legacySource).length} legacy fallback.`}
+                hint={`${snapshot.dbConnections.filter((item) => item.lastTestStatus === "failed").length} gagal uji, ${snapshot.dbConnections.filter((item) => item.legacySource).length} memakai data lama.`}
               />
               <InfoCard
-                title="Pertanyaan Pihak"
+                title="Pertanyaan Publik"
                 value={`${snapshot.publicQaIntents.filter((item) => item.isActive).length} aktif`}
-                hint={`${snapshot.publicQaIntents.filter((item) => item.aiEnabled).length} AI matcher, ${runtimeDashboard?.payload?.publicQa?.stats?.fallbackToday ?? 0} fallback hari ini.`}
+                hint={`${snapshot.publicQaIntents.filter((item) => item.aiEnabled).length} aturan AI, ${runtimeDashboard?.payload?.publicQa?.stats?.fallbackToday ?? 0} perlu tinjauan hari ini.`}
               />
               <InfoCard
                 title="Pesan Hari Ini"
-                value={`${runtimeDashboard?.payload?.messageStatsToday?.sent ?? 0} sent`}
-                hint={`${runtimeDashboard?.payload?.messageStatsToday?.failed ?? 0} failed, ${runtimeDashboard?.payload?.messageStatsToday?.skipped ?? 0} skipped.`}
+                value={`${runtimeDashboard?.payload?.messageStatsToday?.sent ?? 0} terkirim`}
+                hint={`${runtimeDashboard?.payload?.messageStatsToday?.failed ?? 0} gagal, ${runtimeDashboard?.payload?.messageStatsToday?.skipped ?? 0} dilewati.`}
               />
               <InfoCard
                 title="Jam Aman Kirim"
@@ -2165,9 +2166,9 @@ export function AletaBotAdminPanel() {
                 hint={runtimeDashboard?.payload?.bot?.sendingWindow?.message ?? `${runtimeDashboard?.payload?.bot?.sendingWindow?.start ?? "07:30"}-${runtimeDashboard?.payload?.bot?.sendingWindow?.end ?? "21:00"}`}
               />
               <InfoCard
-                title="Error Sistem"
-                value={`${runtimeDashboard?.payload?.systemStatsToday?.error ?? 0} error`}
-                hint={`${runtimeDashboard?.payload?.systemStatsToday?.critical ?? 0} critical hari ini.`}
+                title="Kendala Sistem"
+                value={`${runtimeDashboard?.payload?.systemStatsToday?.error ?? 0} kendala`}
+                hint={`${runtimeDashboard?.payload?.systemStatsToday?.critical ?? 0} kritis hari ini.`}
               />
             </CardContent>
           </Card>
@@ -2191,15 +2192,15 @@ export function AletaBotAdminPanel() {
           {showAdvancedMode ? (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Konfigurasi AI Bridge</CardTitle>
-              <CardDescription>Provider, model, toggle Public Q&A, dan hasil sync dari modul AI portal ke runtime `aleta_bot`.</CardDescription>
+              <CardTitle>Konfigurasi Jembatan AI</CardTitle>
+              <CardDescription>Provider, model, pengaturan Pertanyaan Publik, dan hasil sinkronisasi dari portal ke layanan `aleta_bot`.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 lg:grid-cols-4">
                 <InfoCard
-                  title="Bridge"
-                  value={runtimeDashboard?.payload?.aiRuntime?.status ?? runtimeDashboard?.payload?.aiRuntime?.lastSyncStatus ?? "unknown"}
-                  hint={runtimeDashboard?.payload?.aiRuntime?.message || runtimeDashboard?.payload?.aiRuntime?.lastSyncError || `Source: ${runtimeDashboard?.payload?.aiRuntime?.configSource ?? "-"}`}
+                  title="Jembatan AI"
+                  value={displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? runtimeDashboard?.payload?.aiRuntime?.lastSyncStatus ?? "unknown")}
+                  hint={runtimeDashboard?.payload?.aiRuntime?.message || runtimeDashboard?.payload?.aiRuntime?.lastSyncError || `Sumber: ${runtimeDashboard?.payload?.aiRuntime?.configSource ?? "-"}`}
                 />
                 <InfoCard
                   title="Provider"
@@ -2207,23 +2208,23 @@ export function AletaBotAdminPanel() {
                   hint={`Model: ${runtimeDashboard?.payload?.aiRuntime?.model ?? "-"}`}
                 />
                 <InfoCard
-                  title="Public Q&A AI"
-                  value={runtimeDashboard?.payload?.aiRuntime?.publicQaEnabled ? "enabled" : "disabled"}
-                  hint={runtimeDashboard?.payload?.aiRuntime?.publicQaAiAnswerEnabled ? "AI answer aktif sesuai runtime config." : "AI answer runtime nonaktif."}
+                  title="AI Pertanyaan Publik"
+                  value={runtimeDashboard?.payload?.aiRuntime?.publicQaEnabled ? "Aktif" : "Tidak Aktif"}
+                  hint={runtimeDashboard?.payload?.aiRuntime?.publicQaAiAnswerEnabled ? "Jawaban AI aktif sesuai konfigurasi layanan." : "Jawaban AI otomatis tidak aktif."}
                 />
                 <InfoCard
                   title="API Key"
-                  value={runtimeDashboard?.payload?.aiRuntime?.apiKeyConfigured ? "configured" : "not configured"}
+                  value={runtimeDashboard?.payload?.aiRuntime?.apiKeyConfigured ? "Sudah Diatur" : "Belum Diatur"}
                   hint={runtimeDashboard?.payload?.aiRuntime?.apiKeyMasked ? `Masked: ${runtimeDashboard.payload.aiRuntime.apiKeyMasked}` : "Nilai key tidak pernah ditampilkan."}
                 />
                 <InfoCard
-                  title="Last Sync"
+                  title="Sinkronisasi Terakhir"
                   value={runtimeDashboard?.payload?.aiRuntime?.syncedAt ? formatDateTime(runtimeDashboard.payload.aiRuntime.syncedAt) : "Belum pernah"}
-                  hint="Sync mengambil provider aktif dari Pengaturan AI portal."
+                  hint="Sinkronisasi mengambil provider aktif dari Pengaturan AI portal."
                 />
                 <InfoCard
-                  title="Last Test"
-                  value={runtimeDashboard?.payload?.aiRuntime?.lastTestStatus ?? "idle"}
+                  title="Uji Terakhir"
+                  value={displayStatus(runtimeDashboard?.payload?.aiRuntime?.lastTestStatus ?? "idle")}
                   hint={runtimeDashboard?.payload?.aiRuntime?.lastTestAt ? formatDateTime(runtimeDashboard.payload.aiRuntime.lastTestAt) : runtimeDashboard?.payload?.aiRuntime?.lastTestError || "Belum diuji."}
                 />
               </div>
@@ -2240,11 +2241,11 @@ export function AletaBotAdminPanel() {
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => void runAction("sync-ai-config")} disabled={isSaving}>
                   <RefreshCcw className="h-4 w-4" />
-                  Sync AI ke ALETA Bot
+                  Sinkronkan AI ke ALETA Bot
                 </Button>
                 <Button variant="outline" onClick={() => void runAction("test-ai-runtime")} disabled={isSaving}>
                   <Play className="h-4 w-4" />
-                  Test AI Runtime
+                  Uji Layanan AI
                 </Button>
               </div>
             </CardContent>
@@ -2252,7 +2253,7 @@ export function AletaBotAdminPanel() {
           ) : null}
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Langkah Setup ALETA Bot</CardTitle>
+              <CardTitle>Langkah Menyiapkan ALETA Bot</CardTitle>
               <CardDescription>Checklist operasional untuk memastikan pilot berjalan aman tanpa aksi berisiko langsung dari kartu ini.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -2274,7 +2275,7 @@ export function AletaBotAdminPanel() {
                   <div>
                     <CardTitle>Kesiapan Pilot</CardTitle>
                     <CardDescription>
-                      Checklist lintas WhatsApp, antrean, data, policy, dan Public Q&A. Status Siap tidak muncul jika ada blocker kritis.
+                      Checklist lintas WhatsApp, antrean, data, kebijakan, dan Pertanyaan Publik. Status Siap tidak muncul jika ada hambatan penting.
                     </CardDescription>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Terakhir diperbarui: {runtimeDashboard?.fetchedAt ? formatDateTime(runtimeDashboard.fetchedAt) : formatDateTime(snapshot.settings.updatedAt)}
@@ -2286,11 +2287,11 @@ export function AletaBotAdminPanel() {
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => void runOperationalSmokeTest()} disabled={isSaving}>
                       <Play className="h-4 w-4" />
-                      Jalankan Smoke Test
+                      Jalankan Pemeriksaan Aman
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={exportPilotReadinessCsv}>
                       <Download className="h-4 w-4" />
-                      Export Readiness
+                      Ekspor Kesiapan
                     </Button>
                   </div>
                 </div>
@@ -2328,7 +2329,7 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>Kelengkapan Nomor WhatsApp Pegawai</CardTitle>
-                <CardDescription>Dipakai untuk mengurangi ketergantungan pada mapping legacy di runtime.</CardDescription>
+            <CardDescription>Dipakai untuk mengurangi ketergantungan pada pemetaan lama di layanan.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-border p-4">
@@ -2339,7 +2340,7 @@ export function AletaBotAdminPanel() {
                     </Badge>
                   </div>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    {employeeWhatsappMissing} pegawai belum memiliki nomor. Lengkapi dari Manajemen Akun agar fallback legacy bisa dihapus bertahap.
+                    {employeeWhatsappMissing} pegawai belum memiliki nomor. Lengkapi dari Manajemen Akun agar data lama bisa dihentikan bertahap.
                   </p>
                 </div>
                 {snapshot.whatsappNumberCompleteness.importantMissing.length > 0 ? (
@@ -2357,13 +2358,13 @@ export function AletaBotAdminPanel() {
                 )}
                 <Button variant="outline" onClick={() => void runDeadlineReminderDryRun()} disabled={isSaving}>
                   <Play className="h-4 w-4" />
-                  Simulasikan Reminder Deadline H-1
+                  Simulasikan Pengingat Tenggat H-1
                 </Button>
                 <Button variant="outline" onClick={() => { window.location.href = "/admin/mapping-user-jabatan?missingWhatsapp=true"; }}>
                   Lengkapi Nomor di Manajemen Akun
                 </Button>
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Simulasi ini hanya membuat log dry-run dan preview. Tidak ada WhatsApp sungguhan yang dikirim.
+                  Simulasi ini hanya membuat catatan dan pratinjau. Tidak ada WhatsApp sungguhan yang dikirim.
                 </p>
               </CardContent>
             </Card>
@@ -2372,12 +2373,12 @@ export function AletaBotAdminPanel() {
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <CardTitle>Operational Smoke Test</CardTitle>
-                  <CardDescription>Pemeriksaan baca-saja untuk status WhatsApp, worker, policy, AI, dan registry database. Tidak scan QR, tidak enqueue, dan tidak kirim WhatsApp.</CardDescription>
+                  <CardTitle>Pemeriksaan Operasional Aman</CardTitle>
+                  <CardDescription>Pemeriksaan baca-saja untuk status WhatsApp, pemroses pesan, kebijakan, AI, dan daftar database. Tidak scan QR, tidak mengantrekan pesan, dan tidak mengirim WhatsApp.</CardDescription>
                 </div>
                 <Button type="button" variant="outline" onClick={() => void runOperationalSmokeTest()} disabled={isSaving}>
                   <Play className="h-4 w-4" />
-                  Jalankan Smoke Test
+                  Jalankan Pemeriksaan Aman
                 </Button>
               </div>
             </CardHeader>
@@ -2405,7 +2406,7 @@ export function AletaBotAdminPanel() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Belum ada smoke test pada sesi ini. Jalankan saat ingin memeriksa kesiapan operasional tanpa aksi berisiko.</p>
+                <p className="text-sm text-muted-foreground">Belum ada pemeriksaan aman pada sesi ini. Jalankan saat ingin memeriksa kesiapan operasional tanpa aksi berisiko.</p>
               )}
             </CardContent>
           </Card>
@@ -2417,83 +2418,83 @@ export function AletaBotAdminPanel() {
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2">
                 <InfoCard title="Total Hari Ini" value={String(messageAnalytics.totalToday)} hint={`${messageAnalytics.sent} terkirim, ${messageAnalytics.failed} gagal`} />
-                <InfoCard title="Success Rate" value={`${messageAnalytics.successRate}%`} hint={`${messageAnalytics.simulated} simulasi tercatat`} />
+                <InfoCard title="Tingkat Berhasil" value={`${messageAnalytics.successRate}%`} hint={`${messageAnalytics.simulated} simulasi tercatat`} />
                 <InfoCard title="Sumber Teratas" value={messageAnalytics.topSource?.[0] ? displayStatus(messageAnalytics.topSource[0]) : "-"} hint={messageAnalytics.topSource ? `${messageAnalytics.topSource[1]} pesan` : "Belum ada data hari ini"} />
-                <InfoCard title="Policy Skip" value={String(policySkipToday)} hint="Skip tidak dianggap failed dan tidak mengirim WhatsApp." />
+                <InfoCard title="Notifikasi Ditahan" value={String(policySkipToday)} hint="Notifikasi yang ditahan tidak dianggap gagal dan tidak mengirim WhatsApp." />
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Analitik Public Q&A</CardTitle>
+                <CardTitle>Analitik Pertanyaan Publik</CardTitle>
                 <CardDescription>Tren ringkas pertanyaan publik dan tindak lanjut manusia.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2">
                 <InfoCard title="7 Hari Terakhir" value={String(publicQaAnalytics.totalLast7Days)} hint="Jumlah pertanyaan/log Public Q&A." />
-                <InfoCard title="Fallback Rate" value={`${publicQaAnalytics.fallbackRate}%`} hint="Fallback perlu dipantau agar intent makin matang." />
-                <InfoCard title="Perlu Review" value={String(publicQaAnalytics.pending)} hint="Masuk antrean human review admin." />
-                <InfoCard title="Draft Intent" value={String(publicQaAnalytics.converted)} hint="Pertanyaan yang sudah dikonversi menjadi draft intent." />
+                <InfoCard title="Perlu Tinjauan" value={`${publicQaAnalytics.fallbackRate}%`} hint="Pantau pertanyaan yang belum cocok agar aturan makin matang." />
+                <InfoCard title="Perlu Ditinjau" value={String(publicQaAnalytics.pending)} hint="Masuk antrean tinjauan admin." />
+                <InfoCard title="Draft Aturan" value={String(publicQaAnalytics.converted)} hint="Pertanyaan yang sudah dikonversi menjadi draft aturan." />
               </CardContent>
             </Card>
             <Card id="policy-skip">
               <CardHeader>
-                <CardTitle>Policy Skip</CardTitle>
-                <CardDescription>Skip policy tersimpan di log terstruktur agar insight tidak hilang setelah runtime restart.</CardDescription>
+                <CardTitle>Notifikasi yang Ditahan</CardTitle>
+                <CardDescription>Notifikasi yang ditahan disimpan dalam catatan terstruktur agar tetap bisa ditinjau setelah layanan dimulai ulang.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <InfoCard title="Hari Ini" value={String(policySkipToday)} hint="Dibaca dari runtime/log policy skip." />
-                  <InfoCard title="Total" value={String(policySkipAllTime)} hint={runtimePolicySkipStats?.lastSkippedAt || snapshot.policySkipSummary.lastSkippedAt ? `Terakhir ${formatDateTime(runtimePolicySkipStats?.lastSkippedAt || snapshot.policySkipSummary.lastSkippedAt || "")}` : "Belum ada skip."} />
+                  <InfoCard title="Hari Ini" value={String(policySkipToday)} hint="Dibaca dari catatan notifikasi yang ditahan." />
+                  <InfoCard title="Total" value={String(policySkipAllTime)} hint={runtimePolicySkipStats?.lastSkippedAt || snapshot.policySkipSummary.lastSkippedAt ? `Terakhir ${formatDateTime(runtimePolicySkipStats?.lastSkippedAt || snapshot.policySkipSummary.lastSkippedAt || "")}` : "Belum ada dilewati."} />
                   <InfoCard title="Alasan Utama" value={(runtimePolicySkipStats?.reasons && Object.keys(runtimePolicySkipStats.reasons)[0]) || snapshot.policySkipSummary.topReasons[0]?.reason || "-"} hint="Contoh: belum_dry_run, belum_preview, belum_approval." />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <NativeSelect value={policySkipReasonFilter} onChange={(event) => setPolicySkipReasonFilter(event.target.value)} className="max-w-xs">
                     <option value="all">Semua alasan</option>
-                    <option value="belum_dry_run">Belum dry-run</option>
-                    <option value="belum_preview">Belum preview</option>
-                    <option value="belum_approval">Belum approval</option>
-                    <option value="safe_sending_window">Safe sending window</option>
-                    <option value="recipient_invalid">Recipient invalid</option>
-                    <option value="policy_blocked">Policy blocked</option>
+                    <option value="belum_dry_run">Belum simulasi</option>
+                    <option value="belum_preview">Belum pratinjau</option>
+                    <option value="belum_approval">Belum persetujuan</option>
+                    <option value="safe_sending_window">Di luar jam aman</option>
+                    <option value="recipient_invalid">Penerima tidak valid</option>
+                    <option value="policy_blocked">Ditahan kebijakan</option>
                   </NativeSelect>
                   <Button variant="outline" onClick={exportPolicySkipCsv}>
                     <Download className="h-4 w-4" />
-                    Export CSV Policy Skip
+                    Ekspor CSV Notifikasi Ditahan
                   </Button>
                 </div>
                 <div className="space-y-2">
                   {(runtimePolicySkipStats?.topNotifications ?? snapshot.policySkipSummary.topNotifications).slice(0, 4).map((item) => (
                     <div key={item.notificationKey} className="flex items-center justify-between rounded border border-border p-2 text-xs">
-                      <span className="font-medium text-foreground">{item.notificationKey || "notification"}</span>
-                      <Badge variant="warning">{item.count} skip</Badge>
+                      <span className="font-medium text-foreground">{item.notificationKey || "notifikasi"}</span>
+                      <Badge variant="warning">{item.count} ditahan</Badge>
                     </div>
                   ))}
                   {(runtimePolicySkipStats?.topNotifications ?? snapshot.policySkipSummary.topNotifications).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Belum ada policy skip tercatat.</p>
+                    <p className="text-sm text-muted-foreground">Belum ada notifikasi ditahan yang tercatat.</p>
                   ) : null}
                 </div>
               </CardContent>
             </Card>
             <Card id="reminder-deadline">
               <CardHeader>
-                <CardTitle>Reminder Deadline Disposisi</CardTitle>
-                <CardDescription>Jalur produksi tersedia, tetapi default tetap aman dan membutuhkan approval/konfirmasi eksplisit.</CardDescription>
+                <CardTitle>Pengingat Tenggat Disposisi</CardTitle>
+                <CardDescription>Jalur aktif operasional tersedia, tetapi default tetap aman dan membutuhkan persetujuan/konfirmasi eksplisit.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoCard title="Mode" value={displayStatus(snapshot.settings.deadlineReminderMode)} hint={snapshot.settings.deadlineReminderEnabled ? "Enabled" : "Tidak aktif produksi."} />
-                  <InfoCard title="Approval" value={snapshot.settings.deadlineReminderApprovedAt ? "Ada" : "Belum ada"} hint={snapshot.settings.deadlineReminderApprovedAt ? formatDateTime(snapshot.settings.deadlineReminderApprovedAt) : "Production/pilot butuh Super Admin."} />
-                  <InfoCard title="Run Terakhir" value={snapshot.settings.deadlineReminderLastRunAt ? formatDateTime(snapshot.settings.deadlineReminderLastRunAt) : "Belum pernah"} hint={snapshot.settings.deadlineReminderLastMessage || "Belum ada hasil runner."} />
-                  <InfoCard title="Status Terakhir" value={displayStatus(snapshot.settings.deadlineReminderLastStatus)} hint="Dry-run tidak mengirim WhatsApp real." />
-                  <InfoCard title="Scheduler" value={snapshot.settings.deadlineReminderSchedulerEnabled ? "Aktif" : "Nonaktif"} hint={`${displayStatus(snapshot.settings.deadlineReminderSchedulerMode)} pukul ${snapshot.settings.deadlineReminderSchedulerTime}`} />
-                  <InfoCard title="Kill Switch" value={snapshot.settings.deadlineReminderKillSwitch ? "Aktif" : "Normal"} hint={snapshot.settings.deadlineReminderKillSwitch ? "Semua runner reminder diblokir." : "Runner mengikuti mode dan approval."} />
+                  <InfoCard title="Mode" value={displayStatus(snapshot.settings.deadlineReminderMode)} hint={snapshot.settings.deadlineReminderEnabled ? "Aktif" : "Belum aktif operasional."} />
+                  <InfoCard title="Persetujuan" value={snapshot.settings.deadlineReminderApprovedAt ? "Ada" : "Belum ada"} hint={snapshot.settings.deadlineReminderApprovedAt ? formatDateTime(snapshot.settings.deadlineReminderApprovedAt) : "Aktif operasional/pilot butuh Super Admin."} />
+                  <InfoCard title="Jalankan Terakhir" value={snapshot.settings.deadlineReminderLastRunAt ? formatDateTime(snapshot.settings.deadlineReminderLastRunAt) : "Belum pernah"} hint={snapshot.settings.deadlineReminderLastMessage || "Belum ada hasil pemrosesan."} />
+                  <InfoCard title="Status Terakhir" value={displayStatus(snapshot.settings.deadlineReminderLastStatus)} hint="Simulasi tidak mengirim WhatsApp sungguhan." />
+                  <InfoCard title="Penjadwal" value={snapshot.settings.deadlineReminderSchedulerEnabled ? "Aktif" : "Nonaktif"} hint={`${displayStatus(snapshot.settings.deadlineReminderSchedulerMode)} pukul ${snapshot.settings.deadlineReminderSchedulerTime}`} />
+                  <InfoCard title="Tombol Darurat" value={snapshot.settings.deadlineReminderKillSwitch ? "Aktif" : "Normal"} hint={snapshot.settings.deadlineReminderKillSwitch ? "Semua pemroses pengingat diblokir." : "Pemroses mengikuti mode dan persetujuan."} />
                 </div>
                 <div className="rounded-xl border border-border p-4">
                   <div className="grid gap-3 md:grid-cols-3">
-                    <Field label="Whitelist User ID Pilot" value={deadlinePilotUserIdsText} onChange={setDeadlinePilotUserIdsText} placeholder="user-a, user-b" />
-                    <Field label="Whitelist Role Pilot" value={deadlinePilotRoleIdsText} onChange={setDeadlinePilotRoleIdsText} placeholder="hakim, panitera" />
-                    <Field label="Whitelist Jabatan/Posisi Pilot" value={deadlinePilotPositionIdsText} onChange={setDeadlinePilotPositionIdsText} placeholder="position-id atau nama jabatan" />
+                    <Field label="Daftar User ID Pilot" value={deadlinePilotUserIdsText} onChange={setDeadlinePilotUserIdsText} placeholder="user-a, user-b" />
+                    <Field label="Daftar Peran Pilot" value={deadlinePilotRoleIdsText} onChange={setDeadlinePilotRoleIdsText} placeholder="hakim, panitera" />
+                    <Field label="Daftar Jabatan Pilot" value={deadlinePilotPositionIdsText} onChange={setDeadlinePilotPositionIdsText} placeholder="position-id atau nama jabatan" />
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Mode pilot hanya memproses penerima internal yang cocok dengan whitelist. Pihak eksternal tidak masuk whitelist reminder ini.</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Mode pilot hanya memproses penerima internal yang cocok dengan daftar izin. Pihak eksternal tidak masuk daftar pengingat ini.</p>
                 </div>
                 <div className="rounded-xl border border-border p-4">
                   <div className="grid gap-3 md:grid-cols-[1fr_180px]">
@@ -2501,29 +2502,29 @@ export function AletaBotAdminPanel() {
                       value={snapshot.settings.deadlineReminderSchedulerMode}
                       onChange={(event) => void updateDeadlineReminderAdvancedSettings({ schedulerMode: event.target.value as AletaBotSnapshot["settings"]["deadlineReminderSchedulerMode"] })}
                     >
-                      <option value="dry_run">Scheduler Dry-run</option>
-                      <option value="pilot">Scheduler Pilot</option>
-                      <option value="production">Scheduler Produksi</option>
-                      <option value="disabled">Scheduler Disabled</option>
+                      <option value="dry_run">Penjadwal Simulasi</option>
+                      <option value="pilot">Penjadwal Pilot</option>
+                      <option value="production">Penjadwal Aktif Operasional</option>
+                      <option value="disabled">Penjadwal Nonaktif</option>
                     </NativeSelect>
                     <Input value={deadlineSchedulerTime} onChange={(event) => setDeadlineSchedulerTime(event.target.value)} placeholder="08:00:00" />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button variant="outline" onClick={() => void updateDeadlineReminderAdvancedSettings()} disabled={isSaving}>
-                      Simpan Whitelist/Jadwal
+                      Simpan Daftar/Jadwal
                     </Button>
                     <Button variant="outline" onClick={() => void updateDeadlineReminderAdvancedSettings({ schedulerEnabled: true, schedulerMode: "dry_run" })} disabled={isSaving}>
-                      Aktifkan Scheduler Dry-run
+                      Aktifkan Penjadwal Simulasi
                     </Button>
                     <Button variant="outline" onClick={() => void updateDeadlineReminderAdvancedSettings({ schedulerEnabled: false, schedulerMode: "disabled" })} disabled={isSaving}>
-                      Nonaktifkan Scheduler
+                      Nonaktifkan Penjadwal
                     </Button>
                     <Button
                       variant={snapshot.settings.deadlineReminderKillSwitch ? "outline" : "destructive"}
                       onClick={() => void updateDeadlineReminderAdvancedSettings({ killSwitch: !snapshot.settings.deadlineReminderKillSwitch, confirmText: snapshot.settings.deadlineReminderKillSwitch ? deadlineConfirmText : "EMERGENCY STOP" })}
                       disabled={isSaving || (!snapshot.settings.deadlineReminderKillSwitch && deadlineConfirmText !== "EMERGENCY STOP")}
                     >
-                      {snapshot.settings.deadlineReminderKillSwitch ? "Matikan Emergency Stop" : "Emergency Stop Reminder"}
+                      {snapshot.settings.deadlineReminderKillSwitch ? "Matikan Tombol Darurat" : "Tombol Darurat Pengingat"}
                     </Button>
                   </div>
                 </div>
@@ -2538,32 +2539,32 @@ export function AletaBotAdminPanel() {
                     Simulasikan
                   </Button>
                   <Button variant="outline" onClick={() => void runDeadlineReminderSchedulerDryRun()} disabled={isSaving}>
-                    Jalankan Dry-run Sekarang
+                    Jalankan Simulasi Sekarang
                   </Button>
                   <Button variant="outline" onClick={() => void updateDeadlineReminderMode("dry_run")} disabled={isSaving}>
-                    Mode Dry-run
+                    Mode Simulasi
                   </Button>
                   <Button variant="outline" onClick={() => void updateDeadlineReminderMode("pilot")} disabled={isSaving || deadlineConfirmText !== "AKTIFKAN PILOT"}>
                     Aktifkan Pilot
                   </Button>
                   <Button variant="outline" onClick={() => void updateDeadlineReminderMode("production")} disabled={isSaving || deadlineConfirmText !== "AKTIFKAN REMINDER"}>
-                    Aktifkan Produksi
+                    Aktifkan Operasional
                   </Button>
                   <Button variant="destructive" onClick={() => void updateDeadlineReminderMode("disabled")} disabled={isSaving}>
                     Nonaktifkan
                   </Button>
                   <Button onClick={() => void runDeadlineReminderControlled()} disabled={isSaving || deadlineConfirmText !== "JALANKAN REMINDER"}>
-                    Jalankan Runner Terkontrol
+                    Jalankan Pengingat Terkontrol
                   </Button>
                 </div>
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Tombol produksi tetap role-guarded. Selama tidak mengetik konfirmasi, runner hanya melaporkan blocker dan tidak mengirim WhatsApp.
+                  Tombol aktif operasional tetap dibatasi hak akses. Selama konfirmasi belum sesuai, pemroses hanya melaporkan hambatan dan tidak mengirim WhatsApp.
                 </p>
                 <div className="rounded-xl border border-border p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Run History Reminder</p>
-                      <p className="text-xs text-muted-foreground">5 run terakhir, termasuk dry-run scheduler dan blocker. Nomor/isi pesan penuh tidak disimpan.</p>
+                      <p className="text-sm font-semibold text-foreground">Riwayat Pengingat</p>
+                      <p className="text-xs text-muted-foreground">5 proses terakhir, termasuk simulasi penjadwal dan hambatan. Nomor/isi pesan penuh tidak disimpan.</p>
                     </div>
                     <Badge variant="muted">{snapshot.deadlineReminderRuns.length} log</Badge>
                   </div>
@@ -2580,12 +2581,12 @@ export function AletaBotAdminPanel() {
                           <p className="mt-1 text-muted-foreground">{formatRunSummary(run.summary)}</p>
                         ) : null}
                         <p className="mt-1 text-muted-foreground">
-                          {formatDateTime(run.startedAt)} · kandidat {run.totalCandidates} · dry-run {run.dryRunCreated} · terkirim {run.sentCount} · skip {run.skippedCount} · error {run.errorCount}
+                          {formatDateTime(run.startedAt)} · kandidat {run.totalCandidates} · simulasi {run.dryRunCreated} · terkirim {run.sentCount} · dilewati {run.skippedCount} · kendala {run.errorCount}
                         </p>
                       </div>
                     ))}
                     {snapshot.deadlineReminderRuns.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Belum ada run history reminder.</p>
+                      <p className="text-sm text-muted-foreground">Belum ada riwayat pengingat.</p>
                     ) : null}
                   </div>
                 </div>
@@ -2595,7 +2596,7 @@ export function AletaBotAdminPanel() {
           <Card className="mt-4">
             <CardHeader>
               <CardTitle>Kesiapan Pilot</CardTitle>
-              <CardDescription>Checklist terakhir sebelum pilot produksi terbatas. Status Siap hanya diberikan jika tidak ada blocker runtime.</CardDescription>
+              <CardDescription>Checklist terakhir sebelum pilot aktif operasional terbatas. Status Siap hanya diberikan jika tidak ada hambatan layanan.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
@@ -2607,7 +2608,7 @@ export function AletaBotAdminPanel() {
                     ? "Fondasi siap untuk pilot terbatas."
                     : releaseStatus === "warning"
                       ? "Ada catatan operasional yang perlu dipantau."
-                      : "Ada blocker yang harus diperbaiki sebelum pilot."}
+                    : "Ada hambatan yang harus diperbaiki sebelum pilot."}
                 </span>
               </div>
               {releaseStatus === "blocked" ? (
@@ -2638,11 +2639,11 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>Koneksi WhatsApp Web</CardTitle>
-                <CardDescription>WhatsApp Runtime: ALETA Bot Gateway. Portal hanya menjadi control panel, bukan client WhatsApp kedua.</CardDescription>
+                <CardDescription>Layanan WhatsApp berjalan melalui ALETA Bot. Portal hanya menjadi panel kontrol, bukan klien WhatsApp kedua.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoCard title="Runtime" value={displayStatus(snapshot.whatsapp.runtimeStatus)} hint={snapshot.whatsapp.lastErrorMessage ?? "Tidak ada error runtime tersimpan."} />
+                  <InfoCard title="Layanan" value={displayStatus(snapshot.whatsapp.runtimeStatus)} hint={snapshot.whatsapp.lastErrorMessage ?? "Tidak ada kendala layanan yang tersimpan."} />
                   <InfoCard title="Terakhir Terhubung" value={snapshot.whatsapp.lastConnectedAt ? formatDateTime(snapshot.whatsapp.lastConnectedAt) : "Belum pernah"} hint={snapshot.whatsapp.savedStatus} />
                 </div>
                 <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
@@ -2655,27 +2656,27 @@ export function AletaBotAdminPanel() {
                     </div>
                   ) : snapshot.whatsapp.runtimeStatus === "browser_locked" ? (
                     <div className="space-y-1 text-destructive">
-                      <p className="font-medium">Session WhatsApp sedang dipakai proses browser lain.</p>
-                      <p>Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu klik Refresh Status. Jangan hapus folder session.</p>
+                      <p className="font-medium">Sesi WhatsApp sedang dipakai proses browser lain.</p>
+                      <p>Tutup proses browser lama atau mulai ulang ALETA Bot dengan aman, lalu klik Perbarui Status. Jangan hapus sesi WhatsApp.</p>
                     </div>
                   ) : snapshot.whatsapp.runtimeStatus === "initializing" ? (
                     <span className="text-muted-foreground">Menyiapkan Koneksi — menunggu QR dari ALETA Bot Gateway...</span>
                   ) : (
-                    <span className="text-muted-foreground">Tidak Terhubung. Klik <strong>Connect WhatsApp Gateway</strong> untuk memulai sesi tanpa reset.</span>
+                    <span className="text-muted-foreground">Tidak Terhubung. Klik <strong>Hubungkan WhatsApp Gateway</strong> untuk memulai sesi tanpa reset.</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={() => void runAction("reconnect")} disabled={isSaving}>
                     <RefreshCcw className="h-4 w-4" />
-                    Connect WhatsApp Gateway
+                    Hubungkan WhatsApp Gateway
                   </Button>
                   <Button variant="outline" onClick={() => void loadSnapshot()} disabled={isSaving || isLoading}>
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                    Refresh QR WhatsApp
+                    Perbarui QR WhatsApp
                   </Button>
                   <Button variant="outline" onClick={() => void runAction("test-connection")} disabled={isSaving}>
                     <Play className="h-4 w-4" />
-                    Test Koneksi
+                    Uji Koneksi
                   </Button>
                   <Button
                     variant="destructive"
@@ -2711,12 +2712,12 @@ export function AletaBotAdminPanel() {
                 ) : (
                   <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
                     {snapshot.whatsapp.runtimeStatus === "connected"
-                      ? "WhatsApp sudah connected. QR tidak diperlukan."
+                      ? "WhatsApp sudah terhubung. QR tidak diperlukan."
                       : snapshot.whatsapp.runtimeStatus === "browser_locked"
-                        ? "Session WhatsApp terkunci oleh proses browser lain. Tutup proses lama atau restart backend, lalu refresh status."
+                        ? "Sesi WhatsApp sedang dipakai proses lain. Tutup proses lama atau restart layanan dengan aman, lalu refresh status."
                       : snapshot.whatsapp.runtimeStatus === "initializing"
                         ? "Menunggu QR dari ALETA Bot Gateway..."
-                        : "QR belum tersedia. Klik Connect WhatsApp Gateway, lalu tunggu beberapa detik."}
+                        : "QR belum tersedia. Klik Hubungkan WhatsApp Gateway, lalu tunggu beberapa detik."}
                   </div>
                 )}
               </CardContent>
@@ -2728,12 +2729,12 @@ export function AletaBotAdminPanel() {
           <Card>
             <CardHeader>
               <CardTitle>Pengaturan Bot</CardTitle>
-              <CardDescription>Perubahan disimpan di database portal dan ditulis ke file bridge untuk runtime `aleta_bot`.</CardDescription>
+              <CardDescription>Perubahan disimpan di database portal dan diteruskan ke layanan ALETA Bot.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-4 lg:grid-cols-3">
-                <InfoCard title="Bot" value={snapshot.settings.botEnabled ? "aktif" : "nonaktif"} hint={snapshot.settings.dryRunEnabled ? "Dry-run aktif" : "Mode kirim produksi"} />
-                <InfoCard title="Notifikasi" value={snapshot.settings.notificationsEnabled ? "aktif" : "nonaktif"} hint={`Delay ${snapshot.settings.messageDelayMs} ms, retry ${snapshot.settings.retryLimit}x`} />
+                <InfoCard title="Pengiriman Bot" value={snapshot.settings.botEnabled ? "Aktif dengan pengamanan" : "Nonaktif"} hint={snapshot.settings.dryRunEnabled ? "Simulasi aktif" : "Pengiriman berjalan dengan batas dan persetujuan wajib"} />
+                <InfoCard title="Notifikasi" value={snapshot.settings.notificationsEnabled ? "Aktif" : "Nonaktif"} hint={`Jeda ${snapshot.settings.messageDelayMs} ms, coba ulang ${snapshot.settings.retryLimit}x`} />
                 <InfoCard title="Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint={`Updated: ${formatDateTime(snapshot.settings.updatedAt)}`} />
               </div>
               <Button onClick={() => openModal({ type: "settings", title: "Edit Pengaturan Bot" })} disabled={isSaving}>
@@ -2762,7 +2763,7 @@ export function AletaBotAdminPanel() {
                         </div>
                         <Badge variant={template.editable ? "success" : "muted"}>{template.editable ? "Editable" : "Locked"}</Badge>
                       </div>
-                      <pre className="max-h-52 overflow-auto rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 whitespace-pre-wrap">{templateDraft[template.id] ?? template.body}</pre>
+                    <pre className="max-h-52 overflow-auto rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 whitespace-pre-wrap">{templateDraft[template.id] ?? template.body}</pre>
                       <div className="flex justify-end">
                         <Button size="sm" variant="outline" onClick={() => openModal({ type: "template", title: `Edit Template ${template.title}`, template })} disabled={isSaving || !template.editable}>
                           Edit Template
@@ -3219,13 +3220,13 @@ export function AletaBotAdminPanel() {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">Filter:</span>
-              {(["all", "error", "whatsapp", "ai", "queue", "approval", "migration"] as const).map((f) => (
+                {(["all", "error", "whatsapp", "ai", "queue", "approval", "migration"] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setLogFilter(f)}
                   className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${logFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
                 >
-                  {f === "all" ? "Semua" : f === "error" ? "Error" : f === "whatsapp" ? "WhatsApp" : f === "ai" ? "AI" : f === "queue" ? "Antrean" : f === "approval" ? "Persetujuan" : "Migrasi"}
+                    {f === "all" ? "Semua" : f === "error" ? "Kendala" : f === "whatsapp" ? "WhatsApp" : f === "ai" ? "AI" : f === "queue" ? "Antrean" : f === "approval" ? "Persetujuan" : "Migrasi"}
                 </button>
               ))}
               <span className="ml-2 text-xs text-muted-foreground">{filteredLogs.length} entri ditampilkan</span>
@@ -3284,7 +3285,7 @@ export function AletaBotAdminPanel() {
             <Card>
               <CardHeader>
                 <CardTitle>Kirim Pesan Test</CardTitle>
-                <CardDescription>Dry-run tidak mengirim pesan sungguhan, tetapi tetap mencatat audit log.</CardDescription>
+                <CardDescription>Simulasi tidak mengirim pesan sungguhan, tetapi tetap mencatat audit log.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Field label="Nomor tujuan" value={settingsDraft.testTargetNumber} onChange={(value) => setSettingsDraft((current) => ({ ...current, testTargetNumber: value }))} placeholder="628123456789" />
@@ -3405,7 +3406,7 @@ export function AletaBotAdminPanel() {
             <div className="grid gap-4 lg:grid-cols-3">
               <ToggleRow label="Bot aktif" checked={settingsDraft.botEnabled} onCheckedChange={(value) => { markModalDirty(); setSettingsDraft((current) => ({ ...current, botEnabled: value })); }} />
               <ToggleRow label="Notifikasi otomatis" checked={settingsDraft.notificationsEnabled} onCheckedChange={(value) => { markModalDirty(); setSettingsDraft((current) => ({ ...current, notificationsEnabled: value })); }} />
-              <ToggleRow label="Dry-run" checked={settingsDraft.dryRunEnabled} onCheckedChange={(value) => { markModalDirty(); setSettingsDraft((current) => ({ ...current, dryRunEnabled: value })); }} />
+              <ToggleRow label="Simulasi" checked={settingsDraft.dryRunEnabled} onCheckedChange={(value) => { markModalDirty(); setSettingsDraft((current) => ({ ...current, dryRunEnabled: value })); }} />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Nomor Admin WhatsApp" value={settingsDraft.adminWhatsappNumber} onChange={(value) => { markModalDirty(); setSettingsDraft((current) => ({ ...current, adminWhatsappNumber: value })); }} placeholder="628123456789" />
@@ -3426,7 +3427,7 @@ export function AletaBotAdminPanel() {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">Placeholder: {activeModal.template.placeholders.join(", ") || "tanpa placeholder"}</p>
             {(() => {
-              const body = templateDraft[activeModal.template.id] ?? activeModal.template.body;
+        const body = templateDraft[activeModal.template.id] ?? activeModal.template.body;
               const detected = extractTemplatePlaceholders(body);
               const unknown = detected.filter((placeholder) => !activeModal.template.placeholders.includes(placeholder));
               const missingRequired = activeModal.template.placeholders.filter((placeholder) => !detected.includes(placeholder));
@@ -3744,7 +3745,7 @@ export function AletaBotAdminPanel() {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
               <InfoCard title="Kandidat" value={String(deadlineReminderPreview?.totalCandidates ?? 0)} hint="Disposisi aktif yang jatuh tempo besok." />
-              <InfoCard title={deadlineReminderPreview?.productionSent ? "Masuk Antrean" : "Dry-run dibuat"} value={String(deadlineReminderPreview?.productionSent ?? deadlineReminderPreview?.dryRunCreated ?? 0)} hint={deadlineReminderPreview?.productionSent ? "Terkonfirmasi oleh gateway dengan gate eksplisit." : "Tercatat sebagai simulasi, bukan kirim WA."} />
+              <InfoCard title={deadlineReminderPreview?.productionSent ? "Masuk Antrean" : "Simulasi dibuat"} value={String(deadlineReminderPreview?.productionSent ?? deadlineReminderPreview?.dryRunCreated ?? 0)} hint={deadlineReminderPreview?.productionSent ? "Terkonfirmasi oleh gateway dengan gate eksplisit." : "Tercatat sebagai simulasi, bukan kirim WA."} />
               <InfoCard title="Dilewati" value={String(deadlineReminderPreview?.skipped ?? 0)} hint="Nomor kosong/invalid atau sudah pernah simulasi." />
             </div>
             {(deadlineReminderPreview?.warnings ?? []).length > 0 ? (
@@ -3799,7 +3800,7 @@ export function AletaBotAdminPanel() {
               {activeModal.action === "disable-legacy"
                 ? "Aksi ini tidak menghapus kode legacy, tetapi menulis flag disabled ke runtime config agar adapter membaca legacy key sebagai nonaktif. Pastikan registry sudah aktif dan teruji."
                 : activeModal.action === "activate"
-                  ? "Aktivasi registry hanya tersedia setelah dry-run dan approval. Guard duplikasi jalur aktif: legacy key harus sudah di-disable lebih dulu untuk notifikasi."
+                  ? "Aktivasi registry hanya tersedia setelah simulasi dan approval. Guard duplikasi jalur aktif: legacy key harus sudah di-disable lebih dulu untuk notifikasi."
                   : activeModal.action === "rollback"
                     ? (() => {
                         const s = activeModal.migration.status;
@@ -4508,7 +4509,7 @@ function DeadLetterCard({
                     </td>
                     <td className="py-4 pr-4"><Badge variant="outline">{dl.category}</Badge></td>
                     <td className="py-4 pr-4 text-xs text-muted-foreground">
-                      <p>{formatDateTime(dl.resolvedAt ?? dl.updatedAt)}</p>
+                <p>{formatDateTime(dl.resolvedAt ?? dl.updatedAt)}</p>
                       {dl.resolvedBy ? <p className="mt-1">oleh {dl.resolvedBy}</p> : null}
                     </td>
                     <td className="py-4 pr-4 max-w-[240px]">
@@ -4822,7 +4823,7 @@ function LegacyMigrationCard({
                             {/* Aksi Aman */}
                             <div className="flex flex-wrap gap-1">
                               <Button size="sm" variant="outline" disabled={isSaving} onClick={() => onAction("preview", migration)}>Lihat Pratinjau</Button>
-                              <Button size="sm" variant="outline" disabled={isSaving || !["registry_draft", "needs_manual_mapping", "mapped", "in_progress"].includes(migration.status)} onClick={() => onAction("dry-run", migration)}>Simulasi</Button>
+        <Button size="sm" variant="outline" disabled={isSaving || !["registry_draft", "needs_manual_mapping", "mapped", "in_progress"].includes(migration.status)} onClick={() => onAction("dry-run", migration)}>Simulasi</Button>
                             </div>
                             {/* Alur Kerja */}
                             <div className="flex flex-wrap gap-1">

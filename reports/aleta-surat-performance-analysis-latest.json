@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-05-03T00:00:00+08:00",
+  "overall": "ROOT_CAUSE_IDENTIFIED",
+  "currentApi": {
+    "endpoint": "GET /api/surat",
+    "supportsPagination": false,
+    "supportsServerSort": false,
+    "defaultLimit": 100,
+    "loadsAllDispositionsForAccessFilter": true,
+    "responseShape": ["items", "total", "filters"]
+  },
+  "rootCauses": [
+    "Surat page reads from PortalProvider.accessibleLetters instead of a paginated API query.",
+    "/api/surat loads a batch of letters then loads all active dispositions for access filtering.",
+    "Search/filtering on the Surat page is client-side and URL update happens on every keystroke.",
+    "List response uses LetterDetail shape with detail-heavy fields available from the detail endpoint."
+  ],
+  "recommendedPatch": [
+    "Add page/pageSize/search/sort parsing.",
+    "Add RBAC-safe paginated list service.",
+    "Return pagination metadata.",
+    "Use /api/surat directly from the Surat page.",
+    "Debounce search and add page size controls."
+  ],
+  "doNotChange": [
+    "auth guard",
+    "RBAC semantics",
+    "detail endpoint",
+    "export endpoint",
+    "WhatsApp production",
+    "scheduler/reminder"
+  ]
+}

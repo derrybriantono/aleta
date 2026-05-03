@@ -151,11 +151,11 @@ export function PdfLiveViewer({
 
     return "Menunggu PDF";
   }, [isLoadingPdf, pageCount, pdfDocument, pdfError]);
-  const modeTitle = mode === "original" ? "PDF Asli" : "Fallback PDF Live";
+  const modeTitle = mode === "original" ? "PDF Asli" : "Mode Cadangan PDF";
   const modeHint =
     mode === "original"
       ? "Tampilan dokumen asli tanpa watermark, cocok untuk baca detail, seleksi teks, dan navigasi halaman."
-      : "Viewer fallback otomatis ketika Smart Preview tidak kompatibel di browser aktif.";
+      : "Mode cadangan otomatis saat pratinjau utama belum cocok dengan browser yang digunakan.";
 
   useEffect(() => {
     if (!pdfDocument || pageCount <= 0) return;

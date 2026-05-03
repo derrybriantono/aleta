@@ -1,0 +1,87 @@
+{
+  "generatedAt": "2026-05-03T19:02:00+08:00",
+  "decision": "PRODUCTION_BASELINE_ACTIVE",
+  "whatsappProductionAutomation": "active_with_guard",
+  "canary": "PASS",
+  "riskCheck": "PASS",
+  "shadowRun": "PASS",
+  "preflight": "WARN",
+  "smoke": "PASS",
+  "queueHealthy": true,
+  "deadLetterActive": 0,
+  "approvalPending": 0,
+  "runtime": {
+    "whatsapp": "connected",
+    "worker": "enabled_active_not_paused",
+    "queuePending": 0,
+    "queueProcessing": 0,
+    "queueFailed": 0,
+    "botEnabled": true,
+    "notificationsEnabled": true,
+    "schedulerReminder": "production_with_guard",
+    "safeSendingWindow": "enabled_allowed",
+    "productionGuard": "PASS"
+  },
+  "dataHygiene": {
+    "activeEmployees": 42,
+    "eligibleProduction": 42,
+    "missing": 0,
+    "dummy": 0,
+    "duplicateGroups": 0,
+    "invalid": 0,
+    "excluded": 0
+  },
+  "narrativeUpdated": true,
+  "humanizedLanguagePreserved": true,
+  "patchNotesUpdated": true,
+  "guideUpdated": true,
+  "dashboardUpdated": true,
+  "runbookUpdated": true,
+  "validation": {
+    "tsc": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "test": "PASS",
+    "testFiles": 16,
+    "tests": 62,
+    "preflight": "WARN",
+    "smoke": "PASS",
+    "riskCheck": "PASS",
+    "shadowRun": "PASS"
+  },
+  "filesChanged": [
+    "D:\\aleta\\manajemen_surat\\src\\lib\\patch-notes.ts",
+    "D:\\aleta\\manajemen_surat\\src\\lib\\user-guides.ts",
+    "D:\\aleta\\manajemen_surat\\src\\components\\portal\\aleta-bot-admin.tsx",
+    "D:\\aleta\\reports\\aleta-office-server-day-one-monitoring.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-day-one-monitoring.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-rollback-plan.md",
+    "D:\\aleta\\reports\\aleta-office-server-rollback-plan.md",
+    "D:\\aleta\\reports\\aleta-sop-whatsapp-disconnected.md",
+    "D:\\aleta\\reports\\aleta-sop-dead-letter.md",
+    "D:\\aleta\\reports\\aleta-sop-queue-failed.md",
+    "D:\\aleta\\reports\\aleta-sop-rollback-safe-mode.md",
+    "D:\\aleta\\reports\\aleta-production-status-alignment-latest.md",
+    "D:\\aleta\\reports\\aleta-production-status-alignment-latest.json"
+  ],
+  "oldNarrativesReplaced": [
+    "Pengiriman otomatis masih tahap kesiapan",
+    "Status masih tahap kesiapan awal",
+    "Pengiriman Bot final nonaktif",
+    "Penjadwal/Pengingat masih simulasi sebagai status normal",
+    "Production WhatsApp masih ditahan"
+  ],
+  "newNarrativesApplied": [
+    "Pengiriman WhatsApp otomatis sudah aktif dengan pengamanan",
+    "Uji terbatas sudah berhasil",
+    "Pengiriman berisiko tetap wajib persetujuan",
+    "Batas pengiriman aktif",
+    "Pencegahan kirim ganda aktif",
+    "Mode aman tersedia bila terjadi gangguan"
+  ],
+  "remainingRisks": [
+    "Monitoring hari pertama tetap wajib karena production aktif.",
+    "Operator harus menahan pengiriman bila antrean gagal atau Pesan Gagal aktif muncul.",
+    "Broadcast, pihak luar, kirim ulang massal, pengiriman tidak wajar, dan backlog penjadwal tetap wajib persetujuan."
+  ]
+}

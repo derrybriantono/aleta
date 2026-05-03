@@ -72,7 +72,7 @@ async function readApiJson<T>(response: Response) {
     | null;
 
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error?.message ?? "Permintaan tidak dapat diproses.");
+        throw new Error(payload?.error?.message ?? "Permintaan belum dapat diproses.");
   }
 
   return payload.data as T;
@@ -318,7 +318,7 @@ export function FeedbackCenter() {
 
             {form.type === "bug" ? (
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-foreground">Langkah-langkah agar bug bisa diuji ulang</span>
+                    <span className="text-sm font-semibold text-foreground">Langkah agar kendala bisa diuji ulang</span>
                 <Textarea
                   value={form.reproductionSteps}
                   onChange={(event) => setForm((current) => ({ ...current, reproductionSteps: event.target.value }))}
@@ -364,7 +364,7 @@ export function FeedbackCenter() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <InfoRow label="Nama" value={currentUser?.name ?? "-"} />
-              <InfoRow label="Role" value={getUserRoleBadge(currentUser)} />
+                <InfoRow label="Peran" value={getUserRoleBadge(currentUser)} />
               <InfoRow label="Unit/Jabatan" value={getUserPositionLabel(currentUser)} />
               <InfoRow label="Email" value={currentUser?.email ?? "-"} />
             </CardContent>
@@ -373,7 +373,7 @@ export function FeedbackCenter() {
           <Card className="border-border/80">
             <CardHeader>
               <CardTitle>Riwayat Masukan Saya</CardTitle>
-              <CardDescription>User biasa hanya melihat masukan yang pernah dikirim dari akunnya sendiri.</CardDescription>
+              <CardDescription>Pengguna hanya melihat masukan yang pernah dikirim dari akunnya sendiri.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {loading ? (

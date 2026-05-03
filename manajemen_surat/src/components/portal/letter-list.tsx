@@ -28,7 +28,7 @@ export function LetterList({
     return (
       <EmptyState
         title={`Belum ada ${title.toLowerCase()} yang sesuai filter`}
-        description="Coba ubah kata kunci, status, atau gunakan akun demo lain untuk melihat data yang berbeda."
+        description="Coba ubah kata kunci atau filter status untuk melihat data yang sesuai."
       />
     );
   }
@@ -98,7 +98,7 @@ export function LetterList({
                     {onSoftDelete ? (
                       <Button variant="outline" size="sm" onClick={() => onSoftDelete(letter)}>
                         <Trash2 className="h-3.5 w-3.5" />
-                        Hapus
+                        Arsipkan
                       </Button>
                     ) : null}
                     {onDelete ? (
@@ -151,7 +151,7 @@ export function LetterList({
                 {onSoftDelete ? (
                   <Button variant="outline" className="w-full" onClick={() => onSoftDelete(letter)}>
                     <Trash2 className="h-4 w-4" />
-                    Hapus
+                    Arsipkan
                   </Button>
                 ) : null}
                 {onDelete ? (

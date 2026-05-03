@@ -118,7 +118,7 @@ function AdminLevelSelector({
     {
       value: "none",
       label: "Bukan Admin",
-      desc: "Akses sesuai jabatan dan role utama.",
+    desc: "Akses sesuai jabatan dan peran utama.",
       icon: <UserRound className="h-4 w-4" />,
     },
     {
@@ -329,7 +329,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
 
         <CardHeader>
           <CardTitle>Daftar Akun</CardTitle>
-          <CardDescription>Pilih akun untuk diperbarui atau gunakan tab akun baru untuk menambah user terpusat.</CardDescription>
+          <CardDescription>Pilih akun untuk diperbarui atau gunakan tab akun baru untuk menambah pengguna.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {missingWhatsappOnly ? (
@@ -339,7 +339,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                   <Badge variant="warning">Filter: Belum punya nomor WhatsApp</Badge>
                   <p className="mt-2 font-semibold">{filteredUsers.length} pegawai aktif belum memiliki nomor WhatsApp.</p>
                   <p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">
-                    Lengkapi nomor WhatsApp pegawai prioritas sebelum pilot WhatsApp agar ALETA Bot tidak bergantung pada mapping lama.
+                    Lengkapi nomor WhatsApp pegawai prioritas sebelum pilot WhatsApp agar ALETA Bot tidak memakai data lama.
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => { window.location.href = "/admin/mapping-user-jabatan"; }}>
@@ -365,7 +365,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                 <option value="name">Nama</option>
                 <option value="username">Username</option>
                 <option value="position">Jabatan</option>
-                <option value="role">Role</option>
+                <option value="role">Peran</option>
                 <option value="nip">NIP</option>
                 <option value="email">Email</option>
                 <option value="status">Status</option>
@@ -447,9 +447,9 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
 
                   {resetResult?.userId === user.id ? (
                     <div className="mx-1 rounded-[1rem] border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/30">
-                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Password Sementara (tampil sekali — simpan sebelum ditutup)</p>
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">Password sementara tampil sekali. Simpan sebelum ditutup.</p>
                       <p className="mt-1 font-mono text-base font-bold tracking-widest text-amber-900 dark:text-amber-100">{resetResult.tempPassword}</p>
-                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">Sampaikan ke user secara langsung dan minta segera diganti.</p>
+                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">Sampaikan langsung kepada pengguna dan minta segera diganti.</p>
                       <button
                         type="button"
                         className="mt-2 text-xs text-amber-600 underline dark:text-amber-400"
@@ -501,7 +501,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
           <Card className="border-border/80">
             <CardHeader>
               <CardTitle>Buat Akun Baru</CardTitle>
-              <CardDescription>Factory akun terpusat untuk menambah user baru dengan data identitas lengkap dan foto profil.</CardDescription>
+              <CardDescription>Tambah pengguna baru dengan data identitas lengkap dan foto profil.</CardDescription>
             </CardHeader>
             <CardContent>
               <ManagedUserFactory onCreate={createManagedUser} />
@@ -516,7 +516,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <CardTitle>Permintaan Reset Password</CardTitle>
-                    <CardDescription>Permintaan dari user yang tidak bisa menggunakan OTP WhatsApp. Setujui untuk membuat password sementara otomatis.</CardDescription>
+                    <CardDescription>Permintaan dari pengguna yang tidak bisa menggunakan OTP WhatsApp. Setujui untuk membuat password sementara.</CardDescription>
                   </div>
                   <Button
                     variant="outline"
@@ -524,7 +524,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                     disabled={isLoadingRequests}
                     onClick={() => void loadResetRequests()}
                   >
-                    {isLoadingRequests ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Refresh"}
+                    {isLoadingRequests ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Perbarui"}
                   </Button>
                 </div>
               </CardHeader>
@@ -545,7 +545,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 space-y-1">
                             <p className="truncate font-semibold text-foreground">{req.name}</p>
-                            <p className="text-sm text-muted-foreground">{req.username} — NIP {req.nip}</p>
+                            <p className="text-sm text-muted-foreground">{req.username} - NIP {req.nip}</p>
                             <p className="text-xs text-muted-foreground">
                               Diajukan {new Date(req.createdAt).toLocaleString("id-ID")}
                             </p>
@@ -566,13 +566,13 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                         {resolveResult?.requestId === req.id && resolveResult.action === "approve" && resolveResult.tempPassword ? (
                           <div className="rounded-[1rem] border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/30">
                             <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                              Password Sementara (tampil sekali — simpan sebelum ditutup)
+                              Password sementara tampil sekali. Simpan sebelum ditutup.
                             </p>
                             <p className="mt-1 font-mono text-base font-bold tracking-widest text-amber-900 dark:text-amber-100">
                               {resolveResult.tempPassword}
                             </p>
                             <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                              Sampaikan ke user secara langsung dan minta segera diganti.
+                              Sampaikan langsung kepada pengguna dan minta segera diganti.
                             </p>
                             <button
                               type="button"
@@ -606,7 +606,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                                 <Input
                                   value={resolveNote}
                                   onChange={(event) => setResolveNote(event.target.value)}
-                                  placeholder="Alasan atau catatan untuk user..."
+                    placeholder="Alasan atau catatan untuk pengguna..."
                                   className="h-10 text-sm"
                                 />
                               </div>
@@ -851,7 +851,7 @@ function ManagedUserEditor({
               <div className="flex items-center gap-3">
                 <UserRound className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-semibold text-foreground">Role Efektif</p>
+                  <p className="font-semibold text-foreground">Peran Efektif</p>
                   <p className="text-sm text-muted-foreground">{effectiveRoleLabel}</p>
                 </div>
               </div>
@@ -883,7 +883,7 @@ function ManagedUserEditor({
                 <div className="space-y-1">
                   <p className="font-semibold text-foreground">Status Login</p>
                   <p className="text-sm text-muted-foreground">
-                    Matikan akses untuk memblokir user yang sudah tidak aktif agar tidak bisa masuk ke ALETA.
+                  Matikan akses untuk memblokir pengguna yang sudah tidak aktif agar tidak bisa masuk ke ALETA.
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -923,7 +923,7 @@ function ManagedUserEditor({
                 <Camera className="h-5 w-5 text-primary" />
                 <div>
                   <p className="font-semibold text-foreground">Foto Profil</p>
-                  <p className="text-sm text-muted-foreground">Menggunakan upload native agar tetap ringan dan seamless.</p>
+                  <p className="text-sm text-muted-foreground">Upload dibuat ringan agar mudah dipakai.</p>
                 </div>
               </div>
             </div>
@@ -943,9 +943,9 @@ function ManagedUserEditor({
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.2rem] border border-dashed border-primary/30 bg-primary/5 p-4">
             <div className="space-y-1">
-              <p className="font-semibold text-foreground">Hak akses mengikuti role dan jabatan definitif</p>
+              <p className="font-semibold text-foreground">Hak akses mengikuti peran dan jabatan definitif</p>
               <p className="text-sm text-muted-foreground">
-                Perubahan jabatan akan memengaruhi target disposisi, visibilitas surat, dan rekomendasi kerja pada akun ini.
+                Perubahan jabatan akan memengaruhi target disposisi, akses surat, dan rekomendasi kerja pada akun ini.
               </p>
             </div>
             <Button
@@ -1160,7 +1160,7 @@ function ManagedUserFactory({
               <div className="flex items-center gap-3">
                 <UserPlus className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-semibold text-foreground">Role hasil mapping</p>
+                  <p className="font-semibold text-foreground">Peran hasil mapping</p>
                   <p className="text-sm text-muted-foreground">{effectiveRoleLabel}</p>
                 </div>
               </div>
@@ -1317,7 +1317,7 @@ export function RoleVisibilityPanel({
         <TabsContent key={item.roleId} value={item.roleId}>
           <Card className="border-border/80">
             <CardHeader>
-              <CardTitle>Visibility untuk {roles.find((role) => role.id === item.roleId)?.name ?? item.roleId}</CardTitle>
+            <CardTitle>Akses tampilan untuk {roles.find((role) => role.id === item.roleId)?.name ?? item.roleId}</CardTitle>
               <CardDescription>Perubahan di sini langsung memengaruhi sidebar dan dashboard persona yang bersangkutan.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 lg:grid-cols-2">

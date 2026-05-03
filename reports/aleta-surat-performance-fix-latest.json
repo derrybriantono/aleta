@@ -1,0 +1,89 @@
+{
+  "status": "PASS",
+  "date": "2026-05-03",
+  "summary": {
+    "serverSidePagination": true,
+    "defaultPageSize": 25,
+    "pageSizeOptions": [5, 10, 25, 50, 100, "all"],
+    "lightweightList": true,
+    "serverSideFiltering": true,
+    "serverSideSorting": true,
+    "searchDebounceMs": 400,
+    "allGuardLimit": 500
+  },
+  "rootCause": [
+    "/api/surat belum punya pagination metadata dan sorting server-side.",
+    "Halaman surat sebelumnya bergantung pada state client dan filtering client-side.",
+    "Route lama mengambil dispositions penuh untuk access filtering.",
+    "Payload list masih terlalu dekat dengan detail surat dan relasi berat."
+  ],
+  "api": {
+    "endpoint": "GET /api/surat",
+    "parameters": [
+      "type",
+      "page",
+      "pageSize",
+      "search",
+      "sortBy",
+      "sortDirection",
+      "status",
+      "workflowStatus",
+      "priority",
+      "dateFrom",
+      "dateTo",
+      "dispositionStatus",
+      "unreadOnly",
+      "overdueOnly",
+      "dueTodayOnly"
+    ],
+    "responseKeys": ["items", "data", "total", "pagination", "filters", "sort", "meta"],
+    "allMode": {
+      "allowedWhenTotalLessOrEqual": 500,
+      "blockedMessage": "Data terlalu banyak untuk ditampilkan sekaligus. Gunakan filter atau Export CSV."
+    }
+  },
+  "safety": {
+    "rbacServerSide": true,
+    "sortWhitelist": true,
+    "exportSeparated": true,
+    "detailEndpointPreserved": true,
+    "whatsappTouched": false,
+    "schedulerTouched": false
+  },
+  "testsAdded": [
+    "Parses surat pagination and sort query safely",
+    "Pages lightweight surat lists server-side",
+    "Filters paginated surat lists by type and search on the server",
+    "Keeps surat list RBAC filtering on the server"
+  ],
+  "validation": [
+    {
+      "command": "npx tsc --noEmit --pretty false",
+      "status": "PASS"
+    },
+    {
+      "command": "npm run lint",
+      "status": "PASS"
+    },
+    {
+      "command": "npm run build",
+      "status": "PASS"
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "tests": "52/52"
+    }
+  ],
+  "reports": [
+    "D:\\aleta\\reports\\aleta-surat-performance-analysis-latest.md",
+    "D:\\aleta\\reports\\aleta-surat-performance-analysis-latest.json",
+    "D:\\aleta\\reports\\aleta-surat-performance-fix-latest.md",
+    "D:\\aleta\\reports\\aleta-surat-performance-fix-latest.json"
+  ],
+  "risks": [
+    "Dataset sangat besar tetap membutuhkan index database tambahan.",
+    "Search LIKE pada search_document dapat diganti full-text index bila volume surat meningkat.",
+    "Opsi Semua dibatasi 500 row dan bukan pengganti export."
+  ]
+}

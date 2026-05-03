@@ -2,7 +2,7 @@
 
 ## Rollback Aplikasi Internal
 
-1. Informasikan admin/operator bahwa ALETA masuk safe mode.
+1. Informasikan admin/operator bahwa ALETA masuk mode aman.
 2. Jalankan:
 
 ```powershell
@@ -10,25 +10,27 @@ cd D:\aleta
 .\scripts\stop-aleta-office.ps1
 ```
 
-3. Jika hanya portal bermasalah, hentikan portal dan biarkan database tidak diubah.
+3. Jika hanya portal bermasalah, hentikan portal dan jangan ubah database.
 4. Jika hanya ALETA Bot bermasalah, hentikan ALETA Bot. Jangan hapus `.wwebjs_auth`.
 5. Jalankan backup/restore database hanya dari backup resmi dan setelah disetujui admin.
 
-## Rollback WhatsApp Safe Mode
+## Mode Aman WhatsApp
 
-- Set `botEnabled=false`.
-- Set `notificationsEnabled=false`.
-- Set `dispositionDeadlineReminder.enabled=false`.
-- Set `dispositionDeadlineReminder.scheduler.enabled=false`.
-- Jangan resend dead-letter otomatis.
+- Matikan pengiriman otomatis sementara (`botEnabled=false`).
+- Matikan notifikasi otomatis sementara (`notificationsEnabled=false`) jika insiden luas.
+- Tahan Penjadwal/Pengingat production bila sumber masalah berasal dari jadwal otomatis.
+- Pause Pemroses Pesan jika Antrean Pesan gagal bertambah.
+- Jangan kirim ulang Pesan Gagal secara otomatis.
 - Jangan logout/reset WhatsApp kecuali diputuskan manual oleh Super Admin.
 
-## Trigger Rollback
+## Pemicu Rollback
 
-- Queue failed > 0 yang tidak bisa dijelaskan.
-- Dead-letter aktif > 0.
+- Antrean Pesan gagal lebih dari 0 dan penyebabnya belum jelas.
+- Pesan Gagal aktif lebih dari 0.
 - Terindikasi salah penerima.
 - Terindikasi kirim ganda.
-- WhatsApp `browser_locked` atau stuck initializing.
-- Scheduler/reminder production aktif tanpa gate.
-
+- Pengiriman massal tidak wajar.
+- WhatsApp tidak terhubung lama.
+- Sesi WhatsApp terkunci atau proses inisialisasi macet.
+- Penjadwal mengirim di luar Jam Aman Pengiriman.
+- Persetujuan wajib terlewati.

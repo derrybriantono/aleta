@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-05-03T00:00:00+08:00",
+  "overall": "ROOT_CAUSE_IDENTIFIED",
+  "rootCauses": {
+    "doubleClickLogin": [
+      "Login button is client-only type=button; clicks before hydration do not invoke any handler.",
+      "After sign-in, router.replace('/portal') is immediately followed by router.refresh(), which can race with navigation/session refresh."
+    ],
+    "slowLogin": [
+      "Login page session probe and lookup/sign-in can be slow on cold or busy runtime.",
+      "Portal blocks first render until eight backend endpoints complete."
+    ],
+    "slowNavigation": [
+      "PortalProvider sets isSyncing=true while fetching users, letters, dispositions, AI settings, WhatsApp settings, institution settings, module visibility, and assistant judge settings.",
+      "PortalShellV2 blocks all protected pages while isSyncing is true.",
+      "/api/surat and /api/disposisi duplicate part of the disposition workload during initial sync."
+    ]
+  },
+  "evidence": {
+    "earlyClickBeforeHydration": {
+      "finalUrl": "/login",
+      "elapsedMs": 8120,
+      "lookupCalled": false,
+      "signInCalled": false
+    },
+    "warmLoginAfterHydration": {
+      "lookupMs": 132,
+      "signInMs": 72,
+      "portalReached": true
+    },
+    "slowRoutesBeforePatch": [
+      { "route": "/surat?type=masuk", "totalMs": 15999, "slowestEndpoint": "/api/settings/module-visibility", "slowestEndpointMs": 14491 },
+      { "route": "/tugas", "totalMs": 10264, "slowestEndpoint": "/api/settings/module-visibility", "slowestEndpointMs": 8557 },
+      { "route": "/admin/aleta-bot", "totalMs": 11980, "slowestEndpoint": "/api/settings/module-visibility", "slowestEndpointMs": 10664 },
+      { "route": "/panduan", "totalMs": 14409, "slowestEndpoint": "/api/settings/module-visibility", "slowestEndpointMs": 13051 }
+    ]
+  },
+  "recommendedPatch": [
+    "Hydration-ready login button and duplicate submit guard.",
+    "Single controlled login navigation after session refetch.",
+    "Two-phase portal sync: block only users and module visibility, load the rest in background."
+  ],
+  "doNotChange": [
+    "auth guard",
+    "RBAC",
+    "Better Auth library",
+    "WhatsApp production",
+    "scheduler/reminder"
+  ]
+}

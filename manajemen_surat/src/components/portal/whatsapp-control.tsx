@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, MessageSquare, RefreshCcw, Smartphone } from "lucide-react";
 
 import {
+  getWhatsAppRuntimeDisplayLabel,
   getWhatsAppRuntimeLabel,
   getWhatsAppRuntimeMessage,
   useWhatsAppGateway,
@@ -22,9 +23,10 @@ function runtimeVariant(status: ReturnType<typeof getWhatsAppRuntimeLabel>) {
 export function WhatsAppControl() {
   const { snapshot, refresh, isRefreshing } = useWhatsAppGateway(true);
   const runtimeLabel = getWhatsAppRuntimeLabel(snapshot.runtimeStatus);
+  const runtimeDisplayLabel = getWhatsAppRuntimeDisplayLabel(snapshot.runtimeStatus);
   const phonePolicy = snapshot.requiresPhoneNumberBeforeInit
-    ? "Nomor resmi wajib diisi sebelum QR inisialisasi."
-    : "Nomor resmi tidak wajib diisi sebelum QR inisialisasi.";
+    ? "Isi nomor resmi sebelum menyiapkan QR."
+    : "Nomor resmi dapat diisi setelah koneksi disiapkan.";
 
   return (
     <Card className="overflow-hidden border-border/80" data-testid="wa-summary-card">
@@ -37,20 +39,20 @@ export function WhatsAppControl() {
             <div className="space-y-1">
               <CardTitle>Ringkasan WhatsApp Gateway</CardTitle>
               <CardDescription>
-                QR, inisialisasi, dan kontrol sesi dipusatkan hanya di halaman Status WhatsApp Gateway agar tidak ada dua alur koneksi yang membingungkan.
+                Koneksi, QR, dan sesi WhatsApp dikelola dari satu halaman agar admin tidak membuka dua alur koneksi sekaligus.
               </CardDescription>
             </div>
           </div>
-          <Badge variant={runtimeVariant(runtimeLabel)} className="capitalize">
-            {runtimeLabel}
+          <Badge variant={runtimeVariant(runtimeLabel)}>
+            {runtimeDisplayLabel}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-5 pt-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SummaryItem
-            label="Runtime"
-            value={runtimeLabel}
+            label="Layanan"
+            value={runtimeDisplayLabel}
             description={getWhatsAppRuntimeMessage(snapshot.runtimeStatus)}
             valueTestId="wa-summary-runtime-value"
           />
@@ -62,7 +64,7 @@ export function WhatsAppControl() {
           <SummaryItem
             label="Nama Sesi"
             value={snapshot.sessionName}
-            description="Sumber status dibaca langsung dari backend gateway yang sama."
+            description="Nama sesi yang digunakan layanan WhatsApp."
           />
           <SummaryItem
             label="Terakhir Terhubung"
@@ -71,16 +73,16 @@ export function WhatsAppControl() {
                 ? new Date(snapshot.lastConnectedAt).toLocaleString("id-ID")
                 : "Belum pernah"
             }
-            description="Riwayat koneksi terakhir yang tersimpan di backend."
+            description="Riwayat koneksi terakhir yang tersimpan."
           />
         </div>
 
         <div className="rounded-[1.2rem] border border-dashed border-border bg-muted/35 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-foreground">Alur koneksi tunggal</p>
+              <p className="text-sm font-semibold text-foreground">Koneksi dikelola dari satu tempat</p>
               <p className="text-sm leading-6 text-muted-foreground">
-                Jika status sedang <strong className="text-foreground">waiting_qr</strong>, QR hanya ditampilkan di halaman pusat WhatsApp. Kartu ini sengaja menjadi ringkasan saja supaya tidak ada dua tombol inisialisasi yang saling bertentangan.
+                Jika status <strong className="text-foreground">Perlu Scan QR</strong>, QR hanya ditampilkan di halaman pusat WhatsApp. Kartu ini hanya ringkasan agar tidak ada dua tombol koneksi yang saling bertentangan.
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-card text-primary shadow-sm">
@@ -102,7 +104,7 @@ export function WhatsAppControl() {
               className="h-8 px-2 text-xs text-muted-foreground"
               onClick={() => void refresh()}
             >
-              Refresh Status
+              Perbarui status
             </Button>
             <Button asChild size="sm">
               <Link href="/admin/status-whatsapp">

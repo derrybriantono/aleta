@@ -139,7 +139,11 @@ export function isPrivilegedAdmin(user: UserPersona | null | undefined) {
 }
 
 export function canManageActingAssignments(user: UserPersona | null | undefined) {
-  const roleId = getEffectiveRoleId(user);
+  if (getResolvedActingAssignment(user) && user?.roleId !== "super-admin" && user?.roleId !== "admin") {
+    return false;
+  }
+
+  const roleId = user?.roleId ?? null;
 
   return roleId ? structuralAssignmentRoleIds.has(roleId) : false;
 }

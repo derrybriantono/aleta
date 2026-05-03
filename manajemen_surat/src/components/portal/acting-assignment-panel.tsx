@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { CalendarRange, ShieldCheck, UserCog } from "lucide-react";
 
 import {
-  getAssignableActingUsers,
+  getEligibleCandidatesForActingAssignment,
   getPositionById,
+  isCourtLeadershipTarget,
   isActingAssignmentActive,
   resolveEffectivePositionId,
 } from "@/core/organization/service";
@@ -23,6 +24,10 @@ function getDateInputValue(offsetDays = 0) {
   return value.toISOString().slice(0, 10);
 }
 
+function summarizeEligibility(reasons: string[], warnings: string[]) {
+  return [...reasons, ...warnings].filter(Boolean).join(" ");
+}
+
 export function ActingAssignmentPanel() {
   const { assignActingAssignment, clearActingAssignment, currentUser, users } = usePortal();
   const [supervisorUserId, setSupervisorUserId] = useState("");
@@ -30,23 +35,42 @@ export function ActingAssignmentPanel() {
   const [assignmentType, setAssignmentType] = useState<"PLH" | "PLT">("PLH");
   const [startDate, setStartDate] = useState(getDateInputValue());
   const [endDate, setEndDate] = useState(getDateInputValue(7));
+  const [reason, setReason] = useState("");
   const [feedback, setFeedback] = useState<{ tone: "success" | "error"; message: string } | null>(null);
 
   const supervisors = useMemo(
     () =>
       users
-        .filter((user) => getAssignableActingUsers(user, users).length > 0)
+        .filter((user) => {
+          const targetPosition = getPositionById(resolveEffectivePositionId(user) ?? "");
+          return getEligibleCandidatesForActingAssignment(targetPosition, assignmentType, {
+            userSource: users,
+            supervisorUser: user,
+          }).length > 0;
+        })
         .sort((left, right) => left.name.localeCompare(right.name)),
-    [users]
+    [assignmentType, users]
   );
   const selectedSupervisor =
     supervisors.find((user) => user.id === supervisorUserId) ?? supervisors[0] ?? null;
-  const subordinateUsers = useMemo(
-    () => getAssignableActingUsers(selectedSupervisor, users),
-    [selectedSupervisor, users]
+  const targetPosition = selectedSupervisor
+    ? getPositionById(resolveEffectivePositionId(selectedSupervisor) ?? "")
+    : null;
+  const candidateEvaluations = useMemo(
+    () =>
+      getEligibleCandidatesForActingAssignment(targetPosition, assignmentType, {
+        userSource: users,
+        supervisorUser: selectedSupervisor,
+        includeIneligible: true,
+      }),
+    [assignmentType, selectedSupervisor, targetPosition, users]
   );
+  const eligibleCandidateEvaluations = candidateEvaluations.filter((item) => item.eligibility.eligible);
   const selectedAssignee =
-    subordinateUsers.find((user) => user.id === assigneeUserId) ?? subordinateUsers[0] ?? null;
+    eligibleCandidateEvaluations.find((item) => item.user.id === assigneeUserId)?.user ??
+    eligibleCandidateEvaluations[0]?.user ??
+    null;
+  const selectedCandidateEvaluation = candidateEvaluations.find((item) => item.user.id === selectedAssignee?.id);
   const activeAssignments = users
     .filter((user) => isActingAssignmentActive(user.actingAssignment))
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -55,9 +79,7 @@ export function ActingAssignmentPanel() {
     return null;
   }
 
-  const targetPosition = selectedSupervisor
-    ? getPositionById(resolveEffectivePositionId(selectedSupervisor) ?? "")
-    : null;
+  const leadershipTarget = isCourtLeadershipTarget(targetPosition);
 
   return (
     <Card className="border-border/80">
@@ -67,13 +89,18 @@ export function ActingAssignmentPanel() {
           Penugasan PLH / PLT
         </CardTitle>
         <CardDescription>
-          Dikelola terpusat di Dashboard Manajemen Surat. Validasi hanya mengizinkan atasan memberi penugasan kepada bawahan langsung.
+          Dikelola terpusat di Dashboard Manajemen Surat. Validasi kandidat dilakukan di UI dan server agar PLH/PLT tetap sesuai jalur jabatan.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <div className="space-y-5 rounded-[1.5rem] border border-border bg-muted/40 p-5">
           <div className="rounded-[1.2rem] border border-primary/40 bg-primary/10 p-4 text-sm text-foreground dark:bg-primary/[0.08]">
-            PLH wajib menyertakan rentang waktu aktif, sedangkan PLT berjalan tanpa tanggal akhir sampai pejabat definitif tersedia.
+            PLH/PLT wajib menyertakan alasan dan rentang waktu aktif. PLT dibatasi paling lama 3 bulan per periode dan dapat diperpanjang melalui penugasan baru yang diaudit.
+            {leadershipTarget ? (
+              <span className="mt-2 block">
+                Untuk jabatan pimpinan pengadilan, Hakim aktif/senior dalam satuan kerja yang sama dapat menjadi kandidat PLH/PLT sesuai aturan dan praktik penunjukan.
+              </span>
+            ) : null}
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
@@ -95,7 +122,7 @@ export function ActingAssignmentPanel() {
               </NativeSelect>
             </Field>
 
-            <Field label="Bawahan langsung">
+            <Field label="Kandidat PLH/PLT">
               <NativeSelect
                 value={selectedAssignee?.id ?? ""}
                 onChange={(event) => {
@@ -104,12 +131,23 @@ export function ActingAssignmentPanel() {
                 }}
                 className="h-11 text-base"
               >
-                {subordinateUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
+                {candidateEvaluations.map(({ user, eligibility }) => (
+                  <option key={user.id} value={user.id} disabled={!eligibility.eligible}>
+                    {eligibility.eligible ? "" : "[Tidak eligible] "}
                     {user.name} - {getUserPositionLabel(user)}
                   </option>
                 ))}
               </NativeSelect>
+              {selectedCandidateEvaluation ? (
+                <p className="text-xs text-muted-foreground">
+                  {summarizeEligibility(
+                    selectedCandidateEvaluation.eligibility.reasons,
+                    selectedCandidateEvaluation.eligibility.warnings
+                  )}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Tidak ada kandidat eligible untuk jabatan target ini.</p>
+              )}
             </Field>
           </div>
 
@@ -138,16 +176,24 @@ export function ActingAssignmentPanel() {
             <Field label="Tanggal mulai">
               <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-11 text-base" />
             </Field>
-            <Field label="Tanggal akhir PLH">
+            <Field label={`Tanggal akhir ${assignmentType}`}>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(event) => setEndDate(event.target.value)}
-                disabled={assignmentType === "PLT"}
                 className="h-11 text-base"
               />
             </Field>
           </div>
+
+          <Field label="Alasan penugasan">
+            <Input
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={assignmentType === "PLH" ? "Pejabat definitif berhalangan sementara" : "Jabatan kosong/pejabat definitif berhalangan tetap"}
+              className="h-11 text-base"
+            />
+          </Field>
 
           {feedback ? (
             <div
@@ -163,13 +209,15 @@ export function ActingAssignmentPanel() {
 
           <Button
             className="w-full"
+            disabled={!selectedAssignee || !reason.trim()}
             onClick={async () => {
               const result = await assignActingAssignment({
                 supervisorUserId: selectedSupervisor?.id ?? "",
                 assigneeUserId: selectedAssignee?.id ?? "",
                 type: assignmentType,
                 startDate,
-                endDate: assignmentType === "PLH" ? endDate : null,
+                endDate,
+                reason,
               });
 
               setFeedback({

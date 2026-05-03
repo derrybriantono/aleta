@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-05-03T00:00:00+08:00",
+  "overall": "PASS",
+  "loginSingleClickFixed": true,
+  "loginRedirectRaceFixed": true,
+  "navigationBlockingReduced": true,
+  "rootCauses": {
+    "doubleClickLogin": [
+      "Inputs and button were usable before client hydration, so the first interaction could be lost or read empty React state.",
+      "router.replace('/portal') was immediately followed by router.refresh(), creating a redirect/session refresh race."
+    ],
+    "slowLogin": [
+      "Login flow was followed by a blocking portal sync across eight backend endpoints."
+    ],
+    "slowNavigation": [
+      "PortalShellV2 blocked protected pages while PortalProvider waited for all backend sync endpoints."
+    ]
+  },
+  "changes": {
+    "login": [
+      "Disable login fields and button until hydration is complete.",
+      "Use controlled form submit with preventDefault.",
+      "Guard duplicate submit.",
+      "Refetch session after sign-in, then navigate once to /portal.",
+      "Remove immediate router.refresh after router.replace in the login success path."
+    ],
+    "portalSync": [
+      "Block initial shell only on /api/users and /api/settings/module-visibility.",
+      "Load letters, dispositions, AI settings, WhatsApp settings, institution settings, and assistant judge settings in the background.",
+      "Use cached actor state for non-blocking refresh when a server-verified session already exists."
+    ]
+  },
+  "performanceEvidence": {
+    "before": {
+      "earlyClickLookupCalled": false,
+      "earlyClickSignInCalled": false,
+      "earlyClickElapsedMs": 8120,
+      "slowRoutesDevMs": [
+        { "route": "/surat?type=masuk", "totalMs": 15999 },
+        { "route": "/tugas", "totalMs": 10264 },
+        { "route": "/admin/aleta-bot", "totalMs": 11980 },
+        { "route": "/panduan", "totalMs": 14409 }
+      ]
+    },
+    "after": {
+      "hydrationGuardEnabled": true,
+      "warmDevLookupMsRange": "40-141",
+      "warmDevSignInMsRange": "56-66",
+      "warmDevPortalRouteMs": 495,
+      "warmDevCriticalSyncMsRange": "338-426",
+      "note": "Development cold compile/restart remained noisy and was not treated as application auth latency."
+    }
+  },
+  "testsAdded": [
+    "login submits once, refetches session, and navigates without router.refresh race",
+    "login with incomplete credentials shows a human-readable error"
+  ],
+  "validation": [
+    { "command": "npx tsc --noEmit --pretty false", "status": "PASS" },
+    { "command": "npm run lint", "status": "PASS" },
+    { "command": "npm run build", "status": "PASS" },
+    { "command": "npm test", "status": "PASS", "tests": "48/48" }
+  ],
+  "intentionallyUnchanged": [
+    "auth guard",
+    "Better Auth library",
+    "RBAC",
+    "role and position validation",
+    "WhatsApp production",
+    "scheduler/reminder",
+    "user data"
+  ],
+  "residualRisks": [
+    "Next.js development cold compile can still be slow.",
+    "/api/surat still performs disposition-based access filtering and may deserve later query optimization."
+  ]
+}

@@ -41,7 +41,7 @@ export default function ArsipPage() {
   const statusFilter = searchParams.get("status") ?? "Semua";
   const dateFrom = searchParams.get("dateFrom") ?? "";
   const dateTo = searchParams.get("dateTo") ?? "";
-  const deleteLabel = currentUser?.roleId === "super-admin" ? "Hard Delete" : "Delete";
+  const deleteLabel = currentUser?.roleId === "super-admin" ? "Hapus Permanen" : "Hapus";
   const canDelete = currentUser?.roleId === "super-admin" || currentUser?.roleId === "admin";
   const classificationOptions = Array.from(new Set(accessibleLetters.map((letter) => letter.klasifikasi))).sort();
   const yearOptions = Array.from(

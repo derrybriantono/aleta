@@ -325,7 +325,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">Runtime</p>
+              <p className="text-xs text-muted-foreground">Layanan</p>
               <p className="mt-0.5 text-sm font-semibold">{data.whatsapp.runtime}</p>
             </div>
             {data.whatsapp.lastConnectedAt ? (
@@ -350,7 +350,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
           {(data.whatsapp.sessionAgeHours ?? 0) > 168 ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
               <p className="text-sm text-amber-800 dark:text-amber-200">
-                Sesi WhatsApp sudah aktif lebih dari 7 hari. Pantau pengiriman dan lakukan reconnect aman jika diperlukan.
+                Sesi WhatsApp sudah aktif lebih dari 7 hari. Pantau pengiriman dan hubungkan ulang dengan aman bila diperlukan.
               </p>
             </div>
           ) : null}
@@ -358,8 +358,8 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
             <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
               <p className="text-sm text-amber-800 dark:text-amber-200">
                 {data.whatsapp.status === "qr_needed"
-                  ? "WhatsApp Bot menunggu scan QR. Hubungi Super Admin untuk menghubungkan ulang."
-                  : "WhatsApp Bot belum terhubung. Hubungi Super Admin untuk informasi lebih lanjut."}
+                  ? "WhatsApp menunggu scan QR. Hubungi Super Admin untuk menghubungkan ulang."
+                  : "WhatsApp belum terhubung. Hubungi Super Admin untuk informasi lebih lanjut."}
               </p>
               {data.whatsapp.lastErrorMessage ? (
                 <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/70">
@@ -411,11 +411,11 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
           <CardContent>
             {data.worker.lastHeartbeatAt ? (
               <p className="text-xs text-muted-foreground">
-                Heartbeat: {formatDt(data.worker.lastHeartbeatAt)}
+                Sinyal terakhir: {formatDt(data.worker.lastHeartbeatAt)}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Tidak ada data heartbeat saat ini.
+                Belum ada sinyal pemroses saat ini.
               </p>
             )}
           </CardContent>
@@ -436,7 +436,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
                 : data.ai.status === "needs_sync"
                 ? "Konfigurasi AI perlu disinkronkan ulang oleh Super Admin."
                 : data.ai.status === "disabled"
-                ? "Layanan AI Public Q&A sedang dinonaktifkan."
+                ? "Layanan Pertanyaan Publik sedang dinonaktifkan."
                 : "Status layanan AI tidak dapat ditentukan saat ini."}
             </p>
           </CardContent>
@@ -460,7 +460,7 @@ const STATUS_OPTIONS = [
   { value: "success", label: "Terkirim" },
   { value: "failed", label: "Gagal" },
   { value: "simulated", label: "Simulasi" },
-  { value: "dead_letter", label: "Gagal Permanen" },
+  { value: "dead_letter", label: "Pesan Gagal" },
 ];
 
 const SOURCE_FEATURE_OPTIONS = [
@@ -469,7 +469,7 @@ const SOURCE_FEATURE_OPTIONS = [
   { value: "letter", label: "Surat" },
   { value: "employee", label: "Notifikasi Pegawai" },
   { value: "party", label: "Notifikasi Pihak" },
-  { value: "public_qa", label: "Public Q&A" },
+  { value: "public_qa", label: "Pertanyaan Publik" },
   { value: "system", label: "Sistem" },
   { value: "manajemen_surat", label: "Manajemen Surat" },
   { value: "jadwal_sidang", label: "Jadwal Sidang" },
@@ -816,7 +816,7 @@ export function AletaBotDashboard() {
       <PageIntro
         eyebrow="Bot Notifikasi"
         title="ALETA Bot"
-        description="Pantau status layanan WhatsApp Bot, antrean pesan, dan riwayat pengiriman notifikasi."
+      description="Pantau layanan WhatsApp, Antrean Pesan, dan riwayat pengiriman notifikasi."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">

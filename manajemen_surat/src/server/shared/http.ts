@@ -64,11 +64,11 @@ export function badRequest(message: string, details?: unknown) {
   throw new ApiError(400, message, details);
 }
 
-export function unauthorized(message = "Akses ditolak. User aktif tidak ditemukan.") {
+export function unauthorized(message = "Anda belum login atau sesi Anda telah berakhir.") {
   throw new ApiError(401, message);
 }
 
-export function forbidden(message = "Aksi ini tidak diizinkan untuk user aktif.") {
+export function forbidden(message = "Anda tidak memiliki izin untuk melakukan tindakan ini.") {
   throw new ApiError(403, message);
 }
 
@@ -96,13 +96,13 @@ export function handleRouteError(error: unknown) {
     let message = "Data duplikat terdeteksi. Silakan periksa kembali input Anda.";
 
     if (constraint.includes("users_pkey")) {
-      message = "Gagal membuat akun: terjadi konflik ID internal. Silakan coba lagi. (Sistem membutuhkan Anda untuk restart 'npm run dev' di terminal agar perubahan perbaikan bug UUID termuat)";
+      message = "Akun belum dapat dibuat karena ada konflik data internal. Silakan coba lagi setelah layanan dimuat ulang.";
     } else if (constraint.includes("users_username_unique") || constraint.includes("username")) {
       message = "Username sudah digunakan. Pilih username lain.";
     } else if (constraint.includes("users_email_unique") || constraint.includes("email")) {
       message = "Email sudah digunakan oleh akun lain.";
     } else if (constraint.includes("accounts")) {
-      message = "Akun credential sudah ada untuk user ini.";
+      message = "Akun login untuk pengguna ini sudah tersedia.";
     }
 
     console.error("[ALETA API UNIQUE VIOLATION]", pgError.detail ?? pgError.message ?? error);
@@ -124,7 +124,7 @@ export function handleRouteError(error: unknown) {
         ok: false,
         error: {
           message:
-            "PostgreSQL ALETA belum tersedia atau koneksinya belum benar. Jalankan database dan periksa DATABASE_URL.",
+            "Database ALETA belum tersedia atau koneksinya belum benar. Jalankan database dan periksa pengaturannya.",
         },
       },
       { status: 503 }
@@ -146,7 +146,7 @@ export function handleRouteError(error: unknown) {
     );
   }
 
-  const message = error instanceof Error ? error.message : "Terjadi kegagalan internal pada backend ALETA.";
+  const message = error instanceof Error ? error.message : "Terjadi kendala pada layanan ALETA. Silakan coba lagi.";
   console.error("[ALETA API ERROR]", error);
 
   return NextResponse.json(

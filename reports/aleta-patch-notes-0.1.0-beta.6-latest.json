@@ -1,0 +1,71 @@
+{
+  "overall": "PASS",
+  "version": "0.1.0-beta.6",
+  "title": "ALETA 0.1.0-beta.6 - Full Internal Launch & WhatsApp Production Guard",
+  "date": "2026-05-03",
+  "status": "Full Internal Operational Launch Ready",
+  "patchNotesCreated": true,
+  "displayedInUi": true,
+  "uiPath": "/patch-notes",
+  "oldPatchNotesPreserved": true,
+  "previousVersionsStillPresent": [
+    "0.1.0-beta.5",
+    "0.1.0-beta.4",
+    "0.1.0-beta.3",
+    "0.1.0-beta.2",
+    "0.1.0-beta.1"
+  ],
+  "filesChanged": [
+    "D:\\aleta\\manajemen_surat\\src\\lib\\patch-notes.ts",
+    "D:\\aleta\\manajemen_surat\\src\\app\\(portal)\\patch-notes\\page.tsx",
+    "D:\\aleta\\manajemen_surat\\src\\test\\patch-notes.test.ts"
+  ],
+  "sections": [
+    "Highlights",
+    "WhatsApp Gateway Stabilization",
+    "Queue, Dead-letter, dan Approval Cleanup",
+    "Automated Preflight & Smoke Test",
+    "Pilot WhatsApp Internal",
+    "Office Server Launch Readiness",
+    "WhatsApp Production Guard",
+    "Data Hygiene Nomor WhatsApp",
+    "Production Risk Gate & Shadow-run",
+    "Cap, Rate Limit, dan Approval Gate",
+    "Public Q&A Safe Mode",
+    "Login dan Navigasi Portal",
+    "Validasi",
+    "Status Akhir Rilis",
+    "Risiko Tersisa dan Langkah Lanjutan",
+    "Not Yet Included / Pending Execution"
+  ],
+  "claims": {
+    "fullInternalOperationalLaunchReady": true,
+    "officeServerLaunchGo": true,
+    "whatsappGatewayStable": true,
+    "whatsappProductionAutomationFinalActiveClaimed": false,
+    "riskGatePassClaimed": true,
+    "shadowRunPassClaimed": true,
+    "dataHygiene42EligibleClaimed": true,
+    "canaryProductionPassClaimed": false,
+    "finalActivationWaitingSafeWindowCanary": true
+  },
+  "validation": {
+    "tsc": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "test": "PASS",
+    "testCount": "59/59"
+  },
+  "risks": [
+    "WhatsApp Full Production Automation remains pending until production canary passes inside Safe Sending Window.",
+    "Patch notes intentionally mark several recently requested items as Not Yet Included / Pending Execution because no final execution report is included in this release note."
+  ],
+  "actionsNotTaken": [
+    "Did not enable WhatsApp production automation.",
+    "Did not enable botEnabled.",
+    "Did not enable scheduler/reminder production.",
+    "Did not send WhatsApp.",
+    "Did not delete old patch notes.",
+    "Did not change RBAC or user data."
+  ]
+}

@@ -23,11 +23,14 @@ describe("RBAC visibility", () => {
 
     expect(adminModules).toContain("mapping-user-jabatan");
     expect(adminModules).not.toContain("visibility-role");
+    expect(adminModules).not.toContain("assistant-judge-settings");
     expect(superAdminModules).toContain("visibility-role");
+    expect(superAdminModules).toContain("assistant-judge-settings");
     expect(superAdminModules).toContain("keuangan");
     expect(superAdminModules).toContain("kepegawaian");
     expect(staffModules).not.toContain("mapping-user-jabatan");
     expect(staffModules).not.toContain("visibility-role");
+    expect(staffModules).not.toContain("assistant-judge-settings");
     expect(staffModules).not.toContain("keuangan");
   });
 

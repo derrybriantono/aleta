@@ -5,6 +5,7 @@ import { WhatsAppControl } from "@/components/portal/whatsapp-control";
 
 vi.mock("@/components/portal/use-whatsapp-gateway", () => ({
   getWhatsAppRuntimeLabel: () => "waiting_qr",
+  getWhatsAppRuntimeDisplayLabel: () => "Perlu Scan QR",
   getWhatsAppRuntimeMessage: () => "QR siap dipindai",
   useWhatsAppGateway: () => ({
     snapshot: {

@@ -55,7 +55,7 @@ async function readApiJson<T>(response: Response) {
     | null;
 
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error?.message ?? "Permintaan tidak dapat diproses.");
+        throw new Error(payload?.error?.message ?? "Permintaan belum dapat diproses.");
   }
 
   return payload.data as T;
@@ -135,7 +135,7 @@ export function FeedbackAdminPanel() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Masukan pengguna gagal dimuat.",
+        text: error instanceof Error ? error.message : "Masukan pengguna belum dapat dimuat.",
       });
     } finally {
       setLoading(false);
@@ -189,7 +189,7 @@ export function FeedbackAdminPanel() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Masukan gagal diperbarui.",
+        text: error instanceof Error ? error.message : "Masukan belum dapat diperbarui.",
       });
     } finally {
       setSavingId(null);
@@ -200,8 +200,8 @@ export function FeedbackAdminPanel() {
     <div className="space-y-6">
       <PageIntro
         eyebrow="Masukan Pengguna"
-        title="Laporan Bug dan Saran"
-        description="Tinjau laporan bug, saran fitur, dan usulan aplikasi baru dari pengguna ALETA."
+        title="Laporan Kendala dan Saran"
+        description="Tinjau laporan kendala, saran fitur, dan usulan aplikasi baru dari pengguna ALETA."
         actions={
           <Button asChild variant="outline" size="sm">
             <Link href="/admin">
@@ -215,7 +215,7 @@ export function FeedbackAdminPanel() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <SummaryCard label="Total Masukan" value={summary.total} />
         <SummaryCard label="Masukan Baru" value={summary.new} />
-        <SummaryCard label="Bug Terbuka" value={summary.openBugs} />
+          <SummaryCard label="Kendala Terbuka" value={summary.openBugs} />
         <SummaryCard label="Fitur Direncanakan" value={summary.plannedFeatures} />
         <SummaryCard label="Aplikasi Diusulkan" value={summary.appIdeas} />
       </div>

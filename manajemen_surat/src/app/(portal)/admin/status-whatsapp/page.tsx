@@ -13,7 +13,7 @@ export default function StatusWhatsAppPage() {
       <PageIntro
         eyebrow="Portal Pengaturan Global"
         title="Status WhatsApp Gateway"
-        description="Satu-satunya pusat koneksi WhatsApp ALETA. Inisialisasi QR, status runtime, nomor resmi kanal, dan kontrol sesi dipusatkan di halaman ini agar tidak ada alur ganda."
+        description="Pusat koneksi WhatsApp ALETA. QR, status layanan, nomor resmi, dan kontrol sesi dikelola di halaman ini agar tidak ada alur ganda."
       />
       {isAllowed ? (
         <div className="max-w-5xl">

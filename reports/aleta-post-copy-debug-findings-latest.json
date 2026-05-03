@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-05-03T18:32:47+08:00",
+  "summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "lowOrCosmetic": 1,
+    "fixed": 0,
+    "deferred": 1
+  },
+  "findings": [
+    {
+      "id": "DBG-001",
+      "area": "WhatsApp production runtime/config",
+      "severity": "Low",
+      "reproSteps": [
+        "Run node scripts/aleta-whatsapp-production-risk-check.mjs",
+        "Read reports/aleta-whatsapp-production-canary-latest.json",
+        "Inspect aleta_bot/config/aleta-runtime.json in read-only mode"
+      ],
+      "expected": "Baseline prompt says Full Production Automation is still waiting for canary.",
+      "actual": "Local runtime/config shows productionAutomationEnabled=true, botEnabled=true, notificationsEnabled=true, scheduler/reminder production, and canary report PASS.",
+      "rootCause": "Runtime config was already updated by alita/aleta production launch tooling before this debugging round; not caused by humanized copy.",
+      "files": [
+        "D:\\aleta\\aleta_bot\\config\\aleta-runtime.json",
+        "D:\\aleta\\reports\\aleta-whatsapp-production-canary-latest.json"
+      ],
+      "recommendedFix": "Decide operationally whether to keep production active and update narrative docs, or run a separate rollback/safe-mode task. Do not change config inside copy debugging.",
+      "safeToPatchNow": false,
+      "status": "deferred"
+    }
+  ],
+  "humanizedCopyAudit": {
+    "internalValuesChanged": false,
+    "apiContractChanged": false,
+    "logicComparingIndonesianLabels": false,
+    "wrongLabelsFound": false,
+    "layoutOverflowFound": false,
+    "falseProductionClaimsFound": false
+  },
+  "actionsTaken": [
+    "No code patch applied because no function bug was proven.",
+    "No production config changed.",
+    "No WhatsApp send/canary/resend executed."
+  ]
+}

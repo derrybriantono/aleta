@@ -1,6 +1,6 @@
 # ALETA Automated Preflight Report
 
-Generated: 2026-05-03T00:03:59.053Z
+Generated: 2026-05-03T11:29:38.174Z
 Overall: WARN
 
 ## Kesimpulan
@@ -60,15 +60,15 @@ Overall: WARN
 ## Validation
 | Status | Command | Duration |
 | --- | --- | --- |
-| PASS | node --check scripts/aleta-preflight.mjs | 1652 ms |
-| PASS | node --check app.js | 1319 ms |
-| PASS | node --check whatsapp.js | 1292 ms |
-| PASS | node --check services/whatsappStatusService.js | 1282 ms |
-| PASS | node --check routes/internalGatewayRoutes.js | 1580 ms |
-| PASS | npx tsc --noEmit --pretty false | 15427 ms |
-| PASS | npm run lint | 58433 ms |
-| PASS | npm run build | 86963 ms |
-| PASS | npm test | 51115 ms |
+| PASS | node --check scripts/aleta-preflight.mjs | 1380 ms |
+| PASS | node --check app.js | 1398 ms |
+| PASS | node --check whatsapp.js | 1327 ms |
+| PASS | node --check services/whatsappStatusService.js | 1318 ms |
+| PASS | node --check routes/internalGatewayRoutes.js | 1381 ms |
+| PASS | npx tsc --noEmit --pretty false | 16019 ms |
+| PASS | npm run lint | 62643 ms |
+| PASS | npm run build | 92340 ms |
+| PASS | npm test | 71029 ms |
 
 ## Blockers
 - Tidak ada blocker teknis kritis dari runner.

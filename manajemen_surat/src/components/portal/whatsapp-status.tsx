@@ -50,10 +50,10 @@ export function WhatsAppStatusStack({
                 size="sm"
                 className="h-auto px-2 py-1 text-amber-700 hover:text-amber-800 dark:text-amber-200"
                 onClick={() => onRetry?.(delivery.id)}
-              >
-                <RefreshCcw className="h-3.5 w-3.5" />
-                Gagal - Retry
-              </Button>
+            >
+              <RefreshCcw className="h-3.5 w-3.5" />
+                Coba kirim ulang
+            </Button>
             ) : (
               <Badge variant="success">Terkirim</Badge>
             )}

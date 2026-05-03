@@ -32,6 +32,7 @@ tsconfig.tsbuildinfo
 
 # Runtime data snapshots / logs
 runtime-logs/
+.runtime-logs/
 **/data/
 **/public/uploads/
 **/institution-enrichment-runtime.json

@@ -1,28 +1,30 @@
-# SOP: Active Dead-letter
+# SOP: Pesan Gagal Aktif
 
-## Goal
+## Tujuan
 
-Handle failed messages safely without accidental resend.
+Menangani Pesan Gagal dengan aman tanpa salah kirim, kirim ganda, atau kirim ulang massal.
 
-## Do Not
+## Jangan Lakukan
 
-- Do not resend immediately.
-- Do not broadcast.
-- Do not hard-delete queue/dead-letter history.
-- Do not send to external parties without approval.
+- Jangan kirim ulang langsung.
+- Jangan broadcast.
+- Jangan hapus riwayat antrean atau Pesan Gagal secara permanen.
+- Jangan kirim ke pihak luar tanpa persetujuan.
+- Jangan bypass batas pengiriman.
 
-## Steps
+## Langkah
 
-1. Open Admin ALETA Bot Queue Recovery/Pesan Gagal.
-2. Check recipient category and source feature.
-3. Read the sanitized error.
-4. If it is a validation artifact, use Tandai Ditangani.
-5. If it is operational, check WhatsApp status, safe window, worker, policy skip, and recipient validity.
-6. Decide whether resend is allowed. Require explicit approval for any risky category.
-7. After action, run smoke dry-run.
+1. Buka Admin ALETA Bot bagian Antrean Pesan/Pesan Gagal.
+2. Cek kategori penerima dan sumber pengiriman.
+3. Baca error yang sudah disaring.
+4. Jika item hanya artefak validasi, tandai sebagai sudah ditangani.
+5. Jika item operasional, cek WhatsApp Gateway, Jam Aman Pengiriman, Pemroses Pesan, batas pengiriman, dan validitas penerima.
+6. Tahan pengiriman otomatis bila penyebab belum jelas.
+7. Putuskan apakah kirim ulang boleh dilakukan. Pengiriman berisiko wajib persetujuan.
+8. Setelah tindakan, jalankan smoke dry-run.
 
-## Launch Decision Impact
+## Dampak Operasional
 
-- Active dead-letter greater than 0 blocks WhatsApp pilot expansion.
-- Internal non-WA operations may continue if the issue is isolated.
-- Production automation remains disabled.
+- Pesan Gagal aktif lebih dari 0 adalah alasan kembali ke mode aman.
+- Jangan kirim ulang otomatis.
+- Aplikasi internal tetap dapat digunakan jika masalah hanya pada WhatsApp.

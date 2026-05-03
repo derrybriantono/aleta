@@ -57,9 +57,9 @@ export const FEEDBACK_TYPES: Array<{
 }> = [
   {
     id: "bug",
-    label: "Laporan Bug",
+    label: "Laporan Kendala",
     description:
-      "Laporkan error, tampilan rusak, tombol tidak berfungsi, data tidak muncul, atau kendala teknis lain.",
+      "Laporkan kendala seperti tampilan rusak, tombol tidak berfungsi, data tidak muncul, atau masalah teknis lain.",
   },
   {
     id: "feature",
@@ -75,20 +75,20 @@ export const FEEDBACK_TYPES: Array<{
 ];
 
 export const FEEDBACK_TYPE_LABELS: Record<FeedbackType, string> = {
-  bug: "Laporan Bug",
+  bug: "Laporan Kendala",
   feature: "Saran Fitur",
   app_idea: "Usulan Aplikasi Baru",
 };
 
 export const FEEDBACK_TYPE_DESCRIPTIONS: Record<FeedbackType, string> = {
-  bug: "Jelaskan kendala yang terjadi agar tim admin dapat menelusuri dan menguji ulang.",
+  bug: "Jelaskan kendala yang terjadi agar admin dapat menelusuri dan menguji ulang.",
   feature: "Jelaskan fitur yang diinginkan dan manfaatnya bagi pekerjaan harian.",
   app_idea: "Jelaskan aplikasi baru yang diusulkan, calon pengguna, dan masalah yang ingin diselesaikan.",
 };
 
 export const FEEDBACK_CATEGORIES: Record<FeedbackType, string[]> = {
   bug: [
-    "Error login",
+    "Kendala login",
     "Tampilan/UI rusak",
     "Data tidak muncul",
     "Tombol tidak berfungsi",
@@ -192,7 +192,7 @@ export function getFeedbackPriorityVariant(priority: FeedbackPriority): BadgePro
 
 export function getFeedbackDescriptionPlaceholder(type: FeedbackType) {
   if (type === "bug") {
-    return "Jelaskan apa yang terjadi, langkah sebelum error, dan apa yang seharusnya terjadi.";
+    return "Jelaskan apa yang terjadi, langkah sebelum kendala muncul, dan apa yang seharusnya terjadi.";
   }
   if (type === "feature") {
     return "Jelaskan fitur yang diinginkan dan manfaatnya.";

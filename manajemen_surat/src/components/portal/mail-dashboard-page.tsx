@@ -54,7 +54,7 @@ export function MailDashboardPage() {
     },
     {
       id: "tugas-masuk",
-      label: "Inbox Tugas",
+      label: "Tugas Masuk",
       value: pendingInbox.length,
       hint: "Disposisi yang masih menunggu tindak lanjut Anda.",
       href: "/surat?metric=inbox",
@@ -101,30 +101,33 @@ export function MailDashboardPage() {
             <Button asChild>
               <Link href="/surat?metric=inbox">
                 <Send className="h-4 w-4" />
-                Buka Inbox
+                Buka Tugas
               </Link>
             </Button>
             <Button asChild variant="outline">
               <Link href="/search">
                 <SearchCheck className="h-4 w-4" />
-                Pencarian Global
+                Cari Surat
               </Link>
             </Button>
           </>
         }
       />
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div data-testid="mail-dashboard-summary-grid" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((item) => (
           <Link key={item.id} href={item.href} className="group block">
-            <Card className="border-border/80 transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-panel">
-              <CardHeader className="pb-3">
-                <CardDescription className="uppercase tracking-[0.18em]">{item.label}</CardDescription>
-                <CardTitle className="text-3xl sm:text-4xl">{item.value}</CardTitle>
+            <Card
+              data-testid={`mail-summary-card-${item.id}`}
+              className="h-full border-border/80 transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-panel"
+            >
+              <CardHeader className="space-y-1 p-4 pb-2">
+                <CardDescription className="text-[11px] uppercase tracking-[0.14em]">{item.label}</CardDescription>
+                <CardTitle className="text-2xl sm:text-3xl">{item.value}</CardTitle>
               </CardHeader>
-              <CardContent className="flex items-center justify-between gap-4">
+              <CardContent className="flex min-h-10 items-center justify-between gap-3 px-4 pb-4 pt-0">
                 {item.hint ? (
-                  <p className="text-sm leading-7 text-muted-foreground">{item.hint}</p>
+                  <p className="text-xs leading-5 text-muted-foreground">{item.hint}</p>
                 ) : (
                   <span />
                 )}
@@ -168,12 +171,12 @@ export function MailDashboardPage() {
                         <p className="font-semibold text-foreground">{letter?.perihal ?? "Surat terkait"}</p>
                         <p className="text-sm leading-7 text-muted-foreground">{item.instruksi}</p>
                       </div>
-                      {item.urgent ? <Badge variant="danger">Urgent</Badge> : <Badge variant="outline">Aktif</Badge>}
+                      {item.urgent ? <Badge variant="danger">Mendesak</Badge> : <Badge variant="outline">Aktif</Badge>}
                     </div>
                     <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>{formatDateTime(item.createdAt)}</span>
                       <span>-</span>
-                      <span>Butuh aksi pengguna</span>
+                      <span>Perlu ditindaklanjuti</span>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-3">
                       <Button asChild size="sm">
@@ -227,7 +230,7 @@ export function MailDashboardPage() {
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                       <span>{formatDateTime(item.createdAt)}</span>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/disposisi/${item.id}`}>Buka node</Link>
+                        <Link href={`/disposisi/${item.id}`}>Buka disposisi</Link>
                       </Button>
                     </div>
                   </div>

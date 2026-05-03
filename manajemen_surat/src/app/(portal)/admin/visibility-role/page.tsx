@@ -12,8 +12,8 @@ export default function VisibilityRolePage() {
     <div className="space-y-6">
       <PageIntro
         eyebrow="Portal Pengaturan Global"
-        title="Visibility Control per Role"
-        description="Toggle ini hanya tersedia untuk Super Admin agar kontrol visibilitas modul tetap ketat dan terpusat."
+        title="Akses Tampilan per Peran"
+        description="Pengaturan ini hanya tersedia untuk Super Admin agar akses modul tetap jelas dan terpusat."
       />
       {isAllowed ? (
         <RoleVisibilityPanel visibility={moduleVisibility} onToggle={toggleModuleVisibility} />

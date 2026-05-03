@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { KeyRound, Smartphone, UserCog } from "lucide-react";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -30,12 +30,13 @@ type AdminHelpDoneState = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: session, refetch: refetchSession } = authClient.useSession();
   const [mode, setMode] = useState<"login" | "forgot">("login");
 
   // Login state
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [isClientReady, setIsClientReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginNotice, setLoginNotice] = useState("");
 
@@ -58,18 +59,20 @@ export default function LoginPage() {
   const [isSubmittingAdminHelp, setIsSubmittingAdminHelp] = useState(false);
   const [adminHelpDone, setAdminHelpDone] = useState<AdminHelpDoneState | null>(null);
 
-  const handleLoginKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter") return;
+  const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void handleLogin();
   };
 
   useEffect(() => {
-    if (session?.user) {
+    setIsClientReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClientReady && !isSubmitting && session?.user) {
       router.replace("/portal");
-      router.refresh();
     }
-  }, [router, session]);
+  }, [isClientReady, isSubmitting, router, session?.user]);
 
   function switchMode(next: "login" | "forgot") {
     setMode(next);
@@ -85,10 +88,14 @@ export default function LoginPage() {
   }
 
   const handleLogin = async () => {
+    if (!isClientReady || isSubmitting) {
+      return;
+    }
+
     const normalizedIdentifier = identifier.trim();
     const normalizedPassword = password.trim();
     if (!normalizedIdentifier || !normalizedPassword) {
-      setError("Identitas login atau password tidak valid.");
+      setError("Masukkan identitas akun dan password.");
       setLoginNotice("");
       return;
     }
@@ -107,7 +114,7 @@ export default function LoginPage() {
         | null;
 
       if (!lookupResponse.ok || !lookupPayload?.ok || !lookupPayload.data?.user) {
-        throw new Error(lookupPayload?.error?.message ?? "Akun backend tidak ditemukan.");
+        throw new Error(lookupPayload?.error?.message ?? "Akun tidak ditemukan atau sudah tidak aktif.");
       }
 
       const user = lookupPayload.data.user;
@@ -118,14 +125,14 @@ export default function LoginPage() {
       });
 
       if (authError) {
-        throw new Error(authError.message || "Password tidak cocok dengan akun backend ALETA.");
+        throw new Error(authError.message || "Password tidak sesuai dengan akun ALETA.");
       }
 
-      setLoginNotice("Login berhasil. Menyiapkan dashboard ALETA...");
+      setLoginNotice("Login berhasil. Menyiapkan Portal ALETA...");
+      await refetchSession().catch(() => undefined);
       router.replace("/portal");
-      router.refresh();
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Login ALETA gagal diproses.");
+      setError(loginError instanceof Error ? loginError.message : "Login belum berhasil. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -165,7 +172,7 @@ export default function LoginPage() {
       if (!payload.data?.whatsappReady || !payload.data.recovery) {
         // WhatsApp not ready — suggest admin help
         setError(
-          "WhatsApp gateway tidak aktif saat ini, OTP tidak dapat dikirim. Gunakan jalur Bantuan Admin di bawah untuk melanjutkan."
+          "Layanan WhatsApp belum aktif, sehingga OTP belum dapat dikirim. Gunakan Bantuan Admin untuk melanjutkan."
         );
         return;
       }
@@ -319,16 +326,16 @@ export default function LoginPage() {
             </div>
 
             {mode === "login" ? (
-              <div className="space-y-5">
+              <form className="space-y-5" noValidate onSubmit={handleLoginSubmit}>
                 <Field label="Identitas">
                     <Input
                       id="identifier"
                       data-testid="login-identifier"
                       value={identifier}
                       onChange={(event) => setIdentifier(event.target.value)}
-                      onKeyDown={handleLoginKeyDown}
                       placeholder="Masukkan username, email, nomor HP, NIP, atau nama lengkap"
                       autoComplete="username email"
+                      disabled={!isClientReady || isSubmitting}
                       className="h-12 text-base"
                     />
                   </Field>
@@ -340,9 +347,9 @@ export default function LoginPage() {
                       type="password"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      onKeyDown={handleLoginKeyDown}
                       placeholder="Masukkan password"
                       autoComplete="current-password"
+                      disabled={!isClientReady || isSubmitting}
                       className="h-12 text-base"
                     />
                   </Field>
@@ -361,15 +368,15 @@ export default function LoginPage() {
 
                   <Button
                     data-testid="login-submit"
-                    type="button"
+                    type="submit"
                     className="w-full"
                     size="lg"
-                    disabled={isSubmitting}
-                    onClick={() => void handleLogin()}
+                    disabled={!isClientReady || isSubmitting}
+                    aria-busy={isSubmitting}
                   >
-                    {isSubmitting ? "Memverifikasi akun..." : "Login"}
+                    {!isClientReady ? "Menyiapkan login..." : isSubmitting ? "Memverifikasi akun..." : "Login"}
                   </Button>
-              </div>
+              </form>
             ) : (
               <div className="space-y-5">
                 {/* Pilihan jalur */}
@@ -430,7 +437,7 @@ export default function LoginPage() {
                                 setError("");
                               }}
                             >
-                              Pindah ke Bantuan Admin →
+                              Pindah ke Bantuan Admin
                             </button>
                           ) : null}
                         </div>
@@ -452,7 +459,7 @@ export default function LoginPage() {
                       <div className="rounded-[1.3rem] border border-emerald-300/60 bg-emerald-50 p-4 text-sm dark:bg-emerald-950/30">
                         <p className="font-semibold text-emerald-800 dark:text-emerald-200">OTP telah dikirim ke WhatsApp</p>
                         <p className="mt-1 text-emerald-700 dark:text-emerald-300">
-                          Nomor: <strong>{otpResetState.maskedWhatsapp}</strong> &mdash; a/n <strong>{otpResetState.name}</strong>
+                          Nomor: <strong>{otpResetState.maskedWhatsapp}</strong> - a/n <strong>{otpResetState.name}</strong>
                         </p>
                       </div>
 
@@ -499,7 +506,7 @@ export default function LoginPage() {
                           onClick={() => void confirmReset()}
                         >
                           <KeyRound className="h-4 w-4" />
-                          {isResetting ? "Menyimpan password..." : "Reset Password"}
+                          {isResetting ? "Menyimpan password..." : "Atur Ulang Password"}
                         </Button>
                         <Button
                           type="button"

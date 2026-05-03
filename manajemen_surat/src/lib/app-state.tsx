@@ -8,6 +8,7 @@ import {
   useEffectEvent,
   useMemo,
   useReducer,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -192,6 +193,7 @@ type AssignActingAssignmentInput = {
   type: ActingAssignment["type"];
   startDate?: string;
   endDate?: string | null;
+  reason?: string | null;
 };
 
 type CreateLetterInput = {
@@ -595,6 +597,7 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         targetPositionId,
         startDate: action.payload.startDate,
         endDate: action.payload.endDate,
+        reason: action.payload.reason,
       });
 
       if (!validation.valid) {
@@ -614,7 +617,7 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
                   assignedByUserId: action.currentUserId,
                   authorizedByUserId: supervisorUser.id,
                   startDate: action.payload.startDate ?? new Date().toISOString(),
-                  endDate: action.payload.type === "PLH" ? action.payload.endDate ?? null : null,
+                  endDate: action.payload.endDate ?? null,
                   assignedAt: new Date().toISOString(),
                 },
               }
@@ -987,6 +990,7 @@ export function PortalProvider({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(Boolean(initialState));
+  const syncGenerationRef = useRef(0);
 
   useEffect(() => {
     if (initialState) {
@@ -1096,57 +1100,131 @@ export function PortalProvider({
     return payload.data as T;
   }
 
+  function withSyncTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+    });
+
+    return Promise.race([promise, timeout]).finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    });
+  }
+
+  function getFulfilledValue<T>(result: PromiseSettledResult<T>) {
+    return result.status === "fulfilled" ? result.value : undefined;
+  }
+
+  async function syncSecondaryPortalData(actorUserId: string, syncGeneration: number) {
+    const results = await withSyncTimeout(
+      Promise.allSettled([
+        requestBackendJson<{ items: LetterDetail[] }>("/api/surat?pageSize=100", undefined, actorUserId),
+        requestBackendJson<{ items: DispositionNode[] }>("/api/disposisi", undefined, actorUserId),
+        requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
+        requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
+        requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
+        requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId),
+      ]),
+      30_000,
+      "Sebagian data portal belum selesai dimuat. Data akan dicoba lagi saat halaman dimuat ulang."
+    ).catch((error) => {
+      if (error instanceof BackendRequestError && error.status === 401 && syncGenerationRef.current === syncGeneration) {
+        void authClient.signOut();
+        dispatch({ type: "sign-out" });
+        return null;
+      }
+
+      console.warn("[ALETA] Sinkronisasi data non-kritis belum selesai; portal tetap dapat digunakan.");
+      return null;
+    });
+
+    if (!results || syncGenerationRef.current !== syncGeneration) {
+      return;
+    }
+
+    const unauthorized = results.some(
+      (result) => result.status === "rejected" && result.reason instanceof BackendRequestError && result.reason.status === 401
+    );
+
+    if (unauthorized) {
+      void authClient.signOut();
+      dispatch({ type: "sign-out" });
+      return;
+    }
+
+    const [
+      lettersResult,
+      dispositionsResult,
+      aiConfigResult,
+      whatsAppResult,
+      institutionResult,
+      assistantJudgeResult,
+    ] = results;
+    const lettersPayload = getFulfilledValue(lettersResult);
+    const dispositionsPayload = getFulfilledValue(dispositionsResult);
+    const aiConfigPayload = getFulfilledValue(aiConfigResult);
+    const whatsAppPayload = getFulfilledValue(whatsAppResult);
+    const institutionPayload = getFulfilledValue(institutionResult);
+    const assistantJudgePayload = getFulfilledValue(assistantJudgeResult);
+
+    startTransition(() => {
+      if (lettersPayload) {
+        dispatch({ type: "sync-letters", payload: lettersPayload.items ?? [] });
+      }
+      if (dispositionsPayload) {
+        dispatch({ type: "sync-dispositions", payload: dispositionsPayload.items ?? [] });
+      }
+      if (aiConfigPayload) {
+        dispatch({ type: "set-ai-config", payload: aiConfigPayload });
+      }
+      if (whatsAppPayload) {
+        dispatch({ type: "set-whatsapp-web", payload: whatsAppPayload });
+      }
+      if (institutionPayload) {
+        dispatch({ type: "set-institution-identity", payload: institutionPayload });
+      }
+      if (assistantJudgePayload) {
+        dispatch({ type: "set-assistant-judge-config", payload: assistantJudgePayload });
+      }
+    });
+  }
+
   async function runSyncDataFromBackend(actorUserId?: string) {
     if (!actorUserId) return;
-    setIsSyncing(true);
+    const syncGeneration = syncGenerationRef.current + 1;
+    syncGenerationRef.current = syncGeneration;
+    const hasCachedActor = Boolean(getUser(actorUserId, state.users));
+    setIsSyncing(!hasCachedActor);
     setSyncError(null);
-
-    const SYNC_TIMEOUT_MS = 30_000;
-    const timeoutSignal = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Server tidak merespons dalam 30 detik. Periksa koneksi atau hubungi administrator.")),
-        SYNC_TIMEOUT_MS
-      )
-    );
 
     try {
       const [
         usersPayload,
-        lettersPayload,
-        dispositionsPayload,
-        aiConfigPayload,
-        whatsAppPayload,
-        institutionPayload,
         moduleVisibilityPayload,
-        assistantJudgePayload,
-      ] =
-        await Promise.race([
-          Promise.all([
-            requestBackendJson<{ items: BackendUserRecord[] }>("/api/users", undefined, actorUserId),
-            requestBackendJson<{ items: LetterDetail[] }>("/api/surat", undefined, actorUserId),
-            requestBackendJson<{ items: DispositionNode[] }>("/api/disposisi", undefined, actorUserId),
-            requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
-            requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
-            requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
-            requestBackendJson<{ items: ModuleVisibility[] }>("/api/settings/module-visibility", undefined, actorUserId),
-            requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId),
-          ]),
-          timeoutSignal,
-        ]);
+      ] = await withSyncTimeout(
+        Promise.all([
+          requestBackendJson<{ items: BackendUserRecord[] }>("/api/users", undefined, actorUserId),
+          requestBackendJson<{ items: ModuleVisibility[] }>("/api/settings/module-visibility", undefined, actorUserId),
+        ]),
+        12_000,
+        "Server tidak merespons saat memuat sesi dan hak akses portal. Periksa koneksi atau hubungi administrator."
+      );
+
+      if (syncGenerationRef.current !== syncGeneration) {
+        return;
+      }
 
       startTransition(() => {
         dispatch({
           type: "sync-users",
           payload: syncCachedUsers(state.users, usersPayload.items ?? []),
         });
-        dispatch({ type: "sync-letters", payload: lettersPayload.items ?? [] });
-        dispatch({ type: "sync-dispositions", payload: dispositionsPayload.items ?? [] });
-        dispatch({ type: "set-ai-config", payload: aiConfigPayload });
-        dispatch({ type: "set-whatsapp-web", payload: whatsAppPayload });
-        dispatch({ type: "set-institution-identity", payload: institutionPayload });
         dispatch({ type: "set-module-visibility", payload: moduleVisibilityPayload.items ?? defaultState.moduleVisibility });
-        dispatch({ type: "set-assistant-judge-config", payload: assistantJudgePayload });
       });
+
+      void syncSecondaryPortalData(actorUserId, syncGeneration);
     } catch (error) {
       if (error instanceof BackendRequestError && error.status === 401) {
         void authClient.signOut();
@@ -1154,10 +1232,16 @@ export function PortalProvider({
       } else {
         const message =
           error instanceof Error ? error.message : "Gagal memuat data portal dari server.";
-        setSyncError(message);
+        if (hasCachedActor) {
+          console.warn("[ALETA] Refresh data sesi/RBAC belum selesai; cache lokal sementara dipakai.");
+        } else {
+          setSyncError(message);
+        }
       }
     } finally {
-      setIsSyncing(false);
+      if (syncGenerationRef.current === syncGeneration) {
+        setIsSyncing(false);
+      }
     }
   }
 
@@ -1172,7 +1256,7 @@ export function PortalProvider({
   const currentRoleId = getEffectiveRoleId(currentUser);
   const accessiblePortalApps = getAccessiblePortalApps(currentUser).filter((app) => {
     if (app.id !== "asisten-hakim") return true;
-    return canAccessAssistantJudge(currentRoleId, state.assistantJudgeConfig);
+    return canAccessAssistantJudge(currentRoleId, state.assistantJudgeConfig, currentUser?.id);
   });
   const accessibleModules = getAccessibleModules(currentUser, state.moduleVisibility);
   const accessibleLetters = getAccessibleLetters(currentUser, state.letters, state.dispositions);
@@ -1620,6 +1704,7 @@ export function PortalProvider({
             targetPositionId: targetPositionId ?? "",
             startDate: payload.startDate,
             endDate: payload.endDate,
+            reason: payload.reason,
           });
 
           if (!validation.valid) {
@@ -1633,11 +1718,13 @@ export function PortalProvider({
                 method: "POST",
                 body: JSON.stringify({
                   actorUserId: currentUser.id,
+                  supervisorUserId: payload.supervisorUserId,
                   userIdPengganti: payload.assigneeUserId,
                   jabatanIdTarget: targetPositionId,
                   tipe: payload.type,
                   tanggalMulai: payload.startDate,
-                  tanggalSelesai: payload.type === "PLT" ? null : payload.endDate,
+                  tanggalSelesai: payload.endDate,
+                  reason: payload.reason,
                 }),
               },
               currentUser.id

@@ -1,6 +1,6 @@
 import { type QueryResultRow } from "pg";
 
-import { canCreateIncomingLetter, canCreateOutgoingLetter, getEffectiveRoleId } from "@/lib/permissions";
+import { canCreateIncomingLetter, canCreateOutgoingLetter, getEffectivePositionId, getEffectiveRoleId } from "@/lib/permissions";
 import { letterClassificationCatalog } from "@/lib/letter-taxonomy";
 import {
   type LetterDetail,
@@ -129,6 +129,8 @@ export type LetterSearchFilters = {
   query?: string;
   type?: string;
   status?: string;
+  workflowStatus?: string;
+  priority?: string;
   year?: string;
   month?: string;
   quarter?: string;
@@ -138,8 +140,34 @@ export type LetterSearchFilters = {
   dateTo?: string;
   tags?: string[];
   classificationTags?: string[];
+  dispositionStatus?: string;
+  unreadOnly?: boolean;
+  overdueOnly?: boolean;
+  dueTodayOnly?: boolean;
   includeDeleted?: boolean;
   limit?: number;
+};
+
+export const LETTER_PAGE_SIZE_OPTIONS = [5, 10, 25, 50, 100] as const;
+export type LetterPageSize = (typeof LETTER_PAGE_SIZE_OPTIONS)[number] | "all";
+export type LetterSortBy =
+  | "createdAt"
+  | "updatedAt"
+  | "tanggal"
+  | "tanggalSurat"
+  | "nomorAgenda"
+  | "nomorSurat"
+  | "asalTujuan"
+  | "status"
+  | "priority"
+  | "workflowStatus";
+export type LetterSortDirection = "asc" | "desc";
+
+export type LetterListQuery = {
+  page: number;
+  pageSize: LetterPageSize;
+  sortBy: LetterSortBy;
+  sortDirection: LetterSortDirection;
 };
 
 export type LetterWorkflowAction = "submit" | "approve" | "reject" | "mark-sent" | "return-draft";
@@ -306,6 +334,60 @@ function isOutgoingWorkflowApprover(actor: Awaited<ReturnType<typeof requireActo
 function isLetterCreatorOrAdmin(actor: Awaited<ReturnType<typeof requireActorUser>>, letter: LetterDetail) {
   const roleId = getActorRoleId(actor);
   return roleId === "super-admin" || roleId === "admin" || letter.createdByUserId === actor.id;
+}
+
+function mapLightweightLetterRow(row: LetterRow): LetterDetail {
+  return {
+    id: row.id,
+    type: row.type,
+    nomorSurat: row.nomor_surat,
+    nomorUrut: row.nomor_urut ?? undefined,
+    workflowStatus: row.workflow_status ?? (row.type === "keluar" ? "draft" : "sent"),
+    submittedAt: row.submitted_at,
+    submittedByUserId: row.submitted_by_user_id,
+    approvedAt: row.approved_at,
+    approvedByUserId: row.approved_by_user_id,
+    sentAt: row.sent_at,
+    sentByUserId: row.sent_by_user_id,
+    rejectedAt: row.rejected_at,
+    rejectedByUserId: row.rejected_by_user_id,
+    rejectionNote: row.rejection_note,
+    tanggal: row.tanggal_surat,
+    tanggalAdministratif: row.tanggal_administratif ?? undefined,
+    pengirim: row.pengirim,
+    perihal: row.perihal,
+    status: row.status as LetterDetail["status"],
+    assignedUnit: row.assigned_unit,
+    confidentiality: row.confidentiality,
+    currentDispositionId: row.current_disposition_id ?? "",
+    tags: parseJsonArray<string>(row.tags_json),
+    ringkasan: row.ringkasan,
+    asalSurat: row.asal_surat,
+    tujuanSurat: row.tujuan_surat,
+    klasifikasi: row.klasifikasi_utama,
+    lampiran: [],
+    viewerMode: row.viewer_mode,
+    qrCodeLabel: row.qr_code_label,
+    documentAspectRatio: row.document_aspect_ratio ?? undefined,
+    documentFileName: row.document_file_name ?? undefined,
+    documentSizeMb: row.document_size_mb ?? undefined,
+    documentUrl: undefined,
+    documentTextExtract: undefined,
+    kodeKlasifikasi: row.kode_klasifikasi ?? undefined,
+    klasifikasiTags: parseJsonArray<string>(row.klasifikasi_tags_json),
+    targetPositionId: row.target_position_id ?? undefined,
+    targetUserId: row.target_user_id ?? undefined,
+    createdByUserId: row.created_by_user_id ?? undefined,
+    createdByUserName: undefined,
+    whatsappDeliveries: [],
+    deletedState: row.deleted_at
+      ? {
+          deletedAt: row.deleted_at,
+          deletedByUserId: "",
+          deletedMode: "soft",
+        }
+      : undefined,
+  };
 }
 
 async function hydrateLetters(db: AletaDatabase, rows: LetterRow[]) {
@@ -484,6 +566,16 @@ function buildSearchQuery(db: AletaDatabase, filters: LetterSearchFilters) {
     params.push(filters.status);
   }
 
+  if (filters.workflowStatus && filters.workflowStatus !== "Semua") {
+    clauses.push("letters.workflow_status = ?");
+    params.push(filters.workflowStatus);
+  }
+
+  if (filters.priority && filters.priority !== "Semua") {
+    clauses.push("letters.confidentiality = ?");
+    params.push(filters.priority);
+  }
+
   if (filters.origin && filters.origin !== "Semua") {
     clauses.push("letters.asal_surat = ?");
     params.push(filters.origin);
@@ -572,6 +664,124 @@ function buildSearchQuery(db: AletaDatabase, filters: LetterSearchFilters) {
   };
 }
 
+function buildActorAccessQuery(actor: Awaited<ReturnType<typeof requireActorUser>>, tableAlias = "letters") {
+  const roleId = getActorRoleId(actor);
+  if (roleId === "super-admin" || roleId === "admin") {
+    return { clause: "1 = 1", params: [] as SqlInputValue[] };
+  }
+
+  const effectivePositionId = getEffectivePositionId(actor) ?? null;
+
+  return {
+    clause: `${tableAlias}.id IN (
+      SELECT access_dispositions.surat_id
+      FROM dispositions access_dispositions
+      LEFT JOIN positions disposition_positions ON disposition_positions.id = access_dispositions.target_position_id
+      LEFT JOIN positions actor_positions ON actor_positions.id = ?
+      WHERE access_dispositions.deleted_at IS NULL
+        AND (
+          access_dispositions.penerima_id = ?
+          OR access_dispositions.pengirim_id = ?
+          OR (? IS NOT NULL AND access_dispositions.target_position_id = ?)
+          OR (? IS NOT NULL AND disposition_positions.unit_kerja = actor_positions.unit_kerja)
+        )
+    )`,
+    params: [
+      effectivePositionId,
+      actor.id,
+      actor.id,
+      effectivePositionId,
+      effectivePositionId,
+      effectivePositionId,
+    ] as SqlInputValue[],
+  };
+}
+
+function buildDispositionFilterQuery(
+  filters: LetterSearchFilters,
+  actor: Awaited<ReturnType<typeof requireActorUser>>,
+  tableAlias = "letters"
+) {
+  const clauses: string[] = [];
+  const params: SqlInputValue[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (filters.dispositionStatus === "active") {
+    clauses.push(`${tableAlias}.id IN (
+      SELECT filter_dispositions.surat_id FROM dispositions filter_dispositions
+      WHERE filter_dispositions.deleted_at IS NULL
+        AND filter_dispositions.status <> 'Selesai'
+        AND (filter_dispositions.penerima_id = ? OR filter_dispositions.pengirim_id = ?)
+    )`);
+    params.push(actor.id, actor.id);
+  }
+
+  if (filters.dispositionStatus === "completed") {
+    clauses.push(`${tableAlias}.id IN (
+      SELECT filter_dispositions.surat_id FROM dispositions filter_dispositions
+      WHERE filter_dispositions.deleted_at IS NULL
+        AND filter_dispositions.status = 'Selesai'
+        AND (filter_dispositions.penerima_id = ? OR filter_dispositions.pengirim_id = ?)
+    )`);
+    params.push(actor.id, actor.id);
+  }
+
+  if (filters.unreadOnly) {
+    clauses.push(`${tableAlias}.id IN (
+      SELECT unread_dispositions.surat_id FROM dispositions unread_dispositions
+      WHERE unread_dispositions.deleted_at IS NULL
+        AND unread_dispositions.penerima_id = ?
+        AND unread_dispositions.read_at IS NULL
+    )`);
+    params.push(actor.id);
+  }
+
+  if (filters.overdueOnly) {
+    clauses.push(`${tableAlias}.id IN (
+      SELECT overdue_dispositions.surat_id FROM dispositions overdue_dispositions
+      WHERE overdue_dispositions.deleted_at IS NULL
+        AND overdue_dispositions.status <> 'Selesai'
+        AND overdue_dispositions.deadline_at IS NOT NULL
+        AND SUBSTRING(overdue_dispositions.deadline_at FROM 1 FOR 10) < ?
+    )`);
+    params.push(today);
+  }
+
+  if (filters.dueTodayOnly) {
+    clauses.push(`${tableAlias}.id IN (
+      SELECT due_today_dispositions.surat_id FROM dispositions due_today_dispositions
+      WHERE due_today_dispositions.deleted_at IS NULL
+        AND due_today_dispositions.status <> 'Selesai'
+        AND due_today_dispositions.deadline_at IS NOT NULL
+        AND SUBSTRING(due_today_dispositions.deadline_at FROM 1 FOR 10) = ?
+    )`);
+    params.push(today);
+  }
+
+  return {
+    clause: clauses.length > 0 ? clauses.join(" AND ") : "1 = 1",
+    params,
+  };
+}
+
+function getLetterSortExpression(sortBy: LetterSortBy) {
+  const referenceDate = "COALESCE(letters.tanggal_administratif, letters.tanggal_terima, letters.tanggal_kirim, letters.tanggal_surat)";
+  const sortMap: Record<LetterSortBy, string> = {
+    createdAt: "letters.created_at",
+    updatedAt: "letters.updated_at",
+    tanggal: referenceDate,
+    tanggalSurat: "letters.tanggal_surat",
+    nomorAgenda: "letters.nomor_urut",
+    nomorSurat: "letters.nomor_surat",
+    asalTujuan: "CASE WHEN letters.type = 'masuk' THEN letters.asal_surat ELSE letters.tujuan_surat END",
+    status: "letters.status",
+    priority: "CASE letters.confidentiality WHEN 'Rahasia' THEN 3 WHEN 'Penting' THEN 2 ELSE 1 END",
+    workflowStatus: "letters.workflow_status",
+  };
+
+  return sortMap[sortBy];
+}
+
 export async function getLetterByIdFromDb(
   db: AletaDatabase,
   letterId: string,
@@ -599,6 +809,108 @@ export async function searchLettersInDb(db: AletaDatabase, filters: LetterSearch
   ).all<LetterRow>(...params, limit);
 
   return hydrateLetters(db, rows);
+}
+
+export async function searchLettersPageForActorInDb(
+  db: AletaDatabase,
+  actor: Awaited<ReturnType<typeof requireActorUser>>,
+  filters: LetterSearchFilters = {},
+  query: LetterListQuery
+): Promise<{
+  items: LetterDetail[];
+  pagination: {
+    page: number;
+    pageSize: LetterPageSize;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  sort: {
+    sortBy: LetterSortBy;
+    sortDirection: LetterSortDirection;
+  };
+  meta: {
+    mode: "paginated" | "all";
+    limited: boolean;
+    lightweight: boolean;
+    allGuardLimit: number;
+  };
+}> {
+  const letterAlias = "page_letters";
+  const base = buildSearchQuery(db, filters);
+  const baseWhereClause = base.whereClause.replaceAll("letters.", `${letterAlias}.`);
+  const access = buildActorAccessQuery(actor, letterAlias);
+  const dispositionFilter = buildDispositionFilterQuery(filters, actor, letterAlias);
+  const whereClause = [baseWhereClause, access.clause, dispositionFilter.clause].join(" AND ");
+  const params = [...base.params, ...access.params, ...dispositionFilter.params];
+  const countRow = await db
+    .prepare(`SELECT COUNT(*)::int AS count FROM letters ${letterAlias} WHERE ${whereClause}`)
+    .get<{ count: number }>(...params);
+  const total = Number(countRow?.count ?? 0);
+  const allGuardLimit = 500;
+  const pageSize = query.pageSize;
+
+  if (pageSize === "all" && total > allGuardLimit) {
+    throw new ApiError(
+      400,
+      "Data terlalu banyak untuk ditampilkan sekaligus. Gunakan filter atau Export CSV."
+    );
+  }
+
+  const resolvedPageSize = pageSize === "all" ? Math.max(total, 1) : pageSize;
+  const totalPages = total === 0 ? 0 : Math.max(1, Math.ceil(total / resolvedPageSize));
+  const page = pageSize === "all" ? 1 : Math.min(Math.max(1, query.page), Math.max(totalPages, 1));
+  const offset = pageSize === "all" ? 0 : (page - 1) * resolvedPageSize;
+  const sortExpression = getLetterSortExpression(query.sortBy).replaceAll("letters.", `${letterAlias}.`);
+  const sortDirection = query.sortDirection === "asc" ? "ASC" : "DESC";
+  const listColumnSql = `SELECT
+        letters.id, letters.type, letters.nomor_surat, letters.nomor_urut,
+        letters.tanggal_surat, letters.tanggal_terima, letters.tanggal_kirim,
+        letters.tanggal_administratif, letters.pengirim, letters.perihal, letters.status,
+        letters.workflow_status, letters.submitted_at, letters.submitted_by_user_id,
+        letters.approved_at, letters.approved_by_user_id, letters.sent_at, letters.sent_by_user_id,
+        letters.rejected_at, letters.rejected_by_user_id, letters.rejection_note,
+        letters.assigned_unit, letters.confidentiality, letters.current_disposition_id,
+        SUBSTRING(letters.ringkasan FROM 1 FOR 320) AS ringkasan, letters.asal_surat, letters.tujuan_surat,
+        letters.klasifikasi_utama, letters.kode_klasifikasi,
+        '[]' AS lampiran_json, letters.tags_json, letters.klasifikasi_tags_json,
+        letters.viewer_mode, letters.qr_code_label, letters.document_aspect_ratio,
+        letters.document_file_name, letters.document_size_mb,
+        NULL AS document_text_extract, NULL AS document_file_path,
+        letters.target_position_id, letters.target_user_id, letters.created_by_user_id,
+        letters.deleted_at`.replaceAll("letters.", `${letterAlias}.`);
+  const rows = await db
+    .prepare(
+      `${listColumnSql}
+       FROM letters ${letterAlias}
+       WHERE ${whereClause}
+       ORDER BY ${sortExpression} ${sortDirection}, ${letterAlias}.created_at DESC, ${letterAlias}.id ASC
+       LIMIT ? OFFSET ?`
+    )
+    .all<LetterRow>(...params, resolvedPageSize, offset);
+
+  return {
+    items: rows.map(mapLightweightLetterRow),
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages,
+      hasNextPage: pageSize !== "all" && page < totalPages,
+      hasPreviousPage: pageSize !== "all" && page > 1,
+    },
+    sort: {
+      sortBy: query.sortBy,
+      sortDirection: query.sortDirection,
+    },
+    meta: {
+      mode: pageSize === "all" ? "all" : "paginated",
+      limited: pageSize !== "all",
+      lightweight: true,
+      allGuardLimit,
+    },
+  };
 }
 
 export async function listLetterTemplatesInDb(db: AletaDatabase, actorUserId: string, options?: { activeOnly?: boolean }) {

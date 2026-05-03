@@ -1,6 +1,6 @@
 import { and, asc, desc, gte, isNull, lte, or } from "drizzle-orm";
 
-import { validateActingAssignmentRequest } from "@/core/organization/service";
+import { getResolvedActingAssignment, validateActingAssignmentRequest } from "@/core/organization/service";
 import { canManageActingAssignments, getDefaultRoleForPosition } from "@/lib/permissions";
 import {
   type ActingAssignment,
@@ -56,6 +56,14 @@ type ActingAssignmentListRow = ActingAssignmentRow & {
   assignee_name: string;
   target_position_name: string;
   assigned_by_name: string;
+};
+
+type ActingAssignmentConflictRow = {
+  id: string;
+  user_id_pengganti: string;
+  jabatan_id_target: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string | null;
 };
 
 function mapPositionRow(row: PositionRow): Position {
@@ -271,45 +279,109 @@ export async function resolveTargetRecipientFromDb(db: AletaDatabase, {
   return users[0];
 }
 
+async function getOverlappingActingAssignmentsFromDb(
+  db: AletaDatabase,
+  {
+    userIdPengganti,
+    jabatanIdTarget,
+    tanggalMulai,
+    tanggalSelesai,
+  }: {
+    userIdPengganti: string;
+    jabatanIdTarget: string;
+    tanggalMulai: string;
+    tanggalSelesai: string;
+  }
+) {
+  return db.prepare(
+    `SELECT id, user_id_pengganti, jabatan_id_target, tanggal_mulai, tanggal_selesai
+     FROM acting_assignments
+     WHERE deleted_at IS NULL
+       AND (user_id_pengganti = ? OR jabatan_id_target = ?)
+       AND tanggal_mulai <= ?
+       AND (tanggal_selesai IS NULL OR tanggal_selesai >= ?)`
+  ).all<ActingAssignmentConflictRow>(userIdPengganti, jabatanIdTarget, tanggalSelesai, tanggalMulai);
+}
+
 export async function createActingAssignmentInDb(db: AletaDatabase, {
   actorUserId,
+  supervisorUserId,
   userIdPengganti,
   jabatanIdTarget,
   tipe,
   tanggalMulai,
   tanggalSelesai,
+  reason,
 }: {
   actorUserId: string;
+  supervisorUserId?: string | null;
   userIdPengganti: string;
   jabatanIdTarget: string;
   tipe: ActingAssignment["type"];
   tanggalMulai?: string;
   tanggalSelesai?: string | null;
+  reason?: string | null;
 }) {
   const actor = await requireActorUser(db, actorUserId);
   const assignee = await getUserByIdFromDb(db, userIdPengganti);
+  const authorizedSupervisor = supervisorUserId ? await getUserByIdFromDb(db, supervisorUserId) : actor;
+
+  if (getResolvedActingAssignment(actor) && actor.roleId !== "super-admin" && actor.roleId !== "admin") {
+    throw new ApiError(403, "Pejabat yang hanya bertindak sebagai PLH/PLT tidak boleh membuat penugasan jabatan baru.");
+  }
 
   if (!canManageActingAssignments(actor)) {
     throw new ApiError(403, "Role aktif tidak memiliki hak untuk mengelola penugasan PLH/PLT.");
+  }
+
+  if (authorizedSupervisor?.id !== actor.id && actor.roleId !== "super-admin" && actor.roleId !== "admin") {
+    throw new ApiError(403, "Hanya Super Admin/Admin yang boleh mencatat penugasan atas otorisasi pejabat lain.");
   }
 
   if (!assignee) {
     throw new ApiError(404, "User pengganti tidak ditemukan.");
   }
 
+  if (!authorizedSupervisor) {
+    throw new ApiError(404, "Pejabat pemberi otorisasi tidak ditemukan.");
+  }
+
+  const positionSource = await getPositionsFromDb(db);
   const validation = validateActingAssignmentRequest({
-    supervisorUser: actor,
+    supervisorUser: authorizedSupervisor,
     assigneeUser: assignee,
     actingType: tipe,
     targetPositionId: jabatanIdTarget,
     startDate: tanggalMulai,
     endDate: tanggalSelesai,
+    reason,
+    positionSource,
   });
 
   if (!validation.valid) {
     throw new ApiError(
-      validation.message.includes("bawahan langsung") ? 403 : 400,
+      "statusCodeHint" in validation && typeof validation.statusCodeHint === "number"
+        ? validation.statusCodeHint
+        : validation.message.includes("jalur jabatan")
+          ? 403
+          : 400,
       validation.message
+    );
+  }
+
+  const normalizedStartDate = tanggalMulai ?? new Date().toISOString();
+  const normalizedEndDate = tanggalSelesai ?? "";
+  const overlaps = await getOverlappingActingAssignmentsFromDb(db, {
+    userIdPengganti,
+    jabatanIdTarget,
+    tanggalMulai: normalizedStartDate,
+    tanggalSelesai: normalizedEndDate,
+  });
+
+  if (overlaps.length > 0) {
+    throw new ApiError(
+      409,
+      "Terdapat konflik penugasan PLH/PLT aktif pada kandidat atau jabatan target untuk periode yang sama."
     );
   }
 
@@ -317,12 +389,6 @@ export async function createActingAssignmentInDb(db: AletaDatabase, {
     const now = new Date().toISOString();
     const assignmentId = await nextPrefixedId(tx, "acting_assignments", "asg");
     const roleIdTarget = getDefaultRoleForPosition(jabatanIdTarget);
-
-    await tx.prepare(
-      `UPDATE acting_assignments
-       SET deleted_at = ?, updated_at = ?
-       WHERE user_id_pengganti = ? AND jabatan_id_target = ? AND deleted_at IS NULL`
-    ).run(now, now, userIdPengganti, jabatanIdTarget);
 
     await tx.prepare(
       `INSERT INTO acting_assignments (
@@ -336,9 +402,9 @@ export async function createActingAssignmentInDb(db: AletaDatabase, {
       tipe,
       roleIdTarget,
       actor.id,
-      actor.id,
-      tanggalMulai ?? now,
-      tipe === "PLT" ? null : tanggalSelesai ?? null,
+      authorizedSupervisor.id,
+      normalizedStartDate,
+      tanggalSelesai ?? null,
       now,
       null,
       now,
@@ -355,8 +421,14 @@ export async function createActingAssignmentInDb(db: AletaDatabase, {
         userIdPengganti,
         jabatanIdTarget,
         tipe,
-        tanggalMulai: tanggalMulai ?? now,
-        tanggalSelesai: tipe === "PLT" ? null : tanggalSelesai ?? null,
+        tanggalMulai: normalizedStartDate,
+        tanggalSelesai: tanggalSelesai ?? null,
+        reason,
+        authorizedByUserId: authorizedSupervisor.id,
+        candidateRole: assignee.roleId,
+        ruleApplied: validation.eligibility.ruleApplied,
+        eligibilityReasons: validation.eligibility.reasons,
+        eligibilityWarnings: validation.eligibility.warnings,
       },
     });
 
@@ -366,10 +438,12 @@ export async function createActingAssignmentInDb(db: AletaDatabase, {
       jabatanIdTarget,
       tipe,
       roleIdTarget,
-      tanggalMulai: tanggalMulai ?? now,
-      tanggalSelesai: tipe === "PLT" ? null : tanggalSelesai ?? null,
+      tanggalMulai: normalizedStartDate,
+      tanggalSelesai: tanggalSelesai ?? null,
       actorName: actor.name,
+      authorizedByName: authorizedSupervisor.name,
       assigneeName: assignee.name,
+      ruleApplied: validation.eligibility.ruleApplied,
     };
   });
 }

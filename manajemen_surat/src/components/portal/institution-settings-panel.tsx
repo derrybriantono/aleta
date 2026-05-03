@@ -17,6 +17,7 @@ import {
   useWhatsAppGateway,
 } from "@/components/portal/use-whatsapp-gateway";
 import { usePortal } from "@/lib/app-state";
+import { humanizeStatus } from "@/lib/humanized-labels";
 import {
   type InstitutionIdentity,
   type InstitutionIdentityEnrichmentMetadata,
@@ -30,11 +31,11 @@ function statusCopy(status: "active" | "inactive" | "failed") {
 }
 
 function runtimeBadgeCopy(status: ReturnType<typeof getWhatsAppRuntimeLabel>) {
-  if (status === "connected") return { label: "connected", badge: "success" as const };
-  if (status === "waiting_qr") return { label: "waiting_qr", badge: "outline" as const };
-  if (status === "initializing") return { label: "initializing", badge: "outline" as const };
-  if (status === "failed") return { label: "failed", badge: "danger" as const };
-  return { label: "disconnected", badge: "outline" as const };
+  if (status === "connected") return { label: humanizeStatus(status), badge: "success" as const };
+  if (status === "waiting_qr") return { label: humanizeStatus(status), badge: "outline" as const };
+  if (status === "initializing") return { label: humanizeStatus(status), badge: "outline" as const };
+  if (status === "failed") return { label: humanizeStatus(status), badge: "danger" as const };
+  return { label: humanizeStatus("disconnected"), badge: "outline" as const };
 }
 
 function toSafeString(value: unknown) {

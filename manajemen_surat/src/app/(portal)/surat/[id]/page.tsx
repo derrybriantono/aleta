@@ -229,7 +229,7 @@ export default function SuratDetailPage() {
                 onClick={() => {
                   if (deleteMode === "hard" && activeDispositionCount > 0) {
                     window.alert(
-                      `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Selesaikan disposisi terlebih dahulu sebelum hard delete.`
+                      `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Selesaikan disposisi terlebih dahulu sebelum menghapus permanen.`
                     );
                     return;
                   }
@@ -238,8 +238,8 @@ export default function SuratDetailPage() {
                     activeDispositionCount > 0
                       ? `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Menghapus surat dapat mengganggu tindak lanjut. Gunakan arsip/nonaktifkan hanya jika sudah yakin. Lanjutkan?`
                       : deleteMode === "hard"
-                        ? "Hard delete akan menghapus surat secara permanen. Lanjutkan?"
-                        : "Hapus surat ini dari daftar aktif? Lanjutkan?"
+                        ? "Surat akan dihapus permanen. Tindakan ini tidak dapat dibatalkan. Lanjutkan?"
+                        : "Arsipkan surat ini dari daftar aktif? Lanjutkan?"
                   );
 
                   if (!confirmed) return;
@@ -248,7 +248,7 @@ export default function SuratDetailPage() {
                 }}
               >
                 <Trash2 className="h-4 w-4" />
-                {deleteMode === "hard" ? "Hard Delete" : "Delete"}
+                {deleteMode === "hard" ? "Hapus Permanen" : "Arsipkan"}
               </Button>
             ) : null}
           </>
@@ -303,12 +303,12 @@ export default function SuratDetailPage() {
                 <div className="mt-3 space-y-3 text-sm text-muted-foreground">
                   {isAdmin ? (
                     <div className="flex items-center justify-between gap-3">
-                      <span>Node aktif</span>
+                      <span>Disposisi aktif</span>
                       <strong className="text-foreground">{currentDisposition?.id ?? "-"}</strong>
                     </div>
                   ) : null}
                   <div className="flex items-center justify-between gap-3">
-                    <span>Mode viewer</span>
+                    <span>Mode dokumen</span>
                     <strong className="text-foreground">{letter.viewerMode === "preview" ? "Preview" : "Download"}</strong>
                   </div>
                   <div className="flex items-center justify-between gap-3">
@@ -321,7 +321,7 @@ export default function SuratDetailPage() {
               {letter.type === "keluar" ? (
                 <div className="rounded-[1.2rem] border border-border bg-card/70 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Workflow Surat Keluar</p>
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Alur Surat Keluar</p>
                     <Badge variant={workflowBadgeVariant(workflowStatus)}>
                       {workflowLabels[workflowStatus] ?? workflowStatus}
                     </Badge>
@@ -346,7 +346,7 @@ export default function SuratDetailPage() {
                         onClick={() => openWorkflowModal("submit")}
                       >
                         <SendHorizontal className="h-4 w-4" />
-                        Ajukan Review
+                        Ajukan Pemeriksaan
                       </Button>
                     ) : null}
                     {workflowStatus === "submitted" && canApproveWorkflow ? (
@@ -444,7 +444,7 @@ export default function SuratDetailPage() {
                 <div className="rounded-[1.2rem] border border-rose-300/60 bg-rose-50 p-4 text-sm dark:border-rose-700/40 dark:bg-rose-950/30">
                   <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300">
                     <Trash2 className="h-4 w-4" />
-                    <span className="font-semibold">Hard Delete</span>
+                    <span className="font-semibold">Hapus Permanen</span>
                   </div>
                   <p className="mt-1.5 leading-6 text-rose-800 dark:text-rose-200">
                     Akun Super Admin dapat menghapus surat ini secara permanen. Tindakan ini tidak dapat dibatalkan.
@@ -550,7 +550,7 @@ export default function SuratDetailPage() {
                           {deadlineState === "overdue" ? (
                             <Badge variant="danger">Terlambat</Badge>
                           ) : deadlineState === "due_today" ? (
-                            <Badge variant="warning">Jatuh Tempo Hari Ini</Badge>
+            <Badge variant="warning">Tenggat Hari Ini</Badge>
                           ) : item.deadlineAt ? (
                             <Badge variant="outline">{getDispositionDeadlineLabel(item)}</Badge>
                           ) : null}

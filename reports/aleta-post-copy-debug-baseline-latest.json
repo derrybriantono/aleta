@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-05-03T18:32:47+08:00",
+  "overall": "WARN_GO",
+  "validation": {
+    "manajemenSurat": {
+      "tsc": "PASS",
+      "lint": "PASS",
+      "build": "PASS",
+      "test": "PASS",
+      "testFilesPassed": 16,
+      "testsPassed": 62
+    },
+    "aletaBotNodeCheck": {
+      "app.js": "PASS",
+      "whatsapp.js": "PASS",
+      "services/whatsappStatusService.js": "PASS",
+      "routes/internalGatewayRoutes.js": "PASS",
+      "services/productionGuardService.js": "PASS",
+      "services/messageService.js": "PASS",
+      "services/idempotencyService.js": "PASS"
+    },
+    "rootScripts": {
+      "aleta-preflight.mjs": "WARN",
+      "aleta-smoke-dry-run.mjs": "PASS",
+      "aleta-whatsapp-number-quality.mjs": "PASS",
+      "aleta-whatsapp-production-risk-check.mjs": "PASS",
+      "aleta-whatsapp-production-shadow-run.mjs": "PASS"
+    },
+    "rootScriptSyntax": {
+      "aleta-preflight.mjs": "PASS",
+      "aleta-smoke-dry-run.mjs": "PASS",
+      "aleta-whatsapp-number-quality.mjs": "PASS",
+      "aleta-whatsapp-production-risk-check.mjs": "PASS",
+      "aleta-whatsapp-production-shadow-run.mjs": "PASS"
+    }
+  },
+  "runtime": {
+    "portalReachable": true,
+    "botReachable": true,
+    "whatsappStatus": "connected",
+    "workerEnabled": true,
+    "workerActiveTimer": true,
+    "workerPaused": false,
+    "queuePending": 0,
+    "queueProcessing": 0,
+    "queueFailed": 0,
+    "deadLetterActive": 0,
+    "approvalPending": 0,
+    "safeSendingWindowAllowed": true,
+    "productionGuard": "PASS",
+    "botEnabledActual": true,
+    "notificationsEnabledActual": true,
+    "productionAutomationEnabledActual": true,
+    "schedulerReminderActual": "production"
+  },
+  "dataHygiene": {
+    "totalActiveEmployees": 42,
+    "eligibleProduction": 42,
+    "missing": 0,
+    "dummy": 0,
+    "duplicateGroups": 0,
+    "invalid": 0,
+    "excluded": 0
+  },
+  "warnings": [
+    {
+      "key": "portal_whatsapp_status_proxy_401",
+      "detail": "Portal proxy WhatsApp mengembalikan HTTP 401 dari shell tanpa sesi; auth guard dianggap bekerja."
+    },
+    {
+      "key": "actual_production_state_differs_from_prompt_baseline",
+      "detail": "Runtime/config aktual menunjukkan production automation sudah aktif dengan canary audit PASS; tidak diubah dalam debugging ini."
+    }
+  ],
+  "blockers": [],
+  "actionsTaken": [
+    "Ran no-send baseline validation.",
+    "Read runtime reports and config in read-only mode.",
+    "No production config changed.",
+    "No WhatsApp sent."
+  ]
+}
