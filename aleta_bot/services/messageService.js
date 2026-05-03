@@ -3,6 +3,7 @@ const { validateWhatsappRecipient } = require("../utils/phoneFormatter");
 const logService = require("./logService");
 const rateLimitService = require("./rateLimitService");
 const whatsappStatusService = require("./whatsappStatusService");
+const productionGuardService = require("./productionGuardService");
 
 function getMessagePreview(message) {
   if (typeof message === "string") {
@@ -13,6 +14,11 @@ function getMessagePreview(message) {
 
 function isNotificationContext(category) {
   return ["employee", "party", "notification"].includes(String(category || "").toLowerCase());
+}
+
+function isLegacyDirectSend(metadata = {}) {
+  const source = String(metadata.source || metadata.sourceFeature || "").toLowerCase();
+  return source.startsWith("legacy_") || source.includes("legacy_safe") || source.includes("legacy_client");
 }
 
 async function safeSendMessage({
@@ -71,6 +77,34 @@ async function safeSendMessage({
 
   if (isNotificationContext(category) && !runtimeConfig.notificationsEnabled) {
     logService.logMessageSkipped({ ...baseLog, status: "skipped", errorMessage: "notifications_disabled" });
+    return null;
+  }
+
+  if (
+    productionGuardService.productionGuardEnabled(runtimeConfig) &&
+    isNotificationContext(category) &&
+    isLegacyDirectSend(metadata) &&
+    !productionGuardService.legacyDirectSendAllowed(runtimeConfig)
+  ) {
+    logService.logMessageSkipped({
+      ...baseLog,
+      status: "skipped",
+      errorMessage: "legacy_direct_send_blocked_by_production_guard",
+      metadata: {
+        ...baseLog.metadata,
+        guard: "production_legacy_direct_send",
+      },
+    });
+    logService.logSystemEvent({
+      eventType: "legacy_direct_send_blocked",
+      severity: "warning",
+      message: "Legacy direct WhatsApp send diblokir oleh production guard.",
+      metadata: {
+        notificationKey,
+        category,
+        recipientType: validation.type,
+      },
+    });
     return null;
   }
 

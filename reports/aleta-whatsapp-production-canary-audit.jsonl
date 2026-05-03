@@ -1,0 +1,2 @@
+{"at":"2026-05-02T23:45:13.299Z","action":"temporary_canary_enable","botEnabled":true,"notificationsEnabled":true,"dryRunEnabled":false,"retryLimit":0,"schedulerProduction":false}
+{"at":"2026-05-02T23:45:31.816Z","action":"restore_after_canary","detail":"Runtime config restored to pre-canary state."}

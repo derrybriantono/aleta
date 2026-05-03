@@ -1,0 +1,161 @@
+{
+  "generatedAt": "2026-05-02T13:58:43.321Z",
+  "overall": "NO_GO",
+  "officeServerLaunch": "GO",
+  "whatsappProductionLaunch": "NO_GO",
+  "partialGoPlanAvailable": true,
+  "productionAutomationEnabled": false,
+  "botEnabledFinal": false,
+  "schedulerProductionEnabled": false,
+  "reminderProductionEnabled": false,
+  "fixedOrHardened": [
+    "Office server readiness script and safe service scripts created.",
+    "Incoming letter registry moved to production-ready disabled state for shadow-run proof.",
+    "Incoming letter shadow-run now validates internal eligible recipients, template, cap, and idempotency preview.",
+    "Deadline H-1 reminder shadow-run now passes when template is production-ready and no real candidate is forced.",
+    "Data hygiene guard continues excluding dummy and duplicate numbers from production resolver.",
+    "High-risk broadcast, external notification, and mass resend remain approval-gated."
+  ],
+  "dataHygiene": {
+    "totalActiveEmployees": 42,
+    "validForWhatsappProduction": 36,
+    "dummyCount": 2,
+    "duplicateGroupsCount": 2,
+    "invalidCount": 0,
+    "excludedFromProductionCount": 6,
+    "manualCorrectionRequired": true
+  },
+  "riskGates": {
+    "runtime": "PASS",
+    "queue": "PASS",
+    "data": "WARN",
+    "recipientResolver": "PASS",
+    "template": "PASS",
+    "idempotency": "WARN",
+    "massSendOutlier": "PASS",
+    "schedulerReminder": "WARN",
+    "approval": "PASS",
+    "publicQa": "PASS",
+    "rollback": "PASS"
+  },
+  "workflowStatus": [
+    {
+      "key": "internal_disposition_notification",
+      "name": "Internal disposition notification",
+      "decision": "PASS",
+      "recipientCount": 3,
+      "potentialMessageCount": 3,
+      "reason": "Workflow internal disposition lulus shadow-run sample dengan eligibility guard, cap, template, dan idempotency preview."
+    },
+    {
+      "key": "internal_incoming_letter_notification",
+      "name": "Internal incoming letter notification",
+      "decision": "PASS",
+      "recipientCount": 5,
+      "potentialMessageCount": 5,
+      "reason": "Workflow surat masuk lulus shadow-run sample PILOT-PROD-GATE-INCOMING dengan recipient internal eligible, template aman, cap, dan idempotency preview."
+    },
+    {
+      "key": "deadline_h_minus_1_reminder",
+      "name": "Deadline H-1 reminder",
+      "decision": "PASS",
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "reason": "Template reminder production-ready. Shadow-run hari ini tidak memaksa data palsu; scheduler/reminder tetap disabled/dry_run sampai approval, kandidat nyata, dan canary terpisah PASS."
+    },
+    {
+      "key": "public_qa_runtime",
+      "name": "Public Q&A runtime",
+      "decision": "PASS",
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "reason": "Safe mode policy passes; unapproved active intents are not production eligible."
+    },
+    {
+      "key": "broadcast_capability_gate",
+      "name": "Broadcast capability gate",
+      "decision": "PASS",
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "reason": "Broadcast capability remains locked behind approval/dry-run/cap gate; no free-send production."
+    },
+    {
+      "key": "external_notification_capability_gate",
+      "name": "External party notification capability gate",
+      "decision": "PASS",
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "reason": "External party capability remains locked behind approval/template/case-context gate; no free-send production."
+    },
+    {
+      "key": "mass_resend_capability_gate",
+      "name": "Mass resend capability gate",
+      "decision": "PASS",
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "reason": "Mass resend remains locked behind reviewed-item approval and cap gate."
+    }
+  ],
+  "canary": {
+    "overall": "FAIL",
+    "executed": false,
+    "sentCount": 0,
+    "failedCount": 0
+  },
+  "blockers": [
+    {
+      "key": "risk_check_not_pass",
+      "detail": "Risk check=WARN."
+    },
+    {
+      "key": "canary_not_pass_or_not_run",
+      "detail": "Canary=FAIL, executed=false."
+    },
+    {
+      "key": "production_canary_not_executed",
+      "detail": "Canary production tidak dijalankan karena risk-check masih WARN dan production launch script tetap NO_GO."
+    }
+  ],
+  "warnings": [
+    {
+      "key": "employee_phone_data",
+      "label": "Data nomor WhatsApp internal",
+      "detail": "employees=42, invalid=0, dummy=2, duplicateGroups=2, excluded=6. Recipient tidak layak produksi dikecualikan oleh production guard."
+    },
+    {
+      "key": "legacy_send_idempotency",
+      "label": "Idempotency dan duplicate prevention",
+      "detail": "legacy client.sendMessage calls=4, safeSendMessage calls=55, buildIdempotencyKey calls=2. Legacy direct send diblokir production guard; workflow registry wajib memakai idempotency key production."
+    },
+    {
+      "key": "scheduler_reminder_gate",
+      "label": "Scheduler/reminder production",
+      "detail": "reminder=false/dry_run, scheduler=false/dry_run, approved=false, legacyCronCount=24. Scheduler production tetap terkunci; legacy direct send diblokir guard."
+    },
+    {
+      "key": "office_server_actual_cutover",
+      "detail": "Readiness ini dijalankan di environment Codex/lokal. Jalankan ulang script yang sama di mesin server kantor sebelum cutover final."
+    }
+  ],
+  "reports": [
+    "reports/aleta-office-server-readiness-latest.md",
+    "reports/aleta-office-server-deployment-runbook.md",
+    "reports/aleta-office-server-launch-checklist.md",
+    "reports/aleta-office-server-rollback-plan.md",
+    "reports/aleta-office-server-day-one-monitoring.md",
+    "reports/aleta-office-server-launch-final-latest.md",
+    "reports/aleta-office-server-launch-final-latest.json",
+    "reports/aleta-whatsapp-production-automation-launch-latest.md",
+    "reports/aleta-whatsapp-production-automation-launch-latest.json",
+    "reports/aleta-whatsapp-production-risk-check-latest.md",
+    "reports/aleta-whatsapp-production-shadow-run-latest.md",
+    "reports/aleta-whatsapp-number-quality-latest.md",
+    "reports/aleta-whatsapp-number-correction-list.md"
+  ],
+  "nextActions": [
+    "Run office readiness directly on the real office server before cutover.",
+    "Correct dummy and duplicate numbers manually or keep them excluded.",
+    "If production WhatsApp is desired, execute a separately approved canary after risk-check is accepted despite guarded WARNs.",
+    "Only activate workflow flags after canary PASS and rollback monitoring is staffed."
+  ]
+}

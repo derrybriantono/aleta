@@ -1,0 +1,298 @@
+{
+  "generatedAt": "2026-05-03T00:03:59.029Z",
+  "overall": "PASS",
+  "safeForNonWaPilot": true,
+  "safeForLimitedWhatsAppPilot": true,
+  "safeForProduction": true,
+  "checks": [
+    {
+      "key": "portal_reachable",
+      "label": "Portal reachable",
+      "status": "PASS",
+      "detail": "Portal HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_reachable",
+      "label": "ALETA Bot reachable",
+      "status": "PASS",
+      "detail": "Runtime ALETA Bot reachable.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_status_endpoint",
+      "label": "WhatsApp status endpoint",
+      "status": "PASS",
+      "detail": "Endpoint status WhatsApp reachable.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_diagnostics_endpoint",
+      "label": "WhatsApp diagnostics endpoint",
+      "status": "PASS",
+      "detail": "Endpoint diagnostics WhatsApp reachable.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_response_sanitized",
+      "label": "Sanitasi response runtime",
+      "status": "PASS",
+      "detail": "Smoke runner tidak menemukan token, QR raw, path session, stack trace, atau API key pada response runtime.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_runtime",
+      "label": "WhatsApp Gateway",
+      "status": "PASS",
+      "detail": "WhatsApp connected.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_whatsapp_status",
+      "label": "/api/whatsapp/status",
+      "status": "PASS",
+      "detail": "Endpoint HTTP 401; auth guard aktif dan tidak dilonggarkan.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_whatsapp_qr",
+      "label": "/api/whatsapp/qr",
+      "status": "PASS",
+      "detail": "Endpoint HTTP 401; auth guard aktif dan tidak dilonggarkan.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_tasks",
+      "label": "/api/tasks",
+      "status": "PASS",
+      "detail": "Endpoint HTTP 401; auth guard aktif dan tidak dilonggarkan.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_kpi",
+      "label": "/api/stats/kpi",
+      "status": "PASS",
+      "detail": "Endpoint HTTP 401; auth guard aktif dan tidak dilonggarkan.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_sla",
+      "label": "/api/stats/surat/sla",
+      "status": "PASS",
+      "detail": "Endpoint HTTP 401; auth guard aktif dan tidak dilonggarkan.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_disposisi_stats",
+      "label": "/api/stats/disposisi",
+      "status": "PASS",
+      "detail": "Endpoint readable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_operational",
+      "label": "Worker antrean",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false, running=false.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_sending_window",
+      "label": "Safe Sending Window",
+      "status": "PASS",
+      "detail": "enabled 07:30-21:00; insideWindow=true, allowed=true.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letters_active",
+      "label": "Dead-letter aktif",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif. 1 sudah ditangani.",
+      "metadata": {}
+    },
+    {
+      "key": "phase4_dead_letter_active",
+      "label": "Artefak dead-letter Phase 4",
+      "status": "PASS",
+      "detail": "Tidak ada dead-letter Phase 4 aktif.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_health",
+      "label": "Queue health",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_db",
+      "label": "Portal database",
+      "status": "PASS",
+      "detail": "Koneksi database portal berhasil.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_number_completeness",
+      "label": "Kelengkapan nomor WhatsApp pegawai",
+      "status": "PASS",
+      "detail": "42/42 pegawai punya nomor WhatsApp. Missing=0, priorityMissing=0.",
+      "metadata": {}
+    },
+    {
+      "key": "approval_pending",
+      "label": "Approval pending",
+      "status": "PASS",
+      "detail": "0 approval masih pending.",
+      "metadata": {}
+    },
+    {
+      "key": "phase4_approval_pending",
+      "label": "Approval Phase 4 pending",
+      "status": "PASS",
+      "detail": "Tidak ada approval Phase 4 pending.",
+      "metadata": {}
+    },
+    {
+      "key": "reminder_scheduler_safety",
+      "label": "Reminder dan scheduler",
+      "status": "PASS",
+      "detail": "mode=production, enabled=true, scheduler=enabled/production, killSwitch=false, approved=true.",
+      "metadata": {}
+    },
+    {
+      "key": "public_qa_pending_review",
+      "label": "Public Q&A pending review",
+      "status": "PASS",
+      "detail": "0 pertanyaan publik perlu review.",
+      "metadata": {}
+    },
+    {
+      "key": "ai_bridge",
+      "label": "AI Bridge",
+      "status": "PASS",
+      "detail": "AI Bridge status=synced. Smoke tidak memanggil provider eksternal.",
+      "metadata": {}
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "actionsTaken": [
+    {
+      "action": "read_only_smoke",
+      "detail": "Tidak ada send, resend, enqueue, approve, scan QR, logout/reset, atau production activation.",
+      "metadata": {}
+    }
+  ],
+  "summary": {
+    "runtime": {
+      "whatsappStatus": "connected",
+      "initializing": false,
+      "hasClient": true,
+      "hasQr": false,
+      "lastErrorType": "",
+      "sessionName": "aleta-whatsapp-main",
+      "authPathConfigured": true,
+      "initializeAgeMs": 0,
+      "worker": {
+        "enabled": true,
+        "running": false,
+        "paused": false,
+        "intervalMs": 30000,
+        "batchSize": 5,
+        "lastHeartbeatAt": "2026-05-03T00:03:55.041Z",
+        "lastBatchProcessed": 0,
+        "lastError": "",
+        "startedAt": "2026-05-02T21:40:52.225Z",
+        "pausedAt": null,
+        "pauseReason": "",
+        "sendingWindow": {
+          "enabled": true,
+          "start": "07:30",
+          "end": "21:00",
+          "inside": true,
+          "allowed": true,
+          "message": "Pengiriman berada dalam jam aman."
+        },
+        "activeTimer": true
+      },
+      "queue": {
+        "total": 16,
+        "pending": 0,
+        "processing": 0,
+        "sent": 8,
+        "failed": 0,
+        "skipped": 1,
+        "dry_run": 6,
+        "dead_letter": 0,
+        "resolved": 1
+      },
+      "safeSendingWindow": {
+        "enabled": true,
+        "start": "07:30",
+        "end": "21:00",
+        "inside": true,
+        "allowed": true,
+        "message": "Pengiriman berada dalam jam aman."
+      },
+      "aiRuntime": {
+        "status": "synced",
+        "provider": "gemini",
+        "model": "Gemini 2.5 Flash",
+        "publicQaEnabled": true,
+        "publicQaAiAnswerEnabled": true
+      },
+      "registry": {
+        "active": 0,
+        "dryRun": 0,
+        "requiresApproval": 0,
+        "skippedPolicy": 0
+      }
+    },
+    "worker": {
+      "enabled": true,
+      "activeTimer": true,
+      "paused": false,
+      "running": false,
+      "intervalMs": 30000,
+      "batchSize": 5
+    },
+    "safeSendingWindow": {
+      "enabled": true,
+      "start": "07:30",
+      "end": "21:00",
+      "inside": true,
+      "allowed": true,
+      "message": "Pengiriman berada dalam jam aman."
+    },
+    "queue": {
+      "pending": 0,
+      "processing": 0,
+      "failed": 0,
+      "resolved": 1,
+      "dryRun": 6,
+      "activeDeadLetters": 0,
+      "resolvedDeadLetters": 1,
+      "phase4Active": 0
+    },
+    "whatsappNumbers": {
+      "total": 42,
+      "complete": 42,
+      "missing": 0,
+      "priorityMissing": 0
+    },
+    "approvals": {
+      "pending": 0
+    },
+    "reminder": {
+      "mode": "production",
+      "enabled": true,
+      "schedulerEnabled": true,
+      "schedulerMode": "production",
+      "killSwitch": false,
+      "approved": true
+    },
+    "publicQa": {
+      "pendingHumanReview": 0
+    }
+  }
+}

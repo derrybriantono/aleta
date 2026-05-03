@@ -1,0 +1,243 @@
+{
+  "generatedAt": "2026-05-02T10:56:10.543Z",
+  "overall": "PASS",
+  "pilotType": "small_internal_whatsapp_db_whitelist",
+  "whitelistSource": "database_plus_explicit_derry",
+  "botEnabledBefore": false,
+  "botEnabledDuringPilot": true,
+  "botEnabledFinal": false,
+  "recipientCount": 3,
+  "sentCount": 3,
+  "enqueuedCount": 3,
+  "failedCount": 0,
+  "skippedCount": 0,
+  "recipients": [
+    {
+      "name": "DERRY BRIANTONO, S.H.",
+      "role": "Hakim",
+      "maskedPhone": "628****6962",
+      "internalFound": true,
+      "deliveryStatus": "sent",
+      "queueId": "bcf7e0ff-1fe4-47e2-8a5e-93b485f686fc"
+    },
+    {
+      "name": "ABDUL SALAM, S.HI. MH.",
+      "role": "Ketua",
+      "maskedPhone": "628****3055",
+      "internalFound": true,
+      "deliveryStatus": "sent",
+      "queueId": "cde06658-caf0-4e3c-91de-4b00f84ba843"
+    },
+    {
+      "name": "AKBAR ALI, S.H.I.",
+      "role": "Wakil Ketua",
+      "maskedPhone": "628****1382",
+      "internalFound": true,
+      "deliveryStatus": "sent",
+      "queueId": "b3572f08-c75d-4f18-b2d2-344fa1f86f49"
+    }
+  ],
+  "databaseCandidateSummary": {
+    "candidateCount": 42,
+    "validCandidateCount": 38,
+    "selectedCount": 3
+  },
+  "gateBeforeEnable": [
+    {
+      "key": "preflight_latest",
+      "label": "Preflight terakhir",
+      "status": "PASS",
+      "detail": "overall=WARN.",
+      "metadata": {}
+    },
+    {
+      "key": "smoke_latest",
+      "label": "Smoke dry-run terakhir",
+      "status": "PASS",
+      "detail": "overall=PASS.",
+      "metadata": {}
+    },
+    {
+      "key": "whitelist_valid",
+      "label": "Whitelist valid",
+      "status": "PASS",
+      "detail": "3 penerima whitelist valid.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_reachable",
+      "label": "Runtime reachable",
+      "status": "PASS",
+      "detail": "Status runtime, WhatsApp, diagnostics, dan queue dibaca.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_connected",
+      "label": "WhatsApp connected",
+      "status": "PASS",
+      "detail": "status=connected.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_not_stuck",
+      "label": "WhatsApp tidak lock/stuck",
+      "status": "PASS",
+      "detail": "lastErrorType=-, initializing=false.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_operational",
+      "label": "Worker operasional",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_empty",
+      "label": "Queue kosong",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letter_zero",
+      "label": "Dead-letter aktif",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif.",
+      "metadata": {}
+    },
+    {
+      "key": "approval_zero",
+      "label": "Approval pending",
+      "status": "PASS",
+      "detail": "0 approval pending.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_window_allowed",
+      "label": "Safe Sending Window allowed",
+      "status": "PASS",
+      "detail": "enabled=true, 07:30-21:00, allowed=true.",
+      "metadata": {}
+    },
+    {
+      "key": "production_disabled",
+      "label": "Scheduler/reminder non-production",
+      "status": "PASS",
+      "detail": "reminder=false/dry_run, scheduler=false/dry_run.",
+      "metadata": {}
+    }
+  ],
+  "gateBeforeSend": [
+    {
+      "key": "bot_enabled",
+      "label": "botEnabled true",
+      "status": "PASS",
+      "detail": "botEnabled=true.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_still_empty",
+      "label": "Queue tetap kosong",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "production_still_disabled",
+      "label": "Production tetap disabled",
+      "status": "PASS",
+      "detail": "reminder=false/dry_run, scheduler=false/dry_run.",
+      "metadata": {}
+    }
+  ],
+  "queueAfterPilot": {
+    "pending": 0,
+    "processing": 0,
+    "failed": 0,
+    "sent": 5,
+    "skipped": 1,
+    "deadLetter": 0,
+    "activeDeadLetters": 0
+  },
+  "deadLetterActiveAfterPilot": 0,
+  "approvalPendingAfterPilot": 0,
+  "schedulerProductionActive": false,
+  "reminderProductionActive": false,
+  "warnings": [],
+  "blockers": [],
+  "actionsTaken": [
+    {
+      "action": "generate_database_whitelist",
+      "detail": "Whitelist otomatis dibuat di D:\\aleta\\config\\pilot-whatsapp-small-whitelist.json.",
+      "metadata": {}
+    },
+    {
+      "action": "enable_bot_temporarily",
+      "detail": "botEnabled=true ditulis sementara untuk pilot whitelist kecil.",
+      "metadata": {}
+    },
+    {
+      "action": "disable_bot_after_pilot",
+      "detail": "botEnabled dikembalikan ke nilai awal setelah pilot kecil.",
+      "metadata": {}
+    }
+  ],
+  "validation": [],
+  "summary": {
+    "before": {
+      "whatsappStatus": "connected",
+      "worker": {
+        "enabled": true,
+        "activeTimer": true,
+        "paused": false,
+        "running": false
+      },
+      "queue": {
+        "total": 10,
+        "pending": 0,
+        "processing": 0,
+        "sent": 2,
+        "failed": 0,
+        "skipped": 1,
+        "dryRun": 6,
+        "deadLetter": 0,
+        "resolved": 1
+      },
+      "reminder": {
+        "enabled": false,
+        "mode": "dry_run",
+        "schedulerEnabled": false,
+        "schedulerMode": "dry_run",
+        "killSwitch": false
+      }
+    },
+    "after": {
+      "whatsappStatus": "connected",
+      "worker": {
+        "enabled": true,
+        "activeTimer": true,
+        "paused": false,
+        "running": false
+      },
+      "queue": {
+        "total": 13,
+        "pending": 0,
+        "processing": 0,
+        "sent": 5,
+        "failed": 0,
+        "skipped": 1,
+        "dryRun": 6,
+        "deadLetter": 0,
+        "resolved": 1
+      },
+      "reminder": {
+        "enabled": false,
+        "mode": "dry_run",
+        "schedulerEnabled": false,
+        "schedulerMode": "dry_run",
+        "killSwitch": false
+      }
+    }
+  }
+}

@@ -277,47 +277,32 @@ async function getQueueStats() {
       stats[row.status] = count;
       return stats;
     },
-    { total: 0, pending: 0, processing: 0, sent: 0, failed: 0, skipped: 0, dry_run: 0, dead_letter: 0 }
+    { total: 0, pending: 0, processing: 0, sent: 0, failed: 0, skipped: 0, dry_run: 0, dead_letter: 0, resolved: 0 }
   );
 }
 
-async function getDeadLetters(limit = 50) {
+async function getDeadLetters(limit = 50, options = {}) {
   await botDb.ensureSchema();
   const safeLimit = Math.max(1, Math.min(200, Number(limit || 50)));
+  const statusFilter = String(options.status || "active").toLowerCase();
+  const whereClause =
+    statusFilter === "resolved"
+      ? "status = 'resolved'"
+      : statusFilter === "all"
+        ? "((status = 'failed' AND retry_count >= max_retries) OR status = 'resolved')"
+        : "status = 'failed' AND retry_count >= max_retries";
   const rows = await botDb.query(
     `SELECT id, idempotency_key, recipient_number, recipient_name, message_preview,
        category, notification_key, priority, status, retry_count, max_retries,
        last_error, source_app, source_feature, entity_type, entity_id,
-       scheduled_at, processed_at, created_at, updated_at
+       scheduled_at, processed_at, resolved_at, resolved_by, resolved_note, created_at, updated_at
      FROM aleta_bot_message_queue
-     WHERE status = 'failed'
-       AND retry_count >= max_retries
+     WHERE ${whereClause}
      ORDER BY updated_at DESC
      LIMIT ?`,
     [safeLimit]
   );
-  return rows.map((row) => ({
-    id: row.id,
-    idempotencyKey: row.idempotency_key,
-    recipientNumber: maskRecipientNumber(row.recipient_number),
-    recipientName: row.recipient_name || "",
-    messagePreview: row.message_preview || "",
-    category: row.category || "",
-    notificationKey: row.notification_key || "",
-    priority: Number(row.priority || 0),
-    status: row.status || "",
-    retryCount: Number(row.retry_count || 0),
-    maxRetries: Number(row.max_retries || 0),
-    lastError: String(row.last_error || "").slice(0, 500),
-    sourceApp: row.source_app || "",
-    sourceFeature: row.source_feature || "",
-    entityType: row.entity_type || "",
-    entityId: row.entity_id || "",
-    scheduledAt: row.scheduled_at || null,
-    processedAt: row.processed_at || null,
-    createdAt: row.created_at || null,
-    updatedAt: row.updated_at || null,
-  }));
+  return rows.map(toPublicQueueItem);
 }
 
 function maskRecipientNumber(value) {
@@ -379,6 +364,55 @@ async function requeueDeadLetter(id) {
   return { originalId: id, newId, status: "pending" };
 }
 
+async function resolveDeadLetter(id, input = {}) {
+  await botDb.ensureSchema();
+  const rows = await botDb.query(
+    `SELECT * FROM aleta_bot_message_queue
+     WHERE id = ? AND status = 'failed' AND retry_count >= max_retries
+     LIMIT 1`,
+    [id]
+  );
+  const item = rows[0];
+  if (!item) return null;
+
+  const now = new Date();
+  const resolvedAt = botDb.toMysqlDate(now);
+  const resolvedBy = String(input.resolvedBy || "internal").slice(0, 191);
+  const resolvedNote = String(input.note || "").slice(0, 1000);
+
+  await botDb.query(
+    `UPDATE aleta_bot_message_queue
+     SET status = 'resolved',
+         resolved_at = ?,
+         resolved_by = ?,
+         resolved_note = ?,
+         updated_at = ?
+     WHERE id = ? AND status = 'failed'`,
+    [resolvedAt, resolvedBy, resolvedNote, resolvedAt, id]
+  );
+
+  await logService.logSystemEvent({
+    eventType: "dead_letter_resolved",
+    severity: "info",
+    message: "Dead letter ALETA Bot ditandai ditangani tanpa resend.",
+    metadata: {
+      originalId: id,
+      resolvedBy,
+      notePreview: resolvedNote.slice(0, 160),
+      recipientNumber: maskRecipientNumber(item.recipient_number),
+    },
+  });
+
+  return toPublicQueueItem({
+    ...item,
+    status: "resolved",
+    resolved_at: resolvedAt,
+    resolved_by: resolvedBy,
+    resolved_note: resolvedNote,
+    updated_at: resolvedAt,
+  });
+}
+
 function toPublicQueueItem(row = {}) {
   return {
     id: row.id,
@@ -399,6 +433,10 @@ function toPublicQueueItem(row = {}) {
     entityId: row.entity_id || "",
     scheduledAt: row.scheduled_at || null,
     processedAt: row.processed_at || null,
+    resolvedAt: row.resolved_at || null,
+    resolvedBy: row.resolved_by || "",
+    resolvedNote: row.resolved_note || "",
+    isResolved: row.status === "resolved",
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
   };
@@ -443,4 +481,5 @@ module.exports = {
   readQueuePublic,
   getDeadLetters,
   requeueDeadLetter,
+  resolveDeadLetter,
 };

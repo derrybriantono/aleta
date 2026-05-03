@@ -51,12 +51,32 @@ const {
   legacyWhatsappMappingStats
 } = require('./whatsapp');
 
+function sanitizeProcessError(error) {
+  const rawMessage = error && error.message ? error.message : String(error || "");
+  const lower = rawMessage.toLowerCase();
+  if (
+    lower.includes("browser is already running") ||
+    lower.includes("userdata") ||
+    lower.includes("userdatadir") ||
+    lower.includes(".wwebjs_auth") ||
+    lower.includes("session-aleta-whatsapp-main") ||
+    lower.includes("ebusy") ||
+    lower.includes("eperm")
+  ) {
+    return "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi.";
+  }
+  if (lower.includes("could not find chrome") || lower.includes("puppeteer")) {
+    return "Chrome/Puppeteer belum tersedia di server atau belum dapat dijalankan.";
+  }
+  return rawMessage.slice(0, 500) || "Error runtime tidak diketahui.";
+}
+
 process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled promise rejection:', reason);
+  console.error('Unhandled promise rejection:', sanitizeProcessError(reason));
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error);
+  console.error('Uncaught exception:', sanitizeProcessError(error));
 });
 
 validateStartupConfig();
@@ -111,11 +131,20 @@ if (chromeExecutablePath) {
 
 function getWhatsappStartupErrorMessage(error) {
   const rawMessage = error && error.message ? error.message : String(error || "");
+  const isBrowserLocked =
+    /browser is already running/i.test(rawMessage) ||
+    /userdata/i.test(rawMessage) ||
+    /userDataDir/i.test(rawMessage) ||
+    /session-aleta-whatsapp-main/i.test(rawMessage);
   const isChromeMissing =
     /could not find chrome/i.test(rawMessage) ||
     /chrome.*not.*found/i.test(rawMessage) ||
     /browser was not found/i.test(rawMessage) ||
     /failed to launch the browser process/i.test(rawMessage);
+
+  if (isBrowserLocked) {
+    return "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi.";
+  }
 
   if (!isChromeMissing) {
     return rawMessage || "Inisialisasi WhatsApp client gagal.";
@@ -131,6 +160,22 @@ function getWhatsappStartupErrorMessage(error) {
     "atau set PUPPETEER_EXECUTABLE_PATH.",
     envHint,
   ].join(" ");
+}
+
+function getWhatsappStartupErrorType(error) {
+  const rawMessage = error && error.message ? error.message : String(error || "");
+  if (
+    /browser is already running/i.test(rawMessage) ||
+    /userdata/i.test(rawMessage) ||
+    /userDataDir/i.test(rawMessage) ||
+    /session-aleta-whatsapp-main/i.test(rawMessage)
+  ) {
+    return "browser_locked";
+  }
+  if (/could not find chrome/i.test(rawMessage) || /puppeteer/i.test(rawMessage)) return "browser_unavailable";
+  if (/target closed/i.test(rawMessage)) return "browser_closed";
+  if (/protocol error/i.test(rawMessage)) return "browser_protocol";
+  return "initialize_failed";
 }
 
 const client = new Client({
@@ -240,18 +285,59 @@ async function resolveLegacyAiCommandResponse({ prompt, senderNumber, senderName
 }
 
 let whatsappInitializePromise = null;
+let isShuttingDown = false;
+const WHATSAPP_INITIALIZE_TIMEOUT_MS = 120000;
 
-const startWhatsappClient = (source = "manual") => {
+const markWhatsappInitializeTimeoutIfNeeded = async () => {
+  const currentState = whatsappStatusService.getStatus();
+  if (
+    currentState.status !== "initializing" ||
+    whatsappInitializePromise ||
+    !currentState.initializeAgeMs ||
+    currentState.initializeAgeMs < WHATSAPP_INITIALIZE_TIMEOUT_MS
+  ) {
+    return false;
+  }
+
+  try {
+    if (client) {
+      await client.destroy();
+    }
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "whatsapp_initialize_timeout_destroy_failed",
+      severity: "warning",
+      message: "Cleanup aman client WhatsApp setelah initialize timeout gagal.",
+      metadata: { errorMessage: getWhatsappStartupErrorMessage(error) },
+    });
+  }
+
+  whatsappStatusService.setStatus("initialize_timeout", "initialize_timeout", {
+    severity: "warning",
+    message: "Inisialisasi WhatsApp terlalu lama tanpa QR/ready. Client dihentikan aman tanpa logout.",
+    errorMessage: "Inisialisasi WhatsApp terlalu lama. Klik Connect sekali lagi setelah memastikan tidak ada proses browser lama.",
+    errorType: "initialize_timeout",
+    initializeAgeMs: currentState.initializeAgeMs,
+  });
+  return true;
+};
+
+const startWhatsappClient = async (source = "manual") => {
+  await markWhatsappInitializeTimeoutIfNeeded();
   const currentState = whatsappStatusService.getStatus();
   const currentStatus = currentState.status || "unknown";
 
-  if (["connected", "authenticated", "qr_needed"].includes(currentStatus)) {
+  if (["connected", "authenticated", "qr_needed", "initializing", "browser_locked", "reconnecting"].includes(currentStatus)) {
     return {
       started: false,
       status: currentStatus,
       message:
         currentStatus === "connected"
           ? "WhatsApp sudah terhubung."
+          : currentStatus === "browser_locked"
+          ? "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi."
+          : currentStatus === "initializing" || currentStatus === "reconnecting"
+          ? "WhatsApp client sedang diinisialisasi. Tunggu status/QR beberapa detik."
           : "WhatsApp client sudah berjalan. QR akan tersedia jika login diperlukan.",
     };
   }
@@ -273,11 +359,12 @@ const startWhatsappClient = (source = "manual") => {
     .then(() => client.initialize())
     .catch((error) => {
       const friendlyMessage = getWhatsappStartupErrorMessage(error);
-      whatsappStatusService.setStatus("disconnected", "initialize_failed", {
+      const errorType = getWhatsappStartupErrorType(error);
+      whatsappStatusService.setStatus(errorType === "browser_locked" ? "browser_locked" : "disconnected", "initialize_failed", {
         severity: "error",
         message: friendlyMessage,
         errorMessage: friendlyMessage,
-        rawErrorMessage: error && error.message ? error.message : String(error),
+        errorType,
         source,
         chromeExecutablePathConfigured: Boolean(chromeExecutablePath),
         chromeExecutablePath: chromeExecutablePath ? "[configured]" : "",
@@ -309,7 +396,12 @@ client.on("qr", (qr) => {
 client.on("ready", () => {
   const phoneNumber = client.info?.wid?.user || "";
   whatsappStatusService.setStatus("connected", "ready", { message: "WhatsApp client siap dan terhubung.", phoneNumber });
-  safeSendMessage(adminId, "Bot Whatsapp Siap dan Terhubung!");
+  logService.logWhatsappEvent({
+    eventType: "whatsapp_ready_no_auto_send",
+    severity: "info",
+    message: "WhatsApp client siap. Tidak ada pesan otomatis yang dikirim saat ready.",
+    metadata: { hasAdminRecipient: Boolean(adminId) },
+  });
   console.log("READY");
 });
 
@@ -361,12 +453,15 @@ client.on("disconnected", (reason) => {
     message: "WhatsApp client disconnected.",
     reason,
   });
+  if (isShuttingDown) return;
   reconnect();
 });
 
 let isReconnecting = false;
 const reconnect = () => {
-  if (isReconnecting) return;
+  if (isReconnecting || isShuttingDown) return;
+  const currentStatus = whatsappStatusService.getStatus().status;
+  if (currentStatus === "browser_locked") return;
   isReconnecting = true;
   console.log("Jadwal reconnect dalam 10 detik...");
   whatsappStatusService.setStatus("reconnecting", "reconnect_scheduled", { message: "Reconnect dijadwalkan dalam 10 detik." });
@@ -376,7 +471,7 @@ const reconnect = () => {
       whatsappStatusService.setStatus("reconnecting", "reconnect_attempt", { message: "Mencoba reconnect WhatsApp client." });
       await client.destroy();
       whatsappInitializePromise = null;
-      startWhatsappClient("reconnect");
+      void startWhatsappClient("reconnect");
     } catch (err) {
       whatsappStatusService.setStatus("disconnected", "reconnect_failed", {
         severity: "error",
@@ -391,7 +486,7 @@ const reconnect = () => {
 };
 
 if (readRuntimeConfig().botEnabled) {
-  startWhatsappClient("startup");
+  void startWhatsappClient("startup");
 } else {
   whatsappStatusService.setStatus("disconnected", "initialize_skipped", { message: "Bot nonaktif dari konfigurasi portal." });
   console.log("[ALETA Bot] Bot nonaktif dari konfigurasi portal. WhatsApp client tidak diinisialisasi.");
@@ -3415,9 +3510,12 @@ const ensureInternalAccess = (req, res, action = "internal_access") => {
   return false;
 };
 
-app.get("/internal/aleta-bot/status", (req, res) => {
+app.get("/internal/aleta-bot/status", async (req, res) => {
   if (!ensureInternalAccess(req, res, "status")) return;
+  await markWhatsappInitializeTimeoutIfNeeded();
   const runtimeConfig = readRuntimeConfig();
+  const waStatus = whatsappStatusService.getStatus();
+  const { lastQrString, ...safeWhatsappStatus } = waStatus;
   Promise.all([
     messageQueueService.getQueueStats(),
     logService.getMessageStatsToday(),
@@ -3430,7 +3528,8 @@ app.get("/internal/aleta-bot/status", (req, res) => {
   ]).then(([queueStats, messageStatsToday, systemStatsToday, whatsappEvents, notificationRuns, publicQa, aiConfig, registrySnapshot]) => res.status(200).json({
     status: true,
     whatsapp: {
-      ...whatsappStatusService.getStatus(),
+      ...safeWhatsappStatus,
+      qrAvailable: waStatus.status === "qr_needed" && Boolean(lastQrString),
       sessionName: whatsappSessionName,
     },
     db: botDbService.getDbStatus(),
@@ -3470,7 +3569,7 @@ app.get("/internal/aleta-bot/status", (req, res) => {
   });
 });
 
-app.post("/internal/aleta-bot/whatsapp/connect", (req, res) => {
+app.post("/internal/aleta-bot/whatsapp/connect", async (req, res) => {
   if (!ensureInternalAccess(req, res, "whatsapp_connect")) return;
 
   try {
@@ -3490,7 +3589,7 @@ app.post("/internal/aleta-bot/whatsapp/connect", (req, res) => {
       });
     }
 
-    const result = startWhatsappClient("internal_connect");
+    const result = await startWhatsappClient("internal_connect");
     const waState = whatsappStatusService.getStatus();
     logService.logWhatsappEvent({
       eventType: "internal_whatsapp_connect_requested",
@@ -3525,6 +3624,46 @@ app.post("/internal/aleta-bot/whatsapp/connect", (req, res) => {
       ok: false,
       error: "connect_failed",
       message: "Connect WhatsApp Gateway gagal diproses.",
+    });
+  }
+});
+
+app.get("/internal/aleta-bot/whatsapp/diagnostics", async (req, res) => {
+  if (!ensureInternalAccess(req, res, "whatsapp_diagnostics")) return;
+
+  try {
+    await markWhatsappInitializeTimeoutIfNeeded();
+    const runtimeConfig = readRuntimeConfig();
+    const waState = whatsappStatusService.getStatus();
+    return res.status(200).json({
+      ok: true,
+      sessionName: getWhatsappSessionName(runtimeConfig),
+      status: waState.status || "unknown",
+      initializing: Boolean(whatsappInitializePromise),
+      hasClient: Boolean(client),
+      hasQr: Boolean(waState.lastQrString),
+      lastErrorType: waState.lastErrorType || "",
+      initializingSince: waState.initializingStartedAt || null,
+      initializeAgeMs: waState.initializeAgeMs || 0,
+      authPathConfigured: true,
+      message:
+        waState.status === "browser_locked"
+          ? "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi."
+          : waState.status === "initialize_timeout"
+          ? "Inisialisasi WhatsApp terlalu lama tanpa QR/ready. Client sudah dihentikan aman tanpa logout."
+          : "Diagnostics WhatsApp Gateway terbaca. QR raw, token, session path, dan stack trace tidak disertakan.",
+    });
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "internal_whatsapp_diagnostics_failed",
+      severity: "error",
+      message: "Endpoint diagnostics WhatsApp internal gagal.",
+      metadata: { errorMessage: getWhatsappStartupErrorMessage(error) },
+    });
+    return res.status(500).json({
+      ok: false,
+      error: "diagnostics_failed",
+      message: "Diagnostics WhatsApp Gateway belum dapat dibaca.",
     });
   }
 });
@@ -3828,6 +3967,44 @@ app.get("/send-message-group/:number/:message", async (req, res) => {
     status: true,
     response,
   });
+});
+
+let shutdownStarted = false;
+async function shutdownWhatsappClient(signal) {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
+  isShuttingDown = true;
+  whatsappInitializePromise = null;
+  try {
+    await client.destroy();
+    whatsappStatusService.setStatus("disconnected", "shutdown", {
+      severity: "info",
+      message: "WhatsApp client stopped without logout.",
+      signal,
+    });
+    console.log("WhatsApp client stopped without logout.");
+  } catch (error) {
+    whatsappStatusService.setStatus("disconnected", "shutdown_error", {
+      severity: "warning",
+      message: "WhatsApp client shutdown selesai dengan catatan.",
+      errorMessage: getWhatsappStartupErrorMessage(error),
+      errorType: getWhatsappStartupErrorType(error),
+    });
+    console.warn("WhatsApp shutdown cleanup:", getWhatsappStartupErrorMessage(error));
+  } finally {
+    server.close(() => {
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(0), 3000).unref();
+  }
+}
+
+process.once("SIGINT", () => {
+  void shutdownWhatsappClient("SIGINT");
+});
+
+process.once("SIGTERM", () => {
+  void shutdownWhatsappClient("SIGTERM");
 });
 
 server.listen(port, '0.0.0.0', () => {

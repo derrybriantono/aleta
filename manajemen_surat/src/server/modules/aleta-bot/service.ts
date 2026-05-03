@@ -43,6 +43,7 @@ import {
   controlGatewayWorker,
   getGatewayDeadLetters,
   getGatewayWhatsappQr,
+  resolveGatewayDeadLetter,
   resendGatewayDeadLetter,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import {
@@ -4229,6 +4230,21 @@ async function getWorkerStateFromGateway(): Promise<AletaBotWorkerState | null> 
   return result.data.worker;
 }
 
+function isQueueWorkerOperational(worker: AletaBotWorkerState | null) {
+  if (!worker) return false;
+  return Boolean(worker.enabled && worker.activeTimer && !worker.paused);
+}
+
+function describeQueueWorker(worker: AletaBotWorkerState | null) {
+  if (!worker) return "Worker runtime belum dapat dibaca.";
+  if (worker.paused) return "Worker antrean sedang dijeda.";
+  if (!worker.enabled) return "Worker antrean belum diaktifkan di runtime.";
+  if (!worker.activeTimer) return "Timer worker antrean belum aktif.";
+  return worker.running
+    ? "Worker antrean sedang memproses batch."
+    : "Worker antrean aktif dan sedang menunggu jadwal batch berikutnya.";
+}
+
 function getAletaBotRuntimeStatusUrl() {
   const baseUrl = (
     process.env.ALETA_BOT_BASE_URL ||
@@ -4319,16 +4335,15 @@ export async function controlWorker(
   }
   return {
     worker: result.data.worker,
-    message: result.data.worker.paused
-      ? "Worker queue sedang dijeda."
-      : result.data.worker.running
-      ? "Worker queue sedang berjalan."
-      : "Worker queue tidak aktif.",
+    message: describeQueueWorker(result.data.worker),
   };
 }
 
-async function getDeadLettersFromGateway(limit = 50): Promise<AletaBotDeadLetter[]> {
-  const result = await getGatewayDeadLetters(limit);
+async function getDeadLettersFromGateway(
+  limit = 50,
+  status: "active" | "resolved" | "all" = "active"
+): Promise<AletaBotDeadLetter[]> {
+  const result = await getGatewayDeadLetters(limit, status);
   if (!result.ok) return [];
   return result.data.items;
 }
@@ -4369,6 +4384,47 @@ export async function resendDeadLetter(
     originalId: result.data.originalId,
     newId: result.data.newId,
     status: result.data.status,
+  };
+}
+
+export async function resolveDeadLetter(
+  db: AletaDatabase,
+  actorUserId: string,
+  id: string,
+  note?: string
+): Promise<{ originalId: string; status: string; item: AletaBotDeadLetter }> {
+  const actor = await requireSuperAdmin(db, actorUserId);
+  const resolvedNote = String(note ?? "").trim().slice(0, 1000);
+  const result = await resolveGatewayDeadLetter(id, resolvedNote, actor.id);
+  if (!result.ok) {
+    await appendAletaBotLog(db, {
+      actorUserId: actor.id,
+      level: "error",
+      eventType: "message",
+      message: `Tandai dead letter ditangani gagal (id: ${id}): ${result.error}`,
+      metadata: { id, error: result.error },
+    });
+    throw new ApiError(502, result.error);
+  }
+  await appendAletaBotLog(db, {
+    actorUserId: actor.id,
+    level: "info",
+    eventType: "message",
+    message: `Dead letter ditandai ditangani tanpa resend: ${id}.`,
+    metadata: { originalId: result.data.originalId, status: result.data.status, note: resolvedNote.slice(0, 160) },
+  });
+  await appendAuditLog(db, {
+    id: await nextPrefixedId(db, "audit_logs", "adt"),
+    actorUserId: actor.id,
+    action: "RESOLVE_DEAD_LETTER",
+    entityType: "aleta_bot_message_queue",
+    entityId: id,
+    payload: { originalId: result.data.originalId, status: result.data.status, note: resolvedNote.slice(0, 160) },
+  });
+  return {
+    originalId: result.data.originalId,
+    status: result.data.status,
+    item: result.data.item,
   };
 }
 
@@ -5198,6 +5254,7 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
   const metrics = await buildMetrics(db, jobs, templates);
   const workerState = runtimeMode === "aleta_bot" ? await getWorkerStateFromGateway() : null;
   const deadLetters = runtimeMode === "aleta_bot" ? await getDeadLettersFromGateway(50) : [];
+  const resolvedDeadLetters = runtimeMode === "aleta_bot" ? await getDeadLettersFromGateway(50, "resolved") : [];
   const notificationsWithPolicy = await Promise.all(
     notifications.map(async (notification) => {
       if (notification.category !== "party") {
@@ -5262,6 +5319,7 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
     logs,
     approvalRequests,
     deadLetters,
+    resolvedDeadLetters,
     workerState,
     legacyMigrations,
   };
@@ -7981,6 +8039,7 @@ export async function getPilotReadinessReport(
   const sendingWindow = runtimeStatus.payload?.bot?.sendingWindow ?? null;
   const safeSendingWindowReadable = Boolean(sendingWindow);
   const safeSendingWindowEnabled = sendingWindow?.enabled !== false;
+  const workerOperational = isQueueWorkerOperational(workerState);
   const aiBridgeStatus = runtimeStatus.payload?.aiRuntime?.status ?? (aiSettings.enabled ? "unknown" : "disabled");
   const publicQaActive = Number(publicQaActiveRow?.count || 0) > 0;
   const legacyResolver = runtimeStatus.payload?.whatsappNumberResolver ?? null;
@@ -8008,13 +8067,13 @@ export async function getPilotReadinessReport(
       actionHref: "/admin/aleta-bot",
     });
   }
-  if (workerState && workerState.running === false) {
+  if (workerState && !workerOperational) {
     blockers.push({
-      key: "worker_paused",
-      label: "Worker antrean belum aktif.",
+      key: workerState.paused ? "worker_paused" : "worker_inactive",
+      label: describeQueueWorker(workerState),
       severity: "critical",
       actionLabel: "Buka Worker ALETA Bot",
-      actionHref: "/admin/aleta-bot",
+      actionHref: "/admin/aleta-bot#queue-recovery",
     });
   }
   if (!workerState) {
@@ -8050,7 +8109,7 @@ export async function getPilotReadinessReport(
       label: "Dead-letter tinggi dan perlu ditinjau.",
       severity: "critical",
       actionLabel: "Buka Dead Letter",
-      actionHref: "/admin/aleta-bot",
+      actionHref: "/admin/aleta-bot#queue-recovery",
     });
   }
   if (deadLetters.length > 0 && deadLetters.length < 10) {
@@ -8059,7 +8118,7 @@ export async function getPilotReadinessReport(
       label: "Ada dead-letter yang perlu dipantau.",
       severity: "warning",
       actionLabel: "Buka Dead Letter",
-      actionHref: "/admin/aleta-bot",
+      actionHref: "/admin/aleta-bot#queue-recovery",
     });
   }
   if (whatsappNumberCompleteness.importantMissing.length > 0) {
@@ -8191,8 +8250,12 @@ export async function getPilotReadinessReport(
     },
     worker: {
       readable: Boolean(workerState),
+      operational: workerState ? workerOperational : null,
+      enabled: workerState?.enabled ?? null,
+      activeTimer: workerState?.activeTimer ?? null,
       running: workerState?.running ?? null,
       paused: workerState?.paused ?? null,
+      detail: describeQueueWorker(workerState),
     },
     queue: {
       deadLetterCount: deadLetters.length,
@@ -8243,8 +8306,9 @@ export async function getPilotReadinessReport(
       ["Generated At", report.generatedAt].map(csvCell).join(","),
       ["Overall Status", report.overallStatus].map(csvCell).join(","),
       ["WhatsApp Status", report.whatsapp.runtimeStatus].map(csvCell).join(","),
-      ["Safe Sending Window", `${report.safeSendingWindow.enabled ? "enabled" : "disabled"} ${report.safeSendingWindow.start}-${report.safeSendingWindow.end}`].map(csvCell).join(","),
-      ["Worker Running", String(report.worker.running ?? "unknown")].map(csvCell).join(","),
+      ["Safe Sending Window", `${report.safeSendingWindow.enabled ? "enabled" : "disabled"} ${report.safeSendingWindow.start}-${report.safeSendingWindow.end}${report.safeSendingWindow.readable ? " runtime synced" : " runtime belum terbaca"}`].map(csvCell).join(","),
+      ["Worker Running", String(report.worker.operational ?? "unknown")].map(csvCell).join(","),
+      ["Worker Detail", report.worker.detail].map(csvCell).join(","),
       ["Dead-letter", String(report.queue.deadLetterCount)].map(csvCell).join(","),
       ["Policy Skip Hari Ini", String(report.queue.policySkipToday)].map(csvCell).join(","),
       ["Public Q&A Pending", String(report.publicQa.pendingHumanReview)].map(csvCell).join(","),
@@ -8335,9 +8399,12 @@ export async function runAletaBotOperationalSmokeTest(db: AletaDatabase, actorUs
   });
   await safeCheck("worker_status", "Worker Status", async () => {
     const worker = getWhatsappRuntimeMode() === "aleta_bot" ? await getWorkerStateFromGateway() : null;
+    const operational = isQueueWorkerOperational(worker);
     return {
-      status: worker ? "passed" : "warning",
-      detail: worker ? `Worker readable. Running: ${worker.running ? "ya" : "tidak"}.` : "Worker runtime belum dapat dibaca.",
+      status: operational ? "passed" : "warning",
+      detail: worker
+        ? `${describeQueueWorker(worker)} Enabled: ${worker.enabled ? "ya" : "tidak"}, timer: ${worker.activeTimer ? "aktif" : "nonaktif"}, batch berjalan: ${worker.running ? "ya" : "tidak"}.`
+        : "Worker runtime belum dapat dibaca.",
     };
   });
   await safeCheck("settings", "Konfigurasi Reminder", async () => {

@@ -104,6 +104,7 @@ export type GatewayStatusResponse = {
   lastConnectedAt: string | null;
   lastDisconnectedAt: string | null;
   lastError: string | null;
+  lastErrorType?: string;
   qrAvailable: boolean;
   runtime: string;
   gatewayMode: string;
@@ -225,6 +226,7 @@ export async function controlGatewayWorker(
 
 export type GatewayDeadLettersResponse = {
   ok: boolean;
+  status?: string;
   total: number;
   items: AletaBotDeadLetter[];
 };
@@ -236,8 +238,20 @@ export type GatewayResendDeadLetterResponse = {
   status: string;
 };
 
-export async function getGatewayDeadLetters(limit = 50): Promise<GatewayResult<GatewayDeadLettersResponse>> {
-  return gatewayFetch<GatewayDeadLettersResponse>(`/internal/aleta-bot/queue/dead-letters?limit=${limit}`);
+export type GatewayResolveDeadLetterResponse = {
+  ok: boolean;
+  originalId: string;
+  status: string;
+  item: AletaBotDeadLetter;
+};
+
+export async function getGatewayDeadLetters(
+  limit = 50,
+  status: "active" | "resolved" | "all" = "active"
+): Promise<GatewayResult<GatewayDeadLettersResponse>> {
+  return gatewayFetch<GatewayDeadLettersResponse>(
+    `/internal/aleta-bot/queue/dead-letters?limit=${limit}&status=${encodeURIComponent(status)}`
+  );
 }
 
 export async function resendGatewayDeadLetter(
@@ -246,6 +260,17 @@ export async function resendGatewayDeadLetter(
   return gatewayFetch<GatewayResendDeadLetterResponse>("/internal/aleta-bot/queue/dead-letters/resend", {
     method: "POST",
     body: JSON.stringify({ id }),
+  });
+}
+
+export async function resolveGatewayDeadLetter(
+  id: string,
+  note: string,
+  resolvedBy: string
+): Promise<GatewayResult<GatewayResolveDeadLetterResponse>> {
+  return gatewayFetch<GatewayResolveDeadLetterResponse>("/internal/aleta-bot/queue/dead-letters/resolve", {
+    method: "POST",
+    body: JSON.stringify({ id, note, resolvedBy }),
   });
 }
 
@@ -295,6 +320,7 @@ function mapGatewayStatusToRuntime(gatewayStatus: string): string {
   if (gatewayStatus === "connected") return "connected";
   if (gatewayStatus === "qr_needed") return "waiting_qr";
   if (gatewayStatus === "initializing") return "initializing";
+  if (gatewayStatus === "browser_locked") return "browser_locked";
   if (gatewayStatus === "auth_failure") return "failed";
   return "disconnected";
 }
@@ -303,6 +329,7 @@ function mapGatewayStatusToInternal(gatewayStatus: string): string {
   if (gatewayStatus === "connected") return "ready";
   if (gatewayStatus === "qr_needed") return "qr";
   if (gatewayStatus === "initializing") return "initializing";
+  if (gatewayStatus === "browser_locked") return "failed";
   if (gatewayStatus === "auth_failure") return "failed";
   return "inactive";
 }

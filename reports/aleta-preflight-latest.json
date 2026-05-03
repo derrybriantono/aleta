@@ -1,0 +1,441 @@
+{
+  "generatedAt": "2026-05-03T00:03:59.053Z",
+  "overall": "WARN",
+  "safeToRunSmokeTest": true,
+  "safeForNonWaPilot": true,
+  "safeForLimitedWhatsAppPilot": true,
+  "safeForProduction": true,
+  "checks": [
+    {
+      "key": "portal_reachable",
+      "label": "Portal manajemen_surat reachable",
+      "status": "PASS",
+      "detail": "Portal reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_runtime_status",
+      "label": "Runtime ALETA Bot status",
+      "status": "PASS",
+      "detail": "Runtime ALETA Bot reachable.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_whatsapp_status_endpoint",
+      "label": "WhatsApp status endpoint",
+      "status": "PASS",
+      "detail": "Endpoint status WhatsApp reachable.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_whatsapp_diagnostics",
+      "label": "WhatsApp diagnostics endpoint",
+      "status": "PASS",
+      "detail": "Endpoint diagnostics WhatsApp reachable.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_status_no_raw_qr",
+      "label": "Status runtime tidak membocorkan QR raw",
+      "status": "PASS",
+      "detail": "Tidak ada field QR raw pada status runtime.",
+      "metadata": {}
+    },
+    {
+      "key": "diagnostics_sanitized",
+      "label": "Diagnostics aman",
+      "status": "PASS",
+      "detail": "Diagnostics tidak menampilkan token, QR raw, atau path session sensitif.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_connection",
+      "label": "WhatsApp Gateway",
+      "status": "PASS",
+      "detail": "WhatsApp runtime connected.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_whatsapp_status_proxy",
+      "label": "Portal proxy status WhatsApp",
+      "status": "WARN",
+      "detail": "Portal status tidak readable tanpa sesi atau gagal: HTTP 401.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_whatsapp_mapping",
+      "label": "Mapping runtime ke portal",
+      "status": "PASS",
+      "detail": "Tidak ada mismatch connected runtime vs portal.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_qr_proxy",
+      "label": "Portal proxy QR",
+      "status": "PASS",
+      "detail": "Endpoint QR portal HTTP 401.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_operational",
+      "label": "Worker antrean",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false, running=false.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_sending_window",
+      "label": "Safe Sending Window",
+      "status": "PASS",
+      "detail": "enabled 07:30-21:00. insideWindow=true, allowed=true.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letters_active",
+      "label": "Dead-letter aktif",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif. 1 sudah ditangani.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_db",
+      "label": "Portal database",
+      "status": "PASS",
+      "detail": "Koneksi database portal berhasil.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_number_completeness",
+      "label": "Kelengkapan nomor WhatsApp pegawai",
+      "status": "PASS",
+      "detail": "42/42 pegawai punya nomor WhatsApp. Missing=0, priorityMissing=0.",
+      "metadata": {}
+    },
+    {
+      "key": "approval_pending",
+      "label": "Approval pending",
+      "status": "PASS",
+      "detail": "0 approval masih pending. Phase 4 exact match sudah dibersihkan jika ada.",
+      "metadata": {}
+    },
+    {
+      "key": "reminder_scheduler_safety",
+      "label": "Reminder dan scheduler",
+      "status": "WARN",
+      "detail": "mode=production, scheduler=enabled/production, killSwitch=false.",
+      "metadata": {}
+    },
+    {
+      "key": "ai_bridge",
+      "label": "AI Bridge",
+      "status": "PASS",
+      "detail": "AI Bridge status=synced. API key tidak ditampilkan.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_tasks_endpoint",
+      "label": "Pusat Tugas endpoint",
+      "status": "PASS",
+      "detail": "Endpoint /api/tasks HTTP 401; auth guard dianggap aktif bila 401.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_node_check_scripts_aleta_preflight_mjs",
+      "label": "node --check scripts/aleta-preflight.mjs",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_node_check_app_js",
+      "label": "node --check app.js",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_node_check_whatsapp_js",
+      "label": "node --check whatsapp.js",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_node_check_services_whatsappstatusservice_js",
+      "label": "node --check services/whatsappStatusService.js",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_node_check_routes_internalgatewayroutes_js",
+      "label": "node --check routes/internalGatewayRoutes.js",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_npx_tsc_noemit_pretty_false",
+      "label": "npx tsc --noEmit --pretty false",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_npm_run_lint",
+      "label": "npm run lint",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_npm_run_build",
+      "label": "npm run build",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    },
+    {
+      "key": "validation_npm_test",
+      "label": "npm test",
+      "status": "PASS",
+      "detail": "Command passed.",
+      "metadata": {}
+    }
+  ],
+  "blockers": [],
+  "warnings": [
+    {
+      "key": "portal_whatsapp_status_proxy",
+      "label": "Portal proxy status WhatsApp",
+      "detail": "Portal status tidak readable tanpa sesi atau gagal: HTTP 401."
+    },
+    {
+      "key": "reminder_scheduler_safety",
+      "label": "Reminder dan scheduler",
+      "detail": "mode=production, scheduler=enabled/production, killSwitch=false."
+    }
+  ],
+  "actionsTaken": [
+    {
+      "action": "resolve_phase4_dead_letter",
+      "detail": "Tidak ada Phase 4 dead-letter aktif yang perlu di-resolve.",
+      "metadata": {}
+    },
+    {
+      "action": "reject_phase4_approval",
+      "detail": "Tidak ada approval Phase 4 pending yang perlu ditolak.",
+      "metadata": {}
+    }
+  ],
+  "validation": [
+    {
+      "command": "node --check scripts/aleta-preflight.mjs",
+      "cwd": "D:\\aleta",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 1652,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "command": "node --check app.js",
+      "cwd": "D:\\aleta\\aleta_bot",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 1319,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "command": "node --check whatsapp.js",
+      "cwd": "D:\\aleta\\aleta_bot",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 1292,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "command": "node --check services/whatsappStatusService.js",
+      "cwd": "D:\\aleta\\aleta_bot",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 1282,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "command": "node --check routes/internalGatewayRoutes.js",
+      "cwd": "D:\\aleta\\aleta_bot",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 1580,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "command": "npx tsc --noEmit --pretty false",
+      "cwd": "D:\\aleta\\manajemen_surat",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 15427,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "command": "npm run lint",
+      "cwd": "D:\\aleta\\manajemen_surat",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 58433,
+      "stdoutTail": "> manajemen_surat@1.0.0 lint\n> eslint . --max-warnings=0",
+      "stderrTail": ""
+    },
+    {
+      "command": "npm run build",
+      "cwd": "D:\\aleta\\manajemen_surat",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 86963,
+      "stdoutTail": "├ ƒ /statistik\n├ ƒ /surat\n├ ƒ /surat/[id]\n├ ƒ /surat/keluar\n├ ƒ /surat/masuk\n└ ƒ /tugas\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand",
+      "stderrTail": ""
+    },
+    {
+      "command": "npm test",
+      "cwd": "D:\\aleta\\manajemen_surat",
+      "status": "PASS",
+      "exitCode": 0,
+      "durationMs": 51115,
+      "stdoutTail": "   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22msupports Drizzle ORM user lookups in the in-memory fallback used by Better Auth \u001b[33m765\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mupdates managed users and password recovery against backend records \u001b[33m969\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22menforces admin-level RBAC: admin cannot create super-admin, super-admin can promote \u001b[33m1016\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m backend modular monolith services\u001b[2m > \u001b[22mprevents blocking or demoting the last active super-admin \u001b[33m945\u001b[2mms\u001b[22m\u001b[39m\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m11 passed\u001b[39m\u001b[22m\u001b[90m (11)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m38 passed\u001b[39m\u001b[22m\u001b[90m (38)\u001b[39m\n\u001b[2m   Start at \u001b[22m 08:06:56\n\u001b[2m   Duration \u001b[22m 42.83s\u001b[2m (transform 14.46s, setup 11.76s, collect 44.65s, tests 27.66s, environment 44.83s, prepare 7.81s)\u001b[22m",
+      "stderrTail": "\u001b[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.\u001b[39m"
+    }
+  ],
+  "summary": {
+    "runtime": {
+      "whatsappStatus": "connected",
+      "initializing": false,
+      "hasClient": true,
+      "hasQr": false,
+      "lastErrorType": "",
+      "sessionName": "aleta-whatsapp-main",
+      "authPathConfigured": true,
+      "initializeAgeMs": 0,
+      "worker": {
+        "enabled": true,
+        "running": false,
+        "paused": false,
+        "intervalMs": 30000,
+        "batchSize": 5,
+        "lastHeartbeatAt": "2026-05-03T00:03:55.041Z",
+        "lastBatchProcessed": 0,
+        "lastError": "",
+        "startedAt": "2026-05-02T21:40:52.225Z",
+        "pausedAt": null,
+        "pauseReason": "",
+        "sendingWindow": {
+          "enabled": true,
+          "start": "07:30",
+          "end": "21:00",
+          "inside": true,
+          "allowed": true,
+          "message": "Pengiriman berada dalam jam aman."
+        },
+        "activeTimer": true
+      },
+      "queue": {
+        "total": 16,
+        "pending": 0,
+        "processing": 0,
+        "sent": 8,
+        "failed": 0,
+        "skipped": 1,
+        "dry_run": 6,
+        "dead_letter": 0,
+        "resolved": 1
+      },
+      "safeSendingWindow": {
+        "enabled": true,
+        "start": "07:30",
+        "end": "21:00",
+        "inside": true,
+        "allowed": true,
+        "message": "Pengiriman berada dalam jam aman."
+      },
+      "aiRuntime": {
+        "status": "synced",
+        "provider": "gemini",
+        "model": "Gemini 2.5 Flash",
+        "publicQaEnabled": true,
+        "publicQaAiAnswerEnabled": true
+      },
+      "registry": {
+        "useRegistryNotifications": true,
+        "registryPilotMode": false,
+        "registryDryRunDefault": false,
+        "total": 2,
+        "active": 0,
+        "dryRun": 0,
+        "requiresApproval": 0,
+        "skippedPolicy": 0,
+        "policySkipStats": {
+          "skippedCount": 0,
+          "totalToday": 0,
+          "lastSkippedAt": null,
+          "reasons": {}
+        }
+      }
+    },
+    "portalProxy": {
+      "statusEndpoint": "http_401",
+      "qrEndpoint": "http_401",
+      "portalStatus": "unknown",
+      "qrAvailable": false
+    },
+    "worker": {
+      "enabled": true,
+      "activeTimer": true,
+      "paused": false,
+      "running": false,
+      "intervalMs": 30000,
+      "batchSize": 5
+    },
+    "safeSendingWindow": {
+      "enabled": true,
+      "start": "07:30",
+      "end": "21:00",
+      "inside": true,
+      "allowed": true,
+      "message": "Pengiriman berada dalam jam aman."
+    },
+    "queue": {
+      "pending": 0,
+      "processing": 0,
+      "failed": 0,
+      "resolved": 1,
+      "dryRun": 6,
+      "activeDeadLetters": 0,
+      "resolvedDeadLetters": 1
+    },
+    "whatsappNumbers": {
+      "total": 42,
+      "complete": 42,
+      "missing": 0,
+      "priorityMissing": 0
+    },
+    "approvals": {
+      "pending": 0
+    },
+    "reminder": {
+      "mode": "production",
+      "enabled": true,
+      "schedulerEnabled": true,
+      "schedulerMode": "production",
+      "killSwitch": false,
+      "approved": true
+    },
+    "publicQa": {
+      "pendingHumanReview": 0
+    }
+  }
+}

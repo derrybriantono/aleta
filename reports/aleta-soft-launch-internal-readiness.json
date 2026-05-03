@@ -1,0 +1,243 @@
+{
+  "generatedAt": "2026-05-02T19:32:25+08:00",
+  "overall": "WARN",
+  "softLaunchInternalAllowed": true,
+  "portalOperationalPilotAllowed": true,
+  "manajemenSuratPilotAllowed": true,
+  "taskCenterPilotAllowed": true,
+  "limitedWhatsappPilotAllowed": true,
+  "productionAllowed": false,
+  "status": {
+    "portal": {
+      "status": "PASS",
+      "detail": "Portal reachable HTTP 200."
+    },
+    "manajemenSurat": {
+      "status": "PASS",
+      "detail": "Manajemen Surat boleh dipakai untuk pilot operasional internal."
+    },
+    "aletaBot": {
+      "status": "PASS",
+      "detail": "Runtime ALETA Bot reachable."
+    },
+    "whatsappRuntime": {
+      "status": "PASS",
+      "connection": "connected",
+      "initializing": false,
+      "hasClient": true,
+      "hasQr": false,
+      "lastErrorType": ""
+    },
+    "worker": {
+      "status": "PASS",
+      "enabled": true,
+      "activeTimer": true,
+      "paused": false,
+      "running": false,
+      "intervalMs": 30000,
+      "batchSize": 5
+    },
+    "queue": {
+      "status": "PASS",
+      "pending": 0,
+      "processing": 0,
+      "failed": 0,
+      "activeDeadLetters": 0,
+      "resolvedDeadLetters": 1,
+      "dryRun": 6
+    },
+    "deadLetter": {
+      "status": "PASS",
+      "active": 0,
+      "resolved": 1,
+      "detail": "Tidak ada dead-letter aktif. Satu artefak validasi lama sudah ditangani sebagai riwayat."
+    },
+    "approval": {
+      "status": "PASS",
+      "pending": 0
+    },
+    "whatsappNumberCompleteness": {
+      "status": "PASS",
+      "total": 42,
+      "complete": 42,
+      "missing": 0,
+      "priorityMissing": 0
+    },
+    "safeSendingWindow": {
+      "status": "PASS",
+      "enabled": true,
+      "start": "07:30",
+      "end": "21:00",
+      "insideWindow": true,
+      "allowed": true,
+      "detail": "Pengiriman berada dalam jam aman."
+    },
+    "aiBridge": {
+      "status": "PASS",
+      "syncStatus": "synced",
+      "publicQaEnabled": true,
+      "publicQaAiAnswerEnabled": true
+    },
+    "publicQa": {
+      "status": "PASS",
+      "pendingHumanReview": 0
+    },
+    "schedulerReminder": {
+      "status": "PASS",
+      "reminderEnabled": false,
+      "mode": "dry_run",
+      "schedulerEnabled": false,
+      "schedulerMode": "dry_run",
+      "killSwitch": false,
+      "approved": false
+    },
+    "botEnabled": {
+      "status": "PASS",
+      "value": false,
+      "detail": "Bot WhatsApp tetap nonaktif secara default setelah uji terbatas."
+    }
+  },
+  "featuresAllowed": [
+    "Portal internal ALETA",
+    "Manajemen Surat pilot operasional",
+    "Pusat Tugas",
+    "Patch Notes",
+    "Panduan",
+    "Pusat Masukan",
+    "Dashboard/monitoring Admin ALETA Bot read-only",
+    "Smoke test dan preflight dry-run",
+    "Uji WhatsApp terbatas hanya dengan persetujuan eksplisit, whitelist, dan gate aman"
+  ],
+  "featuresHeld": [
+    "WhatsApp production otomatis",
+    "Broadcast WhatsApp",
+    "Notifikasi pihak eksternal",
+    "Scheduler reminder production",
+    "Reminder H-1 production",
+    "Resend dead-letter tanpa review manual",
+    "Approval produksi massal",
+    "botEnabled=true permanen"
+  ],
+  "operatorChecklist": [
+    "Pastikan WhatsApp runtime tetap connected sebelum aktivitas yang membutuhkan WhatsApp.",
+    "Pastikan worker enabled, active timer, dan tidak paused.",
+    "Pantau queue pending/processing/failed sebelum dan sesudah uji terbatas.",
+    "Pastikan dead-letter aktif tetap 0.",
+    "Pastikan approval pending tidak muncul tanpa konteks yang jelas.",
+    "Pastikan scheduler/reminder tetap dry_run/disabled.",
+    "Gunakan preflight dan smoke dry-run sebelum uji WhatsApp lanjutan.",
+    "Jangan mengubah botEnabled menjadi true tanpa whitelist dan persetujuan eksplisit."
+  ],
+  "userChecklist": [
+    "Gunakan Manajemen Surat untuk registrasi, detail, disposisi, deadline, dan status baca.",
+    "Gunakan Pusat Tugas untuk memantau tugas internal.",
+    "Gunakan Panduan dan Patch Notes untuk memahami batas fitur pilot.",
+    "Laporkan kendala lewat Pusat Masukan.",
+    "Jangan mengandalkan WhatsApp otomatis untuk proses produksi selama fase pilot internal."
+  ],
+  "sop": {
+    "whatsappDisconnected": [
+      "Jangan scan QR dari script atau shell.",
+      "Buka Status WhatsApp Gateway dari UI Super Admin.",
+      "Cek apakah runtime ALETA Bot reachable dan tidak browser_locked.",
+      "Hubungkan ulang hanya lewat alur Super Admin yang aman.",
+      "Jangan logout/reset session kecuali menjadi keputusan operasional terpisah."
+    ],
+    "deadLetterAppears": [
+      "Jangan langsung resend.",
+      "Buka Queue Recovery/Pesan Gagal.",
+      "Baca error yang sudah disanitasi.",
+      "Jika artefak validasi, tandai ditangani.",
+      "Jika pesan operasional, review penerima, kategori, dan policy sebelum tindakan ulang."
+    ],
+    "queueFails": [
+      "Jangan retry massal.",
+      "Cek WhatsApp status, safe sending window, worker, dan policy skip.",
+      "Pastikan botEnabled tidak berubah tanpa persetujuan.",
+      "Gunakan preflight dan smoke dry-run untuk membedakan masalah runtime dan data.",
+      "Eskalasikan jika failed count bertambah atau dead-letter aktif muncul."
+    ]
+  },
+  "dayOneRecommendations": [
+    "Mulai soft launch dengan alur non-WA: Manajemen Surat, Pusat Tugas, Panduan, Patch Notes, dan Masukan.",
+    "Pantau Admin ALETA Bot secara read-only pada hari pertama.",
+    "Jalankan preflight dan smoke dry-run di awal dan akhir hari pilot.",
+    "Jika ingin menguji WhatsApp lagi, gunakan whitelist kecil internal dan idempotency key baru.",
+    "Tahan semua production WhatsApp sampai ada keputusan approval dan runbook production terpisah."
+  ],
+  "validation": {
+    "preflight": {
+      "overall": "WARN",
+      "safeToRunSmokeTest": true,
+      "safeForNonWaPilot": true,
+      "safeForLimitedWhatsAppPilot": true,
+      "safeForProduction": false,
+      "warnings": [
+        "Portal proxy status WhatsApp mengembalikan HTTP 401 tanpa sesi; ini sesuai auth guard dari shell."
+      ],
+      "blockers": []
+    },
+    "smokeDryRun": {
+      "overall": "PASS",
+      "safeForNonWaPilot": true,
+      "safeForLimitedWhatsAppPilot": true,
+      "safeForProduction": false,
+      "warnings": [],
+      "blockers": []
+    },
+    "commands": [
+      {
+        "command": "node --check app.js",
+        "cwd": "D:\\aleta\\aleta_bot",
+        "status": "PASS"
+      },
+      {
+        "command": "node --check whatsapp.js",
+        "cwd": "D:\\aleta\\aleta_bot",
+        "status": "PASS"
+      },
+      {
+        "command": "node --check services/whatsappStatusService.js",
+        "cwd": "D:\\aleta\\aleta_bot",
+        "status": "PASS"
+      },
+      {
+        "command": "node --check routes/internalGatewayRoutes.js",
+        "cwd": "D:\\aleta\\aleta_bot",
+        "status": "PASS"
+      },
+      {
+        "command": "npx tsc --noEmit --pretty false",
+        "cwd": "D:\\aleta\\manajemen_surat",
+        "status": "PASS"
+      },
+      {
+        "command": "npm run lint",
+        "cwd": "D:\\aleta\\manajemen_surat",
+        "status": "PASS"
+      },
+      {
+        "command": "npm run build",
+        "cwd": "D:\\aleta\\manajemen_surat",
+        "status": "PASS"
+      },
+      {
+        "command": "npm test",
+        "cwd": "D:\\aleta\\manajemen_surat",
+        "status": "PASS",
+        "tests": "38/38"
+      }
+    ]
+  },
+  "risks": [
+    "Production WhatsApp belum boleh dijalankan.",
+    "botEnabled harus tetap false kecuali ada uji terbatas eksplisit.",
+    "Satu queue item lama berstatus skipped tetap ada sebagai riwayat, bukan blocker.",
+    "Portal endpoint admin mengembalikan 401 dari shell tanpa sesi; verifikasi UI tetap dilakukan lewat sesi admin.",
+    "Soft launch hari pertama harus dipantau untuk feedback pengguna dan anomali queue."
+  ],
+  "notes": [
+    "Sebelum validasi ulang, artefak generated .next/dev/types/validator.ts yang korup dibersihkan. Source aplikasi tidak diubah untuk itu.",
+    "Tidak ada pengiriman WhatsApp, resend, QR scan, logout/reset, atau aktivasi production pada checkpoint ini."
+  ]
+}

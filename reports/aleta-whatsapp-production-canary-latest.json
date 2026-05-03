@@ -1,0 +1,263 @@
+{
+  "generatedAt": "2026-05-02T23:45:12.375Z",
+  "overall": "PASS",
+  "canaryExecuted": true,
+  "workflow": "internal_disposition_notification",
+  "sentCount": 3,
+  "failedCount": 0,
+  "skippedCount": 0,
+  "duplicateCount": 0,
+  "outOfWhitelistRecipients": 0,
+  "botEnabledBefore": false,
+  "botEnabledDuringCanary": true,
+  "botEnabledFinal": false,
+  "notificationsEnabledDuringCanary": true,
+  "recipients": [
+    {
+      "name": "DERRY BRIANTONO, S.H.",
+      "role": "Hakim",
+      "maskedPhone": "628****6962",
+      "deliveryStatus": "sent",
+      "queueId": "fe89d048-ad34-4e1a-8b90-175dc3844d3a"
+    },
+    {
+      "name": "ABDUL SALAM, S.HI. MH.",
+      "role": "Ketua",
+      "maskedPhone": "628****3055",
+      "deliveryStatus": "sent",
+      "queueId": "32ee0792-b0ca-4726-9be3-6f6913d94e76"
+    },
+    {
+      "name": "AKBAR ALI, S.H.I.",
+      "role": "Wakil Ketua",
+      "maskedPhone": "628****1382",
+      "deliveryStatus": "sent",
+      "queueId": "e447202f-2601-4698-8371-59b115e08594"
+    }
+  ],
+  "gateBeforeSend": [
+    {
+      "key": "risk_pass",
+      "label": "Risk-check PASS",
+      "status": "PASS",
+      "detail": "risk=PASS.",
+      "metadata": {}
+    },
+    {
+      "key": "shadow_pass",
+      "label": "Shadow-run PASS",
+      "status": "PASS",
+      "detail": "shadow=PASS.",
+      "metadata": {}
+    },
+    {
+      "key": "preflight_usable",
+      "label": "Preflight usable",
+      "status": "PASS",
+      "detail": "preflight=WARN.",
+      "metadata": {}
+    },
+    {
+      "key": "smoke_pass",
+      "label": "Smoke dry-run PASS",
+      "status": "PASS",
+      "detail": "smoke=PASS.",
+      "metadata": {}
+    },
+    {
+      "key": "canary_whitelist_size",
+      "label": "Whitelist canary",
+      "status": "PASS",
+      "detail": "3 penerima internal canary.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_reachable",
+      "label": "Runtime reachable",
+      "status": "PASS",
+      "detail": "Status runtime, WhatsApp, diagnostics, queue, dan dead-letter terbaca.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_connected",
+      "label": "WhatsApp connected",
+      "status": "PASS",
+      "detail": "status=connected.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_not_stuck",
+      "label": "WhatsApp tidak lock/stuck",
+      "status": "PASS",
+      "detail": "lastErrorType=-, initializing=false.",
+      "metadata": {}
+    },
+    {
+      "key": "session_name",
+      "label": "Session name tetap",
+      "status": "PASS",
+      "detail": "session=aleta-whatsapp-main.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_operational",
+      "label": "Worker operasional",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_empty",
+      "label": "Queue kosong",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letter_zero",
+      "label": "Dead-letter aktif",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif.",
+      "metadata": {}
+    },
+    {
+      "key": "approval_zero",
+      "label": "Approval pending",
+      "status": "PASS",
+      "detail": "0 approval pending.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_window_allowed",
+      "label": "Safe Sending Window allowed",
+      "status": "PASS",
+      "detail": "enabled=true, 07:30-21:00, allowed=true.",
+      "metadata": {}
+    },
+    {
+      "key": "scheduler_not_production",
+      "label": "Scheduler/reminder belum production",
+      "status": "PASS",
+      "detail": "reminder=false/dry_run, scheduler=false/dry_run.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_enabled",
+      "label": "botEnabled true",
+      "status": "PASS",
+      "detail": "botEnabled=true.",
+      "metadata": {}
+    },
+    {
+      "key": "notifications_enabled",
+      "label": "notificationsEnabled true",
+      "status": "PASS",
+      "detail": "notificationsEnabled=true.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_still_empty",
+      "label": "Queue tetap kosong",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    }
+  ],
+  "queueAfter": {
+    "total": 16,
+    "pending": 0,
+    "processing": 0,
+    "sent": 8,
+    "failed": 0,
+    "skipped": 1,
+    "dryRun": 6,
+    "deadLetter": 0,
+    "resolved": 1
+  },
+  "deadLetterActiveAfter": 0,
+  "approvalPendingAfter": 0,
+  "blockers": [],
+  "warnings": [],
+  "actionsTaken": [
+    {
+      "action": "enable_bot_temporarily",
+      "detail": "botEnabled, notificationsEnabled, dan dryRunEnabled=false ditulis sementara untuk canary.",
+      "metadata": {}
+    },
+    {
+      "action": "restore_runtime_after_canary",
+      "detail": "Runtime config dikembalikan ke state sebelum canary.",
+      "metadata": {}
+    }
+  ],
+  "summary": {
+    "before": {
+      "whatsappStatus": "connected",
+      "worker": {
+        "enabled": true,
+        "activeTimer": true,
+        "paused": false,
+        "running": false
+      },
+      "queue": {
+        "total": 13,
+        "pending": 0,
+        "processing": 0,
+        "sent": 5,
+        "failed": 0,
+        "skipped": 1,
+        "dryRun": 6,
+        "deadLetter": 0,
+        "resolved": 1
+      },
+      "safeSendingWindow": {
+        "enabled": true,
+        "start": "07:30",
+        "end": "21:00",
+        "inside": true,
+        "allowed": true
+      },
+      "reminder": {
+        "enabled": false,
+        "mode": "dry_run",
+        "schedulerEnabled": false,
+        "schedulerMode": "dry_run",
+        "killSwitch": false
+      }
+    },
+    "after": {
+      "whatsappStatus": "connected",
+      "worker": {
+        "enabled": true,
+        "activeTimer": true,
+        "paused": false,
+        "running": false
+      },
+      "queue": {
+        "total": 16,
+        "pending": 0,
+        "processing": 0,
+        "sent": 8,
+        "failed": 0,
+        "skipped": 1,
+        "dryRun": 6,
+        "deadLetter": 0,
+        "resolved": 1
+      },
+      "safeSendingWindow": {
+        "enabled": true,
+        "start": "07:30",
+        "end": "21:00",
+        "inside": true,
+        "allowed": true
+      },
+      "reminder": {
+        "enabled": false,
+        "mode": "dry_run",
+        "schedulerEnabled": false,
+        "schedulerMode": "dry_run",
+        "killSwitch": false
+      }
+    }
+  }
+}

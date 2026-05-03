@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-05-02T23:52:41.058Z",
+  "overall": "PASS",
+  "checks": [
+    {
+      "key": "guard_config",
+      "label": "Production guard idempotency config",
+      "status": "PASS",
+      "detail": "Production guard harus aktif, idempotency wajib, dan legacy direct-send tidak boleh enabled.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_idempotency_lookup",
+      "label": "Queue idempotency lookup",
+      "status": "PASS",
+      "detail": "Endpoint enqueue dan queue service harus mengecek idempotency key sebelum insert.",
+      "metadata": {}
+    },
+    {
+      "key": "legacy_guard_block",
+      "label": "Legacy direct-send guard",
+      "status": "PASS",
+      "detail": "Legacy client.sendMessage tetap ada, tetapi production guard harus memblokir jalur production legacy.",
+      "metadata": {}
+    },
+    {
+      "key": "number_duplicate_proof",
+      "label": "Same phone duplicate proof",
+      "status": "PASS",
+      "detail": "duplicateGroups=0.",
+      "metadata": {}
+    },
+    {
+      "key": "registry_idempotency_strategy",
+      "label": "Registry idempotency strategy",
+      "status": "PASS",
+      "detail": "productionEligibleItems=6, missingStrategy=0.",
+      "metadata": {}
+    },
+    {
+      "key": "duplicate_simulation",
+      "label": "Duplicate simulation",
+      "status": "PASS",
+      "detail": "Same event/retry/rerun simulations produce stable keys.",
+      "metadata": {}
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "simulations": [
+    {
+      "name": "same_event_twice",
+      "firstKey": "prod:7b7d4a6c81e05a6a7d60a137e694062e",
+      "secondKey": "prod:7b7d4a6c81e05a6a7d60a137e694062e",
+      "duplicatePrevented": true,
+      "expectedEnqueueCount": 1
+    },
+    {
+      "name": "scheduler_rerun",
+      "firstKey": "prod:f574849f347070c4d69e11776edb6460",
+      "secondKey": "prod:f574849f347070c4d69e11776edb6460",
+      "duplicatePrevented": true,
+      "expectedEnqueueCount": 1
+    },
+    {
+      "name": "approval_retry",
+      "firstKey": "prod:5031849e0a29e9248a6a325bbc854c18",
+      "secondKey": "prod:5031849e0a29e9248a6a325bbc854c18",
+      "duplicatePrevented": true,
+      "expectedEnqueueCount": 1
+    }
+  ],
+  "actionsTaken": [
+    {
+      "action": "proof_only",
+      "detail": "Tidak ada send, enqueue, resend, worker trigger, atau production activation."
+    }
+  ]
+}

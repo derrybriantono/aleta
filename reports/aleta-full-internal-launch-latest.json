@@ -1,0 +1,186 @@
+{
+  "generatedAt": "2026-05-02T20:33:08+08:00",
+  "overall": "WARN_GO",
+  "launchName": "ALETA Full Internal Launch - 0.1.0-beta.5 Operational",
+  "launchScope": "internal_operational_full_app",
+  "safeForInternalOperationalUse": true,
+  "safeForWhatsAppMonitoring": true,
+  "safeForLimitedWhatsAppManualWhitelist": true,
+  "safeForWhatsAppProductionAutomation": false,
+  "safeForBroadcast": false,
+  "safeForExternalPartyNotification": false,
+  "safeForProductionReminder": false,
+  "checks": [
+    {
+      "key": "portal_reachable",
+      "status": "PASS",
+      "detail": "Portal reachable. Routes without a session redirect or return 401 as expected."
+    },
+    {
+      "key": "bot_runtime_reachable",
+      "status": "PASS",
+      "detail": "ALETA Bot runtime reachable on port 3003."
+    },
+    {
+      "key": "single_runtime_listener",
+      "status": "PASS",
+      "detail": "One listener observed on portal port 3000 and one listener on ALETA Bot port 3003."
+    },
+    {
+      "key": "whatsapp_connected",
+      "status": "PASS",
+      "detail": "WhatsApp runtime connected; no browser_locked, initialize_timeout, or stuck initializing signal."
+    },
+    {
+      "key": "queue_health",
+      "status": "PASS",
+      "detail": "Queue pending=0, processing=0, failed=0, active dead-letter=0."
+    },
+    {
+      "key": "approval_health",
+      "status": "PASS",
+      "detail": "Approval pending=0."
+    },
+    {
+      "key": "whatsapp_number_completeness",
+      "status": "PASS",
+      "detail": "42/42 internal users have WhatsApp numbers; missing=0 and priorityMissing=0."
+    },
+    {
+      "key": "production_guard",
+      "status": "PASS",
+      "detail": "botEnabled=false; scheduler/reminder production disabled and dry_run guarded."
+    },
+    {
+      "key": "ai_bridge",
+      "status": "PASS",
+      "detail": "AI Bridge synced. Launch checks did not call an external provider."
+    },
+    {
+      "key": "auth_guard_shell",
+      "status": "WARN",
+      "detail": "Some portal admin/API endpoints return 401/redirect from shell without a session. This is expected and non-blocking."
+    },
+    {
+      "key": "kpi_runner_timeout",
+      "status": "WARN",
+      "detail": "Smoke runner saw /api/stats/kpi aborted once from unauthenticated shell. Build and route compilation are passing; verify KPI from an authenticated role during day-one monitoring."
+    }
+  ],
+  "blockers": [],
+  "warnings": [
+    {
+      "key": "auth_guard_shell",
+      "detail": "401/redirect from shell without session is expected for protected routes."
+    },
+    {
+      "key": "historical_skipped_item",
+      "detail": "One historical skipped queue item remains as audit history; it is not pending, failed, or dead-letter."
+    },
+    {
+      "key": "kpi_auth_ui_check",
+      "detail": "KPI should be checked from an authenticated leadership/admin session on day one."
+    }
+  ],
+  "actionsTaken": [
+    {
+      "action": "preflight",
+      "detail": "Ran node scripts/aleta-preflight.mjs; result WARN with no blockers."
+    },
+    {
+      "action": "smoke_dry_run",
+      "detail": "Ran node scripts/aleta-smoke-dry-run.mjs; result WARN with no blockers and no send/enqueue/production action."
+    },
+    {
+      "action": "validation",
+      "detail": "Ran node checks, TypeScript, lint, build, and tests successfully."
+    },
+    {
+      "action": "launch_reports",
+      "detail": "Created launch report, day-one runbook, SOP files, and announcement draft."
+    }
+  ],
+  "runtime": {
+    "portalReachable": true,
+    "botReachable": true,
+    "whatsappStatus": "connected",
+    "workerActive": true,
+    "workerEnabled": true,
+    "workerPaused": false,
+    "botEnabled": false,
+    "safeSendingWindow": {
+      "enabled": true,
+      "start": "07:30",
+      "end": "21:00",
+      "allowedAtCheck": true
+    },
+    "aiBridgeStatus": "synced"
+  },
+  "queue": {
+    "pending": 0,
+    "processing": 0,
+    "failed": 0,
+    "deadLetterActive": 0,
+    "deadLetterResolved": 1,
+    "approvalPending": 0,
+    "historicalSkipped": 1
+  },
+  "data": {
+    "whatsappNumbers": {
+      "total": 42,
+      "complete": 42,
+      "missing": 0,
+      "priorityMissing": 0
+    }
+  },
+  "guards": {
+    "schedulerProductionActive": false,
+    "reminderProductionActive": false,
+    "broadcastEnabled": false,
+    "externalNotificationEnabled": false,
+    "botEnabledPermanent": false,
+    "productionAutomationAllowed": false
+  },
+  "modulesAllowed": [
+    "Portal ALETA",
+    "Manajemen Surat",
+    "Pusat Tugas",
+    "Patch Notes",
+    "Panduan",
+    "Pusat Masukan",
+    "Admin Panel sesuai role",
+    "Admin Monitoring",
+    "ALETA Bot Monitoring",
+    "Preflight dan smoke dry-run",
+    "WhatsApp limited manual whitelist dengan persetujuan eksplisit"
+  ],
+  "modulesRestricted": [
+    "WhatsApp production automation",
+    "Broadcast",
+    "External party notification",
+    "Production reminder",
+    "Reminder H-1 production",
+    "Mass resend",
+    "Public Q&A free-form tanpa intent/template/query resmi",
+    "botEnabled=true permanen"
+  ],
+  "validation": {
+    "preflight": "WARN_NO_BLOCKER",
+    "smokeDryRun": "WARN_NO_BLOCKER",
+    "nodeChecks": "PASS",
+    "tsc": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "test": "PASS_38_OF_38"
+  },
+  "reports": [
+    "D:\\aleta\\reports\\aleta-full-internal-launch-latest.md",
+    "D:\\aleta\\reports\\aleta-full-internal-launch-latest.json",
+    "D:\\aleta\\reports\\aleta-day-one-operator-runbook.md",
+    "D:\\aleta\\reports\\aleta-sop-whatsapp-disconnected.md",
+    "D:\\aleta\\reports\\aleta-sop-dead-letter.md",
+    "D:\\aleta\\reports\\aleta-sop-queue-failed.md",
+    "D:\\aleta\\reports\\aleta-sop-rollback-safe-mode.md",
+    "D:\\aleta\\reports\\aleta-internal-launch-announcement-draft.md"
+  ]
+}

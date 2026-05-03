@@ -1,0 +1,327 @@
+{
+  "generatedAt": "2026-05-03T00:07:48.106Z",
+  "overall": "GO",
+  "launchName": "ALETA WhatsApp Production Automation Launch",
+  "productionAutomationEnabled": true,
+  "botEnabledFinal": true,
+  "notificationsEnabledFinal": true,
+  "schedulerProductionEnabled": true,
+  "reminderProductionEnabled": true,
+  "broadcastEnabledWithApprovalGate": true,
+  "externalNotificationEnabledWithApprovalGate": true,
+  "massResendEnabledWithApprovalGate": true,
+  "publicQaProductionSafeMode": true,
+  "riskGates": {
+    "runtime": "PASS",
+    "queue": "PASS",
+    "data": "PASS",
+    "recipientResolver": "PASS",
+    "template": "PASS",
+    "idempotency": "PASS",
+    "massSendOutlier": "PASS",
+    "schedulerReminder": "PASS",
+    "approval": "PASS",
+    "publicQa": "PASS",
+    "rollback": "PASS"
+  },
+  "shadowRun": {
+    "overall": "PASS",
+    "workflows": [
+      {
+        "key": "internal_disposition_notification",
+        "name": "Internal disposition notification",
+        "candidateEventCount": 1,
+        "recipientCount": 3,
+        "potentialMessageCount": 3,
+        "maskedRecipients": [
+          {
+            "name": "ABDUL SALAM, S.HI. MH.",
+            "role": "ketua",
+            "phone": "628****3055"
+          },
+          {
+            "name": "AKBAR ALI, S.H.I.",
+            "role": "wakil-ketua",
+            "phone": "628****1382"
+          },
+          {
+            "name": "DERRY BRIANTONO, S.H.",
+            "role": "hakim",
+            "phone": "628****6962"
+          }
+        ],
+        "excludedRecipients": [],
+        "templateId": "pegawai-monitoring",
+        "idempotencyKeyPreview": [
+          "disposition:shadow-disposition:usr-donggala-198109142007041001:pegawai-monitoring:event",
+          "disposition:shadow-disposition:usr-donggala-197710132007041001:pegawai-monitoring:event",
+          "disposition:shadow-disposition:usr-donggala-199401022017121003:pegawai-monitoring:event"
+        ],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "not_required_internal_if_caps_pass",
+        "decision": "PASS",
+        "reason": "Workflow internal disposition lulus shadow-run sample dengan eligibility guard, cap, template, dan idempotency preview."
+      },
+      {
+        "key": "internal_incoming_letter_notification",
+        "name": "Internal incoming letter notification",
+        "candidateEventCount": 1,
+        "recipientCount": 5,
+        "potentialMessageCount": 5,
+        "maskedRecipients": [
+          {
+            "name": "ABDUL SALAM, S.HI. MH.",
+            "role": "ketua",
+            "phone": "628****3055"
+          },
+          {
+            "name": "AKBAR ALI, S.H.I.",
+            "role": "wakil-ketua",
+            "phone": "628****1382"
+          },
+          {
+            "name": "ANDINI PUSPITA SARI, S.Sy.",
+            "role": "panitera",
+            "phone": "628****0876"
+          },
+          {
+            "name": "ASRAH RACHMAN, S.H.I.",
+            "role": "panitera",
+            "phone": "628****2565"
+          },
+          {
+            "name": "MUNIFA, S.H.",
+            "role": "panitera",
+            "phone": "628****6522"
+          }
+        ],
+        "excludedRecipients": [],
+        "templateId": "pegawai-monitoring",
+        "idempotencyKeyPreview": [
+          "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-198109142007041001:pegawai-monitoring:event",
+          "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-197710132007041001:pegawai-monitoring:event",
+          "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-19890624****2009:pegawai-monitoring:event",
+          "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-198208072008012014:pegawai-monitoring:event",
+          "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-197309012003122001:pegawai-monitoring:event"
+        ],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "not_required_internal_if_configured",
+        "decision": "PASS",
+        "reason": "Workflow surat masuk lulus shadow-run sample PILOT-PROD-GATE-INCOMING dengan recipient internal eligible, template aman, cap, dan idempotency preview."
+      },
+      {
+        "key": "deadline_h_minus_1_reminder",
+        "name": "Deadline H-1 reminder",
+        "candidateEventCount": 0,
+        "recipientCount": 0,
+        "potentialMessageCount": 0,
+        "maskedRecipients": [],
+        "templateId": "disposition-deadline-h-minus-1",
+        "idempotencyKeyPreview": [
+          "disposition_deadline_reminder:shadow-disposition:shadow-recipient:disposition-deadline-h-minus-1:2026-05-03"
+        ],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "required_for_scheduler_production",
+        "decision": "PASS",
+        "reason": "Template reminder production-ready. Shadow-run hari ini tidak memaksa data palsu; scheduler/reminder tetap disabled/dry_run sampai approval, kandidat nyata, dan canary terpisah PASS."
+      },
+      {
+        "key": "public_qa_runtime",
+        "name": "Public Q&A runtime",
+        "candidateEventCount": 0,
+        "recipientCount": 0,
+        "potentialMessageCount": 0,
+        "maskedRecipients": [],
+        "templateId": "intent-template-query-only",
+        "idempotencyKeyPreview": [],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "intent_approval_required",
+        "decision": "PASS",
+        "reason": "Safe mode policy passes; unapproved active intents are not production eligible."
+      },
+      {
+        "key": "broadcast_capability_gate",
+        "name": "Broadcast capability gate",
+        "candidateEventCount": 0,
+        "recipientCount": 0,
+        "potentialMessageCount": 0,
+        "maskedRecipients": [],
+        "templateId": "",
+        "idempotencyKeyPreview": [],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "required",
+        "decision": "PASS",
+        "reason": "Broadcast capability remains locked behind approval/dry-run/cap gate; no free-send production."
+      },
+      {
+        "key": "external_notification_capability_gate",
+        "name": "External party notification capability gate",
+        "candidateEventCount": 0,
+        "recipientCount": 0,
+        "potentialMessageCount": 0,
+        "maskedRecipients": [],
+        "templateId": "party-templates",
+        "idempotencyKeyPreview": [],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "required",
+        "decision": "PASS",
+        "reason": "External party capability remains locked behind approval/template/case-context gate; no free-send production."
+      },
+      {
+        "key": "mass_resend_capability_gate",
+        "name": "Mass resend capability gate",
+        "candidateEventCount": 0,
+        "recipientCount": 0,
+        "potentialMessageCount": 0,
+        "maskedRecipients": [],
+        "templateId": "",
+        "idempotencyKeyPreview": [],
+        "duplicateCount": 0,
+        "capStatus": "PASS",
+        "approvalRequirement": "required",
+        "decision": "PASS",
+        "reason": "Mass resend remains locked behind reviewed-item approval and cap gate."
+      }
+    ]
+  },
+  "canary": {
+    "overall": "PASS",
+    "sentCount": 3,
+    "failedCount": 0,
+    "duplicateCount": 0,
+    "outOfWhitelistRecipients": 0,
+    "deadLetterActiveAfter": 0,
+    "executed": true,
+    "recipients": [
+      {
+        "name": "DERRY BRIANTONO, S.H.",
+        "role": "Hakim",
+        "maskedPhone": "628****6962",
+        "deliveryStatus": "sent",
+        "queueId": "fe89d048-ad34-4e1a-8b90-175dc3844d3a"
+      },
+      {
+        "name": "ABDUL SALAM, S.HI. MH.",
+        "role": "Ketua",
+        "maskedPhone": "628****3055",
+        "deliveryStatus": "sent",
+        "queueId": "32ee0792-b0ca-4726-9be3-6f6913d94e76"
+      },
+      {
+        "name": "AKBAR ALI, S.H.I.",
+        "role": "Wakil Ketua",
+        "maskedPhone": "628****1382",
+        "deliveryStatus": "sent",
+        "queueId": "e447202f-2601-4698-8371-59b115e08594"
+      }
+    ]
+  },
+  "caps": {
+    "maxRecipientsPerEvent": 5,
+    "maxMessagesPerBatch": 10,
+    "maxMessagesPerMinute": 5,
+    "maxMessagesPerHour": 20,
+    "maxMessagesPerDay": 50,
+    "broadcastRequiresApproval": true,
+    "externalNotificationRequiresApproval": true,
+    "massResendRequiresApproval": true,
+    "outlierRequiresApproval": true
+  },
+  "runtime": {
+    "whatsappStatus": "connected",
+    "workerActive": true,
+    "queuePending": 0,
+    "queueProcessing": 0,
+    "queueFailed": 0,
+    "deadLetterActive": 0,
+    "approvalPending": 0,
+    "botEnabled": true,
+    "notificationsEnabled": true
+  },
+  "guards": {
+    "schedulerProductionActive": true,
+    "reminderProductionActive": true,
+    "broadcastEnabledWithApprovalGate": true,
+    "externalNotificationEnabledWithApprovalGate": true,
+    "massResendEnabledWithApprovalGate": true
+  },
+  "workflowProductionActive": [
+    {
+      "notificationId": "prod-internal-disposition-notification",
+      "workflowName": "Internal disposition notification",
+      "mode": "production",
+      "requiresApproval": false
+    },
+    {
+      "notificationId": "prod-internal-incoming-letter-notification",
+      "workflowName": "Internal incoming letter notification",
+      "mode": "production",
+      "requiresApproval": false
+    },
+    {
+      "notificationId": "prod-disposition-deadline-h-minus-1",
+      "workflowName": "Deadline H-1 disposition reminder",
+      "mode": "production",
+      "requiresApproval": true
+    },
+    {
+      "notificationId": "prod-broadcast-capability",
+      "workflowName": "Broadcast capability gate",
+      "mode": "approval_gated_production",
+      "requiresApproval": true
+    },
+    {
+      "notificationId": "prod-external-party-capability",
+      "workflowName": "External party notification capability gate",
+      "mode": "approval_gated_production",
+      "requiresApproval": true
+    },
+    {
+      "notificationId": "prod-mass-resend-capability",
+      "workflowName": "Mass resend capability gate",
+      "mode": "approval_gated_production",
+      "requiresApproval": true
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "portalSettingsUpdate": {
+    "status": "PASS",
+    "detail": "Portal DB aleta_bot_settings disinkronkan ke production automation."
+  },
+  "actionsTaken": [
+    {
+      "action": "production_launch_enabled",
+      "detail": "Semua gate PASS; botEnabled, notifications, registry production, scheduler/reminder H-1 production, cap, approval gate, audit, dan rollback diaktifkan. Portal settings: PASS."
+    }
+  ],
+  "rollback": [
+    "Set botEnabled=false di runtime config resmi.",
+    "Set notificationsEnabled=false di runtime config resmi.",
+    "Set dryRunEnabled=true untuk menahan direct safeSend non-queue.",
+    "Set dispositionDeadlineReminder.enabled=false dan scheduler.enabled=false.",
+    "Pause worker melalui Admin ALETA Bot bila queue failed/dead-letter muncul.",
+    "Jangan resend dead-letter tanpa review manual."
+  ],
+  "reports": [
+    "D:\\aleta\\reports\\aleta-whatsapp-production-automation-launch-latest.json",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-automation-launch-latest.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-full-production-readiness-latest.json",
+    "D:\\aleta\\reports\\aleta-whatsapp-full-production-readiness-latest.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-post-launch-latest.json",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-post-launch-latest.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-rollback-plan.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-day-one-monitoring.md",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-risk-check-latest.json",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-shadow-run-latest.json",
+    "D:\\aleta\\reports\\aleta-whatsapp-production-canary-latest.json"
+  ],
+  "reportName": "ALETA WhatsApp Full Production Readiness",
+  "fullProductionSucceeded": true
+}

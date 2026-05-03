@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-05-02T21:59:54.211Z",
+  "overall": "PASS",
+  "botEnabled": false,
+  "notificationsEnabled": false,
+  "useRegistryNotifications": true,
+  "productionRegistryCount": 6,
+  "caps": {
+    "maxRecipientsPerEvent": 5,
+    "maxMessagesPerBatch": 10,
+    "maxMessagesPerMinute": 5,
+    "maxMessagesPerHour": 20,
+    "maxMessagesPerDay": 50,
+    "broadcastRequiresApproval": true,
+    "externalNotificationRequiresApproval": true,
+    "massResendRequiresApproval": true,
+    "outlierRequiresApproval": true,
+    "updatedAt": "2026-05-02T21:59:54.203Z"
+  },
+  "actionsTaken": [
+    "Prepared production guard/caps/registry without enabling bot, notifications, scheduler, or reminder production."
+  ]
+}

@@ -330,6 +330,10 @@ export type AletaBotDeadLetter = {
   entityId: string;
   scheduledAt: string | null;
   processedAt: string | null;
+  resolvedAt?: string | null;
+  resolvedBy?: string;
+  resolvedNote?: string;
+  isResolved?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -514,6 +518,7 @@ export type AletaBotSnapshot = {
   logs: AletaBotLogEntry[];
   approvalRequests: AletaBotApprovalRequest[];
   deadLetters: AletaBotDeadLetter[];
+  resolvedDeadLetters: AletaBotDeadLetter[];
   workerState: AletaBotWorkerState | null;
   legacyMigrations: AletaBotLegacyMigration[];
   unknownQuestionReviews: AletaBotUnknownQuestionReview[];

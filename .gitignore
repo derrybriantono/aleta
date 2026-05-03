@@ -46,3 +46,6 @@ runtime-logs/
 *.jpeg
 *.webp
 *.mp4
+
+# Local pilot whitelists may contain real internal phone numbers
+config/pilot-whatsapp-small-whitelist.json

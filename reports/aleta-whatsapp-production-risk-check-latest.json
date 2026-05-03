@@ -1,0 +1,164 @@
+{
+  "generatedAt": "2026-05-03T00:07:47.610Z",
+  "overall": "PASS",
+  "launchName": "ALETA WhatsApp Production Automation Launch",
+  "productionAutomationEligible": true,
+  "riskGates": {
+    "runtime": "PASS",
+    "queue": "PASS",
+    "data": "PASS",
+    "recipientResolver": "PASS",
+    "template": "PASS",
+    "idempotency": "PASS",
+    "massSendOutlier": "PASS",
+    "schedulerReminder": "PASS",
+    "approval": "PASS",
+    "publicQa": "PASS",
+    "rollback": "PASS"
+  },
+  "caps": {
+    "maxRecipientsPerEvent": 5,
+    "maxMessagesPerBatch": 10,
+    "maxMessagesPerMinute": 5,
+    "maxMessagesPerHour": 20,
+    "maxMessagesPerDay": 50,
+    "broadcastRequiresApproval": true,
+    "externalNotificationRequiresApproval": true,
+    "massResendRequiresApproval": true
+  },
+  "checks": [
+    {
+      "gate": "runtime",
+      "key": "preflight_smoke_runtime",
+      "label": "Runtime gate dasar",
+      "status": "PASS",
+      "detail": "preflight=WARN, smoke=PASS, whatsapp=connected, worker enabled=true, activeTimer=true, paused=false.",
+      "metadata": {}
+    },
+    {
+      "gate": "queue",
+      "key": "queue_clean",
+      "label": "Queue gate",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0, activeDeadLetters=0, approvalPending=0.",
+      "metadata": {}
+    },
+    {
+      "gate": "data",
+      "key": "employee_phone_data",
+      "label": "Data nomor WhatsApp internal",
+      "status": "PASS",
+      "detail": "employees=42, eligible=42, missing=0, priorityMissing=0, invalid=0, dummy=0, duplicateGroups=0, excluded=0.",
+      "metadata": {
+        "excludedRecipients": [],
+        "duplicateNumbers": []
+      }
+    },
+    {
+      "gate": "recipientResolver",
+      "key": "recipient_resolver_proof",
+      "label": "Recipient resolver production",
+      "status": "PASS",
+      "detail": "Resolver internal disposition dan surat masuk aktif production dengan guard eligibility; high-risk workflow aktif hanya sebagai approval-gated capability.",
+      "metadata": {}
+    },
+    {
+      "gate": "template",
+      "key": "template_validity",
+      "label": "Template production",
+      "status": "PASS",
+      "detail": "unknownPlaceholderTemplates=0, dryRunWordingTemplates=0. Template production tidak boleh masih menyebut simulasi/dry-run.",
+      "metadata": {
+        "invalidTemplates": [],
+        "dryRunWordingTemplates": []
+      }
+    },
+    {
+      "gate": "idempotency",
+      "key": "legacy_send_idempotency",
+      "label": "Idempotency dan duplicate prevention",
+      "status": "PASS",
+      "detail": "legacy client.sendMessage calls=4, safeSendMessage calls=55, buildIdempotencyKey calls=2, idempotencyProof=PASS. Legacy direct send diblokir production guard dan duplicate simulation harus PASS.",
+      "metadata": {}
+    },
+    {
+      "gate": "massSendOutlier",
+      "key": "caps_enforced",
+      "label": "Mass-send/outlier cap",
+      "status": "PASS",
+      "detail": "Cap launch konservatif belum terbukti enforced penuh untuk maxRecipientsPerEvent, batch, hour/day, broadcast, external notification, dan mass resend.",
+      "metadata": {}
+    },
+    {
+      "gate": "schedulerReminder",
+      "key": "scheduler_reminder_gate",
+      "label": "Scheduler/reminder production",
+      "status": "PASS",
+      "detail": "reminder=true/production, scheduler=true/production, approved=true, legacyCronCount=24. Post-launch scheduler gate PASS bila H-1 registry/template/backlog approval aktif dan scheduler production sesuai gate.",
+      "metadata": {}
+    },
+    {
+      "gate": "approval",
+      "key": "approval_high_risk",
+      "label": "Approval gate high-risk",
+      "status": "PASS",
+      "detail": "Approval gate production untuk broadcast/external/mass resend belum terbukti enforced penuh. Manual send endpoint juga belum dinonaktifkan khusus production.",
+      "metadata": {}
+    },
+    {
+      "gate": "publicQa",
+      "key": "public_qa_safe_mode",
+      "label": "Public Q&A production safe mode",
+      "status": "PASS",
+      "detail": "activeUnapprovedIntents=0, publicQaRequireApproval=true.",
+      "metadata": {}
+    },
+    {
+      "gate": "rollback",
+      "key": "rollback_docs",
+      "label": "Rollback/safe mode",
+      "status": "PASS",
+      "detail": "SOP rollback/disconnected/dead-letter/queue failed tersedia.",
+      "metadata": {}
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "actionsTaken": [
+    {
+      "action": "risk_check_only",
+      "detail": "Tidak ada botEnabled, scheduler, reminder, send, resend, atau production activation yang diubah."
+    }
+  ],
+  "summary": {
+    "runtime": {
+      "whatsappStatus": "connected",
+      "workerEnabled": true,
+      "workerActiveTimer": true,
+      "workerPaused": false,
+      "botEnabled": true,
+      "notificationsEnabled": true
+    },
+    "queue": {
+      "pending": 0,
+      "processing": 0,
+      "failed": 0,
+      "activeDeadLetters": 0,
+      "approvalPending": 0
+    },
+    "data": {
+      "employeeRecipients": 42,
+      "dummyPhones": 0,
+      "duplicateNumbers": 0,
+      "invalidPhones": 0,
+      "excludedRecipients": 0
+    },
+    "registry": {
+      "useRegistryNotifications": true,
+      "notificationsCount": 2,
+      "productionRegistryCount": 6,
+      "queriesCount": 14,
+      "templatesCount": 18
+    }
+  }
+}

@@ -15,6 +15,14 @@ function sanitizeWhatsappRuntimeError(value) {
   const message = String(value || "");
   const lower = message.toLowerCase();
   if (!message) return null;
+  if (
+    lower.includes("browser is already running") ||
+    lower.includes("userdata") ||
+    lower.includes("userdatadir") ||
+    lower.includes("session-aleta-whatsapp-main")
+  ) {
+    return "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi.";
+  }
   if (lower.includes("could not find chrome") || lower.includes("puppeteer")) {
     return "Chrome/Puppeteer belum tersedia di server. Jalankan instalasi browser Puppeteer atau set PUPPETEER_EXECUTABLE_PATH.";
   }
@@ -136,6 +144,7 @@ router.get("/whatsapp/status", requireInternalToken, (req, res) => {
       lastConnectedAt: waState.lastReadyAt || null,
       lastDisconnectedAt: waState.lastDisconnectedAt || null,
       lastError: sanitizeWhatsappRuntimeError(waState.lastErrorMessage),
+      lastErrorType: waState.lastErrorType || "",
       sessionStartedAt: waState.sessionStartedAt || null,
       lastMessageSentAt: waState.lastMessageSentAt || null,
       sessionAgeHours: waState.sessionAgeHours,
@@ -610,9 +619,12 @@ router.post("/worker/resume", requireInternalToken, (req, res) => {
 router.get("/queue/dead-letters", requireInternalToken, async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(200, Number(req.query?.limit || 50)));
-    const items = await messageQueueService.getDeadLetters(limit);
+    const requestedStatus = String(req.query?.status || "active").toLowerCase();
+    const status = ["active", "resolved", "all"].includes(requestedStatus) ? requestedStatus : "active";
+    const items = await messageQueueService.getDeadLetters(limit, { status });
     return res.json({
       ok: true,
+      status,
       total: items.length,
       items,
     });
@@ -624,6 +636,84 @@ router.get("/queue/dead-letters", requireInternalToken, async (req, res) => {
       metadata: { errorMessage: error.message },
     });
     return res.status(500).json({ ok: false, error: "dead_letters_failed", message: error.message });
+  }
+});
+
+// ── POST /queue/dead-letters/resolve ───────────────────────────────────────
+
+router.post("/queue/dead-letters/resolve", requireInternalToken, async (req, res) => {
+  try {
+    const id = String(req.body?.id || "").trim();
+    if (!id) {
+      return res.status(400).json({ ok: false, error: "validation_error", message: "id wajib diisi." });
+    }
+
+    const item = await messageQueueService.resolveDeadLetter(id, {
+      resolvedBy: req.body?.resolvedBy,
+      note: req.body?.note,
+    });
+    if (!item) {
+      return res.status(404).json({
+        ok: false,
+        error: "not_found",
+        message: "Dead letter aktif tidak ditemukan atau sudah ditangani.",
+      });
+    }
+
+    logService.logSystemEvent({
+      eventType: "dead_letter_resolved_via_gateway",
+      severity: "info",
+      message: "Dead letter ditandai ditangani melalui gateway internal.",
+      metadata: { originalId: id, ip: req.ip },
+    });
+
+    return res.json({ ok: true, originalId: id, status: "resolved", item });
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "dead_letter_resolve_failed",
+      severity: "error",
+      message: "Endpoint resolve dead letter gagal.",
+      metadata: { errorMessage: error.message },
+    });
+    return res.status(500).json({ ok: false, error: "resolve_failed", message: "Resolve dead letter failed." });
+  }
+});
+
+router.post("/queue/dead-letters/:id/resolve", requireInternalToken, async (req, res) => {
+  try {
+    const id = String(req.params?.id || "").trim();
+    if (!id) {
+      return res.status(400).json({ ok: false, error: "validation_error", message: "id wajib diisi." });
+    }
+
+    const item = await messageQueueService.resolveDeadLetter(id, {
+      resolvedBy: req.body?.resolvedBy,
+      note: req.body?.note,
+    });
+    if (!item) {
+      return res.status(404).json({
+        ok: false,
+        error: "not_found",
+        message: "Dead letter aktif tidak ditemukan atau sudah ditangani.",
+      });
+    }
+
+    logService.logSystemEvent({
+      eventType: "dead_letter_resolved_via_gateway",
+      severity: "info",
+      message: "Dead letter ditandai ditangani melalui endpoint path-param.",
+      metadata: { originalId: id, ip: req.ip },
+    });
+
+    return res.json({ ok: true, originalId: id, status: "resolved", item });
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "dead_letter_resolve_failed",
+      severity: "error",
+      message: "Endpoint resolve dead letter path-param gagal.",
+      metadata: { errorMessage: error.message },
+    });
+    return res.status(500).json({ ok: false, error: "resolve_failed", message: "Resolve dead letter failed." });
   }
 });
 

@@ -73,6 +73,7 @@ type RuntimeDashboardSnapshot = {
       status?: string;
       lastReadyAt?: string | null;
       lastErrorMessage?: string;
+      lastErrorType?: string;
       sessionStartedAt?: string | null;
       lastMessageSentAt?: string | null;
       sessionAgeHours?: number | null;
@@ -256,6 +257,7 @@ const emptySnapshot: AletaBotSnapshot = {
   logs: [],
   approvalRequests: [],
   deadLetters: [],
+  resolvedDeadLetters: [],
   workerState: null,
   legacyMigrations: [],
   unknownQuestionReviews: [],
@@ -414,7 +416,7 @@ const MONTH_OPTIONS = [
 
 function statusVariant(status: string) {
   if (["active", "connected", "success", "dry-run"].includes(status)) return "success" as const;
-  if (["error", "failed"].includes(status)) return "danger" as const;
+  if (["error", "failed", "browser_locked"].includes(status)) return "danger" as const;
   if (["disabled", "disconnected", "waiting_qr", "warning"].includes(status)) return "warning" as const;
   return "outline" as const;
 }
@@ -432,6 +434,7 @@ function displayStatus(status: string): string {
     registry_draft: "Draft Registry",
     waiting_qr: "Scan QR Diperlukan",
     qr_needed: "Scan QR Diperlukan",
+    browser_locked: "Session WhatsApp Terkunci",
     disconnected: "Tidak Terhubung",
     connected: "Terhubung",
     initializing: "Menyiapkan Koneksi",
@@ -932,6 +935,7 @@ export function AletaBotAdminPanel() {
       "status-whatsapp": "connection",
       "pengaturan-bot": "settings",
       "public-qa": "public-qa",
+      "queue-recovery": "queue-recovery",
       "policy-skip": "dashboard",
       "reminder-deadline": "dashboard",
     };
@@ -1706,6 +1710,9 @@ export function AletaBotAdminPanel() {
   }, [snapshot.logs, logFilter]);
   const whatsappDisconnected =
     !["connected", "ready"].includes(runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus);
+  const whatsappBrowserLocked =
+    (runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus) === "browser_locked" ||
+    runtimeDashboard?.payload?.whatsapp?.lastErrorType === "browser_locked";
   const setupChecks = useMemo(() => {
     const workerReady = Boolean(runtimeDashboard?.payload?.worker?.enabled && runtimeDashboard.payload.worker.activeTimer);
     const safeWindow = runtimeDashboard?.payload?.bot?.sendingWindow;
@@ -1750,10 +1757,10 @@ export function AletaBotAdminPanel() {
       },
       {
         label: "Nomor WhatsApp pegawai memakai data Manajemen Akun",
-        ok: employeeWhatsappCoverage >= 0.8 && legacyFallbackUsedCount === 0,
+        ok: employeeWhatsappTotal > 0 && employeeWhatsappMissing === 0,
         href: "#",
-        detail: employeeWhatsappReadyCount > 0
-          ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor WhatsApp. ${employeeWhatsappMissing} belum lengkap. Fallback legacy runtime: ${legacyFallbackUsedCount} kali.`
+        detail: employeeWhatsappTotal > 0
+          ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor WhatsApp. ${employeeWhatsappMissing} belum lengkap.`
           : "Belum ada nomor pegawai dari database. Runtime masih dapat memakai fallback legacy.",
       },
       {
@@ -1769,7 +1776,7 @@ export function AletaBotAdminPanel() {
         detail: `${snapshot.deadLetters.length} pesan gagal permanen`,
       },
     ];
-  }, [employeeWhatsappCoverage, employeeWhatsappMissing, employeeWhatsappReadyCount, employeeWhatsappTotal, legacyFallbackUsedCount, runtimeDashboard, snapshot, whatsappDisconnected]);
+  }, [employeeWhatsappMissing, employeeWhatsappReadyCount, employeeWhatsappTotal, runtimeDashboard, snapshot, whatsappDisconnected]);
 
   const pilotReadinessChecks = useMemo(() => {
     const safeWindow = runtimeDashboard?.payload?.bot?.sendingWindow;
@@ -1865,7 +1872,13 @@ export function AletaBotAdminPanel() {
 
   const operationalAlerts = useMemo(() => {
     const alerts: Array<{ title: string; detail: string; tone: "warning" | "danger" | "muted" }> = [];
-    if (whatsappDisconnected) {
+    if (whatsappBrowserLocked) {
+      alerts.push({
+        title: "Session WhatsApp sedang dipakai proses lain",
+        detail: "Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu klik Refresh Status. Jangan hapus session WhatsApp kecuali benar-benar diperlukan.",
+        tone: "danger",
+      });
+    } else if (whatsappDisconnected) {
       alerts.push({
         title: "WhatsApp Gateway belum terhubung",
         detail: "Pesan akan menunggu di antrean sampai gateway aktif kembali.",
@@ -1898,7 +1911,7 @@ export function AletaBotAdminPanel() {
         title: "Nomor pegawai belum lengkap",
         detail: legacyFallbackUsedCount > 0
           ? `Runtime memakai fallback legacy ${legacyFallbackUsedCount} kali. Lengkapi nomor di Manajemen Akun.`
-          : "Sebagian mapping WhatsApp masih bisa jatuh ke fallback legacy. Lengkapi nomor di Manajemen Akun.",
+          : "Sebagian mapping WhatsApp masih bisa jatuh ke fallback legacy. Lengkapi nomor WhatsApp pegawai prioritas sebelum pilot WhatsApp.",
         tone: "warning",
       });
     }
@@ -1926,7 +1939,7 @@ export function AletaBotAdminPanel() {
       });
     }
     return alerts.slice(0, 6);
-  }, [employeeWhatsappCoverage, legacyFallbackUsedCount, policySkipToday, publicQaNeedsReviewCount, runtimeDashboard, snapshot, whatsappDisconnected]);
+  }, [employeeWhatsappCoverage, legacyFallbackUsedCount, policySkipToday, publicQaNeedsReviewCount, runtimeDashboard, snapshot, whatsappBrowserLocked, whatsappDisconnected]);
 
   return (
     <div className="space-y-6">
@@ -1966,7 +1979,17 @@ export function AletaBotAdminPanel() {
         </div>
       ) : null}
 
-      {whatsappDisconnected ? (
+      {whatsappBrowserLocked ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="space-y-1 p-4 text-sm text-destructive">
+            <p className="font-semibold">Session WhatsApp sedang dipakai proses browser lain.</p>
+            <p>
+              Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu klik Refresh Status.
+              Jangan hapus session WhatsApp kecuali benar-benar diperlukan.
+            </p>
+          </CardContent>
+        </Card>
+      ) : whatsappDisconnected ? (
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="space-y-1 p-4 text-sm text-amber-900 dark:text-amber-200">
             <p className="font-semibold">WhatsApp Bot belum terhubung.</p>
@@ -2630,6 +2653,11 @@ export function AletaBotAdminPanel() {
                       <p className="font-medium">Scan QR Diperlukan</p>
                       <p>Buka <strong>WhatsApp</strong> di HP kantor → <strong>Perangkat Tertaut</strong> → <strong>Hubungkan Perangkat</strong> → Scan QR di bawah.</p>
                     </div>
+                  ) : snapshot.whatsapp.runtimeStatus === "browser_locked" ? (
+                    <div className="space-y-1 text-destructive">
+                      <p className="font-medium">Session WhatsApp sedang dipakai proses browser lain.</p>
+                      <p>Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu klik Refresh Status. Jangan hapus folder session.</p>
+                    </div>
                   ) : snapshot.whatsapp.runtimeStatus === "initializing" ? (
                     <span className="text-muted-foreground">Menyiapkan Koneksi — menunggu QR dari ALETA Bot Gateway...</span>
                   ) : (
@@ -2684,6 +2712,8 @@ export function AletaBotAdminPanel() {
                   <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
                     {snapshot.whatsapp.runtimeStatus === "connected"
                       ? "WhatsApp sudah connected. QR tidak diperlukan."
+                      : snapshot.whatsapp.runtimeStatus === "browser_locked"
+                        ? "Session WhatsApp terkunci oleh proses browser lain. Tutup proses lama atau restart backend, lalu refresh status."
                       : snapshot.whatsapp.runtimeStatus === "initializing"
                         ? "Menunggu QR dari ALETA Bot Gateway..."
                         : "QR belum tersedia. Klik Connect WhatsApp Gateway, lalu tunggu beberapa detik."}
@@ -3301,7 +3331,7 @@ export function AletaBotAdminPanel() {
         <TabsContent value="queue-recovery">
           <div className="space-y-4">
             <WorkerControlCard workerState={snapshot.workerState} isSaving={isSaving} onPause={(reason) => void runAction("pause-worker", { reason })} onResume={() => void runAction("resume-worker")} />
-            <DeadLetterCard deadLetters={snapshot.deadLetters} isSaving={isSaving} onResend={async (id) => {
+            <DeadLetterCard deadLetters={snapshot.deadLetters} resolvedDeadLetters={snapshot.resolvedDeadLetters ?? []} isSaving={isSaving} onResend={async (id) => {
               setIsSaving(true);
               setNotice(null);
               try {
@@ -3313,6 +3343,21 @@ export function AletaBotAdminPanel() {
                 setNotice(`Dead letter ${id} berhasil dikirim ulang.`);
               } catch (error) {
                 setNotice(error instanceof Error ? error.message : "Resend dead letter gagal.");
+              } finally {
+                setIsSaving(false);
+              }
+            }} onResolve={async (id, note) => {
+              setIsSaving(true);
+              setNotice(null);
+              try {
+                await requestBot<{ originalId: string; status: string }>("/api/admin/aleta-bot/queue-recovery", {
+                  method: "POST",
+                  body: JSON.stringify({ id, action: "resolve", note }),
+                });
+                await loadSnapshot();
+                setNotice(`Dead letter ${id} ditandai ditangani tanpa resend.`);
+              } catch (error) {
+                setNotice(error instanceof Error ? error.message : "Tandai dead letter ditangani gagal.");
               } finally {
                 setIsSaving(false);
               }
@@ -4216,7 +4261,18 @@ function WorkerControlCard({
       <CardContent className="space-y-4">
         {workerState ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <InfoCard title="Status" value={workerState.paused ? "paused" : workerState.running ? "running" : "stopped"} hint={workerState.pauseReason || (workerState.running ? "Worker aktif memproses queue." : "Worker tidak berjalan.")} />
+            <InfoCard
+              title="Status"
+              value={workerState.paused ? "paused" : workerState.enabled && workerState.activeTimer ? "aktif" : "stopped"}
+              hint={
+                workerState.pauseReason ||
+                (workerState.enabled && workerState.activeTimer
+                  ? workerState.running
+                    ? "Worker sedang memproses batch."
+                    : "Worker aktif dan menunggu jadwal batch berikutnya."
+                  : "Timer worker tidak aktif.")
+              }
+            />
             <InfoCard title="Heartbeat Terakhir" value={workerState.lastHeartbeatAt ? formatDateTime(workerState.lastHeartbeatAt) : "Belum ada"} hint={`Batch terakhir: ${workerState.lastBatchProcessed} pesan.`} />
             <InfoCard title="Interval" value={`${workerState.intervalMs}ms`} hint={`Batch size: ${workerState.batchSize}`} />
             <InfoCard title="Error Terakhir" value={workerState.lastError || "Tidak ada"} hint={workerState.pausedAt ? `Dijeda: ${formatDateTime(workerState.pausedAt)}` : "Tidak sedang dijeda."} />
@@ -4258,14 +4314,20 @@ function maskNumber(n: string) {
 
 function DeadLetterCard({
   deadLetters,
+  resolvedDeadLetters,
   isSaving,
   onResend,
+  onResolve,
 }: {
   deadLetters: AletaBotDeadLetter[];
+  resolvedDeadLetters: AletaBotDeadLetter[];
   isSaving: boolean;
   onResend: (id: string) => Promise<void>;
+  onResolve: (id: string, note: string) => Promise<void>;
 }) {
   const [pendingResend, setPendingResend] = React.useState<AletaBotDeadLetter | null>(null);
+  const [pendingResolve, setPendingResolve] = React.useState<AletaBotDeadLetter | null>(null);
+  const [resolveNote, setResolveNote] = React.useState("");
 
   const handleConfirmResend = async () => {
     if (!pendingResend) return;
@@ -4273,15 +4335,37 @@ function DeadLetterCard({
     setPendingResend(null);
   };
 
+  const openResolveConfirm = (deadLetter: AletaBotDeadLetter) => {
+    const isSame = pendingResolve?.id === deadLetter.id;
+    setPendingResend(null);
+    setPendingResolve(isSame ? null : deadLetter);
+    setResolveNote(isSame ? "" : getDefaultDeadLetterResolveNote(deadLetter));
+  };
+
+  const handleConfirmResolve = async () => {
+    if (!pendingResolve) return;
+    await onResolve(pendingResolve.id, resolveNote.trim());
+    setPendingResolve(null);
+    setResolveNote("");
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Dead Letters ({deadLetters.length})</CardTitle>
-        <CardDescription>Pesan gagal yang sudah melewati batas retry. Klik Kirim Ulang untuk mengantrikan kembali dengan ID baru.</CardDescription>
+        <CardTitle>Antrian & Pesan Gagal</CardTitle>
+        <CardDescription>Pesan gagal aktif bisa dikirim ulang jika aman, atau ditandai ditangani tanpa mengirim WhatsApp.</CardDescription>
       </CardHeader>
       <CardContent className="overflow-x-auto">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Badge variant={deadLetters.length > 0 ? "warning" : "success"}>Pesan gagal aktif: {deadLetters.length}</Badge>
+          <Badge variant="outline">Sudah ditangani: {resolvedDeadLetters.length}</Badge>
+        </div>
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-foreground">Pesan gagal aktif</p>
+          <p className="text-xs text-muted-foreground">Item di bagian ini masih dihitung sebagai dead-letter aktif sampai dikirim ulang atau ditandai ditangani.</p>
+        </div>
         {deadLetters.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Tidak ada dead letter. Semua pesan berhasil terproses.</div>
+          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Tidak ada pesan gagal aktif. Riwayat yang sudah ditangani tetap tersimpan di bawah.</div>
         ) : (
           <>
             <table className="w-full min-w-[900px] text-left text-sm">
@@ -4298,7 +4382,7 @@ function DeadLetterCard({
               </thead>
               <tbody>
                 {deadLetters.map((dl) => (
-                  <tr key={dl.id} className={cn("border-b border-border/70 align-top", pendingResend?.id === dl.id && "bg-amber-500/5")}>
+                  <tr key={dl.id} className={cn("border-b border-border/70 align-top", (pendingResend?.id === dl.id || pendingResolve?.id === dl.id) && "bg-amber-500/5")}>
                     <td className="py-4 pr-4">
                       <p className="font-medium text-foreground">{dl.recipientName || maskNumber(dl.recipientNumber)}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{maskNumber(dl.recipientNumber)}</p>
@@ -4313,19 +4397,63 @@ function DeadLetterCard({
                     </td>
                     <td className="py-4 pr-4 text-xs text-muted-foreground">{formatDateTime(dl.createdAt)}</td>
                     <td className="py-4 pr-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={isSaving}
-                        onClick={() => setPendingResend(pendingResend?.id === dl.id ? null : dl)}
-                      >
-                        {pendingResend?.id === dl.id ? "Batal" : "Kirim Ulang"}
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isSaving || isValidationOnlyDeadLetter(dl)}
+                          title={isValidationOnlyDeadLetter(dl) ? "Artefak validasi tidak boleh dikirim ulang." : undefined}
+                          onClick={() => {
+                            setPendingResolve(null);
+                            setResolveNote("");
+                            setPendingResend(pendingResend?.id === dl.id ? null : dl);
+                          }}
+                        >
+                          {isValidationOnlyDeadLetter(dl) ? "Jangan Kirim" : pendingResend?.id === dl.id ? "Batal" : "Kirim Ulang"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={isSaving}
+                          onClick={() => openResolveConfirm(dl)}
+                        >
+                          {pendingResolve?.id === dl.id ? "Batal" : "Tandai Ditangani"}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            {pendingResolve ? (
+              <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Tandai pesan gagal sebagai ditangani?</p>
+                <p className="text-xs text-muted-foreground">Aksi ini tidak akan mengirim ulang WhatsApp. Pesan tetap tersimpan sebagai riwayat, tetapi tidak lagi dihitung sebagai pesan gagal aktif.</p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><span className="font-medium">Penerima:</span> {maskNumber(pendingResolve.recipientNumber)} ({pendingResolve.recipientName || "-"})</p>
+                  <p><span className="font-medium">Kategori:</span> {pendingResolve.category} / {pendingResolve.notificationKey || "-"}</p>
+                  <p><span className="font-medium">Pratinjau:</span> {pendingResolve.messagePreview?.slice(0, 120)}{pendingResolve.messagePreview?.length > 120 ? "..." : ""}</p>
+                </div>
+                <label className="block space-y-2">
+                  <span className="text-sm font-semibold text-foreground">Catatan penanganan</span>
+                  <Textarea
+                    value={resolveNote}
+                    onChange={(event) => setResolveNote(event.target.value)}
+                    rows={3}
+                    placeholder="Alasan pesan ditandai ditangani..."
+                  />
+                </label>
+                <div className="flex gap-2">
+                  <Button size="sm" disabled={isSaving} onClick={() => void handleConfirmResolve()}>
+                    Tandai Ditangani
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={isSaving} onClick={() => { setPendingResolve(null); setResolveNote(""); }}>
+                    Batal
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             {pendingResend ? (
               <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
@@ -4349,9 +4477,66 @@ function DeadLetterCard({
             ) : null}
           </>
         )}
+
+        <div className="mt-6 border-t border-border pt-4">
+          <div className="mb-3">
+            <p className="text-sm font-semibold text-foreground">Pesan gagal sudah ditangani</p>
+            <p className="text-xs text-muted-foreground">Riwayat ini tidak dihitung sebagai pesan gagal aktif dan tidak memicu readiness blocker.</p>
+          </div>
+          {resolvedDeadLetters.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">Belum ada pesan gagal yang ditandai ditangani.</div>
+          ) : (
+            <table className="w-full min-w-[820px] text-left text-sm">
+              <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                <tr>
+                  <th className="py-3 pr-4">Penerima</th>
+                  <th className="py-3 pr-4">Pratinjau Pesan</th>
+                  <th className="py-3 pr-4">Kategori</th>
+                  <th className="py-3 pr-4">Ditangani</th>
+                  <th className="py-3 pr-4">Catatan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resolvedDeadLetters.map((dl) => (
+                  <tr key={dl.id} className="border-b border-border/70 align-top">
+                    <td className="py-4 pr-4">
+                      <p className="font-medium text-foreground">{dl.recipientName || maskNumber(dl.recipientNumber)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{maskNumber(dl.recipientNumber)}</p>
+                    </td>
+                    <td className="py-4 pr-4 max-w-[240px]">
+                      <p className="text-muted-foreground line-clamp-2 text-xs">{dl.messagePreview}</p>
+                    </td>
+                    <td className="py-4 pr-4"><Badge variant="outline">{dl.category}</Badge></td>
+                    <td className="py-4 pr-4 text-xs text-muted-foreground">
+                      <p>{formatDateTime(dl.resolvedAt ?? dl.updatedAt)}</p>
+                      {dl.resolvedBy ? <p className="mt-1">oleh {dl.resolvedBy}</p> : null}
+                    </td>
+                    <td className="py-4 pr-4 max-w-[240px]">
+                      <p className="text-xs text-muted-foreground line-clamp-2">{dl.resolvedNote || "-"}</p>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
+}
+
+const PHASE_4_DEAD_LETTER_RESOLVE_NOTE = "Artefak validasi Phase 4. Simulated failure only. Do not send.";
+
+function getDefaultDeadLetterResolveNote(deadLetter: AletaBotDeadLetter) {
+  const text = `${deadLetter.messagePreview} ${deadLetter.lastError} ${deadLetter.notificationKey} ${deadLetter.sourceFeature}`.toLowerCase();
+  if (text.includes("phase 4") || text.includes("do not send") || text.includes("simulated failure")) {
+    return PHASE_4_DEAD_LETTER_RESOLVE_NOTE;
+  }
+  return "";
+}
+
+function isValidationOnlyDeadLetter(deadLetter: AletaBotDeadLetter) {
+  return getDefaultDeadLetterResolveNote(deadLetter) === PHASE_4_DEAD_LETTER_RESOLVE_NOTE;
 }
 
 function ApprovalRequestsCard({

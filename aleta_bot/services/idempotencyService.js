@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const productionGuardService = require("./productionGuardService");
 
 function stablePart(value) {
   return String(value || "")
@@ -47,4 +48,5 @@ function buildManualIdempotencyKey({ recipientNumber, message, requestId } = {})
 module.exports = {
   buildIdempotencyKey,
   buildManualIdempotencyKey,
+  buildNotificationIdempotencyKey: productionGuardService.buildNotificationIdempotencyKey,
 };

@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-05-02T21:41:45.854Z",
+  "overall": "PASS",
+  "environment": {
+    "host": "PC-1157C82",
+    "platform": "win32 10.0.19045",
+    "arch": "x64",
+    "isOfficeServerVerified": false,
+    "note": "Jalankan script ini langsung di server kantor untuk verifikasi deployment aktual."
+  },
+  "checks": [
+    {
+      "key": "node",
+      "label": "Node.js",
+      "status": "PASS",
+      "detail": "Node tersedia v20.15.1.",
+      "metadata": {}
+    },
+    {
+      "key": "npm",
+      "label": "npm",
+      "status": "PASS",
+      "detail": "npm tersedia 10.7.0.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_env",
+      "label": "Portal env files",
+      "status": "PASS",
+      "detail": "Portal env configured=true.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_env",
+      "label": "ALETA Bot env file",
+      "status": "PASS",
+      "detail": "Bot env configured=true.",
+      "metadata": {}
+    },
+    {
+      "key": "internal_token",
+      "label": "Internal token configured",
+      "status": "PASS",
+      "detail": "Internal token configured=true.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_config",
+      "label": "Runtime config",
+      "status": "PASS",
+      "detail": "aleta-runtime.json harus tersedia.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_auth_folder",
+      "label": "WhatsApp auth folder",
+      "status": "PASS",
+      "detail": "Folder auth WhatsApp dicek tanpa membaca isi session.",
+      "metadata": {}
+    },
+    {
+      "key": "reports_logs",
+      "label": "Reports/logs folders",
+      "status": "PASS",
+      "detail": "Folder reports dan runtime-logs tersedia.",
+      "metadata": {}
+    },
+    {
+      "key": "port_3000",
+      "label": "Port 3000",
+      "status": "PASS",
+      "detail": "Port 3000 sedang listen.",
+      "metadata": {}
+    },
+    {
+      "key": "port_3003",
+      "label": "Port 3003",
+      "status": "PASS",
+      "detail": "Port 3003 sedang listen.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_reachable",
+      "label": "Portal reachable",
+      "status": "PASS",
+      "detail": "Portal HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "bot_reachable",
+      "label": "ALETA Bot reachable",
+      "status": "PASS",
+      "detail": "ALETA Bot status HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_diagnostics",
+      "label": "WhatsApp diagnostics",
+      "status": "PASS",
+      "detail": "status=disconnected, initializing=false, hasClient=true, lastErrorType=none.",
+      "metadata": {}
+    },
+    {
+      "key": "single_bot_instance",
+      "label": "Single ALETA Bot instance",
+      "status": "PASS",
+      "detail": "aleta_bot app.js process count=1.",
+      "metadata": {}
+    },
+    {
+      "key": "disk_space",
+      "label": "Disk space",
+      "status": "PASS",
+      "detail": "Drive D free space 341.92 GB.",
+      "metadata": {}
+    },
+    {
+      "key": "database_reachable",
+      "label": "Database reachable",
+      "status": "PASS",
+      "detail": "Database portal reachable via DATABASE_URL configured.",
+      "metadata": {}
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "actionsTaken": [
+    {
+      "action": "readiness_check_only",
+      "detail": "Tidak ada restart, WhatsApp connect, QR scan, logout, reset session, send, resend, atau production activation."
+    }
+  ],
+  "summary": {
+    "portal": {
+      "reachable": true,
+      "portListening": true
+    },
+    "aletaBot": {
+      "reachable": true,
+      "portListening": true,
+      "processCount": 1
+    },
+    "whatsapp": {
+      "status": "disconnected",
+      "lastErrorType": ""
+    },
+    "env": {
+      "portalEnvConfigured": true,
+      "botEnvConfigured": true,
+      "internalTokenConfigured": true,
+      "databaseUrlConfigured": true
+    },
+    "ports": {
+      "portal3000Connectable": true,
+      "bot3003Connectable": true
+    }
+  }
+}

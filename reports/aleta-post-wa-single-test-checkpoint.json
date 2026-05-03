@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-05-02T10:21:47.483Z",
+  "overall": "PASS",
+  "safeForSmallWhatsappPilot": true,
+  "safeForProduction": false,
+  "sourceReports": {
+    "preflight": "reports/aleta-preflight-latest.json",
+    "smokeDryRun": "reports/aleta-smoke-dry-run-latest.json",
+    "whatsappSingleTest": "reports/aleta-whatsapp-bot-enabled-test-latest.json"
+  },
+  "whatsapp": {
+    "status": "connected",
+    "lastSingleTestRecipient": {
+      "name": "DERRY BRIANTONO",
+      "role": "Hakim",
+      "maskedPhone": "628****6962"
+    },
+    "lastSingleTestDelivery": {
+      "queueId": "6934307c-6c55-4157-aada-e67370fa3a4a",
+      "status": "sent",
+      "recipient": "628****6962",
+      "source": "aleta_bot_queue_public",
+      "waitedMs": 22316
+    }
+  },
+  "worker": {
+    "enabled": true,
+    "activeTimer": true,
+    "paused": false,
+    "running": false
+  },
+  "queue": {
+    "pending": 0,
+    "processing": 0,
+    "failed": 0,
+    "sent": 2,
+    "skipped": 1,
+    "dryRun": 6,
+    "deadLetter": 0,
+    "resolved": 1,
+    "activeDeadLetters": 0
+  },
+  "approvals": {
+    "pending": 0
+  },
+  "botEnabled": {
+    "beforeSingleTest": false,
+    "duringSingleTest": true,
+    "final": false
+  },
+  "reminderScheduler": {
+    "mode": "dry_run",
+    "enabled": false,
+    "schedulerEnabled": false,
+    "schedulerMode": "dry_run",
+    "killSwitch": false,
+    "approved": false
+  },
+  "aiBridge": {
+    "status": "synced",
+    "provider": "gemini"
+  },
+  "validation": [
+    {
+      "command": "node scripts/aleta-preflight.mjs",
+      "status": "PASS",
+      "detail": "overall=WARN"
+    },
+    {
+      "command": "node scripts/aleta-smoke-dry-run.mjs",
+      "status": "PASS",
+      "detail": "overall=PASS"
+    },
+    {
+      "command": "node --check app.js",
+      "cwd": "D:/aleta/aleta_bot",
+      "status": "PASS"
+    },
+    {
+      "command": "node --check whatsapp.js",
+      "cwd": "D:/aleta/aleta_bot",
+      "status": "PASS"
+    },
+    {
+      "command": "node --check services/whatsappStatusService.js",
+      "cwd": "D:/aleta/aleta_bot",
+      "status": "PASS"
+    },
+    {
+      "command": "node --check routes/internalGatewayRoutes.js",
+      "cwd": "D:/aleta/aleta_bot",
+      "status": "PASS"
+    },
+    {
+      "command": "npx tsc --noEmit --pretty false",
+      "cwd": "D:/aleta/manajemen_surat",
+      "status": "PASS"
+    },
+    {
+      "command": "npm run lint",
+      "cwd": "D:/aleta/manajemen_surat",
+      "status": "PASS"
+    },
+    {
+      "command": "npm run build",
+      "cwd": "D:/aleta/manajemen_surat",
+      "status": "PASS"
+    },
+    {
+      "command": "npm test",
+      "cwd": "D:/aleta/manajemen_surat",
+      "status": "PASS",
+      "detail": "38/38 tests"
+    }
+  ],
+  "warnings": [
+    {
+      "source": "preflight",
+      "key": "portal_whatsapp_status_proxy",
+      "label": "Portal proxy status WhatsApp",
+      "detail": "Portal status tidak readable tanpa sesi atau gagal: HTTP 401."
+    },
+    {
+      "key": "historical_skipped_queue_item",
+      "detail": "Ada queue item historis skipped dari uji saat botEnabled=false; tidak aktif dan bukan dead-letter."
+    }
+  ],
+  "blockers": [],
+  "risks": [
+    "Production scheduler/reminder tetap disabled/dry_run dan belum boleh production tanpa approval eksplisit.",
+    "Pilot WhatsApp kecil berikutnya harus tetap whitelist, idempotent, dan dipantau queue/dead-letter."
+  ]
+}

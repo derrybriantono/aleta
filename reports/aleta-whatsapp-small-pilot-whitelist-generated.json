@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-05-02T10:56:10.840Z",
+  "candidateCount": 42,
+  "validCandidateCount": 38,
+  "selectedCount": 3,
+  "selectedRecipients": [
+    {
+      "name": "DERRY BRIANTONO, S.H.",
+      "role": "Hakim",
+      "maskedPhone": "628****6962",
+      "selectionReason": "Penerima wajib sesuai persetujuan eksplisit dan ditemukan di database.",
+      "priority": 4
+    },
+    {
+      "name": "ABDUL SALAM, S.HI. MH.",
+      "role": "Ketua",
+      "maskedPhone": "628****3055",
+      "selectionReason": "Dipilih otomatis berdasarkan prioritas role 3 dan urutan nama/id deterministik.",
+      "priority": 3
+    },
+    {
+      "name": "AKBAR ALI, S.H.I.",
+      "role": "Wakil Ketua",
+      "maskedPhone": "628****1382",
+      "selectionReason": "Dipilih otomatis berdasarkan prioritas role 3 dan urutan nama/id deterministik.",
+      "priority": 3
+    }
+  ],
+  "excludedSummary": {
+    "inactive_blocked_or_deleted": 22,
+    "dummy_number": 2,
+    "duplicate_number_collapsed": 2
+  }
+}

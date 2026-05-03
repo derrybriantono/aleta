@@ -45,6 +45,9 @@ async function initializeSchema() {
         scheduled_at DATETIME NOT NULL,
         processed_at DATETIME NULL,
         last_error TEXT,
+        resolved_at DATETIME NULL,
+        resolved_by VARCHAR(191) NOT NULL DEFAULT '',
+        resolved_note TEXT,
         metadata_json MEDIUMTEXT,
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
@@ -225,6 +228,9 @@ async function initializeSchema() {
     await addColumnIfMissing("aleta_bot_message_queue", "source_feature", "VARCHAR(191) NOT NULL DEFAULT ''");
     await addColumnIfMissing("aleta_bot_message_queue", "entity_type", "VARCHAR(191) NOT NULL DEFAULT ''");
     await addColumnIfMissing("aleta_bot_message_queue", "entity_id", "VARCHAR(191) NOT NULL DEFAULT ''");
+    await addColumnIfMissing("aleta_bot_message_queue", "resolved_at", "DATETIME NULL");
+    await addColumnIfMissing("aleta_bot_message_queue", "resolved_by", "VARCHAR(191) NOT NULL DEFAULT ''");
+    await addColumnIfMissing("aleta_bot_message_queue", "resolved_note", "TEXT");
 
     await addColumnIfMissing("aleta_bot_public_qa_intents", "legacy_command", "VARCHAR(191) NOT NULL DEFAULT ''");
     await addColumnIfMissing("aleta_bot_public_qa_intents", "parameterized_legacy_command", "VARCHAR(191) NOT NULL DEFAULT ''");

@@ -1,0 +1,193 @@
+{
+  "generatedAt": "2026-05-02T22:03:45.704Z",
+  "overall": "WARN",
+  "total": 6,
+  "productionEligibleCount": 6,
+  "enabledCount": 0,
+  "highRiskLockedCount": 3,
+  "items": [
+    {
+      "notificationId": "prod-internal-disposition-notification",
+      "workflowName": "Internal disposition notification",
+      "productionEligible": true,
+      "enabled": false,
+      "mode": "production_ready_disabled",
+      "templateId": "pegawai-monitoring",
+      "resolverId": "internal_employee_disposition_assignee",
+      "queryId": "portal-disposition-deadline-h-minus-1",
+      "requiresApproval": false,
+      "maxRecipientsPerEvent": 5,
+      "idempotencyStrategy": "workflow_entity_recipient_template_trigger",
+      "allowedRecipientScope": "internal_employee",
+      "auditEventName": "whatsapp_internal_disposition_notification",
+      "riskLevel": "low",
+      "productionApprovedAt": null,
+      "productionApprovedBy": null,
+      "notes": "Ready for canary only; not active until production launch.",
+      "templateValidation": {
+        "valid": true,
+        "errors": [],
+        "placeholders": [
+          "nama_pegawai",
+          "judul_notifikasi",
+          "ringkasan"
+        ],
+        "unknown": [],
+        "missing": []
+      },
+      "decision": "PASS",
+      "productionActivationState": "locked_or_disabled"
+    },
+    {
+      "notificationId": "prod-internal-incoming-letter-notification",
+      "workflowName": "Internal incoming letter notification",
+      "productionEligible": true,
+      "enabled": false,
+      "mode": "production_ready_disabled",
+      "templateId": "pegawai-monitoring",
+      "resolverId": "internal_incoming_letter_configured_recipients",
+      "queryId": "portal-incoming-letter-internal-event",
+      "requiresApproval": false,
+      "maxRecipientsPerEvent": 5,
+      "idempotencyStrategy": "workflow_entity_recipient_template_trigger",
+      "allowedRecipientScope": "internal_employee",
+      "auditEventName": "whatsapp_internal_incoming_letter_notification",
+      "riskLevel": "medium",
+      "productionApprovedAt": null,
+      "productionApprovedBy": null,
+      "notes": "Ready for canary only; not active until production launch.",
+      "templateValidation": {
+        "valid": true,
+        "errors": [],
+        "placeholders": [
+          "nama_pegawai",
+          "judul_notifikasi",
+          "ringkasan"
+        ],
+        "unknown": [],
+        "missing": []
+      },
+      "decision": "PASS",
+      "productionActivationState": "locked_or_disabled"
+    },
+    {
+      "notificationId": "prod-disposition-deadline-h-minus-1",
+      "workflowName": "Deadline H-1 disposition reminder",
+      "productionEligible": true,
+      "enabled": false,
+      "mode": "production_ready_disabled",
+      "templateId": "disposition-deadline-h-minus-1",
+      "resolverId": "portal_disposition_deadline_h_minus_1",
+      "queryId": "portal-disposition-deadline-h-minus-1",
+      "requiresApproval": true,
+      "maxRecipientsPerEvent": 5,
+      "idempotencyStrategy": "disposition_recipient_deadline_date_template",
+      "allowedRecipientScope": "internal_employee",
+      "auditEventName": "whatsapp_disposition_deadline_h_minus_1",
+      "riskLevel": "medium",
+      "productionApprovedAt": null,
+      "productionApprovedBy": null,
+      "notes": "Requires approval/canary before scheduler production.",
+      "templateValidation": {
+        "valid": true,
+        "errors": [],
+        "placeholders": [
+          "nama_pegawai",
+          "perihal",
+          "deadline"
+        ],
+        "unknown": [],
+        "missing": []
+      },
+      "decision": "PASS",
+      "productionActivationState": "locked_or_disabled"
+    },
+    {
+      "notificationId": "prod-broadcast-capability",
+      "workflowName": "Broadcast capability gate",
+      "productionEligible": true,
+      "enabled": false,
+      "mode": "approval_gated_capability",
+      "templateId": "",
+      "resolverId": "approved_broadcast_preview_only",
+      "queryId": "",
+      "requiresApproval": true,
+      "maxRecipientsPerEvent": 5,
+      "idempotencyStrategy": "approval_scope_recipient_template",
+      "allowedRecipientScope": "internal_employee_approved_only",
+      "auditEventName": "whatsapp_broadcast_approval_gated",
+      "riskLevel": "high",
+      "productionApprovedAt": null,
+      "productionApprovedBy": null,
+      "notes": "Capability available only behind approval/dry-run preview/caps; no free-send.",
+      "templateValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "decision": "PASS",
+      "productionActivationState": "locked_or_disabled"
+    },
+    {
+      "notificationId": "prod-external-party-capability",
+      "workflowName": "External party notification capability gate",
+      "productionEligible": true,
+      "enabled": false,
+      "mode": "approval_gated_capability",
+      "templateId": "pihak-layanan",
+      "resolverId": "approved_external_case_context_only",
+      "queryId": "",
+      "requiresApproval": true,
+      "maxRecipientsPerEvent": 5,
+      "idempotencyStrategy": "approval_case_party_template",
+      "allowedRecipientScope": "external_party_approved_only",
+      "auditEventName": "whatsapp_external_party_approval_gated",
+      "riskLevel": "high",
+      "productionApprovedAt": null,
+      "productionApprovedBy": null,
+      "notes": "Capability available only behind approval/template/case context; no free-send.",
+      "templateValidation": {
+        "valid": false,
+        "errors": [
+          "missing_sample_placeholder"
+        ],
+        "placeholders": [
+          "nama_pihak",
+          "nomor_perkara",
+          "ringkasan"
+        ],
+        "unknown": [],
+        "missing": [
+          "nama_pihak",
+          "nomor_perkara"
+        ]
+      },
+      "decision": "WARN",
+      "productionActivationState": "locked_or_disabled"
+    },
+    {
+      "notificationId": "prod-mass-resend-capability",
+      "workflowName": "Mass resend capability gate",
+      "productionEligible": true,
+      "enabled": false,
+      "mode": "approval_gated_capability",
+      "templateId": "",
+      "resolverId": "reviewed_resend_items_only",
+      "queryId": "",
+      "requiresApproval": true,
+      "maxRecipientsPerEvent": 5,
+      "idempotencyStrategy": "approval_resend_original_queue_recipient",
+      "allowedRecipientScope": "reviewed_queue_items_only",
+      "auditEventName": "whatsapp_mass_resend_approval_gated",
+      "riskLevel": "high",
+      "productionApprovedAt": null,
+      "productionApprovedBy": null,
+      "notes": "Capability available only for reviewed items with approval/caps; no free resend.",
+      "templateValidation": {
+        "valid": true,
+        "errors": []
+      },
+      "decision": "PASS",
+      "productionActivationState": "locked_or_disabled"
+    }
+  ]
+}

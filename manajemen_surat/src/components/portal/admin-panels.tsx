@@ -339,7 +339,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                   <Badge variant="warning">Filter: Belum punya nomor WhatsApp</Badge>
                   <p className="mt-2 font-semibold">{filteredUsers.length} pegawai aktif belum memiliki nomor WhatsApp.</p>
                   <p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">
-                    Lengkapi nomor WhatsApp agar ALETA Bot tidak bergantung pada mapping lama.
+                    Lengkapi nomor WhatsApp pegawai prioritas sebelum pilot WhatsApp agar ALETA Bot tidak bergantung pada mapping lama.
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => { window.location.href = "/admin/mapping-user-jabatan"; }}>

@@ -1,0 +1,175 @@
+{
+  "generatedAt": "2026-05-03T00:07:47.629Z",
+  "overall": "PASS",
+  "workflows": [
+    {
+      "key": "internal_disposition_notification",
+      "name": "Internal disposition notification",
+      "candidateEventCount": 1,
+      "recipientCount": 3,
+      "potentialMessageCount": 3,
+      "maskedRecipients": [
+        {
+          "name": "ABDUL SALAM, S.HI. MH.",
+          "role": "ketua",
+          "phone": "628****3055"
+        },
+        {
+          "name": "AKBAR ALI, S.H.I.",
+          "role": "wakil-ketua",
+          "phone": "628****1382"
+        },
+        {
+          "name": "DERRY BRIANTONO, S.H.",
+          "role": "hakim",
+          "phone": "628****6962"
+        }
+      ],
+      "excludedRecipients": [],
+      "templateId": "pegawai-monitoring",
+      "idempotencyKeyPreview": [
+        "disposition:shadow-disposition:usr-donggala-198109142007041001:pegawai-monitoring:event",
+        "disposition:shadow-disposition:usr-donggala-197710132007041001:pegawai-monitoring:event",
+        "disposition:shadow-disposition:usr-donggala-199401022017121003:pegawai-monitoring:event"
+      ],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "not_required_internal_if_caps_pass",
+      "decision": "PASS",
+      "reason": "Workflow internal disposition lulus shadow-run sample dengan eligibility guard, cap, template, dan idempotency preview."
+    },
+    {
+      "key": "internal_incoming_letter_notification",
+      "name": "Internal incoming letter notification",
+      "candidateEventCount": 1,
+      "recipientCount": 5,
+      "potentialMessageCount": 5,
+      "maskedRecipients": [
+        {
+          "name": "ABDUL SALAM, S.HI. MH.",
+          "role": "ketua",
+          "phone": "628****3055"
+        },
+        {
+          "name": "AKBAR ALI, S.H.I.",
+          "role": "wakil-ketua",
+          "phone": "628****1382"
+        },
+        {
+          "name": "ANDINI PUSPITA SARI, S.Sy.",
+          "role": "panitera",
+          "phone": "628****0876"
+        },
+        {
+          "name": "ASRAH RACHMAN, S.H.I.",
+          "role": "panitera",
+          "phone": "628****2565"
+        },
+        {
+          "name": "MUNIFA, S.H.",
+          "role": "panitera",
+          "phone": "628****6522"
+        }
+      ],
+      "excludedRecipients": [],
+      "templateId": "pegawai-monitoring",
+      "idempotencyKeyPreview": [
+        "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-198109142007041001:pegawai-monitoring:event",
+        "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-197710132007041001:pegawai-monitoring:event",
+        "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-198906242011012009:pegawai-monitoring:event",
+        "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-198208072008012014:pegawai-monitoring:event",
+        "incoming_letter:PILOT-PROD-GATE-INCOMING:usr-donggala-197309012003122001:pegawai-monitoring:event"
+      ],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "not_required_internal_if_configured",
+      "decision": "PASS",
+      "reason": "Workflow surat masuk lulus shadow-run sample PILOT-PROD-GATE-INCOMING dengan recipient internal eligible, template aman, cap, dan idempotency preview."
+    },
+    {
+      "key": "deadline_h_minus_1_reminder",
+      "name": "Deadline H-1 reminder",
+      "candidateEventCount": 0,
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "maskedRecipients": [],
+      "templateId": "disposition-deadline-h-minus-1",
+      "idempotencyKeyPreview": [
+        "disposition_deadline_reminder:shadow-disposition:shadow-recipient:disposition-deadline-h-minus-1:2026-05-03"
+      ],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "required_for_scheduler_production",
+      "decision": "PASS",
+      "reason": "Template reminder production-ready. Shadow-run hari ini tidak memaksa data palsu; scheduler/reminder tetap disabled/dry_run sampai approval, kandidat nyata, dan canary terpisah PASS."
+    },
+    {
+      "key": "public_qa_runtime",
+      "name": "Public Q&A runtime",
+      "candidateEventCount": 0,
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "maskedRecipients": [],
+      "templateId": "intent-template-query-only",
+      "idempotencyKeyPreview": [],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "intent_approval_required",
+      "decision": "PASS",
+      "reason": "Safe mode policy passes; unapproved active intents are not production eligible."
+    },
+    {
+      "key": "broadcast_capability_gate",
+      "name": "Broadcast capability gate",
+      "candidateEventCount": 0,
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "maskedRecipients": [],
+      "templateId": "",
+      "idempotencyKeyPreview": [],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "required",
+      "decision": "PASS",
+      "reason": "Broadcast capability remains locked behind approval/dry-run/cap gate; no free-send production."
+    },
+    {
+      "key": "external_notification_capability_gate",
+      "name": "External party notification capability gate",
+      "candidateEventCount": 0,
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "maskedRecipients": [],
+      "templateId": "party-templates",
+      "idempotencyKeyPreview": [],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "required",
+      "decision": "PASS",
+      "reason": "External party capability remains locked behind approval/template/case-context gate; no free-send production."
+    },
+    {
+      "key": "mass_resend_capability_gate",
+      "name": "Mass resend capability gate",
+      "candidateEventCount": 0,
+      "recipientCount": 0,
+      "potentialMessageCount": 0,
+      "maskedRecipients": [],
+      "templateId": "",
+      "idempotencyKeyPreview": [],
+      "duplicateCount": 0,
+      "capStatus": "PASS",
+      "approvalRequirement": "required",
+      "decision": "PASS",
+      "reason": "Mass resend remains locked behind reviewed-item approval and cap gate."
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "actionsTaken": [
+    {
+      "action": "shadow_run_only",
+      "detail": "Tidak ada WhatsApp send, enqueue real, atau perubahan runtime config dari shadow-run."
+    }
+  ]
+}

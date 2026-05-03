@@ -1,0 +1,265 @@
+{
+  "generatedAt": "2026-05-02T09:49:41.627Z",
+  "overall": "PASS",
+  "botEnabledBefore": false,
+  "botEnabledAfterEnable": true,
+  "botEnabledFinal": false,
+  "messageSent": true,
+  "messageEnqueued": true,
+  "sentCount": 1,
+  "enqueuedCount": 1,
+  "recipient": {
+    "name": "DERRY BRIANTONO",
+    "role": "Hakim",
+    "maskedPhone": "628****6962"
+  },
+  "idempotencyKey": "limited-wa-test-derry-briantono-2026-05-02-001",
+  "gateBeforeEnable": [
+    {
+      "key": "preflight_latest",
+      "label": "Preflight terakhir",
+      "status": "PASS",
+      "detail": "overall=WARN, safeToRunSmokeTest=true.",
+      "metadata": {}
+    },
+    {
+      "key": "smoke_latest",
+      "label": "Smoke dry-run terakhir",
+      "status": "PASS",
+      "detail": "overall=PASS, safeForLimitedWhatsAppPilot=true.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_reachable",
+      "label": "Runtime ALETA Bot reachable",
+      "status": "PASS",
+      "detail": "Status, WhatsApp, diagnostics, dan queue runtime dibaca.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_connected",
+      "label": "WhatsApp runtime connected",
+      "status": "PASS",
+      "detail": "status=connected.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_no_lock_or_stuck",
+      "label": "WhatsApp tidak terkunci/stuck",
+      "status": "PASS",
+      "detail": "lastErrorType=-, initializing=false, initializeAgeMs=0.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_operational",
+      "label": "Worker operasional",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_empty_before_enable",
+      "label": "Queue kosong sebelum enable",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letter_zero",
+      "label": "Dead-letter aktif",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif.",
+      "metadata": {}
+    },
+    {
+      "key": "approval_zero",
+      "label": "Approval pending",
+      "status": "PASS",
+      "detail": "0 approval pending.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_window_allowed",
+      "label": "Safe Sending Window allowed",
+      "status": "PASS",
+      "detail": "enabled=true, 07:30-21:00, allowed=true.",
+      "metadata": {}
+    },
+    {
+      "key": "production_disabled",
+      "label": "Reminder/scheduler production disabled",
+      "status": "PASS",
+      "detail": "reminder=false/dry_run, scheduler=false/dry_run, killSwitch=false.",
+      "metadata": {}
+    },
+    {
+      "key": "target_valid",
+      "label": "Nomor tujuan internal valid",
+      "status": "PASS",
+      "detail": "Penerima ditemukan sebagai user aktif internal dengan nomor WhatsApp terdaftar.",
+      "metadata": {}
+    }
+  ],
+  "gateBeforeSend": [
+    {
+      "key": "bot_enabled_after_enable",
+      "label": "botEnabled terbaca true",
+      "status": "PASS",
+      "detail": "botEnabled=true.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_still_empty",
+      "label": "Queue tetap kosong sebelum kirim",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "production_still_disabled",
+      "label": "Scheduler/reminder tetap non-production",
+      "status": "PASS",
+      "detail": "reminder=false/dry_run, scheduler=false/dry_run.",
+      "metadata": {}
+    },
+    {
+      "key": "whatsapp_still_connected",
+      "label": "WhatsApp tetap connected",
+      "status": "PASS",
+      "detail": "status=connected.",
+      "metadata": {}
+    }
+  ],
+  "queueAfterSend": {
+    "pending": 0,
+    "processing": 0,
+    "failed": 0,
+    "sent": 2,
+    "skipped": 1,
+    "deadLetter": 0,
+    "activeDeadLetters": 0
+  },
+  "deliveryHistory": {
+    "queueId": "6934307c-6c55-4157-aada-e67370fa3a4a",
+    "status": "sent",
+    "recipient": "628****6962",
+    "source": "aleta_bot_queue_public",
+    "waitedMs": 22316
+  },
+  "deadLetterActiveAfterSend": 0,
+  "approvalPendingAfterSend": 0,
+  "schedulerProductionActive": false,
+  "reminderProductionActive": false,
+  "warnings": [],
+  "blockers": [],
+  "actionsTaken": [
+    {
+      "action": "enable_bot_temporarily",
+      "detail": "botEnabled=true ditulis ke runtime config resmi untuk uji satu pesan internal.",
+      "metadata": {}
+    },
+    {
+      "action": "send_limited_internal_test",
+      "detail": "Satu pesan test internal baru dimasukkan ke queue resmi ALETA Bot untuk 628****6962.",
+      "metadata": {
+        "queueId": "6934307c-6c55-4157-aada-e67370fa3a4a",
+        "duplicate": false
+      }
+    },
+    {
+      "action": "disable_bot_after_test",
+      "detail": "botEnabled dikembalikan ke nilai semula setelah uji satu pesan internal.",
+      "metadata": {}
+    }
+  ],
+  "validation": [],
+  "summary": {
+    "before": {
+      "whatsappStatus": "connected",
+      "worker": {
+        "enabled": true,
+        "activeTimer": true,
+        "paused": false,
+        "running": false,
+        "intervalMs": 30000,
+        "batchSize": 5
+      },
+      "queue": {
+        "total": 9,
+        "pending": 0,
+        "processing": 0,
+        "sent": 1,
+        "failed": 0,
+        "skipped": 1,
+        "dryRun": 6,
+        "resolved": 1,
+        "deadLetter": 0
+      },
+      "activeDeadLetters": 0,
+      "safeSendingWindow": {
+        "enabled": true,
+        "start": "07:30",
+        "end": "21:00",
+        "inside": true,
+        "allowed": true,
+        "message": "Pengiriman berada dalam jam aman."
+      },
+      "reminder": {
+        "mode": "dry_run",
+        "enabled": false,
+        "schedulerEnabled": false,
+        "schedulerMode": "dry_run",
+        "killSwitch": false
+      },
+      "aiRuntime": {
+        "status": "synced",
+        "provider": "gemini"
+      },
+      "approvalPending": 0
+    },
+    "after": {
+      "whatsappStatus": "connected",
+      "worker": {
+        "enabled": true,
+        "activeTimer": true,
+        "paused": false,
+        "running": false,
+        "intervalMs": 30000,
+        "batchSize": 5
+      },
+      "queue": {
+        "total": 10,
+        "pending": 0,
+        "processing": 0,
+        "sent": 2,
+        "failed": 0,
+        "skipped": 1,
+        "dryRun": 6,
+        "resolved": 1,
+        "deadLetter": 0
+      },
+      "activeDeadLetters": 0,
+      "safeSendingWindow": {
+        "enabled": true,
+        "start": "07:30",
+        "end": "21:00",
+        "inside": true,
+        "allowed": true,
+        "message": "Pengiriman berada dalam jam aman."
+      },
+      "reminder": {
+        "mode": "dry_run",
+        "enabled": false,
+        "schedulerEnabled": false,
+        "schedulerMode": "dry_run",
+        "killSwitch": false
+      },
+      "aiRuntime": {
+        "status": "synced",
+        "provider": "gemini"
+      },
+      "approvalPending": 0,
+      "restored": true
+    }
+  }
+}

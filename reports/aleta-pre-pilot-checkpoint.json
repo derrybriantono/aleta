@@ -1,0 +1,153 @@
+{
+  "generatedAt": "2026-05-02T08:47:06.257Z",
+  "overall": "WARN",
+  "preflight": {
+    "overall": "WARN",
+    "safeToRunSmokeTest": true,
+    "safeForNonWaPilot": true,
+    "safeForLimitedWhatsAppPilot": true,
+    "safeForProduction": false,
+    "blockers": [],
+    "warnings": [
+      {
+        "key": "portal_whatsapp_status_proxy",
+        "label": "Portal proxy status WhatsApp",
+        "detail": "Portal status tidak readable tanpa sesi atau gagal: HTTP 401."
+      }
+    ]
+  },
+  "smoke": {
+    "overall": "PASS",
+    "safeForNonWaPilot": true,
+    "safeForLimitedWhatsAppPilot": true,
+    "safeForProduction": false,
+    "blockers": [],
+    "warnings": []
+  },
+  "status": {
+    "whatsapp": "connected",
+    "worker": {
+      "enabled": true,
+      "activeTimer": true,
+      "paused": false,
+      "running": false,
+      "intervalMs": 30000,
+      "batchSize": 5
+    },
+    "queue": {
+      "pending": 0,
+      "processing": 0,
+      "failed": 0,
+      "resolved": 1,
+      "dryRun": 6,
+      "activeDeadLetters": 0,
+      "resolvedDeadLetters": 1,
+      "phase4Active": 0
+    },
+    "deadLetterActive": 0,
+    "approvalPending": 0,
+    "whatsappNumbers": {
+      "total": 42,
+      "complete": 42,
+      "missing": 0,
+      "priorityMissing": 0
+    },
+    "safeSendingWindow": {
+      "enabled": true,
+      "start": "07:30",
+      "end": "21:00",
+      "inside": true,
+      "allowed": true,
+      "message": "Pengiriman berada dalam jam aman."
+    },
+    "reminder": {
+      "mode": "dry_run",
+      "enabled": false,
+      "schedulerEnabled": false,
+      "schedulerMode": "dry_run",
+      "killSwitch": false,
+      "approved": false
+    },
+    "aiBridge": "synced"
+  },
+  "validation": [
+    {
+      "command": "node scripts/aleta-preflight.mjs",
+      "status": "PASS",
+      "detail": "overall=WARN"
+    },
+    {
+      "command": "node scripts/aleta-smoke-dry-run.mjs",
+      "status": "PASS",
+      "detail": "overall=PASS"
+    },
+    {
+      "command": "node --check app.js",
+      "status": "PASS"
+    },
+    {
+      "command": "node --check whatsapp.js",
+      "status": "PASS"
+    },
+    {
+      "command": "node --check services/whatsappStatusService.js",
+      "status": "PASS"
+    },
+    {
+      "command": "node --check routes/internalGatewayRoutes.js",
+      "status": "PASS"
+    },
+    {
+      "command": "npx tsc --noEmit --pretty false",
+      "status": "PASS"
+    },
+    {
+      "command": "npm run lint",
+      "status": "PASS"
+    },
+    {
+      "command": "npm run build",
+      "status": "PASS"
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "detail": "38/38 tests"
+    }
+  ],
+  "git": {
+    "statusCommand": "PASS",
+    "statusShort": "M aleta_bot/app.js\n M aleta_bot/routes/internalGatewayRoutes.js\n M aleta_bot/services/botDbService.js\n M aleta_bot/services/messageQueueService.js\n M aleta_bot/services/whatsappStatusService.js\n M manajemen_surat/src/app/api/admin/aleta-bot/queue-recovery/route.ts\n M manajemen_surat/src/components/portal/admin-panels.tsx\n M manajemen_surat/src/components/portal/aleta-bot-admin.tsx\n M manajemen_surat/src/lib/aleta-bot-types.ts\n M manajemen_surat/src/server/modules/aleta-bot/service.ts\n M manajemen_surat/src/server/modules/aleta-bot/whatsapp-gateway-client.ts\n?? reports/\n?? scripts/",
+    "diffStatCommand": "PASS",
+    "diffStat": "aleta_bot/app.js                                   | 205 ++++++++++++++++--\n aleta_bot/routes/internalGatewayRoutes.js          |  92 +++++++-\n aleta_bot/services/botDbService.js                 |   6 +\n aleta_bot/services/messageQueueService.js          |  93 ++++++---\n aleta_bot/services/whatsappStatusService.js        |  29 ++-\n .../api/admin/aleta-bot/queue-recovery/route.ts    |   7 +-\n .../src/components/portal/admin-panels.tsx         |   2 +-\n .../src/components/portal/aleta-bot-admin.tsx      | 231 +++++++++++++++++++--\n manajemen_surat/src/lib/aleta-bot-types.ts         |   5 +\n .../src/server/modules/aleta-bot/service.ts        | 101 +++++++--\n .../modules/aleta-bot/whatsapp-gateway-client.ts   |  31 ++-\n 11 files changed, 713 insertions(+), 89 deletions(-)",
+    "stderr": "warning: in the working copy of 'aleta_bot/app.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'aleta_bot/routes/internalGatewayRoutes.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'aleta_bot/services/botDbService.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'aleta_bot/services/messageQueueService.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'aleta_bot/services/whatsappStatusService.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'manajemen_surat/src/app/api/admin/aleta-bot/queue-recovery/route.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'manajemen_surat/src/components/portal/admin-panels.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'manajemen_surat/src/components/portal/aleta-bot-admin.tsx', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'manajemen_surat/src/lib/aleta-bot-types.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'manajemen_surat/src/server/modules/aleta-bot/service.ts', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'manajemen_surat/src/server/modules/aleta-bot/whatsapp-gateway-client.ts', LF will be replaced by CRLF the next time Git touches it",
+    "changedFiles": [
+      "M aleta_bot/app.js",
+      " M aleta_bot/routes/internalGatewayRoutes.js",
+      " M aleta_bot/services/botDbService.js",
+      " M aleta_bot/services/messageQueueService.js",
+      " M aleta_bot/services/whatsappStatusService.js",
+      " M manajemen_surat/src/app/api/admin/aleta-bot/queue-recovery/route.ts",
+      " M manajemen_surat/src/components/portal/admin-panels.tsx",
+      " M manajemen_surat/src/components/portal/aleta-bot-admin.tsx",
+      " M manajemen_surat/src/lib/aleta-bot-types.ts",
+      " M manajemen_surat/src/server/modules/aleta-bot/service.ts",
+      " M manajemen_surat/src/server/modules/aleta-bot/whatsapp-gateway-client.ts",
+      "?? reports/",
+      "?? scripts/"
+    ]
+  },
+  "recommendations": {
+    "commitGrouping": [
+      "Commit 1: WhatsApp Gateway safety + singleton/init watchdog + dead-letter resolve plumbing.",
+      "Commit 2: Portal Admin ALETA Bot readiness UI, queue recovery, and status mapping.",
+      "Commit 3: Automated preflight/smoke runners and generated pilot checkpoint reports."
+    ],
+    "pilot": "Pilot non-WA dan WhatsApp terbatas boleh dipertimbangkan; production tetap tidak."
+  },
+  "risks": [
+    "Production scheduler/reminder tetap disabled/dry_run dan belum boleh diaktifkan tanpa gate approval terpisah.",
+    "Auth-guarded portal endpoints tetap mengembalikan 401 dari runner tanpa sesi; ini tidak dilonggarkan.",
+    "Perubahan belum di-commit otomatis sesuai instruksi."
+  ]
+}

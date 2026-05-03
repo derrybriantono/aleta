@@ -1,0 +1,353 @@
+{
+  "generatedAt": "2026-05-02T22:03:44.325Z",
+  "overall": "WARN",
+  "legacyDirectSendEnabled": false,
+  "cronScheduleCount": 24,
+  "clientSendMessageCount": 4,
+  "safeSendMessageCount": 55,
+  "safeSendTrackedCount": 2,
+  "guardStatus": "legacy_direct_send_blocked_by_guard",
+  "cronSchedules": [
+    {
+      "lineNumber": 645,
+      "line": "cron.schedule(\"50 07 1 * *\", () => {"
+    },
+    {
+      "lineNumber": 768,
+      "line": "cron.schedule(\"50 07 1 * *\", () => {"
+    },
+    {
+      "lineNumber": 812,
+      "line": "// cron.schedule(\"30 09 * * Monday-Friday\", () => {"
+    },
+    {
+      "lineNumber": 815,
+      "line": "// cron.schedule(\"00 15 * * Monday-Friday\", () => {"
+    },
+    {
+      "lineNumber": 894,
+      "line": "cron.schedule(\"10 07 * * Monday-Friday\", () => {"
+    },
+    {
+      "lineNumber": 909,
+      "line": "cron.schedule(\"00 20 * * *\", () => {"
+    },
+    {
+      "lineNumber": 977,
+      "line": "cron.schedule(\"30 14 * * Monday-Thursday\", () => {"
+    },
+    {
+      "lineNumber": 1062,
+      "line": "cron.schedule(\"15 07 * * Monday-Friday\", () => {"
+    },
+    {
+      "lineNumber": 1075,
+      "line": "cron.schedule(\"00 20 * * Sunday-Thursday\", () => {"
+    },
+    {
+      "lineNumber": 1141,
+      "line": "cron.schedule(\"00 07 * * Monday-Friday\", () => {"
+    },
+    {
+      "lineNumber": 1155,
+      "line": "cron.schedule(\"00 20 * * *\", () => {"
+    },
+    {
+      "lineNumber": 1229,
+      "line": "cron.schedule(cronTime, () => {"
+    },
+    {
+      "lineNumber": 1295,
+      "line": "cron.schedule(cronTime, () => {"
+    },
+    {
+      "lineNumber": 1342,
+      "line": "cron.schedule(\"55 08 * * Monday-Friday\", () => {"
+    },
+    {
+      "lineNumber": 1409,
+      "line": "cron.schedule(cronTime, () => {"
+    },
+    {
+      "lineNumber": 1478,
+      "line": "cron.schedule(\"00 09 * * Friday\", () => {"
+    },
+    {
+      "lineNumber": 1982,
+      "line": "cron.schedule(\"00 17 * * Monday-Friday\", async () => {"
+    },
+    {
+      "lineNumber": 2096,
+      "line": "cron.schedule(\"00 16 * * *\", async () => {"
+    },
+    {
+      "lineNumber": 2175,
+      "line": "cron.schedule(\"00 19 * * *\", async () => {"
+    },
+    {
+      "lineNumber": 2235,
+      "line": "cron.schedule(\"30 15 * * *\", async () => { // Atur waktu sesuai kebutuhan"
+    },
+    {
+      "lineNumber": 2561,
+      "line": "cron.schedule(\"30 23 * * *\", async () => {"
+    },
+    {
+      "lineNumber": 2869,
+      "line": "cron.schedule(\"00 07 * * *\", async () => {"
+    },
+    {
+      "lineNumber": 3175,
+      "line": "cron.schedule(\"00 09 * * *\", async () => {"
+    },
+    {
+      "lineNumber": 3415,
+      "line": "cron.schedule(\"00 12 24 11 *\", async () => {"
+    }
+  ],
+  "directSendCalls": [
+    {
+      "lineNumber": 649,
+      "line": "client.sendMessage(id, message).then(() => {"
+    },
+    {
+      "lineNumber": 898,
+      "line": "client.sendMessage(id, message).then(() => {"
+    },
+    {
+      "lineNumber": 913,
+      "line": "client.sendMessage(id, message).then(() => {"
+    },
+    {
+      "lineNumber": 981,
+      "line": "client.sendMessage(id, message).then(() => {"
+    }
+  ],
+  "safeSendCalls": [
+    {
+      "lineNumber": 194,
+      "line": "return messageService.safeSendMessage({"
+    },
+    {
+      "lineNumber": 206,
+      "line": "return messageService.safeSendMessage({"
+    },
+    {
+      "lineNumber": 229,
+      "line": "return messageService.safeSendMessage({"
+    },
+    {
+      "lineNumber": 387,
+      "line": "messageService.safeSendMessage({ client, sendFn: originalSendMessage, ...payload })"
+    },
+    {
+      "lineNumber": 772,
+      "line": "safeSendMessage(id, res).then(() => {"
+    },
+    {
+      "lineNumber": 1048,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1127,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1215,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1283,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1330,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1397,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1466,
+      "line": "await safeSendMessage(id, msg);"
+    },
+    {
+      "lineNumber": 1619,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 1631,
+      "line": "await safeSendMessage(formattedNumber, media, { caption: message });"
+    },
+    {
+      "lineNumber": 1686,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 1698,
+      "line": "await safeSendMessage(formattedNumber, media, { caption: message });"
+    },
+    {
+      "lineNumber": 1753,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 1765,
+      "line": "await safeSendMessage(formattedNumber, media, { caption: message });"
+    },
+    {
+      "lineNumber": 1820,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 1832,
+      "line": "await safeSendMessage(formattedNumber, media, { caption: message });"
+    },
+    {
+      "lineNumber": 1887,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 1899,
+      "line": "await safeSendMessage(formattedNumber, media, { caption: message });"
+    },
+    {
+      "lineNumber": 1954,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 1966,
+      "line": "await safeSendMessage(formattedNumber, media, { caption: message });"
+    },
+    {
+      "lineNumber": 2051,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2080,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2218,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2348,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2387,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2426,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2465,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2504,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2543,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2670,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2707,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2744,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2781,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2816,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2851,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 2977,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3013,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3049,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3085,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3121,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3157,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3272,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3297,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3322,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3347,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3372,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3397,
+      "line": "await safeSendMessage(formattedNumber, message);"
+    },
+    {
+      "lineNumber": 3892,
+      "line": "messageService.safeSendMessage({ client, sendFn: originalSendMessage, ...payload })"
+    },
+    {
+      "lineNumber": 3898,
+      "line": "const response = await messageService.safeSendMessage({"
+    },
+    {
+      "lineNumber": 3925,
+      "line": "const response = await messageService.safeSendMessage({"
+    },
+    {
+      "lineNumber": 3955,
+      "line": "const response = await messageService.safeSendMessage({"
+    }
+  ],
+  "remediation": [
+    "Legacy direct-send is blocked by productionGuardService while legacyDirectSendEnabled=false.",
+    "Long-term: migrate each cron to production notification registry with idempotency, cap, and approval gates.",
+    "Do not enable legacyDirectSendEnabled for production."
+  ]
+}

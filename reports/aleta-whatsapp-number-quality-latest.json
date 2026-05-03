@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-05-02T23:52:41.431Z",
+  "overall": "PASS",
+  "source": "portal_database",
+  "databaseSyncApplied": true,
+  "databaseError": "",
+  "totalActiveEmployees": 42,
+  "validForWhatsappProduction": 42,
+  "missingCount": 0,
+  "priorityMissingCount": 0,
+  "dummyCount": 0,
+  "duplicateGroupsCount": 0,
+  "invalidCount": 0,
+  "excludedFromProductionCount": 0,
+  "duplicateGroups": [],
+  "excludedRecipients": [],
+  "manualCorrectionRequired": false,
+  "notes": [
+    "All 42 active employees are eligible for WhatsApp production.",
+    "Nomor penuh tidak ditampilkan.",
+    "Runtime employee recipient mirror disinkronkan dari database portal bila DATABASE_URL tersedia."
+  ]
+}

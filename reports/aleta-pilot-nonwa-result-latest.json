@@ -1,0 +1,314 @@
+{
+  "generatedAt": "2026-05-02T08:56:18.209Z",
+  "runId": "20260502085618",
+  "overall": "PASS",
+  "safeForNonWaPilot": true,
+  "safeForLimitedWhatsAppPilot": true,
+  "safeForProduction": false,
+  "scenarios": [
+    {
+      "key": "page__login",
+      "title": "Halaman login",
+      "status": "PASS",
+      "detail": "/login reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__portal",
+      "title": "Portal utama",
+      "status": "PASS",
+      "detail": "/portal reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__manajemen_surat",
+      "title": "Dashboard Manajemen Surat",
+      "status": "PASS",
+      "detail": "/manajemen-surat reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__surat_masuk",
+      "title": "Surat Masuk",
+      "status": "PASS",
+      "detail": "/surat/masuk reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__surat_keluar",
+      "title": "Surat Keluar",
+      "status": "PASS",
+      "detail": "/surat/keluar reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__patch_notes",
+      "title": "Patch Notes",
+      "status": "PASS",
+      "detail": "/patch-notes reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__panduan",
+      "title": "Panduan",
+      "status": "PASS",
+      "detail": "/panduan reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__masukan",
+      "title": "Pusat Masukan",
+      "status": "PASS",
+      "detail": "/masukan reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "page__admin_aleta_bot",
+      "title": "Admin ALETA Bot",
+      "status": "PASS",
+      "detail": "/admin/aleta-bot reachable HTTP 200.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_before",
+      "title": "Runtime ALETA Bot before",
+      "status": "PASS",
+      "detail": "Runtime readable; WhatsApp=connected.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_before",
+      "title": "Worker before",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_before",
+      "title": "Queue before",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letter_before",
+      "title": "Dead-letter before",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_window_before",
+      "title": "Safe Sending Window before",
+      "status": "PASS",
+      "detail": "enabled=true, 07:30-21:00.",
+      "metadata": {}
+    },
+    {
+      "key": "portal_db",
+      "title": "Portal database",
+      "status": "PASS",
+      "detail": "Koneksi database portal berhasil.",
+      "metadata": {}
+    },
+    {
+      "key": "login_role_basic",
+      "title": "Login/role dasar",
+      "status": "PASS",
+      "detail": "DB memiliki 42 user aktif. Actor pilot role=admin; recipient role=super-admin.",
+      "metadata": {}
+    },
+    {
+      "key": "surat_masuk_insert",
+      "title": "Input surat masuk PILOT-NONWA",
+      "status": "PASS",
+      "detail": "Surat masuk dibuat: PILOT-NONWA-IN/20260502085618.",
+      "metadata": {}
+    },
+    {
+      "key": "surat_detail",
+      "title": "Detail surat",
+      "status": "PASS",
+      "detail": "Detail DB konsisten; currentDispositionId=pilot-nonwa-dsp-20260502085618.",
+      "metadata": {}
+    },
+    {
+      "key": "disposisi_created",
+      "title": "Disposisi",
+      "status": "PASS",
+      "detail": "Disposisi status=Menunggu Tindak Lanjut.",
+      "metadata": {}
+    },
+    {
+      "key": "disposisi_deadline",
+      "title": "Deadline disposisi",
+      "status": "PASS",
+      "detail": "Deadline=2026-05-03T08:56:43.867Z.",
+      "metadata": {}
+    },
+    {
+      "key": "disposisi_read_status",
+      "title": "Read status disposisi",
+      "status": "PASS",
+      "detail": "ReadAt=2026-05-02T08:56:44.867Z.",
+      "metadata": {}
+    },
+    {
+      "key": "pusat_tugas_candidate",
+      "title": "Pusat Tugas task candidate",
+      "status": "PASS",
+      "detail": "Disposisi PILOT-NONWA aktif dan memenuhi kandidat task source Manajemen Surat.",
+      "metadata": {}
+    },
+    {
+      "key": "surat_keluar_workflow",
+      "title": "Workflow surat keluar",
+      "status": "PASS",
+      "detail": "Workflow akhir=rejected; path draft -> submitted -> rejected.",
+      "metadata": {}
+    },
+    {
+      "key": "export_csv_shape",
+      "title": "Export laporan CSV",
+      "status": "PASS",
+      "detail": "CSV preview minimal valid untuk data PILOT-NONWA; endpoint export tetap auth-guarded dari runner tanpa sesi.",
+      "metadata": {}
+    },
+    {
+      "key": "runtime_after",
+      "title": "Runtime ALETA Bot after",
+      "status": "PASS",
+      "detail": "Runtime readable; WhatsApp=connected.",
+      "metadata": {}
+    },
+    {
+      "key": "worker_after",
+      "title": "Worker after",
+      "status": "PASS",
+      "detail": "enabled=true, activeTimer=true, paused=false.",
+      "metadata": {}
+    },
+    {
+      "key": "queue_after",
+      "title": "Queue after",
+      "status": "PASS",
+      "detail": "pending=0, processing=0, failed=0.",
+      "metadata": {}
+    },
+    {
+      "key": "dead_letter_after",
+      "title": "Dead-letter after",
+      "status": "PASS",
+      "detail": "0 dead-letter aktif.",
+      "metadata": {}
+    },
+    {
+      "key": "safe_window_after",
+      "title": "Safe Sending Window after",
+      "status": "PASS",
+      "detail": "enabled=true, 07:30-21:00.",
+      "metadata": {}
+    },
+    {
+      "key": "no_whatsapp_queue_change",
+      "title": "Tidak ada queue WhatsApp baru",
+      "status": "PASS",
+      "detail": "before pending/processing/failed=0/0/0, after=0/0/0.",
+      "metadata": {}
+    },
+    {
+      "key": "approval_pending_after",
+      "title": "Approval pending setelah pilot",
+      "status": "PASS",
+      "detail": "0 approval pending.",
+      "metadata": {}
+    },
+    {
+      "key": "phase4_approval_after",
+      "title": "Phase 4 approval aktif",
+      "status": "PASS",
+      "detail": "0 approval Phase 4 pending.",
+      "metadata": {}
+    },
+    {
+      "key": "scheduler_reminder_after",
+      "title": "Scheduler/reminder production tetap nonaktif",
+      "status": "PASS",
+      "detail": "mode=dry_run, scheduler=disabled/dry_run.",
+      "metadata": {}
+    }
+  ],
+  "bugs": [],
+  "warnings": [],
+  "blockers": [],
+  "actionsTaken": [
+    {
+      "action": "non_wa_guard",
+      "detail": "Runner tidak memanggil endpoint send/resend/connect/approval production.",
+      "metadata": {}
+    },
+    {
+      "action": "create_pilot_nonwa_data",
+      "detail": "Data uji PILOT-NONWA dibuat tanpa jalur WhatsApp.",
+      "metadata": {
+        "incomingId": "pilot-nonwa-in-20260502085618",
+        "dispositionId": "pilot-nonwa-dsp-20260502085618",
+        "outgoingId": "pilot-nonwa-out-20260502085618"
+      }
+    }
+  ],
+  "summary": {
+    "beforeQueue": {
+      "stats": {
+        "total": 8,
+        "pending": 0,
+        "processing": 0,
+        "sent": 1,
+        "failed": 0,
+        "skipped": 0,
+        "dry_run": 6,
+        "dead_letter": 0,
+        "resolved": 1
+      },
+      "activeDeadLetters": 0
+    },
+    "testData": {
+      "incomingId": "pilot-nonwa-in-20260502085618",
+      "dispositionId": "pilot-nonwa-dsp-20260502085618",
+      "outgoingId": "pilot-nonwa-out-20260502085618",
+      "actorRole": "admin",
+      "recipientRole": "super-admin"
+    },
+    "exportCsvPreview": {
+      "rows": 1,
+      "headerCount": 12,
+      "byteLength": 503
+    },
+    "afterQueue": {
+      "stats": {
+        "total": 8,
+        "pending": 0,
+        "processing": 0,
+        "sent": 1,
+        "failed": 0,
+        "skipped": 0,
+        "dry_run": 6,
+        "dead_letter": 0,
+        "resolved": 1
+      },
+      "activeDeadLetters": 0
+    },
+    "afterRuntime": {
+      "whatsappStatus": "connected",
+      "aiRuntime": {
+        "status": "synced"
+      }
+    },
+    "operationalSafety": {
+      "approvalPending": 0,
+      "phase4ApprovalPending": 0,
+      "productionActive": false,
+      "schedulerProductionActive": false
+    }
+  }
+}
