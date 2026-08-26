@@ -54,6 +54,50 @@ export const hybridModuleRegistry: HybridModuleDefinition[] = [
     sharedUtilities: ["notification-gateway", "whatsapp-gateway", "audit-policy"],
     intelligenceReady: false,
   },
+  {
+    id: "judicia-legal-form",
+    label: "ALETA Judicia (Legal Form)",
+    description: "Modul Legal Form untuk dokumen perkara, template, variabel, SIPP read-only, dan workflow validasi.",
+    routePrefix: "/judicia/legal-form",
+    scope: "business",
+    sharedUtilities: [
+      "organization-service",
+      "aleta-intelligence-service",
+      "notification-gateway",
+      "audit-policy",
+    ],
+    intelligenceReady: true,
+  },
+  {
+    id: "aleta-sipp",
+    label: "ALETA x SIPP",
+    description: "Pusat pengetahuan SIPP untuk kamus tabel/kolom, query registry, variabel ABT/SIPP, penilaian, dan jadwal sidang.",
+    routePrefix: "/aleta-sipp",
+    scope: "business",
+    sharedUtilities: [
+      "organization-service",
+      "aleta-intelligence-service",
+      "audit-policy",
+      "sipp-readonly-provider",
+      "notification-gateway",
+    ],
+    intelligenceReady: true,
+  },
+  {
+    id: "e-status",
+    label: "E-Status",
+    description: "Elektronik Sinkronisasi Status Perkawinan untuk validasi, batch, pengiriman, dan tracking data status perkawinan.",
+    routePrefix: "/e-status",
+    scope: "business",
+    sharedUtilities: [
+      "organization-service",
+      "notification-gateway",
+      "whatsapp-gateway",
+      "audit-policy",
+      "sipp-readonly-provider",
+    ],
+    intelligenceReady: true,
+  },
 ];
 
 export function getHybridModuleDefinition(moduleId: string) {

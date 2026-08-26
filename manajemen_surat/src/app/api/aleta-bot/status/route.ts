@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
     const aiRaw = String(ai?.status ?? "");
     const aiLabelMap: Record<string, string> = {
       ready: "AI Siap",
-      needs_sync: "Perlu Sinkronisasi",
+      needs_sync: "Perlu Diperbarui",
       disabled: "Nonaktif",
       error: "Bermasalah",
     };
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
         status: runtimeOnline ? (waRaw || "unknown") : "offline",
         statusLabel: waLabel,
         connected: runtimeOnline && waRaw === "connected",
-        runtime: "ALETA Bot Gateway",
+        runtime: "Koneksi WhatsApp",
         lastConnectedAt: (wa?.lastConnectedAt as string | null) ?? null,
         lastErrorMessage: sanitizeError((wa?.lastErrorMessage ?? wa?.lastError) as string | null),
         sessionStartedAt: (wa?.sessionStartedAt as string | null) ?? null,

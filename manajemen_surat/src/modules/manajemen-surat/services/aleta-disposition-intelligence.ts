@@ -1,3 +1,4 @@
+import { apiPath } from "@/lib/base-path";
 import { type DispositionSuggestionPayload } from "@/lib/types";
 
 export type DispositionSuggestionInsight = DispositionSuggestionPayload;
@@ -27,7 +28,7 @@ export async function fetchDispositionSuggestionInsight({
   targetOptions: { id: string; label: string }[];
   signal?: AbortSignal;
 }): Promise<DispositionSuggestionPayload> {
-  const response = await fetch("/api/ai/suggest-disposisi", {
+  const response = await fetch(apiPath("/api/ai/suggest-disposisi"), {
     method: "POST",
     headers: {
       "content-type": "application/json",

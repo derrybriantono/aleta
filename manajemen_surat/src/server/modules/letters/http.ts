@@ -30,6 +30,8 @@ export function readLetterSearchFiltersFromRequest(request: NextRequest): Letter
     code: getSearchParam(request, "code"),
     dateFrom: getSearchParam(request, "dateFrom"),
     dateTo: getSearchParam(request, "dateTo"),
+    uploadedFrom: getSearchParam(request, "uploadedFrom") ?? getSearchParam(request, "createdFrom"),
+    uploadedTo: getSearchParam(request, "uploadedTo") ?? getSearchParam(request, "createdTo"),
     tags: getSearchParamArray(request, "tags"),
     classificationTags: getSearchParamArray(request, "classificationTags"),
     dispositionStatus: getSearchParam(request, "dispositionStatus"),

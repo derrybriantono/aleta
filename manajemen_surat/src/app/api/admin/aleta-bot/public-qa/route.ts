@@ -8,6 +8,7 @@ import {
   reviewPublicQaUnknownQuestion,
 } from "@/server/modules/aleta-bot/service";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { buildAttachmentContentDisposition, getAttachmentSecurityHeaders } from "@/server/shared/download-headers";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
 
@@ -56,8 +57,9 @@ export async function GET(request: NextRequest) {
     });
     return new Response(result.csv, {
       headers: {
+        ...getAttachmentSecurityHeaders(),
         "content-type": "text/csv; charset=utf-8",
-        "content-disposition": `attachment; filename="${result.filename}"`,
+        "content-disposition": buildAttachmentContentDisposition(result.filename),
         "x-aleta-export-row-count": String(result.rowCount),
       },
     });

@@ -15,17 +15,13 @@ import {
 
 import { authClient } from "@/lib/auth-client";
 import { mergeAIFeatureFlags, type PartialAIFeatureFlags } from "@/lib/ai-feature-flags";
+import { apiPath } from "@/lib/base-path";
 import {
   DEFAULT_ASSISTANT_JUDGE_CONFIG,
   canAccessAssistantJudge,
   normalizeAssistantJudgeConfig,
 } from "@/lib/assistant-judge";
-import {
-  defaultAIConfig,
-  defaultInstitutionIdentity,
-  defaultWhatsAppWeb,
-  moduleVisibility,
-} from "@/lib/mock-data";
+import { DEFAULT_PANEL_SETTINGS, normalizePanelSettings } from "@/lib/panel-settings";
 import { validateActingAssignmentRequest } from "@/core/organization/service";
 import {
   getDefaultRoleForPosition,
@@ -47,18 +43,24 @@ import {
 } from "@/lib/permissions";
 import {
   type ActingAssignment,
+  type AIFeatureFlags,
   type AIGlobalConfig,
   type AssistantJudgeConfig,
   type DashboardMetric,
   type DispositionNode,
+  type ExternalAppCredentialInput,
   type InstitutionIdentity,
   type LetterDetail,
   type ModuleConfig,
   type ModuleId,
   type ModuleVisibility,
   type OperationalSummaryItem,
+  type PanelSettings,
   type PortalAppConfig,
   type PortalStateData,
+  type Position,
+  type Role,
+  type RoleId,
   type SearchResult,
   type ThemeMode,
   type UserPersona,
@@ -150,10 +152,12 @@ type UpdateManagedUserInput = {
   name: string;
   nip: string;
   positionId: string;
+  additionalRoleIds?: string[];
   isActive?: boolean;
   profilePhotoUrl?: string;
-  /** null = Bukan Admin (derive from position); "admin" | "super-admin" = explicit level */
-  roleOverride?: "admin" | "super-admin" | null;
+  /** null = role otomatis dari jabatan; RoleId = override eksplisit seperti admin/super-admin/pppk. */
+  roleOverride?: RoleId | null;
+  externalCredentials?: ExternalAppCredentialInput[];
 };
 
 type RetryWhatsappInput =
@@ -181,10 +185,12 @@ type CreateManagedUserInput = {
   name: string;
   nip: string;
   positionId: string;
+  additionalRoleIds?: string[];
   isActive?: boolean;
   profilePhotoUrl?: string;
-  /** null = Bukan Admin (derive from position); "admin" | "super-admin" = explicit level */
-  roleOverride?: "admin" | "super-admin" | null;
+  /** null = role otomatis dari jabatan; RoleId = override eksplisit seperti admin/super-admin/pppk. */
+  roleOverride?: RoleId | null;
+  externalCredentials?: ExternalAppCredentialInput[];
 };
 
 type AssignActingAssignmentInput = {
@@ -235,8 +241,18 @@ type MutationResult = {
 
 type LetterWorkflowAction = "submit" | "approve" | "reject" | "mark-sent" | "return-draft";
 
-type UpdateAIConfigInput = Omit<Partial<AIGlobalConfig>, "featureFlags"> & {
+type AIConfigStatePatch = Omit<Partial<AIGlobalConfig>, "featureFlags"> & {
   featureFlags?: PartialAIFeatureFlags;
+};
+
+type UpdateAIConfigInput = Omit<AIConfigStatePatch, "moduleConfigs"> & {
+  featureFlags?: PartialAIFeatureFlags;
+  moduleConfigs?: Array<{
+    moduleKey: string;
+    enabled?: boolean;
+    inheritGlobal?: boolean;
+    activeConnectionId?: string | null;
+  }>;
   connection?: {
     id?: string;
     providerId: string;
@@ -254,7 +270,9 @@ type UpdateAIConfigInput = Omit<Partial<AIGlobalConfig>, "featureFlags"> & {
 
 type PortalAction =
   | { type: "hydrate"; payload: PortalStateData }
+  | { type: "sync-roles"; payload: Role[] }
   | { type: "sync-users"; payload: UserPersona[] }
+  | { type: "sync-positions"; payload: Position[] }
   | { type: "sync-letters"; payload: LetterDetail[] }
   | { type: "sync-dispositions"; payload: DispositionNode[] }
   | { type: "set-module-visibility"; payload: ModuleVisibility[] }
@@ -264,9 +282,10 @@ type PortalAction =
   | { type: "sign-in"; userId: string }
   | { type: "sign-out" }
   | { type: "set-theme"; theme: ThemeMode }
-  | { type: "set-ai-config"; payload: UpdateAIConfigInput }
+  | { type: "set-ai-config"; payload: AIConfigStatePatch }
   | { type: "set-whatsapp-web"; payload: Partial<WhatsAppWebConfig> }
   | { type: "set-institution-identity"; payload: Partial<InstitutionIdentity> }
+  | { type: "set-panel-settings"; payload: PanelSettings }
   | { type: "set-assistant-judge-config"; payload: AssistantJudgeConfig }
   | { type: "update-profile"; userId: string; payload: UpdateProfileInput }
   | { type: "update-managed-user"; userId: string; payload: UpdateManagedUserInput }
@@ -290,7 +309,19 @@ type PortalContextValue = {
   syncError: string | null;
   currentUserId: string | null;
   currentUser: UserPersona | null;
+  roles: Role[];
+  /** Seluruh pengguna, termasuk yang diblokir. Hanya untuk Manajemen Akun. */
   users: UserPersona[];
+  /**
+   * Pengguna yang masih aktif saja.
+   *
+   * Dipakai di Manajemen Surat dan modul lain: akun yang diblokir tidak boleh
+   * lagi muncul nama maupun jabatannya, apalagi bisa dipilih sebagai tujuan
+   * disposisi. Server juga menolak tujuan nonaktif, jadi ini menutup celahnya
+   * di layar sekaligus - bukan hanya kosmetik.
+   */
+  activeUsers: UserPersona[];
+  positions: Position[];
   letters: LetterDetail[];
   dispositions: DispositionNode[];
   accessiblePortalApps: PortalAppConfig[];
@@ -309,14 +340,16 @@ type PortalContextValue = {
   aiConfig: AIGlobalConfig;
   whatsAppWeb: WhatsAppWebConfig;
   institutionIdentity: InstitutionIdentity;
+  panelSettings: PanelSettings;
   assistantJudgeConfig: AssistantJudgeConfig;
   signIn: (userId: string) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   setTheme: (theme: ThemeMode) => void;
   setAIConfig: (payload: UpdateAIConfigInput) => Promise<MutationResult>;
   refreshAIConfig: () => Promise<void>;
   updateWhatsAppWeb: (payload: Partial<WhatsAppWebConfig>) => Promise<MutationResult>;
   updateInstitutionIdentity: (payload: Partial<InstitutionIdentity>) => Promise<MutationResult>;
+  updatePanelSettings: (payload: Partial<PanelSettings>) => Promise<MutationResult>;
   updateAssistantJudgeConfig: (payload: AssistantJudgeConfig) => Promise<MutationResult>;
   updateProfile: (payload: UpdateProfileInput) => Promise<MutationResult>;
   updateManagedUser: (userId: string, payload: UpdateManagedUserInput) => Promise<MutationResult>;
@@ -348,16 +381,103 @@ type PortalContextValue = {
   markPendingInboxSeen: (dispositionIds?: string[]) => void;
 };
 
+const EMPTY_AI_FEATURE_FLAGS: AIFeatureFlags = {
+  oneStopDisposition: {
+    enabled: false,
+    recommendation: false,
+    priorityDetection: false,
+    targetSuggestion: false,
+    instructionSuggestion: false,
+    autofill: false,
+    rationale: false,
+    diagnostics: false,
+  },
+  mailIntelligence: {
+    enabled: false,
+    summary: false,
+    findings: false,
+    recommendedActions: false,
+    relatedRegulations: false,
+    riskNotes: false,
+    diagnostics: false,
+  },
+  draftMetadata: {
+    enabled: false,
+    nomorSurat: false,
+    tanggalSurat: false,
+    tanggalTerima: false,
+    asalSurat: false,
+    perihal: false,
+    kodeKlasifikasi: false,
+    klasifikasiSurat: false,
+    tagSurat: false,
+    tagAsalSurat: false,
+    ocrCheck: false,
+    aiReviewNote: false,
+  },
+  institutionIdentity: {
+    enabled: false,
+    courtNameSuggestion: false,
+    identityEnrichment: false,
+    googleDiscovery: false,
+    officialWebsiteExtraction: false,
+    aiNormalization: false,
+    diagnostics: false,
+  },
+};
+
+const EMPTY_AI_CONFIG: AIGlobalConfig = {
+  enabled: false,
+  modelId: "",
+  primaryLanguage: "id",
+  providerId: "",
+  activeConnectionId: null,
+  providers: [],
+  moduleConfigs: [],
+  featureFlags: EMPTY_AI_FEATURE_FLAGS,
+  featureDispositionAi: false,
+  featureMailIntelligence: false,
+  featureDraftMetadata: false,
+  featureManajemenSuratAi: false,
+  featureDisposisiAi: false,
+};
+
+const EMPTY_WHATSAPP_WEB: WhatsAppWebConfig = {
+  phoneNumber: "",
+  sessionName: "",
+  status: "inactive",
+};
+
+const EMPTY_INSTITUTION_IDENTITY: InstitutionIdentity = {
+  courtName: "",
+  courtShortName: "",
+  address: "",
+  phoneNumber: "",
+  mobilePhone: "",
+  csWhatsappNumber: "",
+  botWhatsappNumber: "",
+  email: "",
+  instagram: "",
+  facebook: "",
+  youtube: "",
+  website: "",
+  mapUrl: "",
+  logoUrl: "",
+};
+
 const defaultState: PortalStateData = {
   currentUserId: null,
+  roles: [],
   users: [],
+  positions: [],
   letters: [],
   dispositions: [],
-  moduleVisibility,
+  moduleVisibility: [],
   theme: "dark",
-  aiConfig: defaultAIConfig,
-  whatsAppWeb: defaultWhatsAppWeb,
-  institutionIdentity: defaultInstitutionIdentity,
+  aiConfig: EMPTY_AI_CONFIG,
+  whatsAppWeb: EMPTY_WHATSAPP_WEB,
+  institutionIdentity: EMPTY_INSTITUTION_IDENTITY,
+  panelSettings: DEFAULT_PANEL_SETTINGS,
   assistantJudgeConfig: DEFAULT_ASSISTANT_JUDGE_CONFIG,
 };
 
@@ -397,9 +517,11 @@ function buildCachedUser(
     profilePhotoUrl: incoming.profilePhotoUrl ?? cached?.profilePhotoUrl,
     roleId: incoming.roleId,
     positionId: incoming.positionId,
+    additionalRoleIds: incoming.additionalRoleIds ?? cached?.additionalRoleIds ?? [],
     isActive: incoming.isActive,
     canBypassHierarchy: incoming.canBypassHierarchy ?? cached?.canBypassHierarchy ?? false,
     actingAssignment: incoming.actingAssignment ?? cached?.actingAssignment ?? null,
+    externalCredentials: incoming.externalCredentials ?? cached?.externalCredentials ?? [],
   };
 }
 
@@ -445,11 +567,26 @@ function markDeliveryAsRetried<T extends { id: string; whatsappDeliveries?: { id
 function portalReducer(state: PortalStateData, action: PortalAction): PortalStateData {
   switch (action.type) {
     case "hydrate":
-      return action.payload;
+      return {
+        ...defaultState,
+        ...action.payload,
+        roles: action.payload.roles ?? [],
+        positions: action.payload.positions ?? [],
+      };
+    case "sync-roles":
+      return {
+        ...state,
+        roles: action.payload,
+      };
     case "sync-users":
       return {
         ...state,
         users: sortUsersByName(action.payload),
+      };
+    case "sync-positions":
+      return {
+        ...state,
+        positions: action.payload,
       };
     case "sync-letters":
       return {
@@ -518,6 +655,8 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
         ...state,
         institutionIdentity: { ...state.institutionIdentity, ...action.payload },
       };
+    case "set-panel-settings":
+      return { ...state, panelSettings: normalizePanelSettings(action.payload) };
     case "set-assistant-judge-config":
       return { ...state, assistantJudgeConfig: normalizeAssistantJudgeConfig(action.payload) };
     case "update-profile":
@@ -829,7 +968,7 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
       if (!letter) return state;
 
       const activeDisposition = state.dispositions.find((item) => item.id === letter.currentDispositionId) ?? null;
-      const recipients = getLeadershipRecipients(state.users).filter((recipient) => recipient.id !== action.currentUserId);
+      const recipients = getLeadershipRecipients(state.users, state.positions).filter((recipient) => recipient.id !== action.currentUserId);
       const openLeadershipRecipientIds = new Set(
         state.dispositions
           .filter(
@@ -977,6 +1116,11 @@ class BackendRequestError extends Error {
   }
 }
 
+type UploadPdfResult = {
+  filePath?: string;
+  publicUrl?: string;
+};
+
 export function PortalProvider({
   children,
   initialState,
@@ -993,46 +1137,43 @@ export function PortalProvider({
   const syncGenerationRef = useRef(0);
 
   useEffect(() => {
-    if (initialState) {
-      setIsHydrated(true);
-      return;
-    }
+    if (initialState) return;
 
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      setIsHydrated(true);
-      return;
-    }
+    const timer = window.setTimeout(() => {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        setIsHydrated(true);
+        return;
+      }
 
-    try {
-      const parsed = JSON.parse(stored) as Partial<PortalStateData>;
-      dispatch({
-        type: "hydrate",
-        payload: {
-          currentUserId: parsed.currentUserId ?? defaultState.currentUserId,
-          users: defaultState.users,
-          letters: defaultState.letters,
-          dispositions: defaultState.dispositions,
-          moduleVisibility: defaultState.moduleVisibility,
-          theme: parsed.theme ?? defaultState.theme,
-          aiConfig: {
-            ...defaultState.aiConfig,
-            ...(parsed.aiConfig ?? {}),
-            featureFlags: mergeAIFeatureFlags(defaultState.aiConfig.featureFlags, parsed.aiConfig?.featureFlags),
+      try {
+        const parsed = JSON.parse(stored) as Partial<PortalStateData>;
+        dispatch({
+          type: "hydrate",
+          payload: {
+            currentUserId: parsed.currentUserId ?? defaultState.currentUserId,
+            roles: defaultState.roles,
+            users: defaultState.users,
+            positions: defaultState.positions,
+            letters: defaultState.letters,
+            dispositions: defaultState.dispositions,
+            moduleVisibility: defaultState.moduleVisibility,
+            theme: parsed.theme ?? defaultState.theme,
+            aiConfig: defaultState.aiConfig,
+            whatsAppWeb: defaultState.whatsAppWeb,
+            institutionIdentity: defaultState.institutionIdentity,
+            panelSettings: defaultState.panelSettings,
+            assistantJudgeConfig: defaultState.assistantJudgeConfig,
           },
-          whatsAppWeb: { ...defaultState.whatsAppWeb, ...(parsed.whatsAppWeb ?? {}) },
-          institutionIdentity: {
-            ...defaultState.institutionIdentity,
-            ...(parsed.institutionIdentity ?? {}),
-          },
-          assistantJudgeConfig: normalizeAssistantJudgeConfig(parsed.assistantJudgeConfig),
-        },
-      });
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setIsHydrated(true);
-    }
+        });
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } finally {
+        setIsHydrated(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [initialState]);
 
   const persistState = useEffectEvent((nextState: PortalStateData) => {
@@ -1041,10 +1182,6 @@ export function PortalProvider({
       JSON.stringify({
         currentUserId: nextState.currentUserId,
         theme: nextState.theme,
-        aiConfig: nextState.aiConfig,
-        whatsAppWeb: nextState.whatsAppWeb,
-        institutionIdentity: nextState.institutionIdentity,
-        assistantJudgeConfig: nextState.assistantJudgeConfig,
       } satisfies Partial<PortalStateData>)
     );
   });
@@ -1057,35 +1194,47 @@ export function PortalProvider({
   // ALETA Better Auth Synchronization
   const { data: session, isPending: isAuthPending } = authClient.useSession();
 
-  useEffect(() => {
-    if (!isHydrated || initialState || isAuthPending) return;
-
-    if (session?.user) {
-      if (state.currentUserId !== session.user.id) {
-        dispatch({ type: "sign-in", userId: session.user.id });
-      }
-    } else if (session === null) {
-      if (state.currentUserId) {
-        dispatch({ type: "sign-out" });
-      }
-    }
-  }, [session, isAuthPending, isHydrated, initialState, state.currentUserId]);
-
-
   async function requestBackendJson<T>(input: string, init?: RequestInit, _actorUserId?: string) {
     const headers = new Headers(init?.headers);
     const hasBody = init?.body !== undefined && init?.body !== null;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 25_000);
+    const upstreamSignal = init?.signal;
+    const handleUpstreamAbort = () => controller.abort();
+
+    if (upstreamSignal?.aborted) {
+      controller.abort();
+    } else {
+      upstreamSignal?.addEventListener("abort", handleUpstreamAbort, { once: true });
+    }
 
     if (hasBody && !headers.has("content-type")) {
       headers.set("content-type", "application/json");
     }
 
-    const response = await fetch(input, {
-      ...init,
-      headers,
-      credentials: "include",
-      cache: "no-store",
-    });
+    let response: Response;
+    try {
+      response = await fetch(apiPath(input), {
+        ...init,
+        headers,
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (controller.signal.aborted && !upstreamSignal?.aborted) {
+        throw new BackendRequestError(
+          "Permintaan ALETA melewati batas waktu. Periksa koneksi server lalu coba lagi.",
+          408
+        );
+      }
+
+      throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
+      upstreamSignal?.removeEventListener("abort", handleUpstreamAbort);
+    }
+
     const payload = (await response.json().catch(() => null)) as
       | { ok?: boolean; data?: T; error?: { message?: string } }
       | null;
@@ -1098,6 +1247,76 @@ export function PortalProvider({
     }
 
     return payload.data as T;
+  }
+
+  const resolvePortalSessionFallback = useEffectEvent(async () => {
+    try {
+      const payload = await requestBackendJson<{ userId: string; isActive: boolean }>("/api/portal/session");
+      return payload?.isActive ? payload.userId : null;
+    } catch (error) {
+      if (error instanceof BackendRequestError && error.status === 401) {
+        return null;
+      }
+
+      console.warn("[ALETA] Fallback sesi portal belum dapat diverifikasi.", error);
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (!isHydrated || initialState || isAuthPending) return;
+
+    if (session?.user) {
+      if (state.currentUserId !== session.user.id) {
+        dispatch({ type: "sign-in", userId: session.user.id });
+      }
+    } else if (session === null) {
+      let cancelled = false;
+
+      void resolvePortalSessionFallback().then((fallbackUserId) => {
+        if (cancelled) return;
+
+        if (fallbackUserId) {
+          if (state.currentUserId !== fallbackUserId) {
+            dispatch({ type: "sign-in", userId: fallbackUserId });
+          }
+          return;
+        }
+
+        if (state.currentUserId) {
+          dispatch({ type: "sign-out" });
+        }
+      });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [session, isAuthPending, isHydrated, initialState, state.currentUserId]);
+
+  async function uploadPdfDocument(documentFile: File) {
+    const formData = new FormData();
+    formData.append("file", documentFile);
+
+    const response = await fetch(apiPath("/api/uploads/pdf"), {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+      cache: "no-store",
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | { ok?: boolean; data?: UploadPdfResult; error?: { message?: string } }
+      | null;
+    const documentFilePath = payload?.data?.filePath ?? payload?.data?.publicUrl;
+
+    if (!response.ok || !payload?.ok || !documentFilePath) {
+      throw new BackendRequestError(
+        payload?.error?.message ?? "Unggah PDF belum berhasil diproses.",
+        response.status
+      );
+    }
+
+    return documentFilePath;
   }
 
   function withSyncTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
@@ -1125,6 +1344,7 @@ export function PortalProvider({
         requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
         requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
         requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
+        requestBackendJson<PanelSettings>("/api/settings/panel", undefined, actorUserId),
         requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId),
       ]),
       30_000,
@@ -1160,6 +1380,7 @@ export function PortalProvider({
       aiConfigResult,
       whatsAppResult,
       institutionResult,
+      panelSettingsResult,
       assistantJudgeResult,
     ] = results;
     const lettersPayload = getFulfilledValue(lettersResult);
@@ -1167,6 +1388,7 @@ export function PortalProvider({
     const aiConfigPayload = getFulfilledValue(aiConfigResult);
     const whatsAppPayload = getFulfilledValue(whatsAppResult);
     const institutionPayload = getFulfilledValue(institutionResult);
+    const panelSettingsPayload = getFulfilledValue(panelSettingsResult);
     const assistantJudgePayload = getFulfilledValue(assistantJudgeResult);
 
     startTransition(() => {
@@ -1185,6 +1407,9 @@ export function PortalProvider({
       if (institutionPayload) {
         dispatch({ type: "set-institution-identity", payload: institutionPayload });
       }
+      if (panelSettingsPayload) {
+        dispatch({ type: "set-panel-settings", payload: panelSettingsPayload });
+      }
       if (assistantJudgePayload) {
         dispatch({ type: "set-assistant-judge-config", payload: assistantJudgePayload });
       }
@@ -1201,12 +1426,16 @@ export function PortalProvider({
 
     try {
       const [
+        rolesPayload,
         usersPayload,
         moduleVisibilityPayload,
+        positionsPayload,
       ] = await withSyncTimeout(
         Promise.all([
+          requestBackendJson<{ items: Role[] }>("/api/roles", undefined, actorUserId),
           requestBackendJson<{ items: BackendUserRecord[] }>("/api/users", undefined, actorUserId),
           requestBackendJson<{ items: ModuleVisibility[] }>("/api/settings/module-visibility", undefined, actorUserId),
+          requestBackendJson<{ items: Position[] }>("/api/positions", undefined, actorUserId),
         ]),
         12_000,
         "Server tidak merespons saat memuat sesi dan hak akses portal. Periksa koneksi atau hubungi administrator."
@@ -1217,11 +1446,13 @@ export function PortalProvider({
       }
 
       startTransition(() => {
+        dispatch({ type: "sync-roles", payload: rolesPayload.items ?? [] });
         dispatch({
           type: "sync-users",
           payload: syncCachedUsers(state.users, usersPayload.items ?? []),
         });
-        dispatch({ type: "set-module-visibility", payload: moduleVisibilityPayload.items ?? defaultState.moduleVisibility });
+        dispatch({ type: "set-module-visibility", payload: moduleVisibilityPayload.items ?? [] });
+        dispatch({ type: "sync-positions", payload: positionsPayload.items ?? [] });
       });
 
       void syncSecondaryPortalData(actorUserId, syncGeneration);
@@ -1249,17 +1480,38 @@ export function PortalProvider({
 
   useEffect(() => {
     if (!isHydrated || initialState || !state.currentUserId) return;
-    void syncDataFromBackend(state.currentUserId);
+    const currentUserId = state.currentUserId;
+    const timer = window.setTimeout(() => {
+      void syncDataFromBackend(currentUserId);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [initialState, isHydrated, state.currentUserId]);
 
   const currentUser = getUser(state.currentUserId, state.users);
   const currentRoleId = getEffectiveRoleId(currentUser);
-  const accessiblePortalApps = getAccessiblePortalApps(currentUser).filter((app) => {
-    if (app.id !== "asisten-hakim") return true;
-    return canAccessAssistantJudge(currentRoleId, state.assistantJudgeConfig, currentUser?.id);
-  });
+  // Mode default portal: selain Super Admin, grid aplikasi hanya menampilkan
+  // aplikasi inti berikut (tetap dipotong lagi oleh hak akses role & Akses Menu).
+  const DEFAULT_PORTAL_APP_IDS = new Set([
+    "manajemen-surat",
+    "aleta-bot",
+    "sipp",
+    "aps-badilag",
+    "asisten-hakim",
+    "e-kepegawaian",
+    "audit-trail",
+  ]);
+  const accessiblePortalApps = getAccessiblePortalApps(currentUser, state.moduleVisibility)
+    .filter((app) => {
+      if (currentRoleId === "super-admin") return true;
+      return DEFAULT_PORTAL_APP_IDS.has(app.id);
+    })
+    .filter((app) => {
+      if (app.id !== "asisten-hakim") return true;
+      return canAccessAssistantJudge(currentRoleId, state.assistantJudgeConfig, currentUser?.id);
+    });
   const accessibleModules = getAccessibleModules(currentUser, state.moduleVisibility);
-  const accessibleLetters = getAccessibleLetters(currentUser, state.letters, state.dispositions);
+  const accessibleLetters = getAccessibleLetters(currentUser, state.letters, state.dispositions, state.positions);
   const pendingInbox = getPendingInbox(currentUser, state.dispositions, state.letters);
   const fallbackTaskSources = useMemo(
     () =>
@@ -1288,14 +1540,18 @@ export function PortalProvider({
   useEffect(() => {
     if (!isHydrated) return;
     const localIds = readSeenDispositionIds(currentUser?.id);
-    setSeenPendingDispositionIds(localIds);
-    setTaskSourcesSnapshot(null);
+    const timer = window.setTimeout(() => {
+      setSeenPendingDispositionIds(localIds);
+      setTaskSourcesSnapshot(null);
+    }, 0);
 
-    if (!currentUser?.id || process.env.NODE_ENV === "test") return;
+    if (!currentUser?.id || process.env.NODE_ENV === "test") {
+      return () => window.clearTimeout(timer);
+    }
 
     const controller = new AbortController();
 
-    fetch("/api/notifications/reads?entityType=disposition", {
+    fetch(apiPath("/api/notifications/reads?entityType=disposition"), {
       cache: "no-store",
       credentials: "include",
       signal: controller.signal,
@@ -1319,7 +1575,10 @@ export function PortalProvider({
         console.warn("[ALETA] Gagal memuat read-state notifikasi dari backend; localStorage dipakai sebagai fallback.");
       });
 
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [currentUser?.id, isHydrated]);
 
   useEffect(() => {
@@ -1327,7 +1586,7 @@ export function PortalProvider({
 
     const controller = new AbortController();
 
-    fetch("/api/tasks?limit=50", {
+    fetch(apiPath("/api/tasks?limit=50"), {
       cache: "no-store",
       credentials: "include",
       signal: controller.signal,
@@ -1349,8 +1608,8 @@ export function PortalProvider({
     return () => controller.abort();
   }, [currentUser?.id, isHydrated]);
 
-  const metrics = getDashboardMetrics(currentUser, state.letters, state.dispositions);
-  const operationalSummary = getOperationalSummary(currentUser, state.letters, state.dispositions);
+  const metrics = getDashboardMetrics(currentUser, state.letters, state.dispositions, state.positions);
+  const operationalSummary = getOperationalSummary(currentUser, state.letters, state.dispositions, state.positions);
 
   const markTaskItemsSeen = (items: MarkSeenItemInput[]) => {
     const uniqueItems = Array.from(
@@ -1395,7 +1654,7 @@ export function PortalProvider({
       };
     });
 
-    void fetch("/api/notifications/mark-seen", {
+    void fetch(apiPath("/api/notifications/mark-seen"), {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -1424,7 +1683,10 @@ export function PortalProvider({
         syncError,
         currentUserId: state.currentUserId,
         currentUser,
+        roles: state.roles,
         users: state.users,
+        activeUsers: state.users.filter((user) => user.isActive),
+        positions: state.positions ?? [],
         letters: state.letters,
         dispositions: state.dispositions,
         accessiblePortalApps,
@@ -1443,14 +1705,19 @@ export function PortalProvider({
         aiConfig: state.aiConfig,
         whatsAppWeb: state.whatsAppWeb,
         institutionIdentity: state.institutionIdentity,
+        panelSettings: state.panelSettings,
         assistantJudgeConfig: state.assistantJudgeConfig,
         signIn: (userId) => {
           setSeenPendingDispositionIds([]);
           setTaskSourcesSnapshot(null);
           dispatch({ type: "sign-in", userId });
         },
-        signOut: () => {
-          void authClient.signOut();
+        signOut: async () => {
+          try {
+            await authClient.signOut();
+          } catch (error) {
+            console.warn("[ALETA] Logout session auth belum dapat dikonfirmasi oleh server.", error);
+          }
           setSeenPendingDispositionIds([]);
           setTaskSourcesSnapshot(null);
           dispatch({ type: "sign-out" });
@@ -1544,15 +1811,43 @@ export function PortalProvider({
               currentUser.id
             );
 
-            startTransition(() => {
-              dispatch({ type: "set-institution-identity", payload: result });
-            });
+            dispatch({ type: "set-institution-identity", payload: result });
 
             return { ok: true, message: "Identitas instansi berhasil disimpan." };
           } catch (error) {
             return {
               ok: false,
               message: error instanceof Error ? error.message : "Identitas instansi gagal disimpan.",
+            };
+          }
+        },
+        updatePanelSettings: async (payload) => {
+          if (!currentUser) {
+            return { ok: false, message: "Silakan login ulang untuk mengubah pengaturan panel." };
+          }
+
+          try {
+            const result = await requestBackendJson<PanelSettings>(
+              "/api/settings/panel",
+              {
+                method: "PUT",
+                body: JSON.stringify({
+                  actorUserId: currentUser.id,
+                  ...payload,
+                }),
+              },
+              currentUser.id
+            );
+
+            startTransition(() => {
+              dispatch({ type: "set-panel-settings", payload: result });
+            });
+
+            return { ok: true, message: "Pengaturan panel berhasil disimpan." };
+          } catch (error) {
+            return {
+              ok: false,
+              message: error instanceof Error ? error.message : "Pengaturan panel gagal disimpan.",
             };
           }
         },
@@ -1842,7 +2137,9 @@ export function PortalProvider({
 
             return mode;
           } catch (error) {
-            // Log removed for production
+            if (typeof window !== "undefined") {
+              window.alert(error instanceof Error ? error.message : "Surat belum berhasil dihapus.");
+            }
             return null;
           }
         },
@@ -1871,6 +2168,9 @@ export function PortalProvider({
 
             return "soft";
           } catch (error) {
+            if (typeof window !== "undefined") {
+              window.alert(error instanceof Error ? error.message : "Surat belum berhasil diarsipkan.");
+            }
             return null;
           }
         },
@@ -1906,17 +2206,7 @@ export function PortalProvider({
             let documentFilePath = "";
 
             if (payload.documentFile) {
-              const formData = new FormData();
-              formData.append("file", payload.documentFile);
-
-              const uploadRes = await fetch("/api/uploads/pdf", {
-                method: "POST",
-                body: formData,
-              });
-              const uploadData = await uploadRes.json();
-              if (uploadData.ok) {
-                documentFilePath = uploadData.data.filePath;
-              }
+              documentFilePath = await uploadPdfDocument(payload.documentFile);
             }
 
             const { documentFile, ...restPayload } = payload;
@@ -1964,17 +2254,7 @@ export function PortalProvider({
             let documentFilePath = "";
 
             if (payload.documentFile) {
-              const formData = new FormData();
-              formData.append("file", payload.documentFile);
-
-              const uploadRes = await fetch("/api/uploads/pdf", {
-                method: "POST",
-                body: formData,
-              });
-              const uploadData = await uploadRes.json();
-              if (uploadData.ok) {
-                documentFilePath = uploadData.data.filePath;
-              }
+              documentFilePath = await uploadPdfDocument(payload.documentFile);
             }
 
             const { documentFile, ...restPayload } = payload;
@@ -2186,7 +2466,7 @@ export function PortalProvider({
         getLetterById: (letterId) => getLetter(letterId, state.letters),
         getDispositionById: (dispositionId) => getDisposition(dispositionId, state.dispositions),
         getLetterDispositionsById: (letterId) => getLetterDispositions(letterId, state.dispositions),
-        getSearchResults: (query) => searchPortal(query, currentUser, state.letters, state.dispositions, state.users),
+        getSearchResults: (query) => searchPortal(query, currentUser, state.letters, state.dispositions, state.users, state.positions),
         getUsersByPosition: (positionId) => getPositionUsers(positionId, state.users),
         markTaskItemsSeen,
         markPendingInboxSeen: (dispositionIds) => {

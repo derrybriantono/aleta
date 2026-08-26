@@ -246,21 +246,22 @@ export function buildNotificationDraftFromLegacySnapshot(migration: AletaBotLega
     : "SELECT '' AS nama_pegawai, '' AS judul_notifikasi, '' AS ringkasan, '' AS waktu WHERE 1 = 0";
   const templateBody = isParty
     ? [
-        "Assalamualaikum Warahmatullahi Wabarakatuh.",
+        "Assalamu'alaikum {{nama_pihak}}.",
         "",
-        "Yth. Bapak/Ibu {{nama_pihak}}, berikut informasi terkait perkara {{nomor_perkara}}:",
+        "Informasi perkara:",
+        "Nomor: {{nomor_perkara}}",
+        "Detail:",
         "{{ringkasan}}",
         "",
-        "Pesan ini merupakan notifikasi bantuan. Informasi resmi tetap mengikuti ketentuan pengadilan.",
+        "Untuk informasi lebih lanjut, silakan menghubungi layanan resmi pengadilan.",
       ].join("\n")
     : [
-        "[ALETA Bot - Notifikasi Pegawai]",
-        "Yth. Bapak/Ibu {{nama_pegawai}},",
+        "Assalamu'alaikum {{nama_pegawai}}.",
         "",
         "{{judul_notifikasi}}",
         "{{ringkasan}}",
         "",
-        "Waktu data: {{waktu}}",
+        "Waktu data: {{waktu}}.",
       ].join("\n");
   return {
     kind: "notification",
@@ -278,7 +279,7 @@ export function buildNotificationDraftFromLegacySnapshot(migration: AletaBotLega
     },
     template: {
       id: templateId,
-      category: isParty ? "party" : "employee",
+      category: isParty ? "pihak" : "pegawai",
       title: `[Draft] ${migration.feature}`,
       body: templateBody,
       placeholders: outputColumns.filter((column) => column !== "nomor_whatsapp"),
@@ -337,15 +338,15 @@ export function buildIntentDraftFromCommandCatalog(migration: AletaBotLegacyMigr
       maxAttempts: 3,
       fallbackMessage: "Maaf, pertanyaan Bapak/Ibu belum dapat diproses otomatis. Silakan hubungi PTSP/petugas melalui kanal resmi pengadilan.",
       riskLevel: seed?.riskLevel || migration.riskLevel,
-      notes: "Draft hasil Smart Legacy Conversion. Aktifkan hanya setelah test intent dan approval.",
+      notes: "Hasil Smart Legacy Conversion. Langsung berlaku - periksa contoh pertanyaan dan blangko jawabannya.",
       aiAnswerEnabled: false,
       aiAnswerMode: seed?.aiAnswerMode || "off",
       answerPolicy: seed?.riskLevel === "high" || migration.riskLevel === "high" ? "requires_verified_party" : "public_info_only",
       verificationPolicy: seed?.verificationPolicy || "none",
       allowedDataFields: seed?.requiredParameters || [],
       blockedDataFields: ["nik", "alamat", "nomor_hp", "amar_lengkap", "catatan_internal"],
-      requiresApprovalBeforeActive: true,
-      status: "draft",
+      requiresApprovalBeforeActive: false,
+      status: "active",
     },
     checklist: generateMigrationChecklist(migration),
     warnings: [

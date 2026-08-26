@@ -19,7 +19,16 @@ export const ASSISTANT_JUDGE_ROLE_OPTIONS: Array<{
   { roleId: "wakil-ketua", label: "Wakil Ketua", description: "Akses pimpinan untuk dukungan kerja yudisial." },
   { roleId: "hakim", label: "Hakim", description: "Akses utama untuk asisten AI yudisial." },
   { roleId: "panitera", label: "Panitera", description: "Tidak aktif secara default." },
+  { roleId: "panitera-muda", label: "Panitera Muda", description: "Tidak aktif secara default." },
+  { roleId: "panitera-pengganti", label: "Panitera Pengganti", description: "Tidak aktif secara default." },
   { roleId: "sekretaris", label: "Sekretaris", description: "Tidak aktif secara default." },
+  { roleId: "kasubag", label: "Kasubag", description: "Tidak aktif secara default." },
+  { roleId: "jurusita", label: "Jurusita", description: "Tidak aktif secara default." },
+  { roleId: "pranata-komputer", label: "Pranata Komputer", description: "Tidak aktif secara default." },
+  { roleId: "analis-keuangan", label: "Analis Keuangan", description: "Tidak aktif secara default." },
+  { roleId: "analis-perkara", label: "Analis Perkara", description: "Tidak aktif secara default." },
+  { roleId: "pelaksana", label: "Pelaksana", description: "Tidak aktif secara default." },
+  { roleId: "pppk", label: "PPPK", description: "Tidak aktif secara default; dapat dibuka jika diberi penugasan yudisial pendukung." },
   { roleId: "pejabat-struktural", label: "Pejabat Struktural", description: "Mewakili role struktural yang ada di sistem." },
   { roleId: "staf", label: "Pegawai/Staf", description: "Mewakili pegawai operasional umum di sistem." },
 ];
@@ -31,6 +40,7 @@ export const ASSISTANT_JUDGE_PROVIDER_ORDER: AssistantJudgeProviderId[] = ["chat
 const defaultLinkAccess = {
   allowedRoles: ASSISTANT_JUDGE_DEFAULT_VISIBLE_ROLES,
   allowedUserIds: [] as string[],
+  embeddedEnabled: true,
   openInNewTab: true,
 };
 
@@ -132,6 +142,7 @@ function normalizeLinkConfig(
       : (index + 1) * 10,
     allowedRoles: normalizeRoleList(input?.allowedRoles, fallbackAllowedRoles),
     allowedUserIds: normalizeUserIdList(input?.allowedUserIds ?? fallback?.allowedUserIds),
+    embeddedEnabled: input?.embeddedEnabled ?? fallback?.embeddedEnabled ?? true,
     openInNewTab: input?.openInNewTab ?? fallback?.openInNewTab ?? true,
     createdAt: input?.createdAt ?? fallback?.createdAt,
     updatedAt: input?.updatedAt ?? fallback?.updatedAt,
@@ -144,6 +155,36 @@ export function getAssistantJudgeOrderedLinks(config: AssistantJudgeConfig) {
   return Object.entries(config.links)
     .map(([id, link], index) => normalizeLinkConfig(id, link, DEFAULT_ASSISTANT_JUDGE_CONFIG.links[id], index))
     .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0) || left.label.localeCompare(right.label));
+}
+
+export function getAssistantJudgeLinkIdentifier(link: AssistantJudgeLinkConfig) {
+  return String(link.id ?? link.provider ?? link.label).trim();
+}
+
+export function getAssistantJudgeViewPath(link: AssistantJudgeLinkConfig) {
+  return `/asisten-hakim/view/${encodeURIComponent(getAssistantJudgeLinkIdentifier(link))}`;
+}
+
+export function isAssistantJudgeEmbeddedEnabled(link: AssistantJudgeLinkConfig) {
+  return link.embeddedEnabled !== false;
+}
+
+export function getAssistantJudgeOpenHref(link: AssistantJudgeLinkConfig) {
+  return isAssistantJudgeEmbeddedEnabled(link) ? getAssistantJudgeViewPath(link) : link.url;
+}
+
+export function findAssistantJudgeLinkByIdentifier(config: AssistantJudgeConfig, identifier: string) {
+  const normalizedIdentifier = String(identifier ?? "").trim();
+  if (!normalizedIdentifier) return null;
+
+  return (
+    getAssistantJudgeOrderedLinks(config).find((link) =>
+      [link.id, link.provider, link.label]
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean)
+        .includes(normalizedIdentifier)
+    ) ?? null
+  );
 }
 
 export function normalizeAssistantJudgeConfig(input?: Partial<AssistantJudgeConfig> | null): AssistantJudgeConfig {

@@ -4,7 +4,20 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
 
-export type NotificationReadEntityType = "disposition" | "letter" | "wa_failed" | "feedback" | "approval" | "system_task";
+export type NotificationReadEntityType =
+  | "disposition"
+  | "letter"
+  | "wa_failed"
+  | "feedback"
+  | "approval"
+  | "hr_leave"
+  | "hr_submission"
+  | "hr_attendance"
+  | "estatus_record"
+  | "estatus_batch"
+  | "estatus_transmission"
+  | "estatus_incident"
+  | "system_task";
 
 export type NotificationReadItem = {
   entityType: NotificationReadEntityType;
@@ -43,6 +56,13 @@ const allowedEntityTypes = new Set<NotificationReadEntityType>([
   "wa_failed",
   "feedback",
   "approval",
+  "hr_leave",
+  "hr_submission",
+  "hr_attendance",
+  "estatus_record",
+  "estatus_batch",
+  "estatus_transmission",
+  "estatus_incident",
   "system_task",
 ]);
 

@@ -235,9 +235,11 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "roles",
   "positions",
   "users",
+  "external_app_credentials",
   "acting_assignments",
   "ai_global_settings",
   "ai_providers",
+  "ai_module_settings",
   "ai_suggestion_logs",
   "whatsapp_web_settings",
   "aleta_bot_settings",
@@ -255,6 +257,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_bot_policy_skip_logs",
   "aleta_bot_disposition_reminder_runs",
   "institution_identity",
+  "panel_settings",
   "institution_identity_enrichments",
   "module_visibility_settings",
   "feedback_requests",
@@ -271,6 +274,73 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "letter_whatsapp_deliveries",
   "dispositions",
   "disposition_whatsapp_deliveries",
+  "employee_profiles",
+  "hr_leave_types",
+  "hr_settings",
+  "hr_leave_balances",
+  "hr_leave_balance_transactions",
+  "hr_leave_requests",
+  "hr_leave_approval_logs",
+  "hr_leave_attachments",
+  "hr_submissions",
+  "hr_submission_attachments",
+  "hr_attendance_permissions",
+  "hr_attendance_permission_attachments",
+  "hr_meeting_results",
+  "hr_employee_documents",
+  "hr_holidays",
+  "hr_employee_signatures",
+  "hr_annual_document_requirements",
+  "hr_notification_templates",
+  "hr_generated_documents",
+  "aleta_sipp_tables",
+  "aleta_sipp_columns",
+  "aleta_sipp_relations",
+  "aleta_sipp_query_registry",
+  "aleta_sipp_query_parameters",
+  "aleta_sipp_query_outputs",
+  "aleta_sipp_variables",
+  "aleta_sipp_variable_mappings",
+  "aleta_sipp_query_table_links",
+  "aleta_sipp_query_variable_links",
+  "aleta_sipp_variable_template_links",
+  "aleta_sipp_unresolved_placeholders",
+  "aleta_sipp_variable_conflicts",
+  "aleta_sipp_import_jobs",
+  "aleta_sipp_import_job_items",
+  "aleta_sipp_assessment_indicators",
+  "aleta_sipp_assessment_queries",
+  "aleta_sipp_assessment_runs",
+  "aleta_sipp_assessment_results",
+  "aleta_sipp_assessment_result_items",
+  "aleta_sipp_pdf_templates",
+  "aleta_sipp_audit_logs",
+  "aleta_sipp_ai_logs",
+  "aleta_sipp_user_saved_queries",
+  "aleta_sipp_query_favorites",
+  "estatus_sipp_connections",
+  "estatus_sipp_mappings",
+  "estatus_sipp_schema_snapshots",
+  "estatus_sync_logs",
+  "estatus_agencies",
+  "estatus_records",
+  "estatus_parties",
+  "estatus_validation_rules",
+  "estatus_validation_results",
+  "estatus_batches",
+  "estatus_batch_items",
+  "estatus_record_snapshots",
+  "estatus_agency_templates",
+  "estatus_transmission_logs",
+  "estatus_agency_feedbacks",
+  "estatus_documents",
+  "estatus_file_exchange_logs",
+  "estatus_api_integrations",
+  "estatus_api_requests",
+  "estatus_ai_assist_logs",
+  "estatus_incident_logs",
+  "estatus_data_minimization_findings",
+  "estatus_audit_logs",
   "audit_logs",
   "accounts",
   "sessions",
@@ -362,8 +432,38 @@ export async function getDatabaseRuntimeStatus() {
   };
 }
 
+function normalizeEnvFlag(value: string | undefined) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function isExplicitlyEnabled(value: string | undefined) {
+  return ["1", "true", "yes", "on"].includes(normalizeEnvFlag(value));
+}
+
+function isPublicRuntimeTarget() {
+  const markers = [
+    process.env.NODE_ENV,
+    process.env.ALETA_DEPLOYMENT_TARGET,
+    process.env.ALETA_ENV,
+    process.env.NEXT_PUBLIC_ALETA_ENV,
+  ]
+    .map((value) => normalizeEnvFlag(value))
+    .filter(Boolean);
+
+  return markers.some((value) =>
+    value === "production" ||
+    value === "prod" ||
+    value === "staging" ||
+    value === "staging-public" ||
+    value === "public" ||
+    value.includes("staging-public")
+  );
+}
+
 function isInMemoryFallbackDisabled() {
-  return process.env.ALETA_DISABLE_IN_MEMORY_FALLBACK === "true";
+  if (isExplicitlyEnabled(process.env.ALETA_DISABLE_IN_MEMORY_FALLBACK)) return true;
+  if (isPublicRuntimeTarget() && !isExplicitlyEnabled(process.env.ALETA_ALLOW_IN_MEMORY_FALLBACK)) return true;
+  return false;
 }
 
 function isRecoverablePostgresBootError(error: unknown) {
@@ -700,7 +800,7 @@ export async function runDatabaseMigrations(db: NodePgDatabase<DrizzleSchema>) {
 
 export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
   if (options.useInMemory) {
-    const { newDb } = await import("pg-mem");
+    const { newDb } = await import(/* webpackIgnore: true */ "pg-mem");
     const memoryDb = newDb({
       autoCreateForeignKeyIndices: true,
     });

@@ -6,14 +6,14 @@ import { humanizeErrorMessage, humanizeStatus } from "@/lib/humanized-labels";
 describe("humanized UI labels", () => {
   it("renders technical statuses as clear Indonesian labels", () => {
     expect(humanizeStatus("connected")).toBe("Terhubung");
-    expect(humanizeStatus("browser_locked")).toBe("Sesi WhatsApp sedang dipakai proses lain");
+    expect(humanizeStatus("browser_locked")).toBe("WhatsApp sedang dipakai proses lain");
     expect(humanizeStatus("failed")).toBe("Gagal");
     expect(humanizeStatus("dry_run")).toBe("Simulasi");
   });
 
   it("renders WhatsApp runtime messages in user-friendly language", () => {
     expect(getWhatsAppRuntimeDisplayLabel("connected")).toBe("Terhubung");
-    expect(getWhatsAppRuntimeDisplayLabel("waiting_qr")).toBe("Perlu Scan QR");
+    expect(getWhatsAppRuntimeDisplayLabel("waiting_qr")).toBe("Perlu Pindai QR");
     expect(getWhatsAppRuntimeMessage("disconnected")).toContain("belum terhubung");
   });
 

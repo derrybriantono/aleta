@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, statusVariant } from "@/components/portal/shared";
 import { WhatsAppStatusStack } from "@/components/portal/whatsapp-status";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { type LetterDetail } from "@/lib/types";
 
 export function LetterList({
@@ -27,8 +27,8 @@ export function LetterList({
   if (letters.length === 0) {
     return (
       <EmptyState
-        title={`Belum ada ${title.toLowerCase()} yang sesuai filter`}
-        description="Coba ubah kata kunci atau filter status untuk melihat data yang sesuai."
+        title={`Belum ada ${title.toLowerCase()} yang sesuai pilihan`}
+        description="Coba ubah kata kunci atau pilihan status untuk melihat data yang sesuai."
       />
     );
   }
@@ -37,14 +37,15 @@ export function LetterList({
     <div className="space-y-4">
       <div className="hidden overflow-hidden rounded-[1.55rem] border border-border/95 bg-card shadow-panel lg:block">
         <table className="w-full table-fixed divide-y divide-border text-left text-sm">
-          <thead className="bg-muted/58 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          <thead className="bg-muted/60 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
             <tr>
-              <th className="w-[26%] px-5 py-3 font-semibold">Surat</th>
-              <th className="w-[16%] px-5 py-3 font-semibold">Pengirim</th>
-              <th className="w-[13%] px-5 py-3 font-semibold">Unit</th>
-              <th className="w-[12%] px-5 py-3 font-semibold">Status</th>
-              <th className="w-[15%] px-5 py-3 font-semibold">Status WhatsApp</th>
-              <th className="w-[18%] px-5 py-3 font-semibold">Aksi</th>
+              <th className="w-[23%] px-5 py-3 font-semibold">Surat</th>
+              <th className="w-[14%] px-5 py-3 font-semibold">Pengirim</th>
+              <th className="w-[13%] px-5 py-3 font-semibold">Tanggal Unggah</th>
+              <th className="w-[11%] px-5 py-3 font-semibold">Unit</th>
+              <th className="w-[11%] px-5 py-3 font-semibold">Status</th>
+              <th className="w-[14%] px-5 py-3 font-semibold">Status WhatsApp</th>
+              <th className="w-[14%] px-5 py-3 font-semibold">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -68,7 +69,17 @@ export function LetterList({
                 </td>
                 <td className="px-5 py-4">
                   <p className="font-medium text-foreground">{letter.pengirim}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(letter.tanggal)}</p>
+                  <p className="text-xs text-muted-foreground">Tanggal surat {formatDate(letter.tanggal)}</p>
+                </td>
+                <td className="px-5 py-4">
+                  <p className="font-medium text-foreground">
+                    {letter.createdAt ? formatDate(letter.createdAt) : "-"}
+                  </p>
+                  {letter.createdAt ? (
+                    <p className="text-xs text-muted-foreground">
+                      {new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(new Date(letter.createdAt))}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-5 py-4 text-foreground">{letter.assignedUnit}</td>
                 <td className="px-5 py-4">
@@ -125,6 +136,9 @@ export function LetterList({
                 {letter.nomorUrut ? (
                   <p className="text-xs text-muted-foreground">No. urut {letter.nomorUrut}</p>
                 ) : null}
+                {letter.createdAt ? (
+                  <p className="text-xs text-muted-foreground">Diunggah {formatDateTime(letter.createdAt)}</p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge variant={statusVariant(letter.status)}>{letter.status}</Badge>
@@ -140,7 +154,9 @@ export function LetterList({
                   />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{letter.pengirim}</p>
+              <p className="text-sm text-muted-foreground">
+                {letter.pengirim} - Tanggal surat {formatDate(letter.tanggal)}
+              </p>
               <div className="grid gap-2">
                 <Button asChild variant="outline" className="w-full">
                   <Link href={`/surat/${letter.id}`}>

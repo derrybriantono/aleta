@@ -5,20 +5,25 @@ import { getDatabase } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
 import {
   getWhatsappRuntimeMode,
+  getWhatsappRuntimeModeDiagnostics,
   getGatewayWhatsappStatus,
   getGatewayWhatsappQr,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
-import { handleRouteError, ok } from "@/server/shared/http";
+import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
+import { ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
   try {
-    const actorUserId = await resolveActorUserId(request);
-    const db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
     const actor = await requireActorUser(db, actorUserId);
 
     if (!isPrivilegedAdmin(actor)) {
@@ -26,6 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     const runtimeMode = getWhatsappRuntimeMode();
+    const runtimeDiagnostics = getWhatsappRuntimeModeDiagnostics();
 
     if (runtimeMode === "aleta_bot") {
       const [statusResult, qrResult] = await Promise.allSettled([
@@ -63,8 +69,11 @@ export async function GET(request: NextRequest) {
         sessionName: statusData?.sessionName ?? "aleta-whatsapp-main",
         lastConnectedAt: statusData?.lastConnectedAt ?? null,
         requiresPhoneNumberBeforeInit: false,
-        lastErrorMessage: statusData?.lastError ?? null,
+        lastErrorMessage: statusData?.lastError
+          ? sanitizePublicErrorMessage(statusData.lastError, statusData.lastError)
+          : null,
         runtimeMode,
+        runtimeDiagnostics,
       });
     }
 
@@ -80,6 +89,7 @@ export async function GET(request: NextRequest) {
         requiresPhoneNumberBeforeInit: false,
         lastErrorMessage: "WhatsApp dinonaktifkan (WHATSAPP_RUNTIME_MODE=disabled).",
         runtimeMode,
+        runtimeDiagnostics,
       });
     }
 
@@ -98,8 +108,15 @@ export async function GET(request: NextRequest) {
       requiresPhoneNumberBeforeInit: snapshot.requiresPhoneNumberBeforeInit,
       lastErrorMessage: snapshot.lastErrorMessage,
       runtimeMode,
+      runtimeDiagnostics,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "WHATSAPP_GATEWAY_ACCESS_FAILED",
+      feature: "whatsapp_gateway",
+      entityId: "qr",
+    });
   }
 }

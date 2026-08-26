@@ -8,6 +8,7 @@ import {
 } from "@/server/modules/settings/service";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { ApiError } from "@/server/shared/errors";
 import { handleRouteError, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
 
@@ -36,6 +37,10 @@ export async function PUT(request: NextRequest) {
       moduleId: ModuleId;
       enabled: boolean;
     }>(request);
+    if (!body.roleId || !body.moduleId || typeof body.enabled !== "boolean") {
+      throw new ApiError(400, "roleId, moduleId, dan enabled wajib diisi untuk mengubah visibilitas modul.");
+    }
+
     const db = await getDatabase();
     const actorUserId = await resolveActorUserId(request);
     const items = await updateModuleVisibilityInDb(db, {

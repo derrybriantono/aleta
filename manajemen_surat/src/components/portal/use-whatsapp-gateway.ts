@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { apiPath } from "@/lib/base-path";
 import { humanizeErrorMessage, humanizeStatus } from "@/lib/humanized-labels";
 
 export type WhatsAppGatewayRuntimeStatus =
@@ -50,10 +51,10 @@ export function getWhatsAppRuntimeDisplayLabel(status: WhatsAppGatewayRuntimeSta
 }
 
 export function getWhatsAppRuntimeMessage(status: WhatsAppGatewayRuntimeStatus) {
-  if (status === "waiting_qr") return "QR sudah tersedia di pusat koneksi WhatsApp.";
+  if (status === "waiting_qr") return "QR sudah tersedia di halaman status WhatsApp.";
   if (status === "initializing") return "Layanan WhatsApp sedang menyiapkan koneksi.";
   if (status === "connected") return "Layanan WhatsApp kantor sudah terhubung.";
-  if (status === "failed") return "Koneksi WhatsApp belum berhasil. Periksa pusat koneksi.";
+  if (status === "failed") return "Koneksi WhatsApp belum berhasil. Periksa halaman status WhatsApp.";
   return "Layanan WhatsApp belum terhubung.";
 }
 
@@ -69,7 +70,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
 
     setIsRefreshing(true);
     try {
-      const response = await fetch("/api/whatsapp/status", {
+      const response = await fetch(apiPath("/api/whatsapp/status"), {
         credentials: "include",
         cache: "no-store",
       });
@@ -103,7 +104,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
     setFeedback("");
 
     try {
-      const response = await fetch("/api/whatsapp/init", {
+      const response = await fetch(apiPath("/api/whatsapp/init"), {
         method: "POST",
         credentials: "include",
       });
@@ -141,7 +142,7 @@ export function useWhatsAppGateway(canAccess: boolean) {
     setFeedback("");
 
     try {
-      const response = await fetch("/api/whatsapp/deactivate", {
+      const response = await fetch(apiPath("/api/whatsapp/deactivate"), {
         method: "POST",
         credentials: "include",
       });
@@ -179,7 +180,11 @@ export function useWhatsAppGateway(canAccess: boolean) {
   useEffect(() => {
     if (!canAccess) return;
 
-    void refresh();
+    const timer = globalThis.setTimeout(() => {
+      void refresh();
+    }, 0);
+
+    return () => globalThis.clearTimeout(timer);
   }, [canAccess, refresh]);
 
   useEffect(() => {

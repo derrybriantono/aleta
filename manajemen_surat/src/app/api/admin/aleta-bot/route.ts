@@ -35,6 +35,7 @@ export async function PUT(request: NextRequest) {
         notificationsEnabled?: boolean;
         adminWhatsappNumber?: string;
         messageDelayMs?: number;
+        sendingRiskLevel?: number;
         retryLimit?: number;
         dryRunEnabled?: boolean;
         scheduleCron?: string;

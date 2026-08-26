@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   CheckCircle2,
   LoaderCircle,
@@ -26,9 +26,10 @@ import { hybridModuleRegistry } from "@/core/platform/module-registry";
 import { type PartialAIFeatureFlags } from "@/lib/ai-feature-flags";
 import { popularAIProviderCatalog } from "@/lib/ai-catalog";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 import { readJsonResponseSafe, summarizePlainTextError } from "@/lib/http-response";
 import { canManageGlobalAI } from "@/lib/permissions";
-import { type AIFeatureFlags } from "@/lib/types";
+import { type AIFeatureFlags, type AIModuleConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type ConnectionTestStatus = "idle" | "connected" | "failed";
@@ -149,6 +150,7 @@ export function AIControlPanel() {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isSavingConnection, setIsSavingConnection] = useState(false);
   const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+  const [savingModuleKey, setSavingModuleKey] = useState<string | null>(null);
   const [pendingConnectionActionId, setPendingConnectionActionId] = useState<string | null>(null);
   const [lastTestStatus, setLastTestStatus] = useState<ConnectionTestStatus>("idle");
   const [lastTestedAt, setLastTestedAt] = useState<string | null>(null);
@@ -169,17 +171,7 @@ export function AIControlPanel() {
   const selectedModels = useMemo(() => selectedProvider?.models ?? [], [selectedProvider]);
   const editingConnection =
     aiConfig.providers.find((provider) => provider.id === editingConnectionId) ?? null;
-
-  useEffect(() => {
-    if (!selectedProvider) return;
-    if (selectedModels.length === 0) return;
-    if (selectedModels.includes(form.modelId)) return;
-
-    setForm((current) => ({
-      ...current,
-      modelId: selectedModels[0] ?? current.modelId,
-    }));
-  }, [form.modelId, selectedModels, selectedProvider]);
+  const moduleConfigs: AIModuleConfig[] = aiConfig.moduleConfigs ?? [];
 
   if (!canManage) {
     return null;
@@ -237,7 +229,7 @@ export function AIControlPanel() {
     setFormFeedback("");
 
     try {
-      const response = await fetch("/api/ai/providers/test-connection", {
+      const response = await fetch(apiPath("/api/ai/providers/test-connection"), {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -414,6 +406,32 @@ export function AIControlPanel() {
     setIsSavingGlobal(false);
   }
 
+  async function handleSaveModuleConfig(moduleKey: string, value: string) {
+    const inheritGlobal = value === "__global__";
+    setSavingModuleKey(moduleKey);
+    setPanelFeedback("");
+
+    const result = await setAIConfig({
+      moduleConfigs: [
+        {
+          moduleKey,
+          inheritGlobal,
+          activeConnectionId: inheritGlobal ? null : value,
+        },
+      ],
+    });
+
+    if (result.ok) {
+      const moduleLabel = moduleConfigs.find((module) => module.moduleKey === moduleKey)?.label ?? moduleKey;
+      setPanelFeedback(`${moduleLabel} sekarang memakai ${inheritGlobal ? "konfigurasi AI global" : "koneksi AI pilihan modul"}.`);
+      await syncConfigFromBackend();
+    } else {
+      setPanelFeedback(result.message);
+    }
+
+    setSavingModuleKey(null);
+  }
+
   return (
     <Card className="border-border/90">
       <CardHeader>
@@ -423,7 +441,8 @@ export function AIControlPanel() {
         </CardTitle>
         <CardDescription>
           Pengaturan AI kini dipisah antara <strong className="text-foreground">form tambah/edit koneksi</strong> dan
-          <strong className="text-foreground"> daftar koneksi AI tersimpan</strong>. ALETA hanya memakai koneksi aktif dari layanan.
+          <strong className="text-foreground"> daftar koneksi AI tersimpan</strong>. Koneksi global tetap menjadi fallback,
+          sementara setiap modul dapat memilih model sendiri.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
@@ -560,6 +579,90 @@ export function AIControlPanel() {
                 )}
               </div>
             </div>
+
+            <div className="mt-4 rounded-[1.2rem] border border-border bg-card/80 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Model AI per aplikasi</p>
+                  <p className="text-sm text-muted-foreground">
+                    Setiap modul dapat memakai koneksi AI sendiri tanpa mengubah model global atau modul lain.
+                  </p>
+                </div>
+                <Badge variant="outline">{moduleConfigs.length} modul</Badge>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                {moduleConfigs.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    Konfigurasi modul belum dimuat dari backend. Muat ulang pengaturan AI jika daftar ini belum muncul.
+                  </div>
+                ) : (
+                  moduleConfigs.map((module) => {
+                    const configuredValue = module.inheritGlobal
+                      ? "__global__"
+                      : module.configuredConnectionId ?? module.activeConnectionId ?? "__global__";
+                    const isModuleSaving = savingModuleKey === module.moduleKey;
+                    const statusVariant =
+                      module.status === "custom"
+                        ? "success"
+                        : module.status === "fallback"
+                          ? "warning"
+                          : "outline";
+                    const statusLabel =
+                      module.status === "custom"
+                        ? "Model sendiri"
+                        : module.status === "fallback"
+                          ? "Fallback global"
+                          : "Ikut global";
+
+                    return (
+                      <div key={module.moduleKey} className="rounded-xl border border-border/80 bg-muted/25 px-4 py-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">{module.label}</p>
+                              <Badge variant={statusVariant}>{statusLabel}</Badge>
+                              {isModuleSaving ? <LoaderCircle className="h-4 w-4 animate-spin text-primary" /> : null}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{module.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Dipakai:{" "}
+                              <strong className="text-foreground">
+                                {module.activeConnectionLabel ?? module.providerId} - {module.modelId}
+                              </strong>
+                            </p>
+                            {module.fallbackReason ? (
+                              <p className="text-xs font-medium text-amber-600 dark:text-amber-300">
+                                {module.fallbackReason}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="w-full sm:w-72">
+                            <NativeSelect
+                              value={configuredValue}
+                              disabled={isSavingGlobal || isModuleSaving || aiConfig.providers.length === 0}
+                              onChange={(event) => {
+                                void handleSaveModuleConfig(module.moduleKey, event.target.value);
+                              }}
+                              className="h-11 text-sm"
+                            >
+                              <option value="__global__">
+                                Ikuti Global ({activeConnection?.name ?? aiConfig.modelId})
+                              </option>
+                              {aiConfig.providers.map((connection) => (
+                                <option key={connection.id} value={connection.id}>
+                                  {connection.name} - {connection.providerName ?? connection.providerId} - {connection.modelId}
+                                </option>
+                              ))}
+                            </NativeSelect>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="rounded-[1.4rem] border border-border bg-card/80 p-5">
@@ -584,12 +687,17 @@ export function AIControlPanel() {
               <Field label="Provider">
                 <NativeSelect
                   value={form.providerId}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const providerId = event.target.value;
+                    const nextProvider =
+                      liveProviders.find((provider) => provider.id === providerId) ?? selectedProvider;
+                    const nextModels = nextProvider?.models ?? [];
                     setForm((current) => ({
                       ...current,
-                      providerId: event.target.value,
-                    }))
-                  }
+                      providerId,
+                      modelId: nextModels.includes(current.modelId) ? current.modelId : nextModels[0] ?? current.modelId,
+                    }));
+                  }}
                   className="h-11 text-base"
                 >
                   {liveProviders.map((provider) => (

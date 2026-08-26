@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, Plus, Save, Scale, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, PanelTopOpen, Plus, Save, Scale, Sparkles, Trash2 } from "lucide-react";
 
 import { AccessDeniedCard, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,8 @@ import {
   ASSISTANT_JUDGE_ROLE_OPTIONS,
   createAssistantJudgeLinkId,
   getAssistantJudgeOrderedLinks,
+  getAssistantJudgeViewPath,
+  isAssistantJudgeEmbeddedEnabled,
   normalizeAssistantJudgeConfig,
   validateAssistantJudgeUrl,
 } from "@/lib/assistant-judge";
@@ -54,6 +56,7 @@ function buildNewLink(existingIds: string[]): AssistantJudgeLinkConfig {
     description: "Asisten AI tambahan.",
     allowedRoles: ["super-admin"],
     allowedUserIds: [],
+    embeddedEnabled: true,
     openInNewTab: true,
   };
 }
@@ -105,7 +108,7 @@ function sortUsers(users: UserPersona[]) {
 }
 
 export default function AssistantJudgeSettingsPage() {
-  const { assistantJudgeConfig, currentUser, updateAssistantJudgeConfig, users } = usePortal();
+  const { assistantJudgeConfig, currentUser, positions, updateAssistantJudgeConfig, users } = usePortal();
   const roleId = getEffectiveRoleId(currentUser);
   const [draft, setDraft] = useState<AssistantJudgeConfig>(() => cloneConfig(assistantJudgeConfig));
   const [message, setMessage] = useState<{ type: "success" | "error" | "warning"; text: string } | null>(null);
@@ -316,7 +319,10 @@ export default function AssistantJudgeSettingsPage() {
             const status = getLinkStatus(link);
             const isDefaultLink = ASSISTANT_JUDGE_PROVIDER_ORDER.includes(linkId);
             const urlValidation = link.enabled ? validateAssistantJudgeUrl(link.url) : null;
-            const canPreviewLink = validateAssistantJudgeUrl(link.url).ok;
+            const embeddedEnabled = isAssistantJudgeEmbeddedEnabled(link);
+            const hasValidUrl = validateAssistantJudgeUrl(link.url).ok;
+            const canPreviewEmbedded = link.enabled && embeddedEnabled && hasValidUrl && Boolean(assistantJudgeConfig.links[linkId]);
+            const canPreviewDirect = link.enabled && !embeddedEnabled && hasValidUrl;
 
             return (
               <Card key={linkId} className="border-border/80">
@@ -434,7 +440,7 @@ export default function AssistantJudgeSettingsPage() {
                               <span className="min-w-0">
                                 <span className="block truncate font-medium text-foreground">{user.name}</span>
                                 <span className="block text-xs leading-5 text-muted-foreground">
-                                  {getUserRoleBadge(user)} - {getUserPositionLabel(user)}
+                                  {getUserRoleBadge(user)} - {getUserPositionLabel(user, positions)}
                                 </span>
                               </span>
                             </label>
@@ -444,27 +450,55 @@ export default function AssistantJudgeSettingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <label className="flex items-center gap-3 text-sm font-medium text-foreground">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-primary"
-                        checked={link.openInNewTab !== false}
-                        onChange={(event) => updateLink(linkId, { openInNewTab: event.target.checked })}
-                      />
-                      Buka di tab baru
-                    </label>
-                    {canPreviewLink ? (
+                  <div className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card/70 p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          Mode buka pengguna: {embeddedEnabled ? "dalam ALETA" : "website AI langsung"}
+                        </p>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          Aktifkan wrapped/embedded agar pengguna masuk ke viewer ALETA. Matikan jika website AI tidak mendukung iframe atau perlu dibuka langsung.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        <label className="flex items-center gap-3 rounded-xl border border-border/80 bg-muted/30 px-3 py-2 text-sm font-medium text-foreground">
+                          <Switch
+                            checked={embeddedEnabled}
+                            onCheckedChange={(checked) => updateLink(linkId, { embeddedEnabled: checked })}
+                          />
+                          Wrapped/embedded
+                        </label>
+                        {!embeddedEnabled ? (
+                          <label className="flex items-center gap-2 rounded-xl border border-border/80 bg-muted/30 px-3 py-2 text-sm font-medium text-foreground">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-primary"
+                              checked={link.openInNewTab !== false}
+                              onChange={(event) => updateLink(linkId, { openInNewTab: event.target.checked })}
+                            />
+                            Buka tab baru
+                          </label>
+                        ) : null}
+                      </div>
+                    </div>
+                    {canPreviewEmbedded ? (
                       <Button asChild variant="outline" size="sm">
-                        <a href={link.url} target="_blank" rel="noopener noreferrer">
+                        <Link href={getAssistantJudgeViewPath(link)}>
+                          <PanelTopOpen className="h-4 w-4" />
+                          Preview Dalam ALETA
+                        </Link>
+                      </Button>
+                    ) : canPreviewDirect ? (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={link.url} target={link.openInNewTab === false ? undefined : "_blank"} rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4" />
-                          Preview Link
+                          Preview Website AI
                         </a>
                       </Button>
                     ) : (
                       <Button variant="outline" size="sm" disabled>
-                        <ExternalLink className="h-4 w-4" />
-                        Preview Link
+                        <PanelTopOpen className="h-4 w-4" />
+                        Preview Setelah Disimpan
                       </Button>
                     )}
                   </div>

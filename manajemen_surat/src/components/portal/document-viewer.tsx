@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Download, ExternalLink, Eye, FileText, Info, Minus, Plus, Printer, QrCode, Shield } from "lucide-react";
+import { Download, ExternalLink, Eye, FileText, Info, Maximize2, Minus, Plus, Printer, QrCode, Shield } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PdfLiveViewer } from "@/components/pdf/pdf-live-viewer";
 import { loadPdfBinary } from "@/lib/pdf-binary";
+import { printPdfDocument } from "@/lib/pdf-print";
 import { loadPdfJsModule, type PdfDocumentLoadingTask, type PdfDocumentProxy } from "@/lib/pdfjs-client";
-import { buildPdfBinaryRoute, buildPdfViewerRoute, normalizePdfDocumentPath } from "@/lib/pdf-viewer-route";
+import {
+  buildPdfBinaryRoute,
+  buildPdfViewerRoute,
+  normalizePdfDocumentPath,
+} from "@/lib/pdf-viewer-route";
 import { type LetterDetail, type UserPersona } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -17,10 +21,22 @@ const BASE_DOCUMENT_WIDTH = 960;
 const MIN_SCALE = 0.42;
 const MAX_SCALE = 1.18;
 const securityExplanation =
-  "Dokumen ini dilindungi watermark dinamis dan QR validasi internal untuk mencegah pemalsuan.";
+  "Dokumen diberi watermark dan tanda validasi agar lebih sulit dipalsukan.";
 
 function clampScale(value: number) {
   return Math.min(Math.max(value, MIN_SCALE), MAX_SCALE);
+}
+
+function triggerPdfDownload(downloadUrl: string, fileName?: string) {
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  if (fileName) {
+    link.download = fileName;
+  }
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export function DocumentViewer({
@@ -55,7 +71,7 @@ export function DocumentViewer({
     const dateToFormat = letter.tanggal ? new Date(letter.tanggal) : new Date(0);
     return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(dateToFormat);
   }, [letter.tanggal]);
-  const canAdjustSmartScale = viewMode === "smart" && !!pdfDocument && !pdfError;
+  const canAdjustCanvasScale = !!pdfDocument && !pdfError;
   const safeDocumentUrl = normalizePdfDocumentPath(letter.documentUrl);
   const standaloneViewerUrl = safeDocumentUrl
     ? buildPdfViewerRoute({
@@ -63,20 +79,28 @@ export function DocumentViewer({
         documentFileName: letter.documentFileName,
       })
     : null;
-  const downloadDocumentUrl = safeDocumentUrl ? buildPdfBinaryRoute(safeDocumentUrl) : letter.documentUrl;
+  const downloadDocumentUrl = safeDocumentUrl
+    ? buildPdfBinaryRoute(safeDocumentUrl, {
+        download: true,
+        fileName: letter.documentFileName,
+      })
+    : null;
+  const canDownloadDocument = !isPreviewOnly && !!downloadDocumentUrl;
+  const canPrintDocument = !isPreviewOnly && !!pdfDocument && !pdfError;
   const statusText = useMemo(() => {
     if (!letter.documentUrl) return "Dokumen PDF belum tersedia";
-    if (viewMode === "original") return "Mode fidelity dokumen asli aktif";
-    if (pdfError) return "Preview PDF asli aktif";
-    if (pdfDocument && pageCount > 0) return `${pageCount} halaman PDF aktif`;
-    if (isLoadingPdf) return "Menyiapkan preview PDF";
+    if (pdfError) return "Tampilan PDF tidak dapat dimuat";
+    if (pdfDocument && pageCount > 0) {
+      return viewMode === "original" ? `${pageCount} halaman PDF asli aktif` : `${pageCount} halaman PDF aktif`;
+    }
+    if (isLoadingPdf) return viewMode === "original" ? "Menyiapkan PDF asli" : "Menyiapkan tampilan PDF";
 
     return "Menunggu PDF aktif";
   }, [isLoadingPdf, letter.documentUrl, pageCount, pdfDocument, pdfError, viewMode]);
   const viewerDescription =
     viewMode === "smart"
-      ? "Smart Preview difokuskan untuk telaah cepat di workflow surat: watermark aktif, kartu per halaman, dan render bertahap agar tetap ringan."
-      : "PDF Asli menampilkan dokumen dengan fidelity lebih utuh: tanpa watermark overlay, dengan navigasi halaman internal untuk membaca detail dokumen.";
+      ? "Untuk cek cepat. Dokumen diberi watermark dan dibuat ringan saat dibuka."
+      : "Tampilan dokumen asli untuk membaca detail.";
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -87,6 +111,9 @@ export function DocumentViewer({
       const nextScale = clampScale((rect.width - 56) / BASE_DOCUMENT_WIDTH);
 
       setFitScale(Number(nextScale.toFixed(3)));
+      if (scaleMode === "fit-width") {
+        setScaleInput(`${Math.round(nextScale * 100)}`);
+      }
     };
 
     recalculateScale();
@@ -99,20 +126,24 @@ export function DocumentViewer({
       observer.disconnect();
       window.removeEventListener("resize", recalculateScale);
     };
-  }, []);
-
-  useEffect(() => {
-    setScaleInput(`${scalePercentage}`);
-  }, [scalePercentage]);
+  }, [scaleMode]);
 
   useEffect(() => {
     const documentUrl = letter.documentUrl;
 
     if (!documentUrl) {
-      setPdfDocument(null);
-      setPageCount(0);
-      setPdfError("Dokumen PDF belum tersedia.");
-      return;
+      let cancelled = false;
+
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setPdfDocument(null);
+        setPageCount(0);
+        setPdfError("Dokumen PDF belum tersedia.");
+      });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     let cancelled = false;
@@ -171,46 +202,43 @@ export function DocumentViewer({
   }, [letter.documentUrl]);
 
   return (
-    <section className={cn("flex h-full flex-col", className)}>
-      <div className="flex flex-col gap-4 border-b border-border/80 bg-card/70 px-5 py-5 sm:px-6">
-        <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
+    <section className={cn("flex h-full min-h-[520px] min-w-0 flex-col overflow-hidden", className)}>
+      <div className="flex shrink-0 flex-col gap-2 border-b border-border/80 bg-card/70 px-3 py-2 sm:px-4">
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <h2 className="text-sm font-semibold text-foreground">Pembaca Dokumen</h2>
+            <div className="flex flex-wrap items-center gap-1.5 xl:flex-nowrap">
+              <Badge variant="outline">{canAdjustCanvasScale ? `${scalePercentage}%` : "Pratinjau"}</Badge>
+              <Badge variant="outline">{statusText}</Badge>
               <Badge variant={isPreviewOnly ? "warning" : "success"}>
-                {isPreviewOnly ? "View Only" : "Unduh Aktif"}
+                {isPreviewOnly ? "Hanya Lihat" : "Unduh Aktif"}
               </Badge>
-              <SecurityInfoBadge icon={QrCode} label="Validasi Internal" />
-              <SecurityInfoBadge icon={Shield} label="Proteksi Dokumen" />
-            </div>
-            <div>
-              <h2 className="font-serif text-2xl text-foreground">Integrated Document Viewer</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-                {viewerDescription}
-              </p>
+              <SecurityInfoBadge icon={QrCode} label="Cek Keaslian" />
+              <SecurityInfoBadge icon={Shield} label="Dokumen Terlindungi" />
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1 rounded-[1.3rem] border border-border bg-background/80 p-1 shadow-sm">
+          <div className="flex shrink-0 flex-col gap-1 xl:items-end">
+            <div className="flex items-center gap-1 rounded-[1.1rem] border border-border bg-background/80 p-1 shadow-sm">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-9 rounded-[1rem] px-4 text-xs font-semibold tracking-wide transition-all",
+                  "h-7 rounded-[0.9rem] px-3 text-[11px] font-semibold tracking-wide transition-all",
                   viewMode === "smart" ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90" : "text-muted-foreground hover:bg-muted"
                 )}
                 onClick={() => setViewMode("smart")}
               >
                 <Eye className="mr-2 h-3.5 w-3.5" />
-                Smart Preview
+                Preview Cepat
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-9 rounded-[1rem] px-4 text-xs font-semibold tracking-wide transition-all",
+                  "h-7 rounded-[0.9rem] px-3 text-[11px] font-semibold tracking-wide transition-all",
                   viewMode === "original" ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90" : "text-muted-foreground hover:bg-muted"
                 )}
                 onClick={() => setViewMode("original")}
@@ -219,14 +247,18 @@ export function DocumentViewer({
                 PDF Asli
               </Button>
             </div>
+            <p className="max-w-[28rem] text-[11px] leading-5 text-muted-foreground xl:text-right">{viewerDescription}</p>
+          </div>
+        </div>
 
-            <div className="flex flex-wrap items-center gap-2 rounded-[1.3rem] border border-border bg-background/80 p-2 shadow-sm">
-              <Button
+        <div className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-[1.1rem] border border-border bg-background/80 p-1 shadow-sm">
+            <Button
               type="button"
               variant="ghost"
               size="icon"
+              className="h-7 w-7"
               aria-label="Kurangi zoom"
-              disabled={!canAdjustSmartScale}
+              disabled={!canAdjustCanvasScale}
               onClick={() => {
                 const nextScale = clampScale((scaleMode === "manual" ? manualScale : fitScale) - 0.08);
 
@@ -236,13 +268,13 @@ export function DocumentViewer({
             >
               <Minus className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5">
+            <div className="flex h-7 items-center gap-1.5 rounded-xl border border-border bg-card px-2">
               <Input
                 value={scaleInput}
                 inputMode="numeric"
                 aria-label="Persentase zoom"
-                disabled={!canAdjustSmartScale}
-                className="h-8 w-20 border-0 bg-transparent px-0 text-center text-sm shadow-none focus-visible:ring-0"
+                disabled={!canAdjustCanvasScale}
+                className="h-6 w-12 border-0 bg-transparent px-0 text-center text-xs shadow-none focus-visible:ring-0"
                 onChange={(event) => {
                   const raw = event.target.value.replace(/[^\d]/g, "");
                   setScaleInput(raw);
@@ -255,14 +287,15 @@ export function DocumentViewer({
                 }}
                 onBlur={() => setScaleInput(`${Math.round(activeScale * 100)}`)}
               />
-              <span className="text-sm font-medium text-muted-foreground">%</span>
+              <span className="text-xs font-medium text-muted-foreground">%</span>
             </div>
             <Button
               type="button"
               variant="ghost"
               size="icon"
+              className="h-7 w-7"
               aria-label="Tambah zoom"
-              disabled={!canAdjustSmartScale}
+              disabled={!canAdjustCanvasScale}
               onClick={() => {
                 const nextScale = clampScale((scaleMode === "manual" ? manualScale : fitScale) + 0.08);
 
@@ -276,111 +309,116 @@ export function DocumentViewer({
               type="button"
               variant="outline"
               size="sm"
-              disabled={!canAdjustSmartScale}
-              onClick={() => setScaleMode("fit-width")}
+              className="h-7 rounded-xl px-2.5 text-xs"
+              disabled={!canAdjustCanvasScale}
+              onClick={() => {
+                setScaleMode("fit-width");
+                setScaleInput(`${Math.round(fitScale * 100)}`);
+              }}
             >
               Fit to Width
             </Button>
-            <Button variant="outline" size="sm" disabled={isPreviewOnly || !letter.documentUrl} asChild>
-              <a href={downloadDocumentUrl} download={letter.documentFileName}>
-                <Download className="h-4 w-4" />
-                Unduh
-              </a>
-            </Button>
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              disabled={isPreviewOnly || !standaloneViewerUrl}
+              className="h-7 rounded-xl px-2.5 text-xs"
+              disabled={!standaloneViewerUrl}
               onClick={() => {
                 if (!standaloneViewerUrl) return;
                 window.open(standaloneViewerUrl, "_blank", "noopener,noreferrer");
               }}
             >
+              <Maximize2 className="h-4 w-4" />
+              Layar Penuh
+            </Button>
+            {canDownloadDocument ? (
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 rounded-xl border border-primary/40 bg-primary/15 px-2.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary/25 hover:text-primary"
+                onClick={() => {
+                  if (!downloadDocumentUrl) return;
+                  triggerPdfDownload(downloadDocumentUrl, letter.documentFileName);
+                }}
+              >
+                <Download className="h-4 w-4" />
+                Unduh
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" className="h-7 rounded-xl px-2.5 text-xs" disabled>
+                <Download className="h-4 w-4" />
+                Unduh
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              className="h-7 rounded-xl border border-emerald-500/35 bg-emerald-500/15 px-2.5 text-xs font-semibold text-emerald-600 shadow-sm hover:bg-emerald-500/25 hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200"
+              disabled={!canPrintDocument}
+              onClick={() => {
+                if (!pdfDocument) return;
+                void printPdfDocument(pdfDocument, {
+                  title: letter.documentFileName,
+                  mode: viewMode,
+                  watermark: viewMode === "smart" ? `${currentUser?.name ?? "Pengguna"} / ${timestamp}` : undefined,
+                });
+              }}
+            >
               <Printer className="h-4 w-4" />
               Cetak
             </Button>
-            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <Badge variant="outline">
-            {canAdjustSmartScale ? (scaleMode === "fit-width" ? "Auto fit-to-width" : "Manual zoom") : "Preview inline"}
-          </Badge>
-          <span>{canAdjustSmartScale ? `Scale aktif ${scalePercentage}%` : "Zoom canvas tidak aktif"}</span>
-          <span className="hidden sm:inline">-</span>
-          <span>{statusText}</span>
-        </div>
-      </div>
-
-      <div className="flex-1 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_26%),linear-gradient(180deg,rgba(15,23,42,0.03),transparent)] p-3 sm:p-4">
+      <div className="flex min-h-0 flex-1 flex-col bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_26%),linear-gradient(180deg,rgba(15,23,42,0.03),transparent)] p-2 sm:p-2.5">
         <div
           ref={viewportRef}
-          className="relative h-[clamp(460px,78vh,940px)] overflow-auto rounded-[1.6rem] border border-border bg-[linear-gradient(180deg,rgba(148,163,184,0.10),rgba(15,23,42,0.03))] shadow-inner"
+          className="relative min-h-0 flex-1 overflow-auto rounded-[1.4rem] border border-border bg-[linear-gradient(180deg,rgba(148,163,184,0.10),rgba(15,23,42,0.03))] shadow-inner"
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-4 py-4">
-            <div className="rounded-full border border-primary/20 bg-primary/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary/80 backdrop-blur">
-              Viewer aman - {currentUser?.name ?? "Pengguna aktif"} - {timestamp}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-4 py-3">
+            <div className="rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-primary/80 backdrop-blur">
+              Tampilan aman - {currentUser?.name ?? "Pengguna aktif"} - {timestamp}
             </div>
             {letter.createdByUserName && (
-              <div className="ml-3 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-600 backdrop-blur">
+              <div className="ml-3 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-600 backdrop-blur">
                 Diunggah oleh: {letter.createdByUserName} - {formattedLetterDate}
               </div>
             )}
           </div>
 
-          <div className="flex min-h-full min-w-full items-start justify-center p-4 pt-16 sm:p-6 sm:pt-20">
-            {viewMode === "smart" ? (
-              <div className="flex w-full max-w-5xl flex-col gap-5">
-                {!letter.documentUrl ? (
-                  <ViewerMessage
-                    title="PDF belum tersedia"
-                    description="Upload dokumen surat terlebih dahulu untuk melihat preview PDF asli."
-                    documentUrl={letter.documentUrl}
-                  />
-                ) : isLoadingPdf && !pdfDocument ? (
-                  <ViewerMessage
-                    title="Memuat PDF asli"
-                    description="Halaman PDF sedang dirender agar tampil proporsional dan tetap ringan."
-                    loading
-                  />
-                ) : pdfDocument && pageCount > 0 ? (
-                  Array.from({ length: pageCount }, (_, index) => (
-                    <PdfPageCanvas
-                      key={`${letter.id}-page-${index + 1}`}
-                      pdfDocument={pdfDocument}
-                      pageNumber={index + 1}
-                      scale={activeScale}
-                      watermark={`${currentUser?.name ?? "Pengguna"} / ${timestamp}`}
-                    />
-                  ))
-                ) : (
-                <InlinePdfPreview
-                  documentUrl={safeDocumentUrl}
-                  documentFileName={letter.documentFileName}
-                  mode="fallback"
-                  notice={
-                      pdfError
-                        ? "Smart Preview sedang bermasalah di browser ini. PDF asli tetap ditampilkan langsung di bawah."
-                        : undefined
-                    }
-                  />
-                )}
-              </div>
-            ) : (
-              letter.documentUrl ? (
-                <InlinePdfPreview
-                  documentUrl={safeDocumentUrl}
-                  documentFileName={letter.documentFileName}
-                  mode="original"
-                />
-              ) : (
+          <div className="flex min-h-full min-w-full items-start justify-center p-3 pt-12 sm:p-4 sm:pt-14">
+            <div className={cn("flex w-full flex-col gap-5", viewMode === "original" ? "max-w-[92rem]" : "max-w-5xl")}>
+              {!letter.documentUrl ? (
                 <ViewerMessage
                   title="PDF belum tersedia"
-                  description="Upload dokumen surat terlebih dahulu untuk melihat preview PDF asli."
+                  description="Unggah dokumen surat terlebih dahulu untuk melihat PDF."
                 />
-              )
-            )}
+              ) : isLoadingPdf && !pdfDocument ? (
+                <ViewerMessage
+                  title={viewMode === "original" ? "Memuat PDF asli" : "Memuat PDF"}
+                  description="Dokumen sedang diproses agar dapat ditampilkan langsung di aplikasi."
+                  loading
+                />
+              ) : pdfDocument && pageCount > 0 ? (
+                Array.from({ length: pageCount }, (_, index) => (
+                  <PdfPageCanvas
+                    key={`${letter.id}-${viewMode}-page-${index + 1}`}
+                    pdfDocument={pdfDocument}
+                    pageNumber={index + 1}
+                    scale={activeScale}
+                    mode={viewMode}
+                    watermark={viewMode === "smart" ? `${currentUser?.name ?? "Pengguna"} / ${timestamp}` : undefined}
+                  />
+                ))
+              ) : (
+                <ViewerMessage
+                  title="Tampilan PDF tidak tersedia"
+                  description={pdfError || "Dokumen belum dapat dibaca oleh aplikasi."}
+                  documentHref={standaloneViewerUrl ?? undefined}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -388,85 +426,18 @@ export function DocumentViewer({
   );
 }
 
-function InlinePdfPreview({
-  documentUrl,
-  documentFileName,
-  mode,
-  notice,
-}: {
-  documentUrl: string | null;
-  documentFileName?: string;
-  mode: "original" | "fallback";
-  notice?: string;
-}) {
-  const modeLabel = mode === "original" ? "Viewer Dokumen Asli" : "Live PDF Viewer";
-
-  return (
-    <div
-      className={cn(
-        "flex h-full w-full flex-col overflow-hidden rounded-[1.8rem] border border-border bg-card shadow-2xl",
-        mode === "original" ? "max-w-[92rem]" : "max-w-5xl"
-      )}
-      data-testid="pdf-inline-preview-live"
-    >
-      {notice ? (
-        <div className="border-b border-amber-200 bg-amber-50/80 px-5 py-3 text-sm leading-6 text-amber-800">
-          {notice}
-        </div>
-      ) : null}
-      <div className="flex-1 bg-muted/20">
-        {documentUrl ? (
-          <PdfLiveViewer
-            documentUrl={documentUrl}
-            documentFileName={documentFileName}
-            embedded
-            showToolbar={mode === "original"}
-            mode={mode}
-          />
-        ) : (
-          <ViewerMessage title="PDF tidak tersedia" description="Tautan dokumen tidak valid untuk ditampilkan di browser." />
-        )}
-      </div>
-      <div className="flex items-center justify-between border-t border-border bg-white px-6 py-4 dark:bg-slate-900">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-red-100 p-2 text-red-600 dark:bg-red-500/10">
-            <FileText className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">{documentFileName || "dokumen-asli.pdf"}</p>
-            <p className="text-[11px] text-muted-foreground">{modeLabel}</p>
-          </div>
-        </div>
-        {documentUrl ? (
-          <Button variant="outline" size="sm" asChild>
-            <a
-              href={buildPdfViewerRoute({
-                documentUrl,
-                documentFileName,
-              })}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Buka di Jendela Baru
-            </a>
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 function PdfPageCanvas({
   pdfDocument,
   pageNumber,
   scale,
+  mode,
   watermark,
 }: {
   pdfDocument: PdfDocumentProxy;
   pageNumber: number;
   scale: number;
-  watermark: string;
+  mode: "smart" | "original";
+  watermark?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -508,7 +479,7 @@ function PdfPageCanvas({
         const context = canvas.getContext("2d");
         if (!context) return;
 
-        const pixelRatio = window.devicePixelRatio || 1;
+        const pixelRatio = mode === "original" ? Math.max(window.devicePixelRatio || 1, 2) : window.devicePixelRatio || 1;
         canvas.width = Math.ceil(viewport.width * pixelRatio);
         canvas.height = Math.ceil(viewport.height * pixelRatio);
         canvas.style.width = `${viewport.width}px`;
@@ -528,21 +499,23 @@ function PdfPageCanvas({
 
         if (cancelled) return;
 
-        context.save();
-        context.font = "16px sans-serif";
-        context.fillStyle = "rgba(30, 41, 59, 0.14)";
-        context.translate(viewport.width / 2, viewport.height / 2);
-        context.rotate((-24 * Math.PI) / 180);
-        context.textAlign = "center";
-        context.fillText(watermark, 0, 0);
-        context.restore();
+        if (watermark) {
+          context.save();
+          context.font = "16px sans-serif";
+          context.fillStyle = "rgba(30, 41, 59, 0.14)";
+          context.translate(viewport.width / 2, viewport.height / 2);
+          context.rotate((-24 * Math.PI) / 180);
+          context.textAlign = "center";
+          context.fillText(watermark, 0, 0);
+          context.restore();
+        }
       } catch (error) {
         if (!cancelled) {
           if (error && typeof error === "object" && "name" in error && error.name === "RenderingCancelledException") {
             return;
           }
 
-          setRenderError(error instanceof Error ? error.message : "Halaman PDF gagal dirender.");
+          setRenderError(error instanceof Error ? error.message : "Halaman PDF gagal ditampilkan.");
         }
       }
     };
@@ -553,17 +526,20 @@ function PdfPageCanvas({
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [pageNumber, pdfDocument, scale, shouldRender, watermark]);
+  }, [mode, pageNumber, pdfDocument, scale, shouldRender, watermark]);
 
   return (
     <div
       ref={containerRef}
-      className="relative rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_26px_64px_rgba(15,23,42,0.14)]"
+      className={cn(
+        "relative rounded-[1.8rem] border border-slate-200 bg-white",
+        mode === "original" ? "shadow-[0_16px_42px_rgba(15,23,42,0.10)]" : "shadow-[0_26px_64px_rgba(15,23,42,0.14)]"
+      )}
       style={{ minHeight: `${pageHeight ?? 360}px` }}
     >
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
         <span>Halaman {pageNumber}</span>
-        <span>Smart Preview</span>
+        <span>{mode === "original" ? "Dokumen Asli" : "Preview Cepat"}</span>
       </div>
       {renderError ? (
         <div className="flex min-h-[280px] items-center justify-center p-6 text-center text-sm text-muted-foreground">
@@ -582,13 +558,17 @@ function ViewerMessage({
   title,
   description,
   documentUrl,
+  documentHref,
   loading,
 }: {
   title: string;
   description: string;
   documentUrl?: string;
+  documentHref?: string;
   loading?: boolean;
 }) {
+  const resolvedDocumentHref = documentHref ?? (documentUrl ? buildPdfViewerRoute({ documentUrl }) : undefined);
+
   return (
     <div className="rounded-[1.8rem] border border-border bg-card/80 p-8 text-center shadow-lg">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -596,9 +576,9 @@ function ViewerMessage({
       </div>
       <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
       <p className="mt-2 text-sm leading-7 text-muted-foreground">{description}</p>
-      {documentUrl ? (
+      {resolvedDocumentHref ? (
         <Button className="mt-5" variant="outline" asChild>
-          <a href={documentUrl} target="_blank" rel="noopener noreferrer">
+          <a href={resolvedDocumentHref} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="mr-2 h-4 w-4" />
             Buka PDF Asli
           </a>

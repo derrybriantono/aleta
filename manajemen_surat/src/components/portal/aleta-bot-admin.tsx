@@ -1,13 +1,17 @@
 "use client";
 
 import {
+  ArrowUpDown,
   Bot,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Database,
   Download,
   Eye,
   EyeOff,
   FileText,
+  Loader2,
   MessageCircleMore,
   Play,
   Power,
@@ -18,15 +22,20 @@ import {
   Smartphone,
   TerminalSquare,
   X,
+  XCircle,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
-import React, { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { AletaBotAntrianOnlinePanel } from "@/components/portal/aleta-bot-antrian-online";
+import { AletaBotEcourtPanel } from "@/components/portal/aleta-bot-ecourt";
+import { AletaBotManualSendPanel } from "@/components/portal/aleta-bot-manual-send";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreatableMultiSelect } from "@/components/ui/creatable-multi-select";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
@@ -37,6 +46,7 @@ import {
   type AletaBotDispositionReminderRun,
   type AletaBotDeadlineReminderDryRunResult,
   type AletaBotDeadLetter,
+  type AletaBotEmployeeRecipient,
   type AletaBotLegacyMigration,
   type AletaBotNotification,
   type AletaBotNotificationCategory,
@@ -44,18 +54,55 @@ import {
   type AletaBotPublicQaIntent,
   type AletaBotQuery,
   type AletaBotQueryCategory,
+  type AletaBotSendingRiskPreset,
   type AletaBotSnapshot,
   type AletaBotTemplate,
   type AletaBotUnknownQuestionReview,
   type AletaBotWorkerState,
 } from "@/lib/aleta-bot-types";
+import {
+  ALETA_BOT_VARIABLE_CATEGORY_LABELS,
+  type AletaBotVariableCategory,
+  type AletaBotVariableDoc,
+  describeAletaBotVariable,
+  isKnownAletaBotVariable,
+  listAletaBotVariableDocs,
+} from "@/lib/aleta-bot-variable-catalog";
+import { findNotificationsOutsideSendingWindow, formatHoursLabel } from "@/lib/aleta-bot-sending-schedule";
+import { lintTemplateBody, summarizeWarnings } from "@/lib/aleta-bot-message-linter";
+import { apiPath } from "@/lib/base-path";
+import { usePortal } from "@/lib/app-state";
+import { getEffectiveRoleId } from "@/lib/permissions";
 import { formatDateTime } from "@/lib/format";
 import { humanizeErrorMessage, humanizeStatus } from "@/lib/humanized-labels";
+import { getAdditionalRoleLabel } from "@/lib/user-additional-roles";
 import { cn } from "@/lib/utils";
 
 type ApiEnvelope<T> = {
   ok: boolean;
   data: T;
+  message?: string;
+  error?: {
+    message?: string;
+  };
+};
+
+type AletaBotActionResult = {
+  status?: string;
+  queueId?: number | string;
+  duplicate?: boolean;
+  idempotencyKey?: string;
+  dryRun?: boolean;
+  sent?: boolean;
+  queueProgress?: {
+    queueId?: number | string;
+    stage?: "queued" | "sending" | "done" | "failed" | "unknown" | string;
+    status?: string;
+    position?: number | null;
+    pendingAhead?: number | null;
+    estimatedWaitMs?: number | null;
+    estimatedWaitText?: string | null;
+  };
   message?: string;
 };
 
@@ -69,6 +116,19 @@ type RuntimeDashboardSnapshot = {
     ok: boolean;
     message: string;
   } | null;
+  queueMonitoring?: {
+    pending: number;
+    processing: number;
+    sentToday: number;
+    failedToday: number;
+    deadLetters: number;
+    stalePending: number;
+    oldestPendingAt: string | null;
+    lastSentAt: string | null;
+    lastCreatedAt: string | null;
+    health: "normal" | "warning" | "blocked";
+    alerts: Array<{ key: string; label: string; severity: "warning" | "critical" }>;
+  };
   payload?: {
     whatsapp?: {
       status?: string;
@@ -82,6 +142,11 @@ type RuntimeDashboardSnapshot = {
       lastAuthFailureAt?: string | null;
     };
     bot?: {
+      botEnabled?: boolean;
+      notificationsEnabled?: boolean;
+      dryRunEnabled?: boolean;
+      messageDelayMs?: number;
+      retryLimit?: number;
       sendingWindow?: {
         enabled?: boolean;
         start?: string;
@@ -156,6 +221,9 @@ type RuntimeDashboardSnapshot = {
       model?: string;
       apiKeyConfigured?: boolean;
       apiKeyMasked?: string;
+      apiKeyEnvKey?: string;
+      secretPersistence?: string;
+      productionRequiresEnvSecret?: boolean;
       configSource?: string;
       syncedAt?: string | null;
       lastSyncStatus?: string;
@@ -167,7 +235,297 @@ type RuntimeDashboardSnapshot = {
     messageStatsToday?: Record<string, number>;
     systemStatsToday?: Record<string, number>;
   } | null;
+  tokenHealth?: {
+    status?: string;
+    message?: string;
+    portalTokenConfigured?: boolean;
+    botTokenConfigured?: boolean | null;
+    fingerprintMatched?: boolean;
+    statusCode?: number;
+    checklist?: string[];
+  };
 };
+
+type WhatsappReportSummary = {
+  generatedAt: string;
+  range: {
+    key: string;
+    label: string;
+    from: string | null;
+    to: string;
+  };
+  status: string;
+  source: {
+    key: string;
+    label: string;
+  };
+  availableRanges: Array<{ key: string; label: string; minutes: number | null }>;
+  availableSources: Array<{ key: string; label: string }>;
+  stats: {
+    total: number;
+    sent: number;
+    failed: number;
+    simulated: number;
+    pending: number;
+    successRate: number;
+    byStatus: Array<[string, number]>;
+    byApp: Array<[string, number]>;
+    byFeature: Array<[string, number]>;
+    byCategory: Array<[string, number]>;
+    topErrors: Array<[string, number]>;
+    dailyTrend: Array<{ date: string; total: number; sent: number; failed: number }>;
+  };
+  rows: Array<{
+    id: string;
+    createdAt: string;
+    sentAt: string;
+    statusLabel: string;
+    recipientName: string;
+    recipientNumber: string;
+    categoryLabel: string;
+    sourceAppLabel: string;
+    sourceFeatureLabel: string;
+    caseOrPosition: string;
+    messagePreview: string;
+    errorMessage: string;
+  }>;
+};
+
+type WhatsappReportRow = WhatsappReportSummary["rows"][number];
+type ReportTableSortKey =
+  | "createdAt"
+  | "statusLabel"
+  | "recipientName"
+  | "recipientNumber"
+  | "sourceAppLabel"
+  | "sourceFeatureLabel"
+  | "caseOrPosition"
+  | "messagePreview";
+type ReportTableSortDirection = "asc" | "desc";
+
+const REPORT_TABLE_SORT_OPTIONS: Array<{ key: ReportTableSortKey; label: string }> = [
+  { key: "createdAt", label: "Waktu" },
+  { key: "statusLabel", label: "Status" },
+  { key: "recipientName", label: "Penerima" },
+  { key: "recipientNumber", label: "Nomor" },
+  { key: "sourceAppLabel", label: "Aplikasi" },
+  { key: "sourceFeatureLabel", label: "Fitur" },
+  { key: "caseOrPosition", label: "Data" },
+  { key: "messagePreview", label: "Isi Pesan" },
+];
+
+const WHATSAPP_REPORT_RANGE_OPTIONS = [
+  ["5m", "5 menit"],
+  ["10m", "10 menit"],
+  ["30m", "30 menit"],
+  ["1h", "1 jam"],
+  ["6h", "6 jam"],
+  ["12h", "12 jam"],
+  ["1d", "1 hari"],
+  ["3d", "3 hari"],
+  ["7d", "7 hari"],
+  ["14d", "2 minggu"],
+  ["30d", "1 bulan"],
+  ["90d", "3 bulan"],
+  ["180d", "6 bulan"],
+  ["365d", "1 tahun"],
+  ["all", "Seluruh data"],
+] as const;
+
+const WHATSAPP_REPORT_STATUS_OPTIONS = [
+  ["all", "Semua status"],
+  ["sent", "Terkirim"],
+  ["failed", "Gagal"],
+  ["simulated", "Simulasi"],
+  ["pending", "Menunggu/diproses"],
+] as const;
+
+const WHATSAPP_REPORT_SOURCE_OPTIONS = [
+  ["all", "Semua aplikasi"],
+  ["aleta_bot", "Notifikasi Perkara"],
+  ["manajemen_surat", "Manajemen Surat"],
+  ["e_kepegawaian", "E-Kepegawaian"],
+] as const;
+
+const TEMPLATE_CATEGORY_LABELS: Record<string, string> = {
+  notifikasi: "Pihak Perkara",
+  balasan: "Balasan",
+  error: "Error",
+  admin: "Admin",
+  pegawai: "Pegawai",
+  employee: "Pegawai",
+  pihak: "Pihak Perkara",
+  party: "Pihak Perkara",
+  dokumen_lampiran: "Dokumen / Lampiran",
+  dokumen: "Dokumen / Lampiran",
+  lampiran: "Dokumen / Lampiran",
+  reminder_internal: "Reminder Internal",
+  reminder: "Reminder Internal",
+  manajemen_surat: "Manajemen Surat",
+  publik: "Masyarakat Umum",
+  instansi: "Instansi Mitra",
+};
+
+const TEMPLATE_CATEGORY_ALIASES: Record<string, string> = {
+  employee: "pegawai",
+  party: "pihak",
+  notifikasi: "pihak",
+  dokumen: "dokumen_lampiran",
+  lampiran: "dokumen_lampiran",
+  reminder: "reminder_internal",
+};
+
+const TEMPLATE_CATEGORY_ORDER = [
+  "pihak",
+  "pegawai",
+  "instansi",
+  "publik",
+  "dokumen_lampiran",
+  "reminder_internal",
+  "manajemen_surat",
+  "balasan",
+  "admin",
+  "error",
+];
+
+function normalizeTemplateCategory(category: string) {
+  return TEMPLATE_CATEGORY_ALIASES[category] ?? category;
+}
+
+function formatTemplateCategory(category: string) {
+  const normalized = normalizeTemplateCategory(category);
+  return TEMPLATE_CATEGORY_LABELS[normalized] ?? normalized.replace(/_/g, " ");
+}
+
+function manualSendStepClass(state: "done" | "active" | "failed" | "pending") {
+  if (state === "failed") return "border-destructive/40 bg-destructive/10 text-destructive";
+  if (state === "done") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (state === "active") return "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300";
+  return "border-border bg-muted/20 text-muted-foreground";
+}
+
+function ManualSendProgressCard({ result }: { result: AletaBotActionResult | null }) {
+  if (!result) return null;
+
+  const progress = result.queueProgress;
+  const stage = progress?.stage || result.status || "unknown";
+  const failed = stage === "failed" || result.status === "failed" || result.status === "error";
+  const done = stage === "done" || result.status === "sent" || result.status === "simulated" || result.sent === true;
+  const sending = stage === "sending" || result.status === "processing";
+  const queued = Boolean(progress || result.queueId || result.status === "enqueued" || result.status === "processing" || result.dryRun);
+  const steps: Array<{ label: string; state: "done" | "active" | "failed" | "pending"; detail: string }> = [
+    {
+      label: "Masuk antrean",
+      state: queued || done || failed ? "done" : "active",
+      detail: progress?.position ? `Posisi ${progress.position}` : result.queueId ? `ID ${result.queueId}` : "Menunggu konfirmasi antrean",
+    },
+    {
+      label: "Sedang dikirim",
+      state: failed ? "pending" : done ? "done" : sending ? "active" : "pending",
+      detail: progress?.pendingAhead && progress.pendingAhead > 0 ? `${progress.pendingAhead} pesan di depan` : "Diproses oleh Mesin Bot",
+    },
+    {
+      label: "Berhasil / gagal",
+      state: failed ? "failed" : done ? "done" : "pending",
+      detail: failed ? "Gagal diproses" : done ? "Selesai diproses" : "Menunggu hasil akhir",
+    },
+  ];
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold text-foreground">Progres uji kirim</p>
+          <p className="mt-1 text-xs text-muted-foreground">{result.message || "Status uji kirim sedang diperbarui."}</p>
+        </div>
+        <Badge variant={failed ? "danger" : done ? "success" : "muted"}>
+          {progress?.estimatedWaitText ? `Estimasi ${progress.estimatedWaitText}` : "Estimasi diproses"}
+        </Badge>
+      </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {steps.map((step) => (
+          <div key={step.label} className={cn("rounded-lg border p-3", manualSendStepClass(step.state))}>
+            <div className="flex items-center gap-2 font-semibold">
+              {step.state === "failed" ? (
+                <XCircle className="h-4 w-4" />
+              ) : step.state === "active" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : step.state === "done" ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <span className="h-4 w-4 rounded-full border border-current opacity-60" />
+              )}
+              {step.label}
+            </div>
+            <p className="mt-1 text-xs opacity-80">{step.detail}</p>
+          </div>
+        ))}
+      </div>
+      {result.idempotencyKey ? <p className="mt-3 break-all text-xs text-muted-foreground">Kunci kirim: {result.idempotencyKey}</p> : null}
+    </div>
+  );
+}
+
+function reportStatusKeyFromLabel(label: string) {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("terkirim")) return "sent";
+  if (normalized.includes("gagal")) return "failed";
+  if (normalized.includes("simulasi")) return "simulated";
+  if (normalized.includes("menunggu") || normalized.includes("diproses") || normalized.includes("antrean")) return "pending";
+  return "all";
+}
+
+function reportSourceKeyFromLabel(label: string) {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("kepegawaian")) return "e_kepegawaian";
+  if (normalized.includes("manajemen surat")) return "manajemen_surat";
+  if (normalized.includes("notifikasi perkara") || normalized.includes("aleta bot")) return "aleta_bot";
+  return "all";
+}
+
+function reportRowSearchText(row: WhatsappReportRow) {
+  return [
+    row.createdAt,
+    row.sentAt,
+    row.statusLabel,
+    row.recipientName,
+    row.recipientNumber,
+    row.categoryLabel,
+    row.sourceAppLabel,
+    row.sourceFeatureLabel,
+    row.caseOrPosition,
+    row.messagePreview,
+    row.errorMessage,
+  ].join(" ").toLowerCase();
+}
+
+function reportRowSortValue(row: WhatsappReportRow, sortKey: ReportTableSortKey) {
+  if (sortKey === "createdAt") {
+    const timestamp = new Date(row.createdAt || "").getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  }
+  return String(row[sortKey] || "").toLowerCase();
+}
+
+function compareReportRows(a: WhatsappReportRow, b: WhatsappReportRow, sortKey: ReportTableSortKey, direction: ReportTableSortDirection) {
+  const left = reportRowSortValue(a, sortKey);
+  const right = reportRowSortValue(b, sortKey);
+  const result = typeof left === "number" && typeof right === "number"
+    ? left - right
+    : String(left).localeCompare(String(right), "id-ID", { numeric: true, sensitivity: "base" });
+  return direction === "asc" ? result : -result;
+}
+
+function parseDownloadFilename(contentDisposition: string | null, fallback: string) {
+  const match = contentDisposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+  const raw = match?.[1] || match?.[2];
+  if (!raw) return fallback;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
 
 type OperationalSmokeTestResult = {
   generatedAt: string;
@@ -180,12 +538,29 @@ type OperationalSmokeTestResult = {
   }>;
 };
 
+type NoticeState = {
+  tone: "success" | "warning" | "danger" | "info";
+  title: string;
+  message: string;
+  updatedAt: string;
+};
+
+type OperationFeedbackState = {
+  phase: "loading" | "success" | "error";
+  title: string;
+  message: string;
+  updatedAt: string;
+};
+
+const SIMPLE_MODE_TAB_VALUES = new Set(["dashboard", "connection", "public-qa", "antrian-online", "ecourt", "queue-recovery"]);
+
 const emptySnapshot: AletaBotSnapshot = {
   settings: {
     botEnabled: false,
     notificationsEnabled: false,
     adminWhatsappNumber: "",
     messageDelayMs: 1500,
+    sendingRiskLevel: 1,
     retryLimit: 2,
     dryRunEnabled: true,
     scheduleCron: "00 07 * * Monday-Friday",
@@ -209,6 +584,7 @@ const emptySnapshot: AletaBotSnapshot = {
     deadlineReminderKillSwitch: false,
     updatedAt: new Date(0).toISOString(),
   },
+  sendingRiskPresets: [],
   runtimeState: "disabled",
   whatsapp: {
     runtimeStatus: "disconnected",
@@ -271,10 +647,15 @@ type NotificationForm = {
   description: string;
   queryId: string;
   templateId: string;
+  recipientMapping: Record<string, unknown>;
+  recipientRoleHints: string;
+  recipientPositionHints: string;
+  recipientNameHints: string;
   scheduleType: "cron" | "manual" | "event";
   scheduleCron: string;
   scheduleTrigger: string;
   isActive: boolean;
+  attachDocument: boolean;
   delayMs: number;
   retryLimit: number;
 };
@@ -332,6 +713,8 @@ type PublicQaIntentForm = {
   requiresCaseNumber: boolean;
   maxAttempts: number;
   fallbackMessage: string;
+  answerTemplate: string;
+  matchKeywords: string[];
   riskLevel: AletaBotPublicQaIntent["riskLevel"];
   notes: string;
   aiAnswerEnabled: boolean;
@@ -376,6 +759,9 @@ type RecipientPreviewResult = {
   warnings: string[];
 };
 type ScheduleKind = "manual" | "event" | "daily" | "weekly" | "monthly" | "advanced";
+type EmployeeNotificationAudienceGroup = "hakim" | "kepaniteraan" | "kesekretariatan";
+type PartyNotificationAudienceGroup = "case_party" | "public_unregistered" | "external_agency";
+type NotificationAudienceGroup = EmployeeNotificationAudienceGroup | PartyNotificationAudienceGroup;
 type ParsedCronSchedule = {
   valid: boolean;
   minute: string;
@@ -384,6 +770,36 @@ type ParsedCronSchedule = {
   month: string;
   dayOfWeek: string;
   time: string;
+};
+
+const EMPLOYEE_NOTIFICATION_GROUP_OPTIONS: Array<{ value: EmployeeNotificationAudienceGroup; label: string; hint: string }> = [
+  { value: "hakim", label: "Hakim", hint: "Untuk hakim atau majelis hakim yang terdaftar sebagai user aktif." },
+  { value: "kepaniteraan", label: "Kepaniteraan", hint: "Untuk panitera, panitera pengganti, jurusita, kasir perkara, dan petugas teknis kepaniteraan." },
+  { value: "kesekretariatan", label: "Kesekretariatan", hint: "Untuk unit umum, kepegawaian, perencanaan, IT, PTSP, dan petugas internal non-perkara." },
+];
+
+const PARTY_NOTIFICATION_GROUP_OPTIONS: Array<{ value: PartyNotificationAudienceGroup; label: string; hint: string }> = [
+  { value: "case_party", label: "Para pihak berdasarkan perkara", hint: "Penerima diambil dari data perkara, kuasa, turut tergugat, intervensi, atau pihak terkait." },
+  { value: "public_unregistered", label: "Pihak yang belum mendaftar", hint: "Untuk masyarakat umum yang bertanya layanan pengadilan tetapi belum terdaftar sebagai pihak perkara." },
+  { value: "external_agency", label: "Instansi luar / kerja sama", hint: "Untuk KUA, Dukcapil, Kepolisian, Pemerintah, atau mitra layanan lain." },
+];
+
+const DEFAULT_NOTIFICATION_QUERY_BY_GROUP: Record<NotificationAudienceGroup, string> = {
+  hakim: "legacy-status-sidang-pegawai",
+  kepaniteraan: "legacy-panitera-monitoring-bulanan",
+  kesekretariatan: "legacy-kasir-panjar",
+  case_party: "legacy-pihak-hari-sidang",
+  public_unregistered: "template-publik-belum-terdaftar",
+  external_agency: "template-instansi-mitra",
+};
+
+const DEFAULT_NOTIFICATION_TEMPLATE_BY_GROUP: Record<NotificationAudienceGroup, string> = {
+  hakim: "hakim-jadwal-tugas-sidang",
+  kepaniteraan: "kepaniteraan-monitoring-perkara",
+  kesekretariatan: "kesekretariatan-info-internal",
+  case_party: "pihak-perkara-jadwal-sidang",
+  public_unregistered: "masyarakat-info-layanan",
+  external_agency: "instansi-koordinasi-layanan",
 };
 
 const DAY_OPTIONS = [
@@ -447,6 +863,11 @@ function displayStatus(status: string): string {
     ok: "OK",
     error: "Bermasalah",
     needs_sync: "Perlu Sinkronisasi",
+    env: "Env Server",
+    volatile_memory: "Memory Sementara",
+    missing_after_restart: "Hilang Setelah Restart",
+    local_model: "Model Lokal",
+    none: "Tidak Ada",
     active: "Aktif",
     inactive: "Tidak Aktif",
     online: "Online",
@@ -479,6 +900,137 @@ function formatRunSummary(summary: Record<string, unknown>) {
   return parts.join(" · ").slice(0, 220);
 }
 
+function stringListFromUnknown(value: unknown): string[] {
+  const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+  return Array.from(new Set(raw.map((item) => String(item ?? "").trim()).filter(Boolean)));
+}
+
+function stringListFromText(value: string): string[] {
+  return Array.from(new Set(value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean)));
+}
+
+function textFromStringList(value: unknown): string {
+  return stringListFromUnknown(value).join(", ");
+}
+
+function defaultAudienceGroup(category: AletaBotNotificationCategory): NotificationAudienceGroup {
+  return category === "employee" ? "kepaniteraan" : "case_party";
+}
+
+function normalizeAudienceGroup(category: AletaBotNotificationCategory, value: unknown): NotificationAudienceGroup {
+  const raw = String(value || "");
+  const employeeValues = EMPLOYEE_NOTIFICATION_GROUP_OPTIONS.map((option) => option.value);
+  const partyValues = PARTY_NOTIFICATION_GROUP_OPTIONS.map((option) => option.value);
+  if (category === "employee" && employeeValues.includes(raw as EmployeeNotificationAudienceGroup)) {
+    return raw as EmployeeNotificationAudienceGroup;
+  }
+  if (category === "party" && partyValues.includes(raw as PartyNotificationAudienceGroup)) {
+    return raw as PartyNotificationAudienceGroup;
+  }
+  return defaultAudienceGroup(category);
+}
+
+function notificationAudienceGroup(formOrNotification: { category: AletaBotNotificationCategory; recipientMapping?: Record<string, unknown> }) {
+  const mapping = formOrNotification.recipientMapping ?? {};
+  return normalizeAudienceGroup(formOrNotification.category, mapping["audienceGroup"] ?? mapping["recipientGroup"]);
+}
+
+function audienceGroupLabel(category: AletaBotNotificationCategory, value: unknown) {
+  const group = normalizeAudienceGroup(category, value);
+  const options = category === "employee" ? EMPLOYEE_NOTIFICATION_GROUP_OPTIONS : PARTY_NOTIFICATION_GROUP_OPTIONS;
+  return options.find((option) => option.value === group)?.label ?? "Target notifikasi";
+}
+
+function audienceGroupHint(category: AletaBotNotificationCategory, value: unknown) {
+  const group = normalizeAudienceGroup(category, value);
+  const options = category === "employee" ? EMPLOYEE_NOTIFICATION_GROUP_OPTIONS : PARTY_NOTIFICATION_GROUP_OPTIONS;
+  return options.find((option) => option.value === group)?.hint ?? "";
+}
+
+function friendlyTechnicalLabel(value: string) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^notifikasi\.get/i.test(raw)) {
+    return raw
+      .replace(/^notifikasi\.get(Total)?(Data)?/i, "")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
+      .replace(/\bBht\b/g, "BHT")
+      .replace(/\bEdoc\b/g, "E-Doc")
+      .replace(/\bEcourt\b/g, "E-Court")
+      .trim();
+  }
+  return raw;
+}
+
+function queryDisplayName(query?: Pick<AletaBotQuery, "name" | "sqlText"> | null) {
+  if (!query) return "";
+  return friendlyTechnicalLabel(query.name);
+}
+
+function templateDisplayName(template?: Pick<AletaBotTemplate, "title" | "category"> | null) {
+  if (!template) return "";
+  return template.category ? `${template.title}` : template.title;
+}
+
+function sourceQueryMatchesNotification(query: AletaBotQuery, category: AletaBotNotificationCategory, group: NotificationAudienceGroup) {
+  if (query.category === "system") return true;
+  if (query.category !== category) return false;
+  const haystack = `${query.id} ${query.name} ${query.description} ${query.sqlText}`.toLowerCase();
+  if (category === "employee") return true;
+  if (group === "external_agency") return /instansi|mitra|kua|capil|dukcapil|kepolisian|pemerintah/.test(haystack);
+  if (group === "public_unregistered") return /publik|masyarakat|belum-terdaftar|belum terdaftar|layanan/.test(haystack);
+  return !/template-instansi|template-publik|instansi mitra|masyarakat umum/.test(haystack);
+}
+
+function templateMatchesNotification(template: AletaBotTemplate, category: AletaBotNotificationCategory, group: NotificationAudienceGroup) {
+  const templateCategory = normalizeTemplateCategory(String(template.category || "").toLowerCase());
+  if (category === "employee") return ["pegawai", "manajemen_surat", "admin"].includes(templateCategory);
+  if (group === "external_agency") return ["instansi", "pihak"].includes(templateCategory);
+  if (group === "public_unregistered") return ["publik", "pihak", "balasan"].includes(templateCategory);
+  return templateCategory === "pihak";
+}
+
+function defaultNotificationQuery(snapshot: AletaBotSnapshot | undefined, category: AletaBotNotificationCategory, group: NotificationAudienceGroup) {
+  const queries = snapshot?.queries ?? [];
+  const preferredId = DEFAULT_NOTIFICATION_QUERY_BY_GROUP[group];
+  return (
+    queries.find((query) => query.id === preferredId) ??
+    queries.find((query) => sourceQueryMatchesNotification(query, category, group)) ??
+    queries.find((query) => query.category === category) ??
+    queries[0]
+  );
+}
+
+function defaultNotificationTemplate(snapshot: AletaBotSnapshot | undefined, category: AletaBotNotificationCategory, group: NotificationAudienceGroup) {
+  const templates = snapshot?.templates ?? [];
+  const preferredId = DEFAULT_NOTIFICATION_TEMPLATE_BY_GROUP[group];
+  return (
+    templates.find((template) => template.id === preferredId) ??
+    templates.find((template) => templateMatchesNotification(template, category, group)) ??
+    templates[0]
+  );
+}
+
+function employeeTargetLabel(mapping: Record<string, unknown>): string {
+  const hints = [
+    ...stringListFromUnknown(mapping["roleHints"]),
+    ...stringListFromUnknown(mapping["positionHints"]),
+    ...stringListFromUnknown(mapping["nameHints"]),
+    ...stringListFromUnknown(mapping["hints"]),
+  ];
+  return hints.length > 0 ? `Pegawai: ${hints.join(", ")}` : "Semua user/pegawai portal";
+}
+
+function notificationTargetLabel(notification: AletaBotNotification): string {
+  const group = notificationAudienceGroup(notification);
+  if (notification.recipientSource === "users") {
+    const target = employeeTargetLabel(notification.recipientMapping);
+    return `${audienceGroupLabel("employee", group)} - ${target}`;
+  }
+  return `${audienceGroupLabel("party", group)} - kolom ${String(notification.recipientMapping["recipientColumn"] ?? "sumber data")}`;
+}
+
 function getSimpleAiSummary(status?: string): { label: string; hint: string; level: "ok" | "warning" | "error" } {
   switch (status) {
     case "synced":
@@ -508,10 +1060,23 @@ function isValidTime(value: string) {
   return /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(value);
 }
 
-function isValidCronExpression(value: string) {
+function splitCronExpressions(value: string) {
+  return value
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function isValidSingleCronExpression(value: string) {
   const parts = value.trim().split(/\s+/);
   if (parts.length !== 5) return false;
-  return parts.every((part) => /^[\d*,/-]+$/.test(part));
+  return parts.every((part) => /^[A-Za-z\d*,/-]+$/.test(part));
+}
+
+function isValidCronExpression(value: string) {
+  const schedules = splitCronExpressions(value);
+  if (schedules.length === 0) return false;
+  return schedules.every(isValidSingleCronExpression);
 }
 
 function parseCronExpression(cronExpression: string): ParsedCronSchedule {
@@ -524,7 +1089,7 @@ function parseCronExpression(cronExpression: string): ParsedCronSchedule {
     dayOfWeek: "*",
     time: "08:00:00",
   };
-  const parts = cronExpression.trim().split(/\s+/);
+  const parts = (splitCronExpressions(cronExpression)[0] ?? "").split(/\s+/);
   if (parts.length !== 5) return fallback;
   const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
   const minuteNumber = Number(minute);
@@ -607,13 +1172,62 @@ function extractTemplatePlaceholders(body: string) {
   return Array.from(new Set(Array.from(body.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)).map((match) => match[1])));
 }
 
-function renderAletaBotTemplatePreview(body: string) {
+function looksLikePreviewListKey(key: string) {
+  return /(ringkasan|detail|daftar|data|hasil|items?|list|informasi)/i.test(key);
+}
+
+function normalizePreviewListItem(value: string) {
+  return value
+    .replace(/^\s*(?:[-*]|\d+[.)])\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function looksLikePreviewFieldDetailLines(lines: string[]) {
+  if (lines.length <= 1) return false;
+  const fieldLikeCount = lines
+    .map(normalizePreviewListItem)
+    .filter((line) => /^[A-Za-z_ /().-]{2,45}:\s+\S/.test(line)).length;
+  return fieldLikeCount >= Math.ceil(lines.length * 0.6);
+}
+
+function formatTemplatePreviewValue(key: string, value: unknown) {
+  if (value === undefined || value === null) return "";
+  if (Array.isArray(value)) {
+    const items = value.map((item) => normalizePreviewListItem(String(item))).filter(Boolean);
+    return items.length > 1 ? items.map((item, index) => `${index + 1}. ${item}`).join("\n") : (items[0] ?? "");
+  }
+
+  const text = String(value).replace(/\r\n/g, "\n").trim();
+  if (!text || !looksLikePreviewListKey(key)) return text;
+  if (/^\s*\d+[.)]\s+/m.test(text)) return text;
+
+  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const separator = text.includes("\n\n")
+    ? /\n{2,}/
+    : text.includes(" | ")
+      ? /\s+\|\s+/
+      : text.includes("\n") && !looksLikePreviewFieldDetailLines(lines)
+        ? /\n+/
+        : null;
+  if (!separator) return text;
+
+  const items = text.split(separator).map(normalizePreviewListItem).filter(Boolean);
+  return items.length > 1 ? items.map((item, index) => `${index + 1}. ${item}`).join("\n") : text;
+}
+
+function renderAletaBotTemplatePreview(body: string, overrides: Record<string, string> = {}) {
   const sample: Record<string, string> = {
     waktu: new Date().toLocaleString("id-ID"),
     mode: "dry-run",
     nomor_perkara: "123/Pdt.G/2026/PA.Dgl",
     nama_pihak: "Budi Santoso",
     nama_pegawai: "Contoh Pegawai",
+    jabatan: "Panitera Pengganti",
+    recipient_name: "Contoh Pegawai",
+    recipient_role: "Panitera Pengganti",
+    nama_instansi: "KUA Kecamatan Contoh",
+    nama_layanan: "Layanan informasi pengadilan",
     agenda: "Mediasi",
     hari_sidang: "Senin",
     tanggal_sidang: "12 Januari 2026",
@@ -621,10 +1235,182 @@ function renderAletaBotTemplatePreview(body: string) {
     ruangan: "Ruang Sidang 1",
     sisa_panjar: "Rp125.000",
     judul_notifikasi: "Contoh Notifikasi",
-    ringkasan: "Data contoh untuk pratinjau aman.",
+    ringkasan: "Data contoh pertama untuk pratinjau aman.\nData contoh kedua untuk pratinjau aman.",
+    jenis_surat: "Surat Masuk",
+    nomor_surat: "W00-A/123/OT.01/5/2026",
+    perihal: "Pemberitahuan layanan",
+    instruksi: "Mohon ditindaklanjuti sesuai kewenangan.",
+    deadline: "21 Mei 2026",
+    status: "Menunggu tindak lanjut",
+    file_name: "panggilan-perkara.pdf",
+    file_type: "PDF",
+    file_path: "/var/www/html/SIPP/doc/panggilan-perkara.pdf",
+    attachment_name: "panggilan-perkara.pdf",
+    ...overrides,
   };
 
-  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => sample[key] ?? `{{${key}}}`);
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) =>
+    sample[key] === undefined ? `{{${key}}}` : formatTemplatePreviewValue(key, sample[key])
+  );
+}
+
+function formatTargetOptionLabel(value: string) {
+  return displayStatus(value).replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function normalizeHint(value: string) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function matchesAnyHint(hints: string[], values: string[]) {
+  if (hints.length === 0) return true;
+  const normalizedValues = values.map(normalizeHint).filter(Boolean);
+  return hints.some((hint) => normalizedValues.some((value) => value.includes(hint)));
+}
+
+function employeeMatchesTargetHints(recipient: AletaBotEmployeeRecipient, roleHints: string[], positionHints: string[], nameHints: string[]) {
+  const additionalRoleLabels = recipient.additionalRoleIds.map(getAdditionalRoleLabel);
+  return (
+    matchesAnyHint(roleHints, [recipient.roleId]) &&
+    matchesAnyHint(positionHints, [recipient.positionId, recipient.positionName, recipient.unitKerja, ...recipient.additionalRoleIds, ...additionalRoleLabels]) &&
+    matchesAnyHint(nameHints, [recipient.id, recipient.name, recipient.username])
+  );
+}
+
+function getTargetedEmployeeRecipients(recipients: AletaBotEmployeeRecipient[], form: NotificationForm) {
+  const roleHints = stringListFromText(form.recipientRoleHints).map(normalizeHint);
+  const positionHints = stringListFromText(form.recipientPositionHints).map(normalizeHint);
+  const nameHints = stringListFromText(form.recipientNameHints).map(normalizeHint);
+  return recipients.filter((recipient) => employeeMatchesTargetHints(recipient, roleHints, positionHints, nameHints));
+}
+
+function makeCountedOptions<T>(
+  items: T[],
+  getValue: (item: T) => string,
+  getLabel: (item: T) => string
+) {
+  const grouped = new Map<string, { value: string; label: string; count: number }>();
+  for (const item of items) {
+    const value = getValue(item).trim();
+    if (!value) continue;
+    const existing = grouped.get(value);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    grouped.set(value, { value, label: getLabel(item), count: 1 });
+  }
+  return Array.from(grouped.values())
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((item) => ({ value: item.value, label: `${item.label} (${item.count})` }));
+}
+
+function makeEmployeePositionOptions(recipients: AletaBotEmployeeRecipient[]) {
+  const grouped = new Map<string, { value: string; label: string; count: number }>();
+  const add = (value: string, label: string) => {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) return;
+    const existing = grouped.get(normalizedValue);
+    if (existing) {
+      existing.count += 1;
+      return;
+    }
+    grouped.set(normalizedValue, { value: normalizedValue, label, count: 1 });
+  };
+  for (const recipient of recipients) {
+    add(
+      recipient.positionId || recipient.positionName,
+      [recipient.positionName || recipient.positionId, recipient.unitKerja].filter(Boolean).join(" - ")
+    );
+    for (const additionalRoleId of recipient.additionalRoleIds) {
+      add(additionalRoleId, `${getAdditionalRoleLabel(additionalRoleId)} - Tugas tambahan`);
+    }
+  }
+  return Array.from(grouped.values())
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((item) => ({ value: item.value, label: `${item.label} (${item.count})` }));
+}
+
+function getEmployeeTargetOptionLabels(recipients: AletaBotEmployeeRecipient[], form: NotificationForm) {
+  const roles = stringListFromText(form.recipientRoleHints);
+  const positions = stringListFromText(form.recipientPositionHints);
+  const names = stringListFromText(form.recipientNameHints);
+  const findLabel = (value: string, values: Array<{ value: string; label: string }>) => values.find((item) => item.value === value)?.label ?? value;
+  const roleOptions = makeCountedOptions(recipients, (recipient) => recipient.roleId, (recipient) => formatTargetOptionLabel(recipient.roleId));
+  const positionOptions = makeEmployeePositionOptions(recipients);
+  const employeeOptions = recipients.map((recipient) => ({
+    value: recipient.id,
+    label: [recipient.name || recipient.username, recipient.username ? `@${recipient.username}` : "", recipient.positionName].filter(Boolean).join(" - "),
+  }));
+  const labels = [
+    ...roles.map((value) => `Role: ${findLabel(value, roleOptions)}`),
+    ...positions.map((value) => `Jabatan/unit: ${findLabel(value, positionOptions)}`),
+    ...names.map((value) => `Pegawai: ${findLabel(value, employeeOptions)}`),
+  ];
+  return labels;
+}
+
+function sampleValueForColumn(column: string) {
+  const key = column.toLowerCase();
+  if (key.includes("nama_pegawai")) return "Contoh Pegawai";
+  if (key.includes("nama_instansi")) return "KUA Kecamatan Contoh";
+  if (key.includes("nama_layanan")) return "Layanan informasi pengadilan";
+  if (key.includes("nama_pihak") || key === "nama") return "Budi Santoso";
+  if (key.includes("nomor_perkara")) return "123/Pdt.G/2026/PA.Dgl";
+  if (key.includes("telepon") || key.includes("whatsapp") || key.includes("nomor_hp")) return "6281234567890";
+  if (key.includes("tanggal")) return "20 Mei 2026";
+  if (key.includes("hari")) return "Rabu";
+  if (key.includes("ruang")) return "Ruang Sidang 1";
+  if (key.includes("agenda")) return "Sidang pertama";
+  if (key.includes("perihal")) return "Pemberitahuan layanan";
+  if (key.includes("deadline")) return "21 Mei 2026";
+  if (key.includes("sisa") || key.includes("panjar")) return "Rp125.000";
+  if (key.includes("status")) return "Perlu tindak lanjut";
+  return `[contoh ${column}]`;
+}
+
+function makeNotificationPreviewSample(
+  form: NotificationForm,
+  snapshot: AletaBotSnapshot,
+  query?: AletaBotQuery
+) {
+  const targetedEmployees = form.category === "employee" ? getTargetedEmployeeRecipients(snapshot.employeeRecipients, form) : [];
+  const employee = targetedEmployees[0] ?? snapshot.employeeRecipients[0];
+  const sample: Record<string, string> = {
+    waktu: new Date().toLocaleString("id-ID"),
+    mode: form.isActive ? "aktif" : "simulasi",
+    nama_pegawai: employee?.name || "Contoh Pegawai",
+    jabatan: employee?.additionalRoleIds?.[0] ? getAdditionalRoleLabel(employee.additionalRoleIds[0]) : employee?.positionName || employee?.unitKerja || "Contoh Jabatan",
+    judul_notifikasi: form.name || "Contoh Notifikasi",
+    ringkasan: form.description || query?.description || "Ringkasan isi notifikasi.",
+    recipient_name: form.category === "employee" ? employee?.name || "Contoh Pegawai" : "Budi Santoso",
+    nama_pihak: "Budi Santoso",
+    nama_instansi: "KUA Kecamatan Contoh",
+    nama_layanan: "Layanan informasi pengadilan",
+    kontak_pengadilan: "0822-7111-5021",
+    alamat_pengadilan: "Alamat kantor pengadilan",
+    nomor_perkara: "123/Pdt.G/2026/PA.Dgl",
+    agenda: "Sidang pertama",
+    hari_sidang: "Rabu",
+    tanggal_sidang: "20 Mei 2026",
+    ruang_sidang: "Ruang Sidang 1",
+    ruangan: "Ruang Sidang 1",
+    sisa_panjar: "Rp125.000",
+    jenis_surat: "Surat Masuk",
+    nomor_surat: "W00-A/123/OT.01/5/2026",
+    perihal: "Pemberitahuan layanan",
+    instruksi: "Mohon ditindaklanjuti sesuai kewenangan.",
+    deadline: "21 Mei 2026",
+    status: "Selesai",
+  };
+  sample.ringkasan =
+    form.description ||
+    query?.description ||
+    "Data contoh pertama untuk pratinjau aman.\nData contoh kedua untuk pratinjau aman.";
+  for (const column of query?.outputColumns ?? []) {
+    sample[column] = sample[column] || sampleValueForColumn(column);
+  }
+  return sample;
 }
 
 function makePublicQaDraftKey(value: string) {
@@ -667,7 +1453,7 @@ function getSuggestedMigrationAction(status: AletaBotLegacyMigration["status"]):
 }
 
 async function requestBot<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, {
+  const response = await fetch(apiPath(url), {
     credentials: "include",
     cache: "no-store",
     headers: {
@@ -678,16 +1464,19 @@ async function requestBot<T>(url: string, init?: RequestInit) {
   });
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!response.ok || !payload?.ok) {
-    throw new Error(humanizeErrorMessage(payload?.message, "Permintaan ke ALETA Bot belum berhasil diproses."));
+    throw new Error(humanizeErrorMessage(payload?.message ?? payload?.error?.message, "Permintaan ke ALETA Bot belum berhasil diproses."));
   }
   return payload.data;
 }
 
 function makeEmptyNotificationForm(snapshot?: AletaBotSnapshot, category: AletaBotNotificationCategory = "employee"): NotificationForm {
-  const query = snapshot?.queries.find((item) => item.category === category) ?? snapshot?.queries[0];
-  const template =
-    snapshot?.templates.find((item) => (category === "employee" ? item.id === "pegawai-monitoring" : item.id === "pihak-layanan")) ??
-    snapshot?.templates[0];
+  const audienceGroup = defaultAudienceGroup(category);
+  const query = defaultNotificationQuery(snapshot, category, audienceGroup);
+  const template = defaultNotificationTemplate(snapshot, category, audienceGroup);
+  const recipientMapping =
+    category === "employee"
+      ? { source: "users.whatsapp_number", audienceGroup }
+      : { audienceGroup, recipientColumn: query?.recipientColumn || "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp", "telepon"] };
   return {
     id: "",
     name: "",
@@ -695,10 +1484,15 @@ function makeEmptyNotificationForm(snapshot?: AletaBotSnapshot, category: AletaB
     description: "",
     queryId: query?.id ?? "",
     templateId: template?.id ?? "",
+    recipientMapping,
+    recipientRoleHints: "",
+    recipientPositionHints: "",
+    recipientNameHints: "",
     scheduleType: "manual",
     scheduleCron: "",
     scheduleTrigger: "manual",
     isActive: false,
+    attachDocument: true,
     delayMs: 1500,
     retryLimit: 2,
   };
@@ -712,12 +1506,44 @@ function notificationToForm(notification: AletaBotNotification): NotificationFor
     description: notification.description,
     queryId: notification.queryId,
     templateId: notification.templateId,
+    recipientMapping: notification.recipientMapping ?? {},
+    recipientRoleHints: textFromStringList(notification.recipientMapping?.["roleHints"]),
+    recipientPositionHints: textFromStringList(notification.recipientMapping?.["positionHints"]),
+    recipientNameHints: textFromStringList(notification.recipientMapping?.["nameHints"]),
     scheduleType: notification.scheduleConfig.type,
     scheduleCron: notification.scheduleConfig.cron,
     scheduleTrigger: notification.scheduleConfig.trigger,
     isActive: notification.isActive,
+    attachDocument: notification.attachDocument !== false,
     delayMs: notification.delayMs,
     retryLimit: notification.retryLimit,
+  };
+}
+
+function buildNotificationRecipientMapping(form: NotificationForm, query?: AletaBotQuery): Record<string, unknown> {
+  const audienceGroup = notificationAudienceGroup(form);
+  if (form.category === "employee") {
+    const mapping: Record<string, unknown> = {
+      ...form.recipientMapping,
+      audienceGroup,
+      source: "users.whatsapp_number",
+    };
+    const roleHints = stringListFromText(form.recipientRoleHints);
+    const positionHints = stringListFromText(form.recipientPositionHints);
+    const nameHints = stringListFromText(form.recipientNameHints);
+    if (roleHints.length > 0) mapping["roleHints"] = roleHints;
+    else delete mapping["roleHints"];
+    if (positionHints.length > 0) mapping["positionHints"] = positionHints;
+    else delete mapping["positionHints"];
+    if (nameHints.length > 0) mapping["nameHints"] = nameHints;
+    else delete mapping["nameHints"];
+    return mapping;
+  }
+  return {
+    ...form.recipientMapping,
+    audienceGroup,
+    recipientColumn: query?.recipientColumn || form.recipientMapping["recipientColumn"] || "telepon",
+    fallbackColumns: ["nomor_hp", "nomor_whatsapp", "telepon"],
   };
 }
 
@@ -813,6 +1639,8 @@ function makeEmptyPublicQaIntentForm(): PublicQaIntentForm {
     requiresCaseNumber: false,
     maxAttempts: 2,
     fallbackMessage: "Maaf, saya belum memahami pertanyaan Bapak/Ibu. Silakan ketik info lengkap untuk melihat daftar layanan.",
+    answerTemplate: "",
+    matchKeywords: [],
     riskLevel: "low",
     notes: "",
     aiAnswerEnabled: false,
@@ -854,6 +1682,8 @@ function publicQaIntentToForm(intent: AletaBotPublicQaIntent): PublicQaIntentFor
     requiresCaseNumber: intent.requiresCaseNumber,
     maxAttempts: intent.maxAttempts,
     fallbackMessage: intent.fallbackMessage,
+    answerTemplate: intent.answerTemplate ?? "",
+    matchKeywords: intent.matchKeywords ?? [],
     riskLevel: intent.riskLevel,
     notes: intent.notes,
     aiAnswerEnabled: intent.aiAnswerEnabled,
@@ -871,16 +1701,442 @@ function publicQaIntentToForm(intent: AletaBotPublicQaIntent): PublicQaIntentFor
   };
 }
 
+const HORIZONTAL_SCROLLBAR_CLASS =
+  "[scrollbar-color:hsl(var(--primary))_hsl(var(--muted))] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-3 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-primary/70 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-muted/40";
+
+// Placeholder yang SELALU disuntikkan runtime bot (lihat commonPlaceholders pada
+// aleta_bot/services/dynamicNotificationSchedulerService.js), jadi tetap tersedia
+// walau tidak muncul sebagai kolom output sumber data.
+const RUNTIME_PLACEHOLDERS = [
+  "recipient_number",
+  "recipient_name",
+  "recipient_role",
+  "nomor_perkara",
+  "event_key",
+  "event_date",
+  "ringkasan",
+  "source_updated_at",
+  "file_path",
+  "file_name",
+  "file_type",
+  "nama_pegawai",
+  "nama_pihak",
+  "judul_notifikasi",
+  "waktu",
+  "mode",
+];
+
+/**
+ * Menilai seberapa cocok sebuah sumber data dengan isi pesan yang sedang disunting:
+ * berapa banyak placeholder pada isi pesan yang benar-benar dipasok kolom output query.
+ */
+export function scoreQueryForTemplate(query: Pick<AletaBotQuery, "outputColumns">, placeholders: string[]) {
+  const available = new Set([...query.outputColumns, ...RUNTIME_PLACEHOLDERS]);
+  const covered = placeholders.filter((placeholder) => available.has(placeholder));
+  const missing = placeholders.filter((placeholder) => !available.has(placeholder));
+  return { covered, missing, score: covered.length };
+}
+
+/**
+ * Daftar pilihan variabel isi pesan, lengkap dengan penjelasannya.
+ *
+ * Sebelumnya editor hanya menampilkan nama variabel mentah seperti
+ * `{{ringkasan}}` sehingga admin harus menebak isinya. Di sini tiap variabel
+ * tampil dengan label dan keterangan singkat; saat diklik, terbuka keterangan
+ * panjang, asal datanya, sumber data yang benar-benar memasoknya, dan contoh
+ * hasilnya seperti yang akan dibaca penerima.
+ */
+/**
+ * Peringatan keamanan isi pesan.
+ *
+ * Sengaja hanya MEMBERI TAHU. Tidak ada tombol simpan yang dikunci dan tidak
+ * ada isi pesan yang ditolak: yang menulis adalah pegawai pengadilan yang tahu
+ * apa yang perlu disampaikan, sedangkan pemeriksa ini hanya menebak dari bentuk
+ * kalimat dan tebakannya bisa salah. Pemeriksa yang keliru tidak boleh
+ * menghalangi pemberitahuan yang sah.
+ */
+/**
+ * Penanda ringkas di daftar isi pesan.
+ *
+ * Tanpa ini, peringatan hanya terlihat oleh admin yang kebetulan membuka isi
+ * pesannya - padahal isi pesan yang bermasalah justru yang jarang dibuka lagi
+ * setelah sekali disunting.
+ *
+ * Sengaja tidak menampilkan apa pun ketika isi pesan bersih: penanda hijau di
+ * setiap kartu hanya menambah ramai tanpa memberi tahu apa-apa.
+ */
+function TemplateSafetyBadge({ body }: { body: string }) {
+  const ringkas = useMemo(() => summarizeWarnings(lintTemplateBody(body)), [body]);
+  if (ringkas.total === 0) return null;
+  const berat = ringkas.tinggi > 0;
+  return (
+    <Badge variant={berat ? "danger" : "warning"}>
+      {berat ? `${ringkas.tinggi} risiko tinggi` : `${ringkas.total} catatan`}
+    </Badge>
+  );
+}
+
+function TemplateSafetyWarnings({ body }: { body: string }) {
+  const warnings = useMemo(() => lintTemplateBody(body), [body]);
+  if (warnings.length === 0) {
+    return (
+      <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
+        <p className="font-semibold text-emerald-700 dark:text-emerald-300">Isi pesan aman</p>
+        <p className="mt-1 text-muted-foreground">
+          Tidak ditemukan hal yang biasanya memicu pemblokiran WhatsApp.
+        </p>
+      </div>
+    );
+  }
+
+  const warna: Record<string, string> = {
+    tinggi: "border-destructive/50 bg-destructive/5",
+    sedang: "border-amber-500/50 bg-amber-500/5",
+    rendah: "border-border bg-muted/30",
+  };
+  const labelTingkat: Record<string, string> = {
+    tinggi: "Risiko tinggi",
+    sedang: "Perlu diperhatikan",
+    rendah: "Saran kecil",
+  };
+  const ringkas = summarizeWarnings(warnings);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-semibold text-foreground">Pemeriksaan keamanan isi pesan</p>
+        <span className="text-xs text-muted-foreground">
+          {ringkas.tinggi > 0 ? `${ringkas.tinggi} berisiko tinggi` : `${ringkas.total} catatan`}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Ini peringatan, bukan larangan. Isi pesan tetap dapat disimpan — keputusannya di tangan Anda.
+      </p>
+      {warnings.map((warning) => (
+        <div key={warning.code} className={`rounded-xl border p-3 text-sm ${warna[warning.severity]}`}>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="font-semibold text-foreground">{warning.label}</p>
+            <span className="text-xs text-muted-foreground">{labelTingkat[warning.severity]}</span>
+          </div>
+          <p className="mt-1 text-muted-foreground">{warning.detail}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {warning.samples.map((sample) => (
+              <code key={sample} className="rounded bg-muted px-1.5 py-0.5 text-xs break-all">
+                {sample}
+              </code>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-foreground">
+            <span className="font-medium">Saran:</span> {warning.fix}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TemplateVariablePicker({
+  templateId,
+  editable,
+  requiredPlaceholders,
+  detectedPlaceholders,
+  queries,
+  notifications,
+  onInsertPlaceholder,
+}: {
+  templateId: string;
+  editable: boolean;
+  requiredPlaceholders: string[];
+  detectedPlaceholders: string[];
+  queries: AletaBotQuery[];
+  notifications: AletaBotNotification[];
+  onInsertPlaceholder: (placeholder: string) => void;
+}) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
+
+  // Sumber data yang benar-benar dipasangkan ke isi pesan ini — dipakai untuk
+  // menunjukkan variabel mana yang sudah pasti terpasok datanya.
+  const linkedQueries = useMemo(() => {
+    const linkedIds = new Set(
+      notifications.filter((notification) => notification.templateId === templateId).map((notification) => notification.queryId)
+    );
+    return queries.filter((query) => linkedIds.has(query.id));
+  }, [notifications, queries, templateId]);
+
+  const suppliedBy = useCallback(
+    (key: string) => linkedQueries.filter((query) => (query.outputColumns || []).includes(key)),
+    [linkedQueries]
+  );
+
+  // Gabungan: variabel bawaan ALETA + kolom dari sumber data terpasang +
+  // variabel yang sudah dipakai di badan pesan.
+  const entries = useMemo(() => {
+    const keys = new Set<string>();
+    for (const doc of listAletaBotVariableDocs()) keys.add(doc.key);
+    for (const query of linkedQueries) for (const column of query.outputColumns || []) keys.add(column);
+    for (const key of requiredPlaceholders) keys.add(key);
+    for (const key of detectedPlaceholders) keys.add(key);
+    return [...keys].map((key) => describeAletaBotVariable(key));
+  }, [detectedPlaceholders, linkedQueries, requiredPlaceholders]);
+
+  const visible = useMemo(() => {
+    const needle = filter.trim().toLowerCase();
+    const matched = needle
+      ? entries.filter((doc) =>
+          `${doc.key} ${doc.label} ${doc.shortDescription}`.toLowerCase().includes(needle)
+        )
+      : entries;
+    // Yang dipakai isi pesan ini didahulukan supaya mudah ditinjau.
+    return [...matched].sort((a, b) => {
+      const aUsed = detectedPlaceholders.includes(a.key) ? 0 : 1;
+      const bUsed = detectedPlaceholders.includes(b.key) ? 0 : 1;
+      if (aUsed !== bUsed) return aUsed - bUsed;
+      return a.label.localeCompare(b.label, "id");
+    });
+  }, [detectedPlaceholders, entries, filter]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<AletaBotVariableCategory, AletaBotVariableDoc[]>();
+    for (const doc of visible) {
+      const list = map.get(doc.category) ?? [];
+      list.push(doc);
+      map.set(doc.category, list);
+    }
+    return [...map.entries()];
+  }, [visible]);
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-4">
+      <p className="text-sm font-semibold text-foreground">Pilihan Variabel &amp; Artinya</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Klik nama variabel untuk membuka penjelasan lengkap, asal data, dan contoh hasilnya. Tombol Sisipkan menaruh variabel itu ke isi pesan.
+      </p>
+
+      <input
+        type="search"
+        value={filter}
+        onChange={(event) => setFilter(event.target.value)}
+        placeholder="Cari variabel, mis. sidang atau panjar"
+        className="mt-3 w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      />
+
+      <div className="mt-3 max-h-96 space-y-4 overflow-y-auto pr-1">
+        {grouped.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+            Tidak ada variabel yang cocok dengan pencarian itu.
+          </p>
+        ) : null}
+
+        {grouped.map(([category, docs]) => (
+          <div key={category} className="space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {ALETA_BOT_VARIABLE_CATEGORY_LABELS[category]}
+            </p>
+            {docs.map((doc) => {
+              const isOpen = openKey === doc.key;
+              const used = detectedPlaceholders.includes(doc.key);
+              const required = requiredPlaceholders.includes(doc.key);
+              const sources = suppliedBy(doc.key);
+              return (
+                <div key={doc.key} className="rounded-lg border border-border bg-background">
+                  <div className="flex items-start gap-2 p-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setOpenKey(isOpen ? null : doc.key)}
+                      aria-expanded={isOpen}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-sm font-semibold text-foreground">{doc.label}</span>
+                        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">{`{{${doc.key}}}`}</code>
+                        {required ? <Badge variant="warning" className="text-[9px]">wajib</Badge> : null}
+                        {used ? <Badge variant="success" className="text-[9px]">dipakai</Badge> : null}
+                        {!isKnownAletaBotVariable(doc.key) ? <Badge className="text-[9px]">kolom sumber data</Badge> : null}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{doc.shortDescription}</span>
+                      <span className="mt-1 block text-[11px] font-semibold text-primary">
+                        {isOpen ? "Tutup penjelasan" : "Lihat penjelasan lengkap"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!editable}
+                      onClick={() => onInsertPlaceholder(doc.key)}
+                      className="shrink-0 rounded-md border border-border px-2 py-1 text-[11px] font-semibold text-foreground transition hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Sisipkan
+                    </button>
+                  </div>
+
+                  {isOpen ? (
+                    <div className="space-y-3 border-t border-border px-2.5 py-3 text-xs">
+                      <div>
+                        <p className="font-semibold text-foreground">Penjelasan</p>
+                        <p className="mt-1 leading-relaxed text-muted-foreground">{doc.description}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Sumber data</p>
+                        <p className="mt-1 leading-relaxed text-muted-foreground">{doc.source}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Dipasok sumber data yang terpasang</p>
+                        {sources.length > 0 ? (
+                          <ul className="mt-1 space-y-0.5">
+                            {sources.map((query) => (
+                              <li key={query.id} className="text-muted-foreground">
+                                • {queryDisplayName(query)}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : linkedQueries.length > 0 ? (
+                          <p className="mt-1 text-amber-700 dark:text-amber-300">
+                            Belum ada sumber data terpasang yang mengeluarkan kolom ini. Bila dipakai, pesan bisa gagal disusun.
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-muted-foreground">
+                            Isi pesan ini belum dipasangkan ke notifikasi mana pun, jadi sumber datanya belum dapat dipastikan.
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Contoh hasil di pesan penerima</p>
+                        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-md bg-muted/60 p-2 font-sans leading-relaxed text-foreground">
+                          {doc.example}
+                        </pre>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TemplateQuerySuggestions({
+  template,
+  queries,
+  notifications,
+  placeholders,
+  onInsertPlaceholder,
+  onOpenQuery,
+}: {
+  template: AletaBotTemplate;
+  queries: AletaBotQuery[];
+  notifications: AletaBotNotification[];
+  placeholders: string[];
+  onInsertPlaceholder: (placeholder: string) => void;
+  onOpenQuery: (query: AletaBotQuery) => void;
+}) {
+  const linkedQueryIds = new Set(
+    notifications.filter((notification) => notification.templateId === template.id).map((notification) => notification.queryId)
+  );
+  const linked = queries.filter((query) => linkedQueryIds.has(query.id));
+  const recommended = queries
+    .filter((query) => !linkedQueryIds.has(query.id) && query.isActive)
+    .map((query) => ({ query, ...scoreQueryForTemplate(query, placeholders) }))
+    .filter((item) => item.score > 0 || item.query.category === template.category)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const aSameCategory = a.query.category === template.category ? 0 : 1;
+      const bSameCategory = b.query.category === template.category ? 0 : 1;
+      return aSameCategory - bSameCategory;
+    })
+    .slice(0, 6);
+
+  const renderQueryCard = (query: AletaBotQuery, isLinked: boolean) => {
+    const { missing } = scoreQueryForTemplate(query, placeholders);
+    return (
+      <div key={query.id} className="rounded-xl border border-border bg-background p-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">{queryDisplayName(query)}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{query.description || "Tanpa deskripsi."}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant={isLinked ? "success" : "outline"}>{isLinked ? "Terpakai" : formatTemplateCategory(query.category)}</Badge>
+            <Button size="sm" variant="ghost" onClick={() => onOpenQuery(query)}>
+              Lihat
+            </Button>
+          </div>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {query.outputColumns.length > 0 ? (
+            query.outputColumns.map((column) => (
+              <button
+                key={column}
+                type="button"
+                onClick={() => onInsertPlaceholder(column)}
+                title={`${describeAletaBotVariable(column).label} — ${describeAletaBotVariable(column).shortDescription} Klik untuk menyisipkan {{${column}}}.`}
+                className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-foreground transition-colors hover:border-primary hover:bg-primary/10"
+              >
+                {describeAletaBotVariable(column).label}
+              </button>
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground">Sumber data ini tidak mendeklarasikan kolom output.</span>
+          )}
+        </div>
+        {missing.length > 0 ? (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+            Tidak dipasok sumber data ini: {missing.join(", ")}.
+          </p>
+        ) : null}
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-4">
+      <p className="text-sm font-semibold text-foreground">Sumber Data Terkait</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Klik placeholder untuk menyisipkannya ke isi pesan. Kolom yang tidak dipasok akan tampil kosong saat pesan dikirim.
+      </p>
+
+      <div className="mt-3 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Dipakai notifikasi yang memakai isi pesan ini
+        </p>
+        {linked.length > 0 ? (
+          linked.map((query) => renderQueryCard(query, true))
+        ) : (
+          <p className="rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+            Belum ada notifikasi yang memasangkan isi pesan ini dengan sumber data.
+          </p>
+        )}
+      </div>
+
+      {recommended.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rekomendasi sumber data lain</p>
+          {recommended.map((item) => renderQueryCard(item.query, false))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AletaBotAdminPanel() {
+  const { currentUser } = usePortal();
+  // Super Admin: semua fitur. Admin: operasional saja — tab/tombol kebijakan
+  // disembunyikan (dan tetap ditolak backend bila dipanggil langsung).
+  const isSuperAdmin = getEffectiveRoleId(currentUser) === "super-admin";
   const [snapshot, setSnapshot] = useState<AletaBotSnapshot>(emptySnapshot);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [savingRisk, setSavingRisk] = useState(false);
+  const [pendingRisk, setPendingRisk] = useState(1);
+  const [notice, setNoticeState] = useState<NoticeState | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [recipientPreview, setRecipientPreview] = useState<RecipientPreviewResult | null>(null);
   const [settingsDraft, setSettingsDraft] = useState(emptySnapshot.settings);
   const [templateDraft, setTemplateDraft] = useState<Record<string, string>>({});
   const [testMessage, setTestMessage] = useState("Tes ALETA Bot dari portal berhasil.");
+  const [manualSendProgress, setManualSendProgress] = useState<AletaBotActionResult | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState("admin-test");
   const [selectedQueryId, setSelectedQueryId] = useState("formatter-phone-number");
   const [selectedNotificationId, setSelectedNotificationId] = useState("");
@@ -916,33 +2172,203 @@ export function AletaBotAdminPanel() {
   const [showAdvancedMode, setShowAdvancedMode] = useState<boolean>(() => {
     try { return localStorage.getItem("aleta-bot-admin-advanced") === "true"; } catch { return false; }
   });
+  const setAdvancedModePreference = (next: boolean) => {
+    try { localStorage.setItem("aleta-bot-admin-advanced", String(next)); } catch { /* ignore */ }
+    setShowAdvancedMode(next);
+  };
   const toggleAdvancedMode = () => {
-    setShowAdvancedMode((prev) => {
-      const next = !prev;
-      try { localStorage.setItem("aleta-bot-admin-advanced", String(next)); } catch { /* ignore */ }
-      return next;
-    });
+    const next = !showAdvancedMode;
+    setAdvancedModePreference(next);
+    if (!next && !SIMPLE_MODE_TAB_VALUES.has(activeTab)) {
+      setActiveTab("dashboard");
+    }
   };
   const [notifCategoryFilter, setNotifCategoryFilter] = useState<"all" | "employee" | "party">("all");
   const [logFilter, setLogFilter] = useState<"all" | "error" | "whatsapp" | "ai" | "queue" | "approval" | "migration">("all");
+  const [whatsappReportRange, setWhatsappReportRange] = useState("7d");
+  const [whatsappReportStatus, setWhatsappReportStatus] = useState("all");
+  const [whatsappReportSource, setWhatsappReportSource] = useState("all");
+  const [whatsappReport, setWhatsappReport] = useState<WhatsappReportSummary | null>(null);
+  const [isReportLoading, setIsReportLoading] = useState(false);
+  const [isReportExporting, setIsReportExporting] = useState(false);
+  const [isLatestReportExporting, setIsLatestReportExporting] = useState(false);
+  const [whatsappReportExportInfo, setWhatsappReportExportInfo] = useState<{
+    filename: string;
+    rowCount: number;
+    sizeKb: number;
+    exportedAt: string;
+  } | null>(null);
+  const [latestReportExportInfo, setLatestReportExportInfo] = useState<{
+    filename: string;
+    rowCount: number;
+    sizeKb: number;
+    exportedAt: string;
+  } | null>(null);
+  const [reportTableSearch, setReportTableSearch] = useState("");
+  const [reportTableStatusFilter, setReportTableStatusFilter] = useState("all");
+  const [reportTableAppFilter, setReportTableAppFilter] = useState("all");
+  const [reportTableFeatureFilter, setReportTableFeatureFilter] = useState("all");
+  const [reportTableSortKey, setReportTableSortKey] = useState<ReportTableSortKey>("createdAt");
+  const [reportTableSortDirection, setReportTableSortDirection] = useState<ReportTableSortDirection>("desc");
+  const [operationFeedback, setOperationFeedback] = useState<OperationFeedbackState | null>(null);
+  const operationFeedbackTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const sourceDataTopScrollRef = useRef<HTMLDivElement | null>(null);
+  const sourceDataTableScrollRef = useRef<HTMLDivElement | null>(null);
+  const sourceDataIsSyncingScrollRef = useRef(false);
+
+  const syncSourceDataHorizontalScroll = (source: "top" | "table") => {
+    if (sourceDataIsSyncingScrollRef.current) return;
+    const from = source === "top" ? sourceDataTopScrollRef.current : sourceDataTableScrollRef.current;
+    const to = source === "top" ? sourceDataTableScrollRef.current : sourceDataTopScrollRef.current;
+    if (!from || !to) return;
+    sourceDataIsSyncingScrollRef.current = true;
+    to.scrollLeft = from.scrollLeft;
+    window.requestAnimationFrame(() => {
+      sourceDataIsSyncingScrollRef.current = false;
+    });
+  };
+
+  const scrollSourceDataTable = (direction: "left" | "right") => {
+    const target = sourceDataTableScrollRef.current;
+    if (!target) return;
+    target.scrollBy({
+      left: direction === "left" ? -520 : 520,
+      behavior: "smooth",
+    });
+  };
+
+  const clearOperationFeedbackTimer = useCallback(() => {
+    if (!operationFeedbackTimerRef.current) return;
+    globalThis.clearTimeout(operationFeedbackTimerRef.current);
+    operationFeedbackTimerRef.current = null;
+  }, []);
+
+  const showOperationResult = useCallback(
+    (phase: "success" | "error", title: string, message: string) => {
+      clearOperationFeedbackTimer();
+      setOperationFeedback({
+        phase,
+        title,
+        message,
+        updatedAt: new Date().toISOString(),
+      });
+      operationFeedbackTimerRef.current = globalThis.setTimeout(() => {
+        setOperationFeedback(null);
+        operationFeedbackTimerRef.current = null;
+      }, phase === "success" ? 2200 : 3600);
+    },
+    [clearOperationFeedbackTimer]
+  );
+
+  const setNotice = useCallback((nextNotice: Omit<NoticeState, "updatedAt"> | string | null) => {
+    if (!nextNotice) {
+      setNoticeState(null);
+      clearOperationFeedbackTimer();
+      setOperationFeedback(null);
+      return;
+    }
+
+    if (typeof nextNotice === "string") {
+      setNoticeState({
+        tone: "info",
+        title: "Informasi ALETA Bot",
+        message: nextNotice,
+        updatedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const updatedNotice = {
+      ...nextNotice,
+      updatedAt: new Date().toISOString(),
+    };
+    setNoticeState(updatedNotice);
+    if (nextNotice.tone === "success") {
+      showOperationResult("success", nextNotice.title, nextNotice.message);
+    } else if (nextNotice.tone === "danger") {
+      showOperationResult("error", nextNotice.title, nextNotice.message);
+    }
+  }, [clearOperationFeedbackTimer, showOperationResult]);
+
+  const notifySuccess = useCallback(
+    (title: string, message: string) => setNotice({ tone: "success", title, message }),
+    [setNotice]
+  );
+  const notifyWarning = useCallback(
+    (title: string, message: string) => setNotice({ tone: "warning", title, message }),
+    [setNotice]
+  );
+  const notifyError = useCallback(
+    (title: string, message: string) => setNotice({ tone: "danger", title, message }),
+    [setNotice]
+  );
+  const isActionBusy = isSaving || isReportLoading || isReportExporting || isLatestReportExporting;
+  const operationFeedbackPhase = operationFeedback?.phase;
+  const shouldShowBusyFeedback = isActionBusy && (!operationFeedback || operationFeedbackPhase === "loading");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (shouldShowBusyFeedback) {
+        clearOperationFeedbackTimer();
+        setOperationFeedback({
+          phase: "loading",
+          title: "ALETA Sedang Memproses",
+          message: "Mohon tunggu, permintaan sedang diproses.",
+          updatedAt: new Date().toISOString(),
+        });
+        return;
+      }
+
+      if (!isActionBusy && operationFeedbackPhase === "loading") {
+        setOperationFeedback(null);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [clearOperationFeedbackTimer, isActionBusy, operationFeedbackPhase, shouldShowBusyFeedback]);
+
+  useEffect(() => () => clearOperationFeedbackTimer(), [clearOperationFeedbackTimer]);
 
   const navigateAdminAction = (href: string) => {
     if (!href.startsWith("#")) {
-      window.location.href = href;
+      window.location.assign(href.startsWith("/") ? apiPath(href) : href);
       return;
     }
     const targetId = href.slice(1);
     const tabByAnchor: Record<string, string> = {
       "status-whatsapp": "connection",
+      "status-bot": "settings",
       "pengaturan-bot": "settings",
+      "notifikasi": "notifications",
+      "logs": "logs",
+      "reports": "reports",
+      "database": "database",
+      "ai-bridge": "dashboard",
       "public-qa": "public-qa",
       "queue-recovery": "queue-recovery",
-    "policy-skip": "dashboard",
+      "approvals": "approvals",
+      "templates": "templates",
+      "policy-skip": "dashboard",
       "reminder-deadline": "dashboard",
     };
-    setActiveTab(tabByAnchor[targetId] ?? "dashboard");
+    const nextTab = tabByAnchor[targetId] ?? "dashboard";
+    if (
+      ["templates", "queries", "migration", "manual-test"].includes(nextTab) ||
+      targetId === "ai-bridge" ||
+      (!showAdvancedMode && !SIMPLE_MODE_TAB_VALUES.has(nextTab))
+    ) {
+      setAdvancedModePreference(true);
+    }
+    setActiveTab(nextTab);
     window.requestAnimationFrame(() => {
-      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      window.setTimeout(() => {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
     });
   };
 
@@ -958,9 +2384,9 @@ export function AletaBotAdminPanel() {
     if (modal.type === "publicQaConvert") {
       const key = makePublicQaDraftKey(modal.review.suggestedIntentKey || modal.review.rawMessage);
       setPublicQaConvertMode("new");
-      setPublicQaConvertIntentId(snapshot.publicQaIntents.find((intent) => intent.status === "draft" && !intent.isActive)?.id ?? "");
-      setPublicQaDraftIntentKey(key || "draft_public_qa");
-      setPublicQaDraftIntentName(`Draft Intent: ${modal.review.rawMessage.slice(0, 48)}`);
+      setPublicQaConvertIntentId(snapshot.publicQaIntents.find((intent) => intent.status !== "archived")?.id ?? "");
+      setPublicQaDraftIntentKey(key || "aturan_publik_baru");
+      setPublicQaDraftIntentName(`Draft Aturan: ${modal.review.rawMessage.slice(0, 48)}`);
       setPublicQaReviewNote(modal.review.reviewNote || "");
     }
     setActiveModal(modal);
@@ -978,8 +2404,10 @@ export function AletaBotAdminPanel() {
     try {
       const data = await requestBot<RuntimeDashboardSnapshot>("/api/admin/aleta-bot/runtime-dashboard");
       setRuntimeDashboard(data);
+      return data;
     } catch {
       setRuntimeDashboard(null);
+      return null;
     }
   }, []);
 
@@ -1001,17 +2429,177 @@ export function AletaBotAdminPanel() {
       setQueryForm(makeEmptyQueryForm());
       setDbConnectionForm(data.dbConnections[0] ? dbConnectionToForm(data.dbConnections[0]) : makeEmptyDbConnectionForm());
       setPublicQaIntentForm(data.publicQaIntents[0] ? publicQaIntentToForm(data.publicQaIntents[0]) : makeEmptyPublicQaIntentForm());
-      void loadRuntimeDashboard();
+      await loadRuntimeDashboard();
+      return true;
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Gagal memuat ALETA Bot.");
+      notifyError("Gagal Memuat ALETA Bot", error instanceof Error ? error.message : "Data ALETA Bot belum bisa dimuat.");
+      return false;
     } finally {
       setIsLoading(false);
     }
-  }, [loadRuntimeDashboard]);
+  }, [loadRuntimeDashboard, notifyError]);
+
+  const loadWhatsappReport = useCallback(async (
+    overrides?: Partial<{ range: string; status: string; sourceApp: string }>,
+    options: { silent?: boolean } = {}
+  ) => {
+    const nextRange = overrides?.range ?? whatsappReportRange;
+    const nextStatus = overrides?.status ?? whatsappReportStatus;
+    const nextSource = overrides?.sourceApp ?? whatsappReportSource;
+    if (!options.silent) setIsReportLoading(true);
+    try {
+      const params = new URLSearchParams({
+        range: nextRange,
+        status: nextStatus,
+        sourceApp: nextSource,
+        limit: "200",
+      });
+      const data = await requestBot<WhatsappReportSummary>(`/api/admin/aleta-bot/whatsapp-report?${params.toString()}`);
+      setWhatsappReport(data);
+      return data;
+    } catch (error) {
+      if (!options.silent) {
+        notifyError("Laporan WhatsApp Gagal Dimuat", error instanceof Error ? error.message : "Data laporan belum bisa dimuat.");
+      }
+      return null;
+    } finally {
+      if (!options.silent) setIsReportLoading(false);
+    }
+  }, [notifyError, whatsappReportRange, whatsappReportSource, whatsappReportStatus]);
+
+  const applyWhatsappReportFilters = useCallback(
+    (filters: Partial<{ range: string; status: string; sourceApp: string }>) => {
+      const nextRange = filters.range ?? whatsappReportRange;
+      const nextStatus = filters.status ?? whatsappReportStatus;
+      const nextSource = filters.sourceApp ?? whatsappReportSource;
+      setWhatsappReportRange(nextRange);
+      setWhatsappReportStatus(nextStatus);
+      setWhatsappReportSource(nextSource);
+      void loadWhatsappReport({ range: nextRange, status: nextStatus, sourceApp: nextSource });
+    },
+    [loadWhatsappReport, whatsappReportRange, whatsappReportSource, whatsappReportStatus]
+  );
+
+  const exportWhatsappReportExcel = async () => {
+    setIsReportExporting(true);
+    const params = new URLSearchParams({
+      format: "xlsx",
+      range: whatsappReportRange,
+      status: whatsappReportStatus,
+      sourceApp: whatsappReportSource,
+    });
+    try {
+      const response = await fetch(apiPath(`/api/admin/aleta-bot/whatsapp-report?${params.toString()}`), {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Excel belum bisa dibuat.");
+      }
+      const blob = await response.blob();
+      const filename = parseDownloadFilename(
+        response.headers.get("content-disposition"),
+        `laporan-whatsapp-${whatsappReportSource}-${whatsappReportRange}.xlsx`
+      );
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+      const rowCount = Number(response.headers.get("x-aleta-export-row-count") || 0);
+      setWhatsappReportExportInfo({
+        filename,
+        rowCount,
+        sizeKb: Math.max(1, Math.round(blob.size / 1024)),
+        exportedAt: new Date().toISOString(),
+      });
+      notifySuccess("Excel Berhasil Dibuat", `${filename} berisi ${rowCount} baris data.`);
+    } catch (error) {
+      notifyError("Cetak Excel Gagal", error instanceof Error ? error.message : "File Excel belum berhasil dibuat.");
+    } finally {
+      setIsReportExporting(false);
+    }
+  };
+
+  const exportLatestWhatsappRowsExcel = async () => {
+    setIsLatestReportExporting(true);
+    const params = new URLSearchParams({
+      format: "latest-xlsx",
+      range: whatsappReportRange,
+      status: whatsappReportStatus,
+      sourceApp: whatsappReportSource,
+      tableSearch: reportTableSearch,
+      tableStatus: reportTableStatusFilter,
+      tableApp: reportTableAppFilter,
+      tableFeature: reportTableFeatureFilter,
+      sortKey: reportTableSortKey,
+      sortDirection: reportTableSortDirection,
+    });
+    try {
+      const response = await fetch(apiPath(`/api/admin/aleta-bot/whatsapp-report?${params.toString()}`), {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Excel Data Terbaru belum bisa dibuat.");
+      }
+      const blob = await response.blob();
+      const filename = parseDownloadFilename(
+        response.headers.get("content-disposition"),
+        `data-terbaru-whatsapp-${whatsappReportSource}-${whatsappReportRange}.xlsx`
+      );
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+      const rowCount = Number(response.headers.get("x-aleta-export-row-count") || 0);
+      setLatestReportExportInfo({
+        filename,
+        rowCount,
+        sizeKb: Math.max(1, Math.round(blob.size / 1024)),
+        exportedAt: new Date().toISOString(),
+      });
+      notifySuccess("Excel Data Terbaru Dibuat", `${filename} berisi ${rowCount} baris sesuai filter tabel.`);
+    } catch (error) {
+      notifyError("Cetak Excel Data Terbaru Gagal", error instanceof Error ? error.message : "File Excel Data Terbaru belum berhasil dibuat.");
+    } finally {
+      setIsLatestReportExporting(false);
+    }
+  };
+
+  const refreshSnapshot = useCallback(
+    async (scope: "panel" | "whatsapp" = "panel") => {
+      setNotice(null);
+      const refreshed = await loadSnapshot();
+      if (!refreshed) return;
+      notifySuccess(
+        scope === "whatsapp" ? "Status WhatsApp Diperbarui" : "Data ALETA Bot Diperbarui",
+        scope === "whatsapp"
+          ? "QR dan status koneksi WhatsApp sudah dimuat ulang dari runtime ALETA Bot."
+          : "Data panel ALETA Bot sudah dimuat ulang dari database dan runtime."
+      );
+    },
+    [loadSnapshot, notifySuccess, setNotice]
+  );
 
   useEffect(() => {
-    void loadSnapshot();
+    const timer = globalThis.setTimeout(() => {
+      void loadSnapshot();
+    }, 0);
+
+    return () => globalThis.clearTimeout(timer);
   }, [loadSnapshot]);
+
+  useEffect(() => {
+    setPendingRisk(snapshot.settings.sendingRiskLevel);
+  }, [snapshot.settings.sendingRiskLevel]);
 
   useEffect(() => {
     if (!["initializing", "waiting_qr"].includes(snapshot.whatsapp.runtimeStatus)) return;
@@ -1023,23 +2611,136 @@ export function AletaBotAdminPanel() {
     return () => globalThis.clearInterval(timer);
   }, [loadSnapshot, snapshot.whatsapp.runtimeStatus]);
 
-  const saveSettings = async () => {
+  useEffect(() => {
+    if (activeTab !== "reports") return;
+    const initialTimer = globalThis.setTimeout(() => {
+      void loadWhatsappReport();
+    }, 0);
+    const refreshTimer = globalThis.setInterval(() => {
+      void loadWhatsappReport(undefined, { silent: true });
+    }, 7000);
+
+    return () => {
+      globalThis.clearTimeout(initialTimer);
+      globalThis.clearInterval(refreshTimer);
+    };
+  }, [activeTab, loadWhatsappReport]);
+
+  const settingsDraftChanged = useMemo(
+    () =>
+      settingsDraft.botEnabled !== snapshot.settings.botEnabled ||
+      settingsDraft.notificationsEnabled !== snapshot.settings.notificationsEnabled ||
+      settingsDraft.dryRunEnabled !== snapshot.settings.dryRunEnabled ||
+      settingsDraft.adminWhatsappNumber !== snapshot.settings.adminWhatsappNumber ||
+      settingsDraft.testTargetNumber !== snapshot.settings.testTargetNumber ||
+      Number(settingsDraft.messageDelayMs) !== Number(snapshot.settings.messageDelayMs) ||
+      Number(settingsDraft.retryLimit) !== Number(snapshot.settings.retryLimit) ||
+      settingsDraft.scheduleCron !== snapshot.settings.scheduleCron ||
+      settingsDraft.securityNotes !== snapshot.settings.securityNotes,
+    [settingsDraft, snapshot.settings]
+  );
+
+  const saveSettings = async (
+    draft = settingsDraft,
+    options: { closeModal?: boolean; successMessage?: string } = {}
+  ) => {
     setIsSaving(true);
+    setNotice(null);
+    try {
+      const settingsPayload = {
+        botEnabled: draft.botEnabled,
+        notificationsEnabled: draft.notificationsEnabled,
+        dryRunEnabled: draft.dryRunEnabled,
+        adminWhatsappNumber: draft.adminWhatsappNumber,
+        testTargetNumber: draft.testTargetNumber,
+        messageDelayMs: draft.messageDelayMs,
+        sendingRiskLevel: draft.sendingRiskLevel,
+        retryLimit: draft.retryLimit,
+        scheduleCron: draft.scheduleCron,
+        securityNotes: draft.securityNotes,
+      };
+      const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot", {
+        method: "PUT",
+        body: JSON.stringify({ settings: settingsPayload }),
+      });
+      setSnapshot(data);
+      setSettingsDraft(data.settings);
+      setModalDirty(false);
+      const dashboard = await loadRuntimeDashboard();
+      if (options.closeModal !== false) {
+        setActiveModal(null);
+      }
+      const runtimeBot = dashboard?.payload?.bot;
+      const runtimeOutOfSync = Boolean(
+        dashboard?.online &&
+        runtimeBot &&
+        (
+          (typeof runtimeBot.botEnabled === "boolean" && runtimeBot.botEnabled !== data.settings.botEnabled) ||
+          (typeof runtimeBot.notificationsEnabled === "boolean" && runtimeBot.notificationsEnabled !== data.settings.notificationsEnabled) ||
+          (typeof runtimeBot.dryRunEnabled === "boolean" && runtimeBot.dryRunEnabled !== data.settings.dryRunEnabled)
+        )
+      );
+      if (!dashboard?.online) {
+        notifyWarning(
+          "Pengaturan Tersimpan, Layanan Bot Belum Terkonfirmasi",
+          "Perubahan sudah masuk database portal. Layanan ALETA Bot belum dapat dibaca, jadi sinkronkan pengaturan setelah layanan aktif."
+        );
+      } else if (runtimeOutOfSync) {
+        notifyWarning(
+          "Pengaturan Tersimpan, Layanan Bot Perlu Sinkron",
+          "Data portal sudah berubah, tetapi layanan bot masih menampilkan pengaturan lama. Klik Sinkronkan Pengaturan atau cek layanan ALETA Bot."
+        );
+      } else {
+        notifySuccess(
+          "Pengaturan ALETA Bot Berhasil Diubah",
+          options.successMessage ?? "Bot aktif, notifikasi, simulasi, nomor admin, dan pengaturan utama sudah tersimpan serta dashboard layanan diperbarui."
+        );
+      }
+    } catch (error) {
+      notifyError("Pengaturan Gagal Disimpan", error instanceof Error ? error.message : "Perubahan pengaturan ALETA Bot belum berhasil disimpan.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const applyRiskLevel = async (level: number) => {
+    const target = Math.min(5, Math.max(1, Math.round(Number(level) || 1)));
+    if (target === snapshot.settings.sendingRiskLevel) {
+      return;
+    }
+    const preset = snapshot.sendingRiskPresets.find((item) => item.level === target);
+    setSavingRisk(true);
     setNotice(null);
     try {
       const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot", {
         method: "PUT",
-        body: JSON.stringify({ settings: settingsDraft }),
+        body: JSON.stringify({ settings: { sendingRiskLevel: target } }),
       });
       setSnapshot(data);
       setSettingsDraft(data.settings);
-      setActiveModal(null);
-      setModalDirty(false);
-      setNotice("Pengaturan ALETA Bot berhasil disimpan dan disinkronkan.");
+      const dashboard = await loadRuntimeDashboard();
+      const label = preset?.label ?? `Level ${target}`;
+      const suspend = preset?.suspendRisk ?? "";
+      if (!dashboard?.online) {
+        notifyWarning(
+          `Mode Risiko Diubah ke ${label}, Layanan Bot Belum Terkonfirmasi`,
+          "Perubahan sudah masuk database portal. Sinkronkan setelah layanan ALETA Bot aktif agar batas kirim baru dipakai."
+        );
+      } else {
+        const jarak = preset
+          ? `${Math.round(preset.sendingGapMinMs / 1000)}–${Math.round(preset.sendingGapMaxMs / 1000)} dtk`
+          : "";
+        notifySuccess(
+          `Mode Risiko: ${label}`,
+          `Seluruh sistem kirim kini memakai preset ${label}${suspend ? ` (risiko suspend/banned ${suspend.toLowerCase()})` : ""}.` +
+            (jarak ? ` Pesan berikutnya dijadwalkan berjarak ${jarak} satu sama lain.` : "") +
+            " Jam kirim, jeda per nomor, batas pengaman, dan batch antrean ikut menyesuaikan."
+        );
+      }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Pengaturan gagal disimpan.");
+      notifyError("Mode Risiko Gagal Diubah", error instanceof Error ? error.message : "Preset risiko pengiriman belum berhasil diterapkan.");
     } finally {
-      setIsSaving(false);
+      setSavingRisk(false);
     }
   };
 
@@ -1058,11 +2759,12 @@ export function AletaBotAdminPanel() {
       });
       setSnapshot(data);
       setTemplateDraft(Object.fromEntries(data.templates.map((item) => [item.id, item.body])));
+      await loadRuntimeDashboard();
       setActiveModal(null);
       setModalDirty(false);
-      setNotice(`Template ${template.title} berhasil disimpan.`);
+      notifySuccess("Isi Pesan Berhasil Diubah", `Isi pesan "${template.title}" sudah tersimpan dan data panel diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Template gagal disimpan.");
+      notifyError("Isi Pesan Gagal Disimpan", error instanceof Error ? error.message : "Perubahan isi pesan belum berhasil disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1070,12 +2772,13 @@ export function AletaBotAdminPanel() {
 
   const saveNotification = async () => {
     if (notificationForm.scheduleType === "cron" && notificationForm.scheduleCron && !isValidCronExpression(notificationForm.scheduleCron)) {
-      setNotice("Format cron tidak valid.");
+      notifyWarning("Jadwal Notifikasi Belum Valid", "Format cron belum valid. Perbaiki jadwal sebelum menyimpan notifikasi.");
       return;
     }
     setIsSaving(true);
     setNotice(null);
     try {
+      const selectedQuery = snapshot.queries.find((query) => query.id === notificationForm.queryId);
       const data = await requestBot<AletaBotSnapshot>("/api/admin/aleta-bot", {
         method: "PUT",
         body: JSON.stringify({
@@ -1086,12 +2789,14 @@ export function AletaBotAdminPanel() {
             description: notificationForm.description,
             queryId: notificationForm.queryId,
             templateId: notificationForm.templateId,
+            recipientMapping: buildNotificationRecipientMapping(notificationForm, selectedQuery),
             scheduleConfig: {
               type: notificationForm.scheduleType,
               cron: notificationForm.scheduleCron,
               trigger: notificationForm.scheduleTrigger,
             },
             isActive: notificationForm.isActive,
+            attachDocument: notificationForm.attachDocument,
             delayMs: notificationForm.delayMs,
             retryLimit: notificationForm.retryLimit,
           },
@@ -1099,11 +2804,12 @@ export function AletaBotAdminPanel() {
       });
       setSnapshot(data);
       setNotificationForm(makeEmptyNotificationForm(data, notificationForm.category));
+      await loadRuntimeDashboard();
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Notifikasi ALETA Bot berhasil disimpan dan disinkronkan ke layanan.");
+      notifySuccess("Notifikasi Berhasil Diubah", `Notifikasi "${notificationForm.name || "ALETA Bot"}" sudah tersimpan dan data layanan diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Notifikasi gagal disimpan.");
+      notifyError("Notifikasi Gagal Disimpan", error instanceof Error ? error.message : "Perubahan notifikasi belum berhasil disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1131,11 +2837,12 @@ export function AletaBotAdminPanel() {
       });
       setSnapshot(data);
       setQueryForm(makeEmptyQueryForm(queryForm.category));
+      await loadRuntimeDashboard();
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Kueri ALETA Bot berhasil disimpan dan disinkronkan ke layanan.");
+      notifySuccess("Sumber Data Berhasil Diubah", `Sumber data "${queryForm.name || "ALETA Bot"}" sudah tersimpan dan data panel diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Query gagal disimpan.");
+      notifyError("Sumber Data Gagal Disimpan", error instanceof Error ? error.message : "Perubahan sumber data belum berhasil disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1156,11 +2863,12 @@ export function AletaBotAdminPanel() {
       });
       setSnapshot(data);
       setDbConnectionForm(data.dbConnections.find((item) => item.key === dbConnectionForm.key) ? dbConnectionToForm(data.dbConnections.find((item) => item.key === dbConnectionForm.key)!) : makeEmptyDbConnectionForm());
+      await loadRuntimeDashboard();
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Koneksi SQL ALETA Bot berhasil disimpan dan disinkronkan.");
+      notifySuccess("Koneksi Database Berhasil Diubah", `Koneksi "${dbConnectionForm.name || dbConnectionForm.key}" sudah tersimpan dan daftar koneksi diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Koneksi SQL gagal disimpan.");
+      notifyError("Koneksi Database Gagal Disimpan", error instanceof Error ? error.message : "Perubahan koneksi SQL belum berhasil disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1175,9 +2883,14 @@ export function AletaBotAdminPanel() {
         body: JSON.stringify({ action: "test", connectionKey }),
       });
       setSnapshot(data.snapshot);
-      setNotice(data.result.status === "success" ? "Uji koneksi SQL berhasil." : `Uji koneksi SQL gagal: ${data.result.error || "Kesalahan tidak diketahui."}`);
+      await loadRuntimeDashboard();
+      if (data.result.status === "success") {
+        notifySuccess("Uji Koneksi SQL Berhasil", "Koneksi database aktif berhasil diuji dan status panel sudah diperbarui.");
+      } else {
+        notifyWarning("Uji Koneksi SQL Belum Berhasil", data.result.error || "Periksa host, user, password, dan nama database.");
+      }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Uji koneksi SQL gagal.");
+      notifyError("Uji Koneksi SQL Gagal", error instanceof Error ? error.message : "Uji koneksi SQL belum berhasil diproses.");
     } finally {
       setIsSaving(false);
     }
@@ -1199,9 +2912,14 @@ export function AletaBotAdminPanel() {
         }),
       });
       setSnapshot(data.snapshot);
-      setNotice(data.result.status === "success" ? "Uji koneksi SQL berhasil dengan data form saat ini." : `Uji koneksi SQL gagal: ${data.result.error || "Periksa host, port, username, password, dan nama database."}`);
+      await loadRuntimeDashboard();
+      if (data.result.status === "success") {
+        notifySuccess("Uji Koneksi Form Berhasil", "Data koneksi pada form berhasil diuji. Panel koneksi sudah diperbarui.");
+      } else {
+        notifyWarning("Uji Koneksi Form Belum Berhasil", data.result.error || "Periksa host, port, username, password, dan nama database.");
+      }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Uji koneksi SQL gagal.");
+      notifyError("Uji Koneksi Form Gagal", error instanceof Error ? error.message : "Uji koneksi SQL belum berhasil diproses.");
     } finally {
       setIsSaving(false);
     }
@@ -1225,11 +2943,12 @@ export function AletaBotAdminPanel() {
       setSnapshot(data);
       const saved = data.publicQaIntents.find((item) => item.key === publicQaIntentForm.key);
       setPublicQaIntentForm(saved ? publicQaIntentToForm(saved) : makeEmptyPublicQaIntentForm());
+      await loadRuntimeDashboard();
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Aturan Pertanyaan Publik berhasil disimpan dan disinkronkan.");
+      notifySuccess("Aturan Jawaban Berhasil Diubah", `Aturan "${publicQaIntentForm.name || publicQaIntentForm.key}" sudah tersimpan dan dashboard diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Aturan Pertanyaan Publik gagal disimpan.");
+      notifyError("Aturan Jawaban Gagal Disimpan", error instanceof Error ? error.message : "Perubahan aturan jawaban belum berhasil disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1245,9 +2964,9 @@ export function AletaBotAdminPanel() {
         body: JSON.stringify({ action: "test", question: publicQaQuestion }),
       });
       setPublicQaTestResult(JSON.stringify(data.result, null, 2));
-      setNotice("Uji aturan Pertanyaan Publik berhasil diproses tanpa mengirim WhatsApp.");
+      notifySuccess("Uji Pertanyaan Berhasil", "Pertanyaan diproses untuk pratinjau tanpa mengirim WhatsApp.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Uji aturan Pertanyaan Publik gagal.");
+      notifyError("Uji Pertanyaan Gagal", error instanceof Error ? error.message : "Uji aturan jawaban belum berhasil.");
     } finally {
       setIsSaving(false);
     }
@@ -1269,12 +2988,13 @@ export function AletaBotAdminPanel() {
         }),
       });
       setSnapshot(data);
+      await loadRuntimeDashboard();
       setPublicQaReviewNote("");
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Status tinjauan Pertanyaan Publik berhasil diperbarui tanpa mengirim WhatsApp.");
+      notifySuccess("Tinjauan Pertanyaan Berhasil Diubah", `Status tinjauan diubah menjadi ${displayStatus(reviewStatus)} tanpa mengirim WhatsApp.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Tinjauan Pertanyaan Publik gagal disimpan.");
+      notifyError("Tinjauan Pertanyaan Gagal Disimpan", error instanceof Error ? error.message : "Status tinjauan belum berhasil disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -1299,12 +3019,13 @@ export function AletaBotAdminPanel() {
         }),
       });
       setSnapshot(data);
+      await loadRuntimeDashboard();
       setPublicQaReviewNote("");
       setActiveModal(null);
       setModalDirty(false);
-      setNotice("Pertanyaan publik berhasil disimpan sebagai draft aturan tanpa mengaktifkan jawaban otomatis.");
+      notifySuccess("Aturan Jawaban Dibuat", "Pertanyaan sudah menjadi aturan jawaban yang langsung berlaku. Periksa blangko jawabannya bila perlu disesuaikan.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Pertanyaan publik gagal dijadikan draft aturan.");
+      notifyError("Aturan Jawaban Gagal Dibuat", error instanceof Error ? error.message : "Pertanyaan belum berhasil dijadikan aturan jawaban.");
     } finally {
       setIsSaving(false);
     }
@@ -1322,9 +3043,9 @@ export function AletaBotAdminPanel() {
       setDeadlineReminderPreview(data);
       openModal({ type: "deadlineReminderPreview", title: "Simulasi Pengingat Tenggat H-1" });
       await loadSnapshot();
-      setNotice("Simulasi pengingat tenggat H-1 selesai. Tidak ada WhatsApp sungguhan yang dikirim.");
+      notifySuccess("Simulasi Pengingat Tenggat Selesai", "Simulasi H-1 selesai, data panel sudah diperbarui, dan tidak ada WhatsApp sungguhan yang dikirim.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Simulasi pengingat tenggat gagal.");
+      notifyError("Simulasi Pengingat Tenggat Gagal", error instanceof Error ? error.message : "Simulasi pengingat tenggat belum berhasil.");
     } finally {
       setIsSaving(false);
     }
@@ -1344,9 +3065,10 @@ export function AletaBotAdminPanel() {
       setSnapshot(data);
       setSettingsDraft(data.settings);
       setDeadlineConfirmText("");
-      setNotice(`Mode pengingat tenggat diperbarui menjadi ${displayStatus(mode)}.`);
+      await loadRuntimeDashboard();
+      notifySuccess("Mode Pengingat Tenggat Berhasil Diubah", `Mode pengingat tenggat sekarang ${displayStatus(mode)} dan data panel sudah diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Mode pengingat tenggat gagal diperbarui.");
+      notifyError("Mode Pengingat Tenggat Gagal Diubah", error instanceof Error ? error.message : "Mode pengingat tenggat belum berhasil diperbarui.");
     } finally {
       setIsSaving(false);
     }
@@ -1381,9 +3103,10 @@ export function AletaBotAdminPanel() {
       setDeadlinePilotPositionIdsText(data.settings.deadlineReminderPilotPositionIds.join(", "));
       setDeadlineSchedulerTime(data.settings.deadlineReminderSchedulerTime);
       setDeadlineConfirmText("");
-      setNotice("Kontrol pilot dan penjadwal pengingat diperbarui.");
+      await loadRuntimeDashboard();
+      notifySuccess("Kontrol Pengingat Berhasil Diubah", "Daftar pilot, jadwal, penjadwal, atau tombol darurat pengingat sudah diperbarui.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Kontrol pengingat gagal diperbarui.");
+      notifyError("Kontrol Pengingat Gagal Diubah", error instanceof Error ? error.message : "Kontrol pengingat belum berhasil diperbarui.");
     } finally {
       setIsSaving(false);
     }
@@ -1392,11 +3115,11 @@ export function AletaBotAdminPanel() {
   const exportPolicySkipCsv = () => {
     const params = new URLSearchParams({ format: "csv" });
     if (policySkipReasonFilter !== "all") params.set("reason", policySkipReasonFilter);
-    window.location.href = `/api/admin/aleta-bot/policy-skip-report?${params.toString()}`;
+    window.location.href = apiPath(`/api/admin/aleta-bot/policy-skip-report?${params.toString()}`);
   };
 
   const exportPilotReadinessCsv = () => {
-    window.open("/api/admin/aleta-bot/pilot-readiness?format=csv", "_blank", "noopener,noreferrer");
+    window.open(apiPath("/api/admin/aleta-bot/pilot-readiness?format=csv"), "_blank", "noopener,noreferrer");
   };
 
   const runOperationalSmokeTest = async () => {
@@ -1406,13 +3129,15 @@ export function AletaBotAdminPanel() {
     try {
       const data = await requestBot<OperationalSmokeTestResult>("/api/admin/aleta-bot/operational-smoke-test");
       setSmokeTestResult(data);
-      setNotice(
+      await loadRuntimeDashboard();
+      (data.overallStatus === "passed" ? notifySuccess : notifyWarning)(
+        data.overallStatus === "passed" ? "Pemeriksaan Operasional Lulus" : "Pemeriksaan Operasional Selesai Dengan Catatan",
         data.overallStatus === "passed"
           ? "Pemeriksaan operasional lulus tanpa mengirim WhatsApp."
           : "Pemeriksaan selesai dengan catatan. Tidak ada WhatsApp yang dikirim."
       );
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Pemeriksaan operasional gagal.");
+      notifyError("Pemeriksaan Operasional Gagal", error instanceof Error ? error.message : "Pemeriksaan operasional belum berhasil.");
     } finally {
       setIsSaving(false);
     }
@@ -1433,9 +3158,9 @@ export function AletaBotAdminPanel() {
       setDeadlineReminderPreview(data);
       openModal({ type: "deadlineReminderPreview", title: "Hasil Simulasi Penjadwal Pengingat H-1" });
       await loadSnapshot();
-      setNotice("Simulasi penjadwal dijalankan manual. Tidak ada WhatsApp sungguhan yang dikirim.");
+      notifySuccess("Simulasi Penjadwal Berhasil", "Simulasi penjadwal dijalankan manual, data terbaru dimuat, dan tidak ada WhatsApp sungguhan yang dikirim.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Simulasi penjadwal pengingat gagal.");
+      notifyError("Simulasi Penjadwal Gagal", error instanceof Error ? error.message : "Simulasi penjadwal pengingat belum berhasil.");
     } finally {
       setIsSaving(false);
     }
@@ -1457,9 +3182,14 @@ export function AletaBotAdminPanel() {
       openModal({ type: "deadlineReminderPreview", title: "Hasil Pengingat Tenggat H-1" });
       await loadSnapshot();
       setDeadlineConfirmText("");
-      setNotice(data.productionSent ? "Pengingat aktif operasional memproses antrean sesuai persetujuan." : "Pengingat selesai tanpa pengiriman aktif operasional.");
+      notifySuccess(
+        data.productionSent ? "Pengingat Operasional Diproses" : "Pengingat Tenggat Selesai",
+        data.productionSent
+          ? "Pengingat aktif operasional memproses antrean sesuai persetujuan dan panel sudah diperbarui."
+          : "Pengingat selesai tanpa pengiriman aktif operasional dan panel sudah diperbarui."
+      );
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Pengingat tenggat gagal dijalankan.");
+      notifyError("Pengingat Tenggat Gagal Dijalankan", error instanceof Error ? error.message : "Pengingat tenggat belum berhasil dijalankan.");
     } finally {
       setIsSaving(false);
     }
@@ -1473,7 +3203,7 @@ export function AletaBotAdminPanel() {
     } else if (publicQaReviewFilter !== "all") {
       params.set("reviewStatus", publicQaReviewFilter);
     }
-    window.open(`/api/admin/aleta-bot/public-qa?${params.toString()}`, "_blank", "noopener,noreferrer");
+    window.open(apiPath(`/api/admin/aleta-bot/public-qa?${params.toString()}`), "_blank", "noopener,noreferrer");
   };
 
   const previewNotificationRecipients = async (notification: AletaBotNotification) => {
@@ -1487,9 +3217,9 @@ export function AletaBotAdminPanel() {
       setRecipientPreview(data);
       openModal({ type: "recipientPreview", title: `Preview Penerima ${notification.name}` });
       await loadSnapshot();
-      setNotice("Preview penerima berhasil dibuat tanpa mengirim atau mengantrekan pesan.");
+      notifySuccess("Preview Penerima Berhasil Dibuat", `Preview penerima untuk "${notification.name}" sudah diperbarui tanpa mengirim atau mengantrekan pesan.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Preview penerima gagal dibuat.");
+      notifyError("Preview Penerima Gagal Dibuat", error instanceof Error ? error.message : "Preview penerima belum berhasil dibuat.");
     } finally {
       setIsSaving(false);
     }
@@ -1505,15 +3235,43 @@ export function AletaBotAdminPanel() {
         body: JSON.stringify({ action: "purge-logs", payload: { olderThanDays: 30, safeOnly: true } }),
       });
       await loadSnapshot();
-      setNotice("Log lama berhasil dihapus. Hanya log aman (non-audit) yang dihapus.");
+      notifySuccess("Retensi Log Berhasil Diproses", "Log lama non-audit berhasil dihapus dan daftar log sudah dimuat ulang.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Hapus log gagal.");
+      notifyError("Retensi Log Gagal Diproses", error instanceof Error ? error.message : "Hapus log lama belum berhasil.");
     } finally {
       setIsSaving(false);
       setShowPurgeConfirm(false);
       setPurgeConfirmText("");
     }
   };
+
+  const pollManualSendProgress = useCallback(function poll(queueId: number | string, attempt = 0) {
+    const safeQueueId = String(queueId || "").trim();
+    if (!safeQueueId) return;
+    const delayMs = attempt === 0 ? 1200 : 2500;
+    globalThis.setTimeout(() => {
+      void (async () => {
+        try {
+          const data = await requestBot<AletaBotActionResult>(`/api/admin/aleta-bot/queue-progress?id=${encodeURIComponent(safeQueueId)}`);
+          setManualSendProgress((current) => ({
+            ...(current ?? {}),
+            ...data,
+            queueId: data.queueId ?? safeQueueId,
+            queueProgress: data.queueProgress ?? current?.queueProgress,
+          }));
+          const stage = data.queueProgress?.stage || data.status || "";
+          const finalStage = ["done", "failed", "sent", "delivered", "read", "dry_run", "simulated"].includes(String(stage));
+          if (!finalStage && attempt < 6) {
+            poll(safeQueueId, attempt + 1);
+          }
+        } catch {
+          if (attempt < 2) {
+            poll(safeQueueId, attempt + 1);
+          }
+        }
+      })();
+    }, delayMs);
+  }, []);
 
   const runAction = async (
     action: "sync-config" | "sync-ai-config" | "test-ai-runtime" | "reconnect" | "logout" | "send-test" | "test-template" | "test-query" | "test-notification" | "test-connection" | "pause-worker" | "resume-worker",
@@ -1522,17 +3280,114 @@ export function AletaBotAdminPanel() {
     setIsSaving(true);
     setNotice(null);
     setPreview(null);
+    if (action === "send-test") {
+      setManualSendProgress({
+        status: "processing",
+        message: "Pesan uji sedang dimasukkan ke antrean.",
+        queueProgress: {
+          stage: "queued",
+          status: "processing",
+          position: null,
+          pendingAhead: null,
+          estimatedWaitMs: null,
+          estimatedWaitText: "menghitung antrean",
+        },
+      });
+    }
     try {
-      const data = await requestBot<AletaBotSnapshot & { preview?: string }>("/api/admin/aleta-bot/actions", {
+      const data = await requestBot<AletaBotSnapshot & { preview?: string; actionResult?: AletaBotActionResult }>("/api/admin/aleta-bot/actions", {
         method: "POST",
         body: JSON.stringify({ action, payload }),
       });
       setSnapshot(data);
       if (data.preview) setPreview(data.preview);
-      void loadRuntimeDashboard();
-      setNotice("Aksi ALETA Bot berhasil diproses.");
+      if (action === "send-test") {
+        setManualSendProgress(data.actionResult ?? null);
+        const queueId = data.actionResult?.queueId ?? data.actionResult?.queueProgress?.queueId;
+        const stage = data.actionResult?.queueProgress?.stage || data.actionResult?.status || "";
+        if (queueId && !["done", "failed", "sent", "delivered", "read", "dry_run", "simulated"].includes(String(stage))) {
+          pollManualSendProgress(queueId);
+        }
+      }
+      await loadRuntimeDashboard();
+      if (["send-test", "test-notification", "pause-worker", "resume-worker", "sync-config"].includes(action)) {
+        void loadWhatsappReport(undefined, { silent: true });
+        globalThis.setTimeout(() => {
+          void loadWhatsappReport(undefined, { silent: true });
+        }, 2500);
+      }
+      const actionMessages: Record<string, { title: string; message: string }> = {
+        "sync-config": {
+          title: "Pengaturan Bot Berhasil Disinkronkan",
+          message: "Pengaturan portal sudah dikirim ulang ke layanan ALETA Bot dan dashboard diperbarui.",
+        },
+        "sync-ai-config": {
+          title: "Pengaturan AI Berhasil Disinkronkan",
+          message: "Provider dan model AI aktif sudah dikirim ulang ke layanan ALETA Bot.",
+        },
+        "test-ai-runtime": {
+          title: "Uji AI Berhasil Diproses",
+          message: "Status uji AI sudah diperbarui pada dashboard.",
+        },
+        reconnect: {
+          title: "Koneksi WhatsApp Diminta",
+          message: "Permintaan hubungkan WhatsApp Gateway sudah diproses dan status terbaru sedang dibaca.",
+        },
+        logout: {
+          title: "Kontrol Session WhatsApp Diproses",
+          message: "Permintaan logout/nonaktif session diproses dan status panel sudah diperbarui.",
+        },
+        "send-test": {
+          title: "Pesan Uji Berhasil Diproses",
+          message: "Pesan uji diproses sesuai mode aktif. Jika simulasi aktif, tidak ada WhatsApp sungguhan yang dikirim.",
+        },
+        "test-template": {
+          title: "Preview Isi Pesan Berhasil Dibuat",
+          message: "Isi pesan diuji dan hasil preview sudah diperbarui.",
+        },
+        "test-query": {
+          title: "Uji Sumber Data Berhasil Diproses",
+          message: "Sumber data diuji dan status panel sudah diperbarui.",
+        },
+        "test-notification": {
+          title: "Uji Notifikasi Berhasil Diproses",
+          message: "Notifikasi diuji dalam mode aman dan hasil panel sudah diperbarui.",
+        },
+        "test-connection": {
+          title: "Uji Koneksi WhatsApp Diproses",
+          message: "Status koneksi WhatsApp sudah diminta ulang dari runtime.",
+        },
+        "pause-worker": {
+          title: "Mesin Bot Dijeda",
+          message: "Pemroses antrean dijeda dan status mesin bot sudah diperbarui.",
+        },
+        "resume-worker": {
+          title: "Mesin Bot Dilanjutkan",
+          message: "Pemroses antrean dilanjutkan dan status mesin bot sudah diperbarui.",
+        },
+      };
+      const success = actionMessages[action] ?? {
+        title: "Aksi ALETA Bot Berhasil Diproses",
+        message: "Aksi selesai dan data panel sudah diperbarui.",
+      };
+      notifySuccess(success.title, data.actionResult?.message || success.message);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Aksi gagal diproses.");
+      if (action === "send-test") {
+        setManualSendProgress({
+          status: "failed",
+          sent: false,
+          message: error instanceof Error ? error.message : "Pesan uji gagal diproses.",
+          queueProgress: {
+            stage: "failed",
+            status: "failed",
+            position: 0,
+            pendingAhead: 0,
+            estimatedWaitMs: 0,
+            estimatedWaitText: "gagal",
+          },
+        });
+      }
+      notifyError("Aksi ALETA Bot Gagal Diproses", error instanceof Error ? error.message : "Aksi belum berhasil diproses.");
     } finally {
       setIsSaving(false);
     }
@@ -1550,6 +3405,7 @@ export function AletaBotAdminPanel() {
       const nextSnapshot = (data.snapshot || data) as AletaBotSnapshot;
       if (nextSnapshot?.settings && nextSnapshot?.legacyMigrations) {
         setSnapshot(nextSnapshot);
+        await loadRuntimeDashboard();
       } else {
         await loadSnapshot();
       }
@@ -1565,19 +3421,34 @@ export function AletaBotAdminPanel() {
         setActiveModal(null);
         setModalDirty(false);
       }
-      setNotice("Aksi migrasi jalur lama berhasil diproses.");
+      notifySuccess("Migrasi Jalur Lama Berhasil Diproses", `Aksi ${displayStatus(action)} untuk "${migration.feature}" selesai dan data panel diperbarui.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Aksi migrasi jalur lama gagal.");
+      notifyError("Migrasi Jalur Lama Gagal Diproses", error instanceof Error ? error.message : "Aksi migrasi jalur lama belum berhasil diproses.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const groupedTemplates = useMemo(() => {
-    return snapshot.templates.reduce<Record<string, AletaBotTemplate[]>>((groups, template) => {
-      groups[template.category] = [...(groups[template.category] ?? []), template];
-      return groups;
-    }, {});
+    const groups = new Map<string, AletaBotTemplate[]>();
+    for (const template of snapshot.templates) {
+      const category = normalizeTemplateCategory(template.category);
+      groups.set(category, [...(groups.get(category) ?? []), template]);
+    }
+
+    return Array.from(groups.entries())
+      .map(([category, templates]) => ({
+        category,
+        templates: [...templates].sort((left, right) => left.title.localeCompare(right.title)),
+      }))
+      .sort((left, right) => {
+        const leftIndex = TEMPLATE_CATEGORY_ORDER.indexOf(left.category);
+        const rightIndex = TEMPLATE_CATEGORY_ORDER.indexOf(right.category);
+        if (leftIndex !== -1 || rightIndex !== -1) {
+          return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+        }
+        return formatTemplateCategory(left.category).localeCompare(formatTemplateCategory(right.category));
+      });
   }, [snapshot.templates]);
 
   const publicQaRuntimeLogs = runtimeDashboard?.payload?.publicQa?.recentLogs ?? [];
@@ -1595,11 +3466,17 @@ export function AletaBotAdminPanel() {
   const employeeWhatsappCoverage = snapshot.whatsappNumberCompleteness.coveragePercent / 100;
   const employeeWhatsappTotal = snapshot.whatsappNumberCompleteness.totalActiveUsers;
   const employeeWhatsappMissing = snapshot.whatsappNumberCompleteness.missingWhatsapp;
+  const employeeWhatsappComplete = employeeWhatsappTotal > 0 && employeeWhatsappMissing === 0;
   const legacyFallbackUsedCount = runtimeDashboard?.payload?.whatsappNumberResolver?.legacyFallbackUsedCount ?? 0;
   const legacyFallbackLastUsedAt = runtimeDashboard?.payload?.whatsappNumberResolver?.lastLegacyFallbackUsedAt ?? null;
-  const legacyFallbackRecent = legacyFallbackLastUsedAt
-    ? Date.now() - new Date(legacyFallbackLastUsedAt).getTime() < 24 * 60 * 60 * 1000
-    : false;
+  const runtimeDashboardFetchedAtMs = runtimeDashboard?.fetchedAt ? new Date(runtimeDashboard.fetchedAt).getTime() : null;
+  const legacyFallbackLastUsedAtMs = legacyFallbackLastUsedAt ? new Date(legacyFallbackLastUsedAt).getTime() : null;
+  const legacyFallbackRecent = Boolean(
+    runtimeDashboardFetchedAtMs &&
+    legacyFallbackLastUsedAtMs &&
+    runtimeDashboardFetchedAtMs - legacyFallbackLastUsedAtMs < 24 * 60 * 60 * 1000
+  );
+  const legacyFallbackStillBlocking = legacyFallbackRecent && !employeeWhatsappComplete;
   const runtimePolicySkipStats = runtimeDashboard?.payload?.registry?.policySkipStats;
   const policySkipToday = runtimePolicySkipStats?.totalToday ?? snapshot.policySkipSummary.totalToday;
   const policySkipAllTime = runtimePolicySkipStats?.skippedCount ?? snapshot.policySkipSummary.totalAllTime;
@@ -1653,6 +3530,11 @@ export function AletaBotAdminPanel() {
         detail: runtimeDashboard?.errorMessage ?? `HTTP ${runtimeDashboard?.statusCode ?? "-"}`,
       },
       {
+        name: "Token Internal",
+        status: runtimeDashboard?.tokenHealth?.status === "ok" ? "ready" : "blocked",
+        detail: runtimeDashboard?.tokenHealth?.message ?? "Token health belum terbaca.",
+      },
+      {
         name: "Status WhatsApp",
         status: snapshot.whatsapp.runtimeStatus === "failed" ? "blocked" : "ready",
         detail: displayStatus(snapshot.whatsapp.runtimeStatus),
@@ -1673,9 +3555,15 @@ export function AletaBotAdminPanel() {
         detail: displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? "unknown"),
       },
       {
-        name: "Kesiapan Arsip",
+        // Nama lama "Kesiapan Arsip" terbaca seperti urusan arsip surat atau
+        // berkas perkara, padahal yang dimaksud adalah pemensiunan jalur
+        // notifikasi lama (notifikasi.js) yang sedang digantikan jalur registry.
+        name: "Migrasi Jalur Lama",
         status: archiveReadyCount > 0 ? "ready" : "warning",
-        detail: `${archiveReadyCount} jalur lama siap diarsipkan`,
+        detail:
+          archiveReadyCount > 0
+            ? `${archiveReadyCount} jalur lama sudah dimatikan dan siap diarsipkan`
+            : "Belum ada jalur lama yang dimatikan. Buka tab Migrasi Jalur Lama untuk meninjau.",
       },
       {
         name: "Mode aman tersedia",
@@ -1714,6 +3602,16 @@ export function AletaBotAdminPanel() {
   const whatsappBrowserLocked =
     (runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus) === "browser_locked" ||
     runtimeDashboard?.payload?.whatsapp?.lastErrorType === "browser_locked";
+  const runtimeBotConfig = runtimeDashboard?.payload?.bot;
+  const runtimeBotSettingsOutOfSync = Boolean(
+    runtimeDashboard?.online &&
+    runtimeBotConfig &&
+    (
+      (typeof runtimeBotConfig.botEnabled === "boolean" && runtimeBotConfig.botEnabled !== snapshot.settings.botEnabled) ||
+      (typeof runtimeBotConfig.notificationsEnabled === "boolean" && runtimeBotConfig.notificationsEnabled !== snapshot.settings.notificationsEnabled) ||
+      (typeof runtimeBotConfig.dryRunEnabled === "boolean" && runtimeBotConfig.dryRunEnabled !== snapshot.settings.dryRunEnabled)
+    )
+  );
   const setupChecks = useMemo(() => {
     const workerReady = Boolean(runtimeDashboard?.payload?.worker?.enabled && runtimeDashboard.payload.worker.activeTimer);
     const safeWindow = runtimeDashboard?.payload?.bot?.sendingWindow;
@@ -1721,25 +3619,25 @@ export function AletaBotAdminPanel() {
       {
         label: "WhatsApp Gateway terhubung",
         ok: !whatsappDisconnected,
-        href: "#",
+        href: "#status-whatsapp",
         detail: displayStatus(runtimeDashboard?.payload?.whatsapp?.status ?? snapshot.whatsapp.runtimeStatus),
       },
       {
         label: "Jembatan AI tersinkron",
         ok: runtimeDashboard?.payload?.aiRuntime?.status === "synced",
-        href: "#",
+        href: "#ai-bridge",
         detail: displayStatus(runtimeDashboard?.payload?.aiRuntime?.status ?? "unknown"),
       },
       {
         label: "Koneksi database utama berhasil",
         ok: snapshot.dbConnections.some((item) => item.isActive && item.lastTestStatus === "success"),
-        href: "#",
+        href: "#database",
         detail: `${snapshot.dbConnections.filter((item) => item.isActive).length} koneksi aktif`,
       },
       {
         label: "Pemroses antrean aktif",
         ok: workerReady,
-        href: "#",
+        href: "#queue-recovery",
         detail: runtimeDashboard?.payload?.worker?.lastHeartbeatAt
           ? `Sinyal terakhir ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}`
           : "Belum ada sinyal pemroses",
@@ -1747,19 +3645,19 @@ export function AletaBotAdminPanel() {
       {
         label: "Template aktif tersedia",
         ok: snapshot.templates.some((template) => template.editable),
-        href: "#",
+        href: "#templates",
         detail: `${snapshot.metrics.enabledTemplates} template tersedia`,
       },
       {
         label: "Notifikasi pegawai siap simulasi/aktif",
         ok: snapshot.notifications.some((item) => item.category === "employee" && (item.isActive || item.lastStatus === "simulated")),
-        href: "#",
+        href: "#notifikasi",
         detail: "Mulai pilot dari notifikasi internal pegawai.",
       },
       {
         label: "Nomor WhatsApp pegawai memakai data Manajemen Akun",
-        ok: employeeWhatsappTotal > 0 && employeeWhatsappMissing === 0,
-        href: "#",
+        ok: employeeWhatsappComplete,
+        href: "/admin/mapping-user-jabatan?missingWhatsapp=true",
         detail: employeeWhatsappTotal > 0
           ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor WhatsApp. ${employeeWhatsappMissing} belum lengkap.`
           : "Belum ada nomor pegawai dari database. Layanan masih dapat memakai data lama.",
@@ -1767,17 +3665,17 @@ export function AletaBotAdminPanel() {
       {
         label: "Jam aman pengiriman aktif",
         ok: safeWindow?.enabled !== false,
-        href: "#",
+        href: "#pengaturan-bot",
         detail: safeWindow?.enabled === false ? "Belum aktif" : `${safeWindow?.start ?? "07:30"}-${safeWindow?.end ?? "21:00"}`,
       },
       {
         label: "Tidak ada pesan gagal kritis",
         ok: snapshot.deadLetters.length === 0,
-        href: "#",
+        href: "#queue-recovery",
         detail: `${snapshot.deadLetters.length} pesan gagal permanen`,
       },
     ];
-  }, [employeeWhatsappMissing, employeeWhatsappReadyCount, employeeWhatsappTotal, runtimeDashboard, snapshot, whatsappDisconnected]);
+  }, [employeeWhatsappComplete, employeeWhatsappMissing, employeeWhatsappReadyCount, employeeWhatsappTotal, runtimeDashboard, snapshot, whatsappDisconnected]);
 
   const pilotReadinessChecks = useMemo(() => {
     const safeWindow = runtimeDashboard?.payload?.bot?.sendingWindow;
@@ -1811,8 +3709,12 @@ export function AletaBotAdminPanel() {
       {
         group: "Data",
         name: "Nomor WhatsApp pegawai lengkap",
-        status: employeeWhatsappCoverage >= 0.9 && !legacyFallbackRecent ? "ready" : employeeWhatsappCoverage >= 0.7 ? "warning" : "blocked",
-        detail: `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor. ${employeeWhatsappMissing} belum lengkap.`,
+        status: employeeWhatsappComplete ? "ready" : employeeWhatsappCoverage >= 0.7 ? "warning" : "blocked",
+        detail: employeeWhatsappComplete
+          ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor. Data Manajemen Akun sudah lengkap.`
+          : legacyFallbackStillBlocking
+            ? `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor. ${employeeWhatsappMissing} belum lengkap dan runtime masih sempat memakai fallback lama.`
+            : `${employeeWhatsappReadyCount}/${employeeWhatsappTotal} pegawai punya nomor. ${employeeWhatsappMissing} belum lengkap.`,
         actionLabel: "Lengkapi Nomor Pegawai",
         actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
       },
@@ -1837,28 +3739,29 @@ export function AletaBotAdminPanel() {
         actionHref: "#reminder-deadline",
       },
       {
-        group: "Pertanyaan Publik",
+        group: "Aturan Jawaban",
         name: "Tinjauan admin terpantau",
         status: publicQaNeedsReviewCount > 20 ? "blocked" : publicQaNeedsReviewCount > 0 ? "warning" : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" && publicQaActive ? "blocked" : "ready",
         detail: publicQaNeedsReviewCount > 0
           ? `${publicQaNeedsReviewCount} pertanyaan perlu ditinjau.`
           : runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync" && publicQaActive
-            ? "AI Pertanyaan Publik perlu sinkronisasi."
+            ? "AI aturan jawaban perlu sinkronisasi."
             : "Tidak ada pertanyaan publik yang menunggu tinjauan.",
-        actionLabel: "Tinjau Pertanyaan Publik",
+        actionLabel: "Tinjau Pertanyaan",
         actionHref: "#public-qa",
       },
     ] as const;
   }, [
     employeeWhatsappCoverage,
+    employeeWhatsappComplete,
     employeeWhatsappMissing,
     employeeWhatsappReadyCount,
     employeeWhatsappTotal,
+    legacyFallbackStillBlocking,
     publicQaNeedsReviewCount,
     reminderMode,
     reminderProductionWithoutApproval,
     runtimeDashboard,
-    legacyFallbackRecent,
     snapshot.deadLetters.length,
     snapshot.notifications,
     snapshot.publicQaIntents,
@@ -1889,7 +3792,7 @@ export function AletaBotAdminPanel() {
     if (runtimeDashboard?.payload?.aiRuntime?.status === "needs_sync") {
       alerts.push({
         title: "AI perlu sinkronisasi",
-        detail: "Sinkronkan AI ke ALETA Bot dari Mode Lanjutan sebelum memakai Pertanyaan Publik.",
+        detail: "Sinkronkan AI ke ALETA Bot dari Mode Lanjutan sebelum memakai aturan jawaban.",
         tone: "warning",
       });
     }
@@ -1907,7 +3810,7 @@ export function AletaBotAdminPanel() {
         tone: "warning",
       });
     }
-    if (employeeWhatsappCoverage < 0.8 || legacyFallbackUsedCount > 0) {
+    if (!employeeWhatsappComplete && (employeeWhatsappCoverage < 0.8 || legacyFallbackUsedCount > 0)) {
       alerts.push({
         title: "Nomor pegawai belum lengkap",
         detail: legacyFallbackUsedCount > 0
@@ -1940,35 +3843,105 @@ export function AletaBotAdminPanel() {
       });
     }
     return alerts.slice(0, 6);
-  }, [employeeWhatsappCoverage, legacyFallbackUsedCount, policySkipToday, publicQaNeedsReviewCount, runtimeDashboard, snapshot, whatsappBrowserLocked, whatsappDisconnected]);
+  }, [employeeWhatsappComplete, employeeWhatsappCoverage, legacyFallbackUsedCount, policySkipToday, publicQaNeedsReviewCount, runtimeDashboard, snapshot, whatsappBrowserLocked, whatsappDisconnected]);
+
+  const reportRows = useMemo(() => whatsappReport?.rows ?? [], [whatsappReport]);
+  const reportTableStatusOptions = useMemo(
+    () => Array.from(new Set(reportRows.map((row) => row.statusLabel).filter(Boolean))).sort((a, b) => a.localeCompare(b, "id-ID")),
+    [reportRows]
+  );
+  const reportTableAppOptions = useMemo(
+    () => Array.from(new Set(reportRows.map((row) => row.sourceAppLabel).filter(Boolean))).sort((a, b) => a.localeCompare(b, "id-ID")),
+    [reportRows]
+  );
+  const reportTableFeatureOptions = useMemo(
+    () => Array.from(new Set(reportRows.map((row) => row.sourceFeatureLabel).filter(Boolean))).sort((a, b) => a.localeCompare(b, "id-ID")),
+    [reportRows]
+  );
+  const filteredReportRows = useMemo(() => {
+    const search = reportTableSearch.trim().toLowerCase();
+    return reportRows
+      .filter((row) => {
+        if (reportTableStatusFilter !== "all" && row.statusLabel !== reportTableStatusFilter) return false;
+        if (reportTableAppFilter !== "all" && row.sourceAppLabel !== reportTableAppFilter) return false;
+        if (reportTableFeatureFilter !== "all" && row.sourceFeatureLabel !== reportTableFeatureFilter) return false;
+        if (search && !reportRowSearchText(row).includes(search)) return false;
+        return true;
+      })
+      .sort((a, b) => compareReportRows(a, b, reportTableSortKey, reportTableSortDirection));
+  }, [
+    reportRows,
+    reportTableAppFilter,
+    reportTableFeatureFilter,
+    reportTableSearch,
+    reportTableSortDirection,
+    reportTableSortKey,
+    reportTableStatusFilter,
+  ]);
+  const displayedReportRows = filteredReportRows.slice(0, 30);
+  const reportTableHasFilter =
+    reportTableSearch.trim() !== "" ||
+    reportTableStatusFilter !== "all" ||
+    reportTableAppFilter !== "all" ||
+    reportTableFeatureFilter !== "all";
+  const resetReportTableFilters = () => {
+    setReportTableSearch("");
+    setReportTableStatusFilter("all");
+    setReportTableAppFilter("all");
+    setReportTableFeatureFilter("all");
+  };
+  const focusReportTable = () => {
+    window.requestAnimationFrame(() => document.getElementById("report-data-table")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+  const toggleReportTableSort = (sortKey: ReportTableSortKey) => {
+    setReportTableSortKey((current) => {
+      if (current === sortKey) {
+        setReportTableSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
+        return current;
+      }
+      setReportTableSortDirection(sortKey === "createdAt" ? "desc" : "asc");
+      return sortKey;
+    });
+  };
+  const renderReportSortHeader = (sortKey: ReportTableSortKey, label: string) => (
+    <button
+      type="button"
+      onClick={() => toggleReportTableSort(sortKey)}
+      className="inline-flex items-center gap-1 font-semibold uppercase tracking-[0.12em] transition hover:text-foreground"
+    >
+      {label}
+      <ArrowUpDown className={cn("h-3.5 w-3.5", reportTableSortKey === sortKey ? "text-primary" : "text-muted-foreground")} />
+      {reportTableSortKey === sortKey ? <span className="sr-only">{reportTableSortDirection === "asc" ? "naik" : "turun"}</span> : null}
+    </button>
+  );
 
   return (
     <div className="space-y-6">
+      {operationFeedback ? <ActionFeedbackOverlay feedback={operationFeedback} /> : null}
+
       <PageIntro
-        eyebrow="Khusus Super Admin"
+        eyebrow={isSuperAdmin ? "Khusus Super Admin" : "Mode Operasional Admin"}
         title="ALETA Bot"
-        description="Modul internal untuk memantau layanan WhatsApp, template pesan, kueri, log, dan pengujian aman dari Portal ALETA."
+        description="Panel untuk mengatur pengiriman WhatsApp lewat dua cara: notifikasi terjadwal dan jawaban dari pertanyaan yang diketik user."
         actions={
           <>
             <Button variant={showAdvancedMode ? "default" : "outline"} size="sm" onClick={toggleAdvancedMode}>
-              {showAdvancedMode ? "Mode Lanjutan" : "Mode Sederhana"}
+              {showAdvancedMode ? "Kembali ke Mode Sederhana" : "Buka Mode Lanjutan"}
             </Button>
-            <Button variant="outline" onClick={() => void loadSnapshot()} disabled={isLoading || isSaving}>
+            <Button variant="outline" onClick={() => void refreshSnapshot("panel")} disabled={isLoading || isSaving}>
               <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
               Perbarui
             </Button>
             <Button onClick={() => void runAction("sync-config")} disabled={isSaving}>
               <CheckCircle2 className="h-4 w-4" />
-              Sinkronkan Config
+              Sinkronkan Pengaturan
             </Button>
           </>
         }
       />
 
       {notice ? (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4 text-sm text-foreground">{notice}</CardContent>
-        </Card>
+        <NoticeCard notice={notice} onClose={() => setNotice(null)} />
       ) : null}
 
       {showAdvancedMode ? (
@@ -2023,10 +3996,10 @@ export function AletaBotAdminPanel() {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatusCard label="Status Bot" value={snapshot.runtimeState} icon={Bot} />
-        <StatusCard label="WhatsApp" value={snapshot.whatsapp.runtimeStatus} icon={Smartphone} />
-        <StatusCard label="Terkirim Hari Ini" value={String(snapshot.metrics.sentToday)} icon={Send} />
-        <StatusCard label="Gagal Hari Ini" value={String(snapshot.metrics.failedToday)} icon={TerminalSquare} />
+        <StatusCard label="Status Bot" value={snapshot.runtimeState} icon={Bot} onClick={() => navigateAdminAction("#pengaturan-bot")} actionLabel="Buka Pengaturan Bot" />
+        <StatusCard label="WhatsApp" value={snapshot.whatsapp.runtimeStatus} icon={Smartphone} onClick={() => navigateAdminAction("#status-whatsapp")} actionLabel="Buka Status WhatsApp" />
+        <StatusCard label="Terkirim Hari Ini" value={String(snapshot.metrics.sentToday)} icon={Send} onClick={() => navigateAdminAction("#logs")} actionLabel="Buka Log Aktivitas" />
+        <StatusCard label="Gagal Hari Ini" value={String(snapshot.metrics.failedToday)} icon={TerminalSquare} onClick={() => navigateAdminAction("#queue-recovery")} actionLabel="Buka Pesan Gagal" />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -2034,26 +4007,40 @@ export function AletaBotAdminPanel() {
           {/* Utama — selalu tampil */}
           <TabsTrigger value="dashboard">Ringkasan</TabsTrigger>
           <TabsTrigger value="connection">WhatsApp</TabsTrigger>
-          <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
-          <TabsTrigger value="queue-recovery">Antrean & Pesan Gagal</TabsTrigger>
-          <TabsTrigger value="logs">Log Aktivitas</TabsTrigger>
-          <TabsTrigger value="public-qa">Pertanyaan Publik</TabsTrigger>
-          <TabsTrigger value="approvals">Persetujuan</TabsTrigger>
+          <TabsTrigger value="public-qa">{showAdvancedMode ? "Aturan Jawaban" : "Pertanyaan"}</TabsTrigger>
+          <TabsTrigger value="antrian-online">Antrian Online</TabsTrigger>
+          <TabsTrigger value="ecourt">e-Court</TabsTrigger>
+          <TabsTrigger value="queue-recovery">Pesan Gagal</TabsTrigger>
+          {showAdvancedMode ? (
+            <>
+              <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">|</span>
+              <TabsTrigger value="queries">Sumber Data</TabsTrigger>
+              <TabsTrigger value="templates">Isi Pesan</TabsTrigger>
+              <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
+              <TabsTrigger value="manual-test">Kirim Manual</TabsTrigger>
+              <TabsTrigger value="logs">Riwayat</TabsTrigger>
+              <TabsTrigger value="reports">Laporan</TabsTrigger>
+              <TabsTrigger value="approvals">Persetujuan</TabsTrigger>
+              {isSuperAdmin ? (
+                <>
+                  <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">|</span>
+                  <TabsTrigger value="settings">Pengaturan</TabsTrigger>
+                  <TabsTrigger value="migration">Migrasi Jalur Lama</TabsTrigger>
+                  <TabsTrigger value="database">Koneksi Data</TabsTrigger>
+                </>
+              ) : null}
+            </>
+          ) : null}
           {/* Konten Bot — hanya Mode Lanjutan */}
           {showAdvancedMode ? (
             <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">│</span>
           ) : null}
-          {showAdvancedMode ? <TabsTrigger value="settings">Pengaturan</TabsTrigger> : null}
-          {showAdvancedMode ? <TabsTrigger value="templates">Template</TabsTrigger> : null}
-          {showAdvancedMode ? <TabsTrigger value="migration">Migrasi Jalur Lama</TabsTrigger> : null}
           {/* Konfigurasi — hanya Mode Lanjutan */}
           {showAdvancedMode ? (
             <span role="presentation" className="mx-1 self-center text-[10px] font-semibold text-muted-foreground/40 select-none">│</span>
           ) : null}
-          <TabsTrigger value="database">Koneksi Database</TabsTrigger>
-          {showAdvancedMode ? <TabsTrigger value="queries">Kueri Terdaftar</TabsTrigger> : null}
+          {/* Mode lanjutan hanya menambah detail migrasi dan status teknis. */}
           {/* Developer — hanya Mode Lanjutan */}
-          {showAdvancedMode ? <TabsTrigger value="manual-test">Uji Coba</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -2062,41 +4049,104 @@ export function AletaBotAdminPanel() {
               label="WhatsApp"
               status={snapshot.whatsapp.runtimeStatus === "connected" ? "ok" : ["waiting_qr", "initializing", "qr_needed"].includes(snapshot.whatsapp.runtimeStatus) ? "warning" : "error"}
               value={displayStatus(snapshot.whatsapp.runtimeStatus)}
+              onClick={() => navigateAdminAction("#status-whatsapp")}
             />
             <HealthSummaryCard
               label="Pemroses / Antrean"
               status={runtimeDashboard?.payload?.worker?.enabled ? (runtimeDashboard.payload.worker.activeTimer ? "ok" : "warning") : "error"}
               value={runtimeDashboard?.payload?.worker?.enabled ? `${runtimeDashboard?.payload?.queue?.pending ?? 0} menunggu` : "Tidak Aktif"}
+              onClick={() => navigateAdminAction("#queue-recovery")}
             />
             <HealthSummaryCard
               label="AI"
               status={aiSummary.level}
               value={aiSummary.label}
+              onClick={() => navigateAdminAction("#ai-bridge")}
             />
             <HealthSummaryCard
               label="Persetujuan Menunggu"
               status={snapshot.approvalRequests.filter((r) => r.status === "pending").length > 0 ? "warning" : "ok"}
               value={`${snapshot.approvalRequests.filter((r) => r.status === "pending").length} tertunda`}
+              onClick={() => navigateAdminAction("#approvals")}
             />
             <HealthSummaryCard
               label="Pesan Gagal"
               status={snapshot.deadLetters.length > 0 ? "warning" : "ok"}
               value={`${snapshot.deadLetters.length} pesan gagal`}
+              onClick={() => navigateAdminAction("#queue-recovery")}
             />
           </div>
+          <SendingRiskSlider
+            presets={snapshot.sendingRiskPresets}
+            currentLevel={snapshot.settings.sendingRiskLevel}
+            pendingLevel={pendingRisk}
+            saving={savingRisk}
+            notifications={snapshot.notifications}
+            onPreview={setPendingRisk}
+            onCommit={applyRiskLevel}
+          />
           {!showAdvancedMode ? (
             <div className="mb-4 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Beberapa pengaturan teknis disembunyikan. Aktifkan Mode Lanjutan untuk mengelola AI, kueri, migrasi, dan uji coba manual.
+              Mode sederhana hanya menampilkan panel pantau cepat: Ringkasan, WhatsApp, Pertanyaan, dan Pesan Gagal. Pengaturan detail tersedia di Mode Lanjutan.
             </div>
           ) : null}
+          {!showAdvancedMode && isSuperAdmin ? (
+            <Card id="pengaturan-bot-cepat" className="mb-4">
+              <CardHeader>
+                <CardTitle>Kontrol Cepat Bot</CardTitle>
+                <CardDescription>Pengaturan utama tersedia di Mode Sederhana. Klik simpan agar status aktif bot ikut disinkronkan ke runtime.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <ToggleRow
+                    label="Bot aktif"
+                    checked={settingsDraft.botEnabled}
+                    onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, botEnabled: value }))}
+                  />
+                  <ToggleRow
+                    label="Notifikasi otomatis"
+                    checked={settingsDraft.notificationsEnabled}
+                    onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, notificationsEnabled: value }))}
+                  />
+                  <ToggleRow
+                    label="Mode simulasi"
+                    checked={settingsDraft.dryRunEnabled}
+                    onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, dryRunEnabled: value }))}
+                  />
+                </div>
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                  <Field
+                    label="Nomor Admin WhatsApp"
+                    value={settingsDraft.adminWhatsappNumber}
+                    onChange={(value) => setSettingsDraft((current) => ({ ...current, adminWhatsappNumber: value }))}
+                    placeholder="628123456789"
+                  />
+                  <Button
+                    onClick={() => void saveSettings(settingsDraft, { closeModal: false, successMessage: "Kontrol cepat ALETA Bot tersimpan dan runtime diperbarui." })}
+                    disabled={isSaving || !settingsDraftChanged}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {isSaving ? "Menyimpan..." : settingsDraftChanged ? "Simpan Kontrol Bot" : "Sudah Tersimpan"}
+                  </Button>
+                </div>
+                {settingsDraftChanged ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">Ada perubahan kontrol bot yang belum disimpan.</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Status kontrol bot sudah sama dengan data tersimpan.</p>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
           <div className="grid gap-4 lg:grid-cols-3">
-            <InfoCard title="Nomor Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint="Dipakai sebagai nomor kontrol bot. Disimpan di Portal ALETA dan konfigurasi penghubung." />
+            <InfoCard title="Nomor Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint="Dipakai sebagai nomor kontrol bot. Disimpan di Portal ALETA dan konfigurasi penghubung." onClick={() => navigateAdminAction("#pengaturan-bot")} actionLabel="Atur Nomor Admin" />
             <InfoCard
               title="Nomor Terhubung"
               value={snapshot.whatsapp.phoneNumber || "Belum disetel"}
               hint={showAdvancedMode ? `Sesi: ${snapshot.whatsapp.sessionName}` : "Nomor WhatsApp yang sedang atau akan dipakai bot."}
+              onClick={() => navigateAdminAction("#status-whatsapp")}
+              actionLabel="Buka WhatsApp"
             />
-            <InfoCard title="Notifikasi Terakhir" value={snapshot.metrics.lastNotificationAt ? formatDateTime(snapshot.metrics.lastNotificationAt) : "Belum ada"} hint={`${snapshot.metrics.activeJobs} job aktif, ${snapshot.metrics.enabledTemplates} template tersedia.`} />
+            <InfoCard title="Notifikasi Terakhir" value={snapshot.metrics.lastNotificationAt ? formatDateTime(snapshot.metrics.lastNotificationAt) : "Belum ada"} hint={`${snapshot.metrics.activeJobs} job aktif, ${snapshot.metrics.enabledTemplates} template tersedia.`} onClick={() => navigateAdminAction("#notifikasi")} actionLabel="Buka Notifikasi" />
           </div>
           {showAdvancedMode ? (
           <Card className="mt-4">
@@ -2109,6 +4159,11 @@ export function AletaBotAdminPanel() {
                 title="Layanan"
                 value={runtimeDashboard?.online ? "Terhubung" : "Tidak Terhubung"}
                 hint={runtimeDashboard?.errorMessage ?? `HTTP ${runtimeDashboard?.statusCode ?? "-"}`}
+              />
+              <InfoCard
+                title="Token Internal"
+                value={runtimeDashboard?.tokenHealth?.status === "ok" ? "Sesuai" : "Perlu Cek"}
+                hint={runtimeDashboard?.tokenHealth?.message ?? "Samakan token portal dan aleta_bot sebelum deploy."}
               />
               <InfoCard
                 title="Layanan WhatsApp"
@@ -2127,13 +4182,13 @@ export function AletaBotAdminPanel() {
               />
               <InfoCard
                 title="Antrean Pesan"
-                value={`${runtimeDashboard?.payload?.queue?.pending ?? 0} menunggu`}
-                hint={`${runtimeDashboard?.payload?.queue?.failed ?? 0} gagal, ${runtimeDashboard?.payload?.queue?.sent ?? 0} terkirim.`}
+                value={`${runtimeDashboard?.payload?.queue?.pending ?? runtimeDashboard?.queueMonitoring?.pending ?? 0} menunggu`}
+                hint={`${runtimeDashboard?.payload?.queue?.processing ?? runtimeDashboard?.queueMonitoring?.processing ?? 0} diproses, ${runtimeDashboard?.queueMonitoring?.stalePending ?? 0} tertahan.`}
               />
               <InfoCard
                 title="Pemroses Antrean"
                 value={runtimeDashboard?.payload?.worker?.enabled ? "Aktif" : "Tidak Aktif"}
-                hint={runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Sinyal terakhir: ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : runtimeDashboard?.payload?.worker?.lastError ?? "Belum ada sinyal pemroses."}
+                hint={runtimeDashboard?.payload?.worker?.lastHeartbeatAt ? `Sinyal terakhir: ${formatDateTime(runtimeDashboard.payload.worker.lastHeartbeatAt)}` : runtimeDashboard?.queueMonitoring?.alerts[0]?.label ?? runtimeDashboard?.payload?.worker?.lastError ?? "Belum ada sinyal pemroses."}
               />
               <InfoCard
                 title="Skema Database"
@@ -2151,14 +4206,19 @@ export function AletaBotAdminPanel() {
                 hint={`${snapshot.dbConnections.filter((item) => item.lastTestStatus === "failed").length} gagal uji, ${snapshot.dbConnections.filter((item) => item.legacySource).length} memakai data lama.`}
               />
               <InfoCard
-                title="Pertanyaan Publik"
+                title="Aturan Jawaban"
                 value={`${snapshot.publicQaIntents.filter((item) => item.isActive).length} aktif`}
                 hint={`${snapshot.publicQaIntents.filter((item) => item.aiEnabled).length} aturan AI, ${runtimeDashboard?.payload?.publicQa?.stats?.fallbackToday ?? 0} perlu tinjauan hari ini.`}
               />
               <InfoCard
                 title="Pesan Hari Ini"
-                value={`${runtimeDashboard?.payload?.messageStatsToday?.sent ?? 0} terkirim`}
-                hint={`${runtimeDashboard?.payload?.messageStatsToday?.failed ?? 0} gagal, ${runtimeDashboard?.payload?.messageStatsToday?.skipped ?? 0} dilewati.`}
+                value={`${runtimeDashboard?.payload?.messageStatsToday?.sent ?? runtimeDashboard?.queueMonitoring?.sentToday ?? 0} terkirim`}
+                hint={`${runtimeDashboard?.payload?.messageStatsToday?.failed ?? runtimeDashboard?.queueMonitoring?.failedToday ?? 0} gagal, ${runtimeDashboard?.queueMonitoring?.deadLetters ?? 0} dead letter.`}
+              />
+              <InfoCard
+                title="Kesehatan Antrean"
+                value={runtimeDashboard?.queueMonitoring?.health === "blocked" ? "Macet" : runtimeDashboard?.queueMonitoring?.health === "warning" ? "Perlu Cek" : "Normal"}
+                hint={runtimeDashboard?.queueMonitoring?.lastSentAt ? `Kirim terakhir: ${formatDateTime(runtimeDashboard.queueMonitoring.lastSentAt)}` : runtimeDashboard?.queueMonitoring?.lastCreatedAt ? `Log terakhir: ${formatDateTime(runtimeDashboard.queueMonitoring.lastCreatedAt)}` : "Belum ada log pengiriman."}
               />
               <InfoCard
                 title="Jam Aman Kirim"
@@ -2190,10 +4250,10 @@ export function AletaBotAdminPanel() {
           </Card>
           )}
           {showAdvancedMode ? (
-          <Card className="mt-4">
+          <Card id="ai-bridge" className="mt-4">
             <CardHeader>
               <CardTitle>Konfigurasi Jembatan AI</CardTitle>
-              <CardDescription>Provider, model, pengaturan Pertanyaan Publik, dan hasil sinkronisasi dari portal ke layanan `aleta_bot`.</CardDescription>
+              <CardDescription>Provider, model, aturan jawaban, dan hasil sinkronisasi dari portal ke layanan `aleta_bot`.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 lg:grid-cols-4">
@@ -2208,14 +4268,20 @@ export function AletaBotAdminPanel() {
                   hint={`Model: ${runtimeDashboard?.payload?.aiRuntime?.model ?? "-"}`}
                 />
                 <InfoCard
-                  title="AI Pertanyaan Publik"
+                  title="AI Aturan Jawaban"
                   value={runtimeDashboard?.payload?.aiRuntime?.publicQaEnabled ? "Aktif" : "Tidak Aktif"}
                   hint={runtimeDashboard?.payload?.aiRuntime?.publicQaAiAnswerEnabled ? "Jawaban AI aktif sesuai konfigurasi layanan." : "Jawaban AI otomatis tidak aktif."}
                 />
                 <InfoCard
                   title="API Key"
                   value={runtimeDashboard?.payload?.aiRuntime?.apiKeyConfigured ? "Sudah Diatur" : "Belum Diatur"}
-                  hint={runtimeDashboard?.payload?.aiRuntime?.apiKeyMasked ? `Masked: ${runtimeDashboard.payload.aiRuntime.apiKeyMasked}` : "Nilai key tidak pernah ditampilkan."}
+                  hint={
+                    runtimeDashboard?.payload?.aiRuntime?.secretPersistence
+                      ? `Secret: ${displayStatus(runtimeDashboard.payload.aiRuntime.secretPersistence)}${runtimeDashboard.payload.aiRuntime.apiKeyEnvKey ? `, env: ${runtimeDashboard.payload.aiRuntime.apiKeyEnvKey}` : ""}`
+                      : runtimeDashboard?.payload?.aiRuntime?.apiKeyMasked
+                        ? `Masked: ${runtimeDashboard.payload.aiRuntime.apiKeyMasked}`
+                        : "Nilai key tidak pernah ditampilkan."
+                  }
                 />
                 <InfoCard
                   title="Sinkronisasi Terakhir"
@@ -2238,19 +4304,25 @@ export function AletaBotAdminPanel() {
                   {runtimeDashboard.autoSync.message}
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => void runAction("sync-ai-config")} disabled={isSaving}>
-                  <RefreshCcw className="h-4 w-4" />
-                  Sinkronkan AI ke ALETA Bot
-                </Button>
-                <Button variant="outline" onClick={() => void runAction("test-ai-runtime")} disabled={isSaving}>
-                  <Play className="h-4 w-4" />
-                  Uji Layanan AI
-                </Button>
-              </div>
+              {isSuperAdmin ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => void runAction("sync-ai-config")} disabled={isSaving}>
+                    <RefreshCcw className="h-4 w-4" />
+                    Sinkronkan AI ke ALETA Bot
+                  </Button>
+                  <Button variant="outline" onClick={() => void runAction("test-ai-runtime")} disabled={isSaving}>
+                    <Play className="h-4 w-4" />
+                    Uji Layanan AI
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Sinkronisasi dan uji layanan AI hanya dapat dilakukan Super Admin.</p>
+              )}
             </CardContent>
           </Card>
           ) : null}
+          {showAdvancedMode ? (
+          <>
           <Card className="mt-4">
             <CardHeader>
               <CardTitle>Langkah Menyiapkan ALETA Bot</CardTitle>
@@ -2258,13 +4330,19 @@ export function AletaBotAdminPanel() {
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {setupChecks.map((check) => (
-                <div key={check.label} className="rounded-xl border border-border bg-card p-4">
+                <button
+                  key={check.label}
+                  type="button"
+                  onClick={() => navigateAdminAction(check.href)}
+                  className="rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm font-semibold text-foreground">{check.label}</p>
                     <Badge variant={check.ok ? "success" : "warning"}>{check.ok ? "Selesai" : "Perlu dicek"}</Badge>
                   </div>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
-                </div>
+                  <p className="mt-3 text-xs font-semibold text-primary">Buka pengaturan terkait</p>
+                </button>
               ))}
             </CardContent>
           </Card>
@@ -2275,7 +4353,7 @@ export function AletaBotAdminPanel() {
                   <div>
                     <CardTitle>Kesiapan Pilot</CardTitle>
                     <CardDescription>
-                      Checklist lintas WhatsApp, antrean, data, kebijakan, dan Pertanyaan Publik. Status Siap tidak muncul jika ada hambatan penting.
+                      Checklist lintas WhatsApp, antrean, data, kebijakan, dan aturan jawaban. Status Siap tidak muncul jika ada hambatan penting.
                     </CardDescription>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Terakhir diperbarui: {runtimeDashboard?.fetchedAt ? formatDateTime(runtimeDashboard.fetchedAt) : formatDateTime(snapshot.settings.updatedAt)}
@@ -2335,12 +4413,14 @@ export function AletaBotAdminPanel() {
                 <div className="rounded-xl border border-border p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-foreground">{employeeWhatsappReadyCount} dari {employeeWhatsappTotal} pegawai punya nomor</p>
-                    <Badge variant={employeeWhatsappCoverage >= 0.9 ? "success" : employeeWhatsappCoverage >= 0.7 ? "warning" : "danger"}>
+                    <Badge variant={employeeWhatsappComplete ? "success" : employeeWhatsappCoverage >= 0.7 ? "warning" : "danger"}>
                       {snapshot.whatsappNumberCompleteness.coveragePercent}%
                     </Badge>
                   </div>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    {employeeWhatsappMissing} pegawai belum memiliki nomor. Lengkapi dari Manajemen Akun agar data lama bisa dihentikan bertahap.
+                    {employeeWhatsappComplete
+                      ? "Semua pegawai aktif sudah memiliki nomor WhatsApp valid dari Manajemen Akun."
+                      : `${employeeWhatsappMissing} pegawai belum memiliki nomor. Lengkapi dari Manajemen Akun agar data lama bisa dihentikan bertahap.`}
                   </p>
                 </div>
                 {snapshot.whatsappNumberCompleteness.importantMissing.length > 0 ? (
@@ -2360,7 +4440,7 @@ export function AletaBotAdminPanel() {
                   <Play className="h-4 w-4" />
                   Simulasikan Pengingat Tenggat H-1
                 </Button>
-                <Button variant="outline" onClick={() => { window.location.href = "/admin/mapping-user-jabatan?missingWhatsapp=true"; }}>
+                <Button variant="outline" onClick={() => { window.location.href = apiPath("/admin/mapping-user-jabatan?missingWhatsapp=true"); }}>
                   Lengkapi Nomor di Manajemen Akun
                 </Button>
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -2425,14 +4505,14 @@ export function AletaBotAdminPanel() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Analitik Pertanyaan Publik</CardTitle>
+                <CardTitle>Analitik Aturan Jawaban</CardTitle>
                 <CardDescription>Tren ringkas pertanyaan publik dan tindak lanjut manusia.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2">
                 <InfoCard title="7 Hari Terakhir" value={String(publicQaAnalytics.totalLast7Days)} hint="Jumlah pertanyaan/log Public Q&A." />
                 <InfoCard title="Perlu Tinjauan" value={`${publicQaAnalytics.fallbackRate}%`} hint="Pantau pertanyaan yang belum cocok agar aturan makin matang." />
                 <InfoCard title="Perlu Ditinjau" value={String(publicQaAnalytics.pending)} hint="Masuk antrean tinjauan admin." />
-                <InfoCard title="Draft Aturan" value={String(publicQaAnalytics.converted)} hint="Pertanyaan yang sudah dikonversi menjadi draft aturan." />
+                <InfoCard title="Aturan Dari Pertanyaan" value={String(publicQaAnalytics.converted)} hint="Pertanyaan yang sudah dikonversi menjadi aturan jawaban aktif." />
               </CardContent>
             </Card>
             <Card id="policy-skip">
@@ -2632,6 +4712,8 @@ export function AletaBotAdminPanel() {
               </div>
             </CardContent>
           </Card>
+          </>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="connection" id="status-whatsapp">
@@ -2666,11 +4748,13 @@ export function AletaBotAdminPanel() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => void runAction("reconnect")} disabled={isSaving}>
-                    <RefreshCcw className="h-4 w-4" />
-                    Hubungkan WhatsApp Gateway
-                  </Button>
-                  <Button variant="outline" onClick={() => void loadSnapshot()} disabled={isSaving || isLoading}>
+                  {isSuperAdmin ? (
+                    <Button onClick={() => void runAction("reconnect")} disabled={isSaving}>
+                      <RefreshCcw className="h-4 w-4" />
+                      Hubungkan WhatsApp Gateway
+                    </Button>
+                  ) : null}
+                  <Button variant="outline" onClick={() => void refreshSnapshot("whatsapp")} disabled={isSaving || isLoading}>
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     Perbarui QR WhatsApp
                   </Button>
@@ -2678,19 +4762,24 @@ export function AletaBotAdminPanel() {
                     <Play className="h-4 w-4" />
                     Uji Koneksi
                   </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      if (window.confirm("Nonaktifkan sesi WhatsApp Gateway sekarang?")) {
-                        void runAction("logout");
-                      }
-                    }}
-                    disabled={isSaving}
-                  >
-                    <Power className="h-4 w-4" />
-                    Logout Session
-                  </Button>
+                  {isSuperAdmin ? (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (window.confirm("Nonaktifkan sesi WhatsApp Gateway sekarang?")) {
+                          void runAction("logout");
+                        }
+                      }}
+                      disabled={isSaving}
+                    >
+                      <Power className="h-4 w-4" />
+                      Logout Session
+                    </Button>
+                  ) : null}
                 </div>
+                {!isSuperAdmin ? (
+                  <p className="text-xs text-muted-foreground">Menghubungkan dan me-logout sesi WhatsApp hanya dapat dilakukan Super Admin.</p>
+                ) : null}
               </CardContent>
             </Card>
 
@@ -2725,7 +4814,7 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="settings" id="pengaturan-bot">
+        {isSuperAdmin ? <TabsContent value="settings" id="pengaturan-bot">
           <Card>
             <CardHeader>
               <CardTitle>Pengaturan Bot</CardTitle>
@@ -2733,25 +4822,77 @@ export function AletaBotAdminPanel() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-4 lg:grid-cols-3">
-                <InfoCard title="Pengiriman Bot" value={snapshot.settings.botEnabled ? "Aktif dengan pengamanan" : "Nonaktif"} hint={snapshot.settings.dryRunEnabled ? "Simulasi aktif" : "Pengiriman berjalan dengan batas dan persetujuan wajib"} />
-                <InfoCard title="Notifikasi" value={snapshot.settings.notificationsEnabled ? "Aktif" : "Nonaktif"} hint={`Jeda ${snapshot.settings.messageDelayMs} ms, coba ulang ${snapshot.settings.retryLimit}x`} />
-                <InfoCard title="Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint={`Updated: ${formatDateTime(snapshot.settings.updatedAt)}`} />
+                <InfoCard title="Pengiriman Bot" value={snapshot.settings.botEnabled ? "Aktif dengan pengamanan" : "Nonaktif"} hint={snapshot.settings.dryRunEnabled ? "Simulasi aktif" : "Pengiriman berjalan dengan batas dan persetujuan wajib"} onClick={() => openModal({ type: "settings", title: "Edit Pengiriman Bot" })} actionLabel="Edit Bot Aktif" />
+                <InfoCard title="Notifikasi" value={snapshot.settings.notificationsEnabled ? "Aktif" : "Nonaktif"} hint={`Jeda ${snapshot.settings.messageDelayMs} ms, coba ulang ${snapshot.settings.retryLimit}x`} onClick={() => navigateAdminAction("#notifikasi")} actionLabel="Buka Notifikasi" />
+                <InfoCard title="Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint={`Updated: ${formatDateTime(snapshot.settings.updatedAt)}`} onClick={() => openModal({ type: "settings", title: "Edit Nomor Admin Bot" })} actionLabel="Edit Nomor Admin" />
               </div>
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Kontrol Utama</p>
+                    <p className="text-xs text-muted-foreground">Tersedia juga di Mode Sederhana. Simpan agar runtime ikut menerima status terbaru.</p>
+                  </div>
+                  <Badge variant={settingsDraftChanged ? "warning" : "success"}>
+                    {settingsDraftChanged ? "Belum Disimpan" : "Tersimpan"}
+                  </Badge>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <ToggleRow
+                    label="Bot aktif"
+                    checked={settingsDraft.botEnabled}
+                    onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, botEnabled: value }))}
+                  />
+                  <ToggleRow
+                    label="Notifikasi otomatis"
+                    checked={settingsDraft.notificationsEnabled}
+                    onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, notificationsEnabled: value }))}
+                  />
+                  <ToggleRow
+                    label="Mode simulasi"
+                    checked={settingsDraft.dryRunEnabled}
+                    onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, dryRunEnabled: value }))}
+                  />
+                </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                  <Field
+                    label="Nomor Admin WhatsApp"
+                    value={settingsDraft.adminWhatsappNumber}
+                    onChange={(value) => setSettingsDraft((current) => ({ ...current, adminWhatsappNumber: value }))}
+                    placeholder="628123456789"
+                  />
+                  <Button
+                    onClick={() => void saveSettings(settingsDraft, { closeModal: false, successMessage: "Pengaturan utama ALETA Bot tersimpan dan runtime diperbarui." })}
+                    disabled={isSaving || !settingsDraftChanged}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {isSaving ? "Menyimpan..." : settingsDraftChanged ? "Simpan Pengaturan Utama" : "Sudah Tersimpan"}
+                  </Button>
+                </div>
+              </div>
+              {runtimeDashboard && !runtimeDashboard.online ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-900 dark:text-amber-200">
+                  Runtime ALETA Bot belum dapat dibaca. Pengaturan tetap tersimpan di portal, lalu akan dipakai runtime saat layanan bot bisa menerima sinkronisasi.
+                </div>
+              ) : runtimeBotSettingsOutOfSync ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-900 dark:text-amber-200">
+                  Pengaturan portal belum sama dengan layanan bot. Klik Simpan Pengaturan atau Sinkronkan Pengaturan agar status bot di layanan ALETA Bot ikut berubah.
+                </div>
+              ) : null}
               <Button onClick={() => openModal({ type: "settings", title: "Edit Pengaturan Bot" })} disabled={isSaving}>
                 <Settings2 className="h-4 w-4" />
                 Edit Pengaturan
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> : null}
 
-        <TabsContent value="templates">
+        <TabsContent value="templates" id="templates">
           <div className="grid gap-4">
-            {Object.entries(groupedTemplates).map(([category, templates]) => (
+            {groupedTemplates.map(({ category, templates }) => (
               <Card key={category}>
                 <CardHeader>
-                  <CardTitle className="capitalize">{category}</CardTitle>
-                  <CardDescription>Template berasal dari pola pesan di `app.js`, `notifikasi.js`, dan `formatter.js`.</CardDescription>
+                  <CardTitle>Isi Pesan {formatTemplateCategory(category)}</CardTitle>
+                  <CardDescription>Isi pesan dipakai saat notifikasi dikirim atau saat aturan jawaban membutuhkan format pesan tertentu.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 lg:grid-cols-2">
                   {templates.map((template) => (
@@ -2759,14 +4900,20 @@ export function AletaBotAdminPanel() {
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <p className="font-semibold text-foreground">{template.title}</p>
-                          <p className="text-xs text-muted-foreground">{template.placeholders.join(", ") || "Tanpa placeholder"}</p>
+                          <p className="text-xs text-muted-foreground">Placeholder wajib: {template.placeholders.join(", ") || "tidak ada"}</p>
                         </div>
-                        <Badge variant={template.editable ? "success" : "muted"}>{template.editable ? "Editable" : "Locked"}</Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <TemplateSafetyBadge body={templateDraft[template.id] ?? template.body} />
+                          <Badge variant={template.editable ? "success" : "muted"}>{template.editable ? "Bisa diedit" : "Dikunci"}</Badge>
+                        </div>
                       </div>
-                    <pre className="max-h-52 overflow-auto rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 whitespace-pre-wrap">{templateDraft[template.id] ?? template.body}</pre>
+                      <div className="rounded-xl border border-border bg-muted/30 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview final</p>
+                        <pre className="max-h-52 overflow-auto text-xs leading-5 whitespace-pre-wrap">{renderAletaBotTemplatePreview(templateDraft[template.id] ?? template.body)}</pre>
+                      </div>
                       <div className="flex justify-end">
-                        <Button size="sm" variant="outline" onClick={() => openModal({ type: "template", title: `Edit Template ${template.title}`, template })} disabled={isSaving || !template.editable}>
-                          Edit Template
+                        <Button size="sm" variant="outline" onClick={() => openModal({ type: "template", title: `Edit Isi Pesan ${template.title}`, template })} disabled={isSaving || !template.editable}>
+                          Edit Isi Pesan
                         </Button>
                       </div>
                     </div>
@@ -2777,23 +4924,31 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="notifications">
+        <TabsContent value="notifications" id="notifikasi">
           <div className="grid gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Manajemen Notifikasi</CardTitle>
-                <CardDescription>Notifikasi Pegawai mengambil nomor dari user portal. Notifikasi Pihak mengambil nomor dari kolom hasil query perkara/SIPP.</CardDescription>
+                <CardTitle>Notifikasi Terjadwal</CardTitle>
+                <CardDescription>Pilih tujuan, sumber data, isi pesan, jadwal, lalu cek penerima sebelum pengiriman diaktifkan.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-6">
+                  {["Pilih tujuan", "Pilih sumber data", "Pilih isi pesan", "Atur jadwal", "Preview penerima", "Simulasi / aktifkan"].map((step, index) => (
+                    <div key={step} className="rounded-lg border border-border bg-muted/20 p-3">
+                      <span className="font-semibold text-foreground">{index + 1}. </span>{step}
+                    </div>
+                  ))}
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "employee")); openModal({ type: "notification", title: "Tambah Notifikasi Pegawai" }); }} disabled={isSaving}>Tambah Pegawai</Button>
-                  <Button variant="outline" onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "party")); openModal({ type: "notification", title: "Tambah Notifikasi Pihak" }); }} disabled={isSaving}>Tambah Pihak</Button>
+                  <Button onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "employee")); openModal({ type: "notification", title: "Tambah Notifikasi Pegawai" }); }} disabled={isSaving}>Tambah Notifikasi Pegawai</Button>
+                  <Button variant="outline" onClick={() => { setNotificationForm(makeEmptyNotificationForm(snapshot, "party")); openModal({ type: "notification", title: "Tambah Notifikasi Pihak" }); }} disabled={isSaving}>Tambah Notifikasi Pihak</Button>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Tampilkan:</span>
                   {(["all", "employee", "party"] as const).map((f) => (
                     <button
                       key={f}
+                      type="button"
                       onClick={() => setNotifCategoryFilter(f)}
                       className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${notifCategoryFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
                     >
@@ -2839,75 +4994,136 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="queries">
+        <TabsContent value="queries" id="queries">
           <div className="grid gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Query & Data Source</CardTitle>
-                <CardDescription>Query baru dari UI hanya mengizinkan SELECT atau referensi legacy. Test query dibatasi preview aman.</CardDescription>
+                <CardTitle>Sumber Data SQL</CardTitle>
+                <CardDescription>Satu sumber data bisa dipakai untuk notifikasi terjadwal dan aturan jawaban WhatsApp.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
-                <Button onClick={() => { setQueryForm(makeEmptyQueryForm("employee")); openModal({ type: "query", title: "Tambah Query Pegawai" }); }} disabled={isSaving}>Tambah Query Pegawai</Button>
-                <Button variant="outline" onClick={() => { setQueryForm(makeEmptyQueryForm("party")); openModal({ type: "query", title: "Tambah Query Pihak" }); }} disabled={isSaving}>Tambah Query Pihak</Button>
+                <Button onClick={() => { setQueryForm(makeEmptyQueryForm("employee")); openModal({ type: "query", title: "Tambah Sumber Data Pegawai" }); }} disabled={isSaving}>Tambah Sumber Data Pegawai</Button>
+                <Button variant="outline" onClick={() => { setQueryForm(makeEmptyQueryForm("party")); openModal({ type: "query", title: "Tambah Sumber Data Pihak" }); }} disabled={isSaving}>Tambah Sumber Data Pihak</Button>
+                <Button variant="outline" onClick={() => { setQueryForm(makeEmptyQueryForm("system")); openModal({ type: "query", title: "Tambah Sumber Data Umum" }); }} disabled={isSaving}>Tambah Sumber Data Umum</Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="max-w-full min-w-0 overflow-hidden">
               <CardHeader>
-                <CardTitle>Daftar Query ALETA Bot</CardTitle>
-                <CardDescription>Dipetakan dari query.js, notifikasi.js, dan app.js. Query produksi legacy tidak dieksekusi langsung dari UI.</CardDescription>
+                <CardTitle>Daftar Sumber Data</CardTitle>
+                <CardDescription>Dipetakan dari query.js, notifikasi.js, app.js, dan sumber data baru yang disimpan di database ALETA Bot.</CardDescription>
               </CardHeader>
-              <CardContent className="overflow-hidden">
-                <table className="w-full table-fixed text-left text-sm">
-                  <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    <tr>
-                      <th className="w-[17%] py-3 pr-3">Nama</th>
-                      <th className="w-[8%] py-3 pr-3">Kategori</th>
-                      <th className="w-[12%] py-3 pr-3">Dipakai Oleh</th>
-                      <th className="w-[10%] py-3 pr-3">Sumber SQL</th>
-                      <th className="w-[18%] py-3 pr-3">SQL Preview</th>
-                      <th className="w-[9%] py-3 pr-3">Kolom</th>
-                      <th className="w-[8%] py-3 pr-3">Status</th>
-                      <th className="w-[8%] py-3 pr-3">Test</th>
-                      <th className="w-[10%] py-3 pr-3">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {snapshot.queries.map((query) => (
-                      <tr key={query.id} className="border-b border-border/70 align-top">
-                        <td className="min-w-0 break-words py-4 pr-3">
-                          <p className="font-medium text-foreground">{query.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">{query.description}</p>
-                        </td>
-                        <td className="min-w-0 break-words py-4 pr-3"><Badge variant="outline">{query.category}</Badge></td>
-                        <td className="min-w-0 break-words py-4 pr-3 text-muted-foreground">{query.usedByNotifications.join(", ") || "-"}</td>
-                        <td className="min-w-0 break-words py-4 pr-3"><Badge variant="outline">{query.connectionKey}</Badge></td>
-                        <td className="min-w-0 break-words py-4 pr-3"><code className="line-clamp-3 break-words text-xs text-muted-foreground">{query.sqlText}</code></td>
-                        <td className="min-w-0 break-words py-4 pr-3">
-                          <p>{query.outputColumns.length} kolom</p>
-                          <p className="text-xs text-muted-foreground">{query.recipientColumn || "tanpa kolom nomor"}</p>
-                        </td>
-                        <td className="min-w-0 break-words py-4 pr-3"><Badge variant={query.isActive ? "success" : "muted"}>{query.isActive ? "Active" : "Disabled"}</Badge></td>
-                        <td className="min-w-0 break-words py-4 pr-3">
-                          <p>{query.lastTestedAt ? formatDateTime(query.lastTestedAt) : "Belum dites"}</p>
-                          <Badge variant={statusVariant(query.lastTestStatus)}>{query.lastTestStatus}</Badge>
-                        </td>
-                        <td className="min-w-0 py-4 pr-3">
-                          <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" size="sm" onClick={() => { setQueryForm(queryToForm(query)); openModal({ type: "query", title: `Edit Query ${query.name}` }); }} disabled={isSaving}>Edit</Button>
-                            <Button variant="outline" size="sm" onClick={() => void runAction("test-query", { queryId: query.id })} disabled={isSaving}>Test</Button>
-                          </div>
-                        </td>
+              <CardContent className="min-w-0 max-w-full overflow-hidden">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-muted/20 p-2">
+                  <p className="text-xs text-muted-foreground">Geser tabel ke kiri/kanan untuk melihat Contoh SQL, Health Check, dan Aksi.</p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => scrollSourceDataTable("left")}
+                      aria-label="Geser daftar sumber data ke kiri"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => scrollSourceDataTable("right")}
+                      aria-label="Geser daftar sumber data ke kanan"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div
+                  ref={sourceDataTopScrollRef}
+                  className={cn(
+                    "mb-3 h-5 w-full max-w-full overflow-x-scroll overflow-y-hidden overscroll-x-contain rounded bg-muted/30",
+                    HORIZONTAL_SCROLLBAR_CLASS
+                  )}
+                  onScroll={() => syncSourceDataHorizontalScroll("top")}
+                >
+                  <div className="h-4 w-[2240px]" />
+                </div>
+                <div
+                  ref={sourceDataTableScrollRef}
+                  className={cn(
+                    "max-w-full overflow-x-scroll overflow-y-hidden overscroll-x-contain pb-3",
+                    HORIZONTAL_SCROLLBAR_CLASS
+                  )}
+                  onScroll={() => syncSourceDataHorizontalScroll("table")}
+                >
+                  <table className="w-[2240px] table-fixed text-left text-sm">
+                    <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                      <tr>
+                        <th className="w-[320px] py-3 pr-4">Nama</th>
+                        <th className="w-[140px] py-3 pr-4">Kategori</th>
+                        <th className="w-[260px] py-3 pr-4">Dipakai Notifikasi</th>
+                        <th className="w-[170px] py-3 pr-4">Sumber SQL</th>
+                        <th className="w-[440px] py-3 pr-4">Contoh SQL</th>
+                        <th className="w-[180px] py-3 pr-4">Kolom</th>
+                        <th className="w-[140px] py-3 pr-4">Status</th>
+                        <th className="w-[380px] py-3 pr-4">Health Check</th>
+                        <th className="w-[210px] py-3 pr-4">Aksi</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {snapshot.queries.map((query) => (
+                        <tr key={query.id} className="border-b border-border/70 align-top">
+                          <td className="break-words py-4 pr-4">
+                            <p className="font-medium text-foreground">{queryDisplayName(query)}</p>
+                            <p className="mt-1 text-xs leading-5 text-muted-foreground">{query.description}</p>
+                          </td>
+                          <td className="break-words py-4 pr-4"><Badge variant="outline">{query.category}</Badge></td>
+                          <td className="break-words py-4 pr-4 text-muted-foreground">{query.usedByNotifications.join(", ") || "-"}</td>
+                          <td className="break-words py-4 pr-4"><Badge variant="outline">{query.connectionKey}</Badge></td>
+                          <td className="break-words py-4 pr-4"><code className="line-clamp-4 break-words text-xs text-muted-foreground">{query.sqlText}</code></td>
+                          <td className="break-words py-4 pr-4">
+                            <p>{query.outputColumns.length} kolom</p>
+                            <p className="text-xs text-muted-foreground">{query.recipientColumn || "tanpa kolom nomor"}</p>
+                          </td>
+                          <td className="break-words py-4 pr-4"><Badge variant={query.isActive ? "success" : "muted"}>{query.isActive ? "Aktif" : "Nonaktif"}</Badge></td>
+                          <td className="break-words py-4 pr-4">
+                            <p>{query.lastTestedAt ? formatDateTime(query.lastTestedAt) : "Belum dites"}</p>
+                            <Badge variant={statusVariant(query.lastTestStatus)}>{query.lastTestStatus}</Badge>
+                            {query.lastTestedAt ? (
+                              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                                <p>{query.lastTestRowCount ?? 0} data · {query.lastTestDurationMs ?? 0}ms</p>
+                                {query.lastTestSlow ? <Badge variant="warning">Query lambat</Badge> : null}
+                                {query.lastTestMessage ? <p>{query.lastTestMessage}</p> : null}
+                                {query.lastTestError ? <p className="text-destructive">{query.lastTestError}</p> : null}
+                                {(query.lastTestSampleRows ?? []).length > 0 ? (
+                                  <details className="rounded-lg border border-border/70 bg-background/60 p-2">
+                                    <summary className="cursor-pointer text-foreground">Contoh data</summary>
+                                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-[11px] leading-5">
+                                      {JSON.stringify((query.lastTestSampleRows ?? []).slice(0, 3), null, 2)}
+                                    </pre>
+                                  </details>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="py-4 pr-4">
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" onClick={() => { setQueryForm(queryToForm(query)); openModal({ type: "query", title: `Edit Sumber Data ${queryDisplayName(query)}` }); }} disabled={isSaving}>Edit</Button>
+                              <Button variant="outline" size="sm" onClick={() => void runAction("test-query", { queryId: query.id })} disabled={isSaving}>Uji</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="database">
+        {isSuperAdmin ? <TabsContent value="database" id="database">
           <div className="grid gap-4">
             <Card>
               <CardHeader>
@@ -2937,8 +5153,8 @@ export function AletaBotAdminPanel() {
                 <CardTitle>Daftar Koneksi</CardTitle>
                 <CardDescription>Test connection menjalankan SELECT 1 dari runtime ALETA Bot. Error disanitasi sebelum masuk log.</CardDescription>
               </CardHeader>
-              <CardContent className="overflow-hidden">
-                <table className="w-full table-fixed text-left text-sm">
+              <CardContent className="overflow-x-auto">
+                <table className="min-w-[1040px] table-fixed text-left text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
                     <tr>
                       <th className="w-[18%] py-3 pr-3">Nama</th>
@@ -2994,18 +5210,18 @@ export function AletaBotAdminPanel() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent> : null}
 
         <TabsContent value="public-qa" id="public-qa">
           <div className="grid gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pertanyaan Para Pihak</CardTitle>
-                <CardDescription>Intent natural language yang aman. AI hanya memilih intent aktif dan tidak membuat jawaban bebas.</CardDescription>
+                <CardTitle>Aturan Jawaban WhatsApp</CardTitle>
+                <CardDescription>Atur jawaban untuk pertanyaan yang diketik ke WhatsApp admin, baik untuk para pihak maupun pegawai terdaftar.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 lg:grid-cols-5">
-                <InfoCard title="Intent Aktif" value={String(snapshot.publicQaIntents.filter((item) => item.isActive).length)} hint={`${snapshot.publicQaIntents.length} intent terdaftar.`} />
-                <InfoCard title="AI Matcher" value={String(snapshot.publicQaIntents.filter((item) => item.aiEnabled).length)} hint="Aktif hanya jika env runtime mengizinkan." />
+                <InfoCard title="Aturan Aktif" value={String(snapshot.publicQaIntents.filter((item) => item.isActive).length)} hint={`${snapshot.publicQaIntents.length} aturan terdaftar.`} />
+                <InfoCard title="AI Pengenal" value={String(snapshot.publicQaIntents.filter((item) => item.aiEnabled).length)} hint="AI membantu mengenali maksud pertanyaan." />
                 <InfoCard title="Butuh Verifikasi" value={String(snapshot.publicQaIntents.filter((item) => item.requiresVerification).length)} hint="Intent perkara/panjar/akta perlu hati-hati." />
                 <InfoCard title="Fallback Hari Ini" value={String(runtimeDashboard?.payload?.publicQa?.stats?.fallbackToday ?? 0)} hint={`${runtimeDashboard?.payload?.publicQa?.stats?.totalToday ?? 0} interaksi tercatat hari ini.`} />
                 <InfoCard title="Perlu Tinjauan" value={String(publicQaNeedsReviewCount)} hint={publicQaNeedsReviewCount > 0 ? "Butuh tindak lanjut petugas." : "Tidak ada pertanyaan publik yang perlu ditinjau."} />
@@ -3017,21 +5233,21 @@ export function AletaBotAdminPanel() {
                 <CardHeader>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <CardTitle>Daftar Intent / Trigger</CardTitle>
-                      <CardDescription>Trigger legacy tetap tersimpan sebagai fallback, sementara contoh pertanyaan dipakai untuk matcher natural.</CardDescription>
+                      <CardTitle>Daftar Aturan Jawaban</CardTitle>
+                      <CardDescription>Kata kunci lama tetap bisa dipakai, sementara contoh pertanyaan membantu AI mengenali kalimat yang lebih natural.</CardDescription>
                     </div>
-                    <Button onClick={() => { setPublicQaIntentForm(makeEmptyPublicQaIntentForm()); openModal({ type: "publicQa", title: "Tambah Intent Pertanyaan" }); }} disabled={isSaving}>Tambah Intent</Button>
+                    {isSuperAdmin ? <Button onClick={() => { setPublicQaIntentForm(makeEmptyPublicQaIntentForm()); openModal({ type: "publicQa", title: "Tambah Aturan Jawaban" }); }} disabled={isSaving}>Tambah Aturan</Button> : <p className="text-xs text-muted-foreground">Menambah/mengubah aturan jawaban hanya dapat dilakukan Super Admin.</p>}
                   </div>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
                   <table className="w-full min-w-[1120px] text-left text-sm">
                     <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
                       <tr>
-                        <th className="py-3 pr-4">Intent</th>
+                        <th className="py-3 pr-4">Aturan</th>
                         <th className="py-3 pr-4">Kategori</th>
-                        <th className="py-3 pr-4">Trigger</th>
-                        <th className="py-3 pr-4">Mode</th>
-                        <th className="py-3 pr-4">Risk</th>
+                        <th className="py-3 pr-4">Pertanyaan</th>
+                        <th className="py-3 pr-4">Jawaban</th>
+                        <th className="py-3 pr-4">Risiko</th>
                         <th className="py-3 pr-4">Status</th>
                         <th className="py-3 pr-4">Aksi</th>
                       </tr>
@@ -3059,14 +5275,14 @@ export function AletaBotAdminPanel() {
                           <td className="py-4 pr-4"><Badge variant={statusVariant(intent.riskLevel === "high" ? "failed" : intent.riskLevel)}>{intent.riskLevel}</Badge></td>
                           <td className="py-4 pr-4">
                             <div className="space-y-2">
-                              <Badge variant={intent.isActive ? "success" : "muted"}>{intent.isActive ? "Active" : "Disabled"}</Badge>
-                              <Badge variant={intent.aiEnabled ? "success" : "outline"}>{intent.aiEnabled ? "AI Match" : "No AI"}</Badge>
-                              <Badge variant={intent.aiAnswerEnabled ? "success" : "outline"}>{intent.aiAnswerEnabled ? "AI Answer" : "Answer Off"}</Badge>
-                              <Badge variant={intent.status === "active" ? "success" : "warning"}>{intent.status}</Badge>
+                            <Badge variant={intent.isActive ? "success" : "muted"}>{intent.isActive ? "Aktif" : "Nonaktif"}</Badge>
+                            <Badge variant={intent.aiEnabled ? "success" : "outline"}>{intent.aiEnabled ? "AI mengenali" : "Tanpa AI"}</Badge>
+                            <Badge variant={intent.aiAnswerEnabled ? "success" : "outline"}>{intent.aiAnswerEnabled ? "AI menjawab" : "Jawaban biasa"}</Badge>
+                            <Badge variant={intent.status === "active" ? "success" : "warning"}>{displayStatus(intent.status)}</Badge>
                             </div>
                           </td>
                           <td className="py-4 pr-4">
-                            <Button variant="outline" size="sm" onClick={() => { setPublicQaIntentForm(publicQaIntentToForm(intent)); openModal({ type: "publicQa", title: `Edit Intent ${intent.name}` }); }} disabled={isSaving}>Edit</Button>
+                            {isSuperAdmin ? <Button variant="outline" size="sm" onClick={() => { setPublicQaIntentForm(publicQaIntentToForm(intent)); openModal({ type: "publicQa", title: `Edit Aturan ${intent.name}` }); }} disabled={isSaving}>Edit</Button> : null}
                           </td>
                         </tr>
                       ))}
@@ -3079,14 +5295,14 @@ export function AletaBotAdminPanel() {
             <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Test Intent</CardTitle>
-                  <CardDescription>Preview classifier, confidence, parameter, dan legacy command tanpa kirim pesan WhatsApp.</CardDescription>
+                  <CardTitle>Uji Pertanyaan</CardTitle>
+                  <CardDescription>Coba pertanyaan tanpa mengirim pesan WhatsApp.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Field label="Pertanyaan" value={publicQaQuestion} onChange={setPublicQaQuestion} />
                   <Button variant="outline" onClick={() => void testPublicQaIntent()} disabled={isSaving}>
                     <Play className="h-4 w-4" />
-                    Test Intent
+                    Uji Pertanyaan
                   </Button>
                   {publicQaTestResult ? <pre className="max-h-80 overflow-auto rounded-xl border border-border bg-muted/40 p-4 text-xs leading-5 text-foreground whitespace-pre-wrap">{publicQaTestResult}</pre> : null}
                 </CardContent>
@@ -3094,7 +5310,7 @@ export function AletaBotAdminPanel() {
               <Card>
                 <CardHeader>
                   <CardTitle>Log Pertanyaan</CardTitle>
-                  <CardDescription>Riwayat terbaru pertanyaan pihak, intent, confidence, dan fallback.</CardDescription>
+                  <CardDescription>Riwayat terbaru pertanyaan, aturan jawaban, dan fallback.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {snapshot.publicQaLogs.length === 0 && publicQaRuntimeLogs.length === 0 ? (
@@ -3137,7 +5353,7 @@ export function AletaBotAdminPanel() {
               <CardHeader>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle>Human Review Pertanyaan Publik</CardTitle>
+                    <CardTitle>Tinjauan Pertanyaan WhatsApp</CardTitle>
                     <CardDescription>Fallback/unknown yang perlu tindak lanjut manusia. Aksi di sini tidak membalas WhatsApp.</CardDescription>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -3157,10 +5373,11 @@ export function AletaBotAdminPanel() {
                     ["needs_review", "Perlu Tindak Lanjut"],
                     ["reviewed", "Sudah Ditinjau"],
                     ["ignored", "Diabaikan"],
-                    ["converted_to_intent", "Sudah Jadi Intent"],
+                    ["converted_to_intent", "Sudah Jadi Aturan"],
                   ] as const).map(([value, label]) => (
                     <button
                       key={value}
+                      type="button"
                       onClick={() => setPublicQaReviewFilter(value)}
                       className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${publicQaReviewFilter === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
                     >
@@ -3191,7 +5408,7 @@ export function AletaBotAdminPanel() {
                           </div>
                         </div>
                         <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                          Saran: <code>{item.suggestedIntentKey}</code> ({Math.round(item.confidence * 100)}%) - {item.suggestedAction}
+                          Saran aturan: <code>{item.suggestedIntentKey}</code> ({Math.round(item.confidence * 100)}%) - {item.suggestedAction}
                         </p>
                         {item.reviewNote ? <p className="mt-2 text-xs text-muted-foreground">Catatan: {item.reviewNote}</p> : null}
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -3201,7 +5418,7 @@ export function AletaBotAdminPanel() {
                             disabled={isSaving}
                             onClick={() => {
                               setPublicQaReviewNote(item.reviewNote || "");
-                              openModal({ type: "publicQaReview", title: "Review Pertanyaan Publik", review: item });
+                              openModal({ type: "publicQaReview", title: "Tinjau Pertanyaan WhatsApp", review: item });
                             }}
                           >
                             Review
@@ -3216,13 +5433,14 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="logs">
+        <TabsContent value="logs" id="logs">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">Filter:</span>
                 {(["all", "error", "whatsapp", "ai", "queue", "approval", "migration"] as const).map((f) => (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => setLogFilter(f)}
                   className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${logFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
                 >
@@ -3280,48 +5498,317 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="manual-test">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <TabsContent value="reports" id="reports">
+          <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Kirim Pesan Test</CardTitle>
-                <CardDescription>Simulasi tidak mengirim pesan sungguhan, tetapi tetap mencatat audit log.</CardDescription>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Laporan WhatsApp</CardTitle>
+                    <CardDescription>Cetak data pesan yang diproses bot dalam format Excel rapi dengan filter dan sheet statistik.</CardDescription>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" onClick={() => void loadWhatsappReport()} disabled={isReportLoading}>
+                      <RefreshCcw className="h-4 w-4" />
+                      {isReportLoading ? "Memuat..." : "Muat Data"}
+                    </Button>
+                    <Button type="button" onClick={() => void exportWhatsappReportExcel()} disabled={isReportExporting}>
+                      <Download className="h-4 w-4" />
+                      {isReportExporting ? "Membuat..." : "Cetak Excel"}
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Field label="Nomor tujuan" value={settingsDraft.testTargetNumber} onChange={(value) => setSettingsDraft((current) => ({ ...current, testTargetNumber: value }))} placeholder="628123456789" />
-                <Textarea value={testMessage} onChange={(event) => setTestMessage(event.target.value)} rows={4} />
-                <Button onClick={() => void runAction("send-test", { to: settingsDraft.testTargetNumber, message: testMessage })} disabled={isSaving}>
-                  <Send className="h-4 w-4" />
-                  Kirim / Simulasikan
-                </Button>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,220px)_minmax(0,220px)_minmax(0,240px)_1fr]">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rentang Data</p>
+                    <NativeSelect value={whatsappReportRange} onChange={(event) => setWhatsappReportRange(event.target.value)}>
+                      {WHATSAPP_REPORT_RANGE_OPTIONS.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Status</p>
+                    <NativeSelect value={whatsappReportStatus} onChange={(event) => setWhatsappReportStatus(event.target.value)}>
+                      {WHATSAPP_REPORT_STATUS_OPTIONS.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Aplikasi</p>
+                    <NativeSelect value={whatsappReportSource} onChange={(event) => setWhatsappReportSource(event.target.value)}>
+                      {WHATSAPP_REPORT_SOURCE_OPTIONS.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                    {whatsappReport
+                      ? `Data ${whatsappReport.range.label} untuk ${whatsappReport.source.label}, dibuat ${formatDateTime(whatsappReport.generatedAt)}. Excel berisi sheet Ringkasan, Pesan WhatsApp, Per Status, Per Aplikasi, Per Fitur, Error, Tren Harian, dan Log Sistem.`
+                      : "Pilih rentang lalu muat data untuk melihat statistik. Tombol Cetak Excel tetap bisa langsung dipakai."}
+                    {whatsappReportExportInfo ? (
+                      <p className="mt-2 text-xs font-medium text-foreground">
+                        Excel terakhir: {whatsappReportExportInfo.filename} ({whatsappReportExportInfo.rowCount} baris, {whatsappReportExportInfo.sizeKb} KB), dibuat {formatDateTime(whatsappReportExportInfo.exportedAt)}.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  <InfoCard title="Total Diproses" value={String(whatsappReport?.stats.total ?? 0)} hint="Jumlah log pada rentang dan status yang dipilih." onClick={() => applyWhatsappReportFilters({ status: "all" })} actionLabel="Tampilkan semua status" />
+                  <InfoCard title="Terkirim" value={String(whatsappReport?.stats.sent ?? 0)} hint="Status sent, success, atau delivered." onClick={() => applyWhatsappReportFilters({ status: "sent" })} actionLabel="Filter terkirim" />
+                  <InfoCard title="Gagal" value={String(whatsappReport?.stats.failed ?? 0)} hint="Status failed atau dead letter." onClick={() => applyWhatsappReportFilters({ status: "failed" })} actionLabel="Filter gagal" />
+                  <InfoCard title="Simulasi" value={String(whatsappReport?.stats.simulated ?? 0)} hint="Pesan simulasi/dry run." onClick={() => applyWhatsappReportFilters({ status: "simulated" })} actionLabel="Filter simulasi" />
+                  <InfoCard title="Berhasil" value={`${whatsappReport?.stats.successRate ?? 0}%`} hint="Rasio terkirim dari total diproses." onClick={() => applyWhatsappReportFilters({ status: "sent" })} actionLabel="Lihat pesan berhasil" />
+                </div>
               </CardContent>
             </Card>
+
+            <div className="grid gap-4 xl:grid-cols-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Per Status</CardTitle>
+                  <CardDescription>Ringkasan status pengiriman pada rentang terpilih.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(whatsappReport?.stats.byStatus ?? []).slice(0, 8).map(([label, count]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => applyWhatsappReportFilters({ status: reportStatusKeyFromLabel(label) })}
+                      className="flex w-full items-center justify-between rounded border border-border p-2 text-left text-sm transition hover:border-primary/50 hover:bg-primary/5"
+                    >
+                      <span className="font-medium text-foreground">{label}</span>
+                      <Badge variant={label.toLowerCase().includes("gagal") ? "danger" : label.toLowerCase().includes("terkirim") ? "success" : "muted"}>{count}</Badge>
+                    </button>
+                  ))}
+                  {!whatsappReport?.stats.byStatus.length ? <p className="text-sm text-muted-foreground">Belum ada data pada filter ini.</p> : null}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Per Aplikasi</CardTitle>
+                  <CardDescription>Pemisah Notifikasi Perkara, Manajemen Surat, dan E-Kepegawaian.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(whatsappReport?.stats.byApp ?? []).slice(0, 8).map(([label, count]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        const sourceKey = reportSourceKeyFromLabel(label);
+                        if (sourceKey === "all") {
+                          setReportTableAppFilter(label);
+                          focusReportTable();
+                          return;
+                        }
+                        applyWhatsappReportFilters({ sourceApp: sourceKey });
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded border border-border p-2 text-left text-sm transition hover:border-primary/50 hover:bg-primary/5"
+                    >
+                      <span className="break-words font-medium text-foreground">{label}</span>
+                      <Badge variant="muted">{count}</Badge>
+                    </button>
+                  ))}
+                  {!whatsappReport?.stats.byApp.length ? <p className="text-sm text-muted-foreground">Belum ada aplikasi yang tercatat.</p> : null}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Per Fitur</CardTitle>
+                  <CardDescription>Fitur yang paling banyak memproses WhatsApp.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(whatsappReport?.stats.byFeature ?? []).slice(0, 8).map(([label, count]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        setReportTableFeatureFilter(label);
+                        focusReportTable();
+                      }}
+                      className="flex w-full items-center justify-between rounded border border-border p-2 text-left text-sm transition hover:border-primary/50 hover:bg-primary/5"
+                    >
+                      <span className="break-words font-medium text-foreground">{label}</span>
+                      <Badge variant="muted">{count}</Badge>
+                    </button>
+                  ))}
+                  {!whatsappReport?.stats.byFeature.length ? <p className="text-sm text-muted-foreground">Belum ada fitur yang tercatat.</p> : null}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Error Teratas</CardTitle>
+                  <CardDescription>Alasan gagal yang paling sering muncul.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(whatsappReport?.stats.topErrors ?? []).slice(0, 6).map(([label, count]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        setReportTableSearch(label);
+                        applyWhatsappReportFilters({ status: "failed" });
+                        focusReportTable();
+                      }}
+                      className="w-full rounded border border-border p-2 text-left text-sm transition hover:border-primary/50 hover:bg-primary/5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground">Error</span>
+                        <Badge variant="danger">{count}</Badge>
+                      </div>
+                      <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{label}</p>
+                    </button>
+                  ))}
+                  {!whatsappReport?.stats.topErrors.length ? <p className="text-sm text-muted-foreground">Tidak ada error pada filter ini.</p> : null}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card id="report-data-table">
+              <CardHeader>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Data Terbaru</CardTitle>
+                    <CardDescription>Cuplikan data. File Excel berisi data lengkap sesuai rentang yang dipilih.</CardDescription>
+                  </div>
+                  <Button type="button" variant="outline" onClick={() => void exportLatestWhatsappRowsExcel()} disabled={isLatestReportExporting}>
+                    <Download className="h-4 w-4" />
+                    {isLatestReportExporting ? "Membuat..." : "Cetak Excel Data Terbaru"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(0,180px)_minmax(0,200px)_minmax(0,220px)_minmax(0,180px)_auto_auto]">
+                  <Input
+                    value={reportTableSearch}
+                    onChange={(event) => setReportTableSearch(event.target.value)}
+                    placeholder="Cari penerima, nomor, fitur, data, atau isi pesan"
+                    aria-label="Cari data terbaru"
+                  />
+                  <NativeSelect value={reportTableStatusFilter} onChange={(event) => setReportTableStatusFilter(event.target.value)} aria-label="Filter status tabel">
+                    <option value="all">Semua status</option>
+                    {reportTableStatusOptions.map((label) => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
+                  </NativeSelect>
+                  <NativeSelect value={reportTableAppFilter} onChange={(event) => setReportTableAppFilter(event.target.value)} aria-label="Filter aplikasi tabel">
+                    <option value="all">Semua aplikasi</option>
+                    {reportTableAppOptions.map((label) => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
+                  </NativeSelect>
+                  <NativeSelect value={reportTableFeatureFilter} onChange={(event) => setReportTableFeatureFilter(event.target.value)} aria-label="Filter fitur tabel">
+                    <option value="all">Semua fitur</option>
+                    {reportTableFeatureOptions.map((label) => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
+                  </NativeSelect>
+                  <NativeSelect value={reportTableSortKey} onChange={(event) => setReportTableSortKey(event.target.value as ReportTableSortKey)} aria-label="Urutkan tabel">
+                    {REPORT_TABLE_SORT_OPTIONS.map((item) => (
+                      <option key={item.key} value={item.key}>Urutkan: {item.label}</option>
+                    ))}
+                  </NativeSelect>
+                  <Button type="button" variant="outline" onClick={() => setReportTableSortDirection((direction) => (direction === "asc" ? "desc" : "asc"))}>
+                    <ArrowUpDown className="h-4 w-4" />
+                    {reportTableSortDirection === "asc" ? "Naik" : "Turun"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetReportTableFilters} disabled={!reportTableHasFilter}>
+                    <X className="h-4 w-4" />
+                    Reset
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Menampilkan {displayedReportRows.length} dari {filteredReportRows.length} data yang cocok. Data dimuat: {reportRows.length} baris.
+                </p>
+                {latestReportExportInfo ? (
+                  <p className="text-sm text-muted-foreground">
+                    Excel Data Terbaru terakhir: <span className="font-medium text-foreground">{latestReportExportInfo.filename}</span> ({latestReportExportInfo.rowCount} baris, {latestReportExportInfo.sizeKb} KB), dibuat {formatDateTime(latestReportExportInfo.exportedAt)}.
+                  </p>
+                ) : null}
+                <div className="overflow-x-auto rounded-xl border border-border">
+                  <table className="min-w-[1040px] w-full text-left text-sm">
+                    <thead className="bg-muted text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-3">{renderReportSortHeader("createdAt", "Waktu")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("statusLabel", "Status")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("recipientName", "Penerima")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("recipientNumber", "Nomor")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("sourceAppLabel", "Aplikasi")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("sourceFeatureLabel", "Fitur")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("caseOrPosition", "Data")}</th>
+                        <th className="px-3 py-3">{renderReportSortHeader("messagePreview", "Isi Pesan")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayedReportRows.map((row) => (
+                        <tr key={row.id} className="border-t border-border align-top">
+                          <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{formatDateTime(row.createdAt)}</td>
+                          <td className="px-3 py-3"><Badge variant={row.statusLabel.toLowerCase().includes("gagal") ? "danger" : row.statusLabel.toLowerCase().includes("terkirim") ? "success" : "muted"}>{row.statusLabel}</Badge></td>
+                          <td className="px-3 py-3 font-medium text-foreground">{row.recipientName || "-"}</td>
+                          <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{row.recipientNumber || "-"}</td>
+                          <td className="px-3 py-3 text-muted-foreground">{row.sourceAppLabel || "-"}</td>
+                          <td className="px-3 py-3 text-muted-foreground">{row.sourceFeatureLabel || row.categoryLabel || "-"}</td>
+                          <td className="px-3 py-3 text-muted-foreground">{row.caseOrPosition || "-"}</td>
+                          <td className="max-w-sm px-3 py-3 text-muted-foreground">
+                            <p className="line-clamp-3 break-words">{row.messagePreview || row.errorMessage || "-"}</p>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!filteredReportRows.length ? (
+                  <p className="mt-3 text-sm text-muted-foreground">{isReportLoading ? "Memuat laporan..." : "Belum ada data pada filter ini."}</p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="manual-test" id="manual-test">
+          <div className="space-y-4">
+            <AletaBotManualSendPanel
+              queries={snapshot.queries}
+              templates={snapshot.templates}
+              notifications={snapshot.notifications}
+              employeeRecipients={snapshot.employeeRecipients}
+              dryRunEnabled={settingsDraft.dryRunEnabled}
+              testTargetNumber={settingsDraft.testTargetNumber}
+              onAfterSend={() => {
+                void loadWhatsappReport(undefined, { silent: true });
+              }}
+            />
+            <ManualSendProgressCard result={manualSendProgress} />
             <Card>
               <CardHeader>
-                <CardTitle>Test Template & Query</CardTitle>
-                <CardDescription>Preview template aman tanpa blast pesan massal.</CardDescription>
+                <CardTitle>Uji Sumber Data & Isi Pesan (Simulasi Aman)</CardTitle>
+                <CardDescription>Cek database, isi pesan, dan notifikasi memakai data contoh tanpa pengiriman.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <select className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
-                  {snapshot.templates.map((template) => <option key={template.id} value={template.id}>{template.title}</option>)}
+                  {snapshot.templates.map((template) => <option key={template.id} value={template.id}>{templateDisplayName(template)}</option>)}
                 </select>
-                <Button variant="outline" onClick={() => void runAction("test-template", { templateId: selectedTemplateId })} disabled={isSaving}>
+                <Button variant="outline" onClick={() => void runAction("test-template", { templateId: selectedTemplateId })} disabled={isSaving || !selectedTemplateId}>
                   <FileText className="h-4 w-4" />
-                  Preview Template
+                  Preview Isi Pesan
                 </Button>
                 <select className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" value={selectedQueryId} onChange={(event) => setSelectedQueryId(event.target.value)}>
-                  {snapshot.queries.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  {snapshot.queries.map((item) => <option key={item.id} value={item.id}>{queryDisplayName(item)}</option>)}
                 </select>
-                <Button variant="outline" onClick={() => void runAction("test-query", { queryId: selectedQueryId })} disabled={isSaving}>
+                <Button variant="outline" onClick={() => void runAction("test-query", { queryId: selectedQueryId })} disabled={isSaving || !selectedQueryId}>
                   <Database className="h-4 w-4" />
-                  Test Query Terbatas
+                  Uji Sumber Data
                 </Button>
                 <select className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" value={selectedNotificationId} onChange={(event) => setSelectedNotificationId(event.target.value)}>
                   {snapshot.notifications.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </select>
-                <Button variant="outline" onClick={() => void runAction("test-notification", { notificationId: selectedNotificationId })} disabled={isSaving}>
+                <Button variant="outline" onClick={() => void runAction("test-notification", { notificationId: selectedNotificationId })} disabled={isSaving || !selectedNotificationId}>
                   <MessageCircleMore className="h-4 w-4" />
-                  Test Notifikasi
+                  Simulasi Notifikasi
                 </Button>
                 {preview ? <pre className="max-h-64 overflow-auto rounded-xl border border-border bg-muted/40 p-4 text-xs leading-5 text-foreground whitespace-pre-wrap">{preview}</pre> : null}
               </CardContent>
@@ -3329,7 +5816,15 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="queue-recovery">
+        <TabsContent value="antrian-online" id="antrian-online">
+          <AletaBotAntrianOnlinePanel />
+        </TabsContent>
+
+        <TabsContent value="ecourt" id="ecourt">
+          <AletaBotEcourtPanel />
+        </TabsContent>
+
+        <TabsContent value="queue-recovery" id="queue-recovery">
           <div className="space-y-4">
             <WorkerControlCard workerState={snapshot.workerState} isSaving={isSaving} onPause={(reason) => void runAction("pause-worker", { reason })} onResume={() => void runAction("resume-worker")} />
             <DeadLetterCard deadLetters={snapshot.deadLetters} resolvedDeadLetters={snapshot.resolvedDeadLetters ?? []} isSaving={isSaving} onResend={async (id) => {
@@ -3341,9 +5836,13 @@ export function AletaBotAdminPanel() {
                   body: JSON.stringify({ id }),
                 });
                 await loadSnapshot();
-                setNotice(`Dead letter ${id} berhasil dikirim ulang.`);
+                void loadWhatsappReport(undefined, { silent: true });
+                globalThis.setTimeout(() => {
+                  void loadWhatsappReport(undefined, { silent: true });
+                }, 2500);
+                notifySuccess("Pesan Gagal Berhasil Dikirim Ulang", `Dead letter ${id} sudah diproses ulang dan antrean dimuat ulang.`);
               } catch (error) {
-                setNotice(error instanceof Error ? error.message : "Resend dead letter gagal.");
+                notifyError("Kirim Ulang Pesan Gagal", error instanceof Error ? error.message : "Resend dead letter belum berhasil.");
               } finally {
                 setIsSaving(false);
               }
@@ -3356,9 +5855,9 @@ export function AletaBotAdminPanel() {
                   body: JSON.stringify({ id, action: "resolve", note }),
                 });
                 await loadSnapshot();
-                setNotice(`Dead letter ${id} ditandai ditangani tanpa resend.`);
+                notifySuccess("Pesan Gagal Ditandai Ditangani", `Dead letter ${id} ditandai selesai tanpa resend dan daftar antrean diperbarui.`);
               } catch (error) {
-                setNotice(error instanceof Error ? error.message : "Tandai dead letter ditangani gagal.");
+                notifyError("Tandai Pesan Gagal Belum Berhasil", error instanceof Error ? error.message : "Dead letter belum berhasil ditandai selesai.");
               } finally {
                 setIsSaving(false);
               }
@@ -3366,10 +5865,11 @@ export function AletaBotAdminPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value="approvals">
+        <TabsContent value="approvals" id="approvals">
           <ApprovalRequestsCard
             approvalRequests={snapshot.approvalRequests}
             isSaving={isSaving}
+            canReview={isSuperAdmin}
             onReview={async (approvalId, decision, notes) => {
               setIsSaving(true);
               setNotice(null);
@@ -3379,9 +5879,12 @@ export function AletaBotAdminPanel() {
                   body: JSON.stringify({ mode: "review", approvalId, decision, notes }),
                 });
                 await loadSnapshot();
-                setNotice(`Persetujuan ${decision === "approved" ? "diterima" : "ditolak"}.`);
+                notifySuccess(
+                  decision === "approved" ? "Persetujuan Diterima" : "Persetujuan Ditolak",
+                  `Permintaan approval sudah ${decision === "approved" ? "diterima" : "ditolak"} dan daftar persetujuan diperbarui.`
+                );
               } catch (error) {
-                setNotice(error instanceof Error ? error.message : "Proses approval gagal.");
+                notifyError("Proses Approval Gagal", error instanceof Error ? error.message : "Keputusan approval belum berhasil disimpan.");
               } finally {
                 setIsSaving(false);
               }
@@ -3389,7 +5892,7 @@ export function AletaBotAdminPanel() {
           />
         </TabsContent>
 
-        <TabsContent value="migration">
+        {isSuperAdmin ? <TabsContent value="migration" id="migration">
           <LegacyMigrationCard
             legacyMigrations={snapshot.legacyMigrations}
             unknownQuestionReviews={snapshot.unknownQuestionReviews}
@@ -3397,7 +5900,7 @@ export function AletaBotAdminPanel() {
             onAction={(action, migration) => openModal({ type: "legacyAction", title: migrationActionTitle(action), migration, action })}
             showAdvanced={showAdvancedMode}
           />
-        </TabsContent>
+        </TabsContent> : null}
       </Tabs>
 
       <ModalShell modal={activeModal} isSaving={isSaving} onClose={closeModal}>
@@ -3425,7 +5928,13 @@ export function AletaBotAdminPanel() {
 
         {activeModal?.type === "template" ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Placeholder: {activeModal.template.placeholders.join(", ") || "tanpa placeholder"}</p>
+            <p className="text-sm text-muted-foreground">
+              Variabel wajib pada isi pesan ini:{" "}
+              {activeModal.template.placeholders.length > 0
+                ? activeModal.template.placeholders.map((key) => describeAletaBotVariable(key).label).join(", ")
+                : "tidak ada"}
+              . Penjelasan tiap variabel ada di panel <span className="font-medium text-foreground">Pilihan Variabel &amp; Artinya</span>.
+            </p>
             {(() => {
         const body = templateDraft[activeModal.template.id] ?? activeModal.template.body;
               const detected = extractTemplatePlaceholders(body);
@@ -3437,26 +5946,82 @@ export function AletaBotAdminPanel() {
                   <div className="space-y-3">
                     <Textarea value={body} rows={14} onChange={(event) => { markModalDirty(); setTemplateDraft((current) => ({ ...current, [activeModal.template.id]: event.target.value })); }} disabled={!activeModal.template.editable} />
                     <div className="rounded-xl border border-border p-3 text-sm">
-                      <p className="font-semibold text-foreground">Placeholder terdeteksi</p>
+                      <p className="font-semibold text-foreground">Variabel yang dipakai isi pesan ini</p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {detected.length > 0 ? detected.map((placeholder) => (
-                          <Badge key={placeholder} variant={unknown.includes(placeholder) ? "danger" : "success"}>{placeholder}</Badge>
-                        )) : <span className="text-muted-foreground">Belum ada placeholder.</span>}
+                        {detected.length > 0 ? detected.map((placeholder) => {
+                          const doc = describeAletaBotVariable(placeholder);
+                          return (
+                            <Badge
+                              key={placeholder}
+                              variant={unknown.includes(placeholder) ? "danger" : "success"}
+                              title={doc.shortDescription}
+                            >
+                              {doc.label}
+                            </Badge>
+                          );
+                        }) : <span className="text-muted-foreground">Belum ada variabel dipakai.</span>}
                       </div>
-                      {unknown.length > 0 ? <p className="mt-2 text-destructive">Placeholder tidak dikenal: {unknown.join(", ")}.</p> : null}
-                      {missingRequired.length > 0 ? <p className="mt-2 text-amber-700 dark:text-amber-300">Placeholder wajib belum dipakai: {missingRequired.join(", ")}.</p> : null}
+                      {unknown.length > 0 ? (
+                        <p className="mt-2 text-destructive">
+                          Di luar daftar wajib: {unknown.map((key) => describeAletaBotVariable(key).label).join(", ")}. Pastikan sumber data memasoknya.
+                        </p>
+                      ) : null}
+                      {missingRequired.length > 0 ? (
+                        <p className="mt-2 text-amber-700 dark:text-amber-300">
+                          Variabel wajib belum dipakai: {missingRequired.map((key) => describeAletaBotVariable(key).label).join(", ")}.
+                        </p>
+                      ) : null}
                     </div>
+                    <TemplateSafetyWarnings body={body} />
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/30 p-4">
-                    <p className="text-sm font-semibold text-foreground">Pratinjau Pesan</p>
-                    <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-sm leading-6 text-foreground">
-                      {renderAletaBotTemplatePreview(body)}
-                    </pre>
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                      <p className="text-sm font-semibold text-foreground">Pratinjau Pesan</p>
+                      <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-sm leading-6 text-foreground">
+                        {renderAletaBotTemplatePreview(body)}
+                      </pre>
+                    </div>
+                    <TemplateVariablePicker
+                      templateId={activeModal.template.id}
+                      editable={activeModal.template.editable}
+                      requiredPlaceholders={activeModal.template.placeholders}
+                      detectedPlaceholders={detected}
+                      queries={snapshot.queries}
+                      notifications={snapshot.notifications}
+                      onInsertPlaceholder={(placeholder) => {
+                        if (!activeModal.template.editable) return;
+                        markModalDirty();
+                        setTemplateDraft((current) => {
+                          const currentBody = current[activeModal.template.id] ?? activeModal.template.body;
+                          return { ...current, [activeModal.template.id]: `${currentBody}{{${placeholder}}}` };
+                        });
+                      }}
+                    />
+                    {snapshot ? (
+                      <TemplateQuerySuggestions
+                        template={activeModal.template}
+                        queries={snapshot.queries}
+                        notifications={snapshot.notifications}
+                        placeholders={[...new Set([...activeModal.template.placeholders, ...detected])]}
+                        onInsertPlaceholder={(placeholder) => {
+                          if (!activeModal.template.editable) return;
+                          markModalDirty();
+                          setTemplateDraft((current) => {
+                            const currentBody = current[activeModal.template.id] ?? activeModal.template.body;
+                            return { ...current, [activeModal.template.id]: `${currentBody}{{${placeholder}}}` };
+                          });
+                        }}
+                        onOpenQuery={(query) => {
+                          setQueryForm(queryToForm(query));
+                          openModal({ type: "query", title: `Edit Sumber Data ${queryDisplayName(query)}` });
+                        }}
+                      />
+                    ) : null}
                   </div>
                 </div>
               );
             })()}
-            <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveTemplate(activeModal.template)} saveLabel="Simpan Template" />
+            <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveTemplate(activeModal.template)} saveLabel="Simpan Isi Pesan" />
           </div>
         ) : null}
 
@@ -3499,18 +6064,64 @@ export function AletaBotAdminPanel() {
 
         {activeModal?.type === "notification" ? (
           <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+              Alur: pilih tujuan, sumber data, isi pesan, jadwal kirim, lalu lakukan preview penerima dan simulasi sebelum aktif.
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Nama notifikasi" value={notificationForm.name} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, name: value })); }} />
               <SelectField
-                label="Kategori"
-                value={notificationForm.category}
-                onChange={(value) => { const category = value as AletaBotNotificationCategory; markModalDirty(); setNotificationForm((current) => ({ ...makeEmptyNotificationForm(snapshot, category), id: current.id, name: current.name, description: current.description, isActive: current.isActive })); }}
-                options={[{ value: "employee", label: "Notifikasi Pegawai" }, { value: "party", label: "Notifikasi Pihak" }]}
+                label={notificationForm.category === "employee" ? "Kelompok pegawai" : "Kelompok penerima pihak/eksternal"}
+                value={notificationAudienceGroup(notificationForm)}
+                onChange={(value) => {
+                  const audienceGroup = normalizeAudienceGroup(notificationForm.category, value);
+                  const nextQuery = defaultNotificationQuery(snapshot, notificationForm.category, audienceGroup);
+                  const nextTemplate = defaultNotificationTemplate(snapshot, notificationForm.category, audienceGroup);
+                  markModalDirty();
+                  setNotificationForm((current) => ({
+                    ...current,
+                    queryId: nextQuery?.id ?? current.queryId,
+                    templateId: nextTemplate?.id ?? current.templateId,
+                    recipientMapping: { ...current.recipientMapping, audienceGroup },
+                  }));
+                }}
+                options={(notificationForm.category === "employee" ? EMPLOYEE_NOTIFICATION_GROUP_OPTIONS : PARTY_NOTIFICATION_GROUP_OPTIONS).map((option) => ({ value: option.value, label: option.label }))}
               />
-              <SelectField label="Sumber query" value={notificationForm.queryId} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, queryId: value })); }} options={snapshot.queries.filter((query) => query.category === notificationForm.category || query.category === "system").map((query) => ({ value: query.id, label: query.name }))} />
-              <SelectField label="Template pesan" value={notificationForm.templateId} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, templateId: value })); }} options={snapshot.templates.map((template) => ({ value: template.id, label: template.title }))} />
-              <Field label="Delay (ms)" type="number" value={String(notificationForm.delayMs)} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, delayMs: Number(value) })); }} />
-              <Field label="Retry" type="number" value={String(notificationForm.retryLimit)} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, retryLimit: Number(value) })); }} />
+              {notificationForm.category === "employee" ? (
+                <EmployeeTargetPicker
+                  form={notificationForm}
+                  recipients={snapshot.employeeRecipients}
+                  onChange={(next) => { markModalDirty(); setNotificationForm((current) => ({ ...current, ...next })); }}
+                />
+              ) : (
+                <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-4 md:col-span-2">
+                  <p className="text-sm font-semibold text-foreground">{audienceGroupLabel("party", notificationAudienceGroup(notificationForm))}</p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {audienceGroupHint("party", notificationAudienceGroup(notificationForm))} Nomor WhatsApp dibaca dari kolom nomor tujuan pada sumber data yang dipilih.
+                  </p>
+                </div>
+              )}
+              <SelectField
+                label="Sumber data"
+                value={notificationForm.queryId}
+                onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, queryId: value })); }}
+                options={snapshot.queries
+                  .filter((query) => sourceQueryMatchesNotification(query, notificationForm.category, notificationAudienceGroup(notificationForm)) || query.id === notificationForm.queryId)
+                  .map((query) => ({ value: query.id, label: queryDisplayName(query) || query.id }))}
+              />
+              <SelectField
+                label="Isi pesan"
+                value={notificationForm.templateId}
+                onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, templateId: value })); }}
+                options={snapshot.templates
+                  .filter((template) => templateMatchesNotification(template, notificationForm.category, notificationAudienceGroup(notificationForm)) || template.id === notificationForm.templateId)
+                  .map((template) => ({ value: template.id, label: templateDisplayName(template) || template.id }))}
+              />
+              {showAdvancedMode ? (
+                <>
+                  <Field label="Jeda antar pesan (ms)" type="number" value={String(notificationForm.delayMs)} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, delayMs: Number(value) })); }} />
+                  <Field label="Coba ulang jika gagal" type="number" value={String(notificationForm.retryLimit)} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, retryLimit: Number(value) })); }} />
+                </>
+              ) : null}
             </div>
             <Field label="Deskripsi" value={notificationForm.description} onChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, description: value })); }} />
             <ScheduleBuilder
@@ -3518,7 +6129,14 @@ export function AletaBotAdminPanel() {
               showAdvancedMode={showAdvancedMode}
               onChange={(next) => { markModalDirty(); setNotificationForm((current) => ({ ...current, ...next })); }}
             />
-            <ToggleRow label="Status aktif" checked={notificationForm.isActive} onCheckedChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, isActive: value })); }} />
+            <NotificationMessagePreview form={notificationForm} snapshot={snapshot} />
+            <ToggleRow
+              label="Kirim dokumen gugatan/permohonan (PDF/Word)"
+              description="Lampirkan berkas gugatan/permohonan dari SIPP (petitum_dok) bila sumber data menyediakannya. Matikan untuk mengirim pesan teks saja."
+              checked={notificationForm.attachDocument}
+              onCheckedChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, attachDocument: value })); }}
+            />
+            <ToggleRow label="Aktifkan notifikasi" checked={notificationForm.isActive} onCheckedChange={(value) => { markModalDirty(); setNotificationForm((current) => ({ ...current, isActive: value })); }} />
             <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveNotification()} saveLabel={notificationForm.category === "party" ? "Simpan sebagai Draft Aman" : "Simpan Notifikasi"} />
           </div>
         ) : null}
@@ -3526,19 +6144,26 @@ export function AletaBotAdminPanel() {
         {activeModal?.type === "query" ? (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Nama query" value={queryForm.name} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, name: value })); }} />
-              <SelectField label="Kategori" value={queryForm.category} onChange={(value) => { const category = value as AletaBotQueryCategory; markModalDirty(); setQueryForm((current) => ({ ...current, category, recipientColumn: category === "party" ? current.recipientColumn || "telepon" : "" })); }} options={[{ value: "employee", label: "Pegawai" }, { value: "party", label: "Pihak" }, { value: "system", label: "Sistem" }]} />
-              <Field label="Kolom hasil" value={queryForm.outputColumns} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, outputColumns: value })); }} placeholder="nama_pihak, nomor_perkara, telepon" />
-              <Field label="Kolom nomor pihak" value={queryForm.recipientColumn} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, recipientColumn: value })); }} placeholder="telepon" />
-              <SelectField label="Sumber SQL" value={queryForm.connectionKey} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, connectionKey: value })); }} options={snapshot.dbConnections.map((connection) => ({ value: connection.key, label: `${connection.name} (${connection.key})` }))} />
+              <Field label="Nama sumber data" value={queryForm.name} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, name: value })); }} placeholder="Data Tunda Jadwal Sidang" />
+              <SelectField label="Dipakai untuk" value={queryForm.category} onChange={(value) => { const category = value as AletaBotQueryCategory; markModalDirty(); setQueryForm((current) => ({ ...current, category, recipientColumn: category === "party" ? current.recipientColumn || "telepon" : "" })); }} options={[{ value: "employee", label: "Pegawai kantor / kesekretariatan" }, { value: "party", label: "Para pihak" }, { value: "system", label: "Umum / dipakai bersama" }]} />
+              <Field label="Kolom hasil" value={queryForm.outputColumns} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, outputColumns: value })); }} placeholder="tanggal_terakhir, nomor_perkara, panitera_nama" />
+              {queryForm.category === "party" || showAdvancedMode ? (
+                <Field label={queryForm.category === "party" ? "Kolom nomor tujuan pihak" : "Kolom nomor tujuan (opsional)"} value={queryForm.recipientColumn} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, recipientColumn: value })); }} placeholder="telepon / nomor_hp / nomor_whatsapp" />
+              ) : null}
+              <SelectField label="Database yang dibaca" value={queryForm.connectionKey} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, connectionKey: value })); }} options={snapshot.dbConnections.map((connection) => ({ value: connection.key, label: `${connection.name} (${connection.key})` }))} />
             </div>
             <Field label="Deskripsi" value={queryForm.description} onChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, description: value })); }} />
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-foreground">SQL / referensi legacy</span>
-              <Textarea value={queryForm.sqlText} onChange={(event) => { markModalDirty(); setQueryForm((current) => ({ ...current, sqlText: event.target.value })); }} rows={8} />
+              <span className="text-sm font-semibold text-foreground">SQL SELECT</span>
+              <Textarea
+                value={queryForm.sqlText}
+                onChange={(event) => { markModalDirty(); setQueryForm((current) => ({ ...current, sqlText: event.target.value })); }}
+                rows={8}
+                placeholder="SELECT tanggal_terakhir, nomor_perkara, panitera_nama FROM ..."
+              />
             </label>
-            <ToggleRow label="Query aktif" checked={queryForm.isActive} onCheckedChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, isActive: value })); }} />
-            <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveQuery()} saveLabel="Simpan Query" />
+            <ToggleRow label="Sumber data aktif" checked={queryForm.isActive} onCheckedChange={(value) => { markModalDirty(); setQueryForm((current) => ({ ...current, isActive: value })); }} />
+            <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveQuery()} saveLabel="Simpan Sumber Data" />
           </div>
         ) : null}
 
@@ -3591,7 +6216,7 @@ export function AletaBotAdminPanel() {
             <div className="flex flex-wrap justify-between gap-3">
               <Button variant="outline" onClick={() => void testDbConnectionDraft()} disabled={isSaving}>
                 <Play className="h-4 w-4" />
-                Test Koneksi Form Ini
+                Uji Koneksi Form Ini
               </Button>
               <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => void saveDbConnection()} saveLabel="Simpan Koneksi" />
             </div>
@@ -3601,48 +6226,144 @@ export function AletaBotAdminPanel() {
         {activeModal?.type === "publicQa" ? (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Key" value={publicQaIntentForm.key} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, key: value })); }} placeholder="cek_jadwal_sidang" />
-              <Field label="Nama" value={publicQaIntentForm.name} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, name: value })); }} />
-              <SelectField label="Kategori" value={publicQaIntentForm.category} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, category: value as PublicQaIntentForm["category"] })); }} options={["informasi_umum", "status_perkara", "jadwal_sidang", "biaya_panjar", "akta_cerai", "layanan", "pengaduan", "ecourt", "fallback"].map((value) => ({ value, label: value }))} />
-              <SelectField label="Audience" value={publicQaIntentForm.audience} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, audience: value as PublicQaIntentForm["audience"] })); }} options={["party", "public", "employee", "admin"].map((value) => ({ value, label: value }))} />
-              <SelectField label="Response mode" value={publicQaIntentForm.responseMode} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, responseMode: value as PublicQaIntentForm["responseMode"] })); }} options={["legacy_handler", "query_template", "static_template", "ai_guided_template", "fallback"].map((value) => ({ value, label: value }))} />
-              <SelectField label="AI answer mode" value={publicQaIntentForm.aiAnswerMode} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiAnswerMode: value as PublicQaIntentForm["aiAnswerMode"] })); }} options={["off", "template_only", "template_rewrite", "query_summarize", "guided_answer"].map((value) => ({ value, label: value }))} />
-              <SelectField label="Verification policy" value={publicQaIntentForm.verificationPolicy} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, verificationPolicy: value as PublicQaIntentForm["verificationPolicy"] })); }} options={["none", "case_number_only", "phone_match", "case_number_and_phone", "manual_ptsp"].map((value) => ({ value, label: value }))} />
-              <SelectField label="Answer policy" value={publicQaIntentForm.answerPolicy} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, answerPolicy: value as PublicQaIntentForm["answerPolicy"] })); }} options={["public_info_only", "case_status_limited", "requires_verified_party", "admin_only"].map((value) => ({ value, label: value }))} />
-              <SelectField label="Risk level" value={publicQaIntentForm.riskLevel} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, riskLevel: value as PublicQaIntentForm["riskLevel"] })); }} options={["low", "medium", "high"].map((value) => ({ value, label: value }))} />
-              <SelectField label="Status" value={publicQaIntentForm.status} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, status: value as PublicQaIntentForm["status"] })); }} options={["draft", "active", "archived"].map((value) => ({ value, label: value }))} />
-              <Field label="Legacy command" value={publicQaIntentForm.legacyCommand} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, legacyCommand: value })); }} placeholder="jadwal" />
-              <Field label="Parameterized command" value={publicQaIntentForm.parameterizedLegacyCommand} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, parameterizedLegacyCommand: value })); }} placeholder="jadwal" />
-              <SelectField label="Query mapping" value={publicQaIntentForm.queryKey} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, queryKey: value })); }} options={[{ value: "", label: "Tidak pakai query registry" }, ...snapshot.queries.map((query) => ({ value: query.id, label: query.name }))]} />
-              <Field label="Template key" value={publicQaIntentForm.templateKey} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, templateKey: value })); }} />
-              <Field label="Required parameters" value={publicQaIntentForm.requiredParameters} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, requiredParameters: value })); }} placeholder="nomor_perkara" />
-              <Field label="Confidence threshold" type="number" value={String(publicQaIntentForm.confidenceThreshold)} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, confidenceThreshold: Number(value) })); }} />
-              <Field label="Max AI tokens" type="number" value={String(publicQaIntentForm.maxAiTokens)} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, maxAiTokens: Number(value) })); }} />
-              <Field label="Temperature" type="number" value={String(publicQaIntentForm.temperature)} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, temperature: Number(value) })); }} />
+              {showAdvancedMode ? (
+                <Field label="Kode aturan" value={publicQaIntentForm.key} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, key: value })); }} placeholder="cek_jadwal_sidang" />
+              ) : null}
+              <Field
+                label="Nama aturan"
+                value={publicQaIntentForm.name}
+                onChange={(value) => {
+                  markModalDirty();
+                  setPublicQaIntentForm((current) => {
+                    const currentAutoKey = makePublicQaDraftKey(current.name);
+                    const nextKey = !current.key || current.key === currentAutoKey ? makePublicQaDraftKey(value) : current.key;
+                    return { ...current, name: value, key: nextKey };
+                  });
+                }}
+                placeholder="Cek biaya perkara"
+              />
+              <SelectField label="Kategori" value={publicQaIntentForm.category} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, category: value as PublicQaIntentForm["category"] })); }} options={[
+                { value: "informasi_umum", label: "Informasi umum" },
+                { value: "status_perkara", label: "Status perkara" },
+                { value: "jadwal_sidang", label: "Jadwal sidang" },
+                { value: "biaya_panjar", label: "Biaya perkara / panjar" },
+                { value: "akta_cerai", label: "Akta cerai" },
+                { value: "layanan", label: "Layanan kantor" },
+                { value: "pengaduan", label: "Pengaduan" },
+                { value: "ecourt", label: "E-Court" },
+                { value: "fallback", label: "Pertanyaan belum dikenali" },
+              ]} />
+              <SelectField label="Untuk siapa" value={publicQaIntentForm.audience} onChange={(value) => {
+                markModalDirty();
+                setPublicQaIntentForm((current) => ({
+                  ...current,
+                  audience: value as PublicQaIntentForm["audience"],
+                  verificationPolicy: ["employee", "admin"].includes(value) && current.verificationPolicy === "none" ? "phone_match" : current.verificationPolicy,
+                  answerPolicy: value === "employee" || value === "admin" ? "admin_only" : current.answerPolicy,
+                }));
+              }} options={[
+                { value: "party", label: "Para pihak berperkara" },
+                { value: "public", label: "Masyarakat umum" },
+                { value: "employee", label: "Pegawai terdaftar" },
+                { value: "admin", label: "Admin / petugas internal" },
+              ]} />
+              <SelectField label="Cara menjawab" value={publicQaIntentForm.responseMode} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, responseMode: value as PublicQaIntentForm["responseMode"] })); }} options={[
+                { value: "query_template", label: "Ambil dari sumber data" },
+                { value: "static_template", label: "Jawaban tetap" },
+                { value: "legacy_handler", label: "Pakai jalur lama" },
+                { value: "ai_guided_template", label: "AI merapikan jawaban" },
+                { value: "fallback", label: "Jawaban fallback" },
+              ]} />
+              <SelectField label="Sumber data yang dipakai" value={publicQaIntentForm.queryKey} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, queryKey: value, responseMode: value ? "query_template" : current.responseMode })); }} options={[{ value: "", label: "Tidak pakai sumber data" }, ...snapshot.queries.map((query) => ({ value: query.id, label: queryDisplayName(query) || query.id }))]} />
+              <SelectField label="Isi pesan yang dipakai" value={publicQaIntentForm.templateKey} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, templateKey: value })); }} options={[{ value: "", label: "Tidak pakai isi pesan khusus" }, ...snapshot.templates.map((template) => ({ value: template.id, label: templateDisplayName(template) || template.id }))]} />
+              <Field label="Data wajib dari pertanyaan" value={publicQaIntentForm.requiredParameters} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, requiredParameters: value })); }} placeholder="nomor_perkara" />
+              <SelectField label="Verifikasi" value={publicQaIntentForm.verificationPolicy} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, verificationPolicy: value as PublicQaIntentForm["verificationPolicy"] })); }} options={[
+                { value: "none", label: "Tidak perlu verifikasi" },
+                { value: "case_number_only", label: "Wajib nomor perkara" },
+                { value: "phone_match", label: "Nomor WA harus terdaftar" },
+                { value: "case_number_and_phone", label: "Nomor perkara + WA terdaftar" },
+                { value: "manual_ptsp", label: "Diarahkan ke petugas" },
+              ]} />
+              <SelectField label="Risiko jawaban" value={publicQaIntentForm.riskLevel} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, riskLevel: value as PublicQaIntentForm["riskLevel"] })); }} options={[{ value: "low", label: "Rendah" }, { value: "medium", label: "Sedang" }, { value: "high", label: "Tinggi" }]} />
+              <SelectField label="Status" value={publicQaIntentForm.status} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, status: value as PublicQaIntentForm["status"] })); }} options={[{ value: "draft", label: "Draft" }, { value: "active", label: "Aktif" }, { value: "archived", label: "Diarsipkan" }]} />
+              {showAdvancedMode ? (
+                <>
+                  <SelectField label="Mode jawaban AI" value={publicQaIntentForm.aiAnswerMode} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiAnswerMode: value as PublicQaIntentForm["aiAnswerMode"] })); }} options={["off", "template_only", "template_rewrite", "query_summarize", "guided_answer"].map((value) => ({ value, label: displayStatus(value) }))} />
+                  <SelectField label="Batas data jawaban" value={publicQaIntentForm.answerPolicy} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, answerPolicy: value as PublicQaIntentForm["answerPolicy"] })); }} options={[
+                    { value: "public_info_only", label: "Informasi umum saja" },
+                    { value: "case_status_limited", label: "Status perkara terbatas" },
+                    { value: "requires_verified_party", label: "Wajib pihak terverifikasi" },
+                    { value: "admin_only", label: "Hanya pegawai/admin" },
+                  ]} />
+                  <Field label="Perintah jalur lama" value={publicQaIntentForm.legacyCommand} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, legacyCommand: value })); }} placeholder="jadwal" />
+                  <Field label="Perintah jalur lama berparameter" value={publicQaIntentForm.parameterizedLegacyCommand} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, parameterizedLegacyCommand: value })); }} placeholder="jadwal" />
+                  <Field label="Confidence AI" type="number" value={String(publicQaIntentForm.confidenceThreshold)} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, confidenceThreshold: Number(value) })); }} />
+                  <Field label="Maksimal token AI" type="number" value={String(publicQaIntentForm.maxAiTokens)} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, maxAiTokens: Number(value) })); }} />
+                  <Field label="Temperature AI" type="number" value={String(publicQaIntentForm.temperature)} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, temperature: Number(value) })); }} />
+                </>
+              ) : null}
             </div>
             <Field label="Deskripsi" value={publicQaIntentForm.description} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, description: value })); }} />
-            <Field label="Legacy handler" value={publicQaIntentForm.legacyHandler} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, legacyHandler: value })); }} placeholder="query.getData:jadwal" />
-            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Exact triggers</span><Textarea value={publicQaIntentForm.exactTriggers} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, exactTriggers: event.target.value })); }} rows={3} /></label>
+            {showAdvancedMode ? (
+              <Field label="Handler jalur lama" value={publicQaIntentForm.legacyHandler} onChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, legacyHandler: value })); }} placeholder="query.getData:jadwal" />
+            ) : null}
+            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Kata kunci dari WhatsApp</span><Textarea value={publicQaIntentForm.exactTriggers} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, exactTriggers: event.target.value })); }} rows={3} /></label>
             <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Contoh pertanyaan</span><Textarea value={publicQaIntentForm.exampleQuestions} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, exampleQuestions: event.target.value })); }} rows={4} /></label>
-            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Allowed data fields</span><Textarea value={publicQaIntentForm.allowedDataFields} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, allowedDataFields: event.target.value })); }} rows={2} /></label>
-            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Blocked data fields</span><Textarea value={publicQaIntentForm.blockedDataFields} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, blockedDataFields: event.target.value })); }} rows={2} /></label>
-            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">System prompt</span><Textarea value={publicQaIntentForm.aiSystemPrompt} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiSystemPrompt: event.target.value })); }} rows={4} /></label>
-            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">User prompt template</span><Textarea value={publicQaIntentForm.aiUserPromptTemplate} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiUserPromptTemplate: event.target.value })); }} rows={4} /></label>
-            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Fallback message</span><Textarea value={publicQaIntentForm.fallbackMessage} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, fallbackMessage: event.target.value })); }} rows={3} /></label>
+            {showAdvancedMode ? (
+              <>
+                <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Data yang boleh dipakai</span><Textarea value={publicQaIntentForm.allowedDataFields} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, allowedDataFields: event.target.value })); }} rows={2} /></label>
+                <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Data yang tidak boleh dikirim</span><Textarea value={publicQaIntentForm.blockedDataFields} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, blockedDataFields: event.target.value })); }} rows={2} /></label>
+                <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">System prompt</span><Textarea value={publicQaIntentForm.aiSystemPrompt} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiSystemPrompt: event.target.value })); }} rows={4} /></label>
+                <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">User prompt template</span><Textarea value={publicQaIntentForm.aiUserPromptTemplate} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiUserPromptTemplate: event.target.value })); }} rows={4} /></label>
+              </>
+            ) : null}
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-foreground">Blangko Jawaban</span>
+              <span className="block text-xs text-muted-foreground">
+                Isi kalimat yang ingin dikirim ALETA Bot. Bila diisi, inilah yang dipakai menjawab - bukan kalimat
+                bawaan sistem. Kosongkan bila jawabannya harus diambil dari data perkara.
+              </span>
+              <Textarea
+                value={publicQaIntentForm.answerTemplate}
+                onChange={(event) => {
+                  markModalDirty();
+                  setPublicQaIntentForm((current) => ({ ...current, answerTemplate: event.target.value }));
+                }}
+                rows={5}
+                placeholder="Contoh: Akta cerai dapat diambil 14 hari setelah putusan berkekuatan hukum tetap. Bawa KTP asli ke PTSP pada jam kerja."
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-foreground">Kata Kunci Pengenal</span>
+              <span className="block text-xs text-muted-foreground">
+                Kata yang menandai pertanyaan ini walau kalimatnya berbeda, misalnya panjar, tagihan, bayar. Salah
+                ketik satu-dua huruf sudah dimaafkan otomatis.
+              </span>
+              <CreatableMultiSelect
+                value={publicQaIntentForm.matchKeywords}
+                onChange={(value) => {
+                  markModalDirty();
+                  setPublicQaIntentForm((current) => ({ ...current, matchKeywords: value }));
+                }}
+                options={[]}
+                placeholder="Ketik kata kunci lalu Enter"
+              />
+            </label>
+            <label className="block space-y-2"><span className="text-sm font-semibold text-foreground">Jawaban saat belum bisa diproses</span><Textarea value={publicQaIntentForm.fallbackMessage} onChange={(event) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, fallbackMessage: event.target.value })); }} rows={3} /></label>
             <div className="grid gap-3 sm:grid-cols-3">
               <ToggleRow label="Aktif" checked={publicQaIntentForm.isActive} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, isActive: value })); }} />
-              <ToggleRow label="AI matcher" checked={publicQaIntentForm.aiEnabled} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiEnabled: value })); }} />
-              <ToggleRow label="AI answer" checked={publicQaIntentForm.aiAnswerEnabled} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiAnswerEnabled: value })); }} />
+              <ToggleRow label="AI mengenali pertanyaan" checked={publicQaIntentForm.aiEnabled} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiEnabled: value })); }} />
+              <ToggleRow label="AI menyusun jawaban" checked={publicQaIntentForm.aiAnswerEnabled} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, aiAnswerEnabled: value, aiAnswerMode: value && current.aiAnswerMode === "off" ? "template_rewrite" : current.aiAnswerMode })); }} />
               <ToggleRow label="Butuh verifikasi" checked={publicQaIntentForm.requiresVerification} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, requiresVerification: value })); }} />
               <ToggleRow label="Butuh nomor perkara" checked={publicQaIntentForm.requiresCaseNumber} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, requiresCaseNumber: value })); }} />
               <ToggleRow label="Butuh approval" checked={publicQaIntentForm.requiresApprovalBeforeActive} onCheckedChange={(value) => { markModalDirty(); setPublicQaIntentForm((current) => ({ ...current, requiresApprovalBeforeActive: value })); }} />
             </div>
             <ModalActions isSaving={isSaving} onCancel={closeModal} onSave={() => {
               if (publicQaIntentForm.riskLevel === "high" || publicQaIntentForm.aiAnswerEnabled) {
-                if (!window.confirm("Simpan perubahan intent AI? Perubahan berisiko harus tetap melalui status draft/approval bila belum siap.")) return;
+                if (!window.confirm("Simpan perubahan aturan AI? Perubahan berisiko harus tetap melalui status draft/approval bila belum siap.")) return;
               }
               void savePublicQaIntent();
-            }} saveLabel={publicQaIntentForm.status === "active" ? "Simpan & Aktifkan" : "Simpan sebagai Draft"} />
+            }} saveLabel="Simpan & Berlakukan" />
           </div>
         ) : null}
 
@@ -3673,10 +6394,10 @@ export function AletaBotAdminPanel() {
               <Button variant="outline" onClick={() => void submitPublicQaReview("ignored")} disabled={isSaving}>Abaikan</Button>
               <Button
                 variant="outline"
-                onClick={() => openModal({ type: "publicQaConvert", title: "Jadikan Draft Intent", review: activeModal.review })}
+                onClick={() => openModal({ type: "publicQaConvert", title: "Jadikan Draft Aturan", review: activeModal.review })}
                 disabled={isSaving}
               >
-                Jadikan Draft Intent
+                Jadikan Draft Aturan
               </Button>
               <Button onClick={() => void submitPublicQaReview("reviewed")} disabled={isSaving}>Tandai Sudah Ditinjau</Button>
             </div>
@@ -3697,7 +6418,7 @@ export function AletaBotAdminPanel() {
                   checked={publicQaConvertMode === "new"}
                   onChange={() => setPublicQaConvertMode("new")}
                 />
-                Buat intent draft baru
+                Buat aturan draft baru
               </label>
               <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
                 <input
@@ -3705,17 +6426,17 @@ export function AletaBotAdminPanel() {
                   checked={publicQaConvertMode === "existing"}
                   onChange={() => setPublicQaConvertMode("existing")}
                 />
-                Tambahkan ke intent draft existing
+                Tambahkan ke draft yang sudah ada
               </label>
             </div>
             {publicQaConvertMode === "new" ? (
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Key draft intent" value={publicQaDraftIntentKey} onChange={setPublicQaDraftIntentKey} placeholder="cek_status_layanan" />
-                <Field label="Nama draft intent" value={publicQaDraftIntentName} onChange={setPublicQaDraftIntentName} placeholder="Draft Intent Baru" />
+                <Field label="Kode draft aturan" value={publicQaDraftIntentKey} onChange={setPublicQaDraftIntentKey} placeholder="cek_status_layanan" />
+                <Field label="Nama draft aturan" value={publicQaDraftIntentName} onChange={setPublicQaDraftIntentName} placeholder="Draft Aturan Baru" />
               </div>
             ) : (
               <SelectField
-                label="Intent draft tujuan"
+                label="Draft aturan tujuan"
                 value={publicQaConvertIntentId}
                 onChange={setPublicQaConvertIntentId}
                 options={snapshot.publicQaIntents
@@ -3903,13 +6624,102 @@ function ModalActions({
   );
 }
 
-function StatusCard({ label, value, icon: Icon }: { label: string; value: string; icon: LucideIcon }) {
+function NoticeCard({ notice, onClose }: { notice: NoticeState; onClose: () => void }) {
+  const classes = {
+    success: "border-emerald-300/60 bg-emerald-50 text-emerald-950 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100",
+    warning: "border-amber-300/70 bg-amber-50 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100",
+    danger: "border-destructive/40 bg-destructive/10 text-destructive",
+    info: "border-primary/25 bg-primary/5 text-foreground",
+  } satisfies Record<NoticeState["tone"], string>;
+  const badgeVariant = notice.tone === "success" ? "success" : notice.tone === "warning" ? "warning" : notice.tone === "danger" ? "danger" : "outline";
+  const label = notice.tone === "success" ? "Berhasil" : notice.tone === "warning" ? "Perhatian" : notice.tone === "danger" ? "Gagal" : "Info";
+
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between gap-4 p-5">
+    <Card className={cn("border shadow-none", classes[notice.tone])}>
+      <CardContent className="flex flex-wrap items-start justify-between gap-4 p-4">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={badgeVariant}>{label}</Badge>
+            <p className="font-semibold">{notice.title}</p>
+          </div>
+          <p className="text-sm leading-6 opacity-90">{notice.message}</p>
+          <p className="text-xs opacity-70">Diperbarui {formatDateTime(notice.updatedAt)}</p>
+        </div>
+        <Button type="button" variant="outline" size="icon" onClick={onClose} aria-label="Tutup pemberitahuan">
+          <X className="h-4 w-4" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActionFeedbackOverlay({ feedback }: { feedback: OperationFeedbackState }) {
+  const isLoading = feedback.phase === "loading";
+  const isSuccess = feedback.phase === "success";
+  const iconClassName = "h-5 w-5";
+  return (
+    <div className="pointer-events-none fixed inset-x-3 top-4 z-[90] flex justify-center sm:inset-x-auto sm:right-4 sm:top-5 sm:justify-end" aria-live="polite">
+      <div className="flex w-full max-w-sm items-center gap-3 rounded-xl border border-border bg-card/95 p-4 text-card-foreground shadow-xl backdrop-blur animate-in fade-in slide-in-from-top-2">
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+            isLoading
+              ? "bg-primary/10 text-primary"
+              : isSuccess
+                ? "bg-emerald-500/10 text-emerald-600"
+                : "bg-destructive/10 text-destructive"
+          )}
+        >
+          {isLoading ? (
+            <Loader2 className={cn(iconClassName, "animate-spin")} />
+          ) : isSuccess ? (
+            <CheckCircle2 className={cn(iconClassName, "animate-pulse")} />
+          ) : (
+            <XCircle className={cn(iconClassName, "animate-pulse")} />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold leading-5 text-foreground">{feedback.title}</p>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">{feedback.message}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(feedback.updatedAt)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusCard({
+  label,
+  value,
+  icon: Icon,
+  onClick,
+  actionLabel,
+}: {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  onClick?: () => void;
+  actionLabel?: string;
+}) {
+  return (
+    <Card
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      className={cn(onClick && "cursor-pointer transition hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+    >
+      <CardContent className="flex items-center justify-between gap-4 p-5 !pt-5 sm:p-6 sm:!pt-6">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
           <Badge variant={statusVariant(value)}>{displayStatus(value)}</Badge>
+          {onClick ? <p className="text-xs font-semibold text-primary">{actionLabel ?? "Buka detail"}</p> : null}
         </div>
         <div className="rounded-2xl bg-primary/10 p-3 text-primary">
           <Icon className="h-5 w-5" />
@@ -3919,39 +6729,274 @@ function StatusCard({ label, value, icon: Icon }: { label: string; value: string
   );
 }
 
-function InfoCard({ title, value, hint }: { title: string; value: string; hint: string }) {
+function InfoCard({
+  title,
+  value,
+  hint,
+  onClick,
+  actionLabel,
+}: {
+  title: string;
+  value: string;
+  hint: string;
+  onClick?: () => void;
+  actionLabel?: string;
+}) {
   return (
-    <Card>
-      <CardContent className="p-5">
+    <Card
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      className={cn(onClick && "cursor-pointer transition hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+    >
+      <CardContent className="p-5 !pt-5 sm:p-6 sm:!pt-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
         <p className="mt-2 break-words text-lg font-semibold text-foreground">{value}</p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{hint}</p>
+        {onClick ? <p className="mt-3 text-xs font-semibold text-primary">{actionLabel ?? "Buka pengaturan terkait"}</p> : null}
       </CardContent>
     </Card>
   );
 }
 
-function HealthSummaryCard({ label, status, value }: { label: string; status: "ok" | "warning" | "error"; value: string }) {
+const RISK_LEVEL_META: Record<number, { accent: string; track: string; badge: "success" | "warning" | "danger"; ring: string }> = {
+  1: { accent: "text-emerald-600", track: "accent-emerald-500", badge: "success", ring: "ring-emerald-500/40" },
+  2: { accent: "text-lime-600", track: "accent-lime-500", badge: "success", ring: "ring-lime-500/40" },
+  3: { accent: "text-amber-600", track: "accent-amber-500", badge: "warning", ring: "ring-amber-500/40" },
+  4: { accent: "text-orange-600", track: "accent-orange-500", badge: "warning", ring: "ring-orange-500/40" },
+  5: { accent: "text-red-600", track: "accent-red-500", badge: "danger", ring: "ring-red-500/40" },
+};
+
+function SendingRiskSlider({
+  presets,
+  currentLevel,
+  pendingLevel,
+  saving,
+  notifications,
+  onPreview,
+  onCommit,
+}: {
+  presets: AletaBotSendingRiskPreset[];
+  currentLevel: number;
+  pendingLevel: number;
+  saving: boolean;
+  notifications: AletaBotNotification[];
+  onPreview: (level: number) => void;
+  onCommit: (level: number) => void;
+}) {
+  if (!presets || presets.length === 0) {
+    return null;
+  }
+  const ordered = [...presets].sort((a, b) => a.level - b.level);
+  const minLevel = ordered[0]?.level ?? 1;
+  const maxLevel = ordered[ordered.length - 1]?.level ?? 5;
+  const preview = ordered.find((item) => item.level === pendingLevel) ?? ordered.find((item) => item.level === currentLevel) ?? ordered[0];
+  const meta = RISK_LEVEL_META[preview.level] ?? RISK_LEVEL_META[1];
+  const uncommitted = pendingLevel !== currentLevel;
+  const fmtDelay = (min: number, max: number) => {
+    const lo = (min / 1000).toFixed(min % 1000 === 0 ? 0 : 1);
+    if (max > min) {
+      const hi = (max / 1000).toFixed(max % 1000 === 0 ? 0 : 1);
+      return `${lo}–${hi} dtk (acak)`;
+    }
+    return `${lo} dtk`;
+  };
+  const fmtCooldown = (ms: number) => {
+    if (ms <= 0) return "tanpa jeda";
+    const minutes = Math.round(ms / 60000);
+    return minutes >= 1 ? `${minutes} menit` : `${Math.round(ms / 1000)} dtk`;
+  };
+  // Peringatan dini: notifikasi yang dijadwalkan di luar jam kirim tingkat ini
+  // tetap terkirim, tetapi baru pada pembukaan jam kirim berikutnya.
+  const scheduleWarnings = findNotificationsOutsideSendingWindow(
+    notifications,
+    preview.sendingWindowStart,
+    preview.sendingWindowEnd
+  );
+  return (
+    <Card className={cn("mb-4 border-2 transition", meta.ring, "ring-1")}>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <CardTitle>Mode Risiko Suspend / Banned</CardTitle>
+            <CardDescription>
+              Geser ke <span className="font-semibold text-emerald-600">Minimal</span> agar seluruh sistem kirim paling aman dari suspend/banned, atau ke{" "}
+              <span className="font-semibold text-red-600">Maksimal</span> untuk kecepatan penuh dengan risiko besar.{" "}
+              Setiap pesan dijadwalkan pada waktunya sendiri, jadi notifikasi sejenis tidak pernah berangkat serentak walau dibuat dalam satu kali jalan.
+              Pesan yang jatuh di luar jam kirim otomatis dipindah ke pembukaan jam berikutnya, bukan dikirim tengah malam.
+            </CardDescription>
+          </div>
+          <Badge variant={meta.badge} className="shrink-0">
+            Level {preview.level} · {preview.label}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className={cn("text-lg font-bold", meta.accent)}>{preview.label}</p>
+            <p className="text-sm text-muted-foreground">
+              Risiko suspend/banned: <span className={cn("font-semibold", meta.accent)}>{preview.suspendRisk}</span>
+            </p>
+          </div>
+          <input
+            type="range"
+            min={minLevel}
+            max={maxLevel}
+            step={1}
+            value={pendingLevel}
+            disabled={saving}
+            aria-label="Mode risiko pengiriman"
+            className={cn("mt-3 w-full cursor-pointer", meta.track)}
+            onChange={(event) => onPreview(Number(event.target.value))}
+            onMouseUp={(event) => onCommit(Number((event.target as HTMLInputElement).value))}
+            onTouchEnd={(event) => onCommit(Number((event.target as HTMLInputElement).value))}
+            onKeyUp={(event) => onCommit(Number((event.target as HTMLInputElement).value))}
+          />
+          <div className="mt-1 flex justify-between text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="text-emerald-600">Minimal</span>
+            {ordered.length > 2 ? <span>Sedang</span> : null}
+            <span className="text-red-600">Maksimal</span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <RiskKnob
+            label="Jarak antar pesan"
+            value={fmtDelay(preview.sendingGapMinMs, preview.sendingGapMaxMs)}
+            hint="Pengendali utama. Tiap pesan dijadwalkan sendiri, jadi notifikasi sejenis tidak berangkat serentak."
+          />
+          <RiskKnob
+            label="Jeda per nomor sama"
+            value={fmtCooldown(preview.perRecipientCooldownMs)}
+            hint="Satu nomor tidak diberondong beberapa pesan berdekatan."
+          />
+          <RiskKnob label="Jeda saat kirim" value={fmtDelay(preview.messageDelayMinMs, preview.messageDelayMaxMs)} hint="Jeda tambahan tepat sebelum pesan dilepas, diacak agar tidak berpola." />
+          <RiskKnob label="Jam kirim" value={`${preview.sendingWindowStart}–${preview.sendingWindowEnd}`} hint="Di luar jam ini pesan dipindahkan ke pembukaan jam kirim berikutnya, bukan dikirim malam hari." />
+          <RiskKnob label="Rem darurat" value={`${preview.maxPerMinute}/mnt · ${preview.maxPerHour}/jam · ${preview.maxPerDay}/hari`} hint="Batas pengaman di atas laju normal. Normalnya tidak pernah tersentuh." />
+          <RiskKnob label="Batch antrean" value={`${preview.queueBatchSize} / ${(preview.queueIntervalMs / 1000).toFixed(0)} dtk`} hint="Seberapa sering antrean diperiksa. Pesan tetap hanya dikirim bila jadwalnya sudah tiba." />
+        </div>
+
+        {scheduleWarnings.length > 0 ? (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+              {scheduleWarnings.length} notifikasi dijadwalkan di luar jam kirim {preview.sendingWindowStart}–{preview.sendingWindowEnd}
+            </p>
+            <ul className="mt-1.5 space-y-0.5 text-xs text-amber-800/90 dark:text-amber-200/90">
+              {scheduleWarnings.slice(0, 5).map((warning) => (
+                <li key={warning.notificationId}>
+                  • {warning.notificationName} — jadwal {formatHoursLabel(warning.outsideHours)}
+                </li>
+              ))}
+              {scheduleWarnings.length > 5 ? <li>• dan {scheduleWarnings.length - 5} lainnya</li> : null}
+            </ul>
+            <p className="mt-2 text-[11px] leading-snug text-amber-800/80 dark:text-amber-200/80">
+              Pesannya tidak hilang: ALETA memindahkannya ke pembukaan jam kirim berikutnya secara menyebar. Namun pengirimannya jadi tertunda lama.
+              Geser jadwal notifikasi ke dalam jam kirim, atau naikkan Mode Risiko agar jam kirimnya lebih lebar.
+            </p>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            Broadcast massal: {preview.broadcastRequiresApproval ? "wajib disetujui admin dulu" : "boleh langsung dikirim"}.
+          </p>
+          {saving ? (
+            <span className="text-xs font-semibold text-primary">Menerapkan mode…</span>
+          ) : uncommitted ? (
+            <button
+              type="button"
+              onClick={() => onCommit(pendingLevel)}
+              className={cn("rounded-md px-3 py-1.5 text-xs font-semibold text-white transition", "bg-primary hover:bg-primary/90")}
+            >
+              Terapkan Level {pendingLevel}
+            </button>
+          ) : (
+            <span className="text-xs font-semibold text-emerald-600">Mode aktif tersimpan</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RiskKnob({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-3" title={hint}>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
+      {hint ? <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function HealthSummaryCard({
+  label,
+  status,
+  value,
+  onClick,
+}: {
+  label: string;
+  status: "ok" | "warning" | "error";
+  value: string;
+  onClick?: () => void;
+}) {
   const variant = status === "ok" ? "success" as const : status === "warning" ? "warning" as const : "danger" as const;
   const dot = status === "ok" ? "bg-emerald-500" : status === "warning" ? "bg-amber-500" : "bg-destructive";
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (!onClick) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      className={cn(
+        "rounded-xl border border-border bg-card p-4",
+        onClick && "cursor-pointer transition hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
         <span className={cn("h-2 w-2 rounded-full", dot)} />
       </div>
       <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
       <Badge variant={variant} className="mt-2 text-[10px]">{status === "ok" ? "Normal" : status === "warning" ? "Perhatian" : "Masalah"}</Badge>
+      {onClick ? <p className="mt-3 text-xs font-semibold text-primary">Buka pengaturan terkait</p> : null}
     </div>
   );
 }
 
-function ToggleRow({ label, checked, onCheckedChange }: { label: string; checked: boolean; onCheckedChange: (value: boolean) => void }) {
+function ToggleRow({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onCheckedChange: (value: boolean) => void;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2">
-        <ShieldCheck className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">{label}</span>
+      <div className="flex items-start gap-2">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0">
+          <span className="text-sm font-semibold text-foreground">{label}</span>
+          {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+        </div>
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
@@ -3988,6 +7033,148 @@ function SelectField({
         ))}
       </select>
     </label>
+  );
+}
+
+function EmployeeTargetPicker({
+  form,
+  recipients,
+  onChange,
+}: {
+  form: NotificationForm;
+  recipients: AletaBotEmployeeRecipient[];
+  onChange: (next: Partial<NotificationForm>) => void;
+}) {
+  const roleValues = stringListFromText(form.recipientRoleHints);
+  const positionValues = stringListFromText(form.recipientPositionHints);
+  const nameValues = stringListFromText(form.recipientNameHints);
+  const roleHints = roleValues.map(normalizeHint);
+  const positionHints = positionValues.map(normalizeHint);
+  const roleScopedRecipients = useMemo(
+    () => recipients.filter((recipient) => matchesAnyHint(roleHints, [recipient.roleId])),
+    [recipients, roleHints]
+  );
+  const employeeScopedRecipients = useMemo(
+    () =>
+      roleScopedRecipients.filter((recipient) =>
+        matchesAnyHint(positionHints, [
+          recipient.positionId,
+          recipient.positionName,
+          recipient.unitKerja,
+          ...recipient.additionalRoleIds,
+          ...recipient.additionalRoleIds.map(getAdditionalRoleLabel),
+        ])
+      ),
+    [roleScopedRecipients, positionHints]
+  );
+  const targetedRecipients = useMemo(() => getTargetedEmployeeRecipients(recipients, form), [recipients, form]);
+  const roleOptions = useMemo(
+    () => makeCountedOptions(recipients, (recipient) => recipient.roleId, (recipient) => formatTargetOptionLabel(recipient.roleId)),
+    [recipients]
+  );
+  const positionOptions = useMemo(
+    () => makeEmployeePositionOptions(roleScopedRecipients),
+    [roleScopedRecipients]
+  );
+  const employeeOptions = useMemo(
+    () =>
+      employeeScopedRecipients
+        .map((recipient) => ({
+          value: recipient.id,
+          label: [recipient.name || recipient.username, recipient.username ? `@${recipient.username}` : "", recipient.positionName || recipient.unitKerja].filter(Boolean).join(" - "),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [employeeScopedRecipients]
+  );
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4 md:col-span-2">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Target pegawai</p>
+          <p className="text-xs text-muted-foreground">Pilih role, jabatan/unit, lalu nama pegawai jika ingin target spesifik. Kosongkan semua untuk semua pegawai aktif yang punya WhatsApp.</p>
+        </div>
+        <Badge variant={targetedRecipients.length > 0 ? "success" : "warning"}>{targetedRecipients.length} penerima cocok</Badge>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">Role</span>
+          <CreatableMultiSelect
+            value={roleValues}
+            onChange={(value) => onChange({ recipientRoleHints: value.join(", ") })}
+            options={roleOptions}
+            placeholder="Pilih role dari database"
+          />
+        </label>
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">Jabatan/unit</span>
+          <CreatableMultiSelect
+            value={positionValues}
+            onChange={(value) => onChange({ recipientPositionHints: value.join(", ") })}
+            options={positionOptions}
+            placeholder="Pilih jabatan/unit"
+          />
+        </label>
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">Nama pegawai</span>
+          <CreatableMultiSelect
+            value={nameValues}
+            onChange={(value) => onChange({ recipientNameHints: value.join(", ") })}
+            options={employeeOptions}
+            placeholder="Pilih pegawai terdaftar"
+            allowCreate={false}
+          />
+        </label>
+      </div>
+      {recipients.length === 0 ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Belum ada pegawai aktif dengan nomor WhatsApp valid.</p>
+      ) : targetedRecipients.length === 0 ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Pilihan target belum cocok dengan pegawai yang punya nomor WhatsApp valid.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function NotificationMessagePreview({ form, snapshot }: { form: NotificationForm; snapshot: AletaBotSnapshot }) {
+  const query = snapshot.queries.find((item) => item.id === form.queryId);
+  const template = snapshot.templates.find((item) => item.id === form.templateId);
+  const audienceGroup = notificationAudienceGroup(form);
+  const targetedEmployees = form.category === "employee" ? getTargetedEmployeeRecipients(snapshot.employeeRecipients, form) : [];
+  const selectedLabels = getEmployeeTargetOptionLabels(snapshot.employeeRecipients, form);
+  const targetSummary =
+    form.category === "employee"
+      ? selectedLabels.length > 0
+        ? `${audienceGroupLabel("employee", audienceGroup)} - ${targetedEmployees.length} pegawai cocok - ${selectedLabels.join("; ")}`
+        : `${audienceGroupLabel("employee", audienceGroup)} - ${targetedEmployees.length} pegawai aktif dengan WhatsApp valid`
+      : `${audienceGroupLabel("party", audienceGroup)} dari sumber data ${queryDisplayName(query) || "yang dipilih"}; nomor tujuan dari kolom ${query?.recipientColumn || "telepon"}`;
+  const sample = makeNotificationPreviewSample(form, snapshot, query);
+  const preview = template ? renderAletaBotTemplatePreview(template.body, sample).trim() : "Pilih isi pesan untuk melihat contoh full pesan.";
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Contoh full pesan pengiriman</p>
+          <p className="mt-1 text-xs text-muted-foreground">Preview ini memakai data contoh aman dan mengikuti isi pesan yang dipilih.</p>
+        </div>
+        <Badge variant={template ? "success" : "warning"}>{templateDisplayName(template) || "Belum pilih isi pesan"}</Badge>
+      </div>
+      <div className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
+        <div className="rounded-lg border border-border bg-background/70 p-3">
+          <p className="font-semibold text-foreground">Target</p>
+          <p className="mt-1 leading-5">{targetSummary}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-background/70 p-3">
+          <p className="font-semibold text-foreground">Jadwal</p>
+          <p className="mt-1 leading-5">{humanizeSchedule(form.scheduleType, form.scheduleCron, form.scheduleTrigger)}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-background/70 p-3">
+          <p className="font-semibold text-foreground">Sumber data</p>
+          <p className="mt-1 leading-5">{queryDisplayName(query) || "Belum pilih sumber data"}</p>
+        </div>
+      </div>
+      <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-background/80 p-4 text-sm leading-6 text-foreground">{preview}</pre>
+    </div>
   );
 }
 
@@ -4135,52 +7322,123 @@ function NotificationSection({
   notifications: AletaBotNotification[];
   queries: AletaBotQuery[];
   templates: AletaBotTemplate[];
-  onEdit: (notification: AletaBotNotification) => void;
+  onEdit?: (notification: AletaBotNotification) => void;
   onTest: (notification: AletaBotNotification) => void;
   onPreviewRecipients: (notification: AletaBotNotification) => void;
   isSaving: boolean;
 }) {
-  const queryTitle = (id: string) => queries.find((query) => query.id === id)?.name ?? id;
-  const templateTitle = (id: string) => templates.find((template) => template.id === id)?.title ?? id;
+  const queryTitle = (id: string) => queryDisplayName(queries.find((query) => query.id === id)) || id;
+  const templateTitle = (id: string) => templateDisplayName(templates.find((template) => template.id === id)) || id;
+  const topScrollRef = useRef<HTMLDivElement | null>(null);
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const isSyncingScrollRef = useRef(false);
+  const notificationTableWidthClass = "min-w-[1720px] w-[1720px]";
+  const syncHorizontalScroll = (source: "top" | "table") => {
+    if (isSyncingScrollRef.current) return;
+    const from = source === "top" ? topScrollRef.current : tableScrollRef.current;
+    const to = source === "top" ? tableScrollRef.current : topScrollRef.current;
+    if (!from || !to) return;
+    isSyncingScrollRef.current = true;
+    to.scrollLeft = from.scrollLeft;
+    window.requestAnimationFrame(() => {
+      isSyncingScrollRef.current = false;
+    });
+  };
 
   return (
-    <Card>
+    <Card className="max-w-full min-w-0 overflow-hidden">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="overflow-hidden">
-        <table className="w-full table-fixed text-left text-sm">
+      <CardContent className="min-w-0 max-w-full overflow-hidden space-y-3">
+        <div className="grid gap-3 overflow-x-auto pb-2 md:hidden">
+          {notifications.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">Belum ada notifikasi.</div>
+          ) : notifications.map((notification) => (
+            <div key={notification.id} className="min-w-[560px] rounded-xl border border-border p-4 text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words font-semibold text-foreground">{notification.name}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{notification.description || "-"}</p>
+                </div>
+                <Badge variant={notification.isActive ? "success" : "muted"}>{notification.isActive ? "Aktif" : "Nonaktif"}</Badge>
+              </div>
+              <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
+                <p><span className="font-semibold text-foreground">Sumber data:</span> {queryTitle(notification.queryId)}</p>
+                <p><span className="font-semibold text-foreground">Isi pesan:</span> {templateTitle(notification.templateId)}</p>
+                <p><span className="font-semibold text-foreground">Target:</span> {notificationTargetLabel(notification)}</p>
+                <p><span className="font-semibold text-foreground">Jadwal:</span> {humanizeSchedule(notification.scheduleConfig.type, notification.scheduleConfig.cron, notification.scheduleConfig.trigger)}</p>
+                <p><span className="font-semibold text-foreground">Terakhir:</span> {notification.lastRunAt ? formatDateTime(notification.lastRunAt) : "Belum berjalan"}</p>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                <Badge variant={statusVariant(notification.lastStatus)}>{displayStatus(notification.lastStatus)}</Badge>
+                {notification.category === "party" && notification.policyStatus ? (
+                  <>
+                    <Badge variant={notification.policyStatus.dryRunPassed ? "success" : "warning"}>Simulasi {notification.policyStatus.dryRunPassed ? "Selesai" : "Belum"}</Badge>
+                    <Badge variant={notification.policyStatus.recipientPreviewPassed ? "success" : "warning"}>Preview {notification.policyStatus.recipientPreviewPassed ? "Selesai" : "Belum"}</Badge>
+                    <Badge variant={notification.policyStatus.approved ? "success" : "warning"}>Approval {notification.policyStatus.approved ? "Selesai" : "Belum"}</Badge>
+                  </>
+                ) : null}
+              </div>
+              <div className="mt-3 flex flex-nowrap gap-2">
+                {onEdit ? <Button className="whitespace-nowrap" variant="outline" size="sm" onClick={() => onEdit(notification)} disabled={isSaving}>Edit</Button> : null}
+                <Button className="whitespace-nowrap" variant="outline" size="sm" onClick={() => onTest(notification)} disabled={isSaving}>Simulasi</Button>
+                <Button className="whitespace-nowrap" variant="outline" size="sm" onClick={() => onPreviewRecipients(notification)} disabled={isSaving}>Preview Penerima</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden min-w-0 max-w-full md:block">
+          <div
+            ref={topScrollRef}
+            className={cn(
+              "mb-3 h-5 w-full max-w-full overflow-x-scroll overflow-y-hidden overscroll-x-contain rounded bg-muted/30",
+              HORIZONTAL_SCROLLBAR_CLASS
+            )}
+            onScroll={() => syncHorizontalScroll("top")}
+          >
+            <div className={cn("h-1", notificationTableWidthClass)} />
+          </div>
+          <div
+            ref={tableScrollRef}
+            className={cn(
+              "max-w-full overflow-x-scroll overflow-y-hidden overscroll-x-contain pb-3",
+              HORIZONTAL_SCROLLBAR_CLASS
+            )}
+            onScroll={() => syncHorizontalScroll("table")}
+          >
+        <table className={cn(notificationTableWidthClass, "text-left text-sm")}>
           <thead className="border-b border-border text-xs uppercase tracking-[0.16em] text-muted-foreground">
             <tr>
-              <th className="w-[18%] py-3 pr-3">Nama</th>
-              <th className="w-[8%] py-3 pr-3">Kategori</th>
-              <th className="w-[13%] py-3 pr-3">Sumber Query</th>
-              <th className="w-[11%] py-3 pr-3">Template</th>
-              <th className="w-[10%] py-3 pr-3">Target</th>
-              <th className="w-[13%] py-3 pr-3">Jadwal</th>
-              <th className="w-[9%] py-3 pr-3">Terakhir</th>
-              <th className="w-[8%] py-3 pr-3">Status</th>
-              <th className="w-[10%] py-3 pr-3">Aksi</th>
+              <th className="w-[310px] py-3 pr-4">Nama</th>
+              <th className="w-[120px] py-3 pr-4">Kategori</th>
+              <th className="w-[280px] py-3 pr-4">Sumber Data</th>
+              <th className="w-[240px] py-3 pr-4">Isi Pesan</th>
+              <th className="w-[190px] py-3 pr-4">Target</th>
+              <th className="w-[240px] py-3 pr-4">Jadwal</th>
+              <th className="w-[170px] py-3 pr-4">Terakhir</th>
+              <th className="w-[190px] py-3 pr-4">Status</th>
+              <th className="w-[270px] py-3 pr-4">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {notifications.map((notification) => (
               <tr key={notification.id} className="border-b border-border/70 align-top">
-                <td className="min-w-0 break-words py-4 pr-3">
+                <td className="break-words py-4 pr-4">
                   <p className="font-medium text-foreground">{notification.name}</p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">{notification.description}</p>
                 </td>
-                <td className="min-w-0 break-words py-4 pr-3"><Badge variant="outline">{notification.category === "employee" ? "Pegawai" : "Pihak"}</Badge></td>
-                <td className="min-w-0 break-words py-4 pr-3 text-muted-foreground">{queryTitle(notification.queryId)}</td>
-                <td className="min-w-0 break-words py-4 pr-3 text-muted-foreground">{templateTitle(notification.templateId)}</td>
-                <td className="min-w-0 break-words py-4 pr-3 text-muted-foreground">{notification.recipientSource === "users" ? "User/pegawai portal" : String(notification.recipientMapping.recipientColumn ?? "query")}</td>
-                <td className="min-w-0 break-words py-4 pr-3">
+                <td className="break-words py-4 pr-4"><Badge variant="outline">{notification.category === "employee" ? "Pegawai" : "Pihak"}</Badge></td>
+                <td className="break-words py-4 pr-4 text-muted-foreground">{queryTitle(notification.queryId)}</td>
+                <td className="break-words py-4 pr-4 text-muted-foreground">{templateTitle(notification.templateId)}</td>
+                <td className="break-words py-4 pr-4 text-muted-foreground">{notificationTargetLabel(notification)}</td>
+                <td className="break-words py-4 pr-4">
                   <p>{humanizeSchedule(notification.scheduleConfig.type, notification.scheduleConfig.cron, notification.scheduleConfig.trigger)}</p>
                   <p className="text-xs text-muted-foreground">{notification.scheduleConfig.trigger || "-"}</p>
                 </td>
-                <td className="min-w-0 break-words py-4 pr-3">{notification.lastRunAt ? formatDateTime(notification.lastRunAt) : "Belum berjalan"}</td>
-                <td className="min-w-0 break-words py-4 pr-3">
+                <td className="break-words py-4 pr-4">{notification.lastRunAt ? formatDateTime(notification.lastRunAt) : "Belum berjalan"}</td>
+                <td className="break-words py-4 pr-4">
                   <div className="space-y-2">
                     <Badge variant={notification.isActive ? "success" : "muted"}>{notification.isActive ? "Aktif" : "Nonaktif"}</Badge>
                     <Badge variant={statusVariant(notification.lastStatus)}>{displayStatus(notification.lastStatus)}</Badge>
@@ -4196,17 +7454,19 @@ function NotificationSection({
                     ) : null}
                   </div>
                 </td>
-                <td className="min-w-0 py-4 pr-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button variant="outline" size="sm" onClick={() => onEdit(notification)} disabled={isSaving}>Edit</Button>
-                    <Button variant="outline" size="sm" onClick={() => onTest(notification)} disabled={isSaving}>Test</Button>
-                    <Button variant="outline" size="sm" onClick={() => onPreviewRecipients(notification)} disabled={isSaving}>Preview Penerima</Button>
+                <td className="py-4 pr-4">
+                  <div className="flex flex-nowrap gap-1.5">
+                    {onEdit ? <Button className="whitespace-nowrap" variant="outline" size="sm" onClick={() => onEdit(notification)} disabled={isSaving}>Edit</Button> : null}
+                    <Button className="whitespace-nowrap" variant="outline" size="sm" onClick={() => onTest(notification)} disabled={isSaving}>Simulasi</Button>
+                    <Button className="whitespace-nowrap" variant="outline" size="sm" onClick={() => onPreviewRecipients(notification)} disabled={isSaving}>Preview Penerima</Button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -4256,8 +7516,8 @@ function WorkerControlCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Kontrol Worker Queue</CardTitle>
-        <CardDescription>Jeda atau lanjutkan worker pemrosesan antrian pesan. Worker tetap berjalan saat dijeda tetapi melewati pemrosesan batch.</CardDescription>
+        <CardTitle>Kontrol Mesin Bot</CardTitle>
+        <CardDescription>Jeda atau lanjutkan mesin pemroses pesan. Saat dijeda, pesan menunggu di antrean.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {workerState ? (
@@ -4269,17 +7529,17 @@ function WorkerControlCard({
                 workerState.pauseReason ||
                 (workerState.enabled && workerState.activeTimer
                   ? workerState.running
-                    ? "Worker sedang memproses batch."
-                    : "Worker aktif dan menunggu jadwal batch berikutnya."
-                  : "Timer worker tidak aktif.")
+                  ? "Mesin bot sedang memproses pesan."
+                    : "Mesin bot aktif dan menunggu jadwal berikutnya."
+                  : "Mesin bot tidak aktif.")
               }
             />
             <InfoCard title="Heartbeat Terakhir" value={workerState.lastHeartbeatAt ? formatDateTime(workerState.lastHeartbeatAt) : "Belum ada"} hint={`Batch terakhir: ${workerState.lastBatchProcessed} pesan.`} />
             <InfoCard title="Interval" value={`${workerState.intervalMs}ms`} hint={`Batch size: ${workerState.batchSize}`} />
-            <InfoCard title="Error Terakhir" value={workerState.lastError || "Tidak ada"} hint={workerState.pausedAt ? `Dijeda: ${formatDateTime(workerState.pausedAt)}` : "Tidak sedang dijeda."} />
+            <InfoCard title="Kendala Terakhir" value={workerState.lastError || "Tidak ada"} hint={workerState.pausedAt ? `Dijeda: ${formatDateTime(workerState.pausedAt)}` : "Tidak sedang dijeda."} />
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Worker state tidak tersedia (aleta_bot gateway tidak aktif atau tidak dalam mode aleta_bot).</div>
+          <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Status mesin bot belum tersedia.</div>
         )}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1">
@@ -4292,14 +7552,14 @@ function WorkerControlCard({
             disabled={isSaving || (workerState?.paused ?? false)}
           >
             <Power className="h-4 w-4" />
-            Jeda Worker
+            Jeda Mesin Bot
           </Button>
           <Button
             onClick={() => onResume()}
             disabled={isSaving || !(workerState?.paused ?? false)}
           >
             <Play className="h-4 w-4" />
-            Lanjutkan Worker
+            Lanjutkan Mesin Bot
           </Button>
         </div>
       </CardContent>
@@ -4544,10 +7804,12 @@ function ApprovalRequestsCard({
   approvalRequests,
   isSaving,
   onReview,
+  canReview = true,
 }: {
   approvalRequests: AletaBotApprovalRequest[];
   isSaving: boolean;
   onReview: (approvalId: string, decision: "approved" | "rejected", notes?: string) => Promise<void>;
+  canReview?: boolean;
 }) {
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const pending = approvalRequests.filter((r) => r.status === "pending");
@@ -4576,21 +7838,22 @@ function ApprovalRequestsCard({
                 {req.notes ? <p className="text-sm text-muted-foreground">{req.notes}</p> : null}
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="flex-1">
-                    <Input
+                    {!canReview ? <p className="text-xs text-muted-foreground">Keputusan approval hanya dapat dilakukan Super Admin.</p> : null}
+                    {canReview ? <Input
                       placeholder="Catatan reviewer (opsional)..."
                       value={reviewNotes[req.id] ?? ""}
                       onChange={(event) => setReviewNotes((current) => ({ ...current, [req.id]: event.target.value }))}
-                    />
+                    /> : null}
                   </div>
-                  <Button
+                  {canReview ? <Button
                     size="sm"
                     onClick={() => void onReview(req.id, "approved", reviewNotes[req.id])}
                     disabled={isSaving}
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Setujui
-                  </Button>
-                  <Button
+                  </Button> : null}
+                  {canReview ? <Button
                     variant="outline"
                     size="sm"
                     onClick={() => void onReview(req.id, "rejected", reviewNotes[req.id])}
@@ -4598,7 +7861,7 @@ function ApprovalRequestsCard({
                   >
                     <X className="h-4 w-4" />
                     Tolak
-                  </Button>
+                  </Button> : null}
                 </div>
               </div>
             ))
@@ -4738,6 +8001,7 @@ function LegacyMigrationCard({
           {(["legacyType", "category", "status"] as const).map((g) => (
             <button
               key={g}
+              type="button"
               onClick={() => setGroupBy(g)}
               className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${groupBy === g ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
             >

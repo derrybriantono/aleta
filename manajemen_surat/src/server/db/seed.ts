@@ -1,5 +1,6 @@
 import { regulationsKnowledgeBase } from "@/core/knowledge/regulations-db";
 import { letterClassificationCatalog, letterOriginSuggestions } from "@/lib/letter-taxonomy";
+import { DEFAULT_PANEL_SETTINGS } from "@/lib/panel-settings";
 import {
   defaultAIConfig,
   defaultInstitutionIdentity,
@@ -20,51 +21,72 @@ function json(value: unknown) {
   return JSON.stringify(value ?? []);
 }
 
-export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
-  const roleCount = await db.prepare("SELECT COUNT(*)::int AS count FROM roles").get<{ count: number }>();
+async function seedKnownRoles(tx: AletaDatabase) {
+  for (const role of roles) {
+    await tx.prepare(
+      `INSERT INTO roles (id, name, description)
+       VALUES (?, ?, ?)
+       ON CONFLICT (id) DO NOTHING`
+    ).run(role.id, role.name, role.description);
+  }
+}
 
-  if ((roleCount?.count ?? 0) > 0) {
-    return;
+async function seedDefaultModuleVisibility(tx: AletaDatabase, timestamp: string) {
+  for (const visibility of moduleVisibility) {
+    for (const [moduleId, enabled] of Object.entries(visibility.modules)) {
+      await tx.prepare(
+        `INSERT INTO module_visibility_settings (
+          role_id, module_id, enabled, updated_at
+        ) VALUES (?, ?, ?, ?)
+        ON CONFLICT (role_id, module_id) DO NOTHING`
+      ).run(visibility.roleId, moduleId, enabled ? 1 : 0, timestamp);
+    }
+  }
+}
+
+async function seedKnownPositions(tx: AletaDatabase, timestamp: string) {
+  for (const position of positions) {
+    await tx.prepare(
+      `INSERT INTO positions (
+        id, name, unit_kerja, level_hierarchy, reports_to_position_id,
+        disposition_target_position_ids_json, can_forward_to_leadership,
+        deleted_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT (id) DO NOTHING`
+    ).run(
+      position.id,
+      position.name,
+      position.unitKerja,
+      position.levelHierarchy,
+      null,
+      json(position.dispositionTargetPositionIds ?? []),
+      position.canForwardToLeadership ? 1 : 0,
+      null,
+      timestamp,
+      timestamp
+    );
   }
 
+  for (const position of positions.filter((item) => item.reportsToPositionId)) {
+    await tx.prepare(
+      `UPDATE positions
+       SET reports_to_position_id = COALESCE(reports_to_position_id, ?), updated_at = ?
+       WHERE id = ? AND reports_to_position_id IS NULL`
+    ).run(position.reportsToPositionId ?? null, timestamp, position.id);
+  }
+}
+
+export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
+  const roleCount = await db.prepare("SELECT COUNT(*)::int AS count FROM roles").get<{ count: number }>();
   const timestamp = nowIso();
 
   await withTransaction(db, async (tx) => {
-    for (const role of roles) {
-      await tx.prepare("INSERT INTO roles (id, name, description) VALUES (?, ?, ?)").run(
-        role.id,
-        role.name,
-        role.description
-      );
-    }
+    await seedKnownRoles(tx);
+    await seedKnownPositions(tx, timestamp);
+    await seedDefaultModuleVisibility(tx, timestamp);
 
-    for (const position of positions) {
-      await tx.prepare(
-        `INSERT INTO positions (
-          id, name, unit_kerja, level_hierarchy, reports_to_position_id,
-          disposition_target_position_ids_json, can_forward_to_leadership,
-          deleted_at, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        position.id,
-        position.name,
-        position.unitKerja,
-        position.levelHierarchy,
-        null,
-        json(position.dispositionTargetPositionIds ?? []),
-        position.canForwardToLeadership ? 1 : 0,
-        null,
-        timestamp,
-        timestamp
-      );
-    }
-
-    for (const position of positions.filter((item) => item.reportsToPositionId)) {
-      await tx.prepare(
-        `UPDATE positions
-         SET reports_to_position_id = ?, updated_at = ?
-         WHERE id = ?`
-      ).run(position.reportsToPositionId ?? null, timestamp, position.id);
+    if ((roleCount?.count ?? 0) > 0) {
+      return;
     }
 
     for (const user of personas) {
@@ -178,8 +200,8 @@ export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
     await tx.prepare(
       `INSERT INTO institution_identity (
         id, court_name, court_short_name, address, phone_number, mobile_phone, email,
-        instagram, facebook, youtube, website, map_url, updated_at
-      ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        cs_whatsapp_number, bot_whatsapp_number, instagram, facebook, youtube, website, map_url, logo_url, updated_at
+      ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       defaultInstitutionIdentity.courtName,
       defaultInstitutionIdentity.courtShortName,
@@ -187,23 +209,28 @@ export async function seedDatabaseFromFrontendSource(db: AletaDatabase) {
       defaultInstitutionIdentity.phoneNumber,
       defaultInstitutionIdentity.mobilePhone,
       defaultInstitutionIdentity.email,
+      defaultInstitutionIdentity.csWhatsappNumber ?? "",
+      defaultInstitutionIdentity.botWhatsappNumber ?? "",
       defaultInstitutionIdentity.instagram ?? null,
       defaultInstitutionIdentity.facebook ?? null,
       defaultInstitutionIdentity.youtube ?? null,
       defaultInstitutionIdentity.website ?? null,
       defaultInstitutionIdentity.mapUrl ?? null,
+      defaultInstitutionIdentity.logoUrl ?? null,
       timestamp
     );
 
-    for (const visibility of moduleVisibility) {
-      for (const [moduleId, enabled] of Object.entries(visibility.modules)) {
-        await tx.prepare(
-          `INSERT INTO module_visibility_settings (
-            role_id, module_id, enabled, updated_at
-          ) VALUES (?, ?, ?, ?)`
-        ).run(visibility.roleId, moduleId, enabled ? 1 : 0, timestamp);
-      }
-    }
+    await tx.prepare(
+      `INSERT INTO panel_settings (
+        id, footer_mode, portal_cards_json, public_access_json, external_apps_json, updated_by, updated_at
+      ) VALUES (1, ?, ?, ?, ?, NULL, ?)`
+    ).run(
+      DEFAULT_PANEL_SETTINGS.footerMode,
+      JSON.stringify(DEFAULT_PANEL_SETTINGS.portalCards),
+      JSON.stringify(DEFAULT_PANEL_SETTINGS.publicAccess),
+      JSON.stringify(DEFAULT_PANEL_SETTINGS.externalApps),
+      timestamp
+    );
 
     for (const entry of regulationsKnowledgeBase) {
       await tx.prepare(

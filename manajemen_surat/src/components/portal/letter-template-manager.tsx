@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { apiPath } from "@/lib/base-path";
 import { canCreateOutgoingLetter } from "@/lib/permissions";
 import { type LetterTemplate, type LetterTemplateCategory } from "@/lib/types";
 
@@ -84,7 +85,7 @@ function renderPreview(body: string) {
 async function readApi<T>(response: Response) {
   const payload = (await response.json().catch(() => null)) as { ok?: boolean; data?: T; error?: { message?: string } } | null;
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error?.message || "Request template surat keluar gagal.");
+    throw new Error(payload?.error?.message || "Format surat keluar gagal dimuat.");
   }
   return payload.data as T;
 }
@@ -106,21 +107,25 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
     if (!canManage) return;
     setIsLoading(true);
     try {
-      const response = await fetch("/api/surat/templates", {
+      const response = await fetch(apiPath("/api/surat/templates"), {
         credentials: "include",
         cache: "no-store",
       });
       const data = await readApi<{ items: LetterTemplate[] }>(response);
       setTemplates(data.items);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Template surat keluar gagal dimuat.");
+      setNotice(error instanceof Error ? error.message : "Format surat keluar gagal dimuat.");
     } finally {
       setIsLoading(false);
     }
   }, [canManage]);
 
   useEffect(() => {
-    void loadTemplates();
+    const timer = window.setTimeout(() => {
+      void loadTemplates();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadTemplates]);
 
   if (!canManage) return null;
@@ -128,17 +133,17 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
   const saveTemplate = async () => {
     if (!form) return;
     if (!form.name.trim()) {
-      setNotice("Nama template wajib diisi.");
+      setNotice("Nama format wajib diisi.");
       return;
     }
     if (form.isActive && unknownPlaceholders.length > 0) {
-      setNotice(`Template aktif tidak boleh memakai placeholder tidak dikenal: ${unknownPlaceholders.join(", ")}.`);
+      setNotice(`Format aktif tidak boleh memakai kolom otomatis yang tidak dikenal: ${unknownPlaceholders.join(", ")}.`);
       return;
     }
 
     setIsSaving(true);
     try {
-      const response = await fetch(form.id ? `/api/surat/templates/${encodeURIComponent(form.id)}` : "/api/surat/templates", {
+      const response = await fetch(apiPath(form.id ? `/api/surat/templates/${encodeURIComponent(form.id)}` : "/api/surat/templates"), {
         method: form.id ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
         credentials: "include",
@@ -147,9 +152,9 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
       await readApi<LetterTemplate>(response);
       await loadTemplates();
       setForm(null);
-      setNotice("Template surat keluar berhasil disimpan.");
+      setNotice("Format surat keluar berhasil disimpan.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Template surat keluar gagal disimpan.");
+      setNotice(error instanceof Error ? error.message : "Format surat keluar gagal disimpan.");
     } finally {
       setIsSaving(false);
     }
@@ -158,15 +163,15 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
   const deactivateTemplate = async (template: LetterTemplate) => {
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/surat/templates/${encodeURIComponent(template.id)}`, {
+      const response = await fetch(apiPath(`/api/surat/templates/${encodeURIComponent(template.id)}`), {
         method: "DELETE",
         credentials: "include",
       });
       await readApi<{ id: string; isActive: boolean }>(response);
       await loadTemplates();
-      setNotice(`Template ${template.name} dinonaktifkan.`);
+      setNotice(`Format ${template.name} dinonaktifkan.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Template gagal dinonaktifkan.");
+      setNotice(error instanceof Error ? error.message : "Format gagal dinonaktifkan.");
     } finally {
       setIsSaving(false);
     }
@@ -178,15 +183,15 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
         <div>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Template Surat Keluar
+            Format Surat Keluar
           </CardTitle>
           <CardDescription>
-            Kelola draft format surat keluar. Placeholder divalidasi dan pratinjau tidak mengirim data apa pun.
+            Kelola contoh format surat keluar. Kolom otomatis dicek agar contoh surat tidak salah.
           </CardDescription>
         </div>
         <Button type="button" onClick={() => setForm(makeEmptyForm())} disabled={isSaving}>
           <Plus className="h-4 w-4" />
-          Tambah Template
+          Tambah Format
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -196,10 +201,10 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
           </div>
         ) : null}
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Memuat template surat keluar...</p>
+          <p className="text-sm text-muted-foreground">Memuat format surat keluar...</p>
         ) : templates.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-            Belum ada template surat keluar. Tambahkan template pertama untuk membantu drafting surat.
+            Belum ada format surat keluar. Tambahkan format pertama untuk membantu membuat surat.
           </div>
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
@@ -214,7 +219,7 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                   <Badge variant="outline">{templateCategories.find((item) => item.value === template.category)?.label ?? template.category}</Badge>
-                  <Badge variant="outline">{template.placeholders.length} placeholder</Badge>
+                  <Badge variant="outline">{template.placeholders.length} kolom otomatis</Badge>
                 </div>
                 <pre className="mt-3 max-h-36 overflow-hidden rounded-xl border border-border bg-muted/30 p-3 text-xs leading-5 whitespace-pre-wrap">
                   {template.body}
@@ -242,8 +247,8 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
           <div className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[1.4rem] border border-border bg-card p-5 shadow-2xl">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Template Surat Keluar</p>
-                <h2 className="mt-2 text-xl font-semibold text-foreground">{form.id ? "Edit Template" : "Tambah Template"}</h2>
+                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Format Surat Keluar</p>
+                <h2 className="mt-2 text-xl font-semibold text-foreground">{form.id ? "Edit Format" : "Tambah Format"}</h2>
               </div>
               <Button type="button" size="sm" variant="ghost" onClick={() => setForm(null)} disabled={isSaving}>
                 <X className="h-4 w-4" />
@@ -253,7 +258,7 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
 
             <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div className="space-y-4">
-                <Input value={form.name} onChange={(event) => setForm((current) => current ? { ...current, name: event.target.value } : current)} placeholder="Nama template" />
+                <Input value={form.name} onChange={(event) => setForm((current) => current ? { ...current, name: event.target.value } : current)} placeholder="Nama format" />
                 <NativeSelect value={form.category} onChange={(event) => setForm((current) => current ? { ...current, category: event.target.value as LetterTemplateCategory } : current)}>
                   {templateCategories.map((item) => (
                     <option key={item.value} value={item.value}>{item.label}</option>
@@ -266,7 +271,7 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
                     checked={form.isActive}
                     onChange={(event) => setForm((current) => current ? { ...current, isActive: event.target.checked } : current)}
                   />
-                  Template aktif
+                  Format aktif
                 </label>
                 <Textarea value={form.body} rows={14} onChange={(event) => setForm((current) => current ? { ...current, body: event.target.value } : current)} />
               </div>
@@ -275,28 +280,28 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
                 <div className="rounded-xl border border-border bg-muted/30 p-4">
                   <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <Eye className="h-4 w-4" />
-                    Pratinjau
+                    Contoh Isi
                   </p>
                   <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap text-sm leading-6 text-foreground">
                     {renderPreview(form.body)}
                   </pre>
                 </div>
                 <div className="rounded-xl border border-border p-4">
-                  <p className="text-sm font-semibold text-foreground">Placeholder terdeteksi</p>
+                  <p className="text-sm font-semibold text-foreground">Kolom otomatis terdeteksi</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {placeholders.length > 0 ? placeholders.map((placeholder) => (
                       <Badge key={placeholder} variant={unknownPlaceholders.includes(placeholder) ? "danger" : "success"}>
                         {placeholder}
                       </Badge>
-                    )) : <span className="text-sm text-muted-foreground">Belum ada placeholder.</span>}
+                    )) : <span className="text-sm text-muted-foreground">Belum ada kolom otomatis.</span>}
                   </div>
                   {unknownPlaceholders.length > 0 ? (
                     <p className="mt-3 text-sm text-destructive">
-                      Placeholder tidak dikenal: {unknownPlaceholders.join(", ")}. Template harus dinonaktifkan atau diperbaiki sebelum aktif.
+                      Kolom otomatis tidak dikenal: {unknownPlaceholders.join(", ")}. Format harus dinonaktifkan atau diperbaiki sebelum aktif.
                     </p>
                   ) : null}
                   <p className="mt-4 text-xs leading-5 text-muted-foreground">
-                    Placeholder yang didukung: {allowedPlaceholders.join(", ")}.
+                    Kolom otomatis yang didukung: {allowedPlaceholders.join(", ")}.
                   </p>
                 </div>
               </div>
@@ -308,7 +313,7 @@ export function LetterTemplateManager({ currentUser }: { currentUser: Parameters
               </Button>
               <Button type="button" onClick={() => void saveTemplate()} disabled={isSaving}>
                 <Save className="h-4 w-4" />
-                Simpan Template
+                Simpan Format
               </Button>
             </div>
           </div>

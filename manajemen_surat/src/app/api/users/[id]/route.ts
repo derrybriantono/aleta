@@ -2,9 +2,11 @@ import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { getUserForApiById, updateManagedUserInDb } from "@/server/modules/users/service";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
-import { handleRouteError, notFound, ok } from "@/server/shared/http";
+import { notFound, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
+import type { ExternalAppCredentialInput, RoleId } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,11 +17,15 @@ type RouteContext = {
   }>;
 };
 
-export async function GET(_: NextRequest, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
+  let userId = "unknown";
   try {
     const { id } = await context.params;
-    const db = await getDatabase();
-    const actorUserId = await resolveActorUserId(_);
+    userId = id;
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
     const user = await getUserForApiById(db, actorUserId, id);
 
     if (!user) {
@@ -30,13 +36,23 @@ export async function GET(_: NextRequest, context: RouteContext) {
       user,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "USER_MANAGEMENT_ACCESS_FAILED",
+      feature: "user_management",
+      entityId: userId,
+    });
   }
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
+  let userId = "unknown";
   try {
     const { id } = await context.params;
+    userId = id;
     const body = await readJsonBody<{
       actorUserId?: string;
       username?: string;
@@ -46,12 +62,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       name?: string;
       nip?: string;
       positionId?: string;
+      additionalRoleIds?: string[];
       isActive?: boolean;
       profilePhotoUrl?: string;
-      roleOverride?: "admin" | "super-admin" | null;
+      roleOverride?: RoleId | null;
+      externalCredentials?: ExternalAppCredentialInput[];
     }>(request);
-    const db = await getDatabase();
-    const actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
     const user = await updateManagedUserInDb(db, {
       actorUserId,
       userId: id,
@@ -62,6 +80,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       user,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "USER_MANAGEMENT_ACCESS_FAILED",
+      feature: "user_management",
+      entityId: userId,
+    });
   }
 }

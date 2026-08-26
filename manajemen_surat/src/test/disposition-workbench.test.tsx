@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DispositionWorkbench } from "@/components/portal/disposition-workbench";
 import { PortalProvider } from "@/lib/app-state";
 import { DEFAULT_ASSISTANT_JUDGE_CONFIG } from "@/lib/assistant-judge";
+import { DEFAULT_PANEL_SETTINGS } from "@/lib/panel-settings";
 import {
   defaultAIConfig,
   defaultInstitutionIdentity,
@@ -12,6 +13,8 @@ import {
   letters,
   moduleVisibility,
   personas,
+  positions,
+  roles,
 } from "@/lib/mock-data";
 import { type PortalStateData } from "@/lib/types";
 
@@ -44,7 +47,9 @@ describe("DispositionWorkbench", () => {
     renderWorkbench(
       {
         currentUserId: "usr-ketua",
+        roles,
         users: personas,
+        positions,
         letters,
         dispositions,
         moduleVisibility,
@@ -52,6 +57,7 @@ describe("DispositionWorkbench", () => {
         aiConfig: defaultAIConfig,
         whatsAppWeb: defaultWhatsAppWeb,
         institutionIdentity: defaultInstitutionIdentity,
+        panelSettings: DEFAULT_PANEL_SETTINGS,
         assistantJudgeConfig: DEFAULT_ASSISTANT_JUDGE_CONFIG,
       },
       "dsp-006",
@@ -70,7 +76,9 @@ describe("DispositionWorkbench", () => {
     renderWorkbench(
       {
         currentUserId: "usr-ahmad",
+        roles,
         users: personas,
+        positions,
         letters,
         dispositions,
         moduleVisibility,
@@ -78,6 +86,7 @@ describe("DispositionWorkbench", () => {
         aiConfig: defaultAIConfig,
         whatsAppWeb: defaultWhatsAppWeb,
         institutionIdentity: defaultInstitutionIdentity,
+        panelSettings: DEFAULT_PANEL_SETTINGS,
         assistantJudgeConfig: DEFAULT_ASSISTANT_JUDGE_CONFIG,
       },
       "dsp-003",

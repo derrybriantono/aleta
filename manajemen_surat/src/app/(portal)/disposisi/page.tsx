@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, Send, Zap } from "lucide-react";
 
-import { EmptyState, PageIntro, statusVariant } from "@/components/portal/shared";
+import { AccessDeniedCard, EmptyState, PageIntro, statusVariant } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +20,15 @@ import {
 } from "@/lib/permissions";
 
 export default function DisposisiLandingPage() {
-  const { pendingInbox, accessibleLetters, currentUser, createDisposition, getUsersByPosition } = usePortal();
+  const {
+    accessibleLetters,
+    accessibleModules,
+    createDisposition,
+    currentUser,
+    getUsersByPosition,
+    pendingInbox,
+    positions,
+  } = usePortal();
   const [quickOpenId, setQuickOpenId] = useState<string | null>(null);
   const [targetPositionId, setTargetPositionId] = useState("");
   const [recipientId, setRecipientId] = useState("");
@@ -35,7 +43,8 @@ export default function DisposisiLandingPage() {
       return true;
     });
   }, [pendingInbox]);
-  const targetPositions = getAllowedDispositionTargetPositions(currentUser, { bypass: false });
+  const canOpenDisposisi = accessibleModules.some((module) => module.id === "disposisi");
+  const targetPositions = getAllowedDispositionTargetPositions(currentUser, { bypass: false, positionSource: positions });
   const selectedTargetPositionId = targetPositions.some((position) => position.id === targetPositionId)
     ? targetPositionId
     : targetPositions[0]?.id ?? "";
@@ -45,12 +54,16 @@ export default function DisposisiLandingPage() {
     : availableUsers[0]?.id ?? "";
   const canQuickAction = canUserAccessDispositionAction(currentUser);
 
+  if (!canOpenDisposisi) {
+    return <AccessDeniedCard />;
+  }
+
   return (
     <div className="space-y-6">
       <PageIntro
         eyebrow="Antrean Disposisi"
         title="Pilih surat yang akan didisposisikan"
-        description="Halaman awal ini menampilkan antrean surat yang perlu ditindaklanjuti. Pilih surat terlebih dahulu untuk membuka panel berjenjang, atau gunakan Disposisi Cepat untuk instruksi singkat langsung dari antrean."
+        description="Halaman ini menampilkan surat yang perlu ditindaklanjuti. Pilih surat untuk membuka halaman disposisi, atau gunakan Disposisi Cepat untuk arahan singkat langsung dari antrean."
       />
 
       {feedback ? (
@@ -87,14 +100,14 @@ export default function DisposisiLandingPage() {
                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                         <span>{letter.nomorSurat}</span>
                         <span>{formatDateTime(item.createdAt)}</span>
-                        <span>{getPosition(item.targetPositionId)?.name}</span>
+                        <span>{getPosition(item.targetPositionId, positions)?.name}</span>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       <Button asChild>
                         <Link href={`/disposisi/${item.id}`}>
-                          Buka Panel
+                          Buka Disposisi
                           <ArrowRight className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -131,11 +144,11 @@ export default function DisposisiLandingPage() {
                           </NativeSelect>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground">Individu tujuan</label>
+                          <label className="text-sm font-medium text-foreground">Nama penerima</label>
                           <NativeSelect value={selectedRecipientId} onChange={(event) => setRecipientId(event.target.value)}>
                             {availableUsers.map((user) => (
                               <option key={user.id} value={user.id}>
-                                {user.name} - {getUserPositionLabel(user)}
+                                {user.name} - {getUserPositionLabel(user, positions)}
                               </option>
                             ))}
                           </NativeSelect>

@@ -14,6 +14,11 @@ const DEFAULT_PRODUCTION_CAPS = {
 
 const HIGH_RISK_CATEGORIES = new Set(["party", "external", "broadcast", "mass_resend"]);
 const INTERNAL_CATEGORIES = new Set(["employee", "pegawai", "notification", "disposition", "letter", "task"]);
+const TEMPLATE_CONTRACT_SOURCES = new Set([
+  "portal_template_renderer",
+  "dynamic_notification_scheduler",
+  "notification_registry",
+]);
 const DRY_RUN_WORDING = /\b(simulasi|dry-run|dry run|validation only|do not send|pesan test|uji coba)\b/i;
 
 function normalizePhone(value) {
@@ -141,6 +146,11 @@ function isHighRiskCategory(category) {
 
 function isInternalCategory(category) {
   return INTERNAL_CATEGORIES.has(String(category || "").toLowerCase());
+}
+
+function isNotificationContext(category) {
+  const normalized = String(category || "").toLowerCase();
+  return normalized === "party" || normalized === "notification" || isHighRiskCategory(normalized) || isInternalCategory(normalized);
 }
 
 function ensureRecipientEligibility({ recipient = {}, category = "employee", analysis } = {}) {
@@ -275,6 +285,82 @@ function legacyDirectSendAllowed(runtimeConfig = {}) {
   return runtimeConfig.productionAutomationGuard?.legacyDirectSendEnabled === true;
 }
 
+function legacyNotificationSchedulerAllowed(runtimeConfig = {}) {
+  return (
+    runtimeConfig.productionAutomationGuard?.legacyNotificationSchedulerEnabled === true ||
+    process.env.ALETA_BOT_LEGACY_NOTIFICATION_SCHEDULER_ENABLED === "true"
+  );
+}
+
+function gatewayTemplateContractRequired(runtimeConfig = {}) {
+  return runtimeConfig.productionAutomationGuard?.requireGatewayMessageContract !== false;
+}
+
+function getMetadataValue(metadata = {}, ...keys) {
+  for (const key of keys) {
+    if (metadata && metadata[key] !== undefined && metadata[key] !== null && metadata[key] !== "") {
+      return metadata[key];
+    }
+  }
+  return "";
+}
+
+function normalizeSourceFeature(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function hasTemplateMessageContract(metadata = {}) {
+  const contractVersion = getMetadataValue(metadata, "messageContractVersion", "message_contract_version");
+  const contractSource = normalizeSourceFeature(getMetadataValue(metadata, "messageContractSource", "message_contract_source"));
+  const templateId = getMetadataValue(metadata, "templateId", "template_id", "templateKey", "template_key");
+  const registryPilot = metadata.registryPilot === true || metadata.registry_pilot === true;
+
+  if (contractVersion && contractSource && TEMPLATE_CONTRACT_SOURCES.has(contractSource)) return true;
+  if (templateId && contractSource && TEMPLATE_CONTRACT_SOURCES.has(contractSource)) return true;
+  if (registryPilot && templateId) return true;
+  return false;
+}
+
+function isLegacyMessagePath({ sourceApp = "", sourceFeature = "", metadata = {} } = {}) {
+  const source = normalizeSourceFeature(getMetadataValue(metadata, "source", "sourceFeature", "source_feature") || sourceFeature);
+  const feature = normalizeSourceFeature(sourceFeature);
+  const app = normalizeSourceFeature(sourceApp || getMetadataValue(metadata, "sourceApp", "source_app"));
+
+  return (
+    metadata.legacyQueued === true ||
+    metadata.legacySendPath === true ||
+    metadata.legacy_send_path === true ||
+    metadata.legacySourceFile === "app.js" ||
+    metadata.legacy_source_file === "app.js" ||
+    source.startsWith("legacy_") ||
+    source.includes("legacy_safe") ||
+    source.includes("legacy_client") ||
+    feature.startsWith("legacy_") ||
+    feature.includes("legacy") ||
+    app === "legacy_portal"
+  );
+}
+
+function shouldBlockLegacyQueueMessage({ sourceApp = "", sourceFeature = "", category = "", metadata = {} } = {}, runtimeConfig = {}) {
+  if (!productionGuardEnabled(runtimeConfig)) return { blocked: false, reason: "" };
+  if (!isNotificationContext(category)) return { blocked: false, reason: "" };
+  if (legacyDirectSendAllowed(runtimeConfig)) return { blocked: false, reason: "" };
+
+  if (isLegacyMessagePath({ sourceApp, sourceFeature, metadata })) {
+    return { blocked: true, reason: "legacy_message_path_blocked" };
+  }
+
+  const normalizedApp = normalizeSourceFeature(sourceApp || getMetadataValue(metadata, "sourceApp", "source_app"));
+  const normalizedFeature = normalizeSourceFeature(sourceFeature || getMetadataValue(metadata, "sourceFeature", "source_feature"));
+  const looksLikeTemplateRuntime = normalizedApp !== "aleta_bot_gateway" && normalizedFeature !== "test_message";
+
+  if (gatewayTemplateContractRequired(runtimeConfig) && looksLikeTemplateRuntime && !hasTemplateMessageContract(metadata)) {
+    return { blocked: true, reason: "missing_template_message_contract" };
+  }
+
+  return { blocked: false, reason: "" };
+}
+
 module.exports = {
   DEFAULT_PRODUCTION_CAPS,
   normalizePhone,
@@ -292,4 +378,10 @@ module.exports = {
   buildNotificationIdempotencyKey,
   productionGuardEnabled,
   legacyDirectSendAllowed,
+  legacyNotificationSchedulerAllowed,
+  gatewayTemplateContractRequired,
+  hasTemplateMessageContract,
+  isNotificationContext,
+  isLegacyMessagePath,
+  shouldBlockLegacyQueueMessage,
 };

@@ -6,9 +6,11 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.production.example
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.production.example
 
 # WhatsApp / browser sessions and runtime caches
 .wwebjs_auth/
@@ -50,3 +52,42 @@ runtime-logs/
 
 # Local pilot whitelists may contain real internal phone numbers
 config/pilot-whatsapp-small-whitelist.json
+
+# ---------------------------------------------------------------------------
+# Keluaran build dan paket rilis
+#
+# reports/ berisi paket installer (34 MB per rilis) dan hasil pemeriksaan.
+# Isinya dapat dibangun ulang dari kode, dan pada Agustus 2026 folder ini
+# sudah mencapai 1,4 GB - tidak layak masuk riwayat git.
+# ---------------------------------------------------------------------------
+reports/
+*.tar.gz
+*.tar.gz.sha256
+
+# Cadangan otomatis sebelum pembaruan
+backup-before-bot-update-*/
+.backup/
+*.bak
+*.bak-*
+
+# Berkas sementara dan log
+.tmp/
+tmp/
+logs/
+
+# ---------------------------------------------------------------------------
+# DOKUMEN PERKARA - JANGAN PERNAH MASUK GIT
+#
+# Berkas perkara memuat nama, alamat, dan isi sengketa keluarga pihak
+# berperkara. Sekali masuk riwayat git, tidak bisa benar-benar dihapus tanpa
+# menulis ulang seluruh riwayat.
+# ---------------------------------------------------------------------------
+*.pdf
+*.docx
+*.doc
+aleta_bot/temp/
+aleta_bot/resources/
+
+# Sesi peramban e-Court (setara dengan sedang login ke sistem MA)
+.aleta-ecourt-session/
+.wwebjs_auth/

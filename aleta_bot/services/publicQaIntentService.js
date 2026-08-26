@@ -9,9 +9,10 @@ const {
   normalizeCaseNumber,
 } = require("./publicQaParameterService");
 const { readRuntimeConfig } = require("../config/runtime-config");
+const { normalizeIndonesianPhoneNumber } = require("../utils/phoneFormatter");
 
 const FALLBACK_MESSAGE =
-  "Maaf, saya belum memahami pertanyaan Bapak/Ibu. Silakan ketik *info lengkap* untuk melihat daftar layanan, atau hubungi petugas Pengadilan Agama Donggala di 0822-7111-5021.";
+  "Maaf, saya belum memahami pertanyaan Bapak/Ibu. Silakan ketik *info lengkap* untuk melihat daftar layanan, atau hubungi CS WhatsApp resmi pengadilan.";
 
 const INTERNAL_TRIGGER_PREFIXES = [
   "monev",
@@ -210,6 +211,38 @@ const DEFAULT_PUBLIC_QA_INTENTS = [
     notes: "Data dinamis tetap memakai handler legacy query.js.",
   },
   {
+    id: "qa-antrian-online",
+    key: "antrian_online",
+    name: "Antrian Online Sidang",
+    description: "Mendaftarkan kehadiran pihak pada antrian sidang hari ini dari pertanyaan WhatsApp yang natural.",
+    category: "jadwal_sidang",
+    audience: "party",
+    isActive: true,
+    aiEnabled: true,
+    exactTriggers: ["daftar antrian", "antrian online", "ambil antrian", "ambil antrian online", "daftar hadir"],
+    exampleQuestions: [
+      "Saya sudah hadir untuk sidang perkara 123.G.2026",
+      "Tolong daftarkan antrian sidang saya nomor 123.G.2026",
+      "Saya mau ambil nomor antrian online perkara 123/Pdt.G/2026/PA.Dgl",
+      "Saya penggugat sudah datang untuk antrian sidang",
+      "Saya tergugat ingin daftar antrian online",
+    ],
+    requiredParameters: [],
+    queryKey: "public_online_queue",
+    legacyHandler: "query.getData:daftar antrian/antrian online",
+    legacyCommand: "daftar antrian",
+    parameterizedLegacyCommand: "daftar antrian",
+    templateKey: "",
+    responseMode: "legacy_handler",
+    confidenceThreshold: 0.62,
+    requiresVerification: false,
+    requiresCaseNumber: false,
+    maxAttempts: 2,
+    fallbackMessage: "Untuk daftar antrian online, silakan ketik *ambil antrian*. Jika nomor WhatsApp belum cocok dengan data perkara hari ini, kirim nomor perkara. Contoh: *daftar antrian#123.G.2026*.",
+    riskLevel: "medium",
+    notes: "Nomor WhatsApp pengirim diprioritaskan untuk menentukan penggugat/pemohon, tergugat/termohon, kuasa, turut tergugat, atau pihak intervensi. Data dibaca melalui koneksi antrian_sidang/db_config4.",
+  },
+  {
     id: "qa-ecourt",
     key: "ecourt",
     name: "E-Court",
@@ -370,7 +403,7 @@ function parseJsonArray(value) {
 
 function getDefaultAnswerSettings(key) {
   const rewriteKeys = new Set(["alamat_pengadilan", "ecourt", "pengaduan", "syarat_daftar"]);
-  const guidedKeys = new Set(["cek_jadwal_sidang", "cek_akta_cerai", "sisa_panjar"]);
+  const guidedKeys = new Set(["cek_perkara", "cek_jadwal_sidang", "cek_akta_cerai", "sisa_panjar", "antrian_online"]);
   if (rewriteKeys.has(key)) {
     return {
       aiAnswerEnabled: true,
@@ -381,7 +414,7 @@ function getDefaultAnswerSettings(key) {
       blockedDataFields: [],
       maxAiTokens: 350,
       temperature: 0.2,
-      requiresApprovalBeforeActive: true,
+      requiresApprovalBeforeActive: false,
       version: 1,
       status: "active",
     };
@@ -390,15 +423,16 @@ function getDefaultAnswerSettings(key) {
     return {
       aiAnswerEnabled: true,
       aiAnswerMode: "guided_answer",
-      answerPolicy: key === "cek_jadwal_sidang" ? "case_status_limited" : "requires_verified_party",
-      verificationPolicy: key === "cek_jadwal_sidang" ? "case_number_only" : "case_number_and_phone",
-      allowedDataFields: ["nomor_perkara", "tanggal_sidang", "agenda", "ruangan", "status_umum", "keterangan"],
+      answerPolicy: key === "antrian_online" ? "public_info_only" : "requires_verified_party",
+      verificationPolicy: key === "antrian_online" ? "none" : "case_number_and_phone",
+      allowedDataFields: ["nomor_perkara", "tanggal_sidang", "agenda", "ruangan", "status_umum", "keterangan", "nomor_antrian"],
       blockedDataFields: ["nik", "alamat", "telepon", "nomor_hp", "catatan_internal"],
       maxAiTokens: 350,
       temperature: 0.2,
-      requiresApprovalBeforeActive: true,
+      requiresApprovalBeforeActive: false,
       version: 1,
-      status: key === "cek_jadwal_sidang" ? "active" : "draft",
+      // Aturan jawaban tidak lagi mengenal tahap draft: semuanya langsung berlaku.
+      status: "active",
     };
   }
   return {
@@ -442,6 +476,13 @@ function toCamelIntent(intent = {}) {
     requiresCaseNumber: Boolean(intent.requiresCaseNumber ?? intent.requires_case_number ?? false),
     maxAttempts: Number(intent.maxAttempts ?? intent.max_attempts ?? 2),
     fallbackMessage: String(intent.fallbackMessage ?? intent.fallback_message ?? FALLBACK_MESSAGE),
+    // Blangko jawaban yang disusun admin di portal. Bila diisi, inilah yang
+    // dipakai menjawab - bukan kalimat bawaan sistem.
+    answerTemplate: String(intent.answerTemplate ?? intent.answer_template ?? ""),
+    // Kata kunci tambahan agar pertanyaan yang kalimatnya berbeda tetap
+    // dikenali. Dulu daftar ini dipaku di kode dan hanya untuk aturan bawaan,
+    // sehingga aturan buatan admin tidak pernah dapat bantuan pencocokan.
+    matchKeywords: parseJsonArray(intent.matchKeywords ?? intent.match_keywords_json),
     riskLevel: String(intent.riskLevel ?? intent.risk_level ?? "low"),
     notes: String(intent.notes || ""),
     aiAnswerEnabled: Boolean(intent.aiAnswerEnabled ?? intent.ai_answer_enabled ?? answerDefaults.aiAnswerEnabled),
@@ -462,16 +503,89 @@ function toCamelIntent(intent = {}) {
   };
 }
 
+/**
+ * Ragam tulisan yang lazim dipakai pihak berperkara lewat WhatsApp.
+ *
+ * Tanpa penyamaan ini, "akte cerai" dan "brp biaya" tidak akan pernah cocok
+ * dengan contoh pertanyaan yang ditulis rapi oleh admin - padahal itulah cara
+ * orang benar-benar mengetik.
+ */
+const RAGAM_KATA = [
+  [/\bakte\b/g, "akta"],
+  [/\bbrp\b/g, "berapa"],
+  [/\bgmn\b/g, "bagaimana"],
+  [/\bgimana\b/g, "bagaimana"],
+  [/\bsdh\b/g, "sudah"],
+  [/\budh\b/g, "sudah"],
+  [/\budah\b/g, "sudah"],
+  [/\bblm\b/g, "belum"],
+  [/\bblum\b/g, "belum"],
+  [/\bgk\b|\bga\b|\bgak\b|\bnggak\b|\bengga\b/g, "tidak"],
+  [/\bkpn\b/g, "kapan"],
+  [/\bdmn\b|\bdimana\b/g, "di mana"],
+  [/\bsy\b/g, "saya"],
+  [/\bbpk\b/g, "bapak"],
+  [/\btgl\b/g, "tanggal"],
+  [/\bnomer\b/g, "nomor"],
+  [/\bperkaranya\b/g, "perkara"],
+  [/\bsidangnya\b/g, "sidang"],
+  [/\bbiayanya\b/g, "biaya"],
+  [/\bpanjer\b/g, "panjar"],
+  [/\bantri\b|\bantrean\b/g, "antrian"],
+  [/\bputusannya\b/g, "putusan"],
+  [/\bceraiin\b|\bcerainya\b/g, "cerai"],
+  [/\bmendaftar\b|\bpendaftaran\b/g, "daftar"],
+];
+
 function normalizeIncomingQuestion(text) {
-  return String(text || "")
+  let hasil = String(text || "")
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[^\w\s#./-]/g, " ")
     .replace(/\bpa\b/g, "pengadilan agama")
     .replace(/\be court\b/g, "ecourt")
-    .replace(/\be-court\b/g, "ecourt")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/\be-court\b/g, "ecourt");
+
+  for (const [pola, ganti] of RAGAM_KATA) {
+    hasil = hasil.replace(pola, ganti);
+  }
+
+  return hasil.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Jarak edit sederhana dan dibatasi, agar tetap murah dijalankan tiap pesan.
+ * Dipakai untuk memaafkan salah ketik satu-dua huruf ("panajr", "sidnag")
+ * yang sangat lazim terjadi di WhatsApp.
+ */
+function jarakEdit(a, b, batas = 2) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > batas) return batas + 1;
+  const baris = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let sebelumnya = baris[0];
+    baris[0] = i;
+    let minBaris = baris[0];
+    for (let j = 1; j <= b.length; j += 1) {
+      const simpan = baris[j];
+      baris[j] = a[i - 1] === b[j - 1]
+        ? sebelumnya
+        : 1 + Math.min(sebelumnya, baris[j], baris[j - 1]);
+      sebelumnya = simpan;
+      if (baris[j] < minBaris) minBaris = baris[j];
+    }
+    if (minBaris > batas) return batas + 1;
+  }
+  return baris[b.length];
+}
+
+/** Dua kata dianggap sama bila identik, saling berawalan, atau beda tipis. */
+function kataMirip(a, b) {
+  if (a === b) return true;
+  if (a.length >= 4 && b.length >= 4 && (a.startsWith(b) || b.startsWith(a))) return true;
+  if (Math.min(a.length, b.length) < 4) return false;
+  const batas = Math.min(a.length, b.length) >= 6 ? 2 : 1;
+  return jarakEdit(a, b, batas) <= batas;
 }
 
 function tokenize(text) {
@@ -513,44 +627,165 @@ function isLikelyNaturalQuestion(message) {
   return /\b(saya|mau|ingin|bagaimana|gimana|berapa|kapan|dimana|di mana|apa|tolong|mohon)\b/.test(normalized);
 }
 
+function senderIsEmployee(senderNumber) {
+  const runtime = readRuntimeConfig();
+  const normalizedSender = normalizeIndonesianPhoneNumber(senderNumber || "");
+  if (!normalizedSender) return false;
+  return (Array.isArray(runtime.employeeRecipients) ? runtime.employeeRecipients : []).some((recipient) => {
+    const values = [recipient.whatsappNumber, recipient.whatsappChatId]
+      .map((value) => normalizeIndonesianPhoneNumber(String(value || "").replace(/@c\.us$/i, "")))
+      .filter(Boolean);
+    return values.includes(normalizedSender);
+  });
+}
+
+function getPublicCsContact() {
+  const runtime = readRuntimeConfig();
+  const identity = runtime.institutionIdentity || {};
+  const csNumber = normalizeIndonesianPhoneNumber(identity.csWhatsappNumber || identity.mobilePhone || "");
+  const botNumber = normalizeIndonesianPhoneNumber(identity.botWhatsappNumber || runtime.whatsapp?.phoneNumber || "");
+  return {
+    courtName: identity.courtName || "pengadilan",
+    csNumber,
+    botNumber,
+    csChatUrl: csNumber ? `https://wa.me/${csNumber}` : "",
+    botChatUrl: botNumber ? `https://wa.me/${botNumber}` : "",
+  };
+}
+
+function isHumanHandoffRequest(message) {
+  const normalized = normalizeIncomingQuestion(message);
+  return /\b(cs|customer service|operator|admin|petugas|manusia|pegawai|ptsp)\b/.test(normalized) &&
+    /\b(bicara|hubungi|kontak|chat|wa|whatsapp|minta|butuh|langsung|manusia|petugas|cs|operator|admin)\b/.test(normalized);
+}
+
+function isUnclearPublicMessage(message) {
+  const normalized = normalizeIncomingQuestion(message);
+  if (!normalized || normalized.includes("#")) return false;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const shorthand = new Set(["tmpt", "dmn", "d mana", "gmn", "gmna", "bgmn", "brp", "knp", "yg", "utk", "dgn", "tdk", "ga", "gk", "blm", "sdh", "skrg", "krn", "jd", "sy", "aq"]);
+  const shorthandHits = tokens.filter((token) => shorthand.has(token)).length;
+  const vowelPoorTokens = tokens.filter((token) => token.length >= 4 && !/[aiueo]/.test(token) && /^[a-z]+$/.test(token)).length;
+  return shorthandHits >= 2 || (tokens.length <= 3 && (shorthandHits >= 1 || vowelPoorTokens >= 1));
+}
+
+function buildHumanHandoffAnswer() {
+  const contact = getPublicCsContact();
+  const csLine = contact.csNumber
+    ? `CS WhatsApp resmi: *${contact.csNumber}*\nLink chat: ${contact.csChatUrl}`
+    : "CS WhatsApp resmi belum diisi di Identitas Instansi. Silakan gunakan PTSP/kanal resmi pengadilan.";
+  const lines = [
+    `Baik, untuk berbicara dengan petugas/CS manusia ${contact.courtName}, silakan hubungi:`,
+    "",
+    csLine,
+  ];
+  if (contact.botNumber) {
+    lines.push("", `Nomor WhatsApp Bot informasi realtime: *${contact.botNumber}*`, `Link bot: ${contact.botChatUrl}`);
+  }
+  lines.push(
+    "",
+    "Mohon tuliskan nama, kebutuhan layanan, dan nomor perkara jika sudah ada. Jangan mengirim data pribadi berlebihan sebelum diminta petugas resmi."
+  );
+  return lines.join("\n");
+}
+
+function buildUnclearLanguageWarning() {
+  const contact = getPublicCsContact();
+  const lines = [
+    "Maaf, pesan Bapak/Ibu belum cukup jelas untuk diproses.",
+    "",
+    "Mohon gunakan bahasa Indonesia yang lebih formal, lengkap, dan baku.",
+    "Contoh:",
+    "- Bukan: tmpt pengadilan?",
+    "- Tulis: Di mana alamat pengadilan?",
+  ];
+  if (contact.csNumber) {
+    lines.push("", `Jika ingin bicara langsung dengan petugas, hubungi CS WhatsApp resmi: *${contact.csNumber}* (${contact.csChatUrl}).`);
+  }
+  return lines.join("\n");
+}
+
 function matchExactTrigger(text, intents = getActivePublicIntents()) {
   const normalized = normalizeIncomingQuestion(text);
   for (const intent of intents) {
     const triggers = intent.exactTriggers.map(normalizeIncomingQuestion);
     const index = triggers.indexOf(normalized);
     if (index >= 0) {
-      return { intent, method: "exact", confidence: 1, reason: "exact trigger", legacyCommandOverride: triggers[index] };
+      const exactTrigger = triggers[index];
+      return {
+        intent,
+        method: "exact",
+        confidence: 1,
+        reason: "exact trigger",
+        legacyCommandOverride:
+          intent.key === "antrian_online" && !["daftar antrian", "antrian online"].includes(exactTrigger)
+            ? ""
+            : exactTrigger,
+      };
     }
   }
   return null;
 }
 
+/**
+ * Kata kunci bawaan untuk aturan sistem.
+ *
+ * Ini hanya CADANGAN. Bila admin mengisi kata kunci sendiri di portal, itulah
+ * yang dipakai - termasuk untuk aturan buatan admin yang sebelumnya sama
+ * sekali tidak mendapat bantuan pencocokan karena daftarnya dipaku di kode.
+ */
+const KATA_KUNCI_BAWAAN = {
+  cek_jadwal_sidang: ["sidang", "jadwal", "kapan"],
+  cek_akta_cerai: ["akta", "cerai", "jadi", "ambil"],
+  sisa_panjar: ["panjar", "biaya", "sisa", "tagihan", "bayar"],
+  antrian_online: ["antrian", "ambil", "hadir", "datang", "nomor", "sidang", "online"],
+  cek_perkara: ["perkara", "status", "cek"],
+  alamat_pengadilan: ["alamat", "lokasi", "kantor"],
+  ecourt: ["ecourt", "online", "elektronik"],
+  pengaduan: ["pengaduan", "mengadu", "lapor"],
+  syarat_daftar: ["daftar", "syarat", "gugat", "cerai"],
+  salinan_putusan: ["salinan", "putusan", "penetapan"],
+};
+
+function kataKunciIntent(intent) {
+  const dariAdmin = Array.isArray(intent.matchKeywords) ? intent.matchKeywords : [];
+  const bersih = dariAdmin.map((item) => normalizeIncomingQuestion(item)).filter(Boolean);
+  if (bersih.length > 0) return bersih;
+  return KATA_KUNCI_BAWAAN[intent.key] || [];
+}
+
 function scoreIntent(text, intent) {
-  const messageTokens = new Set(tokenize(text));
+  const messageTokens = tokenize(text);
+  const normalizedText = normalizeIncomingQuestion(text);
   const phrases = [...intent.exactTriggers, ...intent.exampleQuestions];
   let best = 0;
+
   for (const phrase of phrases) {
     const phraseTokens = tokenize(phrase);
     if (phraseTokens.length === 0) continue;
-    const matched = phraseTokens.filter((token) => messageTokens.has(token)).length;
-    const score = matched / Math.max(phraseTokens.length, messageTokens.size || 1);
+
+    // Kata pemicu yang muncul UTUH di dalam kalimat sudah cukup menentukan.
+    // Tanpa aturan ini, "ada posbakum tidak di sini" kalah skor hanya karena
+    // kalimatnya panjang - padahal maksudnya justru sangat jelas.
+    const frasaNormal = normalizeIncomingQuestion(phrase);
+    if (frasaNormal.length >= 5 && normalizedText.includes(frasaNormal)) {
+      best = Math.max(best, 0.9);
+      continue;
+    }
+
+    // Selebihnya longgar: salah ketik dan imbuhan tidak menggagalkan kecocokan.
+    const matched = phraseTokens.filter((token) =>
+      messageTokens.some((kata) => kataMirip(kata, token))
+    ).length;
+    const score = matched / Math.max(phraseTokens.length, messageTokens.length || 1);
     best = Math.max(best, score);
   }
 
   const normalized = normalizeIncomingQuestion(text);
-  const keywordBoosts = {
-    cek_jadwal_sidang: ["sidang", "jadwal", "kapan"],
-    cek_akta_cerai: ["akta", "cerai", "jadi", "ambil"],
-    sisa_panjar: ["panjar", "biaya", "sisa"],
-    cek_perkara: ["perkara", "status", "cek"],
-    alamat_pengadilan: ["alamat", "lokasi", "kantor"],
-    ecourt: ["ecourt", "online", "elektronik"],
-    pengaduan: ["pengaduan", "mengadu", "lapor"],
-    syarat_daftar: ["daftar", "syarat", "gugat", "cerai"],
-    salinan_putusan: ["salinan", "putusan", "penetapan"],
-  };
-  const boosts = keywordBoosts[intent.key] || [];
-  const boostHits = boosts.filter((word) => normalized.includes(word)).length;
+  const boosts = kataKunciIntent(intent);
+  const boostHits = boosts.filter(
+    (word) => normalized.includes(word) || messageTokens.some((kata) => kataMirip(kata, word))
+  ).length;
   return Math.min(1, best + boostHits * 0.18);
 }
 
@@ -635,6 +870,14 @@ async function matchWithAI(text, intents = getActivePublicIntents()) {
 
 function buildLegacyCommand(intent, params) {
   const nomorPerkara = params.nomor_perkara || "";
+  if (intent.responseMode === "query_template" && intent.queryKey) {
+    const parameter = nomorPerkara || params.nama_pegawai || params.nama_pihak || params.nama || params.parameter || "";
+    return parameter ? `query#${intent.queryKey}#${parameter}` : `query#${intent.queryKey}`;
+  }
+  if (intent.key === "antrian_online" && nomorPerkara) {
+    const queueCommand = params.pihak_antrian === "pihak_2" ? "antrian online" : "daftar antrian";
+    return `${queueCommand}#${nomorPerkara}`;
+  }
   if (nomorPerkara && intent.parameterizedLegacyCommand) {
     return `${intent.parameterizedLegacyCommand}#${nomorPerkara}`;
   }
@@ -651,7 +894,7 @@ function executeIntent(intent, params = {}, options = {}) {
     };
   }
 
-  const missingCaseNumber = intent.requiresCaseNumber && !params.nomor_perkara;
+  const missingCaseNumber = intent.requiresCaseNumber && !params.nomor_perkara && intent.key !== "antrian_online";
   if (missingCaseNumber) {
     return {
       status: "needs_more_info",
@@ -661,12 +904,27 @@ function executeIntent(intent, params = {}, options = {}) {
     };
   }
 
-  const legacyCommand = options.legacyCommandOverride || buildLegacyCommand(intent, params);
-  if (intent.responseMode === "legacy_handler" && legacyCommand) {
+  const legacyCommand = intent.responseMode === "query_template"
+    ? buildLegacyCommand(intent, params)
+    : options.legacyCommandOverride || buildLegacyCommand(intent, params);
+  if (["legacy_handler", "query_template"].includes(intent.responseMode) && legacyCommand) {
     return {
       status: "answered",
       answer: "",
       legacyCommand,
+      needsMoreInfo: false,
+    };
+  }
+
+  // Blangko jawaban yang disusun admin didahulukan. Tanpa ini, aturan yang
+  // sudah diberi jawaban tetap membalas kalimat bawaan sistem - persis keluhan
+  // "jawabannya tidak sesuai dengan yang sudah dibuat".
+  const blangko = String(intent.answerTemplate || "").trim();
+  if (blangko) {
+    return {
+      status: "answered",
+      answer: blangko,
+      legacyCommand: "",
       needsMoreInfo: false,
     };
   }
@@ -889,6 +1147,66 @@ async function resolvePublicQaAnswer({ message, senderNumber = "", senderName = 
     return { handled: false, reason: "session_cancelled" };
   }
 
+  const publicSender = !senderIsEmployee(senderNumber);
+  const fallbackIntent = intents.find((intent) => intent.key === "fallback_unknown") ||
+    toCamelIntent(DEFAULT_PUBLIC_QA_INTENTS.find((intent) => intent.key === "fallback_unknown"));
+
+  if (publicSender && isHumanHandoffRequest(message)) {
+    const answer = buildHumanHandoffAnswer();
+    await logPublicQaInteraction({
+      senderNumber,
+      senderName,
+      rawMessage: message,
+      normalizedMessage: normalized,
+      matchedIntentKey: "handoff_to_cs",
+      matchedMethod: "fallback",
+      confidence: 1,
+      parameters: params,
+      queryKey: "",
+      responsePreview: answer,
+      status: "answered",
+    });
+    return {
+      handled: true,
+      intent: fallbackIntent,
+      matchedMethod: "fallback",
+      confidence: 1,
+      parameters: params,
+      status: "answered",
+      answer,
+      legacyCommand: "",
+      needsMoreInfo: false,
+    };
+  }
+
+  if (publicSender && isUnclearPublicMessage(message)) {
+    const answer = buildUnclearLanguageWarning();
+    await logPublicQaInteraction({
+      senderNumber,
+      senderName,
+      rawMessage: message,
+      normalizedMessage: normalized,
+      matchedIntentKey: "unclear_language_warning",
+      matchedMethod: "fallback",
+      confidence: 1,
+      parameters: params,
+      queryKey: "",
+      responsePreview: answer,
+      status: "needs_more_info",
+    });
+    return {
+      handled: true,
+      intent: fallbackIntent,
+      matchedMethod: "fallback",
+      confidence: 1,
+      parameters: params,
+      status: "needs_more_info",
+      answer,
+      legacyCommand: "",
+      needsMoreInfo: true,
+    };
+  }
+
   const session = await getActiveSession(senderNumber);
   if (session) {
     const sessionIntent = intents.find((intent) => intent.key === session.current_intent_key);
@@ -948,8 +1266,15 @@ async function resolvePublicQaAnswer({ message, senderNumber = "", senderName = 
     if (!isLikelyNaturalQuestion(normalized)) {
       return { handled: false, reason: "no_public_match" };
     }
-    const fallbackIntent = intents.find((intent) => intent.key === "fallback_unknown") || toCamelIntent(DEFAULT_PUBLIC_QA_INTENTS.find((intent) => intent.key === "fallback_unknown"));
     const result = executeIntent(fallbackIntent, params);
+    const composed = await answerService.composePublicQaAnswer({
+      intent: fallbackIntent,
+      message,
+      senderNumber,
+      params,
+      baseAnswer: result.answer,
+      confidence: 0,
+    });
     await logPublicQaInteraction({
       senderNumber,
       senderName,
@@ -959,8 +1284,8 @@ async function resolvePublicQaAnswer({ message, senderNumber = "", senderName = 
       matchedMethod: "fallback",
       confidence: 0,
       parameters: params,
-      responsePreview: result.answer,
-      status: "fallback",
+      responsePreview: composed.answer || result.answer,
+      status: composed.status || "fallback",
     });
     return {
       handled: true,
@@ -968,6 +1293,8 @@ async function resolvePublicQaAnswer({ message, senderNumber = "", senderName = 
       matchedMethod: "fallback",
       confidence: 0,
       ...result,
+      answer: composed.answer || result.answer,
+      status: composed.status || result.status,
     };
   }
 

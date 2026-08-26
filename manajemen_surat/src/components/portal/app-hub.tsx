@@ -4,8 +4,10 @@ import Link from "next/link";
 import {
   Archive,
   ArrowRight,
+  Bell,
   BriefcaseBusiness,
   ChartColumn,
+  Database,
   GitBranchPlus,
   Inbox,
   MessageCircleMore,
@@ -24,6 +26,7 @@ import { type ModuleConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const iconMap = {
+  bell: Bell,
   inbox: Inbox,
   send: Send,
   "git-branch-plus": GitBranchPlus,
@@ -34,6 +37,7 @@ const iconMap = {
   "scroll-text": ScrollText,
   "briefcase-business": BriefcaseBusiness,
   wallet: Wallet,
+  database: Database,
   archive: Archive,
   "shield-user": ShieldUser,
   "message-circle-more": MessageCircleMore,
@@ -50,7 +54,7 @@ export function AppHub({ modules }: { modules: ModuleConfig[] }) {
             <Card
               className={cn(
                 "group h-full border transition duration-200 hover:-translate-y-1 hover:shadow-panel",
-                module.cardClass ?? "border-slate-200/80 bg-slate-50/70"
+                module.cardClass ?? "border-border/80 bg-card/80"
               )}
             >
               <CardContent className="flex h-full flex-col gap-4 p-6">
@@ -64,11 +68,11 @@ export function AppHub({ modules }: { modules: ModuleConfig[] }) {
                   >
                     <Icon className="h-7 w-7" />
                   </div>
-                  <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:text-slate-800" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-primary" />
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-base font-semibold text-slate-900">{module.label}</p>
+                  <p className="text-base font-semibold text-foreground">{module.label}</p>
                   <p className="text-sm leading-6 text-muted-foreground">{module.description}</p>
                 </div>
 

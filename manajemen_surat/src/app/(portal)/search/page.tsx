@@ -26,7 +26,11 @@ export default function SearchPage() {
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
-    setQuery(initialQuery);
+    const timer = window.setTimeout(() => {
+      setQuery(initialQuery);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [initialQuery]);
 
   const results = useMemo(() => getSearchResults(deferredQuery), [deferredQuery, getSearchResults]);

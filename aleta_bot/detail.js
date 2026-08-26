@@ -1,6 +1,7 @@
 // requiring dependencies
 const moment = require("moment");
 const db = require("./db_config");
+const { normalizeCaseNumberInput } = require("./services/publicQaVerificationService");
 
 //pool on connect
 db.on("connection", (connection) => console.log("CONNECTION USING POOL"));
@@ -16,24 +17,8 @@ const getDetailPerkara = async (message) => {
     });
   }
 
-  let nomor_perkara_decode = Buffer.from(keyword[1], "base64").toString(
-    "ascii"
-  );
-  let nomor_perkara = nomor_perkara_decode.split(".");
-  if (nomor_perkara[1] == "GS") {
-    nomor_perkara =
-      nomor_perkara[0] + "/Pdt.G.S/" + nomor_perkara[2] + "/PA.Buk";
-  } else {
-    nomor_perkara =
-      nomor_perkara[0] +
-      "/Pdt." +
-      nomor_perkara[1] +
-      "/" +
-      nomor_perkara[2] +
-      "/PA.Buk";
-  }
-
-  let pengadilan = "Pengadilan Agama Bungku";
+  let nomor_perkara = normalizeCaseNumberInput(keyword[1]);
+  let pengadilan = "Pengadilan Agama Donggala";
 
   // let web = "https://pa-bungku.go.id";
   return new Promise((resolve, reject) => {

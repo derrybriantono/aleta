@@ -8,6 +8,15 @@ const { readRuntimeConfig } = require("../config/runtime-config");
 const SETTING_KEY = "ai_runtime_config";
 const SUPPORTED_PROVIDERS = new Set(["openai", "chatgpt", "gemini", "claude", "llama"]);
 const volatileSecrets = new Map();
+let lastAiRuntimeAlertSignature = "";
+let lastAiRuntimeAlertAt = 0;
+
+const PROVIDER_ENV_KEYS = {
+  openai: ["OPENAI_API_KEY", "ALETA_OPENAI_API_KEY"],
+  chatgpt: ["OPENAI_API_KEY", "ALETA_OPENAI_API_KEY"],
+  gemini: ["GEMINI_API_KEY", "GOOGLE_AI_API_KEY", "ALETA_GEMINI_API_KEY"],
+  claude: ["ANTHROPIC_API_KEY", "CLAUDE_API_KEY", "ALETA_CLAUDE_API_KEY"],
+};
 
 const DEFAULT_CONFIG = {
   enabled: false,
@@ -51,6 +60,30 @@ function providerForPortal(provider) {
   return normalized === "openai" ? "chatgpt" : normalized;
 }
 
+function uniqueStrings(values = []) {
+  return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
+}
+
+function getProviderEnvKeyCandidates(provider) {
+  const normalized = normalizeProvider(provider);
+  const specificOverrideName = `ALETA_BOT_AI_${String(normalized || "").toUpperCase()}_API_KEY_ENV`;
+  return uniqueStrings([
+    process.env[specificOverrideName],
+    process.env.ALETA_BOT_AI_API_KEY_ENV,
+    ...(PROVIDER_ENV_KEYS[normalized] || []),
+  ]);
+}
+
+function resolveProviderApiKeyEnvKey(provider, explicitEnvKey = "") {
+  const explicit = String(explicitEnvKey || "").trim();
+  if (explicit) return explicit;
+  return getProviderEnvKeyCandidates(provider).find((envKey) => Boolean(process.env[envKey])) || "";
+}
+
+function allowsVolatileProductionSecret() {
+  return String(process.env.ALETA_BOT_ALLOW_VOLATILE_AI_SECRET || "false").toLowerCase() === "true";
+}
+
 function sanitizeAiError(error) {
   return String(error?.message || error || "AI runtime error")
     .replace(/sk-[a-zA-Z0-9_-]+/g, "sk-***")
@@ -85,7 +118,11 @@ function normalizeConfig(input = {}) {
   const provider = normalizeProvider(input.provider || input.providerId || DEFAULT_CONFIG.provider);
   const model = String(input.model || input.modelId || DEFAULT_CONFIG.model).trim();
   const apiKey = String(input.apiKey || "").trim();
-  const apiKeyEnvKey = String(input.apiKeyEnvKey || input.api_key_env_key || "").trim();
+  const apiKeyEnvKey = resolveProviderApiKeyEnvKey(
+    provider,
+    input.apiKeyEnvKey || input.api_key_env_key || ""
+  );
+  const envApiKey = apiKeyEnvKey ? process.env[apiKeyEnvKey] || "" : "";
   const enabled = Boolean(input.enabled);
   const publicQaEnabled = Boolean(input.publicQaEnabled ?? input.public_qa_enabled ?? enabled);
   const publicQaAiAnswerEnabled = Boolean(
@@ -104,11 +141,11 @@ function normalizeConfig(input = {}) {
     modelId: model,
     endpointUrl: String(input.endpointUrl || input.endpoint_url || "").trim(),
     apiKeyEnvKey,
-    apiKeyConfigured: Boolean(apiKey || apiKeyEnvKey || input.apiKeyConfigured),
-    apiKeyMasked: apiKey ? maskApiKey(apiKey) : String(input.apiKeyMasked || ""),
+    apiKeyConfigured: Boolean(apiKey || envApiKey || apiKeyEnvKey || input.apiKeyConfigured),
+    apiKeyMasked: apiKey ? maskApiKey(apiKey) : envApiKey ? "env" : String(input.apiKeyMasked || ""),
     secretAvailable: Boolean(
       input.secretAvailable ??
-      (apiKey || (apiKeyEnvKey && process.env[apiKeyEnvKey]) || provider === "llama")
+      (apiKey || envApiKey || provider === "llama")
     ),
     timeoutMs: clampNumber(input.timeoutMs ?? input.timeout_ms, 1000, 30000, DEFAULT_CONFIG.timeoutMs),
     maxTokens: clampNumber(input.maxTokens ?? input.max_tokens, 100, 2000, DEFAULT_CONFIG.maxTokens),
@@ -161,6 +198,15 @@ function resolveAiRuntimeStatus(config = {}) {
   };
 }
 
+function getSecretPersistence(config = {}) {
+  const normalized = normalizeConfig(config);
+  if (normalized.provider === "llama") return "local_model";
+  if (normalized.apiKeyEnvKey && process.env[normalized.apiKeyEnvKey]) return "env";
+  if (volatileSecrets.has(SETTING_KEY)) return "volatile_memory";
+  if (normalized.apiKeyConfigured && !normalized.secretAvailable) return "missing_after_restart";
+  return "none";
+}
+
 function validateAiRuntimeConfig(config) {
   const normalized = normalizeConfig(config);
   const errors = [];
@@ -178,6 +224,24 @@ function validateAiRuntimeConfig(config) {
     const dummyPattern = /dummy|example|changeme|test-key/i;
     if (dummyPattern.test(normalized.apiKeyMasked || "") || dummyPattern.test(normalized.apiKeyEnvKey || "")) {
       errors.push("Production tidak boleh memakai API key dummy.");
+    }
+    // Tolak HANYA bila benar-benar tidak ada key yang bisa dipakai. secretAvailable
+    // sudah bernilai true bila portal MENERUSKAN key langsung (jalur internal
+    // bertoken) ATAU bila env key terisi. Dulu guard ini hanya memeriksa env key,
+    // sehingga key yang diteruskan dari UI portal ditolak (HTTP 400) walaupun
+    // sebenarnya ada dan siap dipakai — inilah yang membuat AI bot "tidak sinkron".
+    if (normalized.provider !== "llama" && !normalized.secretAvailable && !allowsVolatileProductionSecret()) {
+      // Sebutkan nama env yang benar-benar dicari beserta langkah konkretnya,
+      // supaya operator tidak perlu menebak berkas mana yang harus disunting.
+      const namaEnv = normalized.apiKeyEnvKey || "GEMINI_API_KEY";
+      errors.push(
+        `API key AI belum tersedia di container ALETA Bot. Pilih SALAH SATU cara berikut, lalu Sinkronkan AI lagi:\n` +
+          `(1) Sunting /var/www/html/aleta/.env.production, tambahkan ${namaEnv}=<api key Anda>, ` +
+          `lalu jalankan: docker compose up -d aleta_bot\n` +
+          `(2) Bila API key sudah tersimpan di Pengaturan AI portal dan Anda ingin memakainya langsung, ` +
+          `tambahkan ALETA_BOT_ALLOW_VOLATILE_AI_SECRET=true pada .env.production lalu jalankan: ` +
+          `docker compose up -d portal aleta_bot`
+      );
     }
   }
 
@@ -211,6 +275,10 @@ function maskAiRuntimeConfig(config = {}) {
     secretAvailable: Boolean(normalized.secretAvailable),
     apiKeyMasked: normalized.apiKeyConfigured ? "configured" : "",
     apiKeyEnvKey: normalized.apiKeyEnvKey,
+    secretPersistence: getSecretPersistence(normalized),
+    productionRequiresEnvSecret:
+      process.env.NODE_ENV === "production" && normalized.enabled && normalized.provider !== "llama",
+    volatileProductionSecretAllowed: allowsVolatileProductionSecret(),
     configSource: normalized.configSource,
     timeoutMs: normalized.timeoutMs,
     maxTokens: normalized.maxTokens,
@@ -222,7 +290,68 @@ function maskAiRuntimeConfig(config = {}) {
     lastTestStatus: normalized.lastTestStatus || "idle",
     lastTestError: normalized.lastTestError || "",
     lastTestAt: normalized.lastTestAt || null,
+    moduleKey: normalized.moduleKey || config.moduleKey || "",
+    moduleConfig: normalized.moduleConfig || config.moduleConfig || null,
+    moduleConfigs: Array.isArray(normalized.moduleConfigs || config.moduleConfigs)
+      ? (normalized.moduleConfigs || config.moduleConfigs)
+      : [],
   };
+}
+
+async function emitAiRuntimeHealthAlert(maskedConfig = {}, reason = "runtime_status") {
+  const status = String(maskedConfig.status || "");
+  const secretPersistence = String(maskedConfig.secretPersistence || "");
+  const volatileProductionSecret =
+    process.env.NODE_ENV === "production" &&
+    Boolean(maskedConfig.enabled) &&
+    secretPersistence === "volatile_memory";
+  const needsAttention = status === "needs_sync" || status === "error" || volatileProductionSecret;
+
+  if (!needsAttention) return maskedConfig;
+
+  const signature = [
+    status,
+    maskedConfig.provider,
+    maskedConfig.model,
+    secretPersistence,
+    maskedConfig.lastTestError || maskedConfig.message || "",
+  ].join("|");
+  const now = Date.now();
+  if (signature === lastAiRuntimeAlertSignature && now - lastAiRuntimeAlertAt < 15 * 60 * 1000) {
+    return maskedConfig;
+  }
+
+  lastAiRuntimeAlertSignature = signature;
+  lastAiRuntimeAlertAt = now;
+
+  await logService.logSystemEvent({
+    eventType: volatileProductionSecret ? "ai_runtime_secret_volatile_production" : "ai_runtime_attention_required",
+    severity: status === "error" || volatileProductionSecret ? "error" : "warning",
+    message: volatileProductionSecret
+      ? "AI runtime memakai secret volatile di production. Set env key AI agar secret tidak hilang setelah restart."
+      : status === "needs_sync"
+        ? "AI runtime membutuhkan sinkronisasi secret setelah restart."
+        : "AI runtime mengalami error dan perlu diperiksa.",
+    metadata: {
+      reason,
+      status,
+      provider: maskedConfig.provider,
+      model: maskedConfig.model,
+      configSource: maskedConfig.configSource,
+      secretPersistence,
+      apiKeyEnvKey: maskedConfig.apiKeyEnvKey || "",
+      message: maskedConfig.message || maskedConfig.lastTestError || "",
+    },
+  });
+
+  return maskedConfig;
+}
+
+async function getMaskedAiRuntimeConfigWithHealthAlert(reason = "runtime_status") {
+  const config = await getAiRuntimeConfig();
+  const masked = maskAiRuntimeConfig(config);
+  await emitAiRuntimeHealthAlert(masked, reason);
+  return masked;
 }
 
 async function readStoredRuntimeConfig() {
@@ -313,7 +442,7 @@ async function getAiRuntimeConfig() {
   const stored = await readStoredRuntimeConfig();
   if (stored) {
     const provider = normalizeProvider(stored.provider);
-    const envKey = stored.apiKeyEnvKey || "";
+    const envKey = resolveProviderApiKeyEnvKey(provider, stored.apiKeyEnvKey || "");
     const secretAvailable = Boolean(
       volatileSecrets.has(SETTING_KEY) ||
       (envKey && process.env[envKey]) ||
@@ -322,6 +451,7 @@ async function getAiRuntimeConfig() {
     return normalizeConfig({
       ...stored,
       provider,
+      apiKeyEnvKey: envKey,
       apiKeyConfigured: Boolean(stored.apiKeyConfigured),
       secretAvailable,
     });
@@ -361,7 +491,8 @@ async function updateAiRuntimeConfig(payload = {}, source = "portal") {
     throw new Error(message);
   }
 
-  if (apiKey) {
+  const envSecretAvailable = Boolean(normalized.apiKeyEnvKey && process.env[normalized.apiKeyEnvKey]);
+  if (apiKey && !(process.env.NODE_ENV === "production" && envSecretAvailable)) {
     volatileSecrets.set(SETTING_KEY, apiKey);
   }
   await persistMaskedRuntimeConfig(stripSecrets(validation.config), source);
@@ -379,10 +510,7 @@ async function getProviderClientConfig(providerOverride) {
   const runtimeConfig = await getAiRuntimeConfig();
   const provider = normalizeProvider(providerOverride || runtimeConfig.provider);
   const envKey = runtimeConfig.apiKeyEnvKey || (
-    provider === "openai" ? "OPENAI_API_KEY" :
-    provider === "gemini" ? "GEMINI_API_KEY" :
-    provider === "claude" ? "ANTHROPIC_API_KEY" :
-    ""
+    resolveProviderApiKeyEnvKey(provider)
   );
   const apiKey =
     volatileSecrets.get(SETTING_KEY) ||
@@ -426,6 +554,8 @@ module.exports = {
   getProviderClientConfig,
   isAiEnabledForPublicQa,
   updateAiRuntimeTestResult,
+  getMaskedAiRuntimeConfigWithHealthAlert,
+  emitAiRuntimeHealthAlert,
   sanitizeAiError,
   maskApiKey,
 };

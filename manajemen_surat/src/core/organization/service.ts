@@ -1,31 +1,45 @@
-import { positions } from "@/lib/mock-data";
 import { type ActingAssignment, type Position, type RoleId, type UserPersona } from "@/lib/types";
 
 const positionRoleMap: Record<string, RoleId> = {
   "pos-ketua": "ketua",
   "pos-wakil": "wakil-ketua",
   "pos-hakim": "hakim",
+  "pos-pppk": "pppk",
   "pos-sekretaris": "sekretaris",
   "pos-panitera": "panitera",
-  "pos-panitera-muda-hukum": "pejabat-struktural",
-  "pos-panitera-muda-gugatan": "pejabat-struktural",
-  "pos-panitera-muda-permohonan": "pejabat-struktural",
-  "pos-panitera-pengganti": "staf",
-  "pos-analis-perkara": "staf",
-  "pos-kasubag-umum": "pejabat-struktural",
-  "pos-kasubag-kepegawaian": "pejabat-struktural",
-  "pos-pranata-komputer": "staf",
-  "pos-arsiparis": "staf",
-  "pos-analis-keuangan": "staf",
-  "pos-bendahara": "staf",
-  "pos-pranata-humas": "staf",
+  "pos-panitera-muda-hukum": "panitera-muda",
+  "pos-panitera-muda-gugatan": "panitera-muda",
+  "pos-panitera-muda-permohonan": "panitera-muda",
+  "pos-panitera-pengganti": "panitera-pengganti",
+  "pos-analis-perkara": "analis-perkara",
+  "pos-analis-perkara-hukum": "analis-perkara",
+  "pos-analis-perkara-gugatan": "analis-perkara",
+  "pos-kasubag-umum": "kasubag",
+  "pos-kasubag-kepegawaian": "kasubag",
+  "pos-kasubag-ptip": "kasubag",
+  "pos-pranata-komputer": "pranata-komputer",
+  "pos-arsiparis": "pelaksana",
+  "pos-analis-keuangan": "analis-keuangan",
+  "pos-bendahara": "analis-keuangan",
+  "pos-pranata-humas": "pelaksana",
   "pos-staf-umum": "staf",
-  "pos-ptsp": "staf",
-  "pos-pengadministrasi-umum": "staf",
+  "pos-ptsp": "pelaksana",
+  "pos-pengadministrasi-umum": "pelaksana",
+  "pos-penelaah-kebijakan": "pelaksana",
+  "pos-staf-ptip": "pelaksana",
+  "pos-teknisi-sarpras": "pelaksana",
+  "pos-penata-layanan-umum": "pelaksana",
+  "pos-operator-layanan-umum": "pelaksana",
+  "pos-pengelola-umum-operasional": "pelaksana",
+  "pos-pengolah-data-informasi": "pelaksana",
   "pos-staf-kepegawaian": "staf",
-  "pos-analis-kepegawaian": "staf",
-  "pos-jurusita": "staf",
-  "pos-jurusita-pengganti": "staf",
+  "pos-analis-kepegawaian": "pelaksana",
+  "pos-penata-layanan-kepegawaian": "pelaksana",
+  "pos-pengelola-penanganan-perkara-gugatan": "pelaksana",
+  "pos-dokumentalis-hukum": "pelaksana",
+  "pos-pengelola-umum-operasional-hukum": "pelaksana",
+  "pos-jurusita": "jurusita",
+  "pos-jurusita-pengganti": "jurusita",
 };
 
 export type OrganizationTreeNode = {
@@ -78,7 +92,9 @@ const courtLeadershipPositionNames = new Set([
 const courtLeadershipPositionIds = new Set(["pos-ketua", "pos-wakil"]);
 const courtJudgeRoles = new Set<RoleId>(["hakim"]);
 const deputyLeadershipRoles = new Set<RoleId>(["wakil-ketua"]);
+const structuralActingRoles = new Set<RoleId>(["pejabat-struktural", "panitera-muda", "kasubag"]);
 const pltMaxMonths = 3;
+const emptyPositions: Position[] = [];
 
 function normalizeText(value: string | null | undefined) {
   return (value ?? "")
@@ -122,7 +138,7 @@ export function isCourtLeadershipTarget(targetPosition: Position | null | undefi
 
 export function isJudgeCandidate(
   user: UserPersona | null | undefined,
-  positionSource: Position[] = positions
+  positionSource: Position[] = emptyPositions
 ) {
   if (!user || !courtJudgeRoles.has(user.roleId)) return false;
 
@@ -174,11 +190,11 @@ export function resolveEffectiveRoleId(user: UserPersona | null | undefined, ref
   return getResolvedActingAssignment(user, referenceDate)?.roleId ?? user?.roleId ?? null;
 }
 
-export function getPositionById(positionId: string, positionSource: Position[] = positions) {
+export function getPositionById(positionId: string, positionSource: Position[] = emptyPositions) {
   return positionSource.find((position) => position.id === positionId) ?? null;
 }
 
-export function getDirectSubordinatePositions(positionId: string, positionSource: Position[] = positions) {
+export function getDirectSubordinatePositions(positionId: string, positionSource: Position[] = emptyPositions) {
   return positionSource
     .filter((position) => position.reportsToPositionId === positionId)
     .sort(sortPositions);
@@ -187,7 +203,7 @@ export function getDirectSubordinatePositions(positionId: string, positionSource
 export function isDirectSubordinatePosition(
   supervisorPositionId: string,
   subordinatePositionId: string,
-  positionSource: Position[] = positions
+  positionSource: Position[] = emptyPositions
 ) {
   return getPositionById(subordinatePositionId, positionSource)?.reportsToPositionId === supervisorPositionId;
 }
@@ -261,7 +277,7 @@ export function getActingAssignmentEligibility(
   targetPosition: Position | null | undefined,
   actingType: ActingAssignment["type"],
   {
-    positionSource = positions,
+    positionSource = emptyPositions,
     supervisorUser = null,
     referenceDate = new Date(),
   }: {
@@ -346,7 +362,7 @@ export function getActingAssignmentEligibility(
   }
 
   if (
-    candidate.roleId === "pejabat-struktural" &&
+    structuralActingRoles.has(candidate.roleId) &&
     isSameUnit(candidatePosition, targetPosition) &&
     candidatePosition.levelHierarchy > targetPosition.levelHierarchy
   ) {
@@ -371,7 +387,7 @@ export function getEligibleCandidatesForActingAssignment(
   actingType: ActingAssignment["type"],
   {
     userSource,
-    positionSource = positions,
+    positionSource = emptyPositions,
     supervisorUser = null,
     includeIneligible = false,
     referenceDate = new Date(),
@@ -416,7 +432,7 @@ export function getAssignableActingUsers(
   supervisorUser: UserPersona | null | undefined,
   userSource: UserPersona[],
   actingType: ActingAssignment["type"] = "PLH",
-  positionSource: Position[] = positions
+  positionSource: Position[] = emptyPositions
 ) {
   const supervisorPositionId = resolveEffectivePositionId(supervisorUser);
   if (!supervisorPositionId) return [];
@@ -438,7 +454,7 @@ export function validateActingAssignmentRequest({
   startDate,
   endDate,
   reason,
-  positionSource = positions,
+  positionSource = emptyPositions,
 }: {
   supervisorUser: UserPersona | null | undefined;
   assigneeUser: UserPersona | null | undefined;
@@ -492,7 +508,7 @@ export function validateActingAssignmentRequest({
   return { valid: true, message: "", eligibility };
 }
 
-export function getOrganizationRoots(positionSource: Position[] = positions) {
+export function getOrganizationRoots(positionSource: Position[] = emptyPositions) {
   return positionSource.filter((position) => !position.reportsToPositionId).sort(sortPositions);
 }
 
@@ -510,7 +526,7 @@ export function getPositionActingUsers(positionId: string, userSource: UserPerso
 
 export function buildOrganizationTree(
   userSource: UserPersona[],
-  positionSource: Position[] = positions
+  positionSource: Position[] = emptyPositions
 ): OrganizationTreeNode[] {
   const buildNode = (position: Position): OrganizationTreeNode => ({
     position,

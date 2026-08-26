@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Scale, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Scale, ShieldCheck, Sparkles } from "lucide-react";
 
 import { PageIntro, AccessDeniedCard, EmptyState } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   canAccessAssistantJudge,
   getVisibleAssistantJudgeLinks,
+  getAssistantJudgeViewPath,
+  isAssistantJudgeEmbeddedEnabled,
 } from "@/lib/assistant-judge";
 import { usePortal } from "@/lib/app-state";
 import { getEffectiveRoleId } from "@/lib/permissions";
@@ -87,6 +89,7 @@ export default function AssistantJudgePage() {
           {enabledLinks.map((link) => {
             const providerId = link.provider ?? link.id ?? "custom";
             const tone = providerTone[providerId as keyof typeof providerTone] ?? providerTone.default;
+            const embeddedEnabled = isAssistantJudgeEmbeddedEnabled(link);
 
             return (
             <Card key={link.id ?? providerId} className="flex h-full flex-col border-border/80">
@@ -95,17 +98,29 @@ export default function AssistantJudgePage() {
                   {link.iconKey === "scale" || providerId === "claude" ? <Scale className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
                 </div>
                 <div className="space-y-2">
-                  <Badge variant="muted">Asisten AI</Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="muted">Asisten AI</Badge>
+                    <Badge variant={embeddedEnabled ? "success" : "outline"}>
+                      {embeddedEnabled ? "Dalam ALETA" : "Website AI"}
+                    </Badge>
+                  </div>
                   <CardTitle className="text-xl">{link.label}</CardTitle>
                   <CardDescription className="leading-6">{link.description}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="mt-auto">
                 <Button asChild className="w-full">
-                  <a href={link.url} target={link.openInNewTab === false ? undefined : "_blank"} rel="noopener noreferrer">
-                    Buka {link.label.split(" - ")[0]}
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                  {embeddedEnabled ? (
+                    <Link href={getAssistantJudgeViewPath(link)}>
+                      Buka {link.label.split(" - ")[0]}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <a href={link.url} target={link.openInNewTab === false ? undefined : "_blank"} rel="noopener noreferrer">
+                      Buka {link.label.split(" - ")[0]}
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
                 </Button>
               </CardContent>
             </Card>

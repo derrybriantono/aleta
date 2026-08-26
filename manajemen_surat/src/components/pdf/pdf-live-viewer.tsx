@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, FileText, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileText, Minus, Plus, Printer } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loadPdfBinary } from "@/lib/pdf-binary";
+import { printPdfDocument } from "@/lib/pdf-print";
 import { loadPdfJsModule, type PdfDocumentLoadingTask, type PdfDocumentProxy } from "@/lib/pdfjs-client";
 import { buildPdfBinaryRoute } from "@/lib/pdf-viewer-route";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,18 @@ function clampScale(value: number, mode: "original" | "fallback") {
   const maxScale = mode === "original" ? ORIGINAL_MAX_SCALE : FALLBACK_MAX_SCALE;
 
   return Math.min(Math.max(value, minScale), maxScale);
+}
+
+function triggerPdfDownload(downloadUrl: string, fileName?: string) {
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  if (fileName) {
+    link.download = fileName;
+  }
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export function PdfLiveViewer({
@@ -50,7 +63,10 @@ export function PdfLiveViewer({
   const [pdfError, setPdfError] = useState("");
   const activeScale = scaleMode === "manual" ? manualScale : fitScale;
   const scalePercentage = Math.round(activeScale * 100);
-  const binaryRoute = buildPdfBinaryRoute(documentUrl);
+  const downloadRoute = buildPdfBinaryRoute(documentUrl, {
+    download: true,
+    fileName: documentFileName,
+  });
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -76,20 +92,36 @@ export function PdfLiveViewer({
   }, [mode]);
 
   useEffect(() => {
-    setManualScale((currentScale) => clampScale(currentScale, mode));
-    setFitScale((currentScale) => clampScale(currentScale, mode));
+    const timer = window.setTimeout(() => {
+      setManualScale((currentScale) => clampScale(currentScale, mode));
+      setFitScale((currentScale) => clampScale(currentScale, mode));
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [mode]);
 
   useEffect(() => {
-    setScaleInput(`${scalePercentage}`);
+    const timer = window.setTimeout(() => {
+      setScaleInput(`${scalePercentage}`);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [scalePercentage]);
 
   useEffect(() => {
-    setCurrentPage(1);
+    const timer = window.setTimeout(() => {
+      setCurrentPage(1);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [documentUrl]);
 
   useEffect(() => {
-    setPageInput(`${currentPage}`);
+    const timer = window.setTimeout(() => {
+      setPageInput(`${currentPage}`);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [currentPage]);
 
   useEffect(() => {
@@ -127,7 +159,7 @@ export function PdfLiveViewer({
         if (!cancelled) {
           setPdfDocument(null);
           setPageCount(0);
-          setPdfError(error instanceof Error ? error.message : "Preview PDF tidak dapat dimuat.");
+          setPdfError(error instanceof Error ? error.message : "Tampilan PDF tidak dapat dimuat.");
         }
       } finally {
         if (!cancelled) {
@@ -147,15 +179,15 @@ export function PdfLiveViewer({
   const statusText = useMemo(() => {
     if (pdfDocument && pageCount > 0) return `${pageCount} halaman aktif`;
     if (isLoadingPdf) return "Memuat PDF";
-    if (pdfError) return "Preview gagal dimuat";
+    if (pdfError) return "Tampilan gagal dimuat";
 
     return "Menunggu PDF";
   }, [isLoadingPdf, pageCount, pdfDocument, pdfError]);
-  const modeTitle = mode === "original" ? "PDF Asli" : "Mode Cadangan PDF";
+  const modeTitle = mode === "original" ? "PDF Asli" : "Tampilan Cadangan PDF";
   const modeHint =
     mode === "original"
-      ? "Tampilan dokumen asli tanpa watermark, cocok untuk baca detail, seleksi teks, dan navigasi halaman."
-      : "Mode cadangan otomatis saat pratinjau utama belum cocok dengan browser yang digunakan.";
+      ? "Tampilan dokumen asli untuk membaca detail, memilih teks, dan pindah halaman."
+      : "Tampilan cadangan saat PDF belum cocok dibuka di halaman utama.";
 
   useEffect(() => {
     if (!pdfDocument || pageCount <= 0) return;
@@ -304,11 +336,30 @@ export function PdfLiveViewer({
             <Button type="button" variant="outline" size="sm" disabled={!pdfDocument} onClick={() => setScaleMode("fit-width")}>
               Fit to Width
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <a href={binaryRoute} download={documentFileName}>
-                <Download className="mr-2 h-4 w-4" />
-                Unduh
-              </a>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => triggerPdfDownload(downloadRoute, documentFileName)}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Unduh
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!pdfDocument}
+              onClick={() => {
+                if (!pdfDocument) return;
+                void printPdfDocument(pdfDocument, {
+                  title: documentFileName,
+                  mode,
+                });
+              }}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Cetak
             </Button>
           </div>
         </div>
@@ -324,11 +375,16 @@ export function PdfLiveViewer({
         <div className="flex min-h-full min-w-full items-start justify-center p-4 sm:p-6">
           <div className={cn("flex w-full flex-col gap-5", mode === "original" ? "max-w-[92rem]" : "max-w-5xl")}>
             {pdfError ? (
-              <PdfLiveMessage title="Preview PDF tidak tersedia" description={pdfError} documentUrl={binaryRoute} />
+              <PdfLiveMessage
+                title="Tampilan PDF tidak tersedia"
+                description={pdfError}
+                downloadUrl={downloadRoute}
+                documentFileName={documentFileName}
+              />
             ) : isLoadingPdf && !pdfDocument ? (
               <PdfLiveMessage
                 title="Memuat PDF"
-                description="Dokumen sedang diproses agar dapat ditampilkan langsung di browser."
+                description="Dokumen sedang diproses agar dapat ditampilkan langsung."
                 loading
               />
             ) : pdfDocument && pageCount > 0 ? (
@@ -347,8 +403,9 @@ export function PdfLiveViewer({
             ) : (
               <PdfLiveMessage
                 title="PDF belum tersedia"
-                description="Dokumen belum dapat dibaca oleh viewer."
-                documentUrl={binaryRoute}
+                description="Dokumen belum dapat dibaca oleh aplikasi."
+                downloadUrl={downloadRoute}
+                documentFileName={documentFileName}
               />
             )}
           </div>
@@ -436,7 +493,7 @@ function PdfLivePageCanvas({
             return;
           }
 
-          setRenderError(error instanceof Error ? error.message : "Halaman PDF gagal dirender.");
+          setRenderError(error instanceof Error ? error.message : "Halaman PDF gagal ditampilkan.");
         }
       }
     };
@@ -463,7 +520,7 @@ function PdfLivePageCanvas({
     >
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
         <span>Halaman {pageNumber}</span>
-        <span>{mode === "original" ? "Dokumen Asli" : "PDF Live"}</span>
+        <span>{mode === "original" ? "Dokumen Asli" : "Tampilan PDF"}</span>
       </div>
       {renderError ? (
         <div className="flex min-h-[280px] items-center justify-center p-6 text-center text-sm text-muted-foreground">
@@ -481,12 +538,14 @@ function PdfLivePageCanvas({
 function PdfLiveMessage({
   title,
   description,
-  documentUrl,
+  downloadUrl,
+  documentFileName,
   loading,
 }: {
   title: string;
   description: string;
-  documentUrl?: string;
+  downloadUrl?: string;
+  documentFileName?: string;
   loading?: boolean;
 }) {
   return (
@@ -496,12 +555,15 @@ function PdfLiveMessage({
       </div>
       <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
       <p className="mt-2 text-sm leading-7 text-muted-foreground">{description}</p>
-      {documentUrl ? (
-        <Button className="mt-5" variant="outline" asChild>
-          <a href={documentUrl} download>
-            <Download className="mr-2 h-4 w-4" />
-            Unduh PDF
-          </a>
+      {downloadUrl ? (
+        <Button
+          className="mt-5"
+          type="button"
+          variant="outline"
+          onClick={() => triggerPdfDownload(downloadUrl, documentFileName)}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Unduh PDF
         </Button>
       ) : null}
     </div>

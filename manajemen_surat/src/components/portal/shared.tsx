@@ -71,14 +71,14 @@ export function PageIntro({
 }) {
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div className="space-y-2">
-        <p className="text-[0.78rem] font-semibold uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
-        <h1 className="font-serif text-3xl leading-tight text-foreground sm:text-[2.6rem]">{title}</h1>
+      <div className="space-y-1.5">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-primary sm:text-[0.72rem] sm:tracking-[0.2em]">{eyebrow}</p>
+        <h1 className="font-serif text-2xl leading-tight text-foreground sm:text-[2.25rem]">{title}</h1>
         {description ? (
-          <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">{description}</p>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+      {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">{actions}</div> : null}
     </div>
   );
 }
@@ -89,18 +89,20 @@ export function SectionHint({
   description,
   href,
   className,
+  testId,
 }: {
   icon?: "search" | "security" | "inbox";
   title: string;
   description: string;
   href?: string;
   className?: string;
+  testId?: string;
 }) {
   const Icon = icon === "security" ? ShieldAlert : icon === "inbox" ? Inbox : FileSearch;
 
   return (
-    <Card className={cn("border-dashed border-border bg-muted/40", className)}>
-      <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+    <Card className={cn("border-dashed border-border bg-muted/40", className)} data-testid={testId}>
+      <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-start gap-4">
           <div className="rounded-2xl bg-card p-3 text-primary shadow-sm">
             <Icon className="h-5 w-5" />
@@ -127,9 +129,10 @@ export function AccessDeniedCard() {
   return (
     <SectionHint
       icon="security"
-      title="Anda tidak memiliki akses"
-      description="Peran aktif akun Anda belum memiliki izin untuk membuka halaman ini. Gunakan akun yang berwenang bila perlu."
+      title="Akses ditolak"
+      description="Anda tidak memiliki izin untuk membuka halaman ini. Modul atau aksi ini belum tersedia untuk role aktif akun Anda."
       href="/portal"
+      testId="access-denied-card"
     />
   );
 }

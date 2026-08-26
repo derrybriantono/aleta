@@ -1,4 +1,5 @@
 import { createAletaDatabase, type AletaDatabase, withTransaction } from "../../src/server/db/client";
+import { moduleVisibility as defaultModuleVisibility, positions as defaultPositions, roles as defaultRoles } from "../../src/lib/mock-data";
 import { hashSecret } from "../../src/server/shared/security";
 
 type EmployeeInput = {
@@ -42,7 +43,7 @@ const employees: EmployeeInput[] = [
   { nip: "197806052005021002", nama: "HIMAWAN TATURA WIJAYA, S.H.I.,M.H.", jabatan: "Hakim Tingkat Pertama", unitKerja: "Pengadilan Agama Donggala", tmtJabatan: "13 Februari 2023", golongan: "IV/b" },
   { nip: "198609152009042004", nama: "SRI SUSILOWATI, S.H.", jabatan: "Panitera Tingkat Pertama Klas IB", unitKerja: "Panitera", tmtJabatan: "31 Oktober 2024", golongan: "IV/a" },
   { nip: "197312222003121006", nama: "SUDIRMAN B, S.Ag.,M.H.", jabatan: "Sekretaris Tingkat Pertama Klas IB", unitKerja: "Sekretaris", tmtJabatan: "22 Desember 2017", golongan: "IV/a" },
-  { nip: "199401022017121003", nama: "DERRY BRIANTONO, S.H.", jabatan: "Hakim Tingkat Pertama", unitKerja: "Pengadilan Agama Donggala", tmtJabatan: "30 Juni 2025", golongan: "III/c" },
+  { nip: "199401012017121003", nama: "DERRY BRIANTONO, S.H.", jabatan: "Hakim Tingkat Pertama", unitKerja: "Pengadilan Agama Donggala", tmtJabatan: "30 Juni 2025", golongan: "III/c" },
   { nip: "198302202009041005", nama: "HARMAN, S.Kom., M.M.", jabatan: "Kepala Subbagian", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "02 Desember 2024", golongan: "IV/a" },
   { nip: "198009262007042001", nama: "NUNIEK WIDRIYANI, S.H.", jabatan: "Panitera Muda Tingkat Pertama Klas IB", unitKerja: "Panitera Muda Hukum", tmtJabatan: "27 November 2025", golongan: "III/d" },
   { nip: "198001172006041002", nama: "MUHAMMAD RIFA`I, S.H.", jabatan: "Kepala Subbagian", unitKerja: "Subbagian Perencanaan, Teknologi Informasi, dan Pelaporan", tmtJabatan: "02 Desember 2024", golongan: "III/d" },
@@ -59,27 +60,24 @@ const employees: EmployeeInput[] = [
   { nip: "197707032005022002", nama: "MUSTINI", jabatan: "Juru Sita", unitKerja: "Panitera", tmtJabatan: "01 Agustus 2022", golongan: "III/b" },
   { nip: "198409012006042002", nama: "TANTY RESTIANTY", jabatan: "Juru Sita", unitKerja: "Panitera", tmtJabatan: "02 Oktober 2023", golongan: "III/b" },
   { nip: "199703052020121006", nama: "HADI MUAMMAR SALEH, S.T.", jabatan: "Pranata Komputer Ahli Pertama", unitKerja: "Subbagian Perencanaan, Teknologi Informasi, dan Pelaporan", tmtJabatan: "29 Agustus 2022", golongan: "III/b" },
-  { nip: "199503222022031005", nama: "LUKMAN ABDUL AZIZ, S.E.", jabatan: "Klerek - Penelaah Teknis Kebijakan", unitKerja: "Subbagian Perencanaan, Teknologi Informasi, dan Pelaporan", tmtJabatan: "02 Oktober 2023", golongan: "III/b" },
-  { nip: "199510152019031003", nama: "DONI PRASETYO, S.E.", jabatan: "Operator - Penata Layanan Operasional", unitKerja: "Subbagian Kepegawaian, Organisasi, dan Tata Laksana", tmtJabatan: "02 Oktober 2023", golongan: "III/b" },
+  { nip: "199503222022031005", nama: "LUKMAN ABDUL AZIZ, S.E.", jabatan: "Penelaah Teknis Kebijakan", unitKerja: "Subbagian Perencanaan, Teknologi Informasi, dan Pelaporan", tmtJabatan: "02 Oktober 2023", golongan: "III/b" },
+  { nip: "199510152019031003", nama: "DONI PRASETYO, S.E.", jabatan: "Penata Layanan Operasional", unitKerja: "Subbagian Kepegawaian, Organisasi, dan Tata Laksana", tmtJabatan: "02 Oktober 2023", golongan: "III/b" },
   { nip: "199809292024051001", nama: "DHANAR REZAWARA, S.H.", jabatan: "Klerek - Analis Perkara Peradilan", unitKerja: "Panitera Muda Hukum", tmtJabatan: "02 Mei 2025", golongan: "III/a" },
-  { nip: "200209212025062005", nama: "DIAH ARUM KUSUMAJATI, S.H.", jabatan: "Klerek - Analis Perkara Peradilan", unitKerja: "Panitera Muda Hukum", tmtJabatan: "01 Juni 2025", golongan: "III/a" },
+  { nip: "200209212025062005", nama: "DIAH ARUM KUSUMAJATI, S.H.", jabatan: "Analis Perkara Peradilan", unitKerja: "Panitera Muda Hukum", tmtJabatan: "01 Juni 2025", golongan: "III/a" },
   { nip: "199807212025061007", nama: "YULIAN CANDRA PURWANA, S.T.", jabatan: "Teknisi Sarana dan Prasarana", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "01 Juni 2025", golongan: "III/a" },
   { nip: "200203272024051001", nama: "AZZAM ZAID MUHARAM, S.H.", jabatan: "Klerek - Analis Perkara Peradilan", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "02 Mei 2025", golongan: "III/a" },
-  { nip: "200001072025061006", nama: "FABIAN FADHLILLAH RAMADHAN, S.H.", jabatan: "Klerek - Analis Perkara Peradilan", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "01 Juni 2025", golongan: "III/a" },
-  { nip: "199907312022032009", nama: "ADHE DWINA AUDIA AGATHA, A.Md.Ak.", jabatan: "Klerek - Pengolah Data dan Informasi", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "02 Oktober 2023", golongan: "II/d" },
-  { nip: "199601092022032007", nama: "RAHMA ANGGOROSIWI YANU PAMUNGKAS, A.Md", jabatan: "Klerek - Pengelola Penanganan Perkara", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "02 Oktober 2023", golongan: "II/d" },
-  { nip: "199908012022032015", nama: "TIFFANY RACHMAWATI SURANTO, A.Md.M", jabatan: "Klerek - Pengelola Penanganan Perkara", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "02 Oktober 2023", golongan: "II/d" },
-  { nip: "199102182025061004", nama: "FERIZKY RUDIATNA, A.Md.", jabatan: "Klerek - Dokumentalis Hukum", unitKerja: "Panitera Muda Hukum", tmtJabatan: "01 Juni 2025", golongan: "II/c" },
-  { nip: "198808252025211036", nama: "SAMSUDDIN S, S.E.", jabatan: "Operator - Penata Layanan Operasional", unitKerja: "Subbagian Kepegawaian, Organisasi, dan Tata Laksana", tmtJabatan: "01 September 2025", golongan: "IX" },
-  { nip: "198301192025211024", nama: "SALEH, S.Sy.", jabatan: "Operator - Penata Layanan Operasional", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "01 September 2025", golongan: "IX" },
+  { nip: "200001072025061006", nama: "FABIAN FADHLILLAH RAMADHAN, S.H.", jabatan: "Analis Perkara Peradilan", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "01 Juni 2025", golongan: "III/a" },
+  { nip: "199907312022032009", nama: "ADHE DWINA AUDIA AGATHA, A.Md.Ak.", jabatan: "Pengolah Data dan Informasi", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "02 Oktober 2023", golongan: "II/d" },
+  { nip: "199601092022032007", nama: "RAHMA ANGGOROSIWI YANU PAMUNGKAS, A.Md", jabatan: "Pengelola Penanganan Perkara", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "02 Oktober 2023", golongan: "II/d" },
+  { nip: "199908012022032015", nama: "TIFFANY RACHMAWATI SURANTO, A.Md.M", jabatan: "Pengelola Penanganan Perkara", unitKerja: "Panitera Muda Gugatan", tmtJabatan: "02 Oktober 2023", golongan: "II/d" },
+  { nip: "199102182025061004", nama: "FERIZKY RUDIATNA, A.Md.", jabatan: "Dokumentalis Hukum", unitKerja: "Panitera Muda Hukum", tmtJabatan: "01 Juni 2025", golongan: "II/c" },
+  { nip: "198808252025211036", nama: "SAMSUDDIN S, S.E.", jabatan: "Penata Layanan Operasional", unitKerja: "Subbagian Kepegawaian, Organisasi, dan Tata Laksana", tmtJabatan: "01 September 2025", golongan: "IX" },
+  { nip: "198301192025211024", nama: "SALEH, S.Sy.", jabatan: "Penata Layanan Operasional", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "01 September 2025", golongan: "IX" },
   { nip: "199109182025212048", nama: "ANGGRALARASATI", jabatan: "Pengadministrasi Perkantoran", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "01 September 2025", golongan: "V" },
   { nip: "199901052025211017", nama: "RAHMAT SANDI", jabatan: "Operator Layanan Operasional", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "01 September 2025", golongan: "V" },
   { nip: "198605272025211044", nama: "FIRDAUS", jabatan: "Operator Layanan Operasional", unitKerja: "Subbagian Umum dan Keuangan", tmtJabatan: "01 September 2025", golongan: "V" },
   { nip: "198402192025211028", nama: "HERDIN S", jabatan: "Pengelola Umum Operasional", unitKerja: "Panitera Muda Hukum", tmtJabatan: "01 September 2025", golongan: "I" },
 ];
-
-const adminUsernames = new Set(["admin", "superadmin", "adminit"]);
-const adminRoles = new Set(["admin", "super-admin"]);
 
 function firstNamePassword(name: string) {
   const firstToken = name.trim().split(/\s+/)[0] ?? "";
@@ -94,6 +92,63 @@ function firstNamePassword(name: string) {
   }
 
   return `${normalized}123`;
+}
+
+async function ensureReferenceData(db: AletaDatabase, now: string) {
+  for (const role of defaultRoles) {
+    await db.prepare(
+      `INSERT INTO roles (id, name, description)
+       VALUES (?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         description = excluded.description`
+    ).run(role.id, role.name, role.description);
+  }
+
+  for (const position of defaultPositions) {
+    await db.prepare(
+      `INSERT INTO positions (
+        id, name, unit_kerja, level_hierarchy, reports_to_position_id,
+        disposition_target_position_ids_json, can_forward_to_leadership,
+        deleted_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, NULL, ?, ?, NULL, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        unit_kerja = excluded.unit_kerja,
+        level_hierarchy = excluded.level_hierarchy,
+        disposition_target_position_ids_json = excluded.disposition_target_position_ids_json,
+        can_forward_to_leadership = excluded.can_forward_to_leadership,
+        deleted_at = NULL,
+        updated_at = excluded.updated_at`
+    ).run(
+      position.id,
+      position.name,
+      position.unitKerja,
+      position.levelHierarchy,
+      JSON.stringify(position.dispositionTargetPositionIds ?? []),
+      position.canForwardToLeadership ? 1 : 0,
+      now,
+      now
+    );
+  }
+
+  for (const position of defaultPositions) {
+    await db.prepare(
+      `UPDATE positions
+       SET reports_to_position_id = ?, updated_at = ?
+       WHERE id = ?`
+    ).run(position.reportsToPositionId ?? null, now, position.id);
+  }
+
+  for (const visibility of defaultModuleVisibility) {
+    for (const [moduleId, enabled] of Object.entries(visibility.modules)) {
+      await db.prepare(
+        `INSERT INTO module_visibility_settings (role_id, module_id, enabled, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(role_id, module_id) DO NOTHING`
+      ).run(visibility.roleId, moduleId, enabled ? 1 : 0, now);
+    }
+  }
 }
 
 function mapRoleAndPosition(employee: EmployeeInput): RolePositionMapping {
@@ -123,41 +178,76 @@ function mapRoleAndPosition(employee: EmployeeInput): RolePositionMapping {
 
   if (jabatan.includes("kepala subbagian")) {
     if (unit.includes("kepegawaian")) {
-      return { roleId: "pejabat-struktural", positionId: "pos-kasubag-kepegawaian", canBypassHierarchy: false, notes };
+      return { roleId: "kasubag", positionId: "pos-kasubag-kepegawaian", canBypassHierarchy: false, notes };
     }
     if (unit.includes("perencanaan") || unit.includes("teknologi informasi")) {
-      notes.push("Tidak ada posisi Kasubag PTIP khusus; memakai posisi Pranata Komputer sebagai posisi terdekat.");
-      return { roleId: "pejabat-struktural", positionId: "pos-pranata-komputer", canBypassHierarchy: false, notes };
+      return { roleId: "kasubag", positionId: "pos-kasubag-ptip", canBypassHierarchy: false, notes };
     }
-    return { roleId: "pejabat-struktural", positionId: "pos-kasubag-umum", canBypassHierarchy: false, notes };
+    return { roleId: "kasubag", positionId: "pos-kasubag-umum", canBypassHierarchy: false, notes };
   }
 
   if (jabatan.includes("panitera muda")) {
     if (unit.includes("gugatan")) {
-      return { roleId: "pejabat-struktural", positionId: "pos-panitera-muda-gugatan", canBypassHierarchy: false, notes };
+      return { roleId: "panitera-muda", positionId: "pos-panitera-muda-gugatan", canBypassHierarchy: false, notes };
     }
     if (unit.includes("permohonan")) {
-      return { roleId: "pejabat-struktural", positionId: "pos-panitera-muda-permohonan", canBypassHierarchy: false, notes };
+      return { roleId: "panitera-muda", positionId: "pos-panitera-muda-permohonan", canBypassHierarchy: false, notes };
     }
-    return { roleId: "pejabat-struktural", positionId: "pos-panitera-muda-hukum", canBypassHierarchy: false, notes };
+    return { roleId: "panitera-muda", positionId: "pos-panitera-muda-hukum", canBypassHierarchy: false, notes };
   }
 
   if (jabatan.includes("panitera pengganti")) {
-    notes.push("Role panitera_pengganti belum tersedia; memakai role panitera dengan posisi Panitera Pengganti.");
-    return { roleId: "panitera", positionId: "pos-panitera-pengganti", canBypassHierarchy: false, notes };
+    return { roleId: "panitera-pengganti", positionId: "pos-panitera-pengganti", canBypassHierarchy: false, notes };
   }
 
   if (jabatan.includes("juru sita")) {
-    notes.push("Role jurusita belum tersedia; memakai role staf dengan posisi Jurusita.");
-    return { roleId: "staf", positionId: "pos-jurusita", canBypassHierarchy: false, notes };
+    return { roleId: "jurusita", positionId: "pos-jurusita", canBypassHierarchy: false, notes };
   }
 
   if (jabatan.includes("pranata komputer")) {
-    return { roleId: "staf", positionId: "pos-pranata-komputer", canBypassHierarchy: false, notes };
+    return { roleId: "pranata-komputer", positionId: "pos-pranata-komputer", canBypassHierarchy: false, notes };
   }
 
   if (jabatan.includes("keuangan")) {
-    return { roleId: "staf", positionId: "pos-analis-keuangan", canBypassHierarchy: false, notes };
+    return { roleId: "analis-keuangan", positionId: "pos-analis-keuangan", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("penelaah teknis kebijakan")) {
+    return { roleId: "pelaksana", positionId: "pos-penelaah-kebijakan", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("penata layanan operasional")) {
+    if (unit.includes("kepegawaian")) {
+      return { roleId: "pelaksana", positionId: "pos-penata-layanan-kepegawaian", canBypassHierarchy: false, notes };
+    }
+    return { roleId: "pelaksana", positionId: "pos-penata-layanan-umum", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("teknisi sarana")) {
+    return { roleId: "pelaksana", positionId: "pos-teknisi-sarpras", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("pengolah data")) {
+    return { roleId: "pelaksana", positionId: "pos-pengolah-data-informasi", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("pengelola penanganan perkara")) {
+    return { roleId: "pelaksana", positionId: "pos-pengelola-penanganan-perkara-gugatan", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("dokumentalis hukum")) {
+    return { roleId: "pelaksana", positionId: "pos-dokumentalis-hukum", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("operator layanan operasional")) {
+    return { roleId: "pelaksana", positionId: "pos-operator-layanan-umum", canBypassHierarchy: false, notes };
+  }
+
+  if (jabatan.includes("pengelola umum operasional")) {
+    if (unit.includes("hukum")) {
+      return { roleId: "pelaksana", positionId: "pos-pengelola-umum-operasional-hukum", canBypassHierarchy: false, notes };
+    }
+    return { roleId: "pelaksana", positionId: "pos-pengelola-umum-operasional", canBypassHierarchy: false, notes };
   }
 
   if (unit.includes("kepegawaian")) {
@@ -165,14 +255,20 @@ function mapRoleAndPosition(employee: EmployeeInput): RolePositionMapping {
   }
 
   if (unit.includes("hukum") || unit.includes("gugatan") || unit.includes("permohonan") || jabatan.includes("perkara")) {
-    return { roleId: "staf", positionId: "pos-analis-perkara", canBypassHierarchy: false, notes };
+    if (unit.includes("hukum")) {
+      return { roleId: "analis-perkara", positionId: "pos-analis-perkara-hukum", canBypassHierarchy: false, notes };
+    }
+    if (unit.includes("gugatan")) {
+      return { roleId: "analis-perkara", positionId: "pos-analis-perkara-gugatan", canBypassHierarchy: false, notes };
+    }
+    return { roleId: "analis-perkara", positionId: "pos-analis-perkara", canBypassHierarchy: false, notes };
   }
 
   if (jabatan.includes("pengadministrasi")) {
-    return { roleId: "staf", positionId: "pos-pengadministrasi-umum", canBypassHierarchy: false, notes };
+    return { roleId: "pelaksana", positionId: "pos-pengadministrasi-umum", canBypassHierarchy: false, notes };
   }
 
-  return { roleId: "staf", positionId: "pos-staf-umum", canBypassHierarchy: false, notes };
+  return { roleId: "pelaksana", positionId: "pos-staf-umum", canBypassHierarchy: false, notes };
 }
 
 async function fetchColumnValues(db: AletaDatabase, tableName: string) {
@@ -244,6 +340,7 @@ async function main() {
     const result = await withTransaction(db, async (tx) => {
       const now = new Date().toISOString();
       const targetNips = new Set(employees.map((employee) => employee.nip));
+      await ensureReferenceData(tx, now);
       const roleIds = await fetchColumnValues(tx, "roles");
       const positionIds = await fetchColumnValues(tx, "positions");
       const mappingNotes: string[] = [];

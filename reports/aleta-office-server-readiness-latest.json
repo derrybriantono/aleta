@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-02T21:41:45.854Z",
-  "overall": "PASS",
+  "generatedAt": "2026-05-13T07:35:36.781Z",
+  "overall": "WARN",
   "environment": {
     "host": "PC-1157C82",
     "platform": "win32 10.0.19045",
@@ -68,36 +68,36 @@
     {
       "key": "port_3000",
       "label": "Port 3000",
-      "status": "PASS",
-      "detail": "Port 3000 sedang listen.",
+      "status": "WARN",
+      "detail": "Port 3000 belum listen; jalankan portal saat deployment.",
       "metadata": {}
     },
     {
       "key": "port_3003",
       "label": "Port 3003",
-      "status": "PASS",
-      "detail": "Port 3003 sedang listen.",
+      "status": "WARN",
+      "detail": "Port 3003 belum listen; jalankan aleta_bot saat deployment.",
       "metadata": {}
     },
     {
       "key": "portal_reachable",
       "label": "Portal reachable",
-      "status": "PASS",
-      "detail": "Portal HTTP 200.",
+      "status": "WARN",
+      "detail": "Portal belum reachable: fetch failed.",
       "metadata": {}
     },
     {
       "key": "bot_reachable",
       "label": "ALETA Bot reachable",
-      "status": "PASS",
-      "detail": "ALETA Bot status HTTP 200.",
+      "status": "WARN",
+      "detail": "ALETA Bot belum reachable: fetch failed.",
       "metadata": {}
     },
     {
       "key": "whatsapp_diagnostics",
       "label": "WhatsApp diagnostics",
-      "status": "PASS",
-      "detail": "status=disconnected, initializing=false, hasClient=true, lastErrorType=none.",
+      "status": "WARN",
+      "detail": "Diagnostics belum reachable: fetch failed.",
       "metadata": {}
     },
     {
@@ -111,7 +111,7 @@
       "key": "disk_space",
       "label": "Disk space",
       "status": "PASS",
-      "detail": "Drive D free space 341.92 GB.",
+      "detail": "Drive D free space 330.89 GB.",
       "metadata": {}
     },
     {
@@ -123,7 +123,33 @@
     }
   ],
   "blockers": [],
-  "warnings": [],
+  "warnings": [
+    {
+      "key": "port_3000",
+      "label": "Port 3000",
+      "detail": "Port 3000 belum listen; jalankan portal saat deployment."
+    },
+    {
+      "key": "port_3003",
+      "label": "Port 3003",
+      "detail": "Port 3003 belum listen; jalankan aleta_bot saat deployment."
+    },
+    {
+      "key": "portal_reachable",
+      "label": "Portal reachable",
+      "detail": "Portal belum reachable: fetch failed."
+    },
+    {
+      "key": "bot_reachable",
+      "label": "ALETA Bot reachable",
+      "detail": "ALETA Bot belum reachable: fetch failed."
+    },
+    {
+      "key": "whatsapp_diagnostics",
+      "label": "WhatsApp diagnostics",
+      "detail": "Diagnostics belum reachable: fetch failed."
+    }
+  ],
   "actionsTaken": [
     {
       "action": "readiness_check_only",
@@ -132,16 +158,16 @@
   ],
   "summary": {
     "portal": {
-      "reachable": true,
-      "portListening": true
+      "reachable": false,
+      "portListening": false
     },
     "aletaBot": {
-      "reachable": true,
-      "portListening": true,
+      "reachable": false,
+      "portListening": false,
       "processCount": 1
     },
     "whatsapp": {
-      "status": "disconnected",
+      "status": "unknown",
       "lastErrorType": ""
     },
     "env": {
@@ -151,8 +177,8 @@
       "databaseUrlConfigured": true
     },
     "ports": {
-      "portal3000Connectable": true,
-      "bot3003Connectable": true
+      "portal3000Connectable": false,
+      "bot3003Connectable": false
     }
   }
 }

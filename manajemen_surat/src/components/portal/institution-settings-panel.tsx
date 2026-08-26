@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Building2, CheckCircle2, Landmark, Link2, LoaderCircle, MessageCircleMore, RefreshCcw, Smartphone, Sparkles, Unplug } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Building2, CheckCircle2, ImageIcon, Landmark, Link2, LoaderCircle, MessageCircleMore, RefreshCcw, Smartphone, Sparkles, Trash2, Unplug, Upload } from "lucide-react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,12 @@ import {
   type InstitutionIdentity,
   type InstitutionIdentityEnrichmentMetadata,
 } from "@/lib/types";
+import { apiPath } from "@/lib/base-path";
+import {
+  getInstitutionLogoSrc,
+  isSupportedInstitutionLogoUrl,
+  MAX_INSTITUTION_LOGO_FILE_SIZE,
+} from "@/lib/institution-logo";
 import { cn } from "@/lib/utils";
 
 function statusCopy(status: "active" | "inactive" | "failed") {
@@ -55,12 +61,15 @@ function normalizeInstitutionIdentityDraft(source: Partial<Record<keyof Institut
     address: toSafeString(source?.address),
     phoneNumber: toSafeString(source?.phoneNumber),
     mobilePhone: toSafeString(source?.mobilePhone),
+    csWhatsappNumber: toSafeString(source?.csWhatsappNumber),
+    botWhatsappNumber: toSafeString(source?.botWhatsappNumber),
     email: toSafeString(source?.email),
     instagram: toSafeString(source?.instagram),
     facebook: toSafeString(source?.facebook),
     youtube: toSafeString(source?.youtube),
     website: toSafeString(source?.website),
     mapUrl: toSafeString(source?.mapUrl),
+    logoUrl: toSafeString(source?.logoUrl),
   };
 }
 
@@ -68,8 +77,11 @@ const INSTITUTION_IDENTITY_FIELDS: Array<keyof InstitutionIdentity> = [
   "courtName",
   "courtShortName",
   "address",
+  "mapUrl",
   "phoneNumber",
   "mobilePhone",
+  "csWhatsappNumber",
+  "botWhatsappNumber",
   "email",
   "instagram",
   "facebook",
@@ -83,12 +95,15 @@ const INSTITUTION_IDENTITY_FIELD_LABELS: Record<keyof InstitutionIdentity, strin
   address: "Alamat",
   phoneNumber: "Telepon",
   mobilePhone: "Handphone",
+  csWhatsappNumber: "CS WhatsApp Resmi",
+  botWhatsappNumber: "WhatsApp Bot Informasi",
   email: "Email",
   instagram: "Instagram",
   facebook: "Facebook",
   youtube: "YouTube",
   website: "Website",
-  mapUrl: "Google Maps",
+  mapUrl: "Lokasi Titik Google Maps",
+  logoUrl: "Logo Instansi",
 };
 
 function mergeEnrichedIdentityPreservingManualEdits(
@@ -179,6 +194,23 @@ function buildIdentityEnrichmentFeedback(
   return `Satuan kerja terdeteksi: ${suggestionLabel}. Identitas berhasil dilengkapi dari ${sources || "sumber terverifikasi"} (${coverage})${metadata.fromCache ? " menggunakan cache ALETA" : ""}.${confidence}`;
 }
 
+type IdentityFeedbackTone = "info" | "success" | "error";
+
+function showAletaProcessMessage(label: string, detail: string, durationMs = 1200) {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(
+    new CustomEvent("aleta:show-loading", {
+      detail: {
+        label,
+        detail,
+        durationMs,
+        immediate: true,
+      },
+    })
+  );
+}
+
 export function IdentitySettingsForm() {
   const {
     currentUser,
@@ -196,14 +228,119 @@ export function IdentitySettingsForm() {
   const [pendingEnrichedIdentity, setPendingEnrichedIdentity] = useState<InstitutionIdentity | null>(null);
   const [pendingBaseIdentity, setPendingBaseIdentity] = useState<InstitutionIdentity | null>(null);
   const [manualConflictFields, setManualConflictFields] = useState<Array<keyof InstitutionIdentity>>([]);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isSavingIdentity, setIsSavingIdentity] = useState(false);
+  const [feedbackTone, setFeedbackTone] = useState<IdentityFeedbackTone>("info");
   const enrichmentRequestRef = useRef(0);
+  const logoFileInputRef = useRef<HTMLInputElement | null>(null);
   const identityForm = normalizeInstitutionIdentityDraft({ ...institutionIdentity, ...identityOverrides });
   const enrichmentBadge = getIdentityEnrichmentBadge(identityEnrichment);
   const canApplyAISuggestion = canEdit && isNonEmptyText(identityForm.courtName) && !isEnrichingIdentity;
+  const logoPreviewSrc = getInstitutionLogoSrc(identityForm.logoUrl);
+  const logoUrlIsInlineFile = toSafeString(identityForm.logoUrl).startsWith("data:image/");
+
+  function setLogoUrl(nextLogoUrl: string) {
+    setIdentityOverrides((current) => ({ ...current, logoUrl: nextLogoUrl }));
+  }
+
+  async function saveInstitutionIdentity(
+    nextIdentity: InstitutionIdentity,
+    {
+      pendingMessage = "Identitas instansi sedang disimpan.",
+      successMessage = "Identitas instansi berhasil disimpan dan diterapkan di seluruh ALETA.",
+    }: {
+      pendingMessage?: string;
+      successMessage?: string;
+    } = {}
+  ) {
+    setIsSavingIdentity(true);
+    setFeedbackTone("info");
+    setFeedback(pendingMessage);
+
+    const result = await updateInstitutionIdentity(nextIdentity);
+
+    if (result.ok) {
+      setFeedbackTone("success");
+      setFeedback(successMessage);
+      setIdentityOverrides({});
+      showAletaProcessMessage("Perubahan selesai", successMessage, 1100);
+    } else {
+      setFeedbackTone("error");
+      setFeedback(result.message);
+    }
+
+    setIsSavingIdentity(false);
+    return result;
+  }
+
+  async function handleLogoFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type)) {
+      setFeedbackTone("error");
+      setFeedback("Logo harus berupa PNG, JPG, WebP, atau GIF.");
+      return;
+    }
+    if (file.size > MAX_INSTITUTION_LOGO_FILE_SIZE) {
+      setFeedbackTone("error");
+      setFeedback("Ukuran logo maksimal 2 MB agar tetap ringan saat dibuka di semua halaman.");
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    setFeedbackTone("info");
+    setFeedback("Logo sedang diunggah ke penyimpanan internal ALETA.");
+
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const response = await globalThis.fetch(apiPath("/api/settings/institution/logo"), {
+        method: "POST",
+        headers: {
+          "x-aleta-loading-label": "ALETA sedang mengunggah logo...",
+          "x-aleta-loading-detail": "Logo instansi sedang divalidasi dan disimpan ke penyimpanan internal.",
+        },
+        body: formData,
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            data?: { publicUrl?: string };
+            error?: { message?: string };
+          }
+        | null;
+      const publicUrl = payload?.data?.publicUrl ?? "";
+
+      if (!response.ok || !payload?.ok || !isSupportedInstitutionLogoUrl(publicUrl)) {
+        throw new Error(payload?.error?.message ?? "Logo belum bisa diunggah.");
+      }
+
+      setLogoUrl(publicUrl);
+      setFeedback("Logo berhasil diunggah. ALETA sedang menerapkan logo ke seluruh aplikasi.");
+      await saveInstitutionIdentity(
+        normalizeInstitutionIdentityDraft({
+          ...identityForm,
+          logoUrl: publicUrl,
+        }),
+        {
+          pendingMessage: "Logo berhasil diunggah. Identitas instansi sedang disimpan.",
+          successMessage: "Logo instansi berhasil diunggah dan langsung dipakai di seluruh ALETA.",
+        }
+      );
+    } catch (error) {
+      setFeedbackTone("error");
+      setFeedback(error instanceof Error ? error.message : "Logo gagal diunggah. Coba pilih file lain.");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  }
 
   async function applyIdentityEnrichment({ refresh = false }: { refresh?: boolean } = {}) {
     const query = toSafeString(identityForm.courtName);
     if (!query) {
+      setFeedbackTone("error");
       setFeedback("Nama pengadilan perlu diisi sebelum menerapkan saran AI.");
       return;
     }
@@ -211,11 +348,12 @@ export function IdentitySettingsForm() {
     const requestId = enrichmentRequestRef.current + 1;
     enrichmentRequestRef.current = requestId;
     setIsEnrichingIdentity(true);
+    setFeedbackTone("info");
     setFeedback("ALETA sedang mencari data identitas dari cache, katalog lokal, Google bila dikonfigurasi, dan website resmi.");
     setManualConflictFields([]);
 
     try {
-      const response = await globalThis.fetch("/api/settings/institution/enrich", {
+      const response = await globalThis.fetch(apiPath("/api/settings/institution/enrich"), {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -259,6 +397,7 @@ export function IdentitySettingsForm() {
           warnings: [message],
           lastErrorMessage: message,
         });
+        setFeedbackTone("info");
         setFeedback(message);
         return;
       }
@@ -274,15 +413,18 @@ export function IdentitySettingsForm() {
       setIdentityEnrichment(metadata);
 
       if (metadata.confidence === "low") {
+        setFeedbackTone("info");
         setFeedback(
           `Saran ditemukan tetapi confidence rendah. Field utama tidak diisi otomatis; periksa sumber dan isi manual bila perlu.${metadata.warnings?.length ? ` ${metadata.warnings.map(toSafeString).filter(Boolean).join(" ")}` : ""}`
         );
         return;
       }
 
-      setIdentityOverrides((current) =>
-        mergeEnrichedIdentityPreservingManualEdits(current, resultBaseIdentity, resultIdentity)
-      );
+      setIdentityOverrides((current) => ({
+        ...mergeEnrichedIdentityPreservingManualEdits(current, resultBaseIdentity, resultIdentity),
+        logoUrl: current.logoUrl ?? identityForm.logoUrl ?? "",
+      }));
+      setFeedbackTone("success");
       setFeedback(buildIdentityEnrichmentFeedback(selectedSatkerLabel || query, metadata, resultIdentity));
     } catch (error) {
       if (requestId !== enrichmentRequestRef.current) {
@@ -301,6 +443,7 @@ export function IdentitySettingsForm() {
         warnings: [message],
         lastErrorMessage: message,
       });
+      setFeedbackTone("info");
       setFeedback(message);
     } finally {
       if (requestId === enrichmentRequestRef.current) {
@@ -343,7 +486,10 @@ export function IdentitySettingsForm() {
               const baseIdentity = normalizeInstitutionIdentityDraft(suggestion.identity);
               enrichmentRequestRef.current += 1;
 
-              setIdentityOverrides(baseIdentity);
+              setIdentityOverrides({
+                ...baseIdentity,
+                logoUrl: identityForm.logoUrl ?? "",
+              });
               setSelectedCourtId(suggestion.id);
               setSelectedCourtName(suggestion.courtName);
               setSelectedSatkerLabel(suggestion.satkerLabel);
@@ -362,12 +508,85 @@ export function IdentitySettingsForm() {
               setPendingEnrichedIdentity(null);
               setManualConflictFields([]);
               setIsEnrichingIdentity(false);
+              setFeedbackTone("info");
               setFeedback(`Satuan kerja terdeteksi: ${suggestion.satkerLabel}. Data katalog lokal diterapkan. Klik Terapkan Saran AI untuk enrichment eksternal.`);
             }}
           />
           <Field label="Nama Singkat">
             <Input data-testid="institution-short-name-input" value={identityForm.courtShortName} onChange={(event) => setIdentityOverrides((current) => ({ ...current, courtShortName: event.target.value }))} className="h-12 text-base" />
           </Field>
+        </div>
+        <div className="grid gap-4 rounded-[1.2rem] border border-border bg-muted/20 p-4 md:grid-cols-[auto_1fr]">
+          <div className="flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-background p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoPreviewSrc}
+              alt={`Logo ${identityForm.courtShortName || identityForm.courtName || "Instansi"}`}
+              className="max-h-full max-w-full object-contain"
+              data-testid="institution-logo-preview"
+            />
+          </div>
+          <div className="min-w-0 space-y-3">
+            <div>
+              <p className="flex items-center gap-2 font-semibold text-foreground">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Logo Instansi
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Logo ini dipakai di login, sidebar, footer, dan identitas instansi. Logo lama tetap dipakai sebagai ikon tab browser.
+              </p>
+            </div>
+            <input
+              ref={logoFileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              data-testid="institution-logo-file-input"
+              onChange={handleLogoFileChange}
+            />
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!canEdit || isUploadingLogo || isSavingIdentity}
+                onClick={() => logoFileInputRef.current?.click()}
+              >
+                {isUploadingLogo ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Pilih Logo
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={!canEdit || isUploadingLogo || isSavingIdentity || !isNonEmptyText(identityForm.logoUrl)}
+                onClick={() => {
+                  setLogoUrl("");
+                  void saveInstitutionIdentity(
+                    normalizeInstitutionIdentityDraft({
+                      ...identityForm,
+                      logoUrl: "",
+                    }),
+                    {
+                      pendingMessage: "Logo instansi sedang dikembalikan ke logo bawaan.",
+                      successMessage: "Logo instansi berhasil dikembalikan ke logo bawaan.",
+                    }
+                  );
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                Pakai Logo Bawaan
+              </Button>
+            </div>
+            <Field label="URL Logo">
+              <Input
+                data-testid="institution-logo-url-input"
+                value={logoUrlIsInlineFile ? "Logo tersimpan dari file unggahan" : identityForm.logoUrl ?? ""}
+                disabled={!canEdit || logoUrlIsInlineFile}
+                onChange={(event) => setLogoUrl(event.target.value)}
+                placeholder="/uploads/logo-instansi.png atau https://..."
+                className="h-12 text-base"
+              />
+            </Field>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button
@@ -405,12 +624,14 @@ export function IdentitySettingsForm() {
               onClick={() => {
                 setIdentityOverrides((current) => ({
                   ...normalizeInstitutionIdentityDraft(current),
+                  logoUrl: current.logoUrl ?? identityForm.logoUrl ?? "",
                   ...manualConflictFields.reduce<Partial<InstitutionIdentity>>((next, field) => {
                     next[field] = toSafeString(pendingEnrichedIdentity[field]);
                     return next;
                   }, {}),
                 }));
                 setManualConflictFields([]);
+                setFeedbackTone("success");
                 setFeedback("Field yang sebelumnya sudah terisi telah diganti dengan saran enrichment.");
               }}
             >
@@ -427,12 +648,50 @@ export function IdentitySettingsForm() {
         <Field label="Alamat">
           <Textarea data-testid="institution-address-input" value={identityForm.address} onChange={(event) => setIdentityOverrides((current) => ({ ...current, address: event.target.value }))} className="min-h-[110px] text-base" />
         </Field>
+        <Field label="Lokasi Titik Google Maps">
+          <Input
+            data-testid="institution-map-url-input"
+            value={identityForm.mapUrl ?? ""}
+            onChange={(event) => setIdentityOverrides((current) => ({ ...current, mapUrl: event.target.value }))}
+            placeholder="Tempel link Google Maps atau koordinat, contoh: -0.6821, 119.7429"
+            className="h-12 text-base"
+          />
+          <p className="text-xs leading-5 text-muted-foreground">
+            Dipakai sebagai tujuan saat alamat di footer diklik. Jika kosong, ALETA akan mencari lokasi berdasarkan alamat tertulis.
+          </p>
+        </Field>
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="Telepon">
             <Input data-testid="institution-phone-input" value={identityForm.phoneNumber} onChange={(event) => setIdentityOverrides((current) => ({ ...current, phoneNumber: event.target.value }))} className="h-12 text-base" />
           </Field>
           <Field label="Handphone">
             <Input data-testid="institution-mobile-input" value={identityForm.mobilePhone} onChange={(event) => setIdentityOverrides((current) => ({ ...current, mobilePhone: event.target.value }))} className="h-12 text-base" />
+          </Field>
+        </div>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field label="CS WhatsApp Resmi">
+            <Input
+              data-testid="institution-cs-whatsapp-input"
+              value={identityForm.csWhatsappNumber ?? ""}
+              onChange={(event) => setIdentityOverrides((current) => ({ ...current, csWhatsappNumber: event.target.value }))}
+              placeholder="Contoh: 62822xxxx atau 0822xxxx"
+              className="h-12 text-base"
+            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              Dipakai saat masyarakat meminta bicara dengan petugas/CS manusia atau saat bot tidak menemukan jawaban aman.
+            </p>
+          </Field>
+          <Field label="WhatsApp Bot Informasi">
+            <Input
+              data-testid="institution-bot-whatsapp-input"
+              value={identityForm.botWhatsappNumber ?? ""}
+              onChange={(event) => setIdentityOverrides((current) => ({ ...current, botWhatsappNumber: event.target.value }))}
+              placeholder="Nomor bot informasi realtime"
+              className="h-12 text-base"
+            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              Nomor bot yang menjawab informasi realtime. Pisahkan dari nomor CS agar arahan petugas tetap jelas.
+            </p>
           </Field>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
@@ -557,20 +816,30 @@ export function IdentitySettingsForm() {
         <div className="flex flex-col gap-4">
           <Button
             type="button"
-            disabled={!canEdit}
+            disabled={!canEdit || isSavingIdentity || isUploadingLogo}
             onClick={async () => {
-              const result = await updateInstitutionIdentity(identityForm);
-              setFeedback(result.message);
-              if (result.ok) {
-                setIdentityOverrides({});
-              }
+              await saveInstitutionIdentity(identityForm);
             }}
           >
-            <Building2 className="h-4 w-4" />
-            Simpan Identitas
+            {isSavingIdentity ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+            {isSavingIdentity ? "Menyimpan Identitas..." : "Simpan Identitas"}
           </Button>
           {feedback ? (
-            <div className="rounded-[1.2rem] border border-emerald-300/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+            <div
+              className={cn(
+                "rounded-[1.2rem] border px-4 py-3 text-sm",
+                feedbackTone === "error"
+                  ? "border-rose-300/60 bg-rose-500/10 text-rose-700 dark:text-rose-200"
+                  : feedbackTone === "success"
+                    ? "border-emerald-300/60 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                    : "border-primary/20 bg-primary/5 text-muted-foreground"
+              )}
+            >
+              {isSavingIdentity || isUploadingLogo || isEnrichingIdentity ? (
+                <LoaderCircle className="mr-2 inline h-4 w-4 animate-spin" />
+              ) : feedbackTone === "success" ? (
+                <CheckCircle2 className="mr-2 inline h-4 w-4" />
+              ) : null}
               {feedback}
             </div>
           ) : null}
@@ -699,7 +968,7 @@ export function WhatsAppStatusPanel({
             }}
           >
             {isDeactivating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />}
-            Nonaktifkan
+            Reset Sesi / QR Baru
           </Button>
           <Button
             type="button"
@@ -733,9 +1002,28 @@ export function WhatsAppStatusPanel({
                   Buka WhatsApp kantor, pilih <strong className="text-foreground">Perangkat Tertaut</strong>, lalu scan QR ini. QR hanya ditampilkan di area ini sebagai pusat koneksi tunggal.
                 </p>
               </div>
+            ) : snapshot.lastErrorMessage || snapshot.runtimeStatus === "failed" ? (
+              <div className="space-y-2" data-testid="wa-qr-error">
+                <div className="flex items-start gap-2 rounded-xl border border-rose-300/60 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div>
+                    <p className="font-semibold">QR gagal dibuat</p>
+                    <p className="mt-0.5">{snapshot.lastErrorMessage || "Sesi WhatsApp gagal diinisialisasi. Coba mulai ulang."}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Langkah pemulihan: klik <strong className="text-foreground">Reset Sesi / QR Baru</strong> (membersihkan sesi macet
+                  lalu membuat QR baru). Bila tetap gagal di server, restart layanan bot:
+                  {" "}<code className="rounded bg-muted px-1">docker compose restart aleta_bot</code>.
+                </p>
+              </div>
+            ) : snapshot.runtimeStatus === "initializing" ? (
+              <p className="text-sm text-muted-foreground" data-testid="wa-qr-initializing">
+                Sedang menyiapkan sesi WhatsApp… QR akan muncul otomatis dalam beberapa detik. Halaman ini memuat ulang statusnya sendiri.
+              </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                QR akan muncul di sini setelah sesi WhatsApp diinisialisasi. Jika belum ada nomor resmi, Anda tetap bisa mulai pairing lewat QR dari panel ini.
+                QR akan muncul di sini setelah sesi WhatsApp diinisialisasi. Klik <strong className="text-foreground">Mulai Inisiasi / Tampilkan QR</strong> untuk memulai pairing.
               </p>
             )}
           </div>
@@ -749,6 +1037,10 @@ export function WhatsAppStatusPanel({
               <p>{institutionIdentity.address}</p>
               <p>
                 {institutionIdentity.phoneNumber} | {institutionIdentity.mobilePhone}
+              </p>
+              <p>
+                CS WA: {institutionIdentity.csWhatsappNumber || institutionIdentity.mobilePhone || "-"} | Bot WA:{" "}
+                {institutionIdentity.botWhatsappNumber || "-"}
               </p>
               <p>{institutionIdentity.email}</p>
             </div>
@@ -799,6 +1091,8 @@ export function InstitutionSettingsPanel({ compact }: { compact?: boolean }) {
         institutionIdentity.address,
         institutionIdentity.phoneNumber,
         institutionIdentity.mobilePhone,
+        institutionIdentity.csWhatsappNumber,
+        institutionIdentity.botWhatsappNumber,
         institutionIdentity.email,
       ].filter(Boolean),
     [institutionIdentity]
@@ -963,7 +1257,9 @@ function SmartCourtNameInput({
 
       setIsLoading(true);
       try {
-        const response = await globalThis.fetch(`/api/ai/suggest-court-name?query=${globalThis.encodeURIComponent(normalizedValue)}`);
+        const response = await globalThis.fetch(
+          apiPath(`/api/ai/suggest-court-name?query=${globalThis.encodeURIComponent(normalizedValue)}`)
+        );
         if (response.ok) {
           const data = await response.json();
           const nextSuggestions: unknown[] = Array.isArray(data.data?.suggestions) ? data.data.suggestions : [];

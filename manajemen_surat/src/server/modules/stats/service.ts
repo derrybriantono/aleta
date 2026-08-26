@@ -1,13 +1,16 @@
 import { runAletaIntelligence } from "@/core/intelligence/aleta-intelligence-service";
+import { getAccessibleLetters } from "@/lib/permissions";
+import { type DispositionNode, type LetterDetail } from "@/lib/types";
 import { type AletaDatabase } from "@/server/db/client";
 import { getAISettingsFromDb } from "@/server/modules/ai/service";
-import { getLetterSummaryForStats, type LetterSearchFilters } from "@/server/modules/letters/service";
-import { requireActorUser } from "@/server/modules/organization/service";
+import { listDispositionsFromDb } from "@/server/modules/dispositions/service";
+import { getLetterSummaryForStats, searchLettersInDb, type LetterSearchFilters } from "@/server/modules/letters/service";
+import { getPositionsFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { ApiError } from "@/server/shared/errors";
 
 type StatsDimension = "jenis" | "tahun" | "triwulan" | "klasifikasi" | "asal" | "status";
 type LetterStatsRow = Awaited<ReturnType<typeof getLetterSummaryForStats>>[number];
-const KPI_ALLOWED_ROLES = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "panitera", "sekretaris"]);
+const KPI_ALLOWED_ROLES = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "panitera", "panitera-muda", "sekretaris", "kasubag"]);
 
 function getQuarter(dateValue: string) {
   const month = new Date(dateValue).getMonth();
@@ -114,15 +117,44 @@ function averageHours(values: number[]) {
   return Math.round((total / values.length) * 10) / 10;
 }
 
-export async function getLetterSlaStatisticsInDb(db: AletaDatabase) {
+async function getAccessibleLetterIdSet(db: AletaDatabase, actorUserId?: string) {
+  if (!actorUserId) return null;
+
+  const actor = await requireActorUser(db, actorUserId);
+  const [letters, dispositions, positions] = await Promise.all([
+    searchLettersInDb(db, { limit: 5000 }),
+    listDispositionsFromDb(db),
+    getPositionsFromDb(db),
+  ]);
+
+  return new Set(getAccessibleLetters(actor, letters, dispositions, positions).map((letter) => letter.id));
+}
+
+function getLetterStatDate(letter: LetterDetail) {
+  const value = letter.tanggalAdministratif || letter.tanggal;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isDateOnOrAfter(date: Date | null, since: Date) {
+  return Boolean(date && date.getTime() >= since.getTime());
+}
+
+function filterAccessibleDispositions(dispositions: DispositionNode[], accessibleLetterIds: Set<string>) {
+  return dispositions.filter((row) => accessibleLetterIds.has(row.suratId));
+}
+
+export async function getLetterSlaStatisticsInDb(db: AletaDatabase, actorUserId?: string) {
+  const accessibleLetterIds = await getAccessibleLetterIdSet(db, actorUserId);
   const rows = await db.prepare(
-    `SELECT dsp.id, dsp.status, dsp.deadline_at, dsp.read_at, dsp.created_at, dsp.updated_at,
+    `SELECT dsp.id, dsp.surat_id, dsp.status, dsp.deadline_at, dsp.read_at, dsp.created_at, dsp.updated_at,
       dsp.urgent, dsp.target_position_id, COALESCE(pos.name, dsp.target_position_id, 'Belum ditentukan') AS target_position_name
      FROM dispositions dsp
      LEFT JOIN positions pos ON pos.id = dsp.target_position_id
      WHERE dsp.deleted_at IS NULL`
   ).all<{
     id: string;
+    surat_id: string;
     status: string;
     deadline_at: string | null;
     read_at: string | null;
@@ -132,9 +164,12 @@ export async function getLetterSlaStatisticsInDb(db: AletaDatabase) {
     target_position_id: string | null;
     target_position_name: string;
   }>();
+  const visibleRows = accessibleLetterIds
+    ? rows.filter((row) => accessibleLetterIds.has(row.surat_id))
+    : rows;
 
   const now = new Date();
-  const activeRows = rows.filter((row) => row.status !== "Selesai");
+  const activeRows = visibleRows.filter((row) => row.status !== "Selesai");
   const overdueRows = activeRows.filter((row) => {
     if (!row.deadline_at) return false;
     const deadline = new Date(row.deadline_at);
@@ -145,11 +180,11 @@ export async function getLetterSlaStatisticsInDb(db: AletaDatabase) {
     const deadline = new Date(row.deadline_at);
     return !Number.isNaN(deadline.getTime()) && isSameLocalDate(deadline, now);
   });
-  const readDurations = rows
+  const readDurations = visibleRows
     .filter((row) => row.read_at)
     .map((row) => (new Date(row.read_at || "").getTime() - new Date(row.created_at).getTime()) / 36e5)
     .filter((value) => Number.isFinite(value) && value >= 0);
-  const completionDurations = rows
+  const completionDurations = visibleRows
     .filter((row) => row.status === "Selesai")
     .map((row) => (new Date(row.updated_at).getTime() - new Date(row.created_at).getTime()) / 36e5)
     .filter((value) => Number.isFinite(value) && value >= 0);
@@ -193,38 +228,16 @@ export async function getLeadershipKpiStatisticsInDb(
   const todayIso = now.toISOString().slice(0, 10);
 
   const [
-    lettersInRow,
-    lettersOutRow,
-    dispositionRows,
+    letters,
+    dispositions,
+    positions,
     failedWaRow,
     publicQaRow,
     feedbackRow,
   ] = await Promise.all([
-    db
-      .prepare(
-        `SELECT COUNT(*) AS count
-         FROM letters
-         WHERE deleted_at IS NULL
-           AND type = 'masuk'
-           AND COALESCE(tanggal_terima, tanggal_administratif, tanggal_surat, created_at) >= ?`
-      )
-      .get<{ count: number | string }>(sinceIso),
-    db
-      .prepare(
-        `SELECT COUNT(*) AS count
-         FROM letters
-         WHERE deleted_at IS NULL
-           AND type = 'keluar'
-           AND COALESCE(tanggal_kirim, tanggal_administratif, tanggal_surat, created_at) >= ?`
-      )
-      .get<{ count: number | string }>(sinceIso),
-    db
-      .prepare(
-        `SELECT id, status, deadline_at, read_at
-         FROM dispositions
-         WHERE deleted_at IS NULL`
-      )
-      .all<{ id: string; status: string; deadline_at: string | null; read_at: string | null }>(),
+    searchLettersInDb(db, { limit: 5000 }),
+    listDispositionsFromDb(db),
+    getPositionsFromDb(db),
     db
       .prepare(
         `SELECT COUNT(*) AS count
@@ -249,17 +262,26 @@ export async function getLeadershipKpiStatisticsInDb(
       .catch(() => ({ count: 0 })),
   ]);
 
-  const activeDispositions = dispositionRows.filter((row) => row.status !== "Selesai");
+  const accessibleLetters = getAccessibleLetters(actor, letters, dispositions, positions);
+  const accessibleLetterIds = new Set(accessibleLetters.map((letter) => letter.id));
+  const accessibleDispositions = filterAccessibleDispositions(dispositions, accessibleLetterIds);
+  const activeDispositions = accessibleDispositions.filter((row) => row.status !== "Selesai");
   const overdueDispositions = activeDispositions.filter((row) => {
-    if (!row.deadline_at) return false;
-    const deadline = new Date(row.deadline_at);
+    if (!row.deadlineAt) return false;
+    const deadline = new Date(row.deadlineAt);
     return !Number.isNaN(deadline.getTime()) && deadline < now && !isSameLocalDate(deadline, now);
   });
   const dueTodayDispositions = activeDispositions.filter((row) => {
-    if (!row.deadline_at) return false;
-    const deadline = new Date(row.deadline_at);
+    if (!row.deadlineAt) return false;
+    const deadline = new Date(row.deadlineAt);
     return !Number.isNaN(deadline.getTime()) && deadline.toISOString().slice(0, 10) === todayIso;
   });
+  const lettersInThisWeek = accessibleLetters.filter(
+    (letter) => letter.type === "masuk" && isDateOnOrAfter(getLetterStatDate(letter), since)
+  ).length;
+  const lettersOutThisWeek = accessibleLetters.filter(
+    (letter) => letter.type === "keluar" && isDateOnOrAfter(getLetterStatDate(letter), since)
+  ).length;
   const failedWhatsappMessages = Number(failedWaRow?.count || 0);
   const publicQaPendingReview = Number(publicQaRow?.count || 0);
   const newFeedback = Number(feedbackRow?.count || 0);
@@ -268,12 +290,12 @@ export async function getLeadershipKpiStatisticsInDb(
 
   return {
     periodDays: safeDays,
-    lettersInThisWeek: Number(lettersInRow?.count || 0),
-    lettersOutThisWeek: Number(lettersOutRow?.count || 0),
+    lettersInThisWeek,
+    lettersOutThisWeek,
     activeDispositions: activeDispositions.length,
     overdueDispositions: overdueDispositions.length,
     dueTodayDispositions: dueTodayDispositions.length,
-    unreadDispositions: activeDispositions.filter((row) => !row.read_at).length,
+    unreadDispositions: activeDispositions.filter((row) => !row.readAt).length,
     failedWhatsappMessages,
     publicQaPendingReview,
     newFeedback,

@@ -15,9 +15,14 @@ import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
 import { parseJsonArray, stringifyJson, toBooleanInt } from "@/server/shared/json";
+import { deleteStoredPdfFile } from "@/server/shared/pdf-storage";
 import { getDispositionByIdFromDb } from "@/server/modules/dispositions/service";
 import { requireActorUser, resolveTargetRecipientFromDb } from "@/server/modules/organization/service";
-import { sendDispositionNotification, sendLetterNotification } from "@/server/modules/whatsapp/delivery";
+import {
+  sendDispositionNotification,
+  sendLetterNotification,
+  syncWhatsappDeliveryStatuses,
+} from "@/server/modules/whatsapp/delivery";
 
 type LetterRow = QueryResultRow & {
   id: string;
@@ -62,6 +67,8 @@ type LetterRow = QueryResultRow & {
   target_position_id: string | null;
   target_user_id: string | null;
   created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
   deleted_at: string | null;
 };
 
@@ -71,6 +78,15 @@ type DeliveryRow = QueryResultRow & {
   recipient_name: string;
   recipient_whatsapp: string;
   status: WhatsAppDeliveryStatus;
+  queue_id: string | null;
+  gateway_status: string | null;
+  gateway_stage: string | null;
+  gateway_message_id: string | null;
+  gateway_error: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
+  last_gateway_sync_at: string | null;
   last_attempt_at: string;
 };
 
@@ -138,6 +154,8 @@ export type LetterSearchFilters = {
   code?: string;
   dateFrom?: string;
   dateTo?: string;
+  uploadedFrom?: string;
+  uploadedTo?: string;
   tags?: string[];
   classificationTags?: string[];
   dispositionStatus?: string;
@@ -189,6 +207,8 @@ const outgoingApproverRoleIds = new Set<RoleId>([
   "wakil-ketua",
   "sekretaris",
   "panitera",
+  "panitera-muda",
+  "kasubag",
 ]);
 const letterTemplateCategories = new Set<LetterTemplateCategory>([
   "undangan",
@@ -343,6 +363,8 @@ function mapLightweightLetterRow(row: LetterRow): LetterDetail {
     nomorSurat: row.nomor_surat,
     nomorUrut: row.nomor_urut ?? undefined,
     workflowStatus: row.workflow_status ?? (row.type === "keluar" ? "draft" : "sent"),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
     submittedAt: row.submitted_at,
     submittedByUserId: row.submitted_by_user_id,
     approvedAt: row.approved_at,
@@ -371,7 +393,7 @@ function mapLightweightLetterRow(row: LetterRow): LetterDetail {
     documentAspectRatio: row.document_aspect_ratio ?? undefined,
     documentFileName: row.document_file_name ?? undefined,
     documentSizeMb: row.document_size_mb ?? undefined,
-    documentUrl: undefined,
+    documentUrl: row.document_file_path ?? undefined,
     documentTextExtract: undefined,
     kodeKlasifikasi: row.kode_klasifikasi ?? undefined,
     klasifikasiTags: parseJsonArray<string>(row.klasifikasi_tags_json),
@@ -414,12 +436,15 @@ async function hydrateLetters(db: AletaDatabase, rows: LetterRow[]) {
      WHERE letter_id IN (${params})
      ORDER BY file_name ASC`
   ).all<{ letter_id: string; file_name: string }>(...ids);
-  const deliveryRows = await db.prepare(
-    `SELECT id, letter_id AS parent_id, recipient_name, recipient_whatsapp, status, last_attempt_at
+  const rawDeliveryRows = await db.prepare(
+    `SELECT id, letter_id AS parent_id, recipient_name, recipient_whatsapp, status,
+      queue_id, gateway_status, gateway_stage, gateway_message_id, gateway_error,
+      delivered_at, read_at, failed_at, last_gateway_sync_at, last_attempt_at
      FROM letter_whatsapp_deliveries
      WHERE deleted_at IS NULL AND letter_id IN (${params})
      ORDER BY last_attempt_at ASC`
   ).all<DeliveryRow>(...ids);
+  const deliveryRows = await syncWhatsappDeliveryStatuses(db, "letter", rawDeliveryRows);
 
   const creatorIds = Array.from(new Set(rows.map((row) => row.created_by_user_id).filter(Boolean))) as string[];
   const creatorParams = placeholders(creatorIds);
@@ -447,6 +472,15 @@ async function hydrateLetters(db: AletaDatabase, rows: LetterRow[]) {
         recipientName: row.recipient_name,
         recipientWhatsapp: row.recipient_whatsapp,
         status: row.status,
+        queueId: row.queue_id || undefined,
+        gatewayStatus: row.gateway_status || undefined,
+        gatewayStage: row.gateway_stage || undefined,
+        gatewayMessageId: row.gateway_message_id || undefined,
+        gatewayError: row.gateway_error || undefined,
+        deliveredAt: row.delivered_at,
+        readAt: row.read_at,
+        failedAt: row.failed_at,
+        lastGatewaySyncAt: row.last_gateway_sync_at,
         lastAttemptAt: row.last_attempt_at,
       },
     ]);
@@ -460,6 +494,8 @@ async function hydrateLetters(db: AletaDatabase, rows: LetterRow[]) {
     nomorSurat: row.nomor_surat,
     nomorUrut: row.nomor_urut ?? undefined,
     workflowStatus: row.workflow_status ?? (row.type === "keluar" ? "draft" : "sent"),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
     submittedAt: row.submitted_at,
     submittedByUserId: row.submitted_by_user_id,
     approvedAt: row.approved_at,
@@ -623,6 +659,16 @@ function buildSearchQuery(db: AletaDatabase, filters: LetterSearchFilters) {
     params.push(filters.dateTo);
   }
 
+  if (filters.uploadedFrom) {
+    clauses.push("SUBSTRING(letters.created_at FROM 1 FOR 10) >= ?");
+    params.push(filters.uploadedFrom);
+  }
+
+  if (filters.uploadedTo) {
+    clauses.push("SUBSTRING(letters.created_at FROM 1 FOR 10) <= ?");
+    params.push(filters.uploadedTo);
+  }
+
   const tags = (filters.tags ?? []).filter(Boolean);
   if (tags.length > 0) {
     clauses.push(
@@ -682,8 +728,8 @@ function buildActorAccessQuery(actor: Awaited<ReturnType<typeof requireActorUser
         AND (
           access_dispositions.penerima_id = ?
           OR access_dispositions.pengirim_id = ?
-          OR (? IS NOT NULL AND access_dispositions.target_position_id = ?)
-          OR (? IS NOT NULL AND disposition_positions.unit_kerja = actor_positions.unit_kerja)
+          OR (CAST(? AS text) IS NOT NULL AND access_dispositions.target_position_id = ?)
+          OR (CAST(? AS text) IS NOT NULL AND disposition_positions.unit_kerja = actor_positions.unit_kerja)
         )
     )`,
     params: [
@@ -877,9 +923,9 @@ export async function searchLettersPageForActorInDb(
         '[]' AS lampiran_json, letters.tags_json, letters.klasifikasi_tags_json,
         letters.viewer_mode, letters.qr_code_label, letters.document_aspect_ratio,
         letters.document_file_name, letters.document_size_mb,
-        NULL AS document_text_extract, NULL AS document_file_path,
+        NULL AS document_text_extract, letters.document_file_path,
         letters.target_position_id, letters.target_user_id, letters.created_by_user_id,
-        letters.deleted_at`.replaceAll("letters.", `${letterAlias}.`);
+        letters.created_at, letters.updated_at, letters.deleted_at`.replaceAll("letters.", `${letterAlias}.`);
   const rows = await db
     .prepare(
       `${listColumnSql}
@@ -1034,25 +1080,31 @@ export async function deactivateLetterTemplateInDb(
   }
 ) {
   const actor = await requireLetterTemplateManager(db, actorUserId);
-  const now = new Date().toISOString();
   const existing = await db
     .prepare(`SELECT id FROM letter_templates WHERE id = ?`)
     .get<{ id: string }>(templateId);
   if (!existing) throw new ApiError(404, "Template surat keluar tidak ditemukan.");
 
-  await db
-    .prepare(`UPDATE letter_templates SET is_active = 0, updated_at = ? WHERE id = ?`)
-    .run(now, templateId);
+  return withTransaction(db, async (tx) => {
+    const now = new Date().toISOString();
+    const result = await tx
+      .prepare(`UPDATE letter_templates SET is_active = 0, updated_at = ? WHERE id = ?`)
+      .run(now, templateId);
 
-  await appendAuditLog(db, {
-    id: await nextPrefixedId(db, "audit_logs", "adt"),
-    actorUserId: actor.id,
-    action: "DEACTIVATE_LETTER_TEMPLATE",
-    entityType: "letter_template",
-    entityId: templateId,
+    if (Number(result.changes ?? 0) === 0) {
+      throw new ApiError(404, "Template surat keluar tidak ditemukan.");
+    }
+
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "DEACTIVATE_LETTER_TEMPLATE",
+      entityType: "letter_template",
+      entityId: templateId,
+    });
+
+    return { id: templateId, isActive: false };
   });
-
-  return { id: templateId, isActive: false };
 }
 
 async function ensureClassificationExists(db: AletaDatabase, code: string) {
@@ -1103,6 +1155,42 @@ async function ensureOriginReferenceExists(db: AletaDatabase, originLabel: strin
   ).run(originId, normalizedOrigin, now);
 }
 
+async function assertLetterNumberAvailable(
+  tx: AletaDatabase,
+  { type, nomorSurat, excludeLetterId }: { type: string; nomorSurat: string; excludeLetterId?: string }
+) {
+  const normalized = nomorSurat.trim();
+  if (!normalized) return;
+
+  // Serialisasi antar-request bernomor sama (advisory lock per nomor+tipe) agar
+  // submit ganda paralel tidak lolos dua-duanya. Mode fallback non-Postgres
+  // tidak mendukung lock ini; pemeriksaan duplikat di bawah tetap berjalan.
+  try {
+    await tx
+      .prepare(`SELECT pg_advisory_xact_lock(hashtext(?)) AS locked`)
+      .get(`letters:${type}:${normalized.toLowerCase()}`);
+  } catch {
+    // fallback database mode
+  }
+
+  const params: string[] = [type, normalized];
+  if (excludeLetterId) params.push(excludeLetterId);
+  const existing = await tx
+    .prepare(
+      `SELECT id FROM letters
+       WHERE deleted_at IS NULL AND type = ? AND LOWER(nomor_surat) = LOWER(?)${excludeLetterId ? " AND id != ?" : ""}
+       LIMIT 1`
+    )
+    .get<{ id: string }>(...params);
+
+  if (existing) {
+    throw new ApiError(
+      409,
+      `Nomor surat "${normalized}" sudah terdaftar pada surat ${type === "masuk" ? "masuk" : "keluar"} lain. Gunakan nomor surat yang berbeda.`
+    );
+  }
+}
+
 export async function createLetterInDb(db: AletaDatabase, input: CreateLetterRequest) {
   const actor = await requireActorUser(db, input.actorUserId);
   const canCreate =
@@ -1142,6 +1230,7 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
   await ensureOriginReferenceExists(db, input.asalSurat);
 
   return withTransaction(db, async (tx) => {
+    await assertLetterNumberAvailable(tx, { type: input.type, nomorSurat: input.nomorSurat });
     const letterId = await nextPrefixedId(tx, "letters", "srt");
     const rootDispositionId = await nextPrefixedId(tx, "dispositions", "dsp");
     const deliveryId = await nextPrefixedId(tx, "letter_whatsapp_deliveries", "wa-letter");
@@ -1243,7 +1332,7 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
       letterId,
       recipient.name,
       recipient.whatsappNumber,
-      "Terkirim",
+      "Diantrekan",
       now,
       null,
       now,
@@ -1296,7 +1385,7 @@ export async function createLetterInDb(db: AletaDatabase, input: CreateLetterReq
       rootDispositionId,
       recipient.name,
       recipient.whatsappNumber,
-      "Terkirim",
+      "Diantrekan",
       now,
       null,
       now,
@@ -1364,6 +1453,14 @@ export async function updateLetterInDb(db: AletaDatabase, input: UpdateLetterReq
   }
 
   return withTransaction(db, async (tx) => {
+    if (input.nomorSurat !== undefined && input.nomorSurat.trim().toLowerCase() !== existing.nomorSurat.trim().toLowerCase()) {
+      await assertLetterNumberAvailable(tx, {
+        type: existing.type,
+        nomorSurat: input.nomorSurat,
+        excludeLetterId: existing.id,
+      });
+    }
+
     const updates: Record<string, SqlInputValue> = {
       updated_at: now,
     };
@@ -1585,8 +1682,14 @@ export async function deleteLetterInDb(
 ) {
   const actor = await requireActorUser(db, actorUserId);
   const existing = await db.prepare(
-    "SELECT id, deleted_at FROM letters WHERE id = ?"
-  ).get<{ id: string; deleted_at: string | null }>(letterId);
+    "SELECT id, type, nomor_surat, deleted_at, document_file_path FROM letters WHERE id = ?"
+  ).get<{
+    id: string;
+    type: LetterDetail["type"];
+    nomor_surat: string;
+    deleted_at: string | null;
+    document_file_path: string | null;
+  }>(letterId);
 
   if (!existing) {
     throw new ApiError(404, "Surat tidak ditemukan.");
@@ -1612,16 +1715,53 @@ export async function deleteLetterInDb(
   ).get<{ cnt: number }>(letterId);
   const activeCount = Number(activeDispositionCount?.cnt ?? 0);
 
-  if (effectiveMode === "hard" && activeCount > 0) {
-    throw new ApiError(
-      400,
-      `Surat ini masih memiliki ${activeCount} disposisi aktif. Selesaikan disposisi terlebih dahulu sebelum hard delete.`
-    );
-  }
-
   if (effectiveMode === "hard") {
-    return withTransaction(db, async (tx) => {
-      await tx.prepare("DELETE FROM letters WHERE id = ?").run(letterId);
+    const hardDeleteResult = await withTransaction(db, async (tx) => {
+      const dispositionRows = await tx.prepare(
+        "SELECT id FROM dispositions WHERE surat_id = ?"
+      ).all<{ id: string }>(letterId);
+      const dispositionIds = dispositionRows.map((row) => row.id);
+      const dispositionParams = dispositionIds.map(() => "?").join(", ");
+
+      const readDeleteResult = dispositionIds.length > 0
+        ? await tx.prepare(
+            `DELETE FROM user_notification_reads
+             WHERE (entity_type = 'letter' AND entity_id = ?)
+                OR (entity_type = 'disposition' AND entity_id IN (${dispositionParams}))`
+          ).run(letterId, ...dispositionIds)
+        : await tx.prepare(
+            "DELETE FROM user_notification_reads WHERE entity_type = 'letter' AND entity_id = ?"
+          ).run(letterId);
+      const dispositionWhatsappDeleteResult = dispositionIds.length > 0
+        ? await tx.prepare(
+            `DELETE FROM disposition_whatsapp_deliveries WHERE disposition_id IN (${dispositionParams})`
+          ).run(...dispositionIds)
+        : { changes: 0 };
+
+      await tx.prepare(
+        "UPDATE dispositions SET parent_disposition_id = NULL WHERE surat_id = ?"
+      ).run(letterId);
+
+      const dispositionDeleteResult = await tx.prepare(
+        "DELETE FROM dispositions WHERE surat_id = ?"
+      ).run(letterId);
+      const letterWhatsappDeleteResult = await tx.prepare(
+        "DELETE FROM letter_whatsapp_deliveries WHERE letter_id = ?"
+      ).run(letterId);
+      const attachmentDeleteResult = await tx.prepare(
+        "DELETE FROM letter_attachments WHERE letter_id = ?"
+      ).run(letterId);
+      const classificationTagDeleteResult = await tx.prepare(
+        "DELETE FROM letter_classification_tags WHERE letter_id = ?"
+      ).run(letterId);
+      const tagDeleteResult = await tx.prepare(
+        "DELETE FROM letter_tags WHERE letter_id = ?"
+      ).run(letterId);
+      const letterDeleteResult = await tx.prepare("DELETE FROM letters WHERE id = ?").run(letterId);
+
+      if ((letterDeleteResult.changes ?? 0) === 0) {
+        throw new ApiError(404, "Surat tidak ditemukan atau sudah dihapus permanen.");
+      }
 
       await appendAuditLog(tx, {
         id: await nextPrefixedId(tx, "audit_logs", "adt"),
@@ -1629,10 +1769,53 @@ export async function deleteLetterInDb(
         action: "HARD_DELETE_LETTER",
         entityType: "letter",
         entityId: letterId,
+        payload: {
+          nomorSurat: existing.nomor_surat,
+          type: existing.type,
+          previousDeletedAt: existing.deleted_at,
+          activeDispositionCount: activeCount,
+          deletedRelations: {
+            userNotificationReads: readDeleteResult.changes ?? 0,
+            dispositionWhatsappDeliveries: dispositionWhatsappDeleteResult.changes ?? 0,
+            dispositions: dispositionDeleteResult.changes ?? 0,
+            letterWhatsappDeliveries: letterWhatsappDeleteResult.changes ?? 0,
+            attachments: attachmentDeleteResult.changes ?? 0,
+            classificationTags: classificationTagDeleteResult.changes ?? 0,
+            tags: tagDeleteResult.changes ?? 0,
+          },
+          documentFilePath: existing.document_file_path ? "[INTERNAL_PDF_PATH_PRESENT]" : null,
+        },
       });
 
-      return { mode: "hard" as const, deletedAt: now };
+      return {
+        mode: "hard" as const,
+        deletedAt: now,
+        activeDispositionCount: activeCount,
+        deletedRelations: {
+          userNotificationReads: readDeleteResult.changes ?? 0,
+          dispositionWhatsappDeliveries: dispositionWhatsappDeleteResult.changes ?? 0,
+          dispositions: dispositionDeleteResult.changes ?? 0,
+          letterWhatsappDeliveries: letterWhatsappDeleteResult.changes ?? 0,
+          attachments: attachmentDeleteResult.changes ?? 0,
+          classificationTags: classificationTagDeleteResult.changes ?? 0,
+          tags: tagDeleteResult.changes ?? 0,
+        },
+      };
     });
+
+    let deletedDocument: { fileName: string; deleted: boolean } | null = null;
+    if (existing.document_file_path) {
+      try {
+        deletedDocument = await deleteStoredPdfFile(existing.document_file_path);
+      } catch {
+        deletedDocument = null;
+      }
+    }
+
+    return {
+      ...hardDeleteResult,
+      deletedDocument,
+    };
   }
 
   return withTransaction(db, async (tx) => {

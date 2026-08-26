@@ -67,6 +67,10 @@ async function withDbFallback(fileKey, record, writer) {
 
 function normalizeMessageRecord(data = {}, status) {
   const now = new Date();
+  const sentAt = data.sentAt || data.sent_at || (["sent", "delivered", "read"].includes(status) ? now : null);
+  const deliveredAt = data.deliveredAt || data.delivered_at || (status === "delivered" ? now : null);
+  const readAt = data.readAt || data.read_at || (status === "read" ? now : null);
+  const failedAt = data.failedAt || data.failed_at || (status === "failed" ? now : null);
   return {
     id: data.id || createId("msg"),
     queue_id: data.queueId || data.queue_id || data.metadata?.queueId || null,
@@ -77,9 +81,14 @@ function normalizeMessageRecord(data = {}, status) {
     recipient_name: data.recipientName || data.recipient_name || "",
     message_preview: data.messagePreview || data.message_preview || previewMessage(data.message),
     status,
+    whatsapp_message_id: data.whatsappMessageId || data.whatsapp_message_id || data.metadata?.whatsappMessageId || "",
+    ack: data.ack === undefined || data.ack === null ? null : Number(data.ack),
     error_message: data.errorMessage || data.error_message || "",
     retry_count: Number(data.retryCount || data.retry_count || 0),
-    sent_at: status === "sent" ? now : data.sentAt || data.sent_at || null,
+    sent_at: sentAt,
+    delivered_at: deliveredAt,
+    read_at: readAt,
+    failed_at: failedAt,
     metadata_json: safeJson(data.metadata || data.metadata_json || {}),
     created_at: data.createdAt || data.created_at || now,
   };
@@ -90,9 +99,10 @@ async function insertMessageLog(record) {
     botDb.query(
       `INSERT INTO aleta_bot_message_logs (
         id, queue_id, idempotency_key, notification_key, category, recipient_number,
-        recipient_name, message_preview, status, retry_count, error_message, sent_at,
+        recipient_name, message_preview, status, whatsapp_message_id, ack,
+        retry_count, error_message, sent_at, delivered_at, read_at, failed_at,
         metadata_json, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         record.id,
         record.queue_id,
@@ -103,9 +113,14 @@ async function insertMessageLog(record) {
         record.recipient_name,
         record.message_preview,
         record.status,
+        record.whatsapp_message_id,
+        record.ack,
         record.retry_count,
         record.error_message,
         record.sent_at ? botDb.toMysqlDate(record.sent_at) : null,
+        record.delivered_at ? botDb.toMysqlDate(record.delivered_at) : null,
+        record.read_at ? botDb.toMysqlDate(record.read_at) : null,
+        record.failed_at ? botDb.toMysqlDate(record.failed_at) : null,
         record.metadata_json,
         botDb.toMysqlDate(record.created_at),
       ]
@@ -115,6 +130,10 @@ async function insertMessageLog(record) {
 
 function logMessageAttempt(data) {
   return insertMessageLog(normalizeMessageRecord(data, data?.status || "sending"));
+}
+
+function logMessageQueued(data) {
+  return insertMessageLog(normalizeMessageRecord(data, "queued"));
 }
 
 function logMessageSent(data) {
@@ -317,7 +336,7 @@ async function hasSentIdempotencyKey(idempotencyKey) {
   const dbReady = await botDb.ensureSchema();
   if (!dbReady) return false;
   const rows = await botDb.query(
-    `SELECT id FROM aleta_bot_message_logs WHERE idempotency_key = ? AND status = 'sent' LIMIT 1`,
+    `SELECT id FROM aleta_bot_message_logs WHERE idempotency_key = ? AND status IN ('sent', 'delivered', 'read') LIMIT 1`,
     [idempotencyKey]
   );
   return Array.isArray(rows) && rows.length > 0;
@@ -326,7 +345,7 @@ async function hasSentIdempotencyKey(idempotencyKey) {
 async function getMessageStatsToday() {
   const dbReady = await botDb.ensureSchema();
   if (!dbReady) {
-    return { total: 0, sent: 0, failed: 0, skipped: 0, dry_run: 0, sending: 0, pending: 0 };
+    return { total: 0, queued: 0, sent: 0, delivered: 0, read: 0, failed: 0, skipped: 0, dry_run: 0, sending: 0, pending: 0 };
   }
   const rows = await botDb.query(
     `SELECT status, COUNT(*) AS count
@@ -341,8 +360,129 @@ async function getMessageStatsToday() {
       stats[row.status] = count;
       return stats;
     },
-    { total: 0, sent: 0, failed: 0, skipped: 0, dry_run: 0, sending: 0, pending: 0 }
+    { total: 0, queued: 0, sent: 0, delivered: 0, read: 0, failed: 0, skipped: 0, dry_run: 0, sending: 0, pending: 0 }
   );
+}
+
+function mapWhatsappAck(ack) {
+  const value = Number(ack);
+  if (!Number.isFinite(value)) return { status: "sent", label: "ack_unknown" };
+  if (value < 0) return { status: "failed", failedAt: new Date(), label: "ack_error" };
+  if (value >= 3) return { status: "read", readAt: new Date(), deliveredAt: new Date(), label: "read" };
+  if (value >= 2) return { status: "delivered", deliveredAt: new Date(), label: "delivered" };
+  if (value >= 1) return { status: "sent", label: "server_sent" };
+  return { status: "sent", label: "pending_device_ack" };
+}
+
+const STATUS_RANK = {
+  queued: 10,
+  pending: 10,
+  sending: 20,
+  sent: 30,
+  success: 30,
+  delivered: 40,
+  read: 50,
+  failed: 60,
+};
+
+async function updateMessageAck(data = {}) {
+  const whatsappMessageId = String(data.whatsappMessageId || data.whatsapp_message_id || "").trim();
+  if (!whatsappMessageId) return null;
+  const dbReady = await botDb.ensureSchema();
+  if (!dbReady) return null;
+
+  const rawAckValue = Number(data.ack);
+  const ackValue = Number.isFinite(rawAckValue) ? rawAckValue : null;
+  const mapped = mapWhatsappAck(ackValue);
+  const now = new Date();
+  const rows = await botDb.query(
+    `SELECT id, queue_id, status, delivered_at, read_at, metadata_json
+     FROM aleta_bot_message_logs
+     WHERE whatsapp_message_id = ?
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [whatsappMessageId]
+  );
+  const row = rows?.[0];
+  if (!row) {
+    return logWhatsappEvent({
+      eventType: "message_ack_unmatched",
+      severity: "info",
+      message: "ACK WhatsApp diterima tetapi log pesan belum ditemukan.",
+      metadata: { whatsappMessageId, ack: ackValue, ackLabel: mapped.label },
+    });
+  }
+
+  const currentRank = STATUS_RANK[row.status] || 0;
+  const mappedRank = STATUS_RANK[mapped.status] || 0;
+  const nextStatus = currentRank > mappedRank && row.status !== "failed" ? row.status : mapped.status;
+  const nextDeliveredAt = mapped.deliveredAt ? (row.delivered_at || botDb.toMysqlDate(mapped.deliveredAt)) : row.delivered_at;
+  const nextReadAt = mapped.readAt ? (row.read_at || botDb.toMysqlDate(mapped.readAt)) : row.read_at;
+  const nextFailedAt = mapped.failedAt ? botDb.toMysqlDate(mapped.failedAt) : null;
+  const previousMetadata = (() => {
+    try {
+      return JSON.parse(row.metadata_json || "{}");
+    } catch {
+      return {};
+    }
+  })();
+  const metadataJson = safeJson({
+    ...previousMetadata,
+    whatsappAck: ackValue,
+    whatsappAckLabel: mapped.label,
+    whatsappAckAt: now.toISOString(),
+  });
+
+  await botDb.query(
+    `UPDATE aleta_bot_message_logs
+     SET status = ?,
+         ack = ?,
+         delivered_at = COALESCE(delivered_at, ?),
+         read_at = COALESCE(read_at, ?),
+         failed_at = COALESCE(failed_at, ?),
+         error_message = CASE WHEN ? = 'failed' THEN 'whatsapp_ack_failed' ELSE error_message END,
+         metadata_json = ?
+     WHERE id = ?`,
+    [
+      nextStatus,
+      ackValue,
+      nextDeliveredAt,
+      nextReadAt,
+      nextFailedAt,
+      nextStatus,
+      metadataJson,
+      row.id,
+    ]
+  );
+
+  if (row.queue_id) {
+    await botDb.query(
+      `UPDATE aleta_bot_message_queue
+       SET status = CASE WHEN status IN ('failed', 'resolved', 'dry_run', 'skipped') THEN status ELSE ? END,
+           whatsapp_message_id = CASE WHEN whatsapp_message_id = '' THEN ? ELSE whatsapp_message_id END,
+           ack = ?,
+           delivered_at = COALESCE(delivered_at, ?),
+           read_at = COALESCE(read_at, ?),
+           updated_at = ?
+       WHERE id = ?`,
+      [
+        nextStatus,
+        whatsappMessageId,
+        ackValue,
+        nextDeliveredAt,
+        nextReadAt,
+        botDb.toMysqlDate(now),
+        row.queue_id,
+      ]
+    );
+  }
+
+  return logWhatsappEvent({
+    eventType: "message_ack_updated",
+    severity: "info",
+    message: `Status WhatsApp diperbarui: ${mapped.label}.`,
+    metadata: { whatsappMessageId, ack: ackValue, queueId: row.queue_id || "", status: nextStatus },
+  });
 }
 
 async function getSystemStatsToday() {
@@ -366,7 +506,7 @@ async function getSystemStatsToday() {
 }
 
 async function getRecentLogs(type = "message", limit = 50) {
-  const safeLimit = Math.max(1, Math.min(100, Number(limit || 50)));
+  const safeLimit = Math.max(1, Math.min(5001, Number(limit || 50)));
   const dbReady = await botDb.ensureSchema();
   if (!dbReady) return [];
 
@@ -387,6 +527,7 @@ async function getRecentLogs(type = "message", limit = 50) {
 module.exports = {
   files: fallbackFiles,
   logMessageAttempt,
+  logMessageQueued,
   logMessageSent,
   logMessageFailed,
   logMessageSkipped,
@@ -398,6 +539,7 @@ module.exports = {
   logQueryError,
   logSecurityEvent,
   hasSentIdempotencyKey,
+  updateMessageAck,
   getMessageStatsToday,
   getSystemStatsToday,
   getRecentLogs,

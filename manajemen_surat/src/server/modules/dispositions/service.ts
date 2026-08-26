@@ -1,8 +1,8 @@
 import { type QueryResultRow } from "pg";
 
 import { canUserForwardToLeadership, getEffectivePositionId, isPrivilegedAdmin } from "@/lib/permissions";
-import { type DispositionNode } from "@/lib/types";
-import { sendDispositionNotification } from "@/server/modules/whatsapp/delivery";
+import { type DispositionNode, type WhatsAppDeliveryStatus } from "@/lib/types";
+import { sendDispositionNotification, syncWhatsappDeliveryStatuses } from "@/server/modules/whatsapp/delivery";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
@@ -10,6 +10,7 @@ import { nextPrefixedId } from "@/server/shared/ids";
 import { toBooleanInt } from "@/server/shared/json";
 import {
   getLeadershipRecipientsFromDb,
+  getPositionsFromDb,
   requireActorUser,
   resolveTargetRecipientFromDb,
 } from "@/server/modules/organization/service";
@@ -41,7 +42,16 @@ type DeliveryRow = QueryResultRow & {
   disposition_id: string;
   recipient_name: string;
   recipient_whatsapp: string;
-  status: "Terkirim" | "Gagal";
+  status: WhatsAppDeliveryStatus;
+  queue_id: string | null;
+  gateway_status: string | null;
+  gateway_stage: string | null;
+  gateway_message_id: string | null;
+  gateway_error: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
+  last_gateway_sync_at: string | null;
   last_attempt_at: string;
 };
 
@@ -92,12 +102,15 @@ async function hydrateDispositions(db: AletaDatabase, rows: DispositionRow[]) {
 
   const ids = rows.map((row) => row.id);
   const params = ids.map(() => "?").join(", ");
-  const deliveries = await db.prepare(
-    `SELECT id, disposition_id, recipient_name, recipient_whatsapp, status, last_attempt_at
+  const rawDeliveries = await db.prepare(
+    `SELECT id, disposition_id, recipient_name, recipient_whatsapp, status,
+      queue_id, gateway_status, gateway_stage, gateway_message_id, gateway_error,
+      delivered_at, read_at, failed_at, last_gateway_sync_at, last_attempt_at
      FROM disposition_whatsapp_deliveries
      WHERE deleted_at IS NULL AND disposition_id IN (${params})
      ORDER BY last_attempt_at ASC`
   ).all<DeliveryRow>(...ids);
+  const deliveries = await syncWhatsappDeliveryStatuses(db, "disposition", rawDeliveries);
   const deliveryMap = deliveries.reduce<Map<string, DispositionNode["whatsappDeliveries"]>>((map, row) => {
     map.set(row.disposition_id, [
       ...(map.get(row.disposition_id) ?? []),
@@ -106,6 +119,15 @@ async function hydrateDispositions(db: AletaDatabase, rows: DispositionRow[]) {
         recipientName: row.recipient_name,
         recipientWhatsapp: row.recipient_whatsapp,
         status: row.status,
+        queueId: row.queue_id || undefined,
+        gatewayStatus: row.gateway_status || undefined,
+        gatewayStage: row.gateway_stage || undefined,
+        gatewayMessageId: row.gateway_message_id || undefined,
+        gatewayError: row.gateway_error || undefined,
+        deliveredAt: row.delivered_at,
+        readAt: row.read_at,
+        failedAt: row.failed_at,
+        lastGatewaySyncAt: row.last_gateway_sync_at,
         lastAttemptAt: row.last_attempt_at,
       },
     ]);
@@ -234,7 +256,7 @@ export async function createDispositionInDb(db: AletaDatabase, input: CreateDisp
       dispositionId,
       recipient.name,
       recipient.whatsappNumber,
-      "Terkirim",
+      "Diantrekan",
       now,
       null,
       now,
@@ -415,8 +437,9 @@ export async function forwardLetterToLeadershipInDb(
   }
 ) {
   const actor = await requireActorUser(db, actorUserId);
+  const positions = await getPositionsFromDb(db);
 
-  if (!canUserForwardToLeadership(actor)) {
+  if (!canUserForwardToLeadership(actor, positions)) {
     throw new ApiError(403, "Role aktif tidak memiliki akses untuk meneruskan surat ke pimpinan.");
   }
 
@@ -500,7 +523,7 @@ export async function forwardLetterToLeadershipInDb(
         dispositionId,
         recipient.name,
         recipient.whatsappNumber,
-        "Terkirim",
+        "Diantrekan",
         now,
         null,
         now,

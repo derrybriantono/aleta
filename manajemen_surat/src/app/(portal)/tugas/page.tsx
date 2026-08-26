@@ -3,25 +3,38 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Clock, ListTodo, LoaderCircle, MessageCircleMore, Send, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  BriefcaseBusiness,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  ListTodo,
+  LoaderCircle,
+  MessageCircleMore,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
-import { sortTaskItems, type TaskItem, type TaskSource } from "@/lib/task-sources";
+import { finalizeTaskSource, sortTaskItems, type TaskItem, type TaskSource } from "@/lib/task-sources";
 import { cn } from "@/lib/utils";
 
-type TaskFilter = "all" | "manajemen-surat" | "aleta-bot" | "feedback" | "admin" | "urgent" | "unseen";
+type TaskFilter = "all" | "manajemen-surat" | "aleta-bot" | "e-kepegawaian" | "e-status" | "feedback" | "admin" | "urgent" | "unseen";
 type TaskSort = "priority" | "newest" | "oldest" | "unread";
 
 const filterOptions: Array<{ id: TaskFilter; label: string }> = [
   { id: "all", label: "Semua" },
   { id: "manajemen-surat", label: "Manajemen Surat" },
   { id: "aleta-bot", label: "ALETA Bot" },
+  { id: "e-kepegawaian", label: "E-Kepegawaian" },
+  { id: "e-status", label: "E-Status" },
   { id: "feedback", label: "Pusat Masukan" },
-  { id: "admin", label: "Persetujuan" },
+  { id: "admin", label: "Admin" },
   { id: "urgent", label: "Mendesak" },
   { id: "unseen", label: "Belum Dilihat" },
 ];
@@ -78,11 +91,60 @@ const taskVisuals: Record<TaskItem["sourceType"], {
     iconBg: "bg-violet-100 dark:bg-violet-950/40",
     badgeVariant: "warning",
   },
+  hr_leave: {
+    icon: ClipboardCheck,
+    iconColor: "text-emerald-600",
+    iconBg: "bg-emerald-100 dark:bg-emerald-950/40",
+    badgeVariant: "warning",
+    badgeClassName: "bg-emerald-500",
+  },
+  hr_submission: {
+    icon: BriefcaseBusiness,
+    iconColor: "text-cyan-600",
+    iconBg: "bg-cyan-100 dark:bg-cyan-950/40",
+    badgeVariant: "default",
+    badgeClassName: "bg-cyan-500",
+  },
+  hr_attendance: {
+    icon: ClipboardCheck,
+    iconColor: "text-teal-600",
+    iconBg: "bg-teal-100 dark:bg-teal-950/40",
+    badgeVariant: "warning",
+    badgeClassName: "bg-teal-500",
+  },
+  estatus_record: {
+    icon: ClipboardCheck,
+    iconColor: "text-amber-600",
+    iconBg: "bg-amber-100 dark:bg-amber-950/40",
+    badgeVariant: "warning",
+  },
+  estatus_batch: {
+    icon: ShieldCheck,
+    iconColor: "text-blue-600",
+    iconBg: "bg-blue-100 dark:bg-blue-950/40",
+    badgeVariant: "warning",
+    badgeClassName: "bg-blue-500",
+  },
+  estatus_transmission: {
+    icon: Send,
+    iconColor: "text-cyan-600",
+    iconBg: "bg-cyan-100 dark:bg-cyan-950/40",
+    badgeVariant: "default",
+    badgeClassName: "bg-cyan-500",
+  },
+  estatus_incident: {
+    icon: ShieldCheck,
+    iconColor: "text-rose-600",
+    iconBg: "bg-rose-100 dark:bg-rose-950/40",
+    badgeVariant: "danger",
+  },
 };
 
 function filterSourceTasks(source: TaskSource, filter: TaskFilter): TaskSource | null {
   if (filter === "manajemen-surat" && source.appId !== "manajemen-surat") return null;
   if (filter === "aleta-bot" && source.appId !== "aleta-bot") return null;
+  if (filter === "e-kepegawaian" && source.appId !== "e-kepegawaian") return null;
+  if (filter === "e-status" && source.appId !== "e-status") return null;
   if (filter === "feedback" && source.appId !== "feedback") return null;
   if (filter === "admin" && source.appId !== "admin") return null;
 
@@ -94,11 +156,12 @@ function filterSourceTasks(source: TaskSource, filter: TaskFilter): TaskSource |
 
   if (tasks.length === 0) return null;
 
-  return {
-    ...source,
-    count: tasks.length,
+  return finalizeTaskSource({
+    appId: source.appId,
+    appName: source.appName,
+    appHref: source.appHref,
     tasks,
-  };
+  });
 }
 
 export default function TugasPage() {
@@ -109,12 +172,19 @@ export default function TugasPage() {
     taskSources,
   } = usePortal();
   const initialSource = searchParams.get("source");
+  const initialFilter = searchParams.get("filter")?.toLocaleLowerCase("id-ID");
   const [activeFilter, setActiveFilter] = useState<TaskFilter>(
     initialSource === "manajemen-surat" ||
       initialSource === "aleta-bot" ||
+      initialSource === "e-kepegawaian" ||
+      initialSource === "e-status" ||
       initialSource === "feedback" ||
       initialSource === "admin"
       ? initialSource
+      : initialFilter === "urgent" || initialFilter === "mendesak"
+        ? "urgent"
+        : initialFilter === "unread" || initialFilter === "unseen" || initialFilter === "belum-dilihat"
+          ? "unseen"
       : "all"
   );
   const [sortMode, setSortMode] = useState<TaskSort>("priority");
@@ -149,8 +219,8 @@ export default function TugasPage() {
         />
       </div>
 
-      <Card className="border-border/70">
-        <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+      <Card className="overflow-hidden border-border/70">
+        <CardContent className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             {filterOptions.map((option) => (
               <Button

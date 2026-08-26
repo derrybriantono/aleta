@@ -17,7 +17,11 @@ import {
   upsertAISettingsInDb,
 } from "@/server/modules/ai/service";
 import { completeDispositionInDb, getDispositionsByLetterIdFromDb } from "@/server/modules/dispositions/service";
-import { readLetterPaginationFromRequest, readLetterSortFromRequest } from "@/server/modules/letters/http";
+import {
+  readLetterPaginationFromRequest,
+  readLetterSearchFiltersFromRequest,
+  readLetterSortFromRequest,
+} from "@/server/modules/letters/http";
 import {
   createLetterInDb,
   deleteLetterInDb,
@@ -248,6 +252,15 @@ describe("backend modular monolith services", () => {
       sortBy: "tanggal",
       sortDirection: "desc",
     });
+    expect(
+      readLetterSearchFiltersFromRequest(
+        makeLetterRequest("/api/surat?type=masuk&uploadedFrom=2026-04-01&uploadedTo=2026-04-30")
+      )
+    ).toMatchObject({
+      type: "masuk",
+      uploadedFrom: "2026-04-01",
+      uploadedTo: "2026-04-30",
+    });
   });
 
   it("pages lightweight surat lists server-side", async () => {
@@ -354,6 +367,50 @@ describe("backend modular monolith services", () => {
     expect(pageOne.meta.lightweight).toBe(true);
   });
 
+  it("keeps PDF document paths in lightweight surat lists for preview and download", async () => {
+    const actor = await requireActorUser(db!, "usr-super");
+    const created = await createLetterInDb(db!, {
+      actorUserId: "usr-dina",
+      type: "masuk",
+      nomorUrut: "037",
+      nomorSurat: "B-037/ALETA/PDF/2026",
+      tanggalSurat: "2026-04-27",
+      tanggalTerima: "2026-04-27",
+      pengirim: "Mahkamah Agung RI",
+      perihal: "Uji path PDF pada daftar surat",
+      assignedUnit: "Kesekretariatan",
+      confidentiality: "Penting",
+      kodeKlasifikasi: "UM.1.1",
+      klasifikasi: "Tata Naskah Dinas dan Persuratan",
+      klasifikasiTags: ["PDF"],
+      ringkasan: "Surat ini memastikan sinkronisasi daftar tidak menghapus path PDF.",
+      asalSurat: "Mahkamah Agung RI",
+      tujuanSurat: "Ketua Pengadilan",
+      lampiran: ["uji-path-pdf.pdf"],
+      tags: ["PdfBackendList"],
+      viewerMode: "download",
+      targetPositionId: "pos-ketua",
+      documentFileName: "uji-path-pdf.pdf",
+      documentSizeMb: 0.42,
+      documentTextExtract: "Teks sengaja tidak dikirim lewat daftar ringan.",
+      documentFilePath: "/uploads/pdf/uji-path-pdf.pdf",
+    });
+
+    const page = await searchLettersPageForActorInDb(
+      db!,
+      actor,
+      { query: "Uji path PDF pada daftar surat" },
+      { page: 1, pageSize: 5, sortBy: "tanggal", sortDirection: "desc" }
+    );
+
+    const listed = page.items.find((item) => item.id === created.letter.id);
+
+    expect(created.letter.documentUrl).toBe("/uploads/pdf/uji-path-pdf.pdf");
+    expect(listed?.documentUrl).toBe("/uploads/pdf/uji-path-pdf.pdf");
+    expect(listed?.documentFileName).toBe("uji-path-pdf.pdf");
+    expect(listed?.documentTextExtract).toBeUndefined();
+  });
+
   it("filters paginated surat lists by type and search on the server", async () => {
     const actor = await requireActorUser(db!, "usr-super");
     const created = await createLetterInDb(db!, {
@@ -385,11 +442,27 @@ describe("backend modular monolith services", () => {
       { type: "keluar", query: "KinerjaPaginated" },
       { page: 1, pageSize: 25, sortBy: "createdAt", sortDirection: "desc" }
     );
+    const uploadDate = created.letter.createdAt?.slice(0, 10);
+    expect(uploadDate).toBeTruthy();
+    const resultsByUploadDate = await searchLettersPageForActorInDb(
+      db!,
+      actor,
+      { type: "keluar", query: "KinerjaPaginated", uploadedFrom: uploadDate, uploadedTo: uploadDate },
+      { page: 1, pageSize: 25, sortBy: "createdAt", sortDirection: "desc" }
+    );
+    const outsideUploadDate = await searchLettersPageForActorInDb(
+      db!,
+      actor,
+      { type: "keluar", query: "KinerjaPaginated", uploadedFrom: "1900-01-01", uploadedTo: "1900-01-01" },
+      { page: 1, pageSize: 25, sortBy: "createdAt", sortDirection: "desc" }
+    );
 
     expect(results.pagination.total).toBe(1);
     expect(results.items).toHaveLength(1);
     expect(results.items[0]?.id).toBe(created.letter.id);
     expect(results.items[0]?.type).toBe("keluar");
+    expect(resultsByUploadDate.items.map((item) => item.id)).toContain(created.letter.id);
+    expect(outsideUploadDate.pagination.total).toBe(0);
   });
 
   it("keeps surat list RBAC filtering on the server", async () => {
@@ -491,14 +564,21 @@ describe("backend modular monolith services", () => {
   });
 
   it("rejects acting-only officer attempts to create another acting assignment", async () => {
+    const startedYesterday = new Date();
+    startedYesterday.setDate(startedYesterday.getDate() - 1);
+    const endsNextWeek = new Date();
+    endsNextWeek.setDate(endsNextWeek.getDate() + 7);
+    const tanggalMulai = startedYesterday.toISOString().slice(0, 10);
+    const tanggalSelesai = endsNextWeek.toISOString().slice(0, 10);
+
     await createActingAssignmentInDb(db!, {
       actorUserId: "usr-super",
       supervisorUserId: "usr-ketua",
       userIdPengganti: "usr-hakim",
       jabatanIdTarget: "pos-ketua",
       tipe: "PLH",
-      tanggalMulai: "2026-05-03",
-      tanggalSelesai: "2026-05-10",
+      tanggalMulai,
+      tanggalSelesai,
       reason: "Pejabat definitif berhalangan sementara.",
     });
 
@@ -573,27 +653,17 @@ describe("backend modular monolith services", () => {
       targetPositionId: "pos-ketua",
     });
 
-    await expect(
-      deleteLetterInDb(db!, {
-        actorUserId: "usr-super",
-        letterId: second.letter.id,
-      })
-    ).rejects.toThrow("disposisi aktif");
-
-    const secondTimeline = await getDispositionsByLetterIdFromDb(db!, second.letter.id);
-    await completeDispositionInDb(db!, {
-      actorUserId: "usr-ketua",
-      dispositionId: secondTimeline[0]!.id,
-      note: "Disposisi selesai sebelum hard delete.",
-      fileName: "",
-    });
-
     const hardDelete = await deleteLetterInDb(db!, {
       actorUserId: "usr-super",
       letterId: second.letter.id,
     });
     expect(hardDelete.mode).toBe("hard");
+    if (hardDelete.mode !== "hard") {
+      throw new Error("Expected hard delete result.");
+    }
+    expect(hardDelete.activeDispositionCount).toBeGreaterThan(0);
     expect(await getLetterByIdFromDb(db!, second.letter.id, { includeDeleted: true })).toBeNull();
+    expect(await getDispositionsByLetterIdFromDb(db!, second.letter.id)).toHaveLength(0);
   });
 
   it("aggregates statistics and can return AI insight", async () => {
@@ -999,6 +1069,14 @@ describe("backend modular monolith services", () => {
     expect(updatedUser.roleId).toBe("ketua");
 
     const recoveryDraft = await createPasswordRecoveryDraftInDb(db!, { identifier: "199001012026041002" });
+    const recoveryOtpRow = await db!.prepare(
+      `SELECT value
+       FROM verifications
+       WHERE identifier = ?`
+    ).get<{ value: string }>(`password-reset:${recoveryDraft.userId}`);
+    expect(recoveryOtpRow?.value).toMatch(/^[a-f0-9]{64}$/);
+    expect(recoveryOtpRow?.value).not.toBe(recoveryDraft.otp);
+
     await confirmPasswordRecoveryInDb(db!, {
       userId: recoveryDraft.userId,
       otp: recoveryDraft.otp,

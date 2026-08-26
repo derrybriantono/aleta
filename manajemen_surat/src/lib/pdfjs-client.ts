@@ -1,5 +1,7 @@
 import type { DocumentInitParameters, PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
 
+import { withBasePath } from "@/lib/base-path";
+
 export type { PDFDocumentLoadingTask as PdfDocumentLoadingTask, PDFDocumentProxy as PdfDocumentProxy };
 
 export type PdfJsModule = {
@@ -10,8 +12,8 @@ export type PdfJsModule = {
 };
 
 let pdfJsModulePromise: Promise<PdfJsModule> | null = null;
-const pdfJsModuleUrl = "/vendor/pdfjs/pdf.min.mjs";
-const pdfJsWorkerUrl = "/vendor/pdfjs/pdf.worker.min.mjs";
+const pdfJsModuleUrl = withBasePath("/vendor/pdfjs/pdf.min.mjs");
+const pdfJsWorkerUrl = withBasePath("/vendor/pdfjs/pdf.worker.min.mjs");
 
 export async function loadPdfJsModule() {
   if (!pdfJsModulePromise) {

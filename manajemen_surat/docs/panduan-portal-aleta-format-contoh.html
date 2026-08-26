@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buku Panduan Portal ALETA</title>
+  <style>
+    @page { size: A4; margin: 16mm 16mm 22mm 16mm; }
+    :root {
+      --blue: #1e4dd8;
+      --navy: #0b1f3a;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --line: #d1d5db;
+      --zebra: #f8fafc;
+      --soft-blue: #eef4ff;
+      --soft-yellow: #fff7df;
+    }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "DejaVu Sans", "Segoe UI", Arial, sans-serif;
+      font-size: 10.2pt;
+      line-height: 1.48;
+      background: #fff;
+    }
+    .cover {
+      min-height: 235mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-top: 12px solid var(--navy);
+      border-bottom: 3px solid var(--blue);
+      page-break-after: always;
+    }
+    .cover-kicker {
+      color: var(--blue);
+      font-size: 11pt;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .cover h1 {
+      color: var(--navy);
+      font-size: 31pt;
+      line-height: 1.12;
+      margin: 0 0 12px;
+    }
+    .cover p {
+      color: var(--muted);
+      font-size: 13pt;
+      max-width: 440px;
+      margin: 0 0 28px;
+    }
+    .meta-table {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 470px;
+      margin-top: 14px;
+    }
+    .meta-table div {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      border-bottom: 1px solid var(--line);
+      min-height: 34px;
+    }
+    .meta-table div:last-child { border-bottom: 0; }
+    .meta-table b {
+      background: var(--navy);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 9pt;
+    }
+    .meta-table span {
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 9pt;
+    }
+    .cover-note {
+      margin-top: 22px;
+      padding: 12px 14px;
+      max-width: 470px;
+      background: var(--soft-blue);
+      color: var(--muted);
+      border-left: 4px solid var(--blue);
+      border-radius: 6px;
+    }
+    .section {
+      page-break-before: always;
+    }
+    .section.toc {
+      page-break-before: auto;
+    }
+    h1 {
+      color: var(--navy);
+      font-size: 19pt;
+      margin: 0 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 {
+      color: var(--blue);
+      font-size: 12.5pt;
+      margin: 16px 0 8px;
+    }
+    p {
+      margin: 0 0 10px;
+    }
+    ul, ol {
+      margin: 7px 0 12px 18px;
+      padding: 0;
+    }
+    li {
+      margin: 4px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 8.8pt;
+      page-break-inside: avoid;
+    }
+    th {
+      background: var(--navy);
+      color: #fff;
+      text-align: left;
+      padding: 7px 8px;
+      border: 1px solid var(--navy);
+      font-weight: 700;
+    }
+    td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background: var(--zebra);
+    }
+    .callout {
+      margin: 12px 0;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border-left: 4px solid var(--blue);
+      background: var(--soft-blue);
+      page-break-inside: avoid;
+    }
+    .callout.warn {
+      background: var(--soft-yellow);
+      border-left-color: #d97706;
+    }
+    .callout strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--navy);
+    }
+    .callout p {
+      margin: 0;
+      color: var(--muted);
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 10px 0 16px;
+      page-break-inside: avoid;
+    }
+    .flow-box {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+      border-radius: 6px;
+      background: #fff;
+      padding: 9px;
+      min-height: 42px;
+    }
+    .flow-box span {
+      display: inline-block;
+      color: var(--blue);
+      font-weight: 700;
+      margin-right: 5px;
+    }
+    .flow-box b {
+      font-size: 9pt;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+  <section class="cover">
+    <div class="cover-kicker">PORTAL ALETA</div>
+    <h1>Buku Panduan Portal ALETA</h1>
+    <p>Panduan Dashboard SSO, Pengaturan Portal, Manajemen Surat, Fitur AI, dan Admin</p>
+    <div class="meta-table">
+      <div><b>Versi</b><span>v1.2 - Juli 2026</span></div>
+      <div><b>Tanggal</b><span>2 Juli 2026</span></div>
+      <div><b>Instansi</b><span>Pengadilan Agama Donggala</span></div>
+      <div><b>Format</b><span>Tanpa screenshot, mengikuti gaya dokumen contoh</span></div>
+    </div>
+    <div class="cover-note">Dokumen ini menggunakan gaya sederhana: heading biru, tabel formal, bullet ringkas, diagram alur teks, dan footer halaman.</div>
+  </section>
+
+  <section class="section toc">
+    <h1>Daftar Isi</h1>
+    <table><thead><tr><th>No.</th><th>Bab</th><th>Ringkasan</th></tr></thead><tbody><tr><td>1</td><td>Kata Pengantar</td><td>Tujuan, sasaran pembaca, dan batasan dokumen.</td></tr><tr><td>2</td><td>Gambaran Umum Portal ALETA</td><td>Konsep SSO, dashboard, dan ekosistem aplikasi.</td></tr><tr><td>3</td><td>Dashboard SSO dan Navigasi</td><td>Kartu aplikasi, sidebar, menu, dan akses.</td></tr><tr><td>4</td><td>Pengaturan Portal ALETA</td><td>Profil, role, permission, dan module visibility.</td></tr><tr><td>5</td><td>Login, Logout, dan Session</td><td>Cara masuk, keluar, dan menjaga keamanan akun.</td></tr><tr><td>6</td><td>Manajemen Surat</td><td>Pencatatan, detail, edit, disposisi, lampiran, pencarian.</td></tr><tr><td>7</td><td>Fitur AI</td><td>Cara pakai, contoh, batasan, dan etika penggunaan.</td></tr><tr><td>8</td><td>Panduan Admin</td><td>User, role, permission, jabatan, modul, dan pengaturan.</td></tr><tr><td>9</td><td>Pengembangan Selanjutnya</td><td>Modul lain yang dapat ditambahkan ke ekosistem.</td></tr><tr><td>10</td><td>Troubleshooting, FAQ, Glosarium</td><td>Solusi masalah umum dan istilah penting.</td></tr><tr><td>11</td><td>Checklist Operasional</td><td>Checklist harian user, operator, admin, dan AI.</td></tr></tbody></table>
+  </section>
+
+  <section class="section"><h1>1. Kata Pengantar</h1>
+    <p>Portal ALETA disiapkan sebagai pusat akses layanan elektronik internal. Panduan ini ditujukan untuk membantu pengguna dan admin memahami cara menggunakan portal dengan benar, aman, dan konsisten.</p>
+    <p>Dokumen ini dibuat tanpa screenshot agar lebih rapi, ringan, dan mudah diperbarui saat tampilan aplikasi berubah. Visualisasi alur disajikan menggunakan tabel, daftar langkah, callout, dan diagram teks.</p>
+    <div class="callout info"><strong>Fokus Dokumen</strong><p>Panduan ini membahas Dashboard SSO, Pengaturan Portal, Manajemen Surat, Fitur AI, dan Admin. Modul lain hanya disebut singkat sebagai pengembangan ekosistem.</p></div>
+    <table><thead><tr><th>Pembaca</th><th>Kebutuhan Utama</th><th>Bagian yang Disarankan</th></tr></thead><tbody><tr><td>User baru</td><td>Memahami login, dashboard, dan menu dasar.</td><td>Bab 2, 3, 5.</td></tr><tr><td>Operator Surat</td><td>Mengelola surat, lampiran, disposisi, dan pencarian.</td><td>Bab 6 dan checklist operator.</td></tr><tr><td>Admin</td><td>Mengelola user, role, permission, modul, dan pengaturan.</td><td>Bab 4 dan 8.</td></tr><tr><td>Pimpinan/Pejabat</td><td>Memahami disposisi, hak akses, dan penggunaan AI secara aman.</td><td>Bab 6 dan 7.</td></tr></tbody></table>
+  </section>
+
+  <section class="section"><h1>2. Gambaran Umum Portal ALETA</h1>
+    <p>Portal ALETA adalah dashboard SSO atau Single Sign On untuk aplikasi internal. Pengguna cukup login satu kali, kemudian sistem menampilkan aplikasi yang sesuai dengan role dan hak akses pengguna tersebut.</p>
+    <div class="flow"><div class="flow-box"><span>1</span><b>User</b></div><div class="flow-box"><span>2</span><b>Login ALETA</b></div><div class="flow-box"><span>3</span><b>Dashboard SSO</b></div><div class="flow-box"><span>4</span><b>Pilih Aplikasi</b></div><div class="flow-box"><span>5</span><b>Gunakan Fitur</b></div><div class="flow-box"><span>6</span><b>Logout</b></div></div>
+    <h2>2.1 Manfaat Portal ALETA</h2><ul><li>Akses aplikasi internal menjadi lebih terpusat.</li><li>Pengelolaan user, role, dan permission lebih tertib.</li><li>Menu pengguna dapat disesuaikan dengan tugas dan jabatan.</li><li>Aplikasi baru dapat ditambahkan ke portal secara bertahap.</li><li>Keamanan akses lebih baik karena fitur tidak dibuka sama untuk semua user.</li></ul>
+    <h2>2.2 Konsep Ekosistem</h2><p>Portal ALETA tidak hanya berfungsi sebagai halaman login. Portal ini menjadi fondasi ekosistem aplikasi internal yang dapat dikembangkan dengan modul baru sesuai kebutuhan satuan kerja.</p>
+  </section>
+
+  <section class="section"><h1>3. Dashboard SSO dan Navigasi</h1>
+    <p>Dashboard SSO adalah halaman utama setelah pengguna berhasil login. Halaman ini menjadi pusat navigasi untuk membuka aplikasi, melihat menu, dan kembali ke portal utama.</p>
+    <h2>3.1 Fungsi Dashboard SSO</h2><ul><li>Menjadi halaman awal setelah login.</li><li>Menampilkan aplikasi yang dapat diakses pengguna.</li><li>Menampilkan menu sesuai role dan permission.</li><li>Memberikan akses cepat ke Manajemen Surat, Admin, dan fitur AI jika diaktifkan.</li><li>Menjadi tempat pengembangan aplikasi internal selanjutnya.</li></ul>
+    <h2>3.2 Komponen Dashboard</h2><table><thead><tr><th>Komponen</th><th>Fungsi</th><th>Catatan</th></tr></thead><tbody><tr><td>Kartu Aplikasi</td><td>Menampilkan aplikasi yang dapat dibuka pengguna.</td><td>Klik kartu sesuai kebutuhan kerja.</td></tr><tr><td>Sidebar/Menu</td><td>Navigasi cepat ke halaman dalam portal atau modul.</td><td>Menu mengikuti role dan permission.</td></tr><tr><td>Profil Akun</td><td>Menampilkan identitas akun dan akses logout.</td><td>Pastikan akun yang tampil adalah akun sendiri.</td></tr><tr><td>Informasi Sistem</td><td>Menampilkan ringkasan, status, atau notifikasi bila tersedia.</td><td>Baca sebelum memulai pekerjaan.</td></tr><tr><td>Hak Akses</td><td>Menyaring menu dan fitur yang boleh digunakan.</td><td>Dikelola melalui role, permission, dan module visibility.</td></tr></tbody></table>
+    <h2>3.3 Alur Penggunaan Dashboard</h2><table><thead><tr><th>Langkah</th><th>Tindakan</th><th>Hasil yang Diharapkan</th></tr></thead><tbody><tr><td>1</td><td>Buka halaman Portal ALETA.</td><td>Halaman login tampil.</td></tr><tr><td>2</td><td>Masukkan identitas akun dan password.</td><td>Sistem memvalidasi akun.</td></tr><tr><td>3</td><td>Login berhasil.</td><td>Pengguna diarahkan ke dashboard.</td></tr><tr><td>4</td><td>Pilih aplikasi atau menu.</td><td>Aplikasi terbuka sesuai hak akses.</td></tr><tr><td>5</td><td>Kembali ke portal bila perlu.</td><td>User dapat memilih modul lain.</td></tr></tbody></table>
+    <div class="callout note"><strong>Catatan</strong><p>Menu setiap user dapat berbeda karena sistem membaca role, permission, jabatan, dan module visibility.</p></div>
+  </section>
+
+  <section class="section"><h1>4. Pengaturan Portal ALETA</h1>
+    <p>Pengaturan Portal ALETA menentukan bagaimana user, role, permission, jabatan, dan module visibility bekerja. Pengaturan ini menjaga agar pengguna hanya melihat dan memakai fitur sesuai tugasnya.</p>
+    <h2>4.1 Konsep Hak Akses</h2><table><thead><tr><th>Istilah</th><th>Penjelasan</th><th>Contoh</th></tr></thead><tbody><tr><td>Akun</td><td>Identitas pengguna untuk login.</td><td>Username, email, NIP, nomor HP.</td></tr><tr><td>Role</td><td>Kelompok peran utama pengguna.</td><td>Admin, Operator Surat, Hakim.</td></tr><tr><td>Permission</td><td>Izin detail untuk fitur atau tindakan.</td><td>Membuat surat, edit, disposisi.</td></tr><tr><td>Jabatan</td><td>Posisi organisasi pengguna.</td><td>Panitera, Jurusita, staf.</td></tr><tr><td>Module Visibility</td><td>Pengaturan modul yang tampil untuk role.</td><td>Manajemen Surat aktif untuk operator.</td></tr></tbody></table>
+    <h2>4.2 Prinsip Pemberian Akses</h2><ul><li>Berikan akses sesuai kebutuhan kerja.</li><li>Hindari memberi akses admin hanya untuk membuka satu menu.</li><li>User nonaktif tidak boleh tetap dapat login.</li><li>Perubahan role dan permission perlu diuji setelah disimpan.</li><li>Gunakan prinsip akses minimal agar data tidak terbuka berlebihan.</li></ul>
+    <h2>4.3 Ringkasan Role</h2><table><thead><tr><th>Role</th><th>Akses Umum</th><th>Catatan</th></tr></thead><tbody><tr><td>Super Admin</td><td>Mengatur seluruh sistem, user, role, modul, dan konfigurasi penting.</td><td>Hanya untuk pengelola inti.</td></tr><tr><td>Admin</td><td>Mengelola user, role, permission, jabatan, dan pengaturan operasional.</td><td>Perlu uji akses setelah perubahan.</td></tr><tr><td>Operator Surat</td><td>Membuat, mengedit, mencari, mengunggah lampiran, dan memproses surat.</td><td>Role utama Manajemen Surat.</td></tr><tr><td>Hakim</td><td>Melihat surat/disposisi yang terkait dengan tugasnya.</td><td>Akses mengikuti disposisi dan kebijakan.</td></tr><tr><td>Panitera</td><td>Memantau atau menindaklanjuti surat sesuai kewenangan.</td><td>Dapat berbeda sesuai jabatan.</td></tr><tr><td>Jurusita</td><td>Melihat tugas atau disposisi pelaksanaan yang relevan.</td><td>Tidak otomatis melihat semua surat.</td></tr><tr><td>User Biasa</td><td>Mengakses fitur yang diberikan secara terbatas.</td><td>Tidak dapat membuka admin tanpa permission.</td></tr></tbody></table>
+  </section>
+
+  <section class="section"><h1>5. Login, Logout, dan Session</h1>
+    <h2>5.1 Cara Login</h2><ol><li>Buka alamat Portal ALETA melalui browser.</li><li>Isi username, email, NIP, atau nomor HP sesuai akun.</li><li>Isi password dengan benar.</li><li>Klik tombol login.</li><li>Jika berhasil, pengguna masuk ke Dashboard SSO.</li></ol>
+    <h2>5.2 Cara Logout</h2><ol><li>Buka menu profil atau akun.</li><li>Pilih logout.</li><li>Pastikan browser kembali ke halaman login.</li><li>Tutup browser jika memakai perangkat bersama.</li></ol>
+    <div class="callout warn"><strong>Keamanan Perangkat Bersama</strong><p>Selalu logout setelah selesai. Jangan meninggalkan browser dalam keadaan login, terutama pada komputer bersama.</p></div>
+    <h2>5.3 Login Gagal</h2><table><thead><tr><th>Kondisi</th><th>Kemungkinan Penyebab</th><th>Tindakan</th></tr></thead><tbody><tr><td>Password salah</td><td>Password tidak sesuai.</td><td>Coba ulang atau ikuti prosedur reset.</td></tr><tr><td>Akun tidak ditemukan</td><td>Identitas salah atau akun belum dibuat.</td><td>Hubungi admin.</td></tr><tr><td>User nonaktif</td><td>Akun dinonaktifkan.</td><td>Minta admin melakukan verifikasi.</td></tr><tr><td>Akses ditolak</td><td>Role belum punya permission.</td><td>Minta evaluasi akses bila diperlukan.</td></tr></tbody></table>
+  </section>
+
+  <section class="section"><h1>6. Manajemen Surat</h1>
+    <p>Manajemen Surat adalah modul untuk mencatat, mengelola, mencari, mendisposisikan, dan mengarsipkan surat secara digital. Modul ini membantu operator dan pejabat terkait bekerja lebih tertib.</p>
+    <h2>6.1 Alur Kerja Manajemen Surat</h2><div class="flow"><div class="flow-box"><span>1</span><b>Surat Diterima/Dibuat</b></div><div class="flow-box"><span>2</span><b>Input Data</b></div><div class="flow-box"><span>3</span><b>Upload Lampiran</b></div><div class="flow-box"><span>4</span><b>Simpan</b></div><div class="flow-box"><span>5</span><b>Disposisi</b></div><div class="flow-box"><span>6</span><b>Tindak Lanjut</b></div><div class="flow-box"><span>7</span><b>Arsip</b></div></div>
+    <h2>6.2 Data Penting Surat</h2><table><thead><tr><th>Data</th><th>Fungsi</th><th>Catatan</th></tr></thead><tbody><tr><td>Nomor Surat</td><td>Identitas utama surat.</td><td>Wajib teliti agar tidak menyulitkan arsip.</td></tr><tr><td>Tanggal Surat</td><td>Tanggal dokumen diterbitkan.</td><td>Bedakan dengan tanggal terima/kirim.</td></tr><tr><td>Asal/Tujuan</td><td>Sumber atau penerima surat.</td><td>Gunakan nama yang jelas dan konsisten.</td></tr><tr><td>Perihal</td><td>Ringkasan isi surat.</td><td>Singkat, jelas, dan mudah dicari.</td></tr><tr><td>Kategori/Klasifikasi</td><td>Pengelompokan administrasi.</td><td>Membantu filter dan laporan.</td></tr><tr><td>Status</td><td>Tahap pemrosesan surat.</td><td>Perbarui sesuai perkembangan.</td></tr><tr><td>Lampiran</td><td>File pendukung digital.</td><td>Upload file valid dan sesuai hak akses.</td></tr><tr><td>Disposisi</td><td>Arahan/tugas kepada penerima.</td><td>Pilih penerima yang benar.</td></tr></tbody></table>
+    <h2>6.3 Tambah Surat</h2><ol><li>Buka menu Manajemen Surat.</li><li>Pilih tambah surat sesuai jenis surat.</li><li>Isi nomor, tanggal, asal/tujuan, perihal, kategori, dan status.</li><li>Upload lampiran jika tersedia.</li><li>Periksa ulang data.</li><li>Simpan dan pastikan data muncul di daftar surat.</li></ol>
+    <h2>6.4 Detail dan Edit Surat</h2><p>Halaman detail dipakai untuk melihat metadata, status, lampiran, dan riwayat disposisi. Edit hanya dilakukan oleh user yang memiliki permission dan hanya bila data perlu diperbaiki.</p>
+    <h2>6.5 Disposisi Surat</h2><ol><li>Buka detail surat.</li><li>Pilih menu disposisi.</li><li>Pilih penerima yang valid.</li><li>Tulis instruksi secara jelas.</li><li>Simpan disposisi.</li><li>Pastikan penerima dapat melihat tugas sesuai hak akses.</li></ol>
+    <h2>6.6 Lampiran, Pencarian, dan Arsip</h2><ul><li>Upload hanya file valid dan sesuai kebutuhan.</li><li>Download hanya boleh dilakukan oleh user yang berhak.</li><li>Gunakan kata kunci, status, kategori, atau tanggal untuk mencari surat.</li><li>Kosongkan filter bila data tidak muncul.</li><li>Pastikan status surat diperbarui sesuai tahap proses.</li></ul>
+    <div class="callout note"><strong>Best Practice</strong><p>Sebelum menyimpan surat, periksa nomor, tanggal, asal/tujuan, perihal, dan lampiran. Kesalahan metadata dapat menyulitkan pencarian arsip.</p></div>
+  </section>
+
+  <section class="section"><h1>7. Fitur AI</h1>
+    <p>Fitur AI membantu pengguna menyusun draft, meringkas informasi, membuat daftar poin penting, memberi rekomendasi awal, dan merapikan bahasa. AI adalah alat bantu, bukan pengganti kewenangan manusia.</p>
+    <h2>7.1 Cara Menggunakan AI</h2><ol><li>Buka fitur AI pada modul yang tersedia.</li><li>Tulis instruksi dengan jelas dan spesifik.</li><li>Berikan konteks secukupnya.</li><li>Baca hasil dengan teliti.</li><li>Edit hasil sesuai kebutuhan.</li><li>Verifikasi manual sebelum digunakan.</li></ol>
+    <h2>7.2 Contoh Penggunaan</h2><table><thead><tr><th>Kebutuhan</th><th>Contoh Instruksi</th><th>Catatan</th></tr></thead><tbody><tr><td>Ringkasan Surat</td><td>Buat ringkasan 5 poin dari isi surat berikut.</td><td>Gunakan untuk memahami dokumen lebih cepat.</td></tr><tr><td>Draft Narasi</td><td>Susun narasi formal berdasarkan poin-poin berikut.</td><td>Edit kembali agar sesuai gaya bahasa kantor.</td></tr><tr><td>Poin Tindak Lanjut</td><td>Ambil poin penting, batas waktu, dan pihak terkait.</td><td>Berguna sebelum disposisi.</td></tr><tr><td>Cek Konsistensi</td><td>Periksa tanggal, nomor, nama, dan istilah yang tidak konsisten.</td><td>Tetap perlu cek manual.</td></tr><tr><td>Rapi Bahasa</td><td>Rapikan bahasa agar lebih formal tanpa mengubah makna.</td><td>Pastikan substansi tetap sama.</td></tr></tbody></table>
+    <h2>7.3 Batasan dan Etika</h2><ul><li>AI dapat keliru memahami konteks.</li><li>Hasil AI wajib diverifikasi.</li><li>AI tidak menggantikan keputusan pejabat/pengguna.</li><li>Jangan memasukkan data sensitif yang tidak diperlukan.</li><li>Gunakan AI sesuai kebijakan satuan kerja.</li></ul>
+    <div class="callout warn"><strong>Perhatian</strong><p>Jangan memasukkan password, token, secret, data pribadi berlebihan, atau dokumen yang tidak perlu diproses AI.</p></div>
+  </section>
+
+  <section class="section"><h1>8. Panduan Admin</h1>
+    <p>Admin bertanggung jawab menjaga struktur akses dan pengaturan aplikasi. Kesalahan pengaturan admin dapat berdampak langsung pada menu, akses data, dan keamanan operasional.</p>
+    <h2>8.1 Fungsi Admin</h2><ul><li>Mengelola user.</li><li>Mengelola role dan permission.</li><li>Mengatur jabatan/posisi.</li><li>Mengatur module visibility.</li><li>Mengelola pengaturan Manajemen Surat.</li><li>Mengelola pengaturan AI bila tersedia.</li><li>Memastikan aplikasi siap digunakan.</li></ul>
+    <h2>8.2 Manajemen User</h2><ol><li>Tambah user hanya untuk pihak yang berwenang.</li><li>Isi identitas akun dengan benar.</li><li>Tentukan role sesuai tugas.</li><li>Hubungkan user dengan jabatan bila tersedia.</li><li>Aktifkan user setelah data benar.</li><li>Nonaktifkan user yang tidak lagi berwenang.</li></ol>
+    <h2>8.3 Role, Permission, dan Jabatan</h2><p>Role memudahkan pengelompokan akses. Permission mengatur tindakan detail. Jabatan dapat memengaruhi alur disposisi dan struktur kerja. Setelah mengubah salah satu pengaturan ini, admin perlu menguji akses dengan akun terkait.</p>
+    <h2>8.4 Module Visibility</h2><table><thead><tr><th>Langkah</th><th>Tindakan</th><th>Tujuan</th></tr></thead><tbody><tr><td>1</td><td>Pilih role yang akan diatur.</td><td>Menentukan kelompok pengguna.</td></tr><tr><td>2</td><td>Aktif/nonaktifkan modul.</td><td>Mengatur menu yang tampil.</td></tr><tr><td>3</td><td>Simpan perubahan.</td><td>Menerapkan konfigurasi.</td></tr><tr><td>4</td><td>Uji login sebagai role terkait.</td><td>Memastikan akses sesuai.</td></tr></tbody></table>
+    <h2>8.5 Checklist Admin</h2><ul><li>User aktif sesuai kebutuhan.</li><li>Role dan jabatan sudah tepat.</li><li>Permission tidak berlebihan.</li><li>Module visibility sudah diuji.</li><li>Manajemen Surat dapat dipakai operator.</li><li>AI dikonfigurasi sesuai kebijakan.</li><li>Masalah berulang dicatat untuk tindak lanjut teknis.</li></ul>
+  </section>
+
+  <section class="section"><h1>9. Aplikasi Pengembangan Selanjutnya</h1>
+    <p>Portal ALETA dapat terus dikembangkan sebagai ekosistem aplikasi internal. Selain Dashboard SSO, Manajemen Surat, Fitur AI, dan Admin, modul baru dapat ditambahkan sesuai kebutuhan satuan kerja.</p>
+    <table><thead><tr><th>Jenis Pengembangan</th><th>Contoh</th><th>Prinsip</th></tr></thead><tbody><tr><td>Monitoring</td><td>Pemantauan data atau indikator kerja.</td><td>Tetap mengikuti SSO dan role.</td></tr><tr><td>Integrasi Data</td><td>Koneksi ke sistem lain.</td><td>Akses aman dan sesuai izin.</td></tr><tr><td>Dokumen</td><td>Penyusunan atau arsip dokumen.</td><td>Data terstruktur dan mudah dicari.</td></tr><tr><td>Notifikasi</td><td>Pengingat atau informasi tugas.</td><td>Dikirim sesuai hak akses.</td></tr></tbody></table>
+    <div class="callout info"><strong>Batasan Panduan</strong><p>ALETA x SIPP, JLF, Query Registry, Variable Registry, dan WhatsApp Gateway tidak dibahas detail pada dokumen ini. Modul tersebut dapat memiliki panduan teknis tersendiri.</p></div>
+  </section>
+
+  <section class="section"><h1>10. Troubleshooting</h1><table><thead><tr><th>Masalah</th><th>Kemungkinan Penyebab</th><th>Solusi</th><th>Ditangani Oleh</th></tr></thead><tbody><tr><td>Tidak bisa login</td><td>Identitas/password salah, akun nonaktif, atau session bermasalah.</td><td>Periksa identitas, coba login ulang, hubungi admin bila tetap gagal.</td><td>User/Admin</td></tr><tr><td>User tidak aktif</td><td>Akun dinonaktifkan karena kebijakan atau perubahan tugas.</td><td>Admin memverifikasi lalu mengaktifkan bila masih berwenang.</td><td>Admin</td></tr><tr><td>Menu tidak muncul</td><td>Role, permission, atau module visibility belum diberikan.</td><td>Admin memeriksa pengaturan akses.</td><td>Admin</td></tr><tr><td>Akses ditolak</td><td>User membuka halaman tanpa hak akses.</td><td>Gunakan menu yang tersedia atau ajukan kebutuhan akses.</td><td>User/Admin</td></tr><tr><td>Data surat tidak tampil</td><td>Filter aktif, data kosong, atau akses terbatas.</td><td>Reset filter, cek kata kunci, dan pastikan hak akses.</td><td>User/Operator</td></tr><tr><td>Gagal tambah surat</td><td>Field wajib kosong atau format input salah.</td><td>Lengkapi data dan perbaiki format.</td><td>Operator</td></tr><tr><td>Gagal disposisi</td><td>Penerima tidak valid atau instruksi belum jelas.</td><td>Pilih penerima valid dan isi instruksi.</td><td>Operator/Pejabat</td></tr><tr><td>Gagal upload lampiran</td><td>Format/ukuran file tidak sesuai atau koneksi terganggu.</td><td>Gunakan file valid dan ulangi upload.</td><td>Operator</td></tr><tr><td>AI tidak merespons</td><td>Fitur AI belum aktif atau konfigurasi belum lengkap.</td><td>Admin memeriksa pengaturan AI.</td><td>Admin</td></tr><tr><td>Hasil AI kurang tepat</td><td>Prompt terlalu umum atau konteks kurang.</td><td>Perjelas instruksi dan verifikasi manual.</td><td>User</td></tr><tr><td>Halaman loading terus</td><td>Koneksi lambat, session kedaluwarsa, atau API bermasalah.</td><td>Refresh, login ulang, lalu laporkan bila berulang.</td><td>User/Admin</td></tr><tr><td>Error server/API</td><td>Gangguan backend, database, atau konfigurasi.</td><td>Catat waktu, halaman, aksi terakhir, dan pesan error.</td><td>Admin/Teknis</td></tr></tbody></table></section>
+
+  <section class="section"><h1>11. FAQ</h1><table><thead><tr><th>Pertanyaan</th><th>Jawaban</th></tr></thead><tbody><tr><td>Apa itu Portal ALETA?</td><td>Portal ALETA adalah pusat akses aplikasi internal yang menyatukan login, dashboard, dan modul kerja.</td></tr><tr><td>Apa itu SSO?</td><td>SSO adalah Single Sign On, yaitu konsep login satu kali untuk membuka aplikasi yang diizinkan.</td></tr><tr><td>Kenapa menu saya berbeda?</td><td>Menu mengikuti role, permission, jabatan, dan module visibility.</td></tr><tr><td>Siapa yang mengatur user?</td><td>Super Admin dan Admin yang memiliki izin pengelolaan user.</td></tr><tr><td>Siapa yang bisa memakai Manajemen Surat?</td><td>Pengguna yang diberi akses, seperti operator surat, pejabat terkait, atau role lain sesuai kebijakan.</td></tr><tr><td>Apakah semua user bisa melihat semua surat?</td><td>Tidak. Akses surat dibatasi oleh role, permission, disposisi, dan kebijakan data.</td></tr><tr><td>Apakah AI menggantikan pengguna?</td><td>Tidak. AI hanya alat bantu. Keputusan dan tanggung jawab tetap pada manusia.</td></tr><tr><td>Apakah hasil AI harus diperiksa?</td><td>Ya. Semua hasil AI wajib diverifikasi sebelum digunakan.</td></tr><tr><td>Apa yang dilakukan jika modul tidak muncul?</td><td>Hubungi admin untuk memeriksa role, permission, dan module visibility.</td></tr><tr><td>Apakah ALETA akan ditambah aplikasi baru?</td><td>Ya. Portal ALETA dirancang sebagai ekosistem yang bisa terus dikembangkan.</td></tr></tbody></table></section>
+
+  <section class="section"><h1>12. Glosarium</h1><table><thead><tr><th>Istilah</th><th>Penjelasan</th></tr></thead><tbody><tr><td>Portal</td><td>Pusat akses aplikasi internal.</td></tr><tr><td>SSO</td><td>Single Sign On, login satu kali untuk aplikasi yang diizinkan.</td></tr><tr><td>Dashboard</td><td>Halaman utama setelah login.</td></tr><tr><td>Role</td><td>Peran pengguna, misalnya admin, operator, hakim, atau user biasa.</td></tr><tr><td>Permission</td><td>Izin spesifik untuk melihat data atau melakukan aksi.</td></tr><tr><td>Module Visibility</td><td>Pengaturan modul yang tampil untuk role tertentu.</td></tr><tr><td>Manajemen Surat</td><td>Modul pencatatan, disposisi, lampiran, pencarian, dan arsip surat.</td></tr><tr><td>Disposisi</td><td>Arahan atau tindak lanjut surat kepada penerima tertentu.</td></tr><tr><td>Lampiran</td><td>File pendukung digital.</td></tr><tr><td>AI</td><td>Alat bantu berbasis kecerdasan buatan.</td></tr><tr><td>Prompt</td><td>Instruksi yang diberikan kepada AI.</td></tr><tr><td>Session</td><td>Status login pengguna di browser.</td></tr><tr><td>Access Denied</td><td>Kondisi ketika user tidak punya izin mengakses fitur.</td></tr></tbody></table></section>
+
+  <section class="section"><h1>13. Checklist Operasional</h1>
+    <h2>13.1 Checklist Harian User</h2><ul><li>Login memakai akun pribadi.</li><li>Pastikan nama akun benar.</li><li>Buka modul sesuai tugas.</li><li>Periksa data sebelum menyimpan.</li><li>Logout setelah selesai.</li></ul>
+    <h2>13.2 Checklist Operator Surat</h2><ul><li>Nomor dan tanggal surat benar.</li><li>Asal/tujuan jelas.</li><li>Perihal singkat dan informatif.</li><li>Lampiran valid.</li><li>Disposisi dikirim ke penerima yang benar.</li></ul>
+    <h2>13.3 Checklist Penggunaan AI Aman</h2><ul><li>Prompt jelas dan spesifik.</li><li>Tidak memasukkan data sensitif yang tidak perlu.</li><li>Hasil AI diverifikasi manual.</li><li>Keputusan tetap oleh manusia berwenang.</li></ul>
+  </section>
+
+</body>
+</html>

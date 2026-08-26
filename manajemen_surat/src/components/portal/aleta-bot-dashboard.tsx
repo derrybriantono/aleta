@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -240,7 +241,7 @@ function MessageDetail({
             </div>
           ) : (
             <div>
-              <dt className="mb-1 text-xs font-medium text-muted-foreground">Preview Pesan</dt>
+              <dt className="mb-1 text-xs font-medium text-muted-foreground">Cuplikan Pesan</dt>
               <dd className="rounded-xl border border-border bg-muted/40 p-3 text-sm leading-7 break-words">
                 {item.messagePreview}
               </dd>
@@ -303,7 +304,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
         <CardContent>
           <p className="text-sm text-muted-foreground">
             {data.service.status === "normal"
-              ? "Semua layanan utama ALETA Bot dapat dipantau dan beroperasi normal."
+              ? "ALETA Bot berjalan normal."
               : "Satu atau lebih layanan ALETA Bot perlu perhatian. Hubungi Super Admin jika masalah berlanjut."}
           </p>
         </CardContent>
@@ -325,7 +326,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">Layanan</p>
+              <p className="text-xs text-muted-foreground">Koneksi</p>
               <p className="mt-0.5 text-sm font-semibold">{data.whatsapp.runtime}</p>
             </div>
             {data.whatsapp.lastConnectedAt ? (
@@ -336,7 +337,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
             ) : null}
             {data.whatsapp.sessionAgeHours != null ? (
               <div className="rounded-xl bg-muted/40 p-3">
-                <p className="text-xs text-muted-foreground">Umur Sesi</p>
+                <p className="text-xs text-muted-foreground">Lama Terhubung</p>
                 <p className="mt-0.5 text-sm font-semibold">{data.whatsapp.sessionAgeHours} jam</p>
               </div>
             ) : null}
@@ -350,7 +351,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
           {(data.whatsapp.sessionAgeHours ?? 0) > 168 ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
               <p className="text-sm text-amber-800 dark:text-amber-200">
-                Sesi WhatsApp sudah aktif lebih dari 7 hari. Pantau pengiriman dan hubungkan ulang dengan aman bila diperlukan.
+                WhatsApp sudah terhubung lebih dari 7 hari. Pantau pengiriman dan hubungkan ulang bila diperlukan.
               </p>
             </div>
           ) : null}
@@ -375,7 +376,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <MetricCard
           icon={Clock}
-          title="Antrean Pesan"
+          title="Pesan Menunggu"
           value={data.queue.pending}
           sub="menunggu"
         />
@@ -392,7 +393,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
         />
         <MetricCard
           icon={AlertCircle}
-          title="Gagal Permanen"
+          title="Gagal Tetap"
           value={data.queue.deadLetters}
           sub="perlu ditinjau"
         />
@@ -404,18 +405,18 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
-              <CardTitle className="text-base">Pemroses Antrean</CardTitle>
+              <CardTitle className="text-base">Pengiriman Pesan</CardTitle>
               <StatusBadge status={data.worker.status} label={data.worker.statusLabel} />
             </div>
           </CardHeader>
           <CardContent>
             {data.worker.lastHeartbeatAt ? (
               <p className="text-xs text-muted-foreground">
-                Sinyal terakhir: {formatDt(data.worker.lastHeartbeatAt)}
+                Cek terakhir: {formatDt(data.worker.lastHeartbeatAt)}
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Belum ada sinyal pemroses saat ini.
+                Belum ada pengecekan pengiriman saat ini.
               </p>
             )}
           </CardContent>
@@ -434,7 +435,7 @@ function StatusTab({ data, loading }: { data: BotStatusData | null; loading: boo
               {data.ai.status === "ready"
                 ? "Layanan AI untuk menjawab pertanyaan publik aktif."
                 : data.ai.status === "needs_sync"
-                ? "Konfigurasi AI perlu disinkronkan ulang oleh Super Admin."
+                ? "Pengaturan AI perlu diperbarui oleh Super Admin."
                 : data.ai.status === "disabled"
                 ? "Layanan Pertanyaan Publik sedang dinonaktifkan."
                 : "Status layanan AI tidak dapat ditentukan saat ini."}
@@ -464,7 +465,7 @@ const STATUS_OPTIONS = [
 ];
 
 const SOURCE_FEATURE_OPTIONS = [
-  { value: "", label: "Semua Sumber" },
+  { value: "", label: "Semua Jenis" },
   { value: "disposition", label: "Disposisi" },
   { value: "letter", label: "Surat" },
   { value: "employee", label: "Notifikasi Pegawai" },
@@ -506,7 +507,7 @@ function MessagesTab() {
       if (dateRange) params.set("dateRange", dateRange);
       params.set("limit", "50");
       params.set("offset", String(offset));
-      const res = await fetch(`/api/aleta-bot/messages?${params.toString()}`);
+      const res = await fetch(apiPath(`/api/aleta-bot/messages?${params.toString()}`));
       if (!res.ok) throw new Error("Gagal memuat riwayat pesan.");
       const json = await res.json() as { ok: boolean; data: MessagesData };
       if (!json.ok) throw new Error("Gagal memuat riwayat pesan.");
@@ -518,7 +519,7 @@ function MessagesTab() {
     }
   }, [search, statusFilter, sourceFeatureFilter, sourceAppFilter, entityTypeFilter, entityIdFilter, dateRange, offset]);
 
-  const exportCsv = () => {
+  const exportExcel = () => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (statusFilter) params.set("status", statusFilter);
@@ -527,9 +528,8 @@ function MessagesTab() {
     if (entityTypeFilter) params.set("entityType", entityTypeFilter);
     if (entityIdFilter) params.set("entityId", entityIdFilter);
     if (dateRange) params.set("dateRange", dateRange);
-    params.set("format", "csv");
-    params.set("limit", "1000");
-    window.open(`/api/aleta-bot/messages?${params.toString()}`, "_blank", "noopener,noreferrer");
+    params.set("format", "xlsx");
+    window.open(apiPath(`/api/aleta-bot/messages?${params.toString()}`), "_blank", "noopener,noreferrer");
   };
 
   const clearEntityFilter = () => {
@@ -541,7 +541,11 @@ function MessagesTab() {
   };
 
   useEffect(() => {
-    void fetchMessages();
+    const timer = window.setTimeout(() => {
+      void fetchMessages();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [fetchMessages]);
 
   return (
@@ -575,9 +579,9 @@ function MessagesTab() {
           <Button variant="ghost" size="sm" onClick={() => void fetchMessages()} disabled={loading}>
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Muat Ulang"}
           </Button>
-          <Button variant="outline" size="sm" onClick={exportCsv}>
+          <Button variant="outline" size="sm" onClick={exportExcel}>
             <Download className="h-3.5 w-3.5" />
-            Export CSV
+            Unduh Excel
           </Button>
         </div>
 
@@ -589,6 +593,7 @@ function MessagesTab() {
                 {STATUS_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
+                    type="button"
                     onClick={() => { setStatusFilter(opt.value); setOffset(0); }}
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs transition",
@@ -608,6 +613,7 @@ function MessagesTab() {
                 {DATE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
+                    type="button"
                     onClick={() => { setDateRange(opt.value); setOffset(0); }}
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs transition",
@@ -622,11 +628,12 @@ function MessagesTab() {
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Sumber Fitur</p>
+              <p className="text-xs font-medium text-muted-foreground">Jenis Pesan</p>
               <div className="flex flex-wrap gap-1.5">
                 {SOURCE_FEATURE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
+                    type="button"
                     onClick={() => { setSourceFeatureFilter(opt.value); setOffset(0); }}
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs transition",
@@ -646,7 +653,7 @@ function MessagesTab() {
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground">
             <Badge variant="outline">Filter surat/disposisi aktif</Badge>
             <span className="break-all">
-              {sourceFeatureFilter || "riwayat"} / {entityTypeFilter || "entity"} / {entityIdFilter}
+              {sourceFeatureFilter || "riwayat"} / {entityTypeFilter || "data"} / {entityIdFilter}
             </span>
             <Button type="button" variant="ghost" size="sm" onClick={clearEntityFilter} className="h-7 rounded-lg text-xs">
               Hapus Filter
@@ -682,7 +689,7 @@ function MessagesTab() {
           </p>
           {data.filters?.entityFilterFallback ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              Filter entity sudah diterapkan. Jika log lama belum menyimpan entityId, gunakan filter sumber fitur sebagai fallback.
+              Filter sudah diterapkan. Jika riwayat lama belum muncul, coba gunakan pilihan jenis pesan.
             </p>
           ) : null}
         </div>
@@ -797,7 +804,7 @@ export function AletaBotDashboard() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/aleta-bot/status")
+    fetch(apiPath("/api/aleta-bot/status"))
       .then((r) => r.json() as Promise<{ ok: boolean; data: BotStatusData }>)
       .then((j) => {
         if (!cancelled && j.ok) setStatusData(j.data);
@@ -816,7 +823,7 @@ export function AletaBotDashboard() {
       <PageIntro
         eyebrow="Bot Notifikasi"
         title="ALETA Bot"
-      description="Pantau layanan WhatsApp, Antrean Pesan, dan riwayat pengiriman notifikasi."
+        description="Cek WhatsApp Bot dan riwayat pesan yang dikirim."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
@@ -829,7 +836,7 @@ export function AletaBotDashboard() {
               <Button asChild variant="default" size="sm">
                 <Link href="/admin/aleta-bot">
                   <Settings className="h-4 w-4" />
-                  Pengaturan Admin ALETA Bot
+                  Pengaturan ALETA Bot
                 </Link>
               </Button>
             ) : null}
@@ -841,7 +848,7 @@ export function AletaBotDashboard() {
         <div className="rounded-[1.4rem] border border-border/60 bg-muted/30 px-4 py-3">
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-            Pengaturan teknis hanya tersedia untuk Super Admin. Data ditampilkan sesuai hak akses Anda.
+            Pengaturan hanya tersedia untuk Super Admin. Data ditampilkan sesuai akses Anda.
           </p>
         </div>
       ) : null}
@@ -850,7 +857,7 @@ export function AletaBotDashboard() {
         <div className="rounded-[1.4rem] border border-amber-500/30 bg-amber-500/5 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">WhatsApp Bot belum terhubung.</p>
           <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">
-            Pesan akan menunggu di antrean sampai koneksi aktif kembali.
+            Pesan akan menunggu sampai koneksi aktif kembali.
             {statusData.whatsapp.lastConnectedAt ? ` Terakhir terhubung: ${formatDt(statusData.whatsapp.lastConnectedAt)}.` : ""}
           </p>
         </div>
@@ -858,8 +865,8 @@ export function AletaBotDashboard() {
 
       <Tabs defaultValue={["riwayat", "riwayat-pengiriman"].includes(searchParams.get("tab") ?? "") ? "riwayat" : "status"}>
         <TabsList className="mb-2">
-          <TabsTrigger value="status">Status Bot</TabsTrigger>
-          <TabsTrigger value="riwayat">Riwayat Pengiriman Pesan</TabsTrigger>
+          <TabsTrigger value="status">Kondisi Bot</TabsTrigger>
+          <TabsTrigger value="riwayat">Riwayat Pesan</TabsTrigger>
         </TabsList>
 
         <TabsContent value="status">

@@ -11,7 +11,7 @@ import { getUserRoleBadge } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 export function OrganizationDirectory() {
-  const { users } = usePortal();
+  const { activeUsers: users } = usePortal();
   const tree = useMemo(() => buildOrganizationTree(users), [users]);
   const [selectedPositionId, setSelectedPositionId] = useState(tree[0]?.position.id ?? "");
   const selectedNode = useMemo(() => findNodeById(tree, selectedPositionId) ?? tree[0] ?? null, [selectedPositionId, tree]);

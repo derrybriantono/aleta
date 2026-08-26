@@ -1,4 +1,5 @@
 const { readRuntimeConfig } = require("../config/runtime-config");
+const crypto = require("crypto");
 const { validateQuery } = require("./queryValidatorService");
 const { renderTemplate, validateTemplate } = require("./templateService");
 const messageQueueService = require("./messageQueueService");
@@ -10,6 +11,10 @@ const runtimePolicyStats = {
   lastSkippedAt: null,
   reasons: {},
 };
+
+function hashMessageBody(value) {
+  return crypto.createHash("sha256").update(String(value || "")).digest("hex");
+}
 
 // Hardcoded pilot fallback — used when runtime config has no notifications yet
 const pilotNotifications = [
@@ -119,6 +124,7 @@ function mapPortalNotificationToRegistry(portalNotification, queries, templates)
   const scheduleConfig = portalNotification.scheduleConfig || {};
   const recipientMapping = portalNotification.recipientMapping || {};
   const recipientColumn = String(recipientMapping.recipientColumn || "");
+  const recipientGroup = String(recipientMapping.audienceGroup || recipientMapping.recipientGroup || "");
 
   const query = queries.find(
     (item) => item.id === portalNotification.queryId || item.name === portalNotification.queryId
@@ -135,6 +141,7 @@ function mapPortalNotificationToRegistry(portalNotification, queries, templates)
     query_key: portalNotification.queryId || "",
     template_key: portalNotification.templateId || "",
     recipient_source: portalNotification.recipientSource || "users",
+    recipient_group: recipientGroup,
     recipient_column: recipientColumn,
     identity_columns: query?.outputColumns || [],
     schedule_config: {
@@ -300,6 +307,7 @@ function makePilotSample(notification, overrides = {}) {
     nomor_perkara: "000/Pdt.G/2026/PA.Dgl",
     nama_pihak: "Contoh Pihak",
     nama_pegawai: "Contoh Pegawai",
+    jabatan: "Pegawai",
     judul_notifikasi: notification.name,
     ringkasan: notification.description,
     agenda: "Agenda sidang",
@@ -355,16 +363,17 @@ async function enqueuePilotDryRun(notificationKey, sampleData = {}) {
     sample.telepon ||
     runtimeConfig.testTargetNumber ||
     runtimeConfig.adminWhatsappNumber;
+  const idempotencyKey = buildIdempotencyKey({
+    notificationKey: notification.key,
+    perkaraId: sample.perkara_id,
+    nomorPerkara: sample.nomor_perkara,
+    recipientNumber,
+    eventDate: new Date().toISOString().slice(0, 10),
+    messageType: "registry-dry-run",
+  });
 
   return messageQueueService.enqueueMessage({
-    idempotencyKey: buildIdempotencyKey({
-      notificationKey: notification.key,
-      perkaraId: sample.perkara_id,
-      nomorPerkara: sample.nomor_perkara,
-      recipientNumber,
-      eventDate: new Date().toISOString().slice(0, 10),
-      messageType: "registry-dry-run",
-    }),
+    idempotencyKey,
     recipientNumber,
     recipientName: sample.nama_pihak || sample.nama_pegawai || notification.name,
     message,
@@ -379,6 +388,12 @@ async function enqueuePilotDryRun(notificationKey, sampleData = {}) {
     metadata: {
       sourceApp: "aleta_bot",
       sourceFeature: notification.category === "party" ? "notification_party" : "notification_employee",
+      messageContractVersion: "aleta-template-v1",
+      messageContractSource: "notification_registry",
+      messageContractTraceId: idempotencyKey,
+      messageSha256: hashMessageBody(message),
+      messageLength: message.length,
+      renderedAt: new Date().toISOString(),
       entityType: "notification",
       entityId: notification.key,
       recipientType: notification.category === "party" ? "party" : "employee",

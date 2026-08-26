@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-07-02T14:59:04.802Z",
+  "generatedDate": "2 Juli 2026",
+  "version": "v1.0 - Juli 2026",
+  "institution": "Pengadilan Agama Donggala",
+  "focus": [
+    "ALETA Dashboard SSO / Portal Utama",
+    "Pengaturan Portal ALETA",
+    "Manajemen Surat",
+    "Fitur AI",
+    "Admin / Pengaturan Admin"
+  ],
+  "intentionallyBrief": [
+    "ALETA x SIPP",
+    "ALETA Justicia Legal Form / JLF",
+    "Query Registry",
+    "Variable Registry",
+    "WhatsApp Gateway detail",
+    "Modul pengembangan lain"
+  ],
+  "files": {
+    "markdown": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-ringkas.md",
+    "html": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-ringkas.html",
+    "pdf": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-ringkas.pdf",
+    "report": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-ringkas-report.json"
+  },
+  "pdfPageCount": 21,
+  "method": "Markdown dan HTML statis dibuat oleh Node.js, lalu HTML dirender menjadi PDF menggunakan Playwright tanpa membuka halaman aplikasi untuk screenshot.",
+  "screenshotPolicy": {
+    "usesScreenshots": false,
+    "imageTagCount": 0,
+    "imagePathCount": 0,
+    "screenshotPathCount": 0,
+    "hasPlaceholderScreenshot": false,
+    "hasLoadingImage": false
+  }
+}

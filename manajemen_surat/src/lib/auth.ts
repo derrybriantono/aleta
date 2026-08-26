@@ -12,6 +12,9 @@ let cachedAuth: ReturnType<typeof createAuthInstance> | undefined;
 let cachedOrm: unknown;
 let cachedLocalAuthSecret: string | undefined;
 
+export const AUTH_SESSION_EXPIRES_IN_SECONDS = 60 * 60;
+export const AUTH_SESSION_UPDATE_AGE_SECONDS = 60 * 10;
+
 function normalizeOrigin(input: string) {
   try {
     return new URL(input).origin;
@@ -20,26 +23,76 @@ function normalizeOrigin(input: string) {
   }
 }
 
-function buildTrustedOrigins(baseURL: string) {
+function isLoopbackHostname(hostname: string) {
+  return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(hostname);
+}
+
+function urlPort(url: URL) {
+  if (url.port) return url.port;
+  if (url.protocol === "http:") return "80";
+  if (url.protocol === "https:") return "443";
+  return "";
+}
+
+export function buildTrustedOrigins(baseURL: string) {
   const configuredOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
   const trustedOrigins = new Set<string>([normalizeOrigin(baseURL), ...configuredOrigins.map(normalizeOrigin)]);
+  const loopbackPorts = new Set<string>();
+  const loopbackProtocols = new Set<string>();
+  const originCandidates = [baseURL, ...configuredOrigins];
 
-  try {
-    const url = new URL(baseURL);
-    if (url.hostname === "localhost") {
-      trustedOrigins.add(`${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`);
+  for (const candidate of originCandidates) {
+    try {
+      const url = new URL(candidate);
+      if (!isLoopbackHostname(url.hostname)) continue;
+      loopbackPorts.add(urlPort(url));
+      loopbackProtocols.add(url.protocol);
+      if (url.hostname === "localhost") {
+        trustedOrigins.add(`${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`);
+      }
+      if (url.hostname === "127.0.0.1") {
+        trustedOrigins.add(`${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`);
+      }
+    } catch {
+      // Ignore invalid URL parsing and rely on the configured values as-is.
     }
-    if (url.hostname === "127.0.0.1") {
-      trustedOrigins.add(`${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`);
+  }
+
+  if (loopbackPorts.size > 0) {
+    for (const port of [process.env.PORT, process.env.NEXT_PUBLIC_PORT, "3000", "3001"].filter(Boolean)) {
+      loopbackPorts.add(String(port));
     }
-  } catch {
-    // Ignore invalid URL parsing and rely on the configured values as-is.
+    if (loopbackProtocols.size === 0) loopbackProtocols.add("http:");
+    for (const protocol of loopbackProtocols) {
+      for (const port of loopbackPorts) {
+        const suffix = port && !["80", "443"].includes(port) ? `:${port}` : "";
+        trustedOrigins.add(`${protocol}//localhost${suffix}`);
+        trustedOrigins.add(`${protocol}//127.0.0.1${suffix}`);
+      }
+    }
   }
 
   return Array.from(trustedOrigins);
+}
+
+export function getAuthBasePath() {
+  return "/api/auth";
+}
+
+export function getAuthBaseURL() {
+  const configured =
+    process.env.BETTER_AUTH_URL ??
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ??
+    "http://localhost:3000";
+
+  try {
+    return new URL(configured).origin;
+  } catch {
+    return configured.trim();
+  }
 }
 
 function getLocalAuthSecret() {
@@ -66,15 +119,13 @@ function getLocalAuthSecret() {
 }
 
 function createAuthInstance(database: Parameters<typeof drizzleAdapter>[0]) {
-  const baseURL =
-    process.env.BETTER_AUTH_URL ??
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ??
-    "http://localhost:3000";
+  const baseURL = getAuthBaseURL();
 
   return betterAuth({
     appName: "ALETA",
     secret: getLocalAuthSecret(),
     baseURL,
+    basePath: getAuthBasePath(),
     trustedOrigins: buildTrustedOrigins(baseURL),
     database: drizzleAdapter(database, {
       provider: "pg",
@@ -91,8 +142,8 @@ function createAuthInstance(database: Parameters<typeof drizzleAdapter>[0]) {
       },
     },
     session: {
-      expiresIn: 60 * 10, // 10 menit
-      updateAge: 60 * 5, // Update sesi setiap 5 menit jika ada aktivitas
+      expiresIn: AUTH_SESSION_EXPIRES_IN_SECONDS,
+      updateAge: AUTH_SESSION_UPDATE_AGE_SECONDS,
     },
 
   });

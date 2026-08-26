@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 import {
   getClassificationOptionByValue,
   getClassificationTitle,
@@ -21,7 +22,6 @@ import {
   letterClassificationOptions,
   letterOriginSuggestions,
 } from "@/lib/letter-taxonomy";
-import { positions } from "@/lib/mock-data";
 import { processPdfUpload, type UploadedPdfDraft } from "@/lib/pdf";
 import { readJsonResponseSafe, summarizePlainTextError } from "@/lib/http-response";
 import {
@@ -38,8 +38,8 @@ import { type LetterDetail, type LetterTemplate } from "@/lib/types";
 
 const confidentialityOptions = ["Biasa", "Penting", "Rahasia"].map((value) => ({ value }));
 const viewerOptions = [
-  { value: "download", label: "Download Allowed" },
-  { value: "preview", label: "Preview Only" },
+  { value: "download", label: "Boleh Diunduh" },
+  { value: "preview", label: "Hanya Dilihat" },
 ];
 const classificationCategoryOptions = Array.from(
   new Set(letterClassificationCatalog.map((item) => item.category))
@@ -67,12 +67,14 @@ function renderLetterTemplatePreview(template: LetterTemplate, values: Record<st
 
 export function LetterRegistrationPanel({
   defaultType,
+  onCreated,
 }: {
   defaultType: LetterDetail["type"];
+  onCreated?: () => void;
 }) {
   const searchParams = useSearchParams();
-  const { aiConfig, createLetter, currentUser, getUsersByPosition, users } = usePortal();
-  const currentPosition = getEffectivePosition(currentUser);
+  const { aiConfig, createLetter, currentUser, getUsersByPosition, positions, activeUsers: users } = usePortal();
+  const currentPosition = getEffectivePosition(currentUser, positions);
   const currentPositionId = getEffectivePositionId(currentUser);
   const canRegister =
     defaultType === "masuk" ? canCreateIncomingLetter(currentUser) : canCreateOutgoingLetter(currentUser);
@@ -112,13 +114,13 @@ export function LetterRegistrationPanel({
   const [formError, setFormError] = useState("");
   const unitOptions = useMemo(
     () => [...new Set(positions.map((position) => position.unitKerja))].map((value) => ({ value })),
-    []
+    [positions]
   );
   const originOptions = useMemo(
     () => letterOriginSuggestions.map((value) => ({ value })),
     []
   );
-  const incomingTargetUsers = useMemo(() => getLeadershipRecipients(users), [users]);
+  const incomingTargetUsers = useMemo(() => getLeadershipRecipients(users, positions), [positions, users]);
   const targetPositions = useMemo(() => {
     if (defaultType === "masuk") {
       return positions
@@ -129,7 +131,7 @@ export function LetterRegistrationPanel({
     return positions
       .filter((position) => position.id !== currentPositionId && getPositionUsers(position.id, users).length > 0)
       .map((position) => ({ value: position.id, label: `${position.name} - ${position.unitKerja}` }));
-  }, [currentPositionId, defaultType, users]);
+  }, [currentPositionId, defaultType, positions, users]);
   const availableTargetUsers = useMemo(() => {
     if (!targetPositionId) {
       return defaultType === "masuk" ? incomingTargetUsers : [];
@@ -151,9 +153,9 @@ export function LetterRegistrationPanel({
       nama_pengadilan: "Pengadilan Agama Donggala",
       alamat_pengadilan: "Jl. Vatu Bala, Donggala",
       nama_penandatangan: currentUser?.name ?? "Pejabat Penandatangan",
-      jabatan_penandatangan: getUserPositionLabel(currentUser),
+      jabatan_penandatangan: getUserPositionLabel(currentUser, positions),
     });
-  }, [currentUser, nomorSurat, perihal, selectedTemplate, tanggalSurat, tujuanSurat]);
+  }, [currentUser, nomorSurat, perihal, positions, selectedTemplate, tanggalSurat, tujuanSurat]);
 
   const resetForm = () => {
     setDraftMode("manual");
@@ -184,7 +186,7 @@ export function LetterRegistrationPanel({
     setIsAiSuggesting(true);
     setAiSuggestionNotice("");
     try {
-      const response = await fetch("/api/ai/letters/classification-suggestion", {
+      const response = await fetch(apiPath("/api/ai/letters/classification-suggestion"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "include",
@@ -212,7 +214,7 @@ export function LetterRegistrationPanel({
       if (suggestion.suggestedTags?.length) {
         setKlasifikasiTags((current) => Array.from(new Set([...suggestion.suggestedTags!, ...current])).slice(0, 8));
       }
-      setAiSuggestionNotice(suggestion.reason || suggestion.message || "Saran klasifikasi AI diterapkan sebagai draft.");
+      setAiSuggestionNotice(suggestion.reason || suggestion.message || "Saran klasifikasi AI sudah diterapkan sebagai data awal.");
     } catch (error) {
       setAiSuggestionNotice(error instanceof Error ? error.message : "Saran AI belum tersedia.");
     } finally {
@@ -224,7 +226,7 @@ export function LetterRegistrationPanel({
     setIsAiSuggesting(true);
     setAiSuggestionNotice("");
     try {
-      const response = await fetch("/api/ai/letters/summary-suggestion", {
+      const response = await fetch(apiPath("/api/ai/letters/summary-suggestion"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "include",
@@ -239,7 +241,7 @@ export function LetterRegistrationPanel({
       if (payload.data.summary && !payload.data.summary.startsWith("Belum ada teks")) {
         setRingkasan(payload.data.summary);
       }
-      setAiSuggestionNotice(payload.data.message || "Ringkasan AI diterapkan sebagai draft.");
+      setAiSuggestionNotice(payload.data.message || "Ringkasan AI sudah diterapkan sebagai data awal.");
     } catch (error) {
       setAiSuggestionNotice(error instanceof Error ? error.message : "Ringkasan AI belum tersedia.");
     } finally {
@@ -249,13 +251,21 @@ export function LetterRegistrationPanel({
 
   useEffect(() => {
     if (searchParams.get("compose") === "1") {
-      setOpen(true);
+      const timer = window.setTimeout(() => {
+        setOpen(true);
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [searchParams]);
 
   useEffect(() => {
     if (!targetPositions.some((position) => position.value === targetPositionId)) {
-      setTargetPositionId(targetPositions[0]?.value ?? "");
+      const timer = window.setTimeout(() => {
+        setTargetPositionId(targetPositions[0]?.value ?? "");
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [targetPositionId, targetPositions]);
 
@@ -265,7 +275,7 @@ export function LetterRegistrationPanel({
 
     const loadTemplates = async () => {
       try {
-        const response = await fetch("/api/surat/templates?activeOnly=true", {
+        const response = await fetch(apiPath("/api/surat/templates?activeOnly=true"), {
           credentials: "include",
           cache: "no-store",
         });
@@ -290,7 +300,11 @@ export function LetterRegistrationPanel({
 
   useEffect(() => {
     if (!availableTargetUsers.some((user) => user.id === targetUserId)) {
-      setTargetUserId(availableTargetUsers[0]?.id ?? "");
+      const timer = window.setTimeout(() => {
+        setTargetUserId(availableTargetUsers[0]?.id ?? "");
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [availableTargetUsers, targetUserId]);
 
@@ -300,19 +314,24 @@ export function LetterRegistrationPanel({
 
   return (
     <Card className="border-border/90">
-      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">
           <CardTitle className="flex items-center gap-2">
             <FilePlus2 className="h-5 w-5 text-primary" />
             Tambah Surat {defaultType === "masuk" ? "Masuk" : "Keluar"}
           </CardTitle>
           <CardDescription>
-            Upload PDF di bagian atas, deteksi AI bila diperlukan, lalu verifikasi draft sebelum menyimpan. Surat yang
-            tersimpan langsung masuk ke antrian disposisi dengan status Menunggu Tindak Lanjut.
+            Unggah PDF di bagian atas, gunakan bantuan AI bila diperlukan, lalu cek kembali sebelum menyimpan. Surat yang
+            tersimpan langsung masuk ke daftar tindak lanjut.
           </CardDescription>
         </div>
-        <Button type="button" variant={open ? "outline" : "default"} onClick={() => setOpen((value) => !value)}>
-          {open ? "Tutup Form" : `Tambah Surat ${defaultType === "masuk" ? "Masuk" : "Keluar"}`}
+        <Button
+          type="button"
+          variant={open ? "outline" : "default"}
+          className="w-full sm:w-auto"
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? "Tutup Formulir" : `Tambah Surat ${defaultType === "masuk" ? "Masuk" : "Keluar"}`}
         </Button>
       </CardHeader>
 
@@ -321,9 +340,9 @@ export function LetterRegistrationPanel({
           <div className="rounded-[1.35rem] border border-border bg-card/80 p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-foreground">Upload PDF Surat</p>
+                <p className="text-sm font-semibold text-foreground">Unggah PDF Surat</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Maksimal 100MB. File dioptimalkan di sisi klien agar tetap ringan dan tetap terbaca jelas.
+                  Maksimal 100MB. File akan diringankan sebelum disimpan agar tetap mudah dibuka.
                 </p>
               </div>
               {uploadedPdf ? <Badge variant="outline">{uploadedPdf.fileSizeMb} MB</Badge> : null}
@@ -360,7 +379,7 @@ export function LetterRegistrationPanel({
                     {isAdmin ? <p className="mt-1">{uploadedPdf.compressionNote}</p> : null}
                     {uploadedPdf.isImageBased ? (
                       <p className="mt-2 font-medium text-amber-700">
-                        PDF ini terdeteksi sebagai scan gambar — tidak ada teks yang terbaca. OCR diperlukan sebelum deteksi metadata dapat dijalankan.
+                        PDF ini berupa gambar, jadi teksnya belum terbaca. Ubah ke PDF teks dulu bila ingin memakai bantuan AI.
                       </p>
                     ) : null}
                   </div>
@@ -369,15 +388,15 @@ export function LetterRegistrationPanel({
 
               {aiConfig.enabled && uploadedPdf ? (
                 <div className="rounded-[1.15rem] border border-primary/20 bg-primary/5 p-3">
-                  <AletaAIMark label="Deteksi metadata draft surat" />
+                  <AletaAIMark label="Bantu isi data surat" />
                   {!draftMetadataEnabled ? (
                     <p className="mt-3 text-sm text-muted-foreground">
                       Fitur ini sedang dinonaktifkan oleh administrator.
                     </p>
                   ) : uploadedPdf.isImageBased ? (
                     <div className="mt-3 rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-                      <p className="font-semibold">File memerlukan OCR</p>
-                      <p className="mt-1 leading-6">PDF ini berupa scan gambar dan tidak dapat diproses untuk deteksi metadata. Silakan konversi ke teks terlebih dahulu.</p>
+                      <p className="font-semibold">Teks PDF belum terbaca</p>
+                      <p className="mt-1 leading-6">PDF ini berupa gambar. Ubah ke PDF teks dulu agar bantuan AI bisa membaca isinya.</p>
                     </div>
                   ) : (
                   <Button
@@ -391,10 +410,10 @@ export function LetterRegistrationPanel({
 
                       try {
                         if (!currentUser) {
-                          throw new Error("Sesi pengguna tidak ditemukan. Silakan login ulang.");
+                          throw new Error("Data login tidak ditemukan. Silakan login ulang.");
                         }
 
-                        const response = await fetch("/api/ai/extract-surat", {
+                        const response = await fetch(apiPath("/api/ai/extract-surat"), {
                           method: "POST",
                           headers: {
                             "content-type": "application/json",
@@ -436,7 +455,7 @@ export function LetterRegistrationPanel({
                         if (!response.ok || !payload?.ok || !detectedDraft) {
                           throw new Error(
                             payload?.error?.message ??
-                              summarizePlainTextError(rawText, "Deteksi AI tidak dapat dijalankan.")
+                              summarizePlainTextError(rawText, "Bantuan AI belum dapat dijalankan.")
                           );
                         }
 
@@ -472,13 +491,13 @@ export function LetterRegistrationPanel({
                         setTargetUserId(draft.suggestedTargetUserId ?? "");
                         setDraftFeedback(draft.aiReviewNote);
                       } catch (error) {
-                        setFormError(error instanceof Error ? error.message : "Deteksi AI tidak dapat dijalankan.");
+                        setFormError(error instanceof Error ? error.message : "Bantuan AI belum dapat dijalankan.");
                       } finally {
                         setIsDetectingAI(false);
                       }
                     }}
                   >
-                    {isDetectingAI ? "Mendeteksi..." : "Deteksi AI"}
+                    {isDetectingAI ? "Membaca..." : "Isi dengan Bantuan AI"}
                   </Button>
                   )}
                 </div>
@@ -501,7 +520,7 @@ export function LetterRegistrationPanel({
           {defaultType === "keluar" && letterTemplates.length > 0 ? (
             <div className="rounded-[1.2rem] border border-border bg-muted/25 p-4">
               <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-                <Field label="Template Surat Keluar">
+                <Field label="Contoh Format Surat Keluar">
                   <NativeSelect
                     value={selectedTemplateId}
                     onChange={(event) => setSelectedTemplateId(event.target.value)}
@@ -512,16 +531,16 @@ export function LetterRegistrationPanel({
                     ))}
                   </NativeSelect>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    Template hanya membantu pratinjau isi surat. Simpan surat tetap memakai metadata resmi di bawah.
+                    Format ini hanya membantu melihat contoh isi surat. Data resmi tetap diisi di bawah.
                   </p>
                 </Field>
                 <div className="min-w-0 rounded-xl border border-border bg-card p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">Pratinjau Template</p>
-                    {selectedTemplate ? <Badge variant="outline">{selectedTemplate.placeholders.length} placeholder</Badge> : null}
+                    <p className="text-sm font-semibold text-foreground">Contoh Isi Surat</p>
+                    {selectedTemplate ? <Badge variant="outline">{selectedTemplate.placeholders.length} kolom isian</Badge> : null}
                   </div>
                   <pre className="mt-3 max-h-52 overflow-auto whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                    {selectedTemplatePreview || "Pilih template untuk melihat pratinjau."}
+                    {selectedTemplatePreview || "Pilih format untuk melihat contoh isi surat."}
                   </pre>
                 </div>
               </div>
@@ -590,14 +609,14 @@ export function LetterRegistrationPanel({
                 placeholder="Pilih kerahasiaan"
               />
             </Field>
-            <Field label="Mode Viewer" required>
+            <Field label="Akses File" required>
               <CreatableMultiSelect
                 multiple={false}
                 allowCreate={false}
                 value={viewerMode ? [viewerMode] : []}
                 onChange={(values) => setViewerMode((values[0] as LetterDetail["viewerMode"]) ?? "download")}
                 options={viewerOptions}
-                placeholder="Pilih mode viewer"
+                placeholder="Pilih akses file"
               />
             </Field>
           </div>
@@ -620,8 +639,8 @@ export function LetterRegistrationPanel({
           <div className="rounded-[1.2rem] border border-border bg-muted/25 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-foreground">Saran AI Administrasi</p>
-                <p className="mt-1 text-xs text-muted-foreground">Hasil AI hanya draft bantuan dan tidak otomatis disimpan sebelum tombol registrasi ditekan.</p>
+                <p className="text-sm font-semibold text-foreground">Bantuan AI Administrasi</p>
+                <p className="mt-1 text-xs text-muted-foreground">Hasil AI hanya saran awal dan tidak otomatis disimpan sebelum Anda menekan tombol simpan.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" onClick={() => void requestClassificationSuggestion()} disabled={isAiSuggesting || !perihal.trim()}>
@@ -668,7 +687,7 @@ export function LetterRegistrationPanel({
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
-            <Field label="Tag Klasifikasi">
+            <Field label="Penanda Klasifikasi">
               <CreatableMultiSelect
                 value={klasifikasiTags}
                 onChange={setKlasifikasiTags}
@@ -676,15 +695,15 @@ export function LetterRegistrationPanel({
                   ...letterClassificationOptions,
                   ...classificationCategoryOptions,
                 ]}
-                placeholder="Tambahkan tag klasifikasi"
+                placeholder="Tambahkan penanda klasifikasi"
               />
             </Field>
-            <Field label="Tag Surat">
+            <Field label="Penanda Surat">
               <CreatableMultiSelect
                 value={tags}
                 onChange={setTags}
                 options={tagSeedOptions}
-                placeholder="Pilih atau buat tag surat"
+                placeholder="Pilih atau buat penanda surat"
               />
             </Field>
             <Field label="Lampiran">
@@ -720,7 +739,7 @@ export function LetterRegistrationPanel({
                 onChange={(values) => setTargetUserId(values[0] ?? "")}
                 options={availableTargetUsers.map((user) => ({
                   value: user.id,
-                  label: `${user.name} - ${getUserPositionLabel(user)}`,
+                  label: `${user.name} - ${getUserPositionLabel(user, positions)}`,
                 }))}
                 placeholder="Pilih pejabat tujuan"
               />
@@ -733,16 +752,16 @@ export function LetterRegistrationPanel({
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.3rem] border border-dashed border-primary/30 bg-primary/5 p-4">
             <div className="space-y-1">
-              <p className="font-semibold text-foreground">Verify-before-save</p>
+              <p className="font-semibold text-foreground">Cek sebelum simpan</p>
               <p className="text-sm text-muted-foreground">
                 {draftMode === "ai"
-                  ? "Draft hasil AI sudah mengisi form. Tinjau dan koreksi bila perlu sebelum disimpan."
-                  : "Form manual tetap aktif. Anda bisa mengisi sendiri atau memulai dari Deteksi AI."}
+                  ? "Bantuan AI sudah mengisi formulir. Tinjau dan koreksi bila perlu sebelum disimpan."
+                  : "Formulir manual tetap aktif. Anda bisa mengisi sendiri atau memakai bantuan AI."}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={resetForm}>
-                Reset Draft
+                Kosongkan Formulir
               </Button>
               <Button
                 type="button"
@@ -761,7 +780,7 @@ export function LetterRegistrationPanel({
                     !targetUserId
                   ) {
                     setFeedback("");
-                    setFormError("Lengkapi seluruh metadata wajib sebelum menyimpan surat.");
+                    setFormError("Lengkapi seluruh data wajib sebelum menyimpan surat.");
                     return;
                   }
 
@@ -799,6 +818,7 @@ export function LetterRegistrationPanel({
                     setFormError("");
                     setFeedback(result.message);
                     resetForm();
+                    onCreated?.();
                   } else {
                     setFeedback("");
                     setFormError(result.message);
@@ -824,7 +844,7 @@ export function LetterRegistrationPanel({
       {isUploadingPdf ? (
         <div className="px-6 pb-6">
           <div className="rounded-[1.2rem] border border-border bg-muted/35 px-4 py-3 text-sm text-muted-foreground">
-            Memproses PDF dan menyiapkan draft dokumen...
+            Memproses PDF dan menyiapkan data awal...
           </div>
         </div>
       ) : null}

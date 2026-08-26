@@ -5,19 +5,23 @@ import { getDatabase } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
 import {
   getWhatsappRuntimeMode,
+  getWhatsappRuntimeModeDiagnostics,
   buildGatewayWhatsappSnapshot,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
-import { handleRouteError, ok } from "@/server/shared/http";
+import { ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
   try {
-    const actorUserId = await resolveActorUserId(request);
-    const db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
     const actor = await requireActorUser(db, actorUserId);
 
     if (!isPrivilegedAdmin(actor)) {
@@ -25,6 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     const runtimeMode = getWhatsappRuntimeMode();
+    const runtimeDiagnostics = getWhatsappRuntimeModeDiagnostics();
 
     if (runtimeMode === "aleta_bot") {
       const snapshot = await buildGatewayWhatsappSnapshot();
@@ -32,6 +37,7 @@ export async function GET(request: NextRequest) {
         ...snapshot,
         requiresPhoneNumberBeforeInit: false,
         runtimeMode,
+        runtimeDiagnostics,
         runtimeLabel: "ALETA Bot Gateway",
         singleGateway: true,
       });
@@ -50,6 +56,7 @@ export async function GET(request: NextRequest) {
         lastErrorMessage: "WhatsApp dinonaktifkan (WHATSAPP_RUNTIME_MODE=disabled).",
         requiresPhoneNumberBeforeInit: false,
         runtimeMode,
+        runtimeDiagnostics,
         runtimeLabel: "Disabled",
         singleGateway: false,
       });
@@ -61,10 +68,17 @@ export async function GET(request: NextRequest) {
     return ok({
       ...snapshot,
       runtimeMode,
+      runtimeDiagnostics,
       runtimeLabel: "Legacy Warning: Portal WhatsApp Client",
       singleGateway: false,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "WHATSAPP_GATEWAY_ACCESS_FAILED",
+      feature: "whatsapp_gateway",
+      entityId: "status",
+    });
   }
 }

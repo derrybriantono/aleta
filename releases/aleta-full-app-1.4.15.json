@@ -1,0 +1,33 @@
+﻿{
+    "includes":  [
+                     "manajemen_surat",
+                     "aleta_bot",
+                     "scripts",
+                     "deploy",
+                     "docs",
+                     "drizzle",
+                     "root project files that are not active server settings"
+                 ],
+    "checksum":  "aleta-full-app-1.4.15.tar.gz.sha256",
+    "createdAt":  "2026-06-19T14:10:24Z",
+    "excludes":  [
+                     ".env and active env files",
+                     "config directories with active server settings",
+                     "database/runtime data",
+                     "uploads",
+                     "WhatsApp sessions",
+                     "node_modules",
+                     ".next",
+                     "logs",
+                     "cache",
+                     "old releases",
+                     "backup folders",
+                     "Docker/server compose settings"
+                 ],
+    "version":  "1.4.15",
+    "package":  "aleta-full-app-1.4.15.tar.gz",
+    "scope":  "FULL_ALETA_APPLICATION_ROOT",
+    "installGuide":  "PANDUAN-INSTALL-ALETA-FULL-1.4.15-CENTOS7-DOCKER.md",
+    "installMode":  "Extract over existing server folder after backup. Do not delete existing app folders before extract because excluded settings must remain on server.",
+    "baseline":  "Server aktif sudah berjalan pada Patch Notes v1.4.5; paket full ini membawa source aplikasi sampai v1.4.15."
+}

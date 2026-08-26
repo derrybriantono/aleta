@@ -31,7 +31,9 @@ import {
 } from "@/lib/feedback";
 import { formatDateTime } from "@/lib/format";
 import { getUserPositionLabel, getUserRoleBadge } from "@/lib/permissions";
+import { APP_VERSION } from "@/lib/patch-notes";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
 type FeedbackFormState = {
@@ -79,7 +81,7 @@ async function readApiJson<T>(response: Response) {
 }
 
 export function FeedbackCenter() {
-  const { currentUser } = usePortal();
+  const { currentUser, positions } = usePortal();
   const [form, setForm] = useState<FeedbackFormState>(() => initialForm());
   const [items, setItems] = useState<FeedbackRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,7 @@ export function FeedbackCenter() {
     async function loadHistory() {
       setLoading(true);
       try {
-        const response = await fetch("/api/feedback", {
+        const response = await fetch(apiPath("/api/feedback"), {
           credentials: "include",
           cache: "no-store",
         });
@@ -153,7 +155,7 @@ export function FeedbackCenter() {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/feedback", {
+      const response = await fetch(apiPath("/api/feedback"), {
         method: "POST",
         credentials: "include",
         headers: {
@@ -357,6 +359,21 @@ export function FeedbackCenter() {
         </Card>
 
         <div className="space-y-6">
+          <Card className="border-primary/25 bg-primary/5">
+            <CardHeader>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="default">v{APP_VERSION}</Badge>
+                <Badge variant="outline">Fokus masukan</Badge>
+              </div>
+              <CardTitle>Yang Paling Perlu Dilaporkan</CardTitle>
+              <CardDescription>
+                Untuk rilis v{APP_VERSION}, prioritaskan laporan tentang login/logout, AccessDenied, loading stuck, RBAC,
+                preflight staging-public, runtime database, Manajemen Surat, ALETA Bot, ALETA x SIPP, JLF, Query Registry,
+                template surat, upload/download, Patch Notes, Panduan, dan Pusat Masukan.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
           <Card className="border-border/80">
             <CardHeader>
               <CardTitle>Kontak Pelapor</CardTitle>
@@ -365,7 +382,7 @@ export function FeedbackCenter() {
             <CardContent className="space-y-3 text-sm">
               <InfoRow label="Nama" value={currentUser?.name ?? "-"} />
                 <InfoRow label="Peran" value={getUserRoleBadge(currentUser)} />
-              <InfoRow label="Unit/Jabatan" value={getUserPositionLabel(currentUser)} />
+              <InfoRow label="Unit/Jabatan" value={getUserPositionLabel(currentUser, positions)} />
               <InfoRow label="Email" value={currentUser?.email ?? "-"} />
             </CardContent>
           </Card>

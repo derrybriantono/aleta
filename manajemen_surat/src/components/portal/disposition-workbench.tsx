@@ -62,7 +62,7 @@ const PRIORITY_COPY: Record<
   low: { label: "Prioritas rendah", variant: "success" },
   medium: { label: "Prioritas sedang", variant: "default" },
   high: { label: "Prioritas tinggi", variant: "warning" },
-  urgent: { label: "Mendesak / urgent", variant: "danger" },
+  urgent: { label: "Mendesak", variant: "danger" },
 };
 
 type ComposerProps = {
@@ -72,7 +72,17 @@ type ComposerProps = {
 
 export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
   const router = useRouter();
-  const { currentUser, aiConfig, createDisposition, startDisposition, completeDisposition, dispositions, getUsersByPosition, users } = usePortal();
+  const {
+    aiConfig,
+    completeDisposition,
+    createDisposition,
+    currentUser,
+    dispositions,
+    getUsersByPosition,
+    positions,
+    startDisposition,
+    users,
+  } = usePortal();
   const isAdmin = isPrivilegedAdmin(currentUser);
   const dispositionFlags = aiConfig.featureFlags.oneStopDisposition;
   const dispositionAiEnabled = aiConfig.enabled && aiConfig.featureDisposisiAi && dispositionFlags.enabled;
@@ -102,8 +112,8 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
       item.status !== "Selesai"
   );
   const targetPositions = useMemo(
-    () => getAllowedDispositionTargetPositions(currentUser, { bypass }),
-    [bypass, currentUser]
+    () => getAllowedDispositionTargetPositions(currentUser, { bypass, positionSource: positions }),
+    [bypass, currentUser, positions]
   );
   const selectedTargetPositionId = targetPositions.some((position) => position.id === targetPositionId)
     ? targetPositionId
@@ -203,7 +213,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
             <div>
               <CardTitle className="text-base">Disposisi Aktif</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                {recipient?.name ?? "-"} · {getPosition(disposition.targetPositionId)?.name ?? "-"}
+                {recipient?.name ?? "-"} · {getPosition(disposition.targetPositionId, positions)?.name ?? "-"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -228,7 +238,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
           </p>
           <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-muted/25 px-3 py-2">
-              <span className="font-medium text-foreground">Deadline:</span>{" "}
+              <span className="font-medium text-foreground">Batas waktu:</span>{" "}
               {getDispositionDeadlineLabel(disposition)}
             </div>
             <div className="rounded-xl border border-border bg-muted/25 px-3 py-2">
@@ -270,7 +280,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
       {/* Main action card */}
       <Card className="border-border/80">
         <CardHeader>
-          <CardTitle>One-Stop Disposition</CardTitle>
+          <CardTitle>Kelola Disposisi</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
           {!canForward ? (
@@ -304,7 +314,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
                   {currentUser?.canBypassHierarchy ? (
                     <SwitchRow
                       testId="switch-bypass"
-                      label="Bypass"
+                      label="Lewati struktur"
                       checked={bypass}
                       onCheckedChange={setBypass}
                       inline
@@ -342,7 +352,7 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Target individu</label>
+                <label className="text-sm font-medium text-foreground">Penerima</label>
                 <NativeSelect
                   data-testid="select-user"
                   value={selectedRecipientId}
@@ -350,13 +360,13 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
                 >
                   {availableUsers.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.name} - {getUserPositionLabel(user)}
+                      {user.name} - {getUserPositionLabel(user, positions)}
                     </option>
                   ))}
                 </NativeSelect>
                 {availableUsers.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    Belum ada user aktif pada jabatan ini. Pilih jabatan lain atau ubah mapping user terlebih dahulu.
+                    Belum ada akun aktif pada jabatan ini. Pilih jabatan lain atau ubah pengaturan pengguna terlebih dahulu.
                   </p>
                 ) : null}
               </div>
@@ -372,14 +382,14 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Deadline disposisi</label>
+                <label className="text-sm font-medium text-foreground">Batas waktu disposisi</label>
                 <Input
                   type="datetime-local"
                   value={deadlineAt}
                   onChange={(event) => setDeadlineAt(event.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Opsional. Dipakai untuk badge Terlambat/Jatuh Tempo di daftar tugas dan detail surat.
+                  Opsional. Dipakai untuk tanda Terlambat atau Jatuh Tempo di daftar tugas dan detail surat.
                 </p>
               </div>
 
@@ -443,17 +453,17 @@ export function DispositionWorkbench({ letter, disposition }: ComposerProps) {
 
               {!canForward ? (
                 <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-                  Hanya penerima aktif yang dapat menyelesaikan node ini.
+                  Hanya penerima aktif yang dapat menyelesaikan tugas ini.
                 </p>
               ) : disposition.status === "Selesai" ? (
                 <p className="rounded-[1.3rem] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">
-                  Node ini sudah ditandai selesai.
+                  Tugas ini sudah ditandai selesai.
                 </p>
               ) : activeWorkChildren.length > 0 ? (
                 <div className="rounded-[1.3rem] border border-amber-300/60 bg-amber-50/50 p-4 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
                   <p className="font-medium">Tidak dapat diselesaikan.</p>
                   <p className="mt-1 leading-7">
-                    Masih ada {activeWorkChildren.length} disposisi turunan yang belum selesai. Selesaikan semua node kerja turunan terlebih dahulu.
+                    Masih ada {activeWorkChildren.length} disposisi lanjutan yang belum selesai. Selesaikan semuanya terlebih dahulu.
                   </p>
                 </div>
               ) : (
@@ -566,8 +576,8 @@ function DispositionAiPanel({
           <AletaAIMark label="Asisten AI Disposisi" />
           <p className="mt-2 text-sm text-muted-foreground">
             {isAdmin
-              ? "Backend memanggil provider/model AI aktif dari Pengaturan AI. Status sumber (AI live / heuristik / dimatikan / error) selalu ditampilkan jujur."
-              : "AI akan menyarankan instruksi dan target disposisi berdasarkan isi surat."}
+              ? "Sistem memakai penyedia dan model AI aktif dari Pengaturan AI. Status sumber selalu ditampilkan apa adanya."
+              : "AI akan menyarankan instruksi dan tujuan disposisi berdasarkan isi surat."}
           </p>
         </div>
         <Button
@@ -585,7 +595,7 @@ function DispositionAiPanel({
       {state.status === "idle" ? (
         <p className="rounded-[1.15rem] border border-dashed border-primary/30 bg-card/70 px-4 py-3 text-sm text-muted-foreground">
           {isAdmin
-            ? "Tekan tombol untuk meminta analisis AI nyata. Jika provider sedang tidak aktif, panel akan tetap menampilkan fallback heuristik secara eksplisit."
+            ? "Tekan tombol untuk meminta analisis AI. Jika penyedia AI tidak aktif, panel akan menampilkan analisis cadangan secara jelas."
             : "Tekan tombol untuk mendapatkan saran AI."}
         </p>
       ) : null}
@@ -627,6 +637,12 @@ function DispositionAiBody({
 }) {
   const priority = PRIORITY_COPY[insight.priority.level];
   const providerLabel = insight.provider.connectionLabel ?? insight.provider.providerName;
+  const providerConnectionLabel =
+    insight.provider.connectionStatus === "connected"
+      ? "Terhubung"
+      : insight.provider.connectionStatus === "failed"
+        ? "Gagal"
+        : "Belum dicek";
   const confidencePercent = Math.round(insight.confidence.score * 100);
   const isLive = insight.source === "ai-live";
   const sourceTone = isLive
@@ -642,9 +658,9 @@ function DispositionAiBody({
         <div className={cn("rounded-[1.25rem] border p-4 text-sm", sourceTone)}>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={isLive ? "default" : insight.source === "error" ? "danger" : "warning"}>
-              {isLive ? "Saran AI live" : insight.source === "disabled" ? "AI dimatikan" : insight.source === "error" ? "Provider AI gagal" : "Fallback heuristik"}
+              {isLive ? "Saran AI aktif" : insight.source === "disabled" ? "AI dimatikan" : insight.source === "error" ? "Penyedia AI gagal" : "Analisis cadangan"}
             </Badge>
-            <Badge variant="outline">Provider: {providerLabel}</Badge>
+            <Badge variant="outline">Penyedia: {providerLabel}</Badge>
             <Badge variant="outline">
               Model: {insight.provider.providerModelId || insight.provider.modelId}
             </Badge>
@@ -660,10 +676,10 @@ function DispositionAiBody({
                     : "outline"
               }
             >
-              Status koneksi: {insight.provider.connectionStatus}
+              Koneksi: {providerConnectionLabel}
             </Badge>
             <Badge variant={insight.provider.hasActiveApiKey ? "success" : "warning"}>
-              API key: {insight.provider.hasActiveApiKey ? "terisi" : "belum diisi"}
+              Kunci API: {insight.provider.hasActiveApiKey ? "terisi" : "belum diisi"}
             </Badge>
           </div>
           <p className="mt-3 text-muted-foreground">{insight.rationale}</p>
@@ -723,7 +739,7 @@ function DispositionAiBody({
           {isAdmin ? (
             <div>
               <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                <span>Confidence</span>
+                <span>Tingkat keyakinan</span>
                 <span>
                   {confidencePercent}% · {insight.confidence.label}
                 </span>
@@ -784,11 +800,11 @@ function DispositionAiBody({
               ) : (
                 <Badge variant="outline">Belum ada saran target spesifik</Badge>
               )}
-              {insight.autofill.urgent === true ? <Badge variant="danger">Tandai urgent</Badge> : null}
+              {insight.autofill.urgent === true ? <Badge variant="danger">Tandai mendesak</Badge> : null}
               {insight.autofill.allowDownload === true ? (
                 <Badge variant="success">Izinkan unduh</Badge>
               ) : insight.autofill.allowDownload === false ? (
-                <Badge variant="muted">Preview only</Badge>
+                <Badge variant="muted">Hanya lihat</Badge>
               ) : null}
             </div>
           </div>
@@ -804,10 +820,10 @@ function DispositionAiBody({
               !insight.autofill.suggestedTargetPositionId
             }
           >
-            Terapkan ke form
+            Terapkan ke formulir
           </Button>
           <p className="text-xs text-muted-foreground">
-            Field form akan terisi otomatis. Periksa sebelum mengirim.
+            Kolom isian akan terisi otomatis. Periksa sebelum mengirim.
           </p>
 
           <div>

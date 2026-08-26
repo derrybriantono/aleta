@@ -1,4 +1,4 @@
-const puppeteer = require("new-puppeteer");
+const puppeteer = require("puppeteer");
 require("dotenv").config();
 
 const username = process.env.SIKEP_USERNAME || "";

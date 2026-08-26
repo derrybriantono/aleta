@@ -6,18 +6,22 @@ import { requireActorUser } from "@/server/modules/organization/service";
 import {
   connectGatewayWhatsapp,
   getWhatsappRuntimeMode,
+  getWhatsappRuntimeModeDiagnostics,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
-import { handleRouteError, ok } from "@/server/shared/http";
+import { ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
   try {
-    const actorUserId = await resolveActorUserId(request);
-    const db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
     const actor = await requireActorUser(db, actorUserId);
 
     if (!isPrivilegedAdmin(actor)) {
@@ -25,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const runtimeMode = getWhatsappRuntimeMode();
+    const runtimeDiagnostics = getWhatsappRuntimeModeDiagnostics();
 
     if (runtimeMode === "aleta_bot") {
       const result = await connectGatewayWhatsapp();
@@ -38,6 +43,7 @@ export async function POST(request: NextRequest) {
         started: result.data.started ?? false,
         qrAvailable: result.data.qrAvailable ?? false,
         runtimeMode,
+        runtimeDiagnostics,
         runtimeLabel: "ALETA Bot Gateway",
         singleGateway: true,
       });
@@ -47,6 +53,7 @@ export async function POST(request: NextRequest) {
       return ok({
         message: "WhatsApp dinonaktifkan (WHATSAPP_RUNTIME_MODE=disabled). Tidak ada yang perlu diinisialisasi.",
         runtimeMode,
+        runtimeDiagnostics,
       });
     }
 
@@ -57,8 +64,15 @@ export async function POST(request: NextRequest) {
     return ok({
       message: "Proses inisialisasi WhatsApp dimulai. Pairing QR bisa dilakukan tanpa wajib mengisi nomor resmi terlebih dahulu.",
       runtimeMode,
+      runtimeDiagnostics,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "WHATSAPP_GATEWAY_ACCESS_FAILED",
+      feature: "whatsapp_gateway",
+      entityId: "init",
+    });
   }
 }

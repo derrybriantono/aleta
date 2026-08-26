@@ -2,7 +2,7 @@ import { type AIProviderConfig } from "@/lib/types";
 
 export const popularAIProviderCatalog: AIProviderConfig[] = [
   { id: "chatgpt", name: "ChatGPT", apiKey: "", models: ["GPT-5.4 Thinking", "GPT-5.4", "GPT-4.1"], builtin: true, connectionStatus: "idle" },
-  { id: "gemini", name: "Gemini", apiKey: "", models: ["Gemini 2.5 Pro", "Gemini 2.5 Flash", "Gemini 2.0 Flash"], builtin: true, connectionStatus: "idle" },
+  { id: "gemini", name: "Gemini", apiKey: "", models: ["Gemini 3.1", "Gemini 2.5 Pro", "Gemini 2.5 Flash", "Gemini 2.0 Flash"], builtin: true, connectionStatus: "idle" },
   { id: "claude", name: "Claude", apiKey: "", models: ["Claude Sonnet 4", "Claude Opus 4", "Claude Haiku 3.5"], builtin: true, connectionStatus: "idle" },
   { id: "perplexity", name: "Perplexity", apiKey: "", models: ["Perplexity Sonar Pro", "Perplexity Sonar", "Perplexity R1"], builtin: true, connectionStatus: "idle" },
   { id: "grok", name: "Grok", apiKey: "", models: ["Grok 3", "Grok 3 Mini"], builtin: true, connectionStatus: "idle" },

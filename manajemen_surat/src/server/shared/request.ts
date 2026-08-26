@@ -29,6 +29,18 @@ export function getNumberSearchParam(request: NextRequest, key: string) {
   return Number.isFinite(numeric) ? numeric : undefined;
 }
 
+export function getRequestAuditMetadata(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = request.headers.get("x-real-ip")?.trim();
+
+  return {
+    method: request.method,
+    path: request.nextUrl.pathname,
+    ipAddress: forwardedFor || realIp || "unknown",
+    userAgent: request.headers.get("user-agent")?.slice(0, 240) ?? "unknown",
+  };
+}
+
 export async function readJsonBody<T>(request: Request) {
   return (await request.json()) as T;
 }

@@ -1,6 +1,8 @@
 const mysql = require("mysql");
 const crypto = require("crypto");
 const { readRuntimeConfig } = require("../config/runtime-config");
+const queryGuardService = require("./queryGuardService");
+const queryMetricsService = require("./queryMetricsService");
 const logService = require("./logService");
 
 const legacyConnections = {
@@ -160,7 +162,30 @@ function maskConnectionConfig(config) {
 function getRegistryConnections() {
   const runtimeConfig = readRuntimeConfig();
   const registry = Array.isArray(runtimeConfig.dbConnections) ? runtimeConfig.dbConnections : [];
-  return registry.map(normalizeRegistryConnection).filter((item) => item.key);
+  const extraConnections = parseExtraDbConnectionsFromEnv();
+  const byKey = new Map();
+  for (const connection of [...registry, ...extraConnections]) {
+    const normalized = normalizeRegistryConnection(connection);
+    if (normalized.key) byKey.set(normalized.key, normalized);
+  }
+  return [...byKey.values()];
+}
+
+function parseExtraDbConnectionsFromEnv() {
+  const raw = process.env.ALETA_BOT_EXTRA_DB_CONNECTIONS_JSON || "";
+  if (!raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    void logService.logSystemEvent({
+      eventType: "external_db_extra_config_invalid",
+      severity: "warning",
+      message: "Konfigurasi ALETA_BOT_EXTRA_DB_CONNECTIONS_JSON tidak valid.",
+      metadata: { errorMessage: sanitizeError(error) },
+    });
+    return [];
+  }
 }
 
 function listConnections() {
@@ -215,17 +240,44 @@ function createConnectionPool(connectionKey = "sipp_primary") {
     database: config.databaseName,
     ssl: config.sslEnabled ? {} : undefined,
     connectTimeout: config.connectionTimeoutMs,
+    connectionLimit: queryGuardService.getGuardConfig().connectionLimit,
     multipleStatements: false,
   });
   pools.set(poolKey, pool);
   return pool;
 }
 
-function query(connectionKey, sql, params = []) {
+/**
+ * Menjalankan satu query sambil memasang batas waktu dan mencatat durasinya.
+ *
+ * Query yang melewati batas dikembalikan dengan pesan berbahasa manusia, bukan
+ * kode driver — pesan ini bisa berakhir di layar admin maupun di pesan WhatsApp
+ * seseorang, jadi harus bisa dibaca tanpa penjelasan tambahan.
+ */
+function runGuardedQuery(pool, sqlOrOptions, params, connectionKey) {
+  const guardConfig = queryGuardService.getGuardConfig();
+  const guard = queryGuardService.applyQueryGuard(sqlOrOptions, guardConfig);
+  const options = guard.applied ? guard.options : sqlOrOptions;
+  const startedAt = Date.now();
+
   return new Promise((resolve, reject) => {
-    const pool = createConnectionPool(connectionKey);
-    pool.query(sql, params, (error, result) => {
+    pool.query(options, params, (error, result) => {
+      queryMetricsService.record({
+        sql: guard.sql,
+        durationMs: Date.now() - startedAt,
+        result,
+        error,
+        connectionKey,
+      });
+
       if (error) {
+        if (queryMetricsService.isTimeoutError(error)) {
+          const timeoutError = new Error(queryGuardService.describeTimeoutError(error, guardConfig));
+          timeoutError.code = error.code || "QUERY_TIMEOUT";
+          timeoutError.cause = error;
+          reject(timeoutError);
+          return;
+        }
         reject(error);
         return;
       }
@@ -234,27 +286,29 @@ function query(connectionKey, sql, params = []) {
   });
 }
 
+function query(connectionKey, sql, params = []) {
+  const pool = createConnectionPool(connectionKey);
+  return runGuardedQuery(pool, sql, params, connectionKey);
+}
+
 function queryWithConfig(config, sql, params = []) {
-  return new Promise((resolve, reject) => {
-    const normalized = normalizeRegistryConnection(config);
-    const pool = mysql.createPool({
-      host: normalized.host,
-      port: normalized.port,
-      user: normalized.username,
-      password: getPassword(normalized),
-      database: normalized.databaseName,
-      ssl: normalized.sslEnabled ? {} : undefined,
-      connectTimeout: normalized.connectionTimeoutMs,
-      multipleStatements: false,
-    });
-    pool.query(sql, params, (error, result) => {
-      pool.end(() => null);
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(result);
-    });
+  const normalized = normalizeRegistryConnection(config);
+  const pool = mysql.createPool({
+    host: normalized.host,
+    port: normalized.port,
+    user: normalized.username,
+    password: getPassword(normalized),
+    database: normalized.databaseName,
+    ssl: normalized.sslEnabled ? {} : undefined,
+    connectTimeout: normalized.connectionTimeoutMs,
+    connectionLimit: queryGuardService.getGuardConfig().connectionLimit,
+    multipleStatements: false,
+  });
+
+  // Kolam sementara ini hanya dipakai sekali (uji koneksi dari portal), jadi
+  // wajib ditutup apa pun hasilnya - termasuk saat query melewati batas waktu.
+  return runGuardedQuery(pool, sql, params, normalized.key || "uji_koneksi").finally(() => {
+    pool.end(() => null);
   });
 }
 

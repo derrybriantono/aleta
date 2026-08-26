@@ -94,7 +94,7 @@ type ResolvedInstitutionIdentity = {
 };
 
 type JsonRecord = Record<string, unknown>;
-type IdentityInput = Partial<Record<IdentityField, unknown>>;
+type IdentityInput = Partial<Record<keyof InstitutionIdentity, unknown>>;
 
 const CATALOG_FIELD_CONFIDENCE: Record<IdentityField, number> = {
   courtName: 0.99,
@@ -183,6 +183,8 @@ function normalizeInstitutionIdentity(source: IdentityInput | null | undefined):
     address: normalizeIdentityValue(source?.address),
     phoneNumber: normalizeIdentityValue(source?.phoneNumber),
     mobilePhone: normalizeIdentityValue(source?.mobilePhone),
+    csWhatsappNumber: normalizeIdentityValue(source?.csWhatsappNumber),
+    botWhatsappNumber: normalizeIdentityValue(source?.botWhatsappNumber),
     email: normalizeIdentityValue(source?.email),
     instagram: normalizeIdentityValue(source?.instagram),
     facebook: normalizeIdentityValue(source?.facebook),

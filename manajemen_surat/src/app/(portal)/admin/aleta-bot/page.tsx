@@ -7,9 +7,12 @@ import { getEffectiveRoleId } from "@/lib/permissions";
 
 export default function AletaBotPage() {
   const { currentUser } = usePortal();
-  const isSuperAdmin = getEffectiveRoleId(currentUser) === "super-admin";
+  const roleId = getEffectiveRoleId(currentUser);
+  // Admin mendapat akses operasional; fitur kebijakan tetap disembunyikan di panel
+  // dan ditolak backend (guard per-role Tahap 1).
+  const canOpenPanel = roleId === "super-admin" || roleId === "admin";
 
-  if (!isSuperAdmin) {
+  if (!canOpenPanel) {
     return <AccessDeniedCard />;
   }
 

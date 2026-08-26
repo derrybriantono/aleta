@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-02T15:21:24.136Z",
+  "generatedDate": "2 Juli 2026",
+  "version": "v1.2 - Juli 2026",
+  "institution": "Pengadilan Agama Donggala",
+  "sourceExample": "C:\\Users\\Delota13\\Downloads\\Panduan_Portal_ALETA_Tanpa_Screenshot.pdf",
+  "exampleFormatObserved": {
+    "engine": "ReportLab-style PDF",
+    "pageSize": "A4",
+    "pageCount": 11,
+    "style": "white pages, blue headings, dark table headers, zebra rows, simple footer"
+  },
+  "files": {
+    "markdown": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-format-contoh.md",
+    "html": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-format-contoh.html",
+    "pdf": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-format-contoh.pdf",
+    "report": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-format-contoh-report.json"
+  },
+  "pdfPageCount": 17,
+  "method": "Node.js membuat Markdown dan HTML dengan gaya seperti PDF contoh. Playwright hanya merender HTML menjadi PDF tanpa screenshot.",
+  "verification": {
+    "usesScreenshots": false,
+    "imageTagCount": 0,
+    "imagePathCount": 0,
+    "screenshotPathCount": 0,
+    "hasPlaceholderScreenshot": false,
+    "hasLoadingImage": false,
+    "sensitivePatternCount": 0
+  }
+}

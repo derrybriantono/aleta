@@ -1,0 +1,265 @@
+{
+  "generatedAt": "2026-07-01T16:52:40.644Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "version": "v1.0 - Juli 2026",
+  "institution": "Pengadilan Agama Donggala",
+  "files": {
+    "markdown": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta.md",
+    "html": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta.html",
+    "pdf": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta.pdf",
+    "screenshotsDir": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots"
+  },
+  "screenshotCount": 31,
+  "capturedCount": 30,
+  "placeholderCount": 1,
+  "screenshots": [
+    {
+      "key": "login",
+      "title": "Halaman Login Portal ALETA",
+      "url": "/login",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\login.png",
+      "reason": null
+    },
+    {
+      "key": "login-gagal",
+      "title": "Contoh Login Gagal",
+      "url": "/login",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\login-gagal.png",
+      "reason": null
+    },
+    {
+      "key": "portal",
+      "title": "Dashboard Portal",
+      "url": "/portal",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\portal.png",
+      "reason": null
+    },
+    {
+      "key": "sidebar-menu",
+      "title": "Sidebar dan Menu Utama",
+      "url": "/portal",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\sidebar-menu.png",
+      "reason": null
+    },
+    {
+      "key": "account",
+      "title": "Profil Pengguna",
+      "url": "/account",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\account.png",
+      "reason": null
+    },
+    {
+      "key": "admin",
+      "title": "Dashboard Admin",
+      "url": "/admin",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\admin.png",
+      "reason": null
+    },
+    {
+      "key": "admin-users",
+      "title": "Manajemen User",
+      "url": "/admin",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\admin-users.png",
+      "reason": null
+    },
+    {
+      "key": "positions",
+      "title": "Jabatan dan Mapping User",
+      "url": "/admin/mapping-user-jabatan",
+      "status": "placeholder",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\positions.png",
+      "reason": "page.goto: Timeout 90000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3000/admin/mapping-user-jabatan\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "key": "module-visibility",
+      "title": "Module Visibility",
+      "url": "/admin/visibility-role",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\module-visibility.png",
+      "reason": null
+    },
+    {
+      "key": "ai-settings",
+      "title": "Pengaturan AI",
+      "url": "/admin/pengaturan-ai",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\ai-settings.png",
+      "reason": null
+    },
+    {
+      "key": "surat-dashboard",
+      "title": "Dashboard Manajemen Surat",
+      "url": "/manajemen-surat",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\surat-dashboard.png",
+      "reason": null
+    },
+    {
+      "key": "surat-list",
+      "title": "Daftar Surat",
+      "url": "/surat",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\surat-list.png",
+      "reason": null
+    },
+    {
+      "key": "surat-masuk",
+      "title": "Surat Masuk",
+      "url": "/surat/masuk",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\surat-masuk.png",
+      "reason": null
+    },
+    {
+      "key": "surat-keluar",
+      "title": "Surat Keluar",
+      "url": "/surat/keluar",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\surat-keluar.png",
+      "reason": null
+    },
+    {
+      "key": "disposisi",
+      "title": "Disposisi",
+      "url": "/disposisi",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\disposisi.png",
+      "reason": null
+    },
+    {
+      "key": "aleta-bot",
+      "title": "ALETA Bot",
+      "url": "/aleta-bot",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\aleta-bot.png",
+      "reason": null
+    },
+    {
+      "key": "admin-aleta-bot",
+      "title": "Admin ALETA Bot",
+      "url": "/admin/aleta-bot",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\admin-aleta-bot.png",
+      "reason": null
+    },
+    {
+      "key": "whatsapp-status",
+      "title": "Status WhatsApp Gateway",
+      "url": "/admin/status-whatsapp",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\whatsapp-status.png",
+      "reason": null
+    },
+    {
+      "key": "aleta-sipp",
+      "title": "ALETA x SIPP",
+      "url": "/aleta-sipp",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\aleta-sipp.png",
+      "reason": null
+    },
+    {
+      "key": "query-registry",
+      "title": "Query Registry",
+      "url": "/aleta-sipp?section=query",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\query-registry.png",
+      "reason": null
+    },
+    {
+      "key": "variable-registry",
+      "title": "Variable Registry",
+      "url": "/aleta-sipp?section=variabel",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\variable-registry.png",
+      "reason": null
+    },
+    {
+      "key": "monitoring-sipp",
+      "title": "Monitoring dan SK SIPP",
+      "url": "/aleta-sipp?section=pendukung2018",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\monitoring-sipp.png",
+      "reason": null
+    },
+    {
+      "key": "jlf",
+      "title": "ALETA Justicia Legal Form",
+      "url": "/judicia/legal-form",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\jlf.png",
+      "reason": null
+    },
+    {
+      "key": "jlf-templates",
+      "title": "Template JLF",
+      "url": "/judicia/legal-form/templates",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\jlf-templates.png",
+      "reason": null
+    },
+    {
+      "key": "jlf-variables",
+      "title": "Variable JLF",
+      "url": "/judicia/legal-form/variables",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\jlf-variables.png",
+      "reason": null
+    },
+    {
+      "key": "asisten-hakim",
+      "title": "Asisten Hakim / AI",
+      "url": "/asisten-hakim",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\asisten-hakim.png",
+      "reason": null
+    },
+    {
+      "key": "e-kepegawaian",
+      "title": "E-Kepegawaian",
+      "url": "/e-kepegawaian",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\e-kepegawaian.png",
+      "reason": null
+    },
+    {
+      "key": "e-status",
+      "title": "E-Status",
+      "url": "/e-status",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\e-status.png",
+      "reason": null
+    },
+    {
+      "key": "panduan",
+      "title": "Halaman Panduan",
+      "url": "/panduan",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\panduan.png",
+      "reason": null
+    },
+    {
+      "key": "masukan",
+      "title": "Saran dan Masukan",
+      "url": "/masukan",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\masukan.png",
+      "reason": null
+    },
+    {
+      "key": "access-denied",
+      "title": "Contoh Akses Ditolak",
+      "url": "/admin/database",
+      "status": "captured",
+      "file": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\screenshots\\access-denied.png",
+      "reason": null
+    }
+  ]
+}

@@ -15,9 +15,26 @@ export type FeedbackStatus =
 
 export type FeedbackAppArea =
   | "portal"
+  | "tasks"
+  | "login_branding"
   | "mail"
+  | "e_kepegawaian"
+  | "judicia_legal_form"
+  | "e_status"
+  | "aleta_sipp"
+  | "sipp"
+  | "aps_badilag"
+  | "external_apps"
   | "aleta_bot"
+  | "query_registry"
+  | "preflight"
   | "assistant_judge"
+  | "first_run_setup"
+  | "panel_settings"
+  | "public_access"
+  | "backup"
+  | "database"
+  | "release_update"
   | "patch_notes"
   | "guide"
   | "admin"
@@ -92,20 +109,86 @@ export const FEEDBACK_CATEGORIES: Record<FeedbackType, string[]> = {
     "Tampilan/UI rusak",
     "Data tidak muncul",
     "Tombol tidak berfungsi",
+    "Login/branding instansi",
+    "Header/footer/sidebar",
     "WhatsApp/ALETA Bot bermasalah",
     "Manajemen Surat bermasalah",
+    "E-Kepegawaian bermasalah",
+    "ALETA Judicia/JLF bermasalah",
+    "Blangko cepat/variabel JLF",
+    "RTF/JLF masih menyisakan placeholder",
+    "E-Status bermasalah",
+    "Mapping SIPP E-Status",
+    "Batch/approval E-Status",
+    "SIPP/APS Badilag auto-login",
+    "Audit trail/notifikasi integrasi",
+    "Preflight staging-public",
+    "Runtime database/fallback",
+    "RBAC/permission bocor",
+    "AccessDenied/loading stuck",
+    "Query Registry/Variable Registry",
+    "Template pesan ALETA Bot",
+    "Recipient/queue/log ALETA Bot",
+    "Upload/download file",
+    "Template surat belum aktif",
+    "Pengajuan cuti dan saldo N/N-1/N-2",
+    "Formulir PDF cuti/preview",
+    "Approval E-Kepegawaian",
+    "Import pegawai E-Kepegawaian",
+    "PCK/SKP/WFA dan dokumen HR",
+    "WhatsApp E-Kepegawaian",
+    "Hapus permanen surat",
+    "Tanggal upload surat",
+    "Logo instansi tidak berubah",
+    "Akses publik/domain tidak bisa dibuka",
+    "Ringkasan Kerja/Pusat Tugas tidak sinkron",
+    "Tugas Penting atau filter Mendesak salah",
+    "Asisten Hakim wrapped/embedded",
+    "Instalasi pertama/config awal",
+    "Database tambahan instalasi",
+    "Ringkasan AI surat kurang tepat",
+    "Viewer PDF/Smart Preview",
+    "Login SSO/copyright",
+    "Build/deploy server CentOS 7",
+    "Backup/Database Admin",
     "Koneksi database",
     "AI/Pertanyaan Publik",
     "Lainnya",
   ],
   feature: [
     "Manajemen Surat",
+    "E-Kepegawaian",
+    "ALETA Judicia / Legal Form",
+    "E-Status",
+    "ALETA x SIPP",
+    "Query Registry dan Variable Registry",
+    "Preflight dan kesiapan staging-public",
+    "Integrasi SIPP dan APS Badilag",
+    "Audit trail dan notifikasi",
+    "Template pesan dan health check ALETA Bot",
+    "RBAC dan module visibility",
+    "Cuti dan saldo pegawai",
+    "Approval kepegawaian",
+    "Dokumen PCK/SKP/WFA",
+    "Laporan E-Kepegawaian",
+    "Kolom dan filter tanggal upload",
+    "Penghapusan dan arsip surat",
     "ALETA Bot",
     "Asisten Hakim",
     "Dashboard",
+    "Ringkasan Kerja dan Pusat Tugas",
     "Pencarian",
     "Notifikasi",
+    "Asisten Hakim wrapped/embedded",
+    "Instalasi pertama dan database tambahan",
     "Laporan/Statistik",
+    "Login dan identitas instansi",
+    "Akses publik dan domain",
+    "Ringkasan AI surat",
+    "Viewer PDF dan download",
+    "Backup dan database",
+    "Paket rilis dan rollback",
+    "Pengaturan panel",
     "Pengaturan Admin",
     "Lainnya",
   ],
@@ -114,19 +197,39 @@ export const FEEDBACK_CATEGORIES: Record<FeedbackType, string[]> = {
     "Aplikasi untuk panitera",
     "Aplikasi untuk jurusita",
     "Aplikasi untuk kesekretariatan",
+    "Aplikasi kepegawaian lanjutan",
     "Aplikasi untuk PTSP",
     "Aplikasi untuk pimpinan",
     "Aplikasi untuk publik/pihak",
     "Integrasi antarinstansi",
+    "Integrasi SIPP/APS lanjutan",
+    "Integrasi Dukcapil/KUA/Kemenag",
     "Lainnya",
   ],
 };
 
 export const FEEDBACK_APP_AREAS: Array<{ id: FeedbackAppArea; label: string }> = [
   { id: "portal", label: "Portal Utama" },
+  { id: "tasks", label: "Pusat Tugas & Notifikasi" },
+  { id: "login_branding", label: "Login & Branding" },
   { id: "mail", label: "Manajemen Surat" },
+  { id: "e_kepegawaian", label: "E-Kepegawaian" },
+  { id: "judicia_legal_form", label: "ALETA Judicia / Legal Form" },
+  { id: "e_status", label: "E-Status" },
+  { id: "aleta_sipp", label: "ALETA x SIPP" },
+  { id: "sipp", label: "SIPP" },
+  { id: "aps_badilag", label: "APS Badilag" },
+  { id: "external_apps", label: "Aplikasi Eksternal/SSO" },
   { id: "aleta_bot", label: "ALETA Bot" },
+  { id: "query_registry", label: "Query/Variable Registry" },
+  { id: "preflight", label: "Preflight & Staging-Public" },
   { id: "assistant_judge", label: "Asisten Hakim" },
+  { id: "first_run_setup", label: "Instalasi Pertama" },
+  { id: "panel_settings", label: "Pengaturan Panel" },
+  { id: "public_access", label: "Akses Publik" },
+  { id: "backup", label: "Backup Sistem" },
+  { id: "database", label: "Database PostgreSQL" },
+  { id: "release_update", label: "Paket Rilis/Update Server" },
   { id: "patch_notes", label: "Patch Notes" },
   { id: "guide", label: "Panduan Penggunaan" },
   { id: "admin", label: "Admin/Pengaturan" },

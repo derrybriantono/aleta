@@ -7,8 +7,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  CalendarDays,
   FileStack,
   Inbox,
+  RotateCcw,
   SendHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -16,13 +18,14 @@ import { useCallback, useEffect, useState } from "react";
 import { LetterRegistrationPanel } from "@/components/portal/letter-registration-panel";
 import { LetterList } from "@/components/portal/letter-list";
 import { LetterTemplateManager } from "@/components/portal/letter-template-manager";
-import { EmptyState, PageIntro } from "@/components/portal/shared";
+import { AccessDeniedCard, EmptyState, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 import { canCreateIncomingLetter, canCreateOutgoingLetter } from "@/lib/permissions";
 import { type LetterDetail } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,15 +33,15 @@ import { cn } from "@/lib/utils";
 const typeMeta = {
   semua: {
     title: "Kumpulan Surat",
-  description: "Daftar surat lintas jenis dengan filter cepat, status aktif, dan akses registrasi sesuai peran.",
+    description: "Lihat semua surat yang bisa Anda akses. Gunakan pencarian atau pilihan penyaring bila perlu.",
   },
   masuk: {
     title: "Surat Masuk",
-    description: "Gunakan halaman ini untuk registrasi, filter cepat, dan tindak lanjut surat masuk dalam satu alur utama.",
+    description: "Catat surat masuk, cari data, dan ikuti tindak lanjutnya.",
   },
   keluar: {
     title: "Surat Keluar",
-    description: "Gunakan halaman ini untuk registrasi, filter cepat, dan monitoring surat keluar tanpa berpindah ke halaman duplikat.",
+    description: "Catat surat keluar, cari data, dan pantau prosesnya.",
   },
 } as const;
 
@@ -93,7 +96,7 @@ function buildMetricButtonMeta(metric: "visible" | "inbox" | "completed", active
   if (metric === "inbox") {
     return {
       icon: Inbox,
-      label: "Inbox Aktif",
+      label: "Tugas Aktif",
       className: active ? "border-primary/40 bg-primary/10 text-foreground" : "border-border bg-card/80 text-muted-foreground",
     };
   }
@@ -101,14 +104,14 @@ function buildMetricButtonMeta(metric: "visible" | "inbox" | "completed", active
   if (metric === "completed") {
     return {
       icon: CheckCircle2,
-      label: "Tindak Lanjut Selesai",
+      label: "Sudah Selesai",
       className: active ? "border-emerald-400/40 bg-emerald-500/10 text-foreground" : "border-border bg-card/80 text-muted-foreground",
     };
   }
 
   return {
     icon: FileStack,
-    label: "Surat Terlihat",
+    label: "Semua Surat",
     className: active ? "border-sky-400/40 bg-sky-500/10 text-foreground" : "border-border bg-card/80 text-muted-foreground",
   };
 }
@@ -117,7 +120,7 @@ export default function SuratIndexPage() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, deleteLetter, softDeleteLetter, retryWhatsappDelivery } = usePortal();
+  const { accessibleModules, currentUser, deleteLetter, softDeleteLetter, retryWhatsappDelivery } = usePortal();
   const metric = (searchParams.get("metric") ?? "visible") as "visible" | "inbox" | "completed";
   const typeFilter = (searchParams.get("type") ?? "semua") as "semua" | "masuk" | "keluar";
   const statusFilter = searchParams.get("status") ?? "Semua";
@@ -126,6 +129,8 @@ export default function SuratIndexPage() {
   const pageSize = readPageSize(searchParams.get("pageSize"));
   const sortBy = searchParams.get("sortBy") ?? "tanggal";
   const sortDirection = searchParams.get("sortDirection") === "asc" ? "asc" : "desc";
+  const uploadedFrom = searchParams.get("uploadedFrom") ?? "";
+  const uploadedTo = searchParams.get("uploadedTo") ?? "";
   const [searchInput, setSearchInput] = useState(query);
   const [letters, setLetters] = useState<LetterDetail[]>([]);
   const [pagination, setPagination] = useState<SuratListPayload["pagination"]>({
@@ -153,6 +158,14 @@ export default function SuratIndexPage() {
     { id: "completed" as const, count: metric === "completed" ? (pagination?.total ?? 0) : undefined },
   ];
   const currentMeta = typeMeta[typeFilter];
+  const canSeeIncomingLetters = accessibleModules.some((module) => module.id === "surat-masuk");
+  const canSeeOutgoingLetters = accessibleModules.some((module) => module.id === "surat-keluar");
+  const canAccessCurrentFilter =
+    typeFilter === "masuk"
+      ? canSeeIncomingLetters
+      : typeFilter === "keluar"
+        ? canSeeOutgoingLetters
+        : canSeeIncomingLetters || canSeeOutgoingLetters;
 
   const updateParam = useCallback((key: string, value: string, options?: { resetPage?: boolean }) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -174,8 +187,22 @@ export default function SuratIndexPage() {
     updateParam("page", String(nextPage), { resetPage: false });
   };
 
+  const refreshLettersAfterCreate = useCallback(() => {
+    setRefreshTick((current) => current + 1);
+
+    if (page !== 1) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("page");
+      router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname);
+    }
+  }, [page, pathname, router, searchParams]);
+
   useEffect(() => {
-    setSearchInput(query);
+    const timer = window.setTimeout(() => {
+      setSearchInput(query);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [query]);
 
   useEffect(() => {
@@ -189,6 +216,10 @@ export default function SuratIndexPage() {
   }, [query, searchInput, updateParam]);
 
   useEffect(() => {
+    if (!canAccessCurrentFilter) {
+      return;
+    }
+
     const controller = new AbortController();
     const params = new URLSearchParams();
 
@@ -197,61 +228,72 @@ export default function SuratIndexPage() {
     if (query.trim()) params.set("search", query.trim());
     if (metric === "inbox") params.set("dispositionStatus", "active");
     if (metric === "completed") params.set("dispositionStatus", "completed");
+    if (uploadedFrom) params.set("uploadedFrom", uploadedFrom);
+    if (uploadedTo) params.set("uploadedTo", uploadedTo);
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
     params.set("sortBy", sortBy);
     params.set("sortDirection", sortDirection);
 
-    setIsLoadingLetters(true);
-    setLetterError("");
+    const timer = window.setTimeout(() => {
+      setIsLoadingLetters(true);
+      setLetterError("");
 
-    fetch(`/api/surat?${params.toString()}`, {
-      cache: "no-store",
-      credentials: "include",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const payload = (await response.json().catch(() => null)) as
-          | { ok?: boolean; data?: SuratListPayload; error?: { message?: string } }
-          | null;
-
-        if (!response.ok || !payload?.ok || !payload.data) {
-          throw new Error(
-            payload?.error?.message ?? payload?.data?.error?.message ?? "Daftar surat gagal dimuat."
-          );
-        }
-
-        setLetters(payload.data.items ?? payload.data.data ?? []);
-        setPagination(payload.data.pagination ?? {
-          page,
-          pageSize,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        });
+      fetch(apiPath(`/api/surat?${params.toString()}`), {
+        cache: "no-store",
+        credentials: "include",
+        signal: controller.signal,
       })
-      .catch((error) => {
-        if ((error as { name?: string }).name === "AbortError") return;
-        setLetters([]);
-        setPagination({
-          page,
-          pageSize,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        });
-        setLetterError(error instanceof Error ? error.message : "Daftar surat gagal dimuat.");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setIsLoadingLetters(false);
-        }
-      });
+        .then(async (response) => {
+          const payload = (await response.json().catch(() => null)) as
+            | { ok?: boolean; data?: SuratListPayload; error?: { message?: string } }
+            | null;
 
-    return () => controller.abort();
-  }, [metric, page, pageSize, query, refreshTick, sortBy, sortDirection, statusFilter, typeFilter]);
+          if (!response.ok || !payload?.ok || !payload.data) {
+            throw new Error(
+              payload?.error?.message ?? payload?.data?.error?.message ?? "Daftar surat gagal dimuat."
+            );
+          }
+
+          setLetters(payload.data.items ?? payload.data.data ?? []);
+          setPagination(payload.data.pagination ?? {
+            page,
+            pageSize,
+            total: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          });
+        })
+        .catch((error) => {
+          if ((error as { name?: string }).name === "AbortError") return;
+          setLetters([]);
+          setPagination({
+            page,
+            pageSize,
+            total: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          });
+          setLetterError(error instanceof Error ? error.message : "Daftar surat gagal dimuat.");
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setIsLoadingLetters(false);
+          }
+        });
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [canAccessCurrentFilter, metric, page, pageSize, query, refreshTick, sortBy, sortDirection, statusFilter, typeFilter, uploadedFrom, uploadedTo]);
+
+  if (!canAccessCurrentFilter) {
+    return <AccessDeniedCard />;
+  }
 
   return (
     <div className="space-y-6">
@@ -276,12 +318,14 @@ export default function SuratIndexPage() {
         }
       />
 
-      {typeFilter !== "semua" ? <LetterRegistrationPanel defaultType={typeFilter} /> : null}
+      {typeFilter !== "semua" ? (
+        <LetterRegistrationPanel defaultType={typeFilter} onCreated={refreshLettersAfterCreate} />
+      ) : null}
       {typeFilter === "keluar" ? <LetterTemplateManager currentUser={currentUser} /> : null}
 
       <Card className="border-border/90">
-        <CardContent className="space-y-4 p-5">
-          <div className="flex flex-wrap gap-3">
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-3">
             {quickMetrics.map((item) => {
               const meta = buildMetricButtonMeta(item.id, metric === item.id);
               const Icon = meta.icon;
@@ -291,7 +335,7 @@ export default function SuratIndexPage() {
                   key={item.id}
                   type="button"
                   className={cn(
-                    "inline-flex min-w-[180px] items-center justify-between gap-3 rounded-[1.15rem] border px-4 py-3 text-left shadow-sm transition hover:border-primary/35",
+                    "inline-flex w-full items-center justify-between gap-3 rounded-[1rem] border px-3 py-2.5 text-left shadow-sm transition hover:border-primary/35 sm:min-w-[180px] sm:w-auto sm:rounded-[1.15rem] sm:px-4 sm:py-3",
                     meta.className
                   )}
                   onClick={() => updateParam("metric", item.id)}
@@ -300,14 +344,14 @@ export default function SuratIndexPage() {
                     <span className="rounded-xl bg-background/80 p-2 text-primary shadow-sm">
                       <Icon className="h-4 w-4" />
                     </span>
-                    <span>
-                      <span className="block text-sm font-semibold">{meta.label}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        {item.id === "visible"
-                          ? "Semua surat yang sesuai tipe aktif"
-                          : item.id === "inbox"
-                            ? "Surat yang masih perlu ditindaklanjuti"
-                            : "Riwayat yang sudah ditutup"}
+                      <span>
+                        <span className="block text-sm font-semibold">{meta.label}</span>
+                        <span className="hidden text-xs text-muted-foreground sm:block">
+                          {item.id === "visible"
+                            ? "Surat yang sesuai pilihan saat ini"
+                            : item.id === "inbox"
+                            ? "Surat yang masih perlu dicek"
+                            : "Tindak lanjut yang sudah selesai"}
                       </span>
                     </span>
                   </span>
@@ -321,7 +365,7 @@ export default function SuratIndexPage() {
             <Input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Cari perihal, nomor surat, asal surat, kode klasifikasi, atau tag..."
+              placeholder="Cari perihal, nomor surat, asal/tujuan, atau kata kunci..."
               className="h-12 text-base"
             />
             <NativeSelect
@@ -374,6 +418,8 @@ export default function SuratIndexPage() {
             >
               <option value="tanggal:desc">Tanggal terbaru</option>
               <option value="tanggal:asc">Tanggal terlama</option>
+              <option value="createdAt:desc">Tanggal unggah terbaru</option>
+              <option value="createdAt:asc">Tanggal unggah terlama</option>
               <option value="tanggalSurat:desc">Tanggal surat terbaru</option>
               <option value="nomorAgenda:asc">Nomor agenda naik</option>
               <option value="asalTujuan:asc">Asal/tujuan A-Z</option>
@@ -386,20 +432,62 @@ export default function SuratIndexPage() {
             </div>
           </div>
 
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px_140px]">
+            <div className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-muted/25 px-3 text-sm text-muted-foreground">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              <span className="font-medium text-foreground">Tanggal unggah surat</span>
+            </div>
+            <Input
+              type="date"
+              value={uploadedFrom}
+              onChange={(event) => updateParam("uploadedFrom", event.target.value)}
+              className="h-11 text-sm"
+              aria-label="Tanggal unggah mulai"
+            />
+            <Input
+              type="date"
+              value={uploadedTo}
+              onChange={(event) => updateParam("uploadedTo", event.target.value)}
+              className="h-11 text-sm"
+              aria-label="Tanggal unggah sampai"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              disabled={!uploadedFrom && !uploadedTo}
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("uploadedFrom");
+                params.delete("uploadedTo");
+                params.delete("page");
+                router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname);
+              }}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </Button>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="outline">
-              Tampilan aktif: {typeFilter === "semua" ? "Semua Surat" : typeFilter === "masuk" ? "Surat Masuk" : "Surat Keluar"}
+              Yang ditampilkan: {typeFilter === "semua" ? "Semua Surat" : typeFilter === "masuk" ? "Surat Masuk" : "Surat Keluar"}
             </Badge>
             <Badge variant={metric === "inbox" ? "warning" : metric === "completed" ? "success" : "default"}>
-              {metric === "visible" ? "Surat yang Dapat Dilihat" : metric === "inbox" ? "Tugas Aktif" : "Tindak Lanjut Selesai"}
+              {metric === "visible" ? "Semua Surat" : metric === "inbox" ? "Tugas Aktif" : "Sudah Selesai"}
             </Badge>
             {canOpenComposer ? (
               <Badge variant="outline">
-                Form siap dibuka untuk {typeFilter === "masuk" ? "surat masuk" : "surat keluar"}
+                Formulir tersedia untuk {typeFilter === "masuk" ? "surat masuk" : "surat keluar"}
               </Badge>
             ) : null}
             {pageSize === "all" ? (
-              <Badge variant="warning">Mode Semua dibatasi maksimal 500 surat. Untuk data besar gunakan ekspor laporan.</Badge>
+              <Badge variant="warning">Tampilan semua dibatasi 500 surat. Untuk data besar gunakan laporan.</Badge>
+            ) : null}
+            {uploadedFrom || uploadedTo ? (
+              <Badge variant="outline">
+                Diunggah {uploadedFrom || "awal"} sampai {uploadedTo || "hari ini"}
+              </Badge>
             ) : null}
           </div>
         </CardContent>
@@ -416,8 +504,8 @@ export default function SuratIndexPage() {
         />
       ) : letters.length === 0 ? (
         <EmptyState
-          title="Tidak ada surat pada filter ini"
-          description="Coba ubah jenis surat, status, atau kata kunci."
+          title="Tidak ada surat pada pilihan ini"
+          description="Coba ubah jenis surat, status, kata kunci, atau tanggal unggah."
         />
       ) : (
         <div className="space-y-4">
@@ -429,7 +517,11 @@ export default function SuratIndexPage() {
                 ? (letter) => {
                     const confirmed = window.confirm("Arsipkan surat ini dari daftar aktif? Surat masih dapat dipulihkan oleh sistem.");
                     if (!confirmed) return;
-                    void softDeleteLetter(letter.id).then(() => setRefreshTick((current) => current + 1));
+                    void softDeleteLetter(letter.id).then((result) => {
+                      if (result) {
+                        setRefreshTick((current) => current + 1);
+                      }
+                    });
                   }
                 : undefined
             }
@@ -443,7 +535,11 @@ export default function SuratIndexPage() {
                     );
 
                     if (!confirmed) return;
-                    void deleteLetter(letter.id).then(() => setRefreshTick((current) => current + 1));
+                    void deleteLetter(letter.id).then((result) => {
+                      if (result) {
+                        setRefreshTick((current) => current + 1);
+                      }
+                    });
                   }
                 : undefined
             }
@@ -512,9 +608,9 @@ export default function SuratIndexPage() {
         <Card className="border-border/90">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
             <div className="space-y-1">
-              <p className="font-semibold text-foreground">Butuh registrasi surat baru?</p>
+              <p className="font-semibold text-foreground">Mau catat surat baru?</p>
               <p className="text-sm text-muted-foreground">
-                Pilih jenis surat lebih dulu agar form yang sesuai langsung terbuka.
+                Pilih jenis surat lebih dulu agar form yang sesuai terbuka.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

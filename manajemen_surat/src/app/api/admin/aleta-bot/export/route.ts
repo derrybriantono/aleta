@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { exportAletaBotConfig } from "@/server/modules/aleta-bot/service";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { buildAttachmentContentDisposition, getAttachmentSecurityHeaders } from "@/server/shared/download-headers";
 import { handleRouteError } from "@/server/shared/http";
 
 export const runtime = "nodejs";
@@ -16,8 +17,8 @@ export async function GET(request: NextRequest) {
 
     return Response.json(payload, {
       headers: {
-        "content-disposition": `attachment; filename="aleta-bot-config-${payload.exportedAt.slice(0, 10)}.json"`,
-        "cache-control": "no-store",
+        ...getAttachmentSecurityHeaders(),
+        "content-disposition": buildAttachmentContentDisposition(`aleta-bot-config-${payload.exportedAt.slice(0, 10)}.json`),
       },
     });
   } catch (error) {

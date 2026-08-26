@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Save, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Save, ShieldCheck } from "lucide-react";
 
 import { getResolvedActingAssignment } from "@/core/organization/service";
 import { UserAvatar } from "@/components/portal/user-avatar";
@@ -15,20 +15,22 @@ import { getRoleLabel, getUserPositionLabel, getUserRoleBadge } from "@/lib/perm
 import { type UserPersona } from "@/lib/types";
 
 export default function AccountPage() {
-  const { currentUser, updateProfile } = usePortal();
+  const { currentUser, positions, updateProfile } = usePortal();
 
   if (!currentUser) {
     return <EmptyState title="Akun tidak tersedia" description="Silakan login ulang untuk membuka pengaturan profil." />;
   }
 
-  return <AccountEditor key={currentUser.id} currentUser={currentUser} onSave={updateProfile} />;
+  return <AccountEditor key={currentUser.id} currentUser={currentUser} positions={positions} onSave={updateProfile} />;
 }
 
 function AccountEditor({
   currentUser,
+  positions,
   onSave,
 }: {
   currentUser: UserPersona;
+  positions: ReturnType<typeof usePortal>["positions"];
   onSave: (payload: {
     email: string;
     password?: string;
@@ -38,6 +40,7 @@ function AccountEditor({
   const activeActingAssignment = getResolvedActingAssignment(currentUser);
   const [email, setEmail] = useState(currentUser.email);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | undefined>(currentUser.profilePhotoUrl);
   const [formError, setFormError] = useState("");
   const [photoError, setPhotoError] = useState("");
@@ -48,15 +51,15 @@ function AccountEditor({
     <div className="space-y-6">
       <PageIntro
         eyebrow="Pengaturan Akun"
-        title="Edit Profil / Akun"
-        description="Email, password, dan foto profil disimpan terpusat sehingga langsung berlaku di ALETA maupun sub-modul Manajemen Surat. Penugasan PLH/PLT kini dikelola khusus dari Dashboard Manajemen Surat."
+        title="Profil Akun"
+        description="Email, password, dan foto profil yang diubah di sini berlaku untuk ALETA dan Manajemen Surat. Penugasan PLH/PLT dikelola dari Ringkasan Surat."
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.7fr_1.3fr]">
         <Card className="border-border/80">
           <CardHeader>
             <CardTitle>Foto Profil</CardTitle>
-            <CardDescription>Gunakan upload native browser agar tetap ringan tanpa library tambahan.</CardDescription>
+            <CardDescription>Pilih foto dari perangkat Anda. Ukuran maksimal 1 MB.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -69,12 +72,12 @@ function AccountEditor({
               <div className="space-y-1">
                 <p className="font-semibold text-foreground">{currentUser.name}</p>
                 <p className="text-sm text-muted-foreground">{getUserRoleBadge(currentUser)}</p>
-                <Badge variant="outline">{getUserPositionLabel(currentUser)}</Badge>
+                <Badge variant="outline">{getUserPositionLabel(currentUser, positions)}</Badge>
               </div>
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-foreground">Upload Foto Profil</span>
+              <span className="mb-2 block text-sm font-medium text-foreground">Unggah Foto Profil</span>
               <Input
                 type="file"
                 accept="image/*"
@@ -105,7 +108,7 @@ function AccountEditor({
             ) : null}
 
             <Badge variant="muted" className="w-fit">
-              Native file input
+              Foto dari perangkat
             </Badge>
           </CardContent>
         </Card>
@@ -113,7 +116,7 @@ function AccountEditor({
         <Card className="border-border/80">
           <CardHeader>
             <CardTitle>Informasi Akun</CardTitle>
-            <CardDescription>Pengaturan akun ini dipakai bersama di ALETA dan di dalam sub-modul Manajemen Surat.</CardDescription>
+            <CardDescription>Data akun ini dipakai bersama di ALETA dan Manajemen Surat.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2">
@@ -125,7 +128,7 @@ function AccountEditor({
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground" htmlFor="account-username">
-                  Username
+                  Nama Login
                 </label>
                 <Input id="account-username" value={currentUser.username} disabled />
               </div>
@@ -134,15 +137,15 @@ function AccountEditor({
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground" htmlFor="account-role">
-                  Peran Dasar
+                  Peran Akun
                 </label>
                 <Input id="account-role" value={getRoleLabel(currentUser.roleId)} disabled />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground" htmlFor="account-position">
-                  Jabatan Efektif
+                  Jabatan Aktif
                 </label>
-                <Input id="account-position" value={getUserPositionLabel(currentUser)} disabled />
+                <Input id="account-position" value={getUserPositionLabel(currentUser, positions)} disabled />
               </div>
             </div>
 
@@ -166,20 +169,31 @@ function AccountEditor({
               <label className="text-sm font-medium text-foreground" htmlFor="account-password">
                 Password
               </label>
-              <Input
-                id="account-password"
-                type="password"
-                value={password}
-                onChange={(event) => {
-                  setSaved(false);
-                  setFormError("");
-                  setPassword(event.target.value);
-                }}
-                placeholder="Kosongkan jika password tidak diubah"
-              />
+              <div className="relative">
+                <Input
+                  id="account-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => {
+                    setSaved(false);
+                    setFormError("");
+                    setPassword(event.target.value);
+                  }}
+                  placeholder="Kosongkan jika password tidak diubah"
+                  className="pr-12"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
+            <div className="rounded-[1.35rem] border border-primary/25 bg-primary/5 p-4 dark:border-primary/20 dark:bg-primary/[0.08]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-foreground">Penugasan Sementara PLH / PLT</p>
@@ -192,7 +206,7 @@ function AccountEditor({
                 </Badge>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-dashed border-primary/25 bg-white px-4 py-3 text-sm text-muted-foreground">
+              <div className="mt-4 rounded-2xl border border-dashed border-primary/25 bg-background/55 px-4 py-3 text-sm text-muted-foreground dark:bg-background/35">
                 {activeActingAssignment ? (
                   <>
                     Akses efektif saat ini: <strong className="text-foreground">{getUserRoleBadge(currentUser)}</strong>.
@@ -215,7 +229,7 @@ function AccountEditor({
 
             {saved ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                Profil berhasil diperbarui dan langsung tersinkron di seluruh portal.
+                Profil berhasil diperbarui dan langsung berlaku di ALETA.
               </div>
             ) : null}
 
@@ -255,10 +269,10 @@ function AccountEditor({
             <div className="rounded-[1.3rem] border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2 font-medium text-foreground">
                 <ShieldCheck className="h-4 w-4 text-primary" />
-                Sinkronisasi terpusat
+                Berlaku di semua menu
               </div>
               <p className="mt-2">
-                Email, password, dan foto profil yang Anda ubah di sini akan langsung tampil di ALETA dan header aplikasi surat karena memakai state akun yang sama.
+                Email, password, dan foto profil yang Anda ubah di sini akan langsung tampil di ALETA dan header aplikasi surat.
               </p>
             </div>
           </CardContent>

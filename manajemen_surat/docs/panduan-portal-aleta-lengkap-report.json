@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-07-02T15:05:43.675Z",
+  "generatedDate": "2 Juli 2026",
+  "version": "v1.1 - Juli 2026",
+  "institution": "Pengadilan Agama Donggala",
+  "files": {
+    "markdown": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-lengkap.md",
+    "html": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-lengkap.html",
+    "pdf": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-lengkap.pdf",
+    "report": "D:\\Download File\\server aleta baru\\aleta_server\\manajemen_surat\\docs\\panduan-portal-aleta-lengkap-report.json"
+  },
+  "pdfPageCount": 28,
+  "method": "Node.js membuat Markdown dan HTML konseptual tanpa screenshot. Playwright hanya merender HTML menjadi PDF.",
+  "focus": [
+    "ALETA Dashboard SSO / Portal Utama",
+    "Pengaturan Portal ALETA",
+    "Manajemen Surat",
+    "Fitur AI",
+    "Admin / Pengaturan Admin"
+  ],
+  "intentionallyBrief": [
+    "ALETA x SIPP",
+    "ALETA Justicia Legal Form / JLF",
+    "Query Registry",
+    "Variable Registry",
+    "WhatsApp Gateway detail",
+    "Modul lain di luar fokus panduan"
+  ],
+  "verification": {
+    "usesScreenshots": false,
+    "imageTagCount": 0,
+    "imagePathCount": 0,
+    "screenshotPathCount": 0,
+    "hasPlaceholderScreenshot": false,
+    "hasLoadingImage": false,
+    "sensitivePatternCount": 0
+  }
+}

@@ -4,7 +4,7 @@ import { getAccessibleLetters } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { getDispositionsByLetterIdFromDb } from "@/server/modules/dispositions/service";
 import { deleteLetterInDb, getLetterByIdFromDb, updateLetterInDb, type UpdateLetterRequest } from "@/server/modules/letters/service";
-import { requireActorUser } from "@/server/modules/organization/service";
+import { getPositionsFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { handleRouteError, ok } from "@/server/shared/http";
@@ -30,8 +30,11 @@ export async function GET(
       throw new ApiError(404, "Surat tidak ditemukan.");
     }
 
-    const relatedDispositions = await getDispositionsByLetterIdFromDb(db, id);
-    if (getAccessibleLetters(actor, [letter], relatedDispositions).length === 0) {
+    const [relatedDispositions, positions] = await Promise.all([
+      getDispositionsByLetterIdFromDb(db, id),
+      getPositionsFromDb(db),
+    ]);
+    if (getAccessibleLetters(actor, [letter], relatedDispositions, positions).length === 0) {
       throw new ApiError(404, "Surat tidak ditemukan.");
     }
 

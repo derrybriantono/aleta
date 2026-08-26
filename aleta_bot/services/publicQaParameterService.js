@@ -76,6 +76,7 @@ function extractDate(text) {
 
 function extractServiceType(text) {
   const normalized = String(text || "").toLowerCase();
+  if (/\bantrian\b|\bdaftar\s+antrian\b|\bambil\s+nomor\b|\bnomor\s+antrian\b/.test(normalized)) return "antrian_online";
   if (/\bakta\b|\bcerai\b/.test(normalized)) return "akta_cerai";
   if (/\bsidang\b|\bjadwal\b/.test(normalized)) return "jadwal_sidang";
   if (/\bpanjar\b|\bbiaya\b/.test(normalized)) return "biaya_panjar";
@@ -86,15 +87,26 @@ function extractServiceType(text) {
   return "";
 }
 
+function extractQueuePartySlot(text) {
+  const normalized = String(text || "").toLowerCase();
+  if (normalized.startsWith("antrian online")) return "pihak_2";
+  if (normalized.startsWith("daftar antrian")) return "pihak_1";
+  if (/\b(tergugat|termohon|pihak\s*2|pihak\s*kedua|lawan)\b/.test(normalized)) return "pihak_2";
+  if (/\b(penggugat|pemohon|pihak\s*1|pihak\s*pertama)\b/.test(normalized)) return "pihak_1";
+  return "";
+}
+
 function extractPublicQaParameters(text, intent = {}) {
   const params = {};
   const nomorPerkara = normalizeCaseNumber(text);
   const tanggal = extractDate(text);
   const jenisLayanan = extractServiceType(text);
+  const pihakAntrian = extractQueuePartySlot(text);
 
   if (nomorPerkara) params.nomor_perkara = nomorPerkara;
   if (tanggal) params.tanggal = tanggal;
   if (jenisLayanan) params.jenis_layanan = jenisLayanan;
+  if (pihakAntrian) params.pihak_antrian = pihakAntrian;
 
   const required = Array.isArray(intent.requiredParameters) ? intent.requiredParameters : [];
   const missing = required.filter((param) => !params[param]);
@@ -106,5 +118,6 @@ module.exports = {
   normalizeCaseNumber,
   extractDate,
   extractServiceType,
+  extractQueuePartySlot,
   extractPublicQaParameters,
 };

@@ -8,6 +8,35 @@ const {
 } = require("../utils/phoneFormatter");
 
 const DEFAULT_WHATSAPP_SESSION_NAME = "aleta-whatsapp-main";
+const DEFAULT_DISABLED_LEGACY_NOTIFICATION_KEYS = [
+  "sendKetuaPenerimaanPerkara",
+  "sendPanitera",
+  "sendPenjagaSidangHariIni",
+  "sendPenjagaSidangBesok",
+  "sendPengingatKasir",
+  "sendPengingatHakim",
+  "pengingatHakim",
+  "sendPengingatPaniteraSidang",
+  "pengingatPanitera",
+  "sendStatusSidangHakim",
+  "statusSidangHakim",
+  "sendStatusSidangPanitera",
+  "statusSidangPanitera",
+  "sendAntrianSidangHariIni",
+  "statusSidangHariIni",
+  "sendStatusSidangJurusita",
+  "statusSidangJurusita",
+  "sendRelaasJurusita",
+  "statusRelaasJurusita",
+  "sendPihakBaru",
+  "sendPihakAktaCerai",
+  "sendPihakSisaPanjar",
+  "sendPihakPanjarBelum",
+  "sendPihakPutusan",
+  "sendPihakHariSidang",
+  "sendPihakSebelumHariSidang",
+  "sendPihakTundaCuti",
+];
 
 const defaultConfig = {
   version: 1,
@@ -16,10 +45,20 @@ const defaultConfig = {
   adminWhatsappNumber: "",
   adminWhatsappChatId: "",
   messageDelayMs: 0,
+  // Batas atas jeda ber-jitter. Bila > messageDelayMs, jeda antar pesan diacak
+  // dalam rentang [messageDelayMs, messageDelayMaxMs] (anti-ban). Diisi oleh
+  // Slider Risiko di portal; 0 = perilaku lama (jeda tetap).
+  messageDelayMaxMs: 0,
   retryLimit: 0,
   dryRunEnabled: false,
   manualSendEnabled: true,
   internalApiToken: process.env.ALETA_BOT_INTERNAL_TOKEN || "",
+  productionAutomationGuard: {
+    enabled: true,
+    legacyDirectSendEnabled: false,
+    legacyNotificationSchedulerEnabled: false,
+    requireGatewayMessageContract: true,
+  },
   rateLimit: {
     maxPerMinute: 60,
     maxPerHour: 1000,
@@ -35,11 +74,30 @@ const defaultConfig = {
     start: process.env.ALETA_BOT_SENDING_WINDOW_START || "07:30",
     end: process.env.ALETA_BOT_SENDING_WINDOW_END || "21:00",
   },
-  useRegistryNotifications: false,
-  registryPilotMode: true,
+  // Pengaman query ke database perkara: batas waktu eksekusi dan batas
+  // sambungan. Tanpa ini, query lambat menggantung sampai kolam sambungan
+  // habis dan bot berhenti menjawab siapa pun.
+  queryGuard: {
+    enabled: String(process.env.ALETA_BOT_QUERY_GUARD_ENABLED || "true") !== "false",
+    timeoutMs: Number(process.env.ALETA_BOT_QUERY_TIMEOUT_MS || 15000),
+    serverEnforced: String(process.env.ALETA_BOT_QUERY_GUARD_SERVER_ENFORCED || "true") !== "false",
+    connectionLimit: Number(process.env.ALETA_BOT_DB_CONNECTION_LIMIT || 10),
+  },
+  // Jarak waktu antar pesan di ANTREAN (bukan hanya saat kirim). Mencegah
+  // puluhan notifikasi sejenis berangkat serentak — pola paling khas akun bot.
+  // Diisi oleh Slider Risiko di portal.
+  sendingPace: {
+    enabled: String(process.env.ALETA_BOT_SENDING_PACE_ENABLED || "true") !== "false",
+    minGapMs: Number(process.env.ALETA_BOT_SENDING_PACE_MIN_GAP_MS || 8000),
+    maxGapMs: Number(process.env.ALETA_BOT_SENDING_PACE_MAX_GAP_MS || 15000),
+    perRecipientCooldownMs: Number(process.env.ALETA_BOT_SENDING_PACE_RECIPIENT_COOLDOWN_MS || 300000),
+  },
+  useRegistryNotifications: true,
+  registryPilotMode: false,
   registryDryRunDefault: true,
+  legacyNotificationTakeoverMode: true,
   disabledLegacyKeys: [],
-  disabledLegacyNotificationKeys: [],
+  disabledLegacyNotificationKeys: DEFAULT_DISABLED_LEGACY_NOTIFICATION_KEYS,
   disabledLegacyCommandKeys: [],
   dbConnections: [],
   publicQaEnabled: true,
@@ -52,6 +110,22 @@ const defaultConfig = {
   publicQaSessionTtlMinutes: Number(process.env.ALETA_BOT_PUBLIC_QA_SESSION_TTL_MINUTES || 20),
   publicQaRequireApproval: String(process.env.ALETA_BOT_PUBLIC_QA_REQUIRE_APPROVAL || "true") !== "false",
   publicQaIntents: [],
+  publicQaKnowledge: [],
+  institutionIdentity: {
+    courtName: process.env.ALETA_COURT_NAME || "Pengadilan",
+    courtShortName: process.env.ALETA_COURT_SHORT_NAME || "",
+    address: "",
+    phoneNumber: "",
+    mobilePhone: "",
+    csWhatsappNumber: "",
+    botWhatsappNumber: "",
+    email: "",
+    instagram: "",
+    facebook: "",
+    youtube: "",
+    website: process.env.ALETA_COURT_WEBSITE || "",
+    mapUrl: "",
+  },
   aiRuntimeConfig: {
     enabled: false,
     publicQaEnabled: false,
@@ -78,7 +152,11 @@ const defaultConfig = {
   },
 };
 
+const writableRuntimeConfigPath =
+  process.env.ALETA_BOT_RUNTIME_CONFIG_PATH || path.join(__dirname, "aleta-runtime.json");
+
 const candidateConfigPaths = [
+  writableRuntimeConfigPath,
   path.join(__dirname, "aleta-runtime.json"),
   path.resolve(__dirname, "..", "..", "manajemen_surat", "data", "aleta-bot-runtime.json"),
 ];
@@ -91,11 +169,20 @@ function normalizeChatId(number) {
   return toWhatsappChatId(number);
 }
 
+function uniqueStrings(values) {
+  return [...new Set((Array.isArray(values) ? values : [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean))];
+}
+
 function normalizeEmployeeRecipients(recipients) {
   if (!Array.isArray(recipients)) return [];
   return recipients
     .map((recipient) => {
       const whatsappNumber = normalizeWhatsappNumber(recipient.whatsappNumber || recipient.whatsapp_number);
+      const additionalRoleIds = Array.isArray(recipient.additionalRoleIds || recipient.additional_role_ids)
+        ? (recipient.additionalRoleIds || recipient.additional_role_ids).map((item) => String(item || "").toLowerCase()).filter(Boolean)
+        : [];
       return {
         id: String(recipient.id || ""),
         name: String(recipient.name || recipient.username || ""),
@@ -103,6 +190,8 @@ function normalizeEmployeeRecipients(recipients) {
         roleId: String(recipient.roleId || recipient.role_id || "").toLowerCase(),
         positionId: String(recipient.positionId || recipient.position_id || "").toLowerCase(),
         positionName: String(recipient.positionName || recipient.position_name || "").toLowerCase(),
+        unitKerja: String(recipient.unitKerja || recipient.unit_kerja || "").toLowerCase(),
+        additionalRoleIds,
         whatsappNumber,
         whatsappChatId: normalizeChatId(whatsappNumber),
       };
@@ -115,7 +204,7 @@ function recipientMatches(recipient, hints) {
     .map((hint) => String(hint || "").toLowerCase())
     .filter(Boolean);
   if (normalizedHints.length === 0) return true;
-  const haystack = `${recipient.roleId} ${recipient.positionId} ${recipient.positionName} ${recipient.name}`.toLowerCase();
+  const haystack = `${recipient.id} ${recipient.roleId} ${recipient.positionId} ${recipient.positionName} ${recipient.unitKerja} ${(recipient.additionalRoleIds || []).join(" ")} ${recipient.name} ${recipient.username}`.toLowerCase();
   return normalizedHints.some((hint) => haystack.includes(hint));
 }
 
@@ -156,6 +245,16 @@ function readRuntimeConfig() {
       );
 
       const sessionName = getWhatsappSessionName(parsed);
+      const legacyNotificationTakeoverMode = Boolean(
+        parsed.legacyNotificationTakeoverMode ?? defaultConfig.legacyNotificationTakeoverMode
+      );
+      const takeoverDisabledLegacyNotificationKeys = legacyNotificationTakeoverMode
+        ? defaultConfig.disabledLegacyNotificationKeys
+        : [];
+      const disabledLegacyNotificationKeys = uniqueStrings([
+        ...takeoverDisabledLegacyNotificationKeys,
+        ...(Array.isArray(parsed.disabledLegacyNotificationKeys) ? parsed.disabledLegacyNotificationKeys : []),
+      ]);
 
       return {
         ...defaultConfig,
@@ -163,9 +262,14 @@ function readRuntimeConfig() {
         adminWhatsappNumber,
         adminWhatsappChatId: normalizeChatId(adminWhatsappNumber) || defaultConfig.adminWhatsappChatId,
         messageDelayMs: Math.max(0, Number(parsed.messageDelayMs ?? defaultConfig.messageDelayMs)),
+        messageDelayMaxMs: Math.max(0, Number(parsed.messageDelayMaxMs ?? defaultConfig.messageDelayMaxMs)),
         retryLimit: Math.max(0, Number(parsed.retryLimit ?? defaultConfig.retryLimit)),
         internalApiToken: parsed.internalApiToken || process.env.ALETA_BOT_INTERNAL_TOKEN || "",
         manualSendEnabled: parsed.manualSendEnabled ?? defaultConfig.manualSendEnabled,
+        productionAutomationGuard: {
+          ...defaultConfig.productionAutomationGuard,
+          ...(parsed.productionAutomationGuard || {}),
+        },
         rateLimit: {
           ...defaultConfig.rateLimit,
           ...(parsed.rateLimit || {}),
@@ -178,11 +282,24 @@ function readRuntimeConfig() {
           ...defaultConfig.sendingWindow,
           ...(parsed.sendingWindow || {}),
         },
+        sendingPace: {
+          ...defaultConfig.sendingPace,
+          ...(parsed.sendingPace || {}),
+        },
+        queryGuard: {
+          ...defaultConfig.queryGuard,
+          ...(parsed.queryGuard || {}),
+        },
         useRegistryNotifications: Boolean(parsed.useRegistryNotifications ?? defaultConfig.useRegistryNotifications),
         registryPilotMode: Boolean(parsed.registryPilotMode ?? defaultConfig.registryPilotMode),
         registryDryRunDefault: Boolean(parsed.registryDryRunDefault ?? defaultConfig.registryDryRunDefault),
-        disabledLegacyKeys: Array.isArray(parsed.disabledLegacyKeys) ? parsed.disabledLegacyKeys : [],
-        disabledLegacyNotificationKeys: Array.isArray(parsed.disabledLegacyNotificationKeys) ? parsed.disabledLegacyNotificationKeys : [],
+        legacyNotificationTakeoverMode,
+        disabledLegacyKeys: uniqueStrings([
+          ...takeoverDisabledLegacyNotificationKeys,
+          ...(Array.isArray(parsed.disabledLegacyKeys) ? parsed.disabledLegacyKeys : []),
+          ...disabledLegacyNotificationKeys,
+        ]),
+        disabledLegacyNotificationKeys,
         disabledLegacyCommandKeys: Array.isArray(parsed.disabledLegacyCommandKeys) ? parsed.disabledLegacyCommandKeys : [],
         dbConnections: Array.isArray(parsed.dbConnections) ? parsed.dbConnections : [],
         publicQaEnabled: Boolean(parsed.publicQaEnabled ?? defaultConfig.publicQaEnabled),
@@ -195,6 +312,11 @@ function readRuntimeConfig() {
         publicQaSessionTtlMinutes: Number(parsed.publicQaSessionTtlMinutes ?? defaultConfig.publicQaSessionTtlMinutes),
         publicQaRequireApproval: Boolean(parsed.publicQaRequireApproval ?? defaultConfig.publicQaRequireApproval),
         publicQaIntents: Array.isArray(parsed.publicQaIntents) ? parsed.publicQaIntents : [],
+        publicQaKnowledge: Array.isArray(parsed.publicQaKnowledge) ? parsed.publicQaKnowledge : [],
+        institutionIdentity: {
+          ...defaultConfig.institutionIdentity,
+          ...(parsed.institutionIdentity || {}),
+        },
         aiRuntimeConfig: {
           ...defaultConfig.aiRuntimeConfig,
           ...(parsed.aiRuntimeConfig || {}),
@@ -224,12 +346,25 @@ function readRuntimeConfig() {
   };
 }
 
+function writeRuntimeConfig(nextConfig = {}) {
+  const payload = {
+    ...nextConfig,
+    version: Number(nextConfig.version || 1),
+    updatedAt: nextConfig.updatedAt || new Date().toISOString(),
+    source: nextConfig.source || "manajemen_surat",
+  };
+  fs.mkdirSync(path.dirname(writableRuntimeConfigPath), { recursive: true });
+  fs.writeFileSync(writableRuntimeConfigPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  return readRuntimeConfig();
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {
   readRuntimeConfig,
+  writeRuntimeConfig,
   getWhatsappSessionName,
   normalizeWhatsappNumber,
   normalizeChatId,

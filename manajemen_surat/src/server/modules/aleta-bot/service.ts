@@ -30,11 +30,19 @@ import {
   type AletaBotUnknownQuestionReview,
   type AletaBotDeadlineReminderDryRunResult,
   type AletaBotDispositionReminderRun,
+  type AletaBotManualRecipientPreview,
+  type AletaBotManualSendHistoryEntry,
+  type AletaBotManualSendMode,
+  type AletaBotManualSendPreviewResult,
+  type AletaBotManualSendQueryPreview,
+  type AletaBotManualSendRecipientResult,
+  type AletaBotManualSendResult,
+  type AletaBotManualSendTemplatePreview,
 } from "@/lib/aleta-bot-types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { getPositionsFromDb, getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
-import { getAISettingsFromDb } from "@/server/modules/ai/service";
-import { getWhatsAppSettingsFromDb } from "@/server/modules/settings/service";
+import { getAISettingsFromDb, resolveAIConfigForModule } from "@/server/modules/ai/service";
+import { getInstitutionIdentityFromDb, getWhatsAppSettingsFromDb } from "@/server/modules/settings/service";
 import { whatsappService } from "@/server/modules/whatsapp/service";
 import {
   getWhatsappRuntimeMode,
@@ -42,6 +50,8 @@ import {
   connectGatewayWhatsapp,
   controlGatewayWorker,
   getGatewayDeadLetters,
+  getGatewayQueueProgress,
+  getGatewayWhatsappStatus,
   getGatewayWhatsappQr,
   resolveGatewayDeadLetter,
   resendGatewayDeadLetter,
@@ -52,13 +62,22 @@ import {
 } from "@/server/modules/whatsapp/portal-whatsapp-sender";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
+import { assertExportRowLimit, exportOverflowLimit, EXPORT_ROW_LIMITS } from "@/server/shared/export-limits";
 import { nextPrefixedId } from "@/server/shared/ids";
 import {
   convertLegacyToDraft,
   validateConvertedDraft,
   type ConvertedLegacyDraft,
 } from "@/server/modules/aleta-bot/legacy-conversion";
+import {
+  LEGACY_NOTIFIKASI_QUERY_CATALOG,
+  LEGACY_NOTIFIKASI_QUERY_DEFINITIONS,
+} from "@/server/modules/aleta-bot/legacy-notifikasi-catalog";
+import { SIPP_ADDITIONAL_QUERY_DEFINITIONS } from "@/server/modules/aleta-bot/sipp-additional-query-sources";
+import { DEFAULT_PUBLIC_QA_KNOWLEDGE } from "@/server/modules/aleta-bot/public-qa-knowledge-seed";
+import { formatAletaBotTemplateValue } from "@/server/modules/aleta-bot/template-renderer";
 import { buildSafeFallback, suggestIntentForQuestion } from "@/server/modules/aleta-bot/public-qa-safety";
+import { getAdditionalRoleLabel, normalizeAdditionalRoleIds } from "@/lib/user-additional-roles";
 
 const DEFAULT_ALETA_BOT_RUNTIME_URL = "http://127.0.0.1:3003";
 
@@ -67,6 +86,7 @@ type SettingsRow = {
   notifications_enabled: number;
   admin_whatsapp_number: string;
   message_delay_ms: number;
+  sending_risk_level: number;
   retry_limit: number;
   dry_run_enabled: number;
   schedule_cron: string;
@@ -126,6 +146,11 @@ type QueryRow = {
   last_tested_at: string | null;
   last_test_status: AletaBotQuery["lastTestStatus"];
   last_test_error: string | null;
+  last_test_duration_ms: number;
+  last_test_row_count: number;
+  last_test_sample_json: string;
+  last_test_slow: number;
+  last_test_message: string | null;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
@@ -170,6 +195,7 @@ type NotificationRow = {
   recipient_mapping_json: string;
   schedule_config_json: string;
   is_active: number;
+  attach_document: number;
   delay_ms: number;
   retry_limit: number;
   last_run_at: string | null;
@@ -188,6 +214,8 @@ type EmployeeRecipientRow = {
   role_id: string;
   position_id: string;
   position_name: string | null;
+  unit_kerja: string | null;
+  additional_role_ids_json: string;
   whatsapp_number: string;
 };
 
@@ -200,6 +228,8 @@ type NotificationLogRow = {
   category: AletaBotNotificationLogEntry["category"];
   message_preview: string;
   status: AletaBotNotificationLogEntry["status"];
+  whatsapp_message_id: string;
+  ack: number | null;
   error_message: string | null;
   source_app: string;
   source_feature: string;
@@ -207,6 +237,9 @@ type NotificationLogRow = {
   entity_id: string;
   metadata_json: string;
   sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
   created_at: string;
 };
 
@@ -243,6 +276,8 @@ type PublicQaIntentRow = {
   requires_case_number: number;
   max_attempts: number;
   fallback_message: string;
+  answer_template: string | null;
+  match_keywords_json: string | null;
   risk_level: AletaBotPublicQaIntent["riskLevel"];
   notes: string;
   ai_answer_enabled: number;
@@ -286,6 +321,21 @@ type PublicQaLogRow = {
   reviewed_at: string | null;
   review_note: string;
   created_at: string;
+};
+
+type PublicQaKnowledgeRow = {
+  id: string;
+  key: string;
+  title: string;
+  category: string;
+  audience: string;
+  keywords_json: string;
+  answer: string;
+  source_label: string;
+  source_url: string;
+  priority: number;
+  is_active: number;
+  updated_at: string;
 };
 
 type PolicySkipLogRow = {
@@ -414,11 +464,168 @@ type LegacyMigrationRow = {
   updated_at: string;
 };
 
+export type SendingRiskPreset = {
+  level: 1 | 2 | 3 | 4 | 5;
+  label: string;
+  /** Kemungkinan suspend/ban dalam kata: "Sangat kecil" .. "Sangat besar". */
+  suspendRisk: string;
+  messageDelayMinMs: number;
+  messageDelayMaxMs: number;
+  maxPerMinute: number;
+  maxPerHour: number;
+  maxPerDay: number;
+  queueBatchSize: number;
+  queueIntervalMs: number;
+  sendingWindowStart: string;
+  sendingWindowEnd: string;
+  broadcastRequiresApproval: boolean;
+  /** Jarak minimum antar pesan berurutan di antrean (ms). */
+  sendingGapMinMs: number;
+  /** Jarak maksimum antar pesan berurutan; diacak antara min dan max. */
+  sendingGapMaxMs: number;
+  /**
+   * Kelompok jarak untuk irama campuran.
+   *
+   * Jarak acak di dalam satu rentang sempit ternyata TETAP berbentuk mesin:
+   * manusia tidak pernah seseragam itu. Orang membalas beberapa pesan beruntun
+   * dalam setengah menit, lalu diam sepuluh menit, lalu beruntun lagi.
+   *
+   * Dengan kelompok berbobot, satu kelompok dipilih dulu baru jaraknya diacak
+   * di dalamnya — menghasilkan sebaran berekor panjang seperti percakapan
+   * sungguhan. Kosong berarti kembali memakai sendingGapMinMs/MaxMs.
+   */
+  gapProfile?: Array<{ label: string; minMs: number; maxMs: number; weight: number }>;
+  /** Jeda minimum sebelum satu nomor yang sama menerima pesan berikutnya (ms). */
+  perRecipientCooldownMs: number;
+};
+
+/**
+ * Preset Slider Risiko: satu tingkat menetapkan SEMUA knob anti-ban sekaligus.
+ *
+ * Pengendali utama laju kirim adalah JARAK ANTAR PESAN (sendingGap*), bukan
+ * batas per menit/jam/hari. Alasannya: jarak menjadwalkan tiap pesan pada
+ * waktunya sendiri sehingga notifikasi sejenis tidak pernah berangkat serentak,
+ * sedangkan batas hanya menolak pesan setelah lewat ambang — yang justru
+ * memicu antrean gagal dan pengiriman ulang menumpuk. Karena itu batas
+ * per menit/jam/hari di sini sengaja diletakkan DI ATAS laju yang bisa
+ * dihasilkan jarak, jadi perannya adalah rem darurat, bukan pengatur harian.
+ *
+ * Jarak selalu berupa rentang (diacak) karena interval yang persis sama adalah
+ * ciri bot yang paling mudah dikenali WhatsApp.
+ */
+const SENDING_RISK_PRESETS: Record<1 | 2 | 3 | 4 | 5, SendingRiskPreset> = {
+  1: {
+    level: 1, label: "Minimal", suspendRisk: "Sangat kecil",
+    // Rentang cadangan ini dipakai HANYA bila gapProfile tidak termuat - mis.
+    // server masih memakai runtime config lama sesaat setelah pembaruan.
+    // Rata-ratanya (112 dtk) sengaja disamakan dengan rata-rata gapProfile:
+    // bila cadangannya jauh lebih cepat, laju kirim akan menembus rem darurat
+    // di bawah dan pemberitahuan mulai DIBUANG, bukan sekadar tertunda.
+    sendingGapMinMs: 45000, sendingGapMaxMs: 180000,
+    // Irama campuran: banyak jarak pendek, sesekali jeda panjang. Rata-rata
+    // sekitar 112 detik, yaitu ± 257 pesan pada jendela kirim 8 jam - cukup di
+    // atas kebutuhan nyata PA Donggala (100-200 pesan/hari) tanpa membuat
+    // iramanya rapat.
+    gapProfile: [
+      { label: "beruntun", minMs: 20000, maxMs: 45000, weight: 35 },
+      { label: "pendek", minMs: 45000, maxMs: 90000, weight: 30 },
+      { label: "sedang", minMs: 90000, maxMs: 180000, weight: 22 },
+      { label: "panjang", minMs: 180000, maxMs: 420000, weight: 10 },
+      { label: "jeda", minMs: 480000, maxMs: 900000, weight: 3 },
+    ],
+    perRecipientCooldownMs: 30 * 60 * 1000,
+    messageDelayMinMs: 2500, messageDelayMaxMs: 6000,
+    // Batas ini REM DARURAT di atas irama, bukan target. Angka lama (150/jam,
+    // 600/hari) jauh di atas apa yang mungkin dihasilkan iramanya sendiri,
+    // sehingga tidak pernah berfungsi sebagai rem dan hanya menenangkan nama
+    // modenya. Sekarang diletakkan tepat di atas kapasitas irama.
+    maxPerMinute: 4, maxPerHour: 40, maxPerDay: 300,
+    queueBatchSize: 3, queueIntervalMs: 20000,
+    sendingWindowStart: "08:00", sendingWindowEnd: "16:00",
+    broadcastRequiresApproval: true,
+  },
+  2: {
+    level: 2, label: "Rendah", suspendRisk: "Kecil",
+    sendingGapMinMs: 30000, sendingGapMaxMs: 100000,
+    // Rata-rata ± 66 detik, sekitar 490 pesan pada jendela 9 jam.
+    gapProfile: [
+      { label: "beruntun", minMs: 12000, maxMs: 30000, weight: 40 },
+      { label: "pendek", minMs: 30000, maxMs: 60000, weight: 30 },
+      { label: "sedang", minMs: 60000, maxMs: 120000, weight: 20 },
+      { label: "panjang", minMs: 120000, maxMs: 300000, weight: 8 },
+      { label: "jeda", minMs: 300000, maxMs: 600000, weight: 2 },
+    ],
+    perRecipientCooldownMs: 20 * 60 * 1000,
+    messageDelayMinMs: 2000, messageDelayMaxMs: 5000,
+    maxPerMinute: 6, maxPerHour: 260, maxPerDay: 1000,
+    queueBatchSize: 3, queueIntervalMs: 20000,
+    sendingWindowStart: "08:00", sendingWindowEnd: "17:00",
+    broadcastRequiresApproval: true,
+  },
+  3: {
+    level: 3, label: "Sedang", suspendRisk: "Sedang",
+    sendingGapMinMs: 15000, sendingGapMaxMs: 45000,
+    // Rata-rata ± 30 detik.
+    gapProfile: [
+      { label: "beruntun", minMs: 7000, maxMs: 15000, weight: 45 },
+      { label: "pendek", minMs: 15000, maxMs: 35000, weight: 30 },
+      { label: "sedang", minMs: 35000, maxMs: 70000, weight: 18 },
+      { label: "panjang", minMs: 70000, maxMs: 150000, weight: 7 },
+    ],
+    perRecipientCooldownMs: 10 * 60 * 1000,
+    messageDelayMinMs: 1500, messageDelayMaxMs: 3500,
+    maxPerMinute: 12, maxPerHour: 460, maxPerDay: 2000,
+    queueBatchSize: 5, queueIntervalMs: 15000,
+    sendingWindowStart: "07:30", sendingWindowEnd: "20:00",
+    broadcastRequiresApproval: true,
+  },
+  4: {
+    level: 4, label: "Tinggi", suspendRisk: "Besar",
+    sendingGapMinMs: 8000, sendingGapMaxMs: 22000,
+    // Rata-rata ± 15 detik.
+    gapProfile: [
+      { label: "beruntun", minMs: 3000, maxMs: 8000, weight: 50 },
+      { label: "pendek", minMs: 8000, maxMs: 20000, weight: 30 },
+      { label: "sedang", minMs: 20000, maxMs: 45000, weight: 15 },
+      { label: "panjang", minMs: 45000, maxMs: 90000, weight: 5 },
+    ],
+    perRecipientCooldownMs: 3 * 60 * 1000,
+    messageDelayMinMs: 800, messageDelayMaxMs: 2000,
+    maxPerMinute: 30, maxPerHour: 1000, maxPerDay: 4000,
+    queueBatchSize: 8, queueIntervalMs: 10000,
+    sendingWindowStart: "07:00", sendingWindowEnd: "21:00",
+    broadcastRequiresApproval: false,
+  },
+  5: {
+    level: 5, label: "Maksimal", suspendRisk: "Sangat besar",
+    sendingGapMinMs: 0, sendingGapMaxMs: 1000,
+    perRecipientCooldownMs: 0,
+    messageDelayMinMs: 0, messageDelayMaxMs: 400,
+    maxPerMinute: 60, maxPerHour: 1500, maxPerDay: 6000,
+    queueBatchSize: 15, queueIntervalMs: 5000,
+    sendingWindowStart: "06:00", sendingWindowEnd: "22:00",
+    broadcastRequiresApproval: false,
+  },
+};
+
+export function resolveSendingRiskPreset(level: unknown): SendingRiskPreset {
+  const n = Math.round(Number(level));
+  const clamped = (Number.isFinite(n) ? Math.min(5, Math.max(1, n)) : 1) as 1 | 2 | 3 | 4 | 5;
+  return SENDING_RISK_PRESETS[clamped];
+}
+
+export function listSendingRiskPresets(): SendingRiskPreset[] {
+  return [1, 2, 3, 4, 5].map((level) => SENDING_RISK_PRESETS[level as 1 | 2 | 3 | 4 | 5]);
+}
+
 const DEFAULT_SETTINGS: Omit<AletaBotSettings, "updatedAt"> = {
   botEnabled: false,
   notificationsEnabled: false,
   adminWhatsappNumber: "",
   messageDelayMs: 1500,
+  // Default MINIMAL: paling aman dari suspend/ban. Operator dapat menaikkan
+  // lewat Slider Risiko di dashboard bila memang perlu lebih cepat.
+  sendingRiskLevel: 1,
   retryLimit: 2,
   dryRunEnabled: true,
   scheduleCron: "00 07 * * Monday-Friday",
@@ -442,9 +649,12 @@ const DEFAULT_SETTINGS: Omit<AletaBotSettings, "updatedAt"> = {
   deadlineReminderKillSwitch: false,
 };
 
-const DEFAULT_DB_CONNECTIONS: Array<
-  Omit<AletaBotDbConnection, "usernameMasked" | "passwordConfigured" | "passwordSource" | "lastTestStatus" | "lastTestError" | "lastTestAt" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
-> = [
+type SeedDbConnection = Omit<
+  AletaBotDbConnection,
+  "usernameMasked" | "passwordConfigured" | "passwordSource" | "lastTestStatus" | "lastTestError" | "lastTestAt" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt"
+>;
+
+const DEFAULT_DB_CONNECTIONS: Array<SeedDbConnection> = [
   {
     id: "db-sipp-primary",
     key: "sipp_primary",
@@ -498,6 +708,51 @@ const DEFAULT_DB_CONNECTIONS: Array<
   },
 ];
 
+function parseExtraDbConnectionsFromEnv(): Array<SeedDbConnection> {
+  const raw = process.env.ALETA_BOT_EXTRA_DB_CONNECTIONS_JSON || "";
+  if (!raw.trim()) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as Array<Partial<SeedDbConnection> & { database_name?: string; password_env_key?: string; connection_timeout_ms?: number }>;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((connection, index) => ({
+        id: String(connection.id || `db-extra-${connection.key || index + 1}`),
+        key: validateConnectionKey(String(connection.key || "")),
+        name: String(connection.name || connection.key || `SQL Tambahan ${index + 1}`).trim(),
+        description: String(connection.description || "Koneksi SQL tambahan dari konfigurasi instalasi ALETA.").trim(),
+        driver: "mysql" as const,
+        host: String(connection.host || "").trim(),
+        port: Math.max(1, Math.min(65535, Number(connection.port || 3306))),
+        databaseName: String(connection.databaseName || connection.database_name || "").trim(),
+        username: String(connection.username || "").trim(),
+        passwordEnvKey: String(connection.passwordEnvKey || connection.password_env_key || "").trim(),
+        sslEnabled: Boolean(connection.sslEnabled),
+        connectionTimeoutMs: Math.max(1000, Math.min(30000, Number(connection.connectionTimeoutMs || connection.connection_timeout_ms || 5000))),
+        isActive: connection.isActive !== false,
+        isDefault: false,
+        legacySource: String(connection.legacySource || "first-install").trim(),
+      }))
+      .filter((connection) => connection.key && connection.host && connection.databaseName && connection.username);
+  } catch {
+    return [];
+  }
+}
+
+function getSeedDbConnections() {
+  const byKey = new Map<string, SeedDbConnection>();
+  for (const connection of DEFAULT_DB_CONNECTIONS) {
+    byKey.set(connection.key, connection);
+  }
+  for (const connection of parseExtraDbConnectionsFromEnv()) {
+    if (!byKey.has(connection.key)) {
+      byKey.set(connection.key, connection);
+    }
+  }
+  return [...byKey.values()];
+}
+
 const PUBLIC_QA_FALLBACK_MESSAGE =
   "Maaf, saya belum memahami pertanyaan Bapak/Ibu. Silakan ketik info lengkap untuk melihat daftar layanan, atau hubungi petugas Pengadilan Agama Donggala di 0822-7111-5021.";
 
@@ -532,26 +787,26 @@ function getPublicQaAnswerDefaults(key: string): Pick<
       aiUserPromptTemplate: "",
       maxAiTokens: 350,
       temperature: 0.2,
-      requiresApprovalBeforeActive: true,
+      requiresApprovalBeforeActive: false,
       version: 1,
       status: "active",
       approvedBy: null,
       approvedAt: null,
     };
   }
-  if (key === "cek_jadwal_sidang") {
+  if (key === "cek_jadwal_sidang" || key === "antrian_online") {
     return {
       aiAnswerEnabled: true,
       aiAnswerMode: "guided_answer",
-      answerPolicy: "case_status_limited",
-      verificationPolicy: "case_number_only",
-      allowedDataFields: ["nomor_perkara", "tanggal_sidang", "agenda", "ruangan", "status_umum", "keterangan"],
+      answerPolicy: key === "antrian_online" ? "public_info_only" : "case_status_limited",
+      verificationPolicy: key === "antrian_online" ? "none" : "case_number_only",
+      allowedDataFields: ["nomor_perkara", "tanggal_sidang", "agenda", "ruangan", "status_umum", "keterangan", "nomor_antrian"],
       blockedDataFields: ["nik", "alamat", "telepon", "nomor_hp", "catatan_internal"],
       aiSystemPrompt: "",
       aiUserPromptTemplate: "",
       maxAiTokens: 350,
       temperature: 0.2,
-      requiresApprovalBeforeActive: true,
+      requiresApprovalBeforeActive: false,
       version: 1,
       status: "active",
       approvedBy: null,
@@ -570,9 +825,9 @@ function getPublicQaAnswerDefaults(key: string): Pick<
       aiUserPromptTemplate: "",
       maxAiTokens: 350,
       temperature: 0.2,
-      requiresApprovalBeforeActive: true,
+      requiresApprovalBeforeActive: false,
       version: 1,
-      status: "draft",
+      status: "active",
       approvedBy: null,
       approvedAt: null,
     };
@@ -588,7 +843,7 @@ function getPublicQaAnswerDefaults(key: string): Pick<
     aiUserPromptTemplate: "",
     maxAiTokens: 400,
     temperature: 0.2,
-    requiresApprovalBeforeActive: true,
+    requiresApprovalBeforeActive: false,
     version: 1,
     status: "active",
     approvedBy: null,
@@ -691,7 +946,10 @@ const DEFAULT_PUBLIC_QA_INTENTS = [
     exactTriggers: ["jadwal"],
     exampleQuestions: ["Saya mau tahu jadwal sidang saya", "Kapan sidang perkara saya?", "Sidang saya tanggal berapa?"],
     requiredParameters: ["nomor_perkara"],
-    queryKey: "public_hearing_schedule",
+    // Sumber data dikosongkan: aturan ini menjawab lewat jalur lama
+    // (responseMode legacy_handler), dan kunci lamanya menunjuk query yang
+    // tidak pernah ada sehingga aturannya gagal disimpan dari portal.
+    queryKey: "",
     legacyHandler: "query.getData:jadwal",
     legacyCommand: "jadwal",
     parameterizedLegacyCommand: "jadwal",
@@ -717,7 +975,10 @@ const DEFAULT_PUBLIC_QA_INTENTS = [
     exactTriggers: ["akta_cerai", "akta", "pesan akta", "validasi"],
     exampleQuestions: ["Bagaimana cara ambil akta cerai?", "Akta cerai saya sudah jadi belum?", "Saya mau validasi akta cerai"],
     requiredParameters: ["nomor_perkara"],
-    queryKey: "public_divorce_certificate",
+    // Sumber data dikosongkan: aturan ini menjawab lewat jalur lama
+    // (responseMode legacy_handler), dan kunci lamanya menunjuk query yang
+    // tidak pernah ada sehingga aturannya gagal disimpan dari portal.
+    queryKey: "",
     legacyHandler: "query.getData:akta",
     legacyCommand: "akta_cerai",
     parameterizedLegacyCommand: "akta",
@@ -743,7 +1004,10 @@ const DEFAULT_PUBLIC_QA_INTENTS = [
     exactTriggers: ["biaya"],
     exampleQuestions: ["Berapa sisa panjar perkara saya?", "Saya mau cek biaya perkara", "Rincian panjar perkara saya"],
     requiredParameters: ["nomor_perkara"],
-    queryKey: "public_case_fee",
+    // Sumber data dikosongkan: aturan ini menjawab lewat jalur lama
+    // (responseMode legacy_handler), dan kunci lamanya menunjuk query yang
+    // tidak pernah ada sehingga aturannya gagal disimpan dari portal.
+    queryKey: "",
     legacyHandler: "query.getData:biaya",
     legacyCommand: "perkara",
     parameterizedLegacyCommand: "biaya",
@@ -756,6 +1020,38 @@ const DEFAULT_PUBLIC_QA_INTENTS = [
     fallbackMessage: "Untuk cek biaya atau sisa panjar, silakan kirim nomor perkara. Contoh: biaya#123.G.2021.",
     riskLevel: "medium",
     notes: "Data dinamis tetap memakai handler legacy query.js.",
+  },
+  {
+    id: "qa-antrian-online",
+    key: "antrian_online",
+    name: "Antrian Online Sidang",
+    description: "Mendaftarkan kehadiran pihak pada antrian sidang hari ini dari pertanyaan WhatsApp yang natural.",
+    category: "jadwal_sidang",
+    audience: "party",
+    isActive: true,
+    aiEnabled: true,
+    exactTriggers: ["daftar antrian", "antrian online", "ambil antrian", "ambil antrian online", "daftar hadir"],
+    exampleQuestions: [
+      "Saya sudah hadir untuk sidang perkara 123.G.2026",
+      "Tolong daftarkan antrian sidang saya nomor 123.G.2026",
+      "Saya mau ambil nomor antrian online perkara 123/Pdt.G/2026/PA.Dgl",
+      "Saya penggugat sudah datang untuk antrian sidang",
+      "Saya tergugat ingin daftar antrian online",
+    ],
+    requiredParameters: [],
+    queryKey: "public_online_queue",
+    legacyHandler: "query.getData:daftar antrian/antrian online",
+    legacyCommand: "daftar antrian",
+    parameterizedLegacyCommand: "daftar antrian",
+    templateKey: "",
+    responseMode: "legacy_handler",
+    confidenceThreshold: 0.62,
+    requiresVerification: false,
+    requiresCaseNumber: false,
+    maxAttempts: 2,
+    fallbackMessage: "Untuk daftar antrian online, silakan ketik ambil antrian. Jika nomor WhatsApp belum cocok dengan data perkara hari ini, kirim nomor perkara. Contoh: daftar antrian#123.G.2026.",
+    riskLevel: "medium",
+    notes: "Nomor WhatsApp pengirim diprioritaskan untuk menentukan penggugat/pemohon, tergugat/termohon, kuasa, turut tergugat, atau pihak intervensi. Data dibaca melalui koneksi antrian_sidang/db_config4.",
   },
   {
     id: "qa-ecourt",
@@ -894,38 +1190,51 @@ const DEFAULT_PUBLIC_QA_INTENTS = [
 const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
   {
     id: "perkara-baru",
-    category: "notifikasi",
+    category: "pihak",
     title: "Notifikasi Perkara Baru",
     body:
-      "Assalamu'alaikum.\n\nHalo, saya ALETA Bot. Perkara {{nomor_perkara}} atas nama {{nama_pihak}} telah terdaftar dengan agenda {{agenda}}.\n\nPesan ini adalah notifikasi otomatis.",
-    placeholders: ["nomor_perkara", "nama_pihak", "agenda"],
+      "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\n\nDetail Perkara Baru:\n- Nama: Sdr/Sdri *{{nama_pihak}}*\n- Nomor Perkara: *{{nomor_perkara}}*\n\n{{ringkasan}}\n\nInformasi tambahan:\n- Ini adalah notifikasi, anda tidak perlu membalasnya. Panggilan resmi akan disampaikan oleh Jurusita/Petugas Pos ke rumah Anda atau melalui Desa/Kelurahan.\n- Untuk informasi lebih lanjut, ketik \"perkara\" atau hubungi *0822-7111-5021*.\n- Mohon isi survei kepuasan layanan di https://pa-donggala.go.id/survei",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
     editable: true,
   },
   {
     id: "jadwal-sidang",
-    category: "notifikasi",
+    category: "pihak",
     title: "Notifikasi Jadwal Sidang",
     body:
-      "Assalamu'alaikum.\n\nPerkara {{nomor_perkara}} dijadwalkan sidang pada {{hari_sidang}}, {{tanggal_sidang}} di ruang {{ruangan}} dengan agenda {{agenda}}.",
-    placeholders: ["nomor_perkara", "hari_sidang", "tanggal_sidang", "ruangan", "agenda"],
+      "Assalamualaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\n\nDetail Sidang Perkara:\n- Nama: Sdr/Sdri *{{nama_pihak}}*\n- Nomor Perkara: *{{nomor_perkara}}*\n\n{{ringkasan}}\n\n{{persiapan_sidang}}\n\nInformasi Tambahan:\n- Pesan ini adalah notifikasi, anda tidak perlu membalasnya. Panggilan resmi sebelumnya disampaikan oleh Jurusita/Petugas Pos.\n- Untuk daftar antrian online, ikuti petunjuk yang tercantum pada informasi perkara apabila tersedia.\n- Info lebih lanjut, ketik \"perkara\" atau hubungi WhatsApp: *0822-7111-5021*.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan", "persiapan_sidang"],
+    editable: true,
+  },
+  {
+    // Pengingat H-1 sengaja jauh lebih pendek daripada H-3. Penjelasan panjang
+    // sudah disampaikan tiga hari sebelumnya; mengulanginya utuh membuat pesan
+    // penting terlihat seperti pesan berulang, dan pesan berulang persis yang
+    // membuat orang memblokir nomor pengadilan.
+    id: "pihak-sidang-h1",
+    category: "pihak",
+    title: "Pengingat Sidang Besok (H-1)",
+    body:
+      "Pengingat: sidang Anda besok.\n\nSdr/Sdri *{{nama_pihak}}*\nPerkara *{{nomor_perkara}}*\n\n{{ringkasan}}\n\n{{persiapan_sidang}}\n\nBila berhalangan hadir, sampaikan kepada Majelis Hakim melalui surat atau hubungi *0822-7111-5021*.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan", "persiapan_sidang"],
     editable: true,
   },
   {
     id: "akta-cerai",
-    category: "notifikasi",
+    category: "pihak",
     title: "Notifikasi Akta Cerai",
     body:
-      "Akta cerai untuk perkara {{nomor_perkara}} telah tersedia. Silakan mengikuti prosedur pengambilan pada layanan PTSP.",
-    placeholders: ["nomor_perkara"],
+      "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\nInformasi mengenai Akta Cerai Anda:\n- Nomor Perkara: *{{nomor_perkara}}*\n- Nama: *{{nama_pihak}}*\n\n{{ringkasan}}\n\nAkta Cerai sekarang dapat diambil secara online.\nSilahkan mengunjungi https://eac.mahkamahagung.go.id/ dan apabila masih belum memahami silahkan hubungi *0822-7111-5021*.\n\nIni adalah notifikasi, Anda tidak perlu membalasnya. Abaikan pesan ini jika Akta Cerai telah diambil. Terima kasih.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
     editable: true,
   },
   {
     id: "sisa-panjar",
-    category: "notifikasi",
+    category: "pihak",
     title: "Notifikasi Sisa Panjar",
     body:
-      "Informasi biaya perkara {{nomor_perkara}}: sisa panjar saat ini {{sisa_panjar}}. Mohon hubungi petugas bila memerlukan rincian.",
-    placeholders: ["nomor_perkara", "sisa_panjar"],
+      "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nSdr/Sdri *{{nama_pihak}}*, perkara Nomor *{{nomor_perkara}}* memiliki informasi biaya perkara sebagai berikut:\n\n{{ringkasan}}\n\nTindakan yang perlu dilakukan:\n1. Silakan ke PTSP Pengadilan untuk arahan lebih lanjut.\n2. Lakukan pembayaran atau pengambilan hanya melalui petugas resmi/kasir Pengadilan.\n\nUntuk cek biaya, ketik:\nbiaya#nomor perkara Anda\n\nIni adalah notifikasi, anda tidak perlu membalasnya.\nInfo lebih lanjut hubungi *0822-7111-5021*.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
     editable: true,
   },
   {
@@ -933,7 +1242,7 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     category: "balasan",
     title: "Balasan Otomatis",
     body:
-      "Halo, saya ALETA Bot. Ketik info lengkap, perkara, sidang hari ini, atau akta#nomor perkara untuk layanan informasi.",
+      "Assalamu'alaikum. Ada yang bisa kami bantu?\n\nKetik salah satu kata kunci berikut:\n- info lengkap\n- perkara\n- sidang hari ini\n- akta#nomor perkara\n\nKami akan membantu sesuai data layanan yang tersedia.",
     placeholders: [],
     editable: true,
   },
@@ -941,7 +1250,7 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     id: "fallback-error",
     category: "error",
     title: "Fallback Error",
-    body: "Maaf, ALETA Bot belum dapat memproses permintaan tersebut. Silakan coba beberapa saat lagi.",
+    body: "Maaf, permintaan Bapak/Ibu belum dapat diproses saat ini. Silakan coba beberapa saat lagi atau hubungi petugas layanan resmi pengadilan.",
     placeholders: [],
     editable: true,
   },
@@ -949,7 +1258,7 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     id: "admin-test",
     category: "admin",
     title: "Pesan Admin Test",
-    body: "Tes ALETA Bot berhasil pada {{waktu}}. Mode: {{mode}}.",
+    body: "Tes pengiriman ALETA berhasil.\n\nWaktu: {{waktu}}\nMode: {{mode}}\n\nJika pesan ini diterima, koneksi WhatsApp sedang berjalan.",
     placeholders: ["waktu", "mode"],
     editable: true,
   },
@@ -958,8 +1267,44 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     category: "pegawai",
     title: "Notifikasi Pegawai / Monitoring",
     body:
-      "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n\n{{ringkasan}}\n\nSumber: ALETA Bot.",
-    placeholders: ["nama_pegawai", "judul_notifikasi", "ringkasan"],
+      "{{nama_pegawai}} — {{jabatan}}\n\n{{judul_notifikasi}}:\n\n{{ringkasan}}",
+    placeholders: ["nama_pegawai", "jabatan", "judul_notifikasi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pegawai-monitoring-ringkas",
+    category: "pegawai",
+    title: "Pegawai - Monitoring Ringkas",
+    body:
+      "{{nama_pegawai}} — {{jabatan}}\n\nRingkasan keadaan perkara sampai sore ini:\n\n{{ringkasan}}\n\nData per {{waktu}}.",
+    placeholders: ["nama_pegawai", "jabatan", "ringkasan", "waktu"],
+    editable: true,
+  },
+  {
+    id: "hakim-jadwal-tugas-sidang",
+    category: "pegawai",
+    title: "Hakim - Jadwal dan Tugas Sidang",
+    body:
+      "{{nama_pegawai}} — {{jabatan}}\n\n{{judul_notifikasi}}:\n\n{{ringkasan}}\n\nMohon disiapkan sebelum sidang dimulai.",
+    placeholders: ["nama_pegawai", "jabatan", "judul_notifikasi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "kepaniteraan-monitoring-perkara",
+    category: "pegawai",
+    title: "Kepaniteraan - Monitoring Perkara",
+    body:
+      "{{nama_pegawai}} — {{jabatan}}\n\nPerkara berikut perlu ditindaklanjuti:\n\n{{ringkasan}}\n\nMohon ditindaklanjuti sesuai kewenangan.",
+    placeholders: ["nama_pegawai", "jabatan", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "kesekretariatan-info-internal",
+    category: "pegawai",
+    title: "Kesekretariatan - Informasi Internal",
+    body:
+      "{{nama_pegawai}} — {{jabatan}}\n\n{{judul_notifikasi}}:\n\n{{ringkasan}}",
+    placeholders: ["nama_pegawai", "jabatan", "judul_notifikasi", "ringkasan"],
     editable: true,
   },
   {
@@ -967,8 +1312,38 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     category: "pegawai",
     title: "Pengingat Deadline Disposisi H-1",
     body:
-      "Assalamu'alaikum {{nama_pegawai}}.\n\nPengingat disposisi: Surat \"{{perihal}}\" jatuh tempo pada {{deadline}}. Mohon segera ditindaklanjuti.\n\nPesan ini masih disiapkan dalam mode simulasi/dry-run sampai disetujui.",
-    placeholders: ["nama_pegawai", "perihal", "deadline"],
+      "{{nama_pegawai}} — {{jabatan}}\n\nDisposisi berikut jatuh tempo besok:\nPerihal: {{perihal}}\nBatas tindak lanjut: {{deadline}}\n\nMohon diselesaikan sebelum batas waktu tersebut.",
+    placeholders: ["nama_pegawai", "jabatan", "perihal", "deadline"],
+    editable: true,
+  },
+  {
+    id: "manajemen-surat-baru",
+    category: "manajemen_surat",
+    title: "Manajemen Surat - Surat Baru",
+    body:
+      "Assalamu'alaikum {{recipient_name}}.\n\nAda {{jenis_surat}} baru.\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\n\nSilakan buka ALETA untuk melihat detail dan tindak lanjut.",
+    placeholders: ["recipient_name", "jenis_surat", "nomor_surat", "perihal"],
+    editable: true,
+  },
+  {
+    id: "manajemen-surat-disposisi",
+    category: "manajemen_surat",
+    title: "Manajemen Surat - Disposisi",
+    body:
+      "Assalamu'alaikum {{recipient_name}}.\n\nAda disposisi surat untuk Anda.\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\nInstruksi: {{instruksi}}\n\nSilakan buka ALETA untuk menindaklanjuti.",
+    placeholders: ["recipient_name", "nomor_surat", "perihal", "instruksi"],
+    editable: true,
+  },
+  {
+    id: "pihak-tunda-sidang",
+    category: "pihak",
+    title: "Pihak - Sidang Ditunda",
+    body:
+      // Penekanan memakai satu tanda bintang (huruf tebal WhatsApp), bukan
+      // huruf kapital. Kapital semua terbaca seperti membentak dan merupakan
+      // ciri pesan iklan - ditemukan oleh pemeriksa isi pesan pada v1.15.0.
+      "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nSdr/Sdri *{{nama_pihak}}*, sidang perkara Nomor *{{nomor_perkara}}* yang sebelumnya dijadwalkan *tidak jadi dilaksanakan* pada hari tersebut.\n\n{{ringkasan}}\n\nYang perlu Anda lakukan:\n- Tidak perlu datang ke pengadilan pada jadwal yang lama.\n- Jadwal pengganti akan disampaikan melalui panggilan resmi oleh Jurusita atau Petugas Pos.\n\nIni adalah notifikasi, anda tidak perlu membalasnya.\nInfo lebih lanjut hubungi *0822-7111-5021*.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
     editable: true,
   },
   {
@@ -976,17 +1351,536 @@ const DEFAULT_TEMPLATES: Array<Omit<AletaBotTemplate, "updatedAt">> = [
     category: "pihak",
     title: "Notifikasi Pihak / Layanan Perkara",
     body:
-      "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan otomatis ALETA Bot.",
+      "Assalamualaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\n\nInformasi perkara Nomor *{{nomor_perkara}}* untuk Sdr/Sdri *{{nama_pihak}}*:\n\n{{ringkasan}}\n\nInformasi Tambahan:\n- Ini adalah notifikasi dan bukan pemberitahuan resmi, anda tidak perlu membalasnya.\n- Info lebih lanjut: WhatsApp *0822-7111-5021*.",
     placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
     editable: true,
   },
+  {
+    id: "pihak-perkara-jadwal-sidang",
+    category: "pihak",
+    title: "Pihak Perkara - Jadwal Sidang",
+    body:
+      "Assalamualaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\n\nDetail Sidang Perkara:\n- Nama: Sdr/Sdri *{{nama_pihak}}*\n- Nomor Perkara: *{{nomor_perkara}}*\n\n{{ringkasan}}\n\nInformasi Tambahan:\n- Pesan ini adalah notifikasi, anda tidak perlu membalasnya. Panggilan resmi sebelumnya disampaikan oleh Jurusita/Petugas Pos.\n- Info lebih lanjut, ketik \"perkara\" atau hubungi WhatsApp: *0822-7111-5021*.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-perkara-akta-cerai",
+    category: "pihak",
+    title: "Pihak Perkara - Akta Cerai Terbit",
+    body:
+      "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\nInformasi mengenai Akta Cerai Anda:\n- Nomor Perkara: *{{nomor_perkara}}*\n- Nama: *{{nama_pihak}}*\n\n{{ringkasan}}\n\nAkta Cerai sekarang dapat diambil secara online.\nSilahkan mengunjungi https://eac.mahkamahagung.go.id/ dan apabila masih belum memahami silahkan hubungi *0822-7111-5021*.\n\nIni adalah notifikasi, Anda tidak perlu membalasnya. Abaikan pesan ini jika Akta Cerai telah diambil. Terima kasih.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "masyarakat-info-layanan",
+    category: "publik",
+    title: "Masyarakat Umum - Informasi Layanan",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi layanan pengadilan:\n{{ringkasan}}\n\nJika masih membutuhkan bantuan, silakan hubungi petugas layanan resmi pengadilan.",
+    placeholders: ["nama_pihak", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "instansi-koordinasi-layanan",
+    category: "instansi",
+    title: "Instansi Mitra - Koordinasi Layanan",
+    body:
+      "Yth. {{nama_instansi}}.\n\nKami menyampaikan informasi koordinasi berikut:\n{{ringkasan}}\n\nApabila diperlukan konfirmasi, silakan menghubungi kanal resmi pengadilan.",
+    placeholders: ["nama_instansi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-perkara-putusan",
+    category: "pihak",
+    title: "Pihak Perkara - Informasi Putusan",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi putusan perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nUntuk salinan atau penjelasan layanan, silakan menghubungi PTSP pengadilan.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-perkara-penundaan-sidang",
+    category: "pihak",
+    title: "Pihak Perkara - Penundaan Sidang",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nPembaruan jadwal perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nMohon memperhatikan jadwal terbaru dari pengadilan.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-perkara-panggilan",
+    category: "pihak",
+    title: "Pihak Perkara - Pengingat Panggilan",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nPengingat panggilan perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nPanggilan resmi tetap mengikuti ketentuan hukum acara dan disampaikan oleh petugas yang berwenang.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-perkara-panjar-habis",
+    category: "pihak",
+    title: "Pihak Perkara - Panjar Perlu Diperhatikan",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi panjar perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nSilakan menghubungi kasir/PTSP pengadilan untuk memastikan rincian dan tindak lanjut.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-perkara-mediasi",
+    category: "pihak",
+    title: "Pihak Perkara - Pengingat Mediasi",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nPengingat mediasi perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nMohon hadir tepat waktu dan membawa dokumen yang diperlukan.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-kuasa-koordinasi",
+    category: "pihak",
+    title: "Kuasa Hukum - Koordinasi Perkara",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nKoordinasi perkara untuk kuasa hukum:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nSilakan berkoordinasi melalui kanal resmi pengadilan apabila diperlukan.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "pihak-validasi-kontak",
+    category: "pihak",
+    title: "Pihak Perkara - Validasi Kontak",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nValidasi kontak perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nJika ada perubahan nomor, silakan menghubungi petugas layanan pengadilan.",
+    placeholders: ["nama_pihak", "nomor_perkara", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "publik-syarat-layanan",
+    category: "publik",
+    title: "Masyarakat Umum - Syarat Layanan",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi layanan {{nama_layanan}}:\n{{ringkasan}}\n\nUntuk memastikan syarat terbaru, silakan menghubungi PTSP atau kanal resmi pengadilan.",
+    placeholders: ["nama_pihak", "nama_layanan", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "publik-pendaftaran-informasi",
+    category: "publik",
+    title: "Masyarakat Umum - Informasi Pendaftaran",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi pendaftaran layanan pengadilan:\n{{ringkasan}}\n\nPetugas akan membantu sesuai data dan prosedur yang berlaku.",
+    placeholders: ["nama_pihak", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "publik-pengaduan-layanan",
+    category: "publik",
+    title: "Masyarakat Umum - Pengaduan Layanan",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nUntuk pengaduan atau masukan layanan:\n{{ringkasan}}\n\nMohon cantumkan kronologi singkat dan identitas yang dapat dihubungi agar petugas dapat menindaklanjuti.",
+    placeholders: ["nama_pihak", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "instansi-data-perceraian",
+    category: "instansi",
+    title: "Instansi Mitra - Data Perceraian",
+    body:
+      "Yth. {{nama_instansi}}.\n\nKami menyampaikan informasi terkait data perceraian/akta cerai:\n{{ringkasan}}\n\nMohon digunakan sesuai kebutuhan layanan dan ketentuan yang berlaku.",
+    placeholders: ["nama_instansi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "instansi-permintaan-konfirmasi",
+    category: "instansi",
+    title: "Instansi Mitra - Permintaan Konfirmasi",
+    body:
+      "Yth. {{nama_instansi}}.\n\nMohon konfirmasi terkait informasi berikut:\n{{ringkasan}}\n\nApabila data belum sesuai, silakan menghubungi kanal resmi pengadilan.",
+    placeholders: ["nama_instansi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "instansi-undangan-koordinasi",
+    category: "instansi",
+    title: "Instansi Mitra - Undangan Koordinasi",
+    body:
+      "Yth. {{nama_instansi}}.\n\nKami menyampaikan undangan/koordinasi layanan sebagai berikut:\n{{ringkasan}}\n\nTerima kasih atas kerja samanya.",
+    placeholders: ["nama_instansi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "ketua-rekap-perkara",
+    category: "pegawai",
+    title: "Pimpinan - Rekap Perkara",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nRingkasan ini disiapkan untuk bahan pemantauan dan tindak lanjut pimpinan.",
+    placeholders: ["nama_pegawai", "judul_notifikasi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "panitera-monitoring-bulanan",
+    category: "pegawai",
+    title: "Panitera - Monitoring Bulanan",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nMonitoring kepaniteraan:\n{{ringkasan}}\n\nMohon dicek dan ditindaklanjuti sesuai prioritas.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "jurusita-panggilan-perkara",
+    category: "pegawai",
+    title: "Jurusita - Panggilan dan Pemberitahuan",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nMohon dicek agar pelaksanaan panggilan/pemberitahuan sesuai jadwal.",
+    placeholders: ["nama_pegawai", "judul_notifikasi", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "kasir-monitoring-panjar",
+    category: "pegawai",
+    title: "Kasir - Monitoring Panjar",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nInformasi biaya perkara:\n{{ringkasan}}\n\nMohon dicek untuk layanan kasir dan pengembalian/pemenuhan panjar bila diperlukan.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "penjaga-sidang-jadwal",
+    category: "pegawai",
+    title: "Penjaga Sidang - Jadwal Ruangan",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nJadwal/ruangan sidang:\n{{ringkasan}}\n\nMohon dipastikan kesiapan ruang, jadwal, dan kebutuhan persidangan.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "admin-sipp-monitoring",
+    category: "pegawai",
+    title: "Admin SIPP - Monitoring Data",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nMonitoring data SIPP:\n{{ringkasan}}\n\nMohon dicek apabila ada data yang perlu diperbaiki atau disinkronkan.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "arsip-monitoring-berkas",
+    category: "pegawai",
+    title: "Arsip - Monitoring Berkas",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nInformasi arsip/berkas:\n{{ringkasan}}\n\nMohon dicek lokasi, status pinjam, atau kelengkapan berkas sesuai kebutuhan.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "publikasi-putusan-monitoring",
+    category: "pegawai",
+    title: "Publikasi Putusan - Monitoring",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nMonitoring publikasi putusan:\n{{ringkasan}}\n\nMohon dicek agar publikasi dan kelengkapan dokumen berjalan sesuai ketentuan.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "ecourt-monitoring",
+    category: "pegawai",
+    title: "e-Court - Monitoring",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nMonitoring e-Court:\n{{ringkasan}}\n\nMohon dicek bila ada antrian, sinkronisasi, atau data pihak yang perlu ditindaklanjuti.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "mediasi-monitoring",
+    category: "pegawai",
+    title: "Mediasi - Monitoring",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nMonitoring mediasi:\n{{ringkasan}}\n\nMohon dicek agar jadwal dan hasil mediasi tercatat dengan baik.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "keuangan-transaksi-monitoring",
+    category: "pegawai",
+    title: "Keuangan Perkara - Monitoring Transaksi",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nMonitoring transaksi perkara:\n{{ringkasan}}\n\nMohon dicek bila ada transaksi yang perlu dikonfirmasi.",
+    placeholders: ["nama_pegawai", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "manajemen-surat-deadline",
+    category: "manajemen_surat",
+    title: "Manajemen Surat - Pengingat Batas Waktu",
+    body:
+      "Assalamu'alaikum {{recipient_name}}.\n\nPengingat surat:\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\nBatas waktu: {{deadline}}\n\nMohon ditindaklanjuti sebelum batas waktu.",
+    placeholders: ["recipient_name", "nomor_surat", "perihal", "deadline"],
+    editable: true,
+  },
+  {
+    id: "manajemen-surat-selesai",
+    category: "manajemen_surat",
+    title: "Manajemen Surat - Tindak Lanjut Selesai",
+    body:
+      "Assalamu'alaikum {{recipient_name}}.\n\nTindak lanjut surat berikut telah diperbarui:\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\nStatus: {{status}}\n\nSilakan buka ALETA jika perlu melihat detail.",
+    placeholders: ["recipient_name", "nomor_surat", "perihal", "status"],
+    editable: true,
+  },
+  {
+    id: "manajemen-surat-revisi",
+    category: "manajemen_surat",
+    title: "Manajemen Surat - Perlu Perbaikan",
+    body:
+      "Assalamu'alaikum {{recipient_name}}.\n\nAda surat yang perlu diperbaiki atau dilengkapi.\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\nCatatan: {{instruksi}}\n\nSilakan buka ALETA untuk menindaklanjuti.",
+    placeholders: ["recipient_name", "nomor_surat", "perihal", "instruksi"],
+    editable: true,
+  },
+  {
+    id: "dokumen-lampiran-perkara",
+    category: "dokumen_lampiran",
+    title: "Dokumen / Lampiran - Pihak Perkara",
+    body:
+      "Assalamu'alaikum {{nama_pihak}}.\n\nAda dokumen terkait perkara:\nNomor: {{nomor_perkara}}\nDokumen: {{file_name}}\nKeterangan:\n{{ringkasan}}\n\nMohon simpan dokumen ini dan ikuti arahan layanan pengadilan apabila diperlukan.",
+    placeholders: ["nama_pihak", "nomor_perkara", "file_name", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "dokumen-lampiran-pegawai",
+    category: "dokumen_lampiran",
+    title: "Dokumen / Lampiran - Pegawai",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\nDokumen: {{file_name}}\nKeterangan:\n{{ringkasan}}\n\nMohon dicek dan ditindaklanjuti sesuai tugas masing-masing.",
+    placeholders: ["nama_pegawai", "judul_notifikasi", "file_name", "ringkasan"],
+    editable: true,
+  },
+  {
+    id: "reminder-internal-role",
+    category: "reminder_internal",
+    title: "Reminder Internal - Per Role",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nPengingat untuk {{recipient_role}}:\n{{judul_notifikasi}}\n{{ringkasan}}\n\nWaktu data: {{waktu}}.",
+    placeholders: ["nama_pegawai", "recipient_role", "judul_notifikasi", "ringkasan", "waktu"],
+    editable: true,
+  },
+  {
+    id: "reminder-internal-deadline",
+    category: "reminder_internal",
+    title: "Reminder Internal - Batas Waktu",
+    body:
+      "Assalamu'alaikum {{nama_pegawai}}.\n\nPengingat tindak lanjut:\nPerihal: {{perihal}}\nBatas waktu: {{deadline}}\nDetail:\n{{ringkasan}}\n\nMohon diselesaikan sebelum batas waktu apabila sudah sesuai kewenangan.",
+    placeholders: ["nama_pegawai", "perihal", "deadline", "ringkasan"],
+    editable: true,
+  },
 ];
+
+/**
+ * Apakah isi pesan yang tersimpan masih berupa bawaan versi lama?
+ *
+ * Dipakai saat update aplikasi: hanya isi pesan yang PERSIS sama dengan salah
+ * satu bawaan lama yang boleh diganti dengan bawaan baru. Isi pesan yang sudah
+ * disunting sendiri oleh admin tidak pernah ditimpa, sekecil apa pun ubahannya.
+ */
+export function isReplaceableLegacyTemplateBody(templateId: string, storedBody: string) {
+  const legacyBodies = LEGACY_DEFAULT_TEMPLATE_BODIES[templateId] ?? [];
+  return legacyBodies.includes(storedBody);
+}
+
+/** Isi pesan bawaan versi sebelumnya, per id isi pesan. */
+export function listLegacyTemplateBodies(templateId: string): string[] {
+  return [...(LEGACY_DEFAULT_TEMPLATE_BODIES[templateId] ?? [])];
+}
+
+/** Isi pesan bawaan versi sekarang, per id isi pesan. */
+export function getDefaultTemplateBody(templateId: string): string | null {
+  return DEFAULT_TEMPLATES.find((template) => template.id === templateId)?.body ?? null;
+}
+
+/** Seluruh isi pesan bawaan versi sekarang. Dipakai pemeriksa isi pesan. */
+export function listAletaBotTemplateDefaults() {
+  return DEFAULT_TEMPLATES.map((template) => ({ ...template }));
+}
+
+/** Notifikasi bawaan versi sekarang, per id notifikasi. */
+export function getAletaBotDefaultNotification(notificationId: string) {
+  return DEFAULT_NOTIFICATIONS.find((notification) => notification.id === notificationId) ?? null;
+}
+
+/**
+ * Menyisipkan tahap agenda ke pengaturan jadwal yang SUDAH tersimpan.
+ *
+ * Notifikasi disimpan dengan ON CONFLICT DO NOTHING, sehingga instalasi yang
+ * sudah berjalan tidak pernah menerima kolom baru dari pembaruan aplikasi.
+ * Tanpa penyisipan ini, penyaringan agenda hanya bekerja pada pemasangan baru -
+ * dan justru server produksi yang tidak mendapatkannya.
+ *
+ * Penyisipannya sengaja bedah-kecil: hanya menambahkan satu kunci dan
+ * mempertahankan sisanya apa adanya, supaya jam cron yang sudah disesuaikan
+ * admin tidak ikut dikembalikan ke bawaan.
+ *
+ * @returns JSON baru yang harus disimpan, atau null bila tidak perlu diubah
+ */
+export function mergeAgendaStageIntoScheduleConfig(
+  storedJson: string | null | undefined,
+  defaultStage: string
+): string | null {
+  if (!defaultStage) return null;
+  // Baris tanpa pengaturan jadwal sama sekali tidak dibetulkan di sini.
+  // Membuatkan pengaturan baru berarti menebak jam kirimnya, dan menebak jam
+  // kirim notifikasi ke pihak jauh lebih berbahaya daripada membiarkannya.
+  if (!storedJson || !String(storedJson).trim()) return null;
+
+  let parsed: Record<string, unknown>;
+  try {
+    const raw: unknown = JSON.parse(String(storedJson));
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    parsed = raw as Record<string, unknown>;
+  } catch {
+    // JSON rusak dibiarkan utuh supaya kerusakannya terlihat saat diperiksa,
+    // bukan tertimpa diam-diam oleh pembaruan aplikasi.
+    return null;
+  }
+
+  // Nilai yang sudah ada dihormati, termasuk bila admin sengaja mengosongkannya
+  // untuk mematikan penyaringan agenda.
+  if ("agendaStage" in parsed) return null;
+
+  return JSON.stringify({ ...parsed, agendaStage: defaultStage });
+}
+
+const LEGACY_DEFAULT_TEMPLATE_BODIES: Record<string, string[]> = {
+  "perkara-baru": [
+    // Memakai pemendek tautan s.id - salah satu pemicu pemblokiran WhatsApp
+    // yang paling sering; diganti domain resmi pengadilan (v1.12.1).
+    "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\n\nDetail Perkara Baru:\n- Nama: Sdr/Sdri *{{nama_pihak}}*\n- Nomor Perkara: *{{nomor_perkara}}*\n\n{{ringkasan}}\n\nInformasi tambahan:\n- Ini adalah notifikasi, anda tidak perlu membalasnya. Panggilan resmi akan disampaikan oleh Jurusita/Petugas Pos ke rumah Anda atau melalui Desa/Kelurahan.\n- Untuk informasi lebih lanjut, ketik \"perkara\" atau hubungi *0822-7111-5021*.\n- Mohon isi survei di https://s.id/LTYh1",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara:\nNomor: {{nomor_perkara}}\nAgenda awal: {{agenda}}\n\nData ini sebagai pemberitahuan awal. Untuk informasi resmi lanjutan, silakan hubungi layanan pengadilan.",
+    "Assalamu'alaikum.\n\nHalo, saya ALETA Bot. Perkara {{nomor_perkara}} atas nama {{nama_pihak}} telah terdaftar dengan agenda {{agenda}}.\n\nPesan ini adalah notifikasi otomatis.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nPerkara {{nomor_perkara}} telah terdaftar.\nAgenda awal: {{agenda}}\n\nJika membutuhkan informasi lanjutan, silakan hubungi layanan resmi pengadilan.",
+  ],
+  "pihak-tunda-sidang": [
+    // Memakai HURUF KAPITAL untuk penekanan; diganti huruf tebal WhatsApp
+    // (v1.15.0).
+    "Assalamu'alaikum Warahmatullahi Wabarakatuh,\n\nSdr/Sdri *{{nama_pihak}}*, sidang perkara Nomor *{{nomor_perkara}}* yang sebelumnya dijadwalkan TIDAK JADI dilaksanakan pada hari tersebut.\n\n{{ringkasan}}\n\nYang perlu Anda lakukan:\n- Tidak perlu datang ke pengadilan pada jadwal yang lama.\n- Jadwal pengganti akan disampaikan melalui panggilan resmi oleh Jurusita atau Petugas Pos.\n\nIni adalah notifikasi, anda tidak perlu membalasnya.\nInfo lebih lanjut hubungi *0822-7111-5021*.",
+  ],
+  "jadwal-sidang": [
+    // Belum memuat {{persiapan_sidang}}, sehingga pihak hanya membaca agenda
+    // mentah dari SIPP ("Pemeriksaan Saksi") tanpa tahu apa yang harus dibawa
+    // ke persidangan (v1.13.0).
+    "Assalamualaikum Warahmatullahi Wabarakatuh,\n\nHalo, saya Aleta, Bot Pengadilan.\n\nDetail Sidang Perkara:\n- Nama: Sdr/Sdri *{{nama_pihak}}*\n- Nomor Perkara: *{{nomor_perkara}}*\n\n{{ringkasan}}\n\nInformasi Tambahan:\n- Pesan ini adalah notifikasi, anda tidak perlu membalasnya. Panggilan resmi sebelumnya disampaikan oleh Jurusita/Petugas Pos.\n- Untuk daftar antrian online, ikuti petunjuk yang tercantum pada informasi perkara apabila tersedia.\n- Info lebih lanjut, ketik \"perkara\" atau hubungi WhatsApp: *0822-7111-5021*.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi jadwal sidang:\nNomor: {{nomor_perkara}}\nHari/tanggal: {{hari_sidang}}, {{tanggal_sidang}}\nRuang: {{ruangan}}\nAgenda: {{agenda}}\n\nMohon hadir tepat waktu dan membawa dokumen yang diperlukan.",
+    "Assalamu'alaikum.\n\nPerkara {{nomor_perkara}} dijadwalkan sidang pada {{hari_sidang}}, {{tanggal_sidang}} di ruang {{ruangan}} dengan agenda {{agenda}}.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nJadwal sidang perkara {{nomor_perkara}}:\nHari/tanggal: {{hari_sidang}}, {{tanggal_sidang}}\nRuang: {{ruangan}}\nAgenda: {{agenda}}\n\nMohon hadir tepat waktu dan membawa dokumen yang diperlukan.",
+  ],
+  "akta-cerai": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi akta cerai:\nNomor: {{nomor_perkara}}\nStatus: Akta cerai telah tersedia.\n\nSilakan mengikuti prosedur pengambilan pada layanan PTSP pengadilan.",
+    "Akta cerai untuk perkara {{nomor_perkara}} telah tersedia. Silakan mengikuti prosedur pengambilan pada layanan PTSP.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nAkta cerai untuk perkara {{nomor_perkara}} telah tersedia.\n\nSilakan mengikuti prosedur pengambilan pada layanan PTSP pengadilan.",
+  ],
+  "sisa-panjar": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi panjar perkara:\nNomor: {{nomor_perkara}}\nSisa panjar: {{sisa_panjar}}\n\nUntuk rincian atau pengambilan, silakan menghubungi petugas kasir/PTSP pengadilan.",
+    "Informasi biaya perkara {{nomor_perkara}}: sisa panjar saat ini {{sisa_panjar}}. Mohon hubungi petugas bila memerlukan rincian.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi biaya perkara {{nomor_perkara}}:\nSisa panjar: {{sisa_panjar}}\n\nUntuk rincian atau pengambilan, silakan menghubungi petugas kasir/PTSP pengadilan.",
+  ],
+  "balasan-otomatis": [
+    "Halo, saya ALETA Bot. Ketik info lengkap, perkara, sidang hari ini, atau akta#nomor perkara untuk layanan informasi.",
+  ],
+  "fallback-error": [
+    "Maaf, ALETA Bot belum dapat memproses permintaan tersebut. Silakan coba beberapa saat lagi.",
+  ],
+  "admin-test": ["Tes ALETA Bot berhasil pada {{waktu}}. Mode: {{mode}}."],
+  "pegawai-monitoring": [
+    // Nama pegawai sempat ditebalkan pada v1.7.1.
+    "*{{nama_pegawai}}* — {{jabatan}}\n\n{{judul_notifikasi}}:\n\n{{ringkasan}}",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nMohon dicek dan ditindaklanjuti sesuai tugas masing-masing.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n\n{{ringkasan}}\n\nSumber: ALETA Bot.",
+    // Sapaan "saya Aleta" dihapus untuk pesan internal pegawai (v1.7.1).
+    "*_Hai {{nama_pegawai}}, saya Aleta, berikut data keadaan perkara :_*\n\n*{{judul_notifikasi}}*\n\n{{ringkasan}}",
+  ],
+  "pegawai-monitoring-ringkas": [
+    // Nama pegawai sempat ditebalkan pada v1.7.1.
+    "*{{nama_pegawai}}* — {{jabatan}}\n\nRingkasan keadaan perkara sampai sore ini:\n\n{{ringkasan}}\n\nData per {{waktu}}.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\nPembaruan singkat:\n{{ringkasan}}\n\nWaktu data: {{waktu}}.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\nBerikut pembaruan dari ALETA Bot:\n\n{{ringkasan}}\n\nWaktu data: {{waktu}}.",
+    "*Hai {{nama_pegawai}}, mengingatkan kembali tentang situasi keadaan perkara sampai sore hari ini :*\n\n{{ringkasan}}\n\nWaktu data: {{waktu}}.",
+  ],
+  "hakim-jadwal-tugas-sidang": [
+    // Nama pegawai sempat ditebalkan pada v1.7.1.
+    "*{{nama_pegawai}}* — {{jabatan}}\n\n{{judul_notifikasi}}:\n\n{{ringkasan}}\n\nMohon disiapkan sebelum sidang dimulai.",
+    "Assalamu'alaikum Yang Mulia {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nSemoga menjadi pengingat singkat untuk agenda persidangan.",
+    "Assalamu'alaikum Yang Mulia {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n\n{{ringkasan}}\n\nPesan ini dikirim otomatis sebagai pengingat tugas persidangan.",
+    "*_Hai, Saya Aleta, mengingatkan kembali persiapan untuk {{nama_pegawai}} :_*\n\n*{{judul_notifikasi}}*\n\n{{ringkasan}}",
+  ],
+  "kepaniteraan-monitoring-perkara": [
+    // Nama pegawai sempat ditebalkan pada v1.7.1.
+    "*{{nama_pegawai}}* — {{jabatan}}\n\nPerkara berikut perlu ditindaklanjuti:\n\n{{ringkasan}}\n\nMohon ditindaklanjuti sesuai kewenangan.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\nMohon perhatian untuk data berikut:\n\n{{ringkasan}}\n\nSilakan ditindaklanjuti sesuai kewenangan masing-masing.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\nMohon perhatian untuk data berikut:\n{{ringkasan}}\n\nSilakan ditindaklanjuti sesuai kewenangan.",
+  ],
+  "kesekretariatan-info-internal": [
+    // Nama pegawai sempat ditebalkan pada v1.7.1.
+    "*{{nama_pegawai}}* — {{jabatan}}\n\n{{judul_notifikasi}}:\n\n{{ringkasan}}",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n\n{{ringkasan}}\n\nTerima kasih.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\n{{judul_notifikasi}}\n{{ringkasan}}\n\nTerima kasih.",
+  ],
+  "disposition-deadline-h-minus-1": [
+    // Nama pegawai sempat ditebalkan pada v1.7.1.
+    "*{{nama_pegawai}}* — {{jabatan}}\n\nDisposisi berikut jatuh tempo besok:\nPerihal: {{perihal}}\nBatas tindak lanjut: {{deadline}}\n\nMohon diselesaikan sebelum batas waktu tersebut.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\nPengingat disposisi: Surat \"{{perihal}}\" jatuh tempo pada {{deadline}}. Mohon segera ditindaklanjuti.\n\nPesan ini masih disiapkan dalam mode simulasi/dry-run sampai disetujui.",
+    "Assalamu'alaikum {{nama_pegawai}}.\n\nPengingat disposisi:\nPerihal: {{perihal}}\nBatas tindak lanjut: {{deadline}}\n\nMohon diselesaikan sebelum batas waktu apabila sudah sesuai kewenangan.",
+  ],
+  "manajemen-surat-baru": [
+    "Assalamu'alaikum {{recipient_name}}.\n\nAda surat {{jenis_surat}} baru di ALETA.\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\n\nSilakan buka aplikasi ALETA untuk menindaklanjuti.",
+  ],
+  "manajemen-surat-disposisi": [
+    "Assalamu'alaikum {{recipient_name}}.\n\nAda disposisi surat untuk Anda.\nNomor: {{nomor_surat}}\nPerihal: {{perihal}}\nInstruksi: {{instruksi}}\n\nSilakan buka aplikasi ALETA untuk menindaklanjuti.",
+  ],
+  "pihak-layanan": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nUntuk informasi lebih lanjut, silakan hubungi layanan resmi pengadilan.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPesan otomatis ALETA Bot.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nUntuk informasi lebih lanjut, silakan hubungi layanan resmi pengadilan.",
+  ],
+  "pihak-perkara-jadwal-sidang": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi jadwal perkara:\nNomor: {{nomor_perkara}}\nDetail:\n{{ringkasan}}\n\nMohon hadir sesuai jadwal dan membawa dokumen yang diperlukan.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nMohon hadir sesuai jadwal dan membawa dokumen yang diperlukan. Pesan ini adalah notifikasi otomatis.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nJadwal perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nMohon hadir sesuai jadwal dan membawa dokumen yang diperlukan.",
+  ],
+  "pihak-perkara-akta-cerai": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi akta cerai:\nNomor: {{nomor_perkara}}\nStatus: Akta cerai telah tersedia/terdata.\nDetail:\n{{ringkasan}}\n\nUntuk pengambilan atau konfirmasi, silakan hubungi PTSP pengadilan.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nAkta cerai untuk perkara {{nomor_perkara}} telah tersedia/terdata dalam layanan pengadilan.\n\n{{ringkasan}}\n\nUntuk informasi pengambilan, silakan hubungi PTSP pengadilan.",
+    "Assalamu'alaikum {{nama_pihak}}.\n\nAkta cerai perkara {{nomor_perkara}} telah tersedia.\n{{ringkasan}}\n\nUntuk pengambilan atau konfirmasi, silakan hubungi PTSP pengadilan.",
+  ],
+  "pihak-perkara-putusan": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nUntuk salinan atau penjelasan layanan, silakan menghubungi PTSP pengadilan.",
+  ],
+  "pihak-perkara-penundaan-sidang": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nAda pembaruan jadwal untuk perkara {{nomor_perkara}}.\n{{ringkasan}}\n\nMohon memperhatikan jadwal terbaru dari pengadilan.",
+  ],
+  "pihak-perkara-panggilan": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nPengingat perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nPanggilan resmi tetap mengikuti ketentuan hukum acara dan disampaikan oleh petugas yang berwenang.",
+  ],
+  "pihak-perkara-panjar-habis": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi biaya perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nSilakan menghubungi kasir/PTSP pengadilan untuk memastikan rincian dan tindak lanjut.",
+  ],
+  "pihak-perkara-mediasi": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nPengingat mediasi perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nMohon hadir tepat waktu dan membawa dokumen yang diperlukan.",
+  ],
+  "pihak-kuasa-koordinasi": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nInformasi untuk kuasa hukum pada perkara {{nomor_perkara}}:\n{{ringkasan}}\n\nSilakan berkoordinasi melalui kanal resmi pengadilan apabila diperlukan.",
+  ],
+  "pihak-validasi-kontak": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nKami perlu memastikan data kontak untuk perkara {{nomor_perkara}}.\n{{ringkasan}}\n\nJika ada perubahan nomor, silakan menghubungi petugas layanan pengadilan.",
+  ],
+  "masyarakat-info-layanan": [
+    "Assalamu'alaikum {{nama_pihak}}.\n\nBerikut informasi layanan pengadilan:\n{{ringkasan}}\n\nJika membutuhkan bantuan lanjutan, silakan hubungi petugas layanan resmi pengadilan.",
+  ],
+  "instansi-koordinasi-layanan": [
+    "Yth. {{nama_instansi}}.\n\nKami menyampaikan informasi koordinasi berikut:\n{{ringkasan}}\n\nApabila diperlukan konfirmasi, silakan menghubungi kanal resmi pengadilan.",
+  ],
+};
 
 const DEFAULT_JOBS: Array<Omit<AletaBotJob, "lastRunAt" | "lastStatus" | "lastMessage" | "updatedAt">> = [
   {
     id: "ketua-penerimaan-perkara",
     name: "Rekap Penerimaan Perkara Ketua",
-    description: "Diambil dari app.js sendKetuaPenerimaanPerkara dan notifikasi.getTotalPenerimaanPerkaraSemuaHakimLengkap.",
+    description: "Rekap penerimaan perkara dan mediasi bulanan untuk Ketua dari sumber data notifikasi lama.",
     enabled: false,
     scheduleCron: "50 07 1 * *",
   },
@@ -1000,14 +1894,14 @@ const DEFAULT_JOBS: Array<Omit<AletaBotJob, "lastRunAt" | "lastStatus" | "lastMe
   {
     id: "penjaga-sidang-hari-ini",
     name: "Penjaga Sidang Hari Ini",
-    description: "Diambil dari app.js sendPenjagaSidangHariIni dan notifikasi.getDataJadwalSidangPerdata.",
+    description: "Pengingat jadwal sidang hari ini untuk petugas sidang internal.",
     enabled: false,
     scheduleCron: "10 07 * * Monday-Friday",
   },
   {
     id: "penjaga-sidang-besok",
     name: "Penjaga Sidang Besok",
-    description: "Diambil dari app.js sendPenjagaSidangBesok dan notifikasi.getDataJadwalBesok.",
+    description: "Pengingat jadwal sidang besok untuk petugas sidang internal.",
     enabled: false,
     scheduleCron: "00 20 * * *",
   },
@@ -1021,14 +1915,14 @@ const DEFAULT_JOBS: Array<Omit<AletaBotJob, "lastRunAt" | "lastStatus" | "lastMe
   {
     id: "pihak-hari-sidang",
     name: "Notifikasi Pihak Hari Sidang",
-    description: "Diambil dari app.js sendMessageHariSidang dan notifikasi.getDataPihakHariSidang.",
+    description: "Pengingat kepada pihak perkara pada hari sidang.",
     enabled: false,
     scheduleCron: "00 07 * * *",
   },
   {
     id: "pihak-sebelum-sidang",
     name: "Notifikasi Pihak Sebelum Sidang",
-    description: "Diambil dari app.js sendMessageSebelumHariSidang dan notifikasi.getDataPihakSebelumHariSidang.",
+    description: "Pengingat kepada pihak perkara sebelum tanggal sidang.",
     enabled: false,
     scheduleCron: "00 09 * * *",
   },
@@ -1050,7 +1944,7 @@ const DEFAULT_QUERIES: Array<
 > = [
   {
     id: "legacy-ketua-penerimaan-perkara",
-    name: "legacy.notifikasi.ketuaPenerimaanPerkara",
+    name: "Ketua - Rekap Penerimaan Perkara Bulanan",
     category: "employee",
     description: "Gabungan getTotalPenerimaanPerkaraSemuaHakimLengkap, Mediasi, Panitera, dan Jurusita dari app.js.",
     sqlText:
@@ -1061,7 +1955,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-panitera-monitoring-bulanan",
-    name: "legacy.notifikasi.paniteraMonitoringBulanan",
+    name: "Kepaniteraan - Monitoring Perkara Bulanan",
     category: "employee",
     description: "Monitoring BAS, minutasi, BHT, relaas, panjar, delegasi, e-doc, dan perkara tertunda untuk Panitera.",
     sqlText:
@@ -1072,7 +1966,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-jadwal-sidang-internal",
-    name: "legacy.notifikasi.jadwalSidangInternal",
+    name: "Pegawai - Jadwal Sidang Internal",
     category: "employee",
     description: "Jadwal sidang dan mediasi hari ini/besok untuk penjaga sidang, hakim, dan panitera.",
     sqlText:
@@ -1083,7 +1977,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-kasir-panjar",
-    name: "legacy.notifikasi.kasirPanjar",
+    name: "Kasir/PTSP - Pengingat Panjar dan Penetapan",
     category: "employee",
     description: "Pengingat sisa panjar, meterai/redaksi, dan penetapan untuk kasir/PTSP.",
     sqlText: "legacy:notifikasi.getDataSisaPanjarPn,getDataMeteraiRedaksiPsp,getDataDaftarPenetapan",
@@ -1093,7 +1987,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-status-sidang-pegawai",
-    name: "legacy.notifikasi.statusSidangPegawai",
+    name: "Pegawai - Status Tugas Sidang dan Perkara",
     category: "employee",
     description: "Status minutasi, upload putusan, antrian sidang, relaas, delegasi, dan panggilan untuk Hakim/Panitera/Jurusita.",
     sqlText:
@@ -1104,7 +1998,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "portal-disposition-deadline-h-minus-1",
-    name: "portal.disposition.deadlineHMinus1",
+    name: "Manajemen Surat - Pengingat Deadline Disposisi H-1",
     category: "employee",
     description: "Draft aman untuk reminder H-1 deadline disposisi dari data Manajemen Surat. Eksekusi real tetap harus melalui dry-run dan approval.",
     sqlText:
@@ -1115,7 +2009,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-pihak-baru",
-    name: "legacy.notifikasi.pihakBaru",
+    name: "Pihak Perkara - Perkara Baru",
     category: "party",
     description: "Data pihak, kuasa, turut tergugat, dan intervensi untuk notifikasi perkara baru.",
     sqlText: "legacy:notifikasi.getDataPihakBaru",
@@ -1125,7 +2019,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-pihak-hari-sidang",
-    name: "legacy.notifikasi.pihakHariSidang",
+    name: "Pihak Perkara - Pengingat Hari Sidang",
     category: "party",
     description: "Pengingat hari sidang untuk pihak/kuasa/turut/intervensi.",
     sqlText: "legacy:notifikasi.getDataPihakHariSidang",
@@ -1135,17 +2029,327 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-pihak-sebelum-sidang",
-    name: "legacy.notifikasi.pihakSebelumHariSidang",
+    name: "Pihak Perkara - Pengingat Sidang H-3",
     category: "party",
-    description: "Pengingat sebelum hari sidang untuk pihak perkara.",
+    description:
+      "Pengingat 3 hari sebelum sidang (H-3) untuk pihak perkara. SQL legacy memakai DATE_ADD(CURDATE(), INTERVAL 3 DAY).",
     sqlText: "legacy:notifikasi.getDataPihakSebelumHariSidang",
     outputColumns: ["nama_pihak", "nomor_perkara", "tanggal_sidang", "agenda", "ringkasan", "telepon", "nomor_hp"],
     recipientColumn: "telepon",
     isActive: true,
   },
   {
+    id: "sipp-pihak-sebelum-sidang-h1",
+    name: "Pihak Perkara - Pengingat Sidang H-1",
+    category: "party",
+    description:
+      "Pengingat 1 hari sebelum sidang (H-1) untuk penggugat/pemohon dan tergugat/termohon. Turunan dari SQL H-3 dengan INTERVAL 1 DAY, dapat disunting langsung dari tab Sumber Data.",
+    sqlText: `SELECT DISTINCT
+    a.nama AS nama_pihak,
+    b.telepon,
+    a.nomor_perkara,
+    a.jenis_perkara_nama,
+    CASE a.pihak_ke
+      WHEN 1 THEN 'Penggugat/Pemohon'
+      WHEN 2 THEN 'Tergugat/Termohon'
+      WHEN 3 THEN 'Intervensi'
+      WHEN 4 THEN 'Turut Tergugat'
+      ELSE 'Pihak'
+    END AS peran_pihak,
+    DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y') AS tanggal_sidang,
+    CASE DAYNAME(e.tanggal_sidang)
+      WHEN 'Monday' THEN 'Senin'
+      WHEN 'Tuesday' THEN 'Selasa'
+      WHEN 'Wednesday' THEN 'Rabu'
+      WHEN 'Thursday' THEN 'Kamis'
+      WHEN 'Friday' THEN 'Jumat'
+      WHEN 'Saturday' THEN 'Sabtu'
+      WHEN 'Sunday' THEN 'Minggu'
+      ELSE ''
+    END AS hari_sidang,
+    e.agenda,
+    e.ruangan,
+    CONCAT(
+      'Sidang perkara ', a.nomor_perkara,
+      ' dijadwalkan BESOK ', DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y'),
+      ' dengan agenda ', COALESCE(e.agenda, '-'),
+      ' di ruang ', COALESCE(e.ruangan, '-'), '.'
+    ) AS ringkasan,
+    c.petitum_dok
+FROM
+    v_pihak_perkara a
+    JOIN pihak b ON b.id = a.pihak_id
+                AND b.telepon REGEXP '^[0-9]'
+                AND CHAR_LENGTH(b.telepon) > 8
+    LEFT JOIN perkara c ON c.perkara_id = a.perkara_id
+    LEFT JOIN (
+        SELECT perkara_id, MAX(tanggal_sidang) AS tanggal_sidang_terakhir
+        FROM perkara_jadwal_sidang
+        GROUP BY perkara_id
+    ) AS subq ON c.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_jadwal_sidang e ON e.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_putusan f ON f.perkara_id = c.perkara_id
+    LEFT JOIN perkara_ikrar_talak g ON g.perkara_id = c.perkara_id
+WHERE
+    a.pihak_ke IN (1, 2, 3, 4)
+    AND e.tanggal_sidang = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+    AND c.alur_perkara_id IN (15, 16, 17)
+    AND (
+        CASE
+            WHEN c.jenis_perkara_id = 346 AND f.status_putusan_id = 62 AND g.amar_ikrar_talak IS NULL
+                THEN c.proses_terakhir_id < 296
+            ELSE c.proses_terakhir_id < 218
+        END
+    )
+
+UNION ALL
+
+SELECT DISTINCT
+    a.nama AS nama_pihak,
+    b.telepon,
+    c.nomor_perkara,
+    c.jenis_perkara_nama,
+    'Kuasa Hukum' AS peran_pihak,
+    DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y') AS tanggal_sidang,
+    CASE DAYNAME(e.tanggal_sidang)
+      WHEN 'Monday' THEN 'Senin'
+      WHEN 'Tuesday' THEN 'Selasa'
+      WHEN 'Wednesday' THEN 'Rabu'
+      WHEN 'Thursday' THEN 'Kamis'
+      WHEN 'Friday' THEN 'Jumat'
+      WHEN 'Saturday' THEN 'Sabtu'
+      WHEN 'Sunday' THEN 'Minggu'
+      ELSE ''
+    END AS hari_sidang,
+    e.agenda,
+    e.ruangan,
+    CONCAT(
+      'Sidang perkara ', c.nomor_perkara,
+      ' dijadwalkan BESOK ', DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y'),
+      ' dengan agenda ', COALESCE(e.agenda, '-'),
+      ' di ruang ', COALESCE(e.ruangan, '-'), '.'
+    ) AS ringkasan,
+    c.petitum_dok
+FROM
+    perkara_pengacara a
+    JOIN pihak b ON b.id = a.pengacara_id
+                AND b.telepon REGEXP '^[0-9]'
+                AND CHAR_LENGTH(b.telepon) > 8
+    LEFT JOIN perkara c ON c.perkara_id = a.perkara_id
+    LEFT JOIN (
+        SELECT perkara_id, MAX(tanggal_sidang) AS tanggal_sidang_terakhir
+        FROM perkara_jadwal_sidang
+        GROUP BY perkara_id
+    ) AS subq ON c.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_jadwal_sidang e ON e.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_putusan f ON f.perkara_id = c.perkara_id
+    LEFT JOIN perkara_ikrar_talak g ON g.perkara_id = c.perkara_id
+WHERE
+    e.tanggal_sidang = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+    AND c.alur_perkara_id IN (15, 16, 17)
+    AND (
+        CASE
+            WHEN c.jenis_perkara_id = 346 AND f.status_putusan_id = 62 AND g.amar_ikrar_talak IS NULL
+                THEN c.proses_terakhir_id < 296
+            ELSE c.proses_terakhir_id < 218
+        END
+    )`,
+    outputColumns: [
+      "nama_pihak",
+      "telepon",
+      "nomor_perkara",
+      "jenis_perkara_nama",
+      "peran_pihak",
+      "tanggal_sidang",
+      "hari_sidang",
+      "agenda",
+      "ruangan",
+      "ringkasan",
+      "petitum_dok",
+    ],
+    recipientColumn: "telepon",
+    isActive: true,
+  },
+  {
+    id: "sipp-pihak-sidang-per-tanggal",
+    name: "Pihak Perkara - Sidang pada Tanggal Tertentu",
+    category: "party",
+    description:
+      "Khusus Kirim Manual: isi parameter tanggal_sidang (format YYYY-MM-DD) untuk mengirim pengingat ke pihak yang bersidang pada tanggal itu. Tidak dipakai notifikasi terjadwal karena tanggalnya ditentukan operator.",
+    sqlText: `SELECT DISTINCT
+    a.nama AS nama_pihak,
+    b.telepon,
+    a.nomor_perkara,
+    a.jenis_perkara_nama,
+    CASE a.pihak_ke
+      WHEN 1 THEN 'Penggugat/Pemohon'
+      WHEN 2 THEN 'Tergugat/Termohon'
+      WHEN 3 THEN 'Intervensi'
+      WHEN 4 THEN 'Turut Tergugat'
+      ELSE 'Pihak'
+    END AS peran_pihak,
+    DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y') AS tanggal_sidang,
+    CASE DAYNAME(e.tanggal_sidang)
+      WHEN 'Monday' THEN 'Senin'
+      WHEN 'Tuesday' THEN 'Selasa'
+      WHEN 'Wednesday' THEN 'Rabu'
+      WHEN 'Thursday' THEN 'Kamis'
+      WHEN 'Friday' THEN 'Jumat'
+      WHEN 'Saturday' THEN 'Sabtu'
+      WHEN 'Sunday' THEN 'Minggu'
+      ELSE ''
+    END AS hari_sidang,
+    e.agenda,
+    e.ruangan,
+    CONCAT(
+      'Sidang perkara ', a.nomor_perkara,
+      ' dijadwalkan pada ', DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y'),
+      ' dengan agenda ', COALESCE(e.agenda, '-'),
+      ' di ruang ', COALESCE(e.ruangan, '-'), '.'
+    ) AS ringkasan,
+    c.petitum_dok
+FROM
+    v_pihak_perkara a
+    JOIN pihak b ON b.id = a.pihak_id
+                AND b.telepon REGEXP '^[0-9]'
+                AND CHAR_LENGTH(b.telepon) > 8
+    LEFT JOIN perkara c ON c.perkara_id = a.perkara_id
+    LEFT JOIN (
+        SELECT perkara_id, MAX(tanggal_sidang) AS tanggal_sidang_terakhir
+        FROM perkara_jadwal_sidang
+        GROUP BY perkara_id
+    ) AS subq ON c.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_jadwal_sidang e ON e.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_putusan f ON f.perkara_id = c.perkara_id
+    LEFT JOIN perkara_ikrar_talak g ON g.perkara_id = c.perkara_id
+WHERE
+    a.pihak_ke IN (1, 2, 3, 4)
+    AND e.tanggal_sidang = {{tanggal_sidang}}
+    AND c.alur_perkara_id IN (15, 16, 17)
+    AND (
+        CASE
+            WHEN c.jenis_perkara_id = 346 AND f.status_putusan_id = 62 AND g.amar_ikrar_talak IS NULL
+                THEN c.proses_terakhir_id < 296
+            ELSE c.proses_terakhir_id < 218
+        END
+    )
+
+UNION ALL
+
+SELECT DISTINCT
+    a.nama AS nama_pihak,
+    b.telepon,
+    c.nomor_perkara,
+    c.jenis_perkara_nama,
+    'Kuasa Hukum' AS peran_pihak,
+    DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y') AS tanggal_sidang,
+    CASE DAYNAME(e.tanggal_sidang)
+      WHEN 'Monday' THEN 'Senin'
+      WHEN 'Tuesday' THEN 'Selasa'
+      WHEN 'Wednesday' THEN 'Rabu'
+      WHEN 'Thursday' THEN 'Kamis'
+      WHEN 'Friday' THEN 'Jumat'
+      WHEN 'Saturday' THEN 'Sabtu'
+      WHEN 'Sunday' THEN 'Minggu'
+      ELSE ''
+    END AS hari_sidang,
+    e.agenda,
+    e.ruangan,
+    CONCAT(
+      'Sidang perkara ', c.nomor_perkara,
+      ' dijadwalkan pada ', DATE_FORMAT(e.tanggal_sidang, '%d-%m-%Y'),
+      ' dengan agenda ', COALESCE(e.agenda, '-'),
+      ' di ruang ', COALESCE(e.ruangan, '-'), '.'
+    ) AS ringkasan,
+    c.petitum_dok
+FROM
+    perkara_pengacara a
+    JOIN pihak b ON b.id = a.pengacara_id
+                AND b.telepon REGEXP '^[0-9]'
+                AND CHAR_LENGTH(b.telepon) > 8
+    LEFT JOIN perkara c ON c.perkara_id = a.perkara_id
+    LEFT JOIN (
+        SELECT perkara_id, MAX(tanggal_sidang) AS tanggal_sidang_terakhir
+        FROM perkara_jadwal_sidang
+        GROUP BY perkara_id
+    ) AS subq ON c.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_jadwal_sidang e ON e.perkara_id = subq.perkara_id
+    LEFT JOIN perkara_putusan f ON f.perkara_id = c.perkara_id
+    LEFT JOIN perkara_ikrar_talak g ON g.perkara_id = c.perkara_id
+WHERE
+    e.tanggal_sidang = {{tanggal_sidang}}
+    AND c.alur_perkara_id IN (15, 16, 17)
+    AND (
+        CASE
+            WHEN c.jenis_perkara_id = 346 AND f.status_putusan_id = 62 AND g.amar_ikrar_talak IS NULL
+                THEN c.proses_terakhir_id < 296
+            ELSE c.proses_terakhir_id < 218
+        END
+    )`,
+    outputColumns: [
+      "nama_pihak",
+      "telepon",
+      "nomor_perkara",
+      "jenis_perkara_nama",
+      "peran_pihak",
+      "tanggal_sidang",
+      "hari_sidang",
+      "agenda",
+      "ruangan",
+      "ringkasan",
+      "petitum_dok",
+    ],
+    recipientColumn: "telepon",
+    isActive: true,
+  },
+  {
+    id: "legacy-hakim-sidang-hari-ini",
+    name: "Hakim - Daftar Sidang Hari Ini",
+    category: "employee",
+    description:
+      "Daftar perkara yang disidangkan hari ini (nomor perkara, jam, ruang) plus jadwal mediasi, difilter per nama hakim penerima.",
+    sqlText: "legacy:notifikasi.getDataJadwalSidangPerdataHakim,getDataJadwalMediasiHakim",
+    outputColumns: ["nama_pegawai", "judul_notifikasi", "ringkasan", "nomor_perkara"],
+    recipientColumn: "",
+    isActive: true,
+  },
+  {
+    id: "legacy-panitera-sidang-hari-ini",
+    name: "Panitera - Daftar Sidang Hari Ini",
+    category: "employee",
+    description:
+      "Daftar perkara yang disidangkan hari ini (nomor perkara, jam, ruang) plus tunda mediasi, difilter per nama panitera pengganti penerima.",
+    sqlText: "legacy:notifikasi.getDataJadwalSidangPerdataPanitera,getDataTundaMediasiPanitera",
+    outputColumns: ["nama_pegawai", "judul_notifikasi", "ringkasan", "nomor_perkara"],
+    recipientColumn: "",
+    isActive: true,
+  },
+  {
+    id: "legacy-panitera-sidang-besok",
+    name: "Panitera - Daftar Sidang Besok",
+    category: "employee",
+    description:
+      "Daftar perkara yang disidangkan besok plus tunda mediasi, difilter per nama panitera pengganti. Setara pengingat malam sendPengingatPaniteraSidang pada aplikasi lama.",
+    sqlText: "legacy:notifikasi.getDataJadwalBesokPaniteraNew,getDataTundaMediasiPanitera",
+    outputColumns: ["nama_pegawai", "judul_notifikasi", "ringkasan", "nomor_perkara"],
+    recipientColumn: "",
+    isActive: true,
+  },
+  {
+    id: "legacy-jurusita-tunda-putusan",
+    name: "Jurusita - Tundaan Sidang dan Pemberitahuan Putusan",
+    category: "employee",
+    description:
+      "Perkara yang ditunda dan putusan yang belum diberitahukan, difilter per nama jurusita/jurusita pengganti penerima.",
+    sqlText:
+      "legacy:notifikasi.getDataTundaJurusitaNew,getDataPutusJurusitaNew,getDataPemberitahuanPutusanBelumJurusita",
+    outputColumns: ["nama_pegawai", "judul_notifikasi", "ringkasan", "nomor_perkara"],
+    recipientColumn: "",
+    isActive: true,
+  },
+  {
     id: "legacy-pihak-tunda-cuti",
-    name: "legacy.notifikasi.pihakTundaCuti",
+    name: "Pihak Perkara - Penundaan Sidang atau Cuti",
     category: "party",
     description: "Notifikasi penundaan sidang/cuti.",
     sqlText: "legacy:notifikasi.getDataPihakTundaCuti",
@@ -1155,7 +2359,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-pihak-akta-cerai",
-    name: "legacy.notifikasi.pihakAktaCerai",
+    name: "Pihak Perkara - Akta Cerai",
     category: "party",
     description: "Notifikasi akta cerai untuk Penggugat/Pemohon dan Tergugat/Termohon.",
     sqlText: "legacy:notifikasi.getDataPihakAktaCerai",
@@ -1165,7 +2369,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-pihak-sisa-panjar",
-    name: "legacy.notifikasi.pihakSisaPanjar",
+    name: "Pihak Perkara - Sisa Panjar atau Panjar Habis",
     category: "party",
     description: "Notifikasi sisa panjar atau kekurangan biaya perkara.",
     sqlText: "legacy:notifikasi.getDataPihakSisaPanjar,getDataHabisBiaya",
@@ -1175,7 +2379,7 @@ const DEFAULT_QUERIES: Array<
   },
   {
     id: "legacy-pihak-putusan",
-    name: "legacy.notifikasi.pihakPutusan",
+    name: "Pihak Perkara - Putusan Perkara",
     category: "party",
     description: "Notifikasi putusan kepada pihak/kuasa/turut/intervensi.",
     sqlText: "legacy:notifikasi.getDataPutusanPihak",
@@ -1184,8 +2388,43 @@ const DEFAULT_QUERIES: Array<
     isActive: true,
   },
   {
+    id: "public_online_queue",
+    name: "Pihak Perkara - Antrian Online Dinamis",
+    category: "party",
+    description:
+      "Catatan rujukan, BUKAN sumber data terjadwal. Antrian online dipicu pesan MASUK dari pihak ('daftar antrian#123.G.2026' untuk penggugat, 'antrian online#123.G.2026' untuk tergugat, atau 'ambil antrian' bila nomor WhatsApp sudah tercatat di perkara hari ini) dan ditangani aleta_bot/services/antrianOnlineService.js. Tombol Uji Sumber Data tidak berlaku untuk entri ini.",
+    sqlText: "runtime:antrianOnline.registerOnlineQueue",
+    outputColumns: ["nomor_perkara", "nomor_antrian", "status_umum", "pihak_antrian"],
+    recipientColumn: "",
+    isActive: true,
+  },
+  {
+    id: "template-publik-belum-terdaftar",
+    name: "Masyarakat Umum - Daftar Penerima Informasi Layanan",
+    category: "party",
+    description:
+      "Template sumber data untuk penerima yang belum tercatat sebagai pihak perkara. Admin dapat menyesuaikan SQL ke tabel/daftar nomor yang dipakai instansi.",
+    sqlText:
+      "SELECT nama AS nama_pihak, telepon, 'Informasi layanan pengadilan' AS ringkasan, 'Layanan pengadilan' AS nama_layanan FROM sumber_data_penerima_layanan LIMIT 100",
+    outputColumns: ["nama_pihak", "telepon", "ringkasan", "nama_layanan"],
+    recipientColumn: "telepon",
+    isActive: false,
+  },
+  {
+    id: "template-instansi-mitra",
+    name: "Instansi Mitra - Daftar Penerima Koordinasi",
+    category: "party",
+    description:
+      "Template sumber data untuk KUA, Dukcapil, Kepolisian, Pemerintah, atau instansi kerja sama lain. Sesuaikan SQL ke daftar kontak resmi yang tersedia.",
+    sqlText:
+      "SELECT nama_instansi, nama_kontak AS nama_pihak, telepon, 'Koordinasi layanan pengadilan' AS ringkasan, 'Koordinasi instansi' AS nama_layanan FROM sumber_data_instansi_mitra LIMIT 100",
+    outputColumns: ["nama_instansi", "nama_pihak", "telepon", "ringkasan", "nama_layanan"],
+    recipientColumn: "telepon",
+    isActive: false,
+  },
+  {
     id: "legacy-query-command-router",
-    name: "legacy.query.commandRouter",
+    name: "Aturan Jawaban - Router Query Chat Publik",
     category: "system",
     description: "Router command chat publik dari query.js, dipakai untuk balasan otomatis.",
     sqlText: "legacy:query.getData",
@@ -1193,10 +2432,15 @@ const DEFAULT_QUERIES: Array<
     recipientColumn: "",
     isActive: true,
   },
+  ...SIPP_ADDITIONAL_QUERY_DEFINITIONS,
+  ...LEGACY_NOTIFIKASI_QUERY_DEFINITIONS,
 ];
 
 const DEFAULT_NOTIFICATIONS: Array<
-  Omit<AletaBotNotification, "lastRunAt" | "lastStatus" | "lastMessage" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">
+  Omit<
+    AletaBotNotification,
+    "lastRunAt" | "lastStatus" | "lastMessage" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt" | "attachDocument"
+  > & { attachDocument?: boolean }
 > = [
   {
     id: "ketua-penerimaan-perkara",
@@ -1206,7 +2450,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-ketua-penerimaan-perkara",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { roleHints: ["ketua"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "hakim", roleHints: ["ketua"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "50 07 1 * *", trigger: "cron bulanan" },
     isActive: false,
     delayMs: 1500,
@@ -1220,7 +2464,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-panitera-monitoring-bulanan",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { roleHints: ["panitera"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", roleHints: ["panitera"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "50 07 1 * *", trigger: "cron bulanan" },
     isActive: false,
     delayMs: 1500,
@@ -1234,7 +2478,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-jadwal-sidang-internal",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { positionHints: ["sidang", "ptsp"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", positionHints: ["sidang", "ptsp"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "10 07 * * Monday-Friday", trigger: "cron pagi hari kerja" },
     isActive: false,
     delayMs: 1500,
@@ -1248,7 +2492,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-jadwal-sidang-internal",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { positionHints: ["sidang", "ptsp"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", positionHints: ["sidang", "ptsp"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "00 20 * * *", trigger: "cron malam" },
     isActive: false,
     delayMs: 1500,
@@ -1260,23 +2504,83 @@ const DEFAULT_NOTIFICATIONS: Array<
     category: "employee",
     description: "Pengingat sisa panjar, meterai/redaksi, dan penetapan untuk kasir/PTSP.",
     queryId: "legacy-kasir-panjar",
-    templateId: "pegawai-monitoring",
+    templateId: "pegawai-monitoring-ringkas",
     recipientSource: "users",
-    recipientMapping: { positionHints: ["kasir", "ptsp"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", positionHints: ["kasir", "ptsp"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "30 14 * * Monday-Thursday", trigger: "cron siang" },
     isActive: false,
     delayMs: 1500,
     retryLimit: 2,
   },
   {
-    id: "hakim-jadwal-sidang",
-    name: "Pengingat Hakim",
+    id: "hakim-sidang-hari-ini",
+    name: "Hakim - Sidang Hari Ini",
     category: "employee",
-    description: "Jadwal sidang/mediasi dan status minutasi/upload putusan untuk Hakim.",
-    queryId: "legacy-status-sidang-pegawai",
+    description:
+      "Daftar perkara yang disidangkan hari ini (nomor perkara, jam, ruang) untuk masing-masing Hakim, dikirim tiap pagi hari kerja.",
+    queryId: "legacy-hakim-sidang-hari-ini",
+    templateId: "hakim-jadwal-tugas-sidang",
+    recipientSource: "users",
+    recipientMapping: { audienceGroup: "hakim", roleHints: ["hakim"], source: "users.whatsapp_number" },
+    scheduleConfig: { type: "cron", cron: "00 07 * * Monday-Friday", trigger: "cron pagi hari kerja" },
+    isActive: false,
+    delayMs: 1500,
+    retryLimit: 2,
+  },
+  {
+    id: "panitera-sidang-hari-ini",
+    name: "Panitera - Sidang Hari Ini",
+    category: "employee",
+    description:
+      "Daftar perkara yang disidangkan hari ini (nomor perkara, jam, ruang) untuk masing-masing Panitera Pengganti, dikirim tiap pagi hari kerja. Difilter per nomor perkara yang dipegang, sehingga panitera struktural/kepaniteraan yang tidak bersidang otomatis tidak menerima pesan.",
+    queryId: "legacy-panitera-sidang-hari-ini",
+    templateId: "hakim-jadwal-tugas-sidang",
+    recipientSource: "users",
+    recipientMapping: { audienceGroup: "kepaniteraan", roleHints: ["panitera"], source: "users.whatsapp_number" },
+    scheduleConfig: { type: "cron", cron: "00 07 * * Monday-Friday", trigger: "cron pagi hari kerja" },
+    isActive: false,
+    delayMs: 1500,
+    retryLimit: 2,
+  },
+  {
+    id: "panitera-sidang-besok",
+    name: "Panitera - Sidang Besok",
+    category: "employee",
+    description:
+      "Daftar perkara yang disidangkan besok untuk masing-masing Panitera Pengganti, dikirim malam hari. Panitera yang tidak memegang perkara otomatis dilewati.",
+    queryId: "legacy-panitera-sidang-besok",
+    templateId: "hakim-jadwal-tugas-sidang",
+    recipientSource: "users",
+    recipientMapping: { audienceGroup: "kepaniteraan", roleHints: ["panitera"], source: "users.whatsapp_number" },
+    scheduleConfig: { type: "cron", cron: "00 20 * * Sunday-Thursday", trigger: "cron malam" },
+    isActive: false,
+    delayMs: 1500,
+    retryLimit: 2,
+  },
+  {
+    id: "jurusita-tunda-putusan",
+    name: "Jurusita - Tundaan Sidang dan Pemberitahuan Putusan",
+    category: "employee",
+    description:
+      "Pengingat perkara yang ditunda dan putusan yang belum diberitahukan untuk masing-masing Jurusita/Jurusita Pengganti.",
+    queryId: "legacy-jurusita-tunda-putusan",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { roleHints: ["hakim"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", roleHints: ["jurusita"], source: "users.whatsapp_number" },
+    scheduleConfig: { type: "cron", cron: "00 12 * * Monday-Friday", trigger: "cron siang hari kerja" },
+    isActive: false,
+    delayMs: 1500,
+    retryLimit: 2,
+  },
+  {
+    id: "hakim-jadwal-sidang",
+    name: "Hakim - Monitoring Minutasi dan Upload Putusan",
+    category: "employee",
+    description: "Status minutasi, upload putusan, dan antrian sidang untuk Hakim (bukan daftar sidang hari ini).",
+    queryId: "legacy-status-sidang-pegawai",
+    templateId: "hakim-jadwal-tugas-sidang",
+    recipientSource: "users",
+    recipientMapping: { audienceGroup: "hakim", roleHints: ["hakim"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "15 07 * * Monday-Friday; 00 20 * * Sunday-Thursday", trigger: "cron pagi dan malam" },
     isActive: false,
     delayMs: 1500,
@@ -1284,13 +2588,13 @@ const DEFAULT_NOTIFICATIONS: Array<
   },
   {
     id: "panitera-jadwal-sidang",
-    name: "Pengingat Panitera Sidang",
+    name: "Panitera - Monitoring BAS dan Minutasi",
     category: "employee",
-    description: "Jadwal sidang, tunda mediasi, BAS, dan minutasi untuk Panitera/Panitera Pengganti.",
+    description: "Status BAS, minutasi, dan tunda mediasi untuk Panitera/Panitera Pengganti (bukan daftar sidang hari ini).",
     queryId: "legacy-status-sidang-pegawai",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { roleHints: ["panitera"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", roleHints: ["panitera"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "00 07 * * Monday-Friday; 00 20 * * *", trigger: "cron pagi dan malam" },
     isActive: false,
     delayMs: 1500,
@@ -1304,7 +2608,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-status-sidang-pegawai",
     templateId: "pegawai-monitoring",
     recipientSource: "users",
-    recipientMapping: { roleHints: ["jurusita"], source: "users.whatsapp_number" },
+    recipientMapping: { audienceGroup: "kepaniteraan", roleHints: ["jurusita"], source: "users.whatsapp_number" },
     scheduleConfig: { type: "cron", cron: "00 12 * * Monday-Friday; 15 16 * * Monday-Friday; 00 09 * * Friday", trigger: "cron status dan relaas" },
     isActive: false,
     delayMs: 1500,
@@ -1320,6 +2624,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     recipientSource: "users",
     recipientMapping: {
       recipientColumn: "whatsapp_number",
+      audienceGroup: "kesekretariatan",
       source: "users.whatsapp_number",
       mode: "dry_run",
       idempotencyKeyPattern: "disposition_deadline_reminder:{dispositionId}:{deadlineDate}",
@@ -1337,7 +2642,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-pihak-baru",
     templateId: "perkara-baru",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
     scheduleConfig: { type: "cron", cron: "00 17 * * Monday-Friday", trigger: "cron sore hari kerja" },
     isActive: false,
     delayMs: 1500,
@@ -1351,7 +2656,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-pihak-hari-sidang",
     templateId: "jadwal-sidang",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
     scheduleConfig: { type: "cron", cron: "00 07 * * *", trigger: "cron pagi" },
     isActive: false,
     delayMs: 1500,
@@ -1359,28 +2664,57 @@ const DEFAULT_NOTIFICATIONS: Array<
   },
   {
     id: "pihak-sebelum-sidang",
-    name: "Notifikasi Pihak Sebelum Sidang",
+    name: "Pihak - Pengingat Sidang H-3",
     category: "party",
-    description: "Pengingat kepada pihak perkara sebelum jadwal sidang.",
+    description:
+      "Pengingat kepada pihak perkara 3 hari sebelum jadwal sidang. Hanya dikirim untuk agenda yang menuntut persiapan (saksi, bukti, mediasi); agenda jawab-menjawab cukup diingatkan pada H-1.",
     queryId: "legacy-pihak-sebelum-sidang",
     templateId: "jadwal-sidang",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
-    scheduleConfig: { type: "cron", cron: "00 09 * * *", trigger: "cron pagi" },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    scheduleConfig: { type: "cron", cron: "00 09 * * *", trigger: "cron pagi", agendaStage: "h3" },
     isActive: false,
     delayMs: 1500,
     retryLimit: 2,
   },
   {
-    id: "pihak-tunda-cuti",
-    name: "Notifikasi Tunda/Cuti",
+    id: "pihak-sebelum-sidang-h1",
+    name: "Pihak - Pengingat Sidang H-1",
     category: "party",
-    description: "Notifikasi penundaan sidang karena cuti atau jadwal khusus.",
-    queryId: "legacy-pihak-tunda-cuti",
-    templateId: "pihak-layanan",
+    description:
+      "Pengingat kepada pihak perkara 1 hari sebelum jadwal sidang (sidang besok). Dikirim sore hari agar sempat dibaca sebelum pihak mengatur keberangkatan esok pagi.",
+    queryId: "sipp-pihak-sebelum-sidang-h1",
+    templateId: "pihak-sidang-h1",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
-    scheduleConfig: { type: "cron", cron: "00 12 24 11 *", trigger: "cron khusus" },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    // 15:30, bukan 16:30. Jendela kirim mode Minimal berakhir pukul 16:00,
+    // sehingga pengiriman pukul 16:30 akan ditunda ke pembukaan jendela
+    // berikutnya - yaitu pagi hari sidang itu sendiri, saat pihak mungkin sudah
+    // berangkat. Pengingat H-1 yang tiba pada hari-H bukan lagi pengingat H-1.
+    scheduleConfig: { type: "cron", cron: "30 15 * * *", trigger: "cron sore", agendaStage: "h1" },
+    isActive: false,
+    // Kueri H-1 ikut mengambil kolom petitum_dok, sehingga tanpa penegasan ini
+    // pengingat pendek akan membawa lampiran PDF petitum. Pengingat sehari
+    // sebelum sidang harus ringan - lampiran membuatnya lambat terkirim dan
+    // menambah beban yang tidak dibutuhkan pihak.
+    attachDocument: false,
+    delayMs: 1500,
+    retryLimit: 2,
+  },
+  {
+    id: "pihak-tunda-cuti",
+    name: "Notifikasi Sidang Ditunda",
+    category: "party",
+    description:
+      "Memberi tahu pihak bahwa sidangnya tidak jadi dilaksanakan, sebelum mereka berangkat ke pengadilan.",
+    queryId: "legacy-pihak-tunda-cuti",
+    templateId: "pihak-tunda-sidang",
+    recipientSource: "query",
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    // Dua kali sehari di dalam jam kerja, supaya penundaan yang dicatat pagi
+    // masih sempat diberitahukan pada hari yang sama. Jadwal sebelumnya hanya
+    // berjalan sekali setahun (24 November) - sisa pengumuman cuti lama.
+    scheduleConfig: { type: "cron", cron: "00 09 * * *; 00 14 * * *", trigger: "cron pagi dan siang" },
     isActive: false,
     delayMs: 1500,
     retryLimit: 2,
@@ -1393,7 +2727,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-pihak-akta-cerai",
     templateId: "akta-cerai",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
     scheduleConfig: { type: "cron", cron: "00 16 * * *", trigger: "cron sore" },
     isActive: false,
     delayMs: 1500,
@@ -1407,8 +2741,10 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-pihak-sisa-panjar",
     templateId: "sisa-panjar",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
-    scheduleConfig: { type: "cron", cron: "00 19 * * *; 30 15 * * *", trigger: "cron sore" },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    // Dipindah ke dalam jam kirim aman. Jadwal 19:00 sebelumnya berada di luar
+    // jam kirim Mode Minimal, sehingga pesannya tertahan sampai pagi berikutnya.
+    scheduleConfig: { type: "cron", cron: "00 10 * * *", trigger: "cron pagi" },
     isActive: false,
     delayMs: 1500,
     retryLimit: 2,
@@ -1421,7 +2757,7 @@ const DEFAULT_NOTIFICATIONS: Array<
     queryId: "legacy-pihak-putusan",
     templateId: "pihak-layanan",
     recipientSource: "query",
-    recipientMapping: { recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
+    recipientMapping: { audienceGroup: "case_party", recipientColumn: "telepon", fallbackColumns: ["nomor_hp", "nomor_whatsapp"] },
     scheduleConfig: { type: "manual", cron: "", trigger: "manual/legacy app.js" },
     isActive: false,
     delayMs: 1500,
@@ -1430,6 +2766,7 @@ const DEFAULT_NOTIFICATIONS: Array<
 ];
 
 export const ALETA_BOT_QUERY_CATALOG: AletaBotQueryCatalogItem[] = [
+  ...LEGACY_NOTIFIKASI_QUERY_CATALOG,
   {
     id: "query-get-data",
     sourceFile: "query.js",
@@ -2234,7 +3571,9 @@ function sanitizeReminderSchedulerTime(value: string | undefined, fallback = "08
 function normalizeWhatsappNumber(input: string) {
   const digits = input.replace(/\D/g, "");
   if (!digits) return "";
-  return digits.startsWith("0") ? `62${digits.slice(1)}` : digits;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
 }
 
 function assertWhatsappNumber(input: string, label = "Nomor WhatsApp") {
@@ -2329,7 +3668,13 @@ function getPasswordSource(passwordSecret: string, passwordEnvKey: string) {
 
 function defaultConnectionKeyForQuery(query: Pick<AletaBotQuery, "id" | "sqlText"> | { id: string; sqlText: string }) {
   const text = `${query.id} ${query.sqlText}`.toLowerCase();
-  if (text.includes("antrian")) return "antrian_sidang";
+  if (
+    query.id === "public_online_queue" ||
+    text.includes("runtime:antrianonline") ||
+    text.includes("legacy:notifikasi.getdataantriansidang")
+  ) {
+    return "antrian_sidang";
+  }
   if (text.includes("aps") || text.includes("badilag")) return "aps_badilag";
   return "sipp_primary";
 }
@@ -2349,23 +3694,23 @@ function getTemplatePlaceholders(body: string) {
 function validateReadOnlyQuery(sqlText: string) {
   const trimmed = sqlText.trim();
   if (!trimmed) {
-    throw new ApiError(400, "SQL/query tidak boleh kosong.");
+    throw new ApiError(400, "SQL sumber data tidak boleh kosong.");
   }
   if (trimmed.startsWith("legacy:")) return trimmed;
 
   if (/;/.test(trimmed)) {
-    throw new ApiError(400, "Query dari UI tidak boleh memakai multiple statement atau tanda titik koma.");
+    throw new ApiError(400, "SQL sumber data tidak boleh memakai lebih dari satu perintah atau tanda titik koma.");
   }
   if (/(--|#|\/\*|\*\/)/.test(trimmed)) {
-    throw new ApiError(400, "Query dari UI tidak boleh memakai komentar SQL.");
+    throw new ApiError(400, "SQL sumber data tidak boleh memakai komentar SQL.");
   }
 
   const normalized = trimmed.replace(/\s+/g, " ").trim();
   if (!/^select\b/i.test(normalized)) {
-    throw new ApiError(400, "Query dari UI hanya boleh berupa SELECT atau referensi legacy:.");
+    throw new ApiError(400, "SQL sumber data hanya boleh berupa SELECT atau referensi jalur lama.");
   }
   if (/\b(insert|update|delete|drop|alter|truncate|create|replace|grant|revoke|exec|execute|call|copy)\b/i.test(normalized)) {
-    throw new ApiError(400, "Query mengandung perintah berbahaya dan diblokir.");
+    throw new ApiError(400, "SQL sumber data mengandung perintah berbahaya dan diblokir.");
   }
   return trimmed;
 }
@@ -2409,6 +3754,9 @@ function makeSampleRow(columns: string[]) {
     else if (/nama/i.test(column)) sample[column] = "Contoh Pihak";
     else if (/perkara/i.test(column)) sample[column] = "123/Pdt.G/2026/PA.Dgl";
     else if (/panjar|biaya/i.test(column)) sample[column] = "Rp125.000";
+    else if (/ringkasan|detail|daftar|data|hasil|informasi/i.test(column)) {
+      sample[column] = "Data contoh pertama untuk pratinjau aman.\nData contoh kedua untuk pratinjau aman.";
+    }
     else sample[column] = `contoh_${column}`;
   }
   return sample;
@@ -2429,12 +3777,94 @@ function summarizeQueryPreview(query: AletaBotQuery) {
   };
 }
 
+type AletaBotQueryHealthResult = {
+  ok: boolean;
+  status: "success" | "warning" | "failed";
+  startedAt?: string;
+  finishedAt?: string;
+  durationMs: number;
+  slow: boolean;
+  rowCount: number;
+  truncated?: boolean;
+  sampleRows: Array<Record<string, unknown>>;
+  message: string;
+  error: string | null;
+};
+
+function normalizeQueryHealthResult(input: unknown, fallbackQuery: AletaBotQuery): AletaBotQueryHealthResult {
+  const value = (input && typeof input === "object" ? input : {}) as Partial<AletaBotQueryHealthResult>;
+  const fallback = summarizeQueryPreview(fallbackQuery);
+  const status = value.status === "failed" ? "failed" : value.status === "warning" ? "warning" : "success";
+  return {
+    ok: value.ok !== false && status !== "failed",
+    status,
+    startedAt: typeof value.startedAt === "string" ? value.startedAt : undefined,
+    finishedAt: typeof value.finishedAt === "string" ? value.finishedAt : undefined,
+    durationMs: Math.max(0, Number(value.durationMs || 0)),
+    slow: Boolean(value.slow),
+    rowCount: Math.max(0, Number(value.rowCount || 0)),
+    truncated: Boolean(value.truncated),
+    sampleRows: Array.isArray(value.sampleRows) ? value.sampleRows.slice(0, 5) : fallback.sampleRows,
+    message: typeof value.message === "string" && value.message.trim() ? value.message : fallback.message,
+    error: typeof value.error === "string" && value.error.trim() ? value.error : null,
+  };
+}
+
+async function checkSavedQueryHealth(query: AletaBotQuery): Promise<AletaBotQueryHealthResult> {
+  if (getWhatsappRuntimeMode() !== "aleta_bot") {
+    const previewPayload = summarizeQueryPreview(query);
+    return {
+      ok: true,
+      status: "success",
+      durationMs: 0,
+      slow: false,
+      rowCount: previewPayload.sampleRows.length,
+      sampleRows: previewPayload.sampleRows,
+      message: `${previewPayload.message} Runtime aleta_bot tidak aktif, jadi health check live tidak dijalankan.`,
+      error: null,
+    };
+  }
+
+  try {
+    const response = await callAletaBotRuntime<{ health?: unknown }>("/internal/aleta-bot/query/health-check", {
+      method: "POST",
+      body: JSON.stringify({
+        query: {
+          id: query.id,
+          name: query.name,
+          category: query.category,
+          sqlText: query.sqlText,
+          outputColumns: query.outputColumns,
+          recipientColumn: query.recipientColumn,
+          connectionKey: query.connectionKey,
+        },
+        maxRows: 20,
+        sampleLimit: 5,
+        slowMs: 3000,
+      }),
+    });
+    return normalizeQueryHealthResult(response.health, query);
+  } catch (error) {
+    return {
+      ok: false,
+      status: "failed",
+      durationMs: 0,
+      slow: false,
+      rowCount: 0,
+      sampleRows: [],
+      message: "Health check sumber data gagal karena runtime ALETA Bot belum dapat membaca query.",
+      error: error instanceof Error ? error.message : "Runtime ALETA Bot tidak dapat dihubungi.",
+    };
+  }
+}
+
 function mapSettings(row: SettingsRow): AletaBotSettings {
   return {
     botEnabled: Boolean(row.bot_enabled),
     notificationsEnabled: Boolean(row.notifications_enabled),
     adminWhatsappNumber: row.admin_whatsapp_number,
     messageDelayMs: row.message_delay_ms,
+    sendingRiskLevel: resolveSendingRiskPreset(row.sending_risk_level).level,
     retryLimit: row.retry_limit,
     dryRunEnabled: Boolean(row.dry_run_enabled),
     scheduleCron: row.schedule_cron,
@@ -2507,6 +3937,11 @@ function mapQuery(row: QueryRow, usedByNotifications: string[] = []): AletaBotQu
     lastTestedAt: row.last_tested_at,
     lastTestStatus: row.last_test_status,
     lastTestError: row.last_test_error,
+    lastTestDurationMs: Number(row.last_test_duration_ms || 0),
+    lastTestRowCount: Number(row.last_test_row_count || 0),
+    lastTestSampleRows: parseJson<Array<Record<string, unknown>>>(row.last_test_sample_json, []),
+    lastTestSlow: Boolean(row.last_test_slow),
+    lastTestMessage: row.last_test_message,
     createdBy: row.created_by,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
@@ -2562,6 +3997,7 @@ function mapNotification(row: NotificationRow): AletaBotNotification {
       }),
     },
     isActive: Boolean(row.is_active),
+    attachDocument: row.attach_document === undefined || row.attach_document === null ? true : Boolean(row.attach_document),
     delayMs: row.delay_ms,
     retryLimit: row.retry_limit,
     lastRunAt: row.last_run_at,
@@ -2583,6 +4019,8 @@ function mapEmployeeRecipient(row: EmployeeRecipientRow): AletaBotEmployeeRecipi
     roleId: row.role_id,
     positionId: row.position_id,
     positionName: row.position_name ?? "",
+    unitKerja: row.unit_kerja ?? "",
+    additionalRoleIds: normalizeAdditionalRoleIds(parseJson<unknown>(row.additional_role_ids_json || "[]", [])),
     whatsappNumber,
     whatsappChatId: whatsappNumber ? `${whatsappNumber}@c.us` : "",
   };
@@ -2598,6 +4036,8 @@ function mapNotificationLog(row: NotificationLogRow): AletaBotNotificationLogEnt
     category: row.category,
     messagePreview: row.message_preview,
     status: row.status,
+    whatsappMessageId: row.whatsapp_message_id || "",
+    ack: row.ack === null || row.ack === undefined ? null : Number(row.ack),
     errorMessage: row.error_message,
     sourceApp: row.source_app || "",
     sourceFeature: row.source_feature || row.category,
@@ -2605,6 +4045,9 @@ function mapNotificationLog(row: NotificationLogRow): AletaBotNotificationLogEnt
     entityId: row.entity_id || "",
     metadata: parseJson<Record<string, unknown>>(row.metadata_json || "{}", {}),
     sentAt: row.sent_at,
+    deliveredAt: row.delivered_at,
+    readAt: row.read_at,
+    failedAt: row.failed_at,
     createdAt: row.created_at,
   };
 }
@@ -2645,6 +4088,8 @@ function mapPublicQaIntent(row: PublicQaIntentRow): AletaBotPublicQaIntent {
     requiresCaseNumber: Boolean(row.requires_case_number),
     maxAttempts: Number(row.max_attempts || 2),
     fallbackMessage: row.fallback_message,
+    answerTemplate: row.answer_template || "",
+    matchKeywords: parseJson<string[]>(row.match_keywords_json || "[]", []),
     riskLevel: row.risk_level,
     notes: row.notes,
     aiAnswerEnabled: Boolean(row.ai_answer_enabled),
@@ -2697,6 +4142,23 @@ function mapPublicQaLog(row: PublicQaLogRow): AletaBotPublicQaLogEntry {
     reviewedAt: row.reviewed_at,
     reviewNote: row.review_note || "",
     createdAt: row.created_at,
+  };
+}
+
+function mapPublicQaKnowledge(row: PublicQaKnowledgeRow) {
+  return {
+    id: row.id,
+    key: row.key,
+    title: row.title,
+    category: row.category,
+    audience: row.audience,
+    keywords: parseJson<string[]>(row.keywords_json, []),
+    answer: row.answer,
+    sourceLabel: row.source_label,
+    sourceUrl: row.source_url,
+    priority: Number(row.priority || 50),
+    isActive: Boolean(row.is_active),
+    updatedAt: row.updated_at,
   };
 }
 
@@ -2802,25 +4264,82 @@ function mapPortalProviderToBot(providerId: string) {
   return providerId;
 }
 
+/**
+ * Menentukan apakah API key AI dibiarkan di env container ALETA Bot (portal
+ * tidak mengirim secret), atau dikirim langsung dari Pengaturan AI portal.
+ *
+ * ALETA_BOT_ALLOW_VOLATILE_AI_SECRET=true adalah pilihan sadar operator: key
+ * dikirim lewat jalur internal bertoken antar container, sehingga tidak perlu
+ * disalin ke .env.production. Dulu flag ini HANYA dibaca sisi bot sementara
+ * portal tetap mengosongkan key di production, sehingga jalurnya tidak pernah
+ * berfungsi — guard lolos tetapi bot berjalan tanpa key sama sekali.
+ */
+export function shouldUseEnvSecretForBotAi({
+  envKeyHasValue,
+  allowVolatileSecret,
+}: {
+  /** Apakah env key (mis. GEMINI_API_KEY) BENAR-BENAR terisi nilainya. */
+  envKeyHasValue?: boolean;
+  allowVolatileSecret?: string;
+}) {
+  const bolehVolatile = String(allowVolatileSecret || "false").toLowerCase() === "true";
+  if (bolehVolatile) return false;
+  // Dulu ini memaksa env-secret di production TANPA memeriksa apakah env key-nya
+  // ada. Akibatnya: admin yang hanya mengisi API key di UI portal mendapati bot
+  // berjalan TANPA key sama sekali (portal mengosongkan key, bot tak punya env).
+  // Sekarang env-secret dipakai HANYA bila env key benar-benar terisi. Portal
+  // dan bot berbagi .env.production, jadi bila portal melihat nilainya, bot pun
+  // punya. Bila tidak ada, key dari UI diteruskan ke bot lewat jalur internal.
+  return Boolean(envKeyHasValue);
+}
+
+function getBotAiEnvKeyForProvider(provider: string) {
+  const normalized = mapPortalProviderToBot(provider);
+  const configured =
+    process.env[`ALETA_BOT_AI_${normalized.toUpperCase()}_API_KEY_ENV`] ||
+    process.env.ALETA_BOT_AI_API_KEY_ENV ||
+    "";
+  if (configured) return configured;
+  if (normalized === "openai") return "OPENAI_API_KEY";
+  if (normalized === "gemini") return "GEMINI_API_KEY";
+  if (normalized === "claude") return "ANTHROPIC_API_KEY";
+  return "";
+}
+
 async function buildAletaBotAiConfigPayload(db: AletaDatabase) {
-  const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
+  const globalAiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
+  const aiConfig = resolveAIConfigForModule(globalAiConfig, "aleta_bot");
+  const moduleConfig = globalAiConfig.moduleConfigs.find((item) => item.moduleKey === "aleta_bot") ?? null;
   const activeConnection = resolveActiveAiConnection(aiConfig);
   const providerId = activeConnection?.providerId ?? aiConfig.providerId;
   const modelId = activeConnection?.modelId ?? aiConfig.modelId;
-  const apiKey = activeConnection?.apiKey ?? "";
+  const provider = mapPortalProviderToBot(providerId);
+  // Nama env key yang seharusnya menampung key (mis. GEMINI_API_KEY), lalu cek
+  // apakah env itu BENAR-BENAR terisi. Portal & bot berbagi .env.production,
+  // jadi bila portal melihat nilainya, bot pun punya.
+  const resolvedEnvKeyName = getBotAiEnvKeyForProvider(providerId);
+  const envKeyHasValue = Boolean(resolvedEnvKeyName && process.env[resolvedEnvKeyName]);
+  const useEnvSecret = shouldUseEnvSecretForBotAi({
+    envKeyHasValue,
+    allowVolatileSecret: process.env.ALETA_BOT_ALLOW_VOLATILE_AI_SECRET,
+  });
+  const apiKeyEnvKey = useEnvSecret ? resolvedEnvKeyName : "";
+  const apiKey = useEnvSecret ? "" : activeConnection?.apiKey ?? "";
   const enabled = Boolean(aiConfig.enabled && activeConnection);
 
   return {
     enabled,
     publicQaEnabled: enabled,
     publicQaAiAnswerEnabled: enabled,
-    provider: mapPortalProviderToBot(providerId),
+    provider,
     providerId,
     model: modelId,
     modelId,
     endpointUrl: activeConnection?.endpointUrl ?? "",
     apiKey,
-    apiKeyConfigured: Boolean(apiKey),
+    apiKeyEnvKey,
+    apiKeyConfigured: Boolean(apiKey || apiKeyEnvKey),
+    secretPersistenceHint: apiKeyEnvKey ? "env" : apiKey ? "volatile_memory" : "none",
     configSource: "manajemen_surat",
     promptPolicy: "public_qa_guarded",
     timeoutMs: Number(process.env.ALETA_BOT_AI_TIMEOUT_MS || 8000),
@@ -2831,23 +4350,58 @@ async function buildAletaBotAiConfigPayload(db: AletaDatabase) {
       disposisiAi: aiConfig.featureDisposisiAi,
       publicQaBridge: true,
     },
+    moduleKey: "aleta_bot",
+    moduleConfig,
+    moduleConfigs: globalAiConfig.moduleConfigs,
     syncedAt: new Date().toISOString(),
   };
 }
 
-async function callAletaBotRuntime<T>(pathname: string, init: RequestInit = {}): Promise<T> {
+/**
+ * Batas waktu bawaan untuk panggilan ke ALETA Bot. Operasi berat seperti
+ * pratinjau sumber data pegawai menjalankan query SIPP sekali per pegawai,
+ * sehingga membutuhkan waktu jauh lebih lama daripada panggilan biasa.
+ */
+const ALETA_BOT_TIMEOUT_MS = 10000;
+const ALETA_BOT_PREVIEW_TIMEOUT_MS = 120000;
+
+async function callAletaBotRuntime<T>(
+  pathname: string,
+  init: RequestInit = {},
+  timeoutMs: number = ALETA_BOT_TIMEOUT_MS
+): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(getAletaBotRuntimeUrl(pathname), {
-      cache: "no-store",
-      ...init,
-      headers: {
-        ...getAletaBotInternalHeaders(),
-        ...(init.headers ?? {}),
-      },
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetch(getAletaBotRuntimeUrl(pathname), {
+        cache: "no-store",
+        ...init,
+        headers: {
+          ...getAletaBotInternalHeaders(),
+          ...(init.headers ?? {}),
+        },
+        signal: controller.signal,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      // Habis waktu berbeda dari bot mati: botnya hidup tapi pekerjaannya lama.
+      // Dulu keduanya dilaporkan sama sehingga operator mengira bot tidak jalan.
+      const kehabisanWaktu =
+        (error instanceof Error && error.name === "AbortError") ||
+        /abort/i.test(detail);
+      if (kehabisanWaktu) {
+        throw new Error(
+          `ALETA Bot belum selesai memproses dalam ${Math.round(timeoutMs / 1000)} detik. ` +
+            "Sumber data pegawai menjalankan query SIPP sekali untuk tiap pegawai, jadi makin banyak " +
+            "pegawai makin lama. Persempit target pegawai pada notifikasinya, atau coba lagi saat SIPP tidak sibuk."
+        );
+      }
+      // fetch gagal = bot tidak menyala/tidak terjangkau. Tanpa penegasan ini
+      // pesannya cuma "fetch failed", yang menyesatkan operator.
+      throw new Error(`ALETA Bot tidak dapat dihubungi di ${getAletaBotRuntimeUrl(pathname)} (${detail}).`);
+    }
     const payload = (await response.json().catch(() => null)) as T & {
       status?: boolean;
       message?: string;
@@ -2945,9 +4499,107 @@ async function testAletaBotAiRuntime(db: AletaDatabase, actorUserId: string) {
   }
 }
 
-async function ensureAletaBotSeeded(db: AletaDatabase) {
+function quoteSqlIdentifier(identifier: string) {
+  return `"${identifier.replace(/"/g, "\"\"")}"`;
+}
+
+async function createTableIfMissing(db: AletaDatabase, tableName: string, sql: string) {
+  try {
+    await db.prepare(`SELECT 1 FROM ${quoteSqlIdentifier(tableName)} LIMIT 1`).get();
+    return;
+  } catch {
+    // If the table does not exist yet, fall through and create it.
+  }
+
+  await db.exec(sql);
+}
+
+async function resolveSeedQueryName(db: AletaDatabase, preferredName: string, queryId: string) {
+  const existing = await db
+    .prepare(`SELECT id FROM aleta_bot_queries WHERE name = ? LIMIT 1`)
+    .get<{ id: string }>(preferredName);
+  if (!existing || existing.id === queryId) return preferredName;
+
+  const suffix = queryId.startsWith("legacy-notifikasi-")
+    ? "Detail Notifikasi"
+    : queryId.startsWith("legacy-")
+      ? "Ringkasan"
+      : "Sumber Tambahan";
+  const baseCandidate = `${preferredName} - ${suffix}`;
+  let candidate = baseCandidate;
+
+  for (let index = 2; index <= 20; index += 1) {
+    const conflict = await db
+      .prepare(`SELECT id FROM aleta_bot_queries WHERE name = ? LIMIT 1`)
+      .get<{ id: string }>(candidate);
+    if (!conflict || conflict.id === queryId) return candidate;
+    candidate = `${baseCandidate} ${index}`;
+  }
+
+  return `${preferredName} - ${queryId}`;
+}
+
+const seededAletaBotDatabases = new WeakSet<AletaDatabase>();
+
+async function hasCurrentAletaBotSeedState(db: AletaDatabase) {
+  try {
+    const settings = await db
+      .prepare(
+        `SELECT disposition_deadline_reminder_kill_switch
+         FROM aleta_bot_settings
+         WHERE id = 1`
+      )
+      .get<{ disposition_deadline_reminder_kill_switch: number }>();
+    if (!settings) return false;
+
+    const row = await db
+      .prepare(
+        `SELECT
+          (SELECT COUNT(*) FROM aleta_bot_templates) AS templates,
+          (SELECT COUNT(*) FROM aleta_bot_jobs) AS jobs,
+          (SELECT COUNT(*) FROM aleta_bot_queries) AS queries,
+          (SELECT COUNT(*) FROM aleta_bot_notifications) AS notifications,
+          (SELECT COUNT(*) FROM aleta_bot_db_connections) AS db_connections,
+          (SELECT COUNT(*) FROM aleta_bot_public_qa_intents) AS public_qa_intents,
+          (SELECT COUNT(*) FROM aleta_bot_public_qa_knowledge) AS public_qa_knowledge`
+      )
+      .get<{
+        templates: number | string;
+        jobs: number | string;
+        queries: number | string;
+        notifications: number | string;
+        db_connections: number | string;
+        public_qa_intents: number | string;
+        public_qa_knowledge: number | string;
+      }>();
+
+    return Boolean(
+      row &&
+        Number(row.templates) > 0 &&
+        Number(row.jobs) > 0 &&
+        Number(row.queries) > 0 &&
+        Number(row.notifications) > 0 &&
+        Number(row.db_connections) > 0 &&
+        Number(row.public_qa_intents) > 0 &&
+        Number(row.public_qa_knowledge) > 0
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function ensureAletaBotSeeded(db: AletaDatabase) {
+  if (seededAletaBotDatabases.has(db)) {
+    return;
+  }
+
+  if (db.isTransactionClient() && await hasCurrentAletaBotSeedState(db)) {
+    seededAletaBotDatabases.add(db);
+    return;
+  }
+
   const now = new Date().toISOString();
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_db_connections (
+  await createTableIfMissing(db, "aleta_bot_db_connections", `CREATE TABLE IF NOT EXISTS aleta_bot_db_connections (
     id TEXT PRIMARY KEY,
     key TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -2976,7 +4628,12 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   await db.exec(`ALTER TABLE aleta_bot_db_connections ADD COLUMN IF NOT EXISTS password_secret TEXT NOT NULL DEFAULT ''`);
   await db.exec(`ALTER TABLE aleta_bot_db_connections ADD COLUMN IF NOT EXISTS password_source TEXT NOT NULL DEFAULT 'env'`);
   await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS connection_key TEXT NOT NULL DEFAULT 'sipp_primary'`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_intents (
+  await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS last_test_duration_ms INTEGER NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS last_test_row_count INTEGER NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS last_test_sample_json TEXT NOT NULL DEFAULT '[]'`);
+  await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS last_test_slow SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_queries ADD COLUMN IF NOT EXISTS last_test_message TEXT`);
+  await createTableIfMissing(db, "aleta_bot_public_qa_intents", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_intents (
     id TEXT PRIMARY KEY,
     key TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -2999,6 +4656,8 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     requires_case_number SMALLINT NOT NULL DEFAULT 0,
     max_attempts INTEGER NOT NULL DEFAULT 2,
     fallback_message TEXT NOT NULL DEFAULT '',
+    answer_template TEXT NOT NULL DEFAULT '',
+    match_keywords_json TEXT NOT NULL DEFAULT '[]',
     risk_level TEXT NOT NULL DEFAULT 'low',
     notes TEXT NOT NULL DEFAULT '',
     ai_answer_enabled SMALLINT NOT NULL DEFAULT 0,
@@ -3021,7 +4680,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_logs (
+  await createTableIfMissing(db, "aleta_bot_public_qa_logs", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_logs (
     id TEXT PRIMARY KEY,
     sender_number TEXT NOT NULL DEFAULT '',
     sender_name TEXT NOT NULL DEFAULT '',
@@ -3052,6 +4711,15 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS entity_type TEXT NOT NULL DEFAULT ''`);
   await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS entity_id TEXT NOT NULL DEFAULT ''`);
   await db.exec(`ALTER TABLE aleta_bot_notification_logs ADD COLUMN IF NOT EXISTS metadata_json TEXT NOT NULL DEFAULT '{}'`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS bot_enabled SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS notifications_enabled SMALLINT NOT NULL DEFAULT 0`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS admin_whatsapp_number TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS message_delay_ms INTEGER NOT NULL DEFAULT 1500`);
+  // Default 1 = Minimal (paling aman dari suspend/ban) untuk instalasi lama.
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS sending_risk_level INTEGER NOT NULL DEFAULT 1`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS retry_limit INTEGER NOT NULL DEFAULT 2`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS dry_run_enabled SMALLINT NOT NULL DEFAULT 1`);
+  await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS schedule_cron TEXT NOT NULL DEFAULT '00 07 * * Monday-Friday'`);
   await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_enabled SMALLINT NOT NULL DEFAULT 0`);
   await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_mode TEXT NOT NULL DEFAULT 'dry_run'`);
   await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_approved_at TEXT`);
@@ -3068,7 +4736,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_last_run_at TEXT`);
   await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_scheduler_last_message TEXT`);
   await db.exec(`ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS disposition_deadline_reminder_kill_switch SMALLINT NOT NULL DEFAULT 0`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_policy_skip_logs (
+  await createTableIfMissing(db, "aleta_bot_policy_skip_logs", `CREATE TABLE IF NOT EXISTS aleta_bot_policy_skip_logs (
     id TEXT PRIMARY KEY,
     notification_key TEXT NOT NULL DEFAULT '',
     notification_id TEXT,
@@ -3084,7 +4752,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   )`);
   await db.exec(`CREATE INDEX IF NOT EXISTS idx_aleta_bot_policy_skip_logs_created ON aleta_bot_policy_skip_logs(created_at DESC, reason)`);
   await db.exec(`CREATE INDEX IF NOT EXISTS idx_aleta_bot_policy_skip_logs_notification ON aleta_bot_policy_skip_logs(notification_key, created_at DESC)`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_examples (
+  await createTableIfMissing(db, "aleta_bot_public_qa_examples", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_examples (
     id TEXT PRIMARY KEY,
     intent_id TEXT NOT NULL,
     question_text TEXT NOT NULL,
@@ -3093,7 +4761,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_sessions (
+  await createTableIfMissing(db, "aleta_bot_public_qa_sessions", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_sessions (
     id TEXT PRIMARY KEY,
     sender_number TEXT NOT NULL,
     current_intent_key TEXT NOT NULL DEFAULT '',
@@ -3115,12 +4783,33 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS ai_user_prompt_template TEXT NOT NULL DEFAULT ''`);
   await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS max_ai_tokens INTEGER NOT NULL DEFAULT 400`);
   await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS temperature REAL NOT NULL DEFAULT 0.2`);
-  await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS requires_approval_before_active SMALLINT NOT NULL DEFAULT 1`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS requires_approval_before_active SMALLINT NOT NULL DEFAULT 0`);
   await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
-  await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'draft'`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS answer_template TEXT NOT NULL DEFAULT ''`);
+  await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS match_keywords_json TEXT NOT NULL DEFAULT '[]'`);
+  // Bersihkan sumber data yang menunjuk query tidak ada pada aturan yang
+  // sebenarnya menjawab lewat jalur lama. Tanpa ini, admin tidak bisa menyimpan
+  // perubahan apa pun pada aturan tersebut - termasuk mengisi blangko jawaban.
+  await db.exec(
+    `UPDATE aleta_bot_public_qa_intents
+     SET query_key = ''
+     WHERE response_mode <> 'query_template'
+       AND COALESCE(query_key, '') <> ''
+       AND query_key NOT IN (SELECT id FROM aleta_bot_queries)`
+  );
   await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS approved_by TEXT`);
   await db.exec(`ALTER TABLE aleta_bot_public_qa_intents ADD COLUMN IF NOT EXISTS approved_at TEXT`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_intent_versions (
+  // Aturan jawaban tidak lagi mengenal tahap draft. Draft yang tertinggal dari
+  // versi lama diaktifkan sekali di sini supaya daftar aturan tidak menyisakan
+  // baris yang tampak ada tetapi tidak pernah dipakai menjawab.
+  // Yang diarsipkan sengaja TIDAK ikut - itu keputusan admin untuk memensiunkan aturan.
+  await db.exec(
+    `UPDATE aleta_bot_public_qa_intents
+     SET status = 'active', is_active = 1, requires_approval_before_active = 0
+     WHERE status = 'draft'`
+  );
+  await createTableIfMissing(db, "aleta_bot_public_qa_intent_versions", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_intent_versions (
     id TEXT PRIMARY KEY,
     intent_id TEXT NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
@@ -3129,7 +4818,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     created_by TEXT,
     created_at TEXT NOT NULL
   )`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_ai_logs (
+  await createTableIfMissing(db, "aleta_bot_public_qa_ai_logs", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_ai_logs (
     id TEXT PRIMARY KEY,
     qa_log_id TEXT NOT NULL DEFAULT '',
     intent_key TEXT NOT NULL DEFAULT '',
@@ -3145,7 +4834,22 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     error_message TEXT,
     created_at TEXT NOT NULL
   )`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_approval_requests (
+  await createTableIfMissing(db, "aleta_bot_public_qa_knowledge", `CREATE TABLE IF NOT EXISTS aleta_bot_public_qa_knowledge (
+    id TEXT PRIMARY KEY,
+    key TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'informasi_umum',
+    audience TEXT NOT NULL DEFAULT 'public',
+    keywords_json TEXT NOT NULL DEFAULT '[]',
+    answer TEXT NOT NULL DEFAULT '',
+    source_label TEXT NOT NULL DEFAULT '',
+    source_url TEXT NOT NULL DEFAULT '',
+    priority INTEGER NOT NULL DEFAULT 50,
+    is_active SMALLINT NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL
+  )`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_aleta_bot_public_qa_knowledge_active_category ON aleta_bot_public_qa_knowledge(is_active, category, priority)`);
+  await createTableIfMissing(db, "aleta_bot_approval_requests", `CREATE TABLE IF NOT EXISTS aleta_bot_approval_requests (
     id TEXT PRIMARY KEY,
     entity_type TEXT NOT NULL DEFAULT 'public_qa_intent',
     entity_id TEXT NOT NULL DEFAULT '',
@@ -3160,7 +4864,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`);
-  await db.exec(`CREATE TABLE IF NOT EXISTS aleta_bot_legacy_migrations (
+  await createTableIfMissing(db, "aleta_bot_legacy_migrations", `CREATE TABLE IF NOT EXISTS aleta_bot_legacy_migrations (
     id TEXT PRIMARY KEY,
     feature TEXT NOT NULL DEFAULT '',
     legacy_key TEXT NOT NULL DEFAULT '',
@@ -3195,7 +4899,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
     "replacement_service TEXT NOT NULL DEFAULT ''",
     "can_archive INTEGER NOT NULL DEFAULT 0",
   ]) {
-    try { await db.exec(`ALTER TABLE aleta_bot_legacy_migrations ADD COLUMN ${col}`); } catch { /* column already exists */ }
+    await db.exec(`ALTER TABLE aleta_bot_legacy_migrations ADD COLUMN IF NOT EXISTS ${col}`);
   }
 
   const settings = await db.prepare(`SELECT id FROM aleta_bot_settings WHERE id = 1`).get<{ id: number }>();
@@ -3268,7 +4972,31 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
         template.editable ? 1 : 0,
         now
       );
+
+    const existingTemplate = await db
+      .prepare(`SELECT body FROM aleta_bot_templates WHERE id = ?`)
+      .get<{ body: string }>(template.id);
+    if (existingTemplate && isReplaceableLegacyTemplateBody(template.id, existingTemplate.body)) {
+      await db
+        .prepare(
+          `UPDATE aleta_bot_templates
+           SET category = ?, title = ?, body = ?, placeholders_json = ?, editable = ?, updated_at = ?
+           WHERE id = ?`
+        )
+        .run(
+          template.category,
+          template.title,
+          template.body,
+          JSON.stringify(template.placeholders),
+          template.editable ? 1 : 0,
+          now,
+          template.id
+        );
+    }
   }
+
+  await db.prepare(`UPDATE aleta_bot_templates SET category = 'pegawai', updated_at = ? WHERE category = 'employee'`).run(now);
+  await db.prepare(`UPDATE aleta_bot_templates SET category = 'pihak', updated_at = ? WHERE category IN ('party', 'notifikasi')`).run(now);
 
   for (const job of DEFAULT_JOBS) {
     await db
@@ -3281,6 +5009,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
   }
 
   for (const query of DEFAULT_QUERIES) {
+    const queryName = await resolveSeedQueryName(db, query.name, query.id);
     await db
       .prepare(
         `INSERT INTO aleta_bot_queries (
@@ -3292,7 +5021,7 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
       )
       .run(
         query.id,
-        query.name,
+        queryName,
         query.category,
         query.description,
         query.sqlText,
@@ -3303,9 +5032,30 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
         now,
         now
       );
+    if (
+      query.id.startsWith("legacy-") ||
+      query.id.startsWith("template-") ||
+      query.id === "public_online_queue" ||
+      query.id === "portal-disposition-deadline-h-minus-1"
+    ) {
+      await db
+        .prepare(
+          `UPDATE aleta_bot_queries
+           SET name = ?, description = ?, output_columns_json = ?, recipient_column = ?, updated_at = ?
+           WHERE id = ?`
+        )
+        .run(
+          queryName,
+          query.description,
+          JSON.stringify(query.outputColumns),
+          query.recipientColumn,
+          now,
+          query.id
+        );
+    }
   }
 
-  for (const connection of DEFAULT_DB_CONNECTIONS) {
+  for (const connection of getSeedDbConnections()) {
     await db
       .prepare(
         `INSERT INTO aleta_bot_db_connections (
@@ -3422,15 +5172,52 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
       );
   }
 
+  for (const knowledge of DEFAULT_PUBLIC_QA_KNOWLEDGE) {
+    await db
+      .prepare(
+        `INSERT INTO aleta_bot_public_qa_knowledge (
+          id, key, title, category, audience, keywords_json, answer,
+          source_label, source_url, priority, is_active, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (key) DO UPDATE SET
+          title = excluded.title,
+          category = excluded.category,
+          audience = excluded.audience,
+          keywords_json = excluded.keywords_json,
+          answer = excluded.answer,
+          source_label = excluded.source_label,
+          source_url = excluded.source_url,
+          priority = excluded.priority,
+          is_active = excluded.is_active,
+          updated_at = excluded.updated_at
+        WHERE aleta_bot_public_qa_knowledge.source_label LIKE 'ALETA Public Knowledge%'`
+      )
+      .run(
+        knowledge.id,
+        knowledge.key,
+        knowledge.title,
+        knowledge.category,
+        knowledge.audience,
+        JSON.stringify(knowledge.keywords),
+        knowledge.answer,
+        knowledge.sourceLabel,
+        knowledge.sourceUrl,
+        knowledge.priority,
+        knowledge.isActive ? 1 : 0,
+        now
+      );
+  }
+
   for (const notification of DEFAULT_NOTIFICATIONS) {
     await db
       .prepare(
         `INSERT INTO aleta_bot_notifications (
           id, name, category, description, query_id, template_id, recipient_source,
-          recipient_mapping_json, schedule_config_json, is_active, delay_ms, retry_limit,
+          recipient_mapping_json, schedule_config_json, is_active, attach_document, delay_ms, retry_limit,
           last_status, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?)
         ON CONFLICT (id) DO NOTHING`
       )
       .run(
@@ -3444,11 +5231,27 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
         JSON.stringify(notification.recipientMapping),
         JSON.stringify(notification.scheduleConfig),
         notification.isActive ? 1 : 0,
+        notification.attachDocument === false ? 0 : 1,
         notification.delayMs,
         notification.retryLimit,
         now,
         now
       );
+
+    // Instalasi lama: sisipkan tahap agenda tanpa menyentuh jam cron yang
+    // sudah disesuaikan admin. Lihat mergeAgendaStageIntoScheduleConfig.
+    const tahapAgenda = notification.scheduleConfig?.agendaStage;
+    if (tahapAgenda) {
+      const tersimpan = await db
+        .prepare(`SELECT schedule_config_json FROM aleta_bot_notifications WHERE id = ?`)
+        .get<{ schedule_config_json: string | null }>(notification.id);
+      const gabungan = mergeAgendaStageIntoScheduleConfig(tersimpan?.schedule_config_json, tahapAgenda);
+      if (gabungan) {
+        await db
+          .prepare(`UPDATE aleta_bot_notifications SET schedule_config_json = ?, updated_at = ? WHERE id = ?`)
+          .run(gabungan, now, notification.id);
+      }
+    }
   }
 
   for (const migration of DEFAULT_LEGACY_MIGRATIONS) {
@@ -3504,6 +5307,8 @@ async function ensureAletaBotSeeded(db: AletaDatabase) {
         now
       );
   }
+
+  seededAletaBotDatabases.add(db);
 }
 
 async function listApprovalRequests(db: AletaDatabase): Promise<AletaBotApprovalRequest[]> {
@@ -3537,7 +5342,7 @@ export async function submitApprovalRequest(
     notes?: string;
   }
 ): Promise<AletaBotApprovalRequest> {
-  await requireSuperAdmin(db, actorUserId);
+  await requireAletaBotOperator(db, actorUserId);
   await ensureAletaBotSeeded(db);
   const now = new Date().toISOString();
   const id = await nextPrefixedId(db, "aleta_bot_approval_requests", "abar");
@@ -3837,7 +5642,7 @@ async function upsertConvertedIntentDraftDirect(
   const requiredParameters = parseListInput(intent.requiredParameters);
   const allowedDataFields = parseListInput(intent.allowedDataFields);
   const blockedDataFields = parseListInput(intent.blockedDataFields);
-  if (!key) throw new ApiError(400, "Key intent wajib diisi.");
+  if (!key) throw new ApiError(400, "Kode aturan wajib diisi.");
   if (["query_template", "legacy_handler"].includes(intent.responseMode) && !intent.queryKey && !intent.legacyHandler && !intent.legacyCommand) {
     throw new ApiError(400, "Intent dinamis wajib punya query mapping atau legacy handler.");
   }
@@ -3856,7 +5661,7 @@ async function upsertConvertedIntentDraftDirect(
         requires_approval_before_active, version, status, approved_by, approved_at,
         created_by, updated_by, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'draft', NULL, NULL, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'active', NULL, NULL, ?, ?, ?, ?)
       ON CONFLICT(key) DO UPDATE SET
         name = excluded.name,
         description = excluded.description,
@@ -4092,26 +5897,16 @@ export async function activateLegacyRegistry(
       throw new ApiError(400, "Registry hanya bisa diaktifkan setelah draft/dry-run/pending approval.");
     }
 
-    // ── Duplicate-path guard ─────────────────────────────────────────────────
-    // For notification types: block activation if the same legacy key is still
-    // live (i.e., NOT yet disabled in another legacy_disabled migration row).
-    if (migration.legacyType === "party_notification" || migration.legacyType === "employee_notification") {
-      const alreadyDisabledRow = await tx
-        .prepare(
-          `SELECT id FROM aleta_bot_legacy_migrations
-           WHERE legacy_key = ? AND status = 'legacy_disabled' AND id != ? LIMIT 1`
-        )
-        .get<{ id: string }>(migration.legacyKey, migration.id);
-      // There is no separate "disabled" row for this key — meaning the same key
-      // is still live as legacy. Block to prevent dual-path delivery.
-      if (!alreadyDisabledRow && migration.legacyKey) {
-        throw new ApiError(
-          400,
-          `Duplicate path guard: legacy key "${migration.legacyKey}" masih aktif. ` +
-          `Jalankan aksi "Disable Legacy" pada migrasi yang sama sebelum mengaktifkan registry.`
-        );
-      }
-    }
+    // Catatan: dulu di sini ada "duplicate-path guard" yang MEMBLOKIR aktivasi
+    // registry sampai ada baris legacy_disabled untuk key yang sama. Itu bug
+    // melingkar: aktivasi butuh legacy sudah disable, tapi disable-legacy
+    // (disableLegacyKey) justru mensyaratkan status 'active_registry'. Akibatnya
+    // alur migrasi notifikasi MUSTAHIL diselesaikan (error "Duplicate path guard").
+    //
+    // Urutan yang benar memang: aktifkan registry dulu (→ active_registry), baru
+    // jalankan Disable Legacy (→ legacy_disabled). Pengiriman ganda pun sudah
+    // dicegah oleh mode registry-takeover yang mematikan cron legacy secara
+    // bawaan. Jadi guard di titik ini dihapus agar alurnya tidak buntu.
 
     // ── Approval requirement for high-risk ──────────────────────────────────
     if (migration.riskLevel === "high") {
@@ -4302,7 +6097,7 @@ export async function controlWorker(
   action: "pause" | "resume" | "status",
   reason?: string
 ): Promise<{ worker: AletaBotWorkerState | null; message: string }> {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   const result = await controlGatewayWorker({ action, reason });
   if (!result.ok) {
     await appendAletaBotLog(db, {
@@ -4353,7 +6148,7 @@ export async function resendDeadLetter(
   actorUserId: string,
   id: string
 ): Promise<{ originalId: string; newId: string; status: string }> {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   const result = await resendGatewayDeadLetter(id);
   if (!result.ok) {
     await appendAletaBotLog(db, {
@@ -4393,7 +6188,7 @@ export async function resolveDeadLetter(
   id: string,
   note?: string
 ): Promise<{ originalId: string; status: string; item: AletaBotDeadLetter }> {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   const resolvedNote = String(note ?? "").trim().slice(0, 1000);
   const result = await resolveGatewayDeadLetter(id, resolvedNote, actor.id);
   if (!result.ok) {
@@ -4459,6 +6254,7 @@ export async function getAletaBotSettings(db: AletaDatabase) {
   const row = await db
     .prepare(
       `SELECT bot_enabled, notifications_enabled, admin_whatsapp_number, message_delay_ms,
+        sending_risk_level,
         retry_limit, dry_run_enabled, schedule_cron, test_target_number, security_notes,
         disposition_deadline_reminder_enabled, disposition_deadline_reminder_mode,
         disposition_deadline_reminder_approved_at, disposition_deadline_reminder_approved_by,
@@ -4517,7 +6313,7 @@ async function getNotifications(db: AletaDatabase) {
   const rows = await db
     .prepare(
       `SELECT id, name, category, description, query_id, template_id, recipient_source,
-        recipient_mapping_json, schedule_config_json, is_active, delay_ms, retry_limit,
+        recipient_mapping_json, schedule_config_json, is_active, attach_document, delay_ms, retry_limit,
         last_run_at, last_status, last_message, created_by, updated_by, created_at, updated_at
        FROM aleta_bot_notifications
        ORDER BY category ASC, name ASC`
@@ -4533,7 +6329,9 @@ async function getQueries(db: AletaDatabase) {
     db
       .prepare(
         `SELECT id, name, category, description, sql_text, output_columns_json, recipient_column,
-          connection_key, is_active, last_tested_at, last_test_status, last_test_error, created_by, updated_by, created_at, updated_at
+          connection_key, is_active, last_tested_at, last_test_status, last_test_error,
+          last_test_duration_ms, last_test_row_count, last_test_sample_json, last_test_slow, last_test_message,
+          created_by, updated_by, created_at, updated_at
          FROM aleta_bot_queries
          ORDER BY category ASC, name ASC`
       )
@@ -4567,6 +6365,19 @@ async function getDbConnections(db: AletaDatabase) {
   return rows.map(mapDbConnection);
 }
 
+export async function listAletaBotDbConnectionsForIntegrations(db: AletaDatabase) {
+  return getDbConnections(db);
+}
+
+export async function getAletaBotDbConnectionForIntegration(
+  db: AletaDatabase,
+  connectionKey = "sipp_primary"
+) {
+  const key = validateConnectionKey(connectionKey || "sipp_primary");
+  const connections = await getDbConnections(db);
+  return connections.find((connection) => connection.key === key) ?? null;
+}
+
 async function getRuntimeDbConnections(db: AletaDatabase) {
   await ensureAletaBotSeeded(db);
   const rows = await db
@@ -4591,7 +6402,8 @@ async function getPublicQaIntents(db: AletaDatabase) {
         exact_triggers_json, example_questions_json, required_parameters_json,
         query_key, legacy_handler, legacy_command, parameterized_legacy_command,
         template_key, response_mode, confidence_threshold, requires_verification,
-        requires_case_number, max_attempts, fallback_message, risk_level, notes,
+        requires_case_number, max_attempts, fallback_message,
+        answer_template, match_keywords_json, risk_level, notes,
         ai_answer_enabled, ai_answer_mode, answer_policy, verification_policy,
         allowed_data_fields_json, blocked_data_fields_json, ai_system_prompt,
         ai_user_prompt_template, max_ai_tokens, temperature,
@@ -4619,6 +6431,19 @@ async function getPublicQaLogs(db: AletaDatabase) {
     )
     .all<PublicQaLogRow>();
   return rows.map(mapPublicQaLog);
+}
+
+async function getPublicQaKnowledgeEntries(db: AletaDatabase) {
+  await ensureAletaBotSeeded(db);
+  const rows = await db
+    .prepare(
+      `SELECT id, key, title, category, audience, keywords_json, answer,
+        source_label, source_url, priority, is_active, updated_at
+       FROM aleta_bot_public_qa_knowledge
+       ORDER BY is_active DESC, priority DESC, category ASC, title ASC`
+    )
+    .all<PublicQaKnowledgeRow>();
+  return rows.map(mapPublicQaKnowledge);
 }
 
 async function getUnknownQuestionReviews(db: AletaDatabase): Promise<AletaBotUnknownQuestionReview[]> {
@@ -4679,7 +6504,7 @@ async function getEmployeeRecipients(db: AletaDatabase) {
   const rows = await db
     .prepare(
       `SELECT users.id, users.username, users.name, users.role_id, users.position_id,
-        positions.name AS position_name, users.whatsapp_number
+        positions.name AS position_name, positions.unit_kerja, users.additional_role_ids_json, users.whatsapp_number
        FROM users
        LEFT JOIN positions ON positions.id = users.position_id
        WHERE users.deleted_at IS NULL
@@ -4692,13 +6517,140 @@ async function getEmployeeRecipients(db: AletaDatabase) {
   return rows.map(mapEmployeeRecipient).filter((row) => row.whatsappNumber && /^62\d{8,15}$/.test(row.whatsappNumber));
 }
 
+/**
+ * Daftar akun yang DIBLOKIR atau dihapus, untuk dikirim ke ALETA Bot.
+ *
+ * getEmployeeRecipients di atas sudah menyaring is_active = 1, jadi pegawai
+ * yang diblokir tidak ikut daftar penerima. Tetapi itu belum cukup: banyak
+ * notifikasi mengambil nama DAN nomor langsung dari SIPP, dan SIPP tidak tahu
+ * apa-apa soal pemblokiran di ALETA. Tanpa daftar ini, orang yang sudah
+ * diblokir tetap dikirimi WhatsApp begitu namanya muncul di hasil query.
+ *
+ * Yang dikirim: nomor WhatsApp (pencocokan tepat) dan nama yang dinormalkan
+ * (untuk data SIPP yang nomornya berbeda). Tidak ada data pribadi lain.
+ */
+async function getBlockedRecipients(db: AletaDatabase) {
+  const rows = await db
+    .prepare(
+      `SELECT users.name, users.username, users.whatsapp_number, users.is_active, users.deleted_at
+       FROM users
+       WHERE users.deleted_at IS NOT NULL OR users.is_active = 0`
+    )
+    .all<{ name: string; username: string; whatsapp_number: string | null; is_active: number; deleted_at: string | null }>();
+
+  const numbers = new Set<string>();
+  const names = new Set<string>();
+
+  for (const row of rows) {
+    const number = String(row.whatsapp_number || "").replace(/\D/g, "");
+    if (/^62\d{8,15}$/.test(number)) numbers.add(number);
+
+    const name = normalizeBlockedName(row.name);
+    if (name) names.add(name);
+    const username = normalizeBlockedName(row.username);
+    if (username) names.add(username);
+  }
+
+  return {
+    numbers: Array.from(numbers).sort(),
+    names: Array.from(names).sort(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Menyamakan bentuk nama agar gelar dan tanda baca tidak membuat blokir lolos.
+ * "DERRY BRIANTONO, S.H." dan "Derry Briantono SH" harus dianggap sama.
+ * Harus sama dengan normalizeBlockedName di
+ * aleta_bot/services/blockedRecipientService.js.
+ */
+function normalizeBlockedName(value: string | null | undefined) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\b(s\.?h|s\.?ag|s\.?hi|m\.?h|m\.?ag|m\.?si|lc|dr|drs|h|hj)\b\.?/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Role yang secara jabatan MELEKAT pada role lain.
+ *
+ * Ketua dan Wakil Ketua Pengadilan adalah HAKIM juga: mereka memegang perkara
+ * dan bersidang, sehingga wajib menerima notifikasi jadwal sidang seperti hakim
+ * lain — di samping notifikasi khusus kepemimpinan mereka.
+ *
+ * Aplikasi lama menangani ini dengan mendaftarkan nomor yang SAMA di dua tempat
+ * (aleta_bot/whatsapp.js): "Abdul Salam" ada di hakimIds sekaligus ketuaId, dan
+ * nomor "Ali" di hakimIds sama dengan "Akbar Ali" di ketuaId. Di ALETA satu user
+ * hanya punya satu role utama, jadi keterkaitan itu dinyatakan di sini.
+ *
+ * Harus sama dengan IMPLICIT_ROLE_IDS di
+ * aleta_bot/services/dynamicNotificationSchedulerService.js.
+ */
+const IMPLICIT_ROLE_IDS: Record<string, string[]> = {
+  ketua: ["hakim"],
+  "wakil-ketua": ["hakim"],
+};
+
+function expandRoleIds(roleId: string): string[] {
+  const normalized = String(roleId || "").trim().toLowerCase();
+  if (!normalized) return [];
+  return [normalized, ...(IMPLICIT_ROLE_IDS[normalized] ?? [])];
+}
+
+export function filterEmployeeRecipientsByMapping(
+  recipients: AletaBotEmployeeRecipient[],
+  mapping: Record<string, unknown>
+) {
+  const normalizeHints = (value: unknown) => sanitizeStringIdList(value).map((item) => item.toLowerCase());
+  const roleHints = normalizeHints(mapping["roleHints"]);
+  const positionHints = normalizeHints(mapping["positionHints"]);
+  const nameHints = normalizeHints(mapping["nameHints"]);
+  const legacyHints = normalizeHints(mapping["hints"]);
+  if (roleHints.length === 0 && positionHints.length === 0 && nameHints.length === 0 && legacyHints.length === 0) {
+    return recipients;
+  }
+  const matchesField = (hints: string[], values: string[]) => {
+    if (hints.length === 0) return true;
+    const haystacks = values.map((value) => String(value || "").toLowerCase()).filter(Boolean);
+    return hints.some((hint) => haystacks.some((value) => value.includes(hint)));
+  };
+
+  return recipients.filter((recipient) => {
+    // roleHints dicocokkan ke role utama, role tambahan, dan role melekat
+    // (mis. ketua/wakil ketua yang juga hakim). Dulu hanya role utama yang
+    // diperiksa, sehingga Ketua tidak pernah menerima notifikasi hakim.
+    const roleValues = [...expandRoleIds(recipient.roleId), ...recipient.additionalRoleIds];
+    const additionalRoleLabels = recipient.additionalRoleIds.map(getAdditionalRoleLabel);
+    const positionValues = [recipient.positionId, recipient.positionName, recipient.unitKerja, ...recipient.additionalRoleIds, ...additionalRoleLabels];
+    const nameValues = [recipient.id, recipient.name, recipient.username];
+    const legacyHaystack = [...roleValues, ...positionValues, ...nameValues].join(" ").toLowerCase();
+    if (!matchesField(roleHints, roleValues)) return false;
+    if (!matchesField(positionHints, positionValues)) return false;
+    if (!matchesField(nameHints, nameValues)) return false;
+    return legacyHints.length === 0 || legacyHints.some((hint) => legacyHaystack.includes(hint));
+  });
+}
+
 async function getWhatsappNumberCompleteness(db: AletaDatabase) {
   const [users, positions] = await Promise.all([getUsersFromDb(db), getPositionsFromDb(db)]);
   const positionMap = new Map(positions.map((position) => [position.id, position]));
   const activeUsers = users.filter((user) => user.isActive);
   const hasWhatsapp = (value: string) => /^62\d{8,15}$/.test(normalizeWhatsappNumber(value || ""));
   const withWhatsapp = activeUsers.filter((user) => hasWhatsapp(user.whatsappNumber));
-  const importantRoles = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "hakim", "panitera", "sekretaris"]);
+  const importantRoles = new Set([
+    "super-admin",
+    "admin",
+    "ketua",
+    "wakil-ketua",
+    "hakim",
+    "panitera",
+    "panitera-muda",
+    "panitera-pengganti",
+    "jurusita",
+    "sekretaris",
+    "kasubag",
+  ]);
   const roleGroups = new Map<string, { total: number; withWhatsapp: number; missingWhatsapp: number }>();
 
   for (const user of activeUsers) {
@@ -4749,8 +6701,8 @@ async function getNotificationLogs(db: AletaDatabase) {
   const rows = await db
     .prepare(
       `SELECT id, notification_id, query_id, recipient_number, recipient_name, category,
-        message_preview, status, error_message, source_app, source_feature, entity_type, entity_id, metadata_json,
-        sent_at, created_at
+        message_preview, status, whatsapp_message_id, ack, error_message, source_app, source_feature, entity_type, entity_id, metadata_json,
+        sent_at, delivered_at, read_at, failed_at, created_at
        FROM aleta_bot_notification_logs
        ORDER BY created_at DESC
        LIMIT 80`
@@ -4995,6 +6947,9 @@ export async function getPolicySkipReport(
   }
 
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const detailLimit = filters.format === "csv"
+    ? exportOverflowLimit(EXPORT_ROW_LIMITS.policySkipCsv)
+    : 1000;
   const [totalRow, byReasonRows, byNotificationRows, lastRow, rows] = await Promise.all([
     db.prepare(`SELECT COUNT(*) AS count FROM aleta_bot_policy_skip_logs ${whereSql}`).get<{ count: number | string }>(...params),
     db
@@ -5023,7 +6978,7 @@ export async function getPolicySkipReport(
          FROM aleta_bot_policy_skip_logs
          ${whereSql}
          ORDER BY created_at DESC
-         LIMIT 1000`
+         LIMIT ${detailLimit}`
       )
       .all<PolicySkipLogRow>(...params),
   ]);
@@ -5039,6 +6994,7 @@ export async function getPolicySkipReport(
   };
 
   if (filters.format === "csv") {
+    assertExportRowLimit(Number(totalRow?.count || rows.length), EXPORT_ROW_LIMITS.policySkipCsv, "Export laporan policy skip");
     const headers = [
       "Waktu",
       "Notification Key",
@@ -5128,6 +7084,103 @@ export async function getAletaBotMessageAnalytics(db: AletaDatabase, actorUserId
     bySourceFeature: Object.fromEntries(sourceRows.map((row) => [row.source_feature, Number(row.count || 0)])),
     topFailureReasons: failureRows.map((row) => ({ reason: sanitizeErrorMessage(row.reason).slice(0, 160), count: Number(row.count || 0) })),
     policySkip: policySkipSummary,
+  };
+}
+
+export async function getAletaBotQueueMonitoring(db: AletaDatabase, actorUserId: string) {
+  await requireAletaBotOperator(db, actorUserId);
+  await ensureAletaBotSeeded(db);
+
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const staleCutoff = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+  const todayIso = today.toISOString();
+  const pendingStatuses = ["pending", "processing", "enqueued"];
+  const sentStatuses = ["sent", "success", "delivered"];
+  const failedStatuses = ["failed", "dead_letter"];
+  const placeholders = (items: string[]) => items.map(() => "?").join(", ");
+
+  const [allStatusRows, todayStatusRows, staleRow, oldestPendingRow, lastSentRow, lastCreatedRow] = await Promise.all([
+    db
+      .prepare(
+        `SELECT status, COUNT(*) AS count
+         FROM aleta_bot_notification_logs
+         GROUP BY status`
+      )
+      .all<{ status: string; count: number | string }>(),
+    db
+      .prepare(
+        `SELECT status, COUNT(*) AS count
+         FROM aleta_bot_notification_logs
+         WHERE created_at >= ?
+         GROUP BY status`
+      )
+      .all<{ status: string; count: number | string }>(todayIso),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM aleta_bot_notification_logs
+         WHERE status IN (${placeholders(pendingStatuses)}) AND created_at < ?`
+      )
+      .get<{ count: number | string }>(...pendingStatuses, staleCutoff),
+    db
+      .prepare(
+        `SELECT MIN(created_at) AS created_at
+         FROM aleta_bot_notification_logs
+         WHERE status IN (${placeholders(pendingStatuses)})`
+      )
+      .get<{ created_at: string | null }>(...pendingStatuses),
+    db
+      .prepare(
+        `SELECT MAX(COALESCE(sent_at, created_at)) AS sent_at
+         FROM aleta_bot_notification_logs
+         WHERE status IN (${placeholders(sentStatuses)})`
+      )
+      .get<{ sent_at: string | null }>(...sentStatuses),
+    db
+      .prepare(
+        `SELECT MAX(created_at) AS created_at
+         FROM aleta_bot_notification_logs`
+      )
+      .get<{ created_at: string | null }>(),
+  ]);
+
+  const allByStatus = Object.fromEntries(allStatusRows.map((row) => [row.status || "unknown", Number(row.count || 0)]));
+  const todayByStatus = Object.fromEntries(todayStatusRows.map((row) => [row.status || "unknown", Number(row.count || 0)]));
+  const pending = pendingStatuses.reduce((total, status) => total + Number(allByStatus[status] || 0), 0);
+  const processing = Number(allByStatus.processing || 0);
+  const sentToday = sentStatuses.reduce((total, status) => total + Number(todayByStatus[status] || 0), 0);
+  const failedToday = failedStatuses.reduce((total, status) => total + Number(todayByStatus[status] || 0), 0);
+  const deadLetters = Number(allByStatus.dead_letter || 0);
+  const stalePending = Number(staleRow?.count || 0);
+  const alerts: Array<{ key: string; label: string; severity: "warning" | "critical" }> = [];
+
+  if (failedToday >= 10 || deadLetters >= 10) {
+    alerts.push({ key: "many_failures", label: "Pesan gagal hari ini tinggi.", severity: "critical" });
+  } else if (failedToday > 0 || deadLetters > 0) {
+    alerts.push({ key: "some_failures", label: "Ada pesan gagal yang perlu ditinjau.", severity: "warning" });
+  }
+
+  if (stalePending > 0) {
+    alerts.push({ key: "stale_pending", label: "Ada pesan menunggu lebih dari 15 menit.", severity: "critical" });
+  } else if (pending >= 50) {
+    alerts.push({ key: "queue_growing", label: "Antrean pesan mulai tinggi.", severity: "warning" });
+  }
+
+  return {
+    pending,
+    processing,
+    sentToday,
+    failedToday,
+    deadLetters,
+    stalePending,
+    oldestPendingAt: oldestPendingRow?.created_at ?? null,
+    lastSentAt: lastSentRow?.sent_at ?? null,
+    lastCreatedAt: lastCreatedRow?.created_at ?? null,
+    alerts,
+    health: alerts.some((alert) => alert.severity === "critical") ? "blocked" : alerts.length > 0 ? "warning" : "normal",
+    generatedAt: now.toISOString(),
   };
 }
 
@@ -5223,8 +7276,54 @@ async function buildMetrics(db: AletaDatabase, jobs: AletaBotJob[], templates: A
   };
 }
 
+/**
+ * Notifikasi bawaan yang dikirim developer bersama ALETA.
+ *
+ * Ini adalah notifikasi STANDAR resmi (pengingat sidang, akta cerai, dll) yang
+ * sudah teruji. Ritual "simulasi → preview → approval → migrasi jalur lama"
+ * dirancang untuk notifikasi BUATAN admin yang belum teruji — memaksa admin
+ * memvalidasi ulang notifikasi bawaan developer hanya menghambat, dan alur
+ * approval lewat migrasi jalur lama pun tidak pernah cocok (entityId migrasi
+ * "party-*" tidak sama dengan id notifikasi "pihak-*"). Karena itu notifikasi
+ * bawaan diperlakukan sebagai SUDAH DISETUJUI secara bawaan: admin cukup
+ * mengaktifkannya dan mengisi jadwal.
+ */
+const BUILT_IN_NOTIFICATION_IDS = new Set(DEFAULT_NOTIFICATIONS.map((item) => item.id));
+
+function isBuiltInNotification(notificationId: string) {
+  return BUILT_IN_NOTIFICATION_IDS.has(notificationId);
+}
+
+async function computePartyNotificationPolicy(
+  db: AletaDatabase,
+  notification: AletaBotNotification,
+  reasonPassed: string,
+  reasonPending: string
+) {
+  if (isBuiltInNotification(notification.id)) {
+    return {
+      dryRunPassed: true,
+      recipientPreviewPassed: true,
+      approved: true,
+      canActivate: true,
+      reason: "Notifikasi bawaan standar ALETA — tervalidasi dan disetujui secara bawaan.",
+    };
+  }
+  const dryRunPassed = notification.lastStatus === "simulated";
+  const recipientPreviewPassed = await hasNotificationRecipientPreview(db, notification.id);
+  const approved = await hasApprovedNotificationPolicy(db, notification.id);
+  const canActivate = dryRunPassed && recipientPreviewPassed && approved;
+  return {
+    dryRunPassed,
+    recipientPreviewPassed,
+    approved,
+    canActivate,
+    reason: canActivate ? reasonPassed : reasonPending,
+  };
+}
+
 export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string): Promise<AletaBotSnapshot> {
-  await requireSuperAdmin(db, actorUserId);
+  await requireAletaBotOperator(db, actorUserId);
   await ensureAletaBotSeeded(db);
   const runtimeMode = getWhatsappRuntimeMode();
   const [
@@ -5269,26 +7368,21 @@ export async function getAletaBotSnapshot(db: AletaDatabase, actorUserId: string
           },
         };
       }
-      const dryRunPassed = notification.lastStatus === "simulated";
-      const recipientPreviewPassed = await hasNotificationRecipientPreview(db, notification.id);
-      const approved = await hasApprovedNotificationPolicy(db, notification.id);
       return {
         ...notification,
-        policyStatus: {
-          dryRunPassed,
-          recipientPreviewPassed,
-          approved,
-          canActivate: dryRunPassed && recipientPreviewPassed && approved,
-          reason: dryRunPassed && recipientPreviewPassed && approved
-            ? "Siap diaktifkan sesuai policy notifikasi pihak."
-            : "Notifikasi pihak belum dapat aktif sebelum simulasi, preview penerima, dan approval selesai.",
-        },
+        policyStatus: await computePartyNotificationPolicy(
+          db,
+          notification,
+          "Siap diaktifkan sesuai policy notifikasi pihak.",
+          "Notifikasi pihak belum dapat aktif sebelum simulasi, preview penerima, dan approval selesai."
+        ),
       };
     })
   );
 
   return {
     settings,
+    sendingRiskPresets: listSendingRiskPresets(),
     runtimeState: getRuntimeState(settings, whatsappSnapshot.runtimeStatus),
     whatsapp: {
       runtimeStatus: whatsappSnapshot.runtimeStatus,
@@ -5359,6 +7453,8 @@ export async function exportAletaBotConfig(
   db: AletaDatabase,
   actorUserId: string
 ) {
+  // Ekspor memuat seluruh konfigurasi (termasuk SQL sumber data) — khusus Super Admin.
+  await requireSuperAdmin(db, actorUserId);
   const snapshot = await getAletaBotSnapshot(db, actorUserId);
   const exportedAt = new Date().toISOString();
 
@@ -5505,19 +7601,59 @@ async function writeAletaBotRuntimeConfig(
   settings: AletaBotSettings,
   whatsappSettings: Awaited<ReturnType<typeof getWhatsAppSettingsFromDb>>
 ) {
-  const [templates, notifications, queries, dbConnections, publicQaIntents, employeeRecipients, legacyMigrations] = await Promise.all([
+  const [
+    templates,
+    notifications,
+    queries,
+    dbConnections,
+    publicQaIntents,
+    publicQaKnowledge,
+    employeeRecipients,
+    blockedRecipients,
+    legacyMigrations,
+    institutionIdentity,
+  ] = await Promise.all([
     getTemplates(db),
     getNotifications(db),
     getQueries(db),
     getRuntimeDbConnections(db),
     getPublicQaIntents(db),
+    getPublicQaKnowledgeEntries(db),
     getEmployeeRecipients(db),
+    getBlockedRecipients(db),
     getLegacyMigrations(db),
+    getInstitutionIdentityFromDb(db).catch(() => ({
+      courtName: "Pengadilan",
+      courtShortName: "",
+      address: "",
+      phoneNumber: "",
+      mobilePhone: "",
+      csWhatsappNumber: "",
+      botWhatsappNumber: "",
+      email: "",
+      instagram: "",
+      facebook: "",
+      youtube: "",
+      website: "",
+      mapUrl: "",
+    })),
   ]);
-  const disabledLegacyNotificationKeys = legacyMigrations
+  const allLegacyNotificationKeys = Array.from(
+    new Set(
+      legacyMigrations
+        .filter((item) => item.legacyType === "party_notification" || item.legacyType === "employee_notification")
+        .flatMap((item) => [item.legacyKey, item.sourceFunction])
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+    )
+  );
+  const disabledLegacyNotificationKeys = Array.from(new Set([
+    ...allLegacyNotificationKeys,
+    ...legacyMigrations
     .filter((item) => item.status === "legacy_disabled" && (item.legacyType === "party_notification" || item.legacyType === "employee_notification"))
     .map((item) => item.legacyKey || item.sourceFunction)
-    .filter(Boolean);
+    .filter(Boolean),
+  ]));
   const disabledLegacyCommandKeys = legacyMigrations
     .filter((item) => item.status === "legacy_disabled" && (item.legacyType === "public_command" || item.legacyType === "admin_command"))
     .map((item) => item.legacyKey || item.sourceFunction)
@@ -5527,24 +7663,24 @@ async function writeAletaBotRuntimeConfig(
       .filter((notification) => notification.isActive)
       .map(async (notification) => {
         if (notification.category !== "party") return notification;
-        const dryRunPassed = notification.lastStatus === "simulated";
-        const recipientPreviewPassed = await hasNotificationRecipientPreview(db, notification.id);
-        const approved = await hasApprovedNotificationPolicy(db, notification.id);
         return {
           ...notification,
-          policyStatus: {
-            dryRunPassed,
-            recipientPreviewPassed,
-            approved,
-            canActivate: dryRunPassed && recipientPreviewPassed && approved,
-            reason: "Runtime guard party notification.",
-          },
+          policyStatus: await computePartyNotificationPolicy(
+            db,
+            notification,
+            "Runtime guard party notification.",
+            "Runtime guard party notification."
+          ),
         };
       })
   );
   const safeRuntimeNotifications = activeRuntimeNotifications.filter(
     (notification) => notification.category !== "party" || notification.policyStatus?.canActivate
   );
+  // Slider Risiko menentukan seluruh knob anti-ban sekaligus. Nilainya OVERRIDE
+  // messageDelayMs manual: knob-nya sudah ada (jeda, rate limit, worker, jendela
+  // kirim), portal hanya mengisi nilainya lalu bot menghormatinya seperti biasa.
+  const riskPreset = resolveSendingRiskPreset(settings.sendingRiskLevel);
   const payload = {
     version: 1,
     updatedAt: new Date().toISOString(),
@@ -5553,9 +7689,77 @@ async function writeAletaBotRuntimeConfig(
     notificationsEnabled: settings.notificationsEnabled,
     adminWhatsappNumber: settings.adminWhatsappNumber,
     adminWhatsappChatId: settings.adminWhatsappNumber ? `${settings.adminWhatsappNumber}@c.us` : "",
-    messageDelayMs: settings.messageDelayMs,
+    sendingRiskLevel: riskPreset.level,
+    messageDelayMs: riskPreset.messageDelayMinMs,
+    messageDelayMaxMs: riskPreset.messageDelayMaxMs,
+    rateLimit: {
+      maxPerMinute: riskPreset.maxPerMinute,
+      maxPerHour: riskPreset.maxPerHour,
+      maxPerDay: riskPreset.maxPerDay,
+    },
+    queueWorker: {
+      batchSize: riskPreset.queueBatchSize,
+      intervalMs: riskPreset.queueIntervalMs,
+    },
+    sendingWindow: {
+      enabled: true,
+      start: riskPreset.sendingWindowStart,
+      end: riskPreset.sendingWindowEnd,
+    },
+    // Jarak antar pesan di ANTREAN: mencegah notifikasi sejenis berangkat
+    // serentak, dan memindahkan pesan di luar jam kirim ke pembukaan jam
+    // berikutnya secara menyebar (bukan menumpuk lalu meledak sekaligus).
+    sendingPace: {
+      enabled: true,
+      minGapMs: riskPreset.sendingGapMinMs,
+      maxGapMs: riskPreset.sendingGapMaxMs,
+      perRecipientCooldownMs: riskPreset.perRecipientCooldownMs,
+      // Kelompok jarak untuk irama campuran. Mode Maksimal sengaja tidak
+      // punya kelompok: pada tingkat itu kecepatan memang didahulukan di atas
+      // penyamaran, dan bot kembali memakai rentang min/max.
+      gapProfile: riskPreset.gapProfile ?? null,
+    },
+    // Ritme kantor: istirahat siang, Jumatan, dan libur akhir pekan. Jam kirim
+    // saja belum cukup — pengiriman yang mengalir rata dari pukul 08 sampai 16
+    // tanpa pernah berhenti tidak menyerupai kantor mana pun.
+    sendingRhythm: {
+      enabled: true,
+      lunchStart: "12:00",
+      lunchEnd: "13:00",
+      fridayLunchStart: "11:30",
+      fridayLunchEnd: "13:30",
+      skipWeekend: true,
+      holidays: [],
+    },
+    // Perilaku manusiawi: indikator "sedang mengetik" sebelum kirim, dan
+    // membuka pesan yang masuk. Keduanya sudah tersedia di whatsapp-web.js
+    // tetapi belum pernah dipakai sebelum v1.14.0.
+    humanPresence: {
+      typingEnabled: true,
+      markSeenEnabled: true,
+    },
+    // Pemanasan nomor. Dimatikan secara bawaan; dinyalakan admin saat nomor
+    // baru pulih dari suspend atau saat memakai nomor baru.
+    numberWarmup: {
+      enabled: false,
+      startedAt: "",
+      startCap: 30,
+      targetCap: riskPreset.maxPerDay,
+      stepDays: 3,
+    },
+    openingVariationEnabled: true,
     retryLimit: settings.retryLimit,
     dryRunEnabled: settings.dryRunEnabled,
+    useRegistryNotifications: true,
+    registryPilotMode: false,
+    registryDryRunDefault: settings.dryRunEnabled,
+    legacyNotificationTakeoverMode: true,
+    productionAutomationGuard: {
+      enabled: true,
+      legacyDirectSendEnabled: false,
+      legacyNotificationSchedulerEnabled: false,
+      requireGatewayMessageContract: true,
+    },
     scheduleCron: settings.scheduleCron,
     testTargetNumber: settings.testTargetNumber,
     dispositionDeadlineReminder: {
@@ -5615,6 +7819,21 @@ async function writeAletaBotRuntimeConfig(
     publicQaTemperature: Number(process.env.ALETA_BOT_PUBLIC_QA_TEMPERATURE || 0.2),
     publicQaSessionTtlMinutes: Number(process.env.ALETA_BOT_PUBLIC_QA_SESSION_TTL_MINUTES || 20),
     publicQaRequireApproval: process.env.ALETA_BOT_PUBLIC_QA_REQUIRE_APPROVAL !== "false",
+    institutionIdentity: {
+      courtName: institutionIdentity.courtName,
+      courtShortName: institutionIdentity.courtShortName,
+      address: institutionIdentity.address,
+      phoneNumber: institutionIdentity.phoneNumber,
+      mobilePhone: institutionIdentity.mobilePhone,
+      csWhatsappNumber: institutionIdentity.csWhatsappNumber ?? "",
+      botWhatsappNumber: institutionIdentity.botWhatsappNumber ?? "",
+      email: institutionIdentity.email,
+      instagram: institutionIdentity.instagram ?? "",
+      facebook: institutionIdentity.facebook ?? "",
+      youtube: institutionIdentity.youtube ?? "",
+      website: institutionIdentity.website ?? "",
+      mapUrl: institutionIdentity.mapUrl ?? "",
+    },
     publicQaIntents: publicQaIntents.map((intent) => ({
       id: intent.id,
       key: intent.key,
@@ -5638,6 +7857,8 @@ async function writeAletaBotRuntimeConfig(
       requiresCaseNumber: intent.requiresCaseNumber,
       maxAttempts: intent.maxAttempts,
       fallbackMessage: intent.fallbackMessage,
+      answerTemplate: intent.answerTemplate,
+      matchKeywords: intent.matchKeywords,
       riskLevel: intent.riskLevel,
       notes: intent.notes,
       aiAnswerEnabled: intent.aiAnswerEnabled,
@@ -5656,7 +7877,24 @@ async function writeAletaBotRuntimeConfig(
       approvedBy: intent.approvedBy,
       approvedAt: intent.approvedAt,
     })),
+    publicQaKnowledge: publicQaKnowledge
+      .filter((item) => item.isActive)
+      .map((item) => ({
+        id: item.id,
+        key: item.key,
+        title: item.title,
+        category: item.category,
+        audience: item.audience,
+        keywords: item.keywords,
+        answer: item.answer,
+        sourceLabel: item.sourceLabel,
+        sourceUrl: item.sourceUrl,
+        priority: item.priority,
+        isActive: item.isActive,
+        updatedAt: item.updatedAt,
+      })),
     employeeRecipients,
+    blockedRecipients,
     whatsapp: {
       phoneNumber: whatsappSettings.phoneNumber,
       sessionName: whatsappSettings.sessionName,
@@ -5669,12 +7907,57 @@ async function writeAletaBotRuntimeConfig(
     path.resolve(process.cwd(), "..", "aleta_bot", "config", "aleta-runtime.json"),
   ];
 
-  await Promise.all(
+  const localWrites = await Promise.all(
     targets.map(async (targetPath) => {
-      await mkdir(path.dirname(targetPath), { recursive: true });
-      await writeFile(targetPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+      try {
+        await mkdir(path.dirname(targetPath), { recursive: true });
+        await writeFile(targetPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+        return { targetPath, ok: true as const };
+      } catch (error) {
+        return {
+          targetPath,
+          ok: false as const,
+          message: error instanceof Error ? error.message : "Gagal menulis runtime config.",
+        };
+      }
     })
   );
+
+  let runtimeSync:
+    | { attempted: false; ok: false; message: string }
+    | { attempted: true; ok: true; message: string }
+    | { attempted: true; ok: false; message: string } = {
+    attempted: false,
+    ok: false,
+    message: "Runtime ALETA Bot tidak memakai mode gateway.",
+  };
+
+  if (getWhatsappRuntimeMode() === "aleta_bot") {
+    try {
+      await callAletaBotRuntime("/internal/aleta-bot/config/sync", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      runtimeSync = {
+        attempted: true,
+        ok: true,
+        message: "Runtime config berhasil disinkronkan ke layanan aleta_bot.",
+      };
+    } catch (error) {
+      runtimeSync = {
+        attempted: true,
+        ok: false,
+        message: error instanceof Error ? error.message : "Sinkronisasi runtime aleta_bot gagal.",
+      };
+    }
+  }
+
+  return { localWrites, runtimeSync };
+}
+
+export async function syncAletaBotRuntimeConfigFromDb(db: AletaDatabase) {
+  await ensureAletaBotSeeded(db);
+  return writeAletaBotRuntimeConfig(db, await getAletaBotSettings(db), await getWhatsAppSettingsFromDb(db));
 }
 
 export async function updateAletaBotSettings(
@@ -5688,6 +7971,7 @@ export async function updateAletaBotSettings(
   }
 ) {
   const actor = await requireSuperAdmin(db, actorUserId);
+  await ensureAletaBotSeeded(db);
 
   return withTransaction(db, async (tx) => {
     const current = await getAletaBotSettings(tx);
@@ -5710,6 +7994,10 @@ export async function updateAletaBotSettings(
         payload.messageDelayMs === undefined
           ? current.messageDelayMs
           : Math.min(60000, Math.max(0, Number(payload.messageDelayMs))),
+      sendingRiskLevel:
+        payload.sendingRiskLevel === undefined
+          ? current.sendingRiskLevel
+          : resolveSendingRiskPreset(payload.sendingRiskLevel).level,
       retryLimit:
         payload.retryLimit === undefined
           ? current.retryLimit
@@ -5765,7 +8053,7 @@ export async function updateAletaBotSettings(
       .prepare(
         `UPDATE aleta_bot_settings
          SET bot_enabled = ?, notifications_enabled = ?, admin_whatsapp_number = ?,
-           message_delay_ms = ?, retry_limit = ?, dry_run_enabled = ?, schedule_cron = ?,
+           message_delay_ms = ?, sending_risk_level = ?, retry_limit = ?, dry_run_enabled = ?, schedule_cron = ?,
            test_target_number = ?, security_notes = ?,
            disposition_deadline_reminder_enabled = ?,
            disposition_deadline_reminder_mode = ?,
@@ -5791,6 +8079,7 @@ export async function updateAletaBotSettings(
         nextSettings.notificationsEnabled ? 1 : 0,
         nextSettings.adminWhatsappNumber,
         nextSettings.messageDelayMs,
+        nextSettings.sendingRiskLevel,
         nextSettings.retryLimit,
         nextSettings.dryRunEnabled ? 1 : 0,
         nextSettings.scheduleCron,
@@ -5814,6 +8103,13 @@ export async function updateAletaBotSettings(
         nextSettings.deadlineReminderKillSwitch ? 1 : 0,
         nextSettings.updatedAt
       );
+
+    const savedSettings = await tx
+      .prepare(`SELECT admin_whatsapp_number FROM aleta_bot_settings WHERE id = 1`)
+      .get<{ admin_whatsapp_number: string }>();
+    if ((savedSettings?.admin_whatsapp_number ?? "") !== nextSettings.adminWhatsappNumber) {
+      throw new ApiError(500, "Nomor admin WhatsApp belum berhasil tersimpan ke database.");
+    }
 
     await appendAletaBotLog(tx, {
       actorUserId: actor.id,
@@ -5841,7 +8137,16 @@ export async function updateAletaBotSettings(
     });
 
     const whatsappSettings = await getWhatsAppSettingsFromDb(tx);
-    await writeAletaBotRuntimeConfig(tx, nextSettings, whatsappSettings);
+    const syncResult = await writeAletaBotRuntimeConfig(tx, nextSettings, whatsappSettings);
+    if (!syncResult.runtimeSync.ok || syncResult.localWrites.some((item) => !item.ok)) {
+      await appendAletaBotLog(tx, {
+        actorUserId: actor.id,
+        level: "warning",
+        eventType: "settings",
+        message: "Konfigurasi tersimpan, tetapi sinkronisasi runtime ALETA Bot perlu dicek.",
+        metadata: syncResult,
+      });
+    }
 
     return getAletaBotSnapshot(tx, actor.id);
   });
@@ -5859,7 +8164,7 @@ export async function updateAletaBotTemplate(
     body: string;
   }
 ) {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   const nextBody = body.trim();
   if (nextBody.length < 8 || nextBody.length > 4000) {
     throw new ApiError(400, "Template harus berisi 8-4000 karakter.");
@@ -5918,19 +8223,19 @@ export async function updateAletaBotQuery(
       };
   }
 ) {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   const now = new Date().toISOString();
   const id = query.id?.trim() || (await nextPrefixedId(db, "aleta_bot_queries", "abq"));
   const name = query.name.trim();
-  if (!name) throw new ApiError(400, "Nama query wajib diisi.");
+  if (!name) throw new ApiError(400, "Nama sumber data wajib diisi.");
   const category = query.category;
-  if (!["employee", "party", "system"].includes(category)) throw new ApiError(400, "Kategori query tidak valid.");
+  if (!["employee", "party", "system"].includes(category)) throw new ApiError(400, "Kategori sumber data tidak valid.");
   const sqlText = validateReadOnlyQuery(query.sqlText);
   const outputColumns = validateOutputColumns(parseColumns(query.outputColumns));
-  if (outputColumns.length === 0) throw new ApiError(400, "Mapping kolom hasil query wajib diisi.");
+  if (outputColumns.length === 0) throw new ApiError(400, "Kolom hasil sumber data wajib diisi.");
   const recipientColumn = String(query.recipientColumn ?? "").trim();
   if (category === "party" && (!recipientColumn || !outputColumns.includes(recipientColumn))) {
-    throw new ApiError(400, "Query kategori Pihak wajib memiliki kolom nomor tujuan yang ada di mapping kolom.");
+    throw new ApiError(400, "Sumber data untuk pihak wajib memiliki kolom nomor tujuan yang ada di kolom hasil.");
   }
   const connectionKey = validateConnectionKey(query.connectionKey || "sipp_primary");
 
@@ -5939,13 +8244,13 @@ export async function updateAletaBotQuery(
     const duplicate = await tx
       .prepare(`SELECT id FROM aleta_bot_queries WHERE lower(name) = lower(?) AND id <> ?`)
       .get<{ id: string }>(name, id);
-    if (duplicate) throw new ApiError(400, "Nama query ALETA Bot sudah dipakai.");
+    if (duplicate) throw new ApiError(400, "Nama sumber data ALETA Bot sudah dipakai.");
 
     const existing = await tx.prepare(`SELECT id FROM aleta_bot_queries WHERE id = ?`).get<{ id: string }>(id);
     const connection = (await getDbConnections(tx)).find((item) => item.key === connectionKey);
     if (!connection) throw new ApiError(400, "Connection key database tidak ditemukan.");
     if (!connection.isActive && query.isActive !== false) {
-      throw new ApiError(400, "Query aktif tidak boleh memakai koneksi database yang nonaktif.");
+      throw new ApiError(400, "Sumber data aktif tidak boleh memakai koneksi database yang nonaktif.");
     }
 
     if (existing) {
@@ -6025,7 +8330,7 @@ export async function updateAletaBotNotification(
     notification: Partial<AletaBotNotification> & Pick<AletaBotNotification, "name" | "category" | "queryId" | "templateId">;
   }
 ) {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   const now = new Date().toISOString();
   const id = notification.id?.trim() || (await nextPrefixedId(db, "aleta_bot_notifications", "abn"));
   const name = notification.name.trim();
@@ -6040,27 +8345,31 @@ export async function updateAletaBotNotification(
     if (duplicate) throw new ApiError(400, "Nama notifikasi ALETA Bot sudah dipakai.");
 
     const query = (await getQueries(tx)).find((item) => item.id === notification.queryId);
-    if (!query) throw new ApiError(404, "Sumber query notifikasi tidak ditemukan.");
-    if (!query.isActive && notification.isActive) throw new ApiError(400, "Query nonaktif tidak bisa dipakai oleh notifikasi aktif.");
+    if (!query) throw new ApiError(404, "Sumber data notifikasi tidak ditemukan.");
+    if (!query.isActive && notification.isActive) throw new ApiError(400, "Sumber data nonaktif tidak bisa dipakai oleh notifikasi aktif.");
 
     const template = (await getTemplates(tx)).find((item) => item.id === notification.templateId);
-    if (!template) throw new ApiError(404, "Template notifikasi tidak ditemukan.");
+    if (!template) throw new ApiError(404, "Isi pesan notifikasi tidak ditemukan.");
 
     const placeholders = getTemplatePlaceholders(template.body);
     const allowedColumns = new Set([...query.outputColumns, "nama_pegawai", "judul_notifikasi", "ringkasan", "waktu", "mode"]);
     const missingPlaceholders = placeholders.filter((placeholder) => !allowedColumns.has(placeholder));
     if (missingPlaceholders.length > 0) {
-      throw new ApiError(400, `Placeholder template tidak cocok dengan kolom query: ${missingPlaceholders.join(", ")}.`);
+      throw new ApiError(400, `Placeholder isi pesan tidak cocok dengan kolom sumber data: ${missingPlaceholders.join(", ")}.`);
     }
 
     const recipientSource = notification.category === "employee" ? "users" : "query";
     if (notification.category === "party" && !query.recipientColumn) {
-      throw new ApiError(400, "Notifikasi Pihak wajib memakai query dengan kolom nomor tujuan.");
+      throw new ApiError(400, "Notifikasi pihak wajib memakai sumber data dengan kolom nomor tujuan.");
     }
     if (notification.category === "employee") {
       const employeeRecipients = await getEmployeeRecipients(tx);
       if (employeeRecipients.length === 0 && notification.isActive) {
         throw new ApiError(400, "Tidak ada user aktif dengan nomor WhatsApp valid untuk notifikasi Pegawai.");
+      }
+      const targetedEmployeeRecipients = filterEmployeeRecipientsByMapping(employeeRecipients, notification.recipientMapping ?? {});
+      if (targetedEmployeeRecipients.length === 0 && notification.isActive) {
+        throw new ApiError(400, "Target pegawai tidak cocok dengan role, jabatan, atau nama pegawai yang punya nomor WhatsApp valid.");
       }
     }
 
@@ -6085,7 +8394,14 @@ export async function updateAletaBotNotification(
     const existing = await tx
       .prepare(`SELECT id, is_active, last_status FROM aleta_bot_notifications WHERE id = ?`)
       .get<{ id: string; is_active: number; last_status: AletaBotNotification["lastStatus"] }>(id);
-    if (notification.category === "party" && notification.isActive && existing?.is_active !== 1) {
+    // Notifikasi bawaan standar tidak melewati ritual ini — sudah disetujui
+    // secara bawaan. Yang tetap dijaga hanyalah notifikasi pihak BUATAN admin.
+    if (
+      notification.category === "party" &&
+      notification.isActive &&
+      existing?.is_active !== 1 &&
+      !isBuiltInNotification(id)
+    ) {
       const dryRunPassed = existing?.last_status === "simulated";
       const previewPassed = existing ? await hasNotificationRecipientPreview(tx, id) : false;
       const approved = existing ? await hasApprovedNotificationPolicy(tx, id) : false;
@@ -6102,7 +8418,7 @@ export async function updateAletaBotNotification(
           `UPDATE aleta_bot_notifications
            SET name = ?, category = ?, description = ?, query_id = ?, template_id = ?,
              recipient_source = ?, recipient_mapping_json = ?, schedule_config_json = ?,
-             is_active = ?, delay_ms = ?, retry_limit = ?, updated_by = ?, updated_at = ?
+             is_active = ?, attach_document = ?, delay_ms = ?, retry_limit = ?, updated_by = ?, updated_at = ?
            WHERE id = ?`
         )
         .run(
@@ -6115,6 +8431,7 @@ export async function updateAletaBotNotification(
           JSON.stringify(recipientMapping),
           JSON.stringify(scheduleConfig),
           notification.isActive ? 1 : 0,
+          notification.attachDocument === false ? 0 : 1,
           delayMs,
           retryLimit,
           actor.id,
@@ -6126,10 +8443,10 @@ export async function updateAletaBotNotification(
         .prepare(
           `INSERT INTO aleta_bot_notifications (
             id, name, category, description, query_id, template_id, recipient_source,
-            recipient_mapping_json, schedule_config_json, is_active, delay_ms, retry_limit,
+            recipient_mapping_json, schedule_config_json, is_active, attach_document, delay_ms, retry_limit,
             last_status, created_by, updated_by, created_at, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?, ?, ?)`
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'idle', ?, ?, ?, ?)`
         )
         .run(
           id,
@@ -6142,6 +8459,7 @@ export async function updateAletaBotNotification(
           JSON.stringify(recipientMapping),
           JSON.stringify(scheduleConfig),
           notification.isActive ? 1 : 0,
+          notification.attachDocument === false ? 0 : 1,
           delayMs,
           retryLimit,
           actor.id,
@@ -6407,52 +8725,52 @@ export async function updateAletaBotPublicQaIntent(
   const key = String(intent.key || "").trim().toLowerCase().replace(/[^a-z0-9_ -]/g, "_").replace(/\s+/g, "_");
   if (!key) throw new ApiError(400, "Key intent wajib diisi.");
   const name = String(intent.name || "").trim();
-  if (!name) throw new ApiError(400, "Nama intent wajib diisi.");
+  if (!name) throw new ApiError(400, "Nama aturan wajib diisi.");
   const category = intent.category;
   if (!["informasi_umum", "status_perkara", "jadwal_sidang", "biaya_panjar", "akta_cerai", "layanan", "pengaduan", "ecourt", "fallback"].includes(category)) {
-    throw new ApiError(400, "Kategori intent Pertanyaan Para Pihak tidak valid.");
+    throw new ApiError(400, "Kategori aturan jawaban tidak valid.");
   }
   const audience = intent.audience;
-  if (!["party", "public", "employee", "admin"].includes(audience)) throw new ApiError(400, "Audience intent tidak valid.");
+  if (!["party", "public", "employee", "admin"].includes(audience)) throw new ApiError(400, "Tujuan aturan jawaban tidak valid.");
   const responseMode = intent.responseMode;
   if (!["static_template", "query_template", "legacy_handler", "ai_guided_template", "fallback"].includes(responseMode)) {
-    throw new ApiError(400, "Response mode intent tidak valid.");
-  }
-  if (["employee", "admin"].includes(audience) && intent.isActive) {
-    throw new ApiError(400, "Tab Pertanyaan Para Pihak tidak boleh mengaktifkan intent internal pegawai/admin.");
+    throw new ApiError(400, "Cara menjawab tidak valid.");
   }
   const exactTriggers = parseListInput(intent.exactTriggers);
   const exampleQuestions = parseListInput(intent.exampleQuestions);
   if (intent.aiEnabled && exampleQuestions.length === 0) {
-    throw new ApiError(400, "AI matcher tidak boleh aktif tanpa contoh pertanyaan.");
+    throw new ApiError(400, "AI pengenal pertanyaan tidak boleh aktif tanpa contoh pertanyaan.");
   }
   const requiredParameters = parseListInput(intent.requiredParameters);
   const confidenceThreshold = Math.max(0.4, Math.min(1, Number(intent.confidenceThreshold || 0.7)));
   const riskLevel = intent.riskLevel;
-  if (!["low", "medium", "high"].includes(riskLevel)) throw new ApiError(400, "Risk level intent tidak valid.");
+  if (!["low", "medium", "high"].includes(riskLevel)) throw new ApiError(400, "Risiko jawaban tidak valid.");
   const fallbackMessage = String(intent.fallbackMessage || PUBLIC_QA_FALLBACK_MESSAGE).trim();
-  if (!fallbackMessage) throw new ApiError(400, "Fallback message wajib diisi.");
+  if (!fallbackMessage) throw new ApiError(400, "Jawaban saat belum bisa diproses wajib diisi.");
   const queryKey = String(intent.queryKey || "").trim();
   if (queryKey && !(await getQueries(db)).some((query) => query.id === queryKey || query.name === queryKey)) {
-    throw new ApiError(400, "Query mapping intent tidak ditemukan di registry query.");
+    throw new ApiError(400, "Sumber data aturan jawaban tidak ditemukan.");
   }
   const legacyHandler = String(intent.legacyHandler || "").trim();
   const legacyCommand = String(intent.legacyCommand || "").trim();
   const parameterizedLegacyCommand = String(intent.parameterizedLegacyCommand || "").trim();
   if (["query_template", "legacy_handler"].includes(responseMode) && !queryKey && !legacyHandler && !legacyCommand) {
-    throw new ApiError(400, "Intent dinamis wajib punya query mapping atau legacy handler.");
+    throw new ApiError(400, "Aturan jawaban dinamis wajib punya sumber data atau jalur lama.");
   }
   const aiAnswerMode = String(intent.aiAnswerMode || "off") as AletaBotPublicQaIntent["aiAnswerMode"];
   if (!["off", "template_only", "template_rewrite", "query_summarize", "guided_answer"].includes(aiAnswerMode)) {
-    throw new ApiError(400, "AI answer mode tidak valid.");
+    throw new ApiError(400, "Mode jawaban AI tidak valid.");
   }
   const answerPolicy = String(intent.answerPolicy || "public_info_only") as AletaBotPublicQaIntent["answerPolicy"];
   if (!["public_info_only", "case_status_limited", "requires_verified_party", "admin_only"].includes(answerPolicy)) {
-    throw new ApiError(400, "Answer policy tidak valid.");
+    throw new ApiError(400, "Batas data jawaban tidak valid.");
   }
   const verificationPolicy = String(intent.verificationPolicy || "none") as AletaBotPublicQaIntent["verificationPolicy"];
   if (!["none", "case_number_only", "phone_match", "case_number_and_phone", "manual_ptsp"].includes(verificationPolicy)) {
-    throw new ApiError(400, "Verification policy tidak valid.");
+    throw new ApiError(400, "Verifikasi aturan jawaban tidak valid.");
+  }
+  if (["employee", "admin"].includes(audience) && intent.isActive && !["phone_match", "case_number_and_phone", "manual_ptsp"].includes(verificationPolicy)) {
+    throw new ApiError(400, "Aturan untuk pegawai/admin wajib memakai verifikasi nomor WhatsApp terdaftar atau pemeriksaan petugas.");
   }
   const allowedDataFields = parseListInput(intent.allowedDataFields);
   const blockedDataFields = parseListInput(intent.blockedDataFields);
@@ -6460,14 +8778,23 @@ export async function updateAletaBotPublicQaIntent(
   const aiUserPromptTemplate = String(intent.aiUserPromptTemplate || "").trim();
   const aiAnswerEnabled = Boolean(intent.aiAnswerEnabled);
   if (aiAnswerEnabled && aiAnswerMode !== "off" && !fallbackMessage) {
-    throw new ApiError(400, "Fallback message wajib ada sebelum AI answer aktif.");
+    throw new ApiError(400, "Jawaban saat belum bisa diproses wajib ada sebelum AI menyusun jawaban aktif.");
   }
   if (aiAnswerEnabled && aiAnswerMode !== "off" && exampleQuestions.length === 0) {
-    throw new ApiError(400, "AI answer tidak boleh aktif tanpa contoh pertanyaan.");
+    throw new ApiError(400, "AI penyusun jawaban tidak boleh aktif tanpa contoh pertanyaan.");
   }
-  const status = (intent.status || (riskLevel === "high" ? "draft" : "active")) as AletaBotPublicQaIntent["status"];
-  if (!["draft", "active", "archived"].includes(status)) throw new ApiError(400, "Status intent tidak valid.");
+  // Aturan jawaban tidak lagi mengenal tahap draft: begitu dibuat, ia langsung
+  // berlaku. Pengaman yang tetap dipertahankan adalah batas DATA (audiens
+  // pegawai/admin wajib verifikasi nomor), bukan penundaan berlakunya aturan.
+  const status = (intent.status || "active") as AletaBotPublicQaIntent["status"];
+  if (!["draft", "active", "archived"].includes(status)) throw new ApiError(400, "Status aturan jawaban tidak valid.");
   const requiresApprovalBeforeActive = intent.requiresApprovalBeforeActive !== false;
+  // Blangko jawaban dibatasi panjangnya karena dikirim lewat WhatsApp.
+  const answerTemplate = String(intent.answerTemplate || "").trim().slice(0, 4000);
+  const matchKeywords = parseListInput(intent.matchKeywords)
+    .map((item) => String(item || "").trim().toLowerCase())
+    .filter(Boolean)
+    .slice(0, 40);
   const maxAiTokens = Math.max(100, Math.min(1200, Number(intent.maxAiTokens || 400)));
   const temperature = Math.max(0, Math.min(0.7, Number(intent.temperature ?? 0.2)));
 
@@ -6476,10 +8803,10 @@ export async function updateAletaBotPublicQaIntent(
     const duplicate = await tx
       .prepare(`SELECT id FROM aleta_bot_public_qa_intents WHERE lower(key) = lower(?) AND id <> ?`)
       .get<{ id: string }>(key, id);
-    if (duplicate) throw new ApiError(400, "Key intent Pertanyaan Para Pihak sudah dipakai.");
+    if (duplicate) throw new ApiError(400, "Kode aturan jawaban sudah dipakai.");
 
     const existing = await tx.prepare(`SELECT * FROM aleta_bot_public_qa_intents WHERE id = ?`).get<PublicQaIntentRow>(id);
-    const isActive = riskLevel === "high" || status !== "active" ? false : intent.isActive !== false;
+    const isActive = status === "archived" ? false : intent.isActive !== false;
     const nextVersion = Number(existing?.version || 0) + 1;
     if (existing) {
       await tx
@@ -6505,7 +8832,8 @@ export async function updateAletaBotPublicQaIntent(
              required_parameters_json = ?, query_key = ?, legacy_handler = ?,
              legacy_command = ?, parameterized_legacy_command = ?, template_key = ?,
              response_mode = ?, confidence_threshold = ?, requires_verification = ?,
-             requires_case_number = ?, max_attempts = ?, fallback_message = ?, risk_level = ?,
+             requires_case_number = ?, max_attempts = ?, fallback_message = ?,
+             answer_template = ?, match_keywords_json = ?, risk_level = ?,
              notes = ?, ai_answer_enabled = ?, ai_answer_mode = ?, answer_policy = ?,
              verification_policy = ?, allowed_data_fields_json = ?, blocked_data_fields_json = ?,
              ai_system_prompt = ?, ai_user_prompt_template = ?, max_ai_tokens = ?,
@@ -6535,6 +8863,8 @@ export async function updateAletaBotPublicQaIntent(
           intent.requiresCaseNumber ? 1 : 0,
           Math.max(1, Math.min(5, Number(intent.maxAttempts || 2))),
           fallbackMessage,
+          answerTemplate,
+          JSON.stringify(matchKeywords),
           riskLevel,
           String(intent.notes || "").trim(),
           aiAnswerEnabled ? 1 : 0,
@@ -6564,14 +8894,15 @@ export async function updateAletaBotPublicQaIntent(
             exact_triggers_json, example_questions_json, required_parameters_json,
             query_key, legacy_handler, legacy_command, parameterized_legacy_command,
             template_key, response_mode, confidence_threshold, requires_verification,
-            requires_case_number, max_attempts, fallback_message, risk_level, notes,
+            requires_case_number, max_attempts, fallback_message,
+            answer_template, match_keywords_json, risk_level, notes,
             ai_answer_enabled, ai_answer_mode, answer_policy, verification_policy,
             allowed_data_fields_json, blocked_data_fields_json, ai_system_prompt,
             ai_user_prompt_template, max_ai_tokens, temperature,
             requires_approval_before_active, version, status, approved_by, approved_at,
             created_by, updated_by, created_at, updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           id,
@@ -6596,6 +8927,8 @@ export async function updateAletaBotPublicQaIntent(
           intent.requiresCaseNumber ? 1 : 0,
           Math.max(1, Math.min(5, Number(intent.maxAttempts || 2))),
           fallbackMessage,
+          answerTemplate,
+          JSON.stringify(matchKeywords),
           riskLevel,
           String(intent.notes || "").trim(),
           aiAnswerEnabled ? 1 : 0,
@@ -6815,10 +9148,11 @@ export async function exportPublicQaHumanReviewCsv(
     LEFT JOIN users reviewer ON reviewer.id = logs.reviewed_by_user_id
     ${where.length > 0 ? `WHERE ${where.join(" AND ")}` : ""}
     ORDER BY logs.created_at DESC
-    LIMIT 5000`;
+    LIMIT ${exportOverflowLimit(EXPORT_ROW_LIMITS.publicQaReviewCsv)}`;
   const rows = await db.prepare(sql).all<
     PublicQaLogRow & { reviewer_name: string | null; risk_level: string }
   >(...params);
+  assertExportRowLimit(rows.length, EXPORT_ROW_LIMITS.publicQaReviewCsv, "Export review Pertanyaan Para Pihak");
 
   const headers = [
     "Waktu",
@@ -6909,7 +9243,7 @@ export async function convertPublicQaReviewToDraftIntent(
   const ids = Array.isArray(logIds) ? logIds.map((id) => String(id).trim()).filter(Boolean).slice(0, 50) : [];
   const normalized = String(normalizedMessage || "").trim().toLowerCase();
   if (ids.length === 0 && !normalized) {
-    throw new ApiError(400, "Pilih pertanyaan Public Q&A yang akan dijadikan draft intent.");
+    throw new ApiError(400, "Pilih pertanyaan yang akan dijadikan draft aturan.");
   }
 
   const logs = ids.length > 0
@@ -6941,7 +9275,7 @@ export async function convertPublicQaReviewToDraftIntent(
 
   const examples = Array.from(new Set(logs.map((log) => (log.raw_message || log.normalized_message || "").trim()).filter(Boolean))).slice(0, 12);
   if (examples.length === 0) {
-    throw new ApiError(400, "Pertanyaan tidak memiliki contoh teks yang bisa dijadikan draft intent.");
+    throw new ApiError(400, "Pertanyaan tidak memiliki contoh teks yang bisa dijadikan draft aturan.");
   }
 
   const conversionMode = mode === "existing" ? "existing" : "new";
@@ -6950,16 +9284,14 @@ export async function convertPublicQaReviewToDraftIntent(
   if (conversionMode === "existing") {
     const intents = await getPublicQaIntents(db);
     targetIntent = intents.find((intent) => intent.id === targetIntentId);
-    if (!targetIntent) throw new ApiError(404, "Intent tujuan tidak ditemukan.");
-    if (targetIntent.status === "active" || targetIntent.isActive) {
-      throw new ApiError(400, "Contoh dari human review hanya boleh ditambahkan ke intent draft/nonaktif agar perilaku bot tidak berubah langsung.");
-    }
+    if (!targetIntent) throw new ApiError(404, "Draft aturan tujuan tidak ditemukan.");
+
     await updateAletaBotPublicQaIntent(db, {
       actorUserId: actor.id,
       intent: {
         ...targetIntent,
         isActive: false,
-        status: "draft",
+        status: "active",
         exampleQuestions: Array.from(new Set([...targetIntent.exampleQuestions, ...examples])),
         notes: `${targetIntent.notes || ""}\nTambahan contoh dari human review: ${String(reviewNote || "").trim()}`.trim(),
       },
@@ -6967,14 +9299,14 @@ export async function convertPublicQaReviewToDraftIntent(
   } else {
     const suggested = sanitizePublicQaIntentKey(draftIntentKey || logs[0]?.normalized_message || examples[0]);
     const key = await makeUniquePublicQaIntentKey(db, suggested || "draft_public_qa");
-    const name = String(draftIntentName || `Draft Intent: ${examples[0].slice(0, 48)}`).trim().slice(0, 120);
+    const name = String(draftIntentName || `Draft Aturan: ${examples[0].slice(0, 48)}`).trim().slice(0, 120);
     await updateAletaBotPublicQaIntent(db, {
       actorUserId: actor.id,
       intent: {
         id: await nextPrefixedId(db, "aleta_bot_public_qa_intents", "abpqi"),
         key,
         name,
-        description: "Draft intent dari human review Public Q&A. Tidak aktif sampai diverifikasi dan disetujui.",
+        description: "Draft aturan dari tinjauan pertanyaan WhatsApp. Tidak aktif sampai diverifikasi dan disetujui.",
         category: "fallback",
         audience: "public",
         isActive: false,
@@ -7005,8 +9337,8 @@ export async function convertPublicQaReviewToDraftIntent(
         aiUserPromptTemplate: "",
         maxAiTokens: 400,
         temperature: 0.2,
-        requiresApprovalBeforeActive: true,
-        status: "draft",
+        requiresApprovalBeforeActive: false,
+        status: "active",
       },
     });
   }
@@ -7024,8 +9356,8 @@ export async function convertPublicQaReviewToDraftIntent(
     level: "success",
     eventType: "public_qa",
     message: conversionMode === "existing"
-      ? "Human review Public Q&A ditambahkan sebagai contoh ke intent draft."
-      : "Human review Public Q&A dikonversi menjadi draft intent baru.",
+      ? "Tinjauan pertanyaan ditambahkan sebagai contoh ke draft aturan."
+      : "Tinjauan pertanyaan dikonversi menjadi draft aturan baru.",
     metadata: {
       mode: conversionMode,
       targetIntentId: targetIntent?.id ?? null,
@@ -7043,7 +9375,9 @@ function renderTemplate(template: AletaBotTemplate, values: Record<string, strin
   if (missing.length > 0) {
     throw new ApiError(400, `Preview template gagal karena data contoh tidak memiliki placeholder: ${missing.join(", ")}.`);
   }
-  return template.body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => values[key] ?? "");
+  return template.body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) =>
+    formatAletaBotTemplateValue(key, values[key] ?? "")
+  );
 }
 
 async function hasNotificationRecipientPreview(db: AletaDatabase, notificationId: string) {
@@ -7083,12 +9417,12 @@ export async function previewAletaBotNotificationRecipients(
     limit?: number;
   }
 ) {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  const actor = await requireAletaBotOperator(db, actorUserId);
   await ensureAletaBotSeeded(db);
   const notification = (await getNotifications(db)).find((item) => item.id === notificationId);
   if (!notification) throw new ApiError(404, "Notifikasi ALETA Bot tidak ditemukan.");
   const query = (await getQueries(db)).find((item) => item.id === notification.queryId);
-  if (!query) throw new ApiError(404, "Query notifikasi tidak ditemukan.");
+  if (!query) throw new ApiError(404, "Sumber data notifikasi tidak ditemukan.");
   const template = (await getTemplates(db)).find((item) => item.id === notification.templateId);
   if (!template) throw new ApiError(404, "Template notifikasi tidak ditemukan.");
 
@@ -7103,15 +9437,94 @@ export async function previewAletaBotNotificationRecipients(
     validNumber: boolean;
   }> = [];
 
+  // ── Preview DATA NYATA (utama) ─────────────────────────────────────────────
+  // Ambil data sebenarnya dari runtime bot (yang punya akses SIPP), difilter
+  // dan dirender PER PENERIMA. Inilah yang membuat nomor perkara, agenda, jam,
+  // dan ruang benar-benar muncul di preview — dan menjamin tiap hakim melihat
+  // daftar perkaranya SENDIRI (tidak tercampur), persis seperti saat dikirim.
+  let live: AletaBotManualSendPreviewResult | null = null;
+  try {
+    live = await previewAletaBotManualSend(db, {
+      actorUserId,
+      mode: "data_source",
+      queryId: notification.queryId,
+      templateId: notification.templateId,
+      notificationId: notification.id,
+    });
+  } catch {
+    // Runtime bot tidak aktif/terjangkau (mis. mode portal-only atau bot mati).
+    // Jatuh ke pratinjau contoh aman di bawah.
+    live = null;
+  }
+
+  if (live) {
+    const liveRecipients = live.recipients ?? [];
+    const messageByRow = new Map<number, string>();
+    const messageByNumber = new Map<string, string>();
+    for (const m of live.recipientMessages ?? []) {
+      if (typeof m.rowIndex === "number" && m.rowIndex >= 0) messageByRow.set(m.rowIndex, m.message);
+      if (m.normalized) messageByNumber.set(m.normalized, m.message);
+    }
+    const positionByNumber = new Map<string, string>();
+    if (notification.category === "employee") {
+      for (const emp of await getEmployeeRecipients(db)) {
+        const num = normalizeWhatsappNumber(emp.whatsappNumber);
+        if (num) positionByNumber.set(num, emp.positionName || emp.roleId || "Pegawai");
+      }
+    }
+    for (const r of liveRecipients.slice(0, safeLimit)) {
+      const rowIndex = Number(r.rowIndex ?? -1);
+      const message = messageByRow.get(rowIndex) ?? messageByNumber.get(r.normalized) ?? live.message ?? "";
+      items.push({
+        recipientName: r.name || (notification.category === "employee" ? "Pegawai" : "Pihak Perkara"),
+        recipientNumber: maskExportPhone(r.normalized),
+        caseOrPosition:
+          notification.category === "employee"
+            ? positionByNumber.get(r.normalized) || "Pegawai"
+            : "Pihak Perkara",
+        messagePreview: String(message).slice(0, 1000),
+        idempotencyKey: `preview:${notification.id}:${rowIndex}`,
+        validNumber: Boolean(r.valid),
+      });
+    }
+    if (liveRecipients.length === 0) {
+      warnings.push(
+        notification.category === "employee"
+          ? "Sumber data tidak menghasilkan data untuk saat ini (mis. tidak ada sidang hari ini). Periksa jadwal atau tanggal acuan."
+          : "Sumber data tidak menghasilkan pihak/data untuk saat ini."
+      );
+    }
+    await appendAletaBotLog(db, {
+      actorUserId: actor.id,
+      level: "info",
+      eventType: "notification",
+      message: `Preview penerima notifikasi ${notification.name} dibuat tanpa pengiriman.`,
+      metadata: { notificationId, category: notification.category, sampleSize: items.length, totalEstimated: liveRecipients.length, live: true },
+    });
+    await db
+      .prepare(`UPDATE aleta_bot_notifications SET last_message = ?, updated_at = ? WHERE id = ?`)
+      .run("Preview penerima (data nyata) berhasil dijalankan tanpa pengiriman.", new Date().toISOString(), notification.id);
+    return {
+      totalEstimated: liveRecipients.length,
+      sampleSize: items.length,
+      items,
+      warnings,
+    };
+  }
+
+  // ── Fallback: pratinjau contoh aman (tanpa akses SIPP) ─────────────────────
   if (notification.category === "employee") {
-    const recipients = await getEmployeeRecipients(db);
+    const allRecipients = await getEmployeeRecipients(db);
+    const recipients = filterEmployeeRecipientsByMapping(allRecipients, notification.recipientMapping);
     for (const recipient of recipients.slice(0, safeLimit)) {
       const sample = {
         ...makeSampleRow(query.outputColumns),
         nama_pegawai: recipient.name,
-        jabatan: recipient.positionName,
+        // Selalu terisi: isi pesan pegawai memakai {{jabatan}} di baris pertama,
+        // dan nilai kosong akan membuat render pratinjau gagal.
+        jabatan: formatEmployeePositionLabel(recipient.positionName) || "Pegawai",
         judul_notifikasi: notification.name,
-        ringkasan: notification.description || "Preview notifikasi pegawai",
+        ringkasan: notification.description || "Data contoh pertama untuk pratinjau pegawai.\nData contoh kedua untuk pratinjau pegawai.",
         waktu: new Date().toLocaleString("id-ID"),
         mode: "preview",
       };
@@ -7124,7 +9537,11 @@ export async function previewAletaBotNotificationRecipients(
         validNumber: /^62\d{8,15}$/.test(recipient.whatsappNumber),
       });
     }
-    if (recipients.length === 0) warnings.push("Belum ada user aktif dengan nomor WhatsApp valid.");
+    if (allRecipients.length === 0) {
+      warnings.push("Belum ada user aktif dengan nomor WhatsApp valid.");
+    } else if (recipients.length === 0) {
+      warnings.push("Tidak ada pegawai yang cocok dengan target role, jabatan, atau nama.");
+    }
     await appendAletaBotLog(db, {
       actorUserId: actor.id,
       level: "info",
@@ -7147,7 +9564,7 @@ export async function previewAletaBotNotificationRecipients(
   sample.nama_pihak = sample.nama_pihak || "Budi Santoso";
   sample.nomor_perkara = sample.nomor_perkara || "123/Pdt.G/2026/PA.Dgl";
   sample.judul_notifikasi = notification.name;
-  sample.ringkasan = notification.description || "Preview notifikasi pihak";
+  sample.ringkasan = notification.description || "Data contoh pertama untuk pratinjau pihak.\nData contoh kedua untuk pratinjau pihak.";
   sample.mode = "preview";
   sample.waktu = new Date().toLocaleString("id-ID");
   const recipientNumber = normalizeWhatsappNumber(sample[query.recipientColumn] || sample.telepon || sample.nomor_hp || "");
@@ -7159,7 +9576,7 @@ export async function previewAletaBotNotificationRecipients(
     idempotencyKey: `disposition_preview:${notification.id}:sample`,
     validNumber: /^62\d{8,15}$/.test(recipientNumber),
   });
-  warnings.push("Preview pihak memakai sample aman dari mapping query. Eksekusi live SIPP tidak dijalankan dari portal.");
+  warnings.push("Preview pihak memakai contoh aman dari sumber data. Eksekusi live SIPP tidak dijalankan dari portal.");
   await appendAletaBotLog(db, {
     actorUserId: actor.id,
     level: "info",
@@ -7195,8 +9612,46 @@ function formatReminderDeadline(value: string) {
   });
 }
 
+/** Kata sambung jabatan yang tetap huruf kecil di tengah frasa. */
+const POSITION_LABEL_MINOR_WORDS = new Set(["dan", "di", "ke", "dari", "pada", "untuk", "atas", "yang"]);
+
+/**
+ * Merapikan nama jabatan pegawai untuk ditulis di pesan.
+ * Data jabatan sering tersimpan huruf kecil semua; singkatan yang memang
+ * kapital (PA, PTSP) dipertahankan.
+ */
+function formatEmployeePositionLabel(value: string | null | undefined) {
+  const raw = String(value ?? "").trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  if (!raw) return "";
+  return raw
+    .split(" ")
+    .map((word, index) => {
+      if (/^[A-Z0-9.]{2,}$/.test(word)) return word;
+      const lower = word.toLowerCase();
+      if (index > 0 && POSITION_LABEL_MINOR_WORDS.has(lower)) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
+/**
+ * Pesan pengingat deadline untuk pegawai.
+ *
+ * Pesan internal tidak lagi memperkenalkan diri sebagai bot; langsung menyebut
+ * nama dan jabatan penerima lalu masuk ke pokok informasinya.
+ */
 function buildDeadlineReminderMessage(row: DeadlineReminderCandidateRow) {
-  return `Pengingat disposisi: Surat "${row.perihal}" jatuh tempo pada ${formatReminderDeadline(row.deadline_at)}. Mohon segera ditindaklanjuti.`;
+  const jabatan = formatEmployeePositionLabel(row.position_name || row.recipient_role_id);
+  const sapaan = jabatan ? `${row.recipient_name} — ${jabatan}` : row.recipient_name;
+  return [
+    sapaan,
+    "",
+    "Disposisi berikut jatuh tempo besok:",
+    `Perihal: ${row.perihal}`,
+    `Batas tindak lanjut: ${formatReminderDeadline(row.deadline_at)}`,
+    "",
+    "Mohon diselesaikan sebelum batas waktu tersebut.",
+  ].join("\n");
 }
 
 function isDeadlineReminderPilotRecipient(settings: AletaBotSettings, row: DeadlineReminderCandidateRow) {
@@ -8050,6 +10505,9 @@ export async function getPilotReadinessReport(
   const legacyFallbackRecent =
     legacyFallbackLastUsedAt &&
     Date.now() - new Date(legacyFallbackLastUsedAt).getTime() < 24 * 60 * 60 * 1000;
+  const whatsappNumbersComplete =
+    whatsappNumberCompleteness.totalActiveUsers > 0 &&
+    whatsappNumberCompleteness.missingWhatsapp === 0;
 
   const blockers: Array<{
     key: string;
@@ -8139,7 +10597,7 @@ export async function getPilotReadinessReport(
       actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
     });
   }
-  if (legacyFallbackRecent) {
+  if (legacyFallbackRecent && !whatsappNumbersComplete) {
     blockers.push({
       key: "recent_legacy_fallback",
       label: "Fallback nomor WhatsApp legacy masih dipakai dalam 24 jam terakhir.",
@@ -8147,7 +10605,7 @@ export async function getPilotReadinessReport(
       actionLabel: "Lengkapi Nomor Pegawai",
       actionHref: "/admin/mapping-user-jabatan?missingWhatsapp=true",
     });
-  } else if ((legacyResolver?.legacyFallbackUsedCount ?? 0) > 0) {
+  } else if ((legacyResolver?.legacyFallbackUsedCount ?? 0) > 0 && !whatsappNumbersComplete) {
     blockers.push({
       key: "legacy_fallback_used",
       label: "Fallback nomor WhatsApp legacy pernah dipakai runtime.",
@@ -8480,6 +10938,48 @@ export async function runAletaBotOperationalSmokeTest(db: AletaDatabase, actorUs
   };
 }
 
+export async function getAletaBotQueueProgress(
+  db: AletaDatabase,
+  actorUserId: string,
+  queueId: number | string
+) {
+  await requireAletaBotOperator(db, actorUserId);
+  const safeQueueId = String(queueId || "").trim();
+  if (!safeQueueId) {
+    throw new ApiError(400, "ID antrean wajib diisi.");
+  }
+  if (getWhatsappRuntimeMode() !== "aleta_bot") {
+    return {
+      status: "unknown",
+      queueId: safeQueueId,
+      message: "Progress antrean hanya tersedia saat runtime WhatsApp memakai ALETA Bot.",
+      queueProgress: {
+        queueId: safeQueueId,
+        stage: "unknown",
+        status: "runtime_not_aleta_bot",
+        position: null,
+        pendingAhead: null,
+        estimatedWaitMs: null,
+        estimatedWaitText: "runtime bukan ALETA Bot",
+      },
+    };
+  }
+
+  const result = await getGatewayQueueProgress(safeQueueId);
+  if (!result.ok) {
+    throw new ApiError(502, `Progres antrean belum dapat dibaca: ${result.error}`);
+  }
+
+  return {
+    status: result.data.queueProgress?.status ?? "unknown",
+    queueId: safeQueueId,
+    queueProgress: result.data.queueProgress,
+    message: result.data.queueProgress?.estimatedWaitText
+      ? `Status antrean: ${result.data.queueProgress.status}. Estimasi: ${result.data.queueProgress.estimatedWaitText}.`
+      : `Status antrean: ${result.data.queueProgress?.status ?? "unknown"}.`,
+  };
+}
+
 export async function runAletaBotAction(
   db: AletaDatabase,
   {
@@ -8505,16 +11005,33 @@ export async function runAletaBotAction(
     payload?: Record<string, unknown>;
   }
 ) {
-  const actor = await requireSuperAdmin(db, actorUserId);
+  // Aksi operasional harian boleh dijalankan Admin; aksi kebijakan/berisiko
+  // (sinkronisasi konfigurasi, AI, sesi WhatsApp, purge log) tetap Super Admin.
+  const operatorActions = new Set([
+    "sync-config",
+    "send-test",
+    "test-template",
+    "test-query",
+    "test-notification",
+    "test-connection",
+    "pause-worker",
+    "resume-worker",
+  ]);
+  const actor = operatorActions.has(action)
+    ? await requireAletaBotOperator(db, actorUserId)
+    : await requireSuperAdmin(db, actorUserId);
   const settings = await getAletaBotSettings(db);
 
   if (action === "sync-config") {
-    await writeAletaBotRuntimeConfig(db, settings, await getWhatsAppSettingsFromDb(db));
+    const syncResult = await writeAletaBotRuntimeConfig(db, settings, await getWhatsAppSettingsFromDb(db));
     await appendAletaBotLog(db, {
       actorUserId: actor.id,
-      level: "success",
+      level: syncResult.runtimeSync.ok && syncResult.localWrites.every((item) => item.ok) ? "success" : "warning",
       eventType: "settings",
-      message: "Runtime config ALETA Bot disinkronkan ke file bridge.",
+      message: syncResult.runtimeSync.ok
+        ? "Runtime config ALETA Bot disinkronkan ke layanan bot."
+        : "Runtime config ALETA Bot tersimpan di portal, tetapi layanan bot belum mengonfirmasi sinkronisasi.",
+      metadata: syncResult,
     });
     return getAletaBotSnapshot(db, actor.id);
   }
@@ -8591,11 +11108,24 @@ export async function runAletaBotAction(
       mode: settings.dryRunEnabled ? "dry-run" : "live",
       nomor_perkara: "123/Pdt.G/2026/PA.Dgl",
       nama_pihak: "Contoh Pihak",
+      nama_pegawai: "Contoh Pegawai",
+      jabatan: "Panitera Pengganti",
+      recipient_name: "Contoh Pegawai",
+      nama_instansi: "KUA Kecamatan Contoh",
+      nama_layanan: "Layanan informasi pengadilan",
       agenda: "Mediasi",
       hari_sidang: "Senin",
       tanggal_sidang: "27-04-2026",
       ruangan: "Ruang Sidang 1",
       sisa_panjar: "Rp125.000",
+      judul_notifikasi: "Contoh Notifikasi",
+      ringkasan: "Data contoh pertama untuk pratinjau aman.\nData contoh kedua untuk pratinjau aman.",
+      jenis_surat: "Surat Masuk",
+      nomor_surat: "W00-A/123/OT.01/5/2026",
+      perihal: "Pemberitahuan layanan",
+      instruksi: "Mohon ditindaklanjuti sesuai kewenangan.",
+      deadline: "21 Mei 2026",
+      status: "Selesai",
     });
     await appendAletaBotLog(db, {
       actorUserId: actor.id,
@@ -8623,7 +11153,43 @@ export async function runAletaBotAction(
         message: "Dry-run pesan test ALETA Bot berhasil disimulasikan.",
         metadata: { to: "redacted", length: message.length },
       });
-      return getAletaBotSnapshot(db, actor.id);
+      const snapshot = await getAletaBotSnapshot(db, actor.id);
+      return {
+        ...snapshot,
+        actionResult: {
+          status: "simulated",
+          dryRun: true,
+          sent: false,
+          queueProgress: {
+            stage: "done",
+            status: "simulated",
+            position: 0,
+            pendingAhead: 0,
+            estimatedWaitMs: 0,
+            estimatedWaitText: "simulasi selesai",
+          },
+          message: "Mode simulasi masih aktif, jadi pesan uji tidak dikirim ke WhatsApp sungguhan.",
+        },
+      };
+    }
+
+    if (getWhatsappRuntimeMode() === "aleta_bot") {
+      const [gatewayStatus, workerState] = await Promise.all([
+        getGatewayWhatsappStatus(),
+        getWorkerStateFromGateway(),
+      ]);
+      if (!gatewayStatus.ok) {
+        throw new ApiError(502, `ALETA Bot Gateway belum dapat dihubungi: ${gatewayStatus.error}`);
+      }
+      if (gatewayStatus.data.status !== "connected") {
+        throw new ApiError(
+          409,
+          `WhatsApp ALETA Bot belum tersambung. Status saat ini: ${gatewayStatus.data.status}. Scan QR atau hubungkan ulang WhatsApp terlebih dahulu.`
+        );
+      }
+      if (!isQueueWorkerOperational(workerState)) {
+        throw new ApiError(409, `Mesin Bot belum siap mengirim pesan. ${describeQueueWorker(workerState)}`);
+      }
     }
 
     const sendResult = await sendPortalWhatsappMessage({
@@ -8635,14 +11201,15 @@ export async function runAletaBotAction(
       recipientNumber: to,
       recipientName: actor.name || actor.username || "",
       message,
-      priority: 5,
-      category: "employee",
+      priority: 1,
+      category: "system",
       metadata: {
         sourceFeature: "aleta_bot_test",
         entityType: "test",
         entityId: actor.id,
-        recipientType: "employee",
+        recipientType: "system",
         recipientRole: actor.roleId,
+        processImmediately: true,
       },
     });
     if (!sendResult.ok) {
@@ -8660,7 +11227,22 @@ export async function runAletaBotAction(
           : "Pesan test ALETA Bot diproses.",
       metadata: { to: "redacted", length: message.length },
     });
-    return getAletaBotSnapshot(db, actor.id);
+    const snapshot = await getAletaBotSnapshot(db, actor.id);
+    return {
+      ...snapshot,
+      actionResult: {
+        status: sendResult.status,
+        queueId: sendResult.queueId,
+        duplicate: sendResult.duplicate,
+        idempotencyKey: sendResult.idempotencyKey,
+        queueProgress: sendResult.queueProgress,
+        sent: sendResult.status === "sent",
+        message:
+          sendResult.status === "enqueued"
+            ? `Pesan uji sudah masuk antrean cepat ALETA Bot${sendResult.queueId ? ` (ID ${sendResult.queueId})` : ""}${sendResult.queueProgress?.estimatedWaitText ? `. Estimasi tunggu: ${sendResult.queueProgress.estimatedWaitText}` : ""}. Pantau status terkirim/gagal di laporan WhatsApp.`
+            : sendResult.message,
+      },
+    };
   }
 
   if (action === "test-query") {
@@ -8668,48 +11250,64 @@ export async function runAletaBotAction(
     const savedQuery = (await getQueries(db)).find((query) => query.id === queryId);
     if (savedQuery) {
       const now = new Date().toISOString();
-      const previewPayload = summarizeQueryPreview(savedQuery);
+      const health = await checkSavedQueryHealth(savedQuery);
       await db
         .prepare(
           `UPDATE aleta_bot_queries
-           SET last_tested_at = ?, last_test_status = 'success', last_test_error = NULL
+           SET last_tested_at = ?, last_test_status = ?, last_test_error = ?,
+             last_test_duration_ms = ?, last_test_row_count = ?, last_test_sample_json = ?,
+             last_test_slow = ?, last_test_message = ?, updated_by = ?, updated_at = ?
            WHERE id = ?`
         )
-        .run(now, savedQuery.id);
+        .run(
+          now,
+          health.ok ? "success" : "failed",
+          health.error,
+          health.durationMs,
+          health.rowCount,
+          JSON.stringify(health.sampleRows.slice(0, 5)),
+          health.slow ? 1 : 0,
+          health.message,
+          actor.id,
+          now,
+          savedQuery.id
+        );
       await appendAletaBotLog(db, {
         actorUserId: actor.id,
-        level: "success",
+        level: health.ok ? (health.slow ? "warning" : "success") : "error",
         eventType: "query",
-        message: `Test query ${savedQuery.name} berhasil secara terbatas.`,
-        metadata: { queryId, preview: previewPayload },
+        message: health.ok
+          ? `Health check sumber data ${savedQuery.name} selesai.`
+          : `Health check sumber data ${savedQuery.name} gagal.`,
+        metadata: { queryId, health },
       });
       const snapshot = await getAletaBotSnapshot(db, actor.id);
-      return { ...snapshot, preview: JSON.stringify(previewPayload, null, 2) };
+      return { ...snapshot, preview: JSON.stringify(health, null, 2) };
     }
 
     const item = ALETA_BOT_QUERY_CATALOG.find((query) => query.id === queryId);
     if (!item) {
-      throw new ApiError(404, "Query ALETA Bot tidak ditemukan.");
+      throw new ApiError(404, "Sumber data ALETA Bot tidak ditemukan.");
     }
     if (!item.testable) {
       await appendAletaBotLog(db, {
         actorUserId: actor.id,
         level: "warning",
         eventType: "query",
-        message: "Test query diblokir karena query membaca database produksi SIPP/MIS.",
+        message: "Uji sumber data diblokir karena membaca database produksi SIPP/MIS.",
         metadata: { queryId, sourceFile: item.sourceFile },
       });
       const snapshot = await getAletaBotSnapshot(db, actor.id);
       return {
         ...snapshot,
-        preview: "Query ini terdaftar, tetapi eksekusi live diblokir di portal demi keamanan data produksi.",
+        preview: "Sumber data ini terdaftar, tetapi eksekusi live diblokir di portal demi keamanan data produksi.",
       };
     }
     await appendAletaBotLog(db, {
       actorUserId: actor.id,
       level: "success",
       eventType: "query",
-      message: "Test query/utility ringan berhasil.",
+      message: "Uji sumber data ringan berhasil.",
       metadata: { queryId },
     });
     const snapshot = await getAletaBotSnapshot(db, actor.id);
@@ -8721,14 +11319,14 @@ export async function runAletaBotAction(
     const notification = (await getNotifications(db)).find((item) => item.id === notificationId);
     if (!notification) throw new ApiError(404, "Notifikasi ALETA Bot tidak ditemukan.");
     const query = (await getQueries(db)).find((item) => item.id === notification.queryId);
-    if (!query) throw new ApiError(404, "Query notifikasi tidak ditemukan.");
+    if (!query) throw new ApiError(404, "Sumber data notifikasi tidak ditemukan.");
     const template = (await getTemplates(db)).find((item) => item.id === notification.templateId);
     if (!template) throw new ApiError(404, "Template notifikasi tidak ditemukan.");
 
     const sample = makeSampleRow(query.outputColumns);
     sample.nama_pegawai = "Contoh Pegawai";
     sample.judul_notifikasi = notification.name;
-    sample.ringkasan = notification.description || "Simulasi notifikasi ALETA Bot";
+    sample.ringkasan = notification.description || "Data contoh pertama untuk simulasi.\nData contoh kedua untuk simulasi.";
     sample.mode = settings.dryRunEnabled ? "dry-run" : "live";
     sample.waktu = new Date().toLocaleString("id-ID");
     const preview = renderTemplate(template, sample);
@@ -8846,4 +11444,645 @@ export async function runAletaBotAction(
   }
 
   throw new ApiError(400, "Aksi ALETA Bot tidak valid.");
+}
+
+// ---- Kirim Manual (manual send) ----
+
+const MANUAL_SEND_SOURCE_FEATURE = "aleta_bot_manual_send";
+const MANUAL_SEND_MAX_RECIPIENTS = 1000;
+
+function extractSqlParameters(sqlText: string) {
+  const params = new Set<string>();
+  String(sqlText || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => {
+    params.add(key);
+    return "";
+  });
+  return [...params];
+}
+
+function normalizeManualRecipientInput(
+  raw: string,
+  name = "",
+  source: "manual" | "query" = "manual",
+  documentPath = "",
+  perRecipientMessage = ""
+): AletaBotManualRecipientPreview & { documentPath: string; perRecipientMessage: string } {
+  const trimmed = String(raw || "").trim();
+  const normalized = normalizeWhatsappNumber(trimmed);
+  const valid = /^628\d{7,13}$/.test(normalized);
+  return {
+    raw: trimmed,
+    normalized: valid ? normalized : "",
+    chatId: valid ? `${normalized}@c.us` : "",
+    valid,
+    reason: trimmed
+      ? valid
+        ? ""
+        : "Bukan nomor WhatsApp Indonesia yang valid (contoh benar: 081234567890, 6281234567890, atau +6281234567890)."
+      : "Nomor kosong.",
+    name: String(name || "").trim(),
+    source,
+    documentPath: String(documentPath || "").trim(),
+    perRecipientMessage: String(perRecipientMessage || "").trim(),
+  };
+}
+
+function dedupeManualRecipients<T extends AletaBotManualRecipientPreview>(recipients: T[]) {
+  const seen = new Set<string>();
+  return recipients.filter((item) => {
+    const key = item.normalized || item.raw;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function assertNoUnresolvedPlaceholders(message: string) {
+  const unresolved = extractSqlParameters(message);
+  if (unresolved.length > 0) {
+    throw new ApiError(400, `Isi pesan masih memiliki placeholder kosong: ${unresolved.join(", ")}. Lengkapi data sebelum mengirim.`);
+  }
+  if (message.includes("⟪")) {
+    throw new ApiError(400, "Isi pesan masih memiliki penanda placeholder kosong. Lengkapi data sebelum mengirim.");
+  }
+}
+
+export async function previewAletaBotManualSend(
+  db: AletaDatabase,
+  input: {
+    actorUserId: string;
+    mode: AletaBotManualSendMode;
+    message?: string;
+    queryId?: string;
+    templateId?: string;
+    params?: Record<string, string>;
+    manualValues?: Record<string, string>;
+    selectedRowIndex?: number;
+    recipients?: Array<{ input: string; name?: string }>;
+    runQuery?: boolean;
+    // Dipakai untuk sumber data pegawai: menentukan pegawai mana yang jadi
+    // filter query, memakai pemetaan penerima milik notifikasi terkait.
+    notificationId?: string;
+    // Tanggal acuan pilihan operator: menggantikan "hari ini" pada SQL sumber
+    // data, sehingga satu pemilih tanggal berlaku untuk semua skenario.
+    referenceDate?: string;
+  }
+): Promise<AletaBotManualSendPreviewResult> {
+  await requireAletaBotOperator(db, input.actorUserId);
+  const mode: AletaBotManualSendMode = input.mode === "data_source" ? "data_source" : "manual";
+
+  const manualRecipients = dedupeManualRecipients(
+    (input.recipients ?? []).map((item) => normalizeManualRecipientInput(item.input, item.name ?? "", "manual"))
+  );
+
+  if (mode === "manual") {
+    return {
+      ok: true,
+      mode,
+      query: null,
+      template: null,
+      recipients: manualRecipients,
+      message: String(input.message ?? ""),
+    };
+  }
+
+  const queries = await getQueries(db);
+  const templates = await getTemplates(db);
+  const query = input.queryId ? queries.find((item) => item.id === input.queryId) : undefined;
+  const template = input.templateId ? templates.find((item) => item.id === input.templateId) : undefined;
+
+  if (input.queryId && !query) throw new ApiError(404, "Sumber data tidak ditemukan.");
+  if (input.templateId && !template) throw new ApiError(404, "Isi pesan (template) tidak ditemukan.");
+  if (!query && !template) throw new ApiError(400, "Pilih minimal sumber data atau isi pesan.");
+
+  let queryPreview: AletaBotManualSendQueryPreview | null = null;
+  let templatePreview: AletaBotManualSendTemplatePreview | null = null;
+
+  if (query && input.runQuery === false) {
+    queryPreview = {
+      id: query.id,
+      name: query.name,
+      neededParams: extractSqlParameters(query.sqlText),
+      missingParams: [],
+      rows: [],
+      rowCount: 0,
+      truncated: false,
+      durationMs: 0,
+      empty: false,
+      recipients: [],
+    };
+    return {
+      ok: true,
+      mode,
+      query: queryPreview,
+      template: template
+        ? {
+            id: template.id,
+            title: template.title,
+            placeholders: template.placeholders,
+            missingPlaceholders: [],
+            message: "",
+            complete: false,
+          }
+        : null,
+      recipients: manualRecipients,
+      message: "",
+    };
+  }
+
+  if (getWhatsappRuntimeMode() !== "aleta_bot") {
+    throw new ApiError(
+      409,
+      "Preview sumber data membutuhkan runtime ALETA Bot (WHATSAPP_RUNTIME_MODE=aleta_bot). Runtime saat ini tidak aktif."
+    );
+  }
+
+  // Sumber data pegawai (mis. "Hakim - Daftar Sidang Hari Ini") difilter per nama
+  // pegawai. Daftar pegawainya dihitung dengan pemetaan yang sama seperti
+  // notifikasi, supaya hasil Kirim Manual persis sama dengan pengiriman terjadwal.
+  let employeeRecipientsPayload: Array<{ name: string; whatsappNumber: string }> = [];
+  let notificationName = "";
+  if (query?.category === "employee") {
+    const notifications = await getNotifications(db);
+    const relatedNotification =
+      (input.notificationId ? notifications.find((item) => item.id === input.notificationId) : undefined) ??
+      notifications.find((item) => item.queryId === query.id);
+    notificationName = relatedNotification?.name ?? "";
+    const allEmployees = await getEmployeeRecipients(db);
+    const targeted = relatedNotification
+      ? filterEmployeeRecipientsByMapping(allEmployees, relatedNotification.recipientMapping ?? {})
+      : allEmployees;
+    employeeRecipientsPayload = targeted.map((item) => ({
+      name: item.name || item.username,
+      whatsappNumber: item.whatsappNumber,
+    }));
+  }
+
+  const runtimeResponse = await callAletaBotRuntime<{
+    preview?: {
+      ok: boolean;
+      query:
+        | (Omit<AletaBotManualSendQueryPreview, "recipients"> & {
+            recipients: Array<{
+              raw?: string;
+              normalized?: string;
+              valid?: boolean;
+              reason?: string;
+              name?: string;
+              rowIndex?: number;
+            }>;
+          })
+        | null;
+      template: (AletaBotManualSendTemplatePreview & { values?: Record<string, string> }) | null;
+      recipientMessages?: Array<{
+        rowIndex?: number;
+        normalized?: string;
+        message?: string;
+        complete?: boolean;
+        missingPlaceholders?: string[];
+      }>;
+    };
+  }>("/internal/aleta-bot/manual-send/preview", {
+    method: "POST",
+    body: JSON.stringify({
+      query: query
+        ? {
+            id: query.id,
+            name: query.name,
+            category: query.category,
+            sqlText: query.sqlText,
+            outputColumns: query.outputColumns,
+            recipientColumn: query.recipientColumn,
+            connectionKey: query.connectionKey,
+          }
+        : null,
+      template: template
+        ? { id: template.id, title: template.title, body: template.body }
+        : null,
+      params: input.params ?? {},
+      manualValues: input.manualValues ?? {},
+      selectedRowIndex: input.selectedRowIndex ?? 0,
+      maxRows: 1000,
+      employeeRecipients: employeeRecipientsPayload,
+      notificationName,
+      referenceDate: String(input.referenceDate || ""),
+    }),
+  },
+    // Sumber data pegawai menjalankan query SIPP per pegawai, jauh lebih lama
+    // daripada panggilan biasa, sehingga batas 10 detik tidak mencukupi.
+    ALETA_BOT_PREVIEW_TIMEOUT_MS
+  );
+
+  const preview = runtimeResponse.preview;
+  if (!preview) throw new ApiError(502, "Runtime ALETA Bot tidak mengembalikan hasil preview.");
+
+  if (preview.query) {
+    queryPreview = {
+      id: preview.query.id,
+      name: preview.query.name || query?.name || "",
+      neededParams: preview.query.neededParams ?? [],
+      missingParams: preview.query.missingParams ?? [],
+      rows: preview.query.rows ?? [],
+      rowCount: preview.query.rowCount ?? 0,
+      truncated: Boolean(preview.query.truncated),
+      durationMs: preview.query.durationMs ?? 0,
+      empty: Boolean(preview.query.empty),
+      legacy: Boolean(preview.query.legacy),
+      legacyText: preview.query.legacyText ?? "",
+      error: preview.query.error,
+      recipients: (preview.query.recipients ?? []).map((item) => ({
+        raw: String(item.raw ?? ""),
+        normalized: String(item.normalized ?? ""),
+        chatId: item.normalized ? `${item.normalized}@c.us` : "",
+        valid: Boolean(item.valid),
+        reason: String(item.reason ?? ""),
+        name: String(item.name ?? ""),
+        source: "query" as const,
+        rowIndex: Number(item.rowIndex ?? 0),
+      })),
+    };
+  }
+
+  if (preview.template) {
+    templatePreview = {
+      id: preview.template.id,
+      title: preview.template.title || template?.title || "",
+      placeholders: preview.template.placeholders ?? [],
+      missingPlaceholders: preview.template.missingPlaceholders ?? [],
+      message: preview.template.message ?? "",
+      complete: Boolean(preview.template.complete),
+    };
+  }
+
+  return {
+    ok: Boolean(preview.ok),
+    mode,
+    query: queryPreview,
+    template: templatePreview,
+    recipients: dedupeManualRecipients([...(queryPreview?.recipients ?? []), ...manualRecipients]),
+    message: templatePreview?.message ?? "",
+    recipientMessages: (preview.recipientMessages ?? []).map((item) => ({
+      rowIndex: Number(item.rowIndex ?? -1),
+      normalized: String(item.normalized ?? ""),
+      message: String(item.message ?? ""),
+      complete: Boolean(item.complete),
+      missingPlaceholders: item.missingPlaceholders ?? [],
+    })),
+  };
+}
+
+export async function runAletaBotManualSend(
+  db: AletaDatabase,
+  input: {
+    actorUserId: string;
+    mode: AletaBotManualSendMode;
+    message: string;
+    recipients: Array<{ input: string; name?: string; documentPath?: string; message?: string }>;
+    isTest?: boolean;
+    clientRequestId: string;
+    confirmMultiple?: boolean;
+    queryId?: string;
+    templateId?: string;
+    params?: Record<string, string>;
+    // Lampirkan dokumen gugatan/permohonan per penerima (petitum_dok dari SIPP).
+    attachDocument?: boolean;
+  }
+): Promise<AletaBotManualSendResult> {
+  const actor = await requireAletaBotOperator(db, input.actorUserId);
+  const settings = await getAletaBotSettings(db);
+  const mode: AletaBotManualSendMode = input.mode === "data_source" ? "data_source" : "manual";
+  const isTest = input.isTest === true;
+
+  const clientRequestId = String(input.clientRequestId || "").trim();
+  if (!/^[a-zA-Z0-9:_-]{8,80}$/.test(clientRequestId)) {
+    throw new ApiError(400, "clientRequestId tidak valid. Muat ulang halaman lalu coba lagi.");
+  }
+
+  const finalMessage = String(input.message ?? "").trim();
+  if (finalMessage.length < 3 || finalMessage.length > 4000) {
+    throw new ApiError(400, "Isi pesan harus 3-4000 karakter.");
+  }
+  assertNoUnresolvedPlaceholders(finalMessage);
+
+  const attachDocument = input.attachDocument === true;
+  const recipients = dedupeManualRecipients(
+    (input.recipients ?? []).map((item) =>
+      normalizeManualRecipientInput(
+        item.input,
+        item.name ?? "",
+        "manual",
+        attachDocument ? item.documentPath ?? "" : "",
+        item.message ?? ""
+      )
+    )
+  );
+  // Setiap pesan per-penerima wajib lolos pemeriksaan placeholder yang sama
+  // dengan pesan global, supaya tidak ada {{...}} mentah yang lolos ke pihak.
+  for (const recipient of recipients) {
+    if (recipient.perRecipientMessage) {
+      assertNoUnresolvedPlaceholders(recipient.perRecipientMessage);
+    }
+  }
+  if (recipients.length === 0) {
+    throw new ApiError(400, "Minimal satu nomor tujuan wajib diisi.");
+  }
+  if (recipients.length > MANUAL_SEND_MAX_RECIPIENTS) {
+    throw new ApiError(400, `Maksimal ${MANUAL_SEND_MAX_RECIPIENTS} penerima per pengiriman manual.`);
+  }
+  if (recipients.length > 1 && input.confirmMultiple !== true) {
+    throw new ApiError(400, `Pengiriman ke ${recipients.length} penerima membutuhkan konfirmasi. Centang konfirmasi banyak penerima.`);
+  }
+  const invalidRecipients = recipients.filter((item) => !item.valid);
+  if (invalidRecipients.length > 0) {
+    throw new ApiError(
+      400,
+      `Nomor tujuan tidak valid: ${invalidRecipients.map((item) => item.raw || "(kosong)").join(", ")}. Perbaiki atau hapus nomor tersebut.`
+    );
+  }
+
+  const query = input.queryId ? (await getQueries(db)).find((item) => item.id === input.queryId) : undefined;
+  const template = input.templateId ? (await getTemplates(db)).find((item) => item.id === input.templateId) : undefined;
+
+  const dryRun = Boolean(settings.dryRunEnabled);
+  if (!dryRun && getWhatsappRuntimeMode() === "aleta_bot") {
+    const [gatewayStatus, workerState] = await Promise.all([
+      getGatewayWhatsappStatus(),
+      getWorkerStateFromGateway(),
+    ]);
+    if (!gatewayStatus.ok) {
+      throw new ApiError(502, `ALETA Bot Gateway belum dapat dihubungi: ${gatewayStatus.error}`);
+    }
+    if (gatewayStatus.data.status !== "connected") {
+      throw new ApiError(
+        409,
+        `WhatsApp ALETA Bot belum tersambung. Status saat ini: ${gatewayStatus.data.status}. Scan QR atau hubungkan ulang WhatsApp terlebih dahulu.`
+      );
+    }
+    if (!isQueueWorkerOperational(workerState)) {
+      throw new ApiError(409, `Mesin Bot belum siap mengirim pesan. ${describeQueueWorker(workerState)}`);
+    }
+  }
+
+  const outgoingMessage = isTest ? `*[TEST]*\n${finalMessage}` : finalMessage;
+  const now = new Date().toISOString();
+  const results: AletaBotManualSendRecipientResult[] = [];
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const recipient of recipients) {
+    let status: AletaBotManualSendRecipientResult["status"] = "failed";
+    let queueId: number | string | undefined;
+    let idempotencyKey: string | undefined;
+    let errorMessage: string | null = null;
+
+    if (dryRun) {
+      status = "simulated";
+    } else {
+      try {
+        const sendResult = await sendPortalWhatsappMessage({
+          sourceApp: "manajemen_surat",
+          sourceFeature: MANUAL_SEND_SOURCE_FEATURE,
+          entityType: mode,
+          entityId: clientRequestId,
+          eventType: `manual_send_${clientRequestId}`,
+          recipientNumber: recipient.normalized,
+          recipientName: recipient.name,
+          // Pesan khusus penerima ini bila tersedia (dirender dari barisnya
+          // sendiri), jatuh ke pesan global untuk mode ketik bebas.
+          message: recipient.perRecipientMessage
+            ? isTest
+              ? `*[TEST]*\n${recipient.perRecipientMessage}`
+              : recipient.perRecipientMessage
+            : outgoingMessage,
+          category: "manual",
+          priority: 2,
+          // Dokumen gugatan/permohonan hanya ikut bila toggle dinyalakan DAN
+          // baris penerima memang punya path dokumen. required:false supaya
+          // dokumen yang tidak terbaca tidak membatalkan pesan teksnya.
+          attachment: recipient.documentPath
+            ? { source: recipient.documentPath, kind: "sipp_document", required: false }
+            : undefined,
+          metadata: {
+            sourceFeature: MANUAL_SEND_SOURCE_FEATURE,
+            manualSend: true,
+            manualSendMode: mode,
+            attachDocument,
+            documentPath: recipient.documentPath || "",
+            testMessage: isTest,
+            actorUserId: actor.id,
+            actorName: actor.name || actor.username || "",
+            queryId: query?.id ?? "",
+            queryName: query?.name ?? "",
+            templateId: template?.id ?? "",
+            templateTitle: template?.title ?? "",
+            queryParams: input.params ?? {},
+            recipientNumberRaw: recipient.raw,
+            clientRequestId,
+            processImmediately: true,
+          },
+        });
+        if (!sendResult.ok) {
+          status = "failed";
+          errorMessage = sendResult.message;
+        } else if (sendResult.duplicate) {
+          status = "duplicate";
+          queueId = sendResult.queueId;
+          idempotencyKey = sendResult.idempotencyKey;
+        } else {
+          status = sendResult.status === "sent" ? "sent" : sendResult.status === "enqueued" ? "enqueued" : "skipped";
+          queueId = sendResult.queueId;
+          idempotencyKey = sendResult.idempotencyKey;
+        }
+      } catch (error) {
+        status = "failed";
+        errorMessage = error instanceof Error ? error.message : "Pengiriman gagal tanpa detail error.";
+      }
+    }
+
+    if (status === "failed") {
+      failedCount += 1;
+    } else if (status !== "duplicate") {
+      sentCount += 1;
+    }
+
+    await db
+      .prepare(
+        `INSERT INTO aleta_bot_notification_logs (
+          id, notification_id, query_id, recipient_number, recipient_name, category,
+          message_preview, status, error_message, source_app, source_feature, entity_type, entity_id, metadata_json,
+          sent_at, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        await nextPrefixedId(db, "aleta_bot_notification_logs", "abnl"),
+        null,
+        query?.id ?? null,
+        recipient.normalized,
+        recipient.name,
+        "system",
+        outgoingMessage.slice(0, 1000),
+        status === "duplicate" ? "skipped" : status,
+        status === "duplicate" ? "Duplikat: pesan yang sama dengan permintaan ini sudah diproses (anti pengiriman ganda)." : errorMessage,
+        "manajemen_surat",
+        MANUAL_SEND_SOURCE_FEATURE,
+        mode,
+        clientRequestId,
+        JSON.stringify({
+          sourceApp: "manajemen_surat",
+          sourceFeature: MANUAL_SEND_SOURCE_FEATURE,
+          entityType: mode,
+          entityId: clientRequestId,
+          manualSend: true,
+          manualSendMode: mode,
+          testMessage: isTest,
+          dryRun,
+          actorUserId: actor.id,
+          actorName: actor.name || actor.username || "",
+          queryId: query?.id ?? "",
+          queryName: query?.name ?? "",
+          templateId: template?.id ?? "",
+          templateTitle: template?.title ?? "",
+          queryParams: input.params ?? {},
+          recipientNumberRaw: recipient.raw,
+          clientRequestId,
+          queueId: queueId ?? null,
+          idempotencyKey: idempotencyKey ?? "",
+        }),
+        status === "sent" || status === "enqueued" || status === "simulated" ? now : null,
+        now
+      );
+
+    results.push({
+      raw: recipient.raw,
+      normalized: recipient.normalized,
+      name: recipient.name,
+      status,
+      queueId,
+      idempotencyKey,
+      errorMessage: status === "duplicate" ? "Duplikat: permintaan yang sama sudah diproses." : errorMessage,
+    });
+  }
+
+  await appendAletaBotLog(db, {
+    actorUserId: actor.id,
+    level: failedCount > 0 ? (sentCount > 0 ? "warning" : "error") : "success",
+    eventType: "message",
+    message: dryRun
+      ? `Kirim Manual disimulasikan (mode simulasi aktif) untuk ${recipients.length} penerima.`
+      : `Kirim Manual (${mode === "manual" ? "pesan manual" : "sumber data"}${isTest ? ", TEST" : ""}) diproses: ${sentCount} terkirim/antre, ${failedCount} gagal.`,
+    metadata: {
+      mode,
+      isTest,
+      dryRun,
+      clientRequestId,
+      totalRecipients: recipients.length,
+      sentCount,
+      failedCount,
+      queryId: query?.id ?? "",
+      templateId: template?.id ?? "",
+      queryParams: input.params ?? {},
+    },
+  });
+  await appendAuditLog(db, {
+    id: await nextPrefixedId(db, "audit_logs", "adt"),
+    actorUserId: actor.id,
+    action: "ALETA_BOT_MANUAL_SEND",
+    entityType: "aleta_bot_manual_send",
+    entityId: clientRequestId,
+    payload: {
+      mode,
+      isTest,
+      dryRun,
+      totalRecipients: recipients.length,
+      sentCount,
+      failedCount,
+      queryId: query?.id ?? "",
+      templateId: template?.id ?? "",
+    },
+  });
+
+  return {
+    ok: failedCount === 0,
+    mode,
+    isTest,
+    dryRun,
+    clientRequestId,
+    totalRecipients: recipients.length,
+    sentCount,
+    failedCount,
+    message: dryRun
+      ? "Mode simulasi aktif: pesan tidak dikirim ke WhatsApp sungguhan. Nonaktifkan Simulasi di pengaturan untuk kirim nyata."
+      : failedCount === 0
+        ? `Semua ${recipients.length} pesan sudah masuk antrean kirim ALETA Bot.`
+        : `${sentCount} pesan diproses, ${failedCount} gagal. Periksa detail per penerima.`,
+    recipients: results,
+  };
+}
+
+export async function getAletaBotManualSendHistory(
+  db: AletaDatabase,
+  actorUserId: string,
+  limit = 20
+): Promise<AletaBotManualSendHistoryEntry[]> {
+  await requireAletaBotOperator(db, actorUserId);
+  const safeLimit = Math.max(1, Math.min(100, Number(limit) || 20));
+  const rows = await db
+    .prepare(
+      `SELECT id, query_id, recipient_number, recipient_name, message_preview, status,
+              error_message, entity_type, metadata_json, sent_at, created_at
+       FROM aleta_bot_notification_logs
+       WHERE source_feature = ?
+       ORDER BY created_at DESC
+       LIMIT ${safeLimit}`
+    )
+    .all<{
+      id: string;
+      query_id: string | null;
+      recipient_number: string;
+      recipient_name: string;
+      message_preview: string;
+      status: AletaBotNotificationLogEntry["status"];
+      error_message: string | null;
+      entity_type: string;
+      metadata_json: string | null;
+      sent_at: string | null;
+      created_at: string;
+    }>(MANUAL_SEND_SOURCE_FEATURE);
+
+  return rows.map((row) => {
+    let metadata: Record<string, unknown> = {};
+    try {
+      metadata = row.metadata_json ? (JSON.parse(row.metadata_json) as Record<string, unknown>) : {};
+    } catch {
+      metadata = {};
+    }
+    const queryParamsValue = metadata.queryParams;
+    const queryParams: Record<string, string> = {};
+    if (queryParamsValue && typeof queryParamsValue === "object") {
+      for (const [key, value] of Object.entries(queryParamsValue as Record<string, unknown>)) {
+        queryParams[key] = String(value ?? "");
+      }
+    }
+    return {
+      id: row.id,
+      createdAt: row.created_at,
+      sentAt: row.sent_at,
+      actorName: String(metadata.actorName ?? ""),
+      mode: metadata.manualSendMode === "data_source" ? "data_source" : "manual",
+      isTest: metadata.testMessage === true,
+      recipientNumberRaw: String(metadata.recipientNumberRaw ?? row.recipient_number),
+      recipientNumber: row.recipient_number,
+      recipientName: row.recipient_name,
+      queryId: String(metadata.queryId ?? row.query_id ?? ""),
+      queryName: String(metadata.queryName ?? ""),
+      templateId: String(metadata.templateId ?? ""),
+      templateTitle: String(metadata.templateTitle ?? ""),
+      queryParams,
+      messagePreview: row.message_preview,
+      status: row.status,
+      whatsappMessageId: String(metadata.whatsappMessageId ?? ""),
+      errorMessage: row.error_message,
+    };
+  });
 }

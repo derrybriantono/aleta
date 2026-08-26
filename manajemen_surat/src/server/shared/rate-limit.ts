@@ -2,7 +2,17 @@ import { type NextRequest } from "next/server";
 
 import { ApiError } from "@/server/shared/errors";
 
-type RateLimitScope = "login" | "login-lookup" | "recovery-request" | "recovery-confirm" | "recovery-admin-request" | "recovery-admin-resolve" | "admin-manual-reset";
+type RateLimitScope =
+  | "login"
+  | "login-lookup"
+  | "recovery-request"
+  | "recovery-confirm"
+  | "recovery-admin-request"
+  | "recovery-admin-resolve"
+  | "admin-manual-reset"
+  | "hr-public-lookup"
+  | "hr-public-submit"
+  | "hr-public-status";
 
 type RateLimitBucket = {
   attempts: number;
@@ -61,6 +71,24 @@ const RATE_LIMIT_CONFIG: Record<RateLimitScope, RateLimitConfig> = {
     windowMs: 10 * 60 * 1000,
     blockMs: 5 * 60 * 1000,
     message: "Terlalu banyak reset password manual. Coba lagi beberapa menit lagi.",
+  },
+  "hr-public-lookup": {
+    maxAttempts: 60,
+    windowMs: 10 * 60 * 1000,
+    blockMs: 10 * 60 * 1000,
+    message: "Terlalu banyak pencocokan data pegawai. Coba lagi beberapa menit.",
+  },
+  "hr-public-submit": {
+    maxAttempts: 20,
+    windowMs: 10 * 60 * 1000,
+    blockMs: 10 * 60 * 1000,
+    message: "Terlalu banyak pengiriman form publik. Coba lagi beberapa menit.",
+  },
+  "hr-public-status": {
+    maxAttempts: 30,
+    windowMs: 10 * 60 * 1000,
+    blockMs: 10 * 60 * 1000,
+    message: "Terlalu banyak percobaan cek status. Coba lagi beberapa menit.",
   },
 };
 

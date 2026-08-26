@@ -33,6 +33,7 @@ const BLOCK_RULES = [
 
 const INTENT_HINTS = [
   { intentKey: "cek_jadwal_sidang", patterns: [/jadwal|sidang|kapan/i] },
+  { intentKey: "antrian_online", patterns: [/antrian|ambil\s+nomor|sudah\s+hadir|sudah\s+datang/i] },
   { intentKey: "cek_akta_cerai", patterns: [/akta|cerai|ambil\s+akta/i] },
   { intentKey: "sisa_panjar", patterns: [/sisa\s+panjar|biaya|panjar|uang/i] },
   { intentKey: "alamat_pengadilan", patterns: [/alamat|lokasi|kantor/i] },

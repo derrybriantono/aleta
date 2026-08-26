@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portal-aleta",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "cwd": "manajemen_surat",
+      "port": 3000
+    },
+    {
+      "name": "portal-aleta-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "manajemen_surat",
+      "port": 3000
+    }
+  ]
+}

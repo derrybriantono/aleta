@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getPolicySkipReport } from "@/server/modules/aleta-bot/service";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { buildAttachmentContentDisposition, getAttachmentSecurityHeaders } from "@/server/shared/download-headers";
 import { handleRouteError, ok } from "@/server/shared/http";
 
 export const runtime = "nodejs";
@@ -26,8 +27,9 @@ export async function GET(request: NextRequest) {
     if (format === "csv" && "csv" in report) {
       return new NextResponse(report.csv, {
         headers: {
+          ...getAttachmentSecurityHeaders(),
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="${report.filename}"`,
+          "Content-Disposition": buildAttachmentContentDisposition(report.filename),
         },
       });
     }

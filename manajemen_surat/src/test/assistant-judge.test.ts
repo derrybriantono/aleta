@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ASSISTANT_JUDGE_CONFIG,
   canAccessAssistantJudge,
+  findAssistantJudgeLinkByIdentifier,
+  getAssistantJudgeOpenHref,
+  getAssistantJudgeViewPath,
   getVisibleAssistantJudgeLinks,
+  isAssistantJudgeEmbeddedEnabled,
   normalizeAssistantJudgeConfig,
   validateAssistantJudgeUrl,
 } from "@/lib/assistant-judge";
@@ -55,5 +59,31 @@ describe("assistant judge configuration", () => {
     expect(validateAssistantJudgeUrl("javascript:alert(1)").ok).toBe(false);
     expect(validateAssistantJudgeUrl("data:text/html,boom").ok).toBe(false);
     expect(validateAssistantJudgeUrl("https://chatgpt.com/g/example").ok).toBe(true);
+  });
+
+  it("builds internal ALETA viewer paths for AI links", () => {
+    const config = normalizeAssistantJudgeConfig();
+    const chatgpt = findAssistantJudgeLinkByIdentifier(config, "chatgpt");
+
+    expect(chatgpt).toBeTruthy();
+    expect(chatgpt ? getAssistantJudgeViewPath(chatgpt) : "").toBe("/asisten-hakim/view/chatgpt");
+  });
+
+  it("supports disabling embedded view per AI link", () => {
+    const config = normalizeAssistantJudgeConfig({
+      ...DEFAULT_ASSISTANT_JUDGE_CONFIG,
+      links: {
+        ...DEFAULT_ASSISTANT_JUDGE_CONFIG.links,
+        chatgpt: {
+          ...DEFAULT_ASSISTANT_JUDGE_CONFIG.links.chatgpt,
+          embeddedEnabled: false,
+        },
+      },
+    });
+    const chatgpt = findAssistantJudgeLinkByIdentifier(config, "chatgpt");
+
+    expect(chatgpt).toBeTruthy();
+    expect(chatgpt ? isAssistantJudgeEmbeddedEnabled(chatgpt) : true).toBe(false);
+    expect(chatgpt ? getAssistantJudgeOpenHref(chatgpt) : "").toBe(DEFAULT_ASSISTANT_JUDGE_CONFIG.links.chatgpt.url);
   });
 });

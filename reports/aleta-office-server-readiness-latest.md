@@ -1,8 +1,8 @@
 # ALETA Office Server Readiness
 
-Generated: 2026-05-02T21:41:45.854Z
+Generated: 2026-05-13T07:35:36.781Z
 
-Overall: **PASS**
+Overall: **WARN**
 
 ## Environment
 - Host: PC-1157C82
@@ -18,20 +18,24 @@ Overall: **PASS**
 - PASS - Runtime config: aleta-runtime.json harus tersedia.
 - PASS - WhatsApp auth folder: Folder auth WhatsApp dicek tanpa membaca isi session.
 - PASS - Reports/logs folders: Folder reports dan runtime-logs tersedia.
-- PASS - Port 3000: Port 3000 sedang listen.
-- PASS - Port 3003: Port 3003 sedang listen.
-- PASS - Portal reachable: Portal HTTP 200.
-- PASS - ALETA Bot reachable: ALETA Bot status HTTP 200.
-- PASS - WhatsApp diagnostics: status=disconnected, initializing=false, hasClient=true, lastErrorType=none.
+- WARN - Port 3000: Port 3000 belum listen; jalankan portal saat deployment.
+- WARN - Port 3003: Port 3003 belum listen; jalankan aleta_bot saat deployment.
+- WARN - Portal reachable: Portal belum reachable: fetch failed.
+- WARN - ALETA Bot reachable: ALETA Bot belum reachable: fetch failed.
+- WARN - WhatsApp diagnostics: Diagnostics belum reachable: fetch failed.
 - PASS - Single ALETA Bot instance: aleta_bot app.js process count=1.
-- PASS - Disk space: Drive D free space 341.92 GB.
+- PASS - Disk space: Drive D free space 330.89 GB.
 - PASS - Database reachable: Database portal reachable via DATABASE_URL configured.
 
 ## Blockers
 - Tidak ada blocker.
 
 ## Warnings
-- Tidak ada warning.
+- Port 3000: Port 3000 belum listen; jalankan portal saat deployment.
+- Port 3003: Port 3003 belum listen; jalankan aleta_bot saat deployment.
+- Portal reachable: Portal belum reachable: fetch failed.
+- ALETA Bot reachable: ALETA Bot belum reachable: fetch failed.
+- WhatsApp diagnostics: Diagnostics belum reachable: fetch failed.
 
 ## Deployment Notes
 - Jalankan ulang script ini di mesin server kantor sebelum cutover.

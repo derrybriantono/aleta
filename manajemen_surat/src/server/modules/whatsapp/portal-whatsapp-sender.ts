@@ -1,9 +1,12 @@
 import {
   getWhatsappRuntimeMode,
   enqueueGatewayMessage,
+  type GatewayQueueProgress,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { createHash } from "node:crypto";
 
 export type PortalWhatsappSendInput = {
+  sourceApp?: string;
   sourceFeature: string;
   entityType: string;
   entityId: string;
@@ -15,6 +18,15 @@ export type PortalWhatsappSendInput = {
   priority?: number;
   dryRun?: boolean;
   metadata?: Record<string, unknown>;
+  // Lampiran dokumen (mis. gugatan/permohonan SIPP). Hanya didukung runtime
+  // aleta_bot; path diselesaikan oleh bot lewat services/sippDocumentService.js.
+  attachment?: {
+    source: string;
+    name?: string;
+    mimeType?: string;
+    kind?: string;
+    required?: boolean;
+  };
 };
 
 export type PortalWhatsappSendResult = {
@@ -23,6 +35,8 @@ export type PortalWhatsappSendResult = {
   queueId?: number | string;
   duplicate?: boolean;
   idempotencyKey?: string;
+  queueProgress?: GatewayQueueProgress;
+  traceId?: string;
   message: string;
 };
 
@@ -55,6 +69,18 @@ function compactMetadata(input: Record<string, unknown>) {
   );
 }
 
+function hashMessageBody(message: string) {
+  return createHash("sha256").update(message).digest("hex");
+}
+
+function metadataStringValue(metadata: Record<string, unknown> | undefined, ...keys: string[]) {
+  for (const key of keys) {
+    const value = metadata?.[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 export function buildMessageEntityMetadata(input: MessageEntityMetadataInput): Record<string, unknown> {
   const base = {
     ...input,
@@ -85,6 +111,7 @@ function slugify(value: string): string {
 // Format: manajemen_surat:{sourceFeature}:{entityType}:{entityId}:{recipientNumber}:{eventType}
 // Stabil untuk event yang sama — tidak berubah karena timestamp.
 function buildPortalIdempotencyKey(
+  sourceApp: string,
   sourceFeature: string,
   entityType: string,
   entityId: string,
@@ -92,7 +119,7 @@ function buildPortalIdempotencyKey(
   eventType?: string
 ): string {
   return [
-    "manajemen_surat",
+    slugify(sourceApp),
     slugify(sourceFeature),
     slugify(entityType),
     slugify(entityId),
@@ -105,6 +132,7 @@ export async function sendPortalWhatsappMessage(
   input: PortalWhatsappSendInput
 ): Promise<PortalWhatsappSendResult> {
   const {
+    sourceApp = "manajemen_surat",
     sourceFeature,
     entityType,
     entityId,
@@ -119,14 +147,16 @@ export async function sendPortalWhatsappMessage(
   const runtimeMode = getWhatsappRuntimeMode();
   const normalized = normalizeNumber(input.recipientNumber);
   const recipientName = input.recipientName ?? "";
-  const entityMetadata = buildMessageEntityMetadata({
+  const recipientType: MessageEntityMetadataInput["recipientType"] =
+    category === "party" ? "party" : category === "system" ? "system" : "employee";
+  const baseMetadata = {
     ...(metadata ?? {}),
-    sourceApp: "manajemen_surat",
+    sourceApp,
     sourceFeature,
     entityType,
     entityId,
-    recipientType: category === "party" ? "party" : category === "system" ? "system" : "employee",
-  });
+    recipientType,
+  };
 
   if (!normalized) {
     return {
@@ -145,16 +175,47 @@ export async function sendPortalWhatsappMessage(
   }
 
   const idempotencyKey = buildPortalIdempotencyKey(
+    sourceApp,
     sourceFeature,
     entityType,
     entityId,
     normalized,
     eventType
   );
+  const renderedAt = new Date().toISOString();
+  const messageSha256 = hashMessageBody(message);
+  const templateId = metadataStringValue(metadata, "templateId", "template_id", "templateKey", "template_key");
+  const messageContract = compactMetadata({
+    version: "portal-template-v1",
+    source: "portal_template_renderer",
+    renderer: "sendPortalWhatsappMessage",
+    sourceApp,
+    sourceFeature,
+    entityType,
+    entityId,
+    eventType,
+    templateId,
+    traceId: idempotencyKey,
+    messageSha256,
+    messageLength: message.length,
+    renderedAt,
+    runtimeMode,
+  });
+  const entityMetadata = buildMessageEntityMetadata({
+    ...baseMetadata,
+    templateId,
+    messageContractVersion: messageContract.version,
+    messageContractSource: messageContract.source,
+    messageContractTraceId: messageContract.traceId,
+    messageSha256,
+    messageLength: message.length,
+    renderedAt,
+    runtimeMode,
+  });
 
   if (runtimeMode === "aleta_bot") {
     const result = await enqueueGatewayMessage({
-      sourceApp: "manajemen_surat",
+      sourceApp,
       sourceFeature,
       entityType,
       entityId,
@@ -166,6 +227,8 @@ export async function sendPortalWhatsappMessage(
       dryRun,
       idempotencyKey,
       metadata: entityMetadata,
+      messageContract,
+      attachment: input.attachment,
     });
 
     if (!result.ok) {
@@ -182,6 +245,7 @@ export async function sendPortalWhatsappMessage(
         ok: false,
         status: "error",
         idempotencyKey,
+        traceId: idempotencyKey,
         message: "ALETA Bot Gateway merespons, tetapi antrean pesan tidak terkonfirmasi.",
       };
     }
@@ -192,9 +256,11 @@ export async function sendPortalWhatsappMessage(
       queueId,
       duplicate: result.data.duplicate,
       idempotencyKey,
+      traceId: idempotencyKey,
+      queueProgress: result.data.queueProgress,
       message: result.data.duplicate
-        ? "Pesan sudah ada dalam antrean (idempotent)."
-        : "Pesan berhasil dimasukkan ke antrean pengiriman ALETA Bot.",
+        ? `Pesan sudah ada dalam antrean${result.data.queueProgress?.estimatedWaitText ? `, estimasi ${result.data.queueProgress.estimatedWaitText}` : ""}.`
+        : `Pesan berhasil dimasukkan ke antrean pengiriman ALETA Bot${result.data.queueProgress?.estimatedWaitText ? `, estimasi ${result.data.queueProgress.estimatedWaitText}` : ""}.`,
     };
   }
 
@@ -206,6 +272,7 @@ export async function sendPortalWhatsappMessage(
       ok: true,
       status: "sent",
       idempotencyKey,
+      traceId: idempotencyKey,
       message: "Pesan berhasil dikirim melalui WhatsApp.",
     };
   } catch (error) {

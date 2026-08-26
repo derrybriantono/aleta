@@ -240,6 +240,162 @@ function inferSubject(text: string) {
   return sentence ?? "Ringkasan surat hasil deteksi AI";
 }
 
+const CORE_SUMMARY_MAX_LENGTH = 480;
+
+const SUMMARY_INTENT_PATTERNS = [
+  /\bsehubungan dengan\b/i,
+  /\bmenindaklanjuti\b/i,
+  /\bberdasarkan\b/i,
+  /\bbersama ini\b/i,
+  /\bdalam rangka\b/i,
+  /\b(?:kami|dengan ini)\s+(?:mohon|meminta|mengajukan|mengundang|menyampaikan|memberitahukan|mengharapkan)\b/i,
+  /\b(?:mohon|dimohon|agar|untuk)\b/i,
+  /\b(?:permohonan|permintaan|undangan|pemberitahuan|penyampaian|usulan|laporan|koordinasi|klarifikasi|verifikasi|evaluasi|pelaksanaan|sosialisasi|penugasan)\b/i,
+];
+
+const SUMMARY_METADATA_LABEL_PATTERN =
+  /^(?:nomor|no\.?|lampiran|hal|perihal|tanggal|tgl|kepada|yth\.?|dari|tembusan|alamat|telepon|telp|email|surel|website|laman|fax|kode|klasifikasi|sifat|pengirim|penerima|asal surat|tujuan surat|unit terkait|nomor urut|nama|nip|jabatan|pangkat|hari|waktu|pukul|tempat|diterima|agenda|registrasi)\b\s*[:.-]?/i;
+
+function trimCoreSummary(value: string) {
+  const normalized = normalizeWhitespace(value);
+  if (normalized.length <= CORE_SUMMARY_MAX_LENGTH) return normalized;
+  return `${normalized.slice(0, CORE_SUMMARY_MAX_LENGTH - 3).trimEnd()}...`;
+}
+
+function hasIntentLanguage(value: string) {
+  return SUMMARY_INTENT_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+function isMostlyUppercase(value: string) {
+  const letters = value.replace(/[^A-Za-z]/g, "");
+  if (letters.length < 8) return false;
+  const uppercase = letters.replace(/[^A-Z]/g, "");
+  return uppercase.length / letters.length > 0.72;
+}
+
+function isAdministrativeSummaryLine(line: string) {
+  const normalized = normalizeWhitespace(line);
+  const lowerLine = normalized.toLowerCase();
+  if (!normalized) return true;
+  if (normalized.length < 12) return true;
+  if (/^(?:dengan hormat|assalamu'?alaikum|salam sejahtera)[,.\s]*$/i.test(normalized)) return true;
+  if (/^(?:hormat kami|demikian|atas perhatian|ttd|ditandatangani|mengetahui|tembusan)\b/i.test(normalized)) {
+    return true;
+  }
+  if (SUMMARY_METADATA_LABEL_PATTERN.test(normalized)) return true;
+  if (parseDateCandidate(normalized) && !hasIntentLanguage(normalized)) return true;
+  if (
+    isMostlyUppercase(normalized) &&
+    /\b(?:mahkamah agung|pengadilan|kementerian|direktorat|sekretariat|pemerintah|republik indonesia)\b/i.test(
+      normalized
+    )
+  ) {
+    return true;
+  }
+  if (/\b(?:jalan|jl\.|telepon|telp|fax|email|website|www\.)\b/i.test(lowerLine) && !hasIntentLanguage(normalized)) {
+    return true;
+  }
+
+  return false;
+}
+
+function splitSummarySentences(text: string) {
+  const compact = normalizeWhitespace(text);
+  if (!compact) return [];
+
+  const sentences = compact.match(/[^.!?]+(?:[.!?]+|$)/g) ?? [compact];
+  return sentences
+    .map((sentence) => normalizeWhitespace(sentence.replace(/^[\d.)\-\s]+/, "")))
+    .filter((sentence) => sentence.length >= 24);
+}
+
+function scoreSummarySentence(sentence: string, index: number) {
+  let score = Math.max(0, 8 - index);
+  if (hasIntentLanguage(sentence)) score += 12;
+  if (sentence.length >= 45 && sentence.length <= 320) score += 4;
+  if (SUMMARY_METADATA_LABEL_PATTERN.test(sentence)) score -= 12;
+  if (/\b(?:nomor|tanggal|lampiran|alamat|telepon|email|nip|jabatan|kode klasifikasi)\b/i.test(sentence)) score -= 4;
+  if (/^(?:surat ini|dokumen ini)\b/i.test(sentence)) score += 2;
+  return score;
+}
+
+function buildSummaryFromSubject(subject: string) {
+  const cleanSubject = normalizeWhitespace(subject).replace(/[.:;,\s]+$/, "");
+  if (!cleanSubject || isAdministrativeSummaryLine(cleanSubject)) {
+    return "Ringkasan hasil deteksi AI belum cukup spesifik. Mohon tinjau manual sebelum menyimpan.";
+  }
+
+  const firstLetter = cleanSubject.charAt(0);
+  const readableSubject = /[a-z]/.test(cleanSubject)
+    ? `${firstLetter.toLowerCase()}${cleanSubject.slice(1)}`
+    : cleanSubject.toLowerCase();
+
+  return trimCoreSummary(`Surat ini berisi ${readableSubject}.`);
+}
+
+function inferCoreLetterSummary(text: string, subject: string) {
+  const contentLines = getUsefulLines(text).filter((line) => !isAdministrativeSummaryLine(line));
+  const bodyStartIndex = contentLines.findIndex((line) => hasIntentLanguage(line));
+  const prioritizedLines = bodyStartIndex >= 0 ? contentLines.slice(bodyStartIndex) : contentLines;
+  const sentences = splitSummarySentences(prioritizedLines.slice(0, 14).join(" "));
+  const candidates = sentences
+    .filter((sentence) => !isAdministrativeSummaryLine(sentence))
+    .map((sentence, index) => ({
+      sentence,
+      index,
+      score: scoreSummarySentence(sentence, index),
+    }))
+    .filter((candidate) => candidate.score > 2)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .slice(0, 2)
+    .sort((left, right) => left.index - right.index)
+    .map((candidate) => candidate.sentence);
+
+  if (candidates.length > 0) {
+    return trimCoreSummary(candidates.join(" "));
+  }
+
+  return buildSummaryFromSubject(subject);
+}
+
+function isMetadataHeavySummary(value: string) {
+  const metadataHits = Array.from(
+    value.matchAll(
+      /\b(?:nomor|no\.?|lampiran|hal|perihal|tanggal|tgl|kepada|yth\.?|tembusan|alamat|telepon|email|nip|jabatan)\b/gi
+    )
+  ).length;
+
+  return SUMMARY_METADATA_LABEL_PATTERN.test(value) || metadataHits >= 3;
+}
+
+export function normalizeLetterDraftCoreSummary({
+  summary,
+  extractedText,
+  subject,
+}: {
+  summary?: string;
+  extractedText: string;
+  subject?: string;
+}) {
+  const normalizedSubject = normalizeWhitespace(subject ?? inferSubject(extractedText));
+  const candidate = normalizeWhitespace(summary ?? "");
+  if (candidate && isMetadataHeavySummary(candidate)) {
+    return inferCoreLetterSummary(extractedText, normalizedSubject);
+  }
+
+  const cleanedCandidate = candidate ? inferCoreLetterSummary(candidate, normalizedSubject) : "";
+
+  if (
+    cleanedCandidate &&
+    !cleanedCandidate.includes("belum cukup spesifik") &&
+    !SUMMARY_METADATA_LABEL_PATTERN.test(cleanedCandidate)
+  ) {
+    return cleanedCandidate;
+  }
+
+  return inferCoreLetterSummary(extractedText, normalizedSubject);
+}
+
 function sanitizeOriginCandidate(value: string) {
   return toReadableCase(
     value
@@ -367,7 +523,7 @@ export async function generateLetterDraftFromPdf({
   const normalizedClassification = inferClassification(extractedText, subject, origin);
   const tags = inferTags(extractedText, subject, origin, regulations);
   const confidentiality = inferConfidentiality(extractedText);
-  const summary = normalizeWhitespace(extractedText).slice(0, 480);
+  const summary = normalizeLetterDraftCoreSummary({ extractedText, subject });
   const primaryTargetUser = suggestedUsers[0] ?? null;
   const reviewNotes = [
     inferredDates.tanggalSurat

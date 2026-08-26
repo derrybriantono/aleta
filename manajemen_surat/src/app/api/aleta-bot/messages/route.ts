@@ -3,7 +3,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getUserByIdFromDb } from "@/server/modules/organization/service";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { buildAttachmentContentDisposition, getAttachmentSecurityHeaders } from "@/server/shared/download-headers";
+import { assertExportRowLimit, exportOverflowLimit, EXPORT_ROW_LIMITS } from "@/server/shared/export-limits";
 import { handleRouteError, ok, unauthorized } from "@/server/shared/http";
+import { createXlsxWorkbook, type XlsxSheet } from "@/server/shared/xlsx";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -112,6 +115,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl;
     const exportCsv = searchParams.get("format") === "csv";
+    const exportXlsx = searchParams.get("format") === "xlsx";
+    const isExport = exportCsv || exportXlsx;
     const statusFilter = searchParams.get("status") ?? "";
     const sourceFeatureFilter = searchParams.get("sourceFeature") ?? "";
     const sourceAppFilter = searchParams.get("sourceApp") ?? "";
@@ -119,7 +124,10 @@ export async function GET(request: NextRequest) {
     const entityIdFilter = searchParams.get("entityId") ?? "";
     const searchQuery = (searchParams.get("search") ?? "").trim();
     const dateRange = searchParams.get("dateRange") ?? "7d";
-    const limit = Math.max(1, Math.min(exportCsv ? 1000 : 100, Number(searchParams.get("limit") ?? (exportCsv ? 1000 : 50))));
+    const exportLimit = EXPORT_ROW_LIMITS.aletaBotMessagesCsv;
+    const limit = isExport
+      ? exportOverflowLimit(exportLimit)
+      : Math.max(1, Math.min(100, Number(searchParams.get("limit") ?? 50)));
     const offset = Math.max(0, Number(searchParams.get("offset") ?? 0));
 
     // Build date filter
@@ -232,6 +240,9 @@ export async function GET(request: NextRequest) {
     `;
 
     const rows = await db.queryAll<MessageRow>(sql, allParams as import("@/server/db/client").SqlInputValue[]);
+    if (isExport) {
+      assertExportRowLimit(rows.length, exportLimit, "Export riwayat pesan ALETA Bot");
+    }
 
     const items = rows.map((row) => {
       const numberMasked = !isPrivileged;
@@ -268,6 +279,83 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    if (exportXlsx) {
+      const statusCounts = new Map<string, number>();
+      for (const item of items) {
+        statusCounts.set(item.statusLabel, (statusCounts.get(item.statusLabel) ?? 0) + 1);
+      }
+      const rangeLabels: Record<string, string> = {
+        today: "Hari ini",
+        "7d": "7 hari terakhir",
+        "30d": "30 hari terakhir",
+        all: "Semua data",
+      };
+      const summarySheet: XlsxSheet = {
+        name: "Ringkasan",
+        freezeHeader: true,
+        autoFilter: false,
+        columns: [
+          { key: "metric", header: "Data", width: 30 },
+          { key: "value", header: "Nilai", width: 40 },
+        ],
+        rows: [
+          { metric: "Dibuat pada", value: new Date().toISOString() },
+          { metric: "Rentang waktu", value: rangeLabels[dateRange] ?? dateRange },
+          { metric: "Filter status", value: statusFilter || "Semua status" },
+          { metric: "Filter sumber/fitur", value: sourceFeatureFilter || "Semua" },
+          { metric: "Filter aplikasi", value: sourceAppFilter || "Semua" },
+          { metric: "Kata kunci pencarian", value: searchQuery || "-" },
+          { metric: "Total baris", value: items.length },
+          ...[...statusCounts.entries()].map(([label, count]) => ({ metric: `Status: ${label}`, value: count })),
+          ...(isPrivileged
+            ? []
+            : [{ metric: "Catatan", value: "Nomor WhatsApp disamarkan sesuai hak akses akun Anda." }]),
+        ],
+      };
+      const rowsSheet: XlsxSheet = {
+        name: "Riwayat Pengiriman",
+        freezeHeader: true,
+        autoFilter: true,
+        columns: [
+          { key: "createdAt", header: "Waktu Diproses", width: 22 },
+          { key: "sentAt", header: "Waktu Terkirim", width: 22 },
+          { key: "recipientName", header: "Nama Penerima", width: 28 },
+          { key: "recipientNumber", header: "Nomor WhatsApp", width: 18 },
+          { key: "caseOrPosition", header: "Nomor Perkara/Jabatan", width: 26 },
+          { key: "statusLabel", header: "Status", width: 16 },
+          { key: "sourceFeatureLabel", header: "Sumber/Fitur", width: 22 },
+          { key: "sourceApp", header: "Aplikasi", width: 18 },
+          { key: "messagePreview", header: "Isi Pesan", width: 70 },
+          { key: "errorMessage", header: "Error", width: 40 },
+        ],
+        rows: items.map((item) => ({
+          createdAt: item.createdAt,
+          sentAt: item.sentAt ?? "",
+          recipientName: item.recipientName,
+          recipientNumber: item.recipientNumber,
+          caseOrPosition: item.caseOrPosition,
+          statusLabel: item.statusLabel,
+          sourceFeatureLabel: item.sourceFeatureLabel,
+          sourceApp: item.sourceApp,
+          messagePreview: item.messageBody ?? item.messagePreview,
+          errorMessage: item.errorMessage ?? "",
+        })),
+      };
+      const buffer = createXlsxWorkbook([summarySheet, rowsSheet], {
+        creator: "ALETA Bot",
+        createdAt: new Date(),
+      });
+      const filename = `riwayat-pengiriman-aleta-bot-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          ...getAttachmentSecurityHeaders(),
+          "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "content-disposition": buildAttachmentContentDisposition(filename),
+          "x-aleta-export-row-count": String(items.length),
+        },
+      });
+    }
+
     if (exportCsv) {
       const headers = [
         "Waktu",
@@ -296,9 +384,9 @@ export async function GET(request: NextRequest) {
       ];
       return new NextResponse(lines.join("\r\n"), {
         headers: {
+          ...getAttachmentSecurityHeaders(),
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="riwayat-pesan-aleta-bot.csv"`,
-          "Cache-Control": "no-store",
+          "Content-Disposition": buildAttachmentContentDisposition("riwayat-pesan-aleta-bot.csv"),
         },
       });
     }

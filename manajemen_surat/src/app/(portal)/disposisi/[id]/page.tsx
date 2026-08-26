@@ -50,9 +50,9 @@ export default function DisposisiDetailPage() {
   return (
     <div className="space-y-6">
       <PageIntro
-        eyebrow="Workbench"
-        title="Disposisi digital berjenjang"
-        description="Dokumen surat ditampilkan berdampingan dengan form disposisi agar instruksi dapat ditulis sambil membaca isi surat."
+        eyebrow="Disposisi"
+        title="Tindak Lanjut Disposisi"
+        description="Dokumen surat ditampilkan berdampingan dengan formulir disposisi agar instruksi dapat ditulis sambil membaca isi surat."
       />
 
       <div className="grid gap-6 2xl:items-start 2xl:grid-cols-[minmax(0,1fr)_minmax(380px,0.84fr)]">

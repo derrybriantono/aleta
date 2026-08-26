@@ -18,6 +18,13 @@ export type AletaBotSettings = {
   notificationsEnabled: boolean;
   adminWhatsappNumber: string;
   messageDelayMs: number;
+  /**
+   * Tingkat risiko pengiriman WhatsApp, 1 (Minimal, paling aman) sampai
+   * 5 (Maksimal, tercepat tapi risiko suspend/ban tertinggi). Menentukan jeda,
+   * batas laju, jendela jam kirim, dan persetujuan broadcast sekaligus.
+   * Selalu dijepit ke rentang 1–5 oleh resolveSendingRiskPreset.
+   */
+  sendingRiskLevel: number;
   retryLimit: number;
   dryRunEnabled: boolean;
   scheduleCron: string;
@@ -88,6 +95,11 @@ export type AletaBotQuery = {
   lastTestedAt: string | null;
   lastTestStatus: "idle" | "success" | "failed";
   lastTestError: string | null;
+  lastTestDurationMs?: number;
+  lastTestRowCount?: number;
+  lastTestSampleRows?: Array<Record<string, unknown>>;
+  lastTestSlow?: boolean;
+  lastTestMessage?: string | null;
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string;
@@ -154,6 +166,16 @@ export type AletaBotPublicQaIntent = {
   requiresCaseNumber: boolean;
   maxAttempts: number;
   fallbackMessage: string;
+  /**
+   * Blangko jawaban yang disusun admin. Bila diisi, inilah yang dikirim ALETA
+   * Bot - bukan kalimat bawaan sistem. Mendukung penanda {{nama_kolom}}.
+   */
+  answerTemplate: string;
+  /**
+   * Kata kunci tambahan agar pertanyaan yang kalimatnya berbeda tetap
+   * dikenali, misalnya "panjar" dan "tagihan" untuk aturan biaya.
+   */
+  matchKeywords: string[];
   riskLevel: "low" | "medium" | "high";
   notes: string;
   aiAnswerEnabled: boolean;
@@ -212,8 +234,16 @@ export type AletaBotNotification = {
     type: "cron" | "manual" | "event";
     cron: string;
     trigger: string;
+    // Tahap pengingat sidang: "h3" (tiga hari sebelum) atau "h1" (sehari
+    // sebelum). Bila diisi, bot hanya mengirim baris yang agendanya memang
+    // perlu diingatkan pada jarak hari itu — agenda jawab-menjawab misalnya
+    // cukup pada H-1. Dikosongkan berarti seluruh baris dikirim.
+    agendaStage?: "h3" | "h1";
   };
   isActive: boolean;
+  // Kirim dokumen gugatan/permohonan (petitum_dok) bila query menyediakannya.
+  // Default true; matikan untuk kirim teks saja tanpa lampiran.
+  attachDocument: boolean;
   delayMs: number;
   retryLimit: number;
   lastRunAt: string | null;
@@ -239,6 +269,8 @@ export type AletaBotEmployeeRecipient = {
   roleId: string;
   positionId: string;
   positionName: string;
+  unitKerja: string;
+  additionalRoleIds: string[];
   whatsappNumber: string;
   whatsappChatId: string;
 };
@@ -272,7 +304,23 @@ export type AletaBotNotificationLogEntry = {
   recipientName: string;
   category: AletaBotNotificationCategory | "system";
   messagePreview: string;
-  status: "success" | "failed" | "simulated";
+  status:
+    | "queued"
+    | "pending"
+    | "processing"
+    | "sending"
+    | "enqueued"
+    | "sent"
+    | "success"
+    | "delivered"
+    | "read"
+    | "failed"
+    | "dead_letter"
+    | "simulated"
+    | "dry_run"
+    | "skipped";
+  whatsappMessageId?: string;
+  ack?: number | null;
   errorMessage: string | null;
   sourceApp: string;
   sourceFeature: string;
@@ -280,6 +328,9 @@ export type AletaBotNotificationLogEntry = {
   entityId: string;
   metadata: Record<string, unknown>;
   sentAt: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  failedAt?: string | null;
   createdAt: string;
 };
 
@@ -481,8 +532,32 @@ export type AletaBotDispositionReminderRun = {
   summary: Record<string, unknown>;
 };
 
+export type AletaBotSendingRiskPreset = {
+  level: number;
+  label: string;
+  suspendRisk: string;
+  messageDelayMinMs: number;
+  messageDelayMaxMs: number;
+  maxPerMinute: number;
+  maxPerHour: number;
+  maxPerDay: number;
+  queueBatchSize: number;
+  queueIntervalMs: number;
+  sendingWindowStart: string;
+  sendingWindowEnd: string;
+  broadcastRequiresApproval: boolean;
+  /** Jarak minimum antar pesan berurutan di antrean (ms). */
+  sendingGapMinMs: number;
+  /** Jarak maksimum antar pesan berurutan; diacak antara min dan max. */
+  sendingGapMaxMs: number;
+  /** Jeda minimum sebelum satu nomor yang sama menerima pesan berikutnya (ms). */
+  perRecipientCooldownMs: number;
+};
+
 export type AletaBotSnapshot = {
   settings: AletaBotSettings;
+  /** Daftar preset Slider Risiko (5 tingkat) untuk ditampilkan di dashboard. */
+  sendingRiskPresets: AletaBotSendingRiskPreset[];
   runtimeState: AletaBotRuntimeState;
   whatsapp: {
     runtimeStatus: string;
@@ -522,4 +597,108 @@ export type AletaBotSnapshot = {
   workerState: AletaBotWorkerState | null;
   legacyMigrations: AletaBotLegacyMigration[];
   unknownQuestionReviews: AletaBotUnknownQuestionReview[];
+};
+
+// ---- Kirim Manual (manual send) ----
+
+export type AletaBotManualSendMode = "manual" | "data_source";
+
+export type AletaBotManualRecipientPreview = {
+  raw: string;
+  normalized: string;
+  chatId: string;
+  valid: boolean;
+  reason: string;
+  name: string;
+  source: "manual" | "query";
+  rowIndex?: number;
+};
+
+export type AletaBotManualSendQueryPreview = {
+  id: string;
+  name: string;
+  neededParams: string[];
+  missingParams: string[];
+  rows: Array<Record<string, string>>;
+  rowCount: number;
+  truncated: boolean;
+  durationMs: number;
+  empty: boolean;
+  legacy?: boolean;
+  legacyText?: string;
+  error?: string;
+  recipients: AletaBotManualRecipientPreview[];
+};
+
+export type AletaBotManualSendTemplatePreview = {
+  id: string;
+  title: string;
+  placeholders: string[];
+  missingPlaceholders: string[];
+  message: string;
+  complete: boolean;
+};
+
+export type AletaBotManualSendRecipientMessage = {
+  rowIndex: number;
+  normalized: string;
+  message: string;
+  complete: boolean;
+  missingPlaceholders: string[];
+};
+
+export type AletaBotManualSendPreviewResult = {
+  ok: boolean;
+  mode: AletaBotManualSendMode;
+  query: AletaBotManualSendQueryPreview | null;
+  template: AletaBotManualSendTemplatePreview | null;
+  recipients: AletaBotManualRecipientPreview[];
+  message: string;
+  // Pesan yang sudah dirender khusus untuk tiap penerima memakai baris datanya
+  // sendiri, supaya nama/perkara tidak tertukar antar penerima.
+  recipientMessages?: AletaBotManualSendRecipientMessage[];
+};
+
+export type AletaBotManualSendRecipientResult = {
+  raw: string;
+  normalized: string;
+  name: string;
+  status: "enqueued" | "sent" | "simulated" | "failed" | "skipped" | "duplicate";
+  queueId?: number | string;
+  idempotencyKey?: string;
+  errorMessage: string | null;
+};
+
+export type AletaBotManualSendResult = {
+  ok: boolean;
+  mode: AletaBotManualSendMode;
+  isTest: boolean;
+  dryRun: boolean;
+  clientRequestId: string;
+  totalRecipients: number;
+  sentCount: number;
+  failedCount: number;
+  message: string;
+  recipients: AletaBotManualSendRecipientResult[];
+};
+
+export type AletaBotManualSendHistoryEntry = {
+  id: string;
+  createdAt: string;
+  sentAt: string | null;
+  actorName: string;
+  mode: AletaBotManualSendMode;
+  isTest: boolean;
+  recipientNumberRaw: string;
+  recipientNumber: string;
+  recipientName: string;
+  queryId: string;
+  queryName: string;
+  templateId: string;
+  templateTitle: string;
+  queryParams: Record<string, string>;
+  messagePreview: string;
+  status: AletaBotNotificationLogEntry["status"];
+  whatsappMessageId: string;
+  errorMessage: string | null;
 };

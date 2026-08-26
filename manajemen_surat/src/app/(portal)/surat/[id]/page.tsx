@@ -53,7 +53,7 @@ const LazyDocumentViewer = dynamic(
 );
 
 const workflowLabels = {
-  draft: "Draft",
+  draft: "Konsep",
   submitted: "Diajukan",
   approved: "Disetujui",
   sent: "Dikirim/Terbit",
@@ -64,9 +64,9 @@ type WorkflowUiAction = "submit" | "approve" | "reject" | "mark-sent" | "return-
 
 const workflowActionCopy: Record<WorkflowUiAction, { title: string; description: string; cta: string }> = {
   submit: {
-    title: "Ajukan Review Surat Keluar",
+    title: "Ajukan Pemeriksaan Surat Keluar",
     description: "Surat keluar ini akan dikirim ke pejabat berwenang untuk ditinjau dan disetujui.",
-    cta: "Ajukan Review",
+    cta: "Ajukan Pemeriksaan",
   },
   approve: {
     title: "Setujui Surat Keluar",
@@ -84,9 +84,9 @@ const workflowActionCopy: Record<WorkflowUiAction, { title: string; description:
     cta: "Tandai Terbit/Dikirim",
   },
   "return-draft": {
-    title: "Kembalikan ke Draft",
-    description: "Status surat akan dikembalikan ke Draft untuk diperbaiki sebelum diajukan kembali.",
-    cta: "Kembalikan ke Draft",
+    title: "Kembalikan ke Konsep",
+    description: "Status surat akan dikembalikan ke konsep untuk diperbaiki sebelum diajukan kembali.",
+    cta: "Kembalikan ke Konsep",
   },
 };
 
@@ -106,6 +106,7 @@ export default function SuratDetailPage() {
     forwardToLeadership,
     getLetterById,
     getLetterDispositionsById,
+    positions,
     retryWhatsappDelivery,
     transitionLetterWorkflow,
     users,
@@ -142,7 +143,7 @@ export default function SuratDetailPage() {
     ),
   ];
   const canOpenDisposition = Boolean(currentDisposition) && canUserAccessDispositionAction(currentUser);
-  const leadershipRecipients = getLeadershipRecipients(users).filter((recipient) => recipient.id !== currentUser?.id);
+  const leadershipRecipients = getLeadershipRecipients(users, positions).filter((recipient) => recipient.id !== currentUser?.id);
   const activeLeadershipNotifications = timeline.filter(
     (item) => item.routingType === "leadership-notification" && item.status !== "Selesai"
   );
@@ -151,14 +152,14 @@ export default function SuratDetailPage() {
     (recipient) => !notifiedLeadershipIds.has(recipient.id)
   );
   const canForwardLeadership =
-    letter.type === "masuk" && canUserForwardToLeadership(currentUser) && remainingLeadershipRecipients.length > 0;
+    letter.type === "masuk" && canUserForwardToLeadership(currentUser, positions) && remainingLeadershipRecipients.length > 0;
   const workflowStatus = letter.workflowStatus ?? (letter.type === "keluar" ? "draft" : "sent");
   const currentRoleId = currentUser?.roleId;
   const isCreator = Boolean(currentUser?.id && letter.createdByUserId === currentUser.id);
   const canSubmitWorkflow = isAdmin || isCreator;
   const canApproveWorkflow =
     isAdmin ||
-    ["ketua", "wakil-ketua", "sekretaris", "panitera"].includes(currentRoleId ?? "");
+    ["ketua", "wakil-ketua", "sekretaris", "panitera", "panitera-muda", "kasubag"].includes(currentRoleId ?? "");
   const canMarkSentWorkflow = isAdmin || isCreator || currentRoleId === "sekretaris";
 
   const openWorkflowModal = (action: WorkflowUiAction) => {
@@ -201,7 +202,7 @@ export default function SuratDetailPage() {
                 </Link>
               </Button>
             ) : null}
-            {canUserForwardToLeadership(currentUser) && letter.type === "masuk" ? (
+            {canUserForwardToLeadership(currentUser, positions) && letter.type === "masuk" ? (
               <Button
                 variant="outline"
                 disabled={!canForwardLeadership}
@@ -227,24 +228,22 @@ export default function SuratDetailPage() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (deleteMode === "hard" && activeDispositionCount > 0) {
-                    window.alert(
-                      `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Selesaikan disposisi terlebih dahulu sebelum menghapus permanen.`
-                    );
-                    return;
-                  }
-
                   const confirmed = window.confirm(
-                    activeDispositionCount > 0
-                      ? `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Menghapus surat dapat mengganggu tindak lanjut. Gunakan arsip/nonaktifkan hanya jika sudah yakin. Lanjutkan?`
+                    deleteMode === "hard" && activeDispositionCount > 0
+                      ? `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Hapus permanen akan menghapus surat, disposisi, notifikasi baca, dan riwayat pengiriman terkait. Tindakan ini tidak dapat dibatalkan. Lanjutkan?`
+                      : activeDispositionCount > 0
+                        ? `Surat ini masih memiliki ${activeDispositionCount} disposisi aktif. Mengarsipkan surat dapat mengganggu tindak lanjut. Lanjutkan?`
                       : deleteMode === "hard"
                         ? "Surat akan dihapus permanen. Tindakan ini tidak dapat dibatalkan. Lanjutkan?"
                         : "Arsipkan surat ini dari daftar aktif? Lanjutkan?"
                   );
 
                   if (!confirmed) return;
-                  deleteLetter(letter.id);
-                  router.push("/surat");
+                  void deleteLetter(letter.id).then((result) => {
+                    if (result) {
+                      router.push("/surat");
+                    }
+                  });
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -268,12 +267,12 @@ export default function SuratDetailPage() {
       ) : null}
 
       <Card className="overflow-hidden border-border/80">
-        <div className="grid items-stretch xl:grid-cols-[430px_minmax(0,1fr)]">
-          <aside className="border-b border-border bg-muted/30 xl:border-b-0 xl:border-r">
-            <div className="space-y-5 p-5 sm:p-6">
+        <div className="grid items-stretch xl:h-[min(1320px,calc(100vh+4rem))] xl:min-h-[980px] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
+          <aside className="min-h-0 border-b border-border bg-muted/30 xl:overflow-hidden xl:border-b-0 xl:border-r">
+            <div className="space-y-5 p-5 sm:p-6 xl:h-full xl:overflow-y-auto">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Metadata Surat</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Info Surat</p>
                   <h2 className="mt-2 font-serif text-2xl text-foreground">{letter.nomorSurat}</h2>
                 </div>
                 <Badge variant={statusVariant(letter.status)}>{letter.status}</Badge>
@@ -281,7 +280,7 @@ export default function SuratDetailPage() {
 
               <div className="grid gap-4">
                 <DetailRow label="Nomor urut" value={letter.nomorUrut ?? "-"} />
-                <DetailRow label="Tipe" value={letter.type === "masuk" ? "Surat Masuk" : "Surat Keluar"} />
+                <DetailRow label="Jenis" value={letter.type === "masuk" ? "Surat Masuk" : "Surat Keluar"} />
                 <DetailRow label="Tanggal surat" value={formatDate(letter.tanggal)} />
                 <DetailRow
                   label={letter.type === "masuk" ? "Tanggal terima" : "Tanggal kirim"}
@@ -299,7 +298,7 @@ export default function SuratDetailPage() {
               </div>
 
               <div className="rounded-[1.2rem] border border-border bg-card/70 p-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Kendali cepat</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Ringkasan Aksi</p>
                 <div className="mt-3 space-y-3 text-sm text-muted-foreground">
                   {isAdmin ? (
                     <div className="flex items-center justify-between gap-3">
@@ -308,8 +307,8 @@ export default function SuratDetailPage() {
                     </div>
                   ) : null}
                   <div className="flex items-center justify-between gap-3">
-                    <span>Mode dokumen</span>
-                    <strong className="text-foreground">{letter.viewerMode === "preview" ? "Preview" : "Download"}</strong>
+                    <span>Akses dokumen</span>
+                    <strong className="text-foreground">{letter.viewerMode === "preview" ? "Hanya lihat" : "Bisa diunduh"}</strong>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span>Notifikasi pimpinan</span>
@@ -321,7 +320,7 @@ export default function SuratDetailPage() {
               {letter.type === "keluar" ? (
                 <div className="rounded-[1.2rem] border border-border bg-card/70 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Alur Surat Keluar</p>
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Proses Surat Keluar</p>
                     <Badge variant={workflowBadgeVariant(workflowStatus)}>
                       {workflowLabels[workflowStatus] ?? workflowStatus}
                     </Badge>
@@ -392,7 +391,7 @@ export default function SuratDetailPage() {
                         onClick={() => openWorkflowModal("return-draft")}
                       >
                         <RotateCcw className="h-4 w-4" />
-                        Kembali ke Draft
+                        Kembali ke Konsep
                       </Button>
                     ) : null}
                   </div>
@@ -431,7 +430,7 @@ export default function SuratDetailPage() {
                       .map(
                         (item) =>
                           getUser(item.penerimaId, users)?.name ??
-                          getPosition(item.targetPositionId)?.name ??
+                          getPosition(item.targetPositionId, positions)?.name ??
                           item.penerimaId
                       )
                       .join(", ")}
@@ -454,7 +453,7 @@ export default function SuratDetailPage() {
             </div>
           </aside>
 
-          <div className="min-w-0">
+          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
             <LazyDocumentViewer letter={letter} currentUser={currentUser} />
           </div>
         </div>
@@ -474,7 +473,7 @@ export default function SuratDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.1rem] border border-border bg-muted/35 p-3 text-sm text-muted-foreground">
-            <span>Lihat konteks pengiriman lengkap di modul ALETA Bot bila perlu audit lebih lanjut.</span>
+            <span>Lihat riwayat pengiriman lengkap di ALETA Bot bila perlu pemeriksaan.</span>
             <Button asChild variant="outline" size="sm">
               <Link href={`/aleta-bot?tab=riwayat-pengiriman&sourceFeature=disposition&entityId=${encodeURIComponent(letter.id)}`}>
                 Lihat di Riwayat ALETA Bot
@@ -507,7 +506,7 @@ export default function SuratDetailPage() {
             <ShieldCheck className="h-4 w-4 text-primary" />
             Riwayat Disposisi
           </CardTitle>
-          <CardDescription>Alur parent-child surat ini, termasuk notifikasi pimpinan dan tindak lanjut terakhir.</CardDescription>
+          <CardDescription>Riwayat tindak lanjut surat ini, termasuk notifikasi pimpinan dan proses terakhir.</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:-translate-x-px before:bg-gradient-to-b before:from-primary/50 before:via-border before:to-transparent">
@@ -537,7 +536,7 @@ export default function SuratDetailPage() {
                             {getUser(item.pengirimId, users)?.name} <span className="mx-1 text-muted-foreground font-normal">ke</span> {getUser(item.penerimaId, users)?.name}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {getPosition(item.targetPositionId)?.name} • {formatDateTime(item.createdAt)}
+                            {getPosition(item.targetPositionId, positions)?.name} • {formatDateTime(item.createdAt)}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -599,7 +598,7 @@ export default function SuratDetailPage() {
           <div className="w-full max-w-xl rounded-[1.35rem] border border-border bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Workflow Surat Keluar</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Proses Surat Keluar</p>
                 <h2 className="mt-2 text-xl font-semibold text-foreground">{workflowActionCopy[workflowModal].title}</h2>
               </div>
               <Button type="button" size="sm" variant="ghost" onClick={() => setWorkflowModal(null)} disabled={isWorkflowSaving}>

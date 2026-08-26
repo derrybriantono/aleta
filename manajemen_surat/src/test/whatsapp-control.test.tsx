@@ -5,7 +5,7 @@ import { WhatsAppControl } from "@/components/portal/whatsapp-control";
 
 vi.mock("@/components/portal/use-whatsapp-gateway", () => ({
   getWhatsAppRuntimeLabel: () => "waiting_qr",
-  getWhatsAppRuntimeDisplayLabel: () => "Perlu Scan QR",
+  getWhatsAppRuntimeDisplayLabel: () => "Perlu Pindai QR",
   getWhatsAppRuntimeMessage: () => "QR siap dipindai",
   useWhatsAppGateway: () => ({
     snapshot: {
@@ -35,14 +35,14 @@ describe("WhatsAppControl", () => {
   it("renders a summary card without duplicate initialization actions", () => {
     render(<WhatsAppControl />);
 
-    expect(screen.getByText("Ringkasan WhatsApp Gateway")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Buka Pusat Koneksi/i })).toHaveAttribute(
+    expect(screen.getByText("Ringkasan WhatsApp")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Buka Status WhatsApp/i })).toHaveAttribute(
       "href",
       "/admin/status-whatsapp"
     );
     expect(screen.queryByRole("button", { name: /Mulai Inisialisasi/i })).not.toBeInTheDocument();
     expect(
-      screen.getByText(/QR hanya ditampilkan di halaman pusat WhatsApp/i)
+      screen.getByText(/buka halaman status WhatsApp/i)
     ).toBeInTheDocument();
   });
 });

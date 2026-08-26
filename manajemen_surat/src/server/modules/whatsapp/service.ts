@@ -8,6 +8,8 @@ import fs from "node:fs";
 import { getDatabase } from "@/server/db/client";
 import { whatsappWebSettings } from "@/server/db/drizzle-schema";
 import { getWhatsAppSettingsFromDb } from "@/server/modules/settings/service";
+import { getWhatsappRuntimeModeDiagnostics } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
 import { eq } from "drizzle-orm";
 
 export type WhatsAppGatewayRuntimeStatus =
@@ -32,6 +34,20 @@ class WhatsAppService {
   private isInitializing = false;
   private sessionName = "aleta-session";
   private lastErrorMessage: string | null = null;
+
+  private getLegacyRuntimeBlocker() {
+    const diagnostics = getWhatsappRuntimeModeDiagnostics();
+    return diagnostics.legacyBlocked ? diagnostics.blockerMessage : "";
+  }
+
+  private assertLegacyRuntimeAllowed() {
+    const blocker = this.getLegacyRuntimeBlocker();
+    if (!blocker) return;
+    this.connectionStatus = "failed";
+    this.qrCode = null;
+    this.lastErrorMessage = blocker;
+    throw new Error(blocker);
+  }
 
   private resolveBrowserExecutablePath() {
     const candidatePaths = [
@@ -64,6 +80,7 @@ class WhatsAppService {
   }
 
   async initialize() {
+    this.assertLegacyRuntimeAllowed();
     if (this.isInitializing) return;
 
     const settings = await getWhatsAppSettingsFromDb(await getDatabase()).catch(() => null);
@@ -184,6 +201,22 @@ class WhatsAppService {
   }
 
   async getGatewaySnapshot() {
+    const blocker = this.getLegacyRuntimeBlocker();
+    if (blocker) {
+      return {
+        runtimeStatus: "failed" as const,
+        internalStatus: "failed" as const,
+        qrCode: null,
+        linked: false,
+        phoneNumber: "",
+        sessionName: this.sessionName,
+        savedStatus: "failed",
+        lastConnectedAt: null,
+        requiresPhoneNumberBeforeInit: false,
+        lastErrorMessage: blocker,
+      };
+    }
+
     const settings = await getWhatsAppSettingsFromDb(await getDatabase()).catch(() => null);
 
     return {
@@ -196,7 +229,9 @@ class WhatsAppService {
       savedStatus: settings?.status ?? "inactive",
       lastConnectedAt: settings?.lastConnectedAt ?? null,
       requiresPhoneNumberBeforeInit: false,
-      lastErrorMessage: this.lastErrorMessage,
+      lastErrorMessage: this.lastErrorMessage
+        ? sanitizePublicErrorMessage(this.lastErrorMessage, this.lastErrorMessage)
+        : null,
     };
   }
 
@@ -221,6 +256,7 @@ class WhatsAppService {
   }
 
   async sendMessage(to: string, message: string) {
+    this.assertLegacyRuntimeAllowed();
     if (this.connectionStatus !== "ready" || !this.client) {
       throw new Error("WhatsApp client belum siap. Hubungkan sesi QR terlebih dahulu.");
     }

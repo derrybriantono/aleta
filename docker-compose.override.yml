@@ -1,0 +1,15 @@
+version: "2.4"
+
+services:
+  portal:
+    environment:
+      JLF_SIPP_PROVIDER: aleta_bot_bridge
+      JLF_SIPP_BRIDGE_BASE_URL: http://192.168.10.10:3003
+      ALETA_BOT_BASE_URL: http://192.168.10.10:3003
+      ALETA_BOT_RUNTIME_URL: http://192.168.10.10:3003
+
+  aleta_bot:
+    environment:
+      ALETA_BOT_RUNTIME_CONFIG_PATH: /usr/src/app/runtime-data/aleta-runtime.json
+    volumes:
+      - /var/www/html/aleta-data/aleta-bot-runtime:/usr/src/app/runtime-data

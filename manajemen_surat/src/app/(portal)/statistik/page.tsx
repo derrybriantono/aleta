@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 
 const LazyStatisticsChart = dynamic(
   () => import("@/components/portal/statistics-chart").then((module) => module.StatisticsChart),
@@ -44,7 +45,7 @@ type LeadershipKpiStats = {
   aletaBotStatus: "normal" | "warning" | "blocked";
 };
 
-const KPI_ALLOWED_ROLES = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "panitera", "sekretaris"]);
+const KPI_ALLOWED_ROLES = new Set(["super-admin", "admin", "ketua", "wakil-ketua", "panitera", "panitera-muda", "sekretaris", "kasubag"]);
 
 function quarterFromDate(dateValue: string) {
   const month = new Date(dateValue).getMonth();
@@ -80,7 +81,7 @@ export default function StatistikPage() {
 
   useEffect(() => {
     let active = true;
-    void fetch("/api/stats/surat/sla", { credentials: "include" })
+    void fetch(apiPath("/api/stats/surat/sla"), { credentials: "include" })
       .then((response) => response.json())
       .then((payload) => {
         if (active && payload?.ok && payload.data) {
@@ -100,7 +101,7 @@ export default function StatistikPage() {
       return;
     }
     let active = true;
-    void fetch(`/api/stats/kpi?periodDays=${encodeURIComponent(kpiPeriodDays)}`, { credentials: "include" })
+    void fetch(apiPath(`/api/stats/kpi?periodDays=${encodeURIComponent(kpiPeriodDays)}`), { credentials: "include" })
       .then((response) => response.json())
       .then((payload) => {
         if (active && payload?.ok && payload.data) {

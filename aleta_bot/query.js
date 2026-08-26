@@ -2,6 +2,8 @@
 const moment = require("moment");
 moment.locale('en');
 const axios = require("axios").default;
+const fs = require("fs");
+const path = require("path");
 const { MessageMedia } = require("whatsapp-web.js");
 const db = require("./db_config");
 const db4 = require("./db_config4");
@@ -9,14 +11,57 @@ const mis = require("./mis");
 const notification = require("./notifikasi");
 const absen = require("./absen");
 const pengumuman = require("./pengumuman");
+const antrianOnlineService = require("./services/antrianOnlineService");
+const dynamicQueryCommandService = require("./services/dynamicQueryCommandService");
+const { guardCaseCommandAccess } = require("./services/publicQaVerificationService");
+const sidangAgendaService = require("./services/sidangAgendaService");
+
+const CASE_LEGACY_COMMANDS_REQUIRING_ACCESS = new Set([
+  "jadwal",
+  "status",
+  "biaya",
+  "akta",
+  "pesan akta",
+  "putusan",
+  "saksi",
+]);
+
+function createLocalMediaIfExists(filePath, filename) {
+  const resolvedPath = path.resolve(__dirname, filePath);
+  if (!fs.existsSync(resolvedPath)) {
+    return null;
+  }
+
+  const media = MessageMedia.fromFilePath(resolvedPath);
+  if (filename) media.filename = filename;
+  return media;
+}
 
 //pool on connect
 db.on("connection", (connection) => console.log("CONNECTION USING POOL"));
 db4.on("connection", (connection) => console.log("CONNECTION USING POOL"));
 
 // inisiasi pesan masuk
-const getData = (message) => {
-  let keyword = message.split("#");
+const getData = async (message, context = {}) => {
+  try {
+    const dynamicResponse = await dynamicQueryCommandService.resolveDynamicQueryCommand(message, context);
+    if (dynamicResponse) return dynamicResponse;
+  } catch (error) {
+    console.error("[ALETA Bot] Query dinamis gagal, lanjut ke handler legacy:", error.message);
+  }
+
+  let keyword = String(message || "").split("#");
+  keyword[0] = String(keyword[0] || "").trim().toLowerCase();
+  if (CASE_LEGACY_COMMANDS_REQUIRING_ACCESS.has(keyword[0]) && keyword.length > 1) {
+    const access = await guardCaseCommandAccess({
+      senderNumber: context.senderNumber || "",
+      command: keyword[0],
+      nomorPerkara: keyword.slice(1).join("#"),
+    });
+    if (!access.allowed) {
+      return access.fallbackMessage || "Untuk keamanan data perkara, nomor WhatsApp ini belum dapat diverifikasi.";
+    }
+  }
   let pengadilan = "Pengadilan Agama Donggala";
   let web = "https://pa-donggala.go.id";
   return new Promise((resolve, reject) => {
@@ -999,7 +1044,21 @@ const getData = (message) => {
               );
             });
             responseMessage = resultArray.join("\n\n");
-            3;
+
+            // Daftar di atas memuat seluruh riwayat sidang, sedangkan persiapan
+            // hanya berarti untuk sidang yang BELUM berlangsung. Menempelkan
+            // persiapan untuk agenda yang sudah lewat akan menyuruh pihak
+            // membawa saksi ke sidang yang sudah selesai.
+            const hariIni = moment().startOf("day");
+            const sidangBerikutnya = result
+              .filter((r) => r.tanggal_sidang && moment(r.tanggal_sidang).isSameOrAfter(hariIni))
+              .sort((a, b) => moment(a.tanggal_sidang).valueOf() - moment(b.tanggal_sidang).valueOf())[0];
+            if (sidangBerikutnya) {
+              responseMessage = sidangAgendaService.appendPreparation(
+                responseMessage,
+                sidangBerikutnya.agenda
+              );
+            }
           } else {
             responseMessage = `Tidak ada data`;
           }
@@ -1193,229 +1252,24 @@ const getData = (message) => {
             resolve(responseMessage);
           }
         });
-      } else if (keyword[0] == "daftar antrian") {
-        if (keyword.length == 1) {
-            let responseMessage =
-                "Perintah salah, silahkan ketik daftar antrian#nomor perkara\ncontoh : daftar antrian#123.G.2021\n(untuk perkara gugatan: G dan permohonan: P)";
-            console.log("Error: " + responseMessage);
-            resolve(responseMessage);
-            return;
-        }
-    
-        let nomor_perkara = keyword[1];
-        console.log("Nomor perkara input: " + nomor_perkara);
-    
-        let nomor_perkara_parts = nomor_perkara.split(".");
-        let nomor_perkara_formatted;
-    
-        if (nomor_perkara_parts[1] == "GS") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pdt.G.S/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "B") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.B/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "S") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.S/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "C") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.C/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "Pra") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.Pra/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "Sus-Anak") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.Sus-Anak/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "JN") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/JN/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else if (nomor_perkara_parts[1] == "PraJN") {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/JN.Pra/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        } else {
-            nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pdt." + nomor_perkara_parts[1] + "/" + nomor_perkara_parts[2] + "/PA.Dgl";
-        }
-    
-        console.log("Nomor perkara diformat: " + nomor_perkara_formatted);
-    
-        let updateQuery = `
-          UPDATE sipp_turunan_antrian.antrian_sidang AS a
-          JOIN SIPP.perkara AS p ON a.perkara_id = p.perkara_id
-          SET a.online = 1, 
-              a.pihak_1 = NOW()
-          WHERE p.nomor_perkara = ?;`;
-    
-        db4.query(updateQuery, [nomor_perkara_formatted], (err, result) => {
-            if (err) {
-                console.error("Error dalam query update: ", err);
-                reject(err);
-                return;
-            }
-    
-            console.log("Hasil query update: ", result);
-    
-            // SET dan SELECT dipisah
-            const orderQuery = `
-                SELECT
-                    (@row_number := @row_number + 1) AS nomor_antrian,
-                    p.nomor_perkara
-                FROM (
-                    SELECT
-                        a.perkara_id,
-                        a.majelis_hakim_kode,
-                        a.pihak_1,
-                        a.pihak_2,
-                        CASE
-                            WHEN a.pihak_1 IS NOT NULL AND a.pihak_2 IS NOT NULL THEN LEAST(a.pihak_1, a.pihak_2)
-                            WHEN a.pihak_1 IS NOT NULL THEN a.pihak_1
-                            ELSE a.pihak_2
-                        END AS sort_col1,
-                        a.perkara_id AS sort_col2,
-                        a.majelis_hakim_kode AS sort_col3
-                    FROM sipp_turunan_antrian.antrian_sidang a
-                    WHERE a.pihak_1 IS NOT NULL OR a.pihak_2 IS NOT NULL
-                    ORDER BY sort_col1, sort_col2, sort_col3
-                ) AS sub
-                JOIN SIPP.perkara AS p ON sub.perkara_id = p.perkara_id;
-            `;
-    
-            db4.query("SET @row_number = 0", (err) => {
-                if (err) {
-                    console.error("Error saat SET @row_number: ", err);
-                    reject(err);
-                    return;
-                }
-    
-                db4.query(orderQuery, (err, rows) => {
-                    if (err) {
-                        console.error("Error dalam query urutan: ", err);
-                        reject(err);
-                        return;
-                    }
-    
-                    console.log("Hasil query urutan: ", rows);
-    
-                    let baris = rows.find(row =>
-                        row.nomor_perkara.replace(/\s+/g, '').toLowerCase() ===
-                        nomor_perkara_formatted.replace(/\s+/g, '').toLowerCase()
-                    );
-    
-                    let responseMessage;
-                    if (result.affectedRows > 0 && baris) {
-                        responseMessage = `Anda terdaftar dalam antrian online dengan nomor perkara ${nomor_perkara_formatted} dan menempati antrian nomor ${baris.nomor_antrian}\n\nSilakan hadir pada persidangan untuk mengonfirmasi kehadiran Anda kepada petugas kami. Jika nomor perkara Anda sudah dipanggil tiga kali dan tidak hadir, perkara Anda akan ditunda.\n\nUntuk informasi lebih lanjut, hubungi petugas kami di 0822-7111-5021. Kami siap membantu!`;
-                    } else {
-                        responseMessage = `Nomor Perkara ${nomor_perkara_formatted} belum bersidang pada hari ini\nsilahkan ketik jadwal#nomor perkara\ncontoh : jadwal#123.G.2021\n(untuk perkara gugatan : G dan permohonan : P).`;
-                    }
-    
-                    console.log("Pesan balasan: " + responseMessage);
-                    resolve(responseMessage);
-                });
-            });
-        });
-    } else if (keyword[0] == "antrian online") {
-      if (keyword.length == 1) {
-          let responseMessage =
-              "Perintah salah, silahkan ketik antrian online#nomor perkara\ncontoh : antrian online#123.G.2021\n(untuk perkara gugatan: G dan permohonan: P)";
-          console.log("Error: " + responseMessage);
-          resolve(responseMessage);
-          return;
-      }
-  
-      let nomor_perkara = keyword[1];
-      console.log("Nomor perkara input: " + nomor_perkara);
-  
-      let nomor_perkara_parts = nomor_perkara.split(".");
-      let nomor_perkara_formatted;
-  
-      if (nomor_perkara_parts[1] == "GS") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pdt.G.S/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "B") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.B/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "S") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.S/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "C") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.C/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "Pra") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.Pra/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "Sus-Anak") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pid.Sus-Anak/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "JN") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/JN/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else if (nomor_perkara_parts[1] == "PraJN") {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/JN.Pra/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      } else {
-          nomor_perkara_formatted = nomor_perkara_parts[0] + "/Pdt." + nomor_perkara_parts[1] + "/" + nomor_perkara_parts[2] + "/PA.Dgl";
-      }
-  
-      console.log("Nomor perkara diformat: " + nomor_perkara_formatted);
-  
-      let updateQuery = `
-        UPDATE sipp_turunan_antrian.antrian_sidang AS a
-        JOIN SIPP.perkara AS p ON a.perkara_id = p.perkara_id
-        SET a.online = 1, 
-            a.pihak_2 = NOW()
-        WHERE p.nomor_perkara = ?;`;
-  
-      db4.query(updateQuery, [nomor_perkara_formatted], (err, result) => {
-          if (err) {
-              console.error("Error dalam query update: ", err);
-              reject(err);
-              return;
-          }
-  
-          console.log("Hasil query update: ", result);
-  
-          // SET dan SELECT dipisah
-          const orderQuery = `
-              SELECT
-                  (@row_number := @row_number + 1) AS nomor_antrian,
-                  p.nomor_perkara
-              FROM (
-                  SELECT
-                      a.perkara_id,
-                      a.majelis_hakim_kode,
-                      a.pihak_1,
-                      a.pihak_2,
-                      CASE
-                          WHEN a.pihak_1 IS NOT NULL AND a.pihak_2 IS NOT NULL THEN LEAST(a.pihak_1, a.pihak_2)
-                          WHEN a.pihak_1 IS NOT NULL THEN a.pihak_1
-                          ELSE a.pihak_2
-                      END AS sort_col1,
-                      a.perkara_id AS sort_col2,
-                      a.majelis_hakim_kode AS sort_col3
-                  FROM sipp_turunan_antrian.antrian_sidang a
-                  WHERE a.pihak_1 IS NOT NULL OR a.pihak_2 IS NOT NULL
-                  ORDER BY sort_col1, sort_col2, sort_col3
-              ) AS sub
-              JOIN SIPP.perkara AS p ON sub.perkara_id = p.perkara_id;
-          `;
-  
-          db4.query("SET @row_number = 0", (err) => {
-              if (err) {
-                  console.error("Error saat SET @row_number: ", err);
-                  reject(err);
-                  return;
-              }
-  
-              db4.query(orderQuery, (err, rows) => {
-                  if (err) {
-                      console.error("Error dalam query urutan: ", err);
-                      reject(err);
-                      return;
-                  }
-  
-                  console.log("Hasil query urutan: ", rows);
-  
-                  let baris = rows.find(row =>
-                      row.nomor_perkara.replace(/\s+/g, '').toLowerCase() ===
-                      nomor_perkara_formatted.replace(/\s+/g, '').toLowerCase()
-                  );
-  
-                  let responseMessage;
-                  if (result.affectedRows > 0 && baris) {
-                      responseMessage = `Anda terdaftar dalam antrian online dengan nomor perkara ${nomor_perkara_formatted} dan menempati antrian nomor ${baris.nomor_antrian}\n\nSilakan hadir pada persidangan untuk mengonfirmasi kehadiran Anda kepada petugas kami. Jika nomor perkara Anda sudah dipanggil tiga kali dan tidak hadir, perkara Anda akan ditunda.\n\nUntuk informasi lebih lanjut, hubungi petugas kami di 0822-7111-5021. Kami siap membantu!`;
-                  } else {
-                      responseMessage = `Nomor Perkara ${nomor_perkara_formatted} belum bersidang pada hari ini\nsilahkan ketik jadwal#nomor perkara\ncontoh : jadwal#123.G.2021\n(untuk perkara gugatan : G dan permohonan : P).`;
-                  }
-  
-                  console.log("Pesan balasan: " + responseMessage);
-                  resolve(responseMessage);
-              });
+      } else if (["daftar antrian", "antrian online", "ambil antrian", "ambil antrian online", "daftar hadir"].includes(keyword[0])) {
+        const nomorPerkaraInput = keyword.slice(1).join("#").trim();
+        antrianOnlineService
+          .registerOnlineQueue({
+            nomorPerkara: nomorPerkaraInput,
+            message,
+            partySlot: keyword[0] == "antrian online" ? "pihak_2" : "pihak_1",
+            senderNumber: context.senderNumber || "",
+          })
+          .then((result) => {
+            console.log("Pesan balasan: " + result.answer);
+            resolve(result.answer);
+          })
+          .catch((err) => {
+            console.error("Error dalam antrian online: ", err);
+            reject(err);
           });
-      });
-  } else if (keyword[0] == "biaya") {
+    } else if (keyword[0] == "biaya") {
       if (keyword.length == 1) {
         let responseMessage =
           "Perintah salah silahkan ketik biaya#nomor perkara\ncontoh : biaya#123.G.2021\n(untuk perkara gugatan : G dan permohonan : P)";
@@ -4603,11 +4457,8 @@ const getData = (message) => {
       resolve(responseMessage);
     } else if (keyword[0] == "stikersss") {
       const stiker = async () => {
-        const media = MessageMedia.fromFilePath(
-          `./public/sticker/Naruto_Uzumaki.png`
-        );
-        media.filename = "naruto";
-        return media;
+        return createLocalMediaIfExists("./public/sticker/Naruto_Uzumaki.png", "naruto") ||
+          "File sticker belum tersedia di server.";
         // console.log(media);
       };
 

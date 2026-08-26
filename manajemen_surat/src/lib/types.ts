@@ -6,10 +6,29 @@ export type RoleId =
   | "hakim"
   | "sekretaris"
   | "panitera"
+  | "panitera-muda"
+  | "panitera-pengganti"
+  | "kasubag"
+  | "jurusita"
+  | "pranata-komputer"
+  | "analis-keuangan"
+  | "analis-perkara"
+  | "pelaksana"
+  | "pppk"
   | "pejabat-struktural"
   | "staf";
 
 export type ModuleId =
+  | "manajemen-surat"
+  | "asisten-hakim"
+  | "e-kepegawaian"
+  | "sipp"
+  | "aps-badilag"
+  | "e-keuangan"
+  | "manajemen-aset"
+  | "perpustakaan"
+  | "audit-trail"
+  | "gateway-notifikasi"
   | "dashboard"
   | "penugasan"
   | "surat-masuk"
@@ -23,30 +42,71 @@ export type ModuleId =
   | "laporan"
   | "audit"
   | "kepegawaian"
+  | "hr-settings"
   | "keuangan"
   | "aset"
   | "identity"
+  | "panel-settings"
+  | "public-access"
   | "notifikasi"
+  | "notifikasi-wa"
   | "ai-settings"
   | "admin-hub"
   | "assistant-judge-settings"
   | "whatsapp-settings"
+  | "system-updates"
+  | "backup-system"
+  | "database-viewer"
   | "aleta-bot"
+  | "aleta-sipp"
+  | "aleta-sipp-settings"
+  | "judicia-legal-form"
+  | "judicia-legal-form-settings"
+  | "e-status"
+  | "e-status-settings"
   | "feedback";
 
 export type PortalAppId =
   | "manajemen-surat"
   | "aleta-bot"
+  | "aleta-sipp"
+  | "judicia-legal-form"
   | "asisten-hakim"
   | "e-kepegawaian"
+  | "e-status"
+  | "sipp"
+  | "aps-badilag"
   | "e-keuangan"
   | "manajemen-aset"
   | "perpustakaan"
   | "audit-trail"
   | "gateway-notifikasi";
 
+export type ExternalAppId = "sipp" | "aps-badilag";
+
+export interface ExternalAppCredentialSummary {
+  appId: ExternalAppId;
+  username: string;
+  usernameMasked: string;
+  isEnabled: boolean;
+  hasPassword: boolean;
+  passwordUpdatedAt?: string | null;
+  lastVerifiedAt?: string | null;
+  lastVerifiedStatus?: string;
+  lastLaunchAt?: string | null;
+}
+
+export interface ExternalAppCredentialInput {
+  appId: ExternalAppId;
+  username?: string;
+  password?: string;
+  isEnabled?: boolean;
+  clearPassword?: boolean;
+}
+
 export type ThemeMode = "light" | "dark";
-export type WhatsAppDeliveryStatus = "Terkirim" | "Gagal";
+export type FooterMode = "auto" | "compact" | "full";
+export type WhatsAppDeliveryStatus = "Diantrekan" | "Terkirim" | "Dibaca" | "Gagal";
 
 export type LetterType = "masuk" | "keluar";
 export type LetterStatus = "Baru" | "Dalam Disposisi" | "Selesai";
@@ -71,6 +131,8 @@ export type RegulationSource = "internal" | "external";
 export type AIRecommendationType = "routing" | "instruction" | "regulation";
 export type AIProviderId = string;
 export type AIConnectionStatus = "idle" | "connected" | "failed";
+export type AIModuleKey = "manajemen_surat" | "jlf" | "aleta_bot";
+export type AIModuleConfigStatus = "global" | "custom" | "fallback";
 export type WhatsAppWebConnectionStatus = "active" | "inactive" | "failed";
 export type InstitutionIdentityEnrichmentStatus =
   | "catalog_only"
@@ -184,9 +246,11 @@ export interface UserPersona {
   profilePhotoUrl?: string;
   roleId: RoleId;
   positionId: string;
+  additionalRoleIds?: string[];
   isActive: boolean;
   canBypassHierarchy?: boolean;
   actingAssignment?: ActingAssignment | null;
+  externalCredentials?: ExternalAppCredentialSummary[];
 }
 
 export interface WhatsAppDelivery {
@@ -195,6 +259,15 @@ export interface WhatsAppDelivery {
   recipientWhatsapp: string;
   status: WhatsAppDeliveryStatus;
   lastAttemptAt: string;
+  queueId?: string | null;
+  gatewayStatus?: string | null;
+  gatewayStage?: string | null;
+  gatewayMessageId?: string | null;
+  gatewayError?: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  failedAt?: string | null;
+  lastGatewaySyncAt?: string | null;
   sourceFeature?: string;
   errorMessage?: string;
 }
@@ -219,6 +292,37 @@ export interface ModuleConfig {
   iconFgClass?: string;
   cardClass?: string;
   badgeLabel?: string;
+}
+
+export interface PanelSettings {
+  footerMode: FooterMode;
+  portalCards: PortalCardVisibility;
+  publicAccess: PublicAccessSettings;
+  externalApps: Record<ExternalAppId, ExternalAppLaunchSettings>;
+  updatedAt?: string;
+}
+
+export interface PortalCardVisibility {
+  workSummary: boolean;
+  mainMenu: boolean;
+  importantTasks: boolean;
+}
+
+export interface PublicAccessSettings {
+  publicUrl: string;
+  method: "domain" | "cloudflare-tunnel" | "vpn";
+  notes: string;
+}
+
+export interface ExternalAppLaunchSettings {
+  appId: ExternalAppId;
+  enabled: boolean;
+  baseUrl: string;
+  loginPath: string;
+  usernameField: string;
+  passwordField: string;
+  passwordMode: "plain" | "md5";
+  notes: string;
 }
 
 export interface ModuleVisibility {
@@ -253,6 +357,7 @@ export interface AssistantJudgeLinkConfig {
   sortOrder?: number;
   allowedRoles?: RoleId[];
   allowedUserIds?: string[];
+  embeddedEnabled?: boolean;
   openInNewTab?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -300,6 +405,8 @@ export interface LetterSummary {
 
 export interface LetterDetail extends LetterSummary {
   nomorUrut?: string;
+  createdAt?: string;
+  updatedAt?: string;
   workflowStatus?: LetterWorkflowStatus;
   submittedAt?: string | null;
   submittedByUserId?: string | null;
@@ -400,12 +507,35 @@ export interface AIGlobalConfig {
   providerId: AIProviderId;
   activeConnectionId?: string | null;
   providers: AIProviderConfig[];
+  moduleConfigs: AIModuleConfig[];
   featureFlags: AIFeatureFlags;
   featureDispositionAi: boolean;
   featureMailIntelligence: boolean;
   featureDraftMetadata: boolean;
   featureManajemenSuratAi: boolean;
   featureDisposisiAi: boolean;
+}
+
+export interface AIModuleConfig {
+  moduleKey: AIModuleKey | string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  inheritGlobal: boolean;
+  providerId: AIProviderId;
+  modelId: AIModelId;
+  activeConnectionId?: string | null;
+  activeConnectionLabel?: string | null;
+  activeConnectionStatus?: AIConnectionStatus;
+  configuredProviderId?: AIProviderId | null;
+  configuredModelId?: AIModelId | null;
+  configuredConnectionId?: string | null;
+  fallbackProviderId?: AIProviderId;
+  fallbackModelId?: AIModelId;
+  fallbackConnectionId?: string | null;
+  status: AIModuleConfigStatus;
+  fallbackReason?: string;
+  updatedAt?: string | null;
 }
 
 export interface AIProviderConfig {
@@ -438,12 +568,15 @@ export interface InstitutionIdentity {
   address: string;
   phoneNumber: string;
   mobilePhone: string;
+  csWhatsappNumber?: string;
+  botWhatsappNumber?: string;
   email: string;
   instagram?: string;
   facebook?: string;
   youtube?: string;
   website?: string;
   mapUrl?: string;
+  logoUrl?: string;
 }
 
 export interface InstitutionIdentityEnrichmentMetadata {
@@ -601,7 +734,9 @@ export interface DispositionSuggestionPayload {
 
 export interface PortalStateData {
   currentUserId: string | null;
+  roles: Role[];
   users: UserPersona[];
+  positions: Position[];
   letters: LetterDetail[];
   dispositions: DispositionNode[];
   moduleVisibility: ModuleVisibility[];
@@ -609,5 +744,6 @@ export interface PortalStateData {
   aiConfig: AIGlobalConfig;
   whatsAppWeb: WhatsAppWebConfig;
   institutionIdentity: InstitutionIdentity;
+  panelSettings: PanelSettings;
   assistantJudgeConfig: AssistantJudgeConfig;
 }

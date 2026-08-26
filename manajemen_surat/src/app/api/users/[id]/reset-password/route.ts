@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { adminManualResetPasswordInDb } from "@/server/modules/users/service";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { isApiError } from "@/server/shared/errors";
-import { handleRouteError, ok } from "@/server/shared/http";
+import { ok } from "@/server/shared/http";
 import { assertRateLimit, clearRateLimit, recordRateLimitFailure } from "@/server/shared/rate-limit";
 
 export const runtime = "nodejs";
@@ -15,10 +16,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let actorId = "";
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let targetUserId = "unknown";
 
   try {
-    const { id: targetUserId } = await params;
-    const db = await getDatabase();
+    const { id } = await params;
+    targetUserId = id;
+    db = await getDatabase();
     actorId = await resolveActorUserId(request);
     assertRateLimit("admin-manual-reset", request, actorId);
 
@@ -37,6 +41,12 @@ export async function POST(
     if (actorId && !(isApiError(error) && error.status === 429)) {
       recordRateLimitFailure("admin-manual-reset", request, actorId);
     }
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId: actorId,
+      action: "USER_PASSWORD_RESET_ACCESS_FAILED",
+      feature: "user_management",
+      entityId: targetUserId,
+    });
   }
 }

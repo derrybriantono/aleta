@@ -6,13 +6,8 @@ import {
   resolveEffectiveRoleId,
 } from "@/core/organization/service";
 import {
-  dispositions,
-  letters,
-  moduleVisibility,
   modules,
-  personas,
   portalApps,
-  positions,
   quickSearchSeeds,
   roles,
 } from "@/lib/mock-data";
@@ -40,6 +35,8 @@ const structuralAssignmentRoleIds = new Set<RoleId>([
   "hakim",
   "sekretaris",
   "panitera",
+  "panitera-muda",
+  "kasubag",
   "pejabat-struktural",
 ]);
 const dispositionActionRoleIds = new Set<RoleId>([
@@ -47,19 +44,27 @@ const dispositionActionRoleIds = new Set<RoleId>([
   "wakil-ketua",
   "sekretaris",
   "panitera",
+  "panitera-muda",
+  "kasubag",
   "pejabat-struktural",
 ]);
 const leadershipPositionIds = new Set(["pos-ketua", "pos-wakil"]);
 
-function getVisibleLetters(source: LetterDetail[] = letters) {
+const emptyLetters: LetterDetail[] = [];
+const emptyDispositions: DispositionNode[] = [];
+const emptyUsers: UserPersona[] = [];
+const emptyPositions: Position[] = [];
+const emptyModuleVisibility: ModuleVisibility[] = [];
+
+function getVisibleLetters(source: LetterDetail[] = emptyLetters) {
   return source.filter((letter) => !letter.deletedState);
 }
 
-function getVisibleLetterIds(source: LetterDetail[] = letters) {
+function getVisibleLetterIds(source: LetterDetail[] = emptyLetters) {
   return new Set(getVisibleLetters(source).map((letter) => letter.id));
 }
 
-function getPositionMap(positionSource: Position[] = positions) {
+function getPositionMap(positionSource: Position[] = emptyPositions) {
   return new Map(positionSource.map((position) => [position.id, position]));
 }
 
@@ -81,11 +86,11 @@ export function getRoleLabel(roleId: RoleId | null | undefined) {
   return roles.find((role) => role.id === roleId)?.name ?? roleId;
 }
 
-export function getPosition(positionId: string, positionSource: Position[] = positions) {
+export function getPosition(positionId: string, positionSource: Position[] = emptyPositions) {
   return getPositionById(positionId, positionSource);
 }
 
-export function getUser(userId: string | null | undefined, userSource: UserPersona[] = personas) {
+export function getUser(userId: string | null | undefined, userSource: UserPersona[] = emptyUsers) {
   return userSource.find((persona) => persona.id === userId) ?? null;
 }
 
@@ -99,7 +104,7 @@ export function getEffectivePositionId(user: UserPersona | null | undefined) {
 
 export function getEffectivePosition(
   user: UserPersona | null | undefined,
-  positionSource: Position[] = positions
+  positionSource: Position[] = emptyPositions
 ) {
   const positionId = getEffectivePositionId(user);
 
@@ -115,10 +120,13 @@ export function getUserRoleBadge(user: UserPersona | null | undefined) {
   return actingAssignment ? `${actingAssignment.type} ${roleLabel}` : roleLabel;
 }
 
-export function getUserPositionLabel(user: UserPersona | null | undefined) {
+export function getUserPositionLabel(
+  user: UserPersona | null | undefined,
+  positionSource: Position[] = emptyPositions
+) {
   if (!user) return "-";
 
-  const effectivePosition = getEffectivePosition(user);
+  const effectivePosition = getEffectivePosition(user, positionSource);
   const actingAssignment = getResolvedActingAssignment(user);
 
   if (!effectivePosition) return "-";
@@ -126,10 +134,13 @@ export function getUserPositionLabel(user: UserPersona | null | undefined) {
   return actingAssignment ? `${actingAssignment.type} ${effectivePosition.name}` : effectivePosition.name;
 }
 
-export function getUserAccessSummary(user: UserPersona | null | undefined) {
+export function getUserAccessSummary(
+  user: UserPersona | null | undefined,
+  positionSource: Position[] = emptyPositions
+) {
   if (!user) return "-";
 
-  return `${getUserRoleBadge(user)} - ${getUserPositionLabel(user)}`;
+  return `${getUserRoleBadge(user)} - ${getUserPositionLabel(user, positionSource)}`;
 }
 
 export function isPrivilegedAdmin(user: UserPersona | null | undefined) {
@@ -168,8 +179,11 @@ export function canUserAccessDispositionAction(user: UserPersona | null | undefi
   return roleId ? dispositionActionRoleIds.has(roleId) : false;
 }
 
-export function canUserForwardToLeadership(user: UserPersona | null | undefined) {
-  return Boolean(getEffectivePosition(user)?.canForwardToLeadership);
+export function canUserForwardToLeadership(
+  user: UserPersona | null | undefined,
+  positionSource: Position[] = emptyPositions
+) {
+  return Boolean(getEffectivePosition(user, positionSource)?.canForwardToLeadership);
 }
 
 export function canUserRegisterLetters(user: UserPersona | null | undefined) {
@@ -201,7 +215,7 @@ export function canCreateOutgoingLetter(user: UserPersona | null | undefined) {
 
 function collectDescendantPositionIds(
   positionId: string,
-  positionSource: Position[] = positions
+  positionSource: Position[] = emptyPositions
 ): Set<string> {
   const visited = new Set<string>();
   const positionMap = getPositionMap(positionSource);
@@ -230,7 +244,7 @@ export function getAllowedDispositionTargetPositions(
     positionSource?: Position[];
   }
 ) {
-  const positionSource = options?.positionSource ?? positions;
+  const positionSource = options?.positionSource ?? emptyPositions;
   const currentPositionId = getEffectivePositionId(user);
 
   if (!user || !currentPositionId) return [];
@@ -250,12 +264,15 @@ export function getAllowedDispositionTargetPositions(
   return positionSource.filter((position) => targetIds.has(position.id)).sort(sortPositions);
 }
 
-export function getLeadershipRecipients(userSource: UserPersona[] = personas) {
+export function getLeadershipRecipients(
+  userSource: UserPersona[] = emptyUsers,
+  positionSource: Position[] = emptyPositions
+) {
   return userSource
     .filter((persona) => persona.isActive && leadershipPositionIds.has(getEffectivePositionId(persona) ?? ""))
     .sort((left, right) => {
-      const leftPosition = getEffectivePosition(left);
-      const rightPosition = getEffectivePosition(right);
+      const leftPosition = getEffectivePosition(left, positionSource);
+      const rightPosition = getEffectivePosition(right, positionSource);
 
       if ((leftPosition?.levelHierarchy ?? 99) !== (rightPosition?.levelHierarchy ?? 99)) {
         return (leftPosition?.levelHierarchy ?? 99) - (rightPosition?.levelHierarchy ?? 99);
@@ -280,7 +297,7 @@ export function isDispositionAssignedToUser(
 export function authenticateUser(
   username: string,
   password: string,
-  userSource: UserPersona[] = personas
+  userSource: UserPersona[] = emptyUsers
 ) {
   const normalizedUsername = username.trim().toLowerCase();
   const normalizedPassword = password.trim();
@@ -295,22 +312,22 @@ export function authenticateUser(
   );
 }
 
-export function getLetter(letterId: string, source: LetterDetail[] = letters) {
+export function getLetter(letterId: string, source: LetterDetail[] = emptyLetters) {
   return getVisibleLetters(source).find((letter) => letter.id === letterId) ?? null;
 }
 
-export function getDisposition(dispositionId: string, source: DispositionNode[] = dispositions) {
+export function getDisposition(dispositionId: string, source: DispositionNode[] = emptyDispositions) {
   return source.find((item) => item.id === dispositionId) ?? null;
 }
 
 export function getDispositionChildren(
   dispositionId: string,
-  source: DispositionNode[] = dispositions
+  source: DispositionNode[] = emptyDispositions
 ) {
   return source.filter((item) => item.parentDispositionId === dispositionId);
 }
 
-export function getLetterDispositions(suratId: string, source: DispositionNode[] = dispositions) {
+export function getLetterDispositions(suratId: string, source: DispositionNode[] = emptyDispositions) {
   return source
     .filter((item) => item.suratId === suratId)
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
@@ -318,7 +335,7 @@ export function getLetterDispositions(suratId: string, source: DispositionNode[]
 
 export function getAccessibleModules(
   user: UserPersona | null,
-  visibility: ModuleVisibility[] = moduleVisibility
+  visibility: ModuleVisibility[] = emptyModuleVisibility
 ) {
   if (!user) return [];
 
@@ -335,25 +352,34 @@ export function getAccessibleModules(
   });
 }
 
-export function getAccessiblePortalApps(user: UserPersona | null): PortalAppConfig[] {
+export function getAccessiblePortalApps(
+  user: UserPersona | null,
+  visibility: ModuleVisibility[] = emptyModuleVisibility
+): PortalAppConfig[] {
   if (!user) return [];
 
   const roleId = getEffectiveRoleId(user);
+  const roleVisibility = visibility.find((item) => item.roleId === roleId);
 
-  return portalApps.filter((app) => (roleId ? app.roleIds.includes(roleId) : false));
+  return portalApps.filter((app) => {
+    const roleAllowed = roleId ? app.roleIds.includes(roleId) : false;
+    const visibilityAllowed = roleVisibility?.modules[app.id] ?? false;
+    return roleAllowed && visibilityAllowed;
+  });
 }
 
 export function getAccessibleLetters(
   user: UserPersona | null,
-  letterSource: LetterDetail[] = letters,
-  dispositionSource: DispositionNode[] = dispositions
+  letterSource: LetterDetail[] = emptyLetters,
+  dispositionSource: DispositionNode[] = emptyDispositions,
+  positionSource: Position[] = emptyPositions
 ) {
   if (!user) return [];
 
   const visibleLetters = getVisibleLetters(letterSource);
   const roleId = getEffectiveRoleId(user);
   const effectivePositionId = getEffectivePositionId(user);
-  const effectivePosition = getEffectivePosition(user);
+  const effectivePosition = getEffectivePosition(user, positionSource);
 
   if (roleId && adminRoleIds.has(roleId)) {
     return visibleLetters;
@@ -367,7 +393,7 @@ export function getAccessibleLetters(
       const sender = item.pengirimId === user.id;
       const samePosition = effectivePositionId ? item.targetPositionId === effectivePositionId : false;
       const sameUnit =
-        getPosition(item.targetPositionId)?.unitKerja === effectivePosition?.unitKerja;
+        getPosition(item.targetPositionId, positionSource)?.unitKerja === effectivePosition?.unitKerja;
 
       return recipient || sender || samePosition || sameUnit;
     });
@@ -376,10 +402,11 @@ export function getAccessibleLetters(
 
 export function getDashboardMetrics(
   user: UserPersona | null,
-  letterSource: LetterDetail[] = letters,
-  dispositionSource: DispositionNode[] = dispositions
+  letterSource: LetterDetail[] = emptyLetters,
+  dispositionSource: DispositionNode[] = emptyDispositions,
+  positionSource: Position[] = emptyPositions
 ): DashboardMetric[] {
-  const accessibleLetters = getAccessibleLetters(user, letterSource, dispositionSource);
+  const accessibleLetters = getAccessibleLetters(user, letterSource, dispositionSource, positionSource);
   const visibleLetterIds = getVisibleLetterIds(letterSource);
   const pendingDispositions = dispositionSource.filter(
     (item) => isDispositionAssignedToUser(user, item) && item.status !== "Selesai" && visibleLetterIds.has(item.suratId)
@@ -412,8 +439,8 @@ export function getDashboardMetrics(
 
 export function getPendingInbox(
   user: UserPersona | null,
-  dispositionSource: DispositionNode[] = dispositions,
-  letterSource: LetterDetail[] = letters
+  dispositionSource: DispositionNode[] = emptyDispositions,
+  letterSource: LetterDetail[] = emptyLetters
 ) {
   if (!user) return [];
 
@@ -424,27 +451,28 @@ export function getPendingInbox(
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
-export function getPositionUsers(positionId: string, userSource: UserPersona[] = personas) {
+export function getPositionUsers(positionId: string, userSource: UserPersona[] = emptyUsers) {
   return userSource
     .filter((persona) => getEffectivePositionId(persona) === positionId && persona.isActive)
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-export function getUnits() {
-  return [...new Set(positions.map((position) => position.unitKerja))];
+export function getUnits(positionSource: Position[] = emptyPositions) {
+  return [...new Set(positionSource.map((position) => position.unitKerja))];
 }
 
 export function searchPortal(
   query: string,
   user: UserPersona | null,
-  letterSource: LetterDetail[] = letters,
-  dispositionSource: DispositionNode[] = dispositions,
-  userSource: UserPersona[] = personas
+  letterSource: LetterDetail[] = emptyLetters,
+  dispositionSource: DispositionNode[] = emptyDispositions,
+  userSource: UserPersona[] = emptyUsers,
+  positionSource: Position[] = emptyPositions
 ): SearchResult[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return [];
 
-  const accessibleLetters = getAccessibleLetters(user, letterSource, dispositionSource);
+  const accessibleLetters = getAccessibleLetters(user, letterSource, dispositionSource, positionSource);
   const visibleLetterIds = getVisibleLetterIds(letterSource);
   const effectiveRoleId = getEffectiveRoleId(user);
   const letterResults = accessibleLetters
@@ -484,7 +512,7 @@ export function searchPortal(
     effectiveRoleId && adminRoleIds.has(effectiveRoleId)
       ? userSource
           .filter((item) =>
-            [item.name, item.email, getPosition(getEffectivePositionId(item) ?? "")?.name ?? ""]
+            [item.name, item.email, getPosition(getEffectivePositionId(item) ?? "", positionSource)?.name ?? ""]
               .join(" ")
               .toLowerCase()
               .includes(normalized)
@@ -493,9 +521,9 @@ export function searchPortal(
             id: `user-${item.id}`,
             type: "pengguna",
             title: item.name,
-            excerpt: `${getPosition(getEffectivePositionId(item) ?? "")?.name ?? "-"} - ${item.email}`,
+            excerpt: `${getPosition(getEffectivePositionId(item) ?? "", positionSource)?.name ?? "-"} - ${item.email}`,
             href: "/admin/mapping-user-jabatan",
-            keywords: [getPosition(getEffectivePositionId(item) ?? "")?.name ?? ""],
+            keywords: [getPosition(getEffectivePositionId(item) ?? "", positionSource)?.name ?? ""],
           }))
       : [];
 
@@ -514,24 +542,26 @@ export function searchPortal(
 
 export function getInboxNotificationCount(
   user: UserPersona | null,
-  letterSource: LetterDetail[] = letters,
-  dispositionSource: DispositionNode[] = dispositions
+  letterSource: LetterDetail[] = emptyLetters,
+  dispositionSource: DispositionNode[] = emptyDispositions,
+  positionSource: Position[] = emptyPositions
 ) {
   if (!user) return 0;
 
-  return getAccessibleLetters(user, letterSource, dispositionSource).filter(
+  return getAccessibleLetters(user, letterSource, dispositionSource, positionSource).filter(
     (letter) => letter.type === "masuk" && letter.status === "Baru"
   ).length;
 }
 
 export function getOperationalSummary(
   user: UserPersona | null,
-  letterSource: LetterDetail[] = letters,
-  dispositionSource: DispositionNode[] = dispositions
+  letterSource: LetterDetail[] = emptyLetters,
+  dispositionSource: DispositionNode[] = emptyDispositions,
+  positionSource: Position[] = emptyPositions
 ): OperationalSummaryItem[] {
   if (!user) return [];
 
-  const accessibleLetters = getAccessibleLetters(user, letterSource, dispositionSource);
+  const accessibleLetters = getAccessibleLetters(user, letterSource, dispositionSource, positionSource);
   const pendingInbox = getPendingInbox(user, dispositionSource, letterSource);
   const completedLetters = accessibleLetters.filter((letter) => letter.status === "Selesai");
   const roleId = getEffectiveRoleId(user);

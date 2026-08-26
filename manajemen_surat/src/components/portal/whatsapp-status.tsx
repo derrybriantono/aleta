@@ -55,19 +55,30 @@ export function WhatsAppStatusStack({
                 Coba kirim ulang
             </Button>
             ) : (
-              <Badge variant="success">Terkirim</Badge>
+              <Badge variant={getDeliveryBadgeVariant(delivery.status)}>{delivery.status}</Badge>
             )}
           </div>
           {!compact ? (
-            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-              <MessageCircleMore className="h-3.5 w-3.5" />
-              <span>{formatDateTime(delivery.lastAttemptAt)}</span>
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <MessageCircleMore className="h-3.5 w-3.5" />
+                <span>{formatDateTime(delivery.lastAttemptAt)}</span>
+              </div>
+              {delivery.queueId ? <p>Queue ID: {delivery.queueId}</p> : null}
+              {delivery.gatewayError ? <p className="text-amber-700 dark:text-amber-300">{delivery.gatewayError}</p> : null}
             </div>
           ) : null}
         </div>
       ))}
     </div>
   );
+}
+
+function getDeliveryBadgeVariant(status: WhatsAppDelivery["status"]) {
+  if (status === "Dibaca") return "success";
+  if (status === "Terkirim") return "success";
+  if (status === "Diantrekan") return "warning";
+  return "danger";
 }
 
 function maskPhoneNumber(value: string) {

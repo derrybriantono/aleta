@@ -5,6 +5,7 @@ import { canManageActingAssignments, getDefaultRoleForPosition } from "@/lib/per
 import {
   type ActingAssignment,
   type Position,
+  type Role,
   type UserPersona,
 } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
@@ -24,6 +25,12 @@ type PositionRow = {
   can_forward_to_leadership: number;
 };
 
+type RoleRow = {
+  id: string;
+  name: string;
+  description: string;
+};
+
 type UserRow = {
   id: string;
   username: string;
@@ -35,6 +42,7 @@ type UserRow = {
   profile_photo_url: string | null;
   role_id: string;
   position_id: string;
+  additional_role_ids_json: string;
   is_active: number;
   can_bypass_hierarchy: number;
 };
@@ -103,6 +111,7 @@ function mapUserRow(row: UserRow, assignment?: ActingAssignment | null): UserPer
     profilePhotoUrl: row.profile_photo_url ?? undefined,
     roleId: row.role_id as UserPersona["roleId"],
     positionId: row.position_id,
+    additionalRoleIds: parseJsonArray<string>(row.additional_role_ids_json),
     isActive: Boolean(row.is_active),
     canBypassHierarchy: Boolean(row.can_bypass_hierarchy),
     actingAssignment: assignment ?? null,
@@ -135,6 +144,20 @@ export async function getPositionsFromDb(db: AletaDatabase) {
     .orderBy(asc(positions.levelHierarchy), asc(positions.unitKerja), asc(positions.name));
 
   return rows.map(mapPositionRow);
+}
+
+export async function getRolesFromDb(db: AletaDatabase): Promise<Role[]> {
+  const rows = await db.prepare(
+    `SELECT id, name, description
+     FROM roles
+     ORDER BY id ASC`
+  ).all<RoleRow>();
+
+  return rows.map((row) => ({
+    id: row.id as Role["id"],
+    name: row.name,
+    description: row.description,
+  }));
 }
 
 async function getActiveAssignmentsFromDb(db: AletaDatabase) {
@@ -191,7 +214,7 @@ export async function getUsersFromDb(db: AletaDatabase) {
   if (!db.supportsFullTextSearch()) {
     const rows = await db.prepare(
       `SELECT id, username, password_hash, name, nip, email, whatsapp_number, profile_photo_url,
-        role_id, position_id, is_active, can_bypass_hierarchy
+        role_id, position_id, additional_role_ids_json, is_active, can_bypass_hierarchy
        FROM users
        WHERE deleted_at IS NULL
        ORDER BY name ASC`
@@ -212,6 +235,7 @@ export async function getUsersFromDb(db: AletaDatabase) {
     profile_photo_url: users.image,
     role_id: users.roleId,
     position_id: users.positionId,
+    additional_role_ids_json: users.additionalRoleIdsJson,
     is_active: users.isActive,
     can_bypass_hierarchy: users.canBypassHierarchy,
   }).from(users)

@@ -22,6 +22,13 @@
       "when": 1777199000000,
       "tag": "0002_ai_feature_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779540261624,
+      "tag": "0003_judicia_legal_form_foundation",
+      "breakpoints": true
     }
   ]
 }

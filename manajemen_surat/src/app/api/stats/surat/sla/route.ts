@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const actorUserId = await resolveActorUserId(request);
     if (!actorUserId) throw new ApiError(401, "Silakan login untuk melihat SLA disposisi.");
     const db = await getDatabase();
-    return ok(await getLetterSlaStatisticsInDb(db));
+    return ok(await getLetterSlaStatisticsInDb(db, actorUserId));
   } catch (error) {
     return handleRouteError(error);
   }

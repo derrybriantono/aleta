@@ -422,7 +422,7 @@ export default function ArsipPage() {
                 );
 
                 if (!confirmed) return;
-                deleteLetter(letter.id);
+                void deleteLetter(letter.id);
               }
             : undefined
         }

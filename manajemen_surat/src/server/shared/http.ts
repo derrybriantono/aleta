@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { ApiError, isApiError } from "@/server/shared/errors";
+import { sanitizePublicErrorDetails, sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
 
 function isDatabaseUnavailableError(error: unknown) {
   if (!(error instanceof Error)) {
@@ -82,8 +83,8 @@ export function handleRouteError(error: unknown) {
       {
         ok: false,
         error: {
-          message: error.message,
-          details: error.details,
+          message: sanitizePublicErrorMessage(error.message, error.message),
+          details: sanitizePublicErrorDetails(error.details),
         },
       },
       { status: error.status }
@@ -146,7 +147,10 @@ export function handleRouteError(error: unknown) {
     );
   }
 
-  const message = error instanceof Error ? error.message : "Terjadi kendala pada layanan ALETA. Silakan coba lagi.";
+  const message = sanitizePublicErrorMessage(
+    error instanceof Error ? error.message : "",
+    "Terjadi kendala pada layanan ALETA. Silakan coba lagi."
+  );
   console.error("[ALETA API ERROR]", error);
 
   return NextResponse.json(

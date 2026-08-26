@@ -23,8 +23,8 @@ import {
 } from "@/lib/permissions";
 
 export function MailDashboardPage() {
-  const { accessibleLetters, currentUser, dispositions, pendingInbox, users } = usePortal();
-  const position = getEffectivePosition(currentUser);
+  const { accessibleLetters, currentUser, dispositions, pendingInbox, positions, activeUsers: users } = usePortal();
+  const position = getEffectivePosition(currentUser, positions);
   const currentRoleBadge = getUserRoleBadge(currentUser);
   const visibleLetterIds = new Set(accessibleLetters.map((letter) => letter.id));
   const canManageAssignments = canManageActingAssignments(currentUser);
@@ -56,7 +56,7 @@ export function MailDashboardPage() {
       id: "tugas-masuk",
       label: "Tugas Masuk",
       value: pendingInbox.length,
-      hint: "Disposisi yang masih menunggu tindak lanjut Anda.",
+      hint: "Surat yang masih perlu Anda cek.",
       href: "/surat?metric=inbox",
     },
     {
@@ -64,7 +64,7 @@ export function MailDashboardPage() {
       label: "Disposisi Terlambat",
       value: lateDispositionCount,
       hint: `${dueTodayDispositionCount} jatuh tempo hari ini.`,
-      href: "/tugas?filter=Mendesak",
+      href: "/tugas?filter=urgent",
     },
   ];
   const recentActivities = dispositions
@@ -79,7 +79,7 @@ export function MailDashboardPage() {
     <div className="space-y-6">
       <PageIntro
         eyebrow="Manajemen Surat"
-        title="Dashboard Manajemen Surat"
+        title="Ringkasan Surat"
         description={`${currentRoleBadge} · ${position?.name ?? "-"}`}
         actions={
           <>
@@ -114,20 +114,20 @@ export function MailDashboardPage() {
         }
       />
 
-      <div data-testid="mail-dashboard-summary-grid" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-testid="mail-dashboard-summary-grid" className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
         {stats.map((item) => (
           <Link key={item.id} href={item.href} className="group block">
             <Card
               data-testid={`mail-summary-card-${item.id}`}
               className="h-full border-border/80 transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-panel"
             >
-              <CardHeader className="space-y-1 p-4 pb-2">
-                <CardDescription className="text-[11px] uppercase tracking-[0.14em]">{item.label}</CardDescription>
+              <CardHeader className="space-y-1 p-3 pb-2 sm:p-4 sm:pb-2">
+                <CardDescription className="text-[10px] uppercase tracking-[0.1em] sm:text-[11px] sm:tracking-[0.14em]">{item.label}</CardDescription>
                 <CardTitle className="text-2xl sm:text-3xl">{item.value}</CardTitle>
               </CardHeader>
-              <CardContent className="flex min-h-10 items-center justify-between gap-3 px-4 pb-4 pt-0">
+              <CardContent className="flex min-h-8 items-center justify-between gap-2 px-3 pb-3 pt-0 sm:min-h-10 sm:gap-3 sm:px-4 sm:pb-4">
                 {item.hint ? (
-                  <p className="text-xs leading-5 text-muted-foreground">{item.hint}</p>
+                  <p className="hidden text-xs leading-5 text-muted-foreground sm:block">{item.hint}</p>
                 ) : (
                   <span />
                 )}
@@ -139,17 +139,17 @@ export function MailDashboardPage() {
       </div>
 
       {currentUser?.roleId === "super-admin" && (
-        <div className="grid gap-6">
+        <div className="hidden gap-6 sm:grid">
           <WhatsAppControl />
         </div>
       )}
 
       <div className="grid gap-6 xl:grid-cols-[1.14fr_0.86fr]">
-        <Card className="border-border/80">
+        <Card className="hidden border-border/80 md:block">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-primary" />
-              Widget Tugas Mendesak
+              Tugas Penting
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -157,7 +157,7 @@ export function MailDashboardPage() {
               <SectionHint
                 icon="inbox"
                 title="Tidak ada tugas mendesak"
-                description="Inbox Anda sedang bersih. Gunakan daftar surat untuk meninjau arsip atau pekerjaan baru."
+                description="Tidak ada surat yang perlu segera ditindaklanjuti."
                 href="/surat?metric=inbox"
               />
             ) : (
@@ -198,7 +198,7 @@ export function MailDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BellRing className="h-5 w-5 text-primary" />
-              Log Aktivitas Terbaru
+              Aktivitas Terbaru
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -206,14 +206,14 @@ export function MailDashboardPage() {
               <SectionHint
                 icon="inbox"
                 title="Belum ada aktivitas"
-                description="Log disposisi akan muncul otomatis ketika surat mulai diteruskan atau ditindaklanjuti."
+                description="Aktivitas disposisi akan muncul ketika surat mulai diteruskan atau ditindaklanjuti."
                 href="/surat"
               />
             ) : (
               recentActivities.map((item) => {
                 const sender = getUser(item.pengirimId, users);
                 const recipient = getUser(item.penerimaId, users);
-                const positionLabel = getPosition(item.targetPositionId)?.name ?? "-";
+                const positionLabel = getPosition(item.targetPositionId, positions)?.name ?? "-";
 
                 return (
                   <div key={item.id} className="rounded-[1.2rem] border border-border bg-muted/35 p-4">

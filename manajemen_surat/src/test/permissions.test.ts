@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { moduleVisibility, personas } from "@/lib/mock-data";
+import { dispositions, letters, moduleVisibility, personas, positions } from "@/lib/mock-data";
 import {
   canUserRegisterLetters,
   canUserForwardToLeadership,
@@ -38,8 +38,8 @@ describe("RBAC visibility", () => {
     const superAdmin = personas.find((persona) => persona.id === "usr-super")!;
     const staff = personas.find((persona) => persona.id === "usr-budi")!;
 
-    const superAdminApps = getAccessiblePortalApps(superAdmin).map((app) => app.id);
-    const staffApps = getAccessiblePortalApps(staff).map((app) => app.id);
+    const superAdminApps = getAccessiblePortalApps(superAdmin, moduleVisibility).map((app) => app.id);
+    const staffApps = getAccessiblePortalApps(staff, moduleVisibility).map((app) => app.id);
 
     expect(superAdminApps).toContain("manajemen-surat");
     expect(superAdminApps).toContain("e-keuangan");
@@ -53,8 +53,8 @@ describe("RBAC visibility", () => {
     const staff = personas.find((persona) => persona.id === "usr-budi")!;
     const admin = personas.find((persona) => persona.id === "usr-admin")!;
 
-    const staffResults = searchPortal("Ahmad", staff);
-    const adminResults = searchPortal("Ahmad", admin);
+    const staffResults = searchPortal("Ahmad", staff, letters, dispositions, personas, positions);
+    const adminResults = searchPortal("Ahmad", admin, letters, dispositions, personas, positions);
 
     expect(staffResults.some((item) => item.type === "pengguna")).toBe(false);
     expect(adminResults.some((item) => item.type === "pengguna")).toBe(true);
@@ -65,9 +65,9 @@ describe("RBAC visibility", () => {
     const staffUmum = personas.find((persona) => persona.id === "usr-dina")!;
     const staffPelaksana = personas.find((persona) => persona.id === "usr-budi")!;
 
-    expect(canUserForwardToLeadership(kasubag)).toBe(true);
-    expect(canUserForwardToLeadership(staffUmum)).toBe(true);
-    expect(canUserForwardToLeadership(staffPelaksana)).toBe(false);
+    expect(canUserForwardToLeadership(kasubag, positions)).toBe(true);
+    expect(canUserForwardToLeadership(staffUmum, positions)).toBe(true);
+    expect(canUserForwardToLeadership(staffPelaksana, positions)).toBe(false);
   });
 
   it("allows letter registration only for Kasubag Umum and Staf Umum", () => {
@@ -91,7 +91,7 @@ describe("RBAC visibility", () => {
     };
     const users = personas.map((persona) => (persona.id === actingSekretaris.id ? actingSekretaris : persona));
 
-    expect(getPendingInbox(actingSekretaris).some((item) => item.id === "dsp-006")).toBe(true);
-    expect(getLeadershipRecipients(users).some((user) => user.id === actingSekretaris.id)).toBe(true);
+    expect(getPendingInbox(actingSekretaris, dispositions, letters).some((item) => item.id === "dsp-006")).toBe(true);
+    expect(getLeadershipRecipients(users, positions).some((user) => user.id === actingSekretaris.id)).toBe(true);
   });
 });

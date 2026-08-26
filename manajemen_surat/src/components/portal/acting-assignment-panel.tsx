@@ -29,7 +29,7 @@ function summarizeEligibility(reasons: string[], warnings: string[]) {
 }
 
 export function ActingAssignmentPanel() {
-  const { assignActingAssignment, clearActingAssignment, currentUser, users } = usePortal();
+  const { assignActingAssignment, clearActingAssignment, currentUser, positions, activeUsers: users } = usePortal();
   const [supervisorUserId, setSupervisorUserId] = useState("");
   const [assigneeUserId, setAssigneeUserId] = useState("");
   const [assignmentType, setAssignmentType] = useState<"PLH" | "PLT">("PLH");
@@ -42,28 +42,30 @@ export function ActingAssignmentPanel() {
     () =>
       users
         .filter((user) => {
-          const targetPosition = getPositionById(resolveEffectivePositionId(user) ?? "");
+          const targetPosition = getPositionById(resolveEffectivePositionId(user) ?? "", positions);
           return getEligibleCandidatesForActingAssignment(targetPosition, assignmentType, {
+            positionSource: positions,
             userSource: users,
             supervisorUser: user,
           }).length > 0;
         })
         .sort((left, right) => left.name.localeCompare(right.name)),
-    [assignmentType, users]
+    [assignmentType, positions, users]
   );
   const selectedSupervisor =
     supervisors.find((user) => user.id === supervisorUserId) ?? supervisors[0] ?? null;
   const targetPosition = selectedSupervisor
-    ? getPositionById(resolveEffectivePositionId(selectedSupervisor) ?? "")
+    ? getPositionById(resolveEffectivePositionId(selectedSupervisor) ?? "", positions)
     : null;
   const candidateEvaluations = useMemo(
     () =>
       getEligibleCandidatesForActingAssignment(targetPosition, assignmentType, {
         userSource: users,
+        positionSource: positions,
         supervisorUser: selectedSupervisor,
         includeIneligible: true,
       }),
-    [assignmentType, selectedSupervisor, targetPosition, users]
+    [assignmentType, positions, selectedSupervisor, targetPosition, users]
   );
   const eligibleCandidateEvaluations = candidateEvaluations.filter((item) => item.eligibility.eligible);
   const selectedAssignee =
@@ -116,7 +118,7 @@ export function ActingAssignmentPanel() {
               >
                 {supervisors.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.name} - {getUserPositionLabel(user)}
+                    {user.name} - {getUserPositionLabel(user, positions)}
                   </option>
                 ))}
               </NativeSelect>
@@ -134,7 +136,7 @@ export function ActingAssignmentPanel() {
                 {candidateEvaluations.map(({ user, eligibility }) => (
                   <option key={user.id} value={user.id} disabled={!eligibility.eligible}>
                     {eligibility.eligible ? "" : "[Tidak eligible] "}
-                    {user.name} - {getUserPositionLabel(user)}
+                    {user.name} - {getUserPositionLabel(user, positions)}
                   </option>
                 ))}
               </NativeSelect>
@@ -244,7 +246,7 @@ export function ActingAssignmentPanel() {
           ) : (
             activeAssignments.map((user) => {
               const supervisor = users.find((candidate) => candidate.id === user.actingAssignment?.authorizedByUserId);
-              const targetPosition = getPositionById(user.actingAssignment?.positionId ?? "");
+              const targetPosition = getPositionById(user.actingAssignment?.positionId ?? "", positions);
 
               return (
                 <div key={user.id} className="rounded-[1.2rem] border border-border bg-card/90 p-4">
@@ -254,13 +256,13 @@ export function ActingAssignmentPanel() {
                         {user.actingAssignment?.type} - {user.name}
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {getUserPositionLabel(user)} menjalankan {targetPosition?.name ?? "-"}
+                        {getUserPositionLabel(user, positions)} menjalankan {targetPosition?.name ?? "-"}
                       </p>
                     </div>
                     <Badge variant="warning">{user.actingAssignment?.type}</Badge>
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    Otorisasi jabatan: {supervisor?.name ?? "-"} / {getUserPositionLabel(supervisor ?? null)}
+                    Otorisasi jabatan: {supervisor?.name ?? "-"} / {getUserPositionLabel(supervisor ?? null, positions)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {user.actingAssignment?.type === "PLH"

@@ -1,3 +1,4 @@
+import { apiPath } from "@/lib/base-path";
 import { type MailIntelligencePayload } from "@/lib/types";
 
 export type MailIntelligenceInsight = MailIntelligencePayload;
@@ -23,7 +24,7 @@ export async function fetchMailIntelligenceInsight({
   actorUserId?: string;
   signal?: AbortSignal;
 }): Promise<MailIntelligencePayload> {
-  const response = await fetch("/api/ai/intelligence/mail", {
+  const response = await fetch(apiPath("/api/ai/intelligence/mail"), {
     method: "POST",
     headers: {
       "content-type": "application/json",

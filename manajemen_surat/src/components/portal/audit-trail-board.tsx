@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RefreshCcw, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiPath } from "@/lib/base-path";
 
 type AuditItem = {
   id: string;
@@ -41,12 +42,12 @@ export function AuditTrailBoard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadAuditLogs = async () => {
+  const loadAuditLogs = useCallback(async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await fetch("/api/audit?limit=200", {
+      const response = await fetch(apiPath("/api/audit?limit=200"), {
         credentials: "include",
         cache: "no-store",
       });
@@ -64,11 +65,15 @@ export function AuditTrailBoard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void loadAuditLogs();
-  }, []);
+    const timeout = window.setTimeout(() => {
+      void loadAuditLogs();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [loadAuditLogs]);
 
   return (
     <Card className="border-border/80">

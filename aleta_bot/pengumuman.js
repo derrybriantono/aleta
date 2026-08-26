@@ -1,4 +1,4 @@
-const puppeteer = require("new-puppeteer");
+const puppeteer = require("puppeteer");
 const moment = require("moment");
 
 let month = moment().format("MM");

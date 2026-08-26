@@ -1,0 +1,7 @@
+{
+  "version": "1.19.0",
+  "package": "aleta-update-1.19.0.tar.gz",
+  "checksum": "aleta-update-1.19.0.tar.gz.sha256",
+  "createdAt": "2026-08-25T02:48:03Z",
+  "notes": "Default package excludes local/server config, env, database/runtime data, uploads, PDFs, sessions, node_modules, .next, tmp, and reports."
+}

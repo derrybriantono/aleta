@@ -14,13 +14,20 @@ import {
 import { buildDerivedCourtIdentity, getCourtDirectoryEntryByName, searchCourtDirectory } from "@/lib/court-catalog";
 import { letterClassificationCatalog, normalizeLetterClassificationDraft } from "@/lib/letter-taxonomy";
 import { canManageGlobalAI } from "@/lib/permissions";
-import { type AIGlobalConfig, type AIProviderConfig, type LetterType } from "@/lib/types";
+import {
+  type AIGlobalConfig,
+  type AIModuleConfig,
+  type AIModuleKey,
+  type AIProviderConfig,
+  type LetterType,
+} from "@/lib/types";
 import {
   generateLetterDraftFromPdf,
+  normalizeLetterDraftCoreSummary,
   type GeneratedLetterDraft,
 } from "@/modules/manajemen-surat/services/letter-draft-ai";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
-import { aiGlobalSettings, aiProviders } from "@/server/db/drizzle-schema";
+import { aiGlobalSettings, aiModuleSettings, aiProviders } from "@/server/db/drizzle-schema";
 import {
   isProviderLiveSupported,
   requestStructuredDataFromProvider,
@@ -70,8 +77,28 @@ type AIProviderRow = QueryResultRow & {
   last_connection_message: string | null;
 };
 
+type AIModuleSettingsRow = QueryResultRow & {
+  module_key: string;
+  enabled: number;
+  inherit_global: number;
+  active_provider_id: string | null;
+  active_model_id: string | null;
+  active_connection_id: string | null;
+  fallback_provider_id: string | null;
+  fallback_model_id: string | null;
+  fallback_connection_id: string | null;
+  updated_at: string | null;
+};
+
 type AISettingsQueryOptions = {
   includeSecrets?: boolean;
+};
+
+type AIModuleConfigInput = {
+  moduleKey: string;
+  enabled?: boolean;
+  inheritGlobal?: boolean;
+  activeConnectionId?: string | null;
 };
 
 type AISavedConnectionInput = {
@@ -86,6 +113,38 @@ type AISavedConnectionInput = {
   lastTestedAt?: string;
   lastConnectionMessage?: string;
 };
+
+const AI_MODULE_CATALOG: Array<{
+  key: AIModuleKey;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "manajemen_surat",
+    label: "Manajemen Surat",
+    description: "AI untuk surat, disposisi, metadata PDF, dan intelligence surat.",
+  },
+  {
+    key: "jlf",
+    label: "JLF",
+    description: "AI untuk Judicia Legal Form, template, mapping, dan analisis legal terbatas.",
+  },
+  {
+    key: "aleta_bot",
+    label: "ALETA Bot / WhatsApp AI",
+    description: "AI untuk classifier, jawaban WhatsApp, dan notifikasi cerdas ALETA Bot.",
+  },
+];
+
+function normalizeAIModuleKey(value: string | null | undefined): AIModuleKey | null {
+  const normalized = String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (normalized === "manajemen_surat" || normalized === "surat" || normalized === "mail") return "manajemen_surat";
+  if (normalized === "jlf" || normalized === "judicia" || normalized === "legal_form") return "jlf";
+  if (normalized === "aleta_bot" || normalized === "bot" || normalized === "whatsapp" || normalized === "public_qa") {
+    return "aleta_bot";
+  }
+  return null;
+}
 
 function getProviderEndpoint(providerId: string) {
   return (
@@ -190,6 +249,37 @@ async function ensureAISettingsFeatureFlagColumns(db: AletaDatabase) {
   }
 }
 
+async function ensureAIModuleSettingsTable(db: AletaDatabase) {
+  let tableExists = false;
+  try {
+    await db.prepare(`SELECT module_key FROM ai_module_settings LIMIT 1`).all();
+    tableExists = true;
+  } catch {
+    // The table may not exist yet on upgraded installations.
+  }
+
+  if (!tableExists) {
+    await db.exec(
+      `CREATE TABLE IF NOT EXISTS ai_module_settings (
+        module_key TEXT,
+        enabled INTEGER,
+        inherit_global INTEGER,
+        active_provider_id TEXT,
+        active_model_id TEXT,
+        active_connection_id TEXT,
+        fallback_provider_id TEXT,
+        fallback_model_id TEXT,
+        fallback_connection_id TEXT,
+        updated_by TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      )`
+    );
+  }
+  await db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_module_settings_key ON ai_module_settings(module_key)`);
+  await db.exec(`CREATE INDEX IF NOT EXISTS idx_ai_module_settings_connection ON ai_module_settings(active_connection_id)`);
+}
+
 function normalizeDraftDate(value: string | undefined) {
   const normalized = value?.trim() ?? "";
   return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : "";
@@ -241,9 +331,96 @@ function resolveActiveConnection(
   );
 }
 
+function resolveConnectionByFields(
+  providers: AIProviderConfig[],
+  {
+    activeConnectionId,
+    providerId,
+    modelId,
+  }: {
+    activeConnectionId?: string | null;
+    providerId?: string | null;
+    modelId?: string | null;
+  }
+) {
+  return (
+    providers.find((provider) => provider.id === activeConnectionId) ??
+    providers.find(
+      (provider) =>
+        Boolean(providerId) &&
+        provider.providerId === providerId &&
+        (!modelId || provider.modelId === modelId)
+    ) ??
+    providers.find((provider) => Boolean(providerId) && provider.providerId === providerId) ??
+    null
+  );
+}
+
+function buildModuleConfigResponse(
+  settings: AISettingsRow,
+  providers: AIProviderConfig[],
+  moduleRows: AIModuleSettingsRow[]
+): AIModuleConfig[] {
+  const rowsByKey = new Map(
+    moduleRows
+      .map((row) => {
+        const key = normalizeAIModuleKey(row.module_key);
+        return key ? [key, row] as const : null;
+      })
+      .filter((item): item is readonly [AIModuleKey, AIModuleSettingsRow] => item !== null)
+  );
+  const globalConnection = resolveActiveConnection(settings, providers);
+  const globalProviderId = globalConnection?.providerId ?? settings.active_provider_id;
+  const globalModelId = globalConnection?.modelId ?? settings.active_model_id;
+  const globalConnectionId = globalConnection?.id ?? settings.active_connection_id ?? null;
+
+  return AI_MODULE_CATALOG.map((module) => {
+    const row = rowsByKey.get(module.key) ?? null;
+    const inheritGlobal = !row || row.inherit_global !== 0;
+    const configuredConnection = row
+      ? resolveConnectionByFields(providers, {
+          activeConnectionId: row.active_connection_id,
+          providerId: row.active_provider_id,
+          modelId: row.active_model_id,
+        })
+      : null;
+    const effectiveConnection = inheritGlobal ? globalConnection : configuredConnection ?? globalConnection;
+    const status = inheritGlobal ? "global" : configuredConnection ? "custom" : "fallback";
+    const fallbackReason =
+      status === "fallback"
+        ? "Koneksi AI modul tidak ditemukan atau sudah dihapus. Modul memakai konfigurasi global."
+        : undefined;
+    const providerId = effectiveConnection?.providerId ?? (inheritGlobal ? globalProviderId : row?.active_provider_id) ?? globalProviderId;
+    const modelId = effectiveConnection?.modelId ?? (inheritGlobal ? globalModelId : row?.active_model_id) ?? globalModelId;
+
+    return {
+      moduleKey: module.key,
+      label: module.label,
+      description: module.description,
+      enabled: Boolean(settings.enabled) && (row ? row.enabled !== 0 : true),
+      inheritGlobal,
+      providerId,
+      modelId,
+      activeConnectionId: effectiveConnection?.id ?? globalConnectionId,
+      activeConnectionLabel: effectiveConnection?.name ?? null,
+      activeConnectionStatus: effectiveConnection?.connectionStatus ?? "idle",
+      configuredProviderId: row?.active_provider_id ?? null,
+      configuredModelId: row?.active_model_id ?? null,
+      configuredConnectionId: row?.active_connection_id ?? null,
+      fallbackProviderId: globalProviderId,
+      fallbackModelId: globalModelId,
+      fallbackConnectionId: globalConnectionId,
+      status,
+      fallbackReason,
+      updatedAt: row?.updated_at ?? null,
+    };
+  });
+}
+
 function buildAISettingsResponse(
   settings: AISettingsRow,
   providerRows: AIProviderRow[],
+  moduleRows: AIModuleSettingsRow[] = [],
   includeSecrets = false
 ): AIGlobalConfig {
   const providers = providerRows
@@ -276,6 +453,7 @@ function buildAISettingsResponse(
       ...provider,
       isActive: provider.id === activeConnection?.id,
     })),
+    moduleConfigs: buildModuleConfigResponse(settings, providers, moduleRows),
     featureFlags,
     featureDispositionAi: featureFlags.oneStopDisposition.enabled,
     featureMailIntelligence: featureFlags.mailIntelligence.enabled,
@@ -296,6 +474,47 @@ function resolveLiveAIConnection(aiConfig: AIGlobalConfig) {
     ) ??
     null
   );
+}
+
+export function resolveAIConfigForModule(
+  aiConfig: AIGlobalConfig,
+  moduleKey: AIModuleKey | string
+): AIGlobalConfig {
+  const normalizedKey = normalizeAIModuleKey(moduleKey) ?? moduleKey;
+  const moduleConfig = aiConfig.moduleConfigs.find((item) => item.moduleKey === normalizedKey);
+
+  if (!moduleConfig) {
+    return aiConfig;
+  }
+
+  const activeConnection =
+    aiConfig.providers.find((provider) => provider.id === moduleConfig.activeConnectionId) ??
+    aiConfig.providers.find(
+      (provider) =>
+        provider.providerId === moduleConfig.providerId &&
+        provider.modelId === moduleConfig.modelId
+    ) ??
+    aiConfig.providers.find((provider) => provider.providerId === moduleConfig.providerId) ??
+    resolveLiveAIConnection(aiConfig);
+
+  return {
+    ...aiConfig,
+    enabled: aiConfig.enabled && moduleConfig.enabled,
+    providerId: activeConnection?.providerId ?? moduleConfig.providerId ?? aiConfig.providerId,
+    modelId: activeConnection?.modelId ?? moduleConfig.modelId ?? aiConfig.modelId,
+    activeConnectionId: activeConnection?.id ?? moduleConfig.activeConnectionId ?? aiConfig.activeConnectionId ?? null,
+    providers: aiConfig.providers.map((provider) => ({
+      ...provider,
+      isActive: Boolean(activeConnection && provider.id === activeConnection.id),
+    })),
+  };
+}
+
+export function resolveLiveAIConnectionForModule(
+  aiConfig: AIGlobalConfig,
+  moduleKey: AIModuleKey | string
+) {
+  return resolveLiveAIConnection(resolveAIConfigForModule(aiConfig, moduleKey));
 }
 
 function assertGlobalAIEnabled(aiConfig: AIGlobalConfig) {
@@ -337,6 +556,7 @@ export async function getAISettingsFromDb(
 ): Promise<AIGlobalConfig> {
   const includeSecrets = Boolean(options.includeSecrets);
   await ensureAISettingsFeatureFlagColumns(db);
+  await ensureAIModuleSettingsTable(db);
 
   if (!db.supportsFullTextSearch()) {
     const settings = await db.prepare(
@@ -357,12 +577,17 @@ export async function getAISettingsFromDb(
        WHERE deleted_at IS NULL
        ORDER BY is_active DESC, name ASC, updated_at DESC`
     ).all<AIProviderRow>();
+    const moduleRows = await db.prepare(
+      `SELECT module_key, enabled, inherit_global, active_provider_id, active_model_id, active_connection_id,
+              fallback_provider_id, fallback_model_id, fallback_connection_id, updated_at
+       FROM ai_module_settings`
+    ).all<AIModuleSettingsRow>();
 
     if (!settings) {
       throw new ApiError(500, "Konfigurasi global AI belum ditemukan di database.");
     }
 
-    return buildAISettingsResponse(settings, providers, includeSecrets);
+    return buildAISettingsResponse(settings, providers, moduleRows, includeSecrets);
   }
 
   const settings = await db.getOrm().select({
@@ -397,12 +622,24 @@ export async function getAISettingsFromDb(
   }).from(aiProviders)
     .where(isNull(aiProviders.deletedAt))
     .orderBy(desc(aiProviders.isActive), aiProviders.name, desc(aiProviders.updatedAt));
+  const moduleRows = await db.getOrm().select({
+    module_key: aiModuleSettings.moduleKey,
+    enabled: aiModuleSettings.enabled,
+    inherit_global: aiModuleSettings.inheritGlobal,
+    active_provider_id: aiModuleSettings.activeProviderId,
+    active_model_id: aiModuleSettings.activeModelId,
+    active_connection_id: aiModuleSettings.activeConnectionId,
+    fallback_provider_id: aiModuleSettings.fallbackProviderId,
+    fallback_model_id: aiModuleSettings.fallbackModelId,
+    fallback_connection_id: aiModuleSettings.fallbackConnectionId,
+    updated_at: aiModuleSettings.updatedAt,
+  }).from(aiModuleSettings);
 
   if (!settings) {
     throw new ApiError(500, "Konfigurasi global AI belum ditemukan di database.");
   }
 
-  return buildAISettingsResponse(settings as AISettingsRow, providers as AIProviderRow[], includeSecrets);
+  return buildAISettingsResponse(settings as AISettingsRow, providers as AIProviderRow[], moduleRows as AIModuleSettingsRow[], includeSecrets);
 }
 
 export async function upsertAISettingsInDb(
@@ -420,6 +657,7 @@ export async function upsertAISettingsInDb(
     featureManajemenSuratAi,
     featureDisposisiAi,
     featureFlags,
+    moduleConfigs,
   }: {
     actorUserId: string;
     enabled?: boolean;
@@ -433,6 +671,7 @@ export async function upsertAISettingsInDb(
     featureManajemenSuratAi?: boolean;
     featureDisposisiAi?: boolean;
     featureFlags?: PartialAIFeatureFlags;
+    moduleConfigs?: AIModuleConfigInput[];
   }
 ) {
   const actor = await requireActorUser(db, actorUserId);
@@ -477,6 +716,12 @@ export async function upsertAISettingsInDb(
       featureDisposisiAi: nextFeatureDisposisiAi,
       featureFlags: syncedFeatureFlags,
     };
+    const normalizedModuleInputs = (moduleConfigs ?? [])
+      .map((item) => {
+        const moduleKey = normalizeAIModuleKey(item.moduleKey);
+        return moduleKey ? { ...item, moduleKey } : null;
+      })
+      .filter((item): item is AIModuleConfigInput & { moduleKey: AIModuleKey } => item !== null);
 
     if (connection) {
       if (!isProviderLiveSupported(connection.providerId)) {
@@ -720,6 +965,105 @@ export async function upsertAISettingsInDb(
     auditPayload.activeProviderId = nextProviderId;
     auditPayload.activeModelId = nextModelId;
 
+    if (normalizedModuleInputs.length > 0) {
+      const currentModulesByKey = new Map(refreshed.moduleConfigs.map((item) => [item.moduleKey, item]));
+      const moduleAuditPayload: Array<Record<string, unknown>> = [];
+
+      for (const moduleInput of normalizedModuleInputs) {
+        const currentModule = currentModulesByKey.get(moduleInput.moduleKey);
+        const inheritGlobal = moduleInput.inheritGlobal ?? (!moduleInput.activeConnectionId && (currentModule?.inheritGlobal ?? true));
+        const moduleEnabled = moduleInput.enabled ?? currentModule?.enabled ?? true;
+        const selectedConnection = inheritGlobal
+          ? null
+          : availableConnections.find((provider) => provider.id === moduleInput.activeConnectionId);
+
+        if (!inheritGlobal && !selectedConnection) {
+          throw new ApiError(400, `Koneksi AI untuk modul ${moduleInput.moduleKey} tidak ditemukan atau sudah dihapus.`);
+        }
+
+        const moduleProviderId = inheritGlobal ? null : selectedConnection?.providerId ?? null;
+        const moduleModelId = inheritGlobal ? null : selectedConnection?.modelId ?? null;
+        const moduleConnectionId = inheritGlobal ? null : selectedConnection?.id ?? null;
+
+        if (!tx.supportsFullTextSearch()) {
+          await tx.prepare(
+            `INSERT INTO ai_module_settings (
+              module_key, enabled, inherit_global, active_provider_id, active_model_id, active_connection_id,
+              fallback_provider_id, fallback_model_id, fallback_connection_id, updated_by, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(module_key) DO UPDATE SET
+              enabled = excluded.enabled,
+              inherit_global = excluded.inherit_global,
+              active_provider_id = excluded.active_provider_id,
+              active_model_id = excluded.active_model_id,
+              active_connection_id = excluded.active_connection_id,
+              fallback_provider_id = excluded.fallback_provider_id,
+              fallback_model_id = excluded.fallback_model_id,
+              fallback_connection_id = excluded.fallback_connection_id,
+              updated_by = excluded.updated_by,
+              updated_at = excluded.updated_at`
+          ).run(
+            moduleInput.moduleKey,
+            toBooleanInt(moduleEnabled),
+            toBooleanInt(inheritGlobal),
+            moduleProviderId,
+            moduleModelId,
+            moduleConnectionId,
+            nextProviderId,
+            nextModelId,
+            persistedActiveConnectionId,
+            actor.id,
+            now,
+            now
+          );
+        } else {
+          await tx.getOrm().insert(aiModuleSettings).values({
+            moduleKey: moduleInput.moduleKey,
+            enabled: toBooleanInt(moduleEnabled),
+            inheritGlobal: toBooleanInt(inheritGlobal),
+            activeProviderId: moduleProviderId,
+            activeModelId: moduleModelId,
+            activeConnectionId: moduleConnectionId,
+            fallbackProviderId: nextProviderId,
+            fallbackModelId: nextModelId,
+            fallbackConnectionId: persistedActiveConnectionId,
+            updatedBy: actor.id,
+            createdAt: now,
+            updatedAt: now,
+          }).onConflictDoUpdate({
+            target: aiModuleSettings.moduleKey,
+            set: {
+              enabled: toBooleanInt(moduleEnabled),
+              inheritGlobal: toBooleanInt(inheritGlobal),
+              activeProviderId: moduleProviderId,
+              activeModelId: moduleModelId,
+              activeConnectionId: moduleConnectionId,
+              fallbackProviderId: nextProviderId,
+              fallbackModelId: nextModelId,
+              fallbackConnectionId: persistedActiveConnectionId,
+              updatedBy: actor.id,
+              updatedAt: now,
+            },
+          });
+        }
+
+        moduleAuditPayload.push({
+          moduleKey: moduleInput.moduleKey,
+          inheritGlobal,
+          enabled: moduleEnabled,
+          activeConnectionId: moduleConnectionId,
+          providerId: moduleProviderId,
+          modelId: moduleModelId,
+          fallbackConnectionId: persistedActiveConnectionId,
+        });
+      }
+
+      auditPayload.moduleConfigs = moduleAuditPayload;
+      if (auditAction === "UPDATE_AI_SETTINGS") {
+        auditAction = "UPDATE_AI_MODULE_SETTINGS";
+      }
+    }
+
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
       actorUserId: actor.id,
@@ -865,7 +1209,10 @@ export async function extractSuratDraftInDb(
   }
 ) {
   const actor = await requireActorUser(db, actorUserId);
-  const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
+  const aiConfig = resolveAIConfigForModule(
+    await getAISettingsFromDb(db, { includeSecrets: true }),
+    "manajemen_surat"
+  );
   const featureFlags = getResolvedFeatureFlags(aiConfig);
 
   assertGlobalAIEnabled(aiConfig);
@@ -927,7 +1274,7 @@ export async function extractSuratDraftInDb(
           modelId: activeModelId,
           fallback: heuristicDraft,
           systemPrompt:
-            "Anda membantu aplikasi ALETA memetakan metadata surat dari teks PDF. Balas HANYA JSON tanpa markdown. Jangan mengarang. Untuk tanggal gunakan format YYYY-MM-DD. Jika kode klasifikasi atau klasifikasi tidak yakin, kembalikan string kosong. tanggalSurat adalah tanggal pada naskah surat. tanggalAdministratif adalah tanggal terima jika surat masuk atau tanggal kirim jika surat keluar. Jangan menyalin satu tanggal ke field lain bila tidak ada bukti kuat.",
+            "Anda membantu aplikasi ALETA memetakan metadata surat dari teks PDF. Balas HANYA JSON tanpa markdown. Jangan mengarang. Untuk tanggal gunakan format YYYY-MM-DD. Jika kode klasifikasi atau klasifikasi tidak yakin, kembalikan string kosong. tanggalSurat adalah tanggal pada naskah surat. tanggalAdministratif adalah tanggal terima jika surat masuk atau tanggal kirim jika surat keluar. Jangan menyalin satu tanggal ke field lain bila tidak ada bukti kuat. Khusus ringkasan, tulis maksud dan tujuan surat, bukan salinan kop, nomor, tanggal, alamat tujuan, daftar lampiran, nama pejabat, NIP, atau tanda tangan.",
           userPrompt: [
             `Tipe surat: ${type}`,
             "Kembalikan objek JSON dengan properti:",
@@ -935,6 +1282,7 @@ export async function extractSuratDraftInDb(
             `Subfitur aktif: ${stringifyJson(featureFlags.draftMetadata)}`,
             "nomorSurat, nomorUrut, tanggalSurat, tanggalAdministratif, pengirim, perihal, assignedUnit, confidentiality, asalSurat, tujuanSurat, kodeKlasifikasi, klasifikasi, klasifikasiTags, ringkasan, tags, lampiran, suggestedTargetUserId, suggestedTargetPositionId, aiReviewNote.",
             "Gunakan string untuk seluruh field tunggal dan array string untuk klasifikasiTags/tags/lampiran.",
+            "Aturan ringkasan: isi 1-3 kalimat tentang apa yang diminta, disampaikan, atau perlu ditindaklanjuti dari isi surat. Abaikan kop surat, nomor surat, tanggal, alamat/kepada, perihal sebagai label, dan blok tanda tangan.",
             `Draft heuristik awal: ${stringifyJson(heuristicDraft)}`,
             `Referensi klasifikasi yang valid: ${stringifyJson(
               mergeStringList(
@@ -999,7 +1347,11 @@ export async function extractSuratDraftInDb(
     kodeKlasifikasi: normalizedClassification.kodeKlasifikasi,
     klasifikasi: normalizedClassification.klasifikasi,
     klasifikasiTags: normalizedClassification.klasifikasiTags,
-    ringkasan: preferFilledString(liveDraft.ringkasan, heuristicDraft.ringkasan),
+    ringkasan: normalizeLetterDraftCoreSummary({
+      summary: preferFilledString(liveDraft.ringkasan, heuristicDraft.ringkasan),
+      extractedText,
+      subject: preferFilledString(liveDraft.perihal, heuristicDraft.perihal),
+    }),
     tags: mergeStringList(heuristicDraft.tags, liveDraft.tags).slice(0, 6),
     lampiran: mergeStringList(heuristicDraft.lampiran, liveDraft.lampiran),
     suggestedTargetUserId: preferFilledString(
@@ -1071,7 +1423,10 @@ export async function generateDispositionSuggestionInDb(
     throw new ApiError(404, "Surat yang diminta tidak ditemukan atau sudah dihapus.");
   }
 
-  const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
+  const aiConfig = resolveAIConfigForModule(
+    await getAISettingsFromDb(db, { includeSecrets: true }),
+    "manajemen_surat"
+  );
   const featureFlags = getResolvedFeatureFlags(aiConfig);
 
   // Global AI disabled → delegate to insight layer which returns source:"disabled" fallback.
@@ -1143,7 +1498,10 @@ export async function generateMailIntelligenceInDb(
     throw new ApiError(404, "Surat yang diminta tidak ditemukan atau sudah dihapus.");
   }
 
-  const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
+  const aiConfig = resolveAIConfigForModule(
+    await getAISettingsFromDb(db, { includeSecrets: true }),
+    "manajemen_surat"
+  );
   const featureFlags = getResolvedFeatureFlags(aiConfig);
 
   // Global AI disabled → delegate to insight layer which returns source:"disabled" fallback.
@@ -1195,7 +1553,9 @@ export async function suggestCourtNameInDb(
   }
 ) {
   await requireActorUser(db, actorUserId);
-  const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true }).catch(() => null);
+  const aiConfig = await getAISettingsFromDb(db, { includeSecrets: true })
+    .then((config) => resolveAIConfigForModule(config, "manajemen_surat"))
+    .catch(() => null);
 
   const catalogResults = searchCourtDirectory(query).slice(0, 8);
   const catalogSuggestions = catalogResults.map((entry) => ({

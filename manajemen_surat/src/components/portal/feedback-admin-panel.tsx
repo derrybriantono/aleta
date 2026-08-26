@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { usePortal } from "@/lib/app-state";
+import { apiPath } from "@/lib/base-path";
 import {
   FEEDBACK_APP_AREAS,
   FEEDBACK_APP_AREA_LABELS,
@@ -62,7 +63,7 @@ async function readApiJson<T>(response: Response) {
 }
 
 export function FeedbackAdminPanel() {
-  const { currentUser, users } = usePortal();
+  const { currentUser, activeUsers: users } = usePortal();
   const roleId = getEffectiveRoleId(currentUser);
   const isAdmin = roleId === "super-admin" || roleId === "admin";
   const [items, setItems] = useState<FeedbackRequest[]>([]);
@@ -111,7 +112,7 @@ export function FeedbackAdminPanel() {
     setLoading(true);
     setMessage(null);
     try {
-      const response = await fetch(`/api/admin/feedback${queryString ? `?${queryString}` : ""}`, {
+      const response = await fetch(apiPath(`/api/admin/feedback${queryString ? `?${queryString}` : ""}`), {
         credentials: "include",
         cache: "no-store",
       });
@@ -144,7 +145,11 @@ export function FeedbackAdminPanel() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    void loadFeedback();
+    const timer = globalThis.setTimeout(() => {
+      void loadFeedback();
+    }, 0);
+
+    return () => globalThis.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
@@ -158,7 +163,7 @@ export function FeedbackAdminPanel() {
     setSavingId(item.id);
     setMessage(null);
     try {
-      const response = await fetch(`/api/admin/feedback/${item.id}`, {
+      const response = await fetch(apiPath(`/api/admin/feedback/${item.id}`), {
         method: "PATCH",
         credentials: "include",
         headers: {
@@ -403,15 +408,15 @@ export function FeedbackAdminPanel() {
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <Card className="border-border/80">
-      <CardContent className="flex items-center justify-between gap-4 p-5">
-        <div>
+    <Card className="relative overflow-hidden border-border/80">
+      <CardContent className="min-h-[112px] p-6">
+        <span className="absolute right-5 top-5 rounded-2xl bg-primary/10 p-3 text-primary">
+          <MessageSquareText className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 pr-14">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
           <p className="mt-2 text-3xl font-bold text-foreground">{value}</p>
         </div>
-        <span className="rounded-2xl bg-primary/10 p-3 text-primary">
-          <MessageSquareText className="h-5 w-5" />
-        </span>
       </CardContent>
     </Card>
   );

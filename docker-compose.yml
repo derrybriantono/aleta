@@ -1,0 +1,107 @@
+services:
+  postgres:
+    container_name: aleta-postgres
+    image: postgres:15-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      TZ: Asia/Makassar
+    volumes:
+      # Pertahankan path database lama server jika mount produksi sudah berbeda.
+      - /home/aleta-data/postgres:/var/lib/postgresql/data
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-aleta} -d $${POSTGRES_DB:-aleta}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  portal:
+    container_name: aleta-portal
+    build:
+      context: ./manajemen_surat
+      dockerfile: Dockerfile
+      network: host
+      args:
+        NEXT_PUBLIC_BASE_PATH: /aleta
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      TZ: Asia/Makassar
+      NEXT_PUBLIC_BASE_PATH: /aleta
+      BETTER_AUTH_URL: http://192.168.10.10/aleta
+      ALETA_UPLOAD_DIR: /app/uploads
+      ALETA_PDF_UPLOAD_DIR: /app/uploads/pdf
+    # DNS untuk portal (jaringan bridge).
+    #
+    # DEFAULT: kedua variabel kosong -> Compose menghapus baris kosong dan
+    # kunci "dns" ikut hilang, sehingga container MEWARISI DNS host (perilaku
+    # Docker bawaan). Ini aman untuk mayoritas satker yang DNS host-nya sudah
+    # jalan, dan TIDAK mengubah apa pun bila AI sudah berfungsi.
+    #
+    # OVERRIDE: bila resolusi nama ke penyedia AI gagal (EAI_AGAIN), isi DNS
+    # internal kantor lewat .env di folder ini (bukan .env.production):
+    #   ALETA_DNS_PRIMARY=192.168.8.1
+    #   ALETA_DNS_SECONDARY=192.168.1.1
+    # lalu: docker compose up -d portal
+    # Cari nilainya dengan: docker compose exec portal node scripts/diagnose-ai-dns.js
+    #
+    # Resolusi antar-service (postgres, aleta_bot) tetap ditangani DNS internal
+    # Docker, jadi tidak terpengaruh nilai ini.
+    dns:
+      - ${ALETA_DNS_PRIMARY:-}
+      - ${ALETA_DNS_SECONDARY:-}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - /var/www/html/aleta-data/uploads:/app/uploads
+      - /var/www/html/aleta-pdf:/app/uploads/pdf
+      - /var/www/html/aleta-data/reports:/app/reports
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/aleta/api/public/institution').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      - postgres
+      - aleta_bot
+
+  aleta_bot:
+    container_name: aleta-bot
+    build:
+      context: ./aleta_bot
+      dockerfile: Dockerfile
+      network: host
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      TZ: Asia/Makassar
+    command: sh -c "mkdir -p temp/resources/file/doc/ && node app.js"
+    network_mode: "host"
+    privileged: true
+    volumes:
+      - /var/www/html/aleta-data/wwebjs_auth:/usr/src/app/.wwebjs_auth
+      - /var/www/html/aleta-data/reports:/usr/src/app/reports
+      # Dokumen SIPP (petitum_dok/gugatan) agar bisa dilampirkan ke WhatsApp pihak.
+      # WAJIB read-only (:ro) — bot hanya membaca, tidak pernah menulis ke SIPP.
+      # Sesuaikan path kiri bila docroot SIPP satker berbeda; bila folder tidak ada,
+      # bot otomatis jatuh ke ALETA_BOT_SIPP_DOCUMENT_BASE_URL (HTTP).
+      - /var/www/html/SIPP:/usr/src/app/SIPP:ro
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s

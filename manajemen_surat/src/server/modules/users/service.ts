@@ -1,9 +1,20 @@
+import { randomInt } from "node:crypto";
+
+import { type ExternalAppCredentialInput, type ExternalAppCredentialSummary } from "@/lib/types";
 import { getDefaultRoleForPosition, isPrivilegedAdmin } from "@/lib/permissions";
 import { type RoleId, type UserPersona } from "@/lib/types";
+import { normalizeAdditionalRoleIds } from "@/lib/user-additional-roles";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
+import { syncAletaBotRuntimeConfigFromDb } from "@/server/modules/aleta-bot/service";
+import {
+  findUserIdsByExternalUsername,
+  getExternalCredentialSummariesByUserIds,
+  getExternalCredentialSummariesForUser,
+  upsertExternalCredentialsForUser,
+} from "@/server/modules/external-apps/service";
 import { getPositionByIdFromDb, getUserByIdFromDb, getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { hashSecret } from "@/server/shared/security";
 
@@ -15,10 +26,12 @@ type ManagedUserPayload = {
   name: string;
   nip: string;
   positionId: string;
+  additionalRoleIds?: string[];
   isActive?: boolean;
   profilePhotoUrl?: string;
-  /** Explicit admin-level override. null = derive from position (Bukan Admin). */
-  roleOverride?: "admin" | "super-admin" | null;
+  /** Explicit role override. null = derive from position. */
+  roleOverride?: RoleId | null;
+  externalCredentials?: ExternalAppCredentialInput[];
 };
 
 type UserLookupResult = {
@@ -40,6 +53,8 @@ type PasswordRecoveryDraft = {
   otp: string;
   expiresAt: string;
 };
+
+const DIRECT_ROLE_OVERRIDE_IDS = new Set<RoleId>(["super-admin", "admin"]);
 
 export type AdminResetRequest = {
   id: string;
@@ -68,13 +83,43 @@ function normalizeOptional(value: string | undefined) {
   return normalized ? normalized : null;
 }
 
+function normalizeWhatsappForStorage(value: string | undefined) {
+  const digits = (value ?? "").replace(/\D/g, "");
+  const normalized = digits.startsWith("0")
+    ? `62${digits.slice(1)}`
+    : digits.startsWith("8")
+      ? `62${digits}`
+      : digits;
+  if (!/^62\d{8,15}$/.test(normalized)) {
+    throw new ApiError(400, "Nomor WhatsApp harus memakai format Indonesia yang valid, contoh 628123456789.");
+  }
+  return normalized;
+}
+
 function normalizePhoneForLookup(value: string | undefined) {
+  const digits = (value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
+function onlyDigits(value: string | undefined) {
   return (value ?? "").replace(/\D/g, "");
 }
 
 function maskWhatsappNumber(value: string) {
   if (value.length <= 6) return value;
   return `${value.slice(0, 4)}xxxx${value.slice(-3)}`;
+}
+
+function hashPasswordRecoveryOtp(userId: string, otp: string) {
+  return hashSecret(`password-reset-otp:${userId}:${otp.trim()}`);
+}
+
+function isPasswordRecoveryOtpMatch(userId: string, storedValue: string, inputOtp: string) {
+  const normalizedOtp = inputOtp.trim();
+  const expectedHash = hashPasswordRecoveryOtp(userId, normalizedOtp);
+  return storedValue === expectedHash || storedValue === normalizedOtp;
 }
 
 // ─── Role & Block Guards ──────────────────────────────────────────────────────
@@ -88,16 +133,34 @@ async function countActiveSuperAdmins(db: AletaDatabase): Promise<number> {
   return Number(row?.cnt ?? 0);
 }
 
+async function ensureAssignableRoleInDb(db: AletaDatabase, roleId: RoleId): Promise<void> {
+  const existing = await db.prepare("SELECT id FROM roles WHERE id = ? LIMIT 1").get<{ id: string }>(roleId);
+  if (existing) return;
+
+  throw new ApiError(400, `Role ${roleId} belum tersedia di database. Sinkronkan master role melalui pengaturan admin terlebih dahulu.`);
+}
+
+async function ensureKnownPositionInDb(db: AletaDatabase, positionId: string): Promise<void> {
+  const existing = await getPositionByIdFromDb(db, positionId);
+  if (existing) return;
+
+  throw new ApiError(400, "Jabatan target tidak ditemukan di database. Tambahkan atau sinkronkan master jabatan terlebih dahulu.");
+}
+
 /**
  * Resolve the final role_id from an explicit override or from the user's position.
  * Used when creating a new user (no existing role to preserve).
  */
 function resolveRoleIdForCreate(
-  roleOverride: "admin" | "super-admin" | null | undefined,
+  roleOverride: RoleId | null | undefined,
   positionId: string
 ): RoleId {
-  if (roleOverride === "super-admin") return "super-admin";
-  if (roleOverride === "admin") return "admin";
+  if (roleOverride) {
+    if (!DIRECT_ROLE_OVERRIDE_IDS.has(roleOverride)) {
+      throw new ApiError(400, "Role manual hanya tersedia untuk Super Admin atau Admin. PPPK harus dipilih melalui Jabatan PPPK.");
+    }
+    return roleOverride;
+  }
   return getDefaultRoleForPosition(positionId);
 }
 
@@ -108,12 +171,16 @@ function resolveRoleIdForCreate(
  * - undefined (not sent) → preserve current admin/super-admin to avoid accidental demotion.
  */
 function resolveRoleIdForUpdate(
-  roleOverride: "admin" | "super-admin" | null | undefined,
+  roleOverride: RoleId | null | undefined,
   currentRoleId: RoleId,
   positionId: string
 ): RoleId {
-  if (roleOverride === "super-admin") return "super-admin";
-  if (roleOverride === "admin") return "admin";
+  if (roleOverride) {
+    if (!DIRECT_ROLE_OVERRIDE_IDS.has(roleOverride)) {
+      throw new ApiError(400, "Role manual hanya tersedia untuk Super Admin atau Admin. PPPK harus dipilih melalui Jabatan PPPK.");
+    }
+    return roleOverride;
+  }
   if (roleOverride === null) return getDefaultRoleForPosition(positionId);
   // roleOverride is undefined (caller did not send it) → preserve existing admin level
   if (currentRoleId === "super-admin" || currentRoleId === "admin") return currentRoleId;
@@ -214,7 +281,11 @@ function generateTempPassword(): string {
   return chars.join("");
 }
 
-function mapUserForApi(user: UserPersona, password = "") {
+function mapUserForApi(
+  user: UserPersona,
+  password = "",
+  externalCredentials: ExternalAppCredentialSummary[] = user.externalCredentials ?? []
+) {
   return {
     id: user.id,
     username: user.username,
@@ -226,19 +297,26 @@ function mapUserForApi(user: UserPersona, password = "") {
     profilePhotoUrl: user.profilePhotoUrl,
     roleId: user.roleId,
     positionId: user.positionId,
+    additionalRoleIds: user.additionalRoleIds ?? [],
     isActive: user.isActive,
     canBypassHierarchy: user.canBypassHierarchy ?? false,
     actingAssignment: user.actingAssignment ?? null,
+    externalCredentials,
   };
 }
 
-function mapUserForViewer(viewer: UserPersona, user: UserPersona, password = "") {
+function mapUserForViewer(
+  viewer: UserPersona,
+  user: UserPersona,
+  password = "",
+  externalCredentials: ExternalAppCredentialSummary[] = user.externalCredentials ?? []
+) {
   if (viewer.roleId === "super-admin" || viewer.roleId === "admin" || viewer.id === user.id) {
-    return mapUserForApi(user, password);
+    return mapUserForApi(user, password, externalCredentials);
   }
 
   return {
-    ...mapUserForApi(user, password),
+    ...mapUserForApi(user, password, []),
     email: "",
     whatsappNumber: "",
     nip: "",
@@ -381,20 +459,34 @@ async function findUserForIdentifier(db: AletaDatabase, identifier: string) {
   }
 
   const digitsOnly = normalizePhoneForLookup(identifier);
+  // NIP dibandingkan sebagai angka saja supaya spasi/titik pemisah yang
+  // terbawa dari SIMPEG atau SIPP tidak membuat akun jadi tidak ketemu.
+  const nipDigits = onlyDigits(identifier);
   const users = await getUsersFromDb(db);
-  const exactUser = users.find((item) => {
+  let exactUser = users.find((item) => {
     if (!item.isActive) return false;
 
     const usernameMatch = item.username.toLowerCase() === normalizedIdentifier;
     const emailMatch = item.email.toLowerCase() === normalizedIdentifier;
-    const nipMatch = item.nip.trim() === identifier.trim();
+    const nipMatch = nipDigits.length >= 8 && onlyDigits(item.nip) === nipDigits;
     const fullNameMatch = item.name.toLowerCase() === normalizedIdentifier;
     const phoneMatch = digitsOnly.length >= 8 && normalizePhoneForLookup(item.whatsappNumber) === digitsOnly;
 
     return usernameMatch || emailMatch || nipMatch || phoneMatch || fullNameMatch;
   });
 
-  if (!exactUser) return null;
+  if (!exactUser) {
+    // Belum cocok dengan identitas ALETA. Coba username aplikasi eksternal
+    // (SIPP/APS Badilag) supaya pegawai bisa memakai username yang sudah
+    // mereka hafal. Hanya diterima bila menunjuk tepat satu akun aktif —
+    // kalau ambigu, lebih baik gagal daripada masuk ke akun orang lain.
+    const externalUserIds = new Set(await findUserIdsByExternalUsername(db, identifier));
+    const externalMatches = externalUserIds.size
+      ? users.filter((item) => item.isActive && externalUserIds.has(item.id))
+      : [];
+    if (externalMatches.length !== 1) return null;
+    exactUser = externalMatches[0];
+  }
 
   const result: UserLookupResult = {
     id: exactUser.id,
@@ -415,7 +507,12 @@ async function findUserByNip(db: AletaDatabase, nip: string) {
     return null;
   }
 
-  return (await getUsersFromDb(db)).find((item) => item.isActive && item.nip === normalizedNip) ?? null;
+  const nipDigits = onlyDigits(normalizedNip);
+  return (
+    (await getUsersFromDb(db)).find(
+      (item) => item.isActive && (item.nip === normalizedNip || (nipDigits.length >= 8 && onlyDigits(item.nip) === nipDigits))
+    ) ?? null
+  );
 }
 
 // Lookup active user by any recognized identifier (username, NIP, email, phone, name).
@@ -472,7 +569,8 @@ export async function listUsersFromDb(db: AletaDatabase, actorUserId: string) {
         ? items.filter((user) => user.roleId !== "super-admin")
         : items.filter((user) => user.isActive && user.roleId !== "super-admin");
 
-  return visibleUsers.map((user) => mapUserForViewer(actor, user));
+  const credentialMap = await getExternalCredentialSummariesByUserIds(db, visibleUsers.map((user) => user.id));
+  return visibleUsers.map((user) => mapUserForViewer(actor, user, "", credentialMap.get(user.id) ?? []));
 }
 
 export async function getUserForApiById(db: AletaDatabase, actorUserId: string, userId: string) {
@@ -483,7 +581,8 @@ export async function getUserForApiById(db: AletaDatabase, actorUserId: string, 
     return null;
   }
 
-  return mapUserForApi(user);
+  const externalCredentials = await getExternalCredentialSummariesForUser(db, user.id);
+  return mapUserForApi(user, "", externalCredentials);
 }
 
 export async function lookupUserForLoginInDb(
@@ -531,13 +630,15 @@ export async function createManagedUserInDb(
   const username = normalizeRequired(payload.username, "Username");
   const password = normalizeRequired(payload.password, "Password");
   const email = normalizeRequired(payload.email, "Email");
-  const whatsappNumber = normalizeRequired(payload.whatsappNumber, "Nomor WhatsApp");
+  const whatsappNumber = normalizeWhatsappForStorage(payload.whatsappNumber);
   const name = normalizeRequired(payload.name, "Nama lengkap");
   const nip = normalizeRequired(payload.nip, "NIP");
   const positionId = normalizeRequired(payload.positionId, "Jabatan");
+  const additionalRoleIds = normalizeAdditionalRoleIds(payload.additionalRoleIds);
   const isActive = payload.isActive ?? true;
   const profilePhotoUrl = normalizeOptional(payload.profilePhotoUrl);
 
+  await ensureKnownPositionInDb(db, positionId);
   if (!(await getPositionByIdFromDb(db, positionId))) {
     throw new ApiError(400, "Jabatan target tidak ditemukan.");
   }
@@ -546,6 +647,7 @@ export async function createManagedUserInDb(
 
   // Compute and validate final role
   const roleId = resolveRoleIdForCreate(payload.roleOverride, positionId);
+  await ensureAssignableRoleInDb(db, roleId);
   await validateRoleChangeGuards(db, actor, null, roleId);
 
   return withTransaction(db, async (tx) => {
@@ -556,8 +658,8 @@ export async function createManagedUserInDb(
     await tx.prepare(
       `INSERT INTO users (
         id, username, password_hash, name, nip, email, email_verified, whatsapp_number, profile_photo_url,
-        role_id, position_id, is_active, can_bypass_hierarchy, deleted_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        role_id, position_id, additional_role_ids_json, is_active, can_bypass_hierarchy, deleted_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       userId,
       username,
@@ -570,6 +672,7 @@ export async function createManagedUserInDb(
       profilePhotoUrl,
       roleId,
       positionId,
+      JSON.stringify(additionalRoleIds),
       isActive ? 1 : 0,
       roleId === "ketua" || roleId === "wakil-ketua" ? 1 : 0,
       null,
@@ -594,17 +697,26 @@ export async function createManagedUserInDb(
         email,
         roleId,
         positionId,
+        additionalRoleIds,
         isActive,
         adminLevelSet: payload.roleOverride ?? null,
       },
     });
+
+    await upsertExternalCredentialsForUser(tx, {
+      actor,
+      userId,
+      credentials: payload.externalCredentials,
+    });
+    await syncAletaBotRuntimeConfigFromDb(tx);
 
     const user = await getUserByIdFromDb(tx, userId);
     if (!user) {
       throw new ApiError(500, "Akun baru gagal dimuat ulang dari database.");
     }
 
-    return mapUserForApi(user, password);
+    const externalCredentials = await getExternalCredentialSummariesForUser(tx, userId);
+    return mapUserForApi(user, password, externalCredentials);
   });
 }
 
@@ -646,11 +758,14 @@ export async function updateManagedUserInDb(
   const nextPositionId = canManageOthers && payload.positionId !== undefined
     ? normalizeRequired(payload.positionId, "Jabatan")
     : currentUser.positionId;
+  const nextAdditionalRoleIds = canManageOthers && payload.additionalRoleIds !== undefined
+    ? normalizeAdditionalRoleIds(payload.additionalRoleIds)
+    : currentUser.additionalRoleIds ?? [];
   const nextEmail = payload.email !== undefined
     ? normalizeRequired(payload.email, "Email")
     : currentUser.email;
   const nextWhatsappNumber = payload.whatsappNumber !== undefined
-    ? normalizeRequired(payload.whatsappNumber, "Nomor WhatsApp")
+    ? normalizeWhatsappForStorage(payload.whatsappNumber)
     : currentUser.whatsappNumber;
   const nextProfilePhotoUrl = payload.profilePhotoUrl !== undefined
     ? normalizeOptional(payload.profilePhotoUrl)
@@ -664,6 +779,9 @@ export async function updateManagedUserInDb(
     throw new ApiError(400, "Akun yang sedang aktif tidak dapat menonaktifkan dirinya sendiri.");
   }
 
+  if (canManageOthers) {
+    await ensureKnownPositionInDb(db, nextPositionId);
+  }
   if (canManageOthers && !(await getPositionByIdFromDb(db, nextPositionId))) {
     throw new ApiError(400, "Jabatan target tidak ditemukan.");
   }
@@ -679,6 +797,7 @@ export async function updateManagedUserInDb(
 
   // Resolve final role and validate role-change guards
   const nextRoleId = resolveRoleIdForUpdate(payload.roleOverride, currentUser.roleId, nextPositionId);
+  await ensureAssignableRoleInDb(db, nextRoleId);
   if (payload.roleOverride !== undefined) {
     // Explicit role change requested — validate permission
     await validateRoleChangeGuards(db, actor, currentUser, nextRoleId);
@@ -713,7 +832,7 @@ export async function updateManagedUserInDb(
     await tx.prepare(
       `UPDATE users
        SET username = ?, password_hash = ?, name = ?, nip = ?, email = ?, whatsapp_number = ?, profile_photo_url = ?,
-           role_id = ?, position_id = ?, is_active = ?, can_bypass_hierarchy = ?, updated_at = ?
+           role_id = ?, position_id = ?, additional_role_ids_json = ?, is_active = ?, can_bypass_hierarchy = ?, updated_at = ?
        WHERE id = ? AND deleted_at IS NULL`
     ).run(
       nextUsername,
@@ -725,6 +844,7 @@ export async function updateManagedUserInDb(
       nextProfilePhotoUrl,
       nextRoleId,
       nextPositionId,
+      JSON.stringify(nextAdditionalRoleIds),
       nextIsActive ? 1 : 0,
       nextRoleId === "ketua" || nextRoleId === "wakil-ketua" ? 1 : 0,
       now,
@@ -747,6 +867,7 @@ export async function updateManagedUserInDb(
         username: nextUsername,
         email: nextEmail,
         positionId: nextPositionId,
+        additionalRoleIds: nextAdditionalRoleIds,
         oldRoleId,
         newRoleId: nextRoleId,
         isActive: nextIsActive,
@@ -754,12 +875,22 @@ export async function updateManagedUserInDb(
       },
     });
 
+    if (canManageOthers && payload.externalCredentials !== undefined) {
+      await upsertExternalCredentialsForUser(tx, {
+        actor,
+        userId: currentUser.id,
+        credentials: payload.externalCredentials,
+      });
+    }
+    await syncAletaBotRuntimeConfigFromDb(tx);
+
     const updatedUser = await getUserByIdFromDb(tx, currentUser.id);
     if (!updatedUser) {
       throw new ApiError(500, "Akun gagal dimuat ulang setelah diperbarui.");
     }
 
-    return mapUserForApi(updatedUser, trimmedPassword);
+    const externalCredentials = await getExternalCredentialSummariesForUser(tx, currentUser.id);
+    return mapUserForApi(updatedUser, trimmedPassword, externalCredentials);
   });
 }
 
@@ -785,7 +916,8 @@ export async function createPasswordRecoveryDraftInDb(
   return withTransaction(db, async (tx) => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 10 * 60 * 1000).toISOString();
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otp = randomInt(100000, 1_000_000).toString();
+    const otpHash = hashPasswordRecoveryOtp(user.id, otp);
     const identifier = `password-reset:${user.id}`;
     const verificationId = await nextPrefixedId(tx, "verifications", "vrf");
 
@@ -793,7 +925,7 @@ export async function createPasswordRecoveryDraftInDb(
     await tx.prepare(
       `INSERT INTO verifications (id, identifier, value, expires_at, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(verificationId, identifier, otp, expiresAt, now.toISOString(), now.toISOString());
+    ).run(verificationId, identifier, otpHash, expiresAt, now.toISOString(), now.toISOString());
 
     await appendAuditLog(tx, {
       id: await nextPrefixedId(tx, "audit_logs", "adt"),
@@ -840,15 +972,12 @@ export async function confirmPasswordRecoveryInDb(
   const verification = await db.prepare(
     `SELECT id, identifier, value, expires_at
      FROM verifications
-     WHERE identifier = ? AND value = ?
+     WHERE identifier = ?
      ORDER BY updated_at DESC NULLS LAST
      LIMIT 1`
-  ).get<{ id: string; identifier: string; value: string; expires_at: string }>(
-    `password-reset:${userId}`,
-    otp.trim()
-  );
+  ).get<{ id: string; identifier: string; value: string; expires_at: string }>(`password-reset:${userId}`);
 
-  if (!verification) {
+  if (!verification || !isPasswordRecoveryOtpMatch(userId, verification.value, otp)) {
     throw new ApiError(400, "Kode OTP tidak valid.");
   }
 

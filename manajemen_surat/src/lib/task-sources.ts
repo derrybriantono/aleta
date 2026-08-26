@@ -5,7 +5,20 @@ export type TaskPriority = "low" | "normal" | "high" | "urgent";
 
 export type TaskItem = {
   id: string;
-  entityType: "disposition" | "letter" | "wa_failed" | "feedback" | "approval" | "system_task";
+  entityType:
+    | "disposition"
+    | "letter"
+    | "wa_failed"
+    | "feedback"
+    | "approval"
+    | "hr_leave"
+    | "hr_submission"
+    | "hr_attendance"
+    | "estatus_record"
+    | "estatus_batch"
+    | "estatus_transmission"
+    | "estatus_incident"
+    | "system_task";
   entityId: string;
   sourceApp: string;
   sourceLabel: string;
@@ -14,7 +27,20 @@ export type TaskItem = {
   href: string;
   status?: string;
   priority: TaskPriority;
-  sourceType: "disposition" | "letter" | "wa_failed" | "feedback" | "approval" | "system_task";
+  sourceType:
+    | "disposition"
+    | "letter"
+    | "wa_failed"
+    | "feedback"
+    | "approval"
+    | "hr_leave"
+    | "hr_submission"
+    | "hr_attendance"
+    | "estatus_record"
+    | "estatus_batch"
+    | "estatus_transmission"
+    | "estatus_incident"
+    | "system_task";
   createdAt: string;
   dueAt?: string;
   footer?: string;
@@ -23,7 +49,7 @@ export type TaskItem = {
 };
 
 export type TaskSource = {
-  appId: "manajemen-surat" | "aleta-bot" | "feedback" | "admin";
+  appId: "manajemen-surat" | "aleta-bot" | "feedback" | "admin" | "e-kepegawaian" | "e-status";
   appName: string;
   appHref: string;
   count: number;

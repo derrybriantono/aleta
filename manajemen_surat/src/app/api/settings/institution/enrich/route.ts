@@ -5,9 +5,10 @@ import { type InstitutionIdentity } from "@/lib/types";
 import { getDatabase } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { resolveInstitutionIdentityEnrichment } from "@/server/modules/settings/institution-enrichment";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
-import { handleRouteError, ok } from "@/server/shared/http";
+import { ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
 
 export const runtime = "nodejs";
@@ -26,6 +27,8 @@ function toSafeRecord(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
   try {
     const body = await readJsonBody<{
       courtId?: unknown;
@@ -40,8 +43,8 @@ export async function POST(request: NextRequest) {
       throw new ApiError(400, "Nama pengadilan minimal 3 karakter sebelum menerapkan saran AI.");
     }
 
-    const actorUserId = await resolveActorUserId(request);
-    const db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
     const actor = await requireActorUser(db, actorUserId);
 
     if (!isPrivilegedAdmin(actor)) {
@@ -58,6 +61,11 @@ export async function POST(request: NextRequest) {
       })
     );
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "INSTITUTION_ENRICH_ACCESS_FAILED",
+      feature: "identitas_instansi",
+    });
   }
 }

@@ -1,0 +1,223 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Buku Panduan Penggunaan Portal ALETA</title><style>
+    @page{size:A4;margin:18mm 14mm 20mm}
+    body{font-family:"Segoe UI",Arial,sans-serif;color:#10212f;line-height:1.58;font-size:11.2pt}
+    .cover{height:780px;display:flex;flex-direction:column;justify-content:center;text-align:center;background:linear-gradient(135deg,#0b3449,#102033);color:white;border-radius:22px;padding:40px;margin-bottom:30px}
+    .cover h1{font-size:38pt;border:0;color:white;margin:0 0 16px}
+    .cover p{font-size:15pt;color:#d6e8ef}
+    h1{break-before:page;color:#0b3954;font-size:24pt;border-bottom:3px solid #f0c95a;padding-bottom:7px;margin:0 0 12px}
+    h2{color:#0e4969;font-size:16pt} p{margin:8px 0}
+    .intro{background:#eef8fc;border-left:5px solid #33a4ce;padding:12px 14px;border-radius:8px;margin:16px 0}
+    figure{break-inside:avoid;margin:14px 0 8px} img{max-width:100%;border:1px solid #cbd8e0;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+    figcaption{text-align:center;color:#526575;font-size:9.5pt;margin-top:5px}
+    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:9pt} th{background:#0b3954;color:white;text-align:left}
+    th,td{border:1px solid #cdd9e1;padding:6px;vertical-align:top} tr:nth-child(even) td{background:#f6f9fb}
+    ol{margin-left:22px}.toc{columns:2}.toc li{margin-bottom:5px}
+  </style></head><body>
+    <section class="cover">
+      <h1>Buku Panduan Penggunaan Portal ALETA</h1>
+      <p>Panduan User, Admin, dan Admin Teknis</p>
+      <p>Portal ALETA</p>
+      <p>v1.0 - Juli 2026 | 2 Juli 2026</p>
+      <p>Pengadilan Agama Donggala</p>
+    </section>
+    <section>
+      <h1>Kata Pengantar</h1>
+      <p>Buku panduan ini disusun untuk membantu pegawai, operator, admin, dan admin teknis memahami Portal ALETA secara aman dan konsisten.</p>
+      <div class="intro"><strong>Portal ALETA</strong> adalah SSO dan portal utama untuk masuk ke kumpulan aplikasi internal. Portal ini dilengkapi dukungan AI dan WhatsApp Gateway sesuai modul yang tersedia.</div>
+      <h2>Daftar Isi</h2>
+      <ol class="toc"><li>Gambaran Umum Portal ALETA</li><li>Konsep SSO dan Portal Aplikasi</li><li>Persona Pengguna</li><li>Login, Logout, dan Session</li><li>Dashboard, Sidebar, dan Profil</li><li>Panduan User Biasa</li><li>Panduan Admin</li><li>Panduan Admin Teknis</li><li>Manajemen Surat</li><li>ALETA Bot dan WhatsApp Gateway</li><li>Fitur AI</li><li>ALETA x SIPP</li><li>ALETA Justicia Legal Form / JLF</li><li>Query Registry dan Variable Registry</li><li>Upload dan Download File</li><li>Role, Permission, dan Module Visibility</li><li>Pengaturan Sistem</li><li>Operasional Harian dan Checklist</li><li>Troubleshooting</li><li>FAQ</li><li>Glosarium</li></ol>
+    </section>
+    
+    <section class="chapter">
+      <h1>Gambaran Umum Portal ALETA</h1>
+      <p>Portal ALETA adalah SSO dan portal utama untuk masuk ke kumpulan aplikasi internal. User login satu kali, lalu sistem menampilkan aplikasi yang boleh dipakai berdasarkan role, permission, dan module visibility.</p><p>Portal ini menyatukan Manajemen Surat, Disposisi, ALETA Bot, WhatsApp Gateway, ALETA x SIPP, Query Registry, Variable Registry, ALETA Justicia Legal Form / JLF, Asisten Hakim, E-Kepegawaian, E-Status, Panduan, Patch Notes, Saran/Masukan, serta pengaturan admin.</p><p>Manfaat utamanya adalah akses terpusat, navigasi lebih sederhana, data operasional dari database, dukungan AI, dan komunikasi otomatis melalui WhatsApp Gateway.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/portal.png" alt="Dashboard Portal"><figcaption>Dashboard utama setelah login..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/sidebar-menu.png" alt="Sidebar dan Menu Utama"><figcaption>Menu utama mengikuti role dan permission..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Konsep SSO dan Portal Aplikasi</h1>
+      <p>SSO atau Single Sign On berarti pengguna cukup login sekali untuk masuk ke portal. Setelah login, ALETA membaca session, status user, role, permission, jabatan, dan visibility modul.</p><p>Menu tiap user bisa berbeda. Jika modul tidak muncul, penyebab paling umum adalah role belum diberi akses, permission belum lengkap, atau module visibility belum aktif untuk role tersebut.</p><p>Portal bukan hanya halaman menu. Setiap route dan API tetap perlu perlindungan hak akses agar user tidak dapat membuka data hanya dengan mengetik URL.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/login.png" alt="Halaman Login Portal ALETA"><figcaption>Halaman login SSO Portal ALETA..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Persona Pengguna</h1>
+      <p>User biasa membuka modul yang tersedia, membaca informasi, mengunduh dokumen yang diizinkan, dan menindaklanjuti tugas atau disposisi.</p><p>Operator surat menginput surat masuk/keluar, mengunggah lampiran, mencari data, dan membantu distribusi disposisi.</p><p>Hakim, Panitera, Panitera Pengganti, Jurusita, dan role operasional lain memakai modul sesuai kewenangan dan dapat menerima notifikasi jika ALETA Bot dikonfigurasi.</p><p>Admin mengelola user, role, jabatan, modul, template pesan, AI, dan pengaturan aplikasi. Admin teknis menangani database, upload folder, datasource SIPP, preflight, query registry, WhatsApp session, dan konfigurasi server.</p>
+      
+    </section>
+  
+    <section class="chapter">
+      <h1>Login, Logout, dan Session</h1>
+      <p>Buka halaman login, isi username/email/NIP/nomor HP dan password, lalu klik Login. Jika opsi ingat akun tersedia, gunakan hanya pada perangkat pribadi.</p><p>Login gagal dapat terjadi karena identitas salah, password salah, user nonaktif, atau session bermasalah. Gunakan fitur lupa password bila tersedia atau hubungi admin.</p><p>Logout harus dilakukan setelah selesai bekerja, terutama pada komputer bersama. Setelah logout, halaman protected seperti Admin, Surat, ALETA Bot, dan ALETA x SIPP tidak boleh terbuka tanpa login ulang.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/login.png" alt="Halaman Login Portal ALETA"><figcaption>Halaman login SSO Portal ALETA..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/login-gagal.png" alt="Contoh Login Gagal"><figcaption>Contoh pesan login gagal..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Dashboard, Sidebar, dan Profil</h1>
+      <p>Dashboard Portal menampilkan aplikasi yang tersedia, pintasan modul, informasi ringkas, dan navigasi. Sidebar adalah jalur utama berpindah antar aplikasi.</p><p>Halaman profil atau account menampilkan informasi akun. Jika role atau permission berubah, user biasanya perlu login ulang agar hak akses terbaru terbaca.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/portal.png" alt="Dashboard Portal"><figcaption>Dashboard utama setelah login..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/account.png" alt="Profil Pengguna"><figcaption>Halaman akun/profil pengguna..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Panduan User Biasa</h1>
+      <p>Alur harian user: login, cek dashboard, buka modul kerja, input atau baca data, gunakan AI bila tersedia, cek notifikasi, verifikasi hasil, lalu logout.</p><p>User tidak boleh membagikan akun, mengunggah file tidak relevan, mengirim WhatsApp live tanpa izin, mengakses data di luar kewenangan, atau memasukkan data sensitif ke AI tanpa kebutuhan kerja yang jelas.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/surat-list.png" alt="Daftar Surat"><figcaption>Daftar surat, filter, dan pencarian..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/disposisi.png" alt="Disposisi"><figcaption>Daftar disposisi dan tindak lanjut..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Panduan Admin</h1>
+      <p>Admin bertugas mengelola user, role, permission, jabatan, module visibility, pengaturan sistem, template bot, AI, dan WhatsApp Gateway.</p><p>Perubahan role, permission, dan module visibility harus diuji dengan login user terkait. Menu yang hilang harus diikuti proteksi route dan API.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/admin.png" alt="Dashboard Admin"><figcaption>Halaman administrasi sistem..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/admin-users.png" alt="Manajemen User"><figcaption>Area manajemen user dan akses..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/positions.png" alt="Jabatan dan Mapping User"><figcaption>Pengaturan jabatan dan mapping user. (placeholder otomatis).</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/module-visibility.png" alt="Module Visibility"><figcaption>Pengaturan visibility modul per role..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Panduan Admin Teknis</h1>
+      <p>Admin teknis memastikan database terkoneksi, schema/migration sesuai, upload folder writable, SIPP datasource read-only tersedia, query registry sinkron, WhatsApp Gateway jelas statusnya, AI provider dikonfigurasi, dan preflight lulus.</p><p>Jangan memasukkan .env, token, API key, cookie, session WhatsApp, password, atau secret apa pun ke PDF, screenshot, maupun dokumen publik.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/ai-settings.png" alt="Pengaturan AI"><figcaption>Pengaturan fitur AI..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/whatsapp-status.png" alt="Status WhatsApp Gateway"><figcaption>Status WhatsApp Gateway dan session..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Manajemen Surat</h1>
+      <p>Manajemen Surat mengelola surat masuk, surat keluar, lampiran, disposisi, status, pencarian, filter, pagination, dan workflow administrasi.</p><p>Untuk menambah surat, isi metadata wajib, unggah lampiran bila ada, simpan, lalu pastikan surat muncul di daftar. Untuk disposisi, pilih penerima yang benar berdasarkan jabatan/user dan pastikan catatan tindak lanjut jelas.</p><p>Jika AI tersedia untuk surat, gunakan sebagai bantuan ringkasan, klasifikasi, atau saran disposisi. Hasil AI tetap wajib diperiksa operator/pejabat berwenang.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/surat-dashboard.png" alt="Dashboard Manajemen Surat"><figcaption>Dashboard modul Manajemen Surat..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/surat-list.png" alt="Daftar Surat"><figcaption>Daftar surat, filter, dan pencarian..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/surat-masuk.png" alt="Surat Masuk"><figcaption>Halaman surat masuk..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/surat-keluar.png" alt="Surat Keluar"><figcaption>Halaman surat keluar..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/disposisi.png" alt="Disposisi"><figcaption>Daftar disposisi dan tindak lanjut..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>ALETA Bot dan WhatsApp Gateway</h1>
+      <p>ALETA Bot mengelola notifikasi, template pesan, role penerima, preview penerima, dry-run, queue, log pengiriman, health check, worker, dan laporan WhatsApp.</p><p>WhatsApp Gateway adalah penghubung aplikasi dengan WhatsApp. Gateway dapat memiliki status online/offline, QR/session, antrean, dan log pengiriman.</p><p>Dry-run adalah simulasi tanpa mengirim pesan nyata. Live send adalah pengiriman sungguhan. Jangan menjalankan live send sebelum template, penerima, dan mode pengiriman diverifikasi.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/aleta-bot.png" alt="ALETA Bot"><figcaption>Dashboard ALETA Bot..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/admin-aleta-bot.png" alt="Admin ALETA Bot"><figcaption>Pengaturan ALETA Bot, template, dan queue..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/whatsapp-status.png" alt="Status WhatsApp Gateway"><figcaption>Status WhatsApp Gateway dan session..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Fitur AI</h1>
+      <p>AI di Portal ALETA membantu pekerjaan tertentu seperti ekstraksi surat, ringkasan, saran klasifikasi, saran disposisi, Asisten Hakim, draft/analisis JLF, konsistensi dokumen, anonymizer, dan template assistant.</p><p>AI tidak menggantikan kewenangan manusia. User wajib memeriksa hasil AI sebelum dipakai untuk tindakan administratif atau dokumen resmi.</p><p>Jangan memasukkan data sensitif ke AI jika tidak diperlukan. Admin harus memastikan provider, policy, dan permission sesuai kebijakan kantor.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/asisten-hakim.png" alt="Asisten Hakim / AI"><figcaption>Fitur bantuan AI..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/ai-settings.png" alt="Pengaturan AI"><figcaption>Pengaturan fitur AI..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>ALETA x SIPP</h1>
+      <p>ALETA x SIPP menghubungkan Portal ALETA dengan data SIPP secara read-only. Modul ini menyediakan dictionary database, datasource status, Query Registry, Variable Registry, monitoring pendukung2018, penilaian SK SIPP, export, filter, dan pencarian.</p><p>Prinsip utama: ALETA x SIPP membaca data SIPP, bukan menulis ke database SIPP. Query yang belum aman harus tetap needs_review dan tidak boleh dieksekusi live.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/aleta-sipp.png" alt="ALETA x SIPP"><figcaption>Dashboard ALETA x SIPP..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/query-registry.png" alt="Query Registry"><figcaption>Query Registry read-only..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/variable-registry.png" alt="Variable Registry"><figcaption>Variable Registry SIPP/JLF..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/monitoring-sipp.png" alt="Monitoring dan SK SIPP"><figcaption>Monitoring pendukung2018 dan SK SIPP..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>ALETA Justicia Legal Form / JLF</h1>
+      <p>JLF membantu membuat dokumen/form hukum berbasis template, nomor perkara, variable otomatis, data SQL, data SIPP, multi sidang, jadwal sidang, preview, generate, dan download dokumen.</p><p>Jika variable belum lengkap, user/admin perlu melengkapi mapping atau input manual. Bantuan AI di JLF dapat dipakai untuk draft, analisis, konsistensi, dan template bila dikonfigurasi.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/jlf.png" alt="ALETA Justicia Legal Form"><figcaption>Dashboard JLF..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/jlf-templates.png" alt="Template JLF"><figcaption>Daftar template legal form..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/jlf-variables.png" alt="Variable JLF"><figcaption>Daftar variable JLF..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Query Registry dan Variable Registry</h1>
+      <p>Query Registry menyimpan query yang dikatalogkan, direview, dan diberi status. Query SIPP wajib SELECT-only, memakai parameter aman, dan tidak boleh memuat INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE, atau REPLACE.</p><p>Variable Registry menyimpan mapping variable legacy/modern untuk JLF, data SIPP, dan template. Registry membuat query dan variable bisa diaudit, dicari, dan dipakai ulang.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/query-registry.png" alt="Query Registry"><figcaption>Query Registry read-only..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/variable-registry.png" alt="Variable Registry"><figcaption>Variable Registry SIPP/JLF..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Upload dan Download File</h1>
+      <p>Upload digunakan untuk lampiran surat, dokumen JLF, logo, PDF, dan file pendukung lain sesuai modul. Upload hanya file relevan dan aman.</p><p>Download hanya boleh dilakukan oleh user yang berhak. Jika file gagal dibuka, hubungi admin untuk memeriksa metadata, hak akses, dan file fisik.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/surat-list.png" alt="Daftar Surat"><figcaption>Daftar surat, filter, dan pencarian..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Role, Permission, dan Module Visibility</h1>
+      <p>Role adalah kelompok akses seperti Super Admin, Admin, Hakim, Panitera, Panitera Pengganti, Jurusita, Operator, dan User biasa. Permission adalah izin spesifik untuk melihat, membuat, mengubah, menghapus, menjalankan, atau mengelola fitur.</p><p>Module visibility menentukan apakah modul tampil di menu role tertentu. Jika akses ditolak, ajukan akses melalui admin sesuai SOP.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/module-visibility.png" alt="Module Visibility"><figcaption>Pengaturan visibility modul per role..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/access-denied.png" alt="Contoh Akses Ditolak"><figcaption>Contoh route yang dibatasi akses..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Pengaturan Sistem</h1>
+      <p>Pengaturan sistem meliputi identitas instansi, panel, akses publik, AI, WhatsApp, module visibility, template, backup, database, dan preflight.</p><p>Admin boleh mengubah pengaturan operasional. Admin teknis menangani konfigurasi server, env, database, SIPP datasource, WhatsApp session, backup, dan restore.</p>
+      <figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/admin.png" alt="Dashboard Admin"><figcaption>Halaman administrasi sistem..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/ai-settings.png" alt="Pengaturan AI"><figcaption>Pengaturan fitur AI..</figcaption></figure><figure><img src="file:///D:/Download%20File/server%20aleta%20baru/aleta_server/manajemen_surat/docs/screenshots/whatsapp-status.png" alt="Status WhatsApp Gateway"><figcaption>Status WhatsApp Gateway dan session..</figcaption></figure>
+    </section>
+  
+    <section class="chapter">
+      <h1>Operasional Harian dan Checklist</h1>
+      <p>Checklist user: login, cek dashboard, buka modul, input data, upload file valid, gunakan AI bila perlu, verifikasi hasil, logout.</p><p>Checklist admin: cek user aktif, role, jabatan, module visibility, log bot, status WhatsApp, template pesan, konfigurasi AI, query needs_review, dan preflight.</p><p>Checklist staging/public: admin tersedia, role sesuai, modul aktif, upload folder siap, database terkoneksi, template bot tersedia, dry-run/live jelas, AI siap, datasource SIPP siap, dan WhatsApp live diuji di staging.</p>
+      
+    </section>
+  
+    <section class="chapter">
+      <h1>Troubleshooting</h1>
+      <p>Tidak bisa login: cek identitas, password, status user, session, atau hubungi admin.</p><p>Menu tidak muncul: cek role, permission, dan module visibility.</p><p>Data tidak tampil: cek filter, koneksi database, atau status API.</p><p>Upload/download gagal: cek jenis file, ukuran, hak akses, upload folder, dan metadata file.</p><p>WhatsApp Gateway offline: cek session, QR, runtime bot, dan log.</p><p>Pesan tidak terkirim: cek dry-run, template, penerima, queue, gateway, dan delivery log.</p><p>AI tidak merespons: cek provider, quota, koneksi, permission, dan konfigurasi admin.</p><p>Datasource SIPP belum tersedia: admin teknis perlu memeriksa koneksi read-only.</p><p>Query belum aktif: query masih needs_review, deprecated, atau invalid.</p><p>Halaman loading terus: refresh, login ulang, cek API/server log.</p>
+      
+    </section>
+  
+    <section class="chapter">
+      <h1>FAQ</h1>
+      <p>Apakah ALETA satu aplikasi? ALETA adalah portal/SSO kumpulan aplikasi internal.</p><p>Apa itu SSO? Login satu kali untuk mengakses modul yang diizinkan.</p><p>Kenapa menu saya berbeda? Karena role, permission, dan module visibility berbeda.</p><p>Apakah data SIPP bisa diubah dari ALETA? Untuk ALETA x SIPP, prinsipnya read-only.</p><p>Apakah ALETA memakai AI? Ya, pada modul tertentu dan sesuai konfigurasi.</p><p>Apakah hasil AI pasti benar? Tidak, hasil AI wajib diverifikasi.</p><p>Apa bedanya dry-run dan live send? Dry-run simulasi, live send mengirim pesan nyata.</p><p>Siapa yang bisa membuat user? Admin atau Super Admin sesuai permission.</p><p>Apa yang dilakukan jika lupa password? Gunakan lupa password atau hubungi admin.</p>
+      
+    </section>
+  
+    <section class="chapter">
+      <h1>Glosarium</h1>
+      <p>Portal: pusat akses beberapa aplikasi. SSO: login tunggal. AI: kecerdasan buatan. Prompt: instruksi untuk AI. Role: kelompok hak akses. Permission: izin spesifik. Module visibility: pengaturan modul yang tampil. Disposisi: penerusan surat/tugas. Query Registry: daftar query terkontrol. Variable Registry: daftar variable dan mapping. Dry-run: simulasi. Live send: pengiriman nyata. Gateway: penghubung layanan. Queue: antrean pekerjaan. Delivery log: catatan pengiriman. SIPP: Sistem Informasi Penelusuran Perkara. JLF: Justicia Legal Form. Attachment: lampiran file. Admin teknis: pengelola konfigurasi teknis.</p>
+      
+    </section>
+  
+    <section class="chapter"><h1>Lampiran Screenshot</h1><table><thead><tr><th>No</th><th>Screenshot</th><th>URL</th><th>Status</th><th>Catatan</th></tr></thead><tbody>
+    <tr><td>1</td><td>Halaman Login Portal ALETA</td><td>/login</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>2</td><td>Contoh Login Gagal</td><td>/login</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>3</td><td>Dashboard Portal</td><td>/portal</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>4</td><td>Sidebar dan Menu Utama</td><td>/portal</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>5</td><td>Profil Pengguna</td><td>/account</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>6</td><td>Dashboard Admin</td><td>/admin</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>7</td><td>Manajemen User</td><td>/admin</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>8</td><td>Jabatan dan Mapping User</td><td>/admin/mapping-user-jabatan</td><td>placeholder</td><td>page.goto: Timeout 90000ms exceeded.
+Call log:
+[2m  - navigating to &quot;http://127.0.0.1:3000/admin/mapping-user-jabatan&quot;, waiting until &quot;domcontentloaded&quot;[22m
+</td></tr>
+  
+    <tr><td>9</td><td>Module Visibility</td><td>/admin/visibility-role</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>10</td><td>Pengaturan AI</td><td>/admin/pengaturan-ai</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>11</td><td>Dashboard Manajemen Surat</td><td>/manajemen-surat</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>12</td><td>Daftar Surat</td><td>/surat</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>13</td><td>Surat Masuk</td><td>/surat/masuk</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>14</td><td>Surat Keluar</td><td>/surat/keluar</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>15</td><td>Disposisi</td><td>/disposisi</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>16</td><td>ALETA Bot</td><td>/aleta-bot</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>17</td><td>Admin ALETA Bot</td><td>/admin/aleta-bot</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>18</td><td>Status WhatsApp Gateway</td><td>/admin/status-whatsapp</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>19</td><td>ALETA x SIPP</td><td>/aleta-sipp</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>20</td><td>Query Registry</td><td>/aleta-sipp?section=query</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>21</td><td>Variable Registry</td><td>/aleta-sipp?section=variabel</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>22</td><td>Monitoring dan SK SIPP</td><td>/aleta-sipp?section=pendukung2018</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>23</td><td>ALETA Justicia Legal Form</td><td>/judicia/legal-form</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>24</td><td>Template JLF</td><td>/judicia/legal-form/templates</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>25</td><td>Variable JLF</td><td>/judicia/legal-form/variables</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>26</td><td>Asisten Hakim / AI</td><td>/asisten-hakim</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>27</td><td>E-Kepegawaian</td><td>/e-kepegawaian</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>28</td><td>E-Status</td><td>/e-status</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>29</td><td>Halaman Panduan</td><td>/panduan</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>30</td><td>Saran dan Masukan</td><td>/masukan</td><td>captured</td><td>-</td></tr>
+  
+    <tr><td>31</td><td>Contoh Akses Ditolak</td><td>/admin/database</td><td>captured</td><td>-</td></tr>
+  </tbody></table></section>
+  </body></html>

@@ -31,14 +31,14 @@ const PRIORITY_COPY: Record<MailIntelligencePriorityLevel, { label: string; vari
   low: { label: "Prioritas rendah", variant: "success" },
   medium: { label: "Prioritas sedang", variant: "default" },
   high: { label: "Prioritas tinggi", variant: "warning" },
-  urgent: { label: "Mendesak / urgent", variant: "danger" },
+  urgent: { label: "Mendesak", variant: "danger" },
 };
 
 const SOURCE_LABEL: Record<MailIntelligencePayload["source"], string> = {
-  "ai-live": "Analisis AI live",
-  heuristic: "Fallback heuristik (bukan AI)",
+  "ai-live": "Analisis AI aktif",
+  heuristic: "Analisis cadangan otomatis (bukan AI)",
   disabled: "AI dimatikan",
-  error: "Provider AI gagal",
+  error: "Penyedia AI gagal",
 };
 
 export function AletaMailInsights({
@@ -62,35 +62,41 @@ export function AletaMailInsights({
 
   useEffect(() => {
     if (!currentUser) return;
-    if (!mailIntelligenceEnabled) {
-      setState({ status: "idle", insight: null, errorMessage: null });
-      return;
-    }
     const controller = new AbortController();
-    setState({ status: "loading", insight: null, errorMessage: null });
+    const timer = window.setTimeout(() => {
+      if (!mailIntelligenceEnabled) {
+        setState({ status: "idle", insight: null, errorMessage: null });
+        return;
+      }
 
-    fetchMailIntelligenceInsight({
-      letterId: letter.id,
-      actorUserId: currentUser.id,
-      signal: controller.signal,
-    })
-      .then((insight) => {
-        if (controller.signal.aborted) return;
-        setState({ status: "ready", insight, errorMessage: null });
+      setState({ status: "loading", insight: null, errorMessage: null });
+
+      fetchMailIntelligenceInsight({
+        letterId: letter.id,
+        actorUserId: currentUser.id,
+        signal: controller.signal,
       })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        if ((error as { name?: string }).name === "AbortError") return;
-        const message =
-          error instanceof MailIntelligenceRequestError
-            ? error.message
-            : error instanceof Error
+        .then((insight) => {
+          if (controller.signal.aborted) return;
+          setState({ status: "ready", insight, errorMessage: null });
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted) return;
+          if ((error as { name?: string }).name === "AbortError") return;
+          const message =
+            error instanceof MailIntelligenceRequestError
               ? error.message
-              : "Gagal memuat hasil analisis ALETA Intelligence.";
-        setState({ status: "error", insight: null, errorMessage: message });
-      });
+              : error instanceof Error
+                ? error.message
+                : "Gagal memuat hasil analisis ALETA Intelligence.";
+          setState({ status: "error", insight: null, errorMessage: message });
+        });
+    }, 0);
 
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, mailIntelligenceEnabled, requestKey]);
 
@@ -99,10 +105,10 @@ export function AletaMailInsights({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AletaAIMark compact />
-          ALETA Intelligence Service
+          Bantuan Analisis ALETA
         </CardTitle>
         <CardDescription>
-          Analisis AI: ringkasan, temuan, prioritas, dan saran tindak lanjut.
+          Ringkasan, temuan penting, prioritas, dan saran tindak lanjut dari ALETA.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -136,6 +142,12 @@ function AletaIntelligenceBody({
 }) {
   const priority = PRIORITY_COPY[insight.priority.level];
   const providerLabel = insight.provider.connectionLabel ?? insight.provider.providerName;
+  const providerConnectionLabel =
+    insight.provider.connectionStatus === "connected"
+      ? "Terhubung"
+      : insight.provider.connectionStatus === "failed"
+        ? "Gagal"
+        : "Belum dicek";
   const confidencePercent = Math.round(insight.confidence.score * 100);
   const isLive = insight.source === "ai-live";
   const sourceTone = isLive
@@ -152,7 +164,7 @@ function AletaIntelligenceBody({
             <Badge variant={isLive ? "default" : insight.source === "error" ? "danger" : "warning"}>
               {SOURCE_LABEL[insight.source]}
             </Badge>
-            <Badge variant="outline">Provider: {providerLabel}</Badge>
+            <Badge variant="outline">Penyedia: {providerLabel}</Badge>
             <Badge variant="outline">Model: {insight.provider.providerModelId || insight.provider.modelId}</Badge>
             <Badge variant="outline">
               Bahasa: {insight.provider.language === "id" ? "Bahasa Indonesia" : "English"}
@@ -167,7 +179,7 @@ function AletaIntelligenceBody({
                       : "outline"
                 }
               >
-                Status koneksi: {insight.provider.connectionStatus}
+                Koneksi: {providerConnectionLabel}
               </Badge>
             ) : null}
           </div>
@@ -226,7 +238,7 @@ function AletaIntelligenceBody({
           {isAdmin ? (
             <div>
               <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                <span>Confidence</span>
+                <span>Tingkat keyakinan</span>
                 <span>{confidencePercent}% · {insight.confidence.label}</span>
               </div>
               <div className="mt-2 h-2 w-full rounded-full bg-muted">
@@ -312,7 +324,7 @@ function AletaIntelligenceBody({
             </div>
             {insight.regulations.length === 0 ? (
               <p className="rounded-[1.2rem] border border-dashed border-border bg-muted/30 p-3 text-sm text-muted-foreground">
-                Tidak ada regulasi rujukan yang cukup relevan pada knowledge base internal.
+                Tidak ada regulasi rujukan yang cukup relevan pada data rujukan internal.
               </p>
             ) : (
               insight.regulations.map((regulation) => (
@@ -343,7 +355,7 @@ function AletaIntelligenceBody({
           ))}
         </ul>
         <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
-          Hasil analisis ini bersifat tambahan dan tidak menggantikan telaah serta keputusan manual oleh PIC yang berwenang.
+          Hasil analisis ini bersifat tambahan dan tidak menggantikan telaah serta keputusan manual oleh petugas berwenang.
         </p>
       </div>
     </div>

@@ -3,28 +3,39 @@ import { NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { createManagedUserInDb, listUsersFromDb } from "@/server/modules/users/service";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
-import { created, handleRouteError, ok } from "@/server/shared/http";
+import { created, ok } from "@/server/shared/http";
 import { readJsonBody } from "@/server/shared/request";
+import type { ExternalAppCredentialInput, RoleId } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
   try {
-    const db = await getDatabase();
-    const actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
     await requireActorUser(db, actorUserId);
     const items = await listUsersFromDb(db, actorUserId);
     return ok({
       items,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "USER_MANAGEMENT_ACCESS_FAILED",
+      feature: "user_management",
+    });
   }
 }
 
 export async function POST(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
   try {
     const body = await readJsonBody<{
       actorUserId?: string;
@@ -35,17 +46,24 @@ export async function POST(request: NextRequest) {
       name: string;
       nip: string;
       positionId: string;
+      additionalRoleIds?: string[];
       profilePhotoUrl?: string;
-      roleOverride?: "admin" | "super-admin" | null;
+      roleOverride?: RoleId | null;
+      externalCredentials?: ExternalAppCredentialInput[];
     }>(request);
-    const db = await getDatabase();
-    const actorUserId = await resolveActorUserId(request);
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
     const user = await createManagedUserInDb(db, actorUserId, body);
 
     return created({
       user,
     });
   } catch (error) {
-    return handleRouteError(error);
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "USER_MANAGEMENT_ACCESS_FAILED",
+      feature: "user_management",
+    });
   }
 }

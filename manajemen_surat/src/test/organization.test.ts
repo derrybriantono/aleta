@@ -14,7 +14,7 @@ import { type UserPersona } from "@/lib/types";
 describe("organization service", () => {
   it("limits acting assignment candidates to direct subordinates", () => {
     const sekretaris = personas.find((persona) => persona.id === "usr-sekretaris")!;
-    const assignees = getAssignableActingUsers(sekretaris, personas).map((user) => user.id);
+    const assignees = getAssignableActingUsers(sekretaris, personas, "PLH", positions).map((user) => user.id);
 
     expect(assignees).toContain("usr-rina");
     expect(assignees).not.toContain("usr-budi");
@@ -35,6 +35,7 @@ describe("organization service", () => {
         startDate: "2026-04-11",
         endDate: "2026-04-18",
         reason: "Pejabat definitif berhalangan sementara.",
+        positionSource: positions,
       }).valid
     ).toBe(true);
 
@@ -47,6 +48,7 @@ describe("organization service", () => {
         startDate: "2026-04-11",
         endDate: "2026-04-18",
         reason: "Pejabat definitif berhalangan sementara.",
+        positionSource: positions,
       }).valid
     ).toBe(false);
 
@@ -57,6 +59,7 @@ describe("organization service", () => {
         actingType: "PLH",
         targetPositionId: "pos-sekretaris",
         reason: "Pejabat definitif berhalangan sementara.",
+        positionSource: positions,
       }).valid
     ).toBe(false);
   });
@@ -66,13 +69,15 @@ describe("organization service", () => {
     const wakil = personas.find((persona) => persona.id === "usr-wakil")!;
     const hakim = personas.find((persona) => persona.id === "usr-hakim")!;
 
-    const ketuaEligibility = getActingAssignmentEligibility(hakim, getPositionById("pos-ketua"), "PLH", {
+    const ketuaEligibility = getActingAssignmentEligibility(hakim, getPositionById("pos-ketua", positions), "PLH", {
+      positionSource: positions,
       supervisorUser: ketua,
     });
     expect(ketuaEligibility.eligible).toBe(true);
     expect(ketuaEligibility.ruleApplied).toBe("court_leadership_judge");
 
-    const wakilEligibility = getActingAssignmentEligibility(hakim, getPositionById("pos-wakil"), "PLT", {
+    const wakilEligibility = getActingAssignmentEligibility(hakim, getPositionById("pos-wakil", positions), "PLT", {
+      positionSource: positions,
       supervisorUser: wakil,
     });
     expect(wakilEligibility.eligible).toBe(true);
@@ -82,7 +87,7 @@ describe("organization service", () => {
   it("blocks inactive, different-unit, and overlapping Hakim candidates for court leadership", () => {
     const ketua = personas.find((persona) => persona.id === "usr-ketua")!;
     const hakim = personas.find((persona) => persona.id === "usr-hakim")!;
-    const targetPosition = getPositionById("pos-ketua");
+    const targetPosition = getPositionById("pos-ketua", positions);
     const inactiveHakim: UserPersona = { ...hakim, id: "usr-hakim-inactive", isActive: false };
     const differentUnitHakim: UserPersona = { ...hakim, id: "usr-hakim-ti", positionId: "pos-pranata-komputer" };
     const overlappingHakim: UserPersona = {
@@ -97,11 +102,12 @@ describe("organization service", () => {
       },
     };
 
-    expect(getActingAssignmentEligibility(inactiveHakim, targetPosition, "PLH", { supervisorUser: ketua }).eligible).toBe(false);
-    expect(getActingAssignmentEligibility(differentUnitHakim, targetPosition, "PLH", { supervisorUser: ketua }).eligible).toBe(false);
+    expect(getActingAssignmentEligibility(inactiveHakim, targetPosition, "PLH", { positionSource: positions, supervisorUser: ketua }).eligible).toBe(false);
+    expect(getActingAssignmentEligibility(differentUnitHakim, targetPosition, "PLH", { positionSource: positions, supervisorUser: ketua }).eligible).toBe(false);
     expect(
       getActingAssignmentEligibility(overlappingHakim, targetPosition, "PLH", {
         supervisorUser: ketua,
+        positionSource: positions,
         referenceDate: new Date("2026-05-01"),
       }).eligible
     ).toBe(false);
@@ -111,7 +117,8 @@ describe("organization service", () => {
     const panitera = personas.find((persona) => persona.id === "usr-panitera")!;
     const hakim = personas.find((persona) => persona.id === "usr-hakim")!;
 
-    const eligibility = getActingAssignmentEligibility(hakim, getPositionById("pos-panitera"), "PLH", {
+    const eligibility = getActingAssignmentEligibility(hakim, getPositionById("pos-panitera", positions), "PLH", {
+      positionSource: positions,
       supervisorUser: panitera,
     });
 
@@ -131,6 +138,7 @@ describe("organization service", () => {
         startDate: "2026-04-01",
         endDate: "2026-07-02",
         reason: "Jabatan kosong sementara.",
+        positionSource: positions,
       }).valid
     ).toBe(false);
 
@@ -143,6 +151,7 @@ describe("organization service", () => {
         startDate: "2026-04-10",
         endDate: "2026-04-09",
         reason: "Pejabat definitif berhalangan sementara.",
+        positionSource: positions,
       }).valid
     ).toBe(false);
   });
@@ -166,7 +175,7 @@ describe("organization service", () => {
 
   it("sorts court leadership candidates by court priority before name", () => {
     const ketua = personas.find((persona) => persona.id === "usr-ketua")!;
-    const candidates = getEligibleCandidatesForActingAssignment(getPositionById("pos-ketua"), "PLH", {
+    const candidates = getEligibleCandidatesForActingAssignment(getPositionById("pos-ketua", positions), "PLH", {
       userSource: personas,
       positionSource: positions,
       supervisorUser: ketua,

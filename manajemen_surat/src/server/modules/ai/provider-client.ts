@@ -1,4 +1,10 @@
 import { readJsonResponseSafe, summarizePlainTextError } from "@/lib/http-response";
+import { describeNetworkError, outboundFetch } from "@/server/shared/outbound-http";
+import {
+  sanitizeDiagnosticErrorMessage,
+  sanitizePublicErrorMessage,
+  suggestAiConnectionFix,
+} from "@/server/shared/error-sanitizer";
 
 type ProviderId = "chatgpt" | "gemini" | "claude" | "llama";
 
@@ -122,7 +128,7 @@ async function requestProviderText({
   const resolvedModel = resolveProviderModel(supportedProviderId, modelId);
 
   if (supportedProviderId === "chatgpt") {
-    const response = await fetch(endpointUrl?.trim() || defaultEndpoint(supportedProviderId), {
+    const response = await outboundFetch(endpointUrl?.trim() || defaultEndpoint(supportedProviderId), {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -156,7 +162,7 @@ async function requestProviderText({
 
   if (supportedProviderId === "gemini") {
     const baseUrl = endpointUrl?.trim() || defaultEndpoint(supportedProviderId);
-    const response = await fetch(
+    const response = await outboundFetch(
       `${baseUrl}/${resolvedModel}:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
       {
         method: "POST",
@@ -197,7 +203,7 @@ async function requestProviderText({
   }
 
   if (supportedProviderId === "claude") {
-    const response = await fetch(endpointUrl?.trim() || defaultEndpoint(supportedProviderId), {
+    const response = await outboundFetch(endpointUrl?.trim() || defaultEndpoint(supportedProviderId), {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -229,7 +235,7 @@ async function requestProviderText({
     };
   }
 
-  const response = await fetch(endpointUrl?.trim() || defaultEndpoint(supportedProviderId), {
+  const response = await outboundFetch(endpointUrl?.trim() || defaultEndpoint(supportedProviderId), {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -300,7 +306,10 @@ export async function requestStructuredDataFromProvider<T>({
       data: fallback,
       providerModelId: input.modelId,
       rawText: "",
-      message: error instanceof Error ? error.message : "Permintaan AI live gagal diproses.",
+      message: sanitizePublicErrorMessage(
+        error instanceof Error ? error.message : "",
+        "Permintaan AI live gagal diproses."
+      ),
     };
   }
 }
@@ -332,10 +341,18 @@ export async function testProviderConnection(input: {
       message: result.text || "Provider merespons tetapi tanpa isi jawaban.",
     };
   } catch (error) {
+    // Uji koneksi adalah alat diagnosis: sebab aslinya WAJIB terlihat, kalau
+    // tidak admin tak bisa membedakan key salah, model tidak ada, API belum
+    // aktif, atau server memang tanpa akses internet. Secret tetap disensor.
+    // describeNetworkError merangkai rantai `cause`, tempat undici menyimpan
+    // sebab asli di balik "fetch failed".
+    const asli = describeNetworkError(error);
+    const sebab = sanitizeDiagnosticErrorMessage(asli, "Uji koneksi provider gagal diproses.");
+    const saran = suggestAiConnectionFix(asli);
     return {
       ok: false,
       providerModelId: input.modelId,
-      message: error instanceof Error ? error.message : "Uji koneksi provider gagal diproses.",
+      message: saran ? `${sebab}\n\nSaran: ${saran}` : sebab,
     };
   }
 }

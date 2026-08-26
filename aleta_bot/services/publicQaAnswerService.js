@@ -3,11 +3,14 @@ const botDb = require("./botDbService");
 const logService = require("./logService");
 const aiProviderAdapter = require("./aiProviderAdapter");
 const aiRuntimeConfigService = require("./aiRuntimeConfigService");
+const officialWebsiteContextService = require("./officialWebsiteContextService");
+const publicQaKnowledgeService = require("./publicQaKnowledgeService");
 const { readRuntimeConfig } = require("../config/runtime-config");
 const { verifyCaseAccess } = require("./publicQaVerificationService");
+const { normalizeIndonesianPhoneNumber } = require("../utils/phoneFormatter");
 
 const DEFAULT_FALLBACK =
-  "Maaf, informasi tersebut belum dapat saya jawab dengan aman melalui bot. Silakan hubungi PTSP Pengadilan Agama Donggala untuk bantuan lebih lanjut.";
+  "Maaf, informasi tersebut belum dapat saya jawab dengan aman melalui bot. Silakan hubungi PTSP atau CS WhatsApp resmi pengadilan untuk bantuan lebih lanjut.";
 
 const BLOCKED_PATTERNS = [
   /menang|kalah|pasti\s+dikabulkan|pasti\s+ditolak/i,
@@ -48,12 +51,43 @@ function getAnswerMode(intent = {}) {
   return String(intent.aiAnswerMode || "off");
 }
 
+function getOfficialContactNumberVariants() {
+  const runtime = readRuntimeConfig();
+  const identity = runtime.institutionIdentity || {};
+  const numbers = [
+    identity.csWhatsappNumber,
+    identity.botWhatsappNumber,
+    identity.mobilePhone,
+    identity.phoneNumber,
+    runtime.whatsapp?.phoneNumber,
+  ];
+  const variants = new Set();
+  for (const value of numbers) {
+    const normalized = normalizeIndonesianPhoneNumber(value || "");
+    if (!normalized) continue;
+    variants.add(normalized);
+    if (normalized.startsWith("62")) variants.add(`0${normalized.slice(2)}`);
+  }
+  return Array.from(variants).sort((a, b) => b.length - a.length);
+}
+
 function maskSensitiveData(text) {
-  return String(text || "")
+  const replacements = new Map();
+  let safeText = String(text || "");
+  getOfficialContactNumberVariants().forEach((number, index) => {
+    const marker = `__ALETA_PUBLIC_CONTACT_${index}__`;
+    replacements.set(marker, number);
+    safeText = safeText.split(number).join(marker);
+  });
+  const masked = safeText
     .replace(/\b62\d{7,14}\b/g, (match) => `${match.slice(0, 4)}******${match.slice(-2)}`)
     .replace(/\b0\d{8,13}\b/g, (match) => `${match.slice(0, 3)}******${match.slice(-2)}`)
     .replace(/\b\d{16}\b/g, (match) => `${match.slice(0, 4)}********${match.slice(-4)}`)
     .replace(/(password|token|secret|api[_-]?key)\s*[:=]\s*['"]?[^'"\s]+/gi, "$1=[redacted]");
+  return Array.from(replacements.entries()).reduce(
+    (result, [marker, number]) => result.split(marker).join(number),
+    masked
+  );
 }
 
 function sanitizeDataForAI(intent = {}, queryResult = {}) {
@@ -75,6 +109,24 @@ function sanitizeDataForAI(intent = {}, queryResult = {}) {
 
 function sanitizePublicQaAnswer(answer) {
   return maskSensitiveData(answer).replace(/\n{4,}/g, "\n\n\n").trim();
+}
+
+function buildCsFallbackMessage() {
+  const runtime = readRuntimeConfig();
+  const identity = runtime.institutionIdentity || {};
+  const courtName = identity.courtName || "pengadilan";
+  const csNumber = normalizeIndonesianPhoneNumber(identity.csWhatsappNumber || identity.mobilePhone || "");
+  const csLine = csNumber
+    ? `CS WhatsApp resmi: *${csNumber}*\nLink chat: https://wa.me/${csNumber}`
+    : "CS WhatsApp resmi belum diisi di Identitas Instansi. Silakan hubungi PTSP/kanal resmi pengadilan.";
+  return [
+    "Maaf, saya belum dapat menjawab pertanyaan tersebut dengan aman.",
+    "",
+    `Untuk bantuan petugas ${courtName}, silakan hubungi:`,
+    csLine,
+    "",
+    "Agar mudah dibantu, tuliskan pertanyaan dengan bahasa Indonesia yang jelas, lengkap, dan sopan.",
+  ].join("\n");
 }
 
 function applySafetyPolicy(answer, intent = {}) {
@@ -105,6 +157,21 @@ function renderTemplateAnswer(intent = {}, data = {}) {
   });
 }
 
+function canUseOfficialWebsiteAi(intent = {}) {
+  if (!intent.aiAnswerEnabled) return false;
+  if (String(intent.answerPolicy || "public_info_only") !== "public_info_only") return false;
+  if (!["public", "party"].includes(String(intent.audience || "public"))) return false;
+  if (intent.requiresVerification || intent.requiresCaseNumber) return false;
+  if (["cek_perkara", "cek_jadwal_sidang", "sisa_panjar", "antrian_online"].includes(String(intent.key || ""))) return false;
+  return ["template_rewrite", "query_summarize"].includes(getAnswerMode(intent));
+}
+
+function shouldUseKnowledgeAnswer({ intent = {}, baseAnswer = "", mode = "off" }) {
+  if (String(intent.key || "") === "fallback_unknown") return true;
+  if (!baseAnswer) return true;
+  return ["template_rewrite", "query_summarize"].includes(mode);
+}
+
 function buildFollowUpQuestion({ missingParams = [], intent = {} }) {
   if (missingParams.includes("nomor_perkara") || intent.requiresCaseNumber) {
     return "Baik, silakan ketik nomor perkara Bapak/Ibu. Contoh: 123/Pdt.G/2026/PA.Dgl atau 123.G.2026.";
@@ -112,12 +179,14 @@ function buildFollowUpQuestion({ missingParams = [], intent = {} }) {
   return intent.fallbackMessage || "Mohon kirim data tambahan yang diperlukan agar saya bisa membantu dengan tepat.";
 }
 
-function buildAnswerPrompt({ intent, template, userQuestion, sanitizedQueryResult }) {
+function buildAnswerPrompt({ intent, template, userQuestion, sanitizedQueryResult, officialWebsiteContext }) {
   const systemPrompt =
     intent.aiSystemPrompt ||
     [
       "Anda adalah penyusun jawaban WhatsApp Bot Pengadilan.",
-      "Jawab hanya berdasarkan template resmi dan data terfilter yang diberikan.",
+      "Jawab hanya berdasarkan template resmi, data terfilter, dan konteks website resmi pengadilan yang diberikan.",
+      "Konteks website resmi adalah sumber utama untuk informasi layanan umum jika data lokal kosong.",
+      "Jika konteks website tidak memuat jawaban yang jelas, jangan mengarang; sampaikan bahwa informasi resmi belum ditemukan dan arahkan ke PTSP/kanal resmi.",
       "Jangan memberi nasihat hukum, prediksi putusan, strategi perkara, atau data rahasia.",
       "Jika data tidak cukup, arahkan ke PTSP/petugas.",
       "Gunakan bahasa Indonesia yang sopan, singkat, dan profesional.",
@@ -131,13 +200,19 @@ function buildAnswerPrompt({ intent, template, userQuestion, sanitizedQueryResul
       `Pertanyaan pengguna: ${userQuestion}`,
       `Template resmi: ${template}`,
       `Data terfilter: ${JSON.stringify(sanitizedQueryResult || [])}`,
-      "Susun jawaban final tanpa menambah fakta baru.",
+      officialWebsiteContext?.available
+        ? [
+            `Website resmi pengadilan: ${officialWebsiteContext.websiteUrl}`,
+            `Konteks website resmi:\n${officialWebsiteContext.contextText}`,
+          ].join("\n")
+        : `Website resmi pengadilan belum dapat dipakai: ${officialWebsiteContext?.reason || "tidak tersedia"}`,
+      "Susun jawaban final tanpa menambah fakta baru. Jika memakai website, sebutkan singkat bahwa informasi mengacu pada website resmi pengadilan.",
     ].join("\n");
 
   return { systemPrompt, userPrompt };
 }
 
-async function callAnswerAi({ intent, template, userQuestion, sanitizedQueryResult }) {
+async function callAnswerAi({ intent, template, userQuestion, sanitizedQueryResult, officialWebsiteContext }) {
   const runtime = readRuntimeConfig();
   const bridgeConfig = await aiRuntimeConfigService.getProviderClientConfig().catch(() => null);
   const enabled =
@@ -145,7 +220,13 @@ async function callAnswerAi({ intent, template, userQuestion, sanitizedQueryResu
     String(process.env.ALETA_BOT_PUBLIC_QA_AI_ANSWER_ENABLED || runtime.publicQaAiAnswerEnabled || "false") === "true";
   if (!enabled) return { used: false, answer: template, tokens: {}, provider: "", model: "" };
 
-  const { systemPrompt, userPrompt } = buildAnswerPrompt({ intent, template, userQuestion, sanitizedQueryResult });
+  const { systemPrompt, userPrompt } = buildAnswerPrompt({
+    intent,
+    template,
+    userQuestion,
+    sanitizedQueryResult,
+    officialWebsiteContext,
+  });
   const response = await aiProviderAdapter.completeChat({
     temperature: Number(intent.temperature ?? runtime.publicQaTemperature ?? bridgeConfig?.temperature ?? 0.2),
     maxTokens: Number(intent.maxAiTokens ?? runtime.publicQaMaxTokens ?? bridgeConfig?.maxTokens ?? 400),
@@ -208,9 +289,9 @@ async function logAiAnswer(data = {}) {
   return null;
 }
 
-async function rewriteTemplateWithAI({ intent, template, userQuestion, confidence }) {
+async function rewriteTemplateWithAI({ intent, template, userQuestion, confidence, officialWebsiteContext }) {
   try {
-    const ai = await callAnswerAi({ intent, template, userQuestion, sanitizedQueryResult: [] });
+    const ai = await callAnswerAi({ intent, template, userQuestion, sanitizedQueryResult: [], officialWebsiteContext });
     const safety = applySafetyPolicy(ai.answer, intent);
     await logAiAnswer({
       intentKey: intent.key,
@@ -237,9 +318,9 @@ async function rewriteTemplateWithAI({ intent, template, userQuestion, confidenc
   }
 }
 
-async function summarizeQueryResultWithAI({ intent, sanitizedQueryResult, userQuestion, template, confidence }) {
+async function summarizeQueryResultWithAI({ intent, sanitizedQueryResult, userQuestion, template, confidence, officialWebsiteContext }) {
   try {
-    const ai = await callAnswerAi({ intent, template, userQuestion, sanitizedQueryResult });
+    const ai = await callAnswerAi({ intent, template, userQuestion, sanitizedQueryResult, officialWebsiteContext });
     const safety = applySafetyPolicy(ai.answer, intent);
     await logAiAnswer({
       intentKey: intent.key,
@@ -276,6 +357,15 @@ async function composePublicQaAnswer({
   confidence = 0,
 }) {
   const mode = getAnswerMode(intent);
+  if (intent?.key === "antrian_online" && baseAnswer) {
+    const safety = applySafetyPolicy(baseAnswer, intent);
+    return {
+      status: safety.safe ? "answered" : "blocked",
+      answer: safety.answer,
+      safetyStatus: safety.reason,
+    };
+  }
+
   const required = Array.isArray(intent.requiredParameters) ? intent.requiredParameters : [];
   const missing = required.filter((param) => !params[param]);
   if (missing.length > 0) {
@@ -302,8 +392,36 @@ async function composePublicQaAnswer({
   const template = baseAnswer || renderTemplateAnswer(intent, params);
   let answer = template;
 
+  const knowledge = await publicQaKnowledgeService
+    .findKnowledgeAnswer({ question: message, intent, params })
+    .catch((error) => {
+      logService.logSystemEvent({
+        eventType: "public_qa_knowledge_lookup_failed",
+        severity: "warning",
+        message: "Pencarian knowledge Public Q&A gagal.",
+        metadata: { errorMessage: error.message, intentKey: intent.key },
+      });
+      return null;
+    });
+  if (knowledge?.answer && shouldUseKnowledgeAnswer({ intent, baseAnswer, mode })) {
+    const safety = applySafetyPolicy(knowledge.answer, intent);
+    return {
+      status: safety.safe ? "answered" : "blocked",
+      answer: safety.answer,
+      safetyStatus: safety.safe ? `knowledge:${knowledge.key}` : safety.reason,
+    };
+  }
+
+  if (String(intent.key || "") === "fallback_unknown" && !knowledge?.answer) {
+    answer = buildCsFallbackMessage();
+  }
+
+  const officialWebsiteContext = canUseOfficialWebsiteAi(intent)
+    ? await officialWebsiteContextService.buildOfficialWebsiteContext({ question: message, intent }).catch(() => null)
+    : null;
+
   if (mode === "template_rewrite") {
-    answer = await rewriteTemplateWithAI({ intent, template, userQuestion: message, confidence });
+    answer = await rewriteTemplateWithAI({ intent, template, userQuestion: message, confidence, officialWebsiteContext });
   } else if (mode === "query_summarize") {
     answer = await summarizeQueryResultWithAI({
       intent,
@@ -311,6 +429,7 @@ async function composePublicQaAnswer({
       sanitizedQueryResult: sanitizeDataForAI(intent, queryResult || params),
       userQuestion: message,
       confidence,
+      officialWebsiteContext,
     });
   } else if (mode === "guided_answer" && !baseAnswer) {
     answer = buildFollowUpQuestion({ missingParams: required, intent });

@@ -1,7 +1,8 @@
 require("dotenv").config();
 
-const { exec } = require('child_process');
+const crypto = require("crypto");
 const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const {
   Client,
@@ -12,18 +13,41 @@ const path = require('path');
 const qrcode2 = require("qrcode-terminal");
 const figlet = require("figlet");
 const cron = require("node-cron");
+
+// Semua scheduler ALETA Bot wajib berjalan pada zona waktu WITA, terlepas dari
+// timezone host/container. Wrapper ini menambahkan default timezone ke setiap
+// cron.schedule (termasuk scheduler dinamis yang memakai instance module yang sama).
+const ALETA_CRON_TIMEZONE = String(process.env.ALETA_BOT_CRON_TIMEZONE || "Asia/Makassar").trim() || "Asia/Makassar";
+const cronScheduleWithoutTimezone = cron.schedule.bind(cron);
+cron.schedule = (expression, task, options) =>
+  cronScheduleWithoutTimezone(expression, task, { timezone: ALETA_CRON_TIMEZONE, ...(options || {}) });
 const getData = require("./query");
 const notification = require("./notifikasi");
 const detailPerkara = require("./detail");
 const express = require("express");
 const { phoneNumberFormatter } = require("./helpers/formatter");
-const { readRuntimeConfig, getWhatsappSessionName } = require("./config/runtime-config");
+const { readRuntimeConfig, getWhatsappSessionName, sleep } = require("./config/runtime-config");
 const messageService = require("./services/messageService");
 const messageQueueService = require("./services/messageQueueService");
+const sendingPaceService = require("./services/sendingPaceService");
+const chatMenuService = require("./services/chatMenuService");
+const optOutService = require("./services/optOutService");
+const serviceAnalyticsService = require("./services/serviceAnalyticsService");
+const outgoingChatService = require("./services/outgoingChatService");
+const recipientHealthService = require("./services/recipientHealthService");
+const banSignalService = require("./services/banSignalService");
+const humanPresenceService = require("./services/humanPresenceService");
+const ecourtDocumentService = require("./services/ecourtDocumentService");
+const ecourtNotificationWorker = require("./services/ecourtNotificationWorker");
+const ecourtVerificationService = require("./services/ecourtVerificationService");
+const nomorVerificationService = require("./services/nomorVerificationService");
 const logService = require("./services/logService");
 const rateLimitService = require("./services/rateLimitService");
 const whatsappStatusService = require("./services/whatsappStatusService");
+const whatsappAudienceService = require("./services/whatsappAudienceService");
+const productionGuardService = require("./services/productionGuardService");
 const queueWorkerService = require("./services/queueWorkerService");
+const dynamicNotificationSchedulerService = require("./services/dynamicNotificationSchedulerService");
 const botDbService = require("./services/botDbService");
 const { validateStartupConfig } = require("./services/configValidationService");
 const { buildIdempotencyKey, buildManualIdempotencyKey } = require("./services/idempotencyService");
@@ -32,12 +56,18 @@ const { validateQuery } = require("./services/queryValidatorService");
 const { validateTemplate } = require("./services/templateService");
 const externalDbService = require("./services/externalDbService");
 const publicQaIntentService = require("./services/publicQaIntentService");
+const { guardCaseCommandAccess } = require("./services/publicQaVerificationService");
+const antrianOnlineService = require("./services/antrianOnlineService");
+// Perintah antrian sidang online dari pihak. "daftar antrian" -> slot penggugat,
+// "antrian online" -> slot tergugat, "ambil antrian" -> deteksi dari nomor pengirim.
+const ANTRIAN_ONLINE_COMMANDS = new Set(["daftar antrian", "antrian online", "ambil antrian"]);
 const aiRuntimeConfigService = require("./services/aiRuntimeConfigService");
 const aiProviderAdapter = require("./services/aiProviderAdapter");
 const internalGatewayRoutes = require("./routes/internalGatewayRoutes");
 const app = express();
 const port = 3003;
 const server = http.createServer(app);
+const legacyNotificationSkipLogs = new Set();
 const {
   adminId,
   hakimIds,
@@ -65,8 +95,14 @@ function sanitizeProcessError(error) {
   ) {
     return "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi.";
   }
-  if (lower.includes("could not find chrome") || lower.includes("puppeteer")) {
-    return "Chrome/Puppeteer belum tersedia di server atau belum dapat dijalankan.";
+  if (
+    lower.includes("could not find chrome") ||
+    lower.includes("could not find expected browser") ||
+    lower.includes("browser was not found") ||
+    lower.includes("executable doesn't exist") ||
+    (lower.includes("failed to launch the browser process") && lower.includes("no such file"))
+  ) {
+    return "Chrome belum ditemukan atau path Chrome tidak dapat dijalankan.";
   }
   return rawMessage.slice(0, 500) || "Error runtime tidak diketahui.";
 }
@@ -106,6 +142,16 @@ app.get("/", (req, res) => {
   });
 });
 
+// Health check ringan untuk Docker/reverse proxy. Tanpa auth dan tanpa data sensitif.
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "aleta_bot",
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 //inisiasi whatsapp
 const initialRuntimeConfig = readRuntimeConfig();
 const whatsappSessionName = getWhatsappSessionName(initialRuntimeConfig);
@@ -138,9 +184,10 @@ function getWhatsappStartupErrorMessage(error) {
     /session-aleta-whatsapp-main/i.test(rawMessage);
   const isChromeMissing =
     /could not find chrome/i.test(rawMessage) ||
-    /chrome.*not.*found/i.test(rawMessage) ||
+    /could not find expected browser/i.test(rawMessage) ||
     /browser was not found/i.test(rawMessage) ||
-    /failed to launch the browser process/i.test(rawMessage);
+    /executable doesn't exist/i.test(rawMessage) ||
+    (/failed to launch the browser process/i.test(rawMessage) && /no such file/i.test(rawMessage));
 
   if (isBrowserLocked) {
     return "Session WhatsApp sedang dipakai proses browser lain. Tutup proses Chrome/Puppeteer lama atau restart backend ALETA Bot, lalu coba lagi.";
@@ -172,45 +219,306 @@ function getWhatsappStartupErrorType(error) {
   ) {
     return "browser_locked";
   }
-  if (/could not find chrome/i.test(rawMessage) || /puppeteer/i.test(rawMessage)) return "browser_unavailable";
+  if (
+    /could not find chrome/i.test(rawMessage) ||
+    /could not find expected browser/i.test(rawMessage) ||
+    /browser was not found/i.test(rawMessage) ||
+    /executable doesn.t exist/i.test(rawMessage) ||
+    (/failed to launch the browser process/i.test(rawMessage) && /no such file/i.test(rawMessage))
+  ) return "browser_unavailable";
+  if (/no usable sandbox/i.test(rawMessage) || /running as root without --no-sandbox/i.test(rawMessage) || /setuid sandbox/i.test(rawMessage)) return "browser_sandbox_error";
   if (/target closed/i.test(rawMessage)) return "browser_closed";
   if (/protocol error/i.test(rawMessage)) return "browser_protocol";
   return "initialize_failed";
 }
 
-const client = new Client({
-  webVersionCache: { type: 'none' },
-  puppeteer: puppeteerLaunchConfig,
-  // session is deprecated
-  // session: sessionCfg,
-  authStrategy: new LocalAuth({
-    clientId: whatsappSessionName,
-  }),
-  qrTimeoutMs: 0,
-});
+function cleanupStaleChromiumLocks(sessionName) {
+  const cleaned = [];
+  const errors = [];
+  try {
+    const dataPath = path.join(__dirname, ".wwebjs_auth", `session-${sessionName}`);
+    let exists = false;
+    try { fs.lstatSync(dataPath); exists = true; } catch (_) { exists = false; }
+    if (!exists) return { cleaned: false, reason: "session_dir_missing", files: [], errors: [] };
 
-const originalSendMessage = client.sendMessage.bind(client);
-client.sendMessage = async (id, ...args) => {
-  return messageService.safeSendMessage({
-    client,
-    sendFn: originalSendMessage,
-    to: id,
-    message: args[0],
-    options: args[1],
-    category: "notification",
-    metadata: { source: "legacy_client_sendMessage" },
+    const lockNames = ["SingletonLock", "SingletonCookie", "SingletonSocket"];
+    const dirs = [dataPath, path.join(dataPath, "Default")];
+    for (const dir of dirs) {
+      for (const lockName of lockNames) {
+        const target = path.join(dir, lockName);
+        try {
+          fs.lstatSync(target); // lstat untuk menangani symlink dangling
+          fs.unlinkSync(target);
+          cleaned.push(target);
+        } catch (err) {
+          if (err && err.code !== "ENOENT") {
+            errors.push({ target, message: err.message });
+          }
+        }
+      }
+    }
+    return { cleaned: cleaned.length > 0, files: cleaned, errors };
+  } catch (error) {
+    return { cleaned: false, error: error && error.message ? error.message : String(error), files: cleaned, errors };
+  }
+}
+
+function logWhatsappLockCleanupResult(source, result = {}) {
+  if (!result.cleaned && !result.error && (!Array.isArray(result.errors) || result.errors.length === 0)) return;
+  void logService.logSystemEvent({
+    eventType: "whatsapp_session_lock_cleanup",
+    severity: result.error || (Array.isArray(result.errors) && result.errors.length > 0) ? "warning" : "info",
+    message: result.cleaned
+      ? "Lock Chrome/session WhatsApp lama dibersihkan sebelum initialize."
+      : "Pemeriksaan lock Chrome/session WhatsApp selesai dengan catatan.",
+    metadata: {
+      source,
+      cleaned: Boolean(result.cleaned),
+      files: Array.isArray(result.files) ? result.files.map((file) => path.basename(file)) : [],
+      reason: result.reason || "",
+      errorMessage: result.error || "",
+      errors: Array.isArray(result.errors)
+        ? result.errors.map((item) => ({
+            target: item.target ? path.basename(item.target) : "",
+            message: item.message || "",
+          }))
+        : [],
+    },
   });
-};
+}
+
+function prepareWhatsappSessionForInitialize(source) {
+  const result = cleanupStaleChromiumLocks(whatsappSessionName);
+  logWhatsappLockCleanupResult(source, result);
+  return result;
+}
+
+let client = null;
+let originalSendMessage = null;
+
+function createWhatsappClientInstance(source = "startup") {
+  const nextClient = new Client({
+    webVersionCache: { type: 'none' },
+    puppeteer: puppeteerLaunchConfig,
+    // session is deprecated
+    // session: sessionCfg,
+    authStrategy: new LocalAuth({
+      clientId: whatsappSessionName,
+    }),
+    qrTimeoutMs: 0,
+  });
+
+  originalSendMessage = nextClient.sendMessage.bind(nextClient);
+  nextClient.sendMessage = async (id, ...args) => {
+    return sendOrQueueLegacyMessage({
+      id,
+      message: args[0],
+      options: args[1],
+      category: "notification",
+      metadata: {
+        source: "legacy_client_sendMessage",
+        sourceFeature: "legacy_client_sendMessage",
+        legacySendPath: true,
+        legacySourceFile: "app.js",
+      },
+    });
+  };
+  registerWhatsappClientEventHandlers(nextClient);
+  void logService.logSystemEvent({
+    eventType: "whatsapp_client_instance_created",
+    severity: "info",
+    message: "Instance WhatsApp client ALETA Bot dibuat.",
+    metadata: { source, sessionName: whatsappSessionName },
+  });
+  return nextClient;
+}
+
+function ensureWhatsappClient(source = "runtime") {
+  if (!client) {
+    client = createWhatsappClientInstance(source);
+  }
+  return client;
+}
+
+async function destroyWhatsappClient(source = "runtime") {
+  const activeClient = client;
+  if (!activeClient) return false;
+  try {
+    await activeClient.destroy();
+    if (client === activeClient) {
+      client = null;
+    }
+    return true;
+  } catch (error) {
+    void logService.logSystemEvent({
+      eventType: "whatsapp_client_destroy_failed",
+      severity: "warning",
+      message: "Destroy WhatsApp client gagal.",
+      metadata: { source, errorMessage: getWhatsappStartupErrorMessage(error) },
+    });
+    throw error;
+  }
+}
+
+function recreateWhatsappClientInstance(source = "reconnect") {
+  client = createWhatsappClientInstance(source);
+  return client;
+}
+
+function isActiveWhatsappClient(activeClient) {
+  return Boolean(activeClient && activeClient === client);
+}
+
+client = createWhatsappClientInstance("startup");
+function buildLegacyQueueIdempotencyKey({ recipientNumber, message, notificationKey, sourceFeature, attachment }) {
+  const digest = crypto
+    .createHash("sha256")
+    .update(`${typeof message === "string" ? message : ""}|${attachment?.source || ""}`)
+    .digest("hex")
+    .slice(0, 12);
+  return buildIdempotencyKey({
+    notificationKey: notificationKey || sourceFeature || "legacy-notification",
+    recipientNumber,
+    eventDate: new Date().toISOString().slice(0, 16),
+    messageType: digest || "message",
+  });
+}
+
+async function enqueueLegacyMessage({
+  id,
+  message,
+  options,
+  category = "notification",
+  notificationKey = "",
+  jobKey = "",
+  recipientName = "",
+  metadata = {},
+  idempotencyKey = "",
+  dryRun,
+  attachment = null,
+  priority,
+} = {}) {
+  const sourceFeature = String(metadata.sourceFeature || metadata.source || notificationKey || "legacy_notification");
+  const mergedMetadata = {
+    ...metadata,
+    source: metadata.source || sourceFeature,
+    sourceFeature,
+    jobKey,
+    legacyQueued: true,
+    legacySendPath: true,
+    legacySourceFile: "app.js",
+  };
+  if (options && typeof options === "object" && Object.keys(options).length > 0) {
+    mergedMetadata.sendOptions = options;
+  }
+  if (typeof dryRun === "boolean") {
+    mergedMetadata.dryRun = dryRun;
+  }
+
+  return messageQueueService.enqueueMessage({
+    recipientNumber: id,
+    recipientName,
+    message: typeof message === "string" ? message : (options?.caption || "[media/non-text message]"),
+    category,
+    notificationKey: notificationKey || sourceFeature,
+    priority,
+    idempotencyKey: idempotencyKey || buildLegacyQueueIdempotencyKey({
+      recipientNumber: id,
+      message,
+      notificationKey,
+      sourceFeature,
+      attachment,
+    }),
+    sourceApp: "aleta_bot",
+    sourceFeature,
+    metadata: mergedMetadata,
+    attachment,
+  });
+}
+
+function shouldQueueLegacyMessage({ message, attachment, category, options }) {
+  const normalizedCategory = String(category || "").toLowerCase();
+  if (options && typeof options === "object" && "quotedMessageId" in options) return false;
+  if (attachment && attachment.source) return true;
+  if (typeof message !== "string") return false;
+  return ["notification", "employee", "party"].includes(normalizedCategory);
+}
+
+async function sendOrQueueLegacyMessage(payload = {}) {
+  const sourceFeature = String(
+    payload.metadata?.sourceFeature ||
+    payload.metadata?.source ||
+    payload.notificationKey ||
+    "legacy_app_js_send"
+  );
+  const legacyMetadata = {
+    ...(payload.metadata || {}),
+    source: payload.metadata?.source || sourceFeature,
+    sourceFeature,
+    legacySendPath: true,
+    legacySourceFile: "app.js",
+  };
+  const runtimeConfig = readRuntimeConfig();
+  const guardDecision = productionGuardService.shouldBlockLegacyQueueMessage({
+    sourceApp: "aleta_bot",
+    sourceFeature,
+    category: payload.category || "notification",
+    metadata: legacyMetadata,
+  }, runtimeConfig);
+
+  if (guardDecision.blocked) {
+    await logService.logSecurityEvent({
+      eventType: "legacy_app_js_send_blocked",
+      severity: "warning",
+      message: "Jalur kirim legacy app.js diblokir oleh production guard.",
+      metadata: {
+        sourceFeature,
+        notificationKey: payload.notificationKey || "",
+        category: payload.category || "notification",
+        reason: guardDecision.reason,
+      },
+    });
+    return null;
+  }
+
+  const guardedPayload = {
+    ...payload,
+    metadata: legacyMetadata,
+  };
+
+  if (shouldQueueLegacyMessage(guardedPayload)) {
+    const item = await enqueueLegacyMessage(guardedPayload);
+    return { queued: true, queueId: item.id, status: item.status || "pending" };
+  }
+  const activeClient = ensureWhatsappClient("send_or_queue");
+  return messageService.safeSendMessage({
+    client: activeClient,
+    sendFn: originalSendMessage,
+    to: guardedPayload.id,
+    message: guardedPayload.message,
+    options: guardedPayload.options,
+    category: guardedPayload.category || "notification",
+    notificationKey: guardedPayload.notificationKey || "",
+    jobKey: guardedPayload.jobKey || "",
+    recipientName: guardedPayload.recipientName || "",
+    metadata: guardedPayload.metadata || {},
+    idempotencyKey: guardedPayload.idempotencyKey || "",
+    dryRun: guardedPayload.dryRun,
+  });
+}
 
 const safeSendMessage = async (id, ...args) => {
-  return messageService.safeSendMessage({
-    client,
-    sendFn: originalSendMessage,
-    to: id,
+  return sendOrQueueLegacyMessage({
+    id,
     message: args[0],
     options: args[1],
     category: "notification",
-    metadata: { source: "legacy_safeSendMessage" },
+    metadata: {
+      source: "legacy_safeSendMessage",
+      sourceFeature: "legacy_safeSendMessage",
+      legacySendPath: true,
+      legacySourceFile: "app.js",
+    },
   });
 };
 
@@ -226,10 +534,8 @@ const safeSendTrackedMessage = async ({
   idempotencyKey = "",
   dryRun,
 }) => {
-  return messageService.safeSendMessage({
-    client,
-    sendFn: originalSendMessage,
-    to: id,
+  return sendOrQueueLegacyMessage({
+    id,
     message,
     options,
     category,
@@ -241,6 +547,198 @@ const safeSendTrackedMessage = async ({
     dryRun,
   });
 };
+
+function isLegacyNotificationDisabled(legacyKey, runtimeConfig = readRuntimeConfig()) {
+  const disabledKeys = [
+    ...(Array.isArray(runtimeConfig.disabledLegacyKeys) ? runtimeConfig.disabledLegacyKeys : []),
+    ...(Array.isArray(runtimeConfig.disabledLegacyNotificationKeys) ? runtimeConfig.disabledLegacyNotificationKeys : []),
+  ].map((key) => String(key || ""));
+  return disabledKeys.includes(legacyKey);
+}
+
+function hasActiveDynamicReplacement(replacements = [], runtimeConfig = readRuntimeConfig()) {
+  const notifications = Array.isArray(runtimeConfig.notifications) ? runtimeConfig.notifications : [];
+  return notifications.some((notification) => {
+    if (!notification || !notification.isActive) return false;
+    const notificationId = String(notification.id || notification.key || "");
+    const queryId = String(notification.queryId || notification.query_id || notification.query_key || "");
+    return replacements.some((replacement) => {
+      return (
+        (replacement.id && replacement.id === notificationId) ||
+        (replacement.queryId && replacement.queryId === queryId)
+      );
+    });
+  });
+}
+
+function registryNotificationTakeoverEnabled(runtimeConfig = readRuntimeConfig()) {
+  return runtimeConfig.useRegistryNotifications !== false && runtimeConfig.legacyNotificationTakeoverMode !== false;
+}
+
+function runLegacyNotificationIfAllowed(legacyKey, replacements, runner) {
+  const runtimeConfig = readRuntimeConfig();
+  if (registryNotificationTakeoverEnabled(runtimeConfig)) {
+    if (!legacyNotificationSkipLogs.has(`registry_takeover:${legacyKey}`)) {
+      legacyNotificationSkipLogs.add(`registry_takeover:${legacyKey}`);
+      console.log(`[ALETA Bot] Legacy notification ${legacyKey} dilewati karena registry ALETA Bot menjadi sumber pengiriman.`);
+      void logService.logSecurityEvent({
+        eventType: "legacy_notification_registry_takeover",
+        severity: "warning",
+        message: "Scheduler notifikasi legacy app.js dilewati karena pengiriman sudah dialihkan ke registry ALETA Bot.",
+        metadata: { legacyKey, sourceFile: "app.js", replacements },
+      });
+    }
+    return;
+  }
+  if (
+    productionGuardService.productionGuardEnabled(runtimeConfig) &&
+    !productionGuardService.legacyNotificationSchedulerAllowed(runtimeConfig)
+  ) {
+    if (!legacyNotificationSkipLogs.has(legacyKey)) {
+      legacyNotificationSkipLogs.add(legacyKey);
+      console.log(`[ALETA Bot] Legacy notification ${legacyKey} dilewati oleh production guard.`);
+      void logService.logSecurityEvent({
+        eventType: "legacy_notification_scheduler_blocked",
+        severity: "warning",
+        message: "Scheduler notifikasi legacy app.js diblokir oleh production guard.",
+        metadata: { legacyKey, sourceFile: "app.js" },
+      });
+    }
+    return;
+  }
+  if (isLegacyNotificationDisabled(legacyKey, runtimeConfig)) {
+    console.log(`[ALETA Bot] Legacy notification ${legacyKey} dilewati karena sudah dinonaktifkan dari portal.`);
+    return;
+  }
+  if (hasActiveDynamicReplacement(replacements, runtimeConfig)) {
+    console.log(`[ALETA Bot] Legacy notification ${legacyKey} dilewati karena pengganti dinamis dari portal aktif.`);
+    return;
+  }
+  return runner();
+}
+
+// Resolusi dokumen SIPP dipindahkan ke services/sippDocumentService.js agar bisa
+// diuji/didiagnosis tanpa menyalakan client WhatsApp (lihat scripts/check-sipp-document.js).
+const {
+  SIPP_DOCUMENT_ROOTS,
+  sanitizeSippDocumentInput,
+  findReadableSippDocument,
+  buildSippDocumentUrl,
+  checkRemoteDocument,
+} = require("./services/sippDocumentService");
+
+async function createSippDocumentMedia(documentPath) {
+  const documentInfo = sanitizeSippDocumentInput(documentPath);
+  if (!documentInfo.ok) return { ok: false, reason: documentInfo.reason };
+
+  if (documentInfo.isUrl) {
+    const remoteCheck = await checkRemoteDocument(documentInfo.url);
+    if (!remoteCheck.ok) return remoteCheck;
+    const media = await MessageMedia.fromUrl(documentInfo.url, {
+      unsafeMime: true,
+      filename: documentInfo.fileName,
+      reqOptions: { headers: { accept: "*/*" } },
+    });
+    return { ok: true, media, source: documentInfo.url, fileName: documentInfo.fileName };
+  }
+
+  const localPath = findReadableSippDocument(documentInfo);
+  if (localPath) {
+    return {
+      ok: true,
+      media: MessageMedia.fromFilePath(localPath),
+      source: localPath,
+      fileName: documentInfo.fileName,
+    };
+  }
+
+  const remoteUrl = buildSippDocumentUrl(documentInfo.relativePath);
+  const remoteCheck = await checkRemoteDocument(remoteUrl);
+  if (!remoteCheck.ok) {
+    return {
+      ok: false,
+      reason: `${remoteCheck.reason} File juga tidak ditemukan di root lokal: ${SIPP_DOCUMENT_ROOTS.join(", ")}.`,
+    };
+  }
+
+  const media = await MessageMedia.fromUrl(remoteUrl, {
+    unsafeMime: true,
+    filename: documentInfo.fileName,
+    reqOptions: { headers: { accept: "*/*" } },
+  });
+  return { ok: true, media, source: remoteUrl, fileName: documentInfo.fileName };
+}
+
+/**
+ * Menyiapkan berkas e-Court yang sudah diunduh jembatan sebagai lampiran.
+ *
+ * Jauh lebih sederhana daripada padanannya untuk SIPP: berkasnya sudah pasti
+ * ada di disk lokal (jembatan yang menaruhnya), jadi tidak perlu pencarian di
+ * beberapa root maupun jalur cadangan lewat HTTP.
+ */
+function createEcourtDocumentMedia(documentPath) {
+  const berkas = ecourtDocumentService.describeEcourtDocument(documentPath);
+  if (!berkas.ok) return { ok: false, reason: berkas.reason };
+  return {
+    ok: true,
+    media: MessageMedia.fromFilePath(berkas.absolutePath),
+    source: berkas.absolutePath,
+    fileName: berkas.fileName,
+  };
+}
+
+function createSippDocumentAttachment(documentPath) {
+  const documentInfo = sanitizeSippDocumentInput(documentPath);
+  if (!documentInfo.ok) return null;
+  return {
+    source: documentPath,
+    name: documentInfo.fileName,
+    kind: "sipp_document",
+    required: false,
+  };
+}
+
+async function sendSippDocumentNotification({
+  formattedNumber,
+  message,
+  documentPath,
+  recipientRole,
+  recipientName,
+  caseNumber,
+  testMode = false,
+}) {
+  const recipientLabel = `${recipientRole} ${recipientName || "-"} (${formattedNumber}) untuk perkara ${caseNumber || "-"}`;
+
+  if (testMode) {
+    console.log(`[TEST MODE] Akan mengirim pesan ke ${recipientLabel}:\n${message}`);
+    console.log(`[TEST MODE] Dokumen SIPP: ${documentPath || "tidak ada path dokumen"}`);
+    return { sent: false, testMode: true };
+  }
+
+  const attachment = createSippDocumentAttachment(documentPath);
+  if (!attachment && documentPath) {
+    console.warn(`Dokumen tidak dimasukkan antrean untuk ${recipientLabel}: path dokumen tidak valid.`);
+  }
+
+  const item = await enqueueLegacyMessage({
+    id: formattedNumber,
+    message,
+    options: attachment ? { caption: message, sendMediaAsDocument: true } : undefined,
+    category: "party",
+    notificationKey: "pihak-dokumen-sipp",
+    recipientName,
+    metadata: {
+      source: "sipp_document_notification",
+      sourceFeature: "sipp_document_notification",
+      recipientRole,
+      caseNumber,
+      hasAttachment: Boolean(attachment),
+    },
+    attachment,
+  });
+  console.log(`Pesan ${attachment ? "dengan dokumen" : "teks"} masuk antrean untuk ${recipientLabel}. Queue ID: ${item.id}`);
+  return { sent: false, queued: true, queueId: item.id, withDocument: Boolean(attachment) };
+}
 
 async function resolveLegacyAiCommandResponse({ prompt, senderNumber, senderName, commandKey }) {
   const question = String(prompt || "").trim();
@@ -255,7 +753,13 @@ async function resolveLegacyAiCommandResponse({ prompt, senderNumber, senderName
       senderName,
     });
     const legacyResponse = publicQa.handled && publicQa.legacyCommand
-      ? await getData(publicQa.legacyCommand.toLocaleLowerCase())
+      ? await getData(publicQa.legacyCommand.toLocaleLowerCase(), {
+          senderNumber,
+          senderName,
+          allowDynamicQuery: publicQa.intent?.responseMode === "query_template",
+          publicQaIntentKey: publicQa.intent?.key || "",
+          publicQaIntent: publicQa.intent || null,
+        })
       : "";
     const finalPublicQa = await publicQaIntentService.finalizePublicQaAnswer({
       publicQa,
@@ -290,9 +794,9 @@ const WHATSAPP_INITIALIZE_TIMEOUT_MS = 120000;
 
 const markWhatsappInitializeTimeoutIfNeeded = async () => {
   const currentState = whatsappStatusService.getStatus();
+  const waitingForReady = ["initializing", "authenticated"].includes(currentState.status);
   if (
-    currentState.status !== "initializing" ||
-    whatsappInitializePromise ||
+    !waitingForReady ||
     !currentState.initializeAgeMs ||
     currentState.initializeAgeMs < WHATSAPP_INITIALIZE_TIMEOUT_MS
   ) {
@@ -300,9 +804,7 @@ const markWhatsappInitializeTimeoutIfNeeded = async () => {
   }
 
   try {
-    if (client) {
-      await client.destroy();
-    }
+    await destroyWhatsappClient("initialize_timeout");
   } catch (error) {
     logService.logSystemEvent({
       eventType: "whatsapp_initialize_timeout_destroy_failed",
@@ -311,6 +813,9 @@ const markWhatsappInitializeTimeoutIfNeeded = async () => {
       metadata: { errorMessage: getWhatsappStartupErrorMessage(error) },
     });
   }
+  whatsappInitializePromise = null;
+  await sleep(1500);
+  recreateWhatsappClientInstance("initialize_timeout");
 
   whatsappStatusService.setStatus("initialize_timeout", "initialize_timeout", {
     severity: "warning",
@@ -326,8 +831,11 @@ const startWhatsappClient = async (source = "manual") => {
   await markWhatsappInitializeTimeoutIfNeeded();
   const currentState = whatsappStatusService.getStatus();
   const currentStatus = currentState.status || "unknown";
+  const guardedStatuses = source === "reconnect"
+    ? ["connected", "authenticated", "qr_needed", "initializing", "browser_locked"]
+    : ["connected", "authenticated", "qr_needed", "initializing", "browser_locked", "reconnecting"];
 
-  if (["connected", "authenticated", "qr_needed", "initializing", "browser_locked", "reconnecting"].includes(currentStatus)) {
+  if (guardedStatuses.includes(currentStatus)) {
     return {
       started: false,
       status: currentStatus,
@@ -354,12 +862,16 @@ const startWhatsappClient = async (source = "manual") => {
     message: `WhatsApp client diinisialisasi (${source}).`,
     source,
   });
+  const activeClient = ensureWhatsappClient(source);
+  prepareWhatsappSessionForInitialize(source);
 
-  whatsappInitializePromise = Promise.resolve()
-    .then(() => client.initialize())
+ whatsappInitializePromise = Promise.resolve()
+    .then(() => activeClient.initialize())
     .catch((error) => {
       const friendlyMessage = getWhatsappStartupErrorMessage(error);
       const errorType = getWhatsappStartupErrorType(error);
+      const rawMessage = error && error.message ? error.message : String(error || "");
+      const rawStack = error && error.stack ? String(error.stack) : "";
       whatsappStatusService.setStatus(errorType === "browser_locked" ? "browser_locked" : "disconnected", "initialize_failed", {
         severity: "error",
         message: friendlyMessage,
@@ -371,6 +883,30 @@ const startWhatsappClient = async (source = "manual") => {
         puppeteerCacheDirConfigured: Boolean(process.env.PUPPETEER_CACHE_DIR),
       });
       console.error("Inisialisasi WhatsApp gagal:", friendlyMessage);
+      if (rawMessage && rawMessage.slice(0, 200) !== friendlyMessage.slice(0, 200)) {
+        console.error("[ALETA Bot] Raw launch error:", rawMessage.slice(0, 1500));
+      }
+      if (rawStack) {
+        console.error("[ALETA Bot] Stack:", rawStack.slice(0, 2000));
+      }
+      try {
+        logService.logSystemEvent({
+          eventType: "whatsapp_initialize_failed",
+          severity: "error",
+          message: "Inisialisasi WhatsApp client gagal.",
+          metadata: {
+            errorType,
+            friendlyMessage,
+            rawErrorMessage: rawMessage.slice(0, 1500),
+            rawErrorStack: rawStack.slice(0, 2000),
+            source,
+            chromeExecutablePathConfigured: Boolean(chromeExecutablePath),
+            puppeteerCacheDirConfigured: Boolean(process.env.PUPPETEER_CACHE_DIR),
+          },
+        });
+      } catch (logError) {
+        console.error("[ALETA Bot] Gagal mencatat log inisialisasi:", logError && logError.message ? logError.message : logError);
+      }
     })
     .finally(() => {
       whatsappInitializePromise = null;
@@ -383,18 +919,142 @@ const startWhatsappClient = async (source = "manual") => {
   };
 };
 
-queueWorkerService.startQueueWorker((payload) =>
-  messageService.safeSendMessage({ client, sendFn: originalSendMessage, ...payload })
-);
+const queuedMessageSender = async (payload = {}) => {
+  const activeClient = ensureWhatsappClient("queue_sender");
+  const attachment = payload.attachment;
+  if (attachment && attachment.source) {
+    let mediaResult;
+    try {
+      // Berkas e-Court dan berkas SIPP dipisahkan jalurnya karena asalnya
+      // berbeda: path SIPP datang mentah dari database aplikasi lain dan perlu
+      // pembersihan ketat, sedangkan berkas e-Court diletakkan sendiri oleh
+      // jembatan di bawah folder yang kita kuasai. Menyalurkan berkas e-Court
+      // lewat pembersih SIPP akan ditolak, karena pembersih itu memang
+      // dirancang menolak apa pun di luar root SIPP.
+      mediaResult = attachment.kind === "ecourt_document"
+        ? createEcourtDocumentMedia(attachment.source)
+        : await createSippDocumentMedia(attachment.source);
+    } catch (error) {
+      mediaResult = { ok: false, reason: error.message };
+    }
 
-client.on("qr", (qr) => {
+    if (mediaResult.ok) {
+      return messageService.safeSendMessage({
+        client: activeClient,
+        sendFn: originalSendMessage,
+        ...payload,
+        message: mediaResult.media,
+        options: {
+          ...(payload.options || {}),
+          caption: payload.options?.caption || payload.message || "",
+          sendMediaAsDocument: payload.options?.sendMediaAsDocument !== false,
+        },
+        metadata: {
+          ...(payload.metadata || {}),
+          attachmentSource: mediaResult.source,
+          attachmentName: mediaResult.fileName || attachment.name || "",
+          hasAttachment: true,
+        },
+      });
+    }
+
+    logService.logSystemEvent({
+      eventType: "queue_attachment_unavailable",
+      severity: attachment.required ? "error" : "warning",
+      message: "Lampiran antrean WhatsApp belum dapat dibaca.",
+      metadata: {
+        queueId: payload.metadata?.queueId || "",
+        attachmentName: attachment.name || "",
+        attachmentKind: attachment.kind || "",
+        reason: mediaResult.reason,
+      },
+    });
+
+    if (attachment.required) {
+      throw new Error(`attachment_not_available:${mediaResult.reason}`);
+    }
+  }
+
+  return messageService.safeSendMessage({ client: activeClient, sendFn: originalSendMessage, ...payload });
+};
+
+queueWorkerService.startQueueWorker(queuedMessageSender);
+dynamicNotificationSchedulerService.startDynamicNotificationScheduler();
+
+// Menilai nomor yang pesannya tidak pernah sampai, lalu menghentikannya.
+// Dijalankan sekali sehari saja: penilaiannya memang menunggu lebih dari
+// sehari sebelum menyimpulkan, jadi memeriksanya lebih sering tidak menambah
+// ketepatan, hanya menambah beban database.
+const PENILAIAN_PENERIMA_INTERVAL_MS = 24 * 60 * 60 * 1000;
+function jalankanPenilaianPenerima() {
+  recipientHealthService
+    .evaluateUndeliverable()
+    .then((hasil) => {
+      if (hasil.suppressed > 0) {
+        console.log(`[ALETA Bot] ${hasil.suppressed} nomor dihentikan karena pesannya tidak pernah sampai.`);
+      }
+    })
+    .catch((error) => {
+      logService.logSystemEvent({
+        eventType: "recipient_health_evaluation_failed",
+        severity: "info",
+        message: "Penilaian kesehatan nomor tujuan gagal; pengiriman tidak terpengaruh.",
+        metadata: { errorMessage: String(error.message || error).slice(0, 200) },
+      });
+    });
+}
+const penilaianPenerimaTimer = setInterval(jalankanPenilaianPenerima, PENILAIAN_PENERIMA_INTERVAL_MS);
+if (penilaianPenerimaTimer.unref) penilaianPenerimaTimer.unref();
+// Penilaian pertama ditunda beberapa menit agar tidak menambah beban saat bot
+// baru menyala dan sedang menyambung ke WhatsApp.
+const penilaianAwalTimer = setTimeout(jalankanPenilaianPenerima, 5 * 60 * 1000);
+if (penilaianAwalTimer.unref) penilaianAwalTimer.unref();
+
+// Dokumen e-Court diperiksa tiap 15 menit. Jauh lebih sering daripada
+// penilaian penerima karena sifatnya berbeda: begitu majelis memverifikasi
+// sebuah Jawaban, pihak lawan sebaiknya tahu pada hari yang sama supaya sempat
+// menyiapkan Replik. Pemeriksaannya sendiri murah - hanya membaca tabel ALETA,
+// dan hampir selalu menemukan antrean kosong.
+//
+// Pengirimannya tetap tunduk pada irama kirim dan jendela jam kerja, karena
+// pesan diserahkan ke antrean, bukan dikirim langsung dari sini.
+const PEKERJA_ECOURT_INTERVAL_MS = Number(process.env.ALETA_BOT_ECOURT_WORKER_INTERVAL_MS || 15 * 60 * 1000);
+function jalankanPekerjaEcourt() {
+  ecourtNotificationWorker
+    .runOnce()
+    .then((hasil) => {
+      if (hasil && hasil.diantrekan > 0) {
+        console.log(`[ALETA Bot] e-Court: ${hasil.diantrekan} dokumen diantrekan (${hasil.pesan} pesan).`);
+      }
+    })
+    .catch((error) => {
+      logService.logSystemEvent({
+        eventType: "ecourt_worker_failed",
+        severity: "info",
+        message: "Pekerja notifikasi e-Court gagal; notifikasi lain tidak terpengaruh.",
+        metadata: { errorMessage: String(error.message || error).slice(0, 200) },
+      });
+    });
+}
+const pekerjaEcourtTimer = setInterval(jalankanPekerjaEcourt, PEKERJA_ECOURT_INTERVAL_MS);
+if (pekerjaEcourtTimer.unref) pekerjaEcourtTimer.unref();
+const pekerjaEcourtAwalTimer = setTimeout(jalankanPekerjaEcourt, 6 * 60 * 1000);
+if (pekerjaEcourtAwalTimer.unref) pekerjaEcourtAwalTimer.unref();
+
+function registerWhatsappClientEventHandlers(activeClient) {
+activeClient.on("qr", (qr) => {
+  if (!isActiveWhatsappClient(activeClient)) return;
   // NOTE: This event will not be fired if a session is specified.
   whatsappStatusService.setStatus("qr_needed", "qr", { message: "QR login WhatsApp dibuat.", qrString: qr });
   qrcode2.generate(qr, { small: true });
 });
 
-client.on("ready", () => {
-  const phoneNumber = client.info?.wid?.user || "";
+activeClient.on("ready", () => {
+  if (!isActiveWhatsappClient(activeClient)) return;
+  const phoneNumber = activeClient.info?.wid?.user || "";
+  // Hitungan gagal beruntun dinolkan. Penghentian karena tanda blokir TIDAK
+  // ikut dibatalkan di sini - hanya admin yang boleh melepaskannya.
+  banSignalService.recordReady();
   whatsappStatusService.setStatus("connected", "ready", { message: "WhatsApp client siap dan terhubung.", phoneNumber });
   logService.logWhatsappEvent({
     eventType: "whatsapp_ready_no_auto_send",
@@ -405,40 +1065,67 @@ client.on("ready", () => {
   console.log("READY");
 });
 
+activeClient.on("message_ack", (message, ack) => {
+  const whatsappMessageId = messageService.getWhatsappMessageId(message);
+  logService.updateMessageAck({
+    whatsappMessageId,
+    ack,
+    metadata: {
+      to: message?.to || "",
+      from: message?.from || "",
+    },
+  }).catch((error) => {
+    logService.logWhatsappEvent({
+      eventType: "message_ack_update_failed",
+      severity: "warning",
+      message: "ACK WhatsApp diterima tetapi gagal memperbarui laporan.",
+      metadata: { whatsappMessageId, ack, errorMessage: error.message },
+    });
+  });
+});
+
 // Menyimpan sesi ke file
-client.on("authenticated", () => {
+activeClient.on("authenticated", () => {
+  if (!isActiveWhatsappClient(activeClient)) return;
   whatsappStatusService.setStatus("authenticated", "authenticated", { message: "WhatsApp client berhasil autentikasi." });
   console.log("AUTHENTICATED");
 });
 
-client.on("auth_failure", (msg) => {
+activeClient.on("auth_failure", (msg) => {
+  if (!isActiveWhatsappClient(activeClient)) return;
   // Fired if session restore was unsuccessfull
+  const sinyal = banSignalService.recordAuthFailure(String(msg || ""));
   whatsappStatusService.setStatus("auth_failure", "auth_failure", {
-    severity: "error",
-    message: "WhatsApp authentication failure.",
+    severity: sinyal.halted ? "critical" : "error",
+    message: sinyal.halted
+      ? "Bot dihentikan otomatis: autentikasi WhatsApp gagal berulang kali."
+      : "WhatsApp authentication failure.",
     errorMessage: String(msg || ""),
   });
-  console.error("AUTHENTICATION FAILURE", msg);
+  console.error("AUTHENTICATION FAILURE", msg, `(gagal beruntun ke-${sinyal.streak})`);
 });
 
-client.on("change_battery", (batteryInfo) => {
+activeClient.on("change_battery", (batteryInfo) => {
   // Battery percentage for attached device has changed
   const { battery, plugged } = batteryInfo;
   console.log(`Battery: ${battery}% - Charging? ${plugged}`);
 });
 
-client.on('change_state', (state) => {
+activeClient.on('change_state', (state) => {
+  if (!isActiveWhatsappClient(activeClient)) return;
   console.log("CHANGE STATE", state);
-  whatsappStatusService.setStatus(String(state || "").toLowerCase(), "change_state", { state, message: `WhatsApp state: ${state}` });
-  if (state === "CONFLICT" || state === "UNLAUNCHED") {
-    client.takeOver();
-  } else if (state === "disconnected") {
+  const normalizedState = String(state || "").trim().toLowerCase();
+  whatsappStatusService.setStatus(normalizedState || "unknown", "change_state", { state, message: `WhatsApp state: ${state}` });
+  if (normalizedState === "conflict" || normalizedState === "unlaunched") {
+    activeClient.takeOver();
+  } else if (normalizedState === "disconnected") {
     console.log("Bot terputus. Mencoba untuk menghubungkan kembali...");
     reconnect();
   }
 });
 
-client.on('error', (error) => {
+activeClient.on('error', (error) => {
+  if (!isActiveWhatsappClient(activeClient)) return;
   whatsappStatusService.setStatus("unknown", "error", {
     severity: "error",
     message: "WhatsApp client error.",
@@ -447,13 +1134,27 @@ client.on('error', (error) => {
   console.error("Terjadi kesalahan:", error);
 });
 
-client.on("disconnected", (reason) => {
+activeClient.on("disconnected", (reason) => {
+  if (!isActiveWhatsappClient(activeClient)) return;
+  // Alasan terputus dipilah lebih dulu. Menyambung ulang setelah WhatsApp
+  // menandai akun (TOS_BLOCK, UNPAIRED, LOGOUT) justru memperberat
+  // penilaiannya - setiap percobaan tercatat.
+  const sinyal = banSignalService.recordDisconnect(reason);
   whatsappStatusService.setStatus("disconnected", "disconnected", {
-    severity: "warning",
-    message: "WhatsApp client disconnected.",
+    severity: sinyal.accountLevel ? "critical" : "warning",
+    message: sinyal.accountLevel
+      ? "Bot dihentikan otomatis: WhatsApp memutus sambungan dengan alasan tingkat akun."
+      : "WhatsApp client disconnected.",
     reason,
   });
   if (isShuttingDown) return;
+  if (!sinyal.shouldReconnect) {
+    console.error(
+      `[ALETA Bot] Tidak menyambung ulang. Alasan terputus "${reason}" menunjuk ke keadaan akun, ` +
+        `bukan gangguan jaringan. Ajukan banding dari aplikasi WhatsApp, lalu lepaskan penghentian dari portal.`
+    );
+    return;
+  }
   reconnect();
 });
 
@@ -469,8 +1170,10 @@ const reconnect = () => {
     try {
       console.log("Mencoba untuk menghubungkan kembali...");
       whatsappStatusService.setStatus("reconnecting", "reconnect_attempt", { message: "Mencoba reconnect WhatsApp client." });
-      await client.destroy();
+      await destroyWhatsappClient("reconnect");
       whatsappInitializePromise = null;
+      await sleep(1500);
+      recreateWhatsappClientInstance("reconnect");
       void startWhatsappClient("reconnect");
     } catch (err) {
       whatsappStatusService.setStatus("disconnected", "reconnect_failed", {
@@ -485,28 +1188,248 @@ const reconnect = () => {
   }, 10000);
 };
 
-if (readRuntimeConfig().botEnabled) {
-  void startWhatsappClient("startup");
-} else {
-  whatsappStatusService.setStatus("disconnected", "initialize_skipped", { message: "Bot nonaktif dari konfigurasi portal." });
-  console.log("[ALETA Bot] Bot nonaktif dari konfigurasi portal. WhatsApp client tidak diinisialisasi.");
+
+/**
+ * Satu-satunya cara membalas chat di berkas ini.
+ *
+ * Seluruh balasan wajib lewat sini supaya perlakuan yang sama berlaku di semua
+ * jalur: pembersihan jejak kode, penjelasan istilah hukum, lalu pencatatan
+ * corong layanan. Sebelum ada pembantu ini, perbaikan hanya menempel di jalur
+ * menu baru sehingga warga yang mengetik perintah lama mendapat mutu jawaban
+ * yang berbeda untuk pertanyaan yang sama.
+ */
+async function balasChat(msg, text, meta = {}) {
+    const siap = outgoingChatService.prepareReply(text, {
+        withGlossary: meta.withGlossary !== false,
+    });
+    if (siap && String(siap).trim()) {
+        msg.reply(siap, null, { ignoreQuoteErrors: true });
+    }
+
+    // Lampiran dikirim lewat pintu yang SAMA, bukan lewat msg.reply terpisah.
+    // Seluruh balasan chat harus melewati satu titik ini supaya tidak ada
+    // jalur kedua yang melewatkan sanitasi maupun pencatatan statistik -
+    // aturan yang dijaga scripts/verify-outgoing-chat.js.
+    //
+    // Kegagalan mengirim lampiran sengaja tidak menghentikan apa pun: teks
+    // balasannya sudah berangkat dan sudah menjelaskan apa yang harus
+    // dilakukan bila berkasnya tidak sampai.
+    if (meta.attachment && meta.attachment.source) {
+        const media = createEcourtDocumentMedia(meta.attachment.source);
+        if (media.ok) {
+            await msg
+                .reply(media.media, null, { sendMediaAsDocument: true, ignoreQuoteErrors: true })
+                .catch(() => {});
+        }
+    }
+
+    // Statistik dicatat setelah balasan dikirim dan tanpa ditunggu.
+    void serviceAnalyticsService.record({
+        senderNumber: msg.from || "",
+        action: meta.action || "",
+        optionKey: meta.optionKey || "",
+        dataSource: meta.dataSource || "",
+        durationMs: meta.durationMs || 0,
+    });
+    return siap;
 }
 
-client.on('message', async (msg) => {
+activeClient.on('message', async (msg) => {
+  if (!isActiveWhatsappClient(activeClient)) return;
   if (!msg.body || msg.body.trim() === '') return;
+
+  // Status WhatsApp masuk ke handler ini persis seperti chat biasa. Tanpa
+  // penyaringan, msg.reply() di bawah akan MEMBALAS STATUS orang - pesan yang
+  // tidak pernah diminta dan tampak seperti bot berkomentar di status pegawai
+  // maupun pihak berperkara. Bot hanya melayani chat langsung.
+  const alasanTolak = whatsappAudienceService.getIncomingRejectionReason(msg);
+  if (alasanTolak) {
+    logService.logSystemEvent({
+      eventType: "incoming_message_ignored_non_chat",
+      severity: "info",
+      message: `Pesan masuk diabaikan karena bukan chat langsung (${alasanTolak}).`,
+      metadata: {
+        reason: alasanTolak,
+        sender: msg.from || "",
+        messagePreview: String(msg.body || "").replace(/\s+/g, " ").slice(0, 160),
+      },
+    });
+    return;
+  }
+
+  // Membuka pesan yang masuk, seperti yang dilakukan orang. Akun yang mengirim
+  // ratusan pesan tetapi tidak pernah membuka satu pun pesan masuk berperilaku
+  // sebagai corong satu arah - bentuk yang dicari penyaring spam.
+  //
+  // Tidak ditunggu dan tidak boleh menggagalkan apa pun: ini kosmetik perilaku,
+  // sedangkan menjawab pertanyaan pihak adalah tugas yang sebenarnya.
+  void humanPresenceService.markSeen(activeClient, msg.from);
+
+  const runtimeConfig = readRuntimeConfig();
+  if (!runtimeConfig.botEnabled) {
+    logService.logSystemEvent({
+      eventType: "incoming_message_ignored_bot_disabled",
+      severity: "info",
+      message: "Pesan masuk diabaikan karena bot sedang nonaktif dari portal.",
+      metadata: {
+        sender: msg.from || "",
+        messagePreview: String(msg.body || "").replace(/\s+/g, " ").slice(0, 160),
+      },
+    });
+    return;
+  }
 
   console.log("Pesan diterima:", msg.body);
 
   try {
       let chat = await msg.getChat();
 
-      let message = msg.body.toLocaleLowerCase();
+      const rawMessage = String(msg.body || "");
+      let message = rawMessage.toLocaleLowerCase();
       let prefix = message.split("#");
 
       if (!chat.isGroup) {
-          if (prefix[0] === "detail") {
-              const response = await detailPerkara(prefix[1]);
-              msg.reply(response, null, { ignoreQuoteErrors: true });
+          // Jawaban verifikasi kepemilikan nomor didahulukan dari semua menu.
+          //
+          // Kata "ya" dan "bukan" terlalu umum untuk dibiarkan bertabrakan
+          // dengan menu lain, tetapi layanannya hanya menanggapi bila memang
+          // ada pertanyaan yang sedang menunggu jawaban dari nomor ini -
+          // selain itu ia mengembalikan null dan alur di bawah tetap jalan.
+          try {
+              const jawabanNomor = await nomorVerificationService.handleReply({
+                  senderNumber: msg.from || "",
+                  text: rawMessage,
+              });
+              if (jawabanNomor) {
+                  await balasChat(msg, jawabanNomor.reply, {
+                      action: "verifikasi_nomor",
+                      withGlossary: false,
+                  });
+                  return;
+              }
+          } catch (error) {
+              logService.logSystemEvent({
+                  eventType: "verifikasi_nomor_gagal",
+                  severity: "warning",
+                  message: "Jawaban verifikasi nomor gagal diproses; alur chat lain tetap berjalan.",
+                  metadata: { errorMessage: String(error.message || error).slice(0, 200) },
+              });
+          }
+
+          // Menu verifikasi hakim didahulukan dari menu pihak, karena kata
+          // "verifikasi" dan angka pilihannya bisa bertabrakan dengan menu
+          // umum. Layanannya mengembalikan null bila pesan ini bukan urusannya,
+          // sehingga alur di bawah tetap berjalan seperti biasa.
+          try {
+              const hasilVerifikasi = await ecourtVerificationService.handleMessage({
+                  senderNumber: msg.from || "",
+                  text: rawMessage,
+              });
+              if (hasilVerifikasi) {
+                  // Berkasnya ikut lewat balasChat supaya hakim menerima
+                  // keterangan dan dokumennya dari satu jalur yang sama.
+                  await balasChat(msg, hasilVerifikasi.reply, {
+                      action: "ecourt_verifikasi",
+                      withGlossary: false,
+                      attachment: hasilVerifikasi.attachment || null,
+                  });
+                  return;
+              }
+          } catch (error) {
+              logService.logSystemEvent({
+                  eventType: "ecourt_verification_menu_failed",
+                  severity: "warning",
+                  message: "Menu verifikasi e-Court gagal; alur chat lain tetap berjalan.",
+                  metadata: { errorMessage: String(error.message || error).slice(0, 200) },
+              });
+          }
+
+          // Menu pilihan bernomor didahulukan: pengguna tidak perlu lagi hafal
+          // perintah dan nomor perkaranya. Bila pesan ini bukan urusan menu,
+          // handled=false dan seluruh perintah lama tetap berjalan seperti biasa.
+          const menuMulaiMs = Date.now();
+          const menuResult = await chatMenuService.handleMenuMessage({
+              senderNumber: msg.from || "",
+              chatId: msg.from || "",
+              text: rawMessage,
+              answerCommand: (command) => getData(command, { senderNumber: msg.from || "" }),
+          });
+          if (menuResult.handled) {
+              if (menuResult.reply) {
+                  await balasChat(msg, menuResult.reply, {
+                      action: menuResult.action || "",
+                      optionKey: menuResult.optionKey || "",
+                      dataSource: menuResult.dataSource || "",
+                      durationMs: Date.now() - menuMulaiMs,
+                  });
+              }
+              logService.logSystemEvent({
+                  eventType: "chat_menu_handled",
+                  severity: "info",
+                  message: "Pesan masuk dilayani menu pilihan.",
+                  metadata: {
+                      action: menuResult.action || "",
+                      command: menuResult.command || "",
+                  },
+              });
+              return;
+          }
+
+          if (ANTRIAN_ONLINE_COMMANDS.has(prefix[0].trim())) {
+              // Antrian sidang online: "daftar antrian#123.G.2026" (penggugat),
+              // "antrian online#123.G.2026" (tergugat), atau cukup "ambil antrian"
+              // bila nomor WhatsApp pengirim sudah tercatat di perkara hari ini.
+              const queueCommand = prefix[0].trim();
+              const nomorPerkaraInput = rawMessage.split("#").slice(1).join("#").trim();
+
+              if (nomorPerkaraInput) {
+                  const access = await guardCaseCommandAccess({
+                      senderNumber: msg.from || "",
+                      command: queueCommand,
+                      nomorPerkara: nomorPerkaraInput,
+                  });
+                  if (!access.allowed) {
+                      await balasChat(msg, access.fallbackMessage || "Untuk keamanan data perkara, nomor WhatsApp ini belum dapat diverifikasi.", { action: "no_case", withGlossary: false });
+                      return;
+                  }
+              }
+
+              const queueResult = await antrianOnlineService.registerOnlineQueue({
+                  nomorPerkara: nomorPerkaraInput,
+                  message: rawMessage,
+                  senderNumber: msg.from || "",
+              });
+
+              logService.logSystemEvent({
+                  eventType: "online_queue_registration",
+                  severity: queueResult.status === "registered" ? "info" : "warning",
+                  message: `Pendaftaran antrian online: ${queueResult.status}.`,
+                  metadata: {
+                      sender: msg.from || "",
+                      command: queueCommand,
+                      nomorPerkara: queueResult.nomorPerkara || "",
+                      partySlot: queueResult.partySlot || "",
+                      nomorAntrian: queueResult.nomorAntrian,
+                      resolvedBy: queueResult.resolvedBy || "",
+                  },
+              });
+
+              await balasChat(msg, queueResult.answer, { action: "answered", optionKey: "antrian" });
+          } else if (prefix[0] === "detail") {
+              const detailParameter = rawMessage.split("#").slice(1).join("#");
+              if (detailParameter.trim()) {
+                  const access = await guardCaseCommandAccess({
+                      senderNumber: msg.from || "",
+                      command: "detail",
+                      nomorPerkara: detailParameter,
+                  });
+                  if (!access.allowed) {
+                      await balasChat(msg, access.fallbackMessage || "Untuk keamanan data perkara, nomor WhatsApp ini belum dapat diverifikasi.", { action: "no_case", withGlossary: false });
+                      return;
+                  }
+              }
+              const response = await detailPerkara(rawMessage);
+              await balasChat(msg, response, { action: "answered", optionKey: "detail" });
           } else if (prefix[0] === "ai") {
               const response = await resolveLegacyAiCommandResponse({
                   prompt: prefix.slice(1).join("#"),
@@ -514,7 +1437,7 @@ client.on('message', async (msg) => {
                   senderName: msg._data?.notifyName || "",
                   commandKey: "ai",
               });
-              msg.reply(response, null, { ignoreQuoteErrors: true });
+              await balasChat(msg, response, { action: "answered", optionKey: "ai" });
           } else if (prefix[0] === "bot") {
               if (prefix[1]) {
                   const response = await resolveLegacyAiCommandResponse({
@@ -523,9 +1446,9 @@ client.on('message', async (msg) => {
                       senderName: msg._data?.notifyName || "",
                       commandKey: "bot",
                   });
-                  msg.reply(response, null, { ignoreQuoteErrors: true });
+                  await balasChat(msg, response, { action: "answered", optionKey: "ai" });
               } else {
-                  msg.reply("Tidak ada isi untuk diproses setelah 'bot'.", null, { ignoreQuoteErrors: true });
+                  await balasChat(msg, "Tidak ada isi untuk diproses setelah 'bot'.", { withGlossary: false });
               }
           } else {
               const publicQa = await publicQaIntentService.resolvePublicQaAnswer({
@@ -536,7 +1459,13 @@ client.on('message', async (msg) => {
               let response;
               if (publicQa.handled) {
                   const legacyResponse = publicQa.legacyCommand
-                      ? await getData(publicQa.legacyCommand.toLocaleLowerCase())
+                      ? await getData(publicQa.legacyCommand.toLocaleLowerCase(), {
+                          senderNumber: msg.from || "",
+                          senderName: msg._data?.notifyName || "",
+                          allowDynamicQuery: publicQa.intent?.responseMode === "query_template",
+                          publicQaIntentKey: publicQa.intent?.key || "",
+                          publicQaIntent: publicQa.intent || null,
+                      })
                       : "";
                   const finalPublicQa = await publicQaIntentService.finalizePublicQaAnswer({
                       publicQa,
@@ -546,18 +1475,25 @@ client.on('message', async (msg) => {
                   });
                   response = finalPublicQa.answer || publicQa.answer || legacyResponse;
               } else {
-                  response = await getData(message);
+                  response = await getData(message, {
+                      senderNumber: msg.from || "",
+                      senderName: msg._data?.notifyName || "",
+                  });
               }
-              msg.reply(response, null, { ignoreQuoteErrors: true });
+              await balasChat(msg, response, {
+                  action: "answered",
+                  optionKey: publicQa.handled ? String(publicQa.intent?.key || "tanya_bebas") : "perintah_lama",
+              });
           }
       } else {
           console.log("Pesan berasal dari grup, tidak diproses");
       }
   } catch (error) {
       console.error("Error yang terjadi:", error);
-      msg.reply("Terjadi kesalahan saat memproses permintaan Anda.", null, { ignoreQuoteErrors: true });
+      await balasChat(msg, "Terjadi kesalahan saat memproses permintaan Anda.", { withGlossary: false });
   }
 });
+}
 
 // Fungsi untuk mendapatkan nama hari dalam bahasa Indonesia
 const getNamaHari = (date) => {
@@ -643,7 +1579,7 @@ const sendKetuaPenerimaanPerkara = async () => {
 };
 
 cron.schedule("50 07 1 * *", () => {
-  sendKetuaPenerimaanPerkara().then((message) => {
+  runLegacyNotificationIfAllowed("sendKetuaPenerimaanPerkara", [{ id: "ketua-penerimaan-perkara", queryId: "legacy-ketua-penerimaan-perkara" }], () => sendKetuaPenerimaanPerkara().then((message) => {
     if (!message) return;
     Object.values(ketuaId).forEach((id) => {
       client.sendMessage(id, message).then(() => {
@@ -654,7 +1590,7 @@ cron.schedule("50 07 1 * *", () => {
     });
   }).catch((error) => {
     console.error("Terjadi kesalahan Penerimaan Perkara:", error);
-  });
+  }));
 });
 
 //     let msg = `*_Hai, saya Aleta, berikut data Triwulan :_*\n\n*TRIWULAN E-COURT* :\n${messageTriwulanEcourt}\n\n*TRIWULAN MEDIASI* :\n${messageTriwulanMediasi}`;
@@ -766,7 +1702,7 @@ const sendPanitera = async () => {
 };
 
 cron.schedule("50 07 1 * *", () => {
-  sendPanitera().then((res) => {
+  runLegacyNotificationIfAllowed("sendPanitera", [{ id: "panitera-monitoring-bulanan", queryId: "legacy-panitera-monitoring-bulanan" }], () => sendPanitera().then((res) => {
     if (!res) return;
     Object.values(paniteraId).forEach((id) => {
       safeSendMessage(id, res).then(() => {
@@ -775,7 +1711,7 @@ cron.schedule("50 07 1 * *", () => {
     });
   }).catch((error) => {
     console.error("Terjadi kesalahan sendPanitera:", error);
-  });
+  }));
 });
 
 //     let msg = `*_Hai, saya Aleta, berikut data keadaan perkara :_*\n\n*DATA PENERIMAAN PERKARA SETIAP PANITERA, DARI JUMLAH TERBESAR KE TERKECIL* :\n${messagePerkaraPanitera}\n\n*DATA PENERIMAAN PERKARA SETIAP JURUSITA, DARI JUMLAH TERBESAR KE TERKECIL* :\n${messagePerkaraJurusita}`;
@@ -892,7 +1828,7 @@ const sendPenjagaSidangBesok = async () => {
 };
 
 cron.schedule("10 07 * * Monday-Friday", () => {
-  sendPenjagaSidangHariIni().then((message) => {
+  runLegacyNotificationIfAllowed("sendPenjagaSidangHariIni", [{ id: "penjaga-sidang-hari-ini", queryId: "legacy-jadwal-sidang-internal" }], () => sendPenjagaSidangHariIni().then((message) => {
     if (!message) return;
     Object.values(penjagaSidangId).forEach((id) => {
       client.sendMessage(id, message).then(() => {
@@ -903,11 +1839,11 @@ cron.schedule("10 07 * * Monday-Friday", () => {
     });
   }).catch((error) => {
     console.error("Terjadi kesalahan:", error);
-  });
+  }));
 });
 
 cron.schedule("00 20 * * *", () => {
-  sendPenjagaSidangBesok().then((message) => {
+  runLegacyNotificationIfAllowed("sendPenjagaSidangBesok", [{ id: "penjaga-sidang-besok", queryId: "legacy-jadwal-sidang-internal" }], () => sendPenjagaSidangBesok().then((message) => {
     if (!message) return;
     Object.values(penjagaSidangId).forEach((id) => {
       client.sendMessage(id, message).then(() => {
@@ -918,7 +1854,7 @@ cron.schedule("00 20 * * *", () => {
     });
   }).catch((error) => {
     console.error("Terjadi kesalahan:", error);
-  });
+  }));
 });
 
 //     const messagesToSend = Object.values(messages).filter(value => value !== '');
@@ -975,7 +1911,7 @@ const sendPengingatKasir = async () => {
 };
 
 cron.schedule("30 14 * * Monday-Thursday", () => {
-  sendPengingatKasir().then((message) => {
+  runLegacyNotificationIfAllowed("sendPengingatKasir", [{ id: "kasir-harian", queryId: "legacy-kasir-panjar" }], () => sendPengingatKasir().then((message) => {
     if (!message) return;
     Object.values(ptspId).forEach((id) => {
       client.sendMessage(id, message).then(() => {
@@ -1005,7 +1941,7 @@ cron.schedule("30 14 * * Monday-Thursday", () => {
 
   }).catch((error) => {
     console.error("Terjadi kesalahan sendPengingatKasir:", error);
-  });
+  }));
 });
 
 // NOTIFIKASI PENGINGAT TIAP USER SESUAI NAMA
@@ -1060,26 +1996,26 @@ const sendPengingatHakim = async (id, nama, getDataJadwalSidang, getDataJadwalMe
 // Mengatur pengingat untuk sidang pagi
 const pengingatPagiHakim = (id, nama, getDataJadwalSidang, getDataJadwalMediasi, role, testMode = false) => {
   cron.schedule("15 07 * * Monday-Friday", () => {
-    sendPengingatHakim(id, nama, getDataJadwalSidang, getDataJadwalMediasi, role, false, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendPengingatHakim", [{ id: "hakim-jadwal-sidang" }], () => sendPengingatHakim(id, nama, getDataJadwalSidang, getDataJadwalMediasi, role, false, testMode).then((message) => {
       if (message) {
         console.log(`Pesan berhasil dikirim ke ${nama}`, id);
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat pagi:", error);
-    });
+    }));
   });
 };
 
 // Mengatur pengingat untuk sidang malam
 const pengingatMalamHakim = (id, nama, getDataJadwalSidang, getDataJadwalMediasi, role, testMode = false) => {
   cron.schedule("00 20 * * Sunday-Thursday", () => {
-    sendPengingatHakim(id, nama, getDataJadwalSidang, getDataJadwalMediasi, role, true, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendPengingatHakim", [{ id: "hakim-jadwal-sidang" }], () => sendPengingatHakim(id, nama, getDataJadwalSidang, getDataJadwalMediasi, role, true, testMode).then((message) => {
       if (message) {
         console.log(`Pesan berhasil dikirim ke ${nama}`, id);
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat malam:", error);
-    });
+    }));
   });
 };
 
@@ -1139,28 +2075,28 @@ const sendPengingatPaniteraSidang = async (id, nama, getDataJadwalSidang, getDat
 // Mengatur pengingat untuk sidang pagi
 const pengingatPagiPanitera = (id, nama, getDataJadwalSidang, getDataTundaMediasi, role, testMode = false) => {
   cron.schedule("00 07 * * Monday-Friday", () => {
-    sendPengingatPaniteraSidang(id, nama, getDataJadwalSidang, getDataTundaMediasi, role, false, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendPengingatPaniteraSidang", [{ id: "panitera-jadwal-sidang" }], () => sendPengingatPaniteraSidang(id, nama, getDataJadwalSidang, getDataTundaMediasi, role, false, testMode).then((message) => {
         if (message) {
           console.log(`Pesan berhasil dikirim ke ${nama}`, id);
         }
       })
       .catch((error) => {
         console.error("Terjadi kesalahan:", error);
-      });
+      }));
   });
 }
 
 // Mengatur pengingat untuk sidang malam
 const pengingatMalamPanitera = (id, nama, getDataJadwalSidang, getDataTundaMediasi, role, testMode = false) => {
   cron.schedule("00 20 * * *", () => {
-    sendPengingatPaniteraSidang(id, nama, getDataJadwalSidang, getDataTundaMediasi, role, true, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendPengingatPaniteraSidang", [{ id: "panitera-jadwal-sidang" }], () => sendPengingatPaniteraSidang(id, nama, getDataJadwalSidang, getDataTundaMediasi, role, true, testMode).then((message) => {
         if (message) {
           console.log(`Pesan berhasil dikirim ke ${nama}`, id);
         }
       })
       .catch((error) => {
         console.error("Terjadi kesalahan:", error);
-      });
+      }));
   });
 }
 
@@ -1227,13 +2163,13 @@ const sendStatusSidangHakim = async (id, nama, getDataPutusanBelumMinut, getData
 // Mengatur pengingat untuk sidang
 const statusSidangHakim = (cronTime, id, nama, getDataPutusanBelumMinut, getDataUploadPutusan, getDataEdocAnonimisasi, getDataLupaTundaHakim, role, testMode = false) => { 
   cron.schedule(cronTime, () => {
-    sendStatusSidangHakim(id, nama, getDataPutusanBelumMinut, getDataUploadPutusan, getDataEdocAnonimisasi, getDataLupaTundaHakim, role, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendStatusSidangHakim", [{ id: "hakim-jadwal-sidang" }], () => sendStatusSidangHakim(id, nama, getDataPutusanBelumMinut, getDataUploadPutusan, getDataEdocAnonimisasi, getDataLupaTundaHakim, role, testMode).then((message) => {
       if (message) {
           console.log(`Pesan berhasil dikirim ke ${nama}`, id);
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat:", error);
-    });
+    }));
   });
 };
 
@@ -1293,13 +2229,13 @@ const sendStatusSidangPanitera = async (id, nama, getDataPutusanBelumMinut, getD
 // Fungsi untuk menjadwalkan tugas pengiriman status sidang panitera
 const statusSidangPanitera = (cronTime, id, nama, getDataPutusanBelumMinut, getDataTundaMediasi, getDataLupaTunda, role, testMode = false) => {
   cron.schedule(cronTime, () => {
-    sendStatusSidangPanitera(id, nama, getDataPutusanBelumMinut, getDataTundaMediasi, getDataLupaTunda, role, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendStatusSidangPanitera", [{ id: "panitera-jadwal-sidang" }], () => sendStatusSidangPanitera(id, nama, getDataPutusanBelumMinut, getDataTundaMediasi, getDataLupaTunda, role, testMode).then((message) => {
       if (message) {
           console.log(`Pesan berhasil dikirim ke ${nama}`, id);
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat:", error);
-    });
+    }));
   });
 };
 
@@ -1340,13 +2276,16 @@ const sendAntrianSidangHariIni = async (id, nama, getDataAntrianSidangHariIni, r
 // Mengatur pengingat untuk bas
 const statusSidangHariIni = (id, nama, getDataAntrianSidangHariIni, role, testMode = false) => { 
   cron.schedule("55 08 * * Monday-Friday", () => {
-    sendAntrianSidangHariIni(id, nama, getDataAntrianSidangHariIni, role, testMode).then((message) => { 
+    const replacements = /panitera/i.test(role)
+      ? [{ id: "panitera-jadwal-sidang" }]
+      : [{ id: "hakim-jadwal-sidang" }];
+    runLegacyNotificationIfAllowed("sendAntrianSidangHariIni", replacements, () => sendAntrianSidangHariIni(id, nama, getDataAntrianSidangHariIni, role, testMode).then((message) => { 
       if (message) {
         console.log(`Pesan berhasil dikirim ke ${role} ${nama}`, id); 
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat antrian sidang hari ini:", error);
-    });
+    }));
   });
 }
 
@@ -1407,13 +2346,13 @@ const sendStatusSidangJurusita = async (id, nama, getDataPutusJurusita, getDataT
 // Fungsi untuk menjadwalkan tugas pengiriman status sidang jurusita
 const statusSidangJurusita = (cronTime, id, nama, getDataPutusJurusita, getDataTundaJurusita, role, testMode = false) => {
   cron.schedule(cronTime, () => {
-    sendStatusSidangJurusita(id, nama, getDataPutusJurusita, getDataTundaJurusita, role, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendStatusSidangJurusita", [{ id: "jurusita-status-relaas" }], () => sendStatusSidangJurusita(id, nama, getDataPutusJurusita, getDataTundaJurusita, role, testMode).then((message) => {
       if (message) {
           console.log(`Pesan berhasil dikirim ke ${nama}`, id);
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat:", error);
-    });
+    }));
   });
 };
 
@@ -1476,13 +2415,13 @@ const sendRelaasJurusita = async (id, nama, getBelumPanggilan, getDataBelumDeleg
 // Mengatur pengingat untuk relaas jurusita
 const statusRelaasJurusita = (id, nama, getBelumPanggilan, getDataBelumDelegasi, getDataPemberitahuanPutusanBelum, role, testMode = false) => {
   cron.schedule("00 09 * * Friday", () => {
-    sendRelaasJurusita(id, nama, getBelumPanggilan, getDataBelumDelegasi, getDataPemberitahuanPutusanBelum, role, testMode).then((message) => {
+    runLegacyNotificationIfAllowed("sendRelaasJurusita", [{ id: "jurusita-status-relaas" }], () => sendRelaasJurusita(id, nama, getBelumPanggilan, getDataBelumDelegasi, getDataPemberitahuanPutusanBelum, role, testMode).then((message) => {
       if (message) {
           console.log(`Pesan berhasil dikirim ke ${nama}`, id);
       }
     }).catch((error) => {
       console.error("Terjadi kesalahan saat mengirim pengingat:", error);
-    });
+    }));
   });
 };
 
@@ -1591,49 +2530,14 @@ const sendPihakBaru = async (testMode = false) => {
           `- Untuk informasi lebih lanjut, ketik "perkara" atau hubungi *0822-7111-5021*.\n` +
           `- Mohon isi survei di https://s.id/LTYh1`;
 
-          // Fungsi Pengiriman file edoc gugatan
-          const hostFilePath = `/var/www/html/SIPP/${pihak.petitum_dok}`;
-          const containerFilePath = path.join('temp', `${pihak.petitum_dok}`);
-          const containerHostname = 'aleta-bot-v2-container'; //ganti sesuai dengan nama docker container
-          const dockerCpCommand = `docker cp ${hostFilePath} ${containerHostname}:${containerFilePath}`;
-
-          exec(dockerCpCommand, async (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Gagal menyalin file: ${error.message}`);
-              return;
-            }
-            if (stderr) {
-              console.error(`Stderr dari perintah docker cp: ${stderr}`);
-              return;
-            }
-
-            console.log(`File berhasil disalin ke container: ${stdout}`);
-
-            const existsCommand = `docker exec ${containerHostname} test -f ${containerFilePath}`;
-            exec(existsCommand, async (checkError, checkStdout, checkStderr) => {
-              if (checkError) {
-                console.log(`File tidak ditemukan di container: ${checkError.message}`);
-                if (testMode) {
-                  console.log(`[TEST MODE] Akan mengirim pesan ke ${formattedNumber}:\n${message}`);
-                } else {
-                  await safeSendMessage(formattedNumber, message);
-                  console.log(`Pesan berhasil dikirim ke Penggugat Pihak Baru ${pihak.nama} (${formattedNumber}) untuk perkara ${pihak.nomor_perkara}`);
-                }
-                return;
-              }
-              if (checkStderr) {
-                console.error(`Stderr dari perintah pemeriksaan: ${checkStderr}`);
-                return;
-              }
-
-              // Kirim file melalui WhatsApp
-              const media = MessageMedia.fromFilePath(containerFilePath);
-              await safeSendMessage(formattedNumber, media, { caption: message });
-              console.log(`File .rtf berhasil dikirim ke ${formattedNumber}`);
-
-              // Hapus file sementara setelah dikirim
-              fs.unlinkSync(containerFilePath);
-            });
+          await sendSippDocumentNotification({
+            formattedNumber,
+            message,
+            documentPath: pihak.petitum_dok,
+            recipientRole: "Penggugat Pihak Baru",
+            recipientName: pihak.nama,
+            caseNumber: pihak.nomor_perkara,
+            testMode,
           });
         }
       }
@@ -1658,49 +2562,14 @@ const sendPihakBaru = async (testMode = false) => {
           `- Untuk informasi lebih lanjut, ketik "perkara" atau hubungi *0822-7111-5021*.\n` +
           `- Mohon isi survei di https://s.id/LTYh1`;
 
-          // Fungsi Pengiriman file edoc gugatan
-          const hostFilePath = `/var/www/html/SIPP/${pihak.petitum_dok}`;
-          const containerFilePath = path.join('temp', `${pihak.petitum_dok}`);
-          const containerHostname = 'aleta-bot-v2-container'; //ganti sesuai dengan nama docker container
-          const dockerCpCommand = `docker cp ${hostFilePath} ${containerHostname}:${containerFilePath}`;
-
-          exec(dockerCpCommand, async (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Gagal menyalin file: ${error.message}`);
-              return;
-            }
-            if (stderr) {
-              console.error(`Stderr dari perintah docker cp: ${stderr}`);
-              return;
-            }
-
-            console.log(`File berhasil disalin ke container: ${stdout}`);
-
-            const existsCommand = `docker exec ${containerHostname} test -f ${containerFilePath}`;
-            exec(existsCommand, async (checkError, checkStdout, checkStderr) => {
-              if (checkError) {
-                console.log(`File tidak ditemukan di container: ${checkError.message}`);
-                if (testMode) {
-                  console.log(`[TEST MODE] Akan mengirim pesan ke ${formattedNumber}:\n${message}`);
-                } else {
-                  await safeSendMessage(formattedNumber, message);
-                  console.log(`Pesan berhasil dikirim ke Tergugat Pihak Baru ${pihak.nama} (${formattedNumber}) untuk perkara ${pihak.nomor_perkara}`);
-                }
-                return;
-              }
-              if (checkStderr) {
-                console.error(`Stderr dari perintah pemeriksaan: ${checkStderr}`);
-                return;
-              }
-
-              // Kirim file melalui WhatsApp
-              const media = MessageMedia.fromFilePath(containerFilePath);
-              await safeSendMessage(formattedNumber, media, { caption: message });
-              console.log(`File .rtf berhasil dikirim ke ${formattedNumber}`);
-
-              // Hapus file sementara setelah dikirim
-              fs.unlinkSync(containerFilePath);
-            });
+          await sendSippDocumentNotification({
+            formattedNumber,
+            message,
+            documentPath: pihak.petitum_dok,
+            recipientRole: "Tergugat Pihak Baru",
+            recipientName: pihak.nama,
+            caseNumber: pihak.nomor_perkara,
+            testMode,
           });
         }
       }
@@ -1725,49 +2594,14 @@ const sendPihakBaru = async (testMode = false) => {
           `- Untuk informasi lebih lanjut, ketik "perkara" atau hubungi *0822-7111-5021*.\n` +
           `- Mohon isi survei di https://s.id/LTYh1`;
 
-          // Fungsi Pengiriman file edoc gugatan
-          const hostFilePath = `/var/www/html/SIPP/${kuasa.petitum_dok}`;
-          const containerFilePath = path.join('temp', `${kuasa.petitum_dok}`);
-          const containerHostname = 'aleta-bot-v2-container'; //ganti sesuai dengan nama docker container
-          const dockerCpCommand = `docker cp ${hostFilePath} ${containerHostname}:${containerFilePath}`;
-
-          exec(dockerCpCommand, async (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Gagal menyalin file: ${error.message}`);
-              return;
-            }
-            if (stderr) {
-              console.error(`Stderr dari perintah docker cp: ${stderr}`);
-              return;
-            }
-
-            console.log(`File berhasil disalin ke container: ${stdout}`);
-
-            const existsCommand = `docker exec ${containerHostname} test -f ${containerFilePath}`;
-            exec(existsCommand, async (checkError, checkStdout, checkStderr) => {
-              if (checkError) {
-                console.log(`File tidak ditemukan di container: ${checkError.message}`);
-                if (testMode) {
-                  console.log(`[TEST MODE] Akan mengirim pesan ke ${formattedNumber}:\n${message}`);
-                } else {
-                  await safeSendMessage(formattedNumber, message);
-                  console.log(`Pesan berhasil dikirim ke Kuasa Penggugat Pihak Baru ${kuasa.nama} (${formattedNumber}) untuk perkara ${kuasa.nomor_perkara}`);
-                }
-                return;
-              }
-              if (checkStderr) {
-                console.error(`Stderr dari perintah pemeriksaan: ${checkStderr}`);
-                return;
-              }
-
-              // Kirim file melalui WhatsApp
-              const media = MessageMedia.fromFilePath(containerFilePath);
-              await safeSendMessage(formattedNumber, media, { caption: message });
-              console.log(`File .rtf berhasil dikirim ke ${formattedNumber}`);
-
-              // Hapus file sementara setelah dikirim
-              fs.unlinkSync(containerFilePath);
-            });
+          await sendSippDocumentNotification({
+            formattedNumber,
+            message,
+            documentPath: kuasa.petitum_dok,
+            recipientRole: "Kuasa Penggugat Pihak Baru",
+            recipientName: kuasa.nama,
+            caseNumber: kuasa.nomor_perkara,
+            testMode,
           });
         }
       }
@@ -1792,49 +2626,14 @@ const sendPihakBaru = async (testMode = false) => {
           `- Untuk informasi lebih lanjut, ketik "perkara" atau hubungi *0822-7111-5021*.\n` +
           `- Mohon isi survei di https://s.id/LTYh1`;
 
-          // Fungsi Pengiriman file edoc gugatan
-          const hostFilePath = `/var/www/html/SIPP/${kuasa.petitum_dok}`;
-          const containerFilePath = path.join('temp', `${kuasa.petitum_dok}`);
-          const containerHostname = 'aleta-bot-v2-container'; //ganti sesuai dengan nama docker container
-          const dockerCpCommand = `docker cp ${hostFilePath} ${containerHostname}:${containerFilePath}`;
-
-          exec(dockerCpCommand, async (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Gagal menyalin file: ${error.message}`);
-              return;
-            }
-            if (stderr) {
-              console.error(`Stderr dari perintah docker cp: ${stderr}`);
-              return;
-            }
-
-            console.log(`File berhasil disalin ke container: ${stdout}`);
-
-            const existsCommand = `docker exec ${containerHostname} test -f ${containerFilePath}`;
-            exec(existsCommand, async (checkError, checkStdout, checkStderr) => {
-              if (checkError) {
-                console.log(`File tidak ditemukan di container: ${checkError.message}`);
-                if (testMode) {
-                  console.log(`[TEST MODE] Akan mengirim pesan ke ${formattedNumber}:\n${message}`);
-                } else {
-                  await safeSendMessage(formattedNumber, message);
-                  console.log(`Pesan berhasil dikirim ke Kuasa Tergugat Pihak Baru ${kuasa.nama} (${formattedNumber}) untuk perkara ${kuasa.nomor_perkara}`);
-                }
-                return;
-              }
-              if (checkStderr) {
-                console.error(`Stderr dari perintah pemeriksaan: ${checkStderr}`);
-                return;
-              }
-
-              // Kirim file melalui WhatsApp
-              const media = MessageMedia.fromFilePath(containerFilePath);
-              await safeSendMessage(formattedNumber, media, { caption: message });
-              console.log(`File .rtf berhasil dikirim ke ${formattedNumber}`);
-
-              // Hapus file sementara setelah dikirim
-              fs.unlinkSync(containerFilePath);
-            });
+          await sendSippDocumentNotification({
+            formattedNumber,
+            message,
+            documentPath: kuasa.petitum_dok,
+            recipientRole: "Kuasa Tergugat Pihak Baru",
+            recipientName: kuasa.nama,
+            caseNumber: kuasa.nomor_perkara,
+            testMode,
           });
         }
       }
@@ -1859,49 +2658,14 @@ const sendPihakBaru = async (testMode = false) => {
           `- Untuk informasi lebih lanjut, ketik "perkara" atau hubungi *0822-7111-5021*.\n` +
           `- Mohon isi survei di https://s.id/LTYh1`;
 
-          // Fungsi Pengiriman file edoc gugatan
-          const hostFilePath = `/var/www/html/SIPP/${turut.petitum_dok}`;
-          const containerFilePath = path.join('temp', `${kuasa.petitum_dok}`);
-          const containerHostname = 'aleta-bot-v2-container'; //ganti sesuai dengan nama docker container
-          const dockerCpCommand = `docker cp ${hostFilePath} ${containerHostname}:${containerFilePath}`;
-
-          exec(dockerCpCommand, async (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Gagal menyalin file: ${error.message}`);
-              return;
-            }
-            if (stderr) {
-              console.error(`Stderr dari perintah docker cp: ${stderr}`);
-              return;
-            }
-
-            console.log(`File berhasil disalin ke container: ${stdout}`);
-
-            const existsCommand = `docker exec ${containerHostname} test -f ${containerFilePath}`;
-            exec(existsCommand, async (checkError, checkStdout, checkStderr) => {
-              if (checkError) {
-                console.log(`File tidak ditemukan di container: ${checkError.message}`);
-                if (testMode) {
-                  console.log(`[TEST MODE] Akan mengirim pesan ke ${formattedNumber}:\n${message}`);
-                } else {
-                  await safeSendMessage(formattedNumber, message);
-                  console.log(`Pesan berhasil dikirim ke Kuasa Penggugat Pihak Baru ${kuasa.nama} (${formattedNumber}) untuk perkara ${kuasa.nomor_perkara}`);
-                }
-                return;
-              }
-              if (checkStderr) {
-                console.error(`Stderr dari perintah pemeriksaan: ${checkStderr}`);
-                return;
-              }
-
-              // Kirim file melalui WhatsApp
-              const media = MessageMedia.fromFilePath(containerFilePath);
-              await safeSendMessage(formattedNumber, media, { caption: message });
-              console.log(`File .rtf berhasil dikirim ke ${formattedNumber}`);
-
-              // Hapus file sementara setelah dikirim
-              fs.unlinkSync(containerFilePath);
-            });
+          await sendSippDocumentNotification({
+            formattedNumber,
+            message,
+            documentPath: turut.petitum_dok,
+            recipientRole: "Turut Tergugat Pihak Baru",
+            recipientName: turut.nama,
+            caseNumber: turut.nomor_perkara,
+            testMode,
           });
         }
       }
@@ -1926,49 +2690,14 @@ const sendPihakBaru = async (testMode = false) => {
           `- Untuk informasi lebih lanjut, ketik "perkara" atau hubungi *0822-7111-5021*.\n` +
           `- Mohon isi survei di https://s.id/LTYh1`;
 
-          // Fungsi Pengiriman file edoc gugatan
-          const hostFilePath = `/var/www/html/SIPP/${inv.petitum_dok}`;
-          const containerFilePath = path.join('temp', `${inv.petitum_dok}`);
-          const containerHostname = 'aleta-bot-v2-container'; //ganti sesuai dengan nama docker container
-          const dockerCpCommand = `docker cp ${hostFilePath} ${containerHostname}:${containerFilePath}`;
-
-          exec(dockerCpCommand, async (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Gagal menyalin file: ${error.message}`);
-              return;
-            }
-            if (stderr) {
-              console.error(`Stderr dari perintah docker cp: ${stderr}`);
-              return;
-            }
-
-            console.log(`File berhasil disalin ke container: ${stdout}`);
-
-            const existsCommand = `docker exec ${containerHostname} test -f ${containerFilePath}`;
-            exec(existsCommand, async (checkError, checkStdout, checkStderr) => {
-              if (checkError) {
-                console.log(`File tidak ditemukan di container: ${checkError.message}`);
-                if (testMode) {
-                  console.log(`[TEST MODE] Akan mengirim pesan ke ${formattedNumber}:\n${message}`);
-                } else {
-                  await safeSendMessage(formattedNumber, message);
-                  console.log(`Pesan berhasil dikirim ke Intervensi Pihak Baru ${inv.nama} (${formattedNumber}) untuk perkara ${inv.nomor_perkara}`);
-                }
-                return;
-              }
-              if (checkStderr) {
-                console.error(`Stderr dari perintah pemeriksaan: ${checkStderr}`);
-                return;
-              }
-
-              // Kirim file melalui WhatsApp
-              const media = MessageMedia.fromFilePath(containerFilePath);
-              await safeSendMessage(formattedNumber, media, { caption: message });
-              console.log(`File .rtf berhasil dikirim ke ${formattedNumber}`);
-
-              // Hapus file sementara setelah dikirim
-              fs.unlinkSync(containerFilePath);
-            });
+          await sendSippDocumentNotification({
+            formattedNumber,
+            message,
+            documentPath: inv.petitum_dok,
+            recipientRole: "Intervensi Pihak Baru",
+            recipientName: inv.nama,
+            caseNumber: inv.nomor_perkara,
+            testMode,
           });
         }
       }
@@ -1979,7 +2708,8 @@ const sendPihakBaru = async (testMode = false) => {
 };
 
 const sendMessagePihakBaru = (testMode = false) => {
-  cron.schedule("00 17 * * Monday-Friday", async () => {
+  cron.schedule("00 17 * * Monday-Friday", () => {
+    runLegacyNotificationIfAllowed("sendPihakBaru", [{ id: "pihak-baru", queryId: "legacy-pihak-baru" }, { id: "party-registration", queryId: "legacy-pihak-baru" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -1992,6 +2722,7 @@ const sendMessagePihakBaru = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -2093,7 +2824,8 @@ const sendPihakAktaCerai = async (testMode = false) => {
 };
 
 const sendMessagePihakAktaCerai = (testMode = false) => {
-  cron.schedule("00 16 * * *", async () => {
+  cron.schedule("00 16 * * *", () => {
+    runLegacyNotificationIfAllowed("sendPihakAktaCerai", [{ id: "pihak-akta-cerai", queryId: "legacy-pihak-akta-cerai" }, { id: "party-akta-cerai", queryId: "legacy-pihak-akta-cerai" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -2106,6 +2838,7 @@ const sendMessagePihakAktaCerai = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -2172,7 +2905,8 @@ const sendPihakSisaPanjar = async (testMode = false) => {
 };
 
 const sendMessagePihakPanjar = (testMode = false) => {
-  cron.schedule("00 19 * * *", async () => {
+  cron.schedule("00 19 * * *", () => {
+    runLegacyNotificationIfAllowed("sendPihakSisaPanjar", [{ id: "pihak-sisa-panjar", queryId: "legacy-pihak-sisa-panjar" }, { id: "party-sisa-panjar", queryId: "legacy-pihak-sisa-panjar" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -2185,6 +2919,7 @@ const sendMessagePihakPanjar = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -2232,7 +2967,8 @@ const sendPihakPanjarBelum = async (testMode = false) => {
 
 // Menjadwalkan pengiriman pesan panjar yang belum dibayar
 const sendMessagePihakPanjarBelum = (testMode = false) => {
-  cron.schedule("30 15 * * *", async () => { // Atur waktu sesuai kebutuhan
+  cron.schedule("30 15 * * *", () => { // Atur waktu sesuai kebutuhan
+    runLegacyNotificationIfAllowed("sendPihakPanjarBelum", [{ id: "pihak-sisa-panjar", queryId: "legacy-pihak-sisa-panjar" }, { id: "party-panjar-habis", queryId: "legacy-pihak-sisa-panjar" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -2245,6 +2981,7 @@ const sendMessagePihakPanjarBelum = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -2558,7 +3295,8 @@ const sendPihakPutusan = async (testMode = false) => {
 };
 
 const sendMessagePihakPutusan = (testMode = false) => {
-  cron.schedule("30 23 * * *", async () => {
+  cron.schedule("30 23 * * *", () => {
+    runLegacyNotificationIfAllowed("sendPihakPutusan", [{ id: "pihak-putusan", queryId: "legacy-pihak-putusan" }, { id: "party-putusan", queryId: "legacy-pihak-putusan" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -2571,6 +3309,7 @@ const sendMessagePihakPutusan = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -2866,7 +3605,8 @@ const sendPihakHariSidang = async (testMode = true) => {
 };
 
 const sendMessageHariSidang = (testMode = false) => {
-  cron.schedule("00 07 * * *", async () => {
+  cron.schedule("00 07 * * *", () => {
+    runLegacyNotificationIfAllowed("sendPihakHariSidang", [{ id: "pihak-hari-sidang", queryId: "legacy-pihak-hari-sidang" }, { id: "party-hari-sidang", queryId: "legacy-pihak-hari-sidang" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -2879,6 +3619,7 @@ const sendMessageHariSidang = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -3172,7 +3913,8 @@ const sendPihakSebelumHariSidang = async (testMode = true) => {
 };
 
 const sendMessageSebelumHariSidang = (testMode = false) => {
-  cron.schedule("00 09 * * *", async () => {
+  cron.schedule("00 09 * * *", () => {
+    runLegacyNotificationIfAllowed("sendPihakSebelumHariSidang", [{ id: "pihak-sebelum-sidang", queryId: "legacy-pihak-sebelum-sidang" }, { id: "party-sebelum-sidang", queryId: "legacy-pihak-sebelum-sidang" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -3185,6 +3927,7 @@ const sendMessageSebelumHariSidang = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -3412,7 +4155,8 @@ const sendPihakTundaCuti = async (testMode = true) => {
 };
 
 const sendMessageTundaCuti = (testMode = false) => {
-  cron.schedule("00 12 24 11 *", async () => {
+  cron.schedule("00 12 24 11 *", () => {
+    runLegacyNotificationIfAllowed("sendPihakTundaCuti", [{ id: "pihak-tunda-cuti", queryId: "legacy-pihak-tunda-cuti" }, { id: "party-tunda-cuti", queryId: "legacy-pihak-tunda-cuti" }], async () => {
       try {
           if (testMode) {
               console.log("Test mode aktif. Pesan tidak akan dikirim.");
@@ -3425,6 +4169,7 @@ const sendMessageTundaCuti = (testMode = false) => {
       } catch (error) {
           console.error("Terjadi kesalahan saat mengirim pesan:", error);
       }
+    });
   });
 };
 
@@ -3434,6 +4179,13 @@ sendMessageTundaCuti()
 
 // whatsapp api
 // ── WhatsApp Gateway Internal Routes (Task 1) ────────────────────────────────
+if (typeof internalGatewayRoutes.setRuntimeLifecycleHandlers === "function") {
+  internalGatewayRoutes.setRuntimeLifecycleHandlers({
+    startWhatsappClient,
+    processQueueNow: (options) => queueWorkerService.processNow(queuedMessageSender, options),
+    checkWhatsappStartupTimeout: markWhatsappInitializeTimeoutIfNeeded,
+  });
+}
 app.use("/internal/aleta-bot", internalGatewayRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3442,7 +4194,14 @@ const getRequestToken = (req) => {
   if (authHeader.toLowerCase().startsWith("bearer ")) {
     return authHeader.slice(7).trim();
   }
-  return req.get("x-aleta-internal-token") || req.get("x-aleta-bot-token") || req.query.token || "";
+  return req.get("x-aleta-internal-token") || req.get("x-aleta-bot-token") || "";
+};
+
+const safeCompareToken = (requestToken, configuredToken) => {
+  if (!requestToken || !configuredToken) return false;
+  const requestDigest = crypto.createHash("sha256").update(String(requestToken)).digest();
+  const configuredDigest = crypto.createHash("sha256").update(String(configuredToken)).digest();
+  return crypto.timingSafeEqual(requestDigest, configuredDigest);
 };
 
 const isLoopbackRequest = (req) => {
@@ -3459,7 +4218,7 @@ const ensureInternalAccess = (req, res, action = "internal_access") => {
     "";
   const requestToken = getRequestToken(req);
 
-  if (configuredToken && requestToken === configuredToken) {
+  if (configuredToken && safeCompareToken(requestToken, configuredToken)) {
     return true;
   }
 
@@ -3523,7 +4282,7 @@ app.get("/internal/aleta-bot/status", async (req, res) => {
     logService.getRecentLogs("whatsapp", 1),
     logService.getRecentLogs("notification", 1),
     publicQaIntentService.getPublicQaSnapshot(),
-    aiRuntimeConfigService.getAiRuntimeConfig().then(aiRuntimeConfigService.maskAiRuntimeConfig),
+    aiRuntimeConfigService.getMaskedAiRuntimeConfigWithHealthAlert("internal_status"),
     notificationRegistryService.getRegistrySnapshotAsync(),
   ]).then(([queueStats, messageStatsToday, systemStatsToday, whatsappEvents, notificationRuns, publicQa, aiConfig, registrySnapshot]) => res.status(200).json({
     status: true,
@@ -3539,8 +4298,11 @@ app.get("/internal/aleta-bot/status", async (req, res) => {
       notificationsEnabled: runtimeConfig.notificationsEnabled,
       dryRunEnabled: runtimeConfig.dryRunEnabled,
       messageDelayMs: runtimeConfig.messageDelayMs,
+      messageDelayMaxMs: runtimeConfig.messageDelayMaxMs,
       retryLimit: runtimeConfig.retryLimit,
+      sendingRiskLevel: runtimeConfig.sendingRiskLevel ?? null,
       sendingWindow: messageQueueService.getSendingWindowState(),
+      sendingPace: sendingPaceService.describePace(),
     },
     whatsappNumberResolver: {
       portalRecipientCount: legacyWhatsappMappingStats.portalRecipientCount,
@@ -3551,6 +4313,7 @@ app.get("/internal/aleta-bot/status", async (req, res) => {
     rateLimit: rateLimitService.getRateLimitStats(runtimeConfig),
     queue: queueStats,
     registry: registrySnapshot,
+    dynamicScheduler: dynamicNotificationSchedulerService.getSchedulerStatus(),
     dbConnections: externalDbService.listConnections(),
     publicQa,
     aiRuntime: aiConfig,
@@ -3628,6 +4391,85 @@ app.post("/internal/aleta-bot/whatsapp/connect", async (req, res) => {
   }
 });
 
+// Reset sesi WhatsApp: menyembuhkan sesi macet/korup agar QR baru bisa dibuat.
+// - soft (default): hentikan client, bersihkan lock, buat ulang client, inisiasi ulang.
+// - hard (hardReset: true): tambahan hapus folder sesi (paksa QR baru dari nol).
+app.post("/internal/aleta-bot/whatsapp/reset", async (req, res) => {
+  if (!ensureInternalAccess(req, res, "whatsapp_reset")) return;
+
+  const hardReset = Boolean(req.body?.hardReset || req.query?.hardReset === "true");
+  try {
+    // 1. Hentikan client aktif (best-effort).
+    try {
+      await destroyWhatsappClient("reset");
+    } catch (destroyError) {
+      logService.logSystemEvent({
+        eventType: "whatsapp_reset_destroy_warning",
+        severity: "warning",
+        message: "Destroy client saat reset tidak sempurna, lanjut reset.",
+        metadata: { errorMessage: getWhatsappStartupErrorMessage(destroyError) },
+      });
+    }
+    whatsappInitializePromise = null;
+
+    // 2. Bersihkan lock Chrome yang menggantung.
+    prepareWhatsappSessionForInitialize("reset");
+
+    // 3. Hard reset: hapus folder sesi agar login diminta ulang (QR baru).
+    let sessionCleared = false;
+    if (hardReset) {
+      const sessionDir = path.join(__dirname, ".wwebjs_auth", `session-${whatsappSessionName}`);
+      try {
+        fs.rmSync(sessionDir, { recursive: true, force: true });
+        sessionCleared = true;
+      } catch (rmError) {
+        logService.logSystemEvent({
+          eventType: "whatsapp_reset_session_rm_failed",
+          severity: "warning",
+          message: "Folder sesi WhatsApp gagal dihapus saat hard reset.",
+          metadata: { errorMessage: rmError && rmError.message ? rmError.message : String(rmError) },
+        });
+      }
+    }
+
+    // 4. Buat ulang instance client & inisiasi ulang → QR baru.
+    await sleep(800);
+    recreateWhatsappClientInstance("reset");
+    const result = await startWhatsappClient("reset");
+    const waState = whatsappStatusService.getStatus();
+
+    logService.logWhatsappEvent({
+      eventType: "internal_whatsapp_reset",
+      severity: "warning",
+      message: hardReset ? "Reset penuh sesi WhatsApp (hapus sesi)." : "Reset sesi WhatsApp (soft).",
+      metadata: { hardReset, sessionCleared, status: waState.status },
+    });
+
+    return res.status(200).json({
+      ok: true,
+      status: waState.status || result.status,
+      hardReset,
+      sessionCleared,
+      qrAvailable: waState.status === "qr_needed" && Boolean(waState.lastQrString),
+      message: hardReset
+        ? "Sesi WhatsApp direset penuh. Tunggu beberapa detik, QR baru akan muncul untuk dipindai."
+        : "Sesi WhatsApp dimulai ulang. Tunggu beberapa detik, QR akan muncul bila login diperlukan.",
+    });
+  } catch (error) {
+    logService.logSystemEvent({
+      eventType: "internal_whatsapp_reset_failed",
+      severity: "error",
+      message: "Endpoint reset WhatsApp internal gagal.",
+      metadata: { errorMessage: getWhatsappStartupErrorMessage(error), hardReset },
+    });
+    return res.status(500).json({
+      ok: false,
+      error: "reset_failed",
+      message: "Reset sesi WhatsApp gagal diproses.",
+    });
+  }
+});
+
 app.get("/internal/aleta-bot/whatsapp/diagnostics", async (req, res) => {
   if (!ensureInternalAccess(req, res, "whatsapp_diagnostics")) return;
 
@@ -3671,8 +4513,7 @@ app.get("/internal/aleta-bot/whatsapp/diagnostics", async (req, res) => {
 app.get("/internal/aleta-bot/ai-config", async (req, res) => {
   if (!ensureInternalAccess(req, res, "ai_config")) return;
   try {
-    const config = await aiRuntimeConfigService.getAiRuntimeConfig();
-    const masked = aiRuntimeConfigService.maskAiRuntimeConfig(config);
+    const masked = await aiRuntimeConfigService.getMaskedAiRuntimeConfigWithHealthAlert("ai_config_endpoint");
     res.status(200).json({
       ok: true,
       status: masked.status,
@@ -3885,18 +4726,17 @@ app.post("/send-message", async (req, res) => {
       message,
       category: "manual",
       notificationKey: "manual-send",
+      priority: 1,
       idempotencyKey,
-      metadata: { source: "post_send_message" },
+      metadata: { source: "post_send_message", processImmediately: true },
     });
-    const processed = await messageQueueService.processQueueBatch(1, (payload) =>
-      messageService.safeSendMessage({ client, sendFn: originalSendMessage, ...payload })
-    );
+    const processed = await queueWorkerService.processNow(queuedMessageSender, { reason: "manual_send_post", limit: 5 });
     res.status(200).json({ status: true, queued: true, item, processed });
     return;
   }
 
   const response = await messageService.safeSendMessage({
-    client,
+    client: ensureWhatsappClient("manual_send_post"),
     sendFn: originalSendMessage,
     to,
     message,
@@ -3923,7 +4763,7 @@ app.get("/send-message/:number/:message", async (req, res) => {
   let fix_message = split.join(" ");
 
   const response = await messageService.safeSendMessage({
-    client,
+    client: ensureWhatsappClient("manual_send_get"),
     sendFn: originalSendMessage,
     to: numberId,
     message: fix_message,
@@ -3953,7 +4793,7 @@ app.get("/send-message-group/:number/:message", async (req, res) => {
   let fix_message = split.join(" ");
 
   const response = await messageService.safeSendMessage({
-    client,
+    client: ensureWhatsappClient("manual_send_group_get"),
     sendFn: originalSendMessage,
     to: numberId,
     message: fix_message,
@@ -3976,7 +4816,7 @@ async function shutdownWhatsappClient(signal) {
   isShuttingDown = true;
   whatsappInitializePromise = null;
   try {
-    await client.destroy();
+    await destroyWhatsappClient(`shutdown_${signal}`);
     whatsappStatusService.setStatus("disconnected", "shutdown", {
       severity: "info",
       message: "WhatsApp client stopped without logout.",
@@ -4006,6 +4846,17 @@ process.once("SIGINT", () => {
 process.once("SIGTERM", () => {
   void shutdownWhatsappClient("SIGTERM");
 });
+
+// Inisiasi WhatsApp client dijalankan SEKALI di sini, setelah seluruh fungsi
+// (termasuk startWhatsappClient) selesai dideklarasikan. Dulu blok ini keliru
+// berada di dalam registerWhatsappClientEventHandlers sehingga ikut berjalan saat
+// client dibuat di awal modul — memicu ReferenceError (TDZ) startWhatsappClient.
+if (readRuntimeConfig().botEnabled) {
+  void startWhatsappClient("startup");
+} else {
+  whatsappStatusService.setStatus("disconnected", "initialize_skipped", { message: "Bot nonaktif dari konfigurasi portal." });
+  console.log("[ALETA Bot] Bot nonaktif dari konfigurasi portal. WhatsApp client tidak diinisialisasi.");
+}
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Aleta listening at port ${port}`);

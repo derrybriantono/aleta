@@ -30,7 +30,13 @@ export function UserAvatar({
   }
 
   return (
-    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary text-sm font-semibold", className, textClassName)}>
+    <div
+      className={cn(
+        "flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-300/25 bg-sky-950 text-sm font-bold text-sky-100 shadow-[0_10px_24px_rgba(8,47,73,0.30)] ring-1 ring-white/15",
+        className,
+        textClassName
+      )}
+    >
       {getInitials(name)}
     </div>
   );

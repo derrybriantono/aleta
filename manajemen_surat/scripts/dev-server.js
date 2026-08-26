@@ -25,7 +25,8 @@ try {
 
 const env = { ...process.env };
 if (!env.NODE_OPTIONS || !env.NODE_OPTIONS.includes("--max-old-space-size")) {
-  env.NODE_OPTIONS = [env.NODE_OPTIONS, "--max-old-space-size=2048"].filter(Boolean).join(" ");
+  const maxOldSpaceSizeMb = env.ALETA_DEV_MAX_OLD_SPACE_SIZE_MB || "4096";
+  env.NODE_OPTIONS = [env.NODE_OPTIONS, `--max-old-space-size=${maxOldSpaceSizeMb}`].filter(Boolean).join(" ");
 }
 
 function readPostgresTarget() {

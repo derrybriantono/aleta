@@ -5,6 +5,10 @@
 - [ ] Backup database berhasil.
 - [ ] `.env` portal tersedia dan secret tidak dicetak ke dokumen.
 - [ ] `.env` ALETA Bot tersedia dan token internal cocok dengan portal.
+- [ ] `ALETA_BOT_INTERNAL_API_TOKEN`/`ALETA_BOT_INTERNAL_TOKEN` sama di service `portal` dan `aleta_bot`.
+- [ ] Dashboard Admin ALETA Bot menampilkan `Token Internal: Sesuai`.
+- [ ] AI production memakai env key (`ALETA_BOT_AI_API_KEY_ENV=GEMINI_API_KEY` atau provider lain), bukan secret volatile.
+- [ ] Dashboard Admin ALETA Bot tidak menampilkan AI `needs_sync` atau `error`.
 - [ ] `node --version` dan `npm --version` terbaca.
 - [ ] `npm run build` portal PASS.
 - [ ] `npm test` portal PASS.
@@ -31,4 +35,3 @@
 - [ ] Pantau WhatsApp connected/disconnected.
 - [ ] Pantau feedback user hari pertama.
 - [ ] Jangan resend otomatis item gagal.
-

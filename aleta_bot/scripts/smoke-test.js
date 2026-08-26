@@ -77,6 +77,13 @@ async function main() {
   const wrongToken = await requestJson("/internal/aleta-bot/whatsapp/status", { tokenMode: "wrong" });
   checks.push(wrongToken.statusCode === 403 ? pass("internal_token_wrong_guard", "403 token salah") : fail("internal_token_wrong_guard", summarize(wrongToken)));
 
+  const tokenHealth = await requestJson("/internal/aleta-bot/security/token-health");
+  checks.push(
+    tokenHealth.ok && tokenHealth.json?.status === "ok"
+      ? pass("internal_token_health", "fingerprint tersedia")
+      : fail("internal_token_health", summarize(tokenHealth))
+  );
+
   const status = await requestJson("/internal/aleta-bot/whatsapp/status");
   checks.push(status.ok ? pass("whatsapp_status", status.json?.status || "") : fail("whatsapp_status", summarize(status)));
   if (status.ok && status.json?.status !== "connected") {

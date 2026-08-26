@@ -24,8 +24,9 @@ function audiencesForUser(roleId: string | null | undefined, positionLabel: stri
   if (roleId === "admin") audiences.add("admin");
   if (roleId === "ketua" || roleId === "wakil-ketua") audiences.add("pimpinan");
   if (roleId === "hakim") audiences.add("hakim");
-  if (roleId === "panitera") audiences.add("panitera");
-  if (roleId === "sekretaris" || roleId === "pejabat-struktural") audiences.add("admin");
+  if (roleId === "panitera" || roleId === "panitera-muda" || roleId === "panitera-pengganti" || roleId === "analis-perkara") audiences.add("panitera");
+  if (roleId === "jurusita") audiences.add("jurusita");
+  if (roleId === "sekretaris" || roleId === "kasubag" || roleId === "pejabat-struktural") audiences.add("admin");
 
   if (normalizedPosition.includes("panmud") || normalizedPosition.includes("panitera muda")) audiences.add("panitera");
   if (normalizedPosition.includes("jurusita")) audiences.add("jurusita");
@@ -53,11 +54,11 @@ function guideMatchesSearch(guide: UserGuide, search: string) {
 }
 
 export default function UserGuidePage() {
-  const { currentUser } = usePortal();
+  const { currentUser, positions } = usePortal();
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState<GuideModule | "all">("all");
   const roleLabel = getUserRoleBadge(currentUser);
-  const positionLabel = getUserPositionLabel(currentUser);
+  const positionLabel = getUserPositionLabel(currentUser, positions);
   const roleId = getEffectiveRoleId(currentUser);
   const audiences = useMemo(() => audiencesForUser(roleId, positionLabel), [roleId, positionLabel]);
 
