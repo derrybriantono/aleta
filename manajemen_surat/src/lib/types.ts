@@ -313,6 +313,14 @@ export interface PanelSettings {
   portalCards: PortalCardVisibility;
   publicAccess: PublicAccessSettings;
   externalApps: Record<ExternalAppId, ExternalAppLaunchSettings>;
+  /**
+   * Alamat pintu berpikir bebas di luar berkas (I7).
+   *
+   * Sengaja hanya alamat - bukan kredensial, bukan pengaturan SSO seperti
+   * externalApps. Pintu ini tidak membawa apa pun dari berkas, jadi tidak ada
+   * yang perlu diautentikasi ALETA di sana.
+   */
+  pintuAiBebas?: string;
   updatedAt?: string;
 }
 

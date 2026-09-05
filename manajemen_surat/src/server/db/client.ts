@@ -271,6 +271,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_pertimbangan_butir",
   "aleta_pertimbangan_rujukan",
   "aleta_pertimbangan_asal",
+  "aleta_ai_saklar",
   "aleta_ai_percakapan",
   "aleta_ai_pesan",
   "aleta_ai_fakta",

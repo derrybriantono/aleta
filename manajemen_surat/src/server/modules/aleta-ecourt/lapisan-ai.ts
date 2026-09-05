@@ -11,6 +11,7 @@ import {
   type Kiriman,
 } from "@/lib/penjawab";
 import { buatPenyamar } from "@/lib/penyamaran";
+import { hitungSaklar, periksaSaklar, type Keputusan, type Saklar } from "@/lib/saklar-ai";
 import { periksaUsulan, type UsulanButir } from "@/lib/usulan-pertimbangan";
 import type { AletaDatabase } from "@/server/db/client";
 import { bukaJangkar, cariPasal } from "@/server/modules/aleta-ecourt/pustaka-hukum";
@@ -491,5 +492,85 @@ export async function usulkanButirKePustaka(
   return { ok: true, butirId };
 }
 
+// =============================================================================
+// I6 - SAKLAR MATI: PER PENGADILAN, PER PERAN, ATAU PER PERKARA
+// =============================================================================
+
+export async function bacaSaklar(db: AletaDatabase): Promise<Saklar[]> {
+  const baris = await db.queryAll<Record<string, unknown>>(
+    `SELECT lingkup, kunci, menyala, alasan, diputuskan_oleh FROM aleta_ai_saklar`
+  );
+  return baris.map((item) => ({
+    lingkup: bersih(item.lingkup) as Saklar["lingkup"],
+    kunci: bersih(item.kunci),
+    menyala: Number(item.menyala ?? 1) === 1,
+    alasan: bersih(item.alasan),
+    diputuskanOleh: bersih(item.diputuskan_oleh),
+  }));
+}
+
+/**
+ * Keadaan AI untuk satu konteks - dibaca SETIAP KALI, tidak disimpan.
+ *
+ * Saklar mati yang baru berlaku sesudah singgahan kedaluwarsa bukan saklar
+ * mati. Hakim yang menekannya pada perkara yang sedang disorot berharap
+ * pengiriman berhenti saat itu juga, bukan sepuluh menit lagi - dan sepuluh
+ * menit sudah cukup untuk beberapa pertanyaan.
+ */
+export async function keadaanAi(
+  db: AletaDatabase,
+  konteks: { peran: string; perkaraId: string },
+  globalMenyala: boolean
+): Promise<Keputusan> {
+  return hitungSaklar(await bacaSaklar(db), konteks, globalMenyala);
+}
+
+/**
+ * Menyimpan satu saklar.
+ *
+ * Ditimpa bila lingkup dan kuncinya sudah ada - dua baris yang bertentangan
+ * untuk satu kunci akan membuat keadaan AI bergantung urutan baca, dan urutan
+ * baca bukan sesuatu yang pernah diputuskan siapa pun.
+ */
+export async function simpanSaklar(
+  db: AletaDatabase,
+  masukan: { lingkup: string; kunci: string; menyala: boolean; alasan: string; oleh: string }
+): Promise<{ ok: boolean; sebab?: string }> {
+  const periksa = periksaSaklar(masukan);
+  if (!periksa.ok) return periksa;
+
+  const lingkup = bersih(masukan.lingkup);
+  const kunci = lingkup === "pengadilan" ? "" : bersih(masukan.kunci);
+  const sekarang = new Date().toISOString();
+
+  const sudahAda = await db.queryOne<Record<string, unknown>>(
+    `SELECT id FROM aleta_ai_saklar WHERE lingkup = ? AND kunci = ?`,
+    [lingkup, kunci]
+  );
+
+  if (sudahAda) {
+    await db.run(
+      `UPDATE aleta_ai_saklar SET menyala = ?, alasan = ?, diputuskan_oleh = ?, diubah_at = ? WHERE id = ?`,
+      [masukan.menyala ? 1 : 0, bersih(masukan.alasan), bersih(masukan.oleh), sekarang, bersih(sudahAda.id)]
+    );
+  } else {
+    await db.run(
+      `INSERT INTO aleta_ai_saklar (id, lingkup, kunci, menyala, alasan, diputuskan_oleh, dibuat_at, diubah_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        randomUUID(),
+        lingkup,
+        kunci,
+        masukan.menyala ? 1 : 0,
+        bersih(masukan.alasan),
+        bersih(masukan.oleh),
+        sekarang,
+        sekarang,
+      ]
+    );
+  }
+  return { ok: true };
+}
+
 export { periksaTarikan, periksaUsulan };
-export type { HasilTarik, MasukanTarik, UsulanButir };
+export type { HasilTarik, MasukanTarik, UsulanButir, Keputusan, Saklar };

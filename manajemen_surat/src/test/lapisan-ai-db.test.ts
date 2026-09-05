@@ -11,6 +11,8 @@ import {
   pesanPercakapan,
   sahkanFakta,
   simpanFakta,
+  keadaanAi,
+  simpanSaklar,
   usulkanButirKePustaka,
   type PemanggilModel,
 } from "@/server/modules/aleta-ecourt/lapisan-ai";
@@ -355,5 +357,101 @@ describe("usulan butir masuk pustaka sebagai usulan", () => {
       [hasil.butirId]
     );
     expect(rujukan.map((item) => String(item.jangkar))).toContain("uu-1-1974/pasal-39");
+  });
+});
+
+describe("saklar mati tersimpan dan berlaku (I6)", () => {
+  const KONTEKS = { peran: "hakim", perkaraId: "10601" };
+
+  it("tanpa saklar, keadaannya mengikuti setelan global", async () => {
+    const basis = await basisData();
+    expect((await keadaanAi(basis, KONTEKS, true)).menyala).toBe(true);
+    expect((await keadaanAi(basis, KONTEKS, false)).menyala).toBe(false);
+  });
+
+  it("saklar perkara mati menghentikan perkara itu saja", async () => {
+    const basis = await basisData();
+    await simpanSaklar(basis, {
+      lingkup: "perkara",
+      kunci: "10601",
+      menyala: false,
+      alasan: "para pihak dikenal luas",
+      oleh: "Dra. Siti Zubaidah, M.H.",
+    });
+
+    const dimatikan = await keadaanAi(basis, KONTEKS, true);
+    expect(dimatikan.menyala).toBe(false);
+    expect(dimatikan.sebab).toContain("para pihak dikenal luas");
+
+    expect((await keadaanAi(basis, { peran: "hakim", perkaraId: "10999" }, true)).menyala).toBe(true);
+  });
+
+  it("mematikan tanpa alasan DITOLAK, dan tidak menyisakan baris apa pun", async () => {
+    const basis = await basisData();
+    const hasil = await simpanSaklar(basis, {
+      lingkup: "perkara",
+      kunci: "10601",
+      menyala: false,
+      alasan: "",
+      oleh: "Hakim A",
+    });
+    expect(hasil.ok).toBe(false);
+    expect(hasil.sebab).toContain("beralasan");
+    // Penolakannya terjadi sebelum menyentuh basis data - saklar setengah
+    // tersimpan tanpa alasan akan mematikan AI tanpa ada yang tahu mengapa.
+    expect(await basis.queryAll(`SELECT id FROM aleta_ai_saklar`)).toHaveLength(0);
+  });
+
+  it("saklar ditimpa, bukan ditumpuk", async () => {
+    // Dua baris yang bertentangan untuk satu kunci membuat keadaan AI
+    // bergantung urutan baca, dan urutan baca tidak pernah diputuskan siapa pun.
+    const basis = await basisData();
+    await simpanSaklar(basis, { lingkup: "perkara", kunci: "10601", menyala: false, alasan: "a", oleh: "X" });
+    await simpanSaklar(basis, { lingkup: "perkara", kunci: "10601", menyala: true, alasan: "", oleh: "X" });
+
+    const baris = await basis.queryAll(`SELECT id FROM aleta_ai_saklar WHERE kunci = '10601'`);
+    expect(baris).toHaveLength(1);
+    expect((await keadaanAi(basis, KONTEKS, true)).menyala).toBe(true);
+  });
+
+  it("saklar pengadilan mati tidak dapat dinyalakan saklar perkara", async () => {
+    const basis = await basisData();
+    await simpanSaklar(basis, {
+      lingkup: "pengadilan",
+      kunci: "",
+      menyala: false,
+      alasan: "menunggu keputusan pimpinan",
+      oleh: "Ketua",
+    });
+    await simpanSaklar(basis, { lingkup: "perkara", kunci: "10601", menyala: true, alasan: "", oleh: "Hakim" });
+
+    const hasil = await keadaanAi(basis, KONTEKS, true);
+    expect(hasil.menyala).toBe(false);
+    expect(hasil.dimatikanOleh).toBe("pengadilan");
+  });
+
+  it("saklar mati benar-benar menghentikan pemanggilan model", async () => {
+    // Inilah yang membedakan saklar dari tampilan: bukan jawabannya yang
+    // berubah, melainkan modelnya tidak tersentuh sama sekali.
+    const basis = await basisData();
+    await simpanSaklar(basis, {
+      lingkup: "perkara",
+      kunci: "10601",
+      menyala: false,
+      alasan: "perkara disorot",
+      oleh: "Hakim",
+    });
+    const { catatan, panggil } = pemanggilPalsu();
+    const saklar = await keadaanAi(basis, KONTEKS, true);
+
+    const hasil = await jawab(basis, {
+      pertanyaan: "apa pun",
+      ai: { menyala: saklar.menyala, sebab: saklar.sebab },
+      panggilModel: panggil,
+    });
+
+    expect(catatan.dipanggil).toBe(0);
+    expect(hasil.jawaban.dijawabOleh).toBe("tidakDijawab");
+    expect(hasil.jawaban.peringatan.join(" ")).toContain("perkara disorot");
   });
 });

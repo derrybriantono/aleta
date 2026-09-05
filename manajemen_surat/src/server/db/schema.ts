@@ -577,6 +577,19 @@ const schemaStatements = [
     tanggal TEXT NOT NULL DEFAULT '',
     urutan_alinea INTEGER NOT NULL DEFAULT 0
   )`,
+  // Saklar mati AI. Satu baris mati mematikan seluruhnya - baris menyala
+  // tidak pernah membatalkan baris mati di lingkup mana pun, sebab saklar
+  // yang dapat dibatalkan lapisan lain bukan saklar.
+  `CREATE TABLE IF NOT EXISTS aleta_ai_saklar (
+    id TEXT PRIMARY KEY,
+    lingkup TEXT NOT NULL CHECK (lingkup IN ('pengadilan', 'peran', 'perkara')),
+    kunci TEXT NOT NULL DEFAULT '',
+    menyala INTEGER NOT NULL DEFAULT 1,
+    alasan TEXT NOT NULL DEFAULT '',
+    diputuskan_oleh TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
   // Lapisan AI. Yang disimpan bukti, bukan kenyamanan: naskah jadi terlihat
   // sama persis apa pun asalnya, jadi asalnya harus dicatat di luar naskah.
   `CREATE TABLE IF NOT EXISTS aleta_ai_percakapan (
@@ -2425,6 +2438,8 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_asal_kunci ON aleta_pertimbangan_asal(butir_id, perkara_id, urutan_alinea)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_saklar_kunci ON aleta_ai_saklar(lingkup, kunci)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_saklar_mati ON aleta_ai_saklar(menyala)`,
   `CREATE INDEX IF NOT EXISTS idx_ai_percakapan_perkara ON aleta_ai_percakapan(perkara_id, diubah_at)`,
   `CREATE INDEX IF NOT EXISTS idx_ai_pesan_percakapan ON aleta_ai_pesan(percakapan_id, urutan)`,
   `CREATE INDEX IF NOT EXISTS idx_ai_fakta_perkara ON aleta_ai_fakta(perkara_id, nama)`,

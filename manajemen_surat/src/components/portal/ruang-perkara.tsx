@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
+import { PintuAiBebas } from "@/components/portal/pintu-ai-bebas";
 import { RujukanPasal } from "@/components/portal/rujukan-pasal";
 import { EmptyState, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -212,7 +213,7 @@ function BarisBerkas({ nama, bagian }: { nama: string; bagian: Bagian }) {
 }
 
 export function RuangPerkara() {
-  const { currentUser } = usePortal();
+  const { currentUser, panelSettings } = usePortal();
   const peran = (currentUser?.roleId ?? "staf") as RoleId;
   const namaSaya = currentUser?.name ?? "";
 
@@ -658,6 +659,14 @@ export function RuangPerkara() {
                 ) : null}
               </CardContent>
             </Card>
+          ) : null}
+
+          {aktif === "pemeriksaan" ? (
+            /* Pintu berpikir bebas diletakkan di sini, bukan di panelnya
+               sendiri: yang membukanya justru orang yang baru saja menemui
+               batas pemeriksaan, dan pintu yang harus dicari dulu akan
+               digantikan tab lain yang tidak terlihat siapa pun. */
+            <PintuAiBebas alamat={panelSettings?.pintuAiBebas ?? ""} />
           ) : null}
 
           {aktif === "jejak" ? (

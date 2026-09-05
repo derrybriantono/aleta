@@ -6,12 +6,14 @@ import { susunPerintah } from "@/lib/fakta-tak-berpola";
 import { siapkanKiriman } from "@/lib/penjawab";
 import { buatPenyamar } from "@/lib/penyamaran";
 import { getDatabase } from "@/server/db/client";
-import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAdminIstimewa, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
   bukaPercakapan,
   catatPutaran,
   faktaPerkara,
   jawab,
+  keadaanAi,
+  simpanSaklar,
   periksaTarikan,
   periksaUsulan,
   pesanPercakapan,
@@ -42,6 +44,7 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"tarikFakta"}    menarik fakta dari naskah tak berpola (I1)
  *   POST {tindakan:"sahkanFakta"}   menegaskan satu fakta
  *   POST {tindakan:"usulkanButir"}  memasukkan alinea model ke pustaka (I2, I4)
+ *   POST {tindakan:"saklar"}        mematikan atau menyalakan AI (I6)
  *
  * ============================================================================
  * KEWENANGANNYA SAMA DENGAN MEMBUKA BERKAS, DAN ITU DISENGAJA
@@ -100,6 +103,10 @@ type Masukan = {
   olehNama?: string;
   teks?: string;
   isu?: string;
+  lingkup?: string;
+  kunci?: string;
+  menyala?: boolean;
+  alasan?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -115,7 +122,10 @@ export async function POST(request: NextRequest) {
 
     switch (String(masukan.tindakan ?? "")) {
       case "tanya": {
-        const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt");
+        const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt", {
+          peran: await peranAktor(db, aktor),
+          perkaraId: String(masukan.perkaraId ?? ""),
+        });
         const hasil = await jawab(db, {
           pertanyaan: String(masukan.pertanyaan ?? ""),
           jenisPerkara: String(masukan.jenisPerkara ?? ""),
@@ -162,7 +172,10 @@ export async function POST(request: NextRequest) {
           return ok({ ok: false, sebab: "Naskah dan daftar ruas yang diminta wajib diisi." });
         }
 
-        const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt");
+        const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt", {
+          peran: await peranAktor(db, aktor),
+          perkaraId: String(masukan.perkaraId ?? ""),
+        });
         if (!keadaan.menyala || !panggil) {
           return ok({ ok: false, sebab: keadaan.sebab || "AI sedang dimatikan." });
         }
@@ -244,6 +257,25 @@ export async function POST(request: NextRequest) {
         return ok({ ...hasil, usulan });
       }
 
+      case "saklar": {
+        // Lingkup pengadilan dan peran menuntut admin - keduanya mengenai
+        // orang lain. Lingkup perkara TIDAK: hakim yang menanganinya berhak
+        // memutuskan tidak ada apa pun dari berkas itu yang keluar, dan
+        // kehati-hatian yang menuntut izin berhenti dilakukan.
+        if (String(masukan.lingkup ?? "") !== "perkara") {
+          await pastikanAdminIstimewa(db, actorUserId, "mengubah saklar AI");
+        }
+        return ok(
+          await simpanSaklar(db, {
+            lingkup: String(masukan.lingkup ?? ""),
+            kunci: String(masukan.kunci ?? ""),
+            menyala: Boolean(masukan.menyala),
+            alasan: String(masukan.alasan ?? ""),
+            oleh: String(masukan.olehNama ?? "") || aktor,
+          })
+        );
+      }
+
       default:
         return ok({ ok: false, sebab: "Tindakan tidak dikenali." });
     }
@@ -278,6 +310,24 @@ async function aturanBatas(db: Awaited<ReturnType<typeof getDatabase>>) {
   return [...tersimpan, ...BATAS_BAWAAN];
 }
 
+/**
+ * Peran aktor, untuk saklar lingkup peran.
+ *
+ * Gagal membacanya mengembalikan kosong, dan kosong TIDAK cocok dengan saklar
+ * peran mana pun - artinya kegagalan membaca peran tidak pernah mematikan AI
+ * bagi orang yang perannya tidak sedang dimatikan, dan tidak pernah pula
+ * menyalakannya bagi yang dimatikan lewat lingkup lain.
+ */
+async function peranAktor(db: Awaited<ReturnType<typeof getDatabase>>, aktor: string): Promise<string> {
+  if (!aktor) return "";
+  try {
+    const baris = await db.queryOne<Record<string, unknown>>(`SELECT role_id FROM users WHERE id = ?`, [aktor]);
+    return String(baris?.role_id ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
 type MasukanDariModel = { nama?: string; jenis?: string; nilai?: string; kutipan?: string; halaman?: number };
 
 /**
@@ -290,14 +340,19 @@ type MasukanDariModel = { nama?: string; jenis?: string; nilai?: string; kutipan
  */
 async function siapkanModel(
   db: Awaited<ReturnType<typeof getDatabase>>,
-  moduleKey: string
+  moduleKey: string,
+  konteks: { peran: string; perkaraId: string }
 ): Promise<{ keadaan: { menyala: boolean; sebab: string }; panggil?: PemanggilModel }> {
   try {
     const setelan = await getAISettingsFromDb(db);
     const sambungan = resolveLiveAIConnectionForModule(setelan, moduleKey);
 
-    if (!setelan.enabled) {
-      return { keadaan: { menyala: false, sebab: "AI sedang dimatikan administrator." } };
+    // Saklar dibaca SETIAP KALI, tidak disinggahkan. Saklar mati yang baru
+    // berlaku sesudah singgahan kedaluwarsa bukan saklar mati - dan sepuluh
+    // menit sudah cukup untuk beberapa pertanyaan.
+    const saklar = await keadaanAi(db, konteks, setelan.enabled);
+    if (!saklar.menyala) {
+      return { keadaan: { menyala: false, sebab: saklar.sebab } };
     }
     if (!sambungan) {
       return { keadaan: { menyala: false, sebab: "Belum ada penyedia AI yang tersetel untuk modul ini." } };

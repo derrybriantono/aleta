@@ -74,6 +74,18 @@ export const DEFAULT_PANEL_SETTINGS: PanelSettings = {
   externalApps: DEFAULT_EXTERNAL_APP_SETTINGS,
 };
 
+/** Alamat yang boleh dipasang sebagai pintu: hanya http dan https. */
+function alamatAman(nilai: unknown): string {
+  const teks = String(nilai ?? "").trim();
+  if (!teks) return "";
+  try {
+    const alamat = new URL(teks);
+    return alamat.protocol === "http:" || alamat.protocol === "https:" ? alamat.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 export function isFooterMode(value: unknown): value is FooterMode {
   return value === "auto" || value === "compact" || value === "full";
 }
@@ -85,6 +97,7 @@ export function normalizePanelSettings(
         portalCards?: unknown;
         publicAccess?: unknown;
         externalApps?: unknown;
+        pintuAiBebas?: unknown;
         updatedAt?: unknown;
       }
     | null
@@ -95,6 +108,10 @@ export function normalizePanelSettings(
     portalCards: normalizePortalCardVisibility(value?.portalCards),
     publicAccess: normalizePublicAccessSettings(value?.publicAccess),
     externalApps: normalizeExternalAppSettings(value?.externalApps),
+    // Hanya alamat http/https yang diterima. Alamat berskema lain -
+    // javascript:, data: - akan dijalankan peramban sebagai kode saat pintunya
+    // ditekan, dan yang menekannya mengira sedang membuka tab biasa.
+    pintuAiBebas: alamatAman(value?.pintuAiBebas),
     updatedAt: typeof value?.updatedAt === "string" ? value.updatedAt : undefined,
   };
 }
