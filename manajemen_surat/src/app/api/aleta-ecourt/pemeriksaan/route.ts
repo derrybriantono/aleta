@@ -25,10 +25,34 @@ export const dynamic = "force-dynamic";
 /**
  * Pemeriksaan perkara menurut aturan hukum (G1-G5).
  *
- * Namanya sengaja BUKAN "analisa": rute aleta-ecourt/analisa milik layar
- * Status Perkara menghitung angka dari SIPP, sedangkan yang di sini mengadu
- * fakta dengan aturan hukum. Dua folder bernama nyaris sama di satu tempat
- * adalah jebakan bagi siapa pun yang menyuntingnya kelak.
+ * ============================================================================
+ * INI BUKAN SAUDARA aleta-ecourt/analisa, MESKI NAMANYA TERDENGAR MIRIP
+ * ============================================================================
+ *
+ * Tiga rute di folder ini menjawab pertanyaan tentang satu perkara, dan
+ * ketiganya sengaja tetap terpisah:
+ *
+ *   status-perkara/  keterangan perkara dari SIPP; 31 kueri, dimuat di muka
+ *   analisa/         sebelas hitungan dari register; dimuat saat diminta
+ *   pemeriksaan/     INI - aturan hukum diadu dengan fakta perkara
+ *
+ * Dua yang pertama memang bersaudara: sumbernya sama (MySQL SIPP lewat
+ * jembatan bot), kewenangannya sama (`panel`), dan dipisah SEMATA karena
+ * beban. Menyatukannya kembali mengembalikan beban itu ke pembukaan perkara.
+ *
+ * Yang ini berbeda pada tiga hal yang menentukan: sumbernya pustaka hukum di
+ * Postgres portal, bukan register; ia MENULIS - aturan dan sidik pola; dan
+ * mengubah aturannya menuntut Super Admin, sebab satu aturan yang keliru
+ * salah pada SETIAP perkara yang diperiksanya.
+ *
+ * Karena itu ia tidak boleh disatukan ke salah satu yang lain: satu
+ * kewenangan harus menang, dan kedua arahnya salah. Bila `panel` yang menang,
+ * aturan hukum dapat diubah siapa pun yang boleh membuka panel; bila
+ * kewenangan admin yang menang, panel statistik yang sudah dipakai hari ini
+ * berhenti bekerja.
+ *
+ * Yang disatukan adalah PINTU MASUKNYA: ketiganya sampai ke layar
+ * /perkara, dan pemakainya tidak perlu tahu ada tiga.
  *
  *   GET                                   daftar aturan pemeriksaan
  *   GET ?aktif=1                          hanya yang sudah disahkan

@@ -10,10 +10,12 @@ import {
   Loader2,
   Scale,
   Search,
+  TrendingUp,
   TriangleAlert,
   XCircle,
 } from "lucide-react";
 
+import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
 import { RujukanPasal } from "@/components/portal/rujukan-pasal";
 import { EmptyState, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +52,33 @@ import type { RoleId } from "@/lib/types";
  * dan layar yang menyembunyikan sesuatu yang sebenarnya boleh dilihat hanya
  * akan membuat orang mencarinya lewat jalan lain, atau meminta dibukakan
  * kewenangan yang lebih besar daripada yang ia perlukan.
+ *
+ * ============================================================================
+ * TIGA RUTE BERSEBELAHAN, DAN MENGAPA KETIGANYA TETAP TERPISAH
+ * ============================================================================
+ *
+ * Layar ini memanggil tiga rute yang sekilas menjawab pertanyaan yang sama
+ * tentang satu perkara:
+ *
+ *   status-perkara/  keterangan perkara dari SIPP - 31 kueri, dimuat di muka
+ *   analisa/         sebelas hitungan dari register - dimuat saat diminta
+ *   pemeriksaan/     aturan hukum diadu dengan fakta - dari pustaka, bukan SIPP
+ *
+ * Dua yang pertama memang bersaudara: sumbernya sama, kewenangannya sama
+ * (panel), dan dipisah SEMATA karena beban - menjalankan sebelas agregasi saat
+ * perkara dibuka berarti membuka perkara menunggu angka yang mungkin tidak
+ * dilihat siapa pun. Menyatukannya kembali akan mengembalikan beban itu.
+ *
+ * Yang ketiga bukan saudara mereka meski namanya terdengar mirip. Ia membaca
+ * pustaka hukum, bukan register; menulis aturan dan sidik pola; dan menuntut
+ * kewenangan Super Admin untuk mengubahnya. Menyatukannya ke salah satu yang
+ * lain memaksa satu kewenangan menang - dan kedua arahnya salah: bila `panel`
+ * yang menang, aturan hukum dapat diubah siapa pun yang boleh membuka panel;
+ * bila kewenangan admin yang menang, panel statistik yang sudah dipakai hari
+ * ini berhenti bekerja.
+ *
+ * Maka yang disatukan PINTU MASUKNYA, bukan rutenya. Ketiganya sampai ke
+ * layar ini, dan pemakainya tidak perlu tahu ada tiga.
  *
  * ============================================================================
  * TELAAH PER ALINEA (H3)
@@ -130,11 +159,12 @@ type Jejak = {
   lubang: string[];
 };
 
-type KunciPanel = "berkas" | "riwayat" | "pemeriksaan" | "draf" | "jejak";
+type KunciPanel = "berkas" | "riwayat" | "statistik" | "pemeriksaan" | "draf" | "jejak";
 
 const PANEL: Array<{ kunci: KunciPanel; judul: string; ikon: typeof FileText }> = [
   { kunci: "berkas", judul: "Berkas", ikon: FileText },
   { kunci: "riwayat", judul: "Riwayat", ikon: History },
+  { kunci: "statistik", judul: "Statistik", ikon: TrendingUp },
   { kunci: "pemeriksaan", judul: "Pemeriksaan", ikon: Scale },
   { kunci: "draf", judul: "Draf putusan", ikon: FileSignature },
   { kunci: "jejak", judul: "Jejak", ikon: ClipboardList },
@@ -149,16 +179,16 @@ const PANEL: Array<{ kunci: KunciPanel; judul: string; ikon: typeof FileText }> 
  * peran baru kehilangan bagian tanpa ada yang menyadarinya.
  */
 const URUTAN_PERAN: Partial<Record<RoleId, KunciPanel[]>> = {
-  hakim: ["pemeriksaan", "draf", "berkas", "riwayat", "jejak"],
-  ketua: ["pemeriksaan", "draf", "berkas", "riwayat", "jejak"],
-  "wakil-ketua": ["pemeriksaan", "draf", "berkas", "riwayat", "jejak"],
-  panitera: ["riwayat", "berkas", "draf", "pemeriksaan", "jejak"],
-  "panitera-pengganti": ["riwayat", "berkas", "draf", "pemeriksaan", "jejak"],
-  "panitera-muda": ["riwayat", "berkas", "pemeriksaan", "draf", "jejak"],
-  "analis-perkara": ["pemeriksaan", "berkas", "riwayat", "jejak", "draf"],
+  hakim: ["pemeriksaan", "draf", "berkas", "riwayat", "statistik", "jejak"],
+  ketua: ["pemeriksaan", "draf", "statistik", "berkas", "riwayat", "jejak"],
+  "wakil-ketua": ["pemeriksaan", "draf", "statistik", "berkas", "riwayat", "jejak"],
+  panitera: ["riwayat", "berkas", "statistik", "draf", "pemeriksaan", "jejak"],
+  "panitera-pengganti": ["riwayat", "berkas", "draf", "statistik", "pemeriksaan", "jejak"],
+  "panitera-muda": ["riwayat", "statistik", "berkas", "pemeriksaan", "draf", "jejak"],
+  "analis-perkara": ["statistik", "pemeriksaan", "berkas", "riwayat", "jejak", "draf"],
 };
 
-const URUTAN_BAWAAN: KunciPanel[] = ["berkas", "riwayat", "pemeriksaan", "draf", "jejak"];
+const URUTAN_BAWAAN: KunciPanel[] = ["berkas", "riwayat", "statistik", "pemeriksaan", "draf", "jejak"];
 
 function BarisBerkas({ nama, bagian }: { nama: string; bagian: Bagian }) {
   const jumlah = Array.isArray(bagian.nilai) ? bagian.nilai.length : null;
@@ -483,6 +513,24 @@ export function RuangPerkara() {
                 ) : (
                   <EmptyState title="Belum ada sidang tercatat" description="Jadwal sidang perkara ini masih kosong di SIPP." />
                 )}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {aktif === "statistik" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Statistik perkara</CardTitle>
+                <CardDescription>
+                  Sebelas analisis dari register SIPP: ketepatan input, banding dengan perkara sejenis, kinerja
+                  majelis, dan seterusnya. Tiap analisis berjalan hanya saat tombolnya ditekan.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Komponen milik layar Status Perkara, dipakai ulang apa adanya.
+                    Menyalinnya ke sini akan menghasilkan dua tampilan yang harus
+                    diperbaiki dua kali - dan yang kedua selalu terlambat. */}
+                <AletaAnalisaPerkara nomorPerkara={berkas.nomorPerkara} />
               </CardContent>
             </Card>
           ) : null}
