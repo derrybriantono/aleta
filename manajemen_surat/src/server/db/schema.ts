@@ -575,6 +575,45 @@ const schemaStatements = [
     tanggal TEXT NOT NULL DEFAULT '',
     urutan_alinea INTEGER NOT NULL DEFAULT 0
   )`,
+  // Draf putusan menyimpan BUNYI butir, bukan hanya penunjuknya. Butir pustaka
+  // boleh diganti; draf yang hanya menunjuk akan ikut berubah bunyinya sesudah
+  // ditandatangani, dan itu bukan kekeliruan data melainkan pemalsuan.
+  `CREATE TABLE IF NOT EXISTS aleta_putusan_draf (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    versi INTEGER NOT NULL DEFAULT 1,
+    jenis_naskah TEXT NOT NULL DEFAULT 'PUTUSAN',
+    keadaan TEXT NOT NULL DEFAULT 'draf'
+      CHECK (keadaan IN ('draf', 'diperiksa', 'ditandatangani', 'dibatalkan')),
+    naskah TEXT NOT NULL DEFAULT '',
+    belum_terisi TEXT NOT NULL DEFAULT '[]',
+    halangan TEXT NOT NULL DEFAULT '[]',
+    siap INTEGER NOT NULL DEFAULT 0,
+    ditandatangani_oleh TEXT NOT NULL DEFAULT '',
+    ditandatangani_at TEXT NOT NULL DEFAULT '',
+    catatan TEXT NOT NULL DEFAULT '',
+    dibuat_oleh TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_putusan_draf_butir (
+    id TEXT PRIMARY KEY,
+    draf_id TEXT NOT NULL,
+    kunci_bagian TEXT NOT NULL DEFAULT '',
+    butir_id TEXT NOT NULL DEFAULT '',
+    urutan INTEGER NOT NULL DEFAULT 0,
+    teks_saat_itu TEXT NOT NULL DEFAULT '',
+    versi_butir INTEGER NOT NULL DEFAULT 0,
+    alasan TEXT NOT NULL DEFAULT '[]'
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_putusan_draf_nilai (
+    id TEXT PRIMARY KEY,
+    draf_id TEXT NOT NULL,
+    nama TEXT NOT NULL,
+    nilai TEXT NOT NULL DEFAULT '',
+    asal TEXT NOT NULL DEFAULT ''
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_berkas_riwayat (
     id TEXT PRIMARY KEY,
     perkara_id TEXT NOT NULL,
@@ -2272,6 +2311,12 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_asal_kunci ON aleta_pertimbangan_asal(butir_id, perkara_id, urutan_alinea)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_perkara ON aleta_putusan_draf(perkara_id, versi)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_keadaan ON aleta_putusan_draf(keadaan)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_putusan_draf_versi ON aleta_putusan_draf(perkara_id, versi)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_butir_draf ON aleta_putusan_draf_butir(draf_id, urutan)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_butir_butir ON aleta_putusan_draf_butir(butir_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_putusan_draf_nilai_kunci ON aleta_putusan_draf_nilai(draf_id, nama)`,
   `CREATE INDEX IF NOT EXISTS idx_jlf_sections_anchor ON jlf_regulation_sections(anchor)`,
   `CREATE INDEX IF NOT EXISTS idx_jlf_sections_regulation ON jlf_regulation_sections(regulation_id, sort_order)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_letter_number_sequences_unique ON letter_number_sequences(type, year)`,
