@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.83.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.83.0 - Pustaka Pertimbangan";
+export const APP_VERSION = "1.84.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.84.0 - Perakit Putusan dan Ruang Kerja";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,46 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.84.0",
+    title: "ALETA Judicia v1.84.0 - Perakit Putusan dan Ruang Kerja",
+    date: "2026-09-05",
+    status: "Operasional",
+    summary:
+      "Draf putusan kini dirakit dari pustaka pertimbangan tanpa satu pun panggilan model, lalu ditelaah hakim alinea demi alinea sebelum dapat ditandatangani. Bersamanya: ruang kerja satu layar, pemeriksaan perkara yang aturannya bertaut ke pasal, dan antrian sidang untuk ruang tunggu.",
+    added: [
+      "Perakit putusan: susunan baku enam bagian, duduk perkara dirangkai dari sidang dan kehadiran, butir pustaka dipilih menurut syaratnya, amar diadu dengan petitum, biaya dihitung berikut terbilangnya, dan tiap draf menyimpan riwayat versinya.",
+      "Ruang kerja perkara di /perkara: berkas, riwayat, statistik, pemeriksaan, draf, dan jejak dalam satu layar. Susunan panelnya mengikuti peran.",
+      "Telaah draf per alinea: hakim menerima atau menolak tiap pertimbangan, dan draf yang belum ditelaah tidak dapat ditandatangani.",
+      "Rujukan pasal terbuka di tempat - bunyinya diambil dari pustaka saat rujukannya ditekan.",
+      "Pemeriksaan perkara: kompetensi, syarat formil, tenggang panggilan, kelayakan verstek, peta dalil-bukti-petitum, dan pencarian perkara berpola fakta sama.",
+      "Antrian sidang: layar sentuh ruang tunggu, layar televisi, dan pencarian mandiri tanpa login.",
+      "Sebelas analisis lanjutan satu perkara, dimuat hanya saat tombolnya ditekan.",
+      "Saklar kirim terpisah untuk pegawai dan para pihak.",
+    ],
+    changed: [
+      "Menandatangani draf kini menuntut TIGA hal: seluruh bagian wajib terisi tanpa halangan, seluruh alinea sudah ditelaah, dan nama hakimnya. Tidak ada parameter untuk melewati satu pun.",
+      "Berkas perkara menarik sumber kesebelas: dokumen e-Court beserta berkas terunduhnya.",
+    ],
+    fixed: [
+      "Pemadan amar-petitum tidak lagi melaporkan petitum pertama sebagai terlewat pada hampir setiap perkara.",
+      "Kata berhuruf kapital di awal kalimat tidak lagi tertelan ke dalam nama orang, sehingga pemeriksaan kurang pihak berhenti menuduh tiap petitum dan penyamaran berhenti mengganti nama pengadilan.",
+    ],
+    security: [
+      "Kutipan wajib terbukti: draf yang merujuk pasal yang tidak ada di pustaka - atau peraturan yang sudah dicabut - tidak dapat dinyatakan siap.",
+      "Batas data: ruas yang belum punya aturan diperlakukan terlarang, bukan diloloskan.",
+      "Penyamaran bergaram per berkas, sehingga dua berkas tersamar tidak dapat disatukan kembali menjadi satu jati diri.",
+      "Antrian publik tidak menjawab apa pun tanpa kata cari sekurangnya tiga huruf, dan rentangnya terkunci pada hari berjalan.",
+    ],
+    operationalNotes: [
+      "Migrasi 0027 sampai 0029 menambah tabel draf putusan, aturan pemeriksaan, dan kolom telaah.",
+      "Pustaka pertimbangan dan aturan pemeriksaan masih kosong sampai diserap dan disahkan; sebelum itu perakit tidak menghasilkan pertimbangan apa pun.",
+    ],
+    knownLimitations: [
+      "Belum diuji di ruang sidang yang sesungguhnya.",
+      "Aturan pemeriksaan perlu dimasukkan beserta jangkar pasalnya, lalu disahkan Super Admin, sebelum kolom Pemeriksaan menampilkan kesimpulan apa pun.",
+    ],
+  },
   {
     version: "1.83.0",
     title: "ALETA Judicia v1.83.0 - Pustaka Pertimbangan",

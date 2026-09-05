@@ -42,6 +42,17 @@ const defaultConfig = {
   version: 1,
   botEnabled: true,
   notificationsEnabled: true,
+  // Dua saklar terpisah untuk dua kelompok penerima yang berbeda.
+  //
+  // notificationsEnabled mematikan keduanya sekaligus. Yang kerap
+  // diperlukan hanya salah satunya: menghentikan pemberitahuan ke pihak
+  // saat nomor sedang bermasalah sambil tetap mengirim tugas ke pegawai,
+  // atau meliburkan pemberitahuan internal tanpa memutus panggilan sidang.
+  //
+  // Bawaannya MENYALA - saklar ini hanya berlaku bila seseorang benar-benar
+  // mematikannya.
+  kirimPegawaiEnabled: true,
+  kirimPihakEnabled: true,
   adminWhatsappNumber: "",
   adminWhatsappChatId: "",
   messageDelayMs: 0,
@@ -322,6 +333,11 @@ function readRuntimeConfig() {
           ...(parsed.aiRuntimeConfig || {}),
         },
         employeeRecipients: normalizeEmployeeRecipients(parsed.employeeRecipients),
+        // Yang TIDAK disebut portal dibaca menyala, bukan mati - portal
+        // versi lama tidak mengirimkan kedua kunci ini sama sekali, dan
+        // membacanya sebagai mati akan menghentikan seluruh pengiriman.
+        kirimPegawaiEnabled: parsed.kirimPegawaiEnabled !== false,
+        kirimPihakEnabled: parsed.kirimPihakEnabled !== false,
         notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
         queries: Array.isArray(parsed.queries) ? parsed.queries : [],
         templates: Array.isArray(parsed.templates) ? parsed.templates : [],
@@ -362,6 +378,24 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Apakah nomor ini nomor PEGAWAI?
+ *
+ * Dijawab dari daftar penerima pegawai yang dikirim portal - satu-satunya
+ * daftar yang tahu siapa pegawai. Nomor yang TIDAK ada di sana dianggap
+ * nomor pihak.
+ *
+ * Arah dugaannya disengaja. Menebak sebaliknya berarti mematikan saklar
+ * pihak tidak menghentikan apa pun untuk nomor yang belum terdaftar - dan
+ * justru nomor-nomor itulah yang paling mungkin milik orang berperkara.
+ */
+function adalahPenerimaPegawai(nomorAtauChatId, recipients) {
+  const mentah = String(nomorAtauChatId || "").replace(/@.*$/, "");
+  const chatId = normalizeChatId(normalizeWhatsappNumber(mentah));
+  if (!chatId) return false;
+  return normalizeEmployeeRecipients(recipients).some((satu) => satu.whatsappChatId === chatId);
+}
+
 module.exports = {
   readRuntimeConfig,
   writeRuntimeConfig,
@@ -370,6 +404,7 @@ module.exports = {
   normalizeChatId,
   normalizeSessionName,
   normalizeEmployeeRecipients,
+  adalahPenerimaPegawai,
   recipientsToMap,
   sleep,
 };

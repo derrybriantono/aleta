@@ -97,8 +97,24 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
 
   const kataCari = cleanText(cari);
   if (kataCari) {
-    syarat.push("(p.nomor_perkara LIKE ? OR p.jenis_perkara_nama LIKE ? OR j.agenda LIKE ?)");
-    nilai.push(`%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`);
+    // NAMA PIHAK ikut dicari.
+    //
+    // Sebelumnya hanya nomor perkara, jenis, dan agenda - sehingga mencari
+    // "Dirman" di Jadwal Sidang tidak pernah menemukan apa pun, padahal nama
+    // itulah yang diingat orang. Yang datang ke layar sentuh ruang tunggu
+    // hampir selalu membawa namanya sendiri, bukan nomor perkaranya; tanpa ini
+    // antrian mandiri tidak dapat dipakai sama sekali.
+    //
+    // EXISTS, bukan JOIN: perkara dengan lima pihak yang semuanya cocok tidak
+    // boleh muncul lima kali di jadwal.
+    syarat.push(
+      `(p.nomor_perkara LIKE ?
+        OR p.jenis_perkara_nama LIKE ?
+        OR j.agenda LIKE ?
+        OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
+                    WHERE vp.perkara_id = p.perkara_id AND vp.nama LIKE ?))`
+    );
+    nilai.push(`%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`);
   }
 
   const rows = await runQuery(

@@ -2311,6 +2311,15 @@ async function arsipKeteranganPerkara(perkaraId) {
   if (kolom.arsipKeterangan) pilihan.push(`a.${kolom.arsipKeterangan} AS keterangan`);
   if (kolom.arsipOleh) pilihan.push(`a.${kolom.arsipOleh} AS oleh`);
   if (kolom.arsipBerkas) pilihan.push(`a.${kolom.arsipBerkas} AS berkas`);
+  // Letak berkas FISIK - inilah isi sebenarnya tabel arsip SIPP, dan
+  // sebelumnya tidak satu pun dibaca.
+  if (kolom.arsipRuang) pilihan.push(`a.${kolom.arsipRuang} AS ruang`);
+  if (kolom.arsipLemari) pilihan.push(`a.${kolom.arsipLemari} AS lemari`);
+  if (kolom.arsipRak) pilihan.push(`a.${kolom.arsipRak} AS rak`);
+  if (kolom.arsipBox) pilihan.push(`a.${kolom.arsipBox} AS box`);
+  if (kolom.arsipMasuk) pilihan.push(`a.${kolom.arsipMasuk} AS masuk`);
+  if (kolom.arsipLengkap) pilihan.push(`a.${kolom.arsipLengkap} AS lengkap`);
+  if (kolom.arsipPenerima) pilihan.push(`a.${kolom.arsipPenerima} AS penerima`);
 
   if (pilihan.length === 0) {
     const adaKolom = await sippSkemaService.kolomTabel("arsip");
@@ -2327,6 +2336,39 @@ async function arsipKeteranganPerkara(perkaraId) {
     [id]
   ).catch(() => []);
 
+  // Peminjaman berkas fisik. Tabelnya belum tentu ada pada tiap SIPP, dan
+  // di pengadilan ini masih kosong - jadi kegagalannya ditelan dan
+  // daftarnya dibiarkan kosong, bukan menggagalkan seluruh bagian arsip.
+  let pinjam = [];
+  if (await sippSkemaService.tabelAda("arsip_pinjam")) {
+    const idArsip = rows
+      .map((x) => Number(x.arsipId))
+      .filter((x) => Number.isFinite(x) && x > 0);
+    if (idArsip.length > 0) {
+      const isian = idArsip.map(() => "?").join(", ");
+      pinjam = await runQuery(
+        `SELECT ap.arsip_id AS arsipId,
+                ap.tanggal_pinjam AS tanggalPinjam,
+                ap.tanggal_kembali AS tanggalKembali,
+                ap.petugas_peminjam AS peminjam,
+                ap.keterangan AS keterangan
+           FROM arsip_pinjam ap
+          WHERE ap.arsip_id IN (${isian})
+          ORDER BY ap.tanggal_pinjam DESC
+          LIMIT 50`,
+        idArsip
+      ).catch(() => []);
+    }
+  }
+
+  const petaPinjam = new Map();
+  for (const baris of pinjam) {
+    const kunci = String(baris.arsipId || "");
+    // Yang disimpan peminjaman TERBARU saja - itu yang menjawab
+    // "berkasnya sekarang di siapa".
+    if (!petaPinjam.has(kunci)) petaPinjam.set(kunci, baris);
+  }
+
   return {
     terbaca: true,
     alasan: "",
@@ -2341,6 +2383,28 @@ async function arsipKeteranganPerkara(perkaraId) {
       keterangan: cleanText(row.keterangan),
       oleh: cleanText(row.oleh),
       adaBerkas: Boolean(cleanText(row.berkas)),
+      // --- letak berkas fisiknya ---
+      ruang: cleanText(row.ruang),
+      lemari: cleanText(row.lemari),
+      rak: cleanText(row.rak),
+      box: cleanText(row.box),
+      tanggalMasuk: isoTanggal(row.masuk),
+      penerima: cleanText(row.penerima),
+      // SIPP menyimpannya 'Y'/'T'.
+      lengkap: cleanText(row.lengkap).toUpperCase() === "Y",
+      pinjam: (() => {
+        const p = petaPinjam.get(String(row.arsipId || ""));
+        if (!p) return null;
+        return {
+          tanggalPinjam: isoTanggal(p.tanggalPinjam),
+          tanggalKembali: isoTanggal(p.tanggalKembali),
+          // Belum kembali berarti berkasnya sedang tidak di raknya - itulah
+          // yang perlu diketahui sebelum orang berjalan ke ruang arsip.
+          sedangDipinjam: !isoTanggal(p.tanggalKembali),
+          peminjam: cleanText(p.peminjam),
+          keterangan: cleanText(p.keterangan),
+        };
+      })(),
     })),
   };
 }

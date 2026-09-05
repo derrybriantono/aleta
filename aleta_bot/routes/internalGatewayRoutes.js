@@ -54,6 +54,7 @@ const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
+const analisaLanjutService = require("../services/analisaLanjutService");
 const kehadiranAntrianService = require("../services/kehadiranAntrianService");
 const panggilanAntrianService = require("../services/panggilanAntrianService");
 
@@ -1401,6 +1402,31 @@ router.get("/sipp/status-perkara/cari", requireInternalToken, async (req, res) =
 });
 
 /** Seluruh keadaan satu perkara. */
+/**
+ * Satu analisis lanjutan atas satu perkara.
+ *
+ * Terpisah dari status-perkara dengan sengaja: layar status sudah menjalankan
+ * tiga puluh satu kueri, dan sebagian analisis di sini mengagregasi seluruh
+ * register. Menyatukannya berarti MEMBUKA perkara ikut menunggu perhitungan
+ * yang mungkin tidak akan dilihat siapa pun.
+ */
+router.get("/sipp/analisa", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await analisaLanjutService.jalankanAnalisa(
+      String(req.query.nomor || ""),
+      String(req.query.jenis || "")
+    );
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Daftar analisis yang tersedia - supaya layar tidak menyalinnya sendiri. */
+router.get("/sipp/analisa/daftar", requireInternalToken, async (req, res) => {
+  res.json({ ok: true, daftar: analisaLanjutService.DAFTAR_ANALISA });
+});
+
 router.get("/sipp/status-perkara", requireInternalToken, async (req, res) => {
   try {
     const hasil = await sippStatusPerkaraService.statusLengkap(String(req.query.nomor || ""));

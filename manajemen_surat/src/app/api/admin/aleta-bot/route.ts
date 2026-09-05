@@ -33,6 +33,8 @@ export async function PUT(request: NextRequest) {
       settings?: {
         botEnabled?: boolean;
         notificationsEnabled?: boolean;
+        kirimPegawaiEnabled?: boolean;
+        kirimPihakEnabled?: boolean;
         adminWhatsappNumber?: string;
         messageDelayMs?: number;
         sendingRiskLevel?: number;

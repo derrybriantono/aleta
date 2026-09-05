@@ -1565,6 +1565,21 @@ export async function panggilAntrian(params: {
  * WhatsApp, sehingga nomor di layar tidak pernah berselisih dengan nomor yang
  * sudah diterima para pihak.
  */
+/**
+ * Satu analisis lanjutan atas satu perkara.
+ *
+ * Sepuluh jenis analisis, satu per permintaan - dan hanya saat tombolnya
+ * ditekan. Menyatukannya ke dalam status perkara akan membuat membuka
+ * perkara menunggu perhitungan yang belum tentu dilihat.
+ */
+export async function getGatewayAnalisaPerkara(
+  nomorPerkara: string,
+  jenis: string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ nomor: nomorPerkara, jenis });
+  return gatewayFetch(`/internal/aleta-bot/sipp/analisa?${kueri.toString()}`);
+}
+
 export async function getGatewayAntrianSidang(): Promise<GatewayResult<AntrianSidangGateway>> {
   return gatewayFetch("/internal/aleta-bot/antrian/sidang");
 }

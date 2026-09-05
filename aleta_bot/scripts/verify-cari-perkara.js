@@ -42,6 +42,8 @@ function periksa(nama, benar) {
 // ---------------------------------------------------------------- penadah
 const kueri = [];
 let barisUtama = [];
+/** Jawaban berurut untuk kueri utama, dipakai menguji dua lapis. */
+const antreanUtama = [];
 const barisTambahan = new Map();
 
 const dbPath = require.resolve("../db_config");
@@ -52,6 +54,13 @@ require.cache[dbPath].exports = {
 
     // Kueri utama dikenali dari FROM perkara p.
     if (/FROM perkara p\b/.test(sql)) {
+      // Pencarian teks berjalan dua lapis: cepat dulu, diperdalam bila kosong.
+      // Antrean ini membiarkan uji menentukan jawaban tiap lapis secara
+      // terpisah - tanpa itu, lapis kedua tidak dapat diuji sama sekali.
+      if (antreanUtama.length > 0) {
+        selesai(null, antreanUtama.shift());
+        return;
+      }
       selesai(null, barisUtama);
       return;
     }
@@ -71,6 +80,7 @@ const layanan = require("../services/sippStatusPerkaraService");
 
 function bersihkan() {
   kueri.length = 0;
+  antreanUtama.length = 0;
   barisTambahan.clear();
   barisUtama = [
     {
@@ -190,6 +200,113 @@ async function utama() {
     periksa(
       "tanggal tidak sah diabaikan",
       !/pu\.tanggal_putusan >= \?/.test(sqlUtama()) && !paramUtama().includes("kemarin")
+    );
+  }
+
+  // ==========================================================================
+  console.log("\n== Kotak cari biasa menjangkau yang dijangkau pencarian lanjutan ==");
+  {
+    // Kata yang berarti KEADAAN, bukan teks. "verstek" tidak pernah tertulis
+    // di nomor perkara maupun nama pihak; mencarinya sebagai teks selalu
+    // nihil, dan nihilnya tidak dapat dibedakan dari perkaranya-memang-tidak-
+    // ada.
+    const kosakata = [
+      ["verstek", /putusan_verstek = 'Y'/, "Putusan verstek"],
+      ["banding", /FROM perkara_banding/, "Ada banding"],
+      ["kasasi", /FROM perkara_kasasi/, "Ada kasasi"],
+      ["pk", /FROM perkara_pk/, "Ada peninjauan kembali"],
+      ["retur", /ket_hasil_relaas LIKE '%retur%'/, "Relaas retur"],
+      ["ghaib", /ket_temu IN \('R', 'M', 'W', 'P'\)/, "Dipanggil sebagai ghaib"],
+      ["e-court", /perkara_efiling_id/, "Perkara e-Court"],
+    ];
+
+    for (const [kata, pola, label] of kosakata) {
+      bersihkan();
+      const hasil = await layanan.cariPerkara(kata, {});
+      periksa(`"${kata}" menjadi saringan keadaan`, pola.test(sqlUtama()));
+      periksa(
+        `"${kata}" tidak dicari sebagai teks`,
+        !paramUtama().includes(`%${kata}%`)
+      );
+      periksa(
+        `"${kata}" dijelaskan di hasilnya`,
+        (hasil[0]?.cocok || []).some((x) => x.medan === "Keadaan" && x.nilai === label)
+      );
+    }
+
+    // Huruf besar-kecil tidak boleh menentukan.
+    bersihkan();
+    await layanan.cariPerkara("VERSTEK", {});
+    periksa("kosakata tidak peduli huruf besar", /putusan_verstek = 'Y'/.test(sqlUtama()));
+  }
+
+  {
+    // Kata biasa: lapis cepat dulu. Selama ia berisi, lapis dalam yang mahal
+    // tidak boleh dijalankan sama sekali.
+    bersihkan();
+    await layanan.cariPerkara("Dirman", {});
+    const utamaSql = kueri.filter((q) => /FROM perkara p\b/.test(q.sql));
+    periksa("kata biasa dicari lewat satu kueri saja", utamaSql.length === 1);
+    periksa("lapis cepat memakai nama pihak", /vp\.nama LIKE/.test(utamaSql[0].sql));
+    periksa(
+      "lapis cepat TIDAK menyentuh pertimbangan",
+      !/perkara_pertimbangan_hukum/.test(utamaSql[0].sql)
+    );
+  }
+
+  {
+    // Lapis cepat kosong -> diperdalam sampai ke isi pertimbangan.
+    bersihkan();
+    antreanUtama.push([]);
+    antreanUtama.push([
+      {
+        perkaraId: 9971,
+        nomorPerkara: "551/Pdt.G/2026/PA.Dgl",
+        jenisPerkara: "Cerai Gugat",
+        alurPerkaraId: 15,
+        tanggalDaftar: "2026-09-02",
+        tanggalPutusan: null,
+        tanggalMinutasi: null,
+        tanggalBht: null,
+        statusPutusan: null,
+      },
+    ]);
+
+    const hasil = await layanan.cariPerkara("bada dukhul", {});
+    const utamaSql = kueri.filter((q) => /FROM perkara p\b/.test(q.sql));
+
+    periksa("dijalankan dua lapis", utamaSql.length === 2);
+    periksa(
+      "lapis kedua mencari isi pertimbangan",
+      /perkara_pertimbangan_hukum/.test(utamaSql[1].sql)
+    );
+    periksa("lapis kedua mencari isi amar", /amar_putusan/.test(utamaSql[1].sql));
+    periksa("lapis kedua mencari alamat pihak", /vp\.alamat LIKE/.test(utamaSql[1].sql));
+    periksa("lapis kedua mencari KUA", /kua_tempat_nikah/.test(utamaSql[1].sql));
+    periksa("lapis kedua mencari petugas", /perkara_jurusita/.test(utamaSql[1].sql));
+    periksa("perkaranya ditemukan", hasil.length === 1);
+
+    // Apostrof dibuang dari KOLOM. Yang tertulis di SIPP "ba’da dukhul"
+    // dengan apostrof miring U+2019 - tanpa ini, "bada dukhul" maupun
+    // "ba'da dukhul" sama-sama nihil dan tidak ada cara menebak bentuk yang
+    // benar.
+    periksa(
+      "apostrof dibuang dari kolom teks panjang",
+      /REPLACE\(REPLACE\(REPLACE\([\s\S]*0xE28099/.test(utamaSql[1].sql)
+    );
+  }
+
+  {
+    // Apostrof dibuang dari KATA CARINYA juga - kedua sisi harus diperlakukan
+    // sama, kalau tidak yang satu tetap tidak cocok dengan yang lain.
+    bersihkan();
+    antreanUtama.push([]);
+    antreanUtama.push([]);
+    await layanan.cariPerkara("ba'da dukhul", {});
+    const utamaSql = kueri.filter((q) => /FROM perkara p\b/.test(q.sql));
+    periksa(
+      "apostrof dibuang dari kata carinya",
+      utamaSql[1].params.includes("%bada dukhul%")
     );
   }
 

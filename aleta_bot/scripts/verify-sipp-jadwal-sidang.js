@@ -86,6 +86,42 @@ function bersihkan() {
 }
 
 async function jalan() {
+  console.log("\n== Pencarian jadwal mencakup nama pihak ==");
+  {
+    bersihkan();
+    jawaban = { sidang: [] };
+    await layanan.daftarSidang({ dari: "2026-09-05", sampai: "2026-09-05", cari: "Dirman" });
+    const sql = kueri[0] ? kueri[0].sql : "";
+
+    // Yang berdiri di layar sentuh ruang tunggu membawa NAMANYA, bukan nomor
+    // perkaranya. Selama pencarian jadwal hanya mencocokkan nomor perkara,
+    // jenis, dan agenda, antrian mandiri tidak dapat dipakai sama sekali -
+    // dan kegagalannya sunyi: yang muncul "tidak ada sidang yang cocok",
+    // persis seperti kalau orangnya memang tidak bersidang hari itu.
+    periksa("nama pihak ikut dicari", /v_pihak_perkara/.test(sql));
+    periksa("nomor perkara tetap dicari", /nomor_perkara LIKE/.test(sql));
+    periksa("agenda tetap dicari", /agenda LIKE/.test(sql));
+
+    // EXISTS, bukan JOIN: perkara dengan lima pihak yang semuanya cocok tidak
+    // boleh muncul lima kali di jadwal.
+    periksa("memakai EXISTS, bukan JOIN pihak", /EXISTS \(SELECT 1 FROM v_pihak_perkara/.test(sql));
+
+    const params = kueri[0] ? kueri[0].params : [];
+    periksa(
+      "kata carinya lewat parameter, empat kali",
+      params.filter((x) => x === "%Dirman%").length === 4
+    );
+  }
+  {
+    bersihkan();
+    const jahat = "%' OR '1'='1";
+    await layanan.daftarSidang({ dari: "2026-09-05", sampai: "2026-09-05", cari: jahat });
+    periksa(
+      "kata cari jahat tidak pernah menjadi teks kueri",
+      kueri.every((k) => !k.sql.includes("OR '1'='1"))
+    );
+  }
+
   console.log("\n== Rentang tanggal ==");
   {
     bersihkan();

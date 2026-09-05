@@ -558,6 +558,8 @@ const emptySnapshot: AletaBotSnapshot = {
   settings: {
     botEnabled: false,
     notificationsEnabled: false,
+    kirimPegawaiEnabled: true,
+    kirimPihakEnabled: true,
     adminWhatsappNumber: "",
     messageDelayMs: 1500,
     sendingRiskLevel: 1,
@@ -2630,6 +2632,8 @@ export function AletaBotAdminPanel() {
     () =>
       settingsDraft.botEnabled !== snapshot.settings.botEnabled ||
       settingsDraft.notificationsEnabled !== snapshot.settings.notificationsEnabled ||
+      settingsDraft.kirimPegawaiEnabled !== snapshot.settings.kirimPegawaiEnabled ||
+      settingsDraft.kirimPihakEnabled !== snapshot.settings.kirimPihakEnabled ||
       settingsDraft.dryRunEnabled !== snapshot.settings.dryRunEnabled ||
       settingsDraft.adminWhatsappNumber !== snapshot.settings.adminWhatsappNumber ||
       settingsDraft.testTargetNumber !== snapshot.settings.testTargetNumber ||
@@ -2650,6 +2654,8 @@ export function AletaBotAdminPanel() {
       const settingsPayload = {
         botEnabled: draft.botEnabled,
         notificationsEnabled: draft.notificationsEnabled,
+        kirimPegawaiEnabled: draft.kirimPegawaiEnabled,
+        kirimPihakEnabled: draft.kirimPihakEnabled,
         dryRunEnabled: draft.dryRunEnabled,
         adminWhatsappNumber: draft.adminWhatsappNumber,
         testTargetNumber: draft.testTargetNumber,
@@ -4108,6 +4114,36 @@ export function AletaBotAdminPanel() {
                     checked={settingsDraft.notificationsEnabled}
                     onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, notificationsEnabled: value }))}
                   />
+                  {/* Dua saluran yang dapat dimatikan sendiri-sendiri.
+
+                      "Notifikasi otomatis" di atas mematikan keduanya
+                      sekaligus. Yang kerap diperlukan hanya salah satunya -
+                      menghentikan pemberitahuan ke pihak saat nomornya sedang
+                      bermasalah sambil tetap mengirim tugas ke pegawai, atau
+                      meliburkan pemberitahuan internal tanpa memutus panggilan
+                      sidang kepada para pihak.
+
+                      Balasan atas pesan yang MASUK tidak ikut ditahan:
+                      mematikan pengiriman tidak boleh membuat bot mendiamkan
+                      orang yang sedang bertanya kepadanya.
+
+                      Nomor yang tidak ada di daftar pegawai dihitung sebagai
+                      nomor pihak. */}
+                  <ToggleRow
+                    label="Kirim ke pegawai"
+                    checked={settingsDraft.kirimPegawaiEnabled}
+                    onCheckedChange={(value) =>
+                      setSettingsDraft((current) => ({ ...current, kirimPegawaiEnabled: value }))
+                    }
+                  />
+                  <ToggleRow
+                    label="Kirim ke pihak berperkara"
+                    checked={settingsDraft.kirimPihakEnabled}
+                    onCheckedChange={(value) =>
+                      setSettingsDraft((current) => ({ ...current, kirimPihakEnabled: value }))
+                    }
+                  />
+
                   <ToggleRow
                     label="Mode simulasi"
                     checked={settingsDraft.dryRunEnabled}
@@ -4847,6 +4883,36 @@ export function AletaBotAdminPanel() {
                     checked={settingsDraft.notificationsEnabled}
                     onCheckedChange={(value) => setSettingsDraft((current) => ({ ...current, notificationsEnabled: value }))}
                   />
+                  {/* Dua saluran yang dapat dimatikan sendiri-sendiri.
+
+                      "Notifikasi otomatis" di atas mematikan keduanya
+                      sekaligus. Yang kerap diperlukan hanya salah satunya -
+                      menghentikan pemberitahuan ke pihak saat nomornya sedang
+                      bermasalah sambil tetap mengirim tugas ke pegawai, atau
+                      meliburkan pemberitahuan internal tanpa memutus panggilan
+                      sidang kepada para pihak.
+
+                      Balasan atas pesan yang MASUK tidak ikut ditahan:
+                      mematikan pengiriman tidak boleh membuat bot mendiamkan
+                      orang yang sedang bertanya kepadanya.
+
+                      Nomor yang tidak ada di daftar pegawai dihitung sebagai
+                      nomor pihak. */}
+                  <ToggleRow
+                    label="Kirim ke pegawai"
+                    checked={settingsDraft.kirimPegawaiEnabled}
+                    onCheckedChange={(value) =>
+                      setSettingsDraft((current) => ({ ...current, kirimPegawaiEnabled: value }))
+                    }
+                  />
+                  <ToggleRow
+                    label="Kirim ke pihak berperkara"
+                    checked={settingsDraft.kirimPihakEnabled}
+                    onCheckedChange={(value) =>
+                      setSettingsDraft((current) => ({ ...current, kirimPihakEnabled: value }))
+                    }
+                  />
+
                   <ToggleRow
                     label="Mode simulasi"
                     checked={settingsDraft.dryRunEnabled}

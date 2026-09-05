@@ -84,6 +84,12 @@ const DEFAULT_ALETA_BOT_RUNTIME_URL = "http://127.0.0.1:3003";
 type SettingsRow = {
   bot_enabled: number;
   notifications_enabled: number;
+  /**
+   * Opsional: baris pengaturan yang ditulis versi sebelumnya belum punya
+   * kolomnya. Dibaca MENYALA saat tidak ada - lihat catatan di schema.ts.
+   */
+  kirim_pegawai_enabled?: number;
+  kirim_pihak_enabled?: number;
   admin_whatsapp_number: string;
   message_delay_ms: number;
   sending_risk_level: number;
@@ -621,6 +627,9 @@ export function listSendingRiskPresets(): SendingRiskPreset[] {
 const DEFAULT_SETTINGS: Omit<AletaBotSettings, "updatedAt"> = {
   botEnabled: false,
   notificationsEnabled: false,
+  // Menyala kecuali dimatikan sendiri - lihat catatan di schema.ts.
+  kirimPegawaiEnabled: true,
+  kirimPihakEnabled: true,
   adminWhatsappNumber: "",
   messageDelayMs: 1500,
   // Default MINIMAL: paling aman dari suspend/ban. Operator dapat menaikkan
@@ -3862,6 +3871,10 @@ function mapSettings(row: SettingsRow): AletaBotSettings {
   return {
     botEnabled: Boolean(row.bot_enabled),
     notificationsEnabled: Boolean(row.notifications_enabled),
+    // Baris lama yang belum punya kolomnya dibaca MENYALA, bukan mati -
+    // pemasangan versi baru tidak boleh menghentikan pengiriman sendiri.
+    kirimPegawaiEnabled: row.kirim_pegawai_enabled === undefined ? true : Boolean(row.kirim_pegawai_enabled),
+    kirimPihakEnabled: row.kirim_pihak_enabled === undefined ? true : Boolean(row.kirim_pihak_enabled),
     adminWhatsappNumber: row.admin_whatsapp_number,
     messageDelayMs: row.message_delay_ms,
     sendingRiskLevel: resolveSendingRiskPreset(row.sending_risk_level).level,
@@ -7687,6 +7700,8 @@ async function writeAletaBotRuntimeConfig(
     source: "manajemen_surat",
     botEnabled: settings.botEnabled,
     notificationsEnabled: settings.notificationsEnabled,
+    kirimPegawaiEnabled: settings.kirimPegawaiEnabled,
+    kirimPihakEnabled: settings.kirimPihakEnabled,
     adminWhatsappNumber: settings.adminWhatsappNumber,
     adminWhatsappChatId: settings.adminWhatsappNumber ? `${settings.adminWhatsappNumber}@c.us` : "",
     sendingRiskLevel: riskPreset.level,
@@ -8052,7 +8067,9 @@ export async function updateAletaBotSettings(
     await tx
       .prepare(
         `UPDATE aleta_bot_settings
-         SET bot_enabled = ?, notifications_enabled = ?, admin_whatsapp_number = ?,
+         SET bot_enabled = ?, notifications_enabled = ?,
+           kirim_pegawai_enabled = ?, kirim_pihak_enabled = ?,
+           admin_whatsapp_number = ?,
            message_delay_ms = ?, sending_risk_level = ?, retry_limit = ?, dry_run_enabled = ?, schedule_cron = ?,
            test_target_number = ?, security_notes = ?,
            disposition_deadline_reminder_enabled = ?,
@@ -8077,6 +8094,8 @@ export async function updateAletaBotSettings(
       .run(
         nextSettings.botEnabled ? 1 : 0,
         nextSettings.notificationsEnabled ? 1 : 0,
+        nextSettings.kirimPegawaiEnabled ? 1 : 0,
+        nextSettings.kirimPihakEnabled ? 1 : 0,
         nextSettings.adminWhatsappNumber,
         nextSettings.messageDelayMs,
         nextSettings.sendingRiskLevel,
@@ -8119,6 +8138,8 @@ export async function updateAletaBotSettings(
       metadata: {
         botEnabled: nextSettings.botEnabled,
         notificationsEnabled: nextSettings.notificationsEnabled,
+        kirimPegawaiEnabled: nextSettings.kirimPegawaiEnabled,
+        kirimPihakEnabled: nextSettings.kirimPihakEnabled,
         dryRunEnabled: nextSettings.dryRunEnabled,
         deadlineReminderMode: nextSettings.deadlineReminderMode,
       },

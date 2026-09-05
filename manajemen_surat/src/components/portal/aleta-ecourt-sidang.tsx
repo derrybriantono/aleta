@@ -2627,12 +2627,12 @@ export function AletaEcourtSidang({
           </table>
         </div>
 
+        {/* Yang dicetak adalah yang SEDANG TAMPIL, bukan seluruh yang termuat.
+            Menyaring ke Retur lalu menekan Cetak sebelumnya menghasilkan lembar
+            berisi seluruh sidang hari itu - dan lembar itu dibagikan ke orang
+            lain sebagai daftar yang benar. */}
         {sedangCetak ? (
           <AletaEcourtCetakJadwal
-            {/* Yang dicetak adalah yang SEDANG TAMPIL, bukan seluruh yang
-                termuat. Menyaring ke Retur lalu menekan Cetak sebelumnya
-                menghasilkan lembar berisi seluruh sidang hari itu - dan
-                lembar itu dibagikan sebagai daftar yang benar. */}
             sidang={sidangTampil}
             antrian={antrian.peta}
             catatanSaringan={

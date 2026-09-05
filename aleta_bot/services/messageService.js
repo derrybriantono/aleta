@@ -1,4 +1,4 @@
-const { readRuntimeConfig, sleep } = require("../config/runtime-config");
+const { readRuntimeConfig, sleep, adalahPenerimaPegawai } = require("../config/runtime-config");
 const { validateWhatsappRecipient } = require("../utils/phoneFormatter");
 const logService = require("./logService");
 const rateLimitService = require("./rateLimitService");
@@ -240,6 +240,48 @@ async function safeSendMessage({
   if (isNotificationContext(category) && !runtimeConfig.notificationsEnabled) {
     logService.logMessageSkipped({ ...baseLog, status: "skipped", errorMessage: "notifications_disabled" });
     return null;
+  }
+
+  // ==========================================================================
+  // DUA SALURAN, DUA SAKLAR
+  // ==========================================================================
+  //
+  // Pegawai dan pihak berperkara kerap perlu diperlakukan berbeda:
+  // menghentikan pemberitahuan ke pihak saat nomornya sedang bermasalah
+  // sambil tetap mengirim tugas ke pegawai, atau meliburkan pemberitahuan
+  // internal tanpa memutus panggilan sidang kepada para pihak.
+  //
+  // Hanya berlaku untuk pesan yang DIMULAI BOT SENDIRI. Balasan atas pesan
+  // yang masuk tidak pernah ikut ditahan: mematikan pengiriman tidak boleh
+  // membuat bot mendiamkan orang yang sedang bertanya kepadanya.
+  //
+  // Nomor yang tidak ada di daftar pegawai dianggap nomor PIHAK - lihat
+  // adalahPenerimaPegawai di config/runtime-config.js untuk alasannya.
+  if (isNotificationContext(category)) {
+    const kePegawai = adalahPenerimaPegawai(
+      validation.chatId || to,
+      runtimeConfig.employeeRecipients
+    );
+    const bolehPegawai = runtimeConfig.kirimPegawaiEnabled !== false;
+    const bolehPihak = runtimeConfig.kirimPihakEnabled !== false;
+
+    if (kePegawai && !bolehPegawai) {
+      logService.logMessageSkipped({
+        ...baseLog,
+        status: "skipped",
+        errorMessage: "pengiriman_pegawai_dimatikan",
+      });
+      return null;
+    }
+
+    if (!kePegawai && !bolehPihak) {
+      logService.logMessageSkipped({
+        ...baseLog,
+        status: "skipped",
+        errorMessage: "pengiriman_pihak_dimatikan",
+      });
+      return null;
+    }
   }
 
   // Pemanasan nomor: batas harian yang naik bertahap setelah nomor bermasalah.

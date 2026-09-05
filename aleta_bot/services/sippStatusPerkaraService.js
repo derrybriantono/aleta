@@ -157,6 +157,63 @@ const RELAAS_SYARAT = {
 };
 
 /**
+ * Membuang apostrof dari sebuah kolom sebelum dicocokkan.
+ *
+ * Dipakai pada kolom teks panjang saja - pertimbangan dan amar - sebab di
+ * situlah kalimat berapostrof berada. Byte E2 80 99 adalah apostrof miring
+ * U+2019 yang benar-benar tersimpan di SIPP; 0x27 apostrof biasa; 0x60
+ * aksen balik yang kadang terketik menggantikannya.
+ */
+function tanpaApostrof(kolom) {
+  return `REPLACE(REPLACE(REPLACE(${kolom}, 0xE28099, ''), 0x27, ''), 0x60, '')`;
+}
+
+/** Kata carinya diperlakukan sama dengan kolomnya. */
+function bersihApostrof(teks) {
+  return String(teks || "").replace(/[\u2019'`\u00b4]/g, "");
+}
+
+/**
+ * ============================================================================
+ * KOSAKATA: KATA YANG BUKAN TEKS, MELAINKAN KEADAAN
+ * ============================================================================
+ *
+ * "verstek", "banding", "retur" tidak pernah tertulis di nomor perkara
+ * maupun nama pihak. Mencarinya sebagai teks selalu nihil, dan nihilnya
+ * tidak dapat dibedakan dari perkaranya-memang-tidak-ada.
+ *
+ * Kuncinya daftar TERTUTUP dan dicocokkan utuh, bukan disambung: kata yang
+ * tidak dikenali jatuh ke pencarian teks biasa, bukan menjadi bagian
+ * perintah SQL.
+ */
+const KOSAKATA_CARI = {
+  verstek: { label: "Putusan verstek", sql: "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.putusan_verstek = 'Y')" },
+  "bukan verstek": { label: "Bukan verstek", sql: "EXISTS (SELECT 1 FROM perkara_putusan pu WHERE pu.perkara_id = p.perkara_id AND pu.putusan_verstek = 'T')" },
+  banding: { label: "Ada banding", sql: "EXISTS (SELECT 1 FROM perkara_banding b WHERE b.perkara_id = p.perkara_id)" },
+  kasasi: { label: "Ada kasasi", sql: "EXISTS (SELECT 1 FROM perkara_kasasi k WHERE k.perkara_id = p.perkara_id)" },
+  pk: { label: "Ada peninjauan kembali", sql: "EXISTS (SELECT 1 FROM perkara_pk k WHERE k.perkara_id = p.perkara_id)" },
+  "peninjauan kembali": { label: "Ada peninjauan kembali", sql: "EXISTS (SELECT 1 FROM perkara_pk k WHERE k.perkara_id = p.perkara_id)" },
+  "upaya hukum": {
+    label: "Ada upaya hukum",
+    sql: `(EXISTS (SELECT 1 FROM perkara_banding b WHERE b.perkara_id = p.perkara_id)
+           OR EXISTS (SELECT 1 FROM perkara_kasasi k WHERE k.perkara_id = p.perkara_id)
+           OR EXISTS (SELECT 1 FROM perkara_pk q WHERE q.perkara_id = p.perkara_id))`,
+  },
+};
+
+/** Kunci kosakata yang meminjam daftar tertutup yang sudah ada. */
+const KOSAKATA_PINJAM = [
+  ["retur", "Relaas retur", () => RELAAS_SYARAT.retur],
+  ["gagal panggil", "Pemanggilan gagal", () => RELAAS_SYARAT.gagal],
+  ["ghaib", "Dipanggil sebagai ghaib", () => RELAAS_SYARAT.ghaib],
+  ["belum ada relaas", "Belum ada relaas", () => RELAAS_SYARAT.tanpa_relaas],
+  ["e-court", "Perkara e-Court", () => ECOURT_SYARAT.ya],
+  ["ecourt", "Perkara e-Court", () => ECOURT_SYARAT.ya],
+  ["lewat 3 bulan", "Belum putus lewat 3 bulan", () => UMUR_SYARAT.lewat3bulan],
+  ["lewat 5 bulan", "Belum putus lewat 5 bulan", () => UMUR_SYARAT.lewat5bulan],
+];
+
+/**
  * Umur perkara yang belum putus.
  *
  * Angka bulannya HARUS dari daftar tertutup: INTERVAL di MySQL tidak dapat
@@ -270,6 +327,9 @@ async function lampirkanCocok(hasil, kriteria) {
 
   const kataBebas = cleanText(kriteria.kata);
   const pihakDicari = cleanText(kriteria.namaPihak) || kataBebas;
+  // Bila pencariannya diperdalam, kata bebasnya juga berlaku untuk alamat,
+  // KUA, pertimbangan, dan amar.
+  const kataDalam = cleanText(kriteria.kataDalam);
 
   const pekerjaan = [];
 
@@ -284,8 +344,8 @@ async function lampirkanCocok(hasil, kriteria) {
     );
   }
 
-  if (cleanText(kriteria.alamatPihak)) {
-    const alamat = cleanText(kriteria.alamatPihak);
+  if (cleanText(kriteria.alamatPihak) || kataDalam) {
+    const alamat = cleanText(kriteria.alamatPihak) || kataDalam;
     pekerjaan.push(
       jalankan(
         `SELECT vp.perkara_id AS perkaraId, vp.alamat AS alamat
@@ -313,8 +373,8 @@ async function lampirkanCocok(hasil, kriteria) {
     );
   }
 
-  if (cleanText(kriteria.pertimbangan)) {
-    const kataPtb = cleanText(kriteria.pertimbangan);
+  if (cleanText(kriteria.pertimbangan) || kataDalam) {
+    const kataPtb = cleanText(kriteria.pertimbangan) || kataDalam;
     pekerjaan.push(
       jalankan(
         `SELECT ph.perkara_id AS perkaraId, ph.pertimbangan_hukum AS teks
@@ -325,8 +385,8 @@ async function lampirkanCocok(hasil, kriteria) {
     );
   }
 
-  if (cleanText(kriteria.amar)) {
-    const kataAmar = cleanText(kriteria.amar);
+  if (cleanText(kriteria.amar) || kataDalam) {
+    const kataAmar = cleanText(kriteria.amar) || kataDalam;
     pekerjaan.push(
       jalankan(
         `SELECT pu.perkara_id AS perkaraId, pu.amar_putusan AS teks
@@ -337,8 +397,8 @@ async function lampirkanCocok(hasil, kriteria) {
     );
   }
 
-  if (cleanText(kriteria.kua)) {
-    const kataKua = cleanText(kriteria.kua);
+  if (cleanText(kriteria.kua) || kataDalam) {
+    const kataKua = cleanText(kriteria.kua) || kataDalam;
     pekerjaan.push(
       jalankan(
         `SELECT dn.perkara_id AS perkaraId, dn.kua_tempat_nikah AS kua
@@ -383,23 +443,41 @@ async function cariPerkara(kataCari, pilihan = {}) {
   const syarat = [];
   const nilai = [];
 
+  // Cara kata bebas dicari - ditentukan di sini, dijalankan di bawah.
+  //   ""       tidak ada kata bebas
+  //   "tepat"  nomor urut atau nomor perkara, satu kueri saja
+  //   "kosakata" kata yang berarti keadaan, bukan teks
+  //   "teks"   dicari cepat dulu, diperdalam bila kosong
+  let caraKata = "";
+  let labelKosakata = "";
+
   if (kata) {
+    const kataKecil = kata.toLowerCase();
+    const pinjam = KOSAKATA_PINJAM.find(([kunci]) => kunci === kataKecil);
+    const langsung = KOSAKATA_CARI[kataKecil];
+
     if (/^\d+$/.test(kata)) {
       // Nomor urut saja - dicocokkan persis, bukan LIKE. "41" tidak boleh
       // memunculkan perkara 410 sampai 419.
       syarat.push("SUBSTRING_INDEX(p.nomor_perkara, '/', 1) = ?");
       nilai.push(kata);
+      caraKata = "tepat";
     } else if (kata.includes("/")) {
       syarat.push("p.nomor_perkara LIKE ?");
       nilai.push(`%${kata}%`);
+      caraKata = "tepat";
+    } else if (langsung) {
+      syarat.push(langsung.sql);
+      labelKosakata = langsung.label;
+      caraKata = "kosakata";
+    } else if (pinjam) {
+      syarat.push(pinjam[2]());
+      labelKosakata = pinjam[1];
+      caraKata = "kosakata";
     } else {
-      syarat.push(
-        `(p.nomor_perkara LIKE ?
-          OR p.jenis_perkara_nama LIKE ?
-          OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
-                      WHERE vp.perkara_id = p.perkara_id AND vp.nama LIKE ?))`
-      );
-      nilai.push(`%${kata}%`, `%${kata}%`, `%${kata}%`);
+      // Syaratnya BELUM dipasang di sini - dipasang saat dijalankan, sebab
+      // lapis cepat dan lapis dalam memakai syarat yang berbeda.
+      caraKata = "teks";
     }
   }
 
@@ -589,12 +667,22 @@ async function cariPerkara(kataCari, pilihan = {}) {
   // Tanpa satu pun syarat, kuerinya akan memuat seluruh register. Yang keluar
   // bukan hasil pencarian, melainkan daftar acak sebanyak batas - dan itu
   // menyesatkan orang yang mengiranya hasil.
-  if (syarat.length === 0) return [];
+  // Tanpa satu pun syarat DAN tanpa kata bebas, kuerinya akan memuat seluruh
+  // register. Yang keluar bukan hasil pencarian melainkan daftar acak
+  // sebanyak batas - dan itu menyesatkan orang yang mengiranya hasil.
+  if (syarat.length === 0 && caraKata !== "teks") return [];
 
   const maksBaris = Math.min(Math.max(Number(batas) || 25, 1), 200);
 
-  const rows = await runQuery(
-    `SELECT p.perkara_id AS perkaraId,
+  // Kuerinya ditulis harfiah di dalam runQuery, tidak disusun dari peubah.
+  //
+  // verify-pemisahan-database.js memeriksa bahwa tiap pembacaan SIPP dimulai
+  // dengan SELECT - penjagaan statis atas sambungan baca-saja ke basis data
+  // pengadilan yang sedang dipakai. Menyusunnya dari peubah membuat penjagaan
+  // itu tidak dapat lagi membacanya.
+  const jalankan = (syaratPakai, nilaiPakai) =>
+    runQuery(
+      `SELECT p.perkara_id AS perkaraId,
             p.nomor_perkara AS nomorPerkara,
             p.jenis_perkara_nama AS jenisPerkara,
             p.alur_perkara_id AS alurPerkaraId,
@@ -613,11 +701,63 @@ async function cariPerkara(kataCari, pilihan = {}) {
            FROM perkara_putusan x
           GROUP BY x.perkara_id
        ) pu ON pu.perkara_id = p.perkara_id
-      WHERE ${syarat.join(" AND ")}
+      WHERE ${syaratPakai.join(" AND ")}
       ORDER BY p.tanggal_pendaftaran DESC, p.perkara_id DESC
       LIMIT ${maksBaris}`,
-    nilai
-  );
+      nilaiPakai
+    );
+
+  // --- lapis cepat: nomor, jenis, nama pihak ---
+  const SYARAT_CEPAT = `(p.nomor_perkara LIKE ?
+          OR p.jenis_perkara_nama LIKE ?
+          OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
+                      WHERE vp.perkara_id = p.perkara_id AND vp.nama LIKE ?))`;
+
+  // --- lapis dalam: seluruh yang dijangkau pencarian lanjutan ---
+  //
+  // Apostrof dibuang dari kolom teks panjang DAN dari kata carinya. Yang
+  // tertulis di SIPP "ba’da dukhul" dengan apostrof miring U+2019, sehingga
+  // mengetik "bada dukhul" maupun "ba'da dukhul" sama-sama nihil tanpa ini.
+  const SYARAT_DALAM = `(p.nomor_perkara LIKE ?
+          OR p.jenis_perkara_nama LIKE ?
+          OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
+                      WHERE vp.perkara_id = p.perkara_id
+                        AND (vp.nama LIKE ? OR vp.alamat LIKE ?))
+          OR EXISTS (SELECT 1 FROM perkara_data_pernikahan dn
+                      WHERE dn.perkara_id = p.perkara_id AND dn.kua_tempat_nikah LIKE ?)
+          OR EXISTS (SELECT 1 FROM perkara_pertimbangan_hukum ph
+                      WHERE ph.perkara_id = p.perkara_id AND ${tanpaApostrof("ph.pertimbangan_hukum")} LIKE ?)
+          OR EXISTS (SELECT 1 FROM perkara_putusan pv
+                      WHERE pv.perkara_id = p.perkara_id AND ${tanpaApostrof("pv.amar_putusan")} LIKE ?)
+          OR EXISTS (SELECT 1 FROM perkara_hakim_pn hk
+                      WHERE hk.perkara_id = p.perkara_id AND hk.hakim_nama LIKE ?)
+          OR EXISTS (SELECT 1 FROM perkara_panitera_pn pp
+                      WHERE pp.perkara_id = p.perkara_id AND pp.panitera_nama LIKE ?)
+          OR EXISTS (SELECT 1 FROM perkara_jurusita jr
+                      WHERE jr.perkara_id = p.perkara_id AND jr.jurusita_nama LIKE ?))`;
+
+  let rows;
+  let diperdalam = false;
+
+  if (caraKata === "teks") {
+    const suka = `%${kata}%`;
+    rows = await jalankan([...syarat, SYARAT_CEPAT], [...nilai, suka, suka, suka]);
+
+    // Diperdalam HANYA bila lapis cepat kosong. Nama pihak dan nomor perkara
+    // - yang dicari sembilan dari sepuluh kali - tetap secepat sebelumnya,
+    // dan yang tidak ketemu di sana barulah dicari sampai ke isi
+    // pertimbangan. Diukur pada SIPP yang berjalan: 0,16 detik lawan 1,39.
+    if (rows.length === 0) {
+      const sukaDalam = `%${bersihApostrof(kata)}%`;
+      rows = await jalankan(
+        [...syarat, SYARAT_DALAM],
+        [...nilai, suka, suka, suka, suka, suka, sukaDalam, sukaDalam, suka, suka, suka]
+      );
+      diperdalam = rows.length > 0;
+    }
+  } else {
+    rows = await jalankan(syarat, nilai);
+  }
 
   const hasil = rows.map((row) => ({
     perkaraId: String(row.perkaraId || ""),
@@ -634,8 +774,18 @@ async function cariPerkara(kataCari, pilihan = {}) {
     cocok: [],
   }));
 
+  // Kosakata dijelaskan langsung: tidak ada teks yang dapat dipotong
+  // sebagai buktinya - yang cocok adalah KEADAAN perkaranya.
+  if (labelKosakata) {
+    for (const baris of hasil) baris.cocok.push({ medan: "Keadaan", nilai: labelKosakata });
+  }
+
   await lampirkanCocok(hasil, {
     kata,
+    // Lapis dalam menjangkau alamat, KUA, pertimbangan, dan amar - jadi
+    // keterangannya pun harus dicari di sana, kalau tidak kartunya kembali
+    // tidak menyebut apa pun yang diketik.
+    kataDalam: diperdalam ? kata : "",
     namaPihak,
     alamatPihak,
     hakim,

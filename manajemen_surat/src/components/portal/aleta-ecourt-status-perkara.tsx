@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ChevronDown } from "lucide-react";
 
+import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
 import { TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -401,6 +402,20 @@ type Status = {
     berkasTerbaca?: boolean;
     baris: Array<{
       arsipId: string;
+      ruang?: string;
+      lemari?: string;
+      rak?: string;
+      box?: string;
+      tanggalMasuk?: string;
+      penerima?: string;
+      lengkap?: boolean;
+      pinjam?: {
+        tanggalPinjam: string;
+        tanggalKembali: string;
+        sedangDipinjam: boolean;
+        peminjam: string;
+        keterangan: string;
+      } | null;
       tanggalInput: string;
       nomor: string;
       keterangan: string;
@@ -2371,6 +2386,59 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                     ) : null}
                   </span>
                 </div>
+                {/* ============================================================
+                    DI MANA BERKAS FISIKNYA
+                    ============================================================
+
+                    Inilah isi sebenarnya tabel arsip SIPP, dan sebelumnya
+                    tidak satu pun ditampilkan - padahal SELURUH baris arsip
+                    di pengadilan ini punya keterangan letaknya. Yang tampil
+                    hanya nomor arsip dan tanggal input, sehingga bagian ini
+                    terbaca seperti daftar berkas yang gagal dimuat. */}
+                {x.ruang || x.lemari || x.rak || x.box ? (
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm">
+                    {x.ruang ? (
+                      <span>
+                        <span className="text-muted-foreground">Ruang</span> {x.ruang}
+                      </span>
+                    ) : null}
+                    {x.lemari ? (
+                      <span>
+                        <span className="text-muted-foreground">Lemari</span> {x.lemari}
+                      </span>
+                    ) : null}
+                    {x.rak ? (
+                      <span>
+                        <span className="text-muted-foreground">Rak</span> {x.rak}
+                      </span>
+                    ) : null}
+                    {x.box ? (
+                      <span>
+                        <span className="text-muted-foreground">Box</span> {x.box}
+                      </span>
+                    ) : null}
+                  </p>
+                ) : null}
+
+                {x.tanggalMasuk || x.penerima ? (
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {x.tanggalMasuk ? `Masuk arsip ${x.tanggalMasuk}` : ""}
+                    {x.penerima ? ` \u00b7 diterima ${x.penerima}` : ""}
+                    {x.lengkap === false ? " \u00b7 berkas dinyatakan belum lengkap" : ""}
+                  </p>
+                ) : null}
+
+                {/* Berkas yang sedang dipinjam TIDAK ada di raknya. Itu yang
+                    perlu diketahui sebelum orang berjalan ke ruang arsip. */}
+                {x.pinjam && x.pinjam.sedangDipinjam ? (
+                  <p className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                    Sedang dipinjam
+                    {x.pinjam.peminjam ? ` oleh ${x.pinjam.peminjam}` : ""}
+                    {x.pinjam.tanggalPinjam ? ` sejak ${x.pinjam.tanggalPinjam}` : ""}
+                    {". Berkasnya tidak ada di raknya."}
+                  </p>
+                ) : null}
+
                 {x.keterangan ? (
                   <p className="mt-0.5 text-sm text-muted-foreground">{x.keterangan}</p>
                 ) : null}
@@ -2379,11 +2447,25 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
           </ul>
         )}
 
-        {/* Tidak adanya tombol unduh bukan karena berkasnya hilang - kolom
-            berkasnya memang tidak ada pada SIPP versi ini. */}
+        {/* ================================================================
+            MENGAPA DI SINI TIDAK ADA TOMBOL UNDUH
+            ================================================================
+
+            Karena memang tidak ada yang dapat diunduh. Tabel arsip SIPP
+            seluruhnya berisi keterangan arsip FISIK - ruang, lemari, rak,
+            box, tanggal masuk, penerima - tanpa satu pun kolom dokumen.
+
+            Kalimat lamanya menyebut "kolom berkas arsip tidak ada pada SIPP
+            versi ini", yang terbaca seolah versi SIPP di sini kurang
+            lengkap dan berkasnya seharusnya ada. Yang benar: arsip di SIPP
+            memang bukan tempat berkas digital, dan berkas digitalnya ada di
+            bagian Berkas pada layar yang sama. */}
         {status.arsipKeterangan.sudahDiarsipkan && status.arsipKeterangan.berkasTerbaca === false ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Kolom berkas arsip tidak ada pada SIPP versi ini, sehingga tidak ada yang dapat diunduh.
+          <p className="mt-2 rounded-md border bg-muted/20 px-2.5 py-2 text-sm text-muted-foreground">
+            Arsip di SIPP mencatat letak berkas <strong>fisik</strong> - ruang, lemari, rak, dan
+            box - bukan berkas digital, sehingga tidak ada yang dapat diunduh dari bagian ini.
+            Berkas digital perkara ini (gugatan, relaas, resi, BAS, dan putusan) ada di bagian{" "}
+            <strong>Berkas</strong> pada layar ini.
           </p>
         ) : null}
       </Bagian>
@@ -2955,6 +3037,23 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
           Ringkasan diletakkan PALING ATAS di antara keempatnya. Untuk petugas
           yang punya sepuluh detik, kalimatlah yang terbaca; gambarnya dibuka
           kalau kalimatnya bikin penasaran. */}
+      {/* ==================================================================
+          ANALISIS LANJUTAN - DIMUAT SAAT DIMINTA
+          ==================================================================
+
+          Berbeda dari bagian Analisa perkara di bawahnya, yang disusun dari
+          data yang SUDAH ada di layar ini tanpa pembacaan tambahan. Yang di
+          sini membaca SIPP lagi - sebagian mengagregasi seluruh register -
+          jadi tidak satu pun berjalan sampai tombolnya ditekan. */}
+      <Bagian
+        judul="Analisis lanjutan"
+        kunci="analisa-lanjut"
+        keterangan="Sepuluh analisis; masing-masing dihitung hanya saat ditekan."
+        ciutBawaan
+      >
+        <AletaAnalisaPerkara nomorPerkara={status.identitas.nomorPerkara} />
+      </Bagian>
+
       {status.analisa ? (
         <Bagian
           judul="Analisa perkara"

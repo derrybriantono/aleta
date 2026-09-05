@@ -217,6 +217,8 @@ export const aletaBotSettings = pgTable("aleta_bot_settings", {
   id: integer("id").primaryKey(),
   botEnabled: integer("bot_enabled").notNull().default(0),
   notificationsEnabled: integer("notifications_enabled").notNull().default(0),
+  kirimPegawaiEnabled: integer("kirim_pegawai_enabled").notNull().default(1),
+  kirimPihakEnabled: integer("kirim_pihak_enabled").notNull().default(1),
   adminWhatsappNumber: text("admin_whatsapp_number").notNull().default(""),
   messageDelayMs: integer("message_delay_ms").notNull().default(1500),
   retryLimit: integer("retry_limit").notNull().default(2),

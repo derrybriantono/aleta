@@ -16,6 +16,10 @@ export type AletaBotQueryCategory = "employee" | "party" | "system";
 export type AletaBotSettings = {
   botEnabled: boolean;
   notificationsEnabled: boolean;
+  /** Pengiriman ke nomor pegawai yang terdaftar. */
+  kirimPegawaiEnabled: boolean;
+  /** Pengiriman ke nomor di luar daftar pegawai - para pihak. */
+  kirimPihakEnabled: boolean;
   adminWhatsappNumber: string;
   messageDelayMs: number;
   /**

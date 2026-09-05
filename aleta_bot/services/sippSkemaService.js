@@ -579,6 +579,20 @@ const CALON = {
   arsipKeterangan: { tabel: "arsip", calon: ["keterangan", "catatan", "lokasi", "box"] },
   arsipNomor: { tabel: "arsip", calon: ["nomor_box", "no_box", "nomor_arsip", "kode"] },
   arsipOleh: { tabel: "arsip", calon: ["diinput_oleh", "user", "petugas"] },
+
+  /**
+   * Letak berkas FISIK. Inilah isi sebenarnya tabel arsip SIPP - bukan
+   * berkas digital - dan pertanyaan yang dijawabnya sederhana: berkas
+   * perkara ini disimpan di mana. Seluruh 4.863 baris arsip di pengadilan
+   * ini punya keterangan itu, dan sebelumnya tidak satu pun ditampilkan.
+   */
+  arsipRuang: { tabel: "arsip", calon: ["no_ruang", "ruang", "nomor_ruang"] },
+  arsipLemari: { tabel: "arsip", calon: ["no_lemari", "lemari", "nomor_lemari"] },
+  arsipRak: { tabel: "arsip", calon: ["no_rak", "rak", "nomor_rak"] },
+  arsipBox: { tabel: "arsip", calon: ["no_berkas", "no_box", "nomor_box", "box"] },
+  arsipMasuk: { tabel: "arsip", calon: ["tanggal_masuk_arsip", "tanggal_masuk"] },
+  arsipLengkap: { tabel: "arsip", calon: ["lengkap"] },
+  arsipPenerima: { tabel: "arsip", calon: ["nama_penerima", "penerima"] },
   /**
    * Berkas pindaian arsip. Namanya tidak seragam antar versi SIPP, jadi
    * dicoba beberapa - dan bila tidak satu pun ada, tombol unduhnya memang
