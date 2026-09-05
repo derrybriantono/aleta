@@ -38,6 +38,9 @@ describe("keterjangkauan aplikasi portal", () => {
     "bas",
     "e-kepegawaian",
     "manajemen-surat",
+    // Ruang kerja perkara (H1-H4). Yang membukanya hakim dan panitera setiap
+    // hari sidang, jadi ia memang harus ada di daftar bawaan.
+    "perkara",
     "sipp",
   ];
 

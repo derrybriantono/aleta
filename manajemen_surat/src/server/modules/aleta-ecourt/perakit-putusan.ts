@@ -20,6 +20,7 @@ import {
   type DasarBeku,
 } from "@/server/modules/aleta-ecourt/penjagaan-putusan";
 import { cariButir, type Butir } from "@/server/modules/aleta-ecourt/pustaka-pertimbangan";
+import { butirTelaah, ringkasTelaah } from "@/server/modules/aleta-ecourt/telaah-draf";
 
 /**
  * PERAKIT PUTUSAN (F1-F6) - merangkai, tidak mengarang.
@@ -429,12 +430,14 @@ export async function nilaiDraf(
 /**
  * Menandatangani draf.
  *
- * Menuntut siap = 1. Draf yang masih punya petitum belum terjawab tidak boleh
- * ditandatangani lewat jalur ini, dan tidak ada parameter untuk melewatinya -
- * pelewat yang disediakan akan dipakai pada hari yang paling sibuk.
+ * Menuntut TIGA hal, dan tidak ada parameter untuk melewati satu pun -
+ * pelewat yang disediakan akan dipakai pada hari yang paling sibuk:
  *
- * Nama penanda tangan WAJIB. Tanpanya, jejaknya hanya menyebut akun yang
- * menekan, dan akun bukan hakim.
+ *   - siap = 1: seluruh bagian wajib terisi dan tidak ada halangan;
+ *   - seluruh butir sudah ditelaah (H3) - selama masih ada yang 'belum',
+ *     tombol terima dan tolak pada tiap alinea hanya akan menjadi hiasan; dan
+ *   - nama penanda tangan. Tanpanya jejaknya hanya menyebut akun yang menekan,
+ *     dan akun bukan hakim.
  */
 export async function tandatanganiDraf(
   db: AletaDatabase,
@@ -451,6 +454,16 @@ export async function tandatanganiDraf(
   if (!draf.siap) {
     const sisa = [...draf.belumTerisi, ...draf.halangan].slice(0, 3).join("; ");
     return { ok: false, sebab: `Draf belum siap: ${sisa || "masih ada bagian yang belum terisi"}.` };
+  }
+
+  const telaah = ringkasTelaah(await butirTelaah(db, drafId));
+  if (!telaah.selesai) {
+    return {
+      ok: false,
+      sebab: telaah.jumlah
+        ? `Masih ada ${telaah.belum} alinea pertimbangan yang belum ditelaah.`
+        : "Draf ini tidak memuat satu pun alinea pertimbangan untuk ditelaah.",
+    };
   }
 
   const sekarang = new Date().toISOString();

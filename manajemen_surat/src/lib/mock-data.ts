@@ -1312,6 +1312,36 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "PostgreSQL",
   },
   {
+    // Ruang kerja perkara: berkas, riwayat, pemeriksaan, draf, dan jejaknya di
+    // satu layar. Susunan panelnya mengikuti peran - hakim membuka pemeriksaan
+    // lebih dulu, panitera membuka riwayat - tetapi tidak ada bagian yang
+    // disembunyikan dari peran mana pun. Kewenangan dijaga peladen; layar yang
+    // menyembunyikan hal yang sebenarnya boleh dilihat hanya membuat orang
+    // meminta kewenangan lebih besar daripada yang ia perlukan.
+    id: "perkara",
+    label: "Ruang Kerja Perkara",
+    description: "Buka satu perkara, lalu berkas, riwayat, pemeriksaan, draf, dan jejaknya ada di layar yang sama.",
+    href: "/perkara",
+    icon: "briefcase-business",
+    roleIds: [
+      "super-admin",
+      "admin",
+      "ketua",
+      "wakil-ketua",
+      "hakim",
+      "panitera",
+      "panitera-muda",
+      "panitera-pengganti",
+      "analis-perkara",
+    ],
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-teal-100",
+    iconFgClass: "text-teal-700",
+    cardClass: "border-teal-200/80 bg-teal-50/70",
+    badgeLabel: "Perkara",
+  },
+  {
     // Alat bantu tulis BAS untuk kepaniteraan. Diletakkan di sidebar, bukan
     // hanya di hub: ini alat yang dibuka berkali-kali dalam sehari sidang,
     // dan alat sehari-hari yang harus dicari dulu akan berhenti dipakai.
@@ -1513,6 +1543,34 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-violet-100 dark:bg-violet-500/15",
     iconFgClass: "text-violet-700 dark:text-violet-200",
     cardClass: "border-violet-200/80 bg-violet-50/80 dark:border-violet-500/20 dark:bg-slate-900/80",
+  },
+  {
+    // Ruang kerja perkara: berkas, riwayat, pemeriksaan, draf, dan jejaknya di
+    // satu layar. Susunan panelnya mengikuti peran - hakim membuka pemeriksaan
+    // lebih dulu, panitera membuka riwayat - tetapi tidak ada bagian yang
+    // disembunyikan dari peran mana pun. Kewenangan dijaga peladen; layar yang
+    // menyembunyikan hal yang sebenarnya boleh dilihat hanya membuat orang
+    // meminta kewenangan lebih besar daripada yang ia perlukan.
+    id: "perkara",
+    label: "Ruang Kerja Perkara",
+    description: "Buka satu perkara, lalu berkas, riwayat, pemeriksaan, draf, dan jejaknya ada di layar yang sama.",
+    href: "/perkara",
+    icon: "briefcase-business",
+    roleIds: [
+      "super-admin",
+      "admin",
+      "ketua",
+      "wakil-ketua",
+      "hakim",
+      "panitera",
+      "panitera-muda",
+      "panitera-pengganti",
+      "analis-perkara",
+    ],
+    iconBgClass: "bg-teal-100",
+    iconFgClass: "text-teal-700",
+    cardClass: "border-teal-200/80 bg-teal-50/70",
+    badgeLabel: "Perkara",
   },
   {
     // Alat kerja harian kepaniteraan, jadi kartunya ada di dasbor - bukan hanya

@@ -1145,6 +1145,10 @@ export const DEFAULT_PORTAL_APP_IDS = new Set<string>([
   // super admin - jadi ia harus ada di daftar bawaan, bukan hanya terlihat
   // oleh peran yang melihat segalanya.
   "bas",
+  // Ruang kerja perkara. Yang membukanya hakim dan panitera, bukan super
+  // admin - jadi ia harus ada di daftar bawaan, bukan hanya terlihat oleh
+  // peran yang melihat segalanya.
+  "perkara",
 ]);
 
 export function PortalProvider({

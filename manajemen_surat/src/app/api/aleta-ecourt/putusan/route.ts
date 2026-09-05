@@ -4,7 +4,6 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
   bacaDraf,
-  butirDraf,
   nilaiDraf,
   rakitPutusan,
   riwayatDraf,
@@ -13,6 +12,13 @@ import {
   tandatanganiDraf,
   type MasukanRakit,
 } from "@/server/modules/aleta-ecourt/perakit-putusan";
+import {
+  butirTelaah,
+  naskahDiterima,
+  ringkasTelaah,
+  telaahButir,
+  terimaSisanya,
+} from "@/server/modules/aleta-ecourt/telaah-draf";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
@@ -29,6 +35,8 @@ export const dynamic = "force-dynamic";
  *   GET ?drafId=...&selisih=1             butir yang bunyinya sudah berubah di pustaka
  *
  *   POST {tindakan:"rakit", ...}          merakit draf baru dan menyimpannya
+ *   POST {tindakan:"telaah", ...}         menerima atau menolak satu alinea (H3)
+ *   POST {tindakan:"terimaSisanya", ...}  menerima sisanya sekaligus, dan tercatat begitu
  *   POST {tindakan:"tandatangani", ...}   menandatangani, WAJIB menyebut nama hakim
  *
  * ============================================================================
@@ -55,10 +63,15 @@ export async function GET(request: NextRequest) {
     if (drafId) {
       const draf = await bacaDraf(db, drafId);
       if (!draf) return ok({ ada: false, sebab: "Draf tidak ditemukan." });
+      const telaah = await butirTelaah(db, drafId);
       return ok({
         ada: true,
         draf,
-        butir: await butirDraf(db, drafId),
+        butir: telaah,
+        ringkasTelaah: ringkasTelaah(telaah),
+        // Naskah awal adalah yang DIUSULKAN mesin; yang ini yang DISETUJUI
+        // hakim. Perbedaannya yang membuktikan telaahnya sungguh terjadi.
+        naskahDiterima: naskahDiterima(telaah),
         nilai: await nilaiDraf(db, drafId),
         // Butir yang bunyinya sudah berubah di pustaka sesudah draf ini dibuat.
         selisihPustaka: mintaSelisih ? await selisihDenganPustaka(db, drafId) : [],
@@ -87,6 +100,10 @@ type Masukan = {
   drafId?: string;
   olehNama?: string;
   catatan?: string;
+  /** Baris butir pada draf - bukan butir pustakanya, sebab satu draf dapat memuatnya dua kali. */
+  barisId?: string;
+  keadaan?: string;
+  alasan?: string;
 } & Partial<MasukanRakit>;
 
 export async function POST(request: NextRequest) {
@@ -152,6 +169,25 @@ export async function POST(request: NextRequest) {
           biaya: hasil.biaya,
         });
       }
+
+      case "telaah":
+        return ok(
+          await telaahButir(db, {
+            drafId: String(masukan.drafId ?? ""),
+            barisId: String(masukan.barisId ?? ""),
+            keadaan: String(masukan.keadaan ?? "") === "ditolak" ? "ditolak" : "diterima",
+            oleh: String(masukan.olehNama ?? ""),
+            alasan: String(masukan.alasan ?? ""),
+          })
+        );
+
+      case "terimaSisanya":
+        return ok(
+          await terimaSisanya(db, {
+            drafId: String(masukan.drafId ?? ""),
+            oleh: String(masukan.olehNama ?? ""),
+          })
+        );
 
       case "tandatangani":
         return ok(

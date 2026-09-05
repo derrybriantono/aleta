@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
+import { terimaSisanya } from "@/server/modules/aleta-ecourt/telaah-draf";
 import {
   bacaDraf,
   butirDraf,
@@ -270,10 +271,20 @@ describe("riwayat versi draf", () => {
 });
 
 describe("tanda tangan", () => {
+  /**
+   * Draf yang siap DAN sudah ditelaah.
+   *
+   * Telaah alinea (H3) menjadi syarat tanda tangan sesudah migrasi 0029, jadi
+   * draf yang hanya "siap" tidak lagi cukup. Ditelaah sekaligus di sini karena
+   * yang diuji blok ini adalah tanda tangannya; syarat telaahnya sendiri
+   * diuji di telaah-draf.test.ts.
+   */
   async function drafSiap(basis: AletaDatabase) {
     await tanamButir(basis, "b1", "Menimbang, bahwa maksud gugatan adalah sebagaimana diuraikan;");
     const hasil = await rakitPutusan(basis, masukan());
-    return simpanDraf(basis, "aktor", { perkaraId: PERKARA, nomorPerkara: NOMOR, hasil });
+    const disimpan = await simpanDraf(basis, "aktor", { perkaraId: PERKARA, nomorPerkara: NOMOR, hasil });
+    await terimaSisanya(basis, { drafId: disimpan.drafId, oleh: "Dra. Siti Zubaidah, M.H." });
+    return disimpan;
   }
 
   it("draf siap dapat ditandatangani, dan namanya tercatat", async () => {

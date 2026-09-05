@@ -22,6 +22,9 @@ export type ModuleId =
   | "manajemen-surat"
   // Alat bantu tulis BAS untuk kepaniteraan.
   | "bas"
+  // Ruang kerja perkara: satu layar untuk berkas, riwayat, pemeriksaan, draf,
+  // dan jejaknya.
+  | "perkara"
   | "aleta-ecourt"
   | "aleta-ecourt-admin"
   | "asisten-hakim"
@@ -71,6 +74,7 @@ export type ModuleId =
   | "feedback";
 
 export type PortalAppId =
+  | "perkara"
   | "manajemen-surat"
   | "aleta-bot"
   // Penghubung e-Court: satu untuk seluruh pegawai (unduh ekstensi dan

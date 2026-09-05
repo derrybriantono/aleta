@@ -146,6 +146,8 @@ const schemaStatements = [
     id SMALLINT PRIMARY KEY CHECK (id = 1),
     bot_enabled SMALLINT NOT NULL DEFAULT 0,
     notifications_enabled SMALLINT NOT NULL DEFAULT 0,
+    kirim_pegawai_enabled SMALLINT NOT NULL DEFAULT 1,
+    kirim_pihak_enabled SMALLINT NOT NULL DEFAULT 1,
     admin_whatsapp_number TEXT NOT NULL DEFAULT '',
     message_delay_ms INTEGER NOT NULL DEFAULT 1500,
     retry_limit INTEGER NOT NULL DEFAULT 2,
@@ -664,7 +666,14 @@ const schemaStatements = [
     urutan INTEGER NOT NULL DEFAULT 0,
     teks_saat_itu TEXT NOT NULL DEFAULT '',
     versi_butir INTEGER NOT NULL DEFAULT 0,
-    alasan TEXT NOT NULL DEFAULT '[]'
+    alasan TEXT NOT NULL DEFAULT '[]',
+    -- Telaah hakim per bagian (H3). Selama masih ada 'belum', draf tidak
+    -- dapat ditandatangani - tanpa syarat itu tombolnya hanya hiasan.
+    keadaan TEXT NOT NULL DEFAULT 'belum',
+    diputus_oleh TEXT NOT NULL DEFAULT '',
+    alasan_tolak TEXT NOT NULL DEFAULT '',
+    diputus_at TEXT NOT NULL DEFAULT '',
+    sekaligus INTEGER NOT NULL DEFAULT 0
   )`,
   `CREATE TABLE IF NOT EXISTS aleta_putusan_draf_nilai (
     id TEXT PRIMARY KEY,
@@ -2382,6 +2391,7 @@ const indexStatements = [
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_putusan_draf_versi ON aleta_putusan_draf(perkara_id, versi)`,
   `CREATE INDEX IF NOT EXISTS idx_putusan_draf_butir_draf ON aleta_putusan_draf_butir(draf_id, urutan)`,
   `CREATE INDEX IF NOT EXISTS idx_putusan_draf_butir_butir ON aleta_putusan_draf_butir(butir_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_butir_keadaan ON aleta_putusan_draf_butir(draf_id, keadaan)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_putusan_draf_nilai_kunci ON aleta_putusan_draf_nilai(draf_id, nama)`,
   `CREATE INDEX IF NOT EXISTS idx_jlf_sections_anchor ON jlf_regulation_sections(anchor)`,
   `CREATE INDEX IF NOT EXISTS idx_jlf_sections_regulation ON jlf_regulation_sections(regulation_id, sort_order)`,
@@ -2656,6 +2666,12 @@ const migrationStatements = [
   `ALTER TABLE panel_settings ADD COLUMN IF NOT EXISTS external_apps_json TEXT NOT NULL DEFAULT '{}'`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS bot_enabled SMALLINT NOT NULL DEFAULT 0`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS notifications_enabled SMALLINT NOT NULL DEFAULT 0`,
+  // Berbawaan 1, berbeda dari saklar lain di tabel ini. Berbawaan 0 akan
+  // menghentikan SELURUH pengiriman yang sedang berjalan begitu versi baru
+  // dipasang, tanpa ada yang memintanya - dan panggilan sidang yang tidak
+  // terkirim berakibat pada orang.
+  `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS kirim_pegawai_enabled SMALLINT NOT NULL DEFAULT 1`,
+  `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS kirim_pihak_enabled SMALLINT NOT NULL DEFAULT 1`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS admin_whatsapp_number TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS message_delay_ms INTEGER NOT NULL DEFAULT 1500`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS retry_limit INTEGER NOT NULL DEFAULT 2`,
