@@ -225,6 +225,13 @@
       "when": 1780014400000,
       "tag": "0031_aleta_saklar_ai",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1780018000000,
+      "tag": "0032_aleta_mutu_dan_biaya",
+      "breakpoints": true
     }
   ]
 }

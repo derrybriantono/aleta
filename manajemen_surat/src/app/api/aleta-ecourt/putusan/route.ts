@@ -40,6 +40,15 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"tandatangani", ...}   menandatangani, WAJIB menyebut nama hakim
  *
  * ============================================================================
+ * KEWENANGAN BACANYA "panel", SAMA DENGAN SISA JUDICIA
+ * ============================================================================
+ *
+ * Sempat memakai "berkas" - kewenangan MENGUNDUH arsip e-Court - sementara BAS
+ * dan berkas perkara memakai "panel". Akibatnya pengadilan yang memberi hakim
+ * kewenangan melihat tanpa mengunduh menghasilkan hakim yang dapat menulis BAS
+ * tetapi tidak dapat membuka draf yang harus ditandatanganinya sendiri.
+ *
+ * ============================================================================
  * MERAKIT BOLEH, MENANDATANGANI PUNYA SYARAT
  * ============================================================================
  *
@@ -54,7 +63,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "berkas");
+    await pastikanKapabilitas(db, actorUserId, "panel");
 
     const drafId = String(getSearchParam(request, "drafId") ?? "").trim();
     const perkaraId = String(getSearchParam(request, "perkaraId") ?? "").trim();
@@ -95,6 +104,39 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** Peran yang boleh menandatangani putusan. */
+const PERAN_HAKIM = new Set(["hakim", "ketua", "wakil-ketua"]);
+
+/**
+ * Nama dan kelayakan penanda tangan, dibaca dari akunnya sendiri.
+ *
+ * Akun yang tidak berperan hakim ditolak di sini, bukan di layar: penjagaan
+ * yang hanya ada di layar dilewati siapa pun yang memanggil rutenya langsung.
+ */
+async function penandaTangan(
+  db: Awaited<ReturnType<typeof getDatabase>>,
+  aktor: string
+): Promise<{ boleh: boolean; nama: string; sebab: string }> {
+  if (!aktor) return { boleh: false, nama: "", sebab: "Akun penanda tangan tidak dikenali." };
+
+  const baris = await db.queryOne<Record<string, unknown>>(
+    `SELECT name, role_id FROM users WHERE id = ?`,
+    [aktor]
+  );
+  const nama = String(baris?.name ?? "").trim();
+  const peran = String(baris?.role_id ?? "").trim().toLowerCase();
+
+  if (!nama) return { boleh: false, nama: "", sebab: "Nama pada akun ini belum terisi." };
+  if (!PERAN_HAKIM.has(peran)) {
+    return {
+      boleh: false,
+      nama,
+      sebab: "Hanya hakim, ketua, atau wakil ketua yang dapat menandatangani putusan.",
+    };
+  }
+  return { boleh: true, nama, sebab: "" };
+}
+
 type Masukan = {
   tindakan?: string;
   drafId?: string;
@@ -112,7 +154,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "berkas");
+    await pastikanKapabilitas(db, actorUserId, "panel");
 
     const masukan = (await request.json()) as Masukan;
     const aktor = String(actorUserId ?? "");
@@ -189,13 +231,21 @@ export async function POST(request: NextRequest) {
           })
         );
 
-      case "tandatangani":
+      case "tandatangani": {
+        // Nama penanda tangan diambil dari AKUN, bukan dari badan permintaan.
+        //
+        // Sebelumnya ia teks bebas: siapa pun yang dapat mencapai rute ini
+        // dapat menandatangani atas nama hakim mana pun, dan jejaknya akan
+        // menyebut nama itu tanpa satu pun tanda bahwa yang menekan orang
+        // lain. J3 menuntut hakim di ujung; nama yang diketik sendiri bukan
+        // hakim, hanya tulisan.
+        const penanda = await penandaTangan(db, aktor);
+        if (!penanda.boleh) return ok({ ok: false, sebab: penanda.sebab });
+
         return ok(
-          await tandatanganiDraf(db, {
-            drafId: String(masukan.drafId ?? ""),
-            olehNama: String(masukan.olehNama ?? ""),
-          })
+          await tandatanganiDraf(db, { drafId: String(masukan.drafId ?? ""), olehNama: penanda.nama })
         );
+      }
 
       default:
         return ok({ ok: false, sebab: "Tindakan tidak dikenali." });

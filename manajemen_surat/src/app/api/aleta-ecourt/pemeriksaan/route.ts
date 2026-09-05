@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "berkas");
+    await pastikanKapabilitas(db, actorUserId, "panel");
 
     const hanyaAktif = String(getSearchParam(request, "aktif") ?? "").trim() === "1";
     const aturan = await daftarAturan(db, hanyaAktif);
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     if (mengubahAturan) {
       await pastikanAdminIstimewa(db, actorUserId, "mengubah aturan pemeriksaan perkara");
     } else {
-      await pastikanKapabilitas(db, actorUserId, "berkas");
+      await pastikanKapabilitas(db, actorUserId, "panel");
     }
     const aktor = String(actorUserId ?? "");
 

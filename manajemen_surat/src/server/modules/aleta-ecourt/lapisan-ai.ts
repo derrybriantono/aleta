@@ -10,6 +10,7 @@ import {
   type Jawaban,
   type Kiriman,
 } from "@/lib/penjawab";
+import { type AturanBatas } from "@/lib/batas-data";
 import { buatPenyamar } from "@/lib/penyamaran";
 import { hitungSaklar, periksaSaklar, type Keputusan, type Saklar } from "@/lib/saklar-ai";
 import { periksaUsulan, type UsulanButir } from "@/lib/usulan-pertimbangan";
@@ -94,6 +95,15 @@ export async function jawab(
     fakta?: Record<string, unknown>;
     ai: KeadaanAi;
     panggilModel?: PemanggilModel;
+    /**
+     * Aturan batas yang berlaku, termasuk keputusan pengadilan yang tersimpan.
+     *
+     * Sempat tidak diterima di sini sementara jalur penarikan fakta sudah
+     * membacanya - akibatnya satu ruas yang sengaja diizinkan pengadilan
+     * lolos di satu jalur dan tertahan di jalur lain, tanpa keterangan apa
+     * pun. Keputusan yang tercatat harus berlaku di seluruh jalur.
+     */
+    aturanBatas?: AturanBatas[];
   }
 ): Promise<HasilJawab> {
   const pertanyaan = bersih(masukan.pertanyaan);
@@ -137,7 +147,7 @@ export async function jawab(
 
   // ── Baru sesudah itu model, dan hanya lewat saringan ───────────────────
   const penyamar = buatPenyamar(randomUUID());
-  const kiriman = siapkanKiriman({ pertanyaan, ...(masukan.fakta ?? {}) }, penyamar);
+  const kiriman = siapkanKiriman({ pertanyaan, ...(masukan.fakta ?? {}) }, penyamar, masukan.aturanBatas);
 
   if (!kiriman.boleh) {
     return { jawaban: jawabanKosong(kiriman.sebab), kiriman, penyedia: "", model: "" };

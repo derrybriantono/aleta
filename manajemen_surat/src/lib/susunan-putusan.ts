@@ -148,8 +148,3 @@ export function naskahDariKerangka(kerangka: Kerangka): string {
     .map((item) => `${item.judul.toUpperCase()}\n\n${item.isi || `[${item.halangan}]`}`)
     .join("\n\n");
 }
-
-/** Seluruh butir pustaka yang dipakai naskah ini, tanpa kembar (F6). */
-export function butirTerpakai(kerangka: Kerangka): string[] {
-  return [...new Set(kerangka.bagian.flatMap((item) => item.butirDipakai))];
-}

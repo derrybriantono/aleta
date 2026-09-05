@@ -102,17 +102,6 @@ export function periksaUsulan(
   };
 }
 
-/**
- * Alinea yang TIDAK mengutip pasal sama sekali.
- *
- * Bukan kegagalan: banyak alinea pertimbangan memang tidak mengutip apa pun -
- * alinea pembuka, alinea yang merangkum keterangan saksi. Yang tidak boleh
- * adalah mengutip pasal yang tidak ada, bukan tidak mengutip.
- */
-export function tanpaKutipan(usulan: UsulanButir): boolean {
-  return usulan.kutipan.length === 0;
-}
-
 export type PerintahSusun = {
   jenisPerkara: string;
   isu: string;

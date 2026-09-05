@@ -192,6 +192,64 @@ describe("merakit draf dari pustaka", () => {
   });
 });
 
+describe("amar dari templat SIPP (F4)", () => {
+  const TEMPLAT = [
+    {
+      id: "t1",
+      nama: "Kabul Cerai Gugat",
+      jenisPerkara: "Cerai Gugat",
+      keadaan: "dikabulkan",
+      aktif: true,
+      isi: "MENGADILI\n1. Mengabulkan gugatan Penggugat seluruhnya;\n2. Menjatuhkan talak satu bain sughra;",
+    },
+  ];
+
+  it("templat dipakai saat amar belum disusun petugas", async () => {
+    // Pemilih templat sempat ada, terjuji, dan tidak pernah dipanggil -
+    // sehingga "amar dari templat SIPP" hanya berlaku bila pemanggilnya sudah
+    // menyusun amarnya sendiri, yang meniadakan gunanya.
+    const basis = await basisData();
+    await tanamButir(basis, "b1", "Menimbang, bahwa maksud gugatan adalah sebagaimana diuraikan;");
+    const hasil = await rakitPutusan(basis, masukan({ amar: [], templatAmar: TEMPLAT }));
+
+    expect(hasil.kerangka.bagian.find((item) => item.kunci === "amar")?.isi).toContain(
+      "Mengabulkan gugatan Penggugat"
+    );
+  });
+
+  it("amar yang sudah disusun petugas TIDAK ditimpa templat", async () => {
+    // Yang diketik manusia selalu menang atas yang dipilih mesin.
+    const basis = await basisData();
+    await tanamButir(basis, "b1", "Menimbang, bahwa maksud gugatan adalah sebagaimana diuraikan;");
+    const hasil = await rakitPutusan(
+      basis,
+      masukan({ amar: [{ nomor: 1, teks: "Mengabulkan gugatan Penggugat seluruhnya;" }], templatAmar: TEMPLAT })
+    );
+    expect(hasil.kerangka.bagian.find((item) => item.kunci === "amar")?.isi).not.toContain("talak satu bain");
+  });
+
+  it("penomoran templat dibuang dan dinomori ulang", async () => {
+    // Templat kerap dilewati sebagiannya, dan amar yang melompat dari 1 ke 3
+    // dibaca sebagai ada butir yang hilang.
+    const basis = await basisData();
+    await tanamButir(basis, "b1", "Menimbang, bahwa maksud gugatan adalah sebagaimana diuraikan;");
+    const hasil = await rakitPutusan(basis, masukan({ amar: [], templatAmar: TEMPLAT }));
+    const amar = hasil.kerangka.bagian.find((item) => item.kunci === "amar")?.isi ?? "";
+    expect(amar).toContain("1. Mengabulkan");
+    expect(amar).toContain("2. Menjatuhkan");
+  });
+
+  it("tidak ada templat yang cocok disebut sebagai halangan, bukan didiamkan", async () => {
+    const basis = await basisData();
+    await tanamButir(basis, "b1", "Menimbang, bahwa maksud gugatan adalah sebagaimana diuraikan;");
+    const hasil = await rakitPutusan(
+      basis,
+      masukan({ amar: [], templatAmar: [{ ...TEMPLAT[0], jenisPerkara: "Itsbat Nikah" }] })
+    );
+    expect(hasil.halangan.join(" ")).toContain("Cerai Gugat");
+  });
+});
+
 describe("riwayat versi draf", () => {
   it("menyimpan selalu menambah versi, tidak menimpa", async () => {
     // Draf lama adalah satu-satunya bukti bahwa naskah sempat berbunyi lain.

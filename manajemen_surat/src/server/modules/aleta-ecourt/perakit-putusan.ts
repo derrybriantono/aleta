@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 
-import { adukan, type ButirAmar, type HasilAduan, type Petitum } from "@/lib/amar-petitum";
+import {
+  adukan,
+  bacaKeadaan,
+  pilihTemplatAmar,
+  type ButirAmar,
+  type HasilAduan,
+  type Petitum,
+  type TemplatAmar,
+} from "@/lib/amar-petitum";
 import { hitungBiaya, kalimatBiaya, type HasilBiaya, type KomponenBiaya } from "@/lib/biaya-perkara";
 import { susunDudukPerkara, type MasukanDudukPerkara } from "@/lib/duduk-perkara";
 import { pilihButir, type Fakta } from "@/lib/pemilih-butir";
@@ -64,6 +72,14 @@ export type MasukanRakit = {
   dudukPerkara: MasukanDudukPerkara;
   petitum: Petitum[];
   amar: ButirAmar[];
+  /**
+   * Templat amar dari SIPP (F4).
+   *
+   * Dipakai HANYA bila `amar` kosong. Templat tidak pernah menimpa amar yang
+   * sudah disusun petugas - yang diketik manusia selalu menang atas yang
+   * dipilih mesin.
+   */
+  templatAmar?: TemplatAmar[];
   biaya: { komponen: KomponenBiaya[]; panjar: number; dibebankanKepada: string };
   /** Nilai yang mengisi naskah beserta sistem asalnya, untuk disimpan (F6). */
   nilai?: Array<{ nama: string; nilai: string; asal: string }>;
@@ -136,7 +152,28 @@ export async function rakitPutusan(db: AletaDatabase, masukan: MasukanRakit): Pr
 
   // ── F1 - dirangkai menurut susunan baku ────────────────────────────────
   const pertimbangan = pilihan.terpilih.map((item) => item.butir.teks.trim()).filter(Boolean);
-  const barisAmar = [...(masukan.amar ?? [])].sort((a, b) => a.nomor - b.nomor);
+
+  // ── F4 - amar dari templat SIPP bila belum disusun petugas ─────────────
+  //
+  // Sempat tidak tersambung sama sekali: pemilih templat ada, terjuji, dan
+  // tidak pernah dipanggil - sehingga "amar dari templat SIPP" hanya berlaku
+  // bila pemanggilnya sudah menyusun amarnya sendiri, yang meniadakan gunanya.
+  let barisAmar = [...(masukan.amar ?? [])].sort((a, b) => a.nomor - b.nomor);
+  if (!barisAmar.length && (masukan.templatAmar ?? []).length) {
+    const keadaanAmar = bacaKeadaan(
+      (masukan.petitum ?? []).map((item) => item.teks).join(" ")
+    );
+    const pilihanTemplat = pilihTemplatAmar(masukan.templatAmar ?? [], {
+      jenisPerkara: masukan.jenisPerkara,
+      keadaan: keadaanAmar === "takDikenali" ? "dikabulkan" : keadaanAmar,
+    });
+    if (pilihanTemplat.templat) {
+      barisAmar = pecahTemplatAmar(pilihanTemplat.templat.isi);
+      if (pilihanTemplat.sebab) halangan.push(pilihanTemplat.sebab);
+    } else if (pilihanTemplat.sebab) {
+      halangan.push(pilihanTemplat.sebab);
+    }
+  }
   const kalimatBiayaAmar = kalimatBiaya(biaya, masukan.biaya?.dibebankanKepada ?? "");
 
   const kerangka = susunKerangka({
@@ -188,6 +225,21 @@ export async function rakitPutusan(db: AletaDatabase, masukan: MasukanRakit): Pr
     halangan,
     siapDitandatangani: siap,
   };
+}
+
+/**
+ * Memecah isi templat menjadi butir amar.
+ *
+ * Satu baris satu butir. Penomoran yang sudah ada di templat DIBUANG dan
+ * dinomori ulang perakit - templat kerap dilewati sebagiannya, dan amar yang
+ * melompat dari 1 ke 3 dibaca sebagai ada butir yang hilang.
+ */
+function pecahTemplatAmar(isi: string): ButirAmar[] {
+  return String(isi ?? "")
+    .split(/\r?\n/)
+    .map((baris) => baris.trim().replace(/^\d+[.)]\s*/, ""))
+    .filter((baris) => baris && !/^MENGADILI$/i.test(baris))
+    .map((teks, urutan) => ({ nomor: urutan + 1, teks }));
 }
 
 function susunIdentitas(masukan: MasukanRakit): { isi?: string; halangan?: string } {

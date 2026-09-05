@@ -577,6 +577,73 @@ const schemaStatements = [
     tanggal TEXT NOT NULL DEFAULT '',
     urutan_alinea INTEGER NOT NULL DEFAULT 0
   )`,
+  // Biaya dicatat per panggilan dengan tarif yang berlaku SAAT ITU. Menjumlah
+  // ulang saat laporan dibuka membuat biaya bulan lalu berubah sendiri ketika
+  // tarif penyedia berubah - dan tidak ada yang dapat menjelaskan mengapa.
+  `CREATE TABLE IF NOT EXISTS aleta_ai_pemakaian (
+    id TEXT PRIMARY KEY,
+    pekerjaan TEXT NOT NULL DEFAULT '',
+    tingkat TEXT NOT NULL DEFAULT 'hemat',
+    penyedia TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    token_masuk INTEGER NOT NULL DEFAULT 0,
+    token_keluar INTEGER NOT NULL DEFAULT 0,
+    tarif_masuk_per_juta REAL NOT NULL DEFAULT 0,
+    tarif_keluar_per_juta REAL NOT NULL DEFAULT 0,
+    biaya_rupiah REAL NOT NULL DEFAULT 0,
+    berhasil INTEGER NOT NULL DEFAULT 1,
+    perkara_id TEXT NOT NULL DEFAULT '',
+    oleh TEXT NOT NULL DEFAULT '',
+    bulan TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL
+  )`,
+  // Tarif per model, terpisah dari ai_providers: tarif berubah tanpa
+  // sambungannya berubah. Tanpa baris di sini biaya terhitung NOL, dan pagu
+  // yang selalu nol tidak pernah memperingatkan apa pun.
+  `CREATE TABLE IF NOT EXISTS aleta_ai_tarif (
+    id TEXT PRIMARY KEY,
+    model TEXT NOT NULL,
+    tarif_masuk_per_juta REAL NOT NULL DEFAULT 0,
+    tarif_keluar_per_juta REAL NOT NULL DEFAULT 0,
+    mata_uang TEXT NOT NULL DEFAULT 'IDR',
+    disetel_oleh TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_ai_pagu (
+    id TEXT PRIMARY KEY,
+    bulan TEXT NOT NULL,
+    pagu_rupiah REAL NOT NULL DEFAULT 0,
+    diputuskan_oleh TEXT NOT NULL DEFAULT '',
+    atas_perintah TEXT NOT NULL DEFAULT '',
+    catatan TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_sumber_aplikasi (
+    id TEXT PRIMARY KEY,
+    kode TEXT NOT NULL,
+    nama TEXT NOT NULL DEFAULT '',
+    asal TEXT NOT NULL DEFAULT '',
+    hanya_baca INTEGER NOT NULL DEFAULT 1,
+    umur_wajar_jam INTEGER NOT NULL DEFAULT 0,
+    ruas TEXT NOT NULL DEFAULT '[]',
+    aktif INTEGER NOT NULL DEFAULT 0,
+    didaftarkan_oleh TEXT NOT NULL DEFAULT '',
+    atas_perintah TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_keajekan_jalan (
+    id TEXT PRIMARY KEY,
+    dijalankan_at TEXT NOT NULL,
+    dijalankan_oleh TEXT NOT NULL DEFAULT '',
+    jumlah_perkara INTEGER NOT NULL DEFAULT 0,
+    jumlah_berubah INTEGER NOT NULL DEFAULT 0,
+    jumlah_galat INTEGER NOT NULL DEFAULT 0,
+    temuan TEXT NOT NULL DEFAULT '[]',
+    selesai_at TEXT NOT NULL DEFAULT ''
+  )`,
   // Saklar mati AI. Satu baris mati mematikan seluruhnya - baris menyala
   // tidak pernah membatalkan baris mati di lingkup mana pun, sebab saklar
   // yang dapat dibatalkan lapisan lain bukan saklar.
@@ -2438,6 +2505,12 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_asal_kunci ON aleta_pertimbangan_asal(butir_id, perkara_id, urutan_alinea)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_pemakaian_bulan ON aleta_ai_pemakaian(bulan, pekerjaan)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_pemakaian_perkara ON aleta_ai_pemakaian(perkara_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_tarif_model ON aleta_ai_tarif(model)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_pagu_bulan ON aleta_ai_pagu(bulan)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_sumber_aplikasi_kode ON aleta_sumber_aplikasi(kode)`,
+  `CREATE INDEX IF NOT EXISTS idx_keajekan_jalan_waktu ON aleta_keajekan_jalan(dijalankan_at)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_saklar_kunci ON aleta_ai_saklar(lingkup, kunci)`,
   `CREATE INDEX IF NOT EXISTS idx_ai_saklar_mati ON aleta_ai_saklar(menyala)`,
   `CREATE INDEX IF NOT EXISTS idx_ai_percakapan_perkara ON aleta_ai_percakapan(perkara_id, diubah_at)`,

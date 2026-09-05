@@ -3,7 +3,9 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { susunPerintah } from "@/lib/fakta-tak-berpola";
-import { siapkanKiriman } from "@/lib/penjawab";
+import { type Pekerjaan } from "@/lib/pagu-ai";
+import { susunPerintahPertimbangan } from "@/lib/usulan-pertimbangan";
+import { sebutkanAsal, siapkanKiriman } from "@/lib/penjawab";
 import { buatPenyamar } from "@/lib/penyamaran";
 import { getDatabase } from "@/server/db/client";
 import { pastikanAdminIstimewa, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
@@ -22,8 +24,13 @@ import {
   usulkanButirKePustaka,
   type PemanggilModel,
 } from "@/server/modules/aleta-ecourt/lapisan-ai";
-import { bukaJangkar } from "@/server/modules/aleta-ecourt/pustaka-hukum";
+import { bukaJangkar, cariPasal } from "@/server/modules/aleta-ecourt/pustaka-hukum";
 import { jangkarRujukan, kenaliRujukan } from "@/server/modules/aleta-ecourt/pemecah-pertimbangan";
+import {
+  catatDenganTarif,
+  izinPanggil,
+} from "@/server/modules/aleta-ecourt/mutu-dan-biaya";
+import { cariButir } from "@/server/modules/aleta-ecourt/pustaka-pertimbangan";
 import { getAISettingsFromDb, resolveLiveAIConnectionForModule } from "@/server/modules/ai/service";
 import { requestStructuredDataFromProvider } from "@/server/modules/ai/provider-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -43,7 +50,8 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan:"tanya"}         pustaka dulu, model terakhir (I5, I3)
  *   POST {tindakan:"tarikFakta"}    menarik fakta dari naskah tak berpola (I1)
  *   POST {tindakan:"sahkanFakta"}   menegaskan satu fakta
- *   POST {tindakan:"usulkanButir"}  memasukkan alinea model ke pustaka (I2, I4)
+ *   POST {tindakan:"susunAlinea"}   menyusun alinea baru - hanya bila pustaka kosong (I2)
+ *   POST {tindakan:"usulkanButir"}  memasukkan alinea model ke pustaka (I4)
  *   POST {tindakan:"saklar"}        mematikan atau menyalakan AI (I6)
  *
  * ============================================================================
@@ -65,7 +73,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "berkas");
+    await pastikanKapabilitas(db, actorUserId, "panel");
 
     const percakapanId = String(getSearchParam(request, "percakapanId") ?? "").trim();
     const perkaraId = String(getSearchParam(request, "perkaraId") ?? "").trim();
@@ -115,7 +123,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "berkas");
+    await pastikanKapabilitas(db, actorUserId, "panel");
 
     const masukan = (await request.json()) as Masukan;
     const aktor = String(actorUserId ?? "");
@@ -125,6 +133,7 @@ export async function POST(request: NextRequest) {
         const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt", {
           peran: await peranAktor(db, aktor),
           perkaraId: String(masukan.perkaraId ?? ""),
+          pekerjaan: "percakapan",
         });
         const hasil = await jawab(db, {
           pertanyaan: String(masukan.pertanyaan ?? ""),
@@ -132,6 +141,9 @@ export async function POST(request: NextRequest) {
           fakta: masukan.fakta ?? {},
           ai: keadaan,
           panggilModel: panggil,
+          // Keputusan batas yang tercatat pengadilan berlaku di jalur ini juga,
+          // bukan hanya di penarikan fakta.
+          aturanBatas: await aturanBatas(db),
         });
 
         // Percakapan dicatat hanya bila perkaranya disebut - pertanyaan lepas
@@ -156,6 +168,10 @@ export async function POST(request: NextRequest) {
           ok: true,
           percakapanId,
           jawaban: hasil.jawaban,
+          // Kalimat asal untuk ditampilkan - I5 menjanjikan layar MENYEBUT
+          // siapa yang menjawab, dan menyerahkan kata "model" mentah kepada
+          // layar berarti tiap layar merangkainya sendiri, berbeda-beda.
+          asal: sebutkanAsal(hasil.jawaban),
           penyedia: hasil.penyedia,
           model: hasil.model,
           // Nama ruas saja - nilainya tidak dikembalikan ke layar sebagai
@@ -175,6 +191,7 @@ export async function POST(request: NextRequest) {
         const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt", {
           peran: await peranAktor(db, aktor),
           perkaraId: String(masukan.perkaraId ?? ""),
+          pekerjaan: "tarikFakta",
         });
         if (!keadaan.menyala || !panggil) {
           return ok({ ok: false, sebab: keadaan.sebab || "AI sedang dimatikan." });
@@ -232,6 +249,77 @@ export async function POST(request: NextRequest) {
             olehNama: String(masukan.olehNama ?? ""),
           })
         );
+
+      case "susunAlinea": {
+        // I2. Pustaka diperiksa LEBIH DULU, dan model hanya dipanggil bila ia
+        // menjawab kosong. Jalur ini sempat tidak ada sama sekali: pemeriksa
+        // usulannya terjuji, penyusun perintahnya terjuji, dan tidak ada satu
+        // pun rute yang memanggilnya - sehingga I2 hanya dapat dipakai oleh
+        // pemanggil yang sudah punya alineanya sendiri.
+        const isu = String(masukan.isu ?? "");
+        const jenisPerkara = String(masukan.jenisPerkara ?? "");
+
+        const sudahAda = await cariButir(db, { cari: isu, jenisPerkara, batas: 3 });
+        if (sudahAda.length) {
+          return ok({
+            ok: false,
+            sebab: "Pustaka sudah memuat butir untuk isu ini, sehingga model tidak dipanggil.",
+            butir: sudahAda,
+          });
+        }
+
+        const { keadaan, panggil } = await siapkanModel(db, "aleta-ecourt", {
+          peran: await peranAktor(db, aktor),
+          perkaraId: String(masukan.perkaraId ?? ""),
+          pekerjaan: "susunPertimbangan",
+        });
+        if (!keadaan.menyala || !panggil) {
+          return ok({ ok: false, sebab: keadaan.sebab || "AI sedang dimatikan." });
+        }
+
+        // Model hanya boleh mengutip pasal yang benar-benar ada di pustaka.
+        const pasal = await cariPasal(db, isu || jenisPerkara);
+        const perintah = susunPerintahPertimbangan({
+          jenisPerkara,
+          isu,
+          fakta: masukan.fakta ?? {},
+          pasalTersedia: pasal.slice(0, 10).map((item) => ({
+            jangkar: item.jangkar,
+            sebutan: item.sebutan,
+            isi: item.isi,
+          })),
+        });
+
+        const kirim = siapkanKiriman(
+          { jenisPerkara, ...(masukan.fakta ?? {}) },
+          buatPenyamar(randomUUID()),
+          await aturanBatas(db)
+        );
+        if (!kirim.boleh) return ok({ ok: false, sebab: kirim.sebab });
+
+        const tanggapan = await panggil(perintah, kirim.isi);
+        if (!tanggapan.ok) return ok({ ok: false, sebab: tanggapan.sebab || "Model tidak menjawab." });
+
+        const teksAlinea = String(
+          (tanggapan.data as { teks?: unknown })?.teks ?? tanggapan.teks ?? ""
+        );
+
+        const terbukti = new Set<string>();
+        for (const rujukan of kenaliRujukan(teksAlinea)) {
+          const jangkar = jangkarRujukan(rujukan);
+          if (jangkar && (await bukaJangkar(db, jangkar))) terbukti.add(jangkar);
+        }
+        const usulan = periksaUsulan({ teks: teksAlinea, isu }, terbukti);
+
+        return ok({
+          ok: usulan.layakDiusulkan,
+          sebab: usulan.sebab,
+          usulan,
+          penyedia: tanggapan.penyedia,
+          model: tanggapan.model,
+          ruasDikirim: Object.keys(kirim.isi),
+        });
+      }
 
       case "usulkanButir": {
         const teks = String(masukan.teks ?? "");
@@ -306,8 +394,15 @@ async function aturanBatas(db: Awaited<ReturnType<typeof getDatabase>>) {
     batas: (String(item.batas ?? "terlarang") || "terlarang") as "bebas" | "samar" | "terlarang",
     sebab: String(item.sebab ?? "").trim(),
   }));
+  // Ruas dari sumber aplikasi yang AKTIF ikut berlaku (K7). Tanpa baris ini,
+  // pendaftaran sumber baru tidak berpengaruh apa pun: sumbernya tersambung,
+  // ruasnya terdaftar, dan setiap ruasnya tetap tertahan sebagai tak dikenal -
+  // kegagalan yang terlihat seperti kerusakan sambungan.
+  const { batasDariSumber } = await import("@/server/modules/aleta-ecourt/mutu-dan-biaya");
+  const dariSumber = await batasDariSumber(db);
+
   const { BATAS_BAWAAN } = await import("@/lib/batas-data");
-  return [...tersimpan, ...BATAS_BAWAAN];
+  return [...tersimpan, ...dariSumber, ...BATAS_BAWAAN];
 }
 
 /**
@@ -341,11 +436,25 @@ type MasukanDariModel = { nama?: string; jenis?: string; nilai?: string; kutipan
 async function siapkanModel(
   db: Awaited<ReturnType<typeof getDatabase>>,
   moduleKey: string,
-  konteks: { peran: string; perkaraId: string }
+  konteks: { peran: string; perkaraId: string; pekerjaan: Pekerjaan }
 ): Promise<{ keadaan: { menyala: boolean; sebab: string }; panggil?: PemanggilModel }> {
   try {
     const setelan = await getAISettingsFromDb(db);
-    const sambungan = resolveLiveAIConnectionForModule(setelan, moduleKey);
+
+    // Pagu diperiksa SEBELUM sambungan disiapkan (K1), dan tingkat modelnya
+    // ditentukan pekerjaannya (K3). Tanpa keduanya di sini, pagu hanya
+    // menampilkan angka dan tidak pernah menghentikan apa pun - persis
+    // hiasan yang seluruh kelompok ini ada untuk mencegahnya.
+    const izin = await izinPanggil(db, konteks.pekerjaan);
+    if (!izin.boleh) {
+      return { keadaan: { menyala: false, sebab: izin.sebab } };
+    }
+
+    // Model kuat memakai kunci modul tersendiri. Bila belum disetel admin,
+    // pemetaannya jatuh kembali ke sambungan yang sama - jadi ini berjalan
+    // hari ini dan menjadi bermakna begitu sambungan kedua disetel.
+    const kunci = izin.tingkat === "kuat" ? `${moduleKey}-kuat` : moduleKey;
+    const sambungan = resolveLiveAIConnectionForModule(setelan, kunci);
 
     // Saklar dibaca SETIAP KALI, tidak disinggahkan. Saklar mati yang baru
     // berlaku sesudah singgahan kedaluwarsa bukan saklar mati - dan sepuluh
@@ -359,21 +468,38 @@ async function siapkanModel(
     }
 
     const panggil: PemanggilModel = async (perintah, isi) => {
+      const muatan = JSON.stringify(isi);
       const hasil = await requestStructuredDataFromProvider<Record<string, unknown>>({
         providerId: String(sambungan.providerId ?? ""),
         modelId: String(sambungan.modelId ?? ""),
         apiKey: sambungan.apiKey ?? "",
         endpointUrl: sambungan.endpointUrl ?? null,
         systemPrompt: perintah,
-        userPrompt: JSON.stringify(isi),
+        userPrompt: muatan,
         fallback: {},
       });
+
+      const model = String(hasil.providerModelId || sambungan.modelId || "");
+      // Dicatat SEBELUM hasilnya dikembalikan, dan juga saat gagal: penyedia
+      // tetap menagih permintaan yang jawabannya tidak terpakai.
+      await catatDenganTarif(db, {
+        pekerjaan: konteks.pekerjaan,
+        tingkat: izin.tingkat,
+        penyedia: String(sambungan.providerId ?? ""),
+        model,
+        teksMasuk: `${perintah}
+${muatan}`,
+        teksKeluar: hasil.rawText ?? "",
+        berhasil: hasil.ok,
+        perkaraId: konteks.perkaraId,
+      });
+
       return {
         ok: hasil.ok,
         teks: hasil.rawText,
         data: hasil.data,
         penyedia: String(sambungan.providerId ?? ""),
-        model: String(hasil.providerModelId || sambungan.modelId || ""),
+        model,
         sebab: hasil.message,
       };
     };

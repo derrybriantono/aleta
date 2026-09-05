@@ -12,7 +12,7 @@ import {
 } from "@/lib/penjawab";
 import { BATAS_BAWAAN } from "@/lib/batas-data";
 import { buatPenyamar } from "@/lib/penyamaran";
-import { periksaUsulan, susunPerintahPertimbangan, tanpaKutipan } from "@/lib/usulan-pertimbangan";
+import { periksaUsulan, susunPerintahPertimbangan } from "@/lib/usulan-pertimbangan";
 
 /**
  * Lapisan AI (I1-I5).
@@ -308,7 +308,7 @@ describe("usulan pertimbangan susunan model", () => {
       { teks: "Menimbang, bahwa keterangan kedua saksi saling bersesuaian;" },
       JANGKAR_ADA
     );
-    expect(tanpaKutipan(usulan)).toBe(true);
+    expect(usulan.kutipan).toEqual([]);
     expect(usulan.layakDiusulkan).toBe(true);
   });
 
