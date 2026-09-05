@@ -1,0 +1,72 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================================
+; ALETA E-Court - pemasangan dan pembaruan otomatis ekstensi Chrome
+; ============================================================================
+;
+; !! HANYA BEKERJA DI KOMPUTER YANG TERDETEKSI TERKELOLA PERUSAHAAN !!
+;
+; Yaitu: anggota domain Active Directory, tergabung Azure AD, atau terdaftar
+; MDM. Di komputer WORKGROUP - termasuk semua Windows 10 Home - berkas ini
+; TIDAK BERPENGARUH APA PUN. Kebijakannya tercatat di registry lalu diabaikan,
+; dan Chrome menyebutkan sebabnya di chrome://policy:
+;
+;   "This computer is not detected as enterprise managed so policy can only
+;    automatically install extensions hosted on the Chrome Webstore."
+;
+; Untuk komputer WORKGROUP, pakai pasang-sinkron.ps1 - lihat PANDUAN.md.
+; Periksa dulu dengan: systeminfo | findstr /C:"Domain"
+;
+; ----------------------------------------------------------------------------
+;
+; Jalankan berkas ini SEKALI di tiap komputer petugas (klik kanan - Merge,
+; atau klik dua kali), lalu tutup Chrome sampai benar-benar keluar dan buka
+; lagi. Perlu hak Administrator karena menulis ke HKEY_LOCAL_MACHINE.
+;
+; Sesudah itu Chrome memasang ekstensinya sendiri dan memeriksa pembaruan
+; secara berkala. Tidak ada lagi "Load unpacked", dan tidak ada lagi petugas
+; yang menjalankan versi lama tanpa sadar.
+;
+; ----------------------------------------------------------------------------
+; SEBELUM MENJALANKAN: HAPUS DULU SALINAN LAMA
+; ----------------------------------------------------------------------------
+;
+; Bila di komputer itu ekstensi ALETA masih terpasang lewat "Load unpacked",
+; buka chrome://extensions lalu Hapus salinan itu terlebih dahulu. Bila tidak,
+; halaman SIPP dapat memuat dua salinan sekaligus dan panelnya muncul dobel.
+;
+; ----------------------------------------------------------------------------
+; ARTI BARISNYA
+; ----------------------------------------------------------------------------
+;
+; Nilai "1" berisi dua bagian dipisah titik koma:
+;
+;   pmfdoflbglalkjehigbmcidccnfbohda   ID ekstensi ALETA
+;   http://192.168.10.10/aleta/...     alamat naskah pembaruan di portal
+;
+; ID diturunkan dari kunci penanda tangan di server. Selama kunci itu tidak
+; diganti, ID ini TETAP - dan berkas ini tidak perlu disebar ulang meskipun
+; ekstensinya diperbarui berkali-kali.
+;
+; Angka "1" hanyalah nomor urut daftar. Bila kelak ada ekstensi kantor yang
+; lain, tambahkan sebagai "2", "3", dan seterusnya - jangan menimpa yang ini.
+;
+; ----------------------------------------------------------------------------
+; YANG PERLU DIKETAHUI
+; ----------------------------------------------------------------------------
+;
+; - Ekstensi yang dipasang lewat kebijakan TIDAK DAPAT dimatikan atau dihapus
+;   petugas dari chrome://extensions. Itu memang disengaja: ekstensinya bagian
+;   dari alat kerja, bukan pilihan pribadi. Untuk mencabutnya, jalankan
+;   aleta-ekstensi-copot.reg.
+;
+; - Chrome memeriksa pembaruan sendiri setiap beberapa jam. Untuk memaksanya
+;   segera: buka chrome://extensions, nyalakan "Developer mode" di pojok kanan
+;   atas, lalu tekan "Update".
+;
+; - Alamatnya memakai http di jaringan kantor. Keutuhan paketnya dijamin tanda
+;   tangan di dalam berkas .crx, bukan oleh sambungannya - Chrome menolak paket
+;   yang tandanya tidak cocok dengan ID di atas.
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"="pmfdoflbglalkjehigbmcidccnfbohda;http://192.168.10.10/aleta/api/aleta-ecourt/ekstensi/updates.xml"

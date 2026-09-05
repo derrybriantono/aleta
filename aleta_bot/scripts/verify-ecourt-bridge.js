@@ -102,10 +102,10 @@ const HTML_PERSIDANGAN = `
 
 const HTML_PENDAFTARAN = `
 <tr><td>Dokumen Pendaftaran</td><td>
-  Surat Kuasa Sri Astuti Ningsih | <a href="unduh/1">Download</a><br />
-  Perubahan Gugatan Waris | <a href="unduh/2">Download</a><br />
-  bukti surat | <a href="unduh/3">Download</a><br />
-  Gugatan Waris | <a href="unduh/4">Download</a><br />
+  Surat Kuasa Sri Astuti Ningsih | <a href="#" onclick="view_doc(1,1388186028)">Download</a><br />
+  Perubahan Gugatan Waris | <a href="#" onclick="view_doc(5,1388183288)">Download</a><br />
+  bukti surat | <a href="#" onclick="view_doc(18,1384190152)">Download</a><br />
+  Gugatan Waris | <a href="#" onclick="view_doc(3,1384189439)">Download</a><br />
 </td></tr>
 <tr><td>Nomor Perkara</td><td>620/Pdt.G/2025/PA.Dgl</td></tr>
 `;
@@ -153,7 +153,15 @@ async function utama() {
     const judulPendaftaran = detail.dokumenPendaftaran.map((item) => item.judul);
     periksa("Surat Kuasa terbaca", judulPendaftaran.includes("Surat Kuasa Sri Astuti Ningsih"));
     periksa("bukti surat terbaca", judulPendaftaran.includes("bukti surat"));
-    periksa("tautan unduh menjadi alamat penuh", detail.dokumenPendaftaran[0].url.startsWith("https://ecourt.mahkamahagung.go.id/"));
+    // Berkas pendaftaran membawa PENANDA, bukan alamat. Alamatnya baru
+    // didapat setelah ditukar lewat ViewDoc - href aslinya hanya "#", dan
+    // menyusunnya menjadi alamat menghasilkan beranda e-Court, bukan berkas.
+    periksa(
+      "berkas pendaftaran membawa penanda, bukan alamat",
+      detail.dokumenPendaftaran[0].url === "" &&
+        detail.dokumenPendaftaran[0].penanda &&
+        detail.dokumenPendaftaran[0].penanda.id === "1388186028"
+    );
   }
 
   console.log("\n== Tanggal Indonesia ==");

@@ -20,11 +20,12 @@ const path = require("path");
 // botDbService diganti tiruan sebelum layanan dimuat.
 const botDbPath = require.resolve("../services/botDbService");
 const tersimpan = [];
-require("../services/botDbService");
+const botDbAsli = require("../services/botDbService");
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
   addColumnIfMissing: async () => true,
   toMysqlDate: (value) => new Date(value).toISOString().slice(0, 19).replace("T", " "),
+  fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
     if (/^\s*CREATE TABLE/i.test(sql)) return [];
     if (/^\s*INSERT INTO aleta_bot_service_events/i.test(sql)) {

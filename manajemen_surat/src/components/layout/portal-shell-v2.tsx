@@ -202,6 +202,7 @@ const adminSidebarIds: ReadonlySet<ModuleId> = new Set([
   "backup-system",
   "database-viewer",
   "aleta-bot",
+  "aleta-ecourt-admin",
   "aleta-sipp-settings",
   "judicia-legal-form-settings",
   "hr-settings",
@@ -221,7 +222,7 @@ const adminSidebarGroups = [
   {
     id: "services",
     label: "Layanan & Integrasi",
-    moduleIds: ["whatsapp-settings", "ai-settings", "assistant-judge-settings", "aleta-bot"],
+    moduleIds: ["whatsapp-settings", "ai-settings", "assistant-judge-settings", "aleta-bot", "aleta-ecourt-admin"],
   },
   {
     id: "judicial",
@@ -252,6 +253,7 @@ const compactAdminSidebarDescriptions: Partial<Record<ModuleId, string>> = {
   "ai-settings": "API Key dan model AI.",
   "assistant-judge-settings": "Akses Asisten Hakim.",
   "aleta-bot": "Bot, pesan, log, dan laporan.",
+  "aleta-ecourt-admin": "Login e-Court, penarikan, dan arsip.",
   "aleta-sipp-settings": "Kamus SIPP, registry, penilaian, dan audit.",
   "judicia-legal-form-settings": "Legal Form, SIPP, AI, KB, dan audit.",
   "system-updates": "Versi dan paket update.",

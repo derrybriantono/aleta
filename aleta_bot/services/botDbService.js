@@ -501,6 +501,33 @@ function toMysqlDate(value = new Date()) {
   return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
+/**
+ * Membaca kembali waktu yang ditulis toMysqlDate.
+ *
+ * toMysqlDate menyimpan dalam UTC. Membacanya dengan new Date("2026-08-26
+ * 10:00:00") membuat JavaScript menafsirkannya sebagai waktu LOKAL - dan di
+ * server WIB selisihnya tujuh jam.
+ *
+ * Selisih itu tidak pernah menimbulkan galat. Ia hanya membuat setiap
+ * perhitungan "sudah berapa lama sejak" meleset tujuh jam: pemeriksaan ulang
+ * berjalan lebih sering daripada yang dirancang, dan tenggang "jangan tanya
+ * ulang sebelum tiga hari" sebenarnya berakhir tujuh jam lebih cepat.
+ *
+ * Driver mysql dapat mengembalikan Date maupun string, jadi keduanya diterima.
+ */
+function fromMysqlDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+  const teks = String(value).trim();
+  if (!teks) return null;
+
+  // Bentuk "YYYY-MM-DD HH:MM:SS" dari toMysqlDate: tegaskan sebagai UTC.
+  const cocok = teks.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
+  const tanggal = cocok ? new Date(`${cocok[1]}T${cocok[2]}Z`) : new Date(teks);
+  return Number.isNaN(tanggal.getTime()) ? null : tanggal;
+}
+
 function getDbStatus() {
   return {
     schemaReady,
@@ -514,8 +541,10 @@ module.exports = {
   // yang sudah berdiri: CREATE TABLE IF NOT EXISTS tidak menyentuh tabel lama,
   // sehingga instalasi yang sudah jalan tidak pernah menerima kolom baru.
   addColumnIfMissing,
+  addIndexIfMissing,
   initializeSchema,
   ensureSchema,
   toMysqlDate,
+  fromMysqlDate,
   getDbStatus,
 };

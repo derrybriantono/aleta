@@ -622,6 +622,207 @@ export const moduleVisibilitySettings = pgTable(
   })
 );
 
+/**
+ * Kemampuan ekstensi ALETA E-Court yang boleh dipakai tiap peran.
+ *
+ * Super Admin dan Admin tidak dicatat di sini - keduanya selalu penuh, dan itu
+ * ditegakkan di kode. Lihat catatan pada drizzle/0018_ecourt_extension_access.sql.
+ */
+export const ecourtExtensionAccess = pgTable(
+  "ecourt_extension_access",
+  {
+    roleId: text("role_id").notNull().references(() => roles.id),
+    capability: text("capability").notNull(),
+    enabled: integer("enabled").notNull().default(0),
+    updatedAt: text("updated_at").notNull(),
+    updatedBy: text("updated_by"),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.roleId, table.capability] }),
+  })
+);
+
+/**
+ * Hari sidang tiap majelis - satu-satunya isi SK yang tidak ada di SIPP.
+ *
+ * Susunan majelisnya sendiri dibaca langsung dari ref_majelis_tetap milik
+ * SIPP, tidak disalin ke sini. Lihat catatan pada
+ * drizzle/0019_aleta_penunjukan_otomatis.sql.
+ */
+export const aletaSippHariSidang = pgTable("aleta_sipp_hari_sidang", {
+  majelisKode: text("majelis_kode").primaryKey(),
+  hari: integer("hari").notNull(),
+  paniteraKode: text("panitera_kode").notNull().default(""),
+  keterangan: text("keterangan").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+  updatedBy: text("updated_by"),
+});
+
+/** Setelan tunggal yang dipakai menyusun usulan penunjukan. */
+export const aletaSippAturanPenunjukan = pgTable("aleta_sipp_aturan_penunjukan", {
+  kunci: text("kunci").primaryKey(),
+  nilai: text("nilai").notNull(),
+  keterangan: text("keterangan").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+  updatedBy: text("updated_by"),
+});
+
+/**
+ * Apa yang benar-benar diisikan ekstensi ke borang SIPP.
+ *
+ * asal membedakan usulan otomatis yang diterima apa adanya dari pilihan
+ * manual yang menggantikannya - itulah yang nanti menjawab seberapa sering
+ * usulannya diubah orang sebelum dikerjakan.
+ */
+/**
+ * Penunjuk medan borang SIPP - disimpan sebagai data, bukan ditanam di kode.
+ *
+ * Nama medan berbeda antar versi SIPP. Penunjuk yang salah tidak gagal dengan
+ * jelas; ia mengenai medan lain. Lihat drizzle/0020_aleta_pengisian_borang.sql.
+ */
+/**
+ * Titipan penetapan yang menunggu dikerjakan pejabat berwenang.
+ *
+ * Menyerahkan PEKERJAAN, bukan akun - tidak ada kredensial siapa pun di sini.
+ * Lihat drizzle/0021_aleta_antrean_penetapan.sql.
+ */
+export const aletaSippPenunjukanAntrean = pgTable("aleta_sipp_penunjukan_antrean", {
+  id: text("id").primaryKey(),
+  perkaraId: text("perkara_id").notNull(),
+  nomorPerkara: text("nomor_perkara").notNull(),
+  jenis: text("jenis").notNull(),
+  usulan: text("usulan").notNull().default("{}"),
+  ringkasan: text("ringkasan").notNull().default(""),
+  untukPeran: text("untuk_peran").notNull().default(""),
+  keadaan: text("keadaan").notNull().default("menunggu"),
+  disiapkanOleh: text("disiapkan_oleh").notNull(),
+  disiapkanAt: text("disiapkan_at").notNull(),
+  catatan: text("catatan").notNull().default(""),
+  dikerjakanOleh: text("dikerjakan_oleh"),
+  dikerjakanAt: text("dikerjakan_at"),
+  akunSipp: text("akun_sipp").notNull().default(""),
+  alasanBatal: text("alasan_batal").notNull().default(""),
+});
+
+/**
+ * Lembar BAS yang sedang atau sudah diisi panitera.
+ *
+ * Jati diri saksi disimpan di sini karena blangko BAS menanyakannya sebagai
+ * bagian dari pemeriksaan - nama, umur, agama, pendidikan, pekerjaan, alamat
+ * (#1197# sampai #1202# untuk saksi pertama). Lihat
+ * drizzle/0022_aleta_bas_lembar.sql.
+ */
+export const aletaBasLembar = pgTable("aleta_bas_lembar", {
+  id: text("id").primaryKey(),
+  perkaraId: text("perkara_id").notNull(),
+  nomorPerkara: text("nomor_perkara").notNull().default(""),
+  kodeKumpulan: text("kode_kumpulan").notNull(),
+  namaKumpulan: text("nama_kumpulan").notNull().default(""),
+  saksiKe: integer("saksi_ke").notNull().default(1),
+  saksiNama: text("saksi_nama").notNull().default(""),
+  saksiUmur: text("saksi_umur").notNull().default(""),
+  saksiAgama: text("saksi_agama").notNull().default(""),
+  saksiPendidikan: text("saksi_pendidikan").notNull().default(""),
+  saksiPekerjaan: text("saksi_pekerjaan").notNull().default(""),
+  saksiAlamat: text("saksi_alamat").notNull().default(""),
+  tanggalSidang: text("tanggal_sidang").notNull().default(""),
+  keadaan: text("keadaan").notNull().default("draf"),
+  catatan: text("catatan").notNull().default(""),
+  dibuatOleh: text("dibuat_oleh").notNull(),
+  dibuatAt: text("dibuat_at").notNull(),
+  diubahOleh: text("diubah_oleh").notNull().default(""),
+  diubahAt: text("diubah_at").notNull(),
+});
+
+/**
+ * Jawaban per pertanyaan.
+ *
+ * Bunyi pertanyaannya ikut disimpan - sesudah penandanya terisi - supaya
+ * perubahan katalog ABT kelak tidak mengubah bunyi BAS yang sudah
+ * ditandatangani.
+ */
+export const aletaBasJawaban = pgTable("aleta_bas_jawaban", {
+  id: text("id").primaryKey(),
+  lembarId: text("lembar_id").notNull(),
+  urutan: integer("urutan").notNull(),
+  pertanyaan: text("pertanyaan").notNull().default(""),
+  jawaban: text("jawaban").notNull().default(""),
+  diubahAt: text("diubah_at").notNull(),
+});
+
+/**
+ * Kehadiran para pihak pada satu sidang.
+ *
+ * SIPP hanya mencatat "dihadiri oleh 2" sebagai angka, tanpa menyebut siapa.
+ * Lihat drizzle/0023_aleta_bas_kehadiran.sql.
+ */
+export const aletaBasKehadiran = pgTable("aleta_bas_kehadiran", {
+  id: text("id").primaryKey(),
+  perkaraId: text("perkara_id").notNull(),
+  nomorPerkara: text("nomor_perkara").notNull().default(""),
+  sidangKe: integer("sidang_ke").notNull(),
+  kehadiranPenggugat: text("kehadiran_penggugat").notNull().default(""),
+  kehadiranTergugat: text("kehadiran_tergugat").notNull().default(""),
+  agenda: text("agenda").notNull().default(""),
+  hasil: text("hasil").notNull().default(""),
+  catatan: text("catatan").notNull().default(""),
+  dibuatOleh: text("dibuat_oleh").notNull(),
+  dibuatAt: text("dibuat_at").notNull(),
+  diubahOleh: text("diubah_oleh").notNull().default(""),
+  diubahAt: text("diubah_at").notNull(),
+});
+
+/**
+ * Riwayat keadaan berkas perkara - satu baris per PERUBAHAN, bukan per
+ * pembukaan. Lihat drizzle/0024_aleta_berkas_riwayat.sql.
+ */
+export const aletaBerkasRiwayat = pgTable("aleta_berkas_riwayat", {
+  id: text("id").primaryKey(),
+  perkaraId: text("perkara_id").notNull(),
+  nomorPerkara: text("nomor_perkara").notNull().default(""),
+  sidik: text("sidik").notNull(),
+  ringkasan: text("ringkasan").notNull().default("{}"),
+  halangan: text("halangan").notNull().default(""),
+  dirakitAt: text("dirakit_at").notNull(),
+  dicatatOleh: text("dicatat_oleh").notNull().default(""),
+});
+
+export const aletaSippBorangMedan = pgTable(
+  "aleta_sipp_borang_medan",
+  {
+    borang: text("borang").notNull(),
+    medan: text("medan").notNull(),
+    penunjuk: text("penunjuk").notNull(),
+    jenis: text("jenis").notNull().default("teks"),
+    wajib: integer("wajib").notNull().default(0),
+    catatan: text("catatan").notNull().default(""),
+    updatedAt: text("updated_at").notNull(),
+    updatedBy: text("updated_by"),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.borang, table.medan] }),
+  })
+);
+
+export const aletaSippPenunjukanLog = pgTable("aleta_sipp_penunjukan_log", {
+  id: text("id").primaryKey(),
+  perkaraId: text("perkara_id").notNull(),
+  nomorPerkara: text("nomor_perkara").notNull().default(""),
+  jenis: text("jenis").notNull(),
+  medan: text("medan").notNull(),
+  nilai: text("nilai").notNull().default(""),
+  asal: text("asal").notNull().default("otomatis"),
+  usulanSemula: text("usulan_semula").notNull().default(""),
+  alasan: text("alasan").notNull().default(""),
+  akunSipp: text("akun_sipp").notNull().default(""),
+  aletaUserId: text("aleta_user_id"),
+  aletaPeran: text("aleta_peran").notNull().default(""),
+  createdAt: text("created_at").notNull(),
+  mendarat: text("mendarat").notNull().default("belum"),
+  diperiksaAt: text("diperiksa_at"),
+  tercatat: text("tercatat").notNull().default(""),
+});
+
 export const feedbackRequests = pgTable(
   "feedback_requests",
   {

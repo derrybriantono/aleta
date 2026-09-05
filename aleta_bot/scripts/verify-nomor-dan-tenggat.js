@@ -29,12 +29,13 @@ const path = require("path");
 
 // --- Tiruan database ---
 const botDbPath = require.resolve("../services/botDbService");
-require("../services/botDbService");
+const botDbAsli = require("../services/botDbService");
 const baris = [];
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
   addColumnIfMissing: async () => true,
   toMysqlDate: (v) => new Date(v).toISOString().slice(0, 19).replace("T", " "),
+  fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
     if (/^\s*CREATE TABLE/i.test(sql)) return [];
     if (/INSERT INTO aleta_bot_nomor_terverifikasi/i.test(sql)) {

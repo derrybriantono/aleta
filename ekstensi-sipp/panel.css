@@ -1,0 +1,1258 @@
+/*
+ * Panel ALETA di halaman SIPP.
+ *
+ * Seluruh pemilih diawali .aleta- supaya tidak pernah bertabrakan dengan gaya
+ * milik SIPP. Panel dipasang position:fixed sehingga tidak menggeser satu pun
+ * elemen SIPP - tata letak aslinya tetap persis seperti sebelumnya.
+ */
+
+/*
+ * Warna panel dikumpulkan di satu tempat.
+ *
+ * Sebelumnya nilai heksadesimal yang sama ditulis ulang di belasan aturan,
+ * sehingga mengubah satu warna berarti menyisirnya satu per satu - dan yang
+ * terlewat menghasilkan panel dengan dua nada hijau yang berbeda tipis.
+ */
+.aleta-panel {
+  --aleta-latar: #131c19;
+  --aleta-latar-naik: #1a2622;
+  --aleta-garis: #2a3733;
+  --aleta-tulisan: #e4ebe6;
+  --aleta-tulisan-lembut: #9fb0a7;
+  --aleta-merek: #6fbf95;
+  --aleta-aman: #6fbf95;
+  --aleta-mendesak: #d8b25f;
+  --aleta-lewat: #e08b81;
+
+  position: fixed;
+  top: 90px;
+  right: 14px;
+  z-index: 2147483000;
+  width: 340px;
+  max-height: calc(100vh - 130px);
+  /* Yang menggulir isinya, bukan panelnya - lihat .aleta-isi.
+     Pegangan tarik dipasang absolut di dalam panel, dan panel yang
+     menggulir akan membawa pegangan itu hanyut ke atas bersama isi.
+     Sebagai kolom flex, tinggi panel tetap dan isinya yang bergerak. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* Panel dapat ditarik dari segala sisi - lihat .aleta-tarik.
+     `resize: both` bawaan CSS sengaja TIDAK dipakai: ia hanya memasang
+     pegangan di sudut kanan bawah dan tidak dapat disuruh memasangnya di
+     sisi lain.
+
+     min-* menjaganya tetap terbaca - panel yang tanpa sengaja dikecilkan
+     sampai sebesar tombol tidak dapat ditarik kembali dengan mudah, dan
+     petugas akan mengira ekstensinya rusak. max-width menjaganya tetap muat
+     di layar yang paling sempit sekalipun. */
+  min-width: 260px;
+  min-height: 150px;
+  max-width: min(96vw, 900px);
+  overscroll-behavior: contain;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 10px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.42);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  /* Panel ini lapisan di atas halaman kerja orang: gerakannya tidak boleh
+     ikut menahan gulir SIPP. */
+  contain: layout paint;
+}
+
+/* Gulir yang tidak mencolok - bilah gulir tebal bawaan Chrome memakan lebar
+   yang di panel selebar 340 piksel benar-benar terasa. */
+.aleta-panel::-webkit-scrollbar { width: 9px; }
+.aleta-panel::-webkit-scrollbar-track { background: transparent; }
+.aleta-panel::-webkit-scrollbar-thumb {
+  background: #33443e;
+  border-radius: 999px;
+  border: 2px solid var(--aleta-latar);
+}
+.aleta-panel::-webkit-scrollbar-thumb:hover { background: #415450; }
+
+.aleta-kepala {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #2a3733;
+  position: sticky;
+  top: 0;
+  background: #16211c;
+}
+
+.aleta-merek {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: #6fbf95;
+}
+
+.aleta-nomor {
+  flex: 1;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  color: #869489;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aleta-lipat {
+  background: transparent;
+  border: 1px solid #3a4a44;
+  color: #afbdb5;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 14px;
+}
+.aleta-lipat:hover { background: #1e2926; }
+
+/* Tombol kembali ke bawaan. Sengaja lebih redup daripada tombol lipat: ia
+   jarang dipakai, dan yang sering dipakai harus lebih mudah ditemukan. */
+.aleta-bawaan {
+  background: transparent;
+  border: 1px solid #33423d;
+  color: #7d8d84;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 13px;
+  padding: 0;
+}
+
+.aleta-bawaan:hover {
+  background: #1e2926;
+  color: #afbdb5;
+}
+
+.aleta-isi {
+  padding: 4px 0 8px;
+  /* min-height:0 wajib: tanpa itu anak flex menolak menyusut lebih kecil
+     daripada isinya, dan panel memanjang melewati tepi layar alih-alih
+     menggulir. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.aleta-isi::-webkit-scrollbar { width: 9px; }
+.aleta-isi::-webkit-scrollbar-track { background: transparent; }
+.aleta-isi::-webkit-scrollbar-thumb {
+  background: #2f3d38;
+  border-radius: 5px;
+}
+.aleta-isi::-webkit-scrollbar-thumb:hover { background: #3d4f48; }
+
+/*
+ * ============================================================================
+ * PEGANGAN TARIK DI DELAPAN ARAH
+ * ============================================================================
+ *
+ * Tidak terlihat sampai kursor mendekat. Panel ini menumpang di atas
+ * halaman kerja orang - delapan kotak yang selalu tampak akan membuatnya
+ * terasa seperti jendela yang menuntut perhatian, padahal ia hanya alat
+ * bantu di pinggir layar.
+ *
+ * Lebarnya 6 piksel di sisi dan 12 di sudut. Lebih tipis dari itu meleset
+ * saat ditunjuk cepat; lebih tebal memakan tepi isi panel dan menghalangi
+ * tautan yang kebetulan berada di pinggir.
+ */
+.aleta-tarik {
+  position: absolute;
+  z-index: 3;
+  background: transparent;
+}
+
+/* Sudut berada di atas sisi supaya tarikan diagonal menang di pertemuannya. */
+.aleta-tarik--sudut { z-index: 4; width: 12px; height: 12px; }
+
+.aleta-tarik--u { top: 0; left: 0; right: 0; height: 6px; cursor: ns-resize; }
+.aleta-tarik--s { bottom: 0; left: 0; right: 0; height: 6px; cursor: ns-resize; }
+.aleta-tarik--b { left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
+.aleta-tarik--t { right: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
+
+.aleta-tarik--ub { top: 0; left: 0; cursor: nwse-resize; }
+.aleta-tarik--ut { top: 0; right: 0; cursor: nesw-resize; }
+.aleta-tarik--sb { bottom: 0; left: 0; cursor: nesw-resize; }
+.aleta-tarik--st { bottom: 0; right: 0; cursor: nwse-resize; }
+
+/* Petunjuk halus bahwa sudut kanan bawah dapat ditarik - menggantikan
+   garis-garis kecil yang dulu digambar sendiri oleh `resize: both`. */
+.aleta-tarik--st::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid #3d4f48;
+  border-bottom: 2px solid #3d4f48;
+  border-bottom-right-radius: 2px;
+}
+
+/* Saat sedang ditarik, pilihan teks di seluruh halaman dimatikan - kalau
+   tidak, tarikan cepat menyorot isi panel dan isi SIPP di belakangnya. */
+.aleta-mengubah-ukuran, .aleta-mengubah-ukuran * { user-select: none !important; }
+
+.aleta-bagian { padding: 8px 12px 4px; }
+
+/* Gaya judul bagian disatukan di bawah - lihat catatan di sana. */
+
+.aleta-baris {
+  padding: 7px 9px;
+  margin-bottom: 5px;
+  background: #1e2926;
+  border-left: 2px solid #3a4a44;
+  border-radius: 2px;
+}
+
+.aleta-baris-judul { font-weight: 600; margin-bottom: 2px; }
+.aleta-baris-ket { color: #afbdb5; font-size: 12px; }
+.aleta-berkas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+
+.aleta-unduh {
+  background: #1f4d3a;
+  color: #e4ebe6;
+  border: 1px solid #2f6b52;
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.aleta-unduh:hover:not(:disabled) { background: #2f6b52; }
+.aleta-unduh:disabled { opacity: 0.6; cursor: default; }
+
+.aleta-berkas-kosong { color: #6e7d74; font-size: 11.5px; }
+
+/* Nada: aman, perlu diperhatikan, sudah lewat. */
+.aleta-aman { border-left-color: #6fbf95; }
+.aleta-mendesak { border-left-color: #c9a65c; }
+.aleta-lewat { border-left-color: #d98a81; }
+.aleta-netral { border-left-color: #3a4a44; }
+
+/*
+ * ============================================================================
+ * LENCANA DI DALAM PANEL DIBERI NAMA SENDIRI
+ * ============================================================================
+ *
+ * Kelas ini dulu bernama .aleta-tanda - nama yang SAMA dengan penanda yang
+ * ditempelkan ke dalam halaman SIPP. Keduanya hidup di berkas ini, dan yang
+ * ditulis belakangan menang: lencana di dalam panel kehilangan latar dan
+ * warnanya, lalu tampil sebagai teks polos yang nyaris tidak terbaca di atas
+ * latar gelap.
+ *
+ * Keduanya memang berbeda pekerjaan - satu berlatar gelap di dalam panel,
+ * satu berlatar terang di dalam tabel SIPP - jadi namanya pun dibedakan.
+ */
+.aleta-tanda-panel {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--aleta-latar-naik);
+  border: 1px solid var(--aleta-garis);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-tanda-panel.aleta-tanda-aman { color: var(--aleta-aman); border-color: #2f5a46; }
+.aleta-tanda-panel.aleta-tanda-mendesak { color: var(--aleta-mendesak); border-color: #5c4c22; }
+.aleta-tanda-panel.aleta-tanda-lewat { color: var(--aleta-lewat); border-color: #5e332e; }
+
+.aleta-kosong { padding: 12px; color: #869489; }
+
+.aleta-kosong-lembut {
+  padding: 0 12px 12px;
+  color: #6e7d74;
+  font-size: 11px;
+}
+
+.aleta-tombol {
+  display: inline-block;
+  margin: 0 12px 12px;
+  padding: 6px 12px;
+  background: #6fbf95;
+  color: #16211c;
+  border-radius: 3px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.aleta-tautan {
+  display: block;
+  margin: 0 12px 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #6fbf95;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.aleta-tautan:disabled {
+  color: #6b7b73;
+  cursor: default;
+}
+
+/* Pemberitahuan versi - sengaja mencolok tetapi tidak merah.
+   Ini bukan kerusakan; ini kabar bahwa yang terpasang sudah tertinggal. Merah
+   akan membuat petugas mengira ada yang rusak dan berhenti bekerja. */
+.aleta-versi-baru {
+  margin: 0 12px 10px;
+  padding: 8px 10px;
+  border-left: 3px solid #e0b252;
+  background: rgba(224, 178, 82, 0.12);
+  border-radius: 0 4px 4px 0;
+}
+
+.aleta-versi-judul {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e0b252;
+  margin-bottom: 3px;
+}
+
+.aleta-versi-sebab {
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-kaki {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #2a3733;
+  color: #6e7d74;
+  font-size: 11px;
+}
+
+/* Nomor seri ekstensi. Angka rata lebar supaya tidak bergoyang antar versi,
+   dan tidak menyusut saat panel dipersempit - justru di panel sempit itulah
+   ia paling sering dibutuhkan saat melapor. */
+.aleta-kaki-versi {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: #5f6d65;
+}
+
+@media (max-width: 1100px) {
+  .aleta-panel { width: 270px; }
+}
+
+/* Kotak keputusan verifikasi hakim. */
+.aleta-verifikasi {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed #3a4a44;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.aleta-verifikasi-label { font-size: 11.5px; color: #869489; }
+
+.aleta-verifikasi-pilih,
+.aleta-verifikasi-ya,
+.aleta-verifikasi-batal {
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid #3a4a44;
+  background: #1e2926;
+  color: #e4ebe6;
+}
+.aleta-verifikasi-pilih:hover { background: #2a3733; }
+
+/* Tombol kedua dibedakan tegas: inilah yang benar-benar menyimpan. */
+.aleta-verifikasi-ya { background: #1f4d3a; border-color: #2f6b52; }
+.aleta-verifikasi-ya:hover:not(:disabled) { background: #2f6b52; }
+.aleta-verifikasi-ya:disabled { opacity: 0.6; cursor: default; }
+
+.aleta-verifikasi-tanya {
+  width: 100%;
+  font-size: 11.5px;
+  color: #c9a65c;
+  margin-bottom: 4px;
+}
+
+.aleta-verifikasi-hasil { width: 100%; font-size: 11.5px; color: #6fbf95; }
+.aleta-verifikasi-gagal { width: 100%; font-size: 11.5px; color: #d98a81; }
+
+/* ─── Tanda yang disisipkan ke halaman SIPP ─────────────────────────────────
+ *
+ * Semua pemilih di sini diawali .aleta- supaya tidak pernah bertabrakan dengan
+ * gaya SIPP sendiri. Yang disorot hanya baris yang ALETA sisipi tandanya, dan
+ * sorotannya memakai kelas terpisah agar dapat dicabut utuh saat saklarnya
+ * dimatikan.
+ *
+ * Warnanya sengaja lembut: ini menempel di layar kerja orang sepanjang hari,
+ * bukan pemberitahuan sekali lewat.
+ */
+.aleta-tanda {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.aleta-tanda-merah  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.aleta-tanda-kuning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.aleta-tanda-hijau  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.aleta-tanda-abu    { background: #eef2f0; color: #47564e; border: 1px solid #cbd5d1; }
+
+tr.aleta-baris-disorot > td {
+  box-shadow: inset 3px 0 0 0 #f59e0b;
+}
+
+/* ─── Bagian yang dapat dilipat ──────────────────────────────────────────────
+ *
+ * Judul bagian menjadi tombol, tetapi tampilannya harus tetap seperti judul -
+ * petugas tidak perlu tahu bahwa itu tombol sampai mereka mengarahkan kursor.
+ */
+/*
+ * ============================================================================
+ * SATU ATURAN, BUKAN DUA YANG SALING MENIMPA
+ * ============================================================================
+ *
+ * Judul bagian dulu diatur di DUA tempat pada berkas ini. Aturan yang kedua
+ * memakai `font: inherit` - dan singkatan itu menyetel ulang ukuran huruf,
+ * tinggi baris, serta jarak antarhurufnya sekaligus, sehingga typografi yang
+ * disetel aturan pertama terhapus seluruhnya.
+ *
+ * Yang selamat hanya text-transform, karena ia bukan bagian dari singkatan
+ * `font`. Akibatnya judul tampil HURUF BESAR pada ukuran 13 piksel - hampir
+ * dua kali lipat dari yang dimaksud - dan patah menjadi dua baris di panel
+ * selebar 340 piksel, dengan panah menggantung di tengah.
+ */
+.aleta-bagian-judul {
+  display: flex;
+  /* Panah sejajar BARIS PERTAMA judul. Dengan align-items: center ia melayang
+     di tengah judul dua baris, dan terbaca seperti tidak menempel pada apa pun. */
+  align-items: flex-start;
+  gap: 7px;
+  width: 100%;
+  padding: 5px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--aleta-tulisan-lembut);
+  transition: color 0.12s;
+}
+
+.aleta-bagian-judul:hover { color: var(--aleta-tulisan); }
+
+/* Sasaran fokus papan ketik terlihat. Judul bagian adalah tombol, dan tombol
+   yang tidak menunjukkan fokusnya membuat panel ini mustahil ditelusuri tanpa
+   tetikus. */
+.aleta-bagian-judul:focus-visible {
+  outline: 2px solid var(--aleta-merek);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.aleta-bagian-judul:hover .aleta-bagian-teks {
+  text-decoration: underline;
+}
+
+.aleta-bagian-panah {
+  flex: 0 0 auto;
+  width: 10px;
+  font-size: 10px;
+  line-height: 1.6;
+  opacity: 0.75;
+}
+
+.aleta-bagian-isi {
+  padding-top: 2px;
+}
+
+/* ─── Kepala panel: umur data, nomor register, ringkasan ─────────────────── */
+
+.aleta-usia {
+  margin-bottom: 8px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Data yang sudah lewat sehari ditandai jelas. Panel menampilkan keadaan
+ * menurut ALETA, dan ALETA hanya setahu penarikan terakhirnya - "0 dokumen"
+ * pada data basi berarti "belum ada kemarin", bukan "pihak belum mengunggah". */
+.aleta-usia-basi {
+  padding: 3px 7px;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+  opacity: 1;
+}
+
+/* --- Penanda identitas perkara: jenis, kumulasi, kuasa hukum --------------
+   Warnanya sengaja berbeda dari chip ringkasan. Chip ringkasan menghitung
+   pekerjaan yang menunggu; penanda ini menerangkan perkaranya. Menyamakan
+   warnanya membuat "Cerai Talak" terbaca seolah ada tiga tenggat lewat. */
+/* Tombol unduh yang gagal: merah sebentar, lalu kembali sendiri.
+   Sebab lengkapnya ada di title tombolnya. */
+.aleta-unduh-gagal {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+  cursor: help;
+}
+
+.aleta-identitas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 0;
+}
+
+.aleta-identitas > span {
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+
+.aleta-tanda-jenis {
+  background: #eef2ff;
+  border-color: #c7d2fe !important;
+  color: #3730a3;
+  font-weight: 600;
+}
+
+.aleta-tanda-kumulasi {
+  background: #fdf4ff;
+  border-color: #f0abfc !important;
+  color: #86198f;
+}
+
+.aleta-tanda-kuasa {
+  background: #ecfeff;
+  border-color: #a5f3fc !important;
+  color: #155e75;
+}
+
+.aleta-tanda-tanpa-kuasa {
+  background: #f8fafc;
+  border-color: #e2e8f0 !important;
+  color: #64748b;
+}
+
+.aleta-register {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.aleta-register-label {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.aleta-register-nilai {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.18);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.aleta-salin {
+  padding: 2px 8px;
+  border: 1px solid rgba(127, 127, 127, 0.4);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.aleta-salin:hover {
+  background: rgba(127, 127, 127, 0.15);
+}
+
+.aleta-ringkasan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.aleta-chip {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.aleta-chip-merah  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.aleta-chip-kuning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.aleta-chip-abu    { background: #eef2f0; color: #47564e; border: 1px solid #cbd5d1; }
+
+/* ─── Panel yang dapat digeser ───────────────────────────────────────────── */
+
+.aleta-kepala {
+  cursor: move;
+  user-select: none;
+}
+
+/* Tombol di dalam kepala tetap memakai kursor tombol - kalau tidak, petugas
+ * mengira seluruh kepala hanya bisa digeser dan tidak menekan tombolnya. */
+.aleta-kepala button {
+  cursor: pointer;
+}
+
+.aleta-menggeser {
+  opacity: 0.92;
+  transition: none;
+}
+
+/* ─── Saklar mati di kepala panel ─────────────────────────────────────────── */
+
+.aleta-matikan {
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.aleta-matikan:hover {
+  opacity: 1;
+}
+
+/* ─── Kotak permintaan penarikan ──────────────────────────────────────────── */
+
+.aleta-permintaan {
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px dashed rgba(127, 127, 127, 0.45);
+  border-radius: 6px;
+}
+
+.aleta-permintaan-pesan {
+  margin-bottom: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.aleta-permintaan-tombol {
+  padding: 4px 10px;
+  border: 1px solid #86efac;
+  border-radius: 4px;
+  background: #dcfce7;
+  color: #166534;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aleta-permintaan-tombol:hover:not(:disabled) {
+  background: #bbf7d0;
+}
+
+.aleta-permintaan-tombol:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+
+/*
+ * ============================================================================
+ * WADAH SALINAN SEMENTARA TIDAK BOLEH TERLIHAT
+ * ============================================================================
+ *
+ * Saat papan klip peramban tidak tersedia - SIPP diakses lewat http biasa,
+ * bukan https, sehingga navigator.clipboard kerap ditolak - nomor register
+ * disalin dengan cara lama: teksnya ditaruh ke dalam halaman, disorot, lalu
+ * disalin lewat execCommand.
+ *
+ * Wadah itu sebelumnya tidak punya gaya sama sekali, sehingga nomor register
+ * benar-benar TERLUKIS di kaki halaman SIPP selama sesaat. Sekejap memang,
+ * tetapi ia menggeser tata letak halaman kerja orang - dan panel ini berjanji
+ * tidak mengubah SIPP sama sekali.
+ *
+ * Tidak dapat disembunyikan dengan display:none atau visibility:hidden:
+ * keduanya membuat teksnya tidak dapat disorot, dan penyalinannya gagal.
+ * Karena itu dipindahkan ke luar layar, bukan disembunyikan.
+ */
+.aleta-salinan-sementara {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  white-space: pre;
+}
+
+/* ─── TIDAK PERNAH IKUT TERCETAK ─────────────────────────────────────────────
+ *
+ * Lapisan kedua setelah pengecualian halaman cetak di konten.js.
+ *
+ * Yang pertama menahan ekstensi di halaman relas dan templat. Yang ini menahan
+ * apa pun yang sudah tergambar dari ikut tercetak ketika petugas menekan Ctrl+P
+ * pada halaman SIPP biasa - misalnya mencetak daftar perkara atau halaman
+ * detail untuk berkas.
+ *
+ * Dua lapisan karena kegagalannya tidak setara: panel yang tidak muncul hanya
+ * merepotkan, sedangkan keterangan ALETA yang tercetak di dokumen pengadilan
+ * beredar ke luar dan tidak dapat ditarik kembali.
+ */
+@media print {
+  #aleta-panel-sipp,
+  .aleta-panel,
+  .aleta-tanda,
+  [class^="aleta-tanda-"],
+  .aleta-identitas,
+  .aleta-sisip,
+  [data-aleta-tanda] {
+    display: none !important;
+  }
+
+  /* Sorotan baris ikut dihilangkan: garis kuning di tepi baris pada dokumen
+   * cetak terlihat seperti tanda resmi, padahal bukan. */
+  tr.aleta-baris-disorot > td {
+    box-shadow: none !important;
+  }
+}
+
+/* ─── Sisipan di dalam tabel SIPP ─────────────────────────────────────────────
+ *
+ * Sisipan ini menyatu dengan tampilan SIPP - itu memang tujuannya. Justru
+ * karena itu ia harus BERTANDA JELAS: tanpa penanda, berkas ALETA terbaca
+ * sebagai berkas SIPP, dan petugas mengira kedudukannya sama dengan Dokumen BAS
+ * yang ada di sel yang sama.
+ */
+.aleta-sisip {
+  margin-top: 10px;
+  padding: 6px 8px;
+  border-left: 3px solid #16a34a;
+  border-radius: 3px;
+  background: rgba(22, 163, 74, 0.09);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.aleta-sisip-judul {
+  margin-bottom: 4px;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.aleta-sisip-baris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.aleta-sisip-nama {
+  flex: 1 1 100%;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+/* ─── Logo di kepala panel ────────────────────────────────────────────────── */
+
+.aleta-logo {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  object-fit: contain;
+  /* Logo emas di atas latar gelap: sedikit cahaya di belakangnya menjaga
+     tepinya tetap terbaca tanpa membuatnya menyala. */
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.18));
+}
+
+/* ─── Siapa yang sedang memakai ALETA ─────────────────────────────────────
+ *
+ * Panel ini melayang di atas halaman SIPP, dan SIPP punya akun sendiri yang
+ * belum tentu orang yang sama. Barisnya ditaruh paling atas supaya kewenangan
+ * siapa yang sedang berlaku terbaca sebelum isinya dibaca.
+ */
+
+.aleta-pengguna {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: 7px 12px 5px;
+  border-bottom: 1px solid var(--aleta-garis);
+}
+
+.aleta-pengguna-nama {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-pengguna-peran {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--aleta-latar-naik);
+  border: 1px solid var(--aleta-garis);
+  color: var(--aleta-merek);
+  white-space: nowrap;
+}
+
+/* ─── Menu keadaan perkara ────────────────────────────────────────────────── */
+
+.aleta-nilai {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.aleta-nilai:last-child { border-bottom: 0; }
+
+.aleta-nilai-nama {
+  color: var(--aleta-tulisan-lembut);
+  font-size: 12px;
+  flex: none;
+  max-width: 48%;
+}
+
+.aleta-nilai-isi {
+  text-align: right;
+  font-size: 12px;
+  /* Keterangan panjang dipenggal per kata, bukan meluber keluar panel. */
+  overflow-wrap: anywhere;
+}
+
+/* Nada dipasang pada barisnya, mewarnai nilainya saja - nama unsurnya tetap
+   lembut supaya deretan baris berwarna tidak menjadi ramai. */
+.aleta-nilai.aleta-aman .aleta-nilai-isi { color: var(--aleta-aman); }
+.aleta-nilai.aleta-mendesak .aleta-nilai-isi { color: var(--aleta-mendesak); }
+.aleta-nilai.aleta-lewat .aleta-nilai-isi { color: var(--aleta-lewat); }
+.aleta-nilai.aleta-netral .aleta-nilai-isi { color: var(--aleta-tulisan-lembut); }
+
+.aleta-memuat {
+  padding: 8px 0;
+  color: var(--aleta-tulisan-lembut);
+  font-size: 12px;
+}
+
+/* Titik berkedip menandakan permintaannya benar-benar berjalan. Tulisan
+   "Memuat" yang diam terbaca sebagai macet setelah dua detik. */
+.aleta-memuat::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--aleta-merek);
+  vertical-align: middle;
+  animation: aleta-denyut 1s ease-in-out infinite;
+}
+
+@keyframes aleta-denyut {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+/* Petugas yang memilih mengurangi gerak di sistemnya tidak dipaksa melihat
+   denyut ini. */
+@media (prefers-reduced-motion: reduce) {
+  .aleta-memuat::after { animation: none; opacity: 0.7; }
+}
+
+.aleta-gagal {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(224, 139, 129, 0.1);
+  border: 1px solid rgba(224, 139, 129, 0.3);
+  color: var(--aleta-lewat);
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   PAPAN PENUNJUKAN
+
+   Bentuknya sengaja berbeda dari menu lain: dua kolom tetap, label sempit di
+   kiri dan usulannya di kanan, sehingga keempat penetapan terbaca sebagai satu
+   berkas yang sedang disusun - bukan sebagai empat keterangan yang kebetulan
+   berdampingan.
+
+   Sebab tiap usulan ikut tercetak di bawah nilainya, dengan warna lembut. Itu
+   yang membuat usulannya dapat diperiksa, bukan sekadar dipercaya.
+   ========================================================================== */
+
+.aleta-saklar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--aleta-garis);
+}
+
+.aleta-saklar-nama {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--aleta-tulisan-lembut);
+  min-width: 74px;
+}
+
+.aleta-saklar-pil {
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-saklar-aktif {
+  border-color: #2f5a46;
+  background: #1c2d26;
+  color: var(--aleta-merek);
+  font-weight: 700;
+}
+
+.aleta-tetap {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--aleta-garis);
+}
+
+.aleta-tetap-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--aleta-tulisan-lembut);
+  padding-top: 2px;
+}
+
+.aleta-tetap-nilai {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aleta-tetap-isi {
+  font-size: 12px;
+  color: var(--aleta-tulisan);
+  overflow-wrap: anywhere;
+}
+
+/* Yang belum dapat diusulkan tidak disamarkan jadi tanda hubung - ia ditulis
+   apa adanya, supaya bedanya dengan "tidak ada" tetap terlihat. */
+.aleta-tetap-kosong {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-tetap-sebab {
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--aleta-tulisan-lembut);
+  overflow-wrap: anywhere;
+}
+
+/* Siapa yang MENETAPKAN - dibedakan dari sebab usulannya.
+   Sebab menjawab "mengapa nama ini"; penetap menjawab "akun siapa yang harus
+   mengerjakannya". Dua keterangan berbeda yang mudah tertukar bila serupa. */
+.aleta-tetap-penetap {
+  display: block;
+  margin-top: 3px;
+  padding-left: 7px;
+  border-left: 2px solid rgba(111, 191, 149, 0.5);
+  font-size: 10px;
+  line-height: 1.45;
+  color: #8fd3b0;
+  overflow-wrap: anywhere;
+}
+
+.aleta-tetap-awas {
+  font-size: 10px;
+  line-height: 1.45;
+  font-weight: 700;
+  color: var(--aleta-mendesak);
+  overflow-wrap: anywhere;
+}
+
+.aleta-tetap-hitung {
+  padding: 5px 12px;
+  font-size: 10px;
+  color: var(--aleta-tulisan-lembut);
+  border-bottom: 1px solid var(--aleta-garis);
+  overflow-wrap: anywhere;
+}
+
+.aleta-tetap-kaki {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+/* Tombol yang memang belum dinyalakan. Dibuat jelas mati - bukan disembunyikan
+   - supaya yang membaca tahu tombolnya akan ada di situ, dan tahu ia belum
+   berlaku, tanpa perlu menekannya untuk mencari tahu. */
+.aleta-tombol-mati {
+  margin: 0;
+  background: transparent;
+  color: var(--aleta-tulisan-lembut);
+  border: 1px dashed var(--aleta-garis);
+  cursor: not-allowed;
+}
+
+/* Pemilih berkas gugatan. Dibuat menyatu dengan panel, bukan dibiarkan memakai
+   tampilan bawaan peramban yang jauh lebih terang daripada sekitarnya. */
+.aleta-berkas {
+  width: 100%;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+  background: var(--aleta-latar-naik);
+  border: 1px dashed var(--aleta-garis);
+  border-radius: 3px;
+  padding: 5px 6px;
+}
+
+.aleta-berkas::file-selector-button {
+  background: transparent;
+  color: var(--aleta-merek);
+  border: 1px solid #2f5a46;
+  border-radius: 3px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.aleta-petikan:empty {
+  display: none;
+}
+
+/* ==========================================================================
+   KEPALA PANEL YANG DIPADATKAN
+
+   Enam baris menjadi dua. Yang pertama tentang perkaranya, yang kedua tentang
+   siapa yang membaca dan sejauh mana datanya. Keduanya membungkus sendiri
+   pada panel selebar 340 piksel, sehingga nama panjang tidak memaksa
+   panelnya melebar.
+   ========================================================================== */
+
+.aleta-kepala-perkara {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px 4px;
+}
+
+.aleta-kepala-siapa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  padding: 0 12px 8px;
+  font-size: 10px;
+  color: var(--aleta-tulisan-lembut);
+  border-bottom: 1px solid var(--aleta-garis);
+}
+
+.aleta-kepala-nama {
+  font-weight: 700;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-kepala-peran {
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  padding: 0 6px;
+}
+
+.aleta-kepala-usia {
+  margin-left: auto;
+}
+
+/* Nilai yang disalin dengan menekannya - tanpa tombol Salin tersendiri di
+   sebelahnya, yang pada panel 340 piksel memakan lebar setara nomor
+   perkaranya sendiri. */
+.aleta-salin-nilai {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--aleta-merek);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: 0 -4px 0 0;
+  cursor: pointer;
+}
+
+.aleta-salin-nilai:hover {
+  border-color: #2f5a46;
+  background: #1c2d26;
+}
+
+.aleta-salin-nilai.aleta-salin-berhasil {
+  color: var(--aleta-aman);
+  border-color: #2f5a46;
+}
+
+.aleta-kepala-register {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--aleta-tulisan-lembut);
+}
+
+/* ==========================================================================
+   KELOMPOK MENU
+
+   Empat kelompok menggantikan dua belas baris datar. Kepalanya menyebutkan
+   keadaan paling genting di dalamnya, sehingga menutupnya tidak
+   menyembunyikan apa pun yang perlu diketahui sebelum memutuskan membukanya.
+   ========================================================================== */
+
+.aleta-kelompok {
+  margin: 6px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.aleta-kelompok-judul {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 9px;
+  background: #16211d;
+  border: 0;
+  color: var(--aleta-tulisan);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+
+.aleta-kelompok-judul:hover {
+  background: #1a2622;
+}
+
+.aleta-kelompok-teks {
+  flex: 0 0 auto;
+}
+
+/* Ringkasan kelompok didorong ke kanan, dan tidak ikut huruf besar - ia
+   keterangan, bukan judul. */
+.aleta-kelompok-ringkas {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-kelompok-isi {
+  padding: 4px 0;
+}
+
+/* Menu di dalam kelompok tidak lagi butuh jarak tepinya sendiri - kelompoknya
+   yang memberi jarak. */
+.aleta-kelompok-isi .aleta-bagian {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+/* ==========================================================================
+   LENCANA TIAP MENU
+
+   Menjawab "ada apa di balik menu ini" tanpa membukanya. Warnanya menyebut
+   arti: merah menuntut tindakan, kuning perlu diperhatikan, hijau sudah
+   beres, abu memang tidak ada apa-apa.
+   ========================================================================== */
+
+.aleta-bagian-lencana {
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%;
+}
+
+.aleta-lencana-lewat { color: var(--aleta-lewat); }
+.aleta-lencana-mendesak { color: var(--aleta-mendesak); }
+.aleta-lencana-aman { color: var(--aleta-aman); }
+.aleta-lencana-netral { color: var(--aleta-tulisan-lembut); }

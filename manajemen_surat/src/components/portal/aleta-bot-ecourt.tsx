@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AletaBotEcourtLogin } from "@/components/portal/aleta-bot-ecourt-login";
 import { AletaBotEcourtPengaturan } from "@/components/portal/aleta-bot-ecourt-pengaturan";
 import { apiPath } from "@/lib/base-path";
 import { formatDateTime } from "@/lib/format";
@@ -80,7 +81,24 @@ type Status = {
     belumDiberitahukan: number;
     sudahDiberitahukan: number;
   };
-  verifikasi: { keputusanTersimpan: number; belumDiteruskan: number };
+  verifikasi: {
+    keputusanTersimpan: number;
+    belumDiteruskan: number;
+    /**
+     * Keputusan tertua yang masih menunggu diteruskan ke e-Court, beserta
+     * umurnya. null berarti antreannya kosong.
+     *
+     * Boleh tidak ada: bot versi lama belum mengirimkannya.
+     */
+    tertua?: {
+      nomorPerkara: string;
+      judulDokumen: string;
+      namaHakim: string;
+      keputusan: string;
+      diputuskanPada: string;
+      umurHari: number | null;
+    } | null;
+  };
   nomor: { terverifikasi: number; menunggu: number; ditolak: number };
   rekonsiliasi: {
     ringkasan: {
@@ -220,6 +238,8 @@ export function AletaBotEcourtPanel() {
 
   return (
     <div className="space-y-4">
+      <AletaBotEcourtLogin />
+
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
           <div>
@@ -306,11 +326,25 @@ export function AletaBotEcourtPanel() {
             nilai={status.verifikasi.keputusanTersimpan}
             keterangan="Diputuskan hakim lewat WhatsApp atau portal."
           />
+          {/* Umur antreannya ikut disebut, bukan jumlahnya saja. Tiga keputusan
+              yang masuk pagi ini adalah pekerjaan hari ini; tiga keputusan yang
+              menunggu tiga minggu adalah keputusan hukum yang mengendap - dan
+              angkanya sama saja bila umurnya tidak disebutkan. */}
           <Angka
             judul="Belum Diteruskan"
             nilai={status.verifikasi.belumDiteruskan}
-            keterangan="Menunggu diteruskan ke e-Court."
-            nada={status.verifikasi.belumDiteruskan > 0 ? "perhatian" : "netral"}
+            keterangan={
+              status.verifikasi.tertua && status.verifikasi.tertua.umurHari !== null
+                ? `Menunggu diteruskan ke e-Court. Tertua ${status.verifikasi.tertua.umurHari} hari — ${status.verifikasi.tertua.nomorPerkara}.`
+                : "Menunggu diteruskan ke e-Court."
+            }
+            nada={
+              status.verifikasi.tertua && (status.verifikasi.tertua.umurHari ?? 0) >= 7
+                ? "genting"
+                : status.verifikasi.belumDiteruskan > 0
+                  ? "perhatian"
+                  : "netral"
+            }
           />
         </CardContent>
       </Card>

@@ -87,11 +87,23 @@ services:
       NODE_ENV: production
       PORT: 3003
       TZ: Asia/Makassar
+      # Menunjuk ke folder yang terpasang di atas. Tanpa ini, bawaannya
+      # jatuh ke home di dalam container - yang hilang tiap pembaruan.
+      ALETA_ECOURT_SESSION_DIR: /usr/src/app/.ecourt-session
     command: sh -c "mkdir -p temp/resources/file/doc/ && node app.js"
     network_mode: "host"
     privileged: true
     volumes:
       - /var/www/html/aleta-data/wwebjs_auth:/usr/src/app/.wwebjs_auth
+      # Profil peramban sesi e-Court.
+      #
+      # WAJIB terpasang keluar container. Tanpa ini, profilnya ikut hilang
+      # setiap container dibuat ulang - yang terjadi pada SETIAP pembaruan -
+      # dan petugas harus login ulang dengan captcha tiap kali dipasang versi
+      # baru. Isinya kredensial sesi: folder ini jangan pernah disalin keluar
+      # server, dan jangan ikut dicadangkan ke tempat yang lebih longgar
+      # izinnya.
+      - /var/www/html/aleta-data/ecourt-session:/usr/src/app/.ecourt-session
       - /var/www/html/aleta-data/reports:/usr/src/app/reports
       # Dokumen SIPP (petitum_dok/gugatan) agar bisa dilampirkan ke WhatsApp pihak.
       # WAJIB read-only (:ro) — bot hanya membaca, tidak pernah menulis ke SIPP.

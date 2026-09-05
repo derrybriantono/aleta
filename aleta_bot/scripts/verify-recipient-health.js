@@ -17,12 +17,13 @@ const path = require("path");
 
 // botDbService diganti tiruan agar tidak menyentuh database sungguhan.
 const botDbPath = require.resolve("../services/botDbService");
-require("../services/botDbService");
+const botDbAsli = require("../services/botDbService");
 const state = { suppressed: new Set(), gagal: false };
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
   addColumnIfMissing: async () => true,
   toMysqlDate: (value) => new Date(value).toISOString().slice(0, 19).replace("T", " "),
+  fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
     if (state.gagal) throw new Error("database tidak dapat dijangkau");
     if (/^\s*CREATE TABLE/i.test(sql)) return [];

@@ -474,6 +474,130 @@ const schemaStatements = [
     PRIMARY KEY (role_id, module_id),
     CONSTRAINT fk_module_visibility_role FOREIGN KEY (role_id) REFERENCES roles(id)
   )`,
+  `CREATE TABLE IF NOT EXISTS ecourt_extension_access (
+    role_id TEXT NOT NULL,
+    capability TEXT NOT NULL,
+    enabled SMALLINT NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    updated_by TEXT,
+    PRIMARY KEY (role_id, capability),
+    CONSTRAINT fk_ecourt_extension_access_role FOREIGN KEY (role_id) REFERENCES roles(id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_sipp_hari_sidang (
+    majelis_kode TEXT PRIMARY KEY,
+    hari SMALLINT NOT NULL CHECK (hari BETWEEN 0 AND 6),
+    panitera_kode TEXT NOT NULL DEFAULT '',
+    keterangan TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    updated_by TEXT
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_sipp_aturan_penunjukan (
+    kunci TEXT PRIMARY KEY,
+    nilai TEXT NOT NULL,
+    keterangan TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    updated_by TEXT
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_sipp_penunjukan_antrean (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL,
+    jenis TEXT NOT NULL CHECK (jenis IN ('pmh', 'ppp', 'pjs', 'phs')),
+    usulan TEXT NOT NULL DEFAULT '{}',
+    ringkasan TEXT NOT NULL DEFAULT '',
+    untuk_peran TEXT NOT NULL DEFAULT '',
+    keadaan TEXT NOT NULL DEFAULT 'menunggu' CHECK (keadaan IN ('menunggu', 'dikerjakan', 'dibatalkan', 'kedaluwarsa')),
+    disiapkan_oleh TEXT NOT NULL,
+    disiapkan_at TEXT NOT NULL,
+    catatan TEXT NOT NULL DEFAULT '',
+    dikerjakan_oleh TEXT,
+    dikerjakan_at TEXT,
+    akun_sipp TEXT NOT NULL DEFAULT '',
+    alasan_batal TEXT NOT NULL DEFAULT ''
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_bas_lembar (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    kode_kumpulan TEXT NOT NULL,
+    nama_kumpulan TEXT NOT NULL DEFAULT '',
+    saksi_ke INTEGER NOT NULL DEFAULT 1,
+    saksi_nama TEXT NOT NULL DEFAULT '',
+    saksi_umur TEXT NOT NULL DEFAULT '',
+    saksi_agama TEXT NOT NULL DEFAULT '',
+    saksi_pendidikan TEXT NOT NULL DEFAULT '',
+    saksi_pekerjaan TEXT NOT NULL DEFAULT '',
+    saksi_alamat TEXT NOT NULL DEFAULT '',
+    tanggal_sidang TEXT NOT NULL DEFAULT '',
+    keadaan TEXT NOT NULL DEFAULT 'draf' CHECK (keadaan IN ('draf', 'selesai')),
+    catatan TEXT NOT NULL DEFAULT '',
+    dibuat_oleh TEXT NOT NULL,
+    dibuat_at TEXT NOT NULL,
+    diubah_oleh TEXT NOT NULL DEFAULT '',
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_berkas_riwayat (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    sidik TEXT NOT NULL,
+    ringkasan TEXT NOT NULL DEFAULT '{}',
+    halangan TEXT NOT NULL DEFAULT '',
+    dirakit_at TEXT NOT NULL,
+    dicatat_oleh TEXT NOT NULL DEFAULT ''
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_bas_kehadiran (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    sidang_ke INTEGER NOT NULL,
+    kehadiran_penggugat TEXT NOT NULL DEFAULT '',
+    kehadiran_tergugat TEXT NOT NULL DEFAULT '',
+    agenda TEXT NOT NULL DEFAULT '',
+    hasil TEXT NOT NULL DEFAULT '',
+    catatan TEXT NOT NULL DEFAULT '',
+    dibuat_oleh TEXT NOT NULL,
+    dibuat_at TEXT NOT NULL,
+    diubah_oleh TEXT NOT NULL DEFAULT '',
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_bas_jawaban (
+    id TEXT PRIMARY KEY,
+    lembar_id TEXT NOT NULL,
+    urutan INTEGER NOT NULL,
+    pertanyaan TEXT NOT NULL DEFAULT '',
+    jawaban TEXT NOT NULL DEFAULT '',
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_sipp_borang_medan (
+    borang TEXT NOT NULL,
+    medan TEXT NOT NULL,
+    penunjuk TEXT NOT NULL,
+    jenis TEXT NOT NULL DEFAULT 'teks' CHECK (jenis IN ('teks', 'pilih', 'tanggal', 'kaya')),
+    wajib SMALLINT NOT NULL DEFAULT 0,
+    catatan TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    updated_by TEXT,
+    PRIMARY KEY (borang, medan)
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_sipp_penunjukan_log (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    jenis TEXT NOT NULL CHECK (jenis IN ('pmh', 'ppp', 'pjs', 'phs')),
+    medan TEXT NOT NULL,
+    nilai TEXT NOT NULL DEFAULT '',
+    asal TEXT NOT NULL DEFAULT 'otomatis' CHECK (asal IN ('otomatis', 'manual')),
+    usulan_semula TEXT NOT NULL DEFAULT '',
+    alasan TEXT NOT NULL DEFAULT '',
+    akun_sipp TEXT NOT NULL DEFAULT '',
+    aleta_user_id TEXT,
+    aleta_peran TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    mendarat TEXT NOT NULL DEFAULT 'belum',
+    diperiksa_at TEXT,
+    tercatat TEXT NOT NULL DEFAULT ''
+  )`,
   `CREATE TABLE IF NOT EXISTS feedback_requests (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL CHECK (type IN ('bug', 'feature', 'app_idea')),
@@ -1379,6 +1503,8 @@ const schemaStatements = [
     regulation_version_id TEXT,
     section_type TEXT NOT NULL,
     section_number TEXT NOT NULL DEFAULT '',
+    anchor TEXT NOT NULL DEFAULT '',
+    citation_label TEXT NOT NULL DEFAULT '',
     parent_section_id TEXT,
     title TEXT NOT NULL DEFAULT '',
     content TEXT NOT NULL DEFAULT '',
@@ -2089,6 +2215,18 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_positions_reports_to ON positions(reports_to_position_id, level_hierarchy)`,
   `CREATE INDEX IF NOT EXISTS idx_users_position_role ON users(position_id, role_id, deleted_at)`,
   `CREATE INDEX IF NOT EXISTS idx_acting_assignments_target ON acting_assignments(user_id_pengganti, jabatan_id_target, deleted_at)`,
+  // Satu lembar per perkara, kumpulan, dan urutan saksi. Tanpa kunci tunggal
+  // ini satu perkara dapat punya dua lembar untuk saksi pertama, dan tidak ada
+  // cara memilih mana yang benar saat naskahnya dirakit.
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_bas_lembar_kunci ON aleta_bas_lembar(perkara_id, kode_kumpulan, saksi_ke)`,
+  `CREATE INDEX IF NOT EXISTS idx_bas_lembar_perkara ON aleta_bas_lembar(perkara_id)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_bas_jawaban_baris ON aleta_bas_jawaban(lembar_id, urutan)`,
+  // Kehadiran berubah tiap sidang - itulah sebabnya ia ada. Satu baris per
+  // sidang, bukan per perkara.
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_bas_kehadiran_kunci ON aleta_bas_kehadiran(perkara_id, sidang_ke)`,
+  `CREATE INDEX IF NOT EXISTS idx_berkas_riwayat_perkara ON aleta_berkas_riwayat(perkara_id, dirakit_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_jlf_sections_anchor ON jlf_regulation_sections(anchor)`,
+  `CREATE INDEX IF NOT EXISTS idx_jlf_sections_regulation ON jlf_regulation_sections(regulation_id, sort_order)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_letter_number_sequences_unique ON letter_number_sequences(type, year)`,
   `CREATE INDEX IF NOT EXISTS idx_letter_templates_active ON letter_templates(is_active, category)`,
   `CREATE INDEX IF NOT EXISTS idx_letters_type_status ON letters(type, status, deleted_at)`,
@@ -2290,6 +2428,11 @@ const indexStatements = [
 
 const migrationStatements = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS additional_role_ids_json TEXT NOT NULL DEFAULT '[]'`,
+  // Jangkar kutipan pasal (C3). Kolom tersendiri, bukan di dalam metadata:
+  // rujukan harus dapat DICARI, dan pencarian di dalam JSONB tidak berindeks
+  // sederhana maupun berjalan pada basis data dalam memori.
+  `ALTER TABLE jlf_regulation_sections ADD COLUMN IF NOT EXISTS anchor TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE jlf_regulation_sections ADD COLUMN IF NOT EXISTS citation_label TEXT NOT NULL DEFAULT ''`,
   // Toggle kirim dokumen gugatan/permohonan (petitum_dok) per-notifikasi.
   // Default 1 (ON) agar perilaku notifikasi pihak baru yang sudah ada tidak berubah.
   `ALTER TABLE aleta_bot_notifications ADD COLUMN IF NOT EXISTS attach_document SMALLINT NOT NULL DEFAULT 1`,

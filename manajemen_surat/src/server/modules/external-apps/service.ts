@@ -7,6 +7,7 @@ import {
   type UserPersona,
 } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
+import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
@@ -257,11 +258,16 @@ export async function upsertExternalCredentialsForUser(
     for (const input of credentials) {
       const normalized = normalizeCredentialInput(input);
       const existing = await tx.prepare(
-        `SELECT id, encrypted_password, password_md5_hash
+        `SELECT id, external_username, encrypted_password, password_md5_hash
          FROM external_app_credentials
          WHERE user_id = ? AND app_id = ?
          LIMIT 1`
-      ).get<Pick<ExternalCredentialRow, "id" | "encrypted_password" | "password_md5_hash">>(userId, normalized.appId);
+      ).get<
+        Pick<
+          ExternalCredentialRow,
+          "id" | "external_username" | "encrypted_password" | "password_md5_hash"
+        >
+      >(userId, normalized.appId);
 
       const passwordChanged = typeof normalized.password === "string" && normalized.password.length > 0;
       if (!existing && !normalized.username && !passwordChanged && !normalized.isEnabled) {
@@ -281,10 +287,19 @@ export async function upsertExternalCredentialsForUser(
       const enabled = normalized.isEnabled && Boolean(normalized.username && encryptedPassword);
 
       if (existing) {
+        // Vonis pemeriksaan yang lama DIBATALKAN begitu sandi atau usernamenya
+        // berubah. Tanpa ini, kredensial yang baru diganti masih memamerkan
+        // tanda hijau dari pemeriksaan atas sandi yang sudah tidak dipakai -
+        // yang justru lebih menyesatkan daripada tidak ada tanda sama sekali.
+        const perluDiujiUlang = passwordChanged || normalized.clearPassword
+          || normalized.username !== existing.external_username;
+
         await tx.prepare(
           `UPDATE external_app_credentials
            SET external_username = ?, encrypted_password = ?, password_md5_hash = ?,
              is_enabled = ?, password_updated_at = COALESCE(?, password_updated_at),
+             last_verified_status = CASE WHEN ? = 1 THEN 'not_tested' ELSE last_verified_status END,
+             last_verified_at = CASE WHEN ? = 1 THEN NULL ELSE last_verified_at END,
              updated_by = ?, updated_at = ?
            WHERE id = ?`
         ).run(
@@ -293,6 +308,8 @@ export async function upsertExternalCredentialsForUser(
           passwordMd5Hash,
           enabled ? 1 : 0,
           passwordUpdatedAt,
+          perluDiujiUlang ? 1 : 0,
+          perluDiujiUlang ? 1 : 0,
           actor.id,
           timestamp,
           existing.id
@@ -338,16 +355,177 @@ export async function upsertExternalCredentialsForUser(
       },
     });
   });
+
+  // Diuji SESUDAH tersimpan, dan di luar transaksi.
+  //
+  // Urutannya sengaja begini: menyimpan harus tetap berhasil walaupun bot
+  // sedang mati. Kalau pemeriksaannya didahulukan atau ditaruh di dalam
+  // transaksi, bot yang tidak menjawab akan menggagalkan penyimpanan sandi
+  // yang sebenarnya benar.
+  //
+  // Galat pemeriksaan pun ditelan di sini: keadaannya sudah tercatat sebagai
+  // "belum dapat diuji" pada barisnya, dan itu keterangan yang jujur. Membuat
+  // penyimpanan gagal hanya karena pemeriksaannya gagal akan menyesatkan.
+  const adaSipp = credentials.some((item) => normalizeAppId(item.appId) === "sipp");
+  if (adaSipp) {
+    try {
+      return await periksaKredensialSipp(db, userId);
+    } catch {
+      return undefined;
+    }
+  }
+
+  return undefined;
 }
+
+/**
+ * Keadaan sebuah kredensial SIPP sesudah diperiksa.
+ *
+ * Tiap sebab kegagalan punya namanya sendiri, dan itu disengaja. Satu nama
+ * untuk banyak sebab adalah cara paling ampuh membuat orang mengetik ulang
+ * sandi yang sebenarnya sudah benar - berkali-kali, tanpa pernah berhasil.
+ */
+export const KEADAAN_KREDENSIAL = {
+  BELUM_DIUJI: "not_tested",
+  SAH: "verified",
+  SANDI_SALAH: "wrong_password",
+  TIDAK_TERDAFTAR: "not_found",
+  DIBLOKIR: "blocked",
+  TIDAK_TERJANGKAU: "unreachable",
+} as const;
+
+export type HasilPeriksaKredensial = {
+  keadaan: string;
+  keterangan: string;
+  diperiksaPada: string | null;
+};
+
+/**
+ * Menguji sandi SIPP tersimpan, TANPA memasukinya.
+ *
+ * ============================================================================
+ * MENGAPA TIDAK MENCOBA MASUK
+ * ============================================================================
+ *
+ * Mencoba masuk akan MENULIS ke SIPP: insertSession() menghapus lalu mengisi
+ * ulang sys_user_online, dan sys_users.last_login ikut berubah. Pemeriksaan
+ * kesehatan tidak boleh menyamar menjadi kehadiran orang - apalagi ia berjalan
+ * atas akun hakim dan panitera, dan bisa dijalankan admin kapan saja.
+ *
+ * Karena itu yang dilakukan hanya membaca: bot menghitung sidik sandinya lalu
+ * membandingkannya dengan sys_users.password. Yang kembali ke sini cuma
+ * jawaban cocok atau tidak - sidik tersimpan dan kode aktivasinya tidak pernah
+ * meninggalkan sisi SIPP.
+ *
+ * ============================================================================
+ * MENGAPA DI LUAR TRANSAKSI
+ * ============================================================================
+ *
+ * Ia memanggil jaringan. Memanggil jaringan di dalam transaksi menahan kunci
+ * basis data selama sambungan menggantung - dan bot yang mati membuat
+ * penyimpanan kredensial ikut mati. Menyimpan harus tetap berhasil walau
+ * pemeriksaannya tidak dapat dilakukan.
+ */
+export async function periksaKredensialSipp(
+  db: AletaDatabase,
+  userId: string
+): Promise<HasilPeriksaKredensial> {
+  const baris = await db.prepare(
+    `SELECT id, external_username, encrypted_password
+     FROM external_app_credentials
+     WHERE user_id = ? AND app_id = 'sipp'
+     LIMIT 1`
+  ).get<Pick<ExternalCredentialRow, "id" | "external_username" | "encrypted_password">>(userId);
+
+  if (!baris || !baris.external_username || !baris.encrypted_password) {
+    return { keadaan: KEADAAN_KREDENSIAL.BELUM_DIUJI, keterangan: "Kredensial SIPP belum lengkap.", diperiksaPada: null };
+  }
+
+  const sandi = decryptCredentialSecret(baris.encrypted_password);
+  if (!sandi) {
+    return {
+      keadaan: KEADAAN_KREDENSIAL.BELUM_DIUJI,
+      keterangan: "Password tidak dapat dibaca. Kunci enkripsi berubah, atau password perlu diisi ulang.",
+      diperiksaPada: null,
+    };
+  }
+
+  const jawaban = await callAletaBotSippBridge<{
+    ditemukan?: boolean;
+    cocok?: boolean;
+    diblokir?: boolean;
+    alasan?: string;
+  }>("user.verifikasiSandi", { username: baris.external_username, sandi });
+
+  let keadaan: string;
+  let keterangan: string;
+
+  if (!jawaban.ok) {
+    // Bot tidak menjawab BUKAN berarti sandinya salah. Menyebutnya salah akan
+    // membuat admin mengganti sandi yang sebenarnya masih berlaku.
+    keadaan = KEADAAN_KREDENSIAL.TIDAK_TERJANGKAU;
+    keterangan = `Belum dapat diuji: ${jawaban.error ?? "ALETA Bot tidak merespons."}`;
+  } else if (!jawaban.data?.ditemukan) {
+    keadaan = KEADAAN_KREDENSIAL.TIDAK_TERDAFTAR;
+    keterangan = `Username "${baris.external_username}" tidak terdaftar di SIPP.`;
+  } else if (!jawaban.data?.cocok) {
+    keadaan = KEADAAN_KREDENSIAL.SANDI_SALAH;
+    keterangan = "Password sudah tidak cocok. Kemungkinan sudah diganti pemiliknya.";
+  } else if (jawaban.data?.diblokir) {
+    // Sandinya benar, tetapi SIPP tetap menolak. Dibedakan supaya tidak
+    // diperlakukan sebagai salah sandi.
+    keadaan = KEADAAN_KREDENSIAL.DIBLOKIR;
+    keterangan = "Password benar, tetapi akun SIPP sedang diblokir.";
+  } else {
+    keadaan = KEADAAN_KREDENSIAL.SAH;
+    keterangan = "Password cocok dengan SIPP.";
+  }
+
+  // Waktu pemeriksaan hanya dicatat bila pemeriksaannya benar-benar terjadi.
+  // Bot yang tidak terjangkau tidak boleh meninggalkan jejak seolah sudah
+  // diperiksa.
+  const benarDiperiksa = keadaan !== KEADAAN_KREDENSIAL.TIDAK_TERJANGKAU;
+  const waktu = new Date().toISOString();
+
+  await db.prepare(
+    `UPDATE external_app_credentials
+     SET last_verified_status = ?,
+       last_verified_at = CASE WHEN ? = 1 THEN ? ELSE last_verified_at END,
+       updated_at = ?
+     WHERE id = ?`
+  ).run(keadaan, benarDiperiksa ? 1 : 0, waktu, waktu, baris.id);
+
+  return { keadaan, keterangan, diperiksaPada: benarDiperiksa ? waktu : null };
+}
+
+/**
+ * Tambahan yang membuat jembatan berhati-hati.
+ *
+ * Diisi HANYA ketika masuk atas nama pejabat lain. Ketiganya mengubah tiga
+ * hal sekaligus: sesi lama ditutup lebih dulu, pengiriman dilakukan lewat
+ * fetch supaya jawabannya masih dapat dibaca, dan perjalanan DIHENTIKAN bila
+ * sesi yang terbentuk bukan milik nama yang diharapkan.
+ */
+export type JembatanBertanggungJawab = {
+  /** Alamat keluar sesi, dipanggil sebelum apa pun. */
+  alamatKeluar: string;
+  /** Nama yang harus muncul di halaman sesudah masuk, apa adanya dari SIPP. */
+  namaDiharap: string;
+  /** Halaman yang dibuka setelah terbukti benar. */
+  tujuanAkhir: string;
+};
 
 export async function buildExternalAppLaunchHtml(
   db: AletaDatabase,
   {
     actor,
     appId,
+    bertanggungJawab,
   }: {
     actor: Pick<UserPersona, "id" | "name" | "isActive">;
     appId: string;
+    /** Kosong berarti "buka SIPP sebagai diri sendiri" - perilaku lama. */
+    bertanggungJawab?: JembatanBertanggungJawab & { userIdKredensial?: string };
   }
 ) {
   const normalizedAppId = normalizeAppId(appId);
@@ -366,6 +544,14 @@ export async function buildExternalAppLaunchHtml(
     );
   }
 
+  // Kredensial milik SIAPA.
+  //
+  // Bawaannya milik yang sedang memakai ALETA - itulah "buka SIPP sebagai diri
+  // sendiri". Hanya jalur masuk-sebagai-pejabat-lain yang menyebut pemilik
+  // lain, dan jalur itu punya gerbang izinnya sendiri; lihat
+  // masukSebagaiPejabat pada modul aleta-ecourt/masuk-pejabat.
+  const pemilikKredensial = bertanggungJawab?.userIdKredensial || actor.id;
+
   const credential = await db.prepare(
     `SELECT id, user_id, app_id, external_username, encrypted_password, password_md5_hash,
       is_enabled, last_verified_at, last_verified_status, last_launch_at, password_updated_at,
@@ -373,7 +559,7 @@ export async function buildExternalAppLaunchHtml(
      FROM external_app_credentials
      WHERE user_id = ? AND app_id = ?
      LIMIT 1`
-  ).get<ExternalCredentialRow>(actor.id, credentialSourceAppId);
+  ).get<ExternalCredentialRow>(pemilikKredensial, credentialSourceAppId);
 
   if (!credential || !credential.is_enabled || !credential.external_username || !credential.encrypted_password) {
     const credentialLabel = credentialSourceAppId === "sipp" && normalizedAppId !== "sipp" ? "SIPP" : config.label;
@@ -430,6 +616,12 @@ export async function buildExternalAppLaunchHtml(
     password: postedPassword,
     usernameField: launchSettings.usernameField,
     passwordField: launchSettings.passwordField,
+    // Ketiganya kosong pada jalur "buka SIPP sebagai diri sendiri", sehingga
+    // perilakunya persis seperti sebelumnya. Yang mengisinya adalah jalur
+    // masuk-sebagai-pejabat-lain.
+    alamatKeluar: bertanggungJawab?.alamatKeluar ?? "",
+    namaDiharap: bertanggungJawab?.namaDiharap ?? "",
+    tujuanAkhir: bertanggungJawab?.tujuanAkhir ?? "",
   }).replace(/</g, "\\u003c");
 
   return `<!doctype html>
@@ -451,13 +643,15 @@ export async function buildExternalAppLaunchHtml(
   <main>
     <div class="badge">ALETA SSO Bridge</div>
     <h1>Masuk ke ${escapeHtml(config.label)}</h1>
-    <p>Sesi ALETA valid. ALETA sedang mengirim kredensial ${escapeHtml(config.label)} milik ${escapeHtml(actor.name)} melalui form login aplikasi tujuan.</p>
+    <p>${bertanggungJawab?.namaDiharap
+      ? `Masuk atas nama <b>${escapeHtml(bertanggungJawab.namaDiharap)}</b> (akun SIPP <b>${escapeHtml(credential.external_username)}</b>), dikerjakan oleh ${escapeHtml(actor.name)}. Sesi yang sedang terbuka akan ditutup lebih dulu.`
+      : `Sesi ALETA valid. ALETA sedang mengirim kredensial ${escapeHtml(config.label)} milik ${escapeHtml(actor.name)} melalui form login aplikasi tujuan.`}</p>
     <p class="status" id="status">Membaca form login ${escapeHtml(config.label)}...</p>
-    <form id="cadangan" method="post" action="${escapeHtml(actionUrl)}" autocomplete="off">
+    ${bertanggungJawab?.namaDiharap ? "" : `<form id="cadangan" method="post" action="${escapeHtml(actionUrl)}" autocomplete="off">
       <input type="hidden" name="${escapeHtml(launchSettings.usernameField)}" value="${escapeHtml(credential.external_username)}" />
       <input type="hidden" name="${escapeHtml(launchSettings.passwordField)}" value="${escapeHtml(postedPassword)}" />
       <button type="submit">Masuk ${escapeHtml(config.label)} manual</button>
-    </form>
+    </form>`}
   </main>
   <script>
 (function () {
@@ -485,6 +679,18 @@ export async function buildExternalAppLaunchHtml(
   // Jalur cadangan: kirim persis seperti pengaturan panel. Dipakai bila form
   // login tidak bisa dibaca, misalnya aplikasi tujuan berbeda origin.
   function cadangan(alasan) {
+    // Saat masuk sebagai pejabat lain, jalur cadangan DILUMPUHKAN.
+    //
+    // Cadangan mengirim membabi buta ke alamat pada pengaturan panel, tanpa
+    // pernah tahu apakah sesinya terbentuk dan milik siapa. Untuk "buka SIPP
+    // sebagai diri sendiri" itu tidak apa-apa - paling buruk petugas melihat
+    // halaman masuk lalu mengetik sendiri. Untuk penetapan atas nama pejabat
+    // lain, taruhannya bukan itu: sesi yang salah berarti penetapan tercatat
+    // atas nama yang keliru. Lebih baik berhenti.
+    if (cfg.namaDiharap) {
+      tulis("DIHENTIKAN. Form login tidak terbaca (" + alasan + "). Tidak ada yang dikerjakan.");
+      return;
+    }
     tulis("Form login tidak terbaca (" + alasan + "). Mengirim memakai pengaturan panel.");
     var kolom = {};
     kolom[cfg.usernameField] = cfg.username;
@@ -494,6 +700,7 @@ export async function buildExternalAppLaunchHtml(
 
   if (!window.fetch || !window.DOMParser) { cadangan("browser tidak mendukung"); return; }
 
+  function mulai() {
   fetch(cfg.actionUrl, { credentials: "include", cache: "no-store" })
     .then(function (respons) {
       if (!respons.ok) { throw new Error("HTTP " + respons.status); }
@@ -501,11 +708,40 @@ export async function buildExternalAppLaunchHtml(
     })
     .then(function (html) {
       var dokumen = new DOMParser().parseFromString(html, "text/html");
-      var isianPassword = dokumen.querySelector("form input[type=password]");
-      var form = isianPassword ? isianPassword.form : null;
+
+      // Kotak sandi dicari di SELURUH dokumen, bukan sebagai keturunan <form>.
+      //
+      // SIPP membuka <form> langsung di dalam <tbody>, dengan <tr> di dalamnya:
+      //
+      //     <table><tbody>
+      //       <tr>...</tr>
+      //       <form action="...login/validation_credential" method="post">
+      //         <tr><td><input type="password" name="password">
+      //
+      // Aturan penataan HTML MEMINDAHKAN tag <form> itu keluar dari tabel
+      // (foster parenting), sementara kotak isiannya tetap tinggal di dalam
+      // sel. Formulirnya jelas ada, tetapi kotak sandinya bukan lagi
+      // keturunannya - sehingga "form input[type=password]" tidak menemukan
+      // apa pun dan isianPassword.form bernilai kosong.
+      //
+      // Dulu keadaan itu disimpulkan sebagai "form login tidak ditemukan", lalu
+      // jatuh ke jalur cadangan yang mengirim ke alamat halaman login. Alamat
+      // itu kena "RewriteRule ^index.php/(.*)$ ... [R=302,L]", dan pengalihan
+      // 302 atas sebuah POST membuang isian formulirnya. Dua kegagalan
+      // berantai, keduanya tanpa pesan apa pun.
+      var isianPassword = dokumen.querySelector("input[type=password]");
+      if (!isianPassword) { cadangan("kolom sandi tidak ditemukan"); return; }
+
+      var form = isianPassword.form || dokumen.querySelector("form");
       if (!form) { cadangan("form login tidak ditemukan"); return; }
 
-      if (form.querySelector("[name*=captcha i], [id*=captcha i], img[src*=captcha i]")) {
+      // Kolom dikumpulkan dari lingkup yang benar-benar memuat kotak sandinya.
+      // Bila formulirnya utuh, lingkupnya formulir itu - sehingga halaman
+      // dengan banyak formulir tidak tercampur. Bila terpisah karena tabel,
+      // barulah seluruh dokumen dipakai.
+      var lingkup = form.contains(isianPassword) ? form : dokumen;
+
+      if (lingkup.querySelector("[name*=captcha i], [id*=captcha i], img[src*=captcha i]")) {
         tulis("Login " + cfg.label + " memakai captcha sehingga tidak bisa diisi otomatis. Silakan masuk manual.");
         return;
       }
@@ -514,18 +750,18 @@ export async function buildExternalAppLaunchHtml(
       // Semua input tersembunyi milik form asli ikut dibawa - di sinilah token
       // CSRF berada. Tanpa itu CodeIgniter menolak login lalu memantulkan
       // pengguna kembali ke halaman login tanpa keterangan apa pun.
-      var tersembunyi = form.querySelectorAll("input[type=hidden]");
+      var tersembunyi = lingkup.querySelectorAll("input[type=hidden]");
       for (var i = 0; i < tersembunyi.length; i += 1) {
         if (tersembunyi[i].name) { kolom[tersembunyi[i].name] = tersembunyi[i].value; }
       }
 
-      var isianUser = form.querySelector('input[name="' + cfg.usernameField + '"]')
-        || form.querySelector("input[type=text], input[type=email], input:not([type])");
+      var isianUser = lingkup.querySelector('input[name="' + cfg.usernameField + '"]')
+        || lingkup.querySelector("input[type=text], input[type=email], input:not([type])");
       kolom[(isianUser && isianUser.name) || cfg.usernameField] = cfg.username;
       kolom[isianPassword.name || cfg.passwordField] = cfg.password;
 
       // Sebagian aplikasi memeriksa keberadaan nama tombol submit.
-      var tombol = form.querySelector("button[name], input[type=submit][name]");
+      var tombol = lingkup.querySelector("button[name], input[type=submit][name]");
       if (tombol && tombol.name) { kolom[tombol.name] = tombol.value || "login"; }
 
       var aksi = form.getAttribute("action");
@@ -534,12 +770,71 @@ export async function buildExternalAppLaunchHtml(
         try { tujuan = new URL(aksi, cfg.actionUrl).href; } catch (galat) { tujuan = cfg.actionUrl; }
       }
 
+      // Jalur BERTANGGUNG JAWAB: dipakai ketika sesi yang dibentuk harus
+      // terbukti milik akun yang dimaksud - yaitu saat masuk sebagai pejabat
+      // lain untuk mengerjakan penetapan.
+      //
+      // Bedanya dengan jalur biasa: sandi dikirim lewat fetch, bukan dengan
+      // memindahkan halaman. Dengan begitu jawabannya masih dapat DIBACA
+      // sebelum petugas dilepas ke SIPP. Kalau yang mendarat ternyata akun
+      // lain - misalnya sesi lama yang belum benar-benar mati - perjalanannya
+      // dihentikan di sini, bukan diteruskan dan baru ketahuan setelah
+      // penetapan tercatat atas nama yang keliru.
+      if (cfg.namaDiharap) {
+        tulis("Mengirim kredensial " + cfg.label + "...");
+        var badan = new URLSearchParams();
+        Object.keys(kolom).forEach(function (nama) { badan.append(nama, kolom[nama]); });
+
+        fetch(tujuan, {
+          method: "post",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: badan.toString(),
+        })
+          .then(function (jawab) { return jawab.text(); })
+          .then(function (isi) {
+            if (isi.indexOf(cfg.namaDiharap) >= 0) {
+              tulis("Masuk sebagai " + cfg.namaDiharap + ". Membuka " + cfg.label + "...");
+              window.location.replace(cfg.tujuanAkhir || cfg.actionUrl);
+              return;
+            }
+            // Gagal-tertutup. Diam lebih baik daripada menyerahkan sesi yang
+            // belum tentu milik siapa.
+            tulis(
+              "DIHENTIKAN. Sesi yang terbentuk bukan milik " + cfg.namaDiharap +
+              ". Password mungkin sudah diganti, atau sesi lama belum tertutup. Tidak ada yang dikerjakan."
+            );
+          })
+          .catch(function (galat) {
+            tulis("DIHENTIKAN. Pengiriman gagal: " + (galat && galat.message ? galat.message : "tidak diketahui"));
+          });
+        return;
+      }
+
       tulis("Mengirim kredensial ke " + cfg.label + "...");
       kirim(tujuan, form.getAttribute("method") || "post", kolom);
     })
     .catch(function (galat) {
       cadangan(galat && galat.message ? galat.message : "tidak dapat diakses");
     });
+  }
+
+  // Sesi lama WAJIB ditutup lebih dulu saat masuk sebagai pejabat lain.
+  //
+  // Halaman masuk SIPP TIDAK menampilkan formulir bila sesi masih hidup - ia
+  // langsung mengalihkan ke dashboard. Tanpa langkah ini, "berganti akun"
+  // menghasilkan sesi LAMA yang bertahan, dan penetapan akan tercatat atas
+  // nama akun yang kebetulan sedang terbuka. Terbukti pada percobaan
+  // 2 September 2026 pukul 12:11: GET /SIPP/login menjawab 302, bukan 200.
+  if (cfg.alamatKeluar) {
+    tulis("Menutup sesi " + cfg.label + " yang sedang terbuka...");
+    fetch(cfg.alamatKeluar, { credentials: "include", cache: "no-store" })
+      .then(mulai)
+      .catch(mulai);
+  } else {
+    mulai();
+  }
 })();
   </script>
 </body>

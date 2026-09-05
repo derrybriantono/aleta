@@ -43,12 +43,27 @@ export function decryptCredentialSecret(value: string) {
     return "";
   }
 
-  const decipher = createDecipheriv("aes-256-gcm", getCredentialEncryptionKey(), Buffer.from(ivBase64, "base64"));
-  decipher.setAuthTag(Buffer.from(tagBase64, "base64"));
-  return Buffer.concat([
-    decipher.update(Buffer.from(encryptedBase64, "base64")),
-    decipher.final(),
-  ]).toString("utf8");
+  // Gagal-tertutup, bukan melempar.
+  //
+  // Nilai tersimpan dapat menjadi tidak terbaca karena hal yang WAJAR: kunci
+  // enkripsi diganti, basis data dipulihkan dari cadangan lama, atau barisnya
+  // rusak. Semua itu harus berakhir sebagai "password tidak dapat dibaca" -
+  // keterangan yang sudah disiapkan di pemanggilnya - bukan sebagai galat yang
+  // meledak.
+  //
+  // Sebelumnya galatnya lolos ke atas, sehingga cabang penanganan yang sudah
+  // ditulis di buildExternalAppLaunchHtml dan periksaKredensialSipp TIDAK
+  // PERNAH terjangkau. Yang dilihat petugas hanyalah layar galat.
+  try {
+    const decipher = createDecipheriv("aes-256-gcm", getCredentialEncryptionKey(), Buffer.from(ivBase64, "base64"));
+    decipher.setAuthTag(Buffer.from(tagBase64, "base64"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encryptedBase64, "base64")),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return "";
+  }
 }
 
 export function maskCredentialUsername(value: string) {

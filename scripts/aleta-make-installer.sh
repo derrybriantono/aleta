@@ -30,6 +30,10 @@ INCLUDE_ITEMS=(
   deploy
   scripts
   docs
+  # Ekstensi peramban untuk halaman SIPP. Tidak dipasang otomatis oleh
+  # installer - petugas memuatnya sendiri lewat chrome://extensions - tetapi
+  # tetap ikut dipaketkan supaya berkasnya sampai ke server bersama rilis.
+  ekstensi-sipp
   docker-compose.yml
   docker-compose.override.yml
   .env.production.example
@@ -105,6 +109,32 @@ cat > "$PKG_ROOT/aleta-installer.json" <<JSON
   ]
 }
 JSON
+
+# ---------------------------------------------------------------------------
+# NORMALKAN AKHIR BARIS SEBELUM DIKEMAS
+#
+# Repositori ini dikembangkan di Windows. Bila working tree tempat paket
+# dibuat punya core.autocrlf aktif, berkas skrip ikut ber-CRLF - dan Linux
+# menolaknya dengan galat yang menyesatkan:
+#
+#     : nama pilihan tidak valid pipefail
+#
+# Karakter CR memindahkan kursor ke awal baris sehingga pesan aslinya
+# tertimpa, dan tidak ada petunjuk sama sekali bahwa masalahnya akhir baris.
+#
+# .gitattributes sudah mencegahnya di tingkat git, tetapi penjagaan ini tetap
+# ada karena paket dapat dibuat dari salinan yang tidak melewati git sama
+# sekali - misalnya folder hasil unzip atau hasil salin manual.
+# ---------------------------------------------------------------------------
+echo "==> Menormalkan akhir baris berkas yang dijalankan di Linux..."
+find "$PKG_ROOT" -type f \( \
+  -name "*.sh" -o -name "*.bash" -o -name "*.sql" -o \
+  -name "Dockerfile" -o -name ".dockerignore" -o \
+  -name "*.conf" -o -name "*.service" -o -name "*.yml" -o -name "*.yaml" \
+\) -exec sed -i "s/\r$//" {} + 2>/dev/null || true
+
+# Skrip harus dapat dijalankan setelah paket dibuka.
+find "$PKG_ROOT" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
 
 echo "==> Mengemas: $PKG_FILE"
 tar -czf "$PKG_FILE" -C "$BUILD_DIR" "$PKG_NAME"

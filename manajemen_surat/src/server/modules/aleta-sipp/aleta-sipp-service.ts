@@ -17,6 +17,7 @@ import { badRequest, forbidden, notFound } from "@/server/shared/http";
 import {
   assertAletaSippRegisteredReadOnlySql,
   getAletaSippDataSourceStatus,
+  callAletaBotSippBridge,
   getAletaSippSqlDumpPath,
   testAletaBotSippDataSource,
 } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
@@ -5445,6 +5446,7 @@ export const AletaSippService = {
   testAletaSippDatasourceService,
   getAletaSippDashboardSummary,
   importSippMetadataFromSqlDump,
+  syncAletaSippDictionaryFromLive,
   getAletaSippTables,
   getAletaSippTableDetail,
   getAletaSippColumns,
@@ -5478,3 +5480,209 @@ export const AletaSippService = {
   scanAletaSippLegacyReferences,
   createAletaSippSchedulePdf,
 };
+
+// ─── Menyelaraskan Kamus SIPP langsung dari SIPP yang terpasang ─────────────
+//
+// Kamus Database SIPP selama ini diisi dua cara: tangan, dan pengurai berkas
+// dump SQL yang jalurnya di-hardcode ke folder Windows pengembang - jalur yang
+// tidak akan pernah ada di server. Akibatnya kamus di produksi selalu
+// tertinggal dari SIPP yang sesungguhnya, dan setiap kueri baru dibangun di
+// atas dugaan tentang nama kolom.
+//
+// Penyelaras ini membaca information_schema dari SIPP yang benar-benar
+// terpasang, lewat jembatan baca-saja di ALETA Bot.
+//
+// DUA ATURAN YANG TIDAK BOLEH DILANGGAR:
+//
+//   1. TIDAK MENIMPA TULISAN MANUSIA. Nama manusiawi, kategori, dan penjelasan
+//      yang sudah diisi petugas dipertahankan apa adanya. Introspeksi hanya
+//      mengisi yang masih kosong dan menyegarkan fakta struktural - tipe data,
+//      kunci utama, boleh kosong atau tidak. Dokumentasi yang disusun
+//      bertahun-tahun tidak boleh hilang karena satu tombol ditekan.
+//
+//   2. TIDAK MENGHAPUS. Tabel yang hilang dari SIPP ditandai tidak aktif,
+//      bukan dibuang. Kueri lama yang menyebutnya tetap dapat ditelusuri.
+
+type IntrospeksiTabel = { nama: string; jenis: string; keterangan: string };
+
+type IntrospeksiKolom = {
+  tabel: string;
+  nama: string;
+  tipe: string;
+  tipeLengkap: string;
+  bolehKosong: boolean;
+  kunciUtama: boolean;
+  terindeks: boolean;
+  keterangan: string;
+  urutan: number;
+};
+
+type IntrospeksiHasil = {
+  diperiksaPada: string;
+  jumlahTabel: number;
+  jumlahView: number;
+  jumlahKolom: number;
+  tabel: IntrospeksiTabel[];
+  kolom: IntrospeksiKolom[];
+};
+
+/** Menebak kategori dari nama tabel - hanya dipakai untuk tabel yang BELUM ada di kamus. */
+function kategoriDariNamaTabel(nama: string): string {
+  const n = nama.toLowerCase();
+  if (n.startsWith("ref_") || n.startsWith("jenis_") || n.startsWith("alur_")) return "referensi";
+  if (n.includes("putusan") || n.includes("akta_cerai") || n.includes("ikrar")) return "putusan";
+  if (n.includes("sidang") || n.includes("mediasi") || n.includes("saksi")) return "persidangan";
+  if (n.startsWith("perkara")) return "perkara";
+  if (n.startsWith("log_") || n.includes("_log")) return "sistem";
+  return "pendukung";
+}
+
+/** Mengubah nama_seperti_ini menjadi "Nama Seperti Ini". */
+function namaManusiawiDariKode(nama: string): string {
+  return nama
+    .split("_")
+    .filter(Boolean)
+    .map((kata) => kata.charAt(0).toUpperCase() + kata.slice(1))
+    .join(" ");
+}
+
+export async function syncAletaSippDictionaryFromLive(db: AletaDatabase, actor: UserPersona) {
+  // Izin yang sama dengan impor struktur dari berkas SQL: keduanya menulis
+  // Kamus Database SIPP, hanya sumbernya yang berbeda.
+  requireAletaSippPermissionForAction(
+    actor,
+    ALETA_SIPP_PERMISSION.IMPORT_SQL_STRUCTURE,
+    "Anda tidak memiliki izin menyelaraskan struktur SIPP."
+  );
+
+  const jawaban = await callAletaBotSippBridge<IntrospeksiHasil>(
+    "schema.introspect",
+    {},
+    { timeoutMs: 120_000 }
+  );
+  if (!jawaban.ok || !jawaban.data) {
+    throw badRequest(
+      `Struktur SIPP tidak dapat dibaca: ${jawaban.ok ? "jawaban kosong" : jawaban.error}`
+    );
+  }
+
+  const hasil = jawaban.data;
+  const sekarang = new Date().toISOString();
+
+  const kolomPerTabel = new Map<string, IntrospeksiKolom[]>();
+  for (const kolom of hasil.kolom ?? []) {
+    const daftar = kolomPerTabel.get(kolom.tabel) ?? [];
+    daftar.push(kolom);
+    kolomPerTabel.set(kolom.tabel, daftar);
+  }
+
+  const rowsLama = await db.queryAll<{ table_name: string }>(
+    "SELECT table_name FROM aleta_sipp_tables"
+  );
+  const adaSebelumnya = new Set(rowsLama.map((row) => row.table_name));
+
+  let tabelBaru = 0;
+  let tabelDiperbarui = 0;
+  let kolomTersimpan = 0;
+
+  for (const tabel of hasil.tabel ?? []) {
+    const tableId = stableId("sipp_table", tabel.nama);
+    if (adaSebelumnya.has(tabel.nama)) tabelDiperbarui += 1;
+    else tabelBaru += 1;
+
+    const kolomTabel = kolomPerTabel.get(tabel.nama) ?? [];
+    const sidikJari = createHash("sha1")
+      .update(JSON.stringify(kolomTabel))
+      .digest("hex")
+      .slice(0, 16);
+
+    // COALESCE NULLIF: nilai lama dipertahankan bila sudah terisi manusia.
+    await db.run(
+      `INSERT INTO aleta_sipp_tables (
+        id, table_name, human_name, category, priority, short_description, long_description,
+        function_in_case_process, table_kind, source_schema_hash, risk_notes, example_usage,
+        example_query_key, is_active, created_by, updated_by, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, 3, ?, '', '', ?, ?, '[]'::jsonb, '', '', 1, ?, ?, ?, ?)
+      ON CONFLICT (table_name) DO UPDATE SET
+        human_name = COALESCE(NULLIF(aleta_sipp_tables.human_name, ''), EXCLUDED.human_name),
+        category = COALESCE(NULLIF(aleta_sipp_tables.category, ''), EXCLUDED.category),
+        short_description = COALESCE(NULLIF(aleta_sipp_tables.short_description, ''), EXCLUDED.short_description),
+        source_schema_hash = EXCLUDED.source_schema_hash,
+        is_active = 1,
+        updated_by = EXCLUDED.updated_by,
+        updated_at = EXCLUDED.updated_at`,
+      [
+        tableId,
+        tabel.nama,
+        namaManusiawiDariKode(tabel.nama),
+        kategoriDariNamaTabel(tabel.nama),
+        tabel.keterangan ?? "",
+        tabel.jenis === "view" ? "referensi" : kategoriDariNamaTabel(tabel.nama),
+        sidikJari,
+        actor.id,
+        actor.id,
+        sekarang,
+        sekarang,
+      ]
+    );
+
+    for (const kolom of kolomTabel) {
+      await db.run(
+        `INSERT INTO aleta_sipp_columns (
+          id, table_id, table_name, column_name, human_name, data_type, is_nullable,
+          is_primary_key, is_indexed, description, example_value, relation_hint,
+          query_usage_json, quality_notes, sort_order, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', '[]'::jsonb, '', ?, ?, ?)
+        ON CONFLICT (table_name, column_name) DO UPDATE SET
+          table_id = EXCLUDED.table_id,
+          human_name = COALESCE(NULLIF(aleta_sipp_columns.human_name, ''), EXCLUDED.human_name),
+          description = COALESCE(NULLIF(aleta_sipp_columns.description, ''), EXCLUDED.description),
+          data_type = EXCLUDED.data_type,
+          is_nullable = EXCLUDED.is_nullable,
+          is_primary_key = EXCLUDED.is_primary_key,
+          is_indexed = EXCLUDED.is_indexed,
+          sort_order = EXCLUDED.sort_order,
+          updated_at = EXCLUDED.updated_at`,
+        [
+          stableId("sipp_column", tabel.nama, kolom.nama),
+          tableId,
+          tabel.nama,
+          kolom.nama,
+          namaManusiawiDariKode(kolom.nama),
+          kolom.tipeLengkap || kolom.tipe,
+          kolom.bolehKosong ? 1 : 0,
+          kolom.kunciUtama ? 1 : 0,
+          kolom.terindeks ? 1 : 0,
+          kolom.keterangan ?? "",
+          kolom.urutan,
+          sekarang,
+          sekarang,
+        ]
+      );
+      kolomTersimpan += 1;
+    }
+  }
+
+  // Tabel yang tidak lagi ada di SIPP ditandai tidak aktif, bukan dihapus.
+  const namaSekarang = new Set((hasil.tabel ?? []).map((tabel: IntrospeksiTabel) => tabel.nama));
+  const tabelTidakAktif = [...adaSebelumnya].filter((nama) => !namaSekarang.has(nama));
+  for (const nama of tabelTidakAktif) {
+    await db.run(
+      "UPDATE aleta_sipp_tables SET is_active = 0, updated_at = ?, updated_by = ? WHERE table_name = ?",
+      [sekarang, actor.id, nama]
+    );
+  }
+
+  return {
+    diperiksaPada: hasil.diperiksaPada,
+    jumlahTabel: hasil.jumlahTabel,
+    jumlahView: hasil.jumlahView,
+    jumlahKolom: hasil.jumlahKolom,
+    tabelBaru,
+    tabelDiperbarui,
+    kolomTersimpan,
+    tabelTidakAktif,
+  };
+}

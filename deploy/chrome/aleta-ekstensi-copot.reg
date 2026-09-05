@@ -1,0 +1,20 @@
+Windows Registry Editor Version 5.00
+
+; ============================================================================
+; ALETA E-Court - mencabut pemasangan wajib
+; ============================================================================
+;
+; Menghapus HANYA nilai "1" di daftar pemasangan wajib Chrome, bukan seluruh
+; daftarnya - supaya ekstensi kantor lain yang terdaftar di situ tidak ikut
+; tercabut.
+;
+; Sesudah dijalankan, tutup Chrome sampai benar-benar keluar lalu buka lagi.
+; Chrome akan mencopot ekstensi ALETA sendiri.
+;
+; Jalankan ini bila:
+;   - komputernya tidak lagi dipakai untuk SIPP, atau
+;   - kunci penanda tangan di server terpaksa diganti sehingga ID ekstensinya
+;     berubah - cabut dulu yang lama, baru pasang berkas yang baru.
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"=-

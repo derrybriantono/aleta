@@ -245,8 +245,91 @@ async function listPendingForJudge(hakim, { limit = 10 } = {}) {
 
 /** Menyimpan keputusan hakim. Hanya dipanggil setelah seluruh penjagaan lolos. */
 async function recordDecision({ dokumen, hakim, keputusan, keterangan = "" }) {
+  // Berkas pendaftaran TIDAK dapat diverifikasi.
+  //
+  // Dokumen bukti, gugatan, dan surat kuasa tidak mengenal verifikasi
+  // majelis di e-Court - tidak ada tombolnya di sana, dan tidak ada
+  // keputusan yang ditunggu. Mencatat verifikasi atasnya menghasilkan
+  // keputusan hukum yang tidak punya padanan di sistem resmi.
+  //
+  // Ekstensi memang sudah tidak menampilkan tombolnya, tetapi menyembunyikan
+  // tombol bukan penjagaan: permintaan yang disusun sendiri tetap sampai ke
+  // sini. Penjagaan yang sesungguhnya ada di titik penyimpanan, seperti
+  // pemeriksaan keanggotaan majelis.
+  //
+  // Diperiksa SEBELUM menyentuh database: yang ditolak tidak perlu membuka
+  // koneksi, dan penolakannya dapat diuji tanpa database sama sekali.
+  if (String(dokumen && dokumen.status_verifikasi) === "tidak_perlu") {
+    const galat = new Error("dokumen_tidak_mengenal_verifikasi");
+    galat.tidakPerluVerifikasi = true;
+    throw galat;
+  }
+
   await ensureSchema();
   const sekarang = new Date();
+
+  // ==========================================================================
+  // KEPUTUSAN YANG SUDAH SAMPAI KE e-COURT TIDAK DAPAT DITIMPA DI SINI
+  // ==========================================================================
+  //
+  // Barisnya berkunci unik per dokumen, dan penyimpanannya menimpa isi yang
+  // lama. Selama keputusannya masih mengantre, menimpa memang benar - hakim
+  // boleh berubah pikiran sebelum apa pun dikirim.
+  //
+  // Sesudah diteruskan, tidak. e-Court sudah memegang keputusan yang lama dan
+  // tidak ada yang akan mengiriminya yang baru: penerusan hanya mengambil
+  // baris yang diteruskan_pada-nya masih kosong, dan menimpa tidak
+  // mengosongkannya kembali. Yang tertinggal adalah ALETA menyebut satu
+  // keputusan sementara sistem resmi memuat keputusan yang lain - selisih yang
+  // tidak terlihat oleh siapa pun, pada catatan yang paling tidak boleh
+  // berselisih.
+  //
+  // Membatalkan keputusan yang sudah terkirim adalah pekerjaan manusia di
+  // e-Court, bukan pekerjaan yang boleh dikerjakan diam-diam dari sini.
+  const sebelumnya = await botDb.query(
+    `SELECT keputusan, nama_hakim, diteruskan_pada
+       FROM aleta_bot_ecourt_verifications WHERE document_key = ? LIMIT 1`,
+    [String(dokumen.document_key || "")]
+  );
+  const lama = Array.isArray(sebelumnya) ? sebelumnya[0] : null;
+
+  if (lama && lama.diteruskan_pada) {
+    void logService.logSecurityEvent({
+      eventType: "ecourt_verification_denied",
+      severity: "warning",
+      message: "Keputusan verifikasi yang sudah diteruskan ke e-Court ditolak untuk diubah.",
+      metadata: {
+        documentKey: dokumen.document_key,
+        nomorPerkara: dokumen.nomor_perkara,
+        keputusanLama: String(lama.keputusan || ""),
+        keputusanBaru: keputusan,
+        hakimLama: String(lama.nama_hakim || ""),
+        hakimBaru: hakim.nama,
+      },
+    });
+    const galat = new Error("keputusan_sudah_diteruskan");
+    galat.sudahDiteruskan = true;
+    throw galat;
+  }
+
+  // Masih mengantre: boleh diubah, tetapi TIDAK diam-diam. Keputusan yang
+  // berganti - apalagi oleh hakim yang berbeda - adalah hal yang harus dapat
+  // ditelusuri sesudahnya.
+  if (lama) {
+    void logService.logSecurityEvent({
+      eventType: "ecourt_verification_recorded",
+      severity: "warning",
+      message: "Keputusan verifikasi yang belum diteruskan diubah.",
+      metadata: {
+        documentKey: dokumen.document_key,
+        nomorPerkara: dokumen.nomor_perkara,
+        keputusanLama: String(lama.keputusan || ""),
+        keputusanBaru: keputusan,
+        hakimLama: String(lama.nama_hakim || ""),
+        hakimBaru: hakim.nama,
+      },
+    });
+  }
 
   await botDb.query(
     `INSERT INTO aleta_bot_ecourt_verifications
@@ -447,7 +530,20 @@ async function decideFromPortal({
     return { ok: false, alasan: "bukan_anggota_majelis" };
   }
 
-  await recordDecision({ dokumen, hakim, keputusan, keterangan });
+  // Penolakan yang disengaja dijawab dengan sebabnya, bukan dilepas menjadi
+  // galat 500. Petugas yang menerima "terjadi kesalahan" akan mencoba lagi;
+  // yang menerima "sudah diteruskan ke e-Court" tahu bahwa yang tersisa adalah
+  // pekerjaan di e-Court, bukan di sini.
+  try {
+    await recordDecision({ dokumen, hakim, keputusan, keterangan });
+  } catch (galat) {
+    if (galat && galat.sudahDiteruskan) return { ok: false, alasan: "keputusan_sudah_diteruskan" };
+    if (galat && galat.tidakPerluVerifikasi) {
+      return { ok: false, alasan: "dokumen_tidak_mengenal_verifikasi" };
+    }
+    throw galat;
+  }
+
   return {
     ok: true,
     alasan: "",
@@ -625,7 +721,23 @@ async function handleMessage({ senderNumber, text, runtimeConfig = readRuntimeCo
       return { reply: "Keputusan tidak tersimpan: Anda tidak tercatat sebagai majelis pada perkara tersebut." };
     }
 
-    await recordDecision({ dokumen, hakim, keputusan });
+    try {
+      await recordDecision({ dokumen, hakim, keputusan });
+    } catch (galat) {
+      clearSession(chatId);
+      if (galat && galat.sudahDiteruskan) {
+        return {
+          reply:
+            "Keputusan TIDAK diubah: keputusan atas dokumen ini sudah diteruskan ke e-Court.\n\n" +
+            "Perubahan sesudah penerusan harus dikerjakan langsung di e-Court oleh petugas, " +
+            "supaya catatan ALETA dan e-Court tidak berselisih.",
+        };
+      }
+      if (galat && galat.tidakPerluVerifikasi) {
+        return { reply: "Dokumen ini tidak mengenal verifikasi majelis di e-Court. Keputusan tidak tersimpan." };
+      }
+      throw galat;
+    }
     clearSession(chatId);
 
     return {

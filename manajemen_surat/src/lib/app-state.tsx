@@ -1121,6 +1121,32 @@ type UploadPdfResult = {
   publicUrl?: string;
 };
 
+/**
+ * Aplikasi portal yang tampil bagi SELAIN super-admin.
+ *
+ * Aplikasi yang tidak tercantum di sini tidak akan pernah terlihat pegawai
+ * biasa, sekalipun roleIds-nya mencakup seluruh peran - dan tidak ada pesan apa
+ * pun yang menjelaskan mengapa. Karena itu setiap aplikasi baru yang memang
+ * ditujukan untuk pegawai harus ditambahkan ke sini, bukan hanya didaftarkan di
+ * mock-data. Uji regresi menjaga keduanya tetap sejalan.
+ */
+export const DEFAULT_PORTAL_APP_IDS = new Set<string>([
+  "manajemen-surat",
+  "aleta-bot",
+  "sipp",
+  "aps-badilag",
+  "asisten-hakim",
+  "e-kepegawaian",
+  "audit-trail",
+  // Untuk seluruh pegawai: mengunduh ekstensi SIPP dan melihat keadaan
+  // penghubung e-Court.
+  "aleta-ecourt",
+  // Alat bantu tulis BAS. Yang paling membutuhkannya justru panitera, bukan
+  // super admin - jadi ia harus ada di daftar bawaan, bukan hanya terlihat
+  // oleh peran yang melihat segalanya.
+  "bas",
+]);
+
 export function PortalProvider({
   children,
   initialState,
@@ -1492,15 +1518,6 @@ export function PortalProvider({
   const currentRoleId = getEffectiveRoleId(currentUser);
   // Mode default portal: selain Super Admin, grid aplikasi hanya menampilkan
   // aplikasi inti berikut (tetap dipotong lagi oleh hak akses role & Akses Menu).
-  const DEFAULT_PORTAL_APP_IDS = new Set([
-    "manajemen-surat",
-    "aleta-bot",
-    "sipp",
-    "aps-badilag",
-    "asisten-hakim",
-    "e-kepegawaian",
-    "audit-trail",
-  ]);
   const accessiblePortalApps = getAccessiblePortalApps(currentUser, state.moduleVisibility)
     .filter((app) => {
       if (currentRoleId === "super-admin") return true;

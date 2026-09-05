@@ -8,6 +8,7 @@ import {
   Bot,
   BriefcaseBusiness,
   Database,
+  FileText,
   Inbox,
   LibraryBig,
   MessageCircleMore,
@@ -35,6 +36,7 @@ const iconMap = {
   "users-round": UsersRound,
   bot: Bot,
   database: Database,
+  "file-text": FileText,
 };
 
 export function MainAppHub({ apps }: { apps: PortalAppConfig[] }) {

@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "ALETA E-Court",
+  "version": "1.65.0",
+  "update_url": "http://192.168.10.10/aleta/api/aleta-ecourt/ekstensi/updates.xml",
+  "description": "Menempelkan keterangan ALETA ke halaman SIPP - batas waktu e-Court, tahapan perkara, kesiapan sidang, kelengkapan berkas - dan mengisikan usulan penunjukan serta Data Umum ke borangnya. Tombol Simpan tetap ditekan petugas.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://192.168.10.10/*"
+  ],
+  "icons": {
+    "16": "ikon/aleta-16.png",
+    "32": "ikon/aleta-32.png",
+    "48": "ikon/aleta-48.png",
+    "128": "ikon/aleta-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ALETA E-Court",
+    "default_icon": {
+      "16": "ikon/aleta-16.png",
+      "32": "ikon/aleta-32.png",
+      "48": "ikon/aleta-48.png",
+      "128": "ikon/aleta-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://192.168.10.10/SIPP/*"
+      ],
+      "js": [
+        "konten.js"
+      ],
+      "css": [
+        "panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/SIPP/*"
+      ],
+      "js": [
+        "jembatan.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ikon/aleta-32.png",
+        "ikon/aleta-128.png"
+      ],
+      "matches": [
+        "http://192.168.10.10/*"
+      ]
+    }
+  ]
+}

@@ -20,6 +20,10 @@ export type RoleId =
 
 export type ModuleId =
   | "manajemen-surat"
+  // Alat bantu tulis BAS untuk kepaniteraan.
+  | "bas"
+  | "aleta-ecourt"
+  | "aleta-ecourt-admin"
   | "asisten-hakim"
   | "e-kepegawaian"
   | "sipp"
@@ -69,9 +73,15 @@ export type ModuleId =
 export type PortalAppId =
   | "manajemen-surat"
   | "aleta-bot"
+  // Penghubung e-Court: satu untuk seluruh pegawai (unduh ekstensi dan
+  // keadaan penghubung), satu untuk admin (pengaturannya).
+  | "aleta-ecourt"
+  | "aleta-ecourt-admin"
   | "aleta-sipp"
   | "judicia-legal-form"
   | "asisten-hakim"
+  // Alat bantu tulis BAS untuk kepaniteraan.
+  | "bas"
   | "e-kepegawaian"
   | "e-status"
   | "sipp"

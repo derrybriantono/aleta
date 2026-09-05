@@ -259,7 +259,19 @@ describe("jembatan SSO ke SIPP/APS", () => {
     const gagalBaca = await jalankan(async () => "<html><body>halaman error</body></html>");
     expect(gagalBaca.jumlah).toBe(1);
     expect(gagalBaca.isi?.username).toBe("derry briantono");
-    expect(gagalBaca.status).toContain("form login tidak ditemukan");
+    // Halaman tanpa kotak sandi sama sekali dibedakan dari halaman yang punya
+    // kotak sandi tetapi formulirnya tidak ketemu. Dulu keduanya dilaporkan
+    // sama, dan justru KEADAAN KEDUA-lah yang terjadi pada SIPP - pesan yang
+    // sama untuk dua sebab berbeda membuat penyebabnya tidak terlacak.
+    expect(gagalBaca.status).toContain("kolom sandi tidak ditemukan");
+
+    // Ada kotak sandi tetapi tidak ada <form> sama sekali -> sebab yang lain,
+    // dan disebut dengan namanya sendiri.
+    const tanpaForm = await jalankan(async () =>
+      '<html><body><input type="password" name="password" /></body></html>'
+    );
+    expect(tanpaForm.jumlah).toBe(1);
+    expect(tanpaForm.status).toContain("form login tidak ditemukan");
 
     // Ada captcha -> berhenti dan beri tahu, jangan kirim password sia-sia.
     const berCaptcha = await jalankan(async () =>
@@ -267,6 +279,77 @@ describe("jembatan SSO ke SIPP/APS", () => {
     );
     expect(berCaptcha.jumlah).toBe(0);
     expect(berCaptcha.status).toContain("captcha");
+  });
+
+  it("membaca form SIPP yang dibuka di dalam <tbody> - bentuk aslinya", async () => {
+    // ========================================================================
+    // BENTUK YANG SEBENARNYA DILAYANKAN SIPP
+    // ========================================================================
+    //
+    // Disalin dari http://192.168.10.10/SIPP/login yang berjalan. SIPP membuka
+    // <form> LANGSUNG di dalam <tbody>, dengan <tr> di dalam formulir itu.
+    //
+    // Aturan penataan HTML memindahkan tag <form> keluar dari tabel, sementara
+    // kotak isiannya tetap tinggal di dalam sel. Akibatnya:
+    //
+    //     dokumen.querySelector("form input[type=password]")  -> kosong
+    //     isianPassword.form                                  -> kosong
+    //
+    // padahal formulirnya jelas ada dan alamatnya benar. Dulu keadaan ini
+    // disimpulkan sebagai "form login tidak ditemukan", lalu jatuh ke jalur
+    // cadangan yang mengirim ke alamat halaman login - dan alamat itu kena
+    // pengalihan 302 yang MEMBUANG isian formulirnya. Sandi tidak pernah
+    // sampai, tanpa satu pun pesan kesalahan.
+    const { JSDOM } = await import("jsdom");
+    const html = await halamanJembatan("derry briantono");
+
+    const halamanSippAsli = `<!doctype html><html><body>
+      <div id="kotakLogin">
+        <table width='100%'>
+          <tbody>
+            <tr><td align="center"><img src="/SIPP/resources/img/logo-login.png"></td></tr>
+            <tr><td colspan="4" align="center"><strong>Sistem Informasi Penelusuran Perkara</strong></td></tr>
+        <form action="http://192.168.10.10/SIPP/login/validation_credential" method="post" accept-charset="utf-8" name="login" id="login_frm"><tr><td><small>Username</small><input type="text" name="username" class="login" autofocus="autofocus" /></td></tr><tr><td><small>Password</small><input type="password" name="password" class="login" /><br /><input type="submit" class="tombol7" value="Login" /></td></tr></form>
+          </tbody>
+        </table>
+      </div>
+    </body></html>`;
+
+    const terkirim: HTMLFormElement[] = [];
+    const dom = new JSDOM(html, {
+      runScripts: "dangerously",
+      url: "http://192.168.10.10/aleta/api/external-apps/sipp/launch",
+      beforeParse(window) {
+        (window as unknown as { fetch: unknown }).fetch = async () => ({
+          ok: true,
+          status: 200,
+          text: async () => halamanSippAsli,
+        });
+        window.HTMLFormElement.prototype.submit = function submit(this: HTMLFormElement) {
+          terkirim.push(this);
+        };
+      },
+    });
+
+    for (let i = 0; i < 20; i += 1) await Promise.resolve();
+    await new Promise((selesai) => setTimeout(selesai, 20));
+
+    const isi = terkirim[0]
+      ? Object.fromEntries(
+          Array.from(terkirim[0].querySelectorAll("input")).map((input) => [input.name, input.value])
+        )
+      : null;
+    const aksi = terkirim[0]?.getAttribute("action") ?? "";
+    const jumlah = terkirim.length;
+    dom.window.close();
+
+    expect(jumlah).toBe(1);
+    // Dikirim ke alamat PEMERIKSA SANDI milik formulir, bukan ke alamat
+    // halaman login pada pengaturan panel.
+    expect(aksi).toBe("http://192.168.10.10/SIPP/login/validation_credential");
+    expect(aksi).not.toContain("index.php");
+    expect(isi?.username).toBe("derry briantono");
+    expect(isi?.password).toBe("sipp-rahasia");
   });
 
   it("menolak akun ALETA yang tidak aktif", async () => {

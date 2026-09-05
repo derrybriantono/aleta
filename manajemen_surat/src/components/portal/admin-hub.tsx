@@ -371,6 +371,13 @@ export function AdminHub() {
                 badge="Super Admin"
               />
               <AdminMenuAction
+                href="/admin/aleta-ecourt"
+                title="ALETA e-Court"
+                description="Atur penghubung e-Court: login sesi, penarikan berkala, arsip dokumen, dan sambungan ke SIPP serta ALETA Bot."
+                icon={<Landmark className="h-5 w-5 text-amber-600" />}
+                badge="Super Admin"
+              />
+              <AdminMenuAction
                 href="/admin/asisten-hakim"
                 title="Pengaturan Asisten Hakim"
       description="Atur link AI yudisial dan peran yang dapat melihat Asisten Hakim."

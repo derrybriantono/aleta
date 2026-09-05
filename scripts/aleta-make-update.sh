@@ -95,6 +95,24 @@ rm -rf \
   "$PACKAGE_ROOT/aleta_bot/temp" \
   "$PACKAGE_ROOT/reports"
 
+# ============================================================================
+# SETELAN YANG DITULIS SAAT BERJALAN TIDAK IKUT DIPAKETKAN
+# ============================================================================
+#
+# aleta-runtime.json ditulis BOT saat berjalan: seluruh setelan yang disunting
+# petugas dari portal - penerima notifikasi, aturan pengklasifikasi, daftar
+# kueri, jadwal penarikan - tersimpan di sana.
+#
+# Ia berada di dalam aleta_bot/config, dan folder itu memang harus ikut
+# dipaketkan karena runtime-config.js di sebelahnya adalah KODE. Akibatnya
+# berkas setelan ikut terbawa, dan tiap pembaruan menimpa setelan hidup di
+# server dengan salinan yang kebetulan ada di mesin pengembang - diam-diam,
+# tanpa satu pun peringatan, dan baru ketahuan ketika ada yang bertanya kenapa
+# setelannya kembali seperti dulu.
+#
+# Yang dibuang hanya berkas setelannya; kodenya tetap ikut.
+rm -f "$PACKAGE_ROOT/aleta_bot/config/aleta-runtime.json"
+
 find "$PACKAGE_ROOT" -type f \( -name ".env" -o -name ".env.*" \) \
   ! -name ".env.example" \
   ! -name ".env.production.example" \

@@ -74,7 +74,7 @@ function statusVariant(status: string) {
 export default function AletaSippAdminPage() {
   const [summary, setSummary] = useState<AdminSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState<"import" | "test" | "analyze" | "refresh" | "">("");
+  const [action, setAction] = useState<"import" | "live" | "test" | "analyze" | "refresh" | "">("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [analyzeProgress, setAnalyzeProgress] = useState("");
@@ -137,6 +137,40 @@ export default function AletaSippAdminPage() {
       await loadSummary();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Import struktur SQL gagal.");
+    } finally {
+      setAction("");
+    }
+  }
+
+  async function runLiveSync() {
+    setAction("live");
+    setMessage("");
+    setError("");
+    try {
+      const result = await fetch(apiPath("/api/aleta-sipp/import/live-schema"), {
+        method: "POST",
+        cache: "no-store",
+        credentials: "include",
+      }).then((response) =>
+        readApi<{
+          jumlahTabel: number;
+          jumlahView: number;
+          jumlahKolom: number;
+          tabelBaru: number;
+          tabelDiperbarui: number;
+          tabelTidakAktif: string[];
+        }>(response)
+      );
+      const tidakAktif = result.tabelTidakAktif.length
+        ? ` ${result.tabelTidakAktif.length} tabel lama ditandai tidak aktif.`
+        : "";
+      setMessage(
+        `Selaras dengan SIPP: ${result.jumlahTabel} tabel, ${result.jumlahView} view, ` +
+          `${result.jumlahKolom} kolom (${result.tabelBaru} baru, ${result.tabelDiperbarui} disegarkan).${tidakAktif}`
+      );
+      await loadSummary();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Sinkronisasi struktur SIPP gagal.");
     } finally {
       setAction("");
     }
@@ -254,9 +288,18 @@ export default function AletaSippAdminPage() {
               <div className="text-sm text-muted-foreground">
                 {summary.counts.tables} tabel, {summary.counts.columns} kolom, {summary.counts.relations} relasi.
               </div>
-              <Button className="w-full" onClick={runImport} disabled={busy}>
+              <Button className="w-full" onClick={runLiveSync} disabled={busy}>
+                {action === "live" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                Selaraskan dari SIPP
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Membaca struktur SIPP yang sedang berjalan lewat ALETA Bot. Hanya nama tabel, kolom,
+                tipe, dan komentar &mdash; tidak ada data perkara yang dibaca. Penjelasan yang sudah
+                Anda tulis tidak ditimpa.
+              </p>
+              <Button className="w-full" variant="outline" onClick={runImport} disabled={busy}>
                 {action === "import" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-                Import/Refresh
+                Import dari berkas SQL
               </Button>
             </CardContent>
           </Card>

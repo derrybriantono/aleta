@@ -19,6 +19,31 @@ export const DEFAULT_PUBLIC_ACCESS_SETTINGS: PublicAccessSettings = {
   notes: "",
 };
 
+/**
+ * loginPath menunjuk HALAMAN MASUK, bukan pemeriksa sandinya.
+ *
+ * ============================================================================
+ * JANGAN DIGANTI MENJADI "login/validation_credential"
+ * ============================================================================
+ *
+ * Menggoda, sebab alur itulah yang benar-benar memeriksa sandi - lihat
+ * form_open() pada application/views/Login/login.php milik SIPP. Tetapi nilai
+ * ini bukan sasaran pengiriman: jembatan SSO MENGAMBIL alamat ini lalu
+ * MEMBACA formulir di dalamnya, dan sasaran pengiriman yang sesungguhnya
+ * diambil dari atribut action formulir itu. Lihat buildExternalAppLaunchHtml -
+ * cfg.actionUrl dipakai pada fetch(), bukan pada form.action.
+ *
+ * Mengarahkannya ke pemeriksa sandi berarti mengambil alamat yang tanpa POST
+ * hanya memantul ke login/index/ERR. Formulirnya mungkin masih terbaca, tetapi
+ * lewat jalan memutar dan dalam keadaan galat - persis kerapuhan yang sedang
+ * dihindari.
+ *
+ * Awalan "index.php/" pun tidak apa-apa DI SINI. Ia memang kena
+ * "RewriteRule ^index.php/(.*)$ /SIPP/$1 [R=302,L]" pada .htaccess SIPP, tetapi
+ * pengalihan 302 atas sebuah GET diikuti peramban dengan wajar. Yang berbahaya
+ * adalah 302 atas POST - itu membuang isian formulirnya - dan POST di sini
+ * tidak pernah menuju alamat ini.
+ */
 export const DEFAULT_EXTERNAL_APP_SETTINGS: Record<ExternalAppId, ExternalAppLaunchSettings> = {
   sipp: {
     appId: "sipp",
@@ -132,7 +157,26 @@ function normalizeExternalAppSetting(
   value: Partial<ExternalAppLaunchSettings> | null | undefined
 ): ExternalAppLaunchSettings {
   const fallback = DEFAULT_EXTERNAL_APP_SETTINGS[appId];
-  const passwordMode = value?.passwordMode === "md5" ? "md5" : "plain";
+
+  // SIPP TIDAK PERNAH menerima md5, dan pilihan itu ditolak di sini alih-alih
+  // dibiarkan menjadi kegagalan diam-diam.
+  //
+  // validate() pada application/models/Login/validation_user.php mengacak
+  // sendiri di sisi server: arr2md5(kode_aktivasi, sandi) atas sandi POLOS
+  // yang dikirim, lalu dibandingkan dengan sys_users.password. Mengirim md5
+  // berarti teracak dua kali - hasilnya tidak akan pernah cocok, betapa pun
+  // benar sandinya.
+  //
+  // Yang terjadi kemudian: SIPP memantulkan ke login/index/ERR, dan
+  // pemakainya hanya melihat halaman masuk terbuka kosong. Tidak ada pesan
+  // kesalahan sama sekali. Pemasangan yang berjalan sekarang tersimpan dengan
+  // nilai "md5" - inilah sebabnya masuk otomatis tidak pernah bekerja.
+  //
+  // APS Badilag dibiarkan memilih sendiri; alamat masuknya belum pernah
+  // diperiksa langsung, jadi tidak ada yang boleh disimpulkan tentangnya.
+  const passwordMode = appId === "sipp"
+    ? "plain"
+    : value?.passwordMode === "md5" ? "md5" : "plain";
   const baseUrl = typeof value?.baseUrl === "string" ? normalizePublicUrl(value.baseUrl) : fallback.baseUrl;
   const loginPath = typeof value?.loginPath === "string"
     ? normalizePathLike(value.loginPath) || fallback.loginPath

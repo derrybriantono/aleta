@@ -21,6 +21,25 @@ const paniteraDashboardService = require("../services/paniteraDashboardService")
 const ecourtVerificationService = require("../services/ecourtVerificationService");
 const ecourtReconciliationService = require("../services/ecourtReconciliationService");
 const ecourtStatusService = require("../services/ecourtStatusService");
+const ecourtLoginService = require("../services/ecourtLoginService");
+const sippKonteksService = require("../services/sippKonteksService");
+const ecourtPermintaanService = require("../services/ecourtPermintaanService");
+const ecourtSchedulerService = require("../services/ecourtSchedulerService");
+const sippJadwalSidangService = require("../services/sippJadwalSidangService");
+const kesiapanSidangService = require("../services/kesiapanSidangService");
+const sippStatusPerkaraService = require("../services/sippStatusPerkaraService");
+const kendaliBerkasService = require("../services/kendaliBerkasService");
+const putusanEcourtService = require("../services/putusanEcourtService");
+const sippSkemaService = require("../services/sippSkemaService");
+const ecourtSesiStatusService = require("../services/ecourtSesiStatusService");
+const ecourtKredensialService = require("../services/ecourtKredensialService");
+const penilaianPerkaraService = require("../services/penilaianPerkaraService");
+const ecourtPanggilanService = require("../services/ecourtPanggilanService");
+const ecourtSesiPantauService = require("../services/ecourtSesiPantauService");
+const ecourtAkunService = require("../services/ecourtAkunService");
+const ecourtAuditArsipService = require("../services/ecourtAuditArsipService");
+const sippDocumentService = require("../services/sippDocumentService");
+const ecourtArsipService = require("../services/ecourtArsipService");
 const ecourtSettingsService = require("../services/ecourtSettingsService");
 const nomorVerificationService = require("../services/nomorVerificationService");
 const recipientHealthService = require("../services/recipientHealthService");
@@ -32,6 +51,11 @@ const { analyzeRecipientNumber } = require("../services/recipientValidationServi
 const sippReadOnlyBridgeService = require("../services/sippReadOnlyBridgeService");
 const productionGuardService = require("../services/productionGuardService");
 const manualSendService = require("../services/manualSendService");
+const penunjukanService = require("../services/penunjukanService");
+const antrianSidangService = require("../services/antrianSidangService");
+const antrianSinkronService = require("../services/antrianSinkronService");
+const kehadiranAntrianService = require("../services/kehadiranAntrianService");
+const panggilanAntrianService = require("../services/panggilanAntrianService");
 
 const runtimeLifecycleHandlers = {
   startWhatsappClient: null,
@@ -579,6 +603,112 @@ router.post("/ecourt/nomor/tanya-ulang", requireInternalToken, async (req, res) 
   }
 });
 
+/**
+ * Usulan penunjukan PMH, PPP, PJS, dan PHS untuk satu perkara.
+ *
+ * ==========================================================================
+ * ATURANNYA DATANG BERSAMA PERMINTAAN, TIDAK DISIMPAN DI SINI
+ * ==========================================================================
+ *
+ * Hari sidang tiap majelis, kode panitera penggantinya, jeda minimal, dan
+ * ambang nilai sengketa dikirim portal bersama nomor perkaranya. Portal yang
+ * menyimpannya, portal pula yang menyediakan menu penyuntingnya - bot hanya
+ * tahu SIPP.
+ *
+ * Karena aturannya datang dari luar, tiap nilai diperiksa ulang di sini
+ * sebelum dipakai. Yang tidak masuk akal diabaikan, bukan dipercaya: gerbang
+ * ini memang bertoken internal, tetapi angka yang salah bentuk tetap akan
+ * melahirkan tanggal sidang yang salah - dan tanggal sidang yang salah
+ * menyeret panggilan para pihak.
+ *
+ * Yang dijawab USULAN. Tidak ada satu pun tulisan ke SIPP dari jalur ini.
+ */
+router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
+  try {
+    const nomorPerkara = String(req.body?.nomorPerkara || "");
+    if (!nomorPerkara) {
+      res.status(400).json({ ok: false, error: "Nomor perkara wajib diisi." });
+      return;
+    }
+
+    const kirim = req.body?.pengaturan || {};
+    const aturanMasuk = kirim.aturan || {};
+
+    // Hari sidang: hanya bilangan bulat 0..6 yang diterima. Nilai lain
+    // dibuang, sehingga majelisnya terbaca "belum diatur" - jauh lebih baik
+    // daripada menetapkan sidang pada hari yang tidak ada.
+    const hariSidang = {};
+    for (const [kode, hari] of Object.entries(kirim.hariSidang || {})) {
+      const angka = Number(hari);
+      if (Number.isInteger(angka) && angka >= 0 && angka <= 6) {
+        hariSidang[String(kode).toUpperCase()] = angka;
+      }
+    }
+
+    const paniteraMajelis = {};
+    for (const [kode, daftar] of Object.entries(kirim.paniteraMajelis || {})) {
+      if (!Array.isArray(daftar)) continue;
+      paniteraMajelis[String(kode).toUpperCase()] = daftar
+        .map((x) => String(x || "").trim().toUpperCase())
+        .filter((x) => x.length > 0);
+    }
+
+    const jeda = Number(aturanMasuk.jedaMinimalHari);
+    const ambang = Number(aturanMasuk.ambangNilaiSengketa);
+
+    const hasil = await penunjukanService.usulanPenunjukan(nomorPerkara, {
+      aturan: {
+        jedaMinimalHari: Number.isFinite(jeda) && jeda >= 0 ? Math.floor(jeda) : 10,
+        ambangNilaiSengketa:
+          Number.isFinite(ambang) && ambang >= 0 ? Math.floor(ambang) : 500000000,
+        klasifikasiHakimTunggal: Array.isArray(aturanMasuk.klasifikasiHakimTunggal)
+          ? aturanMasuk.klasifikasiHakimTunggal.map((x) => String(x || ""))
+          : [],
+        kolamHakimTunggal:
+          aturanMasuk.kolamHakimTunggal === "ketua-wakil" ? "ketua-wakil" : "hakim",
+      },
+      hariSidang,
+      paniteraMajelis,
+    });
+
+    res.status(hasil.ok ? 200 : 404).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Memeriksa apakah penetapan yang diisikan benar-benar tercatat di SIPP.
+ *
+ * Dipanggil sesudah tombol Simpan ditekan. Yang dijawab bukan "berhasil"
+ * melainkan apa yang TERBACA di perkara_penetapan sekarang, dibandingkan
+ * dengan yang diharapkan - sehingga yang mendarat sebagian tetap terlihat
+ * sebagian, bukan dibulatkan jadi berhasil atau gagal.
+ */
+router.post("/penunjukan/periksa", requireInternalToken, async (req, res) => {
+  try {
+    const nomorPerkara = String(req.body?.nomorPerkara || "");
+    if (!nomorPerkara) {
+      res.status(400).json({ ok: false, error: "Nomor perkara wajib diisi." });
+      return;
+    }
+
+    // Hanya keempat kunci yang dikenal yang diterima, dan nilainya dipangkas.
+    // Harapan datang dari pemanggil, dan yang tidak dikenali tidak perlu
+    // diteruskan hanya untuk dipantulkan kembali ke catatan.
+    const harapan = {};
+    for (const jenis of ["pmh", "ppp", "pjs", "phs"]) {
+      const nilai = req.body?.harapan?.[jenis];
+      if (nilai) harapan[jenis] = String(nilai).slice(0, 40);
+    }
+
+    const hasil = await penunjukanService.periksaPengisian(nomorPerkara, harapan);
+    res.status(hasil.ok ? 200 : 404).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Padanan agenda sidang yang dapat disunting panitera. */
 router.get("/agenda/pengaturan", requireInternalToken, (req, res) => {
   try {
@@ -613,6 +743,1115 @@ router.post("/agenda/pengaturan/hapus", requireInternalToken, (req, res) => {
       olehSiapa: String(req.body?.olehSiapa || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Keadaan sesi e-Court.
+ *
+ * ?periksa=penuh memaksa pemeriksaan sungguhan - Chrome dinyalakan, halaman
+ * e-Court dimuat. Tanpa itu yang dikembalikan hasil pemeriksaan terakhir
+ * beserta umurnya, sehingga membuka layar pengaturan tidak lagi menyalakan
+ * Chrome tiap kali.
+ */
+router.get("/ecourt/login/status", requireInternalToken, async (req, res) => {
+  try {
+    const penuh = req.query.periksa === "penuh";
+    const slot = String(req.query.slot || "");
+    const keadaan = await ecourtSesiStatusService.keadaanSlot(slot, { paksa: penuh });
+    res.json({
+      ok: true,
+      // Bentuk lama tetap dikirim supaya pemanggil yang sudah ada tidak
+      // rusak; yang baru ada pada `keadaan`.
+      sesi: {
+        tersimpan: keadaan.tersimpan,
+        berlaku: keadaan.keadaan === "berlaku" ? true : keadaan.keadaan === "kedaluwarsa" ? false : null,
+        alasan: keadaan.alasan,
+        namaPengguna: keadaan.namaPengguna,
+      },
+      keadaan,
+      menunggu: ecourtLoginService.sedangMenunggu(),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Keadaan SELURUH akun e-Court sekaligus.
+ *
+ * Dipakai layar pengaturan supaya tidak perlu menembak satu permintaan per
+ * akun - dan supaya pemeriksaan sungguhannya berjalan berurutan di dalam bot,
+ * bukan serentak dari peramban.
+ */
+router.get("/ecourt/akun/keadaan", requireInternalToken, async (req, res) => {
+  try {
+    const penuh = req.query.periksa === "penuh";
+    const akun = await ecourtSesiStatusService.keadaanSemua({ paksa: penuh });
+    res.json({ ok: true, akun, segarDetik: Math.round(ecourtSesiStatusService.SEGAR_MS / 1000) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * SIMPANAN SUREL DAN SANDI AKUN e-COURT
+ * ============================================================================
+ *
+ * Rute ini MENULIS dan MENGHAPUS. Tidak ada rute yang membaca sandinya -
+ * bahkan tidak dalam bentuk tersandi. Satu-satunya yang membukanya adalah
+ * ecourtLoginService, di dalam proses bot, tepat sebelum mengetikkannya ke
+ * formulir e-Court.
+ */
+router.get("/ecourt/kredensial", requireInternalToken, (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      // daftar() memang tidak memuat sandi - lihat ecourtKredensialService.
+      kredensial: ecourtKredensialService.daftar(),
+      keadaan: ecourtKredensialService.keadaan(),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/ecourt/kredensial", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtKredensialService.simpan({
+      slot: String(req.body?.slot || ""),
+      email: String(req.body?.email || ""),
+      sandi: String(req.body?.sandi || ""),
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    if (hasil.ok) ecourtSesiStatusService.lupakan(String(req.body?.slot || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.delete("/ecourt/kredensial", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtKredensialService.hapus({
+      slot: String(req.query.slot || req.body?.slot || ""),
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    if (hasil.ok) ecourtSesiStatusService.lupakan(String(req.query.slot || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Membuka halaman login e-Court dan mengambil gambar captchanya. */
+router.post("/ecourt/login/mulai", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtLoginService.mulaiLogin({ slot: String(req.body?.slot || "") });
+    ecourtSesiStatusService.lupakan(String(req.body?.slot || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengirimkan email, sandi, dan jawaban captcha ke e-Court.
+ *
+ * Badan permintaan ini memuat SANDI. Karena itu tidak ada satu pun bagiannya
+ * yang dicatat: bukan ke log akses, bukan ke pesan galat, bukan ke jejak
+ * keamanan. Yang tercatat hanya berhasil atau tidaknya.
+ */
+router.post("/ecourt/login/kirim", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtLoginService.kirimLogin({
+      email: String(req.body?.email || ""),
+      sandi: String(req.body?.sandi || ""),
+      captcha: String(req.body?.captcha || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    // Pesan galat sengaja tidak diteruskan: dapat memuat potongan badan
+    // permintaan, dan badan permintaan ini memuat sandi.
+    res.status(500).json({ ok: false, alasan: "gagal_memproses_login" });
+  }
+});
+
+/** Menghapus sesi e-Court tersimpan. */
+router.post("/ecourt/login/keluar", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtLoginService.keluar({ slot: String(req.body?.slot || "") });
+    res.json({ ok: hasil.ok, alasan: hasil.alasan || "" });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Konteks ALETA untuk satu perkara, dipakai ekstensi peramban di halaman SIPP.
+ *
+ * HANYA MEMBACA. Tidak menyentuh SIPP sama sekali.
+ */
+router.get("/sipp/konteks", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippKonteksService.getKonteks(String(req.query.nomor || ""), {
+      // Nama pembuka datang dari portal yang sudah mengautentikasi penggunanya.
+      // Dipakai HANYA untuk menentukan tombol verifikasi tampil atau tidak.
+      namaPembuka: String(req.query.nama || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengunduh satu berkas dokumen e-Court.
+ *
+ * Jalur berkasnya diperiksa berada di dalam folder arsip tepat sebelum dibaca,
+ * sehingga baris database yang keliru pun tidak dapat menyerahkan berkas lain
+ * di server.
+ */
+/** Daftar perkara beserta keadaan berkasnya - tabel utama kendali arsip. */
+router.get("/ecourt/arsip/perkara", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtStoreService.daftarArsipPerkara({
+      cari: String(req.query.cari || ""),
+      hanyaBelumLengkap: String(req.query.belumLengkap || "") === "1",
+      urutkan: String(req.query.urutkan || "terbaru"),
+      batas: Number(req.query.batas) || 100,
+      mulai: Number(req.query.mulai) || 0,
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Rincian dokumen satu perkara - dibuka saat satu baris dipilih. */
+router.get("/ecourt/arsip/rincian", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtStoreService.rincianArsipPerkara(String(req.query.nomor || ""));
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Ringkasan singkat untuk BANYAK perkara sekaligus - penanda baris daftar. */
+router.post("/sipp/ringkasan-massal", requireInternalToken, async (req, res) => {
+  try {
+    const daftar = Array.isArray(req.body?.nomorPerkara) ? req.body.nomorPerkara : [];
+    const hasil = await sippKonteksService.ringkasanMassal(daftar);
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menitipkan permintaan penarikan satu perkara. */
+router.post("/ecourt/permintaan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtPermintaanService.titipkan(
+      String(req.body?.nomorPerkara || ""),
+      String(req.body?.dimintaOleh || "")
+    );
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Keadaan permintaan terakhir untuk satu perkara. */
+router.get("/ecourt/permintaan", requireInternalToken, async (req, res) => {
+  try {
+    const keadaan = await ecourtPermintaanService.keadaan(String(req.query.nomor || ""));
+    res.json({ ok: true, keadaan });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/sipp/berkas", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippKonteksService.getBerkas(
+      String(req.query.documentKey || ""),
+      String(req.query.format || "pdf")
+    );
+    if (!hasil.ok) {
+      res.status(404).json({ ok: false, alasan: hasil.alasan });
+      return;
+    }
+
+    res.setHeader("Content-Type", hasil.tipeIsi);
+    res.setHeader("Content-Length", String(hasil.isi.length));
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(hasil.namaBerkas)}"`);
+    res.send(hasil.isi);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Daftar sidang pada rentang tanggal. */
+router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippJadwalSidangService.daftarSidang({
+      dari: String(req.query.dari || ""),
+      sampai: String(req.query.sampai || ""),
+      cari: String(req.query.cari || ""),
+      batas: Number(req.query.batas) || 200,
+    });
+
+    // ======================================================================
+    // ANTRIAN DITEMPELKAN DI SINI, BUKAN DI DALAM LAYANAN JADWAL
+    // ======================================================================
+    //
+    // Keduanya membaca basis data yang BERBEDA: jadwal dari SIPP, antrian
+    // dari sipp_turunan_antrian lewat sambungan tersendiri. Menyatukannya di
+    // dalam satu layanan berarti layanan jadwal ikut mati saat sambungan
+    // antrian bermasalah - padahal antrian hanya keterangan tambahan.
+    //
+    // Karena itu kegagalannya ditelan: jadwalnya tetap terkirim, dan
+    // keterangan antriannya menyebutkan sendiri kenapa ia kosong.
+    const idPerkara = (hasil.sidang || []).map((baris) => baris.perkaraId);
+    const antrian = await antrianSidangService
+      .antrianUntukPerkara(idPerkara)
+      .catch((galat) => ({
+        terbaca: false,
+        alasan: String(galat.message || galat).slice(0, 200),
+        peta: {},
+        tanggal: [],
+      }));
+
+    res.json({ ok: true, ...hasil, antrian });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Antrian sidang hari berjalan, lengkap dengan nomor urutnya.
+ *
+ * Nomornya dihitung dengan rumus yang SAMA PERSIS dengan yang dipakai
+ * menjawab WhatsApp, sehingga nomor di layar dan nomor yang diterima para
+ * pihak tidak pernah berselisih.
+ */
+router.get("/antrian/sidang", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await antrianSidangService.petaAntrian();
+
+    // Kehadiran rinci ditempelkan di sini, bukan di dalam layanan antrian:
+    // yang satu membaca aplikasi antrian, yang lain membaca basis data ALETA.
+    // Kegagalan salah satunya tidak boleh menjatuhkan yang lain.
+    const [kehadiran, panggilan] = await Promise.all([
+      kehadiranAntrianService.daftarKehadiran(Object.keys(hasil.peta || {})).catch(() => ({})),
+      panggilanAntrianService.riwayatPanggilan(Object.keys(hasil.peta || {})).catch(() => ({})),
+    ]);
+
+    res.json({ ok: true, ...hasil, kehadiran, panggilan });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Memanggil satu nomor antrian.
+ *
+ * ==========================================================================
+ * ALETA MENJADI PINTU KEDUA, BUKAN SISTEM TANDINGAN
+ * ==========================================================================
+ *
+ * Yang ditulis PERSIS yang ditulis mesin antrian - disidang dan jam panggil -
+ * sehingga layar aplikasi antrian tetap benar dan tidak ada dua sumber
+ * kebenaran yang berselisih. Yang ditambahkan ALETA hanya RIWAYATNYA: tabel
+ * antrian cuma menyimpan satu jam panggil, dan tidak dapat menjawab "sudah
+ * dipanggil berapa kali" - padahal itulah yang menentukan apakah perkara patut
+ * ditunda.
+ */
+router.post("/antrian/panggil", requireInternalToken, async (req, res) => {
+  try {
+    const perkaraId = String(req.body?.perkaraId || "").trim();
+    if (!perkaraId) {
+      res.status(400).json({ ok: false, error: "perkaraId wajib diisi." });
+      return;
+    }
+
+    const hasil = await panggilanAntrianService.panggil({
+      perkaraId,
+      nomorPerkara: String(req.body?.nomorPerkara || ""),
+      nomorAntrian: req.body?.nomorAntrian ?? null,
+      noRuang: req.body?.noRuang ?? null,
+      oleh: String(req.body?.oleh || ""),
+    });
+
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Peran yang dapat hadir - dipakai layar pengambilan menyusun pilihannya. */
+router.get("/antrian/peran", requireInternalToken, (req, res) => {
+  res.json({ ok: true, peran: kehadiranAntrianService.PERAN });
+});
+
+/**
+ * Mencatat satu kehadiran, lalu mengisi waktu ambil bila masih kosong.
+ *
+ * ==========================================================================
+ * INI YANG MELAHIRKAN NOMOR ANTRIAN
+ * ==========================================================================
+ *
+ * Kolom waktu di aplikasi antrian hanya diisi bila MASIH KOSONG. Kedatangan
+ * kedua pada sisi yang sama - Penggugat II menyusul Penggugat I - tetap
+ * tercatat di ALETA tetapi tidak menyentuh waktunya. Menimpanya berarti
+ * perkara itu mundur di antrian hanya karena ada orang kedua yang datang, dan
+ * nomor yang sudah diberitahukan berubah tanpa ada yang menjelaskan kenapa.
+ */
+router.post("/antrian/hadir", requireInternalToken, async (req, res) => {
+  try {
+    const perkaraId = String(req.body?.perkaraId || "").trim();
+    if (!perkaraId) {
+      res.status(400).json({ ok: false, error: "perkaraId wajib diisi." });
+      return;
+    }
+
+    const hasil = await kehadiranAntrianService.catatHadir({
+      perkaraId,
+      nomorPerkara: String(req.body?.nomorPerkara || ""),
+      tanggal: String(req.body?.tanggal || ""),
+      peran: String(req.body?.peran || ""),
+      urutanPihak: String(req.body?.urutanPihak || ""),
+      sebagaiKuasa: req.body?.sebagaiKuasa === true,
+      nama: String(req.body?.nama || ""),
+      sisi: String(req.body?.sisi || ""),
+      sumber: String(req.body?.sumber || "aleta"),
+      waChatId: String(req.body?.waChatId || ""),
+      dicatatOleh: String(req.body?.dicatatOleh || ""),
+    });
+
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Memberitahu yang tinggal satu atau dua antrian lagi.
+ *
+ * Uji kering adalah bawaan. Yang diberitahu hanya yang meninggalkan nomor
+ * kontak saat mengambil - yang mengambil di mesin tidak meninggalkan apa pun,
+ * dan menebaknya dari data perkara berarti mengirim pesan kepada orang yang
+ * tidak pernah memintanya.
+ */
+router.post("/antrian/pemberitahuan", requireInternalToken, async (req, res) => {
+  try {
+    const jarak = Number(req.body?.jarak);
+    const terapkan = req.body?.terapkan === true || String(req.body?.terapkan) === "1";
+
+    const antrian = await antrianSidangService.petaAntrian();
+    if (!antrian.terbaca) {
+      res.status(503).json({ ok: false, error: antrian.alasan || "Antrian tidak terbaca." });
+      return;
+    }
+
+    const kehadiran = await kehadiranAntrianService.kehadiranBelumDiberitahu(
+      Object.keys(antrian.peta || {})
+    );
+
+    const pesan = kehadiranAntrianService.susunPesanHampirGiliran(antrian.peta, kehadiran, {
+      jarak: Number.isFinite(jarak) ? jarak : 2,
+    });
+
+    if (!terapkan) {
+      res.json({ ok: true, ujiKering: true, akanDikirim: pesan, dikirim: 0 });
+      return;
+    }
+
+    let dikirim = 0;
+    const gagal = [];
+    for (const satu of pesan) {
+      try {
+        await messageQueueService.enqueueMessage({
+          // Satu pesan per perkara per nomor per hari - bukan per putaran.
+          // Tanpa kunci ini, penjadwal yang berjalan tiap menit akan
+          // mengirimi orang yang sama berulang kali sampai gilirannya tiba.
+          // Tanggalnya dari jam server, bukan dari daftar tanggal antrian:
+          // daftar itu kosong ketika belum ada yang mengambil, dan kunci tanpa
+          // tanggal membuat orang yang sama tidak pernah dapat diberitahu lagi
+          // pada hari-hari berikutnya.
+          idempotencyKey: `antrian-giliran:${satu.perkaraId}:${satu.waChatId}:${new Date()
+            .toISOString()
+            .slice(0, 10)}`,
+          category: "party",
+          notificationKey: "antrian-hampir-giliran",
+          recipientNumber: satu.waChatId,
+          recipientName: satu.nama,
+          message: satu.teks,
+          attachment: null,
+          sourceApp: "aleta_bot",
+          sourceFeature: "antrian_sidang",
+          entityType: "perkara",
+          entityId: satu.perkaraId,
+          metadata: { nomorAntrian: satu.nomorAntrian, didepan: satu.didepan },
+        });
+        await kehadiranAntrianService.tandaiDiberitahu(satu.perkaraId, satu.waChatId);
+        dikirim += 1;
+      } catch (galat) {
+        gagal.push({ perkaraId: satu.perkaraId, sebab: String(galat.message || galat).slice(0, 200) });
+      }
+    }
+
+    res.json({ ok: true, ujiKering: false, akanDikirim: pesan, dikirim, gagal });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mendaftarkan jadwal sidang satu tanggal ke aplikasi antrian.
+ *
+ * ==========================================================================
+ * SATU-SATUNYA JALUR ALETA MENULIS KE APLIKASI LAIN
+ * ==========================================================================
+ *
+ * Jadwalnya diambil sendiri dari SIPP di sini, bukan dikirim pemanggil. Kalau
+ * pemanggil yang mengirim daftar perkaranya, maka yang menentukan siapa masuk
+ * antrian adalah layar - dan layar dapat keliru, tertinggal, atau disusun
+ * sendiri oleh siapa pun yang memegang token. Yang berwenang menyatakan
+ * "hari ini sidangnya perkara apa saja" hanyalah SIPP.
+ *
+ * Uji kering adalah bawaan: tanpa terapkan=1, yang dijawab hanya daftar apa
+ * yang AKAN didaftarkan.
+ */
+/**
+ * Nomor ruangan dari teks ruangan SIPP - "Ruang Sidang 2" menjadi 2.
+ *
+ * Yang tidak memuat angka dijawab null, bukan ditebak. Nomor ruang menentukan
+ * ke mana orang dipanggil, dan menebaknya berarti mengirim orang ke ruangan
+ * yang salah.
+ */
+function nomorRuang(teks) {
+  const cocok = /(\d+)/.exec(String(teks || ""));
+  return cocok ? Number(cocok[1]) : null;
+}
+
+router.post("/antrian/sinkron", requireInternalToken, async (req, res) => {
+  try {
+    const tanggal = String(req.body?.tanggal || "").slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) {
+      res.status(400).json({ ok: false, error: "Tanggal wajib berbentuk YYYY-MM-DD." });
+      return;
+    }
+
+    const jadwal = await sippJadwalSidangService.daftarSidang({
+      dari: tanggal,
+      sampai: tanggal,
+      batas: 500,
+    });
+
+    const hasil = await antrianSinkronService.sinkronkan({
+      tanggal,
+      sidang: (jadwal.sidang || []).map((baris) => ({
+        perkaraId: baris.perkaraId,
+        nomorPerkara: baris.nomorPerkara,
+        tanggalSidang: baris.tanggalSidang,
+        jamSidang: baris.jamSidang,
+        majelisKode: baris.majelisKode,
+        // SIPP menyimpan ruangan sebagai TEKS ("Ruang Sidang 1"), sedangkan
+        // aplikasi antrian memakai nomor. Angkanya diambil bila memang ada di
+        // dalam teks itu; bila tidak, dibiarkan kosong dan diisi aplikasi
+        // antrian atau petugas. Menebak pemetaannya berarti memanggil orang ke
+        // ruangan yang salah.
+        noRuang: nomorRuang(baris.ruangan),
+        ruanganId: null,
+        sidangId: baris.sidangId,
+        namaPetugas: baris.paniteraNama,
+      })),
+      terapkan: req.body?.terapkan === true || String(req.body?.terapkan) === "1",
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Jadwal pertemuan MEDIASI pada satu rentang tanggal.
+ *
+ * Terpisah dari jadwal sidang: pertemuan mediasi tersimpan di tabelnya
+ * sendiri dan tidak pernah ikut pada perkara_jadwal_sidang, sehingga layar
+ * jadwal sidang tidak memperlihatkannya sama sekali.
+ */
+router.get("/sipp/jadwal-mediasi", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippJadwalSidangService.daftarJadwalMediasi({
+      dari: String(req.query.dari || ""),
+      sampai: String(req.query.sampai || ""),
+      cari: String(req.query.cari || ""),
+      batas: Number(req.query.batas) || 200,
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Skor kesiapan untuk sekumpulan sidang. */
+router.post("/sipp/jadwal-sidang/kesiapan", requireInternalToken, async (req, res) => {
+  try {
+    const daftar = Array.isArray(req.body?.sidang) ? req.body.sidang : [];
+    const hasil = await kesiapanSidangService.nilaiKesiapanBanyak(daftar, {
+      batas: Number(req.body?.batas) || 50,
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Kesiapan satu sidang, lengkap dengan keadaan panggilan tiap pihak. */
+router.get("/sipp/jadwal-sidang/kesiapan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await kesiapanSidangService.nilaiKesiapanPerkara(String(req.query.nomor || ""), {
+      sidangId: Number(req.query.sidangId) || 0,
+      tanggalSidang: String(req.query.tanggalSidang || "") || null,
+      agenda: String(req.query.agenda || ""),
+    });
+    res.json({ ok: Boolean(hasil), kesiapan: hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Pengaturan tenggang waktu kepatutan panggilan. */
+router.get("/ecourt/panggilan/pengaturan", requireInternalToken, (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      pengaturan: ecourtPanggilanService.getSettings(),
+      jalur: ecourtPanggilanService.JALUR,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/ecourt/panggilan/pengaturan", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtPanggilanService.saveSettings({
+      hariElektronik: req.body?.hariElektronik,
+      hariSuratTercatat: req.body?.hariSuratTercatat,
+      hariBiasa: req.body?.hariBiasa,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, jalur: ecourtPanggilanService.JALUR });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Mencari perkara dari potongan nomor - menerima angka saja. */
+router.get("/sipp/status-perkara/cari", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippStatusPerkaraService.cariPerkara(String(req.query.cari || ""), {
+      batas: Number(req.query.batas) || 25,
+      jenisPerkara: String(req.query.jenisPerkara || ""),
+      status: String(req.query.status || ""),
+      tahun: String(req.query.tahun || ""),
+      alurPerkaraId: Number(req.query.alurPerkaraId) || 0,
+      sejak: String(req.query.sejak || ""),
+      sampai: String(req.query.sampai || ""),
+      namaPihak: String(req.query.namaPihak || ""),
+      petugas: String(req.query.petugas || ""),
+      hakim: String(req.query.hakim || ""),
+      panitera: String(req.query.panitera || ""),
+      jurusita: String(req.query.jurusita || ""),
+      statusPutusan: String(req.query.statusPutusan || ""),
+      pertimbangan: String(req.query.pertimbangan || ""),
+      amar: String(req.query.amar || ""),
+      verstek: String(req.query.verstek || ""),
+      alamatPihak: String(req.query.alamatPihak || ""),
+      kua: String(req.query.kua || ""),
+      relaas: String(req.query.relaas || ""),
+      putusSejak: String(req.query.putusSejak || ""),
+      putusSampai: String(req.query.putusSampai || ""),
+      umur: String(req.query.umur || ""),
+      ecourt: String(req.query.ecourt || ""),
+    });
+    res.json({
+      ok: true,
+      perkara: hasil,
+      // Pilihan saringan dikirim bersama hasilnya supaya layar tidak perlu
+      // menyalin ulang daftar yang sama - dan tidak dapat menyimpang darinya.
+      pilihanStatus: sippStatusPerkaraService.STATUS_PENCARIAN,
+      pilihanAlur: sippStatusPerkaraService.ALUR_PENCARIAN,
+      pilihanRelaas: sippStatusPerkaraService.RELAAS_PENCARIAN,
+      pilihanUmur: sippStatusPerkaraService.UMUR_PENCARIAN,
+      pilihanPutusan: sippStatusPerkaraService.PUTUSAN_PENCARIAN,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Seluruh keadaan satu perkara. */
+router.get("/sipp/status-perkara", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippStatusPerkaraService.statusLengkap(String(req.query.nomor || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * KENDALI BERKAS
+ * ============================================================================
+ *
+ * Menyandingkan berkas yang seharusnya ada menurut SIPP dengan arsip e-Court
+ * ALETA. Sinkronisasinya berjalan lama - ribuan perkara, berjam-jam - sehingga
+ * dilepas ke latar belakang dan dipantau lewat ringkasan, bukan ditunggu di
+ * dalam satu permintaan HTTP yang pasti kehabisan waktu.
+ */
+
+/** Ringkasan kendali berkas beserta jalannya sinkronisasi. */
+router.get("/kendali-berkas/ringkasan", requireInternalToken, async (req, res) => {
+  try {
+    res.json({ ok: true, ...(await kendaliBerkasService.ringkasan()) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Perkara yang kurang berkasnya, paling banyak kurangnya di atas. */
+router.get("/kendali-berkas/kurang", requireInternalToken, async (req, res) => {
+  try {
+    const perkara = await kendaliBerkasService.daftarKurang({ batas: Number(req.query.batas) || 100 });
+    res.json({ ok: true, perkara });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Perkara yang putusannya belum terbit utuh di e-Court.
+ *
+ * Daftar kerja, bukan laporan: yang dikembalikan hanya perkara yang MENUNTUT
+ * tindakan - barisnya belum terbentuk, salinannya belum diunggah, atau
+ * Panitera belum menandatanganinya.
+ */
+router.get("/kendali-berkas/putusan", requireInternalToken, async (req, res) => {
+  try {
+    const perkara = await putusanEcourtService.daftarPerluTindakan({
+      batas: Number(req.query.batas) || 100,
+    });
+    res.json({ ok: true, perkara });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Memulai sinkronisasi.
+ *
+ * Jawaban dikirim SEKARANG, tidak menunggu selesai. Menahan sambungan HTTP
+ * selama berjam-jam akan diputus perantara mana pun di tengah jalan, dan
+ * pemakainya tidak akan pernah tahu apakah pekerjaannya selesai atau mati.
+ * Kemajuannya dibaca dari /kendali-berkas/ringkasan.
+ */
+router.post("/kendali-berkas/sinkron", requireInternalToken, async (req, res) => {
+  try {
+    const berjalan = await kendaliBerkasService.jalanYangMasihHidup();
+    if (berjalan) {
+      return res.status(409).json({
+        ok: false,
+        alasan: "sinkron_lain_berjalan",
+        error: `Sinkronisasi lain sedang berjalan (${berjalan.diperiksa}/${berjalan.target}).`,
+      });
+    }
+
+    const pilihan = {
+      sejak: String((req.body && req.body.sejak) || ""),
+      sampai: String((req.body && req.body.sampai) || ""),
+      maks: Number((req.body && req.body.maks) || 0),
+      hanyaEcourt: Boolean(req.body && req.body.hanyaEcourt),
+      sumber: "portal",
+      dijalankanOleh: String((req.body && req.body.olehSiapa) || ""),
+    };
+
+    // Dilepas tanpa ditunggu. Galatnya tercatat pada baris jalannya sendiri,
+    // jadi tidak ada yang hilang diam-diam.
+    void kendaliBerkasService.sinkron(pilihan).catch(() => {});
+
+    res.json({ ok: true, pesan: "Sinkronisasi kendali berkas dimulai di latar belakang." });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Kolom SIPP mana yang ditemukan dan mana yang tidak.
+ *
+ * Dipakai layar untuk menjelaskan mengapa suatu unsur SK belum dapat dinilai -
+ * jawabannya "kolomnya tidak ada pada SIPP versi ini", bukan "pengadilan tidak
+ * mengerjakannya". Dua hal yang sangat berbeda.
+ */
+router.get("/sipp/skema/laporan", requireInternalToken, async (req, res) => {
+  try {
+    res.json({ ok: true, ...(await sippSkemaService.laporan()) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Rubrik penilaian perkara. */
+router.get("/sipp/penilaian/pengaturan", requireInternalToken, (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      pengaturan: penilaianPerkaraService.getSettings(),
+      butir: penilaianPerkaraService.BUTIR,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/sipp/penilaian/pengaturan", requireInternalToken, (req, res) => {
+  try {
+    const hasil = penilaianPerkaraService.saveSettings({
+      bulanPenuh: req.body?.bulanPenuh,
+      bulanNol: req.body?.bulanNol,
+      hariMinutasi: req.body?.hariMinutasi,
+      bobot: req.body?.bobot || {},
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, butir: penilaianPerkaraService.BUTIR });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Rekap jumlah sidang per hari dalam satu bulan - isi kalender sidang. */
+router.get("/sipp/jadwal-sidang/kalender", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippJadwalSidangService.rekapBulanSidang(String(req.query.bulan || ""));
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Seluruh keterangan satu sidang. */
+router.get("/sipp/jadwal-sidang/rincian", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippJadwalSidangService.rincianSidang(
+      String(req.query.nomor || ""),
+      String(req.query.sidangId || "")
+    );
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengalirkan berkas SIPP - dokumen perkara, relaas, atau resi pos.
+ *
+ * ==========================================================================
+ * JALURNYA DICARI DI DATABASE, TIDAK PERNAH DIKIRIM PEMANGGIL
+ * ==========================================================================
+ *
+ * Pemanggil hanya menyebut jenis dan nomor barisnya. Jalur berkasnya dibaca
+ * dari SIPP di sini, lalu dilewatkan sippDocumentService yang sudah membatasi
+ * ekstensi dan akar folder yang boleh dibaca. Dengan begitu tidak ada cara
+ * meminta berkas yang tidak memang tercatat pada perkara.
+ */
+router.get("/sipp/berkas-perkara", requireInternalToken, async (req, res) => {
+  try {
+    const jenis = String(req.query.jenis || "");
+    if (!["dokumen", "relaas", "resi", "bas", "putusan", "putusan-anonim"].includes(jenis)) {
+      res.status(400).json({ ok: false, alasan: "jenis_tidak_dikenali" });
+      return;
+    }
+
+    const acuan = await sippJadwalSidangService.jalurDokumenSipp(jenis, req.query.id);
+    if (!acuan) {
+      res.status(404).json({ ok: false, alasan: "berkas_tidak_tercatat" });
+      return;
+    }
+
+    const info = sippDocumentService.sanitizeSippDocumentInput(acuan.jalur);
+    if (!info.ok) {
+      res.status(400).json({ ok: false, alasan: info.reason });
+      return;
+    }
+
+    const jalurLokal = info.isUrl ? null : sippDocumentService.findReadableSippDocument(info);
+    if (!jalurLokal) {
+      res.status(404).json({ ok: false, alasan: "berkas_tidak_ditemukan_di_server" });
+      return;
+    }
+
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(info.fileName || acuan.judul)}"`
+    );
+    require("fs").createReadStream(jalurLokal).pipe(res);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Keadaan penjadwal penarikan e-Court. */
+router.get("/ecourt/jadwal", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, jadwal: ecourtSchedulerService.getStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menyimpan pengaturan penjadwal. Berlaku pada putaran berikutnya. */
+router.post("/ecourt/jadwal", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSchedulerService.saveSettings({
+      aktif: req.body?.aktif === true,
+      jarakJam: req.body?.jarakJam,
+      jamMulai: req.body?.jamMulai,
+      jamSelesai: req.body?.jamSelesai,
+      maksPerkara: req.body?.maksPerkara,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menjalankan satu putaran sekarang, di luar jadwal.
+ *
+ * Tetap memakai mode terjadwal, sehingga tidak menunggu login manusia dan
+ * berhenti sopan bila sesinya sudah habis.
+ */
+router.post("/ecourt/jadwal/jalankan", requireInternalToken, (req, res) => {
+  try {
+    // ======================================================================
+    // DILEPAS, BUKAN DITUNGGU
+    // ======================================================================
+    //
+    // Sebelumnya rute ini MENUNGGU satu putaran selesai. Satu putaran menarik
+    // sampai dua puluh lima perkara lewat peramban - hitungan menit. Selama
+    // itu permintaan HTTP menggantung, layar pengaturan tampak membeku, dan
+    // perantara akhirnya memutus sambungannya. Petugas menyimpulkan tombolnya
+    // rusak, lalu menekannya lagi.
+    //
+    // Sekarang jawabannya datang seketika, sama seperti penarikan menyeluruh
+    // dan penarikan satu perkara di bawah. Kemajuannya dibaca dari
+    // /ecourt/jadwal.
+    const status = ecourtSchedulerService.getStatus();
+    if (status && status.sedangJalan) {
+      return res.status(409).json({
+        ok: false,
+        alasan: "putaran_sebelumnya_belum_selesai",
+        error: "Satu putaran penarikan masih berjalan.",
+      });
+    }
+
+    void ecourtSchedulerService.jalankanSatuPutaran().catch(() => {});
+
+    res.json({
+      ok: true,
+      dimulai: true,
+      pesan: "Satu putaran penarikan dimulai. Kemajuannya terlihat pada keadaan penjadwal.",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Penarikan berkas e-Court atas permintaan portal.
+ *
+ * Tiga pintu: menyeluruh, satu perkara, dan penghentian. Ketiganya menjawab
+ * SEKETIKA - penarikan berjalan di latar belakang dan kemajuannya diikuti
+ * lewat berkas log di folder reports yang dibagi dengan host.
+ *
+ * Menunggu sampai selesai bukan pilihan: satu penarikan menyeluruh dapat
+ * berjam-jam, dan proksi akan memutus permintaannya jauh sebelum itu.
+ */
+router.post("/ecourt/penarikan/menyeluruh", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSchedulerService.mulaiPenarikanMenyeluruh({
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/ecourt/penarikan/perkara", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSchedulerService.mulaiPenarikanPerkara(String(req.body?.nomorPerkara || ""), {
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/ecourt/penarikan/hentikan", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSchedulerService.hentikanPenarikan({
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Daftar akun e-Court beserta keadaan sesinya. */
+router.get("/ecourt/akun", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, akun: ecourtAkunService.daftarAkun() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menambah atau menyunting satu akun. */
+router.post("/ecourt/akun", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtAkunService.simpanAkun({
+      slot: String(req.body?.slot || ""),
+      label: String(req.body?.label || ""),
+      aktif: req.body?.aktif !== false,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menghapus satu akun beserta sesinya. */
+router.post("/ecourt/akun/hapus", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtAkunService.hapusAkun(String(req.body?.slot || ""), {
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Keadaan pemantau sesi e-Court. */
+router.get("/ecourt/pantau-sesi", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, pantau: ecourtSesiPantauService.getStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menyimpan pengaturan pemantau sesi. */
+router.post("/ecourt/pantau-sesi", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtSesiPantauService.saveSettings({
+      aktif: req.body?.aktif === true,
+      jedaMenit: req.body?.jedaMenit,
+      jedaPeringatanJam: req.body?.jedaPeringatanJam,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, pantau: ecourtSesiPantauService.getStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Satu detak sekarang juga.
+ *
+ * Membuka peramban, jadi TIDAK dijalankan bila penarikan sedang berlangsung -
+ * profil peramban hanya dapat dipakai satu proses.
+ */
+router.post("/ecourt/pantau-sesi/detak", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtSesiPantauService.detak({ paksa: true });
+    res.json({ ok: true, ...hasil, pantau: ecourtSesiPantauService.getStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Pemeriksaan keutuhan arsip.
+ *
+ * perbaiki=true MENGHAPUS catatan dan berkas yang rusak, sehingga perkaranya
+ * tidak lagi terhitung lengkap dan penarikan berikutnya mengambilnya kembali.
+ */
+router.post("/ecourt/audit-arsip", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtAuditArsipService.periksaArsip({
+      batas: Number(req.body?.batas) || undefined,
+      perbaiki: req.body?.perbaiki === true,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Keadaan ruang dan masa simpan arsip. */
+router.get("/ecourt/arsip", requireInternalToken, async (req, res) => {
+  try {
+    res.json({ ok: true, arsip: await ecourtArsipService.getStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menyimpan pengaturan ruang dan masa simpan. */
+router.post("/ecourt/arsip", requireInternalToken, (req, res) => {
+  try {
+    const hasil = ecourtArsipService.saveSettings({
+      minRuangGb: req.body?.minRuangGb,
+      maksBerkasMb: req.body?.maksBerkasMb,
+      simpanBulan: req.body?.simpanBulan,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Membersihkan berkas yang melewati masa simpan.
+ *
+ * Tanpa hapus:true, hanya melaporkan apa yang AKAN dihapus.
+ */
+router.post("/ecourt/arsip/bersihkan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await ecourtArsipService.bersihkan({
+      hapus: req.body?.hapus === true,
+      olehSiapa: String(req.body?.olehSiapa || ""),
+    });
+    res.json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

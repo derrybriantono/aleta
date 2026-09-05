@@ -54,10 +54,45 @@ const path = require("path");
  * kode mengambil isi folder aplikasi, dan sesi login pengadilan tidak boleh
  * ikut tersalin ke mana-mana.
  */
-function sessionDir() {
+/**
+ * Nama slot bawaan.
+ *
+ * Pemasangan yang hanya punya satu akun tidak perlu tahu bahwa slot itu ada -
+ * seluruh pemanggil yang tidak menyebut slot mendapat yang ini.
+ */
+const SLOT_BAWAAN = "utama";
+
+/**
+ * Membersihkan nama slot.
+ *
+ * Nama slot menjadi bagian JALUR FOLDER. Nama seperti "../../etc" akan membuat
+ * profil peramban ditulis di luar folder sesi, dan clearSession menghapus
+ * folder di luar sana. Karena itu hanya huruf kecil, angka, dan tanda hubung
+ * yang diterima - sisanya jatuh ke slot bawaan.
+ */
+function bersihkanSlot(slot) {
+  const nama = String(slot || "").trim().toLowerCase();
+  if (!/^[a-z0-9-]{1,32}$/.test(nama)) return SLOT_BAWAAN;
+  return nama;
+}
+
+/** Folder induk seluruh slot. */
+function sessionRoot() {
   const dariEnv = String(process.env.ALETA_ECOURT_SESSION_DIR || "").trim();
   if (dariEnv) return path.resolve(dariEnv);
   return path.join(os.homedir(), ".aleta-ecourt-session");
+}
+
+/**
+ * Letak folder profil satu slot.
+ *
+ * Tiap akun memakai folder sendiri. Profil peramban hanya dapat dipakai satu
+ * proses pada satu waktu - dua akun berbagi satu folder berarti keduanya saling
+ * menimpa sesi, dan yang terjadi bukan bergiliran melainkan saling
+ * mengeluarkan.
+ */
+function sessionDir(slot) {
+  return path.join(sessionRoot(), bersihkanSlot(slot));
 }
 
 /**
@@ -70,8 +105,8 @@ function sessionDir() {
  *
  * @returns {{ ok: boolean, dir: string, alasan: string }}
  */
-function ensureSessionDir() {
-  const dir = sessionDir();
+function ensureSessionDir(slot) {
+  const dir = sessionDir(slot);
   try {
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     // mkdir tidak mengubah izin folder yang sudah ada, jadi ditegaskan lagi.
@@ -87,8 +122,8 @@ function ensureSessionDir() {
 }
 
 /** Apakah profil ini sudah pernah dipakai login? */
-function sessionExists() {
-  const dir = sessionDir();
+function sessionExists(slot) {
+  const dir = sessionDir(slot);
   try {
     return fs.existsSync(path.join(dir, "Default"));
   } catch {
@@ -103,8 +138,8 @@ function sessionExists() {
  * ke orang lain. Ini satu-satunya cara "logout" yang benar - menghapus
  * jejaknya, bukan sekadar menutup peramban.
  */
-function clearSession() {
-  const dir = sessionDir();
+function clearSession(slot) {
+  const dir = sessionDir(slot);
   try {
     fs.rmSync(dir, { recursive: true, force: true });
     return { ok: true, alasan: "" };
@@ -118,16 +153,32 @@ function clearSession() {
  *
  * @param {{ headless?: boolean }} opsi
  */
-function launchOptions({ headless = false } = {}) {
+function launchOptions({ headless = false, slot = SLOT_BAWAAN } = {}) {
   const opsi = {
     headless,
     defaultViewport: null,
     args: ["--start-maximized", "--no-sandbox"],
+    // Berkas perkara kerap berukuran satu sampai dua megabita, dan
+    // pengunduhan berjalan DI DALAM halaman supaya cookie sesi ikut
+    // terbawa. Pada jaringan pengadilan yang lambat, satu berkas dapat
+    // melewati batas bawaan Puppeteer (180 detik) - dan yang terlihat
+    // hanyalah pesan Runtime.callFunctionOn timed out, yang tidak
+    // menjelaskan apa pun tentang berkas mana atau mengapa.
+    protocolTimeout: Number(process.env.ALETA_ECOURT_PROTOCOL_TIMEOUT_MS || 300000),
   };
 
-  const sesi = ensureSessionDir();
+  const sesi = ensureSessionDir(slot);
   if (sesi.ok) opsi.userDataDir = sesi.dir;
   return { opsi, sesi };
 }
 
-module.exports = { clearSession, ensureSessionDir, launchOptions, sessionDir, sessionExists };
+module.exports = {
+  SLOT_BAWAAN,
+  bersihkanSlot,
+  clearSession,
+  ensureSessionDir,
+  launchOptions,
+  sessionDir,
+  sessionExists,
+  sessionRoot,
+};

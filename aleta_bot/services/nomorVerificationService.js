@@ -184,7 +184,11 @@ async function ensureVerified(nomor, namaPihak) {
   // Sudah ditanya dan belum dijawab: diamkan sampai tenggang lewat, jangan
   // ditanya berulang-ulang setiap kali pekerja berjalan.
   if (catatan && catatan.ditanya_pada) {
-    const jarak = Date.now() - new Date(catatan.ditanya_pada).getTime();
+    // Dibaca lewat fromMysqlDate: waktu disimpan UTC, dan menafsirkannya
+    // sebagai waktu lokal membuat tenggang ini berakhir tujuh jam lebih cepat
+    // daripada yang tertulis di pengaturan.
+    const ditanya = botDb.fromMysqlDate(catatan.ditanya_pada);
+    const jarak = ditanya ? Date.now() - ditanya.getTime() : Infinity;
     if (jarak < ulangiSetelahMs()) {
       return { boleh: false, status: STATUS.MENUNGGU, pertanyaan: null, alasan: "menunggu_jawaban" };
     }

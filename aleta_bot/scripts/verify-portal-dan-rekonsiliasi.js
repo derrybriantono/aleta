@@ -26,12 +26,14 @@ const path = require("path");
 
 // --- Tiruan database ALETA ---
 const botDbPath = require.resolve("../services/botDbService");
-require("../services/botDbService");
+const botDbAsli = require("../services/botDbService");
 const botState = { dokumen: [], verifikasi: [] };
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
   addColumnIfMissing: async () => true,
+  addIndexIfMissing: async () => true,
   toMysqlDate: (v) => new Date(v).toISOString().slice(0, 19).replace("T", " "),
+  fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
     if (/^\s*CREATE TABLE/i.test(sql)) return [];
     if (/FROM aleta_bot_ecourt_documents/i.test(sql) && /document_key = \?/.test(sql)) {

@@ -29,6 +29,160 @@
       "when": 1779540261624,
       "tag": "0003_judicia_legal_form_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779540262624,
+      "tag": "0004_jlf_variable_query_preview",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779540263624,
+      "tag": "0005_e_status_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779540264624,
+      "tag": "0006_e_status_aleta_bot_connection_bridge",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779540265624,
+      "tag": "0007_e_status_operational_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779540266624,
+      "tag": "0008_e_status_tracking_sla_exports",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779540267624,
+      "tag": "0009_e_status_advanced_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779540268624,
+      "tag": "0010_external_app_credentials",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779540269624,
+      "tag": "0011_external_app_launch_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779540270624,
+      "tag": "0012_aleta_sipp_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1779540271624,
+      "tag": "0013_aleta_sipp_dictionary_analysis",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1779540272624,
+      "tag": "0014_aleta_sipp_query_variable_registry_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1779540273624,
+      "tag": "0015_aleta_sipp_monitoring_assessment",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1779540274624,
+      "tag": "0016_aleta_sipp_pendukung2018_feature_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779540275624,
+      "tag": "0017_aleta_sipp_monitoring_operational_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779540276624,
+      "tag": "0018_ecourt_extension_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1779540277624,
+      "tag": "0019_aleta_penunjukan_otomatis",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1779540278624,
+      "tag": "0020_aleta_pengisian_borang",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1779540279624,
+      "tag": "0021_aleta_antrean_penetapan",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1779540280624,
+      "tag": "0022_aleta_bas_lembar",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1779540281624,
+      "tag": "0023_aleta_bas_kehadiran",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1779540282624,
+      "tag": "0024_aleta_berkas_riwayat",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1779540283624,
+      "tag": "0025_jlf_jangkar_pasal",
+      "breakpoints": true
     }
   ]
 }

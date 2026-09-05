@@ -328,12 +328,31 @@ async function registerOnlineQueue({
   }
 
   const column = slot === "pihak_2" ? "pihak_2" : "pihak_1";
+
+  // ==========================================================================
+  // WAKTU AMBIL HANYA DITULIS SEKALI
+  // ==========================================================================
+  //
+  // Nomor antrian ditentukan oleh waktu pengambilan TERAWAL. Menimpanya pada
+  // permintaan kedua berarti orang yang mengirim pesan dua kali - karena ragu,
+  // karena pesannya tidak terkirim, karena tidak sabar - justru MUNDUR ke
+  // belakang antrian, dan nomor yang sudah diberitahukan kepadanya berubah
+  // tanpa ada yang menjelaskan kenapa.
+  //
+  // Disaring tanggal_sidang = CURDATE() sebab tabel antrian menyimpan satu
+  // baris untuk tiap tanggal sidang dan tidak dibersihkan saat berganti hari.
+  // Tanpa saringan, pengambilan hari ini mengisi juga baris sidang perkara ini
+  // yang sudah lewat.
+  //
+  // Dengan penjaga IS NULL, permintaan kedua tidak mengubah apa pun dan yang
+  // dijawab tetap nomor yang sama. Kolom `online` tetap disetel supaya asal
+  // pengambilannya terbaca walau barisnya sudah terisi lebih dulu oleh mesin.
   const updateSql = `
     UPDATE sipp_turunan_antrian.antrian_sidang AS a
     JOIN SIPP.perkara AS p ON a.perkara_id = p.perkara_id
     SET a.online = 1,
-        a.${column} = NOW()
-    WHERE p.nomor_perkara = ?`;
+        a.${column} = COALESCE(a.${column}, NOW())
+    WHERE p.nomor_perkara = ? AND a.tanggal_sidang = CURDATE()`;
 
   const updateResult = await externalDbService.query(connectionKey, updateSql, [nomorPerkaraFormatted]);
 

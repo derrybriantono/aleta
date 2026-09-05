@@ -106,6 +106,50 @@ async function getStatus({ limit = 100 } = {}) {
     aman(() => ecourtReconciliationService.periksa({ limit }), null),
   ]);
 
+  // Dokumen yang berulang gagal diambil. Diistirahatkan supaya tidak memakan
+  // jatah tiap putaran - tetapi HARUS terlihat, sebab yang diistirahatkan
+  // diam-diam sama saja dengan yang hilang diam-diam.
+  const bermasalah = await aman(() => ecourtStoreService.daftarBerkasBermasalah({ limit: 20 }), []);
+
+  // ==========================================================================
+  // BUKAN BERAPA, MELAINKAN SUDAH BERAPA LAMA
+  // ==========================================================================
+  //
+  // Jumlah keputusan yang menunggu diteruskan sudah lama tampil di layar.
+  // Tetapi angka "3" tidak memberitahu apa pun yang menentukan: tiga keputusan
+  // yang masuk pagi ini adalah pekerjaan hari ini, sedangkan tiga keputusan
+  // yang menunggu sejak tiga minggu lalu adalah keputusan hukum yang mengendap
+  // - hakim sudah memutus, e-Court belum tahu, dan tidak ada yang menyadarinya
+  // karena angkanya sama saja.
+  //
+  // Penerusan ke e-Court memang dijalankan manusia dengan pengawasan, dan itu
+  // disengaja. Justru karena itu umurnya harus terlihat: pekerjaan yang
+  // menunggu orang perlu tahu sejak kapan ia menunggu.
+  const tertua = await aman(async () => {
+    const rows = await botDb.query(
+      `SELECT nomor_perkara AS nomorPerkara, judul_dokumen AS judulDokumen,
+              nama_hakim AS namaHakim, keputusan, diputuskan_pada AS diputuskanPada
+         FROM aleta_bot_ecourt_verifications
+        WHERE diteruskan_pada IS NULL
+        ORDER BY diputuskan_pada ASC
+        LIMIT 1`
+    );
+    const baris = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    if (!baris) return null;
+
+    const waktu = botDb.fromMysqlDate(baris.diputuskanPada);
+    const umurHari = waktu ? Math.floor((Date.now() - waktu.getTime()) / 86400000) : null;
+
+    return {
+      nomorPerkara: String(baris.nomorPerkara || ""),
+      judulDokumen: String(baris.judulDokumen || ""),
+      namaHakim: String(baris.namaHakim || ""),
+      keputusan: String(baris.keputusan || ""),
+      diputuskanPada: waktu ? waktu.toISOString() : "",
+      umurHari,
+    };
+  }, null);
+
   return {
     diperiksaPada: new Date().toISOString(),
     aktif: runtimeConfig.ecourtNotifikasiAktif !== false,
@@ -116,10 +160,16 @@ async function getStatus({ limit = 100 } = {}) {
       sudahValid,
       belumDiberitahukan,
       sudahDiberitahukan,
+      // Berulang gagal diambil - berkasnya tidak akan datang sendiri.
+      bermasalah: bermasalah.length,
+      daftarBermasalah: bermasalah,
     },
     verifikasi: {
       keputusanTersimpan,
       belumDiteruskan,
+      // Keputusan tertua yang masih menunggu diteruskan, beserta umurnya.
+      // null berarti antreannya kosong - bukan berarti tidak terbaca.
+      tertua,
     },
     nomor: {
       terverifikasi: nomorTerverifikasi,

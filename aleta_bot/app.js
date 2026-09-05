@@ -41,6 +41,8 @@ const ecourtDocumentService = require("./services/ecourtDocumentService");
 const ecourtNotificationWorker = require("./services/ecourtNotificationWorker");
 const ecourtVerificationService = require("./services/ecourtVerificationService");
 const nomorVerificationService = require("./services/nomorVerificationService");
+const ecourtSchedulerService = require("./services/ecourtSchedulerService");
+const ecourtSesiPantauService = require("./services/ecourtSesiPantauService");
 const logService = require("./services/logService");
 const rateLimitService = require("./services/rateLimitService");
 const whatsappStatusService = require("./services/whatsappStatusService");
@@ -58,9 +60,22 @@ const externalDbService = require("./services/externalDbService");
 const publicQaIntentService = require("./services/publicQaIntentService");
 const { guardCaseCommandAccess } = require("./services/publicQaVerificationService");
 const antrianOnlineService = require("./services/antrianOnlineService");
+const antrianSidangService = require("./services/antrianSidangService");
+const kehadiranAntrianService = require("./services/kehadiranAntrianService");
 // Perintah antrian sidang online dari pihak. "daftar antrian" -> slot penggugat,
 // "antrian online" -> slot tergugat, "ambil antrian" -> deteksi dari nomor pengirim.
 const ANTRIAN_ONLINE_COMMANDS = new Set(["daftar antrian", "antrian online", "ambil antrian"]);
+
+/**
+ * "cek antrian" - pihak menanyakan posisinya sendiri.
+ *
+ * Dipisahkan dari perintah pengambilan karena ia TIDAK MENULIS apa pun. Yang
+ * paling sering ditanya di ruang tunggu bukan "berapa nomor saya" - itu sudah
+ * dipegangnya - melainkan "masih berapa lagi", dan selama ini jawabannya hanya
+ * ada pada petugas yang harus berhenti mengerjakan yang lain tiap kali
+ * ditanya.
+ */
+const ANTRIAN_CEK_COMMANDS = new Set(["cek antrian", "posisi antrian", "antrian saya"]);
 const aiRuntimeConfigService = require("./services/aiRuntimeConfigService");
 const aiProviderAdapter = require("./services/aiProviderAdapter");
 const internalGatewayRoutes = require("./routes/internalGatewayRoutes");
@@ -979,6 +994,16 @@ const queuedMessageSender = async (payload = {}) => {
 };
 
 queueWorkerService.startQueueWorker(queuedMessageSender);
+
+// Penjadwal penarikan e-Court. Dimulai dalam keadaan MATI kecuali admin
+// menyalakannya dari portal - menarik dari sistem Mahkamah Agung tanpa
+// diminta bukan perilaku yang pantas dinyalakan sendiri oleh pembaruan.
+ecourtSchedulerService.mulai();
+
+// Pemantau sesi e-Court. Sama seperti penjadwal, dimulai dalam keadaan MATI
+// kecuali admin menyalakannya - detaknya membuka peramban ke sistem Mahkamah
+// Agung, dan itu tidak pantas menyala sendiri oleh pembaruan.
+ecourtSesiPantauService.mulai();
 dynamicNotificationSchedulerService.startDynamicNotificationScheduler();
 
 // Menilai nomor yang pesannya tidak pernah sampai, lalu menghentikannya.
@@ -1372,6 +1397,51 @@ activeClient.on('message', async (msg) => {
                       command: menuResult.command || "",
                   },
               });
+              return;
+          }
+
+          if (ANTRIAN_CEK_COMMANDS.has(prefix[0].trim())) {
+              // ============================================================
+              // HANYA PERKARA MILIK PENGIRIMNYA SENDIRI
+              // ============================================================
+              //
+              // Perkaranya dikenali dari NOMOR PENGIRIM saja - tidak ada
+              // bentuk "cek antrian#nomor perkara". Menerima nomor perkara
+              // berarti siapa pun yang menebak nomor perkara dapat mengetahui
+              // apakah pihak lawannya sudah hadir dan sedang menunggu di
+              // ruangan mana. Keterangan itu tidak berbahaya di layar ruang
+              // tunggu, tempat orangnya memang saling melihat; ia menjadi lain
+              // ketika dapat ditanyakan dari jauh oleh siapa saja.
+              //
+              // Perintah ini juga tidak menulis apa pun - ia hanya membaca.
+              try {
+                  const peta = await antrianSidangService.petaAntrian();
+                  if (!peta.terbaca) {
+                      await balasChat(msg, "Maaf, keadaan antrian sedang tidak dapat dibaca. Silakan menghubungi petugas kami.", { action: "no_case", withGlossary: false });
+                      return;
+                  }
+
+                  const cocok = await antrianOnlineService
+                      .findTodayQueueCaseBySender({ senderNumber: msg.from || "" })
+                      .catch(() => null);
+                  const perkaraId = cocok && cocok.perkaraId ? String(cocok.perkaraId) : "";
+
+                  if (!perkaraId) {
+                      await balasChat(msg, "Nomor WhatsApp ini belum tercatat pada perkara yang bersidang hari ini. Silakan menghubungi petugas kami di 0822-7111-5021.", { action: "no_case", withGlossary: false });
+                      return;
+                  }
+
+                  const jawaban = kehadiranAntrianService.susunJawabanCekAntrian(peta.peta, perkaraId);
+                  await balasChat(msg, jawaban, { action: "antrian", withGlossary: false });
+              } catch (galat) {
+                  logService.logSystemEvent({
+                      eventType: "antrian_cek_gagal",
+                      severity: "warning",
+                      message: "Pemeriksaan antrian gagal dijawab.",
+                      metadata: { sender: msg.from || "", errorMessage: String(galat.message || galat).slice(0, 200) },
+                  });
+                  await balasChat(msg, "Maaf, keadaan antrian sedang tidak dapat dibaca. Silakan menghubungi petugas kami.", { action: "no_case", withGlossary: false });
+              }
               return;
           }
 

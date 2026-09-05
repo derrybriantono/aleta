@@ -32,12 +32,13 @@ process.env.ALETA_BOT_RUNTIME_CONFIG_PATH = path.join(SANDBOX, "runtime-config.j
 
 // --- Tiruan database ---
 const botDbPath = require.resolve("../services/botDbService");
-require("../services/botDbService");
+const botDbAsli = require("../services/botDbService");
 const baris = [];
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
   addColumnIfMissing: async () => true,
   toMysqlDate: (v) => new Date(v).toISOString().slice(0, 19).replace("T", " "),
+  fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
     if (/^\s*CREATE TABLE/i.test(sql)) return [];
     if (/INSERT INTO aleta_bot_nomor_terverifikasi/i.test(sql)) {
@@ -383,6 +384,45 @@ async function utama() {
     periksa("jembatan memakai sesi bertahan", /sesiEcourt\.launchOptions/.test(run));
     periksa("ada tanda --lupakan-sesi", /lupakan-sesi/.test(run));
     periksa("gagal menyiapkan sesi tidak menghentikan jembatan", /Peramban dibuka bersih/.test(run));
+  }
+
+  console.log("\n== LOGIN PORTAL: sandi tidak pernah tersimpan ==");
+  {
+    const fsx = require("fs");
+    const pathx = require("path");
+    const layanan = fsx.readFileSync(pathx.resolve(__dirname, "..", "services", "ecourtLoginService.js"), "utf8");
+
+    // Sandi yang bocor ke log adalah kebocoran yang paling sulit disadari:
+    // tidak ada gejalanya sampai ada yang membaca berkas lognya.
+    periksa(
+      "sandi tidak masuk metadata jejak keamanan",
+      !/metadata:[\\s\\S]{0,200}sandi/i.test(layanan)
+    );
+    periksa("sandi tidak ditulis ke berkas", !/writeFile[\\s\\S]{0,100}sandi/i.test(layanan));
+    periksa("sandi tidak masuk database", !/INSERT|UPDATE/i.test(layanan));
+    periksa(
+      "pesan galat puppeteer tidak diteruskan apa adanya",
+      /gagal_mengirim_formulir/.test(layanan)
+    );
+
+    // Captcha harus dipotret dari elemennya, bukan diunduh ulang: mengunduh
+    // ulang meminta captcha BARU sehingga yang tampil berbeda dengan yang
+    // menunggu jawaban, dan loginnya selalu gagal.
+    periksa("captcha dipotret dari elemen", /elemen\.screenshot/.test(layanan));
+
+    // Manusia tetap yang menjawab captcha.
+    periksa(
+      "tidak ada pemecah captcha",
+      !/2captcha|anticaptcha|tesseract|captcha[^\\n]{0,40}(solve|ocr|recognize)/i.test(layanan)
+    );
+
+    periksa("hanya satu peramban login hidup", /bersihkanSesiAktif/.test(layanan));
+    periksa("formulir login hangus sendiri", /LOGIN_TTL_MS/.test(layanan));
+
+    const rute = fsx.readFileSync(pathx.resolve(__dirname, "..", "routes", "internalGatewayRoutes.js"), "utf8");
+    const blokLogin = rute.slice(rute.indexOf("/ecourt/login/kirim"), rute.indexOf("/ecourt/login/kirim") + 900);
+    periksa("rute login bertoken", /requireInternalToken/.test(blokLogin));
+    periksa("galat rute tidak membocorkan badan permintaan", /gagal_memproses_login/.test(blokLogin));
   }
 
   console.log(`\nLulus: ${lulus}, Gagal: ${gagal}`);

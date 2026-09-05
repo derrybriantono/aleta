@@ -1312,6 +1312,56 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "PostgreSQL",
   },
   {
+    // Alat bantu tulis BAS untuk kepaniteraan. Diletakkan di sidebar, bukan
+    // hanya di hub: ini alat yang dibuka berkali-kali dalam sehari sidang,
+    // dan alat sehari-hari yang harus dicari dulu akan berhenti dipakai.
+    id: "bas",
+    label: "Alat Bantu Tulis BAS",
+    description: "Buka perkaranya, pilih pemeriksaan hari ini, dan lembar tanya-jawabnya terbuka sudah terisi dari SIPP.",
+    href: "/bas",
+    icon: "file-text",
+    roleIds: roles.map((role) => role.id),
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-emerald-100",
+    iconFgClass: "text-emerald-700",
+    cardClass: "border-emerald-200/80 bg-emerald-50/70",
+    badgeLabel: "Kepaniteraan",
+  },
+  {
+    // Untuk seluruh pegawai: mengunduh ekstensi dan melihat keadaan
+    // penghubung e-Court. Tidak ada pengaturan apa pun di sini.
+    id: "aleta-ecourt",
+    label: "ALETA e-Court",
+    description: "Penghubung e-Court dan SIPP. Unduh ekstensi peramban dan lihat keadaan penghubungnya.",
+    href: "/aleta-ecourt",
+    icon: "link",
+    roleIds: roles.map((role) => role.id),
+    showInHub: true,
+    showInSidebar: false,
+    iconBgClass: "bg-emerald-100",
+    iconFgClass: "text-emerald-700",
+    cardClass: "border-emerald-200/80 bg-emerald-50/70",
+    badgeLabel: "e-Court",
+  },
+  {
+    // Menu admin di sidebar. Berbeda dengan "aleta-ecourt" yang untuk seluruh
+    // pegawai, yang ini mengatur penghubungnya: sesi login e-Court, penarikan
+    // berkala, arsip, dan kaitannya dengan pemberitahuan WhatsApp ALETA Bot.
+    id: "aleta-ecourt-admin",
+    label: "Integrasi e-Court",
+    description: "Pengaturan penghubung e-Court, SIPP, dan pemberitahuan WhatsApp ALETA Bot.",
+    href: "/admin/aleta-ecourt",
+    icon: "link-2",
+    roleIds: ["super-admin", "admin"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-emerald-100",
+    iconFgClass: "text-emerald-700",
+    cardClass: "border-emerald-200/80 bg-emerald-50/70",
+    badgeLabel: "Integrasi",
+  },
+  {
     id: "aleta-bot",
     label: "ALETA Bot",
     description: "Pengaturan bot WhatsApp notifikasi perkara, template pesan, query, log, dan manual test.",
@@ -1365,6 +1415,21 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-cyan-100 dark:bg-cyan-500/15",
     iconFgClass: "text-cyan-700 dark:text-cyan-200",
     cardClass: "border-cyan-200/80 bg-cyan-50/80 dark:border-cyan-500/20 dark:bg-slate-900/80",
+  },
+  {
+    // Kartu untuk seluruh pegawai: mengunduh ekstensi peramban SIPP dan
+    // melihat keadaan penghubung e-Court. Pengaturannya sendiri ada di menu
+    // admin (/admin/aleta-ecourt), bukan di sini.
+    id: "aleta-ecourt",
+    label: "ALETA e-Court",
+    description: "Penghubung e-Court dan SIPP. Unduh ekstensi peramban dan lihat keadaan penghubungnya.",
+    href: "/aleta-ecourt",
+    icon: "link",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "e-Court",
+    iconBgClass: "bg-emerald-100 dark:bg-emerald-500/15",
+    iconFgClass: "text-emerald-700 dark:text-emerald-200",
+    cardClass: "border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/20 dark:bg-slate-900/80",
   },
   {
     id: "judicia-legal-form",
@@ -1448,6 +1513,21 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-violet-100 dark:bg-violet-500/15",
     iconFgClass: "text-violet-700 dark:text-violet-200",
     cardClass: "border-violet-200/80 bg-violet-50/80 dark:border-violet-500/20 dark:bg-slate-900/80",
+  },
+  {
+    // Alat kerja harian kepaniteraan, jadi kartunya ada di dasbor - bukan hanya
+    // dapat dicapai lewat alamat. Alat sehari-hari yang harus diingat
+    // alamatnya akan berhenti dipakai.
+    id: "bas",
+    label: "Alat Bantu Tulis BAS",
+    description: "Buka perkaranya, pilih pemeriksaan hari ini, lalu blangko BAS terbuka sudah terisi dari SIPP.",
+    href: "/bas",
+    icon: "file-text",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "Kepaniteraan",
+    iconBgClass: "bg-emerald-100 dark:bg-emerald-500/15",
+    iconFgClass: "text-emerald-700 dark:text-emerald-200",
+    cardClass: "border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/20 dark:bg-slate-900/80",
   },
   {
     id: "e-kepegawaian",
@@ -1545,6 +1625,7 @@ function buildVisibility(roleId: Role["id"], enabledModuleIds: ModuleId[]): Modu
 export const moduleVisibility: ModuleVisibility[] = [
   buildVisibility("super-admin", modules.map((module) => module.id)),
   buildVisibility("admin", [
+    "aleta-ecourt-admin",
     "dashboard",
     "penugasan",
     "surat-masuk",
@@ -1559,7 +1640,7 @@ export const moduleVisibility: ModuleVisibility[] = [
     "kepegawaian",
     "hr-settings",
     "judicia-legal-form",
-    "aleta-bot",
+    "aleta-bot", "aleta-ecourt",
     "e-status",
     "e-status-settings",
     "identity",
@@ -1574,22 +1655,22 @@ export const moduleVisibility: ModuleVisibility[] = [
     "notifikasi-wa",
     "admin-hub",
   ]),
-  buildVisibility("ketua", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search", "laporan"]),
-  buildVisibility("wakil-ketua", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search", "laporan"]),
-  buildVisibility("hakim", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("sekretaris", ["dashboard", "aleta-bot", "kepegawaian", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("panitera", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "e-status-settings", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("panitera-muda", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "e-status-settings", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("panitera-pengganti", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("kasubag", ["dashboard", "aleta-bot", "kepegawaian", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("jurusita", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("pranata-komputer", ["dashboard", "aleta-bot", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("analis-keuangan", ["dashboard", "aleta-bot", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("analis-perkara", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("pelaksana", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("pppk", ["dashboard", "aleta-bot", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik"]),
-  buildVisibility("pejabat-struktural", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
-  buildVisibility("staf", ["dashboard", "aleta-bot", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik"]),
+  buildVisibility("ketua", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search", "laporan"]),
+  buildVisibility("wakil-ketua", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search", "laporan"]),
+  buildVisibility("hakim", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("sekretaris", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("panitera", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "e-status-settings", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("panitera-muda", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "e-status-settings", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("panitera-pengganti", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("kasubag", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("jurusita", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("pranata-komputer", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("analis-keuangan", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("analis-perkara", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("pelaksana", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("pppk", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik"]),
+  buildVisibility("pejabat-struktural", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
+  buildVisibility("staf", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik"]),
 ];
 
 export const letters: LetterDetail[] = [

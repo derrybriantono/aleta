@@ -53,6 +53,117 @@ if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev
   die "docker compose / docker-compose tidak ditemukan."
 fi
 
+# --- Penjagaan ruang disk -----------------------------------------------------
+# Build image portal membongkar node_modules (termasuk binari swc Next.js yang
+# besar) ke folder data Docker. Bila ruangnya habis di tengah jalan, build mati
+# dengan "no space left on device" SETELAH kode baru terlanjur tersalin -
+# aplikasi jadi setengah jalan: kode baru, container lama.
+#
+# Karena itu ruang diperiksa SEBELUM apa pun disentuh. Lebih baik installer
+# menolak berjalan dengan angka yang jelas daripada berhenti di tengah rebuild.
+
+MIN_GB_DOCKER="${ALETA_MIN_GB_DOCKER:-8}"
+MIN_GB_APP="${ALETA_MIN_GB_APP:-2}"
+
+ruang_bebas_gb() {
+  # Membulatkan ke bawah. Mengembalikan 0 bila path-nya tidak terbaca, sehingga
+  # ketidakpastian selalu berujung menolak - bukan melanjutkan.
+  df -P -k "$1" 2>/dev/null | awk 'NR==2 { printf "%d", $4/1024/1024 }' || echo 0
+}
+
+docker_root() {
+  docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker
+}
+
+periksa_ruang() {
+  local root free_docker free_app kurang=0
+  root="$(docker_root)"
+  [ -d "$root" ] || root="/"
+
+  free_docker="$(ruang_bebas_gb "$root")"
+  free_app="$(ruang_bebas_gb "$APP_DIR")"
+  [ -n "$free_docker" ] || free_docker=0
+  [ -n "$free_app" ] || free_app=0
+
+  log "Memeriksa ruang disk sebelum menyentuh apa pun ..."
+  printf '    Folder Docker : %-28s %s GB bebas (minimal %s GB)
+' "$root" "$free_docker" "$MIN_GB_DOCKER"
+  printf '    Folder aplikasi: %-27s %s GB bebas (minimal %s GB)
+' "$APP_DIR" "$free_app" "$MIN_GB_APP"
+
+  [ "$free_docker" -lt "$MIN_GB_DOCKER" ] && kurang=1
+  [ "$free_app" -lt "$MIN_GB_APP" ] && kurang=1
+  [ "$kurang" -eq 0 ] && return 0
+
+  echo
+  warn "Ruang disk tidak cukup. Installer DIHENTIKAN sebelum ada file yang diubah."
+  warn "Aplikasi yang sedang berjalan tidak tersentuh sama sekali."
+  cat <<SARAN
+
+  Cara melapangkan ruang - jalankan sebagai root, lalu ulangi installer ini:
+
+    # 1. Lihat pemakaian Docker (aman, hanya membaca)
+    docker system df
+
+    # 2. Buang sisa build yang gagal dan image tanpa nama (aman:
+    #    image yang sedang dipakai container TIDAK ikut terhapus)
+    docker builder prune -f
+    docker image prune -f
+
+    # 3. Lihat backup lama yang menumpuk, terbesar di atas
+    ls -lhS $BACKUP_ROOT/*.tar.gz 2>/dev/null | head -20
+
+    # 4. Hapus backup yang lebih tua dari 30 hari - PERIKSA daftarnya dulu
+    find $BACKUP_ROOT -name 'app-before-update-*.tar.gz' -mtime +30
+
+    # 5. Cari folder lain yang besar
+    du -xh --max-depth=1 / 2>/dev/null | sort -h | tail -15
+
+  Bila ruang memang mepet dan Anda sudah yakin, batas ini dapat diturunkan:
+
+    ALETA_MIN_GB_DOCKER=4 sudo -E bash install.sh
+
+SARAN
+  die "Butuh minimal ${MIN_GB_DOCKER} GB di folder Docker dan ${MIN_GB_APP} GB di folder aplikasi."
+}
+
+# --- Pembersihan cache build ------------------------------------------------
+# Setiap rebuild meninggalkan cache build di folder data Docker. Cache itu tidak
+# pernah dibuang sendiri: pada server ini ia menumpuk sampai 119 GB dari tujuh
+# kali pembaruan, memenuhi partisi 200 GB, dan membuat pembaruan berikutnya mati
+# di tengah rebuild.
+#
+# Pembersihan dijalankan SETELAH container terbukti jalan, bukan sebelumnya.
+# Cache adalah satu-satunya hal yang membuat rebuild ulang cepat bila ternyata
+# ada yang perlu diperbaiki - membuangnya lebih awal justru menyulitkan.
+bersihkan_cache_build() {
+  local sebelum sesudah
+  # Cache build tidak terbagi per proyek: membuangnya membuang cache build
+  # semua proyek Docker di server ini. Isinya hanya hasil antara yang dapat
+  # dibangun ulang - tidak ada data yang hilang - tetapi build proyek lain jadi
+  # lebih lambat sekali. Server yang berbagi dengan aplikasi lain dapat
+  # mematikannya: ALETA_SKIP_PRUNE=1 sudo -E bash install.sh
+  if [ "${ALETA_SKIP_PRUNE:-0}" = "1" ]; then
+    log "Pembersihan cache build dilewati (ALETA_SKIP_PRUNE=1)."
+    return 0
+  fi
+
+  sebelum="$(ruang_bebas_gb "$(docker_root)")"
+
+  log "Membersihkan cache build Docker ..."
+  echo "    Yang dibuang: cache build dan image tanpa nama."
+  echo "    Yang DIPERTAHANKAN: image yang sedang dipakai container, volume, dan database."
+
+  docker builder prune -af >/dev/null 2>&1 || warn "docker builder prune gagal, lewati."
+  docker image prune -f    >/dev/null 2>&1 || warn "docker image prune gagal, lewati."
+
+  sesudah="$(ruang_bebas_gb "$(docker_root)")"
+  [ -n "$sebelum" ] || sebelum=0
+  [ -n "$sesudah" ] || sesudah=0
+  printf '    Ruang bebas: %s GB -> %s GB
+' "$sebelum" "$sesudah"
+}
+
 # --- Deteksi mode ---
 MODE="fresh"
 [ -f "$APP_DIR/.env.production" ] && MODE="update"
@@ -71,12 +182,20 @@ cat <<BANNER
 
 BANNER
 
+periksa_ruang
+
 # --- Siapkan folder data persisten (hanya dibuat bila belum ada) ---
 log "Menyiapkan folder data persisten (tidak menimpa yang sudah ada)..."
 mkdir -p \
   "$APP_DIR" \
   "$DATA_DIR/uploads" "$DATA_DIR/reports" "$DATA_DIR/wwebjs_auth" "$DATA_DIR/aleta-bot-runtime" \
+  "$DATA_DIR/ecourt-session" \
   "$PDF_DIR" "$PG_DIR" "$BACKUP_ROOT"
+
+# Folder sesi e-Court berisi KREDENSIAL: cookie sesi peramban yang, selama
+# masih berlaku, memberi akses penuh ke akun e-Court pengadilan. Izinnya
+# dipersempit ke pemiliknya saja - folder data lain tidak sepeka ini.
+chmod 700 "$DATA_DIR/ecourt-session" 2>/dev/null || true
 
 # =============================================================================
 # MODE FRESH — server satker baru
@@ -175,11 +294,15 @@ compose up -d
 log "Status container:"
 compose ps || true
 
+bersihkan_cache_build
+
 cat <<DONE
 
   ✅ UPDATE selesai.
      - Backup tersimpan di: $BK
      - Rollback cepat: bash $APP_DIR/scripts/aleta-rollback.sh
      - Cek log     : docker compose -f $APP_DIR/docker-compose.yml logs -f --tail=100
+     - Cache build sudah dibersihkan otomatis. Untuk melewatinya lain kali:
+       ALETA_SKIP_PRUNE=1 sudo -E bash install.sh
 
 DONE

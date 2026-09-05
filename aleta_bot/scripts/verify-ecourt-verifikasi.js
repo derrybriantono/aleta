@@ -33,12 +33,14 @@ process.env.ALETA_BOT_ECOURT_DOCUMENT_ROOT = SANDBOX;
 
 // --- Tiruan database ---
 const botDbPath = require.resolve("../services/botDbService");
-require("../services/botDbService");
+const botDbAsli = require("../services/botDbService");
 const botState = { dokumen: [], verifikasi: [], gagal: false };
 require.cache[botDbPath].exports = {
   ensureSchema: async () => true,
   addColumnIfMissing: async () => true,
+  addIndexIfMissing: async () => true,
   toMysqlDate: (value) => new Date(value).toISOString().slice(0, 19).replace("T", " "),
+  fromMysqlDate: botDbAsli.fromMysqlDate,
   query: async (sql, params = []) => {
     if (botState.gagal) throw new Error("database ALETA tidak dapat dijangkau");
     if (/^\s*CREATE TABLE/i.test(sql)) return [];
@@ -48,8 +50,21 @@ require.cache[botDbPath].exports = {
     if (/FROM aleta_bot_ecourt_documents/i.test(sql)) {
       return botState.dokumen.filter((d) => d.status_verifikasi === "belum");
     }
+    if (/FROM aleta_bot_ecourt_verifications/i.test(sql) && /document_key = \?/.test(sql)) {
+      return botState.verifikasi.filter((v) => v.document_key === params[0]);
+    }
     if (/INSERT INTO aleta_bot_ecourt_verifications/i.test(sql)) {
-      botState.verifikasi.push({ document_key: params[1], keputusan: params[6], nama_hakim: params[5] });
+      // Menirukan kunci unik per dokumen: yang sudah ada ditimpa, bukan
+      // ditambah - persis perilaku ON DUPLICATE KEY UPDATE di MySQL.
+      const adaIndeks = botState.verifikasi.findIndex((v) => v.document_key === params[1]);
+      const baris = {
+        document_key: params[1],
+        keputusan: params[6],
+        nama_hakim: params[5],
+        diteruskan_pada: adaIndeks >= 0 ? botState.verifikasi[adaIndeks].diteruskan_pada : null,
+      };
+      if (adaIndeks >= 0) botState.verifikasi[adaIndeks] = baris;
+      else botState.verifikasi.push(baris);
       return { affectedRows: 1 };
     }
     return [];
@@ -208,6 +223,61 @@ async function utama() {
       /belum berubah|menunggu diteruskan/i.test(putusan.reply)
     );
     periksa("nama hakim tercatat", botState.verifikasi[0].nama_hakim === "DERRY BRIANTONO, S.H.");
+  }
+
+  console.log("\n== Keputusan yang SUDAH diteruskan tidak dapat diubah ==");
+  {
+    // Barisnya berkunci unik per dokumen dan penyimpanannya menimpa. Selama
+    // masih mengantre itu benar - hakim boleh berubah pikiran. Sesudah
+    // diteruskan tidak: e-Court sudah memegang keputusan yang lama, penerusan
+    // hanya mengambil baris yang belum diteruskan, dan menimpa tidak
+    // mengembalikannya ke antrean. Yang tertinggal adalah ALETA menyebut satu
+    // keputusan sementara sistem resmi memuat yang lain.
+    // Pembuka sendiri, TANPA mengosongkan tabel verifikasi - yang diuji di
+    // sini justru keputusan yang sudah tersimpan sebelumnya.
+    const bukaSaja = async () => {
+      verifikasi.clearAllSessions();
+      botState.dokumen = [{ ...DOKUMEN }];
+      sippState.majelis = ["Derry Briantono, S.H.", "Ahmad Fauzi, S.H."];
+      await verifikasi.handleMessage({ senderNumber: NOMOR_HAKIM, text: "verifikasi", runtimeConfig: CONFIG });
+      await verifikasi.handleMessage({ senderNumber: NOMOR_HAKIM, text: "1", runtimeConfig: CONFIG });
+    };
+
+    botState.verifikasi = [];
+    await bukaSaja();
+    await verifikasi.handleMessage({
+      senderNumber: NOMOR_HAKIM,
+      text: verifikasi.CONFIRM_VALID,
+      runtimeConfig: CONFIG,
+    });
+    periksa("keputusan pertama tersimpan", botState.verifikasi[0].keputusan === "valid");
+
+    // Masih mengantre: berubah pikiran diperbolehkan.
+    await bukaSaja();
+    await verifikasi.handleMessage({
+      senderNumber: NOMOR_HAKIM,
+      text: verifikasi.CONFIRM_INVALID,
+      runtimeConfig: CONFIG,
+    });
+    periksa("belum diteruskan: keputusan boleh diubah", botState.verifikasi[0].keputusan === "tidak_valid");
+    periksa("dan tidak beranak menjadi dua baris", botState.verifikasi.length === 1);
+
+    // Sesudah diteruskan: ditolak.
+    botState.verifikasi[0].diteruskan_pada = "2026-09-04 10:00:00";
+    await bukaSaja();
+    const ditolak = await verifikasi.handleMessage({
+      senderNumber: NOMOR_HAKIM,
+      text: verifikasi.CONFIRM_VALID,
+      runtimeConfig: CONFIG,
+    });
+    periksa("sudah diteruskan: keputusan TIDAK berubah", botState.verifikasi[0].keputusan === "tidak_valid");
+    periksa("dan sebabnya disebutkan, bukan galat", /sudah diteruskan ke e-Court/i.test(ditolak.reply));
+    periksa(
+      "petugas disuruh membetulkannya di e-Court",
+      /dikerjakan langsung di e-Court/i.test(ditolak.reply)
+    );
+
+    botState.verifikasi = [];
   }
 
   console.log("\n== ATURAN POKOK: balasan harus PERSIS ==");
