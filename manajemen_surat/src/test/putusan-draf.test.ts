@@ -325,6 +325,26 @@ describe("tanda tangan", () => {
     expect(ulang.sebab).toContain("sudah ditandatangani");
   });
 
+  it("tidak ada jalur lain yang menghasilkan draf bertanda tangan", async () => {
+    // J3. Yang dijaga bukan hanya bahwa tanda tangan diminta, melainkan bahwa
+    // simpanDraf SELALU melahirkan keadaan 'draf' - berapa kali pun ia
+    // dipanggil dan sesiap apa pun hasilnya.
+    const basis = await basisData();
+    await tanamButir(basis, "b1", "Menimbang, bahwa maksud gugatan adalah sebagaimana diuraikan;");
+    const hasil = await rakitPutusan(basis, masukan());
+    expect(hasil.siapDitandatangani).toBe(true);
+
+    const satu = await simpanDraf(basis, "aktor", { perkaraId: PERKARA, nomorPerkara: NOMOR, hasil });
+    const dua = await simpanDraf(basis, "aktor", { perkaraId: PERKARA, nomorPerkara: NOMOR, hasil });
+    expect((await bacaDraf(basis, satu.drafId))?.keadaan).toBe("draf");
+    expect((await bacaDraf(basis, dua.drafId))?.keadaan).toBe("draf");
+
+    const bertandaTangan = await basis.queryAll<Record<string, unknown>>(
+      `SELECT id FROM aleta_putusan_draf WHERE keadaan = 'ditandatangani'`
+    );
+    expect(bertandaTangan).toEqual([]);
+  });
+
   it("draf yang tidak ada ditolak dengan sebabnya", async () => {
     const basis = await basisData();
     const hasil = await tandatanganiDraf(basis, { drafId: "tidak-ada", olehNama: "Hakim" });

@@ -12,6 +12,13 @@ import {
   type KunciBagian,
 } from "@/lib/susunan-putusan";
 import type { AletaDatabase } from "@/server/db/client";
+import {
+  bekukanDasar,
+  halanganKutipan,
+  rujukanButirDipakai,
+  simpanDasar,
+  type DasarBeku,
+} from "@/server/modules/aleta-ecourt/penjagaan-putusan";
 import { cariButir, type Butir } from "@/server/modules/aleta-ecourt/pustaka-pertimbangan";
 
 /**
@@ -78,6 +85,8 @@ export type HasilRakit = {
   /** Butir yang tidak dipakai karena faktanya belum diketahui - ini yang dilengkapi. */
   butirTertunda: Array<{ butirId: string; sebab: string }>;
   faktaKurang: string[];
+  /** Dasar hukum yang dibekukan pada saat perakitan (J1, J4). */
+  dasar: DasarBeku[];
   halangan: string[];
   siapDitandatangani: boolean;
 };
@@ -100,6 +109,17 @@ export async function rakitPutusan(db: AletaDatabase, masukan: MasukanRakit): Pr
   // ── F3 - butir pustaka yang syaratnya terpenuhi ────────────────────────
   const tersedia = await cariButir(db, { jenisPerkara: masukan.jenisPerkara, batas: 300 });
   const pilihan = pilihButir(tersedia, masukan.fakta);
+
+  // ── J1 - tiap rujukan butir yang dipakai WAJIB terbukti di pustaka ─────
+  //
+  // Diperiksa di sini, bukan sesudah naskah tersusun. Pemeriksaan yang berjalan
+  // sesudah naskah jadi menghasilkan peringatan di atas naskah yang sudah rapi,
+  // dan peringatan semacam itu dilewati.
+  const pembekuan = await bekukanDasar(
+    db,
+    await rujukanButirDipakai(db, pilihan.terpilih.map((item) => item.butir.id))
+  );
+  halangan.push(...halanganKutipan(pembekuan));
 
   // ── F2 - duduk perkara dari yang tercatat ──────────────────────────────
   const duduk = susunDudukPerkara(masukan.dudukPerkara);
@@ -163,6 +183,7 @@ export async function rakitPutusan(db: AletaDatabase, masukan: MasukanRakit): Pr
       .filter((item) => item.karenaBelumDiketahui)
       .map((item) => ({ butirId: item.butir.id, sebab: item.sebab })),
     faktaKurang: pilihan.faktaKurang,
+    dasar: pembekuan.dasar,
     halangan,
     siapDitandatangani: siap,
   };
@@ -339,6 +360,11 @@ export async function simpanDraf(
       ]
     );
   }
+
+  // Dasar hukum dibekukan bersama draf: peraturan dapat dicabut atau diubah,
+  // dan draf yang hanya menunjuk jangkar akan berubah dasarnya sesudah
+  // ditandatangani.
+  await simpanDasar(db, drafId, hasil.dasar ?? []);
 
   for (const item of masukan.nilai ?? []) {
     const nama = bersih(item.nama);

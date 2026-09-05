@@ -575,6 +575,65 @@ const schemaStatements = [
     tanggal TEXT NOT NULL DEFAULT '',
     urutan_alinea INTEGER NOT NULL DEFAULT 0
   )`,
+  // Aturan pemeriksaan adalah DATA yang membawa jangkar pasal. Aturan yang
+  // jangkarnya tidak ditemukan di pustaka tidak menyatakan lolos maupun gagal:
+  // pernyataan hukum tanpa hukum terbaca sama meyakinkannya dengan yang benar.
+  `CREATE TABLE IF NOT EXISTS aleta_aturan_periksa (
+    id TEXT PRIMARY KEY,
+    kode TEXT NOT NULL,
+    kelompok TEXT NOT NULL DEFAULT 'formil'
+      CHECK (kelompok IN ('kompetensi', 'formil', 'petitum', 'risiko')),
+    hal TEXT NOT NULL DEFAULT '',
+    jenis TEXT NOT NULL DEFAULT 'wajibAda'
+      CHECK (jenis IN ('nilaiSama', 'nilaiSalahSatu', 'wajibAda', 'minimal', 'tidakBoleh')),
+    fakta TEXT NOT NULL DEFAULT '',
+    pembanding TEXT NOT NULL DEFAULT 'null',
+    tingkat TEXT NOT NULL DEFAULT 'peringatan'
+      CHECK (tingkat IN ('halangan', 'peringatan', 'catatan')),
+    tindakan TEXT NOT NULL DEFAULT '',
+    jangkar TEXT NOT NULL DEFAULT '',
+    jenis_perkara TEXT NOT NULL DEFAULT '',
+    aktif INTEGER NOT NULL DEFAULT 0,
+    disahkan_oleh TEXT NOT NULL DEFAULT '',
+    atas_perintah TEXT NOT NULL DEFAULT '',
+    disahkan_at TEXT NOT NULL DEFAULT '',
+    dibuat_oleh TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_perkara_sidik (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    jenis_perkara TEXT NOT NULL DEFAULT '',
+    butir TEXT NOT NULL DEFAULT '[]',
+    sidik TEXT NOT NULL DEFAULT '',
+    dicatat_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_batas_data (
+    id TEXT PRIMARY KEY,
+    ruas TEXT NOT NULL,
+    batas TEXT NOT NULL DEFAULT 'terlarang'
+      CHECK (batas IN ('bebas', 'samar', 'terlarang')),
+    sebab TEXT NOT NULL DEFAULT '',
+    diputuskan_oleh TEXT NOT NULL DEFAULT '',
+    atas_perintah TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL
+  )`,
+  // Dasar hukum satu draf dibekukan, sebab yang sama dengan teks_saat_itu:
+  // peraturan dapat diubah, dan draf yang hanya menunjuk jangkar akan berubah
+  // dasar hukumnya sesudah ditandatangani.
+  `CREATE TABLE IF NOT EXISTS aleta_putusan_draf_dasar (
+    id TEXT PRIMARY KEY,
+    draf_id TEXT NOT NULL,
+    butir_id TEXT NOT NULL DEFAULT '',
+    jangkar TEXT NOT NULL DEFAULT '',
+    tertulis TEXT NOT NULL DEFAULT '',
+    peraturan TEXT NOT NULL DEFAULT '',
+    versi_peraturan TEXT NOT NULL DEFAULT '',
+    terbukti INTEGER NOT NULL DEFAULT 0,
+    diperiksa_at TEXT NOT NULL DEFAULT ''
+  )`,
   // Draf putusan menyimpan BUNYI butir, bukan hanya penunjuknya. Butir pustaka
   // boleh diganti; draf yang hanya menunjuk akan ikut berubah bunyinya sesudah
   // ditandatangani, dan itu bukan kekeliruan data melainkan pemalsuan.
@@ -2311,6 +2370,13 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_asal_kunci ON aleta_pertimbangan_asal(butir_id, perkara_id, urutan_alinea)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_aturan_periksa_kode ON aleta_aturan_periksa(kode)`,
+  `CREATE INDEX IF NOT EXISTS idx_aturan_periksa_aktif ON aleta_aturan_periksa(aktif, kelompok)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_perkara_sidik_perkara ON aleta_perkara_sidik(perkara_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_perkara_sidik_jenis ON aleta_perkara_sidik(jenis_perkara)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_batas_data_ruas ON aleta_batas_data(ruas)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_dasar_draf ON aleta_putusan_draf_dasar(draf_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_putusan_draf_dasar_jangkar ON aleta_putusan_draf_dasar(jangkar)`,
   `CREATE INDEX IF NOT EXISTS idx_putusan_draf_perkara ON aleta_putusan_draf(perkara_id, versi)`,
   `CREATE INDEX IF NOT EXISTS idx_putusan_draf_keadaan ON aleta_putusan_draf(keadaan)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_putusan_draf_versi ON aleta_putusan_draf(perkara_id, versi)`,

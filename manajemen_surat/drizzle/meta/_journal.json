@@ -197,6 +197,13 @@
       "when": 1780000000000,
       "tag": "0027_aleta_putusan_draf",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1780003600000,
+      "tag": "0028_aleta_pemeriksaan_dan_penjagaan",
+      "breakpoints": true
     }
   ]
 }
