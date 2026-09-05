@@ -577,6 +577,52 @@ const schemaStatements = [
     tanggal TEXT NOT NULL DEFAULT '',
     urutan_alinea INTEGER NOT NULL DEFAULT 0
   )`,
+  // Lapisan AI. Yang disimpan bukti, bukan kenyamanan: naskah jadi terlihat
+  // sama persis apa pun asalnya, jadi asalnya harus dicatat di luar naskah.
+  `CREATE TABLE IF NOT EXISTS aleta_ai_percakapan (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL DEFAULT '',
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    judul TEXT NOT NULL DEFAULT '',
+    dibuat_oleh TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_ai_pesan (
+    id TEXT PRIMARY KEY,
+    percakapan_id TEXT NOT NULL,
+    urutan INTEGER NOT NULL DEFAULT 0,
+    peran TEXT NOT NULL DEFAULT 'pemakai' CHECK (peran IN ('pemakai', 'sistem')),
+    isi TEXT NOT NULL DEFAULT '',
+    dijawab_oleh TEXT NOT NULL DEFAULT '',
+    usulan INTEGER NOT NULL DEFAULT 1,
+    rujukan TEXT NOT NULL DEFAULT '[]',
+    peringatan TEXT NOT NULL DEFAULT '[]',
+    -- NAMA ruas yang keluar gedung, bukan nilainya: menyimpan nilainya
+    -- membuat salinan kedua data yang justru sedang dijaga.
+    ruas_dikirim TEXT NOT NULL DEFAULT '[]',
+    ruas_ditahan TEXT NOT NULL DEFAULT '[]',
+    penyedia TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_ai_fakta (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    sumber_berkas TEXT NOT NULL DEFAULT '',
+    nama TEXT NOT NULL,
+    jenis TEXT NOT NULL DEFAULT 'lainnya',
+    nilai TEXT NOT NULL DEFAULT '',
+    kutipan TEXT NOT NULL,
+    halaman INTEGER NOT NULL DEFAULT 0,
+    disahkan INTEGER NOT NULL DEFAULT 0,
+    disahkan_oleh TEXT NOT NULL DEFAULT '',
+    disahkan_at TEXT NOT NULL DEFAULT '',
+    ditarik_oleh TEXT NOT NULL DEFAULT '',
+    penyedia TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL
+  )`,
   // Aturan pemeriksaan adalah DATA yang membawa jangkar pasal. Aturan yang
   // jangkarnya tidak ditemukan di pustaka tidak menyatakan lolos maupun gagal:
   // pernyataan hukum tanpa hukum terbaca sama meyakinkannya dengan yang benar.
@@ -2379,6 +2425,10 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_asal_kunci ON aleta_pertimbangan_asal(butir_id, perkara_id, urutan_alinea)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_percakapan_perkara ON aleta_ai_percakapan(perkara_id, diubah_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_pesan_percakapan ON aleta_ai_pesan(percakapan_id, urutan)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_fakta_perkara ON aleta_ai_fakta(perkara_id, nama)`,
+  `CREATE INDEX IF NOT EXISTS idx_ai_fakta_disahkan ON aleta_ai_fakta(perkara_id, disahkan)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_aturan_periksa_kode ON aleta_aturan_periksa(kode)`,
   `CREATE INDEX IF NOT EXISTS idx_aturan_periksa_aktif ON aleta_aturan_periksa(aktif, kelompok)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_perkara_sidik_perkara ON aleta_perkara_sidik(perkara_id)`,

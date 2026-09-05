@@ -211,6 +211,13 @@
       "when": 1780007200000,
       "tag": "0029_aleta_telaah_draf",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1780010800000,
+      "tag": "0030_aleta_lapisan_ai",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,22 @@ export const BATAS_BAWAAN: AturanBatas[] = [
   { ruas: "keteranganSaksi", batas: "samar", sebab: "Keterangan saksi memuat nama dan tempat di dalam kalimatnya." },
   { ruas: "dalil", batas: "samar", sebab: "Dalil memuat nama dan tempat di dalam kalimatnya." },
 
+  // Pertanyaan diketik pemakai sendiri, dan pemakai menyebut nama serta nomor
+  // perkara di dalamnya tanpa berpikir. Disamarkan, bukan dibebaskan.
+  { ruas: "pertanyaan", batas: "samar", sebab: "Pertanyaan pemakai kerap memuat nama dan nomor perkara." },
+
+  // Naskah berkas utuh - gugatan, jawaban, berita acara.
+  //
+  // TERLARANG sebagai bawaan, dan tidak dapat dilonggarkan dengan menyamarkan:
+  // menarik "tanggal nikah" dari naskah yang tanggalnya sudah menjadi
+  // [TANGGAL] tidak mungkin. Jadi pilihannya hanya dua - dikirim utuh, atau
+  // tidak dikirim - dan pilihan itu terlalu besar untuk diambil diam-diam.
+  //
+  // Pengadilan yang memang hendak memakai penarikan fakta harus menambah
+  // barisnya sendiri di aleta_batas_data, dan baris itu mencatat siapa yang
+  // memutuskannya.
+  { ruas: "naskah", batas: "terlarang", sebab: "Naskah berkas utuh hanya boleh keluar atas keputusan pengadilan yang tercatat." },
+
   { ruas: "jenisPerkara", batas: "bebas", sebab: "Jenis perkara tidak menunjuk siapa pun." },
   { ruas: "agama", batas: "bebas", sebab: "Diperlukan pemeriksaan kompetensi absolut." },
   { ruas: "pekerjaan", batas: "bebas", sebab: "Tidak menunjuk siapa pun tanpa ruas lain." },
