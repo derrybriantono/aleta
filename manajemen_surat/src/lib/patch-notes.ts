@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.84.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.84.0 - Perakit Putusan dan Ruang Kerja";
+export const APP_VERSION = "1.85.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.85.0 - Lapisan AI, Mutu, dan Audit";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,47 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.85.0",
+    title: "ALETA Judicia v1.85.0 - Lapisan AI, Mutu, dan Audit",
+    date: "2026-09-06",
+    status: "Operasional",
+    summary:
+      "Lapisan AI dengan aturan yang tidak dapat dilewati: pustaka dijawab lebih dulu dan model tidak tersentuh bila pustaka menjawab; pagu biaya mengembalikan ALETA ke pustaka saja alih-alih menghentikannya; dan audit menyeluruh menemukan delapan hal yang dibangun tetapi tidak pernah tersambung.",
+    added: [
+      "Lapisan AI: menarik fakta dari naskah tak berpola, menyusun pertimbangan baru hanya bila pustaka kosong, percakapan yang tahu perkaranya, dan usulan butir yang hakim mengesahkan.",
+      "Saklar mati AI per pengadilan, per peran, atau per perkara - satu \"mati\" di lapisan mana pun mematikan seluruhnya.",
+      "Pintu berpikir bebas di luar berkas: tautan biasa tanpa membawa apa pun dari perkara.",
+      "Pagu biaya AI beserta rincian per pekerjaan dan per model, tarif per model, dan ukuran keberhasilan pustaka.",
+      "Pemeriksaan keajekan berkala dan jalur pendaftaran sumber aplikasi baru.",
+    ],
+    changed: [
+      "Kewenangan baca seluruh rute Judicia disamakan menjadi \"panel\", sama dengan BAS dan berkas perkara.",
+      "Pagu habis mengembalikan ALETA ke pustaka saja: draf tetap dirakit dan pemeriksaan tetap berjalan.",
+    ],
+    fixed: [
+      "Pagu dan pemilihan tingkat model kini benar-benar dikonsultasikan sebelum memanggil penyedia; sebelumnya keduanya dibangun tetapi tidak pernah dipanggil.",
+      "Aturan batas data yang dicatat pengadilan kini berlaku di seluruh jalur, bukan hanya penarikan fakta.",
+      "Pendaftaran sumber aplikasi baru kini benar-benar berpengaruh pada penyaring data.",
+      "Amar dari templat SIPP kini terpakai saat petugas belum menyusun amarnya.",
+      "Penyusunan pertimbangan baru kini punya jalurnya sendiri.",
+    ],
+    security: [
+      "Nama penanda tangan putusan diambil dari akun, bukan diketik: sebelumnya siapa pun yang dapat mencapai rutenya dapat menandatangani atas nama hakim mana pun.",
+      "Menandatangani putusan menuntut peran hakim, ketua, atau wakil ketua - ditolak di peladen, bukan di layar.",
+      "Naskah berkas utuh terlarang keluar sebagai bawaan; pengadilan yang hendak memakai penarikan fakta harus memutuskannya sendiri, dan keputusan itu tercatat.",
+    ],
+    operationalNotes: [
+      "Migrasi 0030 sampai 0032 menambah tabel lapisan AI, saklar, pemakaian, pagu, tarif, sumber aplikasi, dan pemeriksaan keajekan.",
+      "Biaya AI memakai PERKIRAAN token dari panjang naskah, bukan hitungan penyedia. Bandingkan dengan tagihan sebelum dijadikan pegangan.",
+      "Tarif tiap model wajib disetel; tanpa itu biaya terhitung nol dan pagu tidak memperingatkan apa pun.",
+    ],
+    knownLimitations: [
+      "Belum diuji di ruang sidang yang sesungguhnya.",
+      "Rute /api/admin/* belum punya penjaga peran eksplisit - di luar lingkup Judicia, dan perlu diputuskan tersendiri.",
+      "Pemeriksaan kesegaran data sumber baru belum punya pemanggil; ia kontrak yang menunggu sumber pertama disambungkan.",
+    ],
+  },
   {
     version: "1.84.0",
     title: "ALETA Judicia v1.84.0 - Perakit Putusan dan Ruang Kerja",
