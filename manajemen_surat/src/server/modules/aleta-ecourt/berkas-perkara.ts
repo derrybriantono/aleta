@@ -79,6 +79,8 @@ export type BerkasPerkara = {
   riwayatSidang: Bagian<unknown[]>;
   saksiTercatat: Bagian<unknown[]>;
   pemeriksaanSaksi: Bagian<Record<string, unknown> | null>;
+  /** Dokumen yang diunggah para pihak lewat e-Court, beserta berkas terunduhnya. */
+  dokumenECourt: Bagian<Record<string, unknown> | null>;
   putusan: Bagian<Record<string, unknown> | null>;
   pertimbangan: Bagian<Record<string, unknown> | null>;
   /** Perbedaan antar sumber - ditampilkan, tidak dilebur. */
@@ -294,6 +296,7 @@ export async function rakitBerkasPerkara(perkaraId: string, nomorPerkara = ""): 
       riwayatSidang: kosong([], "SIPP", "perkara_jadwal_sidang"),
       saksiTercatat: kosong([], "SIPP", "perkara_saksi"),
       pemeriksaanSaksi: kosong(null, "APS Badilag", "abt_keterangan_saksi"),
+      dokumenECourt: kosong(null, "e-Court", "aleta_bot_ecourt_documents"),
       putusan: kosong(null, "SIPP", "perkara_putusan"),
       pertimbangan: kosong(null, "SIPP", "perkara_pertimbangan_hukum"),
       selisih: [],
@@ -314,6 +317,7 @@ export async function rakitBerkasPerkara(perkaraId: string, nomorPerkara = ""): 
   const riwayatSidang = bagian.riwayatSidang as Bagian<unknown[]>;
   const saksiTercatat = bagian.saksiTercatat as Bagian<unknown[]>;
   const pemeriksaanSaksi = bagian.pemeriksaanSaksi as Bagian<Record<string, unknown> | null>;
+  const dokumenECourt = bagian.dokumenECourt as Bagian<Record<string, unknown> | null>;
   const putusan = bagian.putusan as Bagian<Record<string, unknown> | null>;
   const pertimbangan = bagian.pertimbangan as Bagian<Record<string, unknown> | null>;
 
@@ -330,6 +334,7 @@ export async function rakitBerkasPerkara(perkaraId: string, nomorPerkara = ""): 
     riwayatSidang,
     saksiTercatat,
     pemeriksaanSaksi,
+    dokumenECourt,
     putusan,
     pertimbangan,
     selisih: [],

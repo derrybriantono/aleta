@@ -536,6 +536,45 @@ const schemaStatements = [
     diubah_oleh TEXT NOT NULL DEFAULT '',
     diubah_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS aleta_pertimbangan_butir (
+    id TEXT PRIMARY KEY,
+    sidik TEXT NOT NULL,
+    teks TEXT NOT NULL,
+    jenis_perkara TEXT NOT NULL DEFAULT '',
+    isu TEXT NOT NULL DEFAULT '',
+    syarat TEXT NOT NULL DEFAULT '{}',
+    jumlah_pemakaian INTEGER NOT NULL DEFAULT 0,
+    keadaan TEXT NOT NULL DEFAULT 'usulan' CHECK (keadaan IN ('usulan', 'disahkan', 'ditolak', 'diganti')),
+    disahkan_oleh TEXT,
+    atas_perintah TEXT NOT NULL DEFAULT '',
+    disahkan_at TEXT,
+    alasan_tolak TEXT NOT NULL DEFAULT '',
+    diganti_oleh_id TEXT,
+    versi INTEGER NOT NULL DEFAULT 1,
+    dibuat_oleh TEXT NOT NULL DEFAULT '',
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_pertimbangan_rujukan (
+    id TEXT PRIMARY KEY,
+    butir_id TEXT NOT NULL,
+    tertulis TEXT NOT NULL DEFAULT '',
+    pasal TEXT NOT NULL DEFAULT '',
+    ayat TEXT NOT NULL DEFAULT '',
+    huruf TEXT NOT NULL DEFAULT '',
+    peraturan TEXT NOT NULL DEFAULT '',
+    jangkar TEXT NOT NULL DEFAULT '',
+    terbukti INTEGER NOT NULL DEFAULT 0,
+    diperiksa_at TEXT NOT NULL DEFAULT ''
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_pertimbangan_asal (
+    id TEXT PRIMARY KEY,
+    butir_id TEXT NOT NULL,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    tanggal TEXT NOT NULL DEFAULT '',
+    urutan_alinea INTEGER NOT NULL DEFAULT 0
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_berkas_riwayat (
     id TEXT PRIMARY KEY,
     perkara_id TEXT NOT NULL,
@@ -2225,6 +2264,14 @@ const indexStatements = [
   // sidang, bukan per perkara.
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_bas_kehadiran_kunci ON aleta_bas_kehadiran(perkara_id, sidang_ke)`,
   `CREATE INDEX IF NOT EXISTS idx_berkas_riwayat_perkara ON aleta_berkas_riwayat(perkara_id, dirakit_at)`,
+  // Butir dikunci pada SIDIK alineanya. Tanpa itu, alinea yang bunyinya persis
+  // sama pada dua ratus putusan menghasilkan dua ratus butir - dan pustaka
+  // menjadi salinan putusan, bukan kumpulan pertimbangan.
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_sidik ON aleta_pertimbangan_butir(sidik)`,
+  `CREATE INDEX IF NOT EXISTS idx_pertimbangan_keadaan ON aleta_pertimbangan_butir(keadaan, jenis_perkara)`,
+  `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_asal_kunci ON aleta_pertimbangan_asal(butir_id, perkara_id, urutan_alinea)`,
   `CREATE INDEX IF NOT EXISTS idx_jlf_sections_anchor ON jlf_regulation_sections(anchor)`,
   `CREATE INDEX IF NOT EXISTS idx_jlf_sections_regulation ON jlf_regulation_sections(regulation_id, sort_order)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_letter_number_sequences_unique ON letter_number_sequences(type, year)`,

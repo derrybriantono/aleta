@@ -1838,42 +1838,6 @@ export function AletaEcourtSidang({
           </div>
         </div>
 
-        {/* --- Ringkasan per alur perkara --- */}
-        {sidang.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {ringkasAlur(sidang).map((kelompok) => {
-              const terpilih = alurTerpilih === kelompok.kunci;
-              return (
-                <button
-                  key={kelompok.kunci}
-                  type="button"
-                  onClick={() => {
-                    setAlurTerpilih(terpilih ? "" : kelompok.kunci);
-                    bersihkanSaringan();
-                  }}
-                  aria-pressed={terpilih}
-                  className={cn(
-                    // Angka dan namanya SEBARIS, bukan bertumpuk. Lima kartu
-                    // setinggi dua baris memakan tinggi yang sama dengan enam
-                    // baris tabel - dan yang dicari orang tabelnya.
-                    "inline-flex items-baseline gap-1.5 rounded-lg border px-2.5 py-1 text-left transition",
-                    terpilih
-                      ? "border-primary bg-primary/10 shadow-sm"
-                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/50"
-                  )}
-                >
-                  <span className="text-base font-semibold tabular-nums">{kelompok.jumlah}</span>
-                  <span className="text-sm text-muted-foreground">{kelompok.label}</span>
-                </button>
-              );
-            })}
-
-            <div className="inline-flex items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1">
-              <span className="text-base font-semibold tabular-nums">{sidang.length}</span>
-              <span className="text-sm text-muted-foreground">Seluruh sidang</span>
-            </div>
-          </div>
-        ) : null}
 
         {/* ==================================================================
             KOTAK KEADAAN
@@ -1912,9 +1876,48 @@ export function AletaEcourtSidang({
           </p>
         ) : null}
 
+        {/* ==================================================================
+            SATU DERET SARINGAN
+            ==================================================================
+
+            Alur perkara dan keadaan sidang disatukan. Keduanya mengerjakan
+            hal yang sama - menyaring tabel dengan menekan angka - dan dua
+            baris dengan dua bentuk kotak yang berbeda membuat pekerjaan
+            tunggal itu tampak seperti dua alat.
+
+            YANG BERNILAI NOL TIDAK DITAMPILKAN. Ia sudah dimatikan dan tidak
+            dapat menyaring apa pun; menampilkannya hanya memaksa mata
+            melewati sembilan kotak mati sebelum sampai ke yang hidup.
+            Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
+            angkanya nol, saringannya tidak dapat dimatikan lagi. */}
         {sidang.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            {KEADAAN_SIDANG.map((keadaan) => (
+            {ringkasAlur(sidang)
+              .filter((k) => k.jumlah > 0 || alurTerpilih === k.kunci)
+              .map((kelompok) => (
+                <ChipSaring
+                  key={`alur-${kelompok.kunci}`}
+                  label={kelompok.label}
+                  jumlah={kelompok.jumlah}
+                  nada="netral"
+                  judul={`Hanya ${kelompok.label}.`}
+                  aktif={alurTerpilih === kelompok.kunci}
+                  onTekan={() => {
+                    setAlurTerpilih(alurTerpilih === kelompok.kunci ? "" : kelompok.kunci);
+                    bersihkanSaringan();
+                  }}
+                />
+              ))}
+
+            {/* Pemisah tipis: alur perkara menjawab "perkara apa", keadaan
+                menjawab "bagaimana keadaannya". */}
+            <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+
+            {KEADAAN_SIDANG.filter(
+              (keadaan) =>
+                (jumlahKeadaan[keadaan.kunci] ?? 0) > 0 ||
+                keadaanTerpilih.includes(keadaan.kunci)
+            ).map((keadaan) => (
               <ChipSaring
                 key={keadaan.kunci}
                 label={keadaan.label}
@@ -1925,6 +1928,35 @@ export function AletaEcourtSidang({
                 onTekan={() => alihkanKeadaan(keadaan.kunci)}
               />
             ))}
+
+            {/* Jumlah seluruhnya, sekaligus tombol lepas. Sebelumnya ini
+                kotak putus-putus yang tidak dapat ditekan - padahal setelah
+                menyalakan tiga saringan, yang paling dicari justru cara
+                kembali ke semula. */}
+            <button
+              type="button"
+              onClick={() => {
+                setAlurTerpilih("");
+                bersihkanSaringan();
+              }}
+              disabled={!alurTerpilih && keadaanTerpilih.length === 0}
+              className={cn(
+                "inline-flex items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1 text-sm transition",
+                alurTerpilih || keadaanTerpilih.length > 0
+                  ? "hover:border-primary/50 hover:bg-muted/50"
+                  : "cursor-default text-muted-foreground"
+              )}
+              title={
+                alurTerpilih || keadaanTerpilih.length > 0
+                  ? "Lepaskan seluruh saringan"
+                  : "Jumlah sidang hari ini"
+              }
+            >
+              <span className="font-semibold tabular-nums">{sidang.length}</span>
+              <span>
+                {alurTerpilih || keadaanTerpilih.length > 0 ? "Semua sidang" : "Seluruh sidang"}
+              </span>
+            </button>
           </div>
         ) : null}
 
@@ -1955,6 +1987,33 @@ export function AletaEcourtSidang({
               Pencarian lanjutan
               {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
             </Button>
+
+            {/* Pemilih tampilan ikut di baris ini, bukan berdiri sendiri di
+                atas tabel. Ia bagian dari "apa yang saya lihat", sama seperti
+                saringan di sebelahnya - dan satu baris sendiri untuk dua
+                tombol adalah satu baris yang tidak perlu ada. */}
+            <div className="inline-flex overflow-hidden rounded-md border text-sm">
+              <button
+                type="button"
+                onClick={() => setModeRingkas(true)}
+                className={cn(
+                  "px-2.5 py-1",
+                  modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                )}
+              >
+                Ringkas
+              </button>
+              <button
+                type="button"
+                onClick={() => setModeRingkas(false)}
+                className={cn(
+                  "border-l px-2.5 py-1",
+                  modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
+                )}
+              >
+                Lengkap
+              </button>
+            </div>
 
             {adaPenyaringTabel ? (
               <>
@@ -2172,32 +2231,6 @@ export function AletaEcourtSidang({
             Yang disembunyikan hanya GAYA-nya, bukan selnya: jumlah sel tiap
             baris tetap sama dengan jumlah kepala kolomnya, sehingga tidak ada
             colSpan yang perlu dihitung ulang di lima tempat. */}
-        <div className="mb-2 flex flex-wrap items-center justify-end gap-2 text-sm">
-          <span className="text-muted-foreground">Tampilan</span>
-          <div className="inline-flex overflow-hidden rounded-md border">
-            <button
-              type="button"
-              onClick={() => setModeRingkas(true)}
-              className={cn(
-                "px-2 py-1",
-                modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-              )}
-            >
-              Ringkas
-            </button>
-            <button
-              type="button"
-              onClick={() => setModeRingkas(false)}
-              className={cn(
-                "border-l px-2 py-1",
-                modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
-              )}
-            >
-              Lengkap
-            </button>
-          </div>
-        </div>
-
         {/* Hasil pemeriksaan pendaftaran antrian - disebutkan apa adanya
             sebelum apa pun ditulis. */}
         {sinkronHasil ? (
@@ -2242,7 +2275,9 @@ export function AletaEcourtSidang({
           <table
             className={cn(
               "w-full text-sm",
-              modeRingkas ? "min-w-[640px] [&_.kolom-lengkap]:hidden" : "min-w-[980px]"
+              modeRingkas
+                ? "min-w-[640px] [&_.kolom-lengkap]:hidden"
+                : "min-w-[980px] [&_.hanya-ringkas]:hidden"
             )}
           >
             <thead className="sticky top-0 z-10 bg-muted text-left text-sm uppercase tracking-wide shadow-sm">
@@ -2401,6 +2436,72 @@ export function AletaEcourtSidang({
                           </div>
 
                           {/* ==================================================
+                              SIAPA YANG MENYIDANGKAN - HANYA DI MODE RINGKAS
+                              ==================================================
+
+                              Di mode Lengkap keterangan ini sudah punya kolom
+                              sendiri; menampilkannya dua kali hanya mengulang.
+                              Di Ringkas kolomnya disembunyikan, dan tanpa baris
+                              ini petugas yang memanggil perkara di depan ruang
+                              sidang harus berpindah ke mode Lengkap hanya untuk
+                              membaca satu kode majelis. */}
+                          <div className="hanya-ringkas mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                            {baris.majelisKode ? (
+                              <span title={baris.majelisNama}>
+                                <span className="font-medium text-foreground/70">Majelis</span>{" "}
+                                {baris.majelisKode}
+                              </span>
+                            ) : null}
+                            {baris.paniteraNama ? (
+                              <span title={`Panitera Pengganti: ${baris.paniteraNama}`}>
+                                <span className="font-medium text-foreground/70">PP</span>{" "}
+                                {baris.paniteraNama}
+                              </span>
+                            ) : null}
+                            {baris.jurusitaNama ? (
+                              <span title={`Juru Sita: ${baris.jurusitaNama}`}>
+                                <span className="font-medium text-foreground/70">JS</span>{" "}
+                                {baris.jurusitaNama}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {/* Keadaan yang di mode Lengkap terbaca dari kolomnya
+                              sendiri. Retur dan belum-dipanggil TIDAK diulang
+                              di sini - penandanya sudah menempel di samping
+                              nomor perkara pada kedua mode. */}
+                          <div className="hanya-ringkas mt-1 flex flex-wrap items-center gap-1">
+                            {!baris.adaBas ? (
+                              <span
+                                className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                                title="Berita acara sidang belum diunggah ke SIPP."
+                              >
+                                belum ada BAS
+                              </span>
+                            ) : null}
+                            {baris.putusanEcourt?.perluTindakan ? (
+                              <span
+                                className="rounded bg-rose-100 px-1.5 py-0.5 text-xs font-medium text-rose-900 dark:bg-rose-950 dark:text-rose-200"
+                                title={
+                                  baris.putusanEcourt.keterangan ||
+                                  "Sudah putus, tetapi putusannya belum beres di e-Court."
+                                }
+                              >
+                                {baris.putusanEcourt.sebutan || "putusan e-Court"}
+                              </span>
+                            ) : null}
+                            {baris.panggilan &&
+                            baris.panggilan.wajibDipanggil.length === 0 ? (
+                              <span
+                                className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                                title="Semua pihak hadir pada sidang sebelumnya - tidak ada yang wajib dipanggil."
+                              >
+                                tidak perlu dipanggil
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {/* ==================================================
                               TUNDAAN DIRINCI DI TABEL UTAMA
                               ==================================================
 
@@ -2528,7 +2629,17 @@ export function AletaEcourtSidang({
 
         {sedangCetak ? (
           <AletaEcourtCetakJadwal
-            sidang={sidang}
+            {/* Yang dicetak adalah yang SEDANG TAMPIL, bukan seluruh yang
+                termuat. Menyaring ke Retur lalu menekan Cetak sebelumnya
+                menghasilkan lembar berisi seluruh sidang hari itu - dan
+                lembar itu dibagikan sebagai daftar yang benar. */}
+            sidang={sidangTampil}
+            antrian={antrian.peta}
+            catatanSaringan={
+              sidangTampil.length === sidang.length
+                ? ""
+                : `Daftar tersaring: ${sidangTampil.length} dari ${sidang.length} sidang.`
+            }
             dari={dari}
             sampai={sampai}
             namaPengadilan={institutionIdentity.courtName || "PENGADILAN AGAMA"}

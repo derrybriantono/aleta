@@ -55,6 +55,7 @@ function berkas(sebagian: Partial<BerkasPerkara> = {}): BerkasPerkara {
     riwayatSidang: bagian<unknown[]>([{ sidangKe: 1 }]),
     saksiTercatat: bagian<unknown[]>([]),
     pemeriksaanSaksi: bagian<Record<string, unknown> | null>({ jumlahSaksi: 2 }),
+    dokumenECourt: bagian<Record<string, unknown> | null>(null, false),
     putusan: bagian<Record<string, unknown> | null>(null, false),
     pertimbangan: bagian<Record<string, unknown> | null>(null, false),
     selisih: [],

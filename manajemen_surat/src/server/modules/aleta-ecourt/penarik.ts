@@ -73,6 +73,17 @@ export const PENARIK: Penarik[] = [
   },
   { kunci: "putusan", operasi: "case.decision", sistem: "SIPP", sumber: "perkara_putusan", bawaan: null, wartakanGagal: false },
   {
+    // Dibaca dari basis data bot, BUKAN dengan mengetuk e-Court lagi. Halaman
+    // perkara yang menunggu jaringan luar akan terasa berat, dan yang terasa
+    // berat ditinggalkan.
+    kunci: "dokumenECourt",
+    operasi: "ecourt.dokumenPerkara",
+    sistem: "e-Court",
+    sumber: "aleta_bot_ecourt_documents",
+    bawaan: null,
+    wartakanGagal: false,
+  },
+  {
     kunci: "pertimbangan",
     operasi: "case.pertimbangan",
     sistem: "SIPP",

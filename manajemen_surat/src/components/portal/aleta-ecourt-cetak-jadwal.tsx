@@ -38,6 +38,18 @@ type BarisCetak = {
   paniteraNama: string;
   jurusitaNama: string;
   pihak: { penggugat: string[]; tergugat: string[] };
+  // --- keterangan keadaan ---
+  perkaraId?: string | number;
+  alasanDitunda?: string;
+  tanggalSidangBerikut?: string;
+  adaBas?: boolean;
+  urutanSidang?: number;
+  panggilan?: {
+    belumDipanggil: number;
+    retur: number;
+    wajibDipanggil: number[];
+  };
+  putusanEcourt?: { perluTindakan: boolean; sebutan: string } | null;
 };
 
 const GAYA_CETAK = `
@@ -51,12 +63,16 @@ const GAYA_CETAK = `
 
 export function AletaEcourtCetakJadwal({
   sidang,
+  antrian = {},
+  catatanSaringan = "",
   dari,
   sampai,
   namaPengadilan,
   onSelesai,
 }: {
   sidang: BarisCetak[];
+  antrian?: Record<string, { nomor: number | null }>;
+  catatanSaringan?: string;
   dari: string;
   sampai: string;
   namaPengadilan: string;
@@ -89,6 +105,25 @@ export function AletaEcourtCetakJadwal({
           {" · "}
           {sidang.length} perkara
         </p>
+
+        {/* Lembar yang dicetak dari hasil yang SEDANG DISARING harus
+            mengatakannya. Tanpa kalimat ini, daftar berisi tiga perkara
+            dibaca orang berikutnya sebagai seluruh sidang hari itu. */}
+        {catatanSaringan ? (
+          <p style={{ margin: "3px 0 0", fontSize: "9pt", textAlign: "center", fontStyle: "italic" }}>
+            {catatanSaringan}
+          </p>
+        ) : null}
+
+        {/* Ringkasan keadaan - yang menuntut tindakan disebut lebih dulu.
+            Lembar ini kerap dibaca sambil berjalan; angka di kepala
+            menghemat menyisir sepuluh halaman untuk tahu ada berapa
+            relaas yang retur. */}
+        {ringkasKeadaan(sidang) ? (
+          <p style={{ margin: "4px 0 0", fontSize: "9pt", textAlign: "center" }}>
+            {ringkasKeadaan(sidang)}
+          </p>
+        ) : null}
       </div>
 
       <table
@@ -101,7 +136,19 @@ export function AletaEcourtCetakJadwal({
       >
         <thead>
           <tr>
-            {["No", "Jam", "Nomor Perkara", "Jenis Perkara", "Para Pihak", "Majelis", "Panitera Sidang", "Jurusita", "Agenda", "Ruang"].map(
+            {[
+              "No",
+              "Antrian / Jam",
+              "Nomor Perkara",
+              "Jenis Perkara",
+              "Para Pihak",
+              "Majelis",
+              "Panitera Sidang",
+              "Jurusita",
+              "Agenda",
+              "Ruang",
+              "Keterangan",
+            ].map(
               (judul) => (
                 <th
                   key={judul}
@@ -124,7 +171,14 @@ export function AletaEcourtCetakJadwal({
           {sidang.map((baris, urutan) => (
             <tr key={`${baris.nomorPerkara}|${baris.sidangId}`}>
               <td style={sel({ textAlign: "right" })}>{urutan + 1}</td>
-              <td style={sel({ whiteSpace: "nowrap" })}>{baris.jamSidang || "—"}</td>
+              <td style={sel({ whiteSpace: "nowrap" })}>
+                {/* Nomor antrian di atas jamnya, sama seperti di layar -
+                    itulah yang disebut petugas saat memanggil. */}
+                {antrian[String(baris.perkaraId)]?.nomor ? (
+                  <div style={{ fontWeight: 700 }}>{antrian[String(baris.perkaraId)]?.nomor}</div>
+                ) : null}
+                <div>{baris.jamSidang || "—"}</div>
+              </td>
               <td style={sel({ fontWeight: 600, whiteSpace: "nowrap" })}>
                 {baris.nomorPerkara}
                 {baris.ditunda ? <div style={{ fontWeight: 400 }}>(ditunda)</div> : null}
@@ -155,6 +209,19 @@ export function AletaEcourtCetakJadwal({
               <td style={sel()}>{baris.jurusitaNama || "—"}</td>
               <td style={sel()}>{baris.agenda || "—"}</td>
               <td style={sel()}>{baris.ruangan || "—"}</td>
+
+              {/* Keterangan: apa yang harus dikerjakan orang terhadap
+                  perkara ini. Diurut menurut kegentingannya - relaas yang
+                  retur lebih dulu daripada catatan bahwa BAS belum ada. */}
+              <td style={sel({ fontSize: "8pt" })}>
+                {daftarKeterangan(baris).length === 0
+                  ? "—"
+                  : daftarKeterangan(baris).map((teks, i) => (
+                      <div key={i} style={{ marginTop: i === 0 ? 0 : 2 }}>
+                        {teks}
+                      </div>
+                    ))}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -167,6 +234,70 @@ export function AletaEcourtCetakJadwal({
   );
 
   return createPortal(isi, document.body);
+}
+
+/**
+ * Keterangan satu perkara, diurut menurut kegentingannya.
+ *
+ * Yang menuntut tindakan juru sita lebih dulu (retur, belum dipanggil),
+ * lalu keadaan sidangnya, lalu catatan administrasi. Lembar ini dipakai
+ * sambil berjalan - urutan yang salah berarti yang penting terbaca
+ * terakhir.
+ */
+function daftarKeterangan(baris: BarisCetak) {
+  const keterangan: string[] = [];
+  const panggilan = baris.panggilan;
+
+  if (panggilan && panggilan.retur > 0) {
+    keterangan.push(`RETUR${panggilan.retur > 1 ? ` ${panggilan.retur}` : ""} - panggilan harus diulang`);
+  }
+  if (panggilan && panggilan.belumDipanggil > 0) {
+    keterangan.push(`Belum dipanggil (${panggilan.belumDipanggil} pihak)`);
+  }
+  if (panggilan && panggilan.wajibDipanggil.length === 0) {
+    keterangan.push("Tidak perlu dipanggil");
+  }
+
+  if (baris.ditunda) {
+    // Ditunda sampai kapan dan karena apa - keduanya sudah terbaca dari
+    // SIPP. Sebelumnya lembar ini hanya bertulis "(ditunda)", dan yang
+    // ditanya orang berikutnya selalu dua hal itu.
+    const sampaiKapan = baris.tanggalSidangBerikut
+      ? ` s.d. ${tanggalPanjang(baris.tanggalSidangBerikut)}`
+      : "";
+    const sebab = baris.alasanDitunda ? ` (${baris.alasanDitunda})` : "";
+    keterangan.push(`Ditunda${sampaiKapan}${sebab}`);
+  }
+
+  if (baris.putusanEcourt && baris.putusanEcourt.perluTindakan) {
+    keterangan.push(`Putusan e-Court: ${baris.putusanEcourt.sebutan || "belum beres"}`);
+  }
+  if (baris.adaBas === false) keterangan.push("Belum ada BAS");
+  if (baris.urutanSidang === 1) keterangan.push("Sidang pertama");
+
+  return keterangan;
+}
+
+/** Sebaris ringkasan keadaan untuk kepala lembar. */
+function ringkasKeadaan(sidang: BarisCetak[]) {
+  let retur = 0;
+  let belumDipanggil = 0;
+  let ditunda = 0;
+  let belumBas = 0;
+
+  for (const baris of sidang) {
+    if (baris.panggilan && baris.panggilan.retur > 0) retur += 1;
+    if (baris.panggilan && baris.panggilan.belumDipanggil > 0) belumDipanggil += 1;
+    if (baris.ditunda) ditunda += 1;
+    if (baris.adaBas === false) belumBas += 1;
+  }
+
+  const bagian: string[] = [];
+  if (retur > 0) bagian.push(`${retur} retur`);
+  if (belumDipanggil > 0) bagian.push(`${belumDipanggil} belum dipanggil`);
+  if (ditunda > 0) bagian.push(`${ditunda} ditunda`);
+  if (belumBas > 0) bagian.push(`${belumBas} belum ada BAS`);
+  return bagian.join(" · ");
 }
 
 function sel(tambahan: React.CSSProperties = {}): React.CSSProperties {

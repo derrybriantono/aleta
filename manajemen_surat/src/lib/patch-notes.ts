@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.82.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.82.0 - Pustaka Hukum";
+export const APP_VERSION = "1.83.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.83.0 - Pustaka Pertimbangan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,52 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.83.0",
+    title: "ALETA Judicia v1.83.0 - Pustaka Pertimbangan",
+    date: "2026-09-05",
+    status: "Operasional",
+    summary:
+      "Inilah yang menggantikan AI untuk sebagian besar perkara. Pertimbangan hukum yang sudah ditulis hakim pengadilan ini - 2.224 naskah, 18 juta huruf - kini dapat dipecah menjadi butir yang dipakai ulang, dan rujukan pasalnya tersambung ke pustaka hukum. Bersamanya, penarik e-Court akhirnya jadi.",
+    added: [
+      "Pustaka pertimbangan: alinea \"Menimbang, bahwa …\" menjadi butir yang dapat dicari, disahkan, dan dipakai ulang. Satuannya alinea, bukan putusan utuh - itulah yang benar-benar dipakai ulang hakim.",
+      "Rujukan pasal DIBACA dari bunyi alineanya sendiri dan ditautkan ke jangkar pustaka hukum. Diuji terhadap putusan sungguhan: 16 dari 19 rujukan tersambung.",
+      "Pemeriksaan rujukan terhadap pustaka hukum - butir yang menyebut pasal yang tidak ada di pustaka dapat ditahan SEBELUM masuk, bukan ditemukan belakangan di dalam putusan yang sudah ditandatangani.",
+      "Penarik e-Court (B2): 394 dokumen dan 400 berkas terunduh kini terbaca pada halaman perkara, dibaca dari basis data bot - bukan dengan mengetuk e-Court lagi.",
+      "Penggantian butir berversi: versi baru menggantikan, yang lama ditandai diganti dan menunjuk penggantinya.",
+    ],
+    changed: [
+      "Butir dikunci pada SIDIK alineanya, sesudah nama, tanggal, dan nomor perkara dibuang. Perkara kedua yang memuat alinea yang sama tidak membuat butir baru - ia menambah hitungan pemakaian. Hitungan itu membedakan alinea baku yang dipakai dua ratus kali dari alinea khusus yang dipakai sekali.",
+      "B1 dinyatakan selesai: SIPP TIDAK menyimpan BAS sama sekali - template_perkara_bas nol baris. Pengadilan ini menulis BAS di ABT. Membuat pembaca untuk tabel yang tak pernah diisi hanya menambah kode yang tampak seperti fitur.",
+    ],
+    fixed: [
+      "Rujukan berantai \"Pasal 65 dan Pasal 82 ayat (1) … Undang-Undang Nomor 7 tahun 1989\" hanya menautkan pasal terakhir. Undang-undang itu menaungi KEDUA pasalnya; bagi yang membaca itu jelas, bagi pencocok yang hanya melihat kata berikutnya, Pasal 65 tampak tanpa peraturan. Tersambung naik dari 12 menjadi 16 dari 19.",
+      "Rujukan \"ayat (1) dan ayat (4)\" hanya membaca ayat pertama, dan \"Ayat 2 Huruf b\" tidak membaca hurufnya sama sekali.",
+      "Sidik butir hanya membuang separuh nama - menyisakan nama depan, sehingga alinea yang sama pada dua putusan tetap bersidik berbeda dan pustaka menjadi salinan putusan.",
+      "Pengenal nama orang menuntut \"bin\" atau \"binti\" di tengahnya, sehingga nama biasa seperti \"Reka Febrianti\" tidak terdeteksi sebagai tempat kosong.",
+    ],
+    security: [
+      "Butir masuk sebagai USULAN, tidak pernah langsung dipakai. Risiko terbesar proyek ini berpindah dari AI ke pustaka: satu butir yang keliru tidak salah sekali, melainkan salah di SETIAP putusan yang memakainya, dengan rapi dan tanpa ada yang memeriksanya lagi karena \"sudah ada di pustaka\".",
+      "Pengesahan mencatat DUA hal: siapa yang menekan dan ATAS PERINTAH SIAPA - dan perintahnya wajib diisi. Tanpa yang kedua, jejaknya hanya menunjuk operator; pertanyaan yang sesungguhnya saat butir dipersoalkan bukan \"siapa yang mengetik\" melainkan \"atas dasar apa ia masuk\".",
+      "Penolakan wajib beralasan. Tanpa alasan, butir yang sama diusulkan lagi pada penyerapan berikutnya dan yang menolaknya lain kali tidak tahu mengapa ia pernah ditolak.",
+      "Peraturan yang tidak dikenali TIDAK ditebak jangkarnya. Rujukan yang mengarah ke peraturan keliru lebih berbahaya daripada rujukan yang belum tersambung: yang kedua terlihat, yang pertama tidak.",
+      "Hanya ayat PERTAMA yang masuk jangkar. Rujukan \"ayat (1) dan ayat (4)\" menunjuk dua tempat, dan satu alamat tidak dapat mewakili keduanya.",
+      "Hanya alinea \"Menimbang\" yang menjadi butir. Kepala putusan, amar, dan penutup bukan pertimbangan - memasukkannya berarti perakit kelak menyisipkan amar di tengah pertimbangan.",
+      "Versi lama TIDAK dihapus saat diganti. Putusan yang sudah dijatuhkan merujuk butir yang berlaku saat itu.",
+    ],
+    operationalNotes: [
+      "Tiga tabel baru: aleta_pertimbangan_butir, _rujukan, dan _asal, dengan kunci tunggal pada sidik alinea.",
+      "Diuji terhadap putusan cerai gugat sungguhan: 29 alinea, 22 di antaranya Menimbang, 19 rujukan pasal terbaca.",
+      "Penarik e-Court diuji terhadap dua perkara nyata - tiga dokumen dan tiga berkas terunduh pada masing-masing.",
+      "Dua puluh uji baru untuk pemecah pertimbangan; empat cacat ditemukan olehnya sebelum sempat dipakai.",
+    ],
+    knownLimitations: [
+      "Penyerapan masih satu perkara per panggilan; menyerap seluruh 2.224 memerlukan penjadwal.",
+      "Syarat berlaku butir (D2) disimpan tetapi belum ada perakit yang memakainya - itu Tahap 5.",
+      "Belum ada layar untuk mengesahkan butir; jalurnya lewat rute.",
+      "Rujukan yang tidak menyebut nama peraturannya - \"Pasal 116\" pada KHI - tetap tidak tersambung, dan memang tidak boleh ditebak.",
+    ],
+  },
   {
     version: "1.82.0",
     title: "ALETA Judicia v1.82.0 - Pustaka Hukum",

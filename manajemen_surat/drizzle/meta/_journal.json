@@ -183,6 +183,13 @@
       "when": 1779540283624,
       "tag": "0025_jlf_jangkar_pasal",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1779540284624,
+      "tag": "0026_aleta_pustaka_pertimbangan",
+      "breakpoints": true
     }
   ]
 }

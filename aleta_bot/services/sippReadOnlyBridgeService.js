@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 
 const externalDbService = require("./externalDbService");
+const botDbService = require("./botDbService");
 const logService = require("./logService");
 
 const DEFAULT_CONNECTION_KEY = "sipp_primary";
@@ -1710,6 +1711,94 @@ LIMIT 200`;
 }
 
 /**
+ * Dokumen e-Court satu perkara.
+ *
+ * ============================================================================
+ * DARI BASIS DATA BOT, BUKAN DARI MENGETUK E-COURT LAGI
+ * ============================================================================
+ *
+ * Penarik e-Court sudah berjalan dan menyimpan hasilnya di
+ * aleta_bot_ecourt_documents. Membaca dari sana berarti membuka perkara TIDAK
+ * memanggil server Mahkamah Agung - halaman perkara yang menunggu jaringan
+ * luar akan terasa berat, dan yang terasa berat ditinggalkan.
+ *
+ * Berkas yang sudah terunduh disertakan lewat aleta_bot_ecourt_files supaya
+ * yang membaca tahu dokumen itu benar-benar ada di gedung ini, bukan sekadar
+ * tercatat namanya di portal.
+ */
+async function getDokumenECourt(params = {}) {
+  const perkaraId = safeString(params.perkaraId);
+  const nomorPerkara = safeString(params.nomorPerkara);
+  if (!perkaraId && !nomorPerkara) return { ada: false, sebab: "Perkara tidak dikenali.", dokumen: [] };
+
+  const syarat = perkaraId ? "d.perkara_id = ?" : "d.nomor_perkara = ?";
+  const nilai = [perkaraId || nomorPerkara];
+
+  try {
+    const rows = await botDbService.query(
+      `SELECT d.document_key, d.nomor_perkara, d.perkara_id, d.judul_dokumen, d.jenis_dokumen,
+              d.peran_pengunggah, d.diunggah_pada, d.agenda, d.tanggal_sidang, d.batas_unggah,
+              d.status_verifikasi, d.berkas_pdf, d.berkas_word, d.pertama_terlihat, d.terakhir_terlihat,
+              f.jalur_berkas, f.ukuran_byte, f.diunduh_pada, f.format
+         FROM aleta_bot_ecourt_documents d
+         LEFT JOIN aleta_bot_ecourt_files f ON f.document_key = d.document_key
+        WHERE ${syarat}
+        ORDER BY d.tanggal_sidang, d.judul_dokumen
+        LIMIT 300`,
+      nilai
+    );
+
+    const daftar = Array.isArray(rows) ? rows : [];
+
+    // Satu dokumen dapat punya beberapa berkas - PDF dan Word. Digabung per
+    // dokumen supaya yang membaca melihat DOKUMEN, bukan daftar berkas yang
+    // sebagian namanya sama.
+    const perDokumen = new Map();
+    for (const row of daftar) {
+      const kunci = safeString(row.document_key);
+      if (!perDokumen.has(kunci)) {
+        perDokumen.set(kunci, {
+          kunci,
+          nomorPerkara: safeString(row.nomor_perkara),
+          perkaraId: safeString(row.perkara_id),
+          judul: safeString(row.judul_dokumen),
+          jenis: safeString(row.jenis_dokumen),
+          peranPengunggah: safeString(row.peran_pengunggah),
+          diunggahPada: dateString(row.diunggah_pada),
+          agenda: safeString(row.agenda),
+          tanggalSidang: dateString(row.tanggal_sidang),
+          batasUnggah: dateString(row.batas_unggah),
+          statusVerifikasi: safeString(row.status_verifikasi),
+          pertamaTerlihat: dateString(row.pertama_terlihat),
+          terakhirTerlihat: dateString(row.terakhir_terlihat),
+          berkas: [],
+        });
+      }
+      const jalur = safeString(row.jalur_berkas);
+      if (jalur) {
+        perDokumen.get(kunci).berkas.push({
+          jalur,
+          format: safeString(row.format),
+          besarByte: Number(row.ukuran_byte) || 0,
+          diunduhPada: dateString(row.diunduh_pada),
+        });
+      }
+    }
+
+    const dokumen = [...perDokumen.values()];
+    return {
+      ada: dokumen.length > 0,
+      sumber: "aleta_bot.aleta_bot_ecourt_documents",
+      jumlahDokumen: dokumen.length,
+      jumlahBerkasTerunduh: dokumen.reduce((jumlah, item) => jumlah + item.berkas.length, 0),
+      dokumen,
+    };
+  } catch (error) {
+    return { ada: false, sebab: externalDbService.sanitizeError(error), dokumen: [] };
+  }
+}
+
+/**
  * Nama dan jenis variabel ABT untuk sekumpulan nomor penanda.
  *
  * ============================================================================
@@ -2130,6 +2219,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "abt.tanyaJawab": getTanyaJawab,
     "blangko.katalog": getKatalogBlangko,
     "abt.namaVariabel": getNamaVariabel,
+    "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
     "legacy.sqlValue": executeLegacySqlValue,

@@ -49,9 +49,12 @@ describe("merakit berkas perkara", () => {
   it("mengambil seluruh bagian bersamaan, bukan berurutan", async () => {
     jawab({ "case.detail": { nomorPerkara: "545/Pdt.G/2026/PA.Dgl" } });
     await rakitBerkasPerkara("10096");
-    // Sepuluh bagian, satu panggilan masing-masing - bila kelak ada yang
+    // Sebelas bagian, satu panggilan masing-masing - bila kelak ada yang
     // menambah pembacaan berantai, jumlahnya berubah dan uji ini bersuara.
-    expect(panggil).toHaveBeenCalledTimes(10);
+    // Angka ini pernah 10 dan naik saat dokumen e-Court masuk ke daftar
+    // penarik: itulah gunanya diperiksa, bukan sekadar dicocokkan ulang.
+    expect(panggil).toHaveBeenCalledTimes(11);
+    expect(panggil.mock.calls.map((c) => c[0])).toContain("ecourt.dokumenPerkara");
     expect(panggil.mock.calls.every((c) => c[1].perkaraId === "10096")).toBe(true);
   });
 
