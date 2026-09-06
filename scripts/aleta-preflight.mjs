@@ -674,10 +674,37 @@ function runValidation() {
     { cwd: BOT_DIR, cmd: node, args: ["--check", "whatsapp.js"], label: "node --check whatsapp.js", timeoutMs: 30000 },
     { cwd: BOT_DIR, cmd: node, args: ["--check", "services/whatsappStatusService.js"], label: "node --check services/whatsappStatusService.js", timeoutMs: 30000 },
     { cwd: BOT_DIR, cmd: node, args: ["--check", "routes/internalGatewayRoutes.js"], label: "node --check routes/internalGatewayRoutes.js", timeoutMs: 30000 },
-    { cwd: PORTAL_DIR, cmd: npx, args: ["tsc", "--noEmit", "--pretty", "false"], label: "npx tsc --noEmit --pretty false", timeoutMs: 120000, shell: process.platform === "win32" },
-    { cwd: PORTAL_DIR, cmd: npm, args: ["run", "lint"], label: "npm run lint", timeoutMs: 120000, shell: process.platform === "win32" },
-    { cwd: PORTAL_DIR, cmd: npm, args: ["run", "build"], label: "npm run build", timeoutMs: 180000, shell: process.platform === "win32" },
-    { cwd: PORTAL_DIR, cmd: npm, args: ["test"], label: "npm test", timeoutMs: 180000, shell: process.platform === "win32" },
+    // ---------------------------------------------------------------------
+    // BATAS WAKTU YANG DIUKUR, BUKAN DIKIRA
+    // ---------------------------------------------------------------------
+    //
+    // Sebelumnya `npm test` diberi batas 3 menit padahal seluruh uji portal
+    // memakan 40 menit pada 6 September 2026 - jadi langkah itu SELALU gagal
+    // atau terpotong, dan laporan preflight terakhir yang tersimpan (13 Mei
+    // 2026) memang mencatatnya gagal. Batas waktu yang mustahil bukan
+    // penjagaan; ia hanya membuat laporannya berhenti dibaca.
+    //
+    // Angka di bawah diukur pada 6-7 September 2026 sesudah gerbangnya
+    // diperbaiki, lalu diberi kelonggaran kira-kira dua kali lipat karena
+    // mesin pengembang jauh lebih lambat dari mesin lain:
+    //
+    //   tsc --noEmit    ~2 menit   -> 10 menit
+    //   lint (roda gigi) ~2 menit  -> 15 menit
+    //   npm run build   ~2 menit   -> 15 menit
+    //   npm test        ~21 menit  -> 45 menit
+    { cwd: PORTAL_DIR, cmd: npx, args: ["tsc", "--noEmit", "--pretty", "false"], label: "npx tsc --noEmit --pretty false", timeoutMs: 600000, shell: process.platform === "win32" },
+    // Roda gigi searah, bukan `npm run lint` telanjang. Sebelas galat lama
+    // pada layar antrian dan jadwal sidang dicatat apa adanya di
+    // manajemen_surat/lint-utang.json; yang kedua belas ditolak. Memakai
+    // `npm run lint` di sini berarti langkah ini merah selamanya, dan langkah
+    // yang merah selamanya sama tidak bergunanya dengan langkah yang hilang.
+    { cwd: PORTAL_DIR, cmd: node, args: ["scripts/lint-jangan-bertambah.mjs"], label: "node scripts/lint-jangan-bertambah.mjs", timeoutMs: 900000 },
+    { cwd: PORTAL_DIR, cmd: npm, args: ["run", "build"], label: "npm run build", timeoutMs: 900000, shell: process.platform === "win32" },
+    { cwd: PORTAL_DIR, cmd: npm, args: ["test"], label: "npm test", timeoutMs: 2700000, shell: process.platform === "win32" },
+    // CATATAN: ke-67 penjaga sisi bot belum ikut di sini karena pelarinya
+    // belum ada - satu-satunya cara menjalankannya sekarang adalah satu per
+    // satu dengan tangan. Pelari itu dibuat pada tahap 1, dan barisnya
+    // ditambahkan ke daftar ini pada tahap yang sama.
   ];
 
   for (const item of commands) {

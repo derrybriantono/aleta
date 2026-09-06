@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const panggil = vi.fn();
 
@@ -36,19 +36,45 @@ const { bacaBanyak, bacaVariabel, kamusSiap, riwayatSalin, salinKamus, statistik
  *     disalin, mencabut folder ABT tidak boleh menggagalkan apa pun.
  */
 
+/**
+ * ============================================================================
+ * SATU BASIS DATA UNTUK SELURUH BERKAS, DIKOSONGKAN ANTAR PEMERIKSAAN
+ * ============================================================================
+ *
+ * Sebelumnya `basisData()` membangun basis data dalam ingatan pada SETIAP
+ * pemeriksaan - tiga belas kali, masing-masing menyusun ulang seluruh skema
+ * ALETA. Berkas ini sendirian menghabiskan 198 detik dari keseluruhan uji
+ * portal, dan gerbang yang memakan waktu semenit lebih akan dilewati orang.
+ *
+ * Yang dibutuhkan tiap pemeriksaan bukanlah basis data baru, melainkan KAMUS
+ * YANG KOSONG. Karena itu skemanya dibangun sekali, lalu kedua tabel kamus
+ * dikosongkan sebelum tiap pemeriksaan. Pemencilannya tetap utuh: seluruh
+ * berkas ini hanya menyentuh aleta_kamus_variabel dan aleta_kamus_salin, dan
+ * keduanya dikosongkan.
+ */
 let db: AletaDatabase | null = null;
 
-async function basisData() {
+beforeAll(async () => {
   db = await createAletaDatabase({ useInMemory: true, seed: false, runMigrations: false });
+}, 180000);
+
+async function basisData() {
+  if (!db) throw new Error("basis data belum siap");
   return db;
 }
 
-afterEach(async () => {
+beforeEach(async () => {
+  panggil.mockReset();
+  // Urutannya: baris variabel menunjuk ke baris penyalinan, jadi yang menunjuk
+  // dihapus lebih dahulu.
+  await db!.prepare(`DELETE FROM aleta_kamus_variabel`).run();
+  await db!.prepare(`DELETE FROM aleta_kamus_salin`).run();
+});
+
+afterAll(async () => {
   await db?.close?.();
   db = null;
 });
-
-beforeEach(() => panggil.mockReset());
 
 const CONTOH = [
   {

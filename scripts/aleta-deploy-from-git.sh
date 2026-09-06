@@ -159,7 +159,55 @@ tar -czf "$BUNDLE" -C "$KERJA" "$PKG_NAME"
 
 JUMLAH="$(find "$KERJA/$PKG_NAME" -type f | wc -l | tr -d ' ')"
 echo "  $JUMLAH berkas dipaketkan, $(du -h "$BUNDLE" | cut -f1)"
-echo "  berkas compose SENGAJA tidak disertakan - itu setelan server"
+
+# ---------------------------------------------------------------------------
+# YANG DILARANG IKUT - DIPERIKSA, BUKAN SEKADAR DIJANJIKAN
+# ---------------------------------------------------------------------------
+#
+# Baris rm di atas menghapus berkas yang tidak boleh ikut. Sebelumnya yang ada
+# hanya baris rm itu dan sebuah kalimat cetakan yang menyatakan "tidak
+# disertakan" - kalimat yang tetap tercetak walau berkasnya sebenarnya ikut.
+# Kalimat bukan penjaga.
+#
+# Pemeriksaan di bawah membuka bungkusan yang BENAR-BENAR akan dikirim, bukan
+# folder kerjanya, sebab yang sampai ke server adalah isi bungkusan itu. Bila
+# satu saja berkas terlarang ada di dalamnya, penaikan berhenti di sini -
+# sebelum ada yang berubah di server.
+#
+# Sudah terjadi 6 Sep 2026: berkas compose ikut terbungkus, menimpa setelan
+# server, dan portal padam sepuluh menit.
+info "Memeriksa isi bungkusan"
+ISI_BUNDLE="$(tar -tzf "$BUNDLE")"
+# Yang dilarang adalah setelan yang SUNGGUHAN. Contoh setelan (.env.example,
+# .env.production.example) justru berguna di server sebagai rujukan petugas,
+# dan tiga di antaranya memang terlacak git. Menyaringnya ikut akan membuat
+# SETIAP penaikan berhenti - penjaga yang menolak semuanya sama tidak
+# bergunanya dengan penjaga yang menerima semuanya.
+TERLARANG="$(printf '%s\n' "$ISI_BUNDLE" \
+  | grep -E '(^|/)docker-compose[^/]*\.ya?ml$|(^|/)aleta-runtime\.json$|(^|/)\.claude/|(^|/)\.env($|\.)' \
+  | grep -vE '\.(example|sample|contoh)$' || true)"
+if [ -n "$TERLARANG" ]; then
+  echo "" >&2
+  echo "BERHENTI: bungkusan memuat berkas yang tidak boleh ikut ke server." >&2
+  printf '%s\n' "$TERLARANG" | sed 's/^/  /' >&2
+  echo "" >&2
+  echo "Berkas compose dan setelan jalan adalah milik SERVER, bukan milik git." >&2
+  echo "Menimpakannya pernah mematikan portal sepuluh menit." >&2
+  echo "Tambahkan pembuangannya di bagian 'SETELAN SERVER TIDAK IKUT' di atas." >&2
+  exit 64
+fi
+echo "  tidak ada berkas compose, setelan jalan, maupun .env di dalamnya"
+
+# Pemeriksaan kedua: bungkusan harus berisi kedua aplikasi. Bungkusan yang
+# kosong sebelah lulus pemeriksaan pertama dengan mudah, lalu menghapus
+# separuh aplikasi di server.
+for WAJIB in "$PKG_NAME/manajemen_surat/package.json" "$PKG_NAME/aleta_bot/package.json"; do
+  if ! printf '%s\n' "$ISI_BUNDLE" | grep -qx "$WAJIB"; then
+    echo "BERHENTI: bungkusan tidak memuat $WAJIB - paketnya tidak utuh." >&2
+    exit 64
+  fi
+done
+echo "  kedua aplikasi ada di dalamnya"
 
 if [ "$DRY_RUN" = "1" ]; then
   SIMPAN="${TMPDIR:-/tmp}/$PKG_NAME.tar.gz"

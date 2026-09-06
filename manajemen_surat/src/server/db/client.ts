@@ -7,7 +7,7 @@ import { migrate as drizzleMigrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 import { schema, type DrizzleSchema } from "@/server/db/drizzle-schema";
-import { ensureAletaSchema } from "@/server/db/schema";
+import { ensureAletaSchema, tandaiSkemaAletaSudahAda } from "@/server/db/schema";
 import { seedDatabaseFromFrontendSource } from "@/server/db/seed";
 
 export type SqlInputValue =
@@ -829,19 +829,110 @@ export async function runDatabaseMigrations(db: NodePgDatabase<DrizzleSchema>) {
   });
 }
 
+/**
+ * ============================================================================
+ * CETAKAN pg-mem - HANYA SAAT PENGUJIAN
+ * ============================================================================
+ *
+ * Membangun basis data dalam ingatan memakan sekitar sepuluh detik: empat detik
+ * menyusun 185 tabel dan 240 indeks, sisanya menyisipkan 6.901 baris kamus
+ * variabel JLF. Tiga puluh tujuh berkas uji memakainya, sebagian membangun satu
+ * basis data untuk SETIAP pemeriksaan - satu berkas tercatat 9,3 menit untuk
+ * delapan pemeriksaan.
+ *
+ * Gerbang yang memakan waktu setengah jam tidak akan dijalankan orang, dan
+ * gerbang yang tidak dijalankan sama saja dengan tidak ada.
+ *
+ * pg-mem dapat mengambil cetakan (`backup()`) lalu memulihkannya dalam hitungan
+ * milidetik. Cetakan diambil SESUDAH skema dan penyemaian selesai, lalu
+ * dipulihkan untuk permintaan berikutnya di proses yang sama.
+ *
+ * ============================================================================
+ * TIGA PAGAR AGAR INI TIDAK PERNAH MENYENTUH PRODUKSI
+ * ============================================================================
+ *
+ *   1. Hanya hidup ketika NODE_ENV === "test". Di luar itu jalurnya sama persis
+ *      seperti sebelumnya, baris demi baris.
+ *   2. Cetakan dikunci menurut pilihan penyemaian. Basis data bersemai dan tidak
+ *      bersemai tidak pernah saling memakai cetakan.
+ *   3. Cetakan hanya dipakai ulang bila TIDAK ADA basis data lain darinya yang
+ *      masih terbuka. Dua basis data hidup berbagi satu pg-mem akan saling
+ *      melihat barisnya - maka bila masih ada yang terbuka, yang baru dibangun
+ *      dari nol seperti biasa. Benar lebih dahulu, baru cepat.
+ */
+type CetakanIngatan = {
+  memoryDb: { adapters: { createPg: () => unknown }; backup: () => { restore: () => void } };
+  cetakan: { restore: () => void };
+  terbuka: number;
+};
+const cetakanIngatan = new Map<string, CetakanIngatan>();
+
+export function __setelUlangCetakanIngatanUntukUji() {
+  cetakanIngatan.clear();
+}
+
 export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
   if (options.useInMemory) {
     const { newDb } = await import(/* webpackIgnore: true */ "pg-mem");
+    const sedangDiuji = process.env.NODE_ENV === "test";
+    const kunciCetakan = `semai=${options.seed ?? true}`;
+
+    // ---- jalur cepat: memulihkan cetakan yang sudah ada ----
+    if (sedangDiuji) {
+      const simpanan = cetakanIngatan.get(kunciCetakan);
+      if (simpanan && simpanan.terbuka === 0) {
+        try {
+          simpanan.cetakan.restore();
+          const { Pool: PoolPulih } = patchPgMemPgCompatibility(
+            simpanan.memoryDb.adapters.createPg() as Parameters<typeof patchPgMemPgCompatibility>[0]
+          );
+          const poolPulih = new PoolPulih() as unknown as Pool;
+          const ormPulih = drizzle(poolPulih, { schema });
+          simpanan.terbuka += 1;
+          let sudahDitutup = false;
+          const dbPulih = new AletaDatabase(
+            poolPulih,
+            ormPulih,
+            async () => {
+              if (!sudahDitutup) {
+                sudahDitutup = true;
+                simpanan.terbuka -= 1;
+              }
+              await poolPulih.end();
+            },
+            false,
+            {
+              supportsFullTextSearch: false,
+            }
+          );
+          tandaiSkemaAletaSudahAda(dbPulih);
+          updateRuntimeDatabaseTracker({ activeMode: "fallback" });
+          return dbPulih;
+        } catch {
+          // Cetakan tidak dapat dipulihkan - buang, lalu bangun dari nol.
+          // Diam-diam memakai cetakan yang rusak jauh lebih buruk daripada
+          // membayar sepuluh detik.
+          cetakanIngatan.delete(kunciCetakan);
+        }
+      }
+    }
+
     const memoryDb = newDb({
       autoCreateForeignKeyIndices: true,
     });
     const { Pool: MemoryPool } = patchPgMemPgCompatibility(memoryDb.adapters.createPg());
     const pool = new MemoryPool() as unknown as Pool;
     const orm = drizzle(pool, { schema });
+    let hitungTerbuka: CetakanIngatan | null = null;
+    let sudahDitutup = false;
     const db = new AletaDatabase(
       pool,
       orm,
       async () => {
+        if (hitungTerbuka && !sudahDitutup) {
+          sudahDitutup = true;
+          hitungTerbuka.terbuka -= 1;
+        }
         await pool.end();
       },
       false,
@@ -863,6 +954,22 @@ export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
     }
     if (shouldUsePersistentFallback) {
       installInMemoryPersistenceHooks(pool, () => persistInMemorySnapshot(memoryDb));
+    }
+
+    // Cetakan diambil di sini - sesudah skema dan penyemaian, sebelum satu pun
+    // pemeriksaan menyentuhnya. Inilah keadaan yang ingin dipulihkan.
+    if (sedangDiuji && !cetakanIngatan.has(kunciCetakan)) {
+      try {
+        const simpananBaru: CetakanIngatan = {
+          memoryDb: memoryDb as unknown as CetakanIngatan["memoryDb"],
+          cetakan: memoryDb.backup(),
+          terbuka: 1,
+        };
+        cetakanIngatan.set(kunciCetakan, simpananBaru);
+        hitungTerbuka = simpananBaru;
+      } catch {
+        // pg-mem tidak dapat mengambil cetakan - tidak apa-apa, hanya lambat.
+      }
     }
 
     updateRuntimeDatabaseTracker({

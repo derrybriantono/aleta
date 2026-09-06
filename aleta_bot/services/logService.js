@@ -3,7 +3,20 @@ const path = require("path");
 const crypto = require("crypto");
 const botDb = require("./botDbService");
 
-const dataDir = path.resolve(__dirname, "..", "data");
+/**
+ * Folder catatan cadangan.
+ *
+ * Berkas di sini hanya ditulis ketika basis data bot TIDAK terjangkau - yaitu
+ * justru saat jejaknya paling dibutuhkan. Karena itu jalurnya harus berada di
+ * dalam volume yang terpasang keluar container; bawaan `<app>/data` berada di
+ * dalam lapisan container dan musnah setiap kali container dibuat ulang.
+ *
+ * `scripts/verify-jalur-tulis.js` menjaga agar nilai yang berlaku di server
+ * benar-benar berada di dalam sebuah volume.
+ */
+const dataDir = process.env.ALETA_BOT_DATA_DIR
+  ? path.resolve(process.env.ALETA_BOT_DATA_DIR)
+  : path.resolve(__dirname, "..", "data");
 const fallbackFiles = {
   message: path.join(dataDir, "aleta-bot-message-logs.jsonl"),
   system: path.join(dataDir, "aleta-bot-system-logs.jsonl"),

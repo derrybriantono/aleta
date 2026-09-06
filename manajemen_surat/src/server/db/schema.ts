@@ -3786,3 +3786,21 @@ export async function ensureAletaSchema(db: AletaDatabase) {
   await seedJlfVariableCatalog(db);
   ensuredAletaSchemaDatabases.add(db);
 }
+
+/**
+ * Menyatakan bahwa sebuah basis data SUDAH memiliki skema lengkap, sehingga
+ * `ensureAletaSchema` melewatinya.
+ *
+ * Dipakai satu tempat saja: pemulihan cetakan pg-mem pada `createAletaDatabase`
+ * saat pengujian. Cetakan itu diambil SESUDAH skema tersusun, jadi memulihkannya
+ * berarti skemanya sudah ada - menyusunnya lagi hanya membuang empat detik per
+ * basis data, dan `seedJlfVariableCatalog` akan menyisipkan ulang 6.901 baris
+ * yang sudah ada di sana.
+ *
+ * Bukan untuk dipakai di jalur berjalan: memanggilnya atas basis data yang
+ * skemanya belum ada akan membuat seluruh kueri gagal dengan "relation does not
+ * exist", dan gagalnya jauh dari sebabnya.
+ */
+export function tandaiSkemaAletaSudahAda(db: AletaDatabase) {
+  ensuredAletaSchemaDatabases.add(db);
+}

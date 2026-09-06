@@ -38,25 +38,29 @@ services:
       BETTER_AUTH_URL: http://192.168.10.10/aleta
       ALETA_UPLOAD_DIR: /app/uploads
       ALETA_PDF_UPLOAD_DIR: /app/uploads/pdf
-    # DNS untuk portal (jaringan bridge).
+    # DNS untuk portal (jaringan bridge) - SENGAJA TIDAK ADA DI SINI.
     #
-    # DEFAULT: kedua variabel kosong -> Compose menghapus baris kosong dan
-    # kunci "dns" ikut hilang, sehingga container MEWARISI DNS host (perilaku
-    # Docker bawaan). Ini aman untuk mayoritas satker yang DNS host-nya sudah
-    # jalan, dan TIDAK mengubah apa pun bila AI sudah berfungsi.
+    # Sebelumnya berkas ini memuat:
     #
-    # OVERRIDE: bila resolusi nama ke penyedia AI gagal (EAI_AGAIN), isi DNS
-    # internal kantor lewat .env di folder ini (bukan .env.production):
-    #   ALETA_DNS_PRIMARY=192.168.8.1
-    #   ALETA_DNS_SECONDARY=192.168.1.1
-    # lalu: docker compose up -d portal
+    #     dns:
+    #       - ${ALETA_DNS_PRIMARY:-}
+    #       - ${ALETA_DNS_SECONDARY:-}
+    #
+    # beserta keterangan bahwa "baris kosong dihapus sendiri oleh Compose
+    # sehingga kunci dns ikut hilang". Keterangan itu TIDAK BENAR pada Compose
+    # yang terpasang di server: kedua baris memuai menjadi dua tulisan kosong,
+    # Docker menolaknya dengan "bad nameserver address", dan portal mati.
+    # Sudah terjadi pada 6 September 2026 - portal padam sepuluh menit.
+    #
+    # Baris yang keberadaannya bergantung pada perilaku pemuaian tidak dapat
+    # dipercaya. Kini DNS bersifat MASUK-BILA-DIMINTA lewat berkas terpisah:
+    #
+    #   docker compose -f docker-compose.yml -f docker-compose.override.yml \
+    #     -f docker-compose.dns.yml up -d portal
+    #
+    # Tanpa berkas itu, container mewarisi DNS host - perilaku Docker bawaan,
+    # dan yang benar untuk mayoritas satker.
     # Cari nilainya dengan: docker compose exec portal node scripts/diagnose-ai-dns.js
-    #
-    # Resolusi antar-service (postgres, aleta_bot) tetap ditangani DNS internal
-    # Docker, jadi tidak terpengaruh nilai ini.
-    dns:
-      - ${ALETA_DNS_PRIMARY:-}
-      - ${ALETA_DNS_SECONDARY:-}
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
@@ -90,6 +94,23 @@ services:
       # Menunjuk ke folder yang terpasang di atas. Tanpa ini, bawaannya
       # jatuh ke home di dalam container - yang hilang tiap pembaruan.
       ALETA_ECOURT_SESSION_DIR: /usr/src/app/.ecourt-session
+      # Kredensial e-Court tersandi BESERTA kunci penyandiannya.
+      #
+      # ecourtKredensialService jatuh ke os.homedir() bila peubah ini kosong,
+      # yaitu /root/.aleta-ecourt-session di dalam container - tidak terpasang,
+      # jadi hilang tiap pembaruan. Gejalanya: petugas diminta memasukkan sandi
+      # e-Court lagi setiap kali versi baru dipasang, tanpa galat apa pun.
+      # Sengaja disatukan dengan folder profil sesi, sebagaimana disebut
+      # sendiri oleh keterangan fungsi folderSimpanan().
+      ALETA_ECOURT_KREDENSIAL_DIR: /usr/src/app/.ecourt-session
+      # Catatan cadangan (jsonl) yang ditulis ketika basis data bot mati.
+      #
+      # Bawaannya <app>/data - berada di lapisan container, sehingga jejak
+      # pesan, kejadian keamanan, dan galat kueri musnah tiap pembaruan.
+      # Yang hilang justru catatan dari saat basis datanya sedang bermasalah.
+      # Ditaruh di dalam volume runtime-data yang sudah terpasang, supaya
+      # tidak menuntut mount baru di server.
+      ALETA_BOT_DATA_DIR: /usr/src/app/runtime-data/catatan
     command: sh -c "mkdir -p temp/resources/file/doc/ && node app.js"
     network_mode: "host"
     privileged: true

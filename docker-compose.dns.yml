@@ -1,0 +1,47 @@
+# =============================================================================
+# DNS PORTAL - MASUK HANYA BILA DIMINTA
+# =============================================================================
+#
+# Berkas ini TIDAK ikut dipakai kecuali disebut namanya. Itulah gunanya.
+#
+# Sebelumnya kunci `dns` selalu ada di docker-compose.yml dengan nilai
+# `${ALETA_DNS_PRIMARY:-}`, dengan anggapan Compose akan membuang baris yang
+# memuai kosong. Anggapan itu salah pada Compose yang terpasang di server:
+# nilainya memuai menjadi tulisan kosong, Docker menolaknya dengan
+# "bad nameserver address", dan portal mati sepuluh menit pada 6 September 2026.
+#
+# =============================================================================
+# KAPAN INI DIPAKAI
+# =============================================================================
+#
+# Hanya bila resolusi nama ke penyedia AI gagal dengan EAI_AGAIN. Periksa dulu:
+#
+#   docker compose exec portal node scripts/diagnose-ai-dns.js
+#
+# Bila memang perlu, isi DNS internal kantor di berkas `.env` pada folder ini
+# (BUKAN .env.production):
+#
+#   ALETA_DNS_PRIMARY=192.168.8.1
+#   ALETA_DNS_SECONDARY=192.168.1.1
+#
+# lalu jalankan dengan menyebut berkas ini:
+#
+#   docker compose -f docker-compose.yml \
+#                  -f docker-compose.override.yml \
+#                  -f docker-compose.dns.yml up -d portal
+#
+# Keduanya WAJIB terisi. Berbeda dengan sebelumnya, di sini nilai kosong tidak
+# lagi berakhir menjadi daftar berisi tulisan kosong - sebab bila tidak diisi,
+# berkas ini memang tidak perlu dipakai sama sekali.
+#
+# Resolusi antar-service (postgres, aleta_bot) tetap ditangani DNS internal
+# Docker dan tidak terpengaruh nilai ini.
+# =============================================================================
+
+version: "2.4"
+
+services:
+  portal:
+    dns:
+      - ${ALETA_DNS_PRIMARY:?isi ALETA_DNS_PRIMARY di .env sebelum memakai docker-compose.dns.yml}
+      - ${ALETA_DNS_SECONDARY:?isi ALETA_DNS_SECONDARY di .env sebelum memakai docker-compose.dns.yml}
