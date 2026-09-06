@@ -1,0 +1,72 @@
+version: "2.4"
+
+services:
+  portal:
+    environment:
+      JLF_SIPP_PROVIDER: aleta_bot_bridge
+      JLF_SIPP_BRIDGE_BASE_URL: http://192.168.10.10:3003
+      ALETA_BOT_BASE_URL: http://192.168.10.10:3003
+      ALETA_BOT_RUNTIME_URL: http://192.168.10.10:3003
+
+  aleta_bot:
+    environment:
+      ALETA_BOT_RUNTIME_CONFIG_PATH: /usr/src/app/runtime-data/aleta-runtime.json
+      # ====================================================================
+      # PROFIL SESI e-COURT - DITAMBAHKAN 7 SEPTEMBER 2026
+      # ====================================================================
+      #
+      # Tanpa peubah ini, tools/ecourt-bridge/sesi.js menyimpan profil peramban
+      # ke folder di dalam lapisan container. Setiap "docker compose up -d"
+      # yang membuat ulang container menghapusnya, dan petugas harus login ulang
+      # dengan captcha - pada SETIAP pembaruan.
+      #
+      # Diperiksa pada 7 September 2026: folder itu memang belum pernah ada di
+      # dalam container, sehingga tidak ada profil yang hilang saat mount ini
+      # dipasang.
+      ALETA_ECOURT_SESSION_DIR: /usr/src/app/.ecourt-session
+      #
+      # KREDENSIAL e-COURT TERSANDI BESERTA KUNCI PENYANDINYA.
+      #
+      # ecourtKredensialService jatuh ke os.homedir() bila peubah ini kosong,
+      # yaitu /root/.aleta-ecourt-session di dalam container - tidak terpasang,
+      # jadi hilang tiap pembaruan tanpa galat apa pun. Gejalanya: petugas
+      # diminta memasukkan sandi e-Court lagi setiap kali versi baru dipasang.
+      #
+      # Sengaja disatukan dengan folder profil sesi, sebagaimana disebut sendiri
+      # oleh keterangan fungsi folderSimpanan() pada layanan itu.
+      ALETA_ECOURT_KREDENSIAL_DIR: /usr/src/app/.ecourt-session
+      #
+      # CATATAN CADANGAN YANG DITULIS KETIKA BASIS DATA BOT MATI.
+      #
+      # logService menulis jejak pesan, kejadian keamanan, dan galat kueri ke
+      # <app>/data bila basis datanya tidak terjangkau. Hanya <app>/data/ecourt
+      # yang terpasang, sehingga berkas jsonl itu berada di lapisan container -
+      # dan yang hilang justru catatan dari saat basis datanya sedang bermasalah.
+      #
+      # Peubah ini baru dihormati sesudah kode tahap 0 dinaikkan; memasangnya
+      # sekarang tidak berakibat apa-apa dan tidak perlu diubah lagi nanti.
+      ALETA_BOT_DATA_DIR: /usr/src/app/runtime-data/catatan
+    volumes:
+      - /var/www/html/aleta-data/aleta-bot-runtime:/usr/src/app/runtime-data
+      # ====================================================================
+      # ARSIP DOKUMEN e-COURT - TANPA BARIS INI SELURUHNYA HILANG TIAP BUILD
+      # ====================================================================
+      #
+      # ecourtDocumentService menyimpan unduhan ke <app>/data/ecourt, dan
+      # ALETA_BOT_ECOURT_DOCUMENT_ROOT tidak diatur di mana pun. Tanpa mount,
+      # folder itu berada di dalam LAPISAN CONTAINER: setiap
+      # "docker compose up -d" yang membuat ulang container menghapus seluruh
+      # berkas yang pernah diunduh, sementara barisnya di
+      # aleta_bot_ecourt_files tetap ada.
+      #
+      # Gejalanya bukan galat, melainkan diam: tombol unduh menghilang dan
+      # arsip tampak seperti belum pernah diisi. Sudah terjadi berkali-kali -
+      # 400 baris berkas tercatat, nol berkas tersisa di disk.
+      - /var/www/html/aleta-data/ecourt-docs:/usr/src/app/data/ecourt
+      # ====================================================================
+      # PROFIL SESI DAN KREDENSIAL e-COURT - DITAMBAHKAN 7 SEPTEMBER 2026
+      # ====================================================================
+      #
+      # Isinya kredensial sesi. Folder ini JANGAN pernah disalin keluar server,
+      # dan jangan ikut dicadangkan ke tempat yang lebih longgar izinnya.
+      - /var/www/html/aleta-data/ecourt-session:/usr/src/app/.ecourt-session

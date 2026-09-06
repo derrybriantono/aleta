@@ -1,0 +1,805 @@
+{
+  "diukurPada": "2026-09-06T21:39:57.873Z",
+  "ruas": [
+    {
+      "kunci": "kecamatan",
+      "label": "Kecamatan asal pihak",
+      "tabel": "pihak.kecamatan",
+      "dipakaiOleh": "Sebaran wilayah, dan seluruh penilaian yang membagi menurut daerah",
+      "catatan": "SIPP sudah punya ref_kecamatan_new. Yang diukur di sini berapa isian yang TIDAK cocok dengannya.",
+      "ukuran": {
+        "jumlah": [
+          {
+            "semua": 36380,
+            "terisi": 11725,
+            "berbeda": 340
+          }
+        ],
+        "cocok": [
+          {
+            "cocok": 11136
+          }
+        ],
+        "acuan": [
+          {
+            "jumlah": 7231
+          }
+        ],
+        "tidakCocok": [
+          {
+            "nilai": "Sigi Biromaru",
+            "jumlah": 85
+          },
+          {
+            "nilai": "Marawola",
+            "jumlah": 53
+          },
+          {
+            "nilai": "Banawa",
+            "jumlah": 47
+          },
+          {
+            "nilai": "Balaesang",
+            "jumlah": 39
+          },
+          {
+            "nilai": "Dampelas",
+            "jumlah": 31
+          },
+          {
+            "nilai": "Labuan",
+            "jumlah": 25
+          },
+          {
+            "nilai": "Sirenja",
+            "jumlah": 24
+          },
+          {
+            "nilai": "Tanantovea",
+            "jumlah": 22
+          },
+          {
+            "nilai": "Sindue",
+            "jumlah": 21
+          },
+          {
+            "nilai": "Gumbasa",
+            "jumlah": 20
+          },
+          {
+            "nilai": "Dolo",
+            "jumlah": 17
+          },
+          {
+            "nilai": "Rio Pakava",
+            "jumlah": 15
+          },
+          {
+            "nilai": "Ulujadi",
+            "jumlah": 14
+          },
+          {
+            "nilai": "Palu Timur",
+            "jumlah": 14
+          },
+          {
+            "nilai": "Dolo Selatan",
+            "jumlah": 13
+          },
+          {
+            "nilai": "Palu Barat",
+            "jumlah": 12
+          },
+          {
+            "nilai": "Sojol",
+            "jumlah": 11
+          },
+          {
+            "nilai": "Palolo",
+            "jumlah": 10
+          },
+          {
+            "nilai": "Palu Selatan",
+            "jumlah": 10
+          },
+          {
+            "nilai": "Banawa Selatan",
+            "jumlah": 9
+          },
+          {
+            "nilai": "Mantikulore",
+            "jumlah": 9
+          },
+          {
+            "nilai": "Sojol Utara",
+            "jumlah": 8
+          },
+          {
+            "nilai": "Dolo Barat",
+            "jumlah": 7
+          },
+          {
+            "nilai": "0",
+            "jumlah": 6
+          },
+          {
+            "nilai": "Sindue Tombusabora",
+            "jumlah": 5
+          },
+          {
+            "nilai": "Tatanga",
+            "jumlah": 5
+          },
+          {
+            "nilai": "Balaesang Tanjung",
+            "jumlah": 4
+          },
+          {
+            "nilai": "Sindue Tobata",
+            "jumlah": 4
+          },
+          {
+            "nilai": "Banawa Tengah",
+            "jumlah": 3
+          },
+          {
+            "nilai": "Kinovaro",
+            "jumlah": 3
+          }
+        ]
+      }
+    },
+    {
+      "kunci": "alasanDitunda",
+      "label": "Alasan penundaan sidang",
+      "tabel": "perkara_jadwal_sidang.alasan_ditunda",
+      "dipakaiOleh": "Pola penundaan, dan penilaian ketaatan jadwal",
+      "catatan": "Teks bebas. Alasan dan hasil kerap tercampur dalam satu tulisan.",
+      "ukuran": {
+        "jumlah": [
+          {
+            "semua": 20049,
+            "terisi": 19718,
+            "berbeda": 1468
+          }
+        ],
+        "sering": [
+          {
+            "nilai": "0",
+            "jumlah": 6210
+          },
+          {
+            "nilai": "Panggil Tergugat",
+            "jumlah": 2303
+          },
+          {
+            "nilai": "putus DIKABULKAN (verstek)",
+            "jumlah": 2163
+          },
+          {
+            "nilai": "putus DIKABULKAN",
+            "jumlah": 946
+          },
+          {
+            "nilai": "Tergugat tidak hadir",
+            "jumlah": 790
+          },
+          {
+            "nilai": "proses mediasi",
+            "jumlah": 557
+          },
+          {
+            "nilai": "telah ikrar talak",
+            "jumlah": 437
+          },
+          {
+            "nilai": "panggil Termohon",
+            "jumlah": 427
+          },
+          {
+            "nilai": "Musyawarah Majelis",
+            "jumlah": 369
+          },
+          {
+            "nilai": "Panggil Penggugat dan Tergugat",
+            "jumlah": 310
+          },
+          {
+            "nilai": "Pembuktian",
+            "jumlah": 253
+          },
+          {
+            "nilai": "putus DICABUT",
+            "jumlah": 204
+          },
+          {
+            "nilai": "pembuktian lanjutan",
+            "jumlah": 194
+          },
+          {
+            "nilai": "Panggil Pemohon dan termohon",
+            "jumlah": 128
+          },
+          {
+            "nilai": "Termohon tidak hadir",
+            "jumlah": 121
+          },
+          {
+            "nilai": "pembuktian Penggugat",
+            "jumlah": 105
+          },
+          {
+            "nilai": "memanggil Tergugat",
+            "jumlah": 95
+          },
+          {
+            "nilai": "Pembuktian Pemohon",
+            "jumlah": 87
+          },
+          {
+            "nilai": "untuk memanggil Tergugat",
+            "jumlah": 82
+          },
+          {
+            "nilai": "putus DIGUGURKAN",
+            "jumlah": 81
+          },
+          {
+            "nilai": "Penggugat dan Tergugat tidak hadir",
+            "jumlah": 67
+          },
+          {
+            "nilai": "Pembacaan Putusan",
+            "jumlah": 61
+          },
+          {
+            "nilai": "jawaban Tergugat",
+            "jumlah": 61
+          },
+          {
+            "nilai": "putus DICABUT (verstek)",
+            "jumlah": 61
+          },
+          {
+            "nilai": "Panggil pemohon",
+            "jumlah": 60
+          },
+          {
+            "nilai": "Replik Penggugat",
+            "jumlah": 59
+          },
+          {
+            "nilai": "Panggil Penggugat",
+            "jumlah": 58
+          },
+          {
+            "nilai": "kesimpulan",
+            "jumlah": 54
+          },
+          {
+            "nilai": "Jawaban Termohon",
+            "jumlah": 53
+          },
+          {
+            "nilai": "Replik Pemohon",
+            "jumlah": 50
+          }
+        ]
+      }
+    },
+    {
+      "kunci": "pekerjaan",
+      "label": "Pekerjaan pihak",
+      "tabel": "pihak.pekerjaan",
+      "dipakaiOleh": "Profil pihak",
+      "catatan": "Teks bebas.",
+      "ukuran": {
+        "jumlah": [
+          {
+            "semua": 36380,
+            "terisi": 36154,
+            "berbeda": 2115
+          }
+        ],
+        "sering": [
+          {
+            "nilai": "Petani",
+            "jumlah": 10092
+          },
+          {
+            "nilai": "Ibu Rumah Tangga",
+            "jumlah": 8633
+          },
+          {
+            "nilai": "Wiraswasta",
+            "jumlah": 2327
+          },
+          {
+            "nilai": "Urusan Rumah Tangga",
+            "jumlah": 2270
+          },
+          {
+            "nilai": "Mengurus Rumah Tangga",
+            "jumlah": 1260
+          },
+          {
+            "nilai": "Swasta",
+            "jumlah": 1212
+          },
+          {
+            "nilai": "Pegawai Negeri Sipil",
+            "jumlah": 1194
+          },
+          {
+            "nilai": "Honorer",
+            "jumlah": 732
+          },
+          {
+            "nilai": "Nelayan",
+            "jumlah": 452
+          },
+          {
+            "nilai": "Pedagang",
+            "jumlah": 375
+          },
+          {
+            "nilai": "Buruh Harian Lepas",
+            "jumlah": 371
+          },
+          {
+            "nilai": "Petani/Pekebun",
+            "jumlah": 321
+          },
+          {
+            "nilai": "Sopir",
+            "jumlah": 319
+          },
+          {
+            "nilai": "Karyawan Swasta",
+            "jumlah": 296
+          },
+          {
+            "nilai": "Buruh Bangunan",
+            "jumlah": 255
+          },
+          {
+            "nilai": "Mahasiswa",
+            "jumlah": 204
+          },
+          {
+            "nilai": "Pengacara",
+            "jumlah": 201
+          },
+          {
+            "nilai": "Pensiunan PNS",
+            "jumlah": 197
+          },
+          {
+            "nilai": "Tidak Bekerja",
+            "jumlah": 177
+          },
+          {
+            "nilai": "Buruh",
+            "jumlah": 150
+          },
+          {
+            "nilai": "Tani",
+            "jumlah": 143
+          },
+          {
+            "nilai": "Tukang batu",
+            "jumlah": 134
+          },
+          {
+            "nilai": "Tidak ada",
+            "jumlah": 128
+          },
+          {
+            "nilai": "Urusan  Rumah Tangga",
+            "jumlah": 102
+          },
+          {
+            "nilai": "POLRI",
+            "jumlah": 99
+          },
+          {
+            "nilai": "urusan rumah tanggah",
+            "jumlah": 92
+          },
+          {
+            "nilai": "belum bekerja",
+            "jumlah": 91
+          },
+          {
+            "nilai": "Guru Honorer",
+            "jumlah": 86
+          },
+          {
+            "nilai": "Pensiunan",
+            "jumlah": 84
+          },
+          {
+            "nilai": "PNS",
+            "jumlah": 83
+          }
+        ]
+      }
+    },
+    {
+      "kunci": "pendidikan",
+      "label": "Pendidikan pihak",
+      "tabel": "pihak.pendidikan",
+      "dipakaiOleh": "Profil pihak",
+      "catatan": "Teks bebas, tetapi jenjangnya baku sehingga kemungkinan besar lebih rapi.",
+      "ukuran": {
+        "jumlah": [
+          {
+            "semua": 36380,
+            "terisi": 4829,
+            "berbeda": 21
+          }
+        ],
+        "sering": [
+          {
+            "nilai": "Sekolah Lanjutan Tingkat Atas",
+            "jumlah": 2089
+          },
+          {
+            "nilai": "Sekolah Dasar",
+            "jumlah": 1123
+          },
+          {
+            "nilai": "Sekolah Lanjutan Tingkat Pertama",
+            "jumlah": 998
+          },
+          {
+            "nilai": "Strata I",
+            "jumlah": 418
+          },
+          {
+            "nilai": "Tidak Ada",
+            "jumlah": 57
+          },
+          {
+            "nilai": "Diploma III",
+            "jumlah": 57
+          },
+          {
+            "nilai": "Strata II",
+            "jumlah": 27
+          },
+          {
+            "nilai": "Diploma II",
+            "jumlah": 15
+          },
+          {
+            "nilai": "Diploma IV",
+            "jumlah": 9
+          },
+          {
+            "nilai": "Diploma I",
+            "jumlah": 9
+          },
+          {
+            "nilai": "Taman Kanak-kanak",
+            "jumlah": 6
+          },
+          {
+            "nilai": "2",
+            "jumlah": 5
+          },
+          {
+            "nilai": "-",
+            "jumlah": 3
+          },
+          {
+            "nilai": "SMA",
+            "jumlah": 3
+          },
+          {
+            "nilai": "9",
+            "jumlah": 2
+          },
+          {
+            "nilai": "Strata III",
+            "jumlah": 2
+          },
+          {
+            "nilai": "4",
+            "jumlah": 2
+          },
+          {
+            "nilai": "10",
+            "jumlah": 1
+          },
+          {
+            "nilai": "3",
+            "jumlah": 1
+          },
+          {
+            "nilai": "SD",
+            "jumlah": 1
+          },
+          {
+            "nilai": "SLTP",
+            "jumlah": 1
+          }
+        ]
+      }
+    },
+    {
+      "kunci": "uraianBiaya",
+      "label": "Uraian transaksi biaya perkara",
+      "tabel": "perkara_biaya.uraian",
+      "dipakaiOleh": "Peta biaya, dan seluruh penilaian keuangan perkara",
+      "catatan": "Teks bebas yang diketik kasir.",
+      "ukuran": {
+        "jumlah": [
+          {
+            "semua": 100108,
+            "terisi": 100108,
+            "berbeda": 8554
+          }
+        ],
+        "sering": [
+          {
+            "nilai": "Redaksi",
+            "jenis": -1,
+            "jumlah": 9876
+          },
+          {
+            "nilai": "Biaya Pemberkasan/ATK",
+            "jenis": -1,
+            "jumlah": 9501
+          },
+          {
+            "nilai": "Panjar Biaya Perkara",
+            "jenis": 1,
+            "jumlah": 9500
+          },
+          {
+            "nilai": "Meterai",
+            "jenis": -1,
+            "jumlah": 9410
+          },
+          {
+            "nilai": "Biaya Pendaftaran/PNBP",
+            "jenis": -1,
+            "jumlah": 9398
+          },
+          {
+            "nilai": "Pengembalian Sisa Panjar",
+            "jenis": -1,
+            "jumlah": 6456
+          },
+          {
+            "nilai": "Biaya Panggilan Tergugat",
+            "jenis": -1,
+            "jumlah": 4640
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Kepada Penggugat",
+            "jenis": -1,
+            "jumlah": 3000
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Kepada Tergugat",
+            "jenis": -1,
+            "jumlah": 2962
+          },
+          {
+            "nilai": "Biaya Panggilan Penggugat",
+            "jenis": -1,
+            "jumlah": 2791
+          },
+          {
+            "nilai": "PNBP Relaas Pemberitahuan Putusan Kepada Tergugat",
+            "jenis": -1,
+            "jumlah": 2427
+          },
+          {
+            "nilai": "Biaya Pemberitahuan",
+            "jenis": -1,
+            "jumlah": 2105
+          },
+          {
+            "nilai": "Biaya Panggilan Termohon",
+            "jenis": -1,
+            "jumlah": 1532
+          },
+          {
+            "nilai": "Panggilan Pemohon",
+            "jenis": -1,
+            "jumlah": 1127
+          },
+          {
+            "nilai": "Biaya Panggilan Pemohon",
+            "jenis": -1,
+            "jumlah": 917
+          },
+          {
+            "nilai": "Penyerahan akta di Kepaniteraan yang dilakukan di dalam hal yang diharuskan menurut hukum",
+            "jenis": -1,
+            "jumlah": 782
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Kepada Termohon",
+            "jenis": -1,
+            "jumlah": 701
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Kepada Pemohon",
+            "jenis": -1,
+            "jumlah": 682
+          },
+          {
+            "nilai": "Biaya Proses",
+            "jenis": -1,
+            "jumlah": 612
+          },
+          {
+            "nilai": "Panjar",
+            "jenis": 1,
+            "jumlah": 607
+          },
+          {
+            "nilai": "Biaya Pendaftaran",
+            "jenis": -1,
+            "jumlah": 604
+          },
+          {
+            "nilai": "Panggilan Tergugat",
+            "jenis": -1,
+            "jumlah": 577
+          },
+          {
+            "nilai": "Tambahan Panjar Biaya Perkara",
+            "jenis": 1,
+            "jumlah": 556
+          },
+          {
+            "nilai": "Biaya Meterai",
+            "jenis": -1,
+            "jumlah": 518
+          },
+          {
+            "nilai": "PNBP Relaas Pemberitahuan Putusan Kepada Termohon",
+            "jenis": -1,
+            "jumlah": 505
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Pemohon I",
+            "jenis": -1,
+            "jumlah": 476
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Pemohon II",
+            "jenis": -1,
+            "jumlah": 456
+          },
+          {
+            "nilai": "Biaya Panggilan Ikrar Termohon",
+            "jenis": -1,
+            "jumlah": 390
+          },
+          {
+            "nilai": "Biaya Panggilan Tergugat/Terlawan/Pelawan/Iklan/Radio/Pengumuman",
+            "jenis": -1,
+            "jumlah": 377
+          },
+          {
+            "nilai": "PNBP Relaas Panggilan Pertama Pemohon",
+            "jenis": -1,
+            "jumlah": 354
+          }
+        ]
+      }
+    },
+    {
+      "kunci": "ruangSidang",
+      "label": "Ruang sidang",
+      "tabel": "perkara_jadwal_sidang.ruangan",
+      "dipakaiOleh": "Antrian sidang dan pemerataan penggunaan ruang",
+      "catatan": "Teks bebas.",
+      "ukuran": {
+        "jumlah": [
+          {
+            "semua": 20049,
+            "terisi": 16960,
+            "berbeda": 22
+          }
+        ],
+        "sering": [
+          {
+            "nilai": "Ruang Sidang 1",
+            "jumlah": 7999
+          },
+          {
+            "nilai": "1",
+            "jumlah": 3681
+          },
+          {
+            "nilai": "Ruangan Satu",
+            "jumlah": 3134
+          },
+          {
+            "nilai": "Ruang Sidang 1 Dalam Gedung",
+            "jumlah": 1293
+          },
+          {
+            "nilai": "Ruang Sidang Dalam Gedung 1",
+            "jumlah": 211
+          },
+          {
+            "nilai": "Sidang diluar gedung Pengadilan (sidang terpadu)",
+            "jumlah": 135
+          },
+          {
+            "nilai": "Sidang Keliling Sigi Biromaru",
+            "jumlah": 126
+          },
+          {
+            "nilai": "Sidang diluar gedung Pengadilan (sidang keliling)",
+            "jumlah": 50
+          },
+          {
+            "nilai": "Ruang Sidang 2",
+            "jumlah": 45
+          },
+          {
+            "nilai": "Sidang Keliling Rio Pakava",
+            "jumlah": 40
+          },
+          {
+            "nilai": "Terpadu Sindue",
+            "jumlah": 39
+          },
+          {
+            "nilai": "Terpadu Labuan",
+            "jumlah": 29
+          },
+          {
+            "nilai": "Terpadu Sindue Tombusabura",
+            "jumlah": 27
+          },
+          {
+            "nilai": "Ruang Sidang 2 Dalam Gedung",
+            "jumlah": 26
+          },
+          {
+            "nilai": "2",
+            "jumlah": 26
+          },
+          {
+            "nilai": "Sidang Keliling",
+            "jumlah": 24
+          },
+          {
+            "nilai": "Terpadu Sirenja",
+            "jumlah": 20
+          },
+          {
+            "nilai": "Ruangan dua",
+            "jumlah": 19
+          },
+          {
+            "nilai": "3",
+            "jumlah": 15
+          },
+          {
+            "nilai": "Sidang Keliling Sirenja",
+            "jumlah": 14
+          },
+          {
+            "nilai": "Ruang Sidang Elektronik 1",
+            "jumlah": 6
+          },
+          {
+            "nilai": "Ruang Sidang Elektronik 2",
+            "jumlah": 1
+          }
+        ]
+      }
+    }
+  ]
+}

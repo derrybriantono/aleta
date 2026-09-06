@@ -111,7 +111,7 @@ async function ukurKecamatan() {
     runQuery(
       `SELECT COUNT(*) AS semua,
               SUM(CASE WHEN TRIM(COALESCE(ph.kecamatan, '')) <> '' THEN 1 ELSE 0 END) AS terisi,
-              COUNT(DISTINCT TRIM(COALESCE(ph.kecamatan, ''))) AS berbeda
+              COUNT(DISTINCT NULLIF(TRIM(COALESCE(ph.kecamatan, '')), '')) AS berbeda
          FROM pihak ph`,
       []
     )
@@ -149,7 +149,7 @@ async function ukurAlasanDitunda() {
     runQuery(
       `SELECT COUNT(*) AS semua,
               SUM(CASE WHEN TRIM(COALESCE(j.alasan_ditunda, '')) <> '' THEN 1 ELSE 0 END) AS terisi,
-              COUNT(DISTINCT TRIM(COALESCE(j.alasan_ditunda, ''))) AS berbeda
+              COUNT(DISTINCT NULLIF(TRIM(COALESCE(j.alasan_ditunda, '')), '')) AS berbeda
          FROM perkara_jadwal_sidang j`,
       []
     )
@@ -173,7 +173,7 @@ async function ukurPekerjaan() {
     runQuery(
       `SELECT COUNT(*) AS semua,
               SUM(CASE WHEN TRIM(COALESCE(ph.pekerjaan, '')) <> '' THEN 1 ELSE 0 END) AS terisi,
-              COUNT(DISTINCT TRIM(COALESCE(ph.pekerjaan, ''))) AS berbeda
+              COUNT(DISTINCT NULLIF(TRIM(COALESCE(ph.pekerjaan, '')), '')) AS berbeda
          FROM pihak ph`,
       []
     )
@@ -197,7 +197,7 @@ async function ukurPendidikan() {
     runQuery(
       `SELECT COUNT(*) AS semua,
               SUM(CASE WHEN TRIM(COALESCE(ph.pendidikan, '')) <> '' THEN 1 ELSE 0 END) AS terisi,
-              COUNT(DISTINCT TRIM(COALESCE(ph.pendidikan, ''))) AS berbeda
+              COUNT(DISTINCT NULLIF(TRIM(COALESCE(ph.pendidikan, '')), '')) AS berbeda
          FROM pihak ph`,
       []
     )
@@ -221,7 +221,7 @@ async function ukurUraianBiaya() {
     runQuery(
       `SELECT COUNT(*) AS semua,
               SUM(CASE WHEN TRIM(COALESCE(b.uraian, '')) <> '' THEN 1 ELSE 0 END) AS terisi,
-              COUNT(DISTINCT TRIM(COALESCE(b.uraian, ''))) AS berbeda
+              COUNT(DISTINCT NULLIF(TRIM(COALESCE(b.uraian, '')), '')) AS berbeda
          FROM perkara_biaya b`,
       []
     )
@@ -245,7 +245,7 @@ async function ukurRuangSidang() {
     runQuery(
       `SELECT COUNT(*) AS semua,
               SUM(CASE WHEN TRIM(COALESCE(j.ruangan, '')) <> '' THEN 1 ELSE 0 END) AS terisi,
-              COUNT(DISTINCT TRIM(COALESCE(j.ruangan, ''))) AS berbeda
+              COUNT(DISTINCT NULLIF(TRIM(COALESCE(j.ruangan, '')), '')) AS berbeda
          FROM perkara_jadwal_sidang j`,
       []
     )
