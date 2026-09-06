@@ -177,6 +177,84 @@ function sebutanPutusan(nomorPerkara: string): string {
 }
 
 /**
+ * ============================================================================
+ * SEBUTAN PIHAK BUKAN NAMA PIHAK
+ * ============================================================================
+ *
+ * #0046# dan #0047# adalah SEBUTAN - "Penggugat", "Pemohon", "Tergugat",
+ * "Termohon" - bukan nama orangnya. Namanya dibawa #0098# dan #0102#, yang di
+ * ABT sendiri bernama "Nama #0046#" dan "Nama #0047#": mustahil #0046# juga
+ * nama, sebab kalau begitu #0098# berarti "Nama nama penggugat".
+ *
+ * Dokumen rujukan membuktikannya tanpa ragu. Blangko berbunyi
+ *
+ *     #0098#, NIK #0335#, ... sebagai #0046#;
+ *
+ * dan hasil jadinya berbunyi
+ *
+ *     Muhammad Ilham bin Aco Daude, NIK 7203040912000003, ... sebagai Pemohon I;
+ *
+ * Sebelum ini keduanya diisi nama, sehingga kalimat seperti "Ketua Majelis
+ * memeriksa identitas #0046#" tercetak dengan nama lengkap di tempat yang
+ * seharusnya berbunyi "Penggugat". #0046# muncul 12.935 kali di pustaka
+ * blangko - tersering dari seluruh 749 kode - dan #0047# 5.137 kali.
+ */
+function sebutanPihak1(jenisPerkara: string, nomorPerkara: string): string {
+  const surat = sebutanSurat(jenisPerkara, nomorPerkara);
+  if (surat === "permohonan") return "Pemohon";
+  if (surat === "gugatan") return "Penggugat";
+  return "";
+}
+
+function sebutanPihak2(jenisPerkara: string, nomorPerkara: string): string {
+  const surat = sebutanSurat(jenisPerkara, nomorPerkara);
+  if (surat === "permohonan") return "Termohon";
+  if (surat === "gugatan") return "Tergugat";
+  return "";
+}
+
+/**
+ * "Majelis Hakim" atau "Hakim" - juga sebutan, bukan daftar nama.
+ *
+ * ABT menentukannya dari ADA atau TIDAKNYA hakim berjabatan ketua, bukan dari
+ * banyaknya baris: perkara bertiga yang jabatannya belum terisi bukan majelis
+ * menurut SIPP, dan menyebutnya majelis berarti naskah menyatakan susunan yang
+ * tidak tercatat. Tanpa satu pun hakim, dikembalikan kosong - penanda yang
+ * masih terlihat lebih baik daripada sebutan yang ditebak.
+ */
+function sebutanMajelis(daftar: unknown): string {
+  if (namaPetugas(daftar).length === 0) return "";
+  return ketuaMajelis(daftar) ? "Majelis Hakim" : "Hakim";
+}
+
+/** "Ketua Majelis" atau "Hakim" - sebutan bagi yang memimpin sidang. */
+function sebutanKetua(daftar: unknown): string {
+  if (namaPetugas(daftar).length === 0) return "";
+  return ketuaMajelis(daftar) ? "Ketua Majelis" : "Hakim";
+}
+
+/**
+ * Jabatan petugas sebagaimana TERCATAT di SIPP.
+ *
+ * Dipakai untuk #6034# ("Panitera/Panitera Pengganti") dan #6032#
+ * ("Jurusita/Jurusita Pengganti"), yang keduanya jabatan - bukan nama. ABT
+ * membedakannya dengan membandingkan nama panitera perkara terhadap nama
+ * Panitera pengadilan di sys_config; ALETA tidak memegang nilai itu, jadi yang
+ * dipakai adalah jabatan yang sudah tercatat pada perkaranya.
+ *
+ * Bila jabatannya kosong dikembalikan KOSONG, bukan ditebak "Pengganti":
+ * menyebut Panitera sebagai Panitera Pengganti pada naskah yang ditandatangani
+ * adalah menuliskan jabatan yang keliru, dan itu lebih buruk daripada penanda
+ * yang masih terlihat.
+ */
+function jabatanPetugas(daftar: unknown): string {
+  const orang = (Array.isArray(daftar) ? (daftar as Petugas[]) : []).find((item) =>
+    String(item?.name ?? "").trim()
+  );
+  return String(orang?.jabatan ?? "").trim();
+}
+
+/**
  * Nilai tiap penanda, diambil dari berkas perkara.
  *
  * SATU sumber kebenaran untuk lembar tanya-jawab maupun naskah blangko. Dua
@@ -212,34 +290,49 @@ export function petaPenanda(berkas: BerkasPerkara): Map<string, { nilai: string;
   // --- Perkara ---
   pasang("0001", nomor, "SIPP - perkara.nomor_perkara");
   pasang("0048", jenisPerkara, "SIPP - perkara.jenis_perkara_nama");
-  pasang("0017", tanggalIndonesia(identitas.tanggalSurat), "SIPP - perkara.tanggal_surat");
-  pasang("0306", tanggalIndonesia(identitas.tanggalDaftar), "SIPP - perkara.tanggal_pendaftaran");
-  pasang("1061", tanggalIndonesia(identitas.tanggalDaftar), "SIPP - perkara.tanggal_pendaftaran");
+  const tanggalSurat = tanggalIndonesia(identitas.tanggalSurat);
+  const tanggalDaftar = tanggalIndonesia(identitas.tanggalDaftar);
+  pasang("0017", tanggalSurat, "SIPP - perkara.tanggal_surat");
+  pasang("1061", tanggalDaftar, "SIPP - perkara.tanggal_pendaftaran");
 
-  // --- Para pihak ---
-  const penggugat = cariPihak(berkas.paraPihak.nilai, ["penggugat", "pemohon"]);
-  const tergugat = cariPihak(berkas.paraPihak.nilai, ["tergugat", "termohon"]);
-  pasang("0046", penggugat, "SIPP - perkara_pihak");
-  pasang("0098", penggugat, "SIPP - perkara_pihak1.nama");
-  pasang("0047", tergugat, "SIPP - perkara_pihak");
-  pasang("0102", tergugat, "SIPP - perkara_pihak2.nama");
+  // #0306# BUKAN sekadar tanggal daftar. ABT: bila tanggal surat sama dengan
+  // tanggal daftar, yang dicetak kata "tersebut" - supaya kalimat tidak
+  // mengulang tanggal yang sama dua kali dalam satu napas.
+  pasang(
+    "0306",
+    tanggalSurat && tanggalSurat === tanggalDaftar ? "tersebut" : tanggalDaftar,
+    "ABT #0306# - \"tersebut\" bila sama dengan tanggal surat"
+  );
 
-  // --- Petugas ---
-  const hakim = namaPetugas(berkas.majelis.nilai);
-  pasang("0690", hakim.join(", "), "SIPP - perkara_hakim_pn");
+  // --- Para pihak: SEBUTAN dan NAMA adalah dua penanda yang berbeda ---
+  const namaPihak1 = cariPihak(berkas.paraPihak.nilai, ["penggugat", "pemohon"]);
+  const namaPihak2 = cariPihak(berkas.paraPihak.nilai, ["tergugat", "termohon"]);
+  pasang("0046", sebutanPihak1(jenisPerkara, nomor), "ABT #0046# - sebutan menurut jenis perkara");
+  pasang("0047", sebutanPihak2(jenisPerkara, nomor), "ABT #0047# - sebutan menurut jenis perkara");
+  pasang("0098", namaPihak1, "SIPP - perkara_pihak1.nama");
+  pasang("0102", namaPihak2, "SIPP - perkara_pihak2.nama");
 
-  // Ketua majelis DIBACA dari jabatannya di SIPP, bukan diambil yang pertama.
-  // Urutan baris tidak menjamin siapa ketuanya, dan blangko menyebut ketua
-  // majelis sebagai yang memimpin sidang - nama yang keliru di situ mengubah
-  // siapa yang memimpin persidangan menurut naskah resmi.
-  pasang("4004", ketuaMajelis(berkas.majelis.nilai), "SIPP - perkara_hakim_pn, jabatan Hakim Ketua");
+  // --- Petugas: sebutan dan jabatan, bukan nama ---
+  pasang("0690", sebutanMajelis(berkas.majelis.nilai), "ABT #0690# - sebutan susunan hakim");
+
+  // #4004# dan #0668# adalah SEBUTAN bagi yang memimpin - "Ketua Majelis" atau
+  // "Hakim" - bukan namanya. Namanya dibawa #0012#, yang di ABT bernama
+  // "Nama #0668#". Sebelum ini #4004# diisi nama ketua majelis.
+  pasang("4004", sebutanKetua(berkas.majelis.nilai), "ABT #4004# - sebutan pemimpin sidang");
+  pasang("0668", sebutanKetua(berkas.majelis.nilai), "ABT #0668# - sebutan pemimpin sidang");
+  pasang("0012", ketuaMajelis(berkas.majelis.nilai), "SIPP - perkara_hakim_pn, jabatan Hakim Ketua");
 
   const panitera = namaPetugas(berkas.panitera.nilai);
-  pasang("6033", panitera[0] ?? "", "SIPP - perkara_panitera_pn");
-  pasang("6034", panitera[0] ?? "", "SIPP - perkara_panitera_pn");
-  pasang("0015", panitera[0] ?? "", "SIPP - perkara_panitera_pn");
-  const jurusita = namaPetugas(berkas.jurusita.nilai);
-  pasang("6032", jurusita[0] ?? "", "SIPP - perkara_jurusita");
+  pasang("0015", panitera[0] ?? "", "SIPP - perkara_panitera_pn.nama");
+  // #6033# di ABT berbunyi select "#0015#" - alias bagi nama panitera.
+  pasang("6033", panitera[0] ?? "", "ABT #6033# - alias nama panitera (#0015#)");
+  // #6034# JABATANNYA, bukan namanya. Sebelum ini keduanya diisi nama yang
+  // sama, sehingga blangko "#6033# sebagai #6034#" tercetak
+  // "Unun Fidiyasari Patangai, S.H. sebagai Unun Fidiyasari Patangai, S.H.".
+  pasang("6034", jabatanPetugas(berkas.panitera.nilai), "SIPP - jabatan panitera pada perkara");
+
+  // #6032# juga jabatan - "Jurusita" atau "Jurusita Pengganti".
+  pasang("6032", jabatanPetugas(berkas.jurusita.nilai), "SIPP - jabatan jurusita pada perkara");
 
   // --- Sebutan yang mengikuti jenis perkara ---
   pasang("0053", sebutanSurat(jenisPerkara, nomor), "ALETA - menurut jenis perkara");

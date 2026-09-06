@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.85.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.85.0 - Lapisan AI, Mutu, dan Audit";
+export const APP_VERSION = "1.86.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.86.0 - Kamus Variabel dan Antrian Ruang";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,42 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.86.0",
+    title: "ALETA Judicia v1.86.0 - Kamus Variabel dan Antrian Ruang",
+    date: "2026-09-06",
+    status: "Operasional",
+    summary:
+      "Tahap awal kemandirian blangko: ALETA kini menyimpan kamus variabelnya sendiri, disalin dari APS Badilag dan tidak lagi menjadi sambungan. Pemeriksaan 87 pemetaan yang selama ini ditulis tangan menemukan tujuh yang keliru - dua di antaranya mengenai 31 persen dari seluruh pustaka blangko.",
+    added: [
+      "Kamus variabel ALETA: salinan 1.253 definisi APS Badilag beserta jenis, kueri, dan penggolongan Kelas A (mekanis), B (butuh manusia), dan C (mati).",
+      "Setiap penyalinan tercatat - kapan, oleh siapa, dari skema mana, berapa baris masuk - supaya pertanyaan \"definisi ini dari kapan\" selalu terjawab.",
+      "Rute kamus: arti sebuah penanda dapat dibaca siapa pun yang memakai blangko; menyalin ulang menuntut admin.",
+      "Antrian ruang sidang dan tampilan layar antrian.",
+    ],
+    changed: [
+      "Membaca kamus tidak menyentuh APS Badilag sama sekali. Ini titik awal kemandirian: sesudah disalin, mencabut folder ABT tidak menggagalkan pembacaan definisi.",
+    ],
+    fixed: [
+      "#0046# dan #0047# kini terisi SEBUTAN (\"Penggugat\", \"Pemohon\", \"Tergugat\", \"Termohon\"), bukan nama pihak. Namanya tetap dibawa #0098# dan #0102#. Kedua penanda ini muncul 18.072 kali di pustaka blangko - 31 persen dari seluruhnya - sehingga kalimat seperti \"memeriksa identitas #0046#\" sebelumnya tercetak dengan nama lengkap di tempat yang seharusnya berbunyi \"Penggugat\".",
+      "#0690# kini berbunyi \"Majelis Hakim\" atau \"Hakim\", bukan daftar nama hakim yang digabung koma.",
+      "#4004# dan #0668# kini sebutan pemimpin sidang (\"Ketua Majelis\" atau \"Hakim\"); namanya dipindahkan ke #0012# sebagaimana dinyatakan APS Badilag.",
+      "#6034# kini jabatan panitera, bukan namanya - sebelumnya \"#6033# sebagai #6034#\" tercetak dengan nama yang sama dua kali.",
+      "#6032# kini jabatan jurusita, bukan namanya.",
+      "#0306# kini berbunyi \"tersebut\" bila tanggal daftar sama dengan tanggal surat, supaya kalimat tidak mengulang tanggal yang sama.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Kamus perlu disalin sekali lewat rute kamus sebelum dipakai. Sebelum disalin, kamus menyatakan dirinya belum siap - bukan menjawab dengan kekosongan.",
+      "Penyalinan hanya MEMBACA APS Badilag. ALETA tidak pernah menulis ke sana.",
+      "Tarif tiap model AI masih belum disetel; selama kosong, biaya terhitung nol dan pagu tidak pernah memperingatkan.",
+      "Aturan pemeriksaan Kelompok G masih belum dimasukkan dan disetujui; selama kosong, panel Pemeriksaan memang sengaja kosong.",
+    ],
+    knownLimitations: [
+      "Ke-87 pemetaan lama belum seluruhnya dipindahkan menjadi baris data - itu menunggu penyelesai bertingkat pada tahap berikutnya. Pada tahap ini kamus baru menjadi otoritas atas ARTI, dan justru itulah yang menyingkap ketujuh cacat di atas.",
+      "Jenis variabel yang belum dikenali digolongkan Kelas C, bukan diangkat menjadi mekanis - menunggu diperiksa manusia.",
+    ],
+  },
   {
     version: "1.85.0",
     title: "ALETA Judicia v1.85.0 - Lapisan AI, Mutu, dan Audit",

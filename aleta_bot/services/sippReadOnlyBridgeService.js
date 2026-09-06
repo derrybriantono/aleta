@@ -1851,6 +1851,71 @@ LIMIT 300`;
 }
 
 /**
+ * SELURUH definisi variabel ABT - untuk disalin sekali ke kamus ALETA.
+ *
+ * ============================================================================
+ * BERBEDA DARI abt.namaVariabel, DAN SENGAJA
+ * ============================================================================
+ *
+ * abt.namaVariabel menjawab "apa nama penanda ini" untuk segelintir nomor,
+ * supaya temuan pemeriksaan terbaca dalam bahasa panitera. Yang ini menjawab
+ * "apa definisi seluruh variabel" satu kali, supaya ALETA dapat berhenti
+ * bergantung pada tabel ini sama sekali.
+ *
+ * Karena itu ia mengembalikan sql_query juga. Empat ratus enam puluh enam
+ * variabel sudah memuat kueri yang berjalan, dan selama ini ALETA menulis
+ * ulang pemetaannya dengan tangan - 87 dari 749 kode yang dipakai blangko,
+ * tujuh di antaranya keliru karena artinya ditebak dari namanya.
+ *
+ * ============================================================================
+ * TIDAK ADA PARAMETER DARI PEMANGGIL
+ * ============================================================================
+ *
+ * Operasi ini tidak menerima satu pun masukan yang masuk ke dalam kueri. Ia
+ * membaca satu tabel utuh, dan tidak ada bagian yang dapat dipengaruhi dari
+ * luar - jadi tidak ada jalan masuk yang perlu dijaga. Kuerinya sendiri tetap
+ * lewat runReadOnly, sama dengan seluruh jembatan ini.
+ */
+async function getSemuaVariabel(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const skema = await cariSkemaAbt(connectionKey);
+  if (!skema) return { ada: false, sebab: "Basis data APS Badilag tidak ditemukan.", skema: "", variabel: [] };
+
+  try {
+    const sql = `
+SELECT v.${quoteIdentifier("no_var")} AS no_var,
+       v.${quoteIdentifier("nama")} AS nama,
+       v.${quoteIdentifier("data_type")} AS jenis,
+       v.${quoteIdentifier("sql_query")} AS sql_query,
+       v.${quoteIdentifier("data_tabel")} AS data_tabel,
+       v.${quoteIdentifier("data_kolom")} AS data_kolom,
+       v.${quoteIdentifier("default_data")} AS default_data
+FROM ${quoteIdentifier(skema)}.${quoteIdentifier("abt_variabel")} v
+ORDER BY v.${quoteIdentifier("no_var")}`;
+    const baris = await runReadOnly(connectionKey, sql, []);
+
+    return {
+      ada: true,
+      skema,
+      jumlah: Array.isArray(baris) ? baris.length : 0,
+      variabel: (Array.isArray(baris) ? baris : []).map((row) => ({
+        noVar: safeString(row.no_var),
+        nama: safeString(row.nama),
+        jenis: safeString(row.jenis),
+        // sql_query TIDAK dirapikan. Yang menyatakan arti sebuah variabel
+        // adalah definisinya, bukan pembacanya.
+        sqlQuery: safeString(row.sql_query),
+        dataTabel: safeString(row.data_tabel),
+        dataKolom: safeString(row.data_kolom),
+        defaultData: safeString(row.default_data),
+      })),
+    };
+  } catch (error) {
+    return { ada: false, sebab: externalDbService.sanitizeError(error), skema, variabel: [] };
+  }
+}
+
+/**
  * Katalog blangko BAS dan putusan dari APS Badilag.
  *
  * ============================================================================
@@ -2219,6 +2284,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "abt.tanyaJawab": getTanyaJawab,
     "blangko.katalog": getKatalogBlangko,
     "abt.namaVariabel": getNamaVariabel,
+    "abt.semuaVariabel": getSemuaVariabel,
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,

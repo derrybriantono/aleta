@@ -232,6 +232,13 @@
       "when": 1780018000000,
       "tag": "0032_aleta_mutu_dan_biaya",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1780021600000,
+      "tag": "0033_aleta_kamus_variabel",
+      "breakpoints": true
     }
   ]
 }

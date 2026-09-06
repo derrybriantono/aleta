@@ -34,15 +34,21 @@ const PIHAK = [
   { role: "Tergugat/Termohon", name: "Andi Saputra bin Hamzah" },
 ];
 
+// Pertanyaan sungguhan memakai SEBUTAN, bukan nama - persis seperti BAS
+// sungguhan PA Donggala yang berbunyi "Apakah saksi kenal dengan Pemohon I dan
+// Pemohon II?". Pertanyaan keempat memakai #0098# supaya jalur NAMA tetap
+// teruji di sebelahnya.
 const PERTANYAAN_A1A = [
   { urutan: 1, pertanyaan: "Apakah saudara kenal dengan #0046#?", jawabanBawaan: "Saya kenal dengan #0046# karena saya adalah ...;" },
   { urutan: 2, pertanyaan: "Apakah saudara kenal dengan #0047#?", jawabanBawaan: "Saya kenal dengan #0047# sebagai isteri/suami #0046#;" },
   { urutan: 3, pertanyaan: "Berapa jumlah anak #0046# dan #0047#? Sebutkan #0099#.", jawabanBawaan: "Sebanyak ... orang;" },
+  { urutan: 4, pertanyaan: "Sebutkan nama lengkap #0046#: #0098#.", jawabanBawaan: "Namanya #0098#;" },
 ];
 
 const VARIABEL = [
   { noVar: "0046", nama: "Pemohon/ Penggugat", jenis: "data_sql" },
   { noVar: "0047", nama: "Termohon/ Tergugat", jenis: "data_sql" },
+  { noVar: "0098", nama: "Nama #0046#", jenis: "data_sipp" },
   { noVar: "0099", nama: "Rincian anak", jenis: "manual" },
 ];
 
@@ -51,9 +57,17 @@ const MAJELIS = [
   { role: "Hakim", jabatan: "Hakim Anggota", urutan: 2, name: "Idris, S.H.I., M.H." },
 ];
 
-const PANITERA = [{ role: "Panitera Pengganti", name: "Unun Fidiyasari Patangai, S.H." }];
+// role adalah sebutan SERAGAM yang dipasang jembatan bot; jabatan adalah yang
+// SESUNGGUHNYA tercatat SIPP. Keduanya sengaja dibedakan di sini karena #6034#
+// dan #6032# meminta jabatannya, bukan labelnya - dan label "Jurusita/Jurusita
+// Pengganti" kalau tercetak apa adanya akan memuat garis miringnya.
+const PANITERA = [
+  { role: "Panitera Pengganti", jabatan: "Panitera Pengganti", name: "Unun Fidiyasari Patangai, S.H." },
+];
 
-const JURUSITA = [{ role: "Jurusita/Jurusita Pengganti", name: "Mohammad Syukri" }];
+const JURUSITA = [
+  { role: "Jurusita/Jurusita Pengganti", jabatan: "Jurusita Pengganti", name: "Mohammad Syukri" },
+];
 
 function jawab(
   opsi: {
@@ -89,35 +103,53 @@ function jawab(
 beforeEach(() => panggil.mockReset());
 
 describe("mengisi yang sudah ada di sistem", () => {
-  it("nama para pihak diisi dari SIPP, tidak ditanyakan lagi", async () => {
+  it("pertanyaan memakai sebutan pihak, sebagaimana BAS sungguhan", async () => {
+    // BAS PA Donggala berbunyi "Apakah saksi kenal dengan Pemohon I dan
+    // Pemohon II?" - sebutan, bukan nama. Sebelum ini #0046# diisi nama,
+    // sehingga pertanyaannya menyebut nama lengkap di tempat yang seharusnya
+    // berbunyi "Penggugat".
     jawab();
     const lembar = await susunLembarTanyaJawab({ perkaraId: "10096", kode: "A1a" });
 
     expect(lembar.ok).toBe(true);
-    expect(lembar.baris[0].pertanyaan).toBe("Apakah saudara kenal dengan Reka Febrianti binti Rajab?");
-    expect(lembar.baris[1].pertanyaan).toBe("Apakah saudara kenal dengan Andi Saputra bin Hamzah?");
+    expect(lembar.baris[0].pertanyaan).toBe("Apakah saudara kenal dengan Penggugat?");
+    expect(lembar.baris[1].pertanyaan).toBe("Apakah saudara kenal dengan Tergugat?");
+  });
+
+  it("namanya tetap terisi lewat penanda namanya sendiri", async () => {
+    jawab();
+    const lembar = await susunLembarTanyaJawab({ perkaraId: "10096", kode: "A1a" });
+    expect(lembar.baris[3].pertanyaan).toBe("Sebutkan nama lengkap Penggugat: Reka Febrianti binti Rajab.");
   });
 
   it("jawaban bawaan ikut terisi, bukan hanya pertanyaannya", async () => {
     jawab();
     const lembar = await susunLembarTanyaJawab({ perkaraId: "10096", kode: "A1a" });
-    expect(lembar.baris[1].jawabanBawaan).toContain("sebagai isteri/suami Reka Febrianti binti Rajab");
+    expect(lembar.baris[1].jawabanBawaan).toContain("sebagai isteri/suami Penggugat");
+    expect(lembar.baris[3].jawabanBawaan).toContain("Namanya Reka Febrianti binti Rajab");
   });
 
   it("nilai yang terisi membawa asal-usulnya", async () => {
     jawab();
     const lembar = await susunLembarTanyaJawab({ perkaraId: "10096", kode: "A1a" });
-    const penggugat = lembar.terisi.find((x) => x.noVar === "0046");
-    expect(penggugat?.nama).toBe("Pemohon/ Penggugat");
+
     // Asal harus menyebut sistem DAN tabelnya, supaya dapat ditelusuri kembali
     // tanpa menebak - "dari SIPP" saja tidak cukup untuk memeriksa satu nilai.
-    expect(penggugat?.asal).toBe("SIPP - perkara_pihak");
+    const nama = lembar.terisi.find((x) => x.noVar === "0098");
+    expect(nama?.nama).toBe("Nama #0046#");
+    expect(nama?.asal).toBe("SIPP - perkara_pihak1.nama");
+
+    // Sebutan tidak berasal dari tabel pihak - ia dihitung dari jenis
+    // perkaranya, dan asalnya harus mengatakan begitu.
+    const sebutan = lembar.terisi.find((x) => x.noVar === "0046");
+    expect(sebutan?.nama).toBe("Pemohon/ Penggugat");
+    expect(sebutan?.asal).toContain("sebutan menurut jenis perkara");
   });
 
   it("peran dicocokkan longgar - SIPP menulis \"Penggugat/Pemohon\" dalam satu kolom", async () => {
     jawab({ pihak: [{ role: "PEMOHON", name: "Siti Aminah" }] });
     const lembar = await susunLembarTanyaJawab({ perkaraId: "10096", kode: "A1a" });
-    expect(lembar.baris[0].pertanyaan).toContain("Siti Aminah");
+    expect(lembar.baris[3].pertanyaan).toContain("Siti Aminah");
   });
 });
 
@@ -138,12 +170,17 @@ describe("yang tidak pasti tidak ditebak", () => {
     expect(sisa?.nama).toBe("Rincian anak");
   });
 
-  it("para pihak tidak terbaca: tidak ada yang diisi, dan sebabnya disebut", async () => {
+  it("para pihak tidak terbaca: namanya dibiarkan utuh, dan sebabnya disebut", async () => {
     jawab({ pihak: [] });
     const lembar = await susunLembarTanyaJawab({ perkaraId: "10096", kode: "A1a" });
 
-    expect(lembar.baris[0].pertanyaan).toContain("#0046#");
-    expect(lembar.kosong.find((x) => x.noVar === "0046")?.sebab).toMatch(/tidak terbaca dari SIPP/i);
+    expect(lembar.baris[3].pertanyaan).toContain("#0098#");
+    expect(lembar.kosong.find((x) => x.noVar === "0098")?.sebab).toMatch(/tidak terbaca dari SIPP/i);
+
+    // Sebutannya TETAP terisi: "Penggugat" tidak bergantung pada siapa
+    // pihaknya, melainkan pada jenis perkaranya - sama seperti di ABT, yang
+    // membacanya dari tabel perkara, bukan tabel pihak.
+    expect(lembar.baris[0].pertanyaan).toBe("Apakah saudara kenal dengan Penggugat?");
   });
 });
 
@@ -180,9 +217,12 @@ describe("peta penanda dipakai bersama", () => {
     const peta = petaPenanda(berkas);
 
     expect(peta.get("0001")?.nilai).toBe("545/Pdt.G/2026/PA.Dgl");
-    expect(peta.get("0046")?.nilai).toBe("Reka Febrianti binti Rajab");
-    expect(peta.get("0047")?.nilai).toBe("Andi Saputra bin Hamzah");
-    expect(peta.get("0046")?.asal).toMatch(/SIPP/);
+    // #0046# dan #0047# adalah SEBUTAN; namanya dibawa #0098# dan #0102#.
+    expect(peta.get("0046")?.nilai).toBe("Penggugat");
+    expect(peta.get("0047")?.nilai).toBe("Tergugat");
+    expect(peta.get("0098")?.nilai).toBe("Reka Febrianti binti Rajab");
+    expect(peta.get("0102")?.nilai).toBe("Andi Saputra bin Hamzah");
+    expect(peta.get("0098")?.asal).toMatch(/SIPP/);
   });
 
   it("nilainya sama persis dengan yang dipakai lembar tanya-jawab", async () => {
@@ -205,8 +245,11 @@ describe("peta penanda dipakai bersama", () => {
     // Penanda yang tidak ada di peta dibiarkan utuh saat pengisian. Kalau ia
     // masuk peta dengan nilai kosong, penandanya lenyap menjadi ruang kosong
     // pada naskah resmi - dan tidak ada yang menyadarinya.
-    expect(peta.has("0046")).toBe(false);
-    expect(peta.has("0047")).toBe(false);
+    expect(peta.has("0098")).toBe(false);
+    expect(peta.has("0102")).toBe(false);
+
+    // Sebutannya tetap terisi - ia tidak bergantung pada pihaknya.
+    expect(peta.get("0046")?.nilai).toBe("Penggugat");
   });
 });
 
@@ -237,23 +280,107 @@ describe("penanda yang berasal dari SIPP", () => {
     expect(peta.get("0306")?.nilai).toBe("2 September 2026");
   });
 
-  it("nama pihak mengisi kedua penanda yang menunjuk orang yang sama", async () => {
+  /**
+   * ==========================================================================
+   * SEBUTAN DAN NAMA TIDAK BOLEH TERTUKAR
+   * ==========================================================================
+   *
+   * Ini cacat termahal yang pernah ditemukan pada pemetaan ini, dan uji di
+   * bawah ada supaya ia tidak dapat kembali.
+   *
+   * #0046# muncul 12.935 kali di pustaka blangko - tersering dari seluruh 749
+   * kode - dan #0047# 5.137 kali. Keduanya SEBUTAN. Sebelumnya keduanya diisi
+   * nama pihak, sehingga kalimat "Ketua Majelis memeriksa identitas #0046#"
+   * tercetak dengan nama lengkap di tempat yang seharusnya berbunyi
+   * "Penggugat".
+   *
+   * Buktinya ada pada dokumen rujukan PA Donggala sendiri: blangko berbunyi
+   * "#0098#, NIK #0335#, ... sebagai #0046#;" dan hasil jadinya berbunyi
+   * "Muhammad Ilham bin Aco Daude, NIK 7203040912000003, ... sebagai
+   * Pemohon I;". Nama variabel #0098# di ABT pun berbunyi "Nama #0046#", yang
+   * mustahil kalau #0046# juga nama.
+   */
+  it("sebutan pihak bukan nama pihak - keduanya penanda yang berbeda", async () => {
     jawab();
     const peta = petaPenanda(await rakitBerkasPerkara("10096"));
 
-    expect(peta.get("0046")?.nilai).toBe("Reka Febrianti binti Rajab");
+    expect(peta.get("0046")?.nilai).toBe("Penggugat");
+    expect(peta.get("0047")?.nilai).toBe("Tergugat");
     expect(peta.get("0098")?.nilai).toBe("Reka Febrianti binti Rajab");
-    expect(peta.get("0047")?.nilai).toBe("Andi Saputra bin Hamzah");
     expect(peta.get("0102")?.nilai).toBe("Andi Saputra bin Hamzah");
+
+    // Yang dijaga bukan sekadar nilainya benar, melainkan keduanya TIDAK SAMA.
+    expect(peta.get("0046")?.nilai).not.toBe(peta.get("0098")?.nilai);
+    expect(peta.get("0047")?.nilai).not.toBe(peta.get("0102")?.nilai);
   });
 
-  it("majelis, panitera, dan jurusita terisi dari SIPP", async () => {
+  it("perkara permohonan memakai sebutan Pemohon dan Termohon", async () => {
+    jawab({ detail: { nomorPerkara: "206/Pdt.P/2026/PA.Dgl", jenisPerkara: "Itsbat Nikah" } });
+    const peta = petaPenanda(await rakitBerkasPerkara("10096"));
+
+    expect(peta.get("0046")?.nilai).toBe("Pemohon");
+    expect(peta.get("0047")?.nilai).toBe("Termohon");
+  });
+
+  it("majelis, panitera, dan jurusita: sebutan dan jabatan, bukan nama", async () => {
     jawab();
     const peta = petaPenanda(await rakitBerkasPerkara("10096"));
 
-    expect(peta.get("0690")?.nilai).toBe("Sudarmin H.I.M. Tang, S.H.I.,M.H, Idris, S.H.I., M.H.");
+    // #0690# adalah sebutan susunan hakim - dua kata, bukan daftar nama.
+    // Sebelumnya diisi seluruh nama hakim yang digabung koma, sehingga
+    // "diucapkan oleh Majelis Hakim" menjadi "diucapkan oleh Sudarmin
+    // H.I.M. Tang, Idris". Muncul 913 kali di pustaka blangko.
+    expect(peta.get("0690")?.nilai).toBe("Majelis Hakim");
+
+    // #6033# nama panitera, #6034# JABATANNYA. Sebelumnya keduanya diisi nama
+    // yang sama, sehingga blangko "#6033# sebagai #6034#" tercetak
+    // "Unun Fidiyasari Patangai, S.H. sebagai Unun Fidiyasari Patangai, S.H.".
     expect(peta.get("6033")?.nilai).toBe("Unun Fidiyasari Patangai, S.H.");
-    expect(peta.get("6032")?.nilai).toBe("Mohammad Syukri");
+    expect(peta.get("0015")?.nilai).toBe("Unun Fidiyasari Patangai, S.H.");
+    expect(peta.get("6034")?.nilai).toBe("Panitera Pengganti");
+    expect(peta.get("6034")?.nilai).not.toBe(peta.get("6033")?.nilai);
+
+    // #6032# jabatan jurusita, bukan namanya.
+    expect(peta.get("6032")?.nilai).toBe("Jurusita Pengganti");
+  });
+
+  it("jabatan yang tidak tercatat SIPP dibiarkan kosong, tidak ditebak", async () => {
+    // Menyebut Panitera sebagai Panitera Pengganti pada naskah yang
+    // ditandatangani adalah menuliskan jabatan yang keliru - lebih buruk
+    // daripada penanda yang masih terlihat. Label seragam "Jurusita/Jurusita
+    // Pengganti" pun tidak boleh dipakai: garis miringnya akan ikut tercetak.
+    panggil.mockImplementation(async (operasi: string) => {
+      if (operasi === "case.detail")
+        return { ok: true, data: { nomorPerkara: "545/Pdt.G/2026/PA.Dgl", jenisPerkara: "Cerai Gugat" } };
+      if (operasi === "case.panitera")
+        return { ok: true, data: [{ role: "Panitera Pengganti", jabatan: "", name: "Tanpa Jabatan" }] };
+      if (operasi === "case.jurusita")
+        return { ok: true, data: [{ role: "Jurusita/Jurusita Pengganti", jabatan: "", name: "Juga Tanpa" }] };
+      return { ok: true, data: [] };
+    });
+
+    const peta = petaPenanda(await rakitBerkasPerkara("10096"));
+    expect(peta.has("6034")).toBe(false);
+    expect(peta.has("6032")).toBe(false);
+    // Namanya tetap terisi - yang tidak diketahui hanya jabatannya.
+    expect(peta.get("6033")?.nilai).toBe("Tanpa Jabatan");
+  });
+
+  it("tanggal daftar menjadi \"tersebut\" bila sama dengan tanggal surat", async () => {
+    // ABT #0306#: bila keduanya sama, yang dicetak kata "tersebut" supaya
+    // kalimat tidak mengulang tanggal yang sama dua kali dalam satu napas.
+    jawab({
+      detail: {
+        nomorPerkara: "545/Pdt.G/2026/PA.Dgl",
+        jenisPerkara: "Cerai Gugat",
+        tanggalDaftar: "2026-09-02T00:00:00.000Z",
+        tanggalSurat: "2026-09-02T00:00:00.000Z",
+      },
+    });
+    const peta = petaPenanda(await rakitBerkasPerkara("10096"));
+
+    expect(peta.get("0306")?.nilai).toBe("tersebut");
+    expect(peta.get("1061")?.nilai).toBe("2 September 2026");
   });
 });
 
@@ -318,34 +445,51 @@ describe("yang sengaja tidak diisi", () => {
  * memimpin menurut naskah resmi.
  */
 describe("ketua majelis dan pengaturan satker", () => {
-  it("ketua majelis diambil menurut jabatannya, bukan urutan pertama", async () => {
+  it("nama ketua majelis diambil menurut jabatannya, bukan urutan pertama", async () => {
     jawab();
     const peta = petaPenanda(await rakitBerkasPerkara("10096"));
-    expect(peta.get("4004")?.nilai).toBe("Sudarmin H.I.M. Tang, S.H.I.,M.H");
-    expect(peta.get("4004")?.asal).toContain("Hakim Ketua");
+    // #0012# NAMANYA - di ABT bernama "Nama #0668#".
+    expect(peta.get("0012")?.nilai).toBe("Sudarmin H.I.M. Tang, S.H.I.,M.H");
+    expect(peta.get("0012")?.asal).toContain("Hakim Ketua");
   });
 
-  it("majelis tanpa jabatan ketua TIDAK menebak hakim pertama", async () => {
-    // Menebaknya berarti menetapkan siapa yang memimpin persidangan menurut
-    // naskah resmi - atas dasar urutan baris yang tidak menjanjikan apa pun.
+  it("#4004# dan #0668# adalah sebutan pemimpin sidang, bukan namanya", async () => {
+    jawab();
+    const peta = petaPenanda(await rakitBerkasPerkara("10096"));
+    expect(peta.get("4004")?.nilai).toBe("Ketua Majelis");
+    expect(peta.get("0668")?.nilai).toBe("Ketua Majelis");
+    expect(peta.get("4004")?.nilai).not.toBe(peta.get("0012")?.nilai);
+  });
+
+  it("hakim tunggal disebut \"Hakim\", bukan \"Majelis Hakim\"", async () => {
+    // Susunan yang tidak tercatat tidak boleh dinyatakan majelis: naskah resmi
+    // akan menyebut susunan persidangan yang tidak pernah ada.
     panggil.mockImplementation(async (operasi: string) => {
-      if (operasi === "case.detail") return { ok: true, data: { nomorPerkara: "545/Pdt.G/2026/PA.Dgl" } };
+      if (operasi === "case.detail")
+        return { ok: true, data: { nomorPerkara: "545/Pdt.G/2026/PA.Dgl", jenisPerkara: "Cerai Gugat" } };
       if (operasi === "case.judges")
         return { ok: true, data: [{ role: "Hakim", jabatan: "", name: "Hakim Tanpa Jabatan" }] };
       return { ok: true, data: [] };
     });
 
     const peta = petaPenanda(await rakitBerkasPerkara("10096"));
-    expect(peta.has("4004")).toBe(false);
-    expect(peta.get("0690")?.nilai).toBe("Hakim Tanpa Jabatan");
+    // Namanya tetap tidak ditebak - jabatan ketua tidak tercatat.
+    expect(peta.has("0012")).toBe(false);
+    expect(peta.get("0690")?.nilai).toBe("Hakim");
+    expect(peta.get("4004")?.nilai).toBe("Hakim");
   });
 
-  it("nama panitera mengisi ketiga penanda yang menunjuknya", async () => {
-    jawab();
+  it("tanpa satu pun hakim, sebutannya tidak ditebak", async () => {
+    panggil.mockImplementation(async (operasi: string) => {
+      if (operasi === "case.detail")
+        return { ok: true, data: { nomorPerkara: "545/Pdt.G/2026/PA.Dgl", jenisPerkara: "Cerai Gugat" } };
+      return { ok: true, data: [] };
+    });
+
     const peta = petaPenanda(await rakitBerkasPerkara("10096"));
-    for (const noVar of ["0015", "6033", "6034"]) {
-      expect(peta.get(noVar)?.nilai).toBe("Unun Fidiyasari Patangai, S.H.");
-    }
+    expect(peta.has("0690")).toBe(false);
+    expect(peta.has("4004")).toBe(false);
+    expect(peta.has("0668")).toBe(false);
   });
 
   it("zona waktu dan nama satker berasal dari pengaturan", async () => {

@@ -274,6 +274,8 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_pemakaian",
   "aleta_ai_pagu",
   "aleta_ai_tarif",
+  "aleta_kamus_variabel",
+  "aleta_kamus_salin",
   "aleta_sumber_aplikasi",
   "aleta_keajekan_jalan",
   "aleta_ai_saklar",

@@ -610,6 +610,46 @@ const schemaStatements = [
     dibuat_at TEXT NOT NULL,
     diubah_at TEXT NOT NULL
   )`,
+  // Kamus variabel: salinan aps_badilag.abt_variabel ke dalam ALETA.
+  //
+  // Salinan, bukan sambungan - sesudah disalin tidak ada jalur berjalan yang
+  // gagal ketika folder ABT dicabut. Definisi disimpan APA ADANYA, termasuk
+  // sql_query yang tidak diubah sedikit pun: menebak arti sebuah variabel dari
+  // namanya adalah sebab seluruh cacat pemetaan yang ditemukan pada 87 pemetaan
+  // tangan sebelumnya - #0046# yang muncul 12.935 kali ternyata SEBUTAN
+  // ("Penggugat"), bukan nama pihak.
+  `CREATE TABLE IF NOT EXISTS aleta_kamus_variabel (
+    no_var TEXT PRIMARY KEY,
+    nama TEXT NOT NULL DEFAULT '',
+    jenis TEXT NOT NULL DEFAULT '',
+    sql_query TEXT NOT NULL DEFAULT '',
+    data_tabel TEXT NOT NULL DEFAULT '',
+    data_kolom TEXT NOT NULL DEFAULT '',
+    default_data TEXT NOT NULL DEFAULT '',
+    kelas TEXT NOT NULL DEFAULT 'C',
+    sebab_kelas TEXT NOT NULL DEFAULT '',
+    bersarang TEXT NOT NULL DEFAULT '',
+    jumlah_pakai INTEGER NOT NULL DEFAULT 0,
+    asal_skema TEXT NOT NULL DEFAULT '',
+    salin_id TEXT,
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  // Tiap penyalinan dicatat. Kamus tanpa catatan tidak dapat menjawab
+  // "definisi ini dari kapan", dan pertanyaan itu pasti muncul pada hari
+  // sebuah naskah dipersoalkan.
+  `CREATE TABLE IF NOT EXISTS aleta_kamus_salin (
+    id TEXT PRIMARY KEY,
+    asal_skema TEXT NOT NULL DEFAULT '',
+    jumlah_baris INTEGER NOT NULL DEFAULT 0,
+    jumlah_kelas_a INTEGER NOT NULL DEFAULT 0,
+    jumlah_kelas_b INTEGER NOT NULL DEFAULT 0,
+    jumlah_kelas_c INTEGER NOT NULL DEFAULT 0,
+    keadaan TEXT NOT NULL DEFAULT 'selesai',
+    sebab TEXT NOT NULL DEFAULT '',
+    oleh TEXT NOT NULL DEFAULT '',
+    dijalankan_at TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_ai_pagu (
     id TEXT PRIMARY KEY,
     bulan TEXT NOT NULL,
@@ -2509,6 +2549,10 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_ai_pemakaian_perkara ON aleta_ai_pemakaian(perkara_id)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_tarif_model ON aleta_ai_tarif(model)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_pagu_bulan ON aleta_ai_pagu(bulan)`,
+  `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_kelas ON aleta_kamus_variabel(kelas)`,
+  `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_jenis ON aleta_kamus_variabel(jenis)`,
+  `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_salin ON aleta_kamus_variabel(salin_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_kamus_salin_waktu ON aleta_kamus_salin(dijalankan_at)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_sumber_aplikasi_kode ON aleta_sumber_aplikasi(kode)`,
   `CREATE INDEX IF NOT EXISTS idx_keajekan_jalan_waktu ON aleta_keajekan_jalan(dijalankan_at)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_saklar_kunci ON aleta_ai_saklar(lingkup, kunci)`,
