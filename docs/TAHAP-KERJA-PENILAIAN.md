@@ -362,3 +362,111 @@ Cakupan hari ini: **0 terbukti, 0 berselisih, 31 belum, dari 31 analisis.**
 | Penjaga SIPP baca-saja menjangkau seluruh berkas | **lulus** — 246 kueri, 20 berkas |
 | Kerangka penyandingan berdiri dan terbukti menolak yang cacat | **lulus** — 9 bentuk cacat ditolak |
 | Belum satu pun penilaian baru ditulis | **lulus** — memang belum, dan itu disengaja |
+
+---
+
+## Tahap 2 — Perapian ruas sumber
+
+**Dikerjakan 7 September 2026. BELUM LULUS — terhalang sambungan SIPP.**
+
+### 2.1 Mengukur dahulu, memetakan kemudian
+
+Rencana menyebut lima ruas yang harus dirapikan, lengkap dengan angkanya:
+340 tulisan kecamatan menjadi 16, 1.489 alasan penundaan menjadi 9, 2.115
+pekerjaan menjadi 14, 8.554 uraian biaya menjadi 10, dan 22 nama ruang sidang
+menjadi 4.
+
+Menyusun tabel pemetaan dari angka-angka itu berarti membangun untuk masalah
+yang **dikira**, bukan masalah yang **ada**. Yang menentukan bentuk pemetaannya
+bukan berapa banyak tulisannya, melainkan seperti apa tulisan itu — dan itu
+hanya dapat dibaca dari daftarnya.
+
+Maka yang dibangun lebih dahulu pengukurnya:
+`services/ukurRuasBebasService.js` beserta penjalannya
+`scripts/ukur-ruas-bebas.js`. Untuk enam ruas ia melaporkan berapa baris
+seluruhnya, berapa yang terisi, berapa banyak tulisan yang berbeda, dan **tiga
+puluh** tulisan yang paling sering — tiga puluh, bukan sepuluh, sebab yang
+menentukan berat-ringannya perapian justru ekornya; sepuluh teratas hampir
+selalu tampak rapi.
+
+### 2.2 Satu hal yang sudah ketahuan tanpa menjalankannya
+
+SIPP ternyata **sudah punya tabel acuan kecamatan sendiri** —
+`ref_kecamatan_new` — dan `sebaranWilayah()` sudah menjoinnya sejak lama.
+
+Jadi persoalan wilayah bukan "belum ada tabel acuan", melainkan "berapa banyak
+isian yang tidak cocok dengan tabel acuan yang sudah ada". Itu pertanyaan yang
+berbeda, dan jawabannya menentukan apakah perapiannya sepuluh menit atau dua
+hari. Pengukur itu menghitungnya secara khusus, beserta tiga puluh isian teratas
+yang **tidak** cocok.
+
+Andaikan tabel pemetaan disusun lebih dahulu, ia akan menduplikasi tabel yang
+sudah ada di SIPP.
+
+### 2.3 Kuerinya diletakkan di layanan, bukan di naskah
+
+Seluruh kueri pengukur tinggal di `services/`, bukan di `scripts/`. Sebabnya
+tegas: `scripts/` sengaja **tidak** dipindai penjaga baca-saja, sebab naskah
+penjaga memang menuliskan contoh kueri yang salah untuk menguji penolakannya.
+Kueri sungguhan yang tinggal di sana tidak akan pernah dijaga.
+
+Diperiksa: kedua penjaga baca-saja memang menjangkau berkas layanan yang baru.
+
+### 2.4 Dua temuan sampingan
+
+**Penjaga baca-saja punya titik buta.** Ia tidak mengikuti pembungkus
+`runQuery`, sehingga kueri layanan baru tidak ikut terhitung. Ditutup: kini ia
+mengenali pembungkus berbentuk `function NAMA(` maupun berbentuk panah
+(`const runQuery = (sql) =>`) — bentuk kedua luput dari penjaga lama seluruhnya.
+Jangkauannya naik dari **246 menjadi 459 kueri**.
+
+**Sebuah penjaga berhenti bekerja tanpa suara.** Regexnya tampak benar di layar:
+
+```
+/...{0,400}?\bdb\s*\.\s*query\s*\(/g
+```
+
+tetapi `\b` di sana bukan dua aksara — ia **satu** aksara backspace (0x08), lahir
+dari tanda miring ganda yang menyusut ketika melewati cangkang. Regexnya mencari
+aksara backspace yang diikuti "db"; tidak pernah ada. Penjaganya lulus tanpa
+memeriksa apa pun.
+
+Dibuat penjaga tetap `verify-aksara-liar.js` yang memindai **1.403 berkas
+sumber**. Lima berkas yang memang menulis aksara kendali dengan sadar
+dikecualikan **beserta kode aksaranya** — bukan berkasnya saja, sebab berkas
+yang dikecualikan seluruhnya akan menelan aksara liar berikutnya tanpa suara.
+
+Penjaga itu menemukan **satu cacat produksi sungguhan**:
+
+`scripts/aleta-ecourt-unduh-latar.sh` membaca waktu detak berkas kunci dengan
+
+```
+sed -n 's/.*"detak":"\([^"]*\)".*/^A/p'
+```
+
+Acuan baliknya `\1` sudah menyusut menjadi aksara 0x01. Akibatnya `sed`
+memulangkan satu bita tak terbaca, `date -d` gagal, `DETAK_EPOCH` menjadi 0,
+dan syarat `-gt 0` tidak pernah terpenuhi — sehingga **penjaga "penarikan masih
+berjalan" tidak pernah menyala** dan dua penarikan e-Court dapat berjalan
+bersamaan. Diperbaiki dan dibuktikan: sebelumnya memulangkan `^A`, sesudahnya
+memulangkan `2026-09-07T10:00:00+08:00`.
+
+### Gerbang lulus tahap 2
+
+| Syarat | Keadaan |
+|---|---|
+| Pengukur enam ruas berdiri dan kuerinya dijaga | **lulus** |
+| Nol tulisan yang tak terpetakan | **terhalang** — belum ada pengukuran |
+| Jumlah baris sesudah dipetakan sama persis | **terhalang** — belum ada pemetaan |
+| Daftar tulisan tiap kelompok dapat diperiksa manusia | **terhalang** — menunggu daftar hasil ukur |
+
+**Tahap 2 belum lulus, dan tidak dapat diselesaikan dari mesin pengembang.**
+Basis data SIPP hanya ada di server pengadilan. Langkah berikutnya:
+
+```
+docker compose exec aleta_bot node scripts/ukur-ruas-bebas.js
+```
+
+lalu daftar yang dihasilkannya dibaca **bersama petugas kepaniteraan** untuk
+menyusun pemetaannya. Pemetaan yang disusun tanpa membaca daftarnya akan
+memetakan yang tidak ada dan meninggalkan yang ada.

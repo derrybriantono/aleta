@@ -57,7 +57,7 @@ fi
 # selamanya.
 KUNCI="$LOG_DIR/ecourt-unduh-aleta.lock"
 if [ -f "$KUNCI" ]; then
-  DETAK="$(sed -n 's/.*"detak":"\([^"]*\)".*//p' "$KUNCI" 2>/dev/null)"
+  DETAK="$(sed -n 's/.*"detak":"\([^"]*\)".*/\1/p' "$KUNCI" 2>/dev/null)"
   if [ -n "$DETAK" ]; then
     DETAK_EPOCH="$(date -d "$DETAK" +%s 2>/dev/null || echo 0)"
     SEKARANG="$(date +%s)"

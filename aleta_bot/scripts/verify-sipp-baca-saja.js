@@ -175,7 +175,58 @@ function periksaBerkas(jalur) {
     }
   }
 
-  // ---- 3. kata kerja tulis yang menempel langsung pada pemanggilan ----
+  // ---- 3. lewat pembungkus ----
+  //
+  // Bentuk yang paling lazim di services/: `function runQuery(sql, params)`
+  // yang di dalamnya memanggil `db.query(sql, ...)`. Kueri sungguhannya ada
+  // pada pemanggilan runQuery, bukan pada db.query.
+  //
+  // Dikenali dua bentuk deklarasi. Penjaga lama hanya mengenali `function
+  // NAMA(`, sehingga pembungkus berbentuk panah - `const runQuery = (sql) =>`
+  // - luput seluruhnya. Belum ada yang memakai bentuk itu hari ini; dikenali
+  // sekarang supaya yang menulisnya kelak tidak lolos tanpa suara.
+  const pembungkus = new Set();
+  for (const conn of sipp) {
+    if (bot.has(conn)) continue;
+    const polaDeklarasi = [
+      new RegExp(`function\\s+(\\w+)\\s*\\([^)]*\\)\\s*\\{[\\s\\S]{0,400}?\\b${conn}\\s*\\.\\s*query\\s*\\(`, "g"),
+      new RegExp(`(?:const|let|var)\\s+(\\w+)\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>[\\s\\S]{0,400}?\\b${conn}\\s*\\.\\s*query\\s*\\(`, "g"),
+    ];
+    polaDeklarasi.forEach((pola) => {
+      let m;
+      while ((m = pola.exec(sumber)) !== null) pembungkus.add(m[1]);
+    });
+  }
+  for (const nama of pembungkus) {
+    // 3a. kueri ditulis langsung pada pemanggilan pembungkus
+    const polaLangsung = new RegExp(`(?<![\\w.])${nama}\\s*\\(\\s*\`([^\`]*)\``, "g");
+    let m;
+    while ((m = polaLangsung.exec(sumber)) !== null) {
+      jumlahDiperiksa += 1;
+      const kata = kataPertama(m[1]);
+      if (!KATA_BACA.test(kata)) {
+        pelanggaran.push(`${relatif}:${nomorBaris(sumber, m.index)} ${nama}() diawali ${kata || "(kosong)"}`);
+      }
+    }
+    // 3b. kueri disusun ke peubah lebih dahulu, lalu diserahkan ke pembungkus
+    const polaPeubah = new RegExp(`(?<![\\w.])${nama}\\s*\\(\\s*(\\w+)\\s*[,)]`, "g");
+    while ((m = polaPeubah.exec(sumber)) !== null) {
+      const isi = nilaiPeubah.get(m[1]);
+      if (!isi) {
+        jumlahTakTerjangkau += 1;
+        continue;
+      }
+      jumlahDiperiksa += 1;
+      const kata = kataPertama(isi.sql);
+      if (!KATA_BACA.test(kata)) {
+        pelanggaran.push(
+          `${relatif}:${nomorBaris(sumber, m.index)} ${nama}(${m[1]}) yang isinya diawali ${kata || "(kosong)"} pada baris ${nomorBaris(sumber, isi.di)}`
+        );
+      }
+    }
+  }
+
+  // ---- 4. kata kerja tulis yang menempel langsung pada pemanggilan ----
   for (const conn of sipp) {
     if (bot.has(conn)) continue;
     const pola = new RegExp(`\\b${conn}\\s*\\.\\s*query\\s*\\(\\s*['"\`]\\s*(${KATA_TULIS.source.replace(/^\^|\\b$/g, "")})`, "gi");
@@ -238,6 +289,17 @@ function utama() {
   );
 
   periksa("jumlah kueri yang terjangkau jauh lebih banyak daripada penjaga lama", totalDiperiksa > 200, `dapat ${totalDiperiksa}`);
+  periksa("pembungkus berbentuk panah dikenali", (() => {
+    // Bentuk yang luput dari penjaga lama. Diuji atas sumber buatan supaya
+    // terbukti dikenali walau belum ada berkas yang memakainya hari ini.
+    const contoh = [
+      'const db = require("../db_config");',
+      "const jalankan = async (sql) => db.query(sql);",
+      "jalankan(`DELETE FROM perkara`);",
+    ].join("\n");
+    const pola = /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>[\s\S]{0,400}?\bdb\s*\.\s*query\s*\(/g;
+    return pola.exec(contoh) !== null;
+  })());
 
   if (totalTakTerjangkau) {
     console.log("");
