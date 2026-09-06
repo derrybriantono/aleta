@@ -142,6 +142,92 @@ State dan riwayat update disimpan di folder data, bukan di folder kode:
 
 Karena berada di `aleta-data`, data status tidak hilang saat container dibangun ulang.
 
+## Jalan Mundur Cepat lewat Tag Image (dilatih 6 Sep 2026)
+
+Ada **dua** jalan mundur, dan keduanya menjawab keadaan yang berbeda.
+
+| | Tag image | `aleta-rollback.sh` (tar.gz) |
+|---|---|---|
+| Waktu | **3–23 detik** | menit — perlu bangun ulang |
+| Yang dipulihkan | image jadi | berkas sumber |
+| Syarat | image lama masih ada di server | tarball cadangan ada |
+| Dipakai saat | portal/bot rusak sesudah naik, harus pulih SEKARANG | perlu kembali ke rilis lama seutuhnya |
+
+Angka di atas hasil latihan sungguhan pada 6 Sep 2026 (Minggu, 0 sidang
+terjadwal), bukan perkiraan.
+
+### Sebelum menaikkan: tandai dulu yang sedang berjalan
+
+Tanpa langkah ini tidak ada yang bisa dikembalikan — `docker compose build`
+menimpa tag `latest`, dan image lama menjadi tanpa nama.
+
+```bash
+docker tag $(docker inspect aleta-portal --format '{{.Image}}' | cut -c8-19) \
+  aleta-portal-backup:sebelum-<perubahan>-$(date +%Y%m%d)
+docker tag $(docker inspect aleta-bot --format '{{.Image}}' | cut -c8-19) \
+  aleta-bot-backup:sebelum-<perubahan>-$(date +%Y%m%d)
+```
+
+### Mundur
+
+```bash
+cd /var/www/html/aleta
+# jaring pengaman: beri nama pada yang sekarang, agar bisa maju lagi
+docker tag $(docker inspect aleta-portal --format '{{.Image}}' | cut -c8-19) \
+  aleta-portal:kembali-$(date +%Y%m%d)
+
+docker tag aleta-portal-backup:sebelum-<perubahan>-<tgl> aleta-portal:latest
+docker compose up -d --force-recreate portal
+```
+
+Untuk bot, ganti `aleta-portal` dengan `aleta-aleta_bot` dan `portal` dengan
+`aleta_bot` (nama image bot memang `aleta-aleta_bot`, nama layanannya
+`aleta_bot`).
+
+### Maju lagi
+
+```bash
+docker tag aleta-portal:kembali-<tgl> aleta-portal:latest
+docker compose up -d --force-recreate portal
+```
+
+### Membuktikan versi mana yang hidup
+
+Jangan menebak dari nomor versi — `APP_VERSION` kerap tidak berubah antar
+deploy. Pakai **rute yang hanya ada di versi baru** sebagai penanda:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  "http://127.0.0.1/aleta/api/aleta-ecourt/prompt-putusan?nomor=x"
+# 401 = versi baru (rute ada, tertolak karena belum masuk)
+# 404 = versi lama (rutenya memang belum lahir)
+```
+
+Penanda ini tegas karena membedakan "ada tapi terlindungi" dari "tidak ada".
+
+### Hasil latihan 6 Sep 2026
+
+- Portal mundur: **3 detik**; rute baru berubah 401 → 404; fitur lama tetap
+  melayani.
+- Portal maju: **18 detik**; kembali 404 → 401.
+- Bot mundur: **23 detik**; maju **13 detik**.
+- **Mundur sebagian aman.** Dengan portal baru + bot lama, portal tetap hidup
+  penuh dan rutenya tetap ada — jawaban bot yang hilang ditangani sebagai
+  "ALETA Bot belum dapat dihubungi", bukan sebagai kerusakan. Jadi tidak wajib
+  memundurkan keduanya sekaligus.
+- Nol galat pada log portal maupun bot sepanjang latihan.
+
+### Lubang yang ditemukan saat latihan
+
+**Deploy dengan salin tangan TIDAK membuat tarball cadangan.** Empat deploy
+pada 6 Sep 2026 dikerjakan lewat `scp` + `docker compose build`, sehingga
+melewati `aleta-update.sh` yang biasanya membuat tar.gz. Akibatnya tarball
+terbaru tertanggal 10:22 — sebelum seluruh pekerjaan hari itu — dan satu-
+satunya jalan mundur ke keadaan antara adalah tag image yang dibuat manual.
+
+Artinya: **kalau menaikkan tanpa `aleta-update.sh`, penandaan image di atas
+bukan pilihan melainkan keharusan.**
+
 ## Catatan Aman
 
 Update tidak dijalankan langsung dari browser. Browser hanya menampilkan status, manifest, dan perintah server. Eksekusi tetap melalui SSH agar aplikasi web tidak memiliki hak untuk menimpa file server.
