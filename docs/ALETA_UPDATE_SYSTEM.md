@@ -193,12 +193,31 @@ docker compose up -d --force-recreate portal
 
 ### Membuktikan versi mana yang hidup
 
-Jangan menebak dari nomor versi — `APP_VERSION` kerap tidak berubah antar
-deploy. Pakai **rute yang hanya ada di versi baru** sebagai penanda:
+Cara termudah - **cap build**, sejak 6 Sep 2026:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" \
-  "http://127.0.0.1/aleta/api/aleta-ecourt/prompt-putusan?nomor=x"
+docker exec aleta-portal cat /app/BUILD-STAMP.txt
+# contoh: 20260906-1548 WITA 8941891   <- tanggal-jam, zona, penanda commit
+```
+
+Cap yang sama tampil di footer portal, jadi tidak perlu SSH untuk memeriksanya
+dari layar. Nilainya ditanam saat `next build`, jadi tidak dapat berubah tanpa
+membangun ulang. Kirim penanda commit saat membangun agar dapat dicocokkan ke
+git:
+
+```bash
+ALETA_BUILD_REF=$(git rev-parse --short HEAD) docker compose build portal
+```
+
+Server tidak punya git, jadi hash-nya dihitung di sisi yang punya repo lalu
+dikirim lewat perintah build.
+
+**Cara lama** - masih berguna bila capnya belum ada atau yang diperiksa bot,
+karena bot tidak punya cap: pakai rute yang hanya ada di versi baru.
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+"   "http://127.0.0.1/aleta/api/aleta-ecourt/prompt-putusan?nomor=x"
 # 401 = versi baru (rute ada, tertolak karena belum masuk)
 # 404 = versi lama (rutenya memang belum lahir)
 ```
