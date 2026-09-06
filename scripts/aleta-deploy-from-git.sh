@@ -101,12 +101,49 @@ PKG_NAME="aleta-update-$VERSION"
 KERJA="$(mktemp -d)"
 trap 'rm -rf "$KERJA"' EXIT
 
-git archive --format=tar --prefix="$PKG_NAME/" -o "$KERJA/paket.tar" "$FULL_REF"
+mkdir -p "$KERJA/$PKG_NAME"
+git archive --format=tar "$FULL_REF" | tar -x -C "$KERJA/$PKG_NAME"
+
+# ---------------------------------------------------------------------------
+# SETELAN SERVER TIDAK IKUT, WALAU TERLACAK GIT
+# ---------------------------------------------------------------------------
+#
+# Berkas compose ada di dalam repo, tetapi yang berlaku adalah salinan di
+# SERVER - dan keduanya sudah lama berbeda. Diukur 6 Sep 2026: 69 baris
+# berbeda antara keduanya. Salinan server memuat pemasangan blangko APS
+# Badilag yang tidak ada di git, sedangkan salinan git memuat baris
+#
+#     dns:
+#       - ${ALETA_DNS_PRIMARY:-}
+#
+# yang mengembang menjadi kosong bila .env tidak ada di folder aplikasi -
+# dan Docker menolak menjalankan container dengan alamat DNS kosong.
+#
+# Menimpakan salinan git membuat portal MATI: container terbentuk lalu gagal
+# start dengan "bad nameserver address". Itu benar-benar terjadi pada
+# percobaan pertama skrip ini, dan portal padam sekitar sepuluh menit.
+#
+# aleta-make-update.sh - pemaket yang sudah lama dipakai - memang tidak
+# pernah menyertakan berkas compose. Keputusan itu benar dan diikuti di sini.
+#
+# Perubahan pada compose diterapkan SENDIRI ke server, sengaja, bukan
+# menumpang penaikan kode.
+rm -f "$KERJA/$PKG_NAME"/docker-compose*.yml
+rm -f "$KERJA/$PKG_NAME/aleta_bot/docker-compose.yml"
+rm -f "$KERJA/$PKG_NAME/manajemen_surat/docker-compose.postgres.yml"
+
+# Setelan mesin pengembang - tidak ada gunanya di server.
+rm -rf "$KERJA/$PKG_NAME/.claude" "$KERJA/$PKG_NAME/aleta_bot/.claude" \
+       "$KERJA/$PKG_NAME/manajemen_surat/.claude"
+
+# Setelan hidup yang ditulis bot saat berjalan. Tidak terlacak git sehingga
+# semestinya tidak pernah ikut - dibuang juga di sini supaya tetap aman bila
+# suatu saat ada yang meng-commit-nya.
+rm -f "$KERJA/$PKG_NAME/aleta_bot/config/aleta-runtime.json"
 
 # Manifest yang dituntut aleta-update.sh. Dibuat di sini, bukan disimpan di
 # repo, supaya isinya selalu cocok dengan rujukan yang benar-benar dipaketkan.
-mkdir -p "$KERJA/manifest/$PKG_NAME"
-cat > "$KERJA/manifest/$PKG_NAME/aleta-update.json" <<JSON
+cat > "$KERJA/$PKG_NAME/aleta-update.json" <<JSON
 {
   "version": "$VERSION",
   "gitRef": "$FULL_REF",
@@ -115,15 +152,14 @@ cat > "$KERJA/manifest/$PKG_NAME/aleta-update.json" <<JSON
   "builtAt": "$(date -Iseconds)"
 }
 JSON
-tar -rf "$KERJA/paket.tar" -C "$KERJA/manifest" "$PKG_NAME/aleta-update.json"
-gzip -9 "$KERJA/paket.tar"
 
 BUNDLE="$KERJA/$PKG_NAME.tar.gz"
-mv "$KERJA/paket.tar.gz" "$BUNDLE"
+tar -czf "$BUNDLE" -C "$KERJA" "$PKG_NAME"
 ( cd "$KERJA" && sha256sum "$PKG_NAME.tar.gz" > "$PKG_NAME.tar.gz.sha256" )
 
-JUMLAH="$(git ls-tree -r --name-only "$FULL_REF" | wc -l | tr -d ' ')"
-echo "  $JUMLAH berkas terlacak, $(du -h "$BUNDLE" | cut -f1)"
+JUMLAH="$(find "$KERJA/$PKG_NAME" -type f | wc -l | tr -d ' ')"
+echo "  $JUMLAH berkas dipaketkan, $(du -h "$BUNDLE" | cut -f1)"
+echo "  berkas compose SENGAJA tidak disertakan - itu setelan server"
 
 if [ "$DRY_RUN" = "1" ]; then
   SIMPAN="${TMPDIR:-/tmp}/$PKG_NAME.tar.gz"
