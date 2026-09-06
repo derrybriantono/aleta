@@ -27,6 +27,10 @@ export type ModuleId =
   | "perkara"
   | "aleta-ecourt"
   | "aleta-ecourt-admin"
+  // Antrian sidang: layar ruang tunggu, papan panggil petugas, dan kios
+  // pengambilan nomor. Layarnya sudah lama berjalan - menu inilah yang
+  // membuatnya dapat ditemukan.
+  | "aleta-antrian"
   | "asisten-hakim"
   | "e-kepegawaian"
   | "sipp"
@@ -81,6 +85,10 @@ export type PortalAppId =
   // keadaan penghubung), satu untuk admin (pengaturannya).
   | "aleta-ecourt"
   | "aleta-ecourt-admin"
+  // Antrian sidang: layar ruang tunggu, papan panggil petugas, dan kios
+  // pengambilan nomor. Layarnya sudah lama berjalan - menu inilah yang
+  // membuatnya dapat ditemukan.
+  | "aleta-antrian"
   | "aleta-sipp"
   | "judicia-legal-form"
   | "asisten-hakim"

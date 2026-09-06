@@ -430,9 +430,16 @@ const INPUT_DATA = [
     keterangan: "Pengisian data rapor hasil mediasi.",
     nilai(f) {
       if (f.rapotMediasiTerisi === undefined) return belumTerbaca("Data rapor mediasi belum tersambung ke ALETA.");
+
+      // Perkara yang TIDAK melalui mediasi tidak punya rapor untuk diisi.
+      // Menilainya nol menghukum pekerjaan yang tidak pernah dibebankan.
+      if (f.adaMediasi === false) {
+        return poin(5, "Perkara ini tidak melalui mediasi - tidak ada rapor yang perlu diisi.");
+      }
+
       return f.rapotMediasiTerisi
         ? poin(5, "Rapor mediasi terisi.")
-        : poin(0, "Rapor mediasi belum terisi.");
+        : poin(0, "Mediasi berlangsung tetapi rapornya belum terisi.");
     },
   },
   {
@@ -446,7 +453,10 @@ const INPUT_DATA = [
     nilai(f) {
       if (f.dikecualikanSaksi) return belumTerbaca("Perkara cabut atau gugur - dikecualikan SK.");
       if (!Array.isArray(f.saksi)) return belumTerbaca("Data saksi belum tersambung ke ALETA.");
-      if (f.saksi.length === 0) return poin(0, "Tidak ada data saksi.");
+      // Perkara tanpa saksi tidak punya data saksi untuk dilengkapi.
+      // Sebelumnya dinilai nol - seolah datanya dilalaikan, padahal
+      // saksinya memang tidak pernah ada.
+      if (f.saksi.length === 0) return poin(5, "Tidak ada saksi pada perkara ini - tidak ada data yang perlu dilengkapi.");
 
       const nilaiSaksi = f.saksi.map((s) => {
         const terisi = Number(s.isianTerisi) || 0;
@@ -464,11 +474,34 @@ const INPUT_DATA = [
     dasar:
       "SK 048/2024 Tabel 2 I.13 - pelaksanaan PBT 3 hari atau kurang nilai 5, 4 hari 3, 5 hari 2, 6 hari 1, lebih dari 6 hari 0. Penginputan PBT: 0 hari 5, 1 hari 3, 2 hari 2, 3 hari 1, lebih dari 3 hari 0.",
     keterangan:
-      "Pelaksanaan dan penginputan masing-masing separuh bobot. Selama penginputan belum dapat diakomodir, SK membolehkan waktu pelaksanaan dihitung penuh.",
+      "Hanya wajib bagi pihak yang TIDAK HADIR saat putusan dibacakan - dibaca dari kode kehadiran sidang putusan. Pelaksanaan dan penginputan masing-masing separuh bobot; selama penginputan belum dapat diakomodir, SK membolehkan waktu pelaksanaan dihitung penuh.",
     nilai(f) {
-      if (!f.wajibPbt) return belumTerbaca("Perkara tidak wajib pemberitahuan putusan.");
+      if (f.wajibPbt === undefined)
+        return belumTerbaca("Data pemberitahuan putusan belum tersambung ke ALETA.");
+
+      // Pihak yang HADIR saat putusan dibacakan sudah mendengarnya sendiri -
+      // tidak ada pemberitahuan yang perlu dilaksanakan, dan menilainya nol
+      // menuntut pekerjaan yang memang tidak ada.
+      if (!f.wajibPbt) {
+        return poin(
+          5,
+          f.alasanTidakWajibPbt ||
+            "Tidak ada pihak yang perlu diberitahu - seluruhnya hadir saat putusan dibacakan."
+        );
+      }
+
       if (f.hariPbt === undefined) return belumTerbaca("Data pemberitahuan putusan belum tersambung ke ALETA.");
-      if (f.hariPbt === null) return poin(0, "Pemberitahuan putusan belum dilaksanakan.");
+      if (f.hariPbt === null) {
+        const belum = Array.isArray(f.pbtPerPihak)
+          ? f.pbtPerPihak.filter((x) => x.hari === null).map((x) => x.sebutan)
+          : [];
+        return poin(
+          0,
+          belum.length > 0
+            ? `Belum diberitahukan kepada ${belum.join(" dan ")} (${f.kehadiranSidangPutusan || "tidak hadir saat putusan"}).`
+            : "Pemberitahuan putusan belum dilaksanakan."
+        );
+      }
 
       const pelaksanaan = tangga(f.hariPbt, [[3, 5], [4, 3], [5, 2], [6, 1]], 0);
       if (f.hariInputPbt === undefined || f.hariInputPbt === null) {
@@ -534,7 +567,9 @@ const INPUT_DATA = [
       "Dihitung dari tanggal satker pengaju mengunggah dokumen. Pendelegasian yang jatuh pada hari Jumat dihitung mulai hari Senin.",
     nilai(f) {
       if (f.hariTerimaDelegasi === undefined) return belumTerbaca("Data delegasi belum tersambung ke ALETA.");
-      if (f.hariTerimaDelegasi === null) return belumTerbaca("Perkara ini tidak ada delegasi.");
+      // Tidak ada delegasi berarti tidak ada penerimaan yang bisa terlambat.
+      if (f.hariTerimaDelegasi === null)
+        return poin(5, "Perkara ini tidak menerima delegasi - tidak ada yang perlu dikerjakan.");
       return poin(tangga(f.hariTerimaDelegasi, [[1, 5], [2, 3], [3, 2], [4, 1]], 0), `Diterima ${f.hariTerimaDelegasi} hari setelah diunggah pengaju.`);
     },
   },
@@ -607,7 +642,16 @@ const KELENGKAPAN = [
     dasar: "SK 048/2024 Tabel 2 II.4 - 1 hari setelah BHT nilai 5, 2 hari 4, 3 hari 3, 4 hari 2, 5-6 hari 1.",
     keterangan: "Tanggal input akta cerai dibandingkan tanggal BHT.",
     nilai(f) {
-      if (!f.wajibAktaCerai) return belumTerbaca("Perkara ini tidak menerbitkan akta cerai.");
+      // Jenis perkaranya belum terbaca - belum dapat dinilai. Memberi nilai
+      // sempurna di sini berarti menilai perkara yang jenisnya tidak
+      // diketahui, dan itu nilai yang tidak berdasar apa pun.
+      if (f.wajibAktaCerai === undefined)
+        return belumTerbaca("Jenis perkara belum tersambung ke ALETA.");
+
+      // Bukan perkara perceraian berarti tidak ada akta cerai yang harus
+      // diterbitkan, apalagi diunggah.
+      if (f.wajibAktaCerai === false)
+        return poin(5, "Bukan perkara perceraian - tidak ada akta cerai yang perlu diunggah.");
       if (!f.tanggalBht) return belumTerbaca("Tanggal BHT belum tercatat.");
       if (!f.tanggalAktaCerai) return poin(0, "Akta cerai belum diinput.");
       const selisih = hari(f.tanggalBht, f.tanggalAktaCerai);
@@ -680,7 +724,11 @@ const KESESUAIAN = [
     keterangan: "Tanggal permohonan delegasi dibandingkan hari sidang.",
     nilai(f) {
       if (f.hariSebelumSidangDelegasi === undefined) return belumTerbaca("Data permohonan delegasi belum tersambung ke ALETA.");
-      if (f.hariSebelumSidangDelegasi === null) return belumTerbaca("Perkara ini tidak ada delegasi.");
+      // Butir ini PENGURANG - nilai terbaiknya 0, bukan 5. Tidak ada tabayun
+      // berarti tidak ada pengurangan sama sekali, dan itulah bentuk
+      // sempurnanya.
+      if (f.hariSebelumSidangDelegasi === null)
+        return poin(0, "Bukan perkara dengan panggilan delegasi - tidak ada pengurangan nilai.");
       const h = Number(f.hariSebelumSidangDelegasi);
       const nilai = h >= 6 ? 0 : h === 5 ? -1 : h === 4 ? -2 : h === 3 ? -3 : -5;
       return poin(nilai, `Dimohonkan ${h} hari sebelum sidang.`);

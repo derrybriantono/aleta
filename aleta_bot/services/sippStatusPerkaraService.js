@@ -981,6 +981,26 @@ function faktaPenilaianSk({ identitas, putusan, jadwal, relaas, saksi, sidangLew
     // Perkara cabut atau gugur dikecualikan dari unsur data saksi.
     if (putusan.tanggalCabut || putusan.tanggalGugur) fakta.dikecualikanSaksi = true;
 
+    // ----------------------------------------------------------------------
+    // AKTA CERAI HANYA PADA PERKARA PERCERAIAN
+    // ----------------------------------------------------------------------
+    //
+    // Dibaca dari SIPP yang berjalan: akta cerai terbit pada Cerai Gugat
+    // (3.701) dan Cerai Talak (902). Jenis perkara lain - istbat nikah,
+    // dispensasi kawin, kewarisan, perwalian - tidak menerbitkannya sama
+    // sekali.
+    //
+    // Dibedakan bertingkat, dan itu menentukan:
+    //   true       perkara perceraian - aktanya wajib ada
+    //   false      jenisnya diketahui dan bukan perceraian - tidak berlaku
+    //   undefined  jenisnya tidak terbaca - belum dapat dinilai
+    //
+    // Menyamakan yang KEDUA dengan yang KETIGA akan memberi nilai sempurna
+    // kepada perkara yang jenisnya belum diketahui - nilai yang tidak
+    // berdasar apa pun.
+    const jenisPerkara = String((identitas && identitas.jenisPerkara) || "").trim();
+    if (jenisPerkara) fakta.wajibAktaCerai = /cerai/i.test(jenisPerkara);
+
     if (putusan.aktaCerai) {
       fakta.wajibAktaCerai = true;
       fakta.tanggalAktaCerai = putusan.aktaCerai.tanggal || null;
@@ -1083,10 +1103,15 @@ function faktaPenilaianSk({ identitas, putusan, jadwal, relaas, saksi, sidangLew
   // baris mediasi yang HASILNYA sudah dicatat. Baris kosong yang terbentuk
   // saat mediator ditetapkan belum berarti rapornya diisi.
   if (bantu.mediasiLengkap && bantu.mediasiLengkap.terbaca) {
+    // ADA barisnya atau tidak - dipisahkan dari terisi atau tidak. Perkara
+    // yang memang tidak melalui mediasi tidak boleh dinilai seolah
+    // rapornya dilalaikan.
+    fakta.adaMediasi = bantu.mediasiLengkap.baris.length > 0;
     fakta.rapotMediasiTerisi = bantu.mediasiLengkap.baris.some((x) => Boolean(x.hasil));
   } else if (bantu.durasiMediasi && bantu.durasiMediasi.terbaca && bantu.durasiMediasi.hari > 0) {
     // Mediasi yang lamanya tercatat berarti mediasinya memang berlangsung -
     // dan v_durasi_mediasi hanya menghasilkan angka bila datanya ada.
+    fakta.adaMediasi = true;
     fakta.rapotMediasiTerisi = true;
   }
 
@@ -1097,18 +1122,40 @@ function faktaPenilaianSk({ identitas, putusan, jadwal, relaas, saksi, sidangLew
     fakta.saksi = [];
   }
 
-  // Pemberitahuan putusan - SK Tabel 2 I.13.
-  if (sudahPutus && bantu.pemberitahuan && bantu.pemberitahuan.terbaca) {
-    fakta.wajibPbt = true;
-    const adaPbt = bantu.pemberitahuan.baris.filter((x) => x.tanggal);
-    if (adaPbt.length === 0) {
-      fakta.hariPbt = null;
+  // ------------------------------------------------------------------------
+  // PEMBERITAHUAN PUTUSAN - SK Tabel 2 I.13
+  // ------------------------------------------------------------------------
+  //
+  // Hanya WAJIB bagi pihak yang tidak hadir saat putusan dibacakan - yang
+  // hadir sudah mendengarnya sendiri. Kewajibannya ditentukan dari kode
+  // kehadiran pada sidang putusan, bukan dari sudah-putus semata.
+  //
+  // Sumber tanggalnya perkara_putusan_pemberitahuan_putusan. Tabel yang
+  // dibaca sebelumnya - perkara_pemberitahuan - berisi NOL baris di SIPP
+  // yang berjalan, sehingga butir ini selalu jatuh ke nilai nol.
+  if (sudahPutus && bantu.pbtPutusan && bantu.pbtPutusan.terbaca) {
+    const pbt = bantu.pbtPutusan;
+    fakta.kehadiranSidangPutusan = pbt.kehadiran || '';
+
+    if (!pbt.wajib) {
+      fakta.wajibPbt = false;
+      fakta.alasanTidakWajibPbt = pbt.alasan || '';
     } else {
+      fakta.wajibPbt = true;
+      fakta.pbtPerPihak = pbt.baris.map((x) => ({
+        sebutan: x.sebutan,
+        tanggal: x.tanggal,
+        hari: x.hari,
+      }));
+
+      const berhari = pbt.baris.filter((x) => x.hari !== null);
       // Yang dinilai pelaksanaan PALING LAMBAT: itulah yang menentukan kapan
-      // seluruh pihak sudah diberitahu.
-      const terakhir = adaPbt.reduce((a, b) => (a.tanggal > b.tanggal ? a : b));
-      fakta.hariPbt = sippTahapanService.selisihHari(putusan.tanggalPutusan, terakhir.tanggal);
-      if (terakhir.diinput) fakta.hariInputPbt = terakhir.hariSampaiInput;
+      // seluruh pihak yang tidak hadir sudah diberitahu. Pihak yang BELUM
+      // diberitahu sama sekali membuat butirnya belum terlaksana.
+      fakta.hariPbt =
+        berhari.length === pbt.baris.length && berhari.length > 0
+          ? Math.max(...berhari.map((x) => x.hari))
+          : null;
     }
   }
 
@@ -1312,6 +1359,20 @@ async function statusLengkap(nomorPerkaraMentah) {
   };
 
   const putusan = rincian && rincian.ok ? rincian.putusan : null;
+
+  // Pemberitahuan putusan menuntut tanggal putusannya lebih dulu, jadi ia
+  // dibaca SESUDAH putusan diketahui - bukan bersama rombongan di atas.
+  //
+  // Gagal-terbuka: bila tabelnya tidak ada pada SIPP versi lain, butirnya
+  // dilaporkan belum tersambung, bukan dinilai nol.
+  pendukung.pbtPutusan = await aman(
+    () =>
+      sippTahapanService.pemberitahuanPutusanPerkara(
+        identitas.perkaraId,
+        putusan ? putusan.tanggalPutusan : ""
+      ),
+    null
+  );
   const jadwal = rincian && rincian.ok ? rincian.jadwalPerkara || [] : [];
   const nomorPihak = konteks && konteks.ok ? konteks.nomorPihak : [];
 

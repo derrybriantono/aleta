@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
+import { selangPanggilan, warnaRuang } from "@/lib/antrian-tampilan";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,22 +11,30 @@ import { cn } from "@/lib/utils";
  * PAPAN PANGGIL - UNTUK PETUGAS DI RUANG SIDANG
  * ============================================================================
  *
- * Satu ruang, satu layar, satu tombol besar. Petugas yang memanggil sedang
- * berdiri di depan pintu ruang sidang dengan berkas di tangan - ia tidak
- * sedang membaca tabel, dan tidak akan menekan tombol sebesar korek api.
+ * Petugas yang memanggil sedang berdiri di depan pintu ruang sidang dengan
+ * berkas di tangan. Ia tidak sedang membaca tabel, dan tidak akan menekan
+ * tombol sebesar korek api.
+ *
+ * Maka SATU kartu besar menguasai layar - nomor berikutnya beserta tombolnya -
+ * dan selebihnya mengalah. Yang sudah dipanggil turun menjadi baris tipis.
  *
  * ============================================================================
- * YANG TIDAK DIMILIKI APLIKASI ANTRIAN: HITUNGAN PANGGILAN
+ * TIGA HAL YANG TIDAK DIMILIKI PAPAN PANGGIL BIASA
  * ============================================================================
  *
- * Tabel antrian hanya menyimpan satu jam panggil, jadi ia tidak dapat menjawab
- * "sudah dipanggil berapa kali". Padahal aturannya sudah dijanjikan ALETA
- * kepada para pihak lewat WhatsApp: dipanggil tiga kali dan tidak hadir,
- * perkaranya ditunda.
+ * 1. HITUNGAN PANGGILAN. Tabel antrian hanya menyimpan satu jam panggil,
+ *    sehingga ia tidak dapat menjawab "sudah dipanggil berapa kali". Padahal
+ *    aturannya sudah dijanjikan kepada para pihak lewat WhatsApp: dipanggil
+ *    tiga kali dan tidak hadir, perkaranya ditunda. Selama ini hitungan itu
+ *    dijaga ingatan petugas yang kebetulan berjaga sejak pagi.
  *
- * Selama ini hitungan itu dijaga ingatan petugas yang kebetulan berjaga sejak
- * pagi. Di sini ia terbaca oleh siapa pun yang membuka layar - termasuk
- * petugas pengganti yang baru masuk setelah istirahat.
+ * 2. LAJU HARI INI - berapa menit rata-rata satu perkara, dihitung dari jarak
+ *    NYATA antar panggilan hari ini. Petugas dapat menilai sendiri apakah hari
+ *    ini tertinggal atau tidak.
+ *
+ * 3. SIAPA YANG SUDAH HADIR pada perkara berikutnya, terbaca SEBELUM memanggil
+ *    - sehingga petugas tahu lebih dulu apakah pihak yang ditunggu memang
+ *    sudah berada di ruang tunggu.
  */
 
 type AntrianBaris = {
@@ -39,8 +47,17 @@ type AntrianBaris = {
   online: boolean;
 };
 
-type Kehadiran = { hadir: Array<{ sebutan: string; nama: string; jam: string }>; pertama: { sebutan: string } | null };
-type Panggilan = { jumlah: number; batas: number; sudahBatas: boolean; panggilan: Array<{ urutan: number; jam: string; oleh: string }> };
+type Kehadiran = {
+  hadir: Array<{ sebutan: string; nama: string; jam: string }>;
+  pertama: { sebutan: string } | null;
+};
+
+type Panggilan = {
+  jumlah: number;
+  batas: number;
+  sudahBatas: boolean;
+  panggilan: Array<{ urutan: number; jam: string; oleh: string }>;
+};
 
 type Jawaban = {
   available: boolean;
@@ -87,6 +104,7 @@ export function AletaAntrianPanggil() {
 
     const seruang = semua.filter((x) => (ruang > 0 ? Number(x.noRuang) === ruang : true));
     return {
+      semua: seruang,
       menunggu: seruang
         .filter((x) => x.keadaan === "menunggu" && x.nomor !== null)
         .sort((a, b) => Number(a.nomor) - Number(b.nomor)),
@@ -95,6 +113,8 @@ export function AletaAntrianPanggil() {
         .sort((a, b) => Number(a.nomor) - Number(b.nomor)),
     };
   }, [data, ruang]);
+
+  const laju = useMemo(() => selangPanggilan(baris.semua), [baris.semua]);
 
   const panggil = useCallback(
     async (satu: { perkaraId: string; nomor: number | null; noRuang: number | null }) => {
@@ -112,7 +132,9 @@ export function AletaAntrianPanggil() {
         });
         const isi = (await respons.json()) as { data?: Record<string, unknown> };
         const hasil = (isi.data ?? isi) as { ok?: boolean; alasan?: string; keterangan?: string };
-        setPesan(hasil.ok === false ? hasil.alasan || "Panggilan gagal." : hasil.keterangan || "Dipanggil.");
+        setPesan(
+          hasil.ok === false ? hasil.alasan || "Panggilan gagal." : hasil.keterangan || "Dipanggil."
+        );
         await ambil();
       } catch (error) {
         setPesan(error instanceof Error ? error.message : String(error));
@@ -124,154 +146,129 @@ export function AletaAntrianPanggil() {
   );
 
   const berikutnya = baris.menunggu[0] || null;
+  const warna = warnaRuang(berikutnya?.noRuang ?? (ruang || null));
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">Papan panggil</h2>
-        <div className="flex flex-wrap gap-1">
+      {/* ── kepala: ruang, jumlah menunggu, laju hari ini ─────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5">
           {[0, 1, 2, 3, 4].map((nomor) => (
             <button
               key={`r-${nomor}`}
               type="button"
               onClick={() => setRuang(nomor)}
               className={cn(
-                "rounded-md border px-2.5 py-1 text-sm",
-                ruang === nomor ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                "rounded-full border px-3.5 py-1.5 text-sm transition",
+                ruang === nomor
+                  ? "border-primary bg-primary/10 font-medium"
+                  : "border-border text-muted-foreground hover:border-primary/40"
               )}
             >
               {nomor === 0 ? "Semua ruang" : `Ruang ${nomor}`}
             </button>
           ))}
         </div>
+
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span>
+            <span className="font-mono text-lg tabular-nums text-foreground">
+              {baris.menunggu.length}
+            </span>{" "}
+            menunggu
+          </span>
+          {laju !== null ? (
+            <span title="Dihitung dari jarak nyata antar panggilan hari ini.">
+              <span className="font-mono text-lg tabular-nums text-foreground">{laju}</span> menit
+              rata-rata
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      {/* Antrian yang memuat lebih dari satu tanggal berarti tabelnya menyimpan
-          sisa hari sebelumnya - dan nomornya patut diragukan, sebab rumus
-          penomoran tidak menyaring tanggal. Keadaan itu selama ini dilaporkan
-          bot tetapi tidak pernah ditampilkan di mana pun. */}
+      {/* ── peringatan yang memang perlu dibaca ───────────────────────────── */}
       {data && data.tanggal && data.tanggal.length > 1 ? (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          Antrian memuat {data.tanggal.length} tanggal ({data.tanggal.join(", ")}). Nomor antrian
-          dihitung dari seluruh baris yang sudah diambil tanpa menyaring tanggal, sehingga nomor
-          hari ini dapat melanjut dari sisa hari sebelumnya. Periksa aplikasi antrian.
-        </div>
+        <Peringatan>
+          Antrian memuat {data.tanggal.length} tanggal ({data.tanggal.join(", ")}). Nomor dihitung
+          dari seluruh baris yang sudah diambil tanpa menyaring tanggal, sehingga nomor hari ini
+          dapat melanjut dari sisa hari sebelumnya. Periksa aplikasi antrian.
+        </Peringatan>
       ) : null}
 
       {data && data.terbaca === false ? (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          {data.alasan || data.message || "Antrian belum dapat dibaca."}
-        </div>
+        <Peringatan>{data.alasan || data.message || "Antrian belum dapat dibaca."}</Peringatan>
       ) : null}
 
-      {pesan ? <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">{pesan}</div> : null}
+      {pesan ? <div className="rounded-xl border bg-muted/30 px-4 py-2.5 text-sm">{pesan}</div> : null}
 
-      {/* --- yang berikutnya, dengan tombol sebesar mungkin --- */}
+      {/* ── kartu utama: berikutnya, dengan tombol sebesar mungkin ────────── */}
       {berikutnya ? (
-        <div className="rounded-2xl border p-5">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">Berikutnya</p>
-          <div className="mt-1 flex flex-wrap items-center gap-4">
-            <span className="text-6xl font-bold tabular-nums">{berikutnya.nomor}</span>
-            <div className="min-w-0 flex-1 text-sm">
-              <div>
+        <div className="rounded-3xl border-2 p-6" style={{ borderColor: warna.aksen }}>
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="min-w-[7rem]">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Berikutnya</p>
+              <p
+                className="font-mono text-7xl font-semibold leading-none tabular-nums"
+                style={{ color: warna.aksen }}
+              >
+                {berikutnya.nomor}
+              </p>
+            </div>
+
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className="text-lg">
                 {berikutnya.noRuang ? `Ruang Sidang ${berikutnya.noRuang}` : "Ruang belum ditetapkan"}
-                {berikutnya.majelisKode ? ` · Majelis ${berikutnya.majelisKode}` : ""}
-              </div>
-              <div className="text-muted-foreground">
+                {berikutnya.majelisKode ? (
+                  <span className="text-muted-foreground"> · Majelis {berikutnya.majelisKode}</span>
+                ) : null}
+              </p>
+
+              {/* Siapa yang sudah hadir - terbaca SEBELUM memanggil. */}
+              <p className="text-sm text-muted-foreground">
                 {berikutnya.hadir.length > 0
                   ? `Hadir: ${berikutnya.hadir.map((x) => x.sebutan).join(", ")}`
                   : "Belum ada keterangan kehadiran"}
-              </div>
+              </p>
+
+              {berikutnya.waktuAmbil ? (
+                <p className="text-sm text-muted-foreground">
+                  Mengambil nomor {berikutnya.waktuAmbil}
+                  {berikutnya.online ? " lewat WhatsApp" : " di mesin antrian"}
+                </p>
+              ) : null}
             </div>
-            <Button
-              className="h-14 px-8 text-lg"
+
+            <button
+              type="button"
               disabled={sibuk === berikutnya.perkaraId}
               onClick={() => void panggil(berikutnya)}
+              className="rounded-2xl px-10 py-6 text-2xl font-semibold text-white transition disabled:opacity-60"
+              style={{ backgroundColor: warna.aksen }}
             >
               {sibuk === berikutnya.perkaraId ? "Memanggil…" : "Panggil"}
-            </Button>
+            </button>
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Tidak ada yang menunggu di pilihan ruang ini.</p>
+        <div className="rounded-3xl border border-dashed p-10 text-center text-muted-foreground">
+          Tidak ada yang menunggu di pilihan ruang ini.
+        </div>
       )}
 
-      {/* --- sudah dipanggil, beserta hitungannya --- */}
-      {baris.dipanggil.length > 0 ? (
-        <div>
-          <h3 className="mb-2 text-sm uppercase tracking-widest text-muted-foreground">
-            Sudah dipanggil ({baris.dipanggil.length})
-          </h3>
-          <div className="space-y-1">
-            {baris.dipanggil
-              .slice()
-              .reverse()
-              .map((satu) => (
-                <div
-                  key={satu.perkaraId}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2 text-sm"
-                >
-                  <span className="w-12 text-2xl font-bold tabular-nums">{satu.nomor}</span>
-                  <span className="min-w-0 flex-1">
-                    {satu.noRuang ? `Ruang ${satu.noRuang}` : "Ruang —"}
-                    {satu.jamPanggil ? ` · ${satu.jamPanggil}` : ""}
-                    {satu.hadir.length > 0 ? (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        · {satu.hadir.map((x) => x.sebutan).join(", ")}
-                      </span>
-                    ) : null}
-                  </span>
-
-                  {/* Hitungan panggilan - inilah yang tidak dimiliki aplikasi
-                      antrian, dan yang menentukan apakah perkara patut
-                      ditunda. */}
-                  {satu.panggilan && satu.panggilan.jumlah > 0 ? (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-sm font-medium",
-                        satu.panggilan.sudahBatas
-                          ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                      title={satu.panggilan.panggilan
-                        .map((p) => `ke-${p.urutan} ${p.jam}${p.oleh ? ` oleh ${p.oleh}` : ""}`)
-                        .join(" · ")}
-                    >
-                      {satu.panggilan.jumlah}/{satu.panggilan.batas} panggilan
-                    </span>
-                  ) : null}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={sibuk === satu.perkaraId}
-                    onClick={() => void panggil(satu)}
-                  >
-                    {sibuk === satu.perkaraId ? "…" : "Panggil ulang"}
-                  </Button>
-                </div>
-              ))}
-          </div>
-        </div>
-      ) : null}
-
-      {/* --- sisa yang menunggu --- */}
+      {/* ── antrean sesudahnya, sekilas ───────────────────────────────────── */}
       {baris.menunggu.length > 1 ? (
         <div>
-          <h3 className="mb-2 text-sm uppercase tracking-widest text-muted-foreground">
-            Menunggu berikutnya
-          </h3>
+          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">Sesudahnya</p>
           <div className="flex flex-wrap gap-2">
             {baris.menunggu.slice(1, 16).map((satu) => (
               <span
                 key={satu.perkaraId}
-                className="rounded-lg border px-3 py-1.5 text-lg font-semibold tabular-nums"
+                className="rounded-xl border px-3.5 py-2 font-mono text-lg tabular-nums"
                 title={satu.hadir.map((x) => x.sebutan).join(", ")}
               >
                 {satu.nomor}
                 {ruang === 0 && satu.noRuang ? (
-                  <span className="ml-1 align-middle text-xs font-normal text-muted-foreground">
+                  <span className="ml-1 align-middle font-sans text-[0.65rem] text-muted-foreground">
                     R{satu.noRuang}
                   </span>
                 ) : null}
@@ -280,6 +277,84 @@ export function AletaAntrianPanggil() {
           </div>
         </div>
       ) : null}
+
+      {/* ── yang sudah dipanggil, beserta hitungannya ─────────────────────── */}
+      {baris.dipanggil.length > 0 ? (
+        <div>
+          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Sudah dipanggil ({baris.dipanggil.length})
+          </p>
+          <div className="space-y-1">
+            {baris.dipanggil
+              .slice()
+              .reverse()
+              .map((satu) => {
+                const w = warnaRuang(satu.noRuang);
+                const batas = satu.panggilan?.sudahBatas;
+                return (
+                  <div
+                    key={satu.perkaraId}
+                    className={cn(
+                      "flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-2 text-sm",
+                      batas
+                        ? "border-rose-300 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/30"
+                        : ""
+                    )}
+                  >
+                    <span
+                      className="w-14 font-mono text-2xl font-medium tabular-nums"
+                      style={{ color: w.aksen }}
+                    >
+                      {satu.nomor}
+                    </span>
+
+                    <span className="min-w-0 flex-1 text-muted-foreground">
+                      {satu.noRuang ? `Ruang ${satu.noRuang}` : "Ruang —"}
+                      {satu.jamPanggil ? ` · ${satu.jamPanggil}` : ""}
+                      {satu.hadir.length > 0
+                        ? ` · ${satu.hadir.map((x) => x.sebutan).join(", ")}`
+                        : ""}
+                    </span>
+
+                    {/* Hitungan panggilan - inilah yang menentukan apakah
+                        perkara patut ditunda. */}
+                    {satu.panggilan && satu.panggilan.jumlah > 0 ? (
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-0.5 text-xs font-medium",
+                          batas ? "bg-rose-600 text-white" : "bg-muted text-muted-foreground"
+                        )}
+                        title={satu.panggilan.panggilan
+                          .map((p) => `ke-${p.urutan} ${p.jam}${p.oleh ? ` oleh ${p.oleh}` : ""}`)
+                          .join(" · ")}
+                      >
+                        {satu.panggilan.jumlah}/{satu.panggilan.batas} panggilan
+                        {batas ? " · batas" : ""}
+                      </span>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      disabled={sibuk === satu.perkaraId}
+                      onClick={() => void panggil(satu)}
+                      className="rounded-lg border px-3 py-1.5 text-sm transition hover:bg-muted disabled:opacity-60"
+                    >
+                      {sibuk === satu.perkaraId ? "…" : "Panggil ulang"}
+                    </button>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Peringatan({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+      {children}
     </div>
   );
 }

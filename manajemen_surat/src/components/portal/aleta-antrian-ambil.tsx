@@ -191,32 +191,64 @@ export function AletaAntrianAmbil() {
             berikutnya tetap dicatat, tetapi tidak mengubah nomornya.
           </p>
         </div>
-        <div className="inline-flex overflow-hidden rounded-md border text-sm">
-          <button
-            type="button"
-            onClick={() => setTampilan("pihak")}
-            className={cn("px-3 py-1.5", tampilan === "pihak" ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
-          >
-            Tampilan pihak
-          </button>
-          <button
-            type="button"
-            onClick={() => setTampilan("petugas")}
-            className={cn(
-              "border-l px-3 py-1.5",
-              tampilan === "petugas" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-            )}
-          >
-            Tampilan petugas
-          </button>
+
+        {/* Pemilih tampilan berbentuk pil, sama dengan penyaring ruang di layar
+            antrian lainnya - kelimanya harus terasa satu alat. */}
+        <div className="inline-flex gap-1.5">
+          {(["pihak", "petugas"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setTampilan(mode)}
+              className={cn(
+                "rounded-full border px-4 py-1.5 text-sm transition",
+                tampilan === mode
+                  ? "border-primary bg-primary/10 font-medium"
+                  : "border-border text-muted-foreground hover:border-primary/40"
+              )}
+            >
+              {mode === "pihak" ? "Tampilan pihak" : "Tampilan petugas"}
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* ================================================================
+          RINGKASAN HARI INI
+          ================================================================
+
+          Tiga angka yang paling sering ditanyakan petugas sepanjang pagi:
+          berapa sidang hari ini, berapa yang nomornya sudah terbit, dan
+          berapa yang belum datang sama sekali.
+
+          Sebelumnya jawabannya hanya dapat diperoleh dengan menghitung
+          sendiri baris demi baris. */}
+      {sidang.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: "Sidang hari ini", nilai: sidang.length },
+            {
+              label: "Sudah ambil nomor",
+              nilai: sidang.filter((x) => antrian[x.perkaraId]?.nomor).length,
+            },
+            {
+              label: "Belum hadir",
+              nilai: sidang.filter((x) => !(kehadiran[x.perkaraId]?.hadir || []).length).length,
+            },
+          ].map((satu) => (
+            <div key={satu.label} className="rounded-xl border bg-muted/20 px-4 py-2">
+              <p className="font-mono text-2xl font-semibold tabular-nums">{satu.nilai}</p>
+              <p className="text-sm text-muted-foreground">{satu.label}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <Input
         value={cari}
         onChange={(e) => setCari(e.target.value)}
         placeholder="Cari nomor perkara atau nama pihak…"
-        className={tampilan === "pihak" ? "h-14 text-lg" : ""}
+        className={cn("rounded-xl", tampilan === "pihak" ? "h-14 text-lg" : "h-11")}
       />
 
       {pesan ? (

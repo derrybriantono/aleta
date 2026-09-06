@@ -13,7 +13,14 @@ import { usePortal } from "@/lib/app-state";
  */
 export default function AletaAntrianAmbilPage() {
   const { accessiblePortalApps } = usePortal();
-  const boleh = accessiblePortalApps.some((app) => app.id === "aleta-ecourt");
+  // Antrian sekarang punya menunya sendiri, tetapi kewenangannya tetap
+  // menumpang e-Court: petugas yang sudah boleh membuka jadwal sidang boleh
+  // pula memanggil antriannya. Keduanya diterima supaya pemberian akses
+  // terpisah - bila suatu saat diperlukan - tidak menutup layar ini bagi yang
+  // sudah memakainya.
+  const boleh = accessiblePortalApps.some(
+    (app) => app.id === "aleta-ecourt" || app.id === "aleta-antrian"
+  );
 
   if (!boleh) {
     return <AccessDeniedCard />;

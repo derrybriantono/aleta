@@ -259,6 +259,16 @@ const CALON = {
   dokumenPenetapanTanggal: { tabel: "perkara_dokumen_penetapan", calon: ["diinput_tanggal"] },
   dokumenPenetapanBerkas: { tabel: "perkara_dokumen_penetapan", calon: ["dokumen"] },
   dokumenPenetapanOleh: { tabel: "perkara_dokumen_penetapan", calon: ["diinput_oleh"] },
+  /**
+   * Penanda penetapan KEMBALI - '1' penetapan awal, '2' penggantinya.
+   *
+   * SK menilai penetapan yang PERTAMA; penggantian panitera pengganti atau
+   * juru sita di tengah jalan bukan keterlambatan.
+   */
+  dokumenPenetapanKembali: {
+    tabel: "perkara_dokumen_penetapan",
+    calon: ["is_penetapan_kembali"],
+  },
 
   /** Tanggal relaas diinput ke SIPP, dibandingkan tanggal sidangnya. */
   inputRelaas: {

@@ -429,6 +429,8 @@ async function dokumenPenetapanPerkara(perkaraId) {
     `d.${kolom.dokumenPenetapanTanggal} AS diinput`,
   ];
   if (kolom.dokumenPenetapanBerkas) pilihan.push(`d.${kolom.dokumenPenetapanBerkas} AS berkas`);
+  if (kolom.dokumenPenetapanKembali)
+    pilihan.push(`d.${kolom.dokumenPenetapanKembali} AS penetapanKembali`);
   if (kolom.dokumenPenetapanOleh) pilihan.push(`d.${kolom.dokumenPenetapanOleh} AS oleh`);
 
   const rows = await runQuery(
@@ -440,12 +442,38 @@ async function dokumenPenetapanPerkara(perkaraId) {
   );
 
   const perNama = {};
+  // Dokumen penetapan KEMBALI, dipisahkan - hanya dipakai bila penetapan
+  // awalnya tidak punya dokumen sama sekali.
+  const penggantiPerNama = {};
   for (const row of rows) {
     // Nama dokumen dicocokkan lewat daftar sebutan - sebagian baris memakai
     // singkatannya (PMH), sebagian menuliskannya panjang (Penetapan Majelis
     // Hakim). Keduanya menunjuk berkas yang sama.
     const nama = kenaliJenisPenetapan(row.nama);
     if (!nama || perNama[nama]) continue;
+
+    // Penetapan KEMBALI dilewati - SK menilai penetapan yang pertama.
+    // Penggantian panitera pengganti atau juru sita di tengah jalan adalah
+    // peristiwa baru, bukan keterlambatan atas peristiwa lama, dan
+    // menilainya sebagai penetapan awal menghukum perkara yang justru
+    // dikerjakan sebagaimana mestinya.
+    //
+    // Dibaca dari SIPP yang berjalan: '1' penetapan awal, '2' penggantinya.
+    if (String(row.penetapanKembali || '').trim() === '2') {
+      // Dicatat terpisah supaya dapat dipakai bila TIDAK ADA penetapan
+      // awalnya sama sekali - menolak seluruhnya akan membuat perkara itu
+      // tampak belum punya penetapan, dan itu lebih menyesatkan.
+      if (!penggantiPerNama[nama]) {
+        penggantiPerNama[nama] = {
+          id: String(row.id || ''),
+          diinput: isoTanggal(row.diinput),
+          adaBerkas: Boolean(cleanText(row.berkas)),
+          oleh: cleanText(row.oleh),
+          penetapanKembali: true,
+        };
+      }
+      continue;
+    }
     perNama[nama] = {
       id: String(row.id || ""),
       nama,
@@ -455,7 +483,24 @@ async function dokumenPenetapanPerkara(perkaraId) {
     };
   }
 
-  return { terbaca: true, alasan: "", perNama, jumlah: rows.length };
+  // Penetapan awal yang TIDAK berdokumen sama sekali dilengkapi dokumen
+  // penggantinya, dengan penanda. Menolak seluruhnya akan membuat perkara itu
+  // tampak belum punya penetapan - dan itu lebih menyesatkan daripada memakai
+  // dokumen yang memang ada, asalkan disebutkan apa adanya.
+  for (const nama of Object.keys(penggantiPerNama)) {
+    if (perNama[nama]) continue;
+    perNama[nama] = { ...penggantiPerNama[nama], nama };
+  }
+
+  return {
+    terbaca: true,
+    alasan: "",
+    perNama,
+    jumlah: rows.length,
+    // Berapa banyak dokumen penetapan kembali yang dilewati - dipakai layar
+    // untuk menjelaskan mengapa angkanya berbeda dari yang terlihat di SIPP.
+    jumlahPenetapanKembali: Object.keys(penggantiPerNama).length,
+  };
 }
 
 /**
@@ -867,6 +912,130 @@ async function pemberitahuanPerkara(perkaraId) {
     kolomInput: kolom.inputPbt,
     kolomIsi: "",
   });
+}
+
+/**
+ * Arti kode kehadiran pada perkara_jadwal_sidang.dihadiri_oleh.
+ *
+ * Dibaca dari SIPP yang berjalan. Yang menentukan wajib tidaknya
+ * pemberitahuan putusan hanya SIAPA YANG TIDAK HADIR - pihak yang hadir
+ * sudah mendengar putusannya dibacakan.
+ */
+const ARTI_KEHADIRAN = {
+  "1": { sebutan: "kedua pihak hadir", tidakHadir: [] },
+  "2": { sebutan: "tergugat/termohon tidak hadir", tidakHadir: [2] },
+  "3": { sebutan: "penggugat/pemohon tidak hadir", tidakHadir: [1] },
+  "4": { sebutan: "kedua pihak tidak hadir", tidakHadir: [1, 2] },
+  "10": { sebutan: "sebagian penggugat/pemohon tidak hadir", tidakHadir: [1] },
+};
+
+/**
+ * Pemberitahuan putusan bagi pihak yang tidak hadir - SK Tabel 2 I.13.
+ *
+ * Dua hal dijawab sekaligus: APAKAH pemberitahuan wajib (ada pihak yang
+ * tidak hadir saat putusan dibacakan), dan bila wajib, BERAPA HARI setelah
+ * putusan tiap pihak itu diberitahu.
+ */
+async function pemberitahuanPutusanPerkara(perkaraId, tanggalPutusan) {
+  const id = Number(perkaraId);
+  const putus = isoTanggal(tanggalPutusan);
+  if (!Number.isFinite(id) || id <= 0) return { terbaca: false, alasan: "perkara_id_tidak_sah" };
+  if (!putus) return { terbaca: false, alasan: "Perkara belum diputus." };
+
+  if (!(await sippSkemaService.tabelAda("perkara_putusan_pemberitahuan_putusan"))) {
+    return {
+      terbaca: false,
+      alasan: "Tabel perkara_putusan_pemberitahuan_putusan tidak ada pada SIPP versi ini.",
+    };
+  }
+
+  // --- sidang saat putusan dibacakan ---
+  //
+  // Sidang TERAKHIR sampai dengan tanggal putus. Kerap tanggalnya persis
+  // sama; kadang berselisih sehari karena putusan diinput keesokan harinya.
+  const sidang = await runQuery(
+    `SELECT j.tanggal_sidang AS tanggalSidang,
+            j.dihadiri_oleh AS dihadiri,
+            j.agenda AS agenda
+       FROM perkara_jadwal_sidang j
+      WHERE j.perkara_id = ? AND j.tanggal_sidang <= ?
+      ORDER BY j.tanggal_sidang DESC
+      LIMIT 1`,
+    [id, putus]
+  ).catch(() => []);
+
+  const barisSidang = sidang[0] || null;
+  const kode = barisSidang ? String(barisSidang.dihadiri || "").trim() : "";
+  const arti = ARTI_KEHADIRAN[kode] || null;
+
+  if (!barisSidang) {
+    return {
+      terbaca: true,
+      wajib: false,
+      alasan: "Sidang pembacaan putusannya tidak tercatat, sehingga kehadirannya tidak dapat dibaca.",
+      baris: [],
+    };
+  }
+
+  if (!arti) {
+    return {
+      terbaca: true,
+      wajib: false,
+      alasan: `Kehadiran pada sidang putusan tidak terbaca (kode ${kode || "kosong"}).`,
+      baris: [],
+    };
+  }
+
+  if (arti.tidakHadir.length === 0) {
+    return {
+      terbaca: true,
+      wajib: false,
+      alasan: "Kedua pihak hadir saat putusan dibacakan - tidak ada yang perlu diberitahu.",
+      kehadiran: arti.sebutan,
+      baris: [],
+    };
+  }
+
+  // --- pemberitahuan yang tercatat ---
+  const rows = await runQuery(
+    `SELECT p.pihak AS pihak,
+            p.tanggal_pemberitahuan_putusan AS tanggalPbt
+       FROM perkara_putusan_pemberitahuan_putusan p
+      WHERE p.perkara_id = ?
+      LIMIT 50`,
+    [id]
+  ).catch(() => []);
+
+  const SEBUTAN_PIHAK = {
+    1: "Penggugat/Pemohon",
+    2: "Tergugat/Termohon",
+  };
+
+  const baris = arti.tidakHadir.map((sisi) => {
+    // Pemberitahuan untuk sisi ini - yang PALING AWAL bertanggal, sebab
+    // satu sisi dapat punya beberapa baris bila pihaknya lebih dari satu.
+    const untukSisi = rows
+      .filter((x) => Number(x.pihak) === sisi && isoTanggal(x.tanggalPbt))
+      .map((x) => isoTanggal(x.tanggalPbt))
+      .sort();
+
+    const tanggal = untukSisi[0] || "";
+    return {
+      sisi,
+      sebutan: SEBUTAN_PIHAK[sisi] || `Pihak ${sisi}`,
+      tanggal,
+      hari: tanggal ? selisihHari(putus, tanggal) : null,
+    };
+  });
+
+  return {
+    terbaca: true,
+    wajib: true,
+    alasan: "",
+    kehadiran: arti.sebutan,
+    tanggalSidangPutusan: isoTanggal(barisSidang.tanggalSidang),
+    baris,
+  };
 }
 
 /** Rapor hasil mediasi - SK Tabel 2 I.11. */
@@ -2802,6 +2971,8 @@ module.exports = {
   putusanLengkapPerkara,
   selisihHariKerjaJumat,
   mafqudPerkara,
+  ARTI_KEHADIRAN,
+  pemberitahuanPutusanPerkara,
   dokumenPenetapanPerkara,
   delegasiPerkara,
   isoTanggal,

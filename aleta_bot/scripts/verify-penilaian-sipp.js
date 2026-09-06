@@ -235,7 +235,11 @@ cek("I.12 saksi lengkap 3 dari 3 = 5", poin("dataSaksi", { saksi: [{ isianTerisi
 cek("I.12 saksi 2 dari 3 = 3", poin("dataSaksi", { saksi: [{ isianTerisi: 2 }] }), 3);
 cek("I.12 saksi 1 dari 3 = 2", poin("dataSaksi", { saksi: [{ isianTerisi: 1 }] }), 2);
 cek("I.12 saksi 0 dari 3 = 1", poin("dataSaksi", { saksi: [{ isianTerisi: 0 }] }), 1);
-cek("I.12 tidak ada saksi = 0", poin("dataSaksi", { saksi: [] }), 0);
+// Perkara TANPA saksi tidak punya data saksi untuk dilengkapi. Sebelumnya
+// dinilai nol - seolah datanya dilalaikan - padahal saksinya memang tidak
+// pernah ada, dan menghukum pekerjaan yang tidak pernah dibebankan membuat
+// papan penilaiannya berhenti dibaca.
+cek("I.12 tidak ada saksi = 5 (tidak berlaku)", poin("dataSaksi", { saksi: [] }), 5);
 cek(
   "I.12 perkara cabut atau gugur dikecualikan",
   poin("dataSaksi", { saksi: [], dikecualikanSaksi: true }),
@@ -474,6 +478,87 @@ cek("PTA 150 perkara = kategori II", penilaian.kategoriSatker(150, "banding"), "
 cek("PTA 50 perkara = kategori III", penilaian.kategoriSatker(50, "banding"), "III");
 
 // ---------------------------------------------------------------------------
+console.log("\nButir yang TIDAK BERLAKU dinilai sempurna, bukan nol");
+
+// Perkara tanpa saksi, tanpa mediasi, tanpa delegasi, dan bukan perkara
+// perceraian sebelumnya mendapat nol - seolah pekerjaannya dilalaikan. Tidak
+// ada yang dilalaikan: pekerjaannya memang tidak pernah ada, dan papan
+// penilaian yang menghukum hal yang mustahil dikerjakan akan berhenti dibaca.
+cek("mediasi tidak ada = 5", poin("dataMediasi", { adaMediasi: false, rapotMediasiTerisi: false }), 5);
+
+// Yang dibedakan dengan hati-hati: TIDAK ADA mediasi berbeda dari ADA mediasi
+// yang rapornya belum diisi. Yang kedua memang kelalaian.
+cek(
+  "mediasi ada tapi rapor kosong tetap 0",
+  poin("dataMediasi", { adaMediasi: true, rapotMediasiTerisi: false }),
+  0
+);
+cek(
+  "mediasi ada dan rapor terisi = 5",
+  poin("dataMediasi", { adaMediasi: true, rapotMediasiTerisi: true }),
+  5
+);
+
+cek("tidak menerima delegasi = 5", poin("penerimaanDelegasi", { hariTerimaDelegasi: null }), 5);
+
+// Butir tabayun PENGURANG - nilai terbaiknya 0, bukan 5. Tidak ada tabayun
+// berarti tidak ada pengurangan sama sekali, dan itulah bentuk sempurnanya.
+cek(
+  "tidak ada tabayun = 0 (tanpa pengurangan)",
+  poin("permohonanDelegasi", { hariSebelumSidangDelegasi: null }),
+  0
+);
+cek(
+  "tabayun 2 hari sebelum sidang = -5",
+  poin("permohonanDelegasi", { hariSebelumSidangDelegasi: 2 }),
+  -5
+);
+
+cek("bukan perkara perceraian = 5", poin("eDokAktaCerai", { wajibAktaCerai: false }), 5);
+
+// Jenis perkaranya belum terbaca BUKAN berarti bukan perkara perceraian.
+// Memberi nilai sempurna di sini berarti menilai perkara yang jenisnya tidak
+// diketahui - nilai yang tidak berdasar apa pun.
+cek("jenis perkara tidak terbaca = belum dinilai", poin("eDokAktaCerai", {}), "tidak-terbaca");
+
+console.log("\nI.13 Pemberitahuan putusan - hanya bagi yang TIDAK HADIR");
+
+// Pihak yang HADIR saat putusan dibacakan sudah mendengarnya sendiri.
+// Menuntut pemberitahuan kepadanya berarti menilai pekerjaan yang tidak ada.
+cek(
+  "kedua pihak hadir = 5 (tidak perlu diberitahu)",
+  poin("pemberitahuanPutusan", {
+    wajibPbt: false,
+    alasanTidakWajibPbt: "Kedua pihak hadir saat putusan dibacakan.",
+  }),
+  5
+);
+
+// Wajib, dan sudah dilaksanakan - dinilai menurut tangga SK.
+cek("wajib, PBT 3 hari = 5", poin("pemberitahuanPutusan", { wajibPbt: true, hariPbt: 3 }), 5);
+cek("wajib, PBT 4 hari = 3", poin("pemberitahuanPutusan", { wajibPbt: true, hariPbt: 4 }), 3);
+cek("wajib, PBT 6 hari = 1", poin("pemberitahuanPutusan", { wajibPbt: true, hariPbt: 6 }), 1);
+cek("wajib, PBT 8 hari = 0", poin("pemberitahuanPutusan", { wajibPbt: true, hariPbt: 8 }), 0);
+
+// Wajib tetapi belum dilaksanakan - inilah kelalaian yang sebenarnya.
+cek(
+  "wajib tetapi belum diberitahukan = 0",
+  poin("pemberitahuanPutusan", {
+    wajibPbt: true,
+    hariPbt: null,
+    pbtPerPihak: [{ sebutan: "Tergugat/Termohon", tanggal: "", hari: null }],
+  }),
+  0
+);
+
+// Belum tersambung sama sekali - berbeda dari tidak wajib.
+cek(
+  "data PBT belum tersambung = belum dinilai",
+  poin("pemberitahuanPutusan", {}),
+  "tidak-terbaca"
+);
+
+console.log("");
 console.log("Perkara kosong - yang belum diisi bernilai nol, yang tak terbaca tidak");
 // ---------------------------------------------------------------------------
 

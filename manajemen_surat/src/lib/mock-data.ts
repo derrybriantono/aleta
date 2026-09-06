@@ -1375,6 +1375,33 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "e-Court",
   },
   {
+    // Antrian sidang: layar televisi ruang tunggu, papan panggil petugas, dan
+    // kios tempat pihak mengambil nomornya sendiri.
+    //
+    // Seluruh layarnya sudah ada dan berjalan, tetapi sebelum ini tidak ada
+    // SATU PUN tautan menuju ke sana - alamatnya hanya disebut di catatan
+    // rilis, dan catatan rilis bukan tempat orang mencari cara membuka sebuah
+    // layar. Fitur yang tidak dapat ditemukan sama saja dengan yang tidak ada.
+    //
+    // Ditaruh di sidebar, bukan hanya di hub: layar antrian dibuka tiap pagi
+    // lalu dibiarkan menyala sepanjang hari.
+    id: "aleta-antrian",
+    label: "Antrian Sidang",
+    description:
+      "Layar antrian ruang tunggu, papan panggil petugas, dan kios pengambilan nomor untuk para pihak.",
+    href: "/aleta-antrian",
+    // calendar-days memang ada di peta ikon portal-shell; "list" tidak, dan
+    // akan jatuh ke ikon bawaan yang sama dengan seluruh menu lainnya.
+    icon: "calendar-days",
+    roleIds: roles.map((role) => role.id),
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-sky-100",
+    iconFgClass: "text-sky-700",
+    cardClass: "border-sky-200/80 bg-sky-50/70",
+    badgeLabel: "Antrian",
+  },
+  {
     // Menu admin di sidebar. Berbeda dengan "aleta-ecourt" yang untuk seluruh
     // pegawai, yang ini mengatur penghubungnya: sesi login e-Court, penarikan
     // berkala, arsip, dan kaitannya dengan pemberitahuan WhatsApp ALETA Bot.
@@ -1460,6 +1487,23 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-emerald-100 dark:bg-emerald-500/15",
     iconFgClass: "text-emerald-700 dark:text-emerald-200",
     cardClass: "border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/20 dark:bg-slate-900/80",
+  },
+  {
+    // Kartu antrian sidang - lihat catatan pada entri yang sama di daftar
+    // sebelumnya.
+    id: "aleta-antrian",
+    label: "Antrian Sidang",
+    description:
+      "Layar antrian ruang tunggu, papan panggil petugas, dan kios pengambilan nomor untuk para pihak.",
+    href: "/aleta-antrian",
+    // calendar-days memang ada di peta ikon portal-shell; "list" tidak, dan
+    // akan jatuh ke ikon bawaan yang sama dengan seluruh menu lainnya.
+    icon: "calendar-days",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "Antrian",
+    iconBgClass: "bg-sky-100 dark:bg-sky-500/15",
+    iconFgClass: "text-sky-700 dark:text-sky-200",
+    cardClass: "border-sky-200/80 bg-sky-50/80 dark:border-sky-500/20 dark:bg-slate-900/80",
   },
   {
     id: "judicia-legal-form",

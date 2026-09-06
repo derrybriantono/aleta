@@ -1550,6 +1550,143 @@ async function utama() {
     true
   );
 
+  // ==========================================================================
+  console.log("\nSK I.4-I.7 - penetapan KEMBALI tidak dinilai sebagai yang pertama");
+  {
+    // Penggantian panitera pengganti atau juru sita di tengah jalan adalah
+    // peristiwa baru, bukan keterlambatan atas peristiwa lama. Menilainya
+    // sebagai penetapan awal menghukum perkara yang justru dikerjakan
+    // sebagaimana mestinya.
+    //
+    // Dibaca dari SIPP yang berjalan: is_penetapan_kembali '1' penetapan awal
+    // (3.282 baris), '2' penggantinya (17 baris).
+    const db = buatDbTiruan({
+      kolom: {
+        perkara_dokumen_penetapan: [
+          "id",
+          "nama_dokumen",
+          "diinput_tanggal",
+          "dokumen",
+          "diinput_oleh",
+          "is_penetapan_kembali",
+        ],
+      },
+      baris: {
+        "FROM perkara_dokumen_penetapan": [
+          {
+            id: 1,
+            nama: "PPP",
+            diinput: "2026-01-05",
+            berkas: "a.pdf",
+            oleh: "andi",
+            penetapanKembali: "1",
+          },
+          {
+            id: 2,
+            nama: "PPP",
+            diinput: "2026-03-20",
+            berkas: "b.pdf",
+            oleh: "budi",
+            penetapanKembali: "2",
+          },
+        ],
+      },
+    });
+
+    const { tahapan } = muatDengan(db);
+    const hasil = await tahapan.dokumenPenetapanPerkara(1);
+
+    cek("kolom penanda penetapan kembali ikut dibaca",
+      db.direkam.some((q) => /is_penetapan_kembali/.test(q.sql)), true);
+    cek("yang dipakai penetapan AWAL", hasil.perNama.PPP.diinput, "2026-01-05");
+    cek("penggantinya tidak menimpa", hasil.perNama.PPP.oleh, "andi");
+    cek("penggantian dihitung terpisah", hasil.jumlahPenetapanKembali, 0);
+  }
+
+  {
+    // Bila SATU-SATUNYA dokumen justru penggantinya - penetapan awalnya tidak
+    // terekam - ia tetap dipakai dengan penanda. Menolak seluruhnya membuat
+    // perkara itu tampak belum punya penetapan sama sekali, dan itu lebih
+    // menyesatkan daripada memakai dokumen yang memang ada.
+    const db = buatDbTiruan({
+      kolom: {
+        perkara_dokumen_penetapan: [
+          "id",
+          "nama_dokumen",
+          "diinput_tanggal",
+          "dokumen",
+          "diinput_oleh",
+          "is_penetapan_kembali",
+        ],
+      },
+      baris: {
+        "FROM perkara_dokumen_penetapan": [
+          { id: 9, nama: "PJS", diinput: "2026-04-01", berkas: "c.pdf", oleh: "cici", penetapanKembali: "2" },
+        ],
+      },
+    });
+
+    const { tahapan } = muatDengan(db);
+    const hasil = await tahapan.dokumenPenetapanPerkara(1);
+
+    cek("tanpa penetapan awal, penggantinya dipakai", hasil.perNama.PJS.diinput, "2026-04-01");
+    cek("dan ditandai sebagai penetapan kembali", hasil.perNama.PJS.penetapanKembali, true);
+    cek("jumlah penggantian dilaporkan", hasil.jumlahPenetapanKembali, 1);
+  }
+
+  // ==========================================================================
+  console.log("\nSK I.13 - pemberitahuan putusan hanya bagi yang TIDAK HADIR");
+  {
+    const buatDbPbt = (dihadiri, pbt) =>
+      buatDbTiruan({
+        kolom: { perkara_putusan_pemberitahuan_putusan: ["perkara_id"] },
+        baris: {
+          "FROM perkara_jadwal_sidang j": [
+            { tanggalSidang: "2026-08-18", dihadiri, agenda: "Pembacaan Putusan" },
+          ],
+          "FROM perkara_putusan_pemberitahuan_putusan p": pbt,
+        },
+      });
+
+    {
+      // Kedua pihak hadir - tidak ada yang perlu diberitahu.
+      const { tahapan } = muatDengan(buatDbPbt("1", []));
+      const hasil = await tahapan.pemberitahuanPutusanPerkara(1, "2026-08-18");
+      cek("kedua pihak hadir: tidak wajib", hasil.wajib, false);
+      cek("dan alasannya disebutkan", /hadir/.test(hasil.alasan), true);
+    }
+
+    {
+      // Tergugat tidak hadir, sudah diberitahu 2 hari setelah putusan.
+      const { tahapan } = muatDengan(
+        buatDbPbt("2", [{ pihak: 2, tanggalPbt: "2026-08-20" }])
+      );
+      const hasil = await tahapan.pemberitahuanPutusanPerkara(1, "2026-08-18");
+      cek("tergugat tidak hadir: wajib", hasil.wajib, true);
+      cek("hanya satu pihak yang dinilai", hasil.baris.length, 1);
+      cek("pihaknya disebut", hasil.baris[0].sebutan, "Tergugat/Termohon");
+      cek("jeda dihitung dari tanggal putus", hasil.baris[0].hari, 2);
+    }
+
+    {
+      // Keduanya tidak hadir, hanya satu yang sudah diberitahu.
+      const { tahapan } = muatDengan(
+        buatDbPbt("4", [{ pihak: 1, tanggalPbt: "2026-08-21" }])
+      );
+      const hasil = await tahapan.pemberitahuanPutusanPerkara(1, "2026-08-18");
+      cek("keduanya tidak hadir: dua pihak dinilai", hasil.baris.length, 2);
+      cek("yang sudah diberitahu punya jeda", hasil.baris[0].hari, 3);
+      cek("yang belum diberitahu bernilai null", hasil.baris[1].hari, null);
+    }
+
+    {
+      // Kode 10 - sebagian penggugat tidak hadir.
+      const { tahapan } = muatDengan(buatDbPbt("10", []));
+      const hasil = await tahapan.pemberitahuanPutusanPerkara(1, "2026-08-18");
+      cek("kode 10: penggugat yang diberitahu", hasil.baris[0].sebutan, "Penggugat/Pemohon");
+    }
+  }
+
   if (jumlah < 275) {
     gagal += 1;
     console.log(`  GAGAL: skrip hanya menjalankan ${jumlah} pemeriksaan - ada yang tidak berjalan.`);
