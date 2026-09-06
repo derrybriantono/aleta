@@ -1,0 +1,34 @@
+{
+  "keterangan": [
+    "Catatan penyandingan angka ALETA dengan angka yang dihasilkan SECARA TERPISAH.",
+    "",
+    "Sebuah penilaian belum dianggap benar karena programnya berjalan. Ia dianggap",
+    "benar setelah angkanya disandingkan dengan hitungan tangan atas SIPP, atau",
+    "dengan laporan yang benar-benar dikirim pengadilan pada bulan itu, dan keduanya",
+    "sama.",
+    "",
+    "Berkas ini SENGAJA kosong pada 7 September 2026. Server pengadilan tidak",
+    "terjangkau dari mesin pengembang, sehingga belum ada satu pun angka SIPP",
+    "sungguhan yang dapat disandingkan. Mengisinya dengan angka karangan akan",
+    "membuat seluruh gunanya hilang - catatan penyandingan yang isinya tebakan lebih",
+    "berbahaya daripada catatan yang kosong, sebab yang pertama tampak seperti bukti.",
+    "",
+    "Penilaian yang tidak punya baris di sini berstatus BELUM DISANDINGKAN. Ia tetap",
+    "boleh tampil, tetapi bertanda demikian, dan tidak boleh dipakai sebagai bahan",
+    "pembinaan."
+  ],
+  "bentukBaris": {
+    "penilaian": "kunci penilaiannya, mis. \"tenggang\" atau \"LP01\"",
+    "jenis": "analisa | penilaian-sk | rubrik | lipa",
+    "periode": "periode yang disandingkan, mis. \"2026-08\" atau \"2026-TW3\"",
+    "angkaAleta": "angka yang dihitung ALETA (bilangan)",
+    "angkaLuar": "angka dari luar ALETA (bilangan)",
+    "sumberLuar": "dari mana angka luar itu berasal - wajib, dan harus dapat diperiksa ulang",
+    "kueriLuar": "kueri atau langkah hitungnya, bila ada. Sangat dianjurkan.",
+    "disandingkanPada": "tanggal YYYY-MM-DD",
+    "olehSiapa": "nama dan jabatan orang yang menyandingkan",
+    "sebabSelisih": "wajib diisi bila kedua angka BERBEDA - selisih tanpa penjelasan tidak diterima",
+    "keterangan": "boleh kosong"
+  },
+  "baris": []
+}

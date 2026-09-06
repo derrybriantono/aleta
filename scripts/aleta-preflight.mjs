@@ -701,10 +701,11 @@ function runValidation() {
     { cwd: PORTAL_DIR, cmd: node, args: ["scripts/lint-jangan-bertambah.mjs"], label: "node scripts/lint-jangan-bertambah.mjs", timeoutMs: 900000 },
     { cwd: PORTAL_DIR, cmd: npm, args: ["run", "build"], label: "npm run build", timeoutMs: 900000, shell: process.platform === "win32" },
     { cwd: PORTAL_DIR, cmd: npm, args: ["test"], label: "npm test", timeoutMs: 2700000, shell: process.platform === "win32" },
-    // CATATAN: ke-67 penjaga sisi bot belum ikut di sini karena pelarinya
-    // belum ada - satu-satunya cara menjalankannya sekarang adalah satu per
-    // satu dengan tangan. Pelari itu dibuat pada tahap 1, dan barisnya
-    // ditambahkan ke daftar ini pada tahap yang sama.
+    // Ke-67 penjaga sisi bot. Di situlah seluruh kueri SIPP dijaga tetap
+    // baca-saja, dan sampai tahap 1 tidak ada satu pun cara menjalankannya
+    // sekaligus - artinya tidak pernah dijalankan seluruhnya. Diukur 132
+    // detik; diberi batas 10 menit.
+    { cwd: BOT_DIR, cmd: node, args: ["scripts/jalankan-semua-verify.js", "--diam"], label: "node scripts/jalankan-semua-verify.js", timeoutMs: 600000 },
   ];
 
   for (const item of commands) {

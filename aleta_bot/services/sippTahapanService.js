@@ -921,13 +921,19 @@ async function pemberitahuanPerkara(perkaraId) {
  * pemberitahuan putusan hanya SIAPA YANG TIDAK HADIR - pihak yang hadir
  * sudah mendengar putusannya dibacakan.
  */
-const ARTI_KEHADIRAN = {
+/**
+ * Tanpa induk, sebab kodenya datang dari ruas SIPP `dihadiri` yang isinya
+ * tidak dijamin apa pun. Pada objek biasa, `ARTI_KEHADIRAN["constructor"]`
+ * memulangkan fungsi Object yang bernilai benar, sehingga `arti` terisi
+ * sesuatu yang bukan keterangan kehadiran - dan gagalnya jauh dari sebabnya.
+ */
+const ARTI_KEHADIRAN = Object.assign(Object.create(null), {
   "1": { sebutan: "kedua pihak hadir", tidakHadir: [] },
   "2": { sebutan: "tergugat/termohon tidak hadir", tidakHadir: [2] },
   "3": { sebutan: "penggugat/pemohon tidak hadir", tidakHadir: [1] },
   "4": { sebutan: "kedua pihak tidak hadir", tidakHadir: [1, 2] },
   "10": { sebutan: "sebagian penggugat/pemohon tidak hadir", tidakHadir: [1] },
-};
+});
 
 /**
  * Pemberitahuan putusan bagi pihak yang tidak hadir - SK Tabel 2 I.13.

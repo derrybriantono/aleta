@@ -221,3 +221,144 @@ ditemukan**, menyimpan cadangan bertanggal, memeriksa hasilnya dengan
 `docker compose config`, dan mengembalikan cadangan bila pemeriksaan itu gagal.
 Tambalannya sudah diuji-kering atas salinan compose lama: kedua peubah
 lingkungan masuk, kunci `dns` hilang, dan hasilnya sah sebagai YAML.
+
+---
+
+## Tahap 1 — Kerangka uji, dibangun sebelum penilaian pertama
+
+**Dikerjakan 7 September 2026.**
+
+Yang dikerjakan lebih dahulu adalah alat ujinya, bukan penilaiannya. Penilaian
+yang salah tetapi rapi jauh lebih berbahaya daripada penilaian yang belum ada.
+
+### 1.1 Pelari — ke-67 penjaga akhirnya dapat dijalankan sekaligus
+
+Sampai tahap ini tidak ada satu pun cara menjalankan seluruh `verify-*.js`.
+Satu-satunya jalan adalah mengetik `node scripts/verify-x.js` enam puluh tujuh
+kali, yang berarti pada praktiknya tidak pernah dijalankan seluruhnya.
+
+`aleta_bot/scripts/jalankan-semua-verify.js` menjalankan semuanya, **masing-masing
+sebagai proses tersendiri** — tiga puluh di antaranya membajak pemuat modul untuk
+memasang penadah basis data, dan menjalankan dua naskah semacam itu dalam satu
+proses membuat yang kedua mewarisi penadah yang pertama. Hasilnya bukan gagal,
+melainkan **lulus palsu**.
+
+Kontraknya kode keluar, bukan keluarannya: teks ringkasan ketujuh puluh naskah
+itu tidak seragam (43 memakai satu bentuk, 6 bentuk lain, sisanya berbeda-beda),
+sehingga pelari yang membaca kalimat akan rapuh terhadap kalimat.
+
+Diuji dua arah: naskah yang gagal menghasilkan kode 1 beserta sebabnya; naskah
+yang menggantung dipotong pada batas waktu dan dilaporkan sebagai gagal.
+
+**Hasil: 71 naskah, 118 detik, 0 gagal.** Ditambahkan ke daftar preflight.
+
+### 1.2 Penyapu — berdaftar, bukan bertulisan tangan
+
+`uji-sapuan-penilaian.js` membaca daftar penilaian dari layanannya sendiri lalu
+menyapu apa pun yang ada di sana. Menambah penilaian ke-32 tidak menuntut sebaris
+pun perubahan pada penyapunya — daftar tulisan tangan selalu tertinggal dari
+kodenya, lalu berbohong dengan tenang tentang cakupannya.
+
+Yang disapu: 31 analisis (bentuk amplop, kunci di luar daftar, hitung dua kali),
+30 unsur SK Badilag 048/2024, dan 7 butir rubrik. **114 pemeriksaan.**
+
+**Penyapu menemukan cacat nyata pada jalan pertamanya.** Peta pengerja analisis
+diberi keterangan "daftar tertutup", tetapi ia objek biasa — sehingga mewarisi
+milik prototipe Object:
+
+| Kunci dari peramban | Yang terjadi sebelum diperbaiki |
+|---|---|
+| `constructor` | fungsi Object **dipanggil**, rutenya memulangkan 200 berisi amplop berjenis "constructor" |
+| `toString` | memulangkan "[object Undefined]" yang lalu terurai menjadi objek beraksara-per-kunci |
+| `hasOwnProperty`, `__proto__` | melempar, tertangkap sebagai galat |
+
+Tidak ada data yang bocor — keempatnya tidak membaca basis data. Tetapi layar
+menerima amplop yang tidak berasal dari analisis mana pun, lalu merendernya
+seolah-olah hasil. Diperbaiki dua lapis: daftarnya dibuat tanpa induk dan
+pencariannya memakai hasOwnProperty beserta pemeriksaan bahwa yang ditemukan
+memang fungsi. Cacat sejenis ditutup pula pada ARTI_KEHADIRAN di
+`sippTahapanService`, yang kodenya datang dari ruas SIPP.
+
+Percobaan pertama penyapu juga menuduh delapan analisis melanggar bentuk amplop.
+Yang keliru **dugaan penyapunya sendiri**: `baris` berisi objek berkunci, bukan
+larik. Kontrak sesungguhnya diperiksa langsung ke ketiga puluh satu analisis lalu
+dikodekan — dan dibuat lebih ketat: setiap kunci kolom wajib ada pada setiap
+baris, sebab kunci yang hilang tergambar sebagai sel kosong yang terbaca seperti
+data yang hilang.
+
+### 1.3 Penjaga pendaftaran rute
+
+Satu cacat lolos dari seluruh penjagaan yang lazim dan sudah pernah terjadi: rute
+baru tersisip ke dalam badan penangan rute tetangganya. Berkasnya sah,
+`node --check` lulus, `require()` lulus, uji yang memeriksa keberadaan teksnya pun
+lulus. Yang tidak lulus hanya satu — server menjawab "Cannot GET".
+
+`verify-rute-terdaftar.js` membandingkan rute yang **tertulis** dengan rute yang
+benar-benar ada pada tumpukan router sesudah modulnya dimuat. Dibuktikan dengan
+menyisipkan cacatnya sungguhan:
+
+| Pemeriksaan | Hasil |
+|---|---|
+| `node --check` | LULUS |
+| `require()` | LULUS |
+| penjaga rute | **GAGAL** — GET /sipp/uji-cacat-tersisip tidak terdaftar |
+
+100 rute tertulis, 88 jalur terdaftar, 11 pemeriksaan hijau.
+
+### 1.4 Penjaga SIPP baca-saja diperluas
+
+Penjaga lama tetap berjalan; yang ditutup empat celah pada **jangkauannya**:
+
+| Celah | Akibatnya |
+|---|---|
+| Hanya memindai `services/*.js` | `detail.js`, `notifikasi.js`, dan `query.js` — 25.531 baris kode produksi yang menyentuh SIPP — tidak pernah dipindai sama sekali |
+| Menuntut require berpetik ganda | petik tunggal membuat berkasnya dilewati tanpa peringatan |
+| Menuntut peubah sambungan bernama `db` | `kendaliBerkasService.js` menamainya `sipp`, seluruh kuerinya tak pernah diperiksa |
+| Hanya memeriksa tali kata langsung pada pemanggilan | bentuk `db.query(query)` — yang paling banyak dipakai — luput seluruhnya |
+
+`verify-sipp-baca-saja.js` menutup keempatnya: **246 kueri diperiksa pada 20
+berkas**, termasuk kueri yang disusun ke dalam peubah lebih dahulu. Diperiksa
+juga bahwa tidak ada tulisan ke SIPP — dan memang tidak ada.
+
+Dibuktikan dengan menyisipkan dua bentuk tulisan sungguhan; keduanya tertangkap
+beserta nomor barisnya, termasuk bentuk berpeubah yang tak pernah terlihat
+penjaga lama. Delapan belas pemanggilan yang kuerinya dirakit dari potongan
+dilaporkan sebagai **tidak terjangkau** — penjaga ini tidak menjanjikan
+menangkapnya, dan itu disebutkan supaya tidak ada yang menyangka cakupannya penuh.
+
+### 1.5 Kerangka penyandingan
+
+Inti dari kata "valid" pada rencana. `penyandingan/catatan.json` menyimpan
+pasangan angka ALETA dan angka dari luar beserta periode, sumber, tanggal, dan
+penyandingnya; `services/penyandinganService.js` membacanya dan menjawab satu
+pertanyaan untuk tiap penilaian — **sudah pernah dibuktikan dari luar, atau
+belum?** Tiga jawaban yang berbeda arti: `belum`, `terbukti`, dan `berselisih`
+(angkanya berbeda tetapi selisihnya sudah dijelaskan — kadang yang keliru justru
+angka luarnya, dan itu temuan yang berharga).
+
+`verify-penyandingan.js` menguji dirinya sendiri atas sembilan bentuk catatan
+cacat yang **harus ditolak**: ruas wajib kosong, jenis tak dikenali, tanggal
+bukan YYYY-MM-DD, tanggal di masa depan, angka bukan bilangan, selisih tanpa
+penjelasan, penjelasan terlalu pendek, sumber luar berupa kalimat kosong seperti
+"sudah dicek", dan periode sama dicatat dua kali dengan angka berbeda. Ditambah
+satu catatan sah yang **harus diterima**. Catatan yang rusak membuat statusnya
+`belum`, bukan `terbukti`.
+
+**Catatannya sengaja kosong.** Server pengadilan tidak terjangkau dari mesin
+pengembang, sehingga belum ada satu pun angka SIPP sungguhan yang dapat
+disandingkan. Mengisinya dengan angka karangan akan menghapus seluruh gunanya:
+catatan penyandingan yang isinya tebakan lebih berbahaya daripada catatan yang
+kosong, sebab yang pertama tampak seperti bukti.
+
+Cakupan hari ini: **0 terbukti, 0 berselisih, 31 belum, dari 31 analisis.**
+
+### Gerbang lulus tahap 1
+
+| Syarat | Keadaan |
+|---|---|
+| Kerangka uji berjalan atas 31 analisis yang sudah ada, seluruhnya hijau | **lulus** — 114 pemeriksaan penyapu |
+| Seluruh penjaga sisi bot dapat dijalankan satu perintah | **lulus** — 71 naskah, 118 detik |
+| Penjaga pendaftaran rute terbukti menangkap cacatnya | **lulus** — dibuktikan dengan cacat sungguhan |
+| Penjaga SIPP baca-saja menjangkau seluruh berkas | **lulus** — 246 kueri, 20 berkas |
+| Kerangka penyandingan berdiri dan terbukti menolak yang cacat | **lulus** — 9 bentuk cacat ditolak |
+| Belum satu pun penilaian baru ditulis | **lulus** — memang belum, dan itu disengaja |

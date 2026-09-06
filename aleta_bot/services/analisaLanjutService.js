@@ -3292,7 +3292,31 @@ const DAFTAR_ANALISA = [
   { kunci: "upayaHukum", lingkup: "pengadilan", label: "Profil upaya hukum", keterangan: "Angka dasar banding, kasasi, dan PK - bukan prakiraan." },
 ];
 
-const PENGERJA = {
+/**
+ * Daftar pengerja. Dibuat TANPA induk (`Object.create(null)`) dengan sengaja.
+ *
+ * Objek biasa mewarisi milik Object.prototype, sehingga daftar yang tampak
+ * tertutup sebenarnya masih menjawab nama-nama warisan. Diukur pada 7
+ * September 2026 dengan penyapu, memakai objek biasa:
+ *
+ *   jenis=constructor  -> PENGERJA["constructor"] adalah fungsi Object, ia
+ *                         DIPANGGIL, dan rutenya memulangkan 200 berisi
+ *                         amplop yang jenisnya "constructor"
+ *   jenis=toString     -> memulangkan "[object Undefined]" yang lalu diurai
+ *                         menjadi objek beraksara-per-kunci
+ *   jenis=hasOwnProperty, __proto__ -> melempar, tertangkap sebagai galat
+ *
+ * Tidak satu pun dari keempatnya membaca basis data, jadi tidak ada data yang
+ * bocor. Tetapi keterangan di atas berkata "daftar tertutup", dan sebelum ini
+ * daftarnya TIDAK tertutup - layar menerima amplop yang tidak berasal dari
+ * analisis mana pun, lalu merendernya seolah-olah hasil.
+ *
+ * Dua lapis penjagaan dipasang: daftarnya tanpa induk, dan pencariannya
+ * memakai hasOwnProperty beserta pemeriksaan bahwa yang ditemukan memang
+ * fungsi. Satu lapis sudah cukup; dua dipasang karena yang pertama mudah
+ * hilang tanpa disadari bila kelak ada yang menyalin daftar ini.
+ */
+const PENGERJA = Object.assign(Object.create(null), {
   tenggat: (p) => ketepatanInput(p.perkaraId),
   kesehatan: (p) => kesehatanBerkas(p),
   suntingan: (p) => jejakSuntingan(p.perkaraId),
@@ -3326,7 +3350,7 @@ const PENGERJA = {
   berisiko: () => perkaraBerisiko(),
   anomali: () => deteksiAnomali(),
   upayaHukum: () => profilUpayaHukum(),
-};
+});
 
 /**
  * Menjalankan SATU analisis.
@@ -3336,8 +3360,11 @@ const PENGERJA = {
  */
 async function jalankanAnalisa(nomorPerkara, jenis) {
   const kunci = cleanText(jenis);
-  const pengerja = PENGERJA[kunci];
-  if (!pengerja) return { ok: false, alasan: "jenis_analisa_tidak_dikenali" };
+  // Lapis kedua: hanya milik sendiri, dan harus berupa fungsi. Lihat
+  // keterangan pada PENGERJA - "constructor" dan "toString" pernah menembus
+  // daftar yang tampak tertutup.
+  const pengerja = Object.prototype.hasOwnProperty.call(PENGERJA, kunci) ? PENGERJA[kunci] : null;
+  if (typeof pengerja !== "function") return { ok: false, alasan: "jenis_analisa_tidak_dikenali" };
 
   const perkara = await identitas(nomorPerkara);
   if (!perkara) return { ok: false, alasan: "perkara_tidak_ditemukan" };
