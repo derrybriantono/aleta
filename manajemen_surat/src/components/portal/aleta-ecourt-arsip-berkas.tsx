@@ -50,6 +50,15 @@ type BarisDokumen = {
   agenda: string;
   adaPdf: boolean;
   adaWord: boolean;
+  /**
+   * Berkas yang TERCATAT pernah diunduh tetapi tidak ada lagi di disk.
+   *
+   * Bedanya dengan "belum tersimpan" menentukan tindakan: yang belum pernah
+   * diunduh menunggu penarikan biasa, sedangkan yang hilang menuntut unduh
+   * ulang. Tanpa pembedaan ini keduanya tampak sama dan tidak ada yang tahu
+   * arsipnya perlu diisi ulang.
+   */
+  berkasHilang?: number;
   ukuranByte: number;
   diberitahukanPada: string | null;
 };
@@ -535,7 +544,16 @@ function DaftarDokumen({ dokumen }: { dokumen: BarisDokumen[] }) {
                       <TombolUnduh documentKey={d.documentKey} format="word" label="Word" />
                     ) : null}
                     {!d.adaPdf && !d.adaWord ? (
-                      <span className="text-xs text-muted-foreground">belum tersimpan</span>
+                      (d.berkasHilang ?? 0) > 0 ? (
+                        <span
+                          className="text-xs text-amber-700 dark:text-amber-500"
+                          title="Berkasnya tercatat pernah diunduh tetapi tidak ada lagi di disk. Jalankan penarikan ulang untuk mengisinya kembali."
+                        >
+                          berkas hilang - perlu unduh ulang
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">belum tersimpan</span>
+                      )
                     ) : null}
                   </div>
                 </td>

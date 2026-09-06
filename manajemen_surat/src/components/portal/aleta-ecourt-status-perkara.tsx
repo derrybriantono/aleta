@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
+import { AletaPromptPutusan } from "@/components/portal/aleta-prompt-putusan";
 import { TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -3048,10 +3049,22 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
       <Bagian
         judul="Analisis lanjutan"
         kunci="analisa-lanjut"
-        keterangan="Sepuluh analisis; masing-masing dihitung hanya saat ditekan."
+        keterangan="Tiga puluh satu analisis; masing-masing dihitung hanya saat ditekan."
         ciutBawaan
       >
         <AletaAnalisaPerkara nomorPerkara={status.identitas.nomorPerkara} />
+      </Bagian>
+
+      {/* Penyusun perintah untuk Project Claude ALETA AI PA CLAUDE. Ditaruh
+          sesudah analisis karena urutannya memang begitu: dibaca dahulu,
+          baru ditulis. Bahannya diambil hanya bila tombolnya ditekan. */}
+      <Bagian
+        judul="Susun perintah putusan untuk AI"
+        kunci="prompt-putusan"
+        keterangan="Jadwal sidang, mediasi, saksi, kuasa, dan nama berkas terisi sendiri dari SIPP."
+        ciutBawaan
+      >
+        <AletaPromptPutusan nomorPerkara={status.identitas.nomorPerkara} />
       </Bagian>
 
       {status.analisa ? (

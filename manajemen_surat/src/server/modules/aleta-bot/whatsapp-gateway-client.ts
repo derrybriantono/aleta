@@ -1580,6 +1580,19 @@ export async function getGatewayAnalisaPerkara(
   return gatewayFetch(`/internal/aleta-bot/sipp/analisa?${kueri.toString()}`);
 }
 
+/**
+ * Bahan penyusun perintah putusan.
+ *
+ * Hanya bahannya; perangkaiannya di layar, supaya penyusun melihat
+ * hasilnya berubah tiap kali ia mengubah pilihan.
+ */
+export async function getGatewayPromptPutusan(
+  nomorPerkara: string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ nomor: nomorPerkara });
+  return gatewayFetch(`/internal/aleta-bot/sipp/prompt-putusan?${kueri.toString()}`);
+}
+
 export async function getGatewayAntrianSidang(): Promise<GatewayResult<AntrianSidangGateway>> {
   return gatewayFetch("/internal/aleta-bot/antrian/sidang");
 }

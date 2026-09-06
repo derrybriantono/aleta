@@ -365,7 +365,8 @@ async function getBerkas(documentKey, format = "pdf") {
   const kunci = String(documentKey || "").trim();
   if (!kunci) return { ok: false, alasan: "document_key_kosong" };
 
-  const kolom = String(format) === "word" ? "berkas_word" : "berkas_pdf";
+  const jenis = String(format) === "word" ? "word" : "pdf";
+  const kolom = jenis === "word" ? "berkas_word" : "berkas_pdf";
   const rows = await botDb.query(
     `SELECT nomor_perkara, judul_dokumen, ${kolom} AS jalur
        FROM aleta_bot_ecourt_documents
@@ -375,9 +376,40 @@ async function getBerkas(documentKey, format = "pdf") {
 
   const baris = Array.isArray(rows) ? rows[0] : null;
   if (!baris) return { ok: false, alasan: "dokumen_tidak_ditemukan" };
-  if (!baris.jalur) return { ok: false, alasan: "berkas_belum_tersimpan" };
 
-  const hasil = ecourtDocumentService.describeEcourtDocument(baris.jalur);
+  /**
+   * ==========================================================================
+   * CATATAN BERKAS YANG SEBENARNYA ADA DI aleta_bot_ecourt_files
+   * ==========================================================================
+   *
+   * `berkas_pdf` dan `berkas_word` pada tabel dokumen hanya CERMIN - diisi
+   * saat unduhan berhasil, lalu ditimpa ulang oleh penyelarasan berikutnya.
+   * Diukur pada basis data yang berjalan: dari 394 dokumen, cerminnya terisi
+   * pada 23 (pdf) dan 8 (word) saja, sementara `aleta_bot_ecourt_files`
+   * mencatat seluruh 400 berkas.
+   *
+   * Membaca cerminnya membuat unduhan menjawab "berkas_belum_tersimpan"
+   * untuk berkas yang sebenarnya tercatat - dan karena tombol unduhnya pun
+   * disembunyikan atas dasar yang sama, tidak ada yang pernah melihat
+   * kesalahannya.
+   *
+   * Jadi tabel berkas dibaca lebih dulu, cerminnya jadi cadangan.
+   */
+  const barisBerkas = await botDb
+    .query(
+      `SELECT jalur_berkas AS jalur
+         FROM aleta_bot_ecourt_files
+        WHERE document_key = ? AND format = ? AND dihapus_retensi IS NULL
+        ORDER BY diunduh_pada DESC
+        LIMIT 1`,
+      [kunci, jenis]
+    )
+    .catch(() => []);
+
+  const jalur = (Array.isArray(barisBerkas) && barisBerkas[0] && barisBerkas[0].jalur) || baris.jalur;
+  if (!jalur) return { ok: false, alasan: "berkas_belum_tersimpan" };
+
+  const hasil = ecourtDocumentService.describeEcourtDocument(jalur);
   if (!hasil.ok) return { ok: false, alasan: hasil.reason };
 
   let isi;

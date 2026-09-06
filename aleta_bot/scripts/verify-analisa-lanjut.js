@@ -37,6 +37,16 @@ function periksa(nama, benar) {
 // ---------------------------------------------------------------- penadah
 const kueri = [];
 
+/** Bahan putusan yang disuguhkan penadah - diganti per pemeriksaan. */
+const BAHAN_BAWAAN = {
+  petitum:
+    '<ol><li>Mengabulkan permohonan Pemohon;</li><li>Menjatuhkan talak satu terhadap Termohon;</li></ol>',
+  pertimbangan: '<p>Menimbang bahwa permohonan Pemohon dikabulkan;</p>',
+  amar: '<p>1. Mengabulkan permohonan Pemohon;</p>',
+  kodeMediasi: 'T',
+};
+let bahanPutusan = { ...BAHAN_BAWAAN };
+
 const dbPath = require.resolve("../db_config");
 require("../db_config");
 require.cache[dbPath].exports = {
@@ -45,6 +55,25 @@ require.cache[dbPath].exports = {
     kueri.push({ sql: teks, params: Array.isArray(params) ? params : [] });
 
     // Identitas perkara - dijawab satu baris supaya analisisnya berjalan.
+    // Bahan putusan - dipakai pemeriksa pertimbangan dan ringkasan. Diisi
+    // dari luar supaya satu pemeriksaan dapat mengubahnya tanpa menyalin
+    // seluruh penadah.
+    if (/SELECT p\.petitum AS petitum/.test(teks)) {
+      selesai(null, [{ petitum: bahanPutusan.petitum }]);
+      return;
+    }
+    if (/perkara_pertimbangan_hukum ph WHERE ph\.perkara_id = \?/.test(teks)) {
+      selesai(null, bahanPutusan.pertimbangan ? [{ teks: bahanPutusan.pertimbangan }] : []);
+      return;
+    }
+    if (/pu\.amar_putusan AS amar/.test(teks)) {
+      selesai(null, [{ amar: bahanPutusan.amar, status: 'Dikabulkan', tanggalPutusan: '2026-08-11' }]);
+      return;
+    }
+    if (/FROM perkara_mediasi md WHERE md\.perkara_id = \? LIMIT 1/.test(teks)) {
+      selesai(null, [{ hasil: bahanPutusan.kodeMediasi, mediator: 'Himawan T.W.' }]);
+      return;
+    }
     if (/FROM perkara p WHERE p\.nomor_perkara = \?/.test(teks)) {
       selesai(null, [
         {
@@ -66,6 +95,7 @@ const layanan = require("../services/analisaLanjutService");
 
 function bersihkan() {
   kueri.length = 0;
+  bahanPutusan = { ...BAHAN_BAWAAN };
 }
 
 async function utama() {
@@ -167,6 +197,65 @@ async function utama() {
   }
 
   // ==========================================================================
+  console.log("\n== Pemeriksa pertimbangan: temuan, bukan nilai ==");
+  {
+    bersihkan();
+    const hasil = await layanan.jalankanAnalisa("551/Pdt.G/2026/PA.Dgl", "periksaPertimbangan");
+    // Yang dikeluarkan harus TEMUAN. Sekali ia mengeluarkan persentase,
+    // angkanya akan dipercaya melebihi yang pantas dan masuk ke rapor
+    // orang - padahal pencocokannya hanya kesamaan kata.
+    periksa(
+      "tidak mengeluarkan persentase apa pun",
+      hasil.metrik.every((m) => !String(m.nilai).includes("%"))
+    );
+    periksa("menyatakan dirinya bukan penilaian", /BUKAN penilaian/.test(String(hasil.catatan)));
+    periksa(
+      "butir petitum yang terjawab tidak ditandai",
+      hasil.baris.some((b) => b.perluDibaca === "")
+    );
+
+    // Amar "Mengabulkan" berpasangan dengan pertimbangan "dikabulkan".
+    // Mencocokkan bentuk persisnya membuat peringatan menyala pada hampir
+    // setiap perkara, dan peringatan yang selalu menyala berhenti dibaca.
+    const arah = hasil.metrik.find((m) => m.label === "Arah amar");
+    periksa("arah amar terbaca", Boolean(arah) && arah.nilai === "mengabulkan");
+    periksa(
+      "kata dasar dikabulkan diakui sepadan dengan mengabulkan",
+      Boolean(arah) && arah.keterangan === "juga disebut di pertimbangan"
+    );
+
+    bersihkan();
+    bahanPutusan.pertimbangan = "<p>Menimbang bahwa perkara ini diperiksa;</p>";
+    const sunyi = await layanan.jalankanAnalisa("551/Pdt.G/2026/PA.Dgl", "periksaPertimbangan");
+    const arahSunyi = sunyi.metrik.find((m) => m.label === "Arah amar");
+    periksa(
+      "pertimbangan yang benar-benar tidak menyebutnya tetap ditandai",
+      Boolean(arahSunyi) && arahSunyi.keterangan === "tidak disebut di pertimbangan"
+    );
+  }
+
+  console.log("\n== Ringkasan perkara: tidak mengarang ==");
+  {
+    bersihkan();
+    const hasil = await layanan.jalankanAnalisa("551/Pdt.G/2026/PA.Dgl", "ringkasan");
+    periksa("mediasi kode T disebut tidak berhasil", /tidak berhasil/.test(hasil.ringkas));
+
+    // 'Y2' dan 'D' ada di SIPP tanpa arti yang pasti. Menerjemahkannya
+    // berarti mengarang di kalimat yang dibacakan kepada pihak.
+    bersihkan();
+    bahanPutusan.kodeMediasi = "Y2";
+    const kabur = await layanan.jalankanAnalisa("551/Pdt.G/2026/PA.Dgl", "ringkasan");
+    periksa(
+      "kode mediasi tidak baku tidak diterjemahkan",
+      !/berhasil/.test(kabur.ringkas.replace(/belum tercatat baku/g, ""))
+    );
+    periksa("melainkan dinyatakan belum tercatat baku", /belum tercatat baku/.test(kabur.ringkas));
+    periksa(
+      "menyatakan kalimatnya bukan susunan model bahasa",
+      /tidak satu pun disusun oleh model bahasa/.test(String(kabur.catatan))
+    );
+  }
+
   console.log("\n== Nilai tengah ==");
   {
     // Nilai tengah dipakai membandingkan lama perkara. Rata-rata akan

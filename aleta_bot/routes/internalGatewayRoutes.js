@@ -55,6 +55,7 @@ const penunjukanService = require("../services/penunjukanService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
+const promptPutusanService = require("../services/promptPutusanService");
 const kehadiranAntrianService = require("../services/kehadiranAntrianService");
 const panggilanAntrianService = require("../services/panggilanAntrianService");
 
@@ -1425,6 +1426,22 @@ router.get("/sipp/analisa", requireInternalToken, async (req, res) => {
 /** Daftar analisis yang tersedia - supaya layar tidak menyalinnya sendiri. */
 router.get("/sipp/analisa/daftar", requireInternalToken, async (req, res) => {
   res.json({ ok: true, daftar: analisaLanjutService.DAFTAR_ANALISA });
+});
+
+/**
+ * Bahan penyusun perintah putusan - seluruhnya baca.
+ *
+ * Yang dikembalikan bukan perintahnya, melainkan BAHANnya: riwayat sidang,
+ * mediasi, saksi, kuasa, berkas. Perangkaiannya dikerjakan di layar supaya
+ * yang menyusun dapat melihat perubahan tiap kali ia mengubah pilihan.
+ */
+router.get("/sipp/prompt-putusan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await promptPutusanService.bahanPrompt(String(req.query.nomor || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
 });
 
 router.get("/sipp/status-perkara", requireInternalToken, async (req, res) => {

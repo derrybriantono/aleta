@@ -26,6 +26,7 @@ const crypto = require("crypto");
 
 const botDb = require("./botDbService");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
+const ecourtDocumentService = require("./ecourtDocumentService");
 
 let schemaReady = false;
 let schemaPromise = null;
@@ -1017,24 +1018,81 @@ async function rincianArsipPerkara(nomorPerkaraMentah) {
     [nomorPerkara]
   );
 
+  /**
+   * ==========================================================================
+   * ADA-TIDAKNYA BERKAS DIBACA DARI CATATAN BERKAS, LALU DIBUKTIKAN KE DISK
+   * ==========================================================================
+   *
+   * Sebelumnya `adaPdf`/`adaWord` dibaca dari kolom cermin `berkas_pdf` dan
+   * `berkas_word` di tabel dokumen. Cermin itu BASI: dari 394 dokumen hanya
+   * 23 dan 8 yang terisi, sementara `aleta_bot_ecourt_files` mencatat seluruh
+   * 400 berkas. Akibatnya tombol unduh tidak muncul untuk hampir seluruh
+   * dokumen - inilah sebab keluhan "berkas arsip tidak bisa diunduh".
+   *
+   * Tetapi catatan saja tidak cukup. Folder unduhan pernah - dan sampai
+   * mount-nya dipasang, masih - berada di dalam lapisan container, sehingga
+   * setiap pembangunan ulang menghapus berkasnya sementara barisnya tetap
+   * ada. Menyalakan tombol hanya berdasarkan catatan berarti menjanjikan
+   * unduhan yang pasti gagal.
+   *
+   * Karena itu dua-duanya: TERCATAT dan TERBACA DI DISK. Yang tercatat tapi
+   * hilang dilaporkan lewat `berkasHilang`, supaya keadaannya kelihatan
+   * alih-alih tampak seperti dokumen yang memang belum pernah diunduh.
+   */
+  const daftarBerkas = await botDb
+    .query(
+      `SELECT document_key AS documentKey, format, jalur_berkas AS jalur
+         FROM aleta_bot_ecourt_files
+        WHERE nomor_perkara = ? AND dihapus_retensi IS NULL`,
+      [nomorPerkara]
+    )
+    .catch(() => []);
+
+  const berkasPerDokumen = new Map();
+  for (const berkas of Array.isArray(daftarBerkas) ? daftarBerkas : []) {
+    const kunci = cleanText(berkas.documentKey);
+    const jenis = cleanText(berkas.format).toLowerCase();
+    if (!kunci || (jenis !== "pdf" && jenis !== "word")) continue;
+
+    const periksa = ecourtDocumentService.describeEcourtDocument(berkas.jalur);
+    const catatan = berkasPerDokumen.get(kunci) || {
+      pdf: null,
+      word: null,
+      hilang: 0,
+    };
+    if (periksa.ok) catatan[jenis] = periksa.fileName;
+    else catatan.hilang += 1;
+    berkasPerDokumen.set(kunci, catatan);
+  }
+
   return {
     nomorPerkara,
-    dokumen: (Array.isArray(rows) ? rows : []).map((row) => ({
-      documentKey: cleanText(row.documentKey),
-      judulDokumen: cleanText(row.judulDokumen),
-      jenisDokumen: cleanText(row.jenisDokumen),
-      peranPengunggah: cleanText(row.peranPengunggah),
-      statusVerifikasi: cleanText(row.statusVerifikasi) || "belum",
-      diunggahPada: botDb.fromMysqlDate(row.diunggahPada),
-      tanggalSidang: botDb.fromMysqlDate(row.tanggalSidang),
-      agenda: cleanText(row.agenda),
-      adaPdf: Boolean(row.berkasPdf),
-      adaWord: Boolean(row.berkasWord),
-      ukuranByte: Number(row.ukuranByte) || 0,
-      dihapusRetensi: Number(row.dihapusRetensi) > 0,
-      diberitahukanPada: botDb.fromMysqlDate(row.diberitahukanPada),
-      terakhirTerlihat: botDb.fromMysqlDate(row.terakhirTerlihat),
-    })),
+    dokumen: (Array.isArray(rows) ? rows : []).map((row) => {
+      const kunci = cleanText(row.documentKey);
+      const catatan = berkasPerDokumen.get(kunci) || { pdf: null, word: null, hilang: 0 };
+      return {
+        documentKey: kunci,
+        judulDokumen: cleanText(row.judulDokumen),
+        jenisDokumen: cleanText(row.jenisDokumen),
+        peranPengunggah: cleanText(row.peranPengunggah),
+        statusVerifikasi: cleanText(row.statusVerifikasi) || "belum",
+        diunggahPada: botDb.fromMysqlDate(row.diunggahPada),
+        tanggalSidang: botDb.fromMysqlDate(row.tanggalSidang),
+        agenda: cleanText(row.agenda),
+        adaPdf: Boolean(catatan.pdf),
+        adaWord: Boolean(catatan.word),
+        // Nama berkas yang sebenarnya - tersimpan pada jalur berkas, bukan
+        // pada tabel dokumen. Kosong bila berkasnya tidak terbaca.
+        namaBerkasPdf: catatan.pdf || "",
+        namaBerkasWord: catatan.word || "",
+        /** Tercatat pernah diunduh, tetapi berkasnya tidak ada lagi di disk. */
+        berkasHilang: catatan.hilang,
+        ukuranByte: Number(row.ukuranByte) || 0,
+        dihapusRetensi: Number(row.dihapusRetensi) > 0,
+        diberitahukanPada: botDb.fromMysqlDate(row.diberitahukanPada),
+        terakhirTerlihat: botDb.fromMysqlDate(row.terakhirTerlihat),
+      };
+    }),
   };
 }
 

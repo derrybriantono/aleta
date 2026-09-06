@@ -13,3 +13,18 @@ services:
       ALETA_BOT_RUNTIME_CONFIG_PATH: /usr/src/app/runtime-data/aleta-runtime.json
     volumes:
       - /var/www/html/aleta-data/aleta-bot-runtime:/usr/src/app/runtime-data
+      # ====================================================================
+      # ARSIP DOKUMEN e-COURT - TANPA BARIS INI SELURUHNYA HILANG TIAP BUILD
+      # ====================================================================
+      #
+      # ecourtDocumentService menyimpan unduhan ke <app>/data/ecourt, dan
+      # ALETA_BOT_ECOURT_DOCUMENT_ROOT tidak diatur di mana pun. Tanpa mount,
+      # folder itu berada di dalam LAPISAN CONTAINER: setiap
+      # "docker compose up -d" yang membuat ulang container menghapus seluruh
+      # berkas yang pernah diunduh, sementara barisnya di
+      # aleta_bot_ecourt_files tetap ada.
+      #
+      # Gejalanya bukan galat, melainkan diam: tombol unduh menghilang dan
+      # arsip tampak seperti belum pernah diisi. Sudah terjadi berkali-kali -
+      # 400 baris berkas tercatat, nol berkas tersisa di disk.
+      - /var/www/html/aleta-data/ecourt-docs:/usr/src/app/data/ecourt

@@ -11,26 +11,27 @@ import { cn } from "@/lib/utils";
  * ANALISIS LANJUTAN - SATU TOMBOL, SATU PERHITUNGAN
  * ============================================================================
  *
- * Sepuluh analisis, dan tidak satu pun berjalan sampai tombolnya ditekan.
+ * Tiga puluh satu analisis, dan tidak satu pun berjalan sampai tombolnya
+ * ditekan.
  *
  * Itu bukan kehati-hatian yang berlebihan: layar Status Perkara sudah
  * menjalankan tiga puluh satu kueri untuk membuka satu perkara, dan sebagian
  * analisis di sini mengagregasi seluruh register - membandingkan perkara ini
  * dengan ribuan perkara sejenis, atau menghitung beban seluruh perkara yang
- * pernah ditangani majelisnya. Menjalankan kesepuluhnya di muka berarti
+ * pernah ditangani majelisnya. Menjalankan seluruhnya di muka berarti
  * MEMBUKA perkara menunggu angka yang mungkin tidak akan dilihat siapa pun.
  *
  * ============================================================================
- * SATU PERENDER UNTUK SEPULUHNYA
+ * SATU PERENDER UNTUK SEMUANYA
  * ============================================================================
  *
  * Bot menjawab dengan bentuk yang sama untuk seluruh analisis:
  *
  *     { judul, ringkas, metrik[], kolom[], baris[], catatan }
  *
- * sehingga di sini cukup satu komponen kecil, bukan sepuluh. Menambah analisis
- * kesebelas nanti tidak menuntut satu baris pun kode tampilan - cukup satu
- * fungsi di sisi bot.
+ * sehingga di sini cukup satu komponen kecil, bukan tiga puluh satu. Menambah
+ * analisis berikutnya tidak menuntut satu baris pun kode tampilan - cukup satu
+ * fungsi di sisi bot dan satu baris di daftar.
  *
  * Hasil yang sudah diambil DISIMPAN: menekan tombol yang sama dua kali tidak
  * mengulang perhitungannya, dan berpindah antar analisis tidak kehilangan yang
@@ -58,18 +59,46 @@ type Hasil = {
  * persis yang hendak dihindari. Kunci yang tidak dikenali bot dijawab
  * "jenis_analisa_tidak_dikenali", bukan menjalankan sesuatu yang lain.
  */
-const ANALISA = [
-  { kunci: "tenggat", label: "Ketepatan input", keterangan: "Jeda peristiwa ke input tiap tahapan" },
-  { kunci: "sejenis", label: "Banding sejenis", keterangan: "Dibandingkan perkara jenis yang sama" },
-  { kunci: "majelis", label: "Kinerja majelis", keterangan: "Beban dan kecepatan hakimnya" },
-  { kunci: "pihak", label: "Riwayat pihak", keterangan: "Perkara lain lewat NIK, nama, dan tanggal lahir" },
-  { kunci: "pasangan", label: "Pasangan pihak", keterangan: "Apakah kedua belah pihak pernah berhadapan" },
-  { kunci: "panggilan", label: "Analisa panggilan", keterangan: "Tenggang, retur, dan cara panggil" },
-  { kunci: "prakiraan", label: "Prakiraan selesai", keterangan: "Sebaran perkara sejenis yang sudah putus" },
-  { kunci: "biaya", label: "Peta biaya", keterangan: "Panjar, pengeluaran, dan sisanya" },
-  { kunci: "penundaan", label: "Pola penundaan", keterangan: "Jeda antar sidang dan alasannya" },
-  { kunci: "ecourt", label: "Kelengkapan e-Court", keterangan: "Dokumen elektronik yang wajib ada" },
-  { kunci: "kronologi", label: "Kronologi lengkap", keterangan: "Seluruh peristiwa dalam satu deret" },
+const ANALISA: Array<{
+  kunci: string;
+  lingkup: "perkara" | "pengadilan";
+  label: string;
+  keterangan: string;
+}> = [
+  // ---- lingkup perkara ----
+  { kunci: "tenggat", lingkup: "perkara", label: "Ketepatan input", keterangan: "Jeda peristiwa ke input tiap tahapan" },
+  { kunci: "kesehatan", lingkup: "perkara", label: "Kesehatan berkas", keterangan: "Satu angka kelengkapan berkas perkara ini" },
+  { kunci: "suntingan", lingkup: "perkara", label: "Jejak suntingan", keterangan: "Data yang diubah sesudah diinput, oleh siapa" },
+  { kunci: "pegawai", lingkup: "perkara", label: "Rapor pegawai", keterangan: "Rekam jejak penginput perkara ini di seluruh perkara" },
+  { kunci: "tenggang", lingkup: "perkara", label: "Tenggang panggilan", keterangan: "Kepatuhan Pasal 122 HIR dan rekam juru sitanya" },
+  { kunci: "aturan", lingkup: "perkara", label: "Pemantau SEMA/PERMA", keterangan: "Kepatuhan aturan yang berlaku pada perkara ini" },
+  { kunci: "majelisBanding", lingkup: "perkara", label: "Majelis vs pengadilan", keterangan: "Majelis perkara ini dibanding nilai tengah pengadilan" },
+  { kunci: "sejenis", lingkup: "perkara", label: "Banding sejenis", keterangan: "Dibandingkan perkara jenis yang sama" },
+  { kunci: "majelis", lingkup: "perkara", label: "Kinerja majelis", keterangan: "Beban dan kecepatan hakimnya" },
+  { kunci: "pihak", lingkup: "perkara", label: "Riwayat pihak", keterangan: "Perkara lain lewat NIK, nama, dan tanggal lahir" },
+  { kunci: "pasangan", lingkup: "perkara", label: "Pasangan pihak", keterangan: "Apakah kedua belah pihak pernah berhadapan" },
+  { kunci: "panggilan", lingkup: "perkara", label: "Analisa panggilan", keterangan: "Tenggang, retur, dan cara panggil" },
+  { kunci: "prakiraan", lingkup: "perkara", label: "Prakiraan selesai", keterangan: "Sebaran perkara sejenis yang sudah putus" },
+  { kunci: "biaya", lingkup: "perkara", label: "Peta biaya", keterangan: "Panjar, pengeluaran, dan sisanya" },
+  { kunci: "penundaan", lingkup: "perkara", label: "Pola penundaan", keterangan: "Jeda antar sidang dan alasannya" },
+  { kunci: "ecourt", lingkup: "perkara", label: "Kelengkapan e-Court", keterangan: "Dokumen elektronik yang wajib ada" },
+  { kunci: "kronologi", lingkup: "perkara", label: "Kronologi lengkap", keterangan: "Seluruh peristiwa dalam satu deret" },
+  { kunci: "periksaPertimbangan", lingkup: "perkara", label: "Pemeriksa pertimbangan", keterangan: "Petitum yang belum menemukan padanan di amar atau pertimbangan" },
+  { kunci: "ringkasan", lingkup: "perkara", label: "Ringkasan perkara", keterangan: "Satu paragraf bahasa sederhana dari fakta yang tercatat" },
+  { kunci: "mutuPertimbangan", lingkup: "perkara", label: "Mutu pertimbangan", keterangan: "Panjang dan kepadatan rujukan pertimbangan hukumnya" },
+  { kunci: "keajekan", lingkup: "perkara", label: "Keajekan putusan", keterangan: "Sebaran hasil antar majelis untuk jenis perkara ini" },
+
+  // ---- lingkup pengadilan ----
+  { kunci: "bulanan", lingkup: "pengadilan", label: "Papan kendali bulanan", keterangan: "Masuk, putus, dan sisanya per bulan" },
+  { kunci: "beban", lingkup: "pengadilan", label: "Sebaran beban", keterangan: "Pembagian perkara antar hakim, PP, dan juru sita" },
+  { kunci: "periode", lingkup: "pengadilan", label: "Banding antar periode", keterangan: "Bulan ini lawan bulan lalu dan tahun lalu" },
+  { kunci: "wilayah", lingkup: "pengadilan", label: "Sebaran wilayah", keterangan: "Dari kecamatan mana perkara paling banyak datang" },
+  { kunci: "musim", lingkup: "pengadilan", label: "Musim perkara", keterangan: "Bulan dan hari mana yang paling padat" },
+  { kunci: "corong", lingkup: "pengadilan", label: "Corong perkara", keterangan: "Di mana perkara tersendat, dari daftar sampai arsip" },
+  { kunci: "profil", lingkup: "pengadilan", label: "Profil pihak", keterangan: "Umur, pekerjaan, pendidikan, dan usia pernikahan" },
+  { kunci: "berisiko", lingkup: "pengadilan", label: "Perkara berisiko", keterangan: "Yang mendekati atau melewati ambang lima bulan" },
+  { kunci: "anomali", lingkup: "pengadilan", label: "Deteksi anomali", keterangan: "Perkara yang menyimpang dari kebiasaan jenisnya" },
+  { kunci: "upayaHukum", lingkup: "pengadilan", label: "Profil upaya hukum", keterangan: "Angka dasar banding, kasasi, dan PK - bukan prakiraan" },
 ];
 
 export function AletaAnalisaPerkara({ nomorPerkara }: { nomorPerkara: string }) {
@@ -126,25 +155,55 @@ export function AletaAnalisaPerkara({ nomorPerkara }: { nomorPerkara: string }) 
         membandingkan perkara ini dengan ribuan perkara lain, dan itu perlu beberapa detik.
       </p>
 
-      <div className="flex flex-wrap gap-2">
-        {ANALISA.map((satu) => (
-          <button
-            key={satu.kunci}
-            type="button"
-            onClick={() => void ambil(satu.kunci)}
-            title={satu.keterangan}
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-sm transition",
-              terpilih === satu.kunci
-                ? "border-primary bg-primary/10 font-medium shadow-sm"
-                : "border-border bg-card hover:border-primary/40 hover:bg-muted/50"
-            )}
-          >
-            {satu.label}
-            {sibuk === satu.kunci ? " …" : ""}
-          </button>
-        ))}
-      </div>
+      {/* ==================================================================
+          DUA KELOMPOK, DAN PEMISAHANNYA MENENTUKAN
+          ==================================================================
+
+          Sebagian analisis menjawab tentang PERKARA INI; sebagian lagi
+          tentang SELURUH PENGADILAN, dan angkanya sama siapa pun perkara
+          yang sedang dibuka.
+
+          Menaruhnya dalam satu deret tombol membuat papan kendali bulanan
+          terbaca sebagai keterangan perkara ini - dan angka pengadilan yang
+          disangka angka perkara adalah kekeliruan yang tidak menampakkan
+          dirinya sendiri: keduanya sama-sama berupa angka yang masuk akal. */}
+      {(["perkara", "pengadilan"] as const).map((lingkup) => {
+        const kelompok = ANALISA.filter((x) => x.lingkup === lingkup);
+        if (kelompok.length === 0) return null;
+
+        return (
+          <div key={lingkup} className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">
+              {lingkup === "perkara" ? "Tentang perkara ini" : "Tentang seluruh pengadilan"}
+              {lingkup === "pengadilan" ? (
+                <span className="ml-1.5 font-normal">
+                  — angkanya sama siapa pun perkara yang dibuka
+                </span>
+              ) : null}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {kelompok.map((satu) => (
+                <button
+                  key={satu.kunci}
+                  type="button"
+                  onClick={() => void ambil(satu.kunci)}
+                  title={satu.keterangan}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-sm transition",
+                    terpilih === satu.kunci
+                      ? "border-primary bg-primary/10 font-medium shadow-sm"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/50"
+                  )}
+                >
+                  {satu.label}
+                  {sibuk === satu.kunci ? " …" : ""}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
 
       {terpilih && sibuk === terpilih ? (
         <div className="rounded-lg border bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
