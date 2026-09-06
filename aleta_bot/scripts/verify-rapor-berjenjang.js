@@ -65,6 +65,13 @@ async function utama() {
     lantai: "bulanan",
     versiRumus: "v1",
     ambangDipakai: ["tenggangPanggilan"],
+    caraHitung: {
+      pembilang: "Relaas yang tenggangnya tiga hari kerja atau lebih sebelum sidang",
+      penyebut: "Seluruh relaas panggilan yang terkirim pada rentang ini",
+      dikecualikan: "Relaas retur, panggilan ghaib, dan panggilan delegasi",
+      tabelSumber: "perkara_pihak_panggilan, perkara_jadwal_sidang",
+      ruasSumber: "tanggal_panggilan, tanggal_sidang, jenis_panggilan",
+    },
     baris: async (r) => barisPanggilan(r),
   });
 

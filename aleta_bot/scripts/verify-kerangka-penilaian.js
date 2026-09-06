@@ -43,6 +43,13 @@ function definisiSah(ubah = {}) {
     lantai: "harian",
     versiRumus: "v1",
     ambangDipakai: ["tenggangPanggilan"],
+    caraHitung: {
+      pembilang: "Baris yang tenggangnya tiga hari kerja atau lebih",
+      penyebut: "Seluruh baris yang tercatat pada rentang ini",
+      dikecualikan: "Tidak ada yang dikecualikan",
+      tabelSumber: "perkara_pihak_panggilan",
+      ruasSumber: "tanggal_panggilan, tanggal_sidang",
+    },
     baris: async () => [
       { kunci: "1/Pdt.G/2026", memenuhi: true },
       { kunci: "2/Pdt.G/2026", memenuhi: false },
@@ -67,6 +74,13 @@ async function utama() {
     ["versiRumus kosong", definisiSah({ versiRumus: "" })],
     ["ambang yang tidak ada pada daftar", definisiSah({ ambangDipakai: ["ambangKarangan"] })],
     ["ambangDipakai bukan larik", definisiSah({ ambangDipakai: "tenggangPanggilan" })],
+    ["tanpa caraHitung", definisiSah({ caraHitung: undefined })],
+    ["caraHitung bukan objek", definisiSah({ caraHitung: "dibagi saja" })],
+    ["caraHitung tanpa pembilang", definisiSah({ caraHitung: { penyebut: "seluruh baris", dikecualikan: "tidak ada", tabelSumber: "perkara_x", ruasSumber: "tanggal_y" } })],
+    ["caraHitung tanpa penyebut", definisiSah({ caraHitung: { pembilang: "yang memenuhi", dikecualikan: "tidak ada", tabelSumber: "perkara_x", ruasSumber: "tanggal_y" } })],
+    ["caraHitung tanpa dikecualikan", definisiSah({ caraHitung: { pembilang: "yang memenuhi", penyebut: "seluruh baris", tabelSumber: "perkara_x", ruasSumber: "tanggal_y" } })],
+    ["caraHitung tanpa tabel sumber", definisiSah({ caraHitung: { pembilang: "yang memenuhi", penyebut: "seluruh baris", dikecualikan: "tidak ada", ruasSumber: "tanggal_y" } })],
+    ["caraHitung berisi kalimat kosong", definisiSah({ caraHitung: { pembilang: "ya", penyebut: "ya", dikecualikan: "ya", tabelSumber: "ya", ruasSumber: "ya" } })],
   ];
   DITOLAK.forEach(([nama, def]) => {
     K.lupakanSemua();
@@ -103,6 +117,19 @@ async function utama() {
       }
     })()
   );
+
+  console.log("== D11 - cara hitung ikut dipulangkan ==");
+  {
+    K.lupakanSemua();
+    K.daftarkan(definisiSah());
+    const d = K.daftar()[0];
+    periksa("daftar memuat cara hitungnya", Boolean(d.caraHitung && d.caraHitung.pembilang));
+    const hasil = await K.jalankan("ujiKetaatan", "harian", ACUAN);
+    periksa("hasil menjalankan memuat cara hitungnya", Boolean(hasil.caraHitung && hasil.caraHitung.penyebut));
+    periksa("kelima ruasnya lengkap",
+      ["pembilang", "penyebut", "dikecualikan", "tabelSumber", "ruasSumber"].every((k) => hasil.caraHitung[k]));
+    periksa("menyebut tabel SIPP yang dibaca", /perkara_/.test(hasil.caraHitung.tabelSumber));
+  }
 
   console.log("== Angkanya turunan dari buktinya ==");
   {

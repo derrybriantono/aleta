@@ -634,3 +634,119 @@ pilihan pembaca, bukan bawaan.
 **MS06 (berkas pengawasan siap kirim) belum dikerjakan** dan itu disengaja: ia
 sama dengan alat D08 pada tahap 4, dan membangunnya dua kali akan menghasilkan
 dua bentuk ekspor yang perlahan menyimpang. Dikerjakan sekali di tahap 4.
+
+---
+
+## Tahap 4 — Dua puluh alat di dalam penilaian (sisi mesin)
+
+**Dikerjakan 7 September 2026. SEBAGIAN — sisi mesin selesai, sisi layar belum.**
+
+Alat dikerjakan pada **perender bersama**, bukan pada tiap penilaian: sekali
+pasang, seluruh penilaian mendapatkannya — termasuk penilaian yang ditulis
+kelak. Urutannya mengikuti rencana: yang menyentuh setiap angka dikerjakan
+paling awal, sebab dipasang belakangan berarti membongkar seluruh layar.
+
+### 4.1 Sebelas alat yang sudah punya mesinnya
+
+| Alat | Yang dikerjakan | Pemeriksaan |
+|---|---|---|
+| **D03** ambang dan dasar hukum | selesai pada tahap 3 | 31 |
+| **D10** penanda cakupan data | `cakupanDataService.js` | 52 bersama D07 dan D17 |
+| **D17** rentang keyakinan | `ketelitianNilaiService.js` — selang Wilson | ” |
+| **D07** dampak bila dibereskan | ” | ” |
+| **D02** hak jawab pada baris | `catatanPenilaianService.js` | 35 bersama D13, D14, D18 |
+| **D13** keadaan tindak lanjut | ” | ” |
+| **D14** disposisi pimpinan | ” | ” |
+| **D18** anotasi peristiwa | ” | ” |
+| **D15** sasaran kinerja | `sasaranKinerjaService.js` | 36 bersama D06 |
+| **D06** lencana ketergantungan | ” | ” |
+| **D11** cara hitung terbuka | diwajibkan pada kontrak pendaftaran | 88 (kerangka) |
+
+### 4.2 Keputusan yang diambil, beserta alasannya
+
+**D17 memakai selang Wilson, bukan selang normal biasa.** Bukan kegemaran pada
+rumus: selang normal melar keluar batas nol dan seratus pada nilai yang
+mendekati ujung — dan penilaian ketaatan justru hampir selalu mendekati seratus.
+Selang yang menyatakan "97,8 persen, antara 96,2 dan **101,4**" adalah selang
+yang salah, dan kesalahannya terlihat oleh siapa pun. Diuji: 99 dari 100 tetap
+di bawah seratus, 0 dari 40 tetap di atas nol, dan 40 dari 40 **tetap punya
+rentang** — tidak dianggap pasti.
+
+**Cakupan dan ketelitian dipisah tegas.** Keduanya sering dikira sama. Sebuah
+penilaian dapat bercakupan rendah tetapi berpenyebut besar (mutu pertimbangan:
+22,3 persen cakupan, rentang ±1,7), dan sebaliknya (23 dari 23: cakupan penuh,
+rentang ±14). Diuji keduanya.
+
+**D07 menghitung dampak, tetapi TIDAK menaksir usaha.** Mesin tidak tahu bahwa
+melengkapi 122 naskah anonimisasi memakan dua hari sedangkan menelaah 7.062
+suntingan memerlukan keputusan pimpinan. Kolom usaha dibiarkan kosong untuk
+diisi manusia; menaksirnya dengan angka karangan membuat urutan pengerjaan
+tampak berdasar padahal tidak.
+
+**Empat alat catatan berbagi satu tabel.** D02, D13, D14, dan D18 berbentuk sama:
+tulisan yang melekat pada sesuatu, berpenulis dan bertanggal. Empat tabel yang
+hampir serupa berarti empat perangkat kode yang perlahan menyimpang.
+
+**Penjelasan tidak menghapus temuannya.** Diuji tersendiri: sesudah penjelasan
+dilekatkan, barisnya **tetap** tidak memenuhi. Temuan tanpa penjelasannya adalah
+tuduhan; temuan yang dihapus karena ada penjelasan adalah pengawasan yang mandul.
+
+**Temuan yang "dikecualikan" wajib menyebut alasannya.** Mengecualikan tanpa
+alasan adalah cara paling halus menghilangkan temuan: ia tercatat, tampak sudah
+ditangani, dan tidak seorang pun kembali kepadanya.
+
+**Baris tanpa catatan berkeadaan "belum ditindak", bukan kosong.** Kolom kosong
+terbaca "tidak berlaku"; "belum ditindak" terbaca sebagai pekerjaan yang
+menunggu.
+
+**D15 menolak sasaran tanpa sumber.** Sasaran tanpa dokumen dasarnya adalah
+angka karangan. Daftarnya **sengaja kosong** sampai Perjanjian Kinerja pengadilan
+dibaca — dan layar harus mengatakan "sasarannya belum ditetapkan", bukan
+diam-diam memakai seratus. Nilai yang belum dapat dihitung **tidak** dinyatakan
+"belum tercapai": menuduh tanpa mengukur adalah kesalahan paling mahal pada
+aplikasi yang menyebut nama orang.
+
+**D06 memakai keadaan hulu terburuk, bukan rata-ratanya.** Nilai yang berdiri di
+atas lima sumber bersih dan satu sumber keruh tetap berdiri di atas sumber yang
+keruh.
+
+**D11 diwajibkan pada kontrak pendaftaran, bukan dijadikan pilihan.** Penilaian
+yang tidak dapat menerangkan pembilang, penyebut, pengecualian, tabel, dan ruas
+sumbernya **ditolak saat mendaftar**. Menjadikannya pilihan berarti sembilan
+puluh persen penilaian tidak akan pernah mengisinya.
+
+Penambahan kontrak itu langsung membuktikan dirinya: penjaga tahap 3 yang
+definisinya belum lengkap **seketika gagal**, dan itu memang yang seharusnya
+terjadi.
+
+### 4.3 Yang belum dikerjakan, dan mengapa
+
+| Alat | Keadaan |
+|---|---|
+| **D01** pintu masuk dari nomor perkara | menunggu penilaian sungguhan — panelnya menampilkan satu perkara pada penilaian mana saja, dan hari ini belum ada penilaian sungguhan yang mendaftar |
+| **D04** penanda titik balik | menunggu riwayat nilai terisi; deteksi titik balik atas riwayat kosong tidak dapat diuji |
+| **D05** sanding berdampingan | mesin pembandingnya **sudah ada** (`selisihBerarti`); yang belum panel layarnya |
+| **D08** ekspor blangko resmi | sisi portal; sama dengan MS06 |
+| **D09** kirim ke penanggung jawab | menumpang mesin pemberitahuan yang sudah berjalan; disambungkan bersama D08 |
+| **D12** penyaring di dalam penilaian | sisi portal, bertumpu pada `baris()` yang sudah ada |
+| **D16** riwayat ringkas dalam baris | menunggu riwayat nilai terisi |
+| **D19** pilih beberapa baris | sisi portal |
+| **D20** bagikan dan tayangkan | sisi portal |
+
+Sembilan yang tersisa terbagi dua: **lima menunggu layar portal** (D05, D08,
+D12, D19, D20 — dan D09 menyusul D08), dan **tiga menunggu data sungguhan**
+(D01, D04, D16). Tidak satu pun terhalang oleh rancangan; seluruhnya terhalang
+oleh urutan yang memang disengaja.
+
+### Gerbang lulus tahap 4
+
+| Syarat | Keadaan |
+|---|---|
+| Alat dikerjakan pada perender bersama, bukan tiap penilaian | **lulus** |
+| Penilaian percobaan memperoleh alatnya tanpa baris tambahan | **lulus** |
+| Kotak sasaran dan rentang tidak membaca jumlah sebagai nilai | **lulus** — `null` dibedakan dari nol |
+| Blangko resmi tetap bersih tanpa lajur alat | *menunggu sisi portal* |
+| Seluruh penjaga sisi bot hijau | **lulus** — 80 naskah |
+
+**Tahap 4 belum lulus penuh**: sisi layar belum dikerjakan, dan tiga alat
+menunggu data sungguhan yang baru ada sesudah tahap 5 dan 6.

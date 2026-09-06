@@ -88,6 +88,33 @@ function celaDefinisi(def) {
     cela.push("versiRumus kosong - tanpa itu, perubahan rumus tidak dapat dibedakan dari perubahan data");
   }
 
+  // D11 - cara hitung terbuka.
+  //
+  // Diwajibkan saat mendaftar, sama seperti kewajiban menyebutkan bukti.
+  // Angka yang tidak dapat diperiksa cara hitungnya tidak dapat dipertahankan
+  // di hadapan orang yang keberatan - dan orang yang dinilai selalu berhak
+  // keberatan. Menjadikannya pilihan berarti sembilan puluh persen penilaian
+  // tidak akan pernah mengisinya.
+  const ch = def.caraHitung;
+  if (!ch || typeof ch !== "object") {
+    cela.push("tidak punya caraHitung - penilaian wajib dapat menerangkan cara menghitungnya");
+  } else {
+    [
+      ["pembilang", "apa yang dihitung sebagai memenuhi"],
+      ["penyebut", "apa yang menjadi pembaginya"],
+      ["dikecualikan", "apa yang sengaja tidak ikut dihitung"],
+      ["tabelSumber", "tabel SIPP yang dibaca"],
+      ["ruasSumber", "ruas yang dibaca"],
+    ].forEach(([kunci, arti]) => {
+      const isi = bersih(ch[kunci]);
+      if (!isi) cela.push(`caraHitung.${kunci} kosong - ${arti}`);
+      else if (isi.length < 8) cela.push(`caraHitung.${kunci} terlalu pendek untuk menerangkan apa pun`);
+    });
+    // "Tidak ada yang dikecualikan" adalah jawaban yang sah, tetapi harus
+    // dinyatakan - bukan dikosongkan. Ruas kosong tidak dapat dibedakan antara
+    // "tidak ada" dan "belum dipikirkan".
+  }
+
   if (def.ambangDipakai !== undefined) {
     if (!Array.isArray(def.ambangDipakai)) cela.push("ambangDipakai harus berupa larik");
     else {
@@ -144,6 +171,7 @@ function daftar() {
         lantai: d.lantai,
         versiRumus: d.versiRumus,
         ambangDipakai: (d.ambangDipakai || []).slice(),
+        caraHitung: { ...d.caraHitung },
         punyaRingkas: typeof d.ringkas === "function",
       };
     });
@@ -255,6 +283,8 @@ async function jalankan(kunci, jenisPeriode, acuan, opsi = {}) {
         : s
     ),
     ambangDipakai: (def.ambangDipakai || []).map((k) => ambang.ambangBerlaku(k, p.unit[p.unit.length - 1].selesai)),
+    // D11 - ikut dipulangkan supaya panel cara hitung tidak perlu menebak.
+    caraHitung: { ...def.caraHitung },
   };
 }
 
