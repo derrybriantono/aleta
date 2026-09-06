@@ -82,6 +82,20 @@ periksa(
   })()
 );
 
+console.log("== Hari kerja lawan hari kalender ==");
+// Selisih keduanya bukan main-main, dan justru pada bentuk yang paling sering
+// terjadi: relaas Jumat untuk sidang Senin.
+sama("Jumat ke Senin: tiga hari kalender", P.hariKalenderAntara("2026-09-04", "2026-09-07"), 3);
+sama("Jumat ke Senin: hanya SATU hari kerja", P.hariKerjaAntara("2026-09-04", "2026-09-07"), 1);
+sama("Senin ke Kamis: tiga hari kalender", P.hariKalenderAntara("2026-08-31", "2026-09-03"), 3);
+sama("Senin ke Kamis: tiga hari kerja pula", P.hariKerjaAntara("2026-08-31", "2026-09-03"), 3);
+sama("Sabtu ke Senin: nol hari kerja", P.hariKerjaAntara("2026-09-05", "2026-09-07"), 1);
+sama("tanggal yang sama: nol", P.hariKerjaAntara("2026-09-07", "2026-09-07"), 0);
+sama("mundur: nol, bukan minus", P.hariKerjaAntara("2026-09-07", "2026-09-04"), 0);
+sama("sepekan penuh: lima hari kerja", P.hariKerjaAntara("2026-08-31", "2026-09-07"), 5);
+sama("dua pekan: sepuluh hari kerja", P.hariKerjaAntara("2026-08-31", "2026-09-14"), 10);
+sama("melintasi pergantian tahun", P.hariKerjaAntara("2025-12-29", "2026-01-05"), 5);
+
 console.log("== Pekan mulai Senin ==");
 sama("Senin pada pekan yang memuat Minggu", P.awalPekan("2026-09-06"), "2026-08-31");
 sama("Senin pada pekan yang memuat Senin itu sendiri", P.awalPekan("2026-08-31"), "2026-08-31");

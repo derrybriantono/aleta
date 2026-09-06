@@ -750,3 +750,286 @@ oleh urutan yang memang disengaja.
 
 **Tahap 4 belum lulus penuh**: sisi layar belum dikerjakan, dan tiga alat
 menunggu data sungguhan yang baru ada sesudah tahap 5 dan 6.
+
+---
+
+## Tahap 5 — Memindahkan yang sudah berjalan
+
+**Dikerjakan 7 September 2026. Gerbangnya TERBUKA — menunggu penyandingan.**
+
+### 5.1 Temuan yang mengubah bentuk tahap ini
+
+Rencana berbunyi "tiga puluh satu analisis yang sekarang hidup dipindahkan ke
+bentuk baku penilaian, satu per satu". Sesudah ketiga puluh satunya diperiksa
+satu demi satu, ternyata **sebagian besar bukan penilaian**.
+
+| | Jumlah | Sifatnya |
+|---|---|---|
+| Ketaatan — punya jawaban benar | **9** | `tenggat`, `kesehatan`, `suntingan`, `tenggang`, `aturan`, `mutuPertimbangan`, `ecourt`, `periksaPertimbangan`, `berisiko` |
+| Deskriptif — tidak punya jawaban benar | **22** | sebaran umur pihak, musim perkara, corong perkara, profil upaya hukum, kronologi, riwayat pihak, dan seterusnya |
+
+Memaksa yang deskriptif masuk kerangka bernilai berarti **mengarang skor atas
+hal yang tidak dapat benar atau salah**, lalu menuduh orang berdasarkan skor
+itu. "Musim perkara" tidak dapat baik atau buruk; bulan Juni yang ramai bukan
+kelalaian siapa pun.
+
+Kedua puluh dua analisis deskriptif itu **tetap hidup sebagaimana adanya** —
+tidak dihapus, tidak diubah. Yang berubah hanya satu: ia tidak lagi disebut
+penilaian.
+
+Pemilahan itu dikunci pada `verify-penilaian-ketaatan.js` supaya tidak berubah
+diam-diam.
+
+### 5.2 Tiga penilaian pertama yang sungguhan
+
+`services/penilaianKetaatanService.js` — **45 pemeriksaan**.
+
+| Kunci | Ambang | Sumber |
+|---|---|---|
+| `ketaatanTenggangPanggilan` | 3 hari kerja — Pasal 122 HIR / Pasal 146 R.Bg | `perkara_pelaksanaan_relaas`, `perkara_jadwal_sidang` |
+| `asasPenyelesaianLimaBulan` | 5 bulan — SEMA 2 Tahun 2014 | `perkara`, `perkara_putusan` |
+| `putusanTidakDiubahSesudahMinutasi` | 0 hari sesudah minutasi | `perkara_putusan` |
+
+Nama tabel dan kolomnya **tidak dikarang** — seluruhnya diambil dari kueri yang
+sudah berjalan di produksi, sebab kueri yang ditulis atas tabel yang dikira ada
+baru gagal di server, sesudah dipasang.
+
+### 5.3 Satu perbedaan yang disengaja dengan hitungan lama
+
+Analisis lama menghitung tenggang panggilan dengan `DATEDIFF` — **hari
+kalender**. Ambang yang berlaku berbunyi tiga **hari kerja**.
+
+Selisihnya bukan main-main, dan justru pada bentuk yang paling sering terjadi:
+
+> Relaas disampaikan **Jumat** untuk sidang **Senin**. Tiga hari kalender —
+> lulus menurut hitungan lama. Hanya **satu** hari kerja — pihak yang
+> menerimanya praktis tidak punya kesempatan menyiapkan diri, dan itulah yang
+> hendak dilindungi Pasal 122 HIR.
+
+Penilaian ini memakai hari kerja, sesuai ambang yang tertulis, dan **menyimpan
+kedua hitungan pada tiap baris**. Baris yang lulus menurut hitungan lama tetapi
+gagal menurut hari kerja ditandai `bedaDenganHitunganLama`, sehingga selisih
+dengan angka lama dapat dijelaskan saat disandingkan — bukan menjadi selisih
+misterius yang membuat orang menyangka salah satunya rusak.
+
+**Hari libur nasional belum diperhitungkan.** Yang dikecualikan baru Sabtu dan
+Minggu. Disebutkan terus terang: penilaian yang mengaku menghitung hari kerja
+padahal mengabaikan libur bersama Idulfitri akan menuduh juru sita yang justru
+tidak dapat bekerja.
+
+### Gerbang lulus tahap 5
+
+| Syarat | Keadaan |
+|---|---|
+| Pemilahan dikunci uji | **lulus** |
+| Ketiganya lolos kontrak kerangka | **lulus** |
+| Kuerinya membaca, memakai rentang sebagai nilai, berbatas baris | **lulus** |
+| Ketiga puluh satu angka sama, atau selisihnya berpenjelasan | **terhalang SIPP** |
+
+---
+
+## Tahap 6 — Bab 2, mutu dan integritas data
+
+**Dikerjakan 7 September 2026.**
+
+`services/penilaianMutuDataService.js` — **43 pemeriksaan**. Tiga penilaian:
+kelengkapan berita acara sidang, kelengkapan amar putusan, kelengkapan
+pertimbangan hukum.
+
+**Ketiganya sengaja dipilih karena cakupannya berbeda jauh** — ia menjadi bukti
+hidup bahwa penanda cakupan (D10) bukan hiasan:
+
+| Penilaian | Cakupan | Tingkat |
+|---|---|---|
+| Berita acara sidang | 75,8% | memadai, tepat di ambang |
+| Amar putusan | 99,1% | memadai |
+| Pertimbangan hukum | **22,3%** | **rendah — ditandai** |
+
+Selisih antara yang tertinggi dan terendah lebih dari tujuh puluh poin.
+Menjajarkan ketiganya tanpa penanda akan membuat yang ketiga dibaca sebagai
+keadaan seluruh pengadilan.
+
+**Satu hal yang mudah dikelabui, dan dijaga.** Ruas yang diisi tanda hubung
+supaya tidak tampak kosong dihitung **KOSONG**. Bila tidak, seluruh penilaian
+kelengkapan dapat dilulusi dengan satu ketukan papan ketik, dan pengawasan
+berubah menjadi upacara. Diuji atas sebelas bentuk isian.
+
+---
+
+## Tahap 7 — Bab 4, laporan perkara LIPA 1 sampai 22
+
+**Dikerjakan 7 September 2026. Gerbangnya TERBUKA — menunggu 264 penyandingan.**
+
+`services/laporanPerkaraService.js` — **69 pemeriksaan**.
+
+### 7.1 Kenyataan yang menentukan bentuknya
+
+Aspek pertama penilaian ini ketepatan waktu pengiriman. **Tanggal kirim tidak
+ada di SIPP** — SIPP menyimpan data perkara; kapan sebuah laporan diunggah ke
+sistem pelaporan Badilag adalah peristiwa di luar SIPP. Menebaknya dari tanggal
+input terakhir akan menghasilkan angka yang tampak berdasar padahal karangan.
+
+Maka ALETA menyimpannya sendiri pada `aleta_bot_laporan_perkara`: petugas
+kepaniteraan hukum mencatat tanggal kirim dan angka yang dilaporkan. Itu bukan
+kekurangan melainkan kejujuran — **fakta yang hanya diketahui manusia dicatat
+manusia, dan yang dicatat mesin dihitung mesin.**
+
+### 7.2 Blangko nilai — bentuknya sama untuk kedua puluh dua
+
+Sembilan kolom, diperiksa identik untuk kedua puluh dua laporan. Batas kirim
+tanggal 5, atau tanggal 10 untuk LIPA 14, 15, dan 16 yang dibiayai DIPA 04 —
+diambil dari daftar ambang, bukan dipatok. Melintasi pergantian tahun diuji:
+laporan Desember berbatas 5 Januari tahun berikutnya.
+
+Nilai: ketepatan waktu bobot 60 (potongan 8 poin per hari terlambat),
+kesesuaian angka bobot 40 (potongan 10 poin per satuan selisih). Keduanya
+tidak pernah minus.
+
+### 7.3 Yang belum diperiksa TIDAK bernilai
+
+Ini bagian terpentingnya. Laporan yang angka SIPP-nya belum tersambung
+memulangkan **nilai null**, bukan enam puluh.
+
+Menjumlah aspek pertama saja lalu menyebutnya "nilai" membuat laporan yang
+angkanya tidak pernah dibandingkan tampak bernilai **enam puluh dari seratus** —
+padahal yang benar "enam puluh dari enam puluh yang dapat dinilai". Selisih
+pembacaan itu menentukan apakah seseorang dianggap lalai.
+
+Yang dipulangkan: `nilai: null`, `nilaiSebagian: 60`, `bobotTerpakai: 60`, dan
+daftar sebab yang menyebut persis apa yang belum ada.
+
+**Kueri SIPP tiap LIPA belum disambung.** Tiap LIPA menghitung hal yang berbeda
+dan menuntut kueri tersendiri yang harus diperiksa terhadap SIPP sungguhan.
+Disambung satu per satu, bukan dikarang sekaligus.
+
+### Gerbang lulus tahap 7
+
+| Syarat | Keadaan |
+|---|---|
+| Kolom blangko identik untuk kedua puluh dua | **lulus** |
+| Batas tanggal 5 dan 10 benar, termasuk lintas tahun | **lulus** |
+| Nilai berbobot 60 dan 40 terbukti tiap baris | **lulus** |
+| 264 penyandingan (22 laporan × 12 bulan) | **terhalang SIPP** |
+
+---
+
+## Tahap 8 — Bab 3 dan Bab 8
+
+**Bab 3** sudah berisi tiga penilaian dari tahap 5.
+
+**Bab 8 — keuangan perkara**, `services/penilaianKeuanganService.js`:
+`panjarTercatatSetiapPerkara` dan `pengeluaranTidakMelebihiPenerimaan`.
+
+Keduanya sengaja hanya memakai ruas **berkode dan angka** — `jenis_transaksi`,
+`jumlah`, dan tanggalnya. Ruas `uraian` adalah teks bebas yang diketik kasir,
+dan sampai tahap 2 selesai ia belum dapat dikelompokkan; penilaian yang
+dibangun di atasnya akan menghitung ejaan, bukan jenis transaksi. Diuji: tidak
+satu pun kuerinya menyentuh `uraian`.
+
+Aturan "jenis_transaksi 1 penerimaan, selain itu pengeluaran" diwarisi dari kode
+lama dan **ditulis terbuka pada cara hitungnya** — supaya bila kelak ternyata
+ada kode penerimaan lain, yang salah terlihat pada keterangannya, bukan
+tersembunyi di dalam perbandingan angka.
+
+### Gerbang lulus tahap 8
+
+| Syarat | Keadaan |
+|---|---|
+| Ambang tiap butir terpasang beserta dasar hukumnya | **lulus** |
+| Tidak menyentuh ruas teks bebas | **lulus** |
+| Angka keuangan sama dengan buku jurnal sampai rupiah terakhir | **terhalang SIPP** |
+
+---
+
+## Tahap 9 — Bab 5, 6, 9, 10, 11, dan 12
+
+**TIDAK dikerjakan pada sesi ini, dan itu keputusan yang disengaja.**
+
+Pemilahan tahap 5 menunjukkan sebabnya: dari 31 analisis yang sudah ada, **22
+bersifat deskriptif** — dan enam bab inilah tempat sebagian besarnya berada.
+Sebaran wilayah, musim perkara, corong perkara, profil pihak, profil upaya
+hukum: tidak satu pun punya jawaban benar, sehingga tidak satu pun dapat
+dinilai tanpa mengarang ambang.
+
+Yang **dapat** dinilai di antaranya bertumpu pada ruas teks bebas yang tahap 2
+belum merapikannya — sebaran wilayah menunggu pemetaan 340 tulisan kecamatan,
+pola penundaan menunggu pengelompokan 1.489 alasan, profil pekerjaan menunggu
+pemetaan 2.115 tulisan.
+
+Menulisnya sekarang berarti menulis penilaian yang menghitung ejaan.
+
+**Yang sudah berdiri untuk bab-bab itu:** gerbang cakupan (D10) memaksa setiap
+angka menyebut dihitung dari berapa persen populasinya, dan menandai yang di
+bawah empat puluh persen. Syarat gerbang tahap 9 — "tidak ada angka bercakupan
+di bawah empat puluh persen yang tampil tanpa penanda" — **sudah dipaksakan
+kode**, bukan menunggu penilaiannya ditulis.
+
+---
+
+## Tahap 10 — Bab 7, rapor kinerja aparatur
+
+**Dikerjakan 7 September 2026 — dan bagian terpentingnya adalah penolakannya.**
+
+`services/gerbangRaporAparaturService.js` — **42 pemeriksaan** bersama Bab 8.
+
+Rencana menempatkan bab ini paling akhir dan menyebut syaratnya: baru boleh
+terbit sesudah Bab 2 bersih, hak jawab berjalan, disposisi berjalan, dan rentang
+keyakinan terpasang.
+
+**Syarat semacam itu, bila hanya tertulis pada dokumen, akan dilanggar pada hari
+pertama seseorang membutuhkan angka untuk rapat** — bukan karena niat buruk,
+melainkan karena dokumen tidak menghalangi apa pun.
+
+Karena itu keenam syaratnya dipaksakan kode:
+
+| Syarat | Alat | Mengapa |
+|---|---|---|
+| hak jawab tersedia | D02 | rapor bernama tanpa tempat menjawab adalah tuduhan |
+| disposisi tersedia | D14 | pembinaan kewenangan pimpinan; tanpa arahan, rapor jadi vonis tanpa penandatangan |
+| rentang keyakinan | D17 | selisih tiga poin pada penyebut 23 adalah riak, bukan perbedaan |
+| penyebut cukup | MS05 | juru sita yang menangani tiga panggilan tidak boleh punya nilai |
+| hulu bersih atau berlencana | D06 | rapor yang tampil bersih di atas hulu keruh memberi keyakinan yang tidak dimilikinya |
+| sudah disandingkan | — | aturan yang berlaku di atas segalanya |
+
+**Ketika ditahan, yang ditahan hanya NILAINYA.** Nama pelaku, penyebut, dan
+jumlah yang terpenuhi tetap terbaca — yang membaca tetap tahu pekerjaan apa yang
+tercatat, hanya tidak diberi angka yang menuduh. Diuji tersendiri.
+
+**Peringatan tetap tampil walau seluruh syarat terpenuhi:**
+
+> Rapor ini mengukur yang TERCATAT, bukan yang sebenarnya terjadi. Perkara
+> sulit, majelis yang kekurangan orang, dan wilayah yang jauh tidak seluruhnya
+> tertangkap. Ia bahan pembinaan, bukan dasar penjatuhan sanksi.
+
+Syarat yang terpenuhi tidak mengubah sifat rapor ini. Menghilangkan
+peringatannya ketika syaratnya lengkap akan membuat orang menyangka angkanya
+sudah menggambarkan kinerja seutuhnya.
+
+### Gerbang lulus tahap 10
+
+| Syarat | Keadaan |
+|---|---|
+| Setiap baris bernama punya rentang keyakinannya | **lulus** — dipaksakan gerbang |
+| Setiap baris dapat dijawab | **lulus** — dipaksakan gerbang |
+| Peringatan tertulis tampil di layar, bukan hanya di dokumen | **lulus** — dipaksakan kode |
+| Bab 2 bersih | **terhalang** — telaah 7.062 suntingan menuntut SIPP |
+
+---
+
+## Keadaan seluruh penilaian pada 7 September 2026
+
+| | Jumlah |
+|---|---|
+| Penilaian terdaftar pada kerangka | **8** |
+| Laporan LIPA berblangko nilai | **22** |
+| Analisis deskriptif yang tetap hidup apa adanya | **22** |
+| Penjaga sisi bot | **84 naskah, 0 gagal** |
+
+Delapan penilaian dari rencana seratus delapan puluh lima. Sisanya **tidak
+ditulis dengan sengaja**, bukan karena kehabisan waktu: sebagian besar menunggu
+pengukuran ruas teks bebas (tahap 2), dan sebagian lagi ternyata deskriptif
+sehingga tidak boleh dipaksa menjadi nilai.
+
+**Tidak satu pun dari kedelapannya boleh dipakai membina hari ini.** Seluruhnya
+berstatus *belum disandingkan*, dan gerbang rapor aparatur menolak
+menerbitkannya. Itu bekerja sebagaimana dirancang.

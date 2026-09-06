@@ -157,6 +157,52 @@ function akhirBulan(tahun, bulan) {
   return tulis(Date.UTC(tahun, bulan, 0));
 }
 
+/**
+ * ============================================================================
+ * HARI KERJA - DAN MENGAPA IA TIDAK SAMA DENGAN HARI KALENDER
+ * ============================================================================
+ *
+ * Pasal 122 HIR menuntut panggilan disampaikan dalam "tenggang waktu yang
+ * patut", dan yang dipakai selama ini tiga hari. Pertanyaan yang menentukan:
+ * tiga hari KALENDER atau tiga hari KERJA?
+ *
+ * Selisihnya bukan main-main. Relaas yang disampaikan Jumat untuk sidang Senin
+ * berjarak tiga hari kalender - lulus menurut hitungan kalender - tetapi hanya
+ * SATU hari kerja. Pihak yang menerimanya praktis tidak punya kesempatan
+ * menyiapkan diri, dan itulah yang hendak dilindungi pasal tersebut.
+ *
+ * Kueri yang berjalan pada analisis lama memakai DATEDIFF, yaitu hari
+ * kalender. Penilaian di sini menghitung KEDUANYA dan menyimpan keduanya,
+ * sehingga:
+ *
+ *   - selisih antara keduanya terlihat, tidak tersembunyi;
+ *   - penyandingan dengan angka lama dapat menjelaskan sebab selisihnya;
+ *   - pengadilan dapat memutuskan mana yang berlaku, dan keputusannya tercatat
+ *     sebagai ambang - bukan terkubur di dalam kode.
+ *
+ * HARI LIBUR NASIONAL BELUM DIPERHITUNGKAN. Yang dikecualikan baru Sabtu dan
+ * Minggu. Itu disebutkan terus terang: penilaian yang mengaku menghitung hari
+ * kerja padahal mengabaikan libur bersama Idulfitri akan menuduh juru sita
+ * yang justru tidak dapat bekerja. Daftar hari libur harus dimasukkan sebelum
+ * angka ini dipakai membina.
+ */
+function hariKerjaAntara(mulai, selesai) {
+  const a = uraikan(mulai);
+  const b = uraikan(selesai);
+  if (b <= a) return 0;
+  let jumlah = 0;
+  for (let t = a + SEHARI; t <= b; t += SEHARI) {
+    const hari = new Date(t).getUTCDay();
+    if (hari !== 0 && hari !== 6) jumlah += 1;
+  }
+  return jumlah;
+}
+
+/** Selisih hari kalender - bentuk yang dipakai analisis lama. */
+function hariKalenderAntara(mulai, selesai) {
+  return Math.round((uraikan(selesai) - uraikan(mulai)) / SEHARI);
+}
+
 /** Senin pada pekan yang memuat tanggal ini. Pekan pengadilan mulai Senin. */
 function awalPekan(tanggal) {
   const { hariPekan } = bagian(tanggal);
@@ -432,6 +478,8 @@ module.exports = {
   tanggalHariIni,
   // Diekspor untuk diuji satuan.
   tambahHari,
+  hariKerjaAntara,
+  hariKalenderAntara,
   awalPekan,
   nomorPekan,
   awalBulan,
