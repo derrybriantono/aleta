@@ -470,3 +470,167 @@ docker compose exec aleta_bot node scripts/ukur-ruas-bebas.js
 lalu daftar yang dihasilkannya dibaca **bersama petugas kepaniteraan** untuk
 menyusun pemetaannya. Pemetaan yang disusun tanpa membaca daftarnya akan
 memetakan yang tidak ada dan meninggalkan yang ada.
+
+---
+
+## Tahap 3 — Mesin penilaian (Bab 1)
+
+**Dikerjakan 7 September 2026.**
+
+Lima berkas layanan, empat penjaga, **262 pemeriksaan**. Tidak satu pun
+penilaian sungguhan ditulis pada tahap ini — yang dibangun mesinnya, dan mesin
+itu diuji dengan penilaian buatan supaya kesalahannya tidak tersembunyi di balik
+data sungguhan.
+
+### 3.1 MS01 — mesin periode tujuh jendela
+
+`services/periodePenilaianService.js`, **126 pemeriksaan**.
+
+Satu butir penilaian ditulis sekali sebagai fungsi berparameter tanggal, lalu
+dilihat dari tujuh jendela. Tanpa mesin ini, tujuh jendela berarti tujuh salinan
+kode yang perlahan menyimpang — dan yang menyimpang tidak akan ketahuan, sebab
+tidak ada yang membandingkan nilai mingguan dengan nilai bulanan.
+
+**Almanak, bukan saat.** Seluruh perhitungan memakai tanggal almanak
+(`"2026-09-06"`), bukan saat. Pengadilan berada di WITA sedangkan `Date` milik
+Node berpusat pada UTC; menghitung "hari ini" dengan waktu setempat mesin
+membuat hasilnya berpindah hari pukul empat sore bila mesinnya berzona lain —
+dan pergeseran itu tidak menimbulkan galat, hanya angka yang salah.
+
+Diuji: satuan mingguan **sama persis pada empat zona mesin** (UTC, Makassar,
+New York, Kiritimati). Zona hanya disentuh di satu tempat, dan tempat itu diuji
+tersendiri.
+
+**Almanak yang benar, bukan penambahan tiga puluh hari.** Kabisat 1900 (bukan
+kabisat), 2000 (kabisat), 2024, 2026; pergantian bulan dan tahun; pekan yang
+melintasi keduanya. Tanggal yang tidak ada pada almanak — 30 Februari — ditolak,
+bukan dimuaikan diam-diam menjadi 2 Maret.
+
+**Nomor pekan diubah dari rancangan prototipe.** Prototipe memakai urutan di
+dalam jendela ("Minggu I" untuk pekan paling awal yang kebetulan tampil), dan
+nomor itu berpindah arti setiap kali orang membukanya di hari yang berbeda.
+Nomor yang berpindah arti tidak boleh ada pada laporan pengadilan. Kini memakai
+nomor pekan dalam tahun menurut ISO 8601 — tetap bertanggal sebagaimana diminta,
+tetapi artinya tidak bergeser.
+
+Contoh nama baris yang dihasilkan:
+
+| Jendela | Yang pertama | Yang terakhir |
+|---|---|---|
+| harian | Senin, 31 Agustus 2026 | Minggu, 6 September 2026 |
+| mingguan | Minggu ke-29 · 13–19 Juli 2026 | Minggu ke-36 · 31 Agustus–6 September 2026 |
+| bulanan | Oktober 2025 | September 2026 |
+| triwulan | Triwulan IV 2024 · Okt–Des | Triwulan III 2026 · Jul–Sep |
+| semester | Semester I 2024 · Jan–Jun | Semester II 2026 · Jul–Des |
+| tahunan | Tahun 2022 · Jan–Des | Tahun 2026 · Jan–Des |
+| keseluruhan | Tahun 2015 | Tahun 2026 |
+
+Diperiksa untuk **ketujuh** jendela sekaligus: tidak ada nama baris berupa nama
+bulan telanjang, dan **setiap** nama baris memuat angka tahun.
+
+### 3.2 Ambang beserta dasar hukum dan tanggal berlakunya
+
+`services/ambangPenilaianService.js`, **31 pemeriksaan**. Dua belas ambang:
+sembilan berdasar peraturan, tiga kebijakan pengadilan.
+
+Ambang disimpan sebagai **riwayat**, bukan satu angka. Menanyakan ambang selalu
+menyertakan tanggal, dan yang dijawab adalah yang berlaku pada tanggal itu.
+
+Sifat yang paling menentukan, dan diuji tersendiri:
+
+> **Mengubah ambang hari ini tidak menggeser nilai periode lampau.**
+
+Diuji dengan menambahkan riwayat baru lalu memastikan tanggal lampau tetap
+menjawab yang lama. Ditambah satu hal yang mudah terlewat: menanyakan ambang
+minutasi untuk November 2023 memulangkan **null** — bukan empat belas — sebab SK
+yang melahirkannya baru berlaku 1 Januari 2024. Menilai orang dengan aturan yang
+belum ada adalah kesalahan yang tidak menimbulkan galat apa pun.
+
+### 3.3 MS03 — riwayat nilai tersimpan
+
+`services/riwayatNilaiService.js`, **32 pemeriksaan**. Tabel
+`aleta_bot_nilai_riwayat` pada basis data bot sendiri — **tidak menuntut nomor
+migrasi Drizzle**, sehingga tidak ada risiko bertabrakan dengan sesi lain.
+
+Nilai tidak dihitung ulang setiap layar dibuka. Ia dihitung sekali per periode
+lalu disimpan bersama kumpulan ambang yang berlaku saat itu — diambil dari
+**tanggal akhir periodenya**, bukan dari hari ini.
+
+Yang membuatnya berguna: ketika hitung ulang berbeda dengan yang tersimpan,
+kerangkanya menyebut **dugaan sebabnya**, bukan sekadar "ada selisih":
+
+| Dugaan | Artinya |
+|---|---|
+| ambang berubah | **sah** — nilai lama benar untuk aturan yang berlaku saat itu |
+| rumus berubah | angka lama dan baru tidak sebanding; seluruh riwayat perlu dihitung ulang dengan sadar |
+| keduanya sama, angkanya berbeda | **temuan pengawasan** — data periode lampau berubah sesudah periodenya ditutup |
+
+Menyamakan ketiganya menjadi "ada selisih" membuang seluruh keterangan yang
+membuat temuan itu dapat ditindaklanjuti.
+
+### 3.4 MS04 dan MS05 — angkanya dihitung DARI buktinya
+
+`services/kerangkaPenilaianService.js`, **77 pemeriksaan**.
+
+Cara yang lazim: satu kueri agregat menghasilkan angka, kueri lain menghasilkan
+daftar perkaranya. Keduanya perlahan menyimpang, lalu pada suatu hari layar
+menampilkan "312 relaas bertenggang kurang" di atas daftar berisi 287 baris —
+dan tidak seorang pun menyadarinya, sebab yang membuka daftar tidak menghitung
+barisnya dan yang membaca angka tidak membuka daftarnya.
+
+Di sini hubungannya dibalik. Penilaian menyerahkan **daftar baris** beserta
+penanda memenuhi, dan kerangka yang menghitung penyebut serta pembilangnya.
+Angkanya karena itu **tidak mungkin** berselisih dengan buktinya — ia turunan
+dari buktinya.
+
+Penilaian boleh juga menyediakan kueri agregat untuk penyebut besar. Bila
+keduanya ada, kerangka **membandingkannya dan melaporkan selisihnya sebagai
+temuan** — tidak memilih salah satu diam-diam, dan yang ditampilkan selalu angka
+dari buktinya sebab itulah yang dapat diperiksa manusia.
+
+Sebelas bentuk definisi yang cacat ditolak **saat mendaftar**, bukan saat
+seorang hakim membuka layarnya — termasuk penilaian tanpa `baris()`, yang berarti
+penilaian yang tidak dapat menyebutkan buktinya tidak boleh berdiri sama sekali.
+
+Di bawah lantainya, nilainya dibuang tetapi **buktinya tidak** — justru daftar
+itulah yang berguna pada periode sependek itu.
+
+### 3.5 MS02 — rapor berjenjang
+
+`services/raporBerjenjangService.js`, **27 pemeriksaan**.
+
+Rapor aparatur bukan penilaian lain; ia penilaian yang **sama**, dilihat per
+orang. Menulisnya sebagai penilaian tersendiri berarti dua rumus yang perlahan
+menyimpang, lalu jumlah rapor per orang tidak lagi sama dengan angka pengadilan
+— dan tidak seorang pun tahu mana yang benar.
+
+Tiga jaminan dipaksakan, dan **diperiksa saat berjalan, bukan diandaikan**:
+
+1. jumlah penyebut seluruh kelompok selalu sama dengan penyebut keseluruhan —
+   bila tidak, kerangkanya berhenti dengan galat;
+2. satu baris masuk tepat satu kelompok;
+3. baris yang pelakunya tidak tercatat **tidak dibuang**, melainkan masuk
+   kelompok bernama `(tidak tercatat)` — pekerjaan yang tidak diketahui
+   pengerjanya adalah temuan, bukan hal yang boleh hilang dari hitungan.
+
+Pembatas penyebut berlaku **per orang**, dan justru di situ ia paling penting:
+pada tingkat pengadilan penyebutnya selalu besar, pada tingkat orang ia kerap
+kecil — dan itulah tingkat yang namanya tertulis di sebelah angkanya.
+
+Kelompok diurut menurut **nama, bukan nilai**. Daftar yang selalu menaruh orang
+yang sama di puncak akan berhenti dibaca; mengurutkan menurut nilai adalah
+pilihan pembaca, bukan bawaan.
+
+### Gerbang lulus tahap 3
+
+| Syarat | Keadaan |
+|---|---|
+| Ketujuh periode menghasilkan jumlah baris yang benar | **lulus** |
+| Nama barisnya bertanggal, nol nama bulan telanjang | **lulus** — diperiksa untuk ketujuh jendela |
+| Nilai tersimpan dapat dihitung ulang dan hasilnya sama | **lulus** — beserta pembedaan tiga sebab selisih |
+| Angka tidak dapat berselisih dengan buktinya | **lulus** — angkanya turunan buktinya |
+| Seluruh penjaga sisi bot hijau | **lulus** — 77 naskah, 150 detik |
+
+**MS06 (berkas pengawasan siap kirim) belum dikerjakan** dan itu disengaja: ia
+sama dengan alat D08 pada tahap 4, dan membangunnya dua kali akan menghasilkan
+dua bentuk ekspor yang perlahan menyimpang. Dikerjakan sekali di tahap 4.
