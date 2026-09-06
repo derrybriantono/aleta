@@ -2,6 +2,19 @@ version: "2.4"
 
 services:
   portal:
+    build:
+      args:
+        # Penanda git yang ikut ke dalam cap build.
+        #
+        # Server produksi TIDAK punya git terpasang, jadi nilainya dikirim dari
+        # luar saat membangun:
+        #
+        #   ALETA_BUILD_REF=<hash pendek> docker compose build portal
+        #
+        # Boleh kosong - capnya tetap bergerak karena tanggal-jamnya dihitung
+        # Docker sendiri di dalam Dockerfile. Yang hilang hanya kemampuan
+        # mencocokkan build dengan commit-nya.
+        ALETA_BUILD_REF: ${ALETA_BUILD_REF:-}
     environment:
       JLF_SIPP_PROVIDER: aleta_bot_bridge
       JLF_SIPP_BRIDGE_BASE_URL: http://192.168.10.10:3003

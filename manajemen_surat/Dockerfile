@@ -24,6 +24,25 @@ ARG NEXT_PUBLIC_BASE_PATH=/aleta
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 
+# ============================================================================
+# CAP BUILD - DIHITUNG SENDIRI, BUKAN DIISI TANGAN
+# ============================================================================
+#
+# APP_VERSION dinaikkan manusia, dan karena itu kerap TIDAK berubah antar
+# deploy: pada 6 Sep 2026 empat kali penaikan berturut-turut sama-sama
+# menyebut 1.86.0, sehingga tidak ada cara melihat apakah kode baru sudah
+# hidup selain memanggil rutenya satu per satu.
+#
+# Cap ini dihitung oleh Docker saat membangun, jadi tidak ada langkah manusia
+# yang bisa terlupa. Ditaruh di dalam RUN yang sama dengan `npm run build`
+# supaya perilakunya benar terhadap singgahan: bila sumbernya tidak berubah,
+# lapisan ini disinggah dan capnya TETAP - dan memang begitu seharusnya,
+# karena keluaran buildnya pun sama.
+#
+# ALETA_BUILD_REF diisi penanda git bila yang menaikkan mengetahuinya. Server
+# ini tidak punya git, jadi nilainya dikirim dari luar dan boleh kosong.
+ARG ALETA_BUILD_REF=
+
 COPY . .
 RUN rm -rf node_modules .next
 COPY --from=deps /app/node_modules ./node_modules
@@ -37,7 +56,11 @@ RUN set -eux; \
   chmod +x node_modules/next/dist/bin/next; \
   ls -lah node_modules/.bin/next; \
   node -e "console.log('NEXT VERSION:', require('next/package.json').version)"; \
-  npm run build
+  ALETA_STAMP="$(date -u +%Y%m%d-%H%M)${ALETA_BUILD_REF:+ ${ALETA_BUILD_REF}}"; \
+  echo "=== CAP BUILD: ${ALETA_STAMP} ==="; \
+  export NEXT_PUBLIC_ALETA_BUILD_STAMP="${ALETA_STAMP}"; \
+  npm run build; \
+  printf '%s\n' "${ALETA_STAMP}" > /app/BUILD-STAMP.txt
 
 FROM node:20-bookworm-slim AS runner
 

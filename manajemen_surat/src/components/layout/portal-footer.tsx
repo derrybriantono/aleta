@@ -16,6 +16,7 @@ import { AletaLogo } from "@/components/branding/aleta-logo";
 import { Badge } from "@/components/ui/badge";
 import { usePortal } from "@/lib/app-state";
 import { APP_VERSION } from "@/lib/patch-notes";
+import { capBuildTerbaca } from "@/lib/build-stamp";
 
 const COPYRIGHT_URL = "https://www.instagram.com/derrybriantono?igsh=M2VtOGljMGJkOXBt";
 
@@ -198,7 +199,9 @@ export function PortalFooter() {
           <div className="min-w-0">
             <AletaLogo
               title={institutionIdentity.courtShortName}
-              subtitle={`ALETA v${APP_VERSION} | Footer ${modeLabel}`}
+              subtitle={[`ALETA v${APP_VERSION}`, capBuildTerbaca(), `Footer ${modeLabel}`]
+                .filter(Boolean)
+                .join(" | ")}
               size="sm"
             />
           </div>
@@ -281,7 +284,12 @@ export function PortalFooter() {
             <p className="max-w-md text-sm leading-7 text-muted-foreground">
               ALETA menyatukan surat, pemberitahuan, bantuan bot, dan pekerjaan kantor dalam satu tempat yang rapi, aman, dan mudah digunakan.
             </p>
-            <Badge variant="muted" className="w-fit">Footer {modeLabel}</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="muted" className="w-fit">Footer {modeLabel}</Badge>
+              {capBuildTerbaca() ? (
+                <Badge variant="muted" className="w-fit font-mono">{capBuildTerbaca()}</Badge>
+              ) : null}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border bg-card/92 p-5">
