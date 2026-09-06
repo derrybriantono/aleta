@@ -20,8 +20,12 @@ afterEach(() => {
 
 describe("capBuildTerbaca", () => {
   it("menampilkan cap yang diisi Docker saat membangun", async () => {
-    const { capBuildTerbaca } = await muatDengan("20260906-0930 5cd6623");
-    expect(capBuildTerbaca()).toBe("build 20260906-0930 5cd6623");
+    // Bentuk nyatanya: tanggal-jam WITA, zona yang menyebut dirinya, lalu
+    // penanda commit. Zonanya ikut ditulis supaya selisih jam ketahuan
+    // seketika alih-alih menyelinap - cap pertama sempat UTC dan berbunyi
+    // "0743" untuk build pukul 15:43.
+    const { capBuildTerbaca } = await muatDengan("20260906-1543 WITA 8918373");
+    expect(capBuildTerbaca()).toBe("build 20260906-1543 WITA 8918373");
   });
 
   it("tetap berguna walau penanda git tidak dikirim", async () => {

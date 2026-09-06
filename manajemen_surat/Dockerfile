@@ -39,6 +39,13 @@ ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 # lapisan ini disinggah dan capnya TETAP - dan memang begitu seharusnya,
 # karena keluaran buildnya pun sama.
 #
+# Waktunya WITA, bukan UTC, dan zonanya IKUT DITULIS lewat %Z. Cap pertama
+# memakai UTC dan berbunyi "0743" untuk build yang dikerjakan pukul 15:43 -
+# selisih delapan jam yang justru akan membuat orang menyimpulkan deploynya
+# gagal. %Z membuat capnya membuktikan dirinya sendiri: bila zoneinfo suatu
+# saat hilang dari base image, yang tertulis "UTC" dan selisihnya kelihatan,
+# bukan menyelinap diam-diam.
+#
 # ALETA_BUILD_REF diisi penanda git bila yang menaikkan mengetahuinya. Server
 # ini tidak punya git, jadi nilainya dikirim dari luar dan boleh kosong.
 ARG ALETA_BUILD_REF=
@@ -56,7 +63,7 @@ RUN set -eux; \
   chmod +x node_modules/next/dist/bin/next; \
   ls -lah node_modules/.bin/next; \
   node -e "console.log('NEXT VERSION:', require('next/package.json').version)"; \
-  ALETA_STAMP="$(date -u +%Y%m%d-%H%M)${ALETA_BUILD_REF:+ ${ALETA_BUILD_REF}}"; \
+  ALETA_STAMP="$(TZ=Asia/Makassar date +'%Y%m%d-%H%M %Z')${ALETA_BUILD_REF:+ ${ALETA_BUILD_REF}}"; \
   echo "=== CAP BUILD: ${ALETA_STAMP} ==="; \
   export NEXT_PUBLIC_ALETA_BUILD_STAMP="${ALETA_STAMP}"; \
   npm run build; \
