@@ -1063,6 +1063,21 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "SIPP",
   },
   {
+    id: "aleta-e-audit",
+    label: "ALETA e-Audit",
+    description:
+      "Pengawasan berjenjang: 185 butir penilaian dalam dua belas bab, beserta bukti, cara hitung, dan ambangnya.",
+    href: "/aleta-e-audit",
+    icon: "shield-check",
+    roleIds: roles.map((role) => role.id),
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-violet-100",
+    iconFgClass: "text-violet-700",
+    cardClass: "border-violet-200/80 bg-violet-50/70",
+    badgeLabel: "Pengawasan",
+  },
+  {
     id: "aleta-sipp-settings",
     label: "Pengaturan ALETA x SIPP",
     description: "Import dry-run, query registry, variable registry, penilaian, PDF jadwal sidang, AI, permission, dan audit.",
@@ -1528,6 +1543,31 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-cyan-100 dark:bg-cyan-500/15",
     iconFgClass: "text-cyan-700 dark:text-cyan-200",
     cardClass: "border-cyan-200/80 bg-cyan-50/80 dark:border-cyan-500/20 dark:bg-slate-900/80",
+  },
+  {
+    // ------------------------------------------------------------------
+    // ALETA e-Audit
+    // ------------------------------------------------------------------
+    //
+    // Pengenalnya sengaja TIDAK dimasukkan ke DEFAULT_PORTAL_APP_IDS. Selama
+    // ia tidak ada di sana, hanya super admin yang melihat kartunya - dan
+    // itulah yang diminta selama angkanya belum disandingkan dengan angka
+    // dari luar ALETA.
+    //
+    // Membukanya untuk peran lain kelak adalah satu keputusan sadar, bukan
+    // efek samping: cukup menambahkan pengenal ini ke daftar tersebut, dan
+    // uji keterjangkauan akan menuntut perubahan itu disengaja.
+    id: "aleta-e-audit",
+    label: "ALETA e-Audit",
+    description:
+      "Pengawasan berjenjang: ketaatan tahapan, mutu data, laporan perkara, keuangan, dan kinerja aparatur - dengan bukti yang selalu dapat dibuka sampai ke nomor perkaranya.",
+    href: "/aleta-e-audit",
+    icon: "shield-check",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "Pengawasan",
+    iconBgClass: "bg-violet-100 dark:bg-violet-500/15",
+    iconFgClass: "text-violet-700 dark:text-violet-200",
+    cardClass: "border-violet-200/80 bg-violet-50/80 dark:border-violet-500/20 dark:bg-slate-900/80",
   },
   {
     id: "sipp",

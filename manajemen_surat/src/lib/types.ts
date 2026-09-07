@@ -71,6 +71,8 @@ export type ModuleId =
   | "aleta-bot"
   | "aleta-sipp"
   | "aleta-sipp-settings"
+  // Pengawasan berjenjang: 185 butir penilaian dalam dua belas bab.
+  | "aleta-e-audit"
   | "judicia-legal-form"
   | "judicia-legal-form-settings"
   | "e-status"
@@ -90,6 +92,9 @@ export type PortalAppId =
   // membuatnya dapat ditemukan.
   | "aleta-antrian"
   | "aleta-sipp"
+  // Pengawasan berjenjang. Belum masuk DEFAULT_PORTAL_APP_IDS, sehingga untuk
+  // sekarang hanya super admin yang melihatnya.
+  | "aleta-e-audit"
   | "judicia-legal-form"
   | "asisten-hakim"
   // Alat bantu tulis BAS untuk kepaniteraan.
