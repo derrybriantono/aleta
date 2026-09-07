@@ -1572,6 +1572,64 @@ export async function panggilAntrian(params: {
  * ditekan. Menyatukannya ke dalam status perkara akan membuat membuka
  * perkara menunggu perhitungan yang belum tentu dilihat.
  */
+/* ==========================================================================
+ * PENILAIAN DAN PENGAWASAN
+ * ========================================================================== */
+
+/** Daftar penilaian yang terdaftar pada kerangka, beserta cara hitungnya. */
+export async function getGatewayDaftarPenilaian(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/penilaian/daftar`);
+}
+
+/**
+ * Menjalankan satu penilaian pada satu jendela periode.
+ *
+ * `bukti` membatasi berapa baris bukti yang ikut per satuan. Batas itu ada
+ * karena satu satuan dapat berisi puluhan ribu baris, dan mengirimkannya
+ * seluruhnya membuat layar menunggu sesuatu yang tidak akan dibaca sekaligus.
+ */
+export async function getGatewayJalankanPenilaian(
+  kunci: string,
+  periode: string,
+  acuan?: string,
+  bukti = 10
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ kunci, periode, bukti: String(bukti) });
+  if (acuan) kueri.set("acuan", acuan);
+  return gatewayFetch(`/internal/aleta-bot/penilaian/jalankan?${kueri.toString()}`);
+}
+
+/** Kedua puluh dua laporan perkara, untuk mengisi menu pilihan. */
+export async function getGatewayDaftarLaporanPerkara(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/laporan-perkara/daftar`);
+}
+
+/** Blangko nilai satu laporan beserta catatan pengirimannya. */
+export async function getGatewayBlangkoLaporanPerkara(
+  lipa: number,
+  bulan = 12,
+  acuan?: string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ lipa: String(lipa), bulan: String(bulan) });
+  if (acuan) kueri.set("acuan", acuan);
+  return gatewayFetch(`/internal/aleta-bot/laporan-perkara/blangko?${kueri.toString()}`);
+}
+
+/**
+ * Mencatat tanggal kirim dan angka laporan.
+ *
+ * Fakta yang hanya diketahui orang yang mengirimkannya - tidak ada di SIPP, dan
+ * menebaknya akan menghasilkan angka karangan.
+ */
+export async function postGatewayCatatLaporanPerkara(
+  isi: Record<string, unknown>
+): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/laporan-perkara/catat`, {
+    method: "POST",
+    body: JSON.stringify(isi),
+  });
+}
+
 export async function getGatewayAnalisaPerkara(
   nomorPerkara: string,
   jenis: string

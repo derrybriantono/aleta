@@ -74,6 +74,35 @@ function tunggu(ms) {
   return new Promise((lanjut) => setTimeout(lanjut, ms));
 }
 
+/**
+ * Menunggu SYARATNYA terpenuhi, bukan menunggu jam.
+ *
+ * Sebelumnya tiap tahap menunggu 50 milidetik lalu langsung memeriksa. Pada
+ * mesin yang sedang sibuk - misalnya saat uji portal berjalan bersamaan -
+ * penulisan berkas log belum tentu selesai dalam 50 milidetik, dan penjaga ini
+ * menuduh kode yang sebenarnya benar. Itu sudah pernah terjadi, dan penjaga
+ * yang kadang-kadang menuduh lebih buruk daripada tidak ada penjaga: orang
+ * berhenti mempercayai hasilnya, termasuk saat ia benar.
+ *
+ * Menunggu syarat membuat hasilnya sama pada mesin sepi maupun sibuk. Batas
+ * waktunya tetap ada supaya kekeliruan yang sebenarnya tidak menggantung -
+ * setelah batas itu lewat, pemeriksaannya tetap berjalan dan GAGAL seperti
+ * biasa.
+ */
+async function tungguSampai(syarat, batasMs = 5000) {
+  const tenggat = Date.now() + batasMs;
+  while (Date.now() < tenggat) {
+    try {
+      if (syarat()) return true;
+    } catch {
+      // Syarat yang belum dapat dinilai - misalnya berkas yang belum ada -
+      // dicoba lagi pada putaran berikutnya.
+    }
+    await tunggu(10);
+  }
+  return false;
+}
+
 function catatLogBaru() {
   const status = penjadwal.getStatus();
   if (status.berkasLog) logDibuat.push(pathx.join(FOLDER_LOG, status.berkasLog));
@@ -123,7 +152,11 @@ async function jalan() {
   {
     const berkasLog = pathx.join(FOLDER_LOG, penjadwal.getStatus().berkasLog);
     anakTerakhir.stdout.emit("data", "menarik perkara 620\n");
-    await tunggu(50);
+    await tungguSampai(
+      () =>
+        fs.existsSync(berkasLog) &&
+        fs.readFileSync(berkasLog, "utf8").includes("menarik perkara 620")
+    );
 
     const isi = fs.existsSync(berkasLog) ? fs.readFileSync(berkasLog, "utf8") : "";
     periksa("berkas log dibuat", fs.existsSync(berkasLog));
@@ -134,7 +167,9 @@ async function jalan() {
   console.log("\n== Setelah selesai ==");
   {
     selesaikan(0);
-    await tunggu(50);
+    await tungguSampai(
+      () => penjadwal.getStatus().sedangJalan === false && !fs.existsSync(BERKAS_KUNCI)
+    );
 
     periksa("status tidak lagi sedang jalan", penjadwal.getStatus().sedangJalan === false);
     // Sifat yang dijaga: kunci HARUS hilang. Kunci yang tertinggal akan
@@ -156,7 +191,7 @@ async function jalan() {
     periksa("perkara yang diminta tercatat di status", penjadwal.getStatus().perkaraDiminta === "620/Pdt.G/2025/PA.Dgl");
 
     selesaikan(0);
-    await tunggu(50);
+    await tungguSampai(() => penjadwal.getStatus().sedangJalan === false);
   }
 
   console.log("\n== Nomor perkara kosong ==");
@@ -178,7 +213,9 @@ async function jalan() {
     const hasil = penjadwal.hentikanPenarikan({ olehSiapa: "Penguji" });
     periksa("penarikan berjalan dapat dihentikan", hasil.ok === true);
 
-    await tunggu(50);
+    await tungguSampai(
+      () => !fs.existsSync(BERKAS_KUNCI) && penjadwal.getStatus().sedangJalan === false
+    );
     periksa("kunci ikut dibersihkan setelah dihentikan", !fs.existsSync(BERKAS_KUNCI));
     periksa("status kembali diam", penjadwal.getStatus().sedangJalan === false);
   }
@@ -192,7 +229,7 @@ async function jalan() {
     periksa("putaran terjadwal tetap memakai --maks-perkara", argumenTerakhir.includes("--maks-perkara"));
 
     selesaikan(0);
-    await tunggu(50);
+    await tungguSampai(() => penjadwal.getStatus().sedangJalan === false);
   }
 
   // --- Membersihkan berkas yang dibuat pemeriksaan ini ---------------------

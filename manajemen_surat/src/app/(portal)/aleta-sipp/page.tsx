@@ -28,6 +28,7 @@ import {
   X,
 } from "lucide-react";
 
+import { AletaPenilaianBerjenjang } from "@/components/portal/aleta-penilaian-berjenjang";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -741,6 +742,7 @@ const tabItems = [
   { value: "external-connectors", label: "Konektor Eksternal" },
   { value: "admin-monitoring", label: "Admin Monitoring" },
   { value: "penilaian", label: "Manual Input" },
+  { value: "berjenjang", label: "Penilaian Berjenjang" },
   { value: "jadwal", label: "Jadwal PDF" },
   { value: "audit", label: "Audit" },
 ] as const;
@@ -4789,6 +4791,10 @@ export default function AletaSippPage() {
                 </CardContent>
               </Card>
             ))}
+          </TabsContent>
+
+          <TabsContent value="berjenjang" className="space-y-4">
+            <AletaPenilaianBerjenjang />
           </TabsContent>
 
           <TabsContent value="jadwal" className="space-y-4">

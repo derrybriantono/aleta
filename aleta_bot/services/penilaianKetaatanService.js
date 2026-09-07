@@ -255,6 +255,12 @@ const DEFINISI = [
       tabelSumber: "perkara_pelaksanaan_relaas, perkara_jadwal_sidang, perkara, perkara_jurusita, jurusita",
       ruasSumber: "tanggal_relaas, tanggal_sidang, sidang_id, jurusita_id, pihak_id",
     },
+    // Penilaian inilah satu-satunya yang menghitung HARI KERJA, sehingga ia
+    // bergantung pada daftar hari libur nasional. Selama daftar tahun yang
+    // dinilai belum disahkan terhadap SKB, angkanya tetap dihitung tetapi
+    // membawa keterangan itu sampai ke layar - juru sita tidak boleh dibina
+    // dengan angka yang dasarnya sendiri belum dipastikan.
+    pakaiHariKerja: true,
     baris: barisTenggangPanggilan,
   },
   {

@@ -56,6 +56,14 @@ const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
 const promptPutusanService = require("../services/promptPutusanService");
+// Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
+const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
+const periodePenilaianService = require("../services/periodePenilaianService");
+const penyandinganService = require("../services/penyandinganService");
+const laporanPerkaraService = require("../services/laporanPerkaraService");
+const penilaianKetaatanService = require("../services/penilaianKetaatanService");
+const penilaianMutuDataService = require("../services/penilaianMutuDataService");
+const penilaianKeuanganService = require("../services/penilaianKeuanganService");
 const kehadiranAntrianService = require("../services/kehadiranAntrianService");
 const panggilanAntrianService = require("../services/panggilanAntrianService");
 
@@ -1441,6 +1449,163 @@ router.get("/sipp/prompt-putusan", requireInternalToken, async (req, res) => {
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/* ==========================================================================
+ * PENILAIAN DAN PENGAWASAN
+ * ========================================================================== */
+
+/**
+ * Daftar penilaian yang terdaftar pada kerangka.
+ *
+ * Yang dipulangkan termasuk cara hitung dan ambang tiap penilaian - supaya
+ * layar tidak perlu menebak, dan supaya panel "cara hitung" tidak menjadi
+ * salinan kedua yang perlahan menyimpang dari yang sebenarnya dipakai.
+ */
+router.get("/penilaian/daftar", requireInternalToken, async (req, res) => {
+  try {
+    penilaianKetaatanService.daftarkanSemua();
+    penilaianMutuDataService.daftarkanSemua();
+    penilaianKeuanganService.daftarkanSemua();
+    const daftar = kerangkaPenilaianService.daftar();
+    res.json({
+      ok: true,
+      jumlah: daftar.length,
+      penilaian: daftar,
+      periode: periodePenilaianService.PERIODE.map((p) => ({
+        jenis: p.jenis,
+        label: p.label,
+        satuan: p.satuan,
+      })),
+      catatan:
+        "Tidak satu pun penilaian di sini boleh dipakai membina sebelum angkanya disandingkan dengan angka dari luar ALETA.",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menjalankan satu penilaian pada satu jendela periode.
+ *
+ * Bukti tiap satuan sengaja DIBATASI pada jawaban ini - daftar lengkapnya dapat
+ * berisi puluhan ribu baris, dan mengirimkannya seluruhnya akan membuat layar
+ * menunggu sesuatu yang tidak akan dibaca sekaligus. Jumlah sebenarnya tetap
+ * disebut, sehingga tidak ada yang menyangka itu seluruhnya.
+ */
+router.get("/penilaian/jalankan", requireInternalToken, async (req, res) => {
+  try {
+    penilaianKetaatanService.daftarkanSemua();
+    penilaianMutuDataService.daftarkanSemua();
+    penilaianKeuanganService.daftarkanSemua();
+
+    const kunci = String(req.query.kunci || "").trim();
+    const jenisPeriode = String(req.query.periode || "bulanan").trim();
+    const acuan = String(req.query.acuan || "").trim() || periodePenilaianService.tanggalHariIni();
+    const batasBukti = Math.min(50, Math.max(0, Number(req.query.bukti) || 10));
+
+    const hasil = await kerangkaPenilaianService.jalankan(kunci, jenisPeriode, acuan);
+    if (!hasil.ok) {
+      res.status(400).json(hasil);
+      return;
+    }
+
+    const keadaanSanding = penyandinganService.keadaanPenilaian(kunci);
+    res.json({
+      ...hasil,
+      acuan,
+      penyandingan: {
+        keadaan: keadaanSanding.keadaan,
+        penanda: penyandinganService.penandaTerbaca(kunci),
+      },
+      satuan: hasil.satuan.map((s) => ({
+        ...s,
+        jumlahBukti: Array.isArray(s.bukti) ? s.bukti.length : 0,
+        bukti: Array.isArray(s.bukti) ? s.bukti.slice(0, batasBukti) : [],
+        buktiDipotong: Array.isArray(s.bukti) && s.bukti.length > batasBukti,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Blangko nilai satu laporan perkara beserta catatan pengirimannya.
+ *
+ * Angka SIPP belum disambung untuk laporan mana pun, sehingga aspek kesesuaian
+ * belum dinilai - dan nilainya null, bukan enam puluh. Lihat keterangan pada
+ * laporanPerkaraService.
+ */
+router.get("/laporan-perkara/blangko", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = Number(req.query.lipa);
+    const butir = laporanPerkaraService.butirLipa(nomor);
+    if (!butir) {
+      res.status(400).json({ ok: false, alasan: "Nomor LIPA harus antara 1 dan 22." });
+      return;
+    }
+    const acuan = String(req.query.acuan || "").trim() || periodePenilaianService.tanggalHariIni();
+    const banyak = Math.min(24, Math.max(1, Number(req.query.bulan) || 12));
+    const bulan = periodePenilaianService
+      .satuanPeriode("bulanan", acuan, { banyak })
+      .unit.map((u) => u.kunci);
+
+    const tercatat = await laporanPerkaraService.bacaPengiriman(nomor, bulan[0], bulan[bulan.length - 1]);
+    const peta = {};
+    tercatat.forEach((c) => {
+      peta[String(c.bulanLaporan)] = {
+        tanggalKirim: c.tanggalKirim ? String(c.tanggalKirim).slice(0, 10) : null,
+        angkaLaporan: c.angkaLaporan,
+      };
+    });
+
+    res.json({ ok: true, ...laporanPerkaraService.blangkoNilai(nomor, bulan, peta, {}) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Daftar kedua puluh dua laporan, untuk mengisi menu pilihan. */
+router.get("/laporan-perkara/daftar", requireInternalToken, async (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      lipa: laporanPerkaraService.LIPA.map((x) => ({
+        nomor: x.nomor,
+        kunci: laporanPerkaraService.kunciLipa(x.nomor),
+        nama: x.nama,
+        dipa04: Boolean(x.dipa04),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mencatat tanggal kirim dan angka laporan.
+ *
+ * Inilah satu-satunya jalan yang pantas bagi petugas untuk memasukkannya -
+ * sebelum ada rute ini, satu-satunya cara adalah menulis langsung ke basis
+ * data, dan itu bukan cara yang boleh diminta dari siapa pun.
+ */
+router.post("/laporan-perkara/catat", requireInternalToken, async (req, res) => {
+  try {
+    const b = req.body || {};
+    await laporanPerkaraService.catatPengiriman({
+      lipaNomor: Number(b.lipaNomor),
+      bulanLaporan: String(b.bulanLaporan || "").trim(),
+      tanggalKirim: b.tanggalKirim ? String(b.tanggalKirim).trim() : null,
+      angkaLaporan: b.angkaLaporan === "" || b.angkaLaporan === undefined ? null : b.angkaLaporan,
+      dicatatOleh: String(b.dicatatOleh || "").trim(),
+      jabatan: String(b.jabatan || "").trim(),
+      keterangan: b.keterangan === undefined ? null : String(b.keterangan),
+    });
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({ ok: false, alasan: String(error.message || error).slice(0, 300) });
   }
 });
 

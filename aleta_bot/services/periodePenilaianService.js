@@ -43,6 +43,8 @@
  * ada pada laporan pengadilan.
  */
 
+const hariLibur = require("./hariLiburService");
+
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const BULAN = [
   "Januari",
@@ -180,22 +182,66 @@ function akhirBulan(tahun, bulan) {
  *   - pengadilan dapat memutuskan mana yang berlaku, dan keputusannya tercatat
  *     sebagai ambang - bukan terkubur di dalam kode.
  *
- * HARI LIBUR NASIONAL BELUM DIPERHITUNGKAN. Yang dikecualikan baru Sabtu dan
- * Minggu. Itu disebutkan terus terang: penilaian yang mengaku menghitung hari
- * kerja padahal mengabaikan libur bersama Idulfitri akan menuduh juru sita
- * yang justru tidak dapat bekerja. Daftar hari libur harus dimasukkan sebelum
- * angka ini dipakai membina.
+ * HARI LIBUR NASIONAL IKUT DIKECUALIKAN sejak 7 September 2026, memakai daftar
+ * pada hariLiburService. Sebelum itu yang dikecualikan hanya Sabtu dan Minggu -
+ * dan penilaian yang mengaku menghitung hari kerja padahal mengabaikan libur
+ * bersama Idulfitri akan menuduh juru sita yang justru tidak dapat bekerja.
+ *
+ * Daftar liburnya sendiri BELUM DISAHKAN terhadap SKB tiga menteri. Hitungannya
+ * tetap berjalan, tetapi `hariKerjaRinci` melaporkan bahwa dasarnya belum
+ * disahkan - dan keterangan itu harus terbawa sampai ke layar.
  */
-function hariKerjaAntara(mulai, selesai) {
+function hariKerjaAntara(mulai, selesai, opsi = {}) {
   const a = uraikan(mulai);
   const b = uraikan(selesai);
   if (b <= a) return 0;
+  const pakaiLibur = opsi.tanpaHariLibur !== true;
   let jumlah = 0;
   for (let t = a + SEHARI; t <= b; t += SEHARI) {
-    const hari = new Date(t).getUTCDay();
-    if (hari !== 0 && hari !== 6) jumlah += 1;
+    const d = new Date(t);
+    const hari = d.getUTCDay();
+    if (hari === 0 || hari === 6) continue;
+    if (pakaiLibur && hariLibur.hariLibur(tulis(t))) continue;
+    jumlah += 1;
   }
   return jumlah;
+}
+
+/**
+ * Hari kerja beserta rinciannya - dan beserta pengakuan bahwa daftar liburnya
+ * belum disahkan bila memang begitu.
+ *
+ * Dipakai penilaian yang menyebut nama orang. Angka telanjang tanpa keterangan
+ * ini akan tampil sama meyakinkannya baik daftarnya sudah disahkan maupun
+ * belum.
+ */
+function hariKerjaRinci(mulai, selesai) {
+  const a = uraikan(mulai);
+  const b = uraikan(selesai);
+  const rinci = { jumlah: 0, akhirPekan: 0, libur: [] };
+  if (b > a) {
+    for (let t = a + SEHARI; t <= b; t += SEHARI) {
+      const tgl = tulis(t);
+      const hari = new Date(t).getUTCDay();
+      if (hari === 0 || hari === 6) {
+        rinci.akhirPekan += 1;
+        continue;
+      }
+      const l = hariLibur.hariLibur(tgl);
+      if (l) {
+        rinci.libur.push({ tanggal: tgl, nama: l.nama });
+        continue;
+      }
+      rinci.jumlah += 1;
+    }
+  }
+  const keadaan = hariLibur.keadaanRentang(mulai, selesai);
+  return {
+    ...rinci,
+    hariKalender: hariKalenderAntara(mulai, selesai),
+    dapatDipercaya: keadaan.dapatDipercaya,
+    sebabTidakDapatDipercaya: keadaan.sebab,
+  };
 }
 
 /** Selisih hari kalender - bentuk yang dipakai analisis lama. */
@@ -479,6 +525,7 @@ module.exports = {
   // Diekspor untuk diuji satuan.
   tambahHari,
   hariKerjaAntara,
+  hariKerjaRinci,
   hariKalenderAntara,
   awalPekan,
   nomorPekan,

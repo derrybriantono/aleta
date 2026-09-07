@@ -43,6 +43,7 @@
 
 const periode = require("./periodePenilaianService");
 const ambang = require("./ambangPenilaianService");
+const hariLibur = require("./hariLiburService");
 
 const LANTAI_SAH = new Set(Object.keys(periode.LANTAI));
 
@@ -115,6 +116,14 @@ function celaDefinisi(def) {
     // "tidak ada" dan "belum dipikirkan".
   }
 
+  // Penilaian yang menghitung HARI KERJA bergantung pada daftar hari libur
+  // nasional. Selama daftar tahun yang dinilai belum disahkan terhadap SKB,
+  // angkanya tetap dihitung tetapi keterangan itu HARUS ikut sampai ke layar -
+  // dan itu hanya mungkin bila penilaiannya menyatakan ketergantungannya.
+  if (def.pakaiHariKerja !== undefined && typeof def.pakaiHariKerja !== "boolean") {
+    cela.push("pakaiHariKerja harus berupa boolean bila diberikan");
+  }
+
   if (def.ambangDipakai !== undefined) {
     if (!Array.isArray(def.ambangDipakai)) cela.push("ambangDipakai harus berupa larik");
     else {
@@ -171,6 +180,7 @@ function daftar() {
         lantai: d.lantai,
         versiRumus: d.versiRumus,
         ambangDipakai: (d.ambangDipakai || []).slice(),
+        pakaiHariKerja: Boolean(d.pakaiHariKerja),
         caraHitung: { ...d.caraHitung },
         punyaRingkas: typeof d.ringkas === "function",
       };
@@ -285,6 +295,13 @@ async function jalankan(kunci, jenisPeriode, acuan, opsi = {}) {
     ambangDipakai: (def.ambangDipakai || []).map((k) => ambang.ambangBerlaku(k, p.unit[p.unit.length - 1].selesai)),
     // D11 - ikut dipulangkan supaya panel cara hitung tidak perlu menebak.
     caraHitung: { ...def.caraHitung },
+    pakaiHariKerja: Boolean(def.pakaiHariKerja),
+    // Hanya penilaian yang benar-benar menghitung hari kerja yang membawa
+    // keterangan ini. Menempelkannya pada seluruh penilaian akan membuatnya
+    // menjadi hiasan yang berhenti dibaca orang.
+    hariLibur: def.pakaiHariKerja
+      ? hariLibur.keadaanRentang(p.unit[0].mulai, p.unit[p.unit.length - 1].selesai)
+      : null,
   };
 }
 

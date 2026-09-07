@@ -94,7 +94,31 @@ sama("tanggal yang sama: nol", P.hariKerjaAntara("2026-09-07", "2026-09-07"), 0)
 sama("mundur: nol, bukan minus", P.hariKerjaAntara("2026-09-07", "2026-09-04"), 0);
 sama("sepekan penuh: lima hari kerja", P.hariKerjaAntara("2026-08-31", "2026-09-07"), 5);
 sama("dua pekan: sepuluh hari kerja", P.hariKerjaAntara("2026-08-31", "2026-09-14"), 10);
-sama("melintasi pergantian tahun", P.hariKerjaAntara("2025-12-29", "2026-01-05"), 5);
+// Sejak hari libur ikut dikecualikan, rentang ini berisi 1 Januari - dan
+// jawabannya berubah dari 5 menjadi 4. Itu BUKAN kemunduran melainkan
+// pembetulan: 1 Januari memang bukan hari kerja, dan menghitungnya sebagai
+// hari kerja menuduh juru sita yang tidak dapat bekerja pada hari itu.
+sama("melintasi pergantian tahun, 1 Januari dikecualikan", P.hariKerjaAntara("2025-12-29", "2026-01-05"), 4);
+sama("bila hari libur diabaikan, kembali menjadi 5",
+  P.hariKerjaAntara("2025-12-29", "2026-01-05", { tanpaHariLibur: true }), 5);
+
+// Cuti bersama Idulfitri 2025: 31 Maret sampai 7 April berisi enam hari libur
+// beruntun. Tanpa daftar libur, rentang itu tampak berisi lima hari kerja.
+sama("pekan Idulfitri 2025 hampir tidak punya hari kerja",
+  P.hariKerjaAntara("2025-03-28", "2025-04-08"), 1);
+sama("dan tanpa daftar libur akan terbaca tujuh",
+  P.hariKerjaAntara("2025-03-28", "2025-04-08", { tanpaHariLibur: true }), 7);
+
+// Rinciannya mengaku bahwa daftarnya belum disahkan.
+{
+  const r = P.hariKerjaRinci("2025-03-28", "2025-04-08");
+  periksa("rincian menyebut jumlah hari kerja", r.jumlah === 1, String(r.jumlah));
+  periksa("dan menghitung akhir pekannya", r.akhirPekan === 4, String(r.akhirPekan));
+  periksa("dan menyebut hari liburnya satu per satu", r.libur.length === 6, String(r.libur.length));
+  periksa("dan menyebut namanya", /Idulfitri/.test(r.libur.map((x) => x.nama).join(" ")));
+  periksa("dan mengaku daftarnya belum disahkan", r.dapatDipercaya === false);
+  periksa("dan menyebut tahun yang belum disahkan", /2025/.test(r.sebabTidakDapatDipercaya), r.sebabTidakDapatDipercaya);
+}
 
 console.log("== Pekan mulai Senin ==");
 sama("Senin pada pekan yang memuat Minggu", P.awalPekan("2026-09-06"), "2026-08-31");
