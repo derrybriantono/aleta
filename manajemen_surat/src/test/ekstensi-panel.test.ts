@@ -193,3 +193,122 @@ describe("penetapan yang dapat ditetapkan pembaca", () => {
     expect(isi).toContain("if (respons.status === 404 || respons.status === 403) return;");
   });
 });
+
+// ---------------------------------------------------------------------------
+// TAHAP 2 - PETIKAN, PETA KOLOM, BERKAS PER AGENDA, DAN PENANDA HALAMAN
+// ---------------------------------------------------------------------------
+
+describe("petikan berkas gugatan menggambar seluruh ruas yang dipetik", () => {
+  it("ruas Data Umum perkawinan ikut digambar", () => {
+    // Pemetik di server mengembalikan enam belas ruas; daftar di ekstensi dulu
+    // hanya menyebut sepuluh. Yang hilang justru ruas Data Umum yang paling
+    // dicari saat mendaftarkan perkara perkawinan - dan ruas yang tidak ada di
+    // daftar itu lenyap tanpa jejak: tidak ada galat, tidak ada keterangan.
+    const isi = konten();
+    for (const kunci of [
+      "tanggalMenikah",
+      "nomorAktaNikah",
+      "tanggalAktaNikah",
+      "kuaTempatMenikah",
+      "obyekSengketa",
+      "posita",
+      "tanggalSurat",
+      "nomorSurat",
+    ]) {
+      expect(isi, `ruas ${kunci} tidak digambar`).toContain(`${kunci}:`);
+    }
+  });
+
+  it("daftar petikan sama banyak dengan yang dipetik server", () => {
+    // Kalau pemetik menambah ruas dan daftar ini tidak, ruas barunya hilang
+    // diam-diam - persis cacat yang baru saja diperbaiki.
+    const petik = readFileSync(
+      path.resolve(process.cwd(), "src/server/modules/aleta-ecourt/berkas-gugatan.ts"),
+      "utf8"
+    );
+    const tipe = petik.slice(petik.indexOf("export type DataUmum = {"));
+    const ruasServer = new Set(
+      Array.from(tipe.slice(0, tipe.indexOf("};")).matchAll(/^\s{2}(\w+):/gm)).map((m) => m[1])
+    );
+    const daftar = konten();
+    const blok = daftar.slice(
+      daftar.indexOf("const NAMA_PETIKAN = {"),
+      daftar.indexOf("function gambarPetikan")
+    );
+    const ruasEkstensi = new Set(
+      Array.from(blok.matchAll(/^\s{2}(\w+):/gm)).map((m) => m[1])
+    );
+    const hilang = [...ruasServer].filter((x) => !ruasEkstensi.has(x));
+    expect(hilang, `ruas dipetik server tetapi tidak digambar: ${hilang.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("peta kolom formulir menyebut dirinya alat pemasangan", () => {
+  it("namanya dan keterangannya tidak lagi menyesatkan", () => {
+    // Yang tergambar di sana PENUNJUK kolom, bukan isinya. Tanpa keterangan
+    // itu, daftarnya terbaca sebagai fitur yang gagal mengambil data.
+    const isi = konten();
+    expect(isi).toContain("Peta kolom formulir (sekali pasang)");
+    expect(isi).toContain("Ini alat PEMASANGAN, bukan penampil data.");
+  });
+});
+
+describe("berkas e-Court menempel pada agenda yang menunggunya", () => {
+  it("tahapan diperiksa sebelum tanggal", () => {
+    // Sebelumnya HANYA tanggal, sehingga baris beragenda Jawaban menerima
+    // seluruh berkas yang kebetulan bertanggal sama.
+    const isi = konten();
+    expect(isi).toContain("const TAHAPAN_BERKAS = [");
+    expect(isi).toContain("function berkasUntukAgenda(agendaTeks, dokumen)");
+    expect(isi).toContain('kotakSisipan(cocokAgenda, ambang, "cocok agenda")');
+  });
+
+  it("duplik rekonvensi diperiksa SEBELUM duplik", () => {
+    // Yang belakangan juga cocok dengan yang pertama dan akan merebutnya.
+    const isi = konten();
+    const blok = isi.slice(isi.indexOf("const TAHAPAN_BERKAS = ["));
+    // Dicari lewat nama tahapannya, bukan lewat teks regexnya. Menuliskan
+    // ulang pola bertanda miring di dalam uji berarti tanda miringnya harus
+    // lolos dua lapis - dan lapis mana pun yang memakannya membuat uji ini
+    // mencari teks yang tidak pernah ada lalu lulus tanpa memeriksa apa pun.
+    const urutan = Array.from(blok.matchAll(/\{ agenda: \/([^/]+)\//g)).map((m) => m[1]);
+    const iRekonvensi = urutan.findIndex((x) => x.includes("rekonvensi"));
+    const iDuplik = urutan.findIndex((x) => x.includes("duplik") && !x.includes("rekonvensi"));
+    expect(iRekonvensi).toBeGreaterThanOrEqual(0);
+    expect(iDuplik).toBeGreaterThanOrEqual(0);
+    expect(iRekonvensi).toBeLessThan(iDuplik);
+  });
+
+  it("sebab pencocokan disebut di kotaknya", () => {
+    // Berkas yang menempel karena agendanya berbeda derajat kepastiannya dari
+    // yang menempel karena kebetulan bertanggal sama.
+    expect(konten()).toContain("function kotakSisipan(dokumenSehari, ambangHari, sebabCocok");
+  });
+});
+
+describe("penanda halaman daftar menggambar keenam sinyalnya", () => {
+  it("nomor bermasalah dan selisih e-Court ikut digambar", () => {
+    // Keduanya TIDAK ADA di layar SIPP mana pun - dan justru keduanya yang
+    // paling menjawab kenapa penanda ini ada sama sekali.
+    const isi = konten();
+    expect(isi).toContain("ringkas.nomorBermasalah > 0");
+    expect(isi).toContain("ringkas.selisihGenting > 0");
+  });
+
+  it("hijau menuntut keenam sinyal bersih, bukan empat", () => {
+    // Menandai perkara hijau sementara nomornya bermasalah adalah kabar baik
+    // yang keliru - dan itu lebih merugikan daripada tidak ada kabar.
+    const isi = konten();
+    const blok = isi.slice(isi.indexOf("ringkas.dokumen > 0 &&"));
+    expect(blok.slice(0, 400)).toContain("ringkas.nomorBermasalah === 0");
+    expect(blok.slice(0, 400)).toContain("ringkas.selisihGenting === 0");
+  });
+
+  it("tiap penanda menerangkan artinya saat disentuh", () => {
+    // Penanda yang tidak dapat ditindaklanjuti pada akhirnya diabaikan, dan
+    // penanda yang diabaikan sama saja dengan penanda yang tidak ada.
+    const isi = konten();
+    expect(isi).toContain("function labelTanda(teks, warna, { judul =");
+    expect(isi).toContain('span.title = `ALETA: ${judul}`;');
+  });
+});

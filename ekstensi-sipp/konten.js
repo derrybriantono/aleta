@@ -1736,16 +1736,51 @@ function akunSipp() {
  *
  * Berkasnya TIDAK disimpan di mana pun. Ia dibaca, dipetik, lalu dilepas.
  */
+/**
+ * ============================================================================
+ * ENAM RUAS YANG DIPETIK TETAPI TIDAK PERNAH DIGAMBAR
+ * ============================================================================
+ *
+ * Pemetik di server mengembalikan ENAM BELAS ruas, dan daftar ini dulu hanya
+ * menyebut sepuluh. Yang hilang justru ruas Data Umum yang paling dicari saat
+ * mendaftarkan perkara perkawinan - tanggal menikah, nomor dan tanggal kutipan
+ * akta nikah, KUA tempat menikah - beserta obyek sengketa, posita, dan
+ * keterangan surat gugatannya.
+ *
+ * Akibatnya papan ini terbaca seolah ALETA hanya bisa memetik data PIHAK,
+ * padahal data pernikahannya sudah terpetik sejak awal dan hanya dibuang di
+ * layar. Ruas yang tidak ada di daftar ini lenyap tanpa jejak: tidak ada
+ * galat, dan tidak ada yang menyebutkan bahwa ia pernah ada.
+ *
+ * Urutannya sengaja mengikuti urutan borang Data Umum SIPP, bukan urutan
+ * pemetiknya. Yang membaca papan ini sedang mengisi borang itu baris demi
+ * baris, dan daftar yang urutannya berbeda memaksanya melompat-lompat.
+ */
 const NAMA_PETIKAN = {
+  // --- keterangan surat ---------------------------------------------------
+  tanggalSurat: "Tanggal surat",
+  nomorSurat: "Nomor surat",
+
+  // --- data pernikahan ----------------------------------------------------
+  tanggalMenikah: "Tanggal menikah",
+  tanggalAktaNikah: "Tanggal kutipan akta nikah",
+  nomorAktaNikah: "Nomor kutipan akta nikah",
+  kuaTempatMenikah: "KUA tempat menikah",
+
+  // --- para pihak ---------------------------------------------------------
   penggugat: "Penggugat / Pemohon",
-  tergugat: "Tergugat / Termohon",
   umurPenggugat: "Umur",
   agamaPenggugat: "Agama",
   pekerjaanPenggugat: "Pekerjaan",
   pendidikanPenggugat: "Pendidikan",
   alamatPenggugat: "Alamat penggugat",
+  tergugat: "Tergugat / Termohon",
   alamatTergugat: "Alamat tergugat",
+
+  // --- isi gugatan --------------------------------------------------------
+  obyekSengketa: "Obyek sengketa",
   nilaiSengketa: "Nilai sengketa",
+  posita: "Posita",
   petitum: "Petitum",
 };
 
@@ -1853,7 +1888,7 @@ function bagianDataUmum() {
  * terbuka memuat data pihak berperkara, dan yang dibutuhkan hanya namanya.
  */
 function bagianBacaBorang() {
-  const kotak = bagian("Baca kolom formulir ini", "bacaBorang", true);
+  const kotak = bagian("Peta kolom formulir (sekali pasang)", "bacaBorang", true);
   let sudahDimuat = false;
 
   const kepala = kotak.querySelector(".aleta-bagian-judul");
@@ -1883,11 +1918,34 @@ function bagianBacaBorang() {
         return;
       }
 
+      // ====================================================================
+      // ALAT PEMASANGAN, BUKAN PENAMPIL DATA
+      // ====================================================================
+      //
+      // Yang tergambar di sini PENUNJUK kolom - #ijin_cerai_pihak1 dan
+      // sejenisnya - bukan isinya. Tanpa keterangan itu, daftarnya terbaca
+      // sebagai fitur yang gagal mengambil data, dan yang membacanya
+      // menyimpulkan ALETA tidak dapat membaca SIPP.
+      //
+      // Gunanya sekali pasang: penunjuk ini disalin ke Pengaturan - Peta kolom
+      // formulir, dan peta itulah yang kemudian dipakai tombol Kerjakan
+      // mengisi formulir sendiri. Sesudah petanya lengkap, menu ini tidak
+      // perlu dibuka lagi.
       isi.appendChild(
         buatElemen(
           "div",
           "aleta-tetap-sebab",
-          `${berpenunjuk.length} kolom. Salin penunjuknya ke Pengaturan - Peta kolom formulir.`
+          "Ini alat PEMASANGAN, bukan penampil data. Yang tercantum di bawah adalah " +
+            "penunjuk kolom di halaman ini - bukan isinya."
+        )
+      );
+      isi.appendChild(
+        buatElemen(
+          "div",
+          "aleta-tetap-sebab",
+          `${berpenunjuk.length} kolom terbaca. Salin penunjuknya ke Pengaturan - Peta kolom ` +
+            "formulir. Sesudah petanya lengkap, tombol Kerjakan dapat mengisi formulir ini " +
+            "sendiri, dan menu ini tidak perlu dibuka lagi."
         )
       );
 
@@ -4184,9 +4242,19 @@ function bersihkanTanda() {
   });
 }
 
-function labelTanda(teks, warna) {
+/**
+ * Satu penanda kecil di dalam tabel SIPP.
+ *
+ * `judul` menerangkan ARTI penandanya saat disentuh tetikus. Tanpa itu,
+ * "1 nomor bermasalah" hanya memberi tahu ada sesuatu - tidak memberi tahu
+ * masalahnya apa, apalagi apa yang harus dikerjakan. Penanda yang tidak dapat
+ * ditindaklanjuti pada akhirnya diabaikan, dan penanda yang diabaikan sama
+ * saja dengan penanda yang tidak ada.
+ */
+function labelTanda(teks, warna, { judul = "" } = {}) {
   const span = buatElemen("span", `aleta-tanda aleta-tanda-${warna}`, teks);
   span.setAttribute(TANDA, "1");
+  if (judul) span.title = `ALETA: ${judul}`;
   return span;
 }
 
@@ -4336,14 +4404,21 @@ function selPersidangan(baris) {
 }
 
 /** Menyusun kotak sisipan untuk satu baris jadwal. */
-function kotakSisipan(dokumenSehari, ambangHari) {
+function kotakSisipan(dokumenSehari, ambangHari, sebabCocok = "") {
   const kotak = buatElemen("div", "aleta-sisip");
   kotak.setAttribute(TANDA, "1");
 
   // Bertanda ALETA secara terlihat. Tanpa ini, tautan di dalam tabel SIPP
   // terbaca sebagai bagian SIPP - dan petugas mengira berkasnya berasal dari
   // sistem resmi.
-  kotak.appendChild(buatElemen("div", "aleta-sisip-judul", "ALETA · e-Court"));
+  //
+  // Sebab pencocokannya ikut disebut. Berkas yang menempel karena AGENDA-nya
+  // memang menunggunya berbeda derajat kepastiannya dari berkas yang menempel
+  // karena kebetulan bertanggal sama, dan yang membacanya berhak tahu yang
+  // mana - sebelum mengunduh dan memakainya.
+  kotak.appendChild(
+    buatElemen("div", "aleta-sisip-judul", sebabCocok ? `ALETA · e-Court · ${sebabCocok}` : "ALETA · e-Court")
+  );
 
   for (const dokumen of dokumenSehari) {
     const baris = buatElemen("div", "aleta-sisip-baris");
@@ -4381,6 +4456,52 @@ function kotakSisipan(dokumenSehari, ambangHari) {
  * Baris yang tidak punya dokumen dibiarkan apa adanya - menambahkan "tidak ada
  * dokumen" di setiap baris hanya menambah keramaian tanpa menambah pengetahuan.
  */
+/**
+ * ============================================================================
+ * TAHAPAN e-LITIGASI, DAN BERKAS YANG MENJADI MILIKNYA
+ * ============================================================================
+ *
+ * Tiap tahapan e-Litigasi punya satu jenis berkas yang menjadi miliknya:
+ * agenda Jawaban menunggu berkas jawaban, agenda Replik menunggu replik. Yang
+ * membuka baris agenda Jawaban di SIPP sedang mencari jawabannya - bukan
+ * seluruh berkas yang kebetulan bertanggal sama.
+ *
+ * Urutannya menentukan: "duplik rekonvensi" diperiksa SEBELUM "duplik", sebab
+ * yang belakangan juga cocok dengan yang pertama dan akan merebutnya.
+ */
+const TAHAPAN_BERKAS = [
+  { agenda: /duplik\s+rekonvensi/i, berkas: /duplik\s+rekonvensi/i },
+  { agenda: /\bjawaban\b/i, berkas: /\bjawaban\b/i },
+  { agenda: /\breplik\b/i, berkas: /\breplik\b/i },
+  { agenda: /\bduplik\b/i, berkas: /\bduplik\b/i },
+  { agenda: /\bkesimpulan\b/i, berkas: /\bkesimpulan\b/i },
+  { agenda: /pembuktian|bukti/i, berkas: /bukti|pembuktian/i },
+  { agenda: /gugatan|permohonan/i, berkas: /gugatan|permohonan/i },
+];
+
+/** Sebutan berkas - judul lebih dulu, lalu jenisnya. */
+function sebutanDokumen(dokumen) {
+  return `${dokumen.judulDokumen || ""} ${dokumen.jenisDokumen || ""}`.trim();
+}
+
+/**
+ * Berkas yang menjadi milik agenda ini.
+ *
+ * Mengembalikan daftar kosong bila agendanya bukan tahapan pertukaran berkas -
+ * dan itu bukan kegagalan: agenda "Panggil Tergugat" memang tidak menunggu
+ * berkas apa pun, dan menempelkan berkas di sana hanya menambah kotak yang
+ * harus dilewati mata.
+ */
+function berkasUntukAgenda(agendaTeks, dokumen) {
+  const teks = String(agendaTeks || "");
+  if (!teks) return [];
+
+  const tahapan = TAHAPAN_BERKAS.find((x) => x.agenda.test(teks));
+  if (!tahapan) return [];
+
+  return dokumen.filter((d) => tahapan.berkas.test(sebutanDokumen(d)));
+}
+
 function sisipkanKeJadwalSidang(konteks) {
   const dokumen = Array.isArray(konteks.dokumen) ? konteks.dokumen : [];
   if (dokumen.length === 0) return;
@@ -4394,7 +4515,6 @@ function sisipkanKeJadwalSidang(konteks) {
     daftar.push(d);
     perTanggal.set(tanggal, daftar);
   }
-  if (perTanggal.size === 0) return;
 
   const ambang = Number(konteks.ambangMendesakHari) || 3;
 
@@ -4403,6 +4523,26 @@ function sisipkanKeJadwalSidang(konteks) {
     if (!sel) continue;
     if (sel.querySelector(`[${TANDA}]`)) continue; // sudah disisipi
 
+    // ======================================================================
+    // AGENDA LEBIH DULU, TANGGAL SEBAGAI CADANGAN
+    // ======================================================================
+    //
+    // Sebelumnya HANYA tanggal. Akibatnya baris beragenda Jawaban menerima
+    // seluruh berkas yang kebetulan bertanggal sama - replik, duplik,
+    // kesimpulan - dan yang sedang mencari jawabannya harus memilah sendiri.
+    // Lebih buruk lagi: berkas yang tanggal sidangnya tidak tercatat tidak
+    // pernah tertempel di mana pun, meski agendanya jelas menunggunya.
+    //
+    // Sekarang agendanya diperiksa lebih dulu. Bila agenda baris ini adalah
+    // tahapan pertukaran berkas dan ada berkas yang menjadi miliknya, itulah
+    // yang ditempelkan - beserta sebab pencocokannya, supaya yang membacanya
+    // tahu ini bukan kebetulan tanggal.
+    const cocokAgenda = berkasUntukAgenda(baris.textContent, dokumen);
+    if (cocokAgenda.length > 0) {
+      sel.appendChild(kotakSisipan(cocokAgenda, ambang, "cocok agenda"));
+      continue;
+    }
+
     // Tanggal dibaca dari sel kedua baris ini, tempat SIPP menuliskannya.
     const tanggal = tanggalDariTeksSipp(baris.textContent);
     if (!tanggal) continue;
@@ -4410,7 +4550,7 @@ function sisipkanKeJadwalSidang(konteks) {
     const cocok = perTanggal.get(tanggal);
     if (!cocok || cocok.length === 0) continue;
 
-    sel.appendChild(kotakSisipan(cocok, ambang));
+    sel.appendChild(kotakSisipan(cocok, ambang, "cocok tanggal sidang"));
   }
 }
 
@@ -4484,26 +4624,90 @@ function tempelPenandaBaris(baris, nomor, ringkas) {
   // Belum pernah ditarik ALETA sama sekali - keterangan tersendiri, bukan
   // sama dengan "tidak punya dokumen".
   if (ringkas === null) {
-    sel.appendChild(labelTanda("belum ditarik ALETA", "abu"));
+    sel.appendChild(
+      labelTanda("belum ditarik ALETA", "abu", {
+        judul:
+          "Perkara ini belum pernah ditarik dari e-Court, jadi ALETA belum punya keterangan apa pun tentangnya. Bukan berarti berkasnya tidak ada.",
+      })
+    );
     return;
   }
 
+  // ==========================================================================
+  // ENAM SINYAL DATANG, EMPAT YANG DIGAMBAR
+  // ==========================================================================
+  //
+  // Ringkasan massal membawa enam angka; penanda ini dulu hanya menggambar
+  // empat. Dua yang dibuang justru dua yang paling menjawab "kenapa penanda
+  // ini ada sama sekali" - sebab keduanya TIDAK ADA di layar SIPP mana pun:
+  //
+  //   nomorBermasalah   nomor pihak yang belum terverifikasi. SIPP menyimpan
+  //                     nomornya, tetapi tidak pernah tahu nomor itu benar
+  //                     milik orangnya - dan panggilan lewat WhatsApp ke nomor
+  //                     yang salah adalah panggilan yang tidak pernah sampai.
+  //   selisihGenting    catatan ALETA berbeda dari keadaan di e-Court. Yang
+  //                     satu bilang berkasnya sudah masuk, yang lain tidak -
+  //                     dan tidak ada satu layar pun yang menyandingkannya.
+  //
+  // Keduanya kini digambar lebih dulu, sebelum tenggat: yang menuntut
+  // pemeriksaan orang didahulukan atas yang menuntut penjadwalan.
+  if (ringkas.nomorBermasalah > 0) {
+    sel.appendChild(
+      labelTanda(`${ringkas.nomorBermasalah} nomor bermasalah`, "merah", {
+        judul:
+          "Nomor pihak yang belum terverifikasi. Pemberitahuan WhatsApp ke nomor ini belum tentu sampai kepada orangnya.",
+      })
+    );
+  }
+  if (ringkas.selisihGenting > 0) {
+    sel.appendChild(
+      labelTanda(`${ringkas.selisihGenting} selisih e-Court`, "merah", {
+        judul:
+          "Catatan ALETA berbeda dari keadaan di e-Court untuk perkara ini. Perlu disandingkan sebelum dipakai.",
+      })
+    );
+  }
+
   if (ringkas.tenggatLewat > 0) {
-    sel.appendChild(labelTanda(`${ringkas.tenggatLewat} tenggat lewat`, "merah"));
+    sel.appendChild(
+      labelTanda(`${ringkas.tenggatLewat} tenggat lewat`, "merah", {
+        judul: "Berkas e-Court yang batas unggahnya sudah terlampaui.",
+      })
+    );
   }
   if (ringkas.tenggatMendesak > 0) {
-    sel.appendChild(labelTanda(`${ringkas.tenggatMendesak} mendesak`, "kuning"));
+    sel.appendChild(
+      labelTanda(`${ringkas.tenggatMendesak} mendesak`, "kuning", {
+        judul: "Berkas e-Court yang batas unggahnya tinggal beberapa hari lagi.",
+      })
+    );
   }
   if (ringkas.menungguVerifikasi > 0) {
-    sel.appendChild(labelTanda(`${ringkas.menungguVerifikasi} menunggu majelis`, "kuning"));
+    sel.appendChild(
+      labelTanda(`${ringkas.menungguVerifikasi} menunggu majelis`, "kuning", {
+        judul:
+          "Berkas sudah diunggah pihak tetapi belum diverifikasi majelis, sehingga belum dapat diberitahukan ke pihak lawan.",
+      })
+    );
   }
+
+  // Hijau hanya bila TIDAK ADA satu pun yang menuntut tindakan - termasuk dua
+  // sinyal baru di atas. Menandai perkara hijau sementara nomornya bermasalah
+  // adalah kabar baik yang keliru, dan kabar baik yang keliru lebih merugikan
+  // daripada tidak ada kabar.
   if (
     ringkas.dokumen > 0 &&
     ringkas.tenggatLewat === 0 &&
     ringkas.tenggatMendesak === 0 &&
-    ringkas.menungguVerifikasi === 0
+    ringkas.menungguVerifikasi === 0 &&
+    ringkas.nomorBermasalah === 0 &&
+    ringkas.selisihGenting === 0
   ) {
-    sel.appendChild(labelTanda(`${ringkas.dokumen} dokumen`, "hijau"));
+    sel.appendChild(
+      labelTanda(`${ringkas.dokumen} dokumen`, "hijau", {
+        judul: "Berkas e-Court perkara ini lengkap dan tidak ada yang menunggu tindakan.",
+      })
+    );
   }
 }
 

@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.93.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.93.0 - Ekstensi SIPP Tahap 1";
+export const APP_VERSION = "1.94.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.94.0 - Ekstensi SIPP Tahap 2";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.94.0",
+    title: "ALETA Judicia v1.94.0 - Ekstensi SIPP Tahap 2",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Ekstensi SIPP versi 1.67.0. Tiga hal yang selama ini dipetik atau dihitung tetapi tidak pernah digambar: enam ruas Data Umum dari berkas gugatan, dua sinyal pada penanda halaman daftar, dan berkas e-Court yang kini menempel pada agenda yang menunggunya - bukan sekadar pada tanggal yang sama.",
+    added: [
+      "Berkas e-Court menempel pada baris agenda yang menunggunya: jawaban pada agenda Jawaban, replik pada Replik, dan seterusnya. Tanggal tetap dipakai sebagai cadangan, dan kotaknya menyebut sebab pencocokannya.",
+      "Penanda halaman daftar menggambar dua sinyal yang tidak ada di layar SIPP mana pun: nomor pihak yang belum terverifikasi, dan selisih antara catatan ALETA dengan keadaan di e-Court.",
+      "Tiap penanda menerangkan artinya saat disentuh tetikus - penanda yang tidak dapat ditindaklanjuti pada akhirnya diabaikan.",
+    ],
+    changed: [
+      "Menu Baca kolom formulir ini berganti nama menjadi Peta kolom formulir (sekali pasang), dan menyebutkan bahwa yang tercantum adalah PENUNJUK kolom - bukan isinya. Sebelumnya daftarnya terbaca sebagai fitur yang gagal mengambil data.",
+    ],
+    fixed: [
+      "Enam ruas Data Umum yang dipetik dari berkas gugatan tidak pernah digambar: tanggal menikah, nomor dan tanggal kutipan akta nikah, KUA tempat menikah, obyek sengketa, dan posita - beserta tanggal dan nomor suratnya. Pemetik mengembalikan enam belas ruas, daftar di ekstensi hanya menyebut sepuluh, dan sisanya lenyap tanpa galat. Itulah sebab papan itu terbaca seolah hanya bisa memetik data pihak.",
+      "Baris agenda Jawaban dulu menerima seluruh berkas yang kebetulan bertanggal sama - replik, duplik, kesimpulan - dan yang mencari jawabannya harus memilah sendiri.",
+      "Penanda hijau pada halaman daftar dulu menyala meski nomor pihaknya bermasalah atau ada selisih dengan e-Court, sebab hanya empat dari enam sinyal yang diperiksa. Kabar baik yang keliru lebih merugikan daripada tidak ada kabar.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Uji baru membandingkan daftar ruas petikan di ekstensi dengan tipe DataUmum di server, sehingga ruas yang ditambahkan pemetik tidak dapat lagi hilang diam-diam di layar.",
+    ],
+    knownLimitations: [
+      "Saklar Hakim tunggal masih penanda keadaan. Mengubahnya menyentuh aturan pembagian beban perkara, bukan hanya tampilan, dan itu keputusan pimpinan - bukan keputusan yang menulis kodenya.",
+      "Pencocokan berkas ke agenda memakai kata pada judul berkas. Berkas yang judulnya tidak menyebut tahapannya jatuh kembali ke pencocokan tanggal, dan itu disebutkan pada kotaknya.",
+    ],
+  },
   {
     version: "1.93.0",
     title: "ALETA Judicia v1.93.0 - Ekstensi SIPP Tahap 1",
