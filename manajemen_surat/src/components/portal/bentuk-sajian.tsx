@@ -511,18 +511,53 @@ export function DiagramSebar({
  * P - DIAGRAM PAI
  * ========================================================================== */
 
+/**
+ * ============================================================================
+ * WARNA IRISAN - DIUKUR, BUKAN DIPILIH MENURUT SELERA
+ * ============================================================================
+ *
+ * Palet lama dijalankan lewat pemeriksa palet dan GAGAL dua kali, keduanya
+ * pada irisan pertama yang memakai warna utama aplikasi:
+ *
+ *   pita terang   #155375 berada di L 0,421 - di luar pita 0,43-0,77, terlalu
+ *                 gelap sehingga tampak hitam di antara irisan lain;
+ *   lantai kroma  kroma 0,083 di bawah lantai 0,1 - ia terbaca ABU-ABU, dan
+ *                 abu-abu di dalam pai terbaca sebagai "lain-lain".
+ *
+ * Warna utama aplikasi memang bukan warna kategorikal. Ia warna tindakan -
+ * tombol dan tautan - dan dipilih untuk kontras terhadap tulisan, bukan untuk
+ * dibedakan dari tujuh warna lain di dalam satu lingkaran.
+ *
+ * ============================================================================
+ * DELAPAN IRISAN TIDAK PERNAH DAPAT DIBEDAKAN - DAN ITU TERUKUR
+ * ============================================================================
+ *
+ * Pada pemeriksaan SELURUH pasangan, tidak ada palet delapan warna yang lulus -
+ * termasuk palet acuan yang sudah tervalidasi. Batasnya tiga warna; pada empat
+ * warna lantai penglihatan normal sudah jatuh di bawah 15.
+ *
+ * Karena itu jumlah irisan dipotong menjadi ENAM, dan yang diperiksa pasangan
+ * yang BERSENTUHAN - sebab pada pai yang membingungkan mata adalah dua irisan
+ * bersebelahan, bukan dua irisan yang berseberangan. Pada enam irisan kedua
+ * mode LULUS SELURUH PEMERIKSAAN: pita terang, lantai kroma, pemisahan buta
+ * warna, dan lantai penglihatan normal.
+ *
+ * Peringatan kontras pada mode terang dijawab keterangan bertulisan di samping
+ * gambar - identitas tidak pernah bersandar pada warna saja.
+ *
+ * Urutannya TETAP, tidak diputar. Warna mengikuti entitasnya, bukan
+ * peringkatnya: menyaring satu irisan tidak boleh mengecat ulang sisanya.
+ */
 const WARNA_IRISAN = [
-  "fill-primary/80",
-  "fill-emerald-500/75",
-  "fill-amber-500/75",
-  "fill-rose-500/70",
-  "fill-sky-500/70",
-  "fill-violet-500/70",
-  "fill-teal-500/70",
-  "fill-orange-500/70",
+  "fill-[#2a78d6] dark:fill-[#3987e5]",
+  "fill-[#eb6834] dark:fill-[#d95926]",
+  "fill-[#1baf7a] dark:fill-[#199e70]",
+  "fill-[#eda100] dark:fill-[#c98500]",
+  "fill-[#e87ba4] dark:fill-[#d55181]",
+  "fill-[#008300] dark:fill-[#008300]",
 ];
 
-export function DiagramPai({ data, judul, maksIrisan = 8 }: { data: TitikData[]; judul?: string; maksIrisan?: number }) {
+export function DiagramPai({ data, judul, maksIrisan = 6 }: { data: TitikData[]; judul?: string; maksIrisan?: number }) {
   const isi = ada(data).filter((d) => (d.nilai as number) > 0);
   if (!isi.length) return <Kosong pesan="Belum ada bagian untuk digambar." />;
 

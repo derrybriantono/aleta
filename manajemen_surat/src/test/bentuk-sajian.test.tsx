@@ -180,7 +180,17 @@ describe("sepuluh bentuk sajian tahan data batas", () => {
       nilai: 20 - i,
     }));
     render(<DiagramPai data={banyakMacam} />);
-    expect(screen.getByText(/13 bagian terkecil disatukan/)).toBeInTheDocument();
+    // 20 macam, bawaan 6 irisan: lima tergambar sendiri, lima belas disatukan.
+    //
+    // Angka 15 adalah TURUNAN dari bawaan, bukan angka yang berdiri sendiri.
+    // Bawaannya dulu 8 - dan diturunkan menjadi 6 karena pemeriksa palet
+    // menunjukkan tidak ada palet delapan warna yang lulus: pada palet lama,
+    // irisan pertama gagal pita terang dan lantai kroma sekaligus, dan bahkan
+    // palet acuan yang tervalidasi pun gagal pada delapan slot.
+    //
+    // Yang DIJAGA uji ini tetap sama: sisa irisan disatukan, dan jumlah yang
+    // disatukan DIKATAKAN. Pai yang menyembunyikan potongannya menyesatkan.
+    expect(screen.getByText(/15 bagian terkecil disatukan/)).toBeInTheDocument();
   });
 
   it("diagram pai: seluruhnya nol dianggap tidak ada bagian untuk digambar", () => {

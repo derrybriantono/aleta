@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.94.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.94.0 - Ekstensi SIPP Tahap 2";
+export const APP_VERSION = "1.95.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.95.0 - Status Perkara Berkesinambungan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,38 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.95.0",
+    title: "ALETA Judicia v1.95.0 - Status Perkara Berkesinambungan",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Dua puluh satu bagian pada layar Status Perkara disusun ulang mengikuti jalan perkara - siapa, jalannya, hasilnya, sesudahnya, lalu kesimpulannya. Empat grafik ditambahkan, masing-masing di dalam bagian yang datanya berada. Palet irisan pai diukur ulang lewat pemeriksa palet dan diperbaiki - warna irisan pertama selama ini gagal dua pemeriksaan sekaligus.",
+    added: [
+      "Diagram batang jeda penginputan tiap tahapan: menjawab tahapan mana yang paling lambat diinput tanpa membandingkan sepuluh angka yang berjauhan di dalam tabel.",
+      "Diagram garis hari sejak pendaftaran pada tiap sidang, dengan garis sasaran 150 hari beserta dasar hukumnya - SEMA 2/2014.",
+      "Diagram pai komposisi pengeluaran perkara. Hanya pengeluaran; mencampurnya dengan penerimaan berarti menjumlahkan uang masuk dengan uang keluar seolah keduanya bagian dari satu keseluruhan.",
+      "Diagram batang poin yang diperoleh tiap aspek SK Dirjen 048/2024 - keempat aspeknya berbobot berbeda dan selama ini tidak pernah dibandingkan.",
+    ],
+    changed: [
+      "Susunan bagian mengikuti jalan perkara. Para pihak dan majelis naik ke atas - sebelumnya di urutan dua belas dan tiga belas, padahal seluruh bagian sebelumnya sudah menyebut nama tanpa memperkenalkannya. Dua bagian penilaian turun ke bawah: kesimpulan datang sesudah buktinya, bukan menyela.",
+      "Keterangan putusan dan Putusan dan tindak lanjutnya kini berdampingan. Sebelumnya berjarak sepuluh bagian untuk satu subjek yang sama.",
+      "Jumlah irisan pai dibatasi enam, sebanyak warna yang lulus pemeriksaan. Sebelumnya delapan, dan warna ketujuh mulai berputar memakai warna irisan pertama.",
+    ],
+    fixed: [
+      "Warna irisan pertama diagram pai memakai warna utama aplikasi, dan gagal dua pemeriksaan sekaligus: pita terang - berada di L 0,421, di luar pita 0,43 sampai 0,77 sehingga tampak hitam di antara irisan lain - dan lantai kroma, 0,083 di bawah lantai 0,1 sehingga terbaca ABU-ABU. Abu-abu di dalam pai terbaca sebagai Lainnya.",
+      "Warna utama aplikasi memang bukan warna kategorikal: ia warna tindakan, dipilih untuk kontras terhadap tulisan - bukan untuk dibedakan dari lima warna lain di dalam satu lingkaran. Diganti palet yang seluruh warnanya lulus pemeriksaan pada mode terang maupun gelap.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Grafiknya memakai penggambar yang sudah dibangun untuk e-Audit, bukan penggambar kedua. Keempat aturannya ikut terbawa: sumbu bermula dari nol, kecenderungan menolak digambar dari titik yang terlalu sedikit, yang dipotong disebutkan, dan garis ambang membawa dasar hukumnya.",
+      "Uraian biaya adalah teks bebas di SIPP. Dua tulisan yang maksudnya sama dengan ejaan berbeda tergambar sebagai dua irisan, dan itu disebutkan di bawah gambarnya.",
+    ],
+    knownLimitations: [
+      "Pada pemeriksaan SELURUH pasangan warna - bukan hanya yang bersentuhan - batas warna yang benar-benar dapat dibedakan adalah tiga. Enam warna lulus karena yang diperiksa pasangan yang bersentuhan, dan identitas tiap irisan ditopang keterangan bertulisan di sampingnya - tidak pernah bersandar pada warna saja.",
+      "Grafik belum dilihat langsung di peramban; yang diperiksa baru tipe, aturan penggambar, dan paletnya.",
+    ],
+  },
   {
     version: "1.94.0",
     title: "ALETA Judicia v1.94.0 - Ekstensi SIPP Tahap 2",
