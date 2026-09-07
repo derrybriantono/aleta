@@ -239,6 +239,34 @@
       "when": 1780021600000,
       "tag": "0033_aleta_kamus_variabel",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1780108000000,
+      "tag": "0034_aleta_korpus_blangko",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1780111600000,
+      "tag": "0035_aleta_isian_perkara",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1780244800000,
+      "tag": "0036_aleta_pustaka_blangko",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1780248400000,
+      "tag": "0037_aleta_saklar_periksa",
+      "breakpoints": true
     }
   ]
 }

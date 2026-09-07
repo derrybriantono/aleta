@@ -2256,6 +2256,239 @@ async function isiBlangko(params = {}) {
   }
 }
 
+/**
+ * Seluruh blangko RTF di bawah akar, menurun sampai ke anak folder.
+ *
+ * ============================================================================
+ * UNTUK DIPELAJARI SEKALI, BUKAN UNTUK DIPAKAI SEHARI-HARI
+ * ============================================================================
+ *
+ * blangko.katalog melayani panitera yang sedang memilih blangko: satu folder,
+ * sudah terurai jenjangnya, siap ditampilkan. Yang ini melayani hal lain -
+ * ALETA yang sedang MEMPELAJARI seluruh pustaka supaya kelak tidak lagi
+ * membutuhkannya.
+ *
+ * Karena itu ia menurun ke seluruh folder sekaligus dan hanya mengembalikan
+ * jalur beserta ukurannya. Isinya diambil terpisah lewat blangko.alinea, per
+ * kelompok kecil, supaya satu panggilan tidak pernah menarik 120 MB.
+ */
+async function getPohonBlangko(params = {}) {
+  const akar = path.resolve(AKAR_BLANGKO);
+
+  async function turun(dir, hasil, dalam) {
+    // Batas kedalaman menjaga tautan folder yang berputar tidak membuat
+    // penelusuran berjalan selamanya.
+    if (dalam > 6) return;
+    let entri;
+    try {
+      entri = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const item of entri) {
+      if (item.name.startsWith(".")) continue;
+      const penuh = path.join(dir, item.name);
+      if (item.isDirectory()) {
+        await turun(penuh, hasil, dalam + 1);
+        continue;
+      }
+      if (!/\.rtf$/i.test(item.name)) continue;
+      if (/^\[\d+\]\s*-{5,}/.test(item.name)) continue;
+      let info;
+      try {
+        info = await fs.stat(penuh);
+      } catch {
+        continue;
+      }
+      if (info.size > BATAS_BLANGKO_BYTE) continue;
+      const jalur = path.relative(akar, penuh).split(path.sep).join("/");
+      hasil.push({
+        jalur,
+        folder: path.dirname(jalur) === "." ? "" : path.dirname(jalur),
+        berkas: item.name,
+        besarByte: info.size,
+      });
+    }
+  }
+
+  try {
+    const hasil = [];
+    await turun(akar, hasil, 0);
+    hasil.sort((a, b) => a.jalur.localeCompare(b.jalur, "id"));
+    return { ada: true, akar: path.basename(akar), jumlah: hasil.length, berkas: hasil };
+  } catch (error) {
+    return { ada: false, sebab: "Pohon blangko tidak terbaca.", jumlah: 0, berkas: [] };
+  }
+}
+
+/**
+ * Jalur di dalam akar blangko, ditolak bila mencoba keluar darinya.
+ *
+ * Berbeda dari jalurBerkasBlangko yang hanya menerima satu nama berkas di satu
+ * folder; yang ini menerima jalur bertingkat karena pohon blangko memang
+ * bertingkat. Karena menerima lebih banyak, pemeriksaannya harus lebih keras:
+ * jalur dinyatakan sah HANYA bila hasil resolusinya benar-benar berada di
+ * bawah akar - bukan dengan menyaring "..", yang selalu ada cara melewatinya.
+ */
+function jalurPohonAman(jalur) {
+  const bersih = String(jalur || "").trim();
+  if (!bersih || bersih.includes("\0")) return null;
+  const akar = path.resolve(AKAR_BLANGKO);
+  const penuh = path.resolve(akar, bersih);
+  if (penuh !== akar && !penuh.startsWith(akar + path.sep)) return null;
+  return penuh;
+}
+
+/**
+ * Alinea sebuah blangko, sekelompok berkas sekali panggil.
+ *
+ * ============================================================================
+ * YANG DIKEMBALIKAN ALINEA, BUKAN RTF MENTAH
+ * ============================================================================
+ *
+ * RTF mentah 812 blangko berjumlah sekitar 120 MB dan menuntut ALETA memiliki
+ * penguraian RTF-nya sendiri. Penguraian itu pekerjaan mekanis, bukan
+ * pembelajaran - yang dipelajari ALETA adalah susunan dokumennya, blok
+ * kalimatnya, dan aturan pemilihannya. Jadi penguraian tetap di sini, dan yang
+ * menyeberang hanyalah alinea yang sudah bersih.
+ *
+ * Dibatasi 40 berkas sekali panggil supaya satu permintaan tidak pernah
+ * menahan jembatan terlalu lama.
+ */
+async function getAlineaBlangko(params = {}) {
+  const daftar = (Array.isArray(params.jalur) ? params.jalur : []).map(safeString).filter(Boolean).slice(0, 40);
+  if (daftar.length === 0) return { ada: false, sebab: "Tidak ada jalur yang diminta.", berkas: [] };
+
+  const berkas = [];
+  for (const jalur of daftar) {
+    const penuh = jalurPohonAman(jalur);
+    if (!penuh) {
+      berkas.push({ jalur, ada: false, sebab: "Jalur tidak sah.", alinea: [], penanda: [] });
+      continue;
+    }
+    try {
+      const info = await fs.stat(penuh);
+      if (info.size > BATAS_BLANGKO_BYTE) {
+        berkas.push({ jalur, ada: false, sebab: "Blangko terlalu besar.", alinea: [], penanda: [] });
+        continue;
+      }
+      const rtf = await fs.readFile(penuh, "latin1");
+      const penanda = [...new Set([...rtf.matchAll(/#(\d{3,5})#/g)].map((c) => c[1]))].sort();
+      const alinea = rtfKeTeks(rtf)
+        .split("\n")
+        .map((baris) => baris.trim().replace(/\s+/g, " "))
+        .filter(Boolean);
+      berkas.push({ jalur, ada: true, besarByte: info.size, alinea, penanda });
+    } catch (error) {
+      const sebab = error && error.code === "ENOENT" ? "Blangko tidak ditemukan." : "Blangko tidak terbaca.";
+      berkas.push({ jalur, ada: false, sebab, alinea: [], penanda: [] });
+    }
+  }
+
+  return { ada: true, jumlah: berkas.length, berkas };
+}
+
+/**
+ * Menjalankan kueri kamus variabel atas satu perkara.
+ *
+ * ============================================================================
+ * KUERINYA DARI KAMUS ALETA, PERKARANYA TERIKAT SEBAGAI PARAMETER
+ * ============================================================================
+ *
+ * Sesudah Tahap 0, definisi variabel hidup di kamus ALETA sendiri - termasuk
+ * 466 kueri yang aslinya ditulis ABT. Kueri itu harus dijalankan atas SIPP,
+ * dan hanya bot yang menyentuh SIPP.
+ *
+ * Dua penjagaan, dan keduanya wajib:
+ *
+ *   1. #perkara_id# diganti TANDA TANYA, bukan disambung sebagai teks. Perkara
+ *      yang disebut pemanggil tidak pernah menjadi bagian dari kalimat SQL.
+ *   2. assertReadOnlySql() di dalam runReadOnly menolak apa pun selain satu
+ *      SELECT atau SHOW tunggal.
+ *
+ * Penanda bersarang di dalam kueri sudah diselesaikan ALETA sebelum sampai ke
+ * sini, dan nilainya disandikan di sana. Yang tersisa di sini hanya perkaranya.
+ *
+ * ============================================================================
+ * SATU NILAI, BUKAN SATU TABEL
+ * ============================================================================
+ *
+ * Variabel blangko selalu bernilai tunggal. Mengembalikan seluruh baris akan
+ * membuat pemanggilnya memilih sendiri, dan pilihan itu tidak pernah tertulis
+ * di mana pun. Yang dikembalikan baris pertama kolom "data" - persis seperti
+ * yang diandaikan seluruh kueri ABT dengan menuliskan "as data".
+ */
+async function jalankanKueriKamus(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const sql = String(params.sql || "").trim();
+  const perkaraId = safeString(params.perkaraId);
+
+  if (!sql) return { ada: false, sebab: "Kueri kosong.", nilai: "" };
+  if (sql.length > 8000) return { ada: false, sebab: "Kueri terlalu panjang.", nilai: "" };
+
+  // Penanda yang MASIH tersisa berarti ALETA belum selesai menyelesaikannya.
+  // Menjalankannya apa adanya akan mencari teks "#0046#" di dalam basis data
+  // dan mengembalikan kosong - hasil yang tampak sah tetapi tidak berarti.
+  if (/#\d{3,5}#/.test(sql)) {
+    return { ada: false, sebab: "Kueri masih memuat penanda yang belum diselesaikan.", nilai: "" };
+  }
+
+  const jumlahParam = (sql.match(/#perkara_id#/g) || []).length;
+  if (jumlahParam > 0 && !perkaraId) {
+    return { ada: false, sebab: "Kueri menuntut perkara, tetapi perkaranya tidak disebut.", nilai: "" };
+  }
+
+  const sqlTerikat = sql.replace(/#perkara_id#/g, "?");
+  const nilaiParam = new Array(jumlahParam).fill(perkaraId);
+
+  try {
+    const baris = await runReadOnly(connectionKey, sqlTerikat, nilaiParam);
+    const pertama = Array.isArray(baris) ? baris[0] : null;
+    if (!pertama) return { ada: true, kosong: true, nilai: "" };
+    const nilai = pertama.data !== undefined ? pertama.data : Object.values(pertama)[0];
+    return { ada: true, kosong: false, nilai: nilai === null || nilai === undefined ? "" : String(nilai) };
+  } catch (error) {
+    return { ada: false, sebab: externalDbService.sanitizeError(error), nilai: "" };
+  }
+}
+
+/**
+ * Membaca satu kolom SIPP untuk sebuah perkara - variabel berjenis data_sipp.
+ *
+ * Nama tabel dan kolom berasal dari kamus, bukan dari pemanggil, tetapi
+ * keduanya tetap diperiksa di sini: kamus dapat disalin ulang dari sumber yang
+ * berubah, dan nama tabel yang disambung tanpa diperiksa adalah jalan masuk
+ * yang tidak pernah pantas dibiarkan terbuka.
+ */
+async function bacaKolomSipp(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const tabel = safeString(params.tabel);
+  const kolom = safeString(params.kolom);
+  const perkaraId = safeString(params.perkaraId);
+
+  if (!/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(tabel)) return { ada: false, sebab: "Nama tabel tidak sah.", nilai: "" };
+  if (!/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(kolom)) return { ada: false, sebab: "Nama kolom tidak sah.", nilai: "" };
+  if (!perkaraId) return { ada: false, sebab: "Perkara tidak disebut.", nilai: "" };
+
+  try {
+    const cols = await getTableColumns(connectionKey, tabel);
+    if (cols.size === 0) return { ada: false, sebab: `Tabel ${tabel} tidak ada di SIPP.`, nilai: "" };
+    if (!hasColumn(cols, kolom)) return { ada: false, sebab: `Kolom ${kolom} tidak ada pada ${tabel}.`, nilai: "" };
+    if (!hasColumn(cols, "perkara_id")) return { ada: false, sebab: `Tabel ${tabel} tidak berkolom perkara_id.`, nilai: "" };
+
+    const sql = `SELECT x.${quoteIdentifier(kolom)} AS data
+FROM ${quoteIdentifier(tabel)} x
+WHERE CAST(x.${quoteIdentifier("perkara_id")} AS CHAR) = ?
+LIMIT 1`;
+    const baris = await runReadOnly(connectionKey, sql, [perkaraId]);
+    const pertama = Array.isArray(baris) ? baris[0] : null;
+    if (!pertama) return { ada: true, kosong: true, nilai: "" };
+    return { ada: true, kosong: false, nilai: pertama.data === null || pertama.data === undefined ? "" : String(pertama.data) };
+  } catch (error) {
+    return { ada: false, sebab: externalDbService.sanitizeError(error), nilai: "" };
+  }
+}
+
 async function handleBridgeOperation(operation, params = {}) {
   const op = String(operation || "").trim();
   const handlers = {
@@ -2288,6 +2521,10 @@ async function handleBridgeOperation(operation, params = {}) {
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
+    "blangko.pohon": getPohonBlangko,
+    "blangko.alinea": getAlineaBlangko,
+    "kamus.jalankanKueri": jalankanKueriKamus,
+    "kamus.bacaKolom": bacaKolomSipp,
     "legacy.sqlValue": executeLegacySqlValue,
     "user.search": searchUsers,
     "user.byUsername": async (input) => (await searchUsers({ ...input, query: input.username, limit: 1 }))[0] || null,

@@ -69,6 +69,18 @@ export type HasilKeajekan = {
   jumlahBerubah: number;
   jumlahGalat: number;
   temuan: TemuanKeajekan[];
+  /**
+   * Kemandirian ALETA dari ABT, diperiksa pada tiap pemeriksaan berkala.
+   *
+   * Bukan diumumkan sekali lalu dipercaya selamanya: ketergantungan pada ABT
+   * selalu menyelinap kembali diam-diam - satu pemanggilan baru yang tampak
+   * kecil, dan ALETA berhenti mandiri tanpa seorang pun menyadarinya sampai
+   * hari ABT mati.
+   *
+   * Null bila pustaka blangko ALETA belum ada sama sekali - tidak ada yang
+   * dapat diuji, dan itu berbeda dari gagal.
+   */
+  kemandirian: { mandiri: boolean; jumlahDiperiksa: number; jumlahBergantung: number } | null;
 };
 
 /**
@@ -174,7 +186,45 @@ export async function jalankanKeajekan(
     [berubah, galat, JSON.stringify(temuan.slice(0, 200)), new Date().toISOString(), jalanId]
   );
 
-  return { jalanId, jumlahPerkara: daftar.length, jumlahBerubah: berubah, jumlahGalat: galat, temuan };
+  // Kemandirian diuji di sini, bukan pada rutenya sendiri.
+  //
+  // Uji yang harus diingat orang untuk dijalankan adalah uji yang berhenti
+  // dijalankan. Ditempelkan pada pemeriksaan yang MEMANG berkala, ia berjalan
+  // selama pemeriksaan itu berjalan - dan berhenti bersamanya, yang juga
+  // terlihat.
+  //
+  // Kegagalannya TIDAK menggagalkan pemeriksaan keajekan: keduanya menjawab
+  // pertanyaan yang berbeda, dan perkara yang berubah diam-diam tetap harus
+  // dilaporkan walau pustaka blangko sedang bermasalah.
+  let kemandirian: HasilKeajekan["kemandirian"] = null;
+  try {
+    const adaBlangko = await db.queryOne<Record<string, unknown>>(
+      `SELECT COUNT(*) AS jumlah FROM aleta_blangko`
+    );
+    if ((Number(adaBlangko?.jumlah ?? 0) || 0) > 0) {
+      const { ujiKemandirian } = await import("@/server/modules/aleta-ecourt/blangko-aleta");
+      const hasil = await ujiKemandirian(db, {
+        perkaraId: daftar[0] ?? "",
+        oleh: bersih(masukan.oleh) || "pemeriksaan berkala",
+      });
+      kemandirian = {
+        mandiri: hasil.mandiri,
+        jumlahDiperiksa: hasil.jumlahDiperiksa,
+        jumlahBergantung: hasil.temuan.length,
+      };
+    }
+  } catch {
+    kemandirian = null;
+  }
+
+  return {
+    jalanId,
+    jumlahPerkara: daftar.length,
+    jumlahBerubah: berubah,
+    jumlahGalat: galat,
+    temuan,
+    kemandirian,
+  };
 }
 
 export type JalanKeajekan = {

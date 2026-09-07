@@ -650,6 +650,172 @@ const schemaStatements = [
     oleh TEXT NOT NULL DEFAULT '',
     dijalankan_at TEXT NOT NULL
   )`,
+  // Korpus blangko (Tahap 1). 807 berkas ABT memuat 32.550 alinea terpakai
+  // tetapi hanya 8.448 kalimat yang berbeda - pustaka itu satu kerangka dikali
+  // matriks keadaan. Yang disimpan blok kalimatnya, susunannya, dan dimensinya;
+  // bukan salinan berkasnya.
+  `CREATE TABLE IF NOT EXISTS aleta_blok_kalimat (
+    sidik TEXT PRIMARY KEY,
+    teks TEXT NOT NULL,
+    bentuk TEXT NOT NULL DEFAULT '',
+    sidik_bentuk TEXT NOT NULL DEFAULT '',
+    penanda TEXT NOT NULL DEFAULT '',
+    panjang INTEGER NOT NULL DEFAULT 0,
+    jumlah_pakai INTEGER NOT NULL DEFAULT 0,
+    korpus_id TEXT,
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_blangko_sumber (
+    id TEXT PRIMARY KEY,
+    jalur TEXT NOT NULL,
+    folder TEXT NOT NULL DEFAULT '',
+    berkas TEXT NOT NULL DEFAULT '',
+    jenis TEXT NOT NULL DEFAULT '',
+    dimensi TEXT NOT NULL DEFAULT '{}',
+    kunci_dimensi TEXT NOT NULL DEFAULT '',
+    dimensi_terbaca INTEGER NOT NULL DEFAULT 0,
+    urutan TEXT NOT NULL DEFAULT '',
+    jumlah_alinea INTEGER NOT NULL DEFAULT 0,
+    jumlah_dibuang INTEGER NOT NULL DEFAULT 0,
+    penanda TEXT NOT NULL DEFAULT '',
+    besar_byte INTEGER NOT NULL DEFAULT 0,
+    korpus_id TEXT,
+    dipelajari_at TEXT NOT NULL
+  )`,
+  // Pergeseran: bentuk yang sama dengan lebih dari satu bunyi. TIDAK pernah
+  // digabung mesin - memilih bunyi kalimat hukum pekerjaan hakim.
+  `CREATE TABLE IF NOT EXISTS aleta_blok_geser (
+    id TEXT PRIMARY KEY,
+    sidik_bentuk TEXT NOT NULL,
+    bentuk TEXT NOT NULL DEFAULT '',
+    varian TEXT NOT NULL DEFAULT '[]',
+    jumlah_varian INTEGER NOT NULL DEFAULT 0,
+    keadaan TEXT NOT NULL DEFAULT 'baru',
+    blok_terpilih TEXT NOT NULL DEFAULT '',
+    alasan TEXT NOT NULL DEFAULT '',
+    diputus_oleh TEXT NOT NULL DEFAULT '',
+    diputus_at TEXT,
+    korpus_id TEXT,
+    dibuat_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_korpus_jalan (
+    id TEXT PRIMARY KEY,
+    jumlah_berkas INTEGER NOT NULL DEFAULT 0,
+    jumlah_blok INTEGER NOT NULL DEFAULT 0,
+    jumlah_geser INTEGER NOT NULL DEFAULT 0,
+    jumlah_gagal_susun INTEGER NOT NULL DEFAULT 0,
+    gagal_susun TEXT NOT NULL DEFAULT '[]',
+    keadaan TEXT NOT NULL DEFAULT 'selesai',
+    sebab TEXT NOT NULL DEFAULT '',
+    oleh TEXT NOT NULL DEFAULT '',
+    dijalankan_at TEXT NOT NULL
+  )`,
+  // Isian Kelas B: fakta perkara yang hanya diketahui hakim atau panitera.
+  // Melekat pada PERKARA, bukan pada blangko - mas kawin sebuah perkara tetap
+  // sama baik ia tercetak di BAS maupun di penetapan, dan dua ketikan atas
+  // fakta yang sama pasti berselisih cepat atau lambat.
+  // Pustaka blangko ALETA (Tahap 5). Blangko ALETA BUKAN berkas melainkan
+  // kerangka + bagian + syarat - sehingga kombinasi keadaan yang ABT tidak
+  // punya berkasnya pun terbit dengan benar.
+  `CREATE TABLE IF NOT EXISTS aleta_blangko (
+    id TEXT PRIMARY KEY,
+    kode TEXT NOT NULL,
+    nama TEXT NOT NULL DEFAULT '',
+    jenis TEXT NOT NULL DEFAULT '',
+    keterangan TEXT NOT NULL DEFAULT '',
+    asal_abt TEXT NOT NULL DEFAULT '',
+    keadaan TEXT NOT NULL DEFAULT 'draf',
+    versi INTEGER NOT NULL DEFAULT 1,
+    disusun_oleh TEXT NOT NULL DEFAULT '',
+    disahkan_oleh TEXT NOT NULL DEFAULT '',
+    disahkan_at TEXT,
+    dibuat_at TEXT NOT NULL,
+    diubah_at TEXT NOT NULL
+  )`,
+  // Teks DISALIN ke bagian, tidak hanya ditunjuk lewat sidik: bagian yang
+  // hanya menunjuk akan ikut berubah tiap kali blok kalimatnya disunting,
+  // termasuk blangko yang sudah menerbitkan ratusan dokumen.
+  `CREATE TABLE IF NOT EXISTS aleta_blangko_bagian (
+    id TEXT PRIMARY KEY,
+    blangko_id TEXT NOT NULL,
+    urutan INTEGER NOT NULL DEFAULT 0,
+    blok_sidik TEXT NOT NULL DEFAULT '',
+    teks TEXT NOT NULL DEFAULT '',
+    syarat TEXT NOT NULL DEFAULT '{}',
+    rata TEXT NOT NULL DEFAULT 'justify',
+    tebal INTEGER NOT NULL DEFAULT 0,
+    bernomor INTEGER NOT NULL DEFAULT 0,
+    jorok REAL NOT NULL DEFAULT 0,
+    selalu INTEGER NOT NULL DEFAULT 0,
+    dibuat_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_blangko_terbit (
+    id TEXT PRIMARY KEY,
+    blangko_id TEXT NOT NULL,
+    perkara_id TEXT NOT NULL,
+    keadaan TEXT NOT NULL DEFAULT '{}',
+    jumlah_bagian INTEGER NOT NULL DEFAULT 0,
+    jumlah_penanda INTEGER NOT NULL DEFAULT 0,
+    jumlah_tersisa INTEGER NOT NULL DEFAULT 0,
+    tersisa TEXT NOT NULL DEFAULT '[]',
+    huruf_tak_tercetak INTEGER NOT NULL DEFAULT 0,
+    bentuk TEXT NOT NULL DEFAULT 'docx',
+    oleh TEXT NOT NULL DEFAULT '',
+    pada TEXT NOT NULL
+  )`,
+  // Saklar periksa (Tahap 6). Bawaannya MATI - keputusan yang diambil sadar,
+  // dengan penjagaan pengganti di uji Tahap 1 dan pemeriksaan tingkat dokumen.
+  // Satu saklar per golongan: relaas dan putusan risikonya tidak sama.
+  `CREATE TABLE IF NOT EXISTS aleta_saklar_periksa (
+    id TEXT PRIMARY KEY,
+    golongan TEXT NOT NULL,
+    menyala INTEGER NOT NULL DEFAULT 0,
+    alasan TEXT NOT NULL DEFAULT '',
+    digeser_oleh TEXT NOT NULL DEFAULT '',
+    digeser_at TEXT NOT NULL,
+    dibuat_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_saklar_riwayat (
+    id TEXT PRIMARY KEY,
+    golongan TEXT NOT NULL,
+    dari INTEGER NOT NULL DEFAULT 0,
+    ke INTEGER NOT NULL DEFAULT 0,
+    alasan TEXT NOT NULL DEFAULT '',
+    oleh TEXT NOT NULL DEFAULT '',
+    pada TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
+    id TEXT PRIMARY KEY,
+    dijalankan_at TEXT NOT NULL,
+    dijalankan_oleh TEXT NOT NULL DEFAULT '',
+    mandiri INTEGER NOT NULL DEFAULT 0,
+    jumlah_diperiksa INTEGER NOT NULL DEFAULT 0,
+    jumlah_bergantung INTEGER NOT NULL DEFAULT 0,
+    temuan TEXT NOT NULL DEFAULT '[]',
+    sebab TEXT NOT NULL DEFAULT ''
+  )`,
+  `CREATE TABLE IF NOT EXISTS aleta_isian_perkara (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    no_var TEXT NOT NULL,
+    nilai TEXT NOT NULL DEFAULT '',
+    diisi_oleh TEXT NOT NULL DEFAULT '',
+    diisi_at TEXT NOT NULL,
+    diubah_oleh TEXT NOT NULL DEFAULT '',
+    diubah_at TEXT NOT NULL
+  )`,
+  // Riwayat disimpan terpisah, bukan menimpa: yang menjawab "sejak kapan
+  // maharnya tertulis begini" adalah riwayatnya, bukan nilainya.
+  `CREATE TABLE IF NOT EXISTS aleta_isian_riwayat (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    no_var TEXT NOT NULL,
+    nilai_lama TEXT NOT NULL DEFAULT '',
+    nilai_baru TEXT NOT NULL DEFAULT '',
+    oleh TEXT NOT NULL DEFAULT '',
+    pada TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_ai_pagu (
     id TEXT PRIMARY KEY,
     bulan TEXT NOT NULL,
@@ -2549,6 +2715,25 @@ const indexStatements = [
   `CREATE INDEX IF NOT EXISTS idx_ai_pemakaian_perkara ON aleta_ai_pemakaian(perkara_id)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_tarif_model ON aleta_ai_tarif(model)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_pagu_bulan ON aleta_ai_pagu(bulan)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_blangko_kode ON aleta_blangko(kode)`,
+  `CREATE INDEX IF NOT EXISTS idx_blangko_jenis ON aleta_blangko(jenis)`,
+  `CREATE INDEX IF NOT EXISTS idx_blangko_bagian_induk ON aleta_blangko_bagian(blangko_id, urutan)`,
+  `CREATE INDEX IF NOT EXISTS idx_blangko_terbit_perkara ON aleta_blangko_terbit(perkara_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_blangko_terbit_waktu ON aleta_blangko_terbit(pada)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_saklar_periksa_golongan ON aleta_saklar_periksa(golongan)`,
+  `CREATE INDEX IF NOT EXISTS idx_saklar_riwayat_golongan ON aleta_saklar_riwayat(golongan, pada)`,
+  `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_isian_perkara_kunci ON aleta_isian_perkara(perkara_id, no_var)`,
+  `CREATE INDEX IF NOT EXISTS idx_isian_perkara_perkara ON aleta_isian_perkara(perkara_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_isian_riwayat_kunci ON aleta_isian_riwayat(perkara_id, no_var)`,
+  `CREATE INDEX IF NOT EXISTS idx_blok_kalimat_bentuk ON aleta_blok_kalimat(sidik_bentuk)`,
+  `CREATE INDEX IF NOT EXISTS idx_blok_kalimat_pakai ON aleta_blok_kalimat(jumlah_pakai)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_blangko_sumber_jalur ON aleta_blangko_sumber(jalur)`,
+  `CREATE INDEX IF NOT EXISTS idx_blangko_sumber_jenis ON aleta_blangko_sumber(jenis)`,
+  `CREATE INDEX IF NOT EXISTS idx_blangko_sumber_kunci ON aleta_blangko_sumber(kunci_dimensi)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_blok_geser_bentuk ON aleta_blok_geser(sidik_bentuk)`,
+  `CREATE INDEX IF NOT EXISTS idx_blok_geser_keadaan ON aleta_blok_geser(keadaan)`,
+  `CREATE INDEX IF NOT EXISTS idx_korpus_jalan_waktu ON aleta_korpus_jalan(dijalankan_at)`,
   `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_kelas ON aleta_kamus_variabel(kelas)`,
   `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_jenis ON aleta_kamus_variabel(jenis)`,
   `CREATE INDEX IF NOT EXISTS idx_kamus_variabel_salin ON aleta_kamus_variabel(salin_id)`,
