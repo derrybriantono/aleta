@@ -122,7 +122,15 @@ describe("pagar ALETA e-Audit", () => {
       "src/app/(portal)/aleta-e-audit/page.tsx",
       "src/components/portal/aleta-e-audit.tsx",
     ];
-    const terlarang = [/\bmysql2?\b/, /createConnection\s*\(/, /\bSELECT\s+/i, /db_config/];
+    // Pola SELECT harus menuntut FROM di dekatnya. Tanpa itu ia juga mengenai
+    // elemen borang <select>, dan penjaga yang menuduh hal yang benar akan
+    // dimatikan orang - lalu berhenti menjaga hal yang sungguhan.
+    const terlarang = [
+      /\bmysql2?\b/,
+      /createConnection\s*\(/,
+      /\bSELECT\b[\s\S]{0,200}?\bFROM\b/i,
+      /db_config/,
+    ];
     const pelanggar: string[] = [];
 
     for (const b of berkas) {

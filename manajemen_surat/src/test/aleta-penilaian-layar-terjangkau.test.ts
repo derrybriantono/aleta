@@ -183,7 +183,35 @@ describe("layar penilaian berjenjang benar-benar terjangkau", () => {
     expect(komponen).not.toContain("dicatatOleh:");
   });
 
-  it("layar menahan nilai yang belum pantas ditampilkan", () => {
+  it("aturan penahanan nilai hanya ada di SATU tempat", () => {
+    // Sejak e-Audit ikut menggambar hasil penilaian, penggambarannya dipisah
+    // menjadi satu komponen bersama. Bila tiap layar menggambar sendiri,
+    // jadilah dua salinan aturan penahanan - dan pada suatu hari satu layar
+    // menahan nilai yang ditampilkan layar lain, untuk angka yang persis sama.
+    const bersama = baca("src/components/portal/penilaian-hasil.tsx");
+    const layarLama = baca(KOMPONEN);
+    const eAudit = baca("src/components/portal/aleta-e-audit.tsx");
+
+    expect(bersama).toContain("export function HasilPenilaianTampil");
+    expect(layarLama).toContain('from "@/components/portal/penilaian-hasil"');
+
+    // Tidak ada layar yang boleh punya penggambarnya sendiri.
+    [
+      ["layar lama", layarLama],
+      ["e-Audit", eAudit],
+    ].forEach(([nama, isi]) => {
+      expect(
+        (isi as string).includes("function HasilPenilaianTampil("),
+        `${nama} menggambar hasil sendiri - itu salinan kedua`
+      ).toBe(false);
+      expect(
+        (isi as string).includes("function SatuanKartu("),
+        `${nama} punya kartu satuan sendiri`
+      ).toBe(false);
+    });
+  });
+
+  it("komponen bersama membaca kelima penahan", () => {
     // Keempat penahan datang dari mesinnya. Layar yang tidak membacanya akan
     // menampilkan seratus persen dari tiga baris seolah itu prestasi.
     const wajib = [
@@ -195,7 +223,8 @@ describe("layar penilaian berjenjang benar-benar terjangkau", () => {
       // pemanggilan menghitung hari kerja di atasnya.
       "hariLibur",
     ];
-    const hilang = wajib.filter((k) => !komponen.includes(k));
+    const bersama = baca("src/components/portal/penilaian-hasil.tsx");
+    const hilang = wajib.filter((k) => !bersama.includes(k));
     expect(
       hilang,
       `Layar tidak membaca penahan ini: ${hilang.join(", ")}`

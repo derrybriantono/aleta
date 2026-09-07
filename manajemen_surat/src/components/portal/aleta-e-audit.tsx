@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  HasilPenilaianTampil,
+  type HasilPenilaian,
+} from "@/components/portal/penilaian-hasil";
 import { apiPath } from "@/lib/base-path";
 
 /**
@@ -442,6 +446,92 @@ function BarisButir({
   );
 }
 
+/** Ketujuh jendela periode, sama dengan yang dikenal mesin. */
+const PERIODE = [
+  ["harian", "Harian"],
+  ["mingguan", "Mingguan"],
+  ["bulanan", "Bulanan"],
+  ["triwulan", "Triwulan"],
+  ["semester", "Semester"],
+  ["tahunan", "Tahunan"],
+  ["keseluruhan", "Keseluruhan"],
+] as const;
+
+/**
+ * Menjalankan penilaian sebuah butir.
+ *
+ * ============================================================================
+ * MEMANGGIL RUTE YANG SAMA, BUKAN RUTE KEDUA
+ * ============================================================================
+ *
+ * e-Audit tidak punya mesin penilaiannya sendiri. Ia memanggil rute yang sudah
+ * dipakai layar Penilaian Berjenjang, dan menggambar hasilnya dengan komponen
+ * yang sama pula.
+ *
+ * Membuat rute kedua yang "khusus e-Audit" akan menghasilkan dua jalur hitung
+ * untuk angka yang sama. Keduanya akan bekerja, dan pada suatu hari keduanya
+ * akan menjawab berbeda - tanpa ada yang tahu mana yang benar.
+ */
+function JalankanButir({ kunci }: { kunci: string }) {
+  const [periode, setPeriode] = useState("bulanan");
+  const [hasil, setHasil] = useState<HasilPenilaian | null>(null);
+  const [sedang, setSedang] = useState(false);
+  const [buktiTerbuka, setBuktiTerbuka] = useState("");
+
+  const jalankan = useCallback(async () => {
+    setSedang(true);
+    setBuktiTerbuka("");
+    try {
+      const kueri = new URLSearchParams({ kunci, periode, bukti: "25" });
+      setHasil(await ambilJson<HasilPenilaian>(`/api/aleta-penilaian/jalankan?${kueri.toString()}`));
+    } catch (e) {
+      setHasil({ ok: false, alasan: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSedang(false);
+    }
+  }, [kunci, periode]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={`periode-${kunci}`}>
+            Jendela periode
+          </label>
+          <select
+            id={`periode-${kunci}`}
+            className="h-9 rounded-lg border border-input/90 bg-card/70 px-3 text-sm dark:bg-background/40"
+            value={periode}
+            onChange={(e) => setPeriode(e.target.value)}
+          >
+            {PERIODE.map(([nilai, label]) => (
+              <option key={nilai} value={nilai}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <Button onClick={() => void jalankan()} disabled={sedang}>
+          {sedang ? "Menghitung..." : "Hitung"}
+        </Button>
+      </div>
+
+      {hasil ? (
+        <HasilPenilaianTampil
+          hasil={hasil}
+          buktiTerbuka={buktiTerbuka}
+          setBuktiTerbuka={setBuktiTerbuka}
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Belum dihitung. Tidak ada yang dijalankan sebelum tombolnya ditekan - sebagian penilaian
+          membaca seluruh register.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function PanelButir({ rinci }: { rinci: Rinci }) {
   if (rinci.ok === false) {
     return (
@@ -499,6 +589,13 @@ function PanelButir({ rinci }: { rinci: Rinci }) {
           />
           <Ruas label="Sumber angka" isi={b.artiMutuRuas || b.mutuRuas} />
         </dl>
+
+        {rinci.kunci ? (
+          <div className="rounded-lg border border-border/80 p-3">
+            <p className="mb-2 text-sm font-semibold">Jalankan penilaian ini</p>
+            <JalankanButir kunci={rinci.kunci} />
+          </div>
+        ) : null}
 
         {rinci.definisi ? (
           <div className="rounded-lg border border-border/80 bg-muted/30 p-3">
