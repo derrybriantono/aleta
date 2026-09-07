@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.87.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.87.0 - Penilaian Berjenjang dan Hari Libur Resmi";
+export const APP_VERSION = "1.88.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.88.0 - e-Audit, Blangko Mandiri, dan Jadwal Sidang";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,63 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.88.0",
+    title: "ALETA Judicia v1.88.0 - e-Audit, Blangko Mandiri, dan Jadwal Sidang",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Tiga pekerjaan besar yang dikerjakan berdampingan. e-Audit berdiri sebagai aplikasi tersendiri dengan katalog 185 butir penilaian dan tiga bentuk penilaian yang berbeda. Blangko ALETA menjadi mandiri - 807 blangko diurai menjadi kerangka dan blok kalimat yang dapat disusun ulang kata demi kata, tanpa lagi menyentuh berkas ABT. Layar jadwal sidang menampilkan relaas yang datanya sudah ada sejak lama tetapi tidak pernah terlihat, dan dua cacat data SIPP yang menyembunyikan nama petugas diperbaiki.",
+    added: [
+      "Aplikasi e-Audit: katalog 185 butir penilaian, beserta hitungan sisa pekerjaan yang diturunkan dari selisih katalog dan penilaian yang benar-benar tersambung - bukan dari penanda yang ditulis tangan.",
+      "Tiga bentuk penilaian di e-Audit. Pertama lulus-gagal (24 butir), kedua sebaran yang sengaja TIDAK punya jalan menuju nilai nol sampai seratus (4 butir), ketiga rapor per orang yang menolak memberi satu angka gabungan (4 butir).",
+      "Sepuluh bentuk sajian e-Audit - angka pokok, tabel, kesimpulan, batang, garis, area, sebar, pai, peta kendali, dan bentuk resmi - ditulis sekali dan dipakai seluruh butir. Sumbu nilai selalu bermula dari nol, dan data terlalu sedikit ditolak digambar sebagai kecenderungan.",
+      "Dua puluh alat penilaian yang menempel pada tiap layar penilaian, dengan keadaan dihitung dari berkas yang benar-benar ada di sisi mesin dan sisi layar.",
+      "Blangko mandiri ALETA: 807 blangko diurai menjadi 8.448 blok kalimat unik - pemadatan 3,85 kali - dan seluruh 807 dapat disusun ulang kata demi kata dari bloknya.",
+      "Kamus variabel ALETA beserta penggolongan Kelas A, B, dan C: yang dapat diisi mesin, yang menuntut jawaban orang, dan yang belum punya sumber sama sekali.",
+      "Penyelesai variabel dengan urutan topologis, sehingga variabel yang bergantung pada variabel lain diselesaikan sesudah yang dirujuknya. Termasuk penanggalan Hijriah, yang dicocokkan terhadap penetapan sungguhan 206/Pdt.P/2026/PA.Dgl.",
+      "Cetak DOCX dan PDF dari blangko ALETA sendiri, tanpa pustaka luar - DOCX disusun langsung sebagai OOXML di atas zlib.",
+      "Layar Blangko Mandiri untuk admin: Kamus, Korpus, Pustaka, dan Pembersihan; serta layar isian Kelas B untuk melengkapi data yang tidak dapat diambil dari SIPP.",
+      "Tombol ambil antrian sidang di samping tiap perkara pada jadwal sidang, untuk penggugat, tergugat, kuasa, dan saksi - tercatat atas nama petugas yang menekannya, bukan atas nama mesin antrian.",
+      "Keterangan relaas lengkap pada jadwal sidang: jenis relaas, tanggal kirim ke pos, nomor resi surat tercatat, dan status lacak kirimannya.",
+      "Saringan perkara e-Litigasi pada jadwal sidang, dikenali dari agenda pertukaran berkas - jawaban, replik, duplik, duplik rekonvensi, dan kesimpulan.",
+      "Menu tambahan pada jadwal sidang yang mengarah ke tampilan pihak dan tampilan operator ALETA e-Court.",
+    ],
+    changed: [
+      "Blangko ALETA tidak lagi bergantung pada berkas ABT. ABT dipelajari sekali saat membangun korpus, lalu ditinggalkan - karena ABT tidak memuat seluruh blangko yang dipakai pengadilan.",
+      "Jenis putusan menggantikan kolom upaya hukum pada jadwal sidang, disertai nama konseptor bila naskahnya sudah diunggah, dan keterangan tersendiri untuk perkara verzet.",
+      "Susunan tampilan rinci jadwal sidang mengikuti alur membacanya: majelis dan identitas pihak, lalu relaas terbaru, lalu riwayat relaas, baru selebihnya. Seluruh bagiannya dapat diciutkan.",
+      "Relaas yang ditampilkan tidak lagi dipotong. Seluruh baris dikembalikan, dipisah menjadi relaas sidang berjalan dan riwayatnya.",
+      "Keterangan pada cetak jadwal sidang dipersempit menjadi yang bertanda merah saja - retur, tidak dipanggil, dan sejenisnya.",
+      "Tombol yang semula berlabel Antrian diganti menjadi Daftarkan ke antrian. Kerjanya memang mendaftarkan perkara ke aplikasi antrian; hanya namanya yang tidak menerangkan apa pun.",
+      "Hari libur nasional 2024 dan 2025 kini disahkan terhadap SKB masing-masing tahun, menyusul 2026 yang sudah disahkan pada v1.87.0.",
+    ],
+    fixed: [
+      "Nama juru sita dan panitera pengganti tampak berlipat pada jadwal sidang. SIPP menyimpan dua baris aktif dengan ejaan gelar berbeda - Mohammad Syukri dan Mohammad Syukri, S.H. terbaca sebagai dua orang. Kini disatukan, dan ejaan terlengkap yang dipakai.",
+      "Kolom Majelis berbunyi tanda hubung pada SELURUH perkara ikrar talak. Baris hakim yang aktif justru berkode NULL sedangkan kodenya tersimpan pada baris yang sudah tidak aktif; kueri yang menyaring aktif saja karena itu selalu memungut baris tanpa kode.",
+      "Tujuh salah pasang variabel pada penyusun berita acara. Yang terbesar #0046# - terpakai 12.935 kali - diisi NAMA pihak padahal maksudnya SEBUTAN pihak; naskah acuan membuktikannya: blangko berbunyi sebagai #0046# dan keluarannya sebagai Pemohon I. Mesin JLF sejak awal benar, jalur berita acara yang keliru, dan keduanya tidak pernah dibandingkan.",
+      "Judul BERITA ACARA SIDANG terbuang dari korpus karena penyaring panjang 25 aksara. Penyaringan berdasar panjang diganti pengenalan pola sampah.",
+      "Pemenggal awalan angka pada penamaan blangko ikut memakan huruf B pada BAS, dan akhiran .PA.Mj yang menempel pada huruf pihak mengubah tunda-panggil-pihak2 menjadi tunda-tanggal.",
+      "Tanggal tidak lagi ikut ditampilkan pada penanda putus hijau di tampilan lengkap; status putusannya saja yang ditampilkan. Pada tampilan ringkas, status putus kini muncul di bawah agenda.",
+      "Penanda pemakaian kuasa hukum kini tampil pada semua tampilan jadwal sidang.",
+      "Penetapan yang bertanggal SEBELUM perkara didaftarkan terhitung memenuhi pada penilaian tenggang. Rentang tanggal terbalik memulangkan nol, bukan angka negatif, sehingga selalu lolos ambang.",
+      "Ruas SIPP berisi spasi, tanda hubung, titik, atau angka nol tunggal kini terhitung KOSONG pada penilaian kelengkapan data. Ada 6.210 entri alasan penundaan yang isinya hanya angka nol.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Aplikasi e-Audit belum dibuka untuk peran mana pun selain super admin, dan ujinya mengunci keadaan itu - membukanya kelak harus menjadi keputusan sadar, bukan efek samping.",
+      "Korpus blangko BELUM dipelajari di server. Layar Blangko Mandiri akan menampilkan kamus dan pustaka yang kosong sampai pembelajaran korpus dijalankan di sana.",
+      "Folder APS Badilag tetap hanya dibaca. ALETA tidak pernah menulis apa pun ke dalamnya.",
+      "Pemeriksaan hasil alih rupa mati secara bawaan, sesuai keputusan - dengan sakelar untuk menyalakannya bila hakim hendak memeriksa berita acara sebelum dipakai.",
+    ],
+    knownLimitations: [
+      "Tujuh blangko relaas belum diturunkan dari korpus. Cetak relaas mandiri karena itu belum dapat dipakai.",
+      "Panggilan elektronik tidak dapat dikenali sebagai jenis relaas. Tidak ada kolom yang menyimpannya pada perkara_pelaksanaan_relaas, dan menebaknya berarti menuliskan cara pemanggilan yang mungkin tidak pernah terjadi pada berkas yang menentukan sah tidaknya panggilan.",
+      "Aturan pemeriksaan Kelompok G dan tarif per model AI belum diisi.",
+      "Dari 185 butir katalog e-Audit, 8 tersambung penuh dan 21 sebagian. Sisanya belum, dan tiap butir menyebut sendiri apa yang menghalanginya.",
+      "Tidak satu pun penilaian e-Audit boleh dipakai membina sebelum angkanya disandingkan dengan angka dari luar ALETA.",
+    ],
+  },
   {
     version: "1.87.0",
     title: "ALETA Judicia v1.87.0 - Penilaian Berjenjang dan Hari Libur Resmi",
