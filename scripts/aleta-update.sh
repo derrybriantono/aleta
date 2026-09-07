@@ -144,8 +144,35 @@ if ! (
   # saja membuat perbaikan sisi bot tidak pernah sampai ke server. Sesi WhatsApp
   # tetap aman karena tersimpan di volume wwebjs_auth.
   ALETA_UPDATE_SERVICES="${ALETA_UPDATE_SERVICES:-portal aleta_bot}"
+
+  # -------------------------------------------------------------------------
+  # PENANDA COMMIT HARUS SAMPAI KE DALAM IMAGE
+  # -------------------------------------------------------------------------
+  #
+  # Dockerfile portal menerima ARG ALETA_BUILD_REF dan menuliskannya ke
+  # /app/BUILD-STAMP.txt. Skrip penaikan lalu membaca cap itu untuk MEMBUKTIKAN
+  # bahwa yang berjalan di server benar-benar rujukan yang dikirim.
+  #
+  # Sebelum ini peubahnya diterima di sini lalu berhenti - tidak pernah
+  # diteruskan sebagai --build-arg. Akibatnya cap build selalu berisi tanggal
+  # saja, pembuktiannya selalu gagal, dan penaikan berhenti pada langkah
+  # terakhir walau kodenya sudah naik dengan benar. Bersama kekeliruan pipefail
+  # pada pemeriksaan bungkusan, itulah sebabnya penaikan lewat skrip ini tidak
+  # pernah tuntas sekali pun.
+  #
+  # Larik dipakai supaya nilai bercelah tidak terpecah. Bentuk
+  # ${ARR[@]+"${ARR[@]}"} dipakai karena bash 4.2 di server memperlakukan
+  # larik kosong sebagai peubah tak terikat di bawah `set -u`.
+  BUILD_ARGS=()
+  if [ -n "${ALETA_BUILD_REF:-}" ]; then
+    BUILD_ARGS+=(--build-arg "ALETA_BUILD_REF=$ALETA_BUILD_REF")
+    echo "  penanda build: $ALETA_BUILD_REF"
+  else
+    echo "  penanda build tidak diberikan - cap build hanya akan memuat tanggal"
+  fi
+
   # shellcheck disable=SC2086
-  compose build $ALETA_UPDATE_SERVICES
+  compose build ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} $ALETA_UPDATE_SERVICES
   # shellcheck disable=SC2086
   compose up -d $ALETA_UPDATE_SERVICES
 ); then
