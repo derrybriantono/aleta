@@ -748,10 +748,27 @@ const SAMBUNGAN = {
       "Butir ini menuntut JARAK WAKTU antara sidang dan selesainya berita acara. Yang sudah dibangun baru memeriksa keberadaannya, belum ketepatan waktunya.",
   },
   IN07: {
-    kunci: "kelengkapanAmarPutusan",
+    kunci: "kelengkapanRuasWajibPerkara",
     sifat: "sebagian",
     catatan:
-      "Butir ini mencakup SELURUH ruas wajib perkara. Yang sudah dibangun baru dua di antaranya - amar putusan dan pertimbangan hukum.",
+      "Butir ini mencakup SELURUH ruas wajib perkara. Yang diperiksa baru dua - amar dan petitum - dan daftar ruas wajib yang sebenarnya belum ditetapkan siapa pun.",
+  },
+  IN08: {
+    kunci: "kelengkapanDokumenElektronik",
+    sifat: "sebagian",
+    catatan:
+      "Yang diperiksa baru keberadaan berkas amar putusan dan anonimisasinya. Butir ini juga menuntut dokumen lain - salinan putusan, penetapan - yang belum diperiksa.",
+  },
+  IN09: {
+    kunci: "kewajaranUrutanTanggalPutusan",
+    sifat: "penuh",
+    catatan: "",
+  },
+  IN13: {
+    kunci: "perkaraTanpaDataSaksi",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini seharusnya hanya berlaku bagi perkara yang memang melalui pembuktian dengan saksi. Yang dinilai sekarang seluruh perkara, sehingga perkara yang putus verstek atau dicabut ikut terhitung tanpa saksi.",
   },
   KU01: {
     kunci: "panjarTercatatSetiapPerkara",
@@ -775,6 +792,8 @@ const SAMBUNGAN = {
  * pada suatu hari tidak ada yang tahu mengapa ia ada.
  */
 const DI_LUAR_KATALOG = {
+  kelengkapanAmarPutusan:
+    "Memeriksa keterisian ruas amar putusan saja. Semula disambungkan ke IN07, lalu digantikan kelengkapanRuasWajibPerkara yang memeriksa amar bersama petitum sekaligus. Yang lama tetap berjalan karena butir per-ruas berguna saat menelusuri ruas mana yang kosong.",
   asasPenyelesaianLimaBulan:
     "Asas penyelesaian lima bulan menurut SEMA 2 Tahun 2014. Katalog memuat MP15 - indeks risiko melampaui lima bulan - tetapi itu DUGAAN ke depan, bukan pengukuran ketaatan yang sudah terjadi. Keduanya berbeda dan keduanya berguna.",
   kelengkapanPertimbanganHukum:

@@ -61,6 +61,7 @@ const kerangkaPenilaianService = require("../services/kerangkaPenilaianService")
 const katalogEAuditService = require("../services/katalogEAuditService");
 const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
+const penilaianIntegritasService = require("../services/penilaianIntegritasService");
 const periodePenilaianService = require("../services/periodePenilaianService");
 const penyandinganService = require("../services/penyandinganService");
 const laporanPerkaraService = require("../services/laporanPerkaraService");
@@ -1472,6 +1473,7 @@ router.get("/penilaian/daftar", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianIntegritasService.daftarkanSemua();
     const daftar = kerangkaPenilaianService.daftar();
     res.json({
       ok: true,
@@ -1504,6 +1506,7 @@ router.get("/penilaian/jalankan", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianIntegritasService.daftarkanSemua();
 
     const kunci = String(req.query.kunci || "").trim();
     const jenisPeriode = String(req.query.periode || "bulanan").trim();
@@ -1559,6 +1562,7 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianIntegritasService.daftarkanSemua();
 
     const terdaftar = kerangkaPenilaianService.daftar().map((d) => d.kunci);
     const keadaan = katalogEAuditService.keadaan(terdaftar);
@@ -1639,6 +1643,7 @@ router.get("/e-audit/butir", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianIntegritasService.daftarkanSemua();
 
     const daftar = kerangkaPenilaianService.daftar();
     const keadaan = katalogEAuditService.keadaan(daftar.map((d) => d.kunci));

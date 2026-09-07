@@ -123,6 +123,7 @@ require("../services/penilaianKetaatanService").daftarkanSemua();
 require("../services/penilaianMutuDataService").daftarkanSemua();
 require("../services/penilaianKeuanganService").daftarkanSemua();
 require("../services/penilaianTahapanService").daftarkanSemua();
+require("../services/penilaianIntegritasService").daftarkanSemua();
 
 const terdaftar = kerangka.daftar().map((d) => d.kunci);
 const keadaan = K.keadaan(terdaftar);
