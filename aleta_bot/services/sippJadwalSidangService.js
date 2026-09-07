@@ -175,7 +175,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     }
   };
 
-  const [petaPihak, petaPetugas, petaPutusan, petaPanggilan, petaBerikut] = await Promise.all([
+  const [petaPihak, petaPetugas, petaPutusan, petaPanggilan, petaBerikut, petaKuasa] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
     aman(() => putusanBanyakPerkara(idPerkara)),
@@ -189,6 +189,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
         rows.map((row) => ({ sidangId: row.sidangId, perkaraId: row.perkaraId }))
       )
     ),
+    aman(() => kuasaBanyakPerkara(idPerkara)),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -248,6 +249,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       majelisNama: (petaPetugas[String(row.perkaraId)] || {}).majelisNama || "",
       paniteraNama: (petaPetugas[String(row.perkaraId)] || {}).paniteraNama || "",
       jurusitaNama: (petaPetugas[String(row.perkaraId)] || {}).jurusitaNama || "",
+      // Ada tidaknya kuasa hukum pada tiap sisi. Mengubah SIAPA yang dipanggil
+      // dan siapa yang hadir - dan yang membacakan jadwal perlu tahu sebelum
+      // memanggil, bukan sesudah membuka rinciannya satu per satu.
+      adaKuasa: Boolean((petaKuasa[String(row.perkaraId)] || {}).adaKuasa),
+      kuasaPihak1: Boolean((petaKuasa[String(row.perkaraId)] || {}).kuasaPihak1),
+      kuasaPihak2: Boolean((petaKuasa[String(row.perkaraId)] || {}).kuasaPihak2),
       sudahPutus: Boolean((petaPutusan[String(row.perkaraId)] || {}).tanggalPutusan),
       tanggalPutusan: (petaPutusan[String(row.perkaraId)] || {}).tanggalPutusan || "",
       statusPutusan: (petaPutusan[String(row.perkaraId)] || {}).statusPutusan || "",
@@ -624,6 +631,47 @@ async function petugasBanyakPerkara(daftarPerkaraId = []) {
     ambil(kunci).jurusitaNama = cleanText(satukanPetugas(baris).nama);
   }
 
+  return hasil;
+}
+
+/**
+ * Ada tidaknya kuasa hukum pada tiap sisi, untuk sekumpulan perkara sekaligus.
+ *
+ * ============================================================================
+ * DIBACA DI DAFTAR, BUKAN HANYA SAAT DIBUKA
+ * ============================================================================
+ *
+ * Ada tidaknya kuasa mengubah SIAPA yang dipanggil dan siapa yang hadir di
+ * ruang sidang. Selama ini keterangan itu baru terlihat sesudah satu sidang
+ * dibuka satu per satu - padahal yang membacakan jadwal perlu tahu sebelum
+ * memanggil, bukan sesudah.
+ *
+ * Tabel dan kolomnya sama persis dengan yang dipakai sippIdentitasPerkaraService
+ * saat membuka satu perkara: perkara_pengacara(perkara_id, nama, pihak_ke,
+ * urutan). Menyalin bentuk yang sudah berjalan, bukan menebak yang baru.
+ */
+async function kuasaBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+
+  const baris = await runQuery(
+    `SELECT a.perkara_id AS perkaraId, a.pihak_ke AS pihakKe
+       FROM perkara_pengacara a
+      WHERE a.perkara_id IN (${isian})`,
+    dipakai
+  );
+
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const kunci = String(b.perkaraId);
+    if (!hasil[kunci]) hasil[kunci] = { adaKuasa: false, kuasaPihak1: false, kuasaPihak2: false };
+    hasil[kunci].adaKuasa = true;
+    if (Number(b.pihakKe) === 1) hasil[kunci].kuasaPihak1 = true;
+    if (Number(b.pihakKe) === 2) hasil[kunci].kuasaPihak2 = true;
+  }
   return hasil;
 }
 
@@ -1551,15 +1599,25 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     }
   };
 
-  const [majelis, petugas, saksi, relaas, dokumen, jadwal, lewatEcourt, putusan, petitum] =
+  const [majelis, petugas, saksi, relaas, dokumen, jadwal, lewatEcourt, putusan, petitum, konseptor] =
     await Promise.all([
     aman(() => majelisPerkara(perkara.perkaraId), []),
     aman(() => petugasPerkara(perkara.perkaraId), { panitera: [], jurusita: [] }),
     aman(() => saksiPerkara(perkara.perkaraId), { ada: false, jumlahSaksi: 0, jumlahKeterangan: 0 }),
-    // Dipanggil SELALU. Tanpa nomor sidang ia membaca seluruh relaas perkara -
-    // itulah yang diperlukan layar status perkara, dan sebelumnya di sini
-    // dijawab daftar kosong.
-    aman(() => relaasSidang(perkara.perkaraId, sidangId), []),
+    // ====================================================================
+    // SELURUH RELAAS PERKARA, BUKAN HANYA SIDANG INI
+    // ====================================================================
+    //
+    // Sebelumnya disaring pada sidang yang sedang dibuka. Akibatnya riwayat
+    // panggilan sebelumnya tidak pernah terlihat - padahal itulah yang
+    // ditanya majelis saat menilai patut tidaknya panggilan: sudah berapa
+    // kali dipanggil, dengan cara apa, dan apa hasilnya tiap kali.
+    //
+    // Tiap baris sudah membawa sidangId dan tanggalSidang-nya sendiri,
+    // sehingga yang memisahkan "panggilan sidang ini" dari "riwayat
+    // sebelumnya" adalah layarnya - dan pemisahan itu tidak dapat
+    // dikembalikan lagi kalau datanya sudah disaring di sini.
+    aman(() => relaasSidang(perkara.perkaraId, 0), []),
     aman(() => dokumenSipp(perkara.perkaraId), []),
     aman(() => jadwalPerkara(nomorPerkara), []),
     // Gagal-TERTUTUP: bila tidak dapat dipastikan, perkaranya dianggap BUKAN
@@ -1571,6 +1629,13 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     // Surat gugatan atau permohonan - dibaca dari kolom petitum pada tabel
     // perkara, bukan dari daftar lampiran.
     aman(() => sippTahapanService.petitumPerkara(perkara.perkaraId), { ada: false }),
+    // Konseptor putusan - siapa yang menyusun naskahnya. Sudah lama terbaca
+    // lewat sippTahapanService, hanya belum pernah sampai ke layar jadwal.
+    aman(() => sippTahapanService.konseptorPutusanPerkara(perkara.perkaraId), {
+      terbaca: false,
+      alasan: "",
+      baris: [],
+    }),
   ]);
 
   // ==========================================================================
@@ -1618,6 +1683,10 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     jadwalPerkara: jadwal,
     lewatEcourt,
     putusan,
+    // Siapa yang menyusun naskah putusan. Dipisah dari putusan itu sendiri:
+    // konseptornya terbaca dari jejak tahapan, bukan dari tabel putusan, dan
+    // dapat kosong pada perkara yang tahapannya tidak pernah dicatat.
+    konseptor,
   };
 }
 

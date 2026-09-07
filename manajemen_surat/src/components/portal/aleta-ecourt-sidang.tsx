@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { usePortal } from "@/lib/app-state";
-import { apiPath } from "@/lib/base-path";
+import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import {
   CalendarDays,
@@ -18,6 +18,7 @@ import {
   Filter,
   Gauge,
   ListOrdered,
+  MonitorPlay,
   Printer,
   X,
 } from "lucide-react";
@@ -94,6 +95,10 @@ type SidangBaris = {
   majelisNama: string;
   paniteraNama: string;
   jurusitaNama: string;
+  /** Ada tidaknya kuasa hukum pada tiap sisi - mengubah siapa yang dipanggil. */
+  adaKuasa?: boolean;
+  kuasaPihak1?: boolean;
+  kuasaPihak2?: boolean;
 };
 
 /**
@@ -215,6 +220,16 @@ type Rincian = {
       retur: boolean;
       noResiPos: string;
       jurusitaNama: string;
+      // Ruas berikut SUDAH dikirim jembatan sejak lama, hanya tidak pernah
+      // disebut di tipe ini - sehingga tidak pernah tampil. Tanggal kirim ke
+      // pos dan nomor resi adalah yang ditanya orang saat panggilan lewat
+      // surat tercatat dipersoalkan, dan keduanya ada di SIPP sejak awal.
+      sidangId?: string;
+      tanggalSidang?: string;
+      tanggalKirimPos?: string;
+      statusPos?: number | null;
+      ketHasilRelaas?: string;
+      pihakKe?: number | null;
       // Benar bila namanya diambil dari penugasan jurusita pada perkara,
       // bukan dari baris relaasnya sendiri - lihat catatan di rincianSidang.
       jurusitaDariPenugasan?: boolean;
@@ -250,6 +265,14 @@ type Rincian = {
         adaBerkas: boolean;
       } | null;
       upayaHukum: Array<{ jenis: string; tanggal: string }>;
+    } | null;
+    // Siapa yang menyusun naskah putusan. Terbaca dari jejak tahapan SIPP,
+    // bukan dari tabel putusan - karena itu dapat tidak terbaca sama sekali,
+    // dan itu keadaan yang harus dikatakan, bukan disamarkan jadi kosong.
+    konseptor?: {
+      terbaca: boolean;
+      alasan: string;
+      baris: Array<{ pengguna: string; nama: string; namaTerbaca: boolean; tanggal: string; dariAudit?: boolean }>;
     } | null;
     jadwalPerkara: Array<{
       sidangId: string;
@@ -333,6 +356,38 @@ const SEBUTAN_HADIR: Record<number, string> = {
  */
 function potensiVerstek(dihadiriOleh: number | null) {
   return dihadiriOleh === 2;
+}
+
+/**
+ * Apakah agenda sidang ini termasuk tahapan e-Litigasi.
+ *
+ * ============================================================================
+ * DARI AGENDANYA, BUKAN DARI PENANDA PERKARA
+ * ============================================================================
+ *
+ * Perkara yang didaftarkan lewat e-Court belum tentu disidangkan secara
+ * e-Litigasi: persetujuan tergugat menentukan, dan persetujuan itu baru
+ * diketahui pada sidang pertama. Yang menandai e-Litigasi justru AGENDANYA -
+ * jawaban, replik, duplik, dan kesimpulan adalah tahapan yang pada
+ * e-Litigasi dipertukarkan lewat aplikasi, bukan dibacakan di ruang sidang.
+ *
+ * Karena itu penentuannya di sini dan bukan di SIPP: yang ditanya bukan
+ * "perkara ini e-Court atau bukan", melainkan "hari ini tahapannya
+ * dipertukarkan lewat aplikasi atau tidak" - dan itu menentukan siapa yang
+ * perlu hadir.
+ */
+const AGENDA_ELITIGASI = [
+  /jawaban/i,
+  /replik/i,
+  /duplik/i,
+  /duplik\s+rekonvensi/i,
+  /kesimpulan/i,
+];
+
+function agendaElitigasi(agenda: string): boolean {
+  const teks = String(agenda || "");
+  if (!teks) return false;
+  return AGENDA_ELITIGASI.some((pola) => pola.test(teks));
 }
 
 /** Ringkasan jumlah sidang per kelompok alur. */
@@ -465,6 +520,14 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     nada: "sejuk",
     judul: "Agendanya pembacaan putusan - berpeluang selesai hari ini.",
     cocok: (x) => /putus/i.test(x.agenda || ""),
+  },
+  {
+    kunci: "e-litigasi",
+    label: "e-Litigasi",
+    nada: "sejuk",
+    judul:
+      "Agendanya tahapan yang pada e-Litigasi dipertukarkan lewat aplikasi: jawaban, replik, duplik, atau kesimpulan.",
+    cocok: (x) => agendaElitigasi(x.agenda || ""),
   },
   {
     kunci: "sudah-putus",
@@ -746,6 +809,44 @@ function PenandaPutusanEcourt({
   );
 }
 
+/**
+ * Jenis pelaksanaan relaas, DITURUNKAN dari kolom yang ada.
+ *
+ * ============================================================================
+ * TIDAK ADA KOLOM "JENIS" DI SIPP
+ * ============================================================================
+ *
+ * perkara_pelaksanaan_relaas menyimpan tanggal, ket_temu, no_resi_pos,
+ * tanggal_jursit_pos, dan status_pos - tetapi tidak menyimpan satu ruas pun
+ * yang menyebut caranya. Yang tampil di layar SIPP pun diturunkan.
+ *
+ * Karena itu yang dikembalikan di sini hanya yang benar-benar DAPAT dipastikan
+ * dari datanya: surat tercatat pos (ada resi atau tanggal kirim pos), bertemu,
+ * dan tidak bertemu. "Panggilan elektronik" TIDAK diikutkan - ia tidak dapat
+ * dibedakan dari "bertemu" berdasarkan kolom yang ada, dan menebaknya berarti
+ * menuliskan cara pemanggilan yang mungkin tidak pernah terjadi pada berkas
+ * yang menentukan sah tidaknya panggilan.
+ */
+function jenisRelaas(baris: {
+  noResiPos?: string;
+  tanggalKirimPos?: string;
+  bertemu?: boolean;
+  tanggalRelaas?: string;
+}): string {
+  if (baris.noResiPos || baris.tanggalKirimPos) return "Surat tercatat POS";
+  if (baris.bertemu) return "Bertemu";
+  if (baris.tanggalRelaas) return "Tidak bertemu";
+  return "Belum dilaksanakan";
+}
+
+/** Hasil lacak kiriman pos - SIPP menyimpannya sebagai angka. */
+function sebutanStatusPos(status: number | null | undefined): string {
+  if (status === null || status === undefined) return "";
+  if (status === 1) return "sampai";
+  if (status === 2) return "dikembalikan";
+  return "tidak diketahui";
+}
+
 /** Sebutan lengkap sisi yang belum dipanggil, untuk keterangan penunjuk. */
 function sebutanSisi(sisi: number[] | undefined) {
   if (!Array.isArray(sisi) || sisi.length === 0) return "";
@@ -770,6 +871,212 @@ function sebutanSisiPendek(sisi: number[] | undefined) {
  * Tidak muncul sama sekali bila panggilannya aman. Penanda yang selalu ada
  * berhenti dibaca.
  */
+/**
+ * Mengambil antrian sidang untuk satu perkara, dari sisi petugas.
+ *
+ * ============================================================================
+ * PERANNYA DIPILIH, BUKAN DIANDAIKAN
+ * ============================================================================
+ *
+ * Satu tombol "ambil antrian" tanpa peran akan memaksa mesin menebak siapa
+ * yang datang - dan nomor antrian melekat pada SISI perkara, bukan pada
+ * perkaranya. Menebaknya berarti penggugat yang datang tercatat sebagai
+ * tergugat, lalu dipanggil pada urutan yang bukan miliknya.
+ *
+ * Kuasa dipisah dari pihaknya sendiri karena keduanya tidak sama: kuasa yang
+ * hadir mewakili sisi yang sama, tetapi yang tercatat hadir harus tetap
+ * terbaca sebagai kuasa - itulah yang dibaca majelis saat membuka sidang.
+ *
+ * Saksi berdiri sendiri: ia bukan pihak, dan kehadirannya tidak menggeser
+ * nomor antrian sisi mana pun.
+ */
+const PERAN_ANTRIAN: Array<{ kunci: string; label: string; sisi: string; kuasa: boolean }> = [
+  { kunci: "penggugat", label: "Penggugat / Pemohon", sisi: "1", kuasa: false },
+  { kunci: "tergugat", label: "Tergugat / Termohon", sisi: "2", kuasa: false },
+  { kunci: "kuasa-penggugat", label: "Kuasa penggugat", sisi: "1", kuasa: true },
+  { kunci: "kuasa-tergugat", label: "Kuasa tergugat", sisi: "2", kuasa: true },
+  { kunci: "saksi", label: "Saksi", sisi: "", kuasa: false },
+];
+
+/**
+ * Menu ke layar-layar antrian yang berdiri di luar portal.
+ *
+ * ============================================================================
+ * DUA SISI YANG BERBEDA PEMAKAINYA
+ * ============================================================================
+ *
+ * Layar-layar ini sudah lama ada, tetapi alamatnya hanya diketahui yang
+ * memasangnya. Petugas yang butuh membuka papan panggil di ruang sidang harus
+ * mengetik alamat dari ingatan - dan yang tidak ingat membuka jadwal ini lalu
+ * membacakan nomor dengan suara.
+ *
+ * Dipisah menurut SIAPA yang menghadapinya, bukan menurut apa yang
+ * ditampilkan:
+ *
+ *   Pihak    - dibaca orang yang datang berperkara. Tanpa login, sebab yang
+ *              berdiri di depannya tidak punya akun dan tidak akan pernah
+ *              punya.
+ *   Operator - dipakai petugas yang menjalankan sidang. Memindahkan giliran,
+ *              dan karena itu berada di balik login.
+ *
+ * Seluruhnya dibuka di tab baru: layar ini biasanya dipasang di monitor lain,
+ * dan menutup jadwal sidang untuk membukanya berarti kehilangan tempat.
+ */
+const LAYAR_PIHAK: Array<{ jalur: string; nama: string; guna: string }> = [
+  { jalur: "/antrian", nama: "Ambil antrian", guna: "Layar sentuh ruang tunggu - tanpa login" },
+  { jalur: "/antrian-layar", nama: "Layar antrian", guna: "Televisi ruang tunggu, dibaca dari jauh" },
+  { jalur: "/sidang-ruang", nama: "Papan pintu ruang", guna: "Dipasang menghadap koridor" },
+];
+
+const LAYAR_OPERATOR: Array<{ jalur: string; nama: string; guna: string }> = [
+  { jalur: "/aleta-antrian/ambil", nama: "Meja pengambilan", guna: "Petugas mencatat yang datang" },
+  { jalur: "/aleta-antrian/panggil", nama: "Papan panggil", guna: "Memanggil giliran dari ruang sidang" },
+  { jalur: "/antrian-ruang", nama: "Antrian per ruang", guna: "Halaman cepat dari ponsel" },
+];
+
+function MenuLayarAntrian() {
+  const [terbuka, setTerbuka] = useState(false);
+
+  return (
+    <div className="relative">
+      <Button size="sm" variant="outline" onClick={() => setTerbuka((buka) => !buka)}>
+        <MonitorPlay className="mr-1.5 h-4 w-4" />
+        Tampilan
+      </Button>
+
+      {terbuka ? (
+        <div className="absolute right-0 z-30 mt-1 w-72 rounded-md border bg-popover p-2 shadow-lg">
+          {[
+            { judul: "Untuk pihak", daftar: LAYAR_PIHAK },
+            { judul: "Untuk operator", daftar: LAYAR_OPERATOR },
+          ].map((kelompok) => (
+            <div key={kelompok.judul} className="mb-1 last:mb-0">
+              <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {kelompok.judul}
+              </p>
+              {kelompok.daftar.map((layar) => (
+                <a
+                  key={layar.jalur}
+                  href={withBasePath(layar.jalur)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded px-2 py-1.5 transition hover:bg-muted"
+                  onClick={() => setTerbuka(false)}
+                >
+                  <span className="block text-sm font-medium">{layar.nama}</span>
+                  <span className="block text-[11px] text-muted-foreground">{layar.guna}</span>
+                </a>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TombolAmbilAntrian({
+  baris,
+  sudahAda,
+  onSelesai,
+}: {
+  baris: SidangBaris;
+  /** Nomor antrian yang sudah ada, bila perkaranya sudah pernah diambil. */
+  sudahAda: number | null | undefined;
+  onSelesai: () => void;
+}) {
+  const [terbuka, setTerbuka] = useState(false);
+  const [sibuk, setSibuk] = useState("");
+  const [pesan, setPesan] = useState("");
+
+  const ambil = async (peran: (typeof PERAN_ANTRIAN)[number]) => {
+    setSibuk(peran.kunci);
+    setPesan("");
+    try {
+      const jawaban = await fetch(apiPath("/api/aleta-ecourt/antrian-ambil"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          perkaraId: baris.perkaraId,
+          nomorPerkara: baris.nomorPerkara,
+          peran: peran.kunci,
+          sisi: peran.sisi,
+          sebagaiKuasa: peran.kuasa,
+        }),
+      });
+      const isi = (await jawaban.json()) as {
+        ok?: boolean;
+        alasan?: string;
+        sebutan?: string;
+        antrianDiisi?: boolean;
+        data?: { ok?: boolean; alasan?: string; sebutan?: string; antrianDiisi?: boolean };
+      };
+      const hasil = isi.data ?? isi;
+      if (!hasil.ok) {
+        setPesan(hasil.alasan || "Kehadiran belum dapat dicatat.");
+        return;
+      }
+      // Kedatangan kedua pada sisi yang sama TIDAK menggeser nomor - dijaga di
+      // sisi bot. Yang dikatakan di sini bedanya, supaya petugas tahu
+      // tekanannya berpengaruh atau hanya tercatat.
+      setPesan(
+        hasil.antrianDiisi
+          ? `Nomor antrian terbit untuk ${hasil.sebutan || peran.label}.`
+          : `${hasil.sebutan || peran.label} tercatat hadir; nomor antriannya sudah ada sebelumnya.`
+      );
+      onSelesai();
+    } catch {
+      setPesan("Kehadiran belum dapat dicatat.");
+    } finally {
+      setSibuk("");
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(peristiwa) => {
+          peristiwa.stopPropagation();
+          setTerbuka((buka) => !buka);
+        }}
+        title={
+          sudahAda
+            ? `Sudah bernomor ${sudahAda}. Menekan lagi mencatat kehadiran pihak lain tanpa menggeser nomornya.`
+            : "Ambil nomor antrian untuk perkara ini"
+        }
+        className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+      >
+        <ListOrdered className="h-3 w-3" />
+        Antrian
+      </button>
+
+      {terbuka ? (
+        <div
+          className="absolute left-0 z-20 mt-1 w-52 rounded-md border bg-popover p-1 shadow-lg"
+          onClick={(peristiwa) => peristiwa.stopPropagation()}
+        >
+          <p className="px-2 py-1 text-[11px] text-muted-foreground">Siapa yang hadir?</p>
+          {PERAN_ANTRIAN.map((peran) => (
+            <button
+              key={peran.kunci}
+              type="button"
+              disabled={Boolean(sibuk)}
+              onClick={() => void ambil(peran)}
+              className="block w-full rounded px-2 py-1 text-left text-xs transition hover:bg-muted disabled:opacity-50"
+            >
+              {sibuk === peran.kunci ? "Mencatat…" : peran.label}
+            </button>
+          ))}
+          {pesan ? (
+            <p className="border-t px-2 py-1 text-[11px] text-muted-foreground">{pesan}</p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function PenandaPanggilan({
   panggilan,
 }: {
@@ -1880,6 +2187,8 @@ export function AletaEcourtSidang({
                 {memuat && nilaiKesiapan ? "Menghitung…" : nilaiKesiapan ? "Skor: nyala" : "Hitung skor"}
               </Button>
 
+              <MenuLayarAntrian />
+
               <Button
                 size="sm"
                 variant="outline"
@@ -2321,7 +2630,16 @@ export function AletaEcourtSidang({
           </div>
         ) : null}
 
-        <div className="max-h-[70vh] overflow-auto rounded-xl border">
+        {/* Tinggi tabel MENGIKUTI kendali yang diciutkan: ruang yang dihemat
+            di atas diberikan kepada daftar sidangnya, bukan dibiarkan kosong.
+            Itulah gunanya menciutkan - kalau tabelnya tetap setinggi semula,
+            yang didapat hanya ruang putih. */}
+        <div
+          className={cn(
+            "overflow-auto rounded-xl border",
+            kendaliCiut ? "max-h-[82vh]" : "max-h-[70vh]"
+          )}
+        >
           <table
             className={cn(
               "w-full text-sm",
@@ -2380,18 +2698,21 @@ export function AletaEcourtSidang({
                 >
                   Putusan
                 </KepalaUrut>
+                <th className="px-2 py-2 text-right font-medium">
+                  <span className="sr-only">Rincian</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {memuat ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-muted-foreground" colSpan={11}>
+                  <td className="px-3 py-6 text-center text-muted-foreground" colSpan={10}>
                     Memuat jadwal…
                   </td>
                 </tr>
               ) : sidangTampil.length === 0 && sidang.length > 0 ? (
                 <tr>
-                  <td className="px-3 py-10 text-center" colSpan={9}>
+                  <td className="px-3 py-10 text-center" colSpan={10}>
                     <p className="text-sm font-medium">
                       Tidak ada sidang yang cocok dengan saringan ini.
                     </p>
@@ -2411,7 +2732,7 @@ export function AletaEcourtSidang({
                 </tr>
               ) : sidang.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-10 text-center" colSpan={11}>
+                  <td className="px-3 py-10 text-center" colSpan={10}>
                     <CalendarDays className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
                     <p className="text-sm font-medium">Tidak ada sidang pada tanggal ini.</p>
                     {/* Keadaan kosong yang menawarkan langkah berikutnya, bukan
@@ -2455,6 +2776,19 @@ export function AletaEcourtSidang({
                             antrian={antrian.peta[String(baris.perkaraId)]}
                             tanggalTampil={dari}
                           />
+
+                          {/* Pengambilan antrian dari sisi PETUGAS, di kolom
+                              yang memang sudah memuat nomornya. Sebelumnya
+                              satu-satunya cara mengambil adalah layar sentuh di
+                              ruang tunggu - dan yang datang menghadap meja
+                              pelayanan tidak terlayani sama sekali. */}
+                          <div className="mt-1">
+                            <TombolAmbilAntrian
+                              baris={baris}
+                              sudahAda={antrian.peta[String(baris.perkaraId)]?.nomor}
+                              onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+                            />
+                          </div>
                         </td>
                         <td className="px-3 py-2 align-top">
                           <span className="font-semibold">{baris.nomorPerkara}</span>
@@ -2520,6 +2854,36 @@ export function AletaEcourtSidang({
                               sendiri. Retur dan belum-dipanggil TIDAK diulang
                               di sini - penandanya sudah menempel di samping
                               nomor perkara pada kedua mode. */}
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            {/* ==============================================
+                                KUASA DI KEDUA MODE
+                                ==============================================
+
+                                Ada tidaknya kuasa mengubah SIAPA yang dipanggil
+                                dan siapa yang berhak hadir. Selama ini ia baru
+                                terlihat sesudah satu sidang dibuka - padahal
+                                yang membacakan jadwal perlu tahu sebelum
+                                memanggil, bukan sesudah. */}
+                            {baris.adaKuasa ? (
+                              <span
+                                className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+                                title={`Memakai kuasa hukum: ${[
+                                  baris.kuasaPihak1 ? "penggugat/pemohon" : "",
+                                  baris.kuasaPihak2 ? "tergugat/termohon" : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" dan ") || "tercatat pada perkara"}`}
+                              >
+                                Kuasa
+                                {baris.kuasaPihak1 && !baris.kuasaPihak2
+                                  ? " P"
+                                  : baris.kuasaPihak2 && !baris.kuasaPihak1
+                                    ? " T"
+                                    : ""}
+                              </span>
+                            ) : null}
+                          </div>
+
                           <div className="hanya-ringkas mt-1 flex flex-wrap items-center gap-1">
                             {!baris.adaBas ? (
                               <span
@@ -2584,6 +2948,19 @@ export function AletaEcourtSidang({
                               sidang ke-{baris.urutanSidang}
                             </div>
                           ) : null}
+
+                          {/* Keadaan putusan ikut di sini pada mode RINGKAS.
+                              Kolom Putusan disembunyikan di mode itu, sehingga
+                              perkara yang sudah putus tidak dapat dibedakan
+                              dari yang belum - padahal itulah pertanyaan
+                              pertama yang diajukan orang tentang satu perkara. */}
+                          <div className="hanya-ringkas mt-1">
+                            {baris.sudahPutus ? (
+                              <Badge variant="success">{baris.statusPutusan || "Putus"}</Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">belum putus</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2 align-top kolom-lengkap">
                           <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold">
@@ -2617,12 +2994,13 @@ export function AletaEcourtSidang({
                         <td className="px-3 py-2 align-top text-sm kolom-lengkap">
                           {baris.sudahPutus ? (
                             <>
+                              {/* Tanggalnya sengaja tidak ikut: yang dicari di
+                                  kolom ini keadaannya, bukan kapan. Tanggal
+                                  putusan tetap ada di rincian sidang, tempat
+                                  ia memang dibutuhkan. */}
                               <Badge variant="success">
                                 {baris.statusPutusan || "Putus"}
                               </Badge>
-                              <div className="mt-0.5 text-muted-foreground">
-                                {baris.tanggalPutusan}
-                              </div>
                               {/* Yang BELUM dikerjakan ditandai, bukan yang
                                   sudah - itulah yang perlu ditindaklanjuti. */}
                               {!baris.tanggalMinutasi ? (
@@ -2649,6 +3027,34 @@ export function AletaEcourtSidang({
                             </div>
                           ) : null}
                         </td>
+
+                        {/* ==============================================
+                            TOMBOL RINCIAN DI UJUNG KANAN
+                            ==============================================
+
+                            Barisnya memang sudah dapat ditekan di mana saja,
+                            tetapi itu tidak terlihat: tidak ada satu pun tanda
+                            bahwa menekan baris membuka sesuatu. Tombol yang
+                            menyebutkan dirinya menghilangkan tebakan itu, dan
+                            arah panahnya menyatakan sedang terbuka atau tidak. */}
+                        <td className="px-2 py-2 align-top text-right">
+                          <button
+                            type="button"
+                            onClick={(peristiwa) => {
+                              peristiwa.stopPropagation();
+                              void buka(baris);
+                            }}
+                            aria-expanded={dibuka === kunci}
+                            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                          >
+                            {dibuka === kunci ? (
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            )}
+                            Rincian
+                          </button>
+                        </td>
                       </tr>
 
                       {/* Baris rincian diberi latar lebih gelap dan garis kiri:
@@ -2656,7 +3062,7 @@ export function AletaEcourtSidang({
                           rincian ini milik baris yang mana. */}
                       {dibuka === kunci ? (
                         <tr className="border-t border-border bg-muted/40">
-                          <td className="border-l-4 border-l-primary px-4 py-4" colSpan={11}>
+                          <td className="border-l-4 border-l-primary px-4 py-4" colSpan={10}>
                             {memuatRincian ? (
                               <p className="text-sm text-muted-foreground">Memuat keterangan sidang…</p>
                             ) : (
@@ -2664,6 +3070,7 @@ export function AletaEcourtSidang({
                                 rincian={rincian}
                                 nomorPerkara={baris.nomorPerkara}
                                 perkaraId={baris.perkaraId}
+                                sidangId={baris.sidangId}
                               />
                             )}
                           </td>
@@ -2715,13 +3122,16 @@ function RincianSidang({
   rincian,
   nomorPerkara,
   perkaraId,
+  sidangId,
 }: {
   rincian: Rincian | null;
   nomorPerkara: string;
   perkaraId: string;
+  /** Sidang yang sedang dibuka - pemisah antara panggilan hari ini dan riwayat. */
+  sidangId: string;
 }) {
   if (!rincian) {
-    return <p className="text-sm text-muted-foreground">Keterangan sidang tidak dapat dibaca.</p>;
+    return <p className="text-xs text-muted-foreground">Keterangan sidang tidak dapat dibaca.</p>;
   }
 
   const sipp = rincian.sipp;
@@ -2729,6 +3139,26 @@ function RincianSidang({
   // Disalin ke konstanta supaya penyempitan tipenya bertahan di dalam map -
   // TypeScript melepas penyempitan begitu masuk fungsi lain.
   const kesiapan = rincian.kesiapan;
+
+  // Relaas dipisah menurut sidangnya. Baris yang tidak menyebut sidang mana
+  // pun ikut ke RIWAYAT, bukan ke sidang ini: menempelkannya pada sidang yang
+  // sedang dibuka berarti menyatakan panggilan untuk hari ini sudah ada
+  // padahal belum tentu - dan itu keputusan yang menentukan sidang dilanjutkan
+  // atau ditunda.
+  // Verzet dikenali dari jenis perkaranya - SIPP tidak menyimpan penanda
+  // tersendiri untuknya. "Perlawanan" adalah sebutan resminya di SIPP; "verzet"
+  // yang dipakai sehari-hari.
+  const perkaraVerzet = /verzet|perlawanan/i.test(
+    `${rincian.identitas?.jenisPerkara ?? ""} ${(rincian.identitas?.kumulasi ?? []).join(" ")}`
+  );
+
+  const seluruhRelaas = rincian.sipp?.relaas ?? [];
+  const relaasSidangIni = seluruhRelaas.filter(
+    (baris) => sidangId && String(baris.sidangId ?? "") === String(sidangId)
+  );
+  const relaasRiwayat = seluruhRelaas.filter(
+    (baris) => !sidangId || String(baris.sidangId ?? "") !== String(sidangId)
+  );
 
   return (
     <div className="space-y-3">
@@ -2742,9 +3172,9 @@ function RincianSidang({
       {/* Nomor perkara diulang di kepala rincian: pada tabel panjang, pembaca
           yang sudah menggulung ke bawah kehilangan jejak baris asalnya. */}
       <div className="flex flex-wrap items-baseline gap-2">
-        <h4 className="text-base font-semibold">{nomorPerkara}</h4>
+        <h4 className="text-lg font-semibold tracking-tight">{nomorPerkara}</h4>
         {sipp ? (
-          <span className="text-sm text-muted-foreground">{sipp.majelis.length} hakim</span>
+          <span className="text-xs text-muted-foreground">{sipp.majelis.length} hakim</span>
         ) : null}
       </div>
 
@@ -2790,23 +3220,23 @@ function RincianSidang({
                   <span className="font-mono text-sm">{anggota.kode || "—"}</span>{" "}
                   <span className="font-medium">{anggota.nama}</span>
                   {anggota.jabatan ? (
-                    <span className="text-sm text-muted-foreground"> · {anggota.jabatan}</span>
+                    <span className="text-xs text-muted-foreground"> · {anggota.jabatan}</span>
                   ) : null}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">Majelis belum ditetapkan.</p>
+            <p className="text-xs text-muted-foreground">Majelis belum ditetapkan.</p>
           )}
 
           <p className="mt-2 text-sm">
-            <span className="text-sm text-muted-foreground">Panitera sidang: </span>
+            <span className="text-xs text-muted-foreground">Panitera sidang: </span>
             {sipp && sipp.panitera.length > 0
               ? sipp.panitera.map((orang) => orang.nama).join(", ")
               : "—"}
           </p>
           <p className="text-sm">
-            <span className="text-sm text-muted-foreground">Jurusita: </span>
+            <span className="text-xs text-muted-foreground">Jurusita: </span>
             {sipp && sipp.jurusita.length > 0
               ? sipp.jurusita.map((orang) => orang.nama).join(", ")
               : "—"}
@@ -2819,13 +3249,13 @@ function RincianSidang({
             Identitas pihak
           </h5>
           {rincian.pihak.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Pihak belum tercatat.</p>
+            <p className="text-xs text-muted-foreground">Pihak belum tercatat.</p>
           ) : (
             <ul className="space-y-0.5 text-sm">
               {rincian.pihak.map((orang, urutan) => (
                 <li key={`${orang.nama}-${urutan}`}>
                   <span className="font-medium">{orang.nama}</span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {" · "}
                     {orang.jenis === "kuasa"
                       ? "kuasa hukum"
@@ -2842,6 +3272,208 @@ function RincianSidang({
           )}
         </section>
       </div>
+
+      {/* ==================================================================
+          RELAAS PANGGILAN - SIDANG INI LEBIH DULU, RIWAYATNYA SESUDAHNYA
+          ==================================================================
+
+          Naik ke sini dari urutan kelima. Sesudah tahu siapa majelisnya dan
+          siapa para pihaknya, yang ditanya berikutnya selalu sama: sudah
+          dipanggil atau belum, dan bagaimana hasilnya. Menaruhnya di bawah
+          putusan dan jadwal berarti pertanyaan yang paling sering diajukan
+          dijawab paling akhir.
+
+          Panggilan untuk sidang INI dipisah dari riwayatnya. Keduanya
+          menjawab hal yang berbeda: yang pertama menentukan sidang hari ini
+          dapat dilanjutkan atau tidak, yang kedua menunjukkan pola - berapa
+          kali dipanggil, dengan cara apa, dan apa hasilnya tiap kali. */}
+      <section className="rounded-lg border bg-card p-3">
+        <h5 className="mb-2 border-b pb-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Relaas panggilan sidang ini
+        </h5>
+        {!sipp || relaasSidangIni.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {sipp && sipp.relaas.length > 0
+              ? "Belum ada relaas untuk sidang ini - riwayat panggilan sebelumnya ada di bawah."
+              : "Belum ada relaas tercatat untuk perkara ini."}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-muted/40 text-left">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Pihak</th>
+                  <th className="px-3 py-2 font-medium">Jenis &amp; tanggal</th>
+                  <th className="px-3 py-2 font-medium">Hasil</th>
+                  <th className="px-3 py-2 font-medium">Keterangan relaas</th>
+                  <th className="px-3 py-2 font-medium">Jurusita</th>
+                  <th className="px-3 py-2 font-medium">Berkas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {relaasSidangIni.map((baris) => (
+                  <tr key={baris.id} className="border-t border-border">
+                    <td className="px-3 py-2">
+                      <div className="font-medium">{baris.namaPihak || "—"}</div>
+                      {baris.peran ? (
+                        <div className="text-xs text-muted-foreground">{baris.peran}</div>
+                      ) : null}
+                    </td>
+
+                    {/* ==============================================
+                        JENIS, TANGGAL PELAKSANAAN, DAN TANGGAL KIRIM POS
+                        ==============================================
+
+                        Ketiganya menjawab pertanyaan yang berbeda dan sering
+                        tertukar. Pada surat tercatat, tanggal pelaksanaan
+                        adalah tanggal surat DITERIMA, sedangkan yang dihitung
+                        pada SK KMA 363/2022 angka 8 huruf c adalah tanggal
+                        surat DIKIRIM ke pos. Menampilkan satu saja membuat
+                        tenggang panggilan dihitung dari tanggal yang keliru. */}
+                    <td className="px-3 py-2 text-sm">
+                      <Badge variant="muted">{jenisRelaas(baris)}</Badge>
+                      <div className="mt-0.5">
+                        <span className="text-muted-foreground">dilaksanakan </span>
+                        {baris.tanggalRelaas || "—"}
+                      </div>
+                      {baris.tanggalKirimPos ? (
+                        <div>
+                          <span className="text-muted-foreground">kirim ke pos </span>
+                          {baris.tanggalKirimPos}
+                        </div>
+                      ) : null}
+                    </td>
+
+                    <td className="px-3 py-2">
+                      {/* Retur didahulukan: surat yang kembali menuntut
+                          tindakan, sedangkan "tidak bertemu" belum tentu. */}
+                      {baris.retur ? (
+                        <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                          retur
+                        </span>
+                      ) : baris.bertemu ? (
+                        <Badge variant="success">Bertemu langsung</Badge>
+                      ) : (
+                        <Badge variant="warning">Tidak bertemu</Badge>
+                      )}
+                      {baris.noResiPos ? (
+                        <div className="mt-0.5 font-mono text-xs text-muted-foreground">
+                          resi {baris.noResiPos}
+                        </div>
+                      ) : null}
+                      {sebutanStatusPos(baris.statusPos) ? (
+                        <div className="text-xs text-muted-foreground">
+                          pos: {sebutanStatusPos(baris.statusPos)}
+                        </div>
+                      ) : null}
+                    </td>
+
+                    {/* Keterangan relaas adalah kalimat yang ditulis jurusita
+                        - "diterima oleh kakak ipar yang tinggal serumah" dan
+                        semacamnya. Inilah yang dibaca majelis saat menilai
+                        patut tidaknya panggilan, dan selama ini tidak pernah
+                        ditampilkan sama sekali meski sudah terbaca dari SIPP. */}
+                    <td className="px-3 py-2 text-sm">
+                      {baris.ketHasilRelaas ? (
+                        <span>{baris.ketHasilRelaas}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    {/* Nama jurusita yang berasal dari penugasan perkara -
+                        bukan dari baris relaasnya - ditandai. Panggilan
+                        elektronik tidak menyebut pelaksananya, dan menaruh
+                        nama tanpa keterangan berarti membebankan pekerjaan
+                        pada orang yang mungkin tidak mengerjakannya. */}
+                    <td className="px-3 py-2 text-sm">
+                      {baris.jurusitaNama || "—"}
+                      {baris.jurusitaNama && baris.jurusitaDariPenugasan ? (
+                        <span
+                          className="ml-1 text-muted-foreground"
+                          title="Relaas ini tidak menyebut pelaksananya. Nama diambil dari penugasan jurusita pada perkara."
+                        >
+                          (penugasan)
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {baris.adaDokumen ? (
+                          <TombolUnduh
+                            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(baris.id)}`}
+                            label="Relaas"
+                            namaCadangan={`relaas-${baris.id}.pdf`}
+                          />
+                        ) : null}
+                        {baris.adaResi ? (
+                          <TombolUnduh
+                            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(baris.id)}`}
+                            label="Resi"
+                            namaCadangan={`resi-${baris.id}.pdf`}
+                          />
+                        ) : null}
+                        {!baris.adaDokumen && !baris.adaResi ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* --- Riwayat relaas sidang-sidang sebelumnya --- */}
+      {relaasRiwayat.length > 0 ? (
+        <section className="rounded-lg border bg-card p-3">
+          <h5 className="mb-2 border-b pb-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Riwayat panggilan sebelumnya ({relaasRiwayat.length})
+          </h5>
+          {/* Bentuknya sengaja lebih ringkas daripada tabel di atas: yang
+              dicari di sini polanya - sudah berapa kali dipanggil, dengan cara
+              apa, dan apa hasilnya - bukan rincian tiap barisnya. */}
+          <ul className="space-y-1.5 text-sm">
+            {relaasRiwayat.map((baris) => (
+              <li
+                key={baris.id}
+                className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-border/50 pb-1.5 last:border-0 last:pb-0"
+              >
+                <span className="font-medium">{baris.namaPihak || "—"}</span>
+                {baris.tanggalSidang ? (
+                  <span className="text-xs text-muted-foreground">
+                    untuk sidang {baris.tanggalSidang}
+                  </span>
+                ) : null}
+                <Badge variant="muted">{jenisRelaas(baris)}</Badge>
+                <span className="text-xs text-muted-foreground">
+                  {baris.tanggalRelaas || "belum dilaksanakan"}
+                </span>
+                {baris.retur ? (
+                  <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                    retur
+                  </span>
+                ) : baris.bertemu ? (
+                  <Badge variant="success">bertemu</Badge>
+                ) : baris.tanggalRelaas ? (
+                  <Badge variant="warning">tidak bertemu</Badge>
+                ) : null}
+                {baris.noResiPos ? (
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    resi {baris.noResiPos}
+                  </span>
+                ) : null}
+                {baris.ketHasilRelaas ? (
+                  <span className="w-full text-xs text-muted-foreground">
+                    {baris.ketHasilRelaas}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {/* --- Putusan dan tindak lanjutnya --- */}
       {sipp?.putusan?.sudahPutus ? (
@@ -2869,7 +3501,7 @@ function RincianSidang({
               justru yang belum itulah yang perlu ditindaklanjuti. */}
           <dl className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Minutasi</dt>
+              <dt className="text-xs text-muted-foreground">Minutasi</dt>
               <dd className="font-medium">
                 {sipp.putusan.tanggalMinutasi || (
                   <span className="text-amber-700 dark:text-amber-300">belum diminutasi</span>
@@ -2878,7 +3510,7 @@ function RincianSidang({
             </div>
 
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Berkekuatan hukum tetap</dt>
+              <dt className="text-xs text-muted-foreground">Berkekuatan hukum tetap</dt>
               <dd className="font-medium">
                 {sipp.putusan.tanggalBht || (
                   <span className="text-amber-700 dark:text-amber-300">belum BHT</span>
@@ -2887,7 +3519,7 @@ function RincianSidang({
             </div>
 
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Akta cerai</dt>
+              <dt className="text-xs text-muted-foreground">Akta cerai</dt>
               <dd className="font-medium">
                 {sipp.putusan.aktaCerai?.nomor ? (
                   <>
@@ -2904,21 +3536,85 @@ function RincianSidang({
               </dd>
             </div>
 
+            {/* ==============================================
+                JENIS PUTUSAN, BUKAN UPAYA HUKUM
+                ==============================================
+
+                Kotak ini dulu menampilkan upaya hukum, dan pada hampir seluruh
+                perkara ia berbunyi "tidak ada" - satu kotak penuh yang tidak
+                pernah mengatakan apa pun. Yang dicari orang di sini justru
+                jenis putusannya: dikabulkan, ditolak, digugurkan, dicabut.
+
+                Upaya hukum TIDAK hilang - ia muncul hanya bila memang ada,
+                sebagai penanda di bawah. Keadaan yang jarang terjadi pantas
+                ditampilkan saat terjadi, bukan disediakan tempat tetap. */}
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Upaya hukum</dt>
+              <dt className="text-xs text-muted-foreground">Jenis putusan</dt>
               <dd className="font-medium">
+                {sipp.putusan.statusPutusan ? (
+                  <span>{sipp.putusan.statusPutusan}</span>
+                ) : (
+                  <span className="text-muted-foreground">belum tercatat</span>
+                )}
+
+                {/* Verstek dan verzet adalah dua hal yang berbeda dan sering
+                    tertukar: verstek putusan tanpa hadirnya tergugat, verzet
+                    perlawanan TERHADAP putusan verstek itu. Keduanya ditandai
+                    terpisah supaya tidak dibaca sebagai satu. */}
+                {sipp.putusan.verstek ? (
+                  <Badge variant="warning" className="ml-1.5">
+                    verstek
+                  </Badge>
+                ) : null}
+                {perkaraVerzet ? (
+                  <Badge variant="warning" className="ml-1.5" title="Perkara perlawanan terhadap putusan verstek.">
+                    perkara verzet
+                  </Badge>
+                ) : null}
+
                 {sipp.putusan.upayaHukum.length > 0 ? (
-                  sipp.putusan.upayaHukum.map((upaya) => (
-                    <div key={upaya.jenis}>
-                      {upaya.jenis}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {" "}
-                        {upaya.tanggal}
-                      </span>
+                  <div className="mt-1 text-sm font-normal">
+                    <span className="text-muted-foreground">Upaya hukum: </span>
+                    {sipp.putusan.upayaHukum
+                      .map((upaya) => `${upaya.jenis}${upaya.tanggal ? ` (${upaya.tanggal})` : ""}`)
+                      .join(", ")}
+                  </div>
+                ) : null}
+              </dd>
+            </div>
+
+            {/* Konseptor: siapa yang menyusun naskahnya. Ditanya justru saat
+                naskahnya dipersoalkan, dan selama ini tidak pernah tampil di
+                layar ini meski sudah lama terbaca dari SIPP. */}
+            <div className="rounded-md border bg-muted/30 px-3 py-2">
+              <dt className="text-xs text-muted-foreground">Konseptor putusan</dt>
+              <dd className="font-medium">
+                {sipp.konseptor?.terbaca && sipp.konseptor.baris.length > 0 ? (
+                  sipp.konseptor.baris.map((orang) => (
+                    <div key={orang.pengguna}>
+                      {orang.nama}
+                      {orang.tanggal ? (
+                        <span className="text-sm font-normal text-muted-foreground"> {orang.tanggal}</span>
+                      ) : null}
+                      {/* Pencatat pertama BUKAN konseptor - dua peran yang
+                          kerap sama orangnya, tetapi tidak boleh diandaikan
+                          sama pada naskah yang ditandatangani. */}
+                      {orang.dariAudit ? (
+                        <span
+                          className="ml-1 text-sm font-normal text-muted-foreground"
+                          title="Diambil dari jejak audit: inilah yang PERTAMA mencatat putusan, belum tentu yang menyusunnya."
+                        >
+                          (pencatat pertama)
+                        </span>
+                      ) : null}
                     </div>
                   ))
                 ) : (
-                  <span className="text-muted-foreground">tidak ada</span>
+                  <span className="text-muted-foreground">
+                    {sipp.konseptor && !sipp.konseptor.terbaca
+                      ? "tidak terbaca dari SIPP"
+                      : "belum tercatat"}
+                  </span>
                 )}
               </dd>
             </div>
@@ -2928,7 +3624,7 @@ function RincianSidang({
               mengambil dan satunya belum, dan itu yang ditanyakan di meja
               pelayanan. */}
           {sipp.putusan.aktaCerai?.nomor ? (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               Penyerahan akta — pihak I:{" "}
               {sipp.putusan.aktaCerai.diserahkanPihak1 || "belum diambil"} · pihak II:{" "}
               {sipp.putusan.aktaCerai.diserahkanPihak2 || "belum diambil"}
@@ -3004,12 +3700,12 @@ function RincianSidang({
                     {hambat.tingkat}
                   </Badge>
                   <span>{hambat.pesan}</span>
-                  <span className="text-sm text-muted-foreground">({hambat.sumber})</span>
+                  <span className="text-xs text-muted-foreground">({hambat.sumber})</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mb-3 text-sm text-muted-foreground">
+            <p className="mb-3 text-xs text-muted-foreground">
               Tidak ada penghambat tercatat untuk sidang ini.
             </p>
           )}
@@ -3033,13 +3729,13 @@ function RincianSidang({
                       <td className="px-3 py-2">
                         <span className="font-medium">{pihak.nama}</span>
                         {pihak.peran ? (
-                          <div className="text-sm text-muted-foreground">{pihak.peran}</div>
+                          <div className="text-xs text-muted-foreground">{pihak.peran}</div>
                         ) : null}
                       </td>
 
                       <td className="px-3 py-2">
                         {!kesiapan.panggilan.lewatEcourt ? (
-                          <span className="text-sm text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         ) : pihak.persetujuan === "setuju" ? (
                           <Badge variant="success">setuju</Badge>
                         ) : pihak.persetujuan === "tidak_setuju" ? (
@@ -3066,11 +3762,11 @@ function RincianSidang({
                         {pihak.sudahDikirim ? (
                           <>
                             <Badge variant="success">terkirim</Badge>
-                            <div className="mt-0.5 text-sm text-muted-foreground">
+                            <div className="mt-0.5 text-xs text-muted-foreground">
                               {pihak.tanggalPanggilan}
                             </div>
                             {pihak.noResiPos ? (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-xs text-muted-foreground">
                                 Resi {pihak.noResiPos}
                               </div>
                             ) : null}
@@ -3081,7 +3777,7 @@ function RincianSidang({
                           // sidang, dan tidak ada panggilan yang tertunggak.
                           <>
                             <Badge variant="muted">tidak perlu dipanggil</Badge>
-                            <div className="mt-0.5 text-sm text-muted-foreground">
+                            <div className="mt-0.5 text-xs text-muted-foreground">
                               hadir pada sidang sebelumnya
                             </div>
                           </>
@@ -3092,17 +3788,17 @@ function RincianSidang({
 
                       <td className="px-3 py-2">
                         {!pihak.kepatutan.perluDiterima ? (
-                          <span className="text-sm text-muted-foreground">tidak disyaratkan</span>
+                          <span className="text-xs text-muted-foreground">tidak disyaratkan</span>
                         ) : pihak.diterima === true ? (
                           <>
                             <Badge variant="success">diterima</Badge>
                             {pihak.tanggalPelaksanaanRelaas ? (
-                              <div className="mt-0.5 text-sm text-muted-foreground">
+                              <div className="mt-0.5 text-xs text-muted-foreground">
                                 {pihak.tanggalPelaksanaanRelaas}
                               </div>
                             ) : null}
                             {pihak.buktiPenerimaan ? (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-xs text-muted-foreground">
                                 bukti: {pihak.buktiPenerimaan}
                               </div>
                             ) : null}
@@ -3132,11 +3828,11 @@ function RincianSidang({
                             tenggang cukup · {pihak.kepatutan.selisih} hari
                           </Badge>
                         )}
-                        <div className="mt-0.5 text-sm text-muted-foreground">
+                        <div className="mt-0.5 text-xs text-muted-foreground">
                           ambang {pihak.kepatutan.ambang}{" "}
                           {pihak.kepatutan.hariKerja ? "hari kerja" : "hari kalender"}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs text-muted-foreground">
                           {pihak.kepatutan.dasarHukum}
                         </div>
                       </td>
@@ -3146,13 +3842,13 @@ function RincianSidang({
               </table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Data pihak belum terbaca. Untuk perkara e-Court, tarik perkara ini dari menu Kendali
               Berkas lebih dulu; untuk perkara biasa, pihaknya dibaca dari data relaas SIPP.
             </p>
           )}
 
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             Tenggang dihitung dari tanggal panggilan dikirim sampai hari sidang. Untuk surat
             tercatat, yang dihitung adalah tanggal kirim ke pos — dan penerimaannya harus terbukti
             terpisah. Angka ambang dapat diubah di menu Integrasi e-Court. Penilaian ini alat bantu,
@@ -3167,7 +3863,7 @@ function RincianSidang({
           Seluruh jadwal sidang perkara ini
         </h5>
         {!sipp || sipp.jadwalPerkara.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada jadwal sidang tercatat.</p>
+          <p className="text-xs text-muted-foreground">Belum ada jadwal sidang tercatat.</p>
         ) : (
           <ol className="space-y-1 text-sm">
             {sipp.jadwalPerkara.map((jadwal) => (
@@ -3183,10 +3879,10 @@ function RincianSidang({
                 ) : null}
                 <span className="text-sm">{jadwal.agenda || "tanpa agenda"}</span>
                 {jadwal.ruangan ? (
-                  <span className="text-sm text-muted-foreground">Ruang {jadwal.ruangan}</span>
+                  <span className="text-xs text-muted-foreground">Ruang {jadwal.ruangan}</span>
                 ) : null}
                 {jadwal.urutanSidang > 0 ? (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     sidang ke-{jadwal.urutanSidang}
                   </span>
                 ) : null}
@@ -3209,98 +3905,11 @@ function RincianSidang({
                     namaCadangan={`bas-${jadwal.sidangId}.pdf`}
                   />
                 ) : (
-                  <span className="text-sm text-muted-foreground">BAS belum diunggah</span>
+                  <span className="text-xs text-muted-foreground">BAS belum diunggah</span>
                 )}
               </li>
             ))}
           </ol>
-        )}
-      </section>
-
-      {/* --- Relaas panggilan --- */}
-      <section className="rounded-lg border bg-card p-3">
-        <h5 className="mb-2 border-b pb-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Keadaan relaas panggilan
-        </h5>
-        {!sipp || sipp.relaas.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Belum ada relaas tercatat untuk sidang ini.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-sm">
-              <thead className="bg-muted/40 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Pihak</th>
-                  <th className="px-3 py-2 font-medium">Tanggal</th>
-                  <th className="px-3 py-2 font-medium">Hasil</th>
-                  <th className="px-3 py-2 font-medium">Jurusita</th>
-                  <th className="px-3 py-2 font-medium">Berkas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sipp.relaas.map((baris) => (
-                  <tr key={baris.id} className="border-t border-border">
-                    <td className="px-3 py-2">{baris.namaPihak || "—"}</td>
-                    <td className="px-3 py-2 text-sm">{baris.tanggalRelaas || "—"}</td>
-                    <td className="px-3 py-2">
-                      {/* Retur didahulukan: surat yang kembali menuntut
-                          tindakan, sedangkan "tidak bertemu" belum tentu. */}
-                      {baris.retur ? (
-                        <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                          retur
-                        </span>
-                      ) : baris.bertemu ? (
-                        <Badge variant="success">Bertemu langsung</Badge>
-                      ) : (
-                        <Badge variant="warning">Tidak bertemu</Badge>
-                      )}
-                      {baris.noResiPos ? (
-                        <div className="text-sm text-muted-foreground">Resi {baris.noResiPos}</div>
-                      ) : null}
-                    </td>
-                    {/* Nama jurusita yang berasal dari penugasan perkara -
-                        bukan dari baris relaasnya - ditandai. Panggilan
-                        elektronik tidak menyebut pelaksananya, dan menaruh
-                        nama tanpa keterangan berarti membebankan pekerjaan
-                        pada orang yang mungkin tidak mengerjakannya. */}
-                    <td className="px-3 py-2 text-sm">
-                      {baris.jurusitaNama || "—"}
-                      {baris.jurusitaNama && baris.jurusitaDariPenugasan ? (
-                        <span
-                          className="ml-1 text-muted-foreground"
-                          title="Relaas ini tidak menyebut pelaksananya. Nama diambil dari penugasan jurusita pada perkara."
-                        >
-                          (penugasan)
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        {baris.adaDokumen ? (
-                          <TombolUnduh
-                            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=relaas&id=${encodeURIComponent(baris.id)}`}
-                            label="Relaas"
-                            namaCadangan={`relaas-${baris.id}.pdf`}
-                          />
-                        ) : null}
-                        {baris.adaResi ? (
-                          <TombolUnduh
-                            alamat={`/api/aleta-ecourt/berkas-sipp?jenis=resi&id=${encodeURIComponent(baris.id)}`}
-                            label="Resi"
-                            namaCadangan={`resi-${baris.id}.pdf`}
-                          />
-                        ) : null}
-                        {!baris.adaDokumen && !baris.adaResi ? (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         )}
       </section>
 
@@ -3314,7 +3923,7 @@ function RincianSidang({
             {rincian.pesanEcourt}
           </p>
         ) : rincian.ecourt.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Belum ada dokumen e-Court tersimpan untuk perkara ini.
           </p>
         ) : (
@@ -3334,7 +3943,7 @@ function RincianSidang({
                     <td className="px-3 py-2">
                       {dokumen.judulDokumen || "Dokumen"}
                       {dokumen.jenisDokumen ? (
-                        <div className="text-sm text-muted-foreground">{dokumen.jenisDokumen}</div>
+                        <div className="text-xs text-muted-foreground">{dokumen.jenisDokumen}</div>
                       ) : null}
                     </td>
                     <td className="px-3 py-2 text-sm">{dokumen.peranPengunggah || "—"}</td>
@@ -3358,7 +3967,7 @@ function RincianSidang({
                           />
                         ) : null}
                         {!dokumen.adaPdf && !dokumen.adaWord ? (
-                          <span className="text-sm text-muted-foreground">belum tersimpan</span>
+                          <span className="text-xs text-muted-foreground">belum tersimpan</span>
                         ) : null}
                       </div>
                     </td>
@@ -3390,7 +3999,7 @@ function RincianSidang({
         {/* Seluruh bagian ini bergantung pada rincian SIPP. Dijaga sekali di
             sini, bukan pada tiap barisnya. */}
         {!sipp ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Keterangan SIPP untuk perkara ini belum dapat dibaca.
           </p>
         ) : (
@@ -3410,7 +4019,7 @@ function RincianSidang({
                 />
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Belum diunggah ke SIPP.</p>
+              <p className="text-xs text-muted-foreground">Belum diunggah ke SIPP.</p>
             )}
           </div>
 
@@ -3426,7 +4035,7 @@ function RincianSidang({
               ) : null}
             </p>
             {sipp.relaas.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Belum ada relaas tercatat.</p>
+              <p className="text-xs text-muted-foreground">Belum ada relaas tercatat.</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {sipp.relaas.map((baris) => (
@@ -3434,7 +4043,7 @@ function RincianSidang({
                     <span className="min-w-0 flex-1 truncate" title={baris.namaPihak}>
                       {baris.namaPihak || "tanpa nama pihak"}
                       {baris.tanggalRelaas ? (
-                        <span className="ml-1 text-sm text-muted-foreground">
+                        <span className="ml-1 text-xs text-muted-foreground">
                           {baris.tanggalRelaas}
                         </span>
                       ) : null}
@@ -3448,7 +4057,7 @@ function RincianSidang({
                         namaCadangan={`relaas-${baris.id}.pdf`}
                       />
                     ) : (
-                      <span className="text-sm text-muted-foreground">relaas belum diunggah</span>
+                      <span className="text-xs text-muted-foreground">relaas belum diunggah</span>
                     )}
                     {baris.adaResi ? (
                       <TombolUnduh
@@ -3469,14 +4078,14 @@ function RincianSidang({
           <div>
             <p className="mb-1 text-sm font-semibold">Berita Acara Sidang</p>
             {sipp.jadwalPerkara.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Belum ada sidang tercatat.</p>
+              <p className="text-xs text-muted-foreground">Belum ada sidang tercatat.</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {sipp.jadwalPerkara.map((sidang) => (
                   <li key={sidang.sidangId} className="flex flex-wrap items-center gap-2">
                     <span className="min-w-0 flex-1 truncate">
                       {sidang.tanggalSidang}
-                      <span className="ml-1 text-sm text-muted-foreground">
+                      <span className="ml-1 text-xs text-muted-foreground">
                         {sidang.agenda || "tanpa agenda"}
                       </span>
                     </span>
@@ -3489,7 +4098,7 @@ function RincianSidang({
                         namaCadangan={`bas-${nomorPerkara}-${sidang.tanggalSidang}.pdf`}
                       />
                     ) : (
-                      <span className="text-sm text-muted-foreground">BAS belum diunggah</span>
+                      <span className="text-xs text-muted-foreground">BAS belum diunggah</span>
                     )}
                   </li>
                 ))}
@@ -3508,7 +4117,7 @@ function RincianSidang({
                       {dokumen.namaDokumen || dokumen.namaFile}
                     </span>
                     {dokumen.ukuranByte ? (
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {ukuranTerbaca(dokumen.ukuranByte)}
                       </span>
                     ) : null}
@@ -3528,7 +4137,7 @@ function RincianSidang({
         )}
       </section>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         Perkara {nomorPerkara}. Berkas e-Court yang belum tersimpan dapat ditarik dari menu Kendali
         Berkas.
       </p>

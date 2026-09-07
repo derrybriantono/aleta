@@ -230,7 +230,10 @@ export function AletaEcourtPengguna() {
       <div
         className={cn(
           "grid gap-4 transition-all duration-300",
-          sidebarCiut ? "lg:grid-cols-[76px_1fr]" : "lg:grid-cols-[264px_1fr]"
+          // Sidebar dipersempit dari 264px menjadi 216px: menunya bernama
+          // pendek dan tidak pernah memakai selebar itu, sedangkan jadwal
+          // sidang di sebelahnya punya sepuluh kolom yang selalu kurang ruang.
+          sidebarCiut ? "lg:grid-cols-[68px_1fr]" : "lg:grid-cols-[216px_1fr]"
         )}
       >
         {/* Sidebar ini mengikuti sidebar utama ALETA - lihat portal-shell-v2.
