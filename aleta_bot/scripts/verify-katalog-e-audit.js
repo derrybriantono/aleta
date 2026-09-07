@@ -122,6 +122,7 @@ console.log("== Kemajuan dihitung, bukan disimpan ==");
 require("../services/penilaianKetaatanService").daftarkanSemua();
 require("../services/penilaianMutuDataService").daftarkanSemua();
 require("../services/penilaianKeuanganService").daftarkanSemua();
+require("../services/penilaianTahapanService").daftarkanSemua();
 
 const terdaftar = kerangka.daftar().map((d) => d.kunci);
 const keadaan = K.keadaan(terdaftar);

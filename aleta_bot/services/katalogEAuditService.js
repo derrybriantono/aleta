@@ -666,6 +666,71 @@ const KATALOG = [
  * bukan didiamkan.
  */
 const SAMBUNGAN = {
+  KT01: {
+    kunci: "ketaatanInputPendaftaran",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut JARAK antara penerimaan berkas dan penginputannya. SIPP menyimpan tanggal pendaftaran, bukan tanggal penginputan, sehingga yang dinilai baru keberadaan tanggal pendaftarannya.",
+  },
+  KT02: {
+    kunci: "ketaatanPenetapanMajelis",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut keberadaan DOKUMEN penetapan beserta tanggal penginputannya. Yang dinilai baru tanggal penetapannya - dokumennya belum diperiksa.",
+  },
+  KT03: {
+    kunci: "ketaatanPenunjukanPaniteraPengganti",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut tanggal PENGINPUTAN penunjukan yang pertama. Yang dinilai tanggal penetapannya, dan keduanya dapat berbeda jauh.",
+  },
+  KT04: {
+    kunci: "ketaatanPenunjukanJurusita",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut tanggal PENGINPUTAN penunjukan yang pertama. Yang dinilai tanggal penetapannya, dan keduanya dapat berbeda jauh.",
+  },
+  KT05: {
+    kunci: "ketaatanPenetapanHariSidang",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut tanggal dokumen penetapan hari sidang. Yang dinilai tanggal sidang pertamanya - keduanya berdekatan tetapi bukan hal yang sama, dan penetapan yang terlambat dengan sidang yang tepat waktu tidak akan terlihat.",
+  },
+  KT11: {
+    kunci: "ketaatanInputPutusan",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut jarak antara pengucapan putusan dan penginputannya. Yang dinilai jarak antara pendaftaran dan putusan - ukuran yang sah tetapi menjawab pertanyaan yang lain.",
+  },
+  KT12: {
+    kunci: "ketaatanMinutasiBerkas",
+    sifat: "penuh",
+    catatan: "",
+  },
+  KT14: {
+    kunci: "ketaatanPenetapanBht",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut BHT dihitung dari lewatnya tenggang upaya hukum tiap jenis perkara. Yang dinilai baru satu batas tetap tiga puluh hari sejak putusan.",
+  },
+  KT15: {
+    kunci: "ketaatanPenerbitanAktaCerai",
+    sifat: "sebagian",
+    catatan:
+      "Perkara bukan perceraian sudah dikecualikan lewat saringan jenis perkara. Yang belum: butir ini menyatakan perkara non-perceraian bernilai SEMPURNA, sedangkan di sini mereka dikeluarkan dari penyebut. Keduanya berbeda pengaruhnya pada nilai gabungan.",
+  },
+  KT16: {
+    kunci: "ketaatanSidangIkrarTalak",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menghitung dari penetapan hari sidang ikrar sampai pelaksanaannya. Yang dinilai dari tanggal berkekuatan hukum tetap sampai ikrar - tenggang enam bulan menurut Pasal 70 ayat (6) UU 7 Tahun 1989.",
+  },
+  KT18: {
+    kunci: "ketaatanPengarsipanBerkas",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini tidak menyebutkan batas hari. Batas tiga puluh hari sesudah minutasi yang dipakai di sini adalah pilihan yang belum disahkan siapa pun, dan harus ditetapkan sebelum angkanya dipakai membina.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
