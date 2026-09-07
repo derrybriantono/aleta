@@ -2408,11 +2408,20 @@ export default function AletaSippPage() {
         title="Pusat Pengetahuan SIPP"
         description="Kamus database, query registry, variabel ABT/SIPP, monitoring penilaian, dan jadwal sidang membaca metadata/cache ALETA secara read-only."
         actions={
+          // Sengaja <a> biasa, BUKAN <Link> Next.js.
+          //
+          // Next mem-prefetch tiap <Link> begitu ia terlihat di layar. Untuk
+          // jalur halaman itu berguna; untuk endpoint yang memulangkan BERKAS
+          // itu berarti berkasnya benar-benar diminta - dan peramban langsung
+          // mengunduhnya tanpa ada yang menekan apa pun.
+          //
+          // Tombol ini berada di kepala halaman, jadi ia tampil pada SETIAP
+          // tab. Akibatnya membuka tab mana pun memicu satu unduhan PDF.
           <Button asChild variant="outline">
-            <Link href={apiPath("/api/aleta-sipp/schedule/pdf")} target="_blank">
+            <a href={apiPath("/api/aleta-sipp/schedule/pdf")} target="_blank" rel="noopener noreferrer">
               <Download className="h-4 w-4" />
               PDF Jadwal
-            </Link>
+            </a>
           </Button>
         }
       />
@@ -3639,16 +3648,16 @@ export default function AletaSippPage() {
                     {pendukungFeatureFilters.groupKey ? (
                       <>
                         <Button asChild variant="outline">
-                          <Link href={apiPath(`/api/aleta-sipp/monitoring/export/group/${encodeURIComponent(pendukungFeatureFilters.groupKey)}/export.xlsx`)} target="_blank">
+                          <a href={apiPath(`/api/aleta-sipp/monitoring/export/group/${encodeURIComponent(pendukungFeatureFilters.groupKey)}/export.xlsx`)} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4" />
                             XLSX Grup
-                          </Link>
+                          </a>
                         </Button>
                         <Button asChild variant="outline">
-                          <Link href={apiPath(`/api/aleta-sipp/monitoring/export/group/${encodeURIComponent(pendukungFeatureFilters.groupKey)}/export.pdf`)} target="_blank">
+                          <a href={apiPath(`/api/aleta-sipp/monitoring/export/group/${encodeURIComponent(pendukungFeatureFilters.groupKey)}/export.pdf`)} target="_blank" rel="noopener noreferrer">
                             <FileText className="h-4 w-4" />
                             PDF Grup
-                          </Link>
+                          </a>
                         </Button>
                       </>
                     ) : (
@@ -4479,16 +4488,16 @@ export default function AletaSippPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button asChild variant="outline" size="sm">
-                        <Link href={apiPath(`/api/aleta-sipp/monitoring/export/${encodeURIComponent(selectedRunKey)}.xlsx`)} target="_blank">
+                        <a href={apiPath(`/api/aleta-sipp/monitoring/export/${encodeURIComponent(selectedRunKey)}.xlsx`)} target="_blank" rel="noopener noreferrer">
                           <Download className="h-4 w-4" />
                           XLSX
-                        </Link>
+                        </a>
                       </Button>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={apiPath(`/api/aleta-sipp/monitoring/export/${encodeURIComponent(selectedRunKey)}.pdf`)} target="_blank">
+                        <a href={apiPath(`/api/aleta-sipp/monitoring/export/${encodeURIComponent(selectedRunKey)}.pdf`)} target="_blank" rel="noopener noreferrer">
                           <FileText className="h-4 w-4" />
                           PDF
-                        </Link>
+                        </a>
                       </Button>
                       <Button variant="ghost" size="icon" onClick={closeRunDetail} aria-label="Tutup detail run">
                         <X className="h-4 w-4" />
@@ -4805,11 +4814,16 @@ export default function AletaSippPage() {
                     <CardTitle>Preview Jadwal Persidangan</CardTitle>
                     <CardDescription>Struktur PDF mengikuti registry jadwal sidang read-only.</CardDescription>
                   </div>
+                  {/* <a> biasa - lihat keterangan pada tombol PDF Jadwal di atas. */}
                   <Button asChild>
-                    <Link href={apiPath("/api/aleta-sipp/schedule/pdf")} target="_blank">
+                    <a
+                      href={apiPath("/api/aleta-sipp/schedule/pdf")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <FileText className="h-4 w-4" />
                       Buka PDF
-                    </Link>
+                    </a>
                   </Button>
                 </div>
               </CardHeader>

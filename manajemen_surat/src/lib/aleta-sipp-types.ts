@@ -315,6 +315,14 @@ export const ALETA_SIPP_SIDEBAR_ITEMS: AletaSippSidebarItem[] = [
     permission: ALETA_SIPP_PERMISSION.VIEW_ASSESSMENT,
   },
   {
+    id: "berjenjang",
+    label: "Penilaian Berjenjang",
+    description: "Delapan penilaian beserta bukti, cara hitung, dan ambangnya",
+    href: `${ALETA_SIPP_ROUTE}?section=berjenjang`,
+    iconKey: "shield-check",
+    permission: ALETA_SIPP_PERMISSION.VIEW_ASSESSMENT,
+  },
+  {
     id: "monitoring",
     label: "Monitoring SIPP",
     description: "Run/cache monitoring dan evaluasi SIPP",

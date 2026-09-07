@@ -21,7 +21,7 @@
  * (aleta-bot-jalur-gateway); yang dijaga di sini sambungan di ATAS jalur itu.
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -30,6 +30,20 @@ const AKAR = process.cwd();
 
 function baca(berkas: string) {
   return readFileSync(path.join(AKAR, berkas), "utf8");
+}
+
+/** Seluruh berkas .tsx di bawah sebuah folder. */
+function kumpulkanTsx(relatif: string): string[] {
+  const hasil: string[] = [];
+  const jelajah = (dir: string) => {
+    for (const isi of readdirSync(path.join(AKAR, dir), { withFileTypes: true })) {
+      const anak = `${dir}/${isi.name}`;
+      if (isi.isDirectory()) jelajah(anak);
+      else if (isi.name.endsWith(".tsx")) hasil.push(anak);
+    }
+  };
+  jelajah(relatif);
+  return hasil;
 }
 
 const HALAMAN_SIPP = "src/app/(portal)/aleta-sipp/page.tsx";
@@ -187,4 +201,68 @@ describe("layar penilaian berjenjang benar-benar terjangkau", () => {
       `Layar tidak membaca penahan ini: ${hilang.join(", ")}`
     ).toEqual([]);
   });
+  it("layar terdaftar pada navigasi sidebar, bukan hanya pada deretan tab", () => {
+    // Halaman ALETA x SIPP punya DUA daftar yang harus sejalan: deretan tab di
+    // dalam halaman, dan daftar navigasi sidebar yang juga menjadi bahan kotak
+    // pencarian menu. Mendaftar di salah satunya saja membuat layarnya tidak
+    // dapat ditemukan orang yang mencarinya lewat pencarian - dan itu benar-
+    // benar terjadi: layarnya sudah naik ke server, tetapi tidak ditemukan.
+    const jenis = baca("src/lib/aleta-sipp-types.ts");
+
+    expect(jenis).toContain('id: "berjenjang"');
+    expect(jenis).toContain('label: "Penilaian Berjenjang"');
+    expect(jenis).toContain("?section=berjenjang");
+
+    // Nilai tabnya dan nilai section pada navigasi harus SAMA - halaman
+    // memilih tab dari searchParams "section".
+    expect(halaman).toContain('const activeTab = searchParams.get("section")');
+    expect(halaman).toContain('{ value: "berjenjang", label: "Penilaian Berjenjang" }');
+  });
+
+  it("tab ini berada di awal deretan, bukan di luar layar", () => {
+    // Deretan tab menggulung ke samping tanpa tanda apa pun bahwa masih ada
+    // yang tersembunyi. Ditaruh di urutan ke-16 dari 18, layar ini tidak
+    // ditemukan orang yang berdiri tepat di halaman yang benar.
+    const butir = [...halaman.matchAll(/\{ value: "([a-z0-9-]+)", label: "/g)].map((m) => m[1]);
+    const urutan = butir.indexOf("berjenjang");
+
+    expect(urutan, "tab berjenjang hilang dari deretan").toBeGreaterThanOrEqual(0);
+    expect(
+      urutan,
+      `tab berjenjang berada di urutan ke-${urutan + 1} - terlalu jauh, akan tersembunyi di luar layar`
+    ).toBeLessThanOrEqual(3);
+  });
+
+  it("tidak ada tombol berkas yang memakai Link Next.js", () => {
+    // ============================================================
+    // PREFETCH NEXT.JS MENGUNDUH BERKAS TANPA DITEKAN
+    // ============================================================
+    //
+    // Next mem-prefetch tiap <Link> begitu ia terlihat di layar. Untuk jalur
+    // halaman itu berguna. Untuk endpoint yang memulangkan BERKAS, prefetch
+    // berarti berkasnya BENAR-BENAR diminta - dan peramban mengunduhnya tanpa
+    // ada yang menekan apa pun.
+    //
+    // Tombol "PDF Jadwal" berada di kepala halaman ALETA x SIPP, sehingga
+    // tampil pada SETIAP tab. Akibatnya membuka tab mana pun memicu satu
+    // unduhan PDF. Pemakainya melihat dialog unduhan muncul sendiri, berulang,
+    // tanpa sebab yang terlihat.
+    //
+    // Yang benar <a> biasa: peramban hanya mengambilnya ketika ditekan.
+    const berkasTsx = kumpulkanTsx("src");
+    const pelanggar: string[] = [];
+
+    for (const berkas of berkasTsx) {
+      const isi = readFileSync(path.join(AKAR, berkas), "utf8");
+      for (const cocok of isi.matchAll(/<Link[^>]*href=\{apiPath\(\s*["'`](\/api\/[^"'`]*)/g)) {
+        pelanggar.push(`${berkas} -> ${cocok[1]}`);
+      }
+    }
+
+    expect(
+      pelanggar,
+      `Link Next.js ke endpoint berkas akan di-prefetch dan terunduh sendiri: ${pelanggar.join(", ")}`
+    ).toEqual([]);
+  });
+
 });
