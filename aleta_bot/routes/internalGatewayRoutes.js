@@ -65,6 +65,8 @@ const penilaianIntegritasService = require("../services/penilaianIntegritasServi
 const penilaianSisaPanjarService = require("../services/penilaianSisaPanjarService");
 const kerangkaSebaranService = require("../services/kerangkaSebaranService");
 const sebaranPerkaraService = require("../services/sebaranPerkaraService");
+const kerangkaRaporService = require("../services/kerangkaRaporService");
+const raporAparaturService = require("../services/raporAparaturService");
 const raporBerjenjangService = require("../services/raporBerjenjangService");
 const gerbangRaporAparaturService = require("../services/gerbangRaporAparaturService");
 const periodePenilaianService = require("../services/periodePenilaianService");
@@ -1578,9 +1580,11 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
     // Sejak ada bentuk penilaian kedua, "yang terdaftar" datang dari DUA
     // daftar. Membaca satu saja membuat seluruh butir sebaran terbaca sebagai
     // sambungan yang putus - padahal ia justru berjalan.
+    raporAparaturService.daftarkanSemua();
     const terdaftar = [
       ...kerangkaPenilaianService.daftar().map((d) => d.kunci),
       ...kerangkaSebaranService.daftar().map((d) => d.kunci),
+      ...kerangkaRaporService.daftar().map((d) => d.kunci),
     ];
     const keadaan = katalogEAuditService.keadaan(terdaftar);
     const petaKeadaan = Object.create(null);
@@ -1613,6 +1617,53 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
       catatan:
         "Katalog ini daftar, bukan mesin. Butir yang belum tersambung tetap ditampilkan supaya sisa pekerjaan terlihat, bukan disembunyikan.",
     });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Rapor kinerja aparatur Bab 7 - penilaian dipecah menurut orangnya.
+ *
+ * ============================================================================
+ * RUTE TERSENDIRI DARI /e-audit/rapor
+ * ============================================================================
+ *
+ * Rute /e-audit/rapor memecah SATU penilaian menurut dimensi yang diminta -
+ * berguna saat menelusuri satu angka. Rute ini menyusun rapor yang sudah
+ * DIDAFTARKAN pada katalog Bab 7: beberapa penilaian sekaligus, berdampingan
+ * pada satu tabel orang lawan penilaian.
+ *
+ * Yang tidak dipulangkan keduanya: angka gabungan. Menggabungkan beberapa
+ * penilaian menjadi satu angka menuntut pembobotan, dan pembobotan adalah
+ * kewenangan pimpinan pengadilan.
+ */
+router.get("/e-audit/rapor-aparatur", requireInternalToken, async (req, res) => {
+  try {
+    penilaianTahapanService.daftarkanSemua();
+    raporAparaturService.daftarkanSemua();
+
+    const kunci = String(req.query.kunci || "").trim();
+    const jenisPeriode = String(req.query.periode || "bulanan").trim();
+    const acuan = String(req.query.acuan || "").trim() || periodePenilaianService.tanggalHariIni();
+
+    if (!kunci) {
+      res.json({
+        ok: true,
+        rapor: kerangkaRaporService.daftar(),
+        belumDapatDibangun: raporAparaturService.BELUM_DAPAT,
+        catatan:
+          "Sepuluh butir Bab 7 belum dapat dibangun, dan masing-masing menyebutkan penghalangnya. Butir yang hilang tanpa keterangan terbaca seperti butir yang memang tidak ada.",
+      });
+      return;
+    }
+
+    const hasil = await kerangkaRaporService.jalankan(kunci, jenisPeriode, acuan);
+    if (!hasil.ok) {
+      res.status(400).json(hasil);
+      return;
+    }
+    res.json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
@@ -1825,14 +1876,18 @@ router.get("/e-audit/butir", requireInternalToken, async (req, res) => {
 
     const daftar = kerangkaPenilaianService.daftar();
     const daftarSebaran = kerangkaSebaranService.daftar();
+    raporAparaturService.daftarkanSemua();
+    const daftarRapor = kerangkaRaporService.daftar();
     const keadaan = katalogEAuditService.keadaan([
       ...daftar.map((d) => d.kunci),
       ...daftarSebaran.map((d) => d.kunci),
+      ...daftarRapor.map((d) => d.kunci),
     ]);
     const ini = keadaan.perButir.find((x) => x.kode === b.kode) || { keadaan: "belum", kunci: null, catatan: "" };
     const definisi = ini.kunci
       ? daftar.find((d) => d.kunci === ini.kunci) ||
         daftarSebaran.find((d) => d.kunci === ini.kunci) ||
+        daftarRapor.find((d) => d.kunci === ini.kunci) ||
         null
       : null;
 

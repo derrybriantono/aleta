@@ -770,6 +770,30 @@ const SAMBUNGAN = {
     catatan:
       "Butir ini seharusnya hanya berlaku bagi perkara yang memang melalui pembuktian dengan saksi. Yang dinilai sekarang seluruh perkara, sehingga perkara yang putus verstek atau dicabut ikut terhitung tanpa saksi.",
   },
+  AP01: {
+    kunci: "raporMajelisHakim",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut lama penyelesaian, penundaan, dan tingkat upaya hukum. Yang tersusun baru sebelas penilaian ketaatan tahapan; ketiga hal itu belum ada penilaiannya.",
+  },
+  AP02: {
+    kunci: "raporHakimPerorangan",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut jumlah perkara ditangani dan kecepatan penyelesaiannya. Yang tersusun baru ketaatan tahapan; kecepatan penyelesaian belum ada penilaiannya.",
+  },
+  AP03: {
+    kunci: "raporPaniteraPengganti",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut jarak sidang ke berita acara dan ketepatan agenda. Yang tersusun baru ketaatan tahapan; jarak sidang ke berita acara menunggu KT10 dibangun penuh.",
+  },
+  AP04: {
+    kunci: "raporJurusita",
+    sifat: "sebagian",
+    catatan:
+      "Butir ini menuntut tingkat relaas retur yang DISESUAIKAN tingkat kesulitan wilayah. Penyesuaian itu menuntut daftar radius yang belum dibakukan, dan relaas retur belum ada penilaiannya.",
+  },
   ST02: {
     kunci: "sebaranJenisPerkara",
     sifat: "penuh",

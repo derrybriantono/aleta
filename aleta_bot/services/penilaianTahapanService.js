@@ -246,6 +246,29 @@ function susunKueri(t) {
   const dariTabel = t.dariTabel || "perkara";
   const dariRuas = t.dariRuas || "tanggal_pendaftaran";
 
+  // ==========================================================================
+  // NAMA PETUGAS IKUT DIBAWA TIAP BARIS
+  // ==========================================================================
+  //
+  // Tanpa ini, rapor per orang tidak mungkin disusun - dan rapor per orang
+  // adalah separuh guna pengawasan. Yang dibawa tiga peran yang tercatat SIPP
+  // pada tiap perkara, seluruhnya dari ruas yang sudah terbukti dipakai kueri
+  // lain di ALETA.
+  //
+  // Dipakai MAX, bukan penyaringan "aktif". Ruas aktif ada pada tabelnya
+  // tetapi tidak satu pun kueri di ALETA pernah memakainya sebagai saringan,
+  // sehingga artinya belum terbukti. Memakainya berarti menebak - dan menebak
+  // di sini berarti sebagian perkara kehilangan nama petugasnya tanpa suara.
+  //
+  // Perkara yang petugasnya belum tercatat tetap membawa baris, dengan nama
+  // kosong. Penyusun rapor mengumpulkannya sebagai "(tidak tercatat)" -
+  // terlihat, bukan hilang.
+  const PETUGAS = `,
+                 (SELECT MAX(hk.hakim_nama) FROM perkara_hakim_pn hk WHERE hk.perkara_id = p.perkara_id) AS hakim,
+                 (SELECT MAX(pp.majelis_hakim_nama) FROM perkara_panitera_pn pp WHERE pp.perkara_id = p.perkara_id) AS majelis,
+                 (SELECT MAX(pp.panitera_nama) FROM perkara_panitera_pn pp WHERE pp.perkara_id = p.perkara_id) AS paniteraPengganti,
+                 (SELECT MAX(js.jurusita_nama) FROM perkara_jurusita js WHERE js.perkara_id = p.perkara_id) AS jurusita`;
+
   if (t.mandiri) {
     // Butir yang memeriksa keberadaan ruas pada tabel perkara itu sendiri.
     return {
@@ -253,7 +276,7 @@ function susunKueri(t) {
                    p.nomor_perkara AS nomorPerkara,
                    p.jenis_perkara_nama AS jenisPerkara,
                    p.${t.ruas} AS acuan,
-                   p.${t.ruas} AS peristiwa
+                   p.${t.ruas} AS peristiwa${PETUGAS}
               FROM perkara p
              WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
              ORDER BY p.tanggal_pendaftaran ASC
@@ -292,7 +315,7 @@ function susunKueri(t) {
                  p.nomor_perkara AS nomorPerkara,
                  p.jenis_perkara_nama AS jenisPerkara,
                  ${sumberAcuan} AS acuan,
-                 (SELECT MIN(x.${t.ruas}) FROM ${t.tabel} x WHERE x.perkara_id = p.perkara_id) AS peristiwa
+                 (SELECT MIN(x.${t.ruas}) FROM ${t.tabel} x WHERE x.perkara_id = p.perkara_id) AS peristiwa${PETUGAS}
             FROM perkara p
            WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
              ${saringJenis}
@@ -361,6 +384,10 @@ function pembangunBaris(t) {
           kunci: `${teks(r.nomorPerkara)}#${t.kode}`,
           nomorPerkara: teks(r.nomorPerkara),
           jenisPerkara: teks(r.jenisPerkara),
+          hakim: teks(r.hakim),
+          majelis: teks(r.majelis),
+          paniteraPengganti: teks(r.paniteraPengganti),
+          jurusita: teks(r.jurusita),
           tanggalAcuan: acuan,
           tanggalPeristiwa: peristiwa,
           jarakHari: jarak,
@@ -416,8 +443,17 @@ function sambungan() {
 
 /** Seluruh nama tabel dan ruas SIPP yang disebut berkas ini. */
 function namaSippDipakai() {
-  const tabel = new Set(["perkara"]);
-  const ruas = new Set(["perkara_id", "nomor_perkara", "jenis_perkara_nama", "tanggal_pendaftaran"]);
+  const tabel = new Set(["perkara", "perkara_hakim_pn", "perkara_panitera_pn", "perkara_jurusita"]);
+  const ruas = new Set([
+    "perkara_id",
+    "nomor_perkara",
+    "jenis_perkara_nama",
+    "tanggal_pendaftaran",
+    "hakim_nama",
+    "majelis_hakim_nama",
+    "panitera_nama",
+    "jurusita_nama",
+  ]);
   TAHAPAN.forEach((t) => {
     tabel.add(t.tabel);
     if (t.dariTabel) tabel.add(t.dariTabel);
