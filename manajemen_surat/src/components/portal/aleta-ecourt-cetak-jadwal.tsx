@@ -37,7 +37,7 @@ type BarisCetak = {
   majelisNama: string;
   paniteraNama: string;
   jurusitaNama: string;
-  pihak: { penggugat: string[]; tergugat: string[] };
+  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
   // --- keterangan keadaan ---
   perkaraId?: string | number;
   alasanDitunda?: string;

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -152,5 +153,113 @@ describe("keadaan batas", () => {
 
   it("nama dengan ruang berlebih tetap dibandingkan sebagai orang yang sama", () => {
     expect(kunciNama("Mohammad Syukri, S.H.")).toBe(kunciNama("Mohammad  Syukri"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KEDUDUKAN PIHAK - SAKSI DAN TURUT TERGUGAT BUKAN PENGGUGAT
+// ---------------------------------------------------------------------------
+
+/**
+ * Salinan aturan pengelompokan dari sippJadwalSidangService.pihakBanyakPerkara.
+ *
+ * ==========================================================================
+ * CACAT YANG DIJAGA DI SINI
+ * ==========================================================================
+ *
+ * Aturan lama berbunyi "pihak_ke 2 masuk tergugat, SELURUH SISANYA masuk
+ * penggugat". Pengukuran v_pihak_perkara di PA Donggala menunjukkan akibatnya:
+ *
+ *   pihak_ke 1  Pemohon / Penggugat        14.268  benar
+ *   pihak_ke 2  Tergugat / Termohon         5.846  benar
+ *   pihak_ke 4  TURUT TERGUGAT                 27  masuk penggugat - SISI LAWAN
+ *   pihak_ke 5  SAKSI                      16.480  masuk penggugat
+ *
+ * Saksi lebih banyak daripada penggugatnya sendiri, sehingga hampir setiap
+ * perkara tampak berpenggugat tiga orang.
+ *
+ * Yang terkena bukan hanya layar jadwal: daftar yang sama dipakai CETAK jadwal
+ * sidang, layar antrian ruang tunggu, dan papan pintu ruang sidang - naskah
+ * dan layar yang dibaca para pihak sendiri.
+ */
+function kelompokkanPihak(
+  baris: Array<{ nama: string; pihakKe: number }>
+): { penggugat: string[]; tergugat: string[]; saksi: string[]; lain: string[] } {
+  const hasil = { penggugat: [] as string[], tergugat: [] as string[], saksi: [] as string[], lain: [] as string[] };
+  for (const x of baris) {
+    const nama = String(x.nama || "").trim();
+    if (!nama) continue;
+    const kedudukan = Number(x.pihakKe);
+    if (kedudukan === 1) hasil.penggugat.push(nama);
+    else if (kedudukan === 2 || kedudukan === 4) hasil.tergugat.push(nama);
+    else if (kedudukan === 5) hasil.saksi.push(nama);
+    else hasil.lain.push(nama);
+  }
+  return hasil;
+}
+
+describe("saksi tidak pernah terhitung sebagai penggugat", () => {
+  it("perkara 9984 - apa adanya dari v_pihak_perkara", () => {
+    // Inilah baris yang membuat layar berbunyi "Karmila binti Bustamin +2":
+    // Arfan dan Arpia adalah SAKSI, bukan penggugat kedua dan ketiga.
+    const hasil = kelompokkanPihak([
+      { nama: "Karmila binti Bustamin", pihakKe: 1 },
+      { nama: "Andika Rafliando bin Syarifuddin R. Gasing", pihakKe: 2 },
+      { nama: "Arfan bin Sudin", pihakKe: 5 },
+      { nama: "Arpia binti Haledu", pihakKe: 5 },
+    ]);
+    expect(hasil.penggugat).toEqual(["Karmila binti Bustamin"]);
+    expect(hasil.tergugat).toEqual(["Andika Rafliando bin Syarifuddin R. Gasing"]);
+    expect(hasil.saksi).toEqual(["Arfan bin Sudin", "Arpia binti Haledu"]);
+  });
+
+  it("turut tergugat berada di sisi TERGUGAT, bukan penggugat", () => {
+    // Menaruhnya di penggugat membalik kedudukannya pada naskah yang dibaca
+    // para pihak - dan naskah itu ikut dicetak.
+    const hasil = kelompokkanPihak([
+      { nama: "Penggugat A", pihakKe: 1 },
+      { nama: "Tergugat B", pihakKe: 2 },
+      { nama: "Turut Tergugat C", pihakKe: 4 },
+    ]);
+    expect(hasil.penggugat).toEqual(["Penggugat A"]);
+    expect(hasil.tergugat).toEqual(["Tergugat B", "Turut Tergugat C"]);
+  });
+
+  it("perkara berpenggugat banyak TETAP menyebut semuanya", () => {
+    // Perbaikan ini tidak boleh menghapus penggugat yang memang lebih dari
+    // satu - itu keadaan yang sah dan menentukan berapa relaas yang harus ada.
+    const hasil = kelompokkanPihak([
+      { nama: "Pemohon I", pihakKe: 1 },
+      { nama: "Pemohon II", pihakKe: 1 },
+      { nama: "Saksi X", pihakKe: 5 },
+    ]);
+    expect(hasil.penggugat).toEqual(["Pemohon I", "Pemohon II"]);
+    expect(hasil.saksi).toEqual(["Saksi X"]);
+  });
+
+  it("kedudukan yang tidak dikenali TIDAK dibuang ke salah satu sisi", () => {
+    // Itulah kekeliruan yang sedang diperbaiki; mengulanginya untuk nilai baru
+    // hanya menunda kejadian yang sama.
+    const hasil = kelompokkanPihak([{ nama: "Kedudukan Baru", pihakKe: 9 }]);
+    expect(hasil.penggugat).toEqual([]);
+    expect(hasil.tergugat).toEqual([]);
+    expect(hasil.lain).toEqual(["Kedudukan Baru"]);
+  });
+
+  it("baris tanpa nama dibuang, bukan menjadi baris kosong", () => {
+    expect(kelompokkanPihak([{ nama: "", pihakKe: 1 }]).penggugat).toEqual([]);
+  });
+});
+
+describe("aturan di layanan bot sama dengan salinan di uji ini", () => {
+  it("penggolongan pihak_ke ada apa adanya di berkas sumber", () => {
+    const berkas = path.resolve(process.cwd(), "../aleta_bot/services/sippJadwalSidangService.js");
+    const isi = readFileSync(berkas, "utf8");
+    // Kalau salah satu cabang dihapus, saksi atau turut tergugat kembali
+    // tercampur ke penggugat - tanpa galat, dan tanpa uji lain yang menuduh.
+    expect(isi).toContain("if (kedudukan === 1) hasil[kunci].penggugat.push(nama);");
+    expect(isi).toContain("else if (kedudukan === 2 || kedudukan === 4) hasil[kunci].tergugat.push(nama);");
+    expect(isi).toContain("else if (kedudukan === 5) hasil[kunci].saksi.push(nama);");
+    expect(isi).toContain("else hasil[kunci].lain.push(nama);");
   });
 });

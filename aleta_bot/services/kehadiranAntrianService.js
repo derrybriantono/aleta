@@ -107,6 +107,35 @@ async function ensureSchema() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
+  // ==========================================================================
+  // PEMBATALAN KEHADIRAN DICATAT, TIDAK MENGHAPUS BARIS ASLINYA
+  // ==========================================================================
+  //
+  // Reset kehadiran mengosongkan kolom waktu di aplikasi antrian, dan itu
+  // MENGGESER nomor urut orang lain. Perbuatan yang menggeser giliran orang
+  // harus dapat ditelusuri: siapa yang mereset, kapan, atas perkara mana, dan
+  // dengan alasan apa.
+  //
+  // Baris kehadiran aslinya sengaja TIDAK dihapus. Menghapusnya membuat
+  // catatan berbunyi seolah orang itu tidak pernah datang - padahal yang
+  // terjadi adalah pencatatannya keliru, dan keduanya berbeda. Yang dipakai
+  // membaca keadaan sekarang adalah baris pembatalan yang lebih baru.
+  //
+  // ALTER TABLE dipisah dari CREATE dan dibiarkan gagal diam: pemasangan yang
+  // tabelnya sudah punya kolom ini akan menolak, dan penolakan itu bukan
+  // masalah - tidak ada IF NOT EXISTS untuk kolom pada MySQL 5.7.
+  try {
+    await botDb.query(
+      `ALTER TABLE aleta_bot_antrian_kehadiran
+         ADD COLUMN dibatalkan_pada DATETIME NULL,
+         ADD COLUMN dibatalkan_oleh VARCHAR(191) NOT NULL DEFAULT '',
+         ADD COLUMN alasan_batal VARCHAR(255) NOT NULL DEFAULT ''`
+    );
+  } catch {
+    // Kolomnya sudah ada - keadaan yang wajar pada pemasangan yang sudah
+    // pernah dijalankan.
+  }
+
   skemaSiap = true;
   return true;
 }
@@ -246,6 +275,113 @@ async function catatHadir({
 }
 
 /**
+ * MEMBATALKAN kehadiran satu sisi - penggugat, tergugat, atau saksi.
+ *
+ * ============================================================================
+ * UNTUK SALAH INPUT, BUKAN UNTUK ORANG YANG PULANG
+ * ============================================================================
+ *
+ * Yang diperbaiki di sini adalah PENCATATANNYA, bukan kenyataannya. Orang yang
+ * sudah datang lalu pulang tetap pernah hadir, dan kehadirannya tidak boleh
+ * dihapus. Yang dibatalkan adalah catatan yang memang keliru dibuat - sisi
+ * yang salah ditekan, atau perkara yang salah dibuka.
+ *
+ * ============================================================================
+ * NOMOR URUT DIHITUNG ULANG SENDIRI - TIDAK ADA YANG DIGESER DI SINI
+ * ============================================================================
+ *
+ * Kolom waktu dikosongkan, dan urutan antrian menyusul dengan sendirinya
+ * karena antrianSidangService menurunkan waktuAmbil dari kolom itu:
+ *
+ *   pihak_1 dan pihak_2 ada  -> yang paling awal di antara keduanya
+ *   hanya salah satu ada     -> yang itu
+ *   keduanya kosong          -> barisnya keluar dari daftar bernomor dan
+ *                               kembali menjadi "belum ambil"
+ *
+ * Jadi bila penggugat tercatat 08:00 dan tergugat 09:00, lalu penggugat
+ * dibatalkan, urutan perkara ini bergeser mengikuti 09:00 - persis seperti
+ * seandainya hanya tergugat yang datang. Tidak ada satu pun nomor yang
+ * ditulis ulang tangan; yang ditulis ulang hanya kolom sumbernya.
+ *
+ * ============================================================================
+ * KEHADIRAN LAIN PADA SISI YANG SAMA IKUT BATAL - DAN ITU DISENGAJA
+ * ============================================================================
+ *
+ * Satu sisi hanya punya SATU kolom waktu. Bila penggugat I dan penggugat II
+ * sama-sama tercatat hadir, mengosongkan kolomnya membatalkan keduanya. Itu
+ * memang arti sebenarnya dari mengosongkan kolom itu, dan menyembunyikannya
+ * akan membuat layar menyatakan penggugat II masih hadir padahal waktunya
+ * sudah hilang dari aplikasi antrian.
+ */
+async function batalkanHadir({
+  perkaraId,
+  nomorPerkara = "",
+  tanggal = "",
+  sisi = "",
+  alasan = "",
+  dibatalkanOleh = "",
+} = {}) {
+  const id = String(perkaraId || "").trim();
+  if (!id) return { ok: false, alasan: "perkara_id_kosong" };
+
+  const kolom = KOLOM_SISI[String(sisi || "")];
+  if (!kolom) return { ok: false, alasan: "sisi_tidak_dikenali" };
+
+  const hari = tanggalSah(tanggal) || hariIni();
+  await ensureSchema();
+  const sekarang = new Date();
+
+  // Kolom antrian dikosongkan LEBIH DULU. Bila langkah ini gagal, catatan
+  // pembatalan tidak boleh ditulis - catatan yang menyatakan "sudah
+  // dibatalkan" sementara waktunya masih terisi di aplikasi antrian jauh
+  // lebih menyesatkan daripada tidak ada catatan sama sekali.
+  let antrianDikosongkan = false;
+  try {
+    const hasil = await externalDbService.query(
+      KUNCI_KONEKSI,
+      `UPDATE sipp_turunan_antrian.antrian_sidang
+          SET ${kolom} = NULL
+        WHERE perkara_id = ? AND tanggal_sidang = ? AND ${kolom} IS NOT NULL`,
+      [id, hari]
+    );
+    antrianDikosongkan = Number(hasil && hasil.affectedRows) > 0;
+  } catch (galat) {
+    return {
+      ok: false,
+      alasan: "antrian_gagal",
+      pesan: String((galat && galat.message) || galat).slice(0, 200),
+    };
+  }
+
+  // Menandai baris kehadiran yang masih berlaku pada sisi ini. Baris yang
+  // sudah pernah dibatalkan tidak ditimpa - riwayatnya utuh.
+  await botDb.query(
+    `UPDATE aleta_bot_antrian_kehadiran
+        SET dibatalkan_pada = ?, dibatalkan_oleh = ?, alasan_batal = ?
+      WHERE perkara_id = ? AND tanggal = ? AND sisi = ? AND dibatalkan_pada IS NULL`,
+    [
+      botDb.toMysqlDate(sekarang),
+      cleanText(dibatalkanOleh).slice(0, 191),
+      cleanText(alasan).slice(0, 255),
+      id,
+      hari,
+      String(sisi),
+    ]
+  );
+
+  return {
+    ok: true,
+    // false berarti kolomnya memang sudah kosong - bukan kegagalan. Yang
+    // menekan dua kali tidak perlu diberi pesan galat atas keadaan yang
+    // justru sudah sesuai keinginannya.
+    antrianDikosongkan,
+    sisi: String(sisi),
+    nomorPerkara: cleanText(nomorPerkara),
+    tanggal: hari,
+  };
+}
+
+/**
  * Siapa saja yang hadir pada sekumpulan perkara, terurut menurut kedatangan.
  *
  * Yang PERTAMA hadir disebutkan tersendiri: itulah yang menentukan nomor
@@ -269,6 +405,14 @@ async function daftarKehadiran(daftarPerkaraId = [], tanggal = "") {
               sumber, wa_chat_id AS waChatId
          FROM aleta_bot_antrian_kehadiran
         WHERE tanggal = ? AND perkara_id IN (${isian})
+          -- Kehadiran yang SUDAH DIBATALKAN tidak ikut dibaca. Tanpa saringan
+          -- ini, layar tetap menyebut orangnya hadir sesudah kehadirannya
+          -- direset - sementara kolom waktu di aplikasi antrian sudah kosong.
+          -- Dua sumber yang menjawab berbeda untuk pertanyaan yang sama, dan
+          -- yang dipercaya orang justru yang salah.
+          --
+          -- Barisnya tetap ada di tabel; yang berubah hanya apa yang dibaca.
+          AND dibatalkan_pada IS NULL
         ORDER BY waktu_hadir ASC`,
       [hari, ...bagian]
     );
@@ -525,6 +669,7 @@ module.exports = {
   KOLOM_SISI,
   KUNCI_KONEKSI,
   PERAN,
+  batalkanHadir,
   catatHadir,
   daftarKehadiran,
   ensureSchema,

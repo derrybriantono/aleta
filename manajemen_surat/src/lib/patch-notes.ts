@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.90.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.90.0 - Saksi Bernama dan Antrian per Sisi";
+export const APP_VERSION = "1.91.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.91.0 - Reset Kehadiran dan Kedudukan Pihak";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,36 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.91.0",
+    title: "ALETA Judicia v1.91.0 - Reset Kehadiran dan Kedudukan Pihak",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Kehadiran antrian yang salah input kini dapat dibatalkan per sisi, dan urutan antrian dihitung ulang sendiri. Sekalian ketahuan satu cacat lama: saksi dan turut tergugat selama ini terhitung sebagai penggugat - termasuk pada jadwal sidang yang dicetak dan papan pintu ruang yang dibaca para pihak.",
+    added: [
+      "Reset kehadiran pada menu Antrian tiap perkara, terpisah untuk penggugat, tergugat, dan saksi. Hanya sisi yang waktunya benar-benar terisi yang ditawarkan.",
+      "Jejak pembatalan kehadiran: siapa yang membatalkan, kapan, dan atas alasan apa. Baris kehadiran aslinya tidak dihapus - yang dicatat pembatalannya.",
+    ],
+    changed: [
+      "Penanda jumlah pihak berbentuk plus dua di samping nama penggugat dihapus. Ia menimbulkan pertanyaan alih-alih menjawabnya, dan angkanya pun keliru. Seluruh nama kini disebut dan dipisah koma.",
+    ],
+    fixed: [
+      "Saksi terhitung sebagai penggugat. Aturan lama berbunyi pihak_ke 2 masuk tergugat dan seluruh sisanya masuk penggugat, sehingga 16.480 baris saksi jatuh ke sisi penggugat - lebih banyak daripada penggugatnya sendiri, dan hampir setiap perkara tampak berpenggugat tiga orang.",
+      "Turut tergugat terhitung sebagai penggugat - sisi yang berlawanan dengan kedudukannya. Terkena 27 baris.",
+      "Kedua cacat di atas ikut terbawa ke cetak jadwal sidang, layar antrian ruang tunggu, dan papan pintu ruang sidang - naskah dan layar yang dibaca para pihak sendiri.",
+      "Kehadiran yang sudah dibatalkan tidak lagi ikut dibaca daftar kehadiran, sehingga layar tidak menyebut orangnya hadir sementara waktunya sudah kosong di aplikasi antrian.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Nomor antrian adalah urutan baris pada daftar yang diurutkan menurut waktu ambil, bukan angka yang disimpan. Karena itu membatalkan kehadiran satu perkara dapat menggeser nomor perkara lain - sama seperti setiap pencatatan kehadiran baru. Itu perilaku yang sudah berlaku sejak semula, bukan yang ditambahkan rilis ini.",
+      "Pencarian nama pada layar pengambilan antrian tetap menemukan saksi meski saksi tidak lagi tercampur ke daftar penggugat - saksi termasuk yang boleh mengambil nomor.",
+    ],
+    knownLimitations: [
+      "Satu sisi hanya punya satu kolom waktu di aplikasi antrian. Membatalkan sisi penggugat karena itu membatalkan seluruh kehadiran pada sisi itu, termasuk penggugat kedua bila ada.",
+      "Waktu ambil saksi tidak ikut menentukan urutan antrian - hanya kolom penggugat dan tergugat yang dihitung. Perkara yang hanya saksinya mengambil nomor karena itu tetap terbaca belum ambil. Keadaan ini sudah berlaku sejak sebelum rilis ini.",
+    ],
+  },
   {
     version: "1.90.0",
     title: "ALETA Judicia v1.90.0 - Saksi Bernama dan Antrian per Sisi",

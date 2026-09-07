@@ -1360,14 +1360,49 @@ async function pihakBanyakPerkara(daftarPerkaraId = []) {
     dipakai
   );
 
+  // ==========================================================================
+  // TIAP KEDUDUKAN DISEBUT SENDIRI - TIDAK ADA LAGI "SELAIN TERGUGAT"
+  // ==========================================================================
+  //
+  // Aturan lama: pihak_ke 2 masuk tergugat, SELURUH SISANYA masuk penggugat.
+  // Itu keliru pada dua kedudukan sekaligus, dan pengukuran v_pihak_perkara
+  // di PA Donggala menunjukkan besarnya:
+  //
+  //   pihak_ke 1  Pemohon / Penggugat        14.268  benar
+  //   pihak_ke 2  Tergugat / Termohon         5.846  benar
+  //   pihak_ke 4  TURUT TERGUGAT                 27  tercatat sebagai penggugat
+  //   pihak_ke 5  SAKSI                      16.480  tercatat sebagai penggugat
+  //
+  // Saksi berjumlah lebih banyak daripada penggugatnya sendiri, sehingga
+  // hampir setiap perkara tampak berpenggugat tiga orang. Turut tergugat lebih
+  // buruk lagi: ia tercatat pada sisi yang BERLAWANAN dengan kedudukannya.
+  //
+  // Keliru ini tidak pernah terlihat selama layar hanya menggambar nama
+  // pertama - dan nama pertama kebetulan selalu penggugat yang benar, karena
+  // kuerinya sudah urut menurut pihak_ke. Ia baru muncul ketika jumlahnya
+  // ikut disebut.
+  //
+  // Yang terkena bukan hanya layar jadwal: daftar yang sama dipakai CETAK
+  // jadwal sidang, layar antrian ruang tunggu, dan papan pintu ruang - naskah
+  // dan layar yang dibaca para pihak sendiri.
+  //
+  // Kedudukan yang tidak dikenali sengaja TIDAK dibuang ke salah satu sisi.
+  // Itulah kekeliruan yang sedang diperbaiki; mengulanginya untuk nilai baru
+  // hanya menunda kejadian yang sama.
   const hasil = {};
   for (const baris of Array.isArray(rows) ? rows : []) {
     const kunci = String(baris.perkaraId);
-    if (!hasil[kunci]) hasil[kunci] = { penggugat: [], tergugat: [] };
+    if (!hasil[kunci]) hasil[kunci] = { penggugat: [], tergugat: [], saksi: [], lain: [] };
     const nama = cleanText(baris.nama);
     if (!nama) continue;
-    if (Number(baris.pihakKe) === 2) hasil[kunci].tergugat.push(nama);
-    else hasil[kunci].penggugat.push(nama);
+
+    const kedudukan = Number(baris.pihakKe);
+    if (kedudukan === 1) hasil[kunci].penggugat.push(nama);
+    // Turut tergugat ada di SISI tergugat - itulah artinya. Menaruhnya di
+    // penggugat membalik kedudukannya di naskah yang dibaca para pihak.
+    else if (kedudukan === 2 || kedudukan === 4) hasil[kunci].tergugat.push(nama);
+    else if (kedudukan === 5) hasil[kunci].saksi.push(nama);
+    else hasil[kunci].lain.push(nama);
   }
   return hasil;
 }

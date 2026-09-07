@@ -1146,7 +1146,7 @@ export type SidangBaris = {
   /** 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir. */
   dihadiriOleh: number | null;
   adaBas: boolean;
-  pihak: { penggugat: string[]; tergugat: string[] };
+  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
   panggilan: {
     hadirSebelumnya: number | null;
     wajibDipanggil: number[];
@@ -1768,6 +1768,37 @@ export async function catatKehadiranAntrian(params: {
   });
 }
 
+/**
+ * MEMBATALKAN kehadiran satu sisi, lalu mengosongkan waktu ambilnya.
+ *
+ * Urutan antrian menyusul dengan sendirinya - waktuAmbil diturunkan dari kolom
+ * yang dikosongkan itu. Penggugat 08:00 dan tergugat 09:00, lalu penggugat
+ * dibatalkan, membuat perkara itu bergeser mengikuti 09:00.
+ *
+ * `antrianDikosongkan` false berarti kolomnya memang sudah kosong - bukan
+ * kegagalan.
+ */
+export async function batalkanKehadiranAntrian(params: {
+  perkaraId: string;
+  nomorPerkara: string;
+  sisi: string;
+  alasan?: string;
+  dibatalkanOleh: string;
+}): Promise<
+  GatewayResult<{
+    ok: boolean;
+    alasan?: string;
+    pesan?: string;
+    antrianDikosongkan: boolean;
+    sisi: string;
+  }>
+> {
+  return gatewayFetch("/internal/aleta-bot/antrian/batal-hadir", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
 /** Memberitahu yang tinggal satu atau dua antrian lagi. */
 export async function kirimPemberitahuanAntrian(params: {
   jarak: number;
@@ -2328,7 +2359,7 @@ export type GatewayJadwalMediasi = {
   tenggatPerma: string;
   sisaHariTenggat: number | null;
   lewatTenggang: boolean;
-  pihak: { penggugat: string[]; tergugat: string[] };
+  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
 };
 
 export async function getGatewayJadwalMediasi(params: {

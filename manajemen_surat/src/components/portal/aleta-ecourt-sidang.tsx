@@ -73,7 +73,7 @@ type SidangBaris = {
   urutanSidang: number;
   dihadiriOleh: number | null;
   adaBas: boolean;
-  pihak: { penggugat: string[]; tergugat: string[] };
+  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
   panggilan: {
     hadirSebelumnya: number | null;
     wajibDipanggil: number[];
@@ -1125,12 +1125,31 @@ function MenuLayarAntrian() {
   );
 }
 
+/**
+ * Sisi antrian yang waktunya BENAR-BENAR sudah terisi.
+ *
+ * Kunci di sini adalah nama kolom di aplikasi antrian - pihak_1, pihak_2,
+ * saksi - dan dikirim apa adanya ke bot, yang menolak nilai di luar ketiganya.
+ * Labelnya dipakai layar, dan jamnya menjadi keterangan pada tombol resetnya.
+ */
+function sisiTerisi(antrian: AntrianBaris | undefined) {
+  if (!antrian) return [];
+  return [
+    { kunci: "pihak_1", label: "penggugat/pemohon", jam: antrian.pihak1 },
+    { kunci: "pihak_2", label: "tergugat/termohon", jam: antrian.pihak2 },
+    { kunci: "saksi", label: "saksi", jam: antrian.saksi },
+  ].filter((x) => Boolean(x.jam));
+}
+
 function TombolAmbilAntrian({
   baris,
+  antrian,
   sudahAda,
   onSelesai,
 }: {
   baris: SidangBaris;
+  /** Baris antrian perkara ini - dipakai menentukan sisi mana yang dapat direset. */
+  antrian?: AntrianBaris;
   /** Nomor antrian yang sudah ada, bila perkaranya sudah pernah diambil. */
   sudahAda: number | null | undefined;
   onSelesai: () => void;
@@ -1138,6 +1157,49 @@ function TombolAmbilAntrian({
   const [terbuka, setTerbuka] = useState(false);
   const [sibuk, setSibuk] = useState("");
   const [pesan, setPesan] = useState("");
+
+  const antrianSisi = sisiTerisi(antrian);
+
+  const batalkan = async (sisi: { kunci: string; label: string; jam: string }) => {
+    setSibuk(`batal-${sisi.kunci}`);
+    setPesan("");
+    try {
+      const jawaban = await fetch(apiPath("/api/aleta-ecourt/antrian-ambil"), {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          perkaraId: baris.perkaraId,
+          nomorPerkara: baris.nomorPerkara,
+          sisi: sisi.kunci,
+          alasan: "salah input",
+        }),
+      });
+      const isi = (await jawaban.json()) as {
+        ok?: boolean;
+        alasan?: string;
+        antrianDikosongkan?: boolean;
+        data?: { ok?: boolean; alasan?: string; antrianDikosongkan?: boolean };
+      };
+      const hasil = isi.data ?? isi;
+      if (!hasil.ok) {
+        setPesan(hasil.alasan || "Kehadiran belum dapat dibatalkan.");
+        return;
+      }
+      // antrianDikosongkan false berarti kolomnya memang sudah kosong - bukan
+      // kegagalan. Yang menekan dua kali tidak perlu diberi pesan galat atas
+      // keadaan yang justru sudah sesuai keinginannya.
+      setPesan(
+        hasil.antrianDikosongkan
+          ? `Kehadiran ${sisi.label} dibatalkan. Urutan antrian dihitung ulang.`
+          : `Kehadiran ${sisi.label} memang sudah kosong.`
+      );
+      onSelesai();
+    } catch {
+      setPesan("Kehadiran belum dapat dibatalkan.");
+    } finally {
+      setSibuk("");
+    }
+  };
 
   const ambil = async (peran: (typeof PERAN_ANTRIAN)[number]) => {
     setSibuk(peran.kunci);
@@ -1221,6 +1283,46 @@ function TombolAmbilAntrian({
               {sibuk === peran.kunci ? "Mencatat…" : peran.label}
             </button>
           ))}
+          {/* ==============================================================
+              RESET KEHADIRAN - HANYA SISI YANG MEMANG SUDAH TERCATAT
+              ==============================================================
+
+              Untuk SALAH INPUT, bukan untuk orang yang datang lalu pulang.
+              Yang sudah hadir tetap pernah hadir, dan kehadirannya tidak
+              dihapus dari catatan - yang ditulis adalah pembatalannya, beserta
+              siapa yang membatalkan dan kapan.
+
+              Hanya sisi yang waktunya benar-benar terisi yang ditawarkan.
+              Menawarkan reset atas sisi yang belum pernah mengambil membuat
+              orang menekannya lalu bertanya kenapa tidak terjadi apa-apa -
+              dan pada tombol yang menggeser giliran orang, keraguan itu mahal.
+
+              Nomor urut menyusul dengan sendirinya: waktuAmbil diturunkan dari
+              kolom yang dikosongkan. Penggugat 08:00 dan tergugat 09:00, lalu
+              penggugat dibatalkan, membuat perkara ini bergeser mengikuti
+              09:00 - persis seperti seandainya hanya tergugat yang datang. */}
+          {antrianSisi.length > 0 ? (
+            <>
+              <p className="mt-1 border-t px-2 pt-1.5 text-[11px] text-muted-foreground">
+                Reset kehadiran (salah input)
+              </p>
+              {antrianSisi.map((sisi) => (
+                <button
+                  key={sisi.kunci}
+                  type="button"
+                  disabled={Boolean(sibuk)}
+                  onClick={() => void batalkan(sisi)}
+                  title={`Membatalkan kehadiran ${sisi.label} yang tercatat pukul ${sisi.jam}. Urutan antrian akan dihitung ulang.`}
+                  className="block w-full rounded px-2 py-1 text-left text-xs text-rose-700 transition hover:bg-rose-50 disabled:opacity-50 dark:text-rose-300 dark:hover:bg-rose-950"
+                >
+                  {sibuk === `batal-${sisi.kunci}`
+                    ? "Membatalkan…"
+                    : `Reset ${sisi.label} (${sisi.jam})`}
+                </button>
+              ))}
+            </>
+          ) : null}
+
           {pesan ? (
             <p className="border-t px-2 py-1 text-[11px] text-muted-foreground">{pesan}</p>
           ) : null}
@@ -3067,6 +3169,7 @@ export function AletaEcourtSidang({
                           <div className="mt-1">
                             <TombolAmbilAntrian
                               baris={baris}
+                              antrian={antrian.peta[String(baris.perkaraId)]}
                               sudahAda={antrian.peta[String(baris.perkaraId)]?.nomor}
                               onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
                             />
@@ -3119,9 +3222,16 @@ export function AletaEcourtSidang({
                               sebagai satu bahasa - bukan tiga singkatan yang
                               kebetulan mirip.
 
-                              Beberapa penggugat atau tergugat disebut jumlahnya,
-                              bukan disembunyikan: perkara berpihak banyak
-                              menentukan berapa relaas yang harus ada. */}
+                              Bila pihaknya lebih dari satu, SELURUH namanya
+                              disebut dan dipisah koma - dipotong truncate bila
+                              melebihi lebar kolom, dengan nama lengkapnya tetap
+                              terbaca pada title.
+
+                              Penanda "+2" yang sempat dipakai sudah DIHAPUS. Ia
+                              menimbulkan pertanyaan alih-alih menjawabnya, dan
+                              angkanya pun keliru: saksi ikut terhitung sebagai
+                              penggugat, sehingga hampir setiap perkara tampak
+                              berpenggugat tiga orang. */}
                           {baris.pihak.penggugat.length > 0 ||
                           baris.pihak.tergugat.length > 0 ? (
                             <div className="mt-0.5 space-y-0.5 text-sm text-muted-foreground">
@@ -3131,10 +3241,7 @@ export function AletaEcourtSidang({
                                   title={baris.pihak.penggugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">P:</span>{" "}
-                                  {baris.pihak.penggugat[0]}
-                                  {baris.pihak.penggugat.length > 1
-                                    ? ` +${baris.pihak.penggugat.length - 1}`
-                                    : ""}
+                                  {baris.pihak.penggugat.join(", ")}
                                 </div>
                               ) : null}
                               {baris.pihak.tergugat.length > 0 ? (
@@ -3143,10 +3250,7 @@ export function AletaEcourtSidang({
                                   title={baris.pihak.tergugat.join(", ")}
                                 >
                                   <span className="font-medium text-foreground/70">T:</span>{" "}
-                                  {baris.pihak.tergugat[0]}
-                                  {baris.pihak.tergugat.length > 1
-                                    ? ` +${baris.pihak.tergugat.length - 1}`
-                                    : ""}
+                                  {baris.pihak.tergugat.join(", ")}
                                 </div>
                               ) : null}
                             </div>

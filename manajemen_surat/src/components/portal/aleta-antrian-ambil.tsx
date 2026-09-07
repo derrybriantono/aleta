@@ -43,7 +43,7 @@ type SidangBaris = {
   jamSidang: string;
   agenda: string;
   ruangan: string;
-  pihak: { penggugat: string[]; tergugat: string[] };
+  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
 };
 
 type KehadiranBaris = {
@@ -127,9 +127,18 @@ export function AletaAntrianAmbil() {
     return sidang.filter(
       (baris) =>
         baris.nomorPerkara.toLowerCase().includes(kata) ||
-        [...baris.pihak.penggugat, ...baris.pihak.tergugat].some((n) =>
-          n.toLowerCase().includes(kata)
-        )
+        // Saksi IKUT dicari meski tidak ikut ditampilkan sebagai pihak.
+        //
+        // Sebelumnya saksi ikut tercampur ke dalam daftar penggugat, sehingga
+        // pencarian ini menemukannya secara kebetulan. Sesudah campuran itu
+        // diperbaiki, mereka harus disebut terang-terangan di sini - saksi
+        // termasuk yang boleh mengambil nomor antrian, dan yang datang ke meja
+        // pengambilan mencari namanya sendiri.
+        [
+          ...baris.pihak.penggugat,
+          ...baris.pihak.tergugat,
+          ...(baris.pihak.saksi ?? []),
+        ].some((n) => n.toLowerCase().includes(kata))
     );
   }, [cari, sidang]);
 

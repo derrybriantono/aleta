@@ -64,7 +64,7 @@ type Mediasi = {
   tenggatPerma: string;
   sisaHariTenggat: number | null;
   lewatTenggang: boolean;
-  pihak: { penggugat: string[]; tergugat: string[] };
+  pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
 };
 
 /**

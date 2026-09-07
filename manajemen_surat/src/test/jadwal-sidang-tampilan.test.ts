@@ -346,3 +346,95 @@ describe("aturan warna dan verzet di komponen sama dengan salinan di atas", () =
     expect(isi.split("/verzet|perlawanan/i").length - 1).toBe(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// RESET KEHADIRAN ANTRIAN
+// ---------------------------------------------------------------------------
+
+/** Salinan sisiTerisi dari aleta-ecourt-sidang.tsx. */
+function sisiTerisi(antrian: { pihak1?: string; pihak2?: string; saksi?: string } | undefined) {
+  if (!antrian) return [];
+  return [
+    { kunci: "pihak_1", label: "penggugat/pemohon", jam: antrian.pihak1 },
+    { kunci: "pihak_2", label: "tergugat/termohon", jam: antrian.pihak2 },
+    { kunci: "saksi", label: "saksi", jam: antrian.saksi },
+  ].filter((x) => Boolean(x.jam));
+}
+
+/**
+ * Salinan aturan waktuAmbil dari antrianSidangService.SQL_URUTAN.
+ *
+ * Inilah yang membuat reset bekerja tanpa satu pun nomor ditulis ulang tangan:
+ * nomor antrian adalah URUTAN BARIS pada daftar yang diurutkan menurut nilai
+ * ini, sehingga mengosongkan satu kolom cukup untuk menghitung ulang seluruh
+ * giliran.
+ */
+function waktuAmbil(baris: { pihak1: string | null; pihak2: string | null }): string | null {
+  if (baris.pihak1 !== null && baris.pihak2 !== null) {
+    return baris.pihak1 < baris.pihak2 ? baris.pihak1 : baris.pihak2;
+  }
+  if (baris.pihak1 !== null) return baris.pihak1;
+  return baris.pihak2;
+}
+
+describe("sisi yang dapat direset hanya yang waktunya terisi", () => {
+  it("hanya sisi terisi yang ditawarkan", () => {
+    // Menawarkan reset atas sisi yang belum pernah mengambil membuat orang
+    // menekannya lalu bertanya kenapa tidak terjadi apa-apa - dan pada tombol
+    // yang menggeser giliran orang, keraguan itu mahal.
+    const hasil = sisiTerisi({ pihak1: "08:17", pihak2: "", saksi: "08:24" });
+    expect(hasil.map((x) => x.kunci)).toEqual(["pihak_1", "saksi"]);
+  });
+
+  it("kunci yang dikirim adalah nama kolom aplikasi antrian", () => {
+    // Bot menolak nilai di luar pihak_1, pihak_2, dan saksi. Kunci yang
+    // dikarang di layar akan ditolak diam-diam sebagai "sisi_tidak_dikenali".
+    const hasil = sisiTerisi({ pihak1: "08:00", pihak2: "09:00", saksi: "09:30" });
+    expect(hasil.map((x) => x.kunci)).toEqual(["pihak_1", "pihak_2", "saksi"]);
+  });
+
+  it("perkara yang belum ada di mesin antrian tidak menawarkan reset apa pun", () => {
+    expect(sisiTerisi(undefined)).toEqual([]);
+    expect(sisiTerisi({ pihak1: "", pihak2: "", saksi: "" })).toEqual([]);
+  });
+});
+
+describe("urutan antrian dihitung ulang sendiri sesudah reset", () => {
+  it("penggugat 08:00 direset, urutan mengikuti tergugat 09:00", () => {
+    // Persis keadaan yang diminta: P hadir 08, T hadir 09, lalu P ternyata
+    // salah input dan direset - giliran perkara ini menjadi 09:00.
+    expect(waktuAmbil({ pihak1: "08:00", pihak2: "09:00" })).toBe("08:00");
+    expect(waktuAmbil({ pihak1: null, pihak2: "09:00" })).toBe("09:00");
+  });
+
+  it("tergugat direset, urutan tetap mengikuti penggugat", () => {
+    expect(waktuAmbil({ pihak1: "08:00", pihak2: null })).toBe("08:00");
+  });
+
+  it("kedua sisi direset - tidak ada lagi waktu ambil, dan itu bukan nol", () => {
+    // Barisnya keluar dari daftar bernomor dan kembali menjadi "belum ambil".
+    // Memberi nomor kepada yang tidak ada waktunya berarti menggeser nomor
+    // orang lain atas kehadiran yang sudah dibatalkan.
+    expect(waktuAmbil({ pihak1: null, pihak2: null })).toBeNull();
+  });
+
+  it("yang terawal yang menentukan, bukan yang terakhir", () => {
+    expect(waktuAmbil({ pihak1: "09:30", pihak2: "08:15" })).toBe("08:15");
+  });
+});
+
+describe("jalur reset ada apa adanya di layanan bot", () => {
+  it("pembatalan mengosongkan kolom dan mencatat jejaknya", () => {
+    const berkas = path.resolve(process.cwd(), "../aleta_bot/services/kehadiranAntrianService.js");
+    const isi = readFileSync(berkas, "utf8");
+    expect(isi).toContain("async function batalkanHadir");
+    // Kolomnya dikosongkan - bukan barisnya dihapus.
+    expect(isi).toContain("SET ${kolom} = NULL");
+    // Jejaknya ditulis: siapa, kapan, alasan apa. Perbuatan yang menggeser
+    // giliran orang harus dapat ditelusuri.
+    expect(isi).toContain("dibatalkan_pada = ?, dibatalkan_oleh = ?, alasan_batal = ?");
+    // Yang sudah dibatalkan tidak ikut dibaca lagi, atau layar akan menyebut
+    // orangnya hadir sementara waktunya sudah kosong di aplikasi antrian.
+    expect(isi).toContain("AND dibatalkan_pada IS NULL");
+  });
+});

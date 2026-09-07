@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
+  batalkanKehadiranAntrian,
   catatKehadiranAntrian,
   getGatewayPeranAntrian,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -118,6 +119,73 @@ export async function POST(request: NextRequest) {
       db,
       actorUserId,
       action: "ANTRIAN_AMBIL_FAILED",
+      feature: "aleta_ecourt",
+      entityId: "antrian-ambil",
+    });
+  }
+}
+
+/**
+ * MEMBATALKAN kehadiran satu sisi - untuk salah input.
+ *
+ * ============================================================================
+ * KENAPA DELETE, DAN KENAPA TETAP DI RUTE YANG SAMA
+ * ============================================================================
+ *
+ * Ia membatalkan apa yang dibuat POST di atas, dan wewenangnya sama persis:
+ * yang boleh mencatat kehadiran adalah yang boleh membetulkannya. Memisahnya
+ * ke rute lain hanya menambah satu tempat lagi yang harus diingat saat
+ * wewenangnya kelak diperketat.
+ *
+ * ============================================================================
+ * INI MENGGESER GILIRAN ORANG LAIN
+ * ============================================================================
+ *
+ * Mengosongkan waktu ambil mengubah urutan antrian - bukan hanya baris ini.
+ * Karena itu nama pembatalnya diambil dari sesi yang sedang berjalan dan tidak
+ * dapat diketik, sama seperti pada pencatatan kehadiran.
+ */
+export async function DELETE(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
+  try {
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
+
+    const masukan = (await request.json().catch(() => ({}))) as {
+      perkaraId?: string;
+      nomorPerkara?: string;
+      sisi?: string;
+      alasan?: string;
+    };
+
+    const perkaraId = String(masukan.perkaraId ?? "").trim();
+    const sisi = String(masukan.sisi ?? "").trim();
+    if (!perkaraId || !sisi) {
+      return ok({ ok: false, alasan: "Perkara dan sisi wajib disebut." });
+    }
+
+    const hasil = await batalkanKehadiranAntrian({
+      perkaraId,
+      nomorPerkara: String(masukan.nomorPerkara ?? ""),
+      sisi,
+      alasan: String(masukan.alasan ?? "").slice(0, 255),
+      dibatalkanOleh: aktor.name || String(actorUserId ?? "petugas"),
+    });
+
+    if (!hasil.ok) {
+      return ok({ ok: false, alasan: hasil.error || "Kehadiran belum dapat dibatalkan." });
+    }
+    if (!hasil.data) {
+      return ok({ ok: false, alasan: "Kehadiran belum dapat dibatalkan." });
+    }
+    return ok(hasil.data);
+  } catch (error) {
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "ANTRIAN_BATAL_HADIR_FAILED",
       feature: "aleta_ecourt",
       entityId: "antrian-ambil",
     });

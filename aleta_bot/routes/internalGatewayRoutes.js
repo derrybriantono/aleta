@@ -1161,6 +1161,43 @@ router.post("/antrian/hadir", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * MEMBATALKAN kehadiran satu sisi, lalu mengosongkan waktu ambilnya.
+ *
+ * ==========================================================================
+ * UNTUK SALAH INPUT, DAN NOMOR ORANG LAIN IKUT BERGESER
+ * ==========================================================================
+ *
+ * Yang diperbaiki pencatatannya, bukan kenyataannya: orang yang sudah datang
+ * lalu pulang tetap pernah hadir. Yang dibatalkan adalah catatan yang memang
+ * keliru dibuat - sisi yang salah ditekan, atau perkara yang salah dibuka.
+ *
+ * Mengosongkan kolom waktu MENGGESER urutan antrian, dan karena itu jejaknya
+ * dicatat: siapa yang membatalkan, kapan, dan atas alasan apa.
+ */
+router.post("/antrian/batal-hadir", requireInternalToken, async (req, res) => {
+  try {
+    const perkaraId = String(req.body?.perkaraId || "").trim();
+    if (!perkaraId) {
+      res.status(400).json({ ok: false, error: "perkaraId wajib diisi." });
+      return;
+    }
+
+    const hasil = await kehadiranAntrianService.batalkanHadir({
+      perkaraId,
+      nomorPerkara: String(req.body?.nomorPerkara || ""),
+      tanggal: String(req.body?.tanggal || ""),
+      sisi: String(req.body?.sisi || ""),
+      alasan: String(req.body?.alasan || ""),
+      dibatalkanOleh: String(req.body?.dibatalkanOleh || ""),
+    });
+
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * Memberitahu yang tinggal satu atau dua antrian lagi.
  *
  * Uji kering adalah bawaan. Yang diberitahu hanya yang meninggalkan nomor
