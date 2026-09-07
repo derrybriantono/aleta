@@ -31,6 +31,7 @@ import {
   DiagramGaris,
   DiagramPai,
   DiagramSebar,
+  GarisMini,
   HURUF_DIKENALI,
   Kesimpulan,
   PetaKendali,
@@ -230,6 +231,26 @@ describe("sepuluh bentuk sajian tahan data batas", () => {
     render(<BentukResmi judul="Kosong" kolom={KOLOM} baris={[]} tanggalHitung="2026-09-07" />);
     expect(screen.getByText(/tidak ada baris/i)).toBeInTheDocument();
     expect(screen.getByText("Tanggal hitung:")).toBeInTheDocument();
+  });
+
+  it("garis mini menolak menggambar di bawah tiga titik", () => {
+    // Riwayat dua titik selalu lurus, dan garis lurus sekecil ini terbaca
+    // seperti "tidak berubah" - padahal belum tentu ada yang diketahui.
+    const { unmount } = render(<GarisMini nilai={[10, 20]} />);
+    expect(screen.getByTitle("riwayat belum cukup untuk digambar")).toBeInTheDocument();
+    unmount();
+
+    render(<GarisMini nilai={[10, 20, 15, 30]} />);
+    expect(screen.getByText(/4 periode terakhir/)).toBeInTheDocument();
+  });
+
+  it("garis mini menyebut arahnya, dan mengabaikan nilai kosong", () => {
+    const { unmount } = render(<GarisMini nilai={[30, 20, 10]} />);
+    expect(screen.getByText(/turun/)).toBeInTheDocument();
+    unmount();
+
+    render(<GarisMini nilai={[10, null, 20, 30]} />);
+    expect(screen.getByText(/3 periode terakhir, naik/)).toBeInTheDocument();
   });
 
   it("kesepuluh huruf dikenali, dan huruf asing dilaporkan", () => {

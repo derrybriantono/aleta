@@ -1611,6 +1611,11 @@ export async function getGatewayKatalogEAudit(): Promise<GatewayResult<Record<st
   return gatewayFetch(`/internal/aleta-bot/e-audit/katalog`);
 }
 
+/** Dua puluh alat di dalam penilaian beserta keadaan kedua sisinya. */
+export async function getGatewayAlatEAudit(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/e-audit/alat`);
+}
+
 /** Satu butir katalog beserta definisi penilaiannya bila sudah tersambung. */
 export async function getGatewayButirEAudit(
   kode: string

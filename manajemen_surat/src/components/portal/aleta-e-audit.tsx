@@ -88,6 +88,25 @@ type Katalog = {
   catatan?: string;
 };
 
+type Alat = {
+  kode: string;
+  nama: string;
+  letak: string;
+  keterangan: string;
+  keadaan: "siap" | "sebelah" | "belum";
+  mesinAda: boolean;
+  layarAda: boolean;
+  sebab: string;
+};
+
+type DaftarAlat = {
+  available?: boolean;
+  alat?: Alat[];
+  ringkas?: { jumlah: number; siap: number; sebelah: number; belum: number };
+  cela?: string[];
+  catatan?: string;
+};
+
 type CaraHitung = {
   pembilang?: string;
   penyebut?: string;
@@ -146,6 +165,7 @@ export function AletaEAudit() {
   const [kodeTerbuka, setKodeTerbuka] = useState("");
   const [rinci, setRinci] = useState<Rinci | null>(null);
   const [sedangBuka, setSedangBuka] = useState("");
+  const [alat, setAlat] = useState<DaftarAlat | null>(null);
 
   useEffect(() => {
     let dibatalkan = false;
@@ -157,6 +177,22 @@ export function AletaEAudit() {
         if (jawab.bab && jawab.bab.length > 0) setBabTerpilih(jawab.bab[0].no);
       } catch (e) {
         if (!dibatalkan) setGalat(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      dibatalkan = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let dibatalkan = false;
+    (async () => {
+      try {
+        const jawab = await ambilJson<DaftarAlat>("/api/aleta-e-audit/alat");
+        if (!dibatalkan) setAlat(jawab);
+      } catch {
+        // Daftar alat yang gagal diambil tidak perlu menampilkan galat merah -
+        // katalog di atasnya tetap berguna tanpa panel ini.
       }
     })();
     return () => {
@@ -275,6 +311,8 @@ export function AletaEAudit() {
           {kodeTerbuka && rinci ? <PanelButir rinci={rinci} /> : null}
         </div>
       </div>
+
+      {alat?.alat?.length ? <PanelAlat daftar={alat} /> : null}
 
       {katalog?.catatan ? (
         <p className="text-xs leading-5 text-muted-foreground">{katalog.catatan}</p>
@@ -443,6 +481,78 @@ function BarisButir({
         <Badge variant={l.variant}>{sedang ? "..." : l.teks}</Badge>
       </span>
     </button>
+  );
+}
+
+/**
+ * Keadaan dua puluh alat.
+ *
+ * Yang penting di sini bukan berapa yang siap, melainkan berapa yang SEBELAH -
+ * mesinnya ada tetapi layarnya belum, atau sebaliknya. Sisi yang timpang paling
+ * mudah dianggap selesai: angkanya benar-benar terhitung dan ujinya hijau,
+ * padahal tidak seorang pun dapat melihatnya.
+ */
+function PanelAlat({ daftar }: { daftar: DaftarAlat }) {
+  const r = daftar.ringkas;
+  const LENCANA_ALAT: Record<string, { teks: string; variant: "success" | "warning" | "muted" }> = {
+    siap: { teks: "siap", variant: "success" },
+    sebelah: { teks: "sebelah sisi", variant: "warning" },
+    belum: { teks: "belum", variant: "muted" },
+  };
+
+  return (
+    <Card className="border-border/80">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Dua puluh alat di dalam penilaian</CardTitle>
+            <CardDescription>
+              Menempel pada setiap layar penilaian, bukan menjadi menu tersendiri. Keadaannya
+              dihitung dari berkas yang benar-benar ada pada kedua sisi - mesin dan layar.
+            </CardDescription>
+          </div>
+          {r ? (
+            <Badge variant="muted">
+              {r.siap} siap · {r.sebelah} sebelah · {r.belum} belum
+            </Badge>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {(daftar.alat || []).map((a) => {
+          const l = LENCANA_ALAT[a.keadaan] || LENCANA_ALAT.belum;
+          return (
+            <div key={a.kode} className="rounded-lg border border-border/80 px-3 py-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">{a.kode}</code>
+                    <span className="font-medium">{a.nama}</span>
+                    <span className="text-xs text-muted-foreground">pada {a.letak}</span>
+                  </span>
+                  <span className="mt-0.5 block text-sm leading-6 text-muted-foreground">
+                    {a.keterangan}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <Badge variant={a.mesinAda ? "success" : "muted"}>mesin</Badge>
+                  <Badge variant={a.layarAda ? "success" : "muted"}>layar</Badge>
+                  <Badge variant={l.variant}>{l.teks}</Badge>
+                </span>
+              </div>
+              {a.sebab ? (
+                <p className="mt-1.5 border-l-2 border-amber-400/60 pl-2 text-xs leading-5 text-amber-800 dark:text-amber-300">
+                  {a.sebab}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+        {daftar.catatan ? (
+          <p className="pt-1 text-xs leading-5 text-muted-foreground">{daftar.catatan}</p>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 

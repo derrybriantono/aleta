@@ -379,6 +379,78 @@ export function DiagramArea(p: { data: TitikData[]; judul?: string; sasaran?: { 
 }
 
 /* ==========================================================================
+ * D16 - GARIS MINI DI DALAM SEL
+ * ========================================================================== */
+
+/**
+ * Riwayat ringkas sebuah baris, digambar sebesar satu sel tabel.
+ *
+ * Gunanya menjawab pertanyaan yang selalu muncul saat melihat daftar temuan:
+ * "apakah baris ini memang selalu begini, atau baru belakangan?" Tanpa itu,
+ * satu periode buruk terbaca sama dengan kebiasaan buruk yang menahun.
+ *
+ * Sengaja tanpa sumbu, tanpa angka, tanpa kisi. Yang dicari BENTUKnya - naik,
+ * turun, atau berombak. Angka pastinya ada di kolom sebelahnya, dan mengulang
+ * angka di dalam gambar sekecil ini hanya membuat keduanya sulit dibaca.
+ */
+export function GarisMini({
+  nilai,
+  lebar = 72,
+  tinggi = 20,
+  judul,
+}: {
+  nilai: Array<number | null>;
+  lebar?: number;
+  tinggi?: number;
+  judul?: string;
+}) {
+  const isi = nilai.filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+
+  // Di bawah tiga titik, bentuknya tidak bermakna - dua titik selalu lurus.
+  if (isi.length < 3) {
+    return (
+      <span className="text-xs text-muted-foreground" title="riwayat belum cukup untuk digambar">
+        -
+      </span>
+    );
+  }
+
+  const puncak = Math.max(...isi, 1);
+  const dasar = Math.min(...isi, 0);
+  const jangkauan = puncak - dasar || 1;
+  const langkah = lebar / (isi.length - 1);
+  const d = isi
+    .map((n, i) => {
+      const x = i * langkah;
+      const y = tinggi - ((n - dasar) / jangkauan) * tinggi;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const akhir = isi[isi.length - 1];
+  const awal = isi[0];
+  const arah = akhir > awal ? "naik" : akhir < awal ? "turun" : "tetap";
+
+  return (
+    <svg
+      viewBox={`0 0 ${lebar} ${tinggi}`}
+      className="inline-block h-5 w-[4.5rem] align-middle"
+      role="img"
+      aria-label={judul || `riwayat ${isi.length} periode, ${arah}`}
+    >
+      <title>{judul || `${isi.length} periode terakhir, ${arah}`}</title>
+      <path d={d} className="fill-none stroke-primary" strokeWidth="1.5" />
+      <circle
+        cx={lebar}
+        cy={tinggi - ((akhir - dasar) / jangkauan) * tinggi}
+        r="2"
+        className={arah === "turun" ? "fill-rose-500" : "fill-primary"}
+      />
+    </svg>
+  );
+}
+
+/* ==========================================================================
  * S - DIAGRAM SEBAR
  * ========================================================================== */
 

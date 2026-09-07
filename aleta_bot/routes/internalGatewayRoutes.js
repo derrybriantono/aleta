@@ -59,6 +59,7 @@ const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
 const katalogEAuditService = require("../services/katalogEAuditService");
+const alatPenilaianService = require("../services/alatPenilaianService");
 const periodePenilaianService = require("../services/periodePenilaianService");
 const penyandinganService = require("../services/penyandinganService");
 const laporanPerkaraService = require("../services/laporanPerkaraService");
@@ -1586,6 +1587,29 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
       cela: katalogEAuditService.celaKatalog(),
       catatan:
         "Katalog ini daftar, bukan mesin. Butir yang belum tersambung tetap ditampilkan supaya sisa pekerjaan terlihat, bukan disembunyikan.",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Dua puluh alat di dalam penilaian beserta keadaannya.
+ *
+ * Keadaannya dihitung dari berkas yang benar-benar ada di kedua sisi - mesin
+ * dan layar - bukan dari penanda yang ditulis tangan. Alat yang mesinnya ada
+ * tetapi layarnya belum bukan "selesai": angkanya terhitung tetapi tidak
+ * terlihat siapa pun.
+ */
+router.get("/e-audit/alat", requireInternalToken, async (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      alat: alatPenilaianService.daftar(),
+      ringkas: alatPenilaianService.ringkas(),
+      cela: alatPenilaianService.celaAlat(),
+      catatan:
+        "Alat menempel pada setiap layar penilaian, bukan menjadi menu tersendiri. Yang belum lengkap menyebutkan apa yang menghalanginya.",
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
