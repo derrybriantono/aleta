@@ -62,6 +62,8 @@ const katalogEAuditService = require("../services/katalogEAuditService");
 const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
 const penilaianIntegritasService = require("../services/penilaianIntegritasService");
+const raporBerjenjangService = require("../services/raporBerjenjangService");
+const gerbangRaporAparaturService = require("../services/gerbangRaporAparaturService");
 const periodePenilaianService = require("../services/periodePenilaianService");
 const penyandinganService = require("../services/penyandinganService");
 const laporanPerkaraService = require("../services/laporanPerkaraService");
@@ -1596,6 +1598,106 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
       catatan:
         "Katalog ini daftar, bukan mesin. Butir yang belum tersambung tetap ditampilkan supaya sisa pekerjaan terlihat, bukan disembunyikan.",
     });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Rapor kinerja aparatur - satu penilaian, dipecah menurut orangnya.
+ *
+ * ============================================================================
+ * GERBANGNYA DIJALANKAN SEBELUM RAPORNYA DIPULANGKAN
+ * ============================================================================
+ *
+ * Enam syarat harus terpenuhi sebelum nilai per orang boleh ditampilkan. Bila
+ * salah satu belum, yang dibuang hanya NILAInya - nama, pembilang, dan
+ * penyebutnya tetap ada, beserta daftar syarat yang belum terpenuhi.
+ *
+ * Membuang seluruh rapornya akan membuat orang menyangka tidak ada datanya;
+ * membiarkan nilainya tampil akan membuat nama seseorang tertulis di sebelah
+ * angka yang belum layak dipakai menilainya.
+ *
+ * ============================================================================
+ * DIMENSI YANG DITAWARKAN HANYA YANG BENAR-BENAR ADA
+ * ============================================================================
+ *
+ * Tidak semua penilaian membawa nama petugas pada barisnya. Ketaatan tenggang
+ * pemanggilan membawa juru sita; kelengkapan ruas wajib tidak membawa siapa
+ * pun. Meminta rapor per orang atas penilaian yang tidak menyebut orang akan
+ * menghasilkan satu kelompok bernama "(tidak tercatat)" berisi segalanya - dan
+ * itu terbaca seperti temuan padahal hanya salah pertanyaan.
+ */
+router.get("/e-audit/rapor", requireInternalToken, async (req, res) => {
+  try {
+    penilaianKetaatanService.daftarkanSemua();
+    penilaianMutuDataService.daftarkanSemua();
+    penilaianKeuanganService.daftarkanSemua();
+    penilaianTahapanService.daftarkanSemua();
+    penilaianIntegritasService.daftarkanSemua();
+
+    const kunci = String(req.query.kunci || "").trim();
+    const jenisPeriode = String(req.query.periode || "bulanan").trim();
+    const acuan = String(req.query.acuan || "").trim() || periodePenilaianService.tanggalHariIni();
+    const dimensi = String(req.query.dimensi || "").trim();
+
+    const hasil = await kerangkaPenilaianService.jalankan(kunci, jenisPeriode, acuan);
+    if (!hasil.ok) {
+      res.status(400).json(hasil);
+      return;
+    }
+
+    // Dimensi yang tersedia dibaca dari baris buktinya sendiri - ruas bertipe
+    // teks yang bukan tanggal, bukan nomor perkara, dan bukan penanda.
+    const contoh = hasil.satuan.flatMap((s) => s.bukti).slice(0, 200);
+    const BUKAN_DIMENSI = new Set([
+      "kunci",
+      "nomorPerkara",
+      "memenuhi",
+      "sebabTidakMemenuhi",
+      "ruasKosong",
+      "mendahuluiAcuan",
+    ]);
+    const calon = new Map();
+    contoh.forEach((b) => {
+      Object.keys(b).forEach((k) => {
+        if (BUKAN_DIMENSI.has(k)) return;
+        const v = b[k];
+        if (typeof v !== "string" || !v.trim()) return;
+        if (/^\d{4}-\d{2}-\d{2}/.test(v)) return;
+        calon.set(k, (calon.get(k) || 0) + 1);
+      });
+    });
+    const tersedia = [...calon.keys()].sort();
+
+    if (!dimensi) {
+      res.json({
+        ok: true,
+        kunci: hasil.kunci,
+        judul: hasil.judul,
+        dimensiTersedia: tersedia,
+        catatan:
+          "Sebutkan dimensi untuk menyusun rapornya. Yang ditawarkan hanya ruas yang benar-benar ada pada baris bukti penilaian ini.",
+      });
+      return;
+    }
+
+    if (!tersedia.includes(dimensi)) {
+      res.status(400).json({
+        ok: false,
+        alasan: `Penilaian ini tidak membawa ruas "${dimensi}" pada baris buktinya.`,
+        dimensiTersedia: tersedia,
+      });
+      return;
+    }
+
+    const rapor = raporBerjenjangService.berjenjang(hasil, dimensi);
+    const gerbang = gerbangRaporAparaturService.terbitkan(rapor, {
+      penilaian: hasil.kunci,
+      tanggal: acuan,
+    });
+
+    res.json({ ok: true, dimensi, dimensiTersedia: tersedia, ...gerbang });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

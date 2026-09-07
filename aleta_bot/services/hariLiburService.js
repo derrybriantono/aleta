@@ -51,10 +51,16 @@
  * TAHUN 2026 SUDAH DISAHKAN terhadap SKB Nomor 1497/2/5 Tahun 2025. Tanggalnya
  * disalin dari lampiran, dan tiap harinya diperiksa terhadap kalender.
  *
- * TAHUN 2024 DAN 2025 MASIH BERPENANDA `disahkan: false`. Tanggalnya disusun
- * dari pengetahuan umum dan belum dicocokkan dengan SKB masing-masing tahun.
- * Selama itu, hitungan hari kerja untuk kedua tahun tersebut tetap berjalan
- * tetapi membawa keterangan bahwa dasarnya belum dipastikan.
+ * TAHUN 2024 DAN 2025 KINI JUGA DISAHKAN, terhadap daftar resmi SKB masing-
+ * masing tahun. Pengesahan itu langsung membayar dirinya: daftar 2025 yang
+ * semula disusun dari pengetahuan umum ternyata memuat cuti bersama Nyepi pada
+ * tanggal yang KELIRU, dan tidak memuat cuti bersama HUT ke-80 Kemerdekaan RI
+ * sama sekali.
+ *
+ * Berbeda dengan 2026 yang dicocokkan terhadap pindaian SKB aslinya, kedua
+ * tahun ini dicocokkan terhadap daftar resmi yang dimuat sumber publik. Tiap
+ * tahun membawa ruas `sumber` yang menyebutkan dari mana daftarnya diambil,
+ * supaya siapa pun dapat memeriksa ulang tanpa menebak.
  *
  * Pengesahan 2026 memperbaiki delapan tanggal yang sebelumnya HILANG - antara
  * lain 23 dan 24 Maret yang jatuh Senin dan Selasa. Selama kedelapan tanggal
@@ -63,71 +69,100 @@
  */
 const TAHUN = {
   2024: {
-    disahkan: false,
-    skb: null,
-    catatan: "Belum dicocokkan dengan SKB. Tanggal hari besar keagamaan wajib diperiksa.",
+    // Dicocokkan 7 September 2026 terhadap daftar resmi SKB. Ketujuh belas
+    // hari libur nasional dan kesepuluh cuti bersamanya COCOK SELURUHNYA
+    // dengan daftar yang semula disusun dari pengetahuan umum - tidak satu
+    // pun tanggal meleset.
+    disahkan: true,
+    skb: "Nomor 855 Tahun 2023, Nomor 3 Tahun 2023, dan Nomor 4 Tahun 2023",
+    sumber:
+      "Daftar resmi Kemenko PMK dan Indonesia Baik. Berkas SKB yang ditandatangani belum dibaca langsung - berbeda dengan 2026 yang dicocokkan terhadap pindaian aslinya.",
+    catatan:
+      "17 hari libur nasional dan 10 cuti bersama, seluruhnya 27 tanggal.",
     libur: [
-      ["2024-01-01", "Tahun Baru Masehi"],
+      ["2024-01-01", "Tahun Baru 2024 Masehi"],
       ["2024-02-08", "Isra Mikraj Nabi Muhammad SAW"],
       ["2024-02-09", "Cuti Bersama Tahun Baru Imlek"],
-      ["2024-02-10", "Tahun Baru Imlek"],
-      ["2024-03-11", "Hari Suci Nyepi"],
-      ["2024-03-12", "Cuti Bersama Nyepi"],
+      ["2024-02-10", "Tahun Baru Imlek 2575 Kongzili"],
+      ["2024-03-11", "Hari Suci Nyepi Tahun Baru Saka 1946"],
+      ["2024-03-12", "Cuti Bersama Hari Suci Nyepi"],
       ["2024-03-29", "Wafat Isa Almasih"],
       ["2024-03-31", "Hari Paskah"],
-      ["2024-04-08", "Cuti Bersama Idulfitri"],
-      ["2024-04-09", "Cuti Bersama Idulfitri"],
+      ["2024-04-08", "Cuti Bersama Idulfitri 1445 H"],
+      ["2024-04-09", "Cuti Bersama Idulfitri 1445 H"],
       ["2024-04-10", "Idulfitri 1445 H"],
       ["2024-04-11", "Idulfitri 1445 H"],
-      ["2024-04-12", "Cuti Bersama Idulfitri"],
-      ["2024-04-15", "Cuti Bersama Idulfitri"],
+      ["2024-04-12", "Cuti Bersama Idulfitri 1445 H"],
+      ["2024-04-15", "Cuti Bersama Idulfitri 1445 H"],
       ["2024-05-01", "Hari Buruh Internasional"],
       ["2024-05-09", "Kenaikan Isa Almasih"],
       ["2024-05-10", "Cuti Bersama Kenaikan Isa Almasih"],
-      ["2024-05-23", "Hari Raya Waisak"],
-      ["2024-05-24", "Cuti Bersama Waisak"],
+      ["2024-05-23", "Hari Raya Waisak 2568 BE"],
+      ["2024-05-24", "Cuti Bersama Hari Raya Waisak"],
       ["2024-06-01", "Hari Lahir Pancasila"],
       ["2024-06-17", "Iduladha 1445 H"],
-      ["2024-06-18", "Cuti Bersama Iduladha"],
+      ["2024-06-18", "Cuti Bersama Iduladha 1445 H"],
       ["2024-07-07", "Tahun Baru Islam 1446 H"],
-      ["2024-08-17", "Hari Kemerdekaan Republik Indonesia"],
+      ["2024-08-17", "Proklamasi Kemerdekaan"],
       ["2024-09-16", "Maulid Nabi Muhammad SAW"],
-      ["2024-12-25", "Hari Raya Natal"],
-      ["2024-12-26", "Cuti Bersama Natal"],
+      ["2024-12-25", "Kelahiran Yesus Kristus"],
+      ["2024-12-26", "Cuti Bersama Kelahiran Yesus Kristus"],
     ],
   },
   2025: {
-    disahkan: false,
-    skb: null,
-    catatan: "Belum dicocokkan dengan SKB. Tanggal hari besar keagamaan wajib diperiksa.",
+    // ========================================================================
+    // TIGA KEKELIRUAN YANG DITEMUKAN SAAT PENGESAHAN
+    // ========================================================================
+    //
+    // Daftar yang semula disusun dari pengetahuan umum memuat:
+    //
+    //   1. Cuti bersama Nyepi pada 14 MARET - yang benar 28 Maret.
+    //   2. Tidak memuat 28 Maret sama sekali.
+    //   3. Tidak memuat 18 Agustus - cuti bersama HUT ke-80 Kemerdekaan RI
+    //      yang ditetapkan lewat SKB perubahan, ditandatangani 7 Agustus 2025.
+    //
+    // Kekeliruan pertama yang paling merugikan: 14 Maret 2025 jatuh pada
+    // Jumat, dan menghitungnya libur berarti satu hari kerja hilang dari
+    // hitungan tenggang - sedangkan 28 Maret yang benar-benar libur justru
+    // terhitung hari kerja. Dua kesalahan yang saling menutupi pada jumlah
+    // keseluruhan, tetapi menggeser tenggang tiap perkara di antaranya.
+    disahkan: true,
+    skb: "Nomor 1017 Tahun 2024, Nomor 2 Tahun 2024, dan Nomor 2 Tahun 2024",
+    skbPerubahan:
+      "SKB perubahan yang ditandatangani 7 Agustus 2025, menambahkan cuti bersama 18 Agustus 2025 untuk HUT ke-80 Kemerdekaan RI",
+    sumber:
+      "Daftar resmi SKB 3 Menteri sebagaimana dimuat sumber publik, beserta SKB perubahannya. Berkas yang ditandatangani belum dibaca langsung - berbeda dengan 2026 yang dicocokkan terhadap pindaian aslinya.",
+    catatan:
+      "17 hari libur nasional, 10 cuti bersama, ditambah 1 cuti bersama dari SKB perubahan - seluruhnya 28 tanggal.",
     libur: [
-      ["2025-01-01", "Tahun Baru Masehi"],
+      ["2025-01-01", "Tahun Baru 2025 Masehi"],
       ["2025-01-27", "Isra Mikraj Nabi Muhammad SAW"],
       ["2025-01-28", "Cuti Bersama Tahun Baru Imlek"],
-      ["2025-01-29", "Tahun Baru Imlek"],
-      ["2025-03-14", "Cuti Bersama Nyepi"],
-      ["2025-03-29", "Hari Suci Nyepi"],
+      ["2025-01-29", "Tahun Baru Imlek 2576 Kongzili"],
+      ["2025-03-28", "Cuti Bersama Hari Suci Nyepi"],
+      ["2025-03-29", "Hari Suci Nyepi Tahun Baru Saka 1947"],
       ["2025-03-31", "Idulfitri 1446 H"],
       ["2025-04-01", "Idulfitri 1446 H"],
-      ["2025-04-02", "Cuti Bersama Idulfitri"],
-      ["2025-04-03", "Cuti Bersama Idulfitri"],
-      ["2025-04-04", "Cuti Bersama Idulfitri"],
-      ["2025-04-07", "Cuti Bersama Idulfitri"],
-      ["2025-04-18", "Wafat Isa Almasih"],
-      ["2025-04-20", "Hari Paskah"],
+      ["2025-04-02", "Cuti Bersama Idulfitri 1446 H"],
+      ["2025-04-03", "Cuti Bersama Idulfitri 1446 H"],
+      ["2025-04-04", "Cuti Bersama Idulfitri 1446 H"],
+      ["2025-04-07", "Cuti Bersama Idulfitri 1446 H"],
+      ["2025-04-18", "Wafat Yesus Kristus"],
+      ["2025-04-20", "Kebangkitan Yesus Kristus (Paskah)"],
       ["2025-05-01", "Hari Buruh Internasional"],
-      ["2025-05-12", "Hari Raya Waisak"],
-      ["2025-05-13", "Cuti Bersama Waisak"],
-      ["2025-05-29", "Kenaikan Isa Almasih"],
-      ["2025-05-30", "Cuti Bersama Kenaikan Isa Almasih"],
+      ["2025-05-12", "Hari Raya Waisak 2569 BE"],
+      ["2025-05-13", "Cuti Bersama Hari Raya Waisak"],
+      ["2025-05-29", "Kenaikan Yesus Kristus"],
+      ["2025-05-30", "Cuti Bersama Kenaikan Yesus Kristus"],
       ["2025-06-01", "Hari Lahir Pancasila"],
       ["2025-06-06", "Iduladha 1446 H"],
-      ["2025-06-09", "Cuti Bersama Iduladha"],
-      ["2025-06-27", "Tahun Baru Islam 1447 H"],
-      ["2025-08-17", "Hari Kemerdekaan Republik Indonesia"],
+      ["2025-06-09", "Cuti Bersama Iduladha 1446 H"],
+      ["2025-06-27", "1 Muharam Tahun Baru Islam 1447 H"],
+      ["2025-08-17", "Proklamasi Kemerdekaan"],
+      ["2025-08-18", "Cuti Bersama HUT ke-80 Kemerdekaan RI"],
       ["2025-09-05", "Maulid Nabi Muhammad SAW"],
-      ["2025-12-25", "Hari Raya Natal"],
-      ["2025-12-26", "Cuti Bersama Natal"],
+      ["2025-12-25", "Kelahiran Yesus Kristus"],
+      ["2025-12-26", "Cuti Bersama Kelahiran Yesus Kristus"],
     ],
   },
   2026: {
