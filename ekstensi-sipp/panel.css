@@ -25,8 +25,15 @@
   --aleta-lewat: #e08b81;
 
   position: fixed;
-  top: 90px;
-  right: 14px;
+  /* Menempel di sudut kanan ATAS.
+   *
+   * Sebelumnya 90px dari atas - jarak yang dulu dipilih agar tidak menutupi
+   * bilah menu SIPP. Tetapi panel ini dapat digeser sendiri oleh pemakainya,
+   * dan yang menekan tombol kembali-ke-bawaan justru sedang meminta panelnya
+   * pulang ke sudut - bukan ke suatu tempat 90px di bawah sudut, yang terbaca
+   * sebagai panel yang gagal pulang. */
+  top: 12px;
+  right: 12px;
   z-index: 2147483000;
   width: 340px;
   max-height: calc(100vh - 130px);
@@ -1256,3 +1263,65 @@ tr.aleta-baris-disorot > td {
 .aleta-lencana-mendesak { color: var(--aleta-mendesak); }
 .aleta-lencana-aman { color: var(--aleta-aman); }
 .aleta-lencana-netral { color: var(--aleta-tulisan-lembut); }
+
+/* ==========================================================================
+   PANEL YANG SEDANG DICIUT
+   ==========================================================================
+
+   Pegangan tarik disembunyikan: menarik-ubah-ukuran panel yang isinya tidak
+   terlihat hanya menghasilkan kotak kosong yang lebih besar, dan pegangan yang
+   dapat ditarik tetapi tidak mengubah apa pun terbaca sebagai kerusakan. */
+.aleta-panel-ciut {
+  height: auto !important;
+  max-height: none !important;
+}
+
+.aleta-panel-ciut .aleta-tarik {
+  display: none;
+}
+
+/* ==========================================================================
+   TEMA TERANG
+   ==========================================================================
+
+   Seluruh warna panel sudah berupa peubah pada .aleta-panel, sehingga tema
+   terang cukup menimpa peubahnya - tidak satu pun aturan lain perlu disentuh.
+   Itulah gunanya warna dikumpulkan di satu tempat sejak awal.
+
+   Yang ditimpa HANYA warnanya. Ukuran, jarak, dan tata letak tidak ikut
+   berubah: tema yang menggeser tata letak membuat orang mengira panelnya
+   berganti, bukan warnanya.
+
+   Kontras dijaga pada kedua tema. Hijau merek #6fbf95 yang terbaca di atas
+   latar gelap terlalu pucat di atas putih, jadi ia digelapkan menjadi #1f7a4d -
+   nada yang sama, kontras yang tetap. Begitu pula kuning dan merahnya. */
+.aleta-panel[data-tema="terang"] {
+  --aleta-latar: #ffffff;
+  --aleta-latar-naik: #f2f5f3;
+  --aleta-garis: #d3ddd7;
+  --aleta-tulisan: #16211c;
+  --aleta-tulisan-lembut: #566b60;
+  --aleta-merek: #1f7a4d;
+  --aleta-aman: #1f7a4d;
+  --aleta-mendesak: #8a6410;
+  --aleta-lewat: #a8332a;
+
+  box-shadow: 0 10px 30px rgba(16, 32, 26, 0.18);
+}
+
+/* Tombol tema di kepala panel - satu ikon yang menyebut ke mana ia akan
+   berpindah, bukan keadaan sekarang. Tombol bertulisan keadaan sekarang selalu
+   terbaca terbalik oleh separuh pemakainya. */
+.aleta-tema {
+  background: none;
+  border: 0;
+  color: var(--aleta-tulisan-lembut);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.aleta-tema:hover {
+  color: var(--aleta-tulisan);
+}

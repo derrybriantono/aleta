@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.92.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.92.0 - Antrian Milik Satu Hari";
+export const APP_VERSION = "1.93.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.93.0 - Ekstensi SIPP Tahap 1";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,37 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.93.0",
+    title: "ALETA Judicia v1.93.0 - Ekstensi SIPP Tahap 1",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Ekstensi SIPP versi 1.66.0. Saklar Manual pada papan penunjukan akhirnya benar-benar dapat ditekan - selama ini ia hanya penanda. Menu yang tersimpan dalam keadaan terbuka kini terisi sendiri, tombol ciutkan benar-benar menciutkan, panel pulang ke sudut kanan atas, dan tema terang tersedia.",
+    added: [
+      "Cara Manual pada papan penunjukan: daftar calon hakim, panitera pengganti, dan juru sita dapat dipilih sendiri. Daftarnya sudah lama dikirim layanan penunjukan - yang tergambar selama ini hanya juaranya.",
+      "Tema terang untuk panel ekstensi, dan tema untuk halaman SIPP yang dinyalakan terpisah dengan menahan Shift. Tema SIPP bawaannya mati.",
+      "Bagian Penetapan yang dapat Anda tetapkan: keempat penetapan perkara yang sedang dibuka, ditandai mana yang urusan pembaca menurut rencana kerja - bukan tebakan dari nama jabatan.",
+    ],
+    changed: [
+      "Bagian Menunggu penetapan Anda dulu hanya membaca antrean penerusan, sehingga selalu kosong sebelum ada yang menekan teruskan. Antrean itu tidak dibuang - ia turun ke bawah, sesudah pertanyaan tentang perkara yang sedang dibuka terjawab.",
+      "Panel kembali ke sudut kanan atas ketika tombol kembalikan-bawaan ditekan. Sebelumnya 90px di bawah sudut, yang terbaca sebagai panel yang gagal pulang.",
+    ],
+    fixed: [
+      "Menu yang tersimpan dalam keadaan TERBUKA tergambar terbentang tetapi kosong, dan baru terisi sesudah ditekan dua kali - sekali menutup, sekali membuka. Terkena empat bagian sekaligus: keadaan perkara, baca kolom formulir, papan penunjukan, dan penetapan.",
+      "Tombol ciutkan menyembunyikan isi panel tetapi meninggalkan kotak kosong sebesar semula, karena tinggi panel terpatok sesudah pernah diubah ukurannya. Tingginya kini ikut dilepas dan dikembalikan lagi saat dibentangkan.",
+      "Saklar Cara dan Hakim tunggal berbentuk tombol tetapi tidak menanggapi tekanan sama sekali - keduanya span tanpa penangan. Saklar yang belum dapat diubah kini tampil mati dan menyebutkan dirinya, bukan diam.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tema halaman SIPP dikerjakan sebagai lapisan tipis yang hanya menyentuh latar, tulisan, dan garis tabel - tidak satu pun ukuran atau tata letaknya. Filter invert pada seluruh halaman sengaja tidak dipakai: ia membalik warna foto dan tanda tangan pindaian juga.",
+      "Pilihan manual tidak disimpan antar-perkara. Penunjukan menyangkut satu perkara pada satu saat, dan pilihan yang tertinggal dari perkara sebelumnya adalah cara paling halus menetapkan orang yang salah.",
+    ],
+    knownLimitations: [
+      "Empat permintaan lain pada ekstensi belum dikerjakan: deteksi Data Umum dari berkas gugatan, keterangan menu Baca kolom formulir, perombakan penandaan halaman SIPP, dan pengisian berkas e-Court pada jadwal sidang.",
+      "Saklar Hakim tunggal masih penanda keadaan - mengubahnya menyentuh aturan pembagian beban, bukan hanya tampilan.",
+    ],
+  },
   {
     version: "1.92.0",
     title: "ALETA Judicia v1.92.0 - Antrian Milik Satu Hari",
