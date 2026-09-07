@@ -4,6 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
   kesiapanIsian,
+  penandaKelasB,
   riwayatIsian,
   simpanIsian,
 } from "@/server/modules/aleta-ecourt/isian-perkara";
@@ -47,11 +48,25 @@ export async function GET(request: NextRequest) {
       return ok({ ada: true, riwayat: await riwayatIsian(db, perkaraId, noVar) });
     }
 
-    const penanda = String(getSearchParam(request, "penanda") ?? "")
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-    if (penanda.length === 0) return ok({ ada: false, sebab: "Penanda blangko harus disebutkan." });
+    // "semua=1" dipakai layar perkara, yang membukanya SEBELUM ada blangko
+    // terpilih. Yang dikembalikan hanya Kelas B yang benar-benar dipakai
+    // pustaka blangko - meminta panitera mengisi keterangan yang tidak akan
+    // pernah tercetak di mana pun hanya menambah kotak kosong.
+    const semua = String(getSearchParam(request, "semua") ?? "").trim() === "1";
+    const penanda = semua
+      ? await penandaKelasB(db)
+      : String(getSearchParam(request, "penanda") ?? "")
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean);
+    if (penanda.length === 0) {
+      return ok({
+        ada: false,
+        sebab: semua
+          ? "Belum ada variabel Kelas B di kamus. Salin kamus variabel lebih dulu."
+          : "Penanda blangko harus disebutkan.",
+      });
+    }
 
     const hasil = await kesiapanIsian(db, perkaraId, penanda);
     return ok({ ada: true, ...hasil });

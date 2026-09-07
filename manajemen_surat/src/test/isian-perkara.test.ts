@@ -7,6 +7,7 @@ import {
   butirUntukBlangko,
   isianPerkara,
   kesiapanIsian,
+  penandaKelasB,
   riwayatIsian,
   simpanIsian,
 } from "@/server/modules/aleta-ecourt/isian-perkara";
@@ -268,5 +269,47 @@ describe("aturan pengelompokan dari nama variabel", () => {
 describe("ringkasan tanpa isian", () => {
   it("blangko tanpa Kelas B dinyatakan tidak menuntut isian tangan", () => {
     expect(ringkasIsian(susunKelompok([])).kalimat).toMatch(/tidak menuntut isian tangan/i);
+  });
+});
+
+/**
+ * Layar perkara membuka isian SEBELUM ada blangko terpilih, jadi ia meminta
+ * seluruh Kelas B sekaligus. Yang dijaga: daftar itu tidak menjadi tempat
+ * pembuangan seluruh isi kamus.
+ */
+describe("seluruh Kelas B untuk layar perkara", () => {
+  it("hanya Kelas B, bukan Kelas A maupun C", async () => {
+    const basis = await basisData();
+    await tanamKamus(basis);
+
+    const daftar = await penandaKelasB(basis);
+    expect(daftar).toContain("1001");
+    expect(daftar).not.toContain("0098"); // Kelas A
+    expect(daftar).not.toContain("7211"); // Kelas C
+  });
+
+  it("yang tidak dipakai satu blangko pun TIDAK ikut", async () => {
+    // Meminta panitera mengisi keterangan yang tidak akan pernah tercetak di
+    // mana pun hanya menambah kotak kosong.
+    const basis = await basisData();
+    await tanamKamus(basis);
+    await basis.run(`UPDATE aleta_kamus_variabel SET jumlah_pakai = 0 WHERE no_var = '1152'`);
+
+    const daftar = await penandaKelasB(basis);
+    expect(daftar).not.toContain("1152");
+    expect(daftar).toContain("1001");
+  });
+
+  it("yang paling sering dipakai lebih dulu", async () => {
+    const basis = await basisData();
+    await tanamKamus(basis);
+    const daftar = await penandaKelasB(basis);
+    // #0600# (298) paling sering di antara Kelas B pada tanaman uji.
+    expect(daftar[0]).toBe("0600");
+  });
+
+  it("kamus kosong menghasilkan daftar kosong, bukan galat", async () => {
+    const basis = await basisData();
+    expect(await penandaKelasB(basis)).toEqual([]);
   });
 });

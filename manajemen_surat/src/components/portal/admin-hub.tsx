@@ -1,6 +1,23 @@
 "use client";
 
-import { Bot, BriefcaseBusiness, Database, DatabaseBackup, Globe, LayoutDashboard, Landmark, MessageCircleMore, PackageCheck, Scale, Settings, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
+import {
+  Bot,
+  BriefcaseBusiness,
+  Database,
+  DatabaseBackup,
+  Globe,
+  Landmark,
+  LayoutDashboard,
+  Library,
+  MessageCircleMore,
+  PackageCheck,
+  Scale,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -375,6 +392,13 @@ export function AdminHub() {
                 title="ALETA e-Court"
                 description="Atur penghubung e-Court: login sesi, penarikan berkala, arsip dokumen, dan sambungan ke SIPP serta ALETA Bot."
                 icon={<Landmark className="h-5 w-5 text-amber-600" />}
+                badge="Super Admin"
+              />
+              <AdminMenuAction
+                href="/admin/blangko-mandiri"
+                title="Kemandirian Blangko"
+                description="Salin kamus variabel, pelajari korpus blangko ABT, susun pustaka blangko ALETA sendiri, dan uji kemandiriannya."
+                icon={<Library className="h-5 w-5 text-teal-600" />}
                 badge="Super Admin"
               />
               <AdminMenuAction

@@ -77,6 +77,24 @@ export async function butirUntukBlangko(
   return susunKelompok(butir);
 }
 
+/**
+ * Seluruh penanda Kelas B yang BENAR-BENAR dipakai pustaka blangko.
+ *
+ * Dipakai layar perkara, yang membukanya sebelum ada blangko terpilih. Yang
+ * disaring keluar adalah Kelas B yang tidak muncul di satu blangko pun -
+ * menampilkannya berarti meminta panitera mengisi keterangan yang tidak akan
+ * pernah tercetak di mana pun.
+ */
+export async function penandaKelasB(db: AletaDatabase, batas = 200): Promise<string[]> {
+  const baris = await db.queryAll<Record<string, unknown>>(
+    `SELECT no_var FROM aleta_kamus_variabel
+      WHERE kelas = 'B' AND jumlah_pakai > 0
+      ORDER BY jumlah_pakai DESC LIMIT ?`,
+    [Math.max(1, Math.min(500, batas))]
+  );
+  return baris.map((b) => teks(b.no_var)).filter(Boolean);
+}
+
 /** Seluruh isian sebuah perkara sebagai peta - dipakai penyelesai Tahap 2. */
 export async function isianPerkara(db: AletaDatabase, perkaraId: string): Promise<Record<string, string>> {
   const baris = await db.queryAll<Record<string, unknown>>(

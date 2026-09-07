@@ -8,6 +8,7 @@ import {
   FileText,
   History,
   Loader2,
+  PenLine,
   Scale,
   Search,
   TrendingUp,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
+import { IsianKelasB } from "@/components/portal/isian-kelas-b";
 import { PintuAiBebas } from "@/components/portal/pintu-ai-bebas";
 import { RujukanPasal } from "@/components/portal/rujukan-pasal";
 import { EmptyState, PageIntro } from "@/components/portal/shared";
@@ -160,7 +162,7 @@ type Jejak = {
   lubang: string[];
 };
 
-type KunciPanel = "berkas" | "riwayat" | "statistik" | "pemeriksaan" | "draf" | "jejak";
+type KunciPanel = "berkas" | "riwayat" | "statistik" | "pemeriksaan" | "draf" | "isian" | "jejak";
 
 const PANEL: Array<{ kunci: KunciPanel; judul: string; ikon: typeof FileText }> = [
   { kunci: "berkas", judul: "Berkas", ikon: FileText },
@@ -168,6 +170,7 @@ const PANEL: Array<{ kunci: KunciPanel; judul: string; ikon: typeof FileText }> 
   { kunci: "statistik", judul: "Statistik", ikon: TrendingUp },
   { kunci: "pemeriksaan", judul: "Pemeriksaan", ikon: Scale },
   { kunci: "draf", judul: "Draf putusan", ikon: FileSignature },
+  { kunci: "isian", judul: "Isian perkara", ikon: PenLine },
   { kunci: "jejak", judul: "Jejak", ikon: ClipboardList },
 ];
 
@@ -180,16 +183,16 @@ const PANEL: Array<{ kunci: KunciPanel; judul: string; ikon: typeof FileText }> 
  * peran baru kehilangan bagian tanpa ada yang menyadarinya.
  */
 const URUTAN_PERAN: Partial<Record<RoleId, KunciPanel[]>> = {
-  hakim: ["pemeriksaan", "draf", "berkas", "riwayat", "statistik", "jejak"],
-  ketua: ["pemeriksaan", "draf", "statistik", "berkas", "riwayat", "jejak"],
-  "wakil-ketua": ["pemeriksaan", "draf", "statistik", "berkas", "riwayat", "jejak"],
-  panitera: ["riwayat", "berkas", "statistik", "draf", "pemeriksaan", "jejak"],
-  "panitera-pengganti": ["riwayat", "berkas", "draf", "statistik", "pemeriksaan", "jejak"],
-  "panitera-muda": ["riwayat", "statistik", "berkas", "pemeriksaan", "draf", "jejak"],
-  "analis-perkara": ["statistik", "pemeriksaan", "berkas", "riwayat", "jejak", "draf"],
+  hakim: ["pemeriksaan", "draf", "isian", "berkas", "riwayat", "statistik", "jejak"],
+  ketua: ["pemeriksaan", "draf", "isian", "statistik", "berkas", "riwayat", "jejak"],
+  "wakil-ketua": ["pemeriksaan", "draf", "isian", "statistik", "berkas", "riwayat", "jejak"],
+  panitera: ["riwayat", "berkas", "statistik", "draf", "isian", "pemeriksaan", "jejak"],
+  "panitera-pengganti": ["riwayat", "berkas", "draf", "isian", "statistik", "pemeriksaan", "jejak"],
+  "panitera-muda": ["riwayat", "statistik", "berkas", "pemeriksaan", "draf", "isian", "jejak"],
+  "analis-perkara": ["statistik", "pemeriksaan", "berkas", "riwayat", "jejak", "draf", "isian"],
 };
 
-const URUTAN_BAWAAN: KunciPanel[] = ["berkas", "riwayat", "statistik", "pemeriksaan", "draf", "jejak"];
+const URUTAN_BAWAAN: KunciPanel[] = ["berkas", "riwayat", "statistik", "pemeriksaan", "draf", "isian", "jejak"];
 
 function BarisBerkas({ nama, bagian }: { nama: string; bagian: Bagian }) {
   const jumlah = Array.isArray(bagian.nilai) ? bagian.nilai.length : null;
@@ -667,6 +670,10 @@ export function RuangPerkara() {
                batas pemeriksaan, dan pintu yang harus dicari dulu akan
                digantikan tab lain yang tidak terlihat siapa pun. */
             <PintuAiBebas alamat={panelSettings?.pintuAiBebas ?? ""} />
+          ) : null}
+
+          {aktif === "isian" && berkas ? (
+            <IsianKelasB perkaraId={berkas.perkaraId} semua olehNama={namaSaya} />
           ) : null}
 
           {aktif === "jejak" ? (
