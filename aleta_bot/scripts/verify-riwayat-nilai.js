@@ -248,6 +248,34 @@ async function utama() {
     periksa("selisih karena rumus dikenali", karenaRumus.rumusBerubah === true);
     periksa("dan dugaannya menuntut hitung ulang seluruh riwayat", /seluruh riwayat/.test(karenaRumus.dugaan), karenaRumus.dugaan);
 
+    // Ambang DAN rumus berubah sekaligus. Ini bukan kasus karangan: mengesahkan
+    // daftar hari libur terhadap SKB menaikkan versiRumus, dan ambang dapat
+    // ikut berubah pada tanggal yang sama. Yang dijaga: tuntutan yang lebih
+    // berat - hitung ulang seluruh riwayat - tidak boleh hilang hanya karena
+    // ada sebab lain yang lebih ringan ikut berubah.
+    {
+      const asliDua = A.AMBANG.pembatasPenyebut.riwayat.slice();
+      // Tanggalnya mengikuti pola kasus ambang di atas: ambang baru berlaku
+      // 1 September, dan hitung ulangnya dilakukan 30 September - sesudah
+      // sidik ambang yang tersimpan (31 Agustus) tidak lagi berlaku.
+      A.AMBANG.pembatasPenyebut.riwayat.push({ mulai: "2026-09-01", nilai: 25, dasar: "uji" });
+      const keduanya = R.bandingkanHitungUlang(
+        tersimpan,
+        { terpenuhi: 70, penyebut: 100, nilai: 70, versiRumus: "v2" },
+        "2026-09-30"
+      );
+      A.AMBANG.pembatasPenyebut.riwayat.length = 0;
+      asliDua.forEach((r) => A.AMBANG.pembatasPenyebut.riwayat.push(r));
+
+      periksa("selisih karena ambang dan rumus sekaligus dikenali keduanya",
+        keduanya.ambangBerubah === true && keduanya.rumusBerubah === true,
+        JSON.stringify(keduanya).slice(0, 200));
+      periksa("dan dugaannya tetap menuntut hitung ulang seluruh riwayat",
+        /seluruh riwayat/.test(keduanya.dugaan), keduanya.dugaan);
+      periksa("dan dugaannya menyebut kedua sebabnya",
+        /ambang/i.test(keduanya.dugaan) && /rumus/i.test(keduanya.dugaan), keduanya.dugaan);
+    }
+
     // Tidak ada yang berubah, tetapi angkanya berbeda - inilah temuannya.
     const karenaData = R.bandingkanHitungUlang(
       tersimpan,

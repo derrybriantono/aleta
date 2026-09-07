@@ -245,7 +245,12 @@ const DEFINISI = [
     keterangan:
       "Panggilan sah sekurangnya tiga hari kerja sebelum sidang, menurut Pasal 122 HIR dan Pasal 146 R.Bg.",
     lantai: "harian",
-    versiRumus: "hariKerja-v1",
+    // Naik dari hariKerja-v1 saat daftar hari libur 2026 disahkan terhadap
+    // SKB. Delapan tanggal yang sebelumnya hilang membuat hitungan hari kerja
+    // BERBEDA untuk periode yang memuatnya - dan itu perubahan CARA MENGHITUNG,
+    // bukan perubahan data. Tanpa menaikkan penanda ini, nilai yang tersimpan
+    // dari hitungan lama akan tampak "turun" seolah kinerjanya memburuk.
+    versiRumus: "hariKerja-v2-skb2026",
     ambangDipakai: ["tenggangPanggilan"],
     caraHitung: {
       pembilang: "Relaas yang tenggangnya sekurangnya tiga hari kerja sebelum tanggal sidang",

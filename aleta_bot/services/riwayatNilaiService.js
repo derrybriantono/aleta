@@ -264,7 +264,15 @@ function bandingkanHitungUlang(tersimpan, baru, tanggalAmbangSekarang) {
   // Yang tersisa - keduanya tidak berubah tetapi angkanya berbeda - berarti
   // data lampaunya yang berubah, dan itu justru temuan pengawasan.
   let dugaan;
-  if (ambangBerubah) {
+  if (ambangBerubah && rumusBerubah) {
+    // Keduanya berubah sekaligus. Menyebut ambangnya saja - sebagaimana urutan
+    // di bawah - akan menutupi tuntutan yang lebih berat: rumus yang berubah
+    // membuat angka lama dan baru TIDAK SEBANDING, dan itu tidak boleh hilang
+    // hanya karena ada sebab lain yang lebih ringan ikut berubah.
+    dugaan =
+      "ambang DAN rumusnya sama-sama berubah sesudah nilai ini disimpan - " +
+      "angka lama dan baru tidak sebanding, seluruh riwayat perlu dihitung ulang dengan sadar";
+  } else if (ambangBerubah) {
     dugaan = "ambang berubah sesudah nilai ini disimpan - selisihnya sah, dan nilai lama tetap benar untuk aturan yang berlaku saat itu";
   } else if (rumusBerubah) {
     dugaan = "rumusnya berubah - angka lama dan baru tidak sebanding, seluruh riwayat perlu dihitung ulang dengan sadar";

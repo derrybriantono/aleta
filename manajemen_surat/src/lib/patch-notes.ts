@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.86.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.86.0 - Kamus Variabel dan Antrian Ruang";
+export const APP_VERSION = "1.87.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.87.0 - Penilaian Berjenjang dan Hari Libur Resmi";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,41 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.87.0",
+    title: "ALETA Judicia v1.87.0 - Penilaian Berjenjang dan Hari Libur Resmi",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Delapan penilaian yang selama ini hanya lulus uji sekarang dapat dilihat: satu layar dengan bukti, cara hitung, dan ambangnya. Daftar hari libur nasional 2026 disahkan terhadap SKB tiga menteri - dan pengesahan itu menyingkap delapan tanggal yang sebelumnya hilang, termasuk 23 dan 24 Maret yang jatuh Senin dan Selasa.",
+    added: [
+      "Layar Penilaian Berjenjang di halaman ALETA x SIPP: memilih penilaian, jendela periode, dan tanggal acuan, lalu menghitungnya saat diminta - bukan menghitung seluruhnya di muka.",
+      "Daftar bukti tiap satuan periode. Angka pembilang dan penyebutnya DITURUNKAN dari daftar itu, sehingga angka dan bukti tidak mungkin berbeda; siapa pun yang tidak percaya dapat mengambil satu nomor perkara lalu memeriksanya sendiri di SIPP.",
+      "Panel cara hitung dan ambang yang datang dari mesin yang benar-benar menghitung, bukan disalin ke layar - sehingga panelnya tidak dapat menerangkan rumus yang berbeda dari yang dipakai.",
+      "Pencatatan laporan perkara: 22 laporan LIPA x 12 bulan, beserta tanggal kirim dan angkanya. Tanggal kirim tidak ada di SIPP; sebelum ini satu-satunya cara memasukkannya adalah menulis langsung ke basis data.",
+      "Daftar hari libur nasional dan cuti bersama 2024-2026 sebagai dasar hitungan hari kerja.",
+    ],
+    changed: [
+      "Hitungan hari kerja tidak lagi hanya mengecualikan Sabtu dan Minggu. Penilaian ketaatan tenggang pemanggilan karena itu berubah untuk periode yang memuat hari libur - relaas yang dulu lolos karena cuti bersama terhitung hari kerja sekarang dinilai apa adanya.",
+      "Daftar hari libur 2026 disahkan terhadap SKB Menteri Agama, Menteri Ketenagakerjaan, dan Menteri PANRB Nomor 1497, 2, dan 5 Tahun 2025 (ditetapkan 19 September 2025): 25 tanggal, tiap harinya diperiksa terhadap kalender.",
+      "Nama pencatat laporan diambil dari sesi yang sedang berjalan dan tidak dapat diketik. Ruas yang dapat diisi sendiri membuat catatannya tidak dapat ditelusuri.",
+    ],
+    fixed: [
+      "Delapan tanggal libur 2026 yang sebelumnya hilang kini masuk - 16 Februari, 18, 20, 23, dan 24 Maret, 15 dan 28 Mei, serta 24 Desember. Tanpa kedelapannya, hari yang sebenarnya libur terhitung sebagai hari kerja: relaas Kamis 19 Maret untuk sidang Rabu 25 Maret dulu terhitung empat hari kerja dan lolos, padahal sebenarnya hanya satu.",
+      "Penjaga penarikan e-Court tidak lagi menuduh kode yang benar saat mesin sedang sibuk. Lima penantian berbasis jam diganti penantian berbasis syarat.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Halaman ALETA x SIPP belum dibuka untuk pegawai umum, sehingga layar penilaian ini untuk sekarang hanya terlihat oleh super admin. Itu memang pantas selama angkanya belum disandingkan dengan angka dari luar ALETA.",
+      "Tidak satu pun penilaian boleh dipakai membina sebelum angkanya disandingkan. Layarnya menyatakan itu pada tiap hasil, bukan menyembunyikannya di catatan kaki.",
+      "Daftar hari libur 2024 dan 2025 masih berpenanda belum disahkan. Penilaian yang menghitung hari kerja pada kedua tahun itu membawa keterangannya sampai ke layar.",
+    ],
+    knownLimitations: [
+      "Aspek kesesuaian angka laporan dengan SIPP belum tersambung untuk laporan mana pun, sehingga nilai laporan perkara null - bukan enam puluh. Yang sudah dinilai baru ketepatan waktunya.",
+      "Hari libur belum diperhitungkan pada BATAS KIRIM laporan; keputusan tentang batas yang jatuh pada hari libur belum diambil.",
+      "Penilaian dijalankan saat diminta, belum berjadwal. Uji berulang tiap malam di server belum dipasang.",
+    ],
+  },
   {
     version: "1.86.0",
     title: "ALETA Judicia v1.86.0 - Kamus Variabel dan Antrian Ruang",

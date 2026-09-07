@@ -48,10 +48,18 @@
  * Sumber: Surat Keputusan Bersama Menteri Agama, Menteri Ketenagakerjaan, dan
  * Menteri PANRB tentang Hari Libur Nasional dan Cuti Bersama.
  *
- * SELURUH TAHUN DI BAWAH MASIH BERPENANDA `disahkan: false`. Tanggalnya disusun
- * dari pengetahuan umum dan HARUS dicocokkan dengan SKB yang sebenarnya
- * sebelum dipakai menilai. Yang paling perlu dicermati: tanggal Idulfitri,
- * Iduladha, dan cuti bersama yang menyertainya.
+ * TAHUN 2026 SUDAH DISAHKAN terhadap SKB Nomor 1497/2/5 Tahun 2025. Tanggalnya
+ * disalin dari lampiran, dan tiap harinya diperiksa terhadap kalender.
+ *
+ * TAHUN 2024 DAN 2025 MASIH BERPENANDA `disahkan: false`. Tanggalnya disusun
+ * dari pengetahuan umum dan belum dicocokkan dengan SKB masing-masing tahun.
+ * Selama itu, hitungan hari kerja untuk kedua tahun tersebut tetap berjalan
+ * tetapi membawa keterangan bahwa dasarnya belum dipastikan.
+ *
+ * Pengesahan 2026 memperbaiki delapan tanggal yang sebelumnya HILANG - antara
+ * lain 23 dan 24 Maret yang jatuh Senin dan Selasa. Selama kedelapan tanggal
+ * itu belum masuk, hari yang sebenarnya libur terhitung sebagai hari kerja,
+ * dan relaas yang tenggangnya kurang justru lolos.
  */
 const TAHUN = {
   2024: {
@@ -123,28 +131,49 @@ const TAHUN = {
     ],
   },
   2026: {
-    disahkan: false,
-    skb: null,
+    // Dicocokkan dengan SKB aslinya pada 7 September 2026. Seluruh dua puluh
+    // lima tanggal diperiksa harinya terhadap kalender - tidak satu pun
+    // meleset dari yang tertulis di lampiran.
+    disahkan: true,
+    skb: "Nomor 1497 Tahun 2025, Nomor 2 Tahun 2025, dan Nomor 5 Tahun 2025",
+    ditetapkan: "2025-09-19",
     catatan:
-      "Belum dicocokkan dengan SKB, dan tahun inilah yang sedang dinilai - paling mendesak diperiksa.",
+      "Sudah dicocokkan dengan SKB tiga menteri. Lampiran A memuat 16 butir hari libur nasional " +
+      "(butir 5 mencakup dua tanggal) dan Lampiran B memuat 6 butir cuti bersama " +
+      "(butir 3 mencakup tiga tanggal), seluruhnya 25 tanggal.",
     libur: [
-      ["2026-01-01", "Tahun Baru Masehi"],
+      // ---- A. HARI LIBUR NASIONAL (Lampiran A, 16 butir / 17 tanggal) ----
+      ["2026-01-01", "Tahun Baru 2026 Masehi"],
       ["2026-01-16", "Isra Mikraj Nabi Muhammad SAW"],
-      ["2026-02-17", "Tahun Baru Imlek"],
-      ["2026-03-19", "Hari Suci Nyepi"],
-      ["2026-03-20", "Idulfitri 1447 H"],
-      ["2026-03-21", "Idulfitri 1447 H"],
-      ["2026-04-03", "Wafat Isa Almasih"],
-      ["2026-04-05", "Hari Paskah"],
+      // Cuti bersama Imlek jatuh SEBELUM hari rayanya - 16 Februari cuti
+      // bersama, 17 Februari hari liburnya.
+      ["2026-02-16", "Cuti Bersama Tahun Baru Imlek 2577 Kongzili"],
+      ["2026-02-17", "Tahun Baru Imlek 2577 Kongzili"],
+      ["2026-03-18", "Cuti Bersama Hari Suci Nyepi"],
+      ["2026-03-19", "Hari Suci Nyepi (Tahun Baru Saka 1948)"],
+      // Idul Fitri 1447 H jatuh Sabtu-Minggu, sehingga rangkaian cuti
+      // bersamanya terbelah: Jumat sebelumnya, lalu Senin dan Selasa
+      // sesudahnya. Ketiga hari itulah yang benar-benar mengurangi hari kerja;
+      // hari rayanya sendiri sudah akhir pekan.
+      ["2026-03-20", "Cuti Bersama Idul Fitri 1447 Hijriah"],
+      ["2026-03-21", "Idul Fitri 1447 Hijriah"],
+      ["2026-03-22", "Idul Fitri 1447 Hijriah"],
+      ["2026-03-23", "Cuti Bersama Idul Fitri 1447 Hijriah"],
+      ["2026-03-24", "Cuti Bersama Idul Fitri 1447 Hijriah"],
+      ["2026-04-03", "Wafat Yesus Kristus"],
+      ["2026-04-05", "Kebangkitan Yesus Kristus (Paskah)"],
       ["2026-05-01", "Hari Buruh Internasional"],
-      ["2026-05-14", "Kenaikan Isa Almasih"],
-      ["2026-05-31", "Hari Raya Waisak"],
-      ["2026-05-27", "Iduladha 1447 H"],
+      ["2026-05-14", "Kenaikan Yesus Kristus"],
+      ["2026-05-15", "Cuti Bersama Kenaikan Yesus Kristus"],
+      ["2026-05-27", "Idul Adha 1447 Hijriah"],
+      ["2026-05-28", "Cuti Bersama Idul Adha 1447 Hijriah"],
+      ["2026-05-31", "Hari Raya Waisak 2570 BE"],
       ["2026-06-01", "Hari Lahir Pancasila"],
-      ["2026-06-16", "Tahun Baru Islam 1448 H"],
-      ["2026-08-17", "Hari Kemerdekaan Republik Indonesia"],
+      ["2026-06-16", "1 Muharam Tahun Baru Islam 1448 Hijriah"],
+      ["2026-08-17", "Proklamasi Kemerdekaan"],
       ["2026-08-25", "Maulid Nabi Muhammad SAW"],
-      ["2026-12-25", "Hari Raya Natal"],
+      ["2026-12-24", "Cuti Bersama Kelahiran Yesus Kristus"],
+      ["2026-12-25", "Kelahiran Yesus Kristus"],
     ],
   },
 };
