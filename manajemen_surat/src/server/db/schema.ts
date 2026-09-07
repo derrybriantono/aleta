@@ -785,6 +785,27 @@ const schemaStatements = [
     oleh TEXT NOT NULL DEFAULT '',
     pada TEXT NOT NULL
   )`,
+  // Kehadiran mediasi menurut EMPAT kedudukan yang terpisah - penggugat,
+  // tergugat, kuasa penggugat, kuasa tergugat. SIPP hanya menyimpan satu ruas
+  // bebas ("dihadiri 2"), dan angka itu tidak membedakan dua pihak yang hadir
+  // sendiri dari dua kuasa yang hadir tanpa pihaknya - padahal PERMA 1/2016
+  // Pasal 7 menuntut para pihak hadir SECARA LANGSUNG, dan akibat hukum
+  // keduanya berlawanan.
+  `CREATE TABLE IF NOT EXISTS aleta_kehadiran_mediasi (
+    id TEXT PRIMARY KEY,
+    mediasi_id TEXT NOT NULL,
+    perkara_id TEXT NOT NULL DEFAULT '',
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    tanggal_pertemuan TEXT NOT NULL DEFAULT '',
+    kedudukan TEXT NOT NULL,
+    hadir INTEGER NOT NULL DEFAULT 0,
+    nama TEXT NOT NULL DEFAULT '',
+    alasan TEXT NOT NULL DEFAULT '',
+    catatan TEXT NOT NULL DEFAULT '',
+    dicatat_oleh TEXT NOT NULL DEFAULT '',
+    dicatat_at TEXT NOT NULL,
+    diperbarui_at TEXT NOT NULL DEFAULT ''
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -2723,6 +2744,11 @@ const indexStatements = [
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_saklar_periksa_golongan ON aleta_saklar_periksa(golongan)`,
   `CREATE INDEX IF NOT EXISTS idx_saklar_riwayat_golongan ON aleta_saklar_riwayat(golongan, pada)`,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
+  // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
+  // simpan dua kali menghasilkan dua baris yang saling bertentangan.
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_kehadiran_mediasi_kunci ON aleta_kehadiran_mediasi(mediasi_id, tanggal_pertemuan, kedudukan)`,
+  `CREATE INDEX IF NOT EXISTS idx_kehadiran_mediasi_perkara ON aleta_kehadiran_mediasi(perkara_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_kehadiran_mediasi_nomor ON aleta_kehadiran_mediasi(nomor_perkara)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_isian_perkara_kunci ON aleta_isian_perkara(perkara_id, no_var)`,
   `CREATE INDEX IF NOT EXISTS idx_isian_perkara_perkara ON aleta_isian_perkara(perkara_id)`,
   `CREATE INDEX IF NOT EXISTS idx_isian_riwayat_kunci ON aleta_isian_riwayat(perkara_id, no_var)`,

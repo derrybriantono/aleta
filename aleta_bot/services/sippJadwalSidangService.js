@@ -175,7 +175,16 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     }
   };
 
-  const [petaPihak, petaPetugas, petaPutusan, petaPanggilan, petaBerikut, petaKuasa] = await Promise.all([
+  const [
+    petaPihak,
+    petaPetugas,
+    petaPutusan,
+    petaPanggilan,
+    petaBerikut,
+    petaKuasa,
+    petaSaksi,
+    petaEcourt,
+  ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
     aman(() => putusanBanyakPerkara(idPerkara)),
@@ -190,6 +199,15 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       )
     ),
     aman(() => kuasaBanyakPerkara(idPerkara)),
+    // Saksi yang diajukan tiap sisi. Gagal-terbuka: tabel perkara_pihak5 ada
+    // pada SIPP PA, tetapi pemasangan lain dapat berbeda - dan jadwal sidang
+    // tetap berguna tanpa angka saksi.
+    aman(() => saksiBanyakPerkara(idPerkara)),
+    // Pendaftaran e-Court - penanda e-Litigasi yang sesungguhnya. Gagal-TERTUTUP:
+    // peta kosong berarti tidak ada perkara yang ditandai e-Litigasi, bukan
+    // seluruhnya ditandai. Menandai saat ragu berarti menyalakan penanda pada
+    // perkara yang mungkin tidak pernah menyentuh e-Court.
+    aman(() => ecourtBanyakPerkara(idPerkara)),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -260,6 +278,18 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       statusPutusan: (petaPutusan[String(row.perkaraId)] || {}).statusPutusan || "",
       tanggalMinutasi: (petaPutusan[String(row.perkaraId)] || {}).tanggalMinutasi || "",
       tanggalBht: (petaPutusan[String(row.perkaraId)] || {}).tanggalBht || "",
+      verstekPutusan: Boolean((petaPutusan[String(row.perkaraId)] || {}).verstek),
+      // Saksi yang DIAJUKAN tiap sisi - bukan yang sudah diperiksa. Dipakai
+      // penanda "Saksi P / Saksi T" di daftar.
+      saksiPihak1: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak1) || 0,
+      saksiPihak2: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak2) || 0,
+      // Terdaftar lewat e-Court. Syarat PERTAMA penanda e-Litigasi; syarat
+      // keduanya - agendanya tahapan yang dipertukarkan elektronik - diperiksa
+      // di layar, karena di sanalah daftar agendanya dirawat.
+      lewatEcourt: Boolean(petaEcourt[String(row.perkaraId)]),
+      // Naskah sudah diunggah tetapi minutasi belum bertanggal: yang menagih
+      // bukan hakimnya lagi, melainkan panitera penggantinya.
+      adaBerkasPutusan: Boolean((petaPutusan[String(row.perkaraId)] || {}).adaBerkasPutusan),
       // Terisi hanya pada perkara yang sudah putus. null berarti belum putus,
       // atau keadaan e-Courtnya memang tidak dapat dibaca - dua hal yang
       // sama-sama BUKAN masalah putusan.
@@ -386,6 +416,47 @@ async function perkaraLewatEcourt(perkaraId) {
 }
 
 /**
+ * Perkara mana saja yang terdaftar lewat e-Court, untuk sekumpulan perkara.
+ *
+ * ============================================================================
+ * KENAPA PENANDA e-LITIGASI TIDAK BOLEH BERSANDAR PADA AGENDA SAJA
+ * ============================================================================
+ *
+ * Tahapan yang dipertukarkan lewat aplikasi pada e-Litigasi - jawaban, replik,
+ * duplik, kesimpulan, musyawarah majelis, pembacaan putusan - SEMUANYA juga
+ * terjadi pada perkara biasa. Pengukuran agenda 2026 di PA Donggala: 31 sidang
+ * beragenda "Musyawarah Majelis" dan 20 "Pembacaan putusan", dan sebagian besar
+ * di antaranya perkara yang tidak pernah menyentuh e-Court sama sekali.
+ *
+ * Menandai perkara e-Litigasi dari agendanya saja karena itu akan menyalakan
+ * penanda pada perkara biasa - dan saringan yang memunculkan perkara yang
+ * bukan e-Litigasi lebih menyesatkan daripada tidak ada saringan, karena
+ * pembacanya menyangka daftar itu sudah lengkap dan tepat.
+ *
+ * perkara_efiling_id adalah pendaftaran e-Court yang sesungguhnya. Penanda
+ * e-Litigasi menuntut KEDUANYA: perkaranya terdaftar lewat e-Court, DAN
+ * agendanya salah satu tahapan yang dipertukarkan elektronik.
+ */
+async function ecourtBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+
+  const rows = await runQuery(
+    `SELECT DISTINCT k.perkara_id AS perkaraId
+       FROM perkara_efiling_id k
+      WHERE k.perkara_id IN (${isian})`,
+    dipakai
+  );
+
+  const hasil = {};
+  for (const baris of Array.isArray(rows) ? rows : []) hasil[String(baris.perkaraId)] = true;
+  return hasil;
+}
+
+/**
  * Meringkas amar putusan menjadi teks pendek tanpa tag HTML.
  *
  * Amar disimpan SIPP sebagai HTML dari penyunting kaya - menampilkannya apa
@@ -435,8 +506,22 @@ async function putusanPerkara(perkaraId) {
     aman(
       () =>
         runQuery(
+          // ==================================================================
+          // NAMA STATUS DIAMBIL DARI TABEL RUJUKAN, BUKAN SALINAN DI BARISNYA
+          // ==================================================================
+          //
+          // perkara_putusan.status_putusan_nama adalah salinan yang SIPP isi
+          // hanya kadang-kadang. Pengukuran di PA Donggala: 9.480 dari 9.998
+          // baris putusan menyimpan NULL di sana, padahal status_putusan_id-nya
+          // terisi. Itulah sebab kolom "Jenis putusan" di layar jadwal berbunyi
+          // "belum tercatat" pada hampir seluruh perkara.
+          //
+          // Salinannya juga dapat USANG: satu baris berstatus id 65 (Digugurkan)
+          // menyimpan nama "Dikabulkan" - dua hal yang berlawanan. Karena itu
+          // yang dipakai selalu nama dari status_putusan, dan salinannya hanya
+          // menjadi cadangan bila id-nya sendiri tidak ada di tabel rujukan.
           `SELECT pu.tanggal_putusan AS tanggalPutusan,
-                  pu.status_putusan_nama AS statusPutusan,
+                  COALESCE(sp.nama, pu.status_putusan_nama) AS statusPutusan,
                   pu.putusan_verstek AS verstek,
                   pu.tanggal_cabut AS tanggalCabut,
                   pu.tanggal_gugur AS tanggalGugur,
@@ -446,6 +531,7 @@ async function putusanPerkara(perkaraId) {
                   pu.amar_putusan_dok AS amarDok,
                   pu.amar_putusan_anonimisasi_dok AS amarAnonimDok
              FROM perkara_putusan pu
+             LEFT JOIN status_putusan sp ON sp.id = pu.status_putusan_id
             WHERE pu.perkara_id = ?
             ORDER BY pu.tanggal_putusan DESC
             LIMIT 1`,
@@ -685,13 +771,43 @@ async function putusanBanyakPerkara(daftarPerkaraId = []) {
 
   // MAX dipakai untuk mengambil putusan terakhir bila satu perkara punya lebih
   // dari satu baris putusan - tanggalnya bagian dari kunci utama tabel itu.
+  //
+  // Nama status diambil dari status_putusan, sama seperti putusanPerkara -
+  // sebabnya diterangkan panjang di sana. Dua jalur yang menjawab pertanyaan
+  // yang sama harus mengambilnya dari tempat yang sama, atau pada suatu hari
+  // daftar dan rinciannya berbeda untuk perkara yang sama.
+  //
+  // Pemisah GROUP_CONCAT diganti '|' - bukan koma. "Tidak Dapat Diterima" tidak
+  // memuat koma, tetapi nama status ditentukan operator SIPP dan dapat berubah;
+  // koma sebagai pemisah membuat nama bertanda koma terpotong separuh.
   const rows = await runQuery(
     `SELECT pu.perkara_id AS perkaraId,
             MAX(pu.tanggal_putusan) AS tanggalPutusan,
             MAX(pu.tanggal_minutasi) AS tanggalMinutasi,
             MAX(pu.tanggal_bht) AS tanggalBht,
-            SUBSTRING_INDEX(GROUP_CONCAT(pu.status_putusan_nama ORDER BY pu.tanggal_putusan DESC), ',', 1) AS statusPutusan
+            MAX(pu.putusan_verstek) AS verstek,
+            MAX(CASE WHEN pu.amar_putusan_dok IS NOT NULL AND TRIM(pu.amar_putusan_dok) <> '' THEN 1 ELSE 0 END) AS adaBerkasPutusan,
+            -- ==================================================================
+            -- CONVERT WAJIB - DUA KOLOM INI BEDA COLLATION
+            -- ==================================================================
+            --
+            -- perkara_putusan.status_putusan_nama  latin1_swedish_ci
+            -- status_putusan.nama                  latin1_general_ci
+            --
+            -- COALESCE atas keduanya lolos pada baris tunggal, tetapi
+            -- GROUP_CONCAT/SUBSTRING_INDEX menolaknya dengan
+            -- ER_CANT_AGGREGATE_2COLLATIONS - dan penolakan itu terjadi saat
+            -- kueri dijalankan, bukan saat kode ditulis, sehingga tanpa
+            -- CONVERT seluruh kolom putusan di daftar jadwal kosong tanpa
+            -- sebab yang terlihat.
+            SUBSTRING_INDEX(
+              GROUP_CONCAT(
+                COALESCE(CONVERT(sp.nama USING utf8), CONVERT(pu.status_putusan_nama USING utf8))
+                ORDER BY pu.tanggal_putusan DESC SEPARATOR '|'
+              ), '|', 1
+            ) AS statusPutusan
        FROM perkara_putusan pu
+       LEFT JOIN status_putusan sp ON sp.id = pu.status_putusan_id
       WHERE pu.perkara_id IN (${isian})
       GROUP BY pu.perkara_id`,
     dipakai
@@ -704,6 +820,11 @@ async function putusanBanyakPerkara(daftarPerkaraId = []) {
       statusPutusan: cleanText(baris.statusPutusan),
       tanggalMinutasi: isoTanggal(baris.tanggalMinutasi),
       tanggalBht: isoTanggal(baris.tanggalBht),
+      verstek: cleanText(baris.verstek).toUpperCase() === "Y",
+      // Dipakai menandai perkara yang naskah putusannya sudah diunggah tetapi
+      // belum diminutasi - keadaan yang menagih panitera pengganti, dan yang
+      // sebelumnya hanya terlihat sesudah membuka rincian satu per satu.
+      adaBerkasPutusan: Number(baris.adaBerkasPutusan) === 1,
     };
   }
   return hasil;
@@ -1404,22 +1525,115 @@ async function relaasSidang(perkaraId, sidangId) {
  * yang menentukan kesiapan berkas adalah keterangannya - bukan namanya.
  */
 async function saksiPerkara(perkaraId) {
-  const rows = await runQuery(
-    `SELECT COUNT(DISTINCT s.saksi_id) AS jumlahSaksi,
-            COUNT(*) AS jumlahKeterangan,
-            MAX(s.sidang_id) AS sidangTerakhir
-       FROM perkara_keterangan_saksi s
-      WHERE s.perkara_id = ?`,
-    [perkaraId]
-  );
+  const aman = async (kerja, cadangan) => {
+    try {
+      return await kerja();
+    } catch {
+      return cadangan;
+    }
+  };
+
+  const [rows, daftar] = await Promise.all([
+    aman(
+      () =>
+        runQuery(
+          `SELECT COUNT(DISTINCT s.saksi_id) AS jumlahSaksi,
+                  COUNT(*) AS jumlahKeterangan,
+                  MAX(s.sidang_id) AS sidangTerakhir
+             FROM perkara_keterangan_saksi s
+            WHERE s.perkara_id = ?`,
+          [perkaraId]
+        ),
+      []
+    ),
+    // ========================================================================
+    // SAKSI YANG DIAJUKAN, DIPISAH MENURUT SISI YANG MENGHADIRKAN
+    // ========================================================================
+    //
+    // Dua pertanyaan yang berbeda, dan sebelum ini hanya satu yang terjawab:
+    //
+    //   perkara_keterangan_saksi  saksi yang sudah DIPERIKSA - keterangannya
+    //                             tercatat, dan itulah yang menentukan berkas
+    //                             siap atau belum;
+    //   perkara_pihak5            saksi yang DIAJUKAN - namanya terdaftar,
+    //                             tetapi mungkin belum pernah diperiksa.
+    //
+    // Yang ditanyakan di layar jadwal adalah yang kedua: berapa saksi dari
+    // pihak penggugat dan berapa dari tergugat, supaya majelis tahu sebelum
+    // sidang siapa yang akan hadir.
+    //
+    // saksi_pihak_ke - BUKAN jenis_pihak_id - yang menyimpan sisinya.
+    // jenis_pihak_id bernilai 1 pada seluruh 16.480 baris di PA Donggala,
+    // sehingga memakainya membuat setiap saksi terbaca sebagai saksi
+    // penggugat. Sebaran saksi_pihak_ke: 16.240 sisi penggugat, 240 sisi
+    // tergugat - dan ada perkara yang benar-benar punya saksi dari keduanya.
+    aman(
+      () =>
+        runQuery(
+          `SELECT k.saksi_pihak_ke AS sisi, COUNT(*) AS jumlah
+             FROM perkara_pihak5 k
+            WHERE k.perkara_id = ?
+            GROUP BY k.saksi_pihak_ke`,
+          [perkaraId]
+        ),
+      []
+    ),
+  ]);
 
   const baris = rows[0] || {};
   const jumlahSaksi = Number(baris.jumlahSaksi) || 0;
+
+  let diajukanPihak1 = 0;
+  let diajukanPihak2 = 0;
+  for (const x of Array.isArray(daftar) ? daftar : []) {
+    if (Number(x.sisi) === 1) diajukanPihak1 = Number(x.jumlah) || 0;
+    else if (Number(x.sisi) === 2) diajukanPihak2 = Number(x.jumlah) || 0;
+  }
+
   return {
     ada: jumlahSaksi > 0,
     jumlahSaksi,
     jumlahKeterangan: Number(baris.jumlahKeterangan) || 0,
+    // Saksi yang diajukan tiap sisi. Nol berarti benar-benar tidak ada yang
+    // diajukan - berbeda dari "diajukan tetapi belum diperiksa", yang
+    // terbaca dari selisihnya terhadap jumlahSaksi di atas.
+    diajukanPihak1,
+    diajukanPihak2,
+    adaDiajukan: diajukanPihak1 + diajukanPihak2 > 0,
   };
+}
+
+/**
+ * Jumlah saksi yang diajukan tiap sisi, untuk sekumpulan perkara sekaligus.
+ *
+ * Dipakai daftar jadwal supaya penandanya dapat menyebut angka tanpa membuka
+ * rincian tiap perkara satu per satu.
+ */
+async function saksiBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+
+  const rows = await runQuery(
+    `SELECT k.perkara_id AS perkaraId,
+            SUM(CASE WHEN k.saksi_pihak_ke = 1 THEN 1 ELSE 0 END) AS pihak1,
+            SUM(CASE WHEN k.saksi_pihak_ke = 2 THEN 1 ELSE 0 END) AS pihak2
+       FROM perkara_pihak5 k
+      WHERE k.perkara_id IN (${isian})
+      GROUP BY k.perkara_id`,
+    dipakai
+  );
+
+  const hasil = {};
+  for (const baris of Array.isArray(rows) ? rows : []) {
+    hasil[String(baris.perkaraId)] = {
+      diajukanPihak1: Number(baris.pihak1) || 0,
+      diajukanPihak2: Number(baris.pihak2) || 0,
+    };
+  }
+  return hasil;
 }
 
 /** Dokumen yang tersimpan di SIPP untuk perkara ini. */
@@ -1712,4 +1926,6 @@ module.exports = {
   relaasSidang,
   rincianSidang,
   saksiPerkara,
+  saksiBanyakPerkara,
+  ecourtBanyakPerkara,
 };

@@ -286,6 +286,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_saklar_periksa",
   "aleta_saklar_riwayat",
   "aleta_uji_mandiri",
+  "aleta_kehadiran_mediasi",
   "aleta_isian_perkara",
   "aleta_isian_riwayat",
   "aleta_sumber_aplikasi",

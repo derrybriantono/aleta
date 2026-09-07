@@ -1158,6 +1158,26 @@ export type SidangBaris = {
   majelisNama: string;
   paniteraNama: string;
   jurusitaNama: string;
+  /** Putusan tanpa hadirnya tergugat. Bukan verzet - itu perlawanan TERHADAPnya. */
+  verstekPutusan: boolean;
+  /**
+   * Naskah putusan sudah diunggah ke SIPP. Bersama tanggalMinutasi yang masih
+   * kosong, inilah keadaan yang menagih panitera pengganti - dan sebelumnya
+   * hanya terlihat sesudah membuka rincian perkara satu per satu.
+   */
+  adaBerkasPutusan: boolean;
+  /** Saksi yang DIAJUKAN tiap sisi - belum tentu sudah diperiksa. */
+  saksiPihak1: number;
+  saksiPihak2: number;
+  /**
+   * Perkaranya terdaftar lewat e-Court (perkara_efiling_id).
+   *
+   * Syarat PERTAMA penanda e-Litigasi; syarat keduanya - agendanya tahapan
+   * yang dipertukarkan elektronik - diperiksa di layar. Tanpa ruas ini di tipe
+   * daftar, penandanya selalu mati tanpa satu pun galat: fungsi
+   * pemeriksanya menerima ruas opsional, sehingga undefined lolos begitu saja.
+   */
+  lewatEcourt: boolean;
 };
 
 export type RincianSidang = {
@@ -1168,7 +1188,19 @@ export type RincianSidang = {
   majelis: Array<{ kode: string; nama: string; jabatan: string }>;
   panitera: Array<{ kode: string; nama: string }>;
   jurusita: Array<{ kode: string; nama: string }>;
-  saksi: { ada: boolean; jumlahSaksi: number; jumlahKeterangan: number };
+  saksi: {
+    ada: boolean;
+    jumlahSaksi: number;
+    jumlahKeterangan: number;
+    /**
+     * Saksi yang diajukan tiap sisi, dari perkara_pihak5.saksi_pihak_ke.
+     * Berbeda dari jumlahSaksi di atas, yang menghitung saksi yang sudah
+     * DIPERIKSA - saksi dapat diajukan tanpa pernah diperiksa.
+     */
+    diajukanPihak1: number;
+    diajukanPihak2: number;
+    adaDiajukan: boolean;
+  };
   relaas: Array<{
     id: string;
     namaPihak: string;

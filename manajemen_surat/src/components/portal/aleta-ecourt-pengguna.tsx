@@ -246,6 +246,21 @@ export function AletaEcourtPengguna() {
             sidebarCiut ? "px-3 py-5" : "p-5"
           )}
         >
+          {/* ==================================================================
+              TULISAN TOMBOL INI PERNAH KELUAR DARI BAGANNYA
+              ==================================================================
+
+              Sidebar lebarnya 216px, dan dengan padding 20px di kedua sisi
+              tersisa 176px. Tombol ciutkan mengambil 40px dan jaraknya 8px,
+              sehingga tombol ini hanya punya 128px - sedangkan "Kembali ke
+              Portal" beserta ikon dan padding bawaan tombol menuntut lebih.
+              Tanpa min-w-0, flex-1 menolak menyusut di bawah lebar isinya, dan
+              tulisannya menembus keluar bagan menimpa tombol di sebelahnya.
+
+              Tiga hal yang menahannya sekarang: min-w-0 membolehkan menyusut,
+              truncate memotong dengan elipsis alih-alih meluber, dan padding
+              yang lebih rapat memberi ruang bagi tulisannya. Judul lengkapnya
+              tetap ada di title, sehingga yang terpotong masih dapat dibaca. */}
           <div className={cn("flex gap-2", sidebarCiut ? "justify-center" : "items-center")}>
             <Button
               asChild
@@ -253,12 +268,14 @@ export function AletaEcourtPengguna() {
               size={sidebarCiut ? "icon" : "default"}
               className={cn(
                 "rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15 hover:text-white",
-                sidebarCiut ? "h-11 w-11 shrink-0" : "flex-1 justify-start"
+                sidebarCiut ? "h-11 w-11 shrink-0" : "min-w-0 flex-1 justify-start px-3"
               )}
             >
-              <Link href={apiPath("/portal")} title={sidebarCiut ? "Kembali ke Portal ALETA" : undefined}>
-                <ArrowLeft className="h-4 w-4" />
-                {!sidebarCiut ? <span className="ml-2">Kembali ke Portal</span> : null}
+              <Link href={apiPath("/portal")} title="Kembali ke Portal ALETA">
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                {!sidebarCiut ? (
+                  <span className="ml-2 truncate">Kembali ke Portal</span>
+                ) : null}
               </Link>
             </Button>
 

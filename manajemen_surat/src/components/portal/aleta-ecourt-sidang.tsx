@@ -99,6 +99,15 @@ type SidangBaris = {
   adaKuasa?: boolean;
   kuasaPihak1?: boolean;
   kuasaPihak2?: boolean;
+  /** Putusan tanpa hadirnya tergugat. Bukan verzet - itu perlawanan TERHADAPnya. */
+  verstekPutusan?: boolean;
+  /** Naskah putusan sudah diunggah ke SIPP. */
+  adaBerkasPutusan?: boolean;
+  /** Saksi yang DIAJUKAN tiap sisi - belum tentu sudah diperiksa. */
+  saksiPihak1?: number;
+  saksiPihak2?: number;
+  /** Terdaftar lewat e-Court - syarat pertama penanda e-Litigasi. */
+  lewatEcourt?: boolean;
 };
 
 /**
@@ -210,7 +219,16 @@ type Rincian = {
     majelis: Array<{ kode: string; nama: string; jabatan: string }>;
     panitera: Array<{ kode: string; nama: string }>;
     jurusita: Array<{ kode: string; nama: string }>;
-    saksi: { ada: boolean; jumlahSaksi: number; jumlahKeterangan: number };
+    saksi: {
+      /** Ada keterangan saksi yang tercatat - saksi yang sudah DIPERIKSA. */
+      ada: boolean;
+      jumlahSaksi: number;
+      jumlahKeterangan: number;
+      /** Saksi yang DIAJUKAN tiap sisi - belum tentu sudah diperiksa. */
+      diajukanPihak1: number;
+      diajukanPihak2: number;
+      adaDiajukan: boolean;
+    };
     relaas: Array<{
       id: string;
       namaPihak: string;
@@ -377,17 +395,104 @@ function potensiVerstek(dihadiriOleh: number | null) {
  * perlu hadir.
  */
 const AGENDA_ELITIGASI = [
-  /jawaban/i,
-  /replik/i,
-  /duplik/i,
+  /\bjawaban\b/i,
+  /\breplik\b/i,
+  /\bduplik\b/i,
   /duplik\s+rekonvensi/i,
-  /kesimpulan/i,
+  /\bkesimpulan\b/i,
+  /musyawarah\s+majelis/i,
+  // "Pembacaan putusan" dan "Pembacaan Penetapan" - keduanya benar-benar
+  // ada di SIPP dengan ejaan berbeda, sehingga yang dicocokkan kata intinya.
+  /pembacaan\s+(putusan|penetapan)/i,
+  /putusan\s+sela/i,
 ];
 
+/**
+ * Agendanya saja. TIDAK dipakai sendirian - lihat sidangElitigasi di bawah.
+ * Dipisah sebagai fungsi supaya dapat diuji tanpa merender apa pun.
+ */
 function agendaElitigasi(agenda: string): boolean {
   const teks = String(agenda || "");
   if (!teks) return false;
   return AGENDA_ELITIGASI.some((pola) => pola.test(teks));
+}
+
+/**
+ * Penanda e-Litigasi yang sesungguhnya: perkara e-Court DAN agenda elektronik.
+ *
+ * ============================================================================
+ * KENAPA AGENDA SAJA TIDAK LAGI CUKUP
+ * ============================================================================
+ *
+ * Selama daftar agendanya hanya jawaban, replik, duplik, dan kesimpulan,
+ * agenda saja memang menandai - keempatnya jarang muncul di luar e-Litigasi.
+ * Begitu daftarnya diperluas sampai musyawarah majelis dan pembacaan putusan,
+ * ia berhenti menandai: pengukuran agenda 2026 di PA Donggala mencatat 31
+ * sidang "Musyawarah Majelis" dan 20 "Pembacaan putusan", dan sebagian besar
+ * perkara yang tidak pernah menyentuh e-Court sama sekali.
+ *
+ * Saringan yang memunculkan perkara biasa lebih menyesatkan daripada tidak ada
+ * saringan - pembacanya menyangka daftar itu sudah tepat.
+ *
+ * lewatEcourt yang tidak terbaca dianggap BUKAN e-Court: gagal-tertutup, sama
+ * seperti jalur penilaian lain di ALETA.
+ */
+function sidangElitigasi(baris: { agenda?: string; lewatEcourt?: boolean }): boolean {
+  if (!baris.lewatEcourt) return false;
+  return agendaElitigasi(baris.agenda || "");
+}
+
+/**
+ * Warna penanda menurut status putusan.
+ *
+ * ============================================================================
+ * WARNANYA MENYEBUT ARTI, BUKAN SELERA
+ * ============================================================================
+ *
+ * Tujuh status yang benar-benar dipakai PA Donggala, dari tabel status_putusan
+ * SIPP - bukan daftar yang dikarang:
+ *
+ *   Dikabulkan, Dikabulkan Sebagian, Perdamaian   hijau  permohonan berhasil
+ *   Ditolak                                       merah  ditolak pokoknya
+ *   Tidak Dapat Diterima                          kuning bukan ditolak - tidak
+ *                                                        diperiksa pokoknya,
+ *                                                        dan dapat diajukan lagi
+ *   Digugurkan, Gugur                             kuning berhenti tanpa putusan
+ *   Dicabut, Dicoret dari Register                kelabu ditarik pemohonnya
+ *
+ * "Tidak Dapat Diterima" sengaja TIDAK merah. Ia bukan kekalahan: syarat
+ * formalnya belum terpenuhi, dan perkaranya boleh diajukan kembali sesudah
+ * diperbaiki. Mewarnainya merah menyamakan dua keadaan yang akibatnya berbeda
+ * bagi pihak yang membacanya.
+ *
+ * Status di luar daftar tetap ditampilkan - dengan warna netral, bukan
+ * disembunyikan. Status baru yang ditambahkan operator SIPP harus tetap
+ * terbaca meski warnanya belum ditentukan.
+ */
+/**
+ * Apakah ini perkara verzet - perlawanan terhadap putusan verstek.
+ *
+ * SIPP tidak menyimpan penanda tersendiri untuknya; yang ada hanya nama jenis
+ * perkaranya. "Perlawanan" adalah sebutan resmi di SIPP, "verzet" yang dipakai
+ * sehari-hari - keduanya dikenali.
+ *
+ * Satu fungsi dipakai daftar maupun rincian. Dua salinan aturan yang sama akan
+ * sama-sama bekerja, lalu pada suatu hari satu layar menandai perkara yang
+ * tidak ditandai layar lain - untuk perkara yang persis sama.
+ */
+function perkaraVerzetDari(...teks: Array<string | undefined | null>): boolean {
+  return /verzet|perlawanan/i.test(teks.filter(Boolean).join(" "));
+}
+
+function warnaStatusPutusan(status: string): "success" | "danger" | "warning" | "muted" | "outline" {
+  const teks = String(status || "").toLowerCase();
+  if (!teks) return "muted";
+  if (/tidak\s+dapat\s+diterima/.test(teks)) return "warning";
+  if (/dikabulkan|perdamaian|damai/.test(teks)) return "success";
+  if (/tolak/.test(teks)) return "danger";
+  if (/gugur/.test(teks)) return "warning";
+  if (/cabut|dicoret/.test(teks)) return "muted";
+  return "outline";
 }
 
 /** Ringkasan jumlah sidang per kelompok alur. */
@@ -471,6 +576,29 @@ type KeadaanSidang = {
   cocok: (baris: SidangBaris, antrian: Record<string, AntrianBaris>) => boolean;
 };
 
+/**
+ * Sakelar penanda "Putusan e-Court".
+ *
+ * ============================================================================
+ * DIMATIKAN, DAN SEBABNYA DITULIS - BUKAN DIHAPUS DIAM-DIAM
+ * ============================================================================
+ *
+ * Penandanya menyatakan "sudah putus, tetapi putusannya belum beres di
+ * e-Court". Yang sebenarnya diperiksa bukan itu: ia membandingkan keadaan
+ * SIPP dengan catatan e-Court di ALETA, dan catatan itu kosong pada perkara
+ * yang penarikan e-Courtnya memang belum pernah dijalankan.
+ *
+ * Akibatnya penandanya menyala pada perkara yang tidak bermasalah sama sekali
+ * - hanya belum pernah ditarik. Tuduhan yang salah pada layar jadwal jauh
+ * lebih merugikan daripada penanda yang tidak ada: seseorang akan mengejar
+ * perkara yang tidak perlu dikejar.
+ *
+ * Nyalakan kembali HANYA sesudah pemeriksaannya membedakan "belum pernah
+ * ditarik" dari "sudah ditarik dan memang belum terbit". Sampai saat itu,
+ * seluruh jalurnya tetap ada di kode dan hanya tidak digambar.
+ */
+const TAMPILKAN_PUTUSAN_ECOURT = false;
+
 const KEADAAN_SIDANG: KeadaanSidang[] = [
   {
     kunci: "retur",
@@ -486,13 +614,28 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     judul: "Masih ada pihak yang wajib dipanggil dan relaasnya belum ada.",
     cocok: (x) => x.panggilan.belumDipanggil > 0,
   },
-  {
-    kunci: "putusan-ecourt",
-    label: "Putusan e-Court",
-    nada: "bahaya",
-    judul: "Sudah putus, tetapi putusannya belum beres di e-Court.",
-    cocok: (x) => Boolean(x.putusanEcourt?.perluTindakan),
-  },
+  // ==========================================================================
+  // "Putusan e-Court" SENGAJA TIDAK DITAMPILKAN - LIHAT TAMPILKAN_PUTUSAN_ECOURT
+  // ==========================================================================
+  //
+  // Penandanya menuduh perkara yang sebenarnya tidak bermasalah, karena
+  // keadaan e-Court yang dibacanya belum tentu pernah ditarik. Dimatikan
+  // sampai pemeriksaannya benar-benar membandingkan keadaan yang sama.
+  //
+  // Definisinya TIDAK dihapus: menghapusnya berarti menulis ulang seluruhnya
+  // ketika pemeriksaannya sudah benar, dan yang salah bukan definisinya
+  // melainkan data yang dibacanya.
+  ...(TAMPILKAN_PUTUSAN_ECOURT
+    ? [
+        {
+          kunci: "putusan-ecourt",
+          label: "Putusan e-Court",
+          nada: "bahaya" as const,
+          judul: "Sudah putus, tetapi putusannya belum beres di e-Court.",
+          cocok: (x: SidangBaris) => Boolean(x.putusanEcourt?.perluTindakan),
+        },
+      ]
+    : []),
   {
     kunci: "ditunda",
     label: "Ditunda",
@@ -526,8 +669,8 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     label: "e-Litigasi",
     nada: "sejuk",
     judul:
-      "Agendanya tahapan yang pada e-Litigasi dipertukarkan lewat aplikasi: jawaban, replik, duplik, atau kesimpulan.",
-    cocok: (x) => agendaElitigasi(x.agenda || ""),
+      "Perkara terdaftar lewat e-Court DAN agendanya tahapan yang dipertukarkan elektronik: jawaban, replik, duplik, duplik rekonvensi, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan/putusan sela.",
+    cocok: (x) => sidangElitigasi(x),
   },
   {
     kunci: "sudah-putus",
@@ -945,7 +1088,11 @@ function MenuLayarAntrian() {
       </Button>
 
       {terbuka ? (
-        <div className="absolute right-0 z-30 mt-1 w-72 rounded-md border bg-popover p-2 shadow-lg">
+        // bg-card, BUKAN bg-popover: token --popover tidak pernah didefinisikan
+        // di globals.css, sehingga bg-popover menghasilkan warna yang tidak sah
+        // dan menu tampil TEMBUS PANDANG di atas tabel di bawahnya. Tidak ada
+        // galat apa pun - hanya tulisan yang bertumpuk dan tidak terbaca.
+        <div className="absolute right-0 z-30 mt-1 w-72 rounded-md border bg-card text-card-foreground p-2 shadow-lg">
           {[
             { judul: "Untuk pihak", daftar: LAYAR_PIHAK },
             { judul: "Untuk operator", daftar: LAYAR_OPERATOR },
@@ -1053,7 +1200,10 @@ function TombolAmbilAntrian({
 
       {terbuka ? (
         <div
-          className="absolute left-0 z-20 mt-1 w-52 rounded-md border bg-popover p-1 shadow-lg"
+          // bg-card karena alasan yang sama dengan menu Tampilan di atas:
+          // token --popover tidak ada, dan bg-popover membuat menu ini tembus
+          // pandang di atas baris jadwal.
+          className="absolute left-0 z-20 mt-1 w-52 rounded-md border bg-card text-card-foreground p-1 shadow-lg"
           onClick={(peristiwa) => peristiwa.stopPropagation()}
         >
           <p className="px-2 py-1 text-[11px] text-muted-foreground">Siapa yang hadir?</p>
@@ -1994,7 +2144,9 @@ export function AletaEcourtSidang({
           yang sedang membacakan jadwal tidak sedang menyaring apa pun; ia
           hanya perlu melihat sebanyak mungkin baris sekaligus. */}
       <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2 sm:p-5 sm:pb-2">
-        <CardTitle className="text-base sm:text-lg">Jadwal perkara yang bersidang</CardTitle>
+        <CardTitle className="text-base font-bold uppercase tracking-wide sm:text-lg">
+          Jadwal perkara yang bersidang
+        </CardTitle>
         <div className="flex shrink-0 items-center gap-2">
         {/* Pemilih tampilan berdiri di kepala, bukan di antara saringan:
             ia menjawab "seberapa padat saya mau melihatnya", satu keluarga
@@ -2055,35 +2207,55 @@ export function AletaEcourtSidang({
             pertama dicari mata saat layar dibuka. */}
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
-            {/* Satu kesatuan navigasi: panah dan pemilih tanggal menempel,
-                supaya terbaca sebagai satu alat, bukan tiga tombol lepas. */}
-            {/* Satu alat bersambung, bukan lima tombol sederajat: panah,
-                tanggal, panah, "Hari ini", kalender - kelimanya memilih hari.
-                Tombol yang berdiri sendiri-sendiri menuntut mata membaca
-                semuanya sebelum menemukan satu. */}
+            {/* ============================================================
+                SATU ALAT RENTANG, BUKAN DUA TANGGAL YANG BERJAUHAN
+                ============================================================
+
+                Tanggal mulai dan tanggal akhir menjawab SATU pertanyaan -
+                "jadwal tanggal berapa sampai berapa". Sebelumnya keduanya
+                dipisah oleh kotak pencarian, sehingga mata harus melompati
+                kotak yang tidak ada hubungannya untuk membaca satu rentang.
+
+                Sekarang keduanya menempel di dalam satu bingkai, dipisah tanda
+                pisah, dan panah maju-mundur mengapitnya. Kotak pencarian pindah
+                ke baris tindakan di bawah: ia menyaring yang SUDAH tampil, dan
+                itu pekerjaan yang lain sama sekali. */}
             <div className="flex items-center overflow-hidden rounded-lg border bg-card shadow-sm">
               <button
                 type="button"
                 aria-label="Hari sebelumnya"
                 onClick={() => pilihHari(geserHari(dari, -1))}
-                className="px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
 
-              <Input
-                type="date"
-                value={dari}
-                onChange={(peristiwa) => pilihHari(peristiwa.target.value)}
-                className="h-9 w-[9.5rem] rounded-none border-x border-y-0 text-center focus-visible:ring-0"
-                aria-label="Tanggal sidang"
-              />
+              <div className="flex items-center border-x bg-background/40">
+                <Input
+                  type="date"
+                  value={dari}
+                  onChange={(peristiwa) => pilihHari(peristiwa.target.value)}
+                  className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
+                  aria-label="Tanggal sidang mulai"
+                />
+                <span aria-hidden className="select-none px-0.5 text-muted-foreground">
+                  –
+                </span>
+                <Input
+                  type="date"
+                  value={sampai}
+                  min={dari}
+                  onChange={(peristiwa) => setSampai(peristiwa.target.value)}
+                  className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
+                  aria-label="Tanggal sidang sampai"
+                />
+              </div>
 
               <button
                 type="button"
                 aria-label="Hari berikutnya"
                 onClick={() => pilihHari(geserHari(dari, 1))}
-                className="px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -2109,39 +2281,6 @@ export function AletaEcourtSidang({
               >
                 <CalendarDays className="h-4 w-4" />
               </button>
-            </div>
-
-            {/* ============================================================
-                CARI, RENTANG, DAN TAMPILKAN SEJAJAR PEMILIH HARI
-                ============================================================
-
-                Keempatnya menjawab satu pertanyaan yang sama - "jadwal yang
-                mana yang mau dilihat" - dan sebelumnya dipisah menjadi dua
-                baris oleh garis. Dua baris untuk satu pertanyaan memakan
-                tinggi dua kali lipat, dan tinggi di layar ini adalah jumlah
-                sidang yang terlihat.
-
-                Labelnya dibuang: kotak bertanggal dan kotak bertulisan
-                "Nomor perkara, jenis, atau agenda" sudah menerangkan dirinya
-                sendiri, dan label di atasnya menambah satu baris lagi. */}
-            <Input
-              placeholder="Cari nomor perkara, jenis, atau agenda"
-              value={cari}
-              onChange={(peristiwa) => setCari(peristiwa.target.value)}
-              className="h-9 w-56"
-              aria-label="Cari"
-            />
-
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">s.d.</span>
-              <Input
-                type="date"
-                value={sampai}
-                min={dari}
-                onChange={(peristiwa) => setSampai(peristiwa.target.value)}
-                className="h-9 w-36"
-                aria-label="Sampai tanggal"
-              />
             </div>
 
             <Button size="sm" disabled={memuat} onClick={() => void muat()}>
@@ -2220,6 +2359,21 @@ export function AletaEcourtSidang({
                 <ListOrdered className="mr-1.5 h-4 w-4" />
                 {sinkronSibuk ? "Memeriksa…" : "Daftarkan ke antrian"}
               </Button>
+
+              {/* Pencarian yang dikirim ke SIPP - berbeda dari kotak "Saring di
+                  dalam hasil" di bawah, yang bekerja atas baris yang sudah
+                  termuat. Tempatnya di sini, di sisi tombol tindakan, karena ia
+                  pun menuntut Tampilkan ditekan sesudahnya. */}
+              <Input
+                placeholder="Cari nomor perkara, jenis, atau agenda"
+                value={cari}
+                onChange={(peristiwa) => setCari(peristiwa.target.value)}
+                onKeyDown={(peristiwa) => {
+                  if (peristiwa.key === "Enter" && !memuat) void muat();
+                }}
+                className="h-9 w-64"
+                aria-label="Cari nomor perkara, jenis, atau agenda"
+              />
             </div>
           </div>
         </div>
@@ -2315,17 +2469,37 @@ export function AletaEcourtSidang({
               />
             ))}
 
-            {/* Jumlah seluruhnya, sekaligus tombol lepas. Sebelumnya ini
-                kotak putus-putus yang tidak dapat ditekan - padahal setelah
-                menyalakan tiga saringan, yang paling dicari justru cara
-                kembali ke semula. */}
+            {/* ============================================================
+                SELURUH SIDANG MELEPAS SEMUANYA, BUKAN SEBAGIAN
+                ============================================================
+
+                Sebelumnya tombol ini hanya melepas alur dan keempat penyaring
+                kartu - keadaan yang terpilih, kotak saring, dan pencarian
+                lanjutan tetap menyala. Akibatnya menekan "Seluruh sidang"
+                tetap menyisakan daftar yang tersaring, dan tombol yang
+                menjanjikan "seluruh" lalu tidak menampilkan seluruhnya
+                membuat orang menyangka datanya yang hilang.
+
+                Sekarang ia melepas SEMUA yang menyempitkan tampilan. Yang
+                TIDAK dilepas hanya rentang tanggal dan kotak Cari di atas:
+                keduanya menentukan apa yang diambil dari SIPP, bukan apa yang
+                disembunyikan dari yang sudah diambil - dan melepasnya berarti
+                memuat ulang tanpa diminta. */}
             <button
               type="button"
               onClick={() => {
                 setAlurTerpilih("");
                 bersihkanSaringan();
+                setKeadaanTerpilih([]);
+                setCariCepat("");
+                cariLanjut.bersihkan();
               }}
-              disabled={!alurTerpilih && keadaanTerpilih.length === 0}
+              disabled={
+                !alurTerpilih &&
+                keadaanTerpilih.length === 0 &&
+                !cariCepat &&
+                cariLanjut.jumlahAktif === 0
+              }
               className={cn(
                 "inline-flex items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1 text-sm transition",
                 alurTerpilih || keadaanTerpilih.length > 0
@@ -2748,16 +2922,30 @@ export function AletaEcourtSidang({
                   const kunci = `${baris.nomorPerkara}|${baris.sidangId}`;
                   return (
                     <Fragment key={kunci}>
+                      {/* ==================================================
+                          BARISNYA TIDAK DAPAT DITEKAN - HANYA TOMBOL RINCIAN
+                          ==================================================
+
+                          Seluruh baris dulu membuka rincian di mana pun
+                          ditekan. Itu bertabrakan dengan isinya sendiri: di
+                          dalam baris ada tombol Antrian, tautan nomor perkara,
+                          dan penanda bertitel - dan menekan yang meleset
+                          sedikit saja membuka rincian yang tidak diminta,
+                          menggeser seluruh daftar di bawahnya.
+
+                          Sekarang satu-satunya yang membuka adalah tombol
+                          Rincian di ujung kanan. Ia menyebutkan dirinya, arah
+                          panahnya menyatakan terbuka atau tidak, dan tempatnya
+                          tetap pada tiap baris. */}
                       <tr
                         className={cn(
-                          "cursor-pointer border-t border-border transition",
+                          "border-t border-border transition",
                           dibuka === kunci
                             ? "bg-primary/10"
                             : urutan % 2 === 1
                               ? "bg-muted/20 hover:bg-muted/50"
                               : "hover:bg-muted/50"
                         )}
-                        onClick={() => void buka(baris)}
                       >
                         {/* Nomor urut, bukan nomor perkara: yang dijawab
                             adalah "hari ini ada berapa sidang". */}
@@ -2792,6 +2980,28 @@ export function AletaEcourtSidang({
                         </td>
                         <td className="px-3 py-2 align-top">
                           <span className="font-semibold">{baris.nomorPerkara}</span>
+                          {/* ==================================================
+                              VERZET DITANDAI DI SAMPING NOMORNYA
+                              ==================================================
+
+                              Verzet adalah perlawanan TERHADAP putusan verstek,
+                              bukan perkara biasa: tenggangnya berbeda, dan yang
+                              melawan justru pihak yang semula tergugat. Yang
+                              membaca jadwal harus tahu itu sebelum memanggil,
+                              bukan sesudah membuka rinciannya.
+
+                              Merah - bukan karena buruk, melainkan karena ia
+                              menuntut perlakuan yang berbeda dari perkara di
+                              sekitarnya, dan itulah arti merah di layar ini. */}
+                          {perkaraVerzetDari(baris.jenisPerkara) ? (
+                            <Badge
+                              variant="danger"
+                              className="ml-2 align-middle"
+                              title="Perkara perlawanan terhadap putusan verstek."
+                            >
+                              verzet
+                            </Badge>
+                          ) : null}
                           {/* Penanda panggilan tepat di samping nomor perkara:
                               itulah yang dicari mata saat menelusuri jadwal. */}
                           <span className="ml-2 inline-flex gap-1 align-middle">
@@ -2814,8 +3024,13 @@ export function AletaEcourtSidang({
                           {/* Jenis perkara kini di bawah nomornya - keduanya
                               menjawab pertanyaan yang sama, "perkara apa ini",
                               dan memisahkannya jadi dua kolom hanya memaksa
-                              mata bolak-balik. */}
-                          <div className="mt-0.5 text-sm text-muted-foreground">
+                              mata bolak-balik.
+
+                              Ditebalkan: "Cerai Gugat" dan "Cerai Talak"
+                              menentukan jalan perkaranya sama sekali - siapa
+                              yang memohon, apakah ada ikrar talak - dan
+                              sebelumnya ia sekelabu nama pihak di atasnya. */}
+                          <div className="mt-0.5 text-sm font-semibold text-foreground/80">
                             {baris.jenisPerkara || "—"}
                           </div>
 
@@ -2893,7 +3108,24 @@ export function AletaEcourtSidang({
                                 belum ada BAS
                               </span>
                             ) : null}
-                            {baris.putusanEcourt?.perluTindakan ? (
+                            {/* Saksi yang DIAJUKAN tiap sisi. Berapa saksi yang
+                                akan diperiksa menentukan berapa lama sidang
+                                berlangsung - dan itu ditanyakan sebelum sidang
+                                dimulai, bukan sesudah membuka rinciannya. */}
+                            {(baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0 ? (
+                              <span
+                                className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                                title="Saksi yang diajukan tiap pihak - belum tentu sudah diperiksa."
+                              >
+                                {[
+                                  (baris.saksiPihak1 ?? 0) > 0 ? `Saksi P: ${baris.saksiPihak1}` : "",
+                                  (baris.saksiPihak2 ?? 0) > 0 ? `Saksi T: ${baris.saksiPihak2}` : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
+                            ) : null}
+                            {TAMPILKAN_PUTUSAN_ECOURT && baris.putusanEcourt?.perluTindakan ? (
                               <span
                                 className="rounded bg-rose-100 px-1.5 py-0.5 text-xs font-medium text-rose-900 dark:bg-rose-950 dark:text-rose-200"
                                 title={
@@ -2993,57 +3225,72 @@ export function AletaEcourtSidang({
 
                         <td className="px-3 py-2 align-top text-sm kolom-lengkap">
                           {baris.sudahPutus ? (
-                            <>
+                            <div className="flex flex-wrap gap-1">
                               {/* Tanggalnya sengaja tidak ikut: yang dicari di
                                   kolom ini keadaannya, bukan kapan. Tanggal
                                   putusan tetap ada di rincian sidang, tempat
-                                  ia memang dibutuhkan. */}
-                              <Badge variant="success">
+                                  ia memang dibutuhkan.
+
+                                  Warnanya mengikuti STATUSNYA, bukan hijau
+                                  untuk semuanya: "Ditolak" yang berwarna hijau
+                                  terbaca sebagai kabar baik oleh siapa pun yang
+                                  hanya sempat melihat warnanya. */}
+                              <Badge variant={warnaStatusPutusan(baris.statusPutusan)}>
                                 {baris.statusPutusan || "Putus"}
                               </Badge>
-                              {/* Yang BELUM dikerjakan ditandai, bukan yang
-                                  sudah - itulah yang perlu ditindaklanjuti. */}
+
+                              {/* Verstek: putusan tanpa hadirnya tergugat.
+                                  Menentukan tenggang verzet, dan karena itu
+                                  perlu terbaca tanpa membuka rincian. */}
+                              {baris.verstekPutusan ? (
+                                <Badge variant="warning">verstek</Badge>
+                              ) : null}
+
+                              {/* ==========================================
+                                  BELUM MINUTASI: MERAH BILA NASKAHNYA SUDAH ADA
+                                  ==========================================
+
+                                  Dua keadaan yang tampak sama tetapi menagih
+                                  orang yang berbeda:
+
+                                    naskah belum diunggah  - masih menunggu
+                                      hakim menyusunnya; kuning, sabar;
+                                    naskah SUDAH diunggah  - tidak ada lagi
+                                      yang ditunggu, minutasi tinggal
+                                      dikerjakan panitera pengganti; merah.
+
+                                  Sebelumnya keduanya kuning, sehingga yang
+                                  benar-benar tertahan tidak terbedakan dari
+                                  yang memang belum waktunya. */}
                               {!baris.tanggalMinutasi ? (
-                                <Badge variant="warning" className="mt-0.5">
+                                <Badge
+                                  variant={baris.adaBerkasPutusan ? "danger" : "warning"}
+                                  title={
+                                    baris.adaBerkasPutusan
+                                      ? "Naskah putusan sudah diunggah ke SIPP tetapi minutasi belum bertanggal."
+                                      : "Naskah putusan belum diunggah ke SIPP."
+                                  }
+                                >
                                   belum minutasi
                                 </Badge>
-                              ) : !baris.tanggalBht ? (
-                                <Badge variant="muted" className="mt-0.5">
-                                  belum BHT
-                                </Badge>
                               ) : null}
-                            </>
+                            </div>
                           ) : (
                             <span className="text-muted-foreground">belum putus</span>
                           )}
-                        
-                          {/* Putusan yang sudah dijatuhkan belum tentu terbit
-                              di e-Court. Penandanya di sini, bukan di kolom
-                              lain: inilah kolom yang dibaca orang saat
-                              menanyakan salinan putusan. */}
-                          {baris.putusanEcourt && baris.putusanEcourt.perluTindakan ? (
-                            <div className="mt-1">
-                              <PenandaPutusanEcourt putusan={baris.putusanEcourt} />
-                            </div>
-                          ) : null}
                         </td>
 
                         {/* ==============================================
                             TOMBOL RINCIAN DI UJUNG KANAN
                             ==============================================
 
-                            Barisnya memang sudah dapat ditekan di mana saja,
-                            tetapi itu tidak terlihat: tidak ada satu pun tanda
-                            bahwa menekan baris membuka sesuatu. Tombol yang
-                            menyebutkan dirinya menghilangkan tebakan itu, dan
-                            arah panahnya menyatakan sedang terbuka atau tidak. */}
+                            SATU-SATUNYA yang membuka rincian. Barisnya sendiri
+                            tidak lagi dapat ditekan - lihat keterangan di atas
+                            <tr>. */}
                         <td className="px-2 py-2 align-top text-right">
                           <button
                             type="button"
-                            onClick={(peristiwa) => {
-                              peristiwa.stopPropagation();
-                              void buka(baris);
-                            }}
+                            onClick={() => void buka(baris)}
                             aria-expanded={dibuka === kunci}
                             className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
                           >
@@ -3146,10 +3393,10 @@ function RincianSidang({
   // padahal belum tentu - dan itu keputusan yang menentukan sidang dilanjutkan
   // atau ditunda.
   // Verzet dikenali dari jenis perkaranya - SIPP tidak menyimpan penanda
-  // tersendiri untuknya. "Perlawanan" adalah sebutan resminya di SIPP; "verzet"
-  // yang dipakai sehari-hari.
-  const perkaraVerzet = /verzet|perlawanan/i.test(
-    `${rincian.identitas?.jenisPerkara ?? ""} ${(rincian.identitas?.kumulasi ?? []).join(" ")}`
+  // tersendiri untuknya. Aturannya satu, dipakai daftar maupun rincian.
+  const perkaraVerzet = perkaraVerzetDari(
+    rincian.identitas?.jenisPerkara,
+    (rincian.identitas?.kumulasi ?? []).join(" ")
   );
 
   const seluruhRelaas = rincian.sipp?.relaas ?? [];
@@ -3173,6 +3420,13 @@ function RincianSidang({
           yang sudah menggulung ke bawah kehilangan jejak baris asalnya. */}
       <div className="flex flex-wrap items-baseline gap-2">
         <h4 className="text-lg font-semibold tracking-tight">{nomorPerkara}</h4>
+        {/* Verzet ditandai di samping nomornya di sini juga - sama seperti di
+            daftar. Yang membuka rincian tidak selalu datang dari daftar. */}
+        {perkaraVerzet ? (
+          <Badge variant="danger" title="Perkara perlawanan terhadap putusan verstek.">
+            verzet
+          </Badge>
+        ) : null}
         {sipp ? (
           <span className="text-xs text-muted-foreground">{sipp.majelis.length} hakim</span>
         ) : null}
@@ -3180,7 +3434,13 @@ function RincianSidang({
 
       {identitas ? (
         <div className="flex flex-wrap gap-1">
-          {identitas.jenisPerkara ? <Badge variant="muted">{identitas.jenisPerkara}</Badge> : null}
+          {/* Jenis perkara ditebalkan: ia menentukan jalan perkaranya, dan
+              sebelumnya sekelabu penanda di sebelahnya. */}
+          {identitas.jenisPerkara ? (
+            <Badge variant="outline" className="font-bold">
+              {identitas.jenisPerkara}
+            </Badge>
+          ) : null}
           {identitas.adaKumulasi ? (
             <Badge variant="muted">Kumulasi: {identitas.kumulasi.join(", ")}</Badge>
           ) : null}
@@ -3197,12 +3457,39 @@ function RincianSidang({
           ) : (
             <Badge variant="muted">Tanpa kuasa hukum</Badge>
           )}
-          {sipp?.saksi?.ada ? (
-            <Badge variant="success">
-              Saksi: {sipp.saksi.jumlahSaksi} orang, {sipp.saksi.jumlahKeterangan} keterangan
+          {/* ==================================================================
+              SAKSI: BERAPA DARI TIAP SISI, BUKAN SEKADAR ADA ATAU TIDAK
+              ==================================================================
+
+              Dua pertanyaan yang berbeda, dan sebelumnya hanya satu terjawab:
+
+                saksi DIAJUKAN   namanya terdaftar - inilah yang ditanyakan
+                                 sebelum sidang, dan yang menentukan berapa
+                                 lama pemeriksaan akan berlangsung;
+                saksi DIPERIKSA  keterangannya sudah tercatat di SIPP.
+
+              Penanda lama hanya menyebut yang kedua, dan berbunyi "Belum ada
+              keterangan saksi" pada perkara yang sebenarnya sudah mengajukan
+              empat saksi - terbaca seolah tidak ada saksi sama sekali. */}
+          {sipp?.saksi?.adaDiajukan ? (
+            <Badge variant="success" title="Saksi yang diajukan tiap pihak.">
+              {[
+                sipp.saksi.diajukanPihak1 > 0 ? `Saksi P: ${sipp.saksi.diajukanPihak1}` : "",
+                sipp.saksi.diajukanPihak2 > 0 ? `Saksi T: ${sipp.saksi.diajukanPihak2}` : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              {sipp.saksi.ada ? ` · ${sipp.saksi.jumlahSaksi} diperiksa` : ""}
+            </Badge>
+          ) : sipp?.saksi?.ada ? (
+            /* Ada keterangan tetapi tidak ada yang terdaftar diajukan -
+               keadaan yang tidak seharusnya terjadi, dan disebut apa adanya
+               daripada dipaksa masuk salah satu bentuk di atas. */
+            <Badge variant="warning" title="Keterangan saksi tercatat, tetapi saksinya tidak terdaftar diajukan pihak mana pun.">
+              Saksi diperiksa: {sipp.saksi.jumlahSaksi}, pengajunya tidak tercatat
             </Badge>
           ) : (
-            <Badge variant="muted">Belum ada keterangan saksi</Badge>
+            <Badge variant="muted">Belum ada saksi</Badge>
           )}
         </div>
       ) : null}
@@ -3248,27 +3535,95 @@ function RincianSidang({
           <h5 className="mb-2 border-b pb-1.5 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Identitas pihak
           </h5>
+          {/* ==================================================================
+              DIPISAH MENURUT KEDUDUKAN, KUASA MENEMPEL PADA YANG DIWAKILINYA
+              ==================================================================
+
+              Sebelumnya seluruhnya satu daftar berurutan, dan kedudukan tiap
+              orang hanya tertulis sebagai keterangan kecil di belakang
+              namanya. Pada perkara berkuasa hukum dan bersaksi, daftar itu
+              menjadi tujuh baris yang harus dibaca satu per satu untuk
+              menjawab pertanyaan paling sederhana: siapa penggugatnya.
+
+              Kuasa hukum ditaruh DI BAWAH pihak yang diwakilinya, bukan pada
+              kelompoknya sendiri. Kuasa tidak berdiri sendiri di persidangan -
+              ia hadir UNTUK seseorang, dan memisahkannya menjadi kelompok
+              tersendiri memutus keterangan yang justru menentukan siapa yang
+              boleh berbicara.
+
+              Kelompok yang kosong tidak digambar sama sekali. Judul "Saksi"
+              di atas ruang kosong menyatakan sesuatu yang tidak dinyatakan
+              siapa pun. */}
           {rincian.pihak.length === 0 ? (
             <p className="text-xs text-muted-foreground">Pihak belum tercatat.</p>
           ) : (
-            <ul className="space-y-0.5 text-sm">
-              {rincian.pihak.map((orang, urutan) => (
-                <li key={`${orang.nama}-${urutan}`}>
-                  <span className="font-medium">{orang.nama}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {" · "}
-                    {orang.jenis === "kuasa"
-                      ? "kuasa hukum"
-                      : orang.pihakKe === 1
-                        ? "penggugat/pemohon"
-                        : orang.pihakKe === 2
-                          ? "tergugat/termohon"
-                          : "pihak"}
-                    {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-2 text-sm">
+              {[
+                { judul: "Penggugat / Pemohon", sisi: 1 },
+                { judul: "Tergugat / Termohon", sisi: 2 },
+              ].map((kelompok) => {
+                const pihak = rincian.pihak.filter(
+                  (orang) => orang.jenis !== "kuasa" && orang.pihakKe === kelompok.sisi
+                );
+                const kuasa = rincian.pihak.filter(
+                  (orang) => orang.jenis === "kuasa" && orang.pihakKe === kelompok.sisi
+                );
+                if (pihak.length === 0 && kuasa.length === 0) return null;
+                return (
+                  <div key={kelompok.judul}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {kelompok.judul}
+                    </p>
+                    <ul className="space-y-0.5">
+                      {pihak.map((orang, urutan) => (
+                        <li key={`${orang.nama}-${urutan}`}>
+                          <span className="font-medium">{orang.nama}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
+                          </span>
+                        </li>
+                      ))}
+                      {kuasa.map((orang, urutan) => (
+                        <li key={`kuasa-${orang.nama}-${urutan}`} className="pl-3">
+                          <span className="text-xs text-muted-foreground">kuasa: </span>
+                          <span className="font-medium">{orang.nama}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+
+              {/* Saksi berdiri sendiri: ia bukan pihak, tidak punya kuasa, dan
+                  kehadirannya tidak menentukan sah tidaknya panggilan. */}
+              {(() => {
+                const saksi = rincian.pihak.filter(
+                  (orang) =>
+                    orang.jenis !== "kuasa" && orang.pihakKe !== 1 && orang.pihakKe !== 2
+                );
+                if (saksi.length === 0) return null;
+                return (
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Saksi
+                    </p>
+                    <ul className="space-y-0.5">
+                      {saksi.map((orang, urutan) => (
+                        <li key={`saksi-${orang.nama}-${urutan}`}>
+                          <span className="font-medium">{orang.nama}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
+            </div>
           )}
         </section>
       </div>
@@ -3499,39 +3854,37 @@ function RincianSidang({
           {/* Tahap sesudah putusan, berurut sesuai jalannya perkara. Yang belum
               terjadi ditampilkan sebagai "belum" - bukan disembunyikan, karena
               justru yang belum itulah yang perlu ditindaklanjuti. */}
-          <dl className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          {/* ====================================================================
+              BHT DAN AKTA CERAI TIDAK LAGI DI SINI
+              ====================================================================
+
+              Keduanya bukan keadaan PUTUSAN, melainkan keadaan sesudah perkara
+              selesai - dan tempatnya di layar yang mengurus penyerahan akta,
+              bukan di layar jadwal sidang. Yang membuka jadwal sedang menyiapkan
+              atau membacakan sidang; ia tidak sedang mengurus akta cerai.
+
+              Datanya TIDAK hilang: putusanPerkara tetap membacanya, dan layar
+              Status Perkara tetap menampilkannya. Yang dibuang hanya
+              tampilannya di sini. */}
+          <dl className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-md border bg-muted/30 px-3 py-2">
               <dt className="text-xs text-muted-foreground">Minutasi</dt>
               <dd className="font-medium">
                 {sipp.putusan.tanggalMinutasi || (
-                  <span className="text-amber-700 dark:text-amber-300">belum diminutasi</span>
-                )}
-              </dd>
-            </div>
-
-            <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-xs text-muted-foreground">Berkekuatan hukum tetap</dt>
-              <dd className="font-medium">
-                {sipp.putusan.tanggalBht || (
-                  <span className="text-amber-700 dark:text-amber-300">belum BHT</span>
-                )}
-              </dd>
-            </div>
-
-            <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-xs text-muted-foreground">Akta cerai</dt>
-              <dd className="font-medium">
-                {sipp.putusan.aktaCerai?.nomor ? (
-                  <>
-                    {sipp.putusan.aktaCerai.nomor}
-                    {sipp.putusan.aktaCerai.tanggal ? (
-                      <div className="text-sm font-normal text-muted-foreground">
-                        terbit {sipp.putusan.aktaCerai.tanggal}
-                      </div>
-                    ) : null}
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">belum terbit</span>
+                  <span
+                    className={cn(
+                      sipp.putusan.adaBerkasPutusan
+                        ? "text-rose-700 dark:text-rose-300"
+                        : "text-amber-700 dark:text-amber-300"
+                    )}
+                    title={
+                      sipp.putusan.adaBerkasPutusan
+                        ? "Naskah putusan sudah diunggah ke SIPP tetapi minutasi belum bertanggal."
+                        : "Naskah putusan belum diunggah ke SIPP."
+                    }
+                  >
+                    belum diminutasi
+                  </span>
                 )}
               </dd>
             </div>
@@ -3551,8 +3904,14 @@ function RincianSidang({
             <div className="rounded-md border bg-muted/30 px-3 py-2">
               <dt className="text-xs text-muted-foreground">Jenis putusan</dt>
               <dd className="font-medium">
+                {/* Warnanya mengikuti statusnya - hijau untuk dikabulkan, merah
+                    untuk ditolak. Sama persis dengan penanda di daftar, dari
+                    fungsi yang sama: dua tempat yang menyebut hal yang sama
+                    tidak boleh berbeda warnanya. */}
                 {sipp.putusan.statusPutusan ? (
-                  <span>{sipp.putusan.statusPutusan}</span>
+                  <Badge variant={warnaStatusPutusan(sipp.putusan.statusPutusan)}>
+                    {sipp.putusan.statusPutusan}
+                  </Badge>
                 ) : (
                   <span className="text-muted-foreground">belum tercatat</span>
                 )}
@@ -3619,20 +3978,6 @@ function RincianSidang({
               </dd>
             </div>
           </dl>
-
-          {/* Penyerahan akta cerai dicatat per pihak: sering satu pihak sudah
-              mengambil dan satunya belum, dan itu yang ditanyakan di meja
-              pelayanan. */}
-          {sipp.putusan.aktaCerai?.nomor ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Penyerahan akta — pihak I:{" "}
-              {sipp.putusan.aktaCerai.diserahkanPihak1 || "belum diambil"} · pihak II:{" "}
-              {sipp.putusan.aktaCerai.diserahkanPihak2 || "belum diambil"}
-              {sipp.putusan.aktaCerai.nomorSeri
-                ? ` · seri ${sipp.putusan.aktaCerai.nomorSeri}`
-                : ""}
-            </p>
-          ) : null}
 
           {/* Naskah putusan. Yang anonim boleh dipublikasikan; yang asli
               memuat identitas para pihak - keduanya disebutkan apa adanya

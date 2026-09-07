@@ -19,7 +19,7 @@
  * muncul di mana pun pada SIPP.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
-import { Filter, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, X } from "lucide-react";
 
 import {
   ChipSaring,
@@ -65,6 +65,32 @@ type Mediasi = {
   sisaHariTenggat: number | null;
   lewatTenggang: boolean;
   pihak: { penggugat: string[]; tergugat: string[] };
+};
+
+/**
+ * Empat kedudukan yang dicatat kehadirannya.
+ *
+ * Disalin dari server/modules/aleta-ecourt/kehadiran-mediasi.ts. Kuncinya HARUS
+ * sama - kunci yang tidak dikenali ditolak rutenya, dan penolakan itu memang
+ * disengaja supaya nilai asing tidak tersimpan diam-diam.
+ */
+const KEDUDUKAN_MEDIASI = [
+  { kunci: "penggugat", label: "Penggugat / Pemohon" },
+  { kunci: "kuasa_penggugat", label: "Kuasa penggugat / pemohon" },
+  { kunci: "tergugat", label: "Tergugat / Termohon" },
+  { kunci: "kuasa_tergugat", label: "Kuasa tergugat / termohon" },
+] as const;
+
+type BarisKehadiran = {
+  kedudukan: string;
+  label: string;
+  hadir: boolean;
+  nama: string;
+  alasan: string;
+  catatan: string;
+  dicatatOleh: string;
+  dicatatAt: string;
+  belumDicatat: boolean;
 };
 
 function hariIni() {
@@ -108,6 +134,273 @@ function KeteranganTenggang({ baris }: { baris: Mediasi }) {
     return <Badge variant="warning">{baris.sisaHariTenggat} hari lagi</Badge>;
   }
   return <Badge variant="muted">{baris.sisaHariTenggat} hari lagi</Badge>;
+}
+
+/**
+ * Rincian satu pertemuan mediasi, beserta pencatatan kehadirannya.
+ *
+ * ============================================================================
+ * DUA ASAL YANG DIPISAH DENGAN JELAS
+ * ============================================================================
+ *
+ *   dari SIPP    jadwal, mediator, penetapan, laporan, hasil - hanya dibaca,
+ *                dan tidak pernah dapat diubah dari sini;
+ *   dari ALETA   kehadiran menurut empat kedudukan - ditulis di sini, dan
+ *                tidak pernah ditulis balik ke SIPP.
+ *
+ * Pemisahan itu ditulis di layar, bukan hanya di kode: yang membacanya perlu
+ * tahu ruas mana yang dapat diperbaiki di sini dan mana yang harus diperbaiki
+ * di SIPP.
+ */
+function RincianMediasi({ baris }: { baris: Mediasi }) {
+  const [kehadiran, setKehadiran] = useState<BarisKehadiran[] | null>(null);
+  const [galat, setGalat] = useState("");
+  const [sibuk, setSibuk] = useState(false);
+  const [pesan, setPesan] = useState("");
+  const [putaran, setPutaran] = useState(0);
+
+  useEffect(() => {
+    let batal = false;
+    const ambil = async () => {
+      setGalat("");
+      try {
+        const alamat = `${apiPath("/api/aleta-ecourt/kehadiran-mediasi")}?mediasiId=${encodeURIComponent(
+          baris.mediasiId
+        )}&tanggal=${encodeURIComponent(baris.tanggal)}`;
+        const jawaban = await fetch(alamat);
+        const isi = (await jawaban.json()) as {
+          baris?: BarisKehadiran[];
+          data?: { baris?: BarisKehadiran[] };
+        };
+        if (batal) return;
+        setKehadiran((isi.data?.baris ?? isi.baris) || []);
+      } catch (kesalahan) {
+        if (!batal) setGalat(pesanGalatPortal(kesalahan, "Kehadiran mediasi tidak dapat dibaca."));
+      }
+    };
+    void ambil();
+    return () => {
+      batal = true;
+    };
+  }, [baris.mediasiId, baris.tanggal, putaran]);
+
+  const ubah = (kedudukan: string, ubahan: Partial<BarisKehadiran>) => {
+    setKehadiran((lama) =>
+      (lama ?? []).map((x) => (x.kedudukan === kedudukan ? { ...x, ...ubahan } : x))
+    );
+  };
+
+  const simpan = async () => {
+    if (!kehadiran) return;
+    setSibuk(true);
+    setPesan("");
+    try {
+      const jawaban = await fetch(apiPath("/api/aleta-ecourt/kehadiran-mediasi"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediasiId: baris.mediasiId,
+          perkaraId: baris.perkaraId,
+          nomorPerkara: baris.nomorPerkara,
+          tanggalPertemuan: baris.tanggal,
+          isian: kehadiran.map((x) => ({
+            kedudukan: x.kedudukan,
+            hadir: x.hadir,
+            nama: x.nama,
+            alasan: x.alasan,
+            catatan: x.catatan,
+          })),
+        }),
+      });
+      const isi = (await jawaban.json()) as {
+        ok?: boolean;
+        jumlahDisimpan?: number;
+        sebab?: string;
+        data?: { ok?: boolean; jumlahDisimpan?: number; sebab?: string };
+      };
+      const hasil = isi.data ?? isi;
+      if (!hasil.ok) {
+        setPesan(hasil.sebab || "Kehadiran belum dapat disimpan.");
+        return;
+      }
+      setPesan(`Tersimpan ${hasil.jumlahDisimpan ?? 0} catatan kehadiran.`);
+      setPutaran((n) => n + 1);
+    } catch (kesalahan) {
+      setPesan(pesanGalatPortal(kesalahan, "Kehadiran belum dapat disimpan."));
+    } finally {
+      setSibuk(false);
+    }
+  };
+
+  const keterangan: Array<[string, string]> = [
+    ["Nomor perkara", baris.nomorPerkara || "—"],
+    ["Jenis perkara", baris.jenisPerkara || "—"],
+    ["Tanggal pertemuan", baris.tanggal || "—"],
+    [
+      "Waktu",
+      baris.jam ? `${baris.jam}${baris.sampaiJam ? ` s.d. ${baris.sampaiJam}` : ""}` : "—",
+    ],
+    ["Tempat", baris.tempat || "—"],
+    ["Mediator", baris.mediator || "—"],
+    ["Status mediator", baris.statusMediator || "—"],
+    ["Jenis mediasi", baris.jenisMediasi || "—"],
+    ["Nomor SK mediator", baris.nomorSk || "—"],
+    ["Tanggal penetapan mediator", baris.penetapanMediator || "belum ditetapkan"],
+    ["Batas 30 hari (PERMA 1/2016 Pasal 24)", baris.tenggatPerma || "belum berjalan"],
+    [
+      "Sisa tenggang",
+      baris.selesai
+        ? "tidak dihitung lagi - laporan sudah masuk"
+        : baris.sisaHariTenggat === null
+          ? "belum dapat dihitung"
+          : `${baris.sisaHariTenggat} hari`,
+    ],
+    ["Lama mediasi", baris.lamaHari === null ? "—" : `${baris.lamaHari} hari`],
+    ["Laporan mediator", baris.laporanMediator || "belum masuk"],
+    ["Hasil mediasi", baris.hasilTeks || "belum ada hasil"],
+    ["Pertemuan ditunda", baris.ditunda ? "ya" : "tidak"],
+    ["Kehadiran menurut SIPP", baris.dihadiri || "tidak tercatat"],
+  ];
+
+  return (
+    <div className="space-y-3">
+      <section className="rounded-lg border bg-card p-3">
+        <h5 className="mb-2 border-b pb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Keterangan mediasi — dari SIPP, hanya dibaca
+        </h5>
+        <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          {keterangan.map(([judul, nilai]) => (
+            <div key={judul}>
+              <dt className="text-xs text-muted-foreground">{judul}</dt>
+              <dd className="font-medium">{nilai}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {baris.pihak.penggugat.length > 0 || baris.pihak.tergugat.length > 0 ? (
+          <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Penggugat / Pemohon</p>
+              <p className="font-medium">{baris.pihak.penggugat.join(", ") || "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Tergugat / Termohon</p>
+              <p className="font-medium">{baris.pihak.tergugat.join(", ") || "—"}</p>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      {/* ====================================================================
+          KEHADIRAN - MILIK ALETA
+          ====================================================================
+
+          SIPP hanya menyimpan satu ruas bebas ("dihadiri 2"), dan angka itu
+          tidak membedakan dua PIHAK yang hadir sendiri dari dua KUASA yang
+          hadir tanpa pihaknya - padahal PERMA 1/2016 Pasal 7 ayat (1) menuntut
+          para pihak hadir SECARA LANGSUNG, dan akibat hukum keduanya berbeda.
+
+          Yang dicatat di sini fakta kehadirannya saja. Kesimpulan iktikad baik
+          menurut Pasal 6 adalah kewenangan mediator dan majelis, dan sengaja
+          TIDAK dihitung layar ini. */}
+      <section className="rounded-lg border bg-card p-3">
+        <h5 className="mb-2 border-b pb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Kehadiran pertemuan — dicatat di ALETA
+        </h5>
+
+        {galat ? (
+          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {galat}
+          </p>
+        ) : !kehadiran ? (
+          <p className="text-xs text-muted-foreground">Memuat kehadiran…</p>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="py-1 font-medium">Kedudukan</th>
+                    <th className="py-1 font-medium">Hadir</th>
+                    <th className="py-1 font-medium">Nama yang hadir</th>
+                    <th className="py-1 font-medium">Alasan bila tidak hadir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {KEDUDUKAN_MEDIASI.map((kedudukan) => {
+                    const isi = kehadiran.find((x) => x.kedudukan === kedudukan.kunci);
+                    if (!isi) return null;
+                    return (
+                      <tr key={kedudukan.kunci} className="border-t align-top">
+                        <td className="py-1.5 pr-2">
+                          <span className="font-medium">{kedudukan.label}</span>
+                          {isi.belumDicatat ? (
+                            <div className="text-xs text-muted-foreground">belum dicatat</div>
+                          ) : isi.dicatatOleh ? (
+                            <div className="text-xs text-muted-foreground">
+                              oleh {isi.dicatatOleh}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="py-1.5 pr-2">
+                          <label className="inline-flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={isi.hadir}
+                              onChange={(e) =>
+                                ubah(kedudukan.kunci, {
+                                  hadir: e.target.checked,
+                                  // Alasan dikosongkan begitu ditandai hadir:
+                                  // alasan ketidakhadiran pada orang yang datang
+                                  // adalah keterangan yang bertentangan sendiri.
+                                  alasan: e.target.checked ? "" : isi.alasan,
+                                })
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span className="text-xs text-muted-foreground">hadir</span>
+                          </label>
+                        </td>
+                        <td className="py-1.5 pr-2">
+                          <Input
+                            value={isi.nama}
+                            onChange={(e) => ubah(kedudukan.kunci, { nama: e.target.value })}
+                            placeholder="nama yang benar-benar hadir"
+                            className="h-8 text-sm"
+                          />
+                        </td>
+                        <td className="py-1.5">
+                          <Input
+                            value={isi.alasan}
+                            onChange={(e) => ubah(kedudukan.kunci, { alasan: e.target.value })}
+                            placeholder={isi.hadir ? "—" : "alasan tidak hadir"}
+                            disabled={isi.hadir}
+                            className="h-8 text-sm"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button size="sm" disabled={sibuk} onClick={() => void simpan()}>
+                {sibuk ? "Menyimpan…" : "Simpan kehadiran"}
+              </Button>
+              {pesan ? <span className="text-xs text-muted-foreground">{pesan}</span> : null}
+            </div>
+
+            <p className="mt-2 text-xs text-muted-foreground">
+              Yang dicatat hanya fakta kehadiran. Penilaian iktikad baik menurut PERMA 1/2016
+              Pasal 6 adalah kewenangan mediator dan majelis, dan tidak dihitung layar ini.
+            </p>
+          </>
+        )}
+      </section>
+    </div>
+  );
 }
 
 /**
@@ -325,6 +618,11 @@ export function AletaEcourtMediasi({
   const [cariCepat, setCariCepat] = useState("");
   const [lanjutTerbuka, setLanjutTerbuka] = useState(false);
   const cariLanjut = useCariLanjut();
+
+  // Satu baris terbuka pada satu waktu. Membuka yang kedua menutup yang
+  // pertama: dua panel rincian sekaligus mendorong daftarnya sedemikian jauh
+  // sehingga barisnya sendiri tidak lagi terlihat.
+  const [dibuka, setDibuka] = useState("");
 
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
@@ -658,14 +956,17 @@ export function AletaEcourtMediasi({
                   <KepalaUrut kunci="hasil" urutan={urutTabel} onTekan={tekanUrut}>
                     Hasil
                   </KepalaUrut>
+                  {/* Kolom tombol Rincian - tanpa judul, karena judulnya tidak
+                      menerangkan apa pun yang belum diterangkan tombolnya. */}
+                  <th className="px-2 py-2" />
                 </tr>
               </thead>
               <tbody>
-                {mediasiTampil.map((baris, urutan) => (
-                  <tr
-                    key={`${baris.mediasiId}-${baris.tanggal}-${baris.jam}-${urutan}`}
-                    className="border-t align-top"
-                  >
+                {mediasiTampil.map((baris, urutan) => {
+                  const kunciBaris = `${baris.mediasiId}|${baris.tanggal}`;
+                  return (
+                  <Fragment key={`${kunciBaris}-${baris.jam}-${urutan}`}>
+                  <tr className="border-t align-top">
                     <td className="px-2 py-2 text-right text-xs tabular-nums text-muted-foreground">
                       {urutan + 1}
                     </td>
@@ -765,8 +1066,42 @@ export function AletaEcourtMediasi({
                         <span className="text-muted-foreground">belum ada hasil</span>
                       )}
                     </td>
+
+                    {/* ==================================================
+                        TOMBOL RINCIAN DI UJUNG KANAN
+                        ==================================================
+
+                        Barisnya sendiri TIDAK dapat ditekan - sama seperti
+                        jadwal sidang. Di dalam baris sudah ada tautan nomor
+                        perkara, dan baris yang ikut menanggapi tekanan
+                        membuka rincian yang tidak diminta. */}
+                    <td className="px-2 py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setDibuka((lama) => (lama === kunciBaris ? "" : kunciBaris))}
+                        aria-expanded={dibuka === kunciBaris}
+                        className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      >
+                        {dibuka === kunciBaris ? (
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        )}
+                        Rincian
+                      </button>
+                    </td>
                   </tr>
-                ))}
+
+                  {dibuka === kunciBaris ? (
+                    <tr className="border-t bg-muted/40">
+                      <td colSpan={8} className="px-3 py-3">
+                        <RincianMediasi baris={baris} />
+                      </td>
+                    </tr>
+                  ) : null}
+                  </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
