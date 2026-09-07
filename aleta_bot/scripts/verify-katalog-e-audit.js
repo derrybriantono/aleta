@@ -125,8 +125,16 @@ require("../services/penilaianKeuanganService").daftarkanSemua();
 require("../services/penilaianTahapanService").daftarkanSemua();
 require("../services/penilaianIntegritasService").daftarkanSemua();
 require("../services/penilaianSisaPanjarService").daftarkanSemua();
+require("../services/sebaranPerkaraService").daftarkanSemua();
 
-const terdaftar = kerangka.daftar().map((d) => d.kunci);
+// Sejak ada bentuk penilaian kedua, "yang terdaftar" datang dari DUA daftar.
+// Membaca satu saja membuat seluruh butir sebaran terbaca sebagai sambungan
+// yang putus - padahal ia justru berjalan.
+const kerangkaSebaran = require("../services/kerangkaSebaranService");
+const terdaftar = [
+  ...kerangka.daftar().map((d) => d.kunci),
+  ...kerangkaSebaran.daftar().map((d) => d.kunci),
+];
 const keadaan = K.keadaan(terdaftar);
 
 cek("seluruh butir punya keadaan", keadaan.perButir.length === 185);

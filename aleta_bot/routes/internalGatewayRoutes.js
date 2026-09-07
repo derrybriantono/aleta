@@ -63,6 +63,8 @@ const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
 const penilaianIntegritasService = require("../services/penilaianIntegritasService");
 const penilaianSisaPanjarService = require("../services/penilaianSisaPanjarService");
+const kerangkaSebaranService = require("../services/kerangkaSebaranService");
+const sebaranPerkaraService = require("../services/sebaranPerkaraService");
 const raporBerjenjangService = require("../services/raporBerjenjangService");
 const gerbangRaporAparaturService = require("../services/gerbangRaporAparaturService");
 const periodePenilaianService = require("../services/periodePenilaianService");
@@ -1478,6 +1480,7 @@ router.get("/penilaian/daftar", requireInternalToken, async (req, res) => {
     penilaianTahapanService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
+    sebaranPerkaraService.daftarkanSemua();
     const daftar = kerangkaPenilaianService.daftar();
     res.json({
       ok: true,
@@ -1512,6 +1515,7 @@ router.get("/penilaian/jalankan", requireInternalToken, async (req, res) => {
     penilaianTahapanService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
+    sebaranPerkaraService.daftarkanSemua();
 
     const kunci = String(req.query.kunci || "").trim();
     const jenisPeriode = String(req.query.periode || "bulanan").trim();
@@ -1569,8 +1573,15 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
     penilaianTahapanService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
+    sebaranPerkaraService.daftarkanSemua();
 
-    const terdaftar = kerangkaPenilaianService.daftar().map((d) => d.kunci);
+    // Sejak ada bentuk penilaian kedua, "yang terdaftar" datang dari DUA
+    // daftar. Membaca satu saja membuat seluruh butir sebaran terbaca sebagai
+    // sambungan yang putus - padahal ia justru berjalan.
+    const terdaftar = [
+      ...kerangkaPenilaianService.daftar().map((d) => d.kunci),
+      ...kerangkaSebaranService.daftar().map((d) => d.kunci),
+    ];
     const keadaan = katalogEAuditService.keadaan(terdaftar);
     const petaKeadaan = Object.create(null);
     keadaan.perButir.forEach((x) => {
@@ -1601,6 +1612,63 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
       cela: katalogEAuditService.celaKatalog(),
       catatan:
         "Katalog ini daftar, bukan mesin. Butir yang belum tersambung tetap ditampilkan supaya sisa pekerjaan terlihat, bukan disembunyikan.",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menjalankan satu butir SEBARAN.
+ *
+ * ============================================================================
+ * RUTE TERSENDIRI, SEBAB JAWABANNYA MEMANG BERBEDA BENTUK
+ * ============================================================================
+ *
+ * Butir sebaran tidak menghasilkan nilai, tidak punya pembilang, dan tidak
+ * punya penyebut. Memaksakannya lewat rute penilaian biasa akan menuntut
+ * jawaban itu membawa ruas kosong yang tidak berarti apa-apa - dan ruas kosong
+ * yang bernama "nilai" pada akhirnya akan diisi seseorang.
+ *
+ * Yang dipulangkan gambar keadaannya: daftar kelompok beserta jumlah dan
+ * bagiannya, ditambah tiga keterangan yang menentukan apakah gambar itu boleh
+ * dipercaya - cakupan datanya, kecukupan barisnya, dan apakah kelompoknya
+ * berasal dari ruas yang diketik bebas.
+ */
+router.get("/e-audit/sebaran", requireInternalToken, async (req, res) => {
+  try {
+    sebaranPerkaraService.daftarkanSemua();
+
+    const kunci = String(req.query.kunci || "").trim();
+    const jenisPeriode = String(req.query.periode || "bulanan").trim();
+    const acuan = String(req.query.acuan || "").trim() || periodePenilaianService.tanggalHariIni();
+    const batasBukti = Math.min(50, Math.max(0, Number(req.query.bukti) || 10));
+
+    if (!kunci) {
+      res.json({
+        ok: true,
+        daftar: kerangkaSebaranService.daftar(),
+        catatan:
+          "Butir sebaran menggambarkan keadaan, bukan menilai capaian. Ia tidak menghasilkan angka nol sampai seratus.",
+      });
+      return;
+    }
+
+    const hasil = await kerangkaSebaranService.jalankan(kunci, jenisPeriode, acuan);
+    if (!hasil.ok) {
+      res.status(400).json(hasil);
+      return;
+    }
+
+    res.json({
+      ...hasil,
+      acuan,
+      satuan: hasil.satuan.map((s) => ({
+        ...s,
+        jumlahBukti: Array.isArray(s.bukti) ? s.bukti.length : 0,
+        bukti: Array.isArray(s.bukti) ? s.bukti.slice(0, batasBukti) : [],
+        buktiDipotong: Array.isArray(s.bukti) && s.bukti.length > batasBukti,
+      })),
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -1640,6 +1708,7 @@ router.get("/e-audit/rapor", requireInternalToken, async (req, res) => {
     penilaianTahapanService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
+    sebaranPerkaraService.daftarkanSemua();
 
     const kunci = String(req.query.kunci || "").trim();
     const jenisPeriode = String(req.query.periode || "bulanan").trim();
@@ -1752,11 +1821,20 @@ router.get("/e-audit/butir", requireInternalToken, async (req, res) => {
     penilaianTahapanService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
+    sebaranPerkaraService.daftarkanSemua();
 
     const daftar = kerangkaPenilaianService.daftar();
-    const keadaan = katalogEAuditService.keadaan(daftar.map((d) => d.kunci));
+    const daftarSebaran = kerangkaSebaranService.daftar();
+    const keadaan = katalogEAuditService.keadaan([
+      ...daftar.map((d) => d.kunci),
+      ...daftarSebaran.map((d) => d.kunci),
+    ]);
     const ini = keadaan.perButir.find((x) => x.kode === b.kode) || { keadaan: "belum", kunci: null, catatan: "" };
-    const definisi = ini.kunci ? daftar.find((d) => d.kunci === ini.kunci) || null : null;
+    const definisi = ini.kunci
+      ? daftar.find((d) => d.kunci === ini.kunci) ||
+        daftarSebaran.find((d) => d.kunci === ini.kunci) ||
+        null
+      : null;
 
     res.json({
       ok: true,

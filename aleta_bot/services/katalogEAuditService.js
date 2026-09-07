@@ -770,6 +770,27 @@ const SAMBUNGAN = {
     catatan:
       "Butir ini seharusnya hanya berlaku bagi perkara yang memang melalui pembuktian dengan saksi. Yang dinilai sekarang seluruh perkara, sehingga perkara yang putus verstek atau dicabut ikut terhitung tanpa saksi.",
   },
+  ST02: {
+    kunci: "sebaranJenisPerkara",
+    sifat: "penuh",
+    catatan: "",
+  },
+  ST03: {
+    kunci: "sebaranAmarPutusan",
+    sifat: "penuh",
+    catatan: "",
+  },
+  ST09: {
+    kunci: "sebaranWilayahKecamatan",
+    sifat: "sebagian",
+    catatan:
+      "Sebarannya berjalan, tetapi bertumpu pada ruas kecamatan yang diketik bebas dan hanya terisi 32,2 persen. Butir ini belum dapat menjawab wilayah mana yang paling banyak berperkara sampai daftar kecamatannya dibakukan.",
+  },
+  ST13: {
+    kunci: "sebaranVerstek",
+    sifat: "penuh",
+    catatan: "",
+  },
   KU03: {
     kunci: "sisaPanjarSudahDikembalikan",
     sifat: "penuh",
