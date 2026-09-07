@@ -39,6 +39,7 @@ const sippSkemaService = require("./sippSkemaService");
 // keduanya di kepala berkas menghasilkan rujukan berputar.
 const sippTahapanService = require("./sippTahapanService");
 const putusanEcourtService = require("./putusanEcourtService");
+const { satukanPetugas } = require("./petugasPerkaraUtil");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -551,30 +552,43 @@ async function petugasBanyakPerkara(daftarPerkaraId = []) {
   const dipakai = id.slice(0, 500);
   const isian = dipakai.map(() => "?").join(", ");
 
+  // ==========================================================================
+  // BARIS MENTAH, PENYATUANNYA DI NODE
+  // ==========================================================================
+  //
+  // GROUP_CONCAT sebelumnya menyatukan di SQL, dan dua hal lolos karenanya:
+  //
+  //   1. SIPP menyimpan baris kembar untuk orang yang sama - kadang persis
+  //      sama, kadang beda ejaan gelar ("Mohammad Syukri" dan "Mohammad
+  //      Syukri, S.H."). Layar lalu berbunyi seolah ada dua jurusita.
+  //   2. Pada perkara ikrar talak, baris hakim yang AKTIF justru berkode
+  //      NULL, sedangkan kodenya ada di baris yang tidak aktif. Penyaringan
+  //      aktif='Y' membuat kolom Majelis berbunyi "—" pada seluruh perkara
+  //      ikrar talak.
+  //
+  // Keduanya menuntut penilaian yang tidak dapat ditulis sebagai GROUP BY.
+  // Karena itu SELURUH baris diambil - aktif maupun tidak - lalu disatukan
+  // satukanPetugas(), yang diuji tersendiri.
   const [majelis, panitera, jurusita] = await Promise.all([
     runQuery(
-      `SELECT hk.perkara_id AS perkaraId,
-              GROUP_CONCAT(hk.hakim_kode ORDER BY hk.urutan ASC SEPARATOR '-') AS kode,
-              GROUP_CONCAT(hk.hakim_nama ORDER BY hk.urutan ASC SEPARATOR ', ') AS nama
+      `SELECT hk.perkara_id AS perkaraId, hk.hakim_kode AS kode,
+              hk.hakim_nama AS nama, hk.urutan AS urutan, hk.aktif AS aktif
          FROM perkara_hakim_pn hk
-        WHERE hk.perkara_id IN (${isian}) AND hk.aktif = 'Y'
-        GROUP BY hk.perkara_id`,
+        WHERE hk.perkara_id IN (${isian})`,
       dipakai
     ),
     runQuery(
-      `SELECT pn.perkara_id AS perkaraId,
-              GROUP_CONCAT(pn.panitera_nama ORDER BY pn.urutan ASC SEPARATOR ', ') AS nama
+      `SELECT pn.perkara_id AS perkaraId, pn.panitera_nama AS nama,
+              pn.urutan AS urutan, pn.aktif AS aktif
          FROM perkara_panitera_pn pn
-        WHERE pn.perkara_id IN (${isian}) AND pn.aktif = 'Y'
-        GROUP BY pn.perkara_id`,
+        WHERE pn.perkara_id IN (${isian})`,
       dipakai
     ),
     runQuery(
-      `SELECT js.perkara_id AS perkaraId,
-              GROUP_CONCAT(js.jurusita_nama ORDER BY js.urutan ASC SEPARATOR ', ') AS nama
+      `SELECT js.perkara_id AS perkaraId, js.jurusita_nama AS nama,
+              js.urutan AS urutan, js.aktif AS aktif
          FROM perkara_jurusita js
-        WHERE js.perkara_id IN (${isian}) AND js.aktif = 'Y'
-        GROUP BY js.perkara_id`,
+        WHERE js.perkara_id IN (${isian})`,
       dipakai
     ),
   ]);
@@ -587,16 +601,27 @@ async function petugasBanyakPerkara(daftarPerkaraId = []) {
     return hasil[kunci];
   };
 
-  for (const baris of Array.isArray(majelis) ? majelis : []) {
-    const isi = ambil(String(baris.perkaraId));
-    isi.majelisKode = cleanText(baris.kode);
-    isi.majelisNama = cleanText(baris.nama);
+  const kelompokkan = (baris) => {
+    const peta = new Map();
+    for (const b of Array.isArray(baris) ? baris : []) {
+      const kunci = String(b.perkaraId);
+      if (!peta.has(kunci)) peta.set(kunci, []);
+      peta.get(kunci).push(b);
+    }
+    return peta;
+  };
+
+  for (const [kunci, baris] of kelompokkan(majelis)) {
+    const satu = satukanPetugas(baris);
+    const isi = ambil(kunci);
+    isi.majelisKode = cleanText(satu.kode);
+    isi.majelisNama = cleanText(satu.nama);
   }
-  for (const baris of Array.isArray(panitera) ? panitera : []) {
-    ambil(String(baris.perkaraId)).paniteraNama = cleanText(baris.nama);
+  for (const [kunci, baris] of kelompokkan(panitera)) {
+    ambil(kunci).paniteraNama = cleanText(satukanPetugas(baris).nama);
   }
-  for (const baris of Array.isArray(jurusita) ? jurusita : []) {
-    ambil(String(baris.perkaraId)).jurusitaNama = cleanText(baris.nama);
+  for (const [kunci, baris] of kelompokkan(jurusita)) {
+    ambil(kunci).jurusitaNama = cleanText(satukanPetugas(baris).nama);
   }
 
   return hasil;

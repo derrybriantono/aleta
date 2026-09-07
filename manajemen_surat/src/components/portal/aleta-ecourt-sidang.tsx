@@ -9,7 +9,18 @@ import { Input } from "@/components/ui/input";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
-import { CalendarDays, ChevronLeft, ChevronRight, Filter, Gauge, ListOrdered, Printer, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Filter,
+  Gauge,
+  ListOrdered,
+  Printer,
+  X,
+} from "lucide-react";
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import {
@@ -1318,6 +1329,12 @@ export function AletaEcourtSidang({
 
   const [sedangCetak, setSedangCetak] = useState(false);
 
+  // Kendali diciutkan supaya daftar sidang lebih panjang. Bawaannya TERBUKA:
+  // yang baru membuka layar harus melihat alat yang tersedia, dan menemukan
+  // layar yang alatnya tersembunyi jauh lebih membingungkan daripada layar
+  // yang alatnya makan tempat.
+  const [kendaliCiut, setKendaliCiut] = useState(false);
+
   // Nama pengadilan dari identitas lembaga, bukan dipatok mati - ALETA dapat
   // dipasang di satker lain.
   const { institutionIdentity } = usePortal();
@@ -1336,13 +1353,24 @@ export function AletaEcourtSidang({
    */
   const [modeRingkas, setModeRingkas] = useState(false);
 
+  // Dibaca SESUDAH penyandingan, bukan sebagai nilai awal useState: nilai awal
+  // yang berbeda antara peladen dan peramban membuat React membuang seluruh
+  // pohonnya dan menyusun ulang. Penyetelannya sendiri ditunda satu putaran
+  // supaya ia tidak berjalan serentak di dalam badan efek.
   useEffect(() => {
-    try {
-      setModeRingkas(window.localStorage.getItem("aleta.jadwal-sidang.ringkas") === "1");
-    } catch {
-      // Peramban yang memblokir penyimpanan situs tetap dapat memakai layar
-      // ini - hanya pilihannya yang tidak diingat.
-    }
+    let batal = false;
+    void Promise.resolve().then(() => {
+      if (batal) return;
+      try {
+        setModeRingkas(window.localStorage.getItem("aleta.jadwal-sidang.ringkas") === "1");
+      } catch {
+        // Peramban yang memblokir penyimpanan situs tetap dapat memakai layar
+        // ini - hanya pilihannya yang tidak diingat.
+      }
+    });
+    return () => {
+      batal = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -1643,22 +1671,61 @@ export function AletaEcourtSidang({
   return (
     <Card>
       {/* ==================================================================
-          KEPALA DIRAPATKAN
+          KEPALA SETIPIS MUNGKIN
           ==================================================================
 
-          Judul halaman di atas kartu ini sudah menyebutkan ALETA e-Court
-          beserta keterangannya. Kepala kartu yang setinggi bawaan mengulang
-          ruang itu sekali lagi, dan tabel jadwal - yang justru dicari orang -
-          terdorong jauh ke bawah lipatan layar.
+          Yang dicari orang di layar ini adalah DAFTAR SIDANGNYA. Tiap baris
+          keterangan di atasnya mendorong daftar itu turun, dan pada layar
+          laptop 21 sidang berubah menjadi 6 yang terlihat.
 
-          Keterangannya TIDAK dihapus, hanya dikecilkan dan dirapatkan: yang
-          baru pertama membuka layar ini tetap perlu tahu apa isinya. */}
-      <CardHeader className="gap-1 p-4 pb-2 sm:p-5 sm:pb-2">
+          Keterangan panjangnya dibuang seluruhnya: ia menerangkan hal yang
+          sudah jelas begitu tabelnya terlihat, dan hanya dibaca sekali seumur
+          hidup pemakainya. Judul cukup.
+
+          Tombol ciutkan menyembunyikan SELURUH kendali - tombol tindakan,
+          saringan, pencarian - dan menyisakan navigasi hari saja. Panitera
+          yang sedang membacakan jadwal tidak sedang menyaring apa pun; ia
+          hanya perlu melihat sebanyak mungkin baris sekaligus. */}
+      <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2 sm:p-5 sm:pb-2">
         <CardTitle className="text-base sm:text-lg">Jadwal perkara yang bersidang</CardTitle>
-        <CardDescription className="text-sm">
-          Majelis, panitera, jurusita, para pihak, saksi, relaas panggilan, dan seluruh berkas SIPP
-          maupun e-Court - dalam satu layar, per sidang.
-        </CardDescription>
+        <div className="flex shrink-0 items-center gap-2">
+        {/* Pemilih tampilan berdiri di kepala, bukan di antara saringan:
+            ia menjawab "seberapa padat saya mau melihatnya", satu keluarga
+            dengan tombol ciutkan - dan justru paling dibutuhkan ketika
+            kendali lainnya sedang disembunyikan. */}
+        <div className="inline-flex overflow-hidden rounded-md border text-sm">
+          <button
+            type="button"
+            onClick={() => setModeRingkas(true)}
+            className={cn(
+              "px-2.5 py-1",
+              modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+            )}
+          >
+            Ringkas
+          </button>
+          <button
+            type="button"
+            onClick={() => setModeRingkas(false)}
+            className={cn(
+              "border-l px-2.5 py-1",
+              modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
+            )}
+          >
+            Lengkap
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setKendaliCiut((n) => !n)}
+          aria-expanded={!kendaliCiut}
+          title={kendaliCiut ? "Tampilkan kendali dan saringan" : "Ciutkan kendali agar daftar sidang lebih panjang"}
+          className="flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          {kendaliCiut ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+          {kendaliCiut ? "Kendali" : "Ciutkan"}
+        </button>
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
@@ -1737,6 +1804,43 @@ export function AletaEcourtSidang({
               </button>
             </div>
 
+            {/* ============================================================
+                CARI, RENTANG, DAN TAMPILKAN SEJAJAR PEMILIH HARI
+                ============================================================
+
+                Keempatnya menjawab satu pertanyaan yang sama - "jadwal yang
+                mana yang mau dilihat" - dan sebelumnya dipisah menjadi dua
+                baris oleh garis. Dua baris untuk satu pertanyaan memakan
+                tinggi dua kali lipat, dan tinggi di layar ini adalah jumlah
+                sidang yang terlihat.
+
+                Labelnya dibuang: kotak bertanggal dan kotak bertulisan
+                "Nomor perkara, jenis, atau agenda" sudah menerangkan dirinya
+                sendiri, dan label di atasnya menambah satu baris lagi. */}
+            <Input
+              placeholder="Cari nomor perkara, jenis, atau agenda"
+              value={cari}
+              onChange={(peristiwa) => setCari(peristiwa.target.value)}
+              className="h-9 w-56"
+              aria-label="Cari"
+            />
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">s.d.</span>
+              <Input
+                type="date"
+                value={sampai}
+                min={dari}
+                onChange={(peristiwa) => setSampai(peristiwa.target.value)}
+                className="h-9 w-36"
+                aria-label="Sampai tanggal"
+              />
+            </div>
+
+            <Button size="sm" disabled={memuat} onClick={() => void muat()}>
+              {memuat ? "Memuat…" : "Tampilkan"}
+            </Button>
+
             {/* Tanggal terbacanya, bukan angka - "Senin" adalah yang dicari
                 orang, bukan "31/08". */}
             <div className="ml-auto text-right">
@@ -1751,38 +1855,11 @@ export function AletaEcourtSidang({
             </div>
           </div>
 
-          {/* Baris kedua kendali menyatu dengan baris pertama - garis pemisah
-              dan jaraknya dulu memakan hampir satu baris penuh sendiri. */}
-          <div className="flex flex-wrap items-end gap-2 border-t pt-2">
-            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
-              Cari
-              <Input
-                placeholder="Nomor perkara, jenis, atau agenda"
-                value={cari}
-                onChange={(peristiwa) => setCari(peristiwa.target.value)}
-                className="h-9 w-56"
-              />
-            </label>
-
-            {/* Rentang tetap ada, tetapi tidak menonjol: melihat sepekan
-                sekaligus jarang dikerjakan, dan menaruhnya sejajar pemilih hari
-                membuat yang sehari-hari jadi berbelit. */}
-            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
-              Sampai tanggal
-              <Input
-                type="date"
-                value={sampai}
-                min={dari}
-                onChange={(peristiwa) => setSampai(peristiwa.target.value)}
-                className="h-9 w-36"
-              />
-            </label>
-
-            <Button size="sm" disabled={memuat} onClick={() => void muat()}>
-              {memuat ? "Memuat…" : "Tampilkan"}
-            </Button>
-
-            <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* Tombol tindakan berdiri sendiri dan IKUT CIUT: mencetak,
+              menghitung skor, dan mendaftarkan antrian tidak dikerjakan tiap
+              kali layar dibuka. */}
+          <div className={cn("flex flex-wrap items-center gap-2", kendaliCiut && "hidden")}>
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
                 variant={nilaiKesiapan ? "default" : "outline"}
@@ -1829,10 +1906,10 @@ export function AletaEcourtSidang({
                 variant="outline"
                 disabled={sinkronSibuk || sidang.length === 0}
                 onClick={() => void periksaSinkron()}
-                title="Mendaftarkan jadwal yang tampil ke aplikasi antrian ruang tunggu. Diperlihatkan dulu sebelum ditulis."
+                title="Mendaftarkan perkara yang tampil ke aplikasi antrian ruang tunggu, supaya para pihak dapat mengambil nomor. Diperlihatkan dulu sebelum ditulis, dan hanya menambah yang belum terdaftar."
               >
                 <ListOrdered className="mr-1.5 h-4 w-4" />
-                {sinkronSibuk ? "Memeriksa…" : "Antrian"}
+                {sinkronSibuk ? "Memeriksa…" : "Daftarkan ke antrian"}
               </Button>
             </div>
           </div>
@@ -1890,7 +1967,7 @@ export function AletaEcourtSidang({
             melewati sembilan kotak mati sebelum sampai ke yang hidup.
             Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
             angkanya nol, saringannya tidak dapat dimatikan lagi. */}
-        {sidang.length > 0 ? (
+        {sidang.length > 0 && !kendaliCiut ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {ringkasAlur(sidang)
               .filter((k) => k.jumlah > 0 || alurTerpilih === k.kunci)
@@ -1970,7 +2047,7 @@ export function AletaEcourtSidang({
 
             Keduanya berguna: yang satu memperluas apa yang diambil, yang
             lain mempersempit apa yang dilihat. */}
-        {sidang.length > 0 ? (
+        {sidang.length > 0 && !kendaliCiut ? (
           <div className="flex flex-wrap items-center gap-2">
             <Input
               value={cariCepat}
@@ -1987,33 +2064,6 @@ export function AletaEcourtSidang({
               Pencarian lanjutan
               {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
             </Button>
-
-            {/* Pemilih tampilan ikut di baris ini, bukan berdiri sendiri di
-                atas tabel. Ia bagian dari "apa yang saya lihat", sama seperti
-                saringan di sebelahnya - dan satu baris sendiri untuk dua
-                tombol adalah satu baris yang tidak perlu ada. */}
-            <div className="inline-flex overflow-hidden rounded-md border text-sm">
-              <button
-                type="button"
-                onClick={() => setModeRingkas(true)}
-                className={cn(
-                  "px-2.5 py-1",
-                  modeRingkas ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                )}
-              >
-                Ringkas
-              </button>
-              <button
-                type="button"
-                onClick={() => setModeRingkas(false)}
-                className={cn(
-                  "border-l px-2.5 py-1",
-                  modeRingkas ? "hover:bg-muted" : "bg-primary text-primary-foreground"
-                )}
-              >
-                Lengkap
-              </button>
-            </div>
 
             {adaPenyaringTabel ? (
               <>

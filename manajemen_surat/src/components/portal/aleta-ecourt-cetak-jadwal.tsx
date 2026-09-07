@@ -237,12 +237,24 @@ export function AletaEcourtCetakJadwal({
 }
 
 /**
- * Keterangan satu perkara, diurut menurut kegentingannya.
+ * Keterangan satu perkara - HANYA yang menuntut tindakan.
  *
- * Yang menuntut tindakan juru sita lebih dulu (retur, belum dipanggil),
- * lalu keadaan sidangnya, lalu catatan administrasi. Lembar ini dipakai
- * sambil berjalan - urutan yang salah berarti yang penting terbaca
- * terakhir.
+ * ============================================================================
+ * YANG MERAH SAJA
+ * ============================================================================
+ *
+ * Kolom ini sebelumnya memuat seluruh keadaan: retur, belum dipanggil, tidak
+ * perlu dipanggil, ditunda, belum ada BAS, sidang pertama. Pada hari sidang
+ * penuh hampir tiap baris terisi, dan kolom yang hampir selalu terisi berhenti
+ * menarik perhatian - persis kebalikan dari gunanya.
+ *
+ * Yang tersisa hanya keadaan bernada "bahaya" pada layar: retur, belum
+ * dipanggil, dan putusan e-Court yang belum beres. Ketiganya menuntut orang
+ * mengerjakan sesuatu HARI ITU; sisanya keterangan, dan keterangan tidak
+ * pantas menumpuk di kolom yang dipakai sambil berjalan.
+ *
+ * Yang dibuang tidak hilang dari layar - ia tetap ada sebagai kotak saringan
+ * dan di dalam rincian tiap sidang. Yang berubah hanya lembar cetaknya.
  */
 function daftarKeterangan(baris: BarisCetak) {
   const keterangan: string[] = [];
@@ -254,26 +266,9 @@ function daftarKeterangan(baris: BarisCetak) {
   if (panggilan && panggilan.belumDipanggil > 0) {
     keterangan.push(`Belum dipanggil (${panggilan.belumDipanggil} pihak)`);
   }
-  if (panggilan && panggilan.wajibDipanggil.length === 0) {
-    keterangan.push("Tidak perlu dipanggil");
-  }
-
-  if (baris.ditunda) {
-    // Ditunda sampai kapan dan karena apa - keduanya sudah terbaca dari
-    // SIPP. Sebelumnya lembar ini hanya bertulis "(ditunda)", dan yang
-    // ditanya orang berikutnya selalu dua hal itu.
-    const sampaiKapan = baris.tanggalSidangBerikut
-      ? ` s.d. ${tanggalPanjang(baris.tanggalSidangBerikut)}`
-      : "";
-    const sebab = baris.alasanDitunda ? ` (${baris.alasanDitunda})` : "";
-    keterangan.push(`Ditunda${sampaiKapan}${sebab}`);
-  }
-
   if (baris.putusanEcourt && baris.putusanEcourt.perluTindakan) {
     keterangan.push(`Putusan e-Court: ${baris.putusanEcourt.sebutan || "belum beres"}`);
   }
-  if (baris.adaBas === false) keterangan.push("Belum ada BAS");
-  if (baris.urutanSidang === 1) keterangan.push("Sidang pertama");
 
   return keterangan;
 }

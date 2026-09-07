@@ -28,7 +28,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageIntro } from "@/components/portal/shared";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
@@ -215,13 +214,17 @@ export function AletaEcourtPengguna() {
     : menuItem;
 
   return (
-    <div className="space-y-4 p-6">
-      <PageIntro
-        eyebrow="Penghubung e-Court"
-        title="ALETA e-Court"
-        description="Menghubungkan dokumen e-Litigasi dari e-Court ke SIPP dan ke pemberitahuan WhatsApp, tanpa mengubah keduanya."
-      />
-
+    // ==================================================================
+    // KEPALA HALAMAN DIBUANG, DAN JARAKNYA DIRAPATKAN
+    // ==================================================================
+    //
+    // "ALETA e-Court" beserta keterangannya menempati hampir seperempat
+    // tinggi layar dan hanya dibaca sekali seumur hidup pemakainya. Nama
+    // aplikasinya sudah tertulis di sidebar dan di judul tab peramban;
+    // menuliskannya sekali lagi di dalam halaman memakan ruang yang justru
+    // dibutuhkan jadwal sidang - dan pada layar laptop, tiap seperempat
+    // layar adalah lima baris sidang yang tidak terlihat.
+    <div className="space-y-4 p-4 sm:p-5">
       {catatan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{catatan}</p> : null}
 
       <div
