@@ -148,14 +148,34 @@ if ! docker compose config >/dev/null 2>&1; then
 fi
 hijau "docker compose config sah."
 
+# ---------------------------------------------------------------------------
+# HASIL CONFIG DIBACA SEKALI, DAN TIDAK LEWAT PIPA
+# ---------------------------------------------------------------------------
+#
+# Bentuk sebelumnya menyalurkan hasil config ke `grep -q`. Hasil config
+# panjangnya ribuan baris, dan `grep -q` berhenti membaca begitu ketemu -
+# sehingga penulis di hulu mati kena SIGPIPE dengan kode 141. Skrip ini
+# memakai `set -o pipefail`, jadi kode itulah yang menjadi kode pipeline.
+#
+# Akibatnya terbalik dan berbahaya: pemeriksaan `dns:` di bawah akan masuk ke
+# cabang "sudah tidak ada" TEPAT KETIKA kunci itu masih ada - meluluskan
+# justru keadaan yang hendak dicegahnya. Kunci dns yang mengembang kosong
+# pernah mematikan portal sepuluh menit.
+#
+# Hasilnya dibaca sekali ke dalam peubah, lalu dicari dengan here-string.
+# Tidak ada pipa, tidak ada yang dapat kena SIGPIPE. Isinya TIDAK PERNAH
+# dicetak - hasil config memuat kata sandi basis data, token internal, dan
+# kunci privat.
+CONFIG_TEKS="$(docker compose config 2>/dev/null)"
+
 for kunci in ALETA_ECOURT_KREDENSIAL_DIR ALETA_BOT_DATA_DIR; do
-  if docker compose config | grep -q "$kunci"; then
+  if grep -qF -- "$kunci" <<< "$CONFIG_TEKS"; then
     hijau "  $kunci terbaca oleh Compose"
   else
     merah "  $kunci TIDAK terbaca - periksa dengan tangan"
   fi
 done
-if docker compose config | grep -qE '^\s*dns:' ; then
+if grep -qE '^\s*dns:' <<< "$CONFIG_TEKS"; then
   merah "  kunci dns MASIH ada pada hasil config - periksa dengan tangan"
 else
   hijau "  tidak ada kunci dns pada hasil config"

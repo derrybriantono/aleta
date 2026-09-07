@@ -201,8 +201,26 @@ echo "  tidak ada berkas compose, setelan jalan, maupun .env di dalamnya"
 # Pemeriksaan kedua: bungkusan harus berisi kedua aplikasi. Bungkusan yang
 # kosong sebelah lulus pemeriksaan pertama dengan mudah, lalu menghapus
 # separuh aplikasi di server.
+#
+# BENTUK PEMERIKSAANNYA TIDAK BOLEH MEMAKAI PIPA
+#
+# Bentuk sebelumnya menyalurkan daftar isi bungkusan ke `grep -qx`. Bentuk itu
+# SELALU menyatakan berkasnya tidak ada - justru ketika ada.
+#
+# Sebabnya halus dan diam. Skrip ini memakai `set -o pipefail`, sedangkan
+# `grep -q` berhenti membaca begitu menemukan yang dicari. Penulis di hulu yang
+# masih mengirim lalu mati kena SIGPIPE dengan kode 141, dan pipefail
+# memulangkan kode itu sebagai kode pipeline - sehingga pemeriksaannya
+# menyimpulkan "tidak ketemu" tepat pada saat ketemu.
+#
+# Akibatnya penaikan lewat skrip ini tidak pernah dapat selesai sama sekali;
+# itulah sebabnya server tidak pernah punya catatan .aleta-deployed-ref.
+#
+# Here-string tidak memakai pipa, sehingga tidak ada yang dapat kena SIGPIPE.
+# -F ditambahkan karena yang dicari nama berkas harfiah - titik pada
+# "package.json" seharusnya berarti titik, bukan sembarang aksara.
 for WAJIB in "$PKG_NAME/manajemen_surat/package.json" "$PKG_NAME/aleta_bot/package.json"; do
-  if ! printf '%s\n' "$ISI_BUNDLE" | grep -qx "$WAJIB"; then
+  if ! grep -qxF -- "$WAJIB" <<< "$ISI_BUNDLE"; then
     echo "BERHENTI: bungkusan tidak memuat $WAJIB - paketnya tidak utuh." >&2
     exit 64
   fi
