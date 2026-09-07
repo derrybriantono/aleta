@@ -728,6 +728,7 @@ type ExternalConnectorList = {
 
 const tabItems = [
   { value: "dashboard", label: "Dashboard" },
+  { value: "berjenjang", label: "Penilaian Berjenjang" },
   { value: "kamus", label: "Kamus Database" },
   { value: "query", label: "Query Registry" },
   { value: "variabel", label: "Variable Registry" },
@@ -742,7 +743,6 @@ const tabItems = [
   { value: "external-connectors", label: "Konektor Eksternal" },
   { value: "admin-monitoring", label: "Admin Monitoring" },
   { value: "penilaian", label: "Manual Input" },
-  { value: "berjenjang", label: "Penilaian Berjenjang" },
   { value: "jadwal", label: "Jadwal PDF" },
   { value: "audit", label: "Audit" },
 ] as const;
