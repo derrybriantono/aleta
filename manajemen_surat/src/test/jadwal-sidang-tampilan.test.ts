@@ -338,7 +338,12 @@ describe("aturan warna dan verzet di komponen sama dengan salinan di atas", () =
 
   it("fungsinya ada, dan satu - bukan dua salinan yang dapat menyimpang", () => {
     const isi = readFileSync(berkasKomponen, "utf8");
-    expect(isi).toContain("function warnaStatusPutusan");
+    // warnaStatusPutusan PINDAH ke @/lib/warna-putusan begitu layar Status
+    // Perkara ikut mewarnai status yang sama. Yang dijaga tetap sama - satu
+    // aturan, bukan dua - hanya tempatnya yang berubah: sekarang dijaga
+    // dengan menuntut IMPOR dan melarang salinan lokal.
+    expect(isi).toContain('from "@/lib/warna-putusan"');
+    expect(isi).not.toContain("function warnaStatusPutusan");
     expect(isi).toContain("function perkaraVerzetDari");
     // Aturan verzet pernah ditulis dua kali di berkas ini. Dua salinan akan
     // sama-sama bekerja, lalu pada suatu hari satu layar menandai perkara yang

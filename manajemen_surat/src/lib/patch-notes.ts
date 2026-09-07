@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.95.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.95.0 - Status Perkara Berkesinambungan";
+export const APP_VERSION = "1.96.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.96.0 - Kedudukan Pihak dan Warna Putusan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,36 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.96.0",
+    title: "ALETA Judicia v1.96.0 - Kedudukan Pihak dan Warna Putusan",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Para pihak pada layar Status Perkara dipisah menurut kedudukannya - penggugat beserta kuasanya, tergugat beserta kuasanya, lalu saksi tiap sisi. Status putusan diberi warna menurut artinya, memakai aturan yang sama dengan layar jadwal sidang - satu berkas, bukan dua salinan.",
+    added: [
+      "Saksi dipisah menurut sisi yang mengajukannya - saksi penggugat dan saksi tergugat - dibaca dari SIPP, bukan ditebak. Saksi yang sisinya tidak tercatat disebut apa adanya, tidak dipaksa ke salah satu sisi.",
+    ],
+    changed: [
+      "Para pihak tidak lagi satu daftar berurutan. Empat kelompok dengan kuasa hukum menempel pada pihak yang diwakilinya - kuasa tidak berdiri sendiri di persidangan, ia hadir untuk seseorang.",
+      "Tanggal putusan dan status putusan dipisah menjadi dua penanda. Tanggal netral karena ia keterangan, bukan penilaian.",
+      "Aturan warna status putusan diangkat ke satu berkas bersama dan dipakai kedua layar.",
+    ],
+    fixed: [
+      "Saksi tertulis sebagai pihak pada daftar para pihak. Saksi bukan pihak: ia tidak dipanggil sebagai pihak, tidak menanggung biaya, dan tidak terikat putusan.",
+      "Lencana putusan selalu HIJAU, apa pun hasilnya - hijaunya melekat pada kata Putus, bukan pada hasilnya. Perkara yang ditolak pun tergambar hijau, dan yang melihat sekilas membaca kabar baik atas putusan yang justru menolak permohonan pihaknya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak Dapat Diterima sengaja kuning, bukan merah. Ia bukan kekalahan - syarat formalnya belum terpenuhi dan perkaranya boleh diajukan kembali, sedangkan ditolak berarti pokoknya sudah diperiksa dan mengajukannya lagi menabrak nebis in idem.",
+      "Dicabut dan Dicoret dari Register kelabu: keduanya bukan penilaian atas perkaranya, dan tidak ada yang perlu ditindaklanjuti siapa pun.",
+      "Perdamaian sederajat dengan dikabulkan - PERMA 1/2016 menempatkannya sebagai hasil yang paling dikehendaki.",
+    ],
+    knownLimitations: [
+      "Sisi saksi dicocokkan menurut nama antara daftar pihak dan daftar saksi. Nama yang tertulis berbeda di kedua tempat jatuh ke kelompok sisi belum tercatat - terlihat, bukan hilang.",
+      "Belum dilihat langsung di peramban; yang diperiksa baru tipe, aturan, dan ujinya.",
+    ],
+  },
   {
     version: "1.95.0",
     title: "ALETA Judicia v1.95.0 - Status Perkara Berkesinambungan",

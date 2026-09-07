@@ -35,6 +35,7 @@ import {
   urutkan,
 } from "@/components/portal/tabel-kendali";
 import { cn } from "@/lib/utils";
+import { warnaStatusPutusan } from "@/lib/warna-putusan";
 
 /**
  * Jadwal perkara yang bersidang.
@@ -492,33 +493,6 @@ function sidangElitigasi(baris: { agenda?: string; lewatEcourt?: boolean }): boo
 }
 
 /**
- * Warna penanda menurut status putusan.
- *
- * ============================================================================
- * WARNANYA MENYEBUT ARTI, BUKAN SELERA
- * ============================================================================
- *
- * Tujuh status yang benar-benar dipakai PA Donggala, dari tabel status_putusan
- * SIPP - bukan daftar yang dikarang:
- *
- *   Dikabulkan, Dikabulkan Sebagian, Perdamaian   hijau  permohonan berhasil
- *   Ditolak                                       merah  ditolak pokoknya
- *   Tidak Dapat Diterima                          kuning bukan ditolak - tidak
- *                                                        diperiksa pokoknya,
- *                                                        dan dapat diajukan lagi
- *   Digugurkan, Gugur                             kuning berhenti tanpa putusan
- *   Dicabut, Dicoret dari Register                kelabu ditarik pemohonnya
- *
- * "Tidak Dapat Diterima" sengaja TIDAK merah. Ia bukan kekalahan: syarat
- * formalnya belum terpenuhi, dan perkaranya boleh diajukan kembali sesudah
- * diperbaiki. Mewarnainya merah menyamakan dua keadaan yang akibatnya berbeda
- * bagi pihak yang membacanya.
- *
- * Status di luar daftar tetap ditampilkan - dengan warna netral, bukan
- * disembunyikan. Status baru yang ditambahkan operator SIPP harus tetap
- * terbaca meski warnanya belum ditentukan.
- */
-/**
  * Apakah ini perkara verzet - perlawanan terhadap putusan verstek.
  *
  * SIPP tidak menyimpan penanda tersendiri untuknya; yang ada hanya nama jenis
@@ -533,16 +507,12 @@ function perkaraVerzetDari(...teks: Array<string | undefined | null>): boolean {
   return /verzet|perlawanan/i.test(teks.filter(Boolean).join(" "));
 }
 
-function warnaStatusPutusan(status: string): "success" | "danger" | "warning" | "muted" | "outline" {
-  const teks = String(status || "").toLowerCase();
-  if (!teks) return "muted";
-  if (/tidak\s+dapat\s+diterima/.test(teks)) return "warning";
-  if (/dikabulkan|perdamaian|damai/.test(teks)) return "success";
-  if (/tolak/.test(teks)) return "danger";
-  if (/gugur/.test(teks)) return "warning";
-  if (/cabut|dicoret/.test(teks)) return "muted";
-  return "outline";
-}
+// warnaStatusPutusan pindah ke @/lib/warna-putusan - lihat impor di atas.
+//
+// Layar Status Perkara ikut mewarnai status yang sama, dan menyalin aturannya
+// ke sana akan sama-sama bekerja - lalu pada suatu hari satu layar
+// menghijaukan status yang dimerahkan layar lain, untuk perkara yang persis
+// sama, dan tidak seorang pun tahu mana yang benar.
 
 /** Ringkasan jumlah sidang per kelompok alur. */
 /**

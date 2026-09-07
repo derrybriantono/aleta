@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
+import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 
 /**
  * Status satu perkara.
@@ -1306,11 +1307,28 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
           {status.lewatEcourt ? "e-Court" : "perkara biasa"}
         </Badge>
 
+        {/* ==================================================================
+            TANGGAL DAN STATUS DIPISAH JADI DUA PENANDA
+            ==================================================================
+
+            Sebelumnya keduanya satu lencana HIJAU - "Putus 2026-08-06 ·
+            Dikabulkan" - dan hijaunya melekat pada kata "Putus", bukan pada
+            hasilnya. Akibatnya perkara yang DITOLAK pun tergambar hijau, dan
+            yang sempat melihat sekilas membaca kabar baik atas putusan yang
+            justru menolak permohonan pihaknya.
+
+            Sekarang tanggalnya netral - ia keterangan, bukan penilaian - dan
+            warna melekat pada STATUSNYA, memakai aturan yang sama dengan layar
+            jadwal sidang. */}
         {status.putusan?.sudahPutus ? (
-          <Badge variant="success">
-            Putus {status.putusan.tanggalPutusan}
-            {status.putusan.statusPutusan ? ` · ${status.putusan.statusPutusan}` : ""}
-          </Badge>
+          <>
+            <Badge variant="outline">Putus {status.putusan.tanggalPutusan}</Badge>
+            {status.putusan.statusPutusan ? (
+              <Badge variant={warnaStatusPutusan(status.putusan.statusPutusan)}>
+                {status.putusan.statusPutusan}
+              </Badge>
+            ) : null}
+          </>
         ) : (
           <Badge variant="warning">Masih berjalan</Badge>
         )}
@@ -1449,28 +1467,137 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
           </p>
         </Bagian>
 
+        {/* ==================================================================
+            PARA PIHAK - DIPISAH MENURUT KEDUDUKAN, BUKAN SATU DAFTAR
+            ==================================================================
+
+            Sebelumnya satu daftar berurutan dengan kedudukan tiap orang
+            tertulis sebagai keterangan kecil di belakang namanya. Pada perkara
+            berkuasa hukum dan bersaksi, daftar itu menjadi tujuh baris yang
+            harus dibaca satu per satu untuk menjawab pertanyaan paling
+            sederhana: siapa penggugatnya.
+
+            Lebih buruk lagi, SAKSI tertulis "pihak" - sebutan yang keliru.
+            Saksi bukan pihak: ia tidak dipanggil sebagai pihak, tidak
+            menanggung biaya, dan tidak terikat putusan.
+
+            Empat kelompok sekarang:
+
+              Penggugat/Pemohon   beserta kuasanya, menjorok di bawahnya
+              Tergugat/Termohon   beserta kuasanya
+              Saksi penggugat     sisi yang mengajukannya dibaca dari SIPP
+              Saksi tergugat
+
+            Kuasa ditaruh DI BAWAH pihak yang diwakilinya, bukan pada
+            kelompoknya sendiri. Kuasa tidak berdiri sendiri di persidangan -
+            ia hadir UNTUK seseorang, dan memisahkannya menjadi kelompok
+            tersendiri memutus keterangan yang justru menentukan siapa yang
+            boleh berbicara.
+
+            Kelompok yang kosong tidak digambar. Judul "Saksi tergugat" di atas
+            ruang kosong menyatakan sesuatu yang tidak dinyatakan siapa pun. */}
         <Bagian judul="Para pihak" kunci="pihak">
           {status.pihak.length === 0 ? (
             <p className="text-sm text-muted-foreground">Pihak belum tercatat.</p>
           ) : (
-            <ul className="space-y-0.5 text-sm">
-              {status.pihak.map((orang, urutan) => (
-                <li key={`${orang.nama}-${urutan}`}>
-                  <span className="font-medium">{orang.nama}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {" · "}
-                    {orang.jenis === "kuasa"
-                      ? "kuasa hukum"
-                      : orang.pihakKe === 1
-                        ? "penggugat/pemohon"
-                        : orang.pihakKe === 2
-                          ? "tergugat/termohon"
-                          : "pihak"}
-                    {orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor"}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            (() => {
+              /**
+               * Sisi yang mengajukan tiap saksi, dari perkara_pihak5 lewat
+               * saksiRinci. Daftar pihak sendiri TIDAK menyimpannya - di sana
+               * saksi hanya berkedudukan lima tanpa keterangan sisi.
+               *
+               * Dicocokkan menurut nama. Nama yang tidak ketemu jatuh ke
+               * kelompok "Saksi" tanpa sisi - "tidak diketahui", bukan
+               * dipaksa ke salah satu sisi. Menaruh saksi pada sisi yang salah
+               * membalik siapa yang menghadirkannya, dan itu keterangan yang
+               * dipersoalkan saat kesaksiannya dinilai.
+               */
+              const sisiSaksi = new Map<string, string>();
+              for (const saksi of status.saksiRinci.baris) {
+                const nama = saksi.nama.trim().toLowerCase();
+                if (nama) sisiSaksi.set(nama, saksi.diajukanOleh || "");
+              }
+
+              const pihakSisi = (sisi: 1 | 2) =>
+                status.pihak.filter((x) => x.jenis !== "kuasa" && x.pihakKe === sisi);
+              const kuasaSisi = (sisi: 1 | 2) =>
+                status.pihak.filter((x) => x.jenis === "kuasa" && x.pihakKe === sisi);
+
+              const seluruhSaksi = status.pihak.filter(
+                (x) => x.jenis !== "kuasa" && x.pihakKe !== 1 && x.pihakKe !== 2
+              );
+              const saksiSisi = (cocok: (sisi: string) => boolean) =>
+                seluruhSaksi.filter((x) => cocok(sisiSaksi.get(x.nama.trim().toLowerCase()) || ""));
+
+              const nomor = (orang: (typeof status.pihak)[number]) =>
+                orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor";
+
+              const Kelompok = ({
+                judul,
+                pihak,
+                kuasa = [],
+              }: {
+                judul: string;
+                pihak: typeof status.pihak;
+                kuasa?: typeof status.pihak;
+              }) => {
+                if (pihak.length === 0 && kuasa.length === 0) return null;
+                return (
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      {judul}
+                    </p>
+                    <ul className="space-y-0.5">
+                      {pihak.map((orang, urutan) => (
+                        <li key={`${judul}-${orang.nama}-${urutan}`}>
+                          <span className="font-medium">{orang.nama}</span>
+                          <span className="text-sm text-muted-foreground">{nomor(orang)}</span>
+                        </li>
+                      ))}
+                      {kuasa.map((orang, urutan) => (
+                        <li key={`${judul}-kuasa-${orang.nama}-${urutan}`} className="pl-3">
+                          <span className="text-sm text-muted-foreground">kuasa: </span>
+                          <span className="font-medium">{orang.nama}</span>
+                          <span className="text-sm text-muted-foreground">{nomor(orang)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              };
+
+              return (
+                <div className="space-y-2 text-sm">
+                  <Kelompok
+                    judul="Penggugat / Pemohon"
+                    pihak={pihakSisi(1)}
+                    kuasa={kuasaSisi(1)}
+                  />
+                  <Kelompok
+                    judul="Tergugat / Termohon"
+                    pihak={pihakSisi(2)}
+                    kuasa={kuasaSisi(2)}
+                  />
+                  <Kelompok
+                    judul="Saksi penggugat"
+                    pihak={saksiSisi((sisi) => /penggugat|pemohon/i.test(sisi))}
+                  />
+                  <Kelompok
+                    judul="Saksi tergugat"
+                    pihak={saksiSisi((sisi) => /tergugat|termohon/i.test(sisi))}
+                  />
+                  {/* Saksi yang sisinya tidak terbaca disebut apa adanya -
+                      bukan dimasukkan ke salah satu sisi supaya daftarnya
+                      terlihat rapi. */}
+                  <Kelompok
+                    judul="Saksi - sisi belum tercatat"
+                    pihak={saksiSisi(
+                      (sisi) => !/penggugat|pemohon|tergugat|termohon/i.test(sisi)
+                    )}
+                  />
+                </div>
+              );
+            })()
           )}
         </Bagian>
       </div>
@@ -1994,7 +2121,19 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Status putusan</dt>
-              <dd className="font-medium">{status.putusanLengkap.statusPutusan || "—"}</dd>
+              {/* Warna tulisan, bukan lencana: di dalam daftar keterangan
+                  berpasangan, lencana penuh menarik mata melebihi ruas lain
+                  yang sama pentingnya. Warnanya tetap dari aturan yang sama,
+                  sehingga lencana di kepala layar dan tulisan di sini tidak
+                  mungkin menyebut arti yang berbeda. */}
+              <dd
+                className={cn(
+                  "font-medium",
+                  kelasTulisanPutusan(status.putusanLengkap.statusPutusan || "")
+                )}
+              >
+                {status.putusanLengkap.statusPutusan || "—"}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Jenis putusan</dt>

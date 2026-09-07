@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
+
 /**
  * Susunan bagian pada layar Status Perkara.
  *
@@ -201,5 +203,107 @@ describe("palet irisan pai - hasil pengukuran, bukan selera", () => {
     // dan dua irisan berwarna sama di dalam satu lingkaran adalah kekeliruan
     // yang tidak dapat dijelaskan keterangan apa pun.
     expect(readFileSync(berkasSajian, "utf8")).toContain("maksIrisan = 6");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WARNA PUTUSAN - SATU ATURAN, DIPAKAI DUA LAYAR
+// ---------------------------------------------------------------------------
+
+describe("warna status putusan", () => {
+  it("tujuh status yang benar-benar dipakai PA Donggala", () => {
+    // Dari tabel status_putusan SIPP, bukan daftar yang dikarang.
+    expect(warnaStatusPutusan("Dikabulkan")).toBe("success");
+    expect(warnaStatusPutusan("Dikabulkan Sebagian")).toBe("success");
+    expect(warnaStatusPutusan("Perdamaian")).toBe("success");
+    expect(warnaStatusPutusan("Ditolak")).toBe("danger");
+    expect(warnaStatusPutusan("Digugurkan")).toBe("warning");
+    expect(warnaStatusPutusan("Gugur")).toBe("warning");
+    expect(warnaStatusPutusan("Dicabut")).toBe("muted");
+    expect(warnaStatusPutusan("Dicoret dari Register")).toBe("muted");
+  });
+
+  it("Tidak Dapat Diterima kuning, BUKAN merah", () => {
+    // Ia bukan kekalahan: syarat formalnya belum terpenuhi dan perkaranya
+    // boleh diajukan kembali. Ditolak berarti pokoknya sudah diperiksa dan
+    // mengajukannya lagi menabrak nebis in idem - dua keadaan yang akibatnya
+    // berlawanan bagi pihak yang membacanya.
+    expect(warnaStatusPutusan("Tidak Dapat Diterima")).toBe("warning");
+    expect(warnaStatusPutusan("Tidak Dapat Diterima")).not.toBe("danger");
+  });
+
+  it("Perdamaian sederajat dengan dikabulkan", () => {
+    // PERMA 1/2016 menempatkannya sebagai hasil yang paling dikehendaki.
+    expect(warnaStatusPutusan("Perdamaian")).toBe(warnaStatusPutusan("Dikabulkan"));
+  });
+
+  it("status yang tidak dikenali tetap tampil, tidak dipaksa berwarna", () => {
+    // Nama status ditentukan operator SIPP dan dapat bertambah kapan saja.
+    expect(warnaStatusPutusan("Mengabulkan Eksepsi")).toBe("outline");
+  });
+
+  it("kosong netral, bukan hijau", () => {
+    expect(warnaStatusPutusan("")).toBe("muted");
+  });
+
+  it("kelas tulisan diturunkan dari aturan yang SAMA", () => {
+    // Lencana dan tulisan tidak boleh menyebut arti berbeda untuk status yang
+    // sama - itu terjadi begitu keduanya punya daftar warnanya sendiri.
+    expect(kelasTulisanPutusan("Ditolak")).toContain("rose");
+    expect(kelasTulisanPutusan("Dikabulkan")).toContain("emerald");
+    expect(kelasTulisanPutusan("Tidak Dapat Diterima")).toContain("amber");
+  });
+});
+
+describe("aturan warna tidak disalin ke layar mana pun", () => {
+  it("kedua layar mengimpor dari satu berkas", () => {
+    const sidang = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
+      "utf8"
+    );
+    const perkara = readFileSync(berkas, "utf8");
+    for (const [nama, isi] of [
+      ["jadwal sidang", sidang],
+      ["status perkara", perkara],
+    ] as const) {
+      expect(isi, nama).toContain('from "@/lib/warna-putusan"');
+      // Tidak ada salinan lokalnya. Dua salinan akan sama-sama bekerja, lalu
+      // pada suatu hari satu layar menghijaukan status yang dimerahkan layar
+      // lain untuk perkara yang persis sama.
+      expect(isi, nama).not.toContain("function warnaStatusPutusan");
+    }
+  });
+});
+
+describe("para pihak dipisah menurut kedudukan", () => {
+  it("empat kelompok, dan saksi tidak lagi disebut pihak", () => {
+    // Saksi bukan pihak: ia tidak dipanggil sebagai pihak, tidak menanggung
+    // biaya, dan tidak terikat putusan.
+    const isi = readFileSync(berkas, "utf8");
+    expect(isi).toContain('judul="Penggugat / Pemohon"');
+    expect(isi).toContain('judul="Tergugat / Termohon"');
+    expect(isi).toContain('judul="Saksi penggugat"');
+    expect(isi).toContain('judul="Saksi tergugat"');
+  });
+
+  it("sisi saksi dibaca dari SIPP, bukan ditebak", () => {
+    // Daftar pihak tidak menyimpan sisinya - di sana saksi hanya berkedudukan
+    // lima tanpa keterangan sisi. Yang menyimpannya saksiRinci.diajukanOleh.
+    const isi = readFileSync(berkas, "utf8");
+    expect(isi).toContain("const sisiSaksi = new Map<string, string>()");
+    expect(isi).toContain("saksi.diajukanOleh");
+  });
+
+  it("saksi yang sisinya tidak terbaca disebut apa adanya", () => {
+    // Menaruhnya pada sisi yang salah membalik siapa yang menghadirkannya -
+    // keterangan yang dipersoalkan saat kesaksiannya dinilai.
+    expect(readFileSync(berkas, "utf8")).toContain('judul="Saksi - sisi belum tercatat"');
+  });
+
+  it("kuasa menempel pada pihak yang diwakilinya", () => {
+    // Kuasa tidak berdiri sendiri di persidangan - ia hadir UNTUK seseorang.
+    const isi = readFileSync(berkas, "utf8");
+    expect(isi).toContain("kuasa={kuasaSisi(1)}");
+    expect(isi).toContain("kuasa={kuasaSisi(2)}");
   });
 });
