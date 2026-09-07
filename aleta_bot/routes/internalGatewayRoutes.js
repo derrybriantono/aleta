@@ -58,6 +58,7 @@ const analisaLanjutService = require("../services/analisaLanjutService");
 const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
+const katalogEAuditService = require("../services/katalogEAuditService");
 const periodePenilaianService = require("../services/periodePenilaianService");
 const penyandinganService = require("../services/penyandinganService");
 const laporanPerkaraService = require("../services/laporanPerkaraService");
@@ -1525,6 +1526,108 @@ router.get("/penilaian/jalankan", requireInternalToken, async (req, res) => {
         bukti: Array.isArray(s.bukti) ? s.bukti.slice(0, batasBukti) : [],
         buktiDipotong: Array.isArray(s.bukti) && s.bukti.length > batasBukti,
       })),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/* ==========================================================================
+ * ALETA e-AUDIT
+ * ========================================================================== */
+
+/**
+ * Katalog seratus delapan puluh lima butir beserta keadaan pengerjaannya.
+ *
+ * Keadaannya DIHITUNG di sini, bukan disimpan. Menyimpannya berarti sebuah
+ * angka yang perlahan usang - dan angka "berapa yang sudah selesai" adalah
+ * angka yang paling tidak boleh usang pada aplikasi yang sedang dibangun.
+ *
+ * Yang dihitung mencakup tiga hal yang mudah tersembunyi: butir yang
+ * disambungkan ke penilaian yang ternyata tidak terdaftar (sambungan putus),
+ * penilaian yang berjalan tanpa tercatat di katalog maupun di daftar
+ * pengecualian (terdaftar tanpa tempat), dan butir yang baru tersambung
+ * SEBAGIAN beserta apa yang masih kurang.
+ */
+router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
+  try {
+    penilaianKetaatanService.daftarkanSemua();
+    penilaianMutuDataService.daftarkanSemua();
+    penilaianKeuanganService.daftarkanSemua();
+
+    const terdaftar = kerangkaPenilaianService.daftar().map((d) => d.kunci);
+    const keadaan = katalogEAuditService.keadaan(terdaftar);
+    const petaKeadaan = Object.create(null);
+    keadaan.perButir.forEach((x) => {
+      petaKeadaan[x.kode] = x;
+    });
+
+    res.json({
+      ok: true,
+      bab: katalogEAuditService.daftarBab(),
+      bentuk: katalogEAuditService.BENTUK,
+      mutuRuas: katalogEAuditService.MUTU_RUAS,
+      butir: katalogEAuditService.daftarButir().map((b) => ({
+        ...b,
+        keadaan: petaKeadaan[b.kode] ? petaKeadaan[b.kode].keadaan : "belum",
+        kunci: petaKeadaan[b.kode] ? petaKeadaan[b.kode].kunci : null,
+        catatanSambungan: petaKeadaan[b.kode] ? petaKeadaan[b.kode].catatan : "",
+      })),
+      ringkas: {
+        jumlahButir: keadaan.jumlahButir,
+        penuh: keadaan.penuh,
+        sebagian: keadaan.sebagian,
+        belum: keadaan.belum,
+        putus: keadaan.putus,
+        diLuarKatalog: keadaan.diLuarKatalog,
+        tanpaTempat: keadaan.tanpaTempat,
+      },
+      diLuarKatalog: katalogEAuditService.DI_LUAR_KATALOG,
+      cela: katalogEAuditService.celaKatalog(),
+      catatan:
+        "Katalog ini daftar, bukan mesin. Butir yang belum tersambung tetap ditampilkan supaya sisa pekerjaan terlihat, bukan disembunyikan.",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Satu butir katalog beserta keadaannya.
+ *
+ * Bila butirnya sudah tersambung, definisi penilaiannya ikut dipulangkan -
+ * cara hitung, ambang, dan lantainya - supaya layar tidak perlu memanggil dua
+ * kali untuk menggambar satu halaman.
+ */
+router.get("/e-audit/butir", requireInternalToken, async (req, res) => {
+  try {
+    const b = katalogEAuditService.butir(req.query.kode);
+    if (!b) {
+      res.status(400).json({ ok: false, alasan: "butir_tidak_dikenali" });
+      return;
+    }
+
+    penilaianKetaatanService.daftarkanSemua();
+    penilaianMutuDataService.daftarkanSemua();
+    penilaianKeuanganService.daftarkanSemua();
+
+    const daftar = kerangkaPenilaianService.daftar();
+    const keadaan = katalogEAuditService.keadaan(daftar.map((d) => d.kunci));
+    const ini = keadaan.perButir.find((x) => x.kode === b.kode) || { keadaan: "belum", kunci: null, catatan: "" };
+    const definisi = ini.kunci ? daftar.find((d) => d.kunci === ini.kunci) || null : null;
+
+    res.json({
+      ok: true,
+      butir: {
+        ...b,
+        bentukTerbaca: katalogEAuditService.bentukTerbaca(b.bentuk),
+        artiMutuRuas: katalogEAuditService.MUTU_RUAS[b.mutuRuas] || null,
+      },
+      keadaan: ini.keadaan,
+      kunci: ini.kunci,
+      catatanSambungan: ini.catatan,
+      definisi,
+      bab: katalogEAuditService.daftarBab().find((x) => x.no === b.bab) || null,
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

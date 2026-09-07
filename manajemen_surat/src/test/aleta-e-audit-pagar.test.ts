@@ -1,10 +1,11 @@
 /**
  * ============================================================================
- * TAHAP 0 - PAGAR ALETA e-AUDIT
+ * PAGAR ALETA e-AUDIT - TAHAP 0 DAN TAHAP 1
  * ============================================================================
  *
- * Tahap 0 tidak menghasilkan satu butir penilaian pun. Yang dihasilkannya
- * pagar, dan pagar hanya berguna bila ia benar-benar menolak.
+ * Tahap 0 menghasilkan pagar; tahap 1 menghasilkan katalog. Pagar hanya
+ * berguna bila ia benar-benar menolak, dan katalog hanya berguna bila ia
+ * memperlihatkan sisa pekerjaannya.
  *
  * Uji ini menjaga empat hal yang seluruhnya DIAM saat rusak:
  *
@@ -133,43 +134,59 @@ describe("pagar ALETA e-Audit", () => {
     expect(pelanggar, pelanggar.join("; ")).toEqual([]);
   });
 
-  it("tahap 0 tidak menampilkan satu butir penilaian pun", () => {
-    // Menaruh butir di sini mendahului tahap yang belum dikerjakan, dan pada
-    // tahap berikutnya butir itu harus dibongkar lagi. Yang boleh tampil:
-    // keterangan bahwa isinya belum ada, beserta rencana pengisiannya.
+  it("katalognya datang dari mesin, tidak disalin ke layar", () => {
+    // ============================================================
+    // TAHAP 1 MENGGANTI JANJI TAHAP 0 DENGAN SENGAJA
+    // ============================================================
+    //
+    // Tahap 0 berjanji layarnya kosong. Tahap 1 mengisinya dengan katalog -
+    // dan katalog itu HARUS datang dari mesinnya. Menyalin 185 butir ke sisi
+    // portal berarti dua daftar yang perlahan menyimpang, dan pada suatu hari
+    // layar menawarkan butir yang sudah tidak ada di mesin.
     const komponen = baca("src/components/portal/aleta-e-audit.tsx");
-    expect(komponen).toContain("Tahap 0");
-    expect(komponen).toContain("belum berisi");
 
-    // Halaman tahap 0 tidak boleh memanggil rute penilaian mana pun.
-    expect(komponen).not.toContain("fetch(");
-    expect(komponen).not.toContain("/api/aleta-e-audit");
+    expect(komponen).toContain("/api/aleta-e-audit/katalog");
+    expect(komponen).toContain("/api/aleta-e-audit/butir");
+
+    // Tidak boleh ada daftar butir yang ditulis di layar. Kode butir berbentuk
+    // dua huruf besar diikuti dua angka; menemukannya sebagai teks di sini
+    // berarti ada yang menyalin katalognya.
+    const kodeTertulis = [...komponen.matchAll(/["'`]([A-Z]{2}\d{2})["'`]/g)].map((m) => m[1]);
+    expect(
+      [...new Set(kodeTertulis)],
+      "kode butir tidak boleh ditulis di layar - katalognya datang dari mesin"
+    ).toEqual([]);
   });
 
-  it("dua belas bab pada layar berjumlah 185 butir", () => {
-    // Angka pada layar diambil dari katalog prototipe. Bila jumlahnya bergeser
-    // tanpa katalognya berubah, berarti ada yang salah salin.
+  it("butir yang belum dikerjakan tetap ditampilkan", () => {
+    // Sifat inilah yang membuat aplikasi ini jujur. Menyembunyikan butir yang
+    // belum tersambung membuatnya terlihat selesai padahal baru sebagian, dan
+    // orang yang membukanya menyangka ALETA memang tidak menilai hal itu.
     const komponen = baca("src/components/portal/aleta-e-audit.tsx");
-    const butir = [...komponen.matchAll(/butir:\s*(\d+)/g)].map((m) => Number(m[1]));
 
-    expect(butir.length, "dua belas bab").toBe(12);
-    expect(butir.reduce((a, b) => a + b, 0)).toBe(185);
+    expect(komponen).toContain("belum tersambung");
+    expect(komponen).toContain("sisa pekerjaan terlihat");
 
-    const kode = [...komponen.matchAll(/kode:\s*(\d+)/g)].map((m) => Number(m[1]));
-    const hitung = [...komponen.matchAll(/hitung:\s*(\d+)/g)].map((m) => Number(m[1]));
-    const bebas = [...komponen.matchAll(/bebas:\s*(\d+)/g)].map((m) => Number(m[1]));
+    // Ketiga keadaan harus dikenali layar - termasuk "sebagian", yang tidak
+    // boleh terbaca seperti "sudah".
+    expect(komponen).toContain("penuh");
+    expect(komponen).toContain("sebagian");
+    expect(komponen).toContain("belum");
+    // Dan keadaan keempat yang hanya muncul saat ada yang rusak.
+    expect(komponen).toContain("putus");
+  });
 
-    expect(kode.reduce((a, b) => a + b, 0)).toBe(100);
-    expect(hitung.reduce((a, b) => a + b, 0)).toBe(67);
-    expect(bebas.reduce((a, b) => a + b, 0)).toBe(18);
+  it("angka kemajuan tidak ditulis tangan di layar", () => {
+    // Angka "berapa yang sudah selesai" adalah angka yang paling tidak boleh
+    // usang pada aplikasi yang sedang dibangun. Ia dihitung di sisi mesin dari
+    // selisih antara katalog dan penilaian yang benar-benar terdaftar.
+    const komponen = baca("src/components/portal/aleta-e-audit.tsx");
 
-    // Tiap bab: berkode + dihitung + teks bebas harus sama dengan jumlah butirnya.
-    const timpang = butir
-      .map((n, i) => ({ i, n, jml: kode[i] + hitung[i] + bebas[i] }))
-      .filter((x) => x.n !== x.jml);
+    expect(komponen).toContain("ringkas");
+    // Angka 185 tidak boleh dipatok di layar - ia datang dari katalog.
     expect(
-      timpang,
-      `bab ini jumlahnya tidak cocok: ${timpang.map((x) => `#${x.i + 1} ${x.n} vs ${x.jml}`).join(", ")}`
-    ).toEqual([]);
+      /\b185\b/.test(komponen),
+      "jumlah butir dipatok di layar; ia harus datang dari jawaban mesin"
+    ).toBe(false);
   });
 });

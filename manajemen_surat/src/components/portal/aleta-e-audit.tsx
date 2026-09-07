@@ -1,67 +1,198 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { PageIntro } from "@/components/portal/shared";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { apiPath } from "@/lib/base-path";
 
 /**
  * ============================================================================
- * ALETA e-AUDIT - TAHAP 0
+ * ALETA e-AUDIT - TAHAP 1
  * ============================================================================
  *
- * Tahap 0 sengaja tidak menampilkan satu butir penilaian pun.
+ * Kerangka aplikasi beserta katalog seratus delapan puluh lima butir.
  *
- * Yang dikerjakan pada tahap ini hanya pagarnya: aplikasi berdiri, tempatnya
- * pasti, aksesnya terkunci, dan janjinya tertulis. Menaruh butir penilaian di
- * sini akan mendahului tahap yang belum dikerjakan, dan pada tahap berikutnya
- * butir itu harus dibongkar lagi - persis kebiasaan yang hendak dihindari
- * seluruh rencana ini.
+ * Yang penting pada tahap ini bukan keindahannya, melainkan satu sifat:
+ * butir yang BELUM dikerjakan tetap tampil. Menyembunyikannya membuat aplikasi
+ * terlihat selesai padahal baru sebagian, dan orang yang membukanya menyangka
+ * ALETA memang tidak menilai hal itu.
  *
- * Halaman ini juga tidak berpura-pura. Ia menyatakan apa adanya bahwa isinya
- * belum ada, dan menyebutkan apa yang akan mengisinya. Layar kosong tanpa
- * keterangan terbaca seperti aplikasi rusak; layar kosong yang menerangkan
- * dirinya terbaca seperti pekerjaan yang sedang berjalan.
+ * Karena itu tiap butir membawa keadaannya sendiri - tersambung penuh,
+ * tersambung sebagian, atau belum sama sekali - dan keadaan itu DIHITUNG di
+ * sisi mesin dari selisih antara katalog dan penilaian yang benar-benar
+ * terdaftar. Tidak ada satu pun angka kemajuan yang ditulis tangan di sini.
+ *
+ * ============================================================================
+ * "SEBAGIAN" TIDAK BOLEH TERBACA SEPERTI "SUDAH"
+ * ============================================================================
+ *
+ * Enam penilaian yang sudah dibangun mengukur hal yang mirip dengan butir
+ * katalognya, tetapi hanya dua yang benar-benar sama. Sisanya lebih sempit -
+ * misalnya memeriksa keberadaan berita acara, sedangkan butirnya menuntut
+ * jarak waktu penyelesaiannya.
+ *
+ * Butir seperti itu ditandai "sebagian" dan membawa catatan yang menyebutkan
+ * apa yang masih kurang. Catatan itu tampil pada halaman butirnya, bukan
+ * disimpan di dalam kode.
  */
 
-/** Kedua belas bab beserta jumlah butirnya, dibaca dari katalog prototipe. */
-const BAB = [
-  { no: 1, nama: "Mesin Penilaian", butir: 6, kode: 2, hitung: 4, bebas: 0 },
-  { no: 2, nama: "Pengawasan Mutu dan Integritas Data", butir: 14, kode: 9, hitung: 5, bebas: 0 },
-  { no: 3, nama: "Ketaatan Tahapan dan Tenggang Waktu", butir: 20, kode: 20, hitung: 0, bebas: 0 },
-  { no: 4, nama: "Laporan Perkara (LIPA 1-22)", butir: 26, kode: 23, hitung: 0, bebas: 3 },
-  { no: 5, nama: "Register dan Buku Kepaniteraan", butir: 14, kode: 14, hitung: 0, bebas: 0 },
-  { no: 6, nama: "Beban Kerja dan Pemerataan", butir: 10, kode: 3, hitung: 5, bebas: 2 },
-  { no: 7, nama: "Rapor Kinerja Aparatur", butir: 14, kode: 11, hitung: 3, bebas: 0 },
-  { no: 8, nama: "Keuangan Perkara", butir: 16, kode: 1, hitung: 10, bebas: 5 },
-  { no: 9, nama: "Statistik Perkara dan Para Pihak", butir: 22, kode: 7, hitung: 12, bebas: 3 },
-  { no: 10, nama: "Mutu Putusan dan Persidangan", butir: 16, kode: 6, hitung: 8, bebas: 2 },
-  { no: 11, nama: "Pelayanan kepada Pencari Keadilan", butir: 12, kode: 3, hitung: 8, bebas: 1 },
-  { no: 12, nama: "Metode Analisis dan Pengujian", butir: 15, kode: 1, hitung: 12, bebas: 2 },
-] as const;
+type ApiEnvelope<T> = { ok?: boolean; data?: T; error?: { message?: string } };
 
-const JUMLAH_BUTIR = BAB.reduce((a, b) => a + b.butir, 0);
+type Bab = { no: number; nama: string; jumlah: number };
 
-/** Janji yang tidak boleh berubah, ditulis di layar supaya dapat ditagih. */
-const JANJI = [
-  {
-    judul: "Tidak pernah menulis ke SIPP",
-    isi: "Seluruh pembacaan SIPP melewati ALETA Bot dan wajib berupa SELECT. Penjaga menolak berkas layanan yang memuat perintah tulis, dan penolakan itu berjalan pada tiap putaran uji.",
-  },
-  {
-    judul: "Angka diturunkan dari buktinya",
-    isi: "Pembilang dan penyebut dihitung DARI daftar bukti yang sama, bukan dari kueri terpisah. Dengan begitu angka dan bukti tidak mungkin berbeda - dan bila kueri agregat pembanding tidak sepakat, selisihnya dilaporkan sebagai temuan.",
-  },
-  {
-    judul: "Nilai ditahan bila belum pantas",
-    isi: "Penyebut di bawah dua puluh, periode lebih pendek daripada lantai penilaian, ambang yang belum berlaku, daftar hari libur yang belum disahkan, dan penyandingan yang belum dikerjakan - masing-masing menahan nilainya dan menyebutkan sebabnya.",
-  },
-  {
-    judul: "Belum boleh dipakai membina",
-    isi: "Selama sebuah butir belum disandingkan dengan angka dari luar ALETA, keterangan itu menempel pada hasilnya sampai ke layar. Boleh dibaca dan diperiksa; belum boleh dipakai menilai orang.",
-  },
-];
+type KeadaanButir = "penuh" | "sebagian" | "belum" | "putus";
+
+type Butir = {
+  kode: string;
+  bab: number;
+  nama: string;
+  bentuk: string;
+  satuanBaris: string;
+  mutuRuas: "kode" | "hitung" | "bebas";
+  lantai: string;
+  keterangan: string;
+  keadaan: KeadaanButir;
+  kunci: string | null;
+  catatanSambungan: string;
+};
+
+type Ringkas = {
+  jumlahButir: number;
+  penuh: number;
+  sebagian: number;
+  belum: number;
+  putus: number;
+  diLuarKatalog: number;
+  tanpaTempat: string[];
+};
+
+type Katalog = {
+  available?: boolean;
+  ok?: boolean;
+  alasan?: string;
+  bab?: Bab[];
+  bentuk?: Record<string, string>;
+  mutuRuas?: Record<string, string>;
+  butir?: Butir[];
+  ringkas?: Ringkas;
+  diLuarKatalog?: Record<string, string>;
+  cela?: string[];
+  catatan?: string;
+};
+
+type CaraHitung = {
+  pembilang?: string;
+  penyebut?: string;
+  dikecualikan?: string;
+  tabelSumber?: string;
+  ruasSumber?: string;
+};
+
+type Rinci = {
+  available?: boolean;
+  ok?: boolean;
+  alasan?: string;
+  butir?: Butir & {
+    bentukTerbaca?: Array<{ huruf: string; arti: string | null }>;
+    artiMutuRuas?: string | null;
+  };
+  keadaan?: KeadaanButir;
+  kunci?: string | null;
+  catatanSambungan?: string;
+  definisi?: {
+    judul?: string;
+    keterangan?: string;
+    lantai?: string;
+    versiRumus?: string;
+    caraHitung?: CaraHitung;
+    ambangDipakai?: string[];
+    pakaiHariKerja?: boolean;
+  } | null;
+  bab?: Bab | null;
+};
+
+const LENCANA: Record<KeadaanButir, { teks: string; variant: "success" | "warning" | "muted" | "danger" }> = {
+  penuh: { teks: "tersambung", variant: "success" },
+  sebagian: { teks: "sebagian", variant: "warning" },
+  belum: { teks: "belum", variant: "muted" },
+  putus: { teks: "sambungan putus", variant: "danger" },
+};
+
+const LENCANA_MUTU: Record<string, "success" | "default" | "danger"> = {
+  kode: "success",
+  hitung: "default",
+  bebas: "danger",
+};
+
+async function ambilJson<T>(alamat: string): Promise<T> {
+  const respons = await fetch(apiPath(alamat), { cache: "no-store" });
+  const isi = (await respons.json()) as ApiEnvelope<T>;
+  return (isi.data ?? (isi as unknown)) as T;
+}
 
 export function AletaEAudit() {
+  const [katalog, setKatalog] = useState<Katalog | null>(null);
+  const [galat, setGalat] = useState("");
+  const [babTerpilih, setBabTerpilih] = useState<number>(0);
+  const [cari, setCari] = useState("");
+  const [kodeTerbuka, setKodeTerbuka] = useState("");
+  const [rinci, setRinci] = useState<Rinci | null>(null);
+  const [sedangBuka, setSedangBuka] = useState("");
+
+  useEffect(() => {
+    let dibatalkan = false;
+    (async () => {
+      try {
+        const jawab = await ambilJson<Katalog>("/api/aleta-e-audit/katalog");
+        if (dibatalkan) return;
+        setKatalog(jawab);
+        if (jawab.bab && jawab.bab.length > 0) setBabTerpilih(jawab.bab[0].no);
+      } catch (e) {
+        if (!dibatalkan) setGalat(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      dibatalkan = true;
+    };
+  }, []);
+
+  const bukaButir = useCallback(async (kode: string) => {
+    setKodeTerbuka(kode);
+    setSedangBuka(kode);
+    setRinci(null);
+    try {
+      const jawab = await ambilJson<Rinci>(`/api/aleta-e-audit/butir?kode=${encodeURIComponent(kode)}`);
+      setRinci(jawab);
+    } catch (e) {
+      setRinci({ ok: false, alasan: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSedangBuka("");
+    }
+  }, []);
+
+  const semua = useMemo(() => katalog?.butir || [], [katalog]);
+
+  // Pencarian menyapu SELURUH katalog, bukan hanya bab yang sedang terbuka.
+  // Orang yang mencari sebuah butir jarang tahu bab mana yang memuatnya.
+  const tersaring = useMemo(() => {
+    const q = cari.trim().toLowerCase();
+    if (q) {
+      return semua.filter(
+        (b) =>
+          b.kode.toLowerCase().includes(q) ||
+          b.nama.toLowerCase().includes(q) ||
+          b.keterangan.toLowerCase().includes(q)
+      );
+    }
+    return semua.filter((b) => b.bab === babTerpilih);
+  }, [cari, semua, babTerpilih]);
+
+  const r = katalog?.ringkas;
+
   return (
     <div className="space-y-6">
       <PageIntro
@@ -70,124 +201,337 @@ export function AletaEAudit() {
         description="Ketaatan tahapan, mutu data, laporan perkara, keuangan, dan kinerja aparatur - dengan bukti yang selalu dapat dibuka sampai ke nomor perkaranya."
       />
 
-      <Card className="border-amber-300/70 bg-amber-50/70 dark:border-amber-700/40 dark:bg-amber-950/25">
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-lg">Tahap 0 - kerangka dan pagar</CardTitle>
-              <CardDescription className="text-amber-900 dark:text-amber-200">
-                Aplikasi ini berdiri, tetapi belum memuat satu butir penilaian pun. Itu disengaja.
-              </CardDescription>
-            </div>
-            <Badge variant="warning">belum berisi</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm leading-6">
-          <p>
-            Yang selesai pada tahap ini hanya tempatnya: aplikasi terdaftar di dashboard, memakai
-            kerangka yang sama dengan aplikasi lain, dan aksesnya terkunci pada super admin.
-          </p>
-          <p>
-            Butir penilaiannya masuk mulai Tahap 1, dan urutannya ditentukan oleh dari mana
-            angkanya berasal - bukan oleh nomor babnya. Bab 3 dan Bab 5 dikerjakan lebih dahulu
-            karena keduanya seluruhnya membaca ruas berkode, sehingga satu pola melayani tiga
-            puluh empat butir sekaligus.
-          </p>
-        </CardContent>
-      </Card>
+      {galat ? (
+        <div className="rounded-md border border-rose-300/70 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-700/50 dark:bg-rose-950/40 dark:text-rose-300">
+          Katalog tidak dapat diambil: {galat}
+        </div>
+      ) : null}
 
-      <Card className="border-border/80">
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle>Yang akan mengisinya</CardTitle>
-              <CardDescription>
-                Dua belas bab, {JUMLAH_BUTIR} butir penilaian. Tiap butir membawa penanda dari mana
-                angkanya berasal, dan penanda itulah yang menentukan urutan pengerjaannya.
-              </CardDescription>
-            </div>
-            <Badge variant="muted">{JUMLAH_BUTIR} butir</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-lg border border-border/80">
-            <table className="w-full min-w-[620px] text-left text-sm">
-              <thead className="bg-muted/70 text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 text-right font-semibold">Bab</th>
-                  <th className="px-3 py-2 font-semibold">Nama</th>
-                  <th className="px-3 py-2 text-right font-semibold">Butir</th>
-                  <th className="px-3 py-2 text-right font-semibold">Berkode</th>
-                  <th className="px-3 py-2 text-right font-semibold">Dihitung</th>
-                  <th className="px-3 py-2 text-right font-semibold">Teks bebas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {BAB.map((b) => (
-                  <tr key={b.no} className="border-t border-border/70">
-                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{b.no}</td>
-                    <td className="px-3 py-2 font-medium">{b.nama}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{b.butir}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{b.kode || "-"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{b.hitung || "-"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {b.bebas ? (
-                        <span className="text-amber-700 dark:text-amber-300">{b.bebas}</span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            Delapan belas butir bertumpu pada ruas yang diketik bebas di SIPP. Pengukuran terhadap
-            basis data sungguhan menunjukkan sebagiannya terlalu kosong atau terlalu beragam untuk
-            dinilai - butir seperti itu akan berdiri dengan keterangan cakupannya, bukan dengan
-            angka.
-          </p>
-        </CardContent>
-      </Card>
+      {katalog && katalog.available === false ? (
+        <div className="rounded-md border border-amber-300/70 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-200">
+          {katalog.alasan || "ALETA Bot belum dapat dihubungi."}
+        </div>
+      ) : null}
 
-      <Card className="border-border/80">
-        <CardHeader>
-          <CardTitle>Janji yang tidak berubah</CardTitle>
-          <CardDescription>
-            Ditulis di layar supaya dapat ditagih siapa pun, bukan disimpan di dalam kode.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 md:grid-cols-2">
-            {JANJI.map((j) => (
-              <div key={j.judul} className="rounded-lg border border-border/80 bg-muted/30 p-3">
-                <dt className="text-sm font-semibold">{j.judul}</dt>
-                <dd className="mt-1 text-sm leading-6 text-muted-foreground">{j.isi}</dd>
+      {r ? <PitaKemajuan ringkas={r} cela={katalog?.cela || []} /> : null}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
+        <DaftarBab
+          bab={katalog?.bab || []}
+          butir={semua}
+          terpilih={babTerpilih}
+          onPilih={(no) => {
+            setBabTerpilih(no);
+            setCari("");
+          }}
+        />
+
+        <div className="space-y-4">
+          <Card className="border-border/80">
+            <CardHeader className="pb-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base">
+                    {cari.trim()
+                      ? `Hasil pencarian "${cari.trim()}"`
+                      : katalog?.bab?.find((b) => b.no === babTerpilih)?.nama || "Butir penilaian"}
+                  </CardTitle>
+                  <CardDescription>
+                    {tersaring.length} butir
+                    {cari.trim() ? " dari seluruh dua belas bab" : ""}
+                  </CardDescription>
+                </div>
+                <Input
+                  className="h-9 w-full sm:w-72"
+                  placeholder="Cari kode, nama, atau keterangan..."
+                  value={cari}
+                  onChange={(e) => setCari(e.target.value)}
+                />
               </div>
-            ))}
-          </dl>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {tersaring.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Tidak ada butir yang cocok.
+                </p>
+              ) : (
+                tersaring.map((b) => (
+                  <BarisButir
+                    key={b.kode}
+                    butir={b}
+                    terbuka={kodeTerbuka === b.kode}
+                    sedang={sedangBuka === b.kode}
+                    onBuka={() => (kodeTerbuka === b.kode ? setKodeTerbuka("") : void bukaButir(b.kode))}
+                  />
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-      <Card className="border-border/80">
-        <CardHeader>
-          <CardTitle>Siapa yang dapat membukanya</CardTitle>
-          <CardDescription>Untuk sekarang: super admin saja.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm leading-6">
-          <p>
-            Pengenal aplikasi ini sengaja tidak dimasukkan ke daftar aplikasi bawaan portal. Selama
-            ia tidak ada di sana, peran selain super admin tidak melihat kartunya, dan membuka
-            alamatnya langsung akan dijawab halaman penolakan.
+          {kodeTerbuka && rinci ? <PanelButir rinci={rinci} /> : null}
+        </div>
+      </div>
+
+      {katalog?.catatan ? (
+        <p className="text-xs leading-5 text-muted-foreground">{katalog.catatan}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Kemajuan yang dihitung, bukan ditulis.
+ *
+ * Tiga keadaan yang mudah tersembunyi ikut ditampilkan di sini: sambungan yang
+ * putus, penilaian yang berjalan tanpa tercatat di katalog, dan cela pada
+ * katalog itu sendiri. Ketiganya tidak akan pernah muncul pada keadaan sehat,
+ * dan justru karena itu harus terlihat begitu muncul.
+ */
+function PitaKemajuan({ ringkas, cela }: { ringkas: Ringkas; cela: string[] }) {
+  const bermasalah = ringkas.putus > 0 || ringkas.tanpaTempat.length > 0 || cela.length > 0;
+  const persen = ringkas.jumlahButir
+    ? ((ringkas.penuh / ringkas.jumlahButir) * 100).toFixed(1)
+    : "0";
+
+  return (
+    <Card className="border-border/80">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">Kemajuan katalog</CardTitle>
+            <CardDescription>
+              Dihitung dari selisih antara katalog dan penilaian yang benar-benar terdaftar di
+              mesin - bukan disimpan, sehingga tidak mungkin usang.
+            </CardDescription>
+          </div>
+          <Badge variant="muted">{persen}% tersambung penuh</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Angka label="Butir katalog" nilai={ringkas.jumlahButir} />
+          <Angka label="Tersambung penuh" nilai={ringkas.penuh} warna="text-emerald-700 dark:text-emerald-300" />
+          <Angka label="Tersambung sebagian" nilai={ringkas.sebagian} warna="text-amber-700 dark:text-amber-300" />
+          <Angka label="Belum tersambung" nilai={ringkas.belum} warna="text-muted-foreground" />
+        </div>
+
+        {ringkas.diLuarKatalog > 0 ? (
+          <p className="text-xs leading-5 text-muted-foreground">
+            Ditambah {ringkas.diLuarKatalog} penilaian yang sudah berjalan tetapi tidak punya butir
+            di katalog. Keduanya dicatat beserta alasannya, bukan dibiarkan tanpa tempat.
           </p>
-          <p>
-            Membukanya untuk peran lain kelak adalah satu keputusan sadar - bukan efek samping dari
-            perubahan lain. Uji keterjangkauan mengunci daftar itu, sehingga menambahkannya menuntut
-            perubahan yang disengaja dan tercatat.
-          </p>
+        ) : null}
+
+        {bermasalah ? (
+          <div className="rounded-md border border-rose-300/70 bg-rose-50 p-3 text-sm leading-6 text-rose-800 dark:border-rose-700/50 dark:bg-rose-950/40 dark:text-rose-300">
+            <p className="font-semibold">Perlu diperiksa</p>
+            {ringkas.putus > 0 ? (
+              <p>
+                {ringkas.putus} butir disambungkan ke penilaian yang tidak terdaftar di mesin.
+              </p>
+            ) : null}
+            {ringkas.tanpaTempat.length > 0 ? (
+              <p>
+                Penilaian berjalan tanpa tercatat di katalog: {ringkas.tanpaTempat.join(", ")}.
+              </p>
+            ) : null}
+            {cela.length > 0 ? <p>Cela pada katalog: {cela.join("; ")}</p> : null}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Angka({ label, nilai, warna }: { label: string; nilai: number; warna?: string }) {
+  return (
+    <div className="rounded-lg border border-border/80 bg-muted/30 p-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-semibold tabular-nums ${warna || ""}`}>{nilai}</p>
+    </div>
+  );
+}
+
+function DaftarBab({
+  bab,
+  butir,
+  terpilih,
+  onPilih,
+}: {
+  bab: Bab[];
+  butir: Butir[];
+  terpilih: number;
+  onPilih: (no: number) => void;
+}) {
+  return (
+    <Card className="border-border/80 lg:sticky lg:top-4 lg:self-start">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Dua belas bab</CardTitle>
+        <CardDescription>{butir.length} butir seluruhnya</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-1">
+        {bab.map((b) => {
+          const isi = butir.filter((x) => x.bab === b.no);
+          const jadi = isi.filter((x) => x.keadaan === "penuh").length;
+          const sebagian = isi.filter((x) => x.keadaan === "sebagian").length;
+          const aktif = b.no === terpilih;
+          return (
+            <button
+              key={b.no}
+              type="button"
+              onClick={() => onPilih(b.no)}
+              className={`flex w-full items-start justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition ${
+                aktif
+                  ? "border-primary/40 bg-primary/10"
+                  : "border-transparent hover:border-border/80 hover:bg-muted/50"
+              }`}
+            >
+              <span>
+                <span className="text-xs text-muted-foreground">Bab {b.no}</span>
+                <span className="block font-medium leading-5">{b.nama}</span>
+              </span>
+              <span className="shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                {jadi + sebagian > 0 ? (
+                  <span className="text-emerald-700 dark:text-emerald-300">{jadi + sebagian}</span>
+                ) : null}
+                {jadi + sebagian > 0 ? " / " : ""}
+                {b.jumlah}
+              </span>
+            </button>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function BarisButir({
+  butir,
+  terbuka,
+  sedang,
+  onBuka,
+}: {
+  butir: Butir;
+  terbuka: boolean;
+  sedang: boolean;
+  onBuka: () => void;
+}) {
+  const l = LENCANA[butir.keadaan] || LENCANA.belum;
+  return (
+    <button
+      type="button"
+      onClick={onBuka}
+      className={`flex w-full flex-wrap items-start justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition ${
+        terbuka ? "border-primary/40 bg-primary/5" : "border-border/80 hover:bg-muted/40"
+      }`}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">{butir.kode}</code>
+          <span className="font-medium">{butir.nama}</span>
+        </span>
+        <span className="mt-0.5 block text-sm leading-6 text-muted-foreground">
+          {butir.keterangan}
+        </span>
+      </span>
+      <span className="flex shrink-0 flex-wrap items-center gap-1.5">
+        <Badge variant={LENCANA_MUTU[butir.mutuRuas] || "outline"}>{butir.mutuRuas}</Badge>
+        <Badge variant={l.variant}>{sedang ? "..." : l.teks}</Badge>
+      </span>
+    </button>
+  );
+}
+
+function PanelButir({ rinci }: { rinci: Rinci }) {
+  if (rinci.ok === false) {
+    return (
+      <Card className="border-rose-300/70">
+        <CardContent className="pt-6 text-sm text-rose-800 dark:text-rose-300">
+          {rinci.alasan || "Butir tidak dapat dibuka."}
         </CardContent>
       </Card>
+    );
+  }
+
+  const b = rinci.butir;
+  if (!b) return null;
+  const l = LENCANA[rinci.keadaan || "belum"] || LENCANA.belum;
+
+  return (
+    <Card className="border-border/80">
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg">
+              <code className="mr-2 rounded bg-muted px-1.5 py-0.5 text-sm">{b.kode}</code>
+              {b.nama}
+            </CardTitle>
+            <CardDescription>
+              Bab {b.bab}
+              {rinci.bab ? ` - ${rinci.bab.nama}` : ""}
+            </CardDescription>
+          </div>
+          <Badge variant={l.variant}>{l.teks}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm leading-6">{b.keterangan}</p>
+
+        {rinci.keadaan === "sebagian" && rinci.catatanSambungan ? (
+          <div className="rounded-md border border-amber-300/70 bg-amber-50 p-3 text-sm leading-6 text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-200">
+            <strong>Baru tersambung sebagian.</strong> {rinci.catatanSambungan}
+          </div>
+        ) : null}
+
+        {rinci.keadaan === "belum" ? (
+          <div className="rounded-md border border-border/80 bg-muted/40 p-3 text-sm leading-6">
+            Butir ini <strong>belum tersambung</strong> ke penilaian mana pun. Ia tetap ditampilkan
+            supaya sisa pekerjaan terlihat - bukan disembunyikan sampai selesai.
+          </div>
+        ) : null}
+
+        <dl className="grid gap-3 text-sm md:grid-cols-2">
+          <Ruas label="Satuan baris bukti" isi={b.satuanBaris || "-"} />
+          <Ruas label="Lantai periode" isi={b.lantai} />
+          <Ruas
+            label="Bentuk sajian"
+            isi={(b.bentukTerbaca || []).map((x) => x.arti || x.huruf).join(", ") || b.bentuk}
+          />
+          <Ruas label="Sumber angka" isi={b.artiMutuRuas || b.mutuRuas} />
+        </dl>
+
+        {rinci.definisi ? (
+          <div className="rounded-lg border border-border/80 bg-muted/30 p-3">
+            <p className="mb-2 text-sm font-semibold">
+              Cara hitung yang benar-benar dipakai
+              {rinci.definisi.versiRumus ? (
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  rumus {rinci.definisi.versiRumus}
+                </span>
+              ) : null}
+            </p>
+            <dl className="grid gap-2 text-sm md:grid-cols-2">
+              <Ruas label="Yang dihitung memenuhi" isi={rinci.definisi.caraHitung?.pembilang || "-"} />
+              <Ruas label="Pembaginya" isi={rinci.definisi.caraHitung?.penyebut || "-"} />
+              <Ruas label="Yang dikecualikan" isi={rinci.definisi.caraHitung?.dikecualikan || "-"} />
+              <Ruas label="Tabel SIPP yang dibaca" isi={rinci.definisi.caraHitung?.tabelSumber || "-"} />
+              <Ruas label="Ruas yang dibaca" isi={rinci.definisi.caraHitung?.ruasSumber || "-"} />
+              {rinci.definisi.pakaiHariKerja ? (
+                <Ruas label="Catatan" isi="Menghitung hari kerja, sehingga bergantung pada daftar hari libur nasional." />
+              ) : null}
+            </dl>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Ruas({ label, isi }: { label: string; isi: string }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="leading-6">{isi}</dd>
     </div>
   );
 }

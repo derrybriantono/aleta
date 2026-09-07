@@ -1599,6 +1599,26 @@ export async function getGatewayJalankanPenilaian(
   return gatewayFetch(`/internal/aleta-bot/penilaian/jalankan?${kueri.toString()}`);
 }
 
+/**
+ * Katalog ALETA e-Audit beserta keadaan pengerjaan tiap butirnya.
+ *
+ * Keadaannya dihitung di sisi bot dari selisih antara katalog dan penilaian
+ * yang benar-benar terdaftar. Menghitungnya di portal berarti portal harus
+ * tahu penilaian apa saja yang terdaftar di mesin - dan itu pengetahuan yang
+ * perlahan menyimpang.
+ */
+export async function getGatewayKatalogEAudit(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/e-audit/katalog`);
+}
+
+/** Satu butir katalog beserta definisi penilaiannya bila sudah tersambung. */
+export async function getGatewayButirEAudit(
+  kode: string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ kode });
+  return gatewayFetch(`/internal/aleta-bot/e-audit/butir?${kueri.toString()}`);
+}
+
 /** Kedua puluh dua laporan perkara, untuk mengisi menu pilihan. */
 export async function getGatewayDaftarLaporanPerkara(): Promise<GatewayResult<Record<string, unknown>>> {
   return gatewayFetch(`/internal/aleta-bot/laporan-perkara/daftar`);
