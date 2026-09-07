@@ -116,8 +116,29 @@ sama("dan tanpa daftar libur akan terbaca tujuh",
   periksa("dan menghitung akhir pekannya", r.akhirPekan === 4, String(r.akhirPekan));
   periksa("dan menyebut hari liburnya satu per satu", r.libur.length === 6, String(r.libur.length));
   periksa("dan menyebut namanya", /Idulfitri/.test(r.libur.map((x) => x.nama).join(" ")));
-  periksa("dan mengaku daftarnya belum disahkan", r.dapatDipercaya === false);
-  periksa("dan menyebut tahun yang belum disahkan", /2025/.test(r.sebabTidakDapatDipercaya), r.sebabTidakDapatDipercaya);
+  // ========================================================================
+  // YANG DIKUNCI ATURANNYA, BUKAN KEADAAN HARI INI
+  // ========================================================================
+  //
+  // Dua pemeriksaan di sini semula berbunyi "daftarnya belum disahkan" -
+  // benar pada hari ditulis, lalu MENUDUH pada hari daftar 2025 disahkan
+  // terhadap SKB-nya. Penjaga yang mengunci keadaan hari ini akan menggagalkan
+  // justru perbuatan yang paling dikehendaki.
+  //
+  // Yang dikunci sekarang: rinciannya harus SETUJU dengan keadaan daftar
+  // tahunnya, dan ketidakpercayaan selalu disertai sebab yang dapat dibaca.
+  const H = require("../services/hariLiburService");
+  const keadaan2025 = H.keadaanTahun(2025);
+  periksa(
+    "rincian setuju dengan keadaan daftar tahunnya",
+    r.dapatDipercaya === (keadaan2025.ada && keadaan2025.disahkan),
+    `rincian ${r.dapatDipercaya}, daftar 2025 disahkan ${keadaan2025.disahkan}`
+  );
+  periksa(
+    "ketidakpercayaan selalu disertai sebab yang dapat dibaca",
+    r.dapatDipercaya || (typeof r.sebabTidakDapatDipercaya === "string" && r.sebabTidakDapatDipercaya.length > 20),
+    r.sebabTidakDapatDipercaya
+  );
 }
 
 console.log("== Pekan mulai Senin ==");

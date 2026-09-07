@@ -770,6 +770,11 @@ const SAMBUNGAN = {
     catatan:
       "Butir ini seharusnya hanya berlaku bagi perkara yang memang melalui pembuktian dengan saksi. Yang dinilai sekarang seluruh perkara, sehingga perkara yang putus verstek atau dicabut ikut terhitung tanpa saksi.",
   },
+  KU03: {
+    kunci: "sisaPanjarSudahDikembalikan",
+    sifat: "penuh",
+    catatan: "",
+  },
   KU01: {
     kunci: "panjarTercatatSetiapPerkara",
     sifat: "sebagian",
