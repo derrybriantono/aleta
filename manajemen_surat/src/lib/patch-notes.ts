@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.88.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.88.0 - e-Audit, Blangko Mandiri, dan Jadwal Sidang";
+export const APP_VERSION = "1.89.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.89.0 - Jadwal Sidang, Mediasi, dan Tiga Bug yang Diam";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,53 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.89.0",
+    title: "ALETA Judicia v1.89.0 - Jadwal Sidang, Mediasi, dan Tiga Bug yang Diam",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Delapan belas perbaikan pada layar Jadwal Sidang dan Mediasi. Sambil mengerjakannya, tiga cacat lama ketahuan - ketiganya tidak pernah menimbulkan galat apa pun: saringan e-Litigasi yang tidak pernah sekali pun menyala, kolom jenis putusan yang kosong pada hampir seluruh perkara, dan dua menu yang tampil tembus pandang. Kehadiran mediasi kini dicatat menurut empat kedudukan terpisah, karena satu angka tidak dapat membedakan pihak yang hadir sendiri dari kuasanya yang hadir.",
+    added: [
+      "Pencatatan kehadiran mediasi menurut empat kedudukan terpisah: penggugat, tergugat, kuasa penggugat, dan kuasa tergugat - beserta nama yang benar-benar hadir dan alasan bagi yang tidak.",
+      "Tombol Rincian pada tiap pertemuan mediasi, memuat seluruh keterangannya: jadwal, mediator, nomor SK, tanggal penetapan, batas 30 hari, laporan mediator, dan hasilnya.",
+      "Penanda verzet berwarna merah di samping nomor perkara, pada daftar maupun rincian.",
+      "Penanda jumlah saksi yang diajukan tiap pihak - Saksi P dan Saksi T - pada daftar dan rincian sidang.",
+      "Penanda verstek pada daftar sidang, sebelumnya hanya terlihat sesudah membuka rincian.",
+    ],
+    changed: [
+      "Penanda e-Litigasi kini menuntut DUA syarat: perkaranya terdaftar lewat e-Court, dan agendanya tahapan yang dipertukarkan elektronik. Daftar agendanya diperluas dengan musyawarah majelis, pembacaan putusan, pembacaan penetapan, dan putusan sela.",
+      "Jenis putusan ditampilkan sebagai penanda berwarna menurut statusnya - hijau untuk dikabulkan dan perdamaian, merah untuk ditolak, kuning untuk gugur. Tidak Dapat Diterima sengaja kuning, bukan merah: syarat formalnya belum terpenuhi dan perkaranya boleh diajukan kembali.",
+      "Penanda belum minutasi menjadi merah bila naskah putusannya sudah diunggah - keadaan yang menagih panitera pengganti, bukan lagi menunggu hakim.",
+      "Baris jadwal sidang dan mediasi tidak lagi dapat ditekan di sembarang tempat. Hanya tombol Rincian di ujung kanan yang membukanya.",
+      "Tanggal mulai dan tanggal akhir disatukan dalam satu alat rentang; kotak pencarian pindah ke baris tombol tindakan.",
+      "Tombol Seluruh sidang melepas SEMUA yang menyempitkan tampilan - alur, keadaan, kotak saring, dan pencarian lanjutan - bukan hanya sebagian.",
+      "Identitas pihak pada rincian dipisah menjadi penggugat, tergugat, dan saksi, dengan kuasa hukum menempel pada pihak yang diwakilinya.",
+      "Berkekuatan hukum tetap dan akta cerai dikeluarkan dari menu putusan pada jadwal sidang - keduanya keadaan sesudah perkara selesai, dan tetap ada di layar Status Perkara.",
+      "Jenis perkara ditebalkan, dan judul Jadwal Perkara Yang Bersidang dikapitalkan.",
+    ],
+    fixed: [
+      "Saringan e-Litigasi tidak pernah sekali pun menyala sejak ditulis. Polanya memuat aksara kendali backspace alih-alih penanda batas kata, sehingga tidak pernah cocok dengan teks apa pun. Tidak ada galat, dan ujinya tetap hijau karena menguji salinan aturan yang ejaannya benar.",
+      "Kolom jenis putusan berbunyi belum tercatat pada hampir seluruh perkara. SIPP menyimpan nama status sebagai salinan yang hanya kadang diisi - 9.480 dari 9.998 baris putusan kosong di sana - padahal nomor statusnya terisi. Nama kini selalu diambil dari tabel rujukan.",
+      "Satu baris putusan menyimpan nama status yang bertentangan dengan nomornya: berstatus Digugurkan tetapi tersimpan sebagai Dikabulkan. Terbawa perbaikan di atas.",
+      "Menu Tampilan dan Antrian tampil tembus pandang sehingga tulisannya bertumpuk dengan tabel di bawahnya. Keduanya memakai warna latar yang tidak pernah didefinisikan.",
+      "Kehadiran saksi tertulis belum ada pada perkara yang sudah mengajukan saksi. Yang dihitung adalah saksi yang sudah diperiksa, bukan yang diajukan - dua pertanyaan yang berbeda, dan yang ditanyakan sebelum sidang adalah yang kedua.",
+      "Tulisan Kembali ke Portal meluber keluar bagan sidebar dan menimpa tombol ciutkan.",
+      "Penanda Putusan e-Court dimatikan sementara: ia menuduh perkara yang sebenarnya hanya belum pernah ditarik dari e-Court.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tabel kehadiran mediasi milik ALETA sepenuhnya. Sambungan ke SIPP tetap hanya baca, dan catatan kehadiran tidak pernah ditulis balik ke sana.",
+      "Nama pencatat kehadiran diambil dari sesi yang sedang berjalan dan tidak dapat diketik.",
+      "Migrasi 0038 menambah satu tabel. Seluruhnya CREATE TABLE IF NOT EXISTS - tidak ada tabel atau kolom yang dihapus maupun diubah.",
+    ],
+    knownLimitations: [
+      "Yang dicatat hanya fakta kehadiran mediasi. Penilaian iktikad baik menurut PERMA 1/2016 Pasal 6 tidak dihitung - itu kewenangan mediator dan majelis, dan syaratnya berlapis serta sebagiannya tidak terekam di sistem mana pun.",
+      "Penanda Putusan e-Court belum dapat dinyalakan kembali sebelum pemeriksaannya membedakan perkara yang belum pernah ditarik dari yang sudah ditarik dan memang belum terbit.",
+      "Panggilan elektronik tetap tidak dapat dikenali sebagai jenis relaas - tidak ada kolom yang menyimpannya pada perkara_pelaksanaan_relaas.",
+      "Korpus blangko masih belum dipelajari di server, sehingga layar Blangko Mandiri tetap kosong.",
+    ],
+  },
   {
     version: "1.88.0",
     title: "ALETA Judicia v1.88.0 - e-Audit, Blangko Mandiri, dan Jadwal Sidang",
