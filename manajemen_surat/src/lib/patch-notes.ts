@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.89.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.89.1 - Tombol Reset Saringan";
+export const APP_VERSION = "1.90.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.90.0 - Saksi Bernama dan Antrian per Sisi";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.90.0",
+    title: "ALETA Judicia v1.90.0 - Saksi Bernama dan Antrian per Sisi",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Daftar jadwal sidang kini menyebut nama saksi tiap pihak, memisahkan penggugat dari tergugat pada baris para pihak, dan menandai sisi mana yang sudah mengambil nomor antrian beserta jamnya. Ketiga keterangan itu sudah lama terbaca ALETA tetapi tidak pernah digambar di layar.",
+    added: [
+      "Nama saksi tiap pihak pada daftar sidang - Saksi P dan Saksi T beserta jumlahnya, tampil di kedua mode tampilan.",
+      "Penanda sisi yang sudah mengambil antrian pada kolom Antrian/Jam: penggugat, tergugat, dan saksi disebut sendiri-sendiri beserta jam pengambilannya.",
+    ],
+    changed: [
+      "Nama para pihak pada daftar dipisah menjadi dua baris berlabel P dan T. Sebelumnya satu baris berbunyi A lawan B yang terpotong pada nama panjang - dan yang terpotong justru nama tergugat.",
+      "Nomor perkara dan jenis perkara ditebalkan lagi, pada daftar maupun kepala rincian.",
+      "Tombol Reset pindah dari deretan kotak keadaan ke baris kendali saringan. Di tempat lama ia hampir selalu jatuh sendirian ke baris berikutnya, memakan satu baris penuh dan mengurangi jumlah sidang yang terlihat.",
+      "Penanda antrian online dibuat lebih terbaca. Yang offline tetap tidak ditandai - mengambil nomor di mesin ruang tunggu adalah keadaan biasa, dan label yang ada di mana-mana berhenti menjadi keterangan.",
+    ],
+    fixed: [
+      "Tombol Bersihkan pada baris saringan hanya melepas sebagian - keadaan, kotak saring, dan pencarian lanjutan - sedangkan alur perkara dan keempat penyaring kartu tetap menyala. Pada keadaan hasil kosong, menekannya dapat tetap menghasilkan daftar kosong. Digabung menjadi satu tombol Reset yang melepas seluruhnya.",
+      "Nama saksi dipisah dengan tanda pipa, bukan koma: 573 nama saksi di PA Donggala memuat koma pada gelarnya, dan koma sebagai pemisah memecah satu saksi menjadi dua sekaligus menyalahkan jumlahnya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Waktu pengambilan antrian tiap sisi sudah lama tersimpan pada tabel antrian sidang - ruas pihak_1, pihak_2, dan saksi - dan sudah sampai ke layar ini sejak lama. Yang berubah hanya penggambarannya.",
+    ],
+    knownLimitations: [
+      "Penanda antrian online belum akan muncul: kolom online pada tabel antrian sidang masih kosong pada seluruh baris, sehingga belum satu pun pengambilan tercatat sebagai online. Yang kurang datanya, bukan penandanya.",
+    ],
+  },
   {
     version: "1.89.1",
     title: "ALETA Judicia v1.89.1 - Tombol Reset Saringan",

@@ -21,7 +21,6 @@ import {
   MonitorPlay,
   Printer,
   RotateCcw,
-  X,
 } from "lucide-react";
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
@@ -107,6 +106,9 @@ type SidangBaris = {
   /** Saksi yang DIAJUKAN tiap sisi - belum tentu sudah diperiksa. */
   saksiPihak1?: number;
   saksiPihak2?: number;
+  /** Nama saksi tiap sisi, urut sesuai pengajuannya di SIPP. */
+  saksiNamaPihak1?: string[];
+  saksiNamaPihak2?: string[];
   /** Terdaftar lewat e-Court - syarat pertama penanda e-Litigasi. */
   lewatEcourt?: boolean;
 };
@@ -1373,12 +1375,27 @@ function SelAntrianJam({
           >
             {antrian.nomor}
           </span>
-          {/* Online dan offline satu deret; tanda ini menyebut ASAL
-              pengambilannya, bukan urutannya. */}
+          {/* ================================================================
+              ONLINE DITANDAI, OFFLINE TIDAK
+              ================================================================
+
+              Tanda ini menyebut ASAL pengambilannya, bukan urutannya - online
+              dan offline berbaris pada deret yang sama.
+
+              Hanya yang online yang ditandai. Mengambil nomor di mesin ruang
+              tunggu adalah keadaan biasa; menandainya "offline" berarti
+              memberi label pada hampir setiap baris, dan label yang ada di
+              mana-mana berhenti menjadi keterangan.
+
+              CATATAN KEADAAN DATA: kolom `online` pada tabel antrian_sidang
+              masih NULL pada seluruh baris di PA Donggala - belum satu pun
+              pengambilan tercatat sebagai online. Tandanya karena itu belum
+              akan muncul sampai aplikasi antrian mengisi kolom itu. Yang
+              kurang datanya, bukan penandanya. */}
           {antrian.online ? (
             <span
-              className="rounded border border-sky-400 px-1 text-[9px] font-semibold uppercase leading-tight text-sky-600 dark:text-sky-400"
-              title="Antrian diambil dalam jaringan lewat WhatsApp"
+              className="rounded-full border border-sky-400 bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+              title="Antrian diambil dalam jaringan - bukan di mesin antrian ruang tunggu"
             >
               online
             </span>
@@ -1395,7 +1412,51 @@ function SelAntrianJam({
 
       <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
 
-      {antrian.waktuAmbil ? (
+      {/* ====================================================================
+          SIAPA YANG SUDAH MENGAMBIL - BUKAN SEKADAR "SUDAH DIAMBIL"
+          ====================================================================
+
+          Mesin antrian mencatat waktu pengambilan TERPISAH untuk tiap sisi:
+          pihak_1, pihak_2, dan saksi. Ketiganya sudah lama terbaca ALETA dan
+          sudah sampai ke layar ini, tetapi tidak pernah digambar - yang tampil
+          hanya "ambil 08:17", waktu paling awal di antara keduanya.
+
+          Bedanya menentukan. "Sudah ambil antrian" pada perkara yang hanya
+          penggugatnya datang terbaca seolah kedua pihak sudah hadir, dan
+          panitera yang memanggil perkara baru mengetahuinya di depan ruang
+          sidang. Sekarang tiap sisi disebut sendiri beserta jamnya.
+
+          Yang BELUM mengambil tidak digambar sama sekali. Menampilkan "T: —"
+          pada perkara verstek yang tergugatnya memang tidak akan pernah datang
+          hanya menambah baris yang tidak menagih apa pun. */}
+      {antrian.pihak1 || antrian.pihak2 || antrian.saksi ? (
+        <div className="mt-0.5 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[10px] leading-tight">
+          {antrian.pihak1 ? (
+            <span
+              className="rounded bg-emerald-100 px-1 font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+              title={`Penggugat/pemohon mengambil antrian pukul ${antrian.pihak1}`}
+            >
+              P {antrian.pihak1}
+            </span>
+          ) : null}
+          {antrian.pihak2 ? (
+            <span
+              className="rounded bg-emerald-100 px-1 font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+              title={`Tergugat/termohon mengambil antrian pukul ${antrian.pihak2}`}
+            >
+              T {antrian.pihak2}
+            </span>
+          ) : null}
+          {antrian.saksi ? (
+            <span
+              className="rounded bg-sky-100 px-1 font-medium text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+              title={`Saksi mengambil antrian pukul ${antrian.saksi}`}
+            >
+              Saksi {antrian.saksi}
+            </span>
+          ) : null}
+        </div>
+      ) : antrian.waktuAmbil ? (
         <div className="text-[10px] text-muted-foreground" title="Waktu antrian diambil">
           ambil {antrian.waktuAmbil}
         </div>
@@ -2026,10 +2087,25 @@ export function AletaEcourtSidang({
     antrian.peta,
   ]);
 
-  const adaPenyaringTabel =
-    keadaanTerpilih.length > 0 || cariCepat.trim() !== "" || cariLanjut.jumlahAktif > 0;
-
-  const bersihkanTabel = () => {
+  /**
+   * Melepas SELURUH saringan sekaligus.
+   *
+   * ==========================================================================
+   * SATU TOMBOL, BUKAN DUA YANG CAKUPANNYA BERBEDA
+   * ==========================================================================
+   *
+   * Dulu ada dua: satu di deretan kotak keadaan, satu lagi di baris saringan.
+   * Yang kedua - bernama "Bersihkan" - hanya melepas keadaan, kotak saring,
+   * dan pencarian lanjutan; alur perkara dan keempat penyaring kartu TETAP
+   * menyala. Dua tombol yang sama-sama tampak "membatalkan" tetapi
+   * membatalkan hal yang berbeda adalah cara tercepat membuat orang menyangka
+   * datanya hilang: ditekan salah satu, daftarnya tetap tersaring.
+   *
+   * Sekarang satu, dan cakupannya sama dengan adaSaringan yang menyalakannya.
+   */
+  const resetSemuaSaringan = () => {
+    setAlurTerpilih("");
+    bersihkanSaringan();
     setKeadaanTerpilih([]);
     setCariCepat("");
     cariLanjut.bersihkan();
@@ -2501,81 +2577,6 @@ export function AletaEcourtSidang({
                 onTekan={() => alihkanKeadaan(keadaan.kunci)}
               />
             ))}
-
-            {/* ============================================================
-                TOMBOL RESET - MENYEBUT KE BERAPA PERKARA IA MENGEMBALIKAN
-                ============================================================
-
-                Dulu bertuliskan "Seluruh sidang" beserta angkanya, dan itu
-                membingungkan karena bunyinya seperti KETERANGAN, bukan
-                perintah: orang membacanya sebagai "hari ini ada 21 sidang"
-                lalu tidak pernah tahu tombol itu dapat ditekan.
-
-                Sekarang ia menyebut apa yang akan dikerjakannya - "Reset" -
-                dan ke berapa perkara ia mengembalikan. Angkanya penting:
-                sesudah tiga saringan menyala, yang ingin diketahui sebelum
-                menekan adalah berapa yang akan muncul kembali.
-
-                Saat tidak ada saringan, ia berhenti menjadi tombol dan
-                kembali menjadi keterangan jumlah - tidak ada yang perlu
-                direset, dan tombol mati yang tetap berbunyi "Reset" hanya
-                mengundang tekanan yang tidak menghasilkan apa-apa.
-
-                ============================================================
-                YANG DILEPAS DAN YANG TIDAK
-                ============================================================
-
-                Dilepas SEMUA yang menyempitkan tampilan: alur, keadaan,
-                keempat penyaring kartu, kotak saring, dan pencarian lanjutan.
-                Sebelumnya hanya sebagian, sehingga tombol yang menjanjikan
-                "seluruh" tetap menyisakan daftar tersaring - dan yang
-                disalahkan biasanya datanya.
-
-                TIDAK dilepas: rentang tanggal dan kotak Cari di atas.
-                Keduanya menentukan apa yang DIAMBIL dari SIPP, bukan apa yang
-                disembunyikan dari yang sudah diambil, dan melepasnya berarti
-                memuat ulang tanpa diminta. */}
-            <button
-              type="button"
-              onClick={() => {
-                setAlurTerpilih("");
-                bersihkanSaringan();
-                setKeadaanTerpilih([]);
-                setCariCepat("");
-                cariLanjut.bersihkan();
-              }}
-              disabled={!adaSaringan}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg border border-dashed px-2.5 py-1 text-sm transition",
-                adaSaringan
-                  ? "border-primary/40 text-foreground hover:border-primary/60 hover:bg-muted/50"
-                  : "cursor-default text-muted-foreground"
-              )}
-              title={
-                adaSaringan
-                  ? `Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`
-                  : "Jumlah sidang pada rentang ini"
-              }
-            >
-              {adaSaringan ? (
-                <>
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Reset</span>
-                  <span className="text-muted-foreground">
-                    kembali ke{" "}
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {sidang.length}
-                    </span>{" "}
-                    perkara
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold tabular-nums">{sidang.length}</span>
-                  <span>perkara</span>
-                </>
-              )}
-            </button>
           </div>
         ) : null}
 
@@ -2607,14 +2608,36 @@ export function AletaEcourtSidang({
               {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
             </Button>
 
-            {adaPenyaringTabel ? (
+            {/* ============================================================
+                RESET BERDIRI DI SINI, BUKAN DI DERETAN KOTAK KEADAAN
+                ============================================================
+
+                Sebelumnya ia ikut mengantre di antara belasan kotak keadaan,
+                dan karena deretan itu selalu penuh, ia hampir selalu jatuh
+                sendirian ke baris berikutnya - satu baris penuh terpakai oleh
+                satu tombol, dan jumlah sidang yang terlihat berkurang.
+
+                Tempatnya di sini karena inilah baris kendali saringan: kotak
+                saring dan pencarian lanjutan menyempitkan daftar, dan tombol
+                ini melepasnya. Baris ini pun jarang penuh, sehingga ia tidak
+                pernah lagi mendorong apa pun ke bawah.
+
+                Angka "x dari y" tetap ada di sebelahnya: yang paling sering
+                ditanyakan saat daftar menyusut adalah berapa yang
+                disembunyikan. */}
+            {adaSaringan ? (
               <>
                 <span className="text-sm text-muted-foreground">
-                  {sidangTampil.length} dari {sidang.length} sidang
+                  {sidangTampil.length} dari {sidang.length} perkara
                 </span>
-                <Button size="sm" variant="ghost" onClick={bersihkanTabel}>
-                  <X className="mr-1 h-3.5 w-3.5" />
-                  Bersihkan
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={resetSemuaSaringan}
+                  title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
+                >
+                  <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                  Reset ke {sidang.length} perkara
                 </Button>
               </>
             ) : null}
@@ -2955,11 +2978,23 @@ export function AletaEcourtSidang({
                         membuat orang mencari di tanggal lain padahal
                         perkaranya ada di depan mata. */}
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {sidang.length} sidang hari ini tidak satu pun cocok. Longgarkan
-                      saringannya, atau tekan Bersihkan.
+                      {sidang.length} perkara pada rentang ini tidak satu pun cocok. Longgarkan
+                      saringannya, atau tekan Reset.
                     </p>
-                    <Button size="sm" variant="outline" className="mt-3" onClick={bersihkanTabel}>
-                      Bersihkan saringan
+                    {/* Memakai reset PENUH - dan justru di sini bedanya paling
+                        menentukan. Tombol lama hanya melepas sebagian, sehingga
+                        menekannya pada keadaan kosong dapat tetap menghasilkan
+                        daftar kosong: alur perkara dan keempat penyaring kartu
+                        tidak ikut dilepas. Tombol pemulih yang tidak memulihkan
+                        apa pun adalah jalan buntu yang tampak seperti jalan. */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-3"
+                      onClick={resetSemuaSaringan}
+                    >
+                      <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                      Reset ke {sidang.length} perkara
                     </Button>
                   </td>
                 </tr>
@@ -3038,7 +3073,9 @@ export function AletaEcourtSidang({
                           </div>
                         </td>
                         <td className="px-3 py-2 align-top">
-                          <span className="font-semibold">{baris.nomorPerkara}</span>
+                          <span className="text-[0.95rem] font-extrabold tracking-tight">
+                            {baris.nomorPerkara}
+                          </span>
                           {/* ==================================================
                               VERZET DITANDAI DI SAMPING NOMORNYA
                               ==================================================
@@ -3066,17 +3103,52 @@ export function AletaEcourtSidang({
                           <span className="ml-2 inline-flex gap-1 align-middle">
                             <PenandaPanggilan panggilan={baris.panggilan} />
                           </span>
-                          {/* Para pihak diringkas di bawah nomornya: inilah
-                              yang dipakai memanggil perkara di ruang sidang. */}
-                          {baris.pihak.penggugat.length > 0 ? (
-                            <div
-                              className="mt-0.5 max-w-[22rem] truncate text-sm text-muted-foreground"
-                              title={[...baris.pihak.penggugat, ...baris.pihak.tergugat].join(" · ")}
-                            >
-                              {baris.pihak.penggugat[0]}
-                              {baris.pihak.tergugat.length > 0
-                                ? ` lawan ${baris.pihak.tergugat[0]}`
-                                : ""}
+                          {/* ==================================================
+                              PENGGUGAT DAN TERGUGAT DIPISAH, BUKAN "A LAWAN B"
+                              ==================================================
+
+                              Dulu satu baris terpotong: "Karmila binti Bustamin
+                              lawan Andika Rafliando bin S…". Pada nama panjang -
+                              dan nama di sini hampir selalu panjang - yang
+                              terpotong justru nama TERGUGAT, sehingga sisi yang
+                              paling sering perlu dipanggil ulang tidak terbaca.
+
+                              Dipisah dua baris berlabel P dan T. Labelnya sama
+                              dengan yang dipakai penanda antrian dan penanda
+                              saksi di bawahnya, sehingga ketiganya terbaca
+                              sebagai satu bahasa - bukan tiga singkatan yang
+                              kebetulan mirip.
+
+                              Beberapa penggugat atau tergugat disebut jumlahnya,
+                              bukan disembunyikan: perkara berpihak banyak
+                              menentukan berapa relaas yang harus ada. */}
+                          {baris.pihak.penggugat.length > 0 ||
+                          baris.pihak.tergugat.length > 0 ? (
+                            <div className="mt-0.5 space-y-0.5 text-sm text-muted-foreground">
+                              {baris.pihak.penggugat.length > 0 ? (
+                                <div
+                                  className="max-w-[24rem] truncate"
+                                  title={baris.pihak.penggugat.join(", ")}
+                                >
+                                  <span className="font-medium text-foreground/70">P:</span>{" "}
+                                  {baris.pihak.penggugat[0]}
+                                  {baris.pihak.penggugat.length > 1
+                                    ? ` +${baris.pihak.penggugat.length - 1}`
+                                    : ""}
+                                </div>
+                              ) : null}
+                              {baris.pihak.tergugat.length > 0 ? (
+                                <div
+                                  className="max-w-[24rem] truncate"
+                                  title={baris.pihak.tergugat.join(", ")}
+                                >
+                                  <span className="font-medium text-foreground/70">T:</span>{" "}
+                                  {baris.pihak.tergugat[0]}
+                                  {baris.pihak.tergugat.length > 1
+                                    ? ` +${baris.pihak.tergugat.length - 1}`
+                                    : ""}
+                                </div>
+                              ) : null}
                             </div>
                           ) : null}
 
@@ -3089,7 +3161,7 @@ export function AletaEcourtSidang({
                               menentukan jalan perkaranya sama sekali - siapa
                               yang memohon, apakah ada ikrar talak - dan
                               sebelumnya ia sekelabu nama pihak di atasnya. */}
-                          <div className="mt-0.5 text-sm font-semibold text-foreground/80">
+                          <div className="mt-0.5 text-sm font-extrabold text-foreground/90">
                             {baris.jenisPerkara || "—"}
                           </div>
 
@@ -3158,6 +3230,50 @@ export function AletaEcourtSidang({
                             ) : null}
                           </div>
 
+                          {/* ==================================================
+                              SAKSI: SIAPA, BUKAN HANYA BERAPA
+                              ==================================================
+
+                              Di kedua mode - berbeda dari penanda "belum ada
+                              BAS" di bawah, yang hanya perlu di Ringkas karena
+                              di Lengkap sudah punya kolomnya sendiri. Saksi
+                              tidak punya kolom di mana pun.
+
+                              Namanya disebut, bukan sekadar jumlahnya. Majelis
+                              yang membuka jadwal sebelum sidang menanyakan
+                              "saksi yang mana yang datang hari ini" - dan nama
+                              itulah yang dicocokkan dengan orang yang duduk di
+                              ruang tunggu. Jumlah saja tidak menjawabnya.
+
+                              Sisi pengajunya disebutkan terpisah: saksi
+                              penggugat dan saksi tergugat diperiksa pada
+                              tahapan yang berbeda, dan menggabungkannya
+                              menjadi satu angka menghapus perbedaan itu. */}
+                          {(baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0 ? (
+                            <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                              {(baris.saksiPihak1 ?? 0) > 0 ? (
+                                <div className="max-w-[24rem] truncate">
+                                  <span className="font-medium text-foreground/75">
+                                    Saksi P ({baris.saksiPihak1}):
+                                  </span>{" "}
+                                  <span title={(baris.saksiNamaPihak1 ?? []).join(", ")}>
+                                    {(baris.saksiNamaPihak1 ?? []).join(", ") || "nama belum tercatat"}
+                                  </span>
+                                </div>
+                              ) : null}
+                              {(baris.saksiPihak2 ?? 0) > 0 ? (
+                                <div className="max-w-[24rem] truncate">
+                                  <span className="font-medium text-foreground/75">
+                                    Saksi T ({baris.saksiPihak2}):
+                                  </span>{" "}
+                                  <span title={(baris.saksiNamaPihak2 ?? []).join(", ")}>
+                                    {(baris.saksiNamaPihak2 ?? []).join(", ") || "nama belum tercatat"}
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+
                           <div className="hanya-ringkas mt-1 flex flex-wrap items-center gap-1">
                             {!baris.adaBas ? (
                               <span
@@ -3167,23 +3283,10 @@ export function AletaEcourtSidang({
                                 belum ada BAS
                               </span>
                             ) : null}
-                            {/* Saksi yang DIAJUKAN tiap sisi. Berapa saksi yang
-                                akan diperiksa menentukan berapa lama sidang
-                                berlangsung - dan itu ditanyakan sebelum sidang
-                                dimulai, bukan sesudah membuka rinciannya. */}
-                            {(baris.saksiPihak1 ?? 0) + (baris.saksiPihak2 ?? 0) > 0 ? (
-                              <span
-                                className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-                                title="Saksi yang diajukan tiap pihak - belum tentu sudah diperiksa."
-                              >
-                                {[
-                                  (baris.saksiPihak1 ?? 0) > 0 ? `Saksi P: ${baris.saksiPihak1}` : "",
-                                  (baris.saksiPihak2 ?? 0) > 0 ? `Saksi T: ${baris.saksiPihak2}` : "",
-                                ]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </span>
-                            ) : null}
+                            {/* Penanda saksi TIDAK di sini: ia kini berdiri
+                                sendiri di atas, dengan namanya, dan tampil di
+                                kedua mode. Mengulangnya di baris ini akan
+                                membuat Ringkas menyebut saksi dua kali. */}
                             {TAMPILKAN_PUTUSAN_ECOURT && baris.putusanEcourt?.perluTindakan ? (
                               <span
                                 className="rounded bg-rose-100 px-1.5 py-0.5 text-xs font-medium text-rose-900 dark:bg-rose-950 dark:text-rose-200"
@@ -3478,7 +3581,7 @@ function RincianSidang({
       {/* Nomor perkara diulang di kepala rincian: pada tabel panjang, pembaca
           yang sudah menggulung ke bawah kehilangan jejak baris asalnya. */}
       <div className="flex flex-wrap items-baseline gap-2">
-        <h4 className="text-lg font-semibold tracking-tight">{nomorPerkara}</h4>
+        <h4 className="text-lg font-extrabold tracking-tight">{nomorPerkara}</h4>
         {/* Verzet ditandai di samping nomornya di sini juga - sama seperti di
             daftar. Yang membuka rincian tidak selalu datang dari daftar. */}
         {perkaraVerzet ? (

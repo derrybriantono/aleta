@@ -1170,6 +1170,15 @@ export type SidangBaris = {
   saksiPihak1: number;
   saksiPihak2: number;
   /**
+   * Nama saksi tiap sisi, urut sesuai urutan pengajuannya di SIPP.
+   *
+   * Dipecah dari GROUP_CONCAT berpemisah PIPA, bukan koma: 573 nama saksi di
+   * PA Donggala memuat koma pada gelarnya, dan koma sebagai pemisah memecah
+   * satu saksi menjadi dua.
+   */
+  saksiNamaPihak1: string[];
+  saksiNamaPihak2: string[];
+  /**
    * Perkaranya terdaftar lewat e-Court (perkara_efiling_id).
    *
    * Syarat PERTAMA penanda e-Litigasi; syarat keduanya - agendanya tahapan

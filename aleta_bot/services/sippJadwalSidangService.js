@@ -283,6 +283,9 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // penanda "Saksi P / Saksi T" di daftar.
       saksiPihak1: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak1) || 0,
       saksiPihak2: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak2) || 0,
+      // Namanya ikut supaya layar dapat menyebut SIAPA, bukan hanya berapa.
+      saksiNamaPihak1: (petaSaksi[String(row.perkaraId)] || {}).namaPihak1 || [],
+      saksiNamaPihak2: (petaSaksi[String(row.perkaraId)] || {}).namaPihak2 || [],
       // Terdaftar lewat e-Court. Syarat PERTAMA penanda e-Litigasi; syarat
       // keduanya - agendanya tahapan yang dipertukarkan elektronik - diperiksa
       // di layar, karena di sanalah daftar agendanya dirawat.
@@ -1616,21 +1619,45 @@ async function saksiBanyakPerkara(daftarPerkaraId = []) {
   const dipakai = id.slice(0, 500);
   const isian = dipakai.map(() => "?").join(", ");
 
+  // ==========================================================================
+  // NAMANYA IKUT, DAN PEMISAHNYA PIPA - BUKAN KOMA
+  // ==========================================================================
+  //
+  // Pengukuran di PA Donggala: 573 nama saksi MEMUAT KOMA - "Idris, S.H.I.",
+  // gelar di belakang nama, dan sejenisnya - sedangkan tidak satu pun memuat
+  // tanda pipa. Memakai koma sebagai pemisah berarti satu saksi bergelar
+  // terpecah menjadi dua saksi pada layar, dan jumlahnya ikut salah.
+  //
+  // CONVERT USING utf8 dipakai karena alasan yang sama dengan kueri putusan:
+  // GROUP_CONCAT menolak campuran collation, dan penolakannya baru terjadi
+  // saat kueri dijalankan.
   const rows = await runQuery(
     `SELECT k.perkara_id AS perkaraId,
             SUM(CASE WHEN k.saksi_pihak_ke = 1 THEN 1 ELSE 0 END) AS pihak1,
-            SUM(CASE WHEN k.saksi_pihak_ke = 2 THEN 1 ELSE 0 END) AS pihak2
+            SUM(CASE WHEN k.saksi_pihak_ke = 2 THEN 1 ELSE 0 END) AS pihak2,
+            GROUP_CONCAT(CASE WHEN k.saksi_pihak_ke = 1 THEN CONVERT(k.nama USING utf8) END
+                         ORDER BY k.urutan ASC SEPARATOR '|') AS nama1,
+            GROUP_CONCAT(CASE WHEN k.saksi_pihak_ke = 2 THEN CONVERT(k.nama USING utf8) END
+                         ORDER BY k.urutan ASC SEPARATOR '|') AS nama2
        FROM perkara_pihak5 k
       WHERE k.perkara_id IN (${isian})
       GROUP BY k.perkara_id`,
     dipakai
   );
 
+  const pecah = (nilai) =>
+    String(nilai || "")
+      .split("|")
+      .map((x) => cleanText(x))
+      .filter(Boolean);
+
   const hasil = {};
   for (const baris of Array.isArray(rows) ? rows : []) {
     hasil[String(baris.perkaraId)] = {
       diajukanPihak1: Number(baris.pihak1) || 0,
       diajukanPihak2: Number(baris.pihak2) || 0,
+      namaPihak1: pecah(baris.nama1),
+      namaPihak2: pecah(baris.nama2),
     };
   }
   return hasil;
