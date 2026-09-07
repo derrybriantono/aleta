@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.89.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.89.0 - Jadwal Sidang, Mediasi, dan Tiga Bug yang Diam";
+export const APP_VERSION = "1.89.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.89.1 - Tombol Reset Saringan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,27 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.89.1",
+    title: "ALETA Judicia v1.89.1 - Tombol Reset Saringan",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Tombol yang melepas seluruh saringan pada Jadwal Sidang dulu bertuliskan angka beserta kata Seluruh sidang, sehingga terbaca sebagai keterangan jumlah - bukan sebagai tombol yang dapat ditekan. Sekarang ia menyebut apa yang dikerjakannya dan ke berapa perkara ia mengembalikan.",
+    added: [],
+    changed: [
+      "Tombol Seluruh sidang menjadi tombol Reset yang menyebut jumlah perkara yang akan muncul kembali - berbunyi Reset kembali ke 21 perkara. Saat tidak ada saringan yang menyala ia kembali menjadi keterangan jumlah dan tidak dapat ditekan, supaya tidak mengundang tekanan yang tidak menghasilkan apa-apa.",
+    ],
+    fixed: [
+      "Keadaan mati dan tampilan tombol itu dulu dihitung dari dua daftar yang berbeda - yang mematikannya memeriksa empat hal, yang mewarnainya hanya dua. Akibatnya tombol yang masih dapat ditekan tampil seperti tombol mati. Keduanya kini berasal dari satu sumber yang sama.",
+      "Keempat penyaring pada kartu rincian - jenis, tahap, majelis, ruang - kini ikut menyalakan tombol Reset. Merekalah yang paling mudah tertinggal menyala tanpa disadari, karena letaknya di dalam panel yang dapat ditutup.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Rentang tanggal dan kotak Cari di atas sengaja tidak ikut dilepas. Keduanya menentukan apa yang diambil dari SIPP, bukan apa yang disembunyikan dari yang sudah diambil - melepasnya berarti memuat ulang tanpa diminta.",
+    ],
+    knownLimitations: [],
+  },
   {
     version: "1.89.0",
     title: "ALETA Judicia v1.89.0 - Jadwal Sidang, Mediasi, dan Tiga Bug yang Diam",

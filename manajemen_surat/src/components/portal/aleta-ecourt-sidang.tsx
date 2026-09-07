@@ -20,6 +20,7 @@ import {
   ListOrdered,
   MonitorPlay,
   Printer,
+  RotateCcw,
   X,
 } from "lucide-react";
 
@@ -1777,6 +1778,34 @@ export function AletaEcourtSidang({
   const [lanjutTerbuka, setLanjutTerbuka] = useState(false);
   const cariLanjut = useCariLanjut();
 
+  /**
+   * Ada tidaknya saringan yang sedang menyempitkan daftar.
+   *
+   * Satu sumber kebenaran, dipakai tombol Reset untuk MATI-HIDUPnya sekaligus
+   * TAMPILANNYA. Sebelumnya keduanya dihitung terpisah: yang mematikan tombol
+   * memeriksa empat hal, yang mewarnainya hanya dua - sehingga tombol yang
+   * masih dapat ditekan tampil seperti tombol mati, dan tulisannya pun
+   * berubah pada saat yang berbeda dari warnanya.
+   *
+   * Keempat penyaring kartu ikut dihitung. Merekalah yang paling mudah
+   * tertinggal menyala tanpa disadari - letaknya di dalam panel yang dapat
+   * ditutup, sehingga daftar dapat tampak kosong tanpa satu pun saringan
+   * terlihat di layar.
+   *
+   * Rentang tanggal dan kotak Cari di atas sengaja TIDAK ikut: keduanya
+   * menentukan apa yang DIAMBIL dari SIPP, bukan apa yang disembunyikan dari
+   * yang sudah diambil.
+   */
+  const adaSaringan =
+    Boolean(alurTerpilih) ||
+    keadaanTerpilih.length > 0 ||
+    Boolean(cariCepat) ||
+    cariLanjut.jumlahAktif > 0 ||
+    Boolean(saringJenis) ||
+    Boolean(saringTahap) ||
+    Boolean(saringMajelis) ||
+    Boolean(saringRuang);
+
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
       sekarang.includes(kunci)
@@ -1934,8 +1963,12 @@ export function AletaEcourtSidang({
     (!saringMajelis || rincianMajelis.some((x) => x.nama === saringMajelis && x.cocok(baris))) &&
     (!saringRuang || rincianRuang.some((x) => x.nama === saringRuang && x.cocok(baris)));
 
-  const adaSaringan = Boolean(saringJenis || saringTahap || saringMajelis || saringRuang);
-  const sidangTersaring = adaSaringan ? sidangTerpilih.filter(cocokSaringan) : sidangTerpilih;
+  // HANYA keempat penyaring kartu - bukan seluruh saringan. Dinamai begitu
+  // supaya tidak tertukar dengan adaSaringan di atas, yang mencakup semuanya:
+  // dua nama yang sama dengan arti berbeda pada satu berkas adalah cara
+  // tercepat membuat panel keterangan menyebut saringan yang tidak berlaku.
+  const adaSaringanKartu = Boolean(saringJenis || saringTahap || saringMajelis || saringRuang);
+  const sidangTersaring = adaSaringanKartu ? sidangTerpilih.filter(cocokSaringan) : sidangTerpilih;
 
   // ==========================================================================
   // DAFTAR YANG DIGAMBAR TABEL
@@ -2470,20 +2503,37 @@ export function AletaEcourtSidang({
             ))}
 
             {/* ============================================================
-                SELURUH SIDANG MELEPAS SEMUANYA, BUKAN SEBAGIAN
+                TOMBOL RESET - MENYEBUT KE BERAPA PERKARA IA MENGEMBALIKAN
                 ============================================================
 
-                Sebelumnya tombol ini hanya melepas alur dan keempat penyaring
-                kartu - keadaan yang terpilih, kotak saring, dan pencarian
-                lanjutan tetap menyala. Akibatnya menekan "Seluruh sidang"
-                tetap menyisakan daftar yang tersaring, dan tombol yang
-                menjanjikan "seluruh" lalu tidak menampilkan seluruhnya
-                membuat orang menyangka datanya yang hilang.
+                Dulu bertuliskan "Seluruh sidang" beserta angkanya, dan itu
+                membingungkan karena bunyinya seperti KETERANGAN, bukan
+                perintah: orang membacanya sebagai "hari ini ada 21 sidang"
+                lalu tidak pernah tahu tombol itu dapat ditekan.
 
-                Sekarang ia melepas SEMUA yang menyempitkan tampilan. Yang
-                TIDAK dilepas hanya rentang tanggal dan kotak Cari di atas:
-                keduanya menentukan apa yang diambil dari SIPP, bukan apa yang
-                disembunyikan dari yang sudah diambil - dan melepasnya berarti
+                Sekarang ia menyebut apa yang akan dikerjakannya - "Reset" -
+                dan ke berapa perkara ia mengembalikan. Angkanya penting:
+                sesudah tiga saringan menyala, yang ingin diketahui sebelum
+                menekan adalah berapa yang akan muncul kembali.
+
+                Saat tidak ada saringan, ia berhenti menjadi tombol dan
+                kembali menjadi keterangan jumlah - tidak ada yang perlu
+                direset, dan tombol mati yang tetap berbunyi "Reset" hanya
+                mengundang tekanan yang tidak menghasilkan apa-apa.
+
+                ============================================================
+                YANG DILEPAS DAN YANG TIDAK
+                ============================================================
+
+                Dilepas SEMUA yang menyempitkan tampilan: alur, keadaan,
+                keempat penyaring kartu, kotak saring, dan pencarian lanjutan.
+                Sebelumnya hanya sebagian, sehingga tombol yang menjanjikan
+                "seluruh" tetap menyisakan daftar tersaring - dan yang
+                disalahkan biasanya datanya.
+
+                TIDAK dilepas: rentang tanggal dan kotak Cari di atas.
+                Keduanya menentukan apa yang DIAMBIL dari SIPP, bukan apa yang
+                disembunyikan dari yang sudah diambil, dan melepasnya berarti
                 memuat ulang tanpa diminta. */}
             <button
               type="button"
@@ -2494,28 +2544,37 @@ export function AletaEcourtSidang({
                 setCariCepat("");
                 cariLanjut.bersihkan();
               }}
-              disabled={
-                !alurTerpilih &&
-                keadaanTerpilih.length === 0 &&
-                !cariCepat &&
-                cariLanjut.jumlahAktif === 0
-              }
+              disabled={!adaSaringan}
               className={cn(
-                "inline-flex items-baseline gap-1.5 rounded-lg border border-dashed px-2.5 py-1 text-sm transition",
-                alurTerpilih || keadaanTerpilih.length > 0
-                  ? "hover:border-primary/50 hover:bg-muted/50"
+                "inline-flex items-center gap-1.5 rounded-lg border border-dashed px-2.5 py-1 text-sm transition",
+                adaSaringan
+                  ? "border-primary/40 text-foreground hover:border-primary/60 hover:bg-muted/50"
                   : "cursor-default text-muted-foreground"
               )}
               title={
-                alurTerpilih || keadaanTerpilih.length > 0
-                  ? "Lepaskan seluruh saringan"
-                  : "Jumlah sidang hari ini"
+                adaSaringan
+                  ? `Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`
+                  : "Jumlah sidang pada rentang ini"
               }
             >
-              <span className="font-semibold tabular-nums">{sidang.length}</span>
-              <span>
-                {alurTerpilih || keadaanTerpilih.length > 0 ? "Semua sidang" : "Seluruh sidang"}
-              </span>
+              {adaSaringan ? (
+                <>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset</span>
+                  <span className="text-muted-foreground">
+                    kembali ke{" "}
+                    <span className="font-semibold tabular-nums text-foreground">
+                      {sidang.length}
+                    </span>{" "}
+                    perkara
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold tabular-nums">{sidang.length}</span>
+                  <span>perkara</span>
+                </>
+              )}
             </button>
           </div>
         ) : null}
@@ -2636,7 +2695,7 @@ export function AletaEcourtSidang({
                 Daftar yang menyusut tanpa keterangan terbaca sebagai data yang
                 hilang, dan yang dilaporkan kemudian bukan "saya lupa melepas
                 saringan" melainkan "perkaranya tidak muncul". */}
-            {adaSaringan ? (
+            {adaSaringanKartu ? (
               <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
                 <span className="font-medium">
                   Disaring: {sidangTersaring.length} dari {sidangTerpilih.length} sidang
