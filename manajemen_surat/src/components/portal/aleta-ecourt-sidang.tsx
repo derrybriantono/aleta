@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -421,6 +421,52 @@ function agendaElitigasi(agenda: string): boolean {
 }
 
 /**
+ * Agenda yang menandai perkara sedang MENUJU PUTUSAN hari itu.
+ *
+ * ============================================================================
+ * KENAPA MERAH, DAN KENAPA TERPISAH DARI e-LITIGASI
+ * ============================================================================
+ *
+ * Musyawarah majelis, pembacaan putusan, pembacaan penetapan, dan putusan sela
+ * adalah hari yang menentukan: majelis harus lengkap, naskahnya harus siap,
+ * dan tidak ada yang dapat ditunda tanpa penetapan. Merah di layar ini berarti
+ * "menuntut perhatian hari ini", dan agenda-agenda ini memang begitu.
+ *
+ * Daftar polanya SAMA dengan yang dipakai penanda e-Litigasi - tetapi hanya
+ * sebagian, dan syaratnya berbeda:
+ *
+ *   e-Litigasi  menuntut perkaranya terdaftar e-Court. Yang ditanya "hari ini
+ *               tahapannya dipertukarkan lewat aplikasi atau tidak".
+ *   Musyawarah  TIDAK menuntut apa pun selain agendanya. Perkara biasa maupun
+ *               e-Court sama-sama bermusyawarah dan sama-sama membacakan
+ *               putusan, dan keduanya sama-sama menuntut kesiapan.
+ *
+ * Karena itu keduanya berdiri sendiri-sendiri meski polanya beririsan. Satu
+ * sidang dapat tertandai keduanya sekaligus, dan itu memang benar.
+ */
+const AGENDA_MUSYAWARAH = [
+  /musyawarah/i,
+  /pembacaan\s+(putusan|penetapan)/i,
+  // "Pembacaan putusan" sudah tertangkap pola di atas; yang ini menangkap
+  // penulisan lain yang benar-benar ada di SIPP - "Putusan", "Penetapan",
+  // dan "Putusan Sela" tanpa kata pembacaan di depannya.
+  /\bputusan\b/i,
+  /\bpenetapan\b/i,
+];
+
+// Sidang ikrar talak SENGAJA tidak masuk. Ia memang hari yang menentukan -
+// talak diucapkan dan perceraian berlaku sejak saat itu - tetapi ia bukan
+// musyawarah dan bukan pembacaan putusan; putusannya sudah dijatuhkan jauh
+// sebelumnya. Memasukkannya menambah 57 sidang merah pada 2026 saja, dan
+// penanda merah yang menyala di mana-mana berhenti menuntut perhatian.
+
+function agendaMusyawarah(agenda: string): boolean {
+  const teks = String(agenda || "");
+  if (!teks) return false;
+  return AGENDA_MUSYAWARAH.some((pola) => pola.test(teks));
+}
+
+/**
  * Penanda e-Litigasi yang sesungguhnya: perkara e-Court DAN agenda elektronik.
  *
  * ============================================================================
@@ -526,7 +572,7 @@ function nilaiUrutSidang(
       // Yang belum mengambil dan yang tanpa antrian sama-sama dikembalikan
       // kosong, sehingga keduanya jatuh ke bawah tanpa memandang arah - yang
       // dicari saat mengurut kolom ini memang yang sudah punya nomor.
-      const punya = antrian[String(baris.perkaraId)];
+      const punya = antrianUntuk(antrian, baris);
       return punya && punya.nomor ? punya.nomor : "";
     }
     case "perkara":
@@ -661,11 +707,20 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     cocok: (x) => x.urutanSidang <= 1,
   },
   {
-    kunci: "agenda-putusan",
-    label: "Agenda putusan",
-    nada: "sejuk",
-    judul: "Agendanya pembacaan putusan - berpeluang selesai hari ini.",
-    cocok: (x) => /putus/i.test(x.agenda || ""),
+    // Menggantikan "Agenda putusan" yang dulu bernada sejuk dan hanya
+    // mencocokkan kata "putus". Nadanya dinaikkan menjadi bahaya karena
+    // artinya memang begitu: hari ini majelis harus lengkap dan naskahnya
+    // harus siap, dan tidak ada yang dapat ditunda tanpa penetapan.
+    //
+    // Tidak ditambahkan sebagai kotak KEDUA di sebelah yang lama - dua kotak
+    // yang menyaring hal yang hampir sama membuat pembacanya menduga ada
+    // bedanya, lalu mencari beda yang tidak ada.
+    kunci: "musyawarah-majelis",
+    label: "Musyawarah Majelis",
+    nada: "bahaya",
+    judul:
+      "Agendanya musyawarah majelis, pembacaan putusan, pembacaan penetapan, atau putusan sela - majelis harus lengkap dan naskahnya harus siap.",
+    cocok: (x) => agendaMusyawarah(x.agenda || ""),
   },
   {
     kunci: "e-litigasi",
@@ -702,14 +757,14 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     label: "Sudah ambil antrian",
     nada: "sejuk",
     judul: "Pihaknya sudah mengambil nomor antrian, dalam jaringan maupun di mesin antrian.",
-    cocok: (x, antrian) => Boolean(antrian[String(x.perkaraId)]?.nomor),
+    cocok: (x, antrian) => Boolean(antrianUntuk(antrian, x)?.nomor),
   },
   {
     kunci: "antri-online",
     label: "Antrian online",
     nada: "sejuk",
     judul: "Antriannya diambil lewat WhatsApp, bukan di mesin antrian.",
-    cocok: (x, antrian) => Boolean(antrian[String(x.perkaraId)]?.online),
+    cocok: (x, antrian) => Boolean(antrianUntuk(antrian, x)?.online),
   },
   {
     kunci: "belum-antri",
@@ -718,10 +773,15 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     judul:
       "Terdaftar di mesin antrian, tetapi belum ada pihak yang mengambil nomor. Perkara yang memang tidak memakai antrian tidak ikut terhitung.",
     cocok: (x, antrian) => {
-      const punya = antrian[String(x.perkaraId)];
+      const punya = antrianUntuk(antrian, x);
       // Perkara yang TIDAK terdaftar di mesin antrian sama sekali tidak ikut
       // - ia bukan "belum mengambil", ia memang tidak memakai antrian.
-      return Boolean(punya) && !punya.nomor;
+      //
+      // Ditulis sebagai perbandingan, bukan Boolean(): Boolean() tidak
+      // menyempitkan tipe, dan sebelumnya ini lolos hanya karena akses indeks
+      // Record mengaku selalu mengembalikan nilai. Sesudah pencocokan tanggal,
+      // "tidak ada" menjadi kemungkinan yang sebenarnya.
+      return punya !== undefined && !punya.nomor;
     },
   },
 ];
@@ -751,7 +811,7 @@ function cocokCariLanjutSidang(
   antrian: Record<string, AntrianBaris>
 ) {
   const pihak = [...baris.pihak.penggugat, ...baris.pihak.tergugat].join(" ");
-  const nomorAntrian = antrian[String(baris.perkaraId)]?.nomor ?? null;
+  const nomorAntrian = antrianUntuk(antrian, baris)?.nomor ?? null;
   const petugas = `${baris.paniteraNama} ${baris.jurusitaNama}`;
   const majelis = `${baris.majelisKode} ${baris.majelisNama}`;
 
@@ -1080,11 +1140,64 @@ const LAYAR_OPERATOR: Array<{ jalur: string; nama: string; guna: string }> = [
   { jalur: "/antrian-ruang", nama: "Antrian per ruang", guna: "Halaman cepat dari ponsel" },
 ];
 
+/**
+ * Menu turun yang menutup ketika ditekan di luar dirinya.
+ *
+ * ============================================================================
+ * SATU KAIT UNTUK KEDUA MENU
+ * ============================================================================
+ *
+ * Menu Tampilan dan menu Antrian sebelumnya hanya dapat ditutup dengan menekan
+ * tombolnya sekali lagi. Menekan di tempat lain tidak berpengaruh, sehingga
+ * menu yang terbuka menutupi baris jadwal di bawahnya sampai penekannya ingat
+ * harus kembali ke tombol asalnya.
+ *
+ * Ditulis sekali dan dipakai keduanya. Dua salinan perilaku yang sama akan
+ * sama-sama bekerja, lalu pada suatu hari satu menu menutup sementara yang
+ * lain tidak - untuk gerakan yang persis sama.
+ *
+ * mousedown, BUKAN click: penutupan harus terjadi sebelum tekanan itu sempat
+ * mengenai apa pun di bawahnya, supaya menutup menu tidak sekaligus menekan
+ * tombol di baris jadwal yang kebetulan berada di belakangnya.
+ *
+ * Escape ikut menutup - kebiasaan yang sudah dimiliki setiap menu, dan
+ * ketiadaannya baru terasa saat tangan sudah di papan ketik.
+ */
+function useTutupSaatDiLuar(terbuka: boolean, tutup: () => void) {
+  const wadah = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!terbuka) return;
+
+    const diLuar = (peristiwa: MouseEvent | TouchEvent) => {
+      const sasaran = peristiwa.target as Node | null;
+      if (!wadah.current || !sasaran) return;
+      if (!wadah.current.contains(sasaran)) tutup();
+    };
+    const tombolEscape = (peristiwa: KeyboardEvent) => {
+      if (peristiwa.key === "Escape") tutup();
+    };
+
+    document.addEventListener("mousedown", diLuar);
+    document.addEventListener("touchstart", diLuar);
+    document.addEventListener("keydown", tombolEscape);
+    return () => {
+      document.removeEventListener("mousedown", diLuar);
+      document.removeEventListener("touchstart", diLuar);
+      document.removeEventListener("keydown", tombolEscape);
+    };
+  }, [terbuka, tutup]);
+
+  return wadah;
+}
+
 function MenuLayarAntrian() {
   const [terbuka, setTerbuka] = useState(false);
+  const tutup = useCallback(() => setTerbuka(false), []);
+  const wadah = useTutupSaatDiLuar(terbuka, tutup);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={wadah}>
       <Button size="sm" variant="outline" onClick={() => setTerbuka((buka) => !buka)}>
         <MonitorPlay className="mr-1.5 h-4 w-4" />
         Tampilan
@@ -1132,6 +1245,41 @@ function MenuLayarAntrian() {
  * saksi - dan dikirim apa adanya ke bot, yang menolak nilai di luar ketiganya.
  * Labelnya dipakai layar, dan jamnya menjadi keterangan pada tombol resetnya.
  */
+/**
+ * Antrian milik SIDANG INI - bukan sekadar milik perkaranya.
+ *
+ * ============================================================================
+ * SATU PERKARA BERSIDANG BERKALI-KALI; ANTRIANNYA MILIK SATU HARI
+ * ============================================================================
+ *
+ * Peta antrian dikunci menurut perkara_id saja, sebab aplikasi antrian hanya
+ * memuat baris hari berjalan. Tetapi JADWAL dapat dibuka pada tanggal mana
+ * pun, dan perkara yang sama kerap bersidang lagi beberapa hari kemudian.
+ *
+ * Tanpa pencocokan tanggal, membuka jadwal esok hari menampilkan nomor antrian
+ * dan jam kehadiran yang sebenarnya milik HARI INI. Perkara 216/Pdt.P/2026
+ * memperlihatkannya: barisnya di aplikasi antrian bertanggal 7 September dengan
+ * P, T, dan saksi hadir pukul 08:43 - dan angka itu ikut tergambar pada jadwal
+ * 8 September, seolah para pihak sudah hadir untuk sidang yang belum terjadi.
+ *
+ * Akibatnya bukan sekadar salah tampil: perkara itu ikut terhitung pada kotak
+ * "Sudah ambil antrian", dan petugas yang menyiapkan sidang esok menyangka
+ * para pihaknya sudah datang.
+ *
+ * Tanggal yang tidak terbaca dianggap TIDAK cocok - gagal-tertutup. Antrian
+ * adalah keterangan tambahan; menampilkannya saat ragu lebih merugikan
+ * daripada tidak menampilkannya sama sekali.
+ */
+function antrianUntuk(
+  peta: Record<string, AntrianBaris> | undefined,
+  baris: { perkaraId: string; tanggalSidang: string }
+): AntrianBaris | undefined {
+  const punya = peta?.[String(baris.perkaraId)];
+  if (!punya) return undefined;
+  if (!punya.tanggalSidang || !baris.tanggalSidang) return undefined;
+  return punya.tanggalSidang === baris.tanggalSidang ? punya : undefined;
+}
+
 function sisiTerisi(antrian: AntrianBaris | undefined) {
   if (!antrian) return [];
   return [
@@ -1157,6 +1305,10 @@ function TombolAmbilAntrian({
   const [terbuka, setTerbuka] = useState(false);
   const [sibuk, setSibuk] = useState("");
   const [pesan, setPesan] = useState("");
+
+  // Menutup saat ditekan di luar - kait yang sama dengan menu Tampilan.
+  const tutup = useCallback(() => setTerbuka(false), []);
+  const wadah = useTutupSaatDiLuar(terbuka, tutup);
 
   const antrianSisi = sisiTerisi(antrian);
 
@@ -1245,7 +1397,7 @@ function TombolAmbilAntrian({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={wadah}>
       <button
         type="button"
         onClick={(peristiwa) => {
@@ -3157,7 +3309,7 @@ export function AletaEcourtSidang({
                         <td className="px-2 py-2 align-top">
                           <SelAntrianJam
                             baris={baris}
-                            antrian={antrian.peta[String(baris.perkaraId)]}
+                            antrian={antrianUntuk(antrian.peta, baris)}
                             tanggalTampil={dari}
                           />
 
@@ -3169,8 +3321,8 @@ export function AletaEcourtSidang({
                           <div className="mt-1">
                             <TombolAmbilAntrian
                               baris={baris}
-                              antrian={antrian.peta[String(baris.perkaraId)]}
-                              sudahAda={antrian.peta[String(baris.perkaraId)]?.nomor}
+                              antrian={antrianUntuk(antrian.peta, baris)}
+                              sudahAda={antrianUntuk(antrian.peta, baris)?.nomor}
                               onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
                             />
                           </div>

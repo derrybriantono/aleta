@@ -438,3 +438,141 @@ describe("jalur reset ada apa adanya di layanan bot", () => {
     expect(isi).toContain("AND dibatalkan_pada IS NULL");
   });
 });
+
+// ---------------------------------------------------------------------------
+// ANTRIAN MILIK SATU HARI, DAN AGENDA YANG MENUNTUT KESIAPAN
+// ---------------------------------------------------------------------------
+
+/** Salinan antrianUntuk dari aleta-ecourt-sidang.tsx. */
+function antrianUntuk(
+  peta: Record<string, { tanggalSidang: string; nomor: number | null }> | undefined,
+  baris: { perkaraId: string; tanggalSidang: string }
+) {
+  const punya = peta?.[String(baris.perkaraId)];
+  if (!punya) return undefined;
+  if (!punya.tanggalSidang || !baris.tanggalSidang) return undefined;
+  return punya.tanggalSidang === baris.tanggalSidang ? punya : undefined;
+}
+
+/** Salinan AGENDA_MUSYAWARAH dari aleta-ecourt-sidang.tsx. */
+const AGENDA_MUSYAWARAH = [
+  /musyawarah/i,
+  /pembacaan\s+(putusan|penetapan)/i,
+  /\bputusan\b/i,
+  /\bpenetapan\b/i,
+];
+
+function agendaMusyawarah(agenda: string): boolean {
+  const teks = String(agenda || "");
+  if (!teks) return false;
+  return AGENDA_MUSYAWARAH.some((pola) => pola.test(teks));
+}
+
+describe("antrian hanya berlaku pada hari sidangnya sendiri", () => {
+  // Keadaan yang benar-benar terjadi: perkara 216/Pdt.P/2026 punya baris
+  // antrian bertanggal 7 September dengan P, T, dan saksi hadir 08:43 - dan
+  // angka itu ikut tergambar pada jadwal 8 September, seolah para pihak sudah
+  // hadir untuk sidang yang belum terjadi.
+  const peta = { "10060": { tanggalSidang: "2026-09-07", nomor: 6 } };
+
+  it("tanggal cocok - antriannya dipakai", () => {
+    expect(
+      antrianUntuk(peta, { perkaraId: "10060", tanggalSidang: "2026-09-07" })?.nomor
+    ).toBe(6);
+  });
+
+  it("tanggal berbeda - antriannya TIDAK dipakai", () => {
+    expect(antrianUntuk(peta, { perkaraId: "10060", tanggalSidang: "2026-09-08" })).toBeUndefined();
+  });
+
+  it("perkara yang tidak ada di mesin antrian tetap kosong", () => {
+    expect(antrianUntuk(peta, { perkaraId: "9999", tanggalSidang: "2026-09-07" })).toBeUndefined();
+  });
+
+  it("tanggal yang tidak terbaca dianggap TIDAK cocok", () => {
+    // Gagal-tertutup. Antrian adalah keterangan tambahan; menampilkannya saat
+    // ragu lebih merugikan daripada tidak menampilkannya.
+    expect(antrianUntuk(peta, { perkaraId: "10060", tanggalSidang: "" })).toBeUndefined();
+    expect(
+      antrianUntuk({ "10060": { tanggalSidang: "", nomor: 6 } }, {
+        perkaraId: "10060",
+        tanggalSidang: "2026-09-07",
+      })
+    ).toBeUndefined();
+  });
+
+  it("peta yang belum termuat tidak meledak", () => {
+    expect(antrianUntuk(undefined, { perkaraId: "10060", tanggalSidang: "2026-09-07" })).toBeUndefined();
+  });
+});
+
+describe("agenda yang menuntut majelis lengkap dan naskah siap", () => {
+  it("musyawarah dan pembacaan dikenali", () => {
+    for (const agenda of [
+      "Musyawarah Majelis",
+      "musyawarah majelis",
+      "Pembacaan putusan",
+      "Pembacaan Penetapan",
+      "Putusan Sela",
+      "Penetapan",
+    ]) {
+      expect(agendaMusyawarah(agenda), agenda).toBe(true);
+    }
+  });
+
+  it("sidang ikrar talak TIDAK ikut merah", () => {
+    // Ia hari yang menentukan, tetapi bukan musyawarah dan bukan pembacaan
+    // putusan - putusannya sudah dijatuhkan jauh sebelumnya. Memasukkannya
+    // menambah 57 sidang merah pada 2026 saja, dan penanda merah yang menyala
+    // di mana-mana berhenti menuntut perhatian.
+    expect(agendaMusyawarah("SIDANG IKRAR TALAK")).toBe(false);
+  });
+
+  it("agenda persidangan biasa tidak ikut merah", () => {
+    for (const agenda of [
+      "Panggil Tergugat",
+      "Pemeriksaan Pokok Perkara",
+      "Pembuktian Penggugat",
+      "Mediasi",
+      "Jawaban Termohon",
+      "",
+    ]) {
+      expect(agendaMusyawarah(agenda), agenda).toBe(false);
+    }
+  });
+});
+
+describe("ketiganya ada apa adanya di komponen", () => {
+  const berkasKomponen = path.resolve(
+    process.cwd(),
+    "src/components/portal/aleta-ecourt-sidang.tsx"
+  );
+
+  it("tidak ada lagi pembacaan antrian yang melewati pencocokan tanggal", () => {
+    const isi = readFileSync(berkasKomponen, "utf8");
+    expect(isi).toContain("function antrianUntuk");
+    // Akses langsung ke peta akan melewati pencocokan tanggal, dan bug-nya
+    // kembali tanpa satu pun uji lain yang menuduh.
+    expect(isi).not.toContain("antrian.peta[String(baris.perkaraId)]");
+    expect(isi).not.toContain("antrian[String(x.perkaraId)]");
+    expect(isi).not.toContain("antrian[String(baris.perkaraId)]");
+  });
+
+  it("menu turun menutup saat ditekan di luar", () => {
+    const isi = readFileSync(berkasKomponen, "utf8");
+    expect(isi).toContain("function useTutupSaatDiLuar");
+    // mousedown, bukan click: penutupan harus terjadi sebelum tekanan itu
+    // sempat mengenai tombol di baris jadwal di belakangnya.
+    expect(isi).toContain('document.addEventListener("mousedown", diLuar)');
+    // Dipakai KEDUA menu - bukan satu saja.
+    expect(isi.split("useTutupSaatDiLuar(terbuka, tutup)").length - 1).toBe(2);
+  });
+
+  it("penanda musyawarah bernada bahaya, bukan sejuk", () => {
+    const isi = readFileSync(berkasKomponen, "utf8");
+    expect(isi).toContain('kunci: "musyawarah-majelis"');
+    expect(isi).toContain('label: "Musyawarah Majelis"');
+    // Kotak lama yang bernada sejuk sudah diganti, bukan ditambahi kotak kedua.
+    expect(isi).not.toContain('kunci: "agenda-putusan"');
+  });
+});

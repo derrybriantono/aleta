@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.91.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.91.0 - Reset Kehadiran dan Kedudukan Pihak";
+export const APP_VERSION = "1.92.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.92.0 - Antrian Milik Satu Hari";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,32 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.92.0",
+    title: "ALETA Judicia v1.92.0 - Antrian Milik Satu Hari",
+    date: "2026-09-07",
+    status: "Operasional",
+    summary:
+      "Nomor antrian dan jam kehadiran hari ini ikut tergambar pada jadwal tanggal lain, seolah para pihak sudah hadir untuk sidang yang belum terjadi. Sekalian: menu turun kini menutup ketika ditekan di luar, dan agenda musyawarah majelis serta pembacaan putusan ditandai merah.",
+    added: [
+      "Kotak saringan Musyawarah Majelis bernada merah untuk agenda musyawarah majelis, pembacaan putusan, pembacaan penetapan, dan putusan sela - hari yang menuntut majelis lengkap dan naskah siap.",
+    ],
+    changed: [
+      "Menu Tampilan dan menu Antrian menutup ketika ditekan di luar dirinya, dan ketika tombol Escape ditekan. Sebelumnya satu-satunya cara menutupnya adalah menekan tombolnya sekali lagi.",
+      "Kotak Agenda putusan yang dulu bernada sejuk digantikan kotak Musyawarah Majelis bernada merah - bukan ditambahi kotak kedua yang menyaring hal hampir sama.",
+    ],
+    fixed: [
+      "Nomor antrian dan jam kehadiran suatu perkara ikut tampil pada jadwal tanggal LAIN. Peta antrian dikunci menurut nomor perkara saja, sementara jadwal dapat dibuka pada tanggal mana pun - dan perkara yang sama kerap bersidang lagi beberapa hari kemudian. Perkara 216/Pdt.P/2026 memperlihatkannya: barisnya bertanggal 7 September dengan penggugat, tergugat, dan saksi hadir pukul 08:43, dan angka itu tergambar pada jadwal 8 September.",
+      "Akibat lanjutannya ikut diperbaiki: perkara semacam itu tidak lagi terhitung pada kotak Sudah ambil antrian, sehingga petugas yang menyiapkan sidang esok tidak lagi menyangka para pihaknya sudah datang.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tanggal antrian yang tidak terbaca dianggap tidak cocok - antrian adalah keterangan tambahan, dan menampilkannya saat ragu lebih merugikan daripada tidak menampilkannya.",
+    ],
+    knownLimitations: [
+      "Sidang ikrar talak sengaja tidak ikut ditandai merah. Ia hari yang menentukan, tetapi bukan musyawarah dan bukan pembacaan putusan - putusannya sudah dijatuhkan jauh sebelumnya, dan memasukkannya menambah 57 sidang merah pada 2026 saja.",
+    ],
+  },
   {
     version: "1.91.0",
     title: "ALETA Judicia v1.91.0 - Reset Kehadiran dan Kedudukan Pihak",
