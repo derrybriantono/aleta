@@ -483,6 +483,48 @@ async function petugasDiblokir() {
   }
 }
 
+/**
+ * ============================================================================
+ * BERAPA SIDANG YANG SUDAH ADA PADA TANGGAL ITU
+ * ============================================================================
+ *
+ * Menetapkan hari sidang tanpa mengetahui hari itu sudah seberapa penuh adalah
+ * cara paling mudah menumpuk dua puluh perkara pada satu hari sementara hari
+ * berikutnya kosong. Petugas yang menetapkan tidak dapat melihatnya - kalender
+ * SIPP menunjukkan jadwal satu perkara, bukan beban satu hari.
+ *
+ * Yang dihitung sidang yang BELUM ditunda pada tanggal itu - sidang yang sudah
+ * ditandai ditunda tidak lagi menempati hari itu, dan menghitungnya membuat
+ * hari yang sebenarnya lengang tampak penuh.
+ *
+ * Dihitung sekaligus untuk seluruh tanggal calon dalam satu kueri. Empat kueri
+ * terpisah untuk empat tanggal akan berlipat menjadi delapan begitu calonnya
+ * ditambah, dan tidak seorang pun akan menyadarinya sampai papan terasa berat.
+ */
+async function jumlahSidangPerTanggal(daftarTanggal) {
+  const tanggal = [...new Set((daftarTanggal || []).filter(Boolean))];
+  if (tanggal.length === 0) return new Map();
+  if (!(await sippSkemaService.tabelAda("perkara_jadwal_sidang"))) return new Map();
+
+  const isian = tanggal.map(() => "?").join(", ");
+  const rows = await runQuery(
+    `SELECT DATE(j.tanggal_sidang) AS tanggal,
+            COUNT(*) AS jumlah,
+            SUM(CASE WHEN j.ruangan_id IS NOT NULL THEN 1 ELSE 0 END) AS berruang
+       FROM perkara_jadwal_sidang j
+      WHERE DATE(j.tanggal_sidang) IN (${isian})
+        AND j.ditunda = 'T'
+      GROUP BY DATE(j.tanggal_sidang)`,
+    tanggal
+  ).catch(() => []);
+
+  const peta = new Map();
+  for (const row of rows || []) {
+    peta.set(isoTanggal(row.tanggal), Number(row.jumlah) || 0);
+  }
+  return peta;
+}
+
 /** Seluruh hakim yang masih aktif, untuk daftar pilihan manual. */
 async function daftarHakimAktif() {
   if (!(await sippSkemaService.tabelAda("hakim_pn"))) return [];
@@ -1234,11 +1276,28 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
               sebut: sebutTanggal(iso),
               usulan: maju === 0,
               pekan: maju / 7,
+              // Diisi sesudah seluruh calonnya tersusun - lihat di bawah.
+              jumlahSidang: null,
             };
           })
           .filter(Boolean)
       : [],
   };
+
+  // Beban tiap tanggal calon. Dibaca sesudah calonnya tersusun, dalam satu
+  // kueri untuk seluruh tanggal - lihat jumlahSidangPerTanggal().
+  //
+  // Gagal membaca meninggalkan jumlahSidang bernilai null, dan layar
+  // menampilkan tanggalnya tanpa angka beban. Itu jawaban yang benar: "tidak
+  // tahu" bukan "kosong", dan tanggal yang tampak lengang padahal penuh akan
+  // menumpuk sidang justru pada hari yang paling sibuk.
+  if (phs.calon.length > 0) {
+    const beban = await jumlahSidangPerTanggal(phs.calon.map((x) => x.tanggal));
+    for (const satu of phs.calon) {
+      const angka = beban.get(satu.tanggal);
+      satu.jumlahSidang = angka === undefined ? null : angka;
+    }
+  }
 
   /**
    * Tanggal penetapan keempatnya.
@@ -1662,6 +1721,7 @@ module.exports = {
   smartMajelisPerkara,
   susunanMajelisTetap,
   petugasDiblokir,
+  jumlahSidangPerTanggal,
   susunPmh,
   tanggalSidangPertama,
   tentukanSusunan,

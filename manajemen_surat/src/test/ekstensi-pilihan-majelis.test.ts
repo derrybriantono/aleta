@@ -251,3 +251,83 @@ describe("catatan menyebut mana yang dipilih tangan", () => {
     expect(konten()).toContain("const dipilihTangan = (medan) => {");
   });
 });
+
+describe("PHS: beban hari dan tanggal bebas", () => {
+  /**
+   * Menetapkan hari sidang tanpa mengetahui hari itu sudah seberapa penuh
+   * adalah cara paling mudah menumpuk dua puluh perkara pada satu hari
+   * sementara hari berikutnya kosong. Kalender SIPP menunjukkan jadwal satu
+   * PERKARA, bukan beban satu HARI.
+   */
+  it("jumlah sidang tiap tanggal calon dibaca dari SIPP", () => {
+    const isi = layanan();
+    expect(isi).toContain("async function jumlahSidangPerTanggal(daftarTanggal)");
+    expect(isi).toContain("FROM perkara_jadwal_sidang j");
+  });
+
+  it("yang sudah ditunda tidak ikut dihitung", () => {
+    // Sidang yang ditandai ditunda tidak lagi menempati hari itu, dan
+    // menghitungnya membuat hari yang sebenarnya lengang tampak penuh.
+    expect(layanan()).toContain("AND j.ditunda = 'T'");
+  });
+
+  it("seluruh tanggal dihitung dalam SATU kueri", () => {
+    // Empat kueri terpisah akan berlipat menjadi delapan begitu calonnya
+    // ditambah, dan tidak seorang pun menyadarinya sampai papan terasa berat.
+    const isi = layanan();
+    const potong = isi.slice(isi.indexOf("async function jumlahSidangPerTanggal"));
+    expect(potong.slice(0, 1400)).toContain("DATE(j.tanggal_sidang) IN (${isian})");
+  });
+
+  it("gagal membaca meninggalkan null, bukan nol", () => {
+    // Tanggal yang tampak lengang padahal penuh akan menumpuk sidang justru
+    // pada hari yang paling sibuk.
+    const isi = layanan();
+    expect(isi).toContain("satu.jumlahSidang = angka === undefined ? null : angka;");
+    expect(konten()).toContain('return "beban belum terbaca";');
+  });
+
+  it("bebannya ikut tertulis pada tiap pilihan tanggal", () => {
+    expect(konten()).toContain("` · ${sebutBeban(x)}`");
+  });
+});
+
+describe("PHS: tanggal bebas ada, tetapi di balik saklar", () => {
+  /**
+   * Keempat calon adalah hari sidang majelis itu sendiri. Tanggal sembarang
+   * menghasilkan penetapan hari sidang pada hari majelis itu TIDAK bersidang -
+   * bukan kelonggaran, melainkan kekeliruan.
+   *
+   * Tetapi keadaan yang menuntutnya memang ada: sidang keliling, hari libur
+   * nasional, atau majelis yang harinya sedang diubah. Karena itu ia ada, di
+   * balik saklar, dengan peringatan yang terbaca pada saat memilihnya.
+   */
+  it("saklarnya ada dan tidak menyala sendiri", () => {
+    const isi = konten();
+    expect(isi).toContain("Pilih tanggal sendiri dari kalender");
+    expect(isi).toContain("kotakBebas.checked = Boolean(pilihanManual.phsBebas);");
+  });
+
+  it("kalendernya tidak boleh memilih lebih awal dari usulan", () => {
+    // Usulan sudah hari sidang terdekat yang memenuhi jeda minimal menurut SK;
+    // memajukannya melanggar jeda itu.
+    expect(konten()).toContain("if (phs.usulan) kalender.min = phs.usulan;");
+  });
+
+  it("tanggal di luar hari majelis diperingatkan", () => {
+    expect(konten()).toContain("Tanggal ini di luar hari sidang majelis tersebut");
+  });
+
+  it("menutup saklarnya membuang tanggal bebas yang terlanjur dipilih", () => {
+    // Kalau tidak, tanggal bebas tetap terpakai diam-diam sementara
+    // kalendernya sudah tidak terlihat lagi.
+    expect(konten()).toContain("if (!kotakBebas.checked && !(phs.calon || [])");
+  });
+
+  it("baris PHS menampilkan tanggal pilihan, bukan usulan", () => {
+    // Tanpa itu barisnya menampilkan tanggal usulan sementara yang akan
+    // ditulis tanggal pilihan - selisih yang tidak terlihat sampai
+    // penetapannya sudah tersimpan.
+    expect(konten()).toContain("const phsTerbaca = phsDipilih");
+  });
+});

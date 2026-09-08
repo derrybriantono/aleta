@@ -1408,6 +1408,63 @@ tr.aleta-baris-disorot > td {
   height: 26px;
 }
 
+/* ==========================================================================
+   PILIHAN MANUAL - DROPDOWN ORANG DAN TANGGAL
+
+   Kelas-kelas ini dipakai sejak dropdown manual ada, tetapi gayanya tidak
+   pernah ditulis: yang tampil selama ini <select> bawaan peramban, yang pada
+   panel gelap muncul sebagai kotak putih terang - satu-satunya benda paling
+   mencolok di seluruh panel, dan justru bukan yang paling penting.
+
+   Baris label-dan-kotak, bukan bertumpuk: labelnya pendek ("Hakim", "Panitera
+   pengganti"), dan menaruhnya di baris sendiri menghabiskan tinggi panel untuk
+   satu kata. */
+.aleta-pilih {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 12px 6px;
+}
+
+.aleta-pilih-nama {
+  flex: 0 0 auto;
+  min-width: 5.5rem;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-pilih-kotak {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.aleta-pilih-kotak:focus {
+  outline: 2px solid var(--aleta-merek);
+  outline-offset: 1px;
+}
+
+/* Saklar tanggal bebas. Sengaja lebih kecil dan teredam daripada dropdown di
+   atasnya: ia jalan keluar, bukan pilihan yang setara. */
+.aleta-pilih-bebas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-pilih-bebas input { margin: 0; }
+.aleta-pilih-bebas:hover { color: var(--aleta-tulisan); }
+
 /* Tombol layar penuh dan mode logo - sebentuk dengan tombol kepala lainnya. */
 .aleta-penuh,
 .aleta-jadilogo {

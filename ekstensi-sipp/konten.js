@@ -1310,11 +1310,24 @@ function gambarPenunjukan(isi, data) {
   // --- PHS ---------------------------------------------------------------
   const phs = usulan.phs || {};
   const phsDipilih = (phs.calon || []).find((x) => x.tanggal === pilihanManual.phs);
+  // Tanggal yang dipilih sendiri dari kalender TIDAK ada di daftar calon.
+  // Tanpa cabang ini, barisnya tetap menampilkan tanggal usulan sementara yang
+  // akan ditulis tanggal pilihan - selisih yang tidak terlihat sampai
+  // penetapannya sudah tersimpan.
+  const phsTerbaca = phsDipilih
+    ? phsDipilih.sebut
+    : pilihanManual.phs
+      ? pilihanManual.phs
+      : phs.sebut;
+  const bebanTerpilih =
+    phsDipilih && phsDipilih.jumlahSidang !== null && phsDipilih.jumlahSidang !== undefined
+      ? ` · ${phsDipilih.jumlahSidang} sidang pada hari itu`
+      : "";
   isi.appendChild(
     barisPenetapan(
       "PHS",
-      phsDipilih ? phsDipilih.sebut : phs.sebut,
-      phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : ""),
+      phsTerbaca,
+      phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : "") + bebanTerpilih,
       "",
       penetapUntuk(data, "phs")
     )
@@ -1328,12 +1341,32 @@ function gambarPenunjukan(isi, data) {
   // sesudahnya. Hari sembarang akan menghasilkan penetapan hari sidang pada
   // hari majelis itu tidak bersidang.
   if (data.caraPapan === "manual" && (phs.calon || []).length > 1) {
+    // ======================================================================
+    // BERAPA SIDANG YANG SUDAH ADA PADA TANGGAL ITU
+    // ======================================================================
+    //
+    // Menetapkan hari sidang tanpa mengetahui hari itu sudah seberapa penuh
+    // adalah cara paling mudah menumpuk dua puluh perkara pada satu hari
+    // sementara hari berikutnya kosong. Kalender SIPP menunjukkan jadwal satu
+    // PERKARA, bukan beban satu HARI.
+    //
+    // Yang tidak terbaca ditulis apa adanya sebagai "beban belum terbaca",
+    // bukan sebagai nol. Tanggal yang tampak lengang padahal penuh akan
+    // menumpuk sidang justru pada hari yang paling sibuk.
+    const sebutBeban = (x) => {
+      if (x.jumlahSidang === null || x.jumlahSidang === undefined) return "beban belum terbaca";
+      if (x.jumlahSidang === 0) return "belum ada sidang";
+      return `${x.jumlahSidang} sidang`;
+    };
+
     isi.appendChild(
       pilihanOrang(
         "Hari sidang",
         phs.calon.map((x) => ({
           id: x.tanggal,
-          label: x.usulan ? `${x.sebut} — usulan` : `${x.sebut} — mundur ${x.pekan} pekan`,
+          label:
+            `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` +
+            ` · ${sebutBeban(x)}`,
         })),
         pilihanManual.phs ?? "",
         (nilai) => {
@@ -1343,6 +1376,77 @@ function gambarPenunjukan(isi, data) {
         }
       )
     );
+
+    // ======================================================================
+    // TANGGAL BEBAS - DI BALIK SAKLAR, BUKAN BERDAMPINGAN
+    // ======================================================================
+    //
+    // Keempat calon di atas adalah hari sidang majelis itu sendiri. Tanggal
+    // sembarang menghasilkan penetapan hari sidang pada hari majelis itu TIDAK
+    // bersidang - dan itu bukan kelonggaran, itu kekeliruan.
+    //
+    // Tetapi keadaan yang menuntutnya memang ada: sidang keliling yang harinya
+    // menyesuaikan kecamatan, hari libur nasional yang menggeser seluruh
+    // jadwal, atau majelis yang harinya sedang diubah dan belum tercatat.
+    //
+    // Karena itu ia ADA tetapi di balik saklar. Yang membukanya melakukannya
+    // dengan sadar, dan peringatannya dibaca pada saat yang sama - bukan
+    // sesudah penetapannya terlanjur tersimpan.
+    const saklarBebas = buatElemen("label", "aleta-pilih-bebas");
+    const kotakBebas = document.createElement("input");
+    kotakBebas.type = "checkbox";
+    kotakBebas.checked = Boolean(pilihanManual.phsBebas);
+    saklarBebas.appendChild(kotakBebas);
+    saklarBebas.appendChild(
+      buatElemen("span", "aleta-pilih-bebas-nama", "Pilih tanggal sendiri dari kalender")
+    );
+    isi.appendChild(saklarBebas);
+
+    if (pilihanManual.phsBebas) {
+      const barisBebas = buatElemen("div", "aleta-pilih");
+      barisBebas.appendChild(buatElemen("span", "aleta-pilih-nama", "Tanggal"));
+
+      const kalender = document.createElement("input");
+      kalender.type = "date";
+      kalender.className = "aleta-pilih-kotak";
+      kalender.value = pilihanManual.phs || phs.usulan || "";
+      // Tidak boleh lebih awal dari usulan: usulan sudah hari sidang terdekat
+      // yang memenuhi jeda minimal menurut SK, dan memajukannya melanggar jeda
+      // itu. Kalender yang membiarkannya menjadikan pelanggaran itu semudah
+      // satu klik.
+      if (phs.usulan) kalender.min = phs.usulan;
+      kalender.addEventListener("change", () => {
+        pilihanManual.phs = kalender.value;
+        isi.textContent = "";
+        gambarPenunjukan(isi, data);
+      });
+      barisBebas.appendChild(kalender);
+      isi.appendChild(barisBebas);
+
+      const dipilihBebas = pilihanManual.phs;
+      const adaDiCalon = (phs.calon || []).some((x) => x.tanggal === dipilihBebas);
+      if (dipilihBebas && !adaDiCalon) {
+        isi.appendChild(
+          buatElemen(
+            "div",
+            "aleta-tetap-awas",
+            "Tanggal ini di luar hari sidang majelis tersebut. Pastikan majelisnya memang bersidang hari itu."
+          )
+        );
+      }
+    }
+
+    kotakBebas.addEventListener("change", () => {
+      pilihanManual.phsBebas = kotakBebas.checked;
+      // Menutup saklarnya mengembalikan pilihan ke calon - kalau tidak,
+      // tanggal bebas yang sudah terpilih tetap terpakai diam-diam sementara
+      // kalendernya sudah tidak terlihat lagi.
+      if (!kotakBebas.checked && !(phs.calon || []).some((x) => x.tanggal === pilihanManual.phs)) {
+        pilihanManual.phs = "";
+      }
+      isi.textContent = "";
+      gambarPenunjukan(isi, data);
+    });
   }
 
   // --- keempatnya setanggal ----------------------------------------------
