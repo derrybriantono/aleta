@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.3.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.3.0 - Jam Penetapan Diambil dari Basis Data";
+export const APP_VERSION = "2.4.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.4.0 - Ruang Sidang Dikenali Layanan Skema";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,28 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.4.0",
+    title: "ALETA Judicia v2.4.0 - Ruang Sidang Dikenali Layanan Skema",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Cacat kedua yang ditemukan hasil kering: penetapan hari sidang ditolak dengan alasan ruang sidangnya tidak ketemu, padahal tabelnya ada dan berisi tiga belas ruang aktif. Sebabnya tabel itu tidak pernah didaftarkan pada layanan skema.",
+    added: [],
+    changed: [],
+    fixed: [
+      "ruangan_sidang tidak tercantum pada daftar tabel yang dikenali sippSkemaService. Daftar itu satu-satunya sumber jawaban tabelAda(), dan tabel yang tidak tercantum SELALU dijawab tidak ada - tanpa galat, tanpa peringatan. Akibatnya seluruh penetapan hari sidang lewat ALETA akan ditolak, dan pesannya menyesatkan: ia menyalahkan ruangnya, bukan daftarnya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Cacat ini pun tertangkap hasil kering pada perkara sungguhan, bukan pada uji satuan - uji satuannya memalsukan layanan skema, jadi memang tidak mungkin menangkapnya. Dua cacat dari dua kali menjalankan kering, dan keduanya tidak menimbulkan galat apa pun.",
+      "Penjaga baru: tiap tabel pada daftar putih jalur tulis WAJIB tercantum pada daftar layanan skema. Menambah tabel ke jalur tulis tanpa mendaftarkannya kini tertangkap uji, bukan di hadapan petugas yang sedang menetapkan perkara.",
+      "59 pemeriksaan jalur tulis lulus.",
+    ],
+    knownLimitations: [
+      "Tombol Kerjakan pada ekstensi masih BELUM disambungkan ke jalur tulis.",
+    ],
+  },
   {
     version: "2.3.0",
     title: "ALETA Judicia v2.3.0 - Jam Penetapan Diambil dari Basis Data",

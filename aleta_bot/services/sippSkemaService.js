@@ -124,6 +124,12 @@ const TABEL = [
   "ref_sk_majelis_tetap",
   "ref_kompetensi_majelis",
   "perkara_penetapan_hari_sidang",
+  // Ruang sidang. Tertinggal dari daftar ini sampai hasil kering penetapan
+  // hari sidang menolak dengan "ruangan_tidak_ketemu" - padahal tabelnya ada
+  // dan berisi tiga belas ruang aktif. Daftar di atas adalah SATU-SATUNYA
+  // tabel yang dikenali layanan skema; yang tidak tercantum di sini selalu
+  // dijawab "tidak ada", tanpa galat dan tanpa peringatan.
+  "ruangan_sidang",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

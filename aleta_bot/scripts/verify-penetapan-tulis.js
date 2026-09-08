@@ -345,6 +345,26 @@ async function utama() {
   );
 
   // -------------------------------------------------------------------------
+  console.log("Tabel yang disentuh harus dikenali layanan skema");
+
+  // Tertangkap pada hasil kering PHS atas perkara sungguhan: penetapan hari
+  // sidang ditolak "ruangan_tidak_ketemu" padahal ruangan_sidang ada dan
+  // berisi tiga belas ruang aktif. Sebabnya tabel itu tidak tercantum pada
+  // daftar TABEL milik sippSkemaService - dan tabel yang tidak tercantum di
+  // sana SELALU dijawab "tidak ada", tanpa galat dan tanpa peringatan.
+  //
+  // Karena itu keduanya dijaga bersama: menambah tabel ke jalur tulis tanpa
+  // mendaftarkannya di layanan skema akan tertangkap di sini, bukan di
+  // hadapan petugas yang sedang menetapkan perkara.
+  const fs = require("fs");
+  const sumberSkema = fs.readFileSync(require.resolve("../services/sippSkemaService"), "utf8");
+  const perluDikenali = [...tulis.DAFTAR_TABEL].filter((x) => x !== "sys_audittrail");
+  const tambahan = ["ruangan_sidang", "hakim_pn", "panitera_pn", "jurusita", "sys_users"];
+  for (const nama of [...perluDikenali, ...tambahan]) {
+    cek(`skema mengenali ${nama}`, sumberSkema.includes(`"${nama}",`), true);
+  }
+
+  // -------------------------------------------------------------------------
   console.log("Daftar putih tabel");
 
   const diluar = rencana.langkah.filter((x) => !tulis.DAFTAR_TABEL.has(x.tabel));
