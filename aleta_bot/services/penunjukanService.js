@@ -511,6 +511,124 @@ async function smartMajelisPerkara(perkaraId) {
  * tidak ikut: hakim yang banyak duduk sebagai anggota majelis bukan berarti
  * sudah kebagian perkara hakim tunggal.
  */
+/**
+ * ============================================================================
+ * BEBAN HAKIM PADA PERKARA BERMAJELIS
+ * ============================================================================
+ *
+ * bebanHakimTunggal() sengaja hanya menghitung perkara yang hakimnya SENDIRIAN
+ * - HAVING COUNT(*) = 1. Itu benar untuk usulan hakim tunggal, tetapi menjadi
+ * angka yang menyesatkan begitu kolam hakim dibuka pada perkara bermajelis:
+ * hakim yang setahun ini duduk pada 271 majelis akan tampak berbeban nol.
+ *
+ * Karena itu bebannya dihitung terpisah, dengan syarat yang persis kebalikan.
+ * Keduanya tidak boleh dijumlahkan begitu saja - satu perkara bermajelis
+ * membebani tiga orang sekaligus, sedangkan perkara hakim tunggal membebani
+ * satu; menjumlahkannya menyamakan dua hal yang tidak sama beratnya.
+ */
+async function bebanHakimMajelis(tahun) {
+  if (!(await sippSkemaService.tabelAda("perkara_hakim_pn"))) return new Map();
+
+  const rows = await runQuery(
+    `SELECT hp.hakim_id AS hakimId, COUNT(*) AS jumlah
+       FROM perkara_hakim_pn hp
+       JOIN (
+              SELECT perkara_id
+                FROM perkara_hakim_pn
+               WHERE aktif = 'Y' AND tahapan_id = ? AND YEAR(tanggal_penetapan) = ?
+               GROUP BY perkara_id
+              HAVING COUNT(*) > 1
+            ) AS bermajelis ON bermajelis.perkara_id = hp.perkara_id
+      WHERE hp.aktif = 'Y' AND hp.tahapan_id = ? AND YEAR(hp.tanggal_penetapan) = ?
+      GROUP BY hp.hakim_id`,
+    [TAHAPAN_TINGKAT_PERTAMA, tahun, TAHAPAN_TINGKAT_PERTAMA, tahun]
+  ).catch(() => []);
+
+  const peta = new Map();
+  for (const row of rows) peta.set(Number(row.hakimId) || 0, Number(row.jumlah) || 0);
+  return peta;
+}
+
+/**
+ * ============================================================================
+ * SUSUNAN MAJELIS YANG BENAR-BENAR DIPAKAI - BUKAN YANG TERTULIS DI SK
+ * ============================================================================
+ *
+ * ref_majelis_tetap adalah tempat SIPP menyimpan susunan majelis menurut SK.
+ * Di PA Donggala tabel itu berisi 106 baris dan TIDAK SATU PUN aktif, sehingga
+ * susunanMajelisTetap() memulangkan "susunan_majelis_kosong". Menawarkan
+ * pilihan majelis dari sana berarti menawarkan daftar kosong.
+ *
+ * Yang ada justru kenyataannya: susunan yang dipakai berulang-ulang sepanjang
+ * tahun, terbaca dari perkara_hakim_pn. Diukur untuk 2026:
+ *
+ *   Himawan · Idris · Derry        271 perkara
+ *   Sudarmin · Idris · Derry       109
+ *   Akbar Ali · Idris · Derry       79
+ *   Abdul Salam · Himawan · Derry   51
+ *   Fahri · Himawan · Derry         42
+ *
+ * Itulah yang ditawarkan. Urutannya tetap urutan SIPP (kolom urutan), sebab
+ * urutan itulah yang membedakan ketua dari anggota - mengurutkannya menurut
+ * nama akan menukar ketua dengan anggota tanpa ada yang menyadarinya.
+ *
+ * Hanya susunan yang SELURUH anggotanya masih aktif yang ditawarkan. Susunan
+ * yang memuat hakim yang sudah pindah tetap terbaca di riwayat, tetapi
+ * menawarkannya sebagai pilihan berarti menawarkan penetapan yang pasti
+ * ditolak SIPP.
+ */
+async function susunanMajelisTerpakai(tahun, hakimAktif = [], batas = 12) {
+  if (!(await sippSkemaService.tabelAda("perkara_hakim_pn"))) {
+    return { terbaca: false, alasan: "tabel_hakim_pn_tidak_ada", susunan: [] };
+  }
+
+  const rows = await runQuery(
+    `SELECT susunan, anggota, COUNT(*) AS perkara FROM (
+        SELECT hp.perkara_id AS perkara_id,
+               GROUP_CONCAT(hp.hakim_id ORDER BY hp.urutan ASC SEPARATOR ',') AS susunan,
+               COUNT(*) AS anggota
+          FROM perkara_hakim_pn hp
+         WHERE hp.aktif = 'Y' AND hp.tahapan_id = ? AND YEAR(hp.tanggal_penetapan) = ?
+         GROUP BY hp.perkara_id
+        HAVING COUNT(*) > 1
+      ) AS t
+      GROUP BY susunan, anggota
+      ORDER BY perkara DESC
+      LIMIT 60`,
+    [TAHAPAN_TINGKAT_PERTAMA, tahun]
+  ).catch(() => []);
+
+  if (rows.length === 0) {
+    return { terbaca: false, alasan: "belum_ada_susunan_terpakai", susunan: [] };
+  }
+
+  const aktif = new Map(hakimAktif.map((x) => [Number(x.hakimId), x]));
+  const susunan = [];
+
+  for (const row of rows) {
+    const id = String(row.susunan || "")
+      .split(",")
+      .map((x) => Number(String(x).trim()))
+      .filter((x) => Number.isFinite(x) && x > 0);
+    if (id.length < 2) continue;
+    // Seluruh anggotanya harus masih aktif - lihat catatan di atas.
+    if (!id.every((x) => aktif.has(x))) continue;
+
+    susunan.push({
+      kunci: id.join("-"),
+      hakimId: id,
+      anggota: id.map((x) => {
+        const orang = aktif.get(x);
+        return { hakimId: x, kode: orang.kode, nama: orang.nama };
+      }),
+      perkara: Number(row.perkara) || 0,
+    });
+    if (susunan.length >= batas) break;
+  }
+
+  return { terbaca: susunan.length > 0, alasan: "", susunan };
+}
+
 async function bebanHakimTunggal(tahun) {
   if (!(await sippSkemaService.tabelAda("perkara_hakim_pn"))) return new Map();
 
@@ -872,8 +990,18 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
 
   const tahun = Number(String(identitas.tanggalDaftar || "").slice(0, 4)) || new Date().getFullYear();
 
-  const [penetapan, susunan, smart, hakimAktif, paniteraAktif, jurusita, panitera, beban, tercatat] =
-    await Promise.all([
+  const [
+    penetapan,
+    susunan,
+    smart,
+    hakimAktif,
+    paniteraAktif,
+    jurusita,
+    panitera,
+    beban,
+    bebanMajelis,
+    tercatat,
+  ] = await Promise.all([
       penetapanPerkara(identitas.perkaraId),
       susunanMajelisTetap(),
       smartMajelisPerkara(identitas.perkaraId),
@@ -882,8 +1010,13 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       giliranJurusita(tahun),
       giliranPanitera(tahun),
       bebanHakimTunggal(tahun),
+      bebanHakimMajelis(tahun),
       majelisTercatat(identitas.perkaraId),
     ]);
+
+  // Susunan yang benar-benar dipakai - menuntut daftar hakim aktif, jadi
+  // dibaca sesudahnya, bukan bersamaan.
+  const terpakai = await susunanMajelisTerpakai(tahun, hakimAktif);
 
   const bentuk = tentukanSusunan(identitas, aturan);
 
@@ -896,6 +1029,8 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     hakimAktif,
     namaHakim,
     beban,
+    bebanMajelis,
+    susunanTerpakai: terpakai.susunan,
     aturan,
   });
 
@@ -974,6 +1109,39 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
               86400000
           )
         : 0,
+    /**
+     * ======================================================================
+     * TANGGAL LAIN YANG MASIH SAH - SUPAYA PHS PUN DAPAT DIPILIH
+     * ======================================================================
+     *
+     * Sebelumnya PHS hanya berisi satu tanggal, tanpa alternatif, sehingga
+     * papan tidak punya apa pun untuk ditawarkan pada cara manual. Padahal
+     * PHS-lah yang paling sering perlu digeser: majelisnya berhalangan, atau
+     * hari itu sudah terlalu penuh.
+     *
+     * Yang ditawarkan hanya hari sidang majelis itu sendiri - pekan ini dan
+     * tiga pekan sesudahnya. Menawarkan hari sembarang akan menghasilkan
+     * penetapan hari sidang pada hari majelis itu tidak bersidang, dan itu
+     * bukan kelonggaran, itu kekeliruan.
+     *
+     * Yang lebih awal dari usulan TIDAK ditawarkan: usulan sudah merupakan
+     * hari sidang terdekat yang memenuhi jeda minimal menurut SK, dan
+     * memajukannya berarti melanggar jeda itu.
+     */
+    calon: tanggalSidang
+      ? [0, 7, 14, 21]
+          .map((maju) => {
+            const iso = geserHari(tanggalSidang, maju);
+            if (!iso) return null;
+            return {
+              tanggal: iso,
+              sebut: sebutTanggal(iso),
+              usulan: maju === 0,
+              pekan: maju / 7,
+            };
+          })
+          .filter(Boolean)
+      : [],
   };
 
   /**
@@ -1051,7 +1219,17 @@ function sebutKeadilan(orang) {
   return `${punya}, tepat sebanyak bagiannya${masa}`;
 }
 
-function susunPmh({ bentuk, smart, susunan, hakimAktif, namaHakim, beban, aturan }) {
+function susunPmh({
+  bentuk,
+  smart,
+  susunan,
+  hakimAktif,
+  namaHakim,
+  beban,
+  bebanMajelis,
+  susunanTerpakai,
+  aturan,
+}) {
   const dasar = {
     bentuk: bentuk.bentuk,
     sebab: bentuk.sebab,
@@ -1060,14 +1238,47 @@ function susunPmh({ bentuk, smart, susunan, hakimAktif, namaHakim, beban, aturan
     anggota: [],
     calon: hakimAktif,
     hitungan: [],
+    susunanTerpakai: [],
   };
 
   if (bentuk.bentuk === "belum-tentu") return dasar;
 
   // ---- bermajelis: mengikuti usulan smart majelis milik SIPP --------------
   if (bentuk.bentuk === "majelis") {
+    /**
+     * ======================================================================
+     * KOLAMNYA IKUT DIKIRIM, WALAU USULANNYA DARI SMART MAJELIS
+     * ======================================================================
+     *
+     * Sebelumnya cabang ini memulangkan hitungan KOSONG, dan papan hanya
+     * menggambar dropdown bila hitungannya lebih dari satu. Akibatnya perkara
+     * bermajelis - yaitu hampir seluruh perkara di pengadilan ini - tidak
+     * pernah punya pilihan hakim sama sekali, walau cara MANUAL dinyalakan.
+     *
+     * Yang dikirim di sini bukan usulan tandingan: usulan tetap milik smart
+     * majelis SIPP, dan tetap digambar lebih dulu. Yang ditambahkan hanya
+     * bahan untuk memilih yang lain - lima hakim aktif beserta beban majelis
+     * masing-masing, supaya penyimpangan dari usulan adalah keputusan yang
+     * berdasar, bukan tebakan.
+     *
+     * Bebannya beban MAJELIS, bukan beban hakim tunggal. Hakim yang setahun
+     * ini duduk pada 271 majelis akan tampak berbeban nol bila yang dipakai
+     * hitungan hakim tunggal.
+     */
+    const hitunganMajelis = hakimAktif
+      .map((orang) => ({
+        ...orang,
+        jumlah: (bebanMajelis && bebanMajelis.get(orang.hakimId)) || 0,
+      }))
+      .sort((a, b) => a.jumlah - b.jumlah || a.hakimId - b.hakimId);
+
     if (!smart.ada) {
-      return { ...dasar, sebab: `${bentuk.sebab} - ${smart.alasan}` };
+      return {
+        ...dasar,
+        sebab: `${bentuk.sebab} - ${smart.alasan}`,
+        hitungan: hitunganMajelis,
+        susunanTerpakai,
+      };
     }
     const anggota = smart.hakimId.map((id) => {
       const orang = namaHakim.get(id);
@@ -1082,6 +1293,8 @@ function susunPmh({ bentuk, smart, susunan, hakimAktif, namaHakim, beban, aturan
       ...dasar,
       majelisKode: anggota.length > 0 ? anggota[0].kode : "",
       anggota,
+      hitungan: hitunganMajelis,
+      susunanTerpakai,
       sebab: smart.diganti
         ? "usulan smart majelis, memakai penggantinya"
         : "usulan smart majelis",
@@ -1337,6 +1550,8 @@ module.exports = {
   bagianSemestinya,
   TAHAPAN_TINGKAT_PERTAMA,
   bebanHakimTunggal,
+  bebanHakimMajelis,
+  susunanMajelisTerpakai,
   daftarHakimAktif,
   daftarPaniteraAktif,
   geserHari,

@@ -752,24 +752,51 @@ function nilaiUntukBorang(formulir, usulan, pilihanManual = {}) {
   if (tanggal) nilai.tanggal_penetapan = tanggal;
 
   if (formulir === "pmh") {
+    // ======================================================================
+    // KETIGA KURSINYA DAPAT DIPILIH, BUKAN HANYA KETUA
+    // ======================================================================
+    //
+    // Sebelumnya pilihan manual hanya menimpa KETUA majelis - anggota 1 dan 2
+    // tetap dari usulan, apa pun yang dipilih petugas. Akibatnya "manual" pada
+    // perkara bermajelis tidak pernah benar-benar manual: yang dapat diubah
+    // sepertiga susunannya.
+    //
+    // Sekarang tiap kursi punya pilihannya sendiri, dan pilihan per-majelis
+    // mengisi ketiganya sekaligus.
     const anggota = (usulan.pmh && usulan.pmh.anggota) || [];
-    // Pilihan manual menimpa KETUA majelis - itulah satu-satunya yang dipilih
-    // pada kolam hakim tunggal. Anggota lain, bila ada, tetap dari usulannya.
-    const dipilih = pilihanDari(usulan.pmh && usulan.pmh.hitungan, pilihanManual.pmh);
-    if (dipilih) nilai.hakim_ketua = dipilih.nama;
-    else if (anggota[0]) nilai.hakim_ketua = anggota[0].nama;
-    if (anggota[1]) nilai.hakim_anggota_1 = anggota[1].nama;
-    if (anggota[2]) nilai.hakim_anggota_2 = anggota[2].nama;
+    const kolam = (usulan.pmh && usulan.pmh.hitungan) || [];
+    const susunanDipilih = susunanTerpilih(usulan.pmh, pilihanManual.majelis);
+
+    for (const [urutan, medan] of [
+      [0, "hakim_ketua"],
+      [1, "hakim_anggota_1"],
+      [2, "hakim_anggota_2"],
+    ]) {
+      // Urutan sumbernya disengaja: susunan majelis yang dipilih menang atas
+      // pilihan per-orang, dan keduanya menang atas usulan. Yang memilih satu
+      // susunan utuh sedang menyatakan maksud yang lebih besar daripada satu
+      // kursi, dan kursi yang tertinggal dari pilihan sebelumnya tidak boleh
+      // menyelinap masuk.
+      const dariSusunan = susunanDipilih ? susunanDipilih.anggota[urutan] : null;
+      const dariOrang = pilihanDari(kolam, (pilihanManual.pmhKursi || [])[urutan]);
+      const orang = dariSusunan || dariOrang || anggota[urutan];
+      if (orang && orang.nama) nilai[medan] = orang.nama;
+    }
   } else if (formulir === "ppp") {
-    const pp = pilihanDari(usulan.ppp && usulan.ppp.daftar, pilihanManual.ppp)
+    const pp = pilihanDari(usulan.ppp && usulan.ppp.calon, pilihanManual.ppp)
       || (usulan.ppp && usulan.ppp.usulan);
     if (pp) nilai.panitera = pp.nama;
   } else if (formulir === "pjs") {
-    const js = pilihanDari(usulan.pjs && usulan.pjs.daftar, pilihanManual.pjs)
+    const js = pilihanDari(usulan.pjs && usulan.pjs.calon, pilihanManual.pjs)
       || (usulan.pjs && usulan.pjs.usulan);
     if (js) nilai.jurusita = js.nama;
   } else if (formulir === "phs") {
-    const tanggalSidang = (usulan.phs && usulan.phs.usulan) || "";
+    // Tanggal yang dipilih hanya dipakai bila ia memang salah satu hari sidang
+    // majelis itu - kalau tidak, jatuh kembali ke usulan. Tanggal yang tidak
+    // ada di daftar berarti daftarnya berubah sesudah papan digambar.
+    const calon = (usulan.phs && usulan.phs.calon) || [];
+    const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);
+    const tanggalSidang = (dipilih && dipilih.tanggal) || (usulan.phs && usulan.phs.usulan) || "";
     if (tanggalSidang) nilai.tanggal_sidang = tanggalSidang;
   }
 
@@ -777,7 +804,7 @@ function nilaiUntukBorang(formulir, usulan, pilihanManual = {}) {
 }
 
 /** Baris catatan untuk satu formulir - apa yang diisikan, dan dari mana asalnya. */
-function barisCatatan(formulir, nilai, usulan) {
+function barisCatatan(formulir, nilai, usulan, pilihanManual = {}) {
   const sebab =
     formulir === "pmh"
       ? (usulan.pmh && usulan.pmh.sebab) || ""
@@ -787,14 +814,35 @@ function barisCatatan(formulir, nilai, usulan) {
           ? (usulan.pjs && usulan.pjs.sebab) || ""
           : (usulan.phs && usulan.phs.sebab) || "";
 
+  /**
+   * Apakah medan ini benar-benar berasal dari pilihan tangan.
+   *
+   * Bukan sekadar "cara papan sedang manual": petugas dapat menyalakan manual
+   * lalu tidak mengubah apa pun, dan mencatat seluruhnya sebagai pilihan
+   * tangan akan menghapus jejak bahwa usulan ALETA-lah yang dipakai. Yang
+   * dicatat manual hanya medan yang memang ada pilihannya.
+   */
+  const dipilihTangan = (medan) => {
+    if (formulir === "ppp") return Boolean(pilihanManual.ppp);
+    if (formulir === "pjs") return Boolean(pilihanManual.pjs);
+    if (formulir === "phs") return medan === "tanggal_sidang" && Boolean(pilihanManual.phs);
+    if (formulir === "pmh") {
+      if (pilihanManual.majelis) return medan.startsWith("hakim_");
+      const kursi = pilihanManual.pmhKursi || [];
+      const urutan = { hakim_ketua: 0, hakim_anggota_1: 1, hakim_anggota_2: 2 }[medan];
+      return urutan !== undefined && Boolean(kursi[urutan]);
+    }
+    return false;
+  };
+
   return Object.entries(nilai).map(([medan, isi]) => ({
     jenis: formulir,
     medan,
     nilai: String(isi),
-    // Tahap ini belum punya pilihan manual, jadi seluruhnya usulan otomatis.
-    // Begitu pilihan manual ada, inilah yang membedakan keduanya.
-    asal: "otomatis",
-    alasan: sebab,
+    asal: dipilihTangan(medan) ? "manual" : "otomatis",
+    alasan: dipilihTangan(medan)
+      ? `${sebab} · diubah tangan${pilihanManual.majelis && formulir === "pmh" ? " lewat pilihan majelis" : ""}`
+      : sebab,
   }));
 }
 
@@ -977,6 +1025,21 @@ function barisPenetapan(judul, isiTeks, sebab, peringatan, penetap) {
  * (misalnya sesudah papan dimuat ulang dan kolamnya berubah) tidak boleh
  * menghasilkan penetapan tanpa nama.
  */
+/**
+ * Susunan majelis yang sedang dipilih, atau null.
+ *
+ * Kuncinya rangkaian hakim_id yang disambung tanda hubung - dibuat di layanan,
+ * bukan di sini, supaya kunci yang dikirim balik pasti cocok dengan yang
+ * ditawarkan. Susunan yang kuncinya sudah tidak ada di daftar - misalnya
+ * sesudah salah seorang hakimnya pindah - memulangkan null, dan pemanggilnya
+ * jatuh kembali ke pilihan per-orang atau ke usulan.
+ */
+function susunanTerpilih(pmh, kunci) {
+  if (!kunci) return null;
+  const daftar = (pmh && pmh.susunanTerpakai) || [];
+  return daftar.find((x) => x.kunci === kunci) || null;
+}
+
 function pilihanDari(daftar, pengenal) {
   if (!Array.isArray(daftar) || !pengenal) return null;
   return (
@@ -1079,23 +1142,42 @@ function gambarPenunjukan(isi, data) {
     );
   }
 
-  // Pada cara manual, kolam hakim dibuka sebagai pilihan. Hanya bila kolamnya
-  // memang lebih dari satu orang - dropdown berisi satu nama tidak menawarkan
-  // pilihan apa pun, ia hanya menambah satu baris yang harus dibaca.
-  if (data.caraPapan === "manual" && (pmh.hitungan || []).length > 1) {
+  // ========================================================================
+  // PILIHAN HAKIM: PER MAJELIS ATAU PER ORANG
+  // ========================================================================
+  //
+  // Dua cara memilih hakim, dan keduanya memang diperlukan:
+  //
+  //   per majelis  - satu tekanan mengganti ketiganya sekaligus, memakai
+  //                  susunan yang memang dipakai sehari-hari;
+  //   per orang    - satu kursi diganti sementara dua lainnya tetap, misalnya
+  //                  ketika seorang anggota berhalangan.
+  //
+  // Susunan yang ditawarkan BUKAN dari SK. Tabel ref_majelis_tetap di
+  // pengadilan ini berisi 106 baris dan tidak satu pun aktif, jadi menawarkan
+  // susunan menurut SK berarti menawarkan daftar kosong. Yang ditawarkan
+  // susunan yang benar-benar dipakai tahun ini - dan itu memang yang diminta:
+  // tidak terikat SK.
+  const bolehPilihHakim = data.caraPapan === "manual" && (pmh.hitungan || []).length > 1;
+  const adaSusunan = ((pmh.susunanTerpakai || []).length) > 0;
+
+  if (bolehPilihHakim && adaSusunan) {
     isi.appendChild(
-      pilihanOrang(
-        "Hakim",
-        pmh.hitungan.map((x) => ({
-          id: x.hakimId ?? x.id ?? x.nama,
-          label: `${x.nama} — ${x.jumlah} perkara`,
-        })),
-        pilihanManual.pmh ?? "",
+      saklarPapan(
+        "Pilih",
+        [
+          { nilai: "majelis", label: "Per majelis" },
+          { nilai: "orang", label: "Per orang" },
+        ],
+        pilihanManual.caraHakim || "majelis",
         (nilai) => {
-          pilihanManual.pmh = nilai;
-          // Menggambar ulang, sama seperti PPP dan PJS: tombol Kerjakan
-          // disiapkan sekali saat papan digambar, jadi pilihan yang tidak
-          // menggambar ulang akan tampil berubah tetapi mengisi nilai lama.
+          pilihanManual.caraHakim = nilai;
+          // Berpindah cara MEMBUANG pilihan cara sebelumnya. Menyimpannya
+          // diam-diam membuat susunan yang tidak terlihat lagi tetap mengisi
+          // formulir - persis cacat yang sama sudah dihindari pada saklar
+          // Otomatis/Manual.
+          if (nilai === "majelis") pilihanManual.pmhKursi = [];
+          else pilihanManual.majelis = "";
           isi.textContent = "";
           gambarPenunjukan(isi, data);
         }
@@ -1103,9 +1185,71 @@ function gambarPenunjukan(isi, data) {
     );
   }
 
+  const caraHakim = adaSusunan ? pilihanManual.caraHakim || "majelis" : "orang";
+
+  if (bolehPilihHakim && adaSusunan && caraHakim === "majelis") {
+    isi.appendChild(
+      pilihanOrang(
+        "Majelis",
+        pmh.susunanTerpakai.map((x) => ({
+          id: x.kunci,
+          // Nama lengkap ketiganya, bukan kodenya: kode majelis di SIPP tidak
+          // tetap - A, B, C1 berpindah orang - dan yang memilih perlu melihat
+          // siapa, bukan huruf apa.
+          label: `${x.anggota.map((a) => a.nama).join(" · ")} — ${x.perkara} perkara`,
+        })),
+        pilihanManual.majelis ?? "",
+        (nilai) => {
+          pilihanManual.majelis = nilai;
+          isi.textContent = "";
+          gambarPenunjukan(isi, data);
+        }
+      )
+    );
+  }
+
+  if (bolehPilihHakim && caraHakim === "orang") {
+    // Tiga kursi, tiga dropdown. Yang sudah dipakai kursi lain digugurkan dari
+    // pilihan kursi berikutnya - satu orang tidak dapat menjadi ketua sekaligus
+    // anggota, dan SIPP akan menolaknya belakangan dengan galat yang tidak
+    // menyebut sebabnya.
+    const kursi = pilihanManual.pmhKursi || [];
+    const jumlahKursi = Math.max((pmh.anggota || []).length, 1);
+
+    for (let urutan = 0; urutan < jumlahKursi; urutan += 1) {
+      const dipakaiLain = kursi
+        .filter((_, i) => i !== urutan)
+        .map((x) => String(x))
+        .filter(Boolean);
+
+      isi.appendChild(
+        pilihanOrang(
+          urutan === 0 ? "Ketua" : `Anggota ${urutan}`,
+          pmh.hitungan
+            .filter((x) => !dipakaiLain.includes(String(x.hakimId ?? x.id ?? x.nama)))
+            .map((x) => ({
+              id: x.hakimId ?? x.id ?? x.nama,
+              label: `${x.nama} — ${x.jumlah} perkara`,
+            })),
+          kursi[urutan] ?? "",
+          (nilai) => {
+            const baru = [...(pilihanManual.pmhKursi || [])];
+            baru[urutan] = nilai;
+            pilihanManual.pmhKursi = baru;
+            // Menggambar ulang, sama seperti PPP dan PJS: tombol Kerjakan
+            // disiapkan sekali saat papan digambar, jadi pilihan yang tidak
+            // menggambar ulang akan tampil berubah tetapi mengisi nilai lama.
+            isi.textContent = "";
+            gambarPenunjukan(isi, data);
+          }
+        )
+      );
+    }
+  }
+
   // --- PPP ---------------------------------------------------------------
   const ppp = usulan.ppp || {};
-  const pppTerpilih = pilihanDari(ppp.daftar, pilihanManual.ppp) || ppp.usulan;
+  const pppTerpilih = pilihanDari(ppp.calon, pilihanManual.ppp) || ppp.usulan;
   isi.appendChild(
     barisPenetapan(
       "PPP",
@@ -1115,11 +1259,11 @@ function gambarPenunjukan(isi, data) {
       penetapUntuk(data, "ppp")
     )
   );
-  if (data.caraPapan === "manual" && (ppp.daftar || []).length > 1) {
+  if (data.caraPapan === "manual" && (ppp.calon || []).length > 1) {
     isi.appendChild(
       pilihanOrang(
         "Panitera pengganti",
-        ppp.daftar.map((x) => ({
+        ppp.calon.map((x) => ({
           id: x.id ?? x.paniteraId ?? x.nama,
           label: `${x.nama}${x.jumlah !== undefined ? ` — ${x.jumlah} perkara` : ""}`,
         })),
@@ -1135,7 +1279,7 @@ function gambarPenunjukan(isi, data) {
 
   // --- PJS ---------------------------------------------------------------
   const pjs = usulan.pjs || {};
-  const pjsTerpilih = pilihanDari(pjs.daftar, pilihanManual.pjs) || pjs.usulan;
+  const pjsTerpilih = pilihanDari(pjs.calon, pilihanManual.pjs) || pjs.usulan;
   isi.appendChild(
     barisPenetapan(
       "PJS",
@@ -1145,11 +1289,11 @@ function gambarPenunjukan(isi, data) {
       penetapUntuk(data, "pjs")
     )
   );
-  if (data.caraPapan === "manual" && (pjs.daftar || []).length > 1) {
+  if (data.caraPapan === "manual" && (pjs.calon || []).length > 1) {
     isi.appendChild(
       pilihanOrang(
         "Juru sita",
-        pjs.daftar.map((x) => ({
+        pjs.calon.map((x) => ({
           id: x.id ?? x.jurusitaId ?? x.nama,
           label: `${x.nama}${x.jumlah !== undefined ? ` — ${x.jumlah} perkara` : ""}`,
         })),
@@ -1165,15 +1309,41 @@ function gambarPenunjukan(isi, data) {
 
   // --- PHS ---------------------------------------------------------------
   const phs = usulan.phs || {};
+  const phsDipilih = (phs.calon || []).find((x) => x.tanggal === pilihanManual.phs);
   isi.appendChild(
     barisPenetapan(
       "PHS",
-      phs.sebut,
+      phsDipilih ? phsDipilih.sebut : phs.sebut,
       phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : ""),
       "",
       penetapUntuk(data, "phs")
     )
   );
+
+  // PHS-lah yang paling sering perlu digeser - majelisnya berhalangan, atau
+  // hari itu sudah terlalu penuh - dan sampai sekarang ia satu-satunya
+  // penetapan yang tidak dapat dipilih sama sekali.
+  //
+  // Yang ditawarkan hanya HARI SIDANG MAJELIS ITU, pekan ini dan tiga pekan
+  // sesudahnya. Hari sembarang akan menghasilkan penetapan hari sidang pada
+  // hari majelis itu tidak bersidang.
+  if (data.caraPapan === "manual" && (phs.calon || []).length > 1) {
+    isi.appendChild(
+      pilihanOrang(
+        "Hari sidang",
+        phs.calon.map((x) => ({
+          id: x.tanggal,
+          label: x.usulan ? `${x.sebut} — usulan` : `${x.sebut} — mundur ${x.pekan} pekan`,
+        })),
+        pilihanManual.phs ?? "",
+        (nilai) => {
+          pilihanManual.phs = nilai;
+          isi.textContent = "";
+          gambarPenunjukan(isi, data);
+        }
+      )
+    );
+  }
 
   // --- keempatnya setanggal ----------------------------------------------
   if (usulan.tanggalPenetapan) {
@@ -1610,7 +1780,7 @@ async function tutupTitipan(id, formulir) {
 }
 
 async function kerjakanBorang(rencana) {
-  const { tombol, kabar, formulir, nilai, medanBorang, medanSimpan, simpanOtomatis, usulan } =
+  const { tombol, kabar, formulir, nilai, medanBorang, medanSimpan, simpanOtomatis, usulan, data } =
     rencana;
   const idTitipan = rencana.idTitipan || "";
 
@@ -1632,7 +1802,7 @@ async function kerjakanBorang(rencana) {
         perkaraId: String((usulan.perkara && usulan.perkara.perkaraId) || ""),
         nomorPerkara: String((usulan.perkara && usulan.perkara.nomorPerkara) || ""),
         akunSipp: akunSipp(),
-        baris: barisCatatan(formulir, nilai, usulan),
+        baris: barisCatatan(formulir, nilai, usulan, (data && data.pilihanManual) || {}),
       }),
     });
     const isi = await respons.json();
