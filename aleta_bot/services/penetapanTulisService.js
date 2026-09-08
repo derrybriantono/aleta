@@ -147,6 +147,45 @@ function waktuMysql(saat = new Date()) {
   )}:${p(d.getSeconds())}`;
 }
 
+/**
+ * ============================================================================
+ * JAMNYA DIAMBIL DARI BASIS DATA, BUKAN DARI CONTAINER
+ * ============================================================================
+ *
+ * Tertangkap pada hasil kering pertama atas perkara sungguhan: pernyataan yang
+ * disusun bertanggal 04:54 sedangkan jam dinding pengadilan menunjukkan 12:54.
+ * Selisih delapan jam - persis jarak WITA ke UTC.
+ *
+ * Sebabnya halus. Container bot MEMANG memuat /etc/localtime dari host, dan
+ * `date` di dalamnya menjawab WITA dengan benar. Tetapi Node tidak membaca
+ * berkas itu bila env TZ tidak diset; ia jatuh ke UTC, dan tidak ada satu pun
+ * galat yang muncul:
+ *
+ *   host          2026-09-08 12:54:37 WITA
+ *   date          2026-09-08 12:54:37 WITA
+ *   node          Tue Sep 08 2026 04:54:37 GMT+0000
+ *
+ * Akibatnya seluruh diinput_tanggal dan seluruh baris sys_audittrail akan
+ * tercatat delapan jam sebelum kejadiannya - dan berselisih dengan baris SIPP
+ * di tabel yang sama, yang jamnya benar. Penilaian jeda penginputan yang
+ * menghitung selisih hari pun ikut goyah pada perkara yang diinput menjelang
+ * tengah malam.
+ *
+ * Karena itu jamnya ditanyakan kepada BASIS DATA - jam yang sama yang dipakai
+ * SIPP sendiri ketika menulis barisnya. Menyetel env TZ pada container juga
+ * akan membetulkannya, tetapi hanya sampai seseorang menyalin compose-nya ke
+ * mesin lain dan lupa membawanya.
+ */
+async function waktuBasisData() {
+  const baris = await runQuery(
+    "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') AS saat"
+  ).catch(() => []);
+  const saat = Array.isArray(baris) && baris[0] ? String(baris[0].saat || "") : "";
+  // Jatuh ke jam container hanya bila basis datanya tidak menjawab sama sekali -
+  // dan itu keadaan yang lebih besar masalahnya daripada zona waktu.
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(saat) ? saat : waktuMysql();
+}
+
 function tanggalSah(iso) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""));
 }
@@ -336,7 +375,7 @@ async function susunRencanaTulis(minta) {
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
-  const saat = waktuMysql();
+  const saat = await waktuBasisData();
   const ip = String(minta.ip || "127.0.0.1");
   const langkah = [];
 

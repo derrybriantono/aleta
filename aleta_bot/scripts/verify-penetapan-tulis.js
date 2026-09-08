@@ -323,6 +323,28 @@ async function utama() {
   );
 
   // -------------------------------------------------------------------------
+  console.log("Jam - diambil dari basis data, bukan dari container");
+
+  // Tertangkap pada hasil kering pertama atas perkara sungguhan: pernyataan
+  // bertanggal 04:54 sedangkan jam dinding pengadilan 12:54. Container memuat
+  // /etc/localtime dan `date` di dalamnya benar, tetapi Node jatuh ke UTC
+  // karena env TZ tidak diset - tanpa satu pun galat.
+  const dbJam = buatDb({ perkara: PERKARA_KOSONG, hakim: HAKIM });
+  const tulisJam = muat(dbJam);
+  await tulisJam.susunRencanaTulis({
+    jenis: "pmh",
+    perkaraId: 9909,
+    tanggalPenetapan: "2026-09-08",
+    hakimId: [26, 28, 31],
+    olehUsername: "fahri",
+    operator: "meja1g",
+  });
+  benar(
+    "jamnya ditanyakan ke basis data",
+    dbJam.direkam.some((x) => /DATE_FORMAT\(NOW\(\)/i.test(x.sql))
+  );
+
+  // -------------------------------------------------------------------------
   console.log("Daftar putih tabel");
 
   const diluar = rencana.langkah.filter((x) => !tulis.DAFTAR_TABEL.has(x.tabel));
