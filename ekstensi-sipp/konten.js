@@ -2192,268 +2192,36 @@ function bagianBacaBorang() {
 
 /**
  * ============================================================================
- * PENETAPAN YANG DAPAT ANDA TETAPKAN PADA PERKARA INI
+ * BAGIAN "PENETAPAN YANG DAPAT ANDA TETAPKAN" DIBUANG
  * ============================================================================
  *
- * Bagian ini dulu bernama "Menunggu penetapan Anda" dan membaca antrean
- * PENERUSAN - penetapan yang sengaja dititipkan orang lain kepada jabatan
- * Anda. Isinya benar, tetapi pertanyaannya salah: selama belum ada seorang pun
- * yang menekan "teruskan", kotaknya selalu kosong, dan yang membacanya
- * menyimpulkan fiturnya rusak.
+ * Bagian itu mencocokkan nama pengguna SIPP yang sedang masuk dengan pejabat
+ * yang berwenang menandatangani tiap penetapan, lalu menyebutkan mana yang
+ * "urusan Anda". Dasarnya satu anggapan: tiap pejabat membuka SIPP dengan
+ * akunnya sendiri, sehingga yang tercatat sebagai pengisi adalah dia.
  *
- * Yang sebenarnya ditanyakan ketika satu perkara sedang dibuka jauh lebih
- * sederhana: DARI KEEMPAT PENETAPAN PERKARA INI, MANA YANG URUSAN SAYA?
+ * Anggapan itu sudah tidak berlaku. Sejak ALETA menuliskan penetapan atas nama
+ * pejabatnya - keputusan pimpinan pengadilan ini - siapa yang sedang membuka
+ * SIPP tidak lagi menentukan apa pun. Operator yang mengerjakan, dan nama
+ * pejabatnya tetap yang tercatat.
  *
- * Jawabannya sudah ada di rencana kerja - tiap langkah menyebut akun yang
- * menandatanganinya, hasil penautan akun-jabatan, bukan tebakan dari nama.
- * Yang perlu dilakukan hanya membandingkannya dengan siapa yang sedang masuk
- * di SIPP, lalu menyebutkannya.
+ * Karena itu pertanyaannya berganti, dan bagiannya ikut berganti:
  *
- * ============================================================================
- * ANTREAN PENERUSAN TIDAK DIBUANG - IA TURUN KE BAWAH
- * ============================================================================
+ *   dulu   "boleh tidak saya mengerjakan ini?"
+ *   kini   "kalau saya tekan sekarang, tercatat atas nama siapa?"
  *
- * Penerusan tetap berguna: ia menjawab "ada pekerjaan menunggu saya di perkara
- * LAIN". Itu pertanyaan yang berbeda, dan jawabannya ditaruh di bawah - sesudah
- * pertanyaan tentang perkara yang sedang dibuka terjawab lebih dulu.
+ * Pertanyaan kedua sudah dijawab kotak "Akan tercatat di SIPP atas nama" tepat
+ * di atas tombol Kerjakan. Mempertahankan bagian lamanya berarti menyimpan
+ * satu kotak yang menanyakan hal yang tidak lagi menentukan - dan yang paling
+ * merugikan, ia terbaca seperti gerbang izin padahal tidak pernah menahan apa
+ * pun sekali pun.
  *
- * ============================================================================
- * MENYEBUT, BUKAN MEMUTUSKAN
- * ============================================================================
- *
- * Bagian ini tidak pernah menekan apa pun. Ia menyebutkan mana yang urusan
- * Anda dan mana yang bukan, lalu menyerahkan penekanannya ke papan Penunjukan
- * di bawahnya - tempat usulannya dapat diperiksa lebih dulu. Kecocokan nama
- * yang meleset karena gelar atau ejaan tidak boleh berakibat lebih dari satu
- * baris keterangan yang keliru.
+ * Antrean PENERUSAN ikut terbawa keluar. Ia menjawab "ada pekerjaan menunggu
+ * saya di perkara lain", dan itu berguna - tetapi seluruh alurnya bersandar
+ * pada seseorang menekan "teruskan" kepada pejabat, yang justru tidak lagi
+ * diperlukan. Rutenya dibiarkan hidup di server; yang dibuang hanya
+ * gambarannya di sini.
  */
-const URUTAN_PENETAPAN = [
-  { jenis: "pmh", sebutan: "PMH - penetapan majelis hakim" },
-  { jenis: "ppp", sebutan: "PPP - penunjukan panitera pengganti" },
-  { jenis: "pjs", sebutan: "PJS - penunjukan juru sita" },
-  { jenis: "phs", sebutan: "PHS - penetapan hari sidang" },
-];
-
-/**
- * Apakah penetapan ini urusan orang yang sedang masuk di SIPP?
- *
- * Dicocokkan dengan DUA hal, sebab keduanya dapat berbeda: nama lengkap yang
- * tertulis di kepala halaman SIPP, dan nama akun yang tercatat pada rencana.
- * Yang tidak dapat dipastikan dikembalikan sebagai null - "tidak tahu", bukan
- * "bukan Anda". Menyatakan sesuatu bukan urusan seseorang padahal sebenarnya
- * urusannya adalah kekeliruan yang membuat pekerjaan tertinggal.
- */
-function penetapanMilikSaya(langkah, namaSipp) {
-  if (!langkah || !langkah.akun) return null;
-  if (!namaSipp) return null;
-  const akun = langkah.akun;
-  if (namaSama(akun.namaLengkap || "", namaSipp)) return true;
-  if (akun.username && namaSama(akun.username, namaSipp)) return true;
-  return false;
-}
-
-function bagianMenungguSaya() {
-  const kotak = bagian("Penetapan yang dapat Anda tetapkan", "menungguSaya", true);
-  let sudahDimuat = false;
-
-  const kepala = kotak.querySelector(".aleta-bagian-judul");
-  const muat = () => {
-    const isi = kotak.isi;
-    if (sudahDimuat || isi.style.display === "none") return;
-    sudahDimuat = true;
-
-    isi.appendChild(buatElemen("div", "aleta-memuat", "Memeriksa penetapan perkara ini…"));
-    void (async () => {
-      try {
-        const nomor = cariNomorPerkara();
-        const namaSipp = namaPenggunaSipp();
-
-        // Rencana kerja perkara ini - di situlah pelaksana tiap penetapan
-        // sudah ditentukan. Tanpa nomor perkara, tidak ada yang dapat
-        // ditanyakan, dan itu disebut apa adanya.
-        let data = null;
-        if (nomor) {
-          data = await ambilUsulanPenunjukan(nomor).catch(() => null);
-        }
-
-        isi.textContent = "";
-
-        if (!nomor) {
-          isi.appendChild(
-            buatElemen(
-              "div",
-              "aleta-kosong",
-              "Halaman ini bukan halaman satu perkara, jadi belum ada penetapan yang dapat disebut."
-            )
-          );
-        } else if (!data || !data.rencana || !Array.isArray(data.rencana.langkah)) {
-          isi.appendChild(
-            buatElemen(
-              "div",
-              "aleta-kosong",
-              "Rencana penetapan perkara ini belum dapat dibaca. Buka papan Penunjukan di bawah untuk melihat usulannya."
-            )
-          );
-        } else {
-          gambarPenetapanSaya(isi, data, namaSipp);
-        }
-
-        // --- antrean penerusan, perkara mana pun ---------------------------
-        await gambarAntreanPenerusan(isi);
-      } catch (galat) {
-        isi.textContent = "";
-        isi.appendChild(
-          buatElemen("div", "aleta-gagal", String(galat.message || galat).slice(0, 200))
-        );
-        sudahDimuat = false;
-      }
-    })();
-  };
-
-  kepala.addEventListener("click", muat);
-
-  // Dimuat juga ketika bagiannya SUDAH terbentang dari sesi sebelumnya.
-  //
-  // Tanpa ini, keadaan lipatan yang tersimpan sebagai "terbuka" menghasilkan
-  // bagian yang terbentang tetapi kosong sampai ditekan dua kali - sekali
-  // menutup, sekali membuka. Cacat yang sama ada pada bagian malas lain, dan
-  // di sinilah ia paling terasa karena bagian ini yang paling atas.
-  if (kotak.isi.style.display !== "none") {
-    setTimeout(muat, 0);
-  }
-
-  return kotak;
-}
-
-/**
- * Keempat penetapan perkara ini, ditandai mana yang urusan pembaca.
- *
- * Yang BUKAN urusannya tetap disebut - beserta nama yang menetapkannya.
- * Menyembunyikannya membuat papan ini menjawab "tidak ada apa-apa untuk Anda"
- * sementara yang ditanyakan orang justru "kalau begitu siapa yang menunggu".
- */
-function gambarPetakPenetapan(isi, data, namaSipp) {
-  const langkahPeta = new Map(
-    (data.rencana.langkah || []).map((x) => [String(x.jenis), x])
-  );
-
-  let jumlahSaya = 0;
-
-  for (const acuan of URUTAN_PENETAPAN) {
-    const langkah = langkahPeta.get(acuan.jenis);
-    const milikSaya = penetapanMilikSaya(langkah, namaSipp);
-    if (milikSaya === true) jumlahSaya += 1;
-
-    const baris = buatElemen(
-      "div",
-      milikSaya === true ? "aleta-baris aleta-mendesak" : "aleta-baris"
-    );
-    baris.appendChild(buatElemen("div", "aleta-baris-judul", acuan.sebutan));
-
-    const akun = langkah && langkah.akun;
-    let keterangan;
-    if (!langkah) {
-      keterangan = "Belum ada di rencana perkara ini.";
-    } else if (!akun) {
-      // Data Umum dikerjakan operator dengan akunnya sendiri - akun null
-      // memang artinya begitu, bukan akun yang gagal terbaca.
-      keterangan = "Dikerjakan operator dengan akunnya sendiri.";
-    } else if (milikSaya === true) {
-      keterangan = `Urusan Anda${akun.sebutan ? ` sebagai ${akun.sebutan}` : ""}.`;
-      if (akun.tentatif) {
-        keterangan += " Masih dugaan - baca ulang sesudah PMH mendarat.";
-      }
-      if (akun.siap === false && akun.sebab) keterangan += ` ${akun.sebab}`;
-    } else if (milikSaya === false) {
-      keterangan = `Menunggu ${akun.namaLengkap || akun.sebutan || "pejabat lain"}.`;
-    } else {
-      // null - nama pengguna SIPP tidak terbaca. Disebut apa adanya.
-      keterangan = `Ditetapkan ${akun.sebutan || akun.namaLengkap || "pejabat berwenang"}.`;
-    }
-
-    baris.appendChild(buatElemen("div", "aleta-baris-ket", keterangan));
-    isi.appendChild(baris);
-  }
-
-  return jumlahSaya;
-}
-
-function gambarPenetapanSaya(isi, data, namaSipp) {
-  if (!namaSipp) {
-    isi.appendChild(
-      buatElemen(
-        "div",
-        "aleta-tetap-sebab",
-        "Nama pengguna SIPP tidak terbaca di halaman ini, jadi yang disebut hanya siapa penetapnya - bukan mana yang urusan Anda."
-      )
-    );
-  }
-
-  const jumlahSaya = gambarPetakPenetapan(isi, data, namaSipp);
-
-  if (namaSipp) {
-    isi.appendChild(
-      buatElemen(
-        "div",
-        "aleta-tetap-sebab",
-        jumlahSaya > 0
-          ? `${jumlahSaya} penetapan menunggu Anda. Buka papan Penunjukan di bawah untuk memeriksa usulannya, lalu tekan Kerjakan pada formulirnya.`
-          : "Tidak ada penetapan perkara ini yang menunggu Anda."
-      )
-    );
-  }
-}
-
-/**
- * Penerusan yang menunggu jabatan ini - perkara mana pun.
- *
- * Rutenya BELUM TENTU ada: alurnya bergantung pada tabel antrean, dan
- * pengadilan yang operatornya mengerjakan penetapan secara langsung memang
- * tidak memerlukannya. Di situ jawabannya 404, dan itu bukan kerusakan - jadi
- * bagiannya tidak digambar sama sekali, bukan digambar sebagai galat merah.
- */
-async function gambarAntreanPenerusan(isi) {
-  let data = null;
-  try {
-    const respons = await fetch(ALETA_API_ANTREAN, { credentials: "include", cache: "no-store" });
-    if (respons.status === 404 || respons.status === 403) return;
-    if (!respons.ok) return;
-    const luar = await respons.json();
-    data = luar && luar.data ? luar.data : luar;
-  } catch {
-    // Penerusan adalah keterangan tambahan di bagian ini. Kegagalannya tidak
-    // boleh menghapus daftar penetapan perkara yang sudah tergambar di atas.
-    return;
-  }
-
-  const daftar = (data && data.untukSaya) || [];
-  if (daftar.length === 0) return;
-
-  isi.appendChild(
-    buatElemen("div", "aleta-tetap-sebab", `Diteruskan kepada Anda dari perkara lain (${daftar.length})`)
-  );
-
-  for (const penerusan of daftar.slice(0, 20)) {
-    const baris = buatElemen("div", "aleta-baris aleta-mendesak");
-    baris.appendChild(
-      buatElemen("div", "aleta-baris-judul", `${penerusan.sebutan} — ${penerusan.nomorPerkara}`)
-    );
-    if (penerusan.ringkasan) {
-      baris.appendChild(buatElemen("div", "aleta-baris-ket", penerusan.ringkasan));
-    }
-
-    // Alamatnya disusun dari asal halaman yang sedang dibuka, bukan dipatok
-    // mati - ALETA dapat dipasang di satker lain dengan alamat SIPP berbeda.
-    const tautan = buatElemen("a", "aleta-tombol", "Buka perkaranya");
-    tautan.href = `${location.origin}/SIPP/detil_perkara_agama/index/${encodeURIComponent(
-      penerusan.perkaraId
-    )}`;
-    tautan.title = "Buka perkara ini di SIPP, lalu buka formulir penetapannya.";
-    baris.appendChild(tautan);
-
-    isi.appendChild(baris);
-  }
-}
 
 /** Papan penunjukan, dimuat hanya ketika menunya dibuka. */
 function bagianPenunjukan(nomor) {
@@ -3264,14 +3032,37 @@ function gayaTemaSipp(tema) {
   `;
 }
 
+/**
+ * ============================================================================
+ * TEMA TERANG MENGEMBALIKAN SIPP APA ADANYA
+ * ============================================================================
+ *
+ * Sebelumnya lapisan tema dipasang pada SIPP untuk KEDUA tema - gelap maupun
+ * terang - hanya dengan warna yang berbeda. Akibatnya tema terang pun tetap
+ * mengubah SIPP: latarnya diputihkan, garis tabelnya diganti, dan hasilnya
+ * bukan SIPP yang asli melainkan SIPP versi ALETA yang kebetulan terang.
+ *
+ * Itu keliru pada asasnya. SIPP bukan milik kita. Lapisan tema hanya masuk akal
+ * sebagai KERINGANAN untuk mata - dan keringanan itu hanya dibutuhkan pada tema
+ * gelap, ketika halaman putih menyilaukan di sebelah panel yang gelap.
+ *
+ * Karena itu aturannya kini sesederhana ini:
+ *
+ *   panel gelap   + saklar menyala  -> SIPP diberi lapisan gelap
+ *   panel terang                    -> lapisannya DILEPAS, SIPP kembali asli
+ *
+ * Berpindah ke tema terang dengan begitu selalu mengembalikan SIPP ke keadaan
+ * semula, tanpa perlu mengingat saklar mana yang pernah ditekan.
+ */
 function terapkanTemaSipp() {
   const lama = document.getElementById(PENANDA_TEMA_SIPP);
   if (lama) lama.remove();
   if (!temaSippMenyala) return;
+  if (temaSekarang !== "gelap") return;
 
   const gaya = document.createElement("style");
   gaya.id = PENANDA_TEMA_SIPP;
-  gaya.textContent = gayaTemaSipp(temaSekarang);
+  gaya.textContent = gayaTemaSipp("gelap");
   document.documentElement.appendChild(gaya);
 }
 
@@ -3300,10 +3091,19 @@ function tombolTema(panel) {
 
   const perbaruiJudul = () => {
     tombol.textContent = temaSekarang === "gelap" ? "☀" : "☾";
+    // Keadaan SIPP disebut apa adanya, termasuk ketika saklarnya menyala
+    // tetapi lapisannya memang tidak dipasang karena temanya terang. Tanpa
+    // itu, tombolnya berkata "menyala" sementara SIPP tampak tidak berubah -
+    // dan yang membacanya menyimpulkan saklarnya rusak.
+    const keadaanSipp = !temaSippMenyala
+      ? "mati"
+      : temaSekarang === "gelap"
+        ? "menyala"
+        : "menyala, tetapi tidak dipasang pada tema terang";
     tombol.title =
       `Ganti ke tema ${temaSekarang === "gelap" ? "terang" : "gelap"}. ` +
-      `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema pada halaman SIPP ` +
-      `(sekarang ${temaSippMenyala ? "menyala" : "mati"}).`;
+      `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema gelap pada halaman SIPP ` +
+      `(sekarang ${keadaanSipp}). Tema terang selalu mengembalikan SIPP seperti semula.`;
   };
   perbaruiJudul();
 
@@ -3364,13 +3164,55 @@ function terapkanPosisi(panel, posisi) {
     panel.style.maxHeight = "none";
   }
 
-  if (typeof posisi.kiri !== "number" || typeof posisi.atas !== "number") return;
+  if (typeof posisi.kiri !== "number" || typeof posisi.atas !== "number") {
+    jepitTinggiKeRuangTersisa(panel);
+    return;
+  }
   const kotak = panel.getBoundingClientRect();
   const aman = jepitKeLayar(posisi.kiri, posisi.atas, kotak.width || 320, kotak.height || 200);
   panel.style.left = `${aman.kiri}px`;
   panel.style.top = `${aman.atas}px`;
   panel.style.right = "auto";
   panel.style.bottom = "auto";
+
+  jepitTinggiKeRuangTersisa(panel);
+}
+
+/**
+ * ============================================================================
+ * PANEL YANG BARU MUNCUL TIDAK DAPAT DIGULUNG
+ * ============================================================================
+ *
+ * Tingginya dijepit terhadap SELURUH tinggi jendela - innerHeight dikurangi 20 -
+ * sedangkan posisinya dipasang menyusul, di mana saja panel itu terakhir
+ * ditinggalkan. Panel setinggi hampir satu layar yang dipasang 300 piksel dari
+ * atas karena itu berujung 300 piksel DI BAWAH tepi layar.
+ *
+ * Yang membuatnya membingungkan: tidak ada yang tampak rusak. Panelnya utuh,
+ * kepalanya terbaca, dan isinya kelihatan. Yang tidak terjadi hanya
+ * menggulung - sebab .aleta-isi memang tidak meluap: kotaknya sendiri cukup
+ * tinggi untuk seluruh isinya. Yang meluap keluar layar adalah PANELNYA, dan
+ * panel ber-overflow:hidden tidak menggulung.
+ *
+ * Karena itu tingginya dijepit terhadap ruang yang benar-benar tersisa DI BAWAH
+ * posisinya, bukan terhadap tinggi jendela. Begitu tingginya muat di layar,
+ * .aleta-isi kembali meluap sebagaimana mestinya, dan gulirnya hidup lagi.
+ *
+ * Dijalankan juga saat jendela diubah ukurannya - lihat pemanggilnya - sebab
+ * jendela yang dipendekkan menimbulkan keadaan yang persis sama.
+ */
+function jepitTinggiKeRuangTersisa(panel) {
+  if (!panel || panel.classList.contains("aleta-panel-logo")) return;
+  if (panel.classList.contains("aleta-panel-penuh")) return;
+  // Panel yang sedang ciut memang hanya setinggi kepalanya.
+  if (panel.classList.contains("aleta-panel-ciut")) return;
+
+  const kotak = panel.getBoundingClientRect();
+  const sisa = Math.max(window.innerHeight - kotak.top - 12, 160);
+  if (kotak.height <= sisa) return;
+
+  panel.style.height = `${Math.round(sisa)}px`;
+  panel.style.maxHeight = `${Math.round(sisa)}px`;
 }
 
 /**
@@ -3406,6 +3248,10 @@ function jagaTetapTerlihat() {
   const aman = jepitKeLayar(kotak.left, kotak.top, kotak.width, kotak.height);
   panel.style.left = `${aman.kiri}px`;
   panel.style.top = `${aman.atas}px`;
+
+  // Jendela yang dipendekkan menimbulkan keadaan yang sama dengan panel yang
+  // baru muncul: tingginya melewati tepi bawah, dan gulirnya mati.
+  jepitTinggiKeRuangTersisa(panel);
 }
 
 window.addEventListener("resize", jagaTetapTerlihat);
@@ -3926,8 +3772,87 @@ function susunPanel(konteks) {
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
   kepala.appendChild(buatElemen("span", "aleta-nomor", konteks.nomorPerkara));
 
+  // ==========================================================================
+  // AKUN SIPP YANG SEDANG MASUK
+  // ==========================================================================
+  //
+  // Satu keterangan yang menjawab pertanyaan paling menentukan sebelum menekan
+  // apa pun: SIPP ini sedang dibuka dengan akun siapa. Selama ini jawabannya
+  // hanya ada di sudut kanan atas halaman SIPP - tertutup panel ini sendiri
+  // pada layar sempit, dan tidak terlihat sama sekali ketika panel dilebarkan.
+  //
+  // Dibaca dari halaman, bukan dari server: SIPP tidak menyediakan cara lain,
+  // dan yang tertulis di halaman itulah yang menentukan siapa yang tercatat
+  // ketika tombol Simpan SIPP ditekan.
+  //
+  // Bila tidak terbaca, TIDAK ditulis apa-apa. Menuliskan "tidak diketahui" di
+  // kepala panel hanya menambah satu kata yang harus dibaca tiap kali tanpa
+  // pernah menjawab apa pun.
+  const akunSipp = namaPenggunaSipp();
+  if (akunSipp) {
+    const kotakAkun = buatElemen("span", "aleta-akun-sipp", akunSipp);
+    kotakAkun.title = `Halaman SIPP ini sedang dibuka dengan akun ${akunSipp}.`;
+    kepala.appendChild(kotakAkun);
+  }
+
   // Tombol tema - lihat pasangTema().
   kepala.appendChild(tombolTema(panel));
+
+  // ==========================================================================
+  // LAYAR PENUH DAN CIUT MENJADI LOGO
+  // ==========================================================================
+  //
+  // Dua kebutuhan yang berlawanan, dan keduanya nyata pada hari kerja yang
+  // sama:
+  //
+  //   LAYAR PENUH  ketika membaca daftar panjang - tahapan, berkas, penilaian.
+  //                Panel selebar 340 piksel memaksa menggulung untuk sesuatu
+  //                yang sebenarnya muat pada layar.
+  //   LOGO         ketika sedang mengisi formulir SIPP dan panelnya menghalangi.
+  //                Menciutkan ke kepala saja masih menyisakan sebatang kotak
+  //                selebar panel yang menutupi kolom di bawahnya.
+  //
+  // Keduanya dapat dibatalkan dengan menekan tombol yang sama, dan keduanya
+  // TIDAK menghapus posisi tersimpan - panel kembali ke tempatnya semula.
+  const penuh = buatElemen("button", "aleta-penuh", "⛶");
+  penuh.type = "button";
+  penuh.title = "Layar penuh";
+  penuh.addEventListener("click", () => {
+    const sedangPenuh = panel.classList.toggle("aleta-panel-penuh");
+    penuh.textContent = sedangPenuh ? "⤢" : "⛶";
+    penuh.title = sedangPenuh ? "Keluar dari layar penuh" : "Layar penuh";
+    // Gaya inline dari geser dan ubah ukuran harus MENGALAH pada layar penuh,
+    // kalau tidak panel tetap terpaku di tempat lamanya walau kelasnya ganti.
+    // Nilainya tidak dibuang - hanya dilepas, dan dipasang kembali saat keluar.
+    if (sedangPenuh) {
+      for (const sifat of ["left", "top", "width", "height", "maxHeight"]) {
+        panel.style[sifat] = "";
+      }
+    } else if (keadaanPanel) {
+      terapkanPosisi(panel, keadaanPanel);
+    }
+  });
+  kepala.appendChild(penuh);
+
+  const jadiLogo = buatElemen("button", "aleta-jadilogo", "◇");
+  jadiLogo.type = "button";
+  jadiLogo.title = "Ciutkan menjadi logo melayang";
+  jadiLogo.addEventListener("click", () => {
+    panel.classList.remove("aleta-panel-penuh");
+    panel.classList.add("aleta-panel-logo");
+    for (const sifat of ["width", "height", "maxHeight"]) panel.style[sifat] = "";
+  });
+  kepala.appendChild(jadiLogo);
+
+  // Menekan panel yang sudah menjadi logo mengembalikannya. Pendengarnya
+  // dipasang pada PANEL, bukan pada tombol: dalam bentuk logo tidak ada satu
+  // pun tombol yang terlihat, dan yang terlihat hanya logonya.
+  panel.addEventListener("click", (peristiwa) => {
+    if (!panel.classList.contains("aleta-panel-logo")) return;
+    peristiwa.stopPropagation();
+    panel.classList.remove("aleta-panel-logo");
+    if (keadaanPanel) terapkanPosisi(panel, keadaanPanel);
+  });
 
   // Tombol kembali ke bawaan.
   //
@@ -4100,13 +4025,43 @@ function susunPanel(konteks) {
   };
 
   // ==========================================================================
-  // KELOMPOK 1 - BERKAS
+  // KERJAKAN DI PALING ATAS, DAN SATU-SATUNYA YANG TERBUKA
   // ==========================================================================
   //
-  // Terbuka sebagai bawaan. Inilah yang menjawab "apa yang harus saya
-  // kerjakan sekarang" - dokumen yang masuk, tenggat yang berjalan, dan
-  // berkas yang belum lengkap.
-  const kelBerkas = kelompok("Berkas", "berkas", false);
+  // Panel ini dibuka orang yang sedang MENGERJAKAN perkara, bukan yang sedang
+  // membacanya. Sebelumnya Kerjakan duduk paling bawah di balik tiga kelompok
+  // keterangan, sehingga menetapkan satu perkara menuntut menggulung melewati
+  // berkas, tahapan, dan putusan lebih dahulu - tiap kali, untuk tiap perkara.
+  //
+  // Ketiga kelompok lain kini terlipat seluruhnya. Kepalanya tetap menyebutkan
+  // yang paling genting di dalamnya, jadi yang hanya ingin membaca tidak
+  // kehilangan apa pun - ia menekan sekali, dan itu memang niatnya.
+  //
+  // Digambar hanya bila perannya memang berwenang. Sebelumnya ketiganya tetap
+  // muncul untuk semua orang dan baru menolak sesudah ditekan.
+  if (boleh("penunjukan")) {
+    const kelKerja = kelompok("Kerjakan", "kerjakan", false);
+
+    kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
+    kelKerja.isi.appendChild(bagianDataUmum());
+
+    // Alat pemasangan, bukan keterangan perkara - jawabannya sama pada perkara
+    // mana pun. Dibatasi ke Super Admin dan Admin, yang memang satu-satunya
+    // yang dapat menyunting peta kolomnya.
+    if (boleh("penunjukan-otomatis") && penggunaTerakhir && /admin/i.test(penggunaTerakhir.peran || "")) {
+      kelKerja.isi.appendChild(bagianBacaBorang());
+    }
+
+    isi.appendChild(kelKerja);
+    kelompokSemua.push(kelKerja);
+  }
+
+  // ==========================================================================
+  // KELOMPOK BERKAS
+  // ==========================================================================
+  //
+  // Dokumen yang masuk, tenggat yang berjalan, dan berkas yang belum lengkap.
+  const kelBerkas = kelompok("Berkas", "berkas", true);
 
   // Selisih dengan e-Court paling atas: ia satu-satunya yang menyatakan ada
   // yang KELIRU, bukan sekadar belum selesai.
@@ -4259,38 +4214,6 @@ function susunPanel(konteks) {
   kelPutusan.isi.appendChild(malas("Putusan di e-Court", "putusanEcourt", gambarPutusanEcourt));
   isi.appendChild(kelPutusan);
   kelompokSemua.push(kelPutusan);
-
-  // ==========================================================================
-  // KELOMPOK 4 - KERJAKAN
-  // ==========================================================================
-  //
-  // Satu-satunya kelompok yang MENGUBAH SIPP. Dipisah dari yang dibaca bukan
-  // demi kerapian: mencampur menu yang menampilkan keterangan dengan menu
-  // yang mengisi formulir membuat tombol yang menulis duduk di antara tombol
-  // yang tidak - dan pada layar sesak, itu cara termudah salah tekan.
-  //
-  // Digambar hanya bila perannya memang berwenang. Sebelumnya ketiganya
-  // tetap muncul untuk semua orang dan baru menolak sesudah ditekan.
-  if (boleh("penunjukan")) {
-    const kelKerja = kelompok("Kerjakan", "kerjakan", true);
-
-    // Paling atas di kelompoknya: ini satu-satunya bagian yang menyebut
-    // pekerjaan di perkara LAIN, dan pejabat yang membuka panel ini bisa jadi
-    // sedang membuka perkara yang tidak ada hubungannya dengan penerusannya.
-    kelKerja.isi.appendChild(bagianMenungguSaya());
-    kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
-    kelKerja.isi.appendChild(bagianDataUmum());
-
-    // Alat pemasangan, bukan keterangan perkara - jawabannya sama pada perkara
-    // mana pun. Dibatasi ke Super Admin dan Admin, yang memang satu-satunya
-    // yang dapat menyunting peta kolomnya.
-    if (boleh("penunjukan-otomatis") && penggunaTerakhir && /admin/i.test(penggunaTerakhir.peran || "")) {
-      kelKerja.isi.appendChild(bagianBacaBorang());
-    }
-
-    isi.appendChild(kelKerja);
-    kelompokSemua.push(kelKerja);
-  }
 
   // --- Tidak ada apa-apa untuk perkara ini ---
   if (r.dokumen === 0 && konteks.nomorPihak.length === 0) {
@@ -5400,6 +5323,27 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
     nomorTerakhir = "";
     void segarkan();
     return;
+  }
+
+  // ==========================================================================
+  // POSISI DIKEMBALIKAN DARI POPUP CHROME
+  // ==========================================================================
+  //
+  // Panel dapat tergeser sampai keluar layar - terutama sesudah berpindah ke
+  // monitor yang lebih kecil, atau sesudah jendela diperkecil ketika panelnya
+  // sedang di tepi kanan. Kalau sudah begitu, TIDAK ADA jalan mengembalikannya
+  // dari panel itu sendiri: tombolnya ikut hilang bersama panelnya.
+  //
+  // Karena itu jalan keluarnya harus dari luar - dari popup ikon Chrome, satu-
+  // satunya yang selalu terjangkau. Popup menghapus posisi tersimpan, dan
+  // pendengar ini yang mengembalikan panelnya ke tempat semula tanpa memuat
+  // ulang halaman.
+  if (perubahan[KUNCI_POSISI] && perubahan[KUNCI_POSISI].newValue === undefined) {
+    const panel = document.getElementById(PENANDA);
+    if (panel) {
+      kembalikanBawaan(panel);
+      panel.classList.remove("aleta-panel-penuh", "aleta-panel-logo");
+    }
   }
 
   // Saklar penandaan tidak perlu memanggil ALETA lagi: konteks perkara yang

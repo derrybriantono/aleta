@@ -85,6 +85,24 @@
   .saklar-nama { font-weight: 600; display: block; }
   .saklar-ket { display: block; margin-top: 2px; font-size: 11px; color: var(--tulisan-lembut); }
 
+  /* Tindakan, bukan saklar: ia mengerjakan sesuatu sekali lalu selesai,
+     jadi bentuknya tombol - bukan kotak centang yang menyimpan keadaan. */
+  .tindakan { padding: 4px 16px 12px; }
+  .tombol-reset {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--garis);
+    border-radius: 8px;
+    background: var(--latar-lembut);
+    color: var(--tulisan);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tombol-reset:hover { border-color: var(--aksen); color: var(--aksen); }
+  .tombol-reset:active { transform: translateY(1px); }
+  .tombol-reset:disabled { opacity: .6; cursor: default; transform: none; }
+
   .kaki {
     margin-top: 14px;
     padding: 10px 16px;
@@ -142,6 +160,31 @@
       </span>
     </span>
   </label>
+</div>
+
+<!-- ===================================================================
+     MENGEMBALIKAN PANEL YANG HILANG DARI LAYAR
+
+     Panel dapat tergeser sampai keluar layar - paling sering sesudah
+     berpindah ke monitor yang lebih kecil, atau sesudah jendela
+     diperkecil ketika panelnya sedang di tepi kanan.
+
+     Kalau sudah begitu, tombol kembalikan yang ada DI DALAM panel tidak
+     menolong sama sekali: ia ikut hilang bersama panelnya. Karena itu
+     jalan keluarnya ditaruh di sini - popup ikon Chrome adalah
+     satu-satunya tempat yang selalu terjangkau, berapa pun jauhnya
+     panel itu tergeser.
+     =================================================================== -->
+<div class="tindakan">
+  <button type="button" id="resetPosisi" class="tombol-reset">
+    Kembalikan posisi panel
+  </button>
+  <p class="saklar-ket">
+    Mengembalikan panel ke tempat, ukuran, dan tampilan bawaannya. Pakai ini bila panelnya
+    tergeser keluar layar dan tidak dapat ditemukan lagi. Berlaku seketika, tanpa memuat
+    ulang halaman.
+  </p>
+  <p class="saklar-ket" id="kabarReset" hidden></p>
 </div>
 
 <div class="kaki">

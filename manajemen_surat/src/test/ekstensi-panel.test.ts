@@ -24,6 +24,8 @@ const berkasKonten = path.resolve(process.cwd(), "../ekstensi-sipp/konten.js");
 const berkasGaya = path.resolve(process.cwd(), "../ekstensi-sipp/panel.css");
 
 const konten = () => readFileSync(berkasKonten, "utf8");
+const berkasPopup = path.resolve(process.cwd(), "../ekstensi-sipp/popup.js");
+const popup = () => readFileSync(berkasPopup, "utf8");
 const gaya = () => readFileSync(berkasGaya, "utf8");
 
 describe("bagian malas termuat meski sudah terbentang", () => {
@@ -40,8 +42,20 @@ describe("bagian malas termuat meski sudah terbentang", () => {
     expect(pemuatanAwal).toBe(pendaftaran);
   });
 
-  it("bagian penetapan juga memuat sendiri", () => {
-    expect(konten()).toContain("setTimeout(muat, 0);");
+  it("tidak ada pemuat malas yang tertinggal tanpa pemuatan awal", () => {
+    // Bagian "Penetapan yang dapat Anda tetapkan" dibuang beserta pemuatnya
+    // sendiri (setTimeout(muat, 0)). Yang dijaga sekarang: tidak ada sisa
+    // pemanggilan ke fungsi yang sudah tidak ada.
+    const isi = konten();
+    for (const hilang of [
+      "bagianMenungguSaya",
+      "gambarPenetapanSaya",
+      "gambarPetakPenetapan",
+      "penetapanMilikSaya",
+      "URUTAN_PENETAPAN",
+    ]) {
+      expect(isi, hilang).not.toContain(hilang);
+    }
   });
 });
 
@@ -156,41 +170,203 @@ describe("tema terang dan gelap", () => {
   });
 });
 
-describe("penetapan yang dapat ditetapkan pembaca", () => {
-  it("dibaca dari rencana kerja, bukan ditebak dari nama jabatan", () => {
+describe("bagian \"Penetapan yang dapat Anda tetapkan\" dibuang", () => {
+  /**
+   * Bagian itu mencocokkan nama pengguna SIPP dengan pejabat yang berwenang,
+   * lalu menyebutkan mana yang "urusan Anda". Dasarnya satu anggapan: tiap
+   * pejabat membuka SIPP dengan akunnya sendiri.
+   *
+   * Anggapan itu gugur sejak ALETA menuliskan penetapan atas nama pejabatnya.
+   * Siapa yang sedang membuka SIPP tidak lagi menentukan apa pun - operator
+   * yang mengerjakan, dan nama pejabat tetap yang tercatat.
+   *
+   * Yang paling merugikan bila dipertahankan: ia terbaca seperti gerbang izin
+   * padahal tidak pernah menahan apa pun sekali pun.
+   */
+  it("seluruh fungsinya benar-benar hilang, bukan sekadar tidak dipanggil", () => {
+    // Fungsi yatim yang ditinggalkan akan dihidupkan lagi orang berikutnya
+    // karena disangka masih terpakai.
     const isi = konten();
-    expect(isi).toContain("function penetapanMilikSaya(langkah, namaSipp)");
-    expect(isi).toContain("langkah.akun");
-  });
-
-  it("yang tidak dapat dipastikan dikembalikan null, bukan false", () => {
-    // Menyatakan sesuatu bukan urusan seseorang padahal sebenarnya urusannya
-    // adalah kekeliruan yang membuat pekerjaan tertinggal.
-    const isi = konten();
-    const potong = isi.slice(
-      isi.indexOf("function penetapanMilikSaya"),
-      isi.indexOf("function bagianMenungguSaya")
-    );
-    expect(potong).toContain("if (!namaSipp) return null;");
-    expect(potong).toContain("if (!langkah || !langkah.akun) return null;");
-  });
-
-  it("keempat penetapan tetap disebut, termasuk yang bukan urusannya", () => {
-    // Menyembunyikannya membuat papan menjawab "tidak ada apa-apa untuk Anda"
-    // sementara yang ditanyakan orang justru "kalau begitu siapa yang menunggu".
-    const isi = konten();
-    expect(isi).toContain("const URUTAN_PENETAPAN = [");
-    for (const jenis of ["pmh", "ppp", "pjs", "phs"]) {
-      expect(isi).toContain(`jenis: "${jenis}"`);
+    for (const hilang of [
+      "function bagianMenungguSaya",
+      "function gambarPenetapanSaya",
+      "function gambarPetakPenetapan",
+      "function penetapanMilikSaya",
+      "const URUTAN_PENETAPAN",
+      "Penetapan yang dapat Anda tetapkan",
+    ]) {
+      expect(isi, hilang).not.toContain(hilang);
     }
   });
 
-  it("antrean penerusan tidak dibuang, hanya turun ke bawah", () => {
+  it("sebab pembuangannya tertulis di sumbernya", () => {
+    // Bagian yang hilang tanpa keterangan akan dibangun ulang orang berikutnya
+    // yang mengira ia terhapus tidak sengaja.
+    expect(konten()).toContain('BAGIAN "PENETAPAN YANG DAPAT ANDA TETAPKAN" DIBUANG');
+  });
+
+  it("rute antrean penerusan tidak ikut dimatikan", () => {
+    // Yang dibuang gambarannya, bukan alurnya. Rutenya tetap dipakai tombol
+    // Teruskan, dan mematikannya sekalian berarti membuang alur yang masih
+    // punya pemanggil.
+    expect(konten()).toContain("const ALETA_API_ANTREAN =");
+  });
+
+  it("penggantinya sudah ada - kotak atas nama siapa penetapan tercatat", () => {
+    // Pertanyaannya berganti: dari "boleh tidak saya mengerjakan ini" menjadi
+    // "kalau saya tekan sekarang, tercatat atas nama siapa".
+    expect(konten()).toContain("Akan tercatat di SIPP atas nama");
+  });
+});
+
+describe("panel yang baru muncul dapat digulung", () => {
+  /**
+   * Tingginya dijepit terhadap SELURUH tinggi jendela, sedangkan posisinya
+   * dipasang menyusul di mana saja panel terakhir ditinggalkan. Panel setinggi
+   * hampir satu layar yang dipasang 300 piksel dari atas karena itu berujung
+   * 300 piksel DI BAWAH tepi layar.
+   *
+   * Yang membingungkan: tidak ada yang tampak rusak. Yang tidak terjadi hanya
+   * menggulung - sebab .aleta-isi tidak meluap, kotaknya sendiri cukup tinggi.
+   * Yang meluap keluar layar adalah PANELNYA, dan panel ber-overflow:hidden
+   * tidak menggulung.
+   */
+  it("tingginya dijepit ke ruang yang tersisa di bawah posisinya", () => {
     const isi = konten();
-    expect(isi).toContain("async function gambarAntreanPenerusan(isi)");
-    // 404 berarti alurnya memang tidak dipakai di pengadilan ini - bukan
-    // kerusakan, jadi tidak digambar sebagai kerusakan.
-    expect(isi).toContain("if (respons.status === 404 || respons.status === 403) return;");
+    expect(isi).toContain("function jepitTinggiKeRuangTersisa(panel)");
+    expect(isi).toContain("window.innerHeight - kotak.top - 12");
+  });
+
+  it("dijalankan sesudah posisinya dipasang, bukan sebelum", () => {
+    // Dijalankan lebih dulu, ia menjepit terhadap posisi LAMA - dan panelnya
+    // tetap menjulur keluar layar sesudah dipindahkan.
+    const isi = konten();
+    const potong = isi.slice(isi.indexOf("function terapkanPosisi"));
+    expect(potong.indexOf('panel.style.top = `${aman.atas}px`')).toBeLessThan(
+      potong.lastIndexOf("jepitTinggiKeRuangTersisa(panel);")
+    );
+  });
+
+  it("ikut dijalankan saat jendela diubah ukurannya", () => {
+    // Jendela yang dipendekkan menimbulkan keadaan yang persis sama.
+    const isi = konten();
+    const potong = isi.slice(
+      isi.indexOf("function jagaTetapTerlihat"),
+      isi.indexOf('window.addEventListener("resize"')
+    );
+    expect(potong).toContain("jepitTinggiKeRuangTersisa(panel);");
+  });
+
+  it("mode logo dan layar penuh dikecualikan", () => {
+    // Keduanya memang tidak setinggi isinya, dan menjepitnya akan melawan
+    // ukuran yang justru sedang diminta.
+    const isi = konten();
+    const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
+    expect(potong.slice(0, 700)).toContain('classList.contains("aleta-panel-logo")');
+    expect(potong.slice(0, 700)).toContain('classList.contains("aleta-panel-penuh")');
+  });
+});
+
+describe("kepala panel: akun SIPP, layar penuh, dan mode logo", () => {
+  it("akun SIPP yang sedang masuk disebut di kepala", () => {
+    // Jawaban paling menentukan sebelum menekan apa pun. Selama ini hanya ada
+    // di sudut kanan atas SIPP - tertutup panel ini sendiri pada layar sempit.
+    const isi = konten();
+    expect(isi).toContain("const akunSipp = namaPenggunaSipp();");
+    expect(isi).toContain('buatElemen("span", "aleta-akun-sipp", akunSipp)');
+  });
+
+  it("tidak menulis apa-apa bila akunnya tidak terbaca", () => {
+    // "tidak diketahui" di kepala panel hanya menambah satu kata yang harus
+    // dibaca tiap kali tanpa pernah menjawab apa pun.
+    expect(konten()).toContain("if (akunSipp) {");
+  });
+
+  it("layar penuh melepas gaya inline, lalu memasangnya kembali", () => {
+    // Geser dan ubah ukuran menulis gaya INLINE, yang menang atas kelas mana
+    // pun. Tanpa dilepas, panel tetap terpaku di tempat lamanya.
+    const isi = konten();
+    expect(isi).toContain('panel.classList.toggle("aleta-panel-penuh")');
+    expect(isi).toContain("} else if (keadaanPanel) {");
+    expect(isi).toContain("terapkanPosisi(panel, keadaanPanel);");
+  });
+
+  it("mode logo dikembalikan dengan menekan logonya", () => {
+    // Dalam bentuk logo tidak ada satu pun tombol yang terlihat, jadi
+    // pendengarnya harus di panel - bukan di tombol.
+    const isi = konten();
+    expect(isi).toContain('panel.classList.add("aleta-panel-logo")');
+    expect(isi).toContain('if (!panel.classList.contains("aleta-panel-logo")) return;');
+  });
+});
+
+describe("tema terang mengembalikan SIPP seperti semula", () => {
+  it("lapisan SIPP hanya dipasang pada tema gelap", () => {
+    // Lapisan tema hanya masuk akal sebagai keringanan mata, dan keringanan
+    // itu hanya perlu ketika halaman putih menyilaukan di sebelah panel gelap.
+    const isi = konten();
+    const potong = isi.slice(
+      isi.indexOf("function terapkanTemaSipp"),
+      isi.indexOf("async function muatTema")
+    );
+    expect(potong).toContain('if (temaSekarang !== "gelap") return;');
+    expect(potong).toContain('gayaTemaSipp("gelap")');
+  });
+
+  it("keadaan saklarnya disebut apa adanya", () => {
+    // Tombol yang berkata "menyala" sementara SIPP tampak tidak berubah
+    // membuat yang membacanya menyimpulkan saklarnya rusak.
+    expect(konten()).toContain("menyala, tetapi tidak dipasang pada tema terang");
+  });
+
+  it("tema terang panel tidak lagi putih murni", () => {
+    // #ffffff di atas halaman SIPP yang gelap adalah lompatan kecerahan paling
+    // tajam yang mungkin - dan panel ini dibaca berjam-jam.
+    const berkas = gaya();
+    const potong = berkas.slice(berkas.indexOf('.aleta-panel[data-tema="terang"]'));
+    expect(potong.slice(0, 400)).toContain("--aleta-latar: #f4f6f4;");
+    expect(potong.slice(0, 400)).not.toContain("--aleta-latar: #ffffff;");
+  });
+});
+
+describe("Kerjakan paling atas, sisanya terlipat", () => {
+  it("kelompok Kerjakan digambar sebelum Berkas", () => {
+    // Panel ini dibuka orang yang sedang MENGERJAKAN perkara. Sebelumnya
+    // Kerjakan duduk paling bawah di balik tiga kelompok keterangan.
+    const isi = konten();
+    expect(isi.indexOf('kelompok("Kerjakan", "kerjakan"')).toBeLessThan(
+      isi.indexOf('kelompok("Berkas", "berkas"')
+    );
+  });
+
+  it("hanya Kerjakan yang terbuka", () => {
+    const isi = konten();
+    expect(isi).toContain('kelompok("Kerjakan", "kerjakan", false)');
+    for (const tertutup of [
+      'kelompok("Berkas", "berkas", true)',
+      'kelompok("Perkara", "perkara", true)',
+      'kelompok("Putusan", "putusanKel", true)',
+    ]) {
+      expect(isi, tertutup).toContain(tertutup);
+    }
+  });
+});
+
+describe("posisi panel dapat dikembalikan dari popup Chrome", () => {
+  it("popup menghapus hanya kunci posisinya", () => {
+    // Saklar, tema, dan lipatan menu tidak ikut terhapus: yang hilang dari
+    // layar adalah letaknya, dan membuang pengaturan lain sekalian berarti
+    // menghukum petugas atas kesalahan yang tidak ia perbuat.
+    const isi = popup();
+    expect(isi).toContain('.remove("posisiPanel")');
+  });
+
+  it("skrip konten mendengarkan penghapusan itu", () => {
+    // Panel yang tergeser keluar layar tidak dapat dikembalikan dari tombol di
+    // dalam panel itu sendiri - tombolnya ikut hilang bersama panelnya.
+    const isi = konten();
+    expect(isi).toContain("perubahan[KUNCI_POSISI].newValue === undefined");
+    expect(isi).toContain("kembalikanBawaan(panel);");
   });
 });
 

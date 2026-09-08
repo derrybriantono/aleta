@@ -72,3 +72,47 @@ function simpan(kunci, nilai) {
 kotak.addEventListener("change", () => simpan("aktif", kotak.checked));
 kotakTanda.addEventListener("change", () => simpan("tandaiHalaman", kotakTanda.checked));
 kotakSisip.addEventListener("change", () => simpan("sisipJadwal", kotakSisip.checked));
+
+/**
+ * ============================================================================
+ * MENGEMBALIKAN PANEL YANG TERGESER KELUAR LAYAR
+ * ============================================================================
+ *
+ * Yang dihapus hanya SATU kunci - posisiPanel, tempat letak dan ukuran panel
+ * disimpan. Skrip konten mendengarkan penghapusan itu lalu mengembalikan
+ * panelnya ke tempat bawaan, sehingga tidak perlu memuat ulang halaman dan
+ * tidak perlu izin "tabs" hanya untuk menyentuh satu tab.
+ *
+ * Saklar tampil/sembunyi, tema, dan lipatan menu TIDAK ikut terhapus: yang
+ * hilang dari layar adalah letaknya, dan membuang pengaturan lain sekalian
+ * berarti menghukum petugas atas kesalahan yang tidak ia perbuat.
+ */
+const tombolReset = document.getElementById("resetPosisi");
+const kabarReset = document.getElementById("kabarReset");
+
+function kabarkan(teks) {
+  if (!kabarReset) return;
+  kabarReset.textContent = teks;
+  kabarReset.hidden = false;
+}
+
+if (tombolReset) {
+  tombolReset.addEventListener("click", () => {
+    if (!penyimpanan) {
+      kabarkan("Penyimpanan ekstensi tidak tersedia di jendela ini.");
+      return;
+    }
+    tombolReset.disabled = true;
+    void penyimpanan
+      .remove("posisiPanel")
+      .then(() => {
+        kabarkan("Posisi panel dikembalikan. Buka kembali halaman SIPP bila belum terlihat.");
+      })
+      .catch(() => {
+        kabarkan("Gagal mengembalikan posisi. Coba lagi.");
+      })
+      .finally(() => {
+        tombolReset.disabled = false;
+      });
+  });
+}

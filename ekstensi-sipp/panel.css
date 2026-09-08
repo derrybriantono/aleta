@@ -1295,18 +1295,134 @@ tr.aleta-baris-disorot > td {
    Kontras dijaga pada kedua tema. Hijau merek #6fbf95 yang terbaca di atas
    latar gelap terlalu pucat di atas putih, jadi ia digelapkan menjadi #1f7a4d -
    nada yang sama, kontras yang tetap. Begitu pula kuning dan merahnya. */
+/* ==========================================================================
+   PUTIH MURNI DIGANTI KERTAS
+
+   Latar #ffffff di atas halaman SIPP yang gelap adalah lompatan kecerahan
+   paling tajam yang mungkin - dan panel ini dibaca berjam-jam, bukan sekilas.
+   Yang dilaporkan petugas persis itu: terangnya menyakitkan.
+
+   Ganti #ffffff menjadi #f4f6f4 - putih kertas yang sedikit condong hijau,
+   senada dengan hijau merek ALETA. Bidang yang naik dibuat sedikit LEBIH
+   TERANG dari latarnya, bukan lebih gelap: pada tema terang, permukaan yang
+   naik menerima lebih banyak cahaya, dan membalik hubungan itu membuat kotak
+   di dalam panel tampak melesak.
+
+   Tulisannya juga diturunkan dari hitam pekat ke #1b2622: hitam murni di atas
+   latar terang menghasilkan kontras yang lebih tinggi daripada yang
+   dibutuhkan mata untuk membaca, dan itu yang membuat halaman terasa
+   "menyilaukan" walau warnanya sendiri tidak terang.
+
+   Kontras tetap dijaga: #1b2622 di atas #f4f6f4 masih di atas 13:1, jauh
+   melewati AA. Yang dikurangi keterangannya, bukan keterbacaannya. */
 .aleta-panel[data-tema="terang"] {
-  --aleta-latar: #ffffff;
-  --aleta-latar-naik: #f2f5f3;
-  --aleta-garis: #d3ddd7;
-  --aleta-tulisan: #16211c;
-  --aleta-tulisan-lembut: #566b60;
+  --aleta-latar: #f4f6f4;
+  --aleta-latar-naik: #fbfcfb;
+  --aleta-garis: #cfdad4;
+  --aleta-tulisan: #1b2622;
+  --aleta-tulisan-lembut: #56675f;
   --aleta-merek: #1f7a4d;
   --aleta-aman: #1f7a4d;
   --aleta-mendesak: #8a6410;
   --aleta-lewat: #a8332a;
 
-  box-shadow: 0 10px 30px rgba(16, 32, 26, 0.18);
+  box-shadow: 0 10px 30px rgba(16, 32, 26, 0.16);
+}
+
+/* ==========================================================================
+   AKUN SIPP YANG SEDANG MASUK
+
+   Ditaruh di kepala, sesudah nomor perkara: keduanya keterangan tentang "apa
+   yang sedang dibuka", dan menyatukannya membuat kepala terbaca sebagai satu
+   kalimat. Dipangkas dengan elipsis - nama pejabat bergelar panjang tidak
+   boleh mendorong tombol keluar dari kepala. */
+.aleta-akun-sipp {
+  margin-left: auto;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+/* ==========================================================================
+   LAYAR PENUH DAN MODE LOGO
+
+   Keduanya memakai !important pada letak dan ukuran, dan itu memang perlu:
+   geser dan ubah ukuran menulis gaya INLINE, yang menang atas kelas mana pun.
+   Tanpa !important, panel yang pernah digeser akan tetap terpaku di tempat
+   lamanya walau kelasnya sudah berganti - berubah warnanya saja, tidak
+   letaknya. Nilai inline-nya tidak dibuang, hanya dikalahkan, sehingga keluar
+   dari kedua mode mengembalikan panel persis ke tempatnya semula. */
+.aleta-panel-penuh {
+  left: 12px !important;
+  top: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 12px;
+}
+
+/* Mode logo: yang tersisa hanya lingkaran berlogo, dan seluruh isinya
+   disembunyikan - termasuk kepalanya. Menyisakan kepala berarti menyisakan
+   sebatang kotak selebar panel, yang justru keadaan yang hendak dihindari. */
+.aleta-panel-logo {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+}
+
+.aleta-panel-logo .aleta-isi,
+.aleta-panel-logo .aleta-kaki,
+.aleta-panel-logo .aleta-tarik,
+.aleta-panel-logo .aleta-kepala > *:not(.aleta-logo) {
+  display: none !important;
+}
+
+.aleta-panel-logo .aleta-kepala {
+  padding: 0;
+  border: 0;
+  background: none;
+  justify-content: center;
+}
+
+.aleta-panel-logo .aleta-logo {
+  margin: 0;
+  width: 26px;
+  height: 26px;
+}
+
+/* Tombol layar penuh dan mode logo - sebentuk dengan tombol kepala lainnya. */
+.aleta-penuh,
+.aleta-jadilogo {
+  background: none;
+  border: 0;
+  color: var(--aleta-tulisan-lembut);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.aleta-penuh:hover,
+.aleta-jadilogo:hover {
+  color: var(--aleta-tulisan);
 }
 
 /* Tombol tema di kepala panel - satu ikon yang menyebut ke mana ia akan
