@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.2.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.2.0 - Penetapan Ditulis ke SIPP atas Nama Pejabatnya";
+export const APP_VERSION = "2.3.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.3.0 - Jam Penetapan Diambil dari Basis Data";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,28 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.3.0",
+    title: "ALETA Judicia v2.3.0 - Jam Penetapan Diambil dari Basis Data",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Hasil kering pertama atas perkara sungguhan langsung menemukan cacatnya: pernyataan bertanggal 04:54 sedangkan jam dinding pengadilan 12:54 - selisih delapan jam, persis jarak WITA ke UTC. Jam penetapan kini ditanyakan kepada basis data, jam yang sama yang dipakai SIPP sendiri.",
+    added: [],
+    changed: [],
+    fixed: [
+      "Seluruh diinput_tanggal dan seluruh baris sys_audittrail akan tercatat delapan jam sebelum kejadiannya. Container bot MEMANG memuat /etc/localtime dan `date` di dalamnya menjawab WITA dengan benar - tetapi Node tidak membaca berkas itu bila env TZ tidak diset, dan jatuh ke UTC tanpa satu pun galat. Jamnya kini diambil lewat NOW() pada basis datanya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Inilah gunanya jalur tulis dijalankan KERING lebih dahulu. Cacat ini tidak menimbulkan galat apa pun; ia hanya akan menuliskan jam yang salah ke berkas perkara, berselisih dengan baris SIPP di tabel yang sama, dan tidak ada yang menyadarinya sampai seseorang membandingkan dua baris berdampingan.",
+      "Menyetel env TZ pada container juga membetulkannya, tetapi hanya sampai seseorang menyalin compose-nya ke mesin lain dan lupa membawanya. Menanyakan jam kepada basis data tidak dapat tertinggal.",
+      "47 pemeriksaan jalur tulis lulus, termasuk penjaga baru yang memastikan jamnya memang ditanyakan lewat NOW().",
+    ],
+    knownLimitations: [
+      "Tombol Kerjakan pada ekstensi masih BELUM disambungkan ke jalur tulis. Yang terpasang mesinnya beserta rutenya, dan hasil keringnya sudah diperiksa pada perkara sungguhan.",
+    ],
+  },
   {
     version: "2.2.0",
     title: "ALETA Judicia v2.2.0 - Penetapan Ditulis ke SIPP atas Nama Pejabatnya",
