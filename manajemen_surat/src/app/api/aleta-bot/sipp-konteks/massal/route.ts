@@ -68,6 +68,26 @@ export async function POST(request: NextRequest) {
       diperiksaPada: hasil.data?.diperiksaPada ?? "",
       ambangMendesakHari: hasil.data?.ambangMendesakHari ?? 3,
       perkara: hasil.data?.perkara ?? {},
+      // ======================================================================
+      // MEDAN BARU HARUS DITERUSKAN DI SINI JUGA
+      // ======================================================================
+      //
+      // Rute ini menyusun ulang jawabannya medan demi medan, bukan
+      // meneruskannya utuh. Bentuk itu memang disengaja - ia menjaga supaya
+      // tidak ada keterangan bot yang lolos ke peramban tanpa dipilih dengan
+      // sadar - tetapi ia punya harga: medan baru yang lupa didaftarkan di
+      // sini HILANG diam-diam, dan yang membacanya menyimpulkan botnya tidak
+      // mengirim apa-apa.
+      //
+      // Itulah yang terjadi pada `identitas`: bot mengirimnya dengan benar,
+      // penandanya sudah terbukti menyala di server, tetapi tidak satu pun
+      // sampai ke halaman daftar. Ini kegagalan KEEMPAT dengan bentuk yang
+      // sama dalam satu hari - keterangan yang benar, hilang tanpa bunyi.
+      identitas: hasil.data?.identitas ?? {},
+      // Kosong berarti seluruh pembacaan identitas berhasil. Berisi berarti
+      // ada tabel atau kolom yang tidak dikenali, dan penanda yang diam BUKAN
+      // berarti perkaranya bersih.
+      identitasGagal: hasil.data?.identitasGagal ?? [],
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

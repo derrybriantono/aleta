@@ -416,8 +416,24 @@
  * sorotannya memakai kelas terpisah agar dapat dicabut utuh saat saklarnya
  * dimatikan.
  *
- * Warnanya sengaja lembut: ini menempel di layar kerja orang sepanjang hari,
- * bukan pemberitahuan sekali lewat.
+ * ── WARNANYA MENGIKUTI TEMA HALAMAN, DAN TIDAK BOLEH MENYATU DENGANNYA ──────
+ *
+ * Versi lama memakai warna pastel - #fee2e2, #fef3c7, #dcfce7. Di atas panel
+ * putih itu terlihat lembut; di atas halaman SIPP yang memang sudah putih
+ * keabu-abuan dan penuh biru muda, ketiganya MENYATU. Lencana yang harus
+ * dicari dengan sengaja adalah lencana yang tidak dibaca, dan penanda yang
+ * tidak dibaca lebih buruk daripada tidak ada - ia memakan ruang tabel sambil
+ * mengajari orang bahwa penanda ALETA tidak perlu diperhatikan.
+ *
+ * Karena itu isinya kini pekat dengan tulisan putih. Tetap tenang - tidak ada
+ * warna neon, tidak ada kedipan - tetapi tidak mungkin tertukar dengan sel
+ * SIPP mana pun.
+ *
+ * Keadaan keduanya - SIPP dengan lapisan gelap - punya kebalikan masalahnya:
+ * isian pekat justru menjadi kotak gelap di atas latar gelap. Di sana yang
+ * dipakai isian redup dengan tulisan cerah. Penandanya dari konten.js:
+ * data-aleta-tema-sipp dipasang tepat ketika lapisan gelapnya dipasang, dan
+ * dicabut bersamanya.
  */
 .aleta-tanda {
   display: inline-block;
@@ -432,10 +448,42 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.aleta-tanda-merah  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-.aleta-tanda-kuning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.aleta-tanda-hijau  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-.aleta-tanda-abu    { background: #eef2f0; color: #47564e; border: 1px solid #cbd5d1; }
+/* Baris penanda di bawah nomor perkara.
+ *
+ * Ditaruh di baris sendiri, bukan menyambung di belakang nomornya: nomor
+ * perkara sudah panjang, dan penanda yang menyambung melebarkan kolom lalu
+ * mendorong seluruh tabel. Membungkus bila lebih dari satu, sehingga perkara
+ * dengan tiga keadaan sekaligus tidak pernah memaksa gulir mendatar. */
+.aleta-tanda-baris {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 4px;
+  margin-top: 3px;
+}
+
+/* Jarak kiri hanya berlaku ketika lencana menyambung di belakang tulisan -
+   di judul halaman perkara. Di dalam wadah baris, jaraknya diatur gap, dan
+   margin yang tertinggal akan menggeser lencana pertama menjauh dari tepi
+   kolom tanpa alasan. */
+.aleta-tanda-baris .aleta-tanda { margin-left: 0; }
+
+.aleta-tanda-merah  { background: #b42318; color: #ffffff; border: 1px solid #8a1c13; }
+.aleta-tanda-kuning { background: #9a5b06; color: #ffffff; border: 1px solid #74440a; }
+.aleta-tanda-hijau  { background: #16704a; color: #ffffff; border: 1px solid #0f5334; }
+.aleta-tanda-abu    { background: #4a5b53; color: #ffffff; border: 1px solid #37453f; }
+
+html[data-aleta-tema-sipp="gelap"] .aleta-tanda-merah {
+  background: #43120f; color: #ffb4ab; border-color: #7f2a22;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-tanda-kuning {
+  background: #3a2a0b; color: #f0cb78; border-color: #6b4f14;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-tanda-hijau {
+  background: #0f2e1f; color: #7fd6a4; border-color: #235b3e;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-tanda-abu {
+  background: #1b2521; color: #b3c2ba; border-color: #33443c;
+}
 
 tr.aleta-baris-disorot > td {
   box-shadow: inset 3px 0 0 0 #f59e0b;
@@ -1316,15 +1364,32 @@ tr.aleta-baris-disorot > td {
    Kontras tetap dijaga: #1b2622 di atas #f4f6f4 masih di atas 13:1, jauh
    melewati AA. Yang dikurangi keterangannya, bukan keterbacaannya. */
 .aleta-panel[data-tema="terang"] {
-  --aleta-latar: #f4f6f4;
-  --aleta-latar-naik: #fbfcfb;
-  --aleta-garis: #cfdad4;
+  /* Diturunkan sekali lagi dari #f4f6f4 ke #e9ede9.
+   *
+   * #f4f6f4 masih terbaca sebagai PUTIH: bedanya dari putih murni hanya empat
+   * persen, dan mata tidak mengenali beda sekecil itu sebagai warna - yang
+   * dirasakannya tetap kotak putih menyala di sudut layar, di sebelah halaman
+   * SIPP yang juga putih. Panelnya lalu tidak punya tepi sama sekali.
+   *
+   * #e9ede9 punya dua kegunaan sekaligus: ia jelas lebih gelap daripada kertas
+   * di belakangnya - sehingga panelnya berbatas tanpa perlu garis tebal - dan
+   * ia cukup redup untuk dipandang sepanjang jam kerja.
+   *
+   * Naiknya dibalik arah: latar-naik dibuat LEBIH TERANG daripada latarnya
+   * (#f5f7f4), sehingga kartu di dalam panel tetap terbaca "naik ke depan"
+   * seperti pada tema gelap - bukan tenggelam.
+   *
+   * Kontras tulisan tetap jauh di atas AA: #1b2622 di atas #e9ede9 sekitar
+   * 12:1. Yang dikurangi keterangannya, bukan keterbacaannya. */
+  --aleta-latar: #e9ede9;
+  --aleta-latar-naik: #f5f7f4;
+  --aleta-garis: #c6d2cb;
   --aleta-tulisan: #1b2622;
-  --aleta-tulisan-lembut: #56675f;
-  --aleta-merek: #1f7a4d;
-  --aleta-aman: #1f7a4d;
-  --aleta-mendesak: #8a6410;
-  --aleta-lewat: #a8332a;
+  --aleta-tulisan-lembut: #52635b;
+  --aleta-merek: #1c6f46;
+  --aleta-aman: #1c6f46;
+  --aleta-mendesak: #7d5a0d;
+  --aleta-lewat: #9c2f26;
 
   box-shadow: 0 10px 30px rgba(16, 32, 26, 0.16);
 }

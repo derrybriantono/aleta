@@ -113,6 +113,51 @@
   }
 
   a { color: var(--merek); }
+
+  /* ── Keadaan: versi ekstensi dan siapa yang sedang masuk ───────────────────
+   *
+   * Popup ini berdiri di deretan ikon ekstensi lain, dan di situlah orang
+   * membukanya ketika sesuatu terasa tidak beres. Tiga pertanyaan pertama
+   * selalu sama: versi berapa yang terpasang, saya masuk ALETA sebagai siapa,
+   * dan halaman SIPP-nya atas nama siapa.
+   *
+   * Ketiganya dulu tidak terjawab di mana pun. Versi hanya dibandingkan di
+   * dalam panel - yang justru tidak terlihat ketika panelnya bermasalah - dan
+   * kedua nama akun hanya diketahui skrip konten. */
+  .keadaan {
+    margin: 0 16px 12px;
+    padding: 9px 11px;
+    border: 1px solid var(--garis);
+    border-radius: 8px;
+    background: var(--latar-lembut);
+    font-size: 11.5px;
+  }
+
+  .keadaan-baris {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 2px 0;
+  }
+
+  .keadaan-label {
+    flex: none;
+    width: 74px;
+    color: var(--tulisan-lembut);
+  }
+
+  .keadaan-nilai {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  /* Keadaan yang belum terbaca disebut apa adanya dan ditulis tipis: nama
+     kosong yang ditebalkan seperti nama sungguhan membuat orang mengira
+     akunnya bernama "belum diketahui". */
+  .keadaan-nilai.kosong { font-weight: 400; color: var(--tulisan-lembut); }
+  .keadaan-nilai.usang { color: #b3261e; }
 </style>
 
 <div class="kepala">
@@ -120,6 +165,29 @@
   <div>
     <p class="judul">ALETA UNTUK SIPP</p>
     <p class="anak-judul">Keterangan e-Court di halaman SIPP</p>
+  </div>
+</div>
+
+<!-- ===================================================================
+     VERSI DAN AKUN YANG SEDANG MASUK
+
+     Ditaruh PALING ATAS, sebelum saklar mana pun. Yang membuka popup ini
+     ketika ada yang tidak beres tidak sedang mencari saklar - ia sedang
+     mencari tahu keadaan, dan keadaan yang harus digulung untuk dibaca
+     sama saja dengan keadaan yang tidak ditampilkan.
+     =================================================================== -->
+<div class="keadaan">
+  <div class="keadaan-baris">
+    <span class="keadaan-label">Versi</span>
+    <span class="keadaan-nilai kosong" id="versiEkstensi">memuat…</span>
+  </div>
+  <div class="keadaan-baris">
+    <span class="keadaan-label">Masuk ALETA</span>
+    <span class="keadaan-nilai kosong" id="akunAleta">memuat…</span>
+  </div>
+  <div class="keadaan-baris">
+    <span class="keadaan-label">Masuk SIPP</span>
+    <span class="keadaan-nilai kosong" id="akunSipp">memuat…</span>
   </div>
 </div>
 

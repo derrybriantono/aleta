@@ -1974,6 +1974,13 @@ export async function getGatewaySippRingkasanMassal(nomorPerkara: string[]) {
     diperiksaPada: string;
     ambangMendesakHari: number;
     perkara: Record<string, unknown>;
+    // Keadaan perkara yang tidak punya kolomnya sendiri di SIPP - ghaib, izin
+    // atasan, verzet, prodeo, kuasa. Inilah yang digambar penanda daftar.
+    identitas: Record<string, unknown>;
+    // Tabel atau kolom yang tidak terbaca saat menyusun identitas. Kosong
+    // berarti seluruh pembacaan berhasil; berisi berarti penanda yang diam
+    // BUKAN berarti perkaranya bersih.
+    identitasGagal: unknown[];
   }>("/internal/aleta-bot/sipp/ringkasan-massal", {
     method: "POST",
     body: JSON.stringify({ nomorPerkara }),

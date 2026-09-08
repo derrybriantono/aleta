@@ -3248,15 +3248,15 @@ let temaSippMenyala = false;
  * dan sebagian tidak - dan halaman setengah berubah lebih buruk daripada yang
  * tidak berubah sama sekali.
  */
-function gayaTemaSipp(tema) {
-  if (tema === "terang") {
-    return `
-      html, body { background: #ffffff !important; color: #16211c !important; }
-      table, td, th, div, p, span, label { border-color: #d3ddd7 !important; }
-      td, th { color: #16211c !important; }
-      a { color: #1f7a4d !important; }
-    `;
-  }
+function gayaTemaSipp() {
+  // Hanya ada SATU tema di sini, dan itu memang seluruh maksudnya.
+  //
+  // Dulu fungsi ini punya cabang "terang" juga - lapisan putih untuk SIPP. Yang
+  // dihasilkannya bukan SIPP asli melainkan SIPP versi ALETA yang kebetulan
+  // terang, dan cabang itu kini tidak pernah terpanggil: terapkanTemaSipp
+  // keluar lebih dulu pada tema terang, dengan lapisannya dicabut.
+  //
+  // Cabang mati yang ditinggalkan akan dibaca sebagai pilihan yang masih ada.
   return `
     html, body { background: #101815 !important; color: #e4ebe6 !important; }
     table, td, th, div, p, span, label { border-color: #2a3733 !important; }
@@ -3295,20 +3295,42 @@ function gayaTemaSipp(tema) {
 function terapkanTemaSipp() {
   const lama = document.getElementById(PENANDA_TEMA_SIPP);
   if (lama) lama.remove();
-  if (!temaSippMenyala) return;
-  if (temaSekarang !== "gelap") return;
+  if (!temaSippMenyala || temaSekarang !== "gelap") {
+    // Penandanya ikut dicabut, bukan hanya gayanya. Penanda inilah yang
+    // dipakai penanda baris untuk memilih warnanya - lihat panel.css - dan
+    // penanda yang tertinggal menyala membuat lencana bergaya gelap menempel
+    // di atas SIPP yang sudah kembali putih.
+    document.documentElement.removeAttribute("data-aleta-tema-sipp");
+    return;
+  }
 
   const gaya = document.createElement("style");
   gaya.id = PENANDA_TEMA_SIPP;
-  gaya.textContent = gayaTemaSipp("gelap");
+  gaya.textContent = gayaTemaSipp();
   document.documentElement.appendChild(gaya);
+  document.documentElement.setAttribute("data-aleta-tema-sipp", "gelap");
 }
 
 async function muatTema() {
   try {
     const simpan = await chrome.storage.local.get([KUNCI_TEMA, KUNCI_TEMA_SIPP]);
     temaSekarang = simpan[KUNCI_TEMA] === "terang" ? "terang" : "gelap";
-    temaSippMenyala = simpan[KUNCI_TEMA_SIPP] === true;
+    // ========================================================================
+    // GELAP ADALAH BAWAAN, TERMASUK UNTUK HALAMAN SIPP
+    // ========================================================================
+    //
+    // Sebelumnya lapisan gelap pada SIPP bawaannya MATI, dengan alasan yang
+    // masih benar: mengubah tampilan aplikasi orang lain tanpa diminta bukan
+    // keputusan yang pantas diambil sendiri oleh sebuah pembaruan.
+    //
+    // Yang berubah bukan alasannya, melainkan siapa yang meminta. Pemakainya
+    // sendiri yang memutuskan gelap sebagai bawaan, dan keputusan itu murah
+    // untuk dibatalkan: satu tekanan pada tombol tema mengembalikan SIPP persis
+    // seperti semula, dan pilihan itu diingat.
+    //
+    // Dibaca sebagai "!== false", bukan "=== true": yang pernah mematikannya
+    // tetap mendapati SIPP-nya asli sesudah pembaruan ini.
+    temaSippMenyala = simpan[KUNCI_TEMA_SIPP] !== false;
   } catch {
     // Penyimpanan tidak tersedia - tema bawaan tetap dipakai, dan panelnya
     // tetap terbaca. Ini kenyamanan, bukan syarat.
@@ -3377,6 +3399,10 @@ function kembalikanBawaan(panel) {
   for (const sifat of ["left", "top", "right", "bottom", "width", "height", "maxHeight"]) {
     panel.style[sifat] = "";
   }
+  // Kembali ke batas tiga per lima: tinggi pilihan sendiri sudah ikut dibuang
+  // bersama posisinya.
+  delete panel.dataset.tinggiSendiri;
+  jepitTinggiKeRuangTersisa(panel);
 }
 
 /** Menjaga panel tetap terlihat walau jendela diperkecil setelah digeser. */
@@ -3396,6 +3422,9 @@ function terapkanPosisi(panel, posisi) {
     panel.style.width = `${Math.min(posisi.lebar, Math.max(window.innerWidth - 20, 260))}px`;
   }
   if (typeof posisi.tinggi === "number" && posisi.tinggi > 0) {
+    // Tinggi pilihan petugas mengalahkan batas tiga per lima - lihat
+    // jepitTinggiKeRuangTersisa. Yang dibatasi tetap tepi layar.
+    panel.dataset.tinggiSendiri = "1";
     panel.style.height = `${Math.min(posisi.tinggi, Math.max(window.innerHeight - 20, 160))}px`;
     // Batas bawaan dilepas hanya bila tingginya memang diatur sendiri -
     // kalau tidak, panel setinggi apa pun tetap terpotong pada batas itu.
@@ -3447,10 +3476,30 @@ function jepitTinggiKeRuangTersisa(panel) {
 
   const kotak = panel.getBoundingClientRect();
   const sisa = Math.max(window.innerHeight - kotak.top - 12, 160);
-  if (kotak.height <= sisa) return;
 
-  panel.style.height = `${Math.round(sisa)}px`;
-  panel.style.maxHeight = `${Math.round(sisa)}px`;
+  // ==========================================================================
+  // BERHENTI DI TIGA PER LIMA LAYAR, TIDAK SAMPAI KE DASAR
+  // ==========================================================================
+  //
+  // Menjepit ke ruang yang tersisa saja membuat panel selalu tumbuh sampai
+  // menyentuh tepi bawah jendela - dan panel setinggi layar penuh menutup
+  // seluruh sisi kanan halaman SIPP, termasuk paginasi dan tombol yang
+  // letaknya memang di bawah.
+  //
+  // Batasnya tiga per lima tinggi jendela. Cukup untuk memuat kepala, satu
+  // bagian terbuka, dan kakinya sekaligus; dan menyisakan dua per lima halaman
+  // SIPP yang tetap terlihat utuh di baliknya.
+  //
+  // Ini batas BAWAAN, bukan kurungan: petugas yang menarik sudutnya lebih
+  // panjang tetap mendapat tingginya sendiri - lihat terapkanPosisi, yang
+  // menyetel tinggi lebih dulu lalu memanggil fungsi ini hanya sebagai
+  // pengaman terhadap tepi layar.
+  const batasIdaman = Math.max(Math.round(window.innerHeight * 0.6), 220);
+  const batas = Math.min(sisa, panel.dataset.tinggiSendiri === "1" ? sisa : batasIdaman);
+  if (kotak.height <= batas) return;
+
+  panel.style.height = `${Math.round(batas)}px`;
+  panel.style.maxHeight = `${Math.round(batas)}px`;
 }
 
 /**
@@ -5142,6 +5191,20 @@ async function terapkanTanda(konteks) {
 
 const POLA_PERKARA_BARIS = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4})?\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/;
 
+/**
+ * Sel yang benar-benar memuat nomor perkaranya.
+ *
+ * Dicari, bukan dipatok pada kolom kedua: susunan kolom SIPP berbeda antar
+ * halaman daftar - perdata gugatan, permohonan, dan jinayat tidak sama - dan
+ * kolom kedua pada salah satunya adalah tanggal register.
+ */
+function cariSelNomorPerkara(semuaSel, nomor) {
+  for (const sel of semuaSel) {
+    if (String(sel.textContent || "").includes(nomor)) return sel;
+  }
+  return null;
+}
+
 /** Mengumpulkan baris tabel yang memuat nomor perkara. */
 function barisPerkaraDiHalaman() {
   const hasil = [];
@@ -5162,8 +5225,44 @@ function barisPerkaraDiHalaman() {
 
 /** Menempelkan penanda ringkas pada satu baris daftar. */
 function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
-  const sel = baris.querySelector("td");
+  // ==========================================================================
+  // DITEMPEL DI KOLOM NOMOR PERKARA, BUKAN DI KOLOM "NO"
+  // ==========================================================================
+  //
+  // Sebelumnya penandanya masuk ke sel PERTAMA - kolom nomor urut, selebar dua
+  // angka. Penanda selebar "PIHAK GHAIB" di dalam kolom selebar "322" akan
+  // meluber atau terpotong, dan pada halaman selebar lima puluh baris ia
+  // menjadi kolom yang paling ramai sekaligus paling tidak terbaca.
+  //
+  // Yang benar kolom nomor perkara: di situlah mata berhenti ketika memindai
+  // daftar, dan di situ pula sudah ada tulisan (e-Court) sehingga penanda
+  // tambahan terbaca sebagai keterangan perkara itu - bukan sebagai hiasan
+  // pada nomor urut.
+  const semuaSel = baris.querySelectorAll("td");
+  const sel = cariSelNomorPerkara(semuaSel, nomor) || semuaSel[1] || semuaSel[0];
   if (!sel) return;
+
+  // ==========================================================================
+  // DI BARIS SENDIRI DI BAWAH NOMORNYA, BUKAN MENYAMBUNG DI BELAKANGNYA
+  // ==========================================================================
+  //
+  // Menempel langsung ke sel membuat penandanya menyambung di belakang nomor
+  // perkara pada baris yang sama - dan nomor perkara sendiri sudah panjang
+  // ("399/Pdt.G/2026/PA.Dgl" ditambah keterangan e-Court). Dua penanda saja
+  // sudah melebarkan kolomnya dan mendorong seluruh tabel ke kanan.
+  //
+  // Wadahnya dibuat hanya bila ada yang digambar: baris kosong setinggi tiga
+  // piksel pada lima puluh baris daftar adalah tabel yang jadi lebih panjang
+  // tanpa satu keterangan pun bertambah.
+  let wadah = null;
+  const taruh = (elemen) => {
+    if (!wadah) {
+      wadah = buatElemen("div", "aleta-tanda-baris");
+      wadah.setAttribute(TANDA, "1");
+      sel.appendChild(wadah);
+    }
+    wadah.appendChild(elemen);
+  };
 
   // ==========================================================================
   // IDENTITAS PERKARA LEBIH DAHULU - INILAH YANG DICARI DI HALAMAN DAFTAR
@@ -5175,31 +5274,31 @@ function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
   // sebelahnya, sedangkan di sini petugas memindai lima puluh baris sekaligus.
   if (identitas) {
     if (identitas.ghaib) {
-      sel.appendChild(
+      taruh(
         labelTanda("GHAIB", "merah", {
           judul: "Pihak ghaib - panggilan lewat pengumuman, tenggat 120 atau 180 hari.",
         })
       );
     }
     if (identitas.izinAtasan) {
-      sel.appendChild(
+      taruh(
         labelTanda("izin atasan", "kuning", {
           judul: "Pihak PNS, TNI, atau Polri - persidangan menunggu izin atasannya.",
         })
       );
     }
     if (identitas.verzet) {
-      sel.appendChild(
+      taruh(
         labelTanda("verzet", "kuning", { judul: "Perlawanan atas putusan verstek." })
       );
     }
     if (identitas.prodeo) {
-      sel.appendChild(
+      taruh(
         labelTanda("prodeo", "abu", { judul: "Dibebaskan biaya - tidak boleh ditagih panjar." })
       );
     }
     if (identitas.kuasa) {
-      sel.appendChild(
+      taruh(
         labelTanda("kuasa", "abu", { judul: "Perkara ini memakai kuasa hukum." })
       );
     }
@@ -5238,7 +5337,7 @@ function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
   // Keduanya kini digambar lebih dulu, sebelum tenggat: yang menuntut
   // pemeriksaan orang didahulukan atas yang menuntut penjadwalan.
   if (TANDAI_NOMOR_PIHAK && ringkas.nomorBermasalah > 0) {
-    sel.appendChild(
+    taruh(
       labelTanda(`${ringkas.nomorBermasalah} nomor bermasalah`, "merah", {
         judul:
           "Nomor pihak yang belum terverifikasi. Pemberitahuan WhatsApp ke nomor ini belum tentu sampai kepada orangnya.",
@@ -5246,7 +5345,7 @@ function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
     );
   }
   if (ringkas.selisihGenting > 0) {
-    sel.appendChild(
+    taruh(
       labelTanda(`${ringkas.selisihGenting} selisih e-Court`, "merah", {
         judul:
           "Catatan ALETA berbeda dari keadaan di e-Court untuk perkara ini. Perlu disandingkan sebelum dipakai.",
@@ -5255,21 +5354,21 @@ function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
   }
 
   if (ringkas.tenggatLewat > 0) {
-    sel.appendChild(
+    taruh(
       labelTanda(`${ringkas.tenggatLewat} tenggat lewat`, "merah", {
         judul: "Berkas e-Court yang batas unggahnya sudah terlampaui.",
       })
     );
   }
   if (ringkas.tenggatMendesak > 0) {
-    sel.appendChild(
+    taruh(
       labelTanda(`${ringkas.tenggatMendesak} mendesak`, "kuning", {
         judul: "Berkas e-Court yang batas unggahnya tinggal beberapa hari lagi.",
       })
     );
   }
   if (ringkas.menungguVerifikasi > 0) {
-    sel.appendChild(
+    taruh(
       labelTanda(`${ringkas.menungguVerifikasi} menunggu majelis`, "kuning", {
         judul:
           "Berkas sudah diunggah pihak tetapi belum diverifikasi majelis, sehingga belum dapat diberitahukan ke pihak lawan.",
@@ -5289,7 +5388,7 @@ function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
     ringkas.nomorBermasalah === 0 &&
     ringkas.selisihGenting === 0
   ) {
-    sel.appendChild(
+    taruh(
       labelTanda(`${ringkas.dokumen} dokumen`, "hijau", {
         judul: "Berkas e-Court perkara ini lengkap dan tidak ada yang menunggu tindakan.",
       })
@@ -5562,6 +5661,42 @@ function catatAsalPortal() {
   }
 }
 
+/**
+ * ============================================================================
+ * SIAPA YANG MASUK SIPP, DICATAT UNTUK POPUP
+ * ============================================================================
+ *
+ * Popup ekstensi berjalan di origin chrome-extension:// dan tidak melihat
+ * halaman SIPP sama sekali. Nama akun SIPP hanya diketahui dari halamannya -
+ * dari sapaan "Selamat Datang" di kepala - sehingga skrip inilah satu-satunya
+ * yang dapat mencatatnya.
+ *
+ * Yang disimpan hanya nama tampilan yang memang sudah tertulis besar di kepala
+ * halaman SIPP: tidak ada sandi, tidak ada pengenal sesi, tidak ada data
+ * perkara. Waktunya ikut dicatat supaya popup dapat mengatakan "terakhir
+ * dilihat", bukan menyajikan nama lama seolah-olah keadaan sekarang.
+ */
+let akunSippTercatat = "";
+
+function catatAkunSipp() {
+  let nama = "";
+  try {
+    nama = namaPenggunaSipp();
+  } catch {
+    return;
+  }
+  if (!nama || nama === akunSippTercatat) return;
+  akunSippTercatat = nama;
+  try {
+    void chrome.storage.local.set({
+      akunSipp: nama,
+      akunSippPada: new Date().toISOString(),
+    });
+  } catch {
+    /* penyimpanan tidak tersedia: popup mengatakannya belum diketahui */
+  }
+}
+
 async function segarkan() {
   // Halaman cetak dan templat diperiksa PALING AWAL, sebelum saklar mana
   // pun dibaca. Petugas yang menyalakan penandaan tidak sedang menyetujui
@@ -5569,6 +5704,7 @@ async function segarkan() {
   if (halamanCetakAtauTemplat()) return;
 
   catatAsalPortal();
+  catatAkunSipp();
 
   if (!(await sedangAktif())) {
     const lama = document.getElementById(PENANDA);

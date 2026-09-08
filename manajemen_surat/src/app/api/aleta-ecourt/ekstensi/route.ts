@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { roles as daftarPeran } from "@/lib/mock-data";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await requireActorUser(db, actorUserId);
+    const actor = await requireActorUser(db, actorUserId);
 
     // Versi ekstensi yang DISAJIKAN portal, untuk dibandingkan panel dengan
     // versi yang benar-benar terpasang di peramban.
@@ -62,6 +63,42 @@ export async function GET(request: NextRequest) {
       }
       return Response.json(
         { ok: true, versi },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    // ========================================================================
+    // SIAPA YANG SEDANG MASUK ALETA
+    // ========================================================================
+    //
+    // Dipakai popup ekstensi - jendela kecil yang muncul dari ikon di pojok
+    // peramban, di sebelah ekstensi lain. Di situ tidak ada halaman SIPP dan
+    // tidak ada panel, jadi tidak ada satu pun keterangan tentang sesi yang
+    // sedang berjalan.
+    //
+    // Yang dijawab hanya nama dan jabatan. Bukan surel, bukan pengenal akun,
+    // bukan kewenangan: popup tidak memakainya, dan keterangan yang tidak
+    // dipakai tetap saja bocor bila jendelanya terbuka di depan orang lain.
+    //
+    // Tanpa sesi rute ini menjawab 401 lewat requireActorUser di atas, dan
+    // popup menyebutnya "belum masuk" - bukan menebak nama terakhir.
+    if (request.nextUrl.searchParams.get("info") === "siapa") {
+      const peran = daftarPeran.find((x) => x.id === actor.roleId);
+      let versiSajian = "";
+      try {
+        versiSajian = String(JSON.parse(EKSTENSI_BERKAS["manifest.json"] || "{}").version || "");
+      } catch {
+        versiSajian = "";
+      }
+      return Response.json(
+        {
+          ok: true,
+          versi: versiSajian,
+          pengguna: {
+            nama: actor.name,
+            peran: peran ? peran.name : String(actor.roleId || ""),
+          },
+        },
         { headers: { "Cache-Control": "no-store" } }
       );
     }

@@ -141,16 +141,37 @@ describe("tema terang dan gelap", () => {
   it("tema terang menimpa peubah, bukan aturan satu per satu", () => {
     const css = gaya();
     expect(css).toContain('.aleta-panel[data-tema="terang"]');
-    // Kontras dijaga: hijau merek digelapkan untuk latar putih.
-    expect(css).toContain("--aleta-merek: #1f7a4d;");
+    // Kontras dijaga: hijau merek digelapkan untuk latar terang.
+    expect(css).toContain("--aleta-merek: #1c6f46;");
   });
 
-  it("tema SIPP bawaannya MATI", () => {
-    // Mengubah tampilan aplikasi orang lain tanpa diminta adalah hal terakhir
-    // yang boleh dilakukan lapisan bantu.
+  it("gelap adalah bawaan, termasuk lapisannya di halaman SIPP", () => {
+    // Sebelumnya lapisan gelap pada SIPP bawaannya mati, dengan alasan yang
+    // masih benar: tampilan aplikasi orang lain tidak diubah tanpa diminta.
+    // Yang berubah siapa yang meminta - pemakainya sendiri yang memutuskan
+    // gelap sebagai bawaan, dan satu tekanan mengembalikannya.
     const isi = konten();
-    expect(isi).toContain("let temaSippMenyala = false;");
-    expect(isi).toContain("simpan[KUNCI_TEMA_SIPP] === true");
+    expect(isi).toContain("simpan[KUNCI_TEMA_SIPP] !== false");
+  });
+
+  it("yang pernah mematikan lapisannya tetap mendapati SIPP asli", () => {
+    // Dibaca "!== false", bukan "=== true": pembaruan tidak boleh membatalkan
+    // pilihan yang sudah dibuat orang.
+    const isi = konten();
+    expect(isi).not.toContain("simpan[KUNCI_TEMA_SIPP] === true");
+  });
+
+  it("penanda tema SIPP dicabut bersama gayanya", () => {
+    // Penanda inilah yang dipakai lencana baris untuk memilih warnanya.
+    // Penanda yang tertinggal menyala membuat lencana bergaya gelap menempel
+    // di atas SIPP yang sudah kembali putih.
+    const isi = konten();
+    const potong = isi.slice(
+      isi.indexOf("function terapkanTemaSipp"),
+      isi.indexOf("async function muatTema")
+    );
+    expect(potong).toContain('document.documentElement.removeAttribute("data-aleta-tema-sipp")');
+    expect(potong).toContain('setAttribute("data-aleta-tema-sipp", "gelap")');
   });
 
   it("tema SIPP dipasang sebagai satu style bertanda yang dapat dibuang", () => {
@@ -309,8 +330,8 @@ describe("tema terang mengembalikan SIPP seperti semula", () => {
       isi.indexOf("function terapkanTemaSipp"),
       isi.indexOf("async function muatTema")
     );
-    expect(potong).toContain('if (temaSekarang !== "gelap") return;');
-    expect(potong).toContain('gayaTemaSipp("gelap")');
+    expect(potong).toContain('temaSekarang !== "gelap"');
+    expect(potong).toContain("gayaTemaSipp()");
   });
 
   it("keadaan saklarnya disebut apa adanya", () => {
@@ -324,8 +345,20 @@ describe("tema terang mengembalikan SIPP seperti semula", () => {
     // tajam yang mungkin - dan panel ini dibaca berjam-jam.
     const berkas = gaya();
     const potong = berkas.slice(berkas.indexOf('.aleta-panel[data-tema="terang"]'));
-    expect(potong.slice(0, 400)).toContain("--aleta-latar: #f4f6f4;");
-    expect(potong.slice(0, 400)).not.toContain("--aleta-latar: #ffffff;");
+    // Diturunkan sekali lagi dari #f4f6f4: beda empat persen dari putih murni
+    // tidak dikenali mata sebagai warna - yang dirasakannya tetap kotak putih
+    // menyala di sebelah halaman SIPP yang juga putih.
+    expect(potong).toContain("--aleta-latar: #e9ede9;");
+    expect(potong).not.toContain("--aleta-latar: #ffffff;");
+    expect(potong).not.toContain("--aleta-latar: #f4f6f4;");
+  });
+
+  it("kartu di dalam panel terang tetap terbaca naik ke depan", () => {
+    // Latar-naik dibuat LEBIH TERANG daripada latarnya, kebalikan tema gelap.
+    // Tanpa itu kartunya tenggelam alih-alih menonjol.
+    const berkas = gaya();
+    const potong = berkas.slice(berkas.indexOf('.aleta-panel[data-tema="terang"]'));
+    expect(potong).toContain("--aleta-latar-naik: #f5f7f4;");
   });
 });
 

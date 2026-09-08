@@ -116,3 +116,134 @@ if (tombolReset) {
       });
   });
 }
+
+/**
+ * ============================================================================
+ * VERSI EKSTENSI DAN DUA AKUN YANG SEDANG MASUK
+ * ============================================================================
+ *
+ * Ada DUA akun yang berjalan bersamaan di layar yang sama, dan keduanya belum
+ * tentu orang yang sama:
+ *
+ *   akun ALETA  sesi portal. Inilah yang menentukan menu apa yang boleh
+ *               dipakai, dan atas nama siapa tindakan tercatat di ALETA.
+ *   akun SIPP   sesi SIPP di tab itu. Inilah yang tercatat di sys_audittrail
+ *               ketika penetapan ditulis.
+ *
+ * Perbedaan keduanya diam-diam adalah masalah yang mahal: pekerjaan dapat
+ * tercatat atas nama pejabat yang keliru, dan ketahuannya baru belakangan.
+ * Menyebut keduanya berdampingan membuat perbedaan itu terlihat sebelum ada
+ * yang menekan Kerjakan.
+ *
+ * Versinya diambil dari manifest yang benar-benar terpasang - bukan dari angka
+ * yang ditulis terpisah. Ekstensi yang dimuat unpacked tidak pernah memperbarui
+ * dirinya sendiri, jadi versi terpasang dibandingkan dengan versi yang
+ * DISAJIKAN portal, dan selisihnya disebut di sini.
+ */
+const kolomVersi = document.getElementById("versiEkstensi");
+const kolomAleta = document.getElementById("akunAleta");
+const kolomSipp = document.getElementById("akunSipp");
+
+function tulisKeadaan(kolom, teks, { kosong = false, usang = false } = {}) {
+  if (!kolom) return;
+  kolom.textContent = teks;
+  kolom.classList.toggle("kosong", kosong);
+  kolom.classList.toggle("usang", usang);
+}
+
+/** Membandingkan dua versi bertitik. Positif berarti kiri lebih baru. */
+function bandingVersi(kiri, kanan) {
+  const a = String(kiri || "").split(".").map((x) => parseInt(x, 10) || 0);
+  const b = String(kanan || "").split(".").map((x) => parseInt(x, 10) || 0);
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    const selisih = (a[i] || 0) - (b[i] || 0);
+    if (selisih !== 0) return selisih > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function versiTerpasang() {
+  try {
+    return String(chrome.runtime.getManifest().version || "");
+  } catch {
+    return "";
+  }
+}
+
+const terpasang = versiTerpasang();
+tulisKeadaan(kolomVersi, terpasang ? terpasang : "tidak terbaca", { kosong: !terpasang });
+
+/**
+ * Menanyakan ke portal siapa yang sedang masuk.
+ *
+ * Alamatnya dari penyimpanan, dicatat skrip konten - popup berjalan di origin
+ * chrome-extension:// dan tidak punya cara lain mengetahuinya. Selama halaman
+ * SIPP belum pernah dibuka, alamatnya memang belum diketahui, dan menebaknya
+ * lebih buruk daripada mengatakannya apa adanya.
+ */
+async function periksaAkunAleta(asal) {
+  if (!asal) {
+    tulisKeadaan(kolomAleta, "belum diketahui — buka halaman SIPP dulu", { kosong: true });
+    return;
+  }
+  try {
+    const respons = await fetch(`${asal}/api/aleta-ecourt/ekstensi?info=siapa`, {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (respons.status === 401 || respons.status === 403) {
+      tulisKeadaan(kolomAleta, "belum masuk portal ALETA", { kosong: true });
+      return;
+    }
+    if (!respons.ok) {
+      tulisKeadaan(kolomAleta, `portal menjawab ${respons.status}`, { kosong: true });
+      return;
+    }
+    const isi = await respons.json();
+    const data = isi && isi.data ? isi.data : isi;
+    const nama = String((data && data.pengguna && data.pengguna.nama) || "");
+    const peran = String((data && data.pengguna && data.pengguna.peran) || "");
+    tulisKeadaan(
+      kolomAleta,
+      nama ? (peran ? `${nama} (${peran})` : nama) : "belum masuk portal ALETA",
+      { kosong: !nama }
+    );
+
+    // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
+    // permintaan, dua pertanyaan terjawab.
+    const disajikan = String((data && data.versi) || "");
+    if (terpasang && disajikan && bandingVersi(disajikan, terpasang) > 0) {
+      tulisKeadaan(kolomVersi, `${terpasang} — portal sudah ${disajikan}, perlu diperbarui`, {
+        usang: true,
+      });
+    }
+  } catch {
+    tulisKeadaan(kolomAleta, "portal tidak terjangkau", { kosong: true });
+  }
+}
+
+/** Akun SIPP dicatat skrip konten dari sapaan di kepala halaman SIPP. */
+function tampilkanAkunSipp(simpan) {
+  const nama = String(simpan.akunSipp || "");
+  if (!nama) {
+    tulisKeadaan(kolomSipp, "belum diketahui — buka halaman SIPP dulu", { kosong: true });
+    return;
+  }
+  tulisKeadaan(kolomSipp, nama);
+}
+
+if (penyimpanan) {
+  penyimpanan
+    .get(["asalPortal", "akunSipp"])
+    .then((simpan) => {
+      tampilkanAkunSipp(simpan || {});
+      return periksaAkunAleta(String((simpan && simpan.asalPortal) || ""));
+    })
+    .catch(() => {
+      tampilkanAkunSipp({});
+      void periksaAkunAleta("");
+    });
+} else {
+  tampilkanAkunSipp({});
+  void periksaAkunAleta("");
+}
