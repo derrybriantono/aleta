@@ -161,24 +161,29 @@ describe("tema terang dan gelap", () => {
     expect(isi).not.toContain("simpan[KUNCI_TEMA_SIPP] === true");
   });
 
-  it("penanda tema SIPP dicabut bersama gayanya", () => {
-    // Penanda inilah yang dipakai lencana baris untuk memilih warnanya.
-    // Penanda yang tertinggal menyala membuat lencana bergaya gelap menempel
-    // di atas SIPP yang sudah kembali putih.
+  it("tema SIPP tinggal di panel.css, bukan sebagai teks di dalam konten.js", () => {
+    // Gaya yang ditulis sebagai teks JavaScript tidak diperiksa siapa pun -
+    // satu tanda kurung yang salah baru ketahuan ketika halamannya sudah
+    // telanjur aneh. Ia juga berkekhususan rendah, sehingga tiap aturan
+    // menuntut !important walau tidak ada yang menyainginya.
+    const isi = konten();
+    expect(isi).not.toContain("function gayaTemaSipp");
+    expect(isi).not.toContain("PENANDA_TEMA_SIPP");
+    expect(gaya()).toContain('html[data-aleta-tema-sipp="gelap"]');
+  });
+
+  it("mematikannya tidak meninggalkan satu pun gaya yang menempel", () => {
+    // Sifat terpenting lapisan ini: SIPP bukan milik kita, dan mencabutnya
+    // harus mengembalikan halaman persis seperti semula. Karena seluruh
+    // gayanya bergantung pada SATU penanda di elemen html, mencabut penanda
+    // itu sudah cukup - tidak ada gaya yang perlu dicari dan dibuang.
     const isi = konten();
     const potong = isi.slice(
       isi.indexOf("function terapkanTemaSipp"),
       isi.indexOf("async function muatTema")
     );
-    expect(potong).toContain('document.documentElement.removeAttribute("data-aleta-tema-sipp")');
-    expect(potong).toContain('setAttribute("data-aleta-tema-sipp", "gelap")');
-  });
-
-  it("tema SIPP dipasang sebagai satu style bertanda yang dapat dibuang", () => {
-    // Supaya mematikannya tidak meninggalkan gaya yang menempel di elemen.
-    const isi = konten();
-    expect(isi).toContain('const PENANDA_TEMA_SIPP = "aleta-tema-sipp";');
-    expect(isi).toContain("if (lama) lama.remove();");
+    expect(potong).toContain('akar.removeAttribute("data-aleta-tema-sipp")');
+    expect(potong).not.toContain("createElement");
   });
 
   it("TIDAK memakai filter invert pada seluruh halaman", () => {
@@ -331,7 +336,7 @@ describe("tema terang mengembalikan SIPP seperti semula", () => {
       isi.indexOf("async function muatTema")
     );
     expect(potong).toContain('temaSekarang !== "gelap"');
-    expect(potong).toContain("gayaTemaSipp()");
+    expect(potong).toContain('akar.setAttribute("data-aleta-tema-sipp", "gelap")');
   });
 
   it("keadaan saklarnya disebut apa adanya", () => {

@@ -189,3 +189,102 @@ describe("popup menyebut versi dan dua akun yang sedang masuk", () => {
     expect(potong).toContain("namaPenggunaSipp()");
   });
 });
+
+describe("tema gelap SIPP: lengkap, dan dapat dicabut utuh", () => {
+  it("menggelapkan LATAR, bukan hanya tulisan", () => {
+    // Percobaan pertama hanya menerangkan tulisan tanpa menggelapkan latar
+    // yang aslinya putih - hasilnya tulisan putih di atas kertas putih.
+    // Setengah tema lebih berbahaya daripada tanpa tema: yang tanpa tema
+    // masih terbaca.
+    const css = gaya();
+    for (const pemilih of [
+      ".cssTable tr:nth-child(odd)",
+      ".cssTable tr:nth-child(even)",
+      "#tableDetilPerkara",
+      "#infoPerkara",
+      "#detil_page",
+    ]) {
+      expect(css).toContain(pemilih);
+    }
+  });
+
+  it("warna yang ditanam di atribut dan gaya sebaris ikut ditangani", () => {
+    // bgcolor="#FFFFFF" dan style="color:#111" mengalahkan berkas gaya mana
+    // pun kecuali dengan !important, dan keduanya hampir selalu berarti
+    // "hitam di atas putih".
+    const css = gaya();
+    expect(css).toContain("font[color]");
+    expect(css).toContain('[style*="color"]');
+    expect(css).toContain("[bgcolor]");
+  });
+
+  it("panel ALETA dikecualikan dari aturan borongan", () => {
+    // Panel melayang di atas halaman yang sama. Aturan untuk isian dan
+    // pranala SIPP tidak boleh ikut mewarnai isi panel, yang sudah punya
+    // warnanya sendiri di berkas ini.
+    const css = gaya();
+    expect(css).toContain("input:not(#aleta-panel-sipp input)");
+    expect(css).toContain("a:not(#aleta-panel-sipp a)");
+  });
+
+  it("gambar dan pindaian tidak pernah difilter", () => {
+    // Dokumen pengadilan yang warnanya berubah adalah harga yang terlalu
+    // mahal untuk kenyamanan mata.
+    const css = gaya();
+    expect(css).not.toContain("filter: invert");
+    const potong = css.slice(css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP"));
+    expect(potong).toContain("filter: none !important");
+  });
+
+  it("seluruh tema bergantung pada SATU penanda", () => {
+    // Sifatnya yang paling penting: mencabut penandanya mengembalikan SIPP
+    // persis seperti semula. Aturan yang lupa diberi awalan itu akan
+    // tertinggal menyala pada tema terang.
+    const css = gaya();
+    const potong = css.slice(css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP"));
+    const pembuka = potong.split("\n").filter((baris) => /^[.#:a-z\[]/i.test(baris.trim()) && baris.includes("{"));
+    const tanpaAwalan = pembuka.filter(
+      (baris) => !baris.includes("data-aleta-tema-sipp") && !baris.trim().startsWith("html")
+    );
+    expect(tanpaAwalan).toEqual([]);
+  });
+});
+
+describe("palet panel: satu tempat, dua tema", () => {
+  it("warna redup tidak lagi dipatok, supaya tema terang ikut berubah", () => {
+    // #e4ebe6 dipatok pada dua aturan - hampir putih. Pada tema terang itu
+    // berarti tulisan hampir putih di atas latar hampir putih.
+    const css = gaya();
+    const potong = css.slice(0, css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP"));
+    for (const warna of ["#869489", "#6e7d74", "#5f6d65", "#e4ebe6", "#1e2926", "#3a4a44"]) {
+      expect(potong).not.toContain(warna);
+    }
+  });
+
+  it("kepala panel ikut tema, tidak dipatok gelap", () => {
+    // Dipatok #16211c, kepalanya tetap gelap pada tema terang sementara
+    // tulisan di dalamnya mengikuti tema terang - yaitu gelap juga. Nama
+    // "ALETA" dan nama akun SIPP tinggal 1,06 dan 2,6 banding satu.
+    const css = gaya();
+    const potong = css.slice(css.indexOf(".aleta-kepala {"));
+    expect(potong.slice(0, 1200)).toContain("background: var(--aleta-latar-naik);");
+    expect(potong.slice(0, 1200)).not.toContain("background: #16211c;");
+  });
+
+  it("penanda identitas dan chip punya padanan untuk kedua tema", () => {
+    const css = gaya();
+    for (const kelas of [
+      "aleta-tanda-jenis",
+      "aleta-tanda-kumulasi",
+      "aleta-tanda-kuasa",
+      "aleta-tanda-tanpa-kuasa",
+      "aleta-chip-merah",
+      "aleta-chip-kuning",
+      "aleta-chip-abu",
+      "aleta-usia-basi",
+      "aleta-permintaan-tombol",
+    ]) {
+      expect(css).toContain(`.aleta-panel[data-tema="terang"] .${kelas}`);
+    }
+  });
+});

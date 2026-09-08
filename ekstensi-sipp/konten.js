@@ -3232,43 +3232,9 @@ function simpanUkuran(lebar, tinggi) {
 
 const KUNCI_TEMA = "temaPanel";
 const KUNCI_TEMA_SIPP = "temaSipp";
-const PENANDA_TEMA_SIPP = "aleta-tema-sipp";
 
 let temaSekarang = "gelap";
 let temaSippMenyala = false;
-
-/**
- * Gaya tema untuk halaman SIPP.
- *
- * Ditulis sebagai satu <style> bertanda, sehingga mematikannya cukup dengan
- * membuang satu simpul - tidak ada gaya yang tertinggal menempel di elemen.
- *
- * !important dipakai karena SIPP menaruh sebagian warnanya sebagai atribut
- * bgcolor dan gaya inline pada tabelnya. Tanpa itu, sebagian halaman berubah
- * dan sebagian tidak - dan halaman setengah berubah lebih buruk daripada yang
- * tidak berubah sama sekali.
- */
-function gayaTemaSipp() {
-  // Hanya ada SATU tema di sini, dan itu memang seluruh maksudnya.
-  //
-  // Dulu fungsi ini punya cabang "terang" juga - lapisan putih untuk SIPP. Yang
-  // dihasilkannya bukan SIPP asli melainkan SIPP versi ALETA yang kebetulan
-  // terang, dan cabang itu kini tidak pernah terpanggil: terapkanTemaSipp
-  // keluar lebih dulu pada tema terang, dengan lapisannya dicabut.
-  //
-  // Cabang mati yang ditinggalkan akan dibaca sebagai pilihan yang masih ada.
-  return `
-    html, body { background: #101815 !important; color: #e4ebe6 !important; }
-    table, td, th, div, p, span, label { border-color: #2a3733 !important; }
-    td, th { color: #e4ebe6 !important; }
-    a { color: #6fbf95 !important; }
-    input, select, textarea {
-      background: #1a2622 !important;
-      color: #e4ebe6 !important;
-      border-color: #2a3733 !important;
-    }
-  `;
-}
 
 /**
  * ============================================================================
@@ -3293,22 +3259,35 @@ function gayaTemaSipp() {
  * semula, tanpa perlu mengingat saklar mana yang pernah ditekan.
  */
 function terapkanTemaSipp() {
-  const lama = document.getElementById(PENANDA_TEMA_SIPP);
-  if (lama) lama.remove();
+  // ==========================================================================
+  // SATU PENANDA, BUKAN SATU LEMBAR GAYA YANG DISUNTIKKAN
+  // ==========================================================================
+  //
+  // Dulu seluruh gaya gelapnya ditulis di dalam berkas ini sebagai teks, lalu
+  // disuntikkan sebagai <style>. Cara itu punya tiga kelemahan yang semuanya
+  // terasa begitu temanya harus benar-benar lengkap:
+  //
+  //   1. Gaya di dalam JavaScript tidak diperiksa siapa pun - salah tanda
+  //      kurung baru ketahuan ketika halamannya sudah telanjur aneh.
+  //   2. Kekhususan pemilihnya rendah, sehingga tiap aturan menuntut
+  //      !important walau tidak ada yang menyainginya.
+  //   3. Ia dibangun ulang tiap kali temanya diganti.
+  //
+  // Sekarang gayanya tinggal di panel.css - berkas gaya yang memang sudah
+  // dipasang di tiap halaman SIPP - di bawah pemilih html[data-aleta-tema-sipp].
+  // Fungsi ini hanya memasang dan mencabut penandanya.
+  //
+  // Sifat terpentingnya tetap: mencabut penanda itu mengembalikan SIPP persis
+  // seperti semula, sebab tidak ada satu pun gaya yang menempel di elemennya.
+  //
+  // Penanda yang sama dipakai lencana baris untuk memilih warnanya, sehingga
+  // keduanya mustahil berselisih.
+  const akar = document.documentElement;
   if (!temaSippMenyala || temaSekarang !== "gelap") {
-    // Penandanya ikut dicabut, bukan hanya gayanya. Penanda inilah yang
-    // dipakai penanda baris untuk memilih warnanya - lihat panel.css - dan
-    // penanda yang tertinggal menyala membuat lencana bergaya gelap menempel
-    // di atas SIPP yang sudah kembali putih.
-    document.documentElement.removeAttribute("data-aleta-tema-sipp");
+    akar.removeAttribute("data-aleta-tema-sipp");
     return;
   }
-
-  const gaya = document.createElement("style");
-  gaya.id = PENANDA_TEMA_SIPP;
-  gaya.textContent = gayaTemaSipp();
-  document.documentElement.appendChild(gaya);
-  document.documentElement.setAttribute("data-aleta-tema-sipp", "gelap");
+  akar.setAttribute("data-aleta-tema-sipp", "gelap");
 }
 
 async function muatTema() {
