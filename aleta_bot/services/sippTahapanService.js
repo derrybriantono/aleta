@@ -236,11 +236,39 @@ async function tahapanPerkara(perkaraId) {
   // urutan penulisan baris, dan baris yang ditulis menyusul untuk membetulkan
   // catatan lama akan ber-id besar meski tanggalnya paling awal.
   //
-  // PMH sengaja TIDAK ikut diperlakukan begini. Penggantian majelis memang
-  // tercatat di perkara_hakim_pn, tetapi PMH menetapkan satu majelis - bukan
-  // satu orang - dan tanggal penetapan tiap anggotanya tidak selalu sama
-  // dengan tanggal penetapan majelisnya. Mengambil yang terawal dari sana
-  // dapat memundurkan tanggal PMH ke penetapan anggota yang menyusul.
+  // PMH IKUT DIPERLAKUKAN BEGINI - dan inilah yang paling besar akibatnya.
+  //
+  // Semula PMH sengaja dikecualikan dengan alasan PMH menetapkan satu MAJELIS,
+  // bukan satu orang, sehingga tanggal penetapan tiap anggotanya belum tentu
+  // sama dengan tanggal penetapan majelisnya. Alasan itu ternyata tidak
+  // bertahan menghadapi datanya.
+  //
+  // Yang diperiksa di PA Donggala atas seluruh 9.834 perkara:
+  //
+  //   996 perkara  tanggal PMH tersimpan BERBEDA dari penetapan pertamanya
+  //     1 perkara  tidak punya satu pun baris di perkara_hakim_pn
+  //     1 perkara  penetapan pertamanya mendahului pendaftaran
+  //     0 perkara  penetapan pertamanya LEBIH BARU dari yang tersimpan
+  //
+  // Baris terakhir itulah jawabannya. MIN hanya dapat memundurkan tanggal,
+  // tidak pernah memajukannya - jadi kekhawatiran "anggota yang menyusul
+  // memundurkan tanggal majelis" memang tidak mungkin terjadi lewat MIN.
+  // Yang terjadi justru sebaliknya: mutasi hakim menetapkan kembali seluruh
+  // majelis sekaligus, dan penetapan kembali itu menimpa tanggal di
+  // perkara_penetapan.
+  //
+  // Contoh perkara 9909 - 399/Pdt.G/2026/PA.Dgl, daftar 7 Juli 2026:
+  //
+  //   28285-28287  2026-07-07  majelis pertama, ketiganya setanggal
+  //   28591-28593  2026-08-04  majelis pengganti, ketiganya setanggal
+  //   perkara_penetapan menyimpan 2026-08-04
+  //
+  // Akibatnya berantai, dan itulah yang membuatnya lebih parah daripada PPP
+  // dan juru sita: PMH adalah ACUAN bagi penunjukan PP, juru sita, dan PHS.
+  // Dengan PMH keliru mundur 28 hari, penetapan majelisnya bernilai nol,
+  // sedangkan PP, juru sita, dan PHS - yang sesungguhnya dikerjakan pada hari
+  // pendaftaran - tampak dikerjakan 28 hari SEBELUM acuannya, lalu tidak
+  // dinilai sama sekali. Satu tanggal yang salah menjatuhkan empat unsur.
   const tanggalPenunjukanPertama = async (tabel) => {
     if (!(await sippSkemaService.tabelAda(tabel))) return "";
     const kolom = await sippSkemaService.pilihKolom(tabel, ["tanggal_penetapan"]);
@@ -253,11 +281,16 @@ async function tahapanPerkara(perkaraId) {
     return rows[0] ? isoTanggal(rows[0].pertama) : "";
   };
 
-  const [pertamaPpp, pertamaPjs] = await Promise.all([
+  const [pertamaPmh, pertamaPpp, pertamaPjs] = await Promise.all([
+    tanggalPenunjukanPertama("perkara_hakim_pn"),
     tanggalPenunjukanPertama("perkara_panitera_pn"),
     tanggalPenunjukanPertama("perkara_jurusita"),
   ]);
-  const penunjukanPertama = { ppp: pertamaPpp, pjs: pertamaPjs };
+  // Kuncinya harus sama dengan kunci di RENCANA - dari situlah pemetaannya
+  // dibaca. PHS tidak ada di sini sebab ia bukan penunjukan orang: tidak ada
+  // tabel petugas yang menyimpan riwayatnya, dan tanggalnya tetap dari
+  // perkara_penetapan.
+  const penunjukanPertama = { pmh: pertamaPmh, ppp: pertamaPpp, pjs: pertamaPjs };
 
   const tanggalTahap = {};
   const tahap = RENCANA.map((rencana) => {

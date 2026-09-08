@@ -239,10 +239,40 @@ export function AletaEcourtPengguna() {
         {/* Sidebar ini mengikuti sidebar utama ALETA - lihat portal-shell-v2.
             Menyalin bentuk dan perilakunya, bukan merancang yang kedua: dua
             sidebar yang mirip tetapi tidak sama terbaca sebagai kekeliruan. */}
+        {/* ====================================================================
+            SIDEBAR MENEMPEL, DAN MENGGULUNG SENDIRI BILA KEPANJANGAN
+            ====================================================================
+
+            Sebelumnya sidebar ini ikut tergulung bersama halaman. Layar seperti
+            Jadwal Sidang dan Status Perkara panjangnya berkali-kali tinggi
+            layar, sehingga begitu digulung ke bawah menunya hilang sama sekali
+            dan pemakainya harus menggulung balik ke atas hanya untuk berpindah
+            layar.
+
+            sticky top-4 membuatnya berhenti 16px dari tepi atas - sejajar
+            dengan py-4 bagan luar portal - lalu bertahan di sana. Ia menempel
+            pada bagan grid-nya sendiri, dan bagan itu setinggi baris grid,
+            yakni setinggi isi di sebelahnya; itulah sebabnya ia ikut sampai
+            ke ujung bawah halaman.
+
+            Menempel saja belum cukup: sidebar yang lebih tinggi dari layar
+            akan TERPOTONG di bawah dan butir terbawahnya tidak pernah dapat
+            diklik. max-h dan overflow-y-auto membuatnya menggulung di dalam
+            dirinya sendiri. Tingginya dikurangi 2rem - 1rem untuk top-4 dan
+            1rem lagi agar tepi bawahnya tidak menempel ke tepi layar.
+
+            Hanya pada lg ke atas. Di bawah itu sidebar berada di ATAS isinya,
+            bukan di sampingnya, dan menempelkannya akan menutupi isi yang
+            justru sedang dibaca.
+
+            Yang sama sudah dipakai sidebar utama portal - lihat
+            portal-shell-v2 "sticky top-0 h-screen". Bentuknya sengaja
+            disamakan. */}
         <nav
           aria-label="Menu ALETA e-Court"
           className={cn(
             "flex h-fit flex-col gap-3 rounded-[2rem] border border-primary/20 bg-[linear-gradient(180deg,rgba(5,20,34,0.98),rgba(8,38,58,0.96))] text-slate-100 shadow-panel backdrop-blur transition-all duration-300",
+            "lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:overscroll-contain",
             sidebarCiut ? "px-3 py-5" : "p-5"
           )}
         >

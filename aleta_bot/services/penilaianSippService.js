@@ -319,6 +319,14 @@ const INPUT_DATA = [
       if (f.tanggalPmh === undefined) return belumTerbaca("Tanggal PMH belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalDaftar, f.tanggalPmh);
       if (selisih === null) return poin(0, "PMH belum tercatat.");
+      // Lubang yang sama dengan penunjukan PP dan juru sita, dan tersingkap
+      // oleh sebab yang sama: sejak tanggal PMH diambil dari penetapan
+      // pertama di perkara_hakim_pn, tanggal itu dapat mendahului
+      // pendaftarannya bila barisnya salah tulis. Diperiksa atas 9.834
+      // perkara: satu perkara berkeadaan begitu. Satu sudah cukup, sebab
+      // tangga penilaian memulangkan poin TERTINGGI untuk selisih negatif -
+      // perkara yang datanya rusak justru mendapat nilai sempurna.
+      if (selisih < 0) return urutanTerbalik(selisih, "PMH");
       return poin(skalaPenetapan(selisih), `PMH ${selisih} hari setelah pendaftaran.`);
     },
   },
@@ -405,6 +413,11 @@ const INPUT_DATA = [
       if (f.tanggalPhs === undefined) return belumTerbaca("Tanggal PHS belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPmh, f.tanggalPhs);
       if (selisih === null) return poin(0, "PHS belum tercatat.");
+      // PHS beracuan PMH, sama seperti penunjukan PP dan juru sita, sehingga
+      // lubangnya pun sama - dan pernah terlihat di layar: "PHS -28 hari
+      // setelah PMH" bernilai 5 dari 5. Penjaganya disamakan agar urutan yang
+      // tidak mungkin diperlakukan serupa di mana pun ia muncul.
+      if (selisih < 0) return urutanTerbalik(selisih, "PHS");
       return poin(skalaPenetapan(selisih), `PHS ${selisih} hari setelah PMH.`);
     },
   },

@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.97.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.97.0 - Penunjukan Pertama yang Dinilai";
+export const APP_VERSION = "1.98.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.98.0 - PMH Pertama yang Dinilai, Riwayat Dihitung Ulang";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,39 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.98.0",
+    title: "ALETA Judicia v1.98.0 - PMH Pertama yang Dinilai, Riwayat Dihitung Ulang",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Penetapan majelis hakim kini juga dinilai dari PENETAPAN PERTAMA, bukan penetapan kembali - 996 perkara terkena. Ini yang terbesar akibatnya sebab PMH adalah acuan bagi penunjukan PP, juru sita, dan PHS: satu tanggal PMH yang keliru menjatuhkan empat unsur sekaligus. Riwayat dihitung ulang atas seluruh 9.834 perkara. Sidebar ALETA e-Court kini menempel saat halaman digulung.",
+    added: [
+      "Skrip hitung ulang aleta_bot/scripts/hitung-ulang-penunjukan.js - membaca tanggal dari SIPP tanpa menulis apa pun, lalu menjalankan mesin nilai yang sama dengan yang dipakai layar atas tanggal lama dan tanggal baru, dan melaporkan selisihnya per tahun. Dapat dijalankan lagi kapan pun aturannya berubah.",
+    ],
+    changed: [
+      "Tanggal penetapan majelis hakim dibaca dari perkara_hakim_pn - tabel yang menyimpan satu baris per hakim beserta tanggal penetapannya sendiri - dan yang dipakai tanggal TERAWAL. Sebelumnya dari perkara_penetapan, yang hanya punya satu baris per perkara sehingga penetapan kembali menimpanya.",
+      "Sidebar ALETA e-Court menempel di 16px dari tepi atas dan bertahan di sana selama halaman digulung, serta menggulung di dalam dirinya sendiri bila lebih tinggi dari layar. Hanya pada layar lebar - di layar sempit sidebar berada di atas isinya, dan menempelkannya akan menutupi yang sedang dibaca.",
+    ],
+    fixed: [
+      "Mutasi hakim menetapkan kembali seluruh majelis sekaligus, dan tanggal penetapan kembali itu menimpa tanggal PMH yang asli. Contoh perkara 399/Pdt.G/2026/PA.Dgl: daftar 7 Juli 2026, majelis pertama 7 Juli 2026, majelis pengganti 4 Agustus 2026 - dan yang tersimpan 4 Agustus. Akibatnya penetapan majelisnya bernilai 0 dari 5, sedangkan penunjukan PP, juru sita, dan PHS - yang sungguh dikerjakan pada hari pendaftaran - tampak dikerjakan 28 hari SEBELUM acuannya.",
+      "PMH yang mendahului pendaftaran dan PHS yang mendahului PMH kini tidak dinilai, bukan bernilai sempurna. Tangga penilaian memulangkan poin tertinggi untuk selisih negatif, sehingga 'PHS -28 hari setelah PMH' selama ini bernilai 5 dari 5. Penjaganya kini sama di keempat unsur.",
+    ],
+    security: [],
+    operationalNotes: [
+      "HASIL HITUNG ULANG atas 9.834 perkara - penetapan majelis: 995 perkara nilainya berubah, SELURUHNYA naik, tidak satu pun turun; poin 37.510 menjadi 42.109. Penunjukan PP: 1.277 berubah, 911 di antaranya dari tidak-dinilai menjadi dinilai; 40.416 menjadi 46.411. Juru sita: 1.035 berubah, 988 pulih dari tidak-dinilai; 41.506 menjadi 46.405. PHS: 994 berubah, 992 pulih; 39.595 menjadi 43.892. Empat unsur bersama: 159.027 menjadi 178.817.",
+      "Urutan yang tidak mungkin runtuh begitu tanggalnya dibetulkan. PHS mendahului PMH: 999 perkara menjadi 7. PP mendahului PMH: 918 menjadi 8. Juru sita mendahului PMH: 996 menjadi 8. Sisa yang belasan itu kekeliruan data yang sesungguhnya, dan memang tidak dinilai sampai dibetulkan.",
+      "Perubahannya menyebar di seluruh tahun pendaftaran 2015 sampai 2026, terbanyak 2020 (209 perkara) dan 2026 (115) - jadi ini bukan sekadar warisan data lama, melainkan keadaan yang masih berjalan sampai sekarang.",
+      "Tidak ada migrasi basis data yang diperlukan. Diperiksa di server: tabel aleta_bot_nilai_riwayat - satu-satunya tempat nilai periode disimpan - belum ada, sebab penulisannya belum pernah dipanggil dari mana pun kecuali skrip ujinya. Seluruh nilai yang tampil dihitung saat layar dibuka, sehingga perbaikan ini langsung berlaku atas seluruh riwayat.",
+    ],
+    knownLimitations: [
+      "Satu perkara dari 9.834 penetapan pertamanya mendahului pendaftarannya, dan satu perkara tidak punya satu pun baris di perkara_hakim_pn. Yang pertama tidak dinilai, yang kedua tetap memakai tanggal lama dari perkara_penetapan.",
+      "Jeda penginputan (unsur I.3, I.5, I.7, I.9) belum diberi penjaga urutan terbalik. Diinput sebelum peristiwanya pun masih bernilai sempurna. Setelah tanggal PMH dibetulkan keadaan itu hampir hilang dengan sendirinya, tetapi penjaganya belum dipasang - dan itu keputusan tersendiri yang belum diambil.",
+      "Keterangan pada v1.97.0 yang menyebut nilai tersimpan tidak dihitung ulang TIDAK berlaku - sesudah diperiksa, tidak ada nilai tersimpan sama sekali. Catatan versi lama sengaja tidak diubah agar riwayatnya tetap utuh.",
+      "MS03 Riwayat Nilai Tersimpan masih berupa mesin yang belum tersambung. Selama belum tersambung, nilai laporan bulan lalu ikut berubah bila data lampaunya disunting - dan perubahan itu tidak meninggalkan jejak.",
+      "Tata letak sidebar yang menempel belum dilihat langsung di peramban - tidak ada peladen uji yang berjalan. Yang dijaga baru kelasnya, melalui uji sumber.",
+    ],
+  },
   {
     version: "1.97.0",
     title: "ALETA Judicia v1.97.0 - Penunjukan Pertama yang Dinilai",

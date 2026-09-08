@@ -568,6 +568,29 @@ kerangkanya menyebut **dugaan sebabnya**, bukan sekadar "ada selisih":
 Menyamakan ketiganya menjadi "ada selisih" membuang seluruh keterangan yang
 membuat temuan itu dapat ditindaklanjuti.
 
+> **Mesinnya sudah ada, penulisnya belum.** Diperiksa pada basis data bot di
+> server 8 September 2026: tabel `aleta_bot_nilai_riwayat` **belum ada**. Ia
+> dibuat sesaat sebelum penulisan pertama, dan penulisan itu belum pernah
+> terjadi — `simpanNilai()` sampai hari ini hanya dipanggil oleh skrip ujinya.
+>
+> Kalimat "nilai tidak dihitung ulang setiap layar dibuka" di atas karena itu
+> menerangkan **rancangan MS03, bukan keadaan yang berjalan**. Yang berjalan
+> sekarang justru kebalikannya: setiap layar dibuka, nilainya dihitung ulang
+> dari SIPP.
+>
+> Ada dua akibat, dan keduanya perlu diketahui:
+>
+> - **Menguntungkan.** Perbaikan rumus langsung berlaku atas SELURUH riwayat,
+>   tanpa migrasi. Itulah yang terjadi pada v1.98.0 ketika aturan penunjukan
+>   pertama diperbaiki.
+> - **Merugikan.** Nilai laporan bulan lalu yang sudah ditandatangani dapat
+>   bergeser diam-diam bila data lampaunya disunting, dan tidak ada yang dapat
+>   menunjukkan kapan angkanya berubah. Justru inilah yang hendak dicegah MS03.
+>
+> Selama penulisnya belum disambung, pergeseran akibat perubahan rumus harus
+> diukur dengan sengaja — lihat `aleta_bot/scripts/hitung-ulang-penunjukan.js`
+> sebagai contoh bentuknya.
+
 ### 3.4 MS04 dan MS05 — angkanya dihitung DARI buktinya
 
 `services/kerangkaPenilaianService.js`, **77 pemeriksaan**.
