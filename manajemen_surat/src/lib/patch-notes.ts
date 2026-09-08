@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.4.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.4.0 - Ruang Sidang Dikenali Layanan Skema";
+export const APP_VERSION = "2.5.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.5.0 - Sembilan Penanda SIPP, Bobot Perkara, dan Data Umum";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,45 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.5.0",
+    title: "ALETA Judicia v2.5.0 - Sembilan Penanda SIPP, Bobot Perkara, dan Data Umum",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Ekstensi SIPP dirombak: Kerjakan naik ke paling atas, panel dapat digulung dan diciutkan jadi logo, penanda halaman diganti dari hitungan yang mengulang panel menjadi sembilan keadaan yang benar-benar mengubah pekerjaan. Pembagian perkara kini berbobot menurut jenisnya. Data Umum dari berkas gugatan dapat diisikan langsung ke SIPP.",
+    added: [
+      "Sembilan penanda baru di halaman SIPP: panjar habis atau menipis, akta cerai belum terbit padahal sudah BHT, verzet, perkara berjalan lebih dari lima bulan, mediasi belum dimulai, prodeo, delegasi masuk belum dikirim balik, rekonvensi, dan berkas upaya hukum belum dikirim.",
+      "Penanda pihak ghaib, izin atasan PNS/TNI/Polri, dan dugaan mafqud - ketiganya disimpan SIPP tetapi tidak pernah ditampilkan di halaman detail.",
+      "Data Umum dari berkas gugatan dapat dituliskan ke SIPP: tanggal dan nomor surat, tanggal menikah, kutipan akta nikah, dan KUA tempat menikah. Kering lebih dahulu, selalu.",
+      "Panel ekstensi: layar penuh, ciut menjadi logo melayang, akun SIPP yang sedang masuk di kepala, dan tombol kembalikan posisi dari popup ikon Chrome.",
+      "PHS: beban hari sidang per tanggal dan pemilih tanggal bebas yang tetap berpagar aturan.",
+    ],
+    changed: [
+      "Pembagian perkara berbobot menurut jenisnya: 1,0 perceraian dan itsbat, 1,5 selain keduanya, 2,0 kebendaan. Dikunci pada jenis_perkara_id, bukan nama - id 360 muncul dengan dua nama di basis data ini.",
+      "Perkara ekonomi syariah hanya diusulkan kepada hakim bersertifikat. Sejauh ini satu orang, kode C1.",
+      "Kelompok Kerjakan naik ke paling atas dan menjadi satu-satunya yang terbuka.",
+      "Tema terang mengembalikan halaman SIPP apa adanya; lapisan tema hanya dipasang pada tema gelap. Warna terang panel diturunkan dari putih murni ke #f4f6f4.",
+    ],
+    fixed: [
+      "Panel yang baru muncul tidak dapat digulung. Tingginya dijepit terhadap seluruh tinggi jendela sedangkan posisinya dipasang menyusul, sehingga panel berujung di bawah tepi layar - dan yang meluap adalah panelnya, bukan isinya.",
+      "Petugas yang akun SIPP-nya diblokir tetap diusulkan. Empat dari sebelas panitera aktif berkeadaan begitu.",
+      "Bagian Penetapan yang dapat Anda tetapkan dibuang - dasarnya gugur sejak ALETA menuliskan penetapan atas nama pejabatnya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "TEMUAN: kolom perkara_biaya.sisa tidak pernah diisi SIPP - 32% NULL, 68% nol. Membacanya begitu saja menghasilkan penanda panjar habis pada SETIAP perkara. Saldonya dijumlahkan sendiri dari transaksinya; sesudah dibetulkan, dari 104 perkara belum putus hanya 19 yang menyala.",
+      "TEMUAN: SIPP tidak pernah mengaudit perkara_data_pernikahan - nol baris sepanjang masa. ALETA tetap menuliskan baris auditnya, dan itu penyimpangan yang disengaja: seluruh dasar jalur tulis ini adalah dapat ditelusuri.",
+      "Data Umum tidak menimpa yang sudah terisi. Tiap ruas hanya diisi bila di SIPP masih kosong, dan yang dilewati disebutkan - sehingga jelas bedanya tidak diisikan dari gagal diisikan.",
+      "Penanda nomor pihak dimatikan atas permintaan pengadilan. Alur verifikasinya masih hidup dan masih dipakai bot memutuskan pengiriman WhatsApp.",
+    ],
+    knownLimitations: [
+      "Objek sengketa berupa tanah TIDAK dapat ditandai - SIPP tidak menyimpannya di mana pun. Ditelusuri pada seluruh information_schema; yang ada hanya kolom sita eksekusi dan juru sita delegasi.",
+      "kode_kua tidak ikut diisikan. Ia pengenal acuan yang tidak dapat diturunkan dari nama KUA pada berkas gugatan.",
+      "Pembobotan perkara belum mengubah urutan beban siapa pun hari ini - perkara berat memang jarang, 6% dari seluruhnya. Yang diperbaiki asasnya.",
+      "Nama pihak, alamat, pekerjaan, dan obyek sengketa tidak ikut diisikan ke SIPP. Para pihak punya tabelnya sendiri beserta aturan kumulasi dan kuasa hukumnya.",
+    ],
+  },
   {
     version: "2.4.0",
     title: "ALETA Judicia v2.4.0 - Ruang Sidang Dikenali Layanan Skema",

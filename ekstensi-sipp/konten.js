@@ -49,6 +49,7 @@ const ALETA_API_BORANG = "/aleta/api/aleta-bot/penunjukan/borang";
 const ALETA_API_CATAT = "/aleta/api/aleta-bot/penunjukan/catat";
 const ALETA_API_ANTREAN = "/aleta/api/aleta-bot/penunjukan/antrean";
 const ALETA_API_BERKAS_GUGATAN = "/aleta/api/aleta-bot/penunjukan/berkas";
+const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const PENANDA = "aleta-panel-sipp";
@@ -2148,7 +2149,7 @@ function gambarPetikan(isi, hasil) {
 }
 
 /** Data Umum dari berkas gugatan yang diunggah petugas. */
-function bagianDataUmum() {
+function bagianDataUmum(konteks) {
   const kotak = bagian("Data Umum dari berkas gugatan", "dataUmum", true);
   const isi = kotak.isi;
 
@@ -2196,6 +2197,7 @@ function bagianDataUmum() {
 
         kabar.textContent = `${hasil.nama} terbaca. Periksa tiap baris sebelum dipakai.`;
         gambarPetikan(hasilKotak, hasil);
+        gambarKerjakanDataUmum(hasilKotak, hasil, konteks);
       } catch (galat) {
         kabar.textContent = String(galat.message || galat).slice(0, 180);
       }
@@ -2203,6 +2205,117 @@ function bagianDataUmum() {
   });
 
   return kotak;
+}
+
+/**
+ * ============================================================================
+ * MENGISIKAN DATA UMUM KE SIPP
+ * ============================================================================
+ *
+ * Enam ruas yang dapat diisikan, dan hanya enam. Sisanya - nama pihak, alamat,
+ * pekerjaan, obyek sengketa - sengaja TIDAK ikut: para pihak punya tabelnya
+ * sendiri beserta aturan kumulasi dan kuasa hukumnya, dan mengisikannya dari
+ * petikan mesin menuntut ketelitian yang belum dapat dijamin.
+ *
+ * ============================================================================
+ * KERING LEBIH DAHULU, DAN ITU BUKAN PILIHAN
+ * ============================================================================
+ *
+ * Tekanan pertama SELALU kering: yang muncul daftar pernyataan yang akan
+ * dikirim, beserta ruas mana yang dilewati karena sudah terisi di SIPP.
+ * Menulis menuntut tekanan KEDUA pada tombol yang berbeda, yang baru muncul
+ * sesudah hasil keringnya terbaca.
+ *
+ * Petikan dari berkas gugatan adalah hasil baca mesin atas dokumen yang
+ * ditulis manusia. Menaruh tombol tulis sebagai tekanan pertama berarti
+ * mempertaruhkan berkas perkara pada ketepatan pembacaan yang belum sempat
+ * dilihat siapa pun.
+ */
+function gambarKerjakanDataUmum(isi, hasil, konteks) {
+  const perkaraId = String((konteks && konteks.identitas && konteks.identitas.perkaraId) || "");
+  if (!perkaraId) return;
+
+  const petikan = hasil.petikan || {};
+  const ambil = (kunci) => {
+    const p = petikan[kunci];
+    return p && p.nilai ? String(p.nilai).trim() : "";
+  };
+
+  const dataUmum = {
+    tanggalSurat: ambil("tanggalSurat"),
+    nomorSurat: ambil("nomorSurat"),
+    tanggalMenikah: ambil("tanggalMenikah"),
+    tanggalAktaNikah: ambil("tanggalAktaNikah"),
+    nomorAktaNikah: ambil("nomorAktaNikah"),
+    kuaTempatMenikah: ambil("kuaTempatMenikah"),
+  };
+  if (!Object.values(dataUmum).some(Boolean)) return;
+
+  const kaki = buatElemen("div", "aleta-tetap-kaki");
+  const kabar = buatElemen("div", "aleta-tetap-sebab", "");
+  const tombol = buatElemen("button", "aleta-tombol", "Periksa dulu (kering)");
+  tombol.type = "button";
+
+  let rencanaSiap = null;
+
+  const kirim = async (kering) => {
+    tombol.disabled = true;
+    kabar.textContent = kering ? "Menyusun pernyataan…" : "Menuliskan ke SIPP…";
+    try {
+      const respons = await fetch(ALETA_API_TULIS, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jenis: "dataUmum",
+          perkaraId: Number(perkaraId),
+          tanggalPenetapan: new Date().toISOString().slice(0, 10),
+          dataUmum,
+          // Akun pejabat yang akan tercatat sebagai pengisi. Diambil dari
+          // halaman SIPP yang sedang terbuka - itulah yang dilihat petugas,
+          // dan menebaknya dari tempat lain akan berselisih dengan yang
+          // tertulis di kepala panel.
+          olehUsername: namaPenggunaSipp(),
+          kering,
+        }),
+      });
+      const luar = await respons.json();
+      const h = luar && luar.data ? luar.data : luar;
+
+      if (h.ok === false) {
+        kabar.textContent =
+          h.alasan === "tidak_ada_yang_perlu_diisi"
+            ? `Tidak ada yang perlu diisi - seluruhnya sudah terisi di SIPP. ${(h.dilewati || []).join("; ")}`
+            : `Ditolak: ${h.alasan || "sebab tidak disebut"}`;
+        tombol.disabled = false;
+        return;
+      }
+
+      if (kering) {
+        rencanaSiap = true;
+        const baris = (h.rencana || []).map((x) => `${x.tabel} ${x.aksi} — ${x.keterangan}`);
+        kabar.textContent =
+          `Akan tercatat atas nama ${h.atasNama ? h.atasNama.namaLengkap || h.atasNama.username : "?"}. ` +
+          `${baris.length} pernyataan: ${baris.join(" · ")}. ` +
+          `${(h.dilewati || []).length > 0 ? `Dilewati: ${(h.dilewati || []).join("; ")}.` : ""}`;
+        tombol.textContent = "Tulis ke SIPP sekarang";
+        tombol.disabled = false;
+        return;
+      }
+
+      kabar.textContent = `Tersimpan. ${(h.selesai || []).length} pernyataan dijalankan.`;
+      tombol.textContent = "Sudah ditulis";
+    } catch (galat) {
+      kabar.textContent = String(galat.message || galat).slice(0, 180);
+      tombol.disabled = false;
+    }
+  };
+
+  tombol.addEventListener("click", () => void kirim(!rencanaSiap));
+
+  kaki.appendChild(tombol);
+  isi.appendChild(kaki);
+  isi.appendChild(kabar);
 }
 
 /**
@@ -4171,7 +4284,7 @@ function susunPanel(konteks) {
     const kelKerja = kelompok("Kerjakan", "kerjakan", false);
 
     kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
-    kelKerja.isi.appendChild(bagianDataUmum());
+    kelKerja.isi.appendChild(bagianDataUmum(konteks));
 
     // Alat pemasangan, bukan keterangan perkara - jawabannya sama pada perkara
     // mana pun. Dibatasi ke Super Admin dan Admin, yang memang satu-satunya

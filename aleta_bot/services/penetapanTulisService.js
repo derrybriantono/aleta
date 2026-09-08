@@ -78,6 +78,7 @@ const DAFTAR_TABEL = new Set([
   "perkara_jurusita",
   "perkara_jadwal_sidang",
   "perkara_penetapan_hari_sidang",
+  "perkara_data_pernikahan",
   "sys_audittrail",
 ]);
 
@@ -103,6 +104,14 @@ const JEJAK_PROSES = {
     tahapanText: "Penetapan",
     prosesId: 40,
     prosesText: "Penunjukan Jurusita/Jurusita Pengganti",
+  },
+  dataUmum: {
+    // SIPP memakai formulir yang sama untuk menambah dan menyunting perkara.
+    formulir: "Add Perkara Perdata",
+    tahapanId: 0,
+    tahapanText: "",
+    prosesId: 0,
+    prosesText: "",
   },
   phs: {
     // Huruf besar-kecilnya ditiru apa adanya dari SIPP - "Tambah Penetapan
@@ -357,10 +366,27 @@ async function hakimUntuk(daftarId) {
  * dijalankan di sini. Bentuk ini yang membuat perbuatannya dapat dibaca
  * manusia sebelum terjadi - dan dapat diuji tanpa menyentuh SIPP sama sekali.
  */
+/**
+ * Pencarian jenis yang tidak mempersoalkan besar-kecil huruf.
+ *
+ * Sebelumnya jenisnya dikecilkan lalu dicari langsung pada JEJAK_PROSES.
+ * Itu bekerja selama seluruh kuncinya satu kata - "pmh", "ppp", "pjs", "phs" -
+ * lalu patah diam-diam begitu ada kunci berhuruf besar di tengah: "dataUmum"
+ * menjadi "dataumum" dan tidak pernah ketemu, dengan alasan
+ * "jenis_tidak_didukung" yang menunjuk ke arah yang salah.
+ *
+ * Petanya disusun sekali dari kunci yang ada, sehingga menambah jenis baru
+ * tidak menuntut mengingat aturan ini lagi.
+ */
+const JENIS_MENURUT_HURUF_KECIL = new Map(
+  Object.keys(JEJAK_PROSES).map((kunci) => [kunci.toLowerCase(), kunci])
+);
+
 async function susunRencanaTulis(minta) {
-  const jenis = String((minta && minta.jenis) || "").toLowerCase();
+  const diminta = String((minta && minta.jenis) || "").toLowerCase();
+  const jenis = JENIS_MENURUT_HURUF_KECIL.get(diminta) || "";
   const jejak = JEJAK_PROSES[jenis];
-  if (!jejak) return { ok: false, alasan: "jenis_tidak_didukung", jenis };
+  if (!jejak) return { ok: false, alasan: "jenis_tidak_didukung", jenis: diminta };
 
   const perkara = await keadaanPerkara(minta.perkaraId);
   if (!perkara) return { ok: false, alasan: "perkara_tidak_ketemu" };
@@ -799,6 +825,158 @@ async function susunRencanaTulis(minta) {
         saat,
       })
     );
+  }
+
+  // ---- DATA UMUM dari berkas gugatan --------------------------------------
+  //
+  // ==========================================================================
+  // DUA TABEL, DAN SATU DI ANTARANYA TIDAK PERNAH DIAUDIT SIPP
+  // ==========================================================================
+  //
+  // Data Umum tersebar di dua tempat:
+  //
+  //   perkara                   tanggal_surat, nomor_surat
+  //   perkara_data_pernikahan   tgl_nikah, tgl_kutipan_akta_nikah,
+  //                             no_kutipan_akta_nikah, kua_tempat_nikah
+  //
+  // Diperiksa pada sys_audittrail: perkara_data_pernikahan TIDAK PERNAH
+  // diaudit SIPP - nol baris sepanjang masa. ALETA tetap menuliskan baris
+  // auditnya. Itu penyimpangan dari kebiasaan SIPP, dan disengaja: seluruh
+  // dasar jalur tulis ini adalah dapat ditelusuri. Baris yang ditulis atas
+  // nama pejabat tanpa meninggalkan jejak sama sekali persis keadaan yang
+  // hendak dihindari sejak awal.
+  //
+  // ==========================================================================
+  // YANG SUDAH TERISI TIDAK DITIMPA
+  // ==========================================================================
+  //
+  // Petikan dari berkas gugatan adalah HASIL BACA MESIN atas dokumen yang
+  // ditulis manusia - ia bisa meleset. Menimpa data yang sudah diketik petugas
+  // dengan tebakan mesin adalah pertukaran yang salah arah.
+  //
+  // Karena itu tiap ruas hanya diisi bila di SIPP masih KOSONG. Yang sudah
+  // ada dilewati dan disebutkan sebagai dilewati, sehingga yang membacanya
+  // tahu bedanya "tidak diisikan" dari "gagal diisikan".
+  //
+  // kode_kua sengaja TIDAK disentuh: ia pengenal acuan yang tidak dapat
+  // diturunkan dari nama KUA pada berkas gugatan, dan mengisinya salah lebih
+  // buruk daripada membiarkannya kosong.
+  if (jenis === "dataUmum") {
+    const isian = minta.dataUmum || {};
+    const adaTabelNikah = await sippSkemaService.tabelAda("perkara_data_pernikahan");
+
+    const sekarang = await runQuery(
+      `SELECT p.tanggal_surat AS tanggalSurat, p.nomor_surat AS nomorSurat
+         FROM perkara p WHERE p.perkara_id = ? LIMIT 1`,
+      [perkara.perkaraId]
+    ).catch(() => []);
+    const lamaPerkara = (Array.isArray(sekarang) && sekarang[0]) || {};
+
+    const lamaNikah = adaTabelNikah
+      ? ((
+          await runQuery(
+            `SELECT tgl_nikah AS tglNikah, tgl_kutipan_akta_nikah AS tglAkta,
+                    no_kutipan_akta_nikah AS noAkta, kua_tempat_nikah AS kua
+               FROM perkara_data_pernikahan WHERE perkara_id = ? LIMIT 1`,
+            [perkara.perkaraId]
+          ).catch(() => [])
+        )[0] || {})
+      : {};
+
+    const dilewati = [];
+    const isiPerkara = {};
+    const isiNikah = {};
+
+    const pasang = (nilai, kolom, lama, sasaran, sebutan) => {
+      const bersih = cleanText(nilai);
+      if (!bersih) return;
+      if (cleanText(lama)) {
+        dilewati.push(`${sebutan} sudah terisi di SIPP`);
+        return;
+      }
+      sasaran[kolom] = bersih;
+    };
+
+    pasang(isian.tanggalSurat, "tanggal_surat", lamaPerkara.tanggalSurat, isiPerkara, "Tanggal surat");
+    pasang(isian.nomorSurat, "nomor_surat", lamaPerkara.nomorSurat, isiPerkara, "Nomor surat");
+
+    if (adaTabelNikah) {
+      pasang(isian.tanggalMenikah, "tgl_nikah", lamaNikah.tglNikah, isiNikah, "Tanggal menikah");
+      pasang(isian.tanggalAktaNikah, "tgl_kutipan_akta_nikah", lamaNikah.tglAkta, isiNikah, "Tanggal kutipan akta nikah");
+      pasang(isian.nomorAktaNikah, "no_kutipan_akta_nikah", lamaNikah.noAkta, isiNikah, "Nomor kutipan akta nikah");
+      pasang(isian.kuaTempatMenikah, "kua_tempat_nikah", lamaNikah.kua, isiNikah, "KUA tempat menikah");
+    }
+
+    const jumlahIsi = Object.keys(isiPerkara).length + Object.keys(isiNikah).length;
+    if (jumlahIsi === 0) {
+      return { ok: false, alasan: "tidak_ada_yang_perlu_diisi", dilewati };
+    }
+
+    if (Object.keys(isiPerkara).length > 0) {
+      const kolom = Object.keys(isiPerkara);
+      langkah.push({
+        tabel: "perkara",
+        aksi: "UPDATE",
+        sql:
+          `UPDATE perkara SET ${kolom.map((k) => `${k} = ?`).join(", ")}, ` +
+          `diperbaharui_oleh = ?, diperbaharui_tanggal = ? WHERE perkara_id = ?`,
+        params: [...kolom.map((k) => isiPerkara[k]), akun.username, saat, perkara.perkaraId],
+        keterangan: `data umum: ${kolom.join(", ")}`,
+      });
+      langkah.push(
+        barisAudit({
+          username: akun.username,
+          operator,
+          tabel: "perkara",
+          formulir: jejak.formulir,
+          aksi: "UPDATE",
+          nilai: { perkara_id: perkara.perkaraId, ...isiPerkara, diperbaharui_oleh: akun.username },
+          ip,
+          saat,
+        })
+      );
+    }
+
+    if (Object.keys(isiNikah).length > 0) {
+      const kolom = Object.keys(isiNikah);
+      // perkara_id adalah PRIMARY KEY tabel ini - diperiksa - sehingga satu
+      // pernyataan menangani perkara yang barisnya belum ada maupun yang
+      // sudah. Dari 9.834 perkara, 5.691 sudah punya barisnya.
+      langkah.push({
+        tabel: "perkara_data_pernikahan",
+        aksi: "INSERT",
+        sql:
+          `INSERT INTO perkara_data_pernikahan (perkara_id, ${kolom.join(", ")}, diinput_oleh, diinput_tanggal)
+           VALUES (?${kolom.map(() => ", ?").join("")}, ?, ?)
+           ON DUPLICATE KEY UPDATE ${kolom.map((k) => `${k} = VALUES(${k})`).join(", ")},
+             diperbaharui_oleh = VALUES(diinput_oleh), diperbaharui_tanggal = VALUES(diinput_tanggal)`,
+        params: [perkara.perkaraId, ...kolom.map((k) => isiNikah[k]), akun.username, saat],
+        keterangan: `data pernikahan: ${kolom.join(", ")}`,
+      });
+      langkah.push(
+        barisAudit({
+          username: akun.username,
+          operator,
+          tabel: "perkara_data_pernikahan",
+          formulir: jejak.formulir,
+          aksi: "INSERT",
+          nilai: { perkara_id: perkara.perkaraId, ...isiNikah, diinput_oleh: akun.username },
+          ip,
+          saat,
+        })
+      );
+    }
+
+    return {
+      ok: true,
+      jenis,
+      perkara,
+      atasNama: { username: akun.username, namaLengkap: akun.namaLengkap },
+      operator,
+      dilewati,
+      jumlahLangkah: langkah.length,
+      langkah,
+    };
   }
 
   // ---- jejak pada tabel perkara, sama untuk keempatnya --------------------

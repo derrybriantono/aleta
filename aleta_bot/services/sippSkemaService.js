@@ -133,6 +133,8 @@ const TABEL = [
   // Gugatan balik. Tanpa didaftarkan di sini, tabelAda() menjawab "tidak ada"
   // walau tabelnya ada - dan penanda rekonvensi tidak akan pernah menyala.
   "perkara_rekonvensi",
+  // Data Umum: tanggal nikah, kutipan akta, dan KUA tempat menikah.
+  "perkara_data_pernikahan",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */
