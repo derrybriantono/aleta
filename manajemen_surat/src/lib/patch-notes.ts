@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.99.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.99.0 - Sembilan Penjaga Urutan, dan Berkas Arsip Ditemukan";
+export const APP_VERSION = "2.0.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.0.0 - Arsip Dapat Diunduh, Empat Tombol Mati Dihidupkan";
 
 export type PatchNote = {
   version: string;
@@ -21,8 +21,40 @@ export type PatchNote = {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: "2.0.0",
+    title: "ALETA Judicia v2.0.0 - Arsip Dapat Diunduh, Empat Tombol Mati Dihidupkan",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Berkas pindaian arsip perkara kini dapat diunduh dari layar Status Perkara - 4.128 berkas sebesar 32 GB yang selama ini ada tetapi tidak pernah terjangkau. Sekaligus menghidupkan empat tombol unduh yang selama ini menghasilkan penolakan tanpa ada yang menyadarinya: penetapan, petitum, arsip, dan ikrar talak.",
+    added: [
+      "Layanan arsipBerkasService - menyusun jalur berkas pindaian dari letak fisiknya, lalu bila tidak ketemu di sana menelusuri nama berkasnya di seluruh folder arsip. Indeks namanya disimpan sepuluh menit, sebab petugas arsip memindai berkas baru setiap hari dan indeks yang basi akan menyatakan berkas yang baru diunggah belum ada.",
+      "Tombol unduh arsip beserta besar berkas dan tanggalnya pada layar Status Perkara. Besarnya disebutkan sebab arsip perkara berkisar 2 MB sampai 28 MB - selisih yang menentukan apakah seseorang mengunduhnya sekarang atau menunggu.",
+    ],
+    changed: [
+      "Ada atau tidaknya berkas pindaian kini dijawab berkas sistem, bukan basis data. Sebelumnya dibaca dari kolom arsip yang TIDAK ADA pada SIPP, sehingga jawabannya selalu 'tidak ada' untuk seluruh perkara.",
+      "Daftar jenis berkas yang boleh diunduh kini SATU, dipakai bersama gerbang bot dan layanannya. Sebelumnya ada tiga daftar terpisah dan hanya dua yang diperbarui.",
+    ],
+    fixed: [
+      "Empat tombol unduh mati diam-diam. Diuji pada server sebelum diperbaiki: jenis penetapan, arsip, dan petitum sama-sama memulangkan 400 jenis_tidak_dikenali, padahal kodenya sudah lama ada dan tombolnya sudah lama terpasang. Kegagalan macam ini tidak berbunyi di mana pun - tombolnya tampil, diklik, dan yang terunduh justru berkas JSON berisi penolakan.",
+      "Keterangan pada layar arsip yang menyatakan 'arsip SIPP bukan tempat berkas digital, sehingga tidak ada yang dapat diunduh dari bagian ini'. Kesimpulan itu diambil dari benarnya satu hal - tabel arsip memang tidak punya kolom dokumen - tetapi salah pada hal berikutnya: berkasnya ada, hanya catatannya yang tidak.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Jalur berkas tetap TIDAK PERNAH datang dari peramban. Yang dikirim hanya nomor baris arsipnya; jalurnya disusun di bot dari isi basis data, lalu dilewatkan penyaring ekstensi dan akar folder yang sudah ada. Keping letak yang membawa pemisah jalur atau titik-titik ditolak sebelum jalurnya tersusun.",
+      "Berkas yang ketemu di luar letak yang tercatat tetap dapat diunduh, TETAPI disebutkan letak sebenarnya. Menemukannya diam-diam berarti membiarkan letak arsipnya selamanya keliru; 307 berkas berkeadaan begitu, umumnya karena lemarinya dinomori ulang sesudah berkasnya dipindai.",
+      "Akses ke SIPP tetap baca-saja. Container aleta-bot sudah lama memuat /var/www/html/SIPP secara read-only, jadi tidak ada mount baru maupun perubahan hak akses.",
+    ],
+    knownLimitations: [
+      "Ada atau tidaknya berkas pindaian TIDAK memengaruhi nilai SK Tabel 2 I.16. Yang dinilai SK di sana jeda penginputan datanya, bukan pindaiannya. Menjadikannya pengurang nilai berarti menilai pengadilan dengan aturan yang tidak ada dalam SK - bila kelak dikehendaki, yang diperlukan lebih dahulu dasar hukumnya, bukan kodenya.",
+      "1.041 baris arsip dari 4.863 memang belum ada berkas pindaiannya, dan 991 di antaranya perkara 2018 sampai 2021. Layarnya menyebutkannya apa adanya, bukan menyembunyikannya.",
+      "Jenis ikrar-talak ikut dihidupkan pada daftar, tetapi berkasnya bergantung kolom yang belum tentu ada pada SIPP versi ini - bila tidak ada, hasilnya 404 berkas tidak tercatat, bukan lagi 400 jenis tidak dikenali.",
+      "Layar arsip yang baru belum dilihat langsung di peramban - tidak ada peladen uji yang berjalan.",
+    ],
+  },
+  {
     version: "1.99.0",
-    title: "ALETA Judicia v1.99.0 - Sembilan Penjaga Urutan, dan Berkas Arsip Ditemukan",
+    title: "ALETA Judicia v1.99.0 - Sembilan Penjaga Urutan",
     date: "2026-09-08",
     status: "Operasional",
     summary:

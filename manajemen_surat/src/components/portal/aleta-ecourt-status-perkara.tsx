@@ -416,6 +416,7 @@ type Status = {
     alasan: string;
     sudahDiarsipkan: boolean;
     berkasTerbaca?: boolean;
+    alasanBerkas?: string;
     baris: Array<{
       arsipId: string;
       ruang?: string;
@@ -437,6 +438,12 @@ type Status = {
       keterangan: string;
       oleh: string;
       adaBerkas: boolean;
+      // "letak" bila berkasnya ada di tempat semestinya, "nama" bila ketemu
+      // di tempat lain lewat penelusuran nama - lihat arsipBerkasService.
+      berkasCara?: string;
+      berkasBesar?: number | null;
+      berkasDiubah?: string;
+      berkasCatatan?: string;
     }>;
   };
   // Apakah putusannya benar-benar terbit di e-Court. null bila belum putus.
@@ -2720,15 +2727,37 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                       diinput {x.tanggalInput || "—"}
                       {x.oleh ? ` oleh ${x.oleh}` : ""}
                     </span>
+                    {/* ====================================================
+                        TOMBOL INI TIDAK PERNAH MUNCUL SEKALI PUN
+                        ====================================================
+
+                        adaBerkas dulu dibaca dari kolom arsip yang TIDAK ADA
+                        pada SIPP, jadi nilainya selalu salah untuk seluruh
+                        perkara. Sekarang ia dijawab berkas sistem: 4.128 PDF
+                        sebesar 32 GB memang ada di dokumen_arsip.
+
+                        Besar berkasnya disebutkan sebab arsip perkara berkisar
+                        2 MB sampai 28 MB - selisih yang menentukan apakah
+                        seseorang mengunduhnya sekarang atau menunggu. */}
                     {x.adaBerkas && x.arsipId ? (
-                      <TombolUnduh
-                        alamat={`/api/aleta-ecourt/berkas-sipp?jenis=arsip&id=${encodeURIComponent(
-                          x.arsipId
-                        )}`}
-                        label="Unduh"
-                        namaCadangan={`arsip-${status.identitas.nomorPerkara}.pdf`}
-                      />
-                    ) : null}
+                      <>
+                        {x.berkasBesar ? (
+                          <span className="text-xs text-muted-foreground">
+                            {(x.berkasBesar / 1024 / 1024).toFixed(1)} MB
+                            {x.berkasDiubah ? ` · ${x.berkasDiubah}` : ""}
+                          </span>
+                        ) : null}
+                        <TombolUnduh
+                          alamat={`/api/aleta-ecourt/berkas-sipp?jenis=arsip&id=${encodeURIComponent(
+                            x.arsipId
+                          )}`}
+                          label="Unduh"
+                          namaCadangan={`arsip-${status.identitas.nomorPerkara}.pdf`}
+                        />
+                      </>
+                    ) : (
+                      <Badge variant="muted">berkas pindaian belum ada</Badge>
+                    )}
                   </span>
                 </div>
                 {/* ============================================================
@@ -2787,30 +2816,74 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                 {x.keterangan ? (
                   <p className="mt-0.5 text-sm text-muted-foreground">{x.keterangan}</p>
                 ) : null}
+
+                {/* ============================================================
+                    BERKAS YANG KETEMU DI LUAR LETAK SEMESTINYA
+                    ============================================================
+
+                    Letak arsip dapat disunting di SIPP, sedangkan berkas yang
+                    sudah ditulis tetap di jalur lama - 307 berkas berkeadaan
+                    begitu. ALETA tetap menemukannya lewat penelusuran nama,
+                    dan tombol unduhnya tetap bekerja.
+
+                    Tetapi menemukannya diam-diam berarti membiarkan letaknya
+                    selamanya keliru. Karena itu disebutkan: yang membacanya
+                    dapat membetulkan letak arsipnya di SIPP. */}
+                {x.adaBerkas && x.berkasCara === "nama" && x.berkasCatatan ? (
+                  <p className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                    {x.berkasCatatan}
+                  </p>
+                ) : null}
+
+                {!x.adaBerkas && x.berkasCatatan ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{x.berkasCatatan}</p>
+                ) : null}
               </li>
             ))}
           </ul>
         )}
 
         {/* ================================================================
-            MENGAPA DI SINI TIDAK ADA TOMBOL UNDUH
+            KETERANGAN LAMA DI SINI TERNYATA KELIRU
             ================================================================
 
-            Karena memang tidak ada yang dapat diunduh. Tabel arsip SIPP
-            seluruhnya berisi keterangan arsip FISIK - ruang, lemari, rak,
-            box, tanggal masuk, penerima - tanpa satu pun kolom dokumen.
+            Kalimat sebelumnya menyatakan arsip SIPP "bukan tempat berkas
+            digital, sehingga tidak ada yang dapat diunduh dari bagian ini".
+            Kesimpulan itu diambil dari benarnya satu hal - tabel arsip memang
+            tidak punya kolom dokumen - tetapi salah pada hal berikutnya.
 
-            Kalimat lamanya menyebut "kolom berkas arsip tidak ada pada SIPP
-            versi ini", yang terbaca seolah versi SIPP di sini kurang
-            lengkap dan berkasnya seharusnya ada. Yang benar: arsip di SIPP
-            memang bukan tempat berkas digital, dan berkas digitalnya ada di
-            bagian Berkas pada layar yang sama. */}
+            Berkas pindaiannya ADA: 4.128 PDF sebesar 32 GB di dokumen_arsip,
+            disusun menurut letak fisiknya. Yang tidak ada hanyalah CATATANNYA
+            di basis data, dan itu sebabnya jalurnya harus disusun sendiri.
+
+            Yang tersisa untuk disebutkan di sini karena itu bukan lagi
+            "tidak ada berkas digital", melainkan keadaan yang benar-benar
+            menghalangi: folder arsipnya tidak terbaca dari container. */}
         {status.arsipKeterangan.sudahDiarsipkan && status.arsipKeterangan.berkasTerbaca === false ? (
-          <p className="mt-2 rounded-md border bg-muted/20 px-2.5 py-2 text-sm text-muted-foreground">
-            Arsip di SIPP mencatat letak berkas <strong>fisik</strong> - ruang, lemari, rak, dan
-            box - bukan berkas digital, sehingga tidak ada yang dapat diunduh dari bagian ini.
-            Berkas digital perkara ini (gugatan, relaas, resi, BAS, dan putusan) ada di bagian{" "}
-            <strong>Berkas</strong> pada layar ini.
+          <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            {status.arsipKeterangan.alasanBerkas ||
+              "Folder arsip SIPP tidak terbaca dari ALETA, sehingga berkas pindaiannya tidak dapat disebut ada atau tidak."}
+          </p>
+        ) : null}
+
+        {/* ================================================================
+            ADA ATAU TIDAKNYA BERKAS PINDAIAN TIDAK MENGUBAH NILAI SK
+            ================================================================
+
+            SK 048/2024 Tabel 2 I.16 menilai JEDA PENGINPUTAN DATA arsip -
+            berapa hari sesudah akta cerai atau BHT datanya diinput. Ia sama
+            sekali tidak menyebut berkas pindaian.
+
+            Karena itu keberadaan berkasnya ditampilkan sebagai keterangan,
+            BUKAN sebagai pengurang nilai. Menjadikannya pengurang berarti
+            menilai pengadilan dengan aturan yang tidak ada dalam SK - dan
+            angka yang tidak dapat ditunjuk dasarnya tidak dapat dibantah
+            oleh yang dinilai. Bila kelak dikehendaki ikut menentukan nilai,
+            yang diperlukan lebih dahulu dasar hukumnya, bukan kodenya. */}
+        {status.arsipKeterangan.sudahDiarsipkan ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ada atau tidaknya berkas pindaian <strong>tidak</strong> memengaruhi nilai SK Tabel 2
+            I.16 - yang dinilai di sana jeda penginputan datanya, bukan pindaiannya.
           </p>
         ) : null}
       </Bagian>

@@ -36,6 +36,7 @@ const db = require("../db_config");
 const { cleanText } = require("./ecourtTextService");
 const sippSkemaService = require("./sippSkemaService");
 const sippAuditService = require("./sippAuditService");
+const arsipBerkasService = require("./arsipBerkasService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -2604,6 +2605,10 @@ async function arsipKeteranganPerkara(perkaraId) {
   if (kolom.arsipMasuk) pilihan.push(`a.${kolom.arsipMasuk} AS masuk`);
   if (kolom.arsipLengkap) pilihan.push(`a.${kolom.arsipLengkap} AS lengkap`);
   if (kolom.arsipPenerima) pilihan.push(`a.${kolom.arsipPenerima} AS penerima`);
+  // Nomor perkara dibaca dari baris arsipnya sendiri - nama berkas pindaian
+  // disusun darinya, dan nomor pada baris arsip itulah yang dipakai SIPP
+  // ketika berkasnya ditulis.
+  pilihan.push("a.nomor_perkara AS nomorPerkara");
 
   if (pilihan.length === 0) {
     const adaKolom = await sippSkemaService.kolomTabel("arsip");
@@ -2645,6 +2650,10 @@ async function arsipKeteranganPerkara(perkaraId) {
     }
   }
 
+  // Ditanyakan SEKALI, bukan sekali per baris: jawabannya sama untuk seluruh
+  // baris pada perkara ini, dan tiap panggilan menyentuh berkas sistem.
+  const akarArsip = arsipBerkasService.akarArsip();
+
   const petaPinjam = new Map();
   for (const baris of pinjam) {
     const kunci = String(baris.arsipId || "");
@@ -2657,16 +2666,45 @@ async function arsipKeteranganPerkara(perkaraId) {
     terbaca: true,
     alasan: "",
     sudahDiarsipkan: rows.length > 0,
-    // Bila kolom berkasnya tidak ada sama sekali, itu disebutkan - supaya
-    // jelas bahwa tidak adanya tombol unduh bukan karena berkasnya hilang.
-    berkasTerbaca: Boolean(kolom.arsipBerkas),
-    baris: rows.map((row) => ({
+    // ========================================================================
+    // ADANYA BERKAS DITANYAKAN KE BERKAS SISTEM, BUKAN KE BASIS DATA
+    // ========================================================================
+    //
+    // Sebelumnya adaBerkas dibaca dari kolom arsipBerkas - dan kolom itu TIDAK
+    // ADA pada tabel arsip SIPP. Calonnya (dokumen, file_arsip, berkas, ...)
+    // tidak satu pun cocok, jadi adaBerkas selalu salah untuk SELURUH perkara,
+    // dan tombol unduhnya tidak pernah muncul sekali pun. Padahal berkasnya
+    // ada: 4.128 PDF sebesar 32 GB di dokumen_arsip.
+    //
+    // Yang menjawab pertanyaan "ada berkasnya atau tidak" karena itu berkas
+    // sistem, bukan basis data. Lihat arsipBerkasService.
+    berkasTerbaca: Boolean(akarArsip),
+    alasanBerkas: akarArsip
+      ? ""
+      : "Folder arsip SIPP tidak terbaca dari container ALETA - berkas pindaiannya karena itu tidak dapat disebut ada atau tidak.",
+    baris: rows.map((row) => {
+      const nomorArsip = cleanText(row.nomorPerkara);
+      const berkas = arsipBerkasService.cariBerkas({
+        ruang: cleanText(row.ruang),
+        lemari: cleanText(row.lemari),
+        rak: cleanText(row.rak),
+        box: cleanText(row.box),
+        nomorPerkara: nomorArsip,
+      });
+      return {
       arsipId: String(row.arsipId || ""),
       tanggalInput: isoTanggal(row.diinput),
       nomor: cleanText(row.nomor),
       keterangan: cleanText(row.keterangan),
       oleh: cleanText(row.oleh),
-      adaBerkas: Boolean(cleanText(row.berkas)),
+      adaBerkas: berkas.ada,
+      // Jalannya disebutkan supaya berkas yang ketemu di luar letak semestinya
+      // dapat dibetulkan letaknya - bukan dibiarkan karena toh tetap terunduh.
+      berkasCara: berkas.cara,
+      berkasBesar: berkas.besar,
+      berkasDiubah: berkas.diubah,
+      berkasCatatan: berkas.alasan,
+      nomorPerkaraArsip: nomorArsip,
       // --- letak berkas fisiknya ---
       ruang: cleanText(row.ruang),
       lemari: cleanText(row.lemari),
@@ -2689,7 +2727,8 @@ async function arsipKeteranganPerkara(perkaraId) {
           keterangan: cleanText(p.keterangan),
         };
       })(),
-    })),
+      };
+    }),
   };
 }
 

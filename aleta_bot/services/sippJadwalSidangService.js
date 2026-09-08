@@ -38,6 +38,7 @@ const sippSkemaService = require("./sippSkemaService");
 // Dimuat malas: sippTahapanService juga memuat berkas ini, dan memuat
 // keduanya di kepala berkas menghasilkan rujukan berputar.
 const sippTahapanService = require("./sippTahapanService");
+const arsipBerkasService = require("./arsipBerkasService");
 const putusanEcourtService = require("./putusanEcourtService");
 const { satukanPetugas } = require("./petugasPerkaraUtil");
 
@@ -1723,6 +1724,30 @@ async function dokumenSipp(perkaraId) {
 }
 
 /**
+ * Jenis berkas SIPP yang dapat diunduh - SATU daftar, dipakai bersama.
+ *
+ * Gerbang bot memakai daftar ini untuk menolak jenis yang tidak dikenali.
+ * Sebelumnya ia punya daftar tulisan tangan sendiri, dan daftar itu tertinggal
+ * ketika penetapan, petitum, arsip, dan ikrar talak ditambahkan di bawah -
+ * sehingga keempatnya ditolak 400 padahal kodenya sudah ada.
+ *
+ * Menaruhnya di sebelah cabang-cabangnya membuat keduanya sukar berselisih:
+ * yang menambah cabang melihat daftarnya pada layar yang sama.
+ */
+const JENIS_BERKAS_SIPP = [
+  "dokumen",
+  "penetapan",
+  "petitum",
+  "arsip",
+  "ikrar-talak",
+  "bas",
+  "putusan",
+  "putusan-anonim",
+  "relaas",
+  "resi",
+];
+
+/**
  * Jalur berkas SIPP untuk satu dokumen, dibaca DARI DATABASE.
  *
  * Jalurnya tidak pernah datang dari peramban. Pemanggil menyebut nomor barisnya,
@@ -1780,16 +1805,39 @@ async function jalurDokumenSipp(jenis, id) {
     return { jalur: berkas, judul: berkas.split("/").pop() };
   }
 
+  // ==========================================================================
+  // ARSIP - JALURNYA DISUSUN, SEBAB TABELNYA TIDAK MENYIMPANNYA
+  // ==========================================================================
+  //
+  // Semula cabang ini membaca kolom arsipBerkas. Kolom itu TIDAK ADA pada
+  // tabel arsip SIPP - tidak satu pun calonnya cocok - sehingga cabangnya
+  // selalu memulangkan null dan tombol unduh arsip selalu berujung 404.
+  //
+  // Yang ada di tabel arsip hanya LETAK FISIKNYA, dan dari letak itulah SIPP
+  // menyusun jalur berkasnya. Penyusunannya beserta penelusuran cadangan bila
+  // letaknya sudah disunting ada di arsipBerkasService.
+  //
+  // Yang dikirim pemanggil tetap hanya nomor barisnya - jalurnya disusun di
+  // sini dari isi basis data, tidak pernah dari peramban.
   if (jenis === "arsip") {
-    const kolom = await sippSkemaService.kolomTerpilih();
-    if (!kolom.arsipBerkas) return null;
     const rows = await runQuery(
-      `SELECT a.${kolom.arsipBerkas} AS berkas FROM arsip a WHERE a.id = ? LIMIT 1`,
+      `SELECT a.no_ruang AS ruang, a.no_lemari AS lemari, a.no_rak AS rak,
+              a.no_berkas AS box, a.nomor_perkara AS nomorPerkara
+         FROM arsip a WHERE a.id = ? LIMIT 1`,
       [nomor]
     ).catch(() => []);
-    const berkas = cleanText(rows[0] && rows[0].berkas);
-    if (!berkas) return null;
-    return { jalur: berkas, judul: berkas.split("/").pop() };
+    const baris = rows[0];
+    if (!baris) return null;
+
+    const berkas = arsipBerkasService.cariBerkas({
+      ruang: cleanText(baris.ruang),
+      lemari: cleanText(baris.lemari),
+      rak: cleanText(baris.rak),
+      box: cleanText(baris.box),
+      nomorPerkara: cleanText(baris.nomorPerkara),
+    });
+    if (!berkas.ada) return null;
+    return { jalur: berkas.jalur, judul: berkas.jalur.split("/").pop() };
   }
 
   if (jenis === "ikrar-talak") {
@@ -1983,6 +2031,7 @@ module.exports = {
   rekapBulanSidang,
   dokumenSipp,
   jalurDokumenSipp,
+  JENIS_BERKAS_SIPP,
   majelisPerkara,
   petugasPerkara,
   relaasSidang,

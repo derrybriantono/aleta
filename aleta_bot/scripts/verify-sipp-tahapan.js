@@ -8,8 +8,44 @@
  * ada, isi kosong - dapat diuji di mesin mana pun.
  */
 
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const Module = require("module");
+
+/**
+ * ============================================================================
+ * FOLDER ARSIP TIRUAN - DIPASANG SEBELUM MODUL APA PUN DIMUAT
+ * ============================================================================
+ *
+ * Ada atau tidaknya berkas pindaian arsip kini dijawab BERKAS SISTEM, bukan
+ * basis data - sebab tabel arsip SIPP tidak menyimpan nama berkas sama sekali.
+ * Karena itu tiruannya pun harus berkas sungguhan, bukan baris basis data.
+ *
+ * Env-nya dipasang di sini, di baris paling atas, sebab sippDocumentService
+ * membacanya SEKALI ketika dimuat - dan muatDengan() tidak memuat ulang modul
+ * itu. Memasangnya di tengah berkas akan terlambat, dan ujinya akan lulus atau
+ * gagal tergantung urutan require yang tidak kelihatan.
+ */
+const AKAR_ARSIP_UJI = fs.mkdtempSync(path.join(os.tmpdir(), "aleta-uji-arsip-"));
+process.env.ALETA_BOT_SIPP_DOCUMENT_ROOTS = AKAR_ARSIP_UJI;
+
+function tulisArsipUji(relatif) {
+  const penuh = path.join(AKAR_ARSIP_UJI, ...relatif.split("/"));
+  fs.mkdirSync(path.dirname(penuh), { recursive: true });
+  fs.writeFileSync(penuh, "%PDF-1.4 uji");
+}
+
+// Perkara 4211 pada uji di bawah - letaknya ruang I, lemari II, rak III, box 4.
+tulisArsipUji("dokumen_arsip/I/II/III/4/Arsip_100_Pdt_G_2025_PA_Dgl.pdf");
+
+process.on("exit", () => {
+  try {
+    fs.rmSync(AKAR_ARSIP_UJI, { recursive: true, force: true });
+  } catch (_) {
+    // Folder sementara.
+  }
+});
 
 let jumlah = 0;
 let gagal = 0;
@@ -1402,10 +1438,25 @@ async function utama() {
 
   const dbArsip = muatDengan(
     buatDbTiruan({
-      kolom: { arsip: ["id", "perkara_id", "diinput_tanggal", "nomor_box", "keterangan", "diinput_oleh", "dokumen"] },
+      kolom: {
+        arsip: [
+          "id", "perkara_id", "diinput_tanggal", "nomor_box", "keterangan", "diinput_oleh",
+          "no_ruang", "no_lemari", "no_rak", "no_berkas", "nomor_perkara",
+        ],
+      },
       baris: {
         "FROM arsip a": [
-          { arsipId: 900, diinput: "2025-03-21", nomor: "100", oleh: "panmud4", berkas: "arsip/100.pdf" },
+          {
+            arsipId: 900,
+            diinput: "2025-03-21",
+            nomor: "100",
+            oleh: "panmud4",
+            ruang: "I",
+            lemari: "II",
+            rak: "III",
+            box: "4",
+            nomorPerkara: "100/Pdt.G/2025/PA.Dgl",
+          },
         ],
       },
     })
@@ -1415,21 +1466,53 @@ async function utama() {
   cek("arsip terbaca", hasilArsip.terbaca, true);
   cek("sudah diarsipkan", hasilArsip.sudahDiarsipkan, true);
   cek("nomor box terbaca", hasilArsip.baris[0].nomor, "100");
+  // Adanya berkas dijawab BERKAS SISTEM, bukan kolom basis data - tabel arsip
+  // SIPP tidak punya kolom berkas sama sekali, dan itulah sebabnya jawaban
+  // lamanya selalu "tidak ada" untuk seluruh perkara.
   cek("berkasnya ada", hasilArsip.baris[0].adaBerkas, true);
+  cek("ketemu di letak yang tercatat", hasilArsip.baris[0].berkasCara, "letak");
+  cek("besarnya disebutkan", hasilArsip.baris[0].berkasBesar > 0, true);
   cek("nomor barisnya dibawa untuk unduhan", hasilArsip.baris[0].arsipId, "900");
-  cek("kolom berkas dikenali", hasilArsip.berkasTerbaca, true);
+  cek("folder arsipnya terbaca", hasilArsip.berkasTerbaca, true);
 
-  // Tanpa kolom berkas, tombol unduh memang tidak boleh muncul.
+  // Baris yang berkas pindaiannya memang belum ada. Bedanya dengan keadaan di
+  // atas menentukan: folder arsipnya tetap terbaca - yang tidak ada hanya
+  // berkas perkara ini - sehingga sebabnya dapat disebut dengan pasti, bukan
+  // "entah ada entah tidak".
   const dbArsipTanpa = muatDengan(
     buatDbTiruan({
-      kolom: { arsip: ["id", "perkara_id", "diinput_tanggal", "nomor_box"] },
-      baris: { "FROM arsip a": [{ arsipId: 901, diinput: "2025-03-21", nomor: "101" }] },
+      kolom: {
+        arsip: [
+          "id", "perkara_id", "diinput_tanggal", "nomor_box",
+          "no_ruang", "no_lemari", "no_rak", "no_berkas", "nomor_perkara",
+        ],
+      },
+      baris: {
+        "FROM arsip a": [
+          {
+            arsipId: 901,
+            diinput: "2025-03-21",
+            nomor: "101",
+            ruang: "I",
+            lemari: "II",
+            rak: "III",
+            box: "4",
+            nomorPerkara: "9999/Pdt.G/2025/PA.Dgl",
+          },
+        ],
+      },
     })
   );
   dbArsipTanpa.skema.lupakan();
   const arsipTanpa = await dbArsipTanpa.tahapan.arsipKeteranganPerkara(4211);
-  cek("tanpa kolom berkas: tetap terbaca", arsipTanpa.terbaca, true);
-  cek("tanpa kolom berkas: ditandai", arsipTanpa.berkasTerbaca, false);
+  cek("belum ada berkas: tetap terbaca", arsipTanpa.terbaca, true);
+  cek("belum ada berkas: folder tetap terbaca", arsipTanpa.berkasTerbaca, true);
+  cek("belum ada berkas: tombol tidak muncul", arsipTanpa.baris[0].adaBerkas, false);
+  cek(
+    "belum ada berkas: sebabnya disebut",
+    /belum ada/.test(String(arsipTanpa.baris[0].berkasCatatan || "")),
+    true
+  );
   cek("tanpa kolom berkas: adaBerkas false", arsipTanpa.baris[0].adaBerkas, false);
 
   // -------------------------------------------------------------------------

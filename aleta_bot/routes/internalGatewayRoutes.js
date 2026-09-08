@@ -2199,8 +2199,22 @@ router.get("/sipp/jadwal-sidang/rincian", requireInternalToken, async (req, res)
  */
 router.get("/sipp/berkas-perkara", requireInternalToken, async (req, res) => {
   try {
+    // ======================================================================
+    // DAFTAR INI PERNAH TERTINGGAL DARI YANG SUDAH DIKERJAKAN
+    // ======================================================================
+    //
+    // jalurDokumenSipp() sudah lama menangani penetapan, petitum, arsip, dan
+    // ikrar talak, dan layarnya sudah lama memasang tombol unduh untuk
+    // keempatnya. Daftar di sini tidak ikut ditambah, sehingga keempat tombol
+    // itu berujung 400 jenis_tidak_dikenali - diuji pada server: penetapan,
+    // arsip, dan petitum sama-sama 400.
+    //
+    // Kegagalan seperti ini tidak berbunyi di mana pun: layarnya menampilkan
+    // tombol, tombolnya diklik, dan yang turun berkas JSON berisi penolakan.
+    // Karena itu daftarnya sekarang disusun dari SATU tempat bersama
+    // jalurDokumenSipp - lihat JENIS_BERKAS_SIPP di sippJadwalSidangService.
     const jenis = String(req.query.jenis || "");
-    if (!["dokumen", "relaas", "resi", "bas", "putusan", "putusan-anonim"].includes(jenis)) {
+    if (!sippJadwalSidangService.JENIS_BERKAS_SIPP.includes(jenis)) {
       res.status(400).json({ ok: false, alasan: "jenis_tidak_dikenali" });
       return;
     }
