@@ -308,13 +308,17 @@ async function ringkasanMassal(daftarNomor, { batas = 60 } = {}) {
   // Kelimanya dibaca SEKALI untuk seluruh baris - satu kueri per jenis, bukan
   // satu kueri per perkara. Lima puluh perkara kali lima kueri adalah dua ratus
   // lima puluh perjalanan ke SIPP untuk satu halaman.
-  const identitas = await aman(() => identitasMassal(nomorBersih), {});
+  const identitasHasil = await aman(() => identitasMassal(nomorBersih), { perkara: {}, gagal: [] });
 
   return {
     diperiksaPada: new Date().toISOString(),
     ambangMendesakHari: ambang,
     perkara: hasil,
-    identitas,
+    identitas: identitasHasil.perkara || {},
+    // Kosong berarti seluruh pembacaannya berhasil. Berisi berarti ada tabel
+    // atau kolom yang tidak dikenali - dan penandanya diam BUKAN karena
+    // perkaranya bersih.
+    identitasGagal: identitasHasil.gagal || [],
   };
 }
 
@@ -377,6 +381,35 @@ async function identitasMassal(nomorBersih) {
   if (daftarId.length === 0) return hasil;
   const isianId = daftarId.map(() => "?").join(", ");
 
+  // ==========================================================================
+  // KEGAGALAN SKEMA TIDAK BOLEH BERSEMBUNYI LAGI
+  // ==========================================================================
+  //
+  // Tiga kali dalam satu hari, dengan bentuk yang persis sama:
+  //
+  //   identitas.perkaraId          medan yang tidak ada  -> seluruh penanda mati
+  //   v_pihak_perkara.pekerjaan    kolom yang tidak ada  -> PNS/TNI/Polri mati
+  //   perkara_kuasa                tabel yang tidak ada  -> penanda kuasa mati
+  //
+  // Ketiganya lolos karena pembungkus aman() menelan galat skema, sehingga
+  // "salah nama tabel" tidak dapat dibedakan dari "memang tidak ada datanya".
+  // Ketiganya hanya ketahuan karena dibandingkan dengan sumber lain - bukan
+  // karena ada yang berbunyi.
+  //
+  // Pembungkus di bawah tetap gagal-terbuka - penandanya sekadar tidak muncul,
+  // sebab penanda yang keliru di halaman SIPP lebih merugikan daripada penanda
+  // yang absen. Yang berubah: galatnya DICATAT dan ikut dipulangkan pada
+  // `gagal`, sehingga kegagalan skema berikutnya dapat dilihat tanpa menebak.
+  const gagal = [];
+  const amanSkema = async (nama, fn) => {
+    try {
+      return await fn();
+    } catch (galat) {
+      gagal.push(`${nama}: ${String(galat.message || galat).slice(0, 120)}`);
+      return [];
+    }
+  };
+
   const tandai = (baris, medan) => {
     for (const satu of Array.isArray(baris) ? baris : []) {
       const nomor = petaId.get(Number(satu.id));
@@ -386,9 +419,22 @@ async function identitasMassal(nomorBersih) {
 
   const kolom = await aman(() => sippSkemaService.kolomTerpilih(), {});
 
-  const [ghaib, kuasa, pengacara, instansi, lawan] = await Promise.all([
+  // ======================================================================
+  // TABEL KUASA HANYA SATU - perkara_pengacara
+  // ======================================================================
+  //
+  // Percobaan pertama menanyakan perkara_kuasa juga, dan tabel itu TIDAK ADA
+  // di SIPP ini. Kuerinya gagal, tertelan pembungkus aman(), dan penandanya
+  // diam-diam tidak pernah menyala. Ini kegagalan ketiga dengan bentuk yang
+  // persis sama dalam satu hari - sesudah v_pihak_perkara.pekerjaan dan
+  // identitas.perkaraId - dan ketiganya punya ciri yang sama: pembungkus
+  // aman() menelan galat skema, sehingga salah nama tabel atau kolom tidak
+  // dapat dibedakan dari "memang tidak ada datanya".
+  //
+  // Karena itu kegagalannya kini DILAPORKAN - lihat `gagal` pada hasilnya.
+  const [ghaib, pengacara, instansi, lawan] = await Promise.all([
     kolom.pihakGhaib
-      ? aman(
+      ? amanSkema("ghaib", 
           () =>
             runQuerySipp(
               `SELECT DISTINCT p.perkara_id AS id FROM perkara_pihak2 p
@@ -398,16 +444,7 @@ async function identitasMassal(nomorBersih) {
           []
         )
       : [],
-    aman(
-      () =>
-        runQuerySipp(
-          `SELECT DISTINCT k.perkara_id AS id FROM perkara_kuasa k
-            WHERE k.perkara_id IN (${isianId})`,
-          daftarId
-        ),
-      []
-    ),
-    aman(
+    amanSkema("kuasa", 
       () =>
         runQuerySipp(
           `SELECT DISTINCT a.perkara_id AS id FROM perkara_pengacara a
@@ -433,7 +470,7 @@ async function identitasMassal(nomorBersih) {
     // Nama kolomnya dicari lewat layanan skema, sama seperti halaman detail,
     // supaya keduanya benar-benar membaca kolom yang sama.
     kolom.pihakPekerjaan
-      ? aman(
+      ? amanSkema("izinAtasan", 
           () =>
             runQuerySipp(
               `SELECT DISTINCT v.perkara_id AS id
@@ -446,7 +483,7 @@ async function identitasMassal(nomorBersih) {
           []
         )
       : [],
-    aman(
+    amanSkema("verzet", 
       () =>
         runQuerySipp(
           `SELECT DISTINCT v.perkara_id AS id FROM perkara_verzet v
@@ -458,12 +495,11 @@ async function identitasMassal(nomorBersih) {
   ]);
 
   tandai(ghaib, "ghaib");
-  tandai(kuasa, "kuasa");
   tandai(pengacara, "kuasa");
   tandai(instansi, "izinAtasan");
   tandai(lawan, "verzet");
 
-  return hasil;
+  return { perkara: hasil, gagal };
 }
 
 /**

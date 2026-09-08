@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.6.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.6.0 - Identitas di Halaman Daftar dan Rasio Smart Majelis";
+export const APP_VERSION = "2.6.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.6.1 - Kegagalan Skema Tidak Lagi Bersembunyi";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,28 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.6.1",
+    title: "ALETA Judicia v2.6.1 - Kegagalan Skema Tidak Lagi Bersembunyi",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Penanda kuasa pada halaman daftar tidak pernah menyala - tabel yang ditanyakan tidak ada, dan gagalnya tertelan. Ini kegagalan KETIGA dengan bentuk yang persis sama dalam satu hari, jadi yang diperbaiki bukan hanya kuerinya melainkan cara kegagalannya dilaporkan.",
+    added: [
+      "Kegagalan skema pada pembacaan identitas kini dicatat dan ikut dipulangkan pada identitasGagal. Kosong berarti seluruh pembacaannya berhasil; berisi berarti ada tabel atau kolom yang tidak dikenali - dan penandanya diam BUKAN karena perkaranya bersih.",
+    ],
+    changed: [],
+    fixed: [
+      "perkara_kuasa tidak ada di SIPP ini - satu-satunya tabel kuasa adalah perkara_pengacara. Kuerinya gagal dan tertelan pembungkus aman(), sehingga penanda kuasa tidak pernah muncul.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tiga kegagalan dengan bentuk sama dalam satu hari: identitas.perkaraId (medan tidak ada), v_pihak_perkara.pekerjaan (kolom tidak ada), perkara_kuasa (tabel tidak ada). Ketiganya lolos karena pembungkus aman() menelan galat skema, sehingga salah nama tidak dapat dibedakan dari tidak ada datanya. Ketiganya hanya ketahuan karena dibandingkan dengan sumber lain, bukan karena ada yang berbunyi.",
+      "Pembungkusnya tetap gagal-terbuka - penanda yang keliru di halaman SIPP lebih merugikan daripada penanda yang absen. Yang berubah hanya: galatnya sekarang terlihat.",
+      "Diuji sesudah diperbaiki: gagal skema kosong, dan empat perkara uji menyala benar sementara empat perkara baru memang bersih.",
+    ],
+    knownLimitations: [],
+  },
   {
     version: "2.6.0",
     title: "ALETA Judicia v2.6.0 - Identitas di Halaman Daftar dan Rasio Smart Majelis",
