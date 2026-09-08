@@ -4498,22 +4498,91 @@ function samakan(teks) {
 }
 
 /** Menempelkan ringkasan e-Court di sebelah judul halaman perkara. */
+/**
+ * ============================================================================
+ * YANG DITANDAI HANYA YANG TIDAK ADA DI SIPP
+ * ============================================================================
+ *
+ * Penanda lama menampilkan "5 dokumen e-Court", "1 nomor bermasalah", dan
+ * hitungan tenggat. Ketiganya SUDAH ada di panel ALETA yang terbuka persis di
+ * sebelahnya - jadi penandanya tidak menambah apa pun, ia mengulang. Dan ia
+ * mengulang di halaman milik orang lain, yang merupakan tempat paling mahal
+ * untuk sebuah pengulangan.
+ *
+ * Aturannya sekarang dua, dan keduanya harus terpenuhi:
+ *
+ *   1. TIDAK ADA di halaman SIPP itu. Kalau petugas dapat membacanya dengan
+ *      menggulung halaman, menempelkannya lagi hanya menambah keramaian.
+ *   2. MENGUBAH cara perkara itu ditangani hari ini. Keterangan yang benar
+ *      tetapi tidak mengubah apa pun adalah keterangan yang akan diabaikan
+ *      pada hari ketiga, lalu menulari penanda lain ikut diabaikan.
+ *
+ * Yang lolos keduanya:
+ *
+ *   PIHAK GHAIB      SIPP menyimpannya di perkara_pihak2.ghaib dan tidak
+ *                    menampilkannya di halaman detail. Ia mengubah seluruh
+ *                    tata cara: panggilan lewat pengumuman, tenggat 120 atau
+ *                    180 hari, dan bentuk relaas yang berbeda.
+ *   PERLU IZIN ATASAN  Pihak PNS, TNI, atau Polri tidak dapat disidangkan
+ *                    sebelum izin atasannya keluar. Jadwal sidang pertama
+ *                    yang disamakan dengan perkara biasa akan tertunda.
+ *   DIDUGA MAFQUD    Tidak punya kolomnya sendiri di SIPP - hanya pencirinya:
+ *                    tundaan panjang berulang. Disebut sebagai DUGAAN.
+ *   TENGGAT LEWAT    Batas unggah e-Court ada di e-Court, bukan di SIPP, dan
+ *                    yang lewat berarti pihak kehilangan kesempatan menanggapi.
+ *
+ * Yang sengaja DIBUANG: jumlah dokumen, jumlah nomor bermasalah, dan hitungan
+ * tenggat mendesak. Ketiganya keterangan, bukan tindakan.
+ */
 function tandaiJudul(konteks) {
   const judul = document.querySelector("h1, h2, .page-title, .panel-title");
   if (!judul || judul.querySelector(`[${TANDA}]`)) return;
 
+  const p = konteks.penanda || {};
+
+  // Ghaib lebih dulu dan berwarna merah: dari seluruh penanda, inilah yang
+  // paling mengubah pekerjaan hari itu.
+  if (p.ghaib === true) {
+    judul.appendChild(
+      labelTanda("PIHAK GHAIB", "merah", {
+        judul:
+          `Panggilan lewat pengumuman, tenggat 120 atau 180 hari. ` +
+          `${(p.sumberGhaib || []).join("; ") || "penanda ghaib pada SIPP"}.`,
+      })
+    );
+  }
+
+  if (p.perluIzinAtasan) {
+    const sebutan = (p.instansi || []).map((x) => x.label).join(", ");
+    judul.appendChild(
+      labelTanda(`IZIN ATASAN — ${sebutan || "PNS/TNI/Polri"}`, "kuning", {
+        judul:
+          "Pihak berstatus PNS, TNI, atau Polri. Persidangan menunggu izin atasannya, " +
+          "sehingga hari sidang pertama tidak dapat disamakan dengan perkara biasa.",
+      })
+    );
+  }
+
+  // Dugaan, dan ditulis sebagai dugaan. Mafqud tidak punya kolom di SIPP -
+  // yang ada hanya pencirinya, dan penanda yang menyatakan lebih daripada yang
+  // diketahui akan dipercaya lebih daripada yang pantas.
+  if (p.mafqud) {
+    judul.appendChild(
+      labelTanda("diduga mafqud", "kuning", {
+        judul:
+          `Diduga dari pola tundaan: ${p.tundaanPanjang || 0} kali tundaan panjang. ` +
+          "Ini penanda untuk diperiksa, bukan keterangan resmi.",
+      })
+    );
+  }
+
   const r = konteks.ringkasan || {};
   if (r.tenggatLewat > 0) {
-    judul.appendChild(labelTanda(`${r.tenggatLewat} tenggat lewat`, "merah"));
-  }
-  if (r.tenggatMendesak > 0) {
-    judul.appendChild(labelTanda(`${r.tenggatMendesak} tenggat mendesak`, "kuning"));
-  }
-  if (r.dokumen > 0) {
-    judul.appendChild(labelTanda(`${r.dokumen} dokumen e-Court`, "hijau"));
-  }
-  if (r.nomorBermasalah > 0) {
-    judul.appendChild(labelTanda(`${r.nomorBermasalah} nomor bermasalah`, "kuning"));
+    judul.appendChild(
+      labelTanda(`${r.tenggatLewat} tenggat e-Court lewat`, "merah", {
+        judul: "Batas unggah e-Court sudah terlampaui. SIPP tidak menampilkan batas ini.",
+      })
+    );
   }
 }
 

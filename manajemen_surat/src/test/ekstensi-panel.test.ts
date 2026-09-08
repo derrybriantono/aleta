@@ -370,6 +370,71 @@ describe("posisi panel dapat dikembalikan dari popup Chrome", () => {
   });
 });
 
+describe("penanda halaman SIPP dirombak", () => {
+  /**
+   * Penanda lama menampilkan "5 dokumen e-Court", "1 nomor bermasalah", dan
+   * hitungan tenggat mendesak. Ketiganya SUDAH ada di panel ALETA yang terbuka
+   * persis di sebelahnya - jadi penandanya tidak menambah apa pun, ia
+   * mengulang. Dan ia mengulang di halaman milik orang lain.
+   *
+   * Aturannya sekarang dua, keduanya harus terpenuhi: tidak ada di halaman
+   * SIPP itu, DAN mengubah cara perkara ditangani hari ini.
+   */
+  it("ghaib ditandai - SIPP menyimpannya tetapi tidak menampilkannya", () => {
+    const isi = konten();
+    expect(isi).toContain('labelTanda("PIHAK GHAIB", "merah"');
+    expect(isi).toContain("if (p.ghaib === true)");
+  });
+
+  it("ghaib null TIDAK dianggap tidak-ghaib", () => {
+    // null berarti belum dapat dinilai - tidak satu pun sumbernya terbaca.
+    // Menyamakannya dengan false berarti menyatakan "tidak ghaib" atas perkara
+    // yang sebenarnya belum diperiksa.
+    expect(konten()).toContain("p.ghaib === true");
+    expect(konten()).not.toContain("if (p.ghaib)");
+  });
+
+  it("perlu izin atasan ditandai beserta instansinya", () => {
+    const isi = konten();
+    expect(isi).toContain("if (p.perluIzinAtasan)");
+    expect(isi).toContain("IZIN ATASAN —");
+  });
+
+  it("mafqud ditulis sebagai DUGAAN, bukan keterangan resmi", () => {
+    // Mafqud tidak punya kolomnya sendiri di SIPP - hanya pencirinya. Penanda
+    // yang menyatakan lebih daripada yang diketahui akan dipercaya lebih
+    // daripada yang pantas.
+    const isi = konten();
+    expect(isi).toContain('labelTanda("diduga mafqud"');
+    expect(isi).toContain("Ini penanda untuk diperiksa, bukan keterangan resmi.");
+  });
+
+  it("hitungan yang sudah ada di panel dibuang", () => {
+    // Keterangan, bukan tindakan - dan yang diabaikan pada hari ketiga akan
+    // menulari penanda lain ikut diabaikan.
+    const isi = konten();
+    const potong = isi.slice(isi.indexOf("function tandaiJudul"), isi.indexOf("function tandaiPihak"));
+    expect(potong).not.toContain("dokumen e-Court`");
+    expect(potong).not.toContain("nomor bermasalah");
+    expect(potong).not.toContain("tenggat mendesak");
+  });
+
+  it("tenggat e-Court yang LEWAT tetap ditandai", () => {
+    // Batas unggah ada di e-Court, bukan di SIPP, dan yang lewat berarti pihak
+    // kehilangan kesempatan menanggapi.
+    expect(konten()).toContain("tenggat e-Court lewat");
+  });
+
+  it("penandanya dikirim bot, bukan ditebak ekstensi", () => {
+    const layanan = readFileSync(
+      path.resolve(process.cwd(), "../aleta_bot/services/sippKonteksService.js"),
+      "utf8"
+    );
+    expect(layanan).toContain("sippTahapanService.penandaPerkara(identitas.perkaraId)");
+    expect(layanan).toContain("penanda,");
+  });
+});
+
 // ---------------------------------------------------------------------------
 // TAHAP 2 - PETIKAN, PETA KOLOM, BERKAS PER AGENDA, DAN PENANDA HALAMAN
 // ---------------------------------------------------------------------------

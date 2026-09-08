@@ -824,6 +824,25 @@ export type GatewaySippKonteks = {
     statusAleta: string | null;
     statusEcourt: string;
   }>;
+  /**
+   * Penanda yang TIDAK ADA di halaman SIPP dan mengubah cara perkara ditangani.
+   *
+   * Boleh null: menuntut perkara_id, dan itu hanya ada bila identitasnya
+   * terbaca. Gagal-terbuka - penanda adalah tambahan, dan kehilangannya tidak
+   * boleh menghilangkan dokumen serta tenggat yang justru dicari petugas.
+   *
+   * `ghaib` bernilai null berarti BELUM DAPAT DINILAI - tidak satu pun
+   * sumbernya terbaca. Itu berbeda dari false, dan membedakannya menghindari
+   * menyatakan "tidak ghaib" atas perkara yang sebenarnya belum diperiksa.
+   */
+  penanda: {
+    ghaib: boolean | null;
+    sumberGhaib: string[];
+    instansi: Array<{ kunci: string; label: string }>;
+    perluIzinAtasan: boolean;
+    mafqud: boolean;
+    tundaanPanjang: number;
+  } | null;
   ringkasan: {
     dokumen: number;
     menungguVerifikasi: number;

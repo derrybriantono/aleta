@@ -36,6 +36,7 @@ const ecourtStoreService = require("./ecourtStoreService");
 const ecourtReconciliationService = require("./ecourtReconciliationService");
 const nomorVerificationService = require("./nomorVerificationService");
 const paniteraDashboardService = require("./paniteraDashboardService");
+const sippTahapanService = require("./sippTahapanService");
 const sippIdentitasPerkaraService = require("./sippIdentitasPerkaraService");
 const { fetchCaseParties } = require("./ecourtNotificationWorker");
 const ecourtVerificationService = require("./ecourtVerificationService");
@@ -316,6 +317,23 @@ async function getKonteks(nomor, { namaPembuka = "" } = {}) {
     aman(() => sippIdentitasPerkaraService.identitasPerkara(nomorPerkara), null),
   ]);
 
+  // ==========================================================================
+  // PENANDA YANG TIDAK ADA DI HALAMAN SIPP
+  // ==========================================================================
+  //
+  // penandaPerkara() sudah lama dipakai layar Status Perkara di portal, tetapi
+  // tidak pernah sampai ke ekstensi - padahal justru di halaman SIPP-lah
+  // keterangan ini paling dibutuhkan: petugas yang sedang menetapkan hari
+  // sidang perkara ghaib tidak dapat mengetahuinya dari halaman yang sedang ia
+  // buka. SIPP menyimpan ghaib di perkara_pihak2, dan tidak menampilkannya.
+  //
+  // Perlu perkara_id, dan itu hanya ada bila identitasnya terbaca. Gagal-
+  // terbuka: penanda adalah tambahan, dan kehilangannya tidak boleh
+  // menghilangkan dokumen serta tenggat yang justru dicari petugas.
+  const penanda = identitas && identitas.perkaraId
+    ? await aman(() => sippTahapanService.penandaPerkara(identitas.perkaraId), null)
+    : null;
+
   return {
     ok: true,
     alasan: "",
@@ -331,6 +349,7 @@ async function getKonteks(nomor, { namaPembuka = "" } = {}) {
     selisih,
     hakim,
     identitas,
+    penanda,
     ringkasan: {
       dokumen: dokumen.length,
       menungguVerifikasi: dokumen.filter((d) => d.statusVerifikasi === "belum").length,
