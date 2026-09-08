@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.5.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.5.0 - Sembilan Penanda SIPP, Bobot Perkara, dan Data Umum";
+export const APP_VERSION = "2.5.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.5.1 - Penanda Benar-benar Sampai ke Halaman SIPP";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,25 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.5.1",
+    title: "ALETA Judicia v2.5.1 - Penanda Benar-benar Sampai ke Halaman SIPP",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Seluruh penanda baru v2.5.0 tidak pernah sampai ke halaman SIPP - penjaganya membaca medan yang tidak ada, sehingga keduanya selalu dilewati tanpa satu pun galat. Tertangkap saat diperiksa di server sesudah dipasang.",
+    added: [],
+    changed: [],
+    fixed: [
+      "perkara_id dicari sendiri dari nomor perkara. Sebelumnya diambil dari identitas.perkaraId - medan yang TIDAK ADA: identitasPerkara memulangkan nomor perkara, jenis, kumulasi, dan kuasa, tanpa id-nya. Akibatnya penjaganya selalu salah, penanda ghaib dan kesembilan penanda baru selalu dilewati, dan panel tampak baik-baik saja dengan seluruh penanda mati.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Persis jenis kegagalan yang penanda ini ada untuk mencegahnya - benar tetapi diam - dan ia hampir lolos. Tertangkap karena diperiksa di server sesudah dipasang, bukan karena ada yang berbunyi.",
+      "Terbukti menyala sesudah diperbaiki: 399/Pdt.G/2026 izin atasan, 232/Pdt.G/2026 panjar menipis Rp42.000, 715/Pdt.G/2025 verzet, 0321/Pdt.G/2015 prodeo.",
+    ],
+    knownLimitations: [],
+  },
   {
     version: "2.5.0",
     title: "ALETA Judicia v2.5.0 - Sembilan Penanda SIPP, Bobot Perkara, dan Data Umum",

@@ -38,6 +38,23 @@ const nomorVerificationService = require("./nomorVerificationService");
 const paniteraDashboardService = require("./paniteraDashboardService");
 const sippTahapanService = require("./sippTahapanService");
 const penandaSippService = require("./penandaSippService");
+const sippDb = require("../db_config");
+
+/**
+ * Kueri ke SIPP - baca saja.
+ *
+ * Berkas ini selama ini hanya menyentuh basis data bot; satu-satunya yang
+ * dibutuhkan dari SIPP adalah perkara_id, dan itu tidak dibawa layanan mana
+ * pun yang sudah dipanggil di sini.
+ */
+function runQuerySipp(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    sippDb.query(sql, params, (galat, hasil) => {
+      if (galat) reject(galat);
+      else resolve(hasil);
+    });
+  });
+}
 const sippIdentitasPerkaraService = require("./sippIdentitasPerkaraService");
 const { fetchCaseParties } = require("./ecourtNotificationWorker");
 const ecourtVerificationService = require("./ecourtVerificationService");
@@ -331,10 +348,32 @@ async function getKonteks(nomor, { namaPembuka = "" } = {}) {
   // Perlu perkara_id, dan itu hanya ada bila identitasnya terbaca. Gagal-
   // terbuka: penanda adalah tambahan, dan kehilangannya tidak boleh
   // menghilangkan dokumen serta tenggat yang justru dicari petugas.
-  const [penanda, penandaLain] = identitas && identitas.perkaraId
+  // ==========================================================================
+  // perkara_id DICARI SENDIRI - identitasPerkara TIDAK MEMBAWANYA
+  // ==========================================================================
+  //
+  // Percobaan pertama mengambilnya dari identitas.perkaraId. Medan itu TIDAK
+  // ADA: identitasPerkara memulangkan nomor perkara, jenis, kumulasi, dan
+  // kuasa - tanpa id-nya. Akibatnya penjaganya selalu salah, kedua penanda
+  // selalu dilewati, dan tidak ada satu pun galat yang muncul. Panel tampak
+  // baik-baik saja dengan seluruh penanda mati.
+  //
+  // Persis jenis kegagalan yang penanda ini ada untuk mencegahnya, dan ia
+  // hampir lolos - tertangkap karena diperiksa di server sesudah dipasang,
+  // bukan karena ada yang berbunyi.
+  const perkaraId = await aman(async () => {
+    const rows = await runQuerySipp(
+      "SELECT p.perkara_id AS id FROM perkara p WHERE p.nomor_perkara = ? LIMIT 1",
+      [nomorPerkara]
+    );
+    const satu = (Array.isArray(rows) && rows[0]) || null;
+    return satu ? Number(satu.id) || 0 : 0;
+  }, 0);
+
+  const [penanda, penandaLain] = perkaraId
     ? await Promise.all([
-        aman(() => sippTahapanService.penandaPerkara(identitas.perkaraId), null),
-        aman(() => penandaSippService.penandaTambahan(identitas.perkaraId), {}),
+        aman(() => sippTahapanService.penandaPerkara(perkaraId), null),
+        aman(() => penandaSippService.penandaTambahan(perkaraId), {}),
       ])
     : [null, {}];
 
