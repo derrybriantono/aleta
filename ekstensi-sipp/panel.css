@@ -1325,3 +1325,33 @@ tr.aleta-baris-disorot > td {
 .aleta-tema:hover {
   color: var(--aleta-tulisan);
 }
+
+/* ==========================================================================
+   ATAS NAMA SIAPA PENETAPAN INI AKAN TERCATAT
+   ==========================================================================
+
+   Dibuat menonjol dengan sengaja - garis tebal di kiri dan latar yang berbeda.
+   Ini kalimat terakhir yang dibaca sebelum tombol Kerjakan ditekan, dan satu
+   nama yang salah di sini berarti satu berkas perkara tercatat atas nama orang
+   yang tidak mengerjakannya. */
+.aleta-tetap-atasnama {
+  margin: 10px 0 6px;
+  padding: 8px 10px;
+  border-left: 3px solid #c2410c;
+  background: rgba(194, 65, 12, 0.08);
+  border-radius: 0 6px 6px 0;
+}
+
+.aleta-tetap-atasnama-judul {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c2410c;
+  margin-bottom: 3px;
+}
+
+.aleta-tetap-atasnama-baris {
+  font-size: 12px;
+  line-height: 1.5;
+}

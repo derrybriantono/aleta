@@ -1356,6 +1356,44 @@ function gambarPenunjukan(isi, data) {
     );
   }
 
+  // ========================================================================
+  // ATAS NAMA SIAPA INI AKAN TERCATAT - DIBACA SEBELUM TOMBOLNYA DITEKAN
+  // ========================================================================
+  //
+  // Siapa penetapnya memang sudah tertulis pada tiap baris di atas, tetapi
+  // tersebar - satu keterangan kecil di ujung baris PMH, satu lagi di baris
+  // PPP, dan seterusnya. Yang menekan tombol tidak sedang membaca empat baris
+  // itu; ia sedang melihat tombolnya.
+  //
+  // Karena penetapan ini akan tercatat di SIPP atas nama PEJABAT - bukan atas
+  // nama operator yang menekannya - namanya harus terbaca tepat di sebelah
+  // tombolnya, sebagai kalimat terakhir sebelum ditekan. Satu nama yang salah
+  // di sini berarti satu berkas perkara yang tercatat atas nama orang yang
+  // tidak mengerjakannya, dan itu tidak dapat dibetulkan dengan menekan ulang.
+  const daftarPenetap = ["pmh", "ppp", "pjs", "phs"]
+    .map((jenis) => {
+      const rencana = data && data.rencana;
+      const langkah =
+        rencana && Array.isArray(rencana.langkah)
+          ? rencana.langkah.find((x) => x.jenis === jenis)
+          : null;
+      const akun = langkah && langkah.akun;
+      if (!akun || !akun.namaLengkap) return "";
+      return `${jenis.toUpperCase()} ${akun.namaLengkap}${akun.username ? ` (${akun.username})` : ""}`;
+    })
+    .filter(Boolean);
+
+  if (daftarPenetap.length > 0) {
+    const kotakNama = buatElemen("div", "aleta-tetap-atasnama");
+    kotakNama.appendChild(
+      buatElemen("div", "aleta-tetap-atasnama-judul", "Akan tercatat di SIPP atas nama")
+    );
+    for (const satu of daftarPenetap) {
+      kotakNama.appendChild(buatElemen("div", "aleta-tetap-atasnama-baris", satu));
+    }
+    isi.appendChild(kotakNama);
+  }
+
   // --- tombol Kerjakan ----------------------------------------------------
   const kaki = buatElemen("div", "aleta-tetap-kaki");
   const tombol = buatElemen("button", "aleta-tombol aleta-tombol-mati", "Kerjakan");
