@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.0.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.0.0 - Arsip Dapat Diunduh, Empat Tombol Mati Dihidupkan";
+export const APP_VERSION = "2.1.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.1.0 - Antrian Sidang: Hasil, Suara, dan Kolom yang Disatukan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,41 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.1.0",
+    title: "ALETA Judicia v2.1.0 - Antrian Sidang: Hasil, Suara, dan Kolom yang Disatukan",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Jadwal sidang hari ini kini memuat ulang dirinya sendiri, hasil sidang tampil hijau di sebelah tundaan, tiga kolom disatukan menjadi satu, dan papan panggil mendapat panggilan petugas beserta suara bahasa Indonesia yang dapat dipilih.",
+    added: [
+      "Kotak HASIL SIDANG berwarna hijau, sebidang dengan kotak tundaan yang kuning. Keduanya membaca kolom SIPP yang sama - alasan_ditunda - dan yang memisahkannya bendera ditunda milik SIPP sendiri, bukan tebakan atas isi tulisannya.",
+      "Panggilan pengeras suara untuk majelis/PP, juru sita, rohaniwan, petugas mediasi, petugas persidangan, saksi menurut namanya, dan pengulangan nomor yang sedang dipanggil - meniru aplikasi antrian SIPP.",
+      "Pemilih suara bahasa Indonesia pada papan panggil DAN pada layar ruang tunggu, beserta tombol coba suara. Pilihannya diingat per peramban.",
+    ],
+    changed: [
+      "Jadwal sidang HARI INI memuat ulang sendiri tiap 45 detik - hanya hari ini, hanya saat tabnya terlihat, dan dilewati bila permintaan sebelumnya belum selesai.",
+      "Kolom Majelis, Petugas Sidang, dan Ruang disatukan menjadi satu kolom Majelis & Petugas. Ketiganya menjawab pertanyaan yang sama - siapa yang menyidangkan, dan di mana - dan memisahkannya justru memakan tempat: nama panitera membungkus menjadi empat baris, dan seluruh baris tabel ikut meninggi.",
+      "Kolom Putusan menyebut PUTUSAN BELUM TERCATAT bila hasil sidang menyatakan perkara sudah diputus sedangkan data putusannya belum diisi di SIPP.",
+      "Panggilan suara di layar ruang tunggu memakai modul yang sama dengan papan panggil. Dua layar yang memanggil dengan suara berbeda terdengar seperti dua sistem.",
+    ],
+    fixed: [
+      "Tundaan yang diketik panitera di tengah hari tidak pernah sampai ke layar yang sudah terbuka. Terbukti 8 September 2026: perkara 530/Pdt.G/2026 ditandai ditunda di SIPP pukul 11:00:28, sedangkan layar ALETA yang terbuka sejak pagi masih menampilkannya belum ditunda - dan layar yang basi tampak persis seperti layar yang benar.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Panggilan petugas HANYA bersuara. Nomor antriannya tidak bergerak dan tidak ada yang tercatat sebagai sudah dipanggil - sama seperti aplikasi antrian SIPP. Kalau panggilan petugas ikut menandai antrian, satu panggilan kepada rohaniwan akan menggeser nomor yang sedang menunggu, dan pihak yang belum dipanggil terlewat tanpa jejak.",
+      "Suara nomor antrian hanya berbunyi bila panggilannya BERHASIL tercatat. Suara atas panggilan yang gagal membuat petugas mengira nomornya sudah bergerak lalu meneruskan ke nomor berikutnya.",
+      "Yang memisahkan hasil sidang dari agenda tundaan diukur pada 20.063 baris jadwal sidang: ditunda=T 3.909 menyebut putus dan 7.395 lainnya (6.207 di antaranya berisi angka 0 belaka); ditunda=Y 124 menyebut putus, termasuk 58 Pembacaan Putusan dan 21 Musyawarah Majelis dan Pembacaan Putusan - yang seluruhnya AGENDA, bukan hasil.",
+      "Putusan yang belum tercatat bukan keadaan langka: pada 8 September 2026, dari enam perkara yang hasil sidangnya menyebut putus, EMPAT belum punya baris putusan di SIPP.",
+    ],
+    knownLimitations: [
+      "Suara memakai pengucap bawaan peramban. Perangkat yang belum punya paket suara bahasa Indonesia akan mengucapkan angka dengan janggal - layarnya menyebutkan hal itu apa adanya, dan paketnya harus dipasang di sistem operasinya.",
+      "Panggilan petugas tidak tercatat di mana pun, sehingga tidak dapat dijawab berapa kali rohaniwan dipanggil hari itu. Mencatatnya menuntut tabel tersendiri - bukan kolom antrian, yang sudah punya artinya sendiri.",
+      "Hasil sidang dikenali dari kata putus. Panitera yang menuliskan hasil tanpa kata itu tidak akan tampil hijau - menebak lebih jauh akan salah pada 7.395 baris yang berisi agenda.",
+      "Layar barunya belum dilihat langsung di peramban - tidak ada peladen uji yang berjalan.",
+    ],
+  },
   {
     version: "2.0.0",
     title: "ALETA Judicia v2.0.0 - Arsip Dapat Diunduh, Empat Tombol Mati Dihidupkan",

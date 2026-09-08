@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
+import { useSuaraPanggilan } from "@/lib/suara-panggilan";
 import { cn } from "@/lib/utils";
 
 /**
@@ -83,30 +84,25 @@ type Jawaban = {
 /** Selang penyegaran. Ruang tunggu perlu cepat, tetapi tidak perlu tiap detik. */
 const SELANG_MS = 15000;
 
-function ucapkanNomor(nomor: number, ruang: number | null) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-  const kalimat =
-    ruang && ruang > 0
-      ? `Nomor antrian ${nomor}, silakan menuju ruang sidang ${ruang}.`
-      : `Nomor antrian ${nomor}, silakan memasuki ruang sidang.`;
-
-  const suara = new SpeechSynthesisUtterance(kalimat);
-  suara.lang = "id-ID";
-  // Pelan dan agak rendah: pengeras suara ruang tunggu memantul, dan kalimat
-  // yang diucapkan cepat berubah menjadi bunyi yang tidak dapat dibedakan.
-  suara.rate = 0.9;
-  suara.pitch = 1;
-
-  // Antre, bukan menimpa. Dua nomor yang berpindah bersamaan harus terdengar
-  // dua kali - yang tertimpa berarti ada orang yang tidak pernah dipanggil.
-  window.speechSynthesis.speak(suara);
+/**
+ * Kalimat panggilan satu nomor.
+ *
+ * Pengucapannya sendiri - laju, nada, antrean, dan pemilihan suara - ada di
+ * lib/suara-panggilan, dipakai bersama papan panggil petugas. Dua layar yang
+ * memanggil dengan suara berbeda akan terdengar seperti dua sistem, dan yang
+ * mendengarnya di ruang tunggu tidak tahu mana yang untuk dirinya.
+ */
+function kalimatNomor(nomor: number, ruang: number | null) {
+  return ruang && ruang > 0
+    ? `Nomor antrian ${nomor}, silakan menuju Ruang Sidang ${ruang}.`
+    : `Nomor antrian ${nomor}, silakan memasuki ruang sidang.`;
 }
 
 export function AletaAntrianLayar() {
   const [data, setData] = useState<Jawaban | null>(null);
   const [galat, setGalat] = useState("");
   const [suaraNyala, setSuaraNyala] = useState(false);
+  const { daftar: daftarSuara, terpilih, pilih, bunyikan, didukung } = useSuaraPanggilan();
   const [jam, setJam] = useState("");
 
   // Nomor yang SUDAH pernah diucapkan. Tanpa ini, tiap penyegaran akan
@@ -179,9 +175,9 @@ export function AletaAntrianLayar() {
     for (const satu of baris.dipanggil) {
       if (satu.nomor === null || sudahDiucapkan.current.has(satu.nomor)) continue;
       sudahDiucapkan.current.add(satu.nomor);
-      ucapkanNomor(satu.nomor, satu.noRuang);
+      bunyikan(kalimatNomor(satu.nomor, satu.noRuang));
     }
-  }, [baris.dipanggil, suaraNyala]);
+  }, [baris.dipanggil, suaraNyala, bunyikan]);
 
   const terbaru = baris.dipanggil[baris.dipanggil.length - 1] || null;
 
@@ -193,10 +189,35 @@ export function AletaAntrianLayar() {
           <h1 className="text-2xl font-semibold tracking-wide">ANTRIAN SIDANG</h1>
           <div className="flex items-center gap-4">
             <span className="text-2xl font-mono tabular-nums text-slate-300">{jam}</span>
+            {/* Suaranya dipilih di sini juga, bukan hanya di papan panggil:
+                layar ruang tunggu dipasang di televisi yang tidak pernah
+                dibuka petugas, dan suara bawaan peramban di perangkat itu
+                belum tentu berbahasa Indonesia. */}
+            {didukung && daftarSuara.length > 0 ? (
+              <select
+                value={terpilih}
+                onChange={(e) => pilih(e.target.value)}
+                title="Suara panggilan"
+                className="max-w-[14rem] rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200"
+              >
+                {daftarSuara.map((x) => (
+                  <option key={x.uri} value={x.uri}>
+                    {x.nama} · {x.bahasa}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <Button
               variant={suaraNyala ? "default" : "outline"}
               size="sm"
-              onClick={() => setSuaraNyala((x) => !x)}
+              onClick={() => {
+                const nyala = !suaraNyala;
+                setSuaraNyala(nyala);
+                // Diuji seketika: yang memasang televisi ruang tunggu harus
+                // mendengar bahwa pengeras suaranya memang tersambung, bukan
+                // menunggu panggilan sungguhan untuk mengetahuinya.
+                if (nyala) bunyikan("Pengeras suara antrian sidang siap.");
+              }}
             >
               {suaraNyala ? "Suara menyala" : "Nyalakan suara"}
             </Button>

@@ -35,6 +35,7 @@ import {
   urutkan,
 } from "@/components/portal/tabel-kendali";
 import { cn } from "@/lib/utils";
+import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { warnaStatusPutusan } from "@/lib/warna-putusan";
 
 /**
@@ -1495,6 +1496,17 @@ function PenandaPanggilan({
   );
 }
 
+/**
+ * Jarak pemuatan ulang jadwal hari ini.
+ *
+ * Empat puluh lima detik: cukup rapat agar hasil sidang yang baru diketik
+ * panitera muncul sebelum orang berikutnya bertanya, dan cukup renggang agar
+ * kueri berat ke SIPP tidak dijalankan setiap beberapa detik. Satu layar
+ * terbuka sepanjang jam kerja berarti sekitar 640 pemuatan - masih jauh di
+ * bawah beban satu petugas yang menekan Tampilkan berulang kali.
+ */
+const JEDA_MUAT_ULANG_MS = 45_000;
+
 function hariIni() {
   const sekarang = new Date();
   const bulan = String(sekarang.getMonth() + 1).padStart(2, "0");
@@ -2110,6 +2122,8 @@ export function AletaEcourtSidang({
   // dipasang di satker lain.
   const { institutionIdentity } = usePortal();
   const [memuat, setMemuat] = useState(true);
+  // Dibaca dari dalam pemuatan ulang berkala - lihat catatannya di muatTanggal.
+  const memuatRef = useRef(false);
   const [galat, setGalat] = useState("");
 
   const [kalenderTerbuka, setKalenderTerbuka] = useState(false);
@@ -2348,6 +2362,10 @@ export function AletaEcourtSidang({
    */
   const muatTanggal = useCallback(
     async (mulai: string, akhir: string, pakaiSkor?: boolean) => {
+    // Ditandai lewat ref, bukan state: pemuatan ulang berkala membacanya dari
+    // dalam setInterval, dan state yang terbaca di sana adalah state sewaktu
+    // interval dipasang - selamanya false.
+    memuatRef.current = true;
     setMemuat(true);
     setGalat("");
     try {
@@ -2378,6 +2396,7 @@ export function AletaEcourtSidang({
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca jadwal sidang.");
     } finally {
+      memuatRef.current = false;
       setMemuat(false);
     }
     },
@@ -2396,6 +2415,47 @@ export function AletaEcourtSidang({
     // berat ke SIPP.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * ========================================================================
+   * HARI INI DIMUAT ULANG SENDIRI - TUNDAAN DAN PUTUSAN DATANG SEPANJANG HARI
+   * ========================================================================
+   *
+   * Panitera sidang mengisi hasil sidang di SIPP sepanjang persidangan
+   * berjalan. Layar ALETA yang dibuka pukul sembilan karena itu sudah usang
+   * pukul sebelas - dan usangnya tidak kelihatan, sebab layar yang basi
+   * tampak persis seperti layar yang benar.
+   *
+   * Terbukti pada 8 September 2026: perkara 530/Pdt.G/2026 ditandai ditunda
+   * di SIPP pukul 11:00:28, sedangkan layar ALETA yang sudah terbuka sejak
+   * pagi masih menampilkannya belum ditunda.
+   *
+   * Tiga batas yang membuatnya tidak menjadi beban:
+   *
+   *   1. HANYA HARI INI. Tanggal lampau tidak berubah lagi, dan memuat
+   *      ulangnya hanya menghabiskan kueri berat ke SIPP tanpa guna.
+   *   2. HANYA SAAT TAB TERLIHAT. Layar yang tersembunyi di balik tab lain
+   *      tidak dibaca siapa pun. Ini juga yang mencegah sepuluh tab menganggur
+   *      memukul SIPP sepanjang hari.
+   *   3. TIDAK SAAT SEDANG SIBUK. Pemuatan ulang dilewati bila permintaan
+   *      sebelumnya belum selesai, supaya permintaan tidak menumpuk.
+   *
+   * Barisnya diganti utuh oleh muat(), sehingga rincian yang sedang dibuka
+   * ikut memperbarui dirinya - bukan membeku pada isi sewaktu dibuka.
+   */
+  const sedangHariIni = dari === sampai && dari === hariIni();
+
+  useEffect(() => {
+    if (!sedangHariIni) return;
+
+    const putaran = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      if (memuatRef.current) return;
+      void muat();
+    }, JEDA_MUAT_ULANG_MS);
+
+    return () => window.clearInterval(putaran);
+  }, [sedangHariIni, muat]);
 
   /**
    * Berpindah ke satu hari, lalu memuatnya seketika.
@@ -3160,14 +3220,31 @@ export function AletaEcourtSidang({
                 <KepalaUrut kunci="agenda" urutan={urutTabel} onTekan={tekanUrut}>
                   Agenda
                 </KepalaUrut>
+                {/* ==============================================================
+                    TIGA KOLOM DISATUKAN MENJADI SATU
+                    ==============================================================
+
+                    Majelis, Petugas Sidang, dan Ruang dulu berdiri sendiri-
+                    sendiri. Ketiganya menjawab satu pertanyaan yang sama -
+                    SIAPA yang menyidangkan, dan DI MANA - dan memisahkannya
+                    justru memakan tempat, bukan memberi kejelasan:
+
+                      Majelis  nama hakimnya terpotong elipsis karena sempit
+                      Petugas  "Unun Fidiyasari Patangai, S.H." membungkus
+                               menjadi empat baris, dan seluruh baris tabel
+                               ikut meninggi karenanya
+                      Ruang    "Ruang Sidang 1 Dalam Gedung" membungkus
+                               menjadi empat baris untuk satu keterangan yang
+                               sama pada hampir seluruh perkara hari itu
+
+                    Disatukan, ketiganya muat dalam satu kolom lebar tanpa
+                    membungkus, dan tabel kehilangan dua kolom - itulah ruang
+                    yang selama ini dicari Perkara dan Agenda.
+
+                    Diurutkan menurut majelis, sebab itulah yang dicari orang
+                    ketika menekan kepala kolom ini. */}
                 <KepalaUrut className="kolom-lengkap" kunci="majelis" urutan={urutTabel} onTekan={tekanUrut}>
-                  Majelis
-                </KepalaUrut>
-                <KepalaUrut className="kolom-lengkap" kunci="petugas" urutan={urutTabel} onTekan={tekanUrut}>
-                  Petugas Sidang
-                </KepalaUrut>
-                <KepalaUrut kunci="ruang" urutan={urutTabel} onTekan={tekanUrut}>
-                  Ruang
+                  Majelis &amp; Petugas
                 </KepalaUrut>
                 <KepalaUrut
                   kunci="putusan"
@@ -3186,13 +3263,13 @@ export function AletaEcourtSidang({
             <tbody>
               {memuat ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-muted-foreground" colSpan={10}>
+                  <td className="px-3 py-6 text-center text-muted-foreground" colSpan={8}>
                     Memuat jadwal…
                   </td>
                 </tr>
               ) : sidangTampil.length === 0 && sidang.length > 0 ? (
                 <tr>
-                  <td className="px-3 py-10 text-center" colSpan={10}>
+                  <td className="px-3 py-10 text-center" colSpan={8}>
                     <p className="text-sm font-medium">
                       Tidak ada sidang yang cocok dengan saringan ini.
                     </p>
@@ -3224,7 +3301,7 @@ export function AletaEcourtSidang({
                 </tr>
               ) : sidang.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-10 text-center" colSpan={10}>
+                  <td className="px-3 py-10 text-center" colSpan={8}>
                     <CalendarDays className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
                     <p className="text-sm font-medium">Tidak ada sidang pada tanggal ini.</p>
                     {/* Keadaan kosong yang menawarkan langkah berikutnya, bukan
@@ -3420,6 +3497,17 @@ export function AletaEcourtSidang({
                                 {baris.jurusitaNama}
                               </span>
                             ) : null}
+                            {/* Ruang ikut ke sini sejak kolomnya dihapus. Ia
+                                hampir selalu sama sepanjang satu hari, tetapi
+                                pada hari yang memakai lebih dari satu ruang,
+                                inilah satu-satunya keterangan yang menentukan
+                                ke mana orang berjalan. */}
+                            {baris.ruangan ? (
+                              <span title={`Ruang sidang: ${baris.ruangan}`}>
+                                <span className="font-medium text-foreground/70">Ruang</span>{" "}
+                                {baris.ruangan}
+                              </span>
+                            ) : null}
                           </div>
 
                           {/* Keadaan yang di mode Lengkap terbaca dari kolomnya
@@ -3559,6 +3647,34 @@ export function AletaEcourtSidang({
                               ) : null}
                             </div>
                           ) : null}
+
+                          {/* ==================================================
+                              HASIL SIDANG - SEBELAHAN DENGAN TUNDAAN
+                              ==================================================
+
+                              Kolom yang sama dipakai panitera untuk dua hal:
+                              bila ditunda ia berisi agenda berikutnya, bila
+                              tidak ia berisi hasil sidangnya. Karena itu
+                              keduanya menempati tempat yang sama di sini, dan
+                              tidak pernah muncul bersamaan.
+
+                              Hijau, bukan kuning: tundaan berarti pekerjaan
+                              belum selesai, sedangkan putusan berarti selesai.
+                              Membedakannya dengan warna membuat satu layar
+                              penuh dapat dibaca tanpa mengeja tulisannya.
+
+                              Aturan pemisahnya di lib/hasil-sidang - bukan di
+                              sini - sebab layar antrian memakainya juga. */}
+                          {hasilSidangPutusan(baris.ditunda, baris.alasanDitunda) ? (
+                            <div className="mt-1 rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-1 text-sm">
+                              <span className="font-medium text-emerald-700 dark:text-emerald-300">
+                                Hasil sidang
+                              </span>
+                              <div className="text-muted-foreground">
+                                {hasilSidangPutusan(baris.ditunda, baris.alasanDitunda)}
+                              </div>
+                            </div>
+                          ) : null}
                         </td>
 
                         <td className="px-3 py-2 align-top text-sm">
@@ -3582,34 +3698,40 @@ export function AletaEcourtSidang({
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 align-top kolom-lengkap">
-                          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold">
-                            {baris.majelisKode || "—"}
-                          </span>
-                          {baris.majelisNama ? (
-                            <div
-                              className="mt-0.5 max-w-[14rem] truncate text-sm text-muted-foreground"
-                              title={baris.majelisNama}
-                            >
-                              {baris.majelisNama}
+                        {/* Susunannya menurun dari yang paling menentukan ke
+                            yang paling seragam: majelis, lalu petugasnya, lalu
+                            ruangnya. Ruang hampir selalu sama untuk satu hari,
+                            jadi ia yang paling pantas menjadi baris terakhir
+                            yang teredam - ada bila dicari, tidak menarik mata
+                            bila tidak. */}
+                        <td className="px-3 py-2 align-top text-sm kolom-lengkap">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold">
+                              {baris.majelisKode || "—"}
+                            </span>
+                            {baris.majelisNama ? (
+                              <span
+                                className="max-w-[18rem] truncate text-muted-foreground"
+                                title={baris.majelisNama}
+                              >
+                                {baris.majelisNama}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className="mt-0.5">
+                            <span className="text-muted-foreground">PP </span>
+                            {baris.paniteraNama || "—"}
+                            <span className="text-muted-foreground"> · JS </span>
+                            {baris.jurusitaNama || "—"}
+                          </div>
+
+                          {baris.ruangan ? (
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              {baris.ruangan}
                             </div>
                           ) : null}
                         </td>
-
-                        {/* Panitera dan juru sita satu kolom - keduanya
-                            petugas sidang, dan jarang dibaca terpisah. */}
-                        <td className="px-3 py-2 align-top text-sm kolom-lengkap">
-                          <div>
-                            <span className="text-muted-foreground">PP: </span>
-                            {baris.paniteraNama || "—"}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">JS: </span>
-                            {baris.jurusitaNama || "—"}
-                          </div>
-                        </td>
-
-                        <td className="px-3 py-2 align-top text-sm">{baris.ruangan || "—"}</td>
 
                         <td className="px-3 py-2 align-top text-sm kolom-lengkap">
                           {baris.sudahPutus ? (
@@ -3663,6 +3785,32 @@ export function AletaEcourtSidang({
                                 </Badge>
                               ) : null}
                             </div>
+                          ) : hasilSidangPutusan(baris.ditunda, baris.alasanDitunda) ? (
+                            /* ==================================================
+                               PUTUS MENURUT HASIL SIDANG, TETAPI BELUM TERCATAT
+                               ==================================================
+
+                               Panitera menandai hasil sidang lebih dulu -
+                               satu ketikan pada layar antrian - sedangkan data
+                               putusannya diisi menyusul di SIPP. Di antara
+                               keduanya ada jeda yang nyata.
+
+                               Diukur pada 8 September 2026: dari enam perkara
+                               yang hasil sidangnya menyebut putus, EMPAT belum
+                               punya baris putusan.
+
+                               Kolom ini dulu hanya bertulis "belum putus" untuk
+                               keempatnya - tepat menurut tabel putusan, tetapi
+                               menyesatkan bagi yang membacanya, sebab
+                               perkaranya memang sudah diputus hari itu. Yang
+                               tertinggal PENCATATANNYA, dan itu pekerjaan yang
+                               menunggu orang, bukan keadaan perkara. */
+                            <Badge
+                              variant="warning"
+                              title="Hasil sidang menyebut perkara ini sudah diputus, tetapi data putusannya belum diisi di SIPP."
+                            >
+                              putusan belum tercatat
+                            </Badge>
                           ) : (
                             <span className="text-muted-foreground">belum putus</span>
                           )}
@@ -3697,7 +3845,7 @@ export function AletaEcourtSidang({
                           rincian ini milik baris yang mana. */}
                       {dibuka === kunci ? (
                         <tr className="border-t border-border bg-muted/40">
-                          <td className="border-l-4 border-l-primary px-4 py-4" colSpan={10}>
+                          <td className="border-l-4 border-l-primary px-4 py-4" colSpan={8}>
                             {memuatRincian ? (
                               <p className="text-sm text-muted-foreground">Memuat keterangan sidang…</p>
                             ) : (
