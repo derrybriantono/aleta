@@ -100,6 +100,43 @@ function poin(nilai, catatan) {
 
 /**
  * ============================================================================
+ * URUTAN YANG MUSTAHIL TIDAK DINILAI - DAN TIDAK DIHITUNG NOL
+ * ============================================================================
+ *
+ * tangga() memulangkan poin TERTINGGI untuk selisih negatif: -95 hari lolos
+ * syarat "<= 0" dan mendapat 5, sama dengan yang dikerjakan pada hari yang
+ * sama. Penunjukan yang tercatat mendahului penetapan majelisnya karena itu
+ * bernilai SEMPURNA.
+ *
+ * Sebelumnya keadaan itu jarang muncul: tanggal yang dipakai adalah tanggal
+ * penggantian, yang selalu sesudah PMH. Begitu yang dinilai dikembalikan ke
+ * penunjukan PERTAMA - sebagaimana seharusnya - urutan terbalik menjadi hal
+ * yang biasa, sebab PA Donggala kerap menunjuk panitera pengganti dan juru
+ * sita pada hari pendaftaran sedangkan majelisnya ditetapkan menyusul.
+ *
+ * Dua jalan yang sama-sama salah:
+ *
+ *   memberi 5   memuji pekerjaan atas urutan yang tidak mungkin terjadi
+ *               menurut hukum acara;
+ *   memberi 0   menuduh pengadilan atas keadaan yang belum tentu kesalahannya -
+ *               dapat saja tanggal PMH yang keliru, bukan penunjukannya.
+ *
+ * Karena itu tidak dinilai sama sekali, dan sebabnya disebutkan. Unsur yang
+ * tidak dinilai keluar dari penyebut - bukan menjadi nol di dalamnya - dan
+ * layar menampilkan berapa unsur yang tidak ikut dihitung.
+ */
+function urutanTerbalik(selisih, sebutan) {
+  return {
+    poin: null,
+    terbaca: false,
+    catatan:
+      `${sebutan} tercatat ${Math.abs(selisih)} hari SEBELUM acuannya - urutan yang ` +
+      "tidak mungkin menurut hukum acara. Tidak dinilai sampai tanggalnya dibetulkan.",
+  };
+}
+
+/**
+ * ============================================================================
  * ASPEK KINERJA PENANGANAN PERKARA - bobot 50%
  * ============================================================================
  *
@@ -310,6 +347,7 @@ const INPUT_DATA = [
       if (f.tanggalPpp === undefined) return belumTerbaca("Tanggal penunjukan PP belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPmh, f.tanggalPpp);
       if (selisih === null) return poin(0, "Penunjukan PP belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Penunjukan PP");
       return poin(skalaPenetapan(selisih), `PP ditunjuk ${selisih} hari setelah PMH.`);
     },
   },
@@ -338,6 +376,7 @@ const INPUT_DATA = [
       if (f.tanggalPjs === undefined) return belumTerbaca("Tanggal penunjukan juru sita belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPmh, f.tanggalPjs);
       if (selisih === null) return poin(0, "Penunjukan juru sita belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Penunjukan juru sita");
       return poin(skalaPenetapan(selisih), `Juru sita ditunjuk ${selisih} hari setelah PMH.`);
     },
   },

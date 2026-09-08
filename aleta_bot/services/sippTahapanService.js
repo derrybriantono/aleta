@@ -205,13 +205,73 @@ async function tahapanPerkara(perkaraId) {
   // --- dokumen penetapan: kapan diinput, dan berkasnya ----------------------
   const dokumen = await dokumenPenetapanPerkara(id);
 
+  // ==========================================================================
+  // PENUNJUKAN PERTAMA, BUKAN PENGGANTINYA
+  // ==========================================================================
+  //
+  // perkara_penetapan hanya punya SATU baris per perkara - diperiksa: 9.834
+  // perkara, seluruhnya satu baris. Karena itu penggantian panitera pengganti
+  // atau juru sita MENIMPA tanggal di baris yang sama, dan tanggal yang
+  // tersimpan di sana adalah tanggal PENGGANTINYA.
+  //
+  // Akibatnya penilaian SK Tabel 2 I.4 dan I.6 - yang mengukur jarak dari PMH
+  // ke penunjukan - menghitung jarak ke penggantian yang terjadi berbulan-
+  // bulan kemudian, lalu memberi nilai nol atas pekerjaan yang sebenarnya
+  // dikerjakan pada hari yang sama.
+  //
+  // Pengukuran di PA Donggala:
+  //
+  //   panitera pengganti  465 perkara berbaris lebih dari satu,
+  //                       440 di antaranya tanggalnya berbeda dari yang pertama
+  //   juru sita            71 perkara berbaris lebih dari satu,
+  //                        52 di antaranya berbeda
+  //
+  //   contoh perkara 376  penunjukan pertama 2015-12-03, tersimpan 2016-08-23
+  //
+  // Riwayat penunjukan yang sebenarnya ada di perkara_panitera_pn dan
+  // perkara_jurusita - satu baris per orang, masing-masing membawa
+  // tanggal_penetapan sendiri. Yang PERTAMA di antaranya itulah yang dinilai.
+  //
+  // Yang dipakai tanggal TERAWAL, bukan baris ber-id terkecil: id mengikuti
+  // urutan penulisan baris, dan baris yang ditulis menyusul untuk membetulkan
+  // catatan lama akan ber-id besar meski tanggalnya paling awal.
+  //
+  // PMH sengaja TIDAK ikut diperlakukan begini. Penggantian majelis memang
+  // tercatat di perkara_hakim_pn, tetapi PMH menetapkan satu majelis - bukan
+  // satu orang - dan tanggal penetapan tiap anggotanya tidak selalu sama
+  // dengan tanggal penetapan majelisnya. Mengambil yang terawal dari sana
+  // dapat memundurkan tanggal PMH ke penetapan anggota yang menyusul.
+  const tanggalPenunjukanPertama = async (tabel) => {
+    if (!(await sippSkemaService.tabelAda(tabel))) return "";
+    const kolom = await sippSkemaService.pilihKolom(tabel, ["tanggal_penetapan"]);
+    if (!kolom) return "";
+    const rows = await runQuery(
+      `SELECT MIN(t.${kolom}) AS pertama FROM ${tabel} t
+        WHERE t.perkara_id = ? AND t.${kolom} IS NOT NULL`,
+      [id]
+    ).catch(() => []);
+    return rows[0] ? isoTanggal(rows[0].pertama) : "";
+  };
+
+  const [pertamaPpp, pertamaPjs] = await Promise.all([
+    tanggalPenunjukanPertama("perkara_panitera_pn"),
+    tanggalPenunjukanPertama("perkara_jurusita"),
+  ]);
+  const penunjukanPertama = { ppp: pertamaPpp, pjs: pertamaPjs };
+
   const tanggalTahap = {};
   const tahap = RENCANA.map((rencana) => {
+    // Penunjukan pertama MENANG atas tanggal di perkara_penetapan - tetapi
+    // hanya bila memang terbaca. Perkara yang tabel petugasnya kosong tetap
+    // memakai tanggal lama, sebab tidak ada yang lebih benar untuk dipakai.
+    const dariPetugas = penunjukanPertama[rencana.kunci] || "";
     const tanggal = rencana.dariPerkara
       ? isoTanggal(barisPerkara.pendaftaran_tanggal)
-      : rencana.kolomTanggal
-        ? isoTanggal(penetapan[`${rencana.kunci}_tanggal`])
-        : "";
+      : dariPetugas
+        ? dariPetugas
+        : rencana.kolomTanggal
+          ? isoTanggal(penetapan[`${rencana.kunci}_tanggal`])
+          : "";
     tanggalTahap[rencana.kunci] = tanggal;
 
     const berkas = rencana.namaDokumen ? dokumen.perNama[rencana.namaDokumen] || null : null;
@@ -241,6 +301,22 @@ async function tahapanPerkara(perkaraId) {
       dokumenId: berkas ? berkas.id : "",
       adaBerkas: Boolean(berkas && berkas.adaBerkas),
       diinputOleh: berkas ? berkas.oleh : "",
+      // Dari mana tanggalnya diambil. Disebutkan supaya yang membaca nilai
+      // dapat memeriksanya sendiri - dan supaya perkara yang pernah berganti
+      // petugas tidak tampak seolah tanggalnya berubah tanpa sebab.
+      asalTanggal: dariPetugas
+        ? "penunjukan pertama pada tabel petugas"
+        : rencana.dariPerkara
+          ? "tabel perkara"
+          : "perkara_penetapan",
+      // Benar HANYA bila tabel petugasnya memuat lebih dari satu penunjukan
+      // sehingga tanggalnya berbeda dari yang tersimpan di perkara_penetapan.
+      bedaDariPenetapan: Boolean(
+        dariPetugas &&
+          rencana.kolomTanggal &&
+          isoTanggal(penetapan[`${rencana.kunci}_tanggal`]) &&
+          dariPetugas !== isoTanggal(penetapan[`${rencana.kunci}_tanggal`])
+      ),
     };
   });
 

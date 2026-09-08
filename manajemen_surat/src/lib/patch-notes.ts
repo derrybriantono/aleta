@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.96.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.96.0 - Kedudukan Pihak dan Warna Putusan";
+export const APP_VERSION = "1.97.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.97.0 - Penunjukan Pertama yang Dinilai";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,32 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.97.0",
+    title: "ALETA Judicia v1.97.0 - Penunjukan Pertama yang Dinilai",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Penilaian SK Dirjen 048/2024 untuk penunjukan panitera pengganti dan juru sita selama ini mengukur jarak ke PENGGANTIANNYA, bukan ke penunjukan pertama - sebab tabel penetapan SIPP hanya punya satu baris per perkara dan penggantian menimpa tanggalnya. Terkena 440 perkara panitera pengganti dan 52 juru sita.",
+    added: [],
+    changed: [
+      "Tanggal penunjukan panitera pengganti dan juru sita dibaca dari tabel petugasnya - perkara_panitera_pn dan perkara_jurusita - yang menyimpan satu baris per orang beserta tanggal penetapannya sendiri. Yang dipakai tanggal terawal.",
+      "Tiap tahapan kini menyebut dari mana tanggalnya diambil, sehingga nilainya dapat diperiksa sendiri oleh yang membacanya.",
+    ],
+    fixed: [
+      "Penilaian penunjukan menghitung jarak dari PMH ke penggantian yang terjadi berbulan-bulan kemudian, lalu memberi nilai nol atas pekerjaan yang sebenarnya dikerjakan pada hari yang sama. Contoh perkara 376: penunjukan pertama 3 Desember 2015, yang tersimpan 23 Agustus 2016.",
+      "Selisih negatif bernilai SEMPURNA. Tangga penilaian memulangkan poin tertinggi untuk syarat kurang dari atau sama dengan nol, sehingga penunjukan yang tercatat mendahului penetapan majelisnya mendapat nilai lima - sama dengan yang dikerjakan pada hari yang sama.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Urutan yang terbalik tidak dinilai sama sekali, dan tidak pula dihitung nol. Nol menuduh pengadilan atas keadaan yang belum tentu kesalahannya - dapat saja tanggal PMH yang keliru, bukan penunjukannya. Unsur yang tidak dinilai keluar dari penyebut, dan layar menyebut berapa unsur yang tidak ikut dihitung.",
+      "Penetapan majelis hakim sengaja TIDAK ikut diperlakukan begini. PMH menetapkan satu majelis - bukan satu orang - dan tanggal penetapan tiap anggotanya tidak selalu sama dengan tanggal penetapan majelisnya.",
+    ],
+    knownLimitations: [
+      "Perkara yang tabel petugasnya kosong tetap memakai tanggal lama dari tabel penetapan. Tidak ada yang lebih benar untuk dipakai, dan mengosongkannya akan menghapus tanggal yang selama ini terbaca.",
+      "Nilai yang sudah tersimpan pada periode sebelumnya tidak dihitung ulang. Yang berubah baru penilaian yang dijalankan sesudah pembaruan ini.",
+    ],
+  },
   {
     version: "1.96.0",
     title: "ALETA Judicia v1.96.0 - Kedudukan Pihak dan Warna Putusan",
