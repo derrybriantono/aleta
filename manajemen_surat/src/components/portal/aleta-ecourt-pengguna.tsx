@@ -114,6 +114,20 @@ export function AletaEcourtPengguna() {
   const [memuat, setMemuat] = useState(true);
   const [mengunduh, setMengunduh] = useState(false);
   const [catatan, setCatatan] = useState("");
+  // ==========================================================================
+  // NOMOR PATCH EKSTENSI YANG SEDANG DISAJIKAN PORTAL
+  // ==========================================================================
+  //
+  // Ekstensi Chrome yang dipasang lewat Load unpacked TIDAK PERNAH memperbarui
+  // dirinya sendiri - Chrome memang tidak menyediakannya. Akibatnya petugas
+  // dapat berhari-hari memakai versi lama tanpa satu pun tanda, dan gejalanya
+  // tampak seperti kerusakan portal. Itu benar-benar terjadi.
+  //
+  // Karena itu nomornya disebut di halaman unduhan: yang membandingkannya
+  // dengan nomor di chrome://extensions langsung tahu perlu mengunduh ulang
+  // atau tidak. Angkanya dibaca dari manifest yang ditanam, bukan ditulis
+  // ulang di sini - dua tempat pasti berselisih, dan yang kedua pasti terlupa.
+  const [versiEkstensi, setVersiEkstensi] = useState("");
 
   const muat = useCallback(async () => {
     setMemuat(true);
@@ -147,6 +161,30 @@ export function AletaEcourtPengguna() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [muat]);
+
+  // Dibaca sekali saat menu ekstensi dibuka, bukan saat portal dibuka.
+  // Sebagian besar orang tidak pernah membuka menu ini sama sekali.
+  useEffect(() => {
+    if (menu !== "ekstensi" || versiEkstensi) return;
+    let hidup = true;
+    void (async () => {
+      try {
+        const respons = await fetch(apiPath("/api/aleta-ecourt/ekstensi?info=versi"), {
+          cache: "no-store",
+        });
+        if (!respons.ok) return;
+        const isi = await respons.json();
+        const data = isi?.data ?? isi;
+        if (hidup && data?.versi) setVersiEkstensi(String(data.versi));
+      } catch {
+        // Nomornya tidak muncul, dan itu saja. Halaman unduhan tetap utuh -
+        // yang datang ke sini datang untuk mengunduh, bukan membaca nomor.
+      }
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, [menu, versiEkstensi]);
 
   /**
    * Mengunduh ekstensi.
@@ -463,59 +501,183 @@ export function AletaEcourtPengguna() {
           {menu === "ekstensi" ? (
       <Card>
         <CardHeader>
-          <CardTitle>Ekstensi peramban untuk SIPP</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            Ekstensi peramban untuk SIPP
+            {/* Nomor patch di sebelah judul, bukan di kaki halaman: yang datang
+                ke sini untuk memeriksa versinya tidak perlu menggulung. */}
+            {versiEkstensi ? <Badge variant="muted">Patch {versiEkstensi}</Badge> : null}
+          </CardTitle>
           <CardDescription>
-            Menempelkan keterangan ALETA ke halaman perkara SIPP: batas waktu unggah e-Court, status pemberitahuan
-            pihak, dan selisih data. SIPP sendiri tidak diubah sama sekali.
+            Menempelkan keterangan ALETA ke halaman perkara SIPP, dan mengerjakan penetapan atas
+            nama pejabat yang berwenang. Halaman SIPP tidak diubah tampilannya, kecuali tema gelap
+            yang dapat dimatikan kapan saja.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <CardContent className="space-y-5">
+          {/* ================================================================
+              UNDUHAN PALING ATAS
+
+              Ini satu-satunya tindakan di halaman ini. Menaruhnya di bawah
+              penjelasan berarti setiap orang yang sudah tahu harus menggulung
+              melewati penjelasan yang tidak lagi ia perlukan.
+              ================================================================ */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button size="sm" disabled={mengunduh} onClick={() => void unduhEkstensi()}>
+              {mengunduh ? "Menyiapkan…" : "Unduh Ekstensi"}
+            </Button>
+            {versiEkstensi ? (
+              <p className="text-xs text-muted-foreground">
+                Yang tersedia sekarang <strong className="text-foreground">{versiEkstensi}</strong>.
+                Bandingkan dengan nomor di <code className="rounded bg-muted px-1">chrome://extensions</code>;
+                bila berbeda, unduh lalu muat ulang ekstensinya.
+              </p>
+            ) : null}
+          </div>
+
+          {/* ================================================================
+              TAHAP KERJA
+
+              Ditulis sebagai urutan waktu, bukan daftar fitur. Yang pertama
+              kali memasang ekstensi tidak bertanya "apa saja fiturnya" - ia
+              bertanya "sesudah ini saya harus apa", dan daftar fitur tidak
+              pernah menjawab pertanyaan itu.
+              ================================================================ */}
+          <div>
+            <p className="text-sm font-semibold">Tahap kerjanya — sekali pasang, lalu berjalan sendiri</p>
+            <ol className="mt-2 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <strong className="text-foreground">1. Pasang di Chrome.</strong> Unduh, ekstrak,
+                lalu Load unpacked. Cukup sekali; langkah rincinya ada di kotak bawah.
+              </li>
+              <li>
+                <strong className="text-foreground">2. Masuk ALETA di peramban yang sama.</strong>{" "}
+                Ekstensi menumpang sesi portal Anda — tidak ada sandi yang disimpan di peramban.
+                Tanpa login, panelnya muncul tetapi kosong dan mengajak Anda masuk.
+              </li>
+              <li>
+                <strong className="text-foreground">3. Buka SIPP seperti biasa.</strong> Panel ALETA
+                muncul melayang di sisi kanan. Boleh digeser, diubah ukurannya, diciutkan jadi logo,
+                atau dibuat layar penuh.
+              </li>
+              <li>
+                <strong className="text-foreground">4. Buka satu perkara.</strong> Panel langsung
+                terisi keterangan perkara itu, dan baris-baris di daftar perkara diberi penanda
+                keadaan.
+              </li>
+              <li>
+                <strong className="text-foreground">5. Tekan Kerjakan bila perlu.</strong> Nama
+                pejabat yang akan tercatat ditampilkan lebih dulu, tepat di atas tombolnya — supaya
+                terlihat siapa yang menginput sebelum, bukan sesudah.
+              </li>
+            </ol>
+          </div>
+
+          {/* ================================================================
+              FUNGSINYA, DIPISAH MENURUT AKIBATNYA
+
+              Membaca dan menulis dipisah dengan sengaja. Keduanya sangat
+              berbeda akibatnya bagi data SIPP, dan menggabungkannya dalam satu
+              daftar membuat perbedaan itu hilang justru bagi orang yang paling
+              perlu mengetahuinya.
+              ================================================================ */}
+          <div className="grid gap-3 lg:grid-cols-3">
             <div className="rounded border border-border bg-muted/30 p-3">
-              <p className="text-sm font-medium">Yang ditampilkan di SIPP</p>
+              <p className="text-sm font-medium">1. Membaca — keterangan yang tidak ada di SIPP</p>
               <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                <li>Batas waktu unggah e-Court — tidak ada di SIPP</li>
-                <li>Pihak sudah diberi tahu atau belum</li>
-                <li>Nomor pihak salah alamat</li>
-                <li>Catatan ALETA yang tidak cocok dengan e-Court</li>
+                <li>Batas waktu unggah e-Court dan sisa harinya</li>
+                <li>Berkas e-Court per perkara, sekaligus unduhannya</li>
+                <li>Arsip perkara dan penilaian kelengkapannya</li>
+                <li>Tahapan perkara dan kesiapan sidang</li>
+                <li>Selisih antara catatan ALETA dan keadaan e-Court</li>
               </ul>
             </div>
             <div className="rounded border border-border bg-muted/30 p-3">
-              <p className="text-sm font-medium">Cara memasang</p>
-              <ol className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+              <p className="text-sm font-medium">2. Menandai — keadaan yang mengubah cara kerja</p>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                 <li>
-                  1. Unduh, lalu <strong className="text-foreground">Extract All</strong> berkas ZIP-nya
+                  <strong className="text-foreground">Pihak ghaib</strong> — panggilan lewat
+                  pengumuman, tenggat 120 atau 180 hari
                 </li>
                 <li>
-                  2. Buka <code className="rounded bg-background px-1">chrome://extensions</code>
+                  <strong className="text-foreground">Izin atasan</strong> — pihak PNS, TNI, atau
+                  Polri
                 </li>
-                <li>3. Nyalakan Developer mode</li>
-                <li>
-                  4. <strong className="text-foreground">Load unpacked</strong>, pilih folder hasil
-                  ekstrak
-                </li>
-              </ol>
-              <p className="mt-3 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
-                Menyeret berkas ZIP ke halaman Extensions tidak akan berhasil - Chrome tidak dapat
-                memasang ekstensi dari ZIP. Berkasnya harus diekstrak lebih dulu.
-                <br />
-                Di Windows, klik dua kali ZIP hanya <em>menampilkan</em> isinya seperti folder tanpa
-                mengekstrak, dan Load unpacked pada tampilan itu akan ditolak. Gunakan klik kanan →
-                Extract All.
-                <br />
-                Setelah diekstrak, folder hasilnya boleh diseret langsung ke halaman Extensions -
-                itu berhasil.
+                <li>Verzet, prodeo, dan perkara yang memakai kuasa hukum</li>
+                <li>Diduga mafqud — dugaan dari pola tundaan, bukan keterangan resmi</li>
+                <li>Panjar menipis sebelum perkara diputus</li>
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Penandanya muncul di bawah nomor perkara pada daftar, dan di sebelah judul pada
+                halaman perkara.
+              </p>
+            </div>
+            <div className="rounded border border-border bg-muted/30 p-3">
+              <p className="text-sm font-medium">3. Mengerjakan — menulis ke SIPP</p>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>Usulan majelis, PP, dan juru sita menurut giliran dan bobot perkara</li>
+                <li>PMH, PPP, PJS, PHS, dan Data Umum dituliskan ke SIPP</li>
+                <li>Tercatat atas nama pejabat yang berwenang, termasuk pada jejak auditnya</li>
+                <li>Hari sidang dihindarkan dari tanggal yang sudah penuh dan hari libur</li>
+              </ul>
+              <p className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+                Hanya bagian inilah yang mengubah data. Selebihnya membaca saja.
               </p>
             </div>
           </div>
 
-          <Button size="sm" disabled={mengunduh} onClick={() => void unduhEkstensi()}>
-            {mengunduh ? "Menyiapkan…" : "Unduh Ekstensi"}
-          </Button>
+          {/* ================================================================
+              BATASNYA DISEBUT SENDIRI
+
+              Lapisan yang menempel di aplikasi orang lain harus menyatakan
+              batasnya sendiri. Yang tidak menyatakannya akan dicurigai
+              melakukan lebih daripada yang benar-benar dilakukannya.
+              ================================================================ */}
+          <div className="rounded border border-border bg-muted/30 p-3">
+            <p className="text-sm font-medium">Yang tidak dilakukannya</p>
+            <ul className="mt-2 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
+              <li>Tidak menyimpan sandi — SIPP maupun ALETA</li>
+              <li>Tidak mengubah tampilan SIPP, kecuali tema gelap yang dapat dimatikan</li>
+              <li>Tidak pernah ikut tercetak pada relaas maupun dokumen SIPP</li>
+              <li>Tidak menghapus apa pun di SIPP</li>
+            </ul>
+          </div>
+
+          <div className="rounded border border-border bg-muted/30 p-3">
+            <p className="text-sm font-medium">Cara memasang</p>
+            <ol className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+              <li>
+                1. Unduh, lalu <strong className="text-foreground">Extract All</strong> berkas ZIP-nya
+              </li>
+              <li>
+                2. Buka <code className="rounded bg-background px-1">chrome://extensions</code>
+              </li>
+              <li>3. Nyalakan Developer mode</li>
+              <li>
+                4. <strong className="text-foreground">Load unpacked</strong>, pilih folder hasil
+                ekstrak
+              </li>
+              <li>
+                5. Untuk memperbarui: unduh yang baru, ekstrak menimpa folder lama, lalu tekan{" "}
+                <strong className="text-foreground">Muat ulang</strong> pada kartu ekstensinya
+              </li>
+            </ol>
+            <p className="mt-3 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+              Menyeret berkas ZIP ke halaman Extensions tidak akan berhasil - Chrome tidak dapat
+              memasang ekstensi dari ZIP. Berkasnya harus diekstrak lebih dulu.
+              <br />
+              Di Windows, klik dua kali ZIP hanya <em>menampilkan</em> isinya seperti folder tanpa
+              mengekstrak, dan Load unpacked pada tampilan itu akan ditolak. Gunakan klik kanan →
+              Extract All.
+              <br />
+              Setelah diekstrak, folder hasilnya boleh diseret langsung ke halaman Extensions -
+              itu berhasil.
+            </p>
+          </div>
 
           <p className="text-xs text-muted-foreground">
             Panduan lengkap ada di dalam berkas ZIP (PASANG.md), termasuk penyebab bila panelnya tidak muncul.
-            Ekstensi hanya bekerja setelah Anda login ALETA, dan tidak menyimpan sandi apa pun.
+            Ikon ekstensi di pojok peramban menyebut versi yang terpasang serta akun ALETA dan SIPP
+            yang sedang masuk — periksa di situ lebih dulu bila ada yang terasa tidak beres.
           </p>
         </CardContent>
       </Card>
