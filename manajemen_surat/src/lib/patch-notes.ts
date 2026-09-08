@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.1.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.1.0 - Antrian Sidang: Hasil, Suara, dan Kolom yang Disatukan";
+export const APP_VERSION = "2.2.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.2.0 - Penetapan Ditulis ke SIPP atas Nama Pejabatnya";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,40 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.2.0",
+    title: "ALETA Judicia v2.2.0 - Penetapan Ditulis ke SIPP atas Nama Pejabatnya",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "ALETA kini dapat menuliskan penetapan PMH, PPP, PJS, dan PHS langsung ke SIPP, tercatat atas nama pejabatnya sedangkan operator yang menekan tombolnya - keputusan pimpinan pengadilan. Jalurnya KERING sebagai bawaan: tidak menulis apa pun kecuali diminta tegas.",
+    added: [
+      "Layanan penetapanTulisService - satu-satunya berkas di ALETA yang menulis ke SIPP. Bentuk tulisannya ditiru dari tulisan SIPP sendiri, dibaca dari basis datanya: majelis_hakim_id dipisah koma, kode dipisah garis tegak, nama dan text dipisah </br>, jabatan_hakim_id 1 untuk ketua dan 2 untuk anggota.",
+      "PHS ikut ditulis - empat tabel sekaligus, dan satu di antaranya menunggu id baris jadwal sidang yang baru disisipkan. Langkah yang menunggu id itu BERHENTI bila id-nya tidak ada, bukan menulis kosong.",
+      "Rute POST /api/aleta-bot/penunjukan/tulis pada portal dan /internal/aleta-bot/penetapan/tulis pada bot.",
+      "Kotak 'Akan tercatat di SIPP atas nama' tepat di atas tombol Kerjakan, memuat nama dan akun untuk keempat penetapan.",
+    ],
+    changed: [],
+    fixed: [],
+    security: [
+      "Nama operator DIAMBIL DARI SESI ALETA, bukan dari badan permintaan. Satu-satunya catatan yang menyimpan siapa sebenarnya menekan tombolnya adalah judul baris sys_audittrail; kalau nama itu boleh dikirim peramban, jalur ini kehilangan satu-satunya hal yang membedakannya dari memalsukan tanda tangan.",
+      "Nama, NIP, kode petugas, dan sifat ruang sidang dibaca ulang dari SIPP di dalam layanan. Peramban hanya mengirim PILIHAN - nomor baris - sehingga tidak ada cara menuliskan NIP siapa pun ke berkas perkara.",
+      "Daftar putih tabel, diperiksa dua kali: saat rencana disusun dan saat dijalankan.",
+      "Akun pejabat harus benar-benar ada di sys_users. Nama yang salah ketik akan tercatat atas nama yang tidak ada - lebih buruk daripada tercatat atas nama operator, sebab tidak ada yang dapat dimintai keterangan.",
+    ],
+    operationalNotes: [
+      "KERING SEBAGAI BAWAAN, di ketiga lapisnya - layanan, rute bot, dan rute portal. Menulis menuntut kering: false yang tegas. Hasil kering memulangkan pernyataan lengkap beserta nilainya untuk dibaca manusia lebih dulu.",
+      "Tiap baris audit yang ditulis ALETA berawalan [ALETA] dan menyebut nama operatornya. Dengan begitu tulisan ALETA selalu dapat dibedakan dari tulisan SIPP, selalu dapat dihitung, dan selalu dapat ditelusuri balik bila kelak dipersoalkan.",
+      "Penetapan yang sudah ada tidak ditimpa diam-diam - keempat jenisnya menolak bila tanggalnya sudah terisi. PHS juga menolak selama PMH belum ada, sebab hari sidang ditetapkan ketua majelis.",
+      "46 pemeriksaan jalur tulis lulus, seluruhnya tanpa menyentuh SIPP - db_config digantikan tiruan yang merekam pernyataan tanpa menjalankannya.",
+    ],
+    knownLimitations: [
+      "Sambungan bot ke SIPP memakai akun root dengan ALL PRIVILEGES. Tidak ada satu pun penjagaan di lapisan basis data; yang menahan hanya kode. Sebaiknya dibuatkan akun MySQL tersendiri yang hanya boleh menyentuh keenam tabel pada daftar putih.",
+      "Tidak ada transaksi. Kolam koneksi mysql memberi sambungan berbeda tiap pernyataan, sehingga BEGIN di satu sambungan tidak melindungi pernyataan di sambungan lain. Yang dilakukan sebagai gantinya berhenti pada kegagalan pertama, lalu melaporkan persis berapa langkah yang telanjur berhasil.",
+      "SIPP adalah aplikasi pihak ketiga. Bentuk tulisan ini ditiru dari basis datanya, bukan dari kodenya - pembaruan SIPP dapat mengubahnya tanpa memberi tahu siapa pun.",
+      "Tombol Kerjakan pada ekstensi BELUM disambungkan ke rute ini. Yang terpasang baru mesinnya beserta rutenya, supaya hasil keringnya dapat diperiksa pada perkara sungguhan lebih dahulu.",
+    ],
+  },
   {
     version: "2.1.0",
     title: "ALETA Judicia v2.1.0 - Antrian Sidang: Hasil, Suara, dan Kolom yang Disatukan",

@@ -44,7 +44,7 @@ function benar(nama, syarat) {
  * Menjawab kueri baca yang dipakai penyusun rencana, dan MEREKAM tiap
  * pernyataan tulis tanpa menjalankannya.
  */
-function buatDb({ perkara = {}, akun = true, hakim = [], petugas = null } = {}) {
+function buatDb({ perkara = {}, akun = true, hakim = [], petugas = null, ruangan = null } = {}) {
   const direkam = [];
   return {
     direkam,
@@ -59,6 +59,9 @@ function buatDb({ perkara = {}, akun = true, hakim = [], petugas = null } = {}) 
       }
       if (/FROM hakim_pn/i.test(sql)) {
         return callback(null, hakim);
+      }
+      if (/FROM ruangan_sidang/i.test(sql)) {
+        return callback(null, ruangan ? [ruangan] : []);
       }
       if (/FROM (panitera_pn|jurusita)\b/i.test(sql)) {
         return callback(null, petugas ? [petugas] : []);
@@ -220,6 +223,103 @@ async function utama() {
     "PMH yang sudah ada tidak ditimpa",
     { _db: { perkara: { ...PERKARA_KOSONG, pmh: "2026-07-07" } } },
     "pmh_sudah_ada"
+  );
+
+  // -------------------------------------------------------------------------
+  console.log("PHS - empat tabel, dan satu yang menunggu id");
+
+  const PERKARA_ADA_PMH = { ...PERKARA_KOSONG, adaPenetapan: 9909, pmh: "2026-09-01" };
+  const dbPhs = buatDb({ perkara: PERKARA_ADA_PMH, ruangan: { id: 1, nama: "Ruang Sidang 1 Dalam Gedung", keliling: 0 } });
+  const tulisPhs = muat(dbPhs);
+  const rencanaPhs = await tulisPhs.susunRencanaTulis({
+    jenis: "phs",
+    perkaraId: 9909,
+    tanggalPenetapan: "2026-09-01",
+    tanggalSidang: "2026-09-22",
+    ruanganId: 1,
+    olehUsername: "sudarmin",
+    operator: "meja1g",
+    ip: "192.168.9.66",
+  });
+
+  cek("rencana PHS tersusun", rencanaPhs.ok, true);
+  const tabelPhs = rencanaPhs.langkah.map((x) => `${x.tabel}:${x.aksi}`);
+  cek("jadwal sidang disisipkan", tabelPhs.includes("perkara_jadwal_sidang:INSERT"), true);
+  cek(
+    "penetapan hari sidang disisipkan",
+    tabelPhs.includes("perkara_penetapan_hari_sidang:INSERT"),
+    true
+  );
+  cek("penetapan diperbarui", tabelPhs.includes("perkara_penetapan:UPDATE"), true);
+  cek("tabel perkara diperbarui", tabelPhs.includes("perkara:UPDATE"), true);
+
+  const barisPhs = rencanaPhs.langkah.find((x) => x.tabel === "perkara_penetapan_hari_sidang");
+  benar("menunggu id jadwal sidang", Boolean(barisPhs.isiDariLangkah));
+  cek("id-nya diisi di tempat yang benar", barisPhs.params[barisPhs.isiDariLangkah.posisiParam], null);
+  benar(
+    "langkah rujukannya memang jadwal sidang",
+    rencanaPhs.langkah[barisPhs.isiDariLangkah.indeks].tabel === "perkara_jadwal_sidang"
+  );
+
+  const jadwal = rencanaPhs.langkah.find((x) => x.tabel === "perkara_jadwal_sidang");
+  benar("ruangnya dibaca dari acuannya", jadwal.params.includes("Ruang Sidang 1 Dalam Gedung"));
+  benar("bukan sidang keliling", jadwal.params.filter((x) => x === "T").length >= 4);
+
+  // Langkah yang menunggu id BERHENTI bila id itu tidak ada - tidak menulis
+  // null. Baris penetapan hari sidang yang tidak menunjuk jadwal sidang mana
+  // pun lebih buruk daripada tidak ada baris sama sekali.
+  const rencanaPincang = {
+    ok: true,
+    langkah: [
+      {
+        tabel: "perkara_penetapan_hari_sidang",
+        aksi: "INSERT",
+        sql: "INSERT INTO perkara_penetapan_hari_sidang (perkara_id) VALUES (?)",
+        params: [1, 2, null],
+        isiDariLangkah: { indeks: 99, posisiParam: 2 },
+      },
+    ],
+  };
+  const pincang = await tulisPhs.jalankanRencana(rencanaPincang, { kering: false });
+  cek("berhenti bila id rujukannya tidak ada", pincang.alasan, "id_langkah_sebelumnya_tidak_ada");
+
+  const tolakPhs = async (nama, minta, alasan) => {
+    const db = buatDb({
+      perkara: PERKARA_ADA_PMH,
+      ruangan: { id: 1, nama: "Ruang Sidang 1", keliling: 0 },
+      ...(minta._db || {}),
+    });
+    const t = muat(db);
+    const hasil = await t.susunRencanaTulis({
+      jenis: "phs",
+      perkaraId: 9909,
+      tanggalPenetapan: "2026-09-01",
+      tanggalSidang: "2026-09-22",
+      ruanganId: 1,
+      olehUsername: "sudarmin",
+      operator: "meja1g",
+      ...minta,
+    });
+    cek(nama, hasil.alasan, alasan);
+  };
+
+  // Hari sidang ditetapkan ketua majelis - selama majelisnya belum ada, tidak
+  // ada yang berwenang menetapkannya.
+  await tolakPhs(
+    "PHS ditolak sebelum PMH ada",
+    { _db: { perkara: PERKARA_KOSONG } },
+    "pmh_belum_ada"
+  );
+  await tolakPhs(
+    "sidang tidak boleh mendahului penetapannya",
+    { tanggalSidang: "2026-08-01" },
+    "sidang_mendahului_penetapan"
+  );
+  await tolakPhs("ruang harus ada", { _db: { ruangan: null } }, "ruangan_tidak_ketemu");
+  await tolakPhs(
+    "PHS yang sudah ada tidak ditimpa",
+    { _db: { perkara: { ...PERKARA_ADA_PMH, phs: "2026-09-01" } } },
+    "phs_sudah_ada"
   );
 
   // -------------------------------------------------------------------------

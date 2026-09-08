@@ -1974,6 +1974,32 @@ export async function getGatewaySippKonteks(
  * tiap majelis dan kode panitera penggantinya ada di basis data portal, yang
  * juga menyediakan menu penyuntingnya. Bot hanya tahu SIPP.
  */
+/**
+ * Menulis satu penetapan ke SIPP atas nama pejabatnya.
+ *
+ * KERING sebagai bawaan - bot tidak menulis apa pun kecuali `kering: false`
+ * dikirim tegas. Nama operator TIDAK boleh datang dari peramban; pemanggil di
+ * portal mengisinya dari sesi ALETA yang sedang masuk.
+ */
+export async function kirimPenetapanTulisGateway(payload: {
+  jenis: string;
+  perkaraId: number;
+  tanggalPenetapan: string;
+  hakimId?: number[];
+  petugasId?: number;
+  tanggalSidang?: string;
+  ruanganId?: number;
+  jamSidang?: string;
+  olehUsername: string;
+  operator: string;
+  kering: boolean;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getGatewayPenunjukanUsulan(payload: {
   nomorPerkara: string;
   pengaturan: {

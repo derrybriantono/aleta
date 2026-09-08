@@ -76,6 +76,8 @@ const DAFTAR_TABEL = new Set([
   "perkara_hakim_pn",
   "perkara_panitera_pn",
   "perkara_jurusita",
+  "perkara_jadwal_sidang",
+  "perkara_penetapan_hari_sidang",
   "sys_audittrail",
 ]);
 
@@ -102,6 +104,30 @@ const JEJAK_PROSES = {
     prosesId: 40,
     prosesText: "Penunjukan Jurusita/Jurusita Pengganti",
   },
+  phs: {
+    // Huruf besar-kecilnya ditiru apa adanya dari SIPP - "Tambah Penetapan
+    // Sidang Pertama", bukan huruf besar semua seperti ketiga yang lain.
+    formulir: "Tambah Penetapan Sidang Pertama",
+    tahapanId: 12,
+    tahapanText: "Penetapan",
+    prosesId: 50,
+    prosesText: "Penetapan Hari Sidang",
+  },
+};
+
+/**
+ * Bawaan jadwal sidang pertama, diukur dari 2026: 64 dari sekian perkara
+ * memakai ruang 1 pukul 09:00 dengan agenda SIDANG PERTAMA.
+ *
+ * Ruangnya TETAP dapat dipilih pemanggil, dan memang harus untuk perkara
+ * sidang keliling - menetapkan sidang keliling di ruang dalam gedung berarti
+ * memanggil para pihak ke tempat yang salah.
+ */
+const JADWAL_BAWAAN = {
+  ruanganId: 1,
+  jamSidang: "09:00:00",
+  sampaiJam: "09:30:00",
+  agenda: "SIDANG PERTAMA",
 };
 
 function runQuery(sql, params = []) {
@@ -182,7 +208,8 @@ async function keadaanPerkara(perkaraId) {
             pen.perkara_id AS adaPenetapan,
             pen.penetapan_majelis_hakim AS pmh,
             pen.penetapan_panitera_pengganti AS ppp,
-            pen.penetapan_jurusita AS pjs
+            pen.penetapan_jurusita AS pjs,
+            pen.penetapan_hari_sidang AS phs
        FROM perkara p
        LEFT JOIN perkara_penetapan pen ON pen.perkara_id = p.perkara_id
       WHERE p.perkara_id = ? LIMIT 1`,
@@ -238,6 +265,32 @@ async function petugasUntuk(jenis, id) {
     // Nama bergelar yang dipakai SIPP pada berkas perkara - "Munifa, S.H.",
     // bukan "Munifa".
     nama: cleanText(satu.namaGelar) || cleanText(satu.nama),
+  };
+}
+
+/**
+ * Ruang sidang beserta sifatnya.
+ *
+ * sidang_keliling DIBACA dari tabel acuannya, tidak diterima dari pemanggil:
+ * menandai sidang keliling pada ruang dalam gedung - atau sebaliknya - membuat
+ * laporan sidang keliling salah hitung, dan tidak ada yang menyadarinya sampai
+ * laporan tahunan disusun.
+ */
+async function ruanganUntuk(id) {
+  const nomor = Number(id);
+  if (!Number.isFinite(nomor) || nomor <= 0) return null;
+  if (!(await sippSkemaService.tabelAda("ruangan_sidang"))) return null;
+
+  const baris = await runQuery(
+    `SELECT id, nama, sidang_keliling AS keliling FROM ruangan_sidang WHERE id = ? AND aktif = 'Y' LIMIT 1`,
+    [nomor]
+  ).catch(() => []);
+  const satu = (Array.isArray(baris) && baris[0]) || null;
+  if (!satu) return null;
+  return {
+    id: Number(satu.id) || 0,
+    nama: cleanText(satu.nama),
+    keliling: String(satu.keliling) === "1" || String(satu.keliling).toUpperCase() === "Y",
   };
 }
 
@@ -540,7 +593,176 @@ async function susunRencanaTulis(minta) {
     );
   }
 
-  // ---- jejak pada tabel perkara, sama untuk ketiganya ---------------------
+  // ---- PHS ---------------------------------------------------------------
+  //
+  // Yang paling berlapis dari keempatnya. SIPP menyentuh empat tabel, dan satu
+  // di antaranya BERGANTUNG pada hasil yang sebelumnya: baris jadwal sidang
+  // disisipkan lebih dahulu, lalu id-nya dipakai baris penetapan hari sidang.
+  //
+  // Ketergantungan itu tidak dapat disusun sebagai nilai tetap - id barunya
+  // belum ada saat rencana dibuat. Karena itu langkahnya menandai dirinya
+  // dengan isiDariLangkah, dan penjalannya yang mengisikan id itu. Pada
+  // hasil kering, tempatnya terbaca sebagai "<id jadwal sidang baru>".
+  if (jenis === "phs") {
+    if (!perkara.pmh) {
+      // Hari sidang ditetapkan ketua majelis. Selama majelisnya belum ada,
+      // tidak ada yang berwenang menetapkannya - dan SIPP pun menolaknya.
+      return { ok: false, alasan: "pmh_belum_ada" };
+    }
+    if (perkara.phs) return { ok: false, alasan: "phs_sudah_ada" };
+    if (!tanggalSah(minta.tanggalSidang)) return { ok: false, alasan: "tanggal_sidang_tidak_sah" };
+    if (minta.tanggalSidang < minta.tanggalPenetapan) {
+      return { ok: false, alasan: "sidang_mendahului_penetapan" };
+    }
+
+    const ruangan = await ruanganUntuk(minta.ruanganId || JADWAL_BAWAAN.ruanganId);
+    if (!ruangan) return { ok: false, alasan: "ruangan_tidak_ketemu" };
+
+    const jam = /^\d{2}:\d{2}(:\d{2})?$/.test(String(minta.jamSidang || ""))
+      ? String(minta.jamSidang).length === 5
+        ? `${minta.jamSidang}:00`
+        : String(minta.jamSidang)
+      : JADWAL_BAWAAN.jamSidang;
+
+    const nilaiJadwal = {
+      perkara_id: perkara.perkaraId,
+      urutan: 1,
+      tanggal_sidang: minta.tanggalSidang,
+      jam_sidang: jam,
+      agenda: JADWAL_BAWAAN.agenda,
+      ruangan_id: ruangan.id,
+      ruangan: ruangan.nama,
+      sidang_keliling: ruangan.keliling ? "Y" : "T",
+      // Sidang yang baru ditetapkan belum ditunda apa pun.
+      ditunda: "T",
+      sifat_sidang: "Y",
+      diinput_oleh: akun.username,
+      diinput_tanggal: saat,
+    };
+
+    langkah.push({
+      tabel: "perkara_jadwal_sidang",
+      aksi: "INSERT",
+      sql:
+        `INSERT INTO perkara_jadwal_sidang
+           (perkara_id, verzet, keberatan, ikrar_talak, urutan, tanggal_sidang, jam_sidang,
+            sampai_jam, agenda, ruangan_id, ruangan, sidang_keliling, ditunda, sifat_sidang,
+            diinput_oleh, diinput_tanggal)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      params: [
+        perkara.perkaraId,
+        "T",
+        "T",
+        "T",
+        1,
+        minta.tanggalSidang,
+        jam,
+        JADWAL_BAWAAN.sampaiJam,
+        JADWAL_BAWAAN.agenda,
+        ruangan.id,
+        ruangan.nama,
+        ruangan.keliling ? "Y" : "T",
+        "T",
+        "Y",
+        akun.username,
+        saat,
+      ],
+      keterangan: `jadwal sidang pertama ${minta.tanggalSidang} ${jam} di ${ruangan.nama}`,
+    });
+    const indeksJadwal = langkah.length - 1;
+    langkah.push(
+      barisAudit({
+        username: akun.username,
+        operator,
+        tabel: "perkara_jadwal_sidang",
+        formulir: jejak.formulir,
+        aksi: "INSERT",
+        nilai: nilaiJadwal,
+        ip,
+        saat,
+      })
+    );
+
+    langkah.push({
+      tabel: "perkara_penetapan_hari_sidang",
+      aksi: "INSERT",
+      sql:
+        `INSERT INTO perkara_penetapan_hari_sidang
+           (perkara_id, tahapan_id, jadwalsidang_id, tanggal_penetapan, tanggal_sidang,
+            keterangan, diinput_oleh, diinput_tanggal)
+         VALUES (?,?,?,?,?,?,?,?)`,
+      // Tempat ketiga menampung id baris jadwal sidang yang baru disisipkan.
+      params: [
+        perkara.perkaraId,
+        jejak.tahapanId,
+        null,
+        minta.tanggalPenetapan,
+        minta.tanggalSidang,
+        "Penetapan Hari Sidang Pertama",
+        akun.username,
+        saat,
+      ],
+      isiDariLangkah: { indeks: indeksJadwal, posisiParam: 2 },
+      keterangan: "penetapan hari sidang pertama",
+    });
+    langkah.push(
+      barisAudit({
+        username: akun.username,
+        operator,
+        tabel: "perkara_penetapan_hari_sidang",
+        formulir: jejak.formulir,
+        aksi: "INSERT",
+        nilai: {
+          perkara_id: perkara.perkaraId,
+          tahapan_id: jejak.tahapanId,
+          jadwalsidang_id: "<id jadwal sidang baru>",
+          tanggal_penetapan: minta.tanggalPenetapan,
+          tanggal_sidang: minta.tanggalSidang,
+          keterangan: "Penetapan Hari Sidang Pertama",
+          diinput_oleh: akun.username,
+          diinput_tanggal: saat,
+        },
+        ip,
+        saat,
+      })
+    );
+
+    langkah.push({
+      tabel: "perkara_penetapan",
+      aksi: "UPDATE",
+      sql:
+        `UPDATE perkara_penetapan SET penetapan_hari_sidang = ?, sidang_pertama = ?,
+           diperbaharui_oleh = ?, diperbaharui_tanggal = ? WHERE perkara_id = ?`,
+      params: [
+        minta.tanggalPenetapan,
+        minta.tanggalSidang,
+        akun.username,
+        saat,
+        perkara.perkaraId,
+      ],
+      keterangan: `hari sidang pertama ${minta.tanggalSidang}`,
+    });
+    langkah.push(
+      barisAudit({
+        username: akun.username,
+        operator,
+        tabel: "perkara_penetapan",
+        formulir: jejak.formulir,
+        aksi: "UPDATE",
+        nilai: {
+          perkara_id: perkara.perkaraId,
+          penetapan_hari_sidang: minta.tanggalPenetapan,
+          sidang_pertama: minta.tanggalSidang,
+          diperbaharui_oleh: akun.username,
+          diperbaharui_tanggal: saat,
+        },
+        ip,
+        saat,
+      })
+    );
+  }
+
+  // ---- jejak pada tabel perkara, sama untuk keempatnya --------------------
   const nilaiPerkara = {
     tahapan_terakhir_id: jejak.tahapanId,
     tahapan_terakhir_text: jejak.tahapanText,
@@ -630,12 +852,34 @@ async function jalankanRencana(rencana, opsi = {}) {
   }
 
   const selesai = [];
-  for (const satu of rencana.langkah) {
+  // id baris yang baru disisipkan, menurut urutan langkahnya.
+  const idBaru = [];
+  for (const [urutan, satu] of rencana.langkah.entries()) {
     if (!DAFTAR_TABEL.has(satu.tabel)) {
       return { ok: false, kering: false, alasan: "tabel_di_luar_daftar", tabel: satu.tabel, selesai };
     }
     try {
-      await runQuery(satu.sql, satu.params);
+      // Langkah yang menunggu id baris sebelumnya - lihat catatan pada cabang
+      // PHS. Bila id itu belum ada, langkahnya DIHENTIKAN, bukan ditulis
+      // dengan null: baris penetapan hari sidang yang tidak menunjuk jadwal
+      // sidang mana pun lebih buruk daripada tidak ada baris sama sekali.
+      const params = [...satu.params];
+      if (satu.isiDariLangkah) {
+        const id = idBaru[satu.isiDariLangkah.indeks];
+        if (!id) {
+          return {
+            ok: false,
+            kering: false,
+            alasan: "id_langkah_sebelumnya_tidak_ada",
+            pada: { tabel: satu.tabel, aksi: satu.aksi },
+            selesai,
+          };
+        }
+        params[satu.isiDariLangkah.posisiParam] = id;
+      }
+
+      const hasil = await runQuery(satu.sql, params);
+      idBaru[urutan] = hasil && hasil.insertId ? Number(hasil.insertId) : 0;
       selesai.push({ tabel: satu.tabel, aksi: satu.aksi, keterangan: satu.keterangan });
     } catch (galat) {
       return {

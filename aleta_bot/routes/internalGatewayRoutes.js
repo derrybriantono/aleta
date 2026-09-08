@@ -52,6 +52,7 @@ const sippReadOnlyBridgeService = require("../services/sippReadOnlyBridgeService
 const productionGuardService = require("../services/productionGuardService");
 const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
+const penetapanTulisService = require("../services/penetapanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
@@ -725,6 +726,80 @@ router.post("/penunjukan/periksa", requireInternalToken, async (req, res) => {
 
     const hasil = await penunjukanService.periksaPengisian(nomorPerkara, harapan);
     res.status(hasil.ok ? 200 : 404).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * MENULIS PENETAPAN KE SIPP - SATU-SATUNYA RUTE YANG MENULIS KE SANA
+ * ============================================================================
+ *
+ * KERING sebagai bawaan. Menulis menuntut { kering: false } yang tegas, dan
+ * itu disengaja: rute yang menulis secara diam-diam pada permintaan yang lupa
+ * menyebut apa-apa adalah rute yang akan menulis pada permintaan yang salah.
+ *
+ * Yang datang dari peramban hanya PILIHAN - nomor perkara, id orangnya,
+ * tanggalnya, dan nama akun pejabatnya. Nama, NIP, kode, dan sifat ruangan
+ * seluruhnya dibaca ulang dari SIPP di dalam layanan. Peramban tidak pernah
+ * dapat menuliskan NIP siapa pun ke berkas perkara.
+ *
+ * `operator` diambil dari SESI ALETA yang memanggil, bukan dari badan
+ * permintaan. Kalau ia boleh dikirim peramban, catatan tentang siapa yang
+ * sebenarnya menekan tombolnya dapat diisi apa saja - dan justru catatan itu
+ * satu-satunya yang membedakan jalur ini dari memalsukan tanda tangan.
+ */
+router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+
+    const rencana = await penetapanTulisService.susunRencanaTulis({
+      jenis: String(badan.jenis || ""),
+      perkaraId: badan.perkaraId,
+      tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+      // PMH
+      hakimId: Array.isArray(badan.hakimId) ? badan.hakimId : [],
+      // PPP dan PJS
+      petugasId: badan.petugasId,
+      // PHS
+      tanggalSidang: String(badan.tanggalSidang || ""),
+      ruanganId: badan.ruanganId,
+      jamSidang: String(badan.jamSidang || ""),
+      olehUsername: String(badan.olehUsername || ""),
+      operator,
+      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+    });
+
+    if (!rencana.ok) {
+      res.status(400).json(rencana);
+      return;
+    }
+
+    const kering = badan.kering !== false;
+    const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering });
+
+    res.status(hasil.ok ? 200 : 409).json({
+      ...hasil,
+      jenis: rencana.jenis,
+      perkara: rencana.perkara,
+      atasNama: rencana.atasNama,
+      operator: rencana.operator,
+      // Pada hasil kering, langkahnya dikirim lengkap supaya dapat dibaca
+      // manusia sebelum apa pun terjadi.
+      rencana: kering ? rencana.langkah.map((x) => ({
+        tabel: x.tabel,
+        aksi: x.aksi,
+        keterangan: x.keterangan,
+        sql: String(x.sql).replace(/\s+/g, " ").trim(),
+        nilai: x.params,
+      })) : undefined,
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
