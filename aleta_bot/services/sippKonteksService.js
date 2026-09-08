@@ -39,6 +39,7 @@ const paniteraDashboardService = require("./paniteraDashboardService");
 const sippTahapanService = require("./sippTahapanService");
 const penandaSippService = require("./penandaSippService");
 const sippDb = require("../db_config");
+const sippSkemaService = require("./sippSkemaService");
 
 /**
  * Kueri ke SIPP - baca saja.
@@ -295,11 +296,174 @@ async function ringkasanMassal(daftarNomor, { batas = 60 } = {}) {
     if (!(nomor in hasil)) hasil[nomor] = null;
   }
 
+  // ==========================================================================
+  // IDENTITAS PERKARA UNTUK HALAMAN DAFTAR
+  // ==========================================================================
+  //
+  // Halaman daftar memuat lima puluh perkara sekaligus, dan di situlah penanda
+  // paling berharga: pada halaman detail, panel ALETA sudah terbuka di
+  // sebelahnya, sedangkan di halaman daftar petugas memindai lima puluh baris
+  // dan tidak punya cara apa pun mengetahui mana yang perlu perhatian.
+  //
+  // Kelimanya dibaca SEKALI untuk seluruh baris - satu kueri per jenis, bukan
+  // satu kueri per perkara. Lima puluh perkara kali lima kueri adalah dua ratus
+  // lima puluh perjalanan ke SIPP untuk satu halaman.
+  const identitas = await aman(() => identitasMassal(nomorBersih), {});
+
   return {
     diperiksaPada: new Date().toISOString(),
     ambangMendesakHari: ambang,
     perkara: hasil,
+    identitas,
   };
+}
+
+/**
+ * Prodeo, ghaib, kuasa, PNS/TNI/Polri, dan verzet untuk sekumpulan perkara.
+ *
+ * ============================================================================
+ * LIMA KUERI, BUKAN LIMA PULUH
+ * ============================================================================
+ *
+ * Tiap keadaan dibaca dengan satu kueri yang menyaring seluruh perkara
+ * sekaligus lewat IN (...). Menanyakannya per perkara akan membebani SIPP
+ * dengan ratusan perjalanan untuk satu halaman yang dibuka sekali.
+ *
+ * ============================================================================
+ * YANG GAGAL DIBACA TIDAK MENJADI "TIDAK ADA"
+ * ============================================================================
+ *
+ * Tiap kueri dibungkus sendiri. Yang gagal memulangkan himpunan kosong,
+ * sehingga penandanya sekadar tidak muncul - bukan berubah menjadi pernyataan
+ * bahwa perkaranya tidak prodeo, tidak ghaib, dan tidak berkuasa hukum. Pada
+ * halaman daftar, penanda yang keliru jauh lebih merugikan daripada penanda
+ * yang absen: petugas melewati baris yang sebenarnya perlu dibuka.
+ */
+async function identitasMassal(nomorBersih) {
+  if (!Array.isArray(nomorBersih) || nomorBersih.length === 0) return {};
+
+  const isian = nomorBersih.map(() => "?").join(", ");
+
+  // Peta nomor perkara -> perkara_id. Kelima kueri di bawah menyaring dengan
+  // id, bukan dengan nomor: nomor perkara tersimpan dengan ejaan yang tidak
+  // selalu sama antar tabel, sedangkan id-nya tunggal.
+  const barisId = await aman(
+    () =>
+      runQuerySipp(
+        `SELECT p.perkara_id AS id, p.nomor_perkara AS nomor, p.prodeo AS prodeo
+           FROM perkara p WHERE p.nomor_perkara IN (${isian})`,
+        nomorBersih
+      ),
+    []
+  );
+
+  const petaId = new Map();
+  const hasil = {};
+  for (const baris of Array.isArray(barisId) ? barisId : []) {
+    const id = Number(baris.id) || 0;
+    const nomor = cleanText(baris.nomor);
+    if (!id || !nomor) continue;
+    petaId.set(id, nomor);
+    hasil[nomor] = {
+      prodeo: String(baris.prodeo || "").trim() === "1",
+      ghaib: false,
+      kuasa: false,
+      izinAtasan: false,
+      verzet: false,
+    };
+  }
+
+  const daftarId = [...petaId.keys()];
+  if (daftarId.length === 0) return hasil;
+  const isianId = daftarId.map(() => "?").join(", ");
+
+  const tandai = (baris, medan) => {
+    for (const satu of Array.isArray(baris) ? baris : []) {
+      const nomor = petaId.get(Number(satu.id));
+      if (nomor && hasil[nomor]) hasil[nomor][medan] = true;
+    }
+  };
+
+  const kolom = await aman(() => sippSkemaService.kolomTerpilih(), {});
+
+  const [ghaib, kuasa, pengacara, instansi, lawan] = await Promise.all([
+    kolom.pihakGhaib
+      ? aman(
+          () =>
+            runQuerySipp(
+              `SELECT DISTINCT p.perkara_id AS id FROM perkara_pihak2 p
+                WHERE p.perkara_id IN (${isianId}) AND p.${kolom.pihakGhaib} = 1`,
+              daftarId
+            ),
+          []
+        )
+      : [],
+    aman(
+      () =>
+        runQuerySipp(
+          `SELECT DISTINCT k.perkara_id AS id FROM perkara_kuasa k
+            WHERE k.perkara_id IN (${isianId})`,
+          daftarId
+        ),
+      []
+    ),
+    aman(
+      () =>
+        runQuerySipp(
+          `SELECT DISTINCT a.perkara_id AS id FROM perkara_pengacara a
+            WHERE a.perkara_id IN (${isianId})`,
+          daftarId
+        ),
+      []
+    ),
+    // ======================================================================
+    // PEKERJAAN ADA DI TABEL `pihak`, BUKAN DI v_pihak_perkara
+    // ======================================================================
+    //
+    // Percobaan pertama membacanya dari v_pihak_perkara - tampilan yang sudah
+    // dipakai di tempat lain dan memuat nama, alamat, serta pihak_ke. Kolom
+    // `pekerjaan` TIDAK ADA di sana, sehingga kuerinya gagal, tertelan
+    // pembungkus aman(), dan penandanya diam-diam tidak pernah menyala.
+    //
+    // Ketahuan karena dibandingkan dengan halaman detail: 399/Pdt.G/2026
+    // menyala "izin atasan" di sana tetapi bersih di sini. Dua jalur yang
+    // membaca hal yang sama TIDAK BOLEH berselisih - kalau berselisih, salah
+    // satunya pasti salah, dan yang membacanya tidak punya cara tahu mana.
+    //
+    // Nama kolomnya dicari lewat layanan skema, sama seperti halaman detail,
+    // supaya keduanya benar-benar membaca kolom yang sama.
+    kolom.pihakPekerjaan
+      ? aman(
+          () =>
+            runQuerySipp(
+              `SELECT DISTINCT v.perkara_id AS id
+                 FROM v_pihak_perkara v
+                 JOIN pihak p ON p.id = v.pihak_id
+                WHERE v.perkara_id IN (${isianId})
+                  AND p.${kolom.pihakPekerjaan} REGEXP '(pns|asn|pegawai negeri|aparatur sipil|tni|polri|kepolisian)'`,
+              daftarId
+            ),
+          []
+        )
+      : [],
+    aman(
+      () =>
+        runQuerySipp(
+          `SELECT DISTINCT v.perkara_id AS id FROM perkara_verzet v
+            WHERE v.perkara_id IN (${isianId})`,
+          daftarId
+        ),
+      []
+    ),
+  ]);
+
+  tandai(ghaib, "ghaib");
+  tandai(kuasa, "kuasa");
+  tandai(pengacara, "kuasa");
+  tandai(instansi, "izinAtasan");
+  tandai(lawan, "verzet");
+
+  return hasil;
 }
 
 /**

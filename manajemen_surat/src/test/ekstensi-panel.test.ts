@@ -430,7 +430,7 @@ describe("penanda halaman SIPP dirombak", () => {
       path.resolve(process.cwd(), "../aleta_bot/services/sippKonteksService.js"),
       "utf8"
     );
-    expect(layanan).toContain("sippTahapanService.penandaPerkara(identitas.perkaraId)");
+    expect(layanan).toContain("sippTahapanService.penandaPerkara(perkaraId)");
     expect(layanan).toContain("penanda,");
   });
 });

@@ -5161,21 +5161,63 @@ function barisPerkaraDiHalaman() {
 }
 
 /** Menempelkan penanda ringkas pada satu baris daftar. */
-function tempelPenandaBaris(baris, nomor, ringkas) {
+function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
   const sel = baris.querySelector("td");
   if (!sel) return;
 
-  // Belum pernah ditarik ALETA sama sekali - keterangan tersendiri, bukan
-  // sama dengan "tidak punya dokumen".
-  if (ringkas === null) {
-    sel.appendChild(
-      labelTanda("belum ditarik ALETA", "abu", {
-        judul:
-          "Perkara ini belum pernah ditarik dari e-Court, jadi ALETA belum punya keterangan apa pun tentangnya. Bukan berarti berkasnya tidak ada.",
-      })
-    );
-    return;
+  // ==========================================================================
+  // IDENTITAS PERKARA LEBIH DAHULU - INILAH YANG DICARI DI HALAMAN DAFTAR
+  // ==========================================================================
+  //
+  // Kelimanya keadaan yang mengubah cara perkara ditangani, dan tidak satu pun
+  // tampil di kolom mana pun halaman daftar SIPP. Justru di sinilah penanda
+  // paling berharga: pada halaman detail panel ALETA sudah terbuka di
+  // sebelahnya, sedangkan di sini petugas memindai lima puluh baris sekaligus.
+  if (identitas) {
+    if (identitas.ghaib) {
+      sel.appendChild(
+        labelTanda("GHAIB", "merah", {
+          judul: "Pihak ghaib - panggilan lewat pengumuman, tenggat 120 atau 180 hari.",
+        })
+      );
+    }
+    if (identitas.izinAtasan) {
+      sel.appendChild(
+        labelTanda("izin atasan", "kuning", {
+          judul: "Pihak PNS, TNI, atau Polri - persidangan menunggu izin atasannya.",
+        })
+      );
+    }
+    if (identitas.verzet) {
+      sel.appendChild(
+        labelTanda("verzet", "kuning", { judul: "Perlawanan atas putusan verstek." })
+      );
+    }
+    if (identitas.prodeo) {
+      sel.appendChild(
+        labelTanda("prodeo", "abu", { judul: "Dibebaskan biaya - tidak boleh ditagih panjar." })
+      );
+    }
+    if (identitas.kuasa) {
+      sel.appendChild(
+        labelTanda("kuasa", "abu", { judul: "Perkara ini memakai kuasa hukum." })
+      );
+    }
   }
+
+  // ==========================================================================
+  // "BELUM DITARIK ALETA" DIBUANG
+  // ==========================================================================
+  //
+  // Ia menempel pada hampir SETIAP baris - halaman daftar memuat lima puluh
+  // perkara dan sebagian besar memang belum pernah ditarik dari e-Court. Yang
+  // dikabarkannya pun bukan tentang perkaranya, melainkan tentang keadaan
+  // ALETA sendiri: petugas tidak dapat berbuat apa pun dengannya, dan penanda
+  // yang tidak dapat ditindaklanjuti mengajari orang melewati seluruh penanda.
+  //
+  // Keterangannya tidak hilang - ia tetap ada di panel perkara itu, tempat
+  // tombol Tarik memang tersedia.
+  if (ringkas === null) return;
 
   // ==========================================================================
   // ENAM SINYAL DATANG, EMPAT YANG DIGAMBAR
@@ -5286,7 +5328,12 @@ async function tandaiHalamanDaftar() {
     tanpaPengamat(() => {
       for (const item of baris) {
         if (!(item.nomor in isi.perkara)) continue;
-        tempelPenandaBaris(item.baris, item.nomor, isi.perkara[item.nomor]);
+        tempelPenandaBaris(
+          item.baris,
+          item.nomor,
+          isi.perkara[item.nomor],
+          (isi.identitas || {})[item.nomor] || null
+        );
       }
     });
   } catch {

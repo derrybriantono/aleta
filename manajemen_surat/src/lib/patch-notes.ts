@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.5.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.5.1 - Penanda Benar-benar Sampai ke Halaman SIPP";
+export const APP_VERSION = "2.6.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.6.0 - Identitas di Halaman Daftar dan Rasio Smart Majelis";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.6.0",
+    title: "ALETA Judicia v2.6.0 - Identitas di Halaman Daftar dan Rasio Smart Majelis",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Halaman DAFTAR PERKARA kini menandai prodeo, ghaib, kuasa, izin atasan, dan verzet - lima keadaan yang tidak ada di kolom mana pun. Pembagian beban hakim mengikuti rasio Smart Majelis milik SIPP sendiri, dan panitera pengganti mengikuti rasio yang ditetapkan pengadilan.",
+    added: [
+      "Penanda identitas pada halaman daftar: GHAIB, izin atasan, verzet, prodeo, dan kuasa. Dibaca sekali untuk seluruh lima puluh baris - lima kueri, bukan lima puluh.",
+    ],
+    changed: [
+      "Rasio hakim dibaca dari ref_majelis_tetap.rasio - kolom yang dipakai Smart Majelis SIPP. Terbaca: dua hakim berasio 50, dua berasio 75, tiga berasio 100. Yang berasio 50 bagian perkaranya separuh.",
+      "Rasio panitera pengganti diatur pengadilan: Sri Susilowati 50, yang lain 100 - perbandingan 1 : 2. SIPP tidak punya tempat menyimpannya, jadi tinggal di aturan penunjukan ALETA.",
+      "Rasio masuk ke hitungan bagian semestinya, bukan ditempel sesudahnya. Orang berasio 50 menghitung sebagai setengah kepala, sehingga bagian yang lain otomatis naik tanpa angka kedua yang perlu disetel.",
+    ],
+    fixed: [
+      "Penanda belum ditarik ALETA dibuang dari halaman daftar. Ia menempel pada hampir setiap baris dan mengabarkan keadaan ALETA, bukan keadaan perkaranya - petugas tidak dapat berbuat apa pun dengannya.",
+      "PNS/TNI/Polri pada halaman daftar tidak pernah menyala: kuerinya membaca kolom pekerjaan dari v_pihak_perkara, dan kolom itu TIDAK ADA di sana. Gagalnya tertelan pembungkus aman(). Ketahuan karena dibandingkan dengan halaman detail - dua jalur yang membaca hal yang sama tidak boleh berselisih.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Seluruh 106 baris ref_majelis_tetap ber-aktif = 0. Rasionya tetap dibaca - itu satu-satunya angka porsi yang pernah ditetapkan pengadilan ini, dan mengabaikannya berarti kembali menganggap seluruh hakim berporsi sama, yang justru diketahui tidak benar. Susunan majelisnya tetap tidak dipakai; hanya angka rasionya.",
+      "Peta kolom formulir TETAP dipakai - 35 baris pada lima formulir termasuk data-umum. Ia yang mengenali formulir SIPP mana yang sedang terbuka dan kolom mana yang diisi. Baru dapat dihapus bila jalur tulis langsung sepenuhnya menggantikan pengisian borang.",
+    ],
+    knownLimitations: [
+      "Rasio hakim dibaca dari baris yang tidak aktif. Bila pengadilan menyetel ulang Smart Majelis dan mengaktifkan barisnya, angka yang terbaca berubah mengikuti - dan itu memang yang dikehendaki.",
+      "Rasio panitera dicocokkan menurut nama dengan awalan, sebab tabelnya menuliskan gelar. Nama yang berubah ejaannya harus diperbarui di aturan.",
+    ],
+  },
   {
     version: "2.5.1",
     title: "ALETA Judicia v2.5.1 - Penanda Benar-benar Sampai ke Halaman SIPP",

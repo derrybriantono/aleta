@@ -179,18 +179,34 @@ function bagianSemestinya({ orang, tanggalPenetapan, sekarang, awalTahun }) {
 
     const total = tanggal.filter((x) => x >= mulai && x <= kini).length;
 
-    // Kepala efektif: tiap orang ikut sebanyak bagian masa yang benar-benar
-    // ia jalani di dalam masa orang ini. Seluruh masa berakhir hari ini, jadi
-    // tumpangannya cukup dihitung dari yang paling belakangan mulai.
+    // ======================================================================
+    // KEPALA EFEKTIF, DIBOBOT MENURUT RASIONYA
+    // ======================================================================
+    //
+    // Tiap orang ikut sebanyak bagian masa yang benar-benar ia jalani di dalam
+    // masa orang ini. Seluruh masa berakhir hari ini, jadi tumpangannya cukup
+    // dihitung dari yang paling belakangan mulai.
+    //
+    // Rasio dikalikan ke tiap kepala. Orang berasio 50 menghitung sebagai
+    // SETENGAH kepala, sehingga bagian semestinya-nya jatuh menjadi separuh
+    // orang berasio 100 - dan yang lain otomatis naik, sebab penyebutnya
+    // mengecil. Tidak ada angka yang perlu disetel dua kali.
+    //
+    // Rasionya bukan karangan: untuk hakim ia dibaca dari ref_majelis_tetap
+    // milik SIPP sendiri - kolom yang dipakai Smart Majelis - dan untuk
+    // panitera pengganti dari aturan pengadilan. Yang tidak punya rasio
+    // dianggap 100, yaitu bagian penuh.
     let kepala = 0;
     for (const q of orang) {
       const mulaiQ = mulaiEfektif.get(q.id) || awal;
       const bersama = jarakHari(mulaiQ > mulai ? mulaiQ : mulai, kini);
-      kepala += Math.max(0, bersama) / panjang;
+      const rasioQ = Number.isFinite(Number(q.rasio)) && Number(q.rasio) > 0 ? Number(q.rasio) : 100;
+      kepala += (Math.max(0, bersama) / panjang) * (rasioQ / 100);
     }
-    if (kepala < 1) kepala = 1;
+    if (kepala <= 0) kepala = 1;
 
-    const semestinya = total / kepala;
+    const rasioIni = Number.isFinite(Number(o.rasio)) && Number(o.rasio) > 0 ? Number(o.rasio) : 100;
+    const semestinya = (total / kepala) * (rasioIni / 100);
     hasil.set(o.id, {
       mulaiEfektif: mulai,
       hariBertugas: panjang,
@@ -413,6 +429,55 @@ async function susunanMajelisTetap() {
   }));
 
   return { terbaca: true, alasan: "", majelis };
+}
+
+/**
+ * ============================================================================
+ * RASIO HAKIM - DIBACA DARI SMART MAJELIS MILIK SIPP SENDIRI
+ * ============================================================================
+ *
+ * SIPP menyimpan porsi tiap majelis pada ref_majelis_tetap.rasio, dan itulah
+ * yang dipakai Smart Majelis membagi perkara. Angkanya bukan tebakan siapa
+ * pun - ia disetel pengadilan ini di menu SIPP:
+ *
+ *   majelis 1-3   50    Abdul, Himawan, Derry
+ *   majelis 4-6   75    Akbar, Idris, Derry
+ *   majelis 7-9  100    Himawan, Idris, Derry
+ *   majelis 10-19      hakim tunggal, mengulang rasio yang sama per orang
+ *
+ * Terbaca per hakim: Abdul 50, Akbar 75, Himawan 100, Idris 100, Derry 100.
+ * Yang berasio 50 memang membawa beban lain di luar persidangan, dan bagian
+ * perkaranya separuh.
+ *
+ * ============================================================================
+ * SELURUH BARISNYA aktif = 0, DAN ITU DISEBUTKAN APA ADANYA
+ * ============================================================================
+ *
+ * Seratus enam baris, tidak satu pun aktif. Rasionya tetap dibaca - itu satu-
+ * satunya angka porsi yang pernah ditetapkan pengadilan ini, dan mengabaikannya
+ * berarti kembali menganggap seluruh hakim berporsi sama, yang justru diketahui
+ * tidak benar.
+ *
+ * Yang TIDAK dilakukan: menganggap barisnya aktif untuk keperluan lain. Susunan
+ * majelisnya tetap tidak dipakai - hanya angka rasionya.
+ */
+async function rasioHakim() {
+  if (!(await sippSkemaService.tabelAda("ref_majelis_tetap"))) return new Map();
+
+  const rows = await runQuery(
+    `SELECT rmt.hakim_id AS hakimId, MAX(rmt.rasio) AS rasio
+       FROM ref_majelis_tetap rmt
+      WHERE rmt.rasio IS NOT NULL AND rmt.rasio > 0
+      GROUP BY rmt.hakim_id`
+  ).catch(() => []);
+
+  const peta = new Map();
+  for (const row of rows) {
+    const id = Number(row.hakimId) || 0;
+    const rasio = Number(row.rasio) || 0;
+    if (id && rasio > 0) peta.set(id, rasio);
+  }
+  return peta;
 }
 
 /**
@@ -1055,7 +1120,30 @@ async function giliranJurusita(tahun) {
  * penanganan yang belum pernah kebagian tahun ini dan dugaan berhalangan.
  * Yang berbeda hanya tabelnya: panitera_pn dan perkara_panitera_pn.
  */
-async function giliranPanitera(tahun) {
+/**
+ * Giliran panitera pengganti.
+ *
+ * `rasio` adalah peta nama-huruf-kecil -> angka porsi. Ia harus masuk SEBELUM
+ * bagianSemestinya dihitung: bagian yang semestinya bergantung pada porsi tiap
+ * orang, dan menempelkannya sesudah hitungan selesai tidak mengubah apa pun.
+ */
+/**
+ * Porsi satu panitera menurut petanya.
+ *
+ * Dicocokkan dengan awalan nama supaya "Sri Susilowati" tetap ketemu walau
+ * tabelnya menuliskannya "Sri Susilowati, S.H.". Yang tidak disebut berporsi
+ * penuh - 100.
+ */
+function porsiPanitera(peta, nama) {
+  const bersih = String(nama || "").trim().toLowerCase();
+  if (!bersih) return 100;
+  for (const [kunci, nilai] of peta) {
+    if (bersih === kunci || bersih.startsWith(kunci)) return nilai;
+  }
+  return 100;
+}
+
+async function giliranPanitera(tahun, rasio = new Map()) {
   const punyaPanitera = await sippSkemaService.tabelAda("panitera_pn");
   const punyaPerkara = await sippSkemaService.tabelAda("perkara_panitera_pn");
   if (!punyaPanitera || !punyaPerkara) {
@@ -1115,6 +1203,7 @@ async function giliranPanitera(tahun) {
     orang: aktif.map((row) => ({
       id: Number(row.paniteraId) || 0,
       mulai: row.mulai,
+      rasio: porsiPanitera(rasio, row.nama),
       jumlah: (peta.get(Number(row.paniteraId) || 0) || { jumlah: 0 }).jumlah,
     })),
     tanggalPenetapan: (tanggalSemua || []).map((x) => x.tanggal),
@@ -1173,6 +1262,16 @@ async function giliranPanitera(tahun) {
  */
 async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const aturan = pengaturan.aturan || {};
+
+  // Disusun lebih dahulu: giliranPanitera memakainya di dalam hitungan bagian
+  // semestinya, bukan sesudahnya.
+  const rasioPanitera = new Map();
+  for (const baris of aturan.rasioPanitera || []) {
+    const [nama, angka] = String(baris || "").split("=");
+    const bersih = String(nama || "").trim().toLowerCase();
+    const nilai = Number(angka);
+    if (bersih && Number.isFinite(nilai) && nilai > 0) rasioPanitera.set(bersih, nilai);
+  }
   const hariSidang = pengaturan.hariSidang || {};
   const paniteraMajelis = pengaturan.paniteraMajelis || {};
 
@@ -1195,6 +1294,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     bebanMajelis,
     tercatat,
     diblokir,
+    rasio,
   ] = await Promise.all([
       penetapanPerkara(identitas.perkaraId),
       susunanMajelisTetap(),
@@ -1202,11 +1302,12 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       daftarHakimAktif(),
       daftarPaniteraAktif(),
       giliranJurusita(tahun),
-      giliranPanitera(tahun),
+      giliranPanitera(tahun, rasioPanitera),
       bebanHakimTunggal(tahun),
       bebanHakimMajelis(tahun),
       majelisTercatat(identitas.perkaraId),
       petugasDiblokir(),
+      rasioHakim(),
     ]);
 
   // ==========================================================================
@@ -1220,8 +1321,19 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // Empat dari sebelas panitera aktif berkeadaan begini - lihat catatan pada
   // petugasDiblokir(). Mengusulkan mereka berarti mengusulkan penetapan yang
   // tidak dapat ditandatangani akun mana pun.
-  const hakimAktif = hakimAktifSemua.filter((x) => !diblokir.hakim.has(Number(x.hakimId)));
-  const paniteraAktif = paniteraAktifSemua.filter((x) => !diblokir.panitera.has(Number(x.paniteraId)));
+  // ==========================================================================
+  // RASIO DITEMPELKAN KE TIAP ORANG
+  // ==========================================================================
+  //
+  // Hakim dari Smart Majelis milik SIPP; panitera pengganti dari aturan
+  // pengadilan, dicocokkan menurut namanya. Yang tidak punya rasio dianggap
+  // 100 - bagian penuh - dan itu ditangani bagianSemestinya, bukan di sini.
+  const hakimAktif = hakimAktifSemua
+    .filter((x) => !diblokir.hakim.has(Number(x.hakimId)))
+    .map((x) => ({ ...x, rasio: rasio.get(Number(x.hakimId)) || 100 }));
+  const paniteraAktif = paniteraAktifSemua
+    .filter((x) => !diblokir.panitera.has(Number(x.paniteraId)))
+    .map((x) => ({ ...x, rasio: porsiPanitera(rasioPanitera, x.nama) }));
   const jurusita = {
     ...jurusitaSemua,
     daftar: (jurusitaSemua.daftar || []).filter((x) => !diblokir.jurusita.has(Number(x.id ?? x.jurusitaId))),
@@ -1230,7 +1342,9 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     jurusita.daftar.find((x) => x === jurusitaSemua.usulan) || jurusita.daftar[0] || null;
   const panitera = {
     ...paniteraSemua,
-    daftar: (paniteraSemua.daftar || []).filter((x) => !diblokir.panitera.has(Number(x.id ?? x.paniteraId))),
+    daftar: (paniteraSemua.daftar || [])
+      .filter((x) => !diblokir.panitera.has(Number(x.id ?? x.paniteraId)))
+      .map((x) => ({ ...x, rasio: porsiPanitera(rasioPanitera, x.nama) })),
   };
   panitera.usulan =
     panitera.daftar.find((x) => x === paniteraSemua.usulan) || panitera.daftar[0] || null;
@@ -1604,6 +1718,7 @@ function susunPmh({
     orang: kolam.map((orang) => ({
       id: orang.hakimId,
       mulai: orang.mulai,
+      rasio: orang.rasio,
       jumlah: beban.get(orang.hakimId) || 0,
     })),
     tanggalPenetapan: Array.isArray(beban.tanggal) ? beban.tanggal : [],
@@ -1837,6 +1952,7 @@ module.exports = {
   smartMajelisPerkara,
   susunanMajelisTetap,
   petugasDiblokir,
+  rasioHakim,
   jumlahSidangPerTanggal,
   susunPmh,
   tanggalSidangPertama,

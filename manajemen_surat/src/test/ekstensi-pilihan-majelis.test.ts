@@ -156,8 +156,8 @@ describe("petugas yang akun SIPP-nya diblokir tidak diusulkan", () => {
 
   it("disaring di satu tempat untuk seluruh kolam", () => {
     for (const baris of [
-      "const hakimAktif = hakimAktifSemua.filter",
-      "const paniteraAktif = paniteraAktifSemua.filter",
+      "const hakimAktif = hakimAktifSemua",
+      "const paniteraAktif = paniteraAktifSemua",
       "diblokir.jurusita.has",
       "diblokir.panitera.has",
     ]) {

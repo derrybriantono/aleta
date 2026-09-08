@@ -93,6 +93,16 @@ export type AturanPenunjukan = {
    * diisi.
    */
   sertifikatEkonomiSyariah: string[];
+  /**
+   * Rasio beban panitera pengganti, ditulis "nama=angka" dipisah koma.
+   *
+   * Hakim rasionya dibaca dari ref_majelis_tetap milik SIPP - Smart Majelis
+   * sudah menyimpannya di sana. Panitera pengganti TIDAK punya tempat seperti
+   * itu di SIPP mana pun, jadi rasionya tinggal di sini.
+   *
+   * Yang tidak disebut berasio 100, yaitu bagian penuh.
+   */
+  rasioPanitera: string[];
 };
 
 /**
@@ -123,6 +133,11 @@ export const ATURAN_BAWAAN: AturanPenunjukan = {
   // nama: nama berubah ejaannya antar tabel, kode tidak.
   sertifikatEkonomiSyariah: ["C1"],
 
+  // Sri Susilowati berbanding 1 sedangkan yang lain 2 - keputusan pengadilan
+  // ini. Ditulis sebagai persentase supaya sebentuk dengan rasio hakim:
+  // 50 berbanding 100 adalah perbandingan 1 : 2 yang sama.
+  rasioPanitera: ["Sri Susilowati=50"],
+
   // ==========================================================================
   // KEEMPAT PENETAPAN DIKERJAKAN OPERATOR - ITU YANG BERLAKU DI SINI
   // ==========================================================================
@@ -151,6 +166,8 @@ const KETERANGAN_ATURAN: Record<keyof AturanPenunjukan, string> = {
     "Kata kunci pada jenis perkara yang berhakim tunggal tanpa memandang nilai.",
   sertifikatEkonomiSyariah:
     "Kode hakim bersertifikat ekonomi syariah - hanya mereka yang diusulkan untuk perkara ekonomi syariah. Kosong berarti belum diisi, dan usulannya kembali ke seluruh hakim aktif.",
+  rasioPanitera:
+    "Rasio beban panitera pengganti, ditulis nama=angka dipisah koma. 50 berarti separuh bagian orang berasio 100. Yang tidak disebut berasio penuh. Rasio hakim tidak diatur di sini - ia dibaca dari Smart Majelis milik SIPP.",
   kolamHakimTunggal:
     'Siapa yang boleh diusulkan jadi hakim tunggal: "hakim" menggugurkan Ketua dan Wakil.',
   polaNomorSk: "Pola nomor SK penetapan. Dikosongkan berarti tidak diisikan.",
@@ -268,6 +285,7 @@ export async function bacaAturanPenunjukan(
       peta.get("sertifikatEkonomiSyariah"),
       ATURAN_BAWAAN.sertifikatEkonomiSyariah
     ),
+    rasioPanitera: daftarAtau(peta.get("rasioPanitera"), ATURAN_BAWAAN.rasioPanitera),
   };
 }
 
