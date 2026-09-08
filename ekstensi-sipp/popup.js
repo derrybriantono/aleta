@@ -31,10 +31,12 @@ const penyimpanan =
 function pasangNilai(simpan) {
   // Panel bawaannya MENYALA: ia hanya menambah lapisan di sisi kanan.
   kotak.checked = simpan.aktif !== false;
-  // Penandaan halaman bawaannya MATI. Menyisipkan tanda ke dalam halaman kerja
-  // orang tanpa mereka minta bukan keputusan yang pantas diambil sendiri oleh
-  // sebuah pembaruan.
-  kotakTanda.checked = simpan.tandaiHalaman === true;
+  // Penandaan halaman bawaannya MENYALA. Dulu mati, dan karena saklarnya
+  // terkubur di jendela ini - yang hampir tidak pernah dibuka - penanda ghaib
+  // dan panjar menipis tidak pernah muncul di daftar perkara sama sekali.
+  // Penanda hanya menambah keterangan, jadi harganya rendah dan gunanya
+  // tinggi; yang mematikannya tetap diingat.
+  kotakTanda.checked = simpan.tandaiHalaman !== false;
   // Menyisipkan ke dalam tabel SIPP lebih jauh lagi daripada menandai:
   // tampilannya menyatu, sehingga berkas ALETA terlihat seperti bagian
   // SIPP. Bawaannya mati, dan menyalakannya keputusan petugas.
@@ -186,10 +188,25 @@ async function periksaAkunAleta(asal) {
     tulisKeadaan(kolomAleta, "belum diketahui — buka halaman SIPP dulu", { kosong: true });
     return;
   }
+  // ==========================================================================
+  // PERMINTAANNYA DIBERI BATAS WAKTU
+  // ==========================================================================
+  //
+  // Popup ini dibuka dari bilah ekstensi, dan yang membukanya menunggu di
+  // depan jendela sebesar kartu nama. Bila portal tidak menjawab - server
+  // sedang dibangun ulang, jaringan kantor putus - fetch tanpa batas waktu
+  // menggantung sampai peramban menyerah sendiri, dan selama itu barisnya
+  // tetap bertulis "memuat..." tanpa satu pun keterangan.
+  //
+  // Empat detik: cukup untuk jaringan kantor yang lambat, terlalu singkat
+  // untuk terasa sebagai jendela yang macet.
+  const pembatal = new AbortController();
+  const penghenti = setTimeout(() => pembatal.abort(), 4000);
   try {
     const respons = await fetch(`${asal}/api/aleta-ecourt/ekstensi?info=siapa`, {
       credentials: "include",
       cache: "no-store",
+      signal: pembatal.signal,
     });
     if (respons.status === 401 || respons.status === 403) {
       tulisKeadaan(kolomAleta, "belum masuk portal ALETA", { kosong: true });
@@ -217,8 +234,14 @@ async function periksaAkunAleta(asal) {
         usang: true,
       });
     }
-  } catch {
-    tulisKeadaan(kolomAleta, "portal tidak terjangkau", { kosong: true });
+  } catch (galat) {
+    tulisKeadaan(
+      kolomAleta,
+      galat && galat.name === "AbortError" ? "portal tidak menjawab" : "portal tidak terjangkau",
+      { kosong: true }
+    );
+  } finally {
+    clearTimeout(penghenti);
   }
 }
 

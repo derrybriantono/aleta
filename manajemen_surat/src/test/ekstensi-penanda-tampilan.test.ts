@@ -22,6 +22,16 @@ const gaya = () => readFileSync(akar("panel.css"), "utf8");
 const popupJs = () => readFileSync(akar("popup.js"), "utf8");
 const popupHtml = () => readFileSync(akar("popup.html"), "utf8");
 
+/**
+ * panel.css tanpa catatannya.
+ *
+ * Penjaga yang menyatakan "pemilih ini TIDAK BOLEH ADA lagi" harus membaca
+ * aturannya saja. Bentuk lama yang dikutip di dalam catatan - justru untuk
+ * menerangkan kenapa ia dibuang - membuat penjaganya berbunyi atas kalimat
+ * yang menjelaskan perbaikannya sendiri.
+ */
+const gayaTanpaCatatan = () => gaya().replace(/\/\*[\s\S]*?\*\//g, "");
+
 /** Isi fungsi tempelPenandaBaris saja, tanpa yang di sekelilingnya. */
 function fungsiPenandaBaris() {
   const isi = konten();
@@ -218,13 +228,13 @@ describe("tema gelap SIPP: lengkap, dan dapat dicabut utuh", () => {
     expect(css).toContain("[bgcolor]");
   });
 
-  it("panel ALETA dikecualikan dari aturan borongan", () => {
-    // Panel melayang di atas halaman yang sama. Aturan untuk isian dan
-    // pranala SIPP tidak boleh ikut mewarnai isi panel, yang sudah punya
-    // warnanya sendiri di berkas ini.
-    const css = gaya();
-    expect(css).toContain("input:not(#aleta-panel-sipp input)");
-    expect(css).toContain("a:not(#aleta-panel-sipp a)");
+  it("aturannya dilingkupi ke wadah SIPP, bukan menyapu seluruh dokumen", () => {
+    // Panel melayang di atas halaman yang sama. Dilingkupi ke wadah SIPP,
+    // panel ALETA - yang bukan keturunan wadah mana pun di daftar itu - tidak
+    // perlu dikecualikan sama sekali, dan pencocokannya jauh lebih murah.
+    const css = gayaTanpaCatatan();
+    expect(css).toContain("#konten input");
+    expect(css).toContain(":is(#konten, #atas, #footer, .modal-content) a");
   });
 
   it("gambar dan pindaian tidak pernah difilter", () => {
@@ -286,5 +296,112 @@ describe("palet panel: satu tempat, dua tema", () => {
     ]) {
       expect(css).toContain(`.aleta-panel[data-tema="terang"] .${kelas}`);
     }
+  });
+});
+
+describe("halaman daftar perkara tidak lagi kosong dari ALETA", () => {
+  it("panel ringkas digambar untuk halaman daftar", () => {
+    // Sebelumnya panel HANYA muncul di halaman satu perkara. Di halaman daftar
+    // tidak ada apa pun dari ALETA, dan yang membukanya menyimpulkan
+    // ekstensinya mati.
+    const isi = konten();
+    expect(isi).toContain("function susunPanelDaftar(ringkasan)");
+    expect(isi).toContain('panel.dataset.mode = "daftar"');
+  });
+
+  it("panel daftar punya tombol matikan yang sama dengan panel perkara", () => {
+    // Satu aturan di satu tempat: tombolnya dulu disusun sebaris di dalam
+    // susunPanel, sehingga panel yang lahir belakangan tidak punya tombolnya.
+    const isi = konten();
+    expect(isi).toContain("function tombolMatikan()");
+    expect(isi.split("tombolMatikan()").length - 1).toBeGreaterThanOrEqual(3);
+  });
+
+  it("panel daftar dapat digeser dan diubah ukurannya", () => {
+    const isi = konten();
+    const potong = isi.slice(
+      isi.indexOf("function susunPanelDaftar"),
+      isi.indexOf("function susunAjakanMasuk")
+    );
+    expect(potong).toContain("pasangGeser(panel, kepala)");
+    expect(potong).toContain("pasangUbahUkuran(panel)");
+  });
+
+  it("penandaan yang dimatikan disebut apa adanya beserta jalan keluarnya", () => {
+    // Panel yang hanya berkata "tidak ada penanda" membuat orang mengira tidak
+    // ada yang perlu diperiksa.
+    const isi = konten();
+    expect(isi).toContain("Penandaan baris sedang dimatikan.");
+  });
+
+  it("penandaan halaman kini bawaannya menyala", () => {
+    // Saklarnya terkubur di popup ikon peramban, dan akibatnya penanda ghaib
+    // tidak pernah muncul sama sekali - dua kali dilaporkan sebagai kerusakan.
+    const isi = konten();
+    expect(isi).toContain("saklar.tandaiHalaman = simpan.tandaiHalaman !== false;");
+    expect(popupJs()).toContain("kotakTanda.checked = simpan.tandaiHalaman !== false;");
+    expect(popupHtml()).toContain('id="tandaiHalaman" checked');
+  });
+
+  it("penyisipan berkas ke tabel SIPP TETAP mati secara bawaan", () => {
+    // Ia membuat berkas ALETA tampak seperti berkas SIPP - jauh lebih mudah
+    // disalahpahami daripada label yang jelas bukan milik SIPP.
+    const isi = konten();
+    expect(isi).toContain("saklar.sisipJadwal = simpan.sisipJadwal === true;");
+  });
+});
+
+describe("yang membuat halaman terasa berat sudah dibuang", () => {
+  it("tidak ada lagi pemilih penyapu seluruh dokumen", () => {
+    // [style*="color"] tanpa lingkup memaksa pencocokan substring pada atribut
+    // style tiap elemen, dan :not() bermajemuk memaksa penelusuran leluhur.
+    // Pada daftar berisi lima puluh perkara keduanya berlipat.
+    const css = gayaTanpaCatatan();
+    expect(css).not.toContain(':is(font[color], [style*="color"]):not(#aleta-panel-sipp *)');
+    expect(css).not.toContain("input:not(#aleta-panel-sipp input)");
+    expect(css).not.toContain("a:not(#aleta-panel-sipp a)");
+  });
+
+  it("penanganan warna sebaris dilingkupi ke wadah SIPP", () => {
+    const css = gayaTanpaCatatan();
+    expect(css).toContain(":is(#konten, .cssTable, .detil, #detil_page, #infoPerkara");
+    expect(css).toContain(':is(font[color], [style*="color"]) {');
+  });
+
+  it("popup tidak pernah menggantung menunggu portal", () => {
+    const js = popupJs();
+    expect(js).toContain("new AbortController()");
+    expect(js).toContain("clearTimeout(penghenti)");
+  });
+});
+
+describe("tema terang berpindah keluarga, bukan sekadar diredupkan", () => {
+  it("paletnya batu hangat, bukan abu kehijauan", () => {
+    // Abu kehijauan di atas SIPP putih-hijau terbaca sebagai bagian SIPP yang
+    // kebetulan lebih gelap - bukan sebagai lapisan milik aplikasi lain.
+    const css = gaya();
+    const potong = css.slice(css.indexOf('.aleta-panel[data-tema="terang"] {'));
+    expect(potong.slice(0, 2600)).toContain("--aleta-latar: #ece9e3;");
+    expect(potong.slice(0, 2600)).not.toContain("--aleta-latar: #e9ede9;");
+  });
+
+  it("tulisannya tidak hitam murni", () => {
+    const css = gaya();
+    const potong = css.slice(css.indexOf('.aleta-panel[data-tema="terang"] {'));
+    expect(potong.slice(0, 2600)).toContain("--aleta-tulisan: #2b2721;");
+    expect(potong.slice(0, 2600)).not.toContain("--aleta-tulisan: #000000;");
+  });
+
+  it("garis kepala panel hijau ALETA, bukan goresan gelap", () => {
+    // Garis gelap di atas halaman SIPP yang putih tidak berasal dari mana pun.
+    const css = gaya();
+    expect(css).toContain('.aleta-panel[data-tema="terang"] .aleta-kepala');
+    expect(css).toContain("border-bottom-color: #b8d3c3;");
+  });
+
+  it("tepinya dipertegas supaya panel terpisah dari kertas SIPP", () => {
+    const css = gaya();
+    const potong = css.slice(css.indexOf('.aleta-panel[data-tema="terang"] {'));
+    expect(potong).toContain("border-color: var(--aleta-garis-kuat);");
   });
 });

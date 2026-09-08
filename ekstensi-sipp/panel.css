@@ -713,9 +713,9 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-panel[data-tema="terang"] .aleta-tanda-tanpa-kuasa {
-  background: #e2e7e4;
-  border-color: #c2ccc6 !important;
-  color: #4d5c55;
+  background: #e3ded3;
+  border-color: #c8bfae !important;
+  color: #5b5245;
 }
 
 .aleta-register {
@@ -779,7 +779,7 @@ tr.aleta-baris-disorot > td {
 
 .aleta-panel[data-tema="terang"] .aleta-chip-merah  { background: #f7dedb; color: #8a1c13; border-color: #d3a3a0; }
 .aleta-panel[data-tema="terang"] .aleta-chip-kuning { background: #f3e6c4; color: #6b4f14; border-color: #d5bb74; }
-.aleta-panel[data-tema="terang"] .aleta-chip-abu    { background: #e2e7e4; color: #45544c; border-color: #c2ccc6; }
+.aleta-panel[data-tema="terang"] .aleta-chip-abu    { background: #e3ded3; color: #544b3f; border-color: #c8bfae; }
 
 /* ─── Panel yang dapat digeser ───────────────────────────────────────────── */
 
@@ -1488,18 +1488,57 @@ tr.aleta-baris-disorot > td {
    *
    * Kontras tulisan tetap jauh di atas AA: #1b2622 di atas #e9ede9 sekitar
    * 12:1. Yang dikurangi keterangannya, bukan keterbacaannya. */
-  --aleta-latar: #e9ede9;
-  --aleta-latar-naik: #f5f7f4;
-  --aleta-garis: #c6d2cb;
-  --aleta-tulisan: #1b2622;
-  --aleta-tulisan-lembut: #52635b;
+  /* ========================================================================
+     TEMA TERANG BERPINDAH DARI ABU KEHIJAUAN KE BATU HANGAT
+     ========================================================================
+
+     #e9ede9 sudah cukup redup untuk dipandang lama, tetapi ia salah KELUARGA.
+     Halaman SIPP putih dengan hijau #008C4B dan tulisan abu; panel abu
+     kehijauan di atasnya terbaca sebagai bagian SIPP yang kebetulan sedikit
+     lebih gelap - bukan sebagai lapisan milik aplikasi lain. Itu justru
+     kebalikan dari yang dibutuhkan: panel ini menempel di aplikasi orang, dan
+     satu-satunya cara jujur menampilkannya adalah dengan terlihat BERBEDA.
+
+     Batu hangat memisahkannya dengan cara yang tidak berisik. Ia netral,
+     tidak menuntut perhatian, dan tidak ada satu pun permukaan SIPP yang
+     berwarna seperti itu - jadi tepinya terbaca tanpa perlu garis tebal.
+     Hijau ALETA dipertahankan sebagai aksen: warnanya memang mirip hijau
+     SIPP, tetapi sebagai AKSEN di atas batu ia terbaca sebagai tanda, bukan
+     sebagai latar yang bersaing.
+
+     Tulisannya pun tidak lagi hampir hitam. #2b2721 adalah cokelat-abu gelap
+     yang sekeluarga dengan latarnya; hitam murni di atas batu hangat terlihat
+     seperti tinta yang salah cetak, dan itulah "warna yang bertabrakan" yang
+     dikeluhkan. Kontrasnya tetap sekitar 12:1 - yang dikurangi kekerasannya,
+     bukan keterbacaannya. */
+  --aleta-latar: #ece9e3;
+  --aleta-latar-naik: #f6f4ef;
+  --aleta-garis: #d5cec2;
+  --aleta-garis-kuat: #b9b0a0;
+  --aleta-tulisan: #2b2721;
+  --aleta-tulisan-lembut: #63594c;
   --aleta-merek: #1c6f46;
   --aleta-aman: #1c6f46;
-  --aleta-mendesak: #7d5a0d;
-  --aleta-lewat: #9c2f26;
-  --aleta-garis-kuat: #b6c3bb;
+  --aleta-mendesak: #8a5a0d;
+  --aleta-lewat: #a33228;
 
-  box-shadow: 0 10px 30px rgba(16, 32, 26, 0.16);
+  /* Bayangannya dipertegas dan diberi tepi tipis. Pada halaman SIPP yang
+     putih, bayangan lembut saja tidak cukup memisahkan - tepi setebal satu
+     piksel dengan warna batu yang lebih tua mengerjakannya dengan pasti. */
+  border-color: var(--aleta-garis-kuat);
+  box-shadow: 0 12px 34px rgba(60, 48, 30, 0.22);
+}
+
+/* Kepala panel pada tema terang: batu yang naik, dengan garis hijau ALETA di
+   bawahnya - bukan garis gelap. Garis gelap di atas halaman SIPP yang putih
+   adalah goresan hitam yang tidak berasal dari mana pun; garis hijau
+   menyatakan pemiliknya. */
+.aleta-panel[data-tema="terang"] .aleta-kepala {
+  border-bottom-color: #b8d3c3;
+}
+
+.aleta-panel[data-tema="terang"] .aleta-merek {
+  color: var(--aleta-merek);
 }
 
 /* ==========================================================================
@@ -1966,18 +2005,22 @@ html[data-aleta-tema-sipp="gelap"] .del_btn {
    dan isian di dalamnya sudah punya warnanya sendiri di berkas ini. Bila
    peramban tidak mengenali bentuk :not() ini, aturannya diabaikan seluruhnya -
    isian SIPP tetap terang, dan itu kegagalan yang tidak merusak apa pun. */
-html[data-aleta-tema-sipp="gelap"] input:not(#aleta-panel-sipp input),
-html[data-aleta-tema-sipp="gelap"] select:not(#aleta-panel-sipp select),
-html[data-aleta-tema-sipp="gelap"] textarea:not(#aleta-panel-sipp textarea) {
+html[data-aleta-tema-sipp="gelap"] #konten input,
+html[data-aleta-tema-sipp="gelap"] #konten select,
+html[data-aleta-tema-sipp="gelap"] #konten textarea,
+html[data-aleta-tema-sipp="gelap"] #atas input,
+html[data-aleta-tema-sipp="gelap"] .modal-content input,
+html[data-aleta-tema-sipp="gelap"] .modal-content select,
+html[data-aleta-tema-sipp="gelap"] .modal-content textarea {
   background-color: var(--s-permukaan-2) !important;
   color: var(--s-tulisan) !important;
   border-color: var(--s-garis) !important;
 }
 
-html[data-aleta-tema-sipp="gelap"] input[readonly="readonly"]:not(#aleta-panel-sipp input),
-html[data-aleta-tema-sipp="gelap"] input:disabled:not(#aleta-panel-sipp input),
-html[data-aleta-tema-sipp="gelap"] select:disabled:not(#aleta-panel-sipp select),
-html[data-aleta-tema-sipp="gelap"] textarea[readonly]:not(#aleta-panel-sipp textarea) {
+html[data-aleta-tema-sipp="gelap"] #konten input[readonly="readonly"],
+html[data-aleta-tema-sipp="gelap"] #konten input:disabled,
+html[data-aleta-tema-sipp="gelap"] #konten select:disabled,
+html[data-aleta-tema-sipp="gelap"] #konten textarea[readonly] {
   background: #101a16 !important;
   color: var(--s-tulisan-lembut) !important;
 }
@@ -1987,7 +2030,7 @@ html[data-aleta-tema-sipp="gelap"] ::placeholder {
 }
 
 /* --- Pranala umum, di luar panel ALETA ----------------------------------- */
-html[data-aleta-tema-sipp="gelap"] a:not(#aleta-panel-sipp a) {
+html[data-aleta-tema-sipp="gelap"] :is(#konten, #atas, #footer, .modal-content) a {
   color: var(--s-hijau-terang) !important;
 }
 
@@ -2050,11 +2093,27 @@ html[data-aleta-tema-sipp="gelap"] :is(.pagination > .active > a, .pagination > 
    Diwariskan, bukan dipatok: elemen di dalam kepala tabel hijau mewarisi
    putih, elemen di dalam sel biasa mewarisi warna tulisan biasa. Satu aturan,
    dua hasil yang benar. */
-html[data-aleta-tema-sipp="gelap"] :is(font[color], [style*="color"]):not(#aleta-panel-sipp *) {
+/* ── Kenapa berlingkup, bukan menyapu seluruh halaman ──────────────────────
+ *
+ * Bentuk pertamanya menyapu seluruh dokumen:
+ *
+ *   :is(font[color], [style*="color"]):not(#aleta-panel-sipp *)
+ *
+ * dan itu mahal dengan dua cara sekaligus. [style*="color"] memaksa peramban
+ * mencocokkan SUBSTRING pada atribut style tiap elemen - dan SIPP memasang
+ * gaya sebaris di mana-mana - sedangkan :not() dengan pemilih majemuk memaksa
+ * penelusuran ke atas melalui rantai leluhur untuk tiap elemen yang cocok.
+ * Pada halaman daftar berisi lima puluh perkara, keduanya berlipat, dan
+ * peramban terasa berat justru pada halaman yang paling sering dibuka.
+ *
+ * Dilingkupi ke wadah SIPP, keduanya hilang: pencocokan berhenti di luar
+ * wadah itu, dan panel ALETA - yang bukan keturunan salah satu pun wadah ini -
+ * tidak perlu dikecualikan sama sekali. */
+html[data-aleta-tema-sipp="gelap"] :is(#konten, .cssTable, .detil, #detil_page, #infoPerkara, .usual, .box, .panel, .modal-content) :is(font[color], [style*="color"]) {
   color: inherit !important;
 }
 
-html[data-aleta-tema-sipp="gelap"] [bgcolor]:not(#aleta-panel-sipp *) {
+html[data-aleta-tema-sipp="gelap"] :is(#konten, .cssTable, .detil, #detil_page, #infoPerkara, .usual) [bgcolor] {
   background-color: transparent !important;
 }
 

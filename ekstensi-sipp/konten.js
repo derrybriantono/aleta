@@ -178,12 +178,35 @@ async function muatSaklar() {
   try {
     const simpan = await chrome.storage.local.get(["aktif", "tandaiHalaman", "sisipJadwal"]);
     saklar.aktif = simpan.aktif !== false;
-    saklar.tandaiHalaman = simpan.tandaiHalaman === true;
+    // ========================================================================
+    // PENANDAAN HALAMAN KINI BAWAANNYA MENYALA
+    // ========================================================================
+    //
+    // Dulu mati, dengan alasan yang masih benar: menyisipkan tanda ke dalam
+    // halaman kerja orang tanpa mereka minta bukan keputusan yang pantas
+    // diambil sendiri oleh sebuah pembaruan.
+    //
+    // Yang berubah bukan alasannya, melainkan akibatnya. Saklar ini terkubur
+    // di popup ikon peramban - tempat yang hampir tidak pernah dibuka - dan
+    // akibatnya penanda ghaib, izin atasan, dan panjar menipis TIDAK PERNAH
+    // muncul di daftar perkara. Yang membacanya menyimpulkan penandanya rusak,
+    // padahal ia memang tidak pernah dinyalakan. Itu dua kali dilaporkan
+    // sebagai kerusakan, dan dua kali yang diperiksa adalah datanya - yang
+    // ternyata benar.
+    //
+    // Penanda hanya MENAMBAH keterangan dan tidak mengubah satu pun data SIPP,
+    // jadi harganya rendah dan gunanya tinggi. Yang tidak menginginkannya
+    // tetap dapat mematikannya, dan pilihan itu diingat - dibaca "!== false",
+    // bukan "=== true".
+    saklar.tandaiHalaman = simpan.tandaiHalaman !== false;
+    // Penyisipan berkas ke dalam tabel SIPP TETAP mati secara bawaan: ia
+    // membuat berkas ALETA tampak seperti berkas SIPP, dan itu jauh lebih
+    // mudah disalahpahami daripada label yang jelas bukan milik SIPP.
     saklar.sisipJadwal = simpan.sisipJadwal === true;
   } catch {
-    // Penyimpanan tidak terjangkau: panel tetap menyala, penandaan tetap mati.
+    // Penyimpanan tidak terjangkau: bawaannya tetap dipakai.
     saklar.aktif = true;
-    saklar.tandaiHalaman = false;
+    saklar.tandaiHalaman = true;
     saklar.sisipJadwal = false;
   }
   saklar.siap = true;
@@ -4186,19 +4209,7 @@ function susunPanel(konteks) {
   // yang panelnya menghalangi pekerjaan butuh mematikannya SEKARANG, dan
   // yang tidak menemukan saklarnya akan menutup panel berulang kali setiap
   // halaman - lalu berhenti memakai ekstensinya sama sekali.
-  const matikan = buatElemen("button", "aleta-matikan", "×");
-  matikan.type = "button";
-  matikan.title = "Matikan ALETA untuk SIPP (dapat dinyalakan lagi dari ikon ekstensi)";
-  matikan.addEventListener("click", () => {
-    try {
-      void chrome.storage.local.set({ aktif: false });
-    } catch {
-      // Penyimpanan tidak tersedia: panel tetap ditutup untuk halaman ini.
-      const lama = document.getElementById(PENANDA);
-      if (lama) lama.remove();
-    }
-  });
-  kepala.appendChild(matikan);
+  kepala.appendChild(tombolMatikan());
 
   panel.appendChild(kepala);
   pasangGeser(panel, kepala);
@@ -4569,6 +4580,29 @@ function susunPanel(konteks) {
  * diketahui pengguna adalah kepada siapa harus meminta, bukan bagian mana dari
  * penjagaan yang menahannya.
  */
+/**
+ * Tombol matikan di kepala panel.
+ *
+ * Dulu disusun sebaris di dalam susunPanel, sehingga panel daftar - yang lahir
+ * belakangan - tidak punya tombolnya sama sekali. Satu aturan di satu tempat:
+ * tiap panel yang punya kepala mendapat tombol yang sama persis.
+ */
+function tombolMatikan() {
+  const matikan = buatElemen("button", "aleta-matikan", "×");
+  matikan.type = "button";
+  matikan.title = "Matikan ALETA untuk SIPP (dapat dinyalakan lagi dari ikon ekstensi)";
+  matikan.addEventListener("click", () => {
+    try {
+      void chrome.storage.local.set({ aktif: false });
+    } catch {
+      // Penyimpanan tidak tersedia: panel tetap ditutup untuk halaman ini.
+      const lama = document.getElementById(PENANDA);
+      if (lama) lama.remove();
+    }
+  });
+  return matikan;
+}
+
 function susunPanelDitolak(pesan) {
   const panel = buatElemen("div", "aleta-panel");
   panel.id = PENANDA;
@@ -4587,6 +4621,99 @@ function susunPanelDitolak(pesan) {
   );
 
   panel.appendChild(isi);
+  return panel;
+}
+
+/**
+ * ============================================================================
+ * PANEL UNTUK HALAMAN DAFTAR PERKARA
+ * ============================================================================
+ *
+ * Sebelumnya panel HANYA muncul di halaman satu perkara. Di halaman daftar -
+ * tempat petugas menghabiskan sebagian besar waktunya, memindai puluhan baris
+ * sekaligus - tidak ada apa pun dari ALETA. Yang membukanya menyimpulkan
+ * ekstensinya mati, lalu memuat ulang halaman, lalu melapor rusak.
+ *
+ * Isinya sengaja sedikit dan hanya yang benar-benar menjawab pertanyaan
+ * halaman ini: dari sekian perkara di layar, berapa yang perlu diperiksa, dan
+ * karena apa. Rincian tiap perkara sudah tertempel pada barisnya masing-masing;
+ * mengulanginya di sini hanya menambah tempat kedua yang harus dibaca.
+ */
+const NAMA_KEADAAN = {
+  ghaib: "pihak ghaib",
+  izinAtasan: "perlu izin atasan",
+  verzet: "verzet",
+  prodeo: "prodeo",
+  kuasa: "memakai kuasa hukum",
+  mafqud: "diduga mafqud",
+};
+
+function susunPanelDaftar(ringkasan) {
+  const panel = buatElemen("div", "aleta-panel");
+  panel.id = PENANDA;
+
+  const kepala = buatElemen("div", "aleta-kepala");
+  kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
+  const akun = namaPenggunaSipp();
+  if (akun) {
+    const kotakAkun = buatElemen("span", "aleta-akun-sipp", akun);
+    kotakAkun.title = `Halaman SIPP ini sedang dibuka dengan akun ${akun}.`;
+    kepala.appendChild(kotakAkun);
+  }
+  kepala.appendChild(tombolTema(panel));
+  kepala.appendChild(tombolMatikan());
+  panel.appendChild(kepala);
+
+  const isi = buatElemen("div", "aleta-isi");
+  isi.appendChild(
+    buatElemen("div", "aleta-bagian-judul", `DAFTAR PERKARA — ${ringkasan.jumlah} di halaman ini`)
+  );
+
+  if (!ringkasan.ditandai) {
+    // Disebut apa adanya, beserta jalan keluarnya. Panel yang hanya berkata
+    // "tidak ada penanda" membuat orang mengira tidak ada yang perlu diperiksa.
+    isi.appendChild(
+      buatElemen(
+        "div",
+        "aleta-kosong",
+        'Penandaan baris sedang dimatikan. Nyalakan "Tandai halaman SIPP" pada ikon ALETA di pojok peramban.'
+      )
+    );
+  } else if (ringkasan.bertanda === 0) {
+    isi.appendChild(
+      buatElemen("div", "aleta-kosong", "Tidak ada perkara di halaman ini yang berkeadaan khusus.")
+    );
+  } else {
+    isi.appendChild(
+      buatElemen("div", "aleta-baris-ket", `${ringkasan.bertanda} perkara perlu diperiksa:`)
+    );
+    const daftar = buatElemen("div", "aleta-identitas");
+    for (const [kunci, jumlah] of Object.entries(ringkasan.sebab).sort((a, b) => b[1] - a[1])) {
+      daftar.appendChild(
+        buatElemen("span", "aleta-tanda-panel", `${jumlah} ${NAMA_KEADAAN[kunci] || kunci}`)
+      );
+    }
+    isi.appendChild(daftar);
+    isi.appendChild(
+      buatElemen(
+        "div",
+        "aleta-baris-ket",
+        "Penandanya tertempel di bawah nomor perkara pada barisnya masing-masing."
+      )
+    );
+  }
+
+  panel.appendChild(isi);
+
+  const kaki = buatElemen("div", "aleta-kaki");
+  kaki.appendChild(buatElemen("span", "aleta-kaki-teks", "Keterangan dari ALETA. SIPP tidak diubah."));
+  panel.appendChild(kaki);
+
+  // Digeser dan diubah ukurannya seperti panel perkara. Panel yang satu bisa
+  // dipindahkan dan yang lain tidak terbaca sebagai kerusakan, bukan sebagai
+  // dua panel yang berbeda.
+  pasangGeser(panel, kepala);
+  pasangUbahUkuran(panel);
   return panel;
 }
 
@@ -5376,17 +5503,22 @@ function tempelPenandaBaris(baris, nomor, ringkas, identitas) {
 }
 
 let nomorDaftarTerakhir = "";
+let ringkasanDaftarTerakhir = null;
 
 /** Menandai seluruh baris pada halaman daftar. */
 async function tandaiHalamanDaftar() {
-  if (!(await sedangMenandai())) return;
-
   const baris = barisPerkaraDiHalaman();
-  if (baris.length < 2) return; // bukan halaman daftar
+  if (baris.length < 2) return null; // bukan halaman daftar
+
+  if (!(await sedangMenandai())) {
+    // Penandanya mati, tetapi ini TETAP halaman daftar - panel ringkas di
+    // sisi kanan tetap digambar, dengan keterangan kenapa barisnya polos.
+    return { jumlah: baris.length, ditandai: false, bertanda: 0, sebab: {} };
+  }
 
   // Halaman yang sama tidak diminta ulang setiap DOM berubah sedikit.
   const sidik = baris.map((x) => x.nomor).join("|");
-  if (sidik === nomorDaftarTerakhir) return;
+  if (sidik === nomorDaftarTerakhir) return ringkasanDaftarTerakhir;
   nomorDaftarTerakhir = sidik;
 
   try {
@@ -5397,25 +5529,37 @@ async function tandaiHalamanDaftar() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nomorPerkara: baris.map((x) => x.nomor) }),
     });
-    if (!respons.ok) return;
+    if (!respons.ok) return null;
 
     const hasil = await respons.json();
     const isi = hasil?.data ?? hasil;
-    if (!isi?.available || !isi?.perkara) return;
+    if (!isi?.available || !isi?.perkara) return null;
 
+    const sebab = {};
+    let bertanda = 0;
     tanpaPengamat(() => {
       for (const item of baris) {
         if (!(item.nomor in isi.perkara)) continue;
-        tempelPenandaBaris(
-          item.baris,
-          item.nomor,
-          isi.perkara[item.nomor],
-          (isi.identitas || {})[item.nomor] || null
-        );
+        const identitas = (isi.identitas || {})[item.nomor] || null;
+        tempelPenandaBaris(item.baris, item.nomor, isi.perkara[item.nomor], identitas);
+        // Dihitung untuk panel ringkas. Yang dihitung KEADAAN perkaranya, bukan
+        // jumlah lencananya: satu perkara yang ghaib sekaligus prodeo tetap
+        // satu perkara yang perlu diperiksa.
+        let punya = false;
+        for (const [kunci, nyala] of Object.entries(identitas || {})) {
+          if (nyala !== true) continue;
+          sebab[kunci] = (sebab[kunci] || 0) + 1;
+          punya = true;
+        }
+        if (punya) bertanda += 1;
       }
     });
+
+    ringkasanDaftarTerakhir = { jumlah: baris.length, ditandai: true, bertanda, sebab };
+    return ringkasanDaftarTerakhir;
   } catch {
     // Halaman daftar tetap berjalan seperti biasa bila ALETA tidak terjangkau.
+    return null;
   }
 }
 
@@ -5702,7 +5846,30 @@ async function segarkan() {
     // Bukan halaman perkara. Bila ini halaman daftar, barisnya ditandai -
     // itu justru tempat penanda paling berguna: petugas melihat puluhan
     // perkara sekaligus dan langsung tahu mana yang perlu dibuka.
-    await tandaiHalamanDaftar();
+    const ringkasan = await tandaiHalamanDaftar();
+    if (!ringkasan) {
+      // Bukan halaman daftar juga - halaman awal, laporan, atau referensi.
+      // Panel perkara yang tertinggal dari halaman sebelumnya dibuang supaya
+      // tidak menerangkan perkara yang sudah tidak dibuka.
+      nomorTerakhir = "";
+      return;
+    }
+    // Panel yang sama tidak digambar ulang tiap pengamat berbunyi - menggambar
+    // ulang membuang keadaan lipatan dan posisi yang baru saja diatur.
+    const adaPanel = document.getElementById(PENANDA);
+    if (adaPanel && adaPanel.dataset.mode === "daftar" && nomorTerakhir === "*daftar*") return;
+
+    await muatLipatan();
+    await muatTema();
+    const posisi = await muatPosisi();
+    const panel = susunPanelDaftar(ringkasan);
+    panel.dataset.mode = "daftar";
+    panel.setAttribute("data-tema", temaSekarang);
+    tampilkan(panel);
+    terapkanTemaSipp();
+    terapkanPosisi(panel, posisi);
+    normalkanJangkar(panel);
+    nomorTerakhir = "*daftar*";
     return;
   }
   if (nomor === nomorTerakhir || sedangAmbil) return;

@@ -353,9 +353,12 @@ describe("tema terang mengembalikan SIPP seperti semula", () => {
     // Diturunkan sekali lagi dari #f4f6f4: beda empat persen dari putih murni
     // tidak dikenali mata sebagai warna - yang dirasakannya tetap kotak putih
     // menyala di sebelah halaman SIPP yang juga putih.
-    expect(potong).toContain("--aleta-latar: #e9ede9;");
+    // Diturunkan lagi dan dipindah keluarga: batu hangat, bukan abu kehijauan -
+    // lihat catatan panjang di panel.css. Abu kehijauan sekeluarga dengan SIPP.
+    expect(potong).toContain("--aleta-latar: #ece9e3;");
     expect(potong).not.toContain("--aleta-latar: #ffffff;");
     expect(potong).not.toContain("--aleta-latar: #f4f6f4;");
+    expect(potong).not.toContain("--aleta-latar: #e9ede9;");
   });
 
   it("kartu di dalam panel terang tetap terbaca naik ke depan", () => {
@@ -363,7 +366,7 @@ describe("tema terang mengembalikan SIPP seperti semula", () => {
     // Tanpa itu kartunya tenggelam alih-alih menonjol.
     const berkas = gaya();
     const potong = berkas.slice(berkas.indexOf('.aleta-panel[data-tema="terang"]'));
-    expect(potong).toContain("--aleta-latar-naik: #f5f7f4;");
+    expect(potong).toContain("--aleta-latar-naik: #f6f4ef;");
   });
 });
 
