@@ -415,6 +415,74 @@ async function susunanMajelisTetap() {
   return { terbaca: true, alasan: "", majelis };
 }
 
+/**
+ * ============================================================================
+ * PETUGAS YANG AKUN SIPP-NYA DIBLOKIR
+ * ============================================================================
+ *
+ * "Aktif" pada panitera_pn, hakim_pn, dan jurusita menyatakan orangnya masih
+ * bertugas di pengadilan ini. Ia TIDAK menyatakan akunnya masih dapat dipakai.
+ * Keduanya disimpan di tempat yang berbeda dan tidak pernah disamakan SIPP.
+ *
+ * Akibatnya nyata dan terlihat di layar: Asrah Rachman diblokir akunnya
+ * (sys_users.block = 1) tetapi tetap tercatat aktif sebagai panitera, sehingga
+ * ALETA terus mengusulkannya. Diukur pada panitera yang aktif:
+ *
+ *   Asrah Rachman      1 akun, 0 tidak diblokir
+ *   Mannaria           1 akun, 0 tidak diblokir
+ *   Nuniek Widriyani   1 akun, 0 tidak diblokir
+ *   Sri Wahyuni        1 akun, 0 tidak diblokir
+ *
+ * Empat dari sebelas. Hakim dan juru sita sejauh ini bersih.
+ *
+ * ============================================================================
+ * DUA HAL YANG MEMBUATNYA TIDAK ASAL MEMBUANG ORANG
+ * ============================================================================
+ *
+ *   1. Tautannya EKSPLISIT, bukan cocok-cocokan nama. SIPP punya user_hakim,
+ *      user_panitera, dan user_jurusita yang menghubungkan userid dengan
+ *      orangnya. Mencocokkan nama akan salah pada orang yang namanya ditulis
+ *      berbeda antar tabel - dan salah membuang orang lebih buruk daripada
+ *      salah mengusulkan, sebab yang terbuang tidak kelihatan sama sekali.
+ *
+ *   2. Yang dibuang hanya yang PUNYA akun dan seluruhnya diblokir. Orang yang
+ *      belum punya tautan akun sama sekali TIDAK dibuang: tidak adanya tautan
+ *      bukan bukti diblokir, dan Munifa membuktikan mengapa ini penting - ia
+ *      punya akun lama yang diblokir dan akun baru yang dipakai hari ini.
+ */
+async function petugasDiblokir() {
+  const kosong = { hakim: new Set(), panitera: new Set(), jurusita: new Set() };
+
+  const baca = async (tabelTaut, kolomOrang) => {
+    if (!(await sippSkemaService.tabelAda(tabelTaut))) return new Set();
+    if (!(await sippSkemaService.tabelAda("sys_users"))) return new Set();
+    const rows = await runQuery(
+      `SELECT u.${kolomOrang} AS orangId,
+              COUNT(s.userid) AS akun,
+              SUM(CASE WHEN s.block = 0 THEN 1 ELSE 0 END) AS bebas
+         FROM ${tabelTaut} u
+         JOIN sys_users s ON s.userid = u.userid
+        GROUP BY u.${kolomOrang}
+       HAVING akun > 0 AND bebas = 0`
+    ).catch(() => []);
+    return new Set((rows || []).map((x) => Number(x.orangId)).filter(Boolean));
+  };
+
+  try {
+    const [hakim, panitera, jurusita] = await Promise.all([
+      baca("user_hakim", "hakim_id"),
+      baca("user_panitera", "panitera_id"),
+      baca("user_jurusita", "jurusita_id"),
+    ]);
+    return { hakim, panitera, jurusita };
+  } catch (_) {
+    // Gagal membaca berarti tidak tahu, dan tidak tahu TIDAK boleh menjadi
+    // "buang semuanya". Yang dipulangkan himpunan kosong: seluruh petugas
+    // tetap diusulkan, seperti sebelum penjagaan ini ada.
+    return kosong;
+  }
+}
+
 /** Seluruh hakim yang masih aktif, untuk daftar pilihan manual. */
 async function daftarHakimAktif() {
   if (!(await sippSkemaService.tabelAda("hakim_pn"))) return [];
@@ -994,13 +1062,14 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     penetapan,
     susunan,
     smart,
-    hakimAktif,
-    paniteraAktif,
-    jurusita,
-    panitera,
+    hakimAktifSemua,
+    paniteraAktifSemua,
+    jurusitaSemua,
+    paniteraSemua,
     beban,
     bebanMajelis,
     tercatat,
+    diblokir,
   ] = await Promise.all([
       penetapanPerkara(identitas.perkaraId),
       susunanMajelisTetap(),
@@ -1012,7 +1081,34 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       bebanHakimTunggal(tahun),
       bebanHakimMajelis(tahun),
       majelisTercatat(identitas.perkaraId),
+      petugasDiblokir(),
     ]);
+
+  // ==========================================================================
+  // YANG AKUNNYA DIBLOKIR DIKELUARKAN DARI SELURUH KOLAM
+  // ==========================================================================
+  //
+  // Disaring di SATU tempat, sesudah seluruhnya dibaca - bukan di dalam tiap
+  // pembacanya. Dengan begitu tidak ada kolam yang tertinggal ketika kelak ada
+  // pembaca baru, dan aturannya dapat dibaca sekali saja.
+  //
+  // Empat dari sebelas panitera aktif berkeadaan begini - lihat catatan pada
+  // petugasDiblokir(). Mengusulkan mereka berarti mengusulkan penetapan yang
+  // tidak dapat ditandatangani akun mana pun.
+  const hakimAktif = hakimAktifSemua.filter((x) => !diblokir.hakim.has(Number(x.hakimId)));
+  const paniteraAktif = paniteraAktifSemua.filter((x) => !diblokir.panitera.has(Number(x.paniteraId)));
+  const jurusita = {
+    ...jurusitaSemua,
+    daftar: (jurusitaSemua.daftar || []).filter((x) => !diblokir.jurusita.has(Number(x.id ?? x.jurusitaId))),
+  };
+  jurusita.usulan =
+    jurusita.daftar.find((x) => x === jurusitaSemua.usulan) || jurusita.daftar[0] || null;
+  const panitera = {
+    ...paniteraSemua,
+    daftar: (paniteraSemua.daftar || []).filter((x) => !diblokir.panitera.has(Number(x.id ?? x.paniteraId))),
+  };
+  panitera.usulan =
+    panitera.daftar.find((x) => x === paniteraSemua.usulan) || panitera.daftar[0] || null;
 
   // Susunan yang benar-benar dipakai - menuntut daftar hakim aktif, jadi
   // dibaca sesudahnya, bukan bersamaan.
@@ -1565,6 +1661,7 @@ module.exports = {
   periksaPengisian,
   smartMajelisPerkara,
   susunanMajelisTetap,
+  petugasDiblokir,
   susunPmh,
   tanggalSidangPertama,
   tentukanSusunan,

@@ -120,6 +120,52 @@ describe("perkara bermajelis kini punya kolam hakim", () => {
   });
 });
 
+describe("petugas yang akun SIPP-nya diblokir tidak diusulkan", () => {
+  /**
+   * "Aktif" pada panitera_pn menyatakan orangnya masih bertugas. Ia TIDAK
+   * menyatakan akunnya masih dapat dipakai - keduanya disimpan terpisah dan
+   * tidak pernah disamakan SIPP.
+   *
+   * Diukur pada panitera aktif di PA Donggala: empat dari sebelas punya akun
+   * yang seluruhnya diblokir - Asrah Rachman, Mannaria, Nuniek Widriyani, Sri
+   * Wahyuni - dan keempatnya tetap diusulkan ALETA sampai penjagaan ini ada.
+   */
+  const isi = layanan();
+
+  it("tautannya eksplisit, bukan cocok-cocokan nama", () => {
+    // Mencocokkan nama akan salah pada orang yang namanya ditulis berbeda
+    // antar tabel - dan salah MEMBUANG orang lebih buruk daripada salah
+    // mengusulkan, sebab yang terbuang tidak kelihatan sama sekali.
+    expect(isi).toContain('baca("user_hakim", "hakim_id")');
+    expect(isi).toContain('baca("user_panitera", "panitera_id")');
+    expect(isi).toContain('baca("user_jurusita", "jurusita_id")');
+  });
+
+  it("hanya yang punya akun DAN seluruhnya diblokir", () => {
+    // Tidak adanya tautan akun bukan bukti diblokir. Munifa membuktikan
+    // mengapa: ia punya akun lama yang diblokir dan akun baru yang dipakai.
+    expect(isi).toContain("HAVING akun > 0 AND bebas = 0");
+  });
+
+  it("gagal membaca TIDAK berarti buang semuanya", () => {
+    // Tidak tahu harus berarti "tetap usulkan", bukan "buang" - kalau
+    // sebaliknya, satu galat basis data akan mengosongkan seluruh usulan
+    // tanpa ada yang mengerti sebabnya.
+    expect(isi).toContain("Yang dipulangkan himpunan kosong");
+  });
+
+  it("disaring di satu tempat untuk seluruh kolam", () => {
+    for (const baris of [
+      "const hakimAktif = hakimAktifSemua.filter",
+      "const paniteraAktif = paniteraAktifSemua.filter",
+      "diblokir.jurusita.has",
+      "diblokir.panitera.has",
+    ]) {
+      expect(isi, baris).toContain(baris);
+    }
+  });
+});
+
 describe("nama medan layanan dan ekstensi tidak boleh berselisih", () => {
   it("PP dan JS dibaca sebagai calon, sesuai yang dikirim layanan", () => {
     // Sebab (b): layanan mengirim `calon`, ekstensi dulu membaca `daftar`.
