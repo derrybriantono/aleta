@@ -238,6 +238,27 @@ function keteranganSisa(sisaHari, ambang) {
   return { teks: `${sisaHari} hari lagi`, nada: "aman" };
 }
 
+/**
+ * ============================================================================
+ * PENANDA NOMOR PIHAK DIMATIKAN - UNTUK SEMENTARA
+ * ============================================================================
+ *
+ * "nomor belum dikonfirmasi" dan "tidak ada nomor di SIPP" ditempelkan pada
+ * hampir setiap nama pihak di halaman SIPP. Keduanya benar - tetapi tidak ada
+ * yang tahu harus berbuat apa dengannya, dan penanda yang tidak dapat
+ * ditindaklanjuti mengajari orang mengabaikan penanda.
+ *
+ * Itu kerugian yang menular: begitu mata terbiasa melewati dua penanda kuning
+ * pada tiap nama, penanda GHAIB yang merah pun ikut terlewat.
+ *
+ * Dimatikan lewat saklar, bukan dihapus. Alur verifikasi nomornya sendiri
+ * masih hidup dan masih dipakai bot untuk memutuskan siapa yang boleh
+ * dikirimi pemberitahuan WhatsApp - yang dimatikan hanya penempelannya ke
+ * halaman SIPP. Menghapus kodenya berarti membuang jalan pulang ketika kelak
+ * artinya sudah disepakati.
+ */
+const TANDAI_NOMOR_PIHAK = false;
+
 const STATUS_NOMOR = {
   terverifikasi: { teks: "nomor terkonfirmasi", nada: "aman" },
   menunggu: { teks: "menunggu jawaban konfirmasi", nada: "mendesak" },
@@ -3693,7 +3714,10 @@ function barisRingkasan(ringkasan) {
     { nilai: r.tenggatLewat, label: "tenggat lewat", warna: "merah" },
     { nilai: r.tenggatMendesak, label: "tenggat mendesak", warna: "kuning" },
     { nilai: r.menungguVerifikasi, label: "menunggu majelis", warna: "kuning" },
-    { nilai: r.nomorBermasalah, label: "nomor bermasalah", warna: "kuning" },
+    // nomor bermasalah dimatikan bersama penandanya - lihat TANDAI_NOMOR_PIHAK.
+    ...(TANDAI_NOMOR_PIHAK
+      ? [{ nilai: r.nomorBermasalah, label: "nomor bermasalah", warna: "kuning" }]
+      : []),
     { nilai: r.dokumen, label: "dokumen", warna: "abu" },
   ].filter((x) => Number(x.nilai) > 0);
 
@@ -4277,7 +4301,11 @@ function susunPanel(konteks) {
   const kelPerkara = kelompok("Perkara", "perkara", true);
   kelPerkara.isi.appendChild(malas("Tahapan dan ketepatan input", "tahapan", gambarTahapan));
 
-  if (konteks.nomorPihak.length > 0) {
+  // Menu Nomor pihak ikut dimatikan bersama penandanya - lihat
+  // TANDAI_NOMOR_PIHAK. Menyisakan menunya di panel sementara penandanya
+  // hilang dari halaman menghasilkan dua keterangan yang berselisih tentang
+  // hal yang sama.
+  if (TANDAI_NOMOR_PIHAK && konteks.nomorPihak.length > 0) {
     // Nomor pihak terlipat sendiri di dalam kelompoknya: keadaan nomor jarang
     // jadi alasan orang membuka panel ini, dan daftar nomor yang selalu
     // terbuka memajang data pribadi lebih lama daripada perlu.
@@ -4584,6 +4612,103 @@ function tandaiJudul(konteks) {
       })
     );
   }
+
+  // ==========================================================================
+  // SEMBILAN KEADAAN LAIN YANG SIPP SIMPAN TETAPI TIDAK TAMPILKAN
+  // ==========================================================================
+  //
+  // Urutannya menurun dari yang paling menghentikan pekerjaan ke yang paling
+  // sekadar perlu diketahui. Yang di atas berwarna merah, yang di bawah
+  // kuning atau abu - supaya satu pandangan sudah memisahkan "berhenti
+  // sekarang" dari "ingat nanti".
+  const t = konteks.penandaLain || {};
+
+  // Panjar habis menghentikan perkara karena UANG, bukan karena hukum - dan
+  // baru ketahuan ketika juru sita gagal berangkat.
+  if (t.panjar) {
+    const rupiah = new Intl.NumberFormat("id-ID").format(t.panjar.sisa);
+    judul.appendChild(
+      labelTanda(t.panjar.habis ? "PANJAR HABIS" : `panjar menipis Rp${rupiah}`, "merah", {
+        judul:
+          `Saldo panjar Rp${rupiah} per ${t.panjar.tanggal}. ` +
+          "Dihitung dari transaksi biaya - SIPP tidak menampilkan saldonya di halaman ini.",
+      })
+    );
+  }
+
+  if (t.delegasi) {
+    judul.appendChild(
+      labelTanda(`delegasi belum dikirim balik (${t.delegasi.hari} hari)`, "merah", {
+        judul: `Delegasi ${t.delegasi.jenis} dari ${t.delegasi.asal}, diterima ${t.delegasi.tanggalTerima}. Pengadilan pengaju menunggu.`,
+      })
+    );
+  }
+
+  if (t.upayaHukum) {
+    for (const u of t.upayaHukum) {
+      judul.appendChild(
+        labelTanda(`berkas ${u.label} belum dikirim (${u.hari} hari)`, "merah", {
+          judul: `Permohonan ${u.label} ${u.tanggalMohon}, berkasnya belum dikirim ke pengadilan tingkat atas.`,
+        })
+      );
+    }
+  }
+
+  if (t.aktaCerai) {
+    judul.appendChild(
+      labelTanda(`akta cerai belum terbit (${t.aktaCerai.hari} hari)`, "kuning", {
+        judul: `Sudah BHT ${t.aktaCerai.bht}. Hak pihak atas akta cerai sudah jatuh tempo.`,
+      })
+    );
+  }
+
+  if (t.mediasi) {
+    judul.appendChild(
+      labelTanda("mediasi belum dimulai", "kuning", {
+        judul:
+          `Mediator ${t.mediasi.mediator || "sudah ditunjuk"} sejak ${t.mediasi.tanggalPenunjukan} ` +
+          `(${t.mediasi.hari} hari), tetapi mediasinya belum dimulai.`,
+      })
+    );
+  }
+
+  if (t.berjalanLama) {
+    judul.appendChild(
+      labelTanda(`berjalan ${t.berjalanLama.hari} hari`, "kuning", {
+        judul:
+          `Terdaftar ${t.berjalanLama.tanggalDaftar} dan belum putus. ` +
+          "Melewati lima bulan, batas terakhir sebelum unsur waktu putus SK 048/2024 bernilai nol.",
+      })
+    );
+  }
+
+  // Keempat berikut tidak menuntut tindakan hari ini - ia mengubah CARA
+  // perkaranya diperlakukan, dan itu perlu diketahui sebelum salah langkah.
+  if (t.verzet) {
+    judul.appendChild(
+      labelTanda("VERZET", "kuning", {
+        judul: `Perlawanan atas putusan verstek, terdaftar ${t.verzet.tanggalDaftar}.`,
+      })
+    );
+  }
+
+  if (t.rekonvensi) {
+    judul.appendChild(
+      labelTanda("ada rekonvensi", "kuning", {
+        judul:
+          `Gugatan balik terdaftar ${t.rekonvensi.tanggalDaftar}. ` +
+          "Putusan wajib memuat amar untuk konvensi DAN rekonvensi.",
+      })
+    );
+  }
+
+  if (t.prodeo) {
+    judul.appendChild(
+      labelTanda("PRODEO", "abu", {
+        judul: "Perkara dibebaskan biaya. Tidak boleh ditagih panjar.",
+      })
+    );
+  }
 }
 
 /**
@@ -4595,6 +4720,8 @@ function tandaiJudul(konteks) {
  * menandai daripada menandai baris yang salah.
  */
 function tandaiPihak(konteks) {
+  if (!TANDAI_NOMOR_PIHAK) return;
+
   // ==========================================================================
   // NILAINYA "terverifikasi", BUKAN "terkonfirmasi"
   // ==========================================================================
@@ -4955,7 +5082,7 @@ function tempelPenandaBaris(baris, nomor, ringkas) {
   //
   // Keduanya kini digambar lebih dulu, sebelum tenggat: yang menuntut
   // pemeriksaan orang didahulukan atas yang menuntut penjadwalan.
-  if (ringkas.nomorBermasalah > 0) {
+  if (TANDAI_NOMOR_PIHAK && ringkas.nomorBermasalah > 0) {
     sel.appendChild(
       labelTanda(`${ringkas.nomorBermasalah} nomor bermasalah`, "merah", {
         judul:

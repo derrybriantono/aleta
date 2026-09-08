@@ -130,6 +130,9 @@ const TABEL = [
   // tabel yang dikenali layanan skema; yang tidak tercantum di sini selalu
   // dijawab "tidak ada", tanpa galat dan tanpa peringatan.
   "ruangan_sidang",
+  // Gugatan balik. Tanpa didaftarkan di sini, tabelAda() menjawab "tidak ada"
+  // walau tabelnya ada - dan penanda rekonvensi tidak akan pernah menyala.
+  "perkara_rekonvensi",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

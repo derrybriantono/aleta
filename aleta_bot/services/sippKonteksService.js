@@ -37,6 +37,7 @@ const ecourtReconciliationService = require("./ecourtReconciliationService");
 const nomorVerificationService = require("./nomorVerificationService");
 const paniteraDashboardService = require("./paniteraDashboardService");
 const sippTahapanService = require("./sippTahapanService");
+const penandaSippService = require("./penandaSippService");
 const sippIdentitasPerkaraService = require("./sippIdentitasPerkaraService");
 const { fetchCaseParties } = require("./ecourtNotificationWorker");
 const ecourtVerificationService = require("./ecourtVerificationService");
@@ -330,9 +331,12 @@ async function getKonteks(nomor, { namaPembuka = "" } = {}) {
   // Perlu perkara_id, dan itu hanya ada bila identitasnya terbaca. Gagal-
   // terbuka: penanda adalah tambahan, dan kehilangannya tidak boleh
   // menghilangkan dokumen serta tenggat yang justru dicari petugas.
-  const penanda = identitas && identitas.perkaraId
-    ? await aman(() => sippTahapanService.penandaPerkara(identitas.perkaraId), null)
-    : null;
+  const [penanda, penandaLain] = identitas && identitas.perkaraId
+    ? await Promise.all([
+        aman(() => sippTahapanService.penandaPerkara(identitas.perkaraId), null),
+        aman(() => penandaSippService.penandaTambahan(identitas.perkaraId), {}),
+      ])
+    : [null, {}];
 
   return {
     ok: true,
@@ -350,6 +354,7 @@ async function getKonteks(nomor, { namaPembuka = "" } = {}) {
     hakim,
     identitas,
     penanda,
+    penandaLain,
     ringkasan: {
       dokumen: dokumen.length,
       menungguVerifikasi: dokumen.filter((d) => d.statusVerifikasi === "belum").length,

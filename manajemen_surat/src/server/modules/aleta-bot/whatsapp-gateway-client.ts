@@ -843,6 +843,24 @@ export type GatewaySippKonteks = {
     mafqud: boolean;
     tundaanPanjang: number;
   } | null;
+  /**
+   * Sembilan keadaan lain yang SIPP simpan tetapi tidak tampilkan.
+   *
+   * Tiap kunci HANYA ada bila keadaannya memang berlaku - amplop yang penuh
+   * kunci bernilai null memaksa tiap pembacanya memeriksa null satu per satu,
+   * dan yang lupa memeriksanya akan menggambar penanda kosong.
+   */
+  penandaLain: {
+    panjar?: { sisa: number; tanggal: string; habis: boolean; menipis: boolean };
+    aktaCerai?: { tertunggak: boolean; bht: string; hari: number | null };
+    verzet?: { ada: boolean; tanggalDaftar: string; sudahPutus: boolean };
+    berjalanLama?: { hari: number; tanggalDaftar: string; ambang: number };
+    mediasi?: { tertunda: boolean; tanggalPenunjukan: string; mediator: string; hari: number | null };
+    prodeo?: { prodeo: boolean };
+    delegasi?: { jumlah: number; asal: string; jenis: string; tanggalTerima: string; hari: number | null };
+    rekonvensi?: { ada: boolean; tanggalDaftar: string; pihak: string };
+    upayaHukum?: Array<{ kunci: string; label: string; tanggalMohon: string; hari: number | null }>;
+  };
   ringkasan: {
     dokumen: number;
     menungguVerifikasi: number;

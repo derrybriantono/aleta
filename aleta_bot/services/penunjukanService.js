@@ -636,11 +636,90 @@ async function smartMajelisPerkara(perkaraId) {
  * membebani tiga orang sekaligus, sedangkan perkara hakim tunggal membebani
  * satu; menjumlahkannya menyamakan dua hal yang tidak sama beratnya.
  */
+/**
+ * ============================================================================
+ * SATU PERKARA TIDAK SAMA BERATNYA DENGAN SATU PERKARA LAIN
+ * ============================================================================
+ *
+ * Pembagian sebelumnya menghitung KEPALA: seorang hakim dengan 40 cerai gugat
+ * dianggap sama beratnya dengan hakim yang memegang 40 perkara kewarisan. Itu
+ * tidak benar dan semua orang di pengadilan tahu tidak benar - yang pertama
+ * sebagian besar verstek satu sampai dua kali sidang, yang kedua menuntut
+ * pembuktian, saksi, kadang pemeriksaan setempat.
+ *
+ * Bobotnya ditetapkan pimpinan pengadilan ini, dan aturannya dua:
+ *
+ *   1. Perkara KEBENDAAN lebih berat daripada perkara biasa.
+ *   2. Perkara SELAIN perceraian dan itsbat nikah lebih berat daripada
+ *      perceraian dan itsbat.
+ *
+ * Ketiga tingkatnya karena itu:
+ *
+ *   1,0  perceraian dan itsbat - cerai gugat, cerai talak, istbat nikah.
+ *        Inilah 94% perkara di sini (1.645 dari 1.744 sejak 2025), dan
+ *        justru karena itu ia yang pantas menjadi satuan dasarnya.
+ *   1,5  selain keduanya, bukan kebendaan - dispensasi kawin, perwalian,
+ *        asal usul anak, wali adhol, izin poligami, dan sejenisnya.
+ *   2,0  kebendaan - harta bersama, kewarisan, P3HP/penetapan ahli waris,
+ *        wasiat, dan ekonomi syariah.
+ *
+ * ============================================================================
+ * DIKUNCI PADA ID, BUKAN PADA NAMANYA
+ * ============================================================================
+ *
+ * jenis_perkara_id 360 muncul dengan DUA nama di basis data ini -
+ * "Pengesahan Perkawinan/Istbat Nikah" (3.964 perkara) dan "Istbat Nikah" (89).
+ * Mencocokkan nama berarti 89 perkara jatuh ke tingkat yang salah, tanpa satu
+ * pun galat. Id-nya tidak pernah berubah.
+ *
+ * ============================================================================
+ * YANG TIDAK DIKENALI DIANGGAP 1,5 - BUKAN 1,0
+ * ============================================================================
+ *
+ * Perceraian dan itsbat hanya tiga id, dan ketiganya sudah terdaftar. Jenis
+ * baru apa pun karena itu menurut definisi "selain perceraian dan itsbat",
+ * sehingga 1,5 adalah jawaban yang BENAR untuk yang tidak dikenali - bukan
+ * sekadar jawaban yang aman.
+ */
+const BOBOT_JENIS = {
+  // --- perceraian dan itsbat: satuan dasarnya ---
+  347: 1.0, // Cerai Gugat
+  346: 1.0, // Cerai Talak
+  360: 1.0, // Pengesahan Perkawinan / Istbat Nikah
+
+  // --- kebendaan ---
+  348: 2.0, // Harta Bersama
+  364: 2.0, // Kewarisan
+  371: 2.0, // P3HP / Penetapan Ahli Waris
+  365: 2.0, // Wasiat
+  370: 2.0, // Ekonomi Syariah
+};
+
+const BOBOT_BAWAAN = 1.5;
+
+/**
+ * Potongan SQL yang menghitung bobot satu baris perkara.
+ *
+ * Disusun dari BOBOT_JENIS supaya angkanya hidup di SATU tempat. Menuliskannya
+ * langsung di tiap kueri berarti empat salinan yang perlahan menyimpang - dan
+ * menyimpangnya tidak akan pernah terlihat, sebab keempatnya tetap menghasilkan
+ * angka yang masuk akal.
+ *
+ * Id-nya angka dari daftar di atas, bukan dari pemanggil - tidak ada jalan
+ * masuk bagi nilai luar ke dalam potongan SQL ini.
+ */
+function ekspresiBobot(alias) {
+  const cabang = Object.entries(BOBOT_JENIS)
+    .map(([id, bobot]) => `WHEN ${Number(id)} THEN ${Number(bobot)}`)
+    .join(" ");
+  return `CASE ${alias}.jenis_perkara_id ${cabang} ELSE ${BOBOT_BAWAAN} END`;
+}
+
 async function bebanHakimMajelis(tahun) {
   if (!(await sippSkemaService.tabelAda("perkara_hakim_pn"))) return new Map();
 
   const rows = await runQuery(
-    `SELECT hp.hakim_id AS hakimId, COUNT(*) AS jumlah
+    `SELECT hp.hakim_id AS hakimId, ROUND(SUM(${ekspresiBobot("p")}), 2) AS jumlah
        FROM perkara_hakim_pn hp
        JOIN (
               SELECT perkara_id
@@ -649,6 +728,7 @@ async function bebanHakimMajelis(tahun) {
                GROUP BY perkara_id
               HAVING COUNT(*) > 1
             ) AS bermajelis ON bermajelis.perkara_id = hp.perkara_id
+       JOIN perkara p ON p.perkara_id = hp.perkara_id
       WHERE hp.aktif = 'Y' AND hp.tahapan_id = ? AND YEAR(hp.tanggal_penetapan) = ?
       GROUP BY hp.hakim_id`,
     [TAHAPAN_TINGKAT_PERTAMA, tahun, TAHAPAN_TINGKAT_PERTAMA, tahun]
@@ -743,7 +823,7 @@ async function bebanHakimTunggal(tahun) {
   if (!(await sippSkemaService.tabelAda("perkara_hakim_pn"))) return new Map();
 
   const rows = await runQuery(
-    `SELECT tunggal.hakim_id AS hakimId, COUNT(*) AS jumlah
+    `SELECT tunggal.hakim_id AS hakimId, ROUND(SUM(${ekspresiBobot("p")}), 2) AS jumlah
        FROM (
               SELECT hp.perkara_id AS perkara_id, MIN(hp.hakim_id) AS hakim_id
                 FROM perkara_hakim_pn hp
@@ -753,6 +833,7 @@ async function bebanHakimTunggal(tahun) {
                GROUP BY hp.perkara_id
               HAVING COUNT(*) = 1
             ) AS tunggal
+       JOIN perkara p ON p.perkara_id = tunggal.perkara_id
       GROUP BY tunggal.hakim_id`,
     [TAHAPAN_TINGKAT_PERTAMA, tahun]
   ).catch(() => []);
@@ -871,9 +952,10 @@ async function giliranJurusita(tahun) {
     ).catch(() => []),
     runQuery(
       `SELECT pj.jurusita_id AS jurusitaId,
-              COUNT(*) AS jumlah,
+              ROUND(SUM(${ekspresiBobot("p")}), 2) AS jumlah,
               MAX(pj.perkara_id) AS perkaraTerakhir
          FROM perkara_jurusita pj
+         JOIN perkara p ON p.perkara_id = pj.perkara_id
         WHERE pj.aktif = 'Y'
           AND pj.tahapan_id = ?
           AND YEAR(pj.tanggal_penetapan) = ?
@@ -990,9 +1072,10 @@ async function giliranPanitera(tahun) {
     ).catch(() => []),
     runQuery(
       `SELECT pp.panitera_id AS paniteraId,
-              COUNT(*) AS jumlah,
+              ROUND(SUM(${ekspresiBobot("p")}), 2) AS jumlah,
               MAX(pp.perkara_id) AS perkaraTerakhir
          FROM perkara_panitera_pn pp
+         JOIN perkara p ON p.perkara_id = pp.perkara_id
         WHERE pp.aktif = 'Y'
           AND pp.tahapan_id = ?
           AND YEAR(pp.tanggal_penetapan) = ?
@@ -1460,6 +1543,29 @@ function susunPmh({
   // ---- hakim tunggal ------------------------------------------------------
   let kolam = hakimAktif;
 
+  // ==========================================================================
+  // EKONOMI SYARIAH: YANG BERSERTIFIKAT LEBIH DAHULU
+  // ==========================================================================
+  //
+  // Dua jalan, dan yang kedua yang sebenarnya berlaku di sini.
+  //
+  //   1. Kompetensi majelis pada ref_majelis_tetap. Cara yang paling resmi -
+  //      tetapi tabel itu KOSONG di pengadilan ini: 106 baris, nol yang aktif.
+  //      Jadi cabang ini tidak pernah berjalan, dan itulah sebabnya perkara
+  //      ekonomi syariah selama ini diusulkan kepada siapa saja.
+  //
+  //   2. Daftar kode hakim bersertifikat pada aturan penunjukan. Sejauh ini
+  //      satu orang - Himawan Tatura Wijaya, C1. Ditulis sebagai KODE, bukan
+  //      nama: nama berubah ejaannya antar tabel, kode tidak.
+  //
+  // Daftar yang kosong TIDAK mengosongkan usulan. Ia kembali ke seluruh hakim
+  // aktif, sebab daftar kosong berarti "belum diisi" - bukan "tidak ada yang
+  // bersertifikat". Mengosongkan usulan atas daftar yang belum diisi membuat
+  // yang membacanya mengira ALETA rusak.
+  //
+  // Yang tidak bersertifikat tetap dapat dipilih MANUAL. Yang dibatasi
+  // usulannya, bukan haknya - persis seperti Ketua dan Wakil pada kolam hakim
+  // tunggal.
   if (bentuk.ekonomiSyariah && susunan.terbaca) {
     const berwenang = new Set();
     for (const majelis of susunan.majelis) {
@@ -1468,6 +1574,16 @@ function susunPmh({
     }
     if (berwenang.size > 0) {
       kolam = hakimAktif.filter((x) => berwenang.has(x.hakimId));
+    }
+  }
+
+  if (bentuk.ekonomiSyariah) {
+    const kode = (aturan.sertifikatEkonomiSyariah || [])
+      .map((x) => String(x || "").trim().toUpperCase())
+      .filter(Boolean);
+    if (kode.length > 0) {
+      const bersertifikat = kolam.filter((x) => kode.includes(String(x.kode || "").toUpperCase()));
+      if (bersertifikat.length > 0) kolam = bersertifikat;
     }
   }
 

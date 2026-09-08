@@ -80,6 +80,19 @@ export type AturanPenunjukan = {
   polaNomorSk: string;
   simpanOtomatis: "mati" | "nyala";
   penetapanBerjabatan: "longgar" | "ketat";
+  /**
+   * Hakim bersertifikat ekonomi syariah, menurut kode hakimnya (C1, C2, ...).
+   *
+   * Perkara ekonomi syariah HANYA boleh diusulkan kepada mereka. Yang lain
+   * tetap dapat dipilih manual - yang dibatasi usulannya, bukan haknya.
+   *
+   * Kosong berarti BELUM DIISI, dan usulannya kembali ke seluruh hakim aktif.
+   * Itu disengaja: daftar kosong yang diperlakukan sebagai "tidak ada yang
+   * bersertifikat" akan mengosongkan usulan ekonomi syariah sama sekali, dan
+   * yang membacanya akan mengira ALETA rusak - bukan mengira daftarnya belum
+   * diisi.
+   */
+  sertifikatEkonomiSyariah: string[];
 };
 
 /**
@@ -104,6 +117,11 @@ export const ATURAN_BAWAAN: AturanPenunjukan = {
   kolamHakimTunggal: "hakim",
   polaNomorSk: "",
   simpanOtomatis: "mati",
+
+  // Sejauh ini hanya satu orang di pengadilan ini yang bersertifikat ekonomi
+  // syariah - Himawan Tatura Wijaya, kode C1. Ditulis sebagai kode, bukan
+  // nama: nama berubah ejaannya antar tabel, kode tidak.
+  sertifikatEkonomiSyariah: ["C1"],
 
   // ==========================================================================
   // KEEMPAT PENETAPAN DIKERJAKAN OPERATOR - ITU YANG BERLAKU DI SINI
@@ -131,6 +149,8 @@ const KETERANGAN_ATURAN: Record<keyof AturanPenunjukan, string> = {
     "Batas nilai sengketa yang masih boleh diperiksa hakim tunggal, dalam rupiah.",
   klasifikasiHakimTunggal:
     "Kata kunci pada jenis perkara yang berhakim tunggal tanpa memandang nilai.",
+  sertifikatEkonomiSyariah:
+    "Kode hakim bersertifikat ekonomi syariah - hanya mereka yang diusulkan untuk perkara ekonomi syariah. Kosong berarti belum diisi, dan usulannya kembali ke seluruh hakim aktif.",
   kolamHakimTunggal:
     'Siapa yang boleh diusulkan jadi hakim tunggal: "hakim" menggugurkan Ketua dan Wakil.',
   polaNomorSk: "Pola nomor SK penetapan. Dikosongkan berarti tidak diisikan.",
@@ -244,6 +264,10 @@ export async function bacaAturanPenunjukan(
     // Hanya "ketat" yang mengunci. Nilai lain - termasuk yang salah ketik -
     // berarti longgar, mengikuti cara kerja yang berjalan.
     penetapanBerjabatan: peta.get("penetapanBerjabatan") === "ketat" ? "ketat" : "longgar",
+    sertifikatEkonomiSyariah: daftarAtau(
+      peta.get("sertifikatEkonomiSyariah"),
+      ATURAN_BAWAAN.sertifikatEkonomiSyariah
+    ),
   };
 }
 
