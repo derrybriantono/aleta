@@ -1,5 +1,5 @@
-export const APP_VERSION = "1.98.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v1.98.0 - PMH Pertama yang Dinilai, Riwayat Dihitung Ulang";
+export const APP_VERSION = "1.99.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v1.99.0 - Sembilan Penjaga Urutan, dan Berkas Arsip Ditemukan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,32 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "1.99.0",
+    title: "ALETA Judicia v1.99.0 - Sembilan Penjaga Urutan, dan Berkas Arsip Ditemukan",
+    date: "2026-09-08",
+    status: "Operasional",
+    summary:
+      "Penjaga urutan terbalik kini dipasang di SEMBILAN unsur SK 048/2024, tidak lagi sebagian - jeda penginputan diperlakukan sama dengan tanggal peristiwanya. Selain itu berkas arsip SIPP ditelusuri sampai ketemu: 4.128 PDF sebesar 32 GB, dan jalurnya ternyata TIDAK tersimpan di basis data melainkan disusun dari letak fisiknya.",
+    added: [],
+    changed: [
+      "Lima unsur jeda penginputan (I.1, I.3, I.5, I.7, I.9) kini memakai penjaga yang sama dengan tanggal peristiwanya: dokumen yang tercatat diinput SEBELUM peristiwanya tidak dinilai, bukan bernilai sempurna. Sebelumnya hanya lima unsur tanggal peristiwa yang berpenjaga, sehingga selisih negatif yang sama diperlakukan berbeda di layar yang sama.",
+    ],
+    fixed: [],
+    security: [],
+    operationalNotes: [
+      "Yang terkena sedikit, dan itu memang tujuannya. Diukur pada 9.834 perkara dengan tanggal peristiwa yang sudah dibetulkan v1.98.0: input pendaftaran 21 perkara negatif, input PHS 1 perkara, input PMH dan penunjukan PP serta juru sita nol. Sebelum tanggal PMH dibetulkan jumlahnya jauh lebih besar - perbaikan itulah yang menghabiskan sebagian besarnya.",
+      "TEMUAN ARSIP - berkas PDF arsip ada di /var/www/html/SIPP/dokumen_arsip, disusun ruang/lemari/rak/berkas, 4.128 berkas sebesar 32 GB. Nama berkasnya Arsip_<nomor perkara dengan titik dan garis miring diganti garis bawah>.pdf. Container aleta-bot SUDAH memuatnya baca-saja di /usr/src/app/SIPP, jadi ALETA dapat menyajikannya tanpa mount baru.",
+      "TEMUAN ARSIP - tabel arsip SIPP TIDAK menyimpan nama berkas sama sekali. Jalurnya disusun dari empat kolom letak fisik ditambah nomor perkara. Akibatnya: menyunting letak arsip di SIPP membuat berkas lamanya terlantar di jalur lama, dan pencarian yang hanya mengandalkan jalur susunan akan menyatakannya hilang padahal ada.",
+      "TEMUAN ARSIP - cakupannya: 4.863 baris arsip, 3.822 di antaranya berkasnya ada (78,6%), 1.041 tidak ada, dan 307 berkas ada di disk tanpa baris yang menunjuknya. Yang tidak ada hampir seluruhnya perkara lama - 2018 sampai 2021 sebanyak 991 dari 1.041; tahun 2024 hanya 5, 2025 hanya 10, dan 2026 hanya 1.",
+    ],
+    knownLimitations: [
+      "Penilaian arsip (SK Tabel 2 I.16) masih mengukur JEDA PENGINPUTAN DATA saja, belum keberadaan berkas pindaiannya. Perkara yang datanya diinput tepat waktu tetapi berkasnya tidak pernah diunggah tetap bernilai sempurna.",
+      "ALETA belum menyajikan unduhan arsip. Berkasnya terbaca oleh container bot, tetapi belum ada jalur maupun layarnya.",
+      "Baris yang berkasnya terlantar karena letaknya disunting - 307 berkas - baru dapat ditemukan bila pencarian berkas juga menelusuri nama berkasnya, bukan hanya jalur susunannya. Contoh terbukti: 1/Pdt.G/2022 tersimpan di lemari 1 pada disk sedangkan basis data kini menyebut lemari X.",
+      "Satu baris arsip nomor perkaranya tertulis PA.dgl, bukan PA.Dgl. Pada berkas sistem yang membedakan huruf besar-kecil, perbedaan itu sendiri sudah cukup membuat berkasnya tidak ketemu.",
+    ],
+  },
   {
     version: "1.98.0",
     title: "ALETA Judicia v1.98.0 - PMH Pertama yang Dinilai, Riwayat Dihitung Ulang",

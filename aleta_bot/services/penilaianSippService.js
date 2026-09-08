@@ -124,6 +124,36 @@ function poin(nilai, catatan) {
  * Karena itu tidak dinilai sama sekali, dan sebabnya disebutkan. Unsur yang
  * tidak dinilai keluar dari penyebut - bukan menjadi nol di dalamnya - dan
  * layar menampilkan berapa unsur yang tidak ikut dihitung.
+ *
+ * ============================================================================
+ * DIPASANG DI SEMBILAN UNSUR, BUKAN DI SEBAGIAN
+ * ============================================================================
+ *
+ * Mula-mula penjaga ini hanya dipasang pada penunjukan PP dan juru sita -
+ * yang tanggalnya berubah - lalu menyusul PMH dan PHS. Sisanya, yaitu jeda
+ * PENGINPUTAN, sengaja ditunda sebab keadaannya jarang.
+ *
+ * Menundanya ternyata keliru sebagai prinsip. Dokumen yang tercatat diinput
+ * SEBELUM peristiwanya sama mustahilnya dengan penunjukan yang mendahului
+ * penetapan majelis, dan memperlakukan keduanya berbeda membuat aturan ini
+ * tidak dapat diterangkan: yang membaca layar akan menemukan satu unsur
+ * bernilai sempurna atas selisih negatif di sebelah unsur lain yang tidak
+ * dinilai atas selisih negatif yang sama.
+ *
+ * Yang diukur pada 9.834 perkara PA Donggala - memakai tanggal peristiwa yang
+ * sudah dibetulkan:
+ *
+ *   I.1 input pendaftaran   9.834 terbaca, 21 negatif
+ *   I.3 input PMH             775 terbaca,  0 negatif
+ *   I.5 input penunjukan PP   775 terbaca,  0 negatif
+ *   I.7 input juru sita       775 terbaca,  0 negatif
+ *   I.9 input PHS             775 terbaca,  1 negatif
+ *
+ * Dua puluh dua perkara. Sedikit - dan justru itu sebabnya penjaga ini murah:
+ * ia tidak menggeser angka siapa pun kecuali pada perkara yang datanya memang
+ * bertentangan dengan dirinya sendiri. Sebelum tanggal PMH dibetulkan,
+ * jumlahnya jauh lebih besar; perbaikan itulah yang menghabiskan sebagian
+ * besarnya, bukan penjaga ini.
  */
 function urutanTerbalik(selisih, sebutan) {
   return {
@@ -305,6 +335,7 @@ const INPUT_DATA = [
       }
       const selisih = hari(f.tanggalDaftar, f.tanggalInputPendaftaran);
       if (selisih === null) return poin(0, "Tanggal input pendaftaran belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Input pendaftaran");
       return poin(skalaHarian(selisih), `Diinput ${selisih} hari setelah pendaftaran.`);
     },
   },
@@ -341,6 +372,7 @@ const INPUT_DATA = [
       if (f.tanggalInputPmh === undefined) return belumTerbaca("Tanggal input PMH belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPmh, f.tanggalInputPmh);
       if (selisih === null) return poin(0, "Input PMH belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Input PMH");
       return poin(skalaHarian(selisih), `Diinput ${selisih} hari setelah PMH.`);
     },
   },
@@ -370,6 +402,7 @@ const INPUT_DATA = [
       if (f.tanggalInputPpp === undefined) return belumTerbaca("Tanggal input penunjukan PP belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPpp, f.tanggalInputPpp);
       if (selisih === null) return poin(0, "Input penunjukan PP belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Input penunjukan PP");
       return poin(skalaHarian(selisih), `Diinput ${selisih} hari setelah penunjukan PP.`);
     },
   },
@@ -399,6 +432,7 @@ const INPUT_DATA = [
       if (f.tanggalInputPjs === undefined) return belumTerbaca("Tanggal input penunjukan juru sita belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPjs, f.tanggalInputPjs);
       if (selisih === null) return poin(0, "Input penunjukan juru sita belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Input penunjukan juru sita");
       return poin(skalaHarian(selisih), `Diinput ${selisih} hari setelah penunjukan juru sita.`);
     },
   },
@@ -432,6 +466,7 @@ const INPUT_DATA = [
       if (f.tanggalInputPhs === undefined) return belumTerbaca("Tanggal input PHS belum tersambung ke ALETA.");
       const selisih = hari(f.tanggalPhs, f.tanggalInputPhs);
       if (selisih === null) return poin(0, "Input PHS belum tercatat.");
+      if (selisih < 0) return urutanTerbalik(selisih, "Input PHS");
       return poin(skalaHarian(selisih), `Diinput ${selisih} hari setelah PHS.`);
     },
   },

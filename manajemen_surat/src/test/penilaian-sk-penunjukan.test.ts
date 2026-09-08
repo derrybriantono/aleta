@@ -214,6 +214,62 @@ describe("PMH pun tidak boleh mendahului pendaftaran", () => {
   });
 });
 
+describe("jeda penginputan diperlakukan sama", () => {
+  /**
+   * Dokumen yang tercatat diinput SEBELUM peristiwanya sama mustahilnya dengan
+   * penunjukan yang mendahului penetapan majelis. Memperlakukan keduanya
+   * berbeda membuat aturannya tidak dapat diterangkan: satu unsur bernilai
+   * sempurna atas selisih negatif, di sebelah unsur lain yang tidak dinilai
+   * atas selisih negatif yang sama.
+   *
+   * Diukur pada 9.834 perkara dengan tanggal peristiwa yang sudah dibetulkan:
+   * I.1 21 negatif, I.9 1 negatif, sisanya nol.
+   */
+  const kasus: Array<[string, Record<string, unknown>]> = [
+    ["pendaftaranPerkara", { tanggalDaftar: "2026-07-07", tanggalInputPendaftaran: "2026-07-04" }],
+    ["inputPenetapanMajelis", { tanggalPmh: "2026-07-07", tanggalInputPmh: "2026-07-04" }],
+    ["inputPenunjukanPp", { tanggalPpp: "2026-07-07", tanggalInputPpp: "2026-07-04" }],
+    ["inputPenunjukanJurusita", { tanggalPjs: "2026-07-07", tanggalInputPjs: "2026-07-04" }],
+    ["inputPenetapanHariSidang", { tanggalPhs: "2026-07-07", tanggalInputPhs: "2026-07-04" }],
+  ];
+
+  it.each(kasus)("%s: diinput sebelum peristiwanya tidak dinilai", (kunci, fakta) => {
+    const butir = unsur(fakta, kunci);
+    expect(butir.poin).toBeNull();
+    expect(butir.terbaca).toBe(false);
+    expect(butir.catatan).toContain("3 hari SEBELUM");
+  });
+
+  it.each(kasus)("%s: diinput pada hari yang sama tetap bernilai penuh", (kunci, fakta) => {
+    // Penjaganya hanya boleh menangkap yang NEGATIF. Nol hari - diinput pada
+    // hari peristiwanya - adalah keadaan terbaik menurut SK, dan menjatuhkannya
+    // akan merusak justru pekerjaan yang paling tertib.
+    const sehari: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(fakta)) sehari[k] = k.includes("Input") ? "2026-07-07" : v;
+    const butir = unsur(sehari, kunci);
+    expect(butir.terbaca).toBe(true);
+    expect(butir.poin).toBe(5);
+  });
+
+  it("yang belum diinput tetap nol, bukan tidak dinilai", () => {
+    // Bedanya menentukan: yang belum diinput memang pekerjaan yang tertinggal.
+    const kosong = { tanggalPhs: "2026-07-07", tanggalInputPhs: null };
+    expect(unsur(kosong, "inputPenetapanHariSidang").poin).toBe(0);
+    expect(unsur(kosong, "inputPenetapanHariSidang").terbaca).toBe(true);
+  });
+
+  it("sembilan unsur berpenjaga, tidak kurang", () => {
+    // Daftar yang tidak dihitung akan tertinggal diam-diam ketika unsur
+    // kesepuluh ditambahkan.
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "../aleta_bot/services/penilaianSippService.js"),
+      "utf8"
+    );
+    const jumlah = [...isi.matchAll(/if \(selisih < 0\) return urutanTerbalik\(/g)].length;
+    expect(jumlah).toBe(9);
+  });
+});
+
 describe("tanggal penunjukan dibaca dari tabel petugas", () => {
   const berkasTahapan = path.resolve(
     process.cwd(),
