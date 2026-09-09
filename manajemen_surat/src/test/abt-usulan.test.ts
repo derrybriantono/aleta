@@ -1113,7 +1113,19 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // dipegang di tempat lain, jadi alasannya harus tertulis di berkasnya.
     const isi = alat();
     expect(isi).toContain("KENAPA BERKAS BARU, DAN BUKAN MEMAKAI YANG DI konten.js");
-    expect(isi).toContain("utangnya dicatat");
+
+    // Yang dijaga ISI catatannya, bukan satu frasa di dalamnya. Frasa
+    // "utangnya dicatat" yang dijaga sebelumnya hilang ketika catatan ini
+    // ditulis ulang menjadi lebih lengkap - uji gagal atas catatan yang
+    // justru membaik, dan cara ia gagal menuntun ke perbaikan yang salah:
+    // mengembalikan kalimat lama demi lolosnya uji.
+    //
+    // Yang harus tetap ada tiga hal, sebab ketiganya yang membuat catatan ini
+    // berguna bagi orang berikutnya: apa yang masih kembar, kenapa belum
+    // dilunasi, dan aturan apa yang berlaku sementara itu.
+    expect(isi, "apa yang masih kembar").toContain("masih kembar");
+    expect(isi, "kenapa belum dilunasi").toContain("tidak dapat dibuka");
+    expect(isi, "aturan sementara").toContain("fungsi BARU ditulis di sini saja");
   });
 });
 
