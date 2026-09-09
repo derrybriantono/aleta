@@ -29,3 +29,21 @@ export const EKSTENSI_NAMA_BERKAS = [
   ...Object.keys(EKSTENSI_BERKAS),
   ...Object.keys(EKSTENSI_BINER),
 ];
+
+/**
+ * Versi ekstensi, disalin dari manifest saat penanaman.
+ *
+ * Bukan pengganti manifestnya - portal tetap membacanya dari sana. Ia ada
+ * supaya pengujian dapat memastikan keduanya tidak pernah berselisih tanpa
+ * harus mengurai JSON, dan supaya penjaga di penyusunnya punya pembanding.
+ */
+export const EKSTENSI_VERSI = "1.86.0";
+
+/**
+ * Sidik isi ekstensi, dihitung dengan ruas version dikosongkan.
+ *
+ * Dipakai penyusunnya untuk menolak menanam isi baru dengan nomor versi lama -
+ * kegagalan yang paling sunyi dari semuanya, sebab Chrome memperbarui ekstensi
+ * dengan membandingkan nomor versi dan bukan isinya.
+ */
+export const EKSTENSI_SIDIK = "99db7391159123c941aedb935501c4368aa74a86f284fae31e157cb50fd7357a";
