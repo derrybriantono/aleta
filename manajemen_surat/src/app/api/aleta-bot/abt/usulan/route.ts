@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
       saksi1?: unknown;
       saksi2?: unknown;
       tanggalSidang?: unknown;
+      pelaku?: unknown;
+      lawan?: unknown;
     }>(request).catch(() => ({}) as Record<string, unknown>);
 
     const nomorPerkara = String(body.nomorPerkara || "").trim();
@@ -75,6 +77,12 @@ export async function POST(request: NextRequest) {
       // (variabel 0033). Dipakai menghitung ulang lama pisah: kalimat saksi
       // benar pada hari ia diperiksa, dan mulai keliru pada sidang berikutnya.
       tanggalSidang: String(body.tanggalSidang || "").slice(0, 40),
+      // Sebutan pihak, dibaca ekstensi dari variabel 0047 dan 0046 di halaman
+      // ABT: "Tergugat" pada cerai gugat, "Termohon" pada cerai talak. Kalimat
+      // 5227 diawali pelakunya, jadi salah menyebutnya berarti salah menyebut
+      // pihak di dalam putusan.
+      pelaku: String(body.pelaku || "").slice(0, 40),
+      lawan: String(body.lawan || "").slice(0, 40),
     });
 
     if (!hasil.ok) {

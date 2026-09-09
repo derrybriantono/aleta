@@ -16,6 +16,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2 \
     libgtk-3-0 \
     procps \
+    # ========================================================================
+    # LibreOffice: SATU-SATUNYA cara ALETA menerbitkan PDF putusan
+    # ========================================================================
+    #
+    # Putusan disusun ABT sebagai RTF. Tidak ada satu pun rute di ABT yang
+    # menghasilkan PDF, dan tidak ada pengurai RTF di JavaScript yang dapat
+    # dipercaya untuk dokumen pengadilan - tata letak yang bergeser sedikit
+    # pun pada putusan berarti dokumen yang beredar berbeda dari yang
+    # ditandatangani.
+    #
+    # Yang dipakai mesin yang SAMA dengan yang sudah dipakai ABT sendiri untuk
+    # mengubah docx menjadi rtf pada anonimisasi - lihat convert_putusan di
+    # models/abt/Anonimisasi.php, yang memanggil soffice. Hasilnya karena itu
+    # sekeluarga dengan hasil ABT, bukan penafsiran kedua.
+    #
+    # Hanya writer, tanpa paket rekomendasi, dan tanpa Java: ekspor PDF tidak
+    # memerlukannya. Tambahannya sekitar 300 MB pada image yang sudah 1 GB
+    # karena Chromium - harga yang disebut apa adanya.
+    #
+    # fonts-liberation sudah terpasang di atas, dan itu penting: ia
+    # metrik-sepadan dengan Times New Roman, sehingga jumlah halaman PDF-nya
+    # sama dengan RTF-nya.
+    libreoffice-writer \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production

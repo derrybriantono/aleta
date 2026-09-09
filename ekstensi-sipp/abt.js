@@ -68,6 +68,16 @@ const VAR_SAKSI_2 = "2022";
 const VAR_TGL_SIDANG = "0033";
 /** Posita lengkap - butirnya sering menempel satu sama lain. */
 const VAR_POSITA = "5125";
+/**
+ * Sebutan pihak, apa adanya dari ABT.
+ *
+ * 0046 berbunyi "Penggugat" atau "Pemohon"; 0047 berbunyi "Tergugat" atau
+ * "Termohon". Keduanya dipakai menyusun kalimat 5227, yang diawali pelakunya -
+ * jadi keduanya TIDAK ditebak dari klasifikasi perkara, melainkan dibaca dari
+ * variabel yang memang menyimpannya.
+ */
+const VAR_PIHAK_LAWAN = "0046";
+const VAR_PIHAK_PELAKU = "0047";
 
 /**
  * Variabel "(OTOMATIS)" yang isinya disusun ABT dari kerangka fakta.
@@ -320,6 +330,221 @@ function bersihkanKeteranganSaksi(teks) {
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+// ─── Tiga berkas dari satu tekanan CETAK ─────────────────────────────────────
+
+/**
+ * ============================================================================
+ * APA YANG SEBENARNYA DILAKUKAN TOMBOL CETAK ABT
+ * ============================================================================
+ *
+ * Dibaca dari kodenya di server - views/abt/preview.php - tombol CETAK adalah
+ * tautan biasa ke abt/preview, dan yang dikembalikannya SATU berkas:
+ *
+ *   header("Content-Type: application/vnd.ms-word");
+ *   header("Content-disposition: attachment; filename=\"<no perkara> - <blangko>.rtf\"");
+ *
+ * RTF, satu-satunya bentuk yang dihasilkan ABT. Tidak ada satu pun rute di ABT
+ * yang menghasilkan PDF.
+ *
+ * Anonimisasi ADA di ABT, tetapi ia menuntut berkasnya DIUNGGAH: rute
+ * abt/main/anonim menerima perkara_id, perkara_no, dan file_putusan sebagai
+ * multipart, lalu mengembalikan "anonim_<no>.rtf". Petugas karena itu harus
+ * mengunduh putusannya lebih dulu, membuka menu lain, lalu mengunggah berkas
+ * yang baru saja ia unduh.
+ *
+ * ============================================================================
+ * YANG DIKERJAKAN DI SINI
+ * ============================================================================
+ *
+ * Satu tekanan, tiga berkas, tanpa satu pun langkah manual di antaranya:
+ *
+ *   1. RTF     diambil dari abt/preview - alamat yang sama dengan tautannya
+ *   2. PDF     RTF itu dikirim ke ALETA, dikonversi LibreOffice, kembali
+ *   3. ANONIM  RTF itu diunggahkan ke rute anonimisasi ABT sendiri
+ *
+ * PDF dibuat dari yang BUKAN anonim - itu putusan yang ditandatangani.
+ * Anonimnya untuk diunggah ke direktori putusan, dan bentuk yang diminta di
+ * sana memang RTF.
+ *
+ * Urutannya disengaja: RTF lebih dulu dan diunduh SEGERA. Kalau dua langkah
+ * berikutnya gagal, yang paling dibutuhkan sudah ada di tangan.
+ *
+ * ============================================================================
+ * DAPAT DIMATIKAN, DAN BAWAANNYA MATI
+ * ============================================================================
+ *
+ * Ia mengubah arti tombol milik aplikasi orang lain: satu tekanan yang dulu
+ * menghasilkan satu berkas kini menghasilkan tiga. Perubahan sebesar itu tidak
+ * pantas diambil sendiri oleh sebuah pembaruan - saklarnya ada di popup ikon
+ * ALETA, dan selama mati, tombol CETAK berperilaku persis seperti semula.
+ */
+const KUNCI_CETAK_TIGA = "cetakTigaBerkas";
+const ALETA_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
+
+/**
+ * Keadaan saklar, dibaca sekali lalu diikuti perubahannya.
+ *
+ * Bawaannya MATI. Ia mengubah arti tombol milik aplikasi orang lain - satu
+ * tekanan yang dulu menghasilkan satu berkas menjadi tiga - dan perubahan
+ * sebesar itu tidak pantas diambil sendiri oleh sebuah pembaruan.
+ */
+let cetakTigaMenyala = false;
+
+async function muatSaklarCetak() {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_CETAK_TIGA]);
+    cetakTigaMenyala = simpan[KUNCI_CETAK_TIGA] === true;
+  } catch {
+    cetakTigaMenyala = false;
+  }
+  try {
+    // Diubah dari popup sementara halaman ini terbuka: berlaku seketika,
+    // tanpa memuat ulang. Yang baru menyalakannya lalu menekan CETAK tidak
+    // seharusnya mendapat satu berkas karena halamannya belum disegarkan.
+    chrome.storage.onChanged.addListener((perubahan, wilayah) => {
+      if (wilayah !== "local" || !perubahan[KUNCI_CETAK_TIGA]) return;
+      cetakTigaMenyala = perubahan[KUNCI_CETAK_TIGA].newValue === true;
+    });
+  } catch {
+    /* tanpa pendengar, saklarnya berlaku pada pemuatan berikutnya */
+  }
+}
+
+/** Menyimpan satu blob sebagai unduhan, dengan nama yang ditentukan di sini. */
+function unduhBlob(blob, nama) {
+  const alamat = URL.createObjectURL(blob);
+  const tautan = document.createElement("a");
+  tautan.href = alamat;
+  tautan.download = nama;
+  document.body.appendChild(tautan);
+  tautan.click();
+  tautan.remove();
+  // Dilepas menyusul, bukan seketika: sebagian peramban membatalkan unduhan
+  // yang alamat blob-nya sudah dicabut sebelum unduhannya benar-benar mulai.
+  setTimeout(() => URL.revokeObjectURL(alamat), 30_000);
+}
+
+/**
+ * Nama berkas, disusun di sini dan bukan diambil dari header ABT.
+ *
+ * Header ABT menyusunnya dari nomor perkara dan nama blangko, dan nama blangko
+ * memuat tanda kurung siku serta garis miring - "[01] [Kabul Verstek] Cerai
+ * (Format Lengkap)". Yang bergaris miring tidak dapat menjadi nama berkas di
+ * mana pun, dan yang lolos pun menghasilkan tiga berkas dengan nama sepanjang
+ * satu baris.
+ */
+function namaBerkas(nomorPerkara, akhiran, jenis) {
+  const dasar = String(nomorPerkara || "putusan").replace(/[\\/:*?"<>|]+/g, "_");
+  return jenis ? `${dasar} - ${jenis}.${akhiran}` : `${dasar}.${akhiran}`;
+}
+
+function base64DariBuffer(buffer) {
+  const byte = new Uint8Array(buffer);
+  let biner = "";
+  // Dipotong-potong: String.fromCharCode dengan puluhan ribu argumen sekaligus
+  // melampaui batas tumpukan pemanggilan pada berkas yang besar.
+  const potongan = 0x8000;
+  for (let i = 0; i < byte.length; i += potongan) {
+    biner += String.fromCharCode.apply(null, byte.subarray(i, i + potongan));
+  }
+  return btoa(biner);
+}
+
+/**
+ * Menerbitkan ketiga berkas.
+ *
+ * Tiap langkah melaporkan keadaannya sendiri, dan kegagalan satu langkah tidak
+ * menghentikan langkah lain: yang gagal disebutkan, yang berhasil tetap
+ * diunduh. Menghentikan semuanya karena satu kegagalan berarti petugas
+ * kehilangan berkas yang sebenarnya sudah siap.
+ */
+async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
+  const nomor = nomorPerkaraAbt();
+  const hasil = { rtf: "", pdf: "", anonim: "" };
+
+  // ── 1. RTF, dari alamat yang sama dengan tautan CETAK ─────────────────────
+  lapor("Mengambil putusan dari ABT…");
+  let isiRtf = null;
+  try {
+    const respons = await fetch(alamatPreview, { credentials: "include", cache: "no-store" });
+    if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+    isiRtf = await respons.arrayBuffer();
+    if (isiRtf.byteLength < 32) throw new Error("berkasnya kosong");
+    unduhBlob(new Blob([isiRtf], { type: "application/rtf" }), namaBerkas(nomor, "rtf"));
+    hasil.rtf = "tersimpan";
+  } catch (galat) {
+    hasil.rtf = `gagal: ${String((galat && galat.message) || galat)}`;
+    // Tanpa RTF, dua langkah berikutnya tidak punya bahan sama sekali.
+    lapor(`Putusan tidak dapat diambil — ${hasil.rtf}`, true);
+    return hasil;
+  }
+
+  // ── 2. PDF, dikonversi ALETA dari RTF yang BUKAN anonim ───────────────────
+  lapor("Mengubah menjadi PDF…");
+  try {
+    const respons = await fetch(ALETA_API_PDF, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rtfBase64: base64DariBuffer(isiRtf) }),
+    });
+    if (respons.status === 401) throw new Error("belum masuk portal ALETA");
+    if (!respons.ok) throw new Error(`ALETA menjawab ${respons.status}`);
+    const luar = await respons.json();
+    const isi = luar?.data ?? luar;
+    if (!isi?.available) throw new Error(isi?.message || "ALETA belum dapat menjawab");
+    const biner = Uint8Array.from(atob(isi.pdfBase64), (c) => c.charCodeAt(0));
+    unduhBlob(new Blob([biner], { type: "application/pdf" }), namaBerkas(nomor, "pdf"));
+    hasil.pdf = "tersimpan";
+  } catch (galat) {
+    hasil.pdf = `gagal: ${String((galat && galat.message) || galat)}`;
+  }
+
+  // ── 3. Anonim, lewat rute anonimisasi ABT sendiri ─────────────────────────
+  //
+  // Dikerjakan ABT, bukan ALETA. Aturan penyamarannya - nama, NIK, alamat,
+  // pekerjaan, nomor kutipan akta nikah, surel - sudah ditetapkan di sana, dan
+  // menyalinnya ke sini berarti dua aturan yang akan berselisih diam-diam.
+  lapor("Meminta ABT menganonimkan…");
+  try {
+    if (!nomor) throw new Error("nomor perkara tidak terbaca dari halaman");
+    const borang = new FormData();
+    borang.set("perkara_id", jatiDiri.perkaraId);
+    borang.set("perkara_no", nomor);
+    borang.set(
+      "file_putusan",
+      new Blob([isiRtf], { type: "application/rtf" }),
+      namaBerkas(nomor, "rtf")
+    );
+    const respons = await fetch(`${asalAbt()}/main/anonim`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      body: borang,
+    });
+    if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+    const isi = await respons.arrayBuffer();
+    const awal = new TextDecoder("latin1").decode(new Uint8Array(isi).subarray(0, 5));
+    // Jawaban ABT dapat berupa RTF anonim ATAU halaman berisi keterangan
+    // gagal. Keduanya 200, dan yang membedakannya hanya isinya - halaman HTML
+    // yang tersimpan sebagai .rtf adalah kegagalan yang paling sulit dikenali.
+    if (!awal.startsWith("{\\rtf")) {
+      const teks = new TextDecoder().decode(isi);
+      const pesan = teks.match(/Proses Anonim Gagal[^<]*/i);
+      throw new Error(pesan ? pesan[0].slice(0, 120) : "ABT tidak mengembalikan berkas RTF");
+    }
+    unduhBlob(new Blob([isi], { type: "application/rtf" }), namaBerkas(nomor, "rtf", "anonim"));
+    hasil.anonim = "tersimpan";
+  } catch (galat) {
+    hasil.anonim = `gagal: ${String((galat && galat.message) || galat)}`;
+  }
+
+  const ringkas = `RTF ${hasil.rtf} · PDF ${hasil.pdf} · anonim ${hasil.anonim}`;
+  lapor(ringkas, /gagal/.test(ringkas));
+  return hasil;
 }
 
 // ─── Riwayat dan urungkan ────────────────────────────────────────────────────
@@ -596,10 +821,26 @@ function periksaKelengkapan() {
   return { kurang, rusak };
 }
 
-function pasangPenjagaCetak() {
+function pasangPenjagaCetak(jatiDiri, lapor) {
   for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
     if (tautan.getAttribute(TANDA_ABT) === "jaga") continue;
     tautan.setAttribute(TANDA_ABT, "jaga");
+
+    /**
+     * ======================================================================
+     * SATU PENDENGAR, DUA PEKERJAAN, DAN URUTANNYA MENENTUKAN
+     * ======================================================================
+     *
+     * Penjaga kelengkapan berjalan LEBIH DULU. Kalau petugas membatalkan di
+     * situ, tiga berkas tidak boleh diterbitkan sama sekali - menerbitkan
+     * putusan yang barusan ia putuskan belum siap adalah kebalikan dari apa
+     * yang diminta.
+     *
+     * Sesudah ia lolos, dan hanya bila saklarnya menyala, tautannya ditahan
+     * dan ketiga berkas diterbitkan dari alamat tautan itu sendiri. Ditahan,
+     * sebab membiarkannya berjalan membuat peramban berpindah halaman di
+     * tengah dua permintaan yang belum selesai.
+     */
     tautan.addEventListener(
       "click",
       (peristiwa) => {
@@ -627,6 +868,29 @@ function pasangPenjagaCetak() {
       },
       true
     );
+
+    tautan.addEventListener("click", (peristiwa) => {
+      // Sudah dibatalkan penjaga kelengkapan di atas.
+      if (peristiwa.defaultPrevented) return;
+
+      // ====================================================================
+      // SAKLARNYA DIBACA SEBELUM KLIK, BUKAN DI DALAMNYA
+      // ====================================================================
+      //
+      // chrome.storage hanya asinkron, dan pendengar klik harus memutuskan
+      // SEKARANG apakah tautannya ditahan. Membacanya di dalam pendengar
+      // berarti tautannya sudah berjalan sebelum jawabannya datang - dan
+      // menahannya lebih dulu "untuk sementara" lalu membukanya kembali
+      // menghasilkan dua perilaku yang berlomba.
+      //
+      // Karena itu jawabannya sudah ada sebelum klik: dibaca sekali saat
+      // panel dibangun, dan diperbarui sendiri bila saklarnya diubah dari
+      // popup - lihat cetakTigaMenyala.
+      if (!cetakTigaMenyala) return;
+
+      peristiwa.preventDefault();
+      void terbitkanTigaBerkas(tautan.href, jatiDiri, lapor);
+    });
   }
 }
 
@@ -1214,6 +1478,8 @@ function susunPanelAbt(jatiDiri) {
         // "kira-kira 4 bulan" benar pada hari saksi diperiksa, dan mulai
         // keliru pada sidang berikutnya.
         tanggalSidang: nilaiVariabel(VAR_TGL_SIDANG),
+        pelaku: nilaiVariabel(VAR_PIHAK_PELAKU),
+        lawan: nilaiVariabel(VAR_PIHAK_LAWAN),
       });
       const saksi = isiJawaban.saksi || {};
       kabar.textContent =
@@ -1229,6 +1495,14 @@ function susunPanelAbt(jatiDiri) {
     }
   });
 
+
+  // Pelapor keadaan dipinjamkan ke penjaga cetak: penerbitan tiga berkas
+  // memakan beberapa detik, dan tanpa satu baris yang mengabarkan tahapnya,
+  // yang menekan CETAK hanya melihat halaman yang tidak berbuat apa-apa.
+  panel.lapor = (teks, gagal) => {
+    kabar.className = gagal ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+    kabar.textContent = teks;
+  };
   return panel;
 }
 
@@ -1254,9 +1528,11 @@ async function pasang() {
   if (!jatiDiri) return;
 
   sudahDipasang = true;
+  await muatSaklarCetak();
   pasangSunting(jatiDiri);
-  pasangPenjagaCetak();
-  document.body.appendChild(susunPanelAbt(jatiDiri));
+  const panel = susunPanelAbt(jatiDiri);
+  document.body.appendChild(panel);
+  pasangPenjagaCetak(jatiDiri, panel.lapor);
 }
 
 void pasang();

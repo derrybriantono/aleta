@@ -25,6 +25,7 @@ const ecourtLoginService = require("../services/ecourtLoginService");
 const sippKonteksService = require("../services/sippKonteksService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
 const abtUsulanService = require("../services/abtUsulanService");
+const abtCetakService = require("../services/abtCetakService");
 const ecourtSchedulerService = require("../services/ecourtSchedulerService");
 const sippJadwalSidangService = require("../services/sippJadwalSidangService");
 const kesiapanSidangService = require("../services/kesiapanSidangService");
@@ -1074,11 +1075,58 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(
         String(req.body?.saksi1 || ""),
         String(req.body?.saksi2 || ""),
-        String(req.body?.tanggalSidang || "")
+        String(req.body?.tanggalSidang || ""),
+        {
+          pelaku: String(req.body?.pelaku || ""),
+          lawan: String(req.body?.lawan || ""),
+        }
       );
     }
 
     res.json(jawaban);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengubah RTF putusan menjadi PDF.
+ *
+ * Isinya dikirim sebagai base64, bukan multipart: rute internal ini sudah
+ * menerima JSON untuk segalanya, dan menambahkan satu pengurai multipart hanya
+ * untuk satu rute berarti satu jalur masuk lagi yang harus dijaga.
+ *
+ * Tidak menyimpan apa pun. Berkasnya masuk, PDF-nya keluar, foldernya dibuang -
+ * putusan lengkap beserta nama pihaknya tidak tertinggal di mana-mana.
+ */
+router.post("/abt/pdf", requireInternalToken, async (req, res) => {
+  try {
+    const base64 = String(req.body?.rtfBase64 || "");
+    if (!base64) {
+      res.status(400).json({ ok: false, error: "rtfBase64 kosong." });
+      return;
+    }
+    const isi = Buffer.from(base64, "base64");
+    const hasil = await abtCetakService.rtfKePdf(isi);
+    if (!hasil.ok) {
+      res.status(422).json({ ok: false, error: hasil.alasan });
+      return;
+    }
+    res.json({
+      ok: true,
+      pdfBase64: hasil.pdf.toString("base64"),
+      byte: hasil.pdf.length,
+      versiMesin: hasil.versiMesin || "",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Apakah mesin konversinya siap? Dipakai panel untuk menyebutkan sebabnya. */
+router.get("/abt/pdf/mesin", requireInternalToken, async (_req, res) => {
+  try {
+    res.json({ ok: true, mesin: await abtCetakService.periksaMesin() });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

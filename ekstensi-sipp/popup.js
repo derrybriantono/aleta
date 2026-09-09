@@ -14,6 +14,7 @@
 const kotak = document.getElementById("aktif");
 const kotakTanda = document.getElementById("tandaiHalaman");
 const kotakSisip = document.getElementById("sisipJadwal");
+const kotakCetak = document.getElementById("cetakTigaBerkas");
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -41,6 +42,9 @@ function pasangNilai(simpan) {
   // tampilannya menyatu, sehingga berkas ALETA terlihat seperti bagian
   // SIPP. Bawaannya mati, dan menyalakannya keputusan petugas.
   kotakSisip.checked = simpan.sisipJadwal === true;
+  // Bawaannya MATI: ia mengubah arti tombol CETAK milik ABT, dan satu tekanan
+  // yang dulu menghasilkan satu berkas menjadi tiga.
+  if (kotakCetak) kotakCetak.checked = simpan.cetakTigaBerkas === true;
 
   // Alamat portal dicatat skrip konten saat halaman SIPP dibuka. Popup
   // berjalan di origin chrome-extension://, sehingga tautan relatif di sini
@@ -59,7 +63,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "asalPortal"])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "asalPortal"])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -74,6 +78,9 @@ function simpan(kunci, nilai) {
 kotak.addEventListener("change", () => simpan("aktif", kotak.checked));
 kotakTanda.addEventListener("change", () => simpan("tandaiHalaman", kotakTanda.checked));
 kotakSisip.addEventListener("change", () => simpan("sisipJadwal", kotakSisip.checked));
+if (kotakCetak) {
+  kotakCetak.addEventListener("change", () => simpan("cetakTigaBerkas", kotakCetak.checked));
+}
 
 /**
  * ============================================================================

@@ -46,42 +46,129 @@ const KALIMAT = {
   },
 
   /**
-   * 5227 - alasan-alasan gugatan.
+   * ==========================================================================
+   * 5227 - ALASAN-ALASAN GUGATAN, DISUSUN SEBAGAI FAKTA HUKUM
+   * ==========================================================================
    *
-   * Blangkonya sendiri mengingatkan: "JANGAN LUPA TAMBAH DAN SEBELUM ALASAN
-   * TERAKHIR". Penyambungnya karena itu diurus di sini, bukan diserahkan pada
-   * ingatan orang yang mengisi.
+   * Bentuk pertamanya menderetkan kalimat lengkap satu per satu:
+   *
+   *   "antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan
+   *    pertengkaran, Tergugat melakukan Kekerasan Dalam Rumah Tangga terhadap
+   *    Penggugat, Tergugat melalaikan kewajiban memberi nafkah kepada
+   *    Penggugat dan Tergugat bersikap cemburu berlebihan"
+   *
+   * Itu bukan bahasa putusan. Empat hal keliru sekaligus:
+   *
+   *   1. SUBJEKNYA DIULANG. "Tergugat" muncul tiga kali dalam satu kalimat,
+   *      padahal seluruh perbuatan itu dilakukan orang yang sama.
+   *   2. TIDAK DIAWALI PELAKUNYA. Kalimatnya dibuka dengan keadaan bersama
+   *      ("antara Penggugat dan Tergugat"), sehingga yang terbaca lebih dulu
+   *      justru bukan siapa yang berbuat.
+   *   3. PERSELISIHAN DISAMAKAN DENGAN PERBUATAN. Perselisihan terus-menerus
+   *      itu AKIBAT dari perbuatan-perbuatan tadi, bukan salah satu di antara
+   *      keduanya. Menderetkannya sejajar menghilangkan hubungan sebab-akibat
+   *      yang justru menjadi inti pertimbangan.
+   *   4. PENYAMBUNGNYA "dan". Dalam rumusan berdaftar, penutup yang lazim
+   *      dipakai putusan adalah "serta".
+   *
+   * Yang benar satu kalimat berpelaku tunggal, daftar perbuatan tanpa
+   * mengulang subjek, lalu akibatnya sebagai keterangan penutup:
+   *
+   *   "Tergugat melalaikan kewajiban nafkah lahir, bersikap cemburu
+   *    berlebihan, serta melakukan Kekerasan Dalam Rumah Tangga (KDRT) yang
+   *    memicu perselisihan terus-menerus dengan Penggugat"
+   *
+   * ==========================================================================
+   * PELAKUNYA TIDAK DITEBAK
+   * ==========================================================================
+   *
+   * Pada cerai gugat pelakunya "Tergugat"; pada cerai talak "Termohon". Kedua
+   * kata itu tidak diturunkan dari jenis perkara di sini - ABT sudah
+   * menyimpannya sebagai variabel tersendiri, 0046 dan 0047, dan ekstensi
+   * membacanya dari halaman yang sedang dibuka. Menebaknya dari klasifikasi
+   * perkara berarti salah menyebut pihak pada perkara yang klasifikasinya
+   * tidak terduga.
    */
-  penyambungAlasan: { antara: ", ", terakhir: " dan " },
+  frasaCiri: {
+    // `urutan` menentukan tempatnya di dalam kalimat - bukan urutan kata kunci
+    // ditemukan, yang bergantung pada cara saksi bertutur.
+    //
+    // `akibat` menandai ciri yang BUKAN perbuatan. Yang bertanda akibat tidak
+    // pernah masuk daftar; ia menjadi keterangan penutup.
+    "tidak memberi nafkah": { urutan: 10, frasa: "melalaikan kewajiban nafkah lahir" },
+    cemburu: { urutan: 20, frasa: "bersikap cemburu berlebihan" },
+    "pihak lain (wanita/pria idaman lain)": { urutan: 30, frasa: "menjalin hubungan dengan pihak lain" },
+    "kekerasan dalam rumah tangga": {
+      urutan: 40,
+      frasa: "melakukan Kekerasan Dalam Rumah Tangga (KDRT)",
+    },
+    "mabuk/judi/obat terlarang": {
+      urutan: 50,
+      frasa: "menjadi pemabuk, penjudi, atau pemakai obat terlarang",
+    },
+    "murtad/pindah agama": { urutan: 60, frasa: "berpindah agama" },
+    "perselisihan terus-menerus": {
+      urutan: 90,
+      akibat: true,
+      frasa: "memicu perselisihan terus-menerus dengan",
+    },
+  },
 
   /**
-   * Sebutan tiap ciri, dalam bentuk yang pantas masuk ke kalimat putusan.
+   * Penyambung berdaftar.
    *
-   * Kunci di sebelah kiri dipakai kode; yang kanan yang dibaca manusia.
-   * Memisahkannya membuat kata kunci pencarian dapat diubah tanpa mengubah
-   * bunyi putusan, dan sebaliknya.
+   * "serta" untuk yang terakhir, bukan "dan". Tetapi komanya bergantung pada
+   * BANYAKNYA butir: daftar tiga butir atau lebih memakai koma sebelum
+   * "serta", sedangkan dua butir tidak - "A, serta B" bukan bentuk yang lazim,
+   * sebab koma di sana memisahkan dua hal yang justru sudah tersambung.
    */
-  sebutanCiri: {
-    "perselisihan terus-menerus": "antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan pertengkaran",
-    "kekerasan dalam rumah tangga": "Tergugat melakukan Kekerasan Dalam Rumah Tangga terhadap Penggugat",
-    "tidak memberi nafkah": "Tergugat melalaikan kewajiban memberi nafkah kepada Penggugat",
-    "cemburu": "Tergugat bersikap cemburu berlebihan",
-    "pihak lain (wanita/pria idaman lain)": "Tergugat memiliki pihak lain",
-    "mabuk/judi/obat terlarang": "Tergugat menjadi pemabuk, penjudi, atau pemakai obat terlarang",
-    "murtad/pindah agama": "Tergugat berpindah agama",
-  },
+  penyambungAlasan: { antara: ", ", terakhirBanyak: ", serta ", terakhirDua: " serta " },
+
+  /**
+   * Ketika tidak ada satu pun PERBUATAN yang terbaca dan yang ada hanya
+   * perselisihannya, kalimat berpelaku tunggal tidak dapat disusun - tidak ada
+   * perbuatan untuk digantungi akibat. Yang dipakai rumusan bersama, dan itu
+   * memang bentuk yang lazim untuk keadaan itu.
+   */
+  hanyaPerselisihan: "Antara {lawan} dan {pelaku} terus-menerus terjadi perselisihan dan pertengkaran",
 };
 
-/** Menyambung daftar alasan menurut penyambung baku. */
-function susunAlasan(daftarCiri) {
-  const kalimat = (daftarCiri || []).map((c) => KALIMAT.sebutanCiri[c] || c);
-  if (kalimat.length === 0) return "";
-  if (kalimat.length === 1) return kalimat[0];
-  return (
-    kalimat.slice(0, -1).join(KALIMAT.penyambungAlasan.antara) +
-    KALIMAT.penyambungAlasan.terakhir +
-    kalimat[kalimat.length - 1]
-  );
+/**
+ * Menyusun kalimat 5227.
+ *
+ * @param daftarCiri ciri yang benar-benar disebut saksi
+ * @param pihak      { pelaku, lawan } - dibaca dari variabel 0047 dan 0046
+ */
+function susunAlasan(daftarCiri, pihak) {
+  const pelaku = String((pihak && pihak.pelaku) || "Tergugat").trim() || "Tergugat";
+  const lawan = String((pihak && pihak.lawan) || "Penggugat").trim() || "Penggugat";
+
+  const dikenal = (daftarCiri || [])
+    .map((nama) => ({ nama, aturan: KALIMAT.frasaCiri[nama] }))
+    .filter((x) => x.aturan)
+    .sort((a, b) => a.aturan.urutan - b.aturan.urutan);
+
+  const perbuatan = dikenal.filter((x) => !x.aturan.akibat).map((x) => x.aturan.frasa);
+  const akibat = dikenal.find((x) => x.aturan.akibat);
+
+  if (perbuatan.length === 0) {
+    if (!akibat) return "";
+    return KALIMAT.hanyaPerselisihan.replace("{lawan}", lawan).replace("{pelaku}", pelaku);
+  }
+
+  const penyambungAkhir =
+    perbuatan.length === 2
+      ? KALIMAT.penyambungAlasan.terakhirDua
+      : KALIMAT.penyambungAlasan.terakhirBanyak;
+  const daftar =
+    perbuatan.length === 1
+      ? perbuatan[0]
+      : perbuatan.slice(0, -1).join(KALIMAT.penyambungAlasan.antara) +
+        penyambungAkhir +
+        perbuatan[perbuatan.length - 1];
+
+  const penutup = akibat ? ` yang ${akibat.aturan.frasa} ${lawan}` : "";
+  return `${pelaku} ${daftar}${penutup}`;
 }
 
 /** Kalimat upaya damai menurut berhasil atau tidaknya. */

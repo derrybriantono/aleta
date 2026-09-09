@@ -304,7 +304,7 @@ function usulan(kode, nama, hasil, sumber) {
  * memverifikasi tidak perlu membaca ulang dua blok panjang - cukup membaca
  * satu baris di sebelah usulannya.
  */
-function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang) {
+function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
   const b1 = butirKeterangan(teksSaksi1);
   const b2 = butirKeterangan(teksSaksi2);
   const semua = [...b1, ...b2];
@@ -392,7 +392,11 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang) {
   // saksi, bukan dari daftar tetap. Blangkonya mengingatkan "JANGAN LUPA
   // TAMBAH DAN SEBELUM ALASAN TERAKHIR", jadi penyambungnya diurus di sini.
   const ciri = usulkanHuruf(semua);
-  const kalimatAlasan = kalimatBaku.susunAlasan(ciri);
+  // Pihaknya dibaca ekstensi dari variabel 0047 dan 0046 di halaman ABT -
+  // "Tergugat" pada cerai gugat, "Termohon" pada cerai talak. Tidak diturunkan
+  // dari klasifikasi perkara: menebaknya berarti salah menyebut pihak pada
+  // perkara yang klasifikasinya tidak terduga.
+  const kalimatAlasan = kalimatBaku.susunAlasan(ciri, pihak);
 
   // ==========================================================================
   // NOMOR 4 - PEMERIKSA SILANG DUA SAKSI

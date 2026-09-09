@@ -148,6 +148,26 @@ figlet("AletaBot", function (err, data) {
 });
 
 app.use(express.urlencoded({ extended: true }));
+
+/**
+ * ============================================================================
+ * BATAS BADAN DINAIKKAN HANYA UNTUK SATU RUTE
+ * ============================================================================
+ *
+ * Batas umumnya 1 MB, dan itu memang pantas: hampir seluruh rute di sini
+ * mengirim angka dan nomor perkara. Tetapi konversi PDF mengirim ISI BERKAS
+ * RTF putusan sebagai base64, dan putusan belasan halaman dengan mudah
+ * melewati satu megabita - base64 menambahkan sepertiga lagi.
+ *
+ * Menaikkan batas UMUM menjadi puluhan megabita berarti membuka tiap rute
+ * lain untuk badan sebesar itu, tanpa satu pun yang membutuhkannya. Karena itu
+ * pengurai berbatas besar dipasang lebih dulu, HANYA pada jalur itu; pengurai
+ * umum di bawahnya melihat badannya sudah terurai dan melewatinya.
+ *
+ * Urutannya menentukan: dipasang sesudah pengurai umum, permintaan besar sudah
+ * ditolak 413 sebelum sampai ke sini.
+ */
+app.use("/internal/aleta-bot/abt/pdf", express.json({ limit: "28mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 

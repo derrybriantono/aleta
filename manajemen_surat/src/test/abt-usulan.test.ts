@@ -68,8 +68,11 @@ type Aturan = {
   belumSiap: () => { huruf: string; sebab: string }[];
 };
 type Pustaka = {
-  KALIMAT: { sebutanCiri: Record<string, string> };
-  susunAlasan: (daftar: string[]) => string;
+  KALIMAT: {
+    frasaCiri: Record<string, { urutan: number; frasa: string; akibat?: boolean }>;
+    penyambungAlasan: { antara: string; terakhirBanyak: string; terakhirDua: string };
+  };
+  susunAlasan: (daftar: string[], pihak?: { pelaku?: string; lawan?: string } | null) => string;
   kalimatUpayaDamai: (gagal: boolean) => string;
 };
 const aturan = require_(
@@ -80,6 +83,8 @@ const pustaka = require_(
 ) as Pustaka;
 
 const abtJs = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/abt.js"), "utf8");
+const dockerfileBot = () =>
+  readFileSync(path.resolve(process.cwd(), "../aleta_bot/Dockerfile"), "utf8");
 const popupJs = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/popup.js"), "utf8");
 const popupHtml = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/popup.html"), "utf8");
 const manifest = () =>
@@ -182,10 +187,11 @@ describe("menurunkan kerangka fakta dari keterangan saksi", () => {
     // Kalimatnya dari pustaka kalimat baku, bukan nama cirinya - yang masuk ke
     // putusan harus berbunyi seperti putusan.
     const u = ambil(layanan.dariKeteranganSaksi(SAKSI_1, SAKSI_2), "5227");
-    expect(u.nilai).toContain("Kekerasan Dalam Rumah Tangga");
-    expect(u.nilai).toContain("nafkah");
-    // Blangkonya mengingatkan "JANGAN LUPA TAMBAH DAN SEBELUM ALASAN TERAKHIR".
-    expect(u.nilai).toContain(" dan ");
+    expect(u.nilai.startsWith("Tergugat ")).toBe(true);
+    expect(u.nilai).toContain("Kekerasan Dalam Rumah Tangga (KDRT)");
+    expect(u.nilai).toContain("kewajiban nafkah lahir");
+    // Perselisihan menjadi akibat di ujung, bukan butir yang sejajar.
+    expect(u.nilai).toContain("yang memicu perselisihan terus-menerus dengan Penggugat");
   });
 
   it("huruf alasan perceraian TIDAK pernah dipilih sendiri", () => {
@@ -438,17 +444,73 @@ describe("nomor 9 - pustaka kalimat baku", () => {
     expect(pustaka.kalimatUpayaDamai(false)).not.toContain("namun tidak berhasil");
   });
 
-  it("penyambung alasan memakai DAN sebelum yang terakhir", () => {
-    // Blangkonya sendiri yang mengingatkan.
-    // Diperiksa pada UJUNGNYA, bukan dengan menghitung kata "dan" - kalimat
-    // bakunya sendiri memuat "Penggugat dan Tergugat", dan menghitung
-    // seluruhnya hanya menguji isi kalimat, bukan penyambungnya.
-    const daftar = ["perselisihan terus-menerus", "tidak memberi nafkah", "cemburu"];
-    const kalimat = pustaka.susunAlasan(daftar);
-    const terakhir = pustaka.KALIMAT.sebutanCiri["cemburu"];
-    expect(kalimat.endsWith(` dan ${terakhir}`)).toBe(true);
-    // Yang bukan terakhir disambung koma, bukan "dan".
-    expect(kalimat).toContain(`${pustaka.KALIMAT.sebutanCiri["perselisihan terus-menerus"]}, `);
+  it("5227 disusun sebagai fakta hukum, bukan deretan kalimat saksi", () => {
+    // Bentuk yang diminta, apa adanya: satu pelaku di depan, daftar perbuatan
+    // tanpa mengulang subjek, penyambung "serta", lalu perselisihan sebagai
+    // AKIBAT di ujung - bukan sebagai salah satu butir yang sejajar.
+    const ciri = [
+      "perselisihan terus-menerus",
+      "kekerasan dalam rumah tangga",
+      "tidak memberi nafkah",
+      "cemburu",
+    ];
+    expect(pustaka.susunAlasan(ciri, { pelaku: "Tergugat", lawan: "Penggugat" })).toBe(
+      "Tergugat melalaikan kewajiban nafkah lahir, bersikap cemburu berlebihan, serta " +
+        "melakukan Kekerasan Dalam Rumah Tangga (KDRT) yang memicu perselisihan terus-menerus " +
+        "dengan Penggugat"
+    );
+  });
+
+  it("urutan kalimatnya tidak bergantung pada urutan ciri ditemukan", () => {
+    // Ciri ditemukan menurut cara saksi bertutur, dan itu berbeda tiap
+    // perkara. Kalimat putusan tidak boleh ikut berubah karenanya.
+    const pihak = { pelaku: "Tergugat", lawan: "Penggugat" };
+    const a = ["cemburu", "tidak memberi nafkah", "kekerasan dalam rumah tangga"];
+    const b = ["kekerasan dalam rumah tangga", "cemburu", "tidak memberi nafkah"];
+    expect(pustaka.susunAlasan(a, pihak)).toBe(pustaka.susunAlasan(b, pihak));
+  });
+
+  it("pelakunya Termohon pada cerai talak, bukan dipatok Tergugat", () => {
+    // Dibaca dari variabel 0047 di halaman ABT, bukan diturunkan dari
+    // klasifikasi perkara.
+    const kalimat = pustaka.susunAlasan(["tidak memberi nafkah", "perselisihan terus-menerus"], {
+      pelaku: "Termohon",
+      lawan: "Pemohon",
+    });
+    expect(kalimat.startsWith("Termohon ")).toBe(true);
+    expect(kalimat.endsWith("dengan Pemohon")).toBe(true);
+  });
+
+  it("subjeknya disebut SEKALI, tidak diulang tiap butir", () => {
+    const kalimat = pustaka.susunAlasan(
+      ["tidak memberi nafkah", "cemburu", "kekerasan dalam rumah tangga"],
+      { pelaku: "Tergugat", lawan: "Penggugat" }
+    );
+    expect(kalimat.split("Tergugat").length - 1).toBe(1);
+  });
+
+  it("dua butir disambung tanpa koma sebelum serta", () => {
+    // "A, serta B" bukan bentuk yang lazim - komanya memisahkan dua hal yang
+    // justru sudah tersambung.
+    const kalimat = pustaka.susunAlasan(["tidak memberi nafkah", "cemburu"], {
+      pelaku: "Tergugat",
+      lawan: "Penggugat",
+    });
+    expect(kalimat).toContain(" serta ");
+    expect(kalimat).not.toContain(", serta ");
+  });
+
+  it("perselisihan sendirian memakai rumusan bersama", () => {
+    // Tidak ada perbuatan untuk digantungi akibat, jadi kalimat berpelaku
+    // tunggal tidak dapat disusun.
+    expect(pustaka.susunAlasan(["perselisihan terus-menerus"], {
+      pelaku: "Tergugat",
+      lawan: "Penggugat",
+    })).toBe("Antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan pertengkaran");
+  });
+
+  it("tanpa ciri sama sekali tidak menghasilkan kalimat karangan", () => {
+    expect(pustaka.susunAlasan([], { pelaku: "Tergugat", lawan: "Penggugat" })).toBe("");
   });
 
   it("pustaka kalimat TIDAK memuat bunyi pasal", () => {
@@ -832,5 +894,197 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     const isi = alat();
     expect(isi).toContain("KENAPA BERKAS BARU, DAN BUKAN MEMAKAI YANG DI konten.js");
     expect(isi).toContain("utangnya dicatat");
+  });
+});
+
+describe("nomor 9 - satu tekanan CETAK, tiga berkas", () => {
+  const cetak = () =>
+    readFileSync(path.resolve(process.cwd(), "../aleta_bot/services/abtCetakService.js"), "utf8");
+  const dockerfile = () =>
+    readFileSync(path.resolve(process.cwd(), "../aleta_bot/Dockerfile"), "utf8");
+
+  it("RTF diambil dari alamat tautan CETAK itu sendiri", () => {
+    // Bukan alamat yang disusun ulang: tautannya sudah memuat enc_dir,
+    // enc_file, perkara_id, dan perk_temp yang tersandi, dan menyusunnya ulang
+    // berarti menyandikan ulang apa yang sudah benar.
+    const isi = abtJs();
+    expect(isi).toContain("terbitkanTigaBerkas(tautan.href, jatiDiri, lapor)");
+  });
+
+  it("RTF diunduh SEGERA, sebelum dua langkah berikutnya", () => {
+    // Kalau PDF atau anonimnya gagal, yang paling dibutuhkan sudah di tangan.
+    const isi = abtJs();
+    const potong = isi.slice(isi.indexOf("async function terbitkanTigaBerkas"));
+    expect(potong.indexOf('hasil.rtf = "tersimpan"')).toBeLessThan(potong.indexOf("ALETA_API_PDF"));
+    expect(potong.indexOf('hasil.rtf = "tersimpan"')).toBeLessThan(potong.indexOf("main/anonim"));
+  });
+
+  it("PDF dibuat dari RTF yang BUKAN anonim", () => {
+    // Yang ditandatangani putusannya, bukan versi anonimnya. Anonimnya untuk
+    // diunggah ke direktori putusan, dan di sana bentuk yang diminta RTF.
+    const isi = abtJs();
+    // Dipotong sampai penanda bagian ketiga, bukan sampai kalimat kabarnya -
+    // catatan pembuka bagian ketiga sudah menyebut "anonim", dan memasukkannya
+    // ke dalam potongan membuat penjaga ini berbunyi atas catatannya sendiri.
+    const potong = isi.slice(
+      isi.indexOf("Mengubah menjadi PDF"),
+      isi.indexOf("// ── 3. Anonim")
+    );
+    expect(potong).toContain("base64DariBuffer(isiRtf)");
+    expect(potong).not.toContain("anonim");
+  });
+
+  it("anonimisasi dikerjakan ABT, bukan disalin ke ALETA", () => {
+    // Aturan penyamarannya - nama, NIK, alamat, pekerjaan, nomor kutipan akta
+    // nikah, surel - sudah ditetapkan di ABT. Menyalinnya berarti dua aturan
+    // yang akan berselisih diam-diam.
+    const isi = abtJs();
+    expect(isi).toContain('borang.set("perkara_id"');
+    expect(isi).toContain('borang.set("perkara_no"');
+    expect(isi).toContain('"file_putusan"');
+    expect(isi).toContain("/main/anonim");
+  });
+
+  it("jawaban 200 yang bukan RTF dianggap gagal", () => {
+    // ABT menjawab 200 baik untuk RTF anonim maupun untuk halaman berisi
+    // keterangan gagal. Halaman HTML yang tersimpan sebagai .rtf adalah
+    // kegagalan yang paling sulit dikenali.
+    const isi = abtJs();
+    expect(isi).toContain("Proses Anonim Gagal");
+    expect(isi).toContain("ABT tidak mengembalikan berkas RTF");
+  });
+
+  it("satu langkah gagal tidak menghentikan langkah lain", () => {
+    const isi = abtJs();
+    expect(isi).toContain("RTF ${hasil.rtf} · PDF ${hasil.pdf} · anonim ${hasil.anonim}");
+  });
+
+  it("nama berkas disusun ALETA, bukan diambil dari header ABT", () => {
+    // Nama blangko memuat kurung siku dan garis miring - "[01] [Kabul
+    // Verstek] Cerai (Format Lengkap)" - dan yang bergaris miring tidak dapat
+    // menjadi nama berkas di mana pun.
+    const isi = abtJs();
+    expect(isi).toContain("function namaBerkas(");
+    expect(isi).toContain('replace(/[\\\\/:*?"<>|]+/g, "_")');
+  });
+
+  it("saklarnya bawaannya MATI dan dibaca sebelum klik", () => {
+    // chrome.storage hanya asinkron, dan pendengar klik harus memutuskan
+    // SEKARANG apakah tautannya ditahan.
+    const isi = abtJs();
+    expect(isi).toContain("let cetakTigaMenyala = false;");
+    expect(isi).toContain("if (!cetakTigaMenyala) return;");
+    expect(popupJs()).toContain("simpan.cetakTigaBerkas === true");
+  });
+
+  it("perubahan saklar dari popup berlaku seketika", () => {
+    // Yang baru menyalakannya lalu menekan CETAK tidak seharusnya mendapat
+    // satu berkas karena halamannya belum disegarkan.
+    const isi = abtJs();
+    expect(isi).toContain("chrome.storage.onChanged.addListener");
+  });
+
+  it("penjaga kelengkapan berjalan LEBIH DULU", () => {
+    // Menerbitkan putusan yang barusan diputuskan belum siap adalah kebalikan
+    // dari apa yang diminta penjaga itu.
+    const isi = abtJs();
+    expect(isi).toContain("if (peristiwa.defaultPrevented) return;");
+  });
+});
+
+describe("nomor 9 - layanan konversi RTF ke PDF", () => {
+  const cetak = () =>
+    readFileSync(path.resolve(process.cwd(), "../aleta_bot/services/abtCetakService.js"), "utf8");
+  const layananPdf = require_(
+    path.resolve(process.cwd(), "../aleta_bot/services/abtCetakService.js")
+  ) as {
+    rtfKePdf: (b: Buffer) => Promise<{ ok: boolean; alasan?: string }>;
+    periksaMesin: () => Promise<{ ada: boolean; sebab?: string; versi?: string }>;
+    BATAS_BYTE: number;
+  };
+
+  it("berkas kosong ditolak", async () => {
+    expect((await layananPdf.rtfKePdf(Buffer.alloc(0))).alasan).toContain("kosong");
+  });
+
+  it("yang bukan RTF ditolak dari ISINYA, bukan dari namanya", async () => {
+    // Nama berkas dan tipe yang dikirim dapat ditulis siapa saja.
+    const hasil = await layananPdf.rtfKePdf(Buffer.from("%PDF-1.4 berpura-pura rtf"));
+    expect(hasil.ok).toBe(false);
+    expect(hasil.alasan).toContain("bukan berkas RTF");
+    expect(cetak()).toContain('subarray(0, 5).toString("latin1")');
+  });
+
+  it("berkas kebesaran ditolak sebelum soffice dijalankan", async () => {
+    const hasil = await layananPdf.rtfKePdf(Buffer.alloc(layananPdf.BATAS_BYTE + 1, 0x41));
+    expect(hasil.ok).toBe(false);
+    expect(hasil.alasan).toContain("melewati batas");
+  });
+
+  it("mesin yang tidak ada disebutkan sebabnya, bukan 'gagal'", async () => {
+    // Diuji di lingkungan pengembangan yang memang tidak punya soffice -
+    // itulah keadaan yang harus terbaca jelas, sebab ia yang paling mungkin
+    // terjadi sesudah pemasangan yang lupa memuat LibreOffice.
+    const mesin = await layananPdf.periksaMesin();
+    if (mesin.ada) {
+      expect(mesin.versi).toContain("LibreOffice");
+    } else {
+      expect(mesin.sebab).toContain("LibreOffice");
+    }
+  });
+
+  it("folder sekali pakai dibuang berhasil maupun gagal", async () => {
+    // Folder yang tertinggal berisi putusan lengkap beserta nama pihaknya.
+    const isi = cetak();
+    expect(isi).toContain("await fs.mkdtemp(");
+    const potong = isi.slice(isi.indexOf("} finally {"));
+    expect(potong).toContain("fs.rm(folder, { recursive: true, force: true })");
+  });
+
+  it("nama berkas ditentukan di dalam, bukan diterima dari luar", async () => {
+    // Nama dari luar dapat memuat "../" dan menulis ke tempat yang tidak
+    // dimaksudkan.
+    const isi = cetak();
+    expect(isi).toContain('path.join(folder, "putusan.rtf")');
+    expect(isi).toContain('path.join(folder, "putusan.pdf")');
+  });
+
+  it("soffice punya profil tersendiri per konversi", async () => {
+    // Dua konversi bersamaan yang berbagi profil bertengkar, dan salah satunya
+    // gagal tanpa keterangan - cara yang sama dipakai ABT.
+    expect(cetak()).toContain("-env:UserInstallation=file://");
+  });
+
+  it("hasilnya diperiksa benar PDF, bukan sekadar ada", async () => {
+    expect(cetak()).toContain('startsWith("%PDF-")');
+  });
+
+  it("LibreOffice terpasang di image bot", () => {
+    // Mesin yang SAMA dengan yang dipakai ABT untuk mengubah docx ke rtf.
+    const isi = dockerfileBot();
+    expect(isi).toContain("libreoffice-writer");
+    expect(isi).toContain("fonts-liberation");
+  });
+
+  it("batas badan dinaikkan HANYA untuk rute konversi", () => {
+    // Menaikkan batas umum berarti membuka tiap rute lain untuk badan puluhan
+    // megabita, tanpa satu pun yang membutuhkannya.
+    const app = readFileSync(path.resolve(process.cwd(), "../aleta_bot/app.js"), "utf8");
+    expect(app).toContain('app.use("/internal/aleta-bot/abt/pdf", express.json({ limit: "28mb" }))');
+    expect(app).toContain('app.use(express.json({ limit: "1mb" }))');
+    expect(app.indexOf('"/internal/aleta-bot/abt/pdf"')).toBeLessThan(
+      app.indexOf('app.use(express.json({ limit: "1mb" }))')
+    );
+  });
+
+  it("batas waktu konversi lebih longgar daripada batas gerbang biasa", () => {
+    // Dengan batas bawaan 8 detik, konversi PERTAMA tiap hari selalu gagal
+    // dengan sebab yang menyesatkan.
+    const klien = readFileSync(
+      path.resolve(process.cwd(), "src/server/modules/aleta-bot/whatsapp-gateway-client.ts"),
+      "utf8"
+    );
+    expect(klien).toContain("TIMEOUT_KONVERSI_MS");
+    expect(klien).toContain("timeoutMs: TIMEOUT_KONVERSI_MS");
   });
 });

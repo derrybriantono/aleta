@@ -72,6 +72,15 @@ function getGatewayTimeoutMs(): number {
  */
 const TIMEOUT_PERAMBAN_MS = Number(process.env.ALETA_BOT_GATEWAY_TIMEOUT_PERAMBAN_MS || 90_000);
 
+/**
+ * Batas waktu untuk konversi RTF menjadi PDF di sisi bot.
+ *
+ * Sedikit lebih longgar daripada batas soffice sendiri (90 detik), supaya yang
+ * menyerah lebih dulu adalah soffice - dan sebabnya yang tersampaikan ke
+ * petugas adalah sebab yang sesungguhnya, bukan "bot tidak menjawab".
+ */
+const TIMEOUT_KONVERSI_MS = Number(process.env.ALETA_BOT_GATEWAY_TIMEOUT_KONVERSI_MS || 120_000);
+
 /** Batas waktu untuk pemanggilan yang menyentuh banyak berkas di disk. */
 const TIMEOUT_BERKAS_MS = Number(process.env.ALETA_BOT_GATEWAY_TIMEOUT_BERKAS_MS || 120_000);
 
@@ -2001,6 +2010,8 @@ export async function getGatewayAbtUsulan(muatan: {
   saksi1?: string;
   saksi2?: string;
   tanggalSidang?: string;
+  pelaku?: string;
+  lawan?: string;
 }) {
   return gatewayFetch<{
     sipp: Record<string, unknown> | null;
@@ -2009,6 +2020,35 @@ export async function getGatewayAbtUsulan(muatan: {
     method: "POST",
     body: JSON.stringify(muatan),
   });
+}
+
+/**
+ * Mengubah RTF putusan menjadi PDF lewat LibreOffice di container bot.
+ *
+ * Isinya dikirim base64 dan tidak disimpan di mana pun di jalur ini.
+ */
+export async function getGatewayAbtPdf(rtfBase64: string) {
+  return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string }>(
+    "/internal/aleta-bot/abt/pdf",
+    {
+      method: "POST",
+      body: JSON.stringify({ rtfBase64 }),
+      // ======================================================================
+      // BATAS 8 DETIK TERLALU PENDEK UNTUK MENJALANKAN LibreOffice
+      // ======================================================================
+      //
+      // Batas bawaan pas untuk pemanggilan yang sekadar membaca basis data.
+      // Konversi ini bukan itu: soffice yang baru pertama dijalankan sesudah
+      // container hidup harus menyiapkan profilnya lebih dulu, dan itu saja
+      // dapat sepuluh sampai dua puluh detik. Pemanggilan berikutnya jauh
+      // lebih cepat.
+      //
+      // Dengan batas bawaan, konversi PERTAMA tiap hari akan selalu gagal
+      // dengan sebab yang menyesatkan - "bot tidak dapat dihubungi" - padahal
+      // botnya sedang bekerja dan hasilnya sebentar lagi datang.
+      timeoutMs: TIMEOUT_KONVERSI_MS,
+    }
+  );
 }
 
 /** Menitipkan permintaan penarikan satu perkara dari e-Court. */
