@@ -669,6 +669,103 @@ export function AletaEcourtPengguna() {
           </div>
 
           {/* ================================================================
+              HALAMAN BLANGKO ABT - SETENGAH YANG SELAMA INI TIDAK DISEBUT
+
+              Seluruh keterangan di atas berbicara tentang SIPP. Ekstensi yang
+              sama juga bekerja di halaman blangko ABT, dan yang dikerjakannya
+              di sana sama besarnya - tetapi tidak pernah disebutkan di mana
+              pun. Petugas yang membaca halaman ini menyimpulkan ekstensinya
+              tidak menyentuh ABT sama sekali, lalu mengerjakan dengan tangan
+              apa yang sudah ada tombolnya.
+              ================================================================ */}
+          <div className="rounded border border-border bg-muted/30 p-3">
+            <p className="text-sm font-medium">Di halaman blangko ABT</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Panel yang sama muncul di halaman blangko — dapat digeser, diubah ukurannya,
+              diciutkan jadi logo, dan bertema sama dengan panel SIPP.
+            </p>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              <li>
+                <strong className="text-foreground">Penjaga CETAK</strong> — memeriksa baris
+                variabel sebelum dicetak, dan menahan yang isinya ternyata bunyi galat mesin.
+                Kalimat semacam itu tampak seperti keterangan dan tercetak sebagai pertimbangan
+                hukum.
+              </li>
+              <li>
+                <strong className="text-foreground">Menyunting variabel</strong> — lewat jalur
+                penyuntingan milik ABT sendiri, bukan menulis ke basis datanya.
+              </li>
+              <li>
+                <strong className="text-foreground">Membersihkan keterangan saksi</strong> —
+                kalimat penutup yang berulang dibuang, dan sidang tempat saksi itu diperiksa
+                dicari sendiri.
+              </li>
+              <li>
+                <strong className="text-foreground">Alasan-Alasan Cerai</strong> — yang diusulkan
+                hanya yang BERSESUAIAN antara kedua saksi dan yang memang didalilkan gugatan.
+                Alasan yang hanya diketahui satu saksi disebut terpisah, tidak dicampurkan.
+              </li>
+              <li>
+                <strong className="text-foreground">Merapikan posita</strong> — dirapikan di kolom
+                posita SIPP-nya, sehingga berubah pula di ABT. Isinya dijaga: yang berbeda satu
+                huruf pun ditolak.
+              </li>
+              <li>
+                <strong className="text-foreground">CETAK</strong> — satu tekanan menghasilkan tiga
+                berkas sekaligus: naskah, naskah anonim, dan PDF-nya.
+              </li>
+            </ul>
+          </div>
+
+          {/* ================================================================
+              APA YANG TETAP JALAN KETIKA ALETA MATI
+
+              Ditulis di sini karena satu sebab yang terukur: ketika ALETA
+              tidak terjangkau, yang disimpulkan petugas SELALU sama - ekstensinya
+              rusak. Lalu panelnya ditutup, dan sesudah beberapa kali begitu ia
+              berhenti memakainya, padahal bagian terbesar ekstensi ini tidak
+              pernah menyentuh ALETA sama sekali.
+
+              Daftar yang sama diucapkan pesan galat ekstensi. Keduanya HARUS
+              sama - halaman yang menjanjikan sesuatu tetap jalan sementara
+              pesan galatnya berkata lain lebih membingungkan daripada tidak
+              ada keterangan sama sekali. Kesamaannya dijaga pengujian.
+              ================================================================ */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded border border-emerald-300 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/40">
+              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                Tetap jalan walau ALETA mati
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-emerald-900/80 dark:text-emerald-200/80">
+                <li>Tema gelap dan terang</li>
+                <li>Panel — geser, ukuran, lencana, posisi tersimpan</li>
+                <li>Penandaan halaman</li>
+                <li>Penjaga CETAK</li>
+                <li>Sunting variabel ABT</li>
+                <li>Pembersih keterangan saksi</li>
+                <li>CETAK naskah dan anonimnya</li>
+              </ul>
+            </div>
+            <div className="rounded border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40">
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                Menunggu ALETA
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-amber-900/80 dark:text-amber-200/80">
+                <li>Usulan dari keterangan saksi</li>
+                <li>Huruf alasan</li>
+                <li>Perapian posita</li>
+                <li>PDF</li>
+                <li>Penunjukan</li>
+                <li>Data Umum</li>
+              </ul>
+              <p className="mt-2 text-xs text-amber-900/70 dark:text-amber-200/70">
+                Keenam inilah yang memang lewat portal, dan tidak ada jalan lain. Pesan galat
+                ekstensi menyebutkan daftar yang sama.
+              </p>
+            </div>
+          </div>
+
+          {/* ================================================================
               BATASNYA DISEBUT SENDIRI
 
               Lapisan yang menempel di aplikasi orang lain harus menyatakan
