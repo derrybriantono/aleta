@@ -3813,6 +3813,35 @@ export function AletaEcourtSidang({
                             ) : null}
 
                             {/* ==============================================
+                                KEHADIRAN - PINDAH DARI KISI KARTU YANG DIHAPUS
+                                ==============================================
+
+                                Ia dulu hanya ada di kisi kartu dalam panel
+                                alur, dan hilang bersama kisinya. Yang paling
+                                menentukan di antaranya "potensi verstek":
+                                hanya penggugat/pemohon yang hadir, dan itu
+                                gejala yang membuka jalan putusan verstek.
+                                Keputusannya tetap milik majelis - karena itu
+                                disebut potensi, bukan kesimpulan.
+
+                                Satu penanda saja per baris: keempat keadaan
+                                kehadiran saling meniadakan. */}
+                            {potensiVerstek(baris.dihadiriOleh) ? (
+                              <Badge
+                                variant="danger"
+                                title="Hanya penggugat/pemohon yang hadir pada sidang ini - membuka jalan putusan verstek. Keputusannya milik majelis."
+                              >
+                                potensi verstek
+                              </Badge>
+                            ) : baris.dihadiriOleh === 1 ? (
+                              <Badge variant="success" title="Kedua belah pihak hadir.">
+                                contradictoir
+                              </Badge>
+                            ) : baris.dihadiriOleh ? (
+                              <Badge variant="muted">{SEBUTAN_HADIR[baris.dihadiriOleh]}</Badge>
+                            ) : null}
+
+                            {/* ==============================================
                                 KUASA DI KEDUA MODE
                                 ==============================================
 
