@@ -308,8 +308,24 @@ describe("dua cacat yang dilaporkan dari layar", () => {
       path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippPositaService.js"),
       "utf8"
     );
-    expect(isi).toContain('"$1$2\\n   $3. "');
-    expect(isi).not.toContain('"$1\\n   $2. "');
+    // Penanda butir kini harus BERDIRI SENDIRI - didahului tanda baca atau
+    // spasi, tidak boleh didahului huruf. Tanpa syarat itu, "Usia 5 tahun."
+    // terpecah menjadi "tahu" dan butir baru "n.".
+    expect(isi).toContain('const SEBELUM_BUTIR = ".;:,)";');
+    expect(isi).toContain("${awal}<br>   ${huruf}. ");
+  });
+
+  it("pemisahnya <br>, sebab RTF mengabaikan ganti baris", () => {
+    // cleanHtmlTagSpecial menerjemahkan <br> dan </p> menjadi \par, dan
+    // TIDAK menerjemahkan ganti baris. Diukur: 6.269 dari 8.097 posita di
+    // PA Donggala memuat </p> - itulah yang tercetak rapi selama ini.
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippPositaService.js"),
+      "utf8"
+    );
+    expect(isi).toContain('/\\n+/g, "<br>"');
+    // <br> ikut dibuang pembanding isi - ia pemisah yang boleh disisipkan.
+    expect(isi).toContain("<br" + String.fromCharCode(92) + "s*");
   });
 
   it("uji kering tidak menulis apa pun", () => {

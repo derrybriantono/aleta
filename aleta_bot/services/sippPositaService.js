@@ -69,73 +69,135 @@ function runQuery(sql, params) {
 }
 
 /**
- * Membuang SELURUH ruang kosong.
+ * Membuang ruang kosong DAN pemisah yang boleh disisipkan perapian.
  *
- * Bukan hanya merapatkan spasi ganda: spasi, tab, ganti baris, dan spasi tak
- * terputus (yang dimasukkan penyunting HTML) semuanya dibuang. Perbandingan
- * pada bentuk inilah yang membuktikan tidak ada huruf yang ditambah maupun
- * hilang.
+ * Perapian hanya menambahkan dua hal: ruang kosong dan tag <br>. Perbandingan
+ * pada bentuk yang membuang keduanya karena itu membuktikan tidak satu huruf
+ * pun kata gugatan yang ditambah, dikurangi, atau diubah.
+ *
+ * <br> ikut dibuang sejak perapian berhenti memakai ganti baris - lihat
+ * catatan panjang di rapikanTeksPosita tentang kenapa ganti baris tidak
+ * pernah sampai ke dokumen cetak.
  */
 function tanpaRuang(teks) {
-  return String(teks || "").replace(/[\s ]+/g, "");
+  return String(teks || "")
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/[\s ]+/g, "");
 }
 
 /**
  * ============================================================================
- * PERAPIANNYA DIKERJAKAN DI SINI, ATAS TEKS MENTAH SIPP
+ * PEMISAHNYA <br>, BUKAN GANTI BARIS - SEBAB RTF TIDAK MENGENAL GANTI BARIS
  * ============================================================================
  *
- * Dulu ekstensi yang merapikan lalu mengirimkan hasilnya. Itu keliru, dan
- * kekeliruannya menampakkan diri sebagai penolakan yang membingungkan:
- * petugas hanya menekan Terapkan, dan yang muncul "isi positanya berbeda".
+ * Bentuk pertamanya menyisipkan ganti baris. Positanya lalu tampak rapi di
+ * layar ABT dan di SIPP - dan tercetak MENEMPEL persis seperti semula di
+ * dokumen Word. Ganti baris tidak pernah sampai ke sana.
  *
- * Sebabnya teks yang dirapikan ekstensi BUKAN teks yang tersimpan di SIPP. Ia
- * innerText satu sel tabel - hasil peramban menggambar HTML: baris ganda
- * dirapatkan, entitas diterjemahkan, tag dibuang. Membandingkannya dengan isi
- * kolom di basis data membandingkan dua hal yang berbeda sejak awal.
+ * Sebabnya terbaca dari kode ABT. views/abt/preview.php mengambil berkas
+ * blangko RTF lalu menyerahkannya ke variabel_library, yang menjalankan
+ * TemplateHelper::cleanHtmlTagSpecial atas tiap nilai variabel. Fungsi itu
+ * menerjemahkan:
  *
- * Sekarang yang dibaca, dirapikan, dan dibandingkan satu teks yang sama:
- * kolom posita apa adanya. Ekstensi tidak lagi mengirim teks sama sekali - ia
- * hanya menyebut perkaranya. Itu sekaligus menutup kemungkinan peramban
- * mengirimkan posita karangan sendiri.
+ *   </p>       ->  \par
+ *   <br>       ->  \par
+ *   "   "      ->  \tab       (tiga spasi - itu yang dimaksud petunjuk hijau
+ *                              di borang ABT, "SPASI 3x berubah menjadi TAB")
+ *
+ * dan TIDAK menerjemahkan ganti baris sama sekali. Di dalam RTF, ganti baris
+ * mentah hanyalah spasi - ia diabaikan. Itu sebabnya positanya tetap menempel.
  *
  * ============================================================================
- * SATU TITIK YANG HILANG - DAN PAGARNYALAH YANG MENEMUKANNYA
+ * DIUKUR: BEGITULAH MEMANG SIPP MENYIMPANNYA
  * ============================================================================
  *
- * Pola anak butir yang lama memakai `\.?` untuk memakan titik di antara dua
- * butir, dan tidak pernah menuliskannya kembali. Pada posita yang benar-benar
- * ada di PA Donggala:
+ * Bukan pilihan yang dikarang. Dari 8.097 posita yang terisi di PA Donggala:
  *
- *   "...bersama teman-teman Tergugat.b. Setiap kali terjadi pertengkaran..."
+ *   6.269  memuat </p>      - inilah yang tercetak rapi selama ini
+ *     517  memuat <br>
+ *   8.089  memuat ganti baris, yang tidak berarti apa-apa bagi RTF
  *
- * titik sesudah "Tergugat" lenyap. Satu huruf, pada dalil gugatan.
+ * Perkara 510/Pdt.G/2026/PA.Dgl - yang dilaporkan menempel - tidak memuat
+ * satu pun tag: tidak </p>, tidak <br>. Karena itu ia tercetak sebagai satu
+ * gumpalan sementara ribuan perkara lain tidak.
  *
- * Pagar "isi tidak boleh berubah" itulah yang menangkapnya - bukan uji, bukan
- * pembacaan ulang. Ia menahan perapian yang cacat sebelum cacatnya sampai ke
- * basis data, dan pesan penolakannya yang membawa persoalan ini ke permukaan.
- * Titiknya kini ditangkap sebagai kelompok tersendiri dan dituliskan kembali.
+ * Maka pemisah yang dipakai di sini <br>: bentuk yang sudah dimengerti ABT,
+ * sudah dipakai ratusan posita, dan sudah dirender SIPP sebagai ganti baris di
+ * layarnya sendiri.
+ *
+ * ============================================================================
+ * "USIA 5 TAHUN. SAAT INI" - PEMECAHAN PALSU YANG LOLOS DARI PAGAR
+ * ============================================================================
+ *
+ * Pola anak butir yang lama menerima huruf kecil apa pun sebelum titik,
+ * termasuk huruf TERAKHIR SEBUAH KATA:
+ *
+ *   "...Usia 5 tahun. Saat ini anak tersebut..."
+ *              ^^^^^^ "n." dibaca sebagai penanda anak butir
+ *
+ * dan memecahnya menjadi "tahu" lalu butir baru "n. Saat ini". Itu terlihat
+ * di dokumen Word yang dilaporkan.
+ *
+ * Pagar isi TIDAK menangkapnya - dan tidak seharusnya: tidak ada huruf yang
+ * hilang, hanya berpindah baris. Yang salah aturannya, bukan penjaganya.
+ *
+ * Sekarang penanda anak butir harus berdiri sendiri: didahului TANDA BACA atau
+ * SPASI, tidak boleh didahului huruf. "tahun." karena itu tidak lagi terpecah,
+ * sementara "Tergugat.b." dan "karena a." tetap terpecah.
+ *
+ * Aturan yang sama dipasang pada butir induk, dan sebabnya sama: "berjumlah
+ * 15. Bahwa" jangan sampai terpecah menjadi "1" dan butir "5.".
  */
+
+/** Tanda baca yang boleh mendahului penanda butir. */
+const SEBELUM_BUTIR = ".;:,)";
+
 function rapikanTeksPosita(teks) {
   let hasil = String(teks || "").replace(/\r\n/g, "\n");
 
-  // Butir induk: "2017.2. Bahwa" -> "2017." baris baru "2. Bahwa".
-  // Hanya ruang kosong yang termakan di antara $1 dan angkanya.
-  hasil = hasil.replace(/([^\s\n])\s*(\d{1,2})\.\s+(?=[A-Z])/g, "$1\n$2. ");
+  // Sudah berupa HTML? Jangan sentuh ganti barisnya - ABT sudah mencetaknya
+  // rapi lewat </p>, dan menambahkan <br> di sela-selanya menghasilkan baris
+  // kosong berganda di dokumen.
+  const sudahHtml = /<\/p>|<br\s*\/?>/i.test(hasil);
 
-  // Anak butir: "Tergugat.b. Setiap" -> "Tergugat." baris baru "   b. Setiap".
-  // Titiknya DITANGKAP sebagai $2 dan dituliskan kembali - lihat catatan di
-  // atas. Tanpa itu ia hilang, dan pagar isi menolak seluruh perapiannya.
-  hasil = hasil.replace(/([^\s\n])\s*(\.?)\s*([a-z])\.\s+(?=[A-Z])/g, "$1$2\n   $3. ");
+  // Butir induk: "2017.2. Bahwa" -> "2017.<br>2. Bahwa"
+  // Harus didahului tanda baca. Tanpa syarat itu, "berjumlah 15. Bahwa"
+  // terpecah menjadi "1" dan butir baru "5.".
+  hasil = hasil.replace(
+    new RegExp(`([${SEBELUM_BUTIR}])[ \\t]*(\\d{1,2})\\.[ \\t]+(?=[A-Z])`, "g"),
+    "$1<br>$2. "
+  );
 
-  // Baris kosong berganda menjadi paragraf hampa di dokumen cetak, dan
-  // paragraf hampa di tengah pertimbangan terlihat seperti ada yang terhapus.
-  return hasil
-    .split("\n")
-    .map((baris) => baris.replace(/\s+$/, ""))
-    .filter((baris, i, semua) => baris.trim() !== "" || (i > 0 && semua[i - 1].trim() !== ""))
-    .join("\n")
-    .trim();
+  // Anak butir: "Tergugat.b. Setiap" atau "karena a. Tergugat".
+  //
+  // Satu lintasan untuk kedua bentuknya - kalau dipisah menjadi dua penggantian
+  // berurutan, yang kedua akan mengenai spasi yang baru saja ditulis yang
+  // pertama dan menghasilkan dua <br> berturut-turut.
+  hasil = hasil.replace(
+    new RegExp(`([${SEBELUM_BUTIR}]|[ \\t])[ \\t]*([a-z])\\.[ \\t]+(?=[A-Z])`, "g"),
+    (cocok, sebelum, huruf) => {
+      // Spasi yang mendahului tidak dituliskan kembali - ia digantikan
+      // pemisahnya. Tanda baca dituliskan kembali; ia bagian dari kalimatnya.
+      const awal = sebelum === " " || sebelum === "\t" ? "" : sebelum;
+      // Tiga spasi, bukan satu: cleanHtmlTagSpecial menerjemahkannya menjadi
+      // \tab, sehingga anak butirnya menggantung di bawah induknya.
+      return `${awal}<br>   ${huruf}. `;
+    }
+  );
+
+  // Ganti baris yang SUDAH ada ikut dijadikan pemisah sungguhan - hanya bila
+  // positanya belum berupa HTML. Tanpa langkah ini, posita yang di layar SIPP
+  // sudah tampak berbaris-baris tetap tercetak sebagai satu gumpalan.
+  if (!sudahHtml) {
+    hasil = hasil.replace(/\n+/g, "<br>");
+  }
+
+  // <br> berganda menjadi paragraf hampa di dokumen cetak, dan paragraf hampa
+  // di tengah dalil gugatan terlihat seperti ada butir yang terhapus.
+  hasil = hasil.replace(/(?:<br\s*\/?>\s*){2,}/gi, "<br>");
+
+  // Pemisah di ujung tidak memisahkan apa pun.
+  return hasil.replace(/^(?:\s|<br\s*\/?>)+/i, "").replace(/(?:\s|<br\s*\/?>)+$/i, "");
 }
 
 /**

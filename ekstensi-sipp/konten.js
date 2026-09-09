@@ -3766,6 +3766,14 @@ function pasangGeser(panel, kepala) {
 
   const saatGerak = (peristiwa) => {
     if (!menggeser) return;
+    // Ambang empat piksel memisahkan TARIKAN dari KLIK. Dibaca pendengar
+    // klik pada panel yang sedang berbentuk logo: tanpa pembeda ini, tiap
+    // tarikan berakhir dengan logo yang terbentang kembali - sebab tiap
+    // tarikan diakhiri satu klik di atas logonya, dan logonya jadi terasa
+    // tidak dapat dipindahkan sama sekali.
+    if (Math.abs(peristiwa.clientX - mulaiX) > 4 || Math.abs(peristiwa.clientY - mulaiY) > 4) {
+      panel.dataset.baruDigeser = "1";
+    }
     const kotak = panel.getBoundingClientRect();
     const aman = jepitKeLayar(
       awalKiri + (peristiwa.clientX - mulaiX),
@@ -4068,6 +4076,130 @@ async function periksaVersiEkstensi(isi) {
   }
 }
 
+/**
+ * ============================================================================
+ * SATU DERET TOMBOL KEPALA, DIPAKAI SEMUA PANEL
+ * ============================================================================
+ *
+ * Dulu hanya panel PERKARA yang punya deretan lengkapnya. Panel daftar
+ * perkara - yang tampil di dashboard, daftar perdata, dan tiap halaman SIPP
+ * yang bukan halaman perkara - hanya punya tema dan tutup.
+ *
+ * Akibatnya persis yang dilaporkan: di halaman perkara panelnya dapat
+ * diciutkan, dilayarpenuhkan, dan dikembalikan; di halaman lain tidak ada satu
+ * pun dari ketiganya. Satu ekstensi dengan dua perilaku pada dua halaman
+ * terbaca sebagai ekstensi yang rusak di salah satunya.
+ *
+ * Sekarang deretnya satu, dan keduanya memakainya.
+ */
+function pasangTombolKepala(panel, kepala, keadaanAwal) {
+  let keadaanPanel = keadaanAwal || null;
+  // Tombol tema - lihat pasangTema().
+  kepala.appendChild(tombolTema(panel));
+
+  // ==========================================================================
+  // LAYAR PENUH DAN CIUT MENJADI LOGO
+  // ==========================================================================
+  //
+  // Dua kebutuhan yang berlawanan, dan keduanya nyata pada hari kerja yang
+  // sama:
+  //
+  //   LAYAR PENUH  ketika membaca daftar panjang - tahapan, berkas, penilaian.
+  //                Panel selebar 340 piksel memaksa menggulung untuk sesuatu
+  //                yang sebenarnya muat pada layar.
+  //   LOGO         ketika sedang mengisi formulir SIPP dan panelnya menghalangi.
+  //                Menciutkan ke kepala saja masih menyisakan sebatang kotak
+  //                selebar panel yang menutupi kolom di bawahnya.
+  //
+  // Keduanya dapat dibatalkan dengan menekan tombol yang sama, dan keduanya
+  // TIDAK menghapus posisi tersimpan - panel kembali ke tempatnya semula.
+  const penuh = buatElemen("button", "aleta-penuh", "⛶");
+  penuh.type = "button";
+  penuh.title = "Layar penuh";
+  penuh.addEventListener("click", () => {
+    const sedangPenuh = panel.classList.toggle("aleta-panel-penuh");
+    penuh.textContent = sedangPenuh ? "⤢" : "⛶";
+    penuh.title = sedangPenuh ? "Keluar dari layar penuh" : "Layar penuh";
+    // Gaya inline dari geser dan ubah ukuran harus MENGALAH pada layar penuh,
+    // kalau tidak panel tetap terpaku di tempat lamanya walau kelasnya ganti.
+    // Nilainya tidak dibuang - hanya dilepas, dan dipasang kembali saat keluar.
+    if (sedangPenuh) {
+      for (const sifat of ["left", "top", "width", "height", "maxHeight"]) {
+        panel.style[sifat] = "";
+      }
+    } else if (keadaanPanel) {
+      terapkanPosisi(panel, keadaanPanel);
+    }
+  });
+  kepala.appendChild(penuh);
+
+
+  // Menekan panel yang sudah menjadi logo mengembalikannya. Pendengarnya
+  // dipasang pada PANEL, bukan pada tombol: dalam bentuk logo tidak ada satu
+  // pun tombol yang terlihat, dan yang terlihat hanya logonya.
+  // Menekan panel yang sudah menjadi logo mengembalikannya. Pendengarnya
+  // dipasang pada PANEL, bukan pada tombol: dalam bentuk logo tidak ada satu
+  // pun tombol yang terlihat, dan yang terlihat hanya logonya.
+  //
+  // Tarikan DIBEDAKAN dari klik lewat jarak - lihat pasangGeser. Tanpa
+  // pembeda itu, tiap tarikan berakhir dengan logo yang terbentang kembali,
+  // sebab tiap tarikan diakhiri satu klik di atas logonya. Itulah sebabnya
+  // logonya terasa tidak dapat dipindahkan sama sekali.
+  panel.addEventListener("click", (peristiwa) => {
+    if (!panel.classList.contains("aleta-panel-logo")) return;
+    if (panel.dataset.baruDigeser === "1") {
+      delete panel.dataset.baruDigeser;
+      return;
+    }
+    peristiwa.stopPropagation();
+    panel.classList.remove("aleta-panel-logo");
+    if (keadaanPanel) terapkanPosisi(panel, keadaanPanel);
+  });
+
+  // Tombol kembali ke bawaan.
+  //
+  // Panel yang dapat digeser dan diubah ukurannya juga dapat tersesat: ditarik
+  // ke luar layar, dikecilkan sampai tidak terbaca, atau dilebarkan menutupi
+  // SIPP. Tanpa jalan pulang, satu-satunya cara memperbaikinya adalah membongkar
+  // penyimpanan ekstensi - dan tidak ada petugas yang akan melakukan itu.
+  const bawaan = buatElemen("button", "aleta-bawaan", "↺");
+  bawaan.type = "button";
+  bawaan.title = "Kembalikan ukuran dan posisi panel ke semula";
+  bawaan.addEventListener("click", () => kembalikanBawaan(panel));
+  kepala.appendChild(bawaan);
+
+  // ==========================================================================
+  // MENCIUTKAN BERARTI MENJADI LOGO - BUKAN MENYISAKAN KOTAK
+  // ==========================================================================
+  //
+  // Dulu ada DUA tombol: berlian yang menciutkan menjadi logo, dan minus yang
+  // menyembunyikan isi tetapi menyisakan kepalanya - sebatang kotak selebar
+  // panel yang menutupi kolom di bawahnya tanpa menampilkan satu pun
+  // keterangan. Yang kedua itu yang dilaporkan sebagai "kotak melayang".
+  //
+  // Dua tombol yang sama-sama "mengecilkan" tetapi menghasilkan bentuk yang
+  // berbeda menuntut orang mengingat bedanya. Sekarang satu, dan hasilnya
+  // yang memang berguna: logo bulat yang dapat digeser dan dibuka lagi
+  // dengan satu klik.
+  const lipat = buatElemen("button", "aleta-lipat", "–");
+  lipat.type = "button";
+  lipat.title = "Ciutkan menjadi logo melayang";
+  lipat.addEventListener("click", () => {
+    panel.classList.remove("aleta-panel-penuh", "aleta-panel-ciut");
+    panel.classList.add("aleta-panel-logo");
+    for (const sifat of ["width", "height", "maxHeight"]) panel.style[sifat] = "";
+  });
+  kepala.appendChild(lipat);
+
+  // Saklar mati di kepala panel.
+  //
+  // Saklarnya memang sudah ada di popup ekstensi, tetapi popup itu berada
+  // di bilah ekstensi Chrome - tempat yang harus dicari lebih dulu. Petugas
+  // yang panelnya menghalangi pekerjaan butuh mematikannya SEKARANG, dan
+  // yang tidak menemukan saklarnya akan menutup panel berulang kali setiap
+  // halaman - lalu berhenti memakai ekstensinya sama sekali.
+  kepala.appendChild(tombolMatikan());
+}
 function susunPanel(konteks) {
   const panel = buatElemen("div", "aleta-panel");
   panel.id = PENANDA;
@@ -4121,129 +4253,7 @@ function susunPanel(konteks) {
     kepala.appendChild(kotakAkun);
   }
 
-  // Tombol tema - lihat pasangTema().
-  kepala.appendChild(tombolTema(panel));
-
-  // ==========================================================================
-  // LAYAR PENUH DAN CIUT MENJADI LOGO
-  // ==========================================================================
-  //
-  // Dua kebutuhan yang berlawanan, dan keduanya nyata pada hari kerja yang
-  // sama:
-  //
-  //   LAYAR PENUH  ketika membaca daftar panjang - tahapan, berkas, penilaian.
-  //                Panel selebar 340 piksel memaksa menggulung untuk sesuatu
-  //                yang sebenarnya muat pada layar.
-  //   LOGO         ketika sedang mengisi formulir SIPP dan panelnya menghalangi.
-  //                Menciutkan ke kepala saja masih menyisakan sebatang kotak
-  //                selebar panel yang menutupi kolom di bawahnya.
-  //
-  // Keduanya dapat dibatalkan dengan menekan tombol yang sama, dan keduanya
-  // TIDAK menghapus posisi tersimpan - panel kembali ke tempatnya semula.
-  const penuh = buatElemen("button", "aleta-penuh", "⛶");
-  penuh.type = "button";
-  penuh.title = "Layar penuh";
-  penuh.addEventListener("click", () => {
-    const sedangPenuh = panel.classList.toggle("aleta-panel-penuh");
-    penuh.textContent = sedangPenuh ? "⤢" : "⛶";
-    penuh.title = sedangPenuh ? "Keluar dari layar penuh" : "Layar penuh";
-    // Gaya inline dari geser dan ubah ukuran harus MENGALAH pada layar penuh,
-    // kalau tidak panel tetap terpaku di tempat lamanya walau kelasnya ganti.
-    // Nilainya tidak dibuang - hanya dilepas, dan dipasang kembali saat keluar.
-    if (sedangPenuh) {
-      for (const sifat of ["left", "top", "width", "height", "maxHeight"]) {
-        panel.style[sifat] = "";
-      }
-    } else if (keadaanPanel) {
-      terapkanPosisi(panel, keadaanPanel);
-    }
-  });
-  kepala.appendChild(penuh);
-
-  const jadiLogo = buatElemen("button", "aleta-jadilogo", "◇");
-  jadiLogo.type = "button";
-  jadiLogo.title = "Ciutkan menjadi logo melayang";
-  jadiLogo.addEventListener("click", () => {
-    panel.classList.remove("aleta-panel-penuh");
-    panel.classList.add("aleta-panel-logo");
-    for (const sifat of ["width", "height", "maxHeight"]) panel.style[sifat] = "";
-  });
-  kepala.appendChild(jadiLogo);
-
-  // Menekan panel yang sudah menjadi logo mengembalikannya. Pendengarnya
-  // dipasang pada PANEL, bukan pada tombol: dalam bentuk logo tidak ada satu
-  // pun tombol yang terlihat, dan yang terlihat hanya logonya.
-  panel.addEventListener("click", (peristiwa) => {
-    if (!panel.classList.contains("aleta-panel-logo")) return;
-    peristiwa.stopPropagation();
-    panel.classList.remove("aleta-panel-logo");
-    if (keadaanPanel) terapkanPosisi(panel, keadaanPanel);
-  });
-
-  // Tombol kembali ke bawaan.
-  //
-  // Panel yang dapat digeser dan diubah ukurannya juga dapat tersesat: ditarik
-  // ke luar layar, dikecilkan sampai tidak terbaca, atau dilebarkan menutupi
-  // SIPP. Tanpa jalan pulang, satu-satunya cara memperbaikinya adalah membongkar
-  // penyimpanan ekstensi - dan tidak ada petugas yang akan melakukan itu.
-  const bawaan = buatElemen("button", "aleta-bawaan", "↺");
-  bawaan.type = "button";
-  bawaan.title = "Kembalikan ukuran dan posisi panel ke semula";
-  bawaan.addEventListener("click", () => kembalikanBawaan(panel));
-  kepala.appendChild(bawaan);
-
-  // ==========================================================================
-  // MENCIUTKAN HARUS BENAR-BENAR MENCIUT
-  // ==========================================================================
-  //
-  // Menyembunyikan .aleta-isi saja TIDAK cukup. Begitu panel pernah diubah
-  // ukurannya, tingginya terpatok pada gaya inline (lihat terapkanPosisi), dan
-  // menyembunyikan isinya menyisakan kotak kosong sebesar semula - terbaca
-  // sebagai tombol yang tidak bekerja, bukan sebagai panel yang menciut.
-  //
-  // Karena itu tingginya ikut dilepas saat menciut, dan DIKEMBALIKAN saat
-  // dibentangkan lagi. Melepasnya tanpa mengingat berarti ukuran yang sudah
-  // diatur pemakainya hilang tiap kali panel diciutkan - kehilangan kecil yang
-  // menjengkelkan justru karena terjadi berulang.
-  let tinggiSebelumCiut = "";
-  let batasTinggiSebelumCiut = "";
-
-  const lipat = buatElemen("button", "aleta-lipat", "–");
-  lipat.type = "button";
-  lipat.title = "Ciutkan panel - hanya kepala yang tersisa";
-  lipat.addEventListener("click", () => {
-    const isi = panel.querySelector(".aleta-isi");
-    const sedangCiut = isi.style.display === "none";
-
-    if (sedangCiut) {
-      isi.style.display = "";
-      panel.style.height = tinggiSebelumCiut;
-      panel.style.maxHeight = batasTinggiSebelumCiut;
-      panel.classList.remove("aleta-panel-ciut");
-      lipat.textContent = "–";
-      lipat.title = "Ciutkan panel - hanya kepala yang tersisa";
-      return;
-    }
-
-    tinggiSebelumCiut = panel.style.height || "";
-    batasTinggiSebelumCiut = panel.style.maxHeight || "";
-    isi.style.display = "none";
-    panel.style.height = "";
-    panel.style.maxHeight = "";
-    panel.classList.add("aleta-panel-ciut");
-    lipat.textContent = "+";
-    lipat.title = "Bentangkan panel";
-  });
-  kepala.appendChild(lipat);
-
-  // Saklar mati di kepala panel.
-  //
-  // Saklarnya memang sudah ada di popup ekstensi, tetapi popup itu berada
-  // di bilah ekstensi Chrome - tempat yang harus dicari lebih dulu. Petugas
-  // yang panelnya menghalangi pekerjaan butuh mematikannya SEKARANG, dan
-  // yang tidak menemukan saklarnya akan menutup panel berulang kali setiap
-  // halaman - lalu berhenti memakai ekstensinya sama sekali.
-  kepala.appendChild(tombolMatikan());
+  pasangTombolKepala(panel, kepala, keadaanPanel);
 
   panel.appendChild(kepala);
   pasangGeser(panel, kepala);
@@ -4687,6 +4697,21 @@ function susunPanelDaftar(ringkasan) {
   panel.id = PENANDA;
 
   const kepala = buatElemen("div", "aleta-kepala");
+
+  // Logo dipasang di SINI juga, bukan hanya di panel perkara: dalam bentuk
+  // logo melayang, logo inilah SATU-SATUNYA yang terlihat. Tanpa ia, yang
+  // tersisa lingkaran kosong yang tidak dapat dikenali sebagai apa pun.
+  try {
+    const logo = document.createElement("img");
+    logo.className = "aleta-logo";
+    logo.alt = "";
+    logo.src = chrome.runtime.getURL("ikon/aleta-32.png");
+    logo.addEventListener("error", () => logo.remove());
+    kepala.appendChild(logo);
+  } catch {
+    /* di luar konteks ekstensi: kepala tetap tampil tanpa logo */
+  }
+
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
   const akun = namaPenggunaSipp();
   if (akun) {
@@ -4694,9 +4719,14 @@ function susunPanelDaftar(ringkasan) {
     kotakAkun.title = `Halaman SIPP ini sedang dibuka dengan akun ${akun}.`;
     kepala.appendChild(kotakAkun);
   }
-  kepala.appendChild(tombolTema(panel));
-  kepala.appendChild(tombolMatikan());
+
+  // Deret tombol yang SAMA dengan panel perkara - lihat pasangTombolKepala.
+  // Sebelumnya hanya tema dan tutup, sehingga di dashboard dan daftar perkara
+  // panelnya tidak dapat diciutkan maupun dilayarpenuhkan sama sekali.
+  pasangTombolKepala(panel, kepala, null);
   panel.appendChild(kepala);
+  pasangGeser(panel, kepala);
+  pasangUbahUkuran(panel);
 
   const isi = buatElemen("div", "aleta-isi");
   isi.appendChild(

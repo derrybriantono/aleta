@@ -2797,3 +2797,138 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.footer, .copyr
   background: #0f2f22 !important;
   color: #cfe3d8 !important;
 }
+
+/* ==========================================================================
+   BORANG SEMBUL ABT - "EDIT VARIABEL"
+   ==========================================================================
+
+   Ia satu-satunya permukaan ABT yang masih menyilaukan pada tema gelap, dan
+   justru ia yang paling sering dibuka: tiap penyuntingan variabel lewat sana.
+
+   Kelasnya bukan kelas jendela sembul yang lazim - bukan .modal, bukan
+   .mfp-content. Dibaca dari views/abt/popup_data.php:
+
+     .pop_up                        pembungkusnya
+     .payment-online-form-left      kartu putihnya
+     .w3-agileits                   kelas pendamping tema aslinya
+     .btn.btn-primary.btn-lg        judul "Edit Variabel" - tombol, bukan judul
+     .payment-sendbtns              baris tombol simpan
+     .color-sendbtns1               tombol Simpan yang kuning
+
+   Ditulis satu per satu, bukan dengan pemilih borong: menggelapkan setiap div
+   di dalam sembulnya ikut menggelapkan kotak yang memang sudah benar.
+   ========================================================================== */
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.pop_up, .payment-online-form-left, .w3-agileits, .payment-sendbtns, .clearfix) {
+  background: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* Judul sembulnya digambar sebagai tombol biru. Ia bukan tombol - tidak dapat
+   ditekan - jadi warnanya diturunkan menjadi kepala kartu, bukan tombol yang
+   menggoda untuk diklik. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up .btn-primary {
+  background: var(--s-hijau-tua) !important;
+  border-color: var(--s-garis-hijau) !important;
+  color: #dff0e6 !important;
+}
+
+/* Baris keterangan variabel: "Nomor Variabel", "Tipe Variabel", dan nilainya. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up :is(label, span, div, td, th, p, b, strong) {
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up :is(input, textarea, select, .form-control) {
+  background-color: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* Petunjuk hijau "SPASI 3x berubah menjadi TAB" - hijau tuanya tenggelam. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up :is(font, .text-green, [style*="color:green"], [style*="color: green"]) {
+  color: #7fd0a6 !important;
+}
+
+/* Tombol Simpan tetap kuning - ia satu-satunya tindakan di jendela itu, dan
+   menurunkannya membuat orang mencari-cari. Hanya terangnya yang diredam. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .color-sendbtns1 {
+  background: #e0a52f !important;
+  color: #201700 !important;
+  border-color: #b8861f !important;
+}
+
+/* ==========================================================================
+   DASHBOARD DAN HALAMAN SIPP YANG BUKAN HALAMAN PERKARA
+   ==========================================================================
+
+   Peta SIPP di atas ditulis dari halaman detail perkara - .detil,
+   #tableDetilPerkara, #infoPerkara. Halaman depan memakai kerangka AdminLTE
+   yang lain sama sekali: .box beserta kepala, badan, dan kakinya, .small-box,
+   .info-box, serta .tab-content untuk deretan tab Banding/Kasasi/Eksekusi.
+
+   Yang tampak di layar: tabel statistik perkara berlatar terang di tengah
+   halaman gelap - satu-satunya benda yang menyilaukan pada halaman yang paling
+   sering dibuka pertama kali setiap pagi.
+   ========================================================================== */
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box, .box-header, .box-body, .box-footer, .small-box, .info-box, .info-box-content, .tab-content, .tab-pane, .chart, .chart-responsive, .chart-legend, .direct-chat-messages) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box-header, .box-title) {
+  background-color: var(--s-hijau-tua) !important;
+  color: #dff0e6 !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+/* Kotak warna-warni AdminLTE - .bg-aqua, .bg-green, dan seterusnya. Warnanya
+   diturunkan, bukan dibuang: ia yang membedakan satu ringkasan dari yang lain. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.bg-aqua, .bg-green, .bg-yellow, .bg-red, .bg-blue, .bg-light-blue) {
+  filter: brightness(0.55) saturate(0.85);
+  color: #f2f6f4 !important;
+}
+
+/* Tulisan berwarna pada ringkasan - .text-red, .text-green, .text-muted -
+   ditulis untuk latar putih dan tenggelam di atas latar gelap. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .text-red {
+  color: #ffa79c !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .text-green {
+  color: #7fd0a6 !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.text-muted, .description-text) {
+  color: var(--s-tulisan-lembut) !important;
+}
+
+/* Deretan tab pada dashboard - Home, Banding, Kasasi, Peninjauan Kembali. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .nav-tabs-custom {
+  background-color: var(--s-permukaan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .nav-tabs-custom > .nav-tabs > li.active {
+  border-top-color: var(--s-hijau-terang) !important;
+}
+
+/* Isian pemilih bulan dan tahun di dashboard. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.form-control, .input-group-addon) {
+  background-color: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* Bilah muat/memori di kaki halaman, dan kotak putih polos apa pun yang
+   ditulis SIPP dengan gaya menempel. Gaya inline mengalahkan berkas gaya mana
+   pun kecuali yang ber-!important - sama seperti sel tabel di ABT. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #fff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#fff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #fff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fff"] {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+}

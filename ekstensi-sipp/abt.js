@@ -591,7 +591,7 @@ function ruasAlamatAbt() {
   return { a: ambil("a"), b: ambil("b"), c: ambil("c"), d: ambil("d") };
 }
 
-function alamatTanyaJawab(kode, aksi) {
+function alamatTanyaJawab(kode, aksi, urutan) {
   const r = ruasAlamatAbt();
   const q = new URLSearchParams();
   if (aksi) q.set("aksi", "simpan");
@@ -599,20 +599,55 @@ function alamatTanyaJawab(kode, aksi) {
   q.set("a", r.a);
   q.set("b", r.b);
   q.set("c", r.c);
-  q.set("d", r.d);
+  // Urutan sidang yang ditemukan, bukan yang tertulis di alamat halaman.
+  // Membaca dan menulis HARUS memakai urutan yang sama - rute simpannya
+  // menghapus berdasarkan sidang_id yang diturunkan darinya.
+  q.set("d", urutan !== undefined && urutan !== null && urutan !== "" ? String(urutan) : r.d);
   return `${asalAbt()}/tanyajawab_perkara_edit?${q.toString()}`;
 }
 
 /**
- * Mengambil daftar tanya-jawab utuh dari halaman penyunting ABT.
+ * ============================================================================
+ * RUAS d ITU URUTAN SIDANG, BUKAN PENGENAL SIDANG
+ * ============================================================================
  *
- * Halamannya menyematkan daftarnya sebagai JSON di dalam skripnya sendiri -
- * `var ajax_data = [...]` - dan itu yang dibaca. Bukan tabel yang digambar
- * skripnya: tabel itu baru ada sesudah skripnya berjalan, dan yang diambil
- * lewat fetch hanya HTML-nya.
+ * Terbaca dari Abt_model::data_sidang:
+ *
+ *   data_sidang($perkara_id, $urutan)
+ *     -> "... where a.perkara_id=$perkara_id and a.urutan=$urutan order by a.urutan"
+ *
+ * dan controller memakainya begini:
+ *
+ *   $sidang_id = $this->Abt_model->data_sidang($perkara_id, $this->input->get("d"))["0"]->id;
+ *
+ * Jadi d adalah URUTAN - 1, 2, 3 - dan bila ia kosong, filternya hilang
+ * sehingga yang terambil baris PERTAMA: sidang urutan satu. Keterangan saksi
+ * hampir tidak pernah ada di sidang pertama; ia ada di sidang pembuktian.
+ *
+ * Itu sebabnya daftarnya kembali KOSONG walau d sudah diambil dari tautan
+ * CETAK: nilainya benar sebagai cek_sidang milik halaman itu, tetapi bukan
+ * urutan sidang tempat saksi ini diperiksa.
+ *
+ * ============================================================================
+ * DICARI, BUKAN DITEBAK
+ * ============================================================================
+ *
+ * Yang menentukan bukan nomor urutannya melainkan ADA TIDAKNYA keterangan di
+ * sana. Karena itu urutannya ditelusuri dari 1 ke atas sampai ditemukan yang
+ * daftarnya berisi, dan urutan itulah yang dipakai menyimpan - satu sidang
+ * yang sama untuk membaca dan menulis, sebab rute simpannya menghapus
+ * berdasarkan sidang_id yang diturunkan dari d.
+ *
+ * Dimulai dari d milik halaman: pada perkara yang memang sudah berada di
+ * sidang pembuktian, ia langsung benar dan tidak ada satu pun permintaan
+ * tambahan. Batasnya dua belas - jadwal terpanjang di PA Donggala jauh di
+ * bawah itu, dan batas yang ada mencegah penelusuran tak berujung pada
+ * perkara yang saksinya memang belum diperiksa.
  */
-async function ambilTanyaJawab(kode) {
-  const respons = await fetch(alamatTanyaJawab(kode, false), {
+const BATAS_URUTAN_SIDANG = 12;
+
+async function ambilSatuTanyaJawab(kode, urutan) {
+  const respons = await fetch(alamatTanyaJawab(kode, false, urutan), {
     credentials: "include",
     cache: "no-store",
   });
@@ -626,33 +661,48 @@ async function ambilTanyaJawab(kode) {
     // salah ke tempat yang menghapus daftar lama lebih dulu.
     throw new Error("daftar tanya-jawab tidak terbaca dari halaman ABT");
   }
-
-  let baris;
   try {
-    baris = JSON.parse(cocok[1]);
+    const baris = JSON.parse(cocok[1]);
+    return Array.isArray(baris) ? baris : [];
   } catch {
     throw new Error("daftar tanya-jawab tidak dapat diurai");
   }
-  if (!Array.isArray(baris)) throw new Error("daftar tanya-jawab bukan daftar");
+}
 
-  // ==========================================================================
-  // DAFTAR KOSONG ADALAH KEGAGALAN, BUKAN "TIDAK ADA YANG PERLU DIBUANG"
-  // ==========================================================================
-  //
-  // Keduanya menghasilkan nol kalimat yang dibuang, dan dulu keduanya
-  // dilaporkan dengan kalimat yang sama - sehingga saat ruas d salah dan
-  // ABT mengembalikan daftar kosong, panel berkata "tidak ada kalimat penutup
-  // yang perlu dibuang" sementara kalimatnya jelas ada di layar.
-  //
-  // Baris 2021 tidak pernah kosong pada perkara yang sudah diperiksa
-  // saksinya: itulah isinya. Kosong berarti yang dibaca sidang yang salah.
-  if (baris.length === 0) {
-    throw new Error(
-      "ABT mengembalikan daftar tanya-jawab KOSONG - kemungkinan sidang yang " +
-        "dibaca bukan sidang tempat saksi ini diperiksa"
-    );
+/**
+ * Mencari sidang yang benar-benar memuat keterangan saksi ini.
+ *
+ * @returns {Promise<{baris: Array, urutan: string}>}
+ */
+async function ambilTanyaJawab(kode) {
+  const dicoba = [];
+  const bawaan = ruasAlamatAbt().d;
+  if (bawaan) dicoba.push(String(bawaan));
+  for (let i = 1; i <= BATAS_URUTAN_SIDANG; i += 1) {
+    if (!dicoba.includes(String(i))) dicoba.push(String(i));
   }
-  return baris;
+
+  let galatTerakhir = null;
+  for (const urutan of dicoba) {
+    let baris;
+    try {
+      baris = await ambilSatuTanyaJawab(kode, urutan);
+    } catch (galat) {
+      // Urutan yang tidak ada membuat controller ABT gagal - itu bukan
+      // kegagalan yang perlu menghentikan pencarian, hanya urutan yang
+      // habis. Yang disimpan galat terakhir, untuk dilaporkan bila SELURUH
+      // urutan gagal.
+      galatTerakhir = galat;
+      continue;
+    }
+    if (baris.length > 0) return { baris, urutan };
+  }
+
+  if (galatTerakhir) throw galatTerakhir;
+  throw new Error(
+    "tidak ada sidang yang memuat keterangan saksi ini - diperiksa urutan 1 sampai " +
+      BATAS_URUTAN_SIDANG
+  );
 }
 
 /**
@@ -662,7 +712,7 @@ async function ambilTanyaJawab(kode) {
  * POLA_PENUTUP. Pertanyaannya tidak disentuh sama sekali.
  */
 async function simpanKeteranganSaksi(kode) {
-  const baris = await ambilTanyaJawab(kode);
+  const { baris, urutan } = await ambilTanyaJawab(kode);
   const sebelum = baris.length;
 
   const disimpan = [];
@@ -697,7 +747,7 @@ async function simpanKeteranganSaksi(kode) {
   const badan = new URLSearchParams();
   badan.set("data", JSON.stringify(disimpan));
 
-  const respons = await fetch(alamatTanyaJawab(kode, true), {
+  const respons = await fetch(alamatTanyaJawab(kode, true, urutan), {
     method: "POST",
     credentials: "include",
     cache: "no-store",
@@ -722,7 +772,7 @@ async function simpanKeteranganSaksi(kode) {
   // disebut, bukan didiamkan.
   let sesudah = -1;
   try {
-    sesudah = (await ambilTanyaJawab(kode)).length;
+    sesudah = (await ambilSatuTanyaJawab(kode, urutan)).length;
   } catch {
     /* pemeriksaannya gagal - disebut sebagai tidak terperiksa, bukan gagal */
   }
@@ -740,7 +790,7 @@ async function simpanKeteranganSaksi(kode) {
 
   return {
     ok: true,
-    pesan: `${dibuang} kalimat penutup dibuang, ${harapan} baris tersimpan`,
+    pesan: `${dibuang} kalimat penutup dibuang, ${harapan} baris tersimpan (sidang urutan ${urutan})`,
     dibuang,
   };
 }

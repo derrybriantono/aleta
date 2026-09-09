@@ -107,14 +107,36 @@ describe("pilihan manual benar-benar terbawa ke formulir", () => {
   });
 });
 
-describe("menciutkan panel benar-benar menciutkan", () => {
-  it("tinggi terpatok ikut dilepas, dan dikembalikan lagi", () => {
-    // Menyembunyikan isinya saja menyisakan kotak kosong sebesar semula,
-    // karena tinggi panel terpatok pada gaya inline sesudah diubah ukurannya.
+describe("menciutkan panel menjadi LOGO, bukan kotak", () => {
+  it("tombol ciut menghasilkan logo melayang", () => {
+    // Bentuk lamanya menyembunyikan isi dan menyisakan KEPALA - sebatang
+    // kotak selebar panel yang menutupi kolom di bawahnya tanpa menampilkan
+    // satu pun keterangan. Itulah "kotak melayang" yang dilaporkan.
     const isi = konten();
-    expect(isi).toContain("tinggiSebelumCiut");
-    expect(isi).toContain("panel.style.height = tinggiSebelumCiut;");
-    expect(isi).toContain('panel.classList.add("aleta-panel-ciut");');
+    expect(isi).toContain('lipat.title = "Ciutkan menjadi logo melayang";');
+    expect(isi).toContain('panel.classList.add("aleta-panel-logo");');
+    // Tombol berlian yang dulu mengerjakan hal yang sama sudah dibuang -
+    // dua tombol yang sama-sama mengecilkan menuntut orang mengingat bedanya.
+    expect(isi).not.toContain('buatElemen("button", "aleta-jadilogo"');
+  });
+
+  it("logo dapat DIGESER - klik dibedakan dari tarikan lewat jarak", () => {
+    // Tanpa pembeda, tiap tarikan berakhir dengan logo yang terbentang
+    // kembali, sebab tiap tarikan diakhiri satu klik di atas logonya.
+    const isi = konten();
+    expect(isi).toContain('panel.dataset.baruDigeser = "1";');
+    expect(isi).toContain('if (panel.dataset.baruDigeser === "1") {');
+  });
+
+  it("deret tombolnya SATU, dipakai panel perkara dan panel daftar", () => {
+    // Panel daftar - dashboard, daftar perkara perdata - dulu hanya punya
+    // tema dan tutup. Satu ekstensi dengan dua perilaku pada dua halaman
+    // terbaca sebagai ekstensi yang rusak di salah satunya.
+    const isi = konten();
+    expect(isi).toContain("function pasangTombolKepala(");
+    // Tiga kemunculan: satu definisinya, dua pemanggilnya.
+    expect(isi.split("pasangTombolKepala(panel, kepala").length - 1).toBe(3);
+    expect(isi.split("function pasangTombolKepala").length - 1).toBe(1);
   });
 
   it("gayanya ada, dan pegangan tariknya disembunyikan", () => {

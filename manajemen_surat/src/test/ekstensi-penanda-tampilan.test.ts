@@ -316,11 +316,14 @@ describe("halaman daftar perkara tidak lagi kosong dari ALETA", () => {
   });
 
   it("panel daftar punya tombol matikan yang sama dengan panel perkara", () => {
-    // Satu aturan di satu tempat: tombolnya dulu disusun sebaris di dalam
-    // susunPanel, sehingga panel yang lahir belakangan tidak punya tombolnya.
+    // Satu aturan di satu tempat, dan sekarang benar-benar satu: tombolnya
+    // dipasang di dalam pasangTombolKepala, yang dipakai KEDUA panel. Karena
+    // itu kemunculannya cukup dua - definisinya dan satu pemanggilnya - dan
+    // yang dijaga bahwa kedua panel memanggil deret yang sama.
     const isi = konten();
     expect(isi).toContain("function tombolMatikan()");
-    expect(isi.split("tombolMatikan()").length - 1).toBeGreaterThanOrEqual(3);
+    expect(isi).toContain("kepala.appendChild(tombolMatikan());");
+    expect(isi.split("pasangTombolKepala(panel, kepala").length - 1).toBe(3);
   });
 
   it("panel daftar dapat digeser dan diubah ukurannya", () => {

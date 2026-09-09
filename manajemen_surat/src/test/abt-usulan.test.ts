@@ -731,47 +731,77 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
     "3. Bahwa sejak awal pernikahan pada awal tahun 2018 Penggugat sudah mulai dianiaya.";
 
   const rapikan = (t: string) => layananPosita.rapikanTeksPosita(t);
+  /** Pemisah barisnya <br>, bukan ganti baris - lihat catatan di layanannya. */
+  const barisnya = (t: string) => rapikan(t).split(/<br\s*\/?>/i);
+
+  it("pemisahnya <br>, sebab RTF tidak mengenal ganti baris", () => {
+    // TemplateHelper::cleanHtmlTagSpecial menerjemahkan <br> dan </p>
+    // menjadi \par, dan TIDAK menerjemahkan ganti baris sama sekali. Ganti
+    // baris mentah di dalam RTF hanyalah spasi - itu sebabnya posita yang
+    // dirapikan dengan ganti baris tetap tercetak menempel di Word.
+    const hasil = rapikan(POSITA);
+    expect(hasil).toContain("<br>");
+    expect(hasil).not.toContain("\n");
+  });
 
   it("tiap butir induk mendapat barisnya sendiri", () => {
-    const baris = rapikan(POSITA).split("\n");
+    const baris = barisnya(POSITA);
     expect(baris[0].startsWith("1. Bahwa Penggugat MARIANA")).toBe(true);
     expect(baris.some((x) => x.startsWith("2. Bahwa setelah menikah"))).toBe(true);
     expect(baris.some((x) => x.startsWith("3. Bahwa sejak awal pernikahan"))).toBe(true);
   });
 
-  it("anak butir diberi lekukan, bukan disamakan dengan induknya", () => {
-    const baris = rapikan(POSITA).split("\n");
+  it("anak butir diberi lekukan tiga spasi - itu yang jadi TAB di blangko", () => {
+    // cleanHtmlTagSpecial menerjemahkan tiga spasi menjadi \tab. Itu pula
+    // yang dimaksud petunjuk hijau di borang ABT.
+    const baris = barisnya(POSITA);
     expect(baris.some((x) => x.startsWith("   a. MUHAMMAD FATHIR"))).toBe(true);
     expect(baris.some((x) => x.startsWith("   b. FATHIYAH LASYIRA"))).toBe(true);
   });
 
   it("TIDAK SATU HURUF PUN berubah - termasuk tanda bacanya", () => {
-    // ==================================================================
-    // PEMBANDING LAMA MEMBUANG TITIK, DAN ITULAH YANG MENYEMBUNYIKAN BUG
-    // ==================================================================
-    //
-    // Bentuk lamanya /[\s.]+/ - spasi DAN TITIK. Dengan pembanding itu,
-    // perapian yang menelan titik di antara dua anak butir lolos tanpa satu
-    // pun uji yang menuduh. Cacatnya baru ketahuan ketika pagar di layanan
-    // menolak tulisannya ke SIPP.
-    //
-    // Yang boleh DITAMBAHKAN perapian hanya ruang kosong. Maka pembandingnya
-    // membuang ruang kosong saja, dan tidak satu tanda baca pun.
-    const hurufSaja = (t: string) => t.replace(/\s+/g, "");
-    expect(hurufSaja(rapikan(POSITA))).toBe(hurufSaja(POSITA));
+    // Yang boleh DITAMBAHKAN perapian hanya ruang kosong dan <br>; itu pula
+    // yang dibuang pembandingnya. Bentuk lamanya membuang titik juga
+    // (/[\\s.]+/), dan kelonggaran itulah yang menyembunyikan titik
+    // yang hilang sampai pagar di layanan menolaknya.
+    expect(layananPosita.tanpaRuang(rapikan(POSITA))).toBe(layananPosita.tanpaRuang(POSITA));
   });
 
   it("titik di antara dua anak butir TIDAK hilang", () => {
-    // Keadaan yang benar-benar ada di posita PA Donggala:
-    // "...teman-teman Tergugat.b. Setiap kali..." - titik sesudah "Tergugat".
     const teks = "karena a. Tergugat sering mabuk bersama teman Tergugat.b. Setiap kali bertengkar.";
     const hasil = rapikan(teks);
     expect(hasil).toContain("teman Tergugat.");
     expect(layananPosita.tanpaRuang(hasil)).toBe(layananPosita.tanpaRuang(teks));
   });
 
+  it("kata yang berakhir huruf lalu titik TIDAK dipecah jadi butir", () => {
+    // "...Usia 5 tahun. Saat ini anak tersebut..." dulu terpecah menjadi
+    // "tahu" lalu butir baru "n. Saat ini". Terlihat di dokumen Word yang
+    // dilaporkan. Pagar isi tidak menangkapnya - dan tidak seharusnya: tidak
+    // ada huruf yang hilang, hanya berpindah baris.
+    const teks = "anak bernama Mikhayla, Usia 5 tahun. Saat ini anak tersebut ikut Penggugat;";
+    const hasil = rapikan(teks);
+    expect(hasil).toContain("Usia 5 tahun. Saat ini");
+    expect(hasil).not.toContain("tahu<br>");
+  });
+
+  it("angka di dalam kalimat TIDAK dipecah jadi butir", () => {
+    // Aturan yang sama pada butir induk: "berjumlah 15. Bahwa" jangan sampai
+    // terpecah menjadi "1" dan butir baru "5.".
+    const teks = "Bahwa anaknya berjumlah 15. Bahwa seluruhnya ikut Penggugat;";
+    expect(rapikan(teks)).toContain("berjumlah 15. Bahwa");
+  });
+
+  it("posita yang SUDAH berupa HTML tidak ditambahi pemisah lagi", () => {
+    // 6.269 dari 8.097 posita di PA Donggala memuat </p> - itulah yang
+    // tercetak rapi selama ini. Menambahkan <br> di sela-selanya menghasilkan
+    // baris kosong berganda di dokumen.
+    const teks = "<p>1. Bahwa satu.</p>\n<p>2. Bahwa dua.</p>";
+    expect(rapikan(teks)).not.toContain("</p><br>");
+  });
+
   it("teks yang sudah rapi tidak diubah lagi", () => {
-    const rapi = "1. Bahwa satu.\n2. Bahwa dua.";
+    const rapi = "1. Bahwa satu.<br>2. Bahwa dua.";
     expect(rapikan(rapi)).toBe(rapi);
   });
 });
