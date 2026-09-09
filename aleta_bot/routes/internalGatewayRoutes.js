@@ -63,6 +63,8 @@ const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
 const katalogEAuditService = require("../services/katalogEAuditService");
+const kemampuanMesinService = require("../services/kemampuanMesinService");
+const berkasPengawasanService = require("../services/berkasPengawasanService");
 const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
 const penilaianIntegritasService = require("../services/penilaianIntegritasService");
@@ -1851,7 +1853,14 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
       ...kerangkaSebaranService.daftar().map((d) => d.kunci),
       ...kerangkaRaporService.daftar().map((d) => d.kunci),
     ];
-    const keadaan = katalogEAuditService.keadaan(terdaftar);
+    // Bab 1 mengukur MESINNYA, bukan pengadilan - dan kemampuan mesin tidak
+    // punya kunci penilaian untuk ditunjuk. Tanpa daftar ini keenam butirnya
+    // selamanya terbaca "belum", padahal seluruhnya sudah tertanam sebagai
+    // kontrak yang ditegakkan saat pendaftaran.
+    //
+    // Diperiksa dengan DIJALANKAN, bukan diakui: lihat kemampuanMesinService.
+    const kemampuan = kemampuanMesinService.terpenuhi();
+    const keadaan = katalogEAuditService.keadaan(terdaftar, kemampuan);
     const petaKeadaan = Object.create(null);
     keadaan.perButir.forEach((x) => {
       petaKeadaan[x.kode] = x;
@@ -2016,6 +2025,53 @@ router.get("/e-audit/sebaran", requireInternalToken, async (req, res) => {
  * menghasilkan satu kelompok bernama "(tidak tercatat)" berisi segalanya - dan
  * itu terbaca seperti temuan padahal hanya salah pertanyaan.
  */
+/**
+ * MS06 - berkas pengawasan siap kirim.
+ *
+ * ============================================================================
+ * SATU BERKAS, BUKAN EMPAT LAYAR
+ * ============================================================================
+ *
+ * Pengawas tidak memakai ALETA. Yang sampai kepadanya sebuah berkas, dan
+ * berkas itu harus berdiri sendiri berbulan-bulan sesudah dikirim - ketika
+ * datanya sudah berubah, ketika ambangnya mungkin sudah diganti, dan ketika
+ * tidak ada seorang pun yang ingat bagaimana angka itu dahulu dihitung.
+ *
+ * Karena itu nilai, bukti, temuan, tanggal hitung, dan aturan yang berlaku
+ * dirangkai jadi satu. Berkas yang kurang satu bagian DITOLAK beserta
+ * sebabnya - tidak dikirim setengah, sebab yang menerimanya tidak akan tahu
+ * bagian mana yang hilang.
+ */
+router.get("/e-audit/berkas", requireInternalToken, async (req, res) => {
+  try {
+    penilaianKetaatanService.daftarkanSemua();
+    penilaianMutuDataService.daftarkanSemua();
+    penilaianKeuanganService.daftarkanSemua();
+    penilaianTahapanService.daftarkanSemua();
+    penilaianIntegritasService.daftarkanSemua();
+    penilaianSisaPanjarService.daftarkanSemua();
+
+    const kunci = String(req.query.kunci || "").trim();
+    if (!kunci) {
+      res.status(400).json({ ok: false, alasan: "kunci_penilaian_kosong" });
+      return;
+    }
+
+    const jenisPeriode = String(req.query.periode || "bulanan").trim();
+    const acuan = String(req.query.acuan || "").trim() || periodePenilaianService.tanggalHariIni();
+
+    const hasil = await berkasPengawasanService.susun(kunci, jenisPeriode, acuan);
+    if (!hasil.ok) {
+      res.status(400).json(hasil);
+      return;
+    }
+
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.get("/e-audit/rapor", requireInternalToken, async (req, res) => {
   try {
     penilaianKetaatanService.daftarkanSemua();

@@ -850,6 +850,84 @@ const DI_LUAR_KATALOG = {
     "Ikut menyusun IN07 bersama kelengkapan amar putusan. Didaftarkan terpisah karena satu butir katalog hanya dapat menunjuk satu penilaian, sedangkan keduanya berdiri sendiri-sendiri.",
 };
 
+/**
+ * ============================================================================
+ * SAMBUNGAN KE KEMAMPUAN MESIN - KHUSUS BAB 1
+ * ============================================================================
+ *
+ * Bab 1 berbeda dari sebelas bab lainnya. Sebelas bab itu MENGUKUR
+ * pengadilan, dan tiap butirnya wajar disambungkan ke satu penilaian. Bab 1
+ * mengukur MESINNYA sendiri - apakah ada periode tujuh jendela, apakah tiap
+ * angka dapat dibuka menjadi buktinya, apakah nilai berpenyebut terlalu kecil
+ * ditahan.
+ *
+ * Kemampuan semacam itu bukan penilaian. Tidak ada kunci penilaian untuk
+ * ditunjuk, sehingga selama sambungan hanya berbentuk SAMBUNGAN, keenam butir
+ * Bab 1 jatuh ke "belum" - bukan karena belum dikerjakan, melainkan karena
+ * tidak ada tempat menyebutkannya.
+ *
+ * Akibatnya papan e-Audit MENGECILKAN dirinya sendiri. Bab 1 tertulis 0 dari
+ * 6, padahal MS01, MS03, MS04, dan MS05 sudah tertanam sebagai kontrak yang
+ * ditegakkan saat pendaftaran - kerangkaPenilaianService bahkan menyebut
+ * nomor butirnya di kepala berkasnya sendiri.
+ *
+ * Papan yang salah menyebut sisa pekerjaannya sama merusaknya dengan papan
+ * yang menyembunyikannya: yang satu membuat orang menyangka pekerjaannya
+ * sudah selesai, yang lain membuat orang mengerjakan ulang apa yang sudah ada.
+ *
+ * ============================================================================
+ * TETAP DIHITUNG, TIDAK DITULIS
+ * ============================================================================
+ *
+ * Aturan katalog ini sejak semula: keadaan dihitung dari kenyataan, bukan
+ * ditulis tangan. Aturan itu berlaku juga di sini - nama kemampuan di bawah
+ * hanya berarti bila kemampuannya benar-benar TERBUKTI, dan pembuktiannya
+ * dikerjakan kemampuanMesinService dengan MENJALANKAN kemampuan itu, bukan
+ * dengan membaca keberadaan namanya.
+ *
+ * Katalog ini sengaja tidak memanggilnya sendiri: ia daftar, bukan mesin.
+ * Yang memanggil pemeriksanya adalah rute gerbang, sama seperti ia yang
+ * mengumpulkan daftar penilaian terdaftar.
+ */
+const KEMAMPUAN = {
+  MS01: {
+    kemampuan: "periodeTujuhJendela",
+    sifat: "penuh",
+    catatan:
+      "Tujuh jendela waktu - harian sampai tahunan - dijalankan atas satu tanggal acuan, dan seluruhnya menghasilkan satuan beserta rentang terbacanya.",
+  },
+  MS02: {
+    kemampuan: "raporBerjenjang",
+    sifat: "penuh",
+    catatan:
+      "Satu nilai dipecah menurut jenjangnya, dan rapor yang tidak menyebut dimensinya ditolak saat didaftarkan. Angka gabungan antar penilaian sengaja TIDAK disediakan - pembobotan adalah kewenangan pimpinan pengadilan.",
+  },
+  MS03: {
+    kemampuan: "riwayatNilaiTersimpan",
+    sifat: "penuh",
+    catatan:
+      "Nilai disimpan per periode beserta sidik aturan yang berlaku saat itu, dan hitungan ulangnya dapat disandingkan dengan yang tersimpan.",
+  },
+  MS04: {
+    kemampuan: "wajibMenyebutBukti",
+    sifat: "penuh",
+    catatan:
+      "Penilaian tanpa baris() DITOLAK saat didaftarkan - dibuktikan dengan menyodorkan definisi tanpa bukti dan memastikan ia ditolak, bukan dengan membaca kodenya.",
+  },
+  MS05: {
+    kemampuan: "pembatasPenyebut",
+    sifat: "penuh",
+    catatan:
+      "Penyebut di bawah dua puluh menahan nilainya dan menampilkan daftarnya - dibuktikan dengan meminta nilai atas penyebut sembilan belas dan memastikan yang kembali bukan nilai.",
+  },
+  MS06: {
+    kemampuan: "berkasPengawasan",
+    sifat: "penuh",
+    catatan:
+      "Nilai, bukti, temuan, tanggal hitung, dan aturan yang berlaku dirangkai menjadi satu berkas; berkas yang kurang satu bagian ditolak beserta sebabnya, tidak dikirim setengah.",
+  },
+};
+
 /* ==========================================================================
  * PEMBACAAN
  * ========================================================================== */
@@ -883,10 +961,30 @@ function bentukTerbaca(kodeBentuk) {
  *
  * @param terdaftar daftar kunci penilaian yang benar-benar terdaftar di mesin
  */
-function keadaan(terdaftar) {
+function keadaan(terdaftar, kemampuanTerpenuhi) {
   const ada = new Set((terdaftar || []).map(String));
+  const mampu = new Set((kemampuanTerpenuhi || []).map(String));
 
   const perButir = KATALOG.map((b) => {
+    // Kemampuan mesin diperiksa LEBIH DAHULU. Butir Bab 1 tidak punya kunci
+    // penilaian untuk ditunjuk, dan tanpa jalur ini ia selamanya "belum".
+    const m = Object.prototype.hasOwnProperty.call(KEMAMPUAN, b.kode) ? KEMAMPUAN[b.kode] : null;
+    if (m) {
+      if (!mampu.has(m.kemampuan)) {
+        // Sama seperti sambungan yang menunjuk penilaian tidak terdaftar:
+        // kemampuan yang disebut tetapi tidak terbukti adalah TEMUAN, bukan
+        // hal yang boleh dianggap "belum" begitu saja.
+        return {
+          kode: b.kode,
+          bab: b.bab,
+          keadaan: "putus",
+          kunci: m.kemampuan,
+          catatan: `disandarkan pada kemampuan "${m.kemampuan}" tetapi kemampuan itu tidak terbukti saat diperiksa`,
+        };
+      }
+      return { kode: b.kode, bab: b.bab, keadaan: m.sifat, kunci: m.kemampuan, catatan: m.catatan };
+    }
+
     const s = Object.prototype.hasOwnProperty.call(SAMBUNGAN, b.kode) ? SAMBUNGAN[b.kode] : null;
     if (!s) return { kode: b.kode, bab: b.bab, keadaan: "belum", kunci: null, catatan: "" };
     if (!ada.has(s.kunci)) {
@@ -999,6 +1097,7 @@ module.exports = {
   MUTU_RUAS,
   KATALOG,
   SAMBUNGAN,
+  KEMAMPUAN,
   DI_LUAR_KATALOG,
   daftarBab,
   daftarButir,
