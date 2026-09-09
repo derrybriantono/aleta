@@ -59,7 +59,14 @@ async function ambilPasal(jangkar: string): Promise<Muatan> {
 
   try {
     const tanggapan = await fetch(apiPath(`/api/aleta-ecourt/pustaka/peraturan?jangkar=${encodeURIComponent(jangkar)}`));
-    const isi = (await tanggapan.json()) as { ada?: boolean; bagian?: Pasal; sebab?: string };
+    // ?.data - bungkus { ok, data } milik seluruh rute portal. Tanpa
+    // membukanya, isi.ada selalu undefined dan tiap rujukan pasal terbaca
+    // "tidak ditemukan" - padahal pustakanya menjawab dengan benar.
+    const isi = ((await tanggapan.json())?.data ?? {}) as {
+      ada?: boolean;
+      bagian?: Pasal;
+      sebab?: string;
+    };
 
     const hasil: Muatan = isi?.ada && isi.bagian
       ? { keadaan: "ada", pasal: isi.bagian }

@@ -200,8 +200,14 @@ export function AletaEcourtPengguna() {
     try {
       const respons = await fetch(apiPath("/api/aleta-ecourt/ekstensi"), { cache: "no-store" });
       if (!respons.ok) {
-        const galat = await respons.json().catch(() => null);
-        setCatatan(galat?.message || `Gagal mengunduh (HTTP ${respons.status}).`);
+        // Bentuk galat portal { ok: false, error: { message } } - pesannya di
+        // dalam error, bukan di sebelahnya. Yang dibaca dulu galat.message,
+        // yang tidak pernah ada; sebab yang sudah disiapkan peladen karena itu
+        // tidak pernah sampai ke layar, dan yang terbaca hanya nomor HTTP.
+        const galat = (await respons.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
+        setCatatan(galat?.error?.message || `Gagal mengunduh (HTTP ${respons.status}).`);
         return;
       }
 

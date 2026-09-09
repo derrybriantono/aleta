@@ -258,7 +258,10 @@ export function RuangPerkara() {
         ? `/api/aleta-ecourt/berkas-perkara?perkaraId=${encodeURIComponent(perkaraId)}`
         : `/api/aleta-ecourt/berkas-perkara?nomor=${encodeURIComponent(kunci)}`;
       const tanggapan = await fetch(apiPath(alamat));
-      const isi = (await tanggapan.json()) as {
+      // ?.data - bungkus { ok, data } milik seluruh rute portal. Tanpa
+      // membukanya, isi.ada selalu undefined dan pencarian perkara di layar
+      // ini SELALU berakhir tidak ketemu, sekalipun perkaranya ada.
+      const isi = ((await tanggapan.json())?.data ?? {}) as {
         ada?: boolean;
         berkas?: Berkas;
         kandidat?: Pilihan[];
@@ -290,7 +293,7 @@ export function RuangPerkara() {
     setSibuk("draf");
     try {
       const daftar = await fetch(apiPath(`/api/aleta-ecourt/putusan?perkaraId=${encodeURIComponent(perkaraId)}`));
-      const isiDaftar = (await daftar.json()) as { riwayat?: Draf[] };
+      const isiDaftar = ((await daftar.json())?.data ?? {}) as { riwayat?: Draf[] };
       const terbaru = isiDaftar?.riwayat?.[0];
       if (!terbaru) {
         setDraf(null);
@@ -300,7 +303,7 @@ export function RuangPerkara() {
       }
 
       const satu = await fetch(apiPath(`/api/aleta-ecourt/putusan?drafId=${encodeURIComponent(terbaru.id)}`));
-      const isiSatu = (await satu.json()) as {
+      const isiSatu = ((await satu.json())?.data ?? {}) as {
         draf?: Draf;
         butir?: ButirTelaah[];
         ringkasTelaah?: RingkasTelaah;
@@ -348,9 +351,16 @@ export function RuangPerkara() {
             alasan: alasanTolak[barisId] ?? "",
           }),
         });
-        const isi = (await tanggapan.json()) as { ok?: boolean; sebab?: string };
-        if (!isi?.ok) {
-          setPesan(isi?.sebab || "Telaah tidak tersimpan.");
+        // Bungkus { ok, data } dibuka dulu. Yang dibaca dulu ok milik
+        // BUNGKUSNYA - selalu true - sehingga penolakan telaah terbaca
+        // sebagai keberhasilan: tidak ada pesan, tidak ada galat, dan
+        // drafnya dimuat ulang seolah telaahnya tersimpan. Kegagalan yang
+        // tidak menampakkan dirinya sendiri.
+        const luar = (await tanggapan.json()) as { data?: unknown } | null;
+        const isi = ((luar && typeof luar === "object" && "data" in luar ? luar.data : luar) ??
+          {}) as { ok?: boolean; sebab?: string };
+        if (!isi.ok) {
+          setPesan(isi.sebab || "Telaah tidak tersimpan.");
           return;
         }
         await muatDraf(berkas?.perkaraId ?? "");

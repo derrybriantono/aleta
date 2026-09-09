@@ -124,12 +124,45 @@ export function AletaPromptPutusan({ nomorPerkara }: { nomorPerkara: string }) {
         apiPath(`/api/aleta-ecourt/prompt-putusan?nomor=${encodeURIComponent(nomorPerkara)}`),
         { cache: "no-store" }
       );
-      const isi = (await jawab.json()) as BahanPrompt & { alasan?: string };
-      if (!isi?.ok) {
+
+      // ====================================================================
+      // BUNGKUSNYA DIBUKA DULU - INI YANG DULU MEMBUAT LAYARNYA JATUH
+      // ====================================================================
+      //
+      // Seluruh rute portal menjawab dengan bungkus { ok: true, data: {...} }.
+      // Yang dibaca di sini dulu bungkusnya, bukan isinya, dan akibatnya
+      // berlapis:
+      //
+      //   1. isi.ok SELALU true - itu ok milik bungkusnya. Cabang gagal di
+      //      bawah karena itu tidak pernah menyala, bahkan ketika botnya mati
+      //      dan rutenya menjawab "ALETA Bot belum dapat dihubungi". Alasan
+      //      yang sudah disiapkan peladen tidak pernah sampai ke layar.
+      //   2. bahan diisi BUNGKUSNYA. Seluruh ruasnya undefined, dan
+      //      penggambarnya membaca bahan.identitas.jenisPerkara - membaca
+      //      properti dari undefined, yang menjatuhkan seluruh layar Status
+      //      Perkara, bukan hanya bagian ini.
+      //
+      // Gejalanya: tombol "Ambil bahan dari SIPP" ditekan, layarnya galat.
+      // Selalu, pada perkara mana pun, sebab sebabnya tidak pernah datanya.
+      const luar = (await jawab.json()) as { data?: unknown } | null;
+      const isi = ((luar && typeof luar === "object" && "data" in luar ? luar.data : luar) ??
+        {}) as BahanPrompt & { alasan?: string };
+
+      if (!isi.ok) {
         setKeadaan("gagal");
-        setPesan(isi?.alasan || "Bahan perkara tidak dapat dibaca.");
+        setPesan(isi.alasan || "Bahan perkara tidak dapat dibaca.");
         return;
       }
+
+      // Bahan yang mengaku berhasil tetapi tidak membawa identitas perkara
+      // tetap ditolak. Tanpa penjagaan ini, satu perubahan bentuk jawaban di
+      // peladen kembali menjatuhkan layarnya alih-alih menerangkan keadaannya.
+      if (!isi.identitas) {
+        setKeadaan("gagal");
+        setPesan("Bahan perkara terbaca tetapi tidak memuat identitas perkara.");
+        return;
+      }
+
       setBahan(isi);
       setPilihan(pilihanAwal(isi));
       setKeadaan("siap");

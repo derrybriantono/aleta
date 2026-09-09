@@ -100,7 +100,10 @@ export function IsianKelasB({
           apiPath(`/api/aleta-ecourt/isian?perkaraId=${encodeURIComponent(perkaraId)}&${ruas}`),
           { cache: "no-store" }
         );
-        const isi = (await jawaban.json()) as { ada: boolean; kelompok?: Kelompok[]; ringkas?: Ringkas; sebab?: string };
+        // ?.data - bungkus { ok, data } milik seluruh rute portal. Tanpa
+        // membukanya, isi.ada selalu undefined dan layar ini SELALU berbunyi
+        // "Isian tidak terbaca", pada perkara mana pun, apa pun isinya.
+        const isi = ((await jawaban.json())?.data ?? {}) as { ada: boolean; kelompok?: Kelompok[]; ringkas?: Ringkas; sebab?: string };
         if (batal) return;
         if (!isi.ada) {
           setPesan(isi.sebab ?? "Isian tidak terbaca.");
@@ -137,7 +140,13 @@ export function IsianKelasB({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ perkaraId, nilai: draf, olehNama }),
       });
-      const hasil = (await jawaban.json()) as {
+      // Bungkus { ok, data } dibuka dulu. Membaca ok milik bungkusnya
+      // membuat penyimpanan yang DITOLAK terbaca sebagai berhasil, dan
+      // jumlahDisimpan terbaca undefined - pesannya lalu berbunyi
+      // "undefined isian tersimpan".
+      const luar = (await jawaban.json()) as { data?: unknown } | null;
+      const hasil = ((luar && typeof luar === "object" && "data" in luar ? luar.data : luar) ??
+        {}) as {
         ok: boolean;
         jumlahDisimpan: number;
         ditolak: Array<{ noVar: string; sebab: string }>;
@@ -180,7 +189,7 @@ export function IsianKelasB({
       ),
       { cache: "no-store" }
     );
-    const isi = (await jawaban.json()) as { riwayat?: Riwayat[] };
+    const isi = ((await jawaban.json())?.data ?? {}) as { riwayat?: Riwayat[] };
     setRiwayat((s) => ({ ...s, [noVar]: isi.riwayat ?? [] }));
   };
 
