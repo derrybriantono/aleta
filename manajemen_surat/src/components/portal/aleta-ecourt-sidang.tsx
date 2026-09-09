@@ -584,6 +584,74 @@ function hariPutusan(baris: {
 }
 
 /**
+ * ============================================================================
+ * DIPUTUS PADA SIDANG HARI ITU - BUKAN SEKADAR "PERKARANYA PUNYA PUTUSAN"
+ * ============================================================================
+ *
+ * Layar ini layar JADWAL SIDANG: tiap barisnya satu sidang pada satu tanggal.
+ * "Sudah putus" karena itu harus menjawab "diputus pada sidang INI", bukan
+ * "perkara ini pernah diputus" - yang kedua benar bagi setiap sidang lanjutan
+ * sesudah putusan, dan mengucapkannya pada baris hari ini menyesatkan.
+ *
+ * Menyesatkannya bukan dugaan. 9 September 2026 di PA Donggala menampilkan
+ * "2 Sudah putus", dan keduanya sidang ikrar talak - 274 dan 404/Pdt.G/2026 -
+ * yang putusannya dijatuhkan berbulan-bulan sebelumnya. Perkara yang
+ * benar-benar diputus hari itu, 510/Pdt.G/2026 dengan hasil sidang "putus
+ * DIKABULKAN (verstek)", justru tidak terhitung di antaranya karena
+ * putusannya belum tercatat di SIPP.
+ *
+ * ============================================================================
+ * TANGGALNYA YANG MEMISAHKAN, DAN ITU DIUKUR
+ * ============================================================================
+ *
+ * Syaratnya tanggal putusan SAMA dengan tanggal sidang. Diukur atas jadwal
+ * 25 Agustus - 9 September 2026:
+ *
+ *   tanggal      sidang  punya putusan  putus hari itu  ikrar talak
+ *   2026-09-01     19        11              10             0
+ *   2026-09-03     21        20               1             0
+ *   2026-09-04     19        19              19             0
+ *   2026-09-07     21        13              10             2
+ *   2026-09-09     17         2               0             2
+ *
+ * 3 September memperlihatkan bedanya paling terang: dua puluh perkara punya
+ * putusan, satu di antaranya diputus hari itu. Sembilan belas sisanya sedang
+ * mengerjakan hal lain.
+ *
+ * Baris ikrar_talak = 'Y' yang putusannya bertanggal sama dengan sidangnya:
+ * NOL, di seluruh rentang itu. Pemeriksaan sidangIkrar di bawah karena itu
+ * sudah tidak diperlukan oleh data - ia tetap ditulis supaya maksudnya
+ * terbaca dari kodenya, dan supaya baris yang kelak salah dicatat operator
+ * tetap tidak lolos.
+ *
+ * ============================================================================
+ * KENAPA BUKAN "NASKAHNYA SUDAH DIUNGGAH"
+ * ============================================================================
+ *
+ * Keduanya berjalan bersamaan di sini - dari seluruh perkara yang diputus
+ * pada tanggal sidangnya, SEMUANYA sudah punya amar_putusan_dok. Yang dipilih
+ * tanggalnya, bukan unggahannya, karena keduanya baru berpisah pada keadaan
+ * yang justru paling perlu terlihat: putusan yang sudah dijatuhkan tetapi
+ * naskahnya belum diunggah. Kalau unggahan yang jadi syarat, kotaknya padam
+ * persis pada hari itu.
+ */
+function putusHariIni(baris: {
+  sudahPutus?: boolean;
+  tanggalPutusan?: string;
+  tanggalSidang?: string;
+  agenda?: string;
+  sidangIkrarTalak?: boolean;
+}): boolean {
+  if (!baris.sudahPutus) return false;
+  if (sidangIkrar(baris)) return false;
+  // Salah satu tanggal yang kosong berarti tidak dapat dibandingkan, dan yang
+  // tidak dapat dibandingkan tidak dihitung - gagal-tertutup, sama seperti
+  // jalur penilaian lain di ALETA.
+  if (!baris.tanggalPutusan || !baris.tanggalSidang) return false;
+  return baris.tanggalPutusan === baris.tanggalSidang;
+}
+
+/**
  * Penanda e-Litigasi yang sesungguhnya: perkara e-Court DAN agenda elektronik.
  *
  * ============================================================================
@@ -854,17 +922,50 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     cocok: (x) => sidangElitigasi(x),
   },
   {
+    // ========================================================================
+    // "SUDAH PUTUS" BERARTI DIPUTUS PADA SIDANG HARI ITU
+    // ========================================================================
+    //
+    // Dulu ia mencocokkan x.sudahPutus saja - perkaranya punya putusan, kapan
+    // pun tanggalnya. Pada layar JADWAL SIDANG itu menyesatkan, dan
+    // menyesatkannya terbukti: 9 September 2026 menampilkan "2 Sudah putus",
+    // dan keduanya sidang ikrar talak yang putusannya dijatuhkan
+    // berbulan-bulan sebelumnya. Perkara yang benar-benar diputus hari itu -
+    // 510/Pdt.G/2026, hasil sidangnya "putus DIKABULKAN (verstek)" - justru
+    // tidak terhitung.
+    //
+    // Sekarang syaratnya tanggal putusannya SAMA dengan tanggal sidangnya.
+    // Lihat putusHariIni di atas untuk pengukurannya.
     kunci: "sudah-putus",
     label: "Sudah putus",
     nada: "aman",
-    judul: "Perkaranya sudah dijatuhi putusan.",
-    cocok: (x) => x.sudahPutus,
+    judul:
+      "Putusannya tercatat di SIPP bertanggal sama dengan sidang ini - diputus pada sidang hari itu, bukan pada sidang sebelumnya. Sidang ikrar talak tidak ikut.",
+    cocok: (x) => putusHariIni(x),
   },
   {
+    // ========================================================================
+    // BUKAN LAGI PASANGAN YANG MENJUMLAH GENAP - DAN ITU DISENGAJA
+    // ========================================================================
+    //
+    // Selama "Sudah putus" berarti "punya putusan", keduanya membagi hari itu
+    // menjadi dua tanpa sisa. Sesudah "Sudah putus" dipersempit menjadi
+    // "diputus hari itu", ada baris yang tidak masuk keduanya: perkara yang
+    // putusannya dijatuhkan pada sidang sebelumnya - sidang ikrar talak,
+    // sidang upaya hukum - dan hari ini mengerjakan hal lain.
+    //
+    // Itu bukan kebocoran hitungan. Pada hari itu, kedua pernyataan memang
+    // tidak berlaku bagi baris tersebut: ia tidak diputus hari ini, dan ia
+    // pun tidak sedang menunggu putusan. Memaksanya masuk salah satu kotak
+    // berarti mengucapkan salah satu dari dua kebohongan kecil.
+    //
+    // Keadaan perkaranya sendiri tidak hilang dari layar: kolom Putusan tetap
+    // menyebut statusnya, dan penanda biru menyebut apa yang dikerjakan hari
+    // itu.
     kunci: "belum-putus",
     label: "Belum putus",
     nada: "netral",
-    judul: "Perkaranya masih berjalan.",
+    judul: "Perkaranya belum punya putusan sama sekali - masih berjalan.",
     cocok: (x) => !x.sudahPutus,
   },
   {

@@ -663,18 +663,109 @@ describe("penanda Ikrar Talak", () => {
     expect(hariPutusan(baris)).toBe(false);
   });
 
-  it("perkara ikrar talak TETAP terhitung sudah putus", () => {
-    // Faktanya memang begitu - izin mengucapkan talak adalah putusan. Yang
-    // memotongnya dari sana akan membuat "sudah putus" ditambah "belum
-    // putus" tidak lagi sama dengan jumlah sidang hari itu. Yang
-    // memisahkannya penanda biru, bukan angka yang dikurangi diam-diam.
+  it("ikrar talak TIDAK ikut kotak Sudah putus", () => {
+    // Inilah keluhannya: 9 September 2026 menampilkan "2 Sudah putus", dan
+    // keduanya sidang ikrar talak yang putusannya dijatuhkan berbulan-bulan
+    // sebelumnya. Kotak itu pada layar JADWAL SIDANG harus menjawab
+    // "diputus pada sidang INI".
     const isi = readFileSync(
       path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
       "utf8"
     );
     const potong = isi.slice(isi.indexOf('kunci: "sudah-putus"'), isi.indexOf('kunci: "belum-putus"'));
-    expect(potong).toContain("cocok: (x) => x.sudahPutus");
-    expect(potong).not.toContain("sidangIkrar");
+    expect(potong).toContain("cocok: (x) => putusHariIni(x)");
+    // Bentuk lama - benar bagi tiap sidang lanjutan sesudah putusan.
+    expect(potong).not.toContain("cocok: (x) => x.sudahPutus");
+  });
+
+  it("Belum putus tetap berarti belum punya putusan sama sekali", () => {
+    // Sesudah Sudah putus dipersempit, keduanya tidak lagi menjumlah genap -
+    // dan itu benar: perkara yang diputus pada sidang SEBELUMNYA tidak
+    // diputus hari ini, dan tidak pula sedang menunggu putusan.
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
+      "utf8"
+    );
+    const potong = isi.slice(isi.indexOf('kunci: "belum-putus"'), isi.indexOf('kunci: "tidak-dipanggil"'));
+    expect(potong).toContain("cocok: (x) => !x.sudahPutus");
+  });
+});
+/** Salinan putusHariIni dari aleta-ecourt-sidang.tsx. */
+function putusHariIni(baris: {
+  sudahPutus?: boolean;
+  tanggalPutusan?: string;
+  tanggalSidang?: string;
+  agenda?: string;
+  sidangIkrarTalak?: boolean;
+}): boolean {
+  if (!baris.sudahPutus) return false;
+  if (sidangIkrar(baris)) return false;
+  if (!baris.tanggalPutusan || !baris.tanggalSidang) return false;
+  return baris.tanggalPutusan === baris.tanggalSidang;
+}
+
+describe("kotak Sudah putus berarti diputus pada sidang hari itu", () => {
+  const sidang = "2026-09-09";
+
+  it("putusan bertanggal sama dengan sidangnya - ikut", () => {
+    expect(
+      putusHariIni({ sudahPutus: true, tanggalPutusan: sidang, tanggalSidang: sidang, agenda: "Pembacaan Putusan" })
+    ).toBe(true);
+  });
+
+  it("putusan dari sidang SEBELUMNYA - tidak ikut", () => {
+    // 3 September 2026: dua puluh perkara punya putusan, satu di antaranya
+    // diputus hari itu. Sembilan belas sisanya mengerjakan hal lain.
+    expect(
+      putusHariIni({ sudahPutus: true, tanggalPutusan: "2026-06-17", tanggalSidang: sidang, agenda: "Sidang Lanjutan" })
+    ).toBe(false);
+  });
+
+  it("sidang ikrar talak - tidak ikut, walau perkaranya punya putusan", () => {
+    // 274 dan 404/Pdt.G/2026 pada 9 September 2026. Inilah dua baris yang
+    // dulu terhitung "Sudah putus" dan menjadi keluhannya.
+    for (const b of [
+      { sudahPutus: true, tanggalPutusan: "2026-03-11", tanggalSidang: sidang, agenda: "SIDANG IKRAR TALAK", sidangIkrarTalak: true },
+      { sudahPutus: true, tanggalPutusan: sidang, tanggalSidang: sidang, agenda: "SIDANG IKRAR TALAK", sidangIkrarTalak: true },
+    ]) {
+      expect(putusHariIni(b), b.agenda).toBe(false);
+    }
+  });
+
+  it("perkara tanpa putusan - tidak ikut", () => {
+    // 510/Pdt.G/2026: hasil sidangnya "putus DIKABULKAN (verstek)" tetapi
+    // putusannya belum tercatat di SIPP. Ia dapat penanda kuning Hari
+    // Putusan, bukan kotak hijau Sudah putus - dan kolom Putusan menyebut
+    // "putusan belum tercatat".
+    const b = { sudahPutus: false, tanggalPutusan: "", tanggalSidang: sidang, agenda: "Panggil Tergugat", ditunda: false, alasanDitunda: "putus DIKABULKAN (verstek)" };
+    expect(putusHariIni(b)).toBe(false);
+    expect(hariPutusan(b)).toBe(true);
+  });
+
+  it("tanggal yang tidak terbaca dianggap TIDAK putus hari itu", () => {
+    expect(putusHariIni({ sudahPutus: true, tanggalPutusan: "", tanggalSidang: sidang })).toBe(false);
+    expect(putusHariIni({ sudahPutus: true, tanggalPutusan: sidang, tanggalSidang: "" })).toBe(false);
+  });
+
+  it("ketujuh belas baris 9 September 2026, apa adanya dari SIPP", () => {
+    // Dua ikrar talak, satu putus tanpa putusan tercatat, empat belas biasa.
+    const baris = [
+      { nomor: "274", agenda: "SIDANG IKRAR TALAK", sidangIkrarTalak: true, ditunda: true, alasanDitunda: "Pemohon belum siap membayar pembebanan, tunda 6 bulan", sudahPutus: true, tanggalPutusan: "2026-03-11" },
+      { nomor: "404", agenda: "SIDANG IKRAR TALAK", sidangIkrarTalak: true, ditunda: false, alasanDitunda: "telah ikrar talak", sudahPutus: true, tanggalPutusan: "2026-07-29" },
+      { nomor: "510", agenda: "Panggil Tergugat", sidangIkrarTalak: false, ditunda: false, alasanDitunda: "putus DIKABULKAN (verstek)", sudahPutus: false, tanggalPutusan: "" },
+      { nomor: "445", agenda: "Replik Pemohon", sidangIkrarTalak: false, ditunda: false, alasanDitunda: "", sudahPutus: false, tanggalPutusan: "" },
+      { nomor: "526", agenda: "Sidang Pertama", sidangIkrarTalak: false, ditunda: true, alasanDitunda: "Panggil Tergugat", sudahPutus: false, tanggalPutusan: "" },
+    ].map((b) => ({ ...b, tanggalSidang: sidang }));
+
+    const kuning = baris.filter(hariPutusan).map((b) => b.nomor);
+    const biru = baris.filter(sidangIkrar).map((b) => b.nomor);
+    const hijau = baris.filter(putusHariIni).map((b) => b.nomor);
+
+    expect(kuning).toEqual(["510"]);
+    expect(biru).toEqual(["274", "404"]);
+    expect(hijau).toEqual([]);
+    // Tidak satu baris pun memikul dua penanda sekaligus.
+    expect(baris.filter((b) => [hariPutusan(b), sidangIkrar(b), putusHariIni(b)].filter(Boolean).length > 1)).toEqual([]);
   });
 });
 describe("ketiganya ada apa adanya di komponen", () => {
