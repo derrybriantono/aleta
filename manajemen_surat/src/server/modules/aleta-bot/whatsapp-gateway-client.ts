@@ -1699,6 +1699,73 @@ export async function getGatewayDaftarPenilaian(): Promise<GatewayResult<Record<
 }
 
 /**
+ * ============================================================================
+ * RUBRIK PENILAIAN PERKARA - BOBOT DAN AMBANG PREDIKATNYA
+ * ============================================================================
+ *
+ * Rutenya sudah lama ada di bot, tetapi TIDAK ADA satu pun jalan dari portal
+ * menuju ke sana. Akibatnya "bobot dapat diubah pengadilan" benar di mesin dan
+ * tidak benar bagi orang yang memakainya: tidak ada layar yang dapat dibuka,
+ * dan satu-satunya cara mengubah bobot adalah menyunting berkas pengaturan di
+ * dalam container.
+ *
+ * Rute bot yang tidak punya pemanggil tidak ketahuan dari mana pun - penjaga
+ * keselarasan gerbang memeriksa portal yang meminta alamat tidak ada, bukan
+ * bot yang melayani alamat yang tidak pernah diminta.
+ */
+export async function getGatewayRubrikPengaturan(): Promise<
+  GatewayResult<Record<string, unknown>>
+> {
+  return gatewayFetch(`/internal/aleta-bot/sipp/penilaian/pengaturan`);
+}
+
+/**
+ * Kosakata tambahan pemeriksa pesan.
+ *
+ * Yang dipulangkan TAMBAHAN saja - daftar bawaannya tetap di dalam kode
+ * portal. Menggabungkannya di sisi bot akan membuat pemeriksa kalimat mati
+ * ketika botnya mati, padahal pesannya tetap dapat diketik dan disimpan.
+ */
+export async function getGatewayKosakata(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/kosakata`);
+}
+
+/** Menyimpan kosakata tambahan. Menerima daftar penuh, bukan selisihnya. */
+export async function simpanGatewayKosakata(muatan: {
+  tambahan: { promosi: string[]; phishing: string[]; pemendek: string[] };
+  olehSiapa: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/kosakata`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(muatan),
+  });
+}
+
+/**
+ * Menyimpan rubrik penilaian perkara.
+ *
+ * `olehSiapa` ikut dikirim dan ikut tercatat. Bobot dan ambang menentukan
+ * perkara siapa yang disebut "kurang"; perubahan sebesar itu tidak boleh
+ * terjadi tanpa nama di belakangnya.
+ */
+export async function simpanGatewayRubrikPengaturan(muatan: {
+  bulanPenuh: number;
+  bulanNol: number;
+  hariMinutasi: number;
+  ambangBaik: number;
+  ambangPerhatian: number;
+  bobot: Record<string, number>;
+  olehSiapa: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sipp/penilaian/pengaturan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(muatan),
+  });
+}
+
+/**
  * Menjalankan satu penilaian pada satu jendela periode.
  *
  * `bukti` membatasi berapa baris bukti yang ikut per satuan. Batas itu ada

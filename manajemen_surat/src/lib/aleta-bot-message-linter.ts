@@ -190,9 +190,52 @@ function findPhrases(haystack: string, phrases: string[]) {
   return found;
 }
 
-function findShortenerLinks(body: string) {
+/**
+ * ============================================================================
+ * KOSAKATA TAMBAHAN DARI PENGADILAN - MENAMBAH, TIDAK MENGURANGI
+ * ============================================================================
+ *
+ * Tercatat sejak 1.15.0: daftar kosakata belum dapat disunting dari portal,
+ * sehingga satu kata baru menuntut satu putaran paket-unggah-pasang. Untuk satu
+ * baris teks. Itulah sebabnya kosakatanya jarang bertambah - padahal justru
+ * kosakata penipuan yang paling cepat berubah di dunia nyata.
+ *
+ * Daftar bawaan di atas TETAP berlaku dan tidak dapat dihapus dari layar mana
+ * pun. Sebabnya bukan kehati-hatian berlebihan: daftar penipuan memuat "kode
+ * otp", "nomor rekening", "segera transfer". Membolehkan penghapusan berarti
+ * membolehkan seseorang - dengan niat apa pun, termasuk keliru - membuka jalan
+ * bagi persis pesan yang paling berbahaya, yaitu pesan yang mengatasnamakan
+ * pengadilan dan meminta uang. Peringatannya sendiri tidak menghentikan
+ * pengiriman; menghapusnya tidak memberi kemudahan apa pun selain
+ * menghilangkan pemberitahuannya.
+ *
+ * Digabung DI SINI, di portal, bukan di bot. Pemeriksa yang menggabungkannya
+ * di sisi bot akan mati ketika botnya mati - dan pemeriksa yang mati berhenti
+ * menjadi pemeriksa justru pada saat pesan tetap dapat diketik dan disimpan.
+ */
+export type KosakataTambahan = {
+  promosi?: string[];
+  phishing?: string[];
+  pemendek?: string[];
+};
+
+/** Menggabungkan daftar bawaan dengan tambahan, tanpa kembar. */
+function gabung(bawaan: readonly string[], tambahan?: string[]): string[] {
+  if (!Array.isArray(tambahan) || tambahan.length === 0) return [...bawaan];
+  const hasil = [...bawaan];
+  const sudah = new Set(bawaan.map((x) => x.toLowerCase()));
+  for (const satu of tambahan) {
+    const teks = String(satu || "").trim().toLowerCase();
+    if (teks.length < 3 || sudah.has(teks)) continue;
+    sudah.add(teks);
+    hasil.push(teks);
+  }
+  return hasil;
+}
+
+function findShortenerLinks(body: string, hosts: readonly string[] = SHORTENER_HOSTS) {
   const found: string[] = [];
-  for (const host of SHORTENER_HOSTS) {
+  for (const host of hosts) {
     const pattern = new RegExp(`https?://(?:www\\.)?${escapeRegExp(host)}/\\S+`, "gi");
     const matches = body.match(pattern);
     if (matches) found.push(...matches);
@@ -224,12 +267,12 @@ function countEmoji(body: string) {
  *
  * @returns daftar peringatan, terurut dari yang paling berat
  */
-export function lintTemplateBody(body: string): MessageWarning[] {
+export function lintTemplateBody(body: string, tambahan?: KosakataTambahan): MessageWarning[] {
   const teks = typeof body === "string" ? body : String(body ?? "");
   const warnings: MessageWarning[] = [];
   if (!teks.trim()) return warnings;
 
-  const pemendek = findShortenerLinks(teks);
+  const pemendek = findShortenerLinks(teks, gabung(SHORTENER_HOSTS, tambahan?.pemendek));
   if (pemendek.length > 0) {
     warnings.push({
       code: "pemendek_tautan",
@@ -242,7 +285,7 @@ export function lintTemplateBody(body: string): MessageWarning[] {
     });
   }
 
-  const phishing = findPhrases(teks, PHISHING_PHRASES);
+  const phishing = findPhrases(teks, gabung(PHISHING_PHRASES, tambahan?.phishing));
   if (phishing.length > 0) {
     warnings.push({
       code: "kata_penipuan",
@@ -255,7 +298,7 @@ export function lintTemplateBody(body: string): MessageWarning[] {
     });
   }
 
-  const promosi = findPhrases(teks, PROMO_PHRASES);
+  const promosi = findPhrases(teks, gabung(PROMO_PHRASES, tambahan?.promosi));
   if (promosi.length > 0) {
     warnings.push({
       code: "kata_promosi",

@@ -64,6 +64,7 @@ const promptPutusanService = require("../services/promptPutusanService");
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
 const katalogEAuditService = require("../services/katalogEAuditService");
 const kemampuanMesinService = require("../services/kemampuanMesinService");
+const kosakataService = require("../services/kosakataService");
 const berkasPengawasanService = require("../services/berkasPengawasanService");
 const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
@@ -2418,6 +2419,34 @@ router.get("/sipp/skema/laporan", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Kosakata pemeriksa pesan - yang ditambahkan pengadilan.
+ *
+ * Daftar bawaannya tetap di dalam kode portal dan tidak dikirim dari sini;
+ * yang ini TAMBAHAN saja. Menggabungkannya di sisi bot akan membuat portal
+ * bergantung pada bot untuk memeriksa kalimat yang sedang diketik - dan
+ * pemeriksa yang mati ketika botnya mati berhenti menjadi pemeriksa.
+ */
+router.get("/kosakata", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, tambahan: kosakataService.getTambahan(), jenis: kosakataService.JENIS });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/kosakata", requireInternalToken, (req, res) => {
+  try {
+    const hasil = kosakataService.simpanTambahan(
+      req.body?.tambahan || {},
+      String(req.body?.olehSiapa || "")
+    );
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, jenis: kosakataService.JENIS });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Rubrik penilaian perkara. */
 router.get("/sipp/penilaian/pengaturan", requireInternalToken, (req, res) => {
   try {
@@ -2437,6 +2466,11 @@ router.post("/sipp/penilaian/pengaturan", requireInternalToken, (req, res) => {
       bulanPenuh: req.body?.bulanPenuh,
       bulanNol: req.body?.bulanNol,
       hariMinutasi: req.body?.hariMinutasi,
+      // Ambang predikat. Yang tidak dikirim jatuh ke bawaannya, bukan ke nol -
+      // ambang nol akan menyebut SELURUH perkara "baik", dan itu keadaan yang
+      // tidak akan dicurigai siapa pun.
+      ambangBaik: req.body?.ambangBaik,
+      ambangPerhatian: req.body?.ambangPerhatian,
       bobot: req.body?.bobot || {},
       olehSiapa: String(req.body?.olehSiapa || ""),
     });

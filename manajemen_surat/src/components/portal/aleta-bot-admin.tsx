@@ -69,6 +69,10 @@ import {
   listAletaBotVariableDocs,
 } from "@/lib/aleta-bot-variable-catalog";
 import { findNotificationsOutsideSendingWindow, formatHoursLabel } from "@/lib/aleta-bot-sending-schedule";
+import {
+  KosakataPemeriksaPesan,
+  useKosakataTambahan,
+} from "@/components/portal/kosakata-pemeriksa-pesan";
 import { lintTemplateBody, summarizeWarnings } from "@/lib/aleta-bot-message-linter";
 import { apiPath } from "@/lib/base-path";
 import { usePortal } from "@/lib/app-state";
@@ -1768,7 +1772,14 @@ export function scoreQueryForTemplate(query: Pick<AletaBotQuery, "outputColumns"
  * setiap kartu hanya menambah ramai tanpa memberi tahu apa-apa.
  */
 function TemplateSafetyBadge({ body }: { body: string }) {
-  const ringkas = useMemo(() => summarizeWarnings(lintTemplateBody(body)), [body]);
+  // Kosakata tambahan pengadilan ikut diperiksa. Dibaca sekali untuk seluruh
+  // layar - pemeriksa ini dipasang pada TIAP kartu isi pesan, dan pembacaan
+  // per kartu berarti puluhan permintaan untuk satu daftar yang sama.
+  const tambahan = useKosakataTambahan();
+  const ringkas = useMemo(
+    () => summarizeWarnings(lintTemplateBody(body, tambahan)),
+    [body, tambahan]
+  );
   if (ringkas.total === 0) return null;
   const berat = ringkas.tinggi > 0;
   return (
@@ -1779,7 +1790,8 @@ function TemplateSafetyBadge({ body }: { body: string }) {
 }
 
 function TemplateSafetyWarnings({ body }: { body: string }) {
-  const warnings = useMemo(() => lintTemplateBody(body), [body]);
+  const tambahan = useKosakataTambahan();
+  const warnings = useMemo(() => lintTemplateBody(body, tambahan), [body, tambahan]);
   if (warnings.length === 0) {
     return (
       <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm">
@@ -4954,6 +4966,11 @@ export function AletaBotAdminPanel() {
 
         <TabsContent value="templates" id="templates">
           <div className="grid gap-4">
+            {/* Kosakata pemeriksanya ditaruh di atas kartu isi pesan, dan
+                sengaja: yang membaca peringatan pada kartu di bawah pantas
+                menemukan tempat mengubahnya tanpa mencari-cari. */}
+            <KosakataPemeriksaPesan />
+
             {groupedTemplates.map(({ category, templates }) => (
               <Card key={category}>
                 <CardHeader>

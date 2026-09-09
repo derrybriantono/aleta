@@ -116,9 +116,49 @@ const BAWAAN = {
   bulanNol: 5,
   /** Hari sejak putusan sampai minutasi yang masih dinilai tepat. */
   hariMinutasi: 14,
+  /**
+   * ==========================================================================
+   * AMBANG PREDIKAT - YANG TERAKHIR MASIH TERTANAM DI KODE
+   * ==========================================================================
+   *
+   * Bobot tiap butir sudah lama dapat diubah pengadilan, tetapi ambang yang
+   * mengubah angka menjadi PREDIKAT masih tertulis di dalam kode:
+   *
+   *     skor >= 85 ? "baik" : skor >= 60 ? "perhatian" : "kurang"
+   *
+   * Dan justru ambang itulah yang paling sering dipersoalkan. Bobot menentukan
+   * bagaimana angkanya tersusun - itu perkara teknis. Ambang menentukan
+   * perkara siapa yang disebut "kurang", dan itu perkara yang menyangkut
+   * orang. Menguncinya di dalam kode berarti tiap pengadilan yang menganggap
+   * ukurannya terlalu keras - atau terlalu longgar - harus menunggu versi
+   * baru dipasang untuk sesuatu yang sifatnya kebijakan pimpinan, bukan
+   * kekeliruan aplikasi.
+   *
+   * Disimpan di tempat yang SAMA dengan bobot - berkas pengaturan yang sudah
+   * ada - sehingga tidak menuntut tabel baru maupun migrasi.
+   */
+  ambangBaik: 85,
+  ambangPerhatian: 60,
   /** Bobot tiap butir, dapat diubah dari layar. */
   bobot: Object.fromEntries(BUTIR.map((b) => [b.kunci, b.bobot])),
 };
+
+/**
+ * Predikat dari skor menurut ambang yang berlaku.
+ *
+ * Dipisahkan sebagai fungsi supaya dapat diuji tanpa menjalankan seluruh
+ * penilaian - dan supaya hanya ada SATU tempat yang menerjemahkan angka
+ * menjadi sebutan. Dua tempat yang menerjemahkannya akan sama-sama bekerja
+ * sampai suatu hari satu layar menyebut "kurang" untuk perkara yang di layar
+ * lain "perhatian".
+ */
+function predikat(skor, pengaturan = BAWAAN) {
+  const baik = Number(pengaturan.ambangBaik ?? BAWAAN.ambangBaik);
+  const perhatian = Number(pengaturan.ambangPerhatian ?? BAWAAN.ambangPerhatian);
+  if (skor >= baik) return "baik";
+  if (skor >= perhatian) return "perhatian";
+  return "kurang";
+}
 
 function angka(nilai, bawaan, min, maks) {
   const n = Number(nilai);
@@ -136,15 +176,27 @@ function getSettings() {
     bulanPenuh: angka(tersimpan.bulanPenuh, BAWAAN.bulanPenuh, 1, 24),
     bulanNol: angka(tersimpan.bulanNol, BAWAAN.bulanNol, 1, 36),
     hariMinutasi: angka(tersimpan.hariMinutasi, BAWAAN.hariMinutasi, 1, 180),
+    ambangBaik: angka(tersimpan.ambangBaik, BAWAAN.ambangBaik, 1, 100),
+    ambangPerhatian: angka(tersimpan.ambangPerhatian, BAWAAN.ambangPerhatian, 0, 99),
     bobot,
   };
 }
 
-function saveSettings({ bulanPenuh, bulanNol, hariMinutasi, bobot = {}, olehSiapa = "" } = {}) {
+function saveSettings({
+  bulanPenuh,
+  bulanNol,
+  hariMinutasi,
+  ambangBaik,
+  ambangPerhatian,
+  bobot = {},
+  olehSiapa = "",
+} = {}) {
   const isi = {
     bulanPenuh: angka(bulanPenuh, BAWAAN.bulanPenuh, 1, 24),
     bulanNol: angka(bulanNol, BAWAAN.bulanNol, 1, 36),
     hariMinutasi: angka(hariMinutasi, BAWAAN.hariMinutasi, 1, 180),
+    ambangBaik: angka(ambangBaik, BAWAAN.ambangBaik, 1, 100),
+    ambangPerhatian: angka(ambangPerhatian, BAWAAN.ambangPerhatian, 0, 99),
     bobot: {},
   };
 
@@ -154,6 +206,14 @@ function saveSettings({ bulanPenuh, bulanNol, hariMinutasi, bobot = {}, olehSiap
 
   if (isi.bulanNol <= isi.bulanPenuh) {
     return { ok: false, alasan: "bulan_nol_harus_lebih_besar" };
+  }
+
+  // Ambang "baik" harus di ATAS ambang "perhatian". Bila terbalik atau sama,
+  // predikat "perhatian" tidak akan pernah terpakai - dan tidak ada satu pun
+  // galat yang muncul. Yang terjadi hanya seluruh perkara terbagi dua, dan
+  // pengadilan yang mengaturnya menyangka golongan tengahnya memang kosong.
+  if (isi.ambangPerhatian >= isi.ambangBaik) {
+    return { ok: false, alasan: "ambang_perhatian_harus_lebih_kecil" };
   }
 
   const sekarang = readRuntimeConfig();
@@ -388,7 +448,7 @@ function nilaiPerkara(fakta = {}) {
 
   return {
     skor,
-    keadaan: skor >= 85 ? "baik" : skor >= 60 ? "perhatian" : "kurang",
+    keadaan: predikat(skor, pengaturan),
     totalBobot,
     /** Bobot butir yang belum waktunya dinilai - tidak ikut membagi. */
     bobotBelumBerlaku,
@@ -401,4 +461,4 @@ function nilaiPerkara(fakta = {}) {
   };
 }
 
-module.exports = { BAWAAN, BUTIR, getSettings, nilaiLama, nilaiPerkara, saveSettings };
+module.exports = { BAWAAN, BUTIR, getSettings, nilaiLama, nilaiPerkara, predikat, saveSettings };

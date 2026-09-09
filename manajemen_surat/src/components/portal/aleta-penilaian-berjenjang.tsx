@@ -287,6 +287,7 @@ export function AletaPenilaianBerjenjang() {
       ) : null}
 
       <PencatatanLaporanPerkara />
+      <RubrikPenilaian />
     </div>
   );
 }
@@ -544,6 +545,325 @@ function PencatatanLaporanPerkara() {
 
         {blangko?.catatan ? (
           <p className="text-xs leading-5 text-muted-foreground">{blangko.catatan}</p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ==========================================================================
+ * RUBRIK PENILAIAN PERKARA - BOBOT DAN AMBANG PREDIKATNYA
+ * ========================================================================== */
+
+type ButirRubrik = {
+  kunci: string;
+  label: string;
+  keterangan: string;
+  dasar: string;
+  bobot: number;
+};
+
+type PengaturanRubrik = {
+  bulanPenuh: number;
+  bulanNol: number;
+  hariMinutasi: number;
+  ambangBaik: number;
+  ambangPerhatian: number;
+  bobot: Record<string, number>;
+};
+
+type JawabanRubrik = {
+  available?: boolean;
+  ok?: boolean;
+  alasan?: string;
+  pengaturan?: PengaturanRubrik;
+  butir?: ButirRubrik[];
+};
+
+/**
+ * Sebab penolakan dari mesin, diterjemahkan menjadi kalimat.
+ *
+ * Nama sebabnya berbentuk kunci supaya dapat diperiksa; yang dibaca orang
+ * harus kalimat yang menerangkan APA yang salah dan kenapa itu penting.
+ */
+const SEBAB_TOLAK: Record<string, string> = {
+  bulan_nol_harus_lebih_besar:
+    "Bulan bernilai nol harus lebih besar daripada bulan bernilai penuh. Kalau tidak, tidak ada rentang untuk nilai di antara keduanya.",
+  ambang_perhatian_harus_lebih_kecil:
+    "Ambang perhatian harus lebih kecil daripada ambang baik. Kalau sama atau terbalik, golongan tengahnya tidak akan pernah terpakai - dan tidak ada galat apa pun yang muncul.",
+};
+
+/**
+ * ============================================================================
+ * ANGKANYA DIUBAH PENGADILAN, BUKAN MENUNGGU VERSI BARU
+ * ============================================================================
+ *
+ * Tercatat sejak 1.31.0 sebagai keterbatasan: bobot skor ditetapkan aplikasi
+ * dan belum dapat diubah pengadilan. Mesinnya sebenarnya sudah lama membacanya
+ * dari pengaturan, dan rutenya pun sudah ada di bot - yang tidak pernah ada
+ * jalan dari portal menuju ke sana.
+ *
+ * Selama layar ini tidak ada, "dapat diubah" benar bagi mesin dan tidak benar
+ * bagi orang yang memakainya: satu-satunya cara mengubahnya adalah menyunting
+ * berkas pengaturan di dalam container.
+ *
+ * ============================================================================
+ * AMBANG PREDIKAT DITARUH PALING ATAS, DAN SENGAJA
+ * ============================================================================
+ *
+ * Bobot menentukan bagaimana angkanya tersusun - itu perkara teknis. Ambang
+ * menentukan perkara SIAPA yang disebut kurang, dan itu perkara yang
+ * menyangkut orang. Yang kedua yang paling sering dipersoalkan, dan yang
+ * paling perlu terlihat lebih dahulu oleh yang membukanya.
+ */
+function RubrikPenilaian() {
+  const [jawaban, setJawaban] = useState<JawabanRubrik | null>(null);
+  const [draf, setDraf] = useState<PengaturanRubrik | null>(null);
+  const [pesan, setPesan] = useState("");
+  const [galat, setGalat] = useState("");
+  const [sedangSimpan, setSedangSimpan] = useState(false);
+
+  /** Membaca rubrik. TIDAK menyentuh keadaan layar. */
+  const baca = useCallback(async (): Promise<{ isi: JawabanRubrik | null; sebab: string }> => {
+    try {
+      return { isi: await ambilJson<JawabanRubrik>("/api/aleta-ecourt/rubrik"), sebab: "" };
+    } catch (kesalahan) {
+      return {
+        isi: null,
+        sebab: kesalahan instanceof Error ? kesalahan.message : String(kesalahan),
+      };
+    }
+  }, []);
+
+  const terapkan = useCallback((isi: JawabanRubrik | null, sebab: string) => {
+    setGalat(sebab);
+    if (!isi) return;
+    setJawaban(isi);
+    if (isi.pengaturan) setDraf({ ...isi.pengaturan, bobot: { ...isi.pengaturan.bobot } });
+  }, []);
+
+  /** Penyegaran atas permintaan - sesudah menyimpan. */
+  const muat = useCallback(async () => {
+    const { isi, sebab } = await baca();
+    terapkan(isi, sebab);
+  }, [baca, terapkan]);
+
+  // Penanda hidup: jawaban yang terlambat tidak ditulis ke layar yang sudah
+  // dilepas. Pola yang sama dengan papan antrian.
+  useEffect(() => {
+    let hidup = true;
+    void (async () => {
+      const { isi, sebab } = await baca();
+      if (!hidup) return;
+      terapkan(isi, sebab);
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, [baca, terapkan]);
+
+  const butir = useMemo(() => jawaban?.butir || [], [jawaban]);
+
+  // Jumlah bobot ditampilkan apa adanya, TIDAK dipaksa seratus. Pembagi
+  // nilainya memang jumlah bobot yang berlaku pada perkara itu, bukan angka
+  // seratus - jadi jumlah delapan puluh pun menghasilkan nilai yang benar.
+  // Yang ditampilkan hanya keterangannya, supaya tidak ada yang menyangka
+  // aplikasi diam-diam membetulkannya.
+  const jumlahBobot = useMemo(
+    () => butir.reduce((jumlah, b) => jumlah + Number(draf?.bobot?.[b.kunci] ?? b.bobot), 0),
+    [butir, draf]
+  );
+
+  const ubahAngka = (kunci: keyof PengaturanRubrik, nilai: string) => {
+    setDraf((lama) => (lama ? { ...lama, [kunci]: Number(nilai) } : lama));
+    setPesan("");
+  };
+
+  const ubahBobot = (kunciButir: string, nilai: string) => {
+    setDraf((lama) =>
+      lama ? { ...lama, bobot: { ...lama.bobot, [kunciButir]: Number(nilai) } } : lama
+    );
+    setPesan("");
+  };
+
+  const simpan = async () => {
+    if (!draf) return;
+    setSedangSimpan(true);
+    setPesan("");
+    setGalat("");
+    try {
+      const isi = await ambilJson<JawabanRubrik>("/api/aleta-ecourt/rubrik", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draf),
+      });
+
+      if (isi.available === false) {
+        setGalat(isi.alasan || "ALETA Bot belum dapat dihubungi.");
+        return;
+      }
+      if (isi.ok === false) {
+        setGalat(SEBAB_TOLAK[String(isi.alasan)] || isi.alasan || "Tidak tersimpan.");
+        return;
+      }
+
+      setPesan("Rubrik tersimpan. Nilai perkara dihitung memakai angka ini mulai sekarang.");
+      await muat();
+    } catch (kesalahan) {
+      setGalat(kesalahan instanceof Error ? kesalahan.message : String(kesalahan));
+    } finally {
+      setSedangSimpan(false);
+    }
+  };
+
+  return (
+    <Card className="border-border/80">
+      <CardHeader>
+        <CardTitle>Rubrik penilaian perkara</CardTitle>
+        <CardDescription>
+          Bobot tiap butir dan ambang predikatnya. Ini rubrik ALETA, BUKAN nilai resmi SK Penilaian
+          SIPP - keduanya sengaja tidak dijumlahkan. Perubahan di sini berlaku surut: seluruh perkara
+          dinilai memakai angka yang baru, tanpa satu pun berkas berubah.
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {galat ? (
+          <div className="rounded-md border border-rose-300/70 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-700/50 dark:bg-rose-950/40 dark:text-rose-300">
+            {galat}
+          </div>
+        ) : null}
+
+        {jawaban?.available === false ? (
+          <div className="rounded-md border border-amber-300/70 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-200">
+            {jawaban.alasan || "ALETA Bot belum dapat dihubungi."}
+          </div>
+        ) : null}
+
+        {pesan ? (
+          <div className="rounded-md border border-emerald-300/70 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-700/50 dark:bg-emerald-950/40 dark:text-emerald-200">
+            {pesan}
+          </div>
+        ) : null}
+
+        {draf ? (
+          <>
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">Ambang predikat</h4>
+              <p className="text-xs leading-5 text-muted-foreground">
+                Angka inilah yang menentukan perkara mana yang disebut kurang. Sampai sekarang ia
+                tertanam di dalam kode, sehingga mengubahnya menuntut versi baru dipasang untuk
+                sesuatu yang sifatnya kebijakan pimpinan.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Sekurang-kurangnya bernilai baik</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={draf.ambangBaik}
+                    onChange={(e) => ubahAngka("ambangBaik", e.target.value)}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Sekurang-kurangnya perhatian</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={draf.ambangPerhatian}
+                    onChange={(e) => ubahAngka("ambangPerhatian", e.target.value)}
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Di bawah {draf.ambangPerhatian} disebut kurang.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">Skala waktu</h4>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Bulan bernilai penuh</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={draf.bulanPenuh}
+                    onChange={(e) => ubahAngka("bulanPenuh", e.target.value)}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Bulan bernilai nol</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={36}
+                    value={draf.bulanNol}
+                    onChange={(e) => ubahAngka("bulanNol", e.target.value)}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="font-medium">Hari minutasi masih tepat</span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={180}
+                    value={draf.hariMinutasi}
+                    onChange={(e) => ubahAngka("hariMinutasi", e.target.value)}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">
+                Bobot tiap butir{" "}
+                <span className="font-normal text-muted-foreground">— berjumlah {jumlahBobot}</span>
+              </h4>
+              <div className="space-y-2">
+                {butir.map((b) => (
+                  <div
+                    key={b.kunci}
+                    className="grid items-start gap-2 rounded-md border border-border/70 p-3 sm:grid-cols-[1fr_7rem]"
+                  >
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">{b.label}</p>
+                      <p className="text-xs leading-5 text-muted-foreground">{b.keterangan}</p>
+                      {/* Dasar tiap butir ikut ditampilkan. Bobot yang tidak
+                          diketahui dasarnya akan diubah menurut selera, dan
+                          angka yang diubah menurut selera tidak dapat
+                          dipertahankan pada hari ia dipersoalkan. */}
+                      <p className="text-xs leading-5 text-muted-foreground/80">{b.dasar}</p>
+                    </div>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={draf.bobot?.[b.kunci] ?? b.bobot}
+                      onChange={(e) => ubahBobot(b.kunci, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground">
+                Jumlahnya tidak harus seratus. Pembagi nilainya adalah jumlah bobot yang BERLAKU
+                pada perkara itu - butir yang belum waktunya dinilai tidak ikut membagi - sehingga
+                jumlah delapan puluh pun menghasilkan nilai yang benar.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button type="button" onClick={() => void simpan()} disabled={sedangSimpan}>
+                {sedangSimpan ? "Menyimpan…" : "Simpan rubrik"}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Tersimpan atas nama Anda, dan tercatat.
+              </span>
+            </div>
+          </>
         ) : null}
       </CardContent>
     </Card>
