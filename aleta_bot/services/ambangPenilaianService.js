@@ -52,6 +52,46 @@ const AMBANG = Object.assign(Object.create(null), {
       { mulai: "1848-01-01", nilai: 3, dasar: "Pasal 122 HIR / Pasal 146 R.Bg" },
     ],
   },
+  /**
+   * ==========================================================================
+   * TENGGANG PENGINPUTAN - BERSIFAT KEBIJAKAN, DAN ITU DISENGAJA
+   * ==========================================================================
+   *
+   * Ambang ini memisahkan "diinput tepat waktu" dari "terlambat diinput".
+   * Ia TIDAK ditandai sebagai peraturan, sebab dasar peraturannya belum
+   * diperiksa terhadap naskah resminya.
+   *
+   * Yang diketahui: ALETA sudah lama memakai skala 0 hari bernilai 5, 1 hari
+   * 3, 2 hari 2, 3 hari 1, selebihnya 0 - di dalam pemberitahuan harian yang
+   * dikirimkannya. Skala itu dipakai tiap hari dan tidak pernah dipersoalkan,
+   * tetapi dipakai bukan berarti berdasar; itu dua hal yang berbeda dan
+   * menyamakannya adalah cara paling mudah menuliskan dasar hukum yang tidak
+   * ada.
+   *
+   * Angka satu dipilih sebagai batas "tepat": peristiwa yang diinput pada hari
+   * yang sama atau keesokan harinya masih wajar - petugas mengetik pagi
+   * berikutnya - sedangkan mulai hari kedua jaraknya sudah menjadi keterangan
+   * tentang cara kerja, bukan tentang jam kerja.
+   *
+   * WAJIB ditinjau ulang begitu ada pengukuran atas data nyata. Ambang yang
+   * ditetapkan tanpa melihat sebarannya akan menuduh atau membebaskan seluruh
+   * pengadilan sekaligus, dan keduanya sama-sama tidak berguna.
+   */
+  ketepatanInput: {
+    label: "Tenggang penginputan peristiwa ke SIPP",
+    satuan: "hari",
+    sifat: "kebijakan",
+    keterangan:
+      "Peristiwa perkara diinput ke SIPP pada hari yang sama atau keesokan harinya. Belum ditetapkan pimpinan; angkanya sementara, menunggu pengukuran atas data nyata.",
+    riwayat: [
+      {
+        mulai: "2026-09-10",
+        nilai: 1,
+        dasar:
+          "Sementara - dari skala yang sudah dipakai pemberitahuan harian ALETA. Dasar peraturannya belum diperiksa terhadap naskah resmi.",
+      },
+    ],
+  },
   minutasiBerkas: {
     label: "Tenggang minutasi berkas",
     satuan: "hari",

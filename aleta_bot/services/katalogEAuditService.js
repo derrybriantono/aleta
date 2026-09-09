@@ -682,13 +682,13 @@ const SAMBUNGAN = {
     kunci: "ketaatanPenunjukanPaniteraPengganti",
     sifat: "sebagian",
     catatan:
-      "Butir ini menuntut tanggal PENGINPUTAN penunjukan yang pertama. Yang dinilai tanggal penetapannya, dan keduanya dapat berbeda jauh.",
+      "Butir ini menuntut tanggal PENGINPUTAN penunjukan yang pertama. Yang dinilai di sini tanggal penetapannya, dan keduanya dapat berbeda jauh. Penginputannya kini terukur tersendiri - lihat ketepatanInput pada daftar di luar katalog.",
   },
   KT04: {
     kunci: "ketaatanPenunjukanJurusita",
     sifat: "sebagian",
     catatan:
-      "Butir ini menuntut tanggal PENGINPUTAN penunjukan yang pertama. Yang dinilai tanggal penetapannya, dan keduanya dapat berbeda jauh.",
+      "Butir ini menuntut tanggal PENGINPUTAN penunjukan yang pertama. Yang dinilai di sini tanggal penetapannya, dan keduanya dapat berbeda jauh. Penginputannya kini terukur tersendiri - lihat ketepatanInput pada daftar di luar katalog.",
   },
   KT05: {
     kunci: "ketaatanPenetapanHariSidang",
@@ -848,6 +848,28 @@ const DI_LUAR_KATALOG = {
     "Asas penyelesaian lima bulan menurut SEMA 2 Tahun 2014. Katalog memuat MP15 - indeks risiko melampaui lima bulan - tetapi itu DUGAAN ke depan, bukan pengukuran ketaatan yang sudah terjadi. Keduanya berbeda dan keduanya berguna.",
   kelengkapanPertimbanganHukum:
     "Ikut menyusun IN07 bersama kelengkapan amar putusan. Didaftarkan terpisah karena satu butir katalog hanya dapat menunjuk satu penilaian, sedangkan keduanya berdiri sendiri-sendiri.",
+
+  // ==========================================================================
+  // KETEPATAN PENGINPUTAN - SEPARUH YANG SELAMA INI HILANG DARI EMPAT BUTIR
+  // ==========================================================================
+  //
+  // KT02, KT03, KT04, dan KT11 menyebutkan sendiri bahwa yang mereka tuntut
+  // adalah tanggal PENGINPUTAN, sementara yang dinilai baru tanggal
+  // peristiwanya. Keempat penilaian di bawah mengisi separuh yang hilang itu.
+  //
+  // Didaftarkan terpisah, bukan menggantikan sambungan yang ada, karena satu
+  // butir katalog hanya dapat menunjuk satu penilaian - sedangkan keduanya
+  // mengukur hal yang berbeda dan keduanya diperlukan. Penetapan bertanggal 3
+  // Januari yang baru diketik 20 Januari patuh menurut yang satu dan terlambat
+  // menurut yang lain, dan kedua keterangan itu sama-sama benar.
+  ketepatanInputPenetapanMajelis:
+    "Jarak antara tanggal penetapan majelis dan saat ia diketik ke SIPP. Mengisi separuh KT02 yang menuntut tanggal penginputan; separuh lainnya - keberadaan dokumen penetapannya - masih belum.",
+  ketepatanInputPaniteraPengganti:
+    "Jarak antara tanggal penunjukan panitera pengganti dan saat ia diketik ke SIPP. Inilah yang dituntut KT03 dan selama ini tidak terukur.",
+  ketepatanInputJurusita:
+    "Jarak antara tanggal penunjukan jurusita dan saat ia diketik ke SIPP. Inilah yang dituntut KT04 dan selama ini tidak terukur.",
+  ketepatanInputPutusan:
+    "Jarak antara pengucapan putusan dan saat ia diketik ke SIPP. Mengisi separuh KT11; sambungan KT11 yang ada mengukur jarak pendaftaran ke putusan, ukuran yang sah tetapi menjawab pertanyaan yang lain.",
 };
 
 /**

@@ -65,6 +65,7 @@ const kerangkaPenilaianService = require("../services/kerangkaPenilaianService")
 const katalogEAuditService = require("../services/katalogEAuditService");
 const kemampuanMesinService = require("../services/kemampuanMesinService");
 const kosakataService = require("../services/kosakataService");
+const penilaianKetepatanInputService = require("../services/penilaianKetepatanInputService");
 const berkasPengawasanService = require("../services/berkasPengawasanService");
 const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
@@ -1748,6 +1749,7 @@ router.get("/penilaian/daftar", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -1783,6 +1785,7 @@ router.get("/penilaian/jalankan", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -1841,6 +1844,7 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -1916,6 +1920,7 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
 router.get("/e-audit/rapor-aparatur", requireInternalToken, async (req, res) => {
   try {
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     raporAparaturService.daftarkanSemua();
 
     const kunci = String(req.query.kunci || "").trim();
@@ -2049,6 +2054,7 @@ router.get("/e-audit/berkas", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
 
@@ -2079,6 +2085,7 @@ router.get("/e-audit/rapor", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -2192,6 +2199,7 @@ router.get("/e-audit/butir", requireInternalToken, async (req, res) => {
     penilaianMutuDataService.daftarkanSemua();
     penilaianKeuanganService.daftarkanSemua();
     penilaianTahapanService.daftarkanSemua();
+    penilaianKetepatanInputService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
