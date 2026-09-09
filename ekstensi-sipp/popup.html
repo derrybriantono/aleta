@@ -18,8 +18,23 @@
     --sorot: #e8f0f4;
   }
 
+  /* ── Tiga keadaan, bukan dua ────────────────────────────────────────────
+   *
+   * Bawaannya MENGIKUTI PERAMBAN: itu yang paling jarang salah, dan yang tidak
+   * pernah membuka pengaturan pun mendapat warna yang sama dengan seluruh
+   * jendela lain di layarnya.
+   *
+   * Dua keadaan lainnya adalah pilihan tegas. Keduanya perlu, sebab peramban
+   * yang disetel gelap tidak selalu berarti orangnya ingin popup ini gelap -
+   * jendela sekecil kartu nama yang muncul di atas halaman terang justru lebih
+   * nyaman terang.
+   *
+   * Pola pemilihnya sama dengan panel di halaman SIPP: nilai terang ditulis di
+   * :root biasa, gelap ditimpa lewat prefers-color-scheme yang DIJAGA supaya
+   * pilihan terang tetap menang, lalu ditimpa lagi lewat data-tema supaya
+   * pilihan gelap menang di kedua arah. */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-tema="terang"]) {
       --latar: #141b19;
       --latar-lembut: #1b2521;
       --tulisan: #e6ede9;
@@ -29,6 +44,31 @@
       --sorot: #1e2c33;
     }
   }
+
+  :root[data-tema="gelap"] {
+    --latar: #141b19;
+    --latar-lembut: #1b2521;
+    --tulisan: #e6ede9;
+    --tulisan-lembut: #9aaaa1;
+    --garis: #2b3833;
+    --merek: #7cc0e4;
+    --sorot: #1e2c33;
+  }
+
+  .tombol-tema {
+    margin-left: auto;
+    flex: none;
+    padding: 4px 9px;
+    border: 1px solid var(--garis);
+    border-radius: 999px;
+    background: var(--latar);
+    color: var(--tulisan-lembut);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .tombol-tema:hover { border-color: var(--merek); color: var(--merek); }
 
   * { box-sizing: border-box; }
 
@@ -166,6 +206,12 @@
     <p class="judul">ALETA UNTUK SIPP</p>
     <p class="anak-judul">Keterangan e-Court di halaman SIPP</p>
   </div>
+  <!-- Satu tombol, tiga keadaan, berputar: ikut peramban -> terang -> gelap.
+       Tiga tombol untuk tiga keadaan memakan separuh kepala jendela sekecil
+       ini, dan yang dipilih hanya satu. -->
+  <button type="button" id="tombolTema" class="tombol-tema" title="Ganti tema jendela ini">
+    tema: ikut peramban
+  </button>
 </div>
 
 <!-- ===================================================================

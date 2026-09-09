@@ -3281,6 +3281,39 @@ let temaSippMenyala = false;
  * Berpindah ke tema terang dengan begitu selalu mengembalikan SIPP ke keadaan
  * semula, tanpa perlu mengingat saklar mana yang pernah ditekan.
  */
+/**
+ * ============================================================================
+ * SALINAN TEMA UNTUK PEMUATAN BERIKUTNYA
+ * ============================================================================
+ *
+ * chrome.storage.local hanya dapat dibaca secara asinkron, dan apa pun yang
+ * menunggunya sudah pasti terlambat: halaman digambar lebih dulu, putih, lalu
+ * berubah gelap - kelebat yang paling terasa justru pada daftar perkara
+ * panjang dan tiap kali membuka satu perkara.
+ *
+ * Karena itu keputusannya disalin ke localStorage halaman ini, yang SINKRON,
+ * dan dibaca tema-awal.js pada document_start - sebelum satu piksel pun
+ * digambar. chrome.storage tetap sumber kebenarannya; yang di sini hanya
+ * cache, ditulis ulang tiap kali temanya berubah.
+ *
+ * Tiga nilai, bukan dua, sebab keadaannya memang tiga: panel gelap dengan
+ * lapisan SIPP menyala, panel terang (lapisannya dilepas), dan panel gelap
+ * dengan lapisan SIPP sengaja dimatikan. Yang ketiga harus dapat dibedakan
+ * dari yang pertama, kalau tidak halaman akan berkelebat gelap bagi orang yang
+ * justru mematikannya.
+ */
+const KUNCI_SALINAN_TEMA = "aleta-tema-sipp";
+
+function simpanSalinanTema() {
+  const nilai = temaSekarang !== "gelap" ? "terang" : temaSippMenyala ? "gelap" : "mati";
+  try {
+    window.localStorage.setItem(KUNCI_SALINAN_TEMA, nilai);
+  } catch {
+    // Penyimpanan halaman tidak tersedia. Temanya tetap berlaku untuk halaman
+    // ini; yang hilang hanya kecepatan pada pemuatan berikutnya.
+  }
+}
+
 function terapkanTemaSipp() {
   // ==========================================================================
   // SATU PENANDA, BUKAN SATU LEMBAR GAYA YANG DISUNTIKKAN
@@ -3306,6 +3339,7 @@ function terapkanTemaSipp() {
   // Penanda yang sama dipakai lencana baris untuk memilih warnanya, sehingga
   // keduanya mustahil berselisih.
   const akar = document.documentElement;
+  simpanSalinanTema();
   if (!temaSippMenyala || temaSekarang !== "gelap") {
     akar.removeAttribute("data-aleta-tema-sipp");
     return;

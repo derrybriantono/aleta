@@ -2374,3 +2374,82 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   font-size: 10.5px;
   color: var(--aleta-tulisan-lembut);
 }
+
+/* ── Huruf alasan perceraian, tanpa lencana bulat ──────────────────────────
+ *
+ * Nama naskahnya dulu ditaruh di dalam lencana ber-border-radius 999px.
+ * Lencana itu flex-item yang meregang setinggi barisnya, sehingga "Pasal 19 PP
+ * Nomor 9 Tahun 1975" berubah menjadi bulatan raksasa yang memakan separuh
+ * lebar panel - dan bunyi pasalnya, yang justru harus dibaca, tersisa satu
+ * kata per baris di sisa ruangnya.
+ *
+ * Sekarang keduanya balok biasa yang menumpuk: nama naskah sebagai keterangan
+ * kecil, bunyinya selebar panel di bawahnya. */
+.aleta-abt-huruf {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--aleta-garis);
+}
+
+.aleta-abt-huruf:first-of-type {
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.aleta-abt-huruf-kepala {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.aleta-abt-huruf-nama {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-abt-huruf-pemicu {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-abt-naskah {
+  margin-top: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-abt-bunyi {
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--aleta-tulisan);
+  overflow-wrap: anywhere;
+}
+
+/* Pratinjau perapian. Menampilkan hasilnya apa adanya - termasuk baris dan
+   lekukannya - sebab justru baris dan lekukan itulah yang sedang diubah. */
+.aleta-abt-pratinjau {
+  margin: 4px 0 0;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: var(--aleta-latar);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--aleta-tulisan);
+}

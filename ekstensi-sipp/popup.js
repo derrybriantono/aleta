@@ -270,3 +270,57 @@ if (penyimpanan) {
   tampilkanAkunSipp({});
   void periksaAkunAleta("");
 }
+
+/**
+ * ============================================================================
+ * TEMA JENDELA INI
+ * ============================================================================
+ *
+ * Tiga keadaan, berputar dengan satu tombol:
+ *
+ *   ikut peramban  tidak ada atribut - hanya prefers-color-scheme yang bicara
+ *   terang         data-tema="terang", menang atas peramban yang gelap
+ *   gelap          data-tema="gelap",  menang atas peramban yang terang
+ *
+ * Bawaannya mengikuti peramban. Itu yang paling jarang salah, dan yang tidak
+ * pernah menyentuh tombol ini pun mendapat warna yang sama dengan seluruh
+ * jendela lain di layarnya.
+ *
+ * Disimpan di penyimpanan ekstensi, bukan localStorage: jendela ini hidup di
+ * origin chrome-extension:// dan tidak berbagi apa pun dengan halaman SIPP,
+ * sedangkan pilihannya harus bertahan antar-jendela.
+ */
+const KUNCI_TEMA_POPUP = "temaPopup";
+const URUTAN_TEMA = ["ikut", "terang", "gelap"];
+const SEBUTAN_TEMA = { ikut: "ikut peramban", terang: "terang", gelap: "gelap" };
+
+const tombolTema = document.getElementById("tombolTema");
+let temaPopup = "ikut";
+
+function terapkanTemaPopup() {
+  const akar = document.documentElement;
+  if (temaPopup === "ikut") akar.removeAttribute("data-tema");
+  else akar.setAttribute("data-tema", temaPopup);
+  if (tombolTema) tombolTema.textContent = `tema: ${SEBUTAN_TEMA[temaPopup]}`;
+}
+
+if (penyimpanan) {
+  void penyimpanan
+    .get([KUNCI_TEMA_POPUP])
+    .then((simpan) => {
+      const tersimpan = String((simpan && simpan[KUNCI_TEMA_POPUP]) || "");
+      if (URUTAN_TEMA.includes(tersimpan)) temaPopup = tersimpan;
+      terapkanTemaPopup();
+    })
+    .catch(() => terapkanTemaPopup());
+} else {
+  terapkanTemaPopup();
+}
+
+if (tombolTema) {
+  tombolTema.addEventListener("click", () => {
+    temaPopup = URUTAN_TEMA[(URUTAN_TEMA.indexOf(temaPopup) + 1) % URUTAN_TEMA.length];
+    terapkanTemaPopup();
+    if (penyimpanan) void penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup });
+  });
+}

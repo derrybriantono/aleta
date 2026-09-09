@@ -66,6 +66,8 @@ const VAR_SAKSI_1 = "2021";
 const VAR_SAKSI_2 = "2022";
 /** Tanggal sidang - dipakai menghitung ulang lama pisah (9944). */
 const VAR_TGL_SIDANG = "0033";
+/** Posita lengkap - butirnya sering menempel satu sama lain. */
+const VAR_POSITA = "5125";
 
 /**
  * Variabel "(OTOMATIS)" yang isinya disusun ABT dari kerangka fakta.
@@ -222,6 +224,90 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
   if (/DATA DISIMPAN/i.test(teks)) return { ok: true, pesan: "tersimpan" };
   if (/DATA TIDAK TERSIMPAN/i.test(teks)) return { ok: false, pesan: "ABT menolak menyimpan." };
   return { ok: false, pesan: "Jawaban ABT tidak dikenali - anggap belum tersimpan." };
+}
+
+// ─── Merapikan teks yang sudah ada di blangko ────────────────────────────────
+
+/**
+ * ============================================================================
+ * NOMOR 6 - PENOMORAN POSITA YANG MENEMPEL
+ * ============================================================================
+ *
+ * Posita diketik sebagai satu gumpalan: "... 23 Oktober 2017.2. Bahwa setelah
+ * menikah ...". Angka butir berikutnya menempel langsung pada titik butir
+ * sebelumnya, tanpa pemisah apa pun.
+ *
+ * Di layar ABT itu masih terbaca - kolomnya sempit, jadi teksnya membungkus
+ * dan angkanya kebetulan jatuh di awal baris. Di dokumen cetak tidak: seluruh
+ * posita menjadi satu paragraf panjang, dan pembacanya harus mencari sendiri
+ * di mana satu butir berakhir.
+ *
+ * Yang dikerjakan hanya MENYISIPKAN PEMISAH. Tidak satu kata pun diubah, tidak
+ * satu angka pun dinomori ulang - penomoran ulang berarti mengubah rujukan
+ * antar butir ("sebagaimana butir 3"), dan itu mengubah isi gugatan.
+ *
+ * Butir induk dikenali dari pola "<angka>." dan anak butir dari "<huruf>.".
+ * Anak butir diberi lekukan supaya tampak menggantung pada induknya.
+ */
+function rapikanPosita(teks) {
+  let hasil = String(teks || "").replace(/\r\n/g, "\n");
+
+  // Butir induk: titik yang langsung diikuti angka lalu titik.
+  // "2017.2. Bahwa" -> "2017.\n2. Bahwa"
+  hasil = hasil.replace(/([^\s\n])\s*(\d{1,2})\.\s+(?=[A-Z])/g, "$1\n$2. ");
+
+  // Anak butir: "laki-laki,.b. FATHIYAH" -> "laki-laki,\n   b. FATHIYAH"
+  hasil = hasil.replace(/([^\s\n])\s*\.?\s*([a-z])\.\s+(?=[A-Z])/g, "$1\n   $2. ");
+
+  // Baris pertama tidak boleh diawali baris kosong, dan tidak ada baris kosong
+  // berganda di tengah - keduanya menjadi paragraf hampa di dokumen cetak.
+  return hasil
+    .split("\n")
+    .map((baris) => baris.replace(/\s+$/, ""))
+    .filter((baris, i, semua) => baris.trim() !== "" || (i > 0 && semua[i - 1].trim() !== ""))
+    .join("\n")
+    .trim();
+}
+
+/**
+ * ============================================================================
+ * NOMOR 8 - KALIMAT PENUTUP KETERANGAN SAKSI
+ * ============================================================================
+ *
+ * Petugas mengakhiri tiap keterangan saksi dengan "Bahwa sudah cukup;" atau
+ * "Bahwa tidak sanggup lagi;". Kalimat itu catatan pemeriksaan - penanda bahwa
+ * saksi selesai - bukan fakta yang dibuktikan. Di dalam putusan ia terbaca
+ * seperti keterangan saksi yang berdiri sama dengan yang lain, padahal ia
+ * tidak menerangkan apa pun tentang perkaranya.
+ *
+ * Ikut dibuang: baris kosong dan spasi yang tertinggal di bawahnya. Baris
+ * kosong di ujung variabel menjadi paragraf hampa di dokumen cetak, dan
+ * paragraf hampa di tengah pertimbangan hukum terlihat seperti ada yang
+ * terhapus.
+ *
+ * Yang TIDAK dibuang: apa pun selain kedua kalimat itu. Daftar penutupnya
+ * ditulis tegas di POLA_PENUTUP, bukan ditebak dari panjang kalimat - kalimat
+ * pendek di tengah keterangan bisa saja fakta yang menentukan.
+ */
+const POLA_PENUTUP = [
+  /^bahwa\s+sudah\s+cukup\b/i,
+  /^bahwa\s+tidak\s+sanggup\s+lagi\b/i,
+  /^sudah\s+cukup\b/i,
+];
+
+function bersihkanKeteranganSaksi(teks) {
+  const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n");
+  const disimpan = baris.filter((satu) => {
+    const bersih = satu.replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
+    if (bersih === "") return true; // baris kosong diurus di bawah
+    return !POLA_PENUTUP.some((pola) => pola.test(bersih));
+  });
+
+  return disimpan
+    .map((satu) => satu.replace(/\s+$/, ""))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 // ─── Riwayat dan urungkan ────────────────────────────────────────────────────
@@ -599,6 +685,27 @@ function susunPanelAbt(jatiDiri) {
   const kabar = buatElemen("div", "aleta-abt-kabar");
   isi.appendChild(kabar);
 
+  /**
+   * ==========================================================================
+   * RIWAYAT DITARUH DI ATAS, BUKAN DI KAKI PANEL
+   * ==========================================================================
+   *
+   * Sebelumnya wadahnya berada PALING BAWAH, sesudah kartu selisih, kartu
+   * huruf, dan seluruh kartu usulan. Panel dibatasi tiga per lima layar dan
+   * isinya menggulung di dalam dirinya sendiri - jadi menekan "Riwayat
+   * perubahan" memang menggambar daftarnya, tetapi menggambarnya di tempat
+   * yang tidak terlihat, ratusan piksel di bawah pandangan.
+   *
+   * Yang menekannya menyimpulkan tombolnya rusak. Ia tidak rusak; ia menjawab
+   * di luar layar.
+   *
+   * Dua perbaikan: wadahnya pindah ke atas - tepat di bawah tombolnya - dan
+   * sesudah digambar ia digulung ke pandangan. Yang kedua tetap perlu, sebab
+   * panel yang sedang tergulung ke bawah tidak otomatis kembali ke atas.
+   */
+  const wadahRiwayat = buatElemen("div", "aleta-abt-daftar");
+  isi.appendChild(wadahRiwayat);
+
   // Urutannya disengaja: selisih antar saksi lebih dulu, sebab ia dapat
   // membatalkan seluruh isian di bawahnya. Lalu huruf alasan, lalu usulan.
   const wadahSelisih = buatElemen("div", "aleta-abt-daftar");
@@ -630,66 +737,146 @@ function susunPanelAbt(jatiDiri) {
       )
     );
     for (const x of daftar) {
-      const baris = buatElemen("div", "aleta-abt-kutipan");
-      baris.appendChild(buatElemen("span", "aleta-abt-asal", x.hal));
-      baris.appendChild(
-        buatElemen("span", "aleta-abt-kalimat", `saksi 1: ${x.saksi1}  |  saksi 2: ${x.saksi2}`)
+      // Tanpa lencana bulat - sebab yang sama seperti pada huruf alasan:
+      // lencana yang meregang setinggi barisnya berubah menjadi bulatan besar
+      // dan menyisakan sedikit ruang bagi keterangan yang harus dibaca.
+      kotak.appendChild(buatElemen("div", "aleta-abt-naskah", x.hal));
+      kotak.appendChild(
+        buatElemen("div", "aleta-abt-bunyi", `saksi 1: ${x.saksi1}  ·  saksi 2: ${x.saksi2}`)
       );
-      kotak.appendChild(baris);
     }
     wadahSelisih.appendChild(kotak);
   }
 
   /**
-   * NOMOR 6 - huruf alasan perceraian.
+   * ==========================================================================
+   * NOMOR 6 - HURUF ALASAN PERCERAIAN, DENGAN CENTANGAN YANG DAPAT DITERAPKAN
+   * ==========================================================================
    *
-   * Yang ditampilkan bunyi resminya beserta kata yang memicunya. Tidak ada
-   * tombol terapkan: satu huruf yang salah mengubah dasar hukum putusan, dan
-   * hurufnya diketik sendiri oleh yang memutuskan - di baris 8503, dengan
-   * penyunting yang sama.
+   * Sebelumnya bagian ini hanya MENUNJUK: bunyi pasalnya digambar, dan
+   * hurufnya harus diketik sendiri di baris 8503. Alasannya masih benar - satu
+   * huruf yang salah mengubah dasar hukum putusan - tetapi harganya ternyata
+   * lebih besar daripada manfaatnya: petugas tetap harus mengetik ulang huruf
+   * yang sudah terpampang di layar, dan yang diketik ulang bisa salah tulis.
+   *
+   * Sekarang tiap huruf punya centangannya, dan yang tercentang dituliskan ke
+   * 8503 - beserta 4020 yang mengikutinya. Yang TIDAK berubah: manusia yang
+   * mencentang. Huruf yang syaratnya belum tentu terpenuhi tidak pernah
+   * tercentang sendiri, dan syaratnya tetap tertulis di sebelahnya.
+   *
+   * ==========================================================================
+   * LENCANA BULAT BERISI NAMA PASAL DIBUANG
+   * ==========================================================================
+   *
+   * Nama naskahnya dulu ditaruh di dalam lencana ber-border-radius 999px.
+   * Lencana itu flex-item yang meregang setinggi barisnya, sehingga
+   * "Pasal 19 PP Nomor 9 Tahun 1975" berubah menjadi bulatan raksasa yang
+   * memakan separuh lebar panel - dan bunyi pasalnya, yang justru harus
+   * dibaca, tersisa satu kata per baris di sisa ruangnya.
+   *
+   * Sekarang nama naskahnya jadi keterangan biasa di atas kutipannya, selebar
+   * panel, dan bunyi pasalnya mendapat seluruh lebar itu.
    */
   function gambarHuruf(daftar, belumSiap) {
     wadahHuruf.textContent = "";
     if (!daftar.length && !belumSiap.length) return;
 
     const kotak = buatElemen("div", "aleta-abt-kartu");
-    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "8503 — huruf alasan yang pantas diperiksa"));
-    kotak.appendChild(
-      buatElemen(
-        "div",
-        "aleta-abt-catatan",
-        "ALETA tidak memilih hurufnya. Yang di bawah hanya menunjuk, beserta bunyi resminya."
-      )
-    );
-    // ========================================================================
-    // SELURUH DASAR DIGAMBAR, TIDAK SATU PUN DISEMBUNYIKAN
-    // ========================================================================
-    //
-    // Huruf a, b, dan f berdiri di atas DUA naskah - PP 9/1975 dan KHI - dan
-    // bunyinya tidak sama persis. Menampilkan salah satunya saja sama dengan
-    // memilihkan naskah mana yang dikutip, dan itu memilihkan dasar hukum.
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "8503 — huruf alasan perceraian"));
+
+    const pilihan = [];
     for (const h of daftar) {
-      const kepalaHuruf = buatElemen("div", "aleta-abt-kartu-kepala");
-      kepalaHuruf.appendChild(buatElemen("span", "aleta-abt-kode", `huruf ${h.huruf}`));
+      const blok = buatElemen("div", "aleta-abt-huruf");
+
+      const kepalaHuruf = buatElemen("label", "aleta-abt-huruf-kepala");
+      const centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-abt-centang";
+      // Yang bersyarat tidak pernah tercentang sendiri. Huruf B menuntut dua
+      // tahun berturut-turut dan huruf H menuntut akibat ketidakrukunan;
+      // keduanya fakta yang dibuktikan di persidangan, bukan kesimpulan dari
+      // kata kunci yang muncul di keterangan saksi.
+      centang.checked = !h.syarat;
+      kepalaHuruf.appendChild(centang);
+      kepalaHuruf.appendChild(buatElemen("span", "aleta-abt-huruf-nama", `Huruf ${h.huruf}`));
       kepalaHuruf.appendChild(
-        buatElemen("span", "aleta-abt-nama", `dipicu kata: ${h.pemicu.join(", ")}`)
+        buatElemen("span", "aleta-abt-huruf-pemicu", `dipicu: ${h.pemicu.join(", ")}`)
       );
-      kotak.appendChild(kepalaHuruf);
+      blok.appendChild(kepalaHuruf);
+
+      if (h.syarat) blok.appendChild(buatElemen("div", "aleta-abt-catatan", h.syarat));
 
       for (const d of h.dasar || []) {
-        const baris = buatElemen("div", "aleta-abt-kutipan");
-        baris.appendChild(buatElemen("span", "aleta-abt-asal", d.sumber.nama));
-        baris.appendChild(buatElemen("span", "aleta-abt-kalimat", d.bunyi));
-        kotak.appendChild(baris);
+        blok.appendChild(buatElemen("div", "aleta-abt-naskah", d.sumber.nama));
+        blok.appendChild(buatElemen("div", "aleta-abt-bunyi", d.bunyi));
         if (d.catatanNaskah) {
-          kotak.appendChild(buatElemen("div", "aleta-abt-kutipan-sumber", d.catatanNaskah));
+          blok.appendChild(buatElemen("div", "aleta-abt-kutipan-sumber", d.catatanNaskah));
         }
       }
-      if (h.syarat) kotak.appendChild(buatElemen("div", "aleta-abt-catatan", h.syarat));
+
+      kotak.appendChild(blok);
+      pilihan.push({ huruf: h.huruf, centang });
     }
+
     for (const h of belumSiap) {
       kotak.appendChild(buatElemen("div", "aleta-abt-catatan", `huruf ${h.huruf}: ${h.sebab}`));
     }
+
+    if (pilihan.length) {
+      const terap = buatElemen("button", "aleta-permintaan-tombol", "Tulis 8503 dan 4020");
+      terap.type = "button";
+      const kabarHuruf = buatElemen("div", "aleta-abt-kabar");
+      kotak.appendChild(terap);
+      kotak.appendChild(kabarHuruf);
+
+      terap.addEventListener("click", async () => {
+        const dipilih = pilihan.filter((x) => x.centang.checked).map((x) => x.huruf);
+        if (dipilih.length === 0) {
+          kabarHuruf.className = "aleta-abt-kabar aleta-abt-gagal";
+          kabarHuruf.textContent = "Belum ada huruf yang dicentang.";
+          return;
+        }
+        terap.disabled = true;
+        kabarHuruf.className = "aleta-abt-kabar";
+
+        // 8503 memuat hurufnya; 4020 adalah penyalur yang mengaktifkan blok
+        // kuning yang sesuai, dan bentuknya "alasan <huruf>". Keduanya ditulis
+        // sekaligus - menulis salah satunya saja meninggalkan blangko dalam
+        // keadaan setengah, dan itu justru keadaan yang paling sulit dikenali.
+        const isi8503 = dipilih.join(", ");
+        const isi4020 = `alasan ${dipilih.join(" dan ")}`;
+        const gagal = [];
+        for (const [kode, nilai] of [["8503", isi8503], ["4020", isi4020]]) {
+          const sebelum = (barisVariabel().get(kode) || {}).nilai || "";
+          try {
+            const hasil = await simpanVariabel(kode, nilai, jatiDiri);
+            if (!hasil.ok) {
+              gagal.push(`${kode}: ${hasil.pesan}`);
+              continue;
+            }
+            void catatRiwayat({
+              perkaraId: jatiDiri.perkaraId,
+              kode,
+              nama: kode === "8503" ? "Alasan perceraian" : "Penyalur alasan",
+              sebelum,
+              sesudah: nilai,
+              cara: "centangan huruf alasan",
+              pada: new Date().toISOString(),
+            });
+            const item = barisVariabel().get(kode);
+            if (item) item.selNilai.textContent = nilai;
+          } catch (galat) {
+            gagal.push(`${kode}: ${String((galat && galat.message) || galat)}`);
+          }
+        }
+        terap.disabled = false;
+        kabarHuruf.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+        kabarHuruf.textContent = gagal.length
+          ? gagal.join("; ")
+          : `8503 diisi "${isi8503}", 4020 diisi "${isi4020}".`;
+      });
+    }
+
     wadahHuruf.appendChild(kotak);
   }
 
@@ -701,12 +888,106 @@ function susunPanelAbt(jatiDiri) {
    * Digambar ulang tiap kali dibuka, bukan disegarkan terus-menerus: yang
    * membukanya sedang mencari satu perubahan tertentu, bukan menonton daftar.
    */
-  const wadahRiwayat = buatElemen("div", "aleta-abt-daftar");
-  isi.appendChild(wadahRiwayat);
-
   const tombolRiwayat = buatElemen("button", "aleta-abt-batal", "Riwayat perubahan");
   tombolRiwayat.type = "button";
   tombolBaris.appendChild(tombolRiwayat);
+
+  /**
+   * Dua perapian yang mengubah teks yang SUDAH ada, bukan mengusulkan yang
+   * baru. Karena itu keduanya menampilkan pratinjau lebih dulu: yang diubah
+   * bukan kolom kosong, melainkan tulisan yang sudah dibaca dan disetujui.
+   */
+  const tombolRapikan = buatElemen("button", "aleta-abt-batal", "Rapikan posita & saksi");
+  tombolRapikan.type = "button";
+  tombolRapikan.title =
+    "Memisahkan butir posita yang menempel, dan membuang kalimat penutup " +
+    "keterangan saksi beserta baris kosong di bawahnya.";
+  tombolBaris.appendChild(tombolRapikan);
+
+  tombolRapikan.addEventListener("click", async () => {
+    wadahRiwayat.textContent = "";
+    const peta = barisVariabel();
+    const rencana = [];
+
+    const posita = peta.get(VAR_POSITA);
+    if (posita) {
+      const asli = posita.selNilai.innerText;
+      const rapi = rapikanPosita(asli);
+      if (rapi && rapi !== asli.trim()) {
+        rencana.push({ kode: VAR_POSITA, nama: "Posita lengkap", sebelum: asli, sesudah: rapi });
+      }
+    }
+    for (const kode of [VAR_SAKSI_1, VAR_SAKSI_2]) {
+      const item = peta.get(kode);
+      if (!item) continue;
+      const asli = item.selNilai.innerText;
+      const bersih = bersihkanKeteranganSaksi(asli);
+      if (bersih && bersih !== asli.trim()) {
+        rencana.push({
+          kode,
+          nama: `Keterangan saksi ${kode === VAR_SAKSI_1 ? 1 : 2}`,
+          sebelum: asli,
+          sesudah: bersih,
+        });
+      }
+    }
+
+    if (rencana.length === 0) {
+      wadahRiwayat.appendChild(
+        buatElemen("div", "aleta-kosong", "Tidak ada yang perlu dirapikan di halaman ini.")
+      );
+      wadahRiwayat.scrollIntoView({ block: "nearest" });
+      return;
+    }
+
+    for (const r of rencana) {
+      const kartu = buatElemen("div", "aleta-abt-kartu");
+      const kepalaKartu = buatElemen("div", "aleta-abt-kartu-kepala");
+      kepalaKartu.appendChild(buatElemen("span", "aleta-abt-kode", r.kode));
+      kepalaKartu.appendChild(buatElemen("span", "aleta-abt-nama", r.nama));
+      kartu.appendChild(kepalaKartu);
+      kartu.appendChild(buatElemen("div", "aleta-abt-naskah", "sesudah dirapikan"));
+      const pratinjau = buatElemen("pre", "aleta-abt-pratinjau", r.sesudah);
+      kartu.appendChild(pratinjau);
+
+      const terap = buatElemen("button", "aleta-permintaan-tombol", "Terapkan");
+      terap.type = "button";
+      const kabarTerap = buatElemen("div", "aleta-abt-kabar");
+      terap.addEventListener("click", async () => {
+        terap.disabled = true;
+        kabarTerap.textContent = "Menyimpan…";
+        try {
+          const hasil = await simpanVariabel(r.kode, r.sesudah, jatiDiri);
+          if (!hasil.ok) {
+            kabarTerap.className = "aleta-abt-kabar aleta-abt-gagal";
+            kabarTerap.textContent = hasil.pesan;
+            terap.disabled = false;
+            return;
+          }
+          void catatRiwayat({
+            perkaraId: jatiDiri.perkaraId,
+            kode: r.kode,
+            nama: r.nama,
+            sebelum: r.sebelum,
+            sesudah: r.sesudah,
+            cara: "dirapikan",
+            pada: new Date().toISOString(),
+          });
+          const item = barisVariabel().get(r.kode);
+          if (item) item.selNilai.textContent = r.sesudah;
+          kabarTerap.textContent = "Tersimpan.";
+        } catch (galat) {
+          kabarTerap.className = "aleta-abt-kabar aleta-abt-gagal";
+          kabarTerap.textContent = String((galat && galat.message) || galat);
+          terap.disabled = false;
+        }
+      });
+      kartu.appendChild(terap);
+      kartu.appendChild(kabarTerap);
+      wadahRiwayat.appendChild(kartu);
+    }
+    wadahRiwayat.scrollIntoView({ block: "nearest" });
+  });
 
   tombolRiwayat.addEventListener("click", async () => {
     if (wadahRiwayat.childElementCount > 0) {
@@ -718,6 +999,7 @@ function susunPanelAbt(jatiDiri) {
       wadahRiwayat.appendChild(
         buatElemen("div", "aleta-kosong", "Belum ada perubahan yang tercatat untuk perkara ini.")
       );
+      wadahRiwayat.scrollIntoView({ block: "nearest" });
       return;
     }
     for (const catatan of daftar.slice(0, 25)) {
@@ -789,6 +1071,10 @@ function susunPanelAbt(jatiDiri) {
         "Riwayat ini tersimpan di peramban ini saja, dan hilang bila data situs dibersihkan."
       )
     );
+    // Digulung ke pandangan. Tanpa ini, panel yang sedang tergulung ke bawah
+    // menggambar daftarnya di luar layar - dan itulah sebab tombolnya dulu
+    // tampak tidak berbuat apa-apa.
+    wadahRiwayat.scrollIntoView({ block: "nearest" });
   });
 
   const kaki = buatElemen("div", "aleta-kaki");

@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -79,6 +80,8 @@ const pustaka = require_(
 ) as Pustaka;
 
 const abtJs = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/abt.js"), "utf8");
+const popupJs = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/popup.js"), "utf8");
+const popupHtml = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/popup.html"), "utf8");
 const manifest = () =>
   JSON.parse(
     readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/manifest.json"), "utf8")
@@ -501,5 +504,236 @@ describe("nomor 10 - riwayat dan urungkan", () => {
   it("batasnya disebut kepada yang membacanya", () => {
     const isi = abtJs();
     expect(isi).toContain("tersimpan di peramban ini saja");
+  });
+});
+
+/**
+ * ============================================================================
+ * DUA FUNGSI PERAPIAN DIUJI SUNGGUHAN, BUKAN LEWAT SUMBERNYA
+ * ============================================================================
+ *
+ * Keduanya murni - masuk teks, keluar teks - jadi tidak ada alasan hanya
+ * menjaga bentuk kodenya. Sumbernya dipotong dari abt.js lalu dijalankan di
+ * dalam vm; kalau potongannya berubah bentuk, pengujian ini gagal lebih dulu
+ * daripada penggunanya.
+ */
+function fungsiRapikan() {
+  const isi = abtJs();
+  const awal = isi.indexOf("function rapikanPosita(teks) {");
+  const akhir = isi.indexOf("// ─── Riwayat dan urungkan");
+  expect(awal).toBeGreaterThan(0);
+  expect(akhir).toBeGreaterThan(awal);
+  const konteks: {
+    rapikanPosita?: (t: string) => string;
+    bersihkanKeteranganSaksi?: (t: string) => string;
+  } = {};
+  vm.createContext(konteks);
+  vm.runInContext(isi.slice(awal, akhir), konteks);
+  return konteks as {
+    rapikanPosita: (t: string) => string;
+    bersihkanKeteranganSaksi: (t: string) => string;
+  };
+}
+
+describe("nomor 6 - penomoran posita yang menempel", () => {
+  // Disalin apa adanya dari layar ABT perkara 494/Pdt.G/2026/PA.Dgl.
+  const POSITA =
+    "1. Bahwa Penggugat MARIANA Binti MARENG adalah istri sah Tergugat FADIL Bin ALI YANGKA, " +
+    "menikah tanggal 23 Oktober 2017 berdasarkan Buku Nikah nomor: 0129/011/X/2017 tanggal 23 Oktober 2017." +
+    "2. Bahwa setelah menikah Penggugat dengan Tergugat bergaul sebagaimana layaknya suami dengan istri " +
+    "di karuniai 2 (dua) orang anak, yakni:a. MUHAMMAD FATHIR Bin FADIL, umur 8 tahun, agama islam, " +
+    "kelamin laki-laki,.b. FATHIYAH LASYIRA Binti FADIL, umur 6 tahun, agama islam, kelamin perempuan." +
+    "3. Bahwa sejak awal pernikahan pada awal tahun 2018 Penggugat sudah mulai dianiaya.";
+
+  it("tiap butir induk mendapat barisnya sendiri", () => {
+    const { rapikanPosita } = fungsiRapikan();
+    const hasil = rapikanPosita(POSITA);
+    const baris = hasil.split("\n");
+    expect(baris[0].startsWith("1. Bahwa Penggugat MARIANA")).toBe(true);
+    expect(baris.some((x) => x.startsWith("2. Bahwa setelah menikah"))).toBe(true);
+    expect(baris.some((x) => x.startsWith("3. Bahwa sejak awal pernikahan"))).toBe(true);
+  });
+
+  it("anak butir diberi lekukan, bukan disamakan dengan induknya", () => {
+    const { rapikanPosita } = fungsiRapikan();
+    const baris = rapikanPosita(POSITA).split("\n");
+    expect(baris.some((x) => x.startsWith("   a. MUHAMMAD FATHIR"))).toBe(true);
+    expect(baris.some((x) => x.startsWith("   b. FATHIYAH LASYIRA"))).toBe(true);
+  });
+
+  it("tidak satu kata pun diubah dan tidak dinomori ulang", () => {
+    // Menomori ulang berarti mengubah rujukan antar butir ("sebagaimana butir
+    // 3"), dan itu mengubah isi gugatan.
+    const { rapikanPosita } = fungsiRapikan();
+    // Dibandingkan tanpa spasi sama sekali: yang DITAMBAHKAN fungsi ini
+    // memang baris baru dan lekukan, jadi membandingkannya beserta spasi hanya
+    // menguji bahwa ia tidak bekerja.
+    const hasil = rapikanPosita(POSITA);
+    const hurufSaja = (t: string) => t.replace(/[\s.]+/g, "");
+    expect(hurufSaja(hasil)).toBe(hurufSaja(POSITA));
+  });
+
+  it("teks yang sudah rapi tidak diubah lagi", () => {
+    const { rapikanPosita } = fungsiRapikan();
+    const rapi = "1. Bahwa satu.\n2. Bahwa dua.";
+    expect(rapikanPosita(rapi)).toBe(rapi);
+  });
+});
+
+describe("nomor 8 - kalimat penutup keterangan saksi", () => {
+  const SAKSI = [
+    "- Bahwa yang meninggalkan tempat tinggal bersama adalah Tergugat;",
+    "- Bahwa Penggugat dan Tergugat sudah pernah diupayakan untuk dirukunkan oleh keluarga, namun tidak berhasil;",
+    "- Bahwa sudah cukup;",
+    "",
+    "",
+  ].join("\n");
+
+  it("Bahwa sudah cukup dibuang", () => {
+    const { bersihkanKeteranganSaksi } = fungsiRapikan();
+    expect(bersihkanKeteranganSaksi(SAKSI)).not.toMatch(/sudah cukup/i);
+  });
+
+  it("Bahwa tidak sanggup lagi dibuang", () => {
+    const { bersihkanKeteranganSaksi } = fungsiRapikan();
+    const teks = "- Bahwa saksi kenal Penggugat;\n- Bahwa tidak sanggup lagi;";
+    expect(bersihkanKeteranganSaksi(teks)).not.toMatch(/tidak sanggup/i);
+  });
+
+  it("baris kosong di bawahnya ikut hilang", () => {
+    // Baris kosong di ujung variabel menjadi paragraf hampa di dokumen cetak,
+    // dan paragraf hampa di tengah pertimbangan terlihat seperti ada yang
+    // terhapus.
+    const { bersihkanKeteranganSaksi } = fungsiRapikan();
+    const hasil = bersihkanKeteranganSaksi(SAKSI);
+    expect(hasil.endsWith("berhasil;")).toBe(true);
+    expect(/\n\s*$/.test(hasil)).toBe(false);
+  });
+
+  it("butir yang berisi fakta TIDAK dibuang", () => {
+    // Daftar penutupnya ditulis tegas, bukan ditebak dari panjang kalimat -
+    // kalimat pendek di tengah keterangan bisa saja fakta yang menentukan.
+    const { bersihkanKeteranganSaksi } = fungsiRapikan();
+    const hasil = bersihkanKeteranganSaksi(SAKSI);
+    expect(hasil).toContain("meninggalkan tempat tinggal bersama");
+    expect(hasil.split("\n").filter((x) => x.trim()).length).toBe(2);
+  });
+
+  it("kalimat yang MEMUAT kata cukup di tengahnya tidak ikut terbuang", () => {
+    const { bersihkanKeteranganSaksi } = fungsiRapikan();
+    const teks = "- Bahwa nafkah yang diberikan Tergugat tidak pernah cukup untuk anak-anaknya;";
+    expect(bersihkanKeteranganSaksi(teks)).toContain("tidak pernah cukup");
+  });
+});
+
+describe("nomor 4 - huruf alasan dapat dicentang dan diterapkan", () => {
+  it("centangannya menulis 8503 dan 4020 sekaligus", () => {
+    // Menulis salah satunya saja meninggalkan blangko dalam keadaan setengah,
+    // dan itu justru keadaan yang paling sulit dikenali.
+    const isi = abtJs();
+    expect(isi).toContain('["8503", isi8503], ["4020", isi4020]');
+    expect(isi).toContain("Tulis 8503 dan 4020");
+  });
+
+  it("huruf yang bersyarat tidak pernah tercentang sendiri", () => {
+    // Huruf B menuntut dua tahun berturut-turut, huruf H menuntut akibat
+    // ketidakrukunan - keduanya fakta yang dibuktikan, bukan kesimpulan dari
+    // kata kunci.
+    const isi = abtJs();
+    expect(isi).toContain("centang.checked = !h.syarat;");
+  });
+
+  it("penerapannya ikut dicatat di riwayat", () => {
+    const isi = abtJs();
+    expect(isi).toContain('cara: "centangan huruf alasan"');
+  });
+});
+
+describe("nomor 5 - lencana bulat yang memakan tempat dibuang", () => {
+  it("nama naskah bukan lagi lencana", () => {
+    const isi = abtJs();
+    const potong = isi.slice(isi.indexOf("function gambarHuruf"), isi.indexOf("function gambarUsulan"));
+    expect(potong).not.toContain('"aleta-abt-asal"');
+    expect(potong).toContain('"aleta-abt-naskah"');
+  });
+
+  it("selisih antar saksi juga tidak memakai lencana", () => {
+    const isi = abtJs();
+    const potong = isi.slice(isi.indexOf("function gambarSelisih"), isi.indexOf("function gambarHuruf"));
+    expect(potong).not.toContain('"aleta-abt-asal"');
+  });
+});
+
+describe("nomor 7 - riwayat muncul saat diklik", () => {
+  it("wadahnya di ATAS, bukan di kaki panel", () => {
+    // Panel dibatasi tiga per lima layar dan isinya menggulung sendiri; wadah
+    // di kaki panel berarti daftarnya digambar di luar pandangan, dan yang
+    // menekannya menyimpulkan tombolnya rusak.
+    const isi = abtJs();
+    expect(isi.indexOf("const wadahRiwayat")).toBeLessThan(isi.indexOf("const wadahSelisih"));
+  });
+
+  it("digulung ke pandangan sesudah digambar, termasuk saat kosong", () => {
+    const isi = abtJs();
+    expect(isi.split("wadahRiwayat.scrollIntoView").length - 1).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("nomor 2 - tema dipasang sebelum halaman digambar", () => {
+  const temaAwal = () =>
+    readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-awal.js"), "utf8");
+
+  it("berjalan pada document_start, di SIPP maupun ABT", () => {
+    const m = manifest() as unknown as {
+      content_scripts: { js?: string[]; matches: string[]; run_at?: string }[];
+    };
+    const awal = m.content_scripts.find((x) => (x.js || []).includes("tema-awal.js"));
+    expect(awal?.run_at).toBe("document_start");
+    expect(awal?.matches).toContain("http://192.168.10.10/SIPP/*");
+    expect(awal?.matches).toContain("http://192.168.10.10/aps_badilag/abt/*");
+  });
+
+  it("dibaca dari localStorage yang SINKRON, bukan chrome.storage", () => {
+    // chrome.storage hanya asinkron; apa pun yang menunggunya selesai sesudah
+    // gambar pertama, dan kelebat putihnya tidak dapat dihilangkan.
+    // Catatannya memang MENYEBUT chrome.storage - justru untuk menerangkan
+    // kenapa ia tidak dipakai di sini. Yang diperiksa kodenya, bukan
+    // kalimatnya.
+    const isi = temaAwal().replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    expect(isi).toContain("window.localStorage.getItem");
+    expect(isi).not.toContain("chrome.storage");
+  });
+
+  it("tiga keadaan dibedakan, supaya yang mematikannya tidak berkelebat gelap", () => {
+    const isi = temaAwal();
+    expect(isi).toContain('tersimpan === "mati"');
+    expect(isi).toContain('if (tema === "gelap")');
+  });
+
+  it("salinannya ditulis ulang tiap kali tema berubah", () => {
+    const isi = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/konten.js"), "utf8");
+    expect(isi).toContain("function simpanSalinanTema()");
+    expect(isi).toContain('window.localStorage.setItem(KUNCI_SALINAN_TEMA, nilai)');
+  });
+});
+
+describe("nomor 1 - tema jendela popup", () => {
+  it("tiga keadaan, satu tombol", () => {
+    const js = popupJs();
+    expect(js).toContain('const URUTAN_TEMA = ["ikut", "terang", "gelap"];');
+    expect(popupHtml()).toContain('id="tombolTema"');
+  });
+
+  it("pilihan terang menang atas peramban yang gelap", () => {
+    // Tanpa penjagaan itu, peramban gelap mengalahkan pilihan orangnya.
+    expect(popupHtml()).toContain(':root:not([data-tema="terang"])');
+    expect(popupHtml()).toContain(':root[data-tema="gelap"]');
+  });
+
+  it("disimpan di penyimpanan ekstensi, bukan localStorage", () => {
+    // Jendela ini hidup di origin chrome-extension:// dan tidak berbagi apa
+    // pun dengan halaman SIPP.
+    const js = popupJs();
+    expect(js).toContain('penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup })');
   });
 });
