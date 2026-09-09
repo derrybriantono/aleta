@@ -190,7 +190,7 @@ describe("tiga jalur simpan yang tidak boleh tertukar", () => {
     // tetapi tersimpan di tiga tempat yang sama sekali berbeda.
     const isi = abt();
     expect(isi).toContain("if (r.kode === VAR_POSITA) {");
-    expect(isi).toContain("hasil = await simpanPositaKeSipp(jatiDiri.perkaraId, r.sesudah);");
+    expect(isi).toContain("hasil = await mintaPositaRapi(jatiDiri.perkaraId, false);");
     expect(isi).toContain("hasil = await simpanKeteranganSaksi(r.kode);");
     expect(isi).toContain("hasil = await simpanVariabel(r.kode, r.sesudah, jatiDiri);");
   });
@@ -226,6 +226,11 @@ describe("tiga jalur simpan yang tidak boleh tertukar", () => {
   it("ekstensi tidak menyentuh basis data SIPP - ia lewat portal", () => {
     const isi = abt();
     expect(isi).toContain('ALETA_API_POSITA = "/aleta/api/aleta-bot/sipp/posita"');
+    // Teksnya TIDAK dikirim dari peramban - hanya perkaranya. Rute yang
+    // menerima teks posita adalah rute yang dapat dititipi posita karangan.
+    expect(isi).toContain('body: JSON.stringify({ perkaraId, ujiKering: ujiKering === true })');
+    // Pratinjaunya pun dari server, sehingga yang tampil persis yang ditulis.
+    expect(isi).toContain("await mintaPositaRapi(jatiDiri.perkaraId, true)");
     expect(isi).not.toContain("UPDATE perkara");
   });
 });
@@ -263,5 +268,58 @@ describe("pagar tulisan posita ke SIPP", () => {
 
   it("posita lama dikembalikan supaya ada yang dapat dipulihkan", () => {
     expect(layanan()).toContain("sebelum: lama");
+  });
+});
+
+describe("dua cacat yang dilaporkan dari layar", () => {
+  const layanan = () =>
+    readFileSync(
+      path.resolve(process.cwd(), "..", "aleta_bot", "services", "abtUsulanService.js"),
+      "utf8"
+    );
+
+  it("sumber 5227 berpasangan - saksi 1 DAN saksi 2, per alasan", () => {
+    // Yang dilaporkan: kartu 5227 hanya memperlihatkan Saksi 1, berulang.
+    // Sebabnya slice(0, 4) atas [...b1, ...b2] - b1 selalu di depan dan
+    // biasanya sudah menyumbang empat kalimat sendiri, sehingga b2 tidak
+    // pernah tercapai. Labelnya pun salah: b1.includes(kalimat) menandai
+    // kalimat bersamaan bunyi sebagai milik saksi 1.
+    const isi = layanan();
+    expect(isi).toContain("function sumberBerpasangan(");
+    expect(isi).toContain("sumberBerpasangan(ciri, b1, b2)");
+    expect(isi).not.toContain("b1.includes(kalimat) ? 1 : 2");
+  });
+
+  it("perapian posita tidak lagi dikerjakan di peramban", () => {
+    // innerText sel tabel BUKAN isi kolom posita - baris ganda dirapatkan,
+    // entitas diterjemahkan, tag dibuang. Merapikannya di peramban lalu
+    // membandingkannya dengan kolom di basis data membandingkan dua hal yang
+    // berbeda sejak awal, dan itulah penolakan yang dilaporkan.
+    const isi = baca("abt.js");
+    expect(isi).not.toContain("function rapikanPosita(teks) {");
+    expect(isi).toContain("rapikanPosita DIPINDAHKAN ke");
+  });
+
+  it("titik antar anak butir ditangkap dan dituliskan kembali", () => {
+    // Pola lamanya memakai `\\.?` yang MEMAKAN titik tanpa pernah
+    // menuliskannya kembali. Pada posita PA Donggala, titik sesudah
+    // "Tergugat" pada "...teman-teman Tergugat.b. Setiap kali..." lenyap.
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippPositaService.js"),
+      "utf8"
+    );
+    expect(isi).toContain('"$1$2\\n   $3. "');
+    expect(isi).not.toContain('"$1\\n   $2. "');
+  });
+
+  it("uji kering tidak menulis apa pun", () => {
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippPositaService.js"),
+      "utf8"
+    );
+    const potong = isi.slice(isi.indexOf("if (ujiKering)"));
+    // Baris UPDATE berada SESUDAH keluarnya uji kering.
+    expect(isi.indexOf("if (ujiKering)")).toBeLessThan(isi.indexOf("UPDATE perkara SET posita"));
+    expect(potong.slice(0, 200)).toContain("berubah: true");
   });
 });

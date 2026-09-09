@@ -371,68 +371,147 @@ function alatPasangGeser(panel, kepala, kunci) {
 }
 
 /**
- * Mengubah ukuran panel dari sudut kiri-bawah.
+ * ============================================================================
+ * DELAPAN PEGANGAN, BUKAN SATU DI SUDUT YANG SALAH
+ * ============================================================================
  *
- * Sudut KIRI, bukan kanan: panel menempel di tepi kanan layar, dan sudut kanan
- * bawahnya sering berada di luar jangkauan atau di atas bilah gulir halaman.
+ * Bentuk pertamanya memasang SATU pegangan, 12 x 12 piksel, tembus pandang,
+ * di sudut KIRI-BAWAH. Panel SIPP memasang delapan - empat sisi dan empat
+ * sudut - dan sudut kanan-bawahnya punya petunjuk yang tergambar
+ * (.aleta-tarik--st::after, dua garis kecil).
+ *
+ * Akibatnya persis yang dilaporkan: di SIPP panelnya dapat ditarik, di ABT
+ * tidak. Bukan karena pegangannya tidak ada, melainkan karena ia satu-satunya,
+ * tak terlihat, dan berada di sudut yang tidak pernah dicoba orang. Yang
+ * ditarik orang sudut kanan-bawah - tempat petunjuknya digambar, dan tempat
+ * hampir setiap jendela di sistem operasi mana pun dapat diubah ukurannya.
+ *
+ * Sekarang keduanya sama. Arah dan perhitungannya disalin dari pasangUbahUkuran
+ * di konten.js - termasuk aturan yang menentukan: TEPI SEBERANG DIAM.
+ *
+ * ============================================================================
+ * KENAPA UKURANNYA DIJEPIT SEBELUM POSISINYA DIHITUNG
+ * ============================================================================
+ *
+ * Menarik tepi kiri mengubah lebar DAN kiri sekaligus, dan kirinya diturunkan
+ * dari lebar yang SUDAH dijepit. Kalau urutannya dibalik, panel yang sudah
+ * menyentuh lebar minimum masih terus bergeser mengikuti kursor walau
+ * ukurannya berhenti berubah - tepi seberang yang seharusnya diam malah
+ * berjalan sendiri.
  */
+const ALAT_ARAH_TARIK = [
+  { nama: "u", x: 0, y: -1, sudut: false },
+  { nama: "s", x: 0, y: 1, sudut: false },
+  { nama: "b", x: -1, y: 0, sudut: false },
+  { nama: "t", x: 1, y: 0, sudut: false },
+  { nama: "ub", x: -1, y: -1, sudut: true },
+  { nama: "ut", x: 1, y: -1, sudut: true },
+  { nama: "sb", x: -1, y: 1, sudut: true },
+  { nama: "st", x: 1, y: 1, sudut: true },
+];
+
+/** Sama dengan min-width/min-height di panel.css - dijaga sepasang. */
+const ALAT_LEBAR_MIN = 260;
+const ALAT_TINGGI_MIN = 150;
+
 function alatPasangUbahUkuran(panel, kunci) {
-  const pegangan = document.createElement("div");
-  // Memakai kelas pegangan yang SUDAH ada di panel.css, bukan kelas baru:
-  // ukuran, kursor, dan lapisannya sudah diputuskan di sana, dan kelas kedua
-  // yang mirip pasti berselisih dengan yang pertama.
-  pegangan.className = "aleta-tarik aleta-tarik--sudut aleta-tarik--sb";
-  pegangan.title = "Tarik untuk mengubah ukuran panel";
-  panel.appendChild(pegangan);
+  for (const arah of ALAT_ARAH_TARIK) {
+    // Memakai kelas pegangan yang SUDAH ada di panel.css, bukan kelas baru:
+    // ukuran, kursor, dan lapisannya sudah diputuskan di sana.
+    const pegangan = document.createElement("div");
+    pegangan.className = "aleta-tarik aleta-tarik--" + arah.nama;
+    if (arah.sudut) pegangan.classList.add("aleta-tarik--sudut");
+    pegangan.title = "Tarik untuk mengubah ukuran panel";
+    panel.appendChild(pegangan);
 
-  let tarik = null;
+    pegangan.addEventListener("pointerdown", (peristiwa) => {
+      if (peristiwa.button !== 0) return;
 
-  pegangan.addEventListener("pointerdown", (peristiwa) => {
-    alatNormalkanJangkar(panel);
-    const kotak = panel.getBoundingClientRect();
-    tarik = {
-      x: peristiwa.clientX,
-      y: peristiwa.clientY,
-      lebar: kotak.width,
-      tinggi: kotak.height,
-      kiri: kotak.left,
-    };
-    try {
-      pegangan.setPointerCapture(peristiwa.pointerId);
-    } catch {
-      /* tidak semua peramban mengizinkannya */
-    }
-    peristiwa.preventDefault();
-    peristiwa.stopPropagation();
-  });
+      alatNormalkanJangkar(panel);
+      const kotak = panel.getBoundingClientRect();
+      const mulaiX = peristiwa.clientX;
+      const mulaiY = peristiwa.clientY;
+      const awalKiri = kotak.left;
+      const awalAtas = kotak.top;
+      const awalLebar = kotak.width;
+      const awalTinggi = kotak.height;
 
-  pegangan.addEventListener("pointermove", (peristiwa) => {
-    if (!tarik) return;
-    const geserX = peristiwa.clientX - tarik.x;
-    const lebar = Math.min(Math.max(tarik.lebar - geserX, 280), Math.min(window.innerWidth - 20, 900));
-    const tinggi = Math.max(tarik.tinggi + (peristiwa.clientY - tarik.y), 160);
-    panel.style.width = `${Math.round(lebar)}px`;
-    panel.style.height = `${Math.round(tinggi)}px`;
-    panel.style.maxHeight = "none";
-    // Tepi kanannya diam: yang ditarik sudut kiri, jadi kirinya yang bergerak.
-    panel.style.left = `${Math.round(tarik.kiri + (tarik.lebar - lebar))}px`;
-    panel.dataset.tinggiSendiri = "1";
-  });
+      // Batas atas dihitung sekali di awal tarikan, bukan tiap gerakan:
+      // membaca innerWidth puluhan kali per detik memaksa peramban menghitung
+      // ulang tata letak halaman ABT di belakangnya.
+      const lebarMaks = Math.min(window.innerWidth - 20, 900);
+      const tinggiMaks = window.innerHeight - 20;
 
-  const selesai = () => {
-    if (!tarik) return;
-    tarik = null;
-    const kotak = panel.getBoundingClientRect();
-    alatSimpanPosisi(kunci, {
-      kiri: Math.round(kotak.left),
-      atas: Math.round(kotak.top),
-      lebar: Math.round(kotak.width),
-      tinggi: Math.round(kotak.height),
+      const jepit = (nilai, kecil, besar) =>
+        Math.min(Math.max(nilai, kecil), Math.max(besar, kecil));
+
+      const saatGerak = (gerak) => {
+        const geserX = gerak.clientX - mulaiX;
+        const geserY = gerak.clientY - mulaiY;
+
+        let lebar = awalLebar;
+        let tinggi = awalTinggi;
+        let kiri = awalKiri;
+        let atas = awalAtas;
+
+        if (arah.x === 1) {
+          lebar = jepit(awalLebar + geserX, ALAT_LEBAR_MIN, lebarMaks);
+        } else if (arah.x === -1) {
+          lebar = jepit(awalLebar - geserX, ALAT_LEBAR_MIN, lebarMaks);
+          // Tepi kanan tetap di tempatnya.
+          kiri = awalKiri + (awalLebar - lebar);
+        }
+
+        if (arah.y === 1) {
+          tinggi = jepit(awalTinggi + geserY, ALAT_TINGGI_MIN, tinggiMaks);
+        } else if (arah.y === -1) {
+          tinggi = jepit(awalTinggi - geserY, ALAT_TINGGI_MIN, tinggiMaks);
+          // Tepi bawah tetap di tempatnya.
+          atas = awalAtas + (awalTinggi - tinggi);
+        }
+
+        if (arah.x !== 0) {
+          panel.style.width = `${Math.round(lebar)}px`;
+          panel.style.left = `${Math.round(Math.max(kiri, 0))}px`;
+          panel.style.right = "auto";
+        }
+        if (arah.y !== 0) {
+          panel.style.height = `${Math.round(tinggi)}px`;
+          panel.style.top = `${Math.round(Math.max(atas, 0))}px`;
+          panel.style.bottom = "auto";
+          // Batas bawaan dilepas begitu tingginya diatur sendiri - kalau
+          // tidak, panel setinggi apa pun tetap terpotong pada batas itu.
+          panel.style.maxHeight = "none";
+          panel.dataset.tinggiSendiri = "1";
+        }
+      };
+
+      const saatLepas = () => {
+        document.removeEventListener("pointermove", saatGerak);
+        document.removeEventListener("pointerup", saatLepas);
+        document.removeEventListener("pointercancel", saatLepas);
+
+        const akhir = panel.getBoundingClientRect();
+        alatSimpanPosisi(kunci, {
+          kiri: Math.round(akhir.left),
+          atas: Math.round(akhir.top),
+          lebar: Math.round(akhir.width),
+          tinggi: Math.round(akhir.height),
+        });
+      };
+
+      // Dipasang pada document, bukan pada pegangannya: tarikan cepat membuat
+      // penunjuk meninggalkan kotak selebar dua belas piksel itu dalam satu
+      // gerakan, dan pegangan yang mendengarkan dirinya sendiri kehilangan
+      // tarikannya di tengah jalan.
+      document.addEventListener("pointermove", saatGerak);
+      document.addEventListener("pointerup", saatLepas);
+      document.addEventListener("pointercancel", saatLepas);
+
+      peristiwa.preventDefault();
+      peristiwa.stopPropagation();
     });
-  };
-
-  pegangan.addEventListener("pointerup", selesai);
-  pegangan.addEventListener("pointercancel", selesai);
+  }
 }
 
 /**

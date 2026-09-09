@@ -247,9 +247,15 @@ const CIRI_ALASAN = [
   { kunci: "tidak memberi nafkah", kata: ["nafkah"] },
   { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["idaman lain"] },
   { kunci: "cemburu", kata: ["cemburu"] },
-  { kunci: "mabuk/judi/obat terlarang", kata: ["sabu"] },
-  { kunci: "mabuk/judi/obat terlarang", kata: ["judi"] },
-  { kunci: "mabuk/judi/obat terlarang", kata: ["mabuk"] },
+  // Ketiganya dipisah - dulu satu kunci untuk tiganya, sehingga saksi yang
+  // hanya menerangkan judi menghasilkan kalimat yang menuduh mabuk dan obat
+  // terlarang sekaligus. Lihat catatan di frasaCiri.
+  { kunci: "obat terlarang", kata: ["sabu"] },
+  { kunci: "obat terlarang", kata: ["narkoba"] },
+  { kunci: "obat terlarang", kata: ["pemadat"] },
+  { kunci: "judi", kata: ["judi"] },
+  { kunci: "mabuk", kata: ["mabuk"] },
+  { kunci: "mabuk", kata: ["minuman keras"] },
   { kunci: "murtad/pindah agama", kata: ["murtad"] },
 ];
 
@@ -304,7 +310,43 @@ function usulan(kode, nama, hasil, sumber) {
  * memverifikasi tidak perlu membaca ulang dua blok panjang - cukup membaca
  * satu baris di sebelah usulannya.
  */
-function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
+/**
+ * Kalimat yang memicu satu ciri, dari satu daftar butir.
+ *
+ * Dikembalikan yang PERTAMA cocok - keterangan saksi menyebut satu hal sekali,
+ * dan bila lebih dari sekali, yang pertama yang menjadi dasar.
+ */
+function kalimatPemicu(butir, ciri) {
+  const aturan = CIRI_ALASAN.filter((c) => c.kunci === ciri);
+  for (const baris of butir) {
+    const kecil = baris.toLowerCase();
+    if (aturan.some((c) => c.kata.every((k) => kecil.includes(k)))) return baris;
+  }
+  return "";
+}
+
+/**
+ * Sumber 5227, disusun berpasangan per alasan.
+ *
+ * Urutannya: alasan pertama saksi 1, alasan pertama saksi 2, alasan kedua
+ * saksi 1, dan seterusnya - sehingga keduanya berdampingan di layar dan dapat
+ * dibandingkan tanpa menggulung.
+ *
+ * Dibatasi enam pasang: panel setinggi tiga per lima layar, dan daftar yang
+ * lebih panjang daripada itu berhenti dibaca.
+ */
+function sumberBerpasangan(ciri, b1, b2) {
+  const hasil = [];
+  for (const nama of ciri) {
+    const k1 = kalimatPemicu(b1, nama);
+    const k2 = kalimatPemicu(b2, nama);
+    if (k1) hasil.push({ saksi: 1, kalimat: k1 });
+    if (k2) hasil.push({ saksi: 2, kalimat: k2 });
+    if (hasil.length >= 12) break;
+  }
+  return hasil;
+}
+function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posita) {
   const b1 = butirKeterangan(teksSaksi1);
   const b2 = butirKeterangan(teksSaksi2);
   const semua = [...b1, ...b2];
@@ -409,11 +451,52 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
   // ada yang mengira alasannya tidak terbaca oleh mesin.
   const ciriSaksi1 = usulkanHuruf(b1);
   const ciriSaksi2 = usulkanHuruf(b2);
-  const ciri = ciriSaksi1.filter((x) => ciriSaksi2.includes(x));
+  const berdua = ciriSaksi1.filter((x) => ciriSaksi2.includes(x));
+
+  // ==========================================================================
+  // SARINGAN KETIGA: APA YANG DIDALILKAN DALAM GUGATAN
+  // ==========================================================================
+  //
+  // Dua saksi yang bersesuaian belum cukup. Yang diperiksa dan diputus adalah
+  // DALIL GUGATAN; keterangan saksi membuktikan dalil itu, bukan menambah
+  // dalil baru. Alasan yang terbukti di persidangan tetapi tidak pernah
+  // didalilkan tidak dapat menjadi dasar putusan - itu memutus melebihi yang
+  // dituntut.
+  //
+  // Diukur pada perkara 510/Pdt.G/2026/PA.Dgl:
+  //
+  //   gugatan   mabuk, kekerasan fisik, judi online
+  //   saksi 1   judi, kekerasan, nafkah, perselisihan
+  //   saksi 2   judi, kekerasan, nafkah, perselisihan
+  //
+  // Tanpa saringan ini, 5227 memuat "melalaikan kewajiban nafkah lahir" -
+  // dua saksi memang menerangkannya, tetapi gugatannya tidak pernah
+  // mendalilkannya. Dengan saringan ini ia keluar, dan disebut terpisah.
+  //
+  // Positanya boleh tidak terbaca - halaman yang belum memuatnya, atau
+  // perkara yang positanya kosong. Bila begitu, saringan ini TIDAK berlaku
+  // dan hasilnya kembali seperti sebelumnya; yang tidak boleh terjadi adalah
+  // 5227 menjadi kosong karena gugatannya kebetulan tidak terbaca.
+  const butirPosita = butirKeterangan(posita);
+  const ciriPosita = butirPosita.length ? usulkanHuruf(butirPosita) : null;
+
+  const ciri = ciriPosita ? berdua.filter((x) => ciriPosita.includes(x)) : berdua;
+
   const ciriSepihak = [
     ...ciriSaksi1.filter((x) => !ciriSaksi2.includes(x)).map((nama) => ({ nama, saksi: 1 })),
     ...ciriSaksi2.filter((x) => !ciriSaksi1.includes(x)).map((nama) => ({ nama, saksi: 2 })),
   ];
+
+  // Dua keadaan yang berbeda sama sekali, dan keduanya harus terbaca:
+  //
+  //   terbukti tak didalilkan   kedua saksi menerangkannya, gugatan diam
+  //   didalilkan belum terbukti gugatan mendalilkannya, saksi tidak menguatkan
+  //
+  // Yang kedua yang paling mahal didiamkan: ia dalil yang harus dibuktikan,
+  // dan bila memang tidak terbukti, ia dalil yang harus ditolak - bukan
+  // dalil yang dilupakan.
+  const ciriDiluarGugatan = ciriPosita ? berdua.filter((x) => !ciriPosita.includes(x)) : [];
+  const ciriBelumTerbukti = ciriPosita ? ciriPosita.filter((x) => !berdua.includes(x)) : [];
   // Pihaknya dibaca ekstensi dari variabel 0047 dan 0046 di halaman ABT -
   // "Tergugat" pada cerai gugat, "Termohon" pada cerai talak. Tidak diturunkan
   // dari klasifikasi perkara: menebaknya berarti salah menyebut pihak pada
@@ -450,8 +533,14 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
   bandingkan("Berapa kali saksi melihat pertengkaran", kali(b1), kali(b2));
 
   return {
-    butir: { saksi1: b1.length, saksi2: b2.length },
+    butir: { saksi1: b1.length, saksi2: b2.length, posita: butirPosita.length },
     ciriSepihak,
+    ciriDiluarGugatan,
+    ciriBelumTerbukti,
+    // Benar bila gugatannya benar-benar terbaca dan ikut menyaring. Layar
+    // memakainya untuk membedakan "tidak ada yang di luar gugatan" dari
+    // "gugatannya tidak terbaca sehingga tidak diperiksa".
+    gugatanTerbaca: Boolean(ciriPosita),
     ciri,
     selisih,
     // Nomor 6: huruf alasan diusulkan beserta bunyi resminya, tanpa satu pun
@@ -469,10 +558,28 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
         "5227",
         "Alasan-Alasan Cerai",
         { nilai: kalimatAlasan, keyakinan: ciri.length ? "pasti" : "kosong", bentrok: "" },
-        semua
-          .filter((x) => CIRI_ALASAN.some((c) => c.kata.every((k) => x.toLowerCase().includes(k))))
-          .slice(0, 4)
-          .map((kalimat) => ({ saksi: b1.includes(kalimat) ? 1 : 2, kalimat }))
+        // ====================================================================
+        // SUMBERNYA BERPASANGAN - SATU DARI TIAP SAKSI, PER ALASAN
+        // ====================================================================
+        //
+        // Bentuk lamanya mengambil empat kalimat pertama dari gabungan
+        // [...b1, ...b2] lalu memberi label dengan b1.includes(kalimat).
+        // Dua hal salah sekaligus:
+        //
+        //   1. b1 selalu di depan, dan biasanya sudah menyumbang empat
+        //      kalimat sendiri - sehingga slice(0, 4) tidak pernah sampai ke
+        //      b2. Di layar yang tampak hanya "Saksi 1", berulang-ulang.
+        //   2. b1.includes(kalimat) menandai kalimat yang bunyinya sama
+        //      persis sebagai milik saksi 1, walau ia dari saksi 2.
+        //
+        // Yang dibutuhkan justru perbandingannya: 5227 kini disusun dari
+        // alasan yang disebut KEDUA saksi, dan yang membaca harus dapat
+        // melihat kalimat masing-masing berdampingan untuk menilai apakah
+        // keduanya memang menerangkan hal yang sama.
+        //
+        // Karena itu sumbernya disusun PER ALASAN, berpasangan: kalimat
+        // saksi 1 lalu kalimat saksi 2 untuk alasan yang sama, berurutan.
+        sumberBerpasangan(ciri, b1, b2)
       ),
       usulan("0246", "Pisah Rumah", pisah, [...sumberDari(pisah1, 1), ...sumberDari(pisah2, 2)]),
       usulan("9944", "Lama Pisah", lama, [...sumberDari(pisah1, 1), ...sumberDari(pisah2, 2)]),

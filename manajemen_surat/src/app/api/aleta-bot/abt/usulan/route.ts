@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
       tanggalSidang?: unknown;
       pelaku?: unknown;
       lawan?: unknown;
+      posita?: unknown;
     }>(request).catch(() => ({}) as Record<string, unknown>);
 
     const nomorPerkara = String(body.nomorPerkara || "").trim();
@@ -83,6 +84,16 @@ export async function POST(request: NextRequest) {
       // pihak di dalam putusan.
       pelaku: String(body.pelaku || "").slice(0, 40),
       lawan: String(body.lawan || "").slice(0, 40),
+      // Gugatannya, dibaca ekstensi dari variabel 5125 di halaman ABT.
+      //
+      // Yang diperiksa dan diputus adalah DALIL GUGATAN; keterangan saksi
+      // membuktikannya, bukan menambah dalil baru. Alasan yang terbukti di
+      // persidangan tetapi tidak pernah didalilkan tidak dapat menjadi dasar
+      // putusan - itu memutus melebihi yang dituntut.
+      //
+      // Diteruskan sebagai teks untuk dicocokkan kata kuncinya saja; tidak
+      // disimpan di mana pun pada jalur ini.
+      posita: String(body.posita || "").slice(0, BATAS_TEKS),
     });
 
     if (!hasil.ok) {

@@ -102,10 +102,26 @@ const KALIMAT = {
       urutan: 40,
       frasa: "melakukan Kekerasan Dalam Rumah Tangga (KDRT)",
     },
-    "mabuk/judi/obat terlarang": {
-      urutan: 50,
-      frasa: "menjadi pemabuk, penjudi, atau pemakai obat terlarang",
-    },
+    // ========================================================================
+    // MABUK, JUDI, DAN OBAT TERLARANG DIPISAH - DULU SATU FRASA UNTUK TIGANYA
+    // ========================================================================
+    //
+    // Bentuk lamanya satu ciri berbunyi "menjadi pemabuk, penjudi, atau
+    // pemakai obat terlarang". Ia dipakai apa pun pemicunya, sehingga saksi
+    // yang hanya menerangkan judi menghasilkan kalimat yang menuduh mabuk dan
+    // memakai obat terlarang sekaligus.
+    //
+    // Pada perkara 510/Pdt.G/2026/PA.Dgl keduanya menerangkan judi online -
+    // tidak satu pun menyebut mabuk maupun obat - dan kalimat yang tersusun
+    // tetap menuduh ketiganya. Itu bukan ketidaktepatan bahasa; itu
+    // pertimbangan hukum yang menyebut perbuatan yang tidak dibuktikan.
+    //
+    // Ketiganya tetap satu huruf yang sama dalam Pasal 19 PP 9/1975 - itu
+    // urusan 8503, bukan urusan kalimat ini. Yang ditulis di sini apa yang
+    // benar-benar diterangkan.
+    "mabuk": { urutan: 50, frasa: "menjadi pemabuk" },
+    "judi": { urutan: 51, frasa: "menjadi penjudi" },
+    "obat terlarang": { urutan: 52, frasa: "menjadi pemakai obat terlarang" },
     "murtad/pindah agama": { urutan: 60, frasa: "berpindah agama" },
     "perselisihan terus-menerus": {
       urutan: 90,

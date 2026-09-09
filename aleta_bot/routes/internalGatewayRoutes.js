@@ -1080,7 +1080,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         {
           pelaku: String(req.body?.pelaku || ""),
           lawan: String(req.body?.lawan || ""),
-        }
+        },
+        // Gugatannya - dipakai menyaring alasan yang tidak pernah
+        // didalilkan. Boleh kosong; saringannya lalu tidak berlaku.
+        String(req.body?.posita || "")
       );
     }
 
@@ -1145,9 +1148,12 @@ router.get("/abt/pdf/mesin", requireInternalToken, async (_req, res) => {
  */
 router.post("/sipp/posita/rapikan", requireInternalToken, async (req, res) => {
   try {
+    // Teksnya TIDAK diterima dari pemanggil - hanya perkaranya. Yang
+    // dirapikan dibaca sendiri dari kolom posita, sehingga yang dibandingkan
+    // dan yang ditulis satu teks yang sama.
     const hasil = await sippPositaService.rapikanPosita(
       req.body?.perkaraId,
-      String(req.body?.posita || "")
+      req.body?.ujiKering === true
     );
     if (!hasil.ok) {
       // 422, bukan 500: permintaannya sampai dan dimengerti, isinya yang
@@ -1157,6 +1163,7 @@ router.post("/sipp/posita/rapikan", requireInternalToken, async (req, res) => {
     res.json({
       ok: true,
       tersentuh: hasil.tersentuh,
+      berubah: Boolean(hasil.berubah),
       sebelum: hasil.sebelum,
       sesudah: hasil.sesudah,
       alasan: hasil.alasan || "",

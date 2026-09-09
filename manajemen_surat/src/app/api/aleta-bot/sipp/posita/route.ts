@@ -38,9 +38,29 @@ export const dynamic = "force-dynamic";
  * Ia meneruskan, menerima keterangan berhasil beserta teks lamanya, lalu
  * melupakannya. Yang menyimpan teks lama hanya peramban petugas, sebagai
  * riwayat perubahan yang memang dimintanya.
+ *
+ * ============================================================================
+ * TEKSNYA TIDAK DITERIMA DARI PERAMBAN - HANYA PERKARANYA
+ * ============================================================================
+ *
+ * Bentuk pertama rute ini menerima posita yang sudah dirapikan di peramban.
+ * Itu keliru pada dua arah sekaligus:
+ *
+ *   1. Yang dirapikan peramban innerText satu sel tabel - hasil peramban
+ *      menggambar HTML, bukan isi kolom di basis data. Membandingkannya
+ *      dengan kolom itu membandingkan dua hal yang berbeda sejak awal, dan
+ *      pagar isinya menolak walau petugas tidak mengubah apa pun.
+ *   2. Rute yang menerima teks posita adalah rute yang dapat dititipi posita
+ *      karangan siapa pun yang dapat membuka alat pengembang peramban.
+ *
+ * Sekarang yang dikirim hanya nomor perkaranya. Bot membaca positanya
+ * sendiri, merapikannya sendiri, dan membandingkan hasilnya dengan yang ia
+ * baca - satu teks, satu sumber.
+ *
+ * ujiKering memperlihatkan hasilnya tanpa menulis apa pun. Pratinjau di panel
+ * karena itu memperlihatkan yang BENAR-BENAR akan tersimpan, bukan tebakan
+ * sisi peramban atas teks yang bukan teks aslinya.
  */
-const BATAS_HURUF = 200_000;
-
 export async function POST(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
@@ -49,28 +69,20 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
 
-    const body = await readJsonBody<{ perkaraId?: unknown; posita?: unknown }>(request).catch(
-      () => ({}) as { perkaraId?: unknown; posita?: unknown }
+    const body = await readJsonBody<{ perkaraId?: unknown; ujiKering?: unknown }>(request).catch(
+      () => ({}) as { perkaraId?: unknown; ujiKering?: unknown }
     );
     const perkaraId = String(body.perkaraId || "").trim();
-    const posita = String(body.posita || "");
-
     if (!perkaraId) {
       return ok({ available: false, message: "Nomor perkara tidak terkirim." });
     }
-    if (!posita.trim()) {
-      return ok({ available: false, message: "Posita yang dirapikan kosong." });
-    }
-    if (posita.length > BATAS_HURUF) {
-      return ok({ available: false, message: "Posita terlalu panjang untuk dirapikan." });
-    }
 
-    const hasil = await getGatewaySippPositaRapikan(perkaraId, posita);
+    const hasil = await getGatewaySippPositaRapikan(perkaraId, body.ujiKering === true);
     if (!hasil.ok) {
       return ok({
         // Sebabnya diteruskan apa adanya. Yang paling penting di antaranya -
-        // penolakan karena isinya berbeda, bukan sekadar penataannya - hanya
-        // berguna bila disebutkan lengkap.
+        // penolakan karena perapiannya sendiri mengubah isi - hanya berguna
+        // bila disebutkan lengkap.
         available: false,
         message: hasil.error || "ALETA Bot belum dapat dihubungi.",
       });
@@ -80,7 +92,9 @@ export async function POST(request: NextRequest) {
       available: true,
       message: "",
       tersentuh: hasil.data?.tersentuh ?? 0,
+      berubah: hasil.data?.berubah ?? false,
       sebelum: hasil.data?.sebelum ?? "",
+      sesudah: hasil.data?.sesudah ?? "",
       alasan: hasil.data?.alasan ?? "",
     });
   } catch (error) {

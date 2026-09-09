@@ -353,25 +353,14 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
  * Butir induk dikenali dari pola "<angka>." dan anak butir dari "<huruf>.".
  * Anak butir diberi lekukan supaya tampak menggantung pada induknya.
  */
-function rapikanPosita(teks) {
-  let hasil = String(teks || "").replace(/\r\n/g, "\n");
-
-  // Butir induk: titik yang langsung diikuti angka lalu titik.
-  // "2017.2. Bahwa" -> "2017.\n2. Bahwa"
-  hasil = hasil.replace(/([^\s\n])\s*(\d{1,2})\.\s+(?=[A-Z])/g, "$1\n$2. ");
-
-  // Anak butir: "laki-laki,.b. FATHIYAH" -> "laki-laki,\n   b. FATHIYAH"
-  hasil = hasil.replace(/([^\s\n])\s*\.?\s*([a-z])\.\s+(?=[A-Z])/g, "$1\n   $2. ");
-
-  // Baris pertama tidak boleh diawali baris kosong, dan tidak ada baris kosong
-  // berganda di tengah - keduanya menjadi paragraf hampa di dokumen cetak.
-  return hasil
-    .split("\n")
-    .map((baris) => baris.replace(/\s+$/, ""))
-    .filter((baris, i, semua) => baris.trim() !== "" || (i > 0 && semua[i - 1].trim() !== ""))
-    .join("\n")
-    .trim();
-}
+// rapikanPosita DIPINDAHKAN ke aleta_bot/services/sippPositaService.js.
+//
+// Sebabnya bukan kerapian: yang dirapikan harus teks yang BENAR-BENAR akan
+// tersimpan, dan teks itu ada di kolom posita SIPP - bukan innerText sel
+// tabel yang tergambar di sini. Dua salinan aturan yang bekerja atas dua teks
+// berbeda menghasilkan pratinjau yang tidak pernah cocok dengan hasilnya.
+//
+// Pratinjaunya kini diminta ke server lewat uji kering - lihat mintaPositaRapi.
 
 /**
  * ============================================================================
@@ -461,13 +450,16 @@ function bersihkanKeteranganSaksi(teks) {
  * rapikanPosita - sehingga tidak satu huruf pun dalil gugatan dapat berubah.
  * Bila berbeda walau satu huruf, tulisannya ditolak dan sebabnya disebut.
  */
-async function simpanPositaKeSipp(perkaraId, positaBaru) {
+async function mintaPositaRapi(perkaraId, ujiKering) {
   const respons = await fetch(ALETA_API_POSITA, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ perkaraId, posita: positaBaru }),
+    // Teksnya TIDAK dikirim - hanya perkaranya. Bot membaca positanya
+    // sendiri dari SIPP dan merapikannya di sana; lihat catatan panjang di
+    // sippPositaService.js tentang kenapa mengirim teks dari sini keliru.
+    body: JSON.stringify({ perkaraId, ujiKering: ujiKering === true }),
   });
   if (respons.status === 401) return { ok: false, pesan: "Belum masuk portal ALETA." };
   if (!respons.ok) return { ok: false, pesan: `ALETA menjawab ${respons.status}.` };
@@ -478,10 +470,15 @@ async function simpanPositaKeSipp(perkaraId, positaBaru) {
 
   return {
     ok: true,
-    pesan: isi.alasan === "sudah rapi" ? "positanya memang sudah rapi" : "tersimpan di SIPP",
-    // Teks lamanya dikembalikan bot supaya riwayat perubahan memuat yang
-    // benar-benar ada di SIPP, bukan yang kebetulan tergambar di halaman.
+    berubah: isi.berubah === true,
     sebelum: String(isi.sebelum || ""),
+    sesudah: String(isi.sesudah || ""),
+    pesan:
+      isi.alasan === "sudah rapi"
+        ? "positanya memang sudah rapi"
+        : ujiKering
+          ? "pratinjau"
+          : "tersimpan di SIPP",
   };
 }
 // ─── Keterangan saksi: disunting lewat rute ABT sendiri ──────────────────────
@@ -553,15 +550,45 @@ async function simpanPositaKeSipp(perkaraId, positaBaru) {
  * yang disebut bukan "tersimpan" melainkan selisihnya.
  */
 
-/** Ruas alamat halaman ABT yang dibutuhkan rute penyunting tanya-jawab. */
+/**
+ * ============================================================================
+ * RUAS ALAMATNYA DIAMBIL DARI TAUTAN CETAK, BUKAN DARI ALAMAT HALAMAN
+ * ============================================================================
+ *
+ * Keempatnya - a, b, c, d - dibutuhkan rute penyunting tanya-jawab, dan yang
+ * paling menentukan d: ia cek_sidang, dan controller memakainya untuk
+ * menentukan sidang_id. Rute simpannya MENGHAPUS baris berdasarkan sidang_id
+ * itu, dan rute bacanya mengambil baris dari sidang itu saja.
+ *
+ * Alamat halaman main/view tidak selalu membawa d. Bila ia tidak ada -
+ * atau berbeda dari yang dipakai ABT sendiri - yang terbaca DAFTAR KOSONG,
+ * dan daftar kosong berarti tidak ada satu pun kalimat penutup yang
+ * ditemukan. Itulah yang terjadi: panel berkata "tidak ada kalimat penutup
+ * yang perlu dibuang" sementara "Bahwa sudah cukup;" jelas ada di layar.
+ *
+ * Tautan CETAK di halaman itu dibangun ABT sendiri dengan keempat ruasnya
+ * lengkap - "abt/preview?a=...&b=...&c=...&e=...&d=<cek_sidang>". Ia karena
+ * itu sumber yang benar. Alamat halaman hanya cadangan.
+ */
 function ruasAlamatAbt() {
-  const p = new URLSearchParams(location.search);
-  return {
-    a: p.get("a") || "",
-    b: p.get("b") || "",
-    c: p.get("c") || "",
-    d: p.get("d") || "",
-  };
+  const halaman = new URLSearchParams(location.search);
+  const ambil = (kunci) => halaman.get(kunci) || "";
+
+  const tautan = document.querySelector('a[href*="abt/preview"]');
+  if (tautan) {
+    try {
+      const dari = new URL(tautan.href, location.origin).searchParams;
+      return {
+        a: dari.get("a") || ambil("a"),
+        b: dari.get("b") || ambil("b"),
+        c: dari.get("c") || ambil("c"),
+        d: dari.get("d") || ambil("d"),
+      };
+    } catch {
+      /* tautannya tidak dapat diurai - alamat halaman dipakai */
+    }
+  }
+  return { a: ambil("a"), b: ambil("b"), c: ambil("c"), d: ambil("d") };
 }
 
 function alamatTanyaJawab(kode, aksi) {
@@ -607,6 +634,24 @@ async function ambilTanyaJawab(kode) {
     throw new Error("daftar tanya-jawab tidak dapat diurai");
   }
   if (!Array.isArray(baris)) throw new Error("daftar tanya-jawab bukan daftar");
+
+  // ==========================================================================
+  // DAFTAR KOSONG ADALAH KEGAGALAN, BUKAN "TIDAK ADA YANG PERLU DIBUANG"
+  // ==========================================================================
+  //
+  // Keduanya menghasilkan nol kalimat yang dibuang, dan dulu keduanya
+  // dilaporkan dengan kalimat yang sama - sehingga saat ruas d salah dan
+  // ABT mengembalikan daftar kosong, panel berkata "tidak ada kalimat penutup
+  // yang perlu dibuang" sementara kalimatnya jelas ada di layar.
+  //
+  // Baris 2021 tidak pernah kosong pada perkara yang sudah diperiksa
+  // saksinya: itulah isinya. Kosong berarti yang dibaca sidang yang salah.
+  if (baris.length === 0) {
+    throw new Error(
+      "ABT mengembalikan daftar tanya-jawab KOSONG - kemungkinan sidang yang " +
+        "dibaca bukan sidang tempat saksi ini diperiksa"
+    );
+  }
   return baris;
 }
 
@@ -1428,49 +1473,89 @@ function susunPanelAbt(jatiDiri) {
    */
   /**
    * ==========================================================================
-   * ALASAN YANG HANYA DISEBUT SATU SAKSI
+   * TIGA SARINGAN 5227, DAN KETIGANYA HARUS TERBACA
    * ==========================================================================
    *
-   * 5227 kini disusun dari IRISAN keterangan kedua saksi - hanya alasan yang
-   * saling bersesuaian yang masuk. Sebabnya bukan kerapian melainkan hukum
-   * pembuktian: keterangan seorang saksi tanpa penguat bukanlah alat bukti
-   * yang berdiri sendiri.
+   * 5227 disusun dari alasan yang lolos tiga saringan sekaligus:
    *
-   * Tetapi yang dibuang tidak boleh hilang dari layar. Alasan yang hanya
-   * disebut satu saksi tetap fakta yang didengar majelis, dan bisa jadi
-   * saksi kedua memang tidak ditanya tentangnya - itu keadaan yang diperbaiki
-   * dengan pertanyaan tambahan, bukan dengan menghapusnya dari catatan.
+   *   1. disebut saksi 1
+   *   2. disebut saksi 2 juga - keterangan seorang saksi tanpa penguat bukan
+   *      alat bukti yang berdiri sendiri
+   *   3. DIDALILKAN dalam gugatan - yang diperiksa dan diputus adalah dalil
+   *      gugatan; saksi membuktikannya, bukan menambah dalil baru
    *
-   * Karena itu ia digambar terpisah, disebut siapa yang menyebutnya, dan
-   * dinyatakan terus terang bahwa ia TIDAK masuk 5227.
+   * Yang gugur pada saringan kedua dan ketiga TIDAK boleh hilang dari layar,
+   * dan keduanya berbeda sama sekali:
+   *
+   *   hanya satu saksi        perlu penguat - tanyakan kepada saksi lain
+   *   di luar gugatan         terbukti, tetapi tidak pernah didalilkan
+   *   didalilkan belum terbukti  dalil yang harus dibuktikan atau ditolak
+   *
+   * Yang terakhir yang paling mahal didiamkan: ia dalil hidup di dalam
+   * gugatan, dan putusan yang tidak menyinggungnya meninggalkan tuntutan
+   * yang tidak diadili.
    */
-  function gambarSepihak(daftar) {
+  function gambarSepihak(hasil) {
     wadahSepihak.textContent = "";
-    if (!daftar || !daftar.length) return;
+    const sepihak = (hasil && hasil.ciriSepihak) || [];
+    const diluar = (hasil && hasil.ciriDiluarGugatan) || [];
+    const belum = (hasil && hasil.ciriBelumTerbukti) || [];
+    if (!sepihak.length && !diluar.length && !belum.length) return;
 
     const kotak = buatElemen("div", "aleta-abt-kartu aleta-abt-kartu-awas");
     kotak.appendChild(
-      buatElemen(
-        "div",
-        "aleta-abt-nama",
-        `${daftar.length} alasan hanya disebut satu saksi — tidak masuk 5227`
-      )
+      buatElemen("div", "aleta-abt-nama", "Alasan yang TIDAK masuk 5227, beserta sebabnya")
     );
-    kotak.appendChild(
-      buatElemen(
-        "div",
-        "aleta-abt-catatan",
-        "5227 hanya memuat alasan yang disebut KEDUA saksi. Yang di bawah ini " +
-          "belum bersesuaian - tanyakan kepada saksi yang belum menyebutnya, atau " +
-          "tambahkan sendiri ke 5227 bila memang cukup dibuktikan alat bukti lain."
-      )
-    );
-    for (const satu of daftar) {
-      const baris = buatElemen("div", "aleta-abt-sanding");
-      baris.appendChild(buatElemen("span", "aleta-abt-label", `Saksi ${satu.saksi}`));
-      baris.appendChild(buatElemen("span", "aleta-abt-isi", satu.nama));
-      kotak.appendChild(baris);
+
+    if (!hasil || hasil.gugatanTerbaca !== true) {
+      // Disebut apa adanya. Tanpa keterangan ini, "tidak ada yang di luar
+      // gugatan" tidak dapat dibedakan dari "gugatannya tidak diperiksa".
+      kotak.appendChild(
+        buatElemen(
+          "div",
+          "aleta-abt-catatan",
+          "Gugatan (5125) tidak terbaca dari halaman ini, jadi pencocokan dengan " +
+            "dalil gugatan TIDAK dijalankan."
+        )
+      );
     }
+
+    const kelompok = (judul, keterangan, daftar, label) => {
+      if (!daftar.length) return;
+      kotak.appendChild(buatElemen("div", "aleta-abt-naskah", judul));
+      kotak.appendChild(buatElemen("div", "aleta-abt-catatan", keterangan));
+      for (const satu of daftar) {
+        const baris = buatElemen("div", "aleta-abt-sanding");
+        baris.appendChild(buatElemen("span", "aleta-abt-label", label(satu)));
+        baris.appendChild(buatElemen("span", "aleta-abt-isi", satu.nama || satu));
+        kotak.appendChild(baris);
+      }
+    };
+
+    kelompok(
+      "Hanya disebut satu saksi",
+      "Perlu penguat. Tanyakan kepada saksi yang belum menyebutnya, atau kuatkan " +
+        "dengan alat bukti lain sebelum memasukkannya sendiri ke 5227.",
+      sepihak,
+      (x) => `Saksi ${x.saksi}`
+    );
+
+    kelompok(
+      "Terbukti, tetapi tidak didalilkan dalam gugatan",
+      "Kedua saksi menerangkannya, tetapi gugatannya tidak pernah mendalilkannya. " +
+        "Memasukkannya ke pertimbangan berarti memutus melebihi yang dituntut.",
+      diluar,
+      () => "Di luar gugatan"
+    );
+
+    kelompok(
+      "Didalilkan dalam gugatan, tetapi belum dikuatkan kedua saksi",
+      "Dalil yang masih harus dibuktikan - atau ditolak dengan pertimbangan " +
+        "tersendiri. Yang tidak disinggung sama sekali adalah tuntutan yang tidak diadili.",
+      belum,
+      () => "Belum terbukti"
+    );
+
     wadahSepihak.appendChild(kotak);
   }
   function gambarSelisih(daftar) {
@@ -1672,12 +1757,47 @@ function susunPanelAbt(jatiDiri) {
     const peta = barisVariabel();
     const rencana = [];
 
-    const posita = peta.get(VAR_POSITA);
-    if (posita) {
-      const asli = posita.selNilai.innerText;
-      const rapi = rapikanPosita(asli);
-      if (rapi && rapi !== asli.trim()) {
-        rencana.push({ kode: VAR_POSITA, nama: "Posita lengkap", sebelum: asli, sesudah: rapi });
+    // ========================================================================
+    // PRATINJAU POSITA DATANG DARI SERVER, BUKAN DARI LAYAR
+    // ========================================================================
+    //
+    // Yang tergambar di baris 5125 innerText satu sel tabel - hasil peramban
+    // menggambar HTML: baris ganda dirapatkan, entitas diterjemahkan, tag
+    // dibuang. Merapikannya di sini menghasilkan pratinjau atas teks yang
+    // BUKAN teks yang tersimpan, dan menyimpannya berarti menimpa posita
+    // dengan hasil render peramban.
+    //
+    // Itulah yang dilaporkan: menekan Terapkan menghasilkan penolakan "isi
+    // positanya berbeda" padahal petugas tidak mengubah apa pun.
+    //
+    // Sekarang bot yang membaca dan merapikannya, dan uji kering
+    // mengembalikan sebelum-sesudahnya tanpa menulis apa pun. Pratinjaunya
+    // karena itu memperlihatkan yang benar-benar akan tersimpan.
+    if (peta.get(VAR_POSITA)) {
+      try {
+        const uji = await mintaPositaRapi(jatiDiri.perkaraId, true);
+        if (uji.ok && uji.berubah) {
+          rencana.push({
+            kode: VAR_POSITA,
+            nama: "Posita lengkap",
+            sebelum: uji.sebelum,
+            sesudah: uji.sesudah,
+          });
+        } else if (!uji.ok) {
+          // Disebut, bukan didiamkan: posita yang tidak dapat dibaca terbaca
+          // sebagai posita yang sudah rapi, dan itu keliru.
+          wadahRiwayat.appendChild(
+            buatElemen("div", "aleta-abt-kabar aleta-abt-gagal", `Posita: ${uji.pesan}`)
+          );
+        }
+      } catch (galat) {
+        wadahRiwayat.appendChild(
+          buatElemen(
+            "div",
+            "aleta-abt-kabar aleta-abt-gagal",
+            `Posita tidak dapat diperiksa: ${String((galat && galat.message) || galat)}`
+          )
+        );
       }
     }
     for (const kode of [VAR_SAKSI_1, VAR_SAKSI_2]) {
@@ -1737,7 +1857,7 @@ function susunPanelAbt(jatiDiri) {
           // disunting". Penolakan itu benar - yang salah tempat tujuannya.
           let hasil;
           if (r.kode === VAR_POSITA) {
-            hasil = await simpanPositaKeSipp(jatiDiri.perkaraId, r.sesudah);
+            hasil = await mintaPositaRapi(jatiDiri.perkaraId, false);
             // Teks lama diambil dari SIPP, bukan dari yang tergambar di
             // halaman - riwayat perubahan harus memuat yang benar-benar ada.
             if (hasil.ok && hasil.sebelum) r.sebelum = hasil.sebelum;
@@ -1959,7 +2079,7 @@ function susunPanelAbt(jatiDiri) {
         `Kuasa aktif: ${sipp.jumlahKuasa || 0}. Prodeo: ${sipp.prodeo ? "ya" : "tidak"}. ` +
         "Tiga variabel prodeo dan fasakh memang tidak disimpan SIPP - disebut apa adanya di bawah.";
       gambarSelisih([]);
-      gambarSepihak([]);
+      gambarSepihak(null);
       gambarHuruf([], []);
       gambarUsulan(sipp.usulan || []);
     } catch (galat) {
@@ -1992,12 +2112,16 @@ function susunPanelAbt(jatiDiri) {
         tanggalSidang: nilaiVariabel(VAR_TGL_SIDANG),
         pelaku: nilaiVariabel(VAR_PIHAK_PELAKU),
         lawan: nilaiVariabel(VAR_PIHAK_LAWAN),
+        // Gugatannya - 5227 hanya boleh memuat alasan yang DIDALILKAN dan
+        // dibuktikan. innerText cukup di sini: yang dicocokkan kata kuncinya,
+        // bukan teksnya yang akan disimpan.
+        posita: peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "",
       });
       const saksi = isiJawaban.saksi || {};
       kabar.textContent =
         `Terbaca ${saksi.butir?.saksi1 || 0} butir dari saksi 1 dan ${saksi.butir?.saksi2 || 0} dari saksi 2.`;
       gambarSelisih(saksi.selisih || []);
-      gambarSepihak(saksi.ciriSepihak || []);
+      gambarSepihak(saksi);
       gambarHuruf(saksi.huruf || [], saksi.hurufBelumSiap || []);
       gambarUsulan(saksi.usulan || []);
     } catch (galat) {

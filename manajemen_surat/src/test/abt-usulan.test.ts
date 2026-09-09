@@ -35,6 +35,11 @@ type HasilSaksi = {
   ciri: string[];
   /** Ciri yang hanya disebut SATU saksi - tidak masuk 5227, tetapi tetap disebut. */
   ciriSepihak: { nama: string; saksi: number }[];
+  /** Terbukti kedua saksi, tetapi tidak didalilkan dalam gugatan. */
+  ciriDiluarGugatan: string[];
+  /** Didalilkan dalam gugatan, tetapi belum dikuatkan kedua saksi. */
+  ciriBelumTerbukti: string[];
+  gugatanTerbaca: boolean;
   selisih: { hal: string; saksi1: string; saksi2: string }[];
   huruf: { huruf: string; bunyi: string; pemicu: string[]; syarat: string }[];
   hurufBelumSiap: { huruf: string; sebab: string }[];
@@ -44,7 +49,13 @@ type HasilSaksi = {
 type Layanan = {
   butirKeterangan: (teks: string) => string[];
   hitungLamaPisah: (a: string, b: string) => { teks: string; totalBulan: number } | null;
-  dariKeteranganSaksi: (a: string, b: string, tanggalSidang?: string) => HasilSaksi;
+  dariKeteranganSaksi: (
+    a: string,
+    b: string,
+    tanggalSidang?: string,
+    pihak?: { pelaku?: string; lawan?: string },
+    posita?: string
+  ) => HasilSaksi;
 };
 
 const require_ = createRequire(import.meta.url);
@@ -556,8 +567,14 @@ describe("nomor 9 - pustaka kalimat baku", () => {
       path.resolve(process.cwd(), "../aleta_bot/services/abtKalimatBaku.js"),
       "utf8"
     );
-    expect(isi).not.toContain("Pasal 19");
-    expect(isi).not.toContain("Undang-Undang");
+    // Yang diperiksa DATA-nya, bukan catatannya: menyebut nama pasal di
+    // dalam komentar justru berguna - ia menerangkan kenapa satu frasa
+    // ditulis begitu. Yang dilarang bunyi pasalnya menjadi isi pustaka.
+    const tanpaCatatan = isi
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^[ 	]*\/\/.*$/gm, "");
+    expect(tanpaCatatan).not.toContain("Pasal 19");
+    expect(tanpaCatatan).not.toContain("Undang-Undang");
   });
 });
 
@@ -617,22 +634,92 @@ describe("nomor 10 - riwayat dan urungkan", () => {
  */
 function fungsiRapikan() {
   const isi = abtJs();
-  const awal = isi.indexOf("function rapikanPosita(teks) {");
-  const akhir = isi.indexOf("// ─── Riwayat dan urungkan");
+  // rapikanPosita sudah pindah ke layanan bot - yang tersisa di sini hanya
+  // pembersih keterangan saksi, yang memang bekerja atas teks yang tergambar.
+  const awal = isi.indexOf("const POLA_PENUTUP = [");
+  const akhir = isi.indexOf("// ─── Keterangan saksi: disunting");
   expect(awal).toBeGreaterThan(0);
   expect(akhir).toBeGreaterThan(awal);
-  const konteks: {
-    rapikanPosita?: (t: string) => string;
-    bersihkanKeteranganSaksi?: (t: string) => string;
-  } = {};
+  const konteks: { bersihkanKeteranganSaksi?: (t: string) => string } = {};
   vm.createContext(konteks);
   vm.runInContext(isi.slice(awal, akhir), konteks);
-  return konteks as {
-    rapikanPosita: (t: string) => string;
-    bersihkanKeteranganSaksi: (t: string) => string;
-  };
+  return konteks as { bersihkanKeteranganSaksi: (t: string) => string };
 }
 
+/** rapikanTeksPosita kini milik layanan bot - dijalankan langsung dari sana. */
+const layananPosita = require_(
+  path.resolve(process.cwd(), "../aleta_bot/services/sippPositaService.js")
+) as {
+  rapikanTeksPosita: (t: string) => string;
+  tanpaRuang: (t: string) => string;
+};
+
+describe("5227 disaring gugatan, bukan hanya kedua saksi", () => {
+  // Data nyata perkara 510/Pdt.G/2026/PA.Dgl.
+  const pihak = { pelaku: "Tergugat", lawan: "Penggugat" };
+  const dasar =
+    "- Bahwa antara Penggugat dan Tergugat sering terjadi perselisihan dan pertengkaran sejak 2025;";
+  const nafkah = "- Bahwa Tergugat sudah tidak pernah memberikan nafkah kepada Penggugat;";
+  const s1 = [
+    dasar,
+    "- Bahwa penyebab perselisihan adalah karena Tergugat suka berjudi online dan sering melakukan kekerasan fisik dengan memukul dan menampar Penggugat hingga memar disekitar bibir Penggugat;",
+    nafkah,
+  ].join("\n");
+  const s2 = [
+    dasar,
+    "- Bahwa penyebab perselisihan adalah karena Tergugat suka berjudi online dan jika ditegur Tergugat marah dan memukul Penggugat hingga bengkak dileher Penggugat;",
+    nafkah,
+  ].join("\n");
+  const GUGATAN = [
+    "4. Bahwa sejak Oktober 2025 sering terjadi perselisihan dan pertengkaran secara terus menerus yang disebabkan karena",
+    "a. Tergugat sering kali mabuk-mabukkan bersama teman-teman Tergugat dan jika dinasehati Penggugat, Tergugat selalu marah;",
+    "b. Setiap kali terjadi pertengkaran Tergugat melakukan kekerasan fisik kepada Penggugat karena Tergugat tidak terima jika Penggugat menasehati Tergugat untuk berhenti bermain judi online;",
+  ].join("\n");
+
+  it("alasan yang terbukti tetapi TIDAK didalilkan dikeluarkan dari 5227", () => {
+    // Kedua saksi menerangkan nafkah, tetapi gugatannya tidak pernah
+    // mendalilkannya. Memasukkannya berarti memutus melebihi yang dituntut.
+    const h = layanan.dariKeteranganSaksi(s1, s2, "", pihak, GUGATAN);
+    expect(h.ciri).not.toContain("tidak memberi nafkah");
+    expect(h.ciriDiluarGugatan).toContain("tidak memberi nafkah");
+    expect(ambil(h, "5227").nilai).not.toContain("nafkah");
+  });
+
+  it("dalil yang belum dikuatkan kedua saksi disebut, bukan didiamkan", () => {
+    // Gugatan mendalilkan mabuk; tidak satu saksi pun menerangkannya. Itu
+    // dalil yang harus dibuktikan atau ditolak - bukan dilupakan.
+    const h = layanan.dariKeteranganSaksi(s1, s2, "", pihak, GUGATAN);
+    expect(h.ciriBelumTerbukti).toContain("mabuk");
+    expect(ambil(h, "5227").nilai).not.toContain("pemabuk");
+  });
+
+  it("hasilnya persis alasan yang didalilkan DAN dibuktikan", () => {
+    const h = layanan.dariKeteranganSaksi(s1, s2, "", pihak, GUGATAN);
+    expect(ambil(h, "5227").nilai).toBe(
+      "Tergugat melakukan Kekerasan Dalam Rumah Tangga (KDRT) serta menjadi penjudi " +
+        "yang memicu perselisihan terus-menerus dengan Penggugat"
+    );
+  });
+
+  it("judi tidak lagi menyeret mabuk dan obat terlarang", () => {
+    // Satu frasa untuk tiga perbuatan membuat kalimatnya menuduh dua
+    // perbuatan yang tidak diterangkan siapa pun.
+    const h = layanan.dariKeteranganSaksi(s1, s2, "", pihak, GUGATAN);
+    const nilai = ambil(h, "5227").nilai;
+    expect(nilai).toContain("menjadi penjudi");
+    expect(nilai).not.toContain("pemakai obat terlarang");
+  });
+
+  it("gugatan yang tidak terbaca TIDAK mengosongkan 5227", () => {
+    // Gagal-terbuka di sini, dan sengaja: saringan yang mengosongkan hasil
+    // karena gugatannya kebetulan tidak terbaca lebih merugikan daripada
+    // saringan yang tidak berjalan - asalkan keadaannya disebut di layar.
+    const h = layanan.dariKeteranganSaksi(s1, s2, "", pihak, "");
+    expect(h.gugatanTerbaca).toBe(false);
+    expect(h.ciri).toContain("tidak memberi nafkah");
+    expect(ambil(h, "5227").nilai).toContain("nafkah");
+  });
+});
 describe("nomor 6 - penomoran posita yang menempel", () => {
   // Disalin apa adanya dari layar ABT perkara 494/Pdt.G/2026/PA.Dgl.
   const POSITA =
@@ -643,41 +730,51 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
     "kelamin laki-laki,.b. FATHIYAH LASYIRA Binti FADIL, umur 6 tahun, agama islam, kelamin perempuan." +
     "3. Bahwa sejak awal pernikahan pada awal tahun 2018 Penggugat sudah mulai dianiaya.";
 
+  const rapikan = (t: string) => layananPosita.rapikanTeksPosita(t);
+
   it("tiap butir induk mendapat barisnya sendiri", () => {
-    const { rapikanPosita } = fungsiRapikan();
-    const hasil = rapikanPosita(POSITA);
-    const baris = hasil.split("\n");
+    const baris = rapikan(POSITA).split("\n");
     expect(baris[0].startsWith("1. Bahwa Penggugat MARIANA")).toBe(true);
     expect(baris.some((x) => x.startsWith("2. Bahwa setelah menikah"))).toBe(true);
     expect(baris.some((x) => x.startsWith("3. Bahwa sejak awal pernikahan"))).toBe(true);
   });
 
   it("anak butir diberi lekukan, bukan disamakan dengan induknya", () => {
-    const { rapikanPosita } = fungsiRapikan();
-    const baris = rapikanPosita(POSITA).split("\n");
+    const baris = rapikan(POSITA).split("\n");
     expect(baris.some((x) => x.startsWith("   a. MUHAMMAD FATHIR"))).toBe(true);
     expect(baris.some((x) => x.startsWith("   b. FATHIYAH LASYIRA"))).toBe(true);
   });
 
-  it("tidak satu kata pun diubah dan tidak dinomori ulang", () => {
-    // Menomori ulang berarti mengubah rujukan antar butir ("sebagaimana butir
-    // 3"), dan itu mengubah isi gugatan.
-    const { rapikanPosita } = fungsiRapikan();
-    // Dibandingkan tanpa spasi sama sekali: yang DITAMBAHKAN fungsi ini
-    // memang baris baru dan lekukan, jadi membandingkannya beserta spasi hanya
-    // menguji bahwa ia tidak bekerja.
-    const hasil = rapikanPosita(POSITA);
-    const hurufSaja = (t: string) => t.replace(/[\s.]+/g, "");
-    expect(hurufSaja(hasil)).toBe(hurufSaja(POSITA));
+  it("TIDAK SATU HURUF PUN berubah - termasuk tanda bacanya", () => {
+    // ==================================================================
+    // PEMBANDING LAMA MEMBUANG TITIK, DAN ITULAH YANG MENYEMBUNYIKAN BUG
+    // ==================================================================
+    //
+    // Bentuk lamanya /[\s.]+/ - spasi DAN TITIK. Dengan pembanding itu,
+    // perapian yang menelan titik di antara dua anak butir lolos tanpa satu
+    // pun uji yang menuduh. Cacatnya baru ketahuan ketika pagar di layanan
+    // menolak tulisannya ke SIPP.
+    //
+    // Yang boleh DITAMBAHKAN perapian hanya ruang kosong. Maka pembandingnya
+    // membuang ruang kosong saja, dan tidak satu tanda baca pun.
+    const hurufSaja = (t: string) => t.replace(/\s+/g, "");
+    expect(hurufSaja(rapikan(POSITA))).toBe(hurufSaja(POSITA));
+  });
+
+  it("titik di antara dua anak butir TIDAK hilang", () => {
+    // Keadaan yang benar-benar ada di posita PA Donggala:
+    // "...teman-teman Tergugat.b. Setiap kali..." - titik sesudah "Tergugat".
+    const teks = "karena a. Tergugat sering mabuk bersama teman Tergugat.b. Setiap kali bertengkar.";
+    const hasil = rapikan(teks);
+    expect(hasil).toContain("teman Tergugat.");
+    expect(layananPosita.tanpaRuang(hasil)).toBe(layananPosita.tanpaRuang(teks));
   });
 
   it("teks yang sudah rapi tidak diubah lagi", () => {
-    const { rapikanPosita } = fungsiRapikan();
     const rapi = "1. Bahwa satu.\n2. Bahwa dua.";
-    expect(rapikanPosita(rapi)).toBe(rapi);
+    expect(rapikan(rapi)).toBe(rapi);
   });
 });
-
 describe("nomor 8 - kalimat penutup keterangan saksi", () => {
   const SAKSI = [
     "- Bahwa yang meninggalkan tempat tinggal bersama adalah Tergugat;",
@@ -955,10 +1052,30 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     expect(isi).not.toContain("mousedown");
   });
 
-  it("pegangan ubah ukuran memakai kelas yang sudah ada di panel.css", () => {
-    // Kelas kedua yang mirip pasti berselisih dengan yang pertama.
+  it("DELAPAN pegangan ubah ukuran, sama seperti panel SIPP", () => {
+    // Yang dilaporkan: panel ABT tidak dapat ditarik, panel SIPP bisa.
+    // Sebabnya bukan pegangannya tidak ada - ia ada, satu, 12 x 12 piksel,
+    // tembus pandang, di sudut KIRI-bawah. Yang ditarik orang sudut
+    // kanan-bawah, tempat petunjuknya digambar dan tempat hampir setiap
+    // jendela dapat diubah ukurannya.
     const isi = alat();
-    expect(isi).toContain('"aleta-tarik aleta-tarik--sudut aleta-tarik--sb"');
+    expect(isi).toContain("const ALAT_ARAH_TARIK = [");
+    expect(isi).toContain('"aleta-tarik aleta-tarik--" + arah.nama');
+    for (const arah of ["u", "s", "b", "t", "ub", "ut", "sb", "st"]) {
+      expect(isi, arah).toContain(`nama: "${arah}"`);
+    }
+    // Kelas pegangannya yang SUDAH ada di panel.css, bukan kelas baru.
+    expect(isi).toContain('pegangan.classList.add("aleta-tarik--sudut")');
+  });
+
+  it("tarikan didengarkan document, bukan pegangan selebar 12 piksel", () => {
+    // Tarikan cepat membuat penunjuk meninggalkan kotak itu dalam satu
+    // gerakan, dan pegangan yang mendengarkan dirinya sendiri kehilangan
+    // tarikannya di tengah jalan.
+    const isi = alat();
+    const potong = isi.slice(isi.indexOf("function alatPasangUbahUkuran"));
+    expect(potong).toContain('document.addEventListener("pointermove", saatGerak)');
+    expect(potong).toContain('document.addEventListener("pointerup", saatLepas)');
   });
 
   it("utang duplikasinya dicatat, bukan didiamkan", () => {

@@ -2025,6 +2025,8 @@ export async function getGatewayAbtUsulan(muatan: {
   tanggalSidang?: string;
   pelaku?: string;
   lawan?: string;
+  /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */
+  posita?: string;
 }) {
   return gatewayFetch<{
     sipp: Record<string, unknown> | null;
@@ -2049,14 +2051,17 @@ export async function getGatewayAbtUsulan(muatan: {
  *
  * Posita lama ikut kembali supaya penyimpannya punya yang dapat dikembalikan.
  */
-export async function getGatewaySippPositaRapikan(perkaraId: string, posita: string) {
-  return gatewayFetch<{ tersentuh: number; sebelum: string; sesudah: string; alasan: string }>(
-    "/internal/aleta-bot/sipp/posita/rapikan",
-    {
-      method: "POST",
-      body: JSON.stringify({ perkaraId, posita }),
-    }
-  );
+export async function getGatewaySippPositaRapikan(perkaraId: string, ujiKering: boolean) {
+  return gatewayFetch<{
+    tersentuh: number;
+    berubah: boolean;
+    sebelum: string;
+    sesudah: string;
+    alasan: string;
+  }>("/internal/aleta-bot/sipp/posita/rapikan", {
+    method: "POST",
+    body: JSON.stringify({ perkaraId, ujiKering }),
+  });
 }
 export async function getGatewayAbtPdf(rtfBase64: string) {
   return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string }>(
