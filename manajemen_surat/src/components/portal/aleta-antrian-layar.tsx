@@ -111,23 +111,53 @@ export function AletaAntrianLayar() {
   const sudahDiucapkan = useRef<Set<number>>(new Set());
   const pertamaKali = useRef(true);
 
-  const ambil = useCallback(async () => {
+  /**
+   * Membaca antrian. Ia TIDAK menyentuh keadaan layar sama sekali - hanya
+   * mengembalikan apa yang terbaca, atau sebab kegagalannya.
+   *
+   * Pemisahan ini yang membuat effect di bawah dapat memutuskan sendiri
+   * apakah hasilnya masih layak dipakai. Selama penulisan keadaan tersembunyi
+   * di dalam pengambilnya, keputusan itu tidak ada tempatnya.
+   */
+  const bacaAntrian = useCallback(async (): Promise<{ hasil: Jawaban | null; sebab: string }> => {
     try {
       const respons = await fetch(apiPath("/api/aleta-ecourt/antrian"), { cache: "no-store" });
       const isi = (await respons.json()) as { data?: Jawaban } | Jawaban;
-      const hasil = ("data" in isi && isi.data ? isi.data : isi) as Jawaban;
-      setData(hasil);
-      setGalat("");
+      return { hasil: ("data" in isi && isi.data ? isi.data : isi) as Jawaban, sebab: "" };
     } catch (error) {
-      setGalat(error instanceof Error ? error.message : String(error));
+      return { hasil: null, sebab: error instanceof Error ? error.message : String(error) };
     }
   }, []);
 
+  // ==========================================================================
+  // JAWABAN YANG TERLAMBAT TIDAK BOLEH DITULIS KE LAYAR YANG SUDAH PERGI
+  // ==========================================================================
+  //
+  // Permintaan yang sedang di jalan tidak berhenti ketika layarnya dilepas
+  // atau effect-nya dijalankan ulang. Tanpa penanda hidup, jawaban yang
+  // mendarat sesudahnya tetap menulis keadaan - keadaan milik tampilan yang
+  // sudah tidak ada lagi.
   useEffect(() => {
-    void ambil();
-    const detak = setInterval(() => void ambil(), SELANG_MS);
-    return () => clearInterval(detak);
-  }, [ambil]);
+    let hidup = true;
+
+    const segarkan = async () => {
+      const { hasil, sebab } = await bacaAntrian();
+      if (!hidup) return;
+      if (hasil) {
+        setData(hasil);
+        setGalat("");
+      } else {
+        setGalat(sebab);
+      }
+    };
+
+    void segarkan();
+    const detak = setInterval(() => void segarkan(), SELANG_MS);
+    return () => {
+      hidup = false;
+      clearInterval(detak);
+    };
+  }, [bacaAntrian]);
 
   useEffect(() => {
     const detak = setInterval(() => {

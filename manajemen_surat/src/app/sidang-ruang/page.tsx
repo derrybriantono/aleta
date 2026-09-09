@@ -78,31 +78,71 @@ export default function SidangRuangPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const dari = new URLSearchParams(window.location.search).get("ruang");
+    // ========================================================================
+    // INI MEMANG HARUS DI DALAM EFFECT, DAN TIDAK ADA BENTUK LAIN
+    // ========================================================================
+    //
+    // Aturan set-state-in-effect benar untuk keadaan yang dapat DIHITUNG saat
+    // menggambar. Yang ini tidak dapat: alamat halaman hanya ada di peramban,
+    // sedangkan gambar pertamanya disusun di server. Membacanya di dalam
+    // useState(() => ...) membuat server menulis "ruang 0" sementara peramban
+    // menghitung "ruang 3" - dan React membuang seluruh gambar itu sebagai
+    // hydration mismatch.
+    //
+    // Ongkosnya satu gambar ulang, sekali, saat papan dinyalakan pagi hari.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRuang(Number(dari) || 0);
   }, []);
 
-  const ambil = useCallback(async (nomorRuang: number) => {
-    if (nomorRuang <= 0) return;
+  /**
+   * Membaca papan satu ruang sidang. TIDAK menyentuh keadaan layar.
+   *
+   * null berarti belum ada ruang yang ditunjuk - bukan kegagalan. Kegagalan
+   * punya jawabannya sendiri, lengkap dengan available: false, supaya papan
+   * menerangkan keadaannya alih-alih diam.
+   */
+  const bacaRuang = useCallback(async (nomorRuang: number): Promise<Jawaban | null> => {
+    if (nomorRuang <= 0) return null;
     try {
       const r = await fetch(apiPath(`/api/sidang-ruang?ruang=${nomorRuang}`), { cache: "no-store" });
       const isi = (await r.json()) as { data?: Jawaban };
-      setData((isi.data ?? isi) as Jawaban);
+      return (isi.data ?? isi) as Jawaban;
     } catch {
-      setData({
+      return {
         available: false,
         ruang: nomorRuang,
         pesan: "Papan ruang sidang belum dapat dibaca.",
         sekarang: null,
         berikutnya: null,
-      });
+      };
     }
   }, []);
 
+  // ==========================================================================
+  // JAWABAN RUANG LAMA TIDAK BOLEH MENDARAT DI PAPAN RUANG BARU
+  // ==========================================================================
+  //
+  // Nomor ruang dibaca dari alamat sesudah layar terpasang, jadi effect ini
+  // memang berjalan dua kali: sekali dengan ruang 0, sekali dengan ruang yang
+  // sebenarnya. Permintaan yang sedang di jalan tidak ikut berhenti - dan
+  // papan yang menggantung di depan pintu ruang 3 lalu dapat memperlihatkan
+  // perkara ruang lain tanpa seorang pun tahu sejak kapan.
   useEffect(() => {
-    void ambil(ruang);
-    const detak = setInterval(() => void ambil(ruang), SELANG_MS);
-    return () => clearInterval(detak);
-  }, [ambil, ruang]);
+    let hidup = true;
+
+    const segarkan = async () => {
+      const hasil = await bacaRuang(ruang);
+      if (!hidup || !hasil) return;
+      setData(hasil);
+    };
+
+    void segarkan();
+    const detak = setInterval(() => void segarkan(), SELANG_MS);
+    return () => {
+      hidup = false;
+      clearInterval(detak);
+    };
+  }, [bacaRuang, ruang]);
 
   useEffect(() => {
     const detak = setInterval(() => setJam(jamSekarang()), 1000);
@@ -116,6 +156,11 @@ export default function SidangRuangPage() {
     if (kunci === perkaraTerakhir.current) return;
     perkaraTerakhir.current = kunci;
     if (!kunci) return;
+    // Kedipan itu KEJADIAN, bukan keadaan yang dapat dihitung dari data:
+    // "perkaranya baru saja berganti" tidak ada di dalam data mana pun, ia
+    // ada di dalam perbandingan dengan yang sebelumnya. Sekali per pergantian
+    // perkara - beberapa kali dalam satu hari sidang.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBerkedip(true);
     const jeda = setTimeout(() => setBerkedip(false), 1200);
     return () => clearTimeout(jeda);

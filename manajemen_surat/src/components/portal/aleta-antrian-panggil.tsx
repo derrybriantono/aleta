@@ -139,21 +139,52 @@ export function AletaAntrianPanggil() {
   const [suaraNyala, setSuaraNyala] = useState(false);
   const { daftar: daftarSuara, terpilih, pilih, bunyikan, didukung } = useSuaraPanggilan();
 
-  const ambil = useCallback(async () => {
+  /**
+   * Membaca antrian. TIDAK menyentuh keadaan layar - yang menulis hanya dua
+   * pemakainya di bawah, dan masing-masing tahu kapan hasilnya masih layak.
+   */
+  const bacaAntrian = useCallback(async (): Promise<{ hasil: Jawaban | null; sebab: string }> => {
     try {
       const respons = await fetch(apiPath("/api/aleta-ecourt/antrian"), { cache: "no-store" });
       const isi = (await respons.json()) as { data?: Jawaban } | Jawaban;
-      setData(("data" in isi && isi.data ? isi.data : isi) as Jawaban);
+      return { hasil: ("data" in isi && isi.data ? isi.data : isi) as Jawaban, sebab: "" };
     } catch (error) {
-      setPesan(error instanceof Error ? error.message : String(error));
+      return { hasil: null, sebab: error instanceof Error ? error.message : String(error) };
     }
   }, []);
 
+  /** Penyegaran atas permintaan petugas - sesudah satu nomor dipanggil. */
+  const ambil = useCallback(async () => {
+    const { hasil, sebab } = await bacaAntrian();
+    if (hasil) setData(hasil);
+    else setPesan(sebab);
+  }, [bacaAntrian]);
+
+  // ==========================================================================
+  // JAWABAN YANG TERLAMBAT TIDAK BOLEH DITULIS KE LAYAR YANG SUDAH PERGI
+  // ==========================================================================
+  //
+  // Permintaan yang sedang di jalan tidak berhenti ketika layarnya dilepas.
+  // Penanda hidup ini yang memutuskan hasilnya masih layak dipakai atau tidak
+  // - keputusan yang tidak punya tempat selama penulisan keadaan tersembunyi
+  // di dalam pengambilnya.
   useEffect(() => {
-    void ambil();
-    const detak = setInterval(() => void ambil(), SELANG_MS);
-    return () => clearInterval(detak);
-  }, [ambil]);
+    let hidup = true;
+
+    const segarkan = async () => {
+      const { hasil, sebab } = await bacaAntrian();
+      if (!hidup) return;
+      if (hasil) setData(hasil);
+      else setPesan(sebab);
+    };
+
+    void segarkan();
+    const detak = setInterval(() => void segarkan(), SELANG_MS);
+    return () => {
+      hidup = false;
+      clearInterval(detak);
+    };
+  }, [bacaAntrian]);
 
   const baris = useMemo(() => {
     const semua = Object.entries(data?.peta || {}).map(([perkaraId, satu]) => ({

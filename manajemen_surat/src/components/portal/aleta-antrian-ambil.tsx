@@ -55,6 +55,21 @@ type KehadiranBaris = {
 
 type PeranPilihan = { kunci: string; label: string; sisi: string };
 
+/**
+ * Satu hasil pembacaan, sebelum apa pun ditulis ke layar.
+ *
+ * `sebab` yang terisi berarti gagal - dan itulah gunanya bentuk ini: selama
+ * kegagalan hanya berupa daftar kosong, ia tidak dapat dibedakan dari hari
+ * yang memang tidak bersidang.
+ */
+type Bacaan = {
+  sidang: SidangBaris[];
+  peta: Record<string, { nomor: number | null; keadaan: string }>;
+  kehadiran: Record<string, { hadir: KehadiranBaris[] }>;
+  peran: PeranPilihan[];
+  sebab: string;
+};
+
 /** Urutan pihak yang lazim. Lebih dari lima ditulis petugas sendiri. */
 const URUTAN = ["", "I", "II", "III", "IV", "V"];
 
@@ -86,7 +101,14 @@ export function AletaAntrianAmbil() {
    */
   const [pertamaMuat, setPertamaMuat] = useState(true);
 
-  const muat = useCallback(async () => {
+  /**
+   * Membaca ketiga sumbernya sekaligus. TIDAK menyentuh keadaan layar.
+   *
+   * `sebab` terisi berarti pembacaannya gagal - dan pada keadaan itu tidak
+   * satu pun daftarnya boleh dipakai, sebab semuanya kosong bukan karena
+   * memang tidak ada isinya.
+   */
+  const bacaSemua = useCallback(async (): Promise<Bacaan> => {
     try {
       const [jadwal, antre, daftarPeran] = await Promise.all([
         fetch(apiPath(`/api/aleta-ecourt/sidang?dari=${hariIni}&sampai=${hariIni}&batas=200`), {
@@ -103,23 +125,60 @@ export function AletaAntrianAmbil() {
       };
       const isiPeran = (daftarPeran.data ?? daftarPeran) as { peran?: PeranPilihan[] };
 
-      setSidang(Array.isArray(isiJadwal.sidang) ? isiJadwal.sidang : []);
-      setAntrian(isiAntre.peta ?? {});
-      setKehadiran(isiAntre.kehadiran ?? {});
-      setPeran(Array.isArray(isiPeran.peran) ? isiPeran.peran : []);
-      return isiAntre.peta ?? {};
+      return {
+        sidang: Array.isArray(isiJadwal.sidang) ? isiJadwal.sidang : [],
+        peta: isiAntre.peta ?? {},
+        kehadiran: isiAntre.kehadiran ?? {},
+        peran: Array.isArray(isiPeran.peran) ? isiPeran.peran : [],
+        sebab: "",
+      };
     } catch (error) {
-      setPesan(error instanceof Error ? error.message : String(error));
-      return {};
-    } finally {
-      setMemuat(false);
-      setPertamaMuat(false);
+      return {
+        sidang: [],
+        peta: {},
+        kehadiran: {},
+        peran: [],
+        sebab: error instanceof Error ? error.message : String(error),
+      };
     }
   }, [hariIni]);
 
+  /** Menuliskan hasil bacaan ke layar. */
+  const terapkan = useCallback((bacaan: Bacaan) => {
+    if (bacaan.sebab) {
+      // Daftar lama DIPERTAHANKAN. Petugas yang sedang memilih perkara tidak
+      // boleh kehilangan daftarnya hanya karena satu penyegaran gagal.
+      setPesan(bacaan.sebab);
+    } else {
+      setSidang(bacaan.sidang);
+      setAntrian(bacaan.peta);
+      setKehadiran(bacaan.kehadiran);
+      setPeran(bacaan.peran);
+    }
+    setMemuat(false);
+    setPertamaMuat(false);
+  }, []);
+
+  /** Penyegaran atas permintaan petugas - sesudah kehadiran dicatat. */
+  const muat = useCallback(async () => {
+    const bacaan = await bacaSemua();
+    terapkan(bacaan);
+    return bacaan.peta;
+  }, [bacaSemua, terapkan]);
+
+  // Muatan pertama. Penanda hidup menjaga jawaban yang terlambat tidak
+  // ditulis ke tampilan yang sudah dilepas.
   useEffect(() => {
-    void muat();
-  }, [muat]);
+    let hidup = true;
+    void (async () => {
+      const bacaan = await bacaSemua();
+      if (!hidup) return;
+      terapkan(bacaan);
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, [bacaSemua, terapkan]);
 
   const tersaring = useMemo(() => {
     const kata = cari.trim().toLowerCase();

@@ -131,15 +131,35 @@ export default function AntrianPublikPage() {
     }
   }, []);
 
+  /**
+   * ==========================================================================
+   * PENGOSONGAN HASIL TERJADI SAAT MENGETIK, BUKAN SESUDAH MENGGAMBAR
+   * ==========================================================================
+   *
+   * Keduanya menghasilkan layar yang sama, tetapi jalannya berbeda. Yang di
+   * dalam effect menuntut satu gambar ulang TAMBAHAN pada tiap huruf: React
+   * menggambar dulu dengan hasil yang lama, effect-nya baru menyalakan
+   * pengosongan, lalu React menggambar lagi. Di layar sentuh ruang tunggu
+   * yang tenaganya pas-pasan, gambar ulang berlapis itulah yang terasa
+   * sebagai ketikan yang tertinggal di belakang jari.
+   *
+   * Mengosongkannya di sini - di tempat kejadiannya, yaitu ketikan orangnya -
+   * hanya satu gambar untuk satu huruf.
+   */
+  const ubahCari = useCallback((nilai: string) => {
+    setCari(nilai);
+    const kata = nilai.trim();
+    if (kata.length < 3) {
+      setBaris([]);
+      setPesan(kata.length > 0 ? "Ketik sekurang-kurangnya 3 huruf." : "");
+    }
+  }, []);
+
   // Dicari sesudah orang berhenti mengetik sejenak. Mencari pada tiap huruf
   // membuat layar berkedip sementara orangnya masih mengetik namanya.
   useEffect(() => {
     const kata = cari.trim();
-    if (kata.length < 3) {
-      setBaris([]);
-      setPesan(kata.length > 0 ? "Ketik sekurang-kurangnya 3 huruf." : "");
-      return;
-    }
+    if (kata.length < 3) return;
     const tunda = setTimeout(() => void jalankanCari(kata), 450);
     return () => clearTimeout(tunda);
   }, [cari, jalankanCari]);
@@ -249,7 +269,7 @@ export default function AntrianPublikPage() {
             <Pencarian
               kotakCari={kotakCari}
               cari={cari}
-              setCari={setCari}
+              setCari={ubahCari}
               baris={baris}
               memuat={memuat}
               pesan={pesan}

@@ -46,26 +46,59 @@ export default function AntrianRuangPage() {
   const [pesan, setPesan] = useState("");
   const [jam, setJam] = useState("");
 
-  const ambil = useCallback(async (nomorRuang: number) => {
-    try {
-      const alamat = apiPath(
-        nomorRuang > 0 ? `/api/antrian-ruang?ruang=${nomorRuang}` : "/api/antrian-ruang"
-      );
-      const r = await fetch(alamat, { cache: "no-store" });
-      const isi = (await r.json()) as { data?: { baris?: Baris[]; message?: string } };
-      const hasil = isi.data ?? (isi as { baris?: Baris[]; message?: string });
-      setBaris(Array.isArray(hasil.baris) ? hasil.baris : []);
-      setPesan(hasil.message || "");
-    } catch {
-      setPesan("Antrian belum dapat dibaca.");
-    }
-  }, []);
+  /**
+   * Membaca antrian satu ruang. TIDAK menyentuh keadaan layar.
+   *
+   * baris bernilai null berarti pembacaannya gagal - berbeda dari daftar
+   * kosong, yang berarti memang tidak ada yang mengantre. Perbedaan itu yang
+   * menjaga papan tidak mendadak kosong hanya karena jaringan tersendat.
+   */
+  const bacaRuang = useCallback(
+    async (nomorRuang: number): Promise<{ baris: Baris[] | null; pesan: string }> => {
+      try {
+        const alamat = apiPath(
+          nomorRuang > 0 ? `/api/antrian-ruang?ruang=${nomorRuang}` : "/api/antrian-ruang"
+        );
+        const r = await fetch(alamat, { cache: "no-store" });
+        const isi = (await r.json()) as { data?: { baris?: Baris[]; message?: string } };
+        const hasil = isi.data ?? (isi as { baris?: Baris[]; message?: string });
+        return {
+          baris: Array.isArray(hasil.baris) ? hasil.baris : [],
+          pesan: hasil.message || "",
+        };
+      } catch {
+        return { baris: null, pesan: "Antrian belum dapat dibaca." };
+      }
+    },
+    []
+  );
 
+  // ==========================================================================
+  // JAWABAN RUANG LAMA TIDAK BOLEH MENDARAT DI PAPAN RUANG BARU
+  // ==========================================================================
+  //
+  // Permintaan yang sedang di jalan tidak ikut berhenti ketika nomor ruangnya
+  // berganti atau layarnya dilepas. Tanpa penanda hidup, jawaban ruang
+  // sebelumnya tetap ditulis ke layar - papan di depan pintu memperlihatkan
+  // antrian ruang lain, dan tidak ada yang tahu sejak kapan.
   useEffect(() => {
-    void ambil(ruang);
-    const detak = setInterval(() => void ambil(ruang), SELANG_MS);
-    return () => clearInterval(detak);
-  }, [ambil, ruang]);
+    let hidup = true;
+
+    const segarkan = async () => {
+      const bacaan = await bacaRuang(ruang);
+      if (!hidup) return;
+      // Daftar lama DIPERTAHANKAN saat gagal; hanya pesannya yang berganti.
+      if (bacaan.baris) setBaris(bacaan.baris);
+      setPesan(bacaan.pesan);
+    };
+
+    void segarkan();
+    const detak = setInterval(() => void segarkan(), SELANG_MS);
+    return () => {
+      hidup = false;
+      clearInterval(detak);
+    };
+  }, [bacaRuang, ruang]);
 
   useEffect(() => {
     const detak = setInterval(() => setJam(jamSekarang()), 1000);
