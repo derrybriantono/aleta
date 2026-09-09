@@ -868,6 +868,8 @@ const DI_LUAR_KATALOG = {
     "Jarak antara tanggal penunjukan panitera pengganti dan saat ia diketik ke SIPP. Inilah yang dituntut KT03 dan selama ini tidak terukur.",
   ketepatanInputJurusita:
     "Jarak antara tanggal penunjukan jurusita dan saat ia diketik ke SIPP. Inilah yang dituntut KT04 dan selama ini tidak terukur.",
+  ketepatanInputPenetapanHariSidang:
+    "Jarak antara tanggal penetapan hari sidang dan saat ia diketik ke SIPP. Mengisi separuh KT05. Yang dinilai penetapan PERTAMA; penundaan dan penetapan hari sidang berikutnya tidak ikut, sebab keduanya peristiwa yang berbeda.",
   ketepatanInputPutusan:
     "Jarak antara pengucapan putusan dan saat ia diketik ke SIPP. Mengisi separuh KT11; sambungan KT11 yang ada mengukur jarak pendaftaran ke putusan, ukuran yang sah tetapi menjawab pertanyaan yang lain.",
 };

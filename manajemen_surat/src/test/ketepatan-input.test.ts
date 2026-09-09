@@ -97,9 +97,10 @@ describe("penilaiannya berdiri sesuai kontrak mesin", () => {
     celaDefinisi: (def: unknown) => string[];
   };
 
-  it("keempatnya terdaftar dan tanpa cela", () => {
+  it("kelimanya terdaftar dan tanpa cela", () => {
+    // PMH, PPP, PJS, PHS, dan putusan.
     const kunci = layanan.daftarkanSemua();
-    expect(kunci).toHaveLength(4);
+    expect(kunci).toHaveLength(5);
 
     for (const satu of kunci) {
       const def = kerangka.ambil(satu);
@@ -117,6 +118,67 @@ describe("penilaiannya berdiri sesuai kontrak mesin", () => {
     // Rentangnya disaring dari tanggal pendaftaran perkaranya, sama seperti
     // seluruh penilaian lain - supaya angkanya dapat disandingkan.
     expect(sql).toContain("p.tanggal_pendaftaran >= ?");
+  });
+
+  it("kelima peristiwa penetapan terukur, termasuk PHS", () => {
+    // PMH, PPP, PJS, PHS - keempat penetapan yang ditanyakan - beserta
+    // putusan. PHS memakai tabel PENETAPANNYA, bukan perkara_jadwal_sidang:
+    // yang kedua memuat tiap sidang termasuk penundaannya, dan menilai
+    // ketepatan input atasnya berarti menilai peristiwa yang lain sama sekali.
+    const peta = Object.fromEntries(layanan.PERISTIWA.map((p) => [p.kode, p.tabel]));
+    expect(peta.KT02).toBe("perkara_hakim_pn");
+    expect(peta.KT03).toBe("perkara_panitera_pn");
+    expect(peta.KT04).toBe("perkara_jurusita");
+    expect(peta.KT05).toBe("perkara_penetapan_hari_sidang");
+    expect(peta.KT11).toBe("perkara_putusan");
+  });
+});
+
+describe("hanya penetapan PERTAMA yang dihitung", () => {
+  /**
+   * ==========================================================================
+   * KENAPA INI DIJAGA PADA BENTUK KUERINYA
+   * ==========================================================================
+   *
+   * Aturannya ditegakkan SQL, bukan JavaScript - jadi basis data palsu tidak
+   * dapat membuktikannya: yang dipalsukan memulangkan apa pun yang disodorkan
+   * kepadanya, termasuk satu baris yang sebenarnya seharusnya tiga.
+   *
+   * Yang dapat dijaga bentuk kuerinya, dan itu berarti sesuatu di sini sebab
+   * bentuk yang keliru punya nama yang jelas: JOIN biasa. Bentuk pertama yang
+   * saya tulis memakai JOIN, dan salahnya diam - perkara bermajelis yang punya
+   * tiga baris hakim terhitung tiga kali, dan penetapan pengganti ikut
+   * dihitung padahal hanya yang pertama yang dinilai.
+   */
+  const sql = () =>
+    layanan.susunKueri({ tabel: "perkara_hakim_pn", ruas: "tanggal_penetapan" });
+
+  it("tidak memakai JOIN ke tabel penetapannya", () => {
+    // JOIN memulangkan satu baris untuk TIAP baris di tabel itu. Majelis
+    // bertiga karena itu terhitung tiga kali - membebani angkanya lebih berat
+    // daripada perkara berhakim tunggal, tanpa satu pun galat yang muncul.
+    expect(sql()).not.toMatch(/JOIN\s+perkara_hakim_pn/);
+  });
+
+  it("mengambil satu baris saja per perkara", () => {
+    expect((sql().match(/LIMIT 1/g) || []).length).toBe(2);
+  });
+
+  it("kedua subkuerinya berurutan PERSIS SAMA", () => {
+    // Inilah yang menjamin keduanya membaca baris yang sama: tanggal
+    // peristiwanya dan tanggal ia diketik harus datang dari penetapan yang
+    // satu dan sama. Urutan yang berbeda akan memasangkan tanggal penetapan
+    // pertama dengan tanggal input penetapan lain - dan jaraknya lalu tidak
+    // berarti apa-apa, tanpa terlihat keliru.
+    const urutan = sql().match(/ORDER BY x\.tanggal_penetapan ASC, x\.diinput_tanggal ASC/g) || [];
+    expect(urutan).toHaveLength(2);
+  });
+
+  it("baris yang peristiwanya kosong tidak ikut dipilih", () => {
+    // Tanpa saringan ini, baris tanpa tanggal penetapan dapat terurut paling
+    // awal dan terpilih sebagai "yang pertama" - lalu seluruh perkara terbaca
+    // tidak punya penetapan.
+    expect(sql()).toContain("x.tanggal_penetapan IS NOT NULL");
   });
 });
 

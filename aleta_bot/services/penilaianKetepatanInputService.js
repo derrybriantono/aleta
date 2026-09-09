@@ -161,6 +161,18 @@ const PERISTIWA = [
     ruas: "tanggal_penetapan",
   },
   {
+    kunci: "ketepatanInputPenetapanHariSidang",
+    kode: "KT05",
+    judul: "Ketepatan Penginputan Penetapan Hari Sidang",
+    keterangan:
+      "Jarak antara tanggal penetapan hari sidang dan saat penetapan itu diketik ke SIPP. Yang dinilai penetapan PERTAMA; penundaan dan penetapan hari sidang berikutnya tidak ikut.",
+    // Tabel penetapannya, BUKAN perkara_jadwal_sidang. Yang kedua memuat tiap
+    // sidang termasuk penundaannya - menilai ketepatan input atasnya berarti
+    // menilai peristiwa yang berbeda sama sekali.
+    tabel: "perkara_penetapan_hari_sidang",
+    ruas: "tanggal_penetapan",
+  },
+  {
     kunci: "ketepatanInputPutusan",
     kode: "KT11",
     judul: "Ketepatan Penginputan Putusan",
@@ -209,17 +221,58 @@ function selisihHari(dari, sampai) {
   return Math.round((b - a) / 86400000);
 }
 
+/**
+ * ============================================================================
+ * HANYA PENETAPAN YANG PERTAMA - PERUBAHAN DAN PENGGANTI TIDAK DIHITUNG
+ * ============================================================================
+ *
+ * Yang dinilai ketepatan penginputan PENETAPAN PERTAMA. Penetapan yang
+ * diperbarui, penetapan pengganti, dan penunjukan susulan tidak ikut - ia
+ * peristiwa lain, dengan sebabnya sendiri, dan menilainya sebagai keterlambatan
+ * berarti menghukum pengadilan justru karena membetulkan sesuatu.
+ *
+ * Bentuk kueri yang pertama saya tulis SALAH dan salahnya diam:
+ *
+ *     JOIN perkara_hakim_pn x ON x.perkara_id = p.perkara_id
+ *
+ * JOIN biasa memulangkan satu baris untuk TIAP baris di tabel itu. Akibatnya
+ * dua-duanya keliru sekaligus:
+ *
+ *   - perkara bermajelis yang punya tiga baris hakim terhitung tiga kali,
+ *     sehingga perkara bermajelis membebani angkanya lebih berat daripada
+ *     perkara berhakim tunggal - dan tidak ada satu pun galat yang muncul;
+ *   - penetapan pengganti dan perubahan ikut dihitung, padahal yang dinilai
+ *     hanya yang pertama.
+ *
+ * Karena itu barisnya diambil SATU per perkara, lewat dua subkueri yang
+ * berurutan PERSIS SAMA. Urutan yang sama itu yang menjamin keduanya membaca
+ * baris yang sama: tanggal peristiwanya dan tanggal ia diketik harus datang
+ * dari penetapan yang satu dan sama, bukan dari dua baris yang berbeda.
+ *
+ * Diurutkan menurut tanggal peristiwanya dahulu, baru tanggal diketiknya.
+ * Majelis bertiga tercatat sebagai beberapa baris bertanggal penetapan SAMA -
+ * ketiganya satu peristiwa - jadi mana pun yang terambil menghasilkan jarak
+ * yang sama.
+ */
+function subkueriPertama(p, kolom) {
+  return `(SELECT x.${kolom}
+             FROM ${p.tabel} x
+            WHERE x.perkara_id = p.perkara_id
+              AND x.${p.ruas} IS NOT NULL
+            ORDER BY x.${p.ruas} ASC, x.${RUAS_INPUT} ASC
+            LIMIT 1)`;
+}
+
 function susunKueri(p) {
   return `SELECT p.perkara_id AS perkaraId,
                  p.nomor_perkara AS nomorPerkara,
                  p.jenis_perkara_nama AS jenisPerkara,
-                 x.${p.ruas} AS peristiwa,
-                 x.${RUAS_INPUT} AS diinput,
+                 ${subkueriPertama(p, p.ruas)} AS peristiwa,
+                 ${subkueriPertama(p, RUAS_INPUT)} AS diinput,
                  (SELECT MAX(hk.hakim_nama) FROM perkara_hakim_pn hk WHERE hk.perkara_id = p.perkara_id) AS hakim,
                  (SELECT MAX(pp.panitera_nama) FROM perkara_panitera_pn pp WHERE pp.perkara_id = p.perkara_id) AS paniteraPengganti,
                  (SELECT MAX(js.jurusita_nama) FROM perkara_jurusita js WHERE js.perkara_id = p.perkara_id) AS jurusita
             FROM perkara p
-            JOIN ${p.tabel} x ON x.perkara_id = p.perkara_id
            WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
            ORDER BY p.tanggal_pendaftaran ASC
            LIMIT ${BATAS_BARIS}`;
