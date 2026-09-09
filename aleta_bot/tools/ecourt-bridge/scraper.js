@@ -769,11 +769,125 @@ function parseCaseDetail(html) {
   };
 }
 
+/**
+ * ============================================================================
+ * MENGGALI ALAMAT BERKAS DARI JAWABAN /ViewDoc
+ * ============================================================================
+ *
+ * Dokumen PDF di e-Court tidak membawa alamatnya sendiri di halaman perkara -
+ * yang ada hanya PENANDA. Alamatnya ditanyakan lewat /ViewDoc/index/{tipe}/{id},
+ * dan jawaban itulah yang digali di sini.
+ *
+ * Digali sebagai fungsi murni, terpisah dari peramban, sebab inilah bagian yang
+ * paling sering patah ketika e-Court berubah - dan yang tidak dapat diuji sama
+ * sekali selama ia terkurung di dalam page.evaluate().
+ *
+ * ============================================================================
+ * EMPAT SEBAB KEGAGALAN, DAN PENAWARNYA
+ * ============================================================================
+ *
+ * 1. GARIS MIRING YANG TERSANDI. Jawaban berbentuk JSON menuliskan alamatnya
+ *    dengan garis miring yang didahului garis miring terbalik - itu bawaan
+ *    json_encode PHP, bukan kekeliruan e-Court. Pola lama menolak garis miring
+ *    terbalik di dalam alamat, sehingga pencarian "/storage/" tidak pernah
+ *    cocok pada jawaban yang sebenarnya membawanya. Inilah tersangka utama
+ *    gejala "berkas terdeteksi tetapi tidak pernah terunduh": penandanya
+ *    ketemu, judulnya ketemu, alamatnya dinyatakan tidak ada.
+ *
+ * 2. ALAMAT RELATIF. Jawaban dapat berisi "/storage/berkas/xxx.pdf" tanpa nama
+ *    host. Pola lama mewajibkan http(s):// di depan, jadi bentuk ini pun
+ *    dinyatakan tidak ditemukan. absoluteUrl sudah lama ada di berkas ini dan
+ *    tinggal dipakai.
+ *
+ * 3. JAWABAN YANG DIPOTONG. Pemanggilnya dulu memotong jawaban pada 4.000
+ *    huruf SEBELUM menggalinya. Jawaban yang terbungkus tata letak penuh
+ *    menaruh alamatnya jauh sesudah itu, dan yang tergali hanya kepala
+ *    halaman. Sekarang seluruh jawaban digali; yang dipotong hanya cuplikan
+ *    untuk pesan galatnya.
+ *
+ * 4. PEMERIKSAAN ASAL YANG DAPAT DITIPU. Penjagaan lama berbunyi
+ *    alamat.startsWith(BASE_URL) - dan alamat pada host yang namanya DIAWALI
+ *    nama host e-Court lolos begitu saja, sebab awalannya memang persis sama.
+ *    Sekarang nama hostnya dibandingkan utuh.
+ *
+ * Yang TIDAK diubah: berkas hanya boleh diambil dari e-Court. Penjagaannya
+ * diperketat, bukan dilonggarkan.
+ */
+
+/** Berkas yang memang dokumen, dipakai bila jawabannya tidak melewati /storage/. */
+const EKSTENSI_BERKAS_ECOURT = /[.](pdf|docx|doc|rtf|odt)(?:$|[?#])/i;
+
+/** Calon alamat: bentuk penuh maupun bentuk relatif yang diawali garis miring. */
+const POLA_CALON_ALAMAT = /https?:[/][/][^\s"'<>()\\]+|[/][^\s"'<>()\\]{2,}/g;
+
+/**
+ * Apakah alamat ini benar-benar di dalam e-Court?
+ *
+ * Dibandingkan per NAMA HOST, bukan per awalan teks. Perbandingan awalan
+ * meloloskan host lain yang namanya kebetulan diawali nama host e-Court, dan
+ * berkas dari host semacam itu akan tersimpan sebagai dokumen resmi perkara.
+ */
+function diDalamEcourt(alamat) {
+  try {
+    const url = new URL(String(alamat));
+    const asal = new URL(BASE_URL);
+    return url.hostname.toLowerCase() === asal.hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {string} teks jawaban /ViewDoc apa adanya, TIDAK dipotong
+ * @returns {{ok: true, alamat: string} | {ok: false, alasan: string, cuplikan: string}}
+ */
+function alamatBerkasDariJawabanViewDoc(teks) {
+  // Garis miring yang tersandi dipulihkan LEBIH DAHULU - lihat sebab nomor 1.
+  const isi = String(teks || "").split("\\/").join("/");
+  const cuplikan = stripTags(isi).replace(/\s+/g, " ").trim().slice(0, 200);
+
+  if (!isi.trim()) return { ok: false, alasan: "jawaban_kosong", cuplikan: "" };
+
+  const calon = (isi.match(POLA_CALON_ALAMAT) || []).map((satu) =>
+    // Tanda baca penutup ikut tertangkap ketika alamatnya berada di dalam
+    // kalimat atau tanda kutip; ia dibuang, bukan dibiarkan merusak alamatnya.
+    satu.replace(/[.,;:!?)\]}'"]+$/, "")
+  );
+
+  // Yang melewati /storage/ didahulukan - itu bentuk yang pasti berkas.
+  // Ekstensi dokumen menjadi cadangan bila e-Court memindahkan simpanannya,
+  // sehingga perpindahan itu tidak seketika menghentikan seluruh penarikan.
+  const pilih =
+    calon.find((satu) => /[/]storage[/]/i.test(satu)) ||
+    calon.find((satu) => EKSTENSI_BERKAS_ECOURT.test(satu));
+
+  if (!pilih) {
+    const halamanLogin = LOGIN_PATH_PATTERN.test(isi) || /\b(login|sign in)\b/i.test(cuplikan);
+    return {
+      ok: false,
+      // Sesi habis dan alamat tidak dikenali menuntut tindakan yang berbeda -
+      // yang satu login ulang, yang lain memperbaiki penggali ini. Menyebut
+      // keduanya dengan satu kata membuat keduanya salah ditangani.
+      alasan: halamanLogin ? "sesi_habis" : "alamat_berkas_tidak_ditemukan",
+      cuplikan,
+    };
+  }
+
+  const alamat = absoluteUrl(pilih);
+  if (!diDalamEcourt(alamat)) {
+    return { ok: false, alasan: "alamat_berkas_di_luar_ecourt", cuplikan: alamat.slice(0, 200) };
+  }
+
+  return { ok: true, alamat };
+}
+
 module.exports = {
   BASE_URL,
   GATE_PATH_PATTERN,
   LOGIN_PATH_PATTERN,
   absoluteUrl,
+  alamatBerkasDariJawabanViewDoc,
+  diDalamEcourt,
   extractAgendas,
   extractCaseLinks,
   extractCaseNumber,

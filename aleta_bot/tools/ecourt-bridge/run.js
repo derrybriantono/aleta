@@ -174,7 +174,21 @@ async function alamatBerkasDariViewDoc(page, tipe, id) {
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
         if (!respons.ok) return { ok: false, reason: `HTTP ${respons.status}` };
-        return { ok: true, teks: (await respons.text()).slice(0, 4000) };
+
+        // ==================================================================
+        // JAWABANNYA TIDAK DIPOTONG DI SINI
+        // ==================================================================
+        //
+        // Dulu dipotong 4.000 huruf sebelum digali. Jawaban yang terbungkus
+        // tata letak penuh menaruh alamatnya jauh sesudah itu, sehingga yang
+        // tergali hanya kepala halaman - dan alamatnya dinyatakan tidak ada
+        // pada jawaban yang sebenarnya membawanya. Diukur: pada satu jawaban
+        // bertata letak, alamatnya berada di huruf ke-4.234.
+        //
+        // Batasnya tetap ada, hanya jauh lebih longgar: halaman yang
+        // berperilaku aneh tidak boleh menyeberangkan berpuluh megabita lewat
+        // jembatan CDP hanya untuk dicari satu alamat di dalamnya.
+        return { ok: true, teks: (await respons.text()).slice(0, 200000) };
       } catch (error) {
         return { ok: false, reason: String(error && error.message ? error.message : error) };
       }
@@ -185,23 +199,28 @@ async function alamatBerkasDariViewDoc(page, tipe, id) {
 
   if (!jawaban.ok) return { ok: false, reason: jawaban.reason };
 
-  // Alamat diambil dari jawaban apa adanya. Jawabannya kadang berupa alamat
-  // telanjang, kadang terbungkus HTML - keduanya tertangkap oleh pola ini.
-  const cocok = String(jawaban.teks).match(/https?:\/\/[^\s"'<>\\]+\/storage\/[^\s"'<>\\]+/i);
-  if (!cocok) {
-    const cuplikan = String(jawaban.teks).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
-    return { ok: false, reason: `alamat_berkas_tidak_ditemukan: ${cuplikan}` };
-  }
+  // ==========================================================================
+  // PENGGALIANNYA DI scraper.js, DAN SENGAJA
+  // ==========================================================================
+  //
+  // Selama pola pencariannya tinggal di sini - di dalam berkas yang menuntut
+  // peramban sungguhan, sesi e-Court, dan perkara yang kebetulan punya
+  // dokumen - ia tidak dapat diuji sama sekali. Padahal justru inilah bagian
+  // yang paling sering patah ketika e-Court berubah bentuk jawabannya.
+  //
+  // Sekarang ia fungsi murni yang diuji dengan jawaban sungguhan, termasuk
+  // keempat bentuk yang dulu dinyatakan "alamat tidak ditemukan" padahal
+  // alamatnya ada di dalamnya. Lihat alamatBerkasDariJawabanViewDoc.
+  const hasil = scraper.alamatBerkasDariJawabanViewDoc(jawaban.teks);
+  if (hasil.ok) return { ok: true, alamat: hasil.alamat };
 
-  const alamat = cocok[0];
-
-  // Alamat HARUS tetap di dalam e-Court. Jawaban yang mengarahkan ke tempat
-  // lain tidak diikuti: ia akan membawa sesi login pengadilan ke luar.
-  if (!alamat.startsWith(scraper.BASE_URL)) {
-    return { ok: false, reason: "alamat_berkas_di_luar_ecourt" };
-  }
-
-  return { ok: true, alamat };
+  // Cuplikan jawabannya ikut dibawa. Tanpa itu, "alamat tidak ditemukan"
+  // tidak dapat dibedakan dari "e-Court mengubah bentuk jawabannya" - dan
+  // yang kedua menuntut kode ini diperbaiki, bukan dicoba ulang.
+  return {
+    ok: false,
+    reason: hasil.cuplikan ? `${hasil.alasan}: ${hasil.cuplikan}` : hasil.alasan,
+  };
 }
 
 /**
@@ -211,8 +230,22 @@ async function alamatBerkasDariViewDoc(page, tipe, id) {
  * terpisah, supaya cookie sesi login ikut terbawa. Permintaan dari luar
  * peramban akan ditolak e-Court karena dianggap belum masuk.
  */
+/**
+ * Batas ukuran satu berkas yang boleh diseberangkan dari peramban ke Node.
+ *
+ * Isinya menyeberang sebagai teks base64 lewat jembatan CDP - kira-kira 1,37
+ * kali ukuran aslinya. Tanpa batas, satu berkas yang tidak wajar dapat
+ * menghabiskan ingatan peramban lalu menjatuhkan SELURUH penarikan malam itu,
+ * bukan hanya dokumen yang bersangkutan. Dengan batas, ia gagal sendirian dan
+ * sebabnya tercatat.
+ *
+ * Enam puluh empat megabita: jauh di atas berkas perkara yang wajar, cukup
+ * rendah untuk menahan yang tidak wajar.
+ */
+const BATAS_UNDUH_BYTE = Number(process.env.ALETA_BOT_ECOURT_MAX_UNDUH_BYTE || 64 * 1024 * 1024);
+
 async function downloadFile(page, url, targetPath) {
-  const hasil = await page.evaluate(async (alamat) => {
+  const hasil = await page.evaluate(async (alamat, batasByte) => {
     try {
       const respons = await fetch(alamat, { credentials: "include" });
       if (!respons.ok) return { ok: false, reason: `HTTP ${respons.status}` };
@@ -240,13 +273,39 @@ async function downloadFile(page, url, targetPath) {
 
       const buffer = await respons.arrayBuffer();
       const bytes = new Uint8Array(buffer);
+
+      // Berkas kosong bukan berkas. Ia dulu lolos ke pemeriksa isi dan
+      // ditolak di sana, tetapi sebabnya jadi kabur - "isi tidak dikenali"
+      // padahal yang terjadi jawabannya memang tidak berisi apa pun.
+      if (bytes.length === 0) return { ok: false, reason: "berkas_kosong" };
+
+      if (bytes.length > batasByte) {
+        return { ok: false, reason: `berkas_terlalu_besar (${bytes.length} bita)` };
+      }
+
+      // ====================================================================
+      // DISALIN PER POTONGAN, BUKAN PER BITA
+      // ====================================================================
+      //
+      // Bentuk lamanya menyambung satu bita pada tiap putaran. Untuk putusan
+      // lima megabita itu lima juta penyambungan teks - lambat, dan pada
+      // berkas besar cukup untuk membuat halamannya berhenti menjawab
+      // sehingga penarikan malam itu berhenti di tengah tanpa sebab yang
+      // terbaca.
+      //
+      // Potongannya 8.192 supaya tetap jauh di bawah batas jumlah argumen
+      // apply(); memasukkan seluruh bita sekaligus akan melimpahkan tumpukan
+      // pemanggilan pada berkas yang justru paling ingin diselamatkan.
+      const POTONG = 8192;
       let biner = "";
-      for (let i = 0; i < bytes.length; i += 1) biner += String.fromCharCode(bytes[i]);
+      for (let i = 0; i < bytes.length; i += POTONG) {
+        biner += String.fromCharCode.apply(null, bytes.subarray(i, i + POTONG));
+      }
       return { ok: true, base64: btoa(biner), contentType: tipe, size: bytes.length };
     } catch (error) {
       return { ok: false, reason: String(error && error.message ? error.message : error) };
     }
-  }, url);
+  }, url, BATAS_UNDUH_BYTE);
 
   if (!hasil.ok) return hasil;
 
