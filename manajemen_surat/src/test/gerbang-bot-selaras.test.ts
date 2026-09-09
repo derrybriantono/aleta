@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -140,5 +140,79 @@ describe("portal dan bot menyebut alamat yang sama", () => {
     // menuduh yang sehat lebih cepat dimatikan orang daripada diperbaiki.
     const dilayani = alamatDilayani();
     expect(adaYangMelayani("/internal/aleta-bot/messages/progress", dilayani)).toBe(true);
+  });
+});
+
+/**
+ * ============================================================================
+ * MATA RANTAI KEDUA - EKSTENSI KE PORTAL
+ * ============================================================================
+ *
+ * Rantainya tiga: ekstensi di halaman SIPP memanggil portal, portal memanggil
+ * bot, bot membaca SIPP. Mata rantai pertama sudah dijaga di atas; yang ini
+ * mata rantai keduanya.
+ *
+ * Ekstensi paling rawan dari ketiganya. Alamatnya ditulis sebagai teks di
+ * dalam berkas yang TIDAK ikut dibangun bersama portal - tidak ada
+ * TypeScript, tidak ada pemeriksaan apa pun - dan ia berjalan di halaman
+ * milik aplikasi lain, tempat kegagalan memang sengaja dibuat diam supaya
+ * SIPP tidak terganggu.
+ *
+ * Rute portal yang berpindah nama karena itu tidak menghasilkan galat di mana
+ * pun. Yang terjadi hanya satu tombol di panel SIPP yang berhenti bekerja,
+ * dan tidak ada yang tahu sejak kapan.
+ */
+describe("ekstensi memanggil rute portal yang benar-benar ada", () => {
+  const BERKAS_EKSTENSI = ["konten.js", "abt.js", "panel-alat.js", "popup.js", "tema-awal.js"];
+
+  /** Alamat portal yang disebut ekstensi, apa adanya dari sumbernya. */
+  function alamatEkstensi(): string[] {
+    const hasil = new Set<string>();
+    for (const nama of BERKAS_EKSTENSI) {
+      const p = path.join(akar, "ekstensi-sipp", nama);
+      if (!existsSync(p)) continue;
+      const isi = readFileSync(p, "utf8");
+      for (const m of isi.matchAll(/["'`](\/aleta\/api\/[A-Za-z0-9\-_/]+)/g)) {
+        hasil.add(m[1].replace(/\/+$/, ""));
+      }
+    }
+    return [...hasil];
+  }
+
+  /** Rute yang ada: tiap folder di src/app/api yang punya route.ts. */
+  function rutePortal(dir: string, awalan = ""): string[] {
+    const hasil: string[] = [];
+    for (const nama of readdirSync(dir)) {
+      const p = path.join(dir, nama);
+      if (statSync(p).isDirectory()) hasil.push(...rutePortal(p, `${awalan}/${nama}`));
+      else if (nama === "route.ts" || nama === "route.tsx") hasil.push(`/aleta/api${awalan}`);
+    }
+    return hasil;
+  }
+
+  function ada(jalur: string, rute: string[]): boolean {
+    if (rute.includes(jalur)) return true;
+    // Rute dinamis Next.js: [id]
+    return rute.some((r) => {
+      if (!r.includes("[")) return false;
+      return new RegExp(`^${r.replace(/\[[^\]]+\]/g, "[^/]+")}$`).test(jalur);
+    });
+  }
+
+  it("tiap alamat yang disebut ekstensi punya rutenya", () => {
+    const disebut = alamatEkstensi();
+    const rute = rutePortal(path.join(akar, "manajemen_surat/src/app/api"));
+
+    expect(disebut.length).toBeGreaterThan(10);
+    expect(rute.length).toBeGreaterThan(100);
+
+    const hilang = disebut.filter((x) => !ada(x, rute));
+    const laporan = hilang.map((x) => `  ${x} - rutenya tidak ada di portal`).join("\n");
+    expect(laporan, laporan || "seluruhnya selaras").toBe("");
+  });
+
+  it("penyapunya menemukan alamat yang rutenya memang tidak ada", () => {
+    const rute = rutePortal(path.join(akar, "manajemen_surat/src/app/api"));
+    expect(ada("/aleta/api/jalur-yang-tidak-pernah-ada", rute)).toBe(false);
   });
 });
