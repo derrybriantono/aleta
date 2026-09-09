@@ -92,11 +92,34 @@ type TemuanKelasC = {
   blangko: string[];
 };
 
+/**
+ * ============================================================================
+ * BUNGKUS { ok, data } DIBUKA DI SATU TEMPAT
+ * ============================================================================
+ *
+ * Seluruh rute portal menjawab lewat ok(), yang membungkus muatannya. Kedua
+ * pembantu ini dulu memulangkan hasil urai APA ADANYA dan menyebutnya T -
+ * sehingga tiap pemanggilnya menerima bungkusnya, dengan seluruh ruas yang
+ * dimintanya undefined. Layar ini karena itu tidak pernah menampilkan
+ * statistik kamus, korpus, maupun daftar blangko: bukan karena datanya tidak
+ * ada, melainkan karena yang dibaca bukan datanya.
+ *
+ * TypeScript diam sepenuhnya. json() bertipe any, dan `as T` mengubah dugaan
+ * menjadi kepastian tanpa satu pun pemeriksaan - itulah sebabnya cacat ini
+ * dapat hidup di dalam berkas yang justru punya ujinya sendiri.
+ */
+function isiJawaban<T>(luar: unknown): T {
+  if (luar && typeof luar === "object" && "data" in luar) {
+    return ((luar as { data?: unknown }).data ?? {}) as T;
+  }
+  return (luar ?? {}) as T;
+}
+
 async function ambil<T>(alamat: string): Promise<T | null> {
   try {
     const jawaban = await fetch(apiPath(alamat), { cache: "no-store" });
     if (!jawaban.ok) return null;
-    return (await jawaban.json()) as T;
+    return isiJawaban<T>(await jawaban.json());
   } catch {
     return null;
   }
@@ -109,7 +132,7 @@ async function kirim<T>(alamat: string, badan: unknown): Promise<T | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(badan),
     });
-    return (await jawaban.json()) as T;
+    return isiJawaban<T>(await jawaban.json());
   } catch {
     return null;
   }

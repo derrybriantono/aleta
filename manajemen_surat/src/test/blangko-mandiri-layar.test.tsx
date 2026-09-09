@@ -35,7 +35,13 @@ afterEach(() => {
 });
 
 function jawaban(isi: unknown) {
-  return Promise.resolve({ ok: true, json: async () => isi } as unknown as Response);
+  // Bungkus { ok, data } ikut dipalsukan - itulah yang sungguh dikeluarkan
+  // rutenya. Pemalsu bertelanjang membuat berkas uji ini hijau atas layar yang
+  // di dunia nyata tidak pernah menampilkan apa pun.
+  return Promise.resolve({
+    ok: true,
+    json: async () => ({ ok: true, data: isi }),
+  } as unknown as Response);
 }
 
 const KAMUS_KOSONG = {

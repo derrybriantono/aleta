@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,8 +37,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/**
+ * ============================================================================
+ * PEMALSU INI PERNAH MEMALSUKAN BENTUK YANG TIDAK PERNAH ADA
+ * ============================================================================
+ *
+ * Rute /api/aleta-ecourt/isian menjawab lewat ok(), yang membungkus muatannya:
+ *
+ *     { ok: true, data: { ada: true, kelompok: [...] } }
+ *
+ * Pemalsu ini dulu memulangkan muatannya TELANJANG, tanpa bungkus. Akibatnya
+ * uji di berkas ini hijau atas layar yang di dunia nyata selalu berbunyi
+ * "Isian tidak terbaca" - sebab komponennya membaca isi.ada dari bungkusnya,
+ * dan di sana tidak ada ada.
+ *
+ * Inilah yang membuat cacat itu hidup begitu lama: bukan karena tidak ada
+ * ujinya, melainkan karena ujinya menguji dunia yang tidak pernah ada. Uji
+ * yang memalsukan kontrak yang salah lebih berbahaya daripada tidak ada uji -
+ * yang kedua membuat orang berhati-hati, yang pertama membuat orang yakin.
+ *
+ * Bungkusnya sekarang ikut dipalsukan di sini, satu tempat, dan uji terakhir
+ * di berkas ini mengikatnya pada rute yang sesungguhnya.
+ */
 function jawaban(isi: unknown) {
-  return Promise.resolve({ ok: true, json: async () => isi } as unknown as Response);
+  return Promise.resolve({
+    ok: true,
+    json: async () => ({ ok: true, data: isi }),
+  } as unknown as Response);
 }
 
 const KELOMPOK_PERNIKAHAN = {
@@ -232,5 +260,35 @@ describe("alamat yang diminta", () => {
     const alamat = String(ambilan.mock.calls[0][0]);
     expect(alamat).toContain("penanda=1001%2C0650");
     expect(alamat).not.toContain("semua=1");
+  });
+});
+
+/**
+ * ============================================================================
+ * PEMALSUNYA DIIKAT PADA RUTE YANG SESUNGGUHNYA
+ * ============================================================================
+ *
+ * Pemalsu yang bebas menyimpang adalah pemalsu yang suatu hari menyimpang.
+ * Uji ini membaca rutenya sendiri dan memastikan ia memang membungkus - kalau
+ * kelak ia berhenti membungkus, yang gagal uji ini, beserta petunjuk bahwa
+ * pemalsu di atas yang harus disesuaikan.
+ *
+ * Tanpa ikatan ini, berkas uji ini dapat kembali hijau atas dunia yang tidak
+ * ada, dan tidak ada yang tahu sampai seseorang membuka layarnya.
+ */
+describe("pemalsu jawaban setia pada bentuk rutenya", () => {
+  it("rute isian memang membungkus muatannya", () => {
+    const rute = readFileSync(
+      path.resolve(process.cwd(), "src/app/api/aleta-ecourt/isian/route.ts"),
+      "utf8"
+    );
+
+    // Seluruh jalan keluarnya lewat ok(), dan ok() membungkus { ok, data }.
+    expect(rute).toContain('import { ok } from "@/server/shared/http"');
+    expect(rute).toContain("return ok({ ada: true");
+
+    // Dan tidak ada satu pun jalan keluar yang menjawab tanpa bungkus.
+    expect(rute).not.toContain("NextResponse.json({ ada");
+    expect(rute).not.toContain("Response.json({ ada");
   });
 });

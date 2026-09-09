@@ -103,7 +103,49 @@ function sapu(): Pelanggaran[] {
   return pelanggaran;
 }
 
+/**
+ * Bentuk kedua yang pernah lolos: hasil urai DIPULANGKAN langsung.
+ *
+ *     return (await jawaban.json()) as T;
+ *
+ * Penyapu di atas tidak melihatnya - ia mencari peubah bernama, sedangkan di
+ * sini hasilnya tidak pernah diberi nama. Satu pembantu semacam itu di
+ * blangko-mandiri membuat SELURUH layarnya kosong: statistik kamus, korpus,
+ * dan daftar blangko sama-sama membaca bungkus.
+ *
+ * Yang membuatnya bertahan lama: `as T` mengubah dugaan menjadi kepastian
+ * tanpa satu pun pemeriksaan, dan ujinya sendiri memalsukan jawaban TANPA
+ * bungkus - sehingga uji dan kode sepakat atas dunia yang tidak ada.
+ */
+function sapuPulangLangsung(): Pelanggaran[] {
+  const pelanggaran: Pelanggaran[] = [];
+
+  for (const berkas of berkasSumber(akar)) {
+    const relatif = path.relative(akar, berkas);
+    if (DIKECUALIKAN.has(relatif)) continue;
+
+    const isi = readFileSync(berkas, "utf8");
+    if (!isi.includes("/api/aleta")) continue;
+
+    isi.split(/\r?\n/).forEach((baris, i) => {
+      if (!/return\s*\(?await\s+[A-Za-z_$][\w$]*\.json\(\)/.test(baris)) return;
+      if (baris.includes(".data")) return;
+      // Pembantu yang memang membuka bungkusnya sendiri.
+      if (/isiJawaban|bukaBungkus/.test(baris)) return;
+      pelanggaran.push({ berkas: relatif.replace(/\\/g, "/"), baris: i + 1, ruas: ["(dipulangkan langsung)"] });
+    });
+  }
+
+  return pelanggaran;
+}
+
 describe("jawaban portal selalu dibuka bungkusnya", () => {
+  it("tidak ada pembantu yang memulangkan hasil urai apa adanya", () => {
+    const pelanggaran = sapuPulangLangsung();
+    const laporan = pelanggaran.map((x) => `${x.berkas}:${x.baris} memulangkan bungkus sebagai isi`).join("\n");
+    expect(laporan, laporan || "bersih").toBe("");
+  });
+
   it("tidak ada layar yang membaca ruas isi dari bungkusnya", () => {
     const pelanggaran = sapu();
 
