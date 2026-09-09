@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { type AletaDatabase, createAletaDatabase } from "@/server/db/client";
 import {
+  AMBANG_KEDALUWARSA_HARI,
   JABATAN_PENETAP,
   antreanPerkara,
   antreanUntukSaya,
@@ -306,5 +307,106 @@ describe("menutup titipan", () => {
         keadaan: "dikerjakan",
       })
     ).rejects.toThrow(/tidak ditemukan/i);
+  });
+});
+
+/**
+ * ============================================================================
+ * TITIPAN YANG TIDAK PERNAH KEDALUWARSA MENUMPUK SELAMANYA
+ * ============================================================================
+ *
+ * Keadaan kedaluwarsa sudah disediakan tabelnya sejak awal tetapi belum ada
+ * yang menandainya. Titipan yang tidak dikerjakan karena itu tinggal di daftar
+ * selamanya - dan daftar yang sebagian besarnya mati berhenti dibaca, yang
+ * merusak justru bagian yang masih hidup.
+ *
+ * Yang menentukan kebenarannya SARINGAN pada kedua daftar bacanya, bukan
+ * penyapunya. Kalau kedaluwarsa hanya berarti "sudah ditandai", dua layar yang
+ * membaca tabel yang sama menampilkan hal berbeda tergantung siapa yang
+ * kebetulan membuka layar "pekerjaan saya" lebih dahulu.
+ */
+describe("titipan kedaluwarsa sendiri", () => {
+  /** Memundurkan waktu penyiapan satu titipan, seolah ia dititipkan dulu. */
+  async function tuakan(id: string, hari: number) {
+    const dulu = new Date(Date.now() - hari * 24 * 60 * 60 * 1000).toISOString();
+    await (db as AletaDatabase)
+      .prepare("UPDATE aleta_sipp_penunjukan_antrean SET disiapkan_at = ? WHERE id = ?")
+      .run(dulu, id);
+  }
+
+  it("yang lewat ambangnya hilang dari daftar pekerjaan saya", async () => {
+    const ketua = await buatKetua();
+    const { id } = await titipPmh(ketua);
+
+    // Sehari sebelum ambang: masih hidup.
+    await tuakan(id, AMBANG_KEDALUWARSA_HARI - 1);
+    const masih = await antreanUntukSaya(db as AletaDatabase, ketua);
+    expect(masih.untukSaya.map((x) => x.id)).toContain(id);
+
+    // Sehari sesudahnya: sudah tidak.
+    await tuakan(id, AMBANG_KEDALUWARSA_HARI + 1);
+    const sudah = await antreanUntukSaya(db as AletaDatabase, ketua);
+    expect(sudah.untukSaya.map((x) => x.id)).not.toContain(id);
+  });
+
+  it("ditandai kedaluwarsa, bukan dihapus", async () => {
+    // Pertanyaan "kenapa penetapan ini tidak pernah dikerjakan" harus tetap
+    // dapat dijawab setahun kemudian. Baris yang dihapus tidak menjawabnya.
+    const ketua = await buatKetua();
+    const { id } = await titipPmh(ketua);
+    await tuakan(id, AMBANG_KEDALUWARSA_HARI + 3);
+    await antreanUntukSaya(db as AletaDatabase, ketua);
+
+    const baris = await (db as AletaDatabase)
+      .prepare(
+        "SELECT keadaan, alasan_batal FROM aleta_sipp_penunjukan_antrean WHERE id = ? LIMIT 1"
+      )
+      .all<{ keadaan: string; alasan_batal: string }>(id);
+
+    expect(baris).toHaveLength(1);
+    expect(baris[0].keadaan).toBe("kedaluwarsa");
+    // Alasannya menyebut ambangnya, supaya yang membacanya tidak perlu
+    // mencari angka itu di dalam kode.
+    expect(baris[0].alasan_batal).toContain(String(AMBANG_KEDALUWARSA_HARI));
+  });
+
+  it("daftar per perkara ikut menyaring, tanpa menunggu penyapunya", async () => {
+    // Panel ekstensi menggambar daftar ini tiap kali ia menyusun dirinya,
+    // dan tidak boleh menulis ke basis data untuk itu. Karena itu saringannya
+    // yang harus benar sendiri - bukan bergantung pada penyapu yang berjalan
+    // di layar lain.
+    const ketua = await buatKetua();
+    const { id } = await titipPmh(ketua);
+    await tuakan(id, AMBANG_KEDALUWARSA_HARI + 1);
+
+    const daftar = await antreanPerkara(db as AletaDatabase, "542");
+    expect(daftar.map((x) => x.id)).not.toContain(id);
+
+    // Dan ia memang BELUM ditandai - saringannya yang bekerja, bukan penyapu.
+    const baris = await (db as AletaDatabase)
+      .prepare("SELECT keadaan FROM aleta_sipp_penunjukan_antrean WHERE id = ? LIMIT 1")
+      .all<{ keadaan: string }>(id);
+    expect(baris[0].keadaan).toBe("menunggu");
+  });
+
+  it("yang lewat waktu tidak dapat ditutup sebagai dikerjakan", async () => {
+    // Menutupnya berarti mencatat penetapan dikerjakan atas usulan yang
+    // tanggalnya sudah lewat - catatan yang menyatakan sesuatu yang tidak
+    // benar, dan itu lebih buruk daripada titipan yang hangus.
+    const ketua = await buatKetua();
+    const { id } = await titipPmh(ketua);
+    await tuakan(id, AMBANG_KEDALUWARSA_HARI + 1);
+
+    await expect(
+      tutupTitipan(db as AletaDatabase, { actorUserId: ketua, id, keadaan: "dikerjakan" })
+    ).rejects.toThrow(/lewat 14 hari/);
+  });
+
+  it("titipan baru tidak terganggu sama sekali", async () => {
+    const ketua = await buatKetua();
+    const { id } = await titipPmh(ketua);
+    const daftar = await antreanUntukSaya(db as AletaDatabase, ketua);
+    expect(daftar.untukSaya.map((x) => x.id)).toContain(id);
+    expect(await antreanPerkara(db as AletaDatabase, "542")).toHaveLength(1);
   });
 });

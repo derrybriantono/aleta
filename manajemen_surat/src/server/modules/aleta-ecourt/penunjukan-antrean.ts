@@ -193,6 +193,63 @@ export async function titipkanPenetapan(
 }
 
 /**
+ * ============================================================================
+ * TITIPAN YANG TIDAK PERNAH KEDALUWARSA MENUMPUK SELAMANYA
+ * ============================================================================
+ *
+ * Keadaan kedaluwarsa sudah disediakan tabelnya sejak awal, tetapi belum ada
+ * yang menandainya. Akibatnya titipan yang tidak pernah dikerjakan tinggal di
+ * daftar selamanya, dan suatu hari daftar itu berisi ratusan permintaan mati
+ * dengan yang benar-benar menunggu tenggelam di antaranya. Daftar yang
+ * sebagian besarnya mati berhenti dibaca - dan itu merusak justru bagian yang
+ * masih hidup.
+ *
+ * ============================================================================
+ * KENAPA EMPAT BELAS HARI
+ * ============================================================================
+ *
+ * Ambangnya disebut terang-terangan supaya dapat dibantah, bukan disembunyikan
+ * di dalam kueri.
+ *
+ * Yang dititipkan adalah USULAN, dan usulan itu memuat tanggal - tanggal
+ * penetapan dan tanggal sidang. Usulan yang tidak dikerjakan tidak sekadar
+ * menua, ia menjadi SALAH: mengerjakannya kemudian berarti mencatat penetapan
+ * bertanggal mundur. PMH sendiri dituntut terbit beberapa hari sesudah
+ * perkara didaftarkan, jadi dua minggu sudah jauh melewati tenggangnya.
+ *
+ * Dua minggu, bukan satu, supaya cuti tahunan yang lazim tidak menghanguskan
+ * pekerjaan pejabat yang sedang tidak di tempat.
+ *
+ * Angka ini pantas ditinjau ulang begitu ada data nyata tentang berapa lama
+ * titipan sungguhan menunggu sebelum dikerjakan.
+ */
+export const AMBANG_KEDALUWARSA_HARI = 14;
+
+/** Batas waktu sebagai ISO - titipan yang lebih tua darinya sudah mati. */
+function batasKedaluwarsa(): string {
+  return new Date(Date.now() - AMBANG_KEDALUWARSA_HARI * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/**
+ * Menandai titipan yang sudah lewat waktu.
+ *
+ * DITANDAI, bukan dihapus. Pertanyaan "kenapa penetapan ini tidak pernah
+ * dikerjakan" harus tetap dapat dijawab setahun kemudian, dan baris yang
+ * dihapus tidak menjawab apa pun.
+ */
+async function sapuKedaluwarsa(db: AletaDatabase): Promise<void> {
+  await db
+    .prepare(
+      "UPDATE aleta_sipp_penunjukan_antrean SET keadaan = 'kedaluwarsa', alasan_batal = ? " +
+        "WHERE keadaan = 'menunggu' AND disiapkan_at < ?"
+    )
+    .run(
+      `tidak dikerjakan dalam ${AMBANG_KEDALUWARSA_HARI} hari`,
+      batasKedaluwarsa()
+    );
+}
+
+/**
  * Yang menunggu peran ini - inilah yang membuat pejabatnya tahu ada pekerjaan
  * tanpa ada yang perlu meneleponnya.
  *
@@ -203,12 +260,19 @@ export async function antreanUntukSaya(db: AletaDatabase, actorUserId: string) {
   const actor = await requireActorUser(db, actorUserId);
   const roleId = String(actor.roleId ?? "");
 
+  // Penyapuan dijalankan di sini saja - layar "pekerjaan saya" dibuka dengan
+  // sengaja, sementara daftar per perkara ikut tergambar tiap kali panel
+  // ekstensi menyusun dirinya. Menulis ke basis data pada tiap penggambaran
+  // panel adalah ongkos yang tidak dibayar siapa pun.
+  await sapuKedaluwarsa(db);
+
   const baris = await db
     .prepare(
       `SELECT ${KOLOM} FROM aleta_sipp_penunjukan_antrean ` +
-        "WHERE keadaan = 'menunggu' ORDER BY disiapkan_at ASC LIMIT 200"
+        "WHERE keadaan = 'menunggu' AND disiapkan_at >= ? " +
+        "ORDER BY disiapkan_at ASC LIMIT 200"
     )
-    .all<BarisMentah>();
+    .all<BarisMentah>(batasKedaluwarsa());
 
   const semua = baris.map(rapikan);
   if (isPrivilegedAdmin(actor)) return { untukSaya: semua, seluruhnya: semua.length, roleId };
@@ -222,14 +286,24 @@ export async function antreanUntukSaya(db: AletaDatabase, actorUserId: string) {
   return { untukSaya, seluruhnya: semua.length, roleId };
 }
 
-/** Penerusan yang menunggu untuk satu perkara, apa pun jabatan yang dituju. */
+/**
+ * Penerusan yang menunggu untuk satu perkara, apa pun jabatan yang dituju.
+ *
+ * Batas kedaluwarsanya ikut disaring di sini, TANPA menulis apa pun. Yang
+ * menentukan kebenaran adalah saringan ini, bukan penyapunya: selama
+ * kedaluwarsa hanya berarti "sudah ditandai", dua layar yang membaca tabel
+ * yang sama akan menampilkan hal yang berbeda tergantung siapa yang kebetulan
+ * membuka layar "pekerjaan saya" lebih dulu. Penyapunya sekadar merapikan dan
+ * meninggalkan jejak.
+ */
 export async function antreanPerkara(db: AletaDatabase, perkaraId: string) {
   const baris = await db
     .prepare(
       `SELECT ${KOLOM} FROM aleta_sipp_penunjukan_antrean ` +
-        "WHERE perkara_id = ? AND keadaan = 'menunggu' ORDER BY disiapkan_at ASC"
+        "WHERE perkara_id = ? AND keadaan = 'menunggu' AND disiapkan_at >= ? " +
+        "ORDER BY disiapkan_at ASC"
     )
-    .all<BarisMentah>(String(perkaraId));
+    .all<BarisMentah>(String(perkaraId), batasKedaluwarsa());
 
   return baris.map(rapikan);
 }
@@ -268,6 +342,18 @@ export async function tutupTitipan(
   if (!penerusan) throw new ApiError(404, "Penerusan penetapan tidak ditemukan.");
   if (penerusan.keadaan !== "menunggu") {
     throw new ApiError(409, `Penerusan ini sudah ${penerusan.keadaan}.`);
+  }
+
+  // Ambang yang sama dengan yang menyaring kedua daftar bacanya. Tanpa
+  // pemeriksaan ini, titipan yang sudah lewat waktu tetapi belum sempat
+  // disapu masih dapat ditutup sebagai "dikerjakan" - dan catatannya lalu
+  // menyatakan penetapan dikerjakan atas usulan yang tanggalnya sudah lewat.
+  if (String(penerusan.disiapkan_at ?? "") < batasKedaluwarsa()) {
+    throw new ApiError(
+      409,
+      `Penerusan ini sudah lewat ${AMBANG_KEDALUWARSA_HARI} hari dan tidak berlaku lagi. ` +
+        "Minta operator menyiapkan usulan baru dengan tanggal yang sekarang."
+    );
   }
 
   // Modenya dibaca dari pengaturan, sama dengan yang dipakai saat mengisi.
