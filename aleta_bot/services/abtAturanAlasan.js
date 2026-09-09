@@ -13,34 +13,66 @@
  * Huruf-huruf itu menunjuk alasan perceraian di dalam peraturan, dan satu
  * huruf yang salah mengubah dasar hukum putusan. Karena itu bunyinya TIDAK
  * BOLEH ditulis dari ingatan siapa pun - termasuk ingatan mesin. Yang ada di
- * bawah disalin apa adanya dari naskah resmi yang diunduh dari peraturan.go.id.
+ * bawah disalin apa adanya dari naskah resmi yang diunduh, dan tiap huruf
+ * membawa sendiri keterangan dari naskah mana ia berasal.
  *
  * ============================================================================
- * TIGA HURUF ADA, SATU BELUM
+ * DUA NASKAH, DUA ASAL
  * ============================================================================
  *
- * A, B, dan F ada di Pasal 19 PP Nomor 9 Tahun 1975 - naskahnya berhasil
- * diunduh dan disalin apa adanya.
+ * A, B, dan F disalin dari Pasal 19 PP Nomor 9 Tahun 1975 - naskahnya diunduh
+ * dari peraturan.go.id.
  *
- * H TIDAK ADA di PP itu: Pasal 19 hanya sampai huruf f. Huruf g dan h berasal
- * dari Kompilasi Hukum Islam (Instruksi Presiden Nomor 1 Tahun 1991), dan
- * naskah resminya BELUM berhasil diunduh - berkas .doc di peraturan.go.id
- * menjawab kosong.
+ * H TIDAK ADA di PP itu: Pasal 19 berhenti di huruf f. Huruf g dan h hanya ada
+ * di Kompilasi Hukum Islam, Pasal 116 - dan KHI-lah dasar yang dipakai
+ * Pengadilan Agama.
  *
- * Karena itu huruf H sengaja dibiarkan tanpa bunyi, dan mesin ini TIDAK AKAN
- * PERNAH mengusulkannya sampai bunyinya diisi dari naskah resmi. Mengisinya
- * dengan kalimat yang "kira-kira benar" jauh lebih berbahaya daripada
- * membiarkannya kosong: yang kosong terlihat, yang kira-kira tidak.
+ * Naskah KHI tidak dapat diambil dari peraturan.go.id: berkas .doc yang
+ * dirujuk halaman Inpres 1/1991 di sana menjawab 200 dengan panjang NOL, dan
+ * baris "Dokumen Peraturan" pada halamannya kosong. Diambil dari terbitan
+ * resmi Kementerian Agama - kementerian yang justru diperintahkan Inpres itu
+ * untuk menyebarluaskan KHI.
  *
- * CARA MELENGKAPI: unduh naskah resmi Inpres 1/1991, salin bunyi Pasal 116
- * huruf h apa adanya ke dalam `bunyi`, isi `sumber` dengan tautannya, lalu
- * ubah `siap` menjadi true. Pengujian akan langsung ikut menjaga bentuknya.
+ * ============================================================================
+ * KENAPA DUA SALINAN, DAN APA YANG DIPERIKSA DI ANTARA KEDUANYA
+ * ============================================================================
+ *
+ * Kedua terbitan itu hasil pindaian, dan lapisan teksnya memuat salah baca
+ * yang kentara di alinea yang sama: "Pasall17" untuk "Pasal 117", "dalarn"
+ * untuk "dalam", "terj::idinya" untuk "terjadinya". Salah baca yang paling
+ * berbahaya justru pada PENANDA HURUFNYA - salinan pertama menulis "k." di
+ * tempat yang seharusnya "h.".
+ *
+ * Karena itu bunyinya tidak diambil dari satu salinan saja. Salinan kedua
+ * menulis penanda itu dengan benar sebagai "h.", dan urutan a-b-c-d-e-f-g yang
+ * mendahuluinya menutup ruang tebakan. Keduanya juga sepakat pada bunyi
+ * kalimatnya, termasuk pada penulisan "ketidak rukunan" yang berspasi - jadi
+ * itu memang yang tercetak, bukan salah baca.
+ *
+ * Yang disalin ke bawah adalah bunyi yang disepakati kedua salinan, apa
+ * adanya. Merapikan ejaannya berarti menyunting naskah hukum, dan itu bukan
+ * wewenang berkas ini.
  */
 
 /** Naskah resmi yang dipakai, beserta asalnya. */
 const SUMBER_PP_9_1975 = {
   nama: "Pasal 19 Peraturan Pemerintah Nomor 9 Tahun 1975",
   tautan: "https://peraturan.go.id/files/pp9-1975.pdf",
+  diunduh: "2026-09-09",
+};
+
+/**
+ * Pasal 116 Kompilasi Hukum Islam.
+ *
+ * Dua terbitan resmi Kementerian Agama, dibandingkan satu sama lain - lihat
+ * catatan di kepala berkas ini tentang salah baca pindaian.
+ */
+const SUMBER_KHI = {
+  nama: "Pasal 116 Kompilasi Hukum Islam (Inpres Nomor 1 Tahun 1991)",
+  tautan:
+    "https://simbi.kemenag.go.id/eliterasi/storage/perpustakaan/slims/repository/b5c07c0ce34195adb3cd15ad059b33f2.pdf",
+  pembanding:
+    "https://simbi.kemenag.go.id/eliterasi/storage/perpustakaan/pusat/316a67e6-6a05-4bf8-9f1d-6e8b22741b90/buku-digital/df7746a999-7125653410.pdf",
   diunduh: "2026-09-09",
 };
 
@@ -84,16 +116,19 @@ const HURUF = [
   },
   {
     huruf: "H",
-    siap: false,
-    bunyi: "",
-    sumber: {
-      nama: "Kompilasi Hukum Islam (Instruksi Presiden Nomor 1 Tahun 1991)",
-      tautan: "https://peraturan.go.id/id/inpres-no-1-tahun-1991",
-      diunduh: "",
-    },
+    siap: true,
+    // Disalin apa adanya, termasuk "ketidak rukunan" yang berspasi - kedua
+    // terbitan resmi menuliskannya begitu.
+    bunyi:
+      "peralihan agama atau murtad yang menyebabkan terjadinya ketidak rukunan dalam rumah tangga",
+    sumber: SUMBER_KHI,
     ciri: ["murtad", "pindah agama", "keluar dari agama islam"],
+    // Bukan syarat jangka waktu seperti huruf B, melainkan syarat AKIBAT:
+    // murtadnya saja tidak cukup, ia harus menyebabkan ketidakrukunan. Itu
+    // fakta yang harus dibuktikan di persidangan, dan tidak dapat disimpulkan
+    // dari kata "murtad" yang muncul di keterangan saksi.
     syarat:
-      "BELUM DIPAKAI - bunyi huruf H belum diambil dari naskah resmi KHI. Lengkapi abtAturanAlasan.js lebih dulu.",
+      "menuntut akibat: murtadnya harus menyebabkan ketidakrukunan rumah tangga - periksa apakah itu terbukti",
   },
 ];
 
@@ -140,4 +175,4 @@ function belumSiap() {
   }));
 }
 
-module.exports = { HURUF, usulkan, belumSiap, SUMBER_PP_9_1975 };
+module.exports = { HURUF, usulkan, belumSiap, SUMBER_PP_9_1975, SUMBER_KHI };

@@ -50,7 +50,12 @@ const layanan = require_(berkasLayanan) as Layanan;
 
 /* Kedua modul di bawah bentuknya bebas - yang dijaga isinya, bukan tipenya. */
 type Aturan = {
-  HURUF: { huruf: string; siap: boolean; bunyi: string; sumber: { tautan: string } }[];
+  HURUF: {
+    huruf: string;
+    siap: boolean;
+    bunyi: string;
+    sumber: { nama: string; tautan: string; pembanding?: string };
+  }[];
   usulkan: (teks: string) => { huruf: string; syarat: string }[];
   belumSiap: () => { huruf: string; sebab: string }[];
 };
@@ -339,16 +344,38 @@ describe("nomor 6 - huruf alasan diambil dari naskah resmi", () => {
     expect(f?.sumber.tautan).toBe("https://peraturan.go.id/files/pp9-1975.pdf");
   });
 
-  it("huruf H tidak pernah diusulkan selama bunyinya belum ada", () => {
-    // Mengisinya dengan kalimat yang "kira-kira benar" jauh lebih berbahaya
-    // daripada membiarkannya kosong: yang kosong terlihat, yang kira-kira
-    // tidak.
+  it("huruf H disalin dari Pasal 116 KHI, bukan dari PP 9/1975", () => {
+    // Pasal 19 PP itu berhenti di huruf f. Huruf g dan h hanya ada di KHI -
+    // dan KHI-lah dasar yang dipakai Pengadilan Agama.
     const h = aturan.HURUF.find((x) => x.huruf === "H");
-    expect(h?.siap).toBe(false);
-    expect(h?.bunyi).toBe("");
+    expect(h?.siap).toBe(true);
+    expect(h?.bunyi).toBe(
+      "peralihan agama atau murtad yang menyebabkan terjadinya ketidak rukunan dalam rumah tangga"
+    );
+    expect(h?.sumber.nama).toContain("Pasal 116 Kompilasi Hukum Islam");
+    expect(h?.sumber.tautan).toContain("simbi.kemenag.go.id");
+  });
+
+  it("bunyi huruf H disepakati DUA salinan resmi, bukan satu", () => {
+    // Lapisan teks kedua terbitan itu hasil pindaian dan memuat salah baca -
+    // salinan pertama bahkan menulis penanda hurufnya "k." alih-alih "h.".
+    // Satu salinan saja tidak cukup untuk menyalin naskah hukum.
+    const h = aturan.HURUF.find((x) => x.huruf === "H");
+    expect(h?.sumber.pembanding).toBeTruthy();
+    expect(h?.sumber.pembanding).not.toBe(h?.sumber.tautan);
+  });
+
+  it("tidak ada lagi huruf yang bunyinya belum diambil", () => {
+    expect(aturan.belumSiap()).toEqual([]);
+  });
+
+  it("huruf H membawa syarat AKIBAT, bukan sekadar kata murtad", () => {
+    // Murtadnya saja tidak cukup - ia harus menyebabkan ketidakrukunan, dan
+    // itu fakta yang dibuktikan di persidangan.
     const usul = aturan.usulkan("Tergugat murtad dan pindah agama");
-    expect(usul.some((u) => u.huruf === "H")).toBe(false);
-    expect(aturan.belumSiap().some((u) => u.huruf === "H")).toBe(true);
+    const h = usul.find((u) => u.huruf === "H");
+    expect(h).toBeTruthy();
+    expect(h?.syarat).toContain("menyebabkan ketidakrukunan");
   });
 
   it("huruf B selalu membawa syarat jangka waktunya", () => {
