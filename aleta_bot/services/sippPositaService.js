@@ -467,11 +467,117 @@ async function rapikanPosita(perkaraId, ujiKering) {
   return { ok: true, tersentuh, berubah: true, disambung, sebelum: lama, sesudah: baru };
 }
 
+/**
+ * ============================================================================
+ * MENYAMBUNG SATU PECAHAN YANG RAGU - ATAS PERINTAH MANUSIA
+ * ============================================================================
+ *
+ * Pecahan berhuruf a-f tidak dapat dibedakan dari penanda butir yang sungguhan
+ * tanpa kamus: "karena" + "a" dan "terlaksan" + "a" tampak persis sama. Karena
+ * itu perapian TIDAK menyentuhnya, dan panel menanyakannya.
+ *
+ * Fungsi ini yang menjawab jawaban itu. Yang dikirim peramban hanya nomor
+ * perkara dan URUTAN temuannya - bukan teks, dan bukan pula pola. Positanya
+ * dibaca ulang di sini, temuannya dihitung ulang di sini, dan yang disambung
+ * temuan pada urutan itu.
+ *
+ * Sebabnya bukan kerapian: rute yang menerima teks adalah rute yang dapat
+ * dititipi posita karangan siapa pun yang dapat membuka alat pengembang
+ * peramban. Rute yang menerima ANGKA hanya dapat menyambung apa yang memang
+ * ada di sana.
+ *
+ * ============================================================================
+ * PAGARNYA SAMA DENGAN PERAPIAN, DAN ITU BUKAN KEBETULAN
+ * ============================================================================
+ *
+ * Menyambung hanya membuang pemisah dan ruang kosong di antara dua bagian
+ * kata. Karena itu pagar yang sama berlaku apa adanya: isi tanpa ruang kosong
+ * dan tanpa <br> harus persis sama sebelum dan sesudah. Bila berbeda walau
+ * satu huruf, tulisannya ditolak - dan itu berarti ada cacat pada fungsi ini,
+ * bukan pada positanya.
+ */
+async function sambungPecahanRagu(perkaraId, indeks) {
+  const id = Number(perkaraId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return { ok: false, alasan: "perkara_id tidak sah." };
+  }
+
+  const urutan = Number(indeks);
+  if (!Number.isInteger(urutan) || urutan < 0) {
+    return { ok: false, alasan: "urutan temuan tidak sah." };
+  }
+
+  const baris = await runQuery("SELECT posita FROM perkara WHERE perkara_id = ? LIMIT 1", [id]);
+  if (!Array.isArray(baris) || baris.length === 0) {
+    return { ok: false, alasan: "Perkara tidak ditemukan di SIPP." };
+  }
+
+  const lama = String(baris[0].posita || "");
+  if (!lama.trim()) return { ok: false, alasan: "Posita di SIPP masih kosong." };
+
+  const { pecahanRagu } = periksaPosita(lama);
+  if (pecahanRagu.length === 0) {
+    // Bisa jadi sudah disambung orang lain di antara pratinjau dan penekanan
+    // tombolnya. Disebut apa adanya, bukan dianggap gagal.
+    return { ok: false, alasan: "Tidak ada lagi pecahan yang ragu pada posita ini." };
+  }
+  if (urutan >= pecahanRagu.length) {
+    return {
+      ok: false,
+      alasan:
+        `Temuan ke-${urutan + 1} tidak ada lagi - kini tinggal ${pecahanRagu.length}. ` +
+        "Positanya berubah sejak pratinjau; buka ulang panelnya.",
+    };
+  }
+
+  // Disambung dengan menghitung ulang kemunculannya, bukan dengan mencari
+  // teksnya: dua temuan dapat berbunyi sama persis di satu posita, dan
+  // mengganti "yang pertama cocok" akan menyambung yang salah.
+  let ke = -1;
+  const baru = lama.replace(
+    /([a-z])(?:<br\s*\/?>|\n)[ \t]*([a-f])\.[ \t]+(?=[A-Z])/g,
+    (cocok, sebelum, huruf) => {
+      ke += 1;
+      return ke === urutan ? `${sebelum}${huruf}. ` : cocok;
+    }
+  );
+
+  if (baru === lama) return { ok: false, alasan: "Tidak ada yang tersambung." };
+
+  if (tanpaRuang(lama) !== tanpaRuang(baru)) {
+    return {
+      ok: false,
+      alasan:
+        "Ditolak: penyambungan mengubah isi positanya. Ini cacat pada aturan " +
+        "penyambungnya sendiri - laporkan, jangan dipaksakan.",
+    };
+  }
+
+  const hasil = await runQuery("UPDATE perkara SET posita = ? WHERE perkara_id = ? LIMIT 1", [
+    baru,
+    id,
+  ]);
+  const tersentuh = Number((hasil && hasil.affectedRows) || 0);
+  if (tersentuh !== 1) {
+    return { ok: false, alasan: `UPDATE menyentuh ${tersentuh} baris, bukan satu.` };
+  }
+
+  return {
+    ok: true,
+    tersentuh,
+    sebelum: lama,
+    sesudah: baru,
+    disambung: pecahanRagu[urutan].sambungan,
+    sisa: periksaPosita(baru).pecahanRagu.length,
+  };
+}
+
 module.exports = {
   rapikanPosita,
   rapikanTeksPosita,
   perbaikiPecahanPalsu,
   periksaPosita,
+  sambungPecahanRagu,
   tanpaRuang,
   BATAS_HURUF,
 };

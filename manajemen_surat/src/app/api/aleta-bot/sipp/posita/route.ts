@@ -1,7 +1,10 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
-import { getGatewaySippPositaRapikan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import {
+  getGatewaySippPositaRapikan,
+  getGatewaySippPositaSambung,
+} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -69,12 +72,41 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
 
-    const body = await readJsonBody<{ perkaraId?: unknown; ujiKering?: unknown }>(request).catch(
-      () => ({}) as { perkaraId?: unknown; ujiKering?: unknown }
-    );
+    const body = await readJsonBody<{
+      perkaraId?: unknown;
+      ujiKering?: unknown;
+      aksi?: unknown;
+      indeks?: unknown;
+    }>(request).catch(() => ({}) as Record<string, unknown>);
     const perkaraId = String(body.perkaraId || "").trim();
     if (!perkaraId) {
       return ok({ available: false, message: "Nomor perkara tidak terkirim." });
+    }
+
+    // ======================================================================
+    // DUA AKSI, SATU RUTE - DAN ITU DISENGAJA
+    // ======================================================================
+    //
+    // Keduanya menyentuh kolom yang sama, dipagari aturan yang sama, dan
+    // dicatat sebagai kejadian yang sama bila gagal. Memecahnya menjadi dua
+    // rute berarti dua tempat yang harus diingat bersama setiap kali
+    // pagarnya berubah.
+    if (String(body.aksi || "") === "sambung") {
+      const indeks = Number(body.indeks);
+      if (!Number.isInteger(indeks) || indeks < 0) {
+        return ok({ available: false, message: "Urutan temuan tidak terkirim." });
+      }
+      const sambung = await getGatewaySippPositaSambung(perkaraId, indeks);
+      if (!sambung.ok) {
+        return ok({ available: false, message: sambung.error || "ALETA Bot belum dapat dihubungi." });
+      }
+      return ok({
+        available: true,
+        message: "",
+        tersentuh: sambung.data?.tersentuh ?? 0,
+        disambung: sambung.data?.disambung ?? "",
+        sisa: sambung.data?.sisa ?? 0,
+      });
     }
 
     const hasil = await getGatewaySippPositaRapikan(perkaraId, body.ujiKering === true);
@@ -94,6 +126,8 @@ export async function POST(request: NextRequest) {
       tersentuh: hasil.data?.tersentuh ?? 0,
       berubah: hasil.data?.berubah ?? false,
       disambung: hasil.data?.disambung ?? 0,
+      // Pecahan yang tidak dapat diputuskan mesin - panel menanyakannya.
+      ragu: hasil.data?.ragu ?? [],
       sebelum: hasil.data?.sebelum ?? "",
       sesudah: hasil.data?.sesudah ?? "",
       alasan: hasil.data?.alasan ?? "",

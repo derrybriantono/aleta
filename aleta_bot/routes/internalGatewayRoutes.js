@@ -1165,9 +1165,37 @@ router.post("/sipp/posita/rapikan", requireInternalToken, async (req, res) => {
       tersentuh: hasil.tersentuh,
       berubah: Boolean(hasil.berubah),
       disambung: Number(hasil.disambung) || 0,
+      // Pecahan yang RAGU - huruf a-f - dikembalikan supaya panel dapat
+      // menanyakannya. Tidak satu pun disentuh perapian; lihat catatan di
+      // periksaPosita tentang kenapa ia tidak dapat diputuskan mesin.
+      ragu: sippPositaService.periksaPosita(String(hasil.sebelum || "")).pecahanRagu,
       sebelum: hasil.sebelum,
       sesudah: hasil.sesudah,
       alasan: hasil.alasan || "",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/**
+ * Menyambung satu pecahan kata yang RAGU pada posita.
+ *
+ * Yang diterima hanya nomor perkara dan URUTAN temuannya - bukan teks, dan
+ * bukan pola. Positanya dibaca ulang dan temuannya dihitung ulang di sisi bot;
+ * rute yang menerima teks adalah rute yang dapat dititipi posita karangan.
+ */
+router.post("/sipp/posita/sambung", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippPositaService.sambungPecahanRagu(
+      req.body?.perkaraId,
+      req.body?.indeks
+    );
+    if (!hasil.ok) return res.status(422).json({ ok: false, error: hasil.alasan });
+    res.json({
+      ok: true,
+      tersentuh: hasil.tersentuh,
+      disambung: hasil.disambung,
+      sisa: hasil.sisa,
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

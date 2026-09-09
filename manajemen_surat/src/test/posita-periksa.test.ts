@@ -158,3 +158,125 @@ describe("skrip pemindainya MEMBACA saja", () => {
     expect(skrip()).toContain("p.posita IS NOT NULL AND TRIM(p.posita) <> ''");
   });
 });
+
+describe("menyambung satu pecahan yang ragu - atas perintah manusia", () => {
+  /**
+   * Layanan dimuat ulang dengan basis data TIRUAN, sehingga jalur tulisnya
+   * benar-benar dijalankan tanpa menyentuh SIPP. Yang diperiksa bukan bentuk
+   * kodenya melainkan kueri yang keluar dan nilai yang tersimpan.
+   */
+  const denganDbTiruan = (positaAwal: string) => {
+    const jalur = path.resolve(process.cwd(), "../aleta_bot/services/sippPositaService.js");
+    delete require_.cache[jalur];
+    const jalurDb = path.resolve(process.cwd(), "../aleta_bot/db_config.js");
+
+    let posita = positaAwal;
+    const tersimpan: string[] = [];
+    require_.cache[jalurDb] = {
+      id: jalurDb,
+      filename: jalurDb,
+      loaded: true,
+      exports: {
+        query: (sql: string, params: unknown[], balik: (g: unknown, h?: unknown) => void) => {
+          if (/^SELECT/i.test(sql.trim())) return balik(null, [{ posita }]);
+          if (/^UPDATE/i.test(sql.trim())) {
+            posita = String((params as string[])[0]);
+            tersimpan.push(posita);
+            return balik(null, { affectedRows: 1 });
+          }
+          return balik(new Error("kueri tak dikenal"));
+        },
+      },
+    } as unknown as NodeJS.Module;
+
+    const modul = require_(jalur) as {
+      sambungPecahanRagu: (
+        id: unknown,
+        indeks: unknown
+      ) => Promise<{ ok: boolean; alasan?: string; disambung?: string; sisa?: number }>;
+      periksaPosita: (t: string) => { pecahanRagu: Array<{ sambungan: string }> };
+      tanpaRuang: (t: string) => string;
+    };
+    return { modul, tersimpan, sekarang: () => posita };
+  };
+
+  const DUA_TEMUAN =
+    "4. Bahwa karena\n   a. Tergugat mabuk.\n" +
+    "5. Bahwa kewajiban tidak terlaksan\n   a. Sejak itu tidak rukun;";
+
+  it("menyambung temuan yang DITUNJUK, bukan yang pertama cocok", async () => {
+    // Dua temuan berbunyi mirip di satu posita. Mengganti "yang pertama
+    // cocok" akan menyambung kata yang salah.
+    const { modul, sekarang } = denganDbTiruan(DUA_TEMUAN);
+    const hasil = await modul.sambungPecahanRagu(1, 1);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.disambung).toBe("tidak terlaksana");
+    expect(sekarang()).toContain("tidak terlaksana. Sejak itu");
+  });
+
+  it("butir a yang SUNGGUHAN tidak tersentuh", async () => {
+    const { modul, sekarang } = denganDbTiruan(DUA_TEMUAN);
+    await modul.sambungPecahanRagu(1, 1);
+    expect(sekarang()).toContain("karena");
+    expect(sekarang()).toContain("a. Tergugat mabuk.");
+  });
+
+  it("isi positanya tidak berubah satu huruf pun", async () => {
+    const { modul, sekarang } = denganDbTiruan(DUA_TEMUAN);
+    await modul.sambungPecahanRagu(1, 1);
+    expect(modul.tanpaRuang(sekarang())).toBe(modul.tanpaRuang(DUA_TEMUAN));
+  });
+
+  it("urutan di luar jangkauan ditolak beserta sebabnya", async () => {
+    // Terjadi bila positanya berubah di antara pratinjau dan penekanan
+    // tombolnya - dan itu keadaan yang harus disebut, bukan ditebak.
+    const { modul, tersimpan } = denganDbTiruan(DUA_TEMUAN);
+    const hasil = await modul.sambungPecahanRagu(1, 9);
+    expect(hasil.ok).toBe(false);
+    expect(hasil.alasan).toContain("tidak ada lagi");
+    expect(tersimpan).toHaveLength(0);
+  });
+
+  it("masukan tidak sah ditolak sebelum menyentuh basis data", async () => {
+    const { modul, tersimpan } = denganDbTiruan(DUA_TEMUAN);
+    expect((await modul.sambungPecahanRagu(1, -1)).alasan).toContain("urutan temuan");
+    expect((await modul.sambungPecahanRagu(0, 0)).alasan).toContain("perkara_id");
+    expect(tersimpan).toHaveLength(0);
+  });
+
+  it("posita tanpa temuan ragu menolak, bukan menulis apa pun", async () => {
+    const { modul, tersimpan } = denganDbTiruan("<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>");
+    const hasil = await modul.sambungPecahanRagu(1, 0);
+    expect(hasil.ok).toBe(false);
+    expect(hasil.alasan).toContain("Tidak ada lagi pecahan yang ragu");
+    expect(tersimpan).toHaveLength(0);
+  });
+});
+
+describe("panel menanyakan yang ragu, dan menyebut pembedanya", () => {
+  const abt = () =>
+    readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/abt.js"), "utf8");
+
+  it("sambungannya yang ditulis menonjol, bukan hurufnya", () => {
+    // Hurufnya tidak menjawab apa pun. Yang menjawab kata yang akan
+    // terbentuk: "tahun" utuh berarti pecahan, "karenaa" tidak.
+    const isi = abt();
+    expect(isi).toContain("function gambarRaguPosita(");
+    expect(isi).toContain('buatElemen("strong", "aleta-abt-isi", satu.sambungan)');
+  });
+
+  it("ekstensi mengirim URUTAN, bukan teks posita", () => {
+    const isi = abt();
+    expect(isi).toContain('JSON.stringify({ aksi: "sambung", perkaraId, indeks })');
+  });
+
+  it("tombol lain dimatikan sesudah satu disambung - urutannya bergeser", () => {
+    // Menyambung satu temuan menggeser urutan temuan lain. Tombol yang
+    // tertinggal akan menunjuk temuan yang berbeda dari yang tertulis di
+    // sebelahnya - dan menyambung kata yang salah.
+    const isi = abt();
+    const potong = isi.slice(isi.indexOf("function gambarRaguPosita("));
+    expect(potong).toContain("lain.disabled = true;");
+    expect(potong).toContain("urutan temuan bergeser sesudah satu disambung");
+  });
+});

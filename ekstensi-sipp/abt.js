@@ -469,10 +469,12 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
   if (!isi?.available) return { ok: false, pesan: isi?.message || "ALETA belum dapat menjawab." };
 
   const disambung = Number(isi.disambung) || 0;
+  const ragu = Array.isArray(isi.ragu) ? isi.ragu : [];
   return {
     ok: true,
     berubah: isi.berubah === true,
     disambung,
+    ragu,
     sebelum: String(isi.sebelum || ""),
     sesudah: String(isi.sesudah || ""),
     // Perbaikan data disebut TERPISAH dari penataan. Yang satu menyambung
@@ -489,6 +491,34 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
           : disambung
             ? `tersimpan di SIPP, ${disambung} kata yang terpecah disambung kembali`
             : "tersimpan di SIPP",
+  };
+}
+/**
+ * Menyambung satu pecahan kata yang RAGU, atas perintah petugas.
+ *
+ * Yang dikirim hanya perkara dan urutan temuannya - bukan teks. Bot yang
+ * membaca positanya, menghitung ulang temuannya, dan memutuskan mana yang
+ * disambung; lihat catatan di sambungPecahanRagu.
+ */
+async function sambungPecahanPosita(perkaraId, indeks) {
+  const respons = await fetch(ALETA_API_POSITA, {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ aksi: "sambung", perkaraId, indeks }),
+  });
+  if (respons.status === 401) return { ok: false, pesan: "Belum masuk portal ALETA." };
+  if (!respons.ok) return { ok: false, pesan: `ALETA menjawab ${respons.status}.` };
+
+  const luar = await respons.json();
+  const isi = luar?.data ?? luar;
+  if (!isi?.available) return { ok: false, pesan: isi?.message || "ALETA belum dapat menjawab." };
+
+  return {
+    ok: true,
+    pesan: `"${isi.disambung || ""}" disambung${isi.sisa ? `, sisa ${isi.sisa} lagi` : ""}.`,
+    sisa: Number(isi.sisa) || 0,
   };
 }
 // ─── Keterangan saksi: disunting lewat rute ABT sendiri ──────────────────────
@@ -1511,6 +1541,114 @@ function susunPanelAbt(jatiDiri) {
    * panel yang sedang tergulung ke bawah tidak otomatis kembali ke atas.
    */
   const wadahRiwayat = buatElemen("div", "aleta-abt-daftar");
+
+  /**
+   * ========================================================================
+   * PECAHAN KATA YANG RAGU - DITANYAKAN, SATU KLIK MENYAMBUNG
+   * ========================================================================
+   *
+   * Sesudah kata terpecah, penanda butir yang SUNGGUHAN dan pecahan yang
+   * PALSU tampak persis sama:
+   *
+   *   "...disebabkan karena<br>   a. Tergugat sering..."   penanda butir
+   *   "...kewajiban tidak terlaksan<br>   a. Sejak itu..."  pecahan kata
+   *
+   * Yang membedakan hanya apakah "karena" dan "terlaksan" kata utuh - dan
+   * itu menuntut kamus. Perapian karena itu hanya menyambung huruf g-z,
+   * yang hampir pasti pecahan; a-f dibiarkan.
+   *
+   * Dibiarkan TANPA disebut adalah kekurangan yang lain lagi: petugas tidak
+   * punya cara tahu ada atau tidak. Karena itu di sini keduanya digambar,
+   * dan yang ditulis paling menonjol SAMBUNGANNYA - kata yang akan
+   * terbentuk - sebab itulah satu-satunya keterangan yang menjawab
+   * pertanyaannya. Hurufnya sendiri tidak menjawab apa pun.
+   */
+  function gambarRaguPosita(daftar) {
+    const kotak = buatElemen("div", "aleta-abt-kartu aleta-abt-kartu-awas");
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-nama",
+        `${daftar.length} kemungkinan kata terpecah pada posita — periksa sendiri`
+      )
+    );
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        "Perapian TIDAK menyentuh yang ini: bentuknya sama dengan penanda butir " +
+          "a, b, c yang sungguhan. Lihat kata di bawah - bila ia kata yang utuh " +
+          "(\"tahun\", \"terlaksana\"), ia pecahan yang perlu disambung. Bila tidak " +
+          "(\"karenaa\"), ia penanda butir yang benar - biarkan."
+      )
+    );
+
+    daftar.forEach((satu, indeks) => {
+      const blokRagu = buatElemen("div", "aleta-abt-huruf");
+      const kepalaRagu = buatElemen("div", "aleta-abt-sanding");
+      kepalaRagu.appendChild(buatElemen("span", "aleta-abt-label", `huruf ${satu.huruf}`));
+      kepalaRagu.appendChild(buatElemen("strong", "aleta-abt-isi", satu.sambungan));
+      blokRagu.appendChild(kepalaRagu);
+      blokRagu.appendChild(buatElemen("div", "aleta-abt-kutipan", satu.konteks));
+
+      const tombol = buatElemen("button", "aleta-permintaan-tombol", "Sambung kata ini");
+      tombol.type = "button";
+      const kabarRagu = buatElemen("div", "aleta-abt-kabar");
+      tombol.addEventListener("click", async () => {
+        tombol.disabled = true;
+        kabarRagu.className = "aleta-abt-kabar";
+        kabarRagu.textContent = "Menyambung…";
+        try {
+          const hasil = await sambungPecahanPosita(jatiDiri.perkaraId, indeks);
+          kabarRagu.className = hasil.ok
+            ? "aleta-abt-kabar"
+            : "aleta-abt-kabar aleta-abt-gagal";
+          kabarRagu.textContent = hasil.pesan;
+          if (hasil.ok) {
+            void catatRiwayat({
+              perkaraId: jatiDiri.perkaraId,
+              kode: VAR_POSITA,
+              nama: "Posita lengkap",
+              sebelum: satu.konteks,
+              sesudah: satu.sambungan,
+              cara: "sambung pecahan kata",
+              pada: new Date().toISOString(),
+            });
+            // Urutan temuan BERGESER sesudah satu disambung, jadi tombol
+            // lain pada daftar ini sudah tidak menunjuk temuan yang sama.
+            // Dimatikan seluruhnya, dan petugas menekan Rapikan lagi untuk
+            // daftar yang segar - lebih baik daripada tombol yang menyambung
+            // kata yang salah.
+            for (const lain of Array.from(
+              kotak.querySelectorAll("button.aleta-permintaan-tombol")
+            )) {
+              lain.disabled = true;
+            }
+            kotak.appendChild(
+              buatElemen(
+                "div",
+                "aleta-abt-catatan",
+                "Tekan \"Rapikan posita & saksi\" lagi untuk daftar yang segar - " +
+                  "urutan temuan bergeser sesudah satu disambung."
+              )
+            );
+          } else {
+            tombol.disabled = false;
+          }
+        } catch (galat) {
+          kabarRagu.className = "aleta-abt-kabar aleta-abt-gagal";
+          kabarRagu.textContent = String((galat && galat.message) || galat);
+          tombol.disabled = false;
+        }
+      });
+
+      blokRagu.appendChild(tombol);
+      blokRagu.appendChild(kabarRagu);
+      kotak.appendChild(blokRagu);
+    });
+
+    wadahRiwayat.appendChild(kotak);
+  }
   isi.appendChild(wadahRiwayat);
 
   // Urutannya disengaja: selisih antar saksi lebih dulu, sebab ia dapat
@@ -1843,7 +1981,22 @@ function susunPanelAbt(jatiDiri) {
             sebelum: uji.sebelum,
             sesudah: uji.sesudah,
           });
-        } else if (!uji.ok) {
+        }
+        // ====================================================================
+        // YANG RAGU DITANYAKAN, BUKAN DITEBAK - DAN BUKAN DIDIAMKAN
+        // ====================================================================
+        //
+        // Pecahan berhuruf a-f tidak dapat dibedakan dari penanda butir yang
+        // sungguhan tanpa kamus. Perapian membiarkannya, dan sampai sekarang
+        // petugas tidak punya cara tahu ada atau tidak.
+        //
+        // Yang menentukan penilaiannya SATU hal: apakah "sambungan" - kata
+        // yang akan terbentuk bila disambung - kata yang utuh. "tahun" utuh,
+        // jadi ia pecahan. "karenaa" tidak, jadi ia penanda butir yang benar.
+        // Karena itu sambungannya yang ditulis paling menonjol, bukan
+        // hurufnya.
+        if (uji.ok && uji.ragu && uji.ragu.length) gambarRaguPosita(uji.ragu);
+        if (!uji.ok) {
           // Disebut, bukan didiamkan: posita yang tidak dapat dibaca terbaca
           // sebagai posita yang sudah rapi, dan itu keliru.
           wadahRiwayat.appendChild(

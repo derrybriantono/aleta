@@ -2051,12 +2051,29 @@ export async function getGatewayAbtUsulan(muatan: {
  *
  * Posita lama ikut kembali supaya penyimpannya punya yang dapat dikembalikan.
  */
+/**
+ * Menyambung satu pecahan kata yang ragu pada posita.
+ *
+ * Yang dikirim hanya perkara dan URUTAN temuannya. Bot yang membaca
+ * positanya, menghitung ulang temuannya, dan memutuskan mana yang disambung.
+ */
+export async function getGatewaySippPositaSambung(perkaraId: string, indeks: number) {
+  return gatewayFetch<{ tersentuh: number; disambung: string; sisa: number }>(
+    "/internal/aleta-bot/sipp/posita/sambung",
+    {
+      method: "POST",
+      body: JSON.stringify({ perkaraId, indeks }),
+    }
+  );
+}
 export async function getGatewaySippPositaRapikan(perkaraId: string, ujiKering: boolean) {
   return gatewayFetch<{
     tersentuh: number;
     berubah: boolean;
     /** Pecahan kata yang disambung kembali - kerusakan data, bukan penataan. */
     disambung: number;
+    /** Pecahan berhuruf a-f yang tidak dapat diputuskan mesin. */
+    ragu: Array<{ huruf: string; sambungan: string; konteks: string }>;
     sebelum: string;
     sesudah: string;
     alasan: string;
