@@ -730,6 +730,17 @@ export const aletaBasLembar = pgTable("aleta_bas_lembar", {
   tanggalSidang: text("tanggal_sidang").notNull().default(""),
   keadaan: text("keadaan").notNull().default("draf"),
   catatan: text("catatan").notNull().default(""),
+  /**
+   * Acc hakim - SUMBU YANG BERBEDA dari keadaan.
+   *
+   * keadaan adalah kemajuan panitera sidang; acc adalah perbuatan hakim.
+   * Lembar dapat berkeadaan "selesai" dan belum di-acc, dan itulah keadaan
+   * yang paling sering ditunggu orang. Menggabungkannya menjadi satu kolom
+   * menghapus kemampuan menyebut "sudah selesai, menunggu acc".
+   */
+  diaccOleh: text("diacc_oleh").notNull().default(""),
+  diaccAt: text("diacc_at").notNull().default(""),
+  accDikembalikanAlasan: text("acc_dikembalikan_alasan").notNull().default(""),
   dibuatOleh: text("dibuat_oleh").notNull(),
   dibuatAt: text("dibuat_at").notNull(),
   diubahOleh: text("diubah_oleh").notNull().default(""),

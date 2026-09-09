@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import type { AletaDatabase } from "@/server/db/client";
+import {
+  batalkanAccKarenaBerubah,
+  keadaanAcc,
+  type KeadaanAcc,
+} from "@/server/modules/aleta-ecourt/bas-acc";
 
 /**
  * LEMBAR BAS - tempat jawaban sidang disimpan.
@@ -52,6 +57,17 @@ export type Lembar = {
   tanggalSidang: string;
   keadaan: "draf" | "selesai";
   catatan: string;
+  /**
+   * Keadaan acc hakim - SUMBU YANG BERBEDA dari keadaan di atas.
+   *
+   * keadaan adalah kemajuan panitera sidang; acc adalah perbuatan hakim.
+   * Lembar dapat berkeadaan "selesai" dan ber-acc "menunggu-acc" sekaligus,
+   * dan itulah keadaan yang paling sering ditunggu orang.
+   */
+  acc: KeadaanAcc;
+  diaccOleh: string;
+  diaccAt: string;
+  accDikembalikanAlasan: string;
   baris: BarisJawaban[];
   diubahOleh: string;
   diubahAt: string;
@@ -107,6 +123,18 @@ function bentukLembar(baris: BarisLembarDb, jawaban: BarisJawaban[]): Lembar {
     tanggalSidang: teks(baris.tanggal_sidang),
     keadaan: keadaanSah(baris.keadaan),
     catatan: teks(baris.catatan),
+    // Keadaan acc DITURUNKAN dari jejaknya, tidak disimpan sebagai kolom
+    // tersendiri - dua sumber untuk satu kenyataan akan berselisih, dan yang
+    // berselisih di sini berbunyi "sudah di-acc" atas lembar yang jejak
+    // accnya kosong.
+    acc: keadaanAcc({
+      keadaan: teks(baris.keadaan),
+      diacc_at: teks(baris.diacc_at),
+      acc_dikembalikan_alasan: teks(baris.acc_dikembalikan_alasan),
+    }),
+    diaccOleh: teks(baris.diacc_oleh),
+    diaccAt: teks(baris.diacc_at),
+    accDikembalikanAlasan: teks(baris.acc_dikembalikan_alasan),
     baris: jawaban,
     diubahOleh: teks(baris.diubah_oleh),
     diubahAt: teks(baris.diubah_at),
@@ -267,6 +295,24 @@ export async function simpanLembar(
         lembarId,
       ]
     );
+
+    // ========================================================================
+    // ACC HAKIM BATAL BEGITU ISINYA BERUBAH
+    // ========================================================================
+    //
+    // Tanpa ini, panitera dapat menyunting lembar SESUDAH hakim
+    // menyetujuinya, dan persetujuan hakim melekat pada naskah yang tidak
+    // pernah dilihatnya. Bukan kelalaian yang mustahil - memperbaiki satu
+    // salah ketik sesudah di-acc adalah hal yang paling wajar dilakukan orang.
+    //
+    // Yang membuatnya berbahaya, acc semacam itu tidak menampakkan dirinya:
+    // di layar ia tetap tertulis "sudah di-acc" lengkap dengan nama hakim dan
+    // tanggalnya, dan tidak seorang pun punya sebab untuk memeriksanya.
+    //
+    // Dipanggil di sini, di jalur penyimpanan, BUKAN diserahkan kepada layar.
+    // Pembatalannya bukan keputusan siapa pun - ia akibat langsung dari isinya
+    // yang tidak lagi sama.
+    await batalkanAccKarenaBerubah(db, lembarId);
   } else {
     await db.run(
       `INSERT INTO aleta_bas_lembar

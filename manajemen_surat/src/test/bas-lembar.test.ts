@@ -174,6 +174,11 @@ describe("lembar menjadi penanda blangko", () => {
       tanggalSidang: "5 September 2026",
       keadaan: "draf",
       catatan: "",
+      // Lembar uji ini masih diisi panitera, jadi belum sampai pada acc.
+      acc: "belum-selesai",
+      diaccOleh: "",
+      diaccAt: "",
+      accDikembalikanAlasan: "",
       baris: [{ urutan: 1, pertanyaan: "Apakah saudara kenal?", jawaban: "Kenal, saya kakaknya;" }],
       diubahOleh: "uji",
       diubahAt: "2026-09-05T00:00:00.000Z",

@@ -533,6 +533,14 @@ const schemaStatements = [
     tanggal_sidang TEXT NOT NULL DEFAULT '',
     keadaan TEXT NOT NULL DEFAULT 'draf' CHECK (keadaan IN ('draf', 'selesai')),
     catatan TEXT NOT NULL DEFAULT '',
+    -- Acc hakim. SUMBU YANG BERBEDA dari keadaan: keadaan adalah kemajuan
+    -- panitera sidang, acc adalah perbuatan hakim. Lembar dapat berkeadaan
+    -- 'selesai' dan belum di-acc, dan itulah keadaan yang paling sering
+    -- ditunggu orang. Menggabungkannya menjadi satu kolom menghapus kemampuan
+    -- menyebut "sudah selesai, menunggu acc".
+    diacc_oleh TEXT NOT NULL DEFAULT '',
+    diacc_at TEXT NOT NULL DEFAULT '',
+    acc_dikembalikan_alasan TEXT NOT NULL DEFAULT '',
     dibuat_oleh TEXT NOT NULL,
     dibuat_at TEXT NOT NULL,
     diubah_oleh TEXT NOT NULL DEFAULT '',
@@ -3057,6 +3065,13 @@ const migrationStatements = [
   `ALTER TABLE panel_settings ADD COLUMN IF NOT EXISTS portal_cards_json TEXT NOT NULL DEFAULT '{}'`,
   `ALTER TABLE panel_settings ADD COLUMN IF NOT EXISTS public_access_json TEXT NOT NULL DEFAULT '{}'`,
   `ALTER TABLE panel_settings ADD COLUMN IF NOT EXISTS external_apps_json TEXT NOT NULL DEFAULT '{}'`,
+  // Acc hakim atas Berita Acara Sidang. Ditambahkan lewat jalur ini, BUKAN
+  // sebagai migrasi bernomor: penambahan kolom di sini idempoten dan tidak
+  // mengklaim nomor apa pun, sehingga aman terhadap sesi lain yang sedang
+  // mengerjakan migrasi bersamaan.
+  `ALTER TABLE aleta_bas_lembar ADD COLUMN IF NOT EXISTS diacc_oleh TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE aleta_bas_lembar ADD COLUMN IF NOT EXISTS diacc_at TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE aleta_bas_lembar ADD COLUMN IF NOT EXISTS acc_dikembalikan_alasan TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS bot_enabled SMALLINT NOT NULL DEFAULT 0`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS notifications_enabled SMALLINT NOT NULL DEFAULT 0`,
   // Berbawaan 1, berbeda dari saklar lain di tabel ini. Berbawaan 0 akan
