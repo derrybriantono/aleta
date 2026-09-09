@@ -71,6 +71,17 @@ type SidangBaris = {
   ruangan: string;
   ditunda: boolean;
   alasanDitunda: string;
+  /**
+   * Sidang penyaksian ikrar talak, dari kolom `ikrar_talak` milik SIPP.
+   *
+   * Dipakai penanda biru "Ikrar Talak" dan dipakai MENGECUALIKAN baris ini
+   * dari penanda kuning "Hari Putusan" - lihat hariPutusan di bawah.
+   *
+   * Opsional di sisi layar, sebab jadwal yang sudah tersimpan di peramban
+   * sebelum pembaruan ini tidak memuatnya. Yang tidak terbaca dianggap BUKAN
+   * ikrar - gagal-tertutup, sama seperti jalur penilaian lain di ALETA.
+   */
+  sidangIkrarTalak?: boolean;
   tanggalSidangBerikut: string;
   urutanSidang: number;
   dihadiriOleh: number | null;
@@ -461,11 +472,115 @@ const AGENDA_MUSYAWARAH = [
 // musyawarah dan bukan pembacaan putusan; putusannya sudah dijatuhkan jauh
 // sebelumnya. Memasukkannya menambah 57 sidang merah pada 2026 saja, dan
 // penanda merah yang menyala di mana-mana berhenti menuntut perhatian.
+//
+// Sejak penanda "Ikrar Talak" ada, pengecualian ini bukan lagi sekadar
+// penghematan warna: ikrar talak punya kotaknya sendiri yang biru, dan
+// hariPutusan di bawah memotongnya secara tegas - lihat catatan di sana.
 
 function agendaMusyawarah(agenda: string): boolean {
   const teks = String(agenda || "");
   if (!teks) return false;
   return AGENDA_MUSYAWARAH.some((pola) => pola.test(teks));
+}
+
+/**
+ * Sidang penyaksian ikrar talak.
+ *
+ * ============================================================================
+ * BENDERA SIPP LEBIH DULU, TULISAN AGENDA HANYA PELENGKAP
+ * ============================================================================
+ *
+ * perkara_jadwal_sidang punya kolom `ikrar_talak` char(1) - itulah yang
+ * menandai sidang ikrar, dan ia dibaca lebih dulu. Tulisan agendanya diperiksa
+ * belakangan, hanya untuk menangkap baris yang benderanya lupa dicentang.
+ *
+ * Diukur atas 20.092 baris jadwal di PA Donggala:
+ *
+ *   bendera 'Y'                         1.024 baris
+ *   agenda memuat "ikrar", bendera 'T'      2 baris
+ *
+ * Ejaan agendanya sendiri belasan macam - "SIDANG IKRAR TALAK", "Sidank Ikrar
+ * Talak", "sidang ikrar ", "penyaksian ikrar talak", "Pengucapan Ikrar" -
+ * sehingga polanya cukup kata "ikrar" saja. Ia tidak muncul di luar perkara
+ * cerai talak.
+ */
+function sidangIkrar(baris: { agenda?: string; sidangIkrarTalak?: boolean }): boolean {
+  if (baris.sidangIkrarTalak) return true;
+  return /\bikrar\b/i.test(String(baris.agenda || ""));
+}
+
+/**
+ * ============================================================================
+ * HARI PUTUSAN - SATU PENANDA UNTUK HARI YANG MENJATUHKAN PUTUSAN
+ * ============================================================================
+ *
+ * Dua keadaan, satu hari yang sama:
+ *
+ *   AKAN DIPUTUS   agendanya musyawarah majelis, pembacaan putusan,
+ *                  pembacaan penetapan, atau putusan sela.
+ *   SUDAH DIPUTUS  hasil sidangnya sudah tercatat - "putus DIKABULKAN
+ *                  (verstek)", "putus DICABUT", "putus DIGUGURKAN".
+ *
+ * Keduanya menjawab pertanyaan yang sama: hari ini perkaranya berdiri di
+ * hadapan putusannya. Yang pertama menuntut kesiapan naskah dan kelengkapan
+ * majelis; yang kedua menyatakan hasilnya sudah ada.
+ *
+ * ============================================================================
+ * KENAPA NAMANYA "HARI PUTUSAN"
+ * ============================================================================
+ *
+ * Yang dipertimbangkan:
+ *
+ *   "Sidang Putusan"    tertukar dengan nama agenda di SIPP - orang akan
+ *                       menyangka ia menyaring agenda bertuliskan itu saja.
+ *   "Tahap Putusan"     benar untuk yang akan diputus, terlalu longgar untuk
+ *                       yang sudah - "tahap" terbaca sebagai masih berjalan.
+ *   "Menuju Putusan"    hanya menampung setengahnya; yang sudah putus tidak
+ *                       sedang menuju ke mana pun.
+ *   "Putus Hari Ini"    keliru pada yang agendanya musyawarah - hari itu
+ *                       majelis dapat memutuskan menunda.
+ *   "Hari Putusan"      DIPILIH. Menyebut HARINYA, bukan keadaan perkaranya,
+ *                       dan hari itu sama benarnya bagi yang naskahnya
+ *                       sedang disiapkan maupun yang hasilnya sudah tercatat.
+ *
+ * ============================================================================
+ * KUNING, DAN MENGGANTIKAN "MUSYAWARAH MAJELIS" YANG MERAH
+ * ============================================================================
+ *
+ * Penanda "Musyawarah Majelis" yang dulu merah TIDAK dibiarkan berdiri di
+ * sebelahnya: cakupannya termuat seluruhnya di sini, dan dua kotak yang
+ * menyaring hal yang hampir sama membuat pembacanya menduga ada bedanya, lalu
+ * mencari beda yang tidak ada. Aturan itu sudah ditulis di berkas ini ketika
+ * "Agenda putusan" dilebur menjadi "Musyawarah Majelis"; ia berlaku lagi
+ * sekarang.
+ *
+ * Kuning, bukan merah, karena separuh isinya perkara yang sudah selesai -
+ * merah pada perkara yang hasilnya sudah tercatat menuntut perhatian yang
+ * tidak diperlukan lagi. Kuning berarti "hari ini menentukan", dan itu benar
+ * untuk keduanya.
+ *
+ * ============================================================================
+ * IKRAR TALAK DIKECUALIKAN
+ * ============================================================================
+ *
+ * Sidang ikrar talak bukan hari putusan: putusannya - izin mengucapkan talak
+ * - sudah dijatuhkan jauh sebelumnya, dan yang terjadi hari itu penyaksian
+ * ikrarnya. Ia punya penandanya sendiri, biru.
+ *
+ * Diukur: dari 1.024 baris berbendera ikrar, TIDAK SATU pun yang hasil
+ * sidangnya memuat kata "putus", dan hanya 4 yang agendanya menyebut
+ * musyawarah/putusan/penetapan. Keempatnya jatuh ke penanda biru, dan itu
+ * memang tempatnya - sidang berbendera ikrar adalah sidang ikrar.
+ */
+function hariPutusan(baris: {
+  agenda?: string;
+  ditunda?: boolean;
+  alasanDitunda?: string;
+  sidangIkrarTalak?: boolean;
+}): boolean {
+  if (sidangIkrar(baris)) return false;
+  if (agendaMusyawarah(baris.agenda || "")) return true;
+  return Boolean(hasilSidangPutusan(Boolean(baris.ditunda), baris.alasanDitunda || ""));
 }
 
 /**
@@ -678,20 +793,57 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
     cocok: (x) => x.urutanSidang <= 1,
   },
   {
-    // Menggantikan "Agenda putusan" yang dulu bernada sejuk dan hanya
-    // mencocokkan kata "putus". Nadanya dinaikkan menjadi bahaya karena
-    // artinya memang begitu: hari ini majelis harus lengkap dan naskahnya
-    // harus siap, dan tidak ada yang dapat ditunda tanpa penetapan.
+    // ========================================================================
+    // "MUSYAWARAH MAJELIS" DILEBUR KE SINI - LIHAT hariPutusan DI ATAS
+    // ========================================================================
     //
-    // Tidak ditambahkan sebagai kotak KEDUA di sebelah yang lama - dua kotak
-    // yang menyaring hal yang hampir sama membuat pembacanya menduga ada
-    // bedanya, lalu mencari beda yang tidak ada.
-    kunci: "musyawarah-majelis",
-    label: "Musyawarah Majelis",
-    nada: "bahaya",
+    // Riwayatnya tiga langkah, dan tiap langkah alasannya sama: satu
+    // pertanyaan pantas punya satu kotak.
+    //
+    //   "Agenda putusan"      sejuk, hanya mencocokkan kata "putus"
+    //   "Musyawarah Majelis"  bahaya, empat agenda yang menentukan
+    //   "Hari Putusan"        awas, keempat agenda itu DAN hasil sidang yang
+    //                         sudah tercatat - dikurangi sidang ikrar talak
+    //
+    // Kotak lama tidak dibiarkan berdiri di sebelahnya: cakupannya termuat
+    // seluruhnya di sini, dan dua kotak yang menyaring hal yang hampir sama
+    // membuat pembacanya menduga ada bedanya, lalu mencari beda yang tidak
+    // ada.
+    kunci: "hari-putusan",
+    label: "Hari Putusan",
+    nada: "awas",
     judul:
-      "Agendanya musyawarah majelis, pembacaan putusan, pembacaan penetapan, atau putusan sela - majelis harus lengkap dan naskahnya harus siap.",
-    cocok: (x) => agendaMusyawarah(x.agenda || ""),
+      "Hari ini perkaranya berdiri di hadapan putusannya - agendanya musyawarah majelis, pembacaan putusan, pembacaan penetapan, atau putusan sela; ATAU hasil sidangnya sudah tercatat putus. Sidang ikrar talak tidak ikut - ia punya penandanya sendiri.",
+    cocok: (x) => hariPutusan(x),
+  },
+  {
+    // ========================================================================
+    // IKRAR TALAK - DIPISAHKAN DARI HARI PUTUSAN, BUKAN DILEBUR KE DALAMNYA
+    // ========================================================================
+    //
+    // Sebelumnya sidang ikrar talak tidak punya penanda sama sekali, sehingga
+    // ia hanya terbaca sebagai perkara "Sudah putus" - dan itu menyesatkan
+    // pada layar jadwal: yang membaca "sudah putus" pada baris hari ini
+    // menyangka perkaranya diputus hari ini, padahal putusannya - izin
+    // mengucapkan talak - dijatuhkan berbulan-bulan sebelumnya dan yang
+    // terjadi hari itu penyaksian ikrarnya.
+    //
+    // Biru, bukan kuning dan bukan hijau. Ia bukan tuntutan kesiapan naskah
+    // dan bukan pula perkara yang selesai hari itu; ia satu acara tersendiri
+    // yang menuntut kehadiran Pemohon - dan bila Pemohon tidak hadir sampai
+    // batasnya, hak talaknya gugur. Biru sudah dipakai di layar ini untuk
+    // keterangan yang perlu dilihat tanpa menuntut tindakan.
+    //
+    // Perkaranya TETAP terhitung "Sudah putus" - itu memang faktanya, dan
+    // memotongnya dari sana akan membuat "sudah putus" ditambah "belum putus"
+    // tidak lagi sama dengan jumlah sidang hari itu. Yang memisahkannya
+    // penanda ini.
+    kunci: "ikrar-talak",
+    label: "Ikrar Talak",
+    nada: "sejuk",
+    judul:
+      "Sidang penyaksian ikrar talak menurut bendera SIPP sendiri. Putusannya sudah dijatuhkan sebelumnya - yang terjadi hari ini pengucapan ikrarnya di depan majelis.",
+    cocok: (x) => sidangIkrar(x),
   },
   {
     kunci: "e-litigasi",
@@ -2253,12 +2405,35 @@ export function AletaEcourtSidang({
   const [rincian, setRincian] = useState<Rincian | null>(null);
   const [memuatRincian, setMemuatRincian] = useState(false);
 
-  // Daftar yang sedang disorot ringkasan. Tabel utama TETAP menampilkan
-  // seluruhnya - menyaringnya sekalian akan membuat angka pada ringkasan tidak
-  // lagi cocok dengan isi tabelnya.
-  const sidangTerpilih = alurTerpilih
-    ? sidang.filter((baris) => kelompokAlur(baris.alurPerkaraId) === alurTerpilih)
-    : [];
+  // ==========================================================================
+  // KOTAK ALUR MENYARING TABELNYA JUGA - BUKAN HANYA RINGKASANNYA
+  // ==========================================================================
+  //
+  // Dulu tidak: menekan "Gugatan" hanya membuka panel ringkasan, dan tabel di
+  // bawahnya tetap memuat seluruh sidang hari itu. Alasannya angka pada
+  // ringkasan tidak lagi cocok dengan isi tabel bila keduanya bergerak.
+  //
+  // Yang terjadi di layar justru sebaliknya. Kotaknya berbentuk sama dengan
+  // kotak keadaan yang berjejer di sebelahnya - dan yang itu memang menyaring
+  // tabel. Dua kotak yang serupa dengan akibat yang berbeda terbaca sebagai
+  // kotak yang rusak, bukan sebagai kotak yang bekerja lain.
+  //
+  // Sekarang keduanya menyaring, dan kecocokan angkanya dijaga dari arah lain:
+  // jumlah pada kotak KEADAAN dihitung di dalam alur yang sedang dipilih
+  // (lihat jumlahKeadaan), sementara jumlah pada kotak ALUR tetap dihitung
+  // dari seluruh sidang hari itu - kalau ikut menyusut, alur lain menjadi nol
+  // dan pilihannya mustahil dilepas kembali.
+  const sidangSealur = useMemo(
+    () =>
+      alurTerpilih
+        ? sidang.filter((baris) => kelompokAlur(baris.alurPerkaraId) === alurTerpilih)
+        : sidang,
+    [sidang, alurTerpilih]
+  );
+
+  // Daftar yang sedang disorot panel ringkasan. Kosong saat tidak ada alur
+  // yang dipilih - panelnya pun tidak digambar saat itu.
+  const sidangTerpilih = alurTerpilih ? sidangSealur : [];
   // Baris kartu dihitung dari SELURUH kelompok, bukan dari yang sudah
   // tersaring: angka pada kartu harus tetap menyebut isi kelompoknya, supaya
   // menyaring ke satu majelis tidak membuat majelis lain lenyap dari kartu
@@ -2308,19 +2483,28 @@ export function AletaEcourtSidang({
   // diurutkan. Mengurutkan lebih dulu hanya membuang tenaga atas baris yang
   // kemudian dibuang.
   //
-  // Angka pada kotak keadaan dihitung dari SELURUH sidang hari itu, bukan dari
-  // yang sudah tersaring - kalau ikut menyusut, menyalakan satu saringan akan
-  // membuat saringan lain tampak nol dan mustahil dilepas kembali.
+  // Angka pada kotak keadaan dihitung dari seluruh sidang DI DALAM ALUR yang
+  // sedang dipilih - bukan dari yang sudah tersaring keadaan lain. Kalau ikut
+  // menyusut oleh keadaan, menyalakan satu saringan akan membuat saringan lain
+  // tampak nol dan mustahil dilepas kembali.
+  //
+  // Alur ikut membatasi karena tabelnya pun dibatasi olehnya: kotak bertuliskan
+  // "2 Sudah putus" di atas tabel yang hanya memuat gugatan harus menyebut dua
+  // gugatan, bukan dua perkara dari seluruh hari itu.
   const jumlahKeadaan = useMemo(() => {
     const hitung: Record<string, number> = {};
     for (const keadaan of KEADAAN_SIDANG) {
-      hitung[keadaan.kunci] = sidang.filter((baris) => keadaan.cocok(baris, antrian.peta)).length;
+      hitung[keadaan.kunci] = sidangSealur.filter((baris) =>
+        keadaan.cocok(baris, antrian.peta)
+      ).length;
     }
     return hitung;
-  }, [sidang, antrian.peta]);
+  }, [sidangSealur, antrian.peta]);
 
-  const sidangTampil = useMemo(() => {
-    let hasil = sidang;
+  const sidangTersusun = useMemo(() => {
+    // Alur perkara lebih dulu: ia yang paling banyak memotong, dan saringan
+    // sesudahnya jadi bekerja atas baris yang lebih sedikit.
+    let hasil = sidangSealur;
 
     if (keadaanTerpilih.length > 0) {
       const dipilih = KEADAAN_SIDANG.filter((x) => keadaanTerpilih.includes(x.kunci));
@@ -2346,7 +2530,7 @@ export function AletaEcourtSidang({
       nilaiUrutSidang(baris, kunci, kesiapan, antrian.peta)
     );
   }, [
-    sidang,
+    sidangSealur,
     keadaanTerpilih,
     cariCepat,
     cariLanjut.isian,
@@ -2355,6 +2539,26 @@ export function AletaEcourtSidang({
     kesiapan,
     antrian.peta,
   ]);
+
+  // ==========================================================================
+  // KEEMPAT PENYARING KARTU IKUT SAMPAI KE TABEL
+  // ==========================================================================
+  //
+  // Sejalan dengan kotak alur di atas. Keempatnya - jenis, tahap, majelis,
+  // ruang - berdiri di dalam panel yang baru terbuka SESUDAH satu alur
+  // dipilih, dan alur itu kini menyaring tabelnya. Membiarkan keempat kartu
+  // hanya menyaring kartu di dalam panel akan mengulang persis kekeliruan yang
+  // baru saja diperbaiki: satu deret kotak yang menyaring, satu deret lagi
+  // yang tampaknya menyaring tetapi tidak menyentuh tabel.
+  //
+  // Dikerjakan DI LUAR useMemo di atas, bukan di dalamnya. cocokSaringan
+  // dibangun ulang tiap render - ia bergantung pada rincianJenis dan
+  // kawan-kawannya yang juga dibangun ulang - sehingga memasukkannya ke dalam
+  // daftar kebergantungan useMemo berarti memo yang tidak pernah dipakai.
+  // Penyaringnya sendiri satu lintasan atas paling banyak 500 baris.
+  const sidangTampil = adaSaringanKartu
+    ? sidangTersusun.filter(cocokSaringan)
+    : sidangTersusun;
 
   /**
    * Melepas SELURUH saringan sekaligus.
@@ -3068,68 +3272,30 @@ export function AletaEcourtSidang({
                 </button>
               </div>
             ) : null}
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {sidangTersaring.map((baris) => (
-                <button
-                  key={`${baris.nomorPerkara}|${baris.sidangId}`}
-                  type="button"
-                  onClick={() => onBukaStatus?.(baris.nomorPerkara)}
-                  title={`Buka status perkara ${baris.nomorPerkara}`}
-                  className="rounded-lg border bg-card p-3 text-left text-sm transition hover:border-primary/50 hover:bg-muted/50"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="font-medium">{baris.nomorPerkara}</span>
-                    <span className="text-sm tabular-nums text-muted-foreground">
-                      {baris.jamSidang || "—"}
-                    </span>
-                  </div>
+            {/* ==============================================================
+                KISI KARTU DIHAPUS - TABEL DI BAWAH SUDAH MENJADI DAFTARNYA
+                ==============================================================
 
-                  <p className="mt-0.5 text-sm text-muted-foreground">{baris.jenisPerkara}</p>
+                Panel ini dulu memuat kisi kartu berisi perkara kelompoknya,
+                dan itu satu-satunya tempat daftar sealur dapat dilihat -
+                tabel utama waktu itu tetap memuat seluruh hari.
 
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {baris.urutanSidang > 0 ? (
-                      <Badge variant="muted">sidang ke-{baris.urutanSidang}</Badge>
-                    ) : null}
-                    {baris.ditunda ? <Badge variant="warning">ditunda</Badge> : null}
-                    <PenandaPanggilan panggilan={baris.panggilan} />
-                    {potensiVerstek(baris.dihadiriOleh) ? (
-                      <Badge variant="danger" title="Hanya penggugat/pemohon yang hadir pada sidang ini.">
-                        potensi verstek
-                      </Badge>
-                    ) : baris.dihadiriOleh === 1 ? (
-                      <Badge variant="success">contradictoir</Badge>
-                    ) : baris.dihadiriOleh ? (
-                      <Badge variant="muted">{SEBUTAN_HADIR[baris.dihadiriOleh]}</Badge>
-                    ) : null}
-                  </div>
+                Sejak kotak alur menyaring tabelnya juga, kisi itu menjadi
+                salinan: perkara yang sama, keterangan yang sama, hanya
+                berbentuk kartu alih-alih baris, dua kali di satu halaman.
+                Dua daftar yang isinya sama membuat pembacanya membandingkan
+                keduanya untuk mencari beda yang tidak ada - dan yang di atas
+                selalu lebih miskin, sebab kartu tidak memuat antrian,
+                kesiapan, saksi, maupun hasil sidang.
 
-                  <dl className="mt-2 space-y-0.5 text-sm">
-                    <div>
-                      <dt className="inline text-muted-foreground">Agenda: </dt>
-                      <dd className="inline">{baris.agenda || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="inline text-muted-foreground">Majelis: </dt>
-                      <dd className="inline font-mono">{baris.majelisKode || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="inline text-muted-foreground">Panitera: </dt>
-                      <dd className="inline">{baris.paniteraNama || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="inline text-muted-foreground">Jurusita: </dt>
-                      <dd className="inline">{baris.jurusitaNama || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="inline text-muted-foreground">Ruang: </dt>
-                      <dd className="inline">{baris.ruangan || "—"}</dd>
-                    </div>
-                  </dl>
-
-                  <p className="mt-2 text-sm text-primary">Buka status perkara →</p>
-                </button>
-              ))}
-            </div>
+                Yang TINGGAL di panel ini keempat kartu ringkasan di atas -
+                jenis, tahap, majelis, ruang. Itu yang tidak ada di tabel:
+                jawaban atas "berapa banyak", bukan pengulangan "yang mana".
+                Keempatnya kini menyaring tabel di bawah secara langsung. */}
+            <p className="text-sm text-muted-foreground">
+              Daftar perkaranya ada di tabel di bawah — ia sudah mengikuti kelompok dan
+              keempat penyaring di atas.
+            </p>
           </div>
         ) : null}
 
@@ -3427,9 +3593,35 @@ export function AletaEcourtSidang({
                           </div>
                         </td>
                         <td className="px-3 py-2 align-top">
-                          <span className="text-[0.95rem] font-extrabold tracking-tight">
-                            {baris.nomorPerkara}
-                          </span>
+                          {/* ==================================================
+                              NOMORNYA MEMBUKA STATUS PERKARA
+                              ==================================================
+
+                              Jalan itu dulu hanya ada di kisi kartu dalam panel
+                              alur - satu tempat yang baru terlihat sesudah
+                              menekan kotak alur, dan hilang bersama kisinya.
+                              Tempatnya yang wajar justru di sini: nomor perkara
+                              adalah yang pertama dicari mata dan yang pertama
+                              hendak dibuka orang.
+
+                              Tetap span biasa bila halaman induknya tidak
+                              menyediakan jalan ke status perkara - tombol yang
+                              tidak mengerjakan apa pun lebih buruk daripada
+                              tulisan biasa. */}
+                          {onBukaStatus ? (
+                            <button
+                              type="button"
+                              onClick={() => onBukaStatus(baris.nomorPerkara)}
+                              title={`Buka status perkara ${baris.nomorPerkara}`}
+                              className="text-left text-[0.95rem] font-extrabold tracking-tight underline decoration-transparent underline-offset-2 transition hover:decoration-primary hover:text-primary"
+                            >
+                              {baris.nomorPerkara}
+                            </button>
+                          ) : (
+                            <span className="text-[0.95rem] font-extrabold tracking-tight">
+                              {baris.nomorPerkara}
+                            </span>
+                          )}
                           {/* ==================================================
                               VERZET DITANDAI DI SAMPING NOMORNYA
                               ==================================================
@@ -3567,6 +3759,59 @@ export function AletaEcourtSidang({
                               di sini - penandanya sudah menempel di samping
                               nomor perkara pada kedua mode. */}
                           <div className="mt-1 flex flex-wrap items-center gap-1">
+                            {/* ==============================================
+                                HARI PUTUSAN - KUNING, DI KEDUA MODE
+                                ==============================================
+
+                                Berdiri paling depan pada baris penanda ini,
+                                sebab inilah satu-satunya di antaranya yang
+                                menentukan apakah baris itu perlu dibuka
+                                sekarang: hari ini perkaranya berdiri di
+                                hadapan putusannya.
+
+                                Aturannya di hariPutusan - satu tempat, dipakai
+                                kotak saring di atas dan penanda ini sekaligus.
+                                Sebelumnya keduanya menghitung sendiri-sendiri,
+                                dan yang tersaring tidak selalu yang bertanda. */}
+                            {hariPutusan(baris) ? (
+                              <span
+                                className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                                title={
+                                  hasilSidangPutusan(baris.ditunda, baris.alasanDitunda)
+                                    ? `Hasil sidangnya sudah tercatat: ${hasilSidangPutusan(
+                                        baris.ditunda,
+                                        baris.alasanDitunda
+                                      )}`
+                                    : "Agendanya musyawarah majelis, pembacaan putusan, pembacaan penetapan, atau putusan sela - majelis harus lengkap dan naskahnya harus siap."
+                                }
+                              >
+                                Hari Putusan
+                              </span>
+                            ) : null}
+
+                            {/* ==============================================
+                                IKRAR TALAK - BIRU, MENGGANTIKAN YANG KUNING
+                                ==============================================
+
+                                Tidak pernah muncul bersama penanda kuning:
+                                hariPutusan memotong sidang berbendera ikrar
+                                lebih dulu. Yang dibaca orang pada baris ini
+                                karena itu satu keterangan, bukan dua yang
+                                saling menyangkal.
+
+                                Putusannya sendiri tetap terbaca di kolom
+                                Putusan - yang dikatakan penanda ini bukan
+                                "belum putus", melainkan "yang dikerjakan hari
+                                ini bukan putusannya". */}
+                            {sidangIkrar(baris) ? (
+                              <span
+                                className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+                                title="Sidang penyaksian ikrar talak. Putusannya - izin mengucapkan talak - sudah dijatuhkan sebelumnya; yang terjadi hari ini pengucapan ikrarnya di depan majelis."
+                              >
+                                Ikrar Talak
+                              </span>
+                            ) : null}
+
                             {/* ==============================================
                                 KUASA DI KEDUA MODE
                                 ==============================================

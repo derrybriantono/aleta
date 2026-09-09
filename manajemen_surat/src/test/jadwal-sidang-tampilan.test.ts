@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { hasilSidangPutusan } from "@/lib/hasil-sidang";
+
 /**
  * Aturan tampilan jadwal sidang yang tidak boleh berubah diam-diam.
  *
@@ -547,6 +549,134 @@ describe("agenda yang menuntut majelis lengkap dan naskah siap", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// HARI PUTUSAN DAN IKRAR TALAK - DUA PENANDA YANG TIDAK PERNAH BERSAMAAN
+// ---------------------------------------------------------------------------
+
+/** Salinan sidangIkrar dari aleta-ecourt-sidang.tsx. */
+function sidangIkrar(baris: { agenda?: string; sidangIkrarTalak?: boolean }): boolean {
+  if (baris.sidangIkrarTalak) return true;
+  return /\bikrar\b/i.test(String(baris.agenda || ""));
+}
+
+/** Salinan hariPutusan dari aleta-ecourt-sidang.tsx. */
+function hariPutusan(baris: {
+  agenda?: string;
+  ditunda?: boolean;
+  alasanDitunda?: string;
+  sidangIkrarTalak?: boolean;
+}): boolean {
+  if (sidangIkrar(baris)) return false;
+  if (agendaMusyawarah(baris.agenda || "")) return true;
+  return Boolean(hasilSidangPutusan(Boolean(baris.ditunda), baris.alasanDitunda || ""));
+}
+
+describe("penanda Hari Putusan", () => {
+  it("agenda yang akan memutus ikut", () => {
+    for (const agenda of [
+      "Musyawarah Majelis",
+      "Pembacaan putusan",
+      "Pembacaan Penetapan",
+      "Putusan Sela",
+      "Musyawarah Majelis dan Pembacaan Putusan",
+    ]) {
+      expect(hariPutusan({ agenda, ditunda: true, alasanDitunda: "" }), agenda).toBe(true);
+    }
+  });
+
+  it("hasil sidang yang SUDAH tercatat ikut, walau agendanya biasa", () => {
+    // Empat teratas di PA Donggala, diukur atas 20.092 baris jadwal:
+    // 2.166 "putus DIKABULKAN (verstek)", 946 "putus DIKABULKAN",
+    // 206 "putus DICABUT", 81 "putus DIGUGURKAN".
+    for (const alasan of [
+      "putus DIKABULKAN (verstek)",
+      "putus DIKABULKAN",
+      "putus DICABUT",
+      "putus DIGUGURKAN",
+      "putus TIDAK DITERIMA",
+      "putus DITOLAK",
+    ]) {
+      expect(
+        hariPutusan({ agenda: "Pemeriksaan Pokok Perkara", ditunda: false, alasanDitunda: alasan }),
+        alasan
+      ).toBe(true);
+    }
+  });
+
+  it("agenda BERIKUTNYA yang menyebut putusan tidak dianggap sudah putus", () => {
+    // ditunda = Y berarti kolomnya berisi agenda berikutnya, bukan hasil.
+    // Ia tetap ikut Hari Putusan - lewat agendanya - tetapi bukan karena
+    // hasil sidangnya, dan judulnya harus menyebut yang benar.
+    expect(hasilSidangPutusan(true, "Pembacaan Putusan")).toBe("");
+    expect(hariPutusan({ agenda: "Pembacaan Putusan", ditunda: true, alasanDitunda: "Pembacaan Putusan" })).toBe(true);
+  });
+
+  it("angka bawaan 0 pada alasan_ditunda tidak menyalakan apa pun", () => {
+    // 6.207 baris berisi "0" belaka - nilai bawaan yang tidak pernah diisi.
+    expect(hariPutusan({ agenda: "Panggil Tergugat", ditunda: false, alasanDitunda: "0" })).toBe(false);
+  });
+
+  it("sidang biasa tidak ikut", () => {
+    for (const agenda of ["Panggil Tergugat", "Mediasi", "Pembuktian Penggugat", "Jawaban Termohon", ""]) {
+      expect(hariPutusan({ agenda, ditunda: true, alasanDitunda: "Panggil Tergugat" }), agenda).toBe(false);
+    }
+  });
+});
+
+describe("penanda Ikrar Talak", () => {
+  it("bendera SIPP menang - agendanya boleh berbunyi apa saja", () => {
+    // Yang benar-benar ada di data pada baris berbendera Y: "Panggil
+    // Termohon" (9), "tunda 6 bulan" (4), "Musyawarah Majelis" (3),
+    // "Proses Mediasi" (7). Menebak dari agendanya melewatkan semuanya.
+    for (const agenda of ["Panggil Termohon", "tunda 6 bulan", "Musyawarah Majelis", "Proses Mediasi", ""]) {
+      expect(sidangIkrar({ agenda, sidangIkrarTalak: true }), agenda).toBe(true);
+    }
+  });
+
+  it("agendanya menangkap baris yang benderanya lupa dicentang", () => {
+    // Dua baris di PA Donggala beragenda ikrar dengan bendera T. Ejaannya
+    // sendiri belasan macam, jadi yang dicocokkan kata "ikrar" saja.
+    for (const agenda of [
+      "SIDANG IKRAR TALAK",
+      "Sidank Ikrar Talak",
+      "sidang ikrar ",
+      "penyaksian ikrar talak",
+      "Pengucapan Ikrar",
+      "Sidang  Ikrar Talak",
+    ]) {
+      expect(sidangIkrar({ agenda, sidangIkrarTalak: false }), agenda).toBe(true);
+    }
+  });
+
+  it("yang tidak terbaca dianggap BUKAN ikrar", () => {
+    // Gagal-tertutup: jadwal yang termuat sebelum pembaruan ini tidak
+    // memuat benderanya sama sekali.
+    expect(sidangIkrar({ agenda: "Panggil Termohon" })).toBe(false);
+  });
+
+  it("KEDUANYA tidak pernah menyala bersamaan", () => {
+    // Diukur: dari 1.024 baris berbendera ikrar, TIDAK SATU pun hasil
+    // sidangnya memuat "putus", dan hanya 4 yang agendanya menyebut
+    // musyawarah/putusan/penetapan. Keempatnya harus jatuh ke biru.
+    const baris = { agenda: "Musyawarah Majelis", sidangIkrarTalak: true, ditunda: true, alasanDitunda: "" };
+    expect(sidangIkrar(baris)).toBe(true);
+    expect(hariPutusan(baris)).toBe(false);
+  });
+
+  it("perkara ikrar talak TETAP terhitung sudah putus", () => {
+    // Faktanya memang begitu - izin mengucapkan talak adalah putusan. Yang
+    // memotongnya dari sana akan membuat "sudah putus" ditambah "belum
+    // putus" tidak lagi sama dengan jumlah sidang hari itu. Yang
+    // memisahkannya penanda biru, bukan angka yang dikurangi diam-diam.
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
+      "utf8"
+    );
+    const potong = isi.slice(isi.indexOf('kunci: "sudah-putus"'), isi.indexOf('kunci: "belum-putus"'));
+    expect(potong).toContain("cocok: (x) => x.sudahPutus");
+    expect(potong).not.toContain("sidangIkrar");
+  });
+});
 describe("ketiganya ada apa adanya di komponen", () => {
   const berkasKomponen = path.resolve(
     process.cwd(),
@@ -573,12 +703,79 @@ describe("ketiganya ada apa adanya di komponen", () => {
     expect(isi.split("useTutupSaatDiLuar(terbuka, tutup)").length - 1).toBe(2);
   });
 
-  it("penanda musyawarah bernada bahaya, bukan sejuk", () => {
+  it("penanda hari putusan melebur musyawarah, bukan berdiri di sebelahnya", () => {
     const isi = readFileSync(berkasKomponen, "utf8");
-    expect(isi).toContain('kunci: "musyawarah-majelis"');
-    expect(isi).toContain('label: "Musyawarah Majelis"');
-    // Kotak lama yang bernada sejuk sudah diganti, bukan ditambahi kotak kedua.
+    expect(isi).toContain('kunci: "hari-putusan"');
+    expect(isi).toContain('label: "Hari Putusan"');
+    // Ketiga kotak lama sudah dilebur berturut-turut, bukan ditumpuk. Tiga
+    // kotak yang menyaring hal yang hampir sama membuat pembacanya menduga
+    // ada bedanya, lalu mencari beda yang tidak ada.
     expect(isi).not.toContain('kunci: "agenda-putusan"');
+    expect(isi).not.toContain('kunci: "musyawarah-majelis"');
+    // Kuning, bukan merah: separuh isinya perkara yang hasilnya sudah
+    // tercatat, dan merah pada yang sudah selesai menuntut perhatian yang
+    // tidak diperlukan lagi.
+    const potong = isi.slice(isi.indexOf('kunci: "hari-putusan"'));
+    expect(potong.slice(0, 200)).toContain('nada: "awas"');
+  });
+
+  it("kotak Ikrar Talak berdiri sendiri dan bernada sejuk", () => {
+    const isi = readFileSync(berkasKomponen, "utf8");
+    expect(isi).toContain('kunci: "ikrar-talak"');
+    expect(isi).toContain('label: "Ikrar Talak"');
+    const potong = isi.slice(isi.indexOf('kunci: "ikrar-talak"'));
+    expect(potong.slice(0, 200)).toContain('nada: "sejuk"');
+  });
+
+  it("penanda baris memakai aturan yang SAMA dengan kotak saringnya", () => {
+    // Dua perhitungan terpisah berarti yang tersaring tidak selalu yang
+    // bertanda - dan yang dilaporkan kemudian "kotaknya bilang dua, yang
+    // bertanda satu".
+    const isi = readFileSync(berkasKomponen, "utf8");
+    expect(isi).toContain("{hariPutusan(baris) ? (");
+    expect(isi).toContain("{sidangIkrar(baris) ? (");
+    expect(isi).toContain("cocok: (x) => hariPutusan(x)");
+    expect(isi).toContain("cocok: (x) => sidangIkrar(x)");
+  });
+
+  it("bendera ikrar_talak diambil dari SIPP, bukan ditebak dari agenda", () => {
+    const layanan = readFileSync(
+      path.resolve(process.cwd(), "../aleta_bot/services/sippJadwalSidangService.js"),
+      "utf8"
+    );
+    expect(layanan).toContain("j.ikrar_talak         AS ikrarTalak");
+    expect(layanan).toContain("sidangIkrarTalak: cleanText(row.ikrarTalak).toUpperCase() === \"Y\"");
+    // Wajib di tipe gerbang - ruas opsional yang lupa dikirim bot membuat
+    // penandanya mati selamanya tanpa satu pun galat. Sudah empat kali
+    // terjadi di ALETA.
+    const tipe = readFileSync(
+      path.resolve(process.cwd(), "src/server/modules/aleta-bot/whatsapp-gateway-client.ts"),
+      "utf8"
+    );
+    expect(tipe).toContain("sidangIkrarTalak: boolean;");
+  });
+
+  it("kotak alur menyaring tabelnya, bukan hanya panel ringkasannya", () => {
+    const isi = readFileSync(berkasKomponen, "utf8");
+    // Daftar tabel dimulai dari yang sealur, bukan dari seluruh hari itu.
+    expect(isi).toContain("let hasil = sidangSealur;");
+    // Jumlah pada kotak KEADAAN dihitung di dalam alur yang dipilih, supaya
+    // angkanya cocok dengan isi tabel di bawahnya.
+    expect(isi).toContain("hitung[keadaan.kunci] = sidangSealur.filter((baris) =>");
+    // Jumlah pada kotak ALUR tetap dari seluruh hari - kalau ikut menyusut,
+    // alur lain menjadi nol dan pilihannya mustahil dilepas kembali.
+    expect(isi).toContain("ringkasAlur(sidang)");
+    // Keempat penyaring kartu ikut sampai ke tabel.
+    expect(isi).toContain("const sidangTampil = adaSaringanKartu");
+  });
+
+  it("kisi kartu yang menyalin tabel sudah tidak ada", () => {
+    const isi = readFileSync(berkasKomponen, "utf8");
+    expect(isi).not.toContain("{sidangTersaring.map((baris) => (");
+    expect(isi).not.toContain("Buka status perkara →");
+    // Jalan ke status perkara TIDAK hilang bersama kisinya - ia pindah ke
+    // nomor perkara di tabel, tempat mata mencarinya lebih dulu.
+    expect(isi).toContain("onClick={() => onBukaStatus(baris.nomorPerkara)}");
   });
 });
 

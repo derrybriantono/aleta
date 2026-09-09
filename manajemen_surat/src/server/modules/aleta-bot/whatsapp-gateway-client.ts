@@ -1188,6 +1188,19 @@ export type SidangBaris = {
   ruangan: string;
   ditunda: boolean;
   alasanDitunda: string;
+  /**
+   * Sidang penyaksian ikrar talak, menurut kolom `ikrar_talak` milik SIPP.
+   *
+   * Bukan diambil dari tulisan agendanya. Diukur atas 20.092 baris jadwal di
+   * PA Donggala: 1.024 baris berbendera 'Y', sebagian beragenda "Panggil
+   * Termohon" atau "tunda 6 bulan", sementara ada pula baris beragenda
+   * "Sidang Ikrar Talak" yang benderanya 'T'. Menebak dari agendanya salah
+   * pada dua arah sekaligus.
+   *
+   * Wajib, bukan opsional - lihat lewatEcourt di bawah: ruas opsional yang
+   * lupa dikirim bot membuat penandanya mati selamanya tanpa satu pun galat.
+   */
+  sidangIkrarTalak: boolean;
   urutanSidang: number;
   /** 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir. */
   dihadiriOleh: number | null;

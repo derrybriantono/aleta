@@ -130,6 +130,28 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
             j.agenda              AS agenda,
             j.ruangan             AS ruangan,
             j.ditunda             AS ditunda,
+            -- ==================================================================
+            -- SIDANG IKRAR TALAK - BENDERA SIPP SENDIRI, BUKAN TEBAKAN AGENDA
+            -- ==================================================================
+            --
+            -- perkara_jadwal_sidang punya kolom ikrar_talak char(1), dan
+            -- itulah yang menandai sidang penyaksian ikrar - bukan tulisan
+            -- pada agendanya. Diukur di PA Donggala atas 20.092 baris jadwal:
+            --
+            --   ikrar_talak = 'Y'   1.024 baris
+            --   agenda memuat "ikrar"  ~970 baris
+            --
+            -- Bedanya bukan sedikit dan bukan searah. Yang berbendera Y
+            -- beragenda "Panggil Termohon" (9), "tunda 6 bulan" (4),
+            -- "Musyawarah Majelis" (3) - sidang ikrar yang agendanya diketik
+            -- menurut apa yang dikerjakan hari itu. Sebaliknya ada 2 baris
+            -- beragenda "Sidang Ikrar Talak" yang benderanya T.
+            --
+            -- Menebak dari agendanya karena itu salah pada dua arah
+            -- sekaligus. Ejaan yang benar-benar ada di data pun belasan:
+            -- "SIDANG IKRAR TALAK", "Sidank Ikrar Talak", "sidang ikrar ",
+            -- "penyaksian ikrar talak", "Pengucapan Ikrar".
+            j.ikrar_talak         AS ikrarTalak,
             j.urutan              AS urutanSidang,
             -- 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir.
             j.dihadiri_oleh       AS dihadiriOleh,
@@ -250,6 +272,9 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // SIPP menyimpan 'Y' bila sidangnya ditunda.
       ditunda: cleanText(row.ditunda).toUpperCase() === "Y",
       alasanDitunda: cleanText(row.alasanDitunda),
+      // Sidang penyaksian ikrar talak, menurut bendera SIPP sendiri. Lihat
+      // catatan panjang di kuerinya - agendanya tidak dapat dipakai menebak.
+      sidangIkrarTalak: cleanText(row.ikrarTalak).toUpperCase() === "Y",
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),
