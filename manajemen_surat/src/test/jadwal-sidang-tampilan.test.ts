@@ -24,6 +24,7 @@ import { describe, expect, it } from "vitest";
 import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
+  NADA_PERLU_DIPERIKSA,
   agendaElitigasi,
   agendaMusyawarah,
   hariPutusan,
@@ -797,5 +798,101 @@ describe("penyegaran tidak melepas tabel dari layar", () => {
     // pernah dikosongkan.
     const isi = sumber();
     expect(isi).toContain("const kunci = `${baris.nomorPerkara}|${baris.sidangId}`;");
+  });
+});
+
+/**
+ * ============================================================================
+ * KOTAK "PERLU DIPERIKSA" - YANG DIJAGA DI SINI ADALAH ALASANNYA
+ * ============================================================================
+ *
+ * Kotak gabungan hanya berguna selama ia MENYARING. Begitu ia menyala pada
+ * hampir seluruh baris, ia berhenti menjawab apa pun dan hanya menambah satu
+ * kotak lagi ke deretan yang sudah penuh - persis keluhan yang hendak
+ * dijawabnya.
+ *
+ * Rencana awalnya menggabungkan merah DAN kuning. Itu ditinggalkan karena
+ * ketiga penanda kuning berlaku pada hampir tiap baris jadwal hari ini:
+ * berita acara memang ditulis sesudah sidangnya, penundaan memang jalannya
+ * perkara, dan nomor antrian memang belum diambil sebelum orangnya datang.
+ *
+ * Alasan itu tidak dapat dijaga langsung - ia berupa kalimat. Yang dapat
+ * dijaga adalah PIJAKANNYA: bahwa ketiga penanda itu memang kuning, dan
+ * bahwa keanggotaan kotaknya memang dihitung dari nada. Menaikkan salah
+ * satunya menjadi merah akan memasukkannya ke kotak gabungan tanpa satu pun
+ * galat - dan kotaknya diam-diam berhenti berarti apa-apa.
+ */
+describe("kotak gabungan Perlu diperiksa", () => {
+  const berkasKomponen = path.resolve(
+    process.cwd(),
+    "src/components/portal/aleta-ecourt-sidang.tsx"
+  );
+  const komponen = () => readFileSync(berkasKomponen, "utf8");
+
+  /** Nada satu penanda, dibaca dari sumber komponennya. */
+  function nadaDari(isi: string, kunci: string): string {
+    const awal = isi.indexOf(`kunci: "${kunci}"`);
+    expect(awal, `penanda ${kunci} tidak ditemukan`).toBeGreaterThan(-1);
+    const cocok = isi.slice(awal, awal + 400).match(/nada:\s*"([a-z]+)"/);
+    expect(cocok, `nada ${kunci} tidak terbaca`).toBeTruthy();
+    return cocok![1];
+  }
+
+  it("hanya merah yang masuk, dan kuning sengaja tidak", () => {
+    expect(NADA_PERLU_DIPERIKSA).toContain("bahaya");
+    expect(NADA_PERLU_DIPERIKSA).not.toContain("awas");
+  });
+
+  it("ketiga penanda yang dikecualikan memang masih kuning", () => {
+    // Inilah pijakan alasannya. Bila salah satunya kelak dinaikkan menjadi
+    // merah, ia akan ikut masuk kotak gabungan - dan karena ketiganya berlaku
+    // pada hampir tiap baris, kotaknya akan menyala pada hampir seluruh
+    // jadwal. Uji ini yang memaksa alasan di atas dibaca ulang lebih dahulu.
+    const isi = komponen();
+    for (const kunci of ["belum-bas", "ditunda", "belum-antri"]) {
+      expect(nadaDari(isi, kunci), kunci).toBe("awas");
+    }
+  });
+
+  it("ada yang merah, supaya kotaknya tidak selalu kosong", () => {
+    // Kotak yang selalu nol sama tidak bergunanya dengan kotak yang selalu
+    // penuh - dan yang selalu nol tidak pernah digambar sama sekali.
+    const isi = komponen();
+    expect(nadaDari(isi, "retur")).toBe("bahaya");
+    expect(nadaDari(isi, "belum-dipanggil")).toBe("bahaya");
+  });
+
+  it("keanggotaannya dihitung dari nada, bukan didaftar ulang", () => {
+    // Daftar kunci kedua adalah daftar yang suatu hari lupa diperbarui:
+    // penanda merah baru ditambahkan, tidak masuk kelompoknya, dan tidak ada
+    // yang gagal - kotaknya hanya diam-diam menghitung kurang.
+    const isi = komponen();
+    expect(isi).toContain("const KEADAAN_MENUNTUT_TINDAKAN = KEADAAN_DASAR.filter((x) =>");
+    expect(isi).toContain("NADA_PERLU_DIPERIKSA.includes(x.nada)");
+    expect(isi).toContain(
+      "KEADAAN_MENUNTUT_TINDAKAN.some((keadaan) => keadaan.cocok(baris, antrian))"
+    );
+  });
+
+  it("kotak gabungan tidak ikut menyapu dirinya sendiri", () => {
+    // Kalau ia berada di dalam daftar yang ia sapu, cocok() memanggil dirinya
+    // sendiri sampai tumpukan pemanggilan habis - dan layarnya kosong tanpa
+    // sebab yang terbaca.
+    const isi = komponen();
+    const dasar = isi.indexOf("const KEADAAN_DASAR: KeadaanSidang[] = [");
+    const gabungan = isi.indexOf("const KEADAAN_SIDANG: KeadaanSidang[] = [");
+    const anggota = isi.indexOf("kunci: KUNCI_PERLU_DIPERIKSA");
+
+    expect(dasar).toBeGreaterThan(-1);
+    expect(gabungan).toBeGreaterThan(dasar);
+    // Kuncinya disebut SESUDAH daftar dasar ditutup - artinya ia bukan
+    // anggota daftar itu.
+    expect(anggota).toBeGreaterThan(gabungan);
+  });
+
+  it("dipisahkan garis dari penanda satuan di belakangnya", () => {
+    // Tanpa pemisah ia terbaca sebagai salah satu penanda satuan, dan tidak
+    // akan pernah ditekan orang yang sedang mencari pekerjaannya.
+    expect(komponen()).toContain("keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (");
   });
 });

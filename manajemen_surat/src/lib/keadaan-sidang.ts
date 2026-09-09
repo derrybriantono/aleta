@@ -364,3 +364,61 @@ export function sidangElitigasi(baris: { agenda?: string; lewatEcourt?: boolean 
 export function perkaraVerzetDari(...teks: Array<string | undefined | null>): boolean {
   return /verzet|perlawanan/i.test(teks.filter(Boolean).join(" "));
 }
+
+/**
+ * ============================================================================
+ * SATU KOTAK YANG MENJAWAB PERTANYAAN PERTAMA TIAP PAGI
+ * ============================================================================
+ *
+ * Pertanyaan pertama panitera pagi hari bukan "retur berapa", melainkan "hari
+ * ini yang mana yang perlu saya urus". Deretan kotak keadaan menjawab
+ * pertanyaan yang lain: tiap kotak menjawab satu keadaan, sehingga pertanyaan
+ * pertama itu menuntut membaca belasan kotak lalu menjumlahkannya di kepala -
+ * dan sesudah Hari Putusan dan Ikrar Talak ditambahkan, deretannya memang
+ * selalu penuh.
+ *
+ * ============================================================================
+ * HANYA MERAH, PADAHAL RENCANANYA MERAH DAN KUNING
+ * ============================================================================
+ *
+ * Rencana awalnya menggabungkan keduanya. Itu ditinggalkan sesudah arti tiap
+ * penanda kuning diperiksa satu per satu:
+ *
+ *   belum-bas    tidak ada berita acara sidang. Berita acara ditulis SESUDAH
+ *                sidangnya berlangsung - jadi pada jadwal HARI INI, yang
+ *                merupakan tampilan bawaan layar ini, hampir setiap baris
+ *                memenuhinya. Bukan karena ada yang salah, melainkan karena
+ *                sidangnya memang belum terjadi.
+ *   ditunda      sidang ditunda ke tanggal lain. Itu jalannya perkara, bukan
+ *                kekeliruan; sebagian besar sidang memang ditunda.
+ *   belum-antri  pihaknya belum mengambil nomor. Pagi hari, sebelum orangnya
+ *                datang, itu keadaan yang wajar.
+ *
+ * Kotak yang menyala pada hampir seluruh baris tidak menyaring apa pun.
+ * "Perlu diperiksa 47" di atas tabel berisi 47 baris tidak menjawab
+ * pertanyaan mana pun - ia hanya menambah satu kotak lagi ke deretan yang
+ * sudah terlalu penuh, persis keluhan yang hendak dijawab.
+ *
+ * Merah sudah punya artinya sendiri di layar ini, dan artinya tepat yang
+ * dicari: MENUNTUT TINDAKAN. Retur berarti panggilannya harus diulang;
+ * belum-dipanggil berarti ada pihak yang belum dipanggil sama sekali.
+ * Keduanya pekerjaan yang harus dikerjakan seseorang hari ini, dan keduanya
+ * membatalkan sidangnya bila tidak.
+ *
+ * Kuning tetap kuning dan tetap terbaca pada kotaknya masing-masing. Yang
+ * dihindari hanya menjumlahkannya menjadi satu kotak yang lalu berhenti
+ * berarti apa-apa.
+ *
+ * ============================================================================
+ * DIHITUNG DARI NADANYA, BUKAN DITULIS SEBAGAI DAFTAR KUNCI
+ * ============================================================================
+ *
+ * Daftar kunci kedua di tempat lain adalah daftar yang suatu hari lupa
+ * diperbarui: penanda merah baru ditambahkan, tidak masuk kelompoknya, dan
+ * tidak ada yang gagal - kotaknya hanya diam-diam menghitung kurang. Karena
+ * itu keanggotaannya dihitung dari nada masing-masing penanda.
+ */
+export const NADA_PERLU_DIPERIKSA: readonly string[] = ["bahaya"];
+
+/** Kunci kotak gabungan. Dipakai komponen dan ujinya. */
+export const KUNCI_PERLU_DIPERIKSA = "perlu-diperiksa";

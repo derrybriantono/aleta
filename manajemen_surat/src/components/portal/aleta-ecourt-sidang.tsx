@@ -40,6 +40,8 @@ import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
   KELOMPOK_ALUR,
+  KUNCI_PERLU_DIPERIKSA,
+  NADA_PERLU_DIPERIKSA,
   SEBUTAN_HADIR,
   agendaElitigasi,
   agendaMusyawarah,
@@ -487,7 +489,12 @@ type KeadaanSidang = {
  */
 const TAMPILKAN_PUTUSAN_ECOURT = false;
 
-const KEADAAN_SIDANG: KeadaanSidang[] = [
+/**
+ * Penanda satuan. Kotak gabungan di bawah disusun DARI daftar ini, dan itu
+ * sebabnya keduanya terpisah: kotak gabungan yang berada di dalam daftar yang
+ * ia sapu akan menyapu dirinya sendiri.
+ */
+const KEADAAN_DASAR: KeadaanSidang[] = [
   {
     kunci: "retur",
     label: "Retur",
@@ -693,6 +700,36 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
       return punya !== undefined && !punya.nomor;
     },
   },
+];
+
+/**
+ * Yang menuntut tindakan - dihitung dari nadanya, bukan didaftar ulang.
+ *
+ * Lihat NADA_PERLU_DIPERIKSA di @/lib/keadaan-sidang untuk alasan mengapa
+ * hanya merah, padahal kuning pun mengganggu.
+ */
+const KEADAAN_MENUNTUT_TINDAKAN = KEADAAN_DASAR.filter((x) =>
+  NADA_PERLU_DIPERIKSA.includes(x.nada)
+);
+
+const KEADAAN_SIDANG: KeadaanSidang[] = [
+  // Paling depan di antara penanda keadaan, dan dipisahkan garis dari
+  // penanda satuan di belakangnya: kotak ini dibaca lebih dulu, dan yang
+  // membacanya sedang mencari pekerjaannya - bukan sedang menyaring.
+  {
+    kunci: KUNCI_PERLU_DIPERIKSA,
+    label: "Perlu diperiksa",
+    nada: "bahaya",
+    judul:
+      `Gabungan seluruh penanda merah: ${KEADAAN_MENUNTUT_TINDAKAN.map((x) => x.label).join(", ")}. ` +
+      "Inilah yang membatalkan sidangnya bila tidak diurus hari ini. Penanda kuning " +
+      "sengaja tidak ikut - lihat kotaknya masing-masing.",
+    // "Atau", sama seperti saringan kotak pada umumnya: satu penanda merah
+    // sudah cukup membuat perkaranya perlu diurus.
+    cocok: (baris, antrian) =>
+      KEADAAN_MENUNTUT_TINDAKAN.some((keadaan) => keadaan.cocok(baris, antrian)),
+  },
+  ...KEADAAN_DASAR,
 ];
 
 /** Medan pencarian lanjutan untuk jadwal sidang. */
@@ -2875,15 +2912,24 @@ export function AletaEcourtSidang({
                 (jumlahKeadaan[keadaan.kunci] ?? 0) > 0 ||
                 keadaanTerpilih.includes(keadaan.kunci)
             ).map((keadaan) => (
-              <ChipSaring
-                key={keadaan.kunci}
-                label={keadaan.label}
-                jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
-                nada={keadaan.nada}
-                judul={keadaan.judul}
-                aktif={keadaanTerpilih.includes(keadaan.kunci)}
-                onTekan={() => alihkanKeadaan(keadaan.kunci)}
-              />
+              <Fragment key={keadaan.kunci}>
+                <ChipSaring
+                  label={keadaan.label}
+                  jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
+                  nada={keadaan.nada}
+                  judul={keadaan.judul}
+                  aktif={keadaanTerpilih.includes(keadaan.kunci)}
+                  onTekan={() => alihkanKeadaan(keadaan.kunci)}
+                />
+                {/* Garis kedua: kotak gabungan menjawab "apa pekerjaan saya
+                    hari ini", yang di belakangnya menjawab "tunjukkan yang
+                    begini". Tanpa pemisah, yang pertama terbaca sebagai
+                    salah satu dari yang kedua - dan tidak akan pernah
+                    ditekan orang yang sedang mencari pekerjaannya. */}
+                {keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (
+                  <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+                ) : null}
+              </Fragment>
             ))}
           </div>
         ) : null}
