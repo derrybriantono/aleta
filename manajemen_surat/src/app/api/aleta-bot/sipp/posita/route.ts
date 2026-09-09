@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
       message: "",
       tersentuh: hasil.data?.tersentuh ?? 0,
       berubah: hasil.data?.berubah ?? false,
+      disambung: hasil.data?.disambung ?? 0,
       sebelum: hasil.data?.sebelum ?? "",
       sesudah: hasil.data?.sesudah ?? "",
       alasan: hasil.data?.alasan ?? "",

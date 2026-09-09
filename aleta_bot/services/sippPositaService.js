@@ -82,7 +82,75 @@ function runQuery(sql, params) {
 function tanpaRuang(teks) {
   return String(teks || "")
     .replace(/<br\s*\/?>/gi, "")
+    .replace(/<\/?div[^>]*>/gi, "")
     .replace(/[\s ]+/g, "");
+}
+
+/**
+ * ============================================================================
+ * MEMPERBAIKI PECAHAN PALSU YANG SUDAH TERLANJUR TERSIMPAN
+ * ============================================================================
+ *
+ * Versi perapian sebelumnya memecah kata yang berakhir huruf lalu titik, dan
+ * pecahannya SUDAH tertulis ke SIPP - ia bukan lagi cacat aturan, melainkan
+ * cacat data. Terbaca apa adanya pada posita 510/Pdt.G/2026/PA.Dgl hari ini:
+ *
+ *   "...pisah rumah selama kurang lebih 6 bula\n   n. Sejak saat itu..."
+ *   "...Mikhayla Syahirah binti Dandi, Usia 5 tahu\n   n. Saat ini anak..."
+ *
+ * "bulan" dan "tahun" terpotong, dan huruf terakhirnya berdiri sebagai butir
+ * baru. Pagar isi tidak menahannya - dan memang tidak seharusnya: tidak ada
+ * huruf yang hilang, hanya berpindah baris.
+ *
+ * ============================================================================
+ * YANG DIPERBAIKI HANYA YANG PASTI SALAH
+ * ============================================================================
+ *
+ * Sesudah terpecah, penanda butir yang SUNGGUHAN dan pecahan yang PALSU tampak
+ * persis sama - keduanya "ganti baris, tiga spasi, satu huruf kecil, titik,
+ * spasi, huruf besar":
+ *
+ *   "...disebabkan karena\n   a. Tergugat sering..."   SUNGGUHAN
+ *   "...kurang lebih 6 bula\n   n. Sejak saat itu..."  PALSU
+ *
+ * Tidak ada cara membedakannya dari bentuknya saja; yang membedakan hanya
+ * apakah "karena" dan "bula" itu kata utuh - dan itu menuntut kamus.
+ *
+ * Yang dipakai di sini pembeda yang tidak menuntut kamus dan tidak pernah
+ * salah ke arah yang merusak: HURUFNYA. Penanda butir dalam gugatan tidak
+ * pernah melewati f - a, b, c, kadang d. Huruf g sampai z yang berdiri
+ * sebagai butir hampir pasti pecahan kata: n dari "bulan" dan "tahun", h dari
+ * "rumah", i dari "isteri", t dari "empat".
+ *
+ * Maka g-z disambung kembali, a-f DIBIARKAN. Membiarkan berarti mungkin ada
+ * satu pecahan yang tidak terperbaiki - kekurangan yang disebutkan, dan yang
+ * dapat diperbaiki tangan. Menyambung yang a-f berarti merusak daftar butir
+ * yang benar - kerusakan yang tidak terlihat sampai putusannya terbaca orang.
+ *
+ * Berapa yang disambung dikembalikan kepada pemanggil, supaya panel dapat
+ * menyebutnya dan petugas tahu positanya baru saja diperbaiki - bukan sekadar
+ * dirapikan.
+ */
+
+/** Penanda butir yang wajar dalam gugatan. Di luar ini dianggap pecahan kata. */
+const HURUF_BUTIR_WAJAR = "a-f";
+
+function perbaikiPecahanPalsu(teks) {
+  let jumlah = 0;
+  const hasil = String(teks || "").replace(
+    new RegExp(
+      `([a-z])(?:<br\\s*\\/?>|\\n)[ \\t]*([^${HURUF_BUTIR_WAJAR}a-z]*)([g-z])\\.[ \\t]+(?=[A-Z])`,
+      "g"
+    ),
+    (cocok, sebelum, antara, huruf) => {
+      // `antara` harus kosong: bila ada tanda baca di antaranya, yang berdiri
+      // di sana memang penanda tersendiri, bukan pecahan kata.
+      if (antara) return cocok;
+      jumlah += 1;
+      return `${sebelum}${huruf}. `;
+    }
+  );
+  return { teks: hasil, jumlah };
 }
 
 /**
@@ -155,10 +223,29 @@ const SEBELUM_BUTIR = ".;:,)";
 function rapikanTeksPosita(teks) {
   let hasil = String(teks || "").replace(/\r\n/g, "\n");
 
+  // Pecahan palsu yang SUDAH tersimpan disambung lebih dulu - lihat
+  // perbaikiPecahanPalsu. Dikerjakan sebelum apa pun, supaya kata yang
+  // tersambung kembali ikut dinilai aturan butir seperti kata utuh lainnya.
+  hasil = perbaikiPecahanPalsu(hasil).teks;
+
   // Sudah berupa HTML? Jangan sentuh ganti barisnya - ABT sudah mencetaknya
   // rapi lewat </p>, dan menambahkan <br> di sela-selanya menghasilkan baris
   // kosong berganda di dokumen.
-  const sudahHtml = /<\/p>|<br\s*\/?>/i.test(hasil);
+  // ==========================================================================
+  // <div> DIBUANG ABT TANPA MENINGGALKAN JEJAK - JADI IA DIUBAH LEBIH DULU
+  // ==========================================================================
+  //
+  // cleanHtmlTagSpecial menerjemahkan </p> dan <br> menjadi \par, lalu
+  // memanggil filter_var(..., FILTER_SANITIZE_STRING) yang MENYAPU seluruh
+  // tag yang tersisa. <div> tidak pernah diterjemahkan - ia hanya lenyap,
+  // tanpa meninggalkan satu pun pemisah.
+  //
+  // Posita 510/Pdt.G/2026/PA.Dgl memakai <div>. Itulah sebabnya ia tercetak
+  // menempel walau di layar SIPP tampak berbaris-baris: SIPP menggambar
+  // <div> sebagai blok, ABT membuangnya.
+  hasil = hasil.replace(/<\/div>\s*<div[^>]*>/gi, "<br>");
+  hasil = hasil.replace(/<\/?div[^>]*>/gi, "<br>");
+
 
   // Butir induk: "2017.2. Bahwa" -> "2017.<br>2. Bahwa"
   // Harus didahului tanda baca. Tanpa syarat itu, "berjumlah 15. Bahwa"
@@ -185,16 +272,28 @@ function rapikanTeksPosita(teks) {
     }
   );
 
-  // Ganti baris yang SUDAH ada ikut dijadikan pemisah sungguhan - hanya bila
-  // positanya belum berupa HTML. Tanpa langkah ini, posita yang di layar SIPP
-  // sudah tampak berbaris-baris tetap tercetak sebagai satu gumpalan.
-  if (!sudahHtml) {
-    hasil = hasil.replace(/\n+/g, "<br>");
-  }
+  // Ganti baris yang tersisa dijadikan pemisah sungguhan. Tanpa langkah ini,
+  // posita yang di layar SIPP sudah tampak berbaris-baris tetap tercetak
+  // sebagai satu gumpalan - ganti baris tidak berarti apa-apa bagi RTF.
+  hasil = hasil.replace(/\n+/g, "<br>");
 
   // <br> berganda menjadi paragraf hampa di dokumen cetak, dan paragraf hampa
   // di tengah dalil gugatan terlihat seperti ada butir yang terhapus.
-  hasil = hasil.replace(/(?:<br\s*\/?>\s*){2,}/gi, "<br>");
+  // Hanya <br> BERLEBIH yang dibuang, bukan spasi sesudahnya: `\s*` di ujung
+  // pola ikut menelan tiga spasi lekukan anak butir, dan anak butirnya lalu
+  // rata dengan induknya di dokumen cetak.
+  hasil = hasil.replace(/(<br\s*\/?>)(?:\s*<br\s*\/?>)+/gi, "$1");
+
+  // ==========================================================================
+  // <br> YANG BERSEBELAHAN DENGAN <p> DIBUANG - KEDUANYA MENJADI \par
+  // ==========================================================================
+  //
+  // 6.269 dari 8.097 posita di PA Donggala memakai <p>. Pada teks itu, tiap
+  // ganti baris di antara </p> dan <p> berikutnya baru saja menjadi <br> -
+  // dan cleanHtmlTagSpecial menerjemahkan KEDUANYA menjadi \par. Hasilnya
+  // satu baris kosong di antara tiap butir, sepanjang seluruh posita.
+  hasil = hasil.replace(/<\/p>\s*<br\s*\/?>/gi, "</p>");
+  hasil = hasil.replace(/<br\s*\/?>\s*(<p[^>]*>)/gi, "$1");
 
   // Pemisah di ujung tidak memisahkan apa pun.
   return hasil.replace(/^(?:\s|<br\s*\/?>)+/i, "").replace(/(?:\s|<br\s*\/?>)+$/i, "");
@@ -230,6 +329,9 @@ async function rapikanPosita(perkaraId, ujiKering) {
   }
 
   const baru = rapikanTeksPosita(lama);
+  // Berapa pecahan kata yang disambung kembali - disebut terpisah dari
+  // "dirapikan", sebab yang satu memperbaiki data yang rusak.
+  const disambung = perbaikiPecahanPalsu(lama).jumlah;
 
   // ==========================================================================
   // PAGARNYA TETAP DIPERIKSA, WALAU KEDUANYA KINI DARI SATU SUMBER
@@ -249,11 +351,11 @@ async function rapikanPosita(perkaraId, ujiKering) {
   }
 
   if (lama === baru) {
-    return { ok: true, tersentuh: 0, berubah: false, sebelum: lama, sesudah: baru, alasan: "sudah rapi" };
+    return { ok: true, tersentuh: 0, berubah: false, disambung, sebelum: lama, sesudah: baru, alasan: "sudah rapi" };
   }
 
   if (ujiKering) {
-    return { ok: true, tersentuh: 0, berubah: true, sebelum: lama, sesudah: baru, alasan: "uji kering" };
+    return { ok: true, tersentuh: 0, berubah: true, disambung, sebelum: lama, sesudah: baru, alasan: "uji kering" };
   }
 
   const hasil = await runQuery("UPDATE perkara SET posita = ? WHERE perkara_id = ? LIMIT 1", [
@@ -265,7 +367,7 @@ async function rapikanPosita(perkaraId, ujiKering) {
     return { ok: false, alasan: `UPDATE menyentuh ${tersentuh} baris, bukan satu.` };
   }
 
-  return { ok: true, tersentuh, berubah: true, sebelum: lama, sesudah: baru };
+  return { ok: true, tersentuh, berubah: true, disambung, sebelum: lama, sesudah: baru };
 }
 
-module.exports = { rapikanPosita, rapikanTeksPosita, tanpaRuang, BATAS_HURUF };
+module.exports = { rapikanPosita, rapikanTeksPosita, perbaikiPecahanPalsu, tanpaRuang, BATAS_HURUF };

@@ -2055,6 +2055,8 @@ export async function getGatewaySippPositaRapikan(perkaraId: string, ujiKering: 
   return gatewayFetch<{
     tersentuh: number;
     berubah: boolean;
+    /** Pecahan kata yang disambung kembali - kerusakan data, bukan penataan. */
+    disambung: number;
     sebelum: string;
     sesudah: string;
     alasan: string;

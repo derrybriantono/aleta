@@ -468,17 +468,27 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
   const isi = luar?.data ?? luar;
   if (!isi?.available) return { ok: false, pesan: isi?.message || "ALETA belum dapat menjawab." };
 
+  const disambung = Number(isi.disambung) || 0;
   return {
     ok: true,
     berubah: isi.berubah === true,
+    disambung,
     sebelum: String(isi.sebelum || ""),
     sesudah: String(isi.sesudah || ""),
+    // Perbaikan data disebut TERPISAH dari penataan. Yang satu menyambung
+    // kata yang terpecah - kerusakan yang sudah tersimpan - dan yang lain
+    // hanya menata barisnya. Menggabungkannya menjadi satu kata "dirapikan"
+    // menyembunyikan bahwa positanya baru saja diperbaiki.
     pesan:
       isi.alasan === "sudah rapi"
         ? "positanya memang sudah rapi"
         : ujiKering
-          ? "pratinjau"
-          : "tersimpan di SIPP",
+          ? disambung
+            ? `pratinjau — ${disambung} kata yang terpecah akan disambung kembali`
+            : "pratinjau"
+          : disambung
+            ? `tersimpan di SIPP, ${disambung} kata yang terpecah disambung kembali`
+            : "tersimpan di SIPP",
   };
 }
 // ─── Keterangan saksi: disunting lewat rute ABT sendiri ──────────────────────

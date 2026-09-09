@@ -1164,6 +1164,7 @@ router.post("/sipp/posita/rapikan", requireInternalToken, async (req, res) => {
       ok: true,
       tersentuh: hasil.tersentuh,
       berubah: Boolean(hasil.berubah),
+      disambung: Number(hasil.disambung) || 0,
       sebelum: hasil.sebelum,
       sesudah: hasil.sesudah,
       alasan: hasil.alasan || "",

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+import { createRequire } from "node:module";
+
 import { describe, expect, it } from "vitest";
+
+/** Layanan bot dijalankan langsung - keduanya CommonJS. */
+const require_ = createRequire(import.meta.url);
 
 /**
  * ============================================================================
@@ -337,5 +342,67 @@ describe("dua cacat yang dilaporkan dari layar", () => {
     // Baris UPDATE berada SESUDAH keluarnya uji kering.
     expect(isi.indexOf("if (ujiKering)")).toBeLessThan(isi.indexOf("UPDATE perkara SET posita"));
     expect(potong.slice(0, 200)).toContain("berubah: true");
+  });
+});
+
+describe("kerusakan posita yang sudah terlanjur tersimpan", () => {
+  const layanan = require_(
+    path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippPositaService.js")
+  ) as {
+    rapikanTeksPosita: (t: string) => string;
+    perbaikiPecahanPalsu: (t: string) => { teks: string; jumlah: number };
+    tanpaRuang: (t: string) => string;
+  };
+
+  // Apa adanya dari posita 510/Pdt.G/2026/PA.Dgl sesudah versi lama menulis.
+  const RUSAK =
+    "<div>3. Bahwa anak bernama Mikhayla, Usia 5 tahu\n   n. Saat ini ikut Penggugat;</div>\n" +
+    "<div>4. Bahwa tidak harmonis disebabkan karena\n   a. Tergugat mabuk.\n   b. Tergugat memukul;</div>\n" +
+    "<div>5. Bahwa pisah rumah kurang lebih 6 bula\n   n. Sejak itu tidak terlaksana;</div>";
+
+  it("kata yang terpecah disambung kembali", () => {
+    // "bulan" dan "tahun" terpotong, huruf terakhirnya berdiri sebagai butir.
+    // Pagar isi tidak menahannya - tidak ada huruf yang hilang, hanya
+    // berpindah baris.
+    expect(layanan.perbaikiPecahanPalsu(RUSAK).jumlah).toBe(2);
+    const rapi = layanan.rapikanTeksPosita(RUSAK);
+    expect(rapi).toContain("Usia 5 tahun. Saat ini");
+    expect(rapi).toContain("6 bulan. Sejak itu");
+  });
+
+  it("butir a dan b yang SUNGGUHAN tidak ikut disambung", () => {
+    // Sesudah terpecah, penanda sungguhan dan pecahan palsu tampak persis
+    // sama. Pembedanya hurufnya: penanda butir tidak pernah melewati f.
+    const rapi = layanan.rapikanTeksPosita(RUSAK);
+    expect(rapi).toContain("<br>   a. Tergugat mabuk.");
+    expect(rapi).toContain("<br>   b. Tergugat memukul;");
+  });
+
+  it("<div> diubah jadi <br> - ABT membuangnya tanpa jejak", () => {
+    // cleanHtmlTagSpecial menerjemahkan </p> dan <br> menjadi \par lalu
+    // memanggil filter_var(FILTER_SANITIZE_STRING) yang menyapu sisanya.
+    // <div> tidak pernah diterjemahkan - ia hanya lenyap, tanpa pemisah.
+    const rapi = layanan.rapikanTeksPosita(RUSAK);
+    expect(rapi).not.toContain("<div");
+    expect(rapi).toContain("<br>");
+  });
+
+  it("tidak ada baris kosong, dan lekukan anak butir utuh", () => {
+    const rapi = layanan.rapikanTeksPosita(RUSAK);
+    const baris = rapi.split(/<br\s*\/?>/i);
+    expect(baris.filter((x) => !x.trim()).length).toBe(0);
+    expect(baris.some((x) => x.startsWith("   a. "))).toBe(true);
+  });
+
+  it("isi tetap utuh sesudah diperbaiki DAN dirapikan", () => {
+    const rapi = layanan.rapikanTeksPosita(RUSAK);
+    expect(layanan.tanpaRuang(rapi)).toBe(layanan.tanpaRuang(RUSAK));
+  });
+
+  it("posita ber-<p> tidak mendapat baris kosong tambahan", () => {
+    // 6.269 dari 8.097 posita memakai <p>. Ganti baris di antara </p> dan
+    // <p> berikutnya akan menjadi <br>, dan keduanya menjadi \par.
+    const teks = "<p>1. Bahwa satu.</p>\n<p>2. Bahwa dua.</p>";
+    expect(layanan.rapikanTeksPosita(teks)).toBe("<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>");
   });
 });
