@@ -155,6 +155,103 @@ function perbaikiPecahanPalsu(teks) {
 
 /**
  * ============================================================================
+ * MEMERIKSA KEADAAN SATU POSITA - TANPA MENGUBAH APA PUN
+ * ============================================================================
+ *
+ * Tiga keadaan yang berbeda sebabnya, berbeda cara memperbaikinya, dan
+ * berbeda pula siapa yang boleh memutuskannya:
+ *
+ *   pecahanPasti    kata terpecah pada huruf g-z. Penanda butir dalam gugatan
+ *                   tidak pernah melewati f, jadi huruf ini hampir pasti
+ *                   pecahan kata: n dari "bulan" dan "tahun", h dari "rumah".
+ *                   Disambung sendiri oleh perapian.
+ *
+ *   pecahanRagu     bentuk yang SAMA, tetapi hurufnya a-f. Tidak dapat
+ *                   dibedakan dari penanda butir yang sungguhan tanpa kamus -
+ *                   "karena" + "a" dan "terlaksan" + "a" tampak identik.
+ *                   TIDAK disentuh; dikembalikan beserta konteksnya supaya
+ *                   manusia yang memutuskan.
+ *
+ *   tanpaPemisah    tidak ada </p>, tidak ada <br>, dan ada butir yang
+ *                   menempel. Ia akan tercetak sebagai satu gumpalan di
+ *                   dokumen Word - bukan kerusakan buatan siapa pun,
+ *                   melainkan cara positanya diketik sejak awal.
+ *
+ * Fungsi ini MURNI: masuk teks, keluar keterangan. Ia tidak menyentuh basis
+ * data, dan tidak dipakai memutuskan apa pun sendiri - ia yang dipakai skrip
+ * pemindai untuk melaporkan, dan panel untuk menanyakan.
+ */
+
+/** Panjang konteks di kiri dan kanan temuan, supaya cukup dinilai manusia. */
+const LEBAR_KONTEKS = 45;
+
+function konteksSekitar(teks, indeks, panjang) {
+  const awal = Math.max(0, indeks - LEBAR_KONTEKS);
+  const akhir = Math.min(teks.length, indeks + panjang + LEBAR_KONTEKS);
+  return (awal > 0 ? "…" : "") + teks.slice(awal, akhir).replace(/\s+/g, " ") + (akhir < teks.length ? "…" : "");
+}
+
+/**
+ * Mencari bentuk "kata, pemisah, satu huruf, titik, huruf besar".
+ *
+ * Satu lintasan untuk kedua golongan - pasti dan ragu - sebab keduanya
+ * bentuknya persis sama dan hanya hurufnya yang membedakan. Dua lintasan
+ * dengan dua pola yang hampir sama adalah dua pola yang akan berselisih.
+ */
+function cariPecahan(teks) {
+  const pola = /([a-z])(?:<br\s*\/?>|\n)[ \t]*([a-z])\.[ \t]+(?=[A-Z])/g;
+  const pasti = [];
+  const ragu = [];
+
+  let cocok;
+  while ((cocok = pola.exec(teks)) !== null) {
+    const huruf = cocok[2];
+    const temuan = {
+      huruf,
+      // Kata yang akan terbentuk bila disambung - itu yang dinilai manusia:
+      // "bulan" masuk akal, "karenaa" tidak.
+      sambungan: `${teks.slice(Math.max(0, cocok.index - 14), cocok.index + 1)}${huruf}`.trim(),
+      konteks: konteksSekitar(teks, cocok.index, cocok[0].length),
+    };
+    if (huruf >= "g") pasti.push(temuan);
+    else ragu.push(temuan);
+    // exec dengan lookahead tidak memajukan lastIndex melewati huruf besarnya,
+    // jadi pencocokan berikutnya tetap dimulai sesudah temuan ini.
+  }
+
+  return { pasti, ragu };
+}
+
+/** Benar bila positanya akan tercetak menempel: tidak ada pemisah sama sekali. */
+function tanpaPemisah(teks) {
+  const isi = String(teks || "");
+  if (/<\/p>|<br\s*\/?>|<\/?div[^>]*>/i.test(isi)) return false;
+  // Ada butir yang menempel? "…2017.2. Bahwa" atau "…karena a. Tergugat".
+  return /[.;:,)][ \t]*\d{1,2}\.[ \t]+[A-Z]/.test(isi) || /[ \t][a-z]\.[ \t]+[A-Z]/.test(isi);
+}
+
+/**
+ * Keterangan lengkap satu posita.
+ *
+ * @param {string} teks isi kolom posita apa adanya
+ */
+function periksaPosita(teks) {
+  const isi = String(teks || "");
+  const { pasti, ragu } = cariPecahan(isi);
+  return {
+    kosong: !isi.trim(),
+    huruf: isi.length,
+    pecahanPasti: pasti,
+    pecahanRagu: ragu,
+    tanpaPemisah: tanpaPemisah(isi),
+    // Benar bila perapian akan mengubah sesuatu - dipakai pemindai untuk
+    // memisahkan "perlu dirapikan" dari "sudah rapi".
+    perluDirapikan: pasti.length > 0 || tanpaPemisah(isi),
+  };
+}
+
+/**
+ * ============================================================================
  * PEMISAHNYA <br>, BUKAN GANTI BARIS - SEBAB RTF TIDAK MENGENAL GANTI BARIS
  * ============================================================================
  *
@@ -370,4 +467,11 @@ async function rapikanPosita(perkaraId, ujiKering) {
   return { ok: true, tersentuh, berubah: true, disambung, sebelum: lama, sesudah: baru };
 }
 
-module.exports = { rapikanPosita, rapikanTeksPosita, perbaikiPecahanPalsu, tanpaRuang, BATAS_HURUF };
+module.exports = {
+  rapikanPosita,
+  rapikanTeksPosita,
+  perbaikiPecahanPalsu,
+  periksaPosita,
+  tanpaRuang,
+  BATAS_HURUF,
+};
