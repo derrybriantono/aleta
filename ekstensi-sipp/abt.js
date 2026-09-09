@@ -661,26 +661,34 @@ function susunPanelAbt(jatiDiri) {
         "ALETA tidak memilih hurufnya. Yang di bawah hanya menunjuk, beserta bunyi resminya."
       )
     );
+    // ========================================================================
+    // SELURUH DASAR DIGAMBAR, TIDAK SATU PUN DISEMBUNYIKAN
+    // ========================================================================
+    //
+    // Huruf a, b, dan f berdiri di atas DUA naskah - PP 9/1975 dan KHI - dan
+    // bunyinya tidak sama persis. Menampilkan salah satunya saja sama dengan
+    // memilihkan naskah mana yang dikutip, dan itu memilihkan dasar hukum.
     for (const h of daftar) {
-      const baris = buatElemen("div", "aleta-abt-kutipan");
-      baris.appendChild(buatElemen("span", "aleta-abt-asal", `huruf ${h.huruf}`));
-      const isiBaris = buatElemen("span", "aleta-abt-kalimat", h.bunyi);
-      baris.appendChild(isiBaris);
-      kotak.appendChild(baris);
-      const jejak = buatElemen(
-        "div",
-        "aleta-abt-catatan",
-        `dipicu kata: ${h.pemicu.join(", ")}${h.syarat ? ` — ${h.syarat}` : ""}`
+      const kepalaHuruf = buatElemen("div", "aleta-abt-kartu-kepala");
+      kepalaHuruf.appendChild(buatElemen("span", "aleta-abt-kode", `huruf ${h.huruf}`));
+      kepalaHuruf.appendChild(
+        buatElemen("span", "aleta-abt-nama", `dipicu kata: ${h.pemicu.join(", ")}`)
       );
-      kotak.appendChild(jejak);
+      kotak.appendChild(kepalaHuruf);
+
+      for (const d of h.dasar || []) {
+        const baris = buatElemen("div", "aleta-abt-kutipan");
+        baris.appendChild(buatElemen("span", "aleta-abt-asal", d.sumber.nama));
+        baris.appendChild(buatElemen("span", "aleta-abt-kalimat", d.bunyi));
+        kotak.appendChild(baris);
+        if (d.catatanNaskah) {
+          kotak.appendChild(buatElemen("div", "aleta-abt-kutipan-sumber", d.catatanNaskah));
+        }
+      }
+      if (h.syarat) kotak.appendChild(buatElemen("div", "aleta-abt-catatan", h.syarat));
     }
     for (const h of belumSiap) {
       kotak.appendChild(buatElemen("div", "aleta-abt-catatan", `huruf ${h.huruf}: ${h.sebab}`));
-    }
-    if (daftar[0]) {
-      kotak.appendChild(
-        buatElemen("div", "aleta-abt-kutipan-sumber", `Bunyi pasal dari ${daftar[0].sumber.nama}`)
-      );
     }
     wadahHuruf.appendChild(kotak);
   }

@@ -53,10 +53,17 @@ type Aturan = {
   HURUF: {
     huruf: string;
     siap: boolean;
-    bunyi: string;
-    sumber: { nama: string; tautan: string; pembanding?: string };
+    dasar: {
+      bunyi: string;
+      catatanNaskah: string;
+      sumber: { nama: string; tautan: string; pembanding?: string };
+    }[];
   }[];
-  usulkan: (teks: string) => { huruf: string; syarat: string }[];
+  usulkan: (teks: string) => {
+    huruf: string;
+    syarat: string;
+    dasar: { bunyi: string; sumber: { nama: string } }[];
+  }[];
   belumSiap: () => { huruf: string; sebab: string }[];
 };
 type Pustaka = {
@@ -336,33 +343,63 @@ describe("nomor 4 - pemeriksa silang dua saksi", () => {
 });
 
 describe("nomor 6 - huruf alasan diambil dari naskah resmi", () => {
-  it("bunyinya disalin dari Pasal 19 PP 9/1975, bukan dari ingatan", () => {
+  it("huruf F berdiri di atas DUA naskah, bukan satu", () => {
+    // Isinya sama, bunyinya tidak - dan selisih kata itu ikut tercetak ke
+    // dalam putusan. Menampilkan salah satunya saja sama dengan memilihkan
+    // naskah mana yang dikutip.
     const f = aturan.HURUF.find((h) => h.huruf === "F");
-    expect(f?.bunyi).toBe(
+    expect(f?.dasar).toHaveLength(2);
+
+    const pp = f?.dasar.find((d) => d.sumber.tautan.includes("peraturan.go.id"));
+    expect(pp?.bunyi).toBe(
       "Antara suami dan isteri terus-menerus terjadi perselisihan dan pertengkaran dan tidak ada harapan akan hidup rukun lagi dalam rumah tangga"
     );
-    expect(f?.sumber.tautan).toBe("https://peraturan.go.id/files/pp9-1975.pdf");
+
+    const khi = f?.dasar.find((d) => d.sumber.tautan.includes("simbi.kemenag.go.id"));
+    expect(khi?.bunyi).toBe(
+      "antara suami dan isteri terus menerus terjadi perselisihan dan pertengkaran dan tidak ada harapan akan hidup rukun lagi dalam rumah tangga"
+    );
+    // Selisihnya disebut, bukan didiamkan.
+    expect(khi?.catatanNaskah).toContain("terus menerus");
   });
 
-  it("huruf H disalin dari Pasal 116 KHI, bukan dari PP 9/1975", () => {
-    // Pasal 19 PP itu berhenti di huruf f. Huruf g dan h hanya ada di KHI -
-    // dan KHI-lah dasar yang dipakai Pengadilan Agama.
+  it("selisih kata antar naskah tidak pernah dicampur jadi satu kalimat", () => {
+    // "pemabok" milik PP, "pemabuk" milik KHI. Mencampurnya menghasilkan
+    // kutipan yang tidak ada di naskah mana pun.
+    const a = aturan.HURUF.find((h) => h.huruf === "A");
+    const pp = a?.dasar.find((d) => d.sumber.tautan.includes("peraturan.go.id"));
+    const khi = a?.dasar.find((d) => d.sumber.tautan.includes("simbi.kemenag.go.id"));
+    expect(pp?.bunyi).toContain("pemabok");
+    expect(pp?.bunyi).not.toContain("pemabuk");
+    expect(khi?.bunyi).toContain("pemabuk");
+    expect(khi?.bunyi).not.toContain("pemabok");
+  });
+
+  it("usulan membawa SELURUH dasar huruf itu", () => {
+    const usul = aturan.usulkan("perselisihan dan pertengkaran terus menerus");
+    const f = usul.find((u) => u.huruf === "F");
+    expect(f?.dasar).toHaveLength(2);
+  });
+
+  it("huruf H hanya punya SATU dasar, dan itu KHI", () => {
+    // Pasal 19 PP itu berhenti di huruf f. Huruf g dan h hanya ada di KHI.
     const h = aturan.HURUF.find((x) => x.huruf === "H");
     expect(h?.siap).toBe(true);
-    expect(h?.bunyi).toBe(
+    expect(h?.dasar).toHaveLength(1);
+    expect(h?.dasar[0].bunyi).toBe(
       "peralihan agama atau murtad yang menyebabkan terjadinya ketidak rukunan dalam rumah tangga"
     );
-    expect(h?.sumber.nama).toContain("Pasal 116 Kompilasi Hukum Islam");
-    expect(h?.sumber.tautan).toContain("simbi.kemenag.go.id");
+    expect(h?.dasar[0].sumber.nama).toContain("Pasal 116 Kompilasi Hukum Islam");
+    expect(h?.dasar[0].sumber.tautan).toContain("simbi.kemenag.go.id");
   });
 
-  it("bunyi huruf H disepakati DUA salinan resmi, bukan satu", () => {
+  it("bunyi KHI disepakati DUA salinan resmi, bukan satu", () => {
     // Lapisan teks kedua terbitan itu hasil pindaian dan memuat salah baca -
     // salinan pertama bahkan menulis penanda hurufnya "k." alih-alih "h.".
     // Satu salinan saja tidak cukup untuk menyalin naskah hukum.
     const h = aturan.HURUF.find((x) => x.huruf === "H");
-    expect(h?.sumber.pembanding).toBeTruthy();
-    expect(h?.sumber.pembanding).not.toBe(h?.sumber.tautan);
+    expect(h?.dasar[0].sumber.pembanding).toBeTruthy();
+    expect(h?.dasar[0].sumber.pembanding).not.toBe(h?.dasar[0].sumber.tautan);
   });
 
   it("tidak ada lagi huruf yang bunyinya belum diambil", () => {
