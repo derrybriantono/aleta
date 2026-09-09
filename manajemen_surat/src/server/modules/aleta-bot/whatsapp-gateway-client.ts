@@ -2000,6 +2000,7 @@ export async function getGatewayAbtUsulan(muatan: {
   sumber?: "semua" | "sipp" | "saksi";
   saksi1?: string;
   saksi2?: string;
+  tanggalSidang?: string;
 }) {
   return gatewayFetch<{
     sipp: Record<string, unknown> | null;

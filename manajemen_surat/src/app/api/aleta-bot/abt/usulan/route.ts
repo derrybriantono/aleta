@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       sumber?: unknown;
       saksi1?: unknown;
       saksi2?: unknown;
+      tanggalSidang?: unknown;
     }>(request).catch(() => ({}) as Record<string, unknown>);
 
     const nomorPerkara = String(body.nomorPerkara || "").trim();
@@ -70,6 +71,10 @@ export async function POST(request: NextRequest) {
       sumber,
       saksi1: String(body.saksi1 || "").slice(0, BATAS_TEKS),
       saksi2: String(body.saksi2 || "").slice(0, BATAS_TEKS),
+      // Tanggal sidang dibaca ekstensi dari halaman ABT itu sendiri
+      // (variabel 0033). Dipakai menghitung ulang lama pisah: kalimat saksi
+      // benar pada hari ia diperiksa, dan mulai keliru pada sidang berikutnya.
+      tanggalSidang: String(body.tanggalSidang || "").slice(0, 40),
     });
 
     if (!hasil.ok) {

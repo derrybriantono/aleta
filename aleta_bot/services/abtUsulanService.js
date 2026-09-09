@@ -63,6 +63,8 @@
  */
 
 const db = require("../db_config");
+const aturanAlasan = require("./abtAturanAlasan");
+const kalimatBaku = require("./abtKalimatBaku");
 
 /** Kueri baca-saja ke SIPP. Satu-satunya cara berkas ini menyentuh SIPP. */
 function runQuery(sql, params) {
@@ -147,6 +149,72 @@ function ambilLamaPisah(kalimat) {
 
 /**
  * ============================================================================
+ * LAMA PISAH DIHITUNG, BUKAN DIPERCAYA BEGITU SAJA
+ * ============================================================================
+ *
+ * Saksi berkata "kira-kira sudah sekitar 4 bulan". Kalimat itu benar pada hari
+ * saksi diperiksa - dan mulai keliru pada sidang berikutnya. Sidang yang
+ * ditunda dua kali membuat angka yang tertulis di putusan lebih pendek
+ * daripada kenyataannya, dan tidak ada satu pun yang memberi tahu.
+ *
+ * Karena itu 9944 dihitung dari 0246 sampai TANGGAL SIDANG - tanggal yang ada
+ * di halaman ABT itu sendiri, variabel 0033 - lalu disandingkan dengan angka
+ * yang disebut saksi. Bila keduanya berbeda, keduanya ditampilkan; yang
+ * memutuskan tetap manusia, sebab "sejak Mei" bisa berarti awal Mei atau akhir
+ * Mei, dan selisih itu tidak dapat diperas dari kalimatnya.
+ */
+const POLA_BULAN_TAHUN = /^(?:bulan\s+)?([A-Za-z]+)?\s*(\d{4})$/;
+
+function bulanKeAngka(nama) {
+  const i = BULAN.findIndex((b) => b.toLowerCase() === String(nama || "").toLowerCase());
+  return i < 0 ? null : i;
+}
+
+/** Tanggal sidang "22 September 2026" atau "22/09/2026" menjadi Date. */
+function uraikanTanggal(teks) {
+  const bersih = String(teks || "").replace(/\s+/g, " ").trim();
+  const angka = bersih.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (angka) return new Date(Number(angka[3]), Number(angka[2]) - 1, Number(angka[1]));
+  const panjang = bersih.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (panjang) {
+    const bulan = bulanKeAngka(panjang[2]);
+    if (bulan === null) return null;
+    return new Date(Number(panjang[3]), bulan, Number(panjang[1]));
+  }
+  return null;
+}
+
+/**
+ * Menghitung lama pisah dari nilai 0246 sampai tanggal sidang.
+ *
+ * Mengembalikan null bila salah satunya tidak terbaca - lebih baik tidak
+ * mengusulkan apa pun daripada mengusulkan angka yang dihitung dari tanggal
+ * yang salah dibaca.
+ */
+function hitungLamaPisah(nilai0246, tanggalSidang) {
+  const cocok = String(nilai0246 || "").replace(/\s+/g, " ").trim().match(POLA_BULAN_TAHUN);
+  if (!cocok) return null;
+  const bulanMulai = cocok[1] ? bulanKeAngka(cocok[1]) : 0;
+  if (bulanMulai === null) return null;
+  const sidang = uraikanTanggal(tanggalSidang);
+  if (!sidang || Number.isNaN(sidang.getTime())) return null;
+
+  const mulai = new Date(Number(cocok[2]), bulanMulai, 1);
+  if (sidang < mulai) return null;
+
+  let bulan = (sidang.getFullYear() - mulai.getFullYear()) * 12 + (sidang.getMonth() - mulai.getMonth());
+  if (bulan < 0) bulan = 0;
+  const tahun = Math.floor(bulan / 12);
+  const sisaBulan = bulan % 12;
+
+  const potong = [];
+  if (tahun > 0) potong.push(`${tahun} tahun`);
+  if (sisaBulan > 0 || tahun === 0) potong.push(`${sisaBulan} bulan`);
+  return { teks: potong.join(" "), totalBulan: bulan };
+}
+
+/**
+ * ============================================================================
  * HURUF ALASAN PERCERAIAN DIUSULKAN, TIDAK DIPUTUSKAN
  * ============================================================================
  *
@@ -223,6 +291,8 @@ function usulan(kode, nama, hasil, sumber) {
     nilai: hasil.nilai,
     keyakinan: hasil.keyakinan,
     bentrok: hasil.bentrok,
+    catatan: hasil.catatan || "",
+    dihitung: hasil.dihitung === true,
     sumber: sumber || [],
   };
 }
@@ -234,7 +304,7 @@ function usulan(kode, nama, hasil, sumber) {
  * memverifikasi tidak perlu membaca ulang dua blok panjang - cukup membaca
  * satu baris di sebelah usulannya.
  */
-function dariKeteranganSaksi(teksSaksi1, teksSaksi2) {
+function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang) {
   const b1 = butirKeterangan(teksSaksi1);
   const b2 = butirKeterangan(teksSaksi2);
   const semua = [...b1, ...b2];
@@ -256,6 +326,26 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2) {
   const lama1 = ambilLamaPisah(cariButir(b1, ["pisah", "bulan"]) || pisah1);
   const lama2 = ambilLamaPisah(cariButir(b2, ["pisah", "bulan"]) || pisah2);
   const lama = gabungkan(lama1, lama2);
+
+  // Dihitung ulang dari 0246 sampai tanggal sidang. Yang dihitung MENGALAHKAN
+  // yang diucapkan - kalimat saksi benar pada hari ia diperiksa, dan mulai
+  // keliru pada sidang berikutnya. Yang diucapkan tetap ditampilkan sebagai
+  // pembanding, bukan dibuang.
+  const dihitung = hitungLamaPisah(pisah.nilai, tanggalSidang);
+  if (dihitung) {
+    const diucapkan = lama.nilai;
+    lama.nilai = dihitung.teks;
+    lama.dihitung = true;
+    if (diucapkan && diucapkan !== dihitung.teks) {
+      lama.catatan =
+        `Saksi menyebut "${diucapkan}"; dihitung dari ${pisah.nilai} sampai sidang ${tanggalSidang} ` +
+        `hasilnya ${dihitung.teks}. Angka yang diucapkan benar pada hari saksi diperiksa.`;
+    } else if (!diucapkan) {
+      lama.catatan = `Dihitung dari ${pisah.nilai} sampai tanggal sidang ${tanggalSidang}.`;
+      lama.keyakinan = "cukup";
+    }
+    if (lama.keyakinan === "kosong") lama.keyakinan = "cukup";
+  }
 
   // 7035 - siapa yang meninggalkan kediaman bersama. Jawabannya satu kata,
   // dan blangkonya memang menuntut satu kata.
@@ -291,12 +381,8 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2) {
       cariButir(butir, ["dirukunkan"]) || cariButir(butir, ["didamaikan"]) || cariButir(butir, ["rukunkan"]);
     if (!kalimat) return { nilai: "", kalimat: "" };
     const gagal = /tidak berhasil|namun gagal|tidak membuahkan/i.test(kalimat);
-    return {
-      nilai: gagal
-        ? "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat, namun tidak berhasil"
-        : "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat",
-      kalimat,
-    };
+    // Kalimatnya dari pustaka, bukan disusun di sini - lihat abtKalimatBaku.js.
+    return { nilai: kalimatBaku.kalimatUpayaDamai(gagal), kalimat };
   };
   const damai1 = damai(b1);
   const damai2 = damai(b2);
@@ -306,15 +392,45 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2) {
   // saksi, bukan dari daftar tetap. Blangkonya mengingatkan "JANGAN LUPA
   // TAMBAH DAN SEBELUM ALASAN TERAKHIR", jadi penyambungnya diurus di sini.
   const ciri = usulkanHuruf(semua);
-  const kalimatAlasan = ciri.length
-    ? ciri.length === 1
-      ? ciri[0]
-      : `${ciri.slice(0, -1).join(", ")} dan ${ciri[ciri.length - 1]}`
-    : "";
+  const kalimatAlasan = kalimatBaku.susunAlasan(ciri);
+
+  // ==========================================================================
+  // NOMOR 4 - PEMERIKSA SILANG DUA SAKSI
+  // ==========================================================================
+  //
+  // Yang dikumpulkan bukan hanya selisih pada enam variabel di atas, melainkan
+  // juga selisih pada fakta yang tidak punya variabelnya sendiri - berapa kali
+  // saksi melihat pertengkaran, misalnya. Keduanya persoalan pembuktian yang
+  // sama beratnya, dan keduanya lebih murah ditemukan sekarang daripada
+  // sesudah putusan dibacakan.
+  const selisih = [];
+  const bandingkan = (judul, a, b) => {
+    const kiri = (a || "").trim();
+    const kanan = (b || "").trim();
+    if (kiri && kanan && kiri.toLowerCase() !== kanan.toLowerCase()) {
+      selisih.push({ hal: judul, saksi1: kiri, saksi2: kanan });
+    }
+  };
+  bandingkan("Awal konflik", ambilBulanTahun(konflik1).nilai, ambilBulanTahun(konflik2).nilai);
+  bandingkan("Pisah rumah", ambilBulanTahun(pisah1).nilai, ambilBulanTahun(pisah2).nilai);
+  bandingkan("Lama pisah", lama1, lama2);
+  bandingkan("Yang meninggalkan", siapa1.nilai, siapa2.nilai);
+
+  const kali = (butir) => {
+    const kalimat = cariButir(butir, ["sebanyak"]);
+    const angka = kalimat.match(/sebanyak\s+(\d+)\s*kali/i);
+    return angka ? `${angka[1]} kali` : "";
+  };
+  bandingkan("Berapa kali saksi melihat pertengkaran", kali(b1), kali(b2));
 
   return {
     butir: { saksi1: b1.length, saksi2: b2.length },
     ciri,
+    selisih,
+    // Nomor 6: huruf alasan diusulkan beserta bunyi resminya, tanpa satu pun
+    // ditandai terpilih - lihat abtAturanAlasan.js.
+    huruf: aturanAlasan.usulkan(semua.join(" ")),
+    hurufBelumSiap: aturanAlasan.belumSiap(),
     usulan: [
       usulan(
         "0222",
@@ -449,6 +565,8 @@ module.exports = {
   ambilBulanTahun,
   ambilLamaPisah,
   usulkanHuruf,
+  hitungLamaPisah,
+  uraikanTanggal,
   dariKeteranganSaksi,
   dariSipp,
 };

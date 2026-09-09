@@ -2345,3 +2345,32 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   color: var(--aleta-tulisan-lembut);
   font-style: italic;
 }
+
+/* Arti ketiga tingkat keyakinan, dinyatakan sekali di kepala panel.
+   Lencana tanpa keterangan mengajari orang menebak, dan tebakan yang keliru
+   pada "cukup" berarti satu keterangan saksi dianggap dua. */
+.aleta-abt-petunjuk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+
+.aleta-abt-petunjuk .aleta-tanda {
+  margin-left: 0;
+}
+
+/* Kartu selisih antar saksi. Sengaja bertepi merah dan tanpa tombol apa pun:
+   ini bukan sesuatu yang diperbaiki dengan mengisi kolom. */
+.aleta-abt-kartu-awas {
+  border-color: var(--aleta-lewat);
+  border-left-width: 3px;
+}
+
+.aleta-abt-kutipan-sumber {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--aleta-garis);
+  font-size: 10.5px;
+  color: var(--aleta-tulisan-lembut);
+}

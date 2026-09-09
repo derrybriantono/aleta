@@ -64,6 +64,19 @@ const VARIABEL_SASARAN = [
 /** Keterangan saksi - sumber bagi enam variabel pertama. */
 const VAR_SAKSI_1 = "2021";
 const VAR_SAKSI_2 = "2022";
+/** Tanggal sidang - dipakai menghitung ulang lama pisah (9944). */
+const VAR_TGL_SIDANG = "0033";
+
+/**
+ * Variabel "(OTOMATIS)" yang isinya disusun ABT dari kerangka fakta.
+ *
+ * Selama kerangkanya kosong, keempatnya berbunyi "TIDAK BENAR QUERY NYA" - dan
+ * kalimat itu ikut tercetak ke dalam putusan bila tidak ada yang menahannya.
+ */
+const VAR_OTOMATIS = ["8521", "8522", "8528", "8530"];
+
+/** Isi yang berarti "belum ada", menurut ABT sendiri. */
+const ISI_KOSONG = /^(DATA_TIDAK_ADA|TIDAK BENAR QUERY NYA|BELUM ISI|-)?$/i;
 
 const ALETA_API_ABT = "/aleta/api/aleta-bot/abt/usulan";
 
@@ -123,6 +136,12 @@ function jatiDiriPerkara() {
     if (cocok) return { perkaraId: cocok[2], perkTemp: cocok[3] };
   }
   return null;
+}
+
+/** Isi satu variabel di halaman, apa adanya. */
+function nilaiVariabel(kode) {
+  const item = barisVariabel().get(kode);
+  return item ? item.nilai : "";
 }
 
 /** Nomor perkara dari kepala halaman ABT. */
@@ -205,6 +224,49 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
   return { ok: false, pesan: "Jawaban ABT tidak dikenali - anggap belum tersimpan." };
 }
 
+// ─── Riwayat dan urungkan ────────────────────────────────────────────────────
+
+/**
+ * ============================================================================
+ * TIAP PERUBAHAN DICATAT, DAN DAPAT DIURUNGKAN
+ * ============================================================================
+ *
+ * Tanpa ini, pengisian otomatis yang keliru tidak dapat dibedakan dari ketikan
+ * petugas: keduanya hanya berupa teks di dalam kolom, tanpa jejak siapa yang
+ * menaruhnya dan apa isinya sebelum itu. Yang menemukan kekeliruan seminggu
+ * kemudian tidak punya cara mengembalikannya selain mengingat.
+ *
+ * Disimpan di penyimpanan ekstensi, bukan di server. Itu keputusan sadar
+ * dengan batas yang harus disebut: riwayatnya hanya ada di peramban ini, dan
+ * hilang bila datanya dibersihkan. Catatan yang tersimpan di server menuntut
+ * tabel baru beserta migrasinya - pantas dikerjakan, tetapi bukan syarat bagi
+ * kegunaan yang paling dibutuhkan sekarang, yaitu mengurungkan yang baru saja
+ * salah diterapkan.
+ */
+const KUNCI_RIWAYAT = "abtRiwayat";
+const BATAS_RIWAYAT = 200;
+
+async function catatRiwayat(catatan) {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_RIWAYAT]);
+    const daftar = Array.isArray(simpan[KUNCI_RIWAYAT]) ? simpan[KUNCI_RIWAYAT] : [];
+    daftar.unshift(catatan);
+    await chrome.storage.local.set({ [KUNCI_RIWAYAT]: daftar.slice(0, BATAS_RIWAYAT) });
+  } catch {
+    /* penyimpanan tidak tersedia - perubahannya tetap tersimpan di ABT */
+  }
+}
+
+async function bacaRiwayat(perkaraId) {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_RIWAYAT]);
+    const daftar = Array.isArray(simpan[KUNCI_RIWAYAT]) ? simpan[KUNCI_RIWAYAT] : [];
+    return daftar.filter((x) => x && x.perkaraId === perkaraId);
+  } catch {
+    return [];
+  }
+}
+
 // ─── Menyunting di tempat ────────────────────────────────────────────────────
 
 /**
@@ -282,6 +344,15 @@ function sunting(item, jatiDiri, sesudahSimpan) {
         batal.disabled = false;
         return;
       }
+      void catatRiwayat({
+        perkaraId: jatiDiri.perkaraId,
+        kode: item.kode,
+        nama: item.nama,
+        sebelum: nilaiLama,
+        sesudah: ketik.value.trim(),
+        cara: "sunting tangan",
+        pada: new Date().toISOString(),
+      });
       tutup(ketik.value.trim());
       if (typeof sesudahSimpan === "function") sesudahSimpan(item.kode, ketik.value.trim());
     } catch (galat) {
@@ -390,6 +461,77 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   return kartu;
 }
 
+/**
+ * ============================================================================
+ * NOMOR 8 - PENJAGA SEBELUM CETAK
+ * ============================================================================
+ *
+ * Tombol CETAK di ABT adalah tautan biasa ke abt/preview. Menekannya membuka
+ * pratinjau yang siap dicetak, dan tidak ada satu pun pemeriksaan sebelum itu.
+ *
+ * Dua hal yang harus tertahan di sini:
+ *
+ *   1. Variabel kerangka yang masih DATA_TIDAK_ADA. Putusan yang tercetak
+ *      dengan kalimat itu di dalamnya sudah beredar sebelum ketahuan.
+ *   2. Variabel "(OTOMATIS)" yang masih berbunyi "TIDAK BENAR QUERY NYA".
+ *      Ini yang paling berbahaya: bunyinya seperti pesan galat mesin, tetapi
+ *      ia tercetak sebagai bagian pertimbangan hukum.
+ *
+ * Penjaganya MENAHAN, lalu bertanya - bukan melarang. Ada perkara yang memang
+ * tidak memerlukan sebagian variabel itu (prodeo pada perkara yang bukan
+ * prodeo, misalnya), dan yang paling tahu bukan ekstensi ini.
+ */
+function periksaKelengkapan() {
+  const peta = barisVariabel();
+  const kurang = [];
+  for (const kode of VARIABEL_SASARAN) {
+    const item = peta.get(kode);
+    if (!item) continue;
+    if (ISI_KOSONG.test(item.nilai)) kurang.push(`${kode} ${item.nama}`);
+  }
+  const rusak = [];
+  for (const kode of VAR_OTOMATIS) {
+    const item = peta.get(kode);
+    if (!item) continue;
+    if (/TIDAK BENAR QUERY NYA|BELUM ISI/i.test(item.nilai)) rusak.push(`${kode} ${item.nama}`);
+  }
+  return { kurang, rusak };
+}
+
+function pasangPenjagaCetak() {
+  for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
+    if (tautan.getAttribute(TANDA_ABT) === "jaga") continue;
+    tautan.setAttribute(TANDA_ABT, "jaga");
+    tautan.addEventListener(
+      "click",
+      (peristiwa) => {
+        const { kurang, rusak } = periksaKelengkapan();
+        if (kurang.length === 0 && rusak.length === 0) return;
+
+        const baris = (daftar) => daftar.map((x) => `  - ${x}`).join("\n");
+        const pesan = [
+          "ALETA menahan pencetakan sebentar.",
+          "",
+          rusak.length
+            ? `${rusak.length} variabel OTOMATIS masih berbunyi pesan galat, dan itu akan IKUT TERCETAK sebagai pertimbangan hukum:\n${baris(rusak)}`
+            : "",
+          kurang.length ? `${kurang.length} variabel kerangka masih kosong:\n${baris(kurang)}` : "",
+          "",
+          "Tetap lanjutkan ke pratinjau cetak?",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        if (!window.confirm(pesan)) {
+          peristiwa.preventDefault();
+          peristiwa.stopPropagation();
+        }
+      },
+      true
+    );
+  }
+}
+
 async function mintaUsulan(muatan) {
   const respons = await fetch(ALETA_API_ABT, {
     method: "POST",
@@ -432,6 +574,19 @@ function susunPanelAbt(jatiDiri) {
     )
   );
 
+  // NOMOR 3 - arti ketiga warna dinyatakan sekali, bukan ditebak dari
+  // warnanya. Lencana tanpa keterangan mengajari orang menebak, dan tebakan
+  // yang keliru pada "cukup" berarti satu keterangan saksi dianggap dua.
+  const petunjuk = buatElemen("div", "aleta-abt-petunjuk");
+  for (const [kelas, teks] of [
+    ["aleta-tanda-hijau", "pasti — kedua saksi sama"],
+    ["aleta-tanda-kuning", "cukup — satu saksi saja"],
+    ["aleta-tanda-merah", "bentrok — saksi berselisih"],
+  ]) {
+    petunjuk.appendChild(buatElemen("span", `aleta-tanda ${kelas}`, teks));
+  }
+  isi.appendChild(petunjuk);
+
   const tombolBaris = buatElemen("div", "aleta-abt-aksi");
   const tombolSipp = buatElemen("button", "aleta-permintaan-tombol", "Tarik 5 dari SIPP");
   tombolSipp.type = "button";
@@ -444,10 +599,189 @@ function susunPanelAbt(jatiDiri) {
   const kabar = buatElemen("div", "aleta-abt-kabar");
   isi.appendChild(kabar);
 
+  // Urutannya disengaja: selisih antar saksi lebih dulu, sebab ia dapat
+  // membatalkan seluruh isian di bawahnya. Lalu huruf alasan, lalu usulan.
+  const wadahSelisih = buatElemen("div", "aleta-abt-daftar");
+  isi.appendChild(wadahSelisih);
+  const wadahHuruf = buatElemen("div", "aleta-abt-daftar");
+  isi.appendChild(wadahHuruf);
   const wadahUsulan = buatElemen("div", "aleta-abt-daftar");
   isi.appendChild(wadahUsulan);
 
+  /**
+   * NOMOR 4 - selisih antara dua saksi.
+   *
+   * Ditaruh paling atas dan tidak dapat diterapkan dengan tombol apa pun:
+   * ini bukan sesuatu yang diperbaiki dengan mengisi kolom, melainkan sesuatu
+   * yang harus diketahui hakim sebelum putusan disusun.
+   */
+  function gambarSelisih(daftar) {
+    wadahSelisih.textContent = "";
+    if (!daftar.length) return;
+    const kotak = buatElemen("div", "aleta-abt-kartu aleta-abt-kartu-awas");
+    kotak.appendChild(
+      buatElemen("div", "aleta-abt-nama", `${daftar.length} keterangan yang berselisih antar saksi`)
+    );
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        "Selisih ini soal pembuktian, bukan soal pengisian. Tidak ada tombol untuk menyelesaikannya."
+      )
+    );
+    for (const x of daftar) {
+      const baris = buatElemen("div", "aleta-abt-kutipan");
+      baris.appendChild(buatElemen("span", "aleta-abt-asal", x.hal));
+      baris.appendChild(
+        buatElemen("span", "aleta-abt-kalimat", `saksi 1: ${x.saksi1}  |  saksi 2: ${x.saksi2}`)
+      );
+      kotak.appendChild(baris);
+    }
+    wadahSelisih.appendChild(kotak);
+  }
+
+  /**
+   * NOMOR 6 - huruf alasan perceraian.
+   *
+   * Yang ditampilkan bunyi resminya beserta kata yang memicunya. Tidak ada
+   * tombol terapkan: satu huruf yang salah mengubah dasar hukum putusan, dan
+   * hurufnya diketik sendiri oleh yang memutuskan - di baris 8503, dengan
+   * penyunting yang sama.
+   */
+  function gambarHuruf(daftar, belumSiap) {
+    wadahHuruf.textContent = "";
+    if (!daftar.length && !belumSiap.length) return;
+
+    const kotak = buatElemen("div", "aleta-abt-kartu");
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "8503 — huruf alasan yang pantas diperiksa"));
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        "ALETA tidak memilih hurufnya. Yang di bawah hanya menunjuk, beserta bunyi resminya."
+      )
+    );
+    for (const h of daftar) {
+      const baris = buatElemen("div", "aleta-abt-kutipan");
+      baris.appendChild(buatElemen("span", "aleta-abt-asal", `huruf ${h.huruf}`));
+      const isiBaris = buatElemen("span", "aleta-abt-kalimat", h.bunyi);
+      baris.appendChild(isiBaris);
+      kotak.appendChild(baris);
+      const jejak = buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        `dipicu kata: ${h.pemicu.join(", ")}${h.syarat ? ` — ${h.syarat}` : ""}`
+      );
+      kotak.appendChild(jejak);
+    }
+    for (const h of belumSiap) {
+      kotak.appendChild(buatElemen("div", "aleta-abt-catatan", `huruf ${h.huruf}: ${h.sebab}`));
+    }
+    if (daftar[0]) {
+      kotak.appendChild(
+        buatElemen("div", "aleta-abt-kutipan-sumber", `Bunyi pasal dari ${daftar[0].sumber.nama}`)
+      );
+    }
+    wadahHuruf.appendChild(kotak);
+  }
+
   panel.appendChild(isi);
+
+  /**
+   * NOMOR 10 - riwayat perubahan, dengan tombol urungkan.
+   *
+   * Digambar ulang tiap kali dibuka, bukan disegarkan terus-menerus: yang
+   * membukanya sedang mencari satu perubahan tertentu, bukan menonton daftar.
+   */
+  const wadahRiwayat = buatElemen("div", "aleta-abt-daftar");
+  isi.appendChild(wadahRiwayat);
+
+  const tombolRiwayat = buatElemen("button", "aleta-abt-batal", "Riwayat perubahan");
+  tombolRiwayat.type = "button";
+  tombolBaris.appendChild(tombolRiwayat);
+
+  tombolRiwayat.addEventListener("click", async () => {
+    if (wadahRiwayat.childElementCount > 0) {
+      wadahRiwayat.textContent = "";
+      return;
+    }
+    const daftar = await bacaRiwayat(jatiDiri.perkaraId);
+    if (!daftar.length) {
+      wadahRiwayat.appendChild(
+        buatElemen("div", "aleta-kosong", "Belum ada perubahan yang tercatat untuk perkara ini.")
+      );
+      return;
+    }
+    for (const catatan of daftar.slice(0, 25)) {
+      const kartu = buatElemen("div", "aleta-abt-kartu");
+      const kepalaKartu = buatElemen("div", "aleta-abt-kartu-kepala");
+      kepalaKartu.appendChild(buatElemen("span", "aleta-abt-kode", catatan.kode));
+      kepalaKartu.appendChild(buatElemen("span", "aleta-abt-nama", catatan.nama || ""));
+      kartu.appendChild(kepalaKartu);
+      kartu.appendChild(
+        buatElemen(
+          "div",
+          "aleta-abt-catatan",
+          `${catatan.cara} — ${new Date(catatan.pada).toLocaleString("id-ID")}`
+        )
+      );
+      const sanding = buatElemen("div", "aleta-abt-sanding");
+      const dulu = buatElemen("div", "aleta-abt-kini");
+      dulu.appendChild(buatElemen("span", "aleta-abt-label", "sebelum"));
+      dulu.appendChild(buatElemen("span", "aleta-abt-isi", catatan.sebelum || "(kosong)"));
+      sanding.appendChild(dulu);
+      const kini = buatElemen("div", "aleta-abt-usul");
+      kini.appendChild(buatElemen("span", "aleta-abt-label", "sesudah"));
+      kini.appendChild(buatElemen("span", "aleta-abt-isi", catatan.sesudah || "(kosong)"));
+      sanding.appendChild(kini);
+      kartu.appendChild(sanding);
+
+      const urung = buatElemen("button", "aleta-abt-batal", "Kembalikan yang sebelumnya");
+      urung.type = "button";
+      const kabarUrung = buatElemen("div", "aleta-abt-kabar");
+      urung.addEventListener("click", async () => {
+        urung.disabled = true;
+        kabarUrung.textContent = "Mengembalikan…";
+        try {
+          const hasil = await simpanVariabel(catatan.kode, catatan.sebelum || "", jatiDiri);
+          if (!hasil.ok) {
+            kabarUrung.className = "aleta-abt-kabar aleta-abt-gagal";
+            kabarUrung.textContent = hasil.pesan;
+            urung.disabled = false;
+            return;
+          }
+          const item = barisVariabel().get(catatan.kode);
+          if (item) item.selNilai.textContent = catatan.sebelum || "DATA_TIDAK_ADA";
+          // Pengembalian ikut dicatat. Riwayat yang menghapus jejaknya sendiri
+          // saat diurungkan membuat urutan kejadiannya mustahil dibaca ulang.
+          void catatRiwayat({
+            perkaraId: jatiDiri.perkaraId,
+            kode: catatan.kode,
+            nama: catatan.nama,
+            sebelum: catatan.sesudah,
+            sesudah: catatan.sebelum,
+            cara: "dikembalikan",
+            pada: new Date().toISOString(),
+          });
+          kabarUrung.textContent = "Sudah dikembalikan.";
+        } catch (galat) {
+          kabarUrung.className = "aleta-abt-kabar aleta-abt-gagal";
+          kabarUrung.textContent = String((galat && galat.message) || galat);
+          urung.disabled = false;
+        }
+      });
+      kartu.appendChild(urung);
+      kartu.appendChild(kabarUrung);
+      wadahRiwayat.appendChild(kartu);
+    }
+    wadahRiwayat.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        "Riwayat ini tersimpan di peramban ini saja, dan hilang bila data situs dibersihkan."
+      )
+    );
+  });
 
   const kaki = buatElemen("div", "aleta-kaki");
   kaki.appendChild(
@@ -494,9 +828,21 @@ function susunPanelAbt(jatiDiri) {
       for (const x of dipilih) {
         hasilTerap.textContent = `Menyimpan ${x.usulan.kode}…`;
         try {
+          const sebelum = (barisVariabel().get(x.usulan.kode) || {}).nilai || "";
           const hasil = await simpanVariabel(x.usulan.kode, x.usulan.nilai, jatiDiri);
           if (hasil.ok) {
             berhasil += 1;
+            void catatRiwayat({
+              perkaraId: jatiDiri.perkaraId,
+              kode: x.usulan.kode,
+              nama: x.usulan.nama,
+              sebelum,
+              sesudah: x.usulan.nilai,
+              cara: x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
+                ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
+                : `usulan dari SIPP (${x.usulan.keyakinan})`,
+              pada: new Date().toISOString(),
+            });
             const item = barisVariabel().get(x.usulan.kode);
             if (item) item.selNilai.textContent = x.usulan.nilai;
             x.centang.checked = false;
@@ -527,6 +873,8 @@ function susunPanelAbt(jatiDiri) {
       kabar.textContent =
         `Kuasa aktif: ${sipp.jumlahKuasa || 0}. Prodeo: ${sipp.prodeo ? "ya" : "tidak"}. ` +
         "Tiga variabel prodeo dan fasakh memang tidak disimpan SIPP - disebut apa adanya di bawah.";
+      gambarSelisih([]);
+      gambarHuruf([], []);
       gambarUsulan(sipp.usulan || []);
     } catch (galat) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
@@ -552,13 +900,16 @@ function susunPanelAbt(jatiDiri) {
         sumber: "saksi",
         saksi1: teks1,
         saksi2: teks2,
+        // Dibaca dari halaman ini juga. Dipakai menghitung ulang lama pisah:
+        // "kira-kira 4 bulan" benar pada hari saksi diperiksa, dan mulai
+        // keliru pada sidang berikutnya.
+        tanggalSidang: nilaiVariabel(VAR_TGL_SIDANG),
       });
       const saksi = isiJawaban.saksi || {};
       kabar.textContent =
-        `Terbaca ${saksi.butir?.saksi1 || 0} butir dari saksi 1 dan ${saksi.butir?.saksi2 || 0} dari saksi 2. ` +
-        (saksi.ciri?.length
-          ? `Ciri yang muncul: ${saksi.ciri.join(", ")}. Huruf alasan (8503) TIDAK dipilih ALETA.`
-          : "Tidak satu pun ciri alasan perceraian terbaca.");
+        `Terbaca ${saksi.butir?.saksi1 || 0} butir dari saksi 1 dan ${saksi.butir?.saksi2 || 0} dari saksi 2.`;
+      gambarSelisih(saksi.selisih || []);
+      gambarHuruf(saksi.huruf || [], saksi.hurufBelumSiap || []);
       gambarUsulan(saksi.usulan || []);
     } catch (galat) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
@@ -594,6 +945,7 @@ async function pasang() {
 
   sudahDipasang = true;
   pasangSunting(jatiDiri);
+  pasangPenjagaCetak();
   document.body.appendChild(susunPanelAbt(jatiDiri));
 }
 

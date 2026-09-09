@@ -1073,7 +1073,8 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     if (sumber === "semua" || sumber === "saksi") {
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(
         String(req.body?.saksi1 || ""),
-        String(req.body?.saksi2 || "")
+        String(req.body?.saksi2 || ""),
+        String(req.body?.tanggalSidang || "")
       );
     }
 

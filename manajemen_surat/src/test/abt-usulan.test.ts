@@ -29,17 +29,42 @@ type Usulan = {
   sumber: { saksi: number; kalimat: string }[];
 };
 
+type HasilSaksi = {
+  butir: { saksi1: number; saksi2: number };
+  ciri: string[];
+  selisih: { hal: string; saksi1: string; saksi2: string }[];
+  huruf: { huruf: string; bunyi: string; pemicu: string[]; syarat: string }[];
+  hurufBelumSiap: { huruf: string; sebab: string }[];
+  usulan: (Usulan & { catatan?: string; dihitung?: boolean })[];
+};
+
 type Layanan = {
   butirKeterangan: (teks: string) => string[];
-  dariKeteranganSaksi: (
-    a: string,
-    b: string
-  ) => { butir: { saksi1: number; saksi2: number }; ciri: string[]; usulan: Usulan[] };
+  hitungLamaPisah: (a: string, b: string) => { teks: string; totalBulan: number } | null;
+  dariKeteranganSaksi: (a: string, b: string, tanggalSidang?: string) => HasilSaksi;
 };
 
 const require_ = createRequire(import.meta.url);
 const berkasLayanan = path.resolve(process.cwd(), "../aleta_bot/services/abtUsulanService.js");
 const layanan = require_(berkasLayanan) as Layanan;
+
+/* Kedua modul di bawah bentuknya bebas - yang dijaga isinya, bukan tipenya. */
+type Aturan = {
+  HURUF: { huruf: string; siap: boolean; bunyi: string; sumber: { tautan: string } }[];
+  usulkan: (teks: string) => { huruf: string; syarat: string }[];
+  belumSiap: () => { huruf: string; sebab: string }[];
+};
+type Pustaka = {
+  KALIMAT: { sebutanCiri: Record<string, string> };
+  susunAlasan: (daftar: string[]) => string;
+  kalimatUpayaDamai: (gagal: boolean) => string;
+};
+const aturan = require_(
+  path.resolve(process.cwd(), "../aleta_bot/services/abtAturanAlasan.js")
+) as Aturan;
+const pustaka = require_(
+  path.resolve(process.cwd(), "../aleta_bot/services/abtKalimatBaku.js")
+) as Pustaka;
 
 const abtJs = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/abt.js"), "utf8");
 const manifest = () =>
@@ -65,7 +90,7 @@ const SAKSI_2 = [
   "- Bahwa Penggugat dan Tergugat sudah pernah diupayakan untuk dirukunkan oleh pihak keluarga, namun tidak berhasil;",
 ].join("\n");
 
-function ambil(hasil: ReturnType<Layanan["dariKeteranganSaksi"]>, kode: string) {
+function ambil(hasil: HasilSaksi, kode: string) {
   const u = hasil.usulan.find((x) => x.kode === kode);
   expect(u, `usulan ${kode} tidak ada`).toBeTruthy();
   return u as Usulan;
@@ -139,8 +164,10 @@ describe("menurunkan kerangka fakta dari keterangan saksi", () => {
   });
 
   it("5227 disusun dari ciri yang benar-benar disebut saksi", () => {
+    // Kalimatnya dari pustaka kalimat baku, bukan nama cirinya - yang masuk ke
+    // putusan harus berbunyi seperti putusan.
     const u = ambil(layanan.dariKeteranganSaksi(SAKSI_1, SAKSI_2), "5227");
-    expect(u.nilai).toContain("kekerasan dalam rumah tangga");
+    expect(u.nilai).toContain("Kekerasan Dalam Rumah Tangga");
     expect(u.nilai).toContain("nafkah");
     // Blangkonya mengingatkan "JANGAN LUPA TAMBAH DAN SEBELUM ALASAN TERAKHIR".
     expect(u.nilai).toContain(" dan ");
@@ -246,5 +273,169 @@ describe("ekstensi terdaftar untuk halaman ABT", () => {
   it("abt.js ikut ditanam ke portal", () => {
     const daftar = readFileSync(path.resolve(process.cwd(), "scripts/susun-ekstensi.mjs"), "utf8");
     expect(daftar).toContain('"abt.js"');
+  });
+});
+
+describe("nomor 5 - lama pisah dihitung sampai tanggal sidang", () => {
+  it("dihitung dari 0246, bukan disalin dari kalimat saksi", () => {
+    // "kira-kira 4 bulan" benar pada hari saksi diperiksa, dan mulai keliru
+    // pada sidang berikutnya.
+    const hasil = layanan.hitungLamaPisah("bulan Mei 2026", "22 September 2026");
+    expect(hasil?.teks).toBe("4 bulan");
+    expect(hasil?.totalBulan).toBe(4);
+  });
+
+  it("melewati satu tahun ditulis tahun dan bulan", () => {
+    expect(layanan.hitungLamaPisah("bulan Januari 2024", "22/09/2026")?.teks).toBe("2 tahun 8 bulan");
+  });
+
+  it("tanggal sidang yang tidak terbaca tidak menghasilkan angka karangan", () => {
+    // Lebih baik tidak mengusulkan apa pun daripada mengusulkan angka yang
+    // dihitung dari tanggal yang salah dibaca.
+    expect(layanan.hitungLamaPisah("bulan Mei 2026", "besok")).toBeNull();
+    expect(layanan.hitungLamaPisah("entah kapan", "22 September 2026")).toBeNull();
+  });
+
+  it("sidang yang lebih awal daripada pisah ditolak, bukan jadi angka minus", () => {
+    expect(layanan.hitungLamaPisah("bulan Mei 2026", "01/01/2026")).toBeNull();
+  });
+
+  it("hasil hitungan mengalahkan yang diucapkan, dan selisihnya disebut", () => {
+    const saksi =
+      "- Bahwa Penggugat dan Tergugat sudah pisah tempat tinggal sejak bulan Mei 2026, sudah sekitar 2 bulan;";
+    const hasil = layanan.dariKeteranganSaksi(saksi, "", "22 September 2026");
+    const u = hasil.usulan.find((x) => x.kode === "9944");
+    expect(u?.nilai).toBe("4 bulan");
+    expect(u?.catatan).toContain("2 bulan");
+    expect(u?.dihitung).toBe(true);
+  });
+});
+
+describe("nomor 4 - pemeriksa silang dua saksi", () => {
+  it("selisih di luar keenam variabel pun ikut ditemukan", () => {
+    // Berapa kali saksi melihat pertengkaran tidak punya variabelnya sendiri,
+    // tetapi selisihnya sama beratnya bagi pembuktian.
+    const a = "- Bahwa saksi melihat mereka bertengkar sebanyak 1 kali;";
+    const b = "- Bahwa saksi melihat mereka bertengkar sebanyak 3 kali;";
+    const hasil = layanan.dariKeteranganSaksi(a, b);
+    const item = hasil.selisih.find((x) => x.hal.toLowerCase().includes("berapa kali"));
+    expect(item).toBeTruthy();
+    expect(item?.saksi1).toBe("1 kali");
+    expect(item?.saksi2).toBe("3 kali");
+  });
+
+  it("dua saksi yang sepakat tidak menghasilkan selisih palsu", () => {
+    const hasil = layanan.dariKeteranganSaksi(SAKSI_1, SAKSI_1);
+    expect(hasil.selisih).toEqual([]);
+  });
+});
+
+describe("nomor 6 - huruf alasan diambil dari naskah resmi", () => {
+  it("bunyinya disalin dari Pasal 19 PP 9/1975, bukan dari ingatan", () => {
+    const f = aturan.HURUF.find((h) => h.huruf === "F");
+    expect(f?.bunyi).toBe(
+      "Antara suami dan isteri terus-menerus terjadi perselisihan dan pertengkaran dan tidak ada harapan akan hidup rukun lagi dalam rumah tangga"
+    );
+    expect(f?.sumber.tautan).toBe("https://peraturan.go.id/files/pp9-1975.pdf");
+  });
+
+  it("huruf H tidak pernah diusulkan selama bunyinya belum ada", () => {
+    // Mengisinya dengan kalimat yang "kira-kira benar" jauh lebih berbahaya
+    // daripada membiarkannya kosong: yang kosong terlihat, yang kira-kira
+    // tidak.
+    const h = aturan.HURUF.find((x) => x.huruf === "H");
+    expect(h?.siap).toBe(false);
+    expect(h?.bunyi).toBe("");
+    const usul = aturan.usulkan("Tergugat murtad dan pindah agama");
+    expect(usul.some((u) => u.huruf === "H")).toBe(false);
+    expect(aturan.belumSiap().some((u) => u.huruf === "H")).toBe(true);
+  });
+
+  it("huruf B selalu membawa syarat jangka waktunya", () => {
+    // Syaratnya angka, dan angka itu tidak dapat disimpulkan dari kata
+    // kerjanya - hampir tiap perkara memuat kata "meninggalkan".
+    const usul = aturan.usulkan("Tergugat pergi meninggalkan tempat kediaman bersama");
+    const b = usul.find((u) => u.huruf === "B");
+    expect(b?.syarat).toContain("2 (dua) tahun");
+  });
+
+  it("tidak satu pun huruf ditandai terpilih", () => {
+    const usul = aturan.usulkan("perselisihan dan pertengkaran terus menerus");
+    for (const u of usul) expect("terpilih" in u).toBe(false);
+  });
+});
+
+describe("nomor 9 - pustaka kalimat baku", () => {
+  it("kalimat upaya damai datang dari pustaka, bukan disusun di pemakainya", () => {
+    expect(pustaka.kalimatUpayaDamai(true)).toContain("namun tidak berhasil");
+    expect(pustaka.kalimatUpayaDamai(false)).not.toContain("namun tidak berhasil");
+  });
+
+  it("penyambung alasan memakai DAN sebelum yang terakhir", () => {
+    // Blangkonya sendiri yang mengingatkan.
+    // Diperiksa pada UJUNGNYA, bukan dengan menghitung kata "dan" - kalimat
+    // bakunya sendiri memuat "Penggugat dan Tergugat", dan menghitung
+    // seluruhnya hanya menguji isi kalimat, bukan penyambungnya.
+    const daftar = ["perselisihan terus-menerus", "tidak memberi nafkah", "cemburu"];
+    const kalimat = pustaka.susunAlasan(daftar);
+    const terakhir = pustaka.KALIMAT.sebutanCiri["cemburu"];
+    expect(kalimat.endsWith(` dan ${terakhir}`)).toBe(true);
+    // Yang bukan terakhir disambung koma, bukan "dan".
+    expect(kalimat).toContain(`${pustaka.KALIMAT.sebutanCiri["perselisihan terus-menerus"]}, `);
+  });
+
+  it("pustaka kalimat TIDAK memuat bunyi pasal", () => {
+    // Yang menyatakan hukum hanya boleh disalin dari naskah resmi, dan
+    // tempatnya abtAturanAlasan.js.
+    const isi = readFileSync(
+      path.resolve(process.cwd(), "../aleta_bot/services/abtKalimatBaku.js"),
+      "utf8"
+    );
+    expect(isi).not.toContain("Pasal 19");
+    expect(isi).not.toContain("Undang-Undang");
+  });
+});
+
+describe("nomor 8 - penjaga sebelum CETAK", () => {
+  it("menahan tautan pratinjau cetak ABT", () => {
+    const isi = abtJs();
+    expect(isi).toContain("abt/preview");
+    expect(isi).toContain("function periksaKelengkapan()");
+  });
+
+  it("variabel OTOMATIS yang masih berbunyi pesan galat ikut ditahan", () => {
+    // Ini yang paling berbahaya: bunyinya seperti pesan galat mesin, tetapi
+    // ia tercetak sebagai bagian pertimbangan hukum.
+    const isi = abtJs();
+    expect(isi).toContain("8521");
+    expect(isi).toContain("8530");
+    expect(isi).toContain("TIDAK BENAR QUERY NYA");
+  });
+
+  it("menahan lalu bertanya, bukan melarang", () => {
+    // Ada perkara yang memang tidak memerlukan sebagian variabel itu.
+    const isi = abtJs();
+    expect(isi).toContain("Tetap lanjutkan ke pratinjau cetak?");
+    expect(isi).toContain("window.confirm");
+  });
+});
+
+describe("nomor 10 - riwayat dan urungkan", () => {
+  it("tiap penyimpanan dicatat, lewat sunting tangan maupun usulan", () => {
+    const isi = abtJs();
+    expect(isi.split("catatRiwayat(").length - 1).toBeGreaterThanOrEqual(4);
+    expect(isi).toContain("sunting tangan");
+  });
+
+  it("pengembalian ikut dicatat, tidak menghapus jejaknya sendiri", () => {
+    // Riwayat yang menghapus jejaknya saat diurungkan membuat urutan
+    // kejadiannya mustahil dibaca ulang.
+    const isi = abtJs();
+    expect(isi).toContain("dikembalikan");
+  });
+
+  it("batasnya disebut kepada yang membacanya", () => {
+    const isi = abtJs();
+    expect(isi).toContain("tersimpan di peramban ini saja");
   });
 });
