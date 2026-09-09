@@ -156,6 +156,157 @@ function alatKembalikanBawaan(panel, kunci) {
  * penunjuknya keluar dari jendela - tanpa itu, tarikan cepat "terlepas" di
  * tepi layar dan panel tertinggal di tengah jalan.
  */
+/**
+ * ============================================================================
+ * CIUT MENJADI LENCANA - BUKAN KOTAK KOSONG
+ * ============================================================================
+ *
+ * Yang dulu terjadi ketika panel diciutkan: isinya disembunyikan dan KEPALANYA
+ * tetap ada - selebar panel semula, kosong, dengan deretan tombol di kanannya.
+ * Di layar itu terbaca sebagai panel yang rusak, bukan panel yang diciutkan.
+ * Ia menutupi separuh lebar halaman kerja tanpa menampilkan satu pun
+ * keterangan, dan tetap harus disingkirkan dengan tangan.
+ *
+ * Sekarang yang tersisa satu lencana bulat berisi logo ALETA:
+ *
+ *   - dapat digeser, sama seperti panelnya - itu sebabnya ia dipasang pada
+ *     elemen panel yang SAMA, bukan elemen baru; seluruh perkakas geser,
+ *     jepit tepi layar, dan simpan posisi berlaku apa adanya
+ *   - satu klik membentangkannya kembali, dan klik ganda juga - lihat
+ *     catatan di bawah tentang bedanya klik dari tarikan
+ *   - posisinya disimpan terpisah dari posisi panel yang terbentang, supaya
+ *     lencana yang ditaruh di pojok tidak memindahkan panelnya sekalian
+ *
+ * ============================================================================
+ * MEMBEDAKAN KLIK DARI TARIKAN - INI YANG PALING MUDAH SALAH
+ * ============================================================================
+ *
+ * Lencana ini dua-duanya sekaligus: sasaran tarikan DAN tombol. Tanpa
+ * pembeda, tiap tarikan berakhir dengan panel yang terbentang kembali - sebab
+ * tiap tarikan diakhiri satu pointerup di atas lencananya.
+ *
+ * Pembedanya JARAK, bukan waktu. Tarikan sependek dua piksel tetap tarikan
+ * bila jarinya bergeser, dan tekanan selama satu detik tetap klik bila
+ * jarinya diam. Ambangnya 4 piksel: cukup longgar untuk tangan yang gemetar,
+ * cukup ketat untuk tidak menelan tarikan yang sungguhan.
+ *
+ * alatPasangGeser menandai panel dengan data-baru-digeser setiap kali
+ * pergeserannya melewati ambang itu, dan penanda itu yang dibaca di sini.
+ */
+const KELAS_LENCANA = "aleta-panel-lencana";
+
+/** Menyimpan ukuran terbentang supaya membentangkan kembali tidak menebak. */
+function alatCiutkan(panel, kunci, jadikanLencana) {
+  const sedang = panel.classList.contains(KELAS_LENCANA);
+  const mau = jadikanLencana === undefined ? !sedang : Boolean(jadikanLencana);
+  if (mau === sedang) return;
+
+  if (mau) {
+    // Ukuran terbentangnya dicatat di elemennya sendiri, bukan di penyimpanan:
+    // ia hanya berlaku selama halaman ini terbuka, dan menuliskannya ke
+    // chrome.storage berarti satu tulisan tiap kali tombolnya ditekan.
+    const kotak = panel.getBoundingClientRect();
+    panel.dataset.lebarSemula = String(Math.round(kotak.width));
+    panel.dataset.tinggiSemula = String(Math.round(kotak.height));
+    panel.classList.add(KELAS_LENCANA);
+    panel.classList.remove("aleta-panel-penuh");
+    panel.style.width = "";
+    panel.style.height = "";
+    panel.style.maxHeight = "";
+    panel.title = "Klik untuk membentangkan panel ALETA";
+  } else {
+    panel.classList.remove(KELAS_LENCANA);
+    panel.removeAttribute("title");
+    if (panel.dataset.lebarSemula) panel.style.width = `${panel.dataset.lebarSemula}px`;
+    if (panel.dataset.tinggiSemula) {
+      panel.style.height = `${panel.dataset.tinggiSemula}px`;
+      panel.style.maxHeight = "none";
+    }
+    alatJepitTinggi(panel);
+  }
+
+  // Dijepit ke tepi layar sesudah ukurannya berubah, bukan sebelum: lencana
+  // yang diletakkan di pojok kanan bawah akan menjulur keluar begitu ia
+  // membentang menjadi panel selebar tiga ratus piksel.
+  const kotak = panel.getBoundingClientRect();
+  const aman = alatJepitKeLayar(kotak.left, kotak.top, kotak.width);
+  panel.style.left = `${aman.kiri}px`;
+  panel.style.top = `${aman.atas}px`;
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+
+  const tombol = panel.querySelector(".aleta-lipat");
+  if (tombol) {
+    tombol.textContent = mau ? "▢" : "–";
+    tombol.title = mau ? "Bentangkan panel" : "Ciutkan menjadi lencana";
+  }
+
+  alatSimpanPosisi(kunci, {
+    kiri: Math.round(aman.kiri),
+    atas: Math.round(aman.atas),
+    lebar: Number(panel.dataset.lebarSemula) || undefined,
+    tinggi: Number(panel.dataset.tinggiSemula) || undefined,
+    lencana: mau,
+  });
+}
+
+/**
+ * Memasang lencananya dan pendengar yang membentangkannya kembali.
+ *
+ * Logonya dari berkas ekstensi, bukan huruf "A" yang digambar dengan CSS:
+ * yang melayang di atas halaman aplikasi lain harus dapat dikenali dalam
+ * sekejap sebagai milik ALETA, dan sekejap itu tidak cukup untuk membaca.
+ */
+function alatPasangLencana(panel, kunci) {
+  const lencana = document.createElement("div");
+  lencana.className = "aleta-lencana";
+
+  let alamatLogo = "";
+  try {
+    alamatLogo = chrome.runtime.getURL("ikon/aleta-32.png");
+  } catch {
+    /* di luar ekstensi - huruf yang dipakai sebagai gantinya */
+  }
+
+  if (alamatLogo) {
+    const gambar = document.createElement("img");
+    gambar.src = alamatLogo;
+    gambar.alt = "ALETA";
+    gambar.draggable = false;
+    lencana.appendChild(gambar);
+  } else {
+    lencana.textContent = "A";
+  }
+
+  panel.appendChild(lencana);
+
+  // Satu klik DAN klik ganda, keduanya membentangkan. Klik ganda sebenarnya
+  // sudah tercakup - klik pertamanya membentangkan, klik keduanya jatuh pada
+  // panel yang sudah terbentang dan tidak mengerjakan apa-apa. Pendengar
+  // dblclick tetap dipasang supaya tarikan yang berakhir dengan ketukan
+  // cepat - yang penandanya masih menyala - tetap dapat membentangkan.
+  const bentangkan = (peristiwa) => {
+    if (!panel.classList.contains(KELAS_LENCANA)) return;
+    if (panel.dataset.baruDigeser === "1") {
+      // Tarikan, bukan klik. Penandanya dilepas supaya klik BERIKUTNYA -
+      // yang jarinya diam - dapat membentangkan.
+      delete panel.dataset.baruDigeser;
+      return;
+    }
+    peristiwa.preventDefault();
+    peristiwa.stopPropagation();
+    alatCiutkan(panel, kunci, false);
+  };
+
+  lencana.addEventListener("click", bentangkan);
+  lencana.addEventListener("dblclick", (peristiwa) => {
+    delete panel.dataset.baruDigeser;
+    bentangkan(peristiwa);
+  });
+
+  return lencana;
+}
+
 function alatPasangGeser(panel, kepala, kunci) {
   let geser = null;
 
@@ -184,6 +335,11 @@ function alatPasangGeser(panel, kepala, kunci) {
 
   kepala.addEventListener("pointermove", (peristiwa) => {
     if (!geser) return;
+    // Ambang 4 piksel memisahkan tarikan dari klik - dibaca alatPasangLencana
+    // supaya lencana yang baru saja digeser tidak ikut membentang.
+    if (Math.abs(peristiwa.clientX - geser.x) > 4 || Math.abs(peristiwa.clientY - geser.y) > 4) {
+      panel.dataset.baruDigeser = "1";
+    }
     const kotak = panel.getBoundingClientRect();
     const aman = alatJepitKeLayar(
       geser.kiri + (peristiwa.clientX - geser.x),
@@ -286,6 +442,41 @@ function alatPasangUbahUkuran(panel, kunci) {
  * layar penuh, kembalikan bawaan, tutup. Tombol tutup paling kanan dan paling
  * akhir - sebab ia yang paling mahal salah tekan.
  */
+/**
+ * ============================================================================
+ * TEMA HALAMAN - PENANDA DAN SALINAN SINKRONNYA
+ * ============================================================================
+ *
+ * Satu penanda pada <html>, dan satu salinan di localStorage halaman itu.
+ * Keduanya harus bergerak bersama:
+ *
+ *   penanda      yang mengubah warna SEKARANG, seketika, tanpa satu pun
+ *                permintaan - CSS-nya sudah terpasang sejak awal
+ *   salinan      yang membuat halaman BERIKUTNYA lahir sudah benar, sebab
+ *                tema-awal.js membacanya pada document_start
+ *
+ * Tanpa salinannya, tiap perpindahan halaman menampilkan tema lama sepersekian
+ * detik lebih dulu. Itulah "lag" yang dikeluhkan - bukan lambatnya penggantian,
+ * melainkan halaman berikutnya yang lahir salah lalu diperbaiki di depan mata.
+ *
+ * Nama kuncinya SAMA dengan yang dipakai SIPP - aleta-tema-sipp - dan itu
+ * disengaja: keduanya satu origin, sehingga tema yang dipilih di halaman SIPP
+ * langsung berlaku di halaman ABT dan sebaliknya. Dua kunci terpisah berarti
+ * dua tema yang berselisih pada satu layar yang sama.
+ */
+const KUNCI_SALINAN_TEMA_HALAMAN = "aleta-tema-sipp";
+
+function alatTerapkanTemaHalaman(tema) {
+  const akar = document.documentElement;
+  if (tema === "gelap") akar.setAttribute("data-aleta-tema-sipp", "gelap");
+  else akar.removeAttribute("data-aleta-tema-sipp");
+  try {
+    window.localStorage.setItem(KUNCI_SALINAN_TEMA_HALAMAN, tema === "gelap" ? "gelap" : "terang");
+  } catch {
+    // Penyimpanan halaman ditolak - temanya tetap berlaku untuk halaman ini,
+    // hanya halaman berikutnya yang akan berkelebat sekali.
+  }
+}
 function alatTombolKepala(panel, kunci, opsi) {
   const pilihan = opsi || {};
   const wadah = document.createElement("span");
@@ -302,17 +493,42 @@ function alatTombolKepala(panel, kunci, opsi) {
     return tombol;
   };
 
-  // ── Tema panel ────────────────────────────────────────────────────────────
+  // ── Tema panel, DAN halamannya sekalian ───────────────────────────────────
   //
-  // Yang diganti tema PANEL, bukan tema halaman ABT. Mewarnai ulang aplikasi
-  // orang lain menuntut peta warna tersendiri - tiap kelas dan tiap latar
-  // dipasangkan satu per satu, seperti yang dikerjakan untuk SIPP - dan
-  // separuh peta menghasilkan halaman yang setengah berubah, yang lebih buruk
-  // daripada tidak berubah sama sekali.
-  const tema = buat("aleta-tema", "", "Ganti tema panel ALETA", async () => {
+  // ==========================================================================
+  // DULU HANYA PANELNYA - DAN ITU MEMBUAT "TERANG" TAMPAK RUSAK
+  // ==========================================================================
+  //
+  // Catatan lama di sini berbunyi: yang diganti tema PANEL, bukan tema halaman
+  // ABT, sebab mewarnai ulang aplikasi orang lain menuntut peta warna
+  // tersendiri. Alasannya benar - tetapi keadaannya berubah: penanda
+  // data-aleta-tema-sipp SUDAH terpasang di halaman ABT sejak
+  // tema-awal.js berjalan pada document_start, sehingga halamannya sudah
+  // gelap sejak awal tanpa ada satu pun cara mematikannya.
+  //
+  // Akibatnya persis yang dilaporkan: menekan tombol terang hanya
+  // menerangkan panel selebar telapak tangan, sementara halaman di
+  // belakangnya tetap gelap. "Light mode tidak berfungsi" - dan memang tidak,
+  // sebab tombolnya tidak pernah menyentuh halamannya.
+  //
+  // Sekarang satu tombol mengurus keduanya, dan petanya benar-benar dibuat -
+  // lihat blok "TEMA GELAP UNTUK HALAMAN ABT" di panel.css.
+  //
+  // ==========================================================================
+  // SALINAN SINKRON DITULIS DI SINI JUGA, DAN ITU YANG MEMBUATNYA TANPA JEDA
+  // ==========================================================================
+  //
+  // chrome.storage hanya asinkron. Kalau hanya ia yang menyimpan, halaman ABT
+  // berikutnya akan digambar dengan tema lama lebih dulu lalu berubah -
+  // kelebat yang justru paling menyakitkan mata. localStorage halaman ini
+  // sinkron dan dibaca tema-awal.js pada document_start, sebelum satu piksel
+  // digambar. Keduanya ditulis: chrome.storage tetap sumber kebenarannya,
+  // localStorage cache yang membuat halaman berikutnya lahir sudah benar.
+  const tema = buat("aleta-tema", "", "Ganti tema ALETA dan halaman ini", async () => {
     const baru = panel.getAttribute("data-tema") === "gelap" ? "terang" : "gelap";
     panel.setAttribute("data-tema", baru);
     tema.textContent = baru === "gelap" ? "☀" : "☾";
+    if (pilihan.temaHalaman) alatTerapkanTemaHalaman(baru);
     try {
       await chrome.storage.local.set({ [pilihan.kunciTema || "temaPanel"]: baru });
     } catch {
@@ -325,11 +541,8 @@ function alatTombolKepala(panel, kunci, opsi) {
   //
   // Menyisakan kepalanya saja. Bedanya dengan menutup: yang diciutkan masih
   // terlihat, jadi tidak ada yang perlu diingat untuk membukanya kembali.
-  const ciut = buat("aleta-lipat", "–", "Ciutkan panel", () => {
-    const sedang = panel.classList.toggle("aleta-panel-ciut");
-    ciut.textContent = sedang ? "▢" : "–";
-    ciut.title = sedang ? "Bentangkan panel" : "Ciutkan panel";
-    if (!sedang) alatJepitTinggi(panel);
+  const ciut = buat("aleta-lipat", "–", "Ciutkan menjadi lencana", () => {
+    alatCiutkan(panel, kunci, true);
   });
 
   // ── Layar penuh dan keluar darinya ────────────────────────────────────────
@@ -371,18 +584,35 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   alatPasangGeser(panel, kepala, kunci);
   alatPasangUbahUkuran(panel, kunci);
 
+  // Lencana dipasang pada panel yang SAMA, dan digeser lewat perkakas yang
+  // sama pula - hanya pegangannya yang berbeda. Kepalanya tidak dapat
+  // dipakai sebagai pegangan saat menciut, sebab ia yang disembunyikan.
+  const lencana = alatPasangLencana(panel, kunci);
+  alatPasangGeser(panel, lencana, kunci);
+
   try {
     const simpan = await chrome.storage.local.get([pilihan.kunciTema || "temaPanel"]);
     const tema = simpan[pilihan.kunciTema || "temaPanel"];
     panel.setAttribute("data-tema", tema === "terang" ? "terang" : "gelap");
     const tombolTema = kepala.querySelector(".aleta-tema");
     if (tombolTema) tombolTema.textContent = tema === "terang" ? "☾" : "☀";
+    // Penanda halaman diselaraskan dengan pilihan tersimpan. tema-awal.js
+    // sudah memasangnya dari salinan sinkron; baris ini yang memperbaikinya
+    // bila salinannya tertinggal - misalnya sesudah pilihan diganti dari
+    // popup, yang menulis ke chrome.storage tetapi tidak ke localStorage.
+    if (pilihan.temaHalaman) alatTerapkanTemaHalaman(tema === "terang" ? "terang" : "gelap");
   } catch {
     panel.setAttribute("data-tema", "gelap");
+    if (pilihan.temaHalaman) alatTerapkanTemaHalaman("gelap");
   }
 
   alatNormalkanJangkar(panel);
-  alatTerapkanPosisi(panel, await alatMuatPosisi(kunci));
+  const posisiTersimpan = await alatMuatPosisi(kunci);
+  alatTerapkanPosisi(panel, posisiTersimpan);
+  // Keadaan lencana ikut dipulihkan. Yang menutup halaman dengan panel
+  // terciut mengharapkannya terciut lagi saat kembali - panel yang
+  // terbentang sendiri menutupi apa yang sedang dibacanya.
+  if (posisiTersimpan && posisiTersimpan.lencana) alatCiutkan(panel, kunci, true);
   // Dijepit di luar alatTerapkanPosisi, sebab fungsi itu keluar lebih awal
   // ketika belum ada posisi tersimpan - yakni tepat pada pemuatan PERTAMA.
   // Tanpa baris ini, panel yang baru muncul setinggi isinya: terukur 672 dari

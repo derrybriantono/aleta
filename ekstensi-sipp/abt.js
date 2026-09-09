@@ -80,17 +80,99 @@ const VAR_PIHAK_LAWAN = "0046";
 const VAR_PIHAK_PELAKU = "0047";
 
 /**
+ * ============================================================================
+ * 8503 DAN 4020 - SATU DIISI, SATU MENGIKUTI SENDIRI
+ * ============================================================================
+ *
+ * Dibaca dari definisi variabelnya di basis data ABT, bukan ditebak:
+ *
+ *   8503  data_type = data_teks   -> tersimpan di ABT, dapat disunting
+ *   4020  data_type = data_sql    -> DIHITUNG dari kuerinya sendiri
+ *
+ * Kueri 4020 itu satu CASE panjang atas '#8503#'. Ia tidak menyimpan apa pun;
+ * ia membaca 8503 lalu mengembalikan kalimat penyalurnya. Karena itu menulis
+ * 4020 mustahil - rute edit_data hanya menerima data_teks dan data_tanggal -
+ * dan sekaligus tidak perlu: begitu 8503 terisi, 4020 mengikuti.
+ *
+ * ============================================================================
+ * BENTUK YANG DIKENALI KUERINYA - DISALIN APA ADANYA DARI ABT
+ * ============================================================================
+ *
+ * Tiap cabang kuerinya berupa REGEXP berjangkar. Yang diterima:
+ *
+ *   A, B, F, H     satu huruf                      ^[Aa]$ ^[Bb]$ ^[Ff]$
+ *                  H juga menerima Fasakh / Murtad
+ *   AB  BA         dua huruf, urutan bebas         ^(AB|BA|A DAN B|A & B)$
+ *   AF  FA
+ *   BF  FB
+ *   ABF            tiga huruf, SELURUH permutasinya
+ *
+ * Perhatikan yang TIDAK ada di sana: tidak satu pun cabang menerima H
+ * bergabung dengan huruf lain, dan tidak ada ABFH. Gabungan seperti itu jatuh
+ * ke cabang ELSE, dan ELSE-nya berbunyi "TIDAK BENAR QUERY NYA / BELUM ISI
+ * ALASAN DI KOLOM ABT" - kalimat yang ikut tercetak ke dalam putusan.
+ *
+ * Karena itu ALETA menyebutkan keadaan itu saat menulis, bukan sesudah
+ * putusannya tercetak. Kuerinya sendiri milik ABT dan tidak disentuh.
+ *
+ * ============================================================================
+ * TANPA KOMA DAN TANPA SPASI
+ * ============================================================================
+ *
+ * Dulu ALETA menulis "A, F". Tidak satu pun cabang kuerinya menerima bentuk
+ * itu - regexpnya berjangkar, dan "A, F" bukan "AF" maupun "A DAN F".
+ * Akibatnya 8503 tampak benar di layar sementara 4020 diam-diam jatuh ke
+ * ELSE. Sekarang hurufnya dirapatkan: "AF".
+ */
+const VAR_HURUF = "8503";
+
+/** Urutan kanonik. Kuerinya menerima urutan bebas; keseragaman untuk manusia. */
+const URUTAN_HURUF = ["A", "B", "F", "H"];
+
+/** Gabungan yang benar-benar punya cabang di kueri 4020. */
+const GABUNGAN_4020 = new Set(["A", "B", "F", "H", "AB", "AF", "BF", "ABF"]);
+
+function susun8503(daftar) {
+  const bersih = Array.from(new Set(daftar.map((x) => String(x || "").trim().toUpperCase())));
+  bersih.sort((a, b) => URUTAN_HURUF.indexOf(a) - URUTAN_HURUF.indexOf(b));
+  return bersih.join("");
+}
+
+function dikenali4020(daftar) {
+  return GABUNGAN_4020.has(susun8503(daftar));
+}
+
+/**
  * Variabel "(OTOMATIS)" yang isinya disusun ABT dari kerangka fakta.
  *
  * Selama kerangkanya kosong, keempatnya berbunyi "TIDAK BENAR QUERY NYA" - dan
  * kalimat itu ikut tercetak ke dalam putusan bila tidak ada yang menahannya.
  */
-const VAR_OTOMATIS = ["8521", "8522", "8528", "8530"];
+const VAR_OTOMATIS = [
+  "8521",
+  "8522",
+  "8528",
+  "8530",
+  // ==========================================================================
+  // 4020 IKUT DI SINI, DAN BUKAN DI VARIABEL_SASARAN SAJA
+  // ==========================================================================
+  //
+  // Ia data_sql - sama sifatnya dengan keempat di atas: dihitung, bukan
+  // disimpan. Bila 8503 kosong atau gabungannya tidak dikenali, ELSE-nya
+  // berbunyi "TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT".
+  //
+  // Yang menentukan: ISI_KOSONG BERJANGKAR di kedua ujung, sehingga kalimat
+  // panjang itu TIDAK cocok dengannya - 4020 yang rusak lolos dari
+  // pemeriksaan kekurangan tanpa satu pun peringatan. Pemeriksaan di daftar
+  // ini tidak berjangkar, jadi ia yang menangkapnya.
+  "4020",
+];
 
 /** Isi yang berarti "belum ada", menurut ABT sendiri. */
 const ISI_KOSONG = /^(DATA_TIDAK_ADA|TIDAK BENAR QUERY NYA|BELUM ISI|-)?$/i;
 
 const ALETA_API_ABT = "/aleta/api/aleta-bot/abt/usulan";
+const ALETA_API_POSITA = "/aleta/api/aleta-bot/sipp/posita";
 
 /**
  * Posisi panel ABT disimpan di kuncinya SENDIRI.
@@ -315,6 +397,20 @@ const POLA_PENUTUP = [
   /^bahwa\s+sudah\s+cukup\b/i,
   /^bahwa\s+tidak\s+sanggup\s+lagi\b/i,
   /^sudah\s+cukup\b/i,
+  // ==========================================================================
+  // BENTUK TANPA "BAHWA" - DIPERLUKAN SEJAK PEMBERSIHAN MENYENTUH BASIS DATA
+  // ==========================================================================
+  //
+  // Yang tergambar di halaman selalu berawalan "Bahwa": list_keterangan di
+  // ABT menyusunnya sebagai "-   Bahwa " + lcfirst(jawaban). Selama
+  // pembersihan hanya menyentuh teks yang tergambar, ketiga pola di atas
+  // cukup.
+  //
+  // Sejak keterangan saksi benar-benar disimpan kembali ke
+  // abt_keterangan_saksi, yang dibersihkan adalah kolom jawaban APA ADANYA -
+  // dan di sana kata "Bahwa" tidak ada. "Sudah cukup" tertangkap pola ketiga;
+  // "tidak sanggup lagi" tidak tertangkap satu pun, dan akan lolos diam-diam.
+  /^tidak\s+sanggup\s+lagi\b/i,
 ];
 
 function bersihkanKeteranganSaksi(teks) {
@@ -330,6 +426,278 @@ function bersihkanKeteranganSaksi(teks) {
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+// ─── Posita: dirapikan di SIPP, sebab ABT hanya membacanya ────────────
+
+/**
+ * ============================================================================
+ * KENAPA 5125 TIDAK DAPAT DISIMPAN LEWAT edit_data
+ * ============================================================================
+ *
+ * Dibaca dari definisi variabelnya di basis data ABT:
+ *
+ *   5125  POSITA LENGKAP  data_type = data_sipp  tabel = perkara  kolom = posita
+ *
+ * dan dari Abt_model::get_data_variabel, yang untuk data_sipp menjalankan
+ * "select posita as data from perkara where perkara_id = ?" terhadap koneksi
+ * SIPP. ABT tidak menyimpan salinannya di mana pun.
+ *
+ * Karena itu penolakannya - "bertipe data_sipp, tidak dapat disunting" -
+ * bukan keterbatasan yang dapat diakali: tidak ada tempat di ABT untuk
+ * menyimpannya. Yang dirapikan harus positanya di SIPP, dan begitu ia rapi
+ * di sana, ABT membacanya rapi pada pemuatan berikutnya.
+ *
+ * ============================================================================
+ * LEWAT PORTAL, DAN DENGAN PAGAR YANG DAPAT DIBUKTIKAN
+ * ============================================================================
+ *
+ * Ekstensi tidak menyentuh basis data SIPP - ia tidak punya dan tidak boleh
+ * punya jalannya. Ia mengirim teks yang sudah dirapikan ke portal ALETA,
+ * portal memeriksa sesi dan kewenangan, lalu bot yang menuliskannya.
+ *
+ * Pagarnya di sisi bot dan mutlak: teks tanpa ruang kosong harus persis sama
+ * sebelum dan sesudah. Perapian hanya menyisipkan pemisah antar butir - lihat
+ * rapikanPosita - sehingga tidak satu huruf pun dalil gugatan dapat berubah.
+ * Bila berbeda walau satu huruf, tulisannya ditolak dan sebabnya disebut.
+ */
+async function simpanPositaKeSipp(perkaraId, positaBaru) {
+  const respons = await fetch(ALETA_API_POSITA, {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ perkaraId, posita: positaBaru }),
+  });
+  if (respons.status === 401) return { ok: false, pesan: "Belum masuk portal ALETA." };
+  if (!respons.ok) return { ok: false, pesan: `ALETA menjawab ${respons.status}.` };
+
+  const luar = await respons.json();
+  const isi = luar?.data ?? luar;
+  if (!isi?.available) return { ok: false, pesan: isi?.message || "ALETA belum dapat menjawab." };
+
+  return {
+    ok: true,
+    pesan: isi.alasan === "sudah rapi" ? "positanya memang sudah rapi" : "tersimpan di SIPP",
+    // Teks lamanya dikembalikan bot supaya riwayat perubahan memuat yang
+    // benar-benar ada di SIPP, bukan yang kebetulan tergambar di halaman.
+    sebelum: String(isi.sebelum || ""),
+  };
+}
+// ─── Keterangan saksi: disunting lewat rute ABT sendiri ──────────────────────
+
+/**
+ * ============================================================================
+ * KENAPA 2021 DAN 2022 TIDAK DAPAT DISIMPAN LEWAT edit_data
+ * ============================================================================
+ *
+ * Dibaca dari definisi variabelnya di basis data ABT:
+ *
+ *   2021  Keterangan Saksi 1 P   data_type = tanya_jawab   referensi = 1197
+ *   2022  Keterangan Saksi 2 P   data_type = tanya_jawab   referensi = 1203
+ *
+ * Rute edit_data hanya menerima data_teks dan data_tanggal - itu sebabnya ia
+ * menjawab "bertipe tanya_jawab - tidak dapat disunting". Dan penolakannya
+ * benar: tanya_jawab bukan satu kolom teks, melainkan SEKUMPULAN BARIS di
+ * tabel abt_keterangan_saksi, masing-masing berisi urutan, pertanyaan, dan
+ * jawaban.
+ *
+ * ABT punya rutenya sendiri untuk itu - abt/tanyajawab_perkara_edit - dan
+ * itulah yang dipakai di sini. Bukan basis datanya langsung: rutenya yang
+ * menjalankan clean_tag_ket_saksi, mengisi diinput_oleh dari sesi petugas,
+ * dan menentukan id barisnya. Menulis langsung ke tabelnya berarti menyalin
+ * ketiga aturan itu dan menunggu salah satunya berubah.
+ *
+ * ============================================================================
+ * YANG PALING BERBAHAYA DI SINI: PERTANYAANNYA TIDAK TERLIHAT DI LAYAR
+ * ============================================================================
+ *
+ * Yang tergambar di baris 2021 hanya JAWABANNYA. Dibaca dari list_keterangan
+ * di Abt_model.php:
+ *
+ *   $data .= "-   Bahwa ".replace_ket_saksi(lcfirst($value->jawaban))."<br>";
+ *
+ * Pertanyaannya tidak ikut. Dan rute simpannya MENGHAPUS SELURUH baris milik
+ * saksi itu lebih dulu, lalu menulis ulang dari apa yang dikirim:
+ *
+ *   DELETE FROM abt_keterangan_saksi WHERE perkara_id=? AND sidang_id=? AND saksi_id=?
+ *
+ * Jadi mengirim balik teks yang tergambar di layar akan menghapus SELURUH
+ * pertanyaan - dan pertanyaannya memang ada: diukur atas seluruh
+ * abt_keterangan_saksi, kelompok terbesar berisi 30 baris dan tidak satu pun
+ * yang pertanyaannya kosong. Yang hilang adalah separuh berita acara.
+ *
+ * Karena itu urutannya di sini:
+ *
+ *   1. AMBIL daftar utuhnya dari halaman penyunting ABT - pertanyaan DAN
+ *      jawaban, beserta urutannya
+ *   2. BERSIHKAN jawabannya saja
+ *   3. KIRIM BALIK daftar utuhnya, pertanyaannya apa adanya
+ *
+ * Satu langkah tambahan, dan langkah itu yang menjaga berita acaranya tetap
+ * berupa tanya-jawab.
+ *
+ * ============================================================================
+ * SATU SIDANG, DAN ITU DIPERIKSA
+ * ============================================================================
+ *
+ * DELETE-nya berpagar sidang_id, sementara yang DIGAMBAR variabel 2021 adalah
+ * keterangan dari SELURUH sidang - GetKeteranganPihak dipanggil dengan
+ * sidang_id NULL. Bila satu saksi punya keterangan di lebih dari satu sidang,
+ * menyimpan satu sidang meninggalkan sidang lain apa adanya, dan yang
+ * tergambar sesudahnya campuran keduanya.
+ *
+ * Diukur: seluruh kelompok (perkara, sidang, saksi) di PA Donggala berisi satu
+ * sidang saja. Jadi keadaan itu tidak ada hari ini - tetapi ia mungkin, dan
+ * karena itu jumlah baris sebelum dan sesudah dibandingkan; bila tidak cocok,
+ * yang disebut bukan "tersimpan" melainkan selisihnya.
+ */
+
+/** Ruas alamat halaman ABT yang dibutuhkan rute penyunting tanya-jawab. */
+function ruasAlamatAbt() {
+  const p = new URLSearchParams(location.search);
+  return {
+    a: p.get("a") || "",
+    b: p.get("b") || "",
+    c: p.get("c") || "",
+    d: p.get("d") || "",
+  };
+}
+
+function alamatTanyaJawab(kode, aksi) {
+  const r = ruasAlamatAbt();
+  const q = new URLSearchParams();
+  if (aksi) q.set("aksi", "simpan");
+  q.set("no_var", kode);
+  q.set("a", r.a);
+  q.set("b", r.b);
+  q.set("c", r.c);
+  q.set("d", r.d);
+  return `${asalAbt()}/tanyajawab_perkara_edit?${q.toString()}`;
+}
+
+/**
+ * Mengambil daftar tanya-jawab utuh dari halaman penyunting ABT.
+ *
+ * Halamannya menyematkan daftarnya sebagai JSON di dalam skripnya sendiri -
+ * `var ajax_data = [...]` - dan itu yang dibaca. Bukan tabel yang digambar
+ * skripnya: tabel itu baru ada sesudah skripnya berjalan, dan yang diambil
+ * lewat fetch hanya HTML-nya.
+ */
+async function ambilTanyaJawab(kode) {
+  const respons = await fetch(alamatTanyaJawab(kode, false), {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+  const teks = await respons.text();
+
+  const cocok = teks.match(/var\s+ajax_data\s*=\s*(\[[\s\S]*?\])\s*(?:\r?\n|;)/);
+  if (!cocok) {
+    // Halamannya berubah, atau yang kembali bukan halaman penyunting -
+    // misalnya halaman masuk. Menebak bentuknya berarti menulis daftar yang
+    // salah ke tempat yang menghapus daftar lama lebih dulu.
+    throw new Error("daftar tanya-jawab tidak terbaca dari halaman ABT");
+  }
+
+  let baris;
+  try {
+    baris = JSON.parse(cocok[1]);
+  } catch {
+    throw new Error("daftar tanya-jawab tidak dapat diurai");
+  }
+  if (!Array.isArray(baris)) throw new Error("daftar tanya-jawab bukan daftar");
+  return baris;
+}
+
+/**
+ * Membersihkan jawaban saksi, lalu menyimpannya kembali lewat rute ABT.
+ *
+ * Yang dibuang kalimat penutup yang tidak menambah satu fakta pun - lihat
+ * POLA_PENUTUP. Pertanyaannya tidak disentuh sama sekali.
+ */
+async function simpanKeteranganSaksi(kode) {
+  const baris = await ambilTanyaJawab(kode);
+  const sebelum = baris.length;
+
+  const disimpan = [];
+  let dibuang = 0;
+  for (const satu of baris) {
+    const jawabanAsli = String((satu && satu.jawaban) || "");
+    // Dibersihkan sebagai SATU baris - tiap baris tanya-jawab satu jawaban,
+    // jadi hasilnya kosong berarti seluruh jawabannya memang kalimat penutup.
+    const jawaban = bersihkanKeteranganSaksi(jawabanAsli);
+    if (!jawaban.trim()) {
+      dibuang += 1;
+      continue;
+    }
+    disimpan.push({
+      no: String((satu && satu.urutan_pertanyaan) || disimpan.length + 1),
+      tanya: String((satu && satu.pertanyaan) || ""),
+      jawab: jawaban,
+    });
+  }
+
+  if (dibuang === 0) {
+    return { ok: true, pesan: "tidak ada kalimat penutup yang perlu dibuang", dibuang: 0 };
+  }
+
+  // Urutannya dirapikan ulang HANYA bila ada yang dibuang: nomor yang
+  // berlubang - 1, 2, 4, 5 - terbaca sebagai baris yang hilang, bukan baris
+  // yang sengaja dibuang.
+  disimpan.forEach((satu, i) => {
+    satu.no = String(i + 1);
+  });
+
+  const badan = new URLSearchParams();
+  badan.set("data", JSON.stringify(disimpan));
+
+  const respons = await fetch(alamatTanyaJawab(kode, true), {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: badan.toString(),
+  });
+  if (!respons.ok) return { ok: false, pesan: `ABT menjawab ${respons.status}.` };
+
+  const jawab = await respons.text();
+  if (!/Tanya\s*Jawab\s*Disimpan/i.test(jawab)) {
+    // ABT menjawab 200 baik untuk berhasil maupun untuk pesan galat basis
+    // datanya. Yang membedakannya hanya kalimatnya.
+    return {
+      ok: false,
+      pesan: `ABT tidak mengatakan tersimpan: ${jawab.replace(/<[^>]*>/g, " ").trim().slice(0, 160)}`,
+    };
+  }
+
+  // Diperiksa dari ABT sendiri, bukan dipercaya dari jawabannya. Rute
+  // simpannya menghapus lalu menulis ulang; bila selisihnya bukan yang
+  // diharapkan, ada baris di sidang lain yang tidak ikut - dan itu harus
+  // disebut, bukan didiamkan.
+  let sesudah = -1;
+  try {
+    sesudah = (await ambilTanyaJawab(kode)).length;
+  } catch {
+    /* pemeriksaannya gagal - disebut sebagai tidak terperiksa, bukan gagal */
+  }
+
+  const harapan = sebelum - dibuang;
+  if (sesudah >= 0 && sesudah !== harapan) {
+    return {
+      ok: true,
+      pesan:
+        `${dibuang} kalimat penutup dibuang, tetapi barisnya kini ${sesudah} - ` +
+        `bukan ${harapan}. Periksa apakah saksi ini punya keterangan di sidang lain.`,
+      dibuang,
+    };
+  }
+
+  return {
+    ok: true,
+    pesan: `${dibuang} kalimat penutup dibuang, ${harapan} baris tersimpan`,
+    dibuang,
+  };
 }
 
 // ─── Tiga berkas dari satu tekanan CETAK ─────────────────────────────────────
@@ -406,6 +774,10 @@ async function muatSaklarCetak() {
     chrome.storage.onChanged.addListener((perubahan, wilayah) => {
       if (wilayah !== "local" || !perubahan[KUNCI_CETAK_TIGA]) return;
       cetakTigaMenyala = perubahan[KUNCI_CETAK_TIGA].newValue === true;
+      // Penandanya ikut berubah seketika. Tanpa ini, saklar yang baru
+      // dinyalakan dari popup meninggalkan halaman yang mengaku masih mati -
+      // dan penanda yang berbohong lebih buruk daripada tidak ada penanda.
+      segarkanPenandaCetak();
     });
   } catch {
     /* tanpa pendengar, saklarnya berlaku pada pemuatan berikutnya */
@@ -821,7 +1193,52 @@ function periksaKelengkapan() {
   return { kurang, rusak };
 }
 
+/**
+ * ============================================================================
+ * PENANDA TIGA BERKAS DI SAMPING TOMBOL CETAK
+ * ============================================================================
+ *
+ * Saklarnya ada di popup ikon ekstensi - satu jendela yang hampir tidak
+ * pernah dibuka. Akibatnya keadaannya tidak dapat diketahui dari halaman
+ * tempat tombolnya ditekan: yang menekan CETAK tidak tahu apakah ia akan
+ * mendapat satu berkas atau tiga sampai berkasnya benar-benar turun.
+ *
+ * Untuk tombol yang mengubah arti tombol milik aplikasi lain, itu terbalik.
+ * Keadaannya harus terbaca DI SEBELAH tombolnya, sebelum ditekan.
+ *
+ * Penandanya hanya digambar ketika saklarnya MENYALA. Penanda yang selalu
+ * ada - menyala atau tidak - menuntut orang membaca tulisannya untuk tahu
+ * keadaannya, dan itu satu langkah lebih banyak daripada yang diperlukan.
+ */
+const KELAS_PENANDA_CETAK = "aleta-cetak-tiga";
+
+function segarkanPenandaCetak() {
+  for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
+    const induk = tautan.parentElement || tautan;
+    let tanda = induk.querySelector("." + KELAS_PENANDA_CETAK);
+
+    if (!cetakTigaMenyala) {
+      if (tanda) tanda.remove();
+      continue;
+    }
+    if (tanda) continue;
+
+    tanda = buatElemen("span", KELAS_PENANDA_CETAK);
+    tanda.title =
+      "ALETA aktif: satu tekanan CETAK menerbitkan tiga berkas - putusan .rtf, " +
+      "PDF hasil konversi, dan anonim .rtf. Matikan dari popup ikon ALETA.";
+    // Angka 3 dan lambang berkas: dibaca dalam sekejap, tanpa membaca kata.
+    tanda.appendChild(buatElemen("span", "aleta-cetak-tiga-angka", "3"));
+    tanda.appendChild(buatElemen("span", "aleta-cetak-tiga-ikon", "🗎"));
+    // Disisipkan SESUDAH tautannya, bukan di dalamnya: menyisipkan anak ke
+    // dalam tautan CETAK membuat tekanan pada penandanya ikut mencetak.
+    if (tautan.nextSibling) induk.insertBefore(tanda, tautan.nextSibling);
+    else induk.appendChild(tanda);
+  }
+}
+
 function pasangPenjagaCetak(jatiDiri, lapor) {
+  segarkanPenandaCetak();
   for (const tautan of Array.from(document.querySelectorAll('a[href*="abt/preview"]'))) {
     if (tautan.getAttribute(TANDA_ABT) === "jaga") continue;
     tautan.setAttribute(TANDA_ABT, "jaga");
@@ -926,6 +1343,11 @@ function susunPanelAbt(jatiDiri) {
   // satu-satunya jalan keluar adalah menutupnya.
   void alatPasangPanel(panel, kepala, KUNCI_POSISI_ABT, {
     kunciTema: KUNCI_TEMA_PANEL,
+    // Tombol temanya mewarnai HALAMAN ABT juga, bukan panelnya saja. Tanpa ini
+    // "terang" hanya menerangkan panel selebar telapak tangan sementara
+    // halaman di belakangnya tetap gelap - dan itulah sebabnya light mode
+    // terbaca sebagai tidak berfungsi.
+    temaHalaman: true,
     saatTutup: () => panel.remove(),
   });
 
@@ -990,6 +1412,8 @@ function susunPanelAbt(jatiDiri) {
   // membatalkan seluruh isian di bawahnya. Lalu huruf alasan, lalu usulan.
   const wadahSelisih = buatElemen("div", "aleta-abt-daftar");
   isi.appendChild(wadahSelisih);
+  const wadahSepihak = buatElemen("div", "aleta-abt-daftar");
+  isi.appendChild(wadahSepihak);
   const wadahHuruf = buatElemen("div", "aleta-abt-daftar");
   isi.appendChild(wadahHuruf);
   const wadahUsulan = buatElemen("div", "aleta-abt-daftar");
@@ -1002,6 +1426,53 @@ function susunPanelAbt(jatiDiri) {
    * ini bukan sesuatu yang diperbaiki dengan mengisi kolom, melainkan sesuatu
    * yang harus diketahui hakim sebelum putusan disusun.
    */
+  /**
+   * ==========================================================================
+   * ALASAN YANG HANYA DISEBUT SATU SAKSI
+   * ==========================================================================
+   *
+   * 5227 kini disusun dari IRISAN keterangan kedua saksi - hanya alasan yang
+   * saling bersesuaian yang masuk. Sebabnya bukan kerapian melainkan hukum
+   * pembuktian: keterangan seorang saksi tanpa penguat bukanlah alat bukti
+   * yang berdiri sendiri.
+   *
+   * Tetapi yang dibuang tidak boleh hilang dari layar. Alasan yang hanya
+   * disebut satu saksi tetap fakta yang didengar majelis, dan bisa jadi
+   * saksi kedua memang tidak ditanya tentangnya - itu keadaan yang diperbaiki
+   * dengan pertanyaan tambahan, bukan dengan menghapusnya dari catatan.
+   *
+   * Karena itu ia digambar terpisah, disebut siapa yang menyebutnya, dan
+   * dinyatakan terus terang bahwa ia TIDAK masuk 5227.
+   */
+  function gambarSepihak(daftar) {
+    wadahSepihak.textContent = "";
+    if (!daftar || !daftar.length) return;
+
+    const kotak = buatElemen("div", "aleta-abt-kartu aleta-abt-kartu-awas");
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-nama",
+        `${daftar.length} alasan hanya disebut satu saksi — tidak masuk 5227`
+      )
+    );
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        "5227 hanya memuat alasan yang disebut KEDUA saksi. Yang di bawah ini " +
+          "belum bersesuaian - tanyakan kepada saksi yang belum menyebutnya, atau " +
+          "tambahkan sendiri ke 5227 bila memang cukup dibuktikan alat bukti lain."
+      )
+    );
+    for (const satu of daftar) {
+      const baris = buatElemen("div", "aleta-abt-sanding");
+      baris.appendChild(buatElemen("span", "aleta-abt-label", `Saksi ${satu.saksi}`));
+      baris.appendChild(buatElemen("span", "aleta-abt-isi", satu.nama));
+      kotak.appendChild(baris);
+    }
+    wadahSepihak.appendChild(kotak);
+  }
   function gambarSelisih(daftar) {
     wadahSelisih.textContent = "";
     if (!daftar.length) return;
@@ -1103,7 +1574,7 @@ function susunPanelAbt(jatiDiri) {
     }
 
     if (pilihan.length) {
-      const terap = buatElemen("button", "aleta-permintaan-tombol", "Tulis 8503 dan 4020");
+      const terap = buatElemen("button", "aleta-permintaan-tombol", "Tulis 8503");
       terap.type = "button";
       const kabarHuruf = buatElemen("div", "aleta-abt-kabar");
       kotak.appendChild(terap);
@@ -1119,41 +1590,53 @@ function susunPanelAbt(jatiDiri) {
         terap.disabled = true;
         kabarHuruf.className = "aleta-abt-kabar";
 
-        // 8503 memuat hurufnya; 4020 adalah penyalur yang mengaktifkan blok
-        // kuning yang sesuai, dan bentuknya "alasan <huruf>". Keduanya ditulis
-        // sekaligus - menulis salah satunya saja meninggalkan blangko dalam
-        // keadaan setengah, dan itu justru keadaan yang paling sulit dikenali.
-        const isi8503 = dipilih.join(", ");
-        const isi4020 = `alasan ${dipilih.join(" dan ")}`;
-        const gagal = [];
-        for (const [kode, nilai] of [["8503", isi8503], ["4020", isi4020]]) {
-          const sebelum = (barisVariabel().get(kode) || {}).nilai || "";
-          try {
-            const hasil = await simpanVariabel(kode, nilai, jatiDiri);
-            if (!hasil.ok) {
-              gagal.push(`${kode}: ${hasil.pesan}`);
-              continue;
-            }
+        const isi8503 = susun8503(dipilih);
+        const sebelum = (barisVariabel().get(VAR_HURUF) || {}).nilai || "";
+        let pesan = "";
+        let gagal = false;
+        try {
+          const hasil = await simpanVariabel(VAR_HURUF, isi8503, jatiDiri);
+          if (!hasil.ok) {
+            gagal = true;
+            pesan = `8503: ${hasil.pesan}`;
+          } else {
             void catatRiwayat({
               perkaraId: jatiDiri.perkaraId,
-              kode,
-              nama: kode === "8503" ? "Alasan perceraian" : "Penyalur alasan",
+              kode: VAR_HURUF,
+              nama: "Alasan perceraian",
               sebelum,
-              sesudah: nilai,
+              sesudah: isi8503,
               cara: "centangan huruf alasan",
               pada: new Date().toISOString(),
             });
-            const item = barisVariabel().get(kode);
-            if (item) item.selNilai.textContent = nilai;
-          } catch (galat) {
-            gagal.push(`${kode}: ${String((galat && galat.message) || galat)}`);
+            const item = barisVariabel().get(VAR_HURUF);
+            if (item) item.selNilai.textContent = isi8503;
+            pesan = `8503 diisi "${isi8503}". 4020 mengikuti sendiri sesudah halaman disegarkan.`;
           }
+        } catch (galat) {
+          gagal = true;
+          pesan = `8503: ${String((galat && galat.message) || galat)}`;
         }
+
+        // ====================================================================
+        // GABUNGAN YANG TIDAK DIKENALI KUERI 4020 DISEBUTKAN SEKARANG
+        // ====================================================================
+        //
+        // Bukan sesudahnya, dan bukan dibiarkan. Yang tidak dikenali membuat
+        // 4020 berbunyi "TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM
+        // ABT" - dan kalimat itu ikut tercetak ke dalam putusan.
+        if (!gagal && !dikenali4020(dipilih)) {
+          gagal = true;
+          pesan =
+            `8503 diisi "${isi8503}", tetapi kueri 4020 milik ABT tidak mengenali gabungan ini - ` +
+            `ia hanya mengenal A, B, F, H sendiri-sendiri, AB, AF, BF, dan ABF. ` +
+            `4020 akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak. ` +
+            `Perbaiki kuerinya di ABT, atau kurangi hurufnya.`;
+        }
+
         terap.disabled = false;
-        kabarHuruf.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
-        kabarHuruf.textContent = gagal.length
-          ? gagal.join("; ")
-          : `8503 diisi "${isi8503}", 4020 diisi "${isi4020}".`;
+        kabarHuruf.className = gagal ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+        kabarHuruf.textContent = pesan;
       });
     }
 
@@ -1237,7 +1720,32 @@ function susunPanelAbt(jatiDiri) {
         terap.disabled = true;
         kabarTerap.textContent = "Menyimpan…";
         try {
-          const hasil = await simpanVariabel(r.kode, r.sesudah, jatiDiri);
+          // ================================================================
+          // TIGA VARIABEL, TIGA JALUR SIMPAN YANG BERBEDA
+          // ================================================================
+          //
+          // Ketiganya tampak sama di layar - satu baris teks yang dirapikan -
+          // tetapi tersimpan di tiga tempat yang sama sekali berbeda:
+          //
+          //   5125  data_sipp     kolom posita di basis data SIPP
+          //   2021  tanya_jawab   baris-baris di abt_keterangan_saksi
+          //   2022  tanya_jawab   sama
+          //   lain  data_teks     rute edit_data milik ABT
+          //
+          // Dulu ketiganya dikirim ke edit_data, dan dua yang pertama selalu
+          // ditolak: "bertipe data_sipp / tanya_jawab - tidak dapat
+          // disunting". Penolakan itu benar - yang salah tempat tujuannya.
+          let hasil;
+          if (r.kode === VAR_POSITA) {
+            hasil = await simpanPositaKeSipp(jatiDiri.perkaraId, r.sesudah);
+            // Teks lama diambil dari SIPP, bukan dari yang tergambar di
+            // halaman - riwayat perubahan harus memuat yang benar-benar ada.
+            if (hasil.ok && hasil.sebelum) r.sebelum = hasil.sebelum;
+          } else if (r.kode === VAR_SAKSI_1 || r.kode === VAR_SAKSI_2) {
+            hasil = await simpanKeteranganSaksi(r.kode);
+          } else {
+            hasil = await simpanVariabel(r.kode, r.sesudah, jatiDiri);
+          }
           if (!hasil.ok) {
             kabarTerap.className = "aleta-abt-kabar aleta-abt-gagal";
             kabarTerap.textContent = hasil.pesan;
@@ -1255,7 +1763,10 @@ function susunPanelAbt(jatiDiri) {
           });
           const item = barisVariabel().get(r.kode);
           if (item) item.selNilai.textContent = r.sesudah;
-          kabarTerap.textContent = "Tersimpan.";
+          // Pesannya dari jalur yang benar-benar dipakai, bukan satu kata
+          // "Tersimpan" untuk ketiganya - yang menyimpan posita perlu tahu
+          // bahwa yang berubah ada di SIPP, bukan di ABT.
+          kabarTerap.textContent = hasil.pesan ? `Tersimpan — ${hasil.pesan}.` : "Tersimpan.";
         } catch (galat) {
           kabarTerap.className = "aleta-abt-kabar aleta-abt-gagal";
           kabarTerap.textContent = String((galat && galat.message) || galat);
@@ -1448,6 +1959,7 @@ function susunPanelAbt(jatiDiri) {
         `Kuasa aktif: ${sipp.jumlahKuasa || 0}. Prodeo: ${sipp.prodeo ? "ya" : "tidak"}. ` +
         "Tiga variabel prodeo dan fasakh memang tidak disimpan SIPP - disebut apa adanya di bawah.";
       gambarSelisih([]);
+      gambarSepihak([]);
       gambarHuruf([], []);
       gambarUsulan(sipp.usulan || []);
     } catch (galat) {
@@ -1485,6 +1997,7 @@ function susunPanelAbt(jatiDiri) {
       kabar.textContent =
         `Terbaca ${saksi.butir?.saksi1 || 0} butir dari saksi 1 dan ${saksi.butir?.saksi2 || 0} dari saksi 2.`;
       gambarSelisih(saksi.selisih || []);
+      gambarSepihak(saksi.ciriSepihak || []);
       gambarHuruf(saksi.huruf || [], saksi.hurufBelumSiap || []);
       gambarUsulan(saksi.usulan || []);
     } catch (galat) {

@@ -1,0 +1,267 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+import { describe, expect, it } from "vitest";
+
+/**
+ * ============================================================================
+ * TEMA HALAMAN ABT, LENCANA, DAN TIGA JALUR SIMPAN
+ * ============================================================================
+ *
+ * Ketiganya lahir dari satu laporan yang sama: panel ALETA di halaman ABT
+ * bekerja, tetapi halaman di belakangnya tidak. Temanya tidak dapat
+ * dimatikan, warnanya membuat garis dan tulisan lenyap, dan tiga variabel
+ * menolak disunting dengan sebab yang benar tetapi tanpa jalan keluar.
+ *
+ * Yang diuji di sini SIFAT-nya, bukan warnanya satu per satu: bahwa aturannya
+ * ada, bahwa jangkarnya benar, dan bahwa jalur simpannya tidak tertukar.
+ * Kontras warnanya diukur terpisah, dengan hitungan luminansi.
+ */
+const akar = (berkas: string) => path.resolve(process.cwd(), "..", "ekstensi-sipp", berkas);
+const baca = (berkas: string) => readFileSync(akar(berkas), "utf8");
+
+/** Membuang komentar CSS supaya asersi tidak tertipu oleh catatan sendiri. */
+function gayaTanpaCatatan(isi: string) {
+  return isi.replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
+describe("tema halaman ABT dapat dimatikan", () => {
+  it("tombol tema menyentuh HALAMAN, bukan panel saja", () => {
+    // Sebelumnya ia hanya membalik data-tema pada panel selebar telapak
+    // tangan, sementara halaman di belakangnya tetap gelap. Itulah sebabnya
+    // light mode terbaca sebagai tidak berfungsi.
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain("function alatTerapkanTemaHalaman(");
+    expect(isi).toContain("if (pilihan.temaHalaman) alatTerapkanTemaHalaman(baru);");
+  });
+
+  it("terang berarti penandanya DILEPAS - bukan diganti nilai lain", () => {
+    // ABT harus kembali ke tampilan bawaannya sendiri, bukan ke tema terang
+    // buatan ALETA. Melepas penandanya membuat seluruh aturan gelap berhenti
+    // berlaku sekaligus, tanpa satu pun aturan tandingan.
+    const isi = baca("panel-alat.js");
+    const potong = isi.slice(isi.indexOf("function alatTerapkanTemaHalaman"));
+    expect(potong).toContain('akar.removeAttribute("data-aleta-tema-sipp")');
+  });
+
+  it("panel ABT menyalakannya, panel SIPP tidak", () => {
+    // Halaman SIPP sudah punya tombol temanya sendiri di konten.js. Dua
+    // tombol yang mengurus penanda yang sama akan saling menimpa.
+    expect(baca("abt.js")).toContain("temaHalaman: true,");
+  });
+
+  it("salinan sinkron ikut ditulis - itu yang menghapus kelebatnya", () => {
+    // chrome.storage hanya asinkron; halaman berikutnya akan lahir dengan
+    // tema lama lalu berubah di depan mata. localStorage dibaca tema-awal.js
+    // pada document_start, sebelum satu piksel digambar.
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain('KUNCI_SALINAN_TEMA_HALAMAN = "aleta-tema-sipp"');
+    expect(isi).toContain("window.localStorage.setItem(KUNCI_SALINAN_TEMA_HALAMAN");
+  });
+
+  it("kuncinya SAMA dengan SIPP - satu tema untuk kedua halaman", () => {
+    const awal = baca("tema-awal.js");
+    const alat = baca("panel-alat.js");
+    const kunciAwal = awal.match(/KUNCI_SALINAN\s*=\s*"([^"]+)"/);
+    const kunciAlat = alat.match(/KUNCI_SALINAN_TEMA_HALAMAN\s*=\s*"([^"]+)"/);
+    expect(kunciAwal?.[1]).toBe(kunciAlat?.[1]);
+  });
+});
+
+describe("peta warna ABT", () => {
+  const gaya = () => gayaTanpaCatatan(baca("panel.css"));
+
+  it("halaman ABT ditandai pada document_start, bukan sesudah panel muncul", () => {
+    // Kalau penandanya menyusul, halaman digambar dulu tanpa peta warnanya -
+    // dan itu justru kelebat yang paling menyakitkan.
+    const isi = baca("tema-awal.js");
+    expect(isi).toContain('window.location.pathname.indexOf("/aps_badilag/") === 0');
+    expect(isi).toContain('setAttribute("data-aleta-halaman", "abt")');
+  });
+
+  it("aturannya berjangkar pada penanda halaman ABT", () => {
+    // Tanpa jangkar itu, aturan ABT ikut berlaku di halaman SIPP - dan
+    // sebaliknya. Keduanya berbagi satu berkas gaya.
+    const isi = gaya();
+    const jumlah = isi.split('data-aleta-halaman="abt"').length - 1;
+    expect(jumlah).toBeGreaterThan(10);
+  });
+
+  it("warna sel yang ditulis INLINE oleh ABT ikut diatur", () => {
+    // Dibaca dari views/abt/view.php: tiap sel ditulis style="color:green" /
+    // blue / red / black. Gaya inline mengalahkan berkas gaya mana pun
+    // kecuali yang ber-!important, dan pemilihnya harus membaca atribut
+    // style - ABT tidak memberi kelas apa pun pada sel-sel itu.
+    const isi = gaya();
+    for (const warna of ["green", "blue", "red", "black"]) {
+      expect(isi, warna).toContain(`[style*="color:${warna}"]`);
+    }
+  });
+
+  it("elemen ABT yang paling menentukan punya aturannya", () => {
+    const isi = gaya();
+    for (const pemilih of ["#wrapper", "#content", ".about", "#header", "#cssmenu", ".w3l_header"]) {
+      expect(isi, pemilih).toContain(pemilih);
+    }
+  });
+
+  it("blok kuning 4020 tidak dibiarkan menyala", () => {
+    // <mark> bawaan peramban berlatar kuning terang. Di atas halaman gelap ia
+    // satu-satunya benda yang menyilaukan.
+    expect(gaya()).toContain('data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] mark');
+  });
+});
+
+describe("lencana - panel yang diciutkan", () => {
+  it("kepalanya IKUT tersembunyi, bukan disisakan", () => {
+    // Yang dulu tersisa: kepala selebar panel semula, kosong, dengan deretan
+    // tombol di kanannya. Di layar itu terbaca sebagai panel yang rusak.
+    const isi = gayaTanpaCatatan(baca("panel.css"));
+    expect(isi).toContain(".aleta-panel-lencana > *:not(.aleta-lencana)");
+    expect(isi).toContain("display: none !important;");
+  });
+
+  it("dapat digeser lewat lencananya sendiri", () => {
+    // Kepalanya tidak dapat dipakai sebagai pegangan saat menciut - ia yang
+    // disembunyikan.
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain("alatPasangGeser(panel, lencana, kunci);");
+  });
+
+  it("klik membedakan diri dari tarikan lewat JARAK, bukan waktu", () => {
+    // Tanpa pembeda, tiap tarikan berakhir dengan panel yang terbentang
+    // kembali - sebab tiap tarikan diakhiri satu pointerup di atas lencananya.
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain('panel.dataset.baruDigeser = "1";');
+    expect(isi).toContain('if (panel.dataset.baruDigeser === "1")');
+  });
+
+  it("satu klik dan klik ganda keduanya membentangkan", () => {
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain('lencana.addEventListener("click", bentangkan)');
+    expect(isi).toContain('lencana.addEventListener("dblclick"');
+  });
+
+  it("keadaan terciut ikut dipulihkan saat halaman dibuka lagi", () => {
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain("if (posisiTersimpan && posisiTersimpan.lencana)");
+  });
+
+  it("logonya dari berkas ekstensi, bukan huruf yang digambar CSS", () => {
+    const isi = baca("panel-alat.js");
+    expect(isi).toContain('chrome.runtime.getURL("ikon/aleta-32.png")');
+  });
+});
+
+describe("penanda tiga berkas di samping CETAK", () => {
+  it("hanya digambar ketika saklarnya menyala", () => {
+    const isi = baca("abt.js");
+    expect(isi).toContain("if (!cetakTigaMenyala) {");
+    expect(isi).toContain("if (tanda) tanda.remove();");
+  });
+
+  it("disisipkan DI SAMPING tautan, bukan di dalamnya", () => {
+    // Menyisipkan anak ke dalam tautan CETAK membuat tekanan pada penandanya
+    // ikut mencetak.
+    const isi = baca("abt.js");
+    expect(isi).toContain("induk.insertBefore(tanda, tautan.nextSibling)");
+  });
+
+  it("tidak dapat ditekan", () => {
+    // Tekanan yang jatuh sedikit ke kanan dari CETAK akan mengenai penandanya
+    // dan tidak terjadi apa-apa - yang terbaca sebagai CETAK yang kadang mati.
+    const isi = gayaTanpaCatatan(baca("panel.css"));
+    const potong = isi.slice(isi.indexOf(".aleta-cetak-tiga {"));
+    expect(potong.slice(0, 700)).toContain("pointer-events: none;");
+  });
+
+  it("berubah seketika saat saklarnya diubah dari popup", () => {
+    const isi = baca("abt.js");
+    const potong = isi.slice(isi.indexOf("chrome.storage.onChanged.addListener"));
+    expect(potong.slice(0, 600)).toContain("segarkanPenandaCetak();");
+  });
+});
+
+describe("tiga jalur simpan yang tidak boleh tertukar", () => {
+  const abt = () => baca("abt.js");
+
+  it("posita lewat SIPP, saksi lewat rute tanya-jawab ABT, sisanya edit_data", () => {
+    // Ketiganya tampak sama di layar - satu baris teks yang dirapikan -
+    // tetapi tersimpan di tiga tempat yang sama sekali berbeda.
+    const isi = abt();
+    expect(isi).toContain("if (r.kode === VAR_POSITA) {");
+    expect(isi).toContain("hasil = await simpanPositaKeSipp(jatiDiri.perkaraId, r.sesudah);");
+    expect(isi).toContain("hasil = await simpanKeteranganSaksi(r.kode);");
+    expect(isi).toContain("hasil = await simpanVariabel(r.kode, r.sesudah, jatiDiri);");
+  });
+
+  it("keterangan saksi diambil UTUH lebih dulu - pertanyaannya tidak terlihat di layar", () => {
+    // list_keterangan menggambar jawabannya saja, dan rute simpannya
+    // MENGHAPUS seluruh baris milik saksi itu lebih dulu. Mengirim balik teks
+    // yang tergambar akan menghapus seluruh pertanyaan.
+    const isi = abt();
+    expect(isi).toContain("async function ambilTanyaJawab(");
+    expect(isi).toContain("var\\s+ajax_data");
+    const potong = isi.slice(isi.indexOf("async function simpanKeteranganSaksi"));
+    expect(potong.indexOf("await ambilTanyaJawab(kode)")).toBeLessThan(
+      potong.indexOf('badan.set("data"')
+    );
+    // Pertanyaannya diteruskan apa adanya.
+    expect(potong).toContain("tanya: String((satu && satu.pertanyaan)");
+  });
+
+  it("jumlah barisnya diperiksa dari ABT sendiri sesudah menyimpan", () => {
+    // Rute simpannya menghapus lalu menulis ulang, dan pagarnya sidang_id -
+    // sementara yang digambar variabel 2021 keterangan dari SELURUH sidang.
+    const potong = abt().slice(abt().indexOf("async function simpanKeteranganSaksi"));
+    expect(potong).toContain("const harapan = sebelum - dibuang;");
+    expect(potong).toContain("Periksa apakah saksi ini punya keterangan di sidang lain.");
+  });
+
+  it("jawaban 200 dari ABT tidak langsung dianggap berhasil", () => {
+    const potong = abt().slice(abt().indexOf("async function simpanKeteranganSaksi"));
+    expect(potong).toContain("Tanya\\s*Jawab\\s*Disimpan");
+  });
+
+  it("ekstensi tidak menyentuh basis data SIPP - ia lewat portal", () => {
+    const isi = abt();
+    expect(isi).toContain('ALETA_API_POSITA = "/aleta/api/aleta-bot/sipp/posita"');
+    expect(isi).not.toContain("UPDATE perkara");
+  });
+});
+
+describe("pagar tulisan posita ke SIPP", () => {
+  const layanan = () =>
+    readFileSync(
+      path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippPositaService.js"),
+      "utf8"
+    );
+
+  it("isinya tidak boleh berubah satu huruf pun", () => {
+    // Perapian hanya MENYISIPKAN PEMISAH. Karena itu dapat diperiksa secara
+    // mutlak: buang seluruh ruang kosong dari kedua teks, lalu bandingkan.
+    const isi = layanan();
+    expect(isi).toContain("function tanpaRuang(");
+    expect(isi).toContain("if (tanpaRuang(lama) !== tanpaRuang(baru))");
+  });
+
+  it("posita yang masih kosong TIDAK diisi lewat jalur ini", () => {
+    // Mengisi bukan pekerjaan perapian. Menolak di sini menutup jalan
+    // seseorang menuliskan posita baru lewat tombol bernama "rapikan".
+    expect(layanan()).toContain("Posita di SIPP masih kosong");
+  });
+
+  it("perkara_id dikirim terikat, bukan disambung ke dalam kueri", () => {
+    const isi = layanan();
+    expect(isi).toContain('"UPDATE perkara SET posita = ? WHERE perkara_id = ? LIMIT 1"');
+    expect(isi).toContain("Number.isInteger(id)");
+  });
+
+  it("tepat satu baris yang boleh tersentuh", () => {
+    expect(layanan()).toContain("if (tersentuh !== 1)");
+  });
+
+  it("posita lama dikembalikan supaya ada yang dapat dipulihkan", () => {
+    expect(layanan()).toContain("sebelum: lama");
+  });
+});

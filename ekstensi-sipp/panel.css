@@ -2491,3 +2491,309 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 .aleta-panel-ciut .aleta-kaki {
   display: none;
 }
+
+
+
+/* ==========================================================================
+   PENANDA TIGA BERKAS - DI SAMPING TOMBOL CETAK MILIK ABT
+   ==========================================================================
+
+   Saklarnya ada di popup ikon ekstensi, satu jendela yang hampir tidak pernah
+   dibuka. Tanpa penanda ini, yang menekan CETAK tidak tahu apakah ia akan
+   mendapat satu berkas atau tiga sampai berkasnya benar-benar turun - dan
+   untuk tombol yang mengubah arti tombol milik aplikasi lain, itu terbalik.
+
+   Warnanya hijau ALETA, bukan oranye ABT: yang ditandai justru bahwa ada
+   lapisan ALETA yang bekerja di atas tombol itu. Menyamakan warnanya dengan
+   ABT akan membuatnya terbaca sebagai bagian ABT sendiri.
+
+   Ia digambar HANYA ketika saklarnya menyala - lihat segarkanPenandaCetak.
+   ========================================================================== */
+
+.aleta-cetak-tiga {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border: 1px solid #4bbd85;
+  border-radius: 999px;
+  background: #0f2f22;
+  color: #cdeedd;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  /* Tidak dapat ditekan: ia keterangan, bukan tombol. Tanpa ini, tekanan yang
+     jatuh sedikit ke kanan dari CETAK mengenai penandanya dan tidak terjadi
+     apa-apa - yang terbaca sebagai tombol CETAK yang kadang tidak bekerja. */
+  pointer-events: none;
+  user-select: none;
+  vertical-align: middle;
+}
+
+.aleta-cetak-tiga-angka {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.aleta-cetak-tiga-ikon {
+  font-size: 11px;
+  /* Lambang berkas digambar berbeda tiap peramban dan kadang berwarna sendiri;
+     opasitasnya diturunkan supaya ia tidak lebih menarik mata daripada
+     angkanya, yang justru keterangan pokoknya. */
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   LENCANA - PANEL YANG DICIUTKAN
+   ==========================================================================
+
+   Yang diciutkan dulu menyisakan KEPALANYA: selebar panel semula, kosong,
+   dengan deretan tombol di kanannya. Di layar itu terbaca sebagai panel yang
+   rusak, bukan panel yang diciutkan - ia menutupi separuh lebar halaman kerja
+   tanpa menampilkan satu pun keterangan.
+
+   Sekarang yang tersisa satu lencana bulat berisi logo ALETA. Elemennya tetap
+   panel yang sama - hanya ukurannya, bentuknya, dan isi yang terlihat yang
+   berubah - sehingga seluruh perkakas geser, jepit tepi layar, dan simpan
+   posisi berlaku apa adanya tanpa satu baris pun tambahan.
+   ========================================================================== */
+
+.aleta-lencana {
+  display: none;
+}
+
+.aleta-panel-lencana {
+  width: 52px !important;
+  min-width: 0 !important;
+  height: 52px !important;
+  max-height: 52px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  /* Bayangannya lebih tegas daripada bayangan panel: lencana sekecil ini
+     melayang di atas tabel yang penuh garis, dan tanpa bayangan ia terbaca
+     sebagai gambar yang kebetulan tertempel di halaman. */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* Seluruh isi panel disembunyikan, termasuk kepala beserta tombolnya - yang
+   dulu justru tetap terlihat dan menjadi sebab kotak kosong itu. */
+.aleta-panel-lencana > *:not(.aleta-lencana) {
+  display: none !important;
+}
+
+.aleta-panel-lencana .aleta-tarik {
+  display: none;
+}
+
+.aleta-panel-lencana .aleta-lencana {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--aleta-latar, #12211a);
+  border: 2px solid var(--aleta-merek, #4bbd85);
+  /* Tanpa ini, menarik lencana ikut menyeret gambarnya sebagai berkas -
+     peramban memperlakukan img sebagai sasaran seret bawaan. */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.aleta-panel-lencana .aleta-lencana img {
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.aleta-panel-lencana .aleta-lencana:hover {
+  border-color: var(--aleta-merek-terang, #7fd0a6);
+}
+
+/* Lencana tidak ikut menggeser saat panelnya terbentang - ia tidak terlihat,
+   tetapi pendengar pointernya masih terpasang. */
+.aleta-panel:not(.aleta-panel-lencana) .aleta-lencana {
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   TEMA GELAP UNTUK HALAMAN ABT
+   ==========================================================================
+
+   Terpisah dari peta SIPP di atas, dan sebabnya bukan kerapian: DOM-nya
+   berbeda hampir seluruhnya. SIPP memakai #konten, .cssTable, .detil;
+   ABT memakai #content, #wrapper, .about, .agile_wthree_inner_grids. Tidak
+   satu pun aturan SIPP di atas menyentuh elemen ABT.
+
+   Akibatnya sebelum blok ini ada: aturan html dan body berlaku, sehingga
+   halamannya menjadi hitam - sementara tulisannya tetap hijau tua, merah, dan
+   biru tua milik ABT. Hijau tua di atas hitam adalah gabungan yang paling
+   sulit dibaca dari semua yang mungkin, dan garis tabelnya lenyap sama sekali.
+
+   ==========================================================================
+   WARNANYA DITURUNKAN DARI WARNA ABT SENDIRI
+   ==========================================================================
+
+   Bukan dipilih dari selera. Tiap warna gelap di bawah adalah warna terang
+   ABT yang digeser terangnya, sehingga identitasnya tetap terbaca:
+
+     peran               ABT asli   gelap      dari mana
+     bilah kepala/menu   #006640    #0f2f22    hijau Badilag, diturunkan
+     nomor perkara       #00acee    #7fd0e8    biru ABT, dilembutkan
+     tombol edit         #ffb900    #e0a52f    oranye ABT, diredupkan
+     GANTI BLANGKO       #00acee    #114a66    biru ABT sebagai latar
+     GANTI NOMOR         #e82222    #6d1f1f    merah ABT sebagai latar
+
+   Ground dan permukaannya memakai token --s-* yang SUDAH dipakai peta SIPP.
+   Itu disengaja: petugas berpindah antara kedua halaman puluhan kali sehari,
+   dan dua hijau gelap yang berbeda tipis pada dua halaman bersebelahan
+   terbaca sebagai salah satunya rusak.
+
+   ==========================================================================
+   WARNA TULISAN TABELNYA INLINE - KARENA ITU !important
+   ==========================================================================
+
+   Dibaca dari views/abt/view.php: tiap sel ditulis dengan gayanya menempel,
+   style="color:green" untuk nama variabel dan style="color:blue|red|black"
+   untuk isinya, menurut ada tidaknya data. Gaya inline mengalahkan berkas
+   gaya mana pun kecuali yang ber-!important.
+
+   Pemilihnya karena itu membaca isi atribut style, bukan kelas - ABT tidak
+   memberi kelas apa pun pada sel-sel itu. Kelihatan aneh, dan memang aneh;
+   yang lebih aneh adalah halaman yang tidak dapat dibaca.
+   ========================================================================== */
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#wrapper, #content, .about, #welcome, .container, .agile_wthree_inner_grids) {
+  background: var(--s-latar) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* --- Bilah kepala dan menu: hijau ABT yang diturunkan --------------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#header, #cssmenu) {
+  background: #0f2f22 !important;
+  border-bottom: 1px solid var(--s-garis-hijau) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#header, #header a, #header b, #header small, #header i, .app, .satker, .h_right) {
+  color: #e4efe8 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] #cssmenu a {
+  color: #cfe3d8 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#cssmenu a:hover, #cssmenu li:hover > a) {
+  background: var(--s-hijau) !important;
+  color: #ffffff !important;
+}
+
+/* --- Judul: "Cerai Gugat" nyaris tak terlihat sebelum ini ----------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.about h2, .about h3, .w3l_header, .w3_agileits_header) {
+  color: var(--s-tulisan) !important;
+  border-top-color: var(--s-garis-hijau) !important;
+}
+
+/* Nomor perkaranya di dalam <span> - biru ABT yang dilembutkan. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .w3l_header span {
+  color: #7fd0e8 !important;
+}
+
+/* --- Tabel variabel ------------------------------------------------------ */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table, .table-bordered, .table-hover) {
+  background: var(--s-permukaan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table td, table th, .table-bordered td, .table-bordered th) {
+  background-color: transparent !important;
+  border-color: var(--s-garis) !important;
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(thead th, thead td) {
+  background: var(--s-hijau-tua) !important;
+  color: #dff0e6 !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] tbody tr:nth-child(even) td {
+  background-color: var(--s-permukaan-2) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .table-hover tbody tr:hover td {
+  background-color: var(--s-sorot) !important;
+}
+
+/* --- Warna sel yang ditulis inline oleh view.php -------------------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color:green"],
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color: green"] {
+  color: #7fd0a6 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color:blue"],
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color: blue"] {
+  color: #93c9f2 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color:red"],
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color: red"] {
+  color: #ffa79c !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color:black"],
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color: black"] {
+  color: var(--s-tulisan) !important;
+}
+
+/* Blok kuning penyalur 4020 - <mark> bawaan peramban berlatar kuning terang. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] mark {
+  background: #4a3a10 !important;
+  color: #ffd98a !important;
+}
+
+/* --- Tombol -------------------------------------------------------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.button_one, a.button_one) {
+  background-color: #e0a52f !important;
+  color: #201700 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .sembilan {
+  background: #114a66 !important;
+  color: #cfe9f7 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .delapan {
+  background: #6d1f1f !important;
+  color: #ffc9c4 !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.btn, button, input[type="submit"], input[type="button"]) {
+  background-color: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* --- Isian borang -------------------------------------------------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(input, select, textarea) {
+  background-color: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* --- Jendela sembul (magnific popup) dipakai borang edit ABT ------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.agileinfo, .mfp-content, #small-dialog, .white-popup) {
+  background: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* --- Kaki halaman -------------------------------------------------------- */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.footer, .copyright, .agileits_footer) {
+  background: #0f2f22 !important;
+  color: #cfe3d8 !important;
+}

@@ -2040,6 +2040,24 @@ export async function getGatewayAbtUsulan(muatan: {
  *
  * Isinya dikirim base64 dan tidak disimpan di mana pun di jalur ini.
  */
+/**
+ * Merapikan posita satu perkara di SIPP.
+ *
+ * SATU-SATUNYA jalur di ALETA yang menulis ke kolom posita, dan pagarnya di
+ * sisi bot: isi tanpa ruang kosong harus persis sama sebelum dan sesudah,
+ * sehingga perapian tidak dapat mengubah satu huruf pun dalil gugatan.
+ *
+ * Posita lama ikut kembali supaya penyimpannya punya yang dapat dikembalikan.
+ */
+export async function getGatewaySippPositaRapikan(perkaraId: string, posita: string) {
+  return gatewayFetch<{ tersentuh: number; sebelum: string; sesudah: string; alasan: string }>(
+    "/internal/aleta-bot/sipp/posita/rapikan",
+    {
+      method: "POST",
+      body: JSON.stringify({ perkaraId, posita }),
+    }
+  );
+}
 export async function getGatewayAbtPdf(rtfBase64: string) {
   return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string }>(
     "/internal/aleta-bot/abt/pdf",

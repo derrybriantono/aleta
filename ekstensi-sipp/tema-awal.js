@@ -46,6 +46,38 @@
 
 const KUNCI_SALINAN = "aleta-tema-sipp";
 
+/**
+ * ============================================================================
+ * SIPP DAN ABT DIBEDAKAN DI SINI, BUKAN DI DALAM CSS
+ * ============================================================================
+ *
+ * Keduanya berbagi satu berkas gaya dan satu penanda tema, dan itu memang
+ * disengaja - keduanya satu origin, sehingga tema yang dipilih di salah
+ * satunya langsung berlaku di yang lain. Tetapi DOM-nya berbeda jauh:
+ *
+ *   SIPP  #konten  .cssTable  #tableDetilPerkara  .detil  .usual
+ *   ABT   #content #wrapper   .about              .agile_wthree_inner_grids
+ *
+ * Peta warna SIPP karena itu tidak menyentuh satu pun elemen ABT. Yang
+ * berlaku di sana hanya aturan html dan body - halamannya menjadi hitam
+ * sementara tulisannya tetap hijau tua, merah, dan biru tua milik ABT sendiri.
+ * Itulah "garis dan tulisannya tidak nampak": bukan warnanya salah pilih,
+ * melainkan tidak ada satu pun aturan yang mengaturnya.
+ *
+ * Penandanya dipasang DI SINI, pada document_start, bersama penanda tema -
+ * bukan sesudah panel muncul. Peta warna ABT karena itu sudah berlaku pada
+ * gambar pertama, sama seperti temanya.
+ */
+(function tandaiHalaman() {
+  try {
+    if (window.location.pathname.indexOf("/aps_badilag/") === 0) {
+      document.documentElement.setAttribute("data-aleta-halaman", "abt");
+    }
+  } catch {
+    /* tanpa penandanya, ABT hanya kehilangan peta warnanya - bukan temanya */
+  }
+})();
+
 (function pasangSedini() {
   let tema = "gelap";
   try {

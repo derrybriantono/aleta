@@ -33,6 +33,8 @@ type Usulan = {
 type HasilSaksi = {
   butir: { saksi1: number; saksi2: number };
   ciri: string[];
+  /** Ciri yang hanya disebut SATU saksi - tidak masuk 5227, tetapi tetap disebut. */
+  ciriSepihak: { nama: string; saksi: number }[];
   selisih: { hal: string; saksi1: string; saksi2: string }[];
   huruf: { huruf: string; bunyi: string; pemicu: string[]; syarat: string }[];
   hurufBelumSiap: { huruf: string; sebab: string }[];
@@ -183,17 +185,51 @@ describe("menurunkan kerangka fakta dari keterangan saksi", () => {
     }
   });
 
-  it("5227 disusun dari ciri yang benar-benar disebut saksi", () => {
-    // Kalimatnya dari pustaka kalimat baku, bukan nama cirinya - yang masuk ke
-    // putusan harus berbunyi seperti putusan.
-    const u = ambil(layanan.dariKeteranganSaksi(SAKSI_1, SAKSI_2), "5227");
-    expect(u.nilai.startsWith("Tergugat ")).toBe(true);
-    expect(u.nilai).toContain("Kekerasan Dalam Rumah Tangga (KDRT)");
-    expect(u.nilai).toContain("kewajiban nafkah lahir");
-    // Perselisihan menjadi akibat di ujung, bukan butir yang sejajar.
-    expect(u.nilai).toContain("yang memicu perselisihan terus-menerus dengan Penggugat");
+  it("5227 hanya memuat alasan yang disebut KEDUA saksi", () => {
+    // Keterangan seorang saksi tanpa penguat bukan alat bukti yang berdiri
+    // sendiri. SAKSI_2 tidak menyebut cemburu, nafkah, maupun KDRT - hanya
+    // SAKSI_1 - sehingga ketiganya TIDAK boleh masuk 5227.
+    const hasil = layanan.dariKeteranganSaksi(SAKSI_1, SAKSI_2);
+    const u = ambil(hasil, "5227");
+    expect(u.nilai).not.toContain("Kekerasan Dalam Rumah Tangga");
+    expect(u.nilai).not.toContain("kewajiban nafkah lahir");
+    // Yang tersisa hanya perselisihan - dan kalimatnya berbentuk perselisihan
+    // saja, bukan "Tergugat ..." dengan daftar perbuatan yang kosong.
+    expect(u.nilai).toBe(
+      "Antara Penggugat dan Tergugat terus-menerus terjadi perselisihan dan pertengkaran"
+    );
   });
 
+  it("yang hanya disebut satu saksi dikembalikan, bukan dibuang diam-diam", () => {
+    // Alasan yang terbuang tanpa jejak adalah alasan yang akan disangka tidak
+    // terbaca mesin. Panel menampilkannya beserta siapa yang menyebutnya.
+    const hasil = layanan.dariKeteranganSaksi(SAKSI_1, SAKSI_2);
+    const nama = hasil.ciriSepihak.map((x: { nama: string }) => x.nama);
+    expect(nama).toContain("kekerasan dalam rumah tangga");
+    expect(nama).toContain("tidak memberi nafkah");
+    expect(nama).toContain("cemburu");
+    // Seluruhnya dari saksi 1 - SAKSI_2 memang tidak menyebutkannya.
+    expect(hasil.ciriSepihak.every((x: { saksi: number }) => x.saksi === 1)).toBe(true);
+  });
+
+  it("alasan yang bersesuaian tetap tersusun sebagai kalimat putusan", () => {
+    // Kedua saksi menyebut hal yang sama - inilah keadaan yang seharusnya
+    // menghasilkan kalimat lengkap, dan bunyinya harus persis.
+    const sama = [
+      "- Bahwa antara Penggugat dan Tergugat terjadi perselisihan dan pertengkaran sejak 2025;",
+      "- Bahwa Tergugat tidak memberikan nafkah kepada Penggugat;",
+      "- Bahwa Tergugat bersikap cemburu berlebihan;",
+      "- Bahwa Tergugat melakukan kekerasan dalam rumah tangga terhadap Penggugat;",
+    ].join("\n");
+    const u = ambil(layanan.dariKeteranganSaksi(sama, sama), "5227");
+    expect(u.nilai).toBe(
+      "Tergugat melalaikan kewajiban nafkah lahir, bersikap cemburu berlebihan, serta " +
+        "melakukan Kekerasan Dalam Rumah Tangga (KDRT) yang memicu perselisihan " +
+        "terus-menerus dengan Penggugat"
+    );
+    // Kedua saksi mengatakannya - keyakinannya "pasti", bukan "cukup".
+    expect(u.keyakinan).toBe("pasti");
+  });
   it("huruf alasan perceraian TIDAK pernah dipilih sendiri", () => {
     // Satu huruf yang salah mengubah dasar hukum putusan. Petanya harus
     // diambil dari naskah resmi lebih dulu - lihat catatan usulkanHuruf().
@@ -689,12 +725,46 @@ describe("nomor 8 - kalimat penutup keterangan saksi", () => {
 });
 
 describe("nomor 4 - huruf alasan dapat dicentang dan diterapkan", () => {
-  it("centangannya menulis 8503 dan 4020 sekaligus", () => {
-    // Menulis salah satunya saja meninggalkan blangko dalam keadaan setengah,
-    // dan itu justru keadaan yang paling sulit dikenali.
+  it("centangannya menulis 8503 SAJA - 4020 dihitung ABT sendiri", () => {
+    // Dibaca dari definisi variabelnya di basis data ABT: 4020 bertipe
+    // data_sql, dan kuerinya satu CASE panjang atas #8503#. Ia tidak
+    // menyimpan apa pun - ia MEMBACA 8503. Menulisinya mustahil (rute
+    // edit_data hanya menerima data_teks dan data_tanggal) dan sekaligus
+    // tidak perlu.
     const isi = abtJs();
-    expect(isi).toContain('["8503", isi8503], ["4020", isi4020]');
-    expect(isi).toContain("Tulis 8503 dan 4020");
+    expect(isi).toContain('"Tulis 8503"');
+    expect(isi).not.toContain('["8503", isi8503], ["4020", isi4020]');
+    expect(isi).not.toContain("const isi4020");
+  });
+
+  it("8503 ditulis rapat, tanpa koma dan tanpa spasi", () => {
+    // Regexp tiap cabang kueri 4020 BERJANGKAR di kedua ujung, dan tidak satu
+    // pun cabang menerima "A, F". Bentuk lama itu membuat 8503 tampak benar
+    // di layar sementara 4020 diam-diam jatuh ke cabang ELSE.
+    const isi = abtJs();
+    expect(isi).toContain("function susun8503(");
+    expect(isi).toContain('bersih.join("")');
+    expect(isi).not.toContain('dipilih.join(", ")');
+  });
+
+  it("gabungan yang tidak dikenali kueri 4020 disebutkan saat menulis", () => {
+    // Yang tidak dikenali membuat 4020 berbunyi "TIDAK BENAR QUERY NYA /
+    // BELUM ISI ALASAN DI KOLOM ABT" - dan kalimat itu ikut tercetak ke dalam
+    // putusan. Disalin apa adanya dari kuerinya: hanya A, B, F, H
+    // sendiri-sendiri, AB, AF, BF, dan ABF yang punya cabang.
+    const isi = abtJs();
+    expect(isi).toContain('GABUNGAN_4020 = new Set(["A", "B", "F", "H", "AB", "AF", "BF", "ABF"])');
+    expect(isi).toContain("function dikenali4020(");
+    expect(isi).toContain("tidak mengenali gabungan ini");
+  });
+
+  it("4020 ikut diperiksa penjaga cetak, sebab ISI_KOSONG tidak menangkapnya", () => {
+    // ISI_KOSONG berjangkar di kedua ujung, sehingga kalimat panjang
+    // "TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT" tidak cocok
+    // dengannya - 4020 yang rusak akan lolos tanpa satu pun peringatan.
+    const isi = abtJs();
+    const potong = isi.slice(isi.indexOf("const VAR_OTOMATIS"), isi.indexOf("ISI_KOSONG ="));
+    expect(potong).toContain('"4020"');
   });
 
   it("huruf yang bersyarat tidak pernah tercentang sendiri", () => {
@@ -855,7 +925,10 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // lima yang dijanjikan.
     const isi = alat();
     const potong = isi.slice(isi.indexOf("async function alatPasangPanel"));
-    expect(potong).toContain("alatTerapkanPosisi(panel, await alatMuatPosisi(kunci));");
+    // Bentuknya berubah sejak keadaan lencana ikut dipulihkan: posisinya
+    // dibaca ke dalam peubah lebih dulu, sebab ia dipakai dua kali.
+    expect(potong).toContain("const posisiTersimpan = await alatMuatPosisi(kunci);");
+    expect(potong).toContain("alatTerapkanPosisi(panel, posisiTersimpan);");
     expect(potong.slice(potong.indexOf("alatTerapkanPosisi"))).toContain("alatJepitTinggi(panel);");
   });
 

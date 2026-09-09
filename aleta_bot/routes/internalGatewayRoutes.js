@@ -26,6 +26,7 @@ const sippKonteksService = require("../services/sippKonteksService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
 const abtUsulanService = require("../services/abtUsulanService");
 const abtCetakService = require("../services/abtCetakService");
+const sippPositaService = require("../services/sippPositaService");
 const ecourtSchedulerService = require("../services/ecourtSchedulerService");
 const sippJadwalSidangService = require("../services/sippJadwalSidangService");
 const kesiapanSidangService = require("../services/kesiapanSidangService");
@@ -1132,6 +1133,38 @@ router.get("/abt/pdf/mesin", requireInternalToken, async (_req, res) => {
   }
 });
 
+/**
+ * Merapikan posita satu perkara di SIPP.
+ *
+ * SATU-SATUNYA rute di ALETA yang menulis ke kolom posita. Pagarnya di
+ * sippPositaService: isi tanpa ruang kosong harus persis sama sebelum dan
+ * sesudah, sehingga tidak satu huruf pun dalil gugatan dapat berubah.
+ *
+ * Posita lama dikembalikan supaya pemanggilnya dapat menyimpannya di riwayat
+ * perubahan - dan supaya ada yang dapat dikembalikan bila perlu.
+ */
+router.post("/sipp/posita/rapikan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await sippPositaService.rapikanPosita(
+      req.body?.perkaraId,
+      String(req.body?.posita || "")
+    );
+    if (!hasil.ok) {
+      // 422, bukan 500: permintaannya sampai dan dimengerti, isinya yang
+      // ditolak. Membedakannya membuat sebabnya terbaca di layar petugas.
+      return res.status(422).json({ ok: false, error: hasil.alasan });
+    }
+    res.json({
+      ok: true,
+      tersentuh: hasil.tersentuh,
+      sebelum: hasil.sebelum,
+      sesudah: hasil.sesudah,
+      alasan: hasil.alasan || "",
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
 /** Menitipkan permintaan penarikan satu perkara. */
 router.post("/ecourt/permintaan", requireInternalToken, async (req, res) => {
   try {

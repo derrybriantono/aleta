@@ -388,10 +388,32 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
   const damai2 = damai(b2);
   const upaya = gabungkan(damai1.nilai, damai2.nilai);
 
-  // 5227 - alasan-alasan gugatan. Disusun dari ciri yang benar-benar disebut
-  // saksi, bukan dari daftar tetap. Blangkonya mengingatkan "JANGAN LUPA
-  // TAMBAH DAN SEBELUM ALASAN TERAKHIR", jadi penyambungnya diurus di sini.
-  const ciri = usulkanHuruf(semua);
+  // ==========================================================================
+  // 5227 - HANYA ALASAN YANG BERSESUAIAN ANTARA KEDUA SAKSI
+  // ==========================================================================
+  //
+  // Dulu cirinya diambil dari GABUNGAN keterangan kedua saksi. Itu membuat
+  // 5227 memuat alasan yang hanya diketahui satu orang, dan pada persidangan
+  // yang bukan hal kecil: keterangan satu saksi tanpa penguat bukanlah alat
+  // bukti yang berdiri sendiri - unus testis nullus testis.
+  //
+  // Sekarang cirinya diambil dari IRISAN. Contoh yang diminta:
+  //
+  //   saksi 1  mabuk, madat, memukul
+  //   saksi 2  mabuk, memukul
+  //   hasil    mabuk dan memukul        madat TIDAK ikut
+  //
+  // Yang hanya disebut satu saksi TIDAK dibuang diam-diam. Ia dikembalikan
+  // sebagai ciriSepihak beserta saksi mana yang menyebutnya, dan panel
+  // menampilkannya - supaya yang memutuskan tetap manusia, dan supaya tidak
+  // ada yang mengira alasannya tidak terbaca oleh mesin.
+  const ciriSaksi1 = usulkanHuruf(b1);
+  const ciriSaksi2 = usulkanHuruf(b2);
+  const ciri = ciriSaksi1.filter((x) => ciriSaksi2.includes(x));
+  const ciriSepihak = [
+    ...ciriSaksi1.filter((x) => !ciriSaksi2.includes(x)).map((nama) => ({ nama, saksi: 1 })),
+    ...ciriSaksi2.filter((x) => !ciriSaksi1.includes(x)).map((nama) => ({ nama, saksi: 2 })),
+  ];
   // Pihaknya dibaca ekstensi dari variabel 0047 dan 0046 di halaman ABT -
   // "Tergugat" pada cerai gugat, "Termohon" pada cerai talak. Tidak diturunkan
   // dari klasifikasi perkara: menebaknya berarti salah menyebut pihak pada
@@ -429,6 +451,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
 
   return {
     butir: { saksi1: b1.length, saksi2: b2.length },
+    ciriSepihak,
     ciri,
     selisih,
     // Nomor 6: huruf alasan diusulkan beserta bunyi resminya, tanpa satu pun
@@ -445,7 +468,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak) {
       usulan(
         "5227",
         "Alasan-Alasan Cerai",
-        { nilai: kalimatAlasan, keyakinan: ciri.length ? "cukup" : "kosong", bentrok: "" },
+        { nilai: kalimatAlasan, keyakinan: ciri.length ? "pasti" : "kosong", bentrok: "" },
         semua
           .filter((x) => CIRI_ALASAN.some((c) => c.kata.every((k) => x.toLowerCase().includes(k))))
           .slice(0, 4)
