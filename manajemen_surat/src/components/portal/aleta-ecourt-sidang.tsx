@@ -3174,10 +3174,24 @@ export function AletaEcourtSidang({
             di atas diberikan kepada daftar sidangnya, bukan dibiarkan kosong.
             Itulah gunanya menciutkan - kalau tabelnya tetap setinggi semula,
             yang didapat hanya ruang putih. */}
+        {/* ====================================================================
+            TINGGINYA BERBEDA DI LAYAR KECIL
+            ====================================================================
+
+            Di layar lebar, membatasi tinggi tabel berguna: kepala kolomnya
+            menempel dan sisa halaman tetap terlihat. Di ponsel akibatnya
+            terbalik - layarnya sendiri hanya setinggi 70vh sesudah bilah
+            peramban, sehingga tabel setinggi 70vh menyisakan jendela sempit
+            yang harus digulung di dalam halaman yang juga digulung. Dua gulir
+            bersarang adalah cara tercepat membuat orang tersesat.
+
+            Karena itu di bawah lg tabelnya dibiarkan setinggi isinya dan
+            halamanlah yang menggulung; pembatasan tinggi baru berlaku dari lg
+            ke atas. */}
         <div
           className={cn(
-            "overflow-auto rounded-xl border",
-            kendaliCiut ? "max-h-[82vh]" : "max-h-[70vh]"
+            "overflow-x-auto rounded-xl border",
+            kendaliCiut ? "lg:max-h-[82vh] lg:overflow-auto" : "lg:max-h-[70vh] lg:overflow-auto"
           )}
         >
           <table
@@ -3480,7 +3494,7 @@ export function AletaEcourtSidang({
                               membaca satu kode majelis. */}
                           <div className="hanya-ringkas mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
                             {baris.majelisKode ? (
-                              <span title={baris.majelisNama}>
+                              <span className="whitespace-nowrap" title={baris.majelisNama}>
                                 <span className="font-medium text-foreground/70">Majelis</span>{" "}
                                 {baris.majelisKode}
                               </span>
@@ -3706,7 +3720,29 @@ export function AletaEcourtSidang({
                             bila tidak. */}
                         <td className="px-3 py-2 align-top text-sm kolom-lengkap">
                           <div className="flex items-baseline gap-1.5">
-                            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold">
+                            {/* ============================================
+                                KODE MAJELIS TIDAK BOLEH PATAH DI TANDA HUBUNG
+                                ============================================
+
+                                Kodenya berbentuk "C1-C2-C3" - tiga kode hakim
+                                yang disambung tanda hubung. Peramban
+                                memperlakukan tanda hubung sebagai tempat yang
+                                boleh dipatahkan, sehingga pada kolom sempit ia
+                                tersusun menurun:
+
+                                    C1-
+                                    C2-
+                                    C3
+
+                                Terbaca sebagai tiga hal yang berbeda, padahal
+                                ia satu kode majelis. Barisnya pun jadi tiga
+                                kali lebih tinggi daripada baris tetangganya.
+
+                                whitespace-nowrap menahannya tetap satu baris.
+                                Aman: kode terpanjang hanya sekitar sepuluh
+                                aksara, dan nama majelis di sebelahnya sudah
+                                dipotong dengan truncate bila ruangnya habis. */}
+                            <span className="whitespace-nowrap rounded bg-muted px-1.5 py-0.5 font-mono text-sm font-semibold">
                               {baris.majelisKode || "—"}
                             </span>
                             {baris.majelisNama ? (

@@ -310,7 +310,21 @@ export function AletaEcourtPengguna() {
           aria-label="Menu ALETA e-Court"
           className={cn(
             "flex h-fit flex-col gap-3 rounded-[2rem] border border-primary/20 bg-[linear-gradient(180deg,rgba(5,20,34,0.98),rgba(8,38,58,0.96))] text-slate-100 shadow-panel backdrop-blur transition-all duration-300",
-            "lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:overscroll-contain",
+            // ============================================================
+            // overflow-y-auto SENDIRIAN MEMBUAT BILAH GULIR MENDATAR
+            // ============================================================
+            //
+            // Menyetel overflow-y ke selain visible memaksa overflow-x yang
+            // masih "visible" dihitung sebagai "auto" - itu aturan CSS, bukan
+            // kekhilafan peramban. Akibatnya, begitu isi sidebar lebih lebar
+            // satu piksel saja dari bagannya - dan pada keadaan ciut selebar
+            // 68px itu mudah terjadi karena tombol di dalamnya 44px ditambah
+            // padding - muncul bilah gulir mendatar di kaki sidebar.
+            //
+            // Bilah itu tidak menggulung apa pun yang berguna; ia hanya
+            // bilah. overflow-x-hidden menutupnya tanpa mengubah gulir
+            // menurunnya, yang memang dibutuhkan saat menunya panjang.
+            "lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain",
             sidebarCiut ? "px-3 py-5" : "p-5"
           )}
         >
@@ -399,7 +413,23 @@ export function AletaEcourtPengguna() {
             </>
           ) : null}
 
-          <div className="flex flex-col gap-2">
+          {/* ==================================================================
+              DI BAWAH lg MENUNYA BERJEJER, BUKAN BERTUMPUK
+              ==================================================================
+
+              Pada layar sempit sidebar ini pindah ke ATAS isinya. Tujuh butir
+              menu yang bertumpuk menurun berarti tujuh kotak setinggi 60px
+              yang harus dilewati sebelum jadwal sidangnya terlihat sama
+              sekali - di ponsel itu satu layar penuh berisi menu.
+
+              Dijejerkan mendatar dengan gulir sendiri, butirnya menyusut jadi
+              satu baris: ikon dan namanya saja, keterangannya disembunyikan.
+              Bentuk yang sama dipakai bilah tab di mana-mana, jadi tidak perlu
+              dipelajari.
+
+              Dari lg ke atas tidak ada yang berubah - di situ sidebar memang
+              berdiri di samping dan punya ruang menurun. */}
+          <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:snap-none lg:flex-col lg:overflow-x-visible lg:px-0 lg:pb-0">
             {menuTampil.map((item) => {
               const Icon = item.ikon;
               const aktif = menu === item.id;
@@ -412,8 +442,10 @@ export function AletaEcourtPengguna() {
                   aria-current={aktif ? "page" : undefined}
                   title={sidebarCiut ? item.label : undefined}
                   className={cn(
-                    "relative flex overflow-hidden rounded-2xl border transition",
-                    sidebarCiut ? "justify-center px-0 py-3" : "items-start gap-3 px-3.5 py-2.5 text-left",
+                    "relative flex shrink-0 snap-start overflow-hidden rounded-2xl border transition lg:shrink",
+                    sidebarCiut
+                      ? "justify-center px-3 py-3 lg:px-0"
+                      : "items-center gap-2 px-3 py-2 text-left lg:items-start lg:gap-3 lg:px-3.5 lg:py-2.5",
                     aktif
                       ? cn(
                           "border-sky-300/55 bg-sky-300 text-slate-950 shadow-[0_16px_34px_rgba(56,189,248,0.2)]",
@@ -434,10 +466,15 @@ export function AletaEcourtPengguna() {
 
                   {!sidebarCiut ? (
                     <span className="relative z-10 min-w-0 space-y-0.5">
-                      <span className="block truncate text-sm font-semibold">{item.label}</span>
+                      <span className="block truncate whitespace-nowrap text-sm font-semibold lg:whitespace-normal">
+                        {item.label}
+                      </span>
+                      {/* Keterangannya hanya muat pada sidebar tegak. Di bilah
+                          mendatar ia akan memanjangkan tiap butir sampai
+                          separuh layar. */}
                       <span
                         className={cn(
-                          "block text-[12px] leading-5",
+                          "hidden text-[12px] leading-5 lg:block",
                           aktif ? "text-slate-900/75" : "text-slate-300"
                         )}
                       >
