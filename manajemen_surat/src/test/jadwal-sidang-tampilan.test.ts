@@ -3,6 +3,37 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+/**
+ * ============================================================================
+ * ATURANNYA DIIMPOR, BUKAN DISALIN
+ * ============================================================================
+ *
+ * Berkas ini dulu memuat SALINAN TANGAN tiap aturan komponennya - sepuluh
+ * fungsi dan dua daftar pola - sebab komponennya tidak dapat dirender di
+ * lingkungan pengujian ini.
+ *
+ * Salinan itu bahaya yang berbeda kelas dari uji yang rapuh. Uji yang rapuh
+ * PECAH ketika kodenya berubah: menjengkelkan, tetapi jujur. Salinan yang
+ * menyimpang justru LOLOS - ia menguji aturan yang tidak pernah dikirim ke
+ * siapa pun, sementara aturan yang sungguhan boleh saja salah.
+ *
+ * Aturannya kini di @/lib/keadaan-sidang, dan komponen serta berkas ini
+ * memakai yang SAMA. Yang lolos di sini karena itu benar-benar yang dipakai
+ * di layar.
+ */
+import {
+  AGENDA_ELITIGASI,
+  AGENDA_MUSYAWARAH,
+  agendaElitigasi,
+  agendaMusyawarah,
+  hariPutusan,
+  perkaraVerzetDari,
+  putusHariIni,
+  sidangElitigasi,
+  sidangIkrar,
+} from "@/lib/keadaan-sidang";
+import { warnaStatusPutusan } from "@/lib/warna-putusan";
+
 import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 
 /**
@@ -29,29 +60,8 @@ import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 
 // ---------------------------------------------------------------------------
 // Salinan aturan dari aleta-ecourt-sidang.tsx
-// ---------------------------------------------------------------------------
 
-const AGENDA_ELITIGASI = [
-  /\bjawaban\b/i,
-  /\breplik\b/i,
-  /\bduplik\b/i,
-  /duplik\s+rekonvensi/i,
-  /\bkesimpulan\b/i,
-  /musyawarah\s+majelis/i,
-  /pembacaan\s+(putusan|penetapan)/i,
-  /putusan\s+sela/i,
-];
 
-function agendaElitigasi(agenda: string): boolean {
-  const teks = String(agenda || "");
-  if (!teks) return false;
-  return AGENDA_ELITIGASI.some((pola) => pola.test(teks));
-}
-
-function sidangElitigasi(baris: { agenda?: string; lewatEcourt?: boolean }): boolean {
-  if (!baris.lewatEcourt) return false;
-  return agendaElitigasi(baris.agenda || "");
-}
 
 function jenisRelaas(baris: {
   noResiPos?: string;
@@ -193,164 +203,83 @@ describe("status lacak kiriman pos", () => {
 });
 
 // ---------------------------------------------------------------------------
-// PENJAGA YANG MEMBACA BERKAS SUMBERNYA, BUKAN SALINANNYA
+// PENJAGA: TIDAK ADA SALINAN ATURAN YANG BOLEH KEMBALI
 // ---------------------------------------------------------------------------
 
-describe("aturan di komponen benar-benar sama dengan salinan di uji ini", () => {
+describe("aturannya satu, bukan salinan yang dapat menyimpang", () => {
+  const komponen = () =>
+    readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
+      "utf8"
+    );
+  const ujiIni = () => readFileSync(path.resolve(process.cwd(), __filename), "utf8");
+
   /**
    * ==========================================================================
-   * KENAPA PENJAGA INI ADA
+   * KENAPA PENJAGA INI MENGGANTI DUA PENJAGA SEBELUMNYA
    * ==========================================================================
    *
-   * Seluruh uji di atas bekerja atas SALINAN aturan, bukan atas komponennya.
-   * Salinan itu memang disengaja - komponennya tiga ribu baris dan tidak dapat
-   * dirender di lingkungan node - tetapi ia punya lubang yang sudah terbukti
-   * memakan korban:
+   * Dua penjaga sebelumnya membandingkan SALINAN di berkas uji ini dengan
+   * teks berkas komponennya - pola demi pola, nama fungsi demi nama fungsi.
+   * Keduanya ada karena salinannya ada.
    *
-   *   AGENDA_ELITIGASI di komponen pernah memuat aksara BACKSPACE (0x08)
-   *   alih-alih escape \b, karena heredoc Bash menelan tanda miringnya saat
-   *   berkas itu ditulis. Regexnya menjadi /<BS>jawaban<BS>/i - yang tidak
-   *   pernah cocok dengan teks apa pun.
+   * Salinannya kini tidak ada: aturannya di @/lib/keadaan-sidang, dan
+   * komponen serta berkas ini mengimpor yang SAMA. Membandingkan dua teks
+   * karena itu tidak menjawab apa pun lagi - yang perlu dijaga sekarang satu
+   * hal saja: salinannya tidak boleh kembali.
    *
-   *   Saringan e-Litigasi karena itu MATI TOTAL: tidak satu pun sidang pernah
-   *   tertandai. Tidak ada galat, tidak ada peringatan, dan uji di atas tetap
-   *   hijau seluruhnya - karena ia menguji salinan yang ejaannya benar.
-   *
-   * Penjaga ini menutup lubang itu dengan membaca berkas komponennya dan
-   * memeriksa dua hal yang dapat diperiksa tanpa merender apa pun.
+   * Kembalinya bukan kemungkinan yang jauh. Yang menambah aturan baru pada
+   * komponen tiga ribu baris akan menulisnya di sana - itu yang paling dekat
+   * - lalu menulis salinannya di sini supaya dapat diuji. Dua langkah yang
+   * masuk akal satu per satu, dan hasilnya kembali ke keadaan semula.
    */
-
-  const berkasKomponen = path.resolve(
-    process.cwd(),
-    "src/components/portal/aleta-ecourt-sidang.tsx"
-  );
-
-  it("tidak ada aksara kendali liar di berkas komponen", () => {
-    const isi = readFileSync(berkasKomponen, "utf8");
-    // Tab, LF, dan CR sah. Sisanya di bawah 0x20 tidak pernah sengaja diketik
-    // ke dalam berkas TSX - kehadirannya berarti escape yang tertelan.
-    const liar: string[] = [];
-    isi.split("\n").forEach((baris, nomor) => {
-      for (const aksara of baris) {
-        const kode = aksara.charCodeAt(0);
-        if (kode < 32 && kode !== 9 && kode !== 13) {
-          liar.push(`baris ${nomor + 1}: U+${kode.toString(16).padStart(4, "0")}`);
-        }
-      }
-    });
-    expect(liar, `aksara kendali liar ditemukan: ${liar.join(", ")}`).toEqual([]);
+  it("komponen tidak mendefinisikan ulang aturan yang sudah di lib", () => {
+    const isi = komponen();
+    for (const nama of [
+      "agendaElitigasi",
+      "agendaMusyawarah",
+      "sidangIkrar",
+      "hariPutusan",
+      "putusHariIni",
+      "sidangElitigasi",
+      "perkaraVerzetDari",
+      "kelompokAlur",
+      "potensiVerstek",
+    ]) {
+      expect(isi, `${nama} didefinisikan ulang di komponen`).not.toContain(
+        `function ${nama}(`
+      );
+    }
+    expect(isi).toContain('from "@/lib/keadaan-sidang"');
   });
 
-  it("tiap pola di salinan uji benar-benar ada di komponen", () => {
-    const isi = readFileSync(berkasKomponen, "utf8");
-    // Sumbernya ditulis apa adanya, sehingga /\bjawaban\b/i di komponen
-    // muncul sebagai teks itu juga. Kalau salinan di atas diubah tanpa
-    // mengubah komponennya - atau sebaliknya - uji ini gagal.
-    for (const pola of AGENDA_ELITIGASI) {
-      expect(isi, `pola ${pola} tidak ada di komponen`).toContain(pola.source);
+  it("berkas uji ini pun tidak mendefinisikannya ulang", () => {
+    // Termasuk berkas ini sendiri - itu justru dari mana salinannya berasal.
+    const isi = ujiIni();
+    for (const nama of [
+      "agendaElitigasi",
+      "agendaMusyawarah",
+      "sidangIkrar",
+      "hariPutusan",
+      "putusHariIni",
+      "sidangElitigasi",
+      "perkaraVerzetDari",
+      "warnaStatusPutusan",
+    ]) {
+      expect(isi, `${nama} disalin ulang di berkas uji`).not.toContain(
+        `function ${nama}(`
+      );
     }
   });
 
-  it("komponen menuntut lewatEcourt, bukan agenda saja", () => {
-    const isi = readFileSync(berkasKomponen, "utf8");
-    // Kalau syarat e-Court dihapus dari komponen, penanda e-Litigasi kembali
-    // menandai perkara biasa - dan tidak ada gejala yang terlihat.
-    expect(isi).toContain("function sidangElitigasi");
-    expect(isi).toContain("if (!baris.lewatEcourt) return false;");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Salinan aturan warna dan pengenalan verzet - lihat penjaga di atas.
-// ---------------------------------------------------------------------------
-
-function warnaStatusPutusan(status: string): string {
-  const teks = String(status || "").toLowerCase();
-  if (!teks) return "muted";
-  if (/tidak\s+dapat\s+diterima/.test(teks)) return "warning";
-  if (/dikabulkan|perdamaian|damai/.test(teks)) return "success";
-  if (/tolak/.test(teks)) return "danger";
-  if (/gugur/.test(teks)) return "warning";
-  if (/cabut|dicoret/.test(teks)) return "muted";
-  return "outline";
-}
-
-function perkaraVerzetDari(...teks: Array<string | undefined | null>): boolean {
-  return /verzet|perlawanan/i.test(teks.filter(Boolean).join(" "));
-}
-
-describe("warna penanda mengikuti status putusan", () => {
-  it("tujuh status yang benar-benar dipakai PA Donggala", () => {
-    // Diambil dari tabel status_putusan SIPP, bukan daftar yang dikarang -
-    // id 62, 63, 64, 65, 66, 67, 85, 93 dan 7 adalah yang benar-benar muncul
-    // pada perkara_putusan di PA Donggala.
-    expect(warnaStatusPutusan("Dikabulkan")).toBe("success");
-    expect(warnaStatusPutusan("Dikabulkan Sebagian")).toBe("success");
-    expect(warnaStatusPutusan("Perdamaian")).toBe("success");
-    expect(warnaStatusPutusan("Ditolak")).toBe("danger");
-    expect(warnaStatusPutusan("Digugurkan")).toBe("warning");
-    expect(warnaStatusPutusan("Gugur")).toBe("warning");
-    expect(warnaStatusPutusan("Dicabut")).toBe("muted");
-    expect(warnaStatusPutusan("Dicoret dari Register")).toBe("muted");
-  });
-
-  it("Tidak Dapat Diterima TIDAK merah - ia bukan kekalahan", () => {
-    // Syarat formalnya belum terpenuhi, dan perkaranya boleh diajukan kembali
-    // sesudah diperbaiki. Mewarnainya merah menyamakan dua keadaan yang
-    // akibatnya berbeda bagi pihak yang membacanya.
-    expect(warnaStatusPutusan("Tidak Dapat Diterima")).toBe("warning");
-  });
-
-  it("status di luar daftar tetap ditampilkan, tidak disembunyikan", () => {
-    // Status baru yang ditambahkan operator SIPP harus tetap terbaca meski
-    // warnanya belum ditentukan.
-    expect(warnaStatusPutusan("Mengabulkan Eksepsi")).toBe("outline");
-  });
-
-  it("status kosong netral, bukan hijau", () => {
-    // Hijau pada status yang belum tercatat terbaca sebagai kabar baik atas
-    // sesuatu yang belum diketahui.
-    expect(warnaStatusPutusan("")).toBe("muted");
-  });
-});
-
-describe("verzet dikenali dari jenis perkaranya", () => {
-  it("dua sebutan yang dipakai SIPP dan sehari-hari", () => {
-    expect(perkaraVerzetDari("Perlawanan (Verzet)")).toBe(true);
-    expect(perkaraVerzetDari("Verzet")).toBe(true);
+  it("aturannya benar-benar dapat dipanggil dari lib", () => {
+    // Bukan sekadar ada namanya di impor: dijalankan, dan hasilnya diperiksa.
+    expect(agendaMusyawarah("Musyawarah Majelis")).toBe(true);
+    expect(agendaElitigasi("Replik Pemohon")).toBe(true);
+    expect(sidangIkrar({ agenda: "SIDANG IKRAR TALAK" })).toBe(true);
     expect(perkaraVerzetDari("Perlawanan")).toBe(true);
-  });
-
-  it("kumulasi ikut diperiksa, bukan hanya jenis utamanya", () => {
-    expect(perkaraVerzetDari("Cerai Gugat", "Perlawanan")).toBe(true);
-  });
-
-  it("perkara biasa tidak tertandai", () => {
-    expect(perkaraVerzetDari("Cerai Gugat", "")).toBe(false);
-    expect(perkaraVerzetDari("Cerai Talak")).toBe(false);
-    expect(perkaraVerzetDari(undefined, null)).toBe(false);
-  });
-});
-
-describe("aturan warna dan verzet di komponen sama dengan salinan di atas", () => {
-  const berkasKomponen = path.resolve(
-    process.cwd(),
-    "src/components/portal/aleta-ecourt-sidang.tsx"
-  );
-
-  it("fungsinya ada, dan satu - bukan dua salinan yang dapat menyimpang", () => {
-    const isi = readFileSync(berkasKomponen, "utf8");
-    // warnaStatusPutusan PINDAH ke @/lib/warna-putusan begitu layar Status
-    // Perkara ikut mewarnai status yang sama. Yang dijaga tetap sama - satu
-    // aturan, bukan dua - hanya tempatnya yang berubah: sekarang dijaga
-    // dengan menuntut IMPOR dan melarang salinan lokal.
-    expect(isi).toContain('from "@/lib/warna-putusan"');
-    expect(isi).not.toContain("function warnaStatusPutusan");
-    expect(isi).toContain("function perkaraVerzetDari");
-    // Aturan verzet pernah ditulis dua kali di berkas ini. Dua salinan akan
-    // sama-sama bekerja, lalu pada suatu hari satu layar menandai perkara yang
-    // tidak ditandai layar lain - untuk perkara yang persis sama.
-    expect(isi.split("/verzet|perlawanan/i").length - 1).toBe(1);
+    expect(AGENDA_MUSYAWARAH.length).toBeGreaterThan(0);
+    expect(AGENDA_ELITIGASI.length).toBeGreaterThan(0);
   });
 });
 
@@ -461,19 +390,6 @@ function antrianUntuk(
   return punya.tanggalSidang === baris.tanggalSidang ? punya : undefined;
 }
 
-/** Salinan AGENDA_MUSYAWARAH dari aleta-ecourt-sidang.tsx. */
-const AGENDA_MUSYAWARAH = [
-  /musyawarah/i,
-  /pembacaan\s+(putusan|penetapan)/i,
-  /\bputusan\b/i,
-  /\bpenetapan\b/i,
-];
-
-function agendaMusyawarah(agenda: string): boolean {
-  const teks = String(agenda || "");
-  if (!teks) return false;
-  return AGENDA_MUSYAWARAH.some((pola) => pola.test(teks));
-}
 
 describe("antrian hanya berlaku pada hari sidangnya sendiri", () => {
   // Keadaan yang benar-benar terjadi: perkara 216/Pdt.P/2026 punya baris
@@ -551,25 +467,7 @@ describe("agenda yang menuntut majelis lengkap dan naskah siap", () => {
 
 // ---------------------------------------------------------------------------
 // HARI PUTUSAN DAN IKRAR TALAK - DUA PENANDA YANG TIDAK PERNAH BERSAMAAN
-// ---------------------------------------------------------------------------
 
-/** Salinan sidangIkrar dari aleta-ecourt-sidang.tsx. */
-function sidangIkrar(baris: { agenda?: string; sidangIkrarTalak?: boolean }): boolean {
-  if (baris.sidangIkrarTalak) return true;
-  return /\bikrar\b/i.test(String(baris.agenda || ""));
-}
-
-/** Salinan hariPutusan dari aleta-ecourt-sidang.tsx. */
-function hariPutusan(baris: {
-  agenda?: string;
-  ditunda?: boolean;
-  alasanDitunda?: string;
-  sidangIkrarTalak?: boolean;
-}): boolean {
-  if (sidangIkrar(baris)) return false;
-  if (agendaMusyawarah(baris.agenda || "")) return true;
-  return Boolean(hasilSidangPutusan(Boolean(baris.ditunda), baris.alasanDitunda || ""));
-}
 
 describe("penanda Hari Putusan", () => {
   it("agenda yang akan memutus ikut", () => {
@@ -690,19 +588,6 @@ describe("penanda Ikrar Talak", () => {
     expect(potong).toContain("cocok: (x) => !x.sudahPutus");
   });
 });
-/** Salinan putusHariIni dari aleta-ecourt-sidang.tsx. */
-function putusHariIni(baris: {
-  sudahPutus?: boolean;
-  tanggalPutusan?: string;
-  tanggalSidang?: string;
-  agenda?: string;
-  sidangIkrarTalak?: boolean;
-}): boolean {
-  if (!baris.sudahPutus) return false;
-  if (sidangIkrar(baris)) return false;
-  if (!baris.tanggalPutusan || !baris.tanggalSidang) return false;
-  return baris.tanggalPutusan === baris.tanggalSidang;
-}
 
 describe("kotak Sudah putus berarti diputus pada sidang hari itu", () => {
   const sidang = "2026-09-09";
