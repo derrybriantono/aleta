@@ -2453,3 +2453,41 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   white-space: pre-wrap;
   color: var(--aleta-tulisan);
 }
+
+/* Wadah tombol di kepala panel ABT.
+ *
+ * Didorong ke kanan dengan margin-left:auto supaya nomor perkara di kirinya
+ * mendapat seluruh ruang yang tersisa - nomor perkara yang terpotong lebih
+ * merugikan daripada tombol yang berdempet. */
+.aleta-alat-kepala {
+  margin-left: auto;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.aleta-alat-kepala button {
+  padding: 0 5px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.aleta-alat-kepala button:hover {
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+}
+
+/* Panel ABT yang diciutkan: kepalanya saja, dan isinya benar-benar dilepas
+   dari tata letak - bukan hanya disembunyikan dengan visibility, yang tetap
+   memakan tinggi. */
+.aleta-panel-ciut .aleta-isi,
+.aleta-panel-ciut .aleta-kaki {
+  display: none;
+}

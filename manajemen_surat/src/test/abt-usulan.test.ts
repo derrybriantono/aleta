@@ -737,3 +737,100 @@ describe("nomor 1 - tema jendela popup", () => {
     expect(js).toContain('penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup })');
   });
 });
+
+describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
+  const alat = () =>
+    readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/panel-alat.js"), "utf8");
+
+  it("dimuat SEBELUM abt.js, supaya fungsinya sudah ada saat panel disusun", () => {
+    // Dua berkas dalam satu entri content_scripts berbagi lingkup dan berjalan
+    // menurut urutannya. Urutan yang tertukar berarti abt.js memanggil fungsi
+    // yang belum ada.
+    const m = manifest();
+    const entri = m.content_scripts.find((x) => (x.js || []).includes("abt.js"));
+    expect(entri?.js).toEqual(["panel-alat.js", "abt.js"]);
+  });
+
+  it("tujuh perkakas ada semuanya", () => {
+    const isi = alat();
+    for (const nama of [
+      "alatPasangGeser",
+      "alatPasangUbahUkuran",
+      "alatKembalikanBawaan",
+      "alatJepitTinggi",
+      "alatTerapkanPosisi",
+      "alatTombolKepala",
+      "alatPasangPanel",
+    ]) {
+      expect(isi).toContain(`function ${nama}`);
+    }
+  });
+
+  it("lima tombol kepala: tema, ciut, layar penuh, bawaan, tutup", () => {
+    const isi = alat();
+    for (const kelas of [
+      "aleta-tema",
+      "aleta-lipat",
+      "aleta-penuh",
+      "aleta-bawaan",
+      "aleta-matikan",
+    ]) {
+      expect(isi).toContain(kelas);
+    }
+  });
+
+  it("layar penuh dan keluar darinya memakai SATU tombol", () => {
+    // Tombol keluar yang terpisah hanya berguna satu kali dan menganggur
+    // selebihnya - sedangkan ruang di kepala panel selebar tiga ratus piksel.
+    const isi = alat();
+    expect(isi).toContain('penuh.title = sedang ? "Keluar dari layar penuh" : "Layar penuh";');
+  });
+
+  it("tingginya dijepit juga pada pemuatan PERTAMA", () => {
+    // Cacat yang ditemukan pengujian di peramban: alatTerapkanPosisi keluar
+    // lebih awal ketika belum ada posisi tersimpan, sehingga panel yang baru
+    // muncul setinggi isinya - terukur 672 dari 800 piksel, bukan tiga per
+    // lima yang dijanjikan.
+    const isi = alat();
+    const potong = isi.slice(isi.indexOf("async function alatPasangPanel"));
+    expect(potong).toContain("alatTerapkanPosisi(panel, await alatMuatPosisi(kunci));");
+    expect(potong.slice(potong.indexOf("alatTerapkanPosisi"))).toContain("alatJepitTinggi(panel);");
+  });
+
+  it("posisi panel ABT disimpan di kuncinya sendiri, temanya bersama", () => {
+    // Berbagi kunci posisi berarti menggeser panel di satu aplikasi
+    // memindahkan panel di aplikasi lain. Tema justru sebaliknya: yang memilih
+    // gelap memilihnya untuk matanya, bukan untuk satu halaman.
+    const isi = abtJs();
+    expect(isi).toContain('const KUNCI_POSISI_ABT = "posisiPanelAbt";');
+    expect(isi).toContain('const KUNCI_TEMA_PANEL = "temaPanel";');
+  });
+
+  it("tombol di dalam kepala tidak ikut menggeser panel", () => {
+    // Yang menekan tombol tutup tidak sedang memindahkan panel.
+    const isi = alat();
+    expect(isi).toContain('peristiwa.target.closest("button, a, input, select, textarea")');
+  });
+
+  it("memakai pointer event, bukan mouse event", () => {
+    // Satu jalur untuk tetikus, sentuh, dan pena; dan setPointerCapture
+    // menahan tarikan cepat yang keluar dari jendela.
+    const isi = alat();
+    expect(isi).toContain("setPointerCapture");
+    expect(isi).not.toContain("mousedown");
+  });
+
+  it("pegangan ubah ukuran memakai kelas yang sudah ada di panel.css", () => {
+    // Kelas kedua yang mirip pasti berselisih dengan yang pertama.
+    const isi = alat();
+    expect(isi).toContain('"aleta-tarik aleta-tarik--sudut aleta-tarik--sb"');
+  });
+
+  it("utang duplikasinya dicatat, bukan didiamkan", () => {
+    // Fungsi yang sama masih ada di konten.js. Itu melanggar aturan yang
+    // dipegang di tempat lain, jadi alasannya harus tertulis di berkasnya.
+    const isi = alat();
+    expect(isi).toContain("KENAPA BERKAS BARU, DAN BUKAN MEMAKAI YANG DI konten.js");
+    expect(isi).toContain("utangnya dicatat");
+  });
+});

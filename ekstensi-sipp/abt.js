@@ -82,6 +82,18 @@ const ISI_KOSONG = /^(DATA_TIDAK_ADA|TIDAK BENAR QUERY NYA|BELUM ISI|-)?$/i;
 
 const ALETA_API_ABT = "/aleta/api/aleta-bot/abt/usulan";
 
+/**
+ * Posisi panel ABT disimpan di kuncinya SENDIRI.
+ *
+ * Panel SIPP memakai "posisiPanel". Berbagi kunci berarti menggeser panel di
+ * satu aplikasi memindahkan panel di aplikasi lain - dan yang mengalaminya
+ * tidak punya cara menduga sebabnya. Temanya justru sebaliknya: satu kunci
+ * bersama, sebab yang memilih gelap memilihnya untuk matanya, bukan untuk satu
+ * halaman.
+ */
+const KUNCI_POSISI_ABT = "posisiPanelAbt";
+const KUNCI_TEMA_PANEL = "temaPanel";
+
 function buatElemen(tag, kelas, teks) {
   const el = document.createElement(tag);
   if (kelas) el.className = kelas;
@@ -642,12 +654,16 @@ function susunPanelAbt(jatiDiri) {
   const kepala = buatElemen("div", "aleta-kepala");
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
   kepala.appendChild(buatElemen("span", "aleta-nomor", nomorPerkaraAbt() || "blangko ABT"));
-  const tutup = buatElemen("button", "aleta-matikan", "×");
-  tutup.type = "button";
-  tutup.title = "Sembunyikan panel ALETA untuk halaman ini";
-  tutup.addEventListener("click", () => panel.remove());
-  kepala.appendChild(tutup);
   panel.appendChild(kepala);
+
+  // Geser, ubah ukuran, ciut, layar penuh, kembalikan bawaan, tema, tutup -
+  // seluruhnya dari panel-alat.js. Panel ini sebelumnya tidak punya satu pun,
+  // dan untuk panel yang menutupi sisi kanan halaman kerja itu berarti
+  // satu-satunya jalan keluar adalah menutupnya.
+  void alatPasangPanel(panel, kepala, KUNCI_POSISI_ABT, {
+    kunciTema: KUNCI_TEMA_PANEL,
+    saatTutup: () => panel.remove(),
+  });
 
   const isi = buatElemen("div", "aleta-isi");
 
