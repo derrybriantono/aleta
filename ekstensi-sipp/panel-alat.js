@@ -25,10 +25,26 @@
  * sesi SIPP. Memindahkan kode yang tidak dapat diuji ulang berarti bertaruh
  * dengan panel yang hari ini bekerja.
  *
- * Karena itu berkas ini berdiri sendiri untuk sekarang, dan utangnya dicatat:
- * SESUDAH panel ABT terbukti bekerja di layar sungguhan, konten.js
- * dipindahkan ke sini dan salinannya di sana dibuang. Jangan menambah fungsi
- * baru ke salah satunya tanpa menambahkannya ke keduanya.
+ * KEADAAN SEKARANG - LANGKAH PERTAMA SUDAH DIAMBIL
+ *
+ * Berkas ini kini dimuat di KEDUA halaman - SIPP dan ABT - dan lingkupnya
+ * diperiksa bersih dari tabrakan nama sebelum dipasang: sembilan belas
+ * deklarasi puncak di sini, tidak satu pun bertabrakan dengan 150 milik
+ * konten.js maupun 56 milik abt.js. Awalan alat* itulah yang membuatnya
+ * mungkin.
+ *
+ * Yang SUDAH dipakai bersama: alatPesanGagal - satu kalimat untuk kegagalan
+ * sambungan, dipakai kedua halaman.
+ *
+ * Yang BELUM: sembilan pasang fungsi panel masih kembar - pasangGeser,
+ * pasangUbahUkuran, terapkanPosisi, kembalikanBawaan, dan seterusnya, satu
+ * salinan di sini dan satu di konten.js. Memindahkannya menuntut panel SIPP
+ * dibuka di layar sungguhan sesudahnya, dan halaman itu tidak dapat dibuka
+ * dari lingkungan pengembangan ini.
+ *
+ * Sampai itu dikerjakan: fungsi BARU ditulis di sini saja dan dipakai
+ * keduanya - seperti alatPesanGagal. Yang dilarang menambah salinan baru ke
+ * konten.js.
  *
  * ============================================================================
  * BEDANYA DENGAN YANG DI konten.js
@@ -711,4 +727,139 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
     }
     alatJepitTinggi(panel);
   });
+}
+
+/**
+ * ============================================================================
+ * KETIKA ALETA TIDAK TERJANGKAU - SATU KALIMAT, DAN APA YANG MASIH JALAN
+ * ============================================================================
+ *
+ * Yang tergambar sebelumnya bunyi mentah: "ALETA menjawab 502",
+ * "Failed to fetch", "NetworkError when attempting to fetch resource".
+ * Ketiganya benar dan ketiganya tidak menolong siapa pun.
+ *
+ * Yang disimpulkan petugas dari kalimat seperti itu SELALU sama: ekstensinya
+ * rusak. Lalu ia menutup panelnya, dan sesudah beberapa kali begitu ia berhenti
+ * memakainya - padahal yang mati hanya satu bagian, dan bagian terbesar
+ * ekstensi ini tidak pernah menyentuh ALETA sama sekali.
+ *
+ * ============================================================================
+ * YANG TETAP JALAN TANPA SERVER - DAN INI BUKAN PENGHIBURAN
+ * ============================================================================
+ *
+ * Dihitung dari jalur tiap fiturnya, bukan dikira-kira:
+ *
+ *   TETAP JALAN            tidak menyentuh ALETA sama sekali
+ *     tema gelap/terang    berkas gaya ekstensi, dipasang peramban
+ *     panel                geser, ukuran, lencana, posisi tersimpan
+ *     penandaan halaman    dibaca dari halaman SIPP itu sendiri
+ *     penjaga CETAK        membaca baris variabel di halaman ABT
+ *     sunting variabel     rute edit_data milik ABT
+ *     keterangan saksi     rute tanyajawab_perkara_edit milik ABT
+ *     CETAK: rtf + anonim  keduanya rute ABT; hanya PDF yang lewat ALETA
+ *
+ *   MENUNGGU ALETA         memang lewat portal, dan tidak ada jalan lain
+ *     usulan dari saksi    kerangka fakta disusun bot dari keterangan saksi
+ *     huruf alasan         naskah pasalnya ada di server
+ *     perapian posita      bot yang membaca dan menulis kolom posita SIPP
+ *     PDF                  LibreOffice hidup di dalam container bot
+ *     penunjukan & Data Umum  keduanya membaca SIPP lewat bot
+ *
+ * Daftar itu ditulis di sini, satu tempat, sebab ia harus ikut berubah ketika
+ * jalurnya berubah. Menyebarkannya ke tiap pesan galat berarti daftar yang
+ * separuhnya usang dan tidak ada yang tahu bagian mana.
+ */
+
+/** Sebab yang dapat dibedakan dari satu kegagalan permintaan. */
+function alatSebabGagal(galat, status) {
+  if (status === 401 || status === 403) return "masuk";
+  if (status === 502 || status === 503 || status === 504) return "mati";
+  if (typeof status === "number" && status >= 500) return "mati";
+  if (typeof status === "number" && status > 0) return "jawaban";
+
+  // TypeError dari fetch berarti permintaannya tidak pernah sampai: server
+  // mati, jaringan putus, atau alamatnya tidak terjangkau. Peramban tidak
+  // membedakan ketiganya - dan memang tidak dapat.
+  const pesan = String((galat && galat.message) || galat || "");
+  if (/failed to fetch|networkerror|load failed|fetch/i.test(pesan)) return "mati";
+  return "lain";
+}
+
+/**
+ * Kalimat yang menggantikan bunyi mentah.
+ *
+ * @param {unknown} galat galat yang tertangkap, bila ada
+ * @param {number} [status] kode jawaban HTTP, bila permintaannya sampai
+ * @param {string} [yangDiminta] nama pekerjaan yang gagal, untuk kalimat pertama
+ */
+function alatPesanGagal(galat, status, yangDiminta) {
+  const sebab = alatSebabGagal(galat, status);
+  const pekerjaan = yangDiminta ? `${yangDiminta} gagal` : "Permintaan gagal";
+
+  if (sebab === "masuk") {
+    return (
+      `${pekerjaan}: belum masuk portal ALETA di peramban ini. ` +
+      "Buka portal ALETA di tab lain, masuk, lalu coba lagi - " +
+      "tidak perlu menyegarkan halaman ini."
+    );
+  }
+
+  if (sebab === "mati") {
+    return (
+      `${pekerjaan}: server ALETA tidak terjangkau. ` +
+      "Yang TETAP jalan tanpanya: tema, panel, penandaan halaman, penjaga CETAK, " +
+      "sunting variabel ABT, pembersih keterangan saksi, dan CETAK berkas rtf " +
+      "beserta anonimnya. Yang menunggu ALETA: usulan dari keterangan saksi, " +
+      "huruf alasan, perapian posita, PDF, penunjukan, dan Data Umum."
+    );
+  }
+
+  if (sebab === "jawaban") {
+    return `${pekerjaan}: ALETA menjawab ${status}. Kalau berulang, sebutkan angka itu saat melapor.`;
+  }
+
+  const pesan = String((galat && galat.message) || galat || "").slice(0, 160);
+  return `${pekerjaan}: ${pesan || "sebabnya tidak terbaca"}.`;
+}
+
+/**
+ * Satu pintu untuk memanggil ALETA.
+ *
+ * ============================================================================
+ * KEGAGALAN YANG PALING PENTING TERJADI SEBELUM ADA JAWABAN
+ * ============================================================================
+ *
+ * Memeriksa respons.status hanya menangkap permintaan yang SAMPAI. Ketika
+ * servernya mati - keadaan yang justru paling sering - fetch melempar
+ * TypeError sebelum ada status apa pun, dan lemparan itu melewati seluruh
+ * pemeriksaan status di bawahnya.
+ *
+ * Akibatnya yang tergambar di panel bunyi mentah peramban: "Failed to fetch".
+ * Kalimat itu benar dan tidak menolong siapa pun.
+ *
+ * Fungsi ini menangkapnya di tempat ia terjadi, lalu melempar ulang dengan
+ * kalimat yang menyebut sebab DAN apa yang masih jalan tanpa server - lihat
+ * alatPesanGagal.
+ *
+ * ============================================================================
+ * TIDAK SEMUA PERMINTAAN MELEWATI SINI - DAN ITU DISENGAJA
+ * ============================================================================
+ *
+ * Lima permintaan di konten.js tetap memanggil fetch langsung, sebab kelimanya
+ * memang TIDAK menampilkan apa pun ketika gagal: penutup titipan, pemeriksa
+ * versi, penanda daftar massal, pembaca keadaan permintaan, dan penyisip panel
+ * itu sendiri. Yang terakhir yang paling menentukan: panel disisipkan pada
+ * TIAP halaman perkara SIPP, dan panel yang berteriak di tiap halaman ketika
+ * ALETA mati persis yang membuat ekstensinya dimatikan orang.
+ *
+ * Membungkusnya di sini hanya menyusun kalimat yang lalu dibuang di catch
+ * kosong. Angkanya dijaga uji ekstensi-pesan-gagal, supaya permintaan BARU
+ * yang mentah memaksa penulisnya memilih dengan sadar - bukan lolos diam-diam.
+ */
+async function alatAmbil(alamat, opsi, yangDiminta) {
+  try {
+    return await fetch(alamat, opsi);
+  } catch (galat) {
+    throw new Error(alatPesanGagal(galat, 0, yangDiminta));
+  }
 }

@@ -161,15 +161,98 @@ const VAR_OTOMATIS = [
   // disimpan. Bila 8503 kosong atau gabungannya tidak dikenali, ELSE-nya
   // berbunyi "TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT".
   //
-  // Yang menentukan: ISI_KOSONG BERJANGKAR di kedua ujung, sehingga kalimat
-  // panjang itu TIDAK cocok dengannya - 4020 yang rusak lolos dari
-  // pemeriksaan kekurangan tanpa satu pun peringatan. Pemeriksaan di daftar
-  // ini tidak berjangkar, jadi ia yang menangkapnya.
+  // Dulu ia dimasukkan ke sini sebagai TAMBALAN: ISI_KOSONG berjangkar di
+  // kedua ujung, sehingga kalimat galat yang panjang tidak cocok dengannya
+  // dan 4020 yang rusak lolos tanpa peringatan. Tambalan itu bekerja untuk
+  // 4020 dan tidak untuk variabel turunan lain.
+  //
+  // Lubangnya kini ditutup di akarnya - lihat keadaanNilai, yang mencari
+  // FRASA tanpa jangkar. 4020 tetap di daftar ini, tetapi sekarang karena
+  // sifatnya: ia dihitung, bukan disimpan, sama seperti keempat di atas.
   "4020",
 ];
 
-/** Isi yang berarti "belum ada", menurut ABT sendiri. */
-const ISI_KOSONG = /^(DATA_TIDAK_ADA|TIDAK BENAR QUERY NYA|BELUM ISI|-)?$/i;
+/**
+ * ============================================================================
+ * KEADAAN SATU NILAI VARIABEL - SATU ATURAN, TIGA JAWABAN
+ * ============================================================================
+ *
+ * Sebelumnya ada DUA pemeriksaan yang berbeda bentuk untuk pertanyaan yang
+ * hampir sama:
+ *
+ *   ISI_KOSONG   /^(DATA_TIDAK_ADA|TIDAK BENAR QUERY NYA|BELUM ISI|-)?$/i
+ *   dan satu regex tanpa jangkar khusus untuk VAR_OTOMATIS
+ *
+ * Yang pertama BERJANGKAR di kedua ujung. Akibatnya kalimat galat yang panjang
+ * tidak pernah cocok dengannya - dan bunyi galat ABT memang panjang:
+ *
+ *   "TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT"
+ *
+ * Kalimat itu lolos dari pemeriksaan kekurangan tanpa satu pun peringatan, dan
+ * ia IKUT TERCETAK sebagai pertimbangan hukum. Lubangnya ditutup untuk 4020
+ * dengan memasukkannya ke daftar VAR_OTOMATIS - tetapi itu tambalan per
+ * variabel: variabel turunan lain yang bunyinya sedikit berbeda tetap lolos.
+ *
+ * Sekarang satu fungsi, dan jawabannya tiga - sebab ketiganya menuntut
+ * perlakuan yang berbeda:
+ *
+ *   "kosong"   belum ada isinya. Wajar pada variabel yang memang tidak
+ *              berlaku bagi perkara ini, dan itu sebabnya ia hanya DITANYAKAN,
+ *              bukan ditahan.
+ *   "galat"    bunyi pesan mesin. Ini yang paling berbahaya dari ketiganya:
+ *              ia tampak seperti keterangan, tercetak seperti keterangan, dan
+ *              dibaca orang sebagai pertimbangan hukum.
+ *   "terisi"   ada isinya.
+ *
+ * ============================================================================
+ * DAFTARNYA DISALIN DARI ABT, BUKAN DIKARANG
+ * ============================================================================
+ *
+ * Tiap bunyi di bawah punya asalnya di kode ABT:
+ *
+ *   DATA_TIDAK_ADA      Abt_model::data_variabel_detil, ketika data kosong
+ *                       atau data_type-nya tidak dikenali
+ *   TIDAK_BISA_LOAD     ketika identitas saksi tidak dapat diselesaikan
+ *   "..."               cleanHtmlTagSpecial menerjemahkan keduanya menjadi
+ *                       titik tiga saat mencetak; di layar ia dapat muncul
+ *                       bila variabelnya menyalurkan variabel lain
+ *   "0"                 nilai bawaan yang tidak pernah diisi - 6.207 baris
+ *                       alasan_ditunda di SIPP berisi ini belaka
+ *   "-"                 value_type placeholder
+ *
+ *   TIDAK BENAR QUERY NYA   cabang ELSE kueri data_sql - 4020 dan sejenisnya
+ *   BELUM ISI ALASAN        bagian kedua dari kalimat yang sama
+ *
+ * Yang dicari FRASA-nya, tidak berjangkar, sehingga kalimat sepanjang apa pun
+ * yang memuatnya tetap tertangkap. Frasanya sendiri dipilih cukup panjang
+ * supaya tidak menangkap tulisan biasa: "BELUM ISI" saja terlalu pendek dan
+ * dapat muncul di dalam keterangan yang sah, sedangkan "BELUM ISI ALASAN"
+ * hanya ada di pesan mesin.
+ *
+ * Bila ABT kelak mengeluarkan bunyi galat yang lain, ia ditambahkan DI SINI -
+ * satu tempat - bukan dengan memasukkan nomor variabelnya ke daftar lain.
+ */
+
+/** Bunyi yang berarti "belum ada isinya", menurut ABT sendiri. */
+const NILAI_KOSONG = new Set(["", "-", "0", "...", "DATA_TIDAK_ADA", "TIDAK_BISA_LOAD"]);
+
+/** Frasa yang berarti "ini pesan mesin", dicari tanpa jangkar. */
+const FRASA_GALAT = [/TIDAK BENAR QUERY NYA/i, /BELUM ISI ALASAN/i];
+
+/**
+ * @param {string} nilai isi sel variabel apa adanya
+ * @returns {"kosong" | "galat" | "terisi"}
+ */
+function keadaanNilai(nilai) {
+  const teks = String(nilai || "").replace(/\s+/g, " ").trim();
+
+  // Galat diperiksa LEBIH DULU. Kalimat galat tidak kosong, jadi urutan yang
+  // dibalik akan menggolongkannya "terisi" - dan yang terisi tidak pernah
+  // ditanyakan kepada siapa pun.
+  if (FRASA_GALAT.some((pola) => pola.test(teks))) return "galat";
+  if (NILAI_KOSONG.has(teks.toUpperCase())) return "kosong";
+  return "terisi";
+}
 
 const ALETA_API_ABT = "/aleta/api/aleta-bot/abt/usulan";
 const ALETA_API_POSITA = "/aleta/api/aleta-bot/sipp/posita";
@@ -451,7 +534,7 @@ function bersihkanKeteranganSaksi(teks) {
  * Bila berbeda walau satu huruf, tulisannya ditolak dan sebabnya disebut.
  */
 async function mintaPositaRapi(perkaraId, ujiKering) {
-  const respons = await fetch(ALETA_API_POSITA, {
+  const respons = await alatAmbil(ALETA_API_POSITA, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
@@ -460,13 +543,18 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
     // sendiri dari SIPP dan merapikannya di sana; lihat catatan panjang di
     // sippPositaService.js tentang kenapa mengirim teks dari sini keliru.
     body: JSON.stringify({ perkaraId, ujiKering: ujiKering === true }),
-  });
-  if (respons.status === 401) return { ok: false, pesan: "Belum masuk portal ALETA." };
-  if (!respons.ok) return { ok: false, pesan: `ALETA menjawab ${respons.status}.` };
+  }, "Merapikan posita");
+  if (!respons.ok) {
+    return { ok: false, pesan: alatPesanGagal(null, respons.status, "Menyambung kata") };
+  }
 
   const luar = await respons.json();
   const isi = luar?.data ?? luar;
-  if (!isi?.available) return { ok: false, pesan: isi?.message || "ALETA belum dapat menjawab." };
+  if (!isi?.available) {
+    // Pesan dari portal diteruskan apa adanya bila ada - ia menyebut sebab
+    // yang lebih tepat daripada kalimat umum, misalnya penolakan pagar isi.
+    return { ok: false, pesan: isi?.message || alatPesanGagal(null, 0, "Menyambung kata") };
+  }
 
   const disambung = Number(isi.disambung) || 0;
   const ragu = Array.isArray(isi.ragu) ? isi.ragu : [];
@@ -501,19 +589,22 @@ async function mintaPositaRapi(perkaraId, ujiKering) {
  * disambung; lihat catatan di sambungPecahanRagu.
  */
 async function sambungPecahanPosita(perkaraId, indeks) {
-  const respons = await fetch(ALETA_API_POSITA, {
+  const respons = await alatAmbil(ALETA_API_POSITA, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ aksi: "sambung", perkaraId, indeks }),
-  });
-  if (respons.status === 401) return { ok: false, pesan: "Belum masuk portal ALETA." };
-  if (!respons.ok) return { ok: false, pesan: `ALETA menjawab ${respons.status}.` };
+  }, "Menyambung kata");
+  if (!respons.ok) {
+    return { ok: false, pesan: alatPesanGagal(null, respons.status, "Merapikan posita") };
+  }
 
   const luar = await respons.json();
   const isi = luar?.data ?? luar;
-  if (!isi?.available) return { ok: false, pesan: isi?.message || "ALETA belum dapat menjawab." };
+  if (!isi?.available) {
+    return { ok: false, pesan: isi?.message || alatPesanGagal(null, 0, "Merapikan posita") };
+  }
 
   return {
     ok: true,
@@ -991,18 +1082,17 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
   // ── 2. PDF, dikonversi ALETA dari RTF yang BUKAN anonim ───────────────────
   lapor("Mengubah menjadi PDF…");
   try {
-    const respons = await fetch(ALETA_API_PDF, {
+    const respons = await alatAmbil(ALETA_API_PDF, {
       method: "POST",
       credentials: "include",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rtfBase64: base64DariBuffer(isiRtf) }),
-    });
-    if (respons.status === 401) throw new Error("belum masuk portal ALETA");
-    if (!respons.ok) throw new Error(`ALETA menjawab ${respons.status}`);
+    }, "Membuat PDF");
+    if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membuat PDF"));
     const luar = await respons.json();
     const isi = luar?.data ?? luar;
-    if (!isi?.available) throw new Error(isi?.message || "ALETA belum dapat menjawab");
+    if (!isi?.available) throw new Error(isi?.message || alatPesanGagal(null, 0, "Membuat PDF"));
     const biner = Uint8Array.from(atob(isi.pdfBase64), (c) => c.charCodeAt(0));
     unduhBlob(new Blob([biner], { type: "application/pdf" }), namaBerkas(nomor, "pdf"));
     hasil.pdf = "tersimpan";
@@ -1314,17 +1404,43 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
 function periksaKelengkapan() {
   const peta = barisVariabel();
   const kurang = [];
+  const rusak = [];
+
+  // ==========================================================================
+  // GALAT DIPERIKSA PADA SELURUH VARIABEL, BUKAN HANYA YANG TURUNAN
+  // ==========================================================================
+  //
+  // Dulu pemeriksaan galat hanya berjalan atas VAR_OTOMATIS - lima nomor
+  // yang didaftarkan tangan. Variabel lain yang mengeluarkan bunyi mesin
+  // lolos begitu saja, dan ia ikut tercetak sebagai pertimbangan hukum.
+  //
+  // Sekarang tiap baris yang tergambar diperiksa, apa pun nomornya - sebab
+  // yang menentukan bukan nomor variabelnya melainkan bunyi isinya.
+  for (const [kode, item] of peta) {
+    if (keadaanNilai(item.nilai) === "galat") rusak.push(`${kode} ${item.nama}`);
+  }
+
+  // ==========================================================================
+  // KOSONG HANYA DIPERIKSA PADA KERANGKA FAKTA, DAN SEBABNYA
+  // ==========================================================================
+  //
+  // Variabel kosong itu WAJAR pada perkara yang memang tidak memerlukannya:
+  // 8523 (pertimbangan kuasa) kosong pada perkara tanpa kuasa, 8524
+  // (pertimbangan PNS) kosong pada pihak yang bukan PNS. Memeriksa seluruh
+  // baris akan menahan hampir tiap pencetakan dengan daftar yang tidak
+  // seharusnya diisi - dan penjaga yang selalu berbunyi berhenti dibaca.
+  //
+  // Yang diperiksa karena itu hanya kerangka faktanya: ketiga belas nomor
+  // yang menyuapi variabel otomatis. Kosongnya yang itu memang berarti
+  // pertimbangannya tidak punya bahan.
   for (const kode of VARIABEL_SASARAN) {
     const item = peta.get(kode);
     if (!item) continue;
-    if (ISI_KOSONG.test(item.nilai)) kurang.push(`${kode} ${item.nama}`);
+    // Yang bergalat sudah masuk daftar rusak di atas - jangan disebut dua
+    // kali dengan dua nama yang berbeda untuk satu keadaan yang sama.
+    if (keadaanNilai(item.nilai) === "kosong") kurang.push(`${kode} ${item.nama}`);
   }
-  const rusak = [];
-  for (const kode of VAR_OTOMATIS) {
-    const item = peta.get(kode);
-    if (!item) continue;
-    if (/TIDAK BENAR QUERY NYA|BELUM ISI/i.test(item.nilai)) rusak.push(`${kode} ${item.nama}`);
-  }
+
   return { kurang, rusak };
 }
 
@@ -1447,18 +1563,17 @@ function pasangPenjagaCetak(jatiDiri, lapor) {
 }
 
 async function mintaUsulan(muatan) {
-  const respons = await fetch(ALETA_API_ABT, {
+  const respons = await alatAmbil(ALETA_API_ABT, {
     method: "POST",
     credentials: "include",
     cache: "no-store",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(muatan),
-  });
-  if (respons.status === 401) throw new Error("Belum masuk portal ALETA.");
-  if (!respons.ok) throw new Error(`ALETA menjawab ${respons.status}.`);
+  }, "Membaca usulan");
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca usulan"));
   const luar = await respons.json();
   const isi = luar?.data ?? luar;
-  if (!isi?.available) throw new Error(isi?.message || "ALETA belum dapat menjawab.");
+  if (!isi?.available) throw new Error(isi?.message || alatPesanGagal(null, 0, "Membaca usulan"));
   return isi;
 }
 

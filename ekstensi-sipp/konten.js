@@ -346,7 +346,7 @@ function tombolUnduh(dokumen, format, label) {
 
     try {
       const alamat = `${ALETA_BERKAS}?documentKey=${encodeURIComponent(dokumen.documentKey)}&format=${format}`;
-      const respons = await fetch(alamat, { credentials: "include", cache: "no-store" });
+      const respons = await alatAmbil(alamat, { credentials: "include", cache: "no-store" }, "Unduh berkas");
 
       if (!respons.ok) {
         const pesan = await pesanGalat(respons);
@@ -355,7 +355,7 @@ function tombolUnduh(dokumen, format, label) {
         } else if (respons.status === 403) {
           tandaiGagal(pesan || "Peran Anda tidak diberi akses mengunduh berkas.", "ditolak");
         } else {
-          tandaiGagal(pesan || `Server menjawab ${respons.status}.`);
+          tandaiGagal(pesan || alatPesanGagal(null, respons.status, "Unduh berkas"));
         }
         return;
       }
@@ -399,7 +399,9 @@ function tombolUnduh(dokumen, format, label) {
       tombol.textContent = semula;
       tombol.disabled = false;
     } catch (kesalahan) {
-      tandaiGagal(`Gagal menghubungi ALETA: ${String((kesalahan && kesalahan.message) || kesalahan)}`);
+      // Kalimatnya sudah disusun alatAmbil - lengkap dengan sebabnya dan daftar
+      // yang tetap jalan tanpa ALETA. Membungkusnya lagi hanya memanjangkannya.
+      tandaiGagal(String((kesalahan && kesalahan.message) || kesalahan));
     }
   });
 
@@ -489,12 +491,16 @@ function kotakVerifikasi(dokumen) {
 /** Mengirim keputusan ke ALETA. Konfirmasi selalu true dari sini. */
 async function kirimKeputusan(dokumen, keputusan) {
   try {
-    const respons = await fetch(ALETA_API, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ documentKey: dokumen.documentKey, keputusan, konfirmasi: true }),
-    });
+    const respons = await alatAmbil(
+      ALETA_API,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentKey: dokumen.documentKey, keputusan, konfirmasi: true }),
+      },
+      "Menyimpan keputusan"
+    );
 
     if (respons.status === 401 || respons.status === 403) {
       return { ok: false, pesan: "Sesi ALETA habis. Masuk lagi lalu ulangi." };
@@ -515,8 +521,8 @@ async function kirimKeputusan(dokumen, keputusan) {
     }[isi?.alasan];
 
     return { ok: false, pesan: alasan || `Tidak tersimpan (${isi?.alasan || "tidak diketahui"}).` };
-  } catch {
-    return { ok: false, pesan: "Gagal menghubungi ALETA." };
+  } catch (galat) {
+    return { ok: false, pesan: String((galat && galat.message) || galat) };
   }
 }
 
@@ -633,10 +639,11 @@ async function ambilStatusPerkara(nomor) {
   }
 
   const janji = (async () => {
-    const respons = await fetch(`${ALETA_API_STATUS}?nomor=${encodeURIComponent(nomor)}`, {
-      credentials: "include",
-      cache: "no-store",
-    });
+    const respons = await alatAmbil(
+      `${ALETA_API_STATUS}?nomor=${encodeURIComponent(nomor)}`,
+      { credentials: "include", cache: "no-store" },
+      "Membaca keadaan perkara"
+    );
     if (!respons.ok) throw new Error(await pesanGalat(respons));
     const hasil = await respons.json();
     const isi = hasil?.data ?? hasil;
@@ -746,16 +753,17 @@ function bagianMalas(judul, kunci, nomor, gambar) {
  * tiap perkara yang kebetulan dibuka.
  */
 async function ambilUsulanPenunjukan(nomor) {
-  const respons = await fetch(
+  const respons = await alatAmbil(
     `${ALETA_API_PENUNJUKAN}?nomor=${encodeURIComponent(nomor)}`,
-    { credentials: "include", cache: "no-store" }
+    { credentials: "include", cache: "no-store" },
+    "Menyusun usulan penunjukan"
   );
 
   if (respons.status === 401) throw new Error("Belum masuk ALETA.");
   if (respons.status === 403) {
     throw new Error("Peran Anda tidak diberi akses papan penunjukan.");
   }
-  if (!respons.ok) throw new Error(`ALETA menjawab ${respons.status}.`);
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Menyusun usulan penunjukan"));
 
   const isi = await respons.json();
   const data = isi && isi.data ? isi.data : isi;
@@ -1614,8 +1622,8 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
     const alamat = `${ALETA_API_BORANG}?perkaraId=${encodeURIComponent(
       String((usulan.perkara && usulan.perkara.perkaraId) || "")
     )}`;
-    const respons = await fetch(alamat, { credentials: "include", cache: "no-store" });
-    if (!respons.ok) throw new Error(`ALETA menjawab ${respons.status}.`);
+    const respons = await alatAmbil(alamat, { credentials: "include", cache: "no-store" }, "Memeriksa kewenangan");
+    if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Memeriksa kewenangan"));
     const isi = await respons.json();
     keadaan = isi && isi.data ? isi.data : isi;
   } catch (galat) {
@@ -1913,7 +1921,7 @@ async function titipkanBorang({ tombol, kabar, formulir, nilai, usulan, untukJab
     .slice(0, 280);
 
   try {
-    const respons = await fetch(ALETA_API_ANTREAN, {
+    const respons = await alatAmbil(ALETA_API_ANTREAN, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -1924,7 +1932,7 @@ async function titipkanBorang({ tombol, kabar, formulir, nilai, usulan, untukJab
         usulan: nilai,
         ringkasan,
       }),
-    });
+    }, "Meneruskan usulan");
     const isi = await respons.json();
     const jawab = isi && isi.data ? isi.data : isi;
 
@@ -1981,7 +1989,7 @@ async function kerjakanBorang(rencana) {
   kabar.textContent = "Mencatat…";
   let dicatat = [];
   try {
-    const respons = await fetch(ALETA_API_CATAT, {
+    const respons = await alatAmbil(ALETA_API_CATAT, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -1991,7 +1999,7 @@ async function kerjakanBorang(rencana) {
         akunSipp: akunSipp(),
         baris: barisCatatan(formulir, nilai, usulan, (data && data.pilihanManual) || {}),
       }),
-    });
+    }, "Mencatat penetapan");
     const isi = await respons.json();
     const jawab = isi && isi.data ? isi.data : isi;
     if (!jawab || jawab.ok !== true) {
@@ -2041,7 +2049,7 @@ async function kerjakanBorang(rencana) {
   await new Promise((tunggu) => setTimeout(tunggu, 1500));
 
   try {
-    const respons = await fetch(ALETA_API_CATAT, {
+    const respons = await alatAmbil(ALETA_API_CATAT, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -2050,7 +2058,7 @@ async function kerjakanBorang(rencana) {
         idBaris: dicatat,
         harapan: { [formulir]: usulan.tanggalPenetapan || "" },
       }),
-    });
+    }, "Memeriksa ke SIPP");
     const isi = await respons.json();
     const jawab = isi && isi.data ? isi.data : isi;
     if (jawab && jawab.mendarat === "ya") {
@@ -2201,13 +2209,13 @@ function bagianDataUmum(konteks) {
       try {
         const badan = new FormData();
         badan.append("berkas", berkas);
-        const respons = await fetch(ALETA_API_BERKAS_GUGATAN, {
-          method: "POST",
-          credentials: "include",
-          body: badan,
-        });
+        const respons = await alatAmbil(
+          ALETA_API_BERKAS_GUGATAN,
+          { method: "POST", credentials: "include", body: badan },
+          "Membaca berkas gugatan"
+        );
         if (respons.status === 403) throw new Error("Peran Anda tidak diberi akses papan penunjukan.");
-        if (!respons.ok) throw new Error(`ALETA menjawab ${respons.status}.`);
+        if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca berkas gugatan"));
 
         const luar = await respons.json();
         const hasil = luar && luar.data ? luar.data : luar;
@@ -2285,7 +2293,7 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
     tombol.disabled = true;
     kabar.textContent = kering ? "Menyusun pernyataan…" : "Menuliskan ke SIPP…";
     try {
-      const respons = await fetch(ALETA_API_TULIS, {
+      const respons = await alatAmbil(ALETA_API_TULIS, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -2301,7 +2309,7 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
           olehUsername: namaPenggunaSipp(),
           kering,
         }),
-      });
+      }, "Menulis Data Umum");
       const luar = await respons.json();
       const h = luar && luar.data ? luar.data : luar;
 
@@ -5671,13 +5679,17 @@ function kotakPermintaan(nomorPerkara, keadaanAwal) {
     tombol.disabled = true;
     pesan.textContent = "Meneruskan permintaan...";
     try {
-      const respons = await fetch(ALETA_API_PERMINTAAN, {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nomorPerkara }),
-      });
+      const respons = await alatAmbil(
+        ALETA_API_PERMINTAAN,
+        {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nomorPerkara }),
+        },
+        "Meneruskan permintaan penarikan"
+      );
       const hasil = await respons.json();
       const isi = hasil?.data ?? hasil;
 
