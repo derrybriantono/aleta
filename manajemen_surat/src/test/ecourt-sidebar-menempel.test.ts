@@ -23,13 +23,50 @@ const berkas = path.resolve(
 );
 const isi = readFileSync(berkas, "utf8");
 
-/** Kelas pada elemen nav sidebar, dipotong dari sumbernya. */
+/**
+ * Kelas pada elemen nav sidebar, dipotong dari sumbernya.
+ *
+ * ============================================================================
+ * KOMENTAR DIBUANG LEBIH DAHULU - INI BUKAN KERAPIAN, INI KEBENARANNYA
+ * ============================================================================
+ *
+ * Uji ini pernah gagal atas komponen yang sama sekali tidak berubah
+ * perilakunya. Sebabnya komentar sepanjang tujuh ratus huruf yang ditulis
+ * untuk MENJELASKAN kelas-kelas ini, dan di dalamnya nama kelasnya tertulis
+ * harfiah:
+ *
+ *   // overflow-y-auto SENDIRIAN MEMBUAT BILAH GULIR MENDATAR
+ *
+ * Dua kerusakan sekaligus, keduanya dari cara memotong yang lama:
+ *
+ *   1. jendela 1.200 huruf habis di dalam komentar itu, sehingga baris kelas
+ *      yang sesungguhnya tidak pernah terbaca - "lg:sticky tidak ada",
+ *      padahal ia ada;
+ *   2. penjaga "setiap kemunculan harus berawalan lg:" menemukan
+ *      overflow-y-auto di dalam PROSA, lalu melaporkannya sebagai kelas tanpa
+ *      awalan.
+ *
+ * Yang kedua paling berbahaya: ia menghukum orang yang menulis komentar. Uji
+ * yang berbunyi setiap kali seseorang menerangkan keputusannya akan
+ * menghasilkan kode tanpa keterangan - persis kebalikan dari yang kita mau.
+ *
+ * Karena itu yang dibaca hanya KODE-nya. Komentar dibuang, lalu potongannya
+ * berhenti di kurung sudut penutup tag - dan sesudah komentar hilang, kurung
+ * sudut pertama memang penutup tagnya.
+ */
 function kelasNav() {
   const awal = isi.indexOf('aria-label="Menu ALETA e-Court"');
   expect(awal, "elemen nav sidebar tidak ditemukan").toBeGreaterThan(-1);
-  const potong = isi.slice(awal, awal + 1200);
-  const tutup = potong.indexOf(">");
-  return tutup > -1 ? potong.slice(0, tutup) : potong;
+
+  // Jendelanya dilebihkan jauh: yang membatasi potongan adalah kurung sudut
+  // penutup tag, bukan angka ini. Angka yang pas-pasan itulah yang dulu
+  // membuat uji ini gagal diam-diam ketika komentarnya bertambah panjang.
+  const kasar = isi.slice(awal, awal + 6000);
+  const tanpaKomentar = kasar.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+
+  const tutup = tanpaKomentar.indexOf(">");
+  expect(tutup, "penutup tag nav tidak ditemukan").toBeGreaterThan(-1);
+  return tanpaKomentar.slice(0, tutup);
 }
 
 describe("sidebar e-Court menempel saat digulung", () => {
