@@ -2122,6 +2122,37 @@ export function AletaEcourtSidang({
   // dipasang di satker lain.
   const { institutionIdentity } = usePortal();
   const [memuat, setMemuat] = useState(true);
+  /**
+   * ==========================================================================
+   * PENYEGARAN TIDAK BOLEH MELEPAS TABELNYA DARI LAYAR
+   * ==========================================================================
+   *
+   * Halaman ini memuat ulang dirinya sendiri sepanjang hari - tundaan dan
+   * putusan datang terus, dan layar yang basi tampak persis seperti layar yang
+   * benar. Pemuatan ulang itu memang harus ada.
+   *
+   * Yang keliru bukan pemuatannya, melainkan APA YANG DIGAMBAR selama
+   * pemuatan. Seluruh isi tbody diganti satu baris "Memuat jadwal…", sehingga
+   * tabel tujuh belas baris menyusut menjadi satu. Halaman ikut memendek, dan
+   * peramban - yang tidak dapat mempertahankan posisi gulir pada dokumen yang
+   * mendadak lebih pendek daripada posisi itu sendiri - menjepitnya ke atas.
+   * Begitu barisnya kembali, pembacanya sudah berada di puncak halaman.
+   *
+   * Itulah sebab layar ini "melompat ke atas sendiri" tiap kali ada yang
+   * mengambil nomor antrian: mengambil nomor memicu penyegaran, dan
+   * penyegaranlah yang memendekkan halaman.
+   *
+   * Perbaikannya bukan mematikan penyegaran - itu mengembalikan layar basi -
+   * melainkan membiarkan baris yang SUDAH ada tetap terpasang selama data
+   * barunya datang. Kuncinya stabil (nomorPerkara|sidangId), jadi React
+   * menukar isinya di tempat tanpa melepas satu baris pun, dan posisi gulir
+   * tidak pernah bergerak.
+   *
+   * Pesan "Memuat jadwal…" karena itu hanya untuk muatan PERTAMA, ketika
+   * memang belum ada apa pun yang dapat ditampilkan. Pola yang sama sudah
+   * dipakai layar Ambil Antrian - lihat pertamaMuat di aleta-antrian-ambil.
+   */
+  const [pertamaMuat, setPertamaMuat] = useState(true);
   // Dibaca dari dalam pemuatan ulang berkala - lihat catatannya di muatTanggal.
   const memuatRef = useRef(false);
   const [galat, setGalat] = useState("");
@@ -2398,6 +2429,9 @@ export function AletaEcourtSidang({
     } finally {
       memuatRef.current = false;
       setMemuat(false);
+      // Sesudah putaran pertama, penyegaran berikutnya tidak boleh lagi
+      // melepas tabelnya dari layar - lihat catatan pada pertamaMuat.
+      setPertamaMuat(false);
     }
     },
     [cari, nilaiKesiapan]
@@ -3275,7 +3309,11 @@ export function AletaEcourtSidang({
               </tr>
             </thead>
             <tbody>
-              {memuat ? (
+              {/* Hanya muatan PERTAMA yang boleh mengosongkan tabel - lihat
+                  catatan panjang pada pertamaMuat. Penyegaran berikutnya
+                  membiarkan barisnya terpasang, dan posisi gulir pembacanya
+                  tidak bergerak. */}
+              {pertamaMuat && memuat ? (
                 <tr>
                   <td className="px-3 py-6 text-center text-muted-foreground" colSpan={8}>
                     Memuat jadwal…

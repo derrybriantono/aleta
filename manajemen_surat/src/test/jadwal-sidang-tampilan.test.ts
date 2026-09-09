@@ -581,3 +581,48 @@ describe("ketiganya ada apa adanya di komponen", () => {
     expect(isi).not.toContain('kunci: "agenda-putusan"');
   });
 });
+
+describe("penyegaran tidak melepas tabel dari layar", () => {
+  const sumber = () =>
+    readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
+      "utf8"
+    );
+
+  it("pesan Memuat hanya untuk muatan pertama", () => {
+    // Mengganti seluruh tbody dengan satu baris "Memuat jadwal…" membuat tabel
+    // tujuh belas baris menyusut menjadi satu. Halaman ikut memendek, dan
+    // peramban menjepit posisi gulir ke atas - itulah "melompat ke atas
+    // sendiri" yang dikeluhkan tiap kali ada yang mengambil nomor antrian.
+    const isi = sumber();
+    expect(isi).toContain("{pertamaMuat && memuat ? (");
+    // Bentuk lama tidak boleh kembali.
+    expect(isi).not.toContain("<tbody>\n              {memuat ? (");
+  });
+
+  it("penandanya dilepas sesudah putaran pertama selesai", () => {
+    const isi = sumber();
+    expect(isi).toContain("setPertamaMuat(false);");
+    // Dilepas di finally, bukan di jalur berhasil saja - muatan pertama yang
+    // gagal pun tidak boleh membuat tiap penyegaran berikutnya mengosongkan
+    // tabel selamanya.
+    const potong = isi.slice(isi.indexOf("memuatRef.current = false;"));
+    expect(potong.slice(0, 320)).toContain("setPertamaMuat(false);");
+  });
+
+  it("pemuatan ulang berkala TIDAK dimatikan", () => {
+    // Perbaikannya bukan mematikan penyegaran - itu mengembalikan layar basi,
+    // dan layar basi tampak persis seperti layar yang benar.
+    const isi = sumber();
+    expect(isi).toContain("window.setInterval(");
+    expect(isi).toContain("JEDA_MUAT_ULANG_MS");
+  });
+
+  it("kunci baris tetap stabil, supaya barisnya ditukar di tempat", () => {
+    // Kunci yang berubah tiap muatan membuat React melepas lalu memasang
+    // ulang seluruh baris - dan posisi gulirnya hilang walau tabelnya tidak
+    // pernah dikosongkan.
+    const isi = sumber();
+    expect(isi).toContain("const kunci = `${baris.nomorPerkara}|${baris.sidangId}`;");
+  });
+});
