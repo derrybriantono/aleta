@@ -5025,9 +5025,28 @@ function tandaiJudul(konteks) {
   // Keempat berikut tidak menuntut tindakan hari ini - ia mengubah CARA
   // perkaranya diperlakukan, dan itu perlu diketahui sebelum salah langkah.
   if (t.verzet) {
+    // ========================================================================
+    // PERLAWANAN KEDUA DISEBUT ANGKANYA, TIDAK DIDIAMKAN
+    // ========================================================================
+    //
+    // Satu perkara dapat dilawan lebih dari sekali. Selama penandanya berbunyi
+    // "VERZET" saja, perlawanan kedua tampak persis sama dengan yang pertama -
+    // padahal yang kedua mengubah cara majelis membaca berkasnya, dan tanggal
+    // yang tergambar adalah tanggal perlawanan yang mana pun terbaca lebih
+    // dulu. Angka itu jarang muncul, dan justru karena jarang ia tidak pernah
+    // ketahuan bila tidak disebutkan.
+    const jumlah = Number(t.verzet.jumlah || 1);
+    const lama = Array.isArray(t.verzet.sebelumnya) ? t.verzet.sebelumnya : [];
+    const riwayat = lama.length
+      ? ` Perlawanan sebelumnya: ${lama.map((x) => x.tanggalDaftar || "tanggal tidak terbaca").join(", ")}.`
+      : "";
+
     judul.appendChild(
-      labelTanda("VERZET", "kuning", {
-        judul: `Perlawanan atas putusan verstek, terdaftar ${t.verzet.tanggalDaftar}.`,
+      labelTanda(jumlah > 1 ? `VERZET ke-${jumlah}` : "VERZET", "kuning", {
+        judul:
+          `Perlawanan atas putusan verstek, terdaftar ${t.verzet.tanggalDaftar}.` +
+          (jumlah > 1 ? ` Ini perlawanan ke-${jumlah} atas perkara yang sama.` : "") +
+          riwayat,
       })
     );
   }

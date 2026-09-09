@@ -862,7 +862,24 @@ export type GatewaySippKonteks = {
   penandaLain: {
     panjar?: { sisa: number; tanggal: string; habis: boolean; menipis: boolean };
     aktaCerai?: { tertunggak: boolean; bht: string; hari: number | null };
-    verzet?: { ada: boolean; tanggalDaftar: string; sudahPutus: boolean };
+    /**
+     * Perlawanan atas putusan verstek.
+     *
+     * `jumlah` hampir selalu 1. Yang lebih dari itu jarang - dan justru
+     * karena jarang, ia dulu tidak pernah ketahuan: pembacanya mengambil satu
+     * baris tanpa urutan, sehingga tanggal yang tergambar dapat berpindah
+     * antar-pembacaan pada perkara yang sama. `sebelumnya` memuat perlawanan
+     * yang lebih tua, terbaru lebih dahulu, dan kosong pada hampir seluruh
+     * perkara.
+     */
+    verzet?: {
+      ada: boolean;
+      jumlah: number;
+      tanggalDaftar: string;
+      sidangPertama: string;
+      sudahPutus: boolean;
+      sebelumnya: Array<{ tanggalDaftar: string; sidangPertama: string; sudahPutus: boolean }>;
+    };
     berjalanLama?: { hari: number; tanggalDaftar: string; ambang: number };
     mediasi?: { tertunda: boolean; tanggalPenunjukan: string; mediator: string; hari: number | null };
     prodeo?: { prodeo: boolean };

@@ -202,23 +202,62 @@ async function aktaCerai(perkaraId) {
 async function verzet(perkaraId) {
   if (!(await sippSkemaService.tabelAda("perkara_verzet"))) return null;
 
+  // ==========================================================================
+  // SATU PERKARA DAPAT DILAWAN LEBIH DARI SEKALI
+  // ==========================================================================
+  //
+  // Sebelumnya kueri ini berbunyi LIMIT 1 tanpa ORDER BY. Pada perkara yang
+  // dilawan dua kali, baris mana yang terbaca ditentukan MySQL sendiri - dan
+  // MySQL tidak menjanjikan apa pun tanpa ORDER BY. Tanggal yang tergambar
+  // karena itu dapat berpindah antar-pembacaan pada perkara yang sama, tanpa
+  // satu pun galat.
+  //
+  // Yang dibaca sekarang seluruhnya, terbaru lebih dahulu. Perlawanan yang
+  // TERBARU yang tenggangnya sedang berjalan; yang lama sudah menjadi
+  // sejarah - tetapi ia tetap disebutkan, sebab "ini perlawanan kedua" adalah
+  // keterangan yang mengubah cara majelis membaca berkasnya.
+  //
+  // Ini kelas kekeliruan yang sama dengan ['0']->id di ABT yang membuat
+  // keterangan saksi terbaca dari sidang yang salah.
+  //
+  // Kolom jejak SIPP dipakai sebagai pemutus bila tanggal pendaftarannya sama
+  // - tetapi hanya bila kolomnya memang ada. Mengurutkan atas kolom yang
+  // tidak ada melempar galat, dan galat di sini ditelan aman() sehingga
+  // penandanya hilang diam-diam.
+  const punyaJejak = await sippSkemaService.kolomAda("perkara_verzet", "diinput_tanggal");
+  const urutan = punyaJejak
+    ? "ORDER BY v.tanggal_pendaftaran_verzet DESC, v.diinput_tanggal DESC"
+    : "ORDER BY v.tanggal_pendaftaran_verzet DESC";
+
   const baris = await runQuery(
     `SELECT v.tanggal_pendaftaran_verzet AS daftar,
             v.tanggal_sidang_pertama_verzet AS sidang,
             v.putusan_verzet AS putusan
        FROM perkara_verzet v
       WHERE v.perkara_id = ?
-      LIMIT 1`,
+      ${urutan}`,
     [perkaraId]
   );
-  const satu = (Array.isArray(baris) && baris[0]) || null;
-  if (!satu) return null;
 
+  const semua = Array.isArray(baris) ? baris : [];
+  if (semua.length === 0) return null;
+
+  const satu = semua[0];
   return {
     ada: true,
+    // Hampir selalu 1. Yang lebih dari itu jarang - dan justru karena jarang,
+    // ia tidak pernah ketahuan bila tidak disebutkan angkanya.
+    jumlah: semua.length,
     tanggalDaftar: isoTanggal(satu.daftar),
     sidangPertama: isoTanggal(satu.sidang),
     sudahPutus: Boolean(isoTanggal(satu.putusan)),
+    // Perlawanan sebelumnya, terbaru lebih dahulu. Kosong pada perkara yang
+    // hanya dilawan sekali - yaitu hampir seluruhnya.
+    sebelumnya: semua.slice(1).map((lama) => ({
+      tanggalDaftar: isoTanggal(lama.daftar),
+      sidangPertama: isoTanggal(lama.sidang),
+      sudahPutus: Boolean(isoTanggal(lama.putusan)),
+    })),
   };
 }
 
