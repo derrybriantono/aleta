@@ -24,6 +24,7 @@ const ecourtStatusService = require("../services/ecourtStatusService");
 const ecourtLoginService = require("../services/ecourtLoginService");
 const sippKonteksService = require("../services/sippKonteksService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
+const abtUsulanService = require("../services/abtUsulanService");
 const ecourtSchedulerService = require("../services/ecourtSchedulerService");
 const sippJadwalSidangService = require("../services/sippJadwalSidangService");
 const kesiapanSidangService = require("../services/kesiapanSidangService");
@@ -1043,6 +1044,40 @@ router.post("/sipp/ringkasan-massal", requireInternalToken, async (req, res) => 
     const daftar = Array.isArray(req.body?.nomorPerkara) ? req.body.nomorPerkara : [];
     const hasil = await sippKonteksService.ringkasanMassal(daftar);
     res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Usulan isian untuk blangko ABT.
+ *
+ * Menghasilkan usulan saja - tidak menulis apa pun, tidak ke SIPP maupun ke
+ * aps_badilag. Yang menuliskannya ke ABT adalah ekstensi di peramban petugas,
+ * lewat rute simpan milik ABT sendiri, sesudah petugas memeriksanya.
+ */
+router.post("/abt/usulan", requireInternalToken, async (req, res) => {
+  try {
+    const nomorPerkara = String(req.body?.nomorPerkara || "");
+    const sumber = String(req.body?.sumber || "semua");
+
+    const jawaban = { ok: true, sipp: null, saksi: null };
+
+    if (sumber === "semua" || sumber === "sipp") {
+      jawaban.sipp = await abtUsulanService.dariSipp(nomorPerkara).catch((galat) => ({
+        ok: false,
+        alasan: String(galat.message || galat).slice(0, 200),
+        usulan: [],
+      }));
+    }
+    if (sumber === "semua" || sumber === "saksi") {
+      jawaban.saksi = abtUsulanService.dariKeteranganSaksi(
+        String(req.body?.saksi1 || ""),
+        String(req.body?.saksi2 || "")
+      );
+    }
+
+    res.json(jawaban);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

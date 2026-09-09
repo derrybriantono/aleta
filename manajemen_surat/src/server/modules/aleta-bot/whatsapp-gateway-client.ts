@@ -1987,6 +1987,29 @@ export async function getGatewaySippRingkasanMassal(nomorPerkara: string[]) {
   });
 }
 
+/**
+ * Usulan isian blangko ABT.
+ *
+ * Bentuk jawabannya sengaja longgar - `unknown` untuk isinya - karena yang
+ * menyusun daftar variabelnya adalah bot, dan rute portal meneruskannya utuh.
+ * Mengetiknya rapat di sini berarti tiap variabel baru menuntut perubahan di
+ * tiga tempat sekaligus.
+ */
+export async function getGatewayAbtUsulan(muatan: {
+  nomorPerkara: string;
+  sumber?: "semua" | "sipp" | "saksi";
+  saksi1?: string;
+  saksi2?: string;
+}) {
+  return gatewayFetch<{
+    sipp: Record<string, unknown> | null;
+    saksi: Record<string, unknown> | null;
+  }>("/internal/aleta-bot/abt/usulan", {
+    method: "POST",
+    body: JSON.stringify(muatan),
+  });
+}
+
 /** Menitipkan permintaan penarikan satu perkara dari e-Court. */
 export async function titipGatewayEcourtPermintaan(nomorPerkara: string, dimintaOleh: string) {
   return gatewayFetch<{ ok: boolean; alasan: string; keadaan?: Record<string, unknown> }>(

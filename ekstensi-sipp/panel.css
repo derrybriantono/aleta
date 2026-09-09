@@ -2125,3 +2125,223 @@ html[data-aleta-tema-sipp="gelap"] :is(#konten, .cssTable, .detil, #detil_page, 
 html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, video) {
   filter: none !important;
 }
+
+/* ==========================================================================
+   PENYUNTING DI TEMPAT PADA HALAMAN BLANGKO ABT
+   ==========================================================================
+
+   ABT menyunting lewat jendela sembul: satu variabel, satu jendela, dan
+   jendela itu menutupi variabel lain persis ketika keduanya perlu dibaca
+   bersebelahan. Gaya di bawah membuat sel isinya sendiri yang berubah menjadi
+   kotak ketik, di barisnya, tanpa memindahkan apa pun.
+
+   Warnanya mengikuti halaman ABT - putih dengan hijau - bukan mengikuti panel
+   ALETA: yang disunting ini isi tabel milik ABT, dan kotak gelap di tengah
+   tabel terang terbaca sebagai kerusakan tampilan. */
+.aleta-abt-dapat-disunting {
+  cursor: text;
+  border-left: 3px solid transparent !important;
+  transition: border-color 0.12s, background-color 0.12s;
+}
+
+.aleta-abt-dapat-disunting:hover {
+  border-left-color: #1c6f46 !important;
+  background-color: rgba(28, 111, 70, 0.06) !important;
+}
+
+.aleta-abt-sunting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.aleta-abt-ketik {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #1c6f46;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #1b2622;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.aleta-abt-tombol {
+  display: flex;
+  gap: 6px;
+}
+
+.aleta-abt-simpan,
+.aleta-abt-batal {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid #1c6f46;
+  background: #1c6f46;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aleta-abt-batal {
+  background: transparent;
+  color: #1c6f46;
+}
+
+.aleta-abt-simpan:disabled,
+.aleta-abt-batal:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.aleta-abt-kabar {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--aleta-tulisan-lembut, #63594c);
+}
+
+.aleta-abt-gagal {
+  color: #b42318;
+  font-weight: 600;
+}
+
+/* --- Panel usulan -------------------------------------------------------- */
+
+.aleta-panel-abt {
+  width: 400px;
+}
+
+.aleta-abt-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.aleta-abt-daftar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Satu usulan = satu kartu. Kutipan sumbernya bukan hiasan: tanpa itu,
+   memeriksa satu usulan berarti membaca ulang dua blok keterangan saksi
+   sepanjang layar - dan yang tidak dapat diperiksa dengan murah pada akhirnya
+   diterima tanpa diperiksa. */
+.aleta-abt-kartu {
+  padding: 8px 9px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 5px;
+  background: var(--aleta-latar-naik);
+}
+
+.aleta-abt-kartu-kepala {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.aleta-abt-centang {
+  margin: 0;
+  accent-color: var(--aleta-merek);
+}
+
+.aleta-abt-kode {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-abt-nama {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-abt-sanding {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+}
+
+.aleta-abt-kini,
+.aleta-abt-usul {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.aleta-abt-label {
+  flex: none;
+  width: 54px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-abt-isi {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-abt-usul .aleta-abt-isi {
+  font-weight: 600;
+  color: var(--aleta-merek);
+}
+
+/* Selisih antar saksi ditulis tegas dan disebut apa adanya: ini soal
+   pembuktian, bukan soal pengisian, dan harus terlihat sebelum putusan
+   disusun - bukan sesudah dibaca hakim. */
+.aleta-abt-bentrok {
+  margin-top: 5px;
+  padding: 5px 7px;
+  border-left: 2px solid var(--aleta-lewat);
+  border-radius: 2px;
+  background: rgba(180, 35, 24, 0.1);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-abt-catatan {
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--aleta-mendesak);
+}
+
+.aleta-abt-kutipan {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.aleta-abt-asal {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  color: var(--aleta-tulisan-lembut);
+  white-space: nowrap;
+}
+
+.aleta-abt-kalimat {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--aleta-tulisan-lembut);
+  font-style: italic;
+}

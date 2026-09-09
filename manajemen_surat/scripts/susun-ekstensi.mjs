@@ -25,7 +25,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const BERKAS = ["manifest.json", "konten.js", "jembatan.js", "panel.css", "popup.html", "popup.js", "PASANG.md"];
+const BERKAS = ["manifest.json", "konten.js", "abt.js", "jembatan.js", "panel.css", "popup.html", "popup.js", "PASANG.md"];
 
 // Ikon TIDAK dapat ditanam sebagai teks: ia berkas PNG, dan membacanya sebagai
 // utf8 merusak bitanya tanpa satu pun galat. Karena itu ikon ditanam terpisah

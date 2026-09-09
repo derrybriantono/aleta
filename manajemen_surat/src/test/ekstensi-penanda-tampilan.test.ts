@@ -250,8 +250,14 @@ describe("tema gelap SIPP: lengkap, dan dapat dicabut utuh", () => {
     // Sifatnya yang paling penting: mencabut penandanya mengembalikan SIPP
     // persis seperti semula. Aturan yang lupa diberi awalan itu akan
     // tertinggal menyala pada tema terang.
+    // Dibatasi sampai bagian berikutnya. Gaya penyunting ABT ditulis SESUDAH
+    // blok ini dan memang tidak boleh berawalan penanda tema - ia berlaku di
+    // aplikasi lain, pada halaman yang temanya terang.
     const css = gaya();
-    const potong = css.slice(css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP"));
+    const awal = css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP");
+    const akhirBlok = css.indexOf("PENYUNTING DI TEMPAT PADA HALAMAN BLANGKO ABT");
+    expect(akhirBlok).toBeGreaterThan(awal);
+    const potong = css.slice(awal, akhirBlok);
     const pembuka = potong.split("\n").filter((baris) => /^[.#:a-z\[]/i.test(baris.trim()) && baris.includes("{"));
     const tanpaAwalan = pembuka.filter(
       (baris) => !baris.includes("data-aleta-tema-sipp") && !baris.trim().startsWith("html")
