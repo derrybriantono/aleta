@@ -94,6 +94,30 @@ export const SEBUTAN_ACC: Record<KeadaanAcc, string> = {
   diacc: "Sudah di-acc hakim",
 };
 
+/**
+ * Apakah pengguna ini boleh meng-acc?
+ *
+ * Dipulangkan rute pembaca lembar supaya layar tidak menggambar tombol yang
+ * pasti ditolak. Tombol yang selalu gagal ditekan berkali-kali sebelum orang
+ * menyimpulkan ia memang bukan untuknya - dan kesimpulan itu keliru: ia
+ * memang bukan untuknya, tetapi layar yang menampilkannya sudah lebih dulu
+ * mengatakan sebaliknya.
+ *
+ * TIDAK dipakai sebagai penjagaan. Penjagaannya di pastikanPengacc, yang
+ * berjalan di peladen; yang ini hanya untuk memutuskan apa yang digambar.
+ */
+export async function bolehMengacc(
+  db: AletaDatabase,
+  actorUserId: string | null | undefined
+): Promise<boolean> {
+  try {
+    const aktor = await requireActorUser(db, actorUserId);
+    return PERAN_PENGACC.includes(String(aktor.roleId ?? "") as RoleId);
+  } catch {
+    return false;
+  }
+}
+
 async function pastikanPengacc(db: AletaDatabase, actorUserId: string | null | undefined) {
   const aktor = await requireActorUser(db, actorUserId);
   const peran = String(aktor.roleId ?? "") as RoleId;

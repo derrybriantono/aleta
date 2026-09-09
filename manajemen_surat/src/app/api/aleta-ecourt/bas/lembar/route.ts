@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { daftarLembar, muatLembar, simpanLembar, type MasukanSimpan } from "@/server/modules/aleta-ecourt/bas-lembar";
+import { bolehMengacc } from "@/server/modules/aleta-ecourt/bas-acc";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
@@ -46,7 +47,10 @@ export async function GET(request: NextRequest) {
     if (!kode) return ok({ ada: true, daftar: await daftarLembar(db, perkaraId) });
 
     const lembar = await muatLembar(db, { perkaraId, kode, saksiKe });
-    return ok({ ada: Boolean(lembar), lembar });
+    // Kewenangan acc ikut dipulangkan supaya layar tidak menggambar tombol
+    // yang pasti ditolak. Ini keputusan gambar, BUKAN penjagaan - penjagaannya
+    // di bas-acc, yang berjalan di peladen.
+    return ok({ ada: Boolean(lembar), lembar, bolehAcc: await bolehMengacc(db, actorUserId) });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

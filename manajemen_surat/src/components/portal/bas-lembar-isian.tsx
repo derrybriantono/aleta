@@ -68,8 +68,52 @@ type Lembar = {
   terisi: Array<{ noVar: string; nama: string; nilai: string; asal: string }>;
   kosong: Array<{ noVar: string; nama: string; sebab: string }>;
   halangan: string[];
-  tersimpan?: { saksi: Saksi; tanggalSidang: string; keadaan: string; catatan: string; diubahAt: string } | null;
+  tersimpan?: {
+    id: string;
+    saksi: Saksi;
+    tanggalSidang: string;
+    keadaan: string;
+    catatan: string;
+    diubahAt: string;
+    /**
+     * Keadaan acc hakim - SUMBU YANG BERBEDA dari keadaan di atas. Lembar
+     * dapat berkeadaan "selesai" dan ber-acc "menunggu-acc" sekaligus, dan
+     * itulah keadaan yang paling sering ditunggu orang.
+     */
+    acc?: KeadaanAcc;
+    diaccOleh?: string;
+    diaccAt?: string;
+    accDikembalikanAlasan?: string;
+  } | null;
   rekamanAbt?: RekamanAbt;
+  /** Apakah yang membuka layar ini boleh meng-acc. Keputusan gambar, bukan penjagaan. */
+  bolehAcc?: boolean;
+};
+
+type KeadaanAcc = "belum-selesai" | "menunggu-acc" | "dikembalikan" | "diacc";
+
+/**
+ * Sebutan dan nadanya. Disalin dari bas-acc, bukan diimpor: berkas itu
+ * menyentuh basis data, dan menariknya ke dalam berkas peramban akan menyeret
+ * seluruh lapisan peladen ikut terbangun.
+ */
+const SEBUTAN_ACC: Record<KeadaanAcc, { label: string; nada: string }> = {
+  "belum-selesai": {
+    label: "Masih diisi panitera",
+    nada: "border-border bg-muted/40 text-muted-foreground",
+  },
+  "menunggu-acc": {
+    label: "Menunggu acc hakim",
+    nada: "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  },
+  dikembalikan: {
+    label: "Dikembalikan hakim",
+    nada: "border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
+  },
+  diacc: {
+    label: "Sudah di-acc hakim",
+    nada: "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
+  },
 };
 
 const SAKSI_KOSONG: Saksi = { nama: "", umur: "", agama: "", pendidikan: "", pekerjaan: "", alamat: "" };
@@ -266,6 +310,29 @@ export function LembarIsian({
           </div>
         </div>
 
+        {/* ==================================================================
+            ACC HAKIM
+
+            Ditampilkan kepada SIAPA PUN yang membuka lembar, bukan hanya
+            kepada hakim. Panitera yang tidak dapat melihat keadaan accnya
+            tidak tahu apakah pekerjaannya sudah diperiksa - dan yang paling
+            perlu dilihatnya justru pengembalian beserta alasannya.
+
+            Tombolnya baru digambar bila memang boleh ditekan. Tombol yang
+            selalu gagal ditekan berkali-kali sebelum orang menyimpulkan ia
+            bukan untuknya, dan kesimpulan itu datang terlambat.
+            ================================================================== */}
+        {lembar.tersimpan ? (
+          <BilahAcc
+            lembarId={lembar.tersimpan.id}
+            keadaan={lembar.tersimpan.acc ?? "belum-selesai"}
+            alasan={lembar.tersimpan.accDikembalikanAlasan ?? ""}
+            diaccAt={lembar.tersimpan.diaccAt ?? ""}
+            boleh={Boolean(lembar.bolehAcc)}
+            onBerubah={() => setDimuat(null)}
+          />
+        ) : null}
+
         {kotor ? (
           <p className="text-xs text-amber-600 dark:text-amber-400">Ada perubahan yang belum disimpan.</p>
         ) : null}
@@ -416,5 +483,135 @@ export function LembarIsian({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * ============================================================================
+ * BILAH ACC - KEADAANNYA, DAN TOMBOLNYA BILA BOLEH
+ * ============================================================================
+ *
+ * Keadaan accnya ditampilkan kepada siapa pun yang membuka lembar. Panitera
+ * yang tidak dapat melihatnya tidak tahu apakah pekerjaannya sudah diperiksa,
+ * dan yang paling perlu dilihatnya justru pengembalian beserta alasannya -
+ * tanpa itu ia menebak apa yang harus diperbaiki.
+ *
+ * Tombolnya baru digambar bila memang boleh ditekan. Itu keputusan gambar,
+ * bukan penjagaan: penjagaannya di peladen, dan tetap menolak sekalipun
+ * seseorang memanggil rutenya langsung.
+ */
+function BilahAcc({
+  lembarId,
+  keadaan,
+  alasan,
+  diaccAt,
+  boleh,
+  onBerubah,
+}: {
+  lembarId: string;
+  keadaan: KeadaanAcc;
+  alasan: string;
+  diaccAt: string;
+  boleh: boolean;
+  onBerubah: () => void;
+}) {
+  const [sibuk, setSibuk] = useState("");
+  const [galat, setGalat] = useState("");
+  const [alasanBaru, setAlasanBaru] = useState("");
+  const [mintaAlasan, setMintaAlasan] = useState(false);
+
+  const sebutan = SEBUTAN_ACC[keadaan];
+
+  const kirim = async (tindakan: "acc" | "kembalikan") => {
+    setSibuk(tindakan);
+    setGalat("");
+    try {
+      const jawaban = await fetch(apiPath("/api/aleta-ecourt/bas/acc"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lembarId, tindakan, alasan: alasanBaru }),
+      });
+      const isi = ((await jawaban.json())?.data ?? {}) as { ok?: boolean; alasan?: string };
+      if (!isi.ok) {
+        setGalat(isi.alasan || "Tidak tersimpan.");
+        return;
+      }
+      setAlasanBaru("");
+      setMintaAlasan(false);
+      onBerubah();
+    } catch (kesalahan) {
+      setGalat(kesalahan instanceof Error ? kesalahan.message : String(kesalahan));
+    } finally {
+      setSibuk("");
+    }
+  };
+
+  return (
+    <div className={`space-y-2 rounded-md border p-3 text-sm ${sebutan.nada}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium">
+          {sebutan.label}
+          {keadaan === "diacc" && diaccAt
+            ? ` · ${new Date(diaccAt).toLocaleString("id-ID")}`
+            : ""}
+        </span>
+
+        {boleh && keadaan !== "belum-selesai" ? (
+          <span className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={Boolean(sibuk)}
+              onClick={() => void kirim("acc")}
+            >
+              {sibuk === "acc" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Acc
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={Boolean(sibuk)}
+              onClick={() => setMintaAlasan((lama) => !lama)}
+            >
+              <CornerDownLeft className="h-4 w-4" />
+              Kembalikan
+            </Button>
+          </span>
+        ) : null}
+      </div>
+
+      {/* Alasan pengembalian yang SUDAH ada - inilah yang paling perlu dibaca
+          panitera, dan karena itu ditampilkan apa adanya, bukan disingkat. */}
+      {keadaan === "dikembalikan" && alasan ? (
+        <p className="rounded border border-current/20 bg-background/50 p-2 text-xs leading-5">
+          {alasan}
+        </p>
+      ) : null}
+
+      {mintaAlasan ? (
+        <div className="space-y-2">
+          <Textarea
+            rows={2}
+            value={alasanBaru}
+            onChange={(e) => setAlasanBaru(e.target.value)}
+            placeholder="Apa yang harus diperbaiki panitera?"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              disabled={Boolean(sibuk) || !alasanBaru.trim()}
+              onClick={() => void kirim("kembalikan")}
+            >
+              Kirim pengembalian
+            </Button>
+            <span className="text-xs">
+              Wajib beralasan — tanpa itu panitera menebak apa yang salah.
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {galat ? <p className="text-xs font-medium">{galat}</p> : null}
+    </div>
   );
 }

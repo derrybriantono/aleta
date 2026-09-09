@@ -7,6 +7,7 @@ import { muatLembar } from "@/server/modules/aleta-ecourt/bas-lembar";
 import { rakitBerkasPerkara } from "@/server/modules/aleta-ecourt/berkas-perkara";
 import { bacaSaksiAbt } from "@/lib/keterangan-abt";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
+import { bolehMengacc } from "@/server/modules/aleta-ecourt/bas-acc";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
@@ -65,7 +66,16 @@ export async function GET(request: NextRequest) {
     const berkas = await rakitBerkasPerkara(perkaraId, nomorPerkara);
     const rekamanAbt = bacaSaksiAbt(berkas.pemeriksaanSaksi.nilai).find((item) => item.saksiKe === saksiKe) ?? null;
 
-    return ok({ ...lembar, saksiKe, tersimpan, rekamanAbt });
+    // Kewenangan acc ikut dipulangkan supaya layar tidak menggambar tombol
+    // yang pasti ditolak. Keputusan GAMBAR, bukan penjagaan - penjagaannya di
+    // bas-acc, yang berjalan di peladen.
+    return ok({
+      ...lembar,
+      saksiKe,
+      tersimpan,
+      rekamanAbt,
+      bolehAcc: await bolehMengacc(db, actorUserId),
+    });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
