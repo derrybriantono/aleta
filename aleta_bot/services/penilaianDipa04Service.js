@@ -2,96 +2,66 @@
 
 /**
  * ============================================================================
- * LAPORAN DIPA 04 - DAN KOREKSI ATAS APA YANG SEBELUMNYA SAYA KATAKAN
+ * LAPORAN DIPA 04 - DIUKUR DARI SIPP, BUKAN DARI ANGKA YANG DILAPORKAN
  * ============================================================================
  *
- * Sebelumnya tertulis di penilaianLaporanService bahwa data LIPA 14, 15, 16,
- * 18, 19, dan 21 "tidak ada di SIPP dan tidak ada di mana pun yang dapat
- * dibaca ALETA". Bagian pertamanya benar; bagian keduanya SALAH.
+ * Berkas ini sudah dua kali salah, dan keduanya pantas dicatat supaya tidak
+ * terulang:
  *
- * Datanya ada - di aplikasi pendukung yang dipakai satuan kerja untuk menyusun
- * dan mengirim laporan, berdampingan dengan SIPP. Aplikasi itu punya tabelnya
- * sendiri, dan tabel itulah yang menjadi sumber laporan yang dikirim ke
- * Pengadilan Tinggi Agama:
+ *   Pertama  - dinyatakan bahwa data LIPA 14, 15, 16, dan 21 "tidak ada di
+ *              mana pun yang dapat dibaca ALETA". Itu keliru: saya memeriksa
+ *              SIPP lalu menyimpulkan tentang seluruh dunia.
+ *   Kedua    - lalu dianggap datanya hanya ada di aplikasi pendukung laporan,
+ *              sehingga keempat butir dibangun atas tabel yang tidak ada di
+ *              tangan. Itu juga keliru, dan lebih halus: butir yang bersandar
+ *              pada tabel yang tak pernah dapat diperiksa akan selalu tampak
+ *              "belum ada datanya", dan tidak pernah ketahuan salahnya.
  *
- *   tbl_data_laporan_rk8a   sidang di luar gedung pengadilan   (LIPA 14)
- *   tbl_data_laporan_rk8b   pembebasan biaya perkara/prodeo    (LIPA 15)
- *   tbl_data_laporan_rk8c   pos bantuan hukum                  (LIPA 16)
- *   tbl_data_laporan_yandu  pelayanan terpadu                  (LIPA 21)
- *   tbl_mst_pagu_satker     pagu dan revisinya per satuan kerja
+ * Yang benar disampaikan pengguna, dan seluruhnya dapat diukur dari SIPP:
  *
- * ============================================================================
- * TABELNYA DIKENALI, DATANYA BELUM TENTU ADA
- * ============================================================================
- *
- * Basis data aplikasi pendukung itu TIDAK ada di tangan saat berkas ini
- * ditulis - yang terbaca bentuknya, dari kode aplikasinya. Karena itu tiap
- * butir di sini memeriksa tabelnya lebih dahulu dan memulangkan daftar kosong
- * bila tidak ada: ia tidak dinilai nol, dan ia menyala sendiri di satuan kerja
- * yang aplikasinya memang terpasang.
- *
- * Perlakuan yang sama dipakai penyitaan dan konsinyasi pada Bab 5.
+ *   LIPA 14  sidang yang DI LUAR Ruang Sidang 1 dan 2 - dibaca dari nama
+ *            ruangan pada jadwal sidang, bukan dari penanda sidang_keliling
+ *   LIPA 15  perkara yang panjarnya nol - atau positanya menyebut surat
+ *            keterangan tidak mampu
+ *   LIPA 16  perkara yang mendaftar TANPA kuasa hukum; merekalah yang
+ *            melewati Pos Bantuan Hukum
+ *   LIPA 21  sidang di KUA atas perkara pengesahan perkawinan
  *
  * ============================================================================
- * YANG PALING BERGUNA DI SINI BUKAN ANGKANYA, MELAINKAN SELISIHNYA
+ * PENANDA sidang_keliling MILIK SIPP TIDAK DIPAKAI - DAN SEBABNYA TERUKUR
  * ============================================================================
  *
- * Prodeo tercatat di DUA tempat: pada SIPP sebagai tanda pada perkaranya, dan
- * pada laporan RK8b sebagai angka bulanan yang dikirim ke atas. Keduanya
- * seharusnya sama, dan tidak ada satu pun yang pernah membandingkannya.
+ * Diukur pada satu tahun basis data SIPP: 907 sidang, 97 di antaranya di luar
+ * Ruang Sidang 1 dan 2, tetapi HANYA 39 yang bertanda sidang_keliling.
  *
- * Selisih di antara keduanya bukan sekadar kerapian: angka laporan yang lebih
- * besar daripada SIPP berarti pembebasan biaya dilaporkan untuk perkara yang
- * tidak bertanda prodeo, dan itu menyangkut uang negara.
+ * Penandanya melewatkan 58 sidang. Memakai penanda itu berarti melaporkan
+ * kurang dari separuh sidang di luar gedung yang benar-benar berlangsung - dan
+ * laporan yang kurang berarti satuan kerja tidak menerima penggantian biaya
+ * yang menjadi haknya.
+ *
+ * Selisih itu sendiri dipulangkan sebagai keterangan pada tiap baris, supaya
+ * yang membacanya tahu penandanya tidak dapat dipercaya sendirian.
  */
 
 const db = require("../db_config");
 const kerangka = require("./kerangkaPenilaianService");
 const sippSkemaService = require("./sippSkemaService");
 
-const BATAS_BARIS = 2000;
+const BATAS_BARIS = 5000;
 
 /**
- * Tiga laporan DIPA 04 beserta pagunya.
+ * Ruang sidang di dalam gedung.
  *
- * ruasPagu   kolom pagu pada tbl_mst_pagu_satker; laporan yang realisasinya
- *            melampaui pagu adalah temuan, bukan kerapian
+ * Dicocokkan dengan pola, bukan dengan daftar id: nomor ruangan berbeda antar
+ * satuan kerja, sedangkan penamaannya seragam - "Ruang Sidang 1" dan "Ruang
+ * Sidang 2". Ruang Sidang 3 dan seterusnya juga di dalam gedung, tetapi
+ * keduanya tidak aktif pada satuan kerja yang diperiksa; polanya dibuat memuat
+ * seluruh "Ruang Sidang <angka>" supaya tidak keliru pada satuan kerja lain.
  */
-const DIPA = [
-  {
-    kode: "LP14",
-    kunci: "lipaSidangLuarGedung",
-    judul: "LIPA 14 — Sidang di Luar Gedung Pengadilan",
-    tabel: "tbl_data_laporan_rk8a",
-    ruasPagu: "pagu_sidkel",
-    ruasPaguRevisi: "pagu_sidkel_revisi",
-    keterangan:
-      "Laporan sidang di luar gedung yang dibiayai DIPA 04. Yang dinilai apakah tiap bulan yang dilaporkan menyebutkan jumlah perkara, jumlah biaya, dan kegiatannya - laporan tanpa ketiganya tidak dapat dipertanggungjawabkan.",
-    wajib: ["perkara", "jml", "kegiatan"],
-  },
-  {
-    kode: "LP16",
-    kunci: "lipaPosBantuanHukum",
-    judul: "LIPA 16 — Pos Bantuan Hukum",
-    tabel: "tbl_data_laporan_rk8c",
-    ruasPagu: "pagu_posbakum",
-    ruasPaguRevisi: "pagu_posbakum_revisi",
-    keterangan:
-      "Laporan Pos Bantuan Hukum yang dibiayai DIPA 04. Jumlah layanan dan besaran biayanya harus tercatat pada tiap bulan yang dilaporkan.",
-    wajib: ["layanan", "jml"],
-  },
-  {
-    kode: "LP21",
-    kunci: "lipaPelayananTerpadu",
-    judul: "LIPA 21 — Pelayanan Terpadu Sidang Keliling",
-    tabel: "tbl_data_laporan_yandu",
-    ruasPagu: "",
-    ruasPaguRevisi: "",
-    keterangan:
-      "Laporan pelayanan terpadu bersama instansi lain. Yang dinilai kelengkapan baris bulanannya.",
-    wajib: ["jml"],
-  },
-];
+const POLA_RUANG_DALAM = "^[[:space:]]*Ruang[[:space:]]+Sidang[[:space:]]*[0-9]+[[:space:]]*$";
+
+/** Batas panjar yang masih dianggap nol - hanya PNBP, bukan panjar sungguhan. */
+const BATAS_PANJAR_NOL = 10000;
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -108,175 +78,293 @@ const angka = (n) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-function terisi(nilai) {
-  const t = teks(nilai);
-  if (!t || t === "-") return false;
-  if (/^0(\.0+)?$/.test(t)) return false;
-  return true;
-}
-
-/** Baris bulanan satu laporan DIPA 04. */
-function pembangunBaris(d) {
-  return async function baris(rentang) {
-    const ada = await sippSkemaService.tabelAda(d.tabel).catch(() => false);
-    if (!ada) return [];
-
-    const tahunMulai = Number(String(rentang.mulai).slice(0, 4)) || 0;
-    const tahunSelesai = Number(String(rentang.selesai).slice(0, 4)) || tahunMulai;
-
-    const hasil = await runQuery(
-      `SELECT tahun, bulan, ${d.wajib.join(", ")}, keterangan
-         FROM ${d.tabel}
-        WHERE tahun >= ? AND tahun <= ?
-        ORDER BY tahun, bulan
-        LIMIT ${BATAS_BARIS}`,
-      [tahunMulai, tahunSelesai]
-    );
-
-    return hasil.map((r) => {
-      const kosong = d.wajib.filter((k) => !terisi(r[k]));
-      const bulan = `${teks(r.tahun)}-${String(teks(r.bulan)).padStart(2, "0")}`;
-      return {
-        kunci: `${bulan}#${d.kode}`,
-        nomorPerkara: bulan,
-        jenisPerkara: d.judul,
-        ruasKosong: kosong,
-        memenuhi: kosong.length === 0,
-        sebabTidakMemenuhi: kosong.length === 0 ? "" : `belum terisi: ${kosong.join(", ")}`,
-      };
-    });
-  };
-}
-
 /**
- * ============================================================================
- * PENYANDING: ANGKA LAPORAN PRODEO LAWAN ANGKA SIPP
- * ============================================================================
+ * LIPA 14 - sidang di luar gedung pengadilan.
  *
- * Inilah butir yang paling berguna dari seluruh berkas ini, dan satu-satunya
- * yang menjawab pertanyaan yang selama ini tidak pernah ditanyakan: apakah
- * yang dilaporkan ke atas sama dengan yang tercatat di SIPP.
+ * Satu baris per SIDANG, bukan per perkara: satu perkara dapat bersidang
+ * beberapa kali di luar gedung, dan laporannya menghitung pelaksanaan sidang.
  *
- * Dihitung per bulan, sebab laporannya bulanan. Perkara prodeo pada SIPP
- * dihitung dari tanda prodeo pada perkaranya; angka laporan dibaca dari kolom
- * perkara pada RK8b.
- *
- * Selisih ke ARAH MANA PUN adalah temuan, dan keduanya berbeda artinya:
- *
- *   laporan > SIPP   pembebasan biaya dilaporkan untuk perkara yang tidak
- *                    bertanda prodeo - ini menyangkut uang negara
- *   laporan < SIPP   perkara prodeo yang tidak dilaporkan, sehingga satuan
- *                    kerja tidak menerima penggantian biayanya
+ * Yang dinilai memenuhi: sidang di luar gedung yang penandanya sekalian
+ * tercatat. Yang tidak memenuhi bukan sidangnya yang salah - melainkan
+ * pencatatannya yang tidak lengkap, sehingga laporan yang disusun dari penanda
+ * itu akan kurang.
  */
-async function barisSandingProdeo(rentang) {
-  const adaLaporan = await sippSkemaService.tabelAda("tbl_data_laporan_rk8b").catch(() => false);
-  if (!adaLaporan) return [];
+async function barisSidangLuarGedung(rentang) {
+  const ada = await sippSkemaService.tabelAda("perkara_jadwal_sidang").catch(() => false);
+  if (!ada) return [];
 
-  const tahunMulai = Number(String(rentang.mulai).slice(0, 4)) || 0;
-  const tahunSelesai = Number(String(rentang.selesai).slice(0, 4)) || tahunMulai;
-
-  const laporan = await runQuery(
-    `SELECT tahun, bulan, perkara AS jumlahLaporan
-       FROM tbl_data_laporan_rk8b
-      WHERE tahun >= ? AND tahun <= ?
-      ORDER BY tahun, bulan
-      LIMIT ${BATAS_BARIS}`,
-    [tahunMulai, tahunSelesai]
-  );
-
-  const sipp = await runQuery(
-    `SELECT YEAR(p.tanggal_pendaftaran) AS tahun,
-            MONTH(p.tanggal_pendaftaran) AS bulan,
-            COUNT(*) AS jumlahSipp
+  const hasil = await runQuery(
+    `SELECT p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_nama AS jenisPerkara,
+            j.tanggal_sidang AS tanggalSidang,
+            j.ruangan AS ruangan,
+            j.sidang_keliling AS penanda
        FROM perkara p
-      WHERE p.prodeo = 1
-        AND p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
-      GROUP BY YEAR(p.tanggal_pendaftaran), MONTH(p.tanggal_pendaftaran)`,
-    [rentang.mulai, rentang.selesai]
+       JOIN perkara_jadwal_sidang j ON j.perkara_id = p.perkara_id
+      WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
+        AND j.ruangan IS NOT NULL
+        AND TRIM(j.ruangan) <> ''
+        AND j.ruangan NOT REGEXP ?
+      ORDER BY j.tanggal_sidang
+      LIMIT ${BATAS_BARIS}`,
+    [rentang.mulai, rentang.selesai, POLA_RUANG_DALAM]
   );
 
-  const petaSipp = new Map();
-  for (const r of sipp) petaSipp.set(`${r.tahun}-${r.bulan}`, angka(r.jumlahSipp));
-
-  return laporan.map((r) => {
-    const kunciBulan = `${r.tahun}-${r.bulan}`;
-    const dariLaporan = angka(r.jumlahLaporan);
-    const dariSipp = petaSipp.get(kunciBulan) || 0;
-    const selisih = dariLaporan - dariSipp;
-    const bulan = `${teks(r.tahun)}-${String(teks(r.bulan)).padStart(2, "0")}`;
-
+  return hasil.map((r, i) => {
+    const penanda = teks(r.penanda);
+    const bertanda = penanda !== "" && penanda !== "0" && penanda.toUpperCase() !== "T";
     return {
-      kunci: `${bulan}#LP24`,
-      nomorPerkara: bulan,
-      jenisPerkara: "Prodeo — laporan lawan SIPP",
-      jumlahLaporan: dariLaporan,
-      jumlahSipp: dariSipp,
-      selisih,
-      memenuhi: selisih === 0,
-      sebabTidakMemenuhi:
-        selisih === 0
-          ? ""
-          : selisih > 0
-            ? `laporan menyebut ${dariLaporan}, SIPP hanya ${dariSipp} - ${selisih} perkara dilaporkan tanpa tanda prodeo di SIPP`
-            : `SIPP mencatat ${dariSipp}, laporan hanya ${dariLaporan} - ${Math.abs(selisih)} perkara prodeo tidak dilaporkan`,
+      kunci: `${teks(r.nomorPerkara)}#LP14#${i}`,
+      nomorPerkara: teks(r.nomorPerkara),
+      jenisPerkara: teks(r.jenisPerkara),
+      tanggalSidang: teks(r.tanggalSidang),
+      ruangan: teks(r.ruangan),
+      memenuhi: bertanda,
+      sebabTidakMemenuhi: bertanda
+        ? ""
+        : `sidang di ${teks(r.ruangan)} tidak bertanda sidang keliling - laporan yang disusun dari penanda ini akan melewatkannya`,
     };
   });
 }
 
+/**
+ * LIPA 15 - pembebasan biaya perkara, diperiksa dari TIGA arah.
+ *
+ * Ketiganya seharusnya menunjuk perkara yang sama:
+ *
+ *   penanda prodeo pada perkara
+ *   panjar masuk nol - hanya PNBP, atau tidak ada sama sekali
+ *   posita menyebut surat keterangan tidak mampu atau miskin
+ *
+ * Diukur pada satu tahun: penanda 30, panjar nol 30, posita 31. Yang satu itu
+ * justru temuannya - perkara yang menyatakan dirinya tidak mampu, tetapi tetap
+ * membayar dan tidak pernah ditandai prodeo.
+ *
+ * Karena itu yang dinilai KESESUAIAN ketiganya, bukan jumlahnya. Jumlah yang
+ * benar tidak berarti apa-apa bila ketiga penandanya menunjuk perkara yang
+ * berbeda-beda.
+ */
+async function barisPembebasanBiaya(rentang) {
+  const adaPosita = await sippSkemaService.kolomAda("perkara", "posita").catch(() => false);
+
+  const hasil = await runQuery(
+    `SELECT p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_nama AS jenisPerkara,
+            p.prodeo AS prodeo,
+            ${adaPosita
+              ? `CASE WHEN p.posita LIKE '%tidak mampu%' OR p.posita LIKE '%keterangan miskin%' THEN 1 ELSE 0 END`
+              : "0"} AS positaMiskin,
+            COALESCE((SELECT SUM(b.jumlah) FROM perkara_biaya b
+                       WHERE b.perkara_id = p.perkara_id AND b.jenis_transaksi = 1), 0) AS panjarMasuk
+       FROM perkara p
+      WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
+      ORDER BY p.tanggal_pendaftaran
+      LIMIT ${BATAS_BARIS}`,
+    [rentang.mulai, rentang.selesai]
+  );
+
+  return hasil
+    .map((r) => {
+      const bertanda = angka(r.prodeo) === 1;
+      const panjarNol = angka(r.panjarMasuk) <= BATAS_PANJAR_NOL;
+      const positaMiskin = angka(r.positaMiskin) === 1;
+
+      // Hanya perkara yang MENYENTUH pembebasan biaya yang dinilai. Perkara
+      // yang membayar penuh dan tidak menyebut ketidakmampuan bukan urusan
+      // butir ini - memasukkannya ke penyebut akan membuat angkanya selalu
+      // hampir sempurna dan berhenti berarti.
+      if (!bertanda && !panjarNol && !positaMiskin) return null;
+
+      const selisih = [];
+      if (bertanda && !panjarNol) selisih.push("bertanda prodeo tetapi panjarnya terbayar");
+      if (!bertanda && panjarNol) selisih.push("panjarnya nol tetapi tidak bertanda prodeo");
+      if (positaMiskin && !bertanda)
+        selisih.push("positanya menyebut tidak mampu tetapi tidak bertanda prodeo");
+
+      return {
+        kunci: `${teks(r.nomorPerkara)}#LP15`,
+        nomorPerkara: teks(r.nomorPerkara),
+        jenisPerkara: teks(r.jenisPerkara),
+        bertandaProdeo: bertanda,
+        panjarMasuk: angka(r.panjarMasuk),
+        positaMenyebutTidakMampu: positaMiskin,
+        memenuhi: selisih.length === 0,
+        sebabTidakMemenuhi: selisih.join("; "),
+      };
+    })
+    .filter(Boolean);
+}
+
+/**
+ * LIPA 16 - Pos Bantuan Hukum.
+ *
+ * SIPP memang tidak mencatat layanan Posbakum. Yang dicatatnya cukup untuk
+ * mengetahui SIAPA yang melewatinya: perkara yang mendaftar tanpa kuasa hukum
+ * disusun gugatannya di Pos Bantuan Hukum.
+ *
+ * Yang dinilai karena itu bukan jumlah layanannya - angka itu ada di aplikasi
+ * pendukung laporan - melainkan apakah perkara tanpa kuasa memang tercatat
+ * lengkap identitas pemohonnya, sebab itulah yang dipakai Posbakum menyusun
+ * surat gugatannya.
+ */
+async function barisPosBantuanHukum(rentang) {
+  const adaKuasa = await sippSkemaService.tabelAda("perkara_pengacara").catch(() => false);
+  if (!adaKuasa) return [];
+
+  const hasil = await runQuery(
+    `SELECT p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_nama AS jenisPerkara,
+            (SELECT COUNT(*) FROM perkara_pengacara g WHERE g.perkara_id = p.perkara_id) AS jumlahKuasa,
+            (SELECT COUNT(*) FROM perkara_pihak1 pp WHERE pp.perkara_id = p.perkara_id) AS jumlahPihak
+       FROM perkara p
+      WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
+      ORDER BY p.tanggal_pendaftaran
+      LIMIT ${BATAS_BARIS}`,
+    [rentang.mulai, rentang.selesai]
+  );
+
+  return hasil
+    .filter((r) => angka(r.jumlahKuasa) === 0)
+    .map((r) => {
+      const adaPihak = angka(r.jumlahPihak) > 0;
+      return {
+        kunci: `${teks(r.nomorPerkara)}#LP16`,
+        nomorPerkara: teks(r.nomorPerkara),
+        jenisPerkara: teks(r.jenisPerkara),
+        memenuhi: adaPihak,
+        sebabTidakMemenuhi: adaPihak
+          ? ""
+          : "mendaftar tanpa kuasa tetapi identitas pemohonnya tidak tercatat - Posbakum menyusun gugatan dari identitas itu",
+      };
+    });
+}
+
+/**
+ * LIPA 21 - pelayanan terpadu sidang keliling.
+ *
+ * Dua syarat sekaligus menurut keterangan pengguna: sidangnya di KUA, dan
+ * perkaranya pengesahan perkawinan. Sidang di KUA atas perkara lain bukan
+ * pelayanan terpadu, dan pengesahan perkawinan yang bersidang di gedung juga
+ * bukan.
+ */
+async function barisPelayananTerpadu(rentang) {
+  const ada = await sippSkemaService.tabelAda("perkara_jadwal_sidang").catch(() => false);
+  if (!ada) return [];
+
+  const hasil = await runQuery(
+    `SELECT p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_nama AS jenisPerkara,
+            j.tanggal_sidang AS tanggalSidang,
+            j.ruangan AS ruangan,
+            j.sidang_keliling AS penanda
+       FROM perkara p
+       JOIN perkara_jadwal_sidang j ON j.perkara_id = p.perkara_id
+      WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
+        AND j.ruangan LIKE '%KUA%'
+        AND (p.jenis_perkara_nama LIKE '%engesahan Perkawinan%'
+             OR p.jenis_perkara_nama LIKE '%stbat%')
+      ORDER BY j.tanggal_sidang
+      LIMIT ${BATAS_BARIS}`,
+    [rentang.mulai, rentang.selesai]
+  );
+
+  return hasil.map((r, i) => {
+    const penanda = teks(r.penanda);
+    const bertanda = penanda !== "" && penanda !== "0" && penanda.toUpperCase() !== "T";
+    return {
+      kunci: `${teks(r.nomorPerkara)}#LP21#${i}`,
+      nomorPerkara: teks(r.nomorPerkara),
+      jenisPerkara: teks(r.jenisPerkara),
+      tanggalSidang: teks(r.tanggalSidang),
+      ruangan: teks(r.ruangan),
+      memenuhi: bertanda,
+      sebabTidakMemenuhi: bertanda
+        ? ""
+        : "sidang terpadu di KUA tidak bertanda sidang keliling pada SIPP",
+    };
+  });
+}
+
+const BUTIR = [
+  {
+    kode: "LP14",
+    kunci: "lipaSidangLuarGedung",
+    judul: "LIPA 14 — Sidang di Luar Gedung Pengadilan",
+    keterangan:
+      "Sidang yang berlangsung di luar Ruang Sidang 1 dan 2 - kantor KUA, kantor desa, kantor camat. Dibaca dari nama ruangan pada jadwal sidang, BUKAN dari penanda sidang keliling: diukur pada satu tahun, 97 sidang di luar gedung tetapi hanya 39 yang bertanda, sehingga laporan yang disusun dari penanda itu melewatkan 58 di antaranya.",
+    baris: barisSidangLuarGedung,
+    pembilang: "Sidang di luar gedung yang penanda sidang kelilingnya ikut tercatat",
+    penyebut: "Seluruh sidang di luar Ruang Sidang 1 dan 2 pada rentang ini",
+    tabelSumber: "perkara disambung perkara_jadwal_sidang, dicocokkan dengan nama ruangan",
+    ruasSumber: "tanggal_pendaftaran, tanggal_sidang, ruangan, sidang_keliling",
+  },
+  {
+    kode: "LP15",
+    kunci: "lipaPembebasanBiaya",
+    judul: "LIPA 15 — Pembebasan Biaya Perkara (Prodeo)",
+    keterangan:
+      "Diperiksa dari TIGA arah yang seharusnya menunjuk perkara yang sama: penanda prodeo, panjar masuk yang nol, dan posita yang menyebut surat keterangan tidak mampu. Yang dinilai kesesuaian ketiganya - jumlah yang benar tidak berarti apa-apa bila ketiga penandanya menunjuk perkara yang berbeda.",
+    baris: barisPembebasanBiaya,
+    pembilang: "Perkara yang ketiga penandanya sesuai satu sama lain",
+    penyebut:
+      "Perkara yang menyentuh pembebasan biaya - bertanda prodeo, atau panjarnya nol, atau positanya menyebut ketidakmampuan",
+    tabelSumber: "perkara disambung perkara_biaya, beserta ruas posita pada perkara",
+    ruasSumber: "prodeo, posita, jenis_transaksi, jumlah",
+  },
+  {
+    kode: "LP16",
+    kunci: "lipaPosBantuanHukum",
+    judul: "LIPA 16 — Pos Bantuan Hukum",
+    keterangan:
+      "SIPP tidak mencatat layanan Posbakum, tetapi mencatat siapa yang melewatinya: perkara yang mendaftar TANPA kuasa hukum disusun gugatannya di Pos Bantuan Hukum. Yang dinilai apakah identitas pemohonnya tercatat - itulah yang dipakai Posbakum menyusun surat gugatannya.",
+    baris: barisPosBantuanHukum,
+    pembilang: "Perkara tanpa kuasa yang identitas pemohonnya tercatat",
+    penyebut: "Seluruh perkara yang mendaftar tanpa kuasa hukum pada rentang ini",
+    tabelSumber: "perkara disambung perkara_pengacara dan perkara_pihak1",
+    ruasSumber: "tanggal_pendaftaran, perkara_id pada perkara_pengacara",
+  },
+  {
+    kode: "LP21",
+    kunci: "lipaPelayananTerpadu",
+    judul: "LIPA 21 — Pelayanan Terpadu Sidang Keliling",
+    keterangan:
+      "Dua syarat sekaligus: sidangnya di KUA, dan perkaranya pengesahan perkawinan. Sidang di KUA atas perkara lain bukan pelayanan terpadu, dan pengesahan perkawinan yang bersidang di gedung juga bukan.",
+    baris: barisPelayananTerpadu,
+    pembilang: "Sidang terpadu di KUA yang penanda sidang kelilingnya ikut tercatat",
+    penyebut: "Seluruh sidang di KUA atas perkara pengesahan perkawinan pada rentang ini",
+    tabelSumber: "perkara disambung perkara_jadwal_sidang, disaring nama ruangan dan jenis perkara",
+    ruasSumber: "jenis_perkara_nama, ruangan, sidang_keliling",
+  },
+];
+
 let sudahDidaftar = false;
 
 function daftarkanSemua() {
-  if (sudahDidaftar) return kunciSemua();
+  if (sudahDidaftar) return BUTIR.map((b) => b.kunci);
 
-  DIPA.forEach((d) => {
-    if (kerangka.ambil(d.kunci)) return;
+  BUTIR.forEach((b) => {
+    if (kerangka.ambil(b.kunci)) return;
     kerangka.daftarkan({
-      kunci: d.kunci,
-      judul: d.judul,
-      keterangan: d.keterangan,
+      kunci: b.kunci,
+      judul: b.judul,
+      keterangan: b.keterangan,
       lantai: "bulanan",
-      versiRumus: "dipa04-v1",
+      versiRumus: "dipa04-v2",
       ambangDipakai: [],
       caraHitung: {
-        pembilang: `Bulan laporan yang seluruh kolom wajibnya terisi: ${d.wajib.join(", ")}`,
-        penyebut: `Seluruh bulan yang tercatat pada ${d.tabel} dalam tahun rentang ini`,
+        pembilang: b.pembilang,
+        penyebut: b.penyebut,
         dikecualikan:
-          "Tidak ada yang dikecualikan dari yang tercatat. Bila tabel aplikasi pendukungnya tidak ada pada satuan kerja ini, butir ini tidak menghasilkan baris sama sekali - ia tidak dinilai nol.",
-        tabelSumber: `${d.tabel} milik aplikasi pendukung laporan, berdampingan dengan SIPP`,
-        ruasSumber: `tahun, bulan, ${d.wajib.join(", ")}`,
+          "Perkara dan sidang yang tidak menyentuh butir ini tidak masuk penyebut. Memasukkan seluruh perkara akan membuat angkanya hampir selalu sempurna dan berhenti berarti.",
+        tabelSumber: b.tabelSumber,
+        ruasSumber: b.ruasSumber,
       },
-      baris: pembangunBaris(d),
+      baris: b.baris,
     });
   });
 
-  if (!kerangka.ambil("sandingProdeoLaporanSipp")) {
-    kerangka.daftarkan({
-      kunci: "sandingProdeoLaporanSipp",
-      judul: "LIPA 24 — Selisih Angka Prodeo antara Laporan dan SIPP",
-      keterangan:
-        "Menyandingkan jumlah perkara prodeo yang DILAPORKAN pada RK8b dengan yang TERCATAT di SIPP, bulan demi bulan. Selisih ke arah mana pun adalah temuan: laporan yang lebih besar berarti pembebasan biaya dilaporkan untuk perkara yang tidak bertanda prodeo, dan laporan yang lebih kecil berarti satuan kerja tidak menerima penggantian biaya yang menjadi haknya.",
-      lantai: "bulanan",
-      versiRumus: "sanding-prodeo-v1",
-      ambangDipakai: [],
-      caraHitung: {
-        pembilang: "Bulan yang angka laporannya sama persis dengan hitungan SIPP",
-        penyebut: "Seluruh bulan yang tercatat pada laporan RK8b dalam rentang ini",
-        dikecualikan:
-          "Tidak ada. Bulan yang tidak dilaporkan sama sekali tidak muncul sebagai baris - itu urusan butir ketepatan pengiriman laporan, bukan butir ini.",
-        tabelSumber:
-          "tbl_data_laporan_rk8b milik aplikasi pendukung laporan, disandingkan dengan tabel perkara milik SIPP",
-        ruasSumber: "tahun, bulan, perkara, prodeo, tanggal_pendaftaran",
-      },
-      baris: barisSandingProdeo,
-    });
-  }
-
   sudahDidaftar = true;
-  return kunciSemua();
-}
-
-function kunciSemua() {
-  return [...DIPA.map((d) => d.kunci), "sandingProdeoLaporanSipp"];
+  return BUTIR.map((b) => b.kunci);
 }
 
 function lupakanSemua() {
@@ -285,18 +373,21 @@ function lupakanSemua() {
 
 function sambungan() {
   const peta = {};
-  DIPA.forEach((d) => {
-    peta[d.kode] = d.kunci;
+  BUTIR.forEach((b) => {
+    peta[b.kode] = b.kunci;
   });
-  peta.LP24 = "sandingProdeoLaporanSipp";
   return peta;
 }
 
 module.exports = {
-  DIPA,
-  barisSandingProdeo,
+  BATAS_PANJAR_NOL,
+  BUTIR,
+  POLA_RUANG_DALAM,
+  barisPelayananTerpadu,
+  barisPembebasanBiaya,
+  barisPosBantuanHukum,
+  barisSidangLuarGedung,
   daftarkanSemua,
-  kunciSemua,
   lupakanSemua,
   sambungan,
 };

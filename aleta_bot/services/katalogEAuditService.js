@@ -926,7 +926,7 @@ const SAMBUNGAN = {
     kunci: "lipaPembebasanBiaya",
     sifat: "sebagian",
     catatan:
-      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+      "Diperiksa dari tiga arah yang seharusnya sepakat: penanda prodeo, panjar masuk nol, dan posita yang menyebut surat keterangan tidak mampu. Terukur 30, 30, dan 31 - satu perkara menyatakan dirinya tidak mampu tetapi tetap membayar dan tidak pernah ditandai.",
   },
   LP17: {
     kunci: "lipaBiayaProses",
@@ -952,25 +952,19 @@ const SAMBUNGAN = {
     kunci: "lipaSidangLuarGedung",
     sifat: "sebagian",
     catatan:
-      "Kelengkapan baris bulanan laporannya terukur. Realisasi terhadap pagunya belum dihitung.",
+      "Diukur dari nama ruangan pada jadwal sidang - bukan dari penanda sidang keliling. Terukur pada satu tahun: 97 sidang di luar Ruang Sidang 1 dan 2, hanya 7 yang bertanda. Laporan yang disusun dari penanda itu melaporkan kurang dari sepersepuluh yang sebenarnya.",
   },
   LP16: {
     kunci: "lipaPosBantuanHukum",
     sifat: "sebagian",
     catatan:
-      "Kelengkapan baris bulanan laporannya terukur. Realisasi terhadap pagunya belum dihitung.",
+      "SIPP tidak mencatat layanan Posbakum, tetapi mencatat siapa yang melewatinya: perkara yang mendaftar tanpa kuasa hukum. Jumlah layanannya sendiri tetap di aplikasi pendukung laporan.",
   },
   LP21: {
     kunci: "lipaPelayananTerpadu",
     sifat: "sebagian",
     catatan:
-      "Kelengkapan baris bulanan laporannya terukur. Realisasi terhadap pagunya belum dihitung.",
-  },
-  LP24: {
-    kunci: "sandingProdeoLaporanSipp",
-    sifat: "sebagian",
-    catatan:
-      "Menyandingkan angka laporan prodeo dengan hitungan SIPP bulan demi bulan. Aspek validitas lainnya - dua puluh satu laporan yang lain - belum disandingkan.",
+      "Dua syarat sekaligus - sidang di KUA dan perkara pengesahan perkawinan. Yang dinilai kelengkapan penandanya, bukan jumlah layanan terpadunya.",
   },
   // ==========================================================================
   // BAB 2 - INTEGRITAS WAKTU PENGINPUTAN

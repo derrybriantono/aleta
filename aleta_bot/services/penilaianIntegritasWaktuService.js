@@ -28,6 +28,25 @@
  * Karena itu tiap butir di sini menyebut sebabnya apa adanya, dan tidak satu
  * pun menyimpulkan niat. Yang menyimpulkan niat harus manusia yang melihat
  * keadaannya - bukan kueri.
+ *
+ * ============================================================================
+ * diinput_tanggal BERBEDA ARTINYA DI TIAP TABEL
+ * ============================================================================
+ *
+ * Ini batas yang harus dipegang siapa pun yang menambah butir ke berkas ini.
+ * Kolomnya bernama sama di hampir seluruh tabel SIPP, tetapi yang dicatatnya
+ * bergantung pada tabelnya:
+ *
+ *   perkara                 kapan PERKARANYA didaftarkan ke SIPP
+ *   perkara_hakim_pn        kapan PENETAPAN MAJELISNYA diketik
+ *   perkara_jadwal_sidang   kapan JADWAL ITU dibuat atau diubah
+ *   perkara_biaya           kapan TRANSAKSINYA dibukukan
+ *
+ * Ketiga butir di berkas ini seluruhnya membaca perkara.diinput_tanggal -
+ * yakni saat pendaftarannya diketik - dan itu memang yang dimaksud. Menambah
+ * butir yang membaca kolom bernama sama pada tabel lain TANPA mengganti
+ * kalimatnya akan menghasilkan angka yang terbaca masuk akal dan menjawab
+ * pertanyaan yang sama sekali berbeda.
  */
 
 const db = require("../db_config");
