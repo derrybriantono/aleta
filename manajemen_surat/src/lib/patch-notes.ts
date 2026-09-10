@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.7.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.7.0 - Lima Layar yang Rusak Diam-diam";
+export const APP_VERSION = "2.14.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.14.0 - Lima Layar yang Rusak Diam-diam";
 
 export type PatchNote = {
   version: string;
@@ -21,8 +21,8 @@ export type PatchNote = {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
-    version: "2.7.0",
-    title: "ALETA Judicia v2.7.0 - Lima Layar yang Rusak Diam-diam",
+    version: "2.14.0",
+    title: "ALETA Judicia v2.14.0 - Lima Layar yang Rusak Diam-diam",
     date: "2026-09-10",
     status: "Operasional",
     summary:
@@ -51,7 +51,8 @@ export const PATCH_NOTES: PatchNote[] = [
     ],
     security: [],
     operationalNotes: [
-      "Dipasang sesudah peladen mati semalaman. Dua puluh satu commit sekaligus - bila ada yang berulah, bandingkan dengan daftar di atas sebelum menyimpulkan.",
+      "Dipasang sesudah peladen mati semalaman. Dua puluh dua commit sekaligus - bila ada yang berulah, bandingkan dengan daftar di atas sebelum menyimpulkan.",
+      "Versi sebelumnya yang terpasang 2.13.1. APP_VERSION di sumber selama ini tertinggal di 2.6.1 sementara nomor paket sudah sampai 2.13.1 - keduanya disamakan mulai rilis ini, supaya yang tertulis di layar sama dengan yang benar-benar terpasang.",
       "Migrasi Drizzle TIDAK bertambah. Tabel jejak ABT dan kolom acc BAS ditambahkan lewat jalur idempoten di schema.ts, yang tidak mengklaim nomor migrasi apa pun.",
       "Ambang ketepatan penginputan ditandai KEBIJAKAN, bukan peraturan: dasar peraturannya belum diperiksa terhadap naskah resmi, dan angkanya ditetapkan tanpa melihat sebaran data nyata. Wajib ditinjau ulang sesudah pengukuran pertama.",
     ],
