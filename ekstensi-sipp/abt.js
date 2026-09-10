@@ -1156,16 +1156,39 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
  * menaruhnya dan apa isinya sebelum itu. Yang menemukan kekeliruan seminggu
  * kemudian tidak punya cara mengembalikannya selain mengingat.
  *
- * Disimpan di penyimpanan ekstensi, bukan di server. Itu keputusan sadar
- * dengan batas yang harus disebut: riwayatnya hanya ada di peramban ini, dan
- * hilang bila datanya dibersihkan. Catatan yang tersimpan di server menuntut
- * tabel baru beserta migrasinya - pantas dikerjakan, tetapi bukan syarat bagi
- * kegunaan yang paling dibutuhkan sekarang, yaitu mengurungkan yang baru saja
- * salah diterapkan.
+ * Dahulu disimpan HANYA di penyimpanan ekstensi, dengan batas yang disebut
+ * sendiri: riwayatnya hanya ada di peramban ini dan hilang bila datanya
+ * dibersihkan. Batas itu punya tiga akibat nyata - hilang saat data peramban
+ * dibersihkan, tidak ada pada peramban lain milik orang yang sama, dan tidak
+ * terlihat oleh siapa pun selain yang menyuntingnya, sehingga tidak dapat
+ * dipakai mengawasi apa pun.
+ *
+ * Sekarang dicatat di KEDUANYA, dan masing-masing punya tugasnya - lihat
+ * catatan pada catatRiwayat di bawah. Yang di peramban tetap yang
+ * menggerakkan Urungkan, dan itu bukan peninggalan: ia satu-satunya yang
+ * lengkap, dan satu-satunya yang tetap ada ketika jaringan putus.
  */
 const KUNCI_RIWAYAT = "abtRiwayat";
 const BATAS_RIWAYAT = 200;
+const ALETA_API_RIWAYAT = "/aleta/api/aleta-ecourt/abt-riwayat";
 
+/**
+ * ============================================================================
+ * DICATAT DUA KALI, DAN MASING-MASING PUNYA TUGASNYA
+ * ============================================================================
+ *
+ *   peramban   LENGKAP, ada seketika, dan menggerakkan tombol Urungkan
+ *   peladen    BERTAHAN, dapat dibaca orang lain, dan menjadi jejak pengawasan
+ *
+ * Peramban ditulis LEBIH DAHULU dan tanpa syarat. Menjadikan peladen
+ * satu-satunya sumber akan mematikan Urungkan setiap kali jaringan terputus -
+ * padahal justru saat sesuatu baru saja salah diterapkanlah tombol itu paling
+ * dibutuhkan.
+ *
+ * Kegagalan mengirim ke peladen karena itu DIAM: penyuntingannya sudah
+ * berhasil, salinan lengkapnya sudah tersimpan, dan berteriak tentang jejak
+ * pengawasan pada saat itu hanya membuat petugas menyangka suntingannya gagal.
+ */
 async function catatRiwayat(catatan) {
   try {
     const simpan = await chrome.storage.local.get([KUNCI_RIWAYAT]);
@@ -1175,16 +1198,68 @@ async function catatRiwayat(catatan) {
   } catch {
     /* penyimpanan tidak tersedia - perubahannya tetap tersimpan di ABT */
   }
+
+  try {
+    await fetch(ALETA_API_RIWAYAT, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(catatan),
+    });
+  } catch {
+    /* jejak pengawasan tertinggal - salinan lengkapnya ada di peramban */
+  }
 }
 
+/**
+ * Riwayat satu perkara, dari kedua tempat sekaligus.
+ *
+ * Digabung supaya jejak yang dicatat dari peramban LAIN - atau yang sudah
+ * terhapus dari peramban ini - tetap terlihat. Yang dari peramban tetap
+ * didahulukan pada baris yang sama, sebab hanya ia yang isinya utuh dan hanya
+ * ia yang dapat diurungkan.
+ */
 async function bacaRiwayat(perkaraId) {
+  let lokal = [];
   try {
     const simpan = await chrome.storage.local.get([KUNCI_RIWAYAT]);
     const daftar = Array.isArray(simpan[KUNCI_RIWAYAT]) ? simpan[KUNCI_RIWAYAT] : [];
-    return daftar.filter((x) => x && x.perkaraId === perkaraId);
+    lokal = daftar.filter((x) => x && x.perkaraId === perkaraId);
   } catch {
-    return [];
+    lokal = [];
   }
+
+  let jauh = [];
+  try {
+    const respons = await fetch(
+      `${ALETA_API_RIWAYAT}?perkaraId=${encodeURIComponent(String(perkaraId))}`,
+      { credentials: "include", cache: "no-store" }
+    );
+    if (respons.ok) {
+      const luar = await respons.json();
+      const isi = luar && luar.data ? luar.data : luar;
+      jauh = Array.isArray(isi && isi.daftar) ? isi.daftar : [];
+    }
+  } catch {
+    jauh = [];
+  }
+
+  // Dikenali dari waktu dan variabelnya - itulah yang sama pada kedua
+  // salinan satu perubahan. Id peladen tidak ada pada salinan peramban, jadi
+  // memakainya sebagai pengenal akan menggandakan seluruh baris.
+  const sudah = new Set(lokal.map((x) => `${x.pada}|${x.kode}`));
+  const gabung = lokal.slice();
+  for (const satu of jauh) {
+    const kunci = `${satu.pada}|${satu.kode}`;
+    if (sudah.has(kunci)) continue;
+    sudah.add(kunci);
+    // Ditandai supaya terlihat bahwa ia tidak dapat diurungkan dari sini:
+    // isinya mungkin dipotong, dan salinan lengkapnya ada di peramban lain.
+    gabung.push({ ...satu, dariPeladen: true });
+  }
+
+  gabung.sort((a, b) => String(b.pada || "").localeCompare(String(a.pada || "")));
+  return gabung;
 }
 
 // ─── Menyunting di tempat ────────────────────────────────────────────────────
@@ -2264,6 +2339,33 @@ function susunPanelAbt(jatiDiri) {
       kini.appendChild(buatElemen("span", "aleta-abt-isi", catatan.sesudah || "(kosong)"));
       sanding.appendChild(kini);
       kartu.appendChild(sanding);
+
+      // ======================================================================
+      // YANG DARI PELADEN TIDAK DAPAT DIURUNGKAN DARI SINI
+      // ======================================================================
+      //
+      // Jejak di peladen dipotong bila isinya panjang - ia dibuat untuk
+      // MELIHAT apa yang berubah, bukan untuk mengembalikannya. Menekan
+      // "Kembalikan yang sebelumnya" atas jejak yang terpotong akan menimpa
+      // variabelnya dengan potongan, dan hasilnya terlihat seperti keterangan
+      // yang utuh.
+      //
+      // Salinan lengkapnya ada di peramban tempat perubahan itu dikerjakan.
+      // Karena itu tombolnya tidak digambar di sini, dan sebabnya disebut -
+      // bukan dibiarkan tampak seperti fitur yang rusak.
+      if (catatan.dariPeladen) {
+        kartu.appendChild(
+          buatElemen(
+            "div",
+            "aleta-abt-kabar",
+            catatan.dipotong
+              ? "Dicatat dari peramban lain, dan isinya dipotong. Kembalikan dari peramban tempat perubahan ini dikerjakan."
+              : "Dicatat dari peramban lain. Kembalikan dari peramban tempat perubahan ini dikerjakan."
+          )
+        );
+        wadahRiwayat.appendChild(kartu);
+        continue;
+      }
 
       const urung = buatElemen("button", "aleta-abt-batal", "Kembalikan yang sebelumnya");
       urung.type = "button";

@@ -546,6 +546,39 @@ const schemaStatements = [
     diubah_oleh TEXT NOT NULL DEFAULT '',
     diubah_at TEXT NOT NULL
   )`,
+  // ==========================================================================
+  // JEJAK PERUBAHAN ABT - PINDAH DARI PERAMBAN KE PELADEN
+  // ==========================================================================
+  //
+  // Riwayat perubahan ABT selama ini hanya ada di chrome.storage peramban
+  // yang dipakai. Ia hilang begitu data peramban dibersihkan, tidak terlihat
+  // oleh siapa pun selain yang menyuntingnya, dan tidak ada pada peramban
+  // lain milik orang yang sama.
+  //
+  // Yang disimpan di sini JEJAK PENGAWASANNYA. Salinan di peramban tetap
+  // ada dan tetap yang menggerakkan tombol Urungkan - ia lengkap, ada
+  // seketika, dan tetap bekerja ketika peladen mati. Yang di sini bertahan
+  // dan dapat dibaca orang lain.
+  //
+  // Pembagian itu disengaja: menjadikan peladen satu-satunya sumber berarti
+  // Urungkan mati setiap kali jaringan terputus - padahal justru saat
+  // sesuatu baru saja salah diterapkanlah tombol itu paling dibutuhkan.
+  `CREATE TABLE IF NOT EXISTS aleta_abt_riwayat (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    kode TEXT NOT NULL DEFAULT '',
+    nama TEXT NOT NULL DEFAULT '',
+    sebelum TEXT NOT NULL DEFAULT '',
+    sesudah TEXT NOT NULL DEFAULT '',
+    -- Ditandai bila isinya dipotong karena terlalu panjang. Jejak yang
+    -- dipotong diam-diam lebih buruk daripada jejak yang mengaku dipotong:
+    -- yang membacanya akan menyangka itulah seluruh perubahannya.
+    dipotong SMALLINT NOT NULL DEFAULT 0,
+    cara TEXT NOT NULL DEFAULT '',
+    oleh TEXT NOT NULL DEFAULT '',
+    pada TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_pertimbangan_butir (
     id TEXT PRIMARY KEY,
     sidik TEXT NOT NULL,
@@ -2736,6 +2769,7 @@ const indexStatements = [
   // sama pada dua ratus putusan menghasilkan dua ratus butir - dan pustaka
   // menjadi salinan putusan, bukan kumpulan pertimbangan.
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_pertimbangan_sidik ON aleta_pertimbangan_butir(sidik)`,
+  `CREATE INDEX IF NOT EXISTS idx_abt_riwayat_perkara ON aleta_abt_riwayat(perkara_id, pada DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_keadaan ON aleta_pertimbangan_butir(keadaan, jenis_perkara)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_butir ON aleta_pertimbangan_rujukan(butir_id)`,
   `CREATE INDEX IF NOT EXISTS idx_pertimbangan_rujukan_jangkar ON aleta_pertimbangan_rujukan(jangkar)`,

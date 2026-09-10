@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.6.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.6.1 - Kegagalan Skema Tidak Lagi Bersembunyi";
+export const APP_VERSION = "2.7.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.7.0 - Lima Layar yang Rusak Diam-diam";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,48 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.7.0",
+    title: "ALETA Judicia v2.7.0 - Lima Layar yang Rusak Diam-diam",
+    date: "2026-09-10",
+    status: "Operasional",
+    summary:
+      "Lima layar membaca BUNGKUS jawaban rutenya, bukan isinya - sehingga masing-masing gagal setiap kali, pada setiap perkara, tanpa satu pun galat muncul. Dua di antaranya punya uji yang hijau: pemalsu fetch-nya memalsukan bentuk yang tidak pernah dikeluarkan peladen, sehingga uji dan kode sepakat atas dunia yang tidak ada.",
+    added: [
+      "Acc hakim atas Berita Acara Sidang - langkah yang ada di kenyataan tetapi tidak pernah ada di ALETA. Empat keadaan, dan acc BATAL sendiri begitu isinya diubah, supaya persetujuan hakim tidak melekat pada naskah yang tidak pernah dilihatnya.",
+      "Rubrik penilaian perkara dapat disunting dari ALETA SIPP - bobot tiap butir, skala waktu, dan ambang predikat. Rutenya sudah lama ada di bot, tetapi tidak ada satu pun jalan dari portal menuju ke sana.",
+      "Kosakata pemeriksa isi pesan dapat DITAMBAH dari ALETA Bot. Daftar bawaan tidak dapat dihapus - ia memuat frasa seperti kode otp dan segera transfer.",
+      "Ketepatan waktu penginputan menjadi unsur penilaian: PMH, PPP, PJS, PHS, dan putusan. Yang dinilai penetapan PERTAMA; perubahan dan penetapan pengganti tidak ikut.",
+      "Kotak Perlu diperiksa pada Jadwal Sidang - gabungan penanda merah saja, menjawab pertanyaan pertama tiap pagi dengan satu tekan.",
+      "Titipan penetapan kedaluwarsa sendiri sesudah empat belas hari, ditandai dan bukan dihapus.",
+      "Jejak perubahan ABT kini tersimpan di peladen, bukan hanya di peramban. Salinan peramban tetap yang menggerakkan Urungkan - ia lengkap, dan tetap bekerja ketika jaringan putus.",
+      "Bab 1 katalog e-Audit selesai enam dari enam; keseluruhan naik dari delapan menjadi empat belas butir tersambung penuh.",
+    ],
+    changed: [
+      "Kegagalan menghubungi ALETA dari ekstensi kini satu kalimat yang menyebut sebabnya DAN apa yang tetap jalan tanpa peladen - tema, panel, penjaga CETAK, sunting variabel ABT, pembersih keterangan saksi, dan CETAK rtf beserta anonimnya.",
+      "Halaman Ekstensi SIPP menyebutkan apa yang dikerjakan ekstensi di halaman blangko ABT. Sebelumnya seluruh keterangannya hanya berbicara tentang SIPP.",
+      "Ekstensi SIPP naik ke 1.90.0.",
+    ],
+    fixed: [
+      "Status Perkara, Ruang Perkara, Isian Kelas B, Rujukan Pasal, dan Blangko Mandiri membaca bungkus jawaban rutenya. Tombol susun perintah putusan MENJATUHKAN seluruh layar Status Perkara; pencarian Ruang Perkara selalu tidak ketemu; Isian Kelas B selalu berbunyi tidak terbaca; tiap rujukan pasal tidak ditemukan padahal pustakanya menjawab benar; statistik dan daftar blangko Blangko Mandiri seluruhnya kosong.",
+      "Alamat berkas e-Court digali dengan benar - pola lamanya terbukti TIDAK menemukan alamat yang jelas ada di dalam jawaban, karena garis miringnya tersandi. Inilah sebab berkas terdeteksi tetapi tidak terunduh.",
+      "Papan ruang tunggu tidak lagi menuliskan jawaban ruang lama sesudah ruangnya berganti, dan satu sendatan jaringan tidak lagi mengosongkan papannya.",
+      "Perlawanan kedua atas satu perkara tidak lagi terbaca acak - seluruh barisnya dibaca, terbaru dahulu, dan penandanya menyebut VERZET ke-2.",
+      "Bunyi galat ABT tidak lagi lolos sebagai keterangan dan ikut tercetak sebagai pertimbangan hukum.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Dipasang sesudah peladen mati semalaman. Dua puluh satu commit sekaligus - bila ada yang berulah, bandingkan dengan daftar di atas sebelum menyimpulkan.",
+      "Migrasi Drizzle TIDAK bertambah. Tabel jejak ABT dan kolom acc BAS ditambahkan lewat jalur idempoten di schema.ts, yang tidak mengklaim nomor migrasi apa pun.",
+      "Ambang ketepatan penginputan ditandai KEBIJAKAN, bukan peraturan: dasar peraturannya belum diperiksa terhadap naskah resmi, dan angkanya ditetapkan tanpa melihat sebaran data nyata. Wajib ditinjau ulang sesudah pengukuran pertama.",
+    ],
+    knownLimitations: [
+      "Tidak satu pun dari perbaikan ini teruji di layar sungguhan - peladen mati sepanjang malam pengerjaannya. Kelima layar yang diperbaiki perlu dibuka satu per satu.",
+      "Perubahan rubrik penilaian berlaku SURUT: seluruh perkara dinilai memakai angka yang baru. Ubah sedikit dahulu, lihat akibatnya di Status Perkara, baru tetapkan.",
+      "Acc BAS belum pernah dijalankan oleh hakim sungguhan. Yang paling perlu diuji: sunting satu jawaban sesudah di-acc, lalu pastikan accnya batal sendiri.",
+      "Sembilan pasang fungsi panel masih kembar antara konten.js dan panel-alat.js. Keduanya benar tetapi berbeda cara, dan penyatuannya dikerjakan tersendiri supaya dapat dinilai sendiri.",
+    ],
+  },
   {
     version: "2.6.1",
     title: "ALETA Judicia v2.6.1 - Kegagalan Skema Tidak Lagi Bersembunyi",
