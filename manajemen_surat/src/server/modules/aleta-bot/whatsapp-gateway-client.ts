@@ -84,6 +84,32 @@ const TIMEOUT_KONVERSI_MS = Number(process.env.ALETA_BOT_GATEWAY_TIMEOUT_KONVERS
 /** Batas waktu untuk pemanggilan yang menyentuh banyak berkas di disk. */
 const TIMEOUT_BERKAS_MS = Number(process.env.ALETA_BOT_GATEWAY_TIMEOUT_BERKAS_MS || 120_000);
 
+/**
+ * Batas waktu untuk MENJALANKAN satu penilaian e-Audit.
+ *
+ * Batas bawaan 8 detik cocok untuk pemanggilan yang membaca satu baris. Satu
+ * penilaian bukan itu: ia membaca ribuan baris SIPP, menggabung tiga sampai
+ * lima tabel, lalu menyusun daftar buktinya satu per satu.
+ *
+ * Diukur pada satu basis data SIPP sungguhan berisi 5.554 perkara - jauh lebih
+ * kecil daripada satuan kerja yang sesungguhnya:
+ *
+ *   BK03 beban pemanggilan jurusita   12 detik   1.298 pelaksanaan relaas
+ *   LY11 papan nilai pelayanan        11 detik   sepuluh angka, sepuluh kueri
+ *   MP09 pelaksanaan mediasi           8 detik
+ *   MP16 kronologi perkara             7 detik   tujuh tonggak per perkara
+ *
+ * Dengan batas 8 detik, tiga di antaranya TIDAK PERNAH dapat berhasil -
+ * berapa kali pun dicoba - dan yang terlihat pengawas hanya "aleta bot tidak
+ * merespons dalam 8000ms", padahal botnya sehat dan sedang menghitung. Persis
+ * kekeliruan yang sudah terjadi sekali pada login e-Court di atas.
+ *
+ * Enam puluh detik dipilih supaya yang menyerah lebih dulu adalah batas waktu
+ * kueri di sisi bot, sehingga sebab yang sampai ke pengawas adalah sebab yang
+ * sesungguhnya - kueri mana yang lambat - bukan "bot tidak menjawab".
+ */
+const TIMEOUT_PENILAIAN_MS = Number(process.env.ALETA_BOT_GATEWAY_TIMEOUT_PENILAIAN_MS || 60_000);
+
 type GatewayOptions = RequestInit & {
   /** Menimpa batas waktu bawaan untuk pemanggilan ini saja. */
   timeoutMs?: number;
@@ -1780,7 +1806,9 @@ export async function getGatewayJalankanPenilaian(
 ): Promise<GatewayResult<Record<string, unknown>>> {
   const kueri = new URLSearchParams({ kunci, periode, bukti: String(bukti) });
   if (acuan) kueri.set("acuan", acuan);
-  return gatewayFetch(`/internal/aleta-bot/penilaian/jalankan?${kueri.toString()}`);
+  return gatewayFetch(`/internal/aleta-bot/penilaian/jalankan?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
 }
 
 /**

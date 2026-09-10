@@ -1134,13 +1134,13 @@ const SAMBUNGAN = {
     kunci: "pelaksanaanMediasiHasil",
     sifat: "sebagian",
     catatan:
-      "Kelengkapan baris mediasi terukur - 65 dari 68 lengkap sampai laporan mediatornya. Yang BELUM: makna kode hasil_mediasi. Kode S, T, Y1, dan Y2 ada pada data tetapi artinya belum dipastikan dari sumber resmi, sehingga butir ini menilai kelengkapannya saja, bukan hasilnya.",
+      "Kelengkapan baris mediasi terukur - 65 dari 68 lengkap sampai laporan mediatornya. Kode hasil_mediasi sudah dibaca artinya dari borang SIPP sendiri (Y1 berhasil dengan akta perdamaian, Y2 berhasil dengan pencabutan, S berhasil sebagian, T tidak berhasil, D tidak dapat dilaksanakan). Yang BELUM: MUTU mediasinya - berapa lama tiap pertemuan berlangsung dan berapa kali para pihak dipertemukan tidak tercatat di mana pun.",
   },
   MP10: {
     kunci: "kesepakatanMediasiSelarasAmar",
     sifat: "sebagian",
     catatan:
-      "Keselarasan kesepakatan dengan akhir perkara terukur - 16 dari 28. Dua di antaranya isi kesepakatannya ketikan asal, deretan huruf tanpa makna yang diketik supaya borang mau disimpan. Yang BELUM: pembandingan ISI kesepakatan dengan isi amarnya.",
+      "Keselarasan akhir perkara dengan kode hasil mediasi terukur - 24 dari 28 mediasi yang dicatat berhasil. Tiap kode dituntut akhir yang berbeda: Y1 akta perdamaian, Y2 pencabutan, S tidak menuntut akhir tertentu. Empat yang tertangkap seluruhnya isi kesepakatannya ketikan asal - deretan huruf tanpa makna yang diketik supaya borang mau disimpan. Yang BELUM: pembandingan ISI kesepakatan dengan isi amarnya, yang hanya dapat dilakukan manusia yang membaca keduanya.",
   },
   MP11: {
     kunci: "prakiraanWaktuPenyelesaian",

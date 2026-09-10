@@ -4,16 +4,30 @@
     {
       "name": "portal-aleta",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start"],
+      "runtimeArgs": [
+        "run",
+        "start"
+      ],
       "cwd": "manajemen_surat",
       "port": 3000
     },
     {
       "name": "portal-aleta-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "cwd": "manajemen_surat",
       "port": 3000
+    },
+    {
+      "name": "aleta-bot-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "D:/aleta-dev/jalankan-bot-tanpa-whatsapp.js"
+      ],
+      "port": 3003
     }
   ]
 }

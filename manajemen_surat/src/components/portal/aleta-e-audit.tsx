@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import Link from "next/link";
+
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,7 @@ import {
   HasilPenilaianTampil,
   type HasilPenilaian,
 } from "@/components/portal/penilaian-hasil";
-import { apiPath } from "@/lib/base-path";
+import { apiPath, withBasePath } from "@/lib/base-path";
 
 /**
  * ============================================================================
@@ -239,6 +241,17 @@ export function AletaEAudit() {
         eyebrow="ALETA e-Audit"
         title="Pengawasan Berjenjang"
         description="Ketaatan tahapan, mutu data, laporan perkara, keuangan, dan kinerja aparatur - dengan bukti yang selalu dapat dibuka sampai ke nomor perkaranya."
+        actions={
+          /*
+           * Halaman ini menjawab "sejauh mana aplikasinya jadi". Yang dibawa
+           * pengawas pertanyaan lain - "bagaimana keadaan satuan kerja ini
+           * triwulan lalu" - dan itu dijawab lembar audit. Tanpa tautan ini
+           * lembarnya hanya dapat dicapai oleh yang menghafal alamatnya.
+           */
+          <Button asChild variant="outline">
+            <Link href={withBasePath("/aleta-e-audit/lembar")}>Buka Lembar Audit</Link>
+          </Button>
+        }
       />
 
       {galat ? (

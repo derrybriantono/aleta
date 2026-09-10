@@ -57,7 +57,7 @@
  * seperti ini adalah alasan mengapa hasil ukurnya harus dibaca, bukan
  * dipercaya.
  *
- * Kedua: dari 28 isi kesepakatan perdamaian yang terisi, dua di antaranya
+ * Kedua: dari 28 mediasi yang dicatat BERHASIL, empat isi kesepakatannya
  * ketikan asal - deretan huruf tanpa makna yang diketik supaya borang mau
  * disimpan. Kolom wajib yang diisi sembarang lebih buruk daripada kolom
  * kosong: kolom kosong terlihat, sedangkan "sudah terisi" tidak.
@@ -577,15 +577,70 @@ async function barisPelaksanaanMediasi(rentang) {
  * MP10 - KESEPAKATAN MEDIASI TERCERMIN PADA AKHIR PERKARA
  * ============================================================================
  *
- * Mediasi yang berhasil harus berujung salah satu dari dua hal: perkaranya
- * dicabut, atau dikuatkan menjadi akta perdamaian. Kesepakatan yang tercatat
- * tetapi perkaranya tetap berjalan sampai putusan biasa berarti salah satu
- * dari dua catatan itu keliru.
+ * Kode hasil_mediasi TIDAK ditebak. Artinya dibaca dari borang SIPP sendiri -
+ * application/views/perkara_tab/tab_mediasi_edit2.php, tempat kodenya
+ * ditawarkan kepada petugas:
+ *
+ *   Y1  Berhasil Dengan Akta Perdamaian
+ *   Y2  Berhasil Dengan Pencabutan
+ *   S   Berhasil Sebagian
+ *   T   Tidak Berhasil
+ *   D   Tidak Dapat Dilaksanakan
+ *
+ * Populasinya karena itu ketiga kode BERHASIL, bukan "baris yang isi
+ * kesepakatannya terisi". Pada SIPP yang diukur keduanya kebetulan sama
+ * jumlahnya - 28 baris - tetapi keduanya bukan hal yang sama: mediasi yang
+ * berhasil TANPA isi kesepakatan justru temuan, dan definisi yang bersandar
+ * pada isian akan diam-diam mengeluarkannya dari populasi.
+ *
+ * Kode itu juga menentukan akhir yang selaras, dan tiap kode berbeda:
+ *
+ *   Y1  harus ada akta perdamaian - putusannya berstatus Perdamaian
+ *   Y2  harus ada pencabutan - tanggal cabut atau status Dicabut
+ *   S   akhir perkaranya TIDAK ditentukan - lihat catatan di bawah
+ *
+ * Menyamakan ketiganya - misalnya menuntut pencabutan pada Y1 - akan
+ * menghasilkan temuan palsu atas perkara yang justru ditangani dengan benar.
  *
  * Isi kesepakatannya ikut diperiksa apakah tampak diketik asal. Diukur pada
- * SIPP sungguhan: dari 28 isi kesepakatan yang terisi, dua di antaranya
- * deretan huruf tanpa makna.
+ * SIPP sungguhan: 1 Y1, 18 Y2, 9 S, dan EMPAT di antaranya isi kesepakatannya
+ * deretan huruf tanpa makna:
+ *
+ *   "Hsjxbcifbjdjzbdicbanixbskxjwbdonxmalk fkkqkdixjsjsi"
+ *   "gfsghfdshagcvjhsdzgfvdjzgfjhsdzgvdzgsdfghdfhdfhdfhjnhnnnnnnnn..."
+ *   "woiduhweigyuvuisdhrtdghf6723tyw8we78wef87wer8gh9rherhg8..."
+ *   "sdqwedqwdqwdqwdqwdqwdqwdquiodf0oqejf0owjheoifhwer0ohgwo..."
+ *
+ * Sempat terbaca dua ketika hanya delapan baris pertamanya dilihat. Empat
+ * itulah angka yang benar - dan selisihnya muncul justru karena hasil ukurnya
+ * dibuka seluruhnya, bukan disampel.
  */
+
+/** Kode hasil mediasi yang berarti berhasil, beserta akhir yang selaras. */
+const HASIL_MEDIASI_BERHASIL = {
+  Y1: {
+    sebutan: "berhasil dengan akta perdamaian",
+    selaras: (k) => /damai/i.test(k.status) || k.adaAkta,
+    tuntutan: "putusan berstatus Perdamaian atau akta perdamaian bertanggal",
+  },
+  Y2: {
+    sebutan: "berhasil dengan pencabutan",
+    selaras: (k) => /cabut/i.test(k.status) || k.adaCabut,
+    tuntutan: "perkaranya dicabut",
+  },
+  S: {
+    sebutan: "berhasil sebagian",
+    // Berhasil sebagian TIDAK menentukan akhir perkara: sisanya tetap
+    // diperiksa, dan pada saat lembar audit dijalankan perkaranya boleh saja
+    // masih berjalan. Sempat ditulis menuntut perkaranya sudah diputus, dan
+    // itu menandai satu perkara yang justru berjalan sebagaimana mestinya -
+    // temuan palsu yang akan membuat pengawas membuka berkas tanpa sebab.
+    //
+    // Yang tersisa untuk dinilai pada kode ini hanya isi kesepakatannya.
+    selaras: () => true,
+    tuntutan: "tidak ada akhir tertentu yang dituntut oleh kode ini",
+  },
+};
 async function barisKesepakatanMediasiAmar(rentang) {
   if (!(await tabelSiap(["perkara", "perkara_mediasi"]))) return [];
 
@@ -594,6 +649,7 @@ async function barisKesepakatanMediasiAmar(rentang) {
             p.nomor_perkara                  AS nomorPerkara,
             p.jenis_perkara_nama             AS jenisPerkara,
             m.isi_kesepakatan_perdamaian     AS isiKesepakatan,
+            m.hasil_mediasi                  AS hasilMediasi,
             m.akta_perdamaian                AS aktaPerdamaian,
             d.tanggal_cabut                  AS tanggalCabut,
             s.nama                           AS statusNama
@@ -602,7 +658,7 @@ async function barisKesepakatanMediasiAmar(rentang) {
        LEFT JOIN perkara_putusan d ON d.perkara_id = p.perkara_id
        LEFT JOIN status_putusan s ON s.id = d.status_putusan_id
       WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
-        AND TRIM(COALESCE(m.isi_kesepakatan_perdamaian, '')) <> ''
+        AND m.hasil_mediasi IN ('Y1', 'Y2', 'S')
       ORDER BY p.nomor_perkara
       LIMIT ${BATAS_BARIS}`,
     [rentang.mulai, rentang.selesai]
@@ -610,21 +666,30 @@ async function barisKesepakatanMediasiAmar(rentang) {
 
   return hasil.map((x) => {
     const status = teks(x.statusNama);
-    const berakhirSelaras =
-      /cabut|damai/i.test(status) || tanggalTerisi(x.tanggalCabut) || tanggalTerisi(x.aktaPerdamaian);
-    const asal = tampakKetikanAsal(x.isiKesepakatan);
+    const kode = teks(x.hasilMediasi).toUpperCase();
+    const aturan = HASIL_MEDIASI_BERHASIL[kode];
+    const keadaan = {
+      status,
+      adaAkta: tanggalTerisi(x.aktaPerdamaian),
+      adaCabut: tanggalTerisi(x.tanggalCabut),
+    };
     const sebab = [];
 
-    if (asal) {
+    if (!teks(x.isiKesepakatan)) {
+      sebab.push(
+        `dicatat ${aturan ? aturan.sebutan : "berhasil"} tetapi isi kesepakatannya kosong - kesepakatan yang tidak tertulis tidak dapat dibandingkan dengan apa pun`
+      );
+    } else if (tampakKetikanAsal(x.isiKesepakatan)) {
       sebab.push(
         "isi kesepakatannya tidak terbaca sebagai kalimat - kolom wajib yang diisi sembarang lebih buruk daripada kolom kosong, sebab yang kosong terlihat"
       );
     }
-    if (!berakhirSelaras) {
+
+    if (aturan && !aturan.selaras(keadaan)) {
       sebab.push(
-        `kesepakatan tercatat tetapi perkaranya berakhir "${
+        `dicatat ${aturan.sebutan} tetapi perkaranya berakhir "${
           status || "belum diputus"
-        }" - mediasi yang berhasil semestinya berujung pencabutan atau akta perdamaian`
+        }" - semestinya ${aturan.tuntutan}`
       );
     }
 
@@ -632,6 +697,7 @@ async function barisKesepakatanMediasiAmar(rentang) {
       kunci: `sepakat-${teks(x.mediasiId)}`,
       nomorPerkara: teks(x.nomorPerkara),
       jenisPerkara: teks(x.jenisPerkara),
+      hasilMediasi: aturan ? aturan.sebutan : kode,
       statusAkhir: status,
       memenuhi: sebab.length === 0,
       sebabTidakMemenuhi: sebab.join("; "),
@@ -1280,6 +1346,7 @@ function sambungan() {
 
 module.exports = {
   AMBANG_JUMLAH_SIDANG,
+  HASIL_MEDIASI_BERHASIL,
   AMBANG_KELAZIMAN_AMAR,
   AMBANG_NILAI_KONDISI,
   BATAS_KATA_TERPANJANG,
