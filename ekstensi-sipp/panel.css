@@ -2932,3 +2932,86 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
   background-color: var(--s-permukaan) !important;
   color: var(--s-tulisan) !important;
 }
+
+/* ==========================================================================
+   PEJABAT PENETAP DAN HASIL TULIS LANGSUNG
+   ==========================================================================
+
+   Keduanya muncul tepat sebelum dan sesudah tombol yang menuliskan penetapan
+   ke SIPP. Ukurannya sengaja tidak lebih kecil daripada baris lain di panel:
+   yang dibaca di sini menentukan atas nama siapa satu berkas perkara tercatat,
+   dan keterangan sepenting itu tidak boleh menjadi yang paling sulit dibaca. */
+
+.aleta-tetap-pejabat {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-lembut);
+}
+
+.aleta-tetap-pejabat-baris {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.aleta-tetap-pejabat-jenis {
+  flex: 0 0 3.2rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-tetap-pejabat-baris .aleta-pilih {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.aleta-tulis-hasil {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: var(--aleta-latar-lembut);
+}
+
+.aleta-tulis-judul {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.aleta-tulis-baris {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 12.5px;
+  border-top: 1px solid var(--aleta-garis);
+}
+
+.aleta-tulis-baris:first-of-type { border-top: 0; }
+
+.aleta-tulis-jenis { font-weight: 600; }
+
+.aleta-tulis-ket {
+  color: var(--aleta-tulisan-lembut);
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Gagal diberi warna, bukan hanya kata. Deretan baris yang seluruhnya
+   sewarna membuat yang gagal terlewat justru ketika ia paling penting. */
+.aleta-tulis-gagal .aleta-tulis-jenis,
+.aleta-tulis-gagal .aleta-tulis-ket {
+  color: #d14343;
+}
+
+[data-tema="gelap"] .aleta-tulis-gagal .aleta-tulis-jenis,
+[data-tema="gelap"] .aleta-tulis-gagal .aleta-tulis-ket {
+  color: #ffa79c;
+}

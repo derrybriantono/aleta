@@ -1123,9 +1123,22 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // Yang harus tetap ada tiga hal, sebab ketiganya yang membuat catatan ini
     // berguna bagi orang berikutnya: apa yang masih kembar, kenapa belum
     // dilunasi, dan aturan apa yang berlaku sementara itu.
-    expect(isi, "apa yang masih kembar").toContain("masih kembar");
-    expect(isi, "kenapa belum dilunasi").toContain("tidak dapat dibuka");
-    expect(isi, "aturan sementara").toContain("fungsi BARU ditulis di sini saja");
+    // Diperiksa dengan spasi DIRAPATKAN. Prosa di dalam komentar dipenggal
+    // baris di tempat yang ditentukan penulisnya, dan penjaga yang menuntut
+    // frasa utuh akan gagal setiap kali kalimatnya dipindah barisnya - gagal
+    // atas catatan yang tidak berubah sepatah kata pun. Itu sudah terjadi
+    // sekali di sini, dan cara ia gagal menuntun ke perbaikan yang salah.
+    //
+    // Tanda bintang awal barisnya DIBUANG lebih dulu. Merapatkan spasi saja
+    // tidak cukup pada komentar blok: "fungsi BARU\n * ditulis" menjadi
+    // "fungsi BARU * ditulis", dan frasanya tetap tidak ketemu - gagal yang
+    // tampak seperti catatannya hilang padahal ia utuh.
+    const rapat = isi
+      .replace(/\n\s*\*\s?/g, " ")
+      .replace(/\s+/g, " ");
+    expect(rapat, "apa yang masih kembar").toContain("masih kembar");
+    expect(rapat, "kenapa belum dilunasi").toContain("tidak dapat dibuka");
+    expect(rapat, "aturan sementara").toContain("fungsi BARU ditulis di sini saja");
   });
 });
 

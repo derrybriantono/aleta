@@ -105,6 +105,8 @@ export type LangkahPenetapan = {
   urutan: number;
   jenis: JenisLangkah;
   sebutan: string;
+  /** Pejabat lain yang sah menandatangani langkah ini - lihat calonPenetap. */
+  calon: CalonPenetap[];
   /** null = dikerjakan operator dengan akunnya sendiri (Data Umum). */
   akun: AkunLangkah;
   medan: NilaiMedan[];
@@ -420,6 +422,69 @@ export function akunPanitera(akun: AkunSiapPakai[], keadaan?: KeadaanPejabat | n
   return { akun: panitera, sebutan: "Panitera", catatan };
 }
 
+/**
+ * ============================================================================
+ * CALON PENETAP - SUPAYA PILIHAN OTOMATISNYA DAPAT DIPINDAH
+ * ============================================================================
+ *
+ * Yang dipilih akunPimpinan/akunPanitera adalah pilihan OTOMATIS: Ketua bila
+ * hadir, Wakil bila Ketua berhalangan, Plh bila keduanya tidak ada. Aturan itu
+ * benar hampir selalu.
+ *
+ * "Hampir" itulah sebabnya daftar ini ada. Cuti yang belum tercatat, rapat
+ * mendadak, penandatanganan yang memang diserahkan kepada Wakil atas
+ * kesepakatan pimpinan - mesin tidak tahu satu pun dari itu, dan pada hari
+ * seperti itu satu-satunya jalan yang tersisa dahulu adalah masuk SIPP dengan
+ * akun lain.
+ *
+ * Yang dipulangkan CALON yang sah saja - akun yang memang berwenang atas
+ * langkah itu. Membuka seluruh akun akan membuat penetapan dapat tercatat atas
+ * nama siapa saja, dan itu bukan kemudahan melainkan lubang.
+ *
+ * `otomatis` menandai mana yang dipilih mesin, supaya layar dapat memilihnya
+ * lebih dahulu dan yang menyimpang tahu bahwa ia sedang menyimpang.
+ */
+export type CalonPenetap = {
+  username: string;
+  namaLengkap: string;
+  sebutan: string;
+  siap: boolean;
+  sebab: string;
+  otomatis: boolean;
+};
+
+function calonPenetap(
+  akun: AkunSiapPakai[],
+  jabatan: "pimpinan" | "panitera" | "hakim",
+  terpilih: AkunSiapPakai | null,
+  sebutanTerpilih: string
+): CalonPenetap[] {
+  // Ketua majelis TIDAK ditawarkan penggantinya. Ia bukan jabatan yang dapat
+  // diwakilkan atas kesepakatan - PHS ditandatangani ketua majelis perkara
+  // itu sendiri, dan majelisnya sudah ditetapkan pada langkah sebelumnya.
+  if (jabatan === "hakim") return [];
+
+  const hidup = (x: AkunSiapPakai) => !x.diblokir && !x.kedaluwarsa;
+  const kolam =
+    jabatan === "pimpinan"
+      ? akun.filter((x) => x.jabatan === "hakim" && /ketua/i.test(x.grup))
+      : akun.filter((x) => x.jabatan === "panitera");
+
+  const daftar = kolam.filter(hidup).map((x) => ({
+    username: x.username,
+    namaLengkap: x.namaLengkap,
+    sebutan: x.username === terpilih?.username ? sebutanTerpilih : x.grup,
+    siap: x.siap,
+    sebab: x.sebabBelumSiap,
+    otomatis: x.username === terpilih?.username,
+  }));
+
+  // Yang dipilih mesin selalu di urutan pertama - itulah yang akan tersorot
+  // lebih dahulu, dan menaruhnya di tengah daftar membuat orang mengira
+  // pilihannya belum ada.
+  return daftar.sort((a, b) => Number(b.otomatis) - Number(a.otomatis));
+}
+
 function jadiAkunLangkah(akun: AkunSiapPakai | null, tentatif = false, sebutan = ""): AkunLangkah {
   if (!akun) return null;
   return {
@@ -568,12 +633,15 @@ export function rakitRencana(args: {
     const catatanPenetap: string[] = [];
 
     let akun: AkunLangkah = null;
+    let calon: CalonPenetap[] = [];
     if (JABATAN_LANGKAH[jenis] === "pimpinan") {
       akun = jadiAkunLangkah(pimpinan, false, pilihan.sebutan);
+      calon = calonPenetap(akunPemetaan, "pimpinan", pimpinan, pilihan.sebutan);
       if (!pimpinan) catatan.push("Belum ada akun SIPP pimpinan (Ketua/Wakil Ketua).");
       for (const c of pilihan.catatan) catatanPenetap.push(c);
     } else if (JABATAN_LANGKAH[jenis] === "panitera") {
       akun = jadiAkunLangkah(panitera, false, pilihanPanitera.sebutan);
+      calon = calonPenetap(akunPemetaan, "panitera", panitera, pilihanPanitera.sebutan);
       if (!panitera) catatan.push("Belum ada akun SIPP Panitera.");
       for (const c of pilihanPanitera.catatan) catatanPenetap.push(c);
     } else if (JABATAN_LANGKAH[jenis] === "hakim") {
@@ -614,6 +682,7 @@ export function rakitRencana(args: {
       urutan: i + 1,
       jenis,
       sebutan: SEBUTAN[jenis],
+      calon,
       akun,
       medan: isiMedanPenetapan(jenis, peta, usulan, dataUmum),
       verifikasi: VERIFIKASI[jenis],

@@ -1625,11 +1625,72 @@ function susunPmh({
       .sort((a, b) => a.jumlah - b.jumlah || a.hakimId - b.hakimId);
 
     if (!smart.ada) {
+      /**
+       * ====================================================================
+       * SMART MAJELIS BELUM JALAN - ALETA MENGUSULKAN SENDIRI
+       * ====================================================================
+       *
+       * Dahulu cabang ini menyerah: usulannya kosong, sebabnya berbunyi
+       * "belum_ada_usulan_smartmajelis", dan PMH tidak dapat ditetapkan.
+       *
+       * Akibatnya berantai dan itu yang paling merugikan: PHS membaca
+       * majelisKode untuk mencari hari sidangnya, dan majelisKode kosong -
+       * sehingga PHS ikut berbunyi "menunggu majelisnya ditentukan lebih
+       * dulu". Satu tabel SIPP yang belum diisi mematikan DUA penetapan
+       * sekaligus, dan petugas tidak punya jalan lain selain membuka Smart
+       * Majelis di SIPP lalu kembali lagi.
+       *
+       * Padahal bahannya sudah ada di tangan, dan seluruhnya dari SIPP
+       * sendiri: susunan majelis yang BENAR-BENAR dipakai tahun ini, beserta
+       * berapa perkara yang sudah dipegang masing-masing. Itulah yang selama
+       * ini digambar pada pilihan manual - jadi yang dipakai di sini bukan
+       * sumber baru, melainkan sumber yang sama yang sudah dipercaya orang
+       * untuk memilih dengan tangan.
+       *
+       * Yang diusulkan susunan dengan perkara PALING SEDIKIT. Itu asas yang
+       * sama dengan giliran panitera pengganti dan juru sita di berkas ini -
+       * bukan aturan baru, hanya diterapkan pada majelis.
+       *
+       * SEBABNYA DISEBUT APA ADANYA. Usulan ini BUKAN keluaran Smart Majelis,
+       * dan menuliskannya seolah-olah dari sana akan membuat orang menyangka
+       * SIPP sudah memutuskan padahal belum. Yang membaca berhak tahu bahwa
+       * yang mengusulkan ALETA, atas dasar giliran - supaya ia dapat menolak
+       * bila ada pertimbangan yang tidak diketahui mesin.
+       */
+      const giliranMajelis = [...(susunanTerpakai || [])]
+        .filter((x) => Array.isArray(x.anggota) && x.anggota.length >= 3)
+        .sort((a, b) => a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci)));
+
+      const pilihan = giliranMajelis[0];
+      if (!pilihan) {
+        // Tidak ada satu pun susunan yang terbaca - barulah menyerah, dan
+        // sebabnya tetap disebut supaya dapat ditelusuri.
+        return {
+          ...dasar,
+          sebab: `${bentuk.sebab} - ${smart.alasan}, dan susunan majelis tahun ini belum terbaca`,
+          hitungan: hitunganMajelis,
+          susunanTerpakai,
+        };
+      }
+
       return {
         ...dasar,
-        sebab: `${bentuk.sebab} - ${smart.alasan}`,
+        // Kode majelisnya kode ketuanya - anggota pertama, sebab susunannya
+        // diurutkan menurut urutan duduk. Inilah yang dicari PHS untuk
+        // menemukan hari sidangnya.
+        majelisKode: pilihan.anggota[0].kode,
+        anggota: pilihan.anggota.map((orang) => ({
+          hakimId: orang.hakimId,
+          kode: orang.kode,
+          nama: orang.nama,
+          aktif: true,
+        })),
         hitungan: hitunganMajelis,
         susunanTerpakai,
+        sebab: `usulan ALETA menurut giliran - Smart Majelis SIPP belum dijalankan untuk perkara ini`,
+        keterangan:
+          `Susunan ini yang paling sedikit menerima perkara tahun ini (${pilihan.perkara} perkara). ` +
+          `Bukan keluaran Smart Majelis SIPP - periksa dahulu bila ada pertimbangan yang tidak diketahui mesin.`,
       };
     }
     const anggota = smart.hakimId.map((id) => {

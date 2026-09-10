@@ -58,8 +58,31 @@ export async function POST(request: NextRequest) {
 
     const badan = (await request.json()) as Record<string, unknown>;
 
-    const jenis = String(badan.jenis || "").toLowerCase();
-    if (!["pmh", "ppp", "pjs", "phs"].includes(jenis)) {
+    /**
+     * ========================================================================
+     * DATA UMUM IKUT - DAN HURUF BESARNYA TIDAK BOLEH HILANG
+     * ========================================================================
+     *
+     * Mesin tulis di bot sudah lama mendukung "dataUmum", tetapi rute ini
+     * hanya menerima empat penetapan. Akibatnya tombol "Tulis ke SIPP" pada
+     * bagian Data Umum SELALU ditolak jenis_tidak_didukung - fitur yang
+     * lengkap di kedua ujungnya dan putus tepat di tengah.
+     *
+     * Yang menyamarkannya: toLowerCase() di baris ini. Bahkan seandainya
+     * "dataUmum" ikut didaftarkan, yang diteruskan ke bot menjadi "dataumum" -
+     * dan bot membandingkannya persis, sehingga tetap tidak dikenali. Karena
+     * itu jenisnya dicocokkan tanpa mempersoalkan besar-kecil huruf, lalu
+     * diteruskan dalam BENTUK BAKUNYA.
+     */
+    const JENIS_BAKU: Record<string, string> = {
+      pmh: "pmh",
+      ppp: "ppp",
+      pjs: "pjs",
+      phs: "phs",
+      dataumum: "dataUmum",
+    };
+    const jenis = JENIS_BAKU[String(badan.jenis || "").toLowerCase()];
+    if (!jenis) {
       return Response.json({ ok: false, alasan: "jenis_tidak_didukung" }, { status: 400 });
     }
 
@@ -88,6 +111,10 @@ export async function POST(request: NextRequest) {
       tanggalSidang: badan.tanggalSidang === undefined ? undefined : String(badan.tanggalSidang),
       ruanganId: badan.ruanganId === undefined ? undefined : Number(badan.ruanganId),
       jamSidang: badan.jamSidang === undefined ? undefined : String(badan.jamSidang),
+      dataUmum:
+        badan.dataUmum && typeof badan.dataUmum === "object"
+          ? (badan.dataUmum as Record<string, unknown>)
+          : undefined,
       olehUsername,
       operator,
       kering,

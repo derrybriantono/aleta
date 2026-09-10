@@ -856,6 +856,245 @@ function nilaiUntukBorang(formulir, usulan, pilihanManual = {}) {
   return nilai;
 }
 
+/**
+ * ============================================================================
+ * NILAI UNTUK MESIN TULIS - ID, BUKAN NAMA
+ * ============================================================================
+ *
+ * nilaiUntukBorang di atas memulangkan NAMA, sebab yang diisinya kotak
+ * formulir SIPP yang memang menerima nama. Mesin tulis langsung tidak: ia
+ * menulis ke perkara_hakim_pn, perkara_panitera_pn, dan perkara_jurusita, dan
+ * ketiganya berkolom id.
+ *
+ * Keduanya sengaja dipisah alih-alih satu fungsi yang memulangkan keduanya.
+ * Nama dan id diambil dari sumber yang sama dan dengan urutan menang yang sama
+ * - susunan yang dipilih mengalahkan pilihan per-orang, dan keduanya
+ * mengalahkan usulan - tetapi yang keliru di antara keduanya berakibat sangat
+ * berbeda. Nama yang salah tertulis di formulir dan terlihat sebelum disimpan;
+ * id yang salah langsung mendarat di basis data atas nama orang lain.
+ */
+function idUntukTulis(jenis, usulan, pilihanManual = {}) {
+  if (jenis === "pmh") {
+    const anggota = (usulan.pmh && usulan.pmh.anggota) || [];
+    const kolam = (usulan.pmh && usulan.pmh.hitungan) || [];
+    const susunanDipilih = susunanTerpilih(usulan.pmh, pilihanManual.majelis);
+
+    const hakimId = [];
+    for (const urutan of [0, 1, 2]) {
+      const dariSusunan = susunanDipilih ? susunanDipilih.anggota[urutan] : null;
+      const dariOrang = pilihanDari(kolam, (pilihanManual.pmhKursi || [])[urutan]);
+      const orang = dariSusunan || dariOrang || anggota[urutan];
+      const id = Number(orang && (orang.hakimId ?? orang.id));
+      if (Number.isFinite(id) && id > 0) hakimId.push(id);
+    }
+
+    // Hakim tunggal memang satu kursi. Yang tidak boleh: majelis yang hanya
+    // terbaca dua kursi - itu susunan yang tidak lengkap, dan menuliskannya
+    // menghasilkan majelis cacat yang harus dibongkar dengan tangan.
+    const bentuk = (usulan.pmh && usulan.pmh.bentuk) || "";
+    if (bentuk === "majelis" && hakimId.length !== 3) return null;
+    if (hakimId.length === 0) return null;
+    return { hakimId };
+  }
+
+  if (jenis === "ppp") {
+    const pp =
+      pilihanDari(usulan.ppp && usulan.ppp.calon, pilihanManual.ppp) ||
+      (usulan.ppp && usulan.ppp.usulan);
+    const id = Number(pp && (pp.paniteraId ?? pp.id));
+    return Number.isFinite(id) && id > 0 ? { petugasId: id } : null;
+  }
+
+  if (jenis === "pjs") {
+    const js =
+      pilihanDari(usulan.pjs && usulan.pjs.calon, pilihanManual.pjs) ||
+      (usulan.pjs && usulan.pjs.usulan);
+    const id = Number(js && (js.jurusitaId ?? js.id));
+    return Number.isFinite(id) && id > 0 ? { petugasId: id } : null;
+  }
+
+  if (jenis === "phs") {
+    const calon = (usulan.phs && usulan.phs.calon) || [];
+    const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);
+    const tanggalSidang =
+      (dipilih && dipilih.tanggal) || (usulan.phs && usulan.phs.usulan) || "";
+    return tanggalSidang ? { tanggalSidang } : null;
+  }
+
+  return null;
+}
+
+/** Urutan yang tidak dapat dibalik - SIPP menolak PPP/PJS sebelum majelisnya ada. */
+const URUTAN_TULIS = ["pmh", "ppp", "pjs", "phs"];
+
+/**
+ * ============================================================================
+ * MENETAPKAN LEWAT ALETA - TANPA BERPINDAH AKUN SIPP
+ * ============================================================================
+ *
+ * Dahulu tombol Kerjakan hanya dapat mengisi BORANG SIPP yang sedang terbuka.
+ * Di halaman yang borangnya tidak terbuka - halaman detail perkara, tempat
+ * panel ini paling sering dibuka - ia menolak dengan "Borang penunjukan tidak
+ * terbuka di halaman ini", dan satu-satunya jalan yang tersisa adalah membuka
+ * empat halaman borang sambil berganti empat akun.
+ *
+ * Padahal mesin tulisnya sudah ada, lengkap, dan sudah dipakai Data Umum: ia
+ * menulis ke perkara, perkara_penetapan, perkara_hakim_pn, perkara_panitera_pn,
+ * perkara_jurusita, perkara_jadwal_sidang, perkara_penetapan_hari_sidang -
+ * BESERTA barisnya di sys_audittrail, sebagaimana SIPP sendiri mencatat ketika
+ * seorang petugas menekan Simpan.
+ *
+ * Yang belum ada cuma jalannya ke sana. Inilah jalannya.
+ *
+ * ============================================================================
+ * KERING DULU, SELALU
+ * ============================================================================
+ *
+ * Tekanan pertama TIDAK menulis apa pun. Ia meminta rencana keempat langkah
+ * dan menggambarkannya: pernyataan apa, ke tabel mana, atas nama siapa.
+ * Menulis menuntut tekanan KEDUA, atas rencana yang sudah terbaca.
+ *
+ * Itu bukan kehati-hatian yang berlebihan. Penetapan yang salah tidak dapat
+ * dibatalkan dengan menekan ulang - ia harus dibongkar dengan tangan dari
+ * beberapa tabel sekaligus, dan jejaknya di sys_audittrail tetap tinggal.
+ *
+ * ============================================================================
+ * BERHENTI PADA KEGAGALAN PERTAMA
+ * ============================================================================
+ *
+ * Urutannya tidak dapat dibalik: SIPP menolak PPP dan PJS selama majelisnya
+ * belum ada, dan PHS menetapkan hari sidang BAGI majelis itu. Kalau PMH gagal,
+ * meneruskan ke PPP hanya menambah kegagalan yang sebabnya sama - dan yang
+ * membacanya akan menyangka ada empat masalah, padahal satu.
+ */
+async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) {
+  const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
+  if (!perkaraId) {
+    kabar.textContent = "Perkara tidak dikenali.";
+    return { ok: false };
+  }
+
+  const pilihanManual = (data && data.pilihanManual) || {};
+  const pejabat = (data && data.pejabatDipilih) || {};
+  const rencana = (data && data.rencana && data.rencana.langkah) || [];
+
+  const hasil = [];
+  for (const jenis of URUTAN_TULIS) {
+    const nilai = idUntukTulis(jenis, usulan, pilihanManual);
+    if (!nilai) {
+      hasil.push({ jenis, ok: false, alasan: "belum ada usulan yang dapat ditulis" });
+      break;
+    }
+
+    // Pejabat penetapnya: pilihan petugas bila ada, kalau tidak yang dipilih
+    // mesin. Yang dikirim USERNAME akun SIPP-nya - itulah yang tercatat pada
+    // kolom pengguna dan pada baris sys_audittrail.
+    const langkah = rencana.find((x) => x.jenis === jenis);
+    const otomatis = langkah && langkah.akun ? langkah.akun.username : "";
+    const olehUsername = pejabat[jenis] || otomatis;
+    if (!olehUsername) {
+      hasil.push({ jenis, ok: false, alasan: "akun pejabat penetapnya belum diketahui" });
+      break;
+    }
+
+    let jawab;
+    try {
+      const respons = await alatAmbil(
+        ALETA_API_TULIS,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jenis,
+            perkaraId,
+            tanggalPenetapan: usulan.tanggalPenetapan || "",
+            ...nilai,
+            olehUsername,
+            kering,
+          }),
+        },
+        kering ? "Menyusun rencana penetapan" : "Menulis penetapan"
+      );
+      const luar = await respons.json();
+      jawab = luar && luar.data ? luar.data : luar;
+    } catch (galat) {
+      hasil.push({ jenis, ok: false, alasan: String((galat && galat.message) || galat) });
+      break;
+    }
+
+    const berhasil = jawab && jawab.ok !== false;
+    hasil.push({
+      jenis,
+      ok: berhasil,
+      alasan: berhasil ? "" : String((jawab && jawab.alasan) || "ditolak"),
+      atasNama: jawab && jawab.atasNama,
+      langkah: (jawab && jawab.langkah) || [],
+      olehUsername,
+    });
+    if (!berhasil) break;
+  }
+
+  gambarHasilTulis(kabar, hasil, kering);
+  return { ok: hasil.every((x) => x.ok), hasil };
+}
+
+/** Menggambarkan hasil keempat langkah - kering maupun sungguhan. */
+function gambarHasilTulis(kabar, hasil, kering) {
+  kabar.textContent = "";
+  const kotak = buatElemen("div", "aleta-tulis-hasil");
+
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tulis-judul",
+      kering
+        ? "Rencana penetapan - belum ada yang ditulis. Periksa, lalu tekan sekali lagi."
+        : "Hasil penetapan"
+    )
+  );
+
+  for (const satu of hasil) {
+    const baris = buatElemen("div", satu.ok ? "aleta-tulis-baris" : "aleta-tulis-baris aleta-tulis-gagal");
+    const atas = satu.atasNama && (satu.atasNama.namaLengkap || satu.atasNama.username);
+    baris.appendChild(
+      buatElemen(
+        "span",
+        "aleta-tulis-jenis",
+        `${satu.jenis.toUpperCase()}${atas ? ` — ${atas}` : ""}`
+      )
+    );
+    baris.appendChild(
+      buatElemen(
+        "span",
+        "aleta-tulis-ket",
+        satu.ok
+          ? kering
+            ? `${(satu.langkah || []).length} pernyataan disiapkan`
+            : "tersimpan"
+          : satu.alasan
+      )
+    );
+    kotak.appendChild(baris);
+  }
+
+  // Yang tidak sempat dijalankan disebut apa adanya. Diamnya membuat orang
+  // menyangka keempatnya sudah dikerjakan padahal berhenti di langkah kedua.
+  const sudah = new Set(hasil.map((x) => x.jenis));
+  const belum = URUTAN_TULIS.filter((x) => !sudah.has(x));
+  if (belum.length > 0) {
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-tulis-ket",
+        `Tidak dilanjutkan: ${belum.map((x) => x.toUpperCase()).join(", ")} - urutannya tidak dapat dibalik.`
+      )
+    );
+  }
+
+  kabar.appendChild(kotak);
+}
+
 /** Baris catatan untuk satu formulir - apa yang diisikan, dan dari mana asalnya. */
 function barisCatatan(formulir, nilai, usulan, pilihanManual = {}) {
   const sebab =
@@ -1551,6 +1790,70 @@ function gambarPenunjukan(isi, data) {
     isi.appendChild(kotakNama);
   }
 
+  // ========================================================================
+  // PEJABAT PENETAPNYA DAPAT DIPINDAH - BAWAANNYA YANG DIPILIH MESIN
+  // ========================================================================
+  //
+  // Aturannya benar hampir selalu: Ketua bila hadir, Wakil bila Ketua
+  // berhalangan, Plh bila keduanya tidak ada. "Hampir" itulah sebabnya
+  // pilihan ini ada - cuti yang belum tercatat, rapat mendadak, atau
+  // penandatanganan yang memang diserahkan kepada Wakil atas kesepakatan
+  // pimpinan. Mesin tidak tahu satu pun dari itu.
+  //
+  // Yang ditawarkan hanya CALON YANG SAH untuk langkah itu. Membuka seluruh
+  // akun akan membuat penetapan dapat tercatat atas nama siapa saja, dan itu
+  // bukan kemudahan melainkan lubang.
+  //
+  // Ketua majelis sengaja tidak punya pilihan: PHS ditandatangani ketua
+  // majelis perkara itu sendiri, dan majelisnya sudah ditetapkan pada langkah
+  // sebelumnya - jadi tidak ada yang perlu dipilih.
+  const langkahBercalon = ((data && data.rencana && data.rencana.langkah) || []).filter(
+    (x) => Array.isArray(x.calon) && x.calon.length > 1
+  );
+
+  if (langkahBercalon.length > 0) {
+    if (!data.pejabatDipilih) data.pejabatDipilih = {};
+
+    const kotakPejabat = buatElemen("div", "aleta-tetap-pejabat");
+    kotakPejabat.appendChild(
+      buatElemen("div", "aleta-tetap-atasnama-judul", "Pejabat yang menetapkan")
+    );
+
+    for (const langkah of langkahBercalon) {
+      const baris = buatElemen("div", "aleta-tetap-pejabat-baris");
+      baris.appendChild(buatElemen("span", "aleta-tetap-pejabat-jenis", langkah.jenis.toUpperCase()));
+
+      const pilih = buatElemen("select", "aleta-pilih");
+      for (const calon of langkah.calon) {
+        const opsi = document.createElement("option");
+        opsi.value = calon.username;
+        // Sebutan jabatannya ikut, sebab nama saja tidak menyatakan kewenangan -
+        // dan yang memilih sedang memutuskan siapa yang menandatangani.
+        opsi.textContent =
+          `${calon.namaLengkap}${calon.sebutan ? ` — ${calon.sebutan}` : ""}` +
+          (calon.otomatis ? " (pilihan ALETA)" : "") +
+          (calon.siap === false ? " — akunnya belum siap" : "");
+        if (calon.otomatis) opsi.selected = true;
+        pilih.appendChild(opsi);
+      }
+
+      // Bawaannya disimpan sejak awal, bukan hanya ketika diubah. Kalau tidak,
+      // yang tidak menyentuh pilihan ini akan mengirim nama kosong - dan yang
+      // kosong ditolak rutenya dengan sebab yang tidak menunjuk ke sini.
+      const otomatis = langkah.calon.find((x) => x.otomatis);
+      if (otomatis) data.pejabatDipilih[langkah.jenis] = otomatis.username;
+
+      pilih.addEventListener("change", () => {
+        data.pejabatDipilih[langkah.jenis] = pilih.value;
+      });
+
+      baris.appendChild(pilih);
+      kotakPejabat.appendChild(baris);
+    }
+
+    isi.appendChild(kotakPejabat);
+  }
+
   // --- tombol Kerjakan ----------------------------------------------------
   const kaki = buatElemen("div", "aleta-tetap-kaki");
   const tombol = buatElemen("button", "aleta-tombol aleta-tombol-mati", "Kerjakan");
@@ -1638,10 +1941,62 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
 
   const terbuka = await borangSedangTerbuka(keadaan.medan || []);
   if (!terbuka.formulir) {
-    // Urutan disebutkan supaya yang membaca tahu ke halaman mana harus pergi,
-    // bukan hanya bahwa halaman ini bukan tempatnya.
+    // ========================================================================
+    // BORANG TIDAK TERBUKA BUKAN LAGI JALAN BUNTU
+    // ========================================================================
+    //
+    // Dahulu di sini panel menyerah: "Borang penunjukan tidak terbuka di
+    // halaman ini." Padahal halaman detail perkara - tempat panel ini paling
+    // sering dibuka - memang tidak punya borang itu, sehingga tombol Kerjakan
+    // praktis tidak pernah dapat ditekan, dan keempat penetapan tetap menuntut
+    // empat kali buka halaman sambil berganti empat akun.
+    //
+    // Sekarang ada jalan kedua: ALETA menuliskannya sendiri. Yang ditulis dan
+    // ke tabel mana persis sama dengan yang dituliskan SIPP ketika seorang
+    // petugas menekan Simpan, sys_audittrail-nya ikut.
+    tombol.textContent = "Tetapkan lewat ALETA";
+    tombol.classList.remove("aleta-tombol-mati");
+    tombol.disabled = false;
     kabar.textContent =
-      "Borang penunjukan tidak terbuka di halaman ini. Urutannya: PMH, PPP, PJS, lalu PHS.";
+      "Borang SIPP tidak terbuka di halaman ini. ALETA dapat menuliskan keempatnya langsung - " +
+      "tekan sekali untuk melihat rencananya lebih dulu.";
+
+    let rencanaSudahDibaca = false;
+    tombol.addEventListener("click", async () => {
+      tombol.disabled = true;
+      const semula = tombol.textContent;
+      tombol.textContent = rencanaSudahDibaca ? "Menulis…" : "Menyusun…";
+
+      const hasil = await tetapkanLewatAleta(
+        tombol,
+        kabar,
+        usulan,
+        data,
+        keadaan,
+        !rencanaSudahDibaca
+      );
+
+      if (!rencanaSudahDibaca && hasil.ok) {
+        // Rencananya terbaca dan seluruhnya siap - barulah tekanan berikutnya
+        // menulis. Rencana yang sebagian gagal TIDAK membuka jalan itu.
+        rencanaSudahDibaca = true;
+        tombol.textContent = "Tulis ke SIPP sekarang";
+        tombol.disabled = false;
+        return;
+      }
+
+      if (!rencanaSudahDibaca) {
+        // Gagal pada uji kering: tetap dapat dicoba lagi sesudah dibetulkan.
+        tombol.textContent = semula;
+        tombol.disabled = false;
+        return;
+      }
+
+      // Sesudah benar-benar menulis, tombolnya TIDAK dihidupkan lagi. Menekan
+      // kedua kalinya akan menuliskan penetapan yang sama untuk kedua kalinya,
+      // dan membongkarnya menuntut tangan.
+      tombol.textContent = hasil.ok ? "Sudah ditetapkan" : "Berhenti - periksa sebabnya";
+    });
     return;
   }
 

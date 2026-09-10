@@ -774,6 +774,9 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       hakimId: Array.isArray(badan.hakimId) ? badan.hakimId : [],
       // PPP dan PJS
       petugasId: badan.petugasId,
+      // Data Umum - isian yang akan dituliskan. Tanpa baris ini rencananya
+      // tersusun KOSONG, dan tulisan kosong tetap dilaporkan berhasil.
+      dataUmum: badan.dataUmum || {},
       // PHS
       tanggalSidang: String(badan.tanggalSidang || ""),
       ruanganId: badan.ruanganId,

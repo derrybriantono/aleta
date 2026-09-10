@@ -2237,6 +2237,8 @@ export async function kirimPenetapanTulisGateway(payload: {
   tanggalSidang?: string;
   ruanganId?: number;
   jamSidang?: string;
+  /** Isian Data Umum - hanya dipakai jenis dataUmum. */
+  dataUmum?: Record<string, unknown>;
   olehUsername: string;
   operator: string;
   kering: boolean;

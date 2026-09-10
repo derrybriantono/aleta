@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.14.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.14.0 - Lima Layar yang Rusak Diam-diam";
+export const APP_VERSION = "2.15.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.15.0 - Penetapan Tanpa Berpindah Akun";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,39 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.15.0",
+    title: "ALETA Judicia v2.15.0 - Penetapan Tanpa Berpindah Akun",
+    date: "2026-09-10",
+    status: "Operasional",
+    summary:
+      "Tombol Kerjakan pada papan penunjukan praktis tidak pernah dapat ditekan di halaman detail perkara - halaman yang paling sering dibuka - sebab ia hanya bisa mengisi BORANG SIPP, dan borang itu memang tidak ada di sana. Mesin yang menulis penetapan langsung sudah lengkap sejak lama; yang tidak pernah ada adalah jalannya ke sana.",
+    added: [
+      "Tetapkan lewat ALETA - PMH, PPP, PJS, dan PHS dituliskan langsung ke SIPP secara berurutan, tanpa membuka empat halaman borang dan tanpa berganti empat akun. Yang ditulis dan ke tabel mana persis sama dengan yang dituliskan SIPP ketika petugas menekan Simpan, baris sys_audittrail-nya ikut.",
+      "Tekanan pertama KERING: rencana keempat langkah digambarkan lebih dulu - pernyataan apa, ke tabel mana, atas nama siapa - tanpa satu pun dijalankan. Menulis menuntut tekanan kedua atas rencana yang sudah terbaca.",
+      "Pilihan pejabat yang menetapkan, dengan pilihan ALETA sudah tersorot dan ditandai. Yang ditawarkan hanya calon yang sah untuk langkah itu; ketua majelis sengaja tidak punya pilihan, sebab PHS ditandatangani ketua majelis perkara itu sendiri.",
+    ],
+    changed: [
+      "Usulan PMH untuk perkara bermajelis tidak lagi menunggu Smart Majelis SIPP. Bila tabelnya belum diisi, ALETA mengusulkan dari susunan majelis yang benar-benar dipakai tahun ini dan memilih yang paling sedikit menerima perkara - asas yang sama dengan giliran panitera pengganti dan juru sita. Bila Smart Majelis sudah jalan, keputusan SIPP tetap yang berlaku.",
+      "Ekstensi SIPP naik ke 1.91.0.",
+    ],
+    fixed: [
+      "PHS berbunyi \"menunggu majelisnya ditentukan lebih dulu\" pada perkara yang majelisnya memang belum diusulkan Smart Majelis. Satu tabel SIPP yang belum diisi mematikan DUA penetapan sekaligus; keduanya kini terbuka dari satu perbaikan.",
+      "Tombol Tulis ke SIPP pada Data Umum selalu ditolak jenis_tidak_didukung. Putus di dua tempat: rute portal tidak mendaftarkan jenisnya - dan mengecilkan hurufnya sehingga dataUmum menjadi dataumum yang tidak dikenali bot - sementara kedua rute tidak meneruskan muatannya sama sekali, sehingga seandainya lolos pun yang tertulis rencana kosong yang tetap dilaporkan berhasil.",
+      "Uji dari ujung ke ujung tidak pernah dapat berjalan: medan login berganti nama tanpa specnya ikut, alamat ujinya berbeda asal dari alamat otentikasi, basis datanya memakai Postgres pengembangan yang kebetulan menyala, dan cetakan dalam memori yang dipulihkan berumur empat bulan. Kini memakai basis data terasing yang selalu bersih.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Penetapan yang dituliskan ALETA tercatat atas nama PEJABAT, sementara nama operator yang menekan tombolnya tersimpan pada baris sys_audittrail. Itu satu-satunya yang membedakan jalur ini dari menandatangani atas nama orang lain - operatornya diambil dari sesi ALETA, tidak pernah dari peramban.",
+      "Menulis berhenti pada kegagalan pertama, dan yang tidak dilanjutkan disebutkan. Urutan PMH, PPP, PJS, PHS tidak dapat dibalik: SIPP menolak PPP dan PJS selama majelisnya belum ada.",
+      "Majelis yang hanya terbaca dua kursi DITOLAK, bukan ditulis sebagian - majelis cacat harus dibongkar dengan tangan dari beberapa tabel dan jejaknya tetap tinggal.",
+    ],
+    knownLimitations: [
+      "Jalur tulis langsung belum pernah dijalankan atas perkara sungguhan. Jalankan sekali pada satu perkara, baca rencana keringnya sampai habis, lalu periksa hasilnya di SIPP sebelum memakainya untuk perkara lain.",
+      "Usulan majelis dari ALETA memakai giliran, bukan rasio yang tersimpan pada ref_majelis_tetap. Kompetensi majelis juga belum menyaring - susunan yang diusulkan diambil dari yang benar-benar dipakai tahun ini, dan pada pengadilan yang majelisnya berkompetensi khusus itu belum tentu tepat.",
+      "Penetapan yang sudah tertulis tidak dapat dibatalkan dari panel. Membetulkannya menuntut tangan, dari beberapa tabel sekaligus.",
+    ],
+  },
   {
     version: "2.14.0",
     title: "ALETA Judicia v2.14.0 - Lima Layar yang Rusak Diam-diam",

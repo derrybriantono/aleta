@@ -199,7 +199,9 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     const lewatAlat = isi.split("await alatAmbil(").length - 1;
     const mentah = isi.split("await fetch(").length - 1;
 
-    expect(lewatAlat).toBe(11);
+    // 12 sejak jalur "Tetapkan lewat ALETA" ditambahkan - satu permintaan
+    // baru yang berbicara ke petugas, dan karena itu wajib melewati alatAmbil.
+    expect(lewatAlat).toBe(12);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
