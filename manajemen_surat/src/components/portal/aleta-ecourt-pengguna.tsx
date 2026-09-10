@@ -568,6 +568,30 @@ export function AletaEcourtPengguna() {
             <Button size="sm" disabled={mengunduh} onClick={() => void unduhEkstensi()}>
               {mengunduh ? "Menyiapkan…" : "Unduh Ekstensi"}
             </Button>
+
+            {/* ==============================================================
+                JALAN PINTAS KE PENGATURAN KEWENANGANNYA
+
+                Siapa boleh memakai bagian mana dari ekstensi diatur per PERAN,
+                dan pengaturannya ada di halaman Integrasi e-Court - tiga
+                gulungan di bawah, di tengah tumpukan kartu.
+
+                Selama tidak ada tautan dari sini, yang memasang ekstensi lalu
+                mendapati sebagian menunya mati tidak punya cara menemukan
+                sebabnya: halaman ini menerangkan APA yang dikerjakan ekstensi,
+                tanpa menyebut bahwa sebagiannya dapat dimatikan per peran.
+
+                Hanya digambar bagi yang memang dapat membukanya. Tombol yang
+                berakhir pada penolakan mengajari orang bahwa aplikasinya
+                rusak, padahal ia sedang bekerja sebagaimana mestinya.
+                ============================================================== */}
+            {bolehMengatur ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href="/admin/aleta-ecourt#pengaturan-ekstensi">
+                  Atur kewenangan ekstensi
+                </Link>
+              </Button>
+            ) : null}
             {versiEkstensi ? (
               <p className="text-xs text-muted-foreground">
                 Yang tersedia sekarang <strong className="text-foreground">{versiEkstensi}</strong>.

@@ -324,7 +324,13 @@ export function AletaEcourtAdmin() {
           ditengok daripada daftar kewenangan. */}
       <AletaEcourtPanggilanPengaturan />
 
-      <AletaEcourtAksesPeran />
+      {/* Jangkar untuk tombol "Atur kewenangan ekstensi" di halaman Ekstensi
+          SIPP. Tanpa id ini tombolnya hanya membuka halaman admin dari atas,
+          dan pengaturan yang dicari ada di tengah tumpukan kartu - petugas
+          menggulir mencari sesuatu yang tidak ia tahu bentuknya. */}
+      <div id="pengaturan-ekstensi" className="scroll-mt-24">
+        <AletaEcourtAksesPeran />
+      </div>
 
       <AletaBotEcourtPengaturan />
     </div>

@@ -731,6 +731,215 @@ const SAMBUNGAN = {
     catatan:
       "Butir ini tidak menyebutkan batas hari. Batas tiga puluh hari sesudah minutasi yang dipakai di sini adalah pilihan yang belum disahkan siapa pun, dan harus ditetapkan sebelum angkanya dipakai membina.",
   },
+  // ==========================================================================
+  // SEBARAN BAB 9 - DINILAI DARI KELENGKAPAN BAHANNYA
+  // ==========================================================================
+  //
+  // Sebaran tidak punya benar atau salah; yang dapat dinilai APAKAH BAHANNYA
+  // ADA. Sebaran pendidikan yang disusun dari data yang tiga perempat kosong
+  // bukan gambaran keadaan - ia gambaran atas seperempat perkara yang
+  // kebetulan diisi, disajikan seolah gambaran seluruhnya.
+  //
+  // Sebarannya sendiri tetap dipulangkan pada baris bukti, lengkap dengan
+  // berapa banyak yang tidak terhitung.
+  ST05: {
+    kunci: "sebaranPendidikan",
+    sifat: "sebagian",
+    catatan:
+      "Yang dinilai KETERISIAN ruas pendidikan, bukan bentuk sebarannya. Sebaran yang disusun dari ruas yang sebagian besar kosong bukan gambaran keadaan - diukur pada satu basis data SIPP: 76 terisi dari 878 baris pihak dalam setahun.",
+  },
+  ST06: {
+    kunci: "sebaranPekerjaan",
+    sifat: "sebagian",
+    catatan:
+      "Keterisiannya terukur. Pengelompokan kata pekerjaannya - ruas teks bebas - belum dikerjakan, dan tanpa itu sebarannya masih berupa daftar tulisan yang berbeda-beda ejaannya.",
+  },
+  ST07: {
+    kunci: "sebaranUmur",
+    sifat: "sebagian",
+    catatan:
+      "Keterisian tanggal lahirnya terukur. Pengelompokan umurnya belum - batas kelompoknya keputusan pimpinan, bukan angka yang dapat dikarang mesin.",
+  },
+  ST19: {
+    kunci: "kelengkapanNikPihak",
+    sifat: "sebagian",
+    catatan:
+      "Keterisian nomor induk kependudukannya terukur - itulah dasar penelusuran riwayat. Penelusuran riwayatnya sendiri belum dikerjakan.",
+  },
+  // ==========================================================================
+  // BAB 5 - EMPAT BELAS REGISTER KEPANITERAAN
+  // ==========================================================================
+  //
+  // Katalognya menyebut satu batas dengan tegas: bentuk register tidak diubah.
+  // Yang dinilai karena itu bukan susunan kolomnya, melainkan apakah baris yang
+  // seharusnya tercatat memang tercatat lengkap - register yang bentuknya
+  // sempurna tetapi separuh kolomnya kosong tetap tidak dapat dipakai
+  // memeriksa apa pun.
+  //
+  // SIPP tidak punya tabel register: register di sana TURUNAN, dicetak dari
+  // tabel perkara dan tabel tahapannya. Tiap butir di bawah karena itu
+  // dipetakan ke tabel sumbernya yang sungguhan.
+  RG01: {
+    kunci: "registerIndukGugatan",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG02: {
+    kunci: "registerIndukPermohonan",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG03: {
+    kunci: "registerBanding",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG04: {
+    kunci: "registerKasasi",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG05: {
+    kunci: "registerPeninjauanKembali",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG06: {
+    kunci: "registerMediasi",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG07: {
+    kunci: "registerEksekusi",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG08: {
+    kunci: "registerPenyitaan",
+    sifat: "sebagian",
+    catatan:
+      "Tabel perkara_sita tidak ada pada SIPP satker ini, sehingga registernya tidak menghasilkan baris sama sekali - dan sengaja TIDAK dinilai nol. Nol berarti menuduh pengadilan tidak mencatat sesuatu yang memang tidak punya tempat penyimpanan. Butir ini hidup sendiri begitu SIPP satker lain punya tabelnya.",
+  },
+  RG09: {
+    kunci: "registerKonsinyasi",
+    sifat: "sebagian",
+    catatan:
+      "Tabel perkara_konsinyasi tidak ada pada SIPP satker ini, sehingga registernya tidak menghasilkan baris sama sekali - dan sengaja TIDAK dinilai nol. Nol berarti menuduh pengadilan tidak mencatat sesuatu yang memang tidak punya tempat penyimpanan. Butir ini hidup sendiri begitu SIPP satker lain punya tabelnya.",
+  },
+  RG10: {
+    kunci: "registerAktaCerai",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG11: {
+    kunci: "registerPembebasanBiaya",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG12: {
+    kunci: "registerGugatanSederhana",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG13: {
+    kunci: "registerEkonomiSyariah",
+    sifat: "penuh",
+    catatan: "",
+  },
+  RG14: {
+    kunci: "registerArsipBerkas",
+    sifat: "penuh",
+    catatan: "",
+  },
+  // ==========================================================================
+  // BAB 4 - DUA BELAS LIPA YANG SUMBERNYA MEMANG ADA DI SIPP
+  // ==========================================================================
+  //
+  // Sepuluh LIPA lainnya sengaja TIDAK disambungkan. Datanya tidak ada di
+  // SIPP dan tidak ada di mana pun yang dapat dibaca ALETA - diperiksa pada
+  // basis datanya: tidak satu pun tabel untuk Posbakum, pengaduan, eksaminasi
+  // putusan, sidang keliling, stok blangko akta cerai, maupun realisasi DIPA.
+  //
+  // Mengarang angkanya jauh lebih buruk daripada membiarkannya kosong. Laporan
+  // LIPA dikirim ke Pengadilan Tinggi Agama dan dipakai menilai satuan kerja;
+  // angka yang tersusun dari sumber yang tidak ada akan dipertanggungjawabkan
+  // seseorang yang tidak pernah tahu dari mana angkanya datang.
+  //
+  // Yang dinilai KELENGKAPAN BAHANNYA, bukan angka laporannya. ALETA tidak
+  // menyusun LIPA - itu pekerjaan operator laporan, dan bentuk laporannya
+  // tidak diubah.
+  LP01: {
+    kunci: "lipaKeadaanPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP02: {
+    kunci: "lipaPerkaraBanding",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP03: {
+    kunci: "lipaPerkaraKasasi",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP04: {
+    kunci: "lipaPerkaraPeninjauanKembali",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP05: {
+    kunci: "lipaEksekusi",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP06: {
+    kunci: "lipaKegiatanHakim",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP07: {
+    kunci: "lipaKeuanganPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP12: {
+    kunci: "lipaPelaksanaanMediasi",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP13: {
+    kunci: "lipaPenerbitanAktaCerai",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP15: {
+    kunci: "lipaPembebasanBiaya",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP17: {
+    kunci: "lipaBiayaProses",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
+  LP22: {
+    kunci: "lipaDispensasiKawin",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
