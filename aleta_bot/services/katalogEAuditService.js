@@ -996,6 +996,83 @@ const SAMBUNGAN = {
     catatan:
       "Tiga urutan yang mustahil sudah diperiksa. Urutan tahapan persidangan yang lebih rinci - panggilan, sidang, penundaan - belum.",
   },
+  // ==========================================================================
+  // BAB 6 - BEBAN KERJA DAN PEMERATAAN
+  // ==========================================================================
+  //
+  // Seluruh sepuluh butirnya tersambung, dan seluruhnya SEBAGIAN. Satu sebab
+  // yang sama menahan hampir semuanya: SIPP tidak menyimpan BOBOT perkara.
+  //
+  // Beban kerja yang menghitung perkara sebagai butiran yang sama besarnya
+  // akan selalu keliru ke arah yang sama - memihak majelis yang memegang
+  // banyak perkara ringan, dan merugikan majelis yang memegang sedikit
+  // perkara berat. Itu bukan kesalahan yang dapat diperbaiki dengan ambang
+  // yang lebih baik; yang memperbaikinya penetapan bobot oleh pimpinan.
+  //
+  // Dua butir terakhir (simulasi dan proyeksi) meminta ALETA menebak masa
+  // depan. Yang dinilai keduanya kesiapan BAHAN tebakannya - sebab tebakan
+  // tidak dapat diaudit, dan menyebutnya penuh berarti menjanjikan angka yang
+  // tidak pernah dihitung.
+  BK01: {
+    kunci: "bebanMajelisHakim",
+    sifat: "sebagian",
+    catatan:
+      "Penugasan dan tanggalnya terukur - 431 dari 431 perkara dapat dibebankan. Yang BELUM: bobot tiap perkara. Sepuluh cerai gugat verstek dan sepuluh gugatan waris terhitung sama besarnya di sini, dan itu tidak benar.",
+  },
+  BK02: {
+    kunci: "bebanPaniteraPengganti",
+    sifat: "sebagian",
+    catatan:
+      "Penugasan dan tanggalnya terukur. Bobot tiap perkara belum diperhitungkan, sama seperti beban majelis.",
+  },
+  BK03: {
+    kunci: "bebanPemanggilanJurusita",
+    sifat: "sebagian",
+    catatan:
+      "Jumlah dan kelengkapan pelaksanaan relaas terukur - 1.293 dari 1.298 lengkap. Sebaran WILAYAHNYA belum: alamat pihak ada pada tabel pihak, tetapi jarak tempuhnya - yang sesungguhnya membedakan beban satu jurusita dari yang lain - tidak tercatat di mana pun.",
+  },
+  BK04: {
+    kunci: "pemerataanPembagianPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Selisih terhadap bagian rata dan koefisien Gini terukur. Ambang seperempat dipilih sementara dan belum ditetapkan pimpinan; pembagian yang memperhitungkan bobot perkara juga belum.",
+  },
+  BK05: {
+    kunci: "kepadatanJadwalSidang",
+    sifat: "sebagian",
+    catatan:
+      "Kepadatan hari-ruang terukur - enam dari 153 melampaui ambang. Ambang lima belas persidangan dipilih sementara: kapasitas sesungguhnya bergantung pada agenda sidangnya, dan agenda tidak sama beratnya.",
+  },
+  BK06: {
+    kunci: "pemanfaatanRuangSidang",
+    sifat: "sebagian",
+    catatan:
+      "Selisih ruang tersibuk dan tersepi pada hari yang sama terukur. Hanya hari yang memakai lebih dari satu ruang yang dapat dinilai - pada satuan kerja yang sehari-hari memakai satu ruang saja, butir ini hampir tidak berpenyebut.",
+  },
+  BK07: {
+    kunci: "bebanTidakTercatatStatistik",
+    sifat: "sebagian",
+    catatan:
+      "Delegasi masuk dan keluar terukur - 249 baris, seluruhnya lengkap. Beban tidak tercatat yang LAIN belum: permohonan yang ditolak sebelum register, konsultasi meja informasi, dan pelayanan yang tidak berujung perkara tidak punya tempat penyimpanan pada SIPP.",
+  },
+  BK08: {
+    kunci: "kesiapanBahanSimulasiBeban",
+    sifat: "sebagian",
+    catatan:
+      "Yang dinilai kesiapan BAHAN simulasinya - laju masuk dan laju keluar tiap bulan - bukan simulasinya. ALETA tidak menjalankan model antrean dan tidak menyimpulkan apa yang akan terjadi bila beban berubah; menyebut butir ini penuh berarti menjanjikan angka yang tidak pernah dihitung.",
+  },
+  BK09: {
+    kunci: "sisaPerkaraMasihBergerak",
+    sifat: "sebagian",
+    catatan:
+      "Yang dinilai keadaan sisanya sekarang - 43 sisa, seluruhnya masih berjadwal - bukan proyeksinya. Proyeksi adalah tebakan, dan tebakan tidak dapat diaudit.",
+  },
+  BK10: {
+    kunci: "kewajaranPerubahanBebanBulanan",
+    sifat: "sebagian",
+    catatan:
+      "Kewajaran perubahan antar bulan terukur - satu dari tujuh perbandingan tertangkap melonjak tiga kali lipat. Perbandingan terhadap bulan yang sama TAHUN LALU belum, sebab rentang penilaian yang dijalankan tidak selalu memuat tahun sebelumnya.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",

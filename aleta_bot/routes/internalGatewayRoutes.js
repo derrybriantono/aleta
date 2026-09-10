@@ -71,6 +71,7 @@ const penilaianRegisterService = require("../services/penilaianRegisterService")
 const penilaianLaporanService = require("../services/penilaianLaporanService");
 const penilaianDipa04Service = require("../services/penilaianDipa04Service");
 const penilaianIntegritasWaktuService = require("../services/penilaianIntegritasWaktuService");
+const penilaianBebanKerjaService = require("../services/penilaianBebanKerjaService");
 const berkasPengawasanService = require("../services/berkasPengawasanService");
 const alatPenilaianService = require("../services/alatPenilaianService");
 const penilaianTahapanService = require("../services/penilaianTahapanService");
@@ -1763,6 +1764,7 @@ router.get("/penilaian/daftar", requireInternalToken, async (req, res) => {
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -1804,6 +1806,7 @@ router.get("/penilaian/jalankan", requireInternalToken, async (req, res) => {
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -1868,6 +1871,7 @@ router.get("/e-audit/katalog", requireInternalToken, async (req, res) => {
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -1949,6 +1953,7 @@ router.get("/e-audit/rapor-aparatur", requireInternalToken, async (req, res) => 
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     raporAparaturService.daftarkanSemua();
 
     const kunci = String(req.query.kunci || "").trim();
@@ -2088,6 +2093,7 @@ router.get("/e-audit/berkas", requireInternalToken, async (req, res) => {
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
 
@@ -2124,6 +2130,7 @@ router.get("/e-audit/rapor", requireInternalToken, async (req, res) => {
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
@@ -2243,6 +2250,7 @@ router.get("/e-audit/butir", requireInternalToken, async (req, res) => {
     penilaianLaporanService.daftarkanSemua();
     penilaianDipa04Service.daftarkanSemua();
     penilaianIntegritasWaktuService.daftarkanSemua();
+    penilaianBebanKerjaService.daftarkanSemua();
     penilaianIntegritasService.daftarkanSemua();
     penilaianSisaPanjarService.daftarkanSemua();
     sebaranPerkaraService.daftarkanSemua();
