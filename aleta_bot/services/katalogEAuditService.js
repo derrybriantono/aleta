@@ -940,6 +940,68 @@ const SAMBUNGAN = {
     catatan:
       "Kelengkapan bahannya di SIPP terukur. Penyusunan angka laporannya sendiri tetap di tangan operator laporan - bentuk LIPA tidak diubah, dan ALETA tidak mengirimkannya.",
   },
+  // ==========================================================================
+  // BAB 4 LANJUTAN - DIPA 04 DAN PENYANDINGNYA
+  // ==========================================================================
+  //
+  // Datanya BUKAN di SIPP melainkan di aplikasi pendukung laporan yang dipakai
+  // satuan kerja berdampingan dengannya. Tabelnya diperiksa ada-tidaknya lebih
+  // dahulu, dan butir yang tabelnya tidak ada tidak dinilai nol - ia menyala
+  // sendiri di satuan kerja yang aplikasinya memang terpasang.
+  LP14: {
+    kunci: "lipaSidangLuarGedung",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan baris bulanan laporannya terukur. Realisasi terhadap pagunya belum dihitung.",
+  },
+  LP16: {
+    kunci: "lipaPosBantuanHukum",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan baris bulanan laporannya terukur. Realisasi terhadap pagunya belum dihitung.",
+  },
+  LP21: {
+    kunci: "lipaPelayananTerpadu",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan baris bulanan laporannya terukur. Realisasi terhadap pagunya belum dihitung.",
+  },
+  LP24: {
+    kunci: "sandingProdeoLaporanSipp",
+    sifat: "sebagian",
+    catatan:
+      "Menyandingkan angka laporan prodeo dengan hitungan SIPP bulan demi bulan. Aspek validitas lainnya - dua puluh satu laporan yang lain - belum disandingkan.",
+  },
+  // ==========================================================================
+  // BAB 2 - INTEGRITAS WAKTU PENGINPUTAN
+  // ==========================================================================
+  //
+  // Ketiganya PERTANYAAN, bukan tuduhan. Penginputan malam hari bukan
+  // pelanggaran, dan puluhan perkara dalam satu waktu duduk juga bukan -
+  // penyusulan input setelah SIPP mati seharian justru hal yang benar.
+  //
+  // Yang dikatakan angka-angka ini satu: tanggal pada SIPP tidak selalu
+  // tanggal peristiwanya. Itu penting karena SELURUH penilaian ketaatan
+  // tenggang waktu bersandar pada tanggal-tanggal itu, dan pengadilan yang
+  // seluruhnya menginput susulan akan tampak patuh sempurna pada tiap butir.
+  IN04: {
+    kunci: "penginputanLuarJamKerja",
+    sifat: "sebagian",
+    catatan:
+      "Terukur dari jejak waktu SIPP. Yang menyimpulkan niat harus manusia yang melihat keadaannya - butir ini tidak menyimpulkan apa pun.",
+  },
+  IN03: {
+    kunci: "kewajaranWaktuPenginputan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur per jam per petugas. Ambang dua puluh baris per jam dipilih sementara dan belum ditetapkan pimpinan.",
+  },
+  IN05: {
+    kunci: "urutanTahapanPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Tiga urutan yang mustahil sudah diperiksa. Urutan tahapan persidangan yang lebih rinci - panggilan, sidang, penundaan - belum.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",

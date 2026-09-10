@@ -8,11 +8,23 @@
  * Bab 4 katalog meminta dua puluh dua laporan LIPA beserta tiga aspek
  * penilaiannya. Dua belas di antaranya bersumber SIPP dan dikerjakan di sini.
  *
- * Sepuluh sisanya TIDAK dikerjakan, dan sebabnya satu: datanya tidak ada di
- * SIPP, dan tidak ada di mana pun yang dapat dibaca ALETA. Diperiksa pada
- * basis data yang ada di tangan - tidak ada satu pun tabel untuk Posbakum,
- * pengaduan, eksaminasi putusan, sidang keliling, stok blangko akta cerai,
- * maupun realisasi DIPA.
+ * ============================================================================
+ * KOREKSI - "TIDAK ADA DI MANA PUN" ITU KELIRU
+ * ============================================================================
+ *
+ * Berkas ini sempat menyatakan bahwa data LIPA 14, 15, 16, 18, 19, dan 21
+ * "tidak ada di SIPP, dan tidak ada di mana pun yang dapat dibaca ALETA".
+ * Bagian pertamanya benar; bagian keduanya SALAH, dan salahnya sepenuhnya
+ * karena saya hanya memeriksa SIPP lalu menyimpulkan tentang seluruh dunia.
+ *
+ * Datanya ada di aplikasi pendukung laporan yang dipakai satuan kerja
+ * berdampingan dengan SIPP - lengkap dengan tabelnya sendiri untuk sidang di
+ * luar gedung, prodeo, Pos Bantuan Hukum, dan pelayanan terpadu. Keempatnya
+ * kini dikerjakan di penilaianDipa04Service, beserta satu butir yang
+ * menyandingkan angka laporan prodeo dengan angka SIPP.
+ *
+ * Yang benar-benar belum punya sumber tinggal: eksaminasi putusan, stok
+ * blangko akta cerai, penanganan pengaduan, dan keuangan titipan pihak ketiga.
  *
  * Mengarang angkanya jauh lebih buruk daripada membiarkannya kosong. Laporan
  * LIPA dikirim ke Pengadilan Tinggi Agama dan dipakai menilai satuan kerja;
