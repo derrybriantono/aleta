@@ -1517,6 +1517,89 @@ const SAMBUNGAN = {
     catatan:
       "Terukur - 21 dari 431 perkara terpilih untuk diperiksa manual. BACA TERBALIK: daftar yang TIDAK memenuhi adalah daftar kerjanya, bukan daftar kesalahan. Bobot tiap penanda risiko dipilih sementara dan belum ditetapkan pimpinan.",
   },
+  // ==========================================================================
+  // SISA BAB 2 DAN BAB 3 - JEJAK APLIKASI DAN KETAATAN PENGINPUTAN
+  // ==========================================================================
+  //
+  // SELURUHNYA PERTANYAAN, TIDAK SATU PUN TUDUHAN. Bahannya - siapa mengetik
+  // apa dan kapan - adalah bahan yang paling mudah dipakai menyalahkan orang.
+  // Relaas yang diinput seminggu sesudah dilaksanakan bukan relaas palsu, dan
+  // putusan yang diperbarui sesudah berkekuatan hukum tetap bukan pemalsuan.
+  //
+  // Yang dikatakan angka-angka ini satu saja: tanggal pada SIPP tidak selalu
+  // tanggal peristiwanya. Yang menyimpulkan harus manusia yang membuka
+  // berkasnya.
+  //
+  // ARTI dihadiri_oleh DIBACA DARI BORANG SIPP, BUKAN DITEBAK. Nilai 1
+  // berarti SEMUA PIHAK hadir, 2 berarti penggugat saja. Sempat ditulis
+  // sebaliknya - dengan sangkaan angka lebih besar berarti lebih banyak pihak
+  // - dan kaidah terbalik itu menuduh 282 perkara melanggar PERMA 1/2016
+  // sebelum tertangkap.
+  IN02: {
+    kunci: "putusanDiubahSesudahBht",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 214 dari 228 putusan berkekuatan hukum tetap tidak diperbarui sesudahnya; 14 diperbarui, yang terjauh 55 hari sesudahnya. PERTANYAAN, bukan tuduhan: mungkin perbaikan salah ketik yang memang perlu. Yang BELUM: APA yang berubah - sys_audittrail mencatat perubahannya, tetapi penyandingannya dengan baris putusan belum dibangun.",
+  },
+  IN06: {
+    kunci: "rekamJejakPenginputanAparatur",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan tiap baris audit terukur. Yang BELUM: penyandingan jejak audit dengan perubahan yang benar-benar terjadi pada tabel tahapan - audit trail mencatat apa yang dilaporkan aplikasi, dan perubahan lewat basis data langsung tidak akan muncul di sana sama sekali.",
+  },
+  IN10: {
+    kunci: "cocokSippArsipEcourt",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 45 dari 45 perkara e-Court punya pihak tersalin dan nomor e-filing tunggal. Yang BELUM: arah sebaliknya, yaitu perkara yang ada pada e-Court pusat tetapi TIDAK pernah sampai ke SIPP. Itu hanya dapat diketahui dari sisi e-Court, bukan dari sini.",
+  },
+  IN14: {
+    kunci: "jejakAuditAplikasi",
+    sifat: "sebagian",
+    catatan:
+      "Cakupan jejak audit terukur - sepuluh dari sepuluh tabel tahapan terpantau. Daftar sepuluh tabelnya ditetapkan di dalam kode; SIPP punya ratusan tabel, dan penetapan mana yang WAJIB terpantau belum dilakukan pimpinan.",
+  },
+  KT07: {
+    kunci: "ketaatanInputRelaas",
+    sifat: "sebagian",
+    catatan:
+      "Terukur, dan hasilnya 698 dari 1.293 - hampir separuh relaas diinput lebih dari tiga hari sesudah dilaksanakan. Ini PERTANYAAN: jurusita yang berangkat ke tiga kecamatan sehari memang baru kembali lusa. Tetapi seluruh penilaian ketaatan tenggang pemanggilan bersandar pada tanggal relaas, dan pada 595 baris tanggal itu diketik dari ingatan. Tenggang tiga hari dipilih sementara dan belum ditetapkan pimpinan.",
+  },
+  KT08: {
+    kunci: "ketaatanInputMediasi",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 61 dari 65 keputusan mediasi diinput dalam tiga hari. Perkara yang TIDAK wajib mediasi tidak masuk populasi sama sekali. Yang BELUM: pembedaan antara keterlambatan mediator menyerahkan laporan dan keterlambatan kepaniteraan mengetiknya - keduanya terbaca sama dari sini.",
+  },
+  KT09: {
+    kunci: "ketaatanInputJadwalSidang",
+    sifat: "penuh",
+    catatan: "",
+  },
+  KT13: {
+    kunci: "ketaatanPemberitahuanIsiPutusan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 285 dari 388. Kehadiran dibaca dari kolom dihadiri_oleh pada sidang terakhir, dan artinya diambil dari borang SIPP sendiri: nilai 1 berarti SEMUA PIHAK hadir. Yang BELUM: pemberitahuan kepada pihak TERTENTU - SIPP punya kolom terpisah per pihak, dan penilaian per pihak belum dibangun.",
+  },
+  KT17: {
+    kunci: "ketaatanPublikasiDirektori",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 388 dari 388 putusan terunggah ke direktori dalam tenggangnya. Yang dibaca tanggal unggah pada dirput_dokumen; apakah dokumennya benar-benar terbit dan terbaca publik hanya dapat dipastikan dari Direktori Putusan Mahkamah Agung, bukan dari SIPP.",
+  },
+  KT19: {
+    kunci: "ketaatanSemaPerma",
+    sifat: "sebagian",
+    catatan:
+      "TIGA aturan yang benar-benar dapat diperiksa dari SIPP - PERMA 1/2016, Pasal 149 KHI, dan Pasal 39 UU 1/1974 - dan hasilnya 71 dari 157. Aturan yang tidak berlaku pada sebuah perkara tidak dihitung sama sekali. DAFTARNYA TIDAK LENGKAP: SEMA dan PERMA yang melekat pada peradilan agama jauh lebih banyak, dan menambahnya menuntut naskah resminya dibaca lebih dahulu - bukan diingat.",
+  },
+  KT20: {
+    kunci: "gabunganKetaatanSkDirjen",
+    sifat: "sebagian",
+    catatan:
+      "Gabungan EMPAT butir dari dua puluh sembilan yang disebut SK Dirjen Badilag 048/2024, dan dua keadaan dari tiga - hasilnya 175 dari 431 perkara yang seluruh tahapannya tertib. Angkanya TIDAK BOLEH dilaporkan sebagai nilai SK Dirjen yang utuh sampai dua puluh lima butir sisanya dibangun.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
