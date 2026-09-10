@@ -135,6 +135,19 @@ const TABEL = [
   "perkara_rekonvensi",
   // Data Umum: tanggal nikah, kutipan akta, dan KUA tempat menikah.
   "perkara_data_pernikahan",
+  // Kuasa hukum. Tertinggal dari daftar ini sampai butir Pos Bantuan Hukum
+  // diukur ulang: LP16 memanggil tabelAda("perkara_pengacara"), dijawab
+  // "tidak ada" walau tabelnya berisi 22 baris, lalu memulangkan daftar
+  // KOSONG - penilaian tanpa penyebut, yang pada papan terbaca persis sama
+  // dengan "belum dibangun". Tidak ada galat, tidak ada peringatan, dan
+  // tidak ada yang menyadarinya selama beberapa rilis.
+  //
+  // Ini jebakan bawaan daftar ini: yang tidak tercantum SELALU dijawab tidak
+  // ada. Siapa pun yang menulis kueri atas tabel SIPP baru harus menambahkan
+  // namanya ke sini pada saat yang sama - bukan sesudah hasilnya terlihat
+  // aneh, sebab hasilnya tidak akan terlihat aneh.
+  "perkara_pengacara",
+  "pihak_pengacara",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */

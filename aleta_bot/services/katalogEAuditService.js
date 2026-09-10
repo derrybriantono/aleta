@@ -1178,6 +1178,69 @@ const SAMBUNGAN = {
     catatan:
       "Urutan maju tujuh peristiwa terukur - 429 dari 431, dan dua yang tertangkap masuk arsip sebelum berkekuatan hukum tetap. Yang BELUM: kronologi LENGKAP yang katalog minta - deret waktu yang memuat tiap panggilan, tiap sidang, dan tiap penundaan dalam satu tampilan.",
   },
+  // ==========================================================================
+  // BAB 11 - PELAYANAN KEPADA PENCARI KEADILAN
+  // ==========================================================================
+  //
+  // Tujuh dari dua belas. Lima sisanya diperiksa pada basis datanya:
+  //
+  //   LY03 tabel antrian pada SIPP adalah antrian RUANG SIDANG - nomor
+  //        antrian per jadwal sidang, 34 baris seluruhnya - bukan antrian
+  //        meja pelayanan. Memakainya berarti menjawab pertanyaan yang sama
+  //        sekali lain dengan angka yang terbaca meyakinkan.
+  //   LY04 tidak ada tabel permohonan informasi.
+  //   LY05 tidak ada tabel pengaduan.
+  //   LY10 katalog sendiri menyebutnya diisi manual dari hasil survei.
+  //   LY12 tabel perkara_pemberitahuan ADA tetapi kosong seluruhnya - nol
+  //        baris, bukan nol pada rentang tertentu.
+  //
+  // Yang membedakan bab ini: pelayanan diukur dari sisi PIHAK, bukan dari
+  // sisi kantor. "Perkara selesai dalam 23 hari" adalah angka kantor; yang
+  // dirasakan pihak adalah berapa kali ia harus datang, berapa lama ia
+  // menunggu aktanya, dan apakah sidangnya datang ke desanya. Angka kantor
+  // dapat bagus sementara ketiganya buruk.
+  LY01: {
+    kunci: "lamaLayananDirasakanPihak",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan tonggak layanan terukur - 389 dari 431, dan yang tertangkap sebagian besar akta cerai yang baru terbit lebih dari seminggu sesudah berkekuatan hukum tetap. Yang BELUM: tonggak yang dirasakan pihak sebelum perkaranya terdaftar - berapa kali ia bolak-balik melengkapi berkas sebelum nomor perkaranya keluar, yang tidak tercatat di mana pun.",
+  },
+  LY02: {
+    kunci: "kehadiranDibebankanPihak",
+    sifat: "sebagian",
+    catatan:
+      "Jumlah kehadiran terukur - 398 dari 431 perkara. Yang BELUM: ongkos dan jarak. Beban sesungguhnya bagi pihak yang tinggal enam jam perjalanan dari kantor berbeda seluruhnya dari pihak yang tinggal di seberang jalan, dan jarak itu tidak tercatat pada berkas mana pun.",
+  },
+  LY06: {
+    kunci: "aktaCeraiBelumDiambil",
+    sifat: "sebagian",
+    catatan:
+      "Terukur per PIHAK, bukan per perkara - 214 dari 436. Dari 218 akta yang terbit, seluruhnya diserahkan kepada pihak pertama tetapi hanya 43 kepada pihak kedua. Yang BELUM: apakah pihak kedua sudah DIBERI TAHU aktanya siap; kolom pemberitahuannya tidak ada pada SIPP, sehingga angka ini belum dapat membedakan pihak yang tidak datang dari pihak yang tidak tahu.",
+  },
+  LY07: {
+    kunci: "salinanPutusanBelumDiambil",
+    sifat: "sebagian",
+    catatan:
+      "Terukur, dan hasilnya 0 dari 228 - tidak satu pun putusan berkekuatan hukum tetap mencatat penerbitan salinannya. Kolomnya ada pada SIPP dan tidak pernah diisi. Butir ini akan merah sampai pengisiannya dimulai, dan itu memang yang ingin ditunjukkannya: berbeda dari butir yang tabelnya tidak ada, yang ini DAPAT diperbaiki.",
+  },
+  LY08: {
+    kunci: "sidangLuarGedungWilayah",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 97 dari 129 persidangan di luar gedung menyebut nama tempatnya, tersebar pada sebelas balai kelurahan, kantor KUA, kantor desa, dan kantor kecamatan. Yang BELUM: pemetaan nama tempat itu ke KODE WILAYAH resmi. Nama diketik bebas, sehingga \"Kantor Desa Wosu Ke. Bungku Barat\" dan \"Kantor Kecamatan Bungku Barat\" belum dapat dijumlahkan menjadi satu kecamatan.",
+  },
+  LY09: {
+    kunci: "layananPosbakum",
+    sifat: "sebagian",
+    catatan:
+      "Terukur menurut aturan yang berlaku pada satuan kerjanya - perkara tanpa kuasa melewati Posbakum - 359 dari 409 gugatannya lengkap. BATASNYA harus ikut terbaca: perkara tanpa kuasa TIDAK SELALU pengguna Posbakum, sebab ada yang menyusun sendiri gugatannya, jadi angka ini batas atas. JENIS layanannya juga belum terpisah; SIPP tidak punya tabel Posbakum sama sekali.",
+  },
+  LY11: {
+    kunci: "papanNilaiPelayananPublik",
+    sifat: "sebagian",
+    catatan:
+      "Terukur sebagai papan meta - 7 dari 10 angka pelayanan publik benar-benar terhitung dari SIPP. Tiga yang tidak: pengaduan masyarakat dan survei kepuasan tidak punya tabel, sedangkan salinan putusan punya kolom yang tidak pernah diisi. Berbeda dari butir lain, papan ini menghitung PERISTIWA pada rentang - akta yang terbit Maret adalah pelayanan bulan Maret, bukan pelayanan bulan perkaranya didaftarkan.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
