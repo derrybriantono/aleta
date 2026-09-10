@@ -1339,6 +1339,86 @@ const SAMBUNGAN = {
     catatan:
       "Terukur - 364 dari 377, dengan yang terjauh berjarak enam simpangan baku. Yang dibandingkan baru LAMA PENYELESAIAN. Penyimpangan pada hal lain - jumlah sidang, jumlah penundaan, besaran panjar - belum masuk hitungan, dan katalog meminta perkara yang jauh berbeda dari kebiasaan jenisnya secara utuh.",
   },
+  // ==========================================================================
+  // BAB 8 - SISA KEUANGAN PERKARA
+  // ==========================================================================
+  //
+  // Tiga butir tidak disambungkan, dan ketiganya diperiksa pada datanya:
+  //
+  //   KU11 buku jurnal ada DI LUAR SIPP. Sempat dibangun dengan menyandingkan
+  //        kolom perkara_biaya.sisa - yang disangka saldo berjalan - dan
+  //        hasilnya 502 cocok dari 4.948. Angka seburuk itu yang membuatnya
+  //        diperiksa ulang: kolom `sisa` MATI, bernilai 0.00 pada tiap baris
+  //        yang mengisinya dan NULL pada 1.253 lainnya. Pemeriksaan silang
+  //        yang sesungguhnya - panjar sama dengan pengeluaran ditambah
+  //        pengembaliannya - persis sama dengan KU04, dan satu kesalahan yang
+  //        dihitung dua kali akan diperbaiki dua kali juga.
+  //
+  //   KU14 konsinyasi tidak punya satu pun tabel pada SIPP.
+  //   KU15 uang persediaan dibukukan pada aplikasi keuangan satuan kerja.
+  //
+  // ARAH TRANSAKSI: jenis_transaksi 1 uang masuk, -1 uang keluar. Bukan D dan
+  // K. Menjumlahkan tanpa memperhatikan tandanya menghasilkan angka yang
+  // selalu terlalu besar dan selalu tampak masuk akal.
+  KU04: {
+    kunci: "kecukupanPanjarPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 414 dari 431. Tidak satu pun perkara bersaldo negatif, tetapi 17 sudah diputus dan masih menyimpan sisa panjar tanpa satu pun transaksi pengembalian. Yang BELUM: penelusuran ke MANA sisa itu akhirnya pergi; SIPP mencatat saldonya, bukan penyerahannya kepada pihak.",
+  },
+  KU05: {
+    kunci: "penerimaanNegaraBukanPajak",
+    sifat: "penuh",
+    catatan: "",
+  },
+  KU06: {
+    kunci: "kelazimanBiayaPanggilanRadius",
+    sifat: "sebagian",
+    catatan:
+      "Terukur sebagai KELAZIMAN, bukan sebagai ketaatan pada surat keputusan - 235 dari 312. Tujuh puluh tujuh perkara dikenakan panggilan berbeda dari besaran terbanyak kecamatannya, dan yang terjauh Rp400.000 pada kecamatan yang lazimnya Rp100.000. SIPP tidak menyimpan surat keputusan radiusnya, sehingga yang tidak memenuhi berarti PANTAS DIPERIKSA - satu kecamatan dapat memuat desa yang jauh berbeda jaraknya.",
+  },
+  KU07: {
+    kunci: "transaksiKeuanganHarian",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan tiap baris jurnal terukur - 4.730 dari 4.948. Dua ratus delapan belas transaksi bernilai NOL rupiah: baris yang dibuat lalu ditinggalkan, dan ia tetap terhitung sudah dibukukan pada tiap pemeriksaan yang hanya menghitung baris. Yang BELUM: kuitansi dan bukti setornya, yang tidak tersimpan pada SIPP.",
+  },
+  KU08: {
+    kunci: "saldoRekapitulasiKeuangan",
+    sifat: "sebagian",
+    catatan:
+      "Rekapitulasi bulanan terukur - delapan bulan, seluruhnya bersaldo sehat. Yang BELUM: saldo AWAL yang dibawa dari tahun sebelumnya. Yang dihitung hanya transaksi atas perkara yang didaftarkan pada rentangnya, sehingga saldo di sini bukan saldo kas kepaniteraan yang sesungguhnya.",
+  },
+  KU09: {
+    kunci: "validasiKeuanganHarian",
+    sifat: "sebagian",
+    catatan:
+      "Pemeriksaan silang harian terukur - 134 dari 134 hari bersaldo sehat. Lebih halus daripada pemeriksaan bulanan dengan sengaja: saldo bulanan dapat berakhir sehat sementara di pertengahan bulan ia sempat negatif. Yang BELUM: penyandingan dengan buku kas fisik, yang ada di luar SIPP.",
+  },
+  KU10: {
+    kunci: "validasiKeuanganBerkala",
+    sifat: "sebagian",
+    catatan:
+      "Kewajaran jarak antara tanggal transaksi dan tanggal pengetikannya terukur - 4.948 dari 4.948 diketik dalam tiga puluh hari. Ini PERTANYAAN, bukan tuduhan: penyusulan input yang benar memang terjadi ketika kuitansi terselip atau SIPP mati. Yang BELUM: penutupan buku bulanan sebagai peristiwa tersendiri - SIPP tidak mencatat kapan sebuah bulan dinyatakan tutup.",
+  },
+  KU12: {
+    kunci: "keuanganUpayaHukum",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 1 dari 1 permohonan banding pada rentang yang diuji punya panjarnya. Penyebutnya masih terlalu kecil untuk berarti; satuan kerja dengan upaya hukum yang banyak akan memberi angka yang sesungguhnya. Yang BELUM: penyandingan dengan biaya yang ditetapkan pengadilan tingkat banding.",
+  },
+  KU13: {
+    kunci: "keuanganPerkaraEksekusi",
+    sifat: "sebagian",
+    catatan:
+      "Terbangun dan diuji, tetapi TANPA PENYEBUT pada rentang yang diukur - tidak ada satu pun permohonan eksekusi atas perkara tahun itu. Butir ini akan berbicara pada satuan kerja yang punya eksekusi; sampai itu ia tidak menghasilkan angka sama sekali, dan itu berbeda dari menghasilkan nol.",
+  },
+  KU16: {
+    kunci: "bebanBiayaDitanggungPihak",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 431 dari 431 beban bersihnya terhitung. Yang dihitung panjar DIKURANGI pengembalian sisa: pada rentang yang diukur panjar Rp633 juta sementara pengembalian Rp166 juta, seperempatnya kembali. Yang BELUM: ongkos yang tidak lewat pengadilan sama sekali - perjalanan pihak ke kantor, dan itulah yang paling berat bagi pencari keadilan di wilayah luas.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",

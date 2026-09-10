@@ -155,6 +155,13 @@ const TABEL = [
   // Pelaksanaan delegasi - tanggal relaas dan pengirimannya kembali. Berbeda
   // dari delegasi_masuk yang hanya memuat SURATNYA.
   "delegasi_proses_masuk",
+  // Penggolongan biaya perkara. kategori_biaya memuat dua belas golongan
+  // (Panjar, Panggilan, PNBP, Sisa Panjar, Hak-Hak Kepaniteraan, ...) dan
+  // jenis_biaya merincinya. Tanpa keduanya, tiap butir keuangan hanya dapat
+  // menjumlah angka tanpa tahu angka apa yang dijumlahkannya.
+  "jenis_biaya",
+  "kategori_biaya",
+  "perkara_eksekusi",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */
