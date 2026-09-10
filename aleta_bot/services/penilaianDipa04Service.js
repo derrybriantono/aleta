@@ -93,6 +93,16 @@ async function barisSidangLuarGedung(rentang) {
   const ada = await sippSkemaService.tabelAda("perkara_jadwal_sidang").catch(() => false);
   if (!ada) return [];
 
+  // KEDUA penanda diambil, digabung - bukan salah satunya.
+  //
+  // Petugas kerap tidak menekan centang "sidang keliling", jadi penandanya
+  // melewatkan sidang yang benar-benar berlangsung di luar gedung. Sebaliknya,
+  // sidang yang bertanda tetapi ruangannya tidak terisi juga sidang di luar
+  // gedung yang nyata. Yang dipakai laporan karena itu GABUNGAN keduanya.
+  //
+  // Terukur pada satu tahun: 97 sidang di luar Ruang Sidang 1 dan 2, hanya 7
+  // yang bertanda. Memakai penandanya saja berarti melaporkan sepertigabelas
+  // dari yang sebenarnya.
   const hasil = await runQuery(
     `SELECT p.nomor_perkara AS nomorPerkara,
             p.jenis_perkara_nama AS jenisPerkara,
@@ -102,9 +112,10 @@ async function barisSidangLuarGedung(rentang) {
        FROM perkara p
        JOIN perkara_jadwal_sidang j ON j.perkara_id = p.perkara_id
       WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
-        AND j.ruangan IS NOT NULL
-        AND TRIM(j.ruangan) <> ''
-        AND j.ruangan NOT REGEXP ?
+        AND (
+          (j.ruangan IS NOT NULL AND TRIM(j.ruangan) <> '' AND j.ruangan NOT REGEXP ?)
+          OR (j.sidang_keliling IS NOT NULL AND j.sidang_keliling NOT IN ('', '0', 'T'))
+        )
       ORDER BY j.tanggal_sidang
       LIMIT ${BATAS_BARIS}`,
     [rentang.mulai, rentang.selesai, POLA_RUANG_DALAM]
@@ -113,16 +124,30 @@ async function barisSidangLuarGedung(rentang) {
   return hasil.map((r, i) => {
     const penanda = teks(r.penanda);
     const bertanda = penanda !== "" && penanda !== "0" && penanda.toUpperCase() !== "T";
+    const ruangan = teks(r.ruangan);
+    const diLuar = ruangan !== "" && !/^\s*Ruang\s+Sidang\s*\d+\s*$/i.test(ruangan);
+
+    // Yang dinilai KESESUAIAN kedua penandanya, bukan keberadaan sidangnya.
+    // Sidangnya sendiri sudah pasti berlangsung - ia ada di jadwal. Yang jadi
+    // temuan: pencatatan yang tidak lengkap, sebab dari situlah laporan
+    // disusun dan dari situlah penggantian biaya dihitung.
+    const sesuai = diLuar && bertanda;
+    const sebab = !bertanda
+      ? `sidang di ${ruangan || "luar gedung"} tidak dicentang sidang keliling - laporan yang disusun dari centang ini akan melewatkannya`
+      : !diLuar
+        ? "bertanda sidang keliling tetapi ruangannya tidak terisi atau tercatat ruang sidang dalam gedung"
+        : "";
+
     return {
       kunci: `${teks(r.nomorPerkara)}#LP14#${i}`,
       nomorPerkara: teks(r.nomorPerkara),
       jenisPerkara: teks(r.jenisPerkara),
       tanggalSidang: teks(r.tanggalSidang),
-      ruangan: teks(r.ruangan),
-      memenuhi: bertanda,
-      sebabTidakMemenuhi: bertanda
-        ? ""
-        : `sidang di ${teks(r.ruangan)} tidak bertanda sidang keliling - laporan yang disusun dari penanda ini akan melewatkannya`,
+      ruangan,
+      diLuarGedung: diLuar,
+      bertandaKeliling: bertanda,
+      memenuhi: sesuai,
+      sebabTidakMemenuhi: sebab,
     };
   });
 }
@@ -169,17 +194,27 @@ async function barisPembebasanBiaya(rentang) {
       const panjarNol = angka(r.panjarMasuk) <= BATAS_PANJAR_NOL;
       const positaMiskin = angka(r.positaMiskin) === 1;
 
-      // Hanya perkara yang MENYENTUH pembebasan biaya yang dinilai. Perkara
-      // yang membayar penuh dan tidak menyebut ketidakmampuan bukan urusan
-      // butir ini - memasukkannya ke penyebut akan membuat angkanya selalu
-      // hampir sempurna dan berhenti berarti.
-      if (!bertanda && !panjarNol && !positaMiskin) return null;
+      // ====================================================================
+      // POPULASINYA DUA PENANDA, BUKAN TIGA
+      // ====================================================================
+      //
+      // Yang menentukan sebuah perkara prodeo: penandanya, atau panjarnya yang
+      // nol. Keduanya terukur 30 pada satu tahun yang sama.
+      //
+      // Posita yang menyebut surat keterangan tidak mampu TIDAK ikut menentukan
+      // - terukur 31, satu lebih banyak. Perkara yang satu itu menyebut dirinya
+      // tidak mampu tetapi tetap membayar penuh: ia memang bukan prodeo, dan
+      // memasukkannya ke populasi akan membuat laporan prodeo memuat perkara
+      // yang tidak pernah dibebaskan biayanya.
+      //
+      // Positanya tetap dibaca, dan tetap dipulangkan sebagai keterangan pada
+      // barisnya - sebab perkara yang menyatakan ketidakmampuan lalu membayar
+      // penuh adalah hal yang pantas dilihat orang, hanya bukan di kolom ini.
+      if (!bertanda && !panjarNol) return null;
 
       const selisih = [];
       if (bertanda && !panjarNol) selisih.push("bertanda prodeo tetapi panjarnya terbayar");
       if (!bertanda && panjarNol) selisih.push("panjarnya nol tetapi tidak bertanda prodeo");
-      if (positaMiskin && !bertanda)
-        selisih.push("positanya menyebut tidak mampu tetapi tidak bertanda prodeo");
 
       return {
         kunci: `${teks(r.nomorPerkara)}#LP15`,
