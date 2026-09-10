@@ -1241,6 +1241,104 @@ const SAMBUNGAN = {
     catatan:
       "Terukur sebagai papan meta - 7 dari 10 angka pelayanan publik benar-benar terhitung dari SIPP. Tiga yang tidak: pengaduan masyarakat dan survei kepuasan tidak punya tabel, sedangkan salinan putusan punya kolom yang tidak pernah diisi. Berbeda dari butir lain, papan ini menghitung PERISTIWA pada rentang - akta yang terbit Maret adalah pelayanan bulan Maret, bukan pelayanan bulan perkaranya didaftarkan.",
   },
+  // ==========================================================================
+  // BAB 9 - SISA STATISTIK PERKARA DAN PARA PIHAK
+  // ==========================================================================
+  //
+  // SATU butir di sini menilai CAPAIAN, tiga belas menilai BAHAN, dan
+  // keduanya terlihat sama persis pada papan.
+  //
+  // ST12 - tingkat penggunaan e-Court - menilai capaian. Angkanya rendah
+  // bukan karena datanya buruk melainkan karena memang sedikit yang
+  // mendaftar secara elektronik, dan yang menaikkannya sosialisasi.
+  //
+  // Sisanya menilai apakah statistiknya dapat disusun sama sekali. Angka
+  // rendah di situ berarti kolomnya kosong, dan yang memperbaikinya
+  // pengisian kolom. Menyamakan keduanya akan membuat seseorang mengejar
+  // angka e-Court dengan cara yang tidak mungkin berhasil.
+  ST01: {
+    kunci: "keadaanPerkaraBulanan",
+    sifat: "sebagian",
+    catatan:
+      "Penerimaan, penyelesaian, dan sisa per bulan terukur - delapan dari delapan bulan berimbang. Yang BELUM: sisa satuan kerja yang SESUNGGUHNYA, yang memuat tunggakan tahun-tahun sebelumnya. Yang dihitung di sini hanya perkara yang didaftarkan pada rentangnya.",
+  },
+  ST04: {
+    kunci: "faktorPenyebabPerceraian",
+    sifat: "sebagian",
+    catatan:
+      "Terukur, dan hasilnya 5 dari 252. Faktor perceraian sendiri terisi seluruhnya dan tanggal nikah hampir seluruhnya - yang menjatuhkannya PENDIDIKAN pihak, yang hanya terisi 66 dari 493 baris. Persilangan tiga arah yang katalog minta karena itu hanya dapat disusun atas seperlima puluh perkaranya, dan daftar faktor yang tampak lengkap menyembunyikan itu sepenuhnya.",
+  },
+  ST08: {
+    kunci: "sebaranUsiaPerkawinan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 371 dari 371 perkara cerai punya tanggal nikah yang masuk akal, 0 sampai 36 tahun dengan rerata 10. Yang BELUM: persilangan sebaran itu dengan faktor perceraian dan pendidikan, yang tertahan oleh sebab yang sama seperti ST04.",
+  },
+  ST10: {
+    kunci: "trenPolaMusiman",
+    sifat: "sebagian",
+    catatan:
+      "Terukur sebagai KESIAPAN BAHAN, dan hasilnya 0 dari 8 pada rentang satu tahun - tidak satu pun bulan punya pembanding tahun sebelumnya. Angka nol itu benar dan bukan cacat data: pola musiman memang tidak dapat diurai dari dua belas bulan. Penguraian dan proyeksinya sendiri BELUM dibangun, dan katalog menyebutnya demikian.",
+  },
+  ST11: {
+    kunci: "caraPendaftaranPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 400 dari 431 dapat digolongkan tanpa bertentangan. Tiga puluh satu bertanda sidang keliling tetapi seluruh sidangnya di ruang sidang bernomor. Yang BELUM: cara pendaftaran yang tercatat SEBAGAI CARA PENDAFTARAN; SIPP tidak punya kolomnya, dan ketiganya diturunkan dari penanda lain.",
+  },
+  ST12: {
+    kunci: "tingkatPenggunaanEcourt",
+    sifat: "penuh",
+    catatan: "",
+  },
+  ST14: {
+    kunci: "perkaraDicabutGugur",
+    sifat: "sebagian",
+    catatan:
+      "Terukur, dan hasilnya 0 dari 77 - 76 perkara berstatus Dicabut dan 1 Gugur, tidak satu pun punya tanggal pencabutan atau penggugurannya. Kolomnya ada pada perkara_putusan dan tidak pernah diisi. Butir ini akan merah sampai pengisiannya dimulai, dan itu memang yang ingin ditunjukkannya.",
+  },
+  ST15: {
+    kunci: "perkaraProdeoSelaras",
+    sifat: "sebagian",
+    catatan:
+      "Keselarasan penanda prodeo dengan panjar terukur - 30 dari 30 sepakat. Yang BELUM: penetapan prodeonya sendiri. Apakah pembebasan biaya benar-benar ditetapkan majelis, dan berapa yang ditanggung DIPA, tidak tercatat pada SIPP.",
+  },
+  ST16: {
+    kunci: "perkaraPanggilanGhaib",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 10 dari 11 perkara berpihak ghaib punya pelaksanaan relaas; satu tidak punya sama sekali. Yang BELUM: bukti pengumuman lewat MEDIA MASSA dan tenggang tiga bulannya. SIPP tidak punya kolom untuk nama media maupun tanggal pengumumannya.",
+  },
+  ST17: {
+    kunci: "delegasiBantuanPanggilan",
+    sifat: "sebagian",
+    catatan:
+      "Penyelesaian delegasi masuk terukur - 194 dari 194 lengkap sampai relaasnya dikirim kembali. Yang BELUM: delegasi KELUAR, yang penyelesaiannya ada di tangan pengadilan lain dan tidak dapat diketahui dari SIPP satuan kerja ini.",
+  },
+  ST18: {
+    kunci: "profilUpayaHukum",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 228 dari 388 putusan sudah dapat dijawab. Pada 160 sisanya tidak ada upaya hukum tercatat DAN tidak ada tanggal berkekuatan hukum tetap, sehingga pertanyaannya belum dapat dijawab. Yang BELUM: HASIL upaya hukumnya - dikuatkan, dibatalkan, atau diperbaiki - yang datang dari pengadilan tingkat banding.",
+  },
+  ST20: {
+    kunci: "riwayatPerkaraPasangan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur sebagai kesiapan penelusuran - 319 dari 431 perkara punya nomor identitas di kedua belah pihak. Penelusuran riwayatnya SENDIRI belum dibangun: menyandingkan pasangan pihak antar tahun menuntut pembacaan seluruh riwayat satuan kerja, bukan hanya rentang yang dinilai.",
+  },
+  ST21: {
+    kunci: "risikoMelampauiAmbang",
+    sifat: "sebagian",
+    catatan:
+      "Terukur atas seluruh perkara - 418 dari 431 selesai atau masih berjalan di bawah 150 hari. Ambang lima bulan berlaku bagi tingkat pertama pada umumnya; jenis perkara tertentu punya tenggangnya sendiri, dan pembedaan itu belum dibuat.",
+  },
+  ST22: {
+    kunci: "menyimpangKebiasaanJenis",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 364 dari 377, dengan yang terjauh berjarak enam simpangan baku. Yang dibandingkan baru LAMA PENYELESAIAN. Penyimpangan pada hal lain - jumlah sidang, jumlah penundaan, besaran panjar - belum masuk hitungan, dan katalog meminta perkara yang jauh berbeda dari kebiasaan jenisnya secara utuh.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",

@@ -148,6 +148,13 @@ const TABEL = [
   // aneh, sebab hasilnya tidak akan terlihat aneh.
   "perkara_pengacara",
   "pihak_pengacara",
+  // Faktor penyebab perceraian - dua puluh enam kategori baku Badilag, dipakai
+  // Bab 9. Tanpa didaftarkan di sini butirnya akan memulangkan daftar kosong
+  // tanpa satu pun galat; lihat catatan pada perkara_pengacara di atas.
+  "faktor_perceraian",
+  // Pelaksanaan delegasi - tanggal relaas dan pengirimannya kembali. Berbeda
+  // dari delegasi_masuk yang hanya memuat SURATNYA.
+  "delegasi_proses_masuk",
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */
