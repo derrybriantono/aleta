@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("JLF portal, role visibility, and protected routes smoke", async ({ page }) => {
   await page.goto("/login");
-  await page.getByTestId("login-username").fill("superadmin");
+  await page.getByTestId("login-identifier").fill("superadmin");
   await page.getByTestId("login-password").fill("super123");
   await page.getByTestId("login-submit").click();
 
@@ -28,7 +28,7 @@ test("JLF portal, role visibility, and protected routes smoke", async ({ page })
 
 test("regular JLF user does not see admin settings entry", async ({ page }) => {
   await page.goto("/login");
-  await page.getByTestId("login-username").fill("ketua");
+  await page.getByTestId("login-identifier").fill("ketua");
   await page.getByTestId("login-password").fill("ketua123");
   await page.getByTestId("login-submit").click();
 

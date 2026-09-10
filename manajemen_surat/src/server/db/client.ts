@@ -955,7 +955,28 @@ export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
     );
 
     await ensureAletaSchema(db);
-    const shouldUsePersistentFallback = process.env.NODE_ENV !== "test";
+    /**
+     * ========================================================================
+     * CETAKAN LAMA DAPAT DITOLAK - DIPERLUKAN UJI DARI UJUNG KE UJUNG
+     * ========================================================================
+     *
+     * Cadangan dalam memori memulihkan cetakan terakhir dari data/, supaya
+     * yang diketik saat Postgres mati tidak lenyap. Itu benar untuk
+     * pengembangan sehari-hari.
+     *
+     * Untuk uji dari ujung ke ujung ia justru merusak: cetakan yang tertinggal
+     * berbulan-bulan membawa sidik sandi lama, sehingga akun semaian
+     * ketua/ketua123 ADA tetapi tidak dapat dipakai masuk - dan seluruh berkas
+     * uji gagal pada langkah pertama tanpa sebab yang terbaca. Itulah yang
+     * benar-benar terjadi: cetakan 17 Juni membuat uji e2e berhenti hijau, dan
+     * karena tidak ada yang menjalankannya lagi, tidak ada yang tahu.
+     *
+     * Uji menyalakan penolakan ini dari berkas ujinya sendiri, tidak pernah
+     * dari .env - supaya tidak ada pemasangan sungguhan yang kehilangan
+     * cetakannya karena satu baris yang tertinggal.
+     */
+    const tolakCetakan = isExplicitlyEnabled(process.env.ALETA_TANPA_CETAKAN_INGATAN);
+    const shouldUsePersistentFallback = process.env.NODE_ENV !== "test" && !tolakCetakan;
     const restoredFromSnapshot = shouldUsePersistentFallback
       ? await restoreInMemorySnapshot(db, memoryDb)
       : false;

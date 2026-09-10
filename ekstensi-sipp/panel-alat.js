@@ -36,15 +36,50 @@
  * Yang SUDAH dipakai bersama: alatPesanGagal - satu kalimat untuk kegagalan
  * sambungan, dipakai kedua halaman.
  *
- * Yang BELUM: sembilan pasang fungsi panel masih kembar - pasangGeser,
- * pasangUbahUkuran, terapkanPosisi, kembalikanBawaan, dan seterusnya, satu
- * salinan di sini dan satu di konten.js. Memindahkannya menuntut panel SIPP
- * dibuka di layar sungguhan sesudahnya, dan halaman itu tidak dapat dibuka
- * dari lingkungan pengembangan ini.
- *
- * Sampai itu dikerjakan: fungsi BARU ditulis di sini saja dan dipakai
- * keduanya - seperti alatPesanGagal. Yang dilarang menambah salinan baru ke
+ * Yang BELUM: fungsi panel masih kembar - satu salinan di sini dan satu di
  * konten.js.
+ *
+ * ============================================================================
+ * KEMBARNYA SUDAH DIADU, DAN HASILNYA MENGUBAH APA YANG TERSISA
+ * ============================================================================
+ *
+ * Dahulu tertulis di sini bahwa penyatuannya "menuntut panel SIPP dibuka di
+ * layar sungguhan". Itu benar untuk langkah terakhirnya saja, dan menjadi
+ * alasan menunda seluruhnya.
+ *
+ * Sekarang keduanya dijalankan atas panel palsu yang sama lalu diadu ruas demi
+ * ruas - lihat uji panel-kembar-setara. Yang terbukti SETARA, lengkap dengan
+ * pembulatan dan perlakuan tepi layarnya:
+ *
+ *   jepitKeLayar          - argumen tinggi pada versi konten.js ternyata mati
+ *   jepitTinggi           - rumusnya berbeda bentuk, sama hasilnya
+ *   terapkanPosisi        - termasuk ukuran melebihi layar dan tinggi nol
+ *   normalkanJangkar      - termasuk pembulatan pecahan piksel
+ *   kembalikanBawaan      - gaya yang dibersihkan sama persis
+ *
+ * Satu selisih ketemu dan sudah ditutup: alatJepitTinggi tidak berhenti pada
+ * panel yang sedang menjadi lencana, sedangkan kembarannya berhenti.
+ *
+ * ============================================================================
+ * YANG TERSISA CUMA SATU, DAN INILAH YANG MENUNTUT SATU TARIKAN SUNGGUHAN
+ * ============================================================================
+ *
+ * Cara MENYIMPANNYA berbeda, dan keduanya benar:
+ *
+ *   konten.js   mengingat sebagian - geser menyimpan kiri/atas saja, lalu
+ *               digabung dengan lebar/tinggi yang sudah diingat sebelumnya
+ *   di sini     mengukur ulang seluruh kotak tiap kali menyimpan
+ *
+ * Akibatnya berbeda hanya pada satu keadaan: panel yang BELUM PERNAH diubah
+ * ukurannya. konten.js tidak menyimpan lebarnya sama sekali sehingga panel
+ * mengikuti lebar bawaan CSS; yang di sini menyimpan lebar terukur sehingga
+ * panel mengunci lebar yang berlaku saat itu. Hari ini keduanya menghasilkan
+ * tampilan yang sama - dan akan berselisih pada hari lebar bawaannya diubah.
+ *
+ * Itulah satu-satunya yang tersisa, dan ia hanya menampakkan diri pada
+ * tarikan sungguhan di halaman SIPP. Sampai itu dapat dilakukan: fungsi BARU
+ * ditulis di sini saja dan dipakai keduanya - seperti alatPesanGagal. Yang
+ * dilarang menambah salinan baru ke konten.js.
  *
  * ============================================================================
  * BEDANYA DENGAN YANG DI konten.js
@@ -78,6 +113,25 @@ function alatJepitTinggi(panel) {
   if (!panel) return;
   if (panel.classList.contains("aleta-panel-penuh")) return;
   if (panel.classList.contains("aleta-panel-ciut")) return;
+
+  // ==========================================================================
+  // LENCANA TIDAK DIJEPIT - PENJAGA YANG SEBELUMNYA HILANG DI SINI
+  // ==========================================================================
+  //
+  // Salinan kembarnya di konten.js sudah lama berhenti pada panel yang sedang
+  // menjadi logo melayang; yang di sini tidak. Ketahuan saat keduanya diadu -
+  // lihat panel-kembar-setara.
+  //
+  // Belum berakibat apa-apa hari ini, dan sebabnya kebetulan: pemulihan
+  // keadaan memanggil alatCiutkan lalu SEGERA memanggil fungsi ini, tetapi
+  // lencana selalu lebih pendek daripada lantai 160 piksel sehingga ia keluar
+  // pada pemeriksaan tinggi di bawah.
+  //
+  // Kebetulan itu tidak boleh dijadikan penjagaan. Lencana yang kelak dibuat
+  // lebih besar akan mendapat tinggi paksa tanpa seorang pun memintanya, dan
+  // gejalanya - logo melayang yang tiba-tiba memanjang - tidak akan
+  // menunjukkan sebabnya.
+  if (panel.classList.contains(KELAS_LENCANA)) return;
 
   const kotak = panel.getBoundingClientRect();
   const sisa = Math.max(window.innerHeight - kotak.top - 12, 160);

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("credential login and role-based app hub work end-to-end", async ({ page }) => {
   await page.goto("/login");
-  await page.getByTestId("login-username").fill("ketua");
+  await page.getByTestId("login-identifier").fill("ketua");
   await page.getByTestId("login-password").fill("ketua123");
   await page.getByTestId("login-submit").click();
 
@@ -19,7 +19,7 @@ test("credential login and role-based app hub work end-to-end", async ({ page })
   await page.getByTestId("user-menu").click();
   await page.getByTestId("logout-button").click();
 
-  await page.getByTestId("login-username").fill("superadmin");
+  await page.getByTestId("login-identifier").fill("superadmin");
   await page.getByTestId("login-password").fill("super123");
   await page.getByTestId("login-submit").click();
 
