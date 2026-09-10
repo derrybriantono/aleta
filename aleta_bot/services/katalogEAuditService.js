@@ -1419,6 +1419,104 @@ const SAMBUNGAN = {
     catatan:
       "Terukur - 431 dari 431 beban bersihnya terhitung. Yang dihitung panjar DIKURANGI pengembalian sisa: pada rentang yang diukur panjar Rp633 juta sementara pengembalian Rp166 juta, seperempatnya kembali. Yang BELUM: ongkos yang tidak lewat pengadilan sama sekali - perjalanan pihak ke kantor, dan itulah yang paling berat bagi pencari keadilan di wilayah luas.",
   },
+  // ==========================================================================
+  // BAB 12 - METODE ANALISIS DAN PENGUJIAN
+  // ==========================================================================
+  //
+  // Bab ini menilai APAKAH ALAT UKURNYA SAH DIPAKAI atas data ini - bukan
+  // menilai keadaan pengadilan. Uji beda atas enam perkara akan memulangkan
+  // angka; regresi atas peubah yang kosong akan memulangkan angka; korelasi
+  // antara dua deret yang tak berhubungan akan memulangkan angka. Ketiganya
+  // terbaca meyakinkan, ketiganya salah, dan tidak satu pun menampakkan
+  // dirinya sendiri.
+  //
+  // DUA BUTIR DIBACA TERBALIK. Pada MT07 (Pareto) dan MT13 (uji petik), yang
+  // TIDAK memenuhi adalah yang perlu dikerjakan lebih dulu - daftar kerja,
+  // bukan daftar kesalahan. Papan yang menampilkannya berdampingan dengan
+  // butir lain tanpa kalimat ini akan disalahbaca.
+  //
+  // DUA BUTIR TIDAK DISAMBUNGKAN. MT14 menuntut data pengadilan agama lain,
+  // dan angka pembanding yang dikarang lebih buruk daripada tidak ada
+  // pembanding. MT15 asisten kecerdasan buatan adalah FITUR, bukan
+  // pengukuran - ia tidak punya pembilang dan penyebut.
+  MT01: {
+    kunci: "ujiBedaAntarPeriode",
+    sifat: "sebagian",
+    catatan:
+      "Kesahihan ujinya terukur - 2 dari 7 jenis perkara punya sampel cukup di kedua paruh. Yang dihitung statistik t-nya, bukan nilai p: menampilkan p kepada pembaca yang tidak menuntutnya akan membuat angka itu dikutip sebagai kesimpulan.",
+  },
+  MT02: {
+    kunci: "ujiBedaProporsiUnit",
+    sifat: "sebagian",
+    catatan:
+      "Kesahihan uji proporsi terukur - 4 dari 4 majelis bersampel cukup. Yang dibandingkan PROPORSI, dan proporsi tidak memperhitungkan bobot perkara: majelis yang kebetulan menerima banyak perkara berat akan tampak lebih buruk tanpa satu pun kesalahan.",
+  },
+  MT03: {
+    kunci: "regresiLamaPenyelesaian",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan peubah penjelas terukur - 388 dari 388. Regresinya SENDIRI belum dijalankan ALETA, dan itu disengaja: menyimpulkan sebab-akibat dari data pengamatan menuntut manusia yang memahami batasnya.",
+  },
+  MT04: {
+    kunci: "analisisKohortPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Keterikutan kohort terukur - 8 dari 8 bulan seluruh anggotanya berkeadaan jelas. Yang BELUM: pengikutan kohort MELEWATI batas rentang; perkara yang didaftarkan Desember baru selesai tahun berikutnya, dan nasibnya ada di luar rentang yang dinilai.",
+  },
+  MT05: {
+    kunci: "penguraianDeretWaktu",
+    sifat: "sebagian",
+    catatan:
+      "Kecukupan panjang deret terukur, dan pada rentang satu tahun hasilnya 0 dari 8 - penguraian menuntut dua puluh empat bulan. Angka nol itu benar. Penguraiannya sendiri - memisahkan tren, musiman, dan kejadian luar biasa - belum dibangun.",
+  },
+  MT06: {
+    kunci: "deteksiDataPencilan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur dengan jarak antar kuartil - 363 dari 388. Sengaja berbeda dari butir Bab 9 yang memakai simpangan baku per jenis: satu perkara yang berjalan tiga tahun menggelembungkan simpangan bakunya sendiri sampai berhenti tampak menyimpang, dan kuartil tidak dapat digeser begitu. Yang BELUM: pencilan pada ukuran selain lama penyelesaian.",
+  },
+  MT07: {
+    kunci: "analisisParetoPenyebab",
+    sifat: "sebagian",
+    catatan:
+      "Terukur atas alasan penundaan - 4 dari 7 golongan berada di luar 80% kumulatif pertama, dan pemanggilan pihak sendirian menyumbang 57,6%. BACA TERBALIK: yang TIDAK memenuhi adalah yang perlu dikerjakan lebih dulu, bukan yang buruk. Yang BELUM: Pareto atas jenis temuan selain penundaan.",
+  },
+  MT08: {
+    kunci: "indeksKonsentrasiBeban",
+    sifat: "sebagian",
+    catatan:
+      "Indeks Herfindahl yang dinormalkan terukur. Sengaja berdampingan dengan koefisien Gini pada Bab 6: indeks ini lebih peka terhadap satu pemegang yang sangat besar, dan ketimpangan punya dua bentuk yang berbeda. Ambang 0,25 dipilih sementara dan belum ditetapkan pimpinan.",
+  },
+  MT09: {
+    kunci: "ujiHubunganAntarUkuran",
+    sifat: "sebagian",
+    catatan:
+      "Empat pasangan yang DITETAPKAN LEBIH DAHULU terukur seluruhnya. Batas terpenting bab ini ada di sini: menghitung korelasi seluruh pasangan yang mungkin lalu melaporkan yang terkuat adalah cara paling mudah menemukan hubungan yang tidak ada. Yang BELUM: pasangan tambahan, yang penambahannya harus disertai alasan hukum acara - bukan alasan angka.",
+  },
+  MT10: {
+    kunci: "selangKepercayaanNilai",
+    sifat: "sebagian",
+    catatan:
+      "Lebar selang kepercayaan terukur - 8 dari 8 bulan cukup sempit. Memakai selang Wald yang sederhana; pada penyebut sangat kecil atau proporsi mendekati nol dan satu, selang Wilson lebih tepat dan belum dipakai.",
+  },
+  MT11: {
+    kunci: "petaKendaliProses",
+    sifat: "sebagian",
+    catatan:
+      "Peta kendali atas PENERIMAAN perkara terukur - 8 dari 8 bulan terkendali. Sengaja berdampingan dengan peta kendali Bab 10 yang mengawasi lama penyelesaian: proses yang menerima dan proses yang menyelesaikan dapat lepas kendali sendiri-sendiri. Batasnya dihitung dari rentangnya sendiri, bukan dari batas yang ditetapkan pimpinan.",
+  },
+  MT12: {
+    kunci: "sebabAkarTemuan",
+    sifat: "sebagian",
+    catatan:
+      "Enam jenis temuan ditelusuri sebabnya - 4 dapat ditindak satuan kerja sendiri, 2 tidak (kolom yang tidak ada pada SIPP, dan bobot perkara yang tidak tersimpan). Daftarnya ditetapkan di dalam kode, bukan diturunkan dari temuan yang benar-benar muncul; penurunan otomatis itu yang belum dibangun.",
+  },
+  MT13: {
+    kunci: "ujiPetikBerbasisRisiko",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 21 dari 431 perkara terpilih untuk diperiksa manual. BACA TERBALIK: daftar yang TIDAK memenuhi adalah daftar kerjanya, bukan daftar kesalahan. Bobot tiap penanda risiko dipilih sementara dan belum ditetapkan pimpinan.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
