@@ -1600,6 +1600,122 @@ const SAMBUNGAN = {
     catatan:
       "Gabungan EMPAT butir dari dua puluh sembilan yang disebut SK Dirjen Badilag 048/2024, dan dua keadaan dari tiga - hasilnya 175 dari 431 perkara yang seluruh tahapannya tertib. Angkanya TIDAK BOLEH dilaporkan sebagai nilai SK Dirjen yang utuh sampai dua puluh lima butir sisanya dibangun.",
   },
+  // ==========================================================================
+  // SISA BAB 7 - RAPOR KINERJA APARATUR
+  // ==========================================================================
+  //
+  // Bab ini menilai ORANG, dan angkanya akan dibaca oleh orang yang namanya
+  // tertulis di situ. Tiga hal dipegang: pengenal memakai _id bukan nama,
+  // pembatas dua puluh perkara dipegang keras, dan yang tidak memenuhi
+  // disebut sebabnya - yang hampir selalu bukan orangnya.
+  //
+  // DUA BUTIR TIDAK DISAMBUNGKAN. AP07 meja informasi tidak punya tabel.
+  // AP12 keandalan antar penilai menuntut catatan penilaian MANUAL oleh dua
+  // orang atas berkas yang sama, dan ALETA belum punya tempat mencatatnya -
+  // aleta_bot_ecourt_verifications yang sempat disangka bahannya ternyata
+  // verifikasi dokumen e-Court oleh satu hakim, dan kosong.
+  AP05: {
+    kunci: "raporPenyusunKonsepPutusan",
+    sifat: "sebagian",
+    catatan:
+      "Jarak putus ke minutasi per panitera pengganti terukur, dan hasilnya 0 dari 3 - bukan karena lambat, melainkan karena seluruh 388 minutasi tercatat pada HARI YANG SAMA dengan putusannya. Terlalu rapi untuk pekerjaan manusia; lebih mungkin tanggalnya terisi otomatis. Konsep, koreksi, dan putaran perbaikan yang katalog minta tidak tersimpan pada SIPP satuan kerja ini sama sekali.",
+  },
+  AP06: {
+    kunci: "raporMediator",
+    sifat: "sebagian",
+    catatan:
+      "Tingkat keberhasilan per mediator terukur menurut mediator_id - 2 dari 4 rapornya sah, dua lainnya punya mediasi tanpa hasil tercatat. Kode hasil dibaca dari borang SIPP sendiri. Yang BELUM: bobot jenis perkara. Mediator yang seluruh perkaranya perceraian akan selalu tampak lebih buruk daripada yang kebagian sengketa waris.",
+  },
+  AP08: {
+    kunci: "raporPetugasPengarsipan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur atas peristiwa arsip, bukan tahun pendaftaran - 230 dari 279 berkas masuk arsip dalam tiga puluh hari sesudah minutasi, 48 lebih lama (terlama 211 hari), satu SEBELUM minutasi. Tautannya lewat nomor perkara dengan titik di ujung dibuang: perkara_id pada tabel arsip nol pada 275 dari 279 baris, sehingga butir arsip di Bab 5 dan Bab 10 yang menautkan lewat perkara_id hanya melihat empat baris. Satu petugas tercatat dengan dua ejaan.",
+  },
+  AP09: {
+    kunci: "majelisTerhadapNilaiTengah",
+    sifat: "sebagian",
+    catatan:
+      "Nilai tengah tiap majelis terhadap nilai tengah pengadilan terukur - 4 dari 4 di dalam ambang seperempat. Nilai tengah dipilih, bukan rerata, supaya satu perkara yang berlarut tidak menggeser seluruh pengadilan. Yang BELUM: bobot perkara; majelis yang kebagian perkara berat akan selalu tampak lambat, dan itu ukuran pembagiannya.",
+  },
+  AP10: {
+    kunci: "raporPeroranganGabungan",
+    sifat: "sebagian",
+    catatan:
+      "Nilai gabungan tiga unsur (40/30/30) per ketua majelis terukur dengan pembatas dua puluh perkara - 4 dari 4 sah. Yang menentukan memenuhi KESAHIHAN rapornya, bukan nilainya; bobotnya belum disahkan pimpinan, dan nama orang tidak boleh dimerahkan atas bobot yang belum disahkan. Panitera pengganti dan jurusita belum masuk gabungan ini.",
+  },
+  AP11: {
+    kunci: "riwayatNilaiAntarPeriode",
+    sifat: "sebagian",
+    catatan:
+      "Nilai gabungan pada dua paruh rentang terukur - 4 dari 4 majelis cukup berisi pada keduanya. Yang BELUM: riwayat LINTAS rentang penilaian, yang menuntut nilai tersimpan dari periode sebelumnya, bukan dihitung ulang dari paruh rentang yang sama.",
+  },
+  AP13: {
+    kunci: "catatanAksesPengguna",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - 19 dari 21 akun menyebut orang; 'kasir3' dengan 965 tindakan dan 'admin' dengan 131 tindakan tidak dapat dimintai pertanggungjawaban kepada siapa pun. Yang BELUM: riwayat MASUK aplikasi (login) - sys_audittrail mencatat perubahan data, bukan sesi masuk; jam masuk dan lama sesi tidak ada di mana pun.",
+  },
+  AP14: {
+    kunci: "kepekaanBobotPenilaian",
+    sifat: "sebagian",
+    catatan:
+      "Terukur - peringkat 2 dari 4 majelis berubah ketika bobot digeser sepuluh poin; peringkat pertama dan kedua saling bertukar. Itu bukti bahwa peringkat ini bergantung pada pilihan bobot yang belum disahkan pimpinan, dan tidak boleh dipakai memutuskan apa pun tentang orangnya. Yang BELUM: uji kepekaan atas rapor panitera pengganti dan jurusita.",
+  },
+  // ==========================================================================
+  // SISA BAB 4 - LAPORAN PERKARA LANJUTAN
+  // ==========================================================================
+  //
+  // Tiga butir di sini (LP23, LP24, LP25) dan papan kendalinya bersandar pada
+  // CATATAN PETUGAS: kapan laporan dikirim dan berapa angkanya - dua hal yang
+  // tidak ada di SIPP. Pada satuan kerja yang belum mencatat, keempatnya merah
+  // seluruhnya, dan itu memang keadaannya. Angka SIPP-nya tetap dihitung
+  // supaya catatan pertama yang masuk langsung tersandingkan.
+  //
+  // EMPAT LIPA TETAP TIDAK DISAMBUNGKAN, diperiksa pada datanya: eksaminasi,
+  // meja informasi, pengaduan, dan titipan pihak ketiga tidak punya tabel.
+  LP00: {
+    kunci: "papanKendaliPengirimanLaporan",
+    sifat: "sebagian",
+    catatan:
+      "Papan dua puluh dua LIPA atas bulan terakhir rentang terukur - dan pada satuan kerja yang petugasnya belum pernah mencatat pengiriman, hasilnya 0 dari 22. Itu bukan cacat penilaiannya; itu keadaannya. Angka SIPP-nya tetap dihitung untuk 15 LIPA supaya begitu catatan pertama masuk, selisihnya langsung terlihat. Tujuh LIPA lainnya tidak punya kueri SIPP.",
+  },
+  LP08: {
+    kunci: "lipaKeuanganEksekusi",
+    sifat: "sebagian",
+    catatan:
+      "Terbangun dan diuji, tetapi TANPA PENYEBUT pada rentang yang diukur - tidak ada permohonan eksekusi atas perkara tahun itu. Kosong berarti tidak ada angka, bukan angka nol. Yang BELUM: rincian biaya eksekusi per jenis (pengamanan, pengangkutan, pengosongan), sebab jenis_biaya SIPP tidak memisahkannya.",
+  },
+  LP09: {
+    kunci: "lipaHakKepaniteraan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur per bulan transaksi - 8 dari 8 bulan mencatat hak kepaniteraan, seluruhnya biaya redaksi Rp10.000 per putusan. Yang BELUM: penyandingan dengan bukti setor ke kas negara, yang ada pada aplikasi keuangan satuan kerja, bukan pada SIPP.",
+  },
+  LP10: {
+    kunci: "lipaFormulirAktaCerai",
+    sifat: "sebagian",
+    catatan:
+      "Terukur, dan hasilnya 46 dari 248 - nomor seri blangko ditulis dalam TIGA bentuk pada satu tahun (S.24 002701, S002856, 002850) dan satu salah ketik (S0022909). Hanya 49 yang berbentuk baku. Laporan pemakaian blangko dari nomor seri ini tidak akan cocok dengan stok fisiknya. Yang BELUM: stok awal dan sisa fisik, yang tidak tersimpan pada SIPP.",
+  },
+  LP23: {
+    kunci: "ketepatanKirimLaporan",
+    sifat: "sebagian",
+    catatan:
+      "Terukur atas 22 LIPA dikali bulan rentang - 0 dari 264 pada satuan kerja yang belum mencatat pengiriman. Batas kirim tanggal 5 atau 10 bulan berikutnya menurut laporanPerkaraService, HARI LIBUR belum diperhitungkan, dan keputusannya belum diambil pimpinan. Laporan yang belum dicatat ditandai, bukan dikeluarkan: ketiadaan catatannya sendiri adalah temuan.",
+  },
+  LP24: {
+    kunci: "validitasLaporanSipp",
+    sifat: "sebagian",
+    catatan:
+      "Terukur atas 15 LIPA yang punya kueri SIPP dikali bulan - 0 dari 180 sampai angka laporannya dicatat. Angka SIPP dihitung menurut bulan PERISTIWA tiap LIPA, bukan bulan pendaftaran perkara. Selisih satu pun ditandai. Yang BELUM: kueri untuk LIPA 5, 11, 17, 18, 19, 20, 21 - sebagian tidak punya tabel, sebagian definisi hitungnya belum dipastikan dari petunjuk pelaporan.",
+  },
+  LP25: {
+    kunci: "kinerjaDipa04",
+    sifat: "sebagian",
+    catatan:
+      "Terukur atas tiga LIPA DIPA 04 dikali bulan - 0 dari 36 sampai pertanggungjawabannya dicatat. Realisasi fisiknya sudah terhitung dari SIPP: sidang di luar gedung menurut tanggal sidang, prodeo menurut pendaftaran, Posbakum menurut aturan tanpa-kuasa. Yang BELUM: nilai rupiah realisasi DIPA - SIPP tidak menyimpan pagu maupun serapan.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
