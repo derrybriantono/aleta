@@ -93,7 +93,21 @@ const BELUM_DAPAT = {
   },
 };
 
+/**
+ * Penjaga pendaftaran ganda.
+ *
+ * Rute gerbang memanggil daftarkanSemua() pada TIAP permintaan, dan
+ * kerangka menolak kunci yang sudah terdaftar - dengan sengaja, sebab dua
+ * penilaian berkunci sama akan saling menimpa riwayatnya.
+ *
+ * Tanpa penjaga ini, permintaan KEDUA dan seterusnya selalu gagal dengan
+ * pesan "sudah terdaftar", dan permintaan pertama sesudah bot dinyalakan
+ * selalu berhasil. Bentuk kegagalan seperti itu hampir mustahil ditemukan
+ * dari laporan pengguna: yang mencobanya sekali akan melihatnya jalan.
+ */
+let sudahDidaftar = false;
 function daftarkanSemua() {
+  if (sudahDidaftar) return;
   rapor.daftarkan({
     kunci: "raporMajelisHakim",
     kode: "AP01",
@@ -141,6 +155,7 @@ function daftarkanSemua() {
     sebutanDimensi: "juru sita",
     sumber: sumberTahapan(),
   });
+  sudahDidaftar = true;
 }
 
 /** Sambungan ke katalog - hanya yang benar-benar dibangun. */
