@@ -1073,6 +1073,111 @@ const SAMBUNGAN = {
     catatan:
       "Kewajaran perubahan antar bulan terukur - satu dari tujuh perbandingan tertangkap melonjak tiga kali lipat. Perbandingan terhadap bulan yang sama TAHUN LALU belum, sebab rentang penilaian yang dijalankan tidak selalu memuat tahun sebelumnya.",
   },
+  // ==========================================================================
+  // BAB 10 - MUTU PUTUSAN DAN PERSIDANGAN
+  // ==========================================================================
+  //
+  // Empat belas dari enam belas. Dua yang tidak disambungkan diperiksa lebih
+  // dulu pada datanya, bukan diduga:
+  //
+  //   MP01 pertimbangan hukum tidak disimpan SIPP. Yang disimpannya kolom
+  //        amar_putusan, dan isinya diktum saja - dari 388 putusan satu tahun
+  //        TIDAK SATU PUN memuat kata Pasal, Undang-Undang, KHI, atau
+  //        Peraturan. Itu bukan cacat putusannya; memang begitulah bentuk
+  //        amar. Pertimbangannya ada di dalam dokumen putusan, dan dokumen
+  //        itu tidak dapat dibaca dari sini. Menyambungkannya ke panjang amar
+  //        akan menghasilkan angka yang naik turun dengan meyakinkan dan
+  //        menjawab pertanyaan yang sama sekali lain.
+  //
+  //   MP05 eksaminasi putusan tidak punya satu pun tabel pada SIPP - ia
+  //        dikerjakan di luar aplikasi.
+  //
+  // Dua butir membaca teks yang diketik manusia (MP04 dan MP10), dan katalog
+  // sudah menyebut yang pertama RAPUH. Kalimat itu ikut sampai ke layar:
+  // keduanya bernada bertanya, bukan menuduh.
+  MP02: {
+    kunci: "kesesuaianPetitumAmar",
+    sifat: "sebagian",
+    catatan:
+      "Jumlah butir amar dibanding jumlah butir petitum terukur - 284 dari 292 putusan yang mengabulkan. Yang BELUM: kesesuaian MAKNANYA. Amar dengan jumlah butir yang sama masih dapat meninggalkan satu tuntutan tanpa jawaban, dan itu hanya dapat dilihat manusia yang membaca keduanya.",
+  },
+  MP03: {
+    kunci: "keajekanAmarAntarMajelis",
+    sifat: "sebagian",
+    catatan:
+      "Amar yang langka pada jenisnya terukur - 362 dari 377. Yang BELUM: pembandingan ANTAR MAJELIS yang sesungguhnya. Kelangkaan dihitung terhadap seluruh satuan kerja, bukan terhadap majelis lain pada perkara yang benar-benar serupa - dan kolom jenis_perkara_nama terlalu kasar untuk menyebut dua perkara serupa.",
+  },
+  MP04: {
+    kunci: "amarNafkahIddahMutah",
+    sifat: "sebagian",
+    catatan:
+      "Terukur dan RAPUH, persis seperti yang katalog sebutkan: dihitung dari pencarian kata pada teks amar. Dari 53 cerai talak yang dikabulkan, 19 amarnya menyebut nafkah, iddah, atau mut'ah. Pola pencarian yang lebih longgar sempat memulangkan 22 - selisih tiga pada satu pola kata, dan itulah sebabnya hasilnya harus dibaca, bukan dipercaya. Yang tidak memenuhi berarti pantas ditanyakan, bukan terbukti keliru.",
+  },
+  MP06: {
+    kunci: "polaPenundaanSidang",
+    sifat: "sebagian",
+    catatan:
+      "Penggolongan alasan penundaan terukur - 412 dari 427 masuk salah satu golongan. Delapan golongan yang ada disusun dari alasan yang benar-benar muncul pada satu satuan kerja; satuan kerja lain akan memunculkan alasan yang belum bergolongan, dan daftarnya memang harus bertambah.",
+  },
+  MP07: {
+    kunci: "jumlahPersidanganPerkara",
+    sifat: "penuh",
+    catatan: "",
+  },
+  MP08: {
+    kunci: "kehadiranParaPihakSidang",
+    sifat: "sebagian",
+    catatan:
+      "Keberadaan catatan kehadiran terukur - 848 dari 907 sidang. Yang BELUM: kesesuaian catatan kehadiran dengan verstek yang dijatuhkan. Kolom dihadiri_oleh menyimpan kode, dan pemetaan kode itu ke pihak mana yang hadir belum dipastikan pada aplikasi SIPP.",
+  },
+  MP09: {
+    kunci: "pelaksanaanMediasiHasil",
+    sifat: "sebagian",
+    catatan:
+      "Kelengkapan baris mediasi terukur - 65 dari 68 lengkap sampai laporan mediatornya. Yang BELUM: makna kode hasil_mediasi. Kode S, T, Y1, dan Y2 ada pada data tetapi artinya belum dipastikan dari sumber resmi, sehingga butir ini menilai kelengkapannya saja, bukan hasilnya.",
+  },
+  MP10: {
+    kunci: "kesepakatanMediasiSelarasAmar",
+    sifat: "sebagian",
+    catatan:
+      "Keselarasan kesepakatan dengan akhir perkara terukur - 16 dari 28. Dua di antaranya isi kesepakatannya ketikan asal, deretan huruf tanpa makna yang diketik supaya borang mau disimpan. Yang BELUM: pembandingan ISI kesepakatan dengan isi amarnya.",
+  },
+  MP11: {
+    kunci: "prakiraanWaktuPenyelesaian",
+    sifat: "sebagian",
+    catatan:
+      "Kecukupan sebaran dan kewajaran lama penyelesaian terukur - 377 dari 388. Yang BELUM: prakiraannya sendiri. ALETA belum menyusun sebaran itu menjadi rentang perkiraan yang dapat disampaikan kepada pihak, dan menyampaikan perkiraan waktu kepada pencari keadilan adalah keputusan pimpinan, bukan keputusan mesin.",
+  },
+  MP12: {
+    kunci: "petaKendaliMutuPenyelesaian",
+    sifat: "sebagian",
+    catatan:
+      "Batas kendali tiga simpangan baku terukur - delapan bulan, seluruhnya terkendali. Batasnya dihitung dari rentang yang sedang dinilai itu sendiri, bukan dari batas yang ditetapkan pimpinan, sehingga satuan kerja yang seluruh bulannya buruk akan tetap tampak terkendali.",
+  },
+  MP13: {
+    kunci: "corongTahapanPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Tahapan yang terlewati terukur atas tujuh tahapan - 430 dari 431. Tujuh tahapan itu tulang punggungnya saja; tahapan antara seperti pemberkasan, penyerahan salinan, dan pemberitahuan isi putusan belum masuk corong.",
+  },
+  MP14: {
+    kunci: "nilaiKondisiPenangananPerkara",
+    sifat: "sebagian",
+    catatan:
+      "Nilai gabungan lima unsur terukur - 384 dari 388 sehat. Bobotnya (30/20/20/20/10) dipilih sementara dan belum ditetapkan pimpinan. Nilai gabungan yang bobotnya belum disahkan tidak boleh dipakai menilai orang.",
+  },
+  MP15: {
+    kunci: "risikoLampauiLimaBulan",
+    sifat: "sebagian",
+    catatan:
+      "Dugaan, dan ditulis sebagai dugaan - dihitung dari umur perkara dan ada tidaknya jadwal sidang, tanpa satu pun persentase peluang. Umurnya dihitung sampai akhir rentang, sehingga butir ini hampir selalu penuh pada rentang bulanan dan baru berbicara pada rentang tahunan.",
+  },
+  MP16: {
+    kunci: "kronologiPerkaraMaju",
+    sifat: "sebagian",
+    catatan:
+      "Urutan maju tujuh peristiwa terukur - 429 dari 431, dan dua yang tertangkap masuk arsip sebelum berkekuatan hukum tetap. Yang BELUM: kronologi LENGKAP yang katalog minta - deret waktu yang memuat tiap panggilan, tiap sidang, dan tiap penundaan dalam satu tampilan.",
+  },
   KT06: {
     kunci: "ketaatanTenggangPanggilan",
     sifat: "penuh",
