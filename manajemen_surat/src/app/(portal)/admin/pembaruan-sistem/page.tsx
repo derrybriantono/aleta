@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ClipboardCopy, History, PackageCheck, Puzzle, RefreshCw, RotateCcw, ServerCog, ShieldAlert } from "lucide-react";
+import { Archive, CheckCircle2, ClipboardCopy, Database, History, PackageCheck, Puzzle, RefreshCw, RotateCcw, ServerCog, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { CatatanEkstensiDaftar } from "@/components/portal/catatan-ekstensi-daftar";
@@ -46,6 +46,13 @@ type UpdateHistoryItem = {
   backupFile?: string;
   bundleFile?: string;
   message?: string;
+};
+
+type KeteranganArsip = {
+  alat: { rar: boolean; "7z": boolean; xz: boolean; pg_dump: boolean };
+  format: { aplikasi: string; pembaruan: string; database: string };
+  rarTersedia: boolean;
+  catatan: string;
 };
 
 type UpdateStatus = {
@@ -132,6 +139,7 @@ export default function SystemUpdatePage() {
   const { currentUser } = usePortal();
   const effectiveRoleId = getEffectiveRoleId(currentUser);
   const isAdmin = effectiveRoleId === "super-admin" || effectiveRoleId === "admin";
+  const isSuperAdmin = effectiveRoleId === "super-admin";
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,6 +148,59 @@ export default function SystemUpdatePage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadResult, setUploadResult] = useState<StagedUpdatePackage | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [arsip, setArsip] = useState<KeteranganArsip | null>(null);
+  const [sedangArsip, setSedangArsip] = useState<string | null>(null);
+  const [galatArsip, setGalatArsip] = useState<string | null>(null);
+
+  // Format yang akan dihasilkan dibaca lebih dulu, supaya tombolnya menyebut
+  // ".7z" atau ".rar" SEBELUM ditekan - bukan sesudah berkasnya tiba dengan
+  // nama yang tidak diduga.
+  useEffect(() => {
+    if (!isAdmin) return;
+    let hidup = true;
+    void (async () => {
+      try {
+        const jawaban = await fetch(apiPath("/api/admin/system-update/arsip"), { cache: "no-store" });
+        if (!jawaban.ok) return;
+        const isi = await jawaban.json();
+        if (hidup) setArsip(isi?.data ?? isi);
+      } catch {
+        /* kartunya tetap tampil tanpa keterangan format */
+      }
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, [isAdmin]);
+
+  const unduhArsip = async (jenis: "aplikasi" | "pembaruan" | "database") => {
+    setSedangArsip(jenis);
+    setGalatArsip(null);
+    try {
+      const jawaban = await fetch(apiPath(`/api/admin/system-update/arsip?jenis=${jenis}`), {
+        cache: "no-store",
+      });
+      if (!jawaban.ok) {
+        const isi = await jawaban.json().catch(() => null);
+        throw new Error(isi?.error?.message ?? `Arsip ${jenis} gagal dibuat (${jawaban.status}).`);
+      }
+      const nama =
+        jawaban.headers.get("content-disposition")?.match(/filename="?([^"]+)"?/i)?.[1] ?? `aleta-${jenis}`;
+      const blob = await jawaban.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nama;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch (kesalahan) {
+      setGalatArsip(kesalahan instanceof Error ? kesalahan.message : "Arsip gagal dibuat.");
+    } finally {
+      setSedangArsip(null);
+    }
+  };
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloadResult, setDownloadResult] = useState<(StagedUpdatePackage & { version?: string }) | null>(null);
 
@@ -409,6 +470,94 @@ export default function SystemUpdatePage() {
               cd /var/www/html/aleta &amp;&amp; nohup bash scripts/aleta-apply-uploaded-update.sh --watch &amp;
             </code>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ==================================================================
+          UNDUHAN: SELURUH APLIKASI, PAKET PEMBARUAN, SELURUH BASIS DATA
+
+          Tiga berkas yang dibutuhkan orang yang hendak memasang ALETA di
+          tempat lain atau memulihkannya. Formatnya disebut sebelum ditekan,
+          dan RAR hanya dijanjikan bila programnya benar-benar ada - lihat
+          catatan di server/modules/backups/arsip.ts.
+          ================================================================== */}
+      <Card className="border-border/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Archive className="h-5 w-5 text-primary" />
+            Unduh Aplikasi, Paket Pembaruan, dan Basis Data
+          </CardTitle>
+          <CardDescription>
+            Untuk memasang ALETA di tempat lain atau memulihkannya utuh. Dimampatkan sekuat alat yang
+            terpasang di peladen, tanpa mengurangi satu berkas pun.
+            {arsip ? <span className="mt-1 block text-foreground">{arsip.catatan}</span> : null}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {galatArsip ? (
+            <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{galatArsip}</p>
+          ) : null}
+          <div className="grid gap-3 md:grid-cols-3">
+            {(
+              [
+                {
+                  jenis: "aplikasi" as const,
+                  judul: "Seluruh aplikasi",
+                  keterangan:
+                    "Semua berkas sumber portal dan bot, migrasi, skrip, dan dokumen. node_modules dan hasil build tidak disertakan - keduanya dibangun ulang dari lockfile yang ikut.",
+                  ikon: <PackageCheck className="h-4 w-4" />,
+                },
+                {
+                  jenis: "pembaruan" as const,
+                  judul: "Paket pembaruan terbaru",
+                  keterangan:
+                    "Paket .tar.gz yang diterapkan scripts/aleta-update.sh - bentuk yang sama dengan hasil aleta-make-update.sh. Bila di host belum ada, disusun dari daftar isi yang sama.",
+                  ikon: <RefreshCw className="h-4 w-4" />,
+                },
+                {
+                  jenis: "database" as const,
+                  judul: "Seluruh basis data",
+                  keterangan:
+                    "SQL polos dan format kustom pg_dump dari PostgreSQL ALETA, beserta petunjuk pemulihan. Tabel bot di MySQL SIPP disebut cara mencadangkannya.",
+                  ikon: <Database className="h-4 w-4" />,
+                },
+              ] as const
+            ).map((butir) => (
+              <div key={butir.jenis} className="flex flex-col justify-between gap-3 rounded-2xl border border-border bg-muted/30 p-4">
+                <div>
+                  <p className="flex items-center gap-2 font-semibold text-foreground">
+                    {butir.ikon}
+                    {butir.judul}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{butir.keterangan}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={sedangArsip !== null || !isSuperAdmin}
+                    onClick={() => void unduhArsip(butir.jenis)}
+                    data-testid={`unduh-arsip-${butir.jenis}`}
+                  >
+                    {sedangArsip === butir.jenis ? "Menyusun arsip..." : "Unduh"}
+                  </Button>
+                  {arsip ? (
+                    <Badge variant="outline">.{arsip.format[butir.jenis]}</Badge>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+          {!isSuperAdmin ? (
+            <p className="text-xs text-muted-foreground">
+              Hanya Super Admin yang dapat mengunduh ketiganya - masing-masing memuat seluruh kode atau
+              seluruh data satuan kerja.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Menyusun arsip basis data dapat memakan beberapa menit. Berkas dialirkan langsung ke peramban dan
+              tidak disimpan di peladen.
+            </p>
+          )}
         </CardContent>
       </Card>
 

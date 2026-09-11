@@ -71,6 +71,24 @@ RUN set -eux; \
 
 FROM node:20-bookworm-slim AS runner
 
+# ============================================================================
+# ALAT ARSIP DI DALAM CONTAINER
+# ============================================================================
+#
+# Update Manager membuat arsip aplikasi dan basis data dari dalam container:
+#   p7zip-full        7z LZMA2 tingkat 9 - sama kuat atau lebih kuat dari RAR,
+#                     bebas dipakai, dibuka WinRAR maupun 7-Zip
+#   xz-utils          cadangan bila 7z tidak dapat dipakai
+#   postgresql-client pg_dump untuk SQL polos DAN format kustom pg_restore
+#
+# rar TIDAK dipasang: berbayar dan tertutup. Bila kelak dipasang di citra ini,
+# arsipnya otomatis menjadi .rar - alatnya diperiksa saat berjalan, bukan
+# dipatok di kode.
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends p7zip-full xz-utils postgresql-client; \
+  rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 ARG NEXT_PUBLIC_BASE_PATH=/aleta
 ENV NODE_ENV=production
