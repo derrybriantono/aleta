@@ -645,6 +645,18 @@ export const ecourtExtensionAccess = pgTable(
 );
 
 /**
+ * Penanda sesi portal: diingat atau tidak, dan versi aplikasi saat masuk.
+ *
+ * Lihat catatan pada drizzle/0041_sesi_portal.sql.
+ */
+export const sesiPortal = pgTable("sesi_portal", {
+  sessionId: text("session_id").primaryKey(),
+  diingat: integer("diingat").notNull().default(0),
+  versiAplikasi: text("versi_aplikasi").notNull().default(""),
+  dibuatPada: text("dibuat_pada").notNull(),
+});
+
+/**
  * Susunan kartu dasbor milik tiap pengguna.
  *
  * Satu baris per halaman; susunanJson memuat seluruh zonanya. Lihat catatan

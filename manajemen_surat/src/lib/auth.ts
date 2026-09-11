@@ -12,8 +12,26 @@ let cachedAuth: ReturnType<typeof createAuthInstance> | undefined;
 let cachedOrm: unknown;
 let cachedLocalAuthSecret: string | undefined;
 
-export const AUTH_SESSION_EXPIRES_IN_SECONDS = 60 * 60;
-export const AUTH_SESSION_UPDATE_AGE_SECONDS = 60 * 10;
+/**
+ * ============================================================================
+ * MASA BERLAKU BETTER AUTH ADALAH BATAS TERAKHIR, BUKAN ATURANNYA
+ * ============================================================================
+ *
+ * Aturan yang sesungguhnya ada di server/modules/portal/sesi-portal.ts: yang
+ * mencentang "Simpan login akun" bertahan sampai aplikasinya diperbarui, yang
+ * tidak mencentangnya dua jam.
+ *
+ * Better Auth memberi SATU masa berlaku bagi seluruh sesi - rememberMe hanya
+ * menentukan kukinya bertahan setelah peramban ditutup atau tidak. Karena itu
+ * angka di sini disetel panjang, sebagai pagar terakhir bila penandanya hilang
+ * atau basis datanya tidak dapat dibaca; yang memutus sesi lebih awal adalah
+ * pemeriksaan di resolveActorUserId.
+ *
+ * Dulu satu jam, dan itu memutus panitera pengganti di tengah menulis berita
+ * acara.
+ */
+export const AUTH_SESSION_EXPIRES_IN_SECONDS = 180 * 24 * 60 * 60;
+export const AUTH_SESSION_UPDATE_AGE_SECONDS = 60 * 60;
 
 function normalizeOrigin(input: string) {
   try {

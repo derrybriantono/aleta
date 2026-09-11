@@ -252,6 +252,23 @@ export default function LoginPage() {
         clearRememberedLoginIdentifier();
       }
 
+      // ======================================================================
+      // MENANDAI SESINYA: DIINGAT ATAU DUA JAM
+      // ======================================================================
+      //
+      // Better Auth memakai rememberMe hanya untuk menentukan kukinya bertahan
+      // setelah peramban ditutup atau tidak; masa berlaku sesinya di server
+      // sama bagi keduanya. Penanda inilah yang membedakannya.
+      //
+      // Kegagalannya TIDAK membatalkan masuk. Sesi yang tidak bertanda
+      // diperlakukan sebagai tidak diingat - dua jam - yaitu sisi yang lebih
+      // ketat, dan pengguna tetap masuk seperti biasa.
+      await fetch(apiPath("/api/portal/sesi"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ diingat: rememberAccount }),
+      }).catch(() => undefined);
+
       setLoginNotice("Login berhasil. Menyiapkan Portal ALETA...");
       await refetchSession().catch(() => undefined);
       router.replace("/portal");

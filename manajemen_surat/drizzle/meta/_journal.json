@@ -288,6 +288,13 @@
       "when": 1789098809885,
       "tag": "0040_tata_letak_dasbor",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1789107258932,
+      "tag": "0041_sesi_portal",
+      "breakpoints": true
     }
   ]
 }

@@ -9,9 +9,13 @@ import {
 } from "@/lib/auth";
 
 describe("auth session duration", () => {
-  it("keeps portal sessions alive for one hour", () => {
-    expect(AUTH_SESSION_EXPIRES_IN_SECONDS).toBe(60 * 60);
-    expect(AUTH_SESSION_UPDATE_AGE_SECONDS).toBe(60 * 10);
+  it("memakai masa berlaku panjang sebagai pagar terakhir, bukan sebagai aturannya", () => {
+    // Aturan yang sesungguhnya ada di sesi-portal.ts: dua jam bagi yang tidak
+    // mencentang "Simpan login akun", dan sampai pembaruan bagi yang
+    // mencentangnya. Angka di sini hanya batas terakhir - lihat catatan pada
+    // auth.ts. Dulu satu jam, dan itu memutus orang di tengah pekerjaan.
+    expect(AUTH_SESSION_EXPIRES_IN_SECONDS).toBe(180 * 24 * 60 * 60);
+    expect(AUTH_SESSION_UPDATE_AGE_SECONDS).toBe(60 * 60);
   });
 
   it("keeps Better Auth mounted under the internal API route when the app runs under /aleta", () => {
