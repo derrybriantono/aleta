@@ -55,11 +55,22 @@ import {
   type AletaBotQuery,
   type AletaBotQueryCategory,
   type AletaBotSendingRiskPreset,
+  type AletaBotSettings,
   type AletaBotSnapshot,
   type AletaBotTemplate,
   type AletaBotUnknownQuestionReview,
   type AletaBotWorkerState,
 } from "@/lib/aleta-bot-types";
+import {
+  gabungkanKatalogPesanBot,
+  pesanDimatikan,
+  setelPesan,
+  type SaluranPesanBot,
+} from "@/lib/katalog-pesan-bot";
+import type {
+  GatewayKelengkapanHasil,
+  GatewayKelengkapanStatus,
+} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import {
   ALETA_BOT_VARIABLE_CATEGORY_LABELS,
   type AletaBotVariableCategory,
@@ -564,6 +575,8 @@ const emptySnapshot: AletaBotSnapshot = {
     notificationsEnabled: false,
     kirimPegawaiEnabled: true,
     kirimPihakEnabled: true,
+    kirimSaatLengkap: { enabled: false, pegawai: true, pihak: true, jendelaHari: 14, intervalMenit: 15 },
+    pesanNonaktif: { pegawai: [], pihak: [] },
     adminWhatsappNumber: "",
     messageDelayMs: 1500,
     sendingRiskLevel: 1,
@@ -2646,6 +2659,8 @@ export function AletaBotAdminPanel() {
       settingsDraft.notificationsEnabled !== snapshot.settings.notificationsEnabled ||
       settingsDraft.kirimPegawaiEnabled !== snapshot.settings.kirimPegawaiEnabled ||
       settingsDraft.kirimPihakEnabled !== snapshot.settings.kirimPihakEnabled ||
+      JSON.stringify(settingsDraft.kirimSaatLengkap) !== JSON.stringify(snapshot.settings.kirimSaatLengkap) ||
+      JSON.stringify(settingsDraft.pesanNonaktif) !== JSON.stringify(snapshot.settings.pesanNonaktif) ||
       settingsDraft.dryRunEnabled !== snapshot.settings.dryRunEnabled ||
       settingsDraft.adminWhatsappNumber !== snapshot.settings.adminWhatsappNumber ||
       settingsDraft.testTargetNumber !== snapshot.settings.testTargetNumber ||
@@ -2668,6 +2683,8 @@ export function AletaBotAdminPanel() {
         notificationsEnabled: draft.notificationsEnabled,
         kirimPegawaiEnabled: draft.kirimPegawaiEnabled,
         kirimPihakEnabled: draft.kirimPihakEnabled,
+        kirimSaatLengkap: draft.kirimSaatLengkap,
+        pesanNonaktif: draft.pesanNonaktif,
         dryRunEnabled: draft.dryRunEnabled,
         adminWhatsappNumber: draft.adminWhatsappNumber,
         testTargetNumber: draft.testTargetNumber,
@@ -4105,14 +4122,17 @@ export function AletaBotAdminPanel() {
           />
           {!showAdvancedMode ? (
             <div className="mb-4 rounded-xl border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Mode sederhana hanya menampilkan panel pantau cepat: Ringkasan, WhatsApp, Pertanyaan, dan Pesan Gagal. Pengaturan detail tersedia di Mode Lanjutan.
+              Mode sederhana menampilkan panel pantau cepat dan kontrol utama bot. Pengaturan rinci (templat, sumber data, notifikasi, integrasi) tersedia di Mode Lanjutan.
             </div>
           ) : null}
-          {!showAdvancedMode && isSuperAdmin ? (
-            <Card id="pengaturan-bot-cepat" className="mb-4">
+          {/* Kontrol utama tampil di KEDUA mode. Sebelumnya hanya di mode
+              sederhana, sehingga admin yang membuka Mode Lanjutan hanya
+              melihat penggeser risiko dan mengira saklar botnya tidak ada. */}
+          {isSuperAdmin ? (
+            <Card id="pengaturan-bot-cepat" className="mb-4" data-testid="kontrol-cepat-bot">
               <CardHeader>
                 <CardTitle>Kontrol Cepat Bot</CardTitle>
-                <CardDescription>Pengaturan utama tersedia di Mode Sederhana. Klik simpan agar status aktif bot ikut disinkronkan ke runtime.</CardDescription>
+                <CardDescription>Saklar utama bot. Klik simpan agar status aktif bot ikut disinkronkan ke runtime.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 lg:grid-cols-3">
@@ -4184,6 +4204,35 @@ export function AletaBotAdminPanel() {
                 )}
               </CardContent>
             </Card>
+          ) : null}
+          {isSuperAdmin ? (
+            <KartuKirimSaatLengkap
+              draft={settingsDraft.kirimSaatLengkap}
+              onChange={(nilai) => setSettingsDraft((current) => ({ ...current, kirimSaatLengkap: nilai }))}
+              onSimpan={() =>
+                void saveSettings(settingsDraft, {
+                  closeModal: false,
+                  successMessage: "Pengaturan kirim saat data lengkap tersimpan dan runtime diperbarui.",
+                })
+              }
+              isSaving={isSaving}
+              berubah={settingsDraftChanged}
+            />
+          ) : null}
+          {isSuperAdmin ? (
+            <KartuSaklarPerPesan
+              draft={settingsDraft.pesanNonaktif}
+              notifications={snapshot.notifications}
+              onChange={(nilai) => setSettingsDraft((current) => ({ ...current, pesanNonaktif: nilai }))}
+              onSimpan={() =>
+                void saveSettings(settingsDraft, {
+                  closeModal: false,
+                  successMessage: "Saklar per pesan tersimpan dan runtime diperbarui.",
+                })
+              }
+              isSaving={isSaving}
+              berubah={settingsDraftChanged}
+            />
           ) : null}
           <div className="grid gap-4 lg:grid-cols-3">
             <InfoCard title="Nomor Admin" value={snapshot.settings.adminWhatsappNumber || "Belum diatur"} hint="Dipakai sebagai nomor kontrol bot. Disimpan di Portal ALETA dan konfigurasi penghubung." onClick={() => navigateAdminAction("#pengaturan-bot")} actionLabel="Atur Nomor Admin" />
@@ -7058,6 +7107,338 @@ function HealthSummaryCard({
       <Badge variant={variant} className="mt-2 text-[10px]">{status === "ok" ? "Normal" : status === "warning" ? "Perhatian" : "Masalah"}</Badge>
       {onClick ? <p className="mt-3 text-xs font-semibold text-primary">Buka pengaturan terkait</p> : null}
     </div>
+  );
+}
+
+// ============================================================================
+// KIRIM SAAT DATA LENGKAP
+// ============================================================================
+//
+// Pemberitahuan yang menunggu datanya LENGKAP, bukan sekadar baru. Kartunya
+// memuat saklar universal, saklar per saluran, jendela pemantauan, dan
+// pratinjau daftar kirim yang disusun bot dari SIPP - supaya admin melihat
+// apa yang AKAN terkirim sebelum menyalakannya.
+
+function KartuKirimSaatLengkap({
+  draft,
+  onChange,
+  onSimpan,
+  isSaving,
+  berubah,
+}: {
+  draft: AletaBotSettings["kirimSaatLengkap"];
+  onChange: (nilai: AletaBotSettings["kirimSaatLengkap"]) => void;
+  onSimpan: () => void;
+  isSaving: boolean;
+  berubah: boolean;
+}) {
+  const [status, setStatus] = useState<GatewayKelengkapanStatus | null>(null);
+  const [hasil, setHasil] = useState<GatewayKelengkapanHasil | null>(null);
+  const [memuat, setMemuat] = useState(false);
+  const [galat, setGalat] = useState<string | null>(null);
+  const [contohTerbuka, setContohTerbuka] = useState<string | null>(null);
+
+  const muatStatus = useCallback(async () => {
+    try {
+      const data = await requestBot<GatewayKelengkapanStatus>("/api/admin/aleta-bot/kelengkapan");
+      setStatus(data);
+      setGalat(null);
+    } catch (error) {
+      setStatus(null);
+      setGalat(error instanceof Error ? error.message : "Keadaan pemantau belum dapat dibaca dari bot.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void muatStatus();
+  }, [muatStatus]);
+
+  const jalankan = async (pratinjau: boolean) => {
+    if (!pratinjau && !window.confirm("Jalankan pemantau SEKARANG dan antrekan pesan ke nomor pihak/pegawai yang datanya sudah lengkap?")) {
+      return;
+    }
+    setMemuat(true);
+    setGalat(null);
+    try {
+      const data = await requestBot<GatewayKelengkapanHasil>("/api/admin/aleta-bot/kelengkapan", {
+        method: "POST",
+        body: JSON.stringify({ pratinjau }),
+      });
+      setHasil(data);
+      await muatStatus();
+    } catch (error) {
+      setGalat(error instanceof Error ? error.message : "Pemantau gagal dijalankan.");
+    } finally {
+      setMemuat(false);
+    }
+  };
+
+  const alasanManusiawi: Record<string, string> = {
+    bot_dimatikan: "Bot sedang dimatikan",
+    notifikasi_dimatikan: "Notifikasi otomatis dimatikan",
+    fitur_kirim_saat_lengkap_dimatikan: "Fitur ini belum dinyalakan",
+    fitur_saluran_pegawai_dimatikan: "Saluran pegawai fitur ini dimatikan",
+    fitur_saluran_pihak_dimatikan: "Saluran pihak fitur ini dimatikan",
+    pengiriman_pegawai_dimatikan: "Kirim ke pegawai dimatikan",
+    pengiriman_pihak_dimatikan: "Kirim ke pihak dimatikan",
+    pesan_pegawai_dimatikan: "Dimatikan dari saklar per pesan",
+    pesan_pihak_dimatikan: "Dimatikan dari saklar per pesan",
+  };
+
+  return (
+    <Card id="kirim-saat-lengkap" className="mb-4" data-testid="kartu-kirim-saat-lengkap">
+      <CardHeader>
+        <CardTitle>Kirim Saat Data Lengkap</CardTitle>
+        <CardDescription>
+          Pesan dikirim begitu datanya lengkap, bukan sekadar baru: perkara baru diberitahukan kepada para pihak setelah
+          PMH, PHS, dan jadwal sidang pertama terisi; penugasan diberitahukan kepada majelis, PP, dan JS setelah seluruh
+          penetapannya terisi. Setiap perkara hanya dikirimi sekali.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <ToggleRow
+            label="Fitur aktif (saklar universal)"
+            description="Mati berarti seluruh pemantau diam, apa pun saklar di bawahnya."
+            checked={draft.enabled}
+            onCheckedChange={(value) => onChange({ ...draft, enabled: value })}
+          />
+          <ToggleRow
+            label="Untuk pegawai"
+            description="Penugasan perkara kepada hakim majelis, panitera pengganti, dan juru sita."
+            checked={draft.pegawai}
+            onCheckedChange={(value) => onChange({ ...draft, pegawai: value })}
+          />
+          <ToggleRow
+            label="Untuk pihak berperkara"
+            description="Perkara baru kepada penggugat/pemohon, tergugat/termohon, dan kuasanya."
+            checked={draft.pihak}
+            onCheckedChange={(value) => onChange({ ...draft, pihak: value })}
+          />
+        </div>
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+          <Field
+            label="Jendela perkara baru (hari)"
+            type="number"
+            value={String(draft.jendelaHari)}
+            onChange={(value) => onChange({ ...draft, jendelaHari: Number(value) || 0 })}
+            placeholder="14"
+          />
+          <Field
+            label="Jarak pemeriksaan (menit)"
+            type="number"
+            value={String(draft.intervalMenit)}
+            onChange={(value) => onChange({ ...draft, intervalMenit: Number(value) || 0 })}
+            placeholder="15"
+          />
+          <Button onClick={onSimpan} disabled={isSaving || !berubah} data-testid="simpan-kirim-saat-lengkap">
+            <CheckCircle2 className="h-4 w-4" />
+            {isSaving ? "Menyimpan..." : berubah ? "Simpan" : "Sudah Tersimpan"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Jendela 1-90 hari; jarak 5-240 menit. Pesan tetap melewati seluruh pengaman bot: jam kirim, irama, saklar
+          pegawai/pihak, dan saklar per pesan.
+        </p>
+
+        <div className="rounded-xl border border-border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Keadaan pemantau di bot</p>
+              <p className="text-xs text-muted-foreground">
+                {status
+                  ? status.terakhirJalan
+                    ? `Terakhir berjalan ${formatDateTime(status.terakhirJalan)} (${status.terakhirPemicu || "jadwal"}).`
+                    : "Belum pernah berjalan sejak bot dinyalakan."
+                  : galat ?? "Membaca keadaan pemantau..."}
+                {status?.terakhirGalat ? ` Galat terakhir: ${humanizeErrorMessage(status.terakhirGalat)}.` : ""}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => void jalankan(true)} disabled={memuat} data-testid="pratinjau-kirim-saat-lengkap">
+                {memuat ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+                Pratinjau daftar kirim
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => void jalankan(false)} disabled={memuat || !draft.enabled}>
+                <Send className="h-3.5 w-3.5" />
+                Jalankan sekarang
+              </Button>
+            </div>
+          </div>
+
+          {status ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {status.definisi.map((definisi) => (
+                <div key={definisi.key} className="rounded-lg border border-border/70 bg-muted/20 p-3 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-foreground">{definisi.nama}</span>
+                    <Badge variant={definisi.boleh ? "success" : "muted"}>
+                      {definisi.boleh ? "Siap berjalan" : alasanManusiawi[definisi.alasan] ?? definisi.alasan}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-muted-foreground">{definisi.keterangan}</p>
+                  <ul className="mt-1 list-disc pl-4 text-muted-foreground">
+                    {definisi.syarat.map((syarat) => (
+                      <li key={syarat}>{syarat}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {hasil ? (
+            <div className="mt-3 space-y-2" data-testid="hasil-kirim-saat-lengkap">
+              <p className="text-xs font-semibold text-foreground">
+                {hasil.pratinjau ? "Pratinjau" : "Hasil"} {hasil.dijalankanPada ? formatDateTime(hasil.dijalankanPada) : ""}
+                {hasil.sippTerbaca === false ? ` - SIPP tidak terbaca: ${hasil.alasanSipp}` : ""}
+                {!hasil.ok && hasil.alasan ? ` - ${humanizeErrorMessage(hasil.alasan)}` : ""}
+              </p>
+              {hasil.definisi.map((definisi) => (
+                <div key={definisi.key} className="rounded-lg border border-border/70 p-3 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-foreground">{definisi.nama}</span>
+                    <span className="text-muted-foreground">
+                      {definisi.perkaraLengkap} perkara lengkap · {definisi.calon} calon penerima · {definisi.sudahPernah} sudah pernah
+                      {hasil.pratinjau ? "" : ` · ${definisi.diantrekan} diantrekan`}
+                      {definisi.dilewati.tanpaNomor ? ` · ${definisi.dilewati.tanpaNomor} tanpa nomor sah` : ""}
+                      {definisi.dilewati.tidakCocok ? ` · ${definisi.dilewati.tidakCocok} nama tidak cocok dengan pegawai portal` : ""}
+                    </span>
+                    {!definisi.boleh ? (
+                      <Badge variant="muted">{alasanManusiawi[definisi.alasan] ?? definisi.alasan}</Badge>
+                    ) : null}
+                  </div>
+                  {definisi.contoh.length > 0 ? (
+                    <div className="mt-2 space-y-1">
+                      {definisi.contoh.map((contoh) => {
+                        const kunci = `${definisi.key}:${contoh.nomorPerkara}:${contoh.nomor}`;
+                        return (
+                          <div key={kunci} className="rounded-md bg-muted/30 px-2 py-1">
+                            <button
+                              type="button"
+                              className="flex w-full flex-wrap items-center gap-2 text-left"
+                              onClick={() => setContohTerbuka((sekarang) => (sekarang === kunci ? null : kunci))}
+                            >
+                              <span className="font-medium text-foreground">{contoh.nama}</span>
+                              <span className="text-muted-foreground">{contoh.peran}</span>
+                              <span className="text-muted-foreground">{contoh.nomorPerkara}</span>
+                              <span className="text-muted-foreground">{contoh.nomor}</span>
+                            </button>
+                            {contohTerbuka === kunci ? (
+                              <pre className="mt-1 whitespace-pre-wrap rounded border border-border bg-background p-2 text-[11px] leading-5 text-foreground">
+                                {contoh.pesan}
+                              </pre>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {galat && status ? <p className="mt-2 text-xs text-destructive">{galat}</p> : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================================
+// SAKLAR PER PESAN
+// ============================================================================
+//
+// Setiap jenis pesan dapat dimatikan sendiri, per saluran. Yang disimpan
+// adalah daftar yang MATI: pesan jenis baru yang belum dikenal portal tetap
+// terkirim sampai seseorang mematikannya.
+
+function KartuSaklarPerPesan({
+  draft,
+  notifications,
+  onChange,
+  onSimpan,
+  isSaving,
+  berubah,
+}: {
+  draft: AletaBotSettings["pesanNonaktif"];
+  notifications: AletaBotNotification[];
+  onChange: (nilai: AletaBotSettings["pesanNonaktif"]) => void;
+  onSimpan: () => void;
+  isSaving: boolean;
+  berubah: boolean;
+}) {
+  const katalog = useMemo(() => gabungkanKatalogPesanBot(notifications), [notifications]);
+  const perSaluran = (saluran: SaluranPesanBot) => katalog.filter((butir) => butir.saluran === saluran);
+  const hitungAktif = (saluran: SaluranPesanBot) =>
+    perSaluran(saluran).filter((butir) => !pesanDimatikan(draft, butir.key, saluran)).length;
+
+  const setelSemua = (saluran: SaluranPesanBot, aktif: boolean) => {
+    let hasil = draft;
+    for (const butir of perSaluran(saluran)) {
+      hasil = setelPesan(hasil, butir.key, saluran, aktif);
+    }
+    onChange(hasil);
+  };
+
+  const kolom = (saluran: SaluranPesanBot, judul: string) => (
+    <div className="space-y-2" data-testid={`saklar-pesan-${saluran}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-foreground">
+          {judul}{" "}
+          <span className="text-xs font-normal text-muted-foreground">
+            ({hitungAktif(saluran)} dari {perSaluran(saluran).length} aktif)
+          </span>
+        </p>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setelSemua(saluran, true)}>
+            Nyalakan semua
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setelSemua(saluran, false)}>
+            Matikan semua
+          </Button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {perSaluran(saluran).map((butir) => (
+          <ToggleRow
+            key={butir.key}
+            label={butir.nama}
+            description={butir.keterangan}
+            checked={!pesanDimatikan(draft, butir.key, saluran)}
+            onCheckedChange={(value) => onChange(setelPesan(draft, butir.key, saluran, value))}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <Card id="saklar-per-pesan" className="mb-4" data-testid="kartu-saklar-per-pesan">
+      <CardHeader>
+        <CardTitle>Saklar per Pesan</CardTitle>
+        <CardDescription>
+          Matikan satu jenis pemberitahuan tanpa menyentuh yang lain. Berlaku untuk seluruh jalur pengiriman bot; balasan
+          atas pesan yang masuk tidak pernah ikut ditahan.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-6 lg:grid-cols-2">
+          {kolom("pegawai", "Pesan ke pegawai")}
+          {kolom("pihak", "Pesan ke pihak berperkara")}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            {berubah ? "Ada perubahan yang belum disimpan." : "Saklar per pesan sudah sama dengan data tersimpan."}
+          </p>
+          <Button onClick={onSimpan} disabled={isSaving || !berubah} data-testid="simpan-saklar-per-pesan">
+            <CheckCircle2 className="h-4 w-4" />
+            {isSaving ? "Menyimpan..." : berubah ? "Simpan Saklar per Pesan" : "Sudah Tersimpan"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

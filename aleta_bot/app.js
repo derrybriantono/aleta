@@ -39,6 +39,7 @@ const banSignalService = require("./services/banSignalService");
 const humanPresenceService = require("./services/humanPresenceService");
 const ecourtDocumentService = require("./services/ecourtDocumentService");
 const ecourtNotificationWorker = require("./services/ecourtNotificationWorker");
+const kelengkapanDataService = require("./services/kelengkapanDataService");
 const ecourtVerificationService = require("./services/ecourtVerificationService");
 const nomorVerificationService = require("./services/nomorVerificationService");
 const ecourtSchedulerService = require("./services/ecourtSchedulerService");
@@ -1025,6 +1026,13 @@ ecourtSchedulerService.mulai();
 // Agung, dan itu tidak pantas menyala sendiri oleh pembaruan.
 ecourtSesiPantauService.mulai();
 dynamicNotificationSchedulerService.startDynamicNotificationScheduler();
+
+// Pemantau kelengkapan data: mengirim pemberitahuan begitu perkara baru
+// LENGKAP (PMH, PHS, jadwal sidang pertama), bukan sekadar baru. Pewaktunya
+// menyala, tetapi tidak mengirim apa pun sampai admin menyalakan saklar
+// "Kirim saat data lengkap" di portal - lihat kirimSaatLengkap pada
+// config/runtime-config.js.
+kelengkapanDataService.mulai();
 
 // Menilai nomor yang pesannya tidak pernah sampai, lalu menghentikannya.
 // Dijalankan sekali sehari saja: penilaiannya memang menunggu lebih dari

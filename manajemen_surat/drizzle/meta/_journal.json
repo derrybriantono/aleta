@@ -302,6 +302,13 @@
       "when": 1789107672928,
       "tag": "0042_tata_letak_bawaan",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1789125600000,
+      "tag": "0043_saklar_pesan_bot",
+      "breakpoints": true
     }
   ]
 }

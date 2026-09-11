@@ -2321,6 +2321,81 @@ export async function getGatewayPenunjukanPeriksa(payload: {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Kirim saat data lengkap
+// ---------------------------------------------------------------------------
+
+export type GatewayKelengkapanDefinisi = {
+  key: string;
+  saluran: "pegawai" | "pihak";
+  kategori: string;
+  nama: string;
+  keterangan: string;
+  syarat: string[];
+  boleh: boolean;
+  alasan: string;
+};
+
+export type GatewayKelengkapanRingkasDefinisi = {
+  key: string;
+  nama: string;
+  saluran: "pegawai" | "pihak";
+  boleh: boolean;
+  alasan: string;
+  perkaraLengkap: number;
+  calon: number;
+  sudahPernah: number;
+  diantrekan: number;
+  dilewati: { tanpaNomor: number; tidakCocok: number };
+  contoh: Array<{ nomorPerkara: string; nama: string; nomor: string; peran: string; pesan: string }>;
+};
+
+export type GatewayKelengkapanHasil = {
+  ok: boolean;
+  alasan?: string;
+  pratinjau: boolean;
+  pemicu?: string;
+  dijalankanPada?: string;
+  lamaMs?: number;
+  jendelaHari?: number;
+  sippTerbaca?: boolean | null;
+  alasanSipp?: string;
+  definisi: GatewayKelengkapanRingkasDefinisi[];
+};
+
+export type GatewayKelengkapanStatus = {
+  ok: boolean;
+  aktif: boolean;
+  sedangJalan: boolean;
+  pengaturan: { enabled: boolean; pegawai: boolean; pihak: boolean; jendelaHari: number; intervalMenit: number };
+  terakhirJalan: string | null;
+  terakhirPemicu: string;
+  terakhirHasil: GatewayKelengkapanHasil | null;
+  terakhirGalat: string;
+  definisi: GatewayKelengkapanDefinisi[];
+};
+
+/** Keadaan pemantau kelengkapan pada bot. */
+export async function getGatewayKelengkapanStatus(): Promise<GatewayResult<GatewayKelengkapanStatus>> {
+  return gatewayFetch("/internal/aleta-bot/kelengkapan/status");
+}
+
+/**
+ * Menjalankan pemantau kelengkapan. Pratinjau hanya menyusun daftar; yang
+ * sungguhan mengantrekan pesan. Membaca SIPP untuk puluhan perkara, jadi
+ * batas waktunya lebih lapang dari panggilan biasa.
+ */
+export async function runGatewayKelengkapan(payload: {
+  pratinjau: boolean;
+  olehSiapa: string;
+}): Promise<GatewayResult<{ ok: boolean; hasil: GatewayKelengkapanHasil }>> {
+  return gatewayFetch("/internal/aleta-bot/kelengkapan/jalankan", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    timeoutMs: 120_000,
+  });
+}
+
 /** Pengaturan e-Court yang dapat disunting. */
 export async function getGatewayEcourtSettings(): Promise<
   GatewayResult<{ ok: boolean; pengaturan: GatewayEcourtSettings }>

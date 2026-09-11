@@ -39,6 +39,13 @@ import {
   type AletaBotManualSendResult,
   type AletaBotManualSendTemplatePreview,
 } from "@/lib/aleta-bot-types";
+import {
+  BAWAAN_KIRIM_SAAT_LENGKAP,
+  bacaJsonKirimSaatLengkap,
+  bacaJsonPesanNonaktif,
+  rapikanKirimSaatLengkap,
+  rapikanPesanNonaktif,
+} from "@/lib/katalog-pesan-bot";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { getPositionsFromDb, getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { getAISettingsFromDb, resolveAIConfigForModule } from "@/server/modules/ai/service";
@@ -90,6 +97,9 @@ type SettingsRow = {
    */
   kirim_pegawai_enabled?: number;
   kirim_pihak_enabled?: number;
+  /** Migrasi 0043 - JSON; '{}' berarti fitur mati dan tidak ada pesan yang dimatikan. */
+  kirim_saat_lengkap_json?: string;
+  pesan_nonaktif_json?: string;
   admin_whatsapp_number: string;
   message_delay_ms: number;
   sending_risk_level: number;
@@ -630,6 +640,8 @@ const DEFAULT_SETTINGS: Omit<AletaBotSettings, "updatedAt"> = {
   // Menyala kecuali dimatikan sendiri - lihat catatan di schema.ts.
   kirimPegawaiEnabled: true,
   kirimPihakEnabled: true,
+  kirimSaatLengkap: { ...BAWAAN_KIRIM_SAAT_LENGKAP },
+  pesanNonaktif: { pegawai: [], pihak: [] },
   adminWhatsappNumber: "",
   messageDelayMs: 1500,
   // Default MINIMAL: paling aman dari suspend/ban. Operator dapat menaikkan
@@ -3875,6 +3887,8 @@ function mapSettings(row: SettingsRow): AletaBotSettings {
     // pemasangan versi baru tidak boleh menghentikan pengiriman sendiri.
     kirimPegawaiEnabled: row.kirim_pegawai_enabled === undefined ? true : Boolean(row.kirim_pegawai_enabled),
     kirimPihakEnabled: row.kirim_pihak_enabled === undefined ? true : Boolean(row.kirim_pihak_enabled),
+    kirimSaatLengkap: bacaJsonKirimSaatLengkap(row.kirim_saat_lengkap_json),
+    pesanNonaktif: bacaJsonPesanNonaktif(row.pesan_nonaktif_json),
     adminWhatsappNumber: row.admin_whatsapp_number,
     messageDelayMs: row.message_delay_ms,
     sendingRiskLevel: resolveSendingRiskPreset(row.sending_risk_level).level,
@@ -4226,6 +4240,11 @@ async function requireSuperAdmin(db: AletaDatabase, actorUserId: string) {
   }
 
   return actor;
+}
+
+/** Penjaga yang sama, untuk rute admin di luar berkas ini. */
+export async function requireAletaBotSuperAdmin(db: AletaDatabase, actorUserId: string) {
+  return requireSuperAdmin(db, actorUserId);
 }
 
 async function requireAletaBotOperator(db: AletaDatabase, actorUserId: string) {
@@ -6267,6 +6286,8 @@ export async function getAletaBotSettings(db: AletaDatabase) {
   const row = await db
     .prepare(
       `SELECT bot_enabled, notifications_enabled, admin_whatsapp_number, message_delay_ms,
+        kirim_pegawai_enabled, kirim_pihak_enabled,
+        kirim_saat_lengkap_json, pesan_nonaktif_json,
         sending_risk_level,
         retry_limit, dry_run_enabled, schedule_cron, test_target_number, security_notes,
         disposition_deadline_reminder_enabled, disposition_deadline_reminder_mode,
@@ -7702,6 +7723,8 @@ async function writeAletaBotRuntimeConfig(
     notificationsEnabled: settings.notificationsEnabled,
     kirimPegawaiEnabled: settings.kirimPegawaiEnabled,
     kirimPihakEnabled: settings.kirimPihakEnabled,
+    kirimSaatLengkap: settings.kirimSaatLengkap,
+    pesanNonaktif: settings.pesanNonaktif,
     adminWhatsappNumber: settings.adminWhatsappNumber,
     adminWhatsappChatId: settings.adminWhatsappNumber ? `${settings.adminWhatsappNumber}@c.us` : "",
     sendingRiskLevel: riskPreset.level,
@@ -8061,6 +8084,15 @@ export async function updateAletaBotSettings(
         payload.deadlineReminderKillSwitch === undefined
           ? current.deadlineReminderKillSwitch
           : Boolean(payload.deadlineReminderKillSwitch),
+      // Setelan sebagian digabung ke yang tersimpan, lalu dirapikan: angka
+      // di luar rentang kembali ke batasnya, dan saklar universal hanya
+      // menyala bila disebut menyala secara tegas.
+      kirimSaatLengkap:
+        payload.kirimSaatLengkap === undefined
+          ? current.kirimSaatLengkap
+          : rapikanKirimSaatLengkap({ ...current.kirimSaatLengkap, ...payload.kirimSaatLengkap }),
+      pesanNonaktif:
+        payload.pesanNonaktif === undefined ? current.pesanNonaktif : rapikanPesanNonaktif(payload.pesanNonaktif),
       updatedAt: new Date().toISOString(),
     };
 
@@ -8069,6 +8101,7 @@ export async function updateAletaBotSettings(
         `UPDATE aleta_bot_settings
          SET bot_enabled = ?, notifications_enabled = ?,
            kirim_pegawai_enabled = ?, kirim_pihak_enabled = ?,
+           kirim_saat_lengkap_json = ?, pesan_nonaktif_json = ?,
            admin_whatsapp_number = ?,
            message_delay_ms = ?, sending_risk_level = ?, retry_limit = ?, dry_run_enabled = ?, schedule_cron = ?,
            test_target_number = ?, security_notes = ?,
@@ -8096,6 +8129,8 @@ export async function updateAletaBotSettings(
         nextSettings.notificationsEnabled ? 1 : 0,
         nextSettings.kirimPegawaiEnabled ? 1 : 0,
         nextSettings.kirimPihakEnabled ? 1 : 0,
+        JSON.stringify(nextSettings.kirimSaatLengkap),
+        JSON.stringify(nextSettings.pesanNonaktif),
         nextSettings.adminWhatsappNumber,
         nextSettings.messageDelayMs,
         nextSettings.sendingRiskLevel,
@@ -8140,6 +8175,11 @@ export async function updateAletaBotSettings(
         notificationsEnabled: nextSettings.notificationsEnabled,
         kirimPegawaiEnabled: nextSettings.kirimPegawaiEnabled,
         kirimPihakEnabled: nextSettings.kirimPihakEnabled,
+        kirimSaatLengkap: nextSettings.kirimSaatLengkap,
+        pesanNonaktif: {
+          pegawai: nextSettings.pesanNonaktif.pegawai.length,
+          pihak: nextSettings.pesanNonaktif.pihak.length,
+        },
         dryRunEnabled: nextSettings.dryRunEnabled,
         deadlineReminderMode: nextSettings.deadlineReminderMode,
       },

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 
+import type { AletaBotKirimSaatLengkap, AletaBotPesanNonaktif } from "@/lib/aleta-bot-types";
 import { getDatabase } from "@/server/db/client";
 import {
   getAletaBotSnapshot,
@@ -35,6 +36,8 @@ export async function PUT(request: NextRequest) {
         notificationsEnabled?: boolean;
         kirimPegawaiEnabled?: boolean;
         kirimPihakEnabled?: boolean;
+        kirimSaatLengkap?: AletaBotKirimSaatLengkap;
+        pesanNonaktif?: AletaBotPesanNonaktif;
         adminWhatsappNumber?: string;
         messageDelayMs?: number;
         sendingRiskLevel?: number;

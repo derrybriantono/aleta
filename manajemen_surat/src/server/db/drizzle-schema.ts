@@ -219,6 +219,10 @@ export const aletaBotSettings = pgTable("aleta_bot_settings", {
   notificationsEnabled: integer("notifications_enabled").notNull().default(0),
   kirimPegawaiEnabled: integer("kirim_pegawai_enabled").notNull().default(1),
   kirimPihakEnabled: integer("kirim_pihak_enabled").notNull().default(1),
+  // Migrasi 0043: kirim saat data lengkap, dan saklar per pesan. Keduanya
+  // JSON - lihat catatan pada berkas migrasinya.
+  kirimSaatLengkapJson: text("kirim_saat_lengkap_json").notNull().default("{}"),
+  pesanNonaktifJson: text("pesan_nonaktif_json").notNull().default("{}"),
   adminWhatsappNumber: text("admin_whatsapp_number").notNull().default(""),
   messageDelayMs: integer("message_delay_ms").notNull().default(1500),
   retryLimit: integer("retry_limit").notNull().default(2),

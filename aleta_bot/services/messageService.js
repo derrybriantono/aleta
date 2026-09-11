@@ -1,4 +1,4 @@
-const { readRuntimeConfig, sleep, adalahPenerimaPegawai } = require("../config/runtime-config");
+const { readRuntimeConfig, sleep, adalahPenerimaPegawai, pesanDimatikan } = require("../config/runtime-config");
 const { validateWhatsappRecipient } = require("../utils/phoneFormatter");
 const logService = require("./logService");
 const rateLimitService = require("./rateLimitService");
@@ -279,6 +279,26 @@ async function safeSendMessage({
         ...baseLog,
         status: "skipped",
         errorMessage: "pengiriman_pihak_dimatikan",
+      });
+      return null;
+    }
+
+    // ------------------------------------------------------------------
+    // SAKLAR PER PESAN
+    // ------------------------------------------------------------------
+    //
+    // Satu jenis pemberitahuan dapat dimatikan sendiri tanpa menyentuh yang
+    // lain - menghentikan pengingat sisa panjar ke pihak selama nomornya
+    // ditinjau, sambil panggilan sidang tetap berjalan. Dipasang DI SINI,
+    // bukan di tiap penjadwal, supaya berlaku untuk seluruh jalur yang
+    // berujung ke nomor orang: legacy, registri, e-Court, dan pemantau
+    // kelengkapan. Penjadwal yang lupa memeriksa saklarnya tetap tertahan.
+    if (pesanDimatikan(runtimeConfig, notificationKey, kePegawai)) {
+      logService.logMessageSkipped({
+        ...baseLog,
+        status: "skipped",
+        errorMessage: kePegawai ? "pesan_pegawai_dimatikan" : "pesan_pihak_dimatikan",
+        metadata: { ...baseLog.metadata, notificationKey },
       });
       return null;
     }

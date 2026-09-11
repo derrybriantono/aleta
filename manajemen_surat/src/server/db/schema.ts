@@ -148,6 +148,8 @@ const schemaStatements = [
     notifications_enabled SMALLINT NOT NULL DEFAULT 0,
     kirim_pegawai_enabled SMALLINT NOT NULL DEFAULT 1,
     kirim_pihak_enabled SMALLINT NOT NULL DEFAULT 1,
+    kirim_saat_lengkap_json TEXT NOT NULL DEFAULT '{}',
+    pesan_nonaktif_json TEXT NOT NULL DEFAULT '{}',
     admin_whatsapp_number TEXT NOT NULL DEFAULT '',
     message_delay_ms INTEGER NOT NULL DEFAULT 1500,
     retry_limit INTEGER NOT NULL DEFAULT 2,
@@ -3145,6 +3147,10 @@ const migrationStatements = [
   // terkirim berakibat pada orang.
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS kirim_pegawai_enabled SMALLINT NOT NULL DEFAULT 1`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS kirim_pihak_enabled SMALLINT NOT NULL DEFAULT 1`,
+  // Migrasi 0043. '{}' dibaca: kirim-saat-lengkap MATI, tidak ada pesan
+  // yang dimatikan - baris lama tidak berubah perilakunya.
+  `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS kirim_saat_lengkap_json TEXT NOT NULL DEFAULT '{}'`,
+  `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS pesan_nonaktif_json TEXT NOT NULL DEFAULT '{}'`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS admin_whatsapp_number TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS message_delay_ms INTEGER NOT NULL DEFAULT 1500`,
   `ALTER TABLE aleta_bot_settings ADD COLUMN IF NOT EXISTS retry_limit INTEGER NOT NULL DEFAULT 2`,

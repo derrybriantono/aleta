@@ -53,6 +53,34 @@ const defaultConfig = {
   // mematikannya.
   kirimPegawaiEnabled: true,
   kirimPihakEnabled: true,
+  // ==========================================================================
+  // KIRIM SAAT DATA LENGKAP
+  // ==========================================================================
+  //
+  // Pemberitahuan yang menunggu datanya LENGKAP, bukan sekadar baru. Perkara
+  // yang baru terdaftar belum berguna diberitahukan sebelum majelisnya
+  // ditetapkan dan sidang pertamanya dijadwalkan: pihak akan bertanya "kapan
+  // sidangnya" dan belum ada jawabannya. Pemantau ini menunggu sampai PMH,
+  // PHS, dan jadwal sidang pertama terisi, lalu mengirim SEKALI.
+  //
+  //   enabled   saklar universal - mati berarti seluruh pemantau diam
+  //   pegawai   pemberitahuan penugasan ke majelis, PP, dan JS
+  //   pihak     pemberitahuan perkara baru ke para pihak dan kuasanya
+  //
+  // Bawaannya MATI. Ini perilaku kirim yang baru, dan pengiriman ke nomor
+  // orang tidak boleh mulai sendiri karena sebuah pembaruan dipasang.
+  kirimSaatLengkap: {
+    enabled: false,
+    pegawai: true,
+    pihak: true,
+    jendelaHari: 14,
+    intervalMenit: 15,
+  },
+  // Saklar per pesan. Kunci pemberitahuan (notificationKey) yang disebut di
+  // sini tidak dikirim - berlaku untuk SELURUH jalur: legacy, registri,
+  // e-Court, maupun pemantau kelengkapan. Dibagi per saluran supaya mematikan
+  // satu pesan ke pihak tidak ikut mematikan pesan sejenis ke pegawai.
+  pesanNonaktif: { pegawai: [], pihak: [] },
   adminWhatsappNumber: "",
   adminWhatsappChatId: "",
   messageDelayMs: 0,
@@ -210,6 +238,56 @@ function normalizeEmployeeRecipients(recipients) {
     .filter((recipient) => recipient.whatsappChatId);
 }
 
+/** Angka bulat dalam rentang; di luar itu, atau bukan angka, kembali ke bawaan. */
+function angkaDalamRentang(nilai, bawaan, minimum, maksimum) {
+  const angka = Number(nilai);
+  if (!Number.isFinite(angka)) return bawaan;
+  return Math.min(maksimum, Math.max(minimum, Math.round(angka)));
+}
+
+/**
+ * Setelan pemantau kelengkapan, dirapikan.
+ *
+ * Saklar universalnya dibaca MATI kecuali disetel menyala secara tegas -
+ * kebalikan dari kirimPegawaiEnabled/kirimPihakEnabled. Keduanya menjaga
+ * jalur yang sudah berjalan; yang ini MEMULAI jalur baru, dan jalur baru ke
+ * nomor orang harus dinyalakan seseorang, bukan menyala karena berkas
+ * konfigurasinya kebetulan belum menyebutnya.
+ */
+function normalizeKirimSaatLengkap(nilai) {
+  const sumber = nilai && typeof nilai === "object" ? nilai : {};
+  const bawaan = defaultConfig.kirimSaatLengkap;
+  return {
+    enabled: sumber.enabled === true,
+    pegawai: sumber.pegawai !== false,
+    pihak: sumber.pihak !== false,
+    jendelaHari: angkaDalamRentang(sumber.jendelaHari, bawaan.jendelaHari, 1, 90),
+    intervalMenit: angkaDalamRentang(sumber.intervalMenit, bawaan.intervalMenit, 5, 240),
+  };
+}
+
+function normalizePesanNonaktif(nilai) {
+  const sumber = nilai && typeof nilai === "object" ? nilai : {};
+  return {
+    pegawai: uniqueStrings(sumber.pegawai),
+    pihak: uniqueStrings(sumber.pihak),
+  };
+}
+
+/**
+ * Apakah pesan dengan kunci ini dimatikan untuk saluran itu?
+ *
+ * Saluran ditentukan dari PENERIMANYA (lihat adalahPenerimaPegawai), bukan
+ * dari nama kuncinya: satu kunci yang sama dapat berujung ke pegawai pada
+ * satu pengiriman dan ke pihak pada pengiriman lain.
+ */
+function pesanDimatikan(runtimeConfig, notificationKey, kePegawai) {
+  const kunci = String(notificationKey || "").trim();
+  if (!kunci) return false;
+  const daftar = normalizePesanNonaktif(runtimeConfig && runtimeConfig.pesanNonaktif);
+  return (kePegawai ? daftar.pegawai : daftar.pihak).includes(kunci);
+}
+
 function recipientMatches(recipient, hints) {
   const normalizedHints = (Array.isArray(hints) ? hints : [hints])
     .map((hint) => String(hint || "").toLowerCase())
@@ -338,6 +416,8 @@ function readRuntimeConfig() {
         // membacanya sebagai mati akan menghentikan seluruh pengiriman.
         kirimPegawaiEnabled: parsed.kirimPegawaiEnabled !== false,
         kirimPihakEnabled: parsed.kirimPihakEnabled !== false,
+        kirimSaatLengkap: normalizeKirimSaatLengkap(parsed.kirimSaatLengkap),
+        pesanNonaktif: normalizePesanNonaktif(parsed.pesanNonaktif),
         notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
         queries: Array.isArray(parsed.queries) ? parsed.queries : [],
         templates: Array.isArray(parsed.templates) ? parsed.templates : [],
@@ -405,6 +485,9 @@ module.exports = {
   normalizeSessionName,
   normalizeEmployeeRecipients,
   adalahPenerimaPegawai,
+  normalizeKirimSaatLengkap,
+  normalizePesanNonaktif,
+  pesanDimatikan,
   recipientsToMap,
   sleep,
 };

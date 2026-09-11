@@ -13,6 +13,39 @@ export type AletaBotLogType =
 export type AletaBotNotificationCategory = "employee" | "party";
 export type AletaBotQueryCategory = "employee" | "party" | "system";
 
+/**
+ * Kirim saat data lengkap.
+ *
+ * Pemberitahuan yang menunggu datanya LENGKAP, bukan sekadar baru: perkara
+ * baru diberitahukan kepada pihak setelah PMH, PHS, dan jadwal sidang
+ * pertama terisi - bukan pada hari ia terdaftar. Bawaannya MATI; pengiriman
+ * ke nomor orang tidak boleh mulai sendiri karena pembaruan dipasang.
+ */
+export type AletaBotKirimSaatLengkap = {
+  /** Saklar universal fitur. Mati berarti seluruh pemantau kelengkapan diam. */
+  enabled: boolean;
+  /** Pemberitahuan penugasan kepada majelis, panitera pengganti, dan juru sita. */
+  pegawai: boolean;
+  /** Pemberitahuan perkara baru kepada para pihak dan kuasanya. */
+  pihak: boolean;
+  /** Berapa hari ke belakang perkara yang baru terdaftar dipantau (1-90). */
+  jendelaHari: number;
+  /** Jarak antar pemeriksaan, dalam menit (5-240). */
+  intervalMenit: number;
+};
+
+/**
+ * Saklar per pesan: kunci pemberitahuan yang DIMATIKAN, per saluran.
+ *
+ * Disimpan sebagai daftar yang mati, bukan yang hidup, supaya pesan jenis
+ * baru yang belum dikenal portal tetap terkirim - daftar yang hidup akan
+ * membisukan setiap pesan yang belum sempat didaftarkan.
+ */
+export type AletaBotPesanNonaktif = {
+  pegawai: string[];
+  pihak: string[];
+};
+
 export type AletaBotSettings = {
   botEnabled: boolean;
   notificationsEnabled: boolean;
@@ -20,6 +53,8 @@ export type AletaBotSettings = {
   kirimPegawaiEnabled: boolean;
   /** Pengiriman ke nomor di luar daftar pegawai - para pihak. */
   kirimPihakEnabled: boolean;
+  kirimSaatLengkap: AletaBotKirimSaatLengkap;
+  pesanNonaktif: AletaBotPesanNonaktif;
   adminWhatsappNumber: string;
   messageDelayMs: number;
   /**

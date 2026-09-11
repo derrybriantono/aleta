@@ -69,6 +69,44 @@ Runbook ini untuk operasi terbatas ALETA Bot sebagai WhatsApp Gateway tunggal.
 2. `WHATSAPP_RUNTIME_MODE=legacy_portal`: fallback sementara, hindari menjalankan dua QR.
 3. `WHATSAPP_RUNTIME_MODE=disabled`: pengiriman portal dilewati.
 
+## Saklar Pengiriman
+
+Empat lapis, dari yang paling luas ke yang paling sempit. Pesan tertahan bila
+salah satu lapis mematikannya, dan alasan penahanannya tercatat di riwayat
+pengiriman.
+
+1. **Bot aktif** dan **Notifikasi otomatis** — mematikan seluruh pengiriman.
+2. **Kirim ke pegawai** / **Kirim ke pihak berperkara** — dua saluran yang
+   dapat dimatikan sendiri-sendiri. Nomor yang tidak ada di daftar pegawai
+   dihitung sebagai nomor pihak.
+3. **Kirim saat data lengkap** — saklar universal fitur, ditambah saklar per
+   saluran. Bawaannya MATI; fitur ini memulai pengiriman baru, jadi tidak
+   pernah menyala sendiri karena pembaruan dipasang.
+4. **Saklar per pesan** — mematikan satu jenis pemberitahuan saja, per saluran.
+   Yang disimpan adalah daftar yang MATI, sehingga pesan jenis baru tetap
+   terkirim sampai seseorang mematikannya.
+
+Balasan atas pesan yang MASUK tidak pernah ikut ditahan oleh lapis mana pun.
+Mematikan pengiriman tidak boleh membuat bot mendiamkan orang yang sedang
+bertanya kepadanya.
+
+### Kirim saat data lengkap
+
+Mengirim sekali ketika perkara baru sudah lengkap, bukan ketika ia baru
+terdaftar: pihak diberitahu sesudah PMH, PHS, dan jadwal sidang pertama
+terisi; pegawai yang ditunjuk diberitahu sesudah PPP dan PJS terisi pula.
+Kunci idempoten per perkara per penerima menahan pengiriman ulang, dan
+pesannya masuk antrean seperti pemberitahuan lain sehingga tunduk pada jam
+kirim dan irama anti-blokir.
+
+Sebelum menyalakannya, tekan **Pratinjau daftar kirim** di halaman admin.
+Pratinjau menyusun daftar yang persis sama dengan pengiriman sungguhan tetapi
+tidak mengantrekan apa pun, dan memperlihatkan berapa penerima yang terlewat
+karena nomornya tidak sah atau namanya tidak cocok dengan pegawai portal.
+
+Keadaan pemantau dapat dibaca langsung dari gerbang:
+`GET /internal/aleta-bot/kelengkapan/status`.
+
 ## Failure Handling
 
 1. `aleta_bot` unreachable: portal harus menampilkan error gateway, tidak crash.

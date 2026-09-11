@@ -99,6 +99,7 @@ const penilaianMutuDataService = require("../services/penilaianMutuDataService")
 const penilaianKeuanganService = require("../services/penilaianKeuanganService");
 const kehadiranAntrianService = require("../services/kehadiranAntrianService");
 const panggilanAntrianService = require("../services/panggilanAntrianService");
+const kelengkapanDataService = require("../services/kelengkapanDataService");
 
 const runtimeLifecycleHandlers = {
   startWhatsappClient: null,
@@ -4131,6 +4132,43 @@ router.get("/legacy/query-catalog", requireInternalToken, (req, res) => {
       metadata: { errorMessage: error.message },
     });
     return res.status(500).json({ ok: false, error: "query_catalog_failed", message: error.message });
+  }
+});
+
+// ============================================================================
+// KIRIM SAAT DATA LENGKAP
+// ============================================================================
+//
+// Keadaan pemantau dan pratinjau daftar kirimnya. Pratinjau menyusun daftar
+// yang persis sama dengan pengiriman sungguhan tetapi tidak mengantrekan apa
+// pun - layar portal memperlihatkannya sebelum admin menyalakan saklarnya.
+
+router.get("/kelengkapan/status", requireInternalToken, (_req, res) => {
+  try {
+    return res.json({ ok: true, ...kelengkapanDataService.status() });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "kelengkapan_status_failed", message: error.message });
+  }
+});
+
+router.post("/kelengkapan/jalankan", requireInternalToken, async (req, res) => {
+  try {
+    // Bawaannya PRATINJAU. Mengantrekan sungguhan harus diminta secara tegas
+    // dengan pratinjau: false - tombol yang salah tekan tidak boleh mengirim
+    // pesan ke nomor orang.
+    const pratinjau = req.body?.pratinjau !== false;
+    const hasil = await kelengkapanDataService.jalankan({ pratinjau, pemicu: "portal" });
+    if (!pratinjau) {
+      void logService.logSystemEvent({
+        eventType: "kirim_saat_lengkap_dipicu_portal",
+        severity: "info",
+        message: "Pemantau kelengkapan dijalankan dari portal.",
+        metadata: { olehSiapa: String(req.body?.olehSiapa || ""), ok: hasil.ok },
+      });
+    }
+    return res.json({ ok: true, hasil });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: "kelengkapan_run_failed", message: error.message });
   }
 });
 
