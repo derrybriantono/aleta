@@ -847,7 +847,9 @@ function bulanDari(nilai) {
  * hilang, dan itu tidak akan ketahuan dari mana pun.
  *
  * Diukur pada SIPP sungguhan: 388 putusan, 388 berminutasi, 228 berkekuatan
- * hukum tetap, dan hanya 3 yang tercatat masuk arsip.
+ * hukum tetap, dan 259 tercatat masuk arsip - lewat tautan NOMOR perkara.
+ * Lewat perkara_id hanya 3 yang terlihat, dan angka itu sempat ditulis di
+ * sini sebagai kenyataan.
  */
 const URUTAN_TAHAPAN = [
   { nama: "pendaftaran", ruas: "tanggalDaftar" },
@@ -871,8 +873,11 @@ async function muatTahapan(rentang) {
             d.tanggal_putusan     AS tanggalPutusan,
             d.tanggal_minutasi    AS tanggalMinutasi,
             d.tanggal_bht         AS tanggalBht,
+            -- Arsip ditautkan lewat NOMOR dengan titik di ujung dibuang: perkara_id
+            -- pada tabel arsip nol pada 275 dari 279 baris. Lewat perkara_id,
+            -- corong dan kronologi hanya melihat empat berkas yang diarsipkan.
             (SELECT MIN(a.tanggal_masuk_arsip) FROM arsip a
-              WHERE a.perkara_id = p.perkara_id)              AS tanggalArsip
+              WHERE p.nomor_perkara = TRIM(TRAILING '.' FROM TRIM(a.nomor_perkara))) AS tanggalArsip
        FROM perkara p
        LEFT JOIN perkara_putusan d ON d.perkara_id = p.perkara_id
       WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?

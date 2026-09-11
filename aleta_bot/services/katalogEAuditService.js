@@ -1158,7 +1158,7 @@ const SAMBUNGAN = {
     kunci: "corongTahapanPerkara",
     sifat: "sebagian",
     catatan:
-      "Tahapan yang terlewati terukur atas tujuh tahapan - 430 dari 431. Tujuh tahapan itu tulang punggungnya saja; tahapan antara seperti pemberkasan, penyerahan salinan, dan pemberitahuan isi putusan belum masuk corong.",
+      "Tahapan yang terlewati terukur atas tujuh tahapan - 347 dari 431 sesudah arsip ditautkan lewat nomor perkara. Delapan puluh empat berkas tercatat masuk arsip sebelum tanggal berkekuatan hukum tetapnya ada; lewat perkara_id yang lama, butir ini memulangkan 430 dari 431 dan menyembunyikan seluruhnya. Tujuh tahapan itu tulang punggungnya saja; tahapan antara seperti pemberkasan, penyerahan salinan, dan pemberitahuan isi putusan belum masuk corong.",
   },
   MP14: {
     kunci: "nilaiKondisiPenangananPerkara",
@@ -1176,7 +1176,7 @@ const SAMBUNGAN = {
     kunci: "kronologiPerkaraMaju",
     sifat: "sebagian",
     catatan:
-      "Urutan maju tujuh peristiwa terukur - 429 dari 431, dan dua yang tertangkap masuk arsip sebelum berkekuatan hukum tetap. Yang BELUM: kronologi LENGKAP yang katalog minta - deret waktu yang memuat tiap panggilan, tiap sidang, dan tiap penundaan dalam satu tampilan.",
+      "Urutan maju tujuh peristiwa terukur - 318 dari 431 sesudah arsip ditautkan lewat nomor perkara - 113 berkas tercatat masuk arsip SEBELUM berkekuatan hukum tetap, yang terjauh 29 hari. Lewat perkara_id yang lama hanya dua yang terlihat. Yang BELUM: kronologi LENGKAP yang katalog minta - deret waktu yang memuat tiap panggilan, tiap sidang, dan tiap penundaan dalam satu tampilan.",
   },
   // ==========================================================================
   // BAB 11 - PELAYANAN KEPADA PENCARI KEADILAN

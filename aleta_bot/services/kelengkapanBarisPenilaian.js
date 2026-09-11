@@ -72,6 +72,12 @@ function terisi(nilai, anggapNolKosong = false) {
 /**
  * Menyusun kueri satu butir.
  *
+ * `sambung` menimpa klausa ON bawaan (perkara_id = perkara_id). Ada satu
+ * tabel yang MEMBUTUHKANNYA: arsip. Pada SIPP satuan kerja ini perkara_id
+ * pada arsip nol pada 275 dari 279 baris, dan tautannya hanya lewat nomor
+ * perkara - yang ditulis berekor titik. Tanpa penimpa ini, register arsip
+ * melihat empat baris dan menyimpulkan hampir tidak ada yang diarsipkan.
+ *
  * Dua bentuk, sebab keduanya benar-benar berbeda: butir yang seluruh kolomnya
  * ada pada tabel perkara, dan butir yang kolomnya ada pada tabel tahapan lalu
  * disambung lewat perkara_id.
@@ -94,7 +100,7 @@ function susunKueri(b) {
   return `SELECT ${kepala},
                ${b.wajib.map((k, i) => `x.${k} AS w${i}`).join(",\n               ")}
           FROM perkara p
-          JOIN ${b.tabel} x ON x.perkara_id = p.perkara_id
+          JOIN ${b.tabel} x ON ${b.sambung || "x.perkara_id = p.perkara_id"}
          WHERE p.tanggal_pendaftaran >= ? AND p.tanggal_pendaftaran <= ?
            ${b.saring ? `AND ${b.saring}` : ""}
          ORDER BY p.tanggal_pendaftaran
@@ -150,7 +156,7 @@ function definisi(b) {
       tabelSumber:
         b.tabel === "perkara"
           ? `perkara${b.saring ? ` (disaring: ${b.saring})` : " (seluruh perkara pada rentang)"}`
-          : `perkara disambung ${b.tabel} lewat perkara_id`,
+          : `perkara disambung ${b.tabel} lewat ${b.sambung ? "nomor perkara" : "perkara_id"}`,
       ruasSumber: `tanggal_pendaftaran, ${b.wajib.join(", ")}`,
     },
     baris: pembangunBaris(b),

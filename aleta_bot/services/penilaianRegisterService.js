@@ -161,6 +161,10 @@ const REGISTER = [
     kunci: "registerArsipBerkas",
     judul: "Register Arsip Berkas Perkara",
     tabel: "arsip",
+    // Tabel arsip menautkan perkaranya lewat NOMOR, bukan perkara_id - nol
+    // pada hampir seluruh barisnya - dan nomornya berekor titik yang tidak
+    // ada pada tabel perkara. Tautan bawaan hanya menemukan 4 dari 279.
+    sambung: "p.nomor_perkara = TRIM(TRAILING '.' FROM TRIM(x.nomor_perkara))",
     wajib: ["nomor_arsip", "tanggal_masuk_arsip", "no_ruang", "no_lemari", "no_rak"],
   },
 ];
