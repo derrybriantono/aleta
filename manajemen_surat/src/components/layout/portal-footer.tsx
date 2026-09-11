@@ -15,6 +15,7 @@ import type { SVGProps } from "react";
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { Badge } from "@/components/ui/badge";
 import { usePortal } from "@/lib/app-state";
+import { VERSI_EKSTENSI_TERBARU } from "@/lib/catatan-ekstensi";
 import { APP_VERSION } from "@/lib/patch-notes";
 import { capBuildTerbaca } from "@/lib/build-stamp";
 
@@ -247,6 +248,9 @@ export function PortalFooter() {
             <Link href="/patch-notes" className="font-medium text-primary underline-offset-4 hover:underline">
               Catatan Pembaruan
             </Link>
+            <Link href="/patch-notes#ekstensi" className="font-medium text-primary underline-offset-4 hover:underline">
+              Ekstensi {VERSI_EKSTENSI_TERBARU}
+            </Link>
             <Link href="/panduan" className="font-medium text-primary underline-offset-4 hover:underline">
               Panduan
             </Link>
@@ -377,6 +381,10 @@ export function PortalFooter() {
               ALETA v{APP_VERSION} <span className="px-1">|</span>
               <Link href="/patch-notes" className="font-medium text-primary underline-offset-4 transition hover:underline">
                 Catatan Pembaruan
+              </Link>
+              <span className="px-1">|</span>
+              <Link href="/patch-notes#ekstensi" className="font-medium text-primary underline-offset-4 transition hover:underline">
+                Ekstensi {VERSI_EKSTENSI_TERBARU}
               </Link>
               <span className="px-1">|</span>
               <Link href="/panduan" className="font-medium text-primary underline-offset-4 transition hover:underline">

@@ -24,6 +24,7 @@ import {
   Search,
 } from "lucide-react";
 
+import { CatatanEkstensiDaftar } from "@/components/portal/catatan-ekstensi-daftar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -599,6 +600,21 @@ export function AletaEcourtPengguna() {
                 bila berbeda, unduh lalu muat ulang ekstensinya.
               </p>
             ) : null}
+          </div>
+
+          {/* ================================================================
+              APA YANG BERUBAH, DAN KAPAN
+
+              Yang membandingkan nomor di chrome://extensions dengan yang
+              tersedia perlu tahu apa yang ia lewatkan - dan jam rilisnya,
+              sebab dalam sehari bisa ada tiga rilis. Daftarnya sama persis
+              dengan Patch Notes dan Update Manager: satu sumber.
+              ================================================================ */}
+          <div>
+            <p className="text-sm font-semibold">Catatan pembaruan ekstensi</p>
+            <div className="mt-2">
+              <CatatanEkstensiDaftar batas={4} />
+            </div>
           </div>
 
           {/* ================================================================

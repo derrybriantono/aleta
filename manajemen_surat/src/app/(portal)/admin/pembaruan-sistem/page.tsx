@@ -1,14 +1,16 @@
 "use client";
 
-import { CheckCircle2, ClipboardCopy, History, PackageCheck, RefreshCw, RotateCcw, ServerCog, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ClipboardCopy, History, PackageCheck, Puzzle, RefreshCw, RotateCcw, ServerCog, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { CatatanEkstensiDaftar } from "@/components/portal/catatan-ekstensi-daftar";
 import { AccessDeniedCard, PageIntro, SectionHint } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { DIRILIS_EKSTENSI_TERBARU, VERSI_EKSTENSI_TERBARU, tulisWaktuRilis } from "@/lib/catatan-ekstensi";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -453,6 +455,32 @@ export default function SystemUpdatePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ==================================================================
+          EKSTENSI SIPP - DAFTAR YANG SAMA DENGAN PATCH NOTES
+
+          Ekstensi diperbarui terpisah dari portal dan jauh lebih sering.
+          Update Manager menunjukkan versi yang tersedia beserta jam rilisnya
+          dari sumber yang sama dengan halaman Patch Notes dan Integrasi
+          e-Court (lib/catatan-ekstensi.ts), supaya administrator tidak pernah
+          membaca dua nomor yang berbeda di dua layar.
+          ================================================================== */}
+      <Card className="border-border/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Puzzle className="h-5 w-5 text-primary" />
+            Ekstensi SIPP
+          </CardTitle>
+          <CardDescription>
+            Tersedia <span className="font-semibold text-foreground">{VERSI_EKSTENSI_TERBARU}</span>, dirilis{" "}
+            {tulisWaktuRilis(DIRILIS_EKSTENSI_TERBARU)}. Berkasnya tertanam di build portal ini, jadi
+            memperbarui portal berarti memperbarui ekstensi yang dapat diunduh pegawai.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CatatanEkstensiDaftar batas={5} />
+        </CardContent>
+      </Card>
 
       <Card className="border-border/80">
         <CardHeader>

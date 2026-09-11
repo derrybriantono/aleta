@@ -6,6 +6,8 @@ import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CatatanEkstensiDaftar } from "@/components/portal/catatan-ekstensi-daftar";
+import { DIRILIS_EKSTENSI_TERBARU, VERSI_EKSTENSI_TERBARU, tulisWaktuRilis } from "@/lib/catatan-ekstensi";
 import { APP_VERSION, APP_VERSION_LABEL, PATCH_NOTES, type PatchNote } from "@/lib/patch-notes";
 
 export const metadata: Metadata = {
@@ -42,6 +44,9 @@ export default function PatchNotesPage() {
                 Kembali ke Portal Utama
               </Link>
             </Button>
+            <Link href="#ekstensi" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+              Catatan ekstensi SIPP
+            </Link>
             <Link href="/panduan" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
               Baca Panduan Penggunaan
             </Link>
@@ -78,6 +83,32 @@ export default function PatchNotesPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Catatan Keamanan</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">Tidak memuat secret, token, QR raw, session WhatsApp, atau password.</p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ================================================================
+          CATATAN EKSTENSI SIPP - DAFTAR YANG SAMA DENGAN UPDATE MANAGER
+
+          Ekstensi punya nomor versi dan waktu rilisnya sendiri, terpisah dari
+          portal. Daftarnya dibaca dari lib/catatan-ekstensi.ts - sumber yang
+          sama dengan halaman Integrasi e-Court dan Update Manager - sehingga
+          tiga layar itu tidak pernah berselisih tentang versi terbaru.
+          ================================================================ */}
+      <Card id="ekstensi" className="scroll-mt-24 border-border/80">
+        <CardHeader>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="success">Ekstensi SIPP {VERSI_EKSTENSI_TERBARU}</Badge>
+            <Badge variant="muted">Dirilis {tulisWaktuRilis(DIRILIS_EKSTENSI_TERBARU)}</Badge>
+          </div>
+          <CardTitle className="mt-2">Catatan Pembaruan Ekstensi SIPP</CardTitle>
+          <CardDescription>
+            Seluruh versi ekstensi peramban beserta tanggal dan jam rilisnya. Nomor yang terpasang di
+            peramban Anda terbaca di <code className="rounded bg-muted px-1">chrome://extensions</code>;
+            bila lebih kecil dari yang terbaru, unduh ulang dari halaman Integrasi e-Court.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CatatanEkstensiDaftar tautanLengkap={false} />
         </CardContent>
       </Card>
 
