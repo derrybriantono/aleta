@@ -63,6 +63,8 @@ type Keterangan = Record<Kapabilitas, { label: string; penjelasan: string }>;
 type Jawaban = {
   available: boolean;
   bolehMengatur: boolean;
+  /** Admin melihat, Super Admin mengubah. */
+  bolehMenyunting?: boolean;
   saya: Record<Kapabilitas, boolean>;
   peran: PeranAkses[];
   keterangan: Keterangan;
@@ -144,7 +146,8 @@ export function AletaEcourtAksesPeran() {
         <CardTitle>Akses ekstensi ALETA E-Court</CardTitle>
         <CardDescription>
           Menentukan apa yang boleh dilakukan tiap peran lewat ekstensi peramban di halaman SIPP.
-          Super Admin dan Admin selalu berkemampuan penuh.
+          Super Admin dan Admin selalu berkemampuan penuh, dan hanya Super Admin yang dapat
+          mengubah pengaturan ini.
         </CardDescription>
       </CardHeader>
 
@@ -152,6 +155,12 @@ export function AletaEcourtAksesPeran() {
         {galat ? (
           <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {galat}
+          </p>
+        ) : null}
+
+        {!memuat && data && data.bolehMenyunting === false ? (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Anda dapat membaca pengaturan ini, tetapi hanya Super Admin yang dapat mengubahnya.
           </p>
         ) : null}
 
@@ -208,7 +217,10 @@ export function AletaEcourtAksesPeran() {
                           ) : (
                             <Switch
                               checked={peran.kapabilitas[kunci]}
-                              disabled={sedangSimpan === peran.roleId + ":" + kunci}
+                              disabled={
+                                data.bolehMenyunting === false ||
+                                sedangSimpan === peran.roleId + ":" + kunci
+                              }
                               aria-label={peran.label + " - " + data.keterangan[kunci].label}
                               onCheckedChange={(nilai) => void ubah(peran.roleId, kunci, nilai)}
                             />

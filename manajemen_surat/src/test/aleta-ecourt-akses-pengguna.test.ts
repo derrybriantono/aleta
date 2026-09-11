@@ -312,7 +312,7 @@ describe("pengecualian akses ekstensi untuk satu orang", () => {
     expect(hasil).toEqual(kemampuanPenuh());
   });
 
-  it("hanya Super Admin dan Admin yang boleh memberi pengecualian", async () => {
+  it("hanya Super Admin yang boleh memberi pengecualian", async () => {
     const hakim = await buatHakim();
     const sasaran = await buatJurusita();
 
@@ -324,7 +324,7 @@ describe("pengecualian akses ekstensi untuk satu orang", () => {
         aktif: true,
         alasan: "Mencoba memberi sendiri.",
       })
-    ).rejects.toThrow(/Super Admin dan Admin/i);
+    ).rejects.toThrow(/Hanya Super Admin/i);
   });
 
   it("menolak kemampuan dan pengguna yang tidak dikenali", async () => {
@@ -404,5 +404,121 @@ describe("daftar dan pencarian untuk halaman pengaturan", () => {
     // Membawa kewenangan perannya, supaya layar dapat menggambar keadaan awal
     // tanpa satu permintaan tambahan per orang.
     expect(Object.keys(hasil[0].dariPeran).sort()).toEqual([...KAPABILITAS_EKSTENSI].sort());
+  });
+});
+
+describe("peran operator - peran tambahan untuk penjaga sidang", () => {
+  it("terdaftar sebagai peran, dan bawaannya hanya panel, Data Umum, dan Kerjakan", async () => {
+    const kemampuan = await kapabilitasPeran(db!, "operator" as never);
+    expect(kemampuan.panel).toBe(true);
+    expect(kemampuan["data-umum"]).toBe(true);
+    expect(kemampuan.kerjakan).toBe(true);
+    // Sisanya tidak nampak.
+    expect(kemampuan.berkas).toBe(false);
+    expect(kemampuan.permintaan).toBe(false);
+    expect(kemampuan.penunjukan).toBe(false);
+    expect(kemampuan["penunjukan-otomatis"]).toBe(false);
+    expect(kemampuan["blangko-abt"]).toBe(false);
+  });
+
+  it("Kerjakan tertutup bagi seluruh jabatan - hanya operator yang membukanya", async () => {
+    // Satu-satunya kemampuan ekstensi yang MENULIS ke SIPP. Membukanya bagi
+    // sebuah jabatan berarti membukanya bagi siapa pun yang kelak mendudukinya.
+    for (const peran of [
+      "ketua",
+      "wakil-ketua",
+      "hakim",
+      "panitera",
+      "panitera-muda",
+      "panitera-pengganti",
+      "jurusita",
+      "sekretaris",
+      "staf",
+    ]) {
+      const kemampuan = await kapabilitasPeran(db!, peran as never);
+      expect(kemampuan.kerjakan, peran).toBe(false);
+    }
+  });
+
+  it("dilekatkan sebagai peran tambahan, kemampuannya DIGABUNG dengan jabatannya", async () => {
+    const hakim = await buatHakim();
+    const sendiri = await kapabilitasPengguna(db!, { id: hakim.id, roleId: hakim.roleId });
+    expect(sendiri.kerjakan).toBe(false);
+    expect(sendiri.berkas).toBe(true);
+
+    const denganOperator = await kapabilitasPengguna(db!, {
+      id: hakim.id,
+      roleId: hakim.roleId,
+      additionalRoleIds: ["operator"],
+    });
+    // Bertambah Kerjakan...
+    expect(denganOperator.kerjakan).toBe(true);
+    // ...dan TIDAK kehilangan kewenangan jabatannya. Peran tambahan adalah
+    // tugas di samping jabatan, bukan pengganti jabatan.
+    expect(denganOperator.berkas).toBe(true);
+    expect(denganOperator["blangko-abt"]).toBe(true);
+  });
+
+  it("peran tambahan tidak dapat dipakai menjadikan seseorang administrator", async () => {
+    const jurusita = await buatJurusita();
+    const hasil = await kapabilitasPengguna(db!, {
+      id: jurusita.id,
+      roleId: jurusita.roleId,
+      additionalRoleIds: ["super-admin", "admin"],
+    });
+    expect(hasil).not.toEqual(kemampuanPenuh());
+    expect(hasil.penunjukan).toBe(false);
+  });
+
+  it("pengecualian per orang tetap mengalahkan peran tambahan", async () => {
+    const admin = await buatSuperAdmin();
+    const hakim = await buatHakim();
+    await simpanPengecualianPengguna(db!, {
+      actorUserId: admin.id,
+      userId: hakim.id,
+      kapabilitas: "kerjakan",
+      aktif: false,
+      alasan: "Belum mengikuti pelatihan penulisan penetapan.",
+    });
+
+    const hasil = await kapabilitasPengguna(db!, {
+      id: hakim.id,
+      roleId: hakim.roleId,
+      additionalRoleIds: ["operator"],
+    });
+    expect(hasil.kerjakan).toBe(false);
+  });
+});
+
+describe("menyunting pengaturan hanya Super Admin", () => {
+  it("Admin ditolak saat mengubah akses peran maupun pengecualian", async () => {
+    const admin = await buatPegawai("pos-ketua", "admin");
+    const hakim = await buatHakim();
+
+    await expect(
+      simpanAksesEkstensi(db!, {
+        actorUserId: admin.id,
+        roleId: "jurusita" as never,
+        kapabilitas: "kerjakan",
+        aktif: true,
+      })
+    ).rejects.toThrow(/Hanya Super Admin/i);
+
+    await expect(
+      simpanPengecualianPengguna(db!, {
+        actorUserId: admin.id,
+        userId: hakim.id,
+        kapabilitas: "kerjakan",
+        aktif: true,
+        alasan: "Percobaan oleh admin.",
+      })
+    ).rejects.toThrow(/Hanya Super Admin/i);
+  });
+
+  it("Admin tetap berkemampuan PENUH pada ekstensinya sendiri", async () => {
+    // Yang dibatasi menyunting pengaturan, bukan memakai ekstensinya.
+    const admin = await buatPegawai("pos-ketua", "admin");
+    const hasil = await kapabilitasPengguna(db!, { id: admin.id, roleId: admin.roleId });
+    expect(hasil).toEqual(kemampuanPenuh());
   });
 });

@@ -20,7 +20,7 @@ import { createManagedUserInDb } from "@/server/modules/users/service";
  *   - Super Admin dan Admin selalu berkemampuan penuh, dan tidak dapat
  *     dibatasi lewat jalur mana pun,
  *   - peran lain benar-benar ditolak ketika kemampuannya dimatikan,
- *   - hanya Super Admin dan Admin yang boleh mengubah pengaturannya,
+ *   - hanya Super Admin yang boleh mengubah pengaturannya (Admin membaca),
  *   - pengaturan yang sudah disunting tidak pernah dikembalikan ke bawaan.
  *
  * Yang TIDAK boleh terjadi: pemasangan baru yang tabelnya masih kosong menolak
@@ -111,7 +111,7 @@ describe("akses ekstensi ALETA E-Court", () => {
   });
 
   it("menolak peran yang kemampuannya dimatikan", async () => {
-    const admin = await buatAdmin();
+    const admin = await buatSuperAdmin();
     const hakim = await buatHakim();
     expect(hakim.roleId).toBe("hakim");
 
@@ -150,7 +150,7 @@ describe("akses ekstensi ALETA E-Court", () => {
     await expect(pastikanKapabilitas(db!, superAdmin.id, "berkas")).resolves.toBeTruthy();
   });
 
-  it("hanya Super Admin dan Admin yang boleh mengubah pengaturan", async () => {
+  it("hanya Super Admin yang boleh mengubah pengaturan", async () => {
     const hakim = await buatHakim();
 
     await expect(
@@ -164,7 +164,7 @@ describe("akses ekstensi ALETA E-Court", () => {
   });
 
   it("menolak kemampuan yang tidak dikenali", async () => {
-    const admin = await buatAdmin();
+    const admin = await buatSuperAdmin();
 
     await expect(
       simpanAksesEkstensi(db!, {
@@ -177,7 +177,7 @@ describe("akses ekstensi ALETA E-Court", () => {
   });
 
   it("tidak mengembalikan pengaturan yang sudah disunting ke bawaan", async () => {
-    const admin = await buatAdmin();
+    const admin = await buatSuperAdmin();
 
     await simpanAksesEkstensi(db!, {
       actorUserId: admin.id,

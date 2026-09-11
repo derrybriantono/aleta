@@ -16,7 +16,9 @@ export type RoleId =
   | "pelaksana"
   | "pppk"
   | "pejabat-struktural"
-  | "staf";
+  | "staf"
+  // Peran SEKUNDER. Lihat catatannya di mock-data.ts.
+  | "operator";
 
 export type ModuleId =
   | "manajemen-surat"

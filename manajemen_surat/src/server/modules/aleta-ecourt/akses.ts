@@ -65,6 +65,8 @@ export const KAPABILITAS_EKSTENSI = [
   "penunjukan",
   "penunjukan-otomatis",
   "blangko-abt",
+  "data-umum",
+  "kerjakan",
 ] as const;
 
 export type KapabilitasEkstensi = (typeof KAPABILITAS_EKSTENSI)[number];
@@ -106,6 +108,16 @@ export const KETERANGAN_KAPABILITAS: Record<
     penjelasan:
       "Mengusulkan isian blangko dan menyusun keterangan saksi di halaman APS Badilag. Yang menuliskannya ke ABT tetap sesi petugas itu sendiri.",
   },
+  "data-umum": {
+    label: "Data Umum dari gugatan",
+    penjelasan:
+      "Membaca Data Umum perkara dari berkas gugatan e-Court, dan menyalinnya ke borang Data Umum SIPP setelah diperiksa.",
+  },
+  kerjakan: {
+    label: "Tombol Kerjakan",
+    penjelasan:
+      "Menuliskan penetapan dan penunjukan ke SIPP langsung dari panel. Inilah satu-satunya kemampuan ekstensi yang MENULIS ke SIPP atas nama petugas.",
+  },
 };
 
 /**
@@ -117,6 +129,23 @@ export const KETERANGAN_KAPABILITAS: Record<
  * tangan.
  */
 export const PERAN_SELALU_PENUH = new Set<RoleId>(["super-admin", "admin"]);
+
+/**
+ * ============================================================================
+ * MELIHAT PENGATURAN BOLEH BERDUA, MENGUBAHNYA HANYA SUPER ADMIN
+ * ============================================================================
+ *
+ * Admin tetap dapat membaca seluruh matriks - ia yang ditanya ketika ada
+ * pegawai yang menunya tidak muncul, dan jawabannya ada di layar itu.
+ *
+ * Yang MENGUBAHnya hanya Super Admin. Kewenangan ekstensi menentukan siapa
+ * yang dapat menuliskan penetapan ke SIPP; pengalihan satu saklar di sana
+ * setara dengan memberi wewenang, dan itu tidak boleh menjadi perbuatan
+ * sehari-hari yang dapat dilakukan sambil lalu oleh beberapa orang sekaligus.
+ */
+export function bolehMenyuntingAkses(user: { roleId?: string | null } | null | undefined) {
+  return String(user?.roleId || "") === "super-admin";
+}
 
 /**
  * Seluruh kemampuan menyala - disusun dari daftarnya, tidak pernah diketik.
@@ -177,6 +206,29 @@ const PERAN_PENETAP: RoleId[] = ["ketua", "wakil-ketua", "hakim", "panitera"];
  */
 const PERAN_OTOMATIS: RoleId[] = ["ketua", "panitera"];
 
+/**
+ * ============================================================================
+ * KERJAKAN - SATU-SATUNYA KEMAMPUAN YANG MENULIS KE SIPP
+ * ============================================================================
+ *
+ * Seluruh kemampuan ekstensi yang lain membaca, menghitung, atau mengusulkan.
+ * Kerjakan menuliskan penetapan ke SIPP atas nama petugas yang menekannya,
+ * lengkap dengan baris sys_audittrail-nya - tidak dapat dibedakan dari
+ * pengisian tangan, dan tidak dapat dibatalkan dari panel.
+ *
+ * Karena itu bawaannya KOSONG bagi seluruh jabatan. Yang membukanya hanya:
+ *
+ *   - Super Admin dan Admin, yang kewenangannya ditegakkan di kode, dan
+ *   - Operator, peran TAMBAHAN yang memang dibuat untuk itu - dilekatkan pada
+ *     orang tertentu, bukan pada satu jabatan utuh.
+ *
+ * Membuka Kerjakan bagi sebuah jabatan berarti membukanya bagi setiap orang
+ * yang kelak menduduki jabatan itu, termasuk yang belum pernah dilatih.
+ * Melekatkannya lewat peran tambahan membuat pemberiannya berupa perbuatan
+ * yang tercatat terhadap satu nama.
+ */
+const PERAN_KERJAKAN: RoleId[] = ["operator"];
+
 function kemampuanBawaan(roleId: RoleId): Record<KapabilitasEkstensi, boolean> {
   const pemegangPerkara = PERAN_PEMEGANG_PERKARA.includes(roleId);
   return {
@@ -190,6 +242,12 @@ function kemampuanBawaan(roleId: RoleId): Record<KapabilitasEkstensi, boolean> {
     // keuangan, kepegawaian - tidak diberi, dengan alasan yang sama seperti
     // "berkas": isinya perkara orang.
     "blangko-abt": pemegangPerkara,
+    // Data Umum dibaca dari berkas gugatan e-Court lalu disalin ke borang
+    // SIPP; ia menyentuh isi perkara, jadi mengikuti pemegang perkara -
+    // ditambah Operator, yang justru dibuat untuk mengisi borang itu dari
+    // ruang sidang dan tidak punya kewenangan perkara lainnya.
+    "data-umum": pemegangPerkara || PERAN_KERJAKAN.includes(roleId),
+    kerjakan: PERAN_KERJAKAN.includes(roleId),
   };
 }
 
@@ -380,12 +438,36 @@ export async function bacaPengecualianPengguna(
  */
 export async function kapabilitasPengguna(
   db: AletaDatabase,
-  pengguna: { id: string; roleId: string }
+  pengguna: { id: string; roleId: string; additionalRoleIds?: string[] }
 ): Promise<Record<KapabilitasEkstensi, boolean>> {
   const roleId = pengguna.roleId as RoleId;
   if (PERAN_SELALU_PENUH.has(roleId)) return kemampuanPenuh();
 
   const hasil = await kapabilitasPeran(db, roleId);
+
+  // ==========================================================================
+  // PERAN TAMBAHAN HANYA MENAMBAH
+  // ==========================================================================
+  //
+  // Peran tambahan adalah tugas yang dilekatkan di samping jabatan - penjaga
+  // sidang, misalnya - bukan pengganti jabatannya. Karena itu kemampuannya
+  // DIGABUNG, tidak menimpa: seseorang tidak boleh kehilangan kewenangan
+  // jabatannya hanya karena ia juga ditugasi menjaga sidang.
+  //
+  // Yang ingin mencabut kewenangan satu orang memakai pengecualian di bawah,
+  // yang memang dibuat untuk itu dan menuntut alasan tertulis.
+  for (const tambahan of pengguna.additionalRoleIds ?? []) {
+    if (tambahan === roleId) continue;
+    // Peran tambahan TIDAK dapat memberi kewenangan penuh. Menaruh
+    // "super-admin" pada daftar peran tambahan seseorang bukan cara yang sah
+    // untuk menjadikannya administrator.
+    if (PERAN_SELALU_PENUH.has(tambahan as RoleId)) continue;
+
+    const dariTambahan = await kapabilitasPeran(db, tambahan as RoleId);
+    for (const kunci of KAPABILITAS_EKSTENSI) {
+      if (dariTambahan[kunci]) hasil[kunci] = true;
+    }
+  }
 
   for (const kecuali of await bacaPengecualianPengguna(db, pengguna.id)) {
     // Yang sudah lewat tanggalnya diabaikan diam-diam - ia memang sudah
@@ -433,7 +515,11 @@ export async function pastikanKapabilitas(
   // Kewenangan ORANG ini - perannya, lalu pengecualian yang diberikan
   // kepadanya. Sebelumnya hanya perannya, sehingga pengecualian apa pun
   // tidak akan pernah sampai ke penjagaan yang sesungguhnya.
-  const kemampuan = await kapabilitasPengguna(db, { id: actor.id, roleId: String(actor.roleId) });
+  const kemampuan = await kapabilitasPengguna(db, {
+    id: actor.id,
+    roleId: String(actor.roleId),
+    additionalRoleIds: actor.additionalRoleIds ?? [],
+  });
   if (!kemampuan[kapabilitas]) {
     throw new ApiError(
       403,
@@ -463,8 +549,8 @@ export async function simpanAksesEkstensi(
 ) {
   const actor = await requireActorUser(db, actorUserId);
 
-  if (!isPrivilegedAdmin(actor)) {
-    throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah akses ekstensi.");
+  if (!bolehMenyuntingAkses(actor)) {
+    throw new ApiError(403, "Hanya Super Admin yang dapat mengubah akses ekstensi.");
   }
 
   if (!KAPABILITAS_SAH.has(kapabilitas)) {
@@ -653,8 +739,8 @@ export async function simpanPengecualianPengguna(
 ) {
   const actor = await requireActorUser(db, actorUserId);
 
-  if (!isPrivilegedAdmin(actor)) {
-    throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah akses ekstensi.");
+  if (!bolehMenyuntingAkses(actor)) {
+    throw new ApiError(403, "Hanya Super Admin yang dapat mengubah akses ekstensi.");
   }
 
   if (!KAPABILITAS_SAH.has(kapabilitas)) {

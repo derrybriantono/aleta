@@ -34,6 +34,33 @@ function buildWhatsappDelivery(
 
 export const roles: Role[] = [
   {
+    /**
+     * ========================================================================
+     * OPERATOR - PERAN SEKUNDER, BUKAN JABATAN
+     * ========================================================================
+     *
+     * Bukan jabatan pada struktur pengadilan, melainkan tugas yang dilekatkan
+     * pada seseorang di samping jabatannya: penjaga sidang yang mengoperasikan
+     * SIPP dari ruang sidang, staf yang membantu menuliskan penetapan pada
+     * hari sidang yang padat.
+     *
+     * Karena itu ia dipasang lewat "peran tambahan" pada akun, bukan
+     * menggantikan perannya. Kewenangan peran tambahan DIGABUNG dengan
+     * kewenangan jabatannya - ia hanya menambah, tidak pernah mencabut. Peran
+     * yang mencabut akan membuat satu orang kehilangan kewenangan jabatannya
+     * hanya karena ia juga ditugasi menjaga sidang.
+     *
+     * Yang ditambahkannya sempit dengan sengaja: melihat panel, membaca Data
+     * Umum dari berkas gugatan, dan menekan Kerjakan untuk menuliskan
+     * penetapan ke SIPP. Tidak mengunduh berkas, tidak menitip penarikan,
+     * tidak menyentuh blangko.
+     */
+    id: "operator",
+    name: "Operator",
+    description:
+      "Peran tambahan untuk penjaga sidang: melihat Data Umum dan menuliskan penetapan lewat tombol Kerjakan. Dilekatkan di samping jabatan, tidak menggantikannya.",
+  },
+  {
     id: "super-admin",
     name: "Super Admin",
     description: "Kontrol penuh infrastruktur, modul, dan database global.",
@@ -1813,6 +1840,11 @@ export const moduleVisibility: ModuleVisibility[] = [
   buildVisibility("pppk", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik"]),
   buildVisibility("pejabat-struktural", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "penugasan", "surat-masuk", "surat-keluar", "arsip", "statistik", "disposisi", "search"]),
   buildVisibility("staf", ["dashboard", "aleta-bot", "aleta-ecourt", "kepegawaian", "judicia-legal-form", "e-status", "notifikasi", "surat-masuk", "surat-keluar", "arsip", "statistik"]),
+  // Operator adalah peran TAMBAHAN: yang membuka portal tetap memakai
+  // jabatannya, dan keterlihatan modulnya datang dari sana. Daftar ini hanya
+  // untuk keadaan tidak lazim ketika ia dipasang sebagai peran utama -
+  // secukupnya supaya portalnya tidak kosong sama sekali.
+  buildVisibility("operator", ["dashboard", "aleta-ecourt"]),
 ];
 
 export const letters: LetterDetail[] = [

@@ -1855,6 +1855,28 @@ function gambarPenunjukan(isi, data) {
   }
 
   // --- tombol Kerjakan ----------------------------------------------------
+  // ==========================================================================
+  // TOMBOL KERJAKAN PUNYA KEWENANGANNYA SENDIRI
+  // ==========================================================================
+  //
+  // Papan penunjukan MEMBACA dan mengusulkan; tombol ini MENULIS ke SIPP atas
+  // nama yang menekannya, dan tulisannya tidak dapat dibedakan dari pengisian
+  // tangan. Karena itu keduanya dipisah: banyak jabatan perlu membaca
+  // usulannya, jauh lebih sedikit yang boleh menuliskannya.
+  //
+  // Yang tidak berwenang tetap melihat papannya lengkap - usulan majelis,
+  // panitera pengganti, juru sita, hari sidang - lalu mengetiknya sendiri di
+  // borang SIPP seperti sebelum ada ekstensi ini.
+  if (!boleh("kerjakan")) {
+    const catatan = buatElemen(
+      "div",
+      "aleta-kosong-lembut",
+      "Usulan di atas dapat disalin ke borang SIPP. Peran Anda tidak diberi akses menuliskannya langsung dari panel."
+    );
+    isi.appendChild(catatan);
+    return;
+  }
+
   const kaki = buatElemen("div", "aleta-tetap-kaki");
   const tombol = buatElemen("button", "aleta-tombol aleta-tombol-mati", "Kerjakan");
   tombol.type = "button";
@@ -4817,11 +4839,15 @@ function susunPanel(konteks) {
   //
   // Digambar hanya bila perannya memang berwenang. Sebelumnya ketiganya tetap
   // muncul untuk semua orang dan baru menolak sesudah ditekan.
-  if (boleh("penunjukan")) {
+  // Kelompok ini digambar bila SALAH SATU isinya boleh dipakai. Menuntut
+  // keduanya akan menyembunyikan Data Umum dari operator penjaga sidang, yang
+  // justru dibuat untuk itu; menuntut salah satunya lalu menggambar keduanya
+  // akan menawarkan papan penunjukan kepada yang tidak berwenang.
+  if (boleh("penunjukan") || boleh("data-umum")) {
     const kelKerja = kelompok("Kerjakan", "kerjakan", false);
 
-    kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
-    kelKerja.isi.appendChild(bagianDataUmum(konteks));
+    if (boleh("penunjukan")) kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
+    if (boleh("data-umum")) kelKerja.isi.appendChild(bagianDataUmum(konteks));
 
     // Alat pemasangan, bukan keterangan perkara - jawabannya sama pada perkara
     // mana pun. Dibatasi ke Super Admin dan Admin, yang memang satu-satunya

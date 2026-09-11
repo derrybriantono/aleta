@@ -5,6 +5,7 @@ import {
   KETERANGAN_KAPABILITAS,
   bacaAksesEkstensi,
   bacaSemuaPengecualian,
+  bolehMenyuntingAkses,
   kapabilitasPengguna,
   kemampuanPenuh,
   simpanAksesEkstensi,
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
     const kemampuanSaya = await kapabilitasPengguna(db, {
       id: actor.id,
       roleId: String(actor.roleId),
+      additionalRoleIds: actor.additionalRoleIds ?? [],
     });
     const penuh = isPrivilegedAdmin(actor);
 
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
         available: true,
         saya: kemampuanSaya,
         bolehMengatur: false,
+        bolehMenyunting: false,
         peran: [],
         keterangan: KETERANGAN_KAPABILITAS,
       });
@@ -70,6 +73,10 @@ export async function GET(request: NextRequest) {
       // justru bagi peran yang tidak pernah boleh dibatasi.
       saya: kemampuanPenuh(),
       bolehMengatur: true,
+      // Admin membaca, Super Admin mengubah. Layar memakai ini untuk
+      // mematikan pengalihannya - pengalihan yang selalu ditolak server
+      // adalah kebohongan kecil pada antarmuka.
+      bolehMenyunting: bolehMenyuntingAkses(actor),
       peran: await bacaAksesEkstensi(db),
       pengecualian: await bacaSemuaPengecualian(db),
       keterangan: KETERANGAN_KAPABILITAS,
