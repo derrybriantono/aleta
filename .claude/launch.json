@@ -28,6 +28,18 @@
         "D:/aleta-dev/jalankan-bot-tanpa-whatsapp.js"
       ],
       "port": 3003
+    },
+    {
+      "name": "pratinjau-panel",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8099",
+        "--directory",
+        "D:/aleta-dev/kerja/pratinjau"
+      ],
+      "port": 8099
     }
   ]
 }

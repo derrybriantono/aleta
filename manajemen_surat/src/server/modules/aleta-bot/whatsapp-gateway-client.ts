@@ -2131,18 +2131,26 @@ export async function getGatewaySippRingkasanMassal(nomorPerkara: string[]) {
  */
 export async function getGatewayAbtUsulan(muatan: {
   nomorPerkara: string;
-  sumber?: "semua" | "sipp" | "saksi";
+  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg";
   saksi1?: string;
   saksi2?: string;
   tanggalSidang?: string;
   pelaku?: string;
   lawan?: string;
+  /** Sebutan pemohon kedua pada itsbat nikah dua pemohon. */
+  pemohon2?: string;
   /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */
   posita?: string;
+  /** Templat tanya-jawab ABT, diambil ekstensi lewat halaman penyunting ABT. */
+  templat?: Array<{ no: string; tanya: string; jawab: string }>;
+  /** Ciri alasan yang didalilkan - menyaring jawaban tentang penyebab. */
+  alasan?: string[];
 }) {
   return gatewayFetch<{
     sipp: Record<string, unknown> | null;
     saksi: Record<string, unknown> | null;
+    itsbat: Record<string, unknown> | null;
+    saksiSdg: Record<string, unknown> | null;
   }>("/internal/aleta-bot/abt/usulan", {
     method: "POST",
     body: JSON.stringify(muatan),

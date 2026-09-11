@@ -54,7 +54,7 @@
   top: 12px;
   right: 12px;
   z-index: 2147483000;
-  width: 340px;
+  width: 380px;
   max-height: calc(100vh - 130px);
   /* Yang menggulir isinya, bukan panelnya - lihat .aleta-isi.
      Pegangan tarik dipasang absolut di dalam panel, dan panel yang
@@ -83,7 +83,7 @@
   border-radius: 10px;
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.42);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
   /* Panel ini lapisan di atas halaman kerja orang: gerakannya tidak boleh
      ikut menahan gulir SIPP. */
@@ -128,14 +128,14 @@
 .aleta-merek {
   font-weight: 700;
   letter-spacing: 0.08em;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-merek);
 }
 
 .aleta-nomor {
   flex: 1;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -151,7 +151,7 @@
   border-radius: 3px;
   cursor: pointer;
   line-height: 1;
-  font-size: 14px;
+  font-size: 15px;
 }
 .aleta-lipat:hover { background: var(--aleta-latar-naik); }
 
@@ -166,7 +166,7 @@
   border-radius: 3px;
   cursor: pointer;
   line-height: 1;
-  font-size: 13px;
+  font-size: 14px;
   padding: 0;
 }
 
@@ -258,7 +258,7 @@
 }
 
 .aleta-baris-judul { font-weight: 600; margin-bottom: 2px; }
-.aleta-baris-ket { color: var(--aleta-tulisan-lembut); font-size: 12px; }
+.aleta-baris-ket { color: var(--aleta-tulisan-lembut); font-size: 13px; }
 .aleta-berkas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 
 .aleta-unduh {
@@ -267,7 +267,7 @@
   border: 1px solid #2f6b52;
   border-radius: 3px;
   padding: 3px 10px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -275,7 +275,7 @@
 .aleta-unduh:hover:not(:disabled) { background: #2f6b52; }
 .aleta-unduh:disabled { opacity: 0.6; cursor: default; }
 
-.aleta-berkas-kosong { color: var(--aleta-tulisan-lembut); font-size: 11.5px; }
+.aleta-berkas-kosong { color: var(--aleta-tulisan-lembut); font-size: 12.5px; }
 
 /* Nada: aman, perlu diperhatikan, sudah lewat. */
 .aleta-aman { border-left-color: var(--aleta-merek); }
@@ -303,7 +303,7 @@
   border-radius: 999px;
   background: var(--aleta-latar-naik);
   border: 1px solid var(--aleta-garis);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
   color: var(--aleta-tulisan);
@@ -318,7 +318,7 @@
 .aleta-kosong-lembut {
   padding: 0 12px 12px;
   color: var(--aleta-tulisan-lembut);
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .aleta-tombol {
@@ -330,7 +330,7 @@
   border-radius: 3px;
   text-decoration: none;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .aleta-tautan {
@@ -340,7 +340,7 @@
   background: none;
   border: none;
   color: var(--aleta-merek);
-  font-size: 11px;
+  font-size: 12.5px;
   text-decoration: underline;
   cursor: pointer;
 }
@@ -362,14 +362,14 @@
 }
 
 .aleta-versi-judul {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--aleta-mendesak);
   margin-bottom: 3px;
 }
 
 .aleta-versi-sebab {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
   color: var(--aleta-tulisan-lembut);
 }
@@ -382,7 +382,7 @@
   padding: 8px 12px;
   border-top: 1px solid var(--aleta-garis);
   color: var(--aleta-tulisan-lembut);
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 /* Nomor seri ekstensi. Angka rata lebar supaya tidak bergoyang antar versi,
@@ -395,7 +395,7 @@
 }
 
 @media (max-width: 1100px) {
-  .aleta-panel { width: 270px; }
+  .aleta-panel { width: 300px; }
 }
 
 /* Kotak keputusan verifikasi hakim. */
@@ -409,14 +409,14 @@
   gap: 5px;
 }
 
-.aleta-verifikasi-label { font-size: 11.5px; color: var(--aleta-tulisan-lembut); }
+.aleta-verifikasi-label { font-size: 12.5px; color: var(--aleta-tulisan-lembut); }
 
 .aleta-verifikasi-pilih,
 .aleta-verifikasi-ya,
 .aleta-verifikasi-batal {
   border-radius: 3px;
   padding: 3px 10px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -433,13 +433,13 @@
 
 .aleta-verifikasi-tanya {
   width: 100%;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--aleta-mendesak);
   margin-bottom: 4px;
 }
 
-.aleta-verifikasi-hasil { width: 100%; font-size: 11.5px; color: var(--aleta-merek); }
-.aleta-verifikasi-gagal { width: 100%; font-size: 11.5px; color: var(--aleta-lewat); }
+.aleta-verifikasi-hasil { width: 100%; font-size: 12.5px; color: var(--aleta-merek); }
+.aleta-verifikasi-gagal { width: 100%; font-size: 12.5px; color: var(--aleta-lewat); }
 
 /* ─── Tanda yang disisipkan ke halaman SIPP ─────────────────────────────────
  *
@@ -472,7 +472,7 @@
   margin-left: 6px;
   padding: 1px 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   line-height: 1.6;
   white-space: nowrap;
@@ -555,7 +555,7 @@ tr.aleta-baris-disorot > td {
   cursor: pointer;
 
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: 0.06em;
@@ -582,7 +582,7 @@ tr.aleta-baris-disorot > td {
 .aleta-bagian-panah {
   flex: 0 0 auto;
   width: 10px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
   opacity: 0.75;
 }
@@ -595,7 +595,7 @@ tr.aleta-baris-disorot > td {
 
 .aleta-usia {
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: 12.5px;
   opacity: 0.75;
 }
 
@@ -647,7 +647,7 @@ tr.aleta-baris-disorot > td {
 .aleta-identitas > span {
   border-radius: 4px;
   padding: 2px 7px;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.5;
   border: 1px solid transparent;
 }
@@ -727,7 +727,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-register-label {
-  font-size: 11px;
+  font-size: 12.5px;
   opacity: 0.75;
 }
 
@@ -736,7 +736,7 @@ tr.aleta-baris-disorot > td {
   border-radius: 4px;
   background: rgba(127, 127, 127, 0.18);
   font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 
@@ -747,7 +747,7 @@ tr.aleta-baris-disorot > td {
   background: none;
   color: inherit;
   font: inherit;
-  font-size: 11px;
+  font-size: 12.5px;
   cursor: pointer;
 }
 
@@ -765,7 +765,7 @@ tr.aleta-baris-disorot > td {
 .aleta-chip {
   padding: 2px 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.6;
   white-space: nowrap;
 }
@@ -807,7 +807,7 @@ tr.aleta-baris-disorot > td {
   background: none;
   color: inherit;
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1;
   opacity: 0.55;
   cursor: pointer;
@@ -828,7 +828,7 @@ tr.aleta-baris-disorot > td {
 
 .aleta-permintaan-pesan {
   margin-bottom: 6px;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.5;
   opacity: 0.85;
 }
@@ -845,7 +845,7 @@ tr.aleta-baris-disorot > td {
   background: #1c5539;
   color: #eaf3ee;
   font: inherit;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -946,7 +946,7 @@ tr.aleta-baris-disorot > td {
   border-radius: 3px;
   background: rgba(22, 163, 74, 0.09);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.6;
   text-align: left;
 }
@@ -954,7 +954,7 @@ tr.aleta-baris-disorot > td {
 .aleta-sisip-judul {
   margin-bottom: 4px;
   font-weight: 700;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   opacity: 0.85;
@@ -1004,12 +1004,12 @@ tr.aleta-baris-disorot > td {
 
 .aleta-pengguna-nama {
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--aleta-tulisan);
 }
 
 .aleta-pengguna-peran {
-  font-size: 11px;
+  font-size: 12.5px;
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--aleta-latar-naik);
@@ -1033,14 +1033,14 @@ tr.aleta-baris-disorot > td {
 
 .aleta-nilai-nama {
   color: var(--aleta-tulisan-lembut);
-  font-size: 12px;
+  font-size: 13px;
   flex: none;
   max-width: 48%;
 }
 
 .aleta-nilai-isi {
   text-align: right;
-  font-size: 12px;
+  font-size: 13px;
   /* Keterangan panjang dipenggal per kata, bukan meluber keluar panel. */
   overflow-wrap: anywhere;
 }
@@ -1055,7 +1055,7 @@ tr.aleta-baris-disorot > td {
 .aleta-memuat {
   padding: 8px 0;
   color: var(--aleta-tulisan-lembut);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* Titik berkedip menandakan permintaannya benar-benar berjalan. Tulisan
@@ -1089,7 +1089,7 @@ tr.aleta-baris-disorot > td {
   background: rgba(224, 139, 129, 0.1);
   border: 1px solid rgba(224, 139, 129, 0.3);
   color: var(--aleta-lewat);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* ==========================================================================
@@ -1113,7 +1113,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-saklar-nama {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1125,7 +1125,7 @@ tr.aleta-baris-disorot > td {
   border: 1px solid var(--aleta-garis);
   border-radius: 999px;
   padding: 2px 9px;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
 }
 
@@ -1145,7 +1145,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-tetap-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--aleta-tulisan-lembut);
@@ -1160,7 +1160,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-tetap-isi {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--aleta-tulisan);
   overflow-wrap: anywhere;
 }
@@ -1168,13 +1168,13 @@ tr.aleta-baris-disorot > td {
 /* Yang belum dapat diusulkan tidak disamarkan jadi tanda hubung - ia ditulis
    apa adanya, supaya bedanya dengan "tidak ada" tetap terlihat. */
 .aleta-tetap-kosong {
-  font-size: 12px;
+  font-size: 13px;
   font-style: italic;
   color: var(--aleta-tulisan-lembut);
 }
 
 .aleta-tetap-sebab {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
   color: var(--aleta-tulisan-lembut);
   overflow-wrap: anywhere;
@@ -1188,14 +1188,14 @@ tr.aleta-baris-disorot > td {
   margin-top: 3px;
   padding-left: 7px;
   border-left: 2px solid rgba(111, 191, 149, 0.5);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
   color: #8fd3b0;
   overflow-wrap: anywhere;
 }
 
 .aleta-tetap-awas {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
   font-weight: 700;
   color: var(--aleta-mendesak);
@@ -1204,7 +1204,7 @@ tr.aleta-baris-disorot > td {
 
 .aleta-tetap-hitung {
   padding: 5px 12px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--aleta-tulisan-lembut);
   border-bottom: 1px solid var(--aleta-garis);
   overflow-wrap: anywhere;
@@ -1232,7 +1232,7 @@ tr.aleta-baris-disorot > td {
    tampilan bawaan peramban yang jauh lebih terang daripada sekitarnya. */
 .aleta-berkas {
   width: 100%;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
   background: var(--aleta-latar-naik);
   border: 1px dashed var(--aleta-garis);
@@ -1247,7 +1247,7 @@ tr.aleta-baris-disorot > td {
   border-radius: 3px;
   padding: 2px 8px;
   margin-right: 8px;
-  font-size: 11px;
+  font-size: 12.5px;
   cursor: pointer;
 }
 
@@ -1278,7 +1278,7 @@ tr.aleta-baris-disorot > td {
   align-items: baseline;
   gap: 4px 6px;
   padding: 0 12px 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--aleta-tulisan-lembut);
   border-bottom: 1px solid var(--aleta-garis);
 }
@@ -1303,7 +1303,7 @@ tr.aleta-baris-disorot > td {
    perkaranya sendiri. */
 .aleta-salin-nilai {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--aleta-merek);
   background: transparent;
@@ -1325,7 +1325,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-kepala-register {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--aleta-tulisan-lembut);
 }
@@ -1355,7 +1355,7 @@ tr.aleta-baris-disorot > td {
   border: 0;
   color: var(--aleta-tulisan);
   font: inherit;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1375,7 +1375,7 @@ tr.aleta-baris-disorot > td {
    keterangan, bukan judul. */
 .aleta-kelompok-ringkas {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -1404,7 +1404,7 @@ tr.aleta-baris-disorot > td {
 .aleta-bagian-lencana {
   margin-left: auto;
   padding-left: 6px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -1554,7 +1554,7 @@ tr.aleta-baris-disorot > td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
   border: 1px solid var(--aleta-garis);
   border-radius: 999px;
@@ -1641,7 +1641,7 @@ tr.aleta-baris-disorot > td {
 .aleta-pilih-nama {
   flex: 0 0 auto;
   min-width: 5.5rem;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
 }
 
@@ -1654,7 +1654,7 @@ tr.aleta-baris-disorot > td {
   border-radius: 6px;
   padding: 4px 6px;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .aleta-pilih-kotak:focus {
@@ -1670,7 +1670,7 @@ tr.aleta-baris-disorot > td {
   gap: 6px;
   padding: 0 12px 6px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
 }
 
@@ -1684,7 +1684,7 @@ tr.aleta-baris-disorot > td {
   border: 0;
   color: var(--aleta-tulisan-lembut);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   padding: 2px 4px;
 }
@@ -1702,7 +1702,7 @@ tr.aleta-baris-disorot > td {
   border: 0;
   color: var(--aleta-tulisan-lembut);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   padding: 2px 4px;
 }
@@ -1728,7 +1728,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-tetap-atasnama-judul {
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1737,7 +1737,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-tetap-atasnama-baris {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -2165,7 +2165,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   background: #ffffff;
   color: #1b2622;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   resize: vertical;
 }
@@ -2183,7 +2183,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   background: #1c6f46;
   color: #ffffff;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2200,7 +2200,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 }
 
 .aleta-abt-kabar {
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--aleta-tulisan-lembut, #63594c);
 }
@@ -2256,14 +2256,14 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 
 .aleta-abt-kode {
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
 }
 
 .aleta-abt-nama {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--aleta-tulisan);
 }
@@ -2272,7 +2272,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   display: flex;
   flex-direction: column;
   gap: 3px;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 .aleta-abt-kini,
@@ -2309,14 +2309,14 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   border-left: 2px solid var(--aleta-lewat);
   border-radius: 2px;
   background: rgba(180, 35, 24, 0.1);
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--aleta-tulisan);
 }
 
 .aleta-abt-catatan {
   margin-top: 5px;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--aleta-mendesak);
 }
@@ -2325,7 +2325,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   display: flex;
   gap: 6px;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
@@ -2371,7 +2371,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   margin-top: 6px;
   padding-top: 5px;
   border-top: 1px dashed var(--aleta-garis);
-  font-size: 10.5px;
+  font-size: 12px;
   color: var(--aleta-tulisan-lembut);
 }
 
@@ -2405,7 +2405,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 }
 
 .aleta-abt-huruf-nama {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--aleta-tulisan);
 }
@@ -2416,13 +2416,13 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--aleta-tulisan-lembut);
 }
 
 .aleta-abt-naskah {
   margin-top: 5px;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -2431,7 +2431,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 
 .aleta-abt-bunyi {
   margin-top: 2px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.55;
   color: var(--aleta-tulisan);
   overflow-wrap: anywhere;
@@ -2448,7 +2448,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   border-radius: 4px;
   background: var(--aleta-latar);
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.5;
   white-space: pre-wrap;
   color: var(--aleta-tulisan);
@@ -2474,7 +2474,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   background: none;
   color: var(--aleta-tulisan-lembut);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   cursor: pointer;
 }
@@ -2521,7 +2521,7 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   background: #0f2f22;
   color: #cdeedd;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   line-height: 1.4;
   /* Tidak dapat ditekan: ia keterangan, bukan tombol. Tanpa ini, tekanan yang
@@ -2533,12 +2533,12 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 }
 
 .aleta-cetak-tiga-angka {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
 }
 
 .aleta-cetak-tiga-ikon {
-  font-size: 11px;
+  font-size: 12.5px;
   /* Lambang berkas digambar berbeda tiap peramban dan kadang berwarna sendiri;
      opasitasnya diturunkan supaya ia tidak lebih menarik mata daripada
      angkanya, yang justru keterangan pokoknya. */
@@ -2959,7 +2959,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
 
 .aleta-tetap-pejabat-jenis {
   flex: 0 0 3.2rem;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--aleta-tulisan-lembut);
@@ -2979,7 +2979,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
 }
 
 .aleta-tulis-judul {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -2990,7 +2990,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
   justify-content: space-between;
   gap: 10px;
   padding: 3px 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   border-top: 1px solid var(--aleta-garis);
 }
 
@@ -3000,7 +3000,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
 
 .aleta-tulis-ket {
   color: var(--aleta-tulisan-lembut);
-  font-size: 12px;
+  font-size: 13px;
   text-align: right;
 }
 
@@ -3015,3 +3015,185 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
 [data-tema="gelap"] .aleta-tulis-gagal .aleta-tulis-ket {
   color: #ffa79c;
 }
+
+/* ==========================================================================
+   PITA IDENTITAS - SAMA DI KEPALA DAN DI KAKI
+   ==========================================================================
+   Satu kelas untuk keduanya, dengan sengaja. Yang diminta petugas: nama yang
+   masuk ALETA, akun SIPP yang sedang dipakai, nomor perkara, jenis perkara,
+   dan versi ekstensi terbaca di atas DAN di bawah, pada letak dan huruf yang
+   sama - supaya panel yang digulung tetap menyebut perkara mana yang sedang
+   dibuka, di ujung mana pun matanya berhenti.
+   Kepala dan kaki sama-sama memasang .aleta-identitas-panel; yang berbeda
+   hanya wadahnya. Mengubah ukuran hurufnya di sini mengubah keduanya. */
+.aleta-identitas-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--aleta-tulisan-lembut);
+  min-width: 0;
+}
+.aleta-identitas-panel > span { white-space: nowrap; }
+.aleta-identitas-panel .aleta-id-akun {
+  font-weight: 600;
+  color: var(--aleta-tulisan);
+}
+.aleta-identitas-panel .aleta-id-label {
+  opacity: 0.75;
+  margin-right: 2px;
+}
+.aleta-identitas-panel .aleta-id-nomor {
+  font-family: ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.aleta-identitas-panel .aleta-id-jenis {
+  border: 1px solid var(--aleta-garis);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.aleta-identitas-panel .aleta-id-versi {
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+.aleta-kepala .aleta-identitas-panel {
+  flex: 1 1 100%;
+  padding-top: 4px;
+}
+.aleta-kaki {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+
+/* Pita di kepala menempati baris kedua, sesudah deret tombol - apa pun
+   urutan penambahannya dalam kode. */
+.aleta-kepala { flex-wrap: wrap; }
+.aleta-kepala .aleta-identitas-panel { order: 10; }
+.aleta-kaki .aleta-identitas-panel { flex: 1 1 100%; }
+.aleta-identitas-panel .aleta-akun-sipp {
+  margin-left: 0;
+  max-width: 14rem;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--aleta-tulisan);
+  border: 0;
+  padding: 0;
+}
+.aleta-identitas-panel .aleta-id-aleta { font-weight: 600; }
+
+/* Kode variabel ABT dibuat pelan: yang dibaca petugas namanya, kodenya hanya
+   untuk mencari baris di halaman ABT. */
+.aleta-abt-kode {
+  font-size: 11.5px;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   SUSUN KETERANGAN DUA SAKSI
+   ========================================================================== */
+.aleta-sdg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+.aleta-sdg-ruas {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+}
+.aleta-sdg-pilih,
+.aleta-sdg-angka {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: var(--aleta-latar-lembut, transparent);
+  color: var(--aleta-tulisan);
+  max-width: 100%;
+}
+.aleta-sdg-angka { width: 5rem; }
+.aleta-sdg-centang {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.aleta-sdg-alasan {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px dashed var(--aleta-garis);
+  border-radius: 6px;
+}
+.aleta-sdg-hasil {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.aleta-sdg-dua {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.aleta-panel-penuh .aleta-sdg-dua,
+.aleta-panel-lebar .aleta-sdg-dua {
+  grid-template-columns: 1fr 1fr;
+}
+.aleta-sdg-kolom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.aleta-sdg-judul {
+  font-weight: 700;
+  font-size: 13px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--aleta-garis);
+}
+.aleta-sdg-baris {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.aleta-sdg-tanya {
+  font-size: 12.5px;
+  color: var(--aleta-tulisan-lembut);
+}
+.aleta-sdg-jawab {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: var(--aleta-latar-lembut, transparent);
+  color: var(--aleta-tulisan);
+  resize: vertical;
+}
+.aleta-sdg-perlu .aleta-sdg-jawab {
+  border-color: #c99a2e;
+  box-shadow: inset 3px 0 0 #c99a2e;
+}
+
+/* Label penetapan kini bernama lengkap ("Penetapan Majelis Hakim"), bukan
+   singkatan tiga huruf - kolomnya diberi ruang dan boleh patah dua baris.
+   Kolom 42px yang lama memang cukup untuk "PMH" dan tidak untuk apa pun lain. */
+.aleta-tetap { grid-template-columns: minmax(104px, 32%) 1fr; }
+.aleta-tetap-label { letter-spacing: 0.02em; line-height: 1.3; }
+
+/* Label formulir SDG mengikuti panjang katanya; lebar 54px milik kartu usulan
+   tidak berlaku di sini. Baris centang tetap mendatar. */
+.aleta-sdg-ruas .aleta-abt-label { width: auto; }
+.aleta-sdg-centang { flex-direction: row; }

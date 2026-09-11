@@ -1447,7 +1447,9 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
 
   for (const s of u.sumber || []) {
     const kutip = buatElemen("div", "aleta-abt-kutipan");
-    kutip.appendChild(buatElemen("span", "aleta-abt-asal", s.saksi ? `Saksi ${s.saksi}` : "SIPP"));
+    kutip.appendChild(
+      buatElemen("span", "aleta-abt-asal", s.asal === "posita" ? "Posita" : s.saksi ? `Saksi ${s.saksi}` : "SIPP")
+    );
     kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", s.kalimat));
     kartu.appendChild(kutip);
   }
@@ -1652,6 +1654,175 @@ async function mintaUsulan(muatan) {
   return isi;
 }
 
+/**
+ * ============================================================================
+ * PITA IDENTITAS PANEL ABT - SAMA BENTUKNYA DENGAN PANEL SIPP
+ * ============================================================================
+ *
+ * Yang diminta petugas: siapa yang masuk ALETA, nomor perkara, jenis perkara,
+ * dan seri ekstensi terbaca di kepala DAN di kaki, pada letak dan huruf yang
+ * sama di panel mana pun - termasuk panel blangko ABT ini. Kelas dan urutannya
+ * persis milik konten.js (pitaIdentitas); yang berbeda hanya sumbernya:
+ * halaman ABT tidak menulis akun SIPP di mana pun, jadi ruas itu tidak ada.
+ *
+ * Nama pengguna ALETA datang dari portal dan datangnya menyusul; pita digambar
+ * dulu tanpa nama, lalu digambar ulang begitu jawabannya tiba. Panel tidak
+ * menunggu jaringan hanya untuk menuliskan satu nama.
+ */
+let penggunaAletaAbt = null;
+
+async function muatPenggunaAleta() {
+  if (penggunaAletaAbt) return penggunaAletaAbt;
+  try {
+    const isi = await mintaUsulan({ nomorPerkara: nomorPerkaraAbt(), sumber: "siapa" });
+    penggunaAletaAbt = isi && isi.pengguna && isi.pengguna.nama ? isi.pengguna : null;
+  } catch {
+    penggunaAletaAbt = null;
+  }
+  return penggunaAletaAbt;
+}
+
+/** Jenis perkara dari nomornya: Pdt.G gugatan, Pdt.P permohonan. */
+function jenisPerkaraDariNomor(nomor) {
+  const teks = String(nomor || "");
+  if (/Pdt\.G/i.test(teks)) return "Gugatan";
+  if (/Pdt\.P/i.test(teks)) return "Permohonan";
+  return "";
+}
+
+function pitaIdentitasAbt(pengguna) {
+  const pita = buatElemen("div", "aleta-identitas-panel");
+  const tambah = (kelas, label, teks, judul) => {
+    const kotak = buatElemen("span", kelas);
+    if (label) kotak.appendChild(buatElemen("span", "aleta-id-label", label));
+    kotak.appendChild(document.createTextNode(teks));
+    if (judul) kotak.title = judul;
+    pita.appendChild(kotak);
+  };
+  if (pengguna && pengguna.nama) {
+    const peran = pengguna.peran ? ` (${pengguna.peran})` : "";
+    tambah("aleta-id-akun aleta-id-aleta", "ALETA", String(pengguna.nama), `Masuk ke ALETA sebagai ${pengguna.nama}${peran}.`);
+  }
+  const nomor = nomorPerkaraAbt();
+  if (nomor) tambah("aleta-id-nomor", "", nomor, "Nomor perkara pada blangko yang sedang dibuka.");
+  const jenis = jenisPerkaraDariNomor(nomor);
+  if (jenis) tambah("aleta-id-jenis", "", jenis, "Jenis perkara menurut nomornya.");
+  try {
+    const seri = chrome.runtime.getManifest().version;
+    if (seri) tambah("aleta-id-versi aleta-kaki-versi", "", `v${seri}`, "Seri ekstensi ALETA yang terpasang.");
+  } catch {
+    /* di luar konteks ekstensi: pita tetap tampil tanpa nomor seri */
+  }
+  return pita;
+}
+
+/**
+ * ============================================================================
+ * KETERANGAN DUA SAKSI YANG "SAMA DENGAN GUGATAN"
+ * ============================================================================
+ *
+ * Templat tanya-jawabnya milik ABT, dan diambil lewat halaman penyunting ABT
+ * sendiri: halaman tanyajawab_perkara_edit menawarkan daftar templat untuk
+ * jenis perkara ini, dan mengirim load_template=<kode> kepadanya mengembalikan
+ * pertanyaan-jawaban templat itu dengan variabel perkaranya SUDAH terganti.
+ * ALETA tetap tidak membaca basis data aps_badilag; yang membaca halaman ini
+ * adalah peramban petugas, dengan sesi petugas itu sendiri.
+ *
+ * Portal lalu menyusun dua keterangan dari templat yang satu itu - saksi 1 dan
+ * saksi 2 dengan substansi yang sama dan kalimat yang berbeda - dan hasilnya
+ * digambar di sini untuk dibaca dan disunting SEBELUM disimpan. Menyimpan
+ * memakai rute simpan ABT sendiri, yang menghapus lalu menulis ulang
+ * tanya-jawab sidang itu: karena itu sidang yang sudah memuat keterangan
+ * disebut terang-terangan sebelum tombolnya ditekan.
+ */
+
+/** Cermin CIRI_ALASAN di abtUsulanService - kunci alasan yang dikenal portal. */
+const DAFTAR_ALASAN_SDG = [
+  "perselisihan terus-menerus",
+  "kekerasan dalam rumah tangga",
+  "tidak memberi nafkah",
+  "pihak lain (wanita/pria idaman lain)",
+  "cemburu",
+  "obat terlarang",
+  "judi",
+  "mabuk",
+  "murtad/pindah agama",
+];
+
+/** Daftar templat yang ditawarkan ABT pada halaman penyunting keterangan saksi 1. */
+async function daftarTemplatAbt(urutan) {
+  const respons = await fetch(alamatTanyaJawab(VAR_SAKSI_1, false, urutan), {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+  const teks = await respons.text();
+  const hasil = [];
+  const pola = /<option value='([^']+)'>\s*\(([^)]*)\)\s*([^<]*)<\/option>/g;
+  let cocok;
+  while ((cocok = pola.exec(teks)) !== null) {
+    hasil.push({ nilai: cocok[1], kode: cocok[2].trim(), nama: cocok[3].trim() });
+  }
+  return hasil;
+}
+
+/** Baris templat dengan variabel perkara yang sudah diganti ABT. */
+async function muatTemplatAbt(kodeTemplat, urutan) {
+  const badan = new URLSearchParams();
+  badan.set("load_template", kodeTemplat);
+  const respons = await fetch(alamatTanyaJawab(VAR_SAKSI_1, false, urutan), {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: badan.toString(),
+  });
+  if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
+  const teks = await respons.text();
+  const cocok = teks.match(/var\s+ajax_data\s*=\s*(\[[\s\S]*?\])\s*(?:\r?\n|;)/);
+  if (!cocok) throw new Error("templat tanya-jawab tidak terbaca dari halaman ABT");
+  let baris;
+  try {
+    baris = JSON.parse(cocok[1]);
+  } catch {
+    throw new Error("templat tanya-jawab tidak dapat diurai");
+  }
+  return (Array.isArray(baris) ? baris : []).map((b, i) => ({
+    no: String((b && b.urutan_pertanyaan) || i + 1),
+    tanya: String((b && b.pertanyaan) || ""),
+    jawab: String((b && b.jawaban) || ""),
+  }));
+}
+
+/** Menulis satu daftar tanya-jawab ke ABT lewat rute simpannya sendiri. */
+async function kirimTanyaJawab(kodeVariabel, urutan, baris) {
+  const badan = new URLSearchParams();
+  badan.set("data", JSON.stringify(baris));
+  const respons = await fetch(alamatTanyaJawab(kodeVariabel, true, urutan), {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: badan.toString(),
+  });
+  if (!respons.ok) return { ok: false, pesan: `ABT menjawab ${respons.status}.` };
+  const jawab = await respons.text();
+  if (!/Tanya\s*Jawab\s*Disimpan/i.test(jawab)) {
+    return {
+      ok: false,
+      pesan: `ABT tidak mengatakan tersimpan: ${jawab.replace(/<[^>]*>/g, " ").trim().slice(0, 160)}`,
+    };
+  }
+  return { ok: true, pesan: `${baris.length} tanya-jawab tersimpan.` };
+}
+
+/** Templat yang paling mungkin dimaksud, menurut blangko yang dibuka. */
+function templatBawaan(daftar, itsbat) {
+  const cari = (uji) => daftar.find((t) => uji(String(t.kode).toUpperCase()));
+  if (itsbat) return cari((k) => k.startsWith("IN")) || daftar[0];
+  return cari((k) => k === "04") || cari((k) => k === "A1") || daftar[0];
+}
+
 function susunPanelAbt(jatiDiri) {
   const panel = buatElemen("div", "aleta-panel aleta-panel-abt");
   panel.id = PENANDA_ABT;
@@ -1659,7 +1830,9 @@ function susunPanelAbt(jatiDiri) {
 
   const kepala = buatElemen("div", "aleta-kepala");
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
-  kepala.appendChild(buatElemen("span", "aleta-nomor", nomorPerkaraAbt() || "blangko ABT"));
+  // Pita identitas yang sama dengan panel SIPP - di kepala dan di kaki.
+  let pitaKepala = pitaIdentitasAbt(penggunaAletaAbt);
+  kepala.appendChild(pitaKepala);
   panel.appendChild(kepala);
 
   // Geser, ubah ukuran, ciut, layar penuh, kembalikan bawaan, tema, tutup -
@@ -1700,13 +1873,27 @@ function susunPanelAbt(jatiDiri) {
   }
   isi.appendChild(petunjuk);
 
+  // Tombol berbahasa hukum yang resmi: yang menekannya panitera pengganti,
+  // bukan pemrogram, dan "8503" tidak berarti apa-apa bagi berita acara.
+  // Tombol yang variabel sasarannya tidak ada di blangko ini tidak digambar.
+  const petaAwal = barisVariabel();
   const tombolBaris = buatElemen("div", "aleta-abt-aksi");
-  const tombolSipp = buatElemen("button", "aleta-permintaan-tombol", "Tarik 5 dari SIPP");
+  const tombolSipp = buatElemen("button", "aleta-permintaan-tombol", "Ambil data dari SIPP");
   tombolSipp.type = "button";
-  const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Isi dari Keterangan Saksi");
+  const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Susun dari keterangan saksi");
   tombolSaksi.type = "button";
+  const tombolItsbat = buatElemen("button", "aleta-permintaan-tombol", "Isi dari posita permohonan");
+  tombolItsbat.type = "button";
+  tombolItsbat.title = "Tanggal dan tempat nikah, wali, saksi nikah, mahar, status, umur, dan anak - dibaca dari posita.";
+  tombolItsbat.hidden = !(petaAwal.has("5197") || petaAwal.has("8087"));
+  const tombolSdg = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan dua saksi");
+  tombolSdg.type = "button";
+  tombolSdg.title = "Dua keterangan dari satu templat ABT: substansi sama, kalimat berbeda.";
+  tombolSdg.hidden = !petaAwal.has(VAR_SAKSI_1);
   tombolBaris.appendChild(tombolSipp);
   tombolBaris.appendChild(tombolSaksi);
+  tombolBaris.appendChild(tombolItsbat);
+  tombolBaris.appendChild(tombolSdg);
   isi.appendChild(tombolBaris);
 
   const kabar = buatElemen("div", "aleta-abt-kabar");
@@ -2006,7 +2193,7 @@ function susunPanelAbt(jatiDiri) {
     if (!daftar.length && !belumSiap.length) return;
 
     const kotak = buatElemen("div", "aleta-abt-kartu");
-    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "8503 — huruf alasan perceraian"));
+    kotak.appendChild(buatElemen("div", "aleta-abt-nama", "Huruf alasan perceraian"));
 
     const pilihan = [];
     for (const h of daftar) {
@@ -2047,7 +2234,7 @@ function susunPanelAbt(jatiDiri) {
     }
 
     if (pilihan.length) {
-      const terap = buatElemen("button", "aleta-permintaan-tombol", "Tulis 8503");
+      const terap = buatElemen("button", "aleta-permintaan-tombol", "Tuliskan huruf alasan");
       terap.type = "button";
       const kabarHuruf = buatElemen("div", "aleta-abt-kabar");
       kotak.appendChild(terap);
@@ -2419,10 +2606,19 @@ function susunPanelAbt(jatiDiri) {
   });
 
   const kaki = buatElemen("div", "aleta-kaki");
-  kaki.appendChild(
-    buatElemen("span", "aleta-kaki-teks", "Usulan dari ALETA. Disimpan lewat tombol simpan ABT sendiri.")
-  );
+  kaki.title = "Usulan dari ALETA. Disimpan lewat tombol simpan ABT sendiri.";
+  let pitaKaki = pitaIdentitasAbt(penggunaAletaAbt);
+  kaki.appendChild(pitaKaki);
   panel.appendChild(kaki);
+  void muatPenggunaAleta().then((pengguna) => {
+    if (!pengguna) return;
+    const kepalaBaru = pitaIdentitasAbt(pengguna);
+    const kakiBaru = pitaIdentitasAbt(pengguna);
+    pitaKepala.replaceWith(kepalaBaru);
+    pitaKaki.replaceWith(kakiBaru);
+    pitaKepala = kepalaBaru;
+    pitaKaki = kakiBaru;
+  });
 
   /** Menggambar daftar usulan beserta tombol penerapnya. */
   function gambarUsulan(daftar) {
@@ -2461,7 +2657,7 @@ function susunPanelAbt(jatiDiri) {
       let berhasil = 0;
       const gagal = [];
       for (const x of dipilih) {
-        hasilTerap.textContent = `Menyimpan ${x.usulan.kode}…`;
+        hasilTerap.textContent = `Menyimpan ${x.usulan.nama}…`;
         try {
           const sebelum = (barisVariabel().get(x.usulan.kode) || {}).nilai || "";
           const hasil = await simpanVariabel(x.usulan.kode, x.usulan.nilai, jatiDiri);
@@ -2473,9 +2669,12 @@ function susunPanelAbt(jatiDiri) {
               nama: x.usulan.nama,
               sebelum,
               sesudah: x.usulan.nilai,
-              cara: x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
-                ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
-                : `usulan dari SIPP (${x.usulan.keyakinan})`,
+              cara:
+                x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
+                  ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
+                  : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
+                  ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
+                  : `usulan dari SIPP (${x.usulan.keyakinan})`,
               pada: new Date().toISOString(),
             });
             const item = barisVariabel().get(x.usulan.kode);
@@ -2529,7 +2728,7 @@ function susunPanelAbt(jatiDiri) {
       const teks1 = peta.get(VAR_SAKSI_1) ? peta.get(VAR_SAKSI_1).selNilai.innerText : "";
       const teks2 = peta.get(VAR_SAKSI_2) ? peta.get(VAR_SAKSI_2).selNilai.innerText : "";
       if (!teks1.trim() && !teks2.trim()) {
-        throw new Error("Variabel 2021 dan 2022 masih kosong di halaman ini.");
+        throw new Error("Keterangan saksi 1 dan saksi 2 masih kosong di halaman ini.");
       }
       const isiJawaban = await mintaUsulan({
         nomorPerkara: nomorPerkaraAbt(),
@@ -2559,6 +2758,295 @@ function susunPanelAbt(jatiDiri) {
       kabar.textContent = String((galat && galat.message) || galat);
     } finally {
       tombolSaksi.disabled = false;
+    }
+  });
+
+  /**
+   * ==========================================================================
+   * ISI DARI POSITA PERMOHONAN (ITSBAT NIKAH)
+   * ==========================================================================
+   */
+  tombolItsbat.addEventListener("click", async () => {
+    tombolItsbat.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Membaca posita permohonan…";
+    try {
+      const peta = barisVariabel();
+      const posita = peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "";
+      if (!posita.trim()) {
+        throw new Error("Posita permohonan masih kosong di halaman ini. Ambil positanya lebih dulu.");
+      }
+      const isiJawaban = await mintaUsulan({
+        nomorPerkara: nomorPerkaraAbt(),
+        sumber: "itsbat",
+        posita,
+        pelaku: nilaiVariabel(VAR_PIHAK_PELAKU),
+      });
+      const itsbat = isiJawaban.itsbat || {};
+      if (itsbat.ok === false) throw new Error(itsbat.alasan || "Posita tidak dapat dibaca.");
+      kabar.textContent = itsbat.catatan || "";
+      gambarSelisih([]);
+      gambarSepihak(null);
+      gambarHuruf([], []);
+      gambarUsulan(itsbat.usulan || []);
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      tombolItsbat.disabled = false;
+    }
+  });
+
+  /**
+   * ==========================================================================
+   * SUSUN KETERANGAN DUA SAKSI
+   * ==========================================================================
+   */
+  function gambarPratinjauSdg(hasil, urutan, templat, sudahAda) {
+    const kotak = buatElemen("div", "aleta-sdg-hasil");
+
+    const ringkas = [];
+    if (hasil.alasan && hasil.alasan.length) {
+      ringkas.push(
+        `Alasan yang dipakai: ${hasil.alasan.join(", ")}` +
+          (hasil.asalAlasan === "posita" ? " (dibaca dari gugatan/permohonan)." : " (dipilih).")
+      );
+    }
+    if (hasil.catatan) ringkas.push(hasil.catatan);
+    if (hasil.identik) ringkas.push(`${hasil.identik} jawaban masih sama persis pada kedua saksi - ubah salah satunya.`);
+    kotak.appendChild(buatElemen("div", "aleta-abt-catatan", ringkas.join(" ")));
+
+    const perlu = new Set((hasil.perluDiisi || []).map((x) => String(x.no)));
+    const dua = buatElemen("div", "aleta-sdg-dua");
+    const kolomIsian = [];
+    for (const [nomorSaksi, daftar] of [
+      [1, hasil.saksi1 || []],
+      [2, hasil.saksi2 || []],
+    ]) {
+      const kolom = buatElemen("div", "aleta-sdg-kolom");
+      kolom.appendChild(buatElemen("div", "aleta-sdg-judul", `Saksi ${nomorSaksi}`));
+      const isian = [];
+      for (const b of daftar) {
+        const baris = buatElemen("div", `aleta-sdg-baris${perlu.has(String(b.no)) ? " aleta-sdg-perlu" : ""}`);
+        baris.appendChild(buatElemen("div", "aleta-sdg-tanya", `${b.no}. ${b.tanya}`));
+        const jawab = document.createElement("textarea");
+        jawab.className = "aleta-sdg-jawab";
+        jawab.rows = 2;
+        jawab.value = b.jawab;
+        if (perlu.has(String(b.no))) jawab.title = "Jawaban templat ini masih memuat titik-titik; lengkapi dari keterangan saksi yang sesungguhnya.";
+        baris.appendChild(jawab);
+        kolom.appendChild(baris);
+        isian.push({ no: b.no, tanya: b.tanya, jawab });
+      }
+      dua.appendChild(kolom);
+      kolomIsian.push(isian);
+    }
+    kotak.appendChild(dua);
+
+    const simpan = buatElemen(
+      "button",
+      "aleta-permintaan-tombol",
+      `Simpan keterangan saksi 1 dan 2 ke ABT (sidang ke-${urutan})`
+    );
+    simpan.type = "button";
+    const hasilSimpan = buatElemen("div", "aleta-abt-kabar");
+    if (sudahAda) {
+      kotak.appendChild(
+        buatElemen(
+          "div",
+          "aleta-abt-catatan",
+          `Sidang ke-${urutan} sudah memuat ${sudahAda} tanya-jawab saksi 1. Menyimpan akan MENIMPANYA - baca dulu sebelum menekan.`
+        )
+      );
+    }
+    kotak.appendChild(simpan);
+    kotak.appendChild(hasilSimpan);
+
+    simpan.addEventListener("click", async () => {
+      simpan.disabled = true;
+      hasilSimpan.className = "aleta-abt-kabar";
+      const gagal = [];
+      let tersimpan = 0;
+      for (const [i, kodeVar] of [VAR_SAKSI_1, VAR_SAKSI_2].entries()) {
+        const baris = kolomIsian[i]
+          .map((x, n) => ({ no: String(n + 1), tanya: x.tanya, jawab: x.jawab.value.trim() }))
+          .filter((x) => x.jawab);
+        hasilSimpan.textContent = `Menyimpan keterangan saksi ${i + 1}…`;
+        try {
+          const sebelum = nilaiVariabel(kodeVar);
+          const r = await kirimTanyaJawab(kodeVar, urutan, baris);
+          if (!r.ok) {
+            gagal.push(`saksi ${i + 1}: ${r.pesan}`);
+            continue;
+          }
+          tersimpan += 1;
+          void catatRiwayat({
+            perkaraId: jatiDiri.perkaraId,
+            kode: kodeVar,
+            nama: `Keterangan saksi ${i + 1}`,
+            sebelum,
+            sesudah: `${baris.length} tanya-jawab dari templat ${templat}`,
+            cara: `disusun ALETA dari templat ${templat}` + (hasil.asalAlasan === "posita" ? " (sama dengan gugatan)" : ""),
+            pada: new Date().toISOString(),
+          });
+        } catch (galat) {
+          gagal.push(`saksi ${i + 1}: ${String((galat && galat.message) || galat)}`);
+        }
+      }
+      simpan.disabled = false;
+      hasilSimpan.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+      hasilSimpan.textContent = gagal.length
+        ? `${tersimpan} tersimpan, ${gagal.length} gagal — ${gagal.join("; ")}`
+        : "Keterangan kedua saksi tersimpan di ABT. Muat ulang halaman supaya isi variabel keterangan saksi ikut berubah.";
+    });
+
+    return kotak;
+  }
+
+  function gambarFormSdg(daftarTemplat, urutanAwal, sudahAda) {
+    wadahUsulan.textContent = "";
+    const form = buatElemen("div", "aleta-sdg-form");
+
+    const barisTemplat = buatElemen("label", "aleta-sdg-ruas");
+    barisTemplat.appendChild(buatElemen("span", "aleta-abt-label", "Templat pertanyaan"));
+    const pilihTemplat = document.createElement("select");
+    pilihTemplat.className = "aleta-sdg-pilih";
+    for (const t of daftarTemplat) {
+      const opsi = document.createElement("option");
+      opsi.value = t.nilai;
+      opsi.textContent = `${t.nama} (${t.kode})`;
+      pilihTemplat.appendChild(opsi);
+    }
+    const bawaan = templatBawaan(daftarTemplat, barisVariabel().has("5197"));
+    if (bawaan) pilihTemplat.value = bawaan.nilai;
+    barisTemplat.appendChild(pilihTemplat);
+    form.appendChild(barisTemplat);
+
+    const barisSidang = buatElemen("label", "aleta-sdg-ruas");
+    barisSidang.appendChild(buatElemen("span", "aleta-abt-label", "Disimpan pada sidang ke-"));
+    const isiSidang = document.createElement("input");
+    isiSidang.type = "number";
+    isiSidang.min = "1";
+    isiSidang.max = String(BATAS_URUTAN_SIDANG);
+    isiSidang.value = String(urutanAwal);
+    isiSidang.className = "aleta-sdg-angka";
+    barisSidang.appendChild(isiSidang);
+    form.appendChild(barisSidang);
+
+    const barisSdg = buatElemen("label", "aleta-sdg-ruas aleta-sdg-centang");
+    const centangSdg = document.createElement("input");
+    centangSdg.type = "checkbox";
+    centangSdg.checked = true;
+    barisSdg.appendChild(centangSdg);
+    barisSdg.appendChild(document.createTextNode(" Sama dengan gugatan/permohonan - alasan dibaca dari positanya"));
+    form.appendChild(barisSdg);
+
+    const kotakAlasan = buatElemen("div", "aleta-sdg-alasan");
+    kotakAlasan.appendChild(buatElemen("div", "aleta-abt-label", "Atau pilih alasan yang diterangkan saksi"));
+    const centangAlasan = [];
+    for (const a of DAFTAR_ALASAN_SDG) {
+      const label = buatElemen("label", "aleta-sdg-centang");
+      const c = document.createElement("input");
+      c.type = "checkbox";
+      c.value = a;
+      label.appendChild(c);
+      label.appendChild(document.createTextNode(` ${a}`));
+      kotakAlasan.appendChild(label);
+      centangAlasan.push(c);
+    }
+    kotakAlasan.hidden = centangSdg.checked;
+    centangSdg.addEventListener("change", () => {
+      kotakAlasan.hidden = centangSdg.checked;
+    });
+    form.appendChild(kotakAlasan);
+
+    const susun = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan kedua saksi");
+    susun.type = "button";
+    form.appendChild(susun);
+    const kabarForm = buatElemen("div", "aleta-abt-kabar");
+    form.appendChild(kabarForm);
+    wadahUsulan.appendChild(form);
+
+    const wadahPratinjau = buatElemen("div", "aleta-abt-daftar");
+    wadahUsulan.appendChild(wadahPratinjau);
+
+    susun.addEventListener("click", async () => {
+      susun.disabled = true;
+      kabarForm.className = "aleta-abt-kabar";
+      kabarForm.textContent = "Mengambil templat dari ABT…";
+      wadahPratinjau.textContent = "";
+      try {
+        const urutan = String(Math.max(1, Number(isiSidang.value) || Number(urutanAwal) || 1));
+        const kodeTemplat = pilihTemplat.value;
+        const templat = await muatTemplatAbt(kodeTemplat, urutan);
+        if (!templat.length) throw new Error("Templat itu kosong di ABT.");
+        const alasan = centangSdg.checked ? [] : centangAlasan.filter((c) => c.checked).map((c) => c.value);
+        if (!centangSdg.checked && !alasan.length) {
+          throw new Error("Pilih sekurang-kurangnya satu alasan, atau centang “sama dengan gugatan”.");
+        }
+        kabarForm.textContent = "Menyusun dua keterangan…";
+        const peta = barisVariabel();
+        const isiJawaban = await mintaUsulan({
+          nomorPerkara: nomorPerkaraAbt(),
+          sumber: "saksi-sdg",
+          templat,
+          alasan,
+          posita: centangSdg.checked && peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "",
+        });
+        const hasil = isiJawaban.saksiSdg || {};
+        if (hasil.ok === false) throw new Error(hasil.alasan === "templat_kosong" ? "Templat kosong." : "Keterangan tidak tersusun.");
+        if (centangSdg.checked && !(hasil.alasan || []).length) {
+          kabarForm.textContent =
+            "Tidak satu pun alasan terbaca dari posita; jawaban tentang penyebab diambil apa adanya dari templat.";
+        } else {
+          kabarForm.textContent = "";
+        }
+        const pilihanTemplat = daftarTemplat.find((t) => t.nilai === kodeTemplat);
+        wadahPratinjau.appendChild(
+          gambarPratinjauSdg(hasil, urutan, pilihanTemplat ? pilihanTemplat.kode : kodeTemplat, urutan === String(urutanAwal) ? sudahAda : 0)
+        );
+      } catch (galat) {
+        kabarForm.className = "aleta-abt-kabar aleta-abt-gagal";
+        kabarForm.textContent = String((galat && galat.message) || galat);
+      } finally {
+        susun.disabled = false;
+      }
+    });
+  }
+
+  tombolSdg.addEventListener("click", async () => {
+    tombolSdg.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Membaca daftar templat ABT…";
+    try {
+      // Sidang yang dipakai: yang sudah memuat keterangan saksi 1 bila ada -
+      // supaya membaca dan menulis menunjuk sidang yang sama - dan bila belum
+      // ada, urutan yang tertulis di alamat halaman.
+      let urutan = ruasAlamatAbt().d || "1";
+      let sudahAda = 0;
+      try {
+        const ada = await ambilTanyaJawab(VAR_SAKSI_1);
+        urutan = String(ada.urutan);
+        sudahAda = ada.baris.length;
+      } catch {
+        /* belum ada keterangan saksi: dipakai urutan dari alamat halaman */
+      }
+      const daftarTemplat = await daftarTemplatAbt(urutan);
+      if (!daftarTemplat.length) {
+        throw new Error("ABT tidak menawarkan templat tanya-jawab untuk jenis perkara ini.");
+      }
+      gambarSelisih([]);
+      gambarSepihak(null);
+      gambarHuruf([], []);
+      gambarFormSdg(daftarTemplat, urutan, sudahAda);
+      kabar.textContent = sudahAda
+        ? `Sidang ke-${urutan} sudah memuat ${sudahAda} tanya-jawab saksi 1; menyimpan akan menimpanya.`
+        : `Belum ada keterangan saksi tersimpan; akan disimpan pada sidang ke-${urutan}.`;
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      tombolSdg.disabled = false;
     }
   });
 

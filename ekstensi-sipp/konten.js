@@ -1276,7 +1276,7 @@ function penetapUntuk(data, jenis) {
   let teks = bagian.join(" ");
   // Ketua majelis baru pasti SESUDAH PMH tersimpan; sampai saat itu yang
   // tertulis di sini masih dugaan dari usulan, dan itu disebutkan apa adanya.
-  if (akun.tentatif) teks += " · dipastikan ulang setelah PMH tersimpan";
+  if (akun.tentatif) teks += " · dipastikan ulang setelah penetapan majelis tersimpan";
   if (akun.siap === false && akun.sebab) teks += ` · ${akun.sebab}`;
 
   // Catatan tentang penetapnya dibaca petugas DI SINI, pada baris yang
@@ -1414,7 +1414,7 @@ function gambarPenunjukan(isi, data) {
   const namaMajelis = (pmh.anggota || []).map((x) => x.nama).join(", ");
   isi.appendChild(
     barisPenetapan(
-      "PMH",
+      "Penetapan Majelis Hakim",
       namaMajelis,
       pmh.sebab,
       pmh.perluNilai ? "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum." : "",
@@ -1544,7 +1544,7 @@ function gambarPenunjukan(isi, data) {
   const pppTerpilih = pilihanDari(ppp.calon, pilihanManual.ppp) || ppp.usulan;
   isi.appendChild(
     barisPenetapan(
-      "PPP",
+      "Penunjukan Panitera Pengganti",
       pppTerpilih ? `${pppTerpilih.kode || ""} — ${pppTerpilih.nama}`.replace(/^ — /, "") : "",
       ppp.sebab,
       "",
@@ -1574,7 +1574,7 @@ function gambarPenunjukan(isi, data) {
   const pjsTerpilih = pilihanDari(pjs.calon, pilihanManual.pjs) || pjs.usulan;
   isi.appendChild(
     barisPenetapan(
-      "PJS",
+      "Penunjukan Juru Sita",
       pjsTerpilih ? pjsTerpilih.nama : "",
       pjs.sebab,
       pjs.peringatan,
@@ -1617,7 +1617,7 @@ function gambarPenunjukan(isi, data) {
       : "";
   isi.appendChild(
     barisPenetapan(
-      "PHS",
+      "Penetapan Hari Sidang",
       phsTerbaca,
       phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : "") + bebanTerpilih,
       "",
@@ -1954,7 +1954,7 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
     // Sekarang ada jalan kedua: ALETA menuliskannya sendiri. Yang ditulis dan
     // ke tabel mana persis sama dengan yang dituliskan SIPP ketika seorang
     // petugas menekan Simpan, sys_audittrail-nya ikut.
-    tombol.textContent = "Tetapkan lewat ALETA";
+    tombol.textContent = "Tetapkan dan tuliskan ke SIPP";
     tombol.classList.remove("aleta-tombol-mati");
     tombol.disabled = false;
     kabar.textContent =
@@ -1980,7 +1980,7 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
         // Rencananya terbaca dan seluruhnya siap - barulah tekanan berikutnya
         // menulis. Rencana yang sebagian gagal TIDAK membuka jalan itu.
         rencanaSudahDibaca = true;
-        tombol.textContent = "Tulis ke SIPP sekarang";
+        tombol.textContent = "Tuliskan ke SIPP";
         tombol.disabled = false;
         return;
       }
@@ -2089,9 +2089,9 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
   // mengatakannya lebih awal, supaya petugas tidak menabrak penolakan setelah
   // meninggalkan halaman perkaranya.
   if (akunSeharusnya && akunSeharusnya.tentatif) {
-    tombol.textContent = "Menunggu PMH";
+    tombol.textContent = "Menunggu Penetapan Majelis";
     kabar.textContent =
-      "Kerjakan PMH lebih dulu. Ketua majelis yang menetapkan hari sidang baru pasti sesudah PMH tersimpan, dan ALETA membacanya dari majelis yang tercatat - bukan dari usulan.";
+      "Kerjakan Penetapan Majelis Hakim lebih dulu. Ketua majelis yang menetapkan hari sidang baru pasti sesudah penetapan majelis tersimpan, dan ALETA membacanya dari majelis yang tercatat - bukan dari usulan.";
     return;
   }
 
@@ -2684,7 +2684,7 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
           `Akan tercatat atas nama ${h.atasNama ? h.atasNama.namaLengkap || h.atasNama.username : "?"}. ` +
           `${baris.length} pernyataan: ${baris.join(" · ")}. ` +
           `${(h.dilewati || []).length > 0 ? `Dilewati: ${(h.dilewati || []).join("; ")}.` : ""}`;
-        tombol.textContent = "Tulis ke SIPP sekarang";
+        tombol.textContent = "Tuliskan ke SIPP";
         tombol.disabled = false;
         return;
       }
@@ -2849,7 +2849,7 @@ function bagianBacaBorang() {
 
 /** Papan penunjukan, dimuat hanya ketika menunya dibuka. */
 function bagianPenunjukan(nomor) {
-  const kotak = bagian("Penunjukan PMH, PPP, PJS, PHS", "penunjukan", true);
+  const kotak = bagian("Penetapan dan Penunjukan Perkara", "penunjukan", true);
   let sudahDimuat = false;
 
   const kepala = kotak.querySelector(".aleta-bagian-judul");
@@ -4563,6 +4563,102 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // halaman - lalu berhenti memakai ekstensinya sama sekali.
   kepala.appendChild(tombolMatikan());
 }
+/**
+ * ============================================================================
+ * PITA IDENTITAS - SATU BENTUK DI KEPALA DAN DI KAKI, PADA SETIAP PANEL
+ * ============================================================================
+ *
+ * Lima hal yang harus terbaca tanpa mencari: siapa yang masuk ALETA, akun
+ * SIPP mana yang sedang dipakai, nomor perkara yang dibuka, jenis perkaranya,
+ * dan seri ekstensi yang berjalan. Selama ini kelimanya tersebar - nama ALETA
+ * di baris kedua isi, akun SIPP di kepala, versi di kaki, jenis perkara di
+ * chip - dan pada panel yang tergulung ke bawah, separuhnya tidak terlihat.
+ *
+ * Yang diminta petugas sederhana: kelimanya ada di ATAS dan di BAWAH, pada
+ * letak dan huruf yang sama, di panel mana pun - perkara, daftar, ditolak,
+ * maupun ajakan masuk. Karena itu satu fungsi ini yang menggambar keduanya;
+ * yang berbeda hanya wadahnya. Mengubah urutan atau hurufnya di sini mengubah
+ * kepala dan kaki sekaligus, dan tidak ada cara membuat keduanya berbeda
+ * tanpa sengaja.
+ *
+ * Yang tidak terbaca TIDAK ditulis - bukan "tidak diketahui". Panel ajakan
+ * masuk memang belum tahu siapa yang masuk ALETA; menuliskan tanda tanya di
+ * sana hanya menambah satu kata yang harus dibaca tanpa pernah menjawab.
+ */
+function pitaIdentitas(opsi) {
+  const o = opsi || {};
+  const pita = buatElemen("div", "aleta-identitas-panel");
+
+  const tambah = (kelas, label, teks, judul) => {
+    const kotak = buatElemen("span", kelas);
+    if (label) kotak.appendChild(buatElemen("span", "aleta-id-label", label));
+    kotak.appendChild(document.createTextNode(teks));
+    if (judul) kotak.title = judul;
+    pita.appendChild(kotak);
+    return kotak;
+  };
+
+  // Siapa yang masuk ALETA - bukan siapa yang masuk SIPP. Dua orang yang
+  // berbeda pada satu meja adalah keadaan yang biasa, dan keduanya harus
+  // terbaca berdampingan.
+  const namaAleta = penggunaTerakhir && penggunaTerakhir.nama ? String(penggunaTerakhir.nama) : "";
+  if (namaAleta) {
+    const peran = penggunaTerakhir.peran ? ` (${penggunaTerakhir.peran})` : "";
+    tambah("aleta-id-akun aleta-id-aleta", "ALETA", namaAleta, `Masuk ke ALETA sebagai ${namaAleta}${peran}.`);
+  }
+
+  // Akun SIPP dibaca dari halaman, bukan dari server: SIPP tidak menyediakan
+  // cara lain, dan yang tertulis di halaman itulah yang tercatat ketika
+  // tombol Simpan SIPP ditekan.
+  const akunSipp = namaPenggunaSipp();
+  if (akunSipp) {
+    const kotakAkun = buatElemen("span", "aleta-akun-sipp", akunSipp);
+    kotakAkun.title = `Halaman SIPP ini sedang dibuka dengan akun ${akunSipp}.`;
+    kotakAkun.prepend(buatElemen("span", "aleta-id-label", "SIPP"));
+    pita.appendChild(kotakAkun);
+  }
+
+  if (o.nomorPerkara) tambah("aleta-id-nomor", "", String(o.nomorPerkara), "Nomor perkara yang sedang dibuka.");
+
+  if (o.jenisPerkara) {
+    const judul =
+      o.jenisPerkaraLengkap && o.jenisPerkaraLengkap !== o.jenisPerkara
+        ? String(o.jenisPerkaraLengkap)
+        : "Jenis perkara menurut SIPP.";
+    tambah("aleta-id-jenis", "", String(o.jenisPerkara), judul);
+  }
+
+  // Seri ekstensi yang BENAR-BENAR berjalan di peramban ini, dari manifestnya
+  // sendiri. Gunanya saat melapor: "panelnya keliru" tanpa nomor seri membuat
+  // pemeriksaan dimulai dari menebak versi mana yang sedang dipakai orang itu.
+  try {
+    const seri = chrome.runtime.getManifest().version;
+    if (seri) tambah("aleta-id-versi aleta-kaki-versi", "", `v${seri}`, "Seri ekstensi ALETA yang terpasang.");
+  } catch {
+    /* di luar konteks ekstensi: pita tetap tampil tanpa nomor seri */
+  }
+
+  return pita;
+}
+
+/** Kaki panel: pita identitas yang sama persis dengan kepalanya. */
+function kakiPanel(opsi) {
+  const kaki = buatElemen("div", "aleta-kaki");
+  kaki.title = "Keterangan dari ALETA. SIPP tidak diubah.";
+  kaki.appendChild(pitaIdentitas(opsi));
+  return kaki;
+}
+
+/** Jati diri perkara yang dibawa pita, dari konteks panel perkara. */
+function jatiPita(konteks) {
+  const identitas = (konteks && konteks.identitas) || {};
+  return {
+    nomorPerkara: (konteks && konteks.nomorPerkara) || "",
+    jenisPerkara: identitas.jenisPerkara || "",
+    jenisPerkaraLengkap: identitas.jenisPerkaraLengkap || "",
+  };
+}
+
 function susunPanel(konteks) {
   const panel = buatElemen("div", "aleta-panel");
   panel.id = PENANDA;
@@ -4591,10 +4687,9 @@ function susunPanel(konteks) {
   }
 
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
-  kepala.appendChild(buatElemen("span", "aleta-nomor", konteks.nomorPerkara));
 
   // ==========================================================================
-  // AKUN SIPP YANG SEDANG MASUK
+  // AKUN SIPP YANG SEDANG MASUK - DAN EMPAT KETERANGAN LAINNYA
   // ==========================================================================
   //
   // Satu keterangan yang menjawab pertanyaan paling menentukan sebelum menekan
@@ -4609,12 +4704,8 @@ function susunPanel(konteks) {
   // Bila tidak terbaca, TIDAK ditulis apa-apa. Menuliskan "tidak diketahui" di
   // kepala panel hanya menambah satu kata yang harus dibaca tiap kali tanpa
   // pernah menjawab apa pun.
-  const akunSipp = namaPenggunaSipp();
-  if (akunSipp) {
-    const kotakAkun = buatElemen("span", "aleta-akun-sipp", akunSipp);
-    kotakAkun.title = `Halaman SIPP ini sedang dibuka dengan akun ${akunSipp}.`;
-    kepala.appendChild(kotakAkun);
-  }
+  // Digambar oleh pitaIdentitas - bentuk yang sama persis dengan kaki panel.
+  kepala.appendChild(pitaIdentitas(jatiPita(konteks)));
 
   pasangTombolKepala(panel, kepala, keadaanPanel);
 
@@ -4951,23 +5042,8 @@ function susunPanel(konteks) {
   // untuk perkara yang sudah tidak dilihat siapa pun.
   panel.batalLencana = () => clearTimeout(tundaLencana);
 
-  const kaki = buatElemen("div", "aleta-kaki");
-  kaki.appendChild(buatElemen("span", "aleta-kaki-teks", "Keterangan dari ALETA. SIPP tidak diubah."));
-
-  // Seri ekstensi yang BENAR-BENAR berjalan di peramban ini.
-  //
-  // Dibaca dari manifestnya sendiri, bukan dari angka yang ditulis terpisah.
-  // Gunanya saat melapor: "panelnya keliru" tanpa nomor seri membuat pemeriksaan
-  // dimulai dari menebak versi mana yang sedang dipakai orang itu - dan tebakan
-  // itu hampir selalu meleset di kantor yang komputernya disegarkan sendiri.
-  try {
-    const seri = chrome.runtime.getManifest().version;
-    if (seri) kaki.appendChild(buatElemen("span", "aleta-kaki-versi", `v${seri}`));
-  } catch {
-    /* di luar konteks ekstensi: kaki tetap tampil tanpa nomor seri */
-  }
-
-  panel.appendChild(kaki);
+  // Kaki = kepala. Satu fungsi menggambar keduanya; lihat pitaIdentitas.
+  panel.appendChild(kakiPanel(jatiPita(konteks)));
 
   return panel;
 }
@@ -5016,6 +5092,7 @@ function susunPanelDitolak(pesan) {
 
   const kepala = buatElemen("div", "aleta-kepala");
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
+  kepala.appendChild(pitaIdentitas({ nomorPerkara: cariNomorPerkara() }));
   panel.appendChild(kepala);
 
   const isi = buatElemen("div", "aleta-isi");
@@ -5028,6 +5105,7 @@ function susunPanelDitolak(pesan) {
   );
 
   panel.appendChild(isi);
+  panel.appendChild(kakiPanel({ nomorPerkara: cariNomorPerkara() }));
   return panel;
 }
 
@@ -5076,12 +5154,9 @@ function susunPanelDaftar(ringkasan) {
   }
 
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
-  const akun = namaPenggunaSipp();
-  if (akun) {
-    const kotakAkun = buatElemen("span", "aleta-akun-sipp", akun);
-    kotakAkun.title = `Halaman SIPP ini sedang dibuka dengan akun ${akun}.`;
-    kepala.appendChild(kotakAkun);
-  }
+  // Pita yang sama dengan panel perkara - tanpa nomor, sebab halaman ini
+  // memuat banyak perkara sekaligus.
+  kepala.appendChild(pitaIdentitas({}));
 
   // Deret tombol yang SAMA dengan panel perkara - lihat pasangTombolKepala.
   // Sebelumnya hanya tema dan tutup, sehingga di dashboard dan daftar perkara
@@ -5132,9 +5207,7 @@ function susunPanelDaftar(ringkasan) {
 
   panel.appendChild(isi);
 
-  const kaki = buatElemen("div", "aleta-kaki");
-  kaki.appendChild(buatElemen("span", "aleta-kaki-teks", "Keterangan dari ALETA. SIPP tidak diubah."));
-  panel.appendChild(kaki);
+  panel.appendChild(kakiPanel({}));
 
   // Digeser dan diubah ukurannya seperti panel perkara. Panel yang satu bisa
   // dipindahkan dan yang lain tidak terbaca sebagai kerusakan, bukan sebagai
@@ -5150,6 +5223,9 @@ function susunAjakanMasuk() {
 
   const kepala = buatElemen("div", "aleta-kepala");
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
+  // Belum ada yang masuk ALETA, jadi pitanya hanya memuat akun SIPP, nomor
+  // perkara, dan seri - dan tetap pada letak yang sama dengan panel lain.
+  kepala.appendChild(pitaIdentitas({ nomorPerkara: cariNomorPerkara() }));
   panel.appendChild(kepala);
 
   const isi = buatElemen("div", "aleta-isi");
@@ -5167,6 +5243,7 @@ function susunAjakanMasuk() {
   isi.appendChild(tautan);
 
   panel.appendChild(isi);
+  panel.appendChild(kakiPanel({ nomorPerkara: cariNomorPerkara() }));
   return panel;
 }
 

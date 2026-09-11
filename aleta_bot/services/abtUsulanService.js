@@ -694,6 +694,352 @@ async function dariSipp(nomorPerkara) {
   return { ok: true, perkaraId, prodeo, jumlahKuasa: daftarKuasa.length, usulan: hasil };
 }
 
+/* ==========================================================================
+ * ITSBAT NIKAH - DIISI DARI POSITA PERMOHONAN
+ * ==========================================================================
+ *
+ * Blangko "Putusan_IN_kabul_wali" (Isbat) menuntut belasan fakta pernikahan
+ * yang seluruhnya sudah tertulis di POSITA permohonan: tanggal dan tempat
+ * menikah, wali, yang menikahkan, saksi nikah, mahar, status kedua pemohon,
+ * umur mereka saat menikah, dan anak. Petugas selama ini menyalinnya satu per
+ * satu dari posita ke belasan jendela sembul.
+ *
+ * Yang dibaca kalimat posita itu sendiri, dan tiap usulan membawa kalimat
+ * asalnya. Yang TIDAK dilakukan: menebak. Fakta yang tidak ditemukan pada
+ * posita dipulangkan kosong beserta sebabnya, bukan diisi nilai lazim -
+ * nilai lazim pada putusan itsbat berarti wali yang salah nama.
+ *
+ * Variabel sasaran diambil dari blangkonya di server (berkas RTF-nya dibaca,
+ * kodenya dicatat): seluruhnya bertipe data_teks, sehingga dapat disimpan
+ * lewat rute edit_data ABT. Yang bertipe data_sql tidak ikut - ia dihitung
+ * ABT sendiri.
+ */
+const VARIABEL_ITSBAT = [
+  { kode: "5197", nama: "Tanggal nikah" },
+  { kode: "5105", nama: "Alamat tempat menikah" },
+  { kode: "5178", nama: "KUA kecamatan" },
+  { kode: "1217", nama: "Nama wali nikah" },
+  { kode: "1046", nama: "Status wali nikah" },
+  { kode: "8087", nama: "Yang menikahkan" },
+  { kode: "0650", nama: "Saksi nikah 1" },
+  { kode: "0651", nama: "Saksi nikah 2" },
+  { kode: "1001", nama: "Mas kawin" },
+  { kode: "1002", nama: "Status Pemohon I sebelum nikah" },
+  { kode: "1003", nama: "Status Pemohon II sebelum nikah" },
+  { kode: "7211", nama: "Umur Pemohon I saat menikah" },
+  { kode: "7212", nama: "Umur Pemohon II saat menikah" },
+  { kode: "0007", nama: "Telah dikaruniai anak" },
+];
+
+/** Membuang tanda HTML dan entitasnya; posita SIPP disimpan sebagai <ol><li>. */
+function polosPosita(html) {
+  return String(html || "")
+    .replace(/<\/(li|p|ol|ul|div|tr)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&[a-z#0-9]+;/gi, " ")
+    .replace(/[ �]/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s*\n\s*/g, "\n")
+    .trim();
+}
+
+/** Kalimat-kalimat posita, dipecah pada titik koma dan baris. */
+function kalimatPosita(html) {
+  return polosPosita(html)
+    .split(/\n|;\s+/)
+    .map((k) => k.replace(/^\s*(?:\d+[.)]\s*)?(?:bahwa\s+)?/i, "").trim())
+    .filter((k) => k.length > 8);
+}
+
+/**
+ * Nama orang yang ditulis KAPITAL sesudah suatu pemicu ("bernama").
+ *
+ * Nama pada posita ditulis kapital seluruhnya; itulah batasnya. Begitu huruf
+ * kecil muncul - "dan", "dengan", "yang" - namanya selesai.
+ */
+function namaSesudah(kalimat, pemicu) {
+  const pola = new RegExp(`${pemicu}\\s+((?:[A-Z][A-Z'.-]*|bin|binti)(?:\\s+(?:[A-Z][A-Z'.-]*|bin|binti))*)`);
+  const cocok = String(kalimat || "").match(pola);
+  if (!cocok) return "";
+  return cocok[1].replace(/\s+/g, " ").replace(/[.,]+$/, "").trim();
+}
+
+function hasilItsbat(nilai, kalimat, catatan) {
+  if (!nilai) {
+    return { nilai: "", keyakinan: "kosong", bentrok: "", catatan: catatan || "tidak ditemukan pada posita" };
+  }
+  return { nilai, keyakinan: "cukup", bentrok: "", catatan: catatan || "" };
+}
+
+/**
+ * Menurunkan variabel blangko itsbat nikah dari posita permohonan.
+ *
+ * @param {string} posita   posita apa adanya dari SIPP (boleh HTML)
+ * @param {{pemohon?: string, pemohon2?: string}} pihak sebutan kedua pemohon
+ */
+function dariPositaItsbat(posita, pihak) {
+  const kalimat = kalimatPosita(posita);
+  const sumber = (k) => (k ? [{ saksi: 0, asal: "posita", kalimat: k }] : []);
+  const cari = (wajib, terlarang) => cariButir(kalimat, wajib, terlarang);
+  const sebut1 = (pihak && pihak.pemohon) || "Pemohon I";
+  const sebut2 = (pihak && pihak.pemohon2) || "Pemohon II";
+  const lolos = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Tanggal nikah - "pada tanggal 07 Mei 2017 telah terjadi pernikahan".
+  const kNikah = cari(["pernikahan"], ["dikaruniai", "wali"]) || cari(["menikah"], ["dikaruniai"]);
+  const tgl = String(kNikah || "").match(/\b(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\b/);
+  const tanggalNikah = tgl && bulanKeAngka(tgl[2]) !== null ? `${tgl[1]} ${tgl[2]} ${tgl[3]}` : "";
+
+  // Tempat menikah - "dilangsungkan di wilayah Kecamatan X" / "di Desa Y".
+  const tempat = String(kNikah || "").match(
+    /\bdi\s+(?:wilayah\s+)?((?:Desa|Kelurahan|Kecamatan|Kec\.|Kabupaten|rumah|Masjid|KUA|Kantor)\b.{2,90}?)(?=\s+(?:dan|serta|yang|pada|oleh|dengan|sampai|hingga|sejak)\b|[;,.]|$)/i
+  );
+  const alamatNikah = tempat ? tempat[1].replace(/\s+/g, " ").trim() : "";
+  const kec = String(kNikah || "").match(/\bKec(?:amatan|\.)\s+([A-Z][A-Za-z' -]{2,40}?)(?=\s+(?:dan|Kabupaten|Kab\.|serta|,)|[,;.]|$)/);
+  const kua = kec ? kec[1].trim() : "";
+
+  // Wali nikah - "dengan wali nikah saudara kandung Pemohon II bernama X".
+  const kWali = cari(["wali nikah"]) || cari(["wali", "bernama"]);
+  const namaWali = namaSesudah(kWali, "wali(?: nikah)?[^;]*?bernama");
+  const statusWali = String(kWali || "").match(
+    new RegExp(`wali(?: nikah)?(?:nya)?\\s+(?:adalah\\s+|yaitu\\s+)?([a-z][a-z ]{2,40}?)\\s+(?:${lolos(sebut2)}|${lolos(sebut1)}|Pemohon|bernama)`, "i")
+  );
+
+  // Yang menikahkan - "yang menikahkan adalah Imam Masjid bernama KASWARI".
+  const kMenikahkan = cari(["menikahkan"]);
+  const jabatanMenikahkan = String(kMenikahkan || "").match(
+    /menikahkan\s+(?:adalah\s+|yaitu\s+)?((?:[A-Z][A-Za-z.]*\s?){1,5}?)\s*bernama/
+  );
+  const namaMenikahkan = namaSesudah(kMenikahkan, "menikahkan[^;]*?bernama");
+  const yangMenikahkan = namaMenikahkan
+    ? `${jabatanMenikahkan ? jabatanMenikahkan[1].trim() + " bernama " : ""}${namaMenikahkan}`
+    : "";
+
+  // Saksi nikah - "dihadiri 2 (dua) orang saksi masing-masing bernama MILLO dan MALIWAN".
+  const kSaksi = cari(["saksi", "bernama"]);
+  const sesudahSaksi = String(kSaksi || "").replace(/^[\s\S]*?\bsaksi\b/, "");
+  const saksi1 = namaSesudah(sesudahSaksi, "bernama");
+  const saksi2 = saksi1 ? namaSesudah(sesudahSaksi, `${lolos(saksi1)}\\s+dan`) : "";
+
+  // Mahar - "dengan mahar berupa uang sejumlah Rp166.000 ... dibayar tunai".
+  const kMahar = cari(["mahar"]) || cari(["mas kawin"]);
+  const mahar = String(kMahar || "").match(
+    /(?:mahar|mas kawin)\s+(?:berupa\s+)?(.+?)(?:\s+yang\s+(?:diberikan|dibayar|diserahkan)|\s+dibayar|\s+secara\s+tunai|\s*[;.]|$)/i
+  );
+
+  // Status dan umur - "Pemohon I berstatus Jejaka dalam usia 19 (sembilan belas) tahun".
+  const kStatus = cari(["berstatus"], ["suami istri", "suami isteri"]);
+  const polaStatus = (sebut) =>
+    new RegExp(`${lolos(sebut)}\\s+berstatus\\s+([A-Za-z]+(?:\\s+(?:mati|hidup))?)(?:\\s+dalam\\s+usia\\s+(\\d{1,2}))?`, "i");
+  const cobaStatus = (daftarSebut) => {
+    for (const sebut of daftarSebut) {
+      if (!sebut) continue;
+      if (sebut === "Pemohon" && /Pemohon\s+II?\b/.test(kStatus || "")) continue;
+      const cocok = String(kStatus || "").match(polaStatus(sebut));
+      if (cocok) return cocok;
+    }
+    return null;
+  };
+  const status1 = cobaStatus([sebut1, "Pemohon I", "Pemohon"]);
+  const status2 = cobaStatus([sebut2, "Pemohon II"]);
+
+  // Anak - "telah dikaruniai 2 (dua) orang anak" / "belum dikaruniai anak".
+  const kAnak = cari(["dikaruniai"]);
+  const belumAnak = /belum\s+dikaruniai/i.test(kAnak || "");
+  const jumlahAnak = String(kAnak || "").match(/dikaruniai\s+(\d+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i);
+  const anak = belumAnak
+    ? "belum dikaruniai anak"
+    : jumlahAnak
+    ? `telah dikaruniai ${jumlahAnak[1]} orang anak`
+    : /dikaruniai\s+(?:seorang|satu)\s+(?:orang\s+)?anak/i.test(kAnak || "")
+    ? "telah dikaruniai 1 orang anak"
+    : "";
+
+  const usulanSemua = [
+    usulan("5197", "Tanggal nikah", hasilItsbat(tanggalNikah, kNikah), sumber(kNikah)),
+    usulan("5105", "Alamat tempat menikah", hasilItsbat(alamatNikah, kNikah), sumber(kNikah)),
+    usulan("5178", "KUA kecamatan", hasilItsbat(kua, kNikah, kua ? "" : "posita tidak menyebut kecamatan"), sumber(kNikah)),
+    usulan("1217", "Nama wali nikah", hasilItsbat(namaWali, kWali), sumber(kWali)),
+    usulan("1046", "Status wali nikah", hasilItsbat(statusWali ? statusWali[1].trim() : "", kWali), sumber(kWali)),
+    usulan("8087", "Yang menikahkan", hasilItsbat(yangMenikahkan, kMenikahkan), sumber(kMenikahkan)),
+    usulan("0650", "Saksi nikah 1", hasilItsbat(saksi1, kSaksi), sumber(kSaksi)),
+    usulan("0651", "Saksi nikah 2", hasilItsbat(saksi2, kSaksi), sumber(kSaksi)),
+    usulan("1001", "Mas kawin", hasilItsbat(mahar ? mahar[1].replace(/\s+/g, " ").trim() : "", kMahar), sumber(kMahar)),
+    usulan("1002", `Status ${sebut1} sebelum nikah`, hasilItsbat(status1 ? status1[1] : "", kStatus), sumber(kStatus)),
+    usulan("1003", `Status ${sebut2} sebelum nikah`, hasilItsbat(status2 ? status2[1] : "", kStatus), sumber(kStatus)),
+    usulan("7211", `Umur ${sebut1} saat menikah`, hasilItsbat(status1 && status1[2] ? `${status1[2]} tahun` : "", kStatus), sumber(kStatus)),
+    usulan("7212", `Umur ${sebut2} saat menikah`, hasilItsbat(status2 && status2[2] ? `${status2[2]} tahun` : "", kStatus), sumber(kStatus)),
+    usulan("0007", "Telah dikaruniai anak", hasilItsbat(anak, kAnak), sumber(kAnak)),
+  ];
+
+  const ditemukan = usulanSemua.filter((u) => u.nilai).length;
+  return {
+    ok: true,
+    jumlahKalimat: kalimat.length,
+    ditemukan,
+    usulan: usulanSemua,
+    catatan:
+      ditemukan === 0
+        ? "Tidak satu pun fakta pernikahan terbaca dari posita. Posita ini mungkin bukan permohonan itsbat nikah, atau kalimatnya tidak berpola."
+        : `${ditemukan} dari ${usulanSemua.length} variabel terbaca dari posita; sisanya dikosongkan, bukan ditebak.`,
+  };
+}
+
+/* ==========================================================================
+ * KETERANGAN SAKSI "SAMA DENGAN GUGATAN" - DUA SAKSI, SATU SUBSTANSI, DUA CARA
+ * ==========================================================================
+ *
+ * Saksi dalam perkara perceraian dan itsbat pada umumnya menerangkan hal yang
+ * sama - itulah sebabnya ia disebut SDG. Yang tidak boleh terjadi: dua
+ * keterangan yang kata demi kata identik. Berita acara yang dua saksinya
+ * berbunyi persis sama terbaca sebagai disalin, dan hakim banding membacanya
+ * begitu pula.
+ *
+ * Karena itu tiap jawaban disusun dari templat pertanyaan yang SAMA (milik
+ * ABT, diambil ekstensi lewat halaman penyunting ABT sendiri), lalu diberi
+ * bentuk kalimat yang berbeda untuk saksi 1 dan saksi 2: pembuka yang berbeda,
+ * kata kerja yang berbeda, dan penutup yang berbeda - substansinya tetap satu,
+ * sebab substansi itulah yang dibuktikan.
+ *
+ * Yang TIDAK dilakukan di sini: mengarang fakta. Jawaban templat yang memuat
+ * titik-titik ("...........") atau pilihan ("melihat/mendengar") ditandai
+ * PERLU DIISI, bukan diisi sembarang. Petugas yang membaca akan melihat persis
+ * bagian mana yang masih menunggu keterangan saksinya yang sesungguhnya.
+ */
+
+/** Dua bank pembuka kalimat, satu untuk tiap saksi. Substansi tidak berubah. */
+const RAGAM_PEMBUKA = [
+  ["Ya, ", "Benar, ", "Betul, ", "Setahu saya, ", "Sepengetahuan saya, "],
+  ["Benar, ", "Iya, ", "Ya, ", "Yang saya ketahui, ", "Seingat saya, "],
+];
+
+/** Pasangan kata yang boleh saling mengganti tanpa mengubah makna hukumnya. */
+const RAGAM_KATA = [
+  [/\bkarena\b/g, "sebab"],
+  [/\bsudah\b/g, "telah"],
+  [/\bsering\b/g, "kerap"],
+  [/\btidak pernah\b/g, "tak pernah"],
+  [/\bkurang lebih\b/g, "sekitar"],
+  [/\bsaya mengetahui\b/gi, "saya tahu"],
+  [/\bsaya melihat\b/gi, "saya menyaksikan"],
+  [/\bbertempat tinggal\b/g, "berdiam"],
+  [/\bsaat ini\b/g, "sekarang ini"],
+  [/\bsampai sekarang\b/g, "hingga kini"],
+];
+
+/** Penanda jawaban templat yang masih menunggu isian manusia. */
+const POLA_BELUM_TERISI = /\.{3,}|_{3,}|\bmelihat\/mendengar\b|\bdilihat\/didengar\b|\bXX+\b/i;
+
+/**
+ * Menyusun kalimat jawaban saksi ke-N dari jawaban templat.
+ *
+ * Saksi 1 mendapat bentuk yang paling dekat dengan templatnya; saksi 2
+ * mendapat pembuka berbeda dan pergantian kata berselang-seling. Pergantian
+ * TIDAK menyentuh nama orang yang ditulis kapital - polanya peka huruf besar
+ * kecuali yang memang berawal "saya".
+ */
+function ragamkanJawaban(jawaban, nomorSaksi, urutan) {
+  let teks = String(jawaban || "").replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
+  if (!teks) return "";
+  const bank = RAGAM_PEMBUKA[nomorSaksi === 2 ? 1 : 0];
+  teks = teks.replace(/^(ya|benar|betul|iya)\s*,?\s*/i, "");
+  if (nomorSaksi === 2) {
+    RAGAM_KATA.forEach(([pola, ganti], i) => {
+      // Berselang-seling menurut urutan pertanyaan supaya dua jawaban yang
+      // berdekatan tidak berubah dengan pola yang sama persis.
+      if ((i + urutan) % 2 === 0) teks = teks.replace(pola, ganti);
+    });
+  }
+  // Kalimat penutup "Sudah cukup" dan jawaban satu-dua kata tidak diberi pembuka.
+  if (/^(sudah|cukup|tidak ada)/i.test(teks) || teks.split(" ").length < 3) return teks.replace(/[;.]?$/, ";");
+  const pembuka = bank[(urutan + (nomorSaksi === 2 ? 2 : 0)) % bank.length];
+  teks = pembuka + teks.charAt(0).toLowerCase() + teks.slice(1);
+  return teks.replace(/[;.]?$/, ";");
+}
+
+/**
+ * Alasan yang didalilkan gugatan, dibaca dari positanya dengan CIRI_ALASAN.
+ *
+ * Dipakai saat petugas memilih "sama dengan gugatan": jawaban saksi tentang
+ * penyebab hanya boleh memuat alasan yang memang didalilkan.
+ */
+function alasanDariPosita(posita) {
+  const butir = kalimatPosita(posita);
+  const kecil = butir.map((k) => k.toLowerCase());
+  const hasil = [];
+  for (const c of CIRI_ALASAN) {
+    if (hasil.includes(c.kunci)) continue;
+    if (kecil.some((k) => c.kata.every((kata) => k.includes(kata)))) hasil.push(c.kunci);
+  }
+  return hasil;
+}
+
+/**
+ * Menyusun keterangan saksi 1 dan 2 dari templat pertanyaan ABT.
+ *
+ * @param {{templat: Array<{no,tanya,jawab}>, alasan?: string[], posita?: string}} opsi
+ *   templat  baris pertanyaan-jawaban hasil load_template ABT, variabelnya
+ *            SUDAH terganti oleh ABT
+ *   alasan   ciri alasan yang didalilkan (kunci CIRI_ALASAN); bila kosong dan
+ *            posita ada, diturunkan dari posita ("sama dengan gugatan")
+ */
+function susunKeteranganSaksiSdg(opsi) {
+  const templat = Array.isArray(opsi && opsi.templat) ? opsi.templat : [];
+  let alasan = Array.isArray(opsi && opsi.alasan) ? opsi.alasan.filter(Boolean) : [];
+  let asalAlasan = alasan.length ? "dipilih" : "";
+  if (!alasan.length && opsi && opsi.posita) {
+    alasan = alasanDariPosita(opsi.posita);
+    asalAlasan = alasan.length ? "posita" : "";
+  }
+  if (templat.length === 0) {
+    return { ok: false, alasan: "templat_kosong", saksi1: [], saksi2: [], perluDiisi: [] };
+  }
+
+  const perluDiisi = [];
+  const susun = (nomorSaksi) =>
+    templat.map((baris, i) => {
+      const no = String((baris && (baris.no || baris.urutan_pertanyaan)) || i + 1);
+      const tanya = String((baris && (baris.tanya || baris.pertanyaan)) || "").replace(/\s+/g, " ").trim();
+      let jawab = String((baris && (baris.jawab || baris.jawaban)) || "");
+
+      // Pertanyaan tentang PENYEBAB: jawabannya disusun dari alasan yang
+      // didalilkan, bukan dari templat yang menyebut semua kemungkinan.
+      if (alasan.length && /penyebab|sebab|alasan/i.test(tanya)) {
+        const daftar = alasan.join(nomorSaksi === 2 ? " serta " : " dan ");
+        jawab =
+          nomorSaksi === 2
+            ? `penyebabnya sepengetahuan saya adalah ${daftar}`
+            : `penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu ${daftar}`;
+      }
+
+      if (nomorSaksi === 1 && POLA_BELUM_TERISI.test(jawab)) perluDiisi.push({ no, tanya });
+      return { no, tanya, jawab: ragamkanJawaban(jawab, nomorSaksi, i) };
+    });
+
+  const saksi1 = susun(1);
+  const saksi2 = susun(2);
+
+  // Dua saksi tidak boleh identik kata demi kata. Diperiksa, bukan diandaikan.
+  const identik = saksi1.filter(
+    (b, i) => saksi2[i] && b.jawab === saksi2[i].jawab && !/^(sudah|cukup|tidak ada)/i.test(b.jawab)
+  ).length;
+
+  return {
+    ok: true,
+    saksi1,
+    saksi2,
+    perluDiisi,
+    identik,
+    alasan,
+    asalAlasan,
+    catatan: perluDiisi.length
+      ? `${perluDiisi.length} jawaban masih memuat titik-titik templat dan menunggu keterangan saksi yang sesungguhnya.`
+      : "Seluruh jawaban tersusun; baca kembali sebelum disimpan ke ABT.",
+  };
+}
+
 module.exports = {
   butirKeterangan,
   ambilBulanTahun,
@@ -703,4 +1049,9 @@ module.exports = {
   uraikanTanggal,
   dariKeteranganSaksi,
   dariSipp,
+  dariPositaItsbat,
+  susunKeteranganSaksiSdg,
+  alasanDariPosita,
+  VARIABEL_ITSBAT,
+  CIRI_ALASAN,
 };

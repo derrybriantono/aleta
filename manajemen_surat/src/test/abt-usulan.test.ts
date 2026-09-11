@@ -859,7 +859,7 @@ describe("nomor 4 - huruf alasan dapat dicentang dan diterapkan", () => {
     // edit_data hanya menerima data_teks dan data_tanggal) dan sekaligus
     // tidak perlu.
     const isi = abtJs();
-    expect(isi).toContain('"Tulis 8503"');
+    expect(isi).toContain('"Tuliskan huruf alasan"');
     expect(isi).not.toContain('["8503", isi8503], ["4020", isi4020]');
     expect(isi).not.toContain("const isi4020");
   });

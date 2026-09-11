@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { roles as daftarPeran } from "@/lib/mock-data";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -47,7 +48,12 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const actor = await pastikanKapabilitas(db, actorUserId, "panel");
+    // Siapa yang masuk ALETA - dipakai pita identitas panel ABT. Halaman ABT
+    // tidak menulis nama pengguna di mana pun, jadi satu-satunya sumbernya
+    // sesi portal ini.
+    const peran = daftarPeran.find((x) => x.id === actor.roleId);
+    const pengguna = { nama: actor.name, peran: peran ? peran.name : String(actor.roleId || "") };
 
     const body = await readJsonBody<{
       nomorPerkara?: unknown;
@@ -58,16 +64,29 @@ export async function POST(request: NextRequest) {
       pelaku?: unknown;
       lawan?: unknown;
       posita?: unknown;
+      pemohon2?: unknown;
+      templat?: unknown;
+      alasan?: unknown;
     }>(request).catch(() => ({}) as Record<string, unknown>);
+
+    const sumberMinta = String(body.sumber || "semua");
+
+    // "siapa" hanya menanyakan pengguna yang sedang masuk - tidak ada yang
+    // perlu dihitung bot, jadi dijawab di sini tanpa menyentuh gerbang.
+    if (sumberMinta === "siapa") {
+      return ok({ available: true, message: "", pengguna, sipp: null, saksi: null, itsbat: null, saksiSdg: null });
+    }
 
     const nomorPerkara = String(body.nomorPerkara || "").trim();
     if (!nomorPerkara) {
       return ok({ available: false, message: "Nomor perkara tidak terbaca dari halaman ABT." });
     }
 
-    const sumberMinta = String(body.sumber || "semua");
-    const sumber =
-      sumberMinta === "sipp" || sumberMinta === "saksi" ? (sumberMinta as "sipp" | "saksi") : "semua";
+    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg"] as const;
+    type Sumber = (typeof SUMBER_DIKENAL)[number] | "semua";
+    const sumber: Sumber = (SUMBER_DIKENAL as readonly string[]).includes(sumberMinta)
+      ? (sumberMinta as Sumber)
+      : "semua";
 
     const hasil = await getGatewayAbtUsulan({
       nomorPerkara,
@@ -94,6 +113,23 @@ export async function POST(request: NextRequest) {
       // Diteruskan sebagai teks untuk dicocokkan kata kuncinya saja; tidak
       // disimpan di mana pun pada jalur ini.
       posita: String(body.posita || "").slice(0, BATAS_TEKS),
+      pemohon2: String(body.pemohon2 || "").slice(0, 40),
+      // Templat tanya-jawab, diambil ekstensi dari halaman penyunting ABT
+      // (POST load_template) - ALETA tetap tidak membaca basis data ABT.
+      // Dibatasi enam puluh baris dan panjang tiap ruasnya, sebab ia masukan.
+      templat: Array.isArray(body.templat)
+        ? (body.templat as unknown[]).slice(0, 60).map((b) => {
+            const r = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
+            return {
+              no: String(r.no || "").slice(0, 4),
+              tanya: String(r.tanya || "").slice(0, 600),
+              jawab: String(r.jawab || "").slice(0, 2000),
+            };
+          })
+        : undefined,
+      alasan: Array.isArray(body.alasan)
+        ? (body.alasan as unknown[]).slice(0, 12).map((x) => String(x).slice(0, 80))
+        : undefined,
     });
 
     if (!hasil.ok) {
@@ -109,8 +145,11 @@ export async function POST(request: NextRequest) {
       // Diteruskan utuh, bukan disusun ulang medan demi medan. Rute massal
       // pernah menyusun ulang jawabannya begitu, dan medan yang lupa
       // didaftarkan hilang tanpa bunyi - empat kali dalam satu hari.
+      pengguna,
       sipp: hasil.data?.sipp ?? null,
       saksi: hasil.data?.saksi ?? null,
+      itsbat: hasil.data?.itsbat ?? null,
+      saksiSdg: hasil.data?.saksiSdg ?? null,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

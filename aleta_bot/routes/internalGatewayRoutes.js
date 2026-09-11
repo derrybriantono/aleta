@@ -1084,7 +1084,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     const nomorPerkara = String(req.body?.nomorPerkara || "");
     const sumber = String(req.body?.sumber || "semua");
 
-    const jawaban = { ok: true, sipp: null, saksi: null };
+    const jawaban = { ok: true, sipp: null, saksi: null, itsbat: null, saksiSdg: null };
 
     if (sumber === "semua" || sumber === "sipp") {
       jawaban.sipp = await abtUsulanService.dariSipp(nomorPerkara).catch((galat) => ({
@@ -1092,6 +1092,25 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         alasan: String(galat.message || galat).slice(0, 200),
         usulan: [],
       }));
+    }
+    // Itsbat nikah - fakta pernikahan dari posita permohonan. Positanya
+    // dikirim ekstensi dari halaman ABT (variabel 5125), bukan dibaca dari
+    // basis data aps_badilag: aturan "ALETA tidak membaca aps_badilag" tetap.
+    if (sumber === "itsbat") {
+      jawaban.itsbat = abtUsulanService.dariPositaItsbat(String(req.body?.posita || ""), {
+        pemohon: String(req.body?.pelaku || ""),
+        pemohon2: String(req.body?.pemohon2 || ""),
+      });
+    }
+    // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
+    // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
+    // satu substansi, dua bentuk kalimat.
+    if (sumber === "saksi-sdg") {
+      jawaban.saksiSdg = abtUsulanService.susunKeteranganSaksiSdg({
+        templat: Array.isArray(req.body?.templat) ? req.body.templat.slice(0, 60) : [],
+        alasan: Array.isArray(req.body?.alasan) ? req.body.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
+        posita: String(req.body?.posita || ""),
+      });
     }
     if (sumber === "semua" || sumber === "saksi") {
       jawaban.saksi = abtUsulanService.dariKeteranganSaksi(
