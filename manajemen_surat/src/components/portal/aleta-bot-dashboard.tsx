@@ -6,6 +6,7 @@ import {
   Activity,
   AlertCircle,
   ArrowLeft,
+  ArrowUpDown,
   Bot,
   CheckCircle2,
   ChevronDown,
@@ -16,15 +17,22 @@ import {
   Filter,
   Loader2,
   MessageCircle,
+  Printer,
   Search,
   Settings,
+  SlidersHorizontal,
   Wifi,
   WifiOff,
   XCircle,
   Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import {
+  AletaBotCetakRiwayat,
+  type BarisCetakRiwayat,
+  type RingkasanCetakRiwayat,
+} from "@/components/portal/aleta-bot-cetak-riwayat";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { pesanGangguan } from "@/lib/pesan-gangguan";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +91,8 @@ type MessageItem = {
   sourceFeature: string;
   sourceFeatureLabel: string;
   sourceApp: string;
+  notificationKey: string | null;
+  penerima: "pegawai" | "pihak" | "";
   entityType: string | null;
   entityId: string | null;
   createdAt: string;
@@ -94,6 +105,9 @@ type MessagesData = {
   total: number;
   limit: number;
   offset: number;
+  ringkasan?: RingkasanCetakRiwayat & { perStatus: Record<string, number> };
+  keterangan?: string[];
+  urutan?: { kolom: string; arah: string; label: string };
   filters?: {
     sourceFeature?: string | null;
     sourceApp?: string | null;
@@ -182,7 +196,7 @@ function MetricCard({
 // ─── Message status badge ─────────────────────────────────────────────────────
 
 function MsgStatusBadge({ status, label }: { status: string; label: string }) {
-  const ok = status === "success" || status === "sent";
+  const ok = status === "success" || status === "sent" || status === "delivered" || status === "read";
   const fail = status === "failed" || status === "dead_letter";
   return (
     <Badge
@@ -221,8 +235,13 @@ function MessageDetail({
               (item.recipientNumberMasked ? " (disembunyikan)" : "")
             }
           />
+          <Row
+            label="Jenis Penerima"
+            value={item.penerima === "pegawai" ? "Pegawai" : item.penerima === "pihak" ? "Pihak berperkara" : "—"}
+          />
           <Row label="Nomor Perkara / Jabatan" value={item.caseOrPosition} />
           <Row label="Sumber" value={item.sourceFeatureLabel} />
+          {item.notificationKey ? <Row label="Kunci Pesan" value={<code className="text-xs">{item.notificationKey}</code>} /> : null}
           <Row label="Status" value={<MsgStatusBadge status={item.status} label={item.statusLabel} />} />
           <Row label="Dibuat" value={formatDt(item.createdAt)} />
           {item.sentAt ? <Row label="Dikirim" value={formatDt(item.sentAt)} /> : null}
@@ -453,15 +472,22 @@ const DATE_OPTIONS = [
   { value: "today", label: "Hari Ini" },
   { value: "7d", label: "7 Hari" },
   { value: "30d", label: "30 Hari" },
+  { value: "custom", label: "Tanggal Tertentu" },
   { value: "", label: "Semua" },
 ];
 
 const STATUS_OPTIONS = [
   { value: "", label: "Semua Status" },
   { value: "success", label: "Terkirim" },
+  { value: "sent", label: "Terkirim (antrean)" },
+  { value: "delivered", label: "Sampai" },
+  { value: "read", label: "Dibaca" },
   { value: "failed", label: "Gagal" },
+  { value: "dead_letter", label: "Gagal Permanen" },
   { value: "simulated", label: "Simulasi" },
-  { value: "dead_letter", label: "Pesan Gagal" },
+  { value: "dry_run", label: "Simulasi (antrean)" },
+  { value: "skipped", label: "Dilewati" },
+  { value: "pending", label: "Menunggu" },
 ];
 
 const SOURCE_FEATURE_OPTIONS = [
@@ -470,6 +496,9 @@ const SOURCE_FEATURE_OPTIONS = [
   { value: "letter", label: "Surat" },
   { value: "employee", label: "Notifikasi Pegawai" },
   { value: "party", label: "Notifikasi Pihak" },
+  { value: "kirim_saat_lengkap", label: "Kirim Saat Lengkap" },
+  { value: "ecourt", label: "e-Court" },
+  { value: "verifikasi_nomor", label: "Verifikasi Nomor" },
   { value: "public_qa", label: "Pertanyaan Publik" },
   { value: "system", label: "Sistem" },
   { value: "manajemen_surat", label: "Manajemen Surat" },
@@ -477,8 +506,64 @@ const SOURCE_FEATURE_OPTIONS = [
   { value: "notifikasi_perkara", label: "Notifikasi Perkara" },
 ];
 
+const PENERIMA_OPTIONS = [
+  { value: "", label: "Semua Penerima" },
+  { value: "pegawai", label: "Pegawai" },
+  { value: "pihak", label: "Pihak Berperkara" },
+];
+
+const URUT_OPTIONS = [
+  { value: "createdAt", label: "Waktu diproses" },
+  { value: "sentAt", label: "Waktu terkirim" },
+  { value: "recipientName", label: "Nama penerima" },
+  { value: "recipientNumber", label: "Nomor WhatsApp" },
+  { value: "status", label: "Status" },
+  { value: "sourceFeature", label: "Jenis pesan" },
+  { value: "category", label: "Kategori" },
+];
+
+type SaringanLanjutan = {
+  nomorPerkara: string;
+  isiPesan: string;
+  nomor: string;
+  notificationKey: string;
+};
+
+const LANJUTAN_KOSONG: SaringanLanjutan = { nomorPerkara: "", isiPesan: "", nomor: "", notificationKey: "" };
+
+function ChipPilihan({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            "rounded-full border px-3 py-1 text-xs transition",
+            value === opt.value
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background hover:bg-muted"
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function MessagesTab() {
   const searchParams = useSearchParams();
+  const { currentUser, institutionIdentity } = usePortal();
   const [data, setData] = useState<MessagesData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -489,22 +574,76 @@ function MessagesTab() {
   const [entityTypeFilter, setEntityTypeFilter] = useState(searchParams.get("entityType") ?? "");
   const [entityIdFilter, setEntityIdFilter] = useState(searchParams.get("entityId") ?? "");
   const [dateRange, setDateRange] = useState("7d");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [penerima, setPenerima] = useState("");
+  const [hanyaGagal, setHanyaGagal] = useState(false);
+  const [urut, setUrut] = useState("createdAt");
+  const [arah, setArah] = useState<"asc" | "desc">("desc");
+  const [lanjutan, setLanjutan] = useState<SaringanLanjutan>(LANJUTAN_KOSONG);
+  const [lanjutanDraft, setLanjutanDraft] = useState<SaringanLanjutan>(LANJUTAN_KOSONG);
   const [offset, setOffset] = useState(0);
   const [selectedItem, setSelectedItem] = useState<MessageItem | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [menyiapkanCetak, setMenyiapkanCetak] = useState(false);
+  const [dataCetak, setDataCetak] = useState<{
+    baris: BarisCetakRiwayat[];
+    ringkasan: RingkasanCetakRiwayat;
+    keterangan: string[];
+    urutan: string;
+    terpotong: boolean;
+  } | null>(null);
+
+  /**
+   * Seluruh penyaring yang sedang aktif, sebagai parameter URL. Dipakai
+   * layar, unduhan, dan cetakan - satu penyusun supaya ketiganya tidak
+   * pernah berbeda.
+   */
+  const susunParams = useCallback(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (statusFilter) params.set("status", statusFilter);
+    if (sourceFeatureFilter) params.set("sourceFeature", sourceFeatureFilter);
+    if (sourceAppFilter) params.set("sourceApp", sourceAppFilter);
+    if (entityTypeFilter) params.set("entityType", entityTypeFilter);
+    if (entityIdFilter) params.set("entityId", entityIdFilter);
+    params.set("dateRange", dateRange);
+    if (dateRange === "custom") {
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
+    }
+    if (penerima) params.set("penerima", penerima);
+    if (hanyaGagal) params.set("hanyaGagal", "1");
+    if (lanjutan.nomorPerkara) params.set("nomorPerkara", lanjutan.nomorPerkara);
+    if (lanjutan.isiPesan) params.set("isiPesan", lanjutan.isiPesan);
+    if (lanjutan.nomor) params.set("nomor", lanjutan.nomor);
+    if (lanjutan.notificationKey) params.set("notificationKey", lanjutan.notificationKey);
+    params.set("urut", urut);
+    params.set("arah", arah);
+    return params;
+  }, [
+    search,
+    statusFilter,
+    sourceFeatureFilter,
+    sourceAppFilter,
+    entityTypeFilter,
+    entityIdFilter,
+    dateRange,
+    dateFrom,
+    dateTo,
+    penerima,
+    hanyaGagal,
+    lanjutan,
+    urut,
+    arah,
+  ]);
 
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (statusFilter) params.set("status", statusFilter);
-      if (sourceFeatureFilter) params.set("sourceFeature", sourceFeatureFilter);
-      if (sourceAppFilter) params.set("sourceApp", sourceAppFilter);
-      if (entityTypeFilter) params.set("entityType", entityTypeFilter);
-      if (entityIdFilter) params.set("entityId", entityIdFilter);
-      if (dateRange) params.set("dateRange", dateRange);
+      const params = susunParams();
       params.set("limit", "50");
       params.set("offset", String(offset));
       const res = await fetch(apiPath(`/api/aleta-bot/messages?${params.toString()}`));
@@ -513,23 +652,43 @@ function MessagesTab() {
       if (!json.ok) throw new Error("Gagal memuat riwayat pesan.");
       setData(json.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memuat riwayat pesan.");
+      setError(pesanGangguan(err, "Gagal memuat riwayat pesan."));
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, sourceFeatureFilter, sourceAppFilter, entityTypeFilter, entityIdFilter, dateRange, offset]);
+  }, [susunParams, offset]);
 
-  const exportExcel = () => {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (statusFilter) params.set("status", statusFilter);
-    if (sourceFeatureFilter) params.set("sourceFeature", sourceFeatureFilter);
-    if (sourceAppFilter) params.set("sourceApp", sourceAppFilter);
-    if (entityTypeFilter) params.set("entityType", entityTypeFilter);
-    if (entityIdFilter) params.set("entityId", entityIdFilter);
-    if (dateRange) params.set("dateRange", dateRange);
-    params.set("format", "xlsx");
+  const unduh = (format: "xlsx" | "csv") => {
+    const params = susunParams();
+    params.set("format", format);
     window.open(apiPath(`/api/aleta-bot/messages?${params.toString()}`), "_blank", "noopener,noreferrer");
+  };
+
+  const cetakLaporan = async () => {
+    setMenyiapkanCetak(true);
+    setError(null);
+    try {
+      const params = susunParams();
+      params.set("mode", "laporan");
+      params.set("limit", "2000");
+      params.set("offset", "0");
+      const res = await fetch(apiPath(`/api/aleta-bot/messages?${params.toString()}`));
+      if (!res.ok) throw new Error("Gagal menyiapkan laporan.");
+      const json = await res.json() as { ok: boolean; data: MessagesData };
+      if (!json.ok) throw new Error("Gagal menyiapkan laporan.");
+      const hasil = json.data;
+      setDataCetak({
+        baris: hasil.items,
+        ringkasan: hasil.ringkasan ?? { total: hasil.total, terkirim: 0, gagal: 0, simulasi: 0, lainnya: hasil.total },
+        keterangan: hasil.keterangan ?? [],
+        urutan: `${hasil.urutan?.label ?? "Waktu diproses"} (${arah === "asc" ? "naik" : "turun"})`,
+        terpotong: hasil.total > hasil.items.length,
+      });
+    } catch (err) {
+      setError(pesanGangguan(err, "Gagal menyiapkan laporan."));
+    } finally {
+      setMenyiapkanCetak(false);
+    }
   };
 
   const clearEntityFilter = () => {
@@ -540,6 +699,40 @@ function MessagesTab() {
     setOffset(0);
   };
 
+  const terapkanLanjutan = () => {
+    setLanjutan({
+      nomorPerkara: lanjutanDraft.nomorPerkara.trim(),
+      isiPesan: lanjutanDraft.isiPesan.trim(),
+      nomor: lanjutanDraft.nomor.trim(),
+      notificationKey: lanjutanDraft.notificationKey.trim(),
+    });
+    setOffset(0);
+  };
+
+  const bersihkanSemua = () => {
+    setSearch("");
+    setStatusFilter("");
+    setSourceFeatureFilter("");
+    setSourceAppFilter("");
+    setEntityTypeFilter("");
+    setEntityIdFilter("");
+    setDateRange("7d");
+    setDateFrom("");
+    setDateTo("");
+    setPenerima("");
+    setHanyaGagal(false);
+    setUrut("createdAt");
+    setArah("desc");
+    setLanjutan(LANJUTAN_KOSONG);
+    setLanjutanDraft(LANJUTAN_KOSONG);
+    setOffset(0);
+  };
+
+  const jumlahLanjutanAktif = useMemo(
+    () => Object.values(lanjutan).filter(Boolean).length + (penerima ? 1 : 0) + (hanyaGagal ? 1 : 0),
+    [lanjutan, penerima, hanyaGagal]
+  );
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchMessages();
@@ -548,8 +741,10 @@ function MessagesTab() {
     return () => window.clearTimeout(timer);
   }, [fetchMessages]);
 
+  const ringkasan = data?.ringkasan;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="riwayat-pesan-bot">
       {/* Filter bar */}
       <div className="rounded-[1.4rem] border border-border/80 bg-card p-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -560,7 +755,32 @@ function MessagesTab() {
               onChange={(e) => { setSearch(e.target.value); setOffset(0); }}
               placeholder="Cari nama atau nomor..."
               className="pl-9"
+              data-testid="riwayat-cari"
             />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="sr-only" htmlFor="riwayat-urut">Urutkan</label>
+            <select
+              id="riwayat-urut"
+              value={urut}
+              onChange={(e) => { setUrut(e.target.value); setOffset(0); }}
+              className="h-9 rounded-xl border border-input bg-background px-3 text-xs"
+              data-testid="riwayat-urut"
+            >
+              {URUT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>Urut: {opt.label}</option>
+              ))}
+            </select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setArah((nilai) => (nilai === "asc" ? "desc" : "asc")); setOffset(0); }}
+              title={arah === "asc" ? "Urutan naik (A-Z, lama ke baru)" : "Urutan turun (Z-A, baru ke lama)"}
+              data-testid="riwayat-arah"
+            >
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              {arah === "asc" ? "Naik" : "Turun"}
+            </Button>
           </div>
           <Button
             variant="outline"
@@ -576,79 +796,126 @@ function MessagesTab() {
               <ChevronDown className="h-3.5 w-3.5" />
             )}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdvanced((v) => !v)}
+            className="gap-1.5"
+            data-testid="riwayat-lanjutan"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Pencarian Lanjutan
+            {jumlahLanjutanAktif > 0 ? <Badge variant="default" className="ml-1 px-1.5 text-[10px]">{jumlahLanjutanAktif}</Badge> : null}
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => void fetchMessages()} disabled={loading}>
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Muat Ulang"}
           </Button>
-          <Button variant="outline" size="sm" onClick={exportExcel}>
+          <Button variant="outline" size="sm" onClick={() => unduh("xlsx")}>
             <Download className="h-3.5 w-3.5" />
-            Unduh Excel
+            Excel
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => unduh("csv")}>
+            <Download className="h-3.5 w-3.5" />
+            CSV
+          </Button>
+          <Button variant="default" size="sm" onClick={() => void cetakLaporan()} disabled={menyiapkanCetak} data-testid="riwayat-cetak">
+            {menyiapkanCetak ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
+            Cetak Laporan
           </Button>
         </div>
 
         {showFilters && (
-          <div className="mt-3 flex flex-wrap gap-3 border-t border-border pt-3">
+          <div className="mt-3 flex flex-wrap gap-4 border-t border-border pt-3">
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Status</p>
-              <div className="flex flex-wrap gap-1.5">
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => { setStatusFilter(opt.value); setOffset(0); }}
-                    className={cn(
-                      "rounded-full border px-3 py-1 text-xs transition",
-                      statusFilter === opt.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:bg-muted"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <ChipPilihan options={STATUS_OPTIONS} value={hanyaGagal ? "__gagal" : statusFilter} onChange={(nilai) => { setStatusFilter(nilai); setHanyaGagal(false); setOffset(0); }} />
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Rentang Waktu</p>
-              <div className="flex flex-wrap gap-1.5">
-                {DATE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => { setDateRange(opt.value); setOffset(0); }}
-                    className={cn(
-                      "rounded-full border px-3 py-1 text-xs transition",
-                      dateRange === opt.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:bg-muted"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <ChipPilihan options={DATE_OPTIONS} value={dateRange} onChange={(nilai) => { setDateRange(nilai); setOffset(0); }} />
+              {dateRange === "custom" ? (
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <label className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Dari</span>
+                    <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setOffset(0); }} className="h-8 w-40 text-xs" data-testid="riwayat-dari" />
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">Sampai</span>
+                    <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setOffset(0); }} className="h-8 w-40 text-xs" data-testid="riwayat-sampai" />
+                  </label>
+                </div>
+              ) : null}
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Jenis Pesan</p>
-              <div className="flex flex-wrap gap-1.5">
-                {SOURCE_FEATURE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => { setSourceFeatureFilter(opt.value); setOffset(0); }}
-                    className={cn(
-                      "rounded-full border px-3 py-1 text-xs transition",
-                      sourceFeatureFilter === opt.value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:bg-muted"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <ChipPilihan options={SOURCE_FEATURE_OPTIONS} value={sourceFeatureFilter} onChange={(nilai) => { setSourceFeatureFilter(nilai); setOffset(0); }} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Penerima</p>
+              <ChipPilihan options={PENERIMA_OPTIONS} value={penerima} onChange={(nilai) => { setPenerima(nilai); setOffset(0); }} />
             </div>
           </div>
         )}
+
+        {showAdvanced && (
+          <div className="mt-3 border-t border-border pt-3" data-testid="riwayat-panel-lanjutan">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              Pencarian lanjutan - semua isian digabung (harus terpenuhi seluruhnya).
+            </p>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-foreground">Nomor perkara memuat</span>
+                <Input
+                  value={lanjutanDraft.nomorPerkara}
+                  onChange={(e) => setLanjutanDraft((d) => ({ ...d, nomorPerkara: e.target.value }))}
+                  placeholder="mis. 123/Pdt.G/2026"
+                  className="h-9 text-xs"
+                  data-testid="riwayat-nomor-perkara"
+                />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-foreground">Isi pesan memuat</span>
+                <Input
+                  value={lanjutanDraft.isiPesan}
+                  onChange={(e) => setLanjutanDraft((d) => ({ ...d, isiPesan: e.target.value }))}
+                  placeholder="mis. sisa panjar"
+                  className="h-9 text-xs"
+                />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-foreground">Nomor WhatsApp</span>
+                <Input
+                  value={lanjutanDraft.nomor}
+                  onChange={(e) => setLanjutanDraft((d) => ({ ...d, nomor: e.target.value }))}
+                  placeholder="0812... atau 62812..."
+                  className="h-9 text-xs"
+                />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-foreground">Kunci pesan</span>
+                <Input
+                  value={lanjutanDraft.notificationKey}
+                  onChange={(e) => setLanjutanDraft((d) => ({ ...d, notificationKey: e.target.value }))}
+                  placeholder="mis. pihak-hari-sidang"
+                  className="h-9 text-xs"
+                />
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={terapkanLanjutan} data-testid="riwayat-terapkan">Terapkan</Button>
+              <Button
+                size="sm"
+                variant={hanyaGagal ? "default" : "outline"}
+                onClick={() => { setHanyaGagal((v) => !v); setStatusFilter(""); setOffset(0); }}
+              >
+                <AlertCircle className="h-3.5 w-3.5" />
+                {hanyaGagal ? "Hanya yang gagal: aktif" : "Hanya yang gagal"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={bersihkanSemua}>Bersihkan semua penyaring</Button>
+            </div>
+          </div>
+        )}
+
         {entityIdFilter ? (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground">
             <Badge variant="outline">Filter surat/disposisi aktif</Badge>
@@ -660,7 +927,25 @@ function MessagesTab() {
             </Button>
           </div>
         ) : null}
+
+        {data?.keterangan && data.keterangan.length > 0 ? (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs" data-testid="riwayat-keterangan">
+            {data.keterangan.map((baris) => (
+              <span key={baris} className="rounded-full bg-muted px-2.5 py-0.5 text-muted-foreground">{baris}</span>
+            ))}
+          </div>
+        ) : null}
       </div>
+
+      {/* Ringkasan */}
+      {ringkasan && data ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="riwayat-ringkasan">
+          <MetricCard icon={MessageCircle} title="Sesuai saringan" value={ringkasan.total} />
+          <MetricCard icon={CheckCircle2} title="Terkirim" value={ringkasan.terkirim} />
+          <MetricCard icon={XCircle} title="Gagal" value={ringkasan.gagal} />
+          <MetricCard icon={Eye} title="Simulasi" value={ringkasan.simulasi} sub={`${ringkasan.lainnya} lainnya`} />
+        </div>
+      ) : null}
 
       {/* Error */}
       {error ? (
@@ -685,7 +970,7 @@ function MessagesTab() {
           <p className="mt-3 text-sm text-muted-foreground">
             {entityIdFilter
               ? "Belum ada riwayat pesan untuk surat/disposisi ini."
-              : "Tidak ada riwayat pengiriman pesan untuk filter yang dipilih."}
+              : "Tidak ada riwayat pengiriman pesan untuk penyaring yang dipilih."}
           </p>
           {data.filters?.entityFilterFallback ? (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -702,6 +987,7 @@ function MessagesTab() {
             <div
               key={item.id}
               className="rounded-[1.4rem] border border-border/80 bg-card p-4 transition hover:shadow-sm"
+              data-testid="riwayat-baris"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 {/* Left: identity */}
@@ -711,6 +997,11 @@ function MessagesTab() {
                       {item.recipientName}
                     </span>
                     <MsgStatusBadge status={item.status} label={item.statusLabel} />
+                    {item.penerima ? (
+                      <Badge variant="outline" className="text-[10px]">
+                        {item.penerima === "pegawai" ? "Pegawai" : "Pihak"}
+                      </Badge>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
                     <span className="whitespace-nowrap">
@@ -786,6 +1077,21 @@ function MessagesTab() {
       {/* Detail modal */}
       {selectedItem ? (
         <MessageDetail item={selectedItem} onClose={() => setSelectedItem(null)} />
+      ) : null}
+
+      {/* Lembar cetak */}
+      {dataCetak ? (
+        <AletaBotCetakRiwayat
+          baris={dataCetak.baris}
+          ringkasan={dataCetak.ringkasan}
+          keterangan={dataCetak.keterangan}
+          urutan={dataCetak.urutan}
+          namaPengadilan={institutionIdentity.courtName || "PENGADILAN AGAMA"}
+          alamatPengadilan={institutionIdentity.address || ""}
+          dicetakOleh={currentUser?.name ?? ""}
+          terpotong={dataCetak.terpotong}
+          onSelesai={() => setDataCetak(null)}
+        />
       ) : null}
     </div>
   );
@@ -866,7 +1172,7 @@ export function AletaBotDashboard() {
       <Tabs defaultValue={["riwayat", "riwayat-pengiriman"].includes(searchParams.get("tab") ?? "") ? "riwayat" : "status"}>
         <TabsList className="mb-2">
           <TabsTrigger value="status">Kondisi Bot</TabsTrigger>
-          <TabsTrigger value="riwayat">Riwayat Pesan</TabsTrigger>
+          <TabsTrigger value="riwayat" data-testid="tab-riwayat-pesan">Riwayat Pengiriman</TabsTrigger>
         </TabsList>
 
         <TabsContent value="status">
