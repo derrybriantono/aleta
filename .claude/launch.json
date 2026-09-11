@@ -49,6 +49,15 @@
         "D:/aleta-dev/kerja/jalankan-portal-uji.ps1"
       ],
       "port": 3010
+    },
+    {
+      "name": "portal-db-mati",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-File",
+        "D:/aleta-dev/kerja/jalankan-portal-db-mati.ps1"
+      ],
+      "port": 3011
     }
   ]
 }

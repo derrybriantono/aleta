@@ -29,6 +29,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { apiPath } from "@/lib/base-path";
+import { adalahGangguan, pesanGangguan } from "@/lib/pesan-gangguan";
 import { APP_VERSION } from "@/lib/patch-notes";
 
 const loginBackgroundImageUrl =
@@ -52,8 +53,10 @@ function getAuthErrorMessage(error: unknown) {
   const status = Number(authError?.status ?? authError?.statusCode ?? 0);
   const code = String(authError?.code ?? "");
 
-  if (status >= 500 || code.includes("INTERNAL")) {
-    return "Layanan login sedang bermasalah. Muat ulang halaman atau restart server lokal, lalu coba lagi.";
+  // Gangguan layanan dijelaskan dengan kalimat biasa; kesalahan kata sandi
+  // tetap disampaikan apa adanya, sebab itu memang perlu diperbaiki penggunanya.
+  if (status >= 500 || code.includes("INTERNAL") || adalahGangguan(authError, status)) {
+    return pesanGangguan(authError, "Layanan login sedang bermasalah. Coba lagi beberapa saat lagi.", status);
   }
 
   return authError?.message || "Password tidak sesuai dengan akun ALETA.";
@@ -232,7 +235,17 @@ export default function LoginPage() {
         | null;
 
       if (!lookupResponse.ok || !lookupPayload?.ok || !lookupPayload.data?.user) {
-        throw new Error(lookupPayload?.error?.message ?? "Akun tidak ditemukan atau sudah tidak aktif.");
+        // Peladen menjawab, tetapi jawabannya bisa berarti dua hal yang sangat
+        // berbeda: akunnya memang tidak ada, atau layanan datanya sedang mati.
+        // Keduanya tidak boleh disampaikan dengan kalimat yang sama - yang
+        // kedua membuat petugas mencoba berulang kali sampai akunnya terkunci.
+        throw new Error(
+          pesanGangguan(
+            lookupPayload,
+            lookupPayload?.error?.message ?? "Akun tidak ditemukan atau sudah tidak aktif.",
+            lookupResponse.status
+          )
+        );
       }
 
       const user = lookupPayload.data.user;
@@ -245,6 +258,7 @@ export default function LoginPage() {
       if (authError) {
         throw new Error(getAuthErrorMessage(authError));
       }
+
 
       if (rememberAccount) {
         rememberLoginIdentifier(normalizedIdentifier);
@@ -273,7 +287,27 @@ export default function LoginPage() {
       await refetchSession().catch(() => undefined);
       router.replace("/portal");
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Login belum berhasil. Silakan coba lagi.");
+      // ====================================================================
+      // "Failed to fetch" BERHENTI DI SINI
+      // ====================================================================
+      //
+      // Ketika basis data mati, peladen tidak sempat menjawab apa pun dan
+      // peramban melempar "Failed to fetch" - kalimat yang tidak menjelaskan
+      // apa-apa kepada panitera pengganti pada pukul tujuh pagi. Yang
+      // membacanya lalu mengira dirinya salah mengetik kata sandi, mencoba
+      // berulang kali, dan akunnya terkunci.
+      //
+      // Pesan aslinya tetap dicatat di konsol, tempat yang memperbaikinya
+      // memang mencarinya.
+      if (adalahGangguan(loginError)) {
+        globalThis.console?.error?.("[ALETA LOGIN]", loginError);
+      }
+      setError(
+        pesanGangguan(
+          loginError,
+          loginError instanceof Error ? loginError.message : "Login belum berhasil. Silakan coba lagi."
+        )
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -320,7 +354,7 @@ export default function LoginPage() {
 
       setOtpResetState(payload.data.recovery);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Permintaan OTP gagal diproses.");
+      setError(pesanGangguan(requestError, requestError instanceof Error ? requestError.message : "Permintaan OTP gagal diproses."));
     } finally {
       setIsRequestingOtp(false);
     }
@@ -376,7 +410,7 @@ export default function LoginPage() {
       setLoginNotice(`Password akun ${otpResetState.username} berhasil direset. Silakan login ulang.`);
       setOtpResetState(null);
     } catch (resetError) {
-      setError(resetError instanceof Error ? resetError.message : "Reset password gagal diproses.");
+      setError(pesanGangguan(resetError, resetError instanceof Error ? resetError.message : "Reset password gagal diproses."));
     } finally {
       setIsResetting(false);
     }
@@ -412,7 +446,7 @@ export default function LoginPage() {
 
       setAdminHelpDone({ requestId: payload.data.requestId, name: payload.data.name });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Pengajuan bantuan admin gagal diproses.");
+      setError(pesanGangguan(submitError, submitError instanceof Error ? submitError.message : "Pengajuan bantuan admin gagal diproses."));
     } finally {
       setIsSubmittingAdminHelp(false);
     }

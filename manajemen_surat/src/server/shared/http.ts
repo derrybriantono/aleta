@@ -124,8 +124,14 @@ export function handleRouteError(error: unknown) {
       {
         ok: false,
         error: {
+          // Kalimat untuk petugas, bukan untuk yang memasang peladen: yang
+          // membacanya di halaman masuk pada pukul tujuh pagi tidak dapat
+          // "menjalankan database" dan tidak perlu tahu istilah itu.
+          // Keterangan teknisnya tetap lengkap di log peladen.
           message:
-            "Database ALETA belum tersedia atau koneksinya belum benar. Jalankan database dan periksa pengaturannya.",
+            "Layanan data ALETA sedang tidak aktif, jadi permintaan Anda belum dapat diproses. " +
+            "Ini bukan kesalahan Anda. Tunggu beberapa menit lalu coba lagi; bila tetap begini, " +
+            "hubungi petugas TI atau administrator ALETA dan sebutkan jam kejadiannya.",
         },
       },
       { status: 503 }
