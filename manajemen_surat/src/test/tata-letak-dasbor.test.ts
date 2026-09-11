@@ -17,7 +17,12 @@ import {
   simpanTataLetak,
   simpanTataLetakBawaan,
 } from "@/server/modules/portal/tata-letak-dasbor";
-import { KUNCI_KARTU_DASBOR, ZONA_DASBOR } from "@/lib/dasbor-kartu";
+import {
+  HALAMAN_DASBOR,
+  KUNCI_KARTU_DASBOR,
+  KUNCI_KARTU_PORTAL,
+  ZONA_DASBOR,
+} from "@/lib/dasbor-kartu";
 import { pindahkan, terapkanUrutan } from "@/components/portal/susunan-geser";
 import { createManagedUserInDb } from "@/server/modules/users/service";
 
@@ -325,5 +330,66 @@ describe("katalog kartu dasbor tidak boleh menyimpang dari dasbornya", () => {
     const ringkasan = ZONA_DASBOR.find((z) => z.zona === "ringkasan");
     expect(ringkasan?.kartu[0].kunci).toBe("disposisi-terlambat");
     expect(ringkasan?.kartu[1].kunci).toBe("tugas-masuk");
+  });
+});
+
+describe("katalog kartu portal tidak boleh menyimpang dari portalnya", () => {
+  const bacaPortal = () =>
+    readFileSync(path.resolve(process.cwd(), "src/app/(portal)/portal/page.tsx"), "utf8");
+
+  it("setiap kunci pada katalog benar-benar dipakai halaman portal", () => {
+    const portal = bacaPortal();
+    for (const kunci of KUNCI_KARTU_PORTAL) {
+      expect(portal, kunci).toContain(`kunci="${kunci}"`);
+    }
+  });
+
+  it("setiap kartu yang digeser di portal ada pada katalog", () => {
+    const portal = bacaPortal();
+    const dipakai = [...portal.matchAll(/<ItemGeser[^>]*kunci="([a-z0-9-]+)"/g)].map((m) => m[1]);
+    expect(dipakai.length).toBe(KUNCI_KARTU_PORTAL.length);
+    for (const kunci of dipakai) {
+      expect(KUNCI_KARTU_PORTAL, kunci).toContain(kunci);
+    }
+  });
+
+  it("portal dibungkus penatanya sendiri, dengan nama halaman yang sama seperti di katalog", () => {
+    // Nama halaman menjadi kunci penyimpanan. Salah satu huruf saja dan
+    // susunan tersimpan ke baris lain - tersimpan, terbaca sah, lalu tidak
+    // pernah terpakai.
+    const portal = bacaPortal();
+    expect(portal).toContain('<PenataDasbor halaman="portal">');
+    expect(HALAMAN_DASBOR.map((h) => h.halaman)).toContain("portal");
+  });
+
+  it("ubin aplikasi punya zonanya sendiri, terpisah dari kartu besar", () => {
+    // Satu zona berarti sebuah ubin aplikasi dapat mendarat di antara kartu
+    // besar lalu meregang selebar halaman - susunan yang dapat dibuat pengguna
+    // tetapi tidak pernah diinginkannya.
+    const hub = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/main-app-hub.tsx"),
+      "utf8"
+    );
+    expect(hub).toContain('zona="portal-aplikasi"');
+    expect(bacaPortal()).toContain('zona="portal-utama"');
+  });
+
+  it("tiap halaman pada katalog memakai kunci zona yang tidak dipakai halaman lain", () => {
+    // Zona dipisah per halaman di penyimpanan, tetapi kunci yang bertabrakan
+    // membuat layar pengaturan menampilkan dua zona bernama sama dan sulit
+    // dibedakan orang yang menyusunnya.
+    const semua = HALAMAN_DASBOR.flatMap((h) => h.zona.map((z) => z.zona));
+    expect(new Set(semua).size).toBe(semua.length);
+  });
+
+  it("layar pengaturan menyusun bawaan untuk SELURUH halaman pada katalog", () => {
+    const layar = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/dasbor-bawaan-pengaturan.tsx"),
+      "utf8"
+    );
+    expect(layar).toContain("HALAMAN_DASBOR");
+    // Satu penata per halaman; satu penata untuk dua halaman akan menuliskan
+    // zona keduanya ke baris yang sama.
+    expect(layar).toContain("halaman={halaman.halaman}");
   });
 });

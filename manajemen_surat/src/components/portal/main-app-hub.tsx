@@ -18,6 +18,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { ItemGeser, SusunanGeser } from "@/components/portal/susunan-geser";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { type PortalAppConfig } from "@/lib/types";
@@ -39,14 +40,32 @@ const iconMap = {
   "file-text": FileText,
 };
 
+/**
+ * Ubin aplikasi pada halaman portal.
+ *
+ * Ubinnya dapat ditahan lalu digeser, dan urutannya tersimpan untuk tiap
+ * pengguna sendiri. Alasannya sederhana: daftar ini sama bagi semua orang,
+ * padahal yang dituju tiap jabatan berbeda - jurusita menuju relaas, kasir
+ * menuju keuangan. Yang paling sering dibuka pantas berada paling depan, dan
+ * hanya pemiliknya yang tahu mana itu.
+ *
+ * SusunanGeser aman dipakai di luar penata: tanpa pembungkusnya, ubin digambar
+ * apa adanya tanpa geser dan tanpa pegangan.
+ */
 export function MainAppHub({ apps }: { apps: PortalAppConfig[] }) {
   return (
-    <div className="grid gap-2 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <SusunanGeser
+      zona="portal-aplikasi"
+      sebutan="ubin aplikasi"
+      data-testid="portal-app-grid"
+      className="grid gap-2 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+    >
       {apps.map((app) => {
         const Icon = iconMap[app.icon as keyof typeof iconMap] ?? Inbox;
 
         return (
-          <Link key={app.id} href={app.href} data-testid={`hub-module-${app.id}`}>
+          <ItemGeser key={app.id} kunci={app.id} judul={app.label}>
+          <Link href={app.href} data-testid={`hub-module-${app.id}`}>
             <Card
               className={cn(
                 "group h-full border-border/80 bg-card/80 transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-panel"
@@ -77,8 +96,9 @@ export function MainAppHub({ apps }: { apps: PortalAppConfig[] }) {
               </CardContent>
             </Card>
           </Link>
+          </ItemGeser>
         );
       })}
-    </div>
+    </SusunanGeser>
   );
 }

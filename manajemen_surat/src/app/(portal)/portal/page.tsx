@@ -16,6 +16,12 @@ import {
 
 import { MainAppHub } from "@/components/portal/main-app-hub";
 import { PageIntro } from "@/components/portal/shared";
+import {
+  ItemGeser,
+  PenataDasbor,
+  SusunanGeser,
+  TombolKembalikanSusunan,
+} from "@/components/portal/susunan-geser";
 import { WorkSummaryHero } from "@/components/portal/work-summary-hero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,7 +105,36 @@ const taskVisuals: Record<TaskItem["sourceType"], { icon: typeof ListTodo; iconB
   },
 };
 
+/**
+ * Portal - halaman pertama sesudah masuk.
+ *
+ * ============================================================================
+ * DISUSUN SENDIRI OLEH TIAP PENGGUNA
+ * ============================================================================
+ *
+ * Halaman ini dibuka SEMUA orang, tiap kali masuk, dan kepentingan tiap
+ * jabatan berbeda: jurusita menuju relaas, kasir menuju keuangan, panitera
+ * menuju perkara. Karena itu kartunya dapat ditahan lalu digeser, dan
+ * susunannya tersimpan untuk orang itu sendiri.
+ *
+ * Dua zona, bukan satu. Kartu besar bertukar tempat di dalam kolomnya sendiri,
+ * dan ubin aplikasi di dalam gridnya sendiri (lihat main-app-hub.tsx).
+ * Mencampurnya berarti satu ubin aplikasi dapat mendarat di antara kartu besar
+ * lalu meregang selebar halaman.
+ *
+ * Mesin gesernya sama persis dengan dasbor Manajemen Surat - lihat
+ * susunan-geser.tsx, termasuk alasan kenapa tidak satu pun gerakan menyentuh
+ * state React.
+ */
 export default function PortalPage() {
+  return (
+    <PenataDasbor halaman="portal">
+      <IsiPortal />
+    </PenataDasbor>
+  );
+}
+
+function IsiPortal() {
   const {
     accessibleLetters,
     accessibleModules,
@@ -184,26 +219,15 @@ export default function PortalPage() {
         eyebrow="Portal"
         title="Menu Kerja"
         description={`${currentRoleBadge}${position?.name ? ` · ${position.name}` : ""}`}
+        actions={
+          /* Hanya muncul sesudah portalnya benar-benar disusun - tombol yang
+             mengembalikan sesuatu yang belum pernah diubah tidak menjawab
+             pertanyaan siapa pun. */
+          <TombolKembalikanSusunan />
+        }
       />
 
-      {/* Ringkasan Kerja hanya untuk Super Admin (mode default portal ringkas). */}
-      {portalCards.workSummary && effectiveRoleId === "super-admin" ? (
-        <WorkSummaryHero
-          isAdminTier={isAdminTier}
-          currentRoleBadge={currentRoleBadge}
-          positionName={position?.name}
-          pendingDispositionCount={pendingInbox.length}
-          newLetterCount={newIncomingCount}
-          failedWaCount={failedWhatsappCount}
-          urgentCount={urgentDispositionCount}
-          taskSources={taskSources}
-          taskSummary={taskSummary}
-          quickActions={fallbackTiles}
-        />
-      ) : null}
-
-      <div className="grid gap-6">
-        {!hasVisiblePortalCard ? (
+      {!hasVisiblePortalCard ? (
           <Card className="border-dashed border-border bg-muted/35">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
@@ -229,7 +253,32 @@ export default function PortalPage() {
           </Card>
         ) : null}
 
+      <SusunanGeser
+        zona="portal-utama"
+        sebutan="kartu portal"
+        data-testid="portal-card-grid"
+        className="grid gap-6"
+      >
+        {/* Ringkasan Kerja hanya untuk Super Admin (mode default portal ringkas). */}
+        {portalCards.workSummary && effectiveRoleId === "super-admin" ? (
+        <ItemGeser kunci="ringkasan-kerja" judul="Ringkasan Kerja">
+          <WorkSummaryHero
+            isAdminTier={isAdminTier}
+            currentRoleBadge={currentRoleBadge}
+            positionName={position?.name}
+            pendingDispositionCount={pendingInbox.length}
+            newLetterCount={newIncomingCount}
+            failedWaCount={failedWhatsappCount}
+            urgentCount={urgentDispositionCount}
+            taskSources={taskSources}
+            taskSummary={taskSummary}
+            quickActions={fallbackTiles}
+          />
+        </ItemGeser>
+        ) : null}
+
         {portalCards.mainMenu ? (
+        <ItemGeser kunci="menu-aplikasi" judul="Aplikasi yang Bisa Dibuka">
         <Card className="border-border/80">
           <CardContent className="space-y-4 p-4 sm:space-y-5 sm:p-6">
             <div className="space-y-2">
@@ -239,9 +288,11 @@ export default function PortalPage() {
             <MainAppHub apps={accessiblePortalApps} />
           </CardContent>
         </Card>
+        </ItemGeser>
         ) : null}
 
         {portalCards.importantTasks ? (
+        <ItemGeser kunci="tugas-penting" judul="Tugas Penting">
         <Card className="portal-subtle-surface border-border/80">
           <CardContent className="space-y-4 p-4 sm:space-y-6 sm:p-6">
             <div className="flex items-center justify-between gap-3">
@@ -312,8 +363,9 @@ export default function PortalPage() {
             </div>
           </CardContent>
         </Card>
+        </ItemGeser>
         ) : null}
-      </div>
+      </SusunanGeser>
     </div>
   );
 }

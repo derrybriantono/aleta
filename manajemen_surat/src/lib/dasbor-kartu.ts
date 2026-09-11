@@ -81,3 +81,79 @@ export const ZONA_DASBOR: { zona: string; nama: string; keterangan: string; kart
 
 /** Seluruh kunci yang dikenal, untuk pemeriksaan. */
 export const KUNCI_KARTU_DASBOR = ZONA_DASBOR.flatMap((z) => z.kartu.map((k) => k.kunci));
+
+/**
+ * ============================================================================
+ * PORTAL - HALAMAN PERTAMA YANG DILIHAT SETIAP ORANG
+ * ============================================================================
+ *
+ * Dasbor Manajemen Surat hanya dibuka orang yang mengurus surat. Portal dibuka
+ * SEMUA orang, tiap kali masuk, dan isinya paling berbeda-beda kepentingannya:
+ * jurusita menuju relaas, kasir menuju keuangan, panitera menuju perkara. Di
+ * sinilah menyusun sendiri paling berguna.
+ *
+ * Dua zona, dan pemisahannya disengaja:
+ *
+ *   portal-utama     tiga kartu besar - bagian mana yang lebih dulu dibaca
+ *   portal-aplikasi  ubin aplikasi DI DALAM kartu menu - aplikasi mana yang
+ *                    lebih dulu dijangkau
+ *
+ * Kalau keduanya dijadikan satu zona, sebuah ubin aplikasi dapat mendarat di
+ * antara kartu besar dan meregang selebar halaman - susunan yang dapat dibuat
+ * pengguna tetapi tidak pernah diinginkannya.
+ */
+export const ZONA_PORTAL: { zona: string; nama: string; keterangan: string; kartu: KartuDasbor[] }[] = [
+  {
+    zona: "portal-utama",
+    nama: "Kartu portal",
+    keterangan: "Tiga kartu besar di halaman Menu Kerja. Urutannya menentukan apa yang terbaca lebih dulu tiap kali masuk.",
+    kartu: [
+      {
+        kunci: "ringkasan-kerja",
+        judul: "Ringkasan Kerja",
+        keterangan: "Angka keadaan hari ini beserta tindakan cepatnya.",
+        terbatas: "Hanya Super Admin",
+      },
+      {
+        kunci: "menu-aplikasi",
+        judul: "Aplikasi yang Bisa Dibuka",
+        keterangan: "Pintu ke seluruh aplikasi ALETA. Yang paling sering dituju kebanyakan orang.",
+      },
+      {
+        kunci: "tugas-penting",
+        judul: "Tugas Penting",
+        keterangan: "Tugas dan pemberitahuan yang menunggu, dengan tautan langsung ke tiap butirnya.",
+      },
+    ],
+  },
+];
+
+export const KUNCI_KARTU_PORTAL = ZONA_PORTAL.flatMap((z) => z.kartu.map((k) => k.kunci));
+
+/**
+ * Halaman yang susunan bawaannya dapat disetel Super Admin.
+ *
+ * Zona ubin aplikasi TIDAK ada di sini, dan itu keputusan: daftar aplikasinya
+ * berbeda menurut peran dan hak akses tiap orang, sehingga keping bernama di
+ * layar pengaturan tidak akan mewakili apa yang sesungguhnya dilihat pegawai.
+ * Ubin aplikasi tetap dapat disusun tiap orang pada halaman portalnya sendiri.
+ */
+export const HALAMAN_DASBOR: {
+  halaman: string;
+  nama: string;
+  keterangan: string;
+  zona: { zona: string; nama: string; keterangan: string; kartu: KartuDasbor[] }[];
+}[] = [
+  {
+    halaman: "manajemen-surat",
+    nama: "Dasbor Manajemen Surat",
+    keterangan: "Dibuka petugas yang mengurus surat masuk, surat keluar, dan disposisi.",
+    zona: ZONA_DASBOR,
+  },
+  {
+    halaman: "portal",
+    nama: "Portal - Menu Kerja",
+    keterangan: "Halaman pertama sesudah masuk. Dilihat seluruh pegawai, apa pun jabatannya.",
+    zona: ZONA_PORTAL,
+  },
+];
