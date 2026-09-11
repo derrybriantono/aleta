@@ -295,6 +295,13 @@
       "when": 1789107258932,
       "tag": "0041_sesi_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1789107672928,
+      "tag": "0042_tata_letak_bawaan",
+      "breakpoints": true
     }
   ]
 }

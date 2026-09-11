@@ -70,7 +70,42 @@ function IsiDasborSurat() {
   const dueTodayDispositionCount = visibleDispositions.filter(
     (item) => item.status !== "Selesai" && getDispositionDeadlineState(item) === "due_today"
   ).length;
+  /**
+   * ==========================================================================
+   * URUTAN BAWAAN: BERTINDAK, MENGERJAKAN, LALU MENGETAHUI
+   * ==========================================================================
+   *
+   * Dulu dua kartu jumlah total berdiri paling depan, dan kartu yang menyebut
+   * ada yang TERLAMBAT berada paling belakang - di layar sempit, di luar
+   * pandangan. Dasbor yang dibuka tiap pagi seharusnya memimpin dengan yang
+   * menuntut perbuatan, bukan dengan angka yang tidak berubah sepanjang hari.
+   *
+   *   1. Disposisi Terlambat - satu-satunya kartu yang menyatakan ada yang
+   *      KELIRU, bukan sekadar belum selesai. Tenggat yang lewat pada
+   *      disposisi berakibat pada perkara orang.
+   *   2. Tugas Masuk - yang harus dikerjakan hari ini, oleh orang ini.
+   *   3. Surat Masuk - jumlah yang perlu diketahui, tidak menuntut apa pun.
+   *   4. Surat Keluar - jumlah keluaran; paling jarang menjadi sebab seseorang
+   *      membuka dasbor.
+   *
+   * Ini hanya TITIK BERANGKAT. Super Admin dapat menyusun ulang bawaannya dari
+   * Pengaturan Panel, dan tiap pegawai dapat menyusun dasbornya sendiri.
+   */
   const stats = [
+    {
+      id: "disposisi-terlambat",
+      label: "Disposisi Terlambat",
+      value: lateDispositionCount,
+      hint: `${dueTodayDispositionCount} jatuh tempo hari ini.`,
+      href: "/tugas?filter=urgent",
+    },
+    {
+      id: "tugas-masuk",
+      label: "Tugas Masuk",
+      value: pendingInbox.length,
+      hint: "Surat yang masih perlu Anda cek.",
+      href: "/surat?metric=inbox",
+    },
     {
       id: "surat-masuk",
       label: "Surat Masuk (Total)",
@@ -84,20 +119,6 @@ function IsiDasborSurat() {
       value: accessibleLetters.filter((letter) => letter.type === "keluar").length,
       hint: "",
       href: "/surat?type=keluar",
-    },
-    {
-      id: "tugas-masuk",
-      label: "Tugas Masuk",
-      value: pendingInbox.length,
-      hint: "Surat yang masih perlu Anda cek.",
-      href: "/surat?metric=inbox",
-    },
-    {
-      id: "disposisi-terlambat",
-      label: "Disposisi Terlambat",
-      value: lateDispositionCount,
-      hint: `${dueTodayDispositionCount} jatuh tempo hari ini.`,
-      href: "/tugas?filter=urgent",
     },
   ];
   const recentActivities = dispositions
@@ -188,15 +209,6 @@ function IsiDasborSurat() {
         data-testid="mail-dashboard-panel-grid"
         className="grid gap-6 xl:grid-cols-[1.14fr_0.86fr]"
       >
-        {currentUser?.roleId === "super-admin" ? (
-          // Kewenangannya diperiksa DI SINI, bukan lewat susunan tersimpan.
-          // Kartu yang tidak digambar tidak akan pernah muncul walau kuncinya
-          // masih tercatat pada urutan lama seseorang.
-          <ItemGeser kunci="whatsapp" judul="Kendali WhatsApp" className="hidden sm:block xl:col-span-2">
-            <WhatsAppControl />
-          </ItemGeser>
-        ) : null}
-
         <ItemGeser kunci="tugas-penting" judul="Tugas Penting" className="hidden md:block">
         <Card className="h-full border-border/80">
           <CardHeader>
@@ -295,6 +307,19 @@ function IsiDasborSurat() {
           </CardContent>
         </Card>
         </ItemGeser>
+
+        {currentUser?.roleId === "super-admin" ? (
+          // Terakhir dengan sengaja: kendali WhatsApp perkakas infrastruktur,
+          // bukan keterangan perkara. Yang membuka dasbor mencari pekerjaannya
+          // hari itu, dan gerbang pesan bukan bagian dari pekerjaan itu.
+          //
+          // Kewenangannya diperiksa DI SINI, bukan lewat susunan tersimpan:
+          // kartu yang tidak digambar tidak akan pernah muncul walau kuncinya
+          // masih tercatat pada urutan lama seseorang.
+          <ItemGeser kunci="whatsapp" judul="Kendali WhatsApp" className="hidden sm:block xl:col-span-2">
+            <WhatsAppControl />
+          </ItemGeser>
+        ) : null}
       </SusunanGeser>
     </div>
   );

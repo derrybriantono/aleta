@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { AccessDeniedCard, PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DasborBawaanPengaturan } from "@/components/portal/dasbor-bawaan-pengaturan";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -424,6 +425,10 @@ export function PanelSettingsPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Susunan bawaan dasbor: kartunya menyembunyikan dirinya sendiri bagi
+          yang bukan Super Admin - lihat catatan di dalamnya. */}
+      <DasborBawaanPengaturan />
     </div>
   );
 }

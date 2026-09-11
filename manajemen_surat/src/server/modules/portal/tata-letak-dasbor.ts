@@ -151,3 +151,88 @@ export async function hapusTataLetak(
     .run(actor.id, periksaHalaman(halaman));
   return {} as SusunanDasbor;
 }
+
+/**
+ * ============================================================================
+ * SUSUNAN BAWAAN - TITIK BERANGKAT YANG DITENTUKAN SUPER ADMIN
+ * ============================================================================
+ *
+ * Pegawai yang belum pernah menyusun dasbornya, dan siapa pun yang menekan
+ * "Kembalikan susunan bawaan", mendarat di sini. Sebelumnya keduanya mendarat
+ * pada urutan yang dipatok di kode - padahal yang paling tahu urutan mana yang
+ * berguna di satuan kerja ini adalah orang di satuan kerja itu.
+ *
+ * Tidak disalin ke tiap akun, dengan sengaja: susunan yang disalin membeku,
+ * dan bawaan yang diubah kelak tidak akan pernah sampai kepada siapa pun yang
+ * barisnya sudah terlanjur terisi. Ia dibaca berdampingan dengan susunan
+ * pribadi, dan susunan pribadi menimpanya hanya bila memang ada.
+ */
+export async function bacaTataLetakBawaan(
+  db: AletaDatabase,
+  halaman: string
+): Promise<SusunanDasbor> {
+  const baris = await db
+    .prepare("SELECT susunan_json FROM tata_letak_bawaan WHERE halaman = ?")
+    .all<{ susunan_json: string }>(periksaHalaman(halaman));
+
+  if (baris.length === 0) return {};
+
+  try {
+    return bersihkanSusunan(JSON.parse(baris[0].susunan_json));
+  } catch {
+    return {};
+  }
+}
+
+/** Menyimpan susunan bawaan. Hanya Super Admin. */
+export async function simpanTataLetakBawaan(
+  db: AletaDatabase,
+  actorUserId: string | null | undefined,
+  halaman: string,
+  susunan: unknown
+): Promise<SusunanDasbor> {
+  const actor = await requireActorUser(db, actorUserId);
+
+  // Setelan bersama yang mengubah layar SETIAP pegawai. Admin tidak diberi
+  // jalan ke sini dengan alasan yang sama seperti pada kewenangan ekstensi:
+  // yang berakibat pada semua orang sekaligus tidak boleh menjadi perbuatan
+  // sehari-hari yang dapat dilakukan sambil lalu oleh beberapa orang.
+  if (String(actor.roleId || "") !== "super-admin") {
+    throw new ApiError(403, "Hanya Super Admin yang dapat mengubah susunan bawaan dasbor.");
+  }
+
+  const namaHalaman = periksaHalaman(halaman);
+  const bersih = bersihkanSusunan(susunan);
+
+  await db
+    .prepare(
+      "INSERT INTO tata_letak_bawaan (halaman, susunan_json, updated_at, updated_by) " +
+        "VALUES (?, ?, ?, ?) " +
+        "ON CONFLICT(halaman) DO UPDATE SET " +
+        "susunan_json = excluded.susunan_json, updated_at = excluded.updated_at, " +
+        "updated_by = excluded.updated_by"
+    )
+    .run(namaHalaman, JSON.stringify(bersih), new Date().toISOString(), actor.id);
+
+  return bersih;
+}
+
+/**
+ * Mengembalikan bawaan ke urutan yang tertulis di kode.
+ *
+ * Barisnya dihapus, bukan diisi urutan kode hari ini - alasannya sama dengan
+ * hapusTataLetak: bawaan yang tertulis di kode dapat berubah ketika kartu baru
+ * ditambahkan.
+ */
+export async function hapusTataLetakBawaan(
+  db: AletaDatabase,
+  actorUserId: string | null | undefined,
+  halaman: string
+) {
+  const actor = await requireActorUser(db, actorUserId);
+  if (String(actor.roleId || "") !== "super-admin") {
+    throw new ApiError(403, "Hanya Super Admin yang dapat mengubah susunan bawaan dasbor.");
+  }
+  await db.prepare("DELETE FROM tata_letak_bawaan WHERE halaman = ?").run(periksaHalaman(halaman));
+  return {} as SusunanDasbor;
+}

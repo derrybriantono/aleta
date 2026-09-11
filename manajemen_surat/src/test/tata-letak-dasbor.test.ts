@@ -3,14 +3,21 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { type AletaDatabase, createAletaDatabase } from "@/server/db/client";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import {
   BATAS_KUNCI_PER_ZONA,
   BATAS_ZONA,
   bacaTataLetak,
+  bacaTataLetakBawaan,
   bersihkanSusunan,
   hapusTataLetak,
+  hapusTataLetakBawaan,
   simpanTataLetak,
+  simpanTataLetakBawaan,
 } from "@/server/modules/portal/tata-letak-dasbor";
+import { KUNCI_KARTU_DASBOR, ZONA_DASBOR } from "@/lib/dasbor-kartu";
 import { pindahkan, terapkanUrutan } from "@/components/portal/susunan-geser";
 import { createManagedUserInDb } from "@/server/modules/users/service";
 
@@ -216,5 +223,107 @@ describe("penyimpanan susunan", () => {
       .run(orang.id, "manajemen-surat", "{bukan json", new Date().toISOString());
 
     expect(await bacaTataLetak(db!, orang.id, "manajemen-surat")).toEqual({});
+  });
+});
+
+describe("susunan bawaan yang ditentukan Super Admin", () => {
+  async function buatSuperAdmin() {
+    urutan += 1;
+    return createManagedUserInDb(db!, "usr-super", {
+      roleOverride: "super-admin",
+      username: `sa${urutan}`,
+      password: "rahasia123",
+      email: `sa${urutan}@pa.go.id`,
+      whatsappNumber: `62812377${String(1000 + urutan)}`,
+      name: `Super ${urutan}`,
+      nip: `19940102201777${String(1000 + urutan)}`,
+      positionId: "pos-ketua",
+      isActive: true,
+    });
+  }
+
+  it("tersimpan dan terbaca untuk semua orang", async () => {
+    const sa = await buatSuperAdmin();
+    await simpanTataLetakBawaan(db!, sa.id, "manajemen-surat", {
+      ringkasan: ["tugas-masuk", "disposisi-terlambat"],
+    });
+
+    expect(await bacaTataLetakBawaan(db!, "manajemen-surat")).toEqual({
+      ringkasan: ["tugas-masuk", "disposisi-terlambat"],
+    });
+  });
+
+  it("hanya Super Admin yang boleh mengubahnya", async () => {
+    const orang = await buatPegawai();
+    await expect(
+      simpanTataLetakBawaan(db!, orang.id, "manajemen-surat", { ringkasan: ["a"] })
+    ).rejects.toThrow(/Hanya Super Admin/i);
+    await expect(hapusTataLetakBawaan(db!, orang.id, "manajemen-surat")).rejects.toThrow(
+      /Hanya Super Admin/i
+    );
+  });
+
+  it("susunan pribadi pegawai TIDAK tersentuh ketika bawaan diubah", async () => {
+    // Inilah sebab bawaan tidak disalin ke tiap akun: yang disalin membeku,
+    // dan yang punya susunan sendiri tidak boleh ikut berubah diam-diam.
+    const sa = await buatSuperAdmin();
+    const orang = await buatPegawai();
+
+    await simpanTataLetak(db!, orang.id, "manajemen-surat", { ringkasan: ["surat-keluar"] });
+    await simpanTataLetakBawaan(db!, sa.id, "manajemen-surat", { ringkasan: ["tugas-masuk"] });
+
+    expect(await bacaTataLetak(db!, orang.id, "manajemen-surat")).toEqual({
+      ringkasan: ["surat-keluar"],
+    });
+  });
+
+  it("dikembalikan ke urutan asal aplikasi dengan menghapus barisnya", async () => {
+    const sa = await buatSuperAdmin();
+    await simpanTataLetakBawaan(db!, sa.id, "manajemen-surat", { ringkasan: ["tugas-masuk"] });
+    await hapusTataLetakBawaan(db!, sa.id, "manajemen-surat");
+
+    expect(await bacaTataLetakBawaan(db!, "manajemen-surat")).toEqual({});
+  });
+
+  it("masukannya dibersihkan dengan aturan yang sama", async () => {
+    const sa = await buatSuperAdmin();
+    const hasil = await simpanTataLetakBawaan(db!, sa.id, "manajemen-surat", {
+      ringkasan: ["sah", "TIDAK SAH", "sah"],
+    });
+    expect(hasil).toEqual({ ringkasan: ["sah"] });
+  });
+});
+
+describe("katalog kartu dasbor tidak boleh menyimpang dari dasbornya", () => {
+  it("setiap kunci pada katalog benar-benar dipakai berkas dasbor", () => {
+    // Layar pengaturan menyusun kunci dari katalog ini. Kunci yang tidak ada
+    // di dasbor akan tersimpan, terbaca sah, lalu diabaikan diam-diam.
+    const dasbor = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/mail-dashboard-page.tsx"),
+      "utf8"
+    );
+    for (const kunci of KUNCI_KARTU_DASBOR) {
+      expect(dasbor, kunci).toContain(`"${kunci}"`);
+    }
+  });
+
+  it("setiap kartu yang digeser di dasbor ada pada katalog", () => {
+    const dasbor = readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/mail-dashboard-page.tsx"),
+      "utf8"
+    );
+    const dipakai = [...dasbor.matchAll(/<ItemGeser[^>]*kunci="([a-z0-9-]+)"/g)].map((m) => m[1]);
+    expect(dipakai.length).toBeGreaterThan(0);
+    for (const kunci of dipakai) {
+      expect(KUNCI_KARTU_DASBOR, kunci).toContain(kunci);
+    }
+  });
+
+  it("urutan katalog memimpin dengan yang menuntut perbuatan", () => {
+    // Dasbor yang dibuka tiap pagi tidak boleh memimpin dengan angka yang
+    // tidak berubah sepanjang hari.
+    const ringkasan = ZONA_DASBOR.find((z) => z.zona === "ringkasan");
+    expect(ringkasan?.kartu[0].kunci).toBe("disposisi-terlambat");
+    expect(ringkasan?.kartu[1].kunci).toBe("tugas-masuk");
   });
 });

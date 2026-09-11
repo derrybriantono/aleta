@@ -645,6 +645,18 @@ export const ecourtExtensionAccess = pgTable(
 );
 
 /**
+ * Susunan bawaan dasbor yang ditentukan Super Admin untuk seluruh pegawai.
+ *
+ * Lihat catatan pada drizzle/0042_tata_letak_bawaan.sql.
+ */
+export const tataLetakBawaan = pgTable("tata_letak_bawaan", {
+  halaman: text("halaman").primaryKey(),
+  susunanJson: text("susunan_json").notNull().default("{}"),
+  updatedAt: text("updated_at").notNull(),
+  updatedBy: text("updated_by"),
+});
+
+/**
  * Penanda sesi portal: diingat atau tidak, dan versi aplikasi saat masuk.
  *
  * Lihat catatan pada drizzle/0041_sesi_portal.sql.

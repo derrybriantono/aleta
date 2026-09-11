@@ -264,6 +264,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "ecourt_extension_access_user",
   "tata_letak_dasbor",
   "sesi_portal",
+  "tata_letak_bawaan",
   "aleta_sipp_hari_sidang",
   "aleta_sipp_aturan_penunjukan",
   "aleta_sipp_penunjukan_antrean",

@@ -76,11 +76,15 @@ import { apiPath } from "@/lib/base-path";
 type Susunan = Record<string, string[]>;
 
 type IsiPenata = {
+  /** Susunan yang dipakai menggambar: milik sendiri bila ada, kalau tidak bawaan. */
   susunan: Susunan;
   /** Menyimpan urutan satu zona: seketika di peramban, lalu ke server. */
   simpanZona: (zona: string, urutan: string[]) => void;
   kembalikanBawaan: () => void;
+  /** Pengguna ini PERNAH menyusun dasbornya sendiri. */
   sudahDisusun: boolean;
+  /** "bawaan" berarti sedang menyunting susunan bawaan untuk semua pegawai. */
+  sasaran: "saya" | "bawaan";
 };
 
 const KonteksPenata = createContext<IsiPenata | null>(null);
@@ -116,11 +120,30 @@ function tulisSinggahan(halaman: string, susunan: Susunan) {
  * per setengah detik. Penulisan yang mengiringi tiap lepasan tidak perlu
  * ditunggu siapa pun: layarnya sudah benar sebelum permintaannya berangkat.
  */
-export function PenataDasbor({ halaman, children }: { halaman: string; children: ReactNode }) {
+export function PenataDasbor({
+  halaman,
+  sasaran = "saya",
+  children,
+}: {
+  halaman: string;
+  /**
+   * "saya" - susunan pribadi pengguna, dengan bawaan sebagai titik berangkat.
+   * "bawaan" - Super Admin sedang menyunting titik berangkat itu sendiri.
+   */
+  sasaran?: "saya" | "bawaan";
+  children: ReactNode;
+}) {
   const [susunan, setSusunan] = useState<Susunan>({});
+  // Susunan bawaan dari Super Admin. Dipakai untuk zona yang belum pernah
+  // disusun sendiri oleh pengguna ini - termasuk sesudah ia menekan
+  // "Kembalikan susunan bawaan".
+  const [bawaan, setBawaan] = useState<Susunan>({});
   const [sudahDisusun, setSudahDisusun] = useState(false);
   const tundaSimpan = useRef<number | null>(null);
   const terakhirDikirim = useRef<Susunan>({});
+
+  const menyuntingBawaan = sasaran === "bawaan";
+  const alamat = menyuntingBawaan ? "/api/dasbor/tata-letak-bawaan" : "/api/dasbor/tata-letak";
 
   // useLayoutEffect, bukan useEffect: keduanya berjalan sesudah HTML dari
   // server terpasang, tetapi hanya useLayoutEffect yang selesai SEBELUM
@@ -128,12 +151,16 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
   // dalam urutan bawaan lalu melompat ke urutan pengguna - dan lompatan itu
   // terlihat pada tiap pemuatan halaman.
   useLayoutEffect(() => {
+    // Susunan bawaan TIDAK disinggahkan di peramban: ia setelan bersama, dan
+    // salinan lama di satu komputer akan menampilkan sesuatu yang sudah tidak
+    // berlaku bagi siapa pun - persis pada layar yang dipakai mengubahnya.
+    if (menyuntingBawaan) return;
     const dariPeramban = bacaSinggahan(halaman);
     if (Object.keys(dariPeramban).length > 0) {
       setSusunan(dariPeramban);
       setSudahDisusun(true);
     }
-  }, [halaman]);
+  }, [halaman, menyuntingBawaan]);
 
   // Server dibaca sesudahnya, dan menang bila berbeda: ia yang mengikuti
   // pengguna berpindah komputer. Singgahan peramban hanya mempercepat gambar
@@ -143,19 +170,25 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
     void (async () => {
       try {
         const jawaban = await fetch(
-          apiPath(`/api/dasbor/tata-letak?halaman=${encodeURIComponent(halaman)}`),
+          apiPath(`${alamat}?halaman=${encodeURIComponent(halaman)}`),
           { cache: "no-store" }
         );
         if (!jawaban.ok || dibatalkan) return;
-        const isi = await jawaban.json();
-        const dariServer = (isi?.data ?? isi)?.susunan;
-        if (!dariServer || typeof dariServer !== "object" || dibatalkan) return;
+        const isi = (await jawaban.json())?.data ?? {};
+        if (dibatalkan) return;
+
+        const dariBawaan = isi?.bawaan;
+        if (dariBawaan && typeof dariBawaan === "object") setBawaan(dariBawaan as Susunan);
+
+        // Pada mode bawaan, yang disunting adalah bawaannya sendiri.
+        const dariServer = menyuntingBawaan ? dariBawaan : isi?.susunan;
+        if (!dariServer || typeof dariServer !== "object") return;
 
         terakhirDikirim.current = dariServer as Susunan;
         if (Object.keys(dariServer).length > 0) {
           setSusunan(dariServer as Susunan);
           setSudahDisusun(true);
-          tulisSinggahan(halaman, dariServer as Susunan);
+          if (!menyuntingBawaan) tulisSinggahan(halaman, dariServer as Susunan);
         }
       } catch {
         /* dasbor tetap memakai susunan dari peramban */
@@ -164,7 +197,7 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
     return () => {
       dibatalkan = true;
     };
-  }, [halaman]);
+  }, [alamat, halaman, menyuntingBawaan]);
 
   const kirimKeServer = useCallback(
     (isi: Susunan) => {
@@ -172,7 +205,7 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
       tundaSimpan.current = window.setTimeout(() => {
         tundaSimpan.current = null;
         terakhirDikirim.current = isi;
-        void fetch(apiPath("/api/dasbor/tata-letak"), {
+        void fetch(apiPath(alamat), {
           method: "PUT",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ halaman, susunan: isi }),
@@ -181,23 +214,26 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
         });
       }, 500);
     },
-    [halaman]
+    [alamat, halaman]
   );
 
   const simpanZona = useCallback(
     (zona: string, urutan: string[]) => {
       setSusunan((lama) => {
         const baru = { ...lama, [zona]: urutan };
-        tulisSinggahan(halaman, baru);
+        if (!menyuntingBawaan) tulisSinggahan(halaman, baru);
         kirimKeServer(baru);
         return baru;
       });
       setSudahDisusun(true);
     },
-    [halaman, kirimKeServer]
+    [halaman, kirimKeServer, menyuntingBawaan]
   );
 
   const kembalikanBawaan = useCallback(() => {
+    // Susunan pribadinya dihapus - yang tersisa susunan bawaan dari Super
+    // Admin, yang sudah ada di tangan. Layarnya berpindah ke sana seketika,
+    // tanpa menunggu jaringan.
     setSusunan({});
     setSudahDisusun(false);
     try {
@@ -206,12 +242,12 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
       /* tidak apa-apa */
     }
     if (tundaSimpan.current !== null) window.clearTimeout(tundaSimpan.current);
-    void fetch(apiPath(`/api/dasbor/tata-letak?halaman=${encodeURIComponent(halaman)}`), {
+    void fetch(apiPath(`${alamat}?halaman=${encodeURIComponent(halaman)}`), {
       method: "DELETE",
     }).catch(() => {
       /* susunan peramban sudah dibersihkan */
     });
-  }, [halaman]);
+  }, [alamat, halaman]);
 
   // Penyimpanan yang masih tertunda saat halaman ditutup akan hilang. Dikirim
   // paksa lewat sendBeacon - satu-satunya cara yang tidak dibatalkan peramban
@@ -223,7 +259,7 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
       tundaSimpan.current = null;
       try {
         navigator.sendBeacon?.(
-          apiPath("/api/dasbor/tata-letak"),
+          apiPath(alamat),
           new Blob([JSON.stringify({ halaman, susunan })], { type: "application/json" })
         );
       } catch {
@@ -235,11 +271,20 @@ export function PenataDasbor({ halaman, children }: { halaman: string; children:
       window.removeEventListener("pagehide", saatTutup);
       saatTutup();
     };
-  }, [halaman, susunan]);
+  }, [alamat, halaman, susunan]);
+
+  // Yang dipakai menggambar: zona yang pernah disusun sendiri memakai susunan
+  // pribadi, sisanya memakai bawaan dari Super Admin. Digabung per ZONA, bukan
+  // per halaman - pegawai yang hanya menyusun ulang kartu ringkasan tetap
+  // mengikuti bawaan pada panel besarnya.
+  const terpakai = useMemo<Susunan>(() => {
+    if (menyuntingBawaan) return susunan;
+    return { ...bawaan, ...susunan };
+  }, [bawaan, menyuntingBawaan, susunan]);
 
   const isi = useMemo<IsiPenata>(
-    () => ({ susunan, simpanZona, kembalikanBawaan, sudahDisusun }),
-    [susunan, simpanZona, kembalikanBawaan, sudahDisusun]
+    () => ({ susunan: terpakai, simpanZona, kembalikanBawaan, sudahDisusun, sasaran }),
+    [terpakai, simpanZona, kembalikanBawaan, sudahDisusun, sasaran]
   );
 
   return <KonteksPenata.Provider value={isi}>{children}</KonteksPenata.Provider>;
@@ -306,6 +351,8 @@ export function TombolKembalikanSusunan() {
   const penata = usePenataDasbor();
   if (!penata?.sudahDisusun) return null;
 
+  const menyuntingBawaan = penata.sasaran === "bawaan";
+
   return (
     <button
       type="button"
@@ -313,7 +360,7 @@ export function TombolKembalikanSusunan() {
       className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-      Kembalikan susunan bawaan
+      {menyuntingBawaan ? "Kembalikan ke urutan asal aplikasi" : "Kembalikan susunan bawaan"}
     </button>
   );
 }

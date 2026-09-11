@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import {
   bacaTataLetak,
+  bacaTataLetakBawaan,
   hapusTataLetak,
   simpanTataLetak,
 } from "@/server/modules/portal/tata-letak-dasbor";
@@ -43,7 +44,13 @@ export async function GET(request: NextRequest) {
     const actor = await requireActorUser(db, actorUserId);
     const halaman = getSearchParam(request, "halaman") || "";
 
-    return ok({ susunan: await bacaTataLetak(db, actor.id, halaman) });
+    // Keduanya dikirim terpisah, bukan sudah tergabung: layar perlu tahu
+    // apakah pengguna ini PERNAH menyusun dasbornya sendiri - itu yang
+    // menentukan tombol "Kembalikan susunan bawaan" digambar atau tidak.
+    return ok({
+      susunan: await bacaTataLetak(db, actor.id, halaman),
+      bawaan: await bacaTataLetakBawaan(db, halaman),
+    });
   } catch (error) {
     return handleRouteError(error);
   }
