@@ -94,6 +94,44 @@ describe("mengisi borang putusan SIPP", () => {
     expect(konten).toContain('document.querySelector("#frm_putusan")');
   });
 
+  it("medan pilihan ditanyakan ke halaman, bukan dihafal aturannya", () => {
+    // Faktor perceraian hanya muncul pada perkara cerai yang dikabulkan,
+    // alasan dispensasi hanya pada dispensasi kawin, keadaan istri pada
+    // keadaan tertentu lagi. Aturan itu milik SIPP; menyalinnya ke ekstensi
+    // berarti menyimpang diam-diam pada hari SIPP mengubahnya.
+    expect(konten).toContain('jenis: "pilihan"');
+    expect(konten).toContain("jawabPilihan.tampak");
+    expect(konten).toContain('{ penunjuk: "#faktor_cerai"');
+    expect(konten).toContain('{ penunjuk: "#alasan_dispen"');
+    expect(konten).toContain('{ penunjuk: "#keadaan_istri"');
+  });
+
+  it("usulan yang berselisih tidak dicentang sendiri", () => {
+    expect(konten).toContain('usul.keyakinan !== "bentrok"');
+  });
+
+  it("medan pilihan diisi LEBIH DULU daripada teks panjang", () => {
+    // Sebagian pilihan mengubah tampilan borang - qobla menentukan
+    // muncul-tidaknya keadaan istri. Mengisinya belakangan berarti perubahan
+    // itu terjadi ketika petugas sudah berhenti memperhatikan.
+    const bagian = konten.slice(
+      konten.indexOf("terap.addEventListener"),
+      konten.indexOf("function bagianBacaBorang(")
+    );
+    const pilihanDulu = bagian.indexOf('jenisMedan: "pilih"');
+    const teksKemudian = bagian.indexOf('jenisMedan: "kaya"');
+    expect(pilihanDulu).toBeGreaterThan(-1);
+    expect(teksKemudian).toBeGreaterThan(-1);
+    expect(pilihanDulu).toBeLessThan(teksKemudian);
+  });
+
+  it("jembatan dapat membaca pilihan beserta tampak-tidaknya medan", () => {
+    const jembatan = baca("jembatan.js");
+    expect(jembatan).toContain("function bacaPilihan(");
+    expect(jembatan).toContain('pesan.jenis === "pilihan"');
+    expect(jembatan).toContain("offsetParent");
+  });
+
   it("tidak menyentuh status putusan, verstek, maupun sumber hukum", () => {
     // Pilihannya sudah disaring SIPP menurut jenis dan alur perkara, dan
     // salah pilih di situ mengubah jenis putusannya - bukan sekadar salah

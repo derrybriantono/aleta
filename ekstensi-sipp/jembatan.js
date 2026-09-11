@@ -113,6 +113,70 @@
     return { ok: true, medan: hasil };
   }
 
+  /**
+   * Daftar pilihan satu medan, beserta apakah medannya sedang TAMPAK.
+   *
+   * ============================================================================
+   * KENAPA "TAMPAK" IKUT DILAPORKAN
+   * ============================================================================
+   *
+   * Borang Putusan Akhir menampilkan medan yang berbeda-beda menurut jenis
+   * perkara dan status putusannya: faktor perceraian hanya muncul pada perkara
+   * perceraian yang dikabulkan, alasan dispensasi hanya pada perkara dispensasi
+   * kawin, keadaan istri hanya pada keadaan tertentu lagi. SIPP sendiri yang
+   * menyembunyikan dan menampilkannya.
+   *
+   * Karena itu ekstensi tidak perlu tahu satu pun aturan itu: medan yang
+   * tersembunyi TIDAK diisi, dan yang menentukan tersembunyi atau tidak adalah
+   * halamannya sendiri. Aturan yang disalin ke ekstensi akan menyimpang diam-
+   * diam pada hari SIPP mengubahnya.
+   *
+   * Yang dikembalikan APA ADANYA dari halaman - nilai dan tulisannya - supaya
+   * tidak ada satu pun nomor pilihan SIPP yang perlu dihafal di tempat lain.
+   */
+  function bacaPilihan(penunjuk) {
+    const elemen = cariElemen(penunjuk);
+    if (!elemen) return { ok: false, alasan: "medan_tidak_ketemu", penunjuk };
+
+    const tampak = Boolean(elemen.offsetParent !== null || elemen.getClientRects().length);
+    const tag = elemen.tagName.toLowerCase();
+
+    if (tag === "select") {
+      const pilihan = Array.from(elemen.options).map((opsi) => ({
+        nilai: opsi.value,
+        label: (opsi.textContent || "").trim(),
+        terpilih: opsi.selected,
+      }));
+      return { ok: true, penunjuk, tag, tampak, nilaiSekarang: elemen.value, pilihan };
+    }
+
+    // Kelompok radio dibaca lewat namanya - "nusyuz" dan "tidak_nusyuz" adalah
+    // dua elemen dengan satu nama, dan yang berarti bagi pemanggil adalah
+    // kelompoknya, bukan salah satu kotaknya.
+    if (tag === "input" && (elemen.type === "radio" || elemen.type === "checkbox")) {
+      const nama = elemen.getAttribute("name") || "";
+      const sekelompok = nama
+        ? Array.from(document.querySelectorAll(`input[name="${CSS.escape(nama)}"]`))
+        : [elemen];
+      const pilihan = sekelompok.map((kotak) => ({
+        nilai: kotak.value,
+        label: (labelMedan(kotak) || kotak.value || "").trim(),
+        terpilih: kotak.checked,
+      }));
+      const terpilih = sekelompok.find((kotak) => kotak.checked);
+      return {
+        ok: true,
+        penunjuk,
+        tag: elemen.type,
+        tampak,
+        nilaiSekarang: terpilih ? terpilih.value : "",
+        pilihan,
+      };
+    }
+
+    return { ok: true, penunjuk, tag, tampak, nilaiSekarang: elemen.value ?? "", pilihan: [] };
+  }
+
   /** Melepas peristiwa yang biasa ditunggu kerangka kerja halaman. */
   function lepasPeristiwa(elemen) {
     for (const nama of ["input", "change", "blur"]) {
@@ -247,6 +311,8 @@
     let jawab;
     if (pesan.jenis === "baca") {
       jawab = bacaBorang();
+    } else if (pesan.jenis === "pilihan") {
+      jawab = bacaPilihan(pesan.penunjuk);
     } else if (pesan.jenis === "isi") {
       jawab = isiMedan(pesan.penunjuk, pesan.jenisMedan, pesan.nilai);
     } else if (pesan.jenis === "tekan") {

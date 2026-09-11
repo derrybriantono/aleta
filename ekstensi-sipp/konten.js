@@ -2910,6 +2910,135 @@ function bagianIsiPutusan(nomorPerkara) {
     ];
     for (const satu of daftar) wadah.appendChild(satu.baris);
 
+    // ────────────────────────────────────────────────────────────────────
+    // MEDAN PILIHAN - BERBEDA MENURUT JENIS PERKARA DAN STATUS PUTUSAN
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Perkara cerai yang dikabulkan menuntut faktor perceraian, nusyuz, qobla,
+    // dan kadang keadaan istri. Dispensasi kawin menuntut alasan pengajuan -
+    // hamil, pergaulan bebas, dan seterusnya. Izin poligami, itsbat, dan
+    // pembatalan perkawinan masing-masing punya daftarnya sendiri.
+    //
+    // Tidak satu pun aturan itu disalin ke sini. Yang dikerjakan: menanyakan
+    // kepada HALAMAN medan mana yang sedang tampak beserta daftar pilihannya,
+    // lalu meminta ALETA memilih satu berdasarkan bunyi putusan. Medan yang
+    // disembunyikan SIPP tidak pernah ditawarkan, dan itu sebabnya panel ini
+    // tidak perlu tahu satu pun nomor jenis perkara.
+    const CALON_MEDAN = [
+      { penunjuk: "#faktor_cerai", label: "Faktor Penyebab Perceraian" },
+      { penunjuk: "#faktor_cerai_sekunder", label: "Faktor Penyebab Perceraian (Sekunder)" },
+      { penunjuk: "#keadaan_istri", label: "Keadaan Istri" },
+      { penunjuk: "#qobla", label: "Qobla/Ba'da Dukhul" },
+      { penunjuk: "#alasan_dispen", label: "Alasan Pengajuan Dispensasi Kawin" },
+      { penunjuk: "#akad_syariah_primer", label: "Jenis Akad Syariah" },
+      { penunjuk: "#status_reskom", label: "Hasil Restorative Justice/Reskom" },
+    ];
+
+    const medanTampak = [];
+    for (const calon of CALON_MEDAN) {
+      const jawabPilihan = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
+      if (!jawabPilihan || !jawabPilihan.ok || !jawabPilihan.tampak) continue;
+      const pilihan = (jawabPilihan.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
+      if (pilihan.length === 0) continue;
+      medanTampak.push({
+        kunci: calon.penunjuk,
+        label: calon.label,
+        pilihan,
+        nilaiSekarang: jawabPilihan.nilaiSekarang || "",
+      });
+    }
+
+    const pilihanTerap = [];
+    if (medanTampak.length > 0) {
+      wadah.appendChild(
+        buatElemen(
+          "div",
+          "aleta-tetap-sebab",
+          `Borang ini juga menuntut ${medanTampak.length} pilihan yang berbeda menurut jenis perkara ` +
+            "dan status putusannya. Angka inilah yang kelak menjadi laporan faktor penyebab perceraian " +
+            "dan statistik dispensasi - jadi periksa tiap usulan sebelum dicentang."
+        )
+      );
+
+      let usulanMedan = [];
+      try {
+        const respons = await alatAmbil(
+          ALETA_API_ISIAN_PUTUSAN,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              nomorPerkara: nomorPerkara || "",
+              medan: medanTampak.map((x) => ({ kunci: x.kunci, label: x.label, pilihan: x.pilihan })),
+            }),
+          },
+          "Menyusun usulan pilihan"
+        );
+        if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Menyusun usulan pilihan"));
+        const luar = await respons.json();
+        const isiUsulan = luar && luar.data ? luar.data : luar;
+        usulanMedan = (isiUsulan && isiUsulan.usulan) || [];
+      } catch (galat) {
+        wadah.appendChild(
+          buatElemen("div", "aleta-gagal", String((galat && galat.message) || galat))
+        );
+      }
+
+      for (const medan of medanTampak) {
+        const usul = usulanMedan.find((x) => x.kunci === medan.kunci) || null;
+        const sekarang = (medan.pilihan.find((x) => String(x.nilai) === String(medan.nilaiSekarang)) || {}).label || "";
+        const kartu = buatElemen("div", "aleta-abt-kartu");
+
+        const kepala = buatElemen("div", "aleta-abt-kartu-kepala");
+        const centang = document.createElement("input");
+        centang.type = "checkbox";
+        centang.className = "aleta-abt-centang";
+        // Yang berselisih TIDAK dicentang sendiri: justru itu yang paling
+        // perlu dibaca manusia.
+        centang.checked = Boolean(usul && usul.nilai) && usul.keyakinan !== "bentrok";
+        centang.disabled = !(usul && usul.nilai);
+        kepala.appendChild(centang);
+        kepala.appendChild(buatElemen("span", "aleta-abt-nama", medan.label));
+        const nada =
+          !usul || !usul.nilai
+            ? { kelas: "aleta-tanda-abu", teks: "tidak ditemukan" }
+            : usul.keyakinan === "bentrok"
+            ? { kelas: "aleta-tanda-merah", teks: "naskah menyebut lebih dari satu" }
+            : usul.keyakinan === "pasti"
+            ? { kelas: "aleta-tanda-hijau", teks: "disebut naskah" }
+            : { kelas: "aleta-tanda-kuning", teks: "mendekati" };
+        kepala.appendChild(buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks));
+        kartu.appendChild(kepala);
+
+        const sanding = buatElemen("div", "aleta-abt-sanding");
+        const kini = buatElemen("div", "aleta-abt-kini");
+        kini.appendChild(buatElemen("span", "aleta-abt-label", "sekarang"));
+        kini.appendChild(buatElemen("span", "aleta-abt-isi", sekarang || "(belum dipilih)"));
+        sanding.appendChild(kini);
+        if (usul && usul.nilai) {
+          const usulBaris = buatElemen("div", "aleta-abt-usul");
+          usulBaris.appendChild(buatElemen("span", "aleta-abt-label", "usulan"));
+          usulBaris.appendChild(buatElemen("span", "aleta-abt-isi", usul.nilaiLabel));
+          sanding.appendChild(usulBaris);
+        }
+        kartu.appendChild(sanding);
+
+        if (usul && usul.kutipan) {
+          const kutip = buatElemen("div", "aleta-abt-kutipan");
+          kutip.appendChild(buatElemen("span", "aleta-abt-asal", "Putusan"));
+          kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", usul.kutipan));
+          kartu.appendChild(kutip);
+        }
+        if (usul && usul.alasan) kartu.appendChild(buatElemen("div", "aleta-abt-catatan", usul.alasan));
+
+        wadah.appendChild(kartu);
+        if (usul && usul.nilai) {
+          pilihanTerap.push({ kunci: medan.kunci, nilai: usul.nilai, label: medan.label, centang });
+        }
+      }
+    }
+
     const terap = buatElemen("button", "aleta-permintaan-tombol", "Isikan yang dicentang");
     terap.type = "button";
     const hasilTerap = buatElemen("div", "aleta-abt-kabar");
@@ -2918,13 +3047,31 @@ function bagianIsiPutusan(nomorPerkara) {
 
     terap.addEventListener("click", async () => {
       const dipilih = daftar.filter((x) => x.centang.checked && x.teks);
-      if (dipilih.length === 0) {
+      const medanDipilih = pilihanTerap.filter((x) => x.centang.checked);
+      if (dipilih.length === 0 && medanDipilih.length === 0) {
         hasilTerap.textContent = "Tidak ada yang dicentang.";
         return;
       }
       terap.disabled = true;
       const gagal = [];
       let berhasil = 0;
+
+      // Medan pilihan lebih dulu. Sebagian di antaranya MENGUBAH tampilan
+      // borang - memilih qobla menentukan muncul-tidaknya keadaan istri -
+      // dan mengisinya sesudah teks panjang berarti perubahan itu terjadi
+      // ketika petugas sudah berhenti memperhatikan.
+      for (const satu of medanDipilih) {
+        hasilTerap.textContent = `Memilih ${satu.label}…`;
+        const hasil = await kirimKeJembatan({
+          jenis: "isi",
+          penunjuk: satu.kunci,
+          jenisMedan: "pilih",
+          nilai: satu.nilai,
+        });
+        if (hasil && hasil.ok) berhasil += 1;
+        else gagal.push(`${satu.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+      }
+
       for (const satu of dipilih) {
         hasilTerap.textContent = `Mengisi ${satu.judul}…`;
         // "kaya" - jembatan yang menyentuh CKEditor. Menyetel value pada

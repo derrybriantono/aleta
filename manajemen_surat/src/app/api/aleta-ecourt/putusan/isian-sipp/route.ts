@@ -1,6 +1,9 @@
 import { type NextRequest } from "next/server";
 
 import { susunIsianPutusanSipp, type PihakPerkara } from "@/lib/isian-putusan-sipp";
+import { usulkanMedanPutusan, type MedanPilihan } from "@/lib/usulan-medan-putusan";
+import { pecahNaskahPutusan } from "@/lib/susunan-putusan";
+import { readJsonBody } from "@/server/shared/request";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { getGatewaySippKonteks } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -123,6 +126,82 @@ export async function GET(request: NextRequest) {
       db,
       actorUserId,
       action: "PUTUSAN_ISIAN_SIPP_GAGAL",
+      feature: "aleta_ecourt",
+      entityId: "putusan-isian-sipp",
+    });
+  }
+}
+
+/**
+ * Usulan untuk MEDAN PILIHAN pada borang yang sama.
+ *
+ *   POST { nomorPerkara, medan: [{ kunci, label, pilihan: [{nilai, label}] }] }
+ *
+ * ============================================================================
+ * DAFTAR PILIHANNYA DIKIRIM HALAMAN, BUKAN DISIMPAN DI SINI
+ * ============================================================================
+ *
+ * Borang Putusan Akhir menuntut pilihan yang berbeda-beda menurut jenis
+ * perkara dan status putusannya - faktor perceraian pada perkara cerai yang
+ * dikabulkan, alasan dispensasi pada dispensasi kawin, keadaan istri pada
+ * keadaan tertentu lagi. SIPP sendiri yang menyaring dan menyembunyikannya.
+ *
+ * Karena itu ekstensi mengirimkan daftar yang BENAR-BENAR ADA di borang yang
+ * sedang terbuka, dan yang dikerjakan di sini hanya memilih satu di antaranya
+ * berdasarkan bunyi putusan. Tidak ada satu pun nomor pilihan SIPP yang
+ * dihafal portal: SIPP boleh menambah, menghapus, atau menomori ulang
+ * daftarnya tanpa satu baris pun di sini berubah.
+ *
+ * Yang dicari di dalam naskah hanya PERTIMBANGAN dan DUDUK PERKARA - di
+ * situlah faktanya diuraikan. Amar berisi hukumannya, bukan sebabnya, dan
+ * mencarinya di sana hanya menambah salah tangkap.
+ */
+export async function POST(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
+  try {
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    await pastikanKapabilitas(db, actorUserId, "panel");
+
+    const badan = await readJsonBody<{ nomorPerkara?: string; medan?: MedanPilihan[] }>(request);
+    const nomorPerkara = String(badan?.nomorPerkara ?? "").trim();
+    const medan = Array.isArray(badan?.medan) ? badan.medan : [];
+
+    if (!nomorPerkara) return ok({ ada: false, sebab: "Nomor perkara belum disebut." });
+    if (medan.length === 0) return ok({ ada: false, sebab: "Tidak ada medan pilihan yang perlu diusulkan." });
+
+    const baris = await db.queryOne<{ naskah: string; keadaan: string; versi: number }>(
+      `SELECT naskah, keadaan, versi
+         FROM aleta_putusan_draf
+        WHERE nomor_perkara = ?
+          AND keadaan <> 'dibatalkan'
+        ORDER BY versi DESC
+        LIMIT 1`,
+      [nomorPerkara]
+    );
+
+    if (!baris) {
+      return ok({
+        ada: false,
+        sebab: "Belum ada draf putusan ALETA untuk perkara ini, jadi tidak ada bunyi yang dapat dibaca.",
+      });
+    }
+
+    const bagian = pecahNaskahPutusan(baris.naskah);
+    const dasar = [bagian.pertimbangan ?? "", bagian.dudukPerkara ?? ""].filter(Boolean).join("\n\n");
+
+    return ok({
+      ada: true,
+      versi: baris.versi,
+      keadaan: baris.keadaan,
+      usulan: usulkanMedanPutusan(dasar, medan),
+    });
+  } catch (error) {
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "PUTUSAN_USULAN_MEDAN_GAGAL",
       feature: "aleta_ecourt",
       entityId: "putusan-isian-sipp",
     });

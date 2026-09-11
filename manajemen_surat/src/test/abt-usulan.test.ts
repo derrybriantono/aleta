@@ -332,10 +332,27 @@ describe("ekstensi terdaftar untuk halaman ABT", () => {
 
   it("skrip SIPP TIDAK ikut berjalan di halaman ABT", () => {
     // Seluruh logikanya menganggap dirinya berada di SIPP; menjalankannya di
-    // aplikasi lain hanya menghasilkan galat diam-diam.
+    // aplikasi lain hanya menghasilkan galat diam-diam. Dan bila keduanya
+    // cocok pada satu alamat, panel-alat.js tersuntik DUA KALI ke halaman yang
+    // sama - suntikan kedua melempar galat deklarasi ulang, dan panelnya mati
+    // tanpa satu pesan pun.
+    //
+    // Diperiksa sebagai SIFAT, bukan sebagai daftar yang sama persis: sejak
+    // 1.96.0 ada pola alamat setempat di samping pola peladen, dan daftar yang
+    // dipatok akan menolak tiap pemasangan baru yang sah.
     const m = manifest();
     const sipp = m.content_scripts.find((s) => (s.js || []).includes("konten.js"));
-    expect(sipp?.matches).toEqual(["http://192.168.10.10/SIPP/*"]);
+    const abt = m.content_scripts.find((s) => (s.js || []).includes("abt.js"));
+    expect(sipp?.matches?.length).toBeGreaterThan(0);
+
+    for (const pola of sipp?.matches ?? []) {
+      expect(pola, `pola SIPP ${pola} tidak boleh menjangkau halaman ABT`).not.toContain("aps_badilag");
+    }
+
+    // Dan sebaliknya: tidak satu pun pola ABT yang menjangkau jalur SIPP.
+    for (const pola of abt?.matches ?? []) {
+      expect(pola, `pola ABT ${pola} tidak boleh menjangkau halaman SIPP`).toContain("aps_badilag");
+    }
   });
 
   it("abt.js ikut ditanam ke portal", () => {
