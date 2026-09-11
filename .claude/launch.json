@@ -58,6 +58,18 @@
         "D:/aleta-dev/kerja/jalankan-portal-db-mati.ps1"
       ],
       "port": 3011
+    },
+    {
+      "name": "pratinjau-aleta",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8097",
+        "--directory",
+        "D:/aleta-dev/kerja/pratinjau-aleta"
+      ],
+      "port": 8097
     }
   ]
 }

@@ -1,0 +1,130 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+
+import { modules } from "@/lib/mock-data";
+import {
+  SEMUA_ALAMAT_PINTASAN,
+  susunMenuEkstensi,
+} from "@/server/modules/aleta-ecourt/menu-ekstensi";
+
+/**
+ * Panel ekstensi di halaman ALETA sendiri.
+ *
+ * Yang dijaga: pintasan tiap jabatan menunjuk halaman yang benar-benar ada
+ * dan boleh dibukanya, temanya mengikuti ALETA (bukan membawa tema sendiri),
+ * dan berkas barunya benar-benar ikut ditanam dan dimuati manifest.
+ */
+const baca = (rel: string) => readFileSync(path.resolve(process.cwd(), rel), "utf8");
+const aletaJs = () => baca("../ekstensi-sipp/aleta.js");
+
+describe("pintasan menurut jabatan", () => {
+  it("setiap alamat pada peta pintasan benar-benar ada di daftar modul", () => {
+    // Alamat yang salah ketik tidak akan berbunyi: pintasannya sekadar tidak
+    // pernah tergambar, dan yang menunggu tidak tahu ada yang ditunggu.
+    const hrefModul = new Set(modules.map((m) => m.href));
+    for (const href of SEMUA_ALAMAT_PINTASAN) {
+      expect(hrefModul.has(href), href).toBe(true);
+    }
+  });
+
+  it("Super Admin mendapat pengaturan dan pembaruan; hakim tidak", () => {
+    const sa = susunMenuEkstensi("super-admin").map((m) => m.href);
+    expect(sa).toContain("/admin/aleta-ecourt");
+    expect(sa).toContain("/admin/pembaruan-sistem");
+
+    const hakim = susunMenuEkstensi("hakim").map((m) => m.href);
+    expect(hakim).not.toContain("/admin/aleta-ecourt");
+    expect(hakim).not.toContain("/admin/pembaruan-sistem");
+    expect(hakim).toContain("/perkara");
+  });
+
+  it("tiap jabatan mendapat daftar yang berbeda, dan tidak ada yang kosong", () => {
+    const daftar = ["ketua", "hakim", "panitera", "panitera-pengganti", "jurusita", "admin"].map((r) =>
+      susunMenuEkstensi(r).map((m) => m.href).join("|")
+    );
+    for (const d of daftar) expect(d.length).toBeGreaterThan(0);
+    expect(new Set(daftar).size).toBe(daftar.length);
+  });
+
+  it("peran yang tidak dikenal mendapat pintasan bawaan", () => {
+    const hasil = susunMenuEkstensi("peran-karangan").map((m) => m.href);
+    expect(hasil).toContain("/manajemen-surat");
+  });
+
+  it("peran tambahan Operator menambah papan penetapan, tanpa mengulang", () => {
+    const tanpa = susunMenuEkstensi("jurusita").map((m) => m.href);
+    const dengan = susunMenuEkstensi("jurusita", ["operator"]).map((m) => m.href);
+    expect(tanpa).not.toContain("/aleta-sipp");
+    expect(dengan).toContain("/aleta-sipp");
+    expect(new Set(dengan).size).toBe(dengan.length);
+  });
+
+  it("tiap pintasan membawa label dan keterangan", () => {
+    for (const m of susunMenuEkstensi("panitera")) {
+      expect(m.label.length).toBeGreaterThan(2);
+      expect(m.keterangan.length).toBeGreaterThan(5);
+    }
+  });
+});
+
+describe("aleta.js: mengikuti tema ALETA dan tidak membawa temanya sendiri", () => {
+  it("tema dibaca dari kelas dark pada html, dan didengar perubahannya", () => {
+    const isi = aletaJs();
+    expect(isi).toContain('document.documentElement.classList.contains("dark")');
+    expect(isi).toContain("new MutationObserver(");
+    expect(isi).toContain('attributeFilter: ["class"]');
+  });
+
+  it("warnanya disalin dari token ALETA ke token panel", () => {
+    const isi = aletaJs();
+    for (const token of ["--card", "--foreground", "--primary", "--border", "--muted-foreground"]) {
+      expect(isi, token).toContain(`"${token}"`);
+    }
+    expect(isi).toContain("panel.style.setProperty(tujuan");
+  });
+
+  it("saklar tema milik panel disingkirkan, dan tema tidak diterapkan ke halaman", () => {
+    const isi = aletaJs();
+    expect(isi).toContain('kepala.querySelector(".aleta-tema")');
+    expect(isi).toContain("temaHalaman: false");
+  });
+
+  it("diam di halaman masuk, dan mengejar perpindahan halaman Next.js", () => {
+    const isi = aletaJs();
+    expect(isi).toContain('"/login"');
+    expect(isi).toContain("location.pathname === jalurTerakhir");
+  });
+
+  it("tidak menulis apa pun ke portal - hanya satu GET tentang dirinya sendiri", () => {
+    const isi = aletaJs().replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+    expect(isi).toContain("/api/aleta-ecourt/ekstensi/siapa");
+    expect(isi).not.toMatch(/method:\s*"(POST|PUT|DELETE)"/);
+  });
+});
+
+describe("berkasnya benar-benar dimuat dan ditanam", () => {
+  it("manifest memuati halaman /aleta/* dengan panel-alat.js dan aleta.js", () => {
+    const manifest = JSON.parse(baca("../ekstensi-sipp/manifest.json"));
+    const entri = manifest.content_scripts.find((c: { matches: string[] }) =>
+      c.matches.includes("http://192.168.10.10/aleta/*")
+    );
+    expect(entri).toBeTruthy();
+    expect(entri.js).toEqual(["panel-alat.js", "aleta.js"]);
+    expect(entri.css).toEqual(["panel.css"]);
+  });
+
+  it("susun-ekstensi menanam aleta.js", () => {
+    expect(baca("scripts/susun-ekstensi.mjs")).toContain('"aleta.js",');
+  });
+
+  it("konten.js mencatat perkara yang dibuka, hanya pada halaman detail", () => {
+    const isi = baca("../ekstensi-sipp/konten.js");
+    expect(isi).toContain("async function catatRiwayatPerkaraSipp(nomor, konteks) {");
+    expect(isi).toContain("if (!nomor || !alamatHalamanPerkara()) return;");
+    expect(isi).toContain("void catatRiwayatPerkaraSipp(nomor, isi.konteks);");
+    // Kuncinya sama dengan yang dibaca aleta.js.
+    expect(aletaJs()).toContain('"riwayatPerkaraSipp"');
+    expect(isi).toContain('"riwayatPerkaraSipp"');
+  });
+});

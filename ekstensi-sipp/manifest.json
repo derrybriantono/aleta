@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "ALETA E-Court",
-  "version": "1.94.0",
+  "version": "1.95.0",
   "update_url": "http://192.168.10.10/aleta/api/aleta-ecourt/ekstensi/updates.xml",
-  "description": "Menempelkan keterangan ALETA ke halaman SIPP - batas waktu e-Court, tahapan perkara, kesiapan sidang, kelengkapan berkas - dan mengisikan usulan penunjukan serta Data Umum ke borangnya. Tombol Simpan tetap ditekan petugas.",
+  "description": "Menempelkan keterangan ALETA ke halaman SIPP - batas waktu e-Court, tahapan perkara, kesiapan sidang, kelengkapan berkas - dan mengisikan usulan penunjukan serta Data Umum ke borangnya. Di halaman ALETA sendiri, panelnya menunjukkan versi, kewenangan, pintasan jabatan, dan jalan kembali ke perkara yang dibuka di SIPP. Tombol Simpan tetap ditekan petugas.",
   "permissions": [
     "storage"
   ],
@@ -67,6 +67,19 @@
       "js": [
         "panel-alat.js",
         "abt.js"
+      ],
+      "css": [
+        "panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/aleta/*"
+      ],
+      "js": [
+        "panel-alat.js",
+        "aleta.js"
       ],
       "css": [
         "panel.css"

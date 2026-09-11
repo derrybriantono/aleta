@@ -1918,6 +1918,39 @@ function gambarPenunjukan(isi, data) {
  * Mengembalikan "" bila tidak terbaca - dan itu ditangani sebagai "tidak tahu",
  * bukan sebagai "bukan siapa-siapa".
  */
+/**
+ * Riwayat perkara yang dibuka di SIPP - dibaca panel di halaman ALETA.
+ *
+ * Hanya halaman DETAIL yang dicatat: alamatnya menunjuk satu perkara, sehingga
+ * tautannya membuka perkara itu lagi. Halaman daftar juga memuat nomor
+ * perkara, tetapi alamatnya menunjuk daftar - tautan yang mengantar ke tempat
+ * yang salah lebih buruk daripada tidak ada tautan.
+ *
+ * Delapan yang terakhir, tanpa kembar. Ini kemudahan, bukan catatan: gagal
+ * menulisnya tidak boleh menyentuh apa pun yang lain.
+ */
+const KUNCI_RIWAYAT_SIPP = "riwayatPerkaraSipp";
+
+async function catatRiwayatPerkaraSipp(nomor, konteks) {
+  if (!nomor || !alamatHalamanPerkara()) return;
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_RIWAYAT_SIPP]);
+    const lama = Array.isArray(simpan[KUNCI_RIWAYAT_SIPP]) ? simpan[KUNCI_RIWAYAT_SIPP] : [];
+    const baru = [
+      {
+        nomor,
+        url: location.href,
+        jenis: (konteks && konteks.identitas && konteks.identitas.jenisPerkara) || "",
+        waktu: new Date().toISOString(),
+      },
+      ...lama.filter((x) => x && x.nomor !== nomor),
+    ].slice(0, 8);
+    await chrome.storage.local.set({ [KUNCI_RIWAYAT_SIPP]: baru });
+  } catch {
+    /* riwayat hanya kemudahan */
+  }
+}
+
 function namaPenggunaSipp() {
   const semua = document.querySelectorAll("font");
   for (const huruf of semua) {
@@ -6466,6 +6499,10 @@ async function segarkan() {
     // Kewenangan perannya. Menu yang tidak dapat dipakai tidak digambar sama
     // sekali - sebelumnya ia tetap muncul dan baru menolak sesudah ditekan.
     kapabilitasTerakhir = isi.kapabilitas || null;
+
+    // Perkara ini dicatat sebagai yang terakhir dibuka. Panel di halaman
+    // ALETA membacanya untuk menawarkan jalan kembali dengan satu klik.
+    void catatRiwayatPerkaraSipp(nomor, isi.konteks);
 
     // Keadaan lipatan dan posisi dibaca SEBELUM panel digambar, supaya
     // panel tidak sempat berkedip di tempat lama lalu melompat.

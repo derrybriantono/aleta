@@ -67,6 +67,7 @@ const BERKAS = [
   "manifest.json",
   "konten.js",
   "abt.js",
+  "aleta.js",
   "panel-alat.js",
   "tema-awal.js",
   "jembatan.js",
