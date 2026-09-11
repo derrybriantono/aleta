@@ -645,6 +645,28 @@ export const ecourtExtensionAccess = pgTable(
 );
 
 /**
+ * Pengecualian akses ekstensi untuk satu orang, di atas kewenangan perannya.
+ *
+ * Hanya pengecualian yang disimpan - tidak ada baris berarti ikut peran. Lihat
+ * catatan pada drizzle/0039_ecourt_extension_access_user.sql.
+ */
+export const ecourtExtensionAccessUser = pgTable(
+  "ecourt_extension_access_user",
+  {
+    userId: text("user_id").notNull().references(() => users.id),
+    capability: text("capability").notNull(),
+    enabled: integer("enabled").notNull(),
+    alasan: text("alasan").notNull().default(""),
+    berlakuSampai: text("berlaku_sampai"),
+    updatedAt: text("updated_at").notNull(),
+    updatedBy: text("updated_by"),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.capability] }),
+  })
+);
+
+/**
  * Hari sidang tiap majelis - satu-satunya isi SK yang tidak ada di SIPP.
  *
  * Susunan majelisnya sendiri dibaca langsung dari ref_majelis_tetap milik

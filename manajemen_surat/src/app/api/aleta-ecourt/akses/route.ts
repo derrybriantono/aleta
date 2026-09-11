@@ -4,7 +4,9 @@ import { getDatabase } from "@/server/db/client";
 import {
   KETERANGAN_KAPABILITAS,
   bacaAksesEkstensi,
-  kapabilitasPeran,
+  bacaSemuaPengecualian,
+  kapabilitasPengguna,
+  kemampuanPenuh,
   simpanAksesEkstensi,
 } from "@/server/modules/aleta-ecourt/akses";
 import { requireActorUser } from "@/server/modules/organization/service";
@@ -41,7 +43,13 @@ export async function GET(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
 
-    const kemampuanSaya = await kapabilitasPeran(db, actor.roleId as RoleId);
+    // Kewenangan ORANG ini, bukan jabatannya saja - pengecualian yang
+    // diberikan kepadanya harus ikut terbaca, kalau tidak layar portal akan
+    // mengatakan satu hal dan penjagaan rute mengerjakan hal lain.
+    const kemampuanSaya = await kapabilitasPengguna(db, {
+      id: actor.id,
+      roleId: String(actor.roleId),
+    });
     const penuh = isPrivilegedAdmin(actor);
 
     if (!penuh) {
@@ -57,9 +65,13 @@ export async function GET(request: NextRequest) {
     return ok({
       available: true,
       // Super Admin dan Admin selalu penuh, tanpa melihat tabel sama sekali.
-      saya: { panel: true, berkas: true, permintaan: true },
+      // Disusun dari daftar kemampuan - sebelumnya diketik tangan sebagai tiga
+      // kunci, dan dua kemampuan yang ditambahkan kemudian terbaca undefined
+      // justru bagi peran yang tidak pernah boleh dibatasi.
+      saya: kemampuanPenuh(),
       bolehMengatur: true,
       peran: await bacaAksesEkstensi(db),
+      pengecualian: await bacaSemuaPengecualian(db),
       keterangan: KETERANGAN_KAPABILITAS,
     });
   } catch (error) {
@@ -93,7 +105,12 @@ export async function PUT(request: NextRequest) {
       aktif: Boolean(body.aktif),
     });
 
-    return ok({ available: true, peran, keterangan: KETERANGAN_KAPABILITAS });
+    return ok({
+      available: true,
+      peran,
+      pengecualian: await bacaSemuaPengecualian(db),
+      keterangan: KETERANGAN_KAPABILITAS,
+    });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

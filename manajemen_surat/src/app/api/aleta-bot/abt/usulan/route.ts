@@ -2,7 +2,8 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtUsulan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
-import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { kapabilitasPengguna, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { requireActorUser } from "@/server/modules/organization/service";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -48,13 +49,6 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    const actor = await pastikanKapabilitas(db, actorUserId, "panel");
-    // Siapa yang masuk ALETA - dipakai pita identitas panel ABT. Halaman ABT
-    // tidak menulis nama pengguna di mana pun, jadi satu-satunya sumbernya
-    // sesi portal ini.
-    const peran = daftarPeran.find((x) => x.id === actor.roleId);
-    const pengguna = { nama: actor.name, peran: peran ? peran.name : String(actor.roleId || "") };
-
     const body = await readJsonBody<{
       nomorPerkara?: unknown;
       sumber?: unknown;
@@ -71,11 +65,40 @@ export async function POST(request: NextRequest) {
 
     const sumberMinta = String(body.sumber || "semua");
 
-    // "siapa" hanya menanyakan pengguna yang sedang masuk - tidak ada yang
-    // perlu dihitung bot, jadi dijawab di sini tanpa menyentuh gerbang.
+    // ========================================================================
+    // "siapa" TIDAK MENUNTUT KEMAMPUAN BLANGKO
+    // ========================================================================
+    //
+    // Ia hanya menanyakan siapa yang sedang masuk dan boleh apa - dan justru
+    // yang TIDAK boleh memakai panel blangko paling perlu dijawab, supaya
+    // panelnya dapat menyembunyikan tombol yang akan ditolak alih-alih
+    // menawarkannya lalu gagal sesudah ditekan.
+    //
+    // Yang dijawab tetap tentang dirinya sendiri saja: namanya dan
+    // kemampuannya. Tidak ada keterangan perkara, tidak ada daftar orang lain.
     if (sumberMinta === "siapa") {
-      return ok({ available: true, message: "", pengguna, sipp: null, saksi: null, itsbat: null, saksiSdg: null });
+      const dia = await requireActorUser(db, actorUserId);
+      const peranDia = daftarPeran.find((x) => x.id === dia.roleId);
+      return ok({
+        available: true,
+        message: "",
+        pengguna: {
+          nama: dia.name,
+          peran: peranDia ? peranDia.name : String(dia.roleId || ""),
+        },
+        kapabilitas: await kapabilitasPengguna(db, { id: dia.id, roleId: String(dia.roleId) }),
+        sipp: null,
+        saksi: null,
+        itsbat: null,
+        saksiSdg: null,
+      });
     }
+
+    // Selain "siapa", seluruhnya menyentuh isi perkara dan menyiapkan tulisan
+    // ke ABT - dan itu menuntut kemampuan blangko, bukan sekadar panel.
+    const actor = await pastikanKapabilitas(db, actorUserId, "blangko-abt");
+    const peran = daftarPeran.find((x) => x.id === actor.roleId);
+    const pengguna = { nama: actor.name, peran: peran ? peran.name : String(actor.roleId || "") };
 
     const nomorPerkara = String(body.nomorPerkara || "").trim();
     if (!nomorPerkara) {

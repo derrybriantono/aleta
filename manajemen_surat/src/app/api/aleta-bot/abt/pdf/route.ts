@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
     const body = await readJsonBody<{ rtfBase64?: unknown }>(request).catch(
       () => ({}) as { rtfBase64?: unknown }

@@ -485,6 +485,17 @@ const schemaStatements = [
     PRIMARY KEY (role_id, capability),
     CONSTRAINT fk_ecourt_extension_access_role FOREIGN KEY (role_id) REFERENCES roles(id)
   )`,
+  `CREATE TABLE IF NOT EXISTS ecourt_extension_access_user (
+    user_id TEXT NOT NULL,
+    capability TEXT NOT NULL,
+    enabled SMALLINT NOT NULL,
+    alasan TEXT NOT NULL DEFAULT '',
+    berlaku_sampai TEXT,
+    updated_at TEXT NOT NULL,
+    updated_by TEXT,
+    PRIMARY KEY (user_id, capability),
+    CONSTRAINT fk_ecourt_extension_access_user_user FOREIGN KEY (user_id) REFERENCES users(id)
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_sipp_hari_sidang (
     majelis_kode TEXT PRIMARY KEY,
     hari SMALLINT NOT NULL CHECK (hari BETWEEN 0 AND 6),

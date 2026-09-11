@@ -1670,12 +1670,31 @@ async function mintaUsulan(muatan) {
  * menunggu jaringan hanya untuk menuliskan satu nama.
  */
 let penggunaAletaAbt = null;
+/**
+ * Kemampuan ekstensi yang diberikan portal kepada orang ini.
+ *
+ * Dipakai menyembunyikan tombol yang akan ditolak. Itu KENYAMANAN, bukan
+ * penjagaan - rutenya memeriksa ulang sendiri, dan harus, sebab berkas ini
+ * berjalan di peramban petugas dan dapat diubah siapa saja yang memasangnya.
+ *
+ * Selama jawabannya belum tiba, tombolnya dibiarkan tampak. Menyembunyikannya
+ * lebih dulu lalu memunculkannya membuat panel berkedip pada setiap pemuatan
+ * bagi orang yang justru berwenang - yaitu hampir semua orang yang membuka
+ * halaman blangko.
+ */
+let kapabilitasAletaAbt = null;
+
+function bolehAbt(kunci) {
+  if (!kapabilitasAletaAbt) return true;
+  return kapabilitasAletaAbt[kunci] !== false;
+}
 
 async function muatPenggunaAleta() {
   if (penggunaAletaAbt) return penggunaAletaAbt;
   try {
     const isi = await mintaUsulan({ nomorPerkara: nomorPerkaraAbt(), sumber: "siapa" });
     penggunaAletaAbt = isi && isi.pengguna && isi.pengguna.nama ? isi.pengguna : null;
+    kapabilitasAletaAbt = (isi && isi.kapabilitas) || null;
   } catch {
     penggunaAletaAbt = null;
   }
@@ -2611,6 +2630,14 @@ function susunPanelAbt(jatiDiri) {
   kaki.appendChild(pitaKaki);
   panel.appendChild(kaki);
   void muatPenggunaAleta().then((pengguna) => {
+    // Tombol yang akan ditolak disembunyikan begitu kewenangannya diketahui.
+    // Menawarkan tombol lalu menolaknya sesudah ditekan terbaca sebagai
+    // kerusakan, bukan sebagai pembatasan yang disengaja.
+    if (!bolehAbt("blangko-abt")) {
+      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolSdg]) tombol.hidden = true;
+      kabar.textContent =
+        "Peran Anda tidak diberi akses panel blangko ABT. Panel ini hanya menampilkan keterangan.";
+    }
     if (!pengguna) return;
     const kepalaBaru = pitaIdentitasAbt(pengguna);
     const kakiBaru = pitaIdentitasAbt(pengguna);

@@ -23,6 +23,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AletaBotEcourtLogin } from "@/components/portal/aleta-bot-ecourt-login";
 import { AletaBotEcourtPengaturan } from "@/components/portal/aleta-bot-ecourt-pengaturan";
 import { AletaEcourtAksesPeran } from "@/components/portal/aleta-ecourt-akses-peran";
+import { AletaEcourtAksesPengguna } from "@/components/portal/aleta-ecourt-akses-pengguna";
 import { AletaEcourtArsip } from "@/components/portal/aleta-ecourt-arsip";
 import { AletaEcourtAkun } from "@/components/portal/aleta-ecourt-akun";
 import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt-panggilan-pengaturan";
@@ -328,8 +329,14 @@ export function AletaEcourtAdmin() {
           SIPP. Tanpa id ini tombolnya hanya membuka halaman admin dari atas,
           dan pengaturan yang dicari ada di tengah tumpukan kartu - petugas
           menggulir mencari sesuatu yang tidak ia tahu bentuknya. */}
-      <div id="pengaturan-ekstensi" className="scroll-mt-24">
+      <div id="pengaturan-ekstensi" className="scroll-mt-24 space-y-6">
         <AletaEcourtAksesPeran />
+        {/* Pengecualian per orang DI BAWAH kewenangan jabatan, bukan di
+            atasnya: jalan utamanya tetap peran, dan yang membuka halaman ini
+            harus membaca kewenangan jabatan lebih dulu. Pengecualian yang
+            dibaca tanpa mengetahui kewenangan perannya tidak punya arti -
+            "boleh" hanya bermakna sebagai selisih terhadap sesuatu. */}
+        <AletaEcourtAksesPengguna />
       </div>
 
       <AletaBotEcourtPengaturan />

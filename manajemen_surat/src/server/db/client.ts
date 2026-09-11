@@ -261,6 +261,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "institution_identity_enrichments",
   "module_visibility_settings",
   "ecourt_extension_access",
+  "ecourt_extension_access_user",
   "aleta_sipp_hari_sidang",
   "aleta_sipp_aturan_penunjukan",
   "aleta_sipp_penunjukan_antrean",

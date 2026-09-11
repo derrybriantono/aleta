@@ -34,7 +34,22 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
  * apa-apa.
  */
 
-type Kapabilitas = "panel" | "berkas" | "permintaan";
+/**
+ * ============================================================================
+ * KOLOMNYA DIBACA DARI SERVER, TIDAK PERNAH DIKETIK DI SINI
+ * ============================================================================
+ *
+ * Dulu berkas ini memuat `["panel", "berkas", "permintaan"]` sebagai daftar
+ * kolomnya. Ketika dua kemampuan penunjukan ditambahkan di server, keduanya
+ * menjaga rute dengan benar - dan tidak pernah muncul di layar ini, sehingga
+ * tidak ada satu administrator pun yang dapat mengubahnya. Kewenangan yang ada
+ * tetapi tidak dapat diatur adalah kegagalan yang paling sunyi: tidak ada
+ * galat, tidak ada yang hilang, hanya kolom yang tidak pernah ada.
+ *
+ * Sekarang kolomnya diturunkan dari `keterangan` yang dikirim server - satu
+ * sumber, dan kemampuan baru muncul di sini tanpa berkas ini disentuh.
+ */
+type Kapabilitas = string;
 
 type PeranAkses = {
   roleId: string;
@@ -53,7 +68,10 @@ type Jawaban = {
   keterangan: Keterangan;
 };
 
-const URUTAN: Kapabilitas[] = ["panel", "berkas", "permintaan"];
+/** Urutan kolom: seperti yang dikirim server, apa adanya. */
+function urutanKapabilitas(keterangan: Keterangan | undefined): Kapabilitas[] {
+  return keterangan ? Object.keys(keterangan) : [];
+}
 
 export function AletaEcourtAksesPeran() {
   const [data, setData] = useState<Jawaban | null>(null);
@@ -118,6 +136,8 @@ export function AletaEcourtAksesPeran() {
 
   if (!memuat && data && !data.bolehMengatur) return null;
 
+  const urutan = urutanKapabilitas(data?.keterangan);
+
   return (
     <Card>
       <CardHeader>
@@ -146,8 +166,8 @@ export function AletaEcourtAksesPeran() {
           </div>
         ) : (
           <>
-            <dl className="grid gap-2 sm:grid-cols-3">
-              {URUTAN.map((kunci) => (
+            <dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {urutan.map((kunci) => (
                 <div key={kunci} className="rounded-md border bg-muted/40 px-3 py-2">
                   <dt className="text-xs font-semibold">{data.keterangan[kunci].label}</dt>
                   <dd className="mt-1 text-xs text-muted-foreground">
@@ -158,11 +178,11 @@ export function AletaEcourtAksesPeran() {
             </dl>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
+              <table className="w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b text-left">
                     <th className="py-2 pr-3 font-medium">Peran</th>
-                    {URUTAN.map((kunci) => (
+                    {urutan.map((kunci) => (
                       <th key={kunci} className="px-3 py-2 font-medium">
                         {data.keterangan[kunci].label}
                       </th>
@@ -181,7 +201,7 @@ export function AletaEcourtAksesPeran() {
                         ) : null}
                       </td>
 
-                      {URUTAN.map((kunci) => (
+                      {urutan.map((kunci) => (
                         <td key={kunci} className="px-3 py-2">
                           {peran.selaluPenuh ? (
                             <span className="text-xs text-muted-foreground">selalu aktif</span>

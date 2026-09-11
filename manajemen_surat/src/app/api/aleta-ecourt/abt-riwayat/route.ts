@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
     const perkaraId = String(getSearchParam(request, "perkaraId") ?? "").trim();
     if (!perkaraId) return ok({ ada: false, daftar: [], sebab: "Perkara tidak disebutkan." });
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
 
     const badan = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
