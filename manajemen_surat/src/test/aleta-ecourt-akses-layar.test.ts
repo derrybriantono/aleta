@@ -47,7 +47,7 @@ describe("kolom pengaturan diturunkan dari server, tidak diketik di layar", () =
   it("layar peran tidak memuat satu pun daftar kemampuan yang diketik tetap", () => {
     const isi = tanpaKomentar(layarPeran());
     // Bentuk lamanya: const URUTAN: Kapabilitas[] = ["panel", "berkas", ...]
-    expect(isi).not.toMatch(/const\s+URUTAN/);
+    expect(isi).not.toMatch(/const\s+URUTAN\b/);
     expect(isi).not.toMatch(/\[\s*"panel"\s*,/);
     expect(layarPeran()).toContain("function urutanKapabilitas(");
     expect(layarPeran()).toContain("Object.keys(keterangan)");

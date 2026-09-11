@@ -35,7 +35,9 @@ function namaEntriTar(tar: Buffer) {
   while (posisi + 512 <= tar.length) {
     const kepala = tar.subarray(posisi, posisi + 512);
     if (kepala.every((b) => b === 0)) break;
-    const bersih = (b: Buffer) => b.toString("utf8").replace(/\0.*$/s, "");
+    // [\s\S] alih-alih penanda /s: penanda itu menuntut sasaran es2018,
+    // dan tsconfig proyek ini lebih rendah - kelasnya sama persis.
+    const bersih = (b: Buffer) => b.toString("utf8").replace(/\0[\s\S]*$/, "");
     const awalan = bersih(kepala.subarray(345, 500));
     const berkas = bersih(kepala.subarray(0, 100));
     nama.push(awalan ? `${awalan}/${berkas}` : berkas);

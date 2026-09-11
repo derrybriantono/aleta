@@ -112,8 +112,8 @@ export function alineaBerguna(baris: string): boolean {
  */
 export function bentukAlinea(teks: string): string {
   return rapikanAlinea(teks)
-    .replace(POLA_PENANDA, "")
-    .replace(/\d+/g, "")
+    .replace(POLA_PENANDA, "\u0001")
+    .replace(/\d+/g, "\u0002")
     .toLowerCase()
     .replace(/[.,;:()"'‘’“”-]/g, " ")
     .replace(/\s+/g, " ")
