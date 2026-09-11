@@ -2300,6 +2300,54 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   color: var(--aleta-merek);
 }
 
+/* Usulan yang dapat disunting.
+
+   Garis putus-putus di bawahnya satu-satunya penanda bahwa teks ini dapat
+   diklik. Tanpa penanda apa pun, kemampuan menyunting hanya diketahui orang
+   yang kebetulan mengkliknya - dan itu bukan kemampuan, melainkan rahasia. */
+.aleta-abt-isi-sunting {
+  cursor: text;
+  border-bottom: 1px dashed var(--aleta-garis);
+  padding-bottom: 1px;
+}
+
+.aleta-abt-isi-sunting:hover,
+.aleta-abt-isi-sunting:focus-visible {
+  border-bottom-color: var(--aleta-merek);
+  background: var(--aleta-latar-naik);
+}
+
+.aleta-abt-isi-kosong {
+  font-weight: 400 !important;
+  font-style: italic;
+  color: var(--aleta-tulisan-lembut) !important;
+}
+
+.aleta-abt-sunting-kotak {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--aleta-tulisan);
+  background: var(--aleta-latar);
+  border: 1px solid var(--aleta-merek);
+  border-radius: 6px;
+  padding: 4px 6px;
+  resize: vertical;
+}
+
+/* Dibedakan dari lencana keyakinan: yang ini bukan penilaian mesin melainkan
+   keterangan bahwa manusia sudah turun tangan. */
+.aleta-tanda-sunting {
+  flex: none;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-merek);
+  border: 1px solid var(--aleta-merek);
+}
+
 /* Selisih antar saksi ditulis tegas dan disebut apa adanya: ini soal
    pembuktian, bukan soal pengisian, dan harus terlihat sebelum putusan
    disusun - bukan sesudah dibaca hakim. */
@@ -2947,7 +2995,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
   padding: 8px 10px;
   border: 1px solid var(--aleta-garis);
   border-radius: 6px;
-  background: var(--aleta-latar-lembut);
+  background: var(--aleta-latar-naik);
 }
 
 .aleta-tetap-pejabat-baris {
@@ -2975,7 +3023,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
   padding: 8px 10px;
   border: 1px solid var(--aleta-garis);
   border-radius: 6px;
-  background: var(--aleta-latar-lembut);
+  background: var(--aleta-latar-naik);
 }
 
 .aleta-tulis-judul {

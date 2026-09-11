@@ -1425,13 +1425,99 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   kini.appendChild(buatElemen("span", "aleta-abt-isi", keadaanSekarang || "(kosong)"));
   sanding.appendChild(kini);
 
-  if (u.nilai) {
-    const usul = buatElemen("div", "aleta-abt-usul");
-    usul.appendChild(buatElemen("span", "aleta-abt-label", "usulan"));
-    usul.appendChild(buatElemen("span", "aleta-abt-isi", u.nilai));
-    sanding.appendChild(usul);
+  // ── USULAN YANG DAPAT DISUNTING DI TEMPAT ────────────────────────────────
+  //
+  // Usulan ALETA tetap usulan. Yang menandatangani perkara ini petugas, dan
+  // kalimat yang masuk ke blangko harus kalimat yang ia setujui - bukan
+  // kalimat mesin yang kebetulan mendekati. Sebelum ini, satu kata yang
+  // kurang tepat berarti usulannya tidak dapat dipakai sama sekali: petugas
+  // membatalkan centangnya lalu mengetik ulang seluruh kalimat di borang ABT.
+  //
+  // Sekali klik, teksnya menjadi kotak isian. Yang tersimpan ke ABT adalah
+  // yang terbaca di kotak itu saat Terapkan ditekan - bukan yang diusulkan
+  // semula. Usulan yang KOSONG pun dapat diisi begini, dan centangnya menyala
+  // sendiri begitu ada isinya: petugas yang tahu jawabannya tidak perlu
+  // meninggalkan panel hanya untuk mengetik satu baris.
+  let nilaiTerkini = u.nilai || "";
+  let disunting = false;
+
+  const usul = buatElemen("div", "aleta-abt-usul");
+  usul.appendChild(buatElemen("span", "aleta-abt-label", "usulan"));
+
+  const isi = buatElemen("span", "aleta-abt-isi aleta-abt-isi-sunting", nilaiTerkini || "(kosong - klik untuk mengisi)");
+  if (!nilaiTerkini) isi.classList.add("aleta-abt-isi-kosong");
+  isi.title = "Klik untuk menyunting sebelum dimasukkan ke ABT";
+  isi.tabIndex = 0;
+  isi.setAttribute("role", "button");
+  isi.setAttribute("aria-label", `Sunting usulan ${u.nama}`);
+
+  const tandaSunting = buatElemen("span", "aleta-tanda aleta-tanda-sunting", "disunting");
+  tandaSunting.hidden = true;
+
+  /** Menggambar ulang teks yang tampak beserta keadaan centangnya. */
+  function segarkanTampilan() {
+    isi.textContent = nilaiTerkini || "(kosong - klik untuk mengisi)";
+    isi.classList.toggle("aleta-abt-isi-kosong", !nilaiTerkini);
+    tandaSunting.hidden = !disunting;
+    // Centang mengikuti ADA-TIDAKNYA isi, bukan usulan semula. Kotak yang
+    // tidak dapat dicentang padahal sudah diisi petugas adalah kotak yang
+    // membuang pekerjaannya.
+    centang.disabled = !nilaiTerkini;
+    if (!nilaiTerkini) centang.checked = false;
   }
+
+  function mulaiSunting() {
+    if (usul.querySelector("textarea")) return;
+    const kotak = document.createElement("textarea");
+    kotak.className = "aleta-abt-sunting-kotak";
+    kotak.value = nilaiTerkini;
+    kotak.rows = Math.min(6, Math.max(2, Math.ceil((nilaiTerkini.length || 1) / 60)));
+    isi.replaceWith(kotak);
+    kotak.focus();
+    kotak.setSelectionRange(kotak.value.length, kotak.value.length);
+
+    const selesai = (batal) => {
+      if (!batal) {
+        const baru = kotak.value.trim();
+        if (baru !== nilaiTerkini) {
+          nilaiTerkini = baru;
+          disunting = baru !== (u.nilai || "");
+          // Yang baru diisi sendiri oleh petugas langsung dicentang - ia
+          // mengetiknya justru supaya masuk.
+          if (nilaiTerkini) centang.checked = true;
+        }
+      }
+      kotak.replaceWith(isi);
+      segarkanTampilan();
+    };
+
+    kotak.addEventListener("blur", () => selesai(false));
+    kotak.addEventListener("keydown", (peristiwa) => {
+      // Escape membatalkan, Ctrl+Enter menyelesaikan. Enter biasa dibiarkan
+      // membuat baris baru: usulan blangko kerap lebih dari satu kalimat.
+      if (peristiwa.key === "Escape") {
+        peristiwa.preventDefault();
+        selesai(true);
+      } else if (peristiwa.key === "Enter" && (peristiwa.ctrlKey || peristiwa.metaKey)) {
+        peristiwa.preventDefault();
+        selesai(false);
+      }
+    });
+  }
+
+  isi.addEventListener("click", mulaiSunting);
+  isi.addEventListener("keydown", (peristiwa) => {
+    if (peristiwa.key === "Enter" || peristiwa.key === " ") {
+      peristiwa.preventDefault();
+      mulaiSunting();
+    }
+  });
+
+  usul.appendChild(isi);
+  usul.appendChild(tandaSunting);
+  sanding.appendChild(usul);
   kartu.appendChild(sanding);
+  segarkanTampilan();
 
   if (u.bentrok) {
     kartu.appendChild(
@@ -1454,7 +1540,14 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     kartu.appendChild(kutip);
   }
 
-  pilih.push({ usulan: u, centang });
+  // Nilai dibaca lewat fungsi, bukan disalin sekarang: yang dipakai Terapkan
+  // harus yang terbaca SAAT tombol ditekan, termasuk suntingan terakhir.
+  pilih.push({
+    usulan: u,
+    centang,
+    nilai: () => nilaiTerkini,
+    disunting: () => disunting,
+  });
   return kartu;
 }
 
@@ -2675,7 +2768,9 @@ function susunPanelAbt(jatiDiri) {
     wadahUsulan.appendChild(hasilTerap);
 
     terap.addEventListener("click", async () => {
-      const dipilih = pilih.filter((x) => x.centang.checked && x.usulan.nilai);
+      // Yang menentukan ISI YANG TERBACA SEKARANG, bukan usulan semula -
+      // petugas boleh menyuntingnya di kartu sebelum menekan tombol ini.
+      const dipilih = pilih.filter((x) => x.centang.checked && x.nilai());
       if (dipilih.length === 0) {
         hasilTerap.textContent = "Tidak ada yang dicentang.";
         return;
@@ -2686,26 +2781,36 @@ function susunPanelAbt(jatiDiri) {
       for (const x of dipilih) {
         hasilTerap.textContent = `Menyimpan ${x.usulan.nama}…`;
         try {
+          const nilaiDipakai = x.nilai();
           const sebelum = (barisVariabel().get(x.usulan.kode) || {}).nilai || "";
-          const hasil = await simpanVariabel(x.usulan.kode, x.usulan.nilai, jatiDiri);
+          const hasil = await simpanVariabel(x.usulan.kode, nilaiDipakai, jatiDiri);
           if (hasil.ok) {
             berhasil += 1;
+            // Riwayat menyebut SUNTINGANNYA. Tanpa itu, kalimat yang ditulis
+            // petugas sendiri tercatat seolah-olah usulan mesin - dan yang
+            // membacanya kelak tidak dapat membedakan mana yang diperiksa
+            // manusia dan mana yang lolos begitu saja.
+            const asalUsulan =
+              x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
+                ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
+                : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
+                ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
+                : `usulan dari SIPP (${x.usulan.keyakinan})`;
             void catatRiwayat({
               perkaraId: jatiDiri.perkaraId,
               kode: x.usulan.kode,
               nama: x.usulan.nama,
               sebelum,
-              sesudah: x.usulan.nilai,
-              cara:
-                x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].asal === "posita"
-                  ? `usulan dari posita permohonan (${x.usulan.keyakinan})`
-                  : x.usulan.sumber && x.usulan.sumber[0] && x.usulan.sumber[0].saksi
-                  ? `usulan dari keterangan saksi (${x.usulan.keyakinan})`
-                  : `usulan dari SIPP (${x.usulan.keyakinan})`,
+              sesudah: nilaiDipakai,
+              cara: x.disunting()
+                ? x.usulan.nilai
+                  ? `${asalUsulan}, disunting petugas sebelum disimpan`
+                  : "diketik petugas di panel ALETA"
+                : asalUsulan,
               pada: new Date().toISOString(),
             });
             const item = barisVariabel().get(x.usulan.kode);
-            if (item) item.selNilai.textContent = x.usulan.nilai;
+            if (item) item.selNilai.textContent = nilaiDipakai;
             x.centang.checked = false;
             x.centang.disabled = true;
           } else {

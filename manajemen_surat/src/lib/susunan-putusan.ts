@@ -148,3 +148,62 @@ export function naskahDariKerangka(kerangka: Kerangka): string {
     .map((item) => `${item.judul.toUpperCase()}\n\n${item.isi || `[${item.halangan}]`}`)
     .join("\n\n");
 }
+
+/**
+ * Memecah naskah kembali menjadi bagian-bagiannya.
+ *
+ * ============================================================================
+ * KENAPA NASKAHNYA DIPECAH, BUKAN BAGIANNYA DISIMPAN
+ * ============================================================================
+ *
+ * Yang tersimpan pada draf adalah naskah utuh - satu kolom teks. Itu memang
+ * bentuk yang ditandatangani, dan menyimpan salinan per bagian di sebelahnya
+ * berarti dua sumber untuk satu kebenaran: bagian yang disunting tanpa
+ * naskahnya ikut berubah menghasilkan putusan yang berbeda dari yang
+ * ditandatangani, dan tidak ada satu pun layar yang memperlihatkannya.
+ *
+ * SIPP menuntut potongannya - Pertimbangan Hukum dan Amar masuk ke dua isian
+ * yang terpisah. Karena naskahnya disusun naskahDariKerangka dengan judul
+ * yang PASTI (judul baku, huruf besar, baris sendiri), memecahnya kembali
+ * tidak menebak apa pun: ia membaca penanda yang ditulis fungsi di atas.
+ *
+ * Judul yang tidak ditemukan menghasilkan bagian yang TIDAK ADA di hasilnya,
+ * bukan bagian kosong - supaya pemanggilnya dapat membedakan "tidak tertulis"
+ * dari "tertulis kosong", dan tidak mengisi borang SIPP dengan kekosongan.
+ */
+export function pecahNaskahPutusan(naskah: string): Partial<Record<KunciBagian, string>> {
+  const teks = String(naskah ?? "").replace(/\r\n/g, "\n");
+  if (!teks.trim()) return {};
+
+  const baris = teks.split("\n");
+  const judulKe = new Map<string, KunciBagian>();
+  for (const pola of SUSUNAN) judulKe.set(pola.judul.toUpperCase(), pola.kunci);
+
+  const hasil: Partial<Record<KunciBagian, string>> = {};
+  let kunciSekarang: KunciBagian | null = null;
+  let kumpulan: string[] = [];
+
+  const tutup = () => {
+    if (!kunciSekarang) return;
+    const isi = kumpulan.join("\n").trim();
+    // Bagian yang belum terisi ditulis naskahDariKerangka sebagai
+    // "[sebab]" dalam kurung siku. Itu keterangan halangan, bukan isi, dan
+    // memasukkannya ke borang SIPP berarti menulis alasan ke dalam putusan.
+    const halangan = /^\[[^\]]*\]$/.test(isi);
+    hasil[kunciSekarang] = halangan ? "" : isi;
+    kumpulan = [];
+  };
+
+  for (const satu of baris) {
+    const kunci = judulKe.get(satu.trim());
+    if (kunci) {
+      tutup();
+      kunciSekarang = kunci;
+      continue;
+    }
+    if (kunciSekarang) kumpulan.push(satu);
+  }
+  tutup();
+
+  return hasil;
+}

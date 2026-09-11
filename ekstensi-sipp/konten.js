@@ -52,6 +52,7 @@ const ALETA_API_BERKAS_GUGATAN = "/aleta/api/aleta-bot/penunjukan/berkas";
 const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
+const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
 const PENANDA = "aleta-panel-sipp";
 
 /**
@@ -2774,6 +2775,183 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
  * Nilai kolomnya sengaja TIDAK ikut disebutkan: formulir perkara yang sedang
  * terbuka memuat data pihak berperkara, dan yang dibutuhkan hanya namanya.
  */
+/**
+ * ============================================================================
+ * MENGISI BORANG PUTUSAN AKHIR SIPP DARI DRAF ALETA
+ * ============================================================================
+ *
+ * Borang Putusan Akhir menuntut potongan yang terpisah-pisah, dan tiga di
+ * antaranya panjang: Pertimbangan Hukum, Amar, dan Amar Anonim. Ketiganya
+ * CKEditor, dan selama ini disalin tangan dari naskah putusan - satu per satu,
+ * sambil berpindah jendela, pada hari yang paling sibuk.
+ *
+ * ============================================================================
+ * TIGA HAL YANG SENGAJA TIDAK DIKERJAKAN DI SINI
+ * ============================================================================
+ *
+ * 1. TIDAK MEMUTUSKAN APA PUN. Naskahnya dipecah dan namanya disamarkan di
+ *    portal, yang diuji tiap pemeriksaan berkala. Berkas ini hanya menaruh
+ *    hasilnya ke kolom yang benar.
+ *
+ * 2. TIDAK MENEKAN SIMPAN. Yang tersimpan di sini menjadi putusan resmi.
+ *    Petugas membaca lalu menyimpan sendiri - dan itu bukan kehati-hatian yang
+ *    berlebihan, melainkan satu-satunya tempat manusia masih membacanya.
+ *
+ * 3. TIDAK MENYENTUH STATUS PUTUSAN, VERSTEK, DAN SUMBER HUKUM. Pilihannya
+ *    sudah disaring SIPP menurut jenis dan alur perkara, dan salah pilih di
+ *    situ mengubah jenis putusannya - bukan sekadar salah ketik. Yang
+ *    dikerjakan ALETA hanya isian teks panjang yang selama ini disalin tangan.
+ */
+function bagianIsiPutusan(nomorPerkara) {
+  const kotak = bagian("Isi borang putusan dari ALETA", "isiPutusan", true);
+  const isi = kotak.isi;
+
+  const terang = buatElemen(
+    "div",
+    "aleta-tetap-sebab",
+    "Mengambil draf putusan ALETA yang terbaru untuk perkara ini, lalu mengisikan " +
+      "Pertimbangan Hukum, Amar, dan Amar Anonim ke borang di halaman ini. Tombol " +
+      "Simpan tetap Anda yang menekan."
+  );
+  isi.appendChild(terang);
+
+  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Ambil usulan dari ALETA");
+  tombol.type = "button";
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  const wadah = buatElemen("div", "aleta-isian-putusan");
+  isi.appendChild(tombol);
+  isi.appendChild(kabar);
+  isi.appendChild(wadah);
+
+  /** Satu baris usulan: judul, cuplikan, dan centang. */
+  function barisIsian(judul, penunjuk, teks, keterangan) {
+    const baris = buatElemen("div", "aleta-abt-kartu");
+    const kepala = buatElemen("div", "aleta-abt-kartu-kepala");
+    const centang = document.createElement("input");
+    centang.type = "checkbox";
+    centang.className = "aleta-abt-centang";
+    centang.checked = Boolean(teks);
+    centang.disabled = !teks;
+    kepala.appendChild(centang);
+    kepala.appendChild(buatElemen("span", "aleta-abt-nama", judul));
+    baris.appendChild(kepala);
+
+    if (keterangan) baris.appendChild(buatElemen("div", "aleta-abt-catatan", keterangan));
+
+    const cuplikan = buatElemen(
+      "div",
+      "aleta-abt-isi",
+      teks ? (teks.length > 400 ? `${teks.slice(0, 400)}…` : teks) : "(kosong pada draf)"
+    );
+    if (!teks) cuplikan.classList.add("aleta-abt-isi-kosong");
+    baris.appendChild(cuplikan);
+
+    return { baris, centang, penunjuk, teks, judul };
+  }
+
+  tombol.addEventListener("click", async () => {
+    tombol.disabled = true;
+    wadah.textContent = "";
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Membaca draf putusan…";
+
+    let jawab;
+    try {
+      const respons = await alatAmbil(
+        `${ALETA_API_ISIAN_PUTUSAN}?nomorPerkara=${encodeURIComponent(nomorPerkara || "")}`,
+        { credentials: "include", cache: "no-store" },
+        "Membaca draf putusan"
+      );
+      if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca draf putusan"));
+      const luar = await respons.json();
+      jawab = luar && luar.data ? luar.data : luar;
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+      tombol.disabled = false;
+      return;
+    }
+
+    if (!jawab || !jawab.ada) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = (jawab && jawab.sebab) || "Belum ada draf putusan untuk perkara ini.";
+      tombol.disabled = false;
+      return;
+    }
+
+    kabar.textContent = `Draf versi ${jawab.versi} (${jawab.keadaan}).`;
+
+    for (const satu of jawab.catatan || []) {
+      wadah.appendChild(buatElemen("div", "aleta-tetap-sebab", satu));
+    }
+    if ((jawab.belumTerisi || []).length) {
+      wadah.appendChild(
+        buatElemen(
+          "div",
+          "aleta-gagal",
+          `Belum terisi pada draf: ${jawab.belumTerisi.join(", ")}. Bagian itu tidak akan diisikan.`
+        )
+      );
+    }
+
+    const daftar = [
+      barisIsian("Pertimbangan Hukum", "#perhum", jawab.pertimbangan, ""),
+      barisIsian("Amar Putusan", "#amar", jawab.amar, ""),
+      barisIsian(
+        "Amar Anonim",
+        "#amar_anonim",
+        jawab.amarAnonim,
+        (jawab.namaDisamarkan || []).length
+          ? `Nama yang disamarkan: ${jawab.namaDisamarkan
+              .map((x) => `${x.nama} → ${x.menjadi}`)
+              .join("; ")}`
+          : ""
+      ),
+    ];
+    for (const satu of daftar) wadah.appendChild(satu.baris);
+
+    const terap = buatElemen("button", "aleta-permintaan-tombol", "Isikan yang dicentang");
+    terap.type = "button";
+    const hasilTerap = buatElemen("div", "aleta-abt-kabar");
+    wadah.appendChild(terap);
+    wadah.appendChild(hasilTerap);
+
+    terap.addEventListener("click", async () => {
+      const dipilih = daftar.filter((x) => x.centang.checked && x.teks);
+      if (dipilih.length === 0) {
+        hasilTerap.textContent = "Tidak ada yang dicentang.";
+        return;
+      }
+      terap.disabled = true;
+      const gagal = [];
+      let berhasil = 0;
+      for (const satu of dipilih) {
+        hasilTerap.textContent = `Mengisi ${satu.judul}…`;
+        // "kaya" - jembatan yang menyentuh CKEditor. Menyetel value pada
+        // textarea aslinya membuat tampilannya berubah tanpa nilainya ikut,
+        // dan yang tersimpan kemudian bukan yang terlihat.
+        const hasil = await kirimKeJembatan({
+          jenis: "isi",
+          penunjuk: satu.penunjuk,
+          jenisMedan: "kaya",
+          nilai: satu.teks,
+        });
+        if (hasil && hasil.ok) berhasil += 1;
+        else gagal.push(`${satu.judul}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+      }
+      terap.disabled = false;
+      hasilTerap.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+      hasilTerap.textContent = gagal.length
+        ? `${berhasil} terisi, ${gagal.length} gagal: ${gagal.join("; ")}`
+        : `${berhasil} isian terisi. Periksa seluruhnya, lalu tekan Simpan sendiri.`;
+    });
+
+    tombol.disabled = false;
+  });
+
+  return kotak;
+}
+
 function bagianBacaBorang() {
   const kotak = bagian("Peta kolom formulir (sekali pasang)", "bacaBorang", true);
   let sudahDimuat = false;
@@ -4881,6 +5059,16 @@ function susunPanel(konteks) {
 
     if (boleh("penunjukan")) kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
     if (boleh("data-umum")) kelKerja.isi.appendChild(bagianDataUmum(konteks));
+
+    // Hanya di halaman yang memang memuat borang Putusan Akhir. Dikenali dari
+    // borangnya sendiri (#frm_putusan), bukan dari alamat halaman: alamat SIPP
+    // berubah bentuk antar versi dan antar pemasangan, sedangkan id borangnya
+    // tidak. Di halaman lain, bagian ini tidak digambar sama sekali - menu
+    // yang selalu ada tetapi hampir selalu menjawab "tidak ada borang di sini"
+    // mengajari orang untuk berhenti membukanya.
+    if (boleh("data-umum") && document.querySelector("#frm_putusan")) {
+      kelKerja.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
+    }
 
     // Alat pemasangan, bukan keterangan perkara - jawabannya sama pada perkara
     // mana pun. Dibatasi ke Super Admin dan Admin, yang memang satu-satunya
