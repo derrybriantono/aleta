@@ -262,6 +262,7 @@ const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "module_visibility_settings",
   "ecourt_extension_access",
   "ecourt_extension_access_user",
+  "tata_letak_dasbor",
   "aleta_sipp_hari_sidang",
   "aleta_sipp_aturan_penunjukan",
   "aleta_sipp_penunjukan_antrean",

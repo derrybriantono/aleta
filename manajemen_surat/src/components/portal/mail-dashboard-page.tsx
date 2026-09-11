@@ -4,6 +4,12 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, BellRing, MessageSquare, SearchCheck, Send } from "lucide-react";
 
 import { WhatsAppControl } from "@/components/portal/whatsapp-control";
+import {
+  ItemGeser,
+  PenataDasbor,
+  SusunanGeser,
+  TombolKembalikanSusunan,
+} from "@/components/portal/susunan-geser";
 
 import { PageIntro, SectionHint, statusVariant } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +28,34 @@ import {
   getUserRoleBadge,
 } from "@/lib/permissions";
 
+/**
+ * ============================================================================
+ * DASBOR YANG DAPAT DISUSUN SENDIRI OLEH TIAP PENGGUNA
+ * ============================================================================
+ *
+ * Dasbor ini dibuka tiap pagi oleh jabatan yang pekerjaannya berbeda-beda.
+ * Panitera pengganti mencari tugas masuk, kepala bagian umum mencari surat
+ * masuk, dan sampai kini keduanya harus melewati kartu yang bukan urusannya
+ * karena urutannya dipatok di kode.
+ *
+ * Sekarang tiap kartu dapat ditahan lalu digeser, dan susunannya tersimpan
+ * untuk orang itu sendiri. Lihat susunan-geser.tsx untuk mesinnya.
+ *
+ * Dua zona, bukan satu: kartu ringkasan bertukar tempat di dalam barisnya
+ * sendiri, dan panel besar di dalam kolomnya sendiri. Membiarkan keduanya
+ * bercampur berarti satu kartu angka setinggi lima baris dapat mendarat di
+ * kolom panel dan meregang setinggi layar - susunan yang dapat dibuat pengguna
+ * tetapi tidak pernah diinginkannya.
+ */
 export function MailDashboardPage() {
+  return (
+    <PenataDasbor halaman="manajemen-surat">
+      <IsiDasborSurat />
+    </PenataDasbor>
+  );
+}
+
+function IsiDasborSurat() {
   const { accessibleLetters, currentUser, dispositions, pendingInbox, positions, activeUsers: users } = usePortal();
   const position = getEffectivePosition(currentUser, positions);
   const currentRoleBadge = getUserRoleBadge(currentUser);
@@ -110,13 +143,23 @@ export function MailDashboardPage() {
                 Cari Surat
               </Link>
             </Button>
+            {/* Hanya muncul setelah dasbornya benar-benar disusun - tombol yang
+                mengembalikan sesuatu yang belum pernah diubah tidak menjawab
+                pertanyaan siapa pun. */}
+            <TombolKembalikanSusunan />
           </>
         }
       />
 
-      <div data-testid="mail-dashboard-summary-grid" className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+      <SusunanGeser
+        zona="ringkasan"
+        sebutan="kartu ringkasan"
+        data-testid="mail-dashboard-summary-grid"
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4"
+      >
         {stats.map((item) => (
-          <Link key={item.id} href={item.href} className="group block">
+          <ItemGeser key={item.id} kunci={item.id} judul={item.label}>
+            <Link href={item.href} className="group block">
             <Card
               data-testid={`mail-summary-card-${item.id}`}
               className="h-full border-border/80 transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-panel"
@@ -134,18 +177,28 @@ export function MailDashboardPage() {
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
               </CardContent>
             </Card>
-          </Link>
+            </Link>
+          </ItemGeser>
         ))}
-      </div>
+      </SusunanGeser>
 
-      {currentUser?.roleId === "super-admin" && (
-        <div className="hidden gap-6 sm:grid">
-          <WhatsAppControl />
-        </div>
-      )}
+      <SusunanGeser
+        zona="panel"
+        sebutan="panel"
+        data-testid="mail-dashboard-panel-grid"
+        className="grid gap-6 xl:grid-cols-[1.14fr_0.86fr]"
+      >
+        {currentUser?.roleId === "super-admin" ? (
+          // Kewenangannya diperiksa DI SINI, bukan lewat susunan tersimpan.
+          // Kartu yang tidak digambar tidak akan pernah muncul walau kuncinya
+          // masih tercatat pada urutan lama seseorang.
+          <ItemGeser kunci="whatsapp" judul="Kendali WhatsApp" className="hidden sm:block xl:col-span-2">
+            <WhatsAppControl />
+          </ItemGeser>
+        ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.14fr_0.86fr]">
-        <Card className="hidden border-border/80 md:block">
+        <ItemGeser kunci="tugas-penting" judul="Tugas Penting" className="hidden md:block">
+        <Card className="h-full border-border/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-primary" />
@@ -193,8 +246,10 @@ export function MailDashboardPage() {
 
           </CardContent>
         </Card>
+        </ItemGeser>
 
-        <Card className="border-border/80">
+        <ItemGeser kunci="aktivitas-terbaru" judul="Aktivitas Terbaru">
+        <Card className="h-full border-border/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BellRing className="h-5 w-5 text-primary" />
@@ -239,7 +294,8 @@ export function MailDashboardPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </ItemGeser>
+      </SusunanGeser>
     </div>
   );
 }

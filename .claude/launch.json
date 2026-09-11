@@ -40,6 +40,15 @@
         "D:/aleta-dev/kerja/pratinjau"
       ],
       "port": 8099
+    },
+    {
+      "name": "portal-uji-semai",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-File",
+        "D:/aleta-dev/kerja/jalankan-portal-uji.ps1"
+      ],
+      "port": 3010
     }
   ]
 }

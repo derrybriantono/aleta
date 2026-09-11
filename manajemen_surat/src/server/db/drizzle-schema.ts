@@ -645,6 +645,25 @@ export const ecourtExtensionAccess = pgTable(
 );
 
 /**
+ * Susunan kartu dasbor milik tiap pengguna.
+ *
+ * Satu baris per halaman; susunanJson memuat seluruh zonanya. Lihat catatan
+ * pada drizzle/0040_tata_letak_dasbor.sql.
+ */
+export const tataLetakDasbor = pgTable(
+  "tata_letak_dasbor",
+  {
+    userId: text("user_id").notNull().references(() => users.id),
+    halaman: text("halaman").notNull(),
+    susunanJson: text("susunan_json").notNull().default("{}"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.halaman] }),
+  })
+);
+
+/**
  * Pengecualian akses ekstensi untuk satu orang, di atas kewenangan perannya.
  *
  * Hanya pengecualian yang disimpan - tidak ada baris berarti ikut peran. Lihat

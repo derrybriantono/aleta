@@ -485,6 +485,14 @@ const schemaStatements = [
     PRIMARY KEY (role_id, capability),
     CONSTRAINT fk_ecourt_extension_access_role FOREIGN KEY (role_id) REFERENCES roles(id)
   )`,
+  `CREATE TABLE IF NOT EXISTS tata_letak_dasbor (
+    user_id TEXT NOT NULL,
+    halaman TEXT NOT NULL,
+    susunan_json TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, halaman),
+    CONSTRAINT fk_tata_letak_dasbor_user FOREIGN KEY (user_id) REFERENCES users(id)
+  )`,
   `CREATE TABLE IF NOT EXISTS ecourt_extension_access_user (
     user_id TEXT NOT NULL,
     capability TEXT NOT NULL,
