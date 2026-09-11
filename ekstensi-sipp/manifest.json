@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "ALETA E-Court",
-  "version": "1.95.0",
+  "version": "1.96.0",
   "update_url": "http://192.168.10.10/aleta/api/aleta-ecourt/ekstensi/updates.xml",
   "description": "Menempelkan keterangan ALETA ke halaman SIPP - batas waktu e-Court, tahapan perkara, kesiapan sidang, kelengkapan berkas - dan mengisikan usulan penunjukan serta Data Umum ke borangnya. Di halaman ALETA sendiri, panelnya menunjukkan versi, kewenangan, pintasan jabatan, dan jalan kembali ke perkara yang dibuka di SIPP. Tombol Simpan tetap ditekan petugas.",
   "permissions": [
     "storage"
   ],
   "host_permissions": [
-    "http://192.168.10.10/*"
+    "http://192.168.10.10/*",
+    "http://127.0.0.1/*"
   ],
   "icons": {
     "16": "ikon/aleta-16.png",
@@ -30,7 +31,9 @@
     {
       "matches": [
         "http://192.168.10.10/SIPP/*",
-        "http://192.168.10.10/aps_badilag/abt/*"
+        "http://192.168.10.10/aps_badilag/abt/*",
+        "http://127.0.0.1/index.php/*",
+        "http://127.0.0.1/aps_badilag/*"
       ],
       "js": [
         "tema-awal.js"
@@ -39,7 +42,8 @@
     },
     {
       "matches": [
-        "http://192.168.10.10/SIPP/*"
+        "http://192.168.10.10/SIPP/*",
+        "http://127.0.0.1/index.php/*"
       ],
       "js": [
         "panel-alat.js",
@@ -52,7 +56,8 @@
     },
     {
       "matches": [
-        "http://192.168.10.10/SIPP/*"
+        "http://192.168.10.10/SIPP/*",
+        "http://127.0.0.1/index.php/*"
       ],
       "js": [
         "jembatan.js"
@@ -62,7 +67,8 @@
     },
     {
       "matches": [
-        "http://192.168.10.10/aps_badilag/abt/*"
+        "http://192.168.10.10/aps_badilag/abt/*",
+        "http://127.0.0.1/aps_badilag/*"
       ],
       "js": [
         "panel-alat.js",
@@ -75,7 +81,8 @@
     },
     {
       "matches": [
-        "http://192.168.10.10/aleta/*"
+        "http://192.168.10.10/aleta/*",
+        "http://127.0.0.1/aleta/*"
       ],
       "js": [
         "panel-alat.js",
@@ -94,7 +101,8 @@
         "ikon/aleta-128.png"
       ],
       "matches": [
-        "http://192.168.10.10/*"
+        "http://192.168.10.10/*",
+        "http://127.0.0.1/*"
       ]
     }
   ]
