@@ -49,6 +49,7 @@ const ALETA_API_BORANG = "/aleta/api/aleta-bot/penunjukan/borang";
 const ALETA_API_CATAT = "/aleta/api/aleta-bot/penunjukan/catat";
 const ALETA_API_ANTREAN = "/aleta/api/aleta-bot/penunjukan/antrean";
 const ALETA_API_BERKAS_GUGATAN = "/aleta/api/aleta-bot/penunjukan/berkas";
+const ALETA_API_BERKAS_ARSIP = "/aleta/api/aleta-bot/penunjukan/berkas-arsip";
 const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
 const ALETA_API_HAPUS = "/aleta/api/aleta-bot/penunjukan/hapus";
 const ALETA_API_HAPUS_SEMUA = "/aleta/api/aleta-bot/penunjukan/hapus-semua";
@@ -3135,6 +3136,56 @@ function gambarPetikan(isi, hasil) {
   }
 }
 
+/**
+ * ============================================================================
+ * BERKAS GUGATAN YANG SUDAH ADA DI ARSIP ALETA
+ * ============================================================================
+ *
+ * Sampai sekarang berkas gugatan harus DICARI dan DIPILIH petugas dari
+ * cakramnya sendiri - padahal berkas yang sama sudah ditarik ALETA dari
+ * e-Court sejak hari perkara itu didaftarkan, dan daftarnya sudah tergambar
+ * di panel ini juga, beberapa baris di bawah.
+ *
+ * Yang dikerjakan petugas selama ini: membuka e-Court, mengunduh gugatannya
+ * sekali lagi, menyimpannya entah di mana, lalu memilihnya di sini. Tiga
+ * langkah untuk berkas yang sudah ada di tangan ALETA.
+ *
+ * Pemilih berkas manual TIDAK dibuang: perkara yang berkasnya belum pernah
+ * ditarik - dan perkara lama memang banyak yang begitu - tetap perlu jalan
+ * itu. Yang ditambahkan hanya jalan yang lebih pendek bila memang ada.
+ */
+const POLA_BERKAS_GUGATAN = /gugatan|permohonan/i;
+
+/** Dokumen e-Court perkara ini yang menyerupai berkas gugatan. */
+function dokumenGugatan(konteks) {
+  const semua = (konteks && Array.isArray(konteks.dokumen) && konteks.dokumen) || [];
+  const cocok = semua.filter((d) => POLA_BERKAS_GUGATAN.test(sebutanDokumen(d)));
+  // Kalau tidak ada yang menyerupai gugatan, seluruh dokumennya ditawarkan -
+  // judul dokumen e-Court tidak selalu menyebut kata gugatan, dan daftar
+  // kosong di sini terbaca sebagai ALETA yang tidak punya berkasnya sama
+  // sekali padahal berkasnya ada.
+  const dipakai = cocok.length > 0 ? cocok : semua;
+  return dipakai.filter((d) => d && d.documentKey).slice(0, 6);
+}
+
+/** Membaca satu berkas arsip dan memetik Data Umum darinya. */
+async function bacaBerkasArsip(documentKey, format) {
+  const respons = await alatAmbil(
+    ALETA_API_BERKAS_ARSIP,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documentKey, format: format || "pdf" }),
+    },
+    "Membaca berkas dari arsip ALETA"
+  );
+  if (respons.status === 403) throw new Error("Peran Anda tidak diberi akses papan penunjukan.");
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca berkas dari arsip ALETA"));
+  const luar = await respons.json();
+  return luar && luar.data ? luar.data : luar;
+}
+
 /** Data Umum dari berkas gugatan yang diunggah petugas. */
 function bagianDataUmum(konteks) {
   const kotak = bagian("Data Umum dari berkas gugatan", "dataUmum", true);
@@ -3152,6 +3203,53 @@ function bagianDataUmum(konteks) {
   isi.appendChild(kabar);
 
   const hasilKotak = buatElemen("div", "aleta-petikan");
+
+  // Jalan yang lebih pendek, digambar DI ATAS pemilih berkas: berkas yang
+  // sudah ada di arsip dibaca dengan satu tekanan, tanpa mengunduh apa pun.
+  const arsip = dokumenGugatan(konteks);
+  if (arsip.length > 0) {
+    const kotakArsip = buatElemen("div", "aleta-arsip-gugatan");
+    kotakArsip.appendChild(
+      buatElemen(
+        "div",
+        "aleta-tetap-sebab",
+        "Sudah ada di arsip ALETA - tidak perlu diunduh dari e-Court lebih dahulu:"
+      )
+    );
+    for (const d of arsip) {
+      const baris = buatElemen("div", "aleta-arsip-baris");
+      baris.appendChild(
+        buatElemen("span", "aleta-arsip-judul", d.judulDokumen || d.jenisDokumen || "Dokumen")
+      );
+      const tombolBaca = buatElemen("button", "aleta-portal-tautan", "Baca berkas ini");
+      tombolBaca.type = "button";
+      tombolBaca.addEventListener("click", async () => {
+        tombolBaca.disabled = true;
+        hasilKotak.textContent = "";
+        kabar.textContent = `Membaca ${d.judulDokumen || "berkas"} dari arsip…`;
+        try {
+          const hasil = await bacaBerkasArsip(d.documentKey);
+          if (!hasil || hasil.ok !== true) {
+            kabar.textContent =
+              (hasil && (hasil.pesan || hasil.alasan)) || "Berkas tidak dapat dibaca.";
+            tombolBaca.disabled = false;
+            return;
+          }
+          kabar.textContent = `${hasil.nama} terbaca dari arsip ALETA. Periksa tiap baris sebelum dipakai.`;
+          gambarPetikan(hasilKotak, hasil);
+          gambarKerjakanDataUmum(hasilKotak, hasil, konteks);
+        } catch (galat) {
+          kabar.textContent = String(galat.message || galat).slice(0, 180);
+        } finally {
+          tombolBaca.disabled = false;
+        }
+      });
+      baris.appendChild(tombolBaca);
+      kotakArsip.appendChild(baris);
+    }
+    isi.appendChild(kotakArsip);
+  }
+
   isi.appendChild(hasilKotak);
 
   pemilih.addEventListener("change", () => {
@@ -3486,8 +3584,44 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
       penunjuk: "#petitum",
       jenisMedan: "kaya",
     });
-    const posita = (bacaPosita && bacaPosita.ok && bacaPosita.nilai) || "";
+    let posita = (bacaPosita && bacaPosita.ok && bacaPosita.nilai) || "";
     const petitum = (bacaPetitum && bacaPetitum.ok && bacaPetitum.nilai) || "";
+    let asalPosita = "posita di layar ini";
+
+    // ────────────────────────────────────────────────────────────────────
+    // POSITA KOSONG BUKAN JALAN BUNTU LAGI
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Perkara e-Court yang baru didaftarkan kerap punya kolom posita yang
+    // masih kosong di SIPP - isinya memang masih di berkas gugatannya, dan
+    // mengetiknya ke SIPP justru salah satu pekerjaan yang hendak ditolong
+    // menu ini. Sampai sekarang menu ini menyerah di situ: tidak ada teks,
+    // tidak ada usulan, dan yang membacanya menyimpulkan ALETA tidak bisa
+    // apa-apa pada perkara yang paling membutuhkannya.
+    //
+    // Cadangannya berkas gugatan yang SUDAH ada di arsip ALETA - bukan
+    // berkas yang harus dicari petugas. Kalau arsipnya pun kosong, menu ini
+    // menyerah seperti dahulu, dan itu jawaban yang jujur.
+    //
+    // Asalnya SELALU disebutkan. Usulan yang disusun dari berkas, lalu
+    // dibaca seolah-olah disusun dari layar, membuat orang mencari kalimat
+    // yang memang tidak ada di layarnya.
+    if (!posita.trim()) {
+      const arsip = dokumenGugatan(konteksTerakhir);
+      if (arsip.length > 0) {
+        kabar.textContent = "Posita kosong di SIPP - membaca berkas gugatan dari arsip ALETA…";
+        try {
+          const hasil = await bacaBerkasArsip(arsip[0].documentKey);
+          const dari = hasil && hasil.ok === true && hasil.petikan ? hasil.petikan.posita : null;
+          if (dari && dari.nilai) {
+            posita = dari.nilai;
+            asalPosita = `berkas ${hasil.nama} di arsip ALETA`;
+          }
+        } catch {
+          /* arsipnya tidak terbaca - menu ini menyerah seperti dahulu */
+        }
+      }
+    }
 
     kabar.textContent = "Memeriksa medan alasan yang tampak…";
 
@@ -3542,6 +3676,10 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
           body: JSON.stringify({
             nomorPerkara: nomorPerkara || "",
             teks: { posita, petitum },
+            // Dicatat di sisi server juga: usulan yang disusun dari berkas
+            // dan usulan yang disusun dari layar tidak sama nilainya bila
+            // kelak diukur ketepatannya.
+            asalPosita,
             medan: medanTampak.map((x) => ({ kunci: x.kunci, label: x.label, pilihan: x.pilihan })),
             mintaObyek: obyekTampak,
           }),
@@ -3560,9 +3698,12 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
       usulanMedan = jawab.usulan || [];
       dataNikah = jawab.nikah || null;
       dataObyek = jawab.obyekSengketa || null;
+      // Asal positanya disebutkan apa adanya. Usulan yang disusun dari berkas
+      // gugatan, lalu dibaca seolah-olah disusun dari layar, membuat orang
+      // mencari kalimat yang memang tidak ada di layarnya.
       kabar.textContent =
         `${petikanTampak.length} medan dapat dipetik dan ${medanTampak.length} medan alasan tampak, ` +
-        `dibaca dari ${jawab.panjangTeks} huruf posita dan petitum.`;
+        `dibaca dari ${jawab.panjangTeks} huruf ${asalPosita} dan petitum.`;
     } catch (galat) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);

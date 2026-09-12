@@ -69,6 +69,13 @@ export async function POST(request: NextRequest) {
       medan?: MedanPilihan[];
       /** Halaman menampilkan kotak Obyek Sengketa - kebiasaan satker diminta. */
       mintaObyek?: boolean;
+      /**
+       * Dari mana positanya dibaca: layar SIPP, atau berkas gugatan di arsip
+       * ALETA. Tidak mengubah satu pun hitungan di sini - dicatat supaya
+       * ketepatan usulan yang disusun dari berkas dapat diukur terpisah dari
+       * yang disusun dari layar. Keduanya belum tentu setepat yang lain.
+       */
+      asalPosita?: string;
     }>(request);
 
     const medanMentah = Array.isArray(badan?.medan) ? badan.medan : [];
@@ -135,6 +142,7 @@ export async function POST(request: NextRequest) {
       usulan: medan.length > 0 ? usulkanAlasanPerkara(teks, medan) : [],
       nikah: petikDataNikah(String(badan?.teks?.posita ?? "").slice(0, BATAS_TEKS)),
       obyekSengketa,
+      asalPosita: String(badan?.asalPosita ?? "").slice(0, 160),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

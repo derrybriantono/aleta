@@ -4284,6 +4284,42 @@ if (typeof internalGatewayRoutes.setRuntimeLifecycleHandlers === "function") {
     checkWhatsappStartupTimeout: markWhatsappInitializeTimeoutIfNeeded,
   });
 }
+// ============================================================================
+// PEMERIKSA SELISIH e-COURT DAN SIPP, TIAP MALAM
+// ============================================================================
+//
+// Panel ekstensi sudah lama menghitung selisih ini - tetapi hanya untuk
+// perkara yang KEBETULAN sedang dibuka seseorang. Perkara yang tidak dibuka
+// siapa pun tidak pernah diperiksa, dan justru perkara semacam itulah yang
+// selisihnya paling lama tidak ketahuan.
+//
+// Jadwalnya dibaca dari pengaturan, bukan ditulis tetap di sini - lihat
+// selisihHarianService.pengaturan(). Kalau dimatikan dari portal, cronnya
+// tetap terpasang tetapi putarannya keluar seketika; itu lebih sederhana
+// daripada memasang dan melepas jadwal pada saat berjalan, dan bedanya tidak
+// terasa pada pekerjaan sekecil ini.
+const selisihHarianService = require("./services/selisihHarianService");
+cron.schedule(selisihHarianService.jadwalCron(), () => {
+  if (!selisihHarianService.pengaturan().aktif) return;
+  selisihHarianService
+    .jalankanSatuPutaran({ olehSiapa: "penjadwal" })
+    .then((hasil) => {
+      if (!hasil.ok) {
+        console.error("[selisih harian] gagal:", hasil.pesan || hasil.alasan);
+        return;
+      }
+      // Yang kosong pun dicatat di log - pertanyaan "apakah tadi malam
+      // diperiksa?" harus tetap ada jawabannya walau tidak ada pesan yang
+      // dikirim.
+      console.log(
+        `[selisih harian] ${hasil.jumlah} selisih, ${hasil.genting} genting, diantre ke ${hasil.dikirim || 0} penerima.`
+      );
+    })
+    .catch((galat) => {
+      console.error("[selisih harian] galat tidak terduga:", galat.message || galat);
+    });
+});
+
 app.use("/internal/aleta-bot", internalGatewayRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 

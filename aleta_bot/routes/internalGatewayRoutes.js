@@ -57,6 +57,7 @@ const productionGuardService = require("../services/productionGuardService");
 const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
 const jejakAletaService = require("../services/jejakAletaService");
+const selisihHarianService = require("../services/selisihHarianService");
 const penetapanTulisService = require("../services/penetapanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
@@ -1095,6 +1096,41 @@ router.get("/penetapan/riwayat/:id", requireInternalToken, async (req, res) => {
   try {
     const hasil = await jejakAletaService.rincian(req.params.id);
     res.status(hasil.ok ? 200 : 404).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * PEMERIKSA SELISIH e-COURT DAN SIPP
+ * ============================================================================
+ *
+ * Dua titik: membaca keadaan pemeriksaan terakhir, dan menjalankannya
+ * sekarang juga.
+ *
+ * Yang menjalankan manual BAWAANNYA KERING - ia menyusun pesannya dan
+ * memulangkannya tanpa mengantre apa pun. Mengirim sungguhan menuntut
+ * { kering: false } yang tegas, sebab pesan yang sama dapat berangkat ke
+ * ponsel panitera di tengah malam hanya karena seseorang menekan tombol
+ * untuk melihat isinya.
+ */
+router.get("/selisih-harian/keadaan", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, ...selisihHarianService.keadaan() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/selisih-harian/jalankan", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await selisihHarianService.jalankanSatuPutaran({
+      kering: badan.kering !== false,
+      olehSiapa: String(badan.olehSiapa || "manual").slice(0, 120),
+    });
+    res.status(hasil.ok ? 200 : 500).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

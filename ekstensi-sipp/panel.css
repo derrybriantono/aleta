@@ -2651,6 +2651,36 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   pointer-events: none;
 }
 
+/* Berkas gugatan yang sudah ada di arsip ALETA.
+
+   Digambar DI ATAS pemilih berkas manual: ini jalan yang lebih pendek, dan
+   yang lebih pendek harus terlihat lebih dahulu. Pemilih manualnya tetap ada
+   untuk perkara yang berkasnya belum pernah ditarik. */
+.aleta-arsip-gugatan {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  background: var(--aleta-latar-naik);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+}
+
+.aleta-arsip-baris {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.aleta-arsip-judul {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
 /* Daftar perkara untuk penetapan massal.
 
    Digulung sendiri pada 40vh: halaman daftar SIPP dapat memuat lima puluh

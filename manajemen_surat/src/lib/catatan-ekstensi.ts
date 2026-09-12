@@ -42,6 +42,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.108.0",
+    dirilis: "2026-09-12T18:05:00+08:00",
+    judul: "Selisih e-Court diperiksa sendiri tiap malam, dan Data Umum dibaca dari berkas yang sudah ada di arsip",
+    butir: [
+      "SELISIH e-COURT DAN SIPP kini diperiksa sendiri tiap malam pukul 20.00, lalu ringkasannya dikirim ke panitera dan panitera muda lewat WhatsApp. Hitungannya sama persis dengan yang sudah dipakai panel - tidak ada aturan baru yang ditulis ulang, sebab dua tempat yang menghitung hal yang sama akan menyimpang diam-diam. Bedanya satu: panel hanya memeriksa perkara yang KEBETULAN sedang dibuka seseorang, sedangkan perkara yang tidak dibuka siapa pun tidak pernah diperiksa - dan justru perkara semacam itulah yang selisihnya paling lama tidak ketahuan.",
+      "Pesannya DIAM ketika tidak ada selisih. Pesan 'tidak ada selisih' yang datang tiap malam mengajari orang mengabaikannya, dan pada malam ia berbunyi sungguhan tidak ada yang membacanya. Diamnya tidak berarti tidak diperiksa: tiap putaran tetap dicatat, sehingga pertanyaan 'apakah tadi malam diperiksa?' tetap ada jawabannya.",
+      "Sekali semalam walau bot dinyalakan ulang lima kali - kunci idempotensinya bertanggal dan antrean mengenalinya. Yang disebut satu per satu dibatasi dua belas perkara, sisanya dihitung: pesan WhatsApp sepanjang lima puluh baris tidak dibaca sampai habis oleh siapa pun. Tidak ada satu pun nama pihak di dalamnya - layar ponsel dapat terlihat orang lain.",
+      "DATA UMUM kini dapat dibaca dari berkas gugatan yang SUDAH ADA di arsip ALETA, dengan satu tekanan. Sebelumnya berkas itu harus dicari dan dipilih petugas dari cakramnya sendiri - padahal berkas yang sama sudah ditarik ALETA dari e-Court sejak hari perkara itu didaftarkan, dan daftarnya tergambar di panel yang sama beberapa baris di bawah. Yang dikerjakan petugas selama ini: membuka e-Court, mengunduh gugatannya sekali lagi, menyimpannya entah di mana, lalu memilihnya di panel. Tiga langkah untuk berkas yang sudah ada di tangan ALETA.",
+      "Pemilih berkas manualnya TIDAK dibuang. Perkara lama banyak yang berkasnya belum pernah ditarik, dan bagi mereka jalan itu satu-satunya. Yang ditambahkan hanya jalan yang lebih pendek bila memang ada. Berkas arsipnya dibaca di memori lalu dilepas - tidak ada salinan baru yang disimpan di mana pun.",
+      "POSITA YANG KOSONG DI SIPP tidak lagi menjadi jalan buntu. Perkara e-Court yang baru didaftarkan kerap punya kolom posita yang masih kosong - isinya memang masih di berkas gugatannya, dan mengetiknya ke SIPP justru salah satu pekerjaan yang hendak ditolong menu ini. Sampai sekarang menu Isi formulir Data Umum menyerah di situ. Sekarang ia membaca berkas gugatan dari arsip sebagai cadangan, dan ASALNYA SELALU DISEBUTKAN - usulan yang disusun dari berkas, lalu dibaca seolah-olah disusun dari layar, membuat orang mencari kalimat yang memang tidak ada di layarnya.",
+    ],
+  },
+  {
     versi: "1.107.0",
     dirilis: "2026-09-12T16:40:00+08:00",
     judul: "Penetapan massal, praperiksa yang berbicara manusia, pintasan papan tik, dan panel yang tetap berguna saat ALETA mati",

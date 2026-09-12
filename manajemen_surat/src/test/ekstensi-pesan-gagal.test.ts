@@ -199,7 +199,10 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     const lewatAlat = isi.split("await alatAmbil(").length - 1;
     const mentah = isi.split("await fetch(").length - 1;
 
-    // 18 sejak pembatalan menyeluruh ditambahkan - satu permintaan lagi yang
+    // 19 sejak berkas gugatan dapat dibaca dari arsip ALETA - berkas yang
+    // tidak ada di arsip harus berbunyi sebagai kalimat beserta jalan
+    // keluarnya, bukan sebagai kode 404.
+    // (18 sejak pembatalan menyeluruh ditambahkan - satu permintaan lagi yang
     // berbicara ke petugas. Penetapan massal TIDAK menambah: ia memakai
     // rantai penetapan dan pembaca usulan yang sudah ada.
     // (17 sejak tab Riwayat ALETA ditambahkan - riwayat yang gagal terbaca
@@ -209,7 +212,7 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
     // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
     // ALETA", 12 sejak "Tetapkan lewat ALETA".)
-    expect(lewatAlat).toBe(18);
+    expect(lewatAlat).toBe(19);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
