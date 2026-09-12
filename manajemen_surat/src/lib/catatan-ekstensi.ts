@@ -42,6 +42,30 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.106.0",
+    dirilis: "2026-09-12T15:05:00+08:00",
+    judul: "Basis data SIPP bersih dari nama ALETA, riwayatnya pindah ke ALETA sendiri, dan panel menciut jadi lencana di mana pun",
+    butir: [
+      "Basis data SIPP tidak lagi memuat satu kata pun tentang ALETA. Tiap baris sys_audittrail yang ditulis ALETA dulu diakhiri '[ALETA] diisikan operator <nama>'. Niatnya penelusuran, tempatnya keliru: sys_audittrail catatan milik SIPP, dibaca petugas SIPP di layar Audit Trail SIPP, dan tidak ada satu pun baris SIPP yang menyebut alat yang dipakai mengetiknya - sehingga baris ALETA menonjol sebagai sesuatu yang disisipkan. Keterangan Smart Majelis pun ikut dibersihkan: sebabnya kini berbunyi giliran majelis dan pemerataan beban perkara, yang memang sebab yang sesungguhnya.",
+      "Penelusurannya tidak hilang - ia pindah ke basis data ALETA, dan justru menjadi lebih lengkap di sana. Panel punya tab Riwayat ALETA baru yang menyebut tiap perbuatan beserta jenisnya, tanggalnya, nama pejabat dan akun SIPP yang dipakai, operator ALETA yang menekan tombolnya, jumlah langkah, dan tabel apa saja yang disentuh. Percobaan yang DITOLAK ikut tercatat beserta sebabnya - itu yang tidak pernah dapat dilakukan sys_audittrail, dan justru yang dicari ketika petugas bertanya kenapa penetapannya tidak jadi.",
+      "Menciutkan panel kini menghasilkan lencana bulat berlogo di SIPP, ABT, dan halaman ALETA - satu bentuk yang sama, dan keadaannya DISIMPAN. Sebelumnya panel SIPP punya mode logonya sendiri yang keadaannya tidak pernah disimpan; halaman SIPP mengubah DOM-nya terus-menerus, panelnya digambar ulang, dan panel yang baru lahir terbentang lagi. Bukan kadang-kadang gagal menciut - menciutnya berhasil, lalu dibatalkan oleh halamannya sendiri.",
+      "Ukuran bawaan panel menjadi sepertiga tinggi jendela, dan tidak pernah lebih dari separuh. Batas sebelumnya tiga per lima, dan pada layar 1080 itu berarti panel setinggi hampir 600 piksel yang menutupi sisi kanan SIPP lalu terpotong di tepi bawah begitu isinya lebih panjang daripada jatahnya.",
+      "Sembilan garis panel mendapatkan warnanya kembali pada tema gelap. Sejak 1.73.0 peubah paletnya tertulis menunjuk dirinya sendiri - sah menurut penjaga yang ada waktu itu, tidak sah menurut CSS - sehingga tepi tombol kepala, kedua pegangan gulir, tepi kiri baris, garis putus kaki, dan tepi kotak kehilangan warnanya tanpa satu pun galat. Tema terang tidak pernah terkena, dan itu sebabnya tiga puluh dua rilis berlalu tanpa ada yang menyadarinya. Kotak isian di panel juga tidak lagi transparan.",
+      "Jendela yang dipendekkan kini menjepit tinggi panel walau panelnya belum pernah digeser. Penjaganya dulu keluar lebih awal pada panel yang belum berjangkar, dan panel di halaman semacam itu tertinggal terpotong di tepi bawah tanpa guliran.",
+    ],
+  },
+  {
+    versi: "1.105.0",
+    dirilis: "2026-09-12T14:10:00+08:00",
+    judul: "Sesudah penetapan, halaman kembali ke perkaranya - bukan ke dasbor",
+    butir: [
+      "Memuat ulang halaman detail perkara SIPP selalu berakhir di dasbor, dan itu bukan kebetulan: nomor perkaranya tidak pernah ada di alamat, melainkan diambil dari sesi kilat yang HABIS begitu dibaca. Pemuatan kedua membaca sesi kosong lalu dialihkan. Petugas membacanya sebagai penetapan yang gagal - padahal keempatnya tersimpan, dan halamannya saja yang pindah. Panel kini memakai pintu masuk yang sah, yang alamatnya sudah tercetak di halaman itu sendiri.",
+      "Riwayat perkara di popup menyimpan alamat yang sama cacatnya, dan ikut diperbaiki - ditekan, ia juga mendarat di dasbor.",
+      "Jam keempat penetapan tidak lagi berakhiran detik yang sama. Sebelumnya menitnya berbeda tetapi detiknya persis sama pada PMH, PPP, PJS, dan PHS - empat keputusan yang ditulis manusia tidak mungkin begitu. Diuji atas 3.000 perkara: tidak ada satu pun yang keempat detiknya sama, dan tidak ada satu pun yang jam mulainya kembar.",
+      "Kartu 'Ukuran huruf panel' di popup tidak pernah ditutup, sehingga kartu Pembaruan, tombol posisi panel, dan kaki popup semuanya tersarang di dalamnya. Peraga ukuran huruf dipindahkan ke barisnya sendiri - sebaris dengan tombolnya, di popup selebar 300 piksel ia tersisa 'Co...' saja.",
+    ],
+  },
+  {
     versi: "1.104.0",
     dirilis: "2026-09-12T13:20:00+08:00",
     judul: "Penetapan dapat dibatalkan, Smart Majelis ikut tercatat, dan tab Kerjakan menjadi Penetapan",

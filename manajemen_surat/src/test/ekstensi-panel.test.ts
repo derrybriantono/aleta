@@ -107,25 +107,58 @@ describe("pilihan manual benar-benar terbawa ke formulir", () => {
   });
 });
 
-describe("menciutkan panel menjadi LOGO, bukan kotak", () => {
-  it("tombol ciut menghasilkan logo melayang", () => {
+describe("menciutkan panel menjadi LENCANA, bukan kotak", () => {
+  it("tombol ciut menghasilkan lencana melayang", () => {
     // Bentuk lamanya menyembunyikan isi dan menyisakan KEPALA - sebatang
     // kotak selebar panel yang menutupi kolom di bawahnya tanpa menampilkan
     // satu pun keterangan. Itulah "kotak melayang" yang dilaporkan.
     const isi = konten();
-    expect(isi).toContain('lipat.title = "Ciutkan menjadi logo melayang";');
-    expect(isi).toContain('panel.classList.add("aleta-panel-logo");');
+    // ======================================================================
+    // SATU BENTUK CIUT, DAN KEADAANNYA DISIMPAN
+    // ======================================================================
+    //
+    // Sampai 1.105.0 panel SIPP punya mode logonya sendiri
+    // (aleta-panel-logo) yang keadaannya TIDAK pernah disimpan, sedangkan
+    // panel ABT dan panel halaman ALETA memakai aleta-panel-lencana yang
+    // menyimpannya. Itu sebab laporan "kadang tidak menciut jadi logo
+    // melayang": halaman SIPP mengubah DOM-nya terus-menerus, panelnya
+    // digambar ulang, dan panel yang baru lahir terbentang lagi.
+    expect(isi).toContain('lipat.title = "Ciutkan menjadi lencana";');
+    expect(isi).toContain("ciutkanKeLencana(panel, true);");
+    expect(isi).toContain("panel.classList.add(KELAS_LENCANA);");
+    // Kelas lamanya benar-benar dibuang, bukan disisakan berdampingan.
+    expect(isi).not.toContain('classList.add("aleta-panel-logo")');
     // Tombol berlian yang dulu mengerjakan hal yang sama sudah dibuang -
     // dua tombol yang sama-sama mengecilkan menuntut orang mengingat bedanya.
     expect(isi).not.toContain('buatElemen("button", "aleta-jadilogo"');
   });
 
-  it("logo dapat DIGESER - klik dibedakan dari tarikan lewat jarak", () => {
-    // Tanpa pembeda, tiap tarikan berakhir dengan logo yang terbentang
-    // kembali, sebab tiap tarikan diakhiri satu klik di atas logonya.
+  it("keadaan ciut DISIMPAN, dan dipulihkan tiap panel digambar ulang", () => {
+    // Inilah sebab laporannya, dan satu-satunya penjaga yang menahannya:
+    // menciutnya tidak pernah gagal - ia dibatalkan oleh halaman SIPP yang
+    // menggambar ulang panelnya sedetik kemudian.
+    const isi = konten();
+    expect(isi).toContain("lencana: mau");
+    expect(isi).toContain("if (posisi && posisi.lencana) ciutkanKeLencana(panel, true);");
+  });
+
+  it("lencana dapat DIGESER - klik dibedakan dari tarikan lewat jarak", () => {
+    // Tanpa pembeda, tiap tarikan berakhir dengan lencana yang terbentang
+    // kembali, sebab tiap tarikan diakhiri satu klik di atas lencananya.
     const isi = konten();
     expect(isi).toContain('panel.dataset.baruDigeser = "1";');
     expect(isi).toContain('if (panel.dataset.baruDigeser === "1") {');
+  });
+
+  it("dan pendengar tarikannya di PANEL, bukan di kepala yang tersembunyi", () => {
+    // Pembeda di atas tidak pernah menyala selama pendengarnya di kepala:
+    // kepala itu display:none begitu panelnya menjadi lencana, jadi lencana
+    // yang dijanjikan dapat digeser sesungguhnya tidak pernah dapat digeser.
+    const isi = konten();
+    expect(isi).toContain('panel.addEventListener("mousedown"');
+    expect(isi).not.toContain('kepala.addEventListener("mousedown"');
+    // Pagarnya: panel yang terbentang tetap hanya digeser dari kepalanya.
+    expect(isi).toContain('if (!panel.classList.contains(KELAS_LENCANA) && !kepala.contains(peristiwa.target)) return;');
   });
 
   it("deret tombolnya SATU, dipakai panel perkara dan panel daftar", () => {
@@ -305,17 +338,29 @@ describe("panel yang baru muncul dapat digulung", () => {
     expect(potong).toContain("jepitTinggiKeRuangTersisa(panel);");
   });
 
-  it("mode logo dan layar penuh dikecualikan", () => {
+  it("lencana dan layar penuh dikecualikan", () => {
     // Keduanya memang tidak setinggi isinya, dan menjepitnya akan melawan
-    // ukuran yang justru sedang diminta.
+    // ukuran yang justru sedang diminta - lencana yang dijepit menjadi logo
+    // melayang yang tiba-tiba memanjang.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
-    expect(potong.slice(0, 700)).toContain('classList.contains("aleta-panel-logo")');
-    expect(potong.slice(0, 700)).toContain('classList.contains("aleta-panel-penuh")');
+    expect(potong.slice(0, 900)).toContain("classList.contains(KELAS_LENCANA)");
+    expect(potong.slice(0, 900)).toContain('classList.contains("aleta-panel-penuh")');
+  });
+
+  it("tingginya sepertiga layar, dan tidak pernah lebih dari separuh", () => {
+    // Tiga per lima pernah dipakai, dan pada layar 1080 itu berarti panel
+    // setinggi hampir 600 piksel yang menutupi sisi kanan SIPP lalu
+    // terpotong di tepi bawah begitu isinya lebih panjang daripada jatahnya.
+    const isi = konten();
+    const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
+    expect(potong.slice(0, 2600)).toContain("Math.round(window.innerHeight / 3)");
+    expect(potong.slice(0, 2600)).toContain("Math.round(window.innerHeight / 2)");
+    expect(isi).not.toContain("window.innerHeight * 0.6");
   });
 });
 
-describe("kepala panel: akun SIPP, layar penuh, dan mode logo", () => {
+describe("kepala panel: akun SIPP, layar penuh, dan lencana", () => {
   it("akun SIPP yang sedang masuk disebut di kepala", () => {
     // Jawaban paling menentukan sebelum menekan apa pun. Selama ini hanya ada
     // di sudut kanan atas SIPP - tertutup panel ini sendiri pada layar sempit.
@@ -339,12 +384,16 @@ describe("kepala panel: akun SIPP, layar penuh, dan mode logo", () => {
     expect(isi).toContain("terapkanPosisi(panel, keadaanPanel);");
   });
 
-  it("mode logo dikembalikan dengan menekan logonya", () => {
-    // Dalam bentuk logo tidak ada satu pun tombol yang terlihat, jadi
-    // pendengarnya harus di panel - bukan di tombol.
+  it("lencana dibentangkan dengan menekan lencananya", () => {
+    // Dalam bentuk lencana tidak ada satu pun tombol panel yang terlihat,
+    // jadi pendengarnya dipasang pada lencananya sendiri.
     const isi = konten();
-    expect(isi).toContain('panel.classList.add("aleta-panel-logo")');
-    expect(isi).toContain('if (!panel.classList.contains("aleta-panel-logo")) return;');
+    expect(isi).toContain("function pasangLencana(panel) {");
+    expect(isi).toContain('lencana.addEventListener("click", bentangkan);');
+    expect(isi).toContain("if (!panel.classList.contains(KELAS_LENCANA)) return;");
+    // Logonya berkas ekstensi, bukan huruf yang digambar CSS: yang melayang
+    // di atas halaman aplikasi lain harus dikenali dalam sekejap.
+    expect(isi).toContain('chrome.runtime.getURL("ikon/aleta-32.png")');
   });
 });
 

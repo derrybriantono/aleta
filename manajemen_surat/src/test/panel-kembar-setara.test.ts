@@ -112,10 +112,18 @@ function perkakasKonten() {
     },
   };
 
+  // Kelasnya DIBACA dari panel-alat.js, tidak ditulis ulang: sejak panel
+  // SIPP ikut memakai lencana, keduanya harus benar-benar kelas yang sama.
+  // Menyalin nilainya ke sini akan menyembunyikan justru penyimpangan yang
+  // dicari berkas ini.
+  const cocokKelas = alat.match(/const KELAS_LENCANA = "([^"]+)"/);
+  if (!cocokKelas) throw new Error("KELAS_LENCANA tidak ditemukan di panel-alat.js");
+
   const buat = new Function(
     "window",
     "chrome",
     `const KUNCI_POSISI = "posisiPanel";
+     const KELAS_LENCANA = ${JSON.stringify(cocokKelas[1])};
      let keadaanPanel = null;
      ${sumber}
      return { jepitKeLayar, jepitTinggiKeRuangTersisa, terapkanPosisi, normalkanJangkar, kembalikanBawaan };`
@@ -310,6 +318,15 @@ describe("lencana tidak dijepit tingginya", () => {
   it("lencana sependek apa pun tidak tersentuh", () => {
     const lencana = panelPalsu({ left: 1200, top: 700, width: 44, height: 44 }, ["aleta-panel-lencana"]);
     A.fn.alatJepitTinggi(lencana);
+    expect(lencana.style).toEqual({});
+  });
+
+  it("konten.js menjaganya dengan cara yang sama - dulu kelasnya berbeda", () => {
+    // Sampai 1.105.0 panel SIPP memakai aleta-panel-logo, dan panel ABT
+    // aleta-panel-lencana. Dua kelas untuk satu bentuk yang sama, dan yang
+    // pertama keadaannya tidak pernah disimpan.
+    const lencana = panelPalsu({ left: 1200, top: 100, width: 44, height: 900 }, ["aleta-panel-lencana"]);
+    K.fn.jepitTinggiKeRuangTersisa(lencana);
     expect(lencana.style).toEqual({});
   });
 

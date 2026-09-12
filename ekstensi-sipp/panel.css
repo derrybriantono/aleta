@@ -33,9 +33,15 @@
   --aleta-latar-naik: #1d2925;
   --aleta-garis: #2c3a34;
   /* Garis yang lebih tegas daripada --aleta-garis: tepi tombol, pegangan
-     gulir, dan tepi kiri baris. Dulu ditulis var(--aleta-garis-kuat) di sembilan tempat, dan
-     karena itu tidak pernah ikut berubah pada tema terang. */
-  --aleta-garis-kuat: var(--aleta-garis-kuat);
+     gulir, dan tepi kiri baris. Dulu ditulis tetap di sembilan tempat, dan
+     karena itu tidak pernah ikut berubah pada tema terang.
+
+     Nilainya sempat tertulis var(--aleta-garis-kuat) - menunjuk dirinya
+     sendiri. Peubah semacam itu TIDAK SAH menurut CSS, dan tiap pemakaiannya
+     berakhir sebagai unset. Sejak 1.73.0 sampai 1.105.0 kesembilan garis itu
+     karena itu hilang warnanya pada tema gelap - tema bawaannya - tanpa satu
+     pun galat. Tema terang tidak pernah terkena: di sana nilainya sungguhan. */
+  --aleta-garis-kuat: #3a4a44;
   --aleta-tulisan: #e6ede8;
   --aleta-tulisan-lembut: #a3b4ab;
   --aleta-merek: #7fd0a6;
@@ -1582,43 +1588,12 @@ tr.aleta-baris-disorot > td {
   border-radius: 12px;
 }
 
-/* Mode logo: yang tersisa hanya lingkaran berlogo, dan seluruh isinya
-   disembunyikan - termasuk kepalanya. Menyisakan kepala berarti menyisakan
-   sebatang kotak selebar panel, yang justru keadaan yang hendak dihindari. */
-.aleta-panel-logo {
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
-}
-
-.aleta-panel-logo .aleta-isi,
-.aleta-panel-logo .aleta-kaki,
-.aleta-panel-logo .aleta-tarik,
-.aleta-panel-logo .aleta-kepala > *:not(.aleta-logo) {
-  display: none !important;
-}
-
-.aleta-panel-logo .aleta-kepala {
-  padding: 0;
-  border: 0;
-  background: none;
-  justify-content: center;
-}
-
-.aleta-panel-logo .aleta-logo {
-  margin: 0;
-  width: 26px;
-  height: 26px;
-}
+/* Ciut menjadi lencana - lihat blok CIUT MENJADI LENCANA di bawah.
+   Sampai 1.105.0 panel SIPP punya mode logonya sendiri (.aleta-panel-logo)
+   yang bentuknya serupa tetapi keadaannya tidak pernah disimpan, sehingga
+   tiap penggambaran ulang halaman SIPP membentangkannya lagi. Kelasnya
+   dibuang; SIPP, ABT, dan halaman ALETA kini memakai .aleta-panel-lencana
+   yang sama. */
 
 /* ==========================================================================
    PILIHAN MANUAL - DROPDOWN ORANG DAN TANGGAL
@@ -3162,7 +3137,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
   padding: 4px 6px;
   border: 1px solid var(--aleta-garis);
   border-radius: 4px;
-  background: var(--aleta-latar-lembut, transparent);
+  background: var(--aleta-latar-naik);
   color: var(--aleta-tulisan);
   max-width: 100%;
 }
@@ -3226,7 +3201,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="back
   padding: 4px 6px;
   border: 1px solid var(--aleta-garis);
   border-radius: 4px;
-  background: var(--aleta-latar-lembut, transparent);
+  background: var(--aleta-latar-naik);
   color: var(--aleta-tulisan);
   resize: vertical;
 }

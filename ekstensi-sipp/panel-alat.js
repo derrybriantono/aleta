@@ -135,7 +135,18 @@ function alatJepitTinggi(panel) {
 
   const kotak = panel.getBoundingClientRect();
   const sisa = Math.max(window.innerHeight - kotak.top - 12, 160);
-  const idaman = Math.max(Math.round(window.innerHeight * 0.6), 220);
+  // Sepertiga tinggi jendela, dengan ATAP separuh layar.
+  //
+  // Batas pertamanya tiga per lima, dan itu masih terlalu tinggi: pada layar
+  // 1080 berarti hampir 600 piksel panel yang menutupi sisi kanan halaman
+  // kerja, lalu terpotong di tepi bawah begitu isinya lebih panjang daripada
+  // jatahnya. Lantai 240 piksel menjaganya tetap terbaca pada jendela yang
+  // sangat pendek, dan atap separuh layar menjaga lantai itu sendiri tidak
+  // berbalik menjadi panel yang menutupi segalanya.
+  const idaman = Math.min(
+    Math.max(Math.round(window.innerHeight / 3), 240),
+    Math.round(window.innerHeight / 2)
+  );
   const batas = panel.dataset.tinggiSendiri === "1" ? sisa : Math.min(sisa, idaman);
   if (kotak.height <= batas) return;
 
@@ -380,11 +391,26 @@ function alatPasangLencana(panel, kunci) {
 function alatPasangGeser(panel, kepala, kunci) {
   let geser = null;
 
-  kepala.addEventListener("pointerdown", (peristiwa) => {
+  panel.addEventListener("pointerdown", (peristiwa) => {
     // Tombol di dalam kepala tidak boleh ikut menggeser - yang menekan tombol
     // tutup tidak sedang memindahkan panel.
     if (peristiwa.target.closest("button, a, input, select, textarea")) return;
     if (peristiwa.button !== 0) return;
+    // ========================================================================
+    // LENCANA DIGESER DARI LENCANANYA, PANEL DARI KEPALANYA
+    // ========================================================================
+    //
+    // Pendengar ini dulu dipasang pada KEPALA panel, dan kepala itu
+    // display:none begitu panelnya menjadi lencana - sehingga lencana yang
+    // dijanjikan dapat digeser sesungguhnya tidak pernah dapat digeser sama
+    // sekali. Satu-satunya jalan menyingkirkannya adalah membentangkannya
+    // kembali lalu menggeser panelnya, yaitu justru yang tidak diinginkan
+    // orang yang baru saja menciutkannya.
+    //
+    // Sekarang dipasang pada panel, dengan pagar ini: panel yang terbentang
+    // tetap hanya digeser dari kepalanya - menyeret badannya berarti menyeret
+    // teks yang sedang dibaca - sedangkan lencana digeser dari mana saja.
+    if (!panel.classList.contains(KELAS_LENCANA) && !kepala.contains(peristiwa.target)) return;
 
     alatNormalkanJangkar(panel);
     const kotak = panel.getBoundingClientRect();
@@ -396,14 +422,14 @@ function alatPasangGeser(panel, kepala, kunci) {
     };
     panel.classList.add("aleta-menggeser");
     try {
-      kepala.setPointerCapture(peristiwa.pointerId);
+      panel.setPointerCapture(peristiwa.pointerId);
     } catch {
       /* tidak semua peramban mengizinkannya - geser tetap berjalan */
     }
     peristiwa.preventDefault();
   });
 
-  kepala.addEventListener("pointermove", (peristiwa) => {
+  panel.addEventListener("pointermove", (peristiwa) => {
     if (!geser) return;
     // Ambang 4 piksel memisahkan tarikan dari klik - dibaca alatPasangLencana
     // supaya lencana yang baru saja digeser tidak ikut membentang.
@@ -436,8 +462,8 @@ function alatPasangGeser(panel, kepala, kunci) {
     alatJepitTinggi(panel);
   };
 
-  kepala.addEventListener("pointerup", selesai);
-  kepala.addEventListener("pointercancel", selesai);
+  panel.addEventListener("pointerup", selesai);
+  panel.addEventListener("pointercancel", selesai);
 }
 
 /**

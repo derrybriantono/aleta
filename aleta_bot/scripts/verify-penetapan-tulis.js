@@ -187,13 +187,28 @@ async function utama() {
     "judul audit tidak lagi berawalan [ALETA]",
     audit.every((x) => !String(x.params[6]).startsWith("[ALETA]"))
   );
+  // ==========================================================================
+  // TIDAK SATU KATA PUN TENTANG ALETA MASUK KE BASIS DATA SIPP
+  // ==========================================================================
+  //
+  // Penjaga ini dulu berbunyi sebaliknya: ia MENUNTUT penanda [ALETA] ada
+  // pada kolom keterangan, sebagai jalan menelusuri tulisan ALETA. Niatnya
+  // benar, tempatnya keliru - sys_audittrail catatan milik SIPP, dan tidak
+  // ada satu pun baris SIPP yang menyebut alat yang dipakai mengetiknya.
+  //
+  // Penelusurannya tidak hilang; ia pindah ke basis data ALETA sendiri.
+  // Lihat services/jejakAletaService.js.
   benar(
-    "penanda ALETA pindah ke keterangan, tidak hilang",
-    audit.every((x) => String(x.params[7]).includes("[ALETA]"))
+    "keterangan audit tidak memuat penanda ALETA",
+    audit.every((x) => !String(x.params[7]).includes("[ALETA]"))
   );
   benar(
-    "keterangan menyebut operatornya",
-    audit.every((x) => String(x.params[7]).includes("meja1g"))
+    "keterangan audit tidak menyebut operator ALETA",
+    audit.every((x) => !String(x.params[7]).includes("meja1g"))
+  );
+  benar(
+    "tidak ada ruas audit mana pun yang menyebut ALETA",
+    audit.every((x) => !x.params.some((n) => /aleta/i.test(String(n))))
   );
   benar(
     "keterangan audit berbentuk tabel SIPP",

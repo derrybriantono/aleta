@@ -121,13 +121,27 @@ describe("lencana tidak boleh menyatu dengan halaman SIPP", () => {
   });
 });
 
-describe("panel berhenti di tiga per lima layar", () => {
-  it("tingginya dibatasi 3/5 tinggi jendela, bukan sampai tepi bawah", () => {
+describe("panel berhenti di sepertiga layar", () => {
+  it("tingginya sepertiga tinggi jendela, bukan sampai tepi bawah", () => {
     // Panel setinggi layar penuh menutup seluruh sisi kanan halaman SIPP,
     // termasuk paginasi dan tombol yang letaknya memang di bawah.
+    //
+    // Batas pertamanya tiga per lima, dan itu masih terlalu tinggi: pada
+    // layar 1080 berarti hampir 600 piksel, dan begitu isinya lebih panjang
+    // daripada jatahnya panel itu terpotong di tepi bawah.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
-    expect(potong.slice(0, 2400)).toContain("window.innerHeight * 0.6");
+    expect(potong.slice(0, 2800)).toContain("Math.round(window.innerHeight / 3)");
+  });
+
+  it("dan tidak pernah melewati separuh layar", () => {
+    // Lantai 240 piksel menjaga panel tetap terbaca pada jendela yang sangat
+    // pendek. Tanpa atap, lantai itu sendiri berbalik menjadi panel yang
+    // menutupi hampir seluruh jendela sependek 300 piksel.
+    const isi = konten();
+    const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
+    expect(potong.slice(0, 2800)).toContain("Math.round(window.innerHeight / 2)");
+    expect(isi).not.toContain("window.innerHeight * 0.6");
   });
 
   it("batasnya tidak pernah melewati ruang yang benar-benar tersisa", () => {
@@ -270,10 +284,29 @@ describe("palet panel: satu tempat, dua tema", () => {
   it("warna redup tidak lagi dipatok, supaya tema terang ikut berubah", () => {
     // #e4ebe6 dipatok pada dua aturan - hampir putih. Pada tema terang itu
     // berarti tulisan hampir putih di atas latar hampir putih.
+    //
+    // ======================================================================
+    // YANG DILARANG PEMATOKANNYA, BUKAN UNTAINYA
+    // ======================================================================
+    //
+    // Penjaga ini dulu melarang untai warnanya muncul DI MANA PUN - termasuk
+    // sebagai nilai peubah paletnya sendiri. Larangan itu tidak dapat
+    // dipenuhi: palet harus menyebut angka di suatu tempat. Yang terjadi
+    // kemudian persis yang dapat diduga - definisinya ditulis
+    // var(--aleta-garis-kuat), menunjuk dirinya sendiri, sah menurut penjaga
+    // ini dan TIDAK SAH menurut CSS. Sejak 1.73.0 sampai 1.105.0 sembilan
+    // garis karena itu kehilangan warnanya pada tema gelap.
+    //
+    // Sekarang yang diperiksa aturan gayanya saja - baris yang mematok warna
+    // pada sifat - sedangkan baris definisi peubah (--nama: #warna) memang
+    // tempatnya angka itu ditulis.
     const css = gaya();
     const potong = css.slice(0, css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP"));
+    const barisAturan = potong
+      .split("\n")
+      .filter((baris) => !/^\s*--[a-z0-9-]+\s*:/i.test(baris));
     for (const warna of ["#869489", "#6e7d74", "#5f6d65", "#e4ebe6", "#1e2926", "#3a4a44"]) {
-      expect(potong).not.toContain(warna);
+      expect(barisAturan.filter((baris) => baris.includes(warna))).toEqual([]);
     }
   });
 

@@ -2336,6 +2336,30 @@ export async function kirimPenetapanHapusGateway(payload: {
   });
 }
 
+/**
+ * Riwayat perbuatan ALETA pada penetapan - dari basis data ALETA sendiri.
+ *
+ * Bukan dari sys_audittrail SIPP. Sejak 1.106.0 tidak ada satu kata pun
+ * tentang ALETA yang ditulis ke sana, dan penelusurannya justru menjadi
+ * lebih lengkap di sini: percobaan yang DITOLAK ikut tercatat, sedangkan
+ * sys_audittrail hanya memuat yang berhasil.
+ */
+export async function getGatewayJejakPenetapan(payload: {
+  perkaraId?: number;
+  nomorPerkara?: string;
+  batas?: number;
+}) {
+  const ruas = new URLSearchParams();
+  if (payload.perkaraId) ruas.set("perkaraId", String(payload.perkaraId));
+  if (payload.nomorPerkara) ruas.set("nomorPerkara", payload.nomorPerkara);
+  if (payload.batas) ruas.set("batas", String(payload.batas));
+  const tanya = ruas.toString();
+  return gatewayFetch<Record<string, unknown>>(
+    `/internal/aleta-bot/penetapan/riwayat${tanya ? `?${tanya}` : ""}`,
+    { method: "GET" }
+  );
+}
+
 export async function getGatewayPenunjukanUsulan(payload: {
   nomorPerkara: string;
   pengaturan: {

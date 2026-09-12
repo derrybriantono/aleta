@@ -64,6 +64,10 @@ const TAHAPAN_TINGKAT_PERTAMA = 10;
  * dijawab oleh siapa pun. Tanda ini juga yang membuat penelusuran balik
  * mungkin bila kelak ada yang dipersoalkan.
  */
+// Penanda lama. Sampai 1.105.0 tiap baris sys_audittrail yang ditulis ALETA
+// diakhiri "[ALETA] diisikan operator <nama>". Tetapannya ditahan di sini
+// HANYA sebagai pola pencari bagi yang hendak membersihkan baris lama; ia
+// tidak pernah lagi dituliskan ke basis data SIPP.
 const TANDA_ALETA = "[ALETA]";
 
 /**
@@ -523,7 +527,7 @@ function keteranganAudit(nilai) {
  * satu-satunya keterangan yang dapat menjawab "siapa yang mengerjakan ini"
  * pada hari seseorang mempersoalkan penetapannya.
  */
-function barisAudit({ username, operator, tabel, formulir, aksi, nilai, perkaraId, ip, saat }) {
+function barisAudit({ username, tabel, formulir, aksi, nilai, perkaraId, ip, saat }) {
   // Kunci utamanya diambil dari nilai yang ditulis bila tidak disebut - tiap
   // baris pada berkas ini selalu membawa perkara_id.
   const idPerkara = Number(perkaraId || (nilai && nilai.perkara_id) || 0);
@@ -542,10 +546,21 @@ function barisAudit({ username, operator, tabel, formulir, aksi, nilai, perkaraI
       formulir,
       aksi,
       `${aksi} table <b>${tabel}</b> dari halaman <b>${formulir}</b>${kunci}`,
-      // Provenansinya di sini, bukan di judul: terbaca ketika [detil] dibuka,
-      // tanpa membuat tiap baris menonjol di daftar.
-      keteranganAudit(nilai) +
-        `<br>${TANDA_ALETA}${operator ? ` diisikan operator ${operator}` : ""}`,
+      // ======================================================================
+      // TIDAK ADA SATU KATA PUN TENTANG ALETA DI SINI
+      // ======================================================================
+      //
+      // Dulu baris ini diakhiri `<br>[ALETA] diisikan operator <nama>`.
+      // Niatnya penelusuran, tempatnya keliru: sys_audittrail catatan milik
+      // SIPP, dibaca petugas SIPP di layar Audit Trail SIPP, dan tidak ada
+      // satu pun baris SIPP yang menyebut alat yang dipakai mengetiknya.
+      //
+      // Penelusurannya tidak hilang - ia pindah ke basis data ALETA sendiri
+      // dan justru menjadi lebih lengkap di sana: lihat jejakAletaService.js,
+      // yang mencatat jenis, perkara, akun SIPP, operator, tabel yang
+      // disentuh, serta sebabnya bila gagal - termasuk percobaan yang GAGAL,
+      // yang di sys_audittrail tidak pernah meninggalkan jejak sama sekali.
+      keteranganAudit(nilai),
     ],
     keterangan: `catatan audit ${tabel} atas nama ${username}`,
   };
@@ -828,7 +843,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_penetapan",
         formulir: jejak.formulir,
         aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
@@ -856,7 +870,14 @@ async function susunRencanaTulis(minta) {
     // status 2 = susunannya ditetapkan di luar rekomendasi otomatis. Itu yang
     // benar untuk ALETA: giliran majelis dihitung ALETA sendiri, bukan diambil
     // dari rekomendasi Smart Majelis SIPP.
-    const sebabMajelis = cleanText(minta.sebabMajelis) || "Ditetapkan lewat giliran majelis ALETA";
+    // Sebab yang DITULISKAN ke kolom keterangan SIPP, dan karena itu tidak
+    // boleh menyebut ALETA sama sekali. Yang dibaca laporan Smart Majelis
+    // adalah alasan majelisnya menyimpang dari rekomendasi - dan alasan yang
+    // sesungguhnya memang giliran serta beban perkara, bukan alat yang
+    // dipakai mengetiknya.
+    const sebabMajelis =
+      cleanText(minta.sebabMajelis) ||
+      "Ditetapkan menurut giliran majelis dan pemerataan beban perkara";
     const nilaiSmart = {
       perkara_id: perkara.perkaraId,
       hakim_id2: idGabung,
@@ -880,7 +901,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_smartmajelis",
         formulir: jejak.formulir,
         aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
@@ -936,7 +956,6 @@ async function susunRencanaTulis(minta) {
       langkah.push(
         barisAudit({
           username: akun.username,
-          operator,
           tabel: "perkara_hakim_pn",
           formulir: jejak.formulir,
           aksi: "INSERT",
@@ -987,7 +1006,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_penetapan",
         formulir: jejak.formulir,
         aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
@@ -1064,7 +1082,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: tabelPetugas,
         formulir: jejak.formulir,
         aksi: "INSERT",
@@ -1193,7 +1210,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_jadwal_sidang",
         formulir: jejak.formulir,
         aksi: "INSERT",
@@ -1228,7 +1244,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_penetapan_hari_sidang",
         formulir: jejak.formulir,
         aksi: "INSERT",
@@ -1265,7 +1280,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_penetapan",
         formulir: jejak.formulir,
         aksi: "UPDATE",
@@ -1381,7 +1395,6 @@ async function susunRencanaTulis(minta) {
       langkah.push(
         barisAudit({
           username: akun.username,
-          operator,
           tabel: "perkara",
           formulir: jejak.formulir,
           aksi: "UPDATE",
@@ -1411,7 +1424,6 @@ async function susunRencanaTulis(minta) {
       langkah.push(
         barisAudit({
           username: akun.username,
-          operator,
           tabel: "perkara_data_pernikahan",
           formulir: jejak.formulir,
           aksi: "INSERT",
@@ -1450,7 +1462,6 @@ async function susunRencanaTulis(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: "perkara_proses",
         formulir: jejak.formulir,
         aksi: "INSERT",
@@ -1493,7 +1504,6 @@ async function susunRencanaTulis(minta) {
   langkah.push(
     barisAudit({
       username: akun.username,
-      operator,
       tabel: "perkara",
       formulir: jejak.formulir,
       aksi: "UPDATE",
@@ -1733,7 +1743,6 @@ async function susunRencanaHapus(minta) {
     langkah.push(
       barisAudit({
         username: akun.username,
-        operator,
         tabel: rincian.tabel,
         formulir: jejak.formulir,
         aksi: "DELETE",
@@ -1758,7 +1767,6 @@ async function susunRencanaHapus(minta) {
   langkah.push(
     barisAudit({
       username: akun.username,
-      operator,
       tabel: "perkara_penetapan",
       formulir: jejak.formulir,
       aksi: "UPDATE",
@@ -1781,7 +1789,6 @@ async function susunRencanaHapus(minta) {
   langkah.push(
     barisAudit({
       username: akun.username,
-      operator,
       tabel: "perkara_proses",
       formulir: jejak.formulir,
       aksi: "DELETE",
@@ -1815,7 +1822,6 @@ async function susunRencanaHapus(minta) {
   langkah.push(
     barisAudit({
       username: akun.username,
-      operator,
       tabel: "perkara",
       formulir: jejak.formulir,
       aksi: "UPDATE",

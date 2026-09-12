@@ -216,10 +216,17 @@ const cari = (rencana, tabel, aksi) =>
     judul[0]
   );
 
-  // Provenansinya TIDAK hilang - hanya pindah ke kolom keterangan.
+  // Provenansinya pindah SELURUHNYA ke basis data ALETA - lihat
+  // services/jejakAletaService.js. Yang tersisa di sys_audittrail hanya
+  // tabel nilai seperti yang ditulis SIPP sendiri.
   const keterangan = audit.map((x) => String(x.params[7]));
-  periksa("operator tetap tercatat pada keterangan", keterangan.every((x) => x.includes("SUPER ADMIN DERRY")), "");
-  periksa("penanda ALETA tetap ada pada keterangan", keterangan.every((x) => x.includes("[ALETA]")), "");
+  periksa("keterangan tidak menyebut operator ALETA", keterangan.every((x) => !x.includes("SUPER ADMIN DERRY")), "");
+  periksa("keterangan tidak memuat penanda ALETA", keterangan.every((x) => !x.includes("[ALETA]")), "");
+  periksa(
+    "tidak ada ruas audit mana pun yang menyebut ALETA",
+    audit.every((x) => !x.params.some((n) => /aleta/i.test(String(n)))),
+    ""
+  );
 
   // ======================================================================
   // 5. Penjalannya benar-benar mengisi id dari MAX(id)+1

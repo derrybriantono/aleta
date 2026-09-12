@@ -51,6 +51,7 @@ const ALETA_API_ANTREAN = "/aleta/api/aleta-bot/penunjukan/antrean";
 const ALETA_API_BERKAS_GUGATAN = "/aleta/api/aleta-bot/penunjukan/berkas";
 const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
 const ALETA_API_HAPUS = "/aleta/api/aleta-bot/penunjukan/hapus";
+const ALETA_API_RIWAYAT = "/aleta/api/aleta-bot/penunjukan/riwayat";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
@@ -3809,6 +3810,166 @@ function bagianIsiPutusan(nomorPerkara) {
   return kotak;
 }
 
+/**
+ * ============================================================================
+ * RIWAYAT ALETA - APA SAJA YANG PERNAH DIKERJAKAN ALETA PADA PERKARA INI
+ * ============================================================================
+ *
+ * Sampai 1.105.0 pertanyaan itu dijawab dari layar Audit Trail SIPP: tiap
+ * baris yang ditulis ALETA diakhiri "[ALETA] diisikan operator <nama>".
+ *
+ * Tempatnya keliru. sys_audittrail catatan milik SIPP, dibaca petugas SIPP,
+ * dan tidak ada satu pun baris SIPP yang menyebut alat yang dipakai
+ * mengetiknya - sehingga baris ALETA menonjol sebagai sesuatu yang
+ * disisipkan. Sejak 1.106.0 basis data SIPP tidak memuat satu kata pun
+ * tentang ALETA.
+ *
+ * Riwayatnya pindah ke sini, dan justru menjadi lebih lengkap:
+ *
+ *   - percobaan yang DITOLAK ikut tercatat beserta sebabnya; di sys_audittrail
+ *     yang gagal tidak pernah meninggalkan jejak sama sekali,
+ *   - tabel apa saja yang disentuh tiap langkah tercatat utuh,
+ *   - akun SIPP dan operator ALETA tercatat berdampingan - dua orang yang
+ *     belum tentu sama, dan perbedaannya justru yang dicari bila kelak ada
+ *     yang bertanya.
+ *
+ * Dimuat saat dibuka, bukan saat panel digambar: yang membuka panel belum
+ * tentu sedang mencari riwayat, dan satu panggilan per perkara yang dilihat
+ * sekilas adalah ongkos yang tidak perlu.
+ */
+function bagianRiwayatAleta(nomorPerkara) {
+  const kotak = bagian("Riwayat ALETA", "riwayatAleta", true);
+  let sudahDimuat = false;
+
+  const kepala = kotak.querySelector(".aleta-bagian-judul");
+  const muatBagian = () => {
+    const isi = kotak.isi;
+    if (sudahDimuat || isi.style.display === "none") return;
+    sudahDimuat = true;
+
+    isi.appendChild(buatElemen("div", "aleta-memuat", "Membaca riwayat ALETA…"));
+    void (async () => {
+      let hasil = null;
+      try {
+        const respons = await alatAmbil(
+          `${ALETA_API_RIWAYAT}?nomorPerkara=${encodeURIComponent(nomorPerkara)}&batas=30`,
+          { credentials: "include", cache: "no-store" },
+          "riwayat ALETA"
+        );
+        if (!respons.ok) {
+          isi.textContent = "";
+          isi.appendChild(
+            buatElemen("div", "aleta-gagal", await pesanGalat(respons))
+          );
+          sudahDimuat = false;
+          return;
+        }
+        hasil = await respons.json();
+      } catch (galat) {
+        isi.textContent = "";
+        isi.appendChild(buatElemen("div", "aleta-gagal", String(galat.message || galat)));
+        sudahDimuat = false;
+        return;
+      }
+
+      isi.textContent = "";
+      const baris = (hasil && Array.isArray(hasil.baris) && hasil.baris) || [];
+      if (baris.length === 0) {
+        isi.appendChild(
+          buatElemen(
+            "div",
+            "aleta-kosong",
+            "ALETA belum pernah menulis apa pun pada perkara ini."
+          )
+        );
+        return;
+      }
+
+      const NAMA_JENIS = {
+        pmh: "Penetapan Majelis Hakim",
+        ppp: "Penunjukan Panitera Pengganti",
+        pjs: "Penunjukan Juru Sita",
+        phs: "Penetapan Hari Sidang",
+        dataUmum: "Isian Data Umum",
+      };
+
+      for (const jejak of baris) {
+        const kotakBaris = buatElemen("div", "aleta-baris");
+
+        const judul = jejak.aksi === "hapus" ? "Dibatalkan" : "Ditulis";
+        kotakBaris.appendChild(
+          buatElemen(
+            "div",
+            "aleta-baris-judul",
+            `${judul} — ${NAMA_JENIS[jejak.jenis] || jejak.jenis || "tidak disebut"}`
+          )
+        );
+
+        // Waktunya menurut jam pembacanya sendiri. Menyebut zona waktu di
+        // panel selebar tiga ratus piksel hanya menambah satu hal yang harus
+        // dibaca tanpa pernah menjawab pertanyaan siapa pun.
+        const waktu = jejak.waktu ? new Date(jejak.waktu) : null;
+        const waktuTerbaca =
+          waktu && !Number.isNaN(waktu.getTime()) ? waktu.toLocaleString("id-ID") : "";
+
+        const bagianKet = [];
+        if (waktuTerbaca) bagianKet.push(waktuTerbaca);
+        // Nama pejabatnya lebih dahulu, nama akunnya di dalam kurung: yang
+        // membaca riwayat mencari orangnya, bukan akunnya - tetapi akun itu
+        // yang tercatat di sys_audittrail, jadi keduanya harus dapat
+        // dipertemukan bila kelak ada yang membandingkan.
+        const pejabat = jejak.namaPejabat || jejak.akunSipp;
+        if (pejabat) {
+          bagianKet.push(
+            jejak.namaPejabat && jejak.akunSipp
+              ? `atas nama ${jejak.namaPejabat} (${jejak.akunSipp})`
+              : `atas nama ${pejabat}`
+          );
+        }
+        if (jejak.operator) bagianKet.push(`operator ${jejak.operator}`);
+        kotakBaris.appendChild(
+          buatElemen("div", "aleta-baris-ket", bagianKet.join(" · "))
+        );
+
+        // Yang gagal ditulis TEGAS, bukan diselipkan. Baris yang terbaca
+        // seperti baris berhasil padahal gagal justru menyesatkan lebih jauh
+        // daripada tidak ada barisnya sama sekali.
+        if (!jejak.berhasil) {
+          kotakBaris.appendChild(
+            buatElemen(
+              "div",
+              "aleta-baris-ket aleta-lencana-lewat",
+              `tidak jadi — ${jejak.alasan || "sebabnya tidak tercatat"}`
+            )
+          );
+        } else if (Array.isArray(jejak.tabel) && jejak.tabel.length) {
+          kotakBaris.appendChild(
+            buatElemen(
+              "div",
+              "aleta-baris-ket",
+              `${jejak.jumlahLangkah} langkah · ${jejak.tabel.join(", ")}`
+            )
+          );
+        }
+
+        isi.appendChild(kotakBaris);
+      }
+
+      isi.appendChild(
+        buatElemen(
+          "div",
+          "aleta-kosong-lembut",
+          "Tercatat di basis data ALETA. Basis data SIPP tidak memuat keterangan apa pun tentang ALETA."
+        )
+      );
+    })();
+  };
+
+  if (kepala) kepala.addEventListener("click", muatBagian);
+  setTimeout(muatBagian, 0);
+  return kotak;
+}
+
 function bagianBacaBorang() {
   const kotak = bagian("Peta kolom formulir (sekali pasang)", "bacaBorang", true);
   let sudahDimuat = false;
@@ -4888,10 +5049,136 @@ function kembalikanBawaan(panel) {
   for (const sifat of ["left", "top", "right", "bottom", "width", "height", "maxHeight"]) {
     panel.style[sifat] = "";
   }
-  // Kembali ke batas tiga per lima: tinggi pilihan sendiri sudah ikut dibuang
+  // Kembali ke batas bawaan: tinggi pilihan sendiri sudah ikut dibuang
   // bersama posisinya.
   delete panel.dataset.tinggiSendiri;
+  // Panel yang sedang menjadi lencana ikut dibentangkan. Mengembalikan
+  // "bawaan" tetapi meninggalkannya sebagai lingkaran berarti menjawab
+  // setengah - dan yang menekannya justru sedang mencari panelnya.
+  panel.classList.remove("aleta-panel-penuh", "aleta-panel-ciut", KELAS_LENCANA);
   jepitTinggiKeRuangTersisa(panel);
+}
+
+/**
+ * ============================================================================
+ * CIUT MENJADI LENCANA - SATU BENTUK DI SIPP, ABT, DAN HALAMAN ALETA
+ * ============================================================================
+ *
+ * Sampai 1.105.0 ada DUA bentuk ciut di ekstensi yang sama:
+ *
+ *   ABT dan halaman ALETA  aleta-panel-lencana. Keadaannya DISIMPAN, dan
+ *                          dipulihkan tiap kali panelnya digambar.
+ *   SIPP                   aleta-panel-logo. Lingkaran juga, tetapi
+ *                          keadaannya tidak pernah disimpan.
+ *
+ * Yang kedua itu sebab laporan "kadang tidak menciut jadi logo melayang".
+ * Halaman SIPP mengubah DOM-nya terus-menerus - tiap tabel yang dimuat, tiap
+ * tab yang dibuka - dan tiap perubahan itu dapat membuat panel digambar
+ * ULANG. Panel yang baru lahir tidak membawa kelas logonya, jadi ia
+ * terbentang lagi seolah tombolnya tidak pernah ditekan. Bukan kadang-kadang
+ * gagal menciut: menciutnya berhasil, lalu dibatalkan oleh halamannya.
+ *
+ * Sekarang keduanya satu bentuk, satu kelas, dan satu keadaan tersimpan.
+ *
+ * Ukuran terbentangnya dicatat di elemennya sendiri, bukan di penyimpanan:
+ * ia hanya berlaku selama halaman ini terbuka, dan menuliskannya ke
+ * chrome.storage berarti satu tulisan tiap kali tombolnya ditekan.
+ */
+function ciutkanKeLencana(panel, jadikanLencana) {
+  if (!panel) return;
+  const sedang = panel.classList.contains(KELAS_LENCANA);
+  const mau = jadikanLencana === undefined ? !sedang : Boolean(jadikanLencana);
+  if (mau === sedang) return;
+
+  if (mau) {
+    const kotak = panel.getBoundingClientRect();
+    panel.dataset.lebarSemula = String(Math.round(kotak.width));
+    panel.dataset.tinggiSemula = String(Math.round(kotak.height));
+    panel.classList.add(KELAS_LENCANA);
+    panel.classList.remove("aleta-panel-penuh");
+    panel.style.width = "";
+    panel.style.height = "";
+    panel.style.maxHeight = "";
+    panel.title = "Klik untuk membentangkan panel ALETA";
+  } else {
+    panel.classList.remove(KELAS_LENCANA);
+    panel.removeAttribute("title");
+    if (panel.dataset.lebarSemula) panel.style.width = `${panel.dataset.lebarSemula}px`;
+    if (panel.dataset.tinggiSemula) {
+      panel.style.height = `${panel.dataset.tinggiSemula}px`;
+      panel.style.maxHeight = "none";
+    }
+    jepitTinggiKeRuangTersisa(panel);
+  }
+
+  // Dijepit ke tepi layar SESUDAH ukurannya berubah, bukan sebelum: lencana
+  // yang diletakkan di pojok kanan bawah akan menjulur keluar begitu ia
+  // membentang menjadi panel selebar tiga ratus piksel.
+  const kotak = panel.getBoundingClientRect();
+  const aman = jepitKeLayar(kotak.left, kotak.top, kotak.width, kotak.height);
+  panel.style.left = `${aman.kiri}px`;
+  panel.style.top = `${aman.atas}px`;
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+
+  const tombol = panel.querySelector ? panel.querySelector(".aleta-lipat") : null;
+  if (tombol) {
+    tombol.textContent = mau ? "▢" : "–";
+    tombol.title = mau ? "Bentangkan panel" : "Ciutkan menjadi lencana";
+  }
+
+  simpanKeadaanPanel({ kiri: Math.round(aman.kiri), atas: Math.round(aman.atas), lencana: mau });
+}
+
+/**
+ * Memasang lencananya dan pendengar yang membentangkannya kembali.
+ *
+ * Logonya dari berkas ekstensi, bukan huruf yang digambar dengan CSS: yang
+ * melayang di atas halaman aplikasi lain harus dapat dikenali dalam sekejap
+ * sebagai milik ALETA, dan sekejap itu tidak cukup untuk membaca.
+ *
+ * Tarikan DIBEDAKAN dari klik lewat JARAK, bukan waktu - lihat pasangGeser,
+ * yang menandai panel dengan data-baru-digeser. Tanpa pembeda itu tiap
+ * tarikan berakhir dengan lencana yang terbentang kembali, sebab tiap
+ * tarikan diakhiri satu klik di atas lencananya.
+ */
+function pasangLencana(panel) {
+  const lencana = buatElemen("div", "aleta-lencana");
+  let alamatLogo = "";
+  try {
+    alamatLogo = chrome.runtime.getURL("ikon/aleta-32.png");
+  } catch {
+    /* di luar ekstensi - huruf yang dipakai sebagai gantinya */
+  }
+  if (alamatLogo) {
+    const gambar = document.createElement("img");
+    gambar.src = alamatLogo;
+    gambar.alt = "ALETA";
+    gambar.draggable = false;
+    lencana.appendChild(gambar);
+  } else {
+    lencana.textContent = "A";
+  }
+  panel.appendChild(lencana);
+
+  const bentangkan = (peristiwa) => {
+    if (!panel.classList.contains(KELAS_LENCANA)) return;
+    if (panel.dataset.baruDigeser === "1") {
+      // Tarikan, bukan klik. Penandanya dilepas supaya klik BERIKUTNYA -
+      // yang jarinya diam - dapat membentangkan.
+      delete panel.dataset.baruDigeser;
+      return;
+    }
+    peristiwa.preventDefault();
+    peristiwa.stopPropagation();
+    ciutkanKeLencana(panel, false);
+  };
+  lencana.addEventListener("click", bentangkan);
+  lencana.addEventListener("dblclick", (peristiwa) => {
+    delete panel.dataset.baruDigeser;
+    bentangkan(peristiwa);
+  });
+  return lencana;
 }
 
 /** Menjaga panel tetap terlihat walau jendela diperkecil setelah digeser. */
@@ -4958,16 +5245,19 @@ function terapkanPosisi(panel, posisi) {
  * jendela yang dipendekkan menimbulkan keadaan yang persis sama.
  */
 function jepitTinggiKeRuangTersisa(panel) {
-  if (!panel || panel.classList.contains("aleta-panel-logo")) return;
+  if (!panel) return;
   if (panel.classList.contains("aleta-panel-penuh")) return;
   // Panel yang sedang ciut memang hanya setinggi kepalanya.
   if (panel.classList.contains("aleta-panel-ciut")) return;
+  // Lencana punya ukurannya sendiri dari CSS dan tidak boleh dijepit -
+  // yang dijepit akan menjadi logo melayang yang tiba-tiba memanjang.
+  if (panel.classList.contains(KELAS_LENCANA)) return;
 
   const kotak = panel.getBoundingClientRect();
   const sisa = Math.max(window.innerHeight - kotak.top - 12, 160);
 
   // ==========================================================================
-  // BERHENTI DI TIGA PER LIMA LAYAR, TIDAK SAMPAI KE DASAR
+  // BERHENTI DI SEPERTIGA LAYAR, TIDAK SAMPAI KE DASAR
   // ==========================================================================
   //
   // Menjepit ke ruang yang tersisa saja membuat panel selalu tumbuh sampai
@@ -4975,15 +5265,23 @@ function jepitTinggiKeRuangTersisa(panel) {
   // seluruh sisi kanan halaman SIPP, termasuk paginasi dan tombol yang
   // letaknya memang di bawah.
   //
-  // Batasnya tiga per lima tinggi jendela. Cukup untuk memuat kepala, satu
-  // bagian terbuka, dan kakinya sekaligus; dan menyisakan dua per lima halaman
-  // SIPP yang tetap terlihat utuh di baliknya.
+  // Batasnya sepertiga tinggi jendela, dengan atap separuh layar. Cukup
+  // untuk memuat kepala, satu bagian terbuka, dan kakinya sekaligus; dan
+  // menyisakan dua pertiga halaman SIPP yang tetap terlihat utuh di
+  // baliknya.
+  //
+  // Batas pertamanya tiga per lima, dan itu masih terlalu tinggi: pada
+  // layar 1080 berarti hampir 600 piksel, dan begitu isinya lebih panjang
+  // daripada jatahnya panel itu terpotong di tepi bawah.
   //
   // Ini batas BAWAAN, bukan kurungan: petugas yang menarik sudutnya lebih
   // panjang tetap mendapat tingginya sendiri - lihat terapkanPosisi, yang
   // menyetel tinggi lebih dulu lalu memanggil fungsi ini hanya sebagai
   // pengaman terhadap tepi layar.
-  const batasIdaman = Math.max(Math.round(window.innerHeight * 0.6), 220);
+  const batasIdaman = Math.min(
+    Math.max(Math.round(window.innerHeight / 3), 240),
+    Math.round(window.innerHeight / 2)
+  );
   const batas = Math.min(sisa, panel.dataset.tinggiSendiri === "1" ? sisa : batasIdaman);
   if (kotak.height <= batas) return;
 
@@ -5019,11 +5317,24 @@ function normalkanJangkar(panel) {
  */
 function jagaTetapTerlihat() {
   const panel = document.getElementById(PENANDA);
-  if (!panel || !panel.style.left) return;
-  const kotak = panel.getBoundingClientRect();
-  const aman = jepitKeLayar(kotak.left, kotak.top, kotak.width, kotak.height);
-  panel.style.left = `${aman.kiri}px`;
-  panel.style.top = `${aman.atas}px`;
+  if (!panel) return;
+
+  // Hanya panel yang SUDAH dijangkarkan yang perlu digeser kembali. Yang
+  // belum pernah digeser masih menempel pada tepi kanan lewat CSS, dan
+  // tepi itu mengikuti jendelanya sendiri.
+  //
+  // Dulu seluruh fungsi ini keluar di sini bila panelnya belum berjangkar -
+  // termasuk penjepit tinggi di bawah. Akibatnya panel yang baru muncul
+  // pada halaman yang belum pernah digeser tidak pernah dijepit sama
+  // sekali, dan jendela yang dipendekkan meninggalkannya terpotong di tepi
+  // bawah tanpa guliran. Kembarannya di panel-alat.js tidak pernah punya
+  // cacat ini: di sana yang dipagari hanya bagian geser.
+  if (panel.style.left) {
+    const kotak = panel.getBoundingClientRect();
+    const aman = jepitKeLayar(kotak.left, kotak.top, kotak.width, kotak.height);
+    panel.style.left = `${aman.kiri}px`;
+    panel.style.top = `${aman.atas}px`;
+  }
 
   // Jendela yang dipendekkan menimbulkan keadaan yang sama dengan panel yang
   // baru muncul: tingginya melewati tepi bawah, dan gulirnya mati.
@@ -5196,9 +5507,24 @@ function pasangGeser(panel, kepala) {
   let awalKiri = 0;
   let awalAtas = 0;
 
-  kepala.addEventListener("mousedown", (peristiwa) => {
+  panel.addEventListener("mousedown", (peristiwa) => {
     if (peristiwa.button !== 0) return;
-    if (peristiwa.target.closest("button")) return;
+    if (peristiwa.target.closest("button, a, input, select, textarea")) return;
+    // ========================================================================
+    // LENCANA DIGESER DARI LENCANANYA, PANEL DARI KEPALANYA
+    // ========================================================================
+    //
+    // Pendengar ini dulu dipasang pada KEPALA panel, dan kepala itu
+    // display:none begitu panelnya menjadi lencana - sehingga lencana yang
+    // dijanjikan dapat digeser sesungguhnya tidak pernah dapat digeser sama
+    // sekali. Satu-satunya jalan menyingkirkannya adalah membentangkannya
+    // kembali lalu menggeser panelnya, yaitu justru yang tidak diinginkan
+    // orang yang baru saja menciutkannya.
+    //
+    // Sekarang dipasang pada panel, dengan pagar ini: panel yang terbentang
+    // tetap hanya digeser dari kepalanya - menyeret badannya berarti menyeret
+    // teks yang sedang dibaca - sedangkan lencana digeser dari mana saja.
+    if (!panel.classList.contains(KELAS_LENCANA) && !kepala.contains(peristiwa.target)) return;
     // Pegangan tarik menindih enam piksel teratas kepala panel. Tanpa penjaga
     // ini, menarik tepi atas menggeser DAN mengubah ukuran sekaligus - panel
     // melompat menjauh dari kursor sambil memendek. pointerdown tidak dapat
@@ -5587,27 +5913,10 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   kepala.appendChild(penuh);
 
 
-  // Menekan panel yang sudah menjadi logo mengembalikannya. Pendengarnya
-  // dipasang pada PANEL, bukan pada tombol: dalam bentuk logo tidak ada satu
-  // pun tombol yang terlihat, dan yang terlihat hanya logonya.
-  // Menekan panel yang sudah menjadi logo mengembalikannya. Pendengarnya
-  // dipasang pada PANEL, bukan pada tombol: dalam bentuk logo tidak ada satu
-  // pun tombol yang terlihat, dan yang terlihat hanya logonya.
-  //
-  // Tarikan DIBEDAKAN dari klik lewat jarak - lihat pasangGeser. Tanpa
-  // pembeda itu, tiap tarikan berakhir dengan logo yang terbentang kembali,
-  // sebab tiap tarikan diakhiri satu klik di atas logonya. Itulah sebabnya
-  // logonya terasa tidak dapat dipindahkan sama sekali.
-  panel.addEventListener("click", (peristiwa) => {
-    if (!panel.classList.contains("aleta-panel-logo")) return;
-    if (panel.dataset.baruDigeser === "1") {
-      delete panel.dataset.baruDigeser;
-      return;
-    }
-    peristiwa.stopPropagation();
-    panel.classList.remove("aleta-panel-logo");
-    if (keadaanPanel) terapkanPosisi(panel, keadaanPanel);
-  });
+  // Lencana melayang beserta pendengar yang membentangkannya kembali -
+  // lihat pasangLencana. Satu bentuk yang sama dengan panel ABT dan panel
+  // halaman ALETA.
+  pasangLencana(panel);
 
   // Tombol kembali ke bawaan.
   //
@@ -5636,11 +5945,10 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // dengan satu klik.
   const lipat = buatElemen("button", "aleta-lipat", "–");
   lipat.type = "button";
-  lipat.title = "Ciutkan menjadi logo melayang";
+  lipat.title = "Ciutkan menjadi lencana";
   lipat.addEventListener("click", () => {
-    panel.classList.remove("aleta-panel-penuh", "aleta-panel-ciut");
-    panel.classList.add("aleta-panel-logo");
-    for (const sifat of ["width", "height", "maxHeight"]) panel.style[sifat] = "";
+    panel.classList.remove("aleta-panel-ciut");
+    ciutkanKeLencana(panel, true);
   });
   kepala.appendChild(lipat);
 
@@ -5940,6 +6248,12 @@ function susunPanel(konteks) {
     if (boleh("penunjukan-otomatis") && penggunaTerakhir && /admin/i.test(penggunaTerakhir.peran || "")) {
       kelKerja.isi.appendChild(bagianBacaBorang());
     }
+
+    // Riwayat perbuatan ALETA pada perkara ini - termasuk yang gagal.
+    // Ditaruh di kelompok yang sama dengan yang mengerjakannya: yang
+    // bertanya "tadi jadi tidak?" sedang menatap tombol Tetapkan, bukan
+    // sedang mencari menu lain.
+    if (boleh("penunjukan")) kelKerja.isi.appendChild(bagianRiwayatAleta(konteks.nomorPerkara));
 
     isi.appendChild(kelKerja);
     kelompokSemua.push(kelKerja);
@@ -7507,6 +7821,10 @@ async function segarkan() {
     terapkanTemaSipp();
     terapkanPosisi(panel, posisi);
     normalkanJangkar(panel);
+    // Panel yang ditinggalkan sebagai lencana lahir kembali sebagai lencana.
+    // Tanpa baris ini, tiap penggambaran ulang - dan halaman SIPP memicunya
+    // terus-menerus - membentangkannya lagi tanpa ada yang memintanya.
+    if (posisi && posisi.lencana) ciutkanKeLencana(panel, true);
     nomorTerakhir = "*daftar*";
     return;
   }
@@ -7571,6 +7889,10 @@ async function segarkan() {
     terapkanTemaSipp();
     terapkanPosisi(panel, posisi);
     normalkanJangkar(panel);
+    // Panel yang ditinggalkan sebagai lencana lahir kembali sebagai lencana.
+    // Tanpa baris ini, tiap penggambaran ulang - dan halaman SIPP memicunya
+    // terus-menerus - membentangkannya lagi tanpa ada yang memintanya.
+    if (posisi && posisi.lencana) ciutkanKeLencana(panel, true);
 
     // Perkara tanpa dokumen sama sekali: tawarkan menariknya, jangan
     // biarkan panel kosong tanpa jalan keluar. Perkara yang SUDAH punya
@@ -7726,7 +8048,7 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
     const panel = document.getElementById(PENANDA);
     if (panel) {
       kembalikanBawaan(panel);
-      panel.classList.remove("aleta-panel-penuh", "aleta-panel-logo");
+      panel.classList.remove("aleta-panel-penuh", KELAS_LENCANA);
     }
   }
 

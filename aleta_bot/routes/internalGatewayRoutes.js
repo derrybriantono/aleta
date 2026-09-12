@@ -56,6 +56,7 @@ const sippReadOnlyBridgeService = require("../services/sippReadOnlyBridgeService
 const productionGuardService = require("../services/productionGuardService");
 const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
+const jejakAletaService = require("../services/jejakAletaService");
 const penetapanTulisService = require("../services/penetapanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
@@ -811,11 +812,43 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
     });
 
     if (!rencana.ok) {
+      // Yang DITOLAK ikut tercatat. Di sys_audittrail percobaan yang gagal
+      // tidak pernah meninggalkan jejak, dan itu justru yang dicari ketika
+      // petugas bertanya kenapa penetapannya tidak jadi.
+      void jejakAletaService.catat({
+        aksi: "tulis",
+        jenis: String(badan.jenis || ""),
+        perkaraId: badan.perkaraId,
+        tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+        akunSipp: String(badan.olehUsername || ""),
+        operator,
+        ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+        berhasil: false,
+        kering,
+        alasan: String(rencana.alasan || "ditolak"),
+        langkah: [],
+      });
       res.status(400).json(rencana);
       return;
     }
 
     const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering });
+
+    void jejakAletaService.catat({
+      aksi: "tulis",
+      jenis: rencana.jenis,
+      perkaraId: badan.perkaraId,
+      nomorPerkara: rencana.perkara,
+      tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      operator: rencana.operator,
+      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+      berhasil: hasil.ok === true,
+      kering,
+      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      langkah: rencana.langkah,
+    });
 
     res.status(hasil.ok ? 200 : 409).json({
       ...hasil,
@@ -869,6 +902,22 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
     }
 
     const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering });
+
+    void jejakAletaService.catat({
+      aksi: "hapus",
+      jenis: rencana.jenis,
+      perkaraId: badan.perkaraId,
+      nomorPerkara: rencana.perkara,
+      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      operator: rencana.operator,
+      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+      berhasil: hasil.ok === true,
+      kering,
+      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      langkah: rencana.langkah,
+    });
+
     res.status(hasil.ok ? 200 : 409).json({
       ...hasil,
       jenis: rencana.jenis,
@@ -886,6 +935,39 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
           }))
         : undefined,
     });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * RIWAYAT PERBUATAN ALETA
+ * ============================================================================
+ *
+ * Dibaca tab Riwayat pada panel ekstensi. Sumbernya basis data ALETA sendiri,
+ * bukan sys_audittrail SIPP - sejak 1.106.0 tidak ada satu kata pun tentang
+ * ALETA yang ditulis ke sana.
+ */
+router.get("/penetapan/riwayat", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await jejakAletaService.riwayat({
+      perkaraId: req.query.perkaraId,
+      nomorPerkara: String(req.query.nomorPerkara || ""),
+      batas: req.query.batas,
+      termasukKering: String(req.query.termasukKering || "") === "1",
+    });
+    res.status(hasil.ok ? 200 : 500).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Rincian langkah satu jejak - dibaca ketika satu barisnya dibuka. */
+router.get("/penetapan/riwayat/:id", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await jejakAletaService.rincian(req.params.id);
+    res.status(hasil.ok ? 200 : 404).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
