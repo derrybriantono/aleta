@@ -19,6 +19,7 @@ import {
   FolderCheck,
   History,
   LayoutDashboard,
+  PenLine,
   PanelLeftClose,
   PanelLeftOpen,
   Puzzle,
@@ -68,6 +69,11 @@ const AletaEcourtMediasi = dynamic(
   { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
 );
 
+const AletaEcourtTandaTangan = dynamic(
+  () => import("@/components/portal/aleta-ecourt-tanda-tangan").then((m) => m.AletaEcourtTandaTangan),
+  { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
+);
+
 const AletaEcourtRiwayat = dynamic(
   () => import("@/components/portal/aleta-ecourt-riwayat").then((m) => m.AletaEcourtRiwayat),
   { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
@@ -108,7 +114,7 @@ export function AletaEcourtPengguna() {
   // (berulang, setiap hari). Menumpuk keduanya dalam satu halaman panjang
   // membuat yang sering dipakai selalu berada di bawah yang jarang dipakai.
   const [menu, setMenu] = useState<
-    "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ekstensi"
+    "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ttd" | "ekstensi"
   >("dasbor");
   const [sidebarCiut, setSidebarCiut] = useState(false);
   const [cariMenu, setCariMenu] = useState("");
@@ -263,6 +269,19 @@ export function AletaEcourtPengguna() {
       keterangan: "Yang dituliskan ke SIPP",
       ikon: History,
     },
+    // Hanya bagi admin - menamai tanda tangan pejabat berlaku untuk seluruh
+    // satuan kerja dan untuk semua perkara sesudahnya, dan itu bukan
+    // keputusan petugas meja.
+    ...(bolehMengatur
+      ? [
+          {
+            id: "ttd" as const,
+            label: "Tanda Tangan",
+            keterangan: "Bubuhan pada penetapan",
+            ikon: PenLine,
+          },
+        ]
+      : []),
     { id: "ekstensi" as const, label: "Ekstensi SIPP", keterangan: "Pasang di peramban", ikon: Puzzle },
   ];
   // Menu yang cocok dengan pencarian. Label dan keterangannya sama-sama
@@ -558,6 +577,8 @@ export function AletaEcourtPengguna() {
           ) : null}
 
           {menu === "riwayat" ? <AletaEcourtRiwayat /> : null}
+
+          {menu === "ttd" && bolehMengatur ? <AletaEcourtTandaTangan /> : null}
 
           {menu === "ekstensi" ? (
       <Card>

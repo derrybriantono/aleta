@@ -42,6 +42,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.109.0",
+    dirilis: "2026-09-12T19:30:00+08:00",
+    judul: "Lencana akhirnya benar-benar hanya logo, dan penetapan dapat diterbitkan bertanda tangan ke SIPP",
+    butir: [
+      "LENCANA yang diciutkan kini benar-benar hanya logo. Sebelumnya di bawah logonya masih tersisa lonjong berbingkai hijau setinggi seratus piksel. Sebabnya satu baris yang tertinggal: .aleta-panel punya min-height 150px supaya panel yang terbentang tidak menyusut sampai tidak terbaca, dan pada lencana min-height itu MENANG atas tinggi 52 piksel. Mode logo lama punya penawarnya; ketika panel SIPP dipindahkan ke lencana bersama, baris itulah yang tertinggal - dan karena panel ABT serta panel halaman ALETA memakai lembar gaya yang sama, ketiganya lonjong sejak awal tanpa pernah ada yang menyebutnya. Latar, tepi, sudut, dan bayangan panelnya kini dilepas seluruhnya; yang tergambar hanya lencananya.",
+      "TANDA TANGAN PEJABAT disimpan di basis data ALETA. Gambarnya diukir dari berkas .doc satuan kerja - 42 gambar terukir dari berkas yang ada sekarang - dan seluruhnya masuk dalam keadaan BELUM DISAHKAN. Pengukirannya kasar dan diakui kasar: ia menyapu bita mencari tanda berkas PNG dan JPEG, dan urutan gambar di dalam wadah .doc tidak harus sama dengan urutan nama di dalam teksnya. Tanda tangan yang terpasang pada nama yang keliru adalah tanda tangan palsu pada penetapan pengadilan, dan tidak ada satu galat pun yang akan berbunyi.",
+      "Karena itu ada layar Tanda Tangan di portal - ALETA e-Court, hanya bagi yang berwenang menyunting blangko ABT. Tiap gambar ditampilkan besar di atas latar putih, dinamai, lalu disahkan; namanya tercatat sebagai yang mengesahkan. Tiga penjaga menahannya: yang belum disahkan tidak pernah dipulangkan untuk dipakai, yang belum dinamai tidak dapat disahkan, dan mengganti nama yang sudah disahkan MEMBATALKAN pengesahannya - tanda tangan A yang namanya diganti menjadi B adalah tanda tangan A pada penetapan B.",
+      "PENETAPAN dapat diterbitkan bertanda tangan dan dicatatkan ke SIPP. Blangkonya diambil dari ABT - form PTSP pada blangko satker, dengan penanda @PMH, @PPP, @PJS, dan @PHS - tanda tangannya dibubuhkan tepat di atas nama penandatangan, PDF-nya diterbitkan dengan mesin yang sama yang sudah dipakai mencetak putusan ABT, dan barisnya dicatat di perkara_dokumen_penetapan. Bentuk barisnya dibaca dari 3.336 baris yang sudah ada di basis data satker: jenis 1 PMH, 2 PPP, 3 PJS, 4 PHS, dan perkara_penetapan_id menunjuk tabel petugas yang berbeda tiap jenis.",
+      "Alamat blangko ABT DAPAT DISUNTING dari portal, satu alamat tiap jenis penetapan, dengan {nomor} dan {nomorBersih} yang diganti nomor perkaranya. ABT hanya ada di peladen dan alamatnya berbeda antar pemasangan; alamat tebakan yang salah akan memulangkan halaman galat ABT, dan halaman galat yang tersimpan sebagai penetapan jauh lebih buruk daripada penetapan yang tidak terbit. Karena itu bawaannya KOSONG dan mati sampai disetel, dan jawaban ABT yang bukan RTF ditolak.",
+      "Nama penandatangan dicari di dalam blangko sesudah dibakukan huruf dan angkanya - blangko ABT, SIPP, dan berkas .doc menuliskan gelar dengan tiga cara yang berbeda, dan nama di dalam RTF kerap terpotong kendali gaya di tengah kata. Bila namanya tidak ketemu, tanda tangannya TIDAK dibubuhkan dan sebabnya disebut: penetapan yang tanda tangannya melayang entah di mana lebih buruk daripada penetapan tanpa tanda tangan yang masih dapat ditandatangani dengan tangan.",
+    ],
+  },
+  {
     versi: "1.108.0",
     dirilis: "2026-09-12T18:05:00+08:00",
     judul: "Selisih e-Court diperiksa sendiri tiap malam, dan Data Umum dibaca dari berkas yang sudah ada di arsip",

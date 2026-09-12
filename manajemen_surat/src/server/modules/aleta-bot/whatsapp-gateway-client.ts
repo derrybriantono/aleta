@@ -2337,6 +2337,82 @@ export async function kirimPenetapanHapusGateway(payload: {
 }
 
 /**
+ * ============================================================================
+ * TANDA TANGAN PEJABAT DAN PENERBITAN DOKUMEN PENETAPAN
+ * ============================================================================
+ *
+ * Tanda tangan disimpan di basis data ALETA, bukan SIPP: ia milik satuan
+ * kerja, dipakai lintas perkara, dan tidak punya tempat di skema SIPP.
+ */
+export async function getGatewayTandaTangan(hanyaSah = false) {
+  return gatewayFetch<Record<string, unknown>>(
+    `/internal/aleta-bot/tanda-tangan${hanyaSah ? "?hanyaSah=1" : ""}`,
+    { method: "GET" }
+  );
+}
+
+/** Gambarnya mentah - bukan JSON, jadi tidak lewat gatewayFetch. */
+export async function ambilGambarTandaTangan(id: number): Promise<Response> {
+  const token = getGatewayToken();
+  return fetch(`${getGatewayBaseUrl()}/internal/aleta-bot/tanda-tangan/${id}/gambar`, {
+    headers: token ? { "x-aleta-internal-token": token } : {},
+    cache: "no-store",
+  });
+}
+
+export async function kirimTandaTanganNama(id: number, payload: {
+  namaPejabat: string;
+  jabatan?: string;
+  oleh: string;
+}) {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/nama`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function kirimTandaTanganSahkan(id: number, oleh: string) {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/sahkan`, {
+    method: "POST",
+    body: JSON.stringify({ oleh }),
+  });
+}
+
+export async function kirimTandaTanganHapus(id: number) {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/hapus`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getGatewayBlangkoPenetapan() {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/blangko-penetapan/pengaturan", {
+    method: "GET",
+  });
+}
+
+export async function simpanBlangkoPenetapan(payload: Record<string, unknown>) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/blangko-penetapan/pengaturan", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function terbitkanDokumenPenetapan(payload: {
+  perkaraId: number;
+  nomorPerkara: string;
+  jenis: string;
+  namaPenandatangan: string;
+  olehUsername: string;
+  kering: boolean;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/dokumen-penetapan/terbitkan", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
  * Membongkar SELURUH rantai penetapan satu perkara dalam satu permintaan.
  *
  * Rantainya diurus bot, bukan di sini: urutannya tidak boleh keliru, dan

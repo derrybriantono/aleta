@@ -58,6 +58,8 @@ const manualSendService = require("../services/manualSendService");
 const penunjukanService = require("../services/penunjukanService");
 const jejakAletaService = require("../services/jejakAletaService");
 const selisihHarianService = require("../services/selisihHarianService");
+const tandaTanganService = require("../services/tandaTanganService");
+const dokumenPenetapanService = require("../services/dokumenPenetapanService");
 const penetapanTulisService = require("../services/penetapanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
@@ -1131,6 +1133,139 @@ router.post("/selisih-harian/jalankan", requireInternalToken, async (req, res) =
       olehSiapa: String(badan.olehSiapa || "manual").slice(0, 120),
     });
     res.status(hasil.ok ? 200 : 500).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * TANDA TANGAN PEJABAT
+ * ============================================================================
+ *
+ * Lima titik: membaca daftarnya, membaca gambarnya, menamai, mengesahkan,
+ * dan membuang. Yang BELUM DISAHKAN tidak pernah dapat dipakai membubuhkan
+ * apa pun - lihat tandaTanganService.untukPejabat.
+ */
+router.get("/tanda-tangan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await tandaTanganService.daftar({ hanyaSah: String(req.query.hanyaSah || "") === "1" });
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Gambarnya sendiri - dibaca layar pengesahan. */
+router.get("/tanda-tangan/:id/gambar", requireInternalToken, async (req, res) => {
+  try {
+    const gambar = await tandaTanganService.gambar(req.params.id);
+    if (!gambar) {
+      res.status(404).json({ ok: false, alasan: "tanda_tangan_tidak_ketemu" });
+      return;
+    }
+    res.setHeader("Content-Type", gambar.jenis === "jpg" ? "image/jpeg" : "image/png");
+    res.setHeader("Cache-Control", "private, max-age=300");
+    res.send(gambar.isi);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/tanda-tangan/:id/nama", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await tandaTanganService.namai(req.params.id, {
+      namaPejabat: String(badan.namaPejabat || ""),
+      jabatan: String(badan.jabatan || ""),
+      oleh: String(badan.oleh || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/tanda-tangan/:id/sahkan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await tandaTanganService.sahkan(req.params.id, { oleh: String((req.body || {}).oleh || "") });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/tanda-tangan/:id/hapus", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await tandaTanganService.hapus(req.params.id);
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * ALAMAT BLANGKO PENETAPAN DI ABT
+ * ============================================================================
+ *
+ * ABT hanya ada di peladen, dan alamat blangkonya berbeda antar pemasangan.
+ * Karena itu alamatnya DISUNTING, bukan ditulis tetap di dalam kode: {nomor}
+ * dan {nomorBersih} di dalamnya diganti nomor perkaranya.
+ */
+router.get("/blangko-penetapan/pengaturan", requireInternalToken, (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      pengaturan: dokumenPenetapanService.pengaturanBlangko(),
+      akarSipp: dokumenPenetapanService.akarSipp(),
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/blangko-penetapan/pengaturan", requireInternalToken, (req, res) => {
+  try {
+    const badan = req.body || {};
+    const sekarang = readRuntimeConfig();
+    const lama = sekarang.blangkoPenetapan || {};
+    const untai = (kunci) =>
+      badan[kunci] === undefined ? String(lama[kunci] || "") : String(badan[kunci] || "").slice(0, 500).trim();
+
+    const baru = {
+      aktif: badan.aktif === undefined ? lama.aktif === true : badan.aktif === true,
+      pmh: untai("pmh"),
+      ppp: untai("ppp"),
+      pjs: untai("pjs"),
+      phs: untai("phs"),
+      akarSipp: untai("akarSipp"),
+    };
+
+    writeRuntimeConfig({ ...sekarang, blangkoPenetapan: baru });
+    res.json({ ok: true, pengaturan: dokumenPenetapanService.pengaturanBlangko(), akarSipp: baru.akarSipp });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menerbitkan satu dokumen penetapan dan mencatatnya di SIPP.
+ *
+ * KERING sebagai bawaan - lihat dokumenPenetapanService.terbitkan.
+ */
+router.post("/dokumen-penetapan/terbitkan", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await dokumenPenetapanService.terbitkan({
+      perkaraId: badan.perkaraId,
+      nomorPerkara: String(badan.nomorPerkara || ""),
+      jenis: String(badan.jenis || ""),
+      namaPenandatangan: String(badan.namaPenandatangan || ""),
+      olehUsername: String(badan.olehUsername || ""),
+      kering: badan.kering !== false,
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

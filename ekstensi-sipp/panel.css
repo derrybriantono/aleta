@@ -2598,15 +2598,33 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   width: 52px !important;
   min-width: 0 !important;
   height: 52px !important;
+  /* ======================================================================
+     min-height DIKEMBALIKAN KE NOL - INI YANG MEMBUATNYA LONJONG
+     ======================================================================
+
+     .aleta-panel punya min-height: 150px supaya panel yang terbentang tidak
+     pernah menyusut sampai tidak terbaca. Pada lencana, min-height itu MENANG
+     atas height 52px - dan yang tergambar lingkaran berlogo setinggi 52px di
+     atas sisa panel setinggi seratus piksel: lonjong hijau yang dilaporkan.
+
+     Mode logo lama punya min-height: 0 !important. Ketika panel SIPP
+     dipindahkan ke lencana bersama, baris itulah yang tertinggal - dan
+     karena panel ABT serta panel halaman ALETA memakai lembar gaya yang
+     sama, ketiganya lonjong sejak awal tanpa pernah ada yang menyebutnya. */
+  min-height: 0 !important;
   max-height: 52px !important;
   padding: 0 !important;
   overflow: visible !important;
-  border-radius: 999px !important;
   cursor: pointer;
-  /* Bayangannya lebih tegas daripada bayangan panel: lencana sekecil ini
-     melayang di atas tabel yang penuh garis, dan tanpa bayangan ia terbaca
-     sebagai gambar yang kebetulan tertempel di halaman. */
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+
+  /* Panelnya sendiri tidak menggambar apa pun lagi - latar, tepi, sudut, dan
+     bayangannya dilepas. Yang tergambar HANYA lencananya. Dua lingkaran yang
+     bertumpuk pada ukuran yang sama pun tetap terlihat tepinya ganda, sebab
+     panel menghitung tepinya di luar kotak sedangkan lencananya tidak. */
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
 }
 
 /* Seluruh isi panel disembunyikan, termasuk kepala beserta tombolnya - yang
@@ -2620,6 +2638,10 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
 }
 
 .aleta-panel-lencana .aleta-lencana {
+  /* Bayangannya pindah ke sini bersama seluruh gambarnya. Lencana sekecil ini
+     melayang di atas tabel yang penuh garis, dan tanpa bayangan ia terbaca
+     sebagai gambar yang kebetulan tertempel di halaman. */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
