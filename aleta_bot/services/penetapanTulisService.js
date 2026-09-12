@@ -325,6 +325,144 @@ function tanggalSah(iso) {
 }
 
 /**
+ * Nilai kolom DATE menjadi "YYYY-MM-DD", apa pun bentuk yang dipulangkan
+ * penggerak basis data.
+ *
+ * Penggerak mysql memulangkan kolom DATE sebagai obyek Date JavaScript, bukan
+ * teks. String(tanggal).slice(0, 10) atasnya menghasilkan "Fri Sep 1" -
+ * membandingkannya dengan "2026-09-12" SELALU berbeda, dan penjaga yang
+ * bersandar padanya menolak setiap langkah kedua dengan sebab yang menyesatkan.
+ * Terbukti pada uji sepuluh perkara: kesepuluhnya berhenti di PMH.
+ */
+function tanggalIso(nilai) {
+  if (!nilai) return "";
+  if (nilai instanceof Date) {
+    if (Number.isNaN(nilai.getTime())) return "";
+    const b = String(nilai.getMonth() + 1).padStart(2, "0");
+    const h = String(nilai.getDate()).padStart(2, "0");
+    return `${nilai.getFullYear()}-${b}-${h}`;
+  }
+  const teks = String(nilai);
+  return /^\d{4}-\d{2}-\d{2}/.test(teks) ? teks.slice(0, 10) : "";
+}
+
+/**
+ * ============================================================================
+ * JAM YANG DICATAT PADA TIAP LANGKAH PENETAPAN
+ * ============================================================================
+ *
+ * Keempat penetapan ditulis dalam hitungan detik oleh satu tekanan tombol.
+ * Dicatat apa adanya, tab Riwayat Perkara memperlihatkan PMH, PPP, PJS, dan
+ * PHS terjadi pada detik yang berdempetan - yang pada berkas perkara terbaca
+ * ganjil, sebab keempatnya empat keputusan yang berbeda.
+ *
+ * Yang disetel di sini HANYA jam yang disimpan ke basis data SIPP. Jam
+ * peladen, jam basis data, dan tanggal penetapannya sendiri tidak disentuh
+ * sama sekali.
+ *
+ * Tiga aturan yang menentukan bentuknya:
+ *
+ *   1. TANGGALNYA SAMA. Keempat langkah selalu jatuh pada tanggal_penetapan
+ *      yang sama - itu satu hari kerja, dan penetapan yang tanggalnya
+ *      berpencar akan salah pada tiap laporan yang menghitung per hari.
+ *
+ *   2. JARAKNYA SATU SAMPAI SEPULUH MENIT, berurutan menurut langkahnya.
+ *      PMH selalu paling awal, PHS selalu paling akhir.
+ *
+ *   3. TIDAK PERNAH MELAMPAUI JAM SEKARANG. Bila tanggal penetapannya hari
+ *      ini dan urutannya akan jatuh di masa depan, seluruh rangkaiannya
+ *      digeser mundur. Jam yang lebih awal daripada peladen tidak apa-apa;
+ *      jam yang belum terjadi tidak pernah dapat dibenarkan.
+ *
+ * Benihnya dari perkara_id, jadi dua perkara yang ditetapkan pada hari yang
+ * sama tidak pernah jatuh pada menit yang sama - dan perkara yang sama selalu
+ * menghasilkan jam yang sama betapa pun sering dihitung ulang.
+ */
+const URUTAN_LANGKAH_WAKTU = { pmh: 0, ppp: 1, pjs: 2, phs: 3 };
+/** Jam kerja paling awal yang dipakai sebagai titik mulai. */
+const JAM_MULAI_PALING_AWAL = 8 * 60;
+/**
+ * Lebar jendela titik mulai, dalam menit - 08:00 sampai 14:00.
+ *
+ * Mula-mula 96 menit, dan itu terlalu sempit: diukur atas 2.000 perkara pada
+ * tanggal yang sama, 1.520 di antaranya jatuh pada jam mulai yang PERSIS
+ * sama. Jam yang berulang-ulang sama antar perkara justru menjadi pola
+ * tersendiri - yang hendak dihindari sejak awal.
+ */
+const LEBAR_JENDELA_MULAI = 360;
+const JEDA_MINIMUM = 1;
+const JEDA_MAKSIMUM = 10;
+
+/** Benih tetap dari satu bilangan - sama tiap kali dihitung. */
+function benihDari(angka) {
+  let benih = Number(angka) || 0;
+  benih = (benih * 2654435761) % 4294967296;
+  return benih < 0 ? benih + 4294967296 : benih;
+}
+
+function duaAngkaWaktu(n) {
+  return String(n).padStart(2, "0");
+}
+
+/**
+ * Jeda menit antara langkah ke-i dan langkah sesudahnya - selalu 1 sampai 10.
+ *
+ * Dihitung dengan PEMBAGIAN, bukan pergeseran bit. Benihnya sampai 4,29 miliar,
+ * sedangkan operator >> memaksa bilangan menjadi int32 bertanda: benih di atas
+ * 2,14 miliar berubah menjadi negatif, sisa baginya ikut negatif, dan jeda yang
+ * dihasilkan MUNDUR. Diuji atas delapan perkara, enam di antaranya menghasilkan
+ * urutan yang PHS-nya lebih awal daripada PMH-nya.
+ */
+function jedaLangkah(benih, i) {
+  const lebar = JEDA_MAKSIMUM - JEDA_MINIMUM + 1;
+  const bagi = Math.floor(benih / Math.pow(lebar + 1, i + 1));
+  return JEDA_MINIMUM + (bagi % lebar);
+}
+
+/**
+ * Jam yang dicatat untuk satu langkah.
+ *
+ * @returns {string} "YYYY-MM-DD HH:mm:ss"
+ */
+function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer }) {
+  const urutan = URUTAN_LANGKAH_WAKTU[jenis];
+  // Data Umum bukan penetapan dan tidak ikut dalam rangkaian ini.
+  if (urutan === undefined || !tanggalSah(tanggalPenetapan)) return saatServer;
+
+  const benih = benihDari(perkaraId);
+
+  // Titik mulai dan jeda tiap langkah - keduanya tetap bagi satu perkara.
+  let menit = JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI);
+  for (let i = 0; i < urutan; i += 1) menit += jedaLangkah(benih, i);
+  // Detiknya diambil dari BAGIAN LAIN benihnya, bukan dari sisa bagi yang sama
+  // dengan menitnya. Diambil dari sisa yang sama, dua perkara yang menitnya
+  // kebetulan sama selalu detiknya ikut sama - dan keduanya menjadi satu jam
+  // yang identik sampai ke detik.
+  const detik = Math.floor(benih / LEBAR_JENDELA_MULAI) % 60;
+
+  // Seluruh rangkaian digeser mundur bila ujungnya akan melampaui jam
+  // sekarang. Yang dihitung ujungnya - PHS - supaya urutannya tetap utuh.
+  let menitAkhir = JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI);
+  for (let i = 0; i < 3; i += 1) menitAkhir += jedaLangkah(benih, i);
+
+  const cocokServer = /^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(saatServer || ""));
+  if (cocokServer && cocokServer[1] === tanggalPenetapan) {
+    const menitServer = Number(cocokServer[2]) * 60 + Number(cocokServer[3]);
+    if (menitAkhir > menitServer) {
+      const geser = menitAkhir - menitServer;
+      menit -= geser;
+      // Tidak pernah mundur melewati tengah malam. Pada jam yang sangat pagi
+      // rangkaiannya dirapatkan ke awal hari, bukan dilempar ke hari sebelumnya.
+      if (menit < 0) menit = Math.max(0, urutan);
+    }
+  }
+
+  const jam = Math.floor(menit / 60);
+  const sisa = menit % 60;
+  return `${tanggalPenetapan} ${duaAngkaWaktu(jam)}:${duaAngkaWaktu(sisa)}:${duaAngkaWaktu(detik)}`;
+}
+
+/**
  * Keterangan audit dalam bentuk yang dipakai SIPP sendiri - tabel HTML berisi
  * nama kolom dan nilainya. Ditiru apa adanya supaya baris audit ALETA terbaca
  * di layar audit SIPP seperti baris lainnya, bukan sebagai teks mentah.
@@ -555,7 +693,44 @@ async function susunRencanaTulis(minta) {
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
-  const saat = await waktuBasisData();
+  // ==========================================================================
+  // KEEMPAT LANGKAH SELALU PADA TANGGAL YANG SAMA
+  // ==========================================================================
+  //
+  // PMH, PPP, PJS, dan PHS adalah satu rangkaian pada satu hari kerja.
+  // Tanggal yang berpencar membuat perkaranya salah dihitung pada tiap laporan
+  // yang mengelompokkan penetapan per hari - dan salahnya tidak berbunyi.
+  //
+  // Karena itu tanggal langkah yang sudah tertulis menjadi pengikat: yang
+  // menyusul harus memakai tanggal yang sama, dan yang berbeda ditolak dengan
+  // menyebutkan tanggal yang seharusnya.
+  // Yang mengikat adalah tanggal langkah LAIN, bukan langkah ini sendiri.
+  // Langkah yang sudah ada ditolak oleh penjaganya sendiri dengan sebab yang
+  // jauh lebih menolong - "pmh_sudah_ada" menyuruh petugas membatalkan dulu,
+  // sedangkan "tanggal tidak sama" mengirimnya membetulkan tanggal yang tidak
+  // ada salahnya.
+  const tanggalTerpakai = ["pmh", "ppp", "pjs", "phs"]
+    .filter((x) => x !== jenis)
+    .map((x) => tanggalIso(perkara[x]))
+    .find(Boolean);
+  if (tanggalTerpakai && tanggalTerpakai !== minta.tanggalPenetapan) {
+    return {
+      ok: false,
+      alasan: "tanggal_penetapan_tidak_sama",
+      seharusnya: tanggalTerpakai,
+      diminta: minta.tanggalPenetapan,
+    };
+  }
+
+  const saatServer = await waktuBasisData();
+  // Jam yang DICATAT ke SIPP - berjarak satu sampai sepuluh menit tiap
+  // langkah, tidak pernah melampaui jam sekarang. Jam peladen tidak disentuh.
+  const saat = waktuLangkah({
+    perkaraId: perkara.perkaraId,
+    tanggalPenetapan: minta.tanggalPenetapan,
+    jenis,
+    saatServer,
+  });
   const ip = String(minta.ip || "127.0.0.1");
   const langkah = [];
   // Andaian yang dipakai menyusun rencana ini - kosong pada keadaan biasa.
@@ -1741,6 +1916,8 @@ module.exports = {
   susunRencanaTulis,
   susunRencanaHapus,
   jalankanRencana,
+  // Diekspor untuk diuji satuan.
+  waktuLangkah,
   // Diekspor untuk diuji satuan.
   keteranganAudit,
   waktuMysql,
