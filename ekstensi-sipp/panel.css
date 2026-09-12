@@ -1817,6 +1817,13 @@ textarea.aleta-sunting:focus {
   margin-top: 2px;
 }
 
+.aleta-kaki-baris .aleta-kaki-versi {
+  flex: 0 0 auto;
+  margin-left: 6px;
+  color: var(--aleta-tulisan-lembut);
+  font-variant-numeric: tabular-nums;
+}
+
 .aleta-kaki-baris .aleta-kaki-pintasan {
   flex: 1 1 auto;
   margin: 0;
@@ -3701,12 +3708,58 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
 .aleta-identitas-panel .aleta-id-nomor {
   font-family: ui-monospace, Consolas, monospace;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px dotted var(--aleta-garis-kuat);
+}
+
+.aleta-identitas-panel .aleta-id-nomor:hover {
+  color: var(--aleta-tulisan);
+}
+
+/* Sedang memperlihatkan nomor register e-Court, bukan nomor perkara. */
+.aleta-identitas-panel .aleta-id-nomor.aleta-id-nomor-register {
+  color: var(--aleta-merek);
+}
+
+/* Sekejap sesudah disalin - tanda yang tidak menuntut satu kata pun. */
+.aleta-identitas-panel .aleta-id-nomor.aleta-id-nomor-tersalin {
+  background: var(--aleta-merek);
+  color: #10231a;
+  border-radius: 3px;
+  transition: background 0.15s;
 }
 .aleta-identitas-panel .aleta-id-jenis {
   border: 1px solid var(--aleta-garis);
   border-radius: 999px;
   padding: 0 7px;
 }
+
+/* ── Warna menurut JENIS perkara, bukan satu hijau untuk semuanya ──────────
+ *
+ * Cerai gugat dan cerai talak tampil sama persis selama ini, padahal
+ * keduanya berbeda alur, berbeda pihak yang berperkara, dan berbeda medan
+ * yang muncul pada borang putusan. Warnanya kini menyebut keluarganya:
+ *
+ *   hijau    gugatan cerai (cerai gugat)
+ *   biru     cerai talak
+ *   ungu     permohonan - dispensasi kawin, itsbat, wali adhal, Pdt.P
+ *   kuning   ekonomi syariah
+ *   abu      selebihnya
+ *
+ * Diterapkan pada chip pita DAN chip identitas di badan panel - dua chip
+ * untuk satu jenis harus berwarna sama, atau keduanya berhenti dipercaya. */
+.aleta-jenis-gugat { background: #14352a !important; border-color: #2a6047 !important; color: #8fd9b0 !important; }
+.aleta-jenis-talak { background: #12313a !important; border-color: #245663 !important; color: #8bd3e6 !important; }
+.aleta-jenis-permohonan { background: #2a2340 !important; border-color: #463a63 !important; color: #c3b5f0 !important; }
+.aleta-jenis-syariah { background: #3a2f12 !important; border-color: #6b5620 !important; color: #f0d27a !important; }
+.aleta-jenis-lain { background: #1a2320 !important; border-color: #2f3d36 !important; color: #9db0a6 !important; }
+
+.aleta-panel[data-tema="terang"] .aleta-jenis-gugat { background: #dcece3 !important; border-color: #a9c9b8 !important; color: #155c3c !important; }
+.aleta-panel[data-tema="terang"] .aleta-jenis-talak { background: #dceaef !important; border-color: #a8c8d3 !important; color: #14556a !important; }
+.aleta-panel[data-tema="terang"] .aleta-jenis-permohonan { background: #e6e1f4 !important; border-color: #bcb0dd !important; color: #443289 !important; }
+.aleta-panel[data-tema="terang"] .aleta-jenis-syariah { background: #f5ecd2 !important; border-color: #d9c48a !important; color: #6b4d05 !important; }
+.aleta-panel[data-tema="terang"] .aleta-jenis-lain { background: #e3ded3 !important; border-color: #c4bcae !important; color: #4a4338 !important; }
 .aleta-identitas-panel .aleta-id-versi {
   font-variant-numeric: tabular-nums;
   margin-left: auto;
@@ -3728,7 +3781,15 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
 .aleta-kaki .aleta-identitas-panel { flex: 1 1 100%; }
 .aleta-identitas-panel .aleta-akun-sipp {
   margin-left: 0;
-  max-width: 14rem;
+  /* Dulu 14rem dengan elipsis - "SIPP Super Adm…" pada pita selebar 460
+     piksel. Pemangkasan itu warisan dari masa akun duduk di KEPALA bersama
+     lima tombol dan tidak boleh mendorongnya keluar; di pita ia punya
+     barisnya sendiri dan boleh membungkus. Nama pejabat bergelar panjang
+     memang panjang, dan yang terpotong tidak dapat diperiksa. */
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
   font-size: inherit;
   font-weight: 600;
   color: var(--aleta-tulisan);
@@ -3962,3 +4023,32 @@ button.aleta-portal-tautan:disabled { opacity: 0.5; cursor: default; text-decora
 }
 .aleta-portal-boleh .aleta-portal-tanda { color: var(--aleta-aman); }
 .aleta-portal-tidak { color: var(--aleta-tulisan-lembut); }
+
+/* ==========================================================================
+   PETUNJUK FITUR - MUNCUL SESUDAH KURSOR DIAM DUA DETIK
+   ==========================================================================
+   Satu kotak untuk seluruh halaman, digambar di luar panel supaya tidak
+   terpotong tepi panel yang menggulung. Warnanya mengikuti data-tema panel
+   yang memunculkannya - lihat alatPasangPetunjuk di panel-alat.js. */
+.aleta-petunjuk {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: 320px;
+  padding: 7px 10px;
+  background: #1d2925;
+  color: #e6ede8;
+  border: 1px solid #3a4a44;
+  border-radius: 5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+.aleta-petunjuk[data-tema="terang"] {
+  background: #fbf8f1;
+  color: #2b2721;
+  border-color: #d5cec2;
+}

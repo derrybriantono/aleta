@@ -130,12 +130,8 @@ function pitaIdentitas(siapa) {
     tambah("aleta-id-akun aleta-id-aleta", "ALETA", siapa.nama, `Masuk ke ALETA sebagai ${siapa.nama}.`);
   }
   if (siapa && siapa.peran) tambah("aleta-id-jenis", "", siapa.peran, "Peran yang sedang berlaku.");
-  try {
-    const seri = chrome.runtime.getManifest().version;
-    if (seri) tambah("aleta-id-versi aleta-kaki-versi", "", `v${seri}`, "Seri ekstensi yang terpasang di peramban ini.");
-  } catch {
-    /* di luar konteks ekstensi */
-  }
+  // Seri ekstensi tidak lagi di pita - ia pindah ke baris kaki, satu
+  // tempat untuk ketiga panel.
   return pita;
 }
 
@@ -380,7 +376,8 @@ async function susunPanelPortal(siapa) {
 
   const kaki = buatElemen("div", "aleta-kaki");
   kaki.title = "Keterangan dari ALETA. Tidak ada yang diubah dari sini.";
-  kaki.appendChild(pitaIdentitas(siapa));
+  // Pita identitas TIDAK diulang di kaki - ia sudah di kepala, dua jengkal
+  // di atasnya. Sama dengan panel SIPP.
 
   // Panel ini dibangun SEKALI saat halaman dibuka, sedangkan portal
   // berpindah halaman tanpa memuat ulang. Kewenangan yang baru diubah,
@@ -404,6 +401,16 @@ async function susunPanelPortal(siapa) {
     void pasangPortal();
   });
   barisKaki.appendChild(segar);
+  try {
+    const seri = chrome.runtime.getManifest().version;
+    if (seri) {
+      const versi = buatElemen("span", "aleta-kaki-versi", `v${seri}`);
+      versi.title = "Seri ekstensi yang terpasang di peramban ini.";
+      barisKaki.appendChild(versi);
+    }
+  } catch {
+    /* di luar konteks ekstensi */
+  }
   kaki.appendChild(barisKaki);
   panel.appendChild(kaki);
 

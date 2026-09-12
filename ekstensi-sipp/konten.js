@@ -6846,7 +6846,7 @@ function barisIdentitas(identitas) {
   const baris = buatElemen("div", "aleta-identitas");
 
   if (identitas.jenisPerkara) {
-    const chip = buatElemen("span", "aleta-tanda-jenis", identitas.jenisPerkara);
+    const chip = buatElemen("span", `aleta-tanda-jenis ${kelasJenis(identitas.jenisPerkara)}`, identitas.jenisPerkara);
     if (identitas.jenisPerkaraLengkap && identitas.jenisPerkaraLengkap !== identitas.jenisPerkara) {
       chip.title = identitas.jenisPerkaraLengkap;
     }
@@ -6875,11 +6875,11 @@ function barisIdentitas(identitas) {
       .map((k) => (k.pihak ? `${k.nama} (${k.pihak})` : k.nama))
       .join("\n");
     baris.appendChild(chip);
-  } else {
-    const chip = buatElemen("span", "aleta-tanda-tanpa-kuasa", "Tanpa kuasa hukum");
-    chip.title = "SIPP tidak mencatat kuasa hukum pada perkara ini.";
-    baris.appendChild(chip);
   }
+  // Yang TIDAK berkuasa hukum tidak diberi chip. "Tanpa kuasa hukum" adalah
+  // keadaan sebagian besar perkara, dan chip yang ada di hampir setiap
+  // perkara berhenti dibaca - lalu chip kuasa yang sungguhan, yang jarang
+  // dan justru menentukan kepada siapa surat dialamatkan, ikut tidak dibaca.
 
   return baris.childNodes.length > 0 ? baris : null;
 }
@@ -7144,26 +7144,72 @@ function pitaIdentitas(opsi) {
     pita.appendChild(kotakAkun);
   }
 
-  if (o.nomorPerkara) tambah("aleta-id-nomor", "", String(o.nomorPerkara), "Nomor perkara yang sedang dibuka.");
+  // ==========================================================================
+  // NOMOR: KLIK MENUKAR, KLIK GANDA MENYALIN
+  // ==========================================================================
+  //
+  // Nomor perkara dipakai di SIPP; nomor register dipakai di e-Court. Petugas
+  // yang berpindah antara keduanya membutuhkan yang satu lalu yang lain, dan
+  // menyalinnya adalah pekerjaan yang paling sering dikerjakan pada pita ini.
+  //
+  // Klik tunggal ditunda sekejap dan dibatalkan oleh klik ganda - tanpa
+  // penundaan itu, tiap klik ganda menukar nomornya dua kali lalu menyalin
+  // yang tampil sesudahnya, yakni yang semula. Yang disalin selalu yang
+  // sedang TAMPIL, sebab itulah yang dilihat orang ketika menekannya.
+  if (o.nomorPerkara) {
+    const nomor = String(o.nomorPerkara);
+    const register = String(o.nomorRegister || "");
+    const kotakNomor = buatElemen("span", "aleta-id-nomor", nomor);
+    let tampilRegister = false;
+    const judul = () =>
+      register
+        ? `${tampilRegister ? "Nomor register e-Court" : "Nomor perkara"}. Klik: tukar ke ${
+            tampilRegister ? "nomor perkara" : "nomor register e-Court"
+          }. Klik ganda: salin.`
+        : "Nomor perkara yang sedang dibuka. Klik ganda: salin.";
+    const gambar = () => {
+      kotakNomor.textContent = tampilRegister ? register : nomor;
+      kotakNomor.classList.toggle("aleta-id-nomor-register", tampilRegister);
+      // Petunjuk dua detik memindahkan title ke data-aleta-tip pada sentuhan
+      // pertama; keduanya diperbarui supaya penjelasannya mengikuti keadaan.
+      kotakNomor.title = judul();
+      if (kotakNomor.hasAttribute("data-aleta-tip")) kotakNomor.setAttribute("data-aleta-tip", judul());
+    };
+    gambar();
+    let jamKlik = null;
+    kotakNomor.addEventListener("click", () => {
+      if (!register) return;
+      if (jamKlik) clearTimeout(jamKlik);
+      jamKlik = setTimeout(() => {
+        jamKlik = null;
+        tampilRegister = !tampilRegister;
+        gambar();
+      }, 250);
+    });
+    kotakNomor.addEventListener("dblclick", async () => {
+      if (jamKlik) {
+        clearTimeout(jamKlik);
+        jamKlik = null;
+      }
+      const berhasil = await salinTeks(tampilRegister ? register : nomor);
+      if (!berhasil) return;
+      kotakNomor.classList.add("aleta-id-nomor-tersalin");
+      setTimeout(() => kotakNomor.classList.remove("aleta-id-nomor-tersalin"), 700);
+    });
+    pita.appendChild(kotakNomor);
+  }
 
   if (o.jenisPerkara) {
     const judul =
       o.jenisPerkaraLengkap && o.jenisPerkaraLengkap !== o.jenisPerkara
         ? String(o.jenisPerkaraLengkap)
         : "Jenis perkara menurut SIPP.";
-    tambah("aleta-id-jenis", "", String(o.jenisPerkara), judul);
+    tambah(`aleta-id-jenis ${kelasJenis(o.jenisPerkara)}`, "", String(o.jenisPerkara), judul);
   }
 
-  // Seri ekstensi yang BENAR-BENAR berjalan di peramban ini, dari manifestnya
-  // sendiri. Gunanya saat melapor: "panelnya keliru" tanpa nomor seri membuat
-  // pemeriksaan dimulai dari menebak versi mana yang sedang dipakai orang itu.
-  try {
-    const seri = chrome.runtime.getManifest().version;
-    if (seri) tambah("aleta-id-versi aleta-kaki-versi", "", `v${seri}`, "Seri ekstensi ALETA yang terpasang.");
-  } catch {
-    /* di luar konteks ekstensi: pita tetap tampil tanpa nomor seri */
-  }
-
+  // Seri ekstensi TIDAK lagi di pita: ia pindah ke baris kaki, satu-satunya
+  // tempat yang memang dibaca orang ketika melapor. Di pita ia mengulang
+  // dirinya di kepala dan kaki sekaligus.
   return pita;
 }
 
@@ -7171,7 +7217,11 @@ function pitaIdentitas(opsi) {
 function kakiPanel(opsi) {
   const kaki = buatElemen("div", "aleta-kaki");
   kaki.title = "Keterangan dari ALETA. SIPP tidak diubah.";
-  kaki.appendChild(pitaIdentitas(opsi));
+  // Pita identitas TIDAK diulang di kaki. Nomor dan jenis perkara sudah
+  // ada di kepala, dua jengkal di atasnya; mengulangnya hanya memakan satu
+  // baris yang seharusnya milik isi panel. opsi tetap diterima supaya
+  // pemanggilnya tidak perlu berubah.
+  void opsi;
 
   // Pintasan yang tidak diketahui siapa pun sama saja dengan pintasan yang
   // tidak ada. Disebutkan di kaki panel - satu baris, tempat yang memang
@@ -7224,15 +7274,62 @@ function kakiPanel(opsi) {
     void segarkan();
   });
   barisKaki.appendChild(segar);
+
+  // Seri ekstensi yang BENAR-BENAR berjalan di peramban ini, dari manifestnya
+  // sendiri. Gunanya saat melapor: "panelnya keliru" tanpa nomor seri membuat
+  // pemeriksaan dimulai dari menebak versi mana yang sedang dipakai orang itu.
+  try {
+    const seri = chrome.runtime.getManifest().version;
+    if (seri) {
+      const versi = buatElemen("span", "aleta-kaki-versi", `v${seri}`);
+      versi.title = "Seri ekstensi ALETA yang terpasang di peramban ini.";
+      barisKaki.appendChild(versi);
+    }
+  } catch {
+    /* di luar konteks ekstensi: kaki tetap tampil tanpa nomor seri */
+  }
   kaki.appendChild(barisKaki);
   return kaki;
 }
 
 /** Jati diri perkara yang dibawa pita, dari konteks panel perkara. */
+/**
+ * Kelas warna chip menurut KELUARGA jenis perkara.
+ *
+ * Cerai gugat dan cerai talak tampil sama persis selama ini, padahal
+ * keduanya berbeda alur, berbeda pihak yang berperkara, dan berbeda medan
+ * yang muncul pada borang putusan. Warnanya kini menyebut keluarganya, dan
+ * dipakai pada chip pita DAN chip identitas di badan panel - dua chip untuk
+ * satu jenis harus berwarna sama, atau keduanya berhenti dipercaya.
+ *
+ * Urutan pemeriksaannya penting: ekonomi syariah adalah gugatan, dan cerai
+ * talak memuat kata "talak" yang tidak ada pada cerai gugat - jadi keduanya
+ * diperiksa SEBELUM pola gugat yang lebih umum.
+ */
+function kelasJenis(jenis) {
+  const j = String(jenis || "").toLowerCase();
+  if (!j) return "aleta-jenis-lain";
+  if (/syariah|ekonomi/.test(j)) return "aleta-jenis-syariah";
+  if (/talak/.test(j)) return "aleta-jenis-talak";
+  if (/gugat/.test(j)) return "aleta-jenis-gugat";
+  if (
+    /dispensasi|itsbat|isbat|wali|permohonan|penetapan|pdt\.?\s*p\b|poligami|perwalian|pengangkatan|asal.usul|ahli\s*waris/.test(
+      j
+    )
+  ) {
+    return "aleta-jenis-permohonan";
+  }
+  return "aleta-jenis-lain";
+}
+
 function jatiPita(konteks) {
   const identitas = (konteks && konteks.identitas) || {};
   return {
     nomorPerkara: (konteks && konteks.nomorPerkara) || "",
+    // Nomor register e-Court - yang dicari petugas di aplikasi e-Court, dan
+    // yang selama ini harus dibuka lewat bagian tersendiri. Di pita ia
+    // ditukar dengan satu klik.
+    nomorRegister: (konteks && konteks.nomorRegister) || "",
     jenisPerkara: identitas.jenisPerkara || "",
     jenisPerkaraLengkap: identitas.jenisPerkaraLengkap || "",
   };
@@ -9276,6 +9373,9 @@ function tampilkan(elemen) {
       lama.remove();
     }
     document.body.appendChild(elemen);
+    // Petunjuk dua detik untuk tiap tombol yang bertitle - pembantu bersama
+    // di panel-alat.js, yang sama dengan panel ABT dan ALETA.
+    alatPasangPetunjuk(elemen);
   });
 }
 

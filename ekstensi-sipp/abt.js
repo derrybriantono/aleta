@@ -1819,12 +1819,8 @@ function pitaIdentitasAbt(pengguna) {
   if (nomor) tambah("aleta-id-nomor", "", nomor, "Nomor perkara pada blangko yang sedang dibuka.");
   const jenis = jenisPerkaraDariNomor(nomor);
   if (jenis) tambah("aleta-id-jenis", "", jenis, "Jenis perkara menurut nomornya.");
-  try {
-    const seri = chrome.runtime.getManifest().version;
-    if (seri) tambah("aleta-id-versi aleta-kaki-versi", "", `v${seri}`, "Seri ekstensi ALETA yang terpasang.");
-  } catch {
-    /* di luar konteks ekstensi: pita tetap tampil tanpa nomor seri */
-  }
+  // Seri ekstensi tidak lagi di pita - ia pindah ke baris kaki, satu
+  // tempat untuk ketiga panel.
   return pita;
 }
 
@@ -2719,8 +2715,9 @@ function susunPanelAbt(jatiDiri) {
 
   const kaki = buatElemen("div", "aleta-kaki");
   kaki.title = "Usulan dari ALETA. Disimpan lewat tombol simpan ABT sendiri.";
-  let pitaKaki = pitaIdentitasAbt(penggunaAletaAbt);
-  kaki.appendChild(pitaKaki);
+  // Pita identitas TIDAK diulang di kaki - ia sudah di kepala, dua jengkal
+  // di atasnya. Sama dengan panel SIPP dan ALETA. Penggantian pita saat
+  // pengguna termuat karena itu hanya menyentuh yang di kepala.
 
   // Kaki yang sama dengan panel SIPP dan ALETA: satu baris, segarkan
   // sebagai ikon di kanan. Panel ini dibangun sekali saat halaman dibuka;
@@ -2740,6 +2737,16 @@ function susunPanelAbt(jatiDiri) {
     void pasang();
   });
   barisKaki.appendChild(segar);
+  try {
+    const seri = chrome.runtime.getManifest().version;
+    if (seri) {
+      const versi = buatElemen("span", "aleta-kaki-versi", `v${seri}`);
+      versi.title = "Seri ekstensi ALETA yang terpasang.";
+      barisKaki.appendChild(versi);
+    }
+  } catch {
+    /* di luar konteks ekstensi */
+  }
   kaki.appendChild(barisKaki);
   panel.appendChild(kaki);
   void muatPenggunaAleta().then((pengguna) => {
@@ -2753,11 +2760,8 @@ function susunPanelAbt(jatiDiri) {
     }
     if (!pengguna) return;
     const kepalaBaru = pitaIdentitasAbt(pengguna);
-    const kakiBaru = pitaIdentitasAbt(pengguna);
     pitaKepala.replaceWith(kepalaBaru);
-    pitaKaki.replaceWith(kakiBaru);
     pitaKepala = kepalaBaru;
-    pitaKaki = kakiBaru;
   });
 
   /** Menggambar daftar usulan beserta tombol penerapnya. */

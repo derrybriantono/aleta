@@ -756,6 +756,7 @@ function alatTombolKepala(panel, kunci, opsi) {
 async function alatPasangPanel(panel, kepala, kunci, opsi) {
   const pilihan = opsi || {};
   kepala.appendChild(alatTombolKepala(panel, kunci, pilihan));
+  alatPasangPetunjuk(panel);
   alatPasangGeser(panel, kepala, kunci);
   alatPasangUbahUkuran(panel, kunci);
 
@@ -1174,4 +1175,127 @@ try {
   });
 } catch {
   /* di luar ekstensi tidak ada chrome.storage - panelnya tetap tergambar */
+}
+
+/**
+ * ============================================================================
+ * PETUNJUK FITUR: MUNCUL SESUDAH KURSOR DIAM DUA DETIK
+ * ============================================================================
+ *
+ * Tiap tombol di kepala dan kaki panel sudah membawa title yang menerangkan
+ * gunanya. Tetapi petunjuk bawaan peramban muncul kapan pun ia mau - sekitar
+ * satu detik, tidak dapat diatur - dan bentuknya kotak kuning kecil yang
+ * tidak mengikuti tema, terpotong pada kalimat panjang, dan hilang begitu
+ * kursor bergeser satu piksel.
+ *
+ * Yang diminta: penjelasan yang berbeda untuk tiap fitur, muncul sesudah
+ * kursor diam dua detik. Dua detik bukan angka sembarang - kursor yang lewat
+ * di atas deretan ikon tidak boleh memunculkan lima petunjuk berturut-turut;
+ * yang diam dua detik memang sedang bertanya.
+ *
+ * ============================================================================
+ * TITLE-NYA DIPINDAHKAN, BUKAN DISALIN
+ * ============================================================================
+ *
+ * Pada sentuhan pertama, title dipindahkan ke data-aleta-tip dan dihapus
+ * dari elemennya. Tanpa itu peramban tetap memunculkan petunjuk bawaannya
+ * pada detik pertama, dan petunjuk ini pada detik kedua - dua kotak untuk
+ * satu pertanyaan. Kalimatnya tidak hilang: ia tetap dibaca dari
+ * data-aleta-tip, dan tetap tersedia bagi pembaca layar lewat aria-label
+ * bila elemennya belum punya.
+ *
+ * Satu kotak untuk seluruh halaman, dibuat saat pertama kali dibutuhkan.
+ */
+const ALAT_PETUNJUK_JEDA_MS = 2000;
+const ALAT_PETUNJUK_ID = "aleta-petunjuk";
+
+function alatKotakPetunjuk() {
+  let kotak = document.getElementById(ALAT_PETUNJUK_ID);
+  if (kotak) return kotak;
+  kotak = document.createElement("div");
+  kotak.id = ALAT_PETUNJUK_ID;
+  kotak.className = "aleta-petunjuk";
+  kotak.setAttribute("role", "tooltip");
+  kotak.hidden = true;
+  document.body.appendChild(kotak);
+  return kotak;
+}
+
+function alatPasangPetunjuk(akar) {
+  if (!akar || akar.dataset.aletaPetunjukTerpasang === "1") return;
+  akar.dataset.aletaPetunjukTerpasang = "1";
+
+  let jam = null;
+  let sasaran = null;
+
+  const sembunyikan = () => {
+    if (jam) clearTimeout(jam);
+    jam = null;
+    sasaran = null;
+    const kotak = document.getElementById(ALAT_PETUNJUK_ID);
+    if (kotak) kotak.hidden = true;
+  };
+
+  const tunjukkan = (elemen) => {
+    const teks = elemen.getAttribute("data-aleta-tip") || "";
+    if (!teks) return;
+    const kotak = alatKotakPetunjuk();
+    kotak.textContent = teks;
+    // Ikut tema panelnya, bukan tema halaman - panel terang di atas SIPP
+    // gelap harus memunculkan petunjuk yang terang pula.
+    const tema = akar.getAttribute("data-tema") || "";
+    if (tema) kotak.setAttribute("data-tema", tema);
+    else kotak.removeAttribute("data-tema");
+    kotak.hidden = false;
+
+    // Di bawah elemennya; bila tidak muat, di atasnya. Dijepit ke tepi
+    // layar supaya kalimat panjang tidak terpotong di kanan.
+    const r = elemen.getBoundingClientRect();
+    const lebar = kotak.offsetWidth;
+    const tinggi = kotak.offsetHeight;
+    let kiri = r.left;
+    if (kiri + lebar > window.innerWidth - 8) kiri = window.innerWidth - 8 - lebar;
+    if (kiri < 8) kiri = 8;
+    let atas = r.bottom + 6;
+    if (atas + tinggi > window.innerHeight - 8) atas = r.top - 6 - tinggi;
+    if (atas < 8) atas = 8;
+    kotak.style.left = `${Math.round(kiri)}px`;
+    kotak.style.top = `${Math.round(atas)}px`;
+  };
+
+  akar.addEventListener("mouseover", (peristiwa) => {
+    const asal = peristiwa.target;
+    if (!asal || asal.nodeType !== 1) return;
+    const elemen = asal.closest("[title], [data-aleta-tip]");
+    if (!elemen || !akar.contains(elemen)) return;
+    if (elemen === sasaran) return;
+
+    // Pindahkan, jangan salin - lihat catatan di atas.
+    const title = elemen.getAttribute("title");
+    if (title) {
+      elemen.setAttribute("data-aleta-tip", title);
+      elemen.removeAttribute("title");
+      if (!elemen.getAttribute("aria-label")) elemen.setAttribute("aria-label", title);
+    }
+
+    sembunyikan();
+    sasaran = elemen;
+    jam = setTimeout(() => {
+      jam = null;
+      if (sasaran === elemen) tunjukkan(elemen);
+    }, ALAT_PETUNJUK_JEDA_MS);
+  });
+
+  akar.addEventListener("mouseout", (peristiwa) => {
+    if (!sasaran) return;
+    const tujuan = peristiwa.relatedTarget;
+    // Masih di dalam elemen yang sama - anak-anaknya juga milik dia.
+    if (tujuan && tujuan.nodeType === 1 && sasaran.contains(tujuan)) return;
+    sembunyikan();
+  });
+
+  // Menekan, menggulung, atau mengetik berarti pertanyaannya sudah terjawab.
+  akar.addEventListener("mousedown", sembunyikan, true);
+  akar.addEventListener("scroll", sembunyikan, true);
+  akar.addEventListener("keydown", sembunyikan, true);
 }

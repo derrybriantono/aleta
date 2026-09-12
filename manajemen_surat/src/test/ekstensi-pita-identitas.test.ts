@@ -33,29 +33,48 @@ describe("pita identitas: satu bentuk di kepala dan di kaki, pada setiap panel",
     expect(isi).toContain("panel.appendChild(kakiPanel({}));");
   });
 
-  it("pita memuat kelima keterangan: akun ALETA, akun SIPP, nomor, jenis, seri", () => {
+  it("pita memuat keempat keterangan: akun ALETA, akun SIPP, nomor, jenis - seri di kaki", () => {
+    // Dulu lima: seri ekstensi ikut di pita. Sejak 1.118.0 seri pindah ke
+    // baris kaki - satu tempat untuk ketiga panel - sebab di pita ia
+    // mengulang dirinya di kepala dan kaki sekaligus.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function pitaIdentitas(opsi) {"), isi.indexOf("function kakiPanel(opsi) {"));
     expect(potong).toContain('"aleta-id-akun aleta-id-aleta", "ALETA"');
     expect(potong).toContain('buatElemen("span", "aleta-akun-sipp", akunSipp)');
-    expect(potong).toContain('tambah("aleta-id-nomor"');
-    expect(potong).toContain('tambah("aleta-id-jenis"');
-    expect(potong).toContain("chrome.runtime.getManifest().version");
+    // Nomor bukan lagi tambah() biasa: ia dapat ditukar dan disalin.
+    expect(potong).toContain('buatElemen("span", "aleta-id-nomor", nomor)');
+    // Jenis membawa kelas warna keluarganya.
+    expect(potong).toContain("tambah(`aleta-id-jenis ${kelasJenis(o.jenisPerkara)}`");
+    expect(potong).not.toContain("chrome.runtime.getManifest().version");
     // Yang tidak terbaca tidak ditulis - bukan "tidak diketahui".
     expect(potong).not.toContain("tidak diketahui");
   });
 
-  it("kaki lama - teks dan seri yang terpisah dari kepala - sudah tidak ada", () => {
+  it("seri ekstensi ada TEPAT SATU tempat di panel SIPP: baris kaki", () => {
+    // Kaki lama - teks dan seri yang terpisah dari kepala - pernah dibuang
+    // karena mengulang kepala. Seri kini kembali ke kaki dengan sengaja,
+    // tetapi sebagai SATU-SATUNYA tempatnya: pita tidak lagi memuatnya.
+    // Yang dijaga bukan letaknya, melainkan bahwa ia tidak pernah dua kali.
     const isi = konten();
     expect(isi).not.toContain('buatElemen("span", "aleta-kaki-teks", "Keterangan dari ALETA. SIPP tidak diubah.")');
-    expect(isi).not.toContain('buatElemen("span", "aleta-kaki-versi", `v${seri}`)');
+    const kaki = isi.slice(isi.indexOf("function kakiPanel(opsi) {"));
+    const kakiSaja = kaki.slice(0, kaki.indexOf("\nfunction ", 10));
+    expect(kakiSaja).toContain('buatElemen("span", "aleta-kaki-versi", `v${seri}`)');
+    expect(isi.split("chrome.runtime.getManifest().version").length - 1).toBeGreaterThanOrEqual(1);
+    // Kaki tidak lagi mengulang pita kepala.
+    expect(kakiSaja).not.toContain("kaki.appendChild(pitaIdentitas(opsi))");
   });
 
-  it("panel ABT memakai pita yang sama, di kepala dan kaki, dan meminta nama ALETA ke portal", () => {
+  it("panel ABT memakai pita yang sama di kepala - kaki tidak mengulangnya - dan meminta nama ALETA ke portal", () => {
+    // Sejak 1.118.0 pita hanya di kepala pada ketiga panel; kaki memuat
+    // baris ringkas (segarkan, seri). Penggantian pita saat pengguna termuat
+    // karena itu hanya menyentuh yang di kepala.
     const isi = abt();
     expect(isi).toContain("function pitaIdentitasAbt(pengguna) {");
     expect(isi).toContain("let pitaKepala = pitaIdentitasAbt(penggunaAletaAbt);");
-    expect(isi).toContain("let pitaKaki = pitaIdentitasAbt(penggunaAletaAbt);");
+    expect(isi).not.toContain("let pitaKaki = pitaIdentitasAbt(penggunaAletaAbt);");
+    expect(isi).not.toContain("pitaKaki.replaceWith(");
+    expect(isi).toContain('buatElemen("div", "aleta-kaki-baris")');
     expect(isi).toContain('sumber: "siapa"');
     expect(isi).not.toContain('buatElemen("span", "aleta-kaki-teks"');
   });
