@@ -87,6 +87,15 @@ export type MedanPilihan = {
   /** Nama medan sebagaimana tertulis di borang. */
   label: string;
   pilihan: PilihanMedan[];
+  /**
+   * Medan yang boleh bernilai lebih dari satu - kotak centang, bukan daftar.
+   *
+   * Sumber Hukum adalah satu-satunya pada borang putusan, dan ia memang
+   * hampir selalu lebih dari satu: putusan cerai yang khas menyebut
+   * Undang-Undang, Kompilasi Hukum Islam, dan fiqh sekaligus. Mengusulkan
+   * satu saja berarti dua sisanya diisi tangan tiap kali.
+   */
+  banyak?: boolean;
 };
 
 export type UsulanMedan = {
@@ -101,6 +110,14 @@ export type UsulanMedan = {
   /** Pilihan lain yang ikut terjaring, supaya petugas melihat saingannya. */
   saingan: Array<{ nilai: string; label: string; nilai_skor: number }>;
   alasan: string;
+  /**
+   * Untuk medan bernilai banyak: SELURUH pilihan yang naskahnya menyebut,
+   * masing-masing beserta kalimat yang menjadi dasarnya.
+   *
+   * Tidak ada "juara" di sini - pada kotak centang, dua pilihan yang sama
+   * kuat bukan perselisihan melainkan dua-duanya benar.
+   */
+  nilaiBanyak?: Array<{ nilai: string; label: string; kutipan: string }>;
 };
 
 /** Kata yang terlalu umum untuk menjadi bukti apa pun. */
@@ -138,6 +155,62 @@ const KATA_UMUM = new Set([
   "pengadilan",
   "agama",
 ]);
+
+/**
+ * ============================================================================
+ * SEBUTAN LAIN YANG SAH - KEBIASAAN PENULISAN, BUKAN TEBAKAN
+ * ============================================================================
+ *
+ * Sebagian pilihan pada borang SIPP tidak pernah ditulis persis begitu di
+ * dalam putusan. Tidak ada satu putusan pun yang berbunyi "UU/PP"; yang
+ * ditulis "Undang-Undang Nomor 1 Tahun 1974" dan "Peraturan Pemerintah Nomor
+ * 9 Tahun 1975". Tidak ada yang menulis "Fiqh Islam" sebagai sumber hukum;
+ * yang ditulis "hukum syar'i" pada kalimat Mengingat.
+ *
+ * Tanpa daftar ini, Sumber Hukum selalu menjawab "tidak ditemukan" pada
+ * naskah yang jelas-jelas menyebut ketiganya - dan petugas mencentang enam
+ * kotak itu dengan tangan tiap perkara.
+ *
+ * Yang ada di sini KEBIASAAN PENULISAN, bukan penalaran hukum. Tiap sebutan
+ * adalah kata yang memang dipakai naskah untuk menunjuk pilihan itu, dan tiap
+ * usulan yang dihasilkannya tetap membawa kalimat asalnya untuk dibaca.
+ *
+ * Dicocokkan atas label yang sudah dinormalkan, sehingga huruf besar dan
+ * tanda baca borang tidak perlu ditebak.
+ */
+const SEBUTAN_LAIN: Record<string, string[]> = {
+  // Kuncinya bentuk yang dihasilkan normalkan(), dan normalkan MEMPERTAHANKAN
+  // garis miring - "UU/PP" menjadi "uu/pp", bukan "uu pp".
+  "uu/pp": ["undang undang nomor", "undang undang no", "peraturan pemerintah nomor"],
+  "kompilasi hukum islam": ["kompilasi hukum islam", "khi"],
+  "kompilasi hukum ekonomi syariah": ["kompilasi hukum ekonomi syariah", "khes"],
+  "qanun aceh": ["qanun"],
+  "fiqh islam": ["hukum syar i", "hukum syari", "fiqih", "fikih", "kitab fiqh"],
+  yurisprudensi: ["yurisprudensi", "putusan mahkamah agung nomor"],
+};
+
+/**
+ * ============================================================================
+ * MEDAN YANG PILIHANNYA TIDAK PERNAH TERTULIS
+ * ============================================================================
+ *
+ * "Putusan Verstek" menawarkan Ya dan Tidak. Tidak satu pun dari kedua kata
+ * itu menjadi bukti apa pun - yang menjadi bukti adalah kata "verstek" pada
+ * amar dan pertimbangannya.
+ *
+ * Karena itu medan semacam ini dikenali dari NAMA MEDANNYA, lalu jawabannya
+ * ditentukan oleh ada-tidaknya frasa penentu di dalam naskah. Daftarnya
+ * sengaja pendek: hanya medan yang benar-benar berbentuk ya/tidak dan
+ * penentunya satu frasa yang tidak bermakna ganda.
+ */
+const PENANDA_MEDAN: Array<{ medan: RegExp; frasa: RegExp; ya: RegExp; tidak: RegExp }> = [
+  {
+    medan: /verstek/i,
+    frasa: /\bverstek\b/i,
+    ya: /^(ya|iya|verstek|1)$/i,
+    tidak: /^(tidak|bukan|0)$/i,
+  },
+];
 
 function normalkan(teks: string): string {
   return String(teks ?? "")
@@ -204,6 +277,18 @@ function skorPilihan(
 ): { skor: number; kata: string[]; kalimat: string } {
   const rendahPenuh = normalkan(naskah);
   let terbaik = { skor: 0, kata: [] as string[], kalimat: "" };
+
+  // Sebutan lain dinilai lebih dahulu dan sebagai FRASA UTUH - "undang undang
+  // nomor" yang hadir apa adanya adalah bukti selengkap label yang hadir apa
+  // adanya. Yang tidak punya sebutan lain sama sekali tidak terpengaruh.
+  for (const sebutan of SEBUTAN_LAIN[normalkan(label)] ?? []) {
+    const frasa = normalkan(sebutan);
+    if (!frasa || !rendahPenuh.includes(frasa)) continue;
+    const skor = 100 + frasa.length;
+    if (skor > terbaik.skor) {
+      terbaik = { skor, kata: [frasa], kalimat: kalimatBerfrasa(kalimat, frasa) };
+    }
+  }
 
   for (const kemungkinan of kemungkinanLabel(label)) {
     const kata = kataPenting(kemungkinan);
@@ -287,6 +372,43 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
     if (kandidat.length === 0) return { ...dasar, alasan: "Borang tidak menawarkan pilihan apa pun." };
 
     const kalimat = pecahKalimat(teks);
+
+    // ────────────────────────────────────────────────────────────────────
+    // MEDAN YA/TIDAK - DIKENALI DARI NAMA MEDANNYA
+    // ────────────────────────────────────────────────────────────────────
+    const penanda = PENANDA_MEDAN.find((x) => x.medan.test(satu.label));
+    if (penanda) {
+      const cocok = penanda.frasa.exec(teks);
+      const mau = cocok ? penanda.ya : penanda.tidak;
+      // Dicari pada pilihan YANG BELUM DISARING, dan itu perlu: pada medan
+      // ya/tidak, "Tidak" bernilai 0 - dan pilihanKosong memang membuang
+      // nilai 0 sebagai bukan-pilihan. Aturan itu benar pada daftar biasa,
+      // tempat 0 selalu berarti "- Pilih -", tetapi di sini justru
+      // membuangnya jawaban yang sah. Label yang berbunyi ajakan memilih
+      // tetap dibuang di sini, sebab itu memang bukan jawaban.
+      const pilih = (satu.pilihan ?? []).find(
+        (x) => mau.test(String(x.label).trim()) && !/^(pilih|silakan pilih)/i.test(String(x.label).trim())
+      );
+      if (!pilih) {
+        return {
+          ...dasar,
+          alasan: `Borang tidak menawarkan jawaban yang dicari untuk ${satu.label}.`,
+        };
+      }
+      return {
+        ...dasar,
+        nilai: String(pilih.nilai),
+        nilaiLabel: pilih.label,
+        // "pasti" hanya ketika frasanya benar-benar ada. Ketiadaan frasa
+        // memang berarti Tidak, tetapi ia kesimpulan dari yang TIDAK tertulis
+        // - dan itu tidak pernah sekuat yang tertulis.
+        keyakinan: cocok ? "pasti" : "cukup",
+        kutipan: cocok ? kalimatBerfrasa(kalimat, normalkan(cocok[0])) : "",
+        alasan: cocok
+          ? ""
+          : `Naskah tidak menyebut "${String(penanda.frasa.source).replace(/\\b/g, "")}" sama sekali, jadi dijawab ${pilih.label}. Periksa sendiri.`,
+      };
+    }
     const dinilai = kandidat
       .map((x) => ({ ...x, ...skorPilihan(teks, kalimat, x.label) }))
       .filter((x) => x.skor > 0)
@@ -296,6 +418,43 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
       return {
         ...dasar,
         alasan: "Tidak satu pun pilihan disebut naskah putusan. Pilih sendiri - ALETA tidak menebak.",
+      };
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // MEDAN BERNILAI BANYAK - TIDAK ADA JUARA DI SINI
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Pada kotak centang, dua pilihan yang sama kuat bukan perselisihan
+    // melainkan dua-duanya benar. Putusan cerai yang khas menyebut
+    // Undang-Undang, Kompilasi Hukum Islam, dan hukum syar'i sekaligus, dan
+    // ketiganya memang dicentang.
+    //
+    // Ambangnya sama dengan ambang bukti penuh pada medan biasa: yang
+    // seluruh katanya hadir pada satu kalimat, atau frasanya hadir utuh.
+    // Kata yang kebetulan lewat tidak cukup untuk menambah satu sumber hukum
+    // ke dalam putusan.
+    if (satu.banyak) {
+      const AMBANG_BANYAK = 20;
+      const terpilih = dinilai.filter((x) => x.skor >= AMBANG_BANYAK);
+      if (terpilih.length === 0) {
+        return {
+          ...dasar,
+          alasan: "Tidak satu pun pilihan disebut cukup tegas oleh naskah. Centang sendiri.",
+        };
+      }
+      return {
+        ...dasar,
+        nilai: String(terpilih[0].nilai),
+        nilaiLabel: terpilih.map((x) => x.label).join(", "),
+        keyakinan: terpilih.some((x) => x.skor >= 100) ? "pasti" : "cukup",
+        kutipan: terpilih[0].kalimat,
+        nilaiBanyak: terpilih.map((x) => ({
+          nilai: String(x.nilai),
+          label: x.label,
+          kutipan: x.kalimat,
+        })),
+        alasan: `${terpilih.length} pilihan disebut naskah. Yang tidak disebut tidak dicentang.`,
       };
     }
 

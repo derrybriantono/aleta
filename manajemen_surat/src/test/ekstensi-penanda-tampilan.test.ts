@@ -254,10 +254,34 @@ describe("tema gelap SIPP: lengkap, dan dapat dicabut utuh", () => {
   it("gambar dan pindaian tidak pernah difilter", () => {
     // Dokumen pengadilan yang warnanya berubah adalah harga yang terlalu
     // mahal untuk kenyamanan mata.
+    //
+    // Dulu aturannya "tidak boleh ada filter: invert di berkas ini". Itu
+    // larangan yang lebih luas daripada yang dimaksudkan penulisnya: yang
+    // berbahaya bukan filternya melainkan JANGKAUANNYA. Bilah alat CKEditor
+    // menggambar ikonnya sebagai potongan sprite antarmuka di dalam span
+    // 16x16 - bukan img, bukan canvas, bukan iframe - dan tanpa pembalikan
+    // seluruh ikonnya gelap di atas bilah gelap.
+    //
+    // Maka yang dijaga sekarang jangkauannya, dan dijaga lebih ketat: tiap
+    // pemilih yang membawa filter pembalik HARUS menyebut kelas .cke_, dan
+    // TIDAK BOLEH menyebut satu pun nama elemen dokumen.
     const css = gaya();
-    expect(css).not.toContain("filter: invert");
+    const baris = css.split("\n");
+    const NAMA_DOKUMEN = /\b(img|canvas|svg|embed|object|iframe|video|picture)\b/;
+    for (let i = 0; i < baris.length; i += 1) {
+      if (!/filter:\s*invert/.test(baris[i])) continue;
+      // Pemilihnya baris terakhir sebelum kurung buka.
+      let j = i;
+      while (j >= 0 && !baris[j].includes("{")) j -= 1;
+      const pemilih = j >= 0 ? baris[j] : "";
+      expect(pemilih).toContain(".cke_");
+      expect(pemilih).not.toMatch(NAMA_DOKUMEN);
+    }
+
+    // Dan pelindungnya sendiri harus tetap berdiri.
     const potong = css.slice(css.indexOf("TEMA GELAP UNTUK HALAMAN SIPP"));
     expect(potong).toContain("filter: none !important");
+    expect(potong).toMatch(/:is\(img, canvas, svg, embed, object, iframe, video\)/);
   });
 
   it("seluruh tema bergantung pada SATU penanda", () => {

@@ -3999,7 +3999,7 @@ function perkaraIdDariHalaman() {
 }
 
 function bagianIsiPutusan(nomorPerkara) {
-  const kotak = bagian("Isi formulir putusan dari ALETA", "isiPutusan", true);
+  const kotak = bagian("Putusan otomatis", "isiPutusan", true);
   const isi = kotak.isi;
 
   const terang = buatElemen(
@@ -4165,6 +4165,72 @@ function bagianIsiPutusan(nomorPerkara) {
     return { baris, centang, penunjuk, teks, judul };
   }
 
+  // ────────────────────────────────────────────────────────────────────
+  // MEDAN PILIHAN - BERBEDA MENURUT JENIS PERKARA DAN STATUS PUTUSAN
+  // ────────────────────────────────────────────────────────────────────
+  //
+  // Perkara cerai yang dikabulkan menuntut faktor perceraian, nusyuz, qobla,
+  // dan kadang keadaan istri. Dispensasi kawin menuntut alasan pengajuan -
+  // hamil, pergaulan bebas, dan seterusnya. Izin poligami, itsbat, dan
+  // pembatalan perkawinan masing-masing punya daftarnya sendiri.
+  //
+  // Tidak satu pun aturan itu disalin ke sini. Yang dikerjakan: menanyakan
+  // kepada HALAMAN medan mana yang sedang tampak beserta daftar pilihannya,
+  // lalu meminta ALETA memilih satu berdasarkan bunyi putusan. Medan yang
+  // disembunyikan SIPP tidak pernah ditawarkan, dan itu sebabnya panel ini
+  // tidak perlu tahu satu pun nomor jenis perkara.
+  //
+  // Penunjuknya berbasis NAMA, bukan id, dan itu bukan selera. Pada borang
+  // SIPP yang ini, select "status_reskom" memakai id="faktor_cerai" - id
+  // yang sama dengan select faktor perceraian. querySelector("#faktor_cerai")
+  // memulangkan yang mana pun yang lebih dulu di dokumen, dan pada hari
+  // urutannya berubah, faktor perceraian akan terisi dengan hasil reskom
+  // tanpa satu pun tanda. Nama medan tidak kembar, dan namanya pula yang
+  // dikirim ke peladen.
+  //
+  // URUTANNYA BUKAN SELERA. Status Putusan berdiri paling depan sebab ia
+  // yang MENENTUKAN medan mana saja yang muncul sesudahnya: sebelum ia
+  // dipilih, SIPP menyembunyikan faktor perceraian, nusyuz, qobla, dan
+  // keadaan istri seluruhnya. Itu pula sebab bagian ini dulu tampak tidak
+  // mengusulkan apa-apa - yang dibaca hanya medan yang kebetulan sudah
+  // tampak, dan pada borang yang baru dibuka memang tidak ada satu pun.
+  //
+  // template_amar SENGAJA TIDAK ADA DI SINI. Ia bukan keterangan perkara
+  // melainkan pemilih templat yang MENIMPA isi Amar begitu dipilih -
+  // menimpa amar yang baru saja diisikan dari naskah putusan yang
+  // sesungguhnya. Yang hendak memakai templat memilihnya sendiri.
+  const CALON_MEDAN_PANEL = [
+    { penunjuk: 'select[name="status_putusan"]', label: "Status Putusan" },
+    { penunjuk: 'select[name="verstek"]', label: "Putusan Verstek" },
+    { penunjuk: 'input[name="sumber_hukum[]"]', label: "Sumber Hukum", banyak: true },
+    { penunjuk: 'select[name="faktor_cerai"]', label: "Faktor Penyebab Perceraian" },
+    { penunjuk: 'select[name="faktor_cerai_sekunder"]', label: "Faktor Penyebab Perceraian (Sekunder)" },
+    { penunjuk: 'input[name="status_nusyuz"]', label: "Status Nusyuz" },
+    { penunjuk: 'select[name="qobla"]', label: "Qobla/Ba'da Dukhul" },
+    { penunjuk: 'select[name="keadaan_istri"]', label: "Keadaan Istri" },
+    { penunjuk: 'select[name="alasan_dispen"]', label: "Alasan Pengajuan Dispensasi Kawin" },
+    { penunjuk: 'select[name="akad_syariah_primer"]', label: "Jenis Akad Syariah" },
+    { penunjuk: 'select[name="status_reskom"]', label: "Hasil Reskom" },
+    { penunjuk: 'select[name="pengakhiran_id"]', label: "Jenis Pengakhiran" },
+  ];
+
+  /**
+   * Berapa medan pilihan yang SEDANG tampak di borang.
+   *
+   * Dipakai mengenali borang yang berubah bentuk sesudah sebagian isinya
+   * dipilih - lihat catatan pada pembacaan ulang di bawah. Yang dihitung
+   * hanya jumlahnya; daftar lengkapnya dibaca ulang oleh pembacaan itu
+   * sendiri, dan membacanya dua kali di sini hanya menggandakan kerja.
+   */
+  async function hitungMedanTampak() {
+    let jumlah = 0;
+    for (const calon of CALON_MEDAN_PANEL) {
+      const jawab = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
+      if (jawab && jawab.ok && jawab.tampak && (jawab.pilihan || []).length > 0) jumlah += 1;
+    }
+    return jumlah;
+  }
+
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
     wadah.textContent = "";
@@ -4226,39 +4292,7 @@ function bagianIsiPutusan(nomorPerkara) {
     ];
     for (const satu of daftar) wadah.appendChild(satu.baris);
 
-    // ────────────────────────────────────────────────────────────────────
-    // MEDAN PILIHAN - BERBEDA MENURUT JENIS PERKARA DAN STATUS PUTUSAN
-    // ────────────────────────────────────────────────────────────────────
-    //
-    // Perkara cerai yang dikabulkan menuntut faktor perceraian, nusyuz, qobla,
-    // dan kadang keadaan istri. Dispensasi kawin menuntut alasan pengajuan -
-    // hamil, pergaulan bebas, dan seterusnya. Izin poligami, itsbat, dan
-    // pembatalan perkawinan masing-masing punya daftarnya sendiri.
-    //
-    // Tidak satu pun aturan itu disalin ke sini. Yang dikerjakan: menanyakan
-    // kepada HALAMAN medan mana yang sedang tampak beserta daftar pilihannya,
-    // lalu meminta ALETA memilih satu berdasarkan bunyi putusan. Medan yang
-    // disembunyikan SIPP tidak pernah ditawarkan, dan itu sebabnya panel ini
-    // tidak perlu tahu satu pun nomor jenis perkara.
-    //
-    // Penunjuknya berbasis NAMA, bukan id, dan itu bukan selera. Pada borang
-    // SIPP yang ini, select "status_reskom" memakai id="faktor_cerai" - id
-    // yang sama dengan select faktor perceraian. querySelector("#faktor_cerai")
-    // memulangkan yang mana pun yang lebih dulu di dokumen, dan pada hari
-    // urutannya berubah, faktor perceraian akan terisi dengan hasil reskom
-    // tanpa satu pun tanda. Nama medan tidak kembar, dan namanya pula yang
-    // dikirim ke peladen.
-    const CALON_MEDAN = [
-      { penunjuk: 'select[name="faktor_cerai"]', label: "Faktor Penyebab Perceraian" },
-      { penunjuk: 'select[name="faktor_cerai_sekunder"]', label: "Faktor Penyebab Perceraian (Sekunder)" },
-      { penunjuk: 'input[name="status_nusyuz"]', label: "Status Nusyuz" },
-      { penunjuk: 'select[name="qobla"]', label: "Qobla/Ba'da Dukhul" },
-      { penunjuk: 'select[name="keadaan_istri"]', label: "Keadaan Istri" },
-      { penunjuk: 'select[name="alasan_dispen"]', label: "Alasan Pengajuan Dispensasi Kawin" },
-      { penunjuk: 'select[name="akad_syariah_primer"]', label: "Jenis Akad Syariah" },
-      { penunjuk: 'select[name="status_reskom"]', label: "Hasil Reskom" },
-      { penunjuk: 'select[name="pengakhiran_id"]', label: "Jenis Pengakhiran" },
-    ];
+    const CALON_MEDAN = CALON_MEDAN_PANEL;
 
     const medanTampak = [];
     for (const calon of CALON_MEDAN) {
@@ -4270,6 +4304,7 @@ function bagianIsiPutusan(nomorPerkara) {
         kunci: calon.penunjuk,
         label: calon.label,
         pilihan,
+        banyak: Boolean(calon.banyak),
         nilaiSekarang: jawabPilihan.nilaiSekarang || "",
       });
     }
@@ -4296,7 +4331,12 @@ function bagianIsiPutusan(nomorPerkara) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               nomorPerkara: nomorPerkara || "",
-              medan: medanTampak.map((x) => ({ kunci: x.kunci, label: x.label, pilihan: x.pilihan })),
+              medan: medanTampak.map((x) => ({
+                kunci: x.kunci,
+                label: x.label,
+                pilihan: x.pilihan,
+                banyak: x.banyak,
+              })),
             }),
           },
           "Menyusun usulan pilihan"
@@ -4360,7 +4400,20 @@ function bagianIsiPutusan(nomorPerkara) {
 
         wadah.appendChild(kartu);
         if (usul && usul.nilai) {
-          pilihanTerap.push({ kunci: medan.kunci, nilai: usul.nilai, label: medan.label, centang });
+          // Kotak centang diisikan satu per satu: mencentang satu kotak tidak
+          // pernah membatalkan kotak lain, jadi seluruhnya memang harus
+          // disebut. Medan biasa tetap satu nilai.
+          const nilaiSemua =
+            usul.nilaiBanyak && usul.nilaiBanyak.length
+              ? usul.nilaiBanyak.map((x) => String(x.nilai))
+              : [String(usul.nilai)];
+          pilihanTerap.push({
+            kunci: medan.kunci,
+            nilai: usul.nilai,
+            nilaiSemua,
+            label: medan.label,
+            centang,
+          });
         }
       }
     }
@@ -4388,14 +4441,16 @@ function bagianIsiPutusan(nomorPerkara) {
       // ketika petugas sudah berhenti memperhatikan.
       for (const satu of medanDipilih) {
         hasilTerap.textContent = `Memilih ${satu.label}…`;
-        const hasil = await kirimKeJembatan({
-          jenis: "isi",
-          penunjuk: satu.kunci,
-          jenisMedan: "pilih",
-          nilai: satu.nilai,
-        });
-        if (hasil && hasil.ok) berhasil += 1;
-        else gagal.push(`${satu.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+        for (const nilai of satu.nilaiSemua || [satu.nilai]) {
+          const hasil = await kirimKeJembatan({
+            jenis: "isi",
+            penunjuk: satu.kunci,
+            jenisMedan: "pilih",
+            nilai,
+          });
+          if (hasil && hasil.ok) berhasil += 1;
+          else gagal.push(`${satu.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+        }
       }
 
       for (const satu of dipilih) {
@@ -4417,6 +4472,31 @@ function bagianIsiPutusan(nomorPerkara) {
       hasilTerap.textContent = gagal.length
         ? `${berhasil} terisi, ${gagal.length} gagal: ${gagal.join("; ")}`
         : `${berhasil} isian terisi. Periksa seluruhnya, lalu tekan Simpan sendiri.`;
+
+      // ====================================================================
+      // MEDAN YANG BARU LAHIR SESUDAH STATUS PUTUSAN DIPILIH
+      // ====================================================================
+      //
+      // Memilih "Dikabulkan" pada perkara cerai gugat membuat SIPP
+      // memunculkan Faktor Penyebab Perceraian primer dan sekunder,
+      // Qobla/Ba'da, Status Nusyuz, dan Keadaan Istri - lima medan yang
+      // beberapa detik lalu belum ada di halaman sama sekali, dan karena itu
+      // tidak pernah ikut ditanyakan ke ALETA.
+      //
+      // Membiarkannya berarti otomisasi berhenti tepat di tempat yang paling
+      // banyak isiannya, dan petugas mengisi lima pilihan dengan tangan
+      // justru sesudah diberi tahu bahwa isiannya sudah terisi.
+      //
+      // Dijalankan hanya bila jumlah medan yang tampak benar-benar
+      // BERTAMBAH. Tanpa syarat itu, tiap pengisian memanggil pembacaan
+      // berikutnya tanpa akhir.
+      const tampakSesudah = await hitungMedanTampak();
+      if (tampakSesudah > medanTampak.length) {
+        hasilTerap.textContent =
+          `${hasilTerap.textContent} Borang memunculkan ` +
+          `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
+        tombol.click();
+      }
     });
 
     tombol.disabled = false;
@@ -7132,15 +7212,6 @@ function susunPanel(konteks) {
     if (boleh("penunjukan")) kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
     if (boleh("data-umum")) kelKerja.isi.appendChild(bagianDataUmum(konteks));
 
-    // Hanya di halaman yang memang memuat borang Putusan Akhir. Dikenali dari
-    // borangnya sendiri (#frm_putusan), bukan dari alamat halaman: alamat SIPP
-    // berubah bentuk antar versi dan antar pemasangan, sedangkan id borangnya
-    // tidak. Di halaman lain, bagian ini tidak digambar sama sekali - menu
-    // yang selalu ada tetapi hampir selalu menjawab "tidak ada formulir di sini"
-    // mengajari orang untuk berhenti membukanya.
-    if (boleh("data-umum") && document.querySelector("#frm_putusan")) {
-      kelKerja.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
-    }
 
     // Dan hanya di layar Info Perkara Agama (Data Umum). Dikenali dari borangnya
     // sendiri (#frm_data_umum) dengan alasan yang sama: alamat SIPP berubah
@@ -7323,7 +7394,24 @@ function susunPanel(konteks) {
   // Pada perkara yang belum putus, kedua menu di dalamnya memang kosong - dan
   // kepalanya menyebutkan "belum putus" tanpa perlu dibuka. Itulah yang dulu
   // menuntut membuka dua menu untuk menemukan dua keterangan kosong.
-  const kelPutusan = kelompok("Putusan", "putusanKel", true);
+  // ==========================================================================
+  // PUTUSAN OTOMATIS DUDUK DI KELOMPOK PUTUSAN, BUKAN PENETAPAN
+  // ==========================================================================
+  //
+  // Sebelumnya ia duduk di kelompok Penetapan, bersama papan penunjukan
+  // majelis dan Data Umum. Itu keliru dua kali: yang mencarinya orang yang
+  // sedang membuka borang Putusan Akhir, dan yang dikerjakannya putusan -
+  // bukan penetapan. Yang mencari fitur ini membuka kelompok Putusan lebih
+  // dahulu, tidak menemukannya, lalu menyimpulkan fiturnya tidak ada.
+  //
+  // Kelompoknya juga DIBENTANGKAN ketika borang putusan sedang terbuka.
+  // Yang sedang berdiri di layar Putusan Akhir tidak sedang menunggu
+  // diminta menekan satu lipatan lagi.
+  const adaBorangPutusan = Boolean(document.querySelector("#frm_putusan"));
+  const kelPutusan = kelompok("Putusan", "putusanKel", !adaBorangPutusan);
+  if (boleh("data-umum") && adaBorangPutusan) {
+    kelPutusan.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
+  }
   kelPutusan.isi.appendChild(malas("Putusan dan upaya hukum", "putusan", gambarPutusan));
   kelPutusan.isi.appendChild(malas("Putusan di e-Court", "putusanEcourt", gambarPutusanEcourt));
   isi.appendChild(kelPutusan);

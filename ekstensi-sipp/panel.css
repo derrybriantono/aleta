@@ -274,6 +274,16 @@
 .aleta-baris-ket { color: var(--aleta-tulisan-lembut); font-size: calc(13px * var(--aleta-skala-huruf, 1)); }
 .aleta-berkas { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 
+/* Tulisan "No file chosen" di sebelah tombolnya digambar peramban dengan warna
+   bawaannya - hitam pada panel gelap. Tombolnya sendiri sudah bergaya di
+   ::file-selector-button; yang tertinggal justru tulisan di sebelahnya. */
+input.aleta-berkas {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-family: inherit;
+  max-width: 100%;
+}
+
 .aleta-unduh {
   background: #1f4d3a;
   color: var(--aleta-tulisan);
@@ -2136,48 +2146,70 @@ html[data-aleta-tema-sipp="gelap"] .cke_contents {
   border-color: var(--s-garis) !important;
 }
 
-/* ── Kenapa bilah alatnya TIDAK ikut gelap ─────────────────────────────────
+/* ── Bilah alat: gelap, dan ikonnya dibalik ────────────────────────────────
  *
  * Ikon CKEditor bukan huruf melainkan satu lembar gambar (icons.png) yang
- * digambar gelap untuk latar putih. Bilah yang digelapkan membuat seluruh
- * ikonnya gelap di atas gelap - dan satu-satunya cara memulihkannya adalah
- * membalik warnanya dengan filter.
+ * digambar gelap untuk latar putih. Bilah gelap tanpa perlakuan apa pun
+ * membuat seluruh ikonnya gelap di atas gelap.
  *
- * Filter itu justru yang dilarang di berkas ini. Larangannya bukan selera:
- * foto, tanda tangan pindaian, dan lampiran adalah DOKUMEN PENGADILAN, dan
- * aturan sapu yang membalik warna tidak pernah berhenti tepat di tepi ikon.
- * Yang paling mudah ditambahkan kemudian adalah aturan yang lebih luas dari
- * yang dimaksudkan penulisnya.
+ * Membalik terangnya sambil memutar hue setengah lingkaran mengembalikan
+ * warnanya ke warna semula tetapi terang - ikon gunting tetap perak, ikon
+ * tautan tetap biru.
  *
- * Maka bilahnya dibiarkan terang - tetapi diredupkan ke abu kehijauan yang
- * sewarna dengan palet, bukan putih menyilaukan. Yang menyilaukan selama ini
- * bukan bilah setinggi 60 piksel itu, melainkan BIDANG KETIK seluas layar di
- * bawahnya - dan bidang itu memang menjadi gelap, lihat warnaiCkeditor di
- * konten.js.
+ * DILINGKUPI KE span.cke_button_icon, DAN ITU SYARAT.
  *
- * Hasilnya: bidang tulis gelap seperti seluruh halaman, dengan satu bilah
- * kendali yang teduh di atasnya - dan tiap ikonnya tetap terbaca. */
+ * Berkas ini melarang filter pembalik warna, dan larangannya bukan selera:
+ * foto, tanda tangan pindaian, dan lampiran adalah DOKUMEN PENGADILAN -
+ * dokumen yang warnanya berubah adalah dokumen yang berbeda. Yang berbahaya
+ * bukan filternya melainkan JANGKAUANNYA: aturan sapu tidak pernah berhenti
+ * tepat di tepi ikon.
+ *
+ * span.cke_button_icon tidak pernah dapat mencapai satu pun dokumen. Ia span
+ * berukuran 16x16 yang isinya potongan sprite antarmuka, bukan img, bukan
+ * canvas, bukan iframe. Aturan filter: none pada img/canvas/svg/embed/object/
+ * iframe/video di bawah tetap berdiri tanpa tersentuh.
+ *
+ * Penjaganya di ekstensi-borang-putusan.test.ts menuntut tepat itu: filter
+ * pembalik hanya boleh berdiri pada pemilih .cke_ dan tidak boleh menyebut
+ * satu pun nama elemen dokumen. */
 html[data-aleta-tema-sipp="gelap"] :is(.cke_top, .cke_bottom) {
-  background: #c8d3ce !important;
-  color: #23302a !important;
+  background: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+  box-shadow: none !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(.cke_button, .cke_combo_text, .cke_path_item, .cke_combo_button) {
-  color: #23302a !important;
+  color: var(--s-tulisan) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(.cke_toolgroup, .cke_combo_button) {
-  background: #dbe3df !important;
-  border-color: #a9b7b1 !important;
+  background: var(--s-permukaan-3) !important;
+  border-color: var(--s-garis) !important;
+  box-shadow: none !important;
 }
 
-html[data-aleta-tema-sipp="gelap"] :is(.cke_button:hover, .cke_button:focus, .cke_button_on, .cke_combo_button:hover) {
-  background: #aebeb7 !important;
-  border-color: #8ea099 !important;
+html[data-aleta-tema-sipp="gelap"] :is(.cke_button:hover, .cke_button:focus, .cke_button_on, .cke_combo_on .cke_combo_button, .cke_combo_button:hover) {
+  background: var(--s-sorot) !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] span.cke_button_icon {
+  filter: invert(1) hue-rotate(180deg) brightness(1.12) !important;
+}
+
+/* Panah turun bukan gambar melainkan segitiga dari garis tepi - #474747 pada
+   skin aslinya, yang di atas bilah gelap sama gelapnya dengan latarnya. */
+html[data-aleta-tema-sipp="gelap"] .cke_combo_arrow {
+  border-top-color: var(--s-tulisan) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .cke_toolbar_separator {
-  background: #a9b7b1 !important;
+  background: var(--s-garis) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .cke_path_empty {
+  color: var(--s-tulisan-lembut) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .cke_path_empty {
@@ -3335,9 +3367,24 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.form-con
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: #fff"],
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:#fff"],
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: #fff"],
-html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fff"] {
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:#fff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color: white"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background-color:white"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background: white"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="background:white"] {
   background-color: var(--s-permukaan) !important;
   color: var(--s-tulisan) !important;
+}
+
+/* Tepi putih setebal satu piksel yang membingkai tingkap Putusan Akhir -
+   ditulis SIPP sebagai style="border: 1px solid #ffffff". Di atas halaman
+   terang ia tidak terlihat sama sekali; di atas halaman gelap ia satu-satunya
+   garis paling terang di layar. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="border: 1px solid #ffffff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="border:1px solid #ffffff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="border: 1px solid #fff"],
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="border:1px solid #fff"] {
+  border-color: var(--s-garis) !important;
 }
 
 /* ==========================================================================

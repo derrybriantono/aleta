@@ -167,17 +167,75 @@ describe("mengisi borang putusan SIPP", () => {
     expect(jembatan).toContain("offsetParent");
   });
 
-  it("tidak menyentuh status putusan, verstek, maupun sumber hukum", () => {
-    // Pilihannya sudah disaring SIPP menurut jenis dan alur perkara, dan
-    // salah pilih di situ mengubah jenis putusannya - bukan sekadar salah
-    // ketik.
+  it("status putusan, verstek, dan sumber hukum diusulkan - tidak pernah dipatok", () => {
+    // ========================================================================
+    // DULU KETIGANYA TIDAK DISENTUH SAMA SEKALI - DAN ITU TERLALU LUAS
+    // ========================================================================
+    //
+    // Sebabnya benar: pilihan pada ketiga medan itu sudah disaring SIPP
+    // menurut jenis dan alur perkara, dan salah pilih di situ mengubah jenis
+    // putusannya - bukan sekadar salah ketik.
+    //
+    // Tetapi menghindarinya seluruhnya memindahkan pekerjaan itu ke tangan,
+    // tiap perkara, termasuk pada perkara yang naskahnya menyebut jawabannya
+    // dengan terang. Status Putusan lebih buruk lagi: sebelum ia dipilih,
+    // SIPP MENYEMBUNYIKAN faktor perceraian, nusyuz, qobla, dan keadaan istri
+    // - sehingga menghindarinya ikut memutus jalan ke lima medan berikutnya.
+    //
+    // Yang dijaga sekarang bukan lagi "jangan disentuh", melainkan CARA
+    // menyentuhnya - dan empat sifat di bawah inilah yang membuatnya aman.
     const bagian = konten.slice(
       konten.indexOf("function bagianIsiPutusan("),
       konten.indexOf("function bagianBacaBorang(")
     );
-    expect(bagian).not.toContain("#status_putusan");
-    expect(bagian).not.toContain("#verstek");
-    expect(bagian).not.toContain("sumber_hukum");
+
+    // 1. Ketiganya ditawarkan.
+    expect(bagian).toContain('select[name="status_putusan"]');
+    expect(bagian).toContain('select[name="verstek"]');
+    expect(bagian).toContain('input[name="sumber_hukum[]"]');
+
+    // 2. Tidak satu pun NOMOR pilihan SIPP dihafal ekstensi. Yang dikirim ke
+    //    portal adalah daftar pilihan yang benar-benar ada di borang yang
+    //    sedang terbuka; SIPP tetap yang menyaringnya.
+    expect(bagian).toContain("pilihan: x.pilihan");
+    expect(bagian).not.toMatch(/nilai:\s*"\d+"/);
+
+    // 3. template_amar TIDAK ditawarkan - ia menimpa Amar yang baru diisikan.
+    //    Yang dilarang penunjuknya, bukan namanya: catatan di atas daftar
+    //    memang menyebutnya, dan justru catatan itu yang menerangkan sebabnya.
+    expect(bagian).not.toContain('name="template_amar"');
+
+    // 4. Yang berselisih tidak pernah tercentang sendiri, dan Simpan tidak
+    //    pernah ditekan dari sini.
+    expect(bagian).toContain('usul.keyakinan !== "bentrok"');
+    expect(bagian).not.toContain('jenis: "tekan"');
+  });
+
+  it("sumber hukum dicentang seluruhnya, bukan satu yang menang", () => {
+    // Pada kotak centang, dua pilihan yang sama kuat bukan perselisihan
+    // melainkan dua-duanya benar: putusan cerai yang khas menyebut
+    // Undang-Undang, Kompilasi Hukum Islam, dan hukum syar'i sekaligus.
+    const bagian = konten.slice(
+      konten.indexOf("function bagianIsiPutusan("),
+      konten.indexOf("function bagianBacaBorang(")
+    );
+    expect(bagian).toContain("banyak: true");
+    expect(bagian).toContain("usul.nilaiBanyak");
+    expect(bagian).toContain("for (const nilai of satu.nilaiSemua");
+  });
+
+  it("medan yang baru muncul sesudah Status Putusan ikut terkejar", () => {
+    // Memilih "Dikabulkan" membuat SIPP memunculkan lima medan yang beberapa
+    // detik sebelumnya belum ada di halaman. Tanpa pembacaan ulang, otomisasi
+    // berhenti tepat di tempat yang paling banyak isiannya.
+    const bagian = konten.slice(
+      konten.indexOf("function bagianIsiPutusan("),
+      konten.indexOf("function bagianBacaBorang(")
+    );
+    expect(bagian).toContain("async function hitungMedanTampak()");
+    // Hanya bila BERTAMBAH - tanpa syarat itu, tiap pengisian memanggil
+    // pembacaan berikutnya tanpa akhir.
+    expect(bagian).toContain("if (tampakSesudah > medanTampak.length)");
   });
 
   it("bagian yang kosong pada draf disebut, bukan diisikan", () => {

@@ -158,14 +158,40 @@ describe("gaya gelap bidang ketik CKEditor", () => {
 });
 
 describe("bilah alat CKEditor", () => {
-  it("diredupkan, bukan dibalik warnanya", () => {
-    // Ikonnya satu lembar gambar yang digambar gelap. Membalik warnanya
-    // menuntut filter - dan filter di berkas ini dilarang, sebab aturan sapu
-    // yang membalik warna tidak pernah berhenti tepat di tepi ikon: foto dan
-    // tanda tangan pindaian adalah dokumen pengadilan.
+  it("ikut gelap, dan ikonnya dibalik hanya pada spannya sendiri", () => {
+    // Ikonnya satu lembar gambar yang digambar gelap untuk latar putih, jadi
+    // bilah gelap menuntut pembalikan warna. Yang berbahaya bukan filternya
+    // melainkan JANGKAUANNYA: foto dan tanda tangan pindaian adalah dokumen
+    // pengadilan, dan dokumen yang warnanya berubah adalah dokumen yang
+    // berbeda.
+    //
+    // span.cke_button_icon tidak pernah dapat mencapai satu pun dokumen - ia
+    // span 16x16 berisi potongan sprite antarmuka. Lihat penjaga jangkauan
+    // di ekstensi-penanda-tampilan.test.ts.
     const css = gaya();
-    expect(css).not.toContain("filter: invert");
+    expect(css).toContain('html[data-aleta-tema-sipp="gelap"] span.cke_button_icon');
+    expect(css).toContain("filter: invert(1) hue-rotate(180deg)");
     expect(css).toContain('html[data-aleta-tema-sipp="gelap"] :is(.cke_top, .cke_bottom)');
+    // Bilahnya memakai warna palet, bukan warna terang yang dipatok.
+    const bilah = css.slice(css.indexOf(':is(.cke_top, .cke_bottom)'));
+    expect(bilah.slice(0, 200)).toContain("var(--s-permukaan-2)");
+  });
+
+  it("putih yang ditanam SIPP sebagai gaya sebaris ikut dipadamkan", () => {
+    // application/views/putusan/edit_putusan_akhir.php menulis tiga di antara
+    // ketiganya sebagai gaya sebaris - dan gaya sebaris mengalahkan berkas
+    // gaya mana pun kecuali yang ber-!important:
+    //
+    //   <div id='pihak_pilih' style="border: 1px solid #ffffff;">
+    //   <div class="detil" style="padding: 2px;background-color: white;">
+    //   <form id="frm_putusan" style="background:white;margin:0;">
+    //
+    // Aturan yang sudah ada menangkap "#fff" tetapi tidak menangkap kata
+    // "white" - dan justru kata itulah yang dipakai di sini.
+    const css = gaya();
+    expect(css).toContain('[style*="background-color: white"]');
+    expect(css).toContain('[style*="background:white"]');
+    expect(css).toContain('[style*="border: 1px solid #ffffff"]');
   });
 
   it("bidang ketiknya tetap ikut gelap - itu yang paling luas dipandang", () => {

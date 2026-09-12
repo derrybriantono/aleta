@@ -457,10 +457,22 @@ describe("Kerjakan paling atas, sisanya terlipat", () => {
     for (const tertutup of [
       'kelompok("Berkas", "berkas", true)',
       'kelompok("Perkara", "perkara", true)',
-      'kelompok("Putusan", "putusanKel", true)',
     ]) {
       expect(isi, tertutup).toContain(tertutup);
     }
+  });
+
+  it("Putusan ikut terbuka bila borang Putusan Akhir sedang di layar", () => {
+    // Satu-satunya kelompok yang lipatannya bergantung keadaan, dan sebabnya
+    // sempit: Putusan otomatis duduk di dalamnya. Yang sedang berdiri di
+    // layar Putusan Akhir tidak sedang menunggu diminta menekan satu lipatan
+    // lagi untuk menemukan alat yang dibukanya justru untuk itu.
+    //
+    // Di halaman lain ia tetap terlipat seperti dua kelompok keterangan yang
+    // lain - tidak ada yang berubah bagi yang hanya membaca perkara.
+    const isi = konten();
+    expect(isi).toContain('kelompok("Putusan", "putusanKel", !adaBorangPutusan)');
+    expect(isi).toContain('const adaBorangPutusan = Boolean(document.querySelector("#frm_putusan"))');
   });
 });
 
