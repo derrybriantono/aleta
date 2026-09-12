@@ -1,5 +1,7 @@
 import { inflateRawSync } from "node:zlib";
 
+import { rapikanAlamat, surelDariGugatan } from "@/lib/alamat-pihak";
+
 /**
  * Membaca berkas gugatan yang diunggah, dan memetik isian Data Umum darinya.
  *
@@ -413,6 +415,27 @@ export type DataUmum = {
   pendidikanPenggugat: Petikan | null;
   alamatPenggugat: Petikan | null;
   alamatTergugat: Petikan | null;
+  /**
+   * Alamat yang SUDAH dirapikan - keterangan arah dibuang, spasi dan koma
+   * dibetulkan, sebutan tingkatan yang lupa ditulis dilengkapi.
+   *
+   * Berdiri TERPISAH dari alamat mentahnya, bukan menggantikannya: yang
+   * memeriksanya harus dapat menyandingkan keduanya sebelum memilih. Bernilai
+   * null bila tidak ada yang perlu dirapikan.
+   *
+   * Lihat src/lib/alamat-pihak.ts untuk batas yang tidak dilanggar - tidak
+   * satu pun NAMA TEMPAT ditambahkan dari luar.
+   */
+  alamatPenggugatRapi: Petikan | null;
+  alamatTergugatRapi: Petikan | null;
+  /**
+   * Domisili elektronik para pihak - surel yang memang tertulis di gugatannya.
+   *
+   * Seluruhnya, tidak dipilih satu: gugatan dapat memuat surel penggugat dan
+   * tergugat sekaligus, dan yang tahu mana milik siapa adalah petugas yang
+   * membaca kalimat asalnya.
+   */
+  domisiliElektronik: Petikan[];
 
   // --- data pernikahan, untuk perkara perkawinan ------------------------
   tanggalMenikah: Petikan | null;
@@ -678,6 +701,47 @@ export function petikDataUmum(teksMentah: string): DataUmum {
     label("(?:nama\\s+)?(?:tergugat|termohon)(?:\\s+I+)?")
   );
 
+  /**
+   * Satu petikan alamat, dirapikan.
+   *
+   * Memulangkan null bila TIDAK ADA yang berubah - usulan yang isinya sama
+   * persis dengan yang sudah tertulis hanya menambah satu baris untuk dibaca
+   * dan ditolak. Yang kurang tetap disebutkan pada asalnya, sebab itu
+   * keterangan tersendiri: alamat yang belum menyebut desanya tidak dilengkapi
+   * sendiri, dan petugas perlu tahu apa yang masih kurang.
+   */
+  const rapikanPetikanAlamat = (petikan: Petikan | null): Petikan | null => {
+    if (!petikan || !petikan.nilai) return null;
+    const hasil = rapikanAlamat(petikan.nilai);
+    if (!hasil.alamat || !hasil.berubah) return null;
+    const sebab = [...hasil.perubahan];
+    if (hasil.kurang.length > 0) {
+      sebab.push(`Belum menyebut ${hasil.kurang.join(", ")} - tidak ditambahkan sendiri`);
+    }
+    return { nilai: hasil.alamat.slice(0, 250), asal: sebab.join("; ").slice(0, 300) };
+  };
+
+  const alamatTergugat = ((): Petikan | null => {
+    let sudah = false;
+    for (const satuBaris of baris) {
+      const cocok = satuBaris.match(label("(?:alamat|tempat\\s+tinggal)"));
+      if (!cocok) continue;
+      if (!sudah) {
+        sudah = true;
+        continue;
+      }
+      const nilai = String(cocok[1] || "").replace(/[;,.]+$/, "").trim();
+      if (nilai.length < 2) continue;
+      return { nilai: nilai.slice(0, 250), asal: satuBaris.trim().slice(0, 160) };
+    }
+    return null;
+  })();
+
+  const alamatPenggugat = nilaiSetelahLabel(
+    baris,
+    label("(?:alamat|tempat\\s+tinggal|bertempat\\s+tinggal)")
+  );
+
   return {
     penggugat,
     tergugat,
@@ -685,23 +749,15 @@ export function petikDataUmum(teksMentah: string): DataUmum {
     agamaPenggugat: nilaiSetelahLabel(baris, label("agama")),
     pekerjaanPenggugat: nilaiSetelahLabel(baris, label("pekerjaan")),
     pendidikanPenggugat: nilaiSetelahLabel(baris, label("pendidikan")),
-    alamatPenggugat: nilaiSetelahLabel(baris, label("(?:alamat|tempat\\s+tinggal|bertempat\\s+tinggal)")),
+    alamatPenggugat,
     // Alamat kedua: yang muncul sesudah alamat pertama, bila ada.
-    alamatTergugat: (() => {
-      let sudah = false;
-      for (const satuBaris of baris) {
-        const cocok = satuBaris.match(label("(?:alamat|tempat\\s+tinggal)"));
-        if (!cocok) continue;
-        if (!sudah) {
-          sudah = true;
-          continue;
-        }
-        const nilai = String(cocok[1] || "").replace(/[;,.]+$/, "").trim();
-        if (nilai.length < 2) continue;
-        return { nilai: nilai.slice(0, 250), asal: satuBaris.trim().slice(0, 160) };
-      }
-      return null;
-    })(),
+    alamatPenggugatRapi: rapikanPetikanAlamat(alamatPenggugat),
+    alamatTergugatRapi: rapikanPetikanAlamat(alamatTergugat),
+    domisiliElektronik: surelDariGugatan(teks)
+      .slice(0, 6)
+      .map((x) => ({ nilai: x.surel, asal: x.asal })),
+    alamatTergugat,
+
     nilaiSengketa: petikNilaiSengketa(teks),
 
     // --- data pernikahan, dari kalimat pertama posita ---------------------

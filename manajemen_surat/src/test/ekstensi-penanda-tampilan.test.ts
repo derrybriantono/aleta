@@ -379,7 +379,11 @@ describe("halaman daftar perkara tidak lagi kosong dari ALETA", () => {
     // yang dijaga bahwa kedua panel memanggil deret yang sama.
     const isi = konten();
     expect(isi).toContain("function tombolMatikan()");
-    expect(isi).toContain("kepala.appendChild(tombolMatikan());");
+    // Sejak 1.117.0 tombolnya duduk di dalam wadah .aleta-alat-kepala - wadah
+    // yang sama dengan panel ABT dan ALETA - bukan menempel langsung ke
+    // kepala. Yang dijaga tetap sama: satu tempat, dipakai kedua panel.
+    expect(isi).toContain("alatKepala.appendChild(tombolMatikan());");
+    expect(isi).not.toContain("kepala.appendChild(tombolMatikan());");
     expect(isi.split("pasangTombolKepala(panel, kepala").length - 1).toBe(3);
   });
 

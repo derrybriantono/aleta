@@ -374,6 +374,10 @@ async function identitasMassal(nomorBersih) {
       kuasa: false,
       izinAtasan: false,
       verzet: false,
+      // Keempat penetapan awal, apa adanya dari perkara_dokumen_penetapan.
+      // Dipakai panel penetapan massal untuk menawarkan HANYA langkah yang
+      // memang belum dikerjakan - lihat kueri penetapan di bawah.
+      penetapan: { pmh: false, ppp: false, pjs: false, phs: false },
     };
   }
 
@@ -493,6 +497,32 @@ async function identitasMassal(nomorBersih) {
       []
     ),
   ]);
+
+  // ==========================================================================
+  // PENETAPAN YANG SUDAH ADA
+  // ==========================================================================
+  //
+  // jenis_dokumen_id pada perkara_dokumen_penetapan: 1 PMH, 2 PPP, 3 PJS,
+  // 4 PHS. Nomornya milik SIPP dan tidak pernah berubah - ia dipakai seluruh
+  // laporan yang menghitung penetapan.
+  //
+  // Dibaca sebagai ADA-TIDAKNYA baris, bukan sebagai tahapan perkara. Tahapan
+  // dapat maju karena sebab lain, sedangkan yang ditanyakan panel penetapan
+  // massal tepat satu hal: sudahkah dokumen penetapan ini pernah dibuat.
+  const JENIS_PENETAPAN = { 1: "pmh", 2: "ppp", 3: "pjs", 4: "phs" };
+  const barisPenetapan = await amanSkema("penetapan", () =>
+    runQuerySipp(
+      `SELECT DISTINCT perkara_id AS id, jenis_dokumen_id AS jenis
+         FROM perkara_dokumen_penetapan
+        WHERE perkara_id IN (${isianId}) AND jenis_dokumen_id IN (1, 2, 3, 4)`,
+      daftarId
+    )
+  );
+  for (const satu of Array.isArray(barisPenetapan) ? barisPenetapan : []) {
+    const nomor = petaId.get(Number(satu.id));
+    const jenis = JENIS_PENETAPAN[Number(satu.jenis)];
+    if (nomor && jenis && hasil[nomor]) hasil[nomor].penetapan[jenis] = true;
+  }
 
   tandai(ghaib, "ghaib");
   tandai(pengacara, "kuasa");

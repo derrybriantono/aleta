@@ -148,7 +148,13 @@ describe("penetapan massal menyebut jumlahnya apa adanya", () => {
     // kalimat yang keliru, dan yang membacanya akan menyangka setengah
     // halamannya tidak terbaca ALETA.
     const badan = potongFungsi(konten(), "bagianPenetapanMassal");
-    expect(badan).toContain("perkara di halaman ini, ${nomorSemua.length} pertama ditawarkan");
+    // Sejak yang sudah lengkap disaring keluar, yang disebut bukan lagi
+    // "perkara di halaman" melainkan perkara yang MASIH dapat dikerjakan -
+    // dan yang disembunyikan tetap disebutkan jumlahnya, sebab jumlah yang
+    // tidak dijelaskan terbaca sebagai perkara yang hilang.
+    expect(badan).toContain("perkara masih ada penetapan yang belum dikerjakan");
+    expect(badan).toContain("yang ditawarkan ${nomorSemua.length} pertama");
+    expect(badan).toContain("sudah lengkap dan tidak ditawarkan");
     expect(badan).not.toContain("perkara terbaca di halaman ini");
   });
 });

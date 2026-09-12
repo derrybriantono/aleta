@@ -3104,8 +3104,17 @@ const NAMA_PETIKAN = {
   pekerjaanPenggugat: "Pekerjaan",
   pendidikanPenggugat: "Pendidikan",
   alamatPenggugat: "Alamat penggugat",
+  // Alamat yang SUDAH dirapikan berdiri di sebelah alamat mentahnya, bukan
+  // menggantikannya. Alamat ini tercetak pada relaas panggilan dan pada
+  // identitas para pihak di kepala putusan; yang memilihnya harus dapat
+  // menyandingkan keduanya lebih dulu. Asalnya menyebutkan apa yang diubah,
+  // dan apa yang masih kurang tetapi TIDAK ditambahkan sendiri.
+  alamatPenggugatRapi: "Alamat penggugat (dirapikan)",
   tergugat: "Tergugat / Termohon",
   alamatTergugat: "Alamat tergugat",
+  alamatTergugatRapi: "Alamat tergugat (dirapikan)",
+  // Beberapa sekaligus - lihat catatan pada penggambarnya.
+  domisiliElektronik: "Domisili elektronik",
 
   // --- isi gugatan --------------------------------------------------------
   obyekSengketa: "Obyek sengketa",
@@ -3128,7 +3137,23 @@ function gambarPetikan(isi, hasil) {
   let adaIsi = false;
   for (const [kunci, label] of Object.entries(NAMA_PETIKAN)) {
     const petikan = hasil.petikan ? hasil.petikan[kunci] : null;
-    if (!petikan || !petikan.nilai) continue;
+    if (!petikan) continue;
+
+    // Sebagian ruas memulangkan BEBERAPA petikan sekaligus - domisili
+    // elektronik, misalnya, sebab gugatan dapat memuat surel penggugat dan
+    // tergugat berdampingan. Masing-masing digambar barisnya sendiri beserta
+    // kalimat asalnya: yang menentukan surel ini milik siapa justru kalimat
+    // itu, dan menggabungkannya menjadi satu baris membuang keterangannya.
+    if (Array.isArray(petikan)) {
+      for (const satu of petikan) {
+        if (!satu || !satu.nilai) continue;
+        adaIsi = true;
+        isi.appendChild(barisPenetapan(label, String(satu.nilai).slice(0, 180), satu.asal, ""));
+      }
+      continue;
+    }
+
+    if (!petikan.nilai) continue;
     adaIsi = true;
     isi.appendChild(barisPenetapan(label, petikan.nilai.slice(0, 180), petikan.asal, ""));
   }
@@ -6958,7 +6983,22 @@ async function periksaVersiEkstensi(isi) {
 function pasangTombolKepala(panel, kepala, keadaanAwal) {
   let keadaanPanel = keadaanAwal || null;
   // Tombol tema - lihat pasangTema().
-  kepala.appendChild(tombolTema(panel));
+  // ==========================================================================
+  // TOMBOL KEPALA DI KANAN, DALAM URUTAN YANG SAMA DENGAN PANEL ABT DAN ALETA
+  // ==========================================================================
+  //
+  // Kedua panel itu menaruh tombolnya di dalam .aleta-alat-kepala, yang
+  // margin-left: auto - tombolnya di ujung kanan, merek di kiri. Panel ini
+  // menempelkannya langsung ke kepala satu per satu, sehingga seluruhnya
+  // berkumpul di sebelah merek dengan ruang kosong di kanan. Tiga panel
+  // satu ekstensi yang kepalanya berbeda-beda mengajari orang bahwa
+  // ketiganya alat yang berbeda.
+  //
+  // Urutannya mengikuti panel-alat: tema, ciutkan, layar penuh, bawaan,
+  // tutup - supaya jari yang sudah hafal di satu panel tidak salah tekan di
+  // panel lain.
+  const alatKepala = buatElemen("span", "aleta-alat-kepala");
+  alatKepala.appendChild(tombolTema(panel));
 
   // ==========================================================================
   // LAYAR PENUH DAN CIUT MENJADI LOGO
@@ -6994,7 +7034,7 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
       terapkanPosisi(panel, keadaanPanel);
     }
   });
-  kepala.appendChild(penuh);
+  alatKepala.appendChild(penuh);
 
 
   // Lencana melayang beserta pendengar yang membentangkannya kembali -
@@ -7012,7 +7052,7 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   bawaan.type = "button";
   bawaan.title = "Kembalikan ukuran dan posisi panel ke semula";
   bawaan.addEventListener("click", () => kembalikanBawaan(panel));
-  kepala.appendChild(bawaan);
+  alatKepala.appendChild(bawaan);
 
   // ==========================================================================
   // MENCIUTKAN BERARTI MENJADI LOGO - BUKAN MENYISAKAN KOTAK
@@ -7034,7 +7074,10 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
     panel.classList.remove("aleta-panel-ciut");
     ciutkanKeLencana(panel, true);
   });
-  kepala.appendChild(lipat);
+  // Ciutkan berdiri TEPAT sesudah tema, sebelum layar penuh - urutan
+  // panel-alat. insertBefore, sebab tombol layar penuh sudah lebih dulu
+  // dibuat di atas.
+  alatKepala.insertBefore(lipat, penuh);
 
   // Saklar mati di kepala panel.
   //
@@ -7043,7 +7086,8 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // yang panelnya menghalangi pekerjaan butuh mematikannya SEKARANG, dan
   // yang tidak menemukan saklarnya akan menutup panel berulang kali setiap
   // halaman - lalu berhenti memakai ekstensinya sama sekali.
-  kepala.appendChild(tombolMatikan());
+  alatKepala.appendChild(tombolMatikan());
+  kepala.appendChild(alatKepala);
 }
 /**
  * ============================================================================
@@ -7132,13 +7176,28 @@ function kakiPanel(opsi) {
   // Pintasan yang tidak diketahui siapa pun sama saja dengan pintasan yang
   // tidak ada. Disebutkan di kaki panel - satu baris, tempat yang memang
   // dibaca orang ketika mencari tahu panel ini bisa apa.
+  // ==========================================================================
+  // SATU BARIS, BUKAN TIGA
+  // ==========================================================================
+  //
+  // Kaki panel pernah memakan tiga baris: pita identitas, kalimat pintasan
+  // sepanjang lebar panel, dan tombol segarkan selebar tulisannya. Pada
+  // panel setinggi separuh layar itu seperenam tempatnya - dan tempat itu
+  // milik isi panel, bukan milik keterangan yang dibaca sekali.
+  //
+  // Pintasannya disingkat menjadi tombolnya saja; keterangan lengkapnya
+  // pindah ke title, yang muncul saat kursor diam di atasnya. Segarkan
+  // menjadi ikon di ujung kanan baris yang sama.
+  const barisKaki = buatElemen("div", "aleta-kaki-baris");
   const pintasan = buatElemen(
     "div",
     "aleta-kaki-pintasan",
-    PINTASAN_PANEL.map((x) => `${x.tombol} ${x.nama}`).join("  ·  ")
+    PINTASAN_PANEL.map((x) => x.tombol).join(" · ")
   );
-  pintasan.title = "Pintasan papan tik ALETA. Tidak berlaku selagi mengetik di kolom isian.";
-  kaki.appendChild(pintasan);
+  pintasan.title =
+    PINTASAN_PANEL.map((x) => `${x.tombol}  ${x.nama}`).join("\n") +
+    "\n\nTidak berlaku selagi mengetik di kolom isian.";
+  barisKaki.appendChild(pintasan);
 
   // ==========================================================================
   // SEGARKAN ADA DI KAKI, BUKAN HANYA DI KEPALA
@@ -7151,19 +7210,21 @@ function kakiPanel(opsi) {
   //
   // Di kaki, sebab di sanalah pandangan berhenti sesudah membaca panelnya -
   // dan sebab kepala sudah memuat lima tombol.
-  const segar = buatElemen("button", "aleta-kaki-segar", "↻ Segarkan");
+  const segar = buatElemen("button", "aleta-kaki-segar", "↻");
   segar.type = "button";
-  segar.title = "Membaca ulang keterangan perkara dari ALETA. Halaman SIPP tidak dimuat ulang, dan isian yang belum disimpan tidak hilang.";
+  segar.setAttribute("aria-label", "Segarkan");
+  segar.title = "Segarkan - membaca ulang keterangan perkara dari ALETA. Halaman SIPP tidak dimuat ulang, dan isian yang belum disimpan tidak hilang.";
   segar.addEventListener("click", () => {
     segar.disabled = true;
-    segar.textContent = "↻ Membaca…";
+    segar.classList.add("aleta-kaki-segar-jalan");
     // Penjaga nomorTerakhir dikosongkan lebih dulu - tanpa itu segarkan()
     // memulangkan diri sendiri tanpa membaca apa pun.
     nomorTerakhir = "";
     konteksTerakhir = null;
     void segarkan();
   });
-  kaki.appendChild(segar);
+  barisKaki.appendChild(segar);
+  kaki.appendChild(barisKaki);
   return kaki;
 }
 
@@ -7716,7 +7777,24 @@ const NAMA_KEADAAN = {
  */
 const BATAS_PERKARA_MASSAL = 25;
 
-function bagianPenetapanMassal() {
+/** Urutan rantai penetapan - sama dengan urutan rantaiPenetapan itu sendiri. */
+const URUTAN_RANTAI = ["pmh", "ppp", "pjs", "phs"];
+
+/**
+ * Langkah yang MASIH kurang pada satu perkara.
+ *
+ * Kosong berarti keempatnya sudah ada. Bila keadaannya tidak diketahui -
+ * SIPP tidak terbaca, atau perkaranya tidak ada pada ringkasan - keempatnya
+ * dianggap kurang. Menganggapnya lengkap berarti menyembunyikan perkara yang
+ * barangkali justru belum ditetapkan sama sekali, dan itu kekeliruan yang
+ * tidak terlihat siapa pun.
+ */
+function langkahKurang(keadaan) {
+  if (!keadaan) return [...URUTAN_RANTAI];
+  return URUTAN_RANTAI.filter((x) => keadaan[x] !== true);
+}
+
+function bagianPenetapanMassal(ringkasan) {
   const kotak = bagian("Penetapan massal", "penetapanMassal", true);
 
   const baris = barisPerkaraDiHalaman();
@@ -7727,22 +7805,59 @@ function bagianPenetapanMassal() {
     return kotak;
   }
 
-  const nomorSemua = [...new Set(baris.map((x) => x.nomor))].slice(0, BATAS_PERKARA_MASSAL);
+  // ==========================================================================
+  // YANG SUDAH LENGKAP TIDAK DITAWARKAN SAMA SEKALI
+  // ==========================================================================
+  //
+  // Sebelumnya seluruh perkara di halaman ditawarkan, termasuk yang keempat
+  // penetapannya sudah lengkap sejak berbulan-bulan lalu. Petugas
+  // mencentangnya, menunggu, lalu diberi tahu "sudah ditetapkan" satu per
+  // satu - dan daftar yang sebagian besar isinya tidak dapat dikerjakan
+  // mengajari orang untuk berhenti membacanya.
+  //
+  // Yang TANGGUNG justru ditawarkan, dan inilah tambahannya: perkara yang
+  // PMH-nya sudah ada tetapi PPP, PJS, dan PHS-nya belum dapat dilanjutkan
+  // dari tempat ia berhenti. Rantai penetapan memang sudah melewati langkah
+  // yang ada; yang kurang hanya menawarkannya.
+  const keadaanPer = (ringkasan && ringkasan.penetapan) || {};
+  const seluruhNomor = [...new Set(baris.map((x) => x.nomor))];
+  const kurangPer = new Map();
+  for (const nomor of seluruhNomor) {
+    const kurang = langkahKurang(keadaanPer[nomor]);
+    if (kurang.length > 0) kurangPer.set(nomor, kurang);
+  }
+  const sudahLengkap = seluruhNomor.length - kurangPer.size;
+
+  if (kurangPer.size === 0) {
+    kotak.isi.appendChild(
+      buatElemen(
+        "div",
+        "aleta-kosong",
+        `Keempat penetapan sudah lengkap pada ${seluruhNomor.length} perkara di halaman ini. Tidak ada yang perlu dikerjakan.`
+      )
+    );
+    return kotak;
+  }
+
+  const nomorSemua = [...kurangPer.keys()].slice(0, BATAS_PERKARA_MASSAL);
   const terpilih = new Set();
 
   // Disebut apa adanya bila halamannya memuat lebih banyak daripada yang
   // ditawarkan. "25 perkara terbaca" pada halaman berisi lima puluh perkara
   // adalah kalimat yang keliru, dan yang membacanya akan menyangka
   // setengah halamannya tidak terbaca ALETA.
-  const seluruhnya = [...new Set(baris.map((x) => x.nomor))].length;
   kotak.isi.appendChild(
     buatElemen(
       "div",
       "aleta-tetap-sebab",
-      (seluruhnya > nomorSemua.length
-        ? `${seluruhnya} perkara di halaman ini, ${nomorSemua.length} pertama ditawarkan. `
-        : `${nomorSemua.length} perkara di halaman ini. `) +
-        "Centang yang hendak ditetapkan — tidak ada yang tercentang sendiri."
+      `${nomorSemua.length} perkara masih ada penetapan yang belum dikerjakan` +
+        (kurangPer.size > nomorSemua.length
+          ? ` (dari ${kurangPer.size}; yang ditawarkan ${nomorSemua.length} pertama)`
+          : "") +
+        (sudahLengkap
+          ? `. ${sudahLengkap} perkara lain di halaman ini sudah lengkap dan tidak ditawarkan`
+          : "") +
+        ". Centang yang hendak ditetapkan — tidak ada yang tercentang sendiri."
     )
   );
 
@@ -7761,7 +7876,16 @@ function bagianPenetapanMassal() {
     kotakCentang.set(nomor, centang);
     label.appendChild(centang);
     label.appendChild(buatElemen("span", "aleta-massal-nomor", nomor));
-    const keadaan = buatElemen("span", "aleta-massal-keadaan", "");
+    // Apa yang kurang disebutkan sejak awal, bukan sesudah diperiksa. Yang
+    // memilih perlu tahu ia sedang melanjutkan rantai yang tanggung, bukan
+    // memulai dari nol.
+    const kurang = kurangPer.get(nomor) || [];
+    const awalnya =
+      kurang.length === URUTAN_RANTAI.length
+        ? "belum ditetapkan"
+        : `kurang ${kurang.map((x) => x.toUpperCase()).join(
+)}`;
+    const keadaan = buatElemen("span", "aleta-massal-keadaan", awalnya);
     label.appendChild(keadaan);
     daftar.appendChild(label);
   }
@@ -7843,13 +7967,33 @@ function bagianPenetapanMassal() {
       // Yang SUDAH ada bukan kegagalan - perkara itu memang sudah
       // dikerjakan, dan menyebutnya gagal membuat orang mencari kerusakan
       // yang tidak ada.
-      const semuanyaSudahAda =
-        gagal.length > 0 && gagal.every((x) => /_sudah_ada$/.test(String(x.alasan || "")));
-      if (semuanyaSudahAda) {
+      const sudahAda = gagal.filter((x) => /_sudah_ada$/.test(String(x.alasan || "")));
+      const gagalSungguhan = gagal.filter((x) => !/_sudah_ada$/.test(String(x.alasan || "")));
+      const dikerjakan = hasil.filter((x) => x.ok).length;
+
+      // Rantai yang TANGGUNG: sebagian langkahnya memang sudah ada, dan
+      // sisanya baru saja dikerjakan. Itu keberhasilan, bukan kegagalan -
+      // dan bukan pula "dilewati", sebab ada yang benar-benar tertulis.
+      //
+      // Sebelumnya keduanya tidak dibedakan: satu langkah yang sudah ada
+      // membuat seluruh perkaranya dihitung sebagai dilewati, padahal tiga
+      // langkah lainnya baru saja ditulis ke SIPP.
+      if (gagalSungguhan.length === 0 && dikerjakan === 0) {
         dilewati += 1;
         tandaiBaris(nomor, "sudah ditetapkan", "aman");
         continue;
       }
+      if (gagalSungguhan.length === 0 && sudahAda.length > 0) {
+        berhasil += 1;
+        tandaiBaris(
+          nomor,
+          `${kering ? "siap" : "selesai"} — ${dikerjakan} langkah, ${sudahAda.length} sudah ada`,
+          "aman"
+        );
+        continue;
+      }
+      gagal.length = 0;
+      gagal.push(...gagalSungguhan);
 
       if (gagal.length > 0) {
         tandaiBaris(nomor, `${gagal[0].jenis.toUpperCase()}: ${gagal[0].alasan}`.slice(0, 70), "lewat");
@@ -7977,7 +8121,7 @@ function susunPanelDaftar(ringkasan) {
   // hanya di halaman yang benar-benar daftar perkara. Menggambarnya bagi
   // yang tidak berwenang berarti menawarkan tombol yang akan menolak.
   if (boleh("penunjukan") && boleh("kerjakan")) {
-    isi.appendChild(bagianPenetapanMassal());
+    isi.appendChild(bagianPenetapanMassal(ringkasan));
   }
 
   panel.appendChild(isi);
@@ -8832,6 +8976,8 @@ let ringkasanDaftarTerakhir = null;
 async function tandaiHalamanDaftar() {
   const baris = barisPerkaraDiHalaman();
   if (baris.length < 2) return null; // bukan halaman daftar
+  /** nomor perkara -> { pmh, ppp, pjs, phs } sebagaimana ada di SIPP. */
+  const penetapanPer = {};
 
   if (!(await sedangMenandai())) {
     // Penandanya mati, tetapi ini TETAP halaman daftar - panel ringkas di
@@ -8864,6 +9010,10 @@ async function tandaiHalamanDaftar() {
       for (const item of baris) {
         if (!(item.nomor in isi.perkara)) continue;
         const identitas = (isi.identitas || {})[item.nomor] || null;
+        // Keempat penetapan awal, apa adanya dari SIPP. Dipakai panel
+        // penetapan massal untuk menawarkan hanya yang masih dapat
+        // dikerjakan - lihat bagianPenetapanMassal.
+        if (identitas && identitas.penetapan) penetapanPer[item.nomor] = identitas.penetapan;
         tempelPenandaBaris(item.baris, item.nomor, isi.perkara[item.nomor], identitas);
         // Dihitung untuk panel ringkas. Yang dihitung KEADAAN perkaranya, bukan
         // jumlah lencananya: satu perkara yang ghaib sekaligus prodeo tetap
@@ -8878,7 +9028,7 @@ async function tandaiHalamanDaftar() {
       }
     });
 
-    ringkasanDaftarTerakhir = { jumlah: baris.length, ditandai: true, bertanda, sebab };
+    ringkasanDaftarTerakhir = { jumlah: baris.length, ditandai: true, bertanda, sebab, penetapan: penetapanPer };
     return ringkasanDaftarTerakhir;
   } catch {
     // Halaman daftar tetap berjalan seperti biasa bila ALETA tidak terjangkau.

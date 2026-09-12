@@ -1807,17 +1807,52 @@ textarea.aleta-sunting:focus {
    Sengaja tidak semenonjol tombol yang MENULIS ke SIPP: ia hanya membaca
    ulang, dan tombol baca yang seterang tombol tulis mengajak ditekan tanpa
    alasan. */
+/* Satu baris di bawah pita: pintasan yang disingkat di kiri, ikon segarkan
+   di kanan. Tinggi barisnya tinggi ikonnya - tidak lebih. */
+.aleta-kaki-baris {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.aleta-kaki-baris .aleta-kaki-pintasan {
+  flex: 1 1 auto;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
 .aleta-kaki-segar {
-  display: block;
-  margin: 6px auto 0;
-  padding: 3px 12px;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
   background: transparent;
   color: var(--aleta-tulisan-lembut);
   border: 1px solid var(--aleta-garis-kuat);
-  border-radius: 3px;
+  border-radius: 4px;
   font-family: inherit;
-  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  line-height: 1;
   cursor: pointer;
+}
+
+/* Berputar selagi membaca - tanda yang tidak menuntut satu kata pun. */
+.aleta-kaki-segar-jalan {
+  animation: aleta-putar 0.9s linear infinite;
+}
+
+@keyframes aleta-putar {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aleta-kaki-segar-jalan { animation: none; opacity: 0.5; }
 }
 
 .aleta-kaki-segar:hover:not(:disabled) {
@@ -2142,7 +2177,13 @@ html[data-aleta-tema-sipp="gelap"] #konten textarea,
 html[data-aleta-tema-sipp="gelap"] #atas input,
 html[data-aleta-tema-sipp="gelap"] .modal-content input,
 html[data-aleta-tema-sipp="gelap"] .modal-content select,
-html[data-aleta-tema-sipp="gelap"] .modal-content textarea {
+html[data-aleta-tema-sipp="gelap"] .modal-content textarea,
+html[data-aleta-tema-sipp="gelap"] .centering input,
+html[data-aleta-tema-sipp="gelap"] .centering select,
+html[data-aleta-tema-sipp="gelap"] .centering textarea,
+html[data-aleta-tema-sipp="gelap"] .templatepopcentering input,
+html[data-aleta-tema-sipp="gelap"] .templatepopcentering select,
+html[data-aleta-tema-sipp="gelap"] .templatepopcentering textarea {
   background-color: var(--s-permukaan-2) !important;
   color: var(--s-tulisan) !important;
   border-color: var(--s-garis) !important;
@@ -2158,6 +2199,67 @@ html[data-aleta-tema-sipp="gelap"] #konten textarea[readonly] {
 
 html[data-aleta-tema-sipp="gelap"] ::placeholder {
   color: #7b8f85 !important;
+}
+
+/* --- Tingkap SIPP: kerangka dan daftar pilihannya -------------------------
+   Pembungkusnya yang dilingkupi, bukan tiap idnya satu per satu. Nama
+   pembungkus tidak berubah antar versi SIPP; id borang di dalamnya berubah
+   tiap layar. */
+html[data-aleta-tema-sipp="gelap"] :is(.centering, .templatepopcentering) {
+  background-color: transparent !important;
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(#pihak_pilih, #pop, #frm_court_calendar) {
+  background-color: var(--s-permukaan) !important;
+  border-color: var(--s-garis) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* Daftar pilihan yang TERBUKA digambar peramban memakai warna latar
+   select-nya. SIPP memaksa #fff di situ, dan itulah kilatan putih pada
+   tingkap relaas - bukan halamannya, melainkan daftarnya. */
+html[data-aleta-tema-sipp="gelap"] :is(
+  .custom-dropdown__select,
+  .custom-dropdown__select--white,
+  .custom-dropdown__select--emerald,
+  .custom-dropdown__select--red
+) {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(.custom-dropdown, .custom-dropdown--emerald) {
+  background-color: transparent !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(.centering, .templatepopcentering) option {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* Tombol pilih berkas bawaan peramban - abu terang pada tingkap e-Doc. */
+html[data-aleta-tema-sipp="gelap"] input[type="file"] {
+  color: var(--s-tulisan-lembut) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] input[type="file"]::file-selector-button {
+  background: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+  border: 1px solid var(--s-garis) !important;
+  border-radius: 3px;
+  padding: 2px 10px;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+/* Kepala tingkap - judulnya berlatar hijau tua SIPP yang tidak ikut gelap. */
+html[data-aleta-tema-sipp="gelap"] :is(.centering, .templatepopcentering) :is(.pos, .divider) {
+  background-color: var(--s-hijau-tua) !important;
+  color: #eef7f2 !important;
+  border-color: var(--s-garis-hijau) !important;
 }
 
 /* --- Pranala umum, di luar panel ALETA ----------------------------------- */

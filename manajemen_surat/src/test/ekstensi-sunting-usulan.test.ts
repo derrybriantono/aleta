@@ -83,19 +83,66 @@ describe("tombol segarkan", () => {
     // Memuat ulang halaman SIPP membuang isian borang yang belum disimpan -
     // yakni tepat pekerjaan yang sedang dikerjakan orang yang menekannya.
     const konten = baca("konten.js");
-    expect(konten).toContain('buatElemen("button", "aleta-kaki-segar", "↻ Segarkan")');
+    // Ikon saja, bukan tulisan: kaki panel pernah memakan tiga baris, dan
+    // tempat itu milik isi panel. Namanya pindah ke aria-label dan title.
+    expect(konten).toContain('buatElemen("button", "aleta-kaki-segar", "↻")');
+    expect(konten).toContain('segar.setAttribute("aria-label", "Segarkan")');
     expect(konten).toContain("void segarkan();");
-    const bagian = konten.slice(konten.indexOf("function kakiPanel("));
-    expect(bagian.slice(0, 2500)).not.toContain("location.reload");
+    // Dipotong sampai fungsi berikutnya, bukan pada jumlah aksara tertentu:
+    // potongan 2.500 aksara sempat memangkas badan fungsinya begitu catatan
+    // di dalamnya bertambah, dan penjaga yang memeriksa potongan yang
+    // terpangkas gagal karena sebab yang tidak ada hubungannya dengan yang
+    // dijaganya.
+    const mulai = konten.indexOf("function kakiPanel(");
+    const selesai = konten.indexOf("\nfunction ", mulai + 10);
+    const bagian = konten.slice(mulai, selesai < 0 ? undefined : selesai);
+    expect(bagian.length).toBeGreaterThan(500);
+    expect(bagian).not.toContain("location.reload");
     // Penjaga nomorTerakhir harus dikosongkan lebih dulu - tanpa itu
     // segarkan() memulangkan diri sendiri tanpa membaca apa pun.
-    expect(bagian.slice(0, 2500)).toContain('nomorTerakhir = "";');
+    expect(bagian).toContain('nomorTerakhir = "";');
   });
 
   it("ada juga di kaki panel halaman ALETA", () => {
     const aleta = baca("aleta.js");
-    expect(aleta).toContain('buatElemen("button", "aleta-kaki-segar", "↻ Segarkan")');
+    expect(aleta).toContain('buatElemen("button", "aleta-kaki-segar", "↻")');
     expect(aleta).toContain("void pasangPortal();");
+  });
+
+  it("ada pula di kaki panel ABT - ketiga panel berkaki sama", () => {
+    // Panel ABT dibangun sekali saat halaman dibuka. Tanpa ini, usulan yang
+    // baru diubah di ALETA tidak pernah terbaca sampai halaman ABT dimuat
+    // ulang - dan memuat ulang membuang isian blangko yang belum disimpan.
+    const abt = baca("abt.js");
+    expect(abt).toContain('buatElemen("button", "aleta-kaki-segar", "↻")');
+    expect(abt).toContain("void pasang();");
+  });
+
+  it("kaki panel satu baris: pintasan disingkat, keterangannya di title", () => {
+    const konten = baca("konten.js");
+    expect(konten).toContain('buatElemen("div", "aleta-kaki-baris")');
+    expect(konten).toContain('PINTASAN_PANEL.map((x) => x.tombol).join(" · ")');
+    // Keterangan lengkapnya tidak hilang - ia pindah ke title.
+    expect(konten).toContain("Tidak berlaku selagi mengetik di kolom isian.");
+  });
+
+  it("tombol kepala panel SIPP di dalam wadah yang sama dengan panel ABT dan ALETA", () => {
+    // .aleta-alat-kepala ber-margin-left: auto - tombolnya di ujung kanan.
+    // Panel SIPP dulu menempelkannya langsung ke kepala, satu per satu,
+    // sehingga seluruhnya berkumpul di kiri dengan ruang kosong di kanan.
+    const konten = baca("konten.js");
+    expect(konten).toContain('const alatKepala = buatElemen("span", "aleta-alat-kepala")');
+    expect(konten).toContain("kepala.appendChild(alatKepala);");
+    // Tidak ada lagi tombol yang menempel langsung ke kepala.
+    for (const langsung of [
+      "kepala.appendChild(tombolTema(panel));",
+      "kepala.appendChild(penuh);",
+      "kepala.appendChild(bawaan);",
+      "kepala.appendChild(lipat);",
+      "kepala.appendChild(tombolMatikan());",
+    ]) {
+      expect(konten, langsung).not.toContain(langsung);
+    }
   });
 
   it("gayanya lebih redup daripada tombol yang MENULIS ke SIPP", () => {

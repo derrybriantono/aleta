@@ -476,4 +476,85 @@
 
     window.postMessage({ sumber: TANDA_JAWAB, id: pesan.id, ...jawab }, "*");
   });
+
+  /**
+   * ==========================================================================
+   * BIDANG KETIK CKEDITOR LAHIR GELAP, BUKAN DIGELAPKAN SESUDAHNYA
+   * ==========================================================================
+   *
+   * Isi bidang ketik berada di dalam iframe - dokumen tersendiri yang tidak
+   * dicapai berkas gaya content script. konten.js menyisipkan gayanya lewat
+   * contentDocument, tetapi penyisipan itu menyusul: ia dipicu pengamat DOM
+   * yang ditahan 400 milidetik, dan CKEditor sudah menggambar bidangnya jauh
+   * sebelum itu.
+   *
+   * Akibatnya kilatan PUTIH seluas layar tiap kali tingkap dibuka - dan pada
+   * layar Putusan Akhir ada tiga bidang sekaligus. Bagi mata, kilatan putih di
+   * antara dua keadaan gelap lebih menyakitkan daripada layar yang terang
+   * sepanjang waktu.
+   *
+   * CKEDITOR.addCss menitipkan gaya ke SELURUH bidang ketik yang kelak
+   * dibuat - CKEditor menuliskannya ke dalam dokumen iframe pada saat
+   * membangunnya, sebelum satu piksel pun digambar. Tidak ada lagi yang
+   * menyusul, jadi tidak ada lagi yang berkelebat.
+   *
+   * Berkas ini berjalan di dunia HALAMAN, dan hanya dari sinilah
+   * window.CKEDITOR terlihat. Itu pula sebabnya ia dikerjakan di sini, bukan
+   * di konten.js.
+   *
+   * Penanda temanya dibaca dari elemen html - satu-satunya hal yang memang
+   * dibagi kedua dunia. Bila temanya terang, tidak ada yang dititipkan sama
+   * sekali, dan CKEditor tampil persis seperti tanpa ekstensi ini.
+   */
+  const GAYA_ISI_CKEDITOR = [
+    "html, body { background: #141d19 !important; color: #dfe8e2 !important; }",
+    "body { caret-color: #7fd0a6; }",
+    "a { color: #7fd0a6 !important; }",
+    "table, td, th, hr { border-color: #27342e !important; }",
+    "::selection { background: #22432f; color: #ffffff; }",
+    // Naskah yang ditempel dari Word membawa warnanya sendiri, dan warna itu
+    // hampir selalu hitam - hitam di atas gelap berarti hilang sama sekali.
+    '[style*="color:#000"], [style*="color: #000"], [style*="color:black"],' +
+      ' [style*="color: black"], [style*="color:rgb(0,0,0)"], [style*="color: rgb(0, 0, 0)"],' +
+      ' font[color="#000000"], font[color="black"] { color: inherit !important; }',
+    '[style*="background-color:#fff"], [style*="background-color: #fff"],' +
+      ' [style*="background:#fff"], [style*="background: #fff"],' +
+      ' [style*="background-color:white"], [style*="background-color: white"]' +
+      " { background-color: transparent !important; }",
+  ].join("\n");
+
+  function temaGelap() {
+    try {
+      return document.documentElement.getAttribute("data-aleta-tema-sipp") === "gelap";
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Menitipkan gayanya ke CKEditor, dan menunggunya bila ia belum dimuat.
+   *
+   * SIPP memuat ckeditor.js pada sebagian halaman saja, dan urutan muatnya
+   * tidak dijamin. Ditunggu sebentar dengan jam yang BERHENTI SENDIRI -
+   * halaman tanpa CKEditor tidak boleh meninggalkan jam yang berdetak
+   * selamanya hanya untuk menunggu sesuatu yang memang tidak ada.
+   */
+  function titipkanGayaCkeditor() {
+    if (!temaGelap()) return;
+    let sisa = 40; // 40 x 250ms = 10 detik
+    const coba = () => {
+      if (window.CKEDITOR && typeof window.CKEDITOR.addCss === "function") {
+        if (!window.CKEDITOR.__aletaGaya) {
+          window.CKEDITOR.__aletaGaya = true;
+          window.CKEDITOR.addCss(GAYA_ISI_CKEDITOR);
+        }
+        return;
+      }
+      sisa -= 1;
+      if (sisa > 0) setTimeout(coba, 250);
+    };
+    coba();
+  }
+
+  titipkanGayaCkeditor();
 })();

@@ -71,8 +71,35 @@ describe("penetapan massal", () => {
 
   it("yang sudah ditetapkan dilewati, bukan dihitung gagal", () => {
     const badan = potongFungsi(konten(), "bagianPenetapanMassal");
-    expect(badan).toContain("semuanyaSudahAda");
     expect(badan).toContain("_sudah_ada$");
+    // Yang dilewati hanya perkara yang TIDAK SATU LANGKAH PUN dikerjakan.
+    expect(badan).toContain("gagalSungguhan.length === 0 && dikerjakan === 0");
+  });
+
+  it("rantai yang TANGGUNG dihitung berhasil, bukan dilewati", () => {
+    // Perkara yang PMH-nya sudah ada lalu PPP, PJS, dan PHS-nya baru saja
+    // ditulis adalah perkara yang dikerjakan - bukan dilewati. Sebelumnya
+    // satu langkah yang sudah ada membuat seluruh perkaranya dihitung
+    // dilewati, padahal tiga langkah lainnya benar-benar masuk ke SIPP.
+    const badan = potongFungsi(konten(), "bagianPenetapanMassal");
+    expect(badan).toContain("gagalSungguhan.length === 0 && sudahAda.length > 0");
+    expect(badan).toContain("sudahAda.length} sudah ada");
+  });
+
+  it("yang keempat penetapannya lengkap tidak ditawarkan sama sekali", () => {
+    // Daftar yang sebagian besar isinya tidak dapat dikerjakan mengajari
+    // orang untuk berhenti membacanya.
+    const isi = konten();
+    expect(isi).toContain("function langkahKurang(keadaan)");
+    expect(potongFungsi(isi, "bagianPenetapanMassal")).toContain("if (kurangPer.size === 0)");
+  });
+
+  it("keadaan yang TIDAK diketahui dianggap belum ditetapkan", () => {
+    // Menganggapnya lengkap berarti menyembunyikan perkara yang barangkali
+    // justru belum ditetapkan sama sekali - kekeliruan yang tidak terlihat
+    // siapa pun, sebab yang hilang memang tidak digambar.
+    const badan = potongFungsi(konten(), "langkahKurang");
+    expect(badan).toContain("if (!keadaan) return [...URUTAN_RANTAI];");
   });
 
   it("rantainya SATU salinan, dipakai bersama tombol satu perkara", () => {

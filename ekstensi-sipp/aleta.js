@@ -388,17 +388,23 @@ async function susunPanelPortal(siapa) {
   // dipasang karena itu tidak pernah terbaca sampai halamannya dimuat
   // ulang seluruhnya - dan memuat ulang halaman ALETA berarti kehilangan
   // apa pun yang sedang dikerjakan di sana.
-  const segar = buatElemen("button", "aleta-kaki-segar", "↻ Segarkan");
+  // Bentuk kaki yang sama dengan panel SIPP - satu baris, ikon di kanan.
+  // Panel ini tidak punya pintasan papan tik, jadi barisnya hanya berisi
+  // ikonnya; yang sama adalah tempat dan bentuknya, bukan isinya.
+  const barisKaki = buatElemen("div", "aleta-kaki-baris");
+  const segar = buatElemen("button", "aleta-kaki-segar", "↻");
   segar.type = "button";
-  segar.title = "Membaca ulang akun dan kewenangan dari ALETA. Halaman portal tidak dimuat ulang.";
+  segar.setAttribute("aria-label", "Segarkan");
+  segar.title = "Segarkan - membaca ulang akun dan kewenangan dari ALETA. Halaman portal tidak dimuat ulang.";
   segar.addEventListener("click", () => {
     segar.disabled = true;
-    segar.textContent = "↻ Membaca…";
+    segar.classList.add("aleta-kaki-segar-jalan");
     const lama = document.getElementById(PENANDA_ALETA);
     if (lama) lama.remove();
     void pasangPortal();
   });
-  kaki.appendChild(segar);
+  barisKaki.appendChild(segar);
+  kaki.appendChild(barisKaki);
   panel.appendChild(kaki);
 
   await alatPasangPanel(panel, kepala, KUNCI_POSISI_ALETA, {

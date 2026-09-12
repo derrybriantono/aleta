@@ -233,7 +233,12 @@ export function susunIsianPutusanSipp(masukan: {
   catatan.push("Tombol Simpan di SIPP tidak ditekan ALETA. Periksa seluruh isian, lalu simpan sendiri.");
 
   return {
-    pertimbangan,
+    // Pertimbangan hukum adalah rangkaian alinea "Menimbang, bahwa ..." yang
+    // masing-masing berdiri sebagai satu pertimbangan tersendiri. Mengalir
+    // menjadi satu blok, ia terbaca sebagai satu kalimat sepanjang delapan
+    // ribu aksara - dan yang memeriksanya kehilangan batas antar alinea,
+    // yakni satu-satunya tanda di mana satu pertimbangan berakhir.
+    pertimbangan: paragrafButir(pertimbangan),
     // Paragraf dibentuk PALING AKHIR, sesudah nama pihak disamarkan.
     // Menyisipkan tanda HTML lebih dahulu berarti nama yang kebetulan berdiri
     // di tepi paragraf terpotong tandanya dan luput tersamar.

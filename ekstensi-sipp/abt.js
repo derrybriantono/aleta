@@ -2721,6 +2721,26 @@ function susunPanelAbt(jatiDiri) {
   kaki.title = "Usulan dari ALETA. Disimpan lewat tombol simpan ABT sendiri.";
   let pitaKaki = pitaIdentitasAbt(penggunaAletaAbt);
   kaki.appendChild(pitaKaki);
+
+  // Kaki yang sama dengan panel SIPP dan ALETA: satu baris, segarkan
+  // sebagai ikon di kanan. Panel ini dibangun sekali saat halaman dibuka;
+  // tanpa ini, usulan yang baru diubah di ALETA tidak pernah terbaca
+  // sampai halaman ABT dimuat ulang - dan memuat ulang halaman ABT
+  // membuang isian blangko yang belum disimpan.
+  const barisKaki = buatElemen("div", "aleta-kaki-baris");
+  const segar = buatElemen("button", "aleta-kaki-segar", "↻");
+  segar.type = "button";
+  segar.setAttribute("aria-label", "Segarkan");
+  segar.title = "Segarkan - membaca ulang usulan dari ALETA. Halaman ABT tidak dimuat ulang, dan isian blangko yang belum disimpan tidak hilang.";
+  segar.addEventListener("click", () => {
+    segar.disabled = true;
+    segar.classList.add("aleta-kaki-segar-jalan");
+    const lama = document.getElementById(PENANDA_ABT);
+    if (lama) lama.remove();
+    void pasang();
+  });
+  barisKaki.appendChild(segar);
+  kaki.appendChild(barisKaki);
   panel.appendChild(kaki);
   void muatPenggunaAleta().then((pengguna) => {
     // Tombol yang akan ditolak disembunyikan begitu kewenangannya diketahui.
