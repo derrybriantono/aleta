@@ -1730,6 +1730,10 @@ tr.aleta-baris-disorot > td {
   border-top: 1px solid var(--aleta-garis);
 }
 
+.aleta-unggah-hasil:empty {
+  display: none;
+}
+
 .aleta-unggah-rinci {
   display: flex;
   flex-direction: column;

@@ -4048,6 +4048,12 @@ function bagianIsiPutusan(nomorPerkara) {
   pemilih.className = "aleta-berkas";
   kakiUnggah.appendChild(pemilih);
   kotakUnggah.appendChild(kakiUnggah);
+  // Ringkasan panjang tiap bagian punya wadahnya SENDIRI, bukan wadah usulan.
+  // Pembacaan usulan mengosongkan wadahnya lebih dulu, sehingga ringkasan yang
+  // ditaruh di sana akan terhapus sepersekian detik sesudah ditulis - tepat
+  // ketika yang membacanya sedang memeriksa apakah potongannya masuk akal.
+  const wadahUnggah = buatElemen("div", "aleta-unggah-hasil");
+  kotakUnggah.appendChild(wadahUnggah);
   isi.appendChild(kotakUnggah);
 
   pemilih.addEventListener('change', async () => {
@@ -4056,6 +4062,7 @@ function bagianIsiPutusan(nomorPerkara) {
     pemilih.disabled = true;
     tombol.disabled = true;
     wadah.textContent = "";
+    wadahUnggah.textContent = "";
     kabar.className = "aleta-abt-kabar";
     kabar.textContent = `Membaca ${berkas.name}…`;
 
@@ -4114,8 +4121,8 @@ function bagianIsiPutusan(nomorPerkara) {
       );
       rinci.appendChild(baris);
     }
-    wadah.textContent = '';
-    wadah.appendChild(rinci);
+    wadahUnggah.textContent = '';
+    wadahUnggah.appendChild(rinci);
 
     kabar.className = "aleta-abt-kabar";
     kabar.textContent =

@@ -108,6 +108,17 @@ describe("naskah putusan diterima dari berkas", () => {
     expect(isi).toContain("aleta-unggah-baris");
     expect(isi).toContain("jawab.bagian || []");
   });
+
+  it("ringkasannya tidak terhapus oleh pembacaan usulan yang menyusul", () => {
+    // Unggahan disambung langsung ke pembacaan usulan, dan pembacaan itu
+    // mengosongkan wadahnya lebih dulu. Ringkasan yang ditaruh di wadah yang
+    // sama akan lenyap sepersekian detik sesudah ditulis - tepat ketika yang
+    // membacanya sedang memeriksa apakah potongannya masuk akal.
+    const isi = konten();
+    expect(isi).toContain("wadahUnggah.appendChild(rinci);");
+    expect(isi).not.toContain("wadah.appendChild(rinci);");
+    expect(isi).toContain("tombol.click();");
+  });
 });
 
 describe("gaya gelap bidang ketik CKEditor", () => {
