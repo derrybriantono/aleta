@@ -42,6 +42,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.101.0",
+    dirilis: "2026-09-12T10:30:00+08:00",
+    judul: "Obyek Sengketa diusulkan dari kebiasaan satker, dan ekstensi benar-benar hidup di pemasangan setempat",
+    butir: [
+      "Kotak Obyek Sengketa pada layar Data Umum tidak diisi dari posita - tidak satu pun kalimat di sana menyebut \"Pernikahan/Perceraian\". Yang menentukan isinya adalah kebiasaan satker untuk jenis perkara itu: pada 1.345 cerai gugat PA Donggala, satu maksud itu ditulis dengan empat ejaan. Panel kini menghitung kebiasaan itu lewat gerbang bot, menggabungkan ejaan yang semakna, dan mengusulkan ejaan yang paling sering dipakai beserta jumlahnya.",
+      "Dicentang sendiri HANYA bila kebiasaannya nyaris bulat dan riwayatnya panjang - cerai gugat memenuhi keduanya. Itsbat nikah tidak: \"Isbat Nikah\" dan \"Pernikahan\" sama-sama dipakai, dan memilihkan salah satunya adalah keputusan petugas. Penetapan ahli waris pun tidak: yang ditulis di sana adalah keadaan perkaranya sendiri - tanah, dana BPJS - dan kebiasaan tidak berhak menimpanya. Kebiasaan lain disebutkan di bawah kotaknya.",
+      "Kebiasaannya baru dihitung bila layarnya memang menampilkan kotak Obyek Sengketa, dan gagal menghitungnya tidak menggagalkan petikan data nikah maupun usulan alasan.",
+      "Pemasangan setempat: Chrome ternyata memuat ekstensi dari folder hasil unduhan (D:\\Download File\\ekstensi-sipp) yang masih versi 1.95.0 - sebelum pola alamat 127.0.0.1 ada - sehingga di SIPP, ABT, dan ALETA setempat tidak ada satu pun skrip yang tersuntik. Folder itu kini disamakan dengan repo pada tiap rilis; yang tersisa hanya menekan Reload pada kartu ALETA di chrome://extensions.",
+    ],
+  },
+  {
     versi: "1.100.0",
     dirilis: "2026-09-12T09:40:00+08:00",
     judul: "Data pernikahan pada layar Data Umum dipetik dari posita",

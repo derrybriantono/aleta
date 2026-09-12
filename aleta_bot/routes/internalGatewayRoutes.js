@@ -23,6 +23,7 @@ const ecourtReconciliationService = require("../services/ecourtReconciliationSer
 const ecourtStatusService = require("../services/ecourtStatusService");
 const ecourtLoginService = require("../services/ecourtLoginService");
 const sippKonteksService = require("../services/sippKonteksService");
+const obyekSengketaService = require("../services/obyekSengketaService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
 const abtUsulanService = require("../services/abtUsulanService");
 const abtCetakService = require("../services/abtCetakService");
@@ -1023,6 +1024,21 @@ router.get("/sipp/konteks", requireInternalToken, async (req, res) => {
       // Dipakai HANYA untuk menentukan tombol verifikasi tampil atau tidak.
       namaPembuka: String(req.query.nama || ""),
     });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Kebiasaan satker menulis Obyek Sengketa untuk jenis perkara yang sama.
+ *
+ * Baca saja. Ejaan dipulangkan apa adanya beserta jumlahnya; yang
+ * menggabungkan variannya adalah portal, di tempat yang dapat diuji.
+ */
+router.get("/sipp/obyek-sengketa/kebiasaan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await obyekSengketaService.kebiasaan(String(req.query.nomor || ""));
     res.status(hasil.ok ? 200 : 400).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

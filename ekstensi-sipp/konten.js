@@ -2970,7 +2970,14 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
       petikanTampak.push({ ...calon, nilaiSekarang: jawabNilai.nilai || "" });
     }
 
-    if (medanTampak.length === 0 && petikanTampak.length === 0) {
+    // Obyek Sengketa - satu-satunya kotak di layar ini yang isinya bukan dari
+    // posita melainkan kebiasaan satker. Kebiasaannya baru diminta bila
+    // kotaknya memang tampak.
+    const bacaObyek = await kirimKeJembatan({ jenis: "nilai", penunjuk: 'textarea[name="obyek_gugatan"]' });
+    const obyekTampak = Boolean(bacaObyek && bacaObyek.ok && bacaObyek.tampak);
+    const obyekSekarang = (obyekTampak && bacaObyek.nilai) || "";
+
+    if (medanTampak.length === 0 && petikanTampak.length === 0 && !obyekTampak) {
       kabar.className = "aleta-abt-kabar";
       kabar.textContent =
         "Layar ini tidak menampilkan satu pun medan yang dapat ALETA isikan untuk jenis perkara ini.";
@@ -2980,6 +2987,7 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
 
     let usulanMedan = [];
     let dataNikah = null;
+    let dataObyek = null;
     try {
       const respons = await alatAmbil(
         ALETA_API_ALASAN_PERKARA,
@@ -2991,6 +2999,7 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
             nomorPerkara: nomorPerkara || "",
             teks: { posita, petitum },
             medan: medanTampak.map((x) => ({ kunci: x.kunci, label: x.label, pilihan: x.pilihan })),
+            mintaObyek: obyekTampak,
           }),
         },
         "Menyusun usulan alasan"
@@ -3006,6 +3015,7 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
       }
       usulanMedan = jawab.usulan || [];
       dataNikah = jawab.nikah || null;
+      dataObyek = jawab.obyekSengketa || null;
       kabar.textContent =
         `${petikanTampak.length} medan dapat dipetik dan ${medanTampak.length} medan alasan tampak, ` +
         `dibaca dari ${jawab.panjangTeks} huruf posita dan petitum.`;
@@ -3093,6 +3103,74 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
           "KUA Tempat Menikah - daftarnya dicari SIPP sendiri, dan ALETA tidak dapat memilihkannya."
       );
       wadah.appendChild(kabarKua);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // KARTU OBYEK SENGKETA - KEBIASAAN SATKER, BUKAN PEMBACAAN POSITA
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Tidak ada satu pun kalimat posita yang menyebut "Pernikahan/Perceraian".
+    // Yang menentukan isinya adalah apa yang selama ini ditulis satker untuk
+    // jenis perkara yang sama, dan angka itu diperlihatkan apa adanya.
+    // Dicentang sendiri hanya bila kebiasaannya nyaris bulat; selebihnya
+    // ditawarkan, dengan pilihan lainnya disebut.
+    if (obyekTampak) {
+      const teratas = (dataObyek && dataObyek.usulan && dataObyek.usulan[0]) || null;
+      const kartu = buatElemen("div", "aleta-abt-kartu");
+      const kepala = buatElemen("div", "aleta-abt-kartu-kepala");
+      const centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-abt-centang";
+      centang.checked = Boolean(teratas && teratas.nilai && dataObyek.yakin);
+      centang.disabled = !(teratas && teratas.nilai);
+      kepala.appendChild(centang);
+      kepala.appendChild(buatElemen("span", "aleta-abt-nama", "Obyek Sengketa"));
+      const nadaObyek = !teratas
+        ? { kelas: "aleta-tanda-abu", teks: (dataObyek && dataObyek.sebab) || "belum ada riwayat" }
+        : dataObyek.yakin
+        ? { kelas: "aleta-tanda-hijau", teks: `kebiasaan satker: ${teratas.jumlah} dari ${dataObyek.total}` }
+        : { kelas: "aleta-tanda-kuning", teks: `tidak bulat: ${teratas.jumlah} dari ${dataObyek.total}` };
+      kepala.appendChild(buatElemen("span", `aleta-tanda ${nadaObyek.kelas}`, nadaObyek.teks));
+      kartu.appendChild(kepala);
+
+      const sandingObyek = buatElemen("div", "aleta-abt-sanding");
+      const kiniObyek = buatElemen("div", "aleta-abt-kini");
+      kiniObyek.appendChild(buatElemen("span", "aleta-abt-label", "sekarang"));
+      kiniObyek.appendChild(buatElemen("span", "aleta-abt-isi", obyekSekarang || "(masih kosong)"));
+      sandingObyek.appendChild(kiniObyek);
+      kartu.appendChild(sandingObyek);
+
+      const kotakObyek = document.createElement("input");
+      kotakObyek.type = "text";
+      kotakObyek.className = "aleta-abt-sunting-kotak";
+      kotakObyek.value = (teratas && teratas.nilai) || "";
+      kotakObyek.setAttribute("aria-label", "Obyek Sengketa");
+      kotakObyek.addEventListener("input", () => {
+        centang.disabled = !kotakObyek.value.trim();
+        if (centang.disabled) centang.checked = false;
+      });
+      kartu.appendChild(kotakObyek);
+
+      const lainnya = ((dataObyek && dataObyek.usulan) || []).slice(1).filter((x) => x && x.nilai);
+      if (lainnya.length > 0) {
+        kartu.appendChild(
+          buatElemen(
+            "div",
+            "aleta-abt-catatan",
+            `Pernah ditulis juga untuk ${(dataObyek && dataObyek.jenisPerkara) || "jenis perkara ini"}: ` +
+              lainnya.map((x) => `${x.nilai} (${x.jumlah})`).join("; ")
+          )
+        );
+      }
+
+      wadah.appendChild(kartu);
+      petikanTerap.push({
+        kunci: 'textarea[name="obyek_gugatan"]',
+        label: "Obyek Sengketa",
+        jenisMedan: "teks",
+        centang,
+        nilai: () => kotakObyek.value.trim(),
+      });
     }
 
     const pilihanTerap = [];

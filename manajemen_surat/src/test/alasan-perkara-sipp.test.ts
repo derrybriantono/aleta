@@ -331,6 +331,61 @@ describe("medan yang DIPETIK pada bagian yang sama", () => {
   });
 });
 
+describe("kotak Obyek Sengketa - kebiasaan satker, bukan pembacaan posita", () => {
+  const konten = bacaEkstensi("konten.js");
+  const bagian = konten.slice(
+    konten.indexOf("function bagianIsiAlasanPerkara("),
+    konten.indexOf("function bagianIsiPutusan(")
+  );
+
+  it("kotaknya ditunjuk lewat nama, dan hanya bila tampak", () => {
+    expect(bagian).toContain(`textarea[name="obyek_gugatan"]`);
+    expect(bagian).toContain("bacaObyek.tampak");
+  });
+
+  it("kebiasaannya baru diminta bila kotaknya memang tampak", () => {
+    // Menghitung kebiasaan berarti satu kueri ke SIPP lewat gerbang bot.
+    // Layar yang tidak menampilkan kotaknya tidak perlu membayarnya.
+    expect(bagian).toContain("mintaObyek: obyekTampak");
+  });
+
+  it("dicentang sendiri HANYA bila kebiasaannya bulat", () => {
+    expect(bagian).toContain("dataObyek.yakin");
+    expect(bagian).toContain("centang.checked = Boolean(teratas && teratas.nilai && dataObyek.yakin)");
+  });
+
+  it("kebiasaan lain disebut, supaya petugas tahu ada pilihan", () => {
+    expect(bagian).toContain("Pernah ditulis juga untuk");
+  });
+
+  it("yang diisikan isi kotak saat Terapkan ditekan, lewat jalur yang sama dengan petikan", () => {
+    expect(bagian).toContain("nilai: () => kotakObyek.value.trim()");
+  });
+
+  it("bagiannya tetap digambar walau hanya kotak obyek yang tampak", () => {
+    expect(bagian).toContain("petikanTampak.length === 0 && !obyekTampak");
+  });
+
+  it("rutenya membaca kebiasaan lewat gerbang bot, dan gagal membacanya tidak menggagalkan yang lain", () => {
+    const rute = readFileSync(
+      path.resolve(process.cwd(), "src/app/api/aleta-ecourt/alasan-perkara/route.ts"),
+      "utf8"
+    );
+    expect(rute).toContain("getGatewaySippObyekSengketa");
+    expect(rute).toContain("badan?.mintaObyek && nomorPerkara");
+    expect(rute).toContain('sebab: jawab.error || "SIPP tidak terbaca."');
+  });
+
+  it("bot mendaftarkan tabelnya di layanan skema - yang tidak terdaftar dijawab tidak ada tanpa galat", () => {
+    const skema = readFileSync(
+      path.resolve(process.cwd(), "..", "aleta_bot", "services", "sippSkemaService.js"),
+      "utf8"
+    );
+    expect(skema).toContain('"perkara_obyek_sengketa"');
+    expect(skema).toContain('"jenis_perkara"');
+  });
+});
+
 describe("jembatan dapat membaca nilai CKEditor", () => {
   const jembatan = bacaEkstensi("jembatan.js");
 

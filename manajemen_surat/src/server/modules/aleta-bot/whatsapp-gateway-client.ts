@@ -2250,6 +2250,28 @@ export async function getGatewaySippKonteks(
   return gatewayFetch(`/internal/aleta-bot/sipp/konteks?${params.toString()}`);
 }
 
+/** Ejaan Obyek Sengketa yang pernah ditulis satker untuk jenis perkara yang sama. */
+export type GatewaySippObyekSengketa = {
+  perkaraId: number;
+  jenisPerkaraId: number;
+  jenisPerkara: string;
+  baris: Array<{ obyek: string; jumlah: number }>;
+};
+
+/**
+ * Kebiasaan satker menulis Obyek Sengketa - dihitung bot dari SIPP, baca saja.
+ *
+ * Ejaan dipulangkan apa adanya beserta jumlahnya; yang menggabungkan
+ * variannya adalah portal (obyek-sengketa-sipp.ts), di tempat yang dapat
+ * diuji.
+ */
+export async function getGatewaySippObyekSengketa(
+  nomor: string
+): Promise<GatewayResult<GatewaySippObyekSengketa>> {
+  const params = new URLSearchParams({ nomor });
+  return gatewayFetch(`/internal/aleta-bot/sipp/obyek-sengketa/kebiasaan?${params.toString()}`);
+}
+
 /**
  * Usulan penunjukan PMH, PPP, PJS, dan PHS untuk satu perkara.
  *

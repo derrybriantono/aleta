@@ -135,6 +135,10 @@ const TABEL = [
   "perkara_rekonvensi",
   // Data Umum: tanggal nikah, kutipan akta, dan KUA tempat menikah.
   "perkara_data_pernikahan",
+  // Data Umum: kotak Obyek Sengketa. Dipakai menghitung kebiasaan satker
+  // per jenis perkara - dan jenis_perkara untuk menyebut nama jenisnya.
+  "perkara_obyek_sengketa",
+  "jenis_perkara",
   // Kuasa hukum. Tertinggal dari daftar ini sampai butir Pos Bantuan Hukum
   // diukur ulang: LP16 memanggil tabelAda("perkara_pengacara"), dijawab
   // "tidak ada" walau tabelnya berisi 22 baris, lalu memulangkan daftar

@@ -2,8 +2,10 @@ import { type NextRequest } from "next/server";
 
 import { usulkanAlasanPerkara, susunTeksAlasan } from "@/lib/alasan-perkara-sipp";
 import { petikDataNikah } from "@/lib/data-nikah-sipp";
+import { usulkanObyekSengketa, type UsulanObyek } from "@/lib/obyek-sengketa-sipp";
 import { type MedanPilihan } from "@/lib/usulan-medan-putusan";
 import { getDatabase } from "@/server/db/client";
+import { getGatewaySippObyekSengketa } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -65,6 +67,8 @@ export async function POST(request: NextRequest) {
       nomorPerkara?: string;
       teks?: { posita?: string; petitum?: string };
       medan?: MedanPilihan[];
+      /** Halaman menampilkan kotak Obyek Sengketa - kebiasaan satker diminta. */
+      mintaObyek?: boolean;
     }>(request);
 
     const medanMentah = Array.isArray(badan?.medan) ? badan.medan : [];
@@ -104,12 +108,33 @@ export async function POST(request: NextRequest) {
     // Keduanya berasal dari teks yang sama dan dipakai pada layar yang sama,
     // jadi memisahkannya menjadi dua rute hanya membuat petugas menekan dua
     // tombol untuk satu pekerjaan.
+    //
+    // Yang ketiga, "obyekSengketa", berbeda lagi sifatnya - lihat di bawah.
+
+    // ────────────────────────────────────────────────────────────────────
+    // OBYEK SENGKETA - KEBIASAAN SATKER, DIBACA LEWAT GERBANG BOT
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Satu-satunya isian di layar ini yang tidak berasal dari posita. Hanya
+    // dibaca bila halamannya memang menampilkan kotaknya, dan gagal
+    // membacanya TIDAK menggagalkan petikan dan usulan yang lain: sebabnya
+    // dipulangkan apa adanya di tempat kotak itu.
+    let obyekSengketa: (UsulanObyek & { jenisPerkara: string; sebab: string }) | null = null;
+    const nomorPerkara = String(badan?.nomorPerkara ?? "").trim();
+    if (badan?.mintaObyek && nomorPerkara) {
+      const jawab = await getGatewaySippObyekSengketa(nomorPerkara);
+      obyekSengketa = jawab.ok
+        ? { ...usulkanObyekSengketa(jawab.data.baris), jenisPerkara: jawab.data.jenisPerkara, sebab: "" }
+        : { total: 0, yakin: false, usulan: [], jenisPerkara: "", sebab: jawab.error || "SIPP tidak terbaca." };
+    }
+
     return ok({
       ada: true,
-      nomorPerkara: String(badan?.nomorPerkara ?? "").trim(),
+      nomorPerkara,
       panjangTeks: dasar.length,
       usulan: medan.length > 0 ? usulkanAlasanPerkara(teks, medan) : [],
       nikah: petikDataNikah(String(badan?.teks?.posita ?? "").slice(0, BATAS_TEKS)),
+      obyekSengketa,
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
