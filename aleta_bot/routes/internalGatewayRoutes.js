@@ -32,6 +32,7 @@ const ecourtSchedulerService = require("../services/ecourtSchedulerService");
 const sippJadwalSidangService = require("../services/sippJadwalSidangService");
 const kesiapanSidangService = require("../services/kesiapanSidangService");
 const sippStatusPerkaraService = require("../services/sippStatusPerkaraService");
+const putusanUnggahService = require("../services/putusanUnggahService");
 const kendaliBerkasService = require("../services/kendaliBerkasService");
 const putusanEcourtService = require("../services/putusanEcourtService");
 const sippSkemaService = require("../services/sippSkemaService");
@@ -2905,6 +2906,40 @@ router.post("/laporan-perkara/catat", requireInternalToken, async (req, res) => 
     res.json({ ok: true });
   } catch (error) {
     res.status(400).json({ ok: false, alasan: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengunggah putusan akhir dan anonimisasinya ke SIPP sekaligus.
+ *
+ * Bitanya dikirim sebagai base64 di dalam JSON - gerbang ini tidak menerima
+ * multipart, dan menambahkannya berarti menambah satu pustaka penguraian di
+ * jalur yang sudah bekerja. Putusan 200 KB menjadi 270 KB base64; itu ongkos
+ * yang tidak terasa pada satu unggahan per perkara.
+ */
+router.post("/sipp/putusan-unggah", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const bita = (nilai) => {
+      const teks = String(nilai || "");
+      if (!teks) return null;
+      try {
+        return Buffer.from(teks, "base64");
+      } catch {
+        return null;
+      }
+    };
+    const hasil = await putusanUnggahService.unggahPutusan({
+      perkaraId: badan.perkaraId,
+      nomorPerkara: String(badan.nomorPerkara || ""),
+      pdfPutusan: bita(badan.putusanBase64),
+      pdfAnonimisasi: bita(badan.anonimisasiBase64),
+      olehUsername: String(badan.olehUsername || ""),
+      ip: String(badan.ip || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
 });
 

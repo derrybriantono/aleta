@@ -1980,6 +1980,19 @@ textarea.aleta-sunting:focus {
   opacity: 0.6;
 }
 
+/* --- Unggahan putusan ke SIPP ------------------------------------------- */
+.aleta-unggah-sipp-baris {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--aleta-garis);
+}
+
+.aleta-unggah-sipp-label {
+  font-weight: 600;
+  color: var(--aleta-tulisan);
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+
 /* --- Naskah putusan yang diterima dari berkas ---------------------------- */
 .aleta-unggah-naskah {
   margin-top: 8px;
@@ -2997,6 +3010,16 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
  * Didorong ke kanan dengan margin-left:auto supaya nomor perkara di kirinya
  * mendapat seluruh ruang yang tersisa - nomor perkara yang terpotong lebih
  * merugikan daripada tombol yang berdempet. */
+/* Chip peran di kepala tidak boleh terlihat dapat ditekan - ia berdiri
+   di dalam deret tombol, dan deret itu seluruhnya dapat ditekan. */
+.aleta-alat-kepala .aleta-kepala-peran {
+  cursor: default;
+  margin-right: 4px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
 .aleta-alat-kepala {
   margin-left: auto;
   display: flex;
@@ -3821,7 +3844,9 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
 }
 .aleta-identitas-panel .aleta-id-label {
   opacity: 0.75;
-  margin-right: 2px;
+  /* 2px membuat "ALETA" dan "SUPER ADMIN DERRY" berhimpitan menjadi satu
+     kata. Label dan nilainya dua keterangan, bukan satu. */
+  margin-right: 6px;
 }
 .aleta-identitas-panel .aleta-id-nomor {
   font-family: ui-monospace, Consolas, monospace;

@@ -169,6 +169,11 @@ app.use(express.urlencoded({ extended: true }));
  * ditolak 413 sebelum sampai ke sini.
  */
 app.use("/internal/aleta-bot/abt/pdf", express.json({ limit: "28mb" }));
+// Putusan dan anonimisasinya dikirim sebagai base64 di dalam JSON. Satu
+// putusan 200 KB menjadi 270 KB base64, dan keduanya sekaligus melampaui
+// batas 1 MB di bawah - yang gagalnya berbunyi "request entity too large",
+// kalimat yang tidak menyebut berkas mana pun.
+app.use("/internal/aleta-bot/sipp/putusan-unggah", express.json({ limit: "28mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 

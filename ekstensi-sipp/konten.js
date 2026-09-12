@@ -57,7 +57,9 @@ const ALETA_API_RIWAYAT = "/aleta/api/aleta-bot/penunjukan/riwayat";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
+const ALETA_API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
 const ALETA_API_UNGGAH_NASKAH = "/aleta/api/aleta-ecourt/putusan/unggah-naskah";
+const ALETA_API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
 /**
  * Mengunggah naskah lebih lama daripada membaca satu bagian panel: berkasnya
  * terkirim, diurai, lalu disimpan sebagai draf. Membatalkannya di detik
@@ -4023,6 +4025,135 @@ function perkaraIdDariHalaman() {
   return medan && medan.value ? String(medan.value).trim() : "";
 }
 
+/**
+ * ============================================================================
+ * MENGUNGGAH PUTUSAN AKHIR DAN ANONIMISASINYA SEKALIGUS
+ * ============================================================================
+ *
+ * Keduanya diunggah lewat tingkap "Kelola Dokumen Elektronik (E-Doc)" SIPP,
+ * satu per satu: dua kali buka tingkap, dua kali pilih berkas, dua kali
+ * tunggu - padahal keduanya berasal dari naskah yang sama dan dikerjakan
+ * pada menit yang sama.
+ *
+ * Yang ditulis di sini meniru SIPP apa adanya - nama berkas, letak folder
+ * menurut tanggal putusan, baris dirput_dokumen, dan antrean Direktori
+ * Putusan. Lihat putusanUnggahService.js di bot untuk sumber tiap aturannya.
+ *
+ * PDF SAJA. SIPP menerima .doc lalu mengubahnya lewat soffice; ALETA tidak
+ * menjalankan pengubah itu, sebab pengubahan yang gagal separuh
+ * meninggalkan berkas rusak yang barisnya sudah terlanjur tercatat.
+ */
+function bagianUnggahPutusanSipp(nomorPerkara) {
+  const kotak = bagian("Unggah putusan ke SIPP", "unggahPutusanSipp", true);
+  const isi = kotak.isi;
+
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      "Putusan akhir dan anonimisasinya diunggah sekaligus - berkas, kolom dokumen, " +
+        "baris Direktori Putusan, dan antreannya. PDF saja."
+    )
+  );
+
+  const pilihBerkas = (label, keterangan) => {
+    const baris = buatElemen("div", "aleta-unggah-sipp-baris");
+    baris.appendChild(buatElemen("div", "aleta-unggah-sipp-label", label));
+    if (keterangan) baris.appendChild(buatElemen("div", "aleta-tetap-sebab", keterangan));
+    const pemilih = document.createElement("input");
+    pemilih.type = "file";
+    pemilih.accept = ".pdf,application/pdf";
+    pemilih.className = "aleta-berkas";
+    baris.appendChild(pemilih);
+    isi.appendChild(baris);
+    return pemilih;
+  };
+
+  const pilihPutusan = pilihBerkas("Putusan akhir", "Tersimpan di resources/file/doc menurut tanggal putusannya.");
+  const pilihAnonim = pilihBerkas(
+    "Putusan anonimisasi",
+    "Tersimpan di resources/file/anonimisasi. Inilah yang terbit di Direktori Putusan."
+  );
+
+  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Unggah ke SIPP");
+  tombol.type = "button";
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  isi.appendChild(tombol);
+  isi.appendChild(kabar);
+
+  tombol.addEventListener("click", async () => {
+    const berkasPutusan = pilihPutusan.files && pilihPutusan.files[0];
+    const berkasAnonim = pilihAnonim.files && pilihAnonim.files[0];
+    if (!berkasPutusan && !berkasAnonim) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent = "Belum ada berkas yang dipilih.";
+      return;
+    }
+
+    tombol.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Mengunggah…";
+
+    let jawab;
+    try {
+      const badan = new FormData();
+      badan.append("perkaraId", perkaraIdDariHalaman());
+      badan.append("nomorPerkara", nomorPerkara || "");
+      badan.append("olehUsername", namaPenggunaSipp() || "");
+      if (berkasPutusan) badan.append("putusan", berkasPutusan);
+      if (berkasAnonim) badan.append("anonimisasi", berkasAnonim);
+      const respons = await alatAmbil(
+        ALETA_API_UNGGAH_SIPP,
+        { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_NASKAH_MS },
+        "Mengunggah putusan ke SIPP"
+      );
+      if (!respons.ok) {
+        throw new Error(alatPesanGagal(null, respons.status, "Mengunggah putusan ke SIPP"));
+      }
+      const luar = await respons.json();
+      jawab = luar && luar.data ? luar.data : luar;
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+      tombol.disabled = false;
+      return;
+    }
+
+    tombol.disabled = false;
+    if (!jawab || !jawab.ok) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent =
+        (jawab && (jawab.sebab || jawab.pesan || jawab.alasan)) ||
+        "Unggahannya tidak dapat dikerjakan.";
+      return;
+    }
+
+    // Tiap berkas dilaporkan sendiri-sendiri. Satu yang gagal di antara dua
+    // bukan "gagal" - yang satunya sudah benar-benar tertulis ke SIPP.
+    const rinci = buatElemen("div", "aleta-unggah-rinci");
+    for (const b of jawab.berkas || []) {
+      const baris = buatElemen("div", "aleta-unggah-baris");
+      baris.appendChild(
+        buatElemen("span", "aleta-unggah-judul", b.jenis === "anonimisasi" ? "Anonimisasi" : "Putusan akhir")
+      );
+      baris.appendChild(
+        buatElemen(
+          "span",
+          b.ok ? "aleta-unggah-jumlah" : "aleta-unggah-kosong",
+          b.ok ? b.jalur : `${b.alasan}${b.pesan ? ` — ${b.pesan}` : ""}`
+        )
+      );
+      rinci.appendChild(baris);
+    }
+    kabar.textContent = jawab.antrean
+      ? "Terunggah, dan perkara ini masuk antrean Direktori Putusan."
+      : "Terunggah. Perkara ini sudah ada di antrean Direktori Putusan sebelumnya.";
+    isi.appendChild(rinci);
+  });
+
+  return kotak;
+}
+
 function bagianIsiPutusan(nomorPerkara) {
   const kotak = bagian("Putusan otomatis", "isiPutusan", true);
   const isi = kotak.isi;
@@ -4277,6 +4408,75 @@ function bagianIsiPutusan(nomorPerkara) {
    * hanya jumlahnya; daftar lengkapnya dibaca ulang oleh pembacaan itu
    * sendiri, dan membacanya dua kali di sini hanya menggandakan kerja.
    */
+  /**
+   * ==========================================================================
+   * MEDAN YANG MENGUBAH BENTUK BORANG
+   * ==========================================================================
+   *
+   * Memilih Status Putusan membuat SIPP memunculkan medan yang sebelumnya
+   * tidak ada di halaman sama sekali: faktor perceraian, nusyuz, qobla,
+   * keadaan isteri. Memilih Qobla menentukan muncul-tidaknya keadaan isteri
+   * lagi. Keduanya bukan keterangan biasa - keduanya PINTU.
+   *
+   * Selama pintunya tertutup, medan di baliknya tidak dapat dibaca, tidak
+   * dapat diusulkan, dan tidak dapat dicentang. Panel karena itu membukanya
+   * sendiri: usulan pintunya diterapkan lebih dulu, borangnya dibiarkan
+   * menggambar ulang, lalu isinya dibaca. Yang di baliknya ikut ditawarkan
+   * dalam satu daftar, sekali tekan.
+   *
+   * Yang diterapkan HANYA pintunya, dan hanya bila ALETA memang
+   * mengusulkannya. Sisanya tetap menunggu petugas mencentang - tidak ada
+   * satu pun medan lain yang tersentuh sebelum tombol Isikan ditekan.
+   */
+  const MEDAN_PINTU = ['select[name="status_putusan"]', 'select[name="qobla"]'];
+
+  /** Membaca seluruh medan yang SEDANG tampak, beserta pilihannya. */
+  async function bacaMedanTampak() {
+    const hasil = [];
+    for (const calon of CALON_MEDAN_PANEL) {
+      const jawabPilihan = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
+      if (!jawabPilihan || !jawabPilihan.ok || !jawabPilihan.tampak) continue;
+      const pilihan = (jawabPilihan.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
+      if (pilihan.length === 0) continue;
+      hasil.push({
+        kunci: calon.penunjuk,
+        label: calon.label,
+        pilihan,
+        banyak: Boolean(calon.banyak),
+        nilaiSekarang: jawabPilihan.nilaiSekarang || "",
+      });
+    }
+    return hasil;
+  }
+
+  /** Meminta ALETA mengusulkan nilai untuk sekumpulan medan. */
+  async function mintaUsulanMedan(daftar, jenisPerkara) {
+    if (daftar.length === 0) return [];
+    const respons = await alatAmbil(
+      ALETA_API_ISIAN_PUTUSAN,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          nomorPerkara: nomorPerkara || "",
+          jenisPerkara: jenisPerkara || "",
+          medan: daftar.map((x) => ({
+            kunci: x.kunci,
+            label: x.label,
+            pilihan: x.pilihan,
+            banyak: x.banyak,
+          })),
+        }),
+      },
+      "Menyusun usulan pilihan"
+    );
+    if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Menyusun usulan pilihan"));
+    const luar = await respons.json();
+    const isiUsulan = luar && luar.data ? luar.data : luar;
+    return (isiUsulan && isiUsulan.usulan) || [];
+  }
+
   async function hitungMedanTampak() {
     let jumlah = 0;
     for (const calon of CALON_MEDAN_PANEL) {
@@ -4347,21 +4547,58 @@ function bagianIsiPutusan(nomorPerkara) {
     ];
     for (const satu of daftar) wadah.appendChild(satu.baris);
 
-    const CALON_MEDAN = CALON_MEDAN_PANEL;
 
-    const medanTampak = [];
-    for (const calon of CALON_MEDAN) {
-      const jawabPilihan = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
-      if (!jawabPilihan || !jawabPilihan.ok || !jawabPilihan.tampak) continue;
-      const pilihan = (jawabPilihan.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
-      if (pilihan.length === 0) continue;
-      medanTampak.push({
-        kunci: calon.penunjuk,
-        label: calon.label,
-        pilihan,
-        banyak: Boolean(calon.banyak),
-        nilaiSekarang: jawabPilihan.nilaiSekarang || "",
-      });
+    // ======================================================================
+    // PINTUNYA DIBUKA LEBIH DULU, BARU ISINYA DIBACA
+    // ======================================================================
+    //
+    // Berputar sampai tidak ada lagi medan baru yang muncul, paling banyak
+    // tiga kali - Status Putusan membuka faktor perceraian dan qobla, dan
+    // qobla membuka keadaan isteri: dua pintu bersusun, tidak pernah lebih.
+    // Batasnya tetap ada supaya borang yang berperilaku tak terduga tidak
+    // memutar panel ini tanpa akhir.
+    const jenisUntukUsulan = (jawab && jawab.jenisPerkara) || "";
+    let medanTampak = [];
+    let usulanMedan = [];
+    const sudahDibuka = new Set();
+    let gagalUsulan = null;
+
+    for (let putaran = 0; putaran < 3; putaran += 1) {
+      const terbaca = await bacaMedanTampak();
+      const baru = terbaca.filter((x) => !medanTampak.some((y) => y.kunci === x.kunci));
+      if (baru.length === 0) break;
+
+      let usulanBaru = [];
+      try {
+        usulanBaru = await mintaUsulanMedan(baru, jenisUntukUsulan);
+      } catch (galat) {
+        gagalUsulan = String((galat && galat.message) || galat);
+        medanTampak = terbaca;
+        break;
+      }
+      medanTampak = terbaca;
+      usulanMedan = usulanMedan.concat(usulanBaru);
+
+      // Pintu yang BELUM dibuka dan memang diusulkan ALETA - diterapkan
+      // supaya medan di baliknya ikut terbaca pada putaran berikutnya.
+      let adaYangDibuka = false;
+      for (const pintu of MEDAN_PINTU) {
+        if (sudahDibuka.has(pintu)) continue;
+        const usul = usulanBaru.find((x) => x.kunci === pintu);
+        if (!usul || !usul.nilai) continue;
+        const hasilIsi = await kirimKeJembatan({
+          jenis: "isi",
+          penunjuk: pintu,
+          jenisMedan: "pilih",
+          nilai: usul.nilai,
+        });
+        sudahDibuka.add(pintu);
+        if (hasilIsi && hasilIsi.ok) adaYangDibuka = true;
+      }
+      if (!adaYangDibuka) break;
+      // SIPP menggambar ulang bagian borangnya - diberi waktu sebentar
+      // sebelum dibaca lagi.
+      await new Promise((selesai) => setTimeout(selesai, 350));
     }
 
     const pilihanTerap = [];
@@ -4372,43 +4609,17 @@ function bagianIsiPutusan(nomorPerkara) {
           "aleta-tetap-sebab",
           `Formulir ini juga menuntut ${medanTampak.length} pilihan yang berbeda menurut jenis perkara ` +
             "dan status putusannya. Angka inilah yang kelak menjadi laporan faktor penyebab perceraian " +
-            "dan statistik dispensasi - jadi periksa tiap usulan sebelum dicentang."
+            "dan statistik dispensasi - jadi periksa tiap usulan sebelum dicentang." +
+            (sudahDibuka.size > 0
+              ? " Status Putusan sudah dipilihkan lebih dulu supaya medan di baliknya ikut terbaca; ubah sendiri bila keliru."
+              : "")
         )
       );
 
-      let usulanMedan = [];
-      try {
-        const respons = await alatAmbil(
-          ALETA_API_ISIAN_PUTUSAN,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              nomorPerkara: nomorPerkara || "",
-              // Jenis perkaranya menentukan bawaan sebagian medan - Keadaan
-              // Isteri "Suci" pada cerai gugat, "Tidak diketahui" pada cerai
-              // talak. Diambil dari jawaban yang BARU SAJA dibaca, bukan
-              // ditanyakan lagi: ia jawaban yang sama.
-              jenisPerkara: (jawab && jawab.jenisPerkara) || "",
-              medan: medanTampak.map((x) => ({
-                kunci: x.kunci,
-                label: x.label,
-                pilihan: x.pilihan,
-                banyak: x.banyak,
-              })),
-            }),
-          },
-          "Menyusun usulan pilihan"
-        );
-        if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Menyusun usulan pilihan"));
-        const luar = await respons.json();
-        const isiUsulan = luar && luar.data ? luar.data : luar;
-        usulanMedan = (isiUsulan && isiUsulan.usulan) || [];
-      } catch (galat) {
-        wadah.appendChild(
-          buatElemen("div", "aleta-gagal", String((galat && galat.message) || galat))
-        );
+      // Usulannya sudah tersusun pada putaran buka-pintu di atas; yang
+      // gagal disebutkan di sini, satu kali.
+      if (gagalUsulan) {
+        wadah.appendChild(buatElemen("div", "aleta-gagal", gagalUsulan));
       }
 
       for (const medan of medanTampak) {
@@ -6998,6 +7209,18 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // tutup - supaya jari yang sudah hafal di satu panel tidak salah tekan di
   // panel lain.
   const alatKepala = buatElemen("span", "aleta-alat-kepala");
+  // Chip peran berdiri PALING KIRI di deret ini - tepat sebelum tombol
+  // tema. Ia keterangan, bukan tombol, dan menaruhnya di tengah deret
+  // tombol membuat orang mencoba menekannya.
+  if (penggunaTerakhir && penggunaTerakhir.peran) {
+    const chipPeran = buatElemen(
+      "span",
+      `aleta-kepala-peran ${alatKelasPeran(penggunaTerakhir.peran)}`,
+      penggunaTerakhir.peran
+    );
+    chipPeran.title = `Peran Anda di ALETA: ${penggunaTerakhir.peran}.`;
+    alatKepala.appendChild(chipPeran);
+  }
   alatKepala.appendChild(tombolTema(panel));
 
   // ==========================================================================
@@ -7442,19 +7665,9 @@ function susunPanel(konteks) {
 
   // --- Baris 2: siapa membaca, dan sejauh mana datanya ---------------------
   const barisSiapa = buatElemen("div", "aleta-kepala-siapa");
-  if (penggunaTerakhir && penggunaTerakhir.nama) {
-    barisSiapa.appendChild(buatElemen("span", "aleta-kepala-nama", penggunaTerakhir.nama));
-    if (penggunaTerakhir.peran) {
-      // Warnanya menyebut perannya - lihat alatKelasPeran di panel-alat.js.
-      barisSiapa.appendChild(
-        buatElemen(
-          "span",
-          `aleta-kepala-peran ${alatKelasPeran(penggunaTerakhir.peran)}`,
-          penggunaTerakhir.peran
-        )
-      );
-    }
-  }
+  // Nama pengguna TIDAK diulang di sini - ia sudah berdiri di pita, satu
+  // baris di atasnya. Chip perannya pindah ke kepala, berdampingan dengan
+  // tombol tema: di sana ia terbaca sekilas tanpa menuntut baris tersendiri.
   // Nomor register tidak lagi punya tombolnya sendiri di sini - ia dapat
   // ditukar dari nomor perkara di baris pertama badan (tombolNomorTukar).
 
@@ -7713,6 +7926,13 @@ function susunPanel(konteks) {
   const kelPutusan = kelompok("Putusan", "putusanKel", !adaBorangPutusan);
   if (boleh("data-umum") && adaBorangPutusan) {
     kelPutusan.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
+  }
+  // Unggahan MENULIS ke SIPP - berkas ke cakram, empat baris ke basis
+  // datanya - jadi kewenangannya "penunjukan", sama dengan menuliskan
+  // penetapan. Tidak digantungkan pada borang putusan yang terbuka: berkas
+  // putusan kerap diunggah belakangan, pada hari yang lain.
+  if (boleh("penunjukan")) {
+    kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(konteks.nomorPerkara));
   }
   kelPutusan.isi.appendChild(malas("Putusan dan upaya hukum", "putusan", gambarPutusan));
   kelPutusan.isi.appendChild(malas("Putusan di e-Court", "putusanEcourt", gambarPutusanEcourt));
@@ -9395,6 +9615,41 @@ let sedangAmbil = false;
 
 /**
  * ==========================================================================
+ * SIAPA YANG MASUK ALETA - DI HALAMAN YANG BUKAN HALAMAN PERKARA
+ * ==========================================================================
+ *
+ * penggunaTerakhir hanya terisi dari jawaban konteks perkara, dan jawaban
+ * itu tidak pernah datang di dashboard maupun daftar perkara. Akibatnya
+ * pita di sana hanya memuat akun SIPP, sedangkan di halaman perkara ia
+ * memuat keduanya - dua kepala yang berbeda untuk satu ekstensi.
+ *
+ * Dibaca dari rute yang sama dengan panel ABT dan panel halaman ALETA,
+ * SEKALI per pemuatan halaman, dan hasilnya disimpan. Kegagalannya tidak
+ * menggagalkan apa pun: pitanya sekadar kembali memuat akun SIPP saja.
+ */
+async function muatPenggunaAleta() {
+  if (penggunaTerakhir && penggunaTerakhir.nama) return penggunaTerakhir;
+  try {
+    const respons = await alatAmbil(
+      ALETA_API_SIAPA,
+      { credentials: "include", cache: "no-store" },
+      "Membaca akun ALETA"
+    );
+    if (!respons.ok) return null;
+    const luar = await respons.json();
+    const isi = luar && luar.data ? luar.data : luar;
+    if (isi && isi.nama) {
+      penggunaTerakhir = { nama: isi.nama, peran: isi.peran || "" };
+      if (isi.kapabilitas) kapabilitasTerakhir = isi.kapabilitas;
+    }
+  } catch {
+    /* pita tetap tampil dengan akun SIPP saja */
+  }
+  return penggunaTerakhir;
+}
+
+/**
+ * ==========================================================================
  * BORANG SIPP DATANG BELAKANGAN, DAN PANELNYA SUDAH TERGAMBAR
  * ==========================================================================
  *
@@ -9854,6 +10109,9 @@ async function segarkan() {
 
     await muatLipatan();
     await muatTema();
+    // Akun ALETA dibaca lebih dulu supaya pita di halaman daftar sama
+    // dengan pita di halaman perkara - lihat muatPenggunaAleta.
+    await muatPenggunaAleta();
     const posisi = await muatPosisi();
     const panel = susunPanelDaftar(ringkasan);
     panel.dataset.mode = "daftar";

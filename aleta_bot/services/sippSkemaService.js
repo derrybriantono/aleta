@@ -85,6 +85,12 @@ const TABEL = [
   "v_durasi_mediasi",
   "v_mediator",
   "dirput_dokumen",
+  // Tabel yang TIDAK terdaftar di sini dijawab tabelAda() sebagai "tidak
+  // ada" - tanpa galat, tanpa tanda apa pun. Keduanya di bawah nyata-nyata
+  // ada di SIPP dan dipakai putusanUnggahService: antreannya, dan rujukan
+  // dokumen Direktori Putusan menurut alur perkaranya.
+  "dirput_antrian",
+  "dirput_dokumen_ref",
   "perkara_efiling_id",
   "sys_audittrail",
   "sys_users",

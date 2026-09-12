@@ -2094,6 +2094,43 @@ export async function getGatewayArsipPerkara(input: {
   );
 }
 
+/**
+ * Mengunggah putusan akhir dan anonimisasinya ke SIPP.
+ *
+ * Bitanya dikirim base64 - gerbang tidak menerima multipart, dan menambahkan
+ * penguraiannya berarti menambah satu pustaka di jalur yang sudah bekerja.
+ * Batas badan JSON untuk rute ini dinaikkan tersendiri di app.js bot.
+ */
+export async function gatewayUnggahPutusanSipp(muatan: {
+  perkaraId: string;
+  nomorPerkara: string;
+  putusanBase64: string;
+  anonimisasiBase64: string;
+  olehUsername: string;
+}) {
+  return gatewayFetch<{
+    ok: boolean;
+    alasan?: string;
+    antrean?: boolean;
+    tanggalPutusan?: string;
+    berkas?: Array<{
+      jenis: string;
+      ok: boolean;
+      alasan?: string;
+      pesan?: string;
+      jalur?: string;
+      published?: number;
+    }>;
+  }>("/internal/aleta-bot/sipp/putusan-unggah", {
+    method: "POST",
+    body: JSON.stringify(muatan),
+    // Menulis berkas ke cakram lalu empat baris ke SIPP - lebih lama daripada
+    // satu bacaan, dan membatalkannya di tengah meninggalkan berkas yang sudah
+    // tertulis tanpa barisnya.
+    timeoutMs: 60000,
+  });
+}
+
 /** Rincian dokumen satu perkara. */
 export async function getGatewayArsipRincian(nomorPerkara: string) {
   const params = new URLSearchParams({ nomor: nomorPerkara });

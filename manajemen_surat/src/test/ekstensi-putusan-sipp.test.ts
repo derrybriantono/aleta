@@ -120,9 +120,11 @@ describe("mengisi borang putusan SIPP", () => {
       konten.indexOf("function bagianIsiPutusan("),
       konten.indexOf("function bagianBacaBorang(")
     );
+    // Daftarnya kini berdiri di lingkup fungsi sebagai CALON_MEDAN_PANEL -
+    // dibaca dua pihak: penyusun usulan dan penghitung medan tampak.
     const bagian = seluruhPutusan.slice(
-      seluruhPutusan.indexOf("const CALON_MEDAN"),
-      seluruhPutusan.indexOf("const medanTampak")
+      seluruhPutusan.indexOf("const CALON_MEDAN_PANEL"),
+      seluruhPutusan.indexOf("async function bacaMedanTampak")
     );
     expect(bagian.length).toBeGreaterThan(200);
     expect(bagian).not.toMatch(/penunjuk:\s*"#/);
