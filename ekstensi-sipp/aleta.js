@@ -364,6 +364,9 @@ async function susunPanelPortal(siapa) {
   }
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
   kepala.appendChild(pitaIdentitas(siapa));
+  // Perannya ditandai pada akar panel - dari situlah rel gradasi di tepi atas
+  // mengambil warnanya. Sama persis dengan panel SIPP dan ABT.
+  alatTandaiPeranPanel(panel, siapa && siapa.peran);
   panel.appendChild(kepala);
 
   const isi = buatElemen("div", "aleta-isi");

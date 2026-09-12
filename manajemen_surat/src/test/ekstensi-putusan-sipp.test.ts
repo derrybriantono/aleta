@@ -68,16 +68,34 @@ describe("usulan ABT dapat disunting sebelum dimasukkan", () => {
 describe("mengisi borang putusan SIPP", () => {
   const konten = baca("konten.js");
 
-  it("tidak pernah menekan tombol Simpan", () => {
-    // Yang tersimpan di borang ini menjadi putusan resmi. Satu-satunya tempat
-    // manusia masih membacanya adalah sebelum Simpan ditekan.
+  it("menekan Simpan HANYA bila seluruh isian masuk", () => {
+    // ========================================================================
+    // ATURANNYA BERUBAH DI 1.124.0 - DAN PENJAGANYA IKUT BERUBAH, BUKAN HILANG
+    // ========================================================================
+    //
+    // Sampai 1.123.0 ALETA tidak pernah menekan Simpan di sini: yang tersimpan
+    // menjadi putusan resmi, dan satu-satunya tempat manusia masih membacanya
+    // adalah sebelum Simpan ditekan. Pagar itu dibuka atas permintaan
+    // pengadilan, dan yang menggantikannya harus setara kuatnya.
+    //
+    // Penggantinya dua, dan keduanya dijaga di sini:
+    //
+    //   1. Borang yang belum utuh TIDAK PERNAH disimpan. Satu isian gagal
+    //      berarti Simpan tidak ditekan sama sekali - putusan yang tersimpan
+    //      setengah jadi jauh lebih buruk daripada borang yang menunggu.
+    //   2. Tersimpannya DIBUKTIKAN dari SIPP, bukan diakui dari tombol yang
+    //      berhasil ditekan.
     const bagian = konten.slice(
       konten.indexOf("function bagianIsiPutusan("),
       konten.indexOf("function bagianBacaBorang(")
     );
     expect(bagian.length).toBeGreaterThan(500);
+    expect(bagian).toContain("Simpan TIDAK ditekan selama masih ada yang gagal.");
+    expect(bagian).toContain("if (gagal.length > 0) {");
+    expect(bagian).toContain("await simpanPutusanLaluBuka(nomorPerkara, hasilTerap)");
+    // Tombolnya tidak ditekan langsung dari sini - ia lewat satu pintu yang
+    // membuktikan hasilnya lebih dulu.
     expect(bagian).not.toContain('jenis: "tekan"');
-    expect(bagian).toContain("tekan Simpan sendiri");
   });
 
   it("mengisi ketiga editor lewat jembatan dengan jenis medan kaya", () => {

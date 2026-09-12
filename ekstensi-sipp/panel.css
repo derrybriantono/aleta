@@ -1379,6 +1379,73 @@ tr.aleta-baris-disorot > td {
  * Gerakannya dua lapis: gradasinya bergeser pelan (aleta-kilau), dan
  * butir kerlipnya berkedip di atasnya (aleta-kerlip). Keduanya berhenti
  * bila pengguna meminta gerak dikurangi - warnanya tetap, geraknya tidak. */
+/* ============================================================================
+   TANDA PERAN PADA PANELNYA SENDIRI - SATU REL TIPIS DI TEPI ATAS
+   ============================================================================
+
+   Yang diminta: panel super admin terlihat berbeda sejak pandangan pertama,
+   di SIPP, ABT, dan halaman ALETA sekaligus.
+
+   Yang TIDAK dikerjakan: mewarnai seluruh panel. Panel ini duduk di atas
+   tampilan SIPP yang sudah penuh warna dan garis, dan isinya nomor perkara,
+   nama pihak, serta kutipan putusan - yang harus dibaca, bukan dikagumi.
+   Latar bergradasi di belakang tulisan sepanjang itu menurunkan ketajaman
+   hurufnya pada tiap baris, dan yang menanggungnya justru pemakai paling
+   berat.
+
+   Yang dikerjakan: satu rel dua piksel di tepi ATAS panel, memakai palet yang
+   SAMA PERSIS dengan chip perannya. Ia terbaca sekejap, tidak menyentuh satu
+   pun huruf, dan pada peran lain hanya berubah warnanya - bukan hilang,
+   sehingga tepi panel tidak berpindah tempat antar peran.
+
+   Kilaunya hanya milik super admin, dan hanya pada rel - bukan pada chip DAN
+   rel sekaligus: dua benda berkilau di satu kepala saling berebut perhatian
+   dengan isinya. */
+.aleta-panel[data-peran]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: var(--aleta-garis);
+}
+
+.aleta-panel[data-peran="super"]::before {
+  background: linear-gradient(
+    115deg,
+    #f6c453 0%,
+    #7fd0a6 30%,
+    #8bd3e6 55%,
+    #c3b5f0 80%,
+    #f6c453 100%
+  );
+  background-size: 300% 100%;
+  animation: aleta-kilau 5s linear infinite;
+}
+
+.aleta-panel[data-peran="admin"]::before {
+  background: linear-gradient(115deg, #2f6b52, #245663);
+}
+
+.aleta-panel[data-peran="hakim"]::before {
+  background: linear-gradient(115deg, #5b7fb5, #7f9fd0);
+}
+
+.aleta-panel[data-peran="panitera"]::before {
+  background: linear-gradient(115deg, #b08a4a, #c9a86a);
+}
+
+/* Yang tidak menghendaki gerakan tetap mendapat relnya - hanya diam. */
+@media (prefers-reduced-motion: reduce) {
+  .aleta-panel[data-peran="super"]::before { animation: none; }
+}
+
 .aleta-peran-super {
   border-color: transparent !important;
   color: #10231a !important;
@@ -1933,15 +2000,16 @@ textarea.aleta-sunting:focus {
   font-variant-numeric: tabular-nums;
 }
 
+/* Pintasan di kiri; margin kanan otomatis mendorong ↻ dan versi ke ujung
+   kanan, bersanding.
+
+   Ringkas DULU, baru yang rinci. Urutan terbaliknya - margin-right: auto lalu
+   margin: 0 - membuat dorongannya terhapus diam-diam, dan itulah yang pernah
+   menaruh tombol segarkan di TENGAH kaki panel. */
 .aleta-kaki-baris .aleta-kaki-pintasan {
-  /* Pintasan di kiri, sisanya terdorong ke kanan.
-     Bentuk lamanya menulis margin-right: auto LALU margin: 0 - dan tulisan
-     ringkas yang kedua menimpa yang pertama, sehingga tidak ada dorongan sama
-     sekali. Yang menyusun ketiganya lalu space-between di wadahnya: pintasan
-     di kiri, ↻ di TENGAH, versi di kanan. Tombol segarkan seharusnya bersanding
-     dengan versinya di ujung kanan. */
   flex: 0 1 auto;
-  margin: 0 auto 0 0;
+  margin: 0;
+  margin-right: auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2792,9 +2860,26 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   align-items: baseline;
 }
 
+/* ============================================================================
+   LEBAR LABEL IKUT UKURAN HURUFNYA - KALAU TIDAK, TULISANNYA TUMPANG TINDIH
+   ============================================================================
+
+   Lebarnya dulu 54px MATI sementara hurufnya dihitung dari skala huruf panel.
+   Begitu pembaca membesarkan huruf
+   panel, "sekarang" tidak lagi muat di 54px - dan sebab kotaknya flex: none,
+   ia tidak melebar. Tulisannya tumpah keluar kotak, lalu bertindihan dengan
+   nilai yang mulai di 54px+6px. "usulan" yang lebih pendek tetap rapi, jadi
+   yang tampak hanya sebagian barisnya - itu yang membuatnya lama tidak
+   tertangkap.
+
+   min-width dalam em, bukan width dalam px: em ikut ukuran hurufnya sendiri,
+   dan min- membuat kotaknya MELEBAR bila isinya masih lebih panjang. Dengan
+   keduanya, tumpang tindih tidak mungkin terjadi pada ukuran huruf mana pun,
+   dan pada ukuran biasa nilainya tetap sejajar seperti semula. */
 .aleta-abt-label {
-  flex: none;
-  width: 54px;
+  flex: 0 0 auto;
+  min-width: 4.6em;
+  white-space: nowrap;
   color: var(--aleta-tulisan-lembut);
 }
 
@@ -3313,9 +3398,11 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   padding: 3px 0;
 }
 
+/* Sebab yang sama dengan .aleta-abt-label - lihat catatan panjang di sana. */
 .aleta-praperiksa-label {
-  flex: none;
-  width: 112px;
+  flex: 0 0 auto;
+  min-width: 9.8em;
+  white-space: nowrap;
   color: var(--aleta-tulisan-lembut);
   font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
 }

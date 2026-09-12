@@ -161,7 +161,11 @@ describe("petunjuk fitur muncul sesudah dua detik", () => {
 
   it("menekan, menggulung, atau mengetik menyembunyikannya", () => {
     const badan = potongFungsi(alat, "alatPasangPetunjuk");
-    expect(badan).toContain('akar.addEventListener("mousedown", sembunyikan, true)');
+    // pointerdown, bukan mousedown - satu jalur untuk tetikus, sentuh, dan
+    // pena, sama dengan seluruh pegangan panel lainnya. Diubah di 1.123.0;
+    // penjaga ini sempat tertinggal menuntut yang lama, dan dua penjaga yang
+    // saling bertentangan membuat rangkaian uji tidak dapat hijau sama sekali.
+    expect(badan).toContain('akar.addEventListener("pointerdown", sembunyikan, true)');
     expect(badan).toContain('akar.addEventListener("scroll", sembunyikan, true)');
     expect(badan).toContain('akar.addEventListener("keydown", sembunyikan, true)');
   });

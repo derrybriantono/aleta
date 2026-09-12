@@ -42,6 +42,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.124.0",
+    dirilis: "2026-09-13T02:30:00+08:00",
+    judul: "Putusan disimpan sendiri dan dibuktikan, halaman perkara dibuka kembali, dan arsip e-Court diperiksa tanpa diminta",
+    butir: [
+      "TULISAN TIDAK LAGI BERTINDIHAN. Label 'sekarang' dan 'usulan' berlebar 54 piksel MATI sementara hurufnya dihitung dari skala huruf panel; begitu hurufnya dibesarkan, labelnya tidak muat, tumpah keluar kotak yang flex: none, lalu bertindihan dengan nilainya. Lebarnya kini dalam em dengan min-width - tidak dapat lebih sempit daripada tulisannya pada ukuran huruf mana pun. Dua tempat: kartu usulan putusan dan daftar praperiksa.",
+      "ISIKAN YANG DICENTANG KINI MENYIMPAN SENDIRI. Sesudah SELURUH yang dicentang terisi, Simpan ditekan dan halaman perkara dibuka kembali. Satu isian gagal berarti Simpan tidak ditekan sama sekali - borang yang belum utuh tidak boleh tersimpan sebagai putusan.",
+      "TERSIMPANNYA DIBUKTIKAN, BUKAN DIAKUI. Borang putusan SIPP mengirim lewat AJAX, jadi tombolnya 'berhasil ditekan' walau simpanannya ditolak peladen. Karena itu keadaan putusan dibaca dari SIPP sebelum dan sesudah menekan; hanya selisih itu yang dianggap bukti. Sepuluh detik tanpa perubahan dilaporkan apa adanya, dan halamannya TIDAK dimuat ulang supaya isian yang belum diterima tidak hilang.",
+      "UNGGAH PUTUSAN MEMBUKA KEMBALI HALAMAN PERKARANYA - lewat alamat perkara, bukan location.reload yang mendaratkan petugas di dasbor. Hanya bila ada berkas yang sungguh masuk; bila tidak, pesan yang menerangkan kegagalannya justru akan terhapus.",
+      "Unggah putusan diuji ujung ke ujung terhadap SIPP setempat: dua berkas tertulis ke cakram, kolom dokumen pada perkara_putusan terisi, dua baris dirput_dokumen (putusan published=0, anonimisasi published=1), satu baris dirput_antrian, dan lima baris sys_audittrail - tidak satu pun menyebut ALETA.",
+      "ARSIP e-COURT DIPERIKSA SENDIRI. Pemeriksa keutuhannya sudah lengkap sejak lama - ada, ukuran, sidik jari SHA-256, penanda bentuk - tetapi tidak satu pun pemanggilnya berjalan sendiri: satu-satunya jalan masuk adalah layar portal yang harus dibuka orang. Berkas yang hilang atau terpotong karena itu baru ketahuan ketika ada yang membukanya. Kini dijalankan penjadwal, sesudah tiap penarikan, paling sering enam jam sekali, dan catatan yang rusak dibuang supaya berkasnya ditarik ulang.",
+      "PANEL SUPER ADMIN TERLIHAT BERBEDA di SIPP, ABT, dan halaman ALETA sekaligus: satu rel dua piksel bergradasi berkilau di tepi atas panel, sepalet dengan chip perannya. Peran lain mendapat rel yang sama dalam warna diam - bukan hilang, supaya tepi panel tidak berpindah tempat antar peran. Latar panel TIDAK diberi gradasi: isinya nomor perkara, nama pihak, dan kutipan putusan yang harus dibaca.",
+    ],
+  },
+  {
     versi: "1.123.0",
     dirilis: "2026-09-12T23:30:00+08:00",
     judul: "Penetapan dilanjutkan dari tengah, posita tercetak berbaris, dan naskah penetapan itsbat/dispensasi dapat diunggah",

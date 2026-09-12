@@ -187,9 +187,15 @@ describe("mengusulkan alasan perkara dari posita", () => {
 
 describe("bagian Isi alasan perkara pada ekstensi", () => {
   const konten = bacaEkstensi("konten.js");
+  // Batas akhirnya fungsi yang BERIKUTNYA, bukan bagianIsiPutusan yang
+  // berjarak delapan ratus baris. Potongan selebar itu ikut menelan fungsi
+  // lain yang kebetulan berdiri di antaranya - dan sejak 1.124.0 salah
+  // satunya memang menekan Simpan pada borang PUTUSAN, yang aturannya berbeda
+  // dari layar ini. Penjagaan yang menuduh kode yang bukan miliknya bukan
+  // penjagaan.
   const bagian = konten.slice(
     konten.indexOf("function bagianIsiAlasanPerkara("),
-    konten.indexOf("function bagianIsiPutusan(")
+    konten.indexOf("function perkaraIdDariHalaman(")
   );
 
   it("bagiannya benar-benar ada", () => {
@@ -264,9 +270,15 @@ describe("bagian Isi alasan perkara pada ekstensi", () => {
 
 describe("medan yang DIPETIK pada bagian yang sama", () => {
   const konten = bacaEkstensi("konten.js");
+  // Batas akhirnya fungsi yang BERIKUTNYA, bukan bagianIsiPutusan yang
+  // berjarak delapan ratus baris. Potongan selebar itu ikut menelan fungsi
+  // lain yang kebetulan berdiri di antaranya - dan sejak 1.124.0 salah
+  // satunya memang menekan Simpan pada borang PUTUSAN, yang aturannya berbeda
+  // dari layar ini. Penjagaan yang menuduh kode yang bukan miliknya bukan
+  // penjagaan.
   const bagian = konten.slice(
     konten.indexOf("function bagianIsiAlasanPerkara("),
-    konten.indexOf("function bagianIsiPutusan(")
+    konten.indexOf("function perkaraIdDariHalaman(")
   );
   const daftar = bagian.slice(
     bagian.indexOf("const CALON_PETIKAN"),
@@ -333,9 +345,15 @@ describe("medan yang DIPETIK pada bagian yang sama", () => {
 
 describe("kotak Obyek Sengketa - kebiasaan satker, bukan pembacaan posita", () => {
   const konten = bacaEkstensi("konten.js");
+  // Batas akhirnya fungsi yang BERIKUTNYA, bukan bagianIsiPutusan yang
+  // berjarak delapan ratus baris. Potongan selebar itu ikut menelan fungsi
+  // lain yang kebetulan berdiri di antaranya - dan sejak 1.124.0 salah
+  // satunya memang menekan Simpan pada borang PUTUSAN, yang aturannya berbeda
+  // dari layar ini. Penjagaan yang menuduh kode yang bukan miliknya bukan
+  // penjagaan.
   const bagian = konten.slice(
     konten.indexOf("function bagianIsiAlasanPerkara("),
-    konten.indexOf("function bagianIsiPutusan(")
+    konten.indexOf("function perkaraIdDariHalaman(")
   );
 
   it("kotaknya ditunjuk lewat nama, dan hanya bila tampak", () => {

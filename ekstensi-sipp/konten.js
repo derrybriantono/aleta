@@ -4243,9 +4243,145 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
       ? "Terunggah, dan perkara ini masuk antrean Direktori Putusan."
       : "Terunggah. Perkara ini sudah ada di antrean Direktori Putusan sebelumnya.";
     isi.appendChild(rinci);
+
+    // ======================================================================
+    // HALAMAN PERKARA DIBUKA KEMBALI - DAN HANYA BILA ADA YANG SUNGGUH MASUK
+    // ======================================================================
+    //
+    // Kolom dokumen pada borang putusan baru memperlihatkan berkasnya sesudah
+    // halaman dibaca ulang; tanpa itu petugas melihat kolom kosong tepat
+    // sesudah diberi tahu berkasnya terunggah, dan menduga unggahannya gagal.
+    //
+    // muatUlangHalamanPerkara, BUKAN location.reload(): halaman borang SIPP
+    // dibuka lewat sesi kilat, dan memuat ulangnya mendaratkan petugas di
+    // dasbor - jauh dari perkara yang sedang dikerjakannya.
+    //
+    // Tidak dijalankan bila tidak satu berkas pun masuk: memuat ulang halaman
+    // hanya akan menghapus pesan yang menerangkan kenapa ia gagal.
+    const adaYangMasuk = (jawab.berkas || []).some((b) => b.ok);
+    if (adaYangMasuk) {
+      kabar.textContent += " Halaman perkara dibuka kembali…";
+      setTimeout(muatUlangHalamanPerkara, 1500);
+    }
   });
 
   return kotak;
+}
+
+/**
+ * ============================================================================
+ * MENYIMPAN BORANG PUTUSAN - DAN MEMBUKTIKANNYA DARI BASIS DATA, BUKAN DOM
+ * ============================================================================
+ *
+ * Sampai 1.123.0 ALETA berhenti sesudah mengisi: "Periksa, lalu tekan Simpan
+ * sendiri". Itu pagar yang disengaja, dan pagar itu kini dibuka atas
+ * permintaan - dengan satu syarat yang menggantikannya: TERSIMPAN harus
+ * DIBUKTIKAN, bukan diakui.
+ *
+ * Membuktikannya tidak dapat dari DOM. frm_putusan memakai SubmitHandling
+ * (lihat edit_putusan_akhir.php baris 704) yang mengirim lewat AJAX lalu
+ * menggambar ulang #konten - tombolnya "berhasil ditekan" walau simpanannya
+ * ditolak pengesahan di sisi peladen, dan panel akan berkata tersimpan pada
+ * putusan yang tidak pernah masuk.
+ *
+ * Karena itu yang ditanya SIPP sendiri, lewat ALETA: sudahkah perkara ini
+ * punya baris putusan, dan berubahkah tanggalnya. Dibaca SEBELUM menekan dan
+ * dibaca lagi sesudahnya - selisih itulah buktinya.
+ */
+
+/**
+ * Tombol Simpan pada borang putusan SIPP.
+ *
+ * Tiga penunjuk, dicoba berurutan. Yang pertama paling tepat; dua sisanya
+ * menjaga bila SIPP satker lain menamainya berbeda. Tidak ada yang menebak
+ * dari tulisan tombolnya - "Simpan" juga nama tombol pada belasan borang lain
+ * di halaman yang sama.
+ */
+const PENUNJUK_SIMPAN_PUTUSAN = [
+  "#frm_putusan #simpan",
+  "#frm_putusan input[type='submit']",
+  "#simpan",
+];
+
+/** Keadaan putusan yang SEGAR - tanpa simpanan, sebab inilah yang dibandingkan. */
+async function bacaPutusanSegar(nomorPerkara) {
+  try {
+    const respons = await alatAmbil(
+      `${ALETA_API_STATUS}?nomor=${encodeURIComponent(nomorPerkara)}`,
+      { credentials: "include", cache: "no-store" },
+      "Membaca keadaan putusan"
+    );
+    if (!respons.ok) return null;
+    const hasil = await respons.json();
+    const isi = hasil?.data ?? hasil;
+    const status = isi?.status;
+    if (!status) return null;
+    const p = status.putusan || {};
+    const lengkap = status.putusanLengkap || {};
+    return {
+      sudahPutus: Boolean(p.sudahPutus),
+      tanggal: String(lengkap.tanggalPutusan || p.tanggalPutusan || ""),
+      status: String(lengkap.statusPutusan || ""),
+    };
+  } catch {
+    // Tidak terbaca bukan "belum tersimpan" - dua keadaan yang berbeda, dan
+    // menyamakannya membuat putusan yang benar-benar masuk dilaporkan gagal.
+    return null;
+  }
+}
+
+function samaPutusan(a, b) {
+  if (!a || !b) return false;
+  return a.sudahPutus === b.sudahPutus && a.tanggal === b.tanggal && a.status === b.status;
+}
+
+/**
+ * Menekan Simpan, menunggu SIPP benar-benar mencatatnya, lalu membuka kembali
+ * halaman perkaranya.
+ *
+ * @returns {Promise<{ok: boolean, bunyi: string}>}
+ */
+async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
+  const sebelum = await bacaPutusanSegar(nomorPerkara);
+
+  let ditekan = null;
+  for (const penunjuk of PENUNJUK_SIMPAN_PUTUSAN) {
+    ditekan = await kirimKeJembatan({ jenis: "tekan", penunjuk });
+    if (ditekan && ditekan.ok) break;
+  }
+  if (!ditekan || !ditekan.ok) {
+    return {
+      ok: false,
+      bunyi:
+        "Isiannya sudah masuk borang, tetapi tombol Simpan SIPP tidak ditemukan di halaman ini - " +
+        "tekan Simpan sendiri.",
+    };
+  }
+
+  // SubmitHandling mengirim lewat AJAX; tidak ada satu pun peristiwa yang
+  // dapat ditunggu dari luar. Yang ditunggu karena itu AKIBATNYA di basis
+  // data - sepuluh kali, sedetik sekali.
+  if (kabar) kabar.textContent = "Simpan ditekan - menunggu SIPP mencatatnya…";
+  for (let ke = 0; ke < 10; ke += 1) {
+    await new Promise((selesai) => setTimeout(selesai, 1000));
+    const sesudah = await bacaPutusanSegar(nomorPerkara);
+    if (!sesudah) continue;
+    // Berubah berarti tersimpan. Perkara yang belum pernah diputus berubah
+    // dari sudahPutus=false; yang diperbaiki berubah tanggal atau statusnya.
+    if (!samaPutusan(sebelum, sesudah) || (!sebelum && sesudah.sudahPutus)) {
+      if (kabar) kabar.textContent = "Tersimpan di SIPP. Halaman perkara dibuka kembali…";
+      setTimeout(muatUlangHalamanPerkara, 900);
+      return { ok: true, bunyi: "Tersimpan di SIPP." };
+    }
+  }
+
+  return {
+    ok: false,
+    bunyi:
+      "Simpan sudah ditekan, tetapi sesudah sepuluh detik SIPP belum mencatat perubahan apa pun. " +
+      "Periksa borangnya - biasanya ada isian wajib yang ditolak SIPP. Halaman TIDAK dimuat ulang " +
+      "supaya isian yang sudah masuk tidak hilang.",
+  };
 }
 
 function bagianIsiPutusan(nomorPerkara) {
@@ -4256,8 +4392,10 @@ function bagianIsiPutusan(nomorPerkara) {
     "div",
     "aleta-tetap-sebab",
     "Mengambil draf putusan ALETA yang terbaru untuk perkara ini, lalu mengisikan " +
-      "Pertimbangan Hukum, Amar, dan Amar Anonim ke formulir di halaman ini. Tombol " +
-      "Simpan tetap Anda yang menekan."
+      "Pertimbangan Hukum, Amar, dan Amar Anonim ke formulir di halaman ini. Sesudah " +
+      "SELURUH yang dicentang terisi, Simpan ditekan sendiri dan halaman perkara dibuka " +
+      "kembali - tetapi hanya setelah SIPP terbukti mencatatnya. Satu isian gagal berarti " +
+      "Simpan tidak ditekan sama sekali."
   );
   isi.appendChild(terang);
 
@@ -4909,7 +5047,7 @@ function bagianIsiPutusan(nomorPerkara) {
       hasilTerap.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
       hasilTerap.textContent = gagal.length
         ? `${berhasil} terisi, ${gagal.length} gagal: ${gagal.join("; ")}`
-        : `${berhasil} isian terisi. Periksa seluruhnya, lalu tekan Simpan sendiri.`;
+        : `${berhasil} isian terisi.`;
 
       // ====================================================================
       // MEDAN YANG BARU LAHIR SESUDAH STATUS PUTUSAN DIPILIH
@@ -4934,7 +5072,36 @@ function bagianIsiPutusan(nomorPerkara) {
           `${hasilTerap.textContent} Borang memunculkan ` +
           `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
         tombol.click();
+        return;
       }
+
+      // ====================================================================
+      // TERSIMPAN, BUKAN SEKADAR TERISI
+      // ====================================================================
+      //
+      // Sampai 1.123.0 ALETA berhenti di sini dan menyuruh petugas menekan
+      // Simpan sendiri. Dibuka atas permintaan, dengan dua pagar yang
+      // menggantikannya:
+      //
+      //   1. HANYA BILA SELURUHNYA TERISI. Satu isian gagal berarti borangnya
+      //      belum utuh, dan menyimpan borang yang belum utuh menghasilkan
+      //      putusan yang salah di berkas perkara yang sungguhan.
+      //   2. TERSIMPANNYA DIBUKTIKAN dari SIPP, bukan dari tombol yang
+      //      berhasil ditekan - lihat simpanPutusanLaluBuka.
+      //
+      // Halaman perkaranya dibuka kembali hanya setelah terbukti tersimpan.
+      // Memuat ulang lebih awal membuang isian yang belum diterima SIPP.
+      if (gagal.length > 0) {
+        hasilTerap.textContent += " Simpan TIDAK ditekan selama masih ada yang gagal.";
+        return;
+      }
+      terap.disabled = true;
+      const hasilSimpan = await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
+      terap.disabled = false;
+      hasilTerap.className = hasilSimpan.ok
+        ? "aleta-abt-kabar"
+        : "aleta-abt-kabar aleta-abt-gagal";
+      hasilTerap.textContent = `${berhasil} isian terisi. ${hasilSimpan.bunyi}`;
     });
 
     tombol.disabled = false;
@@ -7314,6 +7481,10 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
     );
     chipPeran.title = `Peran Anda di ALETA: ${penggunaTerakhir.peran}.`;
     alatKepala.appendChild(chipPeran);
+    // Perannya ikut ditandai pada AKAR panel, bukan hanya pada chipnya -
+    // dari situlah rel gradasi di tepi atas panel mengambil warnanya. Satu
+    // atribut, dan ketiga panel ikut tanpa satu baris tambahan.
+    alatTandaiPeranPanel(panel, penggunaTerakhir.peran);
   }
   alatKepala.appendChild(tombolTema(panel));
 

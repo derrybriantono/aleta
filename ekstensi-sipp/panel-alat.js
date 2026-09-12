@@ -1312,6 +1312,30 @@ function alatPasangPetunjuk(akar) {
  * diam, hakim dan panitera berwarna sendiri, selebihnya polos - urutannya
  * dari yang paling khusus, sebab "super admin" memuat kata "admin".
  */
+/**
+ * ============================================================================
+ * TANDA PERAN PADA AKAR PANEL - SATU ATRIBUT, TIGA PANEL
+ * ============================================================================
+ *
+ * Chip perannya sudah berwarna sejak 1.121.0, tetapi warnanya berhenti di
+ * chip itu sendiri. Yang diminta: panel super admin TERLIHAT berbeda sejak
+ * pandangan pertama, di SIPP, ABT, dan halaman ALETA sekaligus.
+ *
+ * Dikerjakan dengan satu atribut pada akar panel, bukan dengan kelas yang
+ * ditempel di banyak tempat: gayanya lalu tinggal satu blok CSS, dan panel
+ * mana pun yang memakai panel-alat.js ikut tanpa satu baris tambahan.
+ *
+ * Nilainya SAMA dengan kelas chipnya - "super", "admin", dan seterusnya -
+ * supaya keduanya tidak pernah dapat berselisih.
+ */
+function alatTandaiPeranPanel(akar, peran) {
+  if (!akar || !akar.setAttribute) return;
+  const kelas = alatKelasPeran(peran);
+  const nama = kelas.replace(/^aleta-peran-/, "");
+  if (nama && nama !== "lain") akar.setAttribute("data-peran", nama);
+  else akar.removeAttribute("data-peran");
+}
+
 function alatKelasPeran(peran) {
   const p = String(peran || "").toLowerCase();
   if (!p) return "aleta-peran-lain";

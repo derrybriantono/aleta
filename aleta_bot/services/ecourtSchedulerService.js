@@ -36,6 +36,8 @@ const { readRuntimeConfig, writeRuntimeConfig } = require("../config/runtime-con
 const logService = require("./logService");
 const ecourtPermintaanService = require("./ecourtPermintaanService");
 const ecourtAkunService = require("./ecourtAkunService");
+const ecourtAuditArsipService = require("./ecourtAuditArsipService");
+const ecourtDocumentService = require("./ecourtDocumentService");
 
 /** Nilai bawaan bila belum pernah diatur. */
 const BAWAAN = {
@@ -438,6 +440,96 @@ function jalankanSatuPutaran({
   });
 }
 
+/**
+ * ============================================================================
+ * PEMERIKSAAN KEUTUHAN ARSIP - DIJALANKAN SENDIRI, BUKAN MENUNGGU DIMINTA
+ * ============================================================================
+ *
+ * ecourtAuditArsipService sudah lengkap sejak lama: ia membandingkan tiap
+ * baris aleta_bot_ecourt_files dengan berkasnya di disk pada empat hal - ada,
+ * ukuran, sidik jari SHA-256, dan penanda bentuk - lalu membuang catatan yang
+ * rusak supaya penarikan berikutnya mengambilnya kembali.
+ *
+ * Yang tidak ada: satu pun pemanggilnya yang berjalan sendiri. Satu-satunya
+ * jalan masuk selama ini POST /ecourt/audit-arsip, yakni layar portal yang
+ * harus dibuka orang. Berkas yang hilang atau terpotong karena itu baru
+ * ketahuan ketika ada yang membukanya - kadang berbulan kemudian, dan yang
+ * membukanya menerima berkas rusak tanpa satu pun keterangan.
+ *
+ * Inilah keluhan "dibilang terunduh tetapi berkasnya rusak": bukan
+ * pemeriksaannya yang keliru, melainkan tidak ada yang pernah menjalankannya.
+ *
+ * Dijalankan SESUDAH penarikan, bukan sebelumnya: yang baru saja diunduh ikut
+ * terperiksa pada putaran yang sama. Bergilir sesuai rancangan layanannya -
+ * yang paling lama tidak diperiksa didahulukan - sehingga tidak ada satu
+ * putaran pun yang membaca seluruh arsip sekaligus.
+ *
+ * perbaiki: true. Membiarkan yang rusak tercatat berarti perkaranya terhitung
+ * lengkap selamanya, dan justru itulah keadaan yang hendak diakhiri. Berkas
+ * yang sengaja dihapus karena masa simpan tidak ikut diperiksa - lihat
+ * penjagaan dihapus_retensi di layanannya.
+ */
+const JEDA_AUDIT_MS = 6 * 60 * 60 * 1000;
+let auditTerakhir = 0;
+
+async function periksaArsipBerkala() {
+  if (Date.now() - auditTerakhir < JEDA_AUDIT_MS) return;
+  auditTerakhir = Date.now();
+
+  try {
+    const hasil = await ecourtAuditArsipService.periksaArsip({
+      perbaiki: true,
+      olehSiapa: "penjadwal",
+    });
+    const diperiksa = Number(hasil?.diperiksa || 0);
+    const rusak = Number(hasil?.dibuang || 0);
+    if (rusak > 0) {
+      // ====================================================================
+      // HILANG SEMUA BUKAN "BEBERAPA BERKAS RUSAK" - ITU ARSIP YANG TIDAK
+      // PERNAH DI-MOUNT
+      // ====================================================================
+      //
+      // Berkas rusak satu-dua memang terjadi: unduhan terpotong, cakram
+      // penuh. Tetapi seluruh atau hampir seluruh yang diperiksa hilang
+      // sekaligus punya satu sebab yang jauh lebih mungkin - folder arsipnya
+      // berada di dalam LAPISAN CONTAINER, bukan di volume. Tiap
+      // "docker compose up -d" yang membuat ulang container menghapusnya,
+      // sementara barisnya di aleta_bot_ecourt_files tetap ada.
+      //
+      // Dua keadaan itu menuntut dua tindakan yang sama sekali berbeda -
+      // yang satu menunggu penarikan berikutnya, yang satu menuntut baris
+      // mount di docker-compose - jadi keduanya disebut berbeda pula.
+      const hampirSemua = diperiksa >= 5 && rusak >= Math.ceil(diperiksa * 0.8);
+      void logService.logSecurityEvent({
+        eventType: hampirSemua ? "ecourt_arsip_hilang_menyeluruh" : "ecourt_arsip_rusak_dibuang",
+        severity: hampirSemua ? "critical" : "warning",
+        message: hampirSemua
+          ? `Arsip e-Court hilang MENYELURUH: ${rusak} dari ${diperiksa} berkas yang diperiksa tidak ada di cakram. ` +
+            `Folder arsip yang dipakai ${ecourtDocumentService.resolveRoot()}. Periksa apakah folder itu benar-benar ` +
+            "ter-mount ke volume di docker-compose; tanpa mount, seluruh unduhan terhapus setiap container dibuat ulang."
+          : `Pemeriksaan arsip e-Court membuang ${rusak} catatan berkas yang hilang atau rusak; ` +
+            "berkasnya akan ditarik ulang pada putaran berikutnya.",
+        metadata: {
+          diperiksa,
+          utuh: hasil?.utuh ?? null,
+          dibuang: rusak,
+          akarArsip: ecourtDocumentService.resolveRoot(),
+        },
+      });
+    }
+  } catch (galat) {
+    // Gagal-terbuka: pemeriksaan arsip bukan pekerjaan utama penjadwal, dan
+    // kegagalannya tidak boleh menghentikan penarikan berikutnya.
+    void logService
+      .logSecurityEvent({
+        eventType: "ecourt_arsip_periksa_gagal",
+        severity: "warning",
+        message: `Pemeriksaan keutuhan arsip e-Court gagal: ${String(galat.message || galat).slice(0, 200)}`,
+      })
+      .catch(() => {});
+  }
+}
+
 /** Satu detak penjadwal. */
 async function detak() {
   const pengaturan = getSettings();
@@ -485,9 +577,30 @@ function mulai() {
   const detakMs = 15 * 60 * 1000;
   let terakhirPutaran = 0;
 
+  // Sekali segera sesudah bot menyala, bukan menunggu detak pertama lima
+  // belas menit lagi. Justru saat inilah arsip paling mungkin baru saja
+  // lenyap: bot yang baru menyala hampir selalu berarti container yang baru
+  // dibuat, dan itu persis kejadian yang menghapus folder yang tidak
+  // ter-mount. Mengetahuinya sekarang jauh lebih berguna daripada seperempat
+  // jam kemudian.
+  void periksaArsipBerkala();
+
   keadaan.timer = setInterval(() => {
     const p = getSettings();
     if (!p.aktif) return;
+
+    // ======================================================================
+    // PEMERIKSAAN ARSIP BERDIRI DI LUAR JAM KERJA DAN DI LUAR JARAK PUTARAN
+    // ======================================================================
+    //
+    // Ia tidak menuntut sesi e-Court dan tidak menyentuh Mahkamah Agung sama
+    // sekali - hanya membaca berkas yang sudah ada di disk. Menaruhnya di
+    // dalam detak() berarti ia ikut berhenti di luar jam kerja dan ikut
+    // menunggu jarakJam, padahal berkas hilang justru paling sering terjadi
+    // di luar jam kerja: container dibuat ulang saat pemasangan malam hari,
+    // dan seluruh arsip yang tidak ter-mount lenyap bersamanya.
+    void periksaArsipBerkala();
+
     const jarakMs = p.jarakJam * 60 * 60 * 1000;
     if (Date.now() - terakhirPutaran < jarakMs) return;
     terakhirPutaran = Date.now();

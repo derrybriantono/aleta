@@ -1941,6 +1941,9 @@ function susunPanelAbt(jatiDiri) {
   // Pita identitas yang sama dengan panel SIPP - di kepala dan di kaki.
   let pitaKepala = pitaIdentitasAbt(penggunaAletaAbt);
   kepala.appendChild(pitaKepala);
+  // Perannya ditandai pada akar panel - dari situlah rel gradasi di tepi atas
+  // mengambil warnanya. Sama persis dengan panel SIPP dan ALETA.
+  alatTandaiPeranPanel(panel, penggunaAletaAbt && penggunaAletaAbt.peran);
   panel.appendChild(kepala);
 
   // Geser, ubah ukuran, ciut, layar penuh, kembalikan bawaan, tema, tutup -

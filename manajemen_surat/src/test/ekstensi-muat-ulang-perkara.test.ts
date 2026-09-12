@@ -87,9 +87,21 @@ describe("alamat halaman perkara yang boleh dibuka ulang", () => {
 describe("tidak ada lagi pemuatan ulang yang terjatuh ke dasbor", () => {
   it("kedua tempat memuat ulang memanggil muatUlangHalamanPerkara", () => {
     const isi = konten();
-    // Tiga: sesudah penetapan tertulis, sesudah satu penetapan dibongkar, dan
-    // sesudah SELURUH penetapan perkara dibongkar sekaligus.
-    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(3);
+    // Lima sejak 1.124.0:
+    //
+    //   1. sesudah penetapan tertulis
+    //   2. sesudah satu penetapan dibongkar
+    //   3. sesudah SELURUH penetapan perkara dibongkar sekaligus
+    //   4. sesudah putusan dan anonimisasinya terunggah ke SIPP - kolom
+    //      dokumennya baru memperlihatkan berkasnya sesudah halaman dibaca
+    //      ulang, dan tanpa itu petugas melihat kolom kosong tepat sesudah
+    //      diberi tahu berkasnya terunggah
+    //   5. sesudah borang putusan disimpan dan SIPP terbukti mencatatnya
+    //
+    // Kelimanya lewat muatUlangHalamanPerkara, bukan location.reload() -
+    // halaman borang SIPP dibuka lewat sesi kilat, dan memuat ulangnya
+    // mendaratkan petugas di dasbor.
+    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(5);
     expect(isi.includes("setTimeout(() => location.reload()")).toBe(false);
   });
 
