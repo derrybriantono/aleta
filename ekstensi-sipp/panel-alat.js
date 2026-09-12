@@ -144,8 +144,8 @@ function alatJepitTinggi(panel) {
   // sangat pendek, dan atap separuh layar menjaga lantai itu sendiri tidak
   // berbalik menjadi panel yang menutupi segalanya.
   const idaman = Math.min(
-    Math.max(Math.round(window.innerHeight / 3), 240),
-    Math.round(window.innerHeight / 2)
+    Math.max(Math.round(window.innerHeight / 2), 320),
+    Math.round((window.innerHeight * 2) / 3)
   );
   const batas = panel.dataset.tinggiSendiri === "1" ? sisa : Math.min(sisa, idaman);
   if (kotak.height <= batas) return;

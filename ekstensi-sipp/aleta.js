@@ -381,6 +381,24 @@ async function susunPanelPortal(siapa) {
   const kaki = buatElemen("div", "aleta-kaki");
   kaki.title = "Keterangan dari ALETA. Tidak ada yang diubah dari sini.";
   kaki.appendChild(pitaIdentitas(siapa));
+
+  // Panel ini dibangun SEKALI saat halaman dibuka, sedangkan portal
+  // berpindah halaman tanpa memuat ulang. Kewenangan yang baru diubah,
+  // perkara yang baru dibuka di SIPP, dan versi ekstensi yang baru
+  // dipasang karena itu tidak pernah terbaca sampai halamannya dimuat
+  // ulang seluruhnya - dan memuat ulang halaman ALETA berarti kehilangan
+  // apa pun yang sedang dikerjakan di sana.
+  const segar = buatElemen("button", "aleta-kaki-segar", "↻ Segarkan");
+  segar.type = "button";
+  segar.title = "Membaca ulang akun dan kewenangan dari ALETA. Halaman portal tidak dimuat ulang.";
+  segar.addEventListener("click", () => {
+    segar.disabled = true;
+    segar.textContent = "↻ Membaca…";
+    const lama = document.getElementById(PENANDA_ALETA);
+    if (lama) lama.remove();
+    void pasangPortal();
+  });
+  kaki.appendChild(segar);
   panel.appendChild(kaki);
 
   await alatPasangPanel(panel, kepala, KUNCI_POSISI_ALETA, {

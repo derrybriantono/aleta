@@ -164,7 +164,11 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
 
-    const badan = await readJsonBody<{ nomorPerkara?: string; medan?: MedanPilihan[] }>(request);
+    const badan = await readJsonBody<{
+      nomorPerkara?: string;
+      medan?: MedanPilihan[];
+      jenisPerkara?: string;
+    }>(request);
     const nomorPerkara = String(badan?.nomorPerkara ?? "").trim();
     const medan = Array.isArray(badan?.medan) ? badan.medan : [];
 
@@ -191,11 +195,18 @@ export async function POST(request: NextRequest) {
     const bagian = pecahNaskahPutusan(baris.naskah);
     const dasar = [bagian.pertimbangan ?? "", bagian.dudukPerkara ?? ""].filter(Boolean).join("\n\n");
 
+    // Jenis perkaranya menentukan bawaan sebagian medan - Keadaan Isteri
+    // "Suci" pada cerai gugat, "Tidak diketahui" pada cerai talak. Dikirim
+    // ekstensi dari jawaban GET yang sudah dibacanya, bukan ditanyakan lagi
+    // ke SIPP: ia jawaban yang sama, dan menanyakannya dua kali menambah satu
+    // penantian pada tiap pembacaan.
+    const jenisPerkara = String(badan?.jenisPerkara ?? "").trim();
+
     return ok({
       ada: true,
       versi: baris.versi,
       keadaan: baris.keadaan,
-      usulan: usulkanMedanPutusan(dasar, medan),
+      usulan: usulkanMedanPutusan(dasar, medan, jenisPerkara),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { paragrafButir } from "@/lib/isian-putusan-sipp";
 import { usulkanMedanPutusan, type MedanPilihan } from "@/lib/usulan-medan-putusan";
 
 /**
@@ -183,5 +184,49 @@ describe("medan biasa tidak berubah perilakunya", () => {
     const usul = satu(NASKAH_VERSTEK, faktor);
     expect(usul.nilai).toBe("12");
     expect(usul.nilaiBanyak).toBeUndefined();
+  });
+});
+
+describe("amar dikeluarkan sebagai paragraf per butir", () => {
+  it("tiap butir berdiri sendiri", () => {
+    // Amar dibaca sebagai daftar, bukan sebagai alinea. Empat butir yang
+    // mengalir menjadi satu blok memaksa pembacanya mencari nomornya di
+    // tengah kalimat - dan itulah bentuk yang tampil di CKEditor selama ini.
+    const hasil = paragrafButir(
+      [
+        "1. Menyatakan Tergugat tidak hadir;",
+        "2. Mengabulkan gugatan Penggugat secara verstek;",
+        "3. Membebankan biaya perkara kepada Penggugat;",
+      ].join("\n")
+    );
+    expect(hasil.split("<p>").length - 1).toBe(3);
+    expect(hasil).toContain("<p>2. Mengabulkan gugatan Penggugat secara verstek;</p>");
+  });
+
+  it("butir yang terlanjur mengalir dalam satu baris ikut dipecah", () => {
+    const hasil = paragrafButir(
+      "1. Menyatakan Tergugat tidak hadir; 2. Mengabulkan gugatan Penggugat; 3. Membebankan biaya perkara;"
+    );
+    expect(hasil.split("<p>").length - 1).toBe(3);
+  });
+
+  it("penomoran di TENGAH kalimat tidak dikira mengawali butir", () => {
+    // "Pasal 19 huruf (b) dan (f)" berdiri di tengah kalimat pertimbangan.
+    // Memecahnya di situ membelah satu butir menjadi dua.
+    const hasil = paragrafButir(
+      "1. Mengabulkan gugatan Penggugat sesuai Pasal 19 huruf (b) dan (f) Peraturan Pemerintah Nomor 9 Tahun 1975;"
+    );
+    expect(hasil.split("<p>").length - 1).toBe(1);
+  });
+
+  it("tanda kurung sudut dilarikan, sehingga tidak pernah menjadi tanda HTML", () => {
+    const hasil = paragrafButir("1. Menyatakan <Tergugat> tidak hadir;");
+    expect(hasil).toContain("&lt;Tergugat&gt;");
+    expect(hasil).not.toContain("<Tergugat>");
+  });
+
+  it("naskah kosong tetap kosong, bukan menjadi paragraf kosong", () => {
+    expect(paragrafButir("")).toBe("");
+    expect(paragrafButir("   ")).toBe("");
   });
 });

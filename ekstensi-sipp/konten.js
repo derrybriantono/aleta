@@ -4154,15 +4154,45 @@ function bagianIsiPutusan(nomorPerkara) {
 
     if (keterangan) baris.appendChild(buatElemen("div", "aleta-abt-catatan", keterangan));
 
-    const cuplikan = buatElemen(
-      "div",
-      "aleta-abt-isi",
-      teks ? (teks.length > 400 ? `${teks.slice(0, 400)}…` : teks) : "(kosong pada draf)"
-    );
-    if (!teks) cuplikan.classList.add("aleta-abt-isi-kosong");
-    baris.appendChild(cuplikan);
+    // ======================================================================
+    // YANG DIISIKAN ADALAH YANG TERBACA DI SINI, BUKAN YANG DIUSULKAN
+    // ======================================================================
+    //
+    // Sebelumnya usulannya hanya dapat diterima atau ditolak seluruhnya.
+    // Satu kata yang keliru pada pertimbangan 8.000 aksara berarti seluruh
+    // usulannya dibatalkan, lalu disalin tangan dari naskahnya - pekerjaan
+    // yang justru hendak dihapus alat ini.
+    //
+    // Sekarang teksnya disunting di tempat. Yang dikirim ke borang SIPP
+    // adalah isi kotak ini apa adanya, sehingga tidak pernah ada selisih
+    // antara yang dibaca petugas dan yang tersimpan.
+    const sunting = document.createElement("textarea");
+    sunting.className = "aleta-abt-isi aleta-sunting";
+    sunting.value = teks || "";
+    sunting.rows = teks && teks.length > 400 ? 8 : 4;
+    sunting.spellcheck = false;
+    if (!teks) {
+      sunting.placeholder = "(kosong pada draf - boleh diisi sendiri)";
+      sunting.classList.add("aleta-abt-isi-kosong");
+    }
+    // Menyunting yang tadinya kosong berarti memang hendak memakainya.
+    sunting.addEventListener("input", () => {
+      const ada = sunting.value.trim().length > 0;
+      centang.disabled = !ada;
+      if (!ada) centang.checked = false;
+    });
+    baris.appendChild(sunting);
 
-    return { baris, centang, penunjuk, teks, judul };
+    return {
+      baris,
+      centang,
+      penunjuk,
+      judul,
+      // Dibaca saat ditekan, bukan saat digambar.
+      get teks() {
+        return sunting.value;
+      },
+    };
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -4331,6 +4361,11 @@ function bagianIsiPutusan(nomorPerkara) {
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               nomorPerkara: nomorPerkara || "",
+              // Jenis perkaranya menentukan bawaan sebagian medan - Keadaan
+              // Isteri "Suci" pada cerai gugat, "Tidak diketahui" pada cerai
+              // talak. Diambil dari jawaban yang BARU SAJA dibaca, bukan
+              // ditanyakan lagi: ia jawaban yang sama.
+              jenisPerkara: (jawab && jawab.jenisPerkara) || "",
               medan: medanTampak.map((x) => ({
                 kunci: x.kunci,
                 label: x.label,
@@ -4363,6 +4398,9 @@ function bagianIsiPutusan(nomorPerkara) {
         // Yang berselisih TIDAK dicentang sendiri: justru itu yang paling
         // perlu dibaca manusia.
         centang.checked = Boolean(usul && usul.nilai) && usul.keyakinan !== "bentrok";
+        // Medan tanpa usulan pun boleh diisi sendiri, jadi centangnya hanya
+        // mati selama memang belum ada yang terpilih - bukan selama ALETA
+        // tidak mengusulkan apa pun.
         centang.disabled = !(usul && usul.nilai);
         kepala.appendChild(centang);
         kepala.appendChild(buatElemen("span", "aleta-abt-nama", medan.label));
@@ -4398,21 +4436,86 @@ function bagianIsiPutusan(nomorPerkara) {
         }
         if (usul && usul.alasan) kartu.appendChild(buatElemen("div", "aleta-abt-catatan", usul.alasan));
 
+        // ====================================================================
+        // PILIHANNYA DAPAT DIGANTI DI PANEL, TANPA MENINGGALKANNYA
+        // ====================================================================
+        //
+        // Usulan yang keliru dulu hanya dapat ditolak - lalu petugas mencari
+        // medannya sendiri di borang yang panjang, sambil mengingat apa yang
+        // tadi dibacanya di panel. Sekarang daftarnya ada di sini, berisi
+        // pilihan yang SAMA PERSIS dengan yang ditawarkan borang, dan yang
+        // terpilih di sinilah yang diisikan.
+        //
+        // Medan bernilai banyak memakai kotak centang, sebab memilih satu
+        // dari daftar tidak pernah dapat menyatakan tiga sumber hukum.
+        let bacaPilihanPanel = null;
+        if (medan.banyak) {
+          const kotakBanyak = buatElemen("div", "aleta-pilih-banyak");
+          const terusul = new Set(
+            ((usul && usul.nilaiBanyak) || []).map((x) => String(x.nilai))
+          );
+          const semua = [];
+          for (const pil of medan.pilihan) {
+            const label = buatElemen("label", "aleta-pilih-banyak-baris");
+            const kotak = document.createElement("input");
+            kotak.type = "checkbox";
+            kotak.value = String(pil.nilai);
+            kotak.checked = terusul.has(String(pil.nilai));
+            kotak.className = "aleta-abt-centang";
+            label.appendChild(kotak);
+            label.appendChild(buatElemen("span", "", pil.label));
+            kotakBanyak.appendChild(label);
+            semua.push(kotak);
+          }
+          kartu.appendChild(kotakBanyak);
+          bacaPilihanPanel = () => semua.filter((x) => x.checked).map((x) => x.value);
+          // Mencentang salah satu sumber hukum berarti medannya memang hendak
+          // dipakai - centang induknya menyala sendiri, dan padam lagi ketika
+          // seluruhnya dilepas.
+          for (const kotak of semua) {
+            kotak.addEventListener("change", () => {
+              const ada = semua.some((x) => x.checked);
+              centang.disabled = !ada;
+              centang.checked = ada;
+            });
+          }
+        } else {
+          const pilih = document.createElement("select");
+          pilih.className = "aleta-pilih-sendiri";
+          for (const pil of medan.pilihan) {
+            const opsi = document.createElement("option");
+            opsi.value = String(pil.nilai);
+            opsi.textContent = pil.label;
+            pilih.appendChild(opsi);
+          }
+          // Usulannya yang terpilih lebih dulu; bila tidak ada usulan,
+          // nilai yang sudah ada di borang.
+          pilih.value = String((usul && usul.nilai) || medan.nilaiSekarang || "");
+          pilih.addEventListener("change", () => {
+            centang.disabled = !pilih.value;
+            if (!pilih.value) centang.checked = false;
+            else centang.checked = true;
+          });
+          kartu.appendChild(pilih);
+          bacaPilihanPanel = () => (pilih.value ? [pilih.value] : []);
+        }
+
         wadah.appendChild(kartu);
-        if (usul && usul.nilai) {
+        // Medan yang tidak punya usulan pun tetap dapat dipilih sendiri -
+        // itulah sebab daftarnya digambar di atas, di luar penjaga ini.
+        {
           // Kotak centang diisikan satu per satu: mencentang satu kotak tidak
           // pernah membatalkan kotak lain, jadi seluruhnya memang harus
           // disebut. Medan biasa tetap satu nilai.
-          const nilaiSemua =
-            usul.nilaiBanyak && usul.nilaiBanyak.length
-              ? usul.nilaiBanyak.map((x) => String(x.nilai))
-              : [String(usul.nilai)];
           pilihanTerap.push({
             kunci: medan.kunci,
-            nilai: usul.nilai,
-            nilaiSemua,
             label: medan.label,
             centang,
+            // Dibaca saat ditekan - yang berlaku pilihan petugas, bukan
+            // usulan yang mungkin sudah digantinya sejak tadi.
+            get nilaiSemua() {
+              return bacaPilihanPanel();
+            },
           });
         }
       }
@@ -4441,7 +4544,12 @@ function bagianIsiPutusan(nomorPerkara) {
       // ketika petugas sudah berhenti memperhatikan.
       for (const satu of medanDipilih) {
         hasilTerap.textContent = `Memilih ${satu.label}…`;
-        for (const nilai of satu.nilaiSemua || [satu.nilai]) {
+        const nilaiDipakai = satu.nilaiSemua || [];
+        if (nilaiDipakai.length === 0) {
+          gagal.push(`${satu.label}: belum ada yang dipilih`);
+          continue;
+        }
+        for (const nilai of nilaiDipakai) {
           const hasil = await kirimKeJembatan({
             jenis: "isi",
             penunjuk: satu.kunci,
@@ -6255,8 +6363,8 @@ function jepitTinggiKeRuangTersisa(panel) {
   // menyetel tinggi lebih dulu lalu memanggil fungsi ini hanya sebagai
   // pengaman terhadap tepi layar.
   const batasIdaman = Math.min(
-    Math.max(Math.round(window.innerHeight / 3), 240),
-    Math.round(window.innerHeight / 2)
+    Math.max(Math.round(window.innerHeight / 2), 320),
+    Math.round((window.innerHeight * 2) / 3)
   );
   const batas = Math.min(sisa, panel.dataset.tinggiSendiri === "1" ? sisa : batasIdaman);
   if (kotak.height <= batas) return;
@@ -7031,6 +7139,31 @@ function kakiPanel(opsi) {
   );
   pintasan.title = "Pintasan papan tik ALETA. Tidak berlaku selagi mengetik di kolom isian.";
   kaki.appendChild(pintasan);
+
+  // ==========================================================================
+  // SEGARKAN ADA DI KAKI, BUKAN HANYA DI KEPALA
+  // ==========================================================================
+  //
+  // Tombol ↺ di kepala mengembalikan UKURAN DAN POSISI panel - bukan
+  // datanya. Tidak ada satu pun jalan membaca ulang keterangan perkara
+  // selain memuat ulang seluruh halaman SIPP, dan memuat ulang halaman
+  // orang yang sedang mengisi borang membuang isian yang belum disimpan.
+  //
+  // Di kaki, sebab di sanalah pandangan berhenti sesudah membaca panelnya -
+  // dan sebab kepala sudah memuat lima tombol.
+  const segar = buatElemen("button", "aleta-kaki-segar", "↻ Segarkan");
+  segar.type = "button";
+  segar.title = "Membaca ulang keterangan perkara dari ALETA. Halaman SIPP tidak dimuat ulang, dan isian yang belum disimpan tidak hilang.";
+  segar.addEventListener("click", () => {
+    segar.disabled = true;
+    segar.textContent = "↻ Membaca…";
+    // Penjaga nomorTerakhir dikosongkan lebih dulu - tanpa itu segarkan()
+    // memulangkan diri sendiri tanpa membaca apa pun.
+    nomorTerakhir = "";
+    konteksTerakhir = null;
+    void segarkan();
+  });
+  kaki.appendChild(segar);
   return kaki;
 }
 

@@ -150,6 +150,50 @@ export function anonimkanAmar(
  * belumTerisi - bukan diisi kalimat penambal. Borang putusan yang terisi
  * kalimat penambal akan tersimpan dan tercetak persis seperti itu.
  */
+/**
+ * ============================================================================
+ * TIAP BUTIR AMAR BERDIRI SEBAGAI PARAGRAFNYA SENDIRI
+ * ============================================================================
+ *
+ * Amar putusan dibaca sebagai daftar, bukan sebagai alinea. Empat butir yang
+ * mengalir menjadi satu blok - "1. Menyatakan ... tidak hadir; 2. Mengabulkan
+ * ... 3. Menjatuhkan ..." - memaksa pembacanya mencari nomornya di tengah
+ * kalimat, dan itulah bentuk yang tampil di CKEditor selama ini.
+ *
+ * Dikeluarkan sebagai <p> per butir, bukan sebagai baris baru. Yang diterima
+ * CKEditor diurai sebagai HTML: baris baru di dalamnya runtuh menjadi satu
+ * spasi, dan tidak satu pun jarak yang terlihat. Kolom amar_putusan di SIPP
+ * memang menyimpan HTML - putusan yang sudah ada di sana pun begitu.
+ *
+ * Penomorannya TIDAK diubah, ditambah, maupun diurutkan ulang. Yang dikerjakan
+ * hanya memberi tiap butir paragrafnya sendiri.
+ */
+export function paragrafButir(teks: string): string {
+  const bersihTeks = bersih(teks);
+  if (!bersihTeks) return "";
+
+  let butir = bersihTeks
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((satu) => satu.trim())
+    .filter(Boolean);
+
+  // Naskah yang butirnya terlanjur mengalir dalam satu baris dipecah pada
+  // penomorannya - tetapi hanya penomoran yang MENGAWALI butir, yakni yang
+  // berdiri sesudah titik koma atau titik. "Pasal 19 huruf (b)" di tengah
+  // kalimat tidak pernah mengawali apa pun.
+  if (butir.length === 1) {
+    butir = butir[0]
+      .split(/(?<=[.;])\s+(?=(?:\d{1,2}|[a-z])[.)]\s)/i)
+      .map((satu) => satu.trim())
+      .filter(Boolean);
+  }
+
+  const aman = (satu: string) =>
+    satu.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return butir.map((satu) => `<p>${aman(satu)}</p>`).join("");
+}
+
 export function susunIsianPutusanSipp(masukan: {
   naskah: string;
   pihak?: PihakPerkara[];
@@ -190,8 +234,11 @@ export function susunIsianPutusanSipp(masukan: {
 
   return {
     pertimbangan,
-    amar,
-    amarAnonim,
+    // Paragraf dibentuk PALING AKHIR, sesudah nama pihak disamarkan.
+    // Menyisipkan tanda HTML lebih dahulu berarti nama yang kebetulan berdiri
+    // di tepi paragraf terpotong tandanya dan luput tersamar.
+    amar: paragrafButir(amar),
+    amarAnonim: paragrafButir(amarAnonim),
     namaDisamarkan: diganti,
     catatan,
     belumTerisi,

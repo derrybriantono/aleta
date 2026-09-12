@@ -60,7 +60,14 @@
   top: 12px;
   right: 12px;
   z-index: 2147483000;
-  width: 380px;
+  /* 380px dulu dipilih agar panel tidak menutupi kolom SIPP di bawahnya.
+     Ukuran itu lahir ketika isinya hanya keterangan pendek. Sejak panel
+     memuat usulan pertimbangan hukum 8.000 aksara beserta kotak suntingnya,
+     380px membuat tiap barisnya patah tiga kali - dan naskah putusan yang
+     patah tiga kali tidak dapat dibaca untuk diperiksa.
+
+     Tetap dapat diubah dan digeser sendiri; yang berubah hanya bawaannya. */
+  width: 460px;
   /* Atap yang sama dengan yang dijaga JS - lihat jepitTinggiKeRuangTersisa.
 
      Sebelumnya calc(100vh - 130px), yaitu hampir setinggi jendela. JS-nya
@@ -68,7 +75,10 @@
      PERTAMA panelnya sempat digambar setinggi itu dahulu - dan pada halaman
      yang lambat, sempat itu terbaca sebagai panel yang menutupi seluruh sisi
      kanan SIPP lalu tiba-tiba memendek. */
-  max-height: 50vh;
+  /* Ikut naik bersama lebarnya - dengan alasan yang sama, dan dengan batas
+     yang sama: panel tidak boleh menutupi lebih dari dua pertiga layar,
+     sebab yang di bawahnya borang yang sedang diisi. */
+  max-height: 66vh;
   /* Yang menggulir isinya, bukan panelnya - lihat .aleta-isi.
      Pegangan tarik dipasang absolut di dalam panel, dan panel yang
      menggulir akan membawa pegangan itu hanyut ke atas bersama isi.
@@ -1731,6 +1741,93 @@ tr.aleta-baris-disorot > td {
 .aleta-tetap-atasnama-baris {
   font-size: calc(13px * var(--aleta-skala-huruf, 1));
   line-height: 1.5;
+}
+
+/* --- Usulan yang dapat disunting sebelum diisikan ------------------------
+   Yang diisikan ke borang SIPP adalah isi kotak ini apa adanya. Karena itu
+   ia harus benar-benar terbaca: huruf yang sama dengan panel, tinggi yang
+   cukup, dan lebar penuh. */
+textarea.aleta-sunting {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 6px 7px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+  resize: vertical;
+}
+
+textarea.aleta-sunting:focus {
+  outline: none;
+  border-color: var(--aleta-merek);
+}
+
+.aleta-pilih-sendiri {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 5px;
+  padding: 4px 6px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-pilih-sendiri:focus {
+  outline: none;
+  border-color: var(--aleta-merek);
+}
+
+.aleta-pilih-banyak {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.aleta-pilih-banyak-baris {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-tulisan);
+  cursor: pointer;
+}
+
+/* --- Tombol segarkan di kaki panel --------------------------------------
+   Sengaja tidak semenonjol tombol yang MENULIS ke SIPP: ia hanya membaca
+   ulang, dan tombol baca yang seterang tombol tulis mengajak ditekan tanpa
+   alasan. */
+.aleta-kaki-segar {
+  display: block;
+  margin: 6px auto 0;
+  padding: 3px 12px;
+  background: transparent;
+  color: var(--aleta-tulisan-lembut);
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+
+.aleta-kaki-segar:hover:not(:disabled) {
+  color: var(--aleta-merek);
+  border-color: var(--aleta-merek);
+}
+
+.aleta-kaki-segar:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 /* --- Naskah putusan yang diterima dari berkas ---------------------------- */

@@ -348,14 +348,18 @@ describe("panel yang baru muncul dapat digulung", () => {
     expect(potong.slice(0, 900)).toContain('classList.contains("aleta-panel-penuh")');
   });
 
-  it("tingginya sepertiga layar, dan tidak pernah lebih dari separuh", () => {
-    // Tiga per lima pernah dipakai, dan pada layar 1080 itu berarti panel
-    // setinggi hampir 600 piksel yang menutupi sisi kanan SIPP lalu
-    // terpotong di tepi bawah begitu isinya lebih panjang daripada jatahnya.
+  it("tingginya separuh layar, dan tidak pernah lebih dari dua pertiga", () => {
+    // Sepertiga layar pas ketika panel hanya memuat keterangan pendek. Sejak
+    // ia memuat usulan pertimbangan hukum 8.000 aksara beserta kotak
+    // suntingnya, sepertiga berarti menggulung terus-menerus untuk membaca
+    // satu naskah yang justru harus diperiksa sebagai satu kesatuan.
+    //
+    // Atapnya tetap ada, dan sebabnya tidak berubah: di bawah panel ada
+    // borang yang sedang diisi orang.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
-    expect(potong.slice(0, 2600)).toContain("Math.round(window.innerHeight / 3)");
     expect(potong.slice(0, 2600)).toContain("Math.round(window.innerHeight / 2)");
+    expect(potong.slice(0, 2600)).toContain("Math.round((window.innerHeight * 2) / 3)");
     expect(isi).not.toContain("window.innerHeight * 0.6");
   });
 });

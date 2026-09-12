@@ -131,16 +131,16 @@ describe("panel berhenti di sepertiga layar", () => {
     // daripada jatahnya panel itu terpotong di tepi bawah.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
-    expect(potong.slice(0, 2800)).toContain("Math.round(window.innerHeight / 3)");
+    expect(potong.slice(0, 2800)).toContain("Math.round(window.innerHeight / 2)");
   });
 
-  it("dan tidak pernah melewati separuh layar", () => {
-    // Lantai 240 piksel menjaga panel tetap terbaca pada jendela yang sangat
+  it("dan tidak pernah melewati dua pertiga layar", () => {
+    // Lantai 320 piksel menjaga panel tetap terbaca pada jendela yang sangat
     // pendek. Tanpa atap, lantai itu sendiri berbalik menjadi panel yang
-    // menutupi hampir seluruh jendela sependek 300 piksel.
+    // menutupi hampir seluruh jendela sependek 400 piksel.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function jepitTinggiKeRuangTersisa"));
-    expect(potong.slice(0, 2800)).toContain("Math.round(window.innerHeight / 2)");
+    expect(potong.slice(0, 2800)).toContain("Math.round((window.innerHeight * 2) / 3)");
     expect(isi).not.toContain("window.innerHeight * 0.6");
   });
 

@@ -221,7 +221,8 @@ describe("mengisi borang putusan SIPP", () => {
     );
     expect(bagian).toContain("banyak: true");
     expect(bagian).toContain("usul.nilaiBanyak");
-    expect(bagian).toContain("for (const nilai of satu.nilaiSemua");
+    expect(bagian).toContain("const nilaiDipakai = satu.nilaiSemua || [];");
+    expect(bagian).toContain("for (const nilai of nilaiDipakai)");
   });
 
   it("medan yang baru muncul sesudah Status Putusan ikut terkejar", () => {

@@ -203,14 +203,116 @@ const SEBUTAN_LAIN: Record<string, string[]> = {
  * sengaja pendek: hanya medan yang benar-benar berbentuk ya/tidak dan
  * penentunya satu frasa yang tidak bermakna ganda.
  */
-const PENANDA_MEDAN: Array<{ medan: RegExp; frasa: RegExp; ya: RegExp; tidak: RegExp }> = [
+const PENANDA_MEDAN: Array<{
+  medan: RegExp;
+  frasa: RegExp;
+  ya: RegExp;
+  tidak: RegExp;
+  /**
+   * Bila petikan yang tertangkap frasa juga cocok dengan ini, ia TIDAK
+   * dihitung - petikan yang mengingkari dirinya sendiri.
+   */
+  bukan?: RegExp;
+  /** Sebutan medan pada kalimat sebab, supaya alasannya terbaca petugas. */
+  sebut: string;
+  /** Bila diisi, jawaban bawaannya bergantung jenis perkara. */
+  bawaanMenurutPerkara?: Array<{ perkara: RegExp; jawab: RegExp }>;
+}> = [
   {
     medan: /verstek/i,
     frasa: /\bverstek\b/i,
     ya: /^(ya|iya|verstek|1)$/i,
     tidak: /^(tidak|bukan|0)$/i,
+    sebut: "verstek",
+  },
+  {
+    // ────────────────────────────────────────────────────────────────────
+    // NUSYUZ - BAWAANNYA TIDAK NUSYUZ, DAN ITU BUKAN KELALAIAN
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Nusyuz adalah tuduhan terhadap isteri, dan akibatnya nyata: ia
+    // menggugurkan hak nafkah iddah. Putusan yang tidak menyatakannya berarti
+    // isterinya TIDAK nusyuz - bukan berarti keadaannya belum diketahui.
+    //
+    // Frasanya menuntut sebutan pihaknya berdiri dekat kata nusyuz. Kata
+    // "nusyuz" sendiri muncul di banyak pertimbangan sebagai uraian hukum
+    // ("...kecuali isteri nusyuz...") tanpa menuduh siapa pun.
+    //
+    // Yang dikecualikan bentuk pengingkaran, dan bentuk itu justru yang
+    // paling sering: "sepanjang bekas isteri TIDAK berbuat nusyuz" adalah
+    // uraian pasal nafkah iddah, bukan tuduhan terhadap siapa pun. Membacanya
+    // sebagai tuduhan menggugurkan hak nafkah seseorang atas dasar kalimat
+    // yang tidak menyebutnya sama sekali.
+    medan: /nusyuz/i,
+    frasa:
+      /(?:penggugat|termohon|isteri|istri)[^.;]{0,120}?\bnusyuz\b|\bnusyuz\b[^.;]{0,60}?(?:penggugat|termohon|isteri|istri)/i,
+    bukan: /\b(?:tidak|bukan|tanpa|kecuali|sepanjang|apabila|jika|manakala|seandainya)\b/i,
+    ya: /^nusyuz$/i,
+    tidak: /^tidak\s*nusyuz$/i,
+    sebut: "isteri nusyuz",
+  },
+  {
+    // ────────────────────────────────────────────────────────────────────
+    // QOBLA/BA'DA DUKHUL - BAWAANNYA BA'DA
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Qobla dukhul berarti belum pernah berkumpul sebagai suami isteri, dan
+    // itu keadaan yang jarang serta selalu DISEBUT tegas dalam pertimbangan
+    // karena mengubah jumlah iddah. Perkara yang tidak menyebutnya ba'da.
+    medan: /qobla|ba'?da|dukhul/i,
+    frasa: /\bqobla\b|\bqabla\b|belum\s+pernah\s+(?:ber)?kumpul/i,
+    ya: /qobla|qabla/i,
+    tidak: /ba'?da/i,
+    sebut: "qobla dukhul",
+  },
+  {
+    // ────────────────────────────────────────────────────────────────────
+    // KEADAAN ISTERI - BAWAANNYA BERGANTUNG JENIS PERKARA
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Pada cerai gugat, isteri hadir sendiri sebagai Penggugat dan keadaan
+    // sucinya ditanyakan majelis di persidangan - jawabannya "Suci".
+    //
+    // Pada cerai talak, yang berperkara suaminya; keadaan isteri tidak
+    // ditanyakan dan memang tidak diketahui. Menjawab "Suci" di situ berarti
+    // menuliskan keterangan yang tidak pernah ada di berkas.
+    medan: /keadaan\s*istri|keadaan\s*isteri/i,
+    frasa: /\bhamil\b/i,
+    ya: /hamil/i,
+    tidak: /suci|tidak\s*diketahui/i,
+    sebut: "isteri hamil",
+    bawaanMenurutPerkara: [
+      { perkara: /cerai\s*gugat/i, jawab: /^suci$/i },
+      { perkara: /cerai\s*talak/i, jawab: /tidak\s*diketahui/i },
+    ],
   },
 ];
+
+/**
+ * ============================================================================
+ * FAKTOR PERCERAIAN YANG POKOK BUKAN YANG PALING SERING DISEBUT
+ * ============================================================================
+ *
+ * Perkara yang para pihaknya berpisah dua tahun atau lebih PASTI didasarkan
+ * Pasal 19 huruf (b) PP 9/1975 jo. Pasal 116 huruf (b) KHI - meninggalkan
+ * salah satu pihak. Itu bukan tafsir: dua tahun berturut-turut adalah unsur
+ * yang disebut pasalnya sendiri, dan majelis menyebutnya di pertimbangan
+ * justru untuk menyatakan unsurnya terpenuhi.
+ *
+ * Tetapi posita hampir selalu menguraikan ekonomi dan pertengkaran jauh lebih
+ * panjang daripada kepergiannya, sehingga penghitungan kata memenangkan yang
+ * paling banyak ditulis - bukan yang menjadi dasar hukumnya. Pada perkara
+ * 492, keduanya memang ada: pisah dua tahun, ditambah ekonomi dan
+ * perselisihan.
+ *
+ * Maka bila naskahnya menyebut kepergian dua tahun, faktor POKOKNYA
+ * didahulukan, dan yang lain turun menjadi sekunder.
+ */
+const POLA_DITINGGAL_DUA_TAHUN =
+  /(?:meninggalkan|pergi|tidak\s+kembali|pisah)[^.;]{0,160}?\b(?:2|dua)\b\s*(?:\(\s*dua\s*\))?\s*tahun|(?:\b(?:2|dua)\b\s*(?:\(\s*dua\s*\))?\s*tahun)[^.;]{0,80}?(?:berturut|meninggalkan|tanpa\s+izin)/i;
+
+/** Label faktor yang berarti "meninggalkan salah satu pihak". */
+const POLA_FAKTOR_MENINGGALKAN = /meninggalkan|pergi|ditinggal/i;
 
 function normalkan(teks: string): string {
   return String(teks ?? "")
@@ -353,9 +455,14 @@ function pilihanKosong(satu: PilihanMedan): boolean {
  * @param naskah Bunyi putusan - pertimbangan dan duduk perkara yang menyebut
  *               fakta yang menentukan pilihan ini.
  */
-export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): UsulanMedan[] {
+export function usulkanMedanPutusan(
+  naskah: string,
+  medan: MedanPilihan[],
+  jenisPerkaraMasukan = ""
+): UsulanMedan[] {
   const teks = String(naskah ?? "");
-  return (Array.isArray(medan) ? medan : []).map((satu) => {
+  const jenisPerkara = String(jenisPerkaraMasukan ?? "");
+  const hasil: UsulanMedan[] = (Array.isArray(medan) ? medan : []).map((satu): UsulanMedan => {
     const kandidat = (satu.pilihan ?? []).filter((x) => !pilihanKosong(x));
     const dasar: UsulanMedan = {
       kunci: satu.kunci,
@@ -378,8 +485,25 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
     // ────────────────────────────────────────────────────────────────────
     const penanda = PENANDA_MEDAN.find((x) => x.medan.test(satu.label));
     if (penanda) {
-      const cocok = penanda.frasa.exec(teks);
-      const mau = cocok ? penanda.ya : penanda.tidak;
+      // Dicari per KALIMAT, bukan atas seluruh naskah sekaligus - sebuah
+      // fakta dinyatakan dalam satu kalimat, dan petikan yang mengingkari
+      // dirinya sendiri harus dapat dikenali beserta kalimatnya.
+      let cocok: RegExpExecArray | null = null;
+      for (const kal of kalimat) {
+        const uji = penanda.frasa.exec(kal);
+        if (!uji) continue;
+        if (penanda.bukan && penanda.bukan.test(uji[0])) continue;
+        cocok = uji;
+        break;
+      }
+      // Bawaan yang bergantung jenis perkara dipakai HANYA ketika naskahnya
+      // memang tidak menyebut apa-apa. Yang tertulis selalu mengalahkan yang
+      // disimpulkan dari jenis perkaranya.
+      const menurutPerkara =
+        !cocok && penanda.bawaanMenurutPerkara
+          ? penanda.bawaanMenurutPerkara.find((x) => x.perkara.test(jenisPerkara))
+          : undefined;
+      const mau = cocok ? penanda.ya : menurutPerkara ? menurutPerkara.jawab : penanda.tidak;
       // Dicari pada pilihan YANG BELUM DISARING, dan itu perlu: pada medan
       // ya/tidak, "Tidak" bernilai 0 - dan pilihanKosong memang membuang
       // nilai 0 sebagai bukan-pilihan. Aturan itu benar pada daftar biasa,
@@ -406,7 +530,9 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
         kutipan: cocok ? kalimatBerfrasa(kalimat, normalkan(cocok[0])) : "",
         alasan: cocok
           ? ""
-          : `Naskah tidak menyebut "${String(penanda.frasa.source).replace(/\\b/g, "")}" sama sekali, jadi dijawab ${pilih.label}. Periksa sendiri.`,
+          : menurutPerkara
+          ? `Naskah tidak menyebut ${penanda.sebut}. Pada ${jenisPerkara} keadaan ini lazimnya ${pilih.label}. Periksa sendiri.`
+          : `Naskah tidak menyebut ${penanda.sebut} sama sekali, jadi dijawab ${pilih.label}. Periksa sendiri.`,
       };
     }
     const dinilai = kandidat
@@ -512,4 +638,101 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
         : "",
     };
   });
+
+  return rapikanFaktorPerceraian(hasil, medan, teks);
+}
+
+/**
+ * ============================================================================
+ * FAKTOR POKOK DIDAHULUKAN, DAN SEKUNDER TIDAK PERNAH MENGULANG POKOKNYA
+ * ============================================================================
+ *
+ * Dua hal diperbaiki di sini, dan keduanya hanya kelihatan ketika kedua medan
+ * faktor perceraian dipandang bersama-sama - sesuatu yang mustahil dikerjakan
+ * penilai yang menimbang tiap medan sendiri-sendiri.
+ *
+ * SATU. Medan sekunder menghasilkan jawaban yang SAMA PERSIS dengan pokoknya,
+ * sebab naskah yang sama dinilai dua kali dengan daftar pilihan yang sama.
+ * Dua medan yang menjawab "Ekonomi" berdua bukan dua faktor melainkan satu
+ * faktor yang tertulis dua kali - dan ia masuk ke laporan faktor penyebab
+ * perceraian sebagai dua.
+ *
+ * DUA. Perkara yang pihaknya berpisah dua tahun atau lebih berdasar Pasal 19
+ * huruf (b) PP 9/1975 jo. Pasal 116 huruf (b) KHI. Itu unsur yang disebut
+ * pasalnya sendiri, dan majelis menuliskannya justru untuk menyatakan
+ * unsurnya terpenuhi. Tetapi posita menguraikan ekonomi dan pertengkaran jauh
+ * lebih panjang daripada kepergiannya, sehingga penghitungan kata memenangkan
+ * yang paling banyak ditulis - bukan yang menjadi dasar hukumnya.
+ *
+ * Yang dikerjakan hanya MENUKAR URUTAN di antara pilihan yang naskahnya sudah
+ * sebut. Tidak ada faktor yang ditambahkan dari luar.
+ */
+function rapikanFaktorPerceraian(
+  hasil: UsulanMedan[],
+  medan: MedanPilihan[],
+  teks: string
+): UsulanMedan[] {
+  const iPokok = hasil.findIndex(
+    (x) => /faktor.*cerai|faktor.*perceraian/i.test(x.label) && !/sekunder/i.test(x.label)
+  );
+  const iSekunder = hasil.findIndex(
+    (x) => /faktor.*cerai|faktor.*perceraian/i.test(x.label) && /sekunder/i.test(x.label)
+  );
+  if (iPokok < 0 && iSekunder < 0) return hasil;
+
+  // ── Kepergian dua tahun mendahului yang lain ────────────────────────────
+  if (iPokok >= 0 && POLA_DITINGGAL_DUA_TAHUN.test(teks)) {
+    const pokok = hasil[iPokok];
+    const pilihanPokok = medan.find((m) => m.kunci === pokok.kunci)?.pilihan ?? [];
+    const meninggalkan = pilihanPokok.find(
+      (x) => !pilihanKosong(x) && POLA_FAKTOR_MENINGGALKAN.test(x.label)
+    );
+    if (meninggalkan && String(meninggalkan.nilai) !== pokok.nilai) {
+      // Yang tadinya pokok turun menjadi calon sekunder - ia tetap disebut
+      // naskah, hanya bukan dasar hukum yang menentukan.
+      const semula = { nilai: pokok.nilai, label: pokok.nilaiLabel };
+      hasil[iPokok] = {
+        ...pokok,
+        nilai: String(meninggalkan.nilai),
+        nilaiLabel: meninggalkan.label,
+        keyakinan: "pasti",
+        kutipan: kalimatBerfrasa(pecahKalimat(teks), normalkan(String(POLA_DITINGGAL_DUA_TAHUN.exec(teks)?.[0] ?? ""))) || pokok.kutipan,
+        saingan: semula.nilai
+          ? [{ nilai: semula.nilai, label: semula.label, nilai_skor: 0 }, ...pokok.saingan]
+          : pokok.saingan,
+        alasan:
+          "Naskah menyebut kepergian dua tahun atau lebih - unsur Pasal 19 huruf (b) PP 9/1975 jo. Pasal 116 huruf (b) KHI. Faktor itu didahulukan; " +
+          (semula.label ? `${semula.label} turun menjadi sekunder.` : "yang lain menjadi sekunder."),
+      };
+    }
+  }
+
+  // ── Sekunder tidak boleh mengulang pokoknya ─────────────────────────────
+  if (iPokok >= 0 && iSekunder >= 0) {
+    const pokok = hasil[iPokok];
+    const sekunder = hasil[iSekunder];
+    if (pokok.nilai && sekunder.nilai && pokok.nilai === sekunder.nilai) {
+      const ganti = sekunder.saingan.find((x) => x.nilai && x.nilai !== pokok.nilai);
+      hasil[iSekunder] = ganti
+        ? {
+            ...sekunder,
+            nilai: ganti.nilai,
+            nilaiLabel: ganti.label,
+            // Turun satu tingkat keyakinannya: ia bukan yang paling kuat,
+            // melainkan yang paling kuat SESUDAH pokoknya diambil.
+            keyakinan: "cukup",
+            alasan: `${pokok.nilaiLabel} sudah menjadi faktor pokok, jadi yang diusulkan di sini saingan terdekatnya. Periksa sendiri.`,
+          }
+        : {
+            ...sekunder,
+            nilai: "",
+            nilaiLabel: "",
+            keyakinan: "kosong",
+            kutipan: "",
+            alasan: `Naskah hanya menyebut satu faktor (${pokok.nilaiLabel}), dan faktor itu sudah menjadi pokok. Sekundernya dikosongkan.`,
+          };
+    }
+  }
+
+  return hasil;
 }

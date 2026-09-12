@@ -56,12 +56,70 @@
     }
   }
 
+  /**
+   * Tulisan yang berdiri TEPAT SESUDAH sebuah kotak centang atau radio.
+   *
+   * ==========================================================================
+   * INI BENTUK HTML YANG PALING TUA, DAN SIPP MASIH MEMAKAINYA
+   * ==========================================================================
+   *
+   * application/views/putusan/edit_putusan_akhir.php menulis Sumber Hukum
+   * begini:
+   *
+   *   echo "<input type='checkbox' name='sumber_hukum[]' value=" . $row->id
+   *        . " />" . $row->nama . "<br/>";
+   *
+   * Tidak ada <label>, tidak ada id - namanya SIMPUL TEKS telanjang di
+   * sebelah kotaknya. Pencarian <label> karena itu memulangkan kosong, dan
+   * yang terkirim ke ALETA sebagai "label" adalah nilainya: 8, 9, 10.
+   *
+   * Akibatnya tepat seperti yang terlihat di panel: keenam sumber hukum
+   * bernilai nol, dan Sumber Hukum selalu menjawab "tidak ditemukan" pada
+   * putusan yang jelas-jelas menyebut tiga di antaranya.
+   *
+   * Dibaca sampai <br>, kotak berikutnya, atau akhir induknya - itulah batas
+   * satu butir pada bentuk penulisan ini.
+   */
+  function tulisanSesudah(elemen) {
+    let kata = "";
+    let simpul = elemen.nextSibling;
+    while (simpul) {
+      if (simpul.nodeType === 3) {
+        kata += simpul.textContent || "";
+      } else if (simpul.nodeType === 1) {
+        const tag = simpul.tagName.toLowerCase();
+        // <br> mengakhiri butir ini; kotak berikutnya apalagi.
+        if (tag === "br" || tag === "input" || tag === "select" || tag === "textarea") break;
+        kata += simpul.textContent || "";
+      }
+      simpul = simpul.nextSibling;
+    }
+    return kata.trim().slice(0, 80);
+  }
+
   /** Label yang tampak untuk satu medan - dipakai mode baca borang. */
   function labelMedan(elemen) {
     if (elemen.id) {
       const label = document.querySelector(`label[for="${CSS.escape(elemen.id)}"]`);
       if (label) return String(label.textContent || "").trim().slice(0, 80);
     }
+
+    // Kotak centang dan radio: yang menamainya hampir selalu tulisan di
+    // sebelahnya, bukan <label> milik barisnya. Dicari SEBELUM induknya,
+    // sebab <label> milik baris menamai SELURUH kelompok - "Sumber Hukum"
+    // untuk keenam kotaknya sekaligus, yang membuat keenamnya kembar.
+    const jenis = String(elemen.type || "").toLowerCase();
+    if (jenis === "checkbox" || jenis === "radio") {
+      const sebelah = tulisanSesudah(elemen);
+      if (sebelah) return sebelah;
+      // Sebagian borang membungkusnya: <label><input> Nusyuz</label>.
+      const pembungkus = elemen.closest("label");
+      if (pembungkus) {
+        const isi = String(pembungkus.textContent || "").trim();
+        if (isi) return isi.slice(0, 80);
+      }
+    }
+
     const induk = elemen.closest(".form-group, .control-group, tr, div");
     if (induk) {
       const label = induk.querySelector("label");

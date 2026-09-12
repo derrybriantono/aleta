@@ -81,7 +81,10 @@ describe("huruf panel dibesarkan", () => {
     expect(ukuran.length).toBeGreaterThan(50);
     expect(Math.min(...ukuran)).toBeGreaterThanOrEqual(11.5);
     expect(css).toContain("font-size: calc(14px * var(--aleta-skala-huruf, 1));");
-    expect(css).toContain("width: 380px;");
+    // 460px sejak panel memuat kotak sunting naskah - pada 380px tiap baris
+    // pertimbangan patah tiga kali, dan naskah yang patah tiga kali tidak
+    // dapat dibaca untuk diperiksa.
+    expect(css).toContain("width: 460px;");
   });
 });
 
