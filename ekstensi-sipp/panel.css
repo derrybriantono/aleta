@@ -2811,6 +2811,16 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   line-height: 1.45;
 }
 
+/* Pita simpanan yang sedang DISEGARKAN - berbeda nada dari pita luring.
+
+   Yang satu berkata ALETA mati, yang lain ALETA sedang menjawab. Menyamakan
+   warnanya membuat portal yang hanya berat terbaca sebagai portal yang mati,
+   dan yang membacanya berhenti menunggu padahal jawabannya sedang datang. */
+.aleta-pita-luring.aleta-pita-luring-segar {
+  background: color-mix(in srgb, var(--aleta-merek) 14%, var(--aleta-latar));
+  border-bottom-color: var(--aleta-merek);
+}
+
 /* Pembatalan menyeluruh: dipisahkan garis dari pembatalan satu langkah.
    Dua tombol yang sama-sama membatalkan tetapi berbeda jangkauannya menuntut
    pembeda yang terlihat, bukan hanya tulisannya yang berbeda. */

@@ -8630,6 +8630,16 @@ function pintasanPapanTik(peristiwa) {
 // memasang pendengarnya sendiri dan menghentikan gelembungnya.
 document.addEventListener("keydown", pintasanPapanTik, true);
 
+// Perhatian kembali ke tab ini: yang tertunda selagi tersembunyi dikerjakan
+// sekarang. Tanpa ini, tab yang dibuka di latar belakang tetap kosong sampai
+// halamannya berubah dengan sendirinya - dan pada halaman perkara yang diam,
+// itu berarti selamanya.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (!tertundaKarenaTersembunyi) return;
+  void segarkan();
+});
+
 function tampilkan(elemen) {
   tanpaPengamat(() => {
     const lama = document.getElementById(PENANDA);
@@ -8694,6 +8704,19 @@ let sedangLuring = false;
 // untuk tidak membebani portal yang sedang sakit, dan cukup singkat untuk
 // tidak membuat petugas menunggu tanpa tahu ia sedang menunggu apa.
 const JEDA_COBA_LURING = 30000;
+
+// Jeda sebelum panel didahului dari simpanan. Empat ratus milidetik: di
+// bawah itu portal yang sehat pun kalah balapan dan panel berkedip tanpa
+// perlu; di atasnya, penantiannya sudah terasa.
+const JEDA_PENDAHULU_MS = 400;
+
+/** Penyegaran yang dilewati karena tabnya tersembunyi - lihat segarkan(). */
+let tertundaKarenaTersembunyi = false;
+
+// Batas panggilan konteks. Lebih longgar daripada batas permintaan panel
+// biasa: inilah panggilan yang paling berat di seluruh ekstensi - ia
+// membaca dokumen, nomor pihak, selisih, hakim, dan identitas sekaligus.
+const BATAS_KONTEKS_MS = 12000;
 let jamCobaLuring = null;
 
 function mulaiMencobaLagi(nomor) {
@@ -8762,7 +8785,12 @@ async function ambilKonteksLuring(nomor) {
  * gagal - bukan sebagai pendahuluan yang cepat, sebab panel yang lahir tua
  * lalu berganti segar sedetik kemudian terbaca sebagai kedipan.
  */
-async function gambarDariSimpanan(nomor) {
+/**
+ * @param {{menyegarkan?: boolean}} [opsi] menyegarkan berarti panggilan
+ *        sungguhannya MASIH TERBANG - panel ini hanya mendahuluinya supaya
+ *        ada yang terbaca, dan jawaban yang segar akan menggantinya.
+ */
+async function gambarDariSimpanan(nomor, opsi = {}) {
   const simpanan = await ambilKonteksLuring(nomor);
   if (!simpanan) return false;
 
@@ -8778,23 +8806,37 @@ async function gambarDariSimpanan(nomor) {
 
   const panel = susunPanel(simpanan.konteks);
   panel.setAttribute("data-tema", temaSekarang);
-  panel.insertBefore(pitaLuring(simpanan.waktu), panel.firstChild);
+  panel.insertBefore(pitaLuring(simpanan.waktu, opsi.menyegarkan === true), panel.firstChild);
   tampilkan(panel);
   terapkanTemaSipp();
   terapkanPosisi(panel, posisi);
   normalkanJangkar(panel);
   if (posisi && posisi.lencana) ciutkanKeLencana(panel, true);
 
-  mulaiMencobaLagi(nomor);
+  // Yang mendahului panggilan yang MASIH terbang tidak perlu penjadwal
+  // percobaan ulang - jawabannya sedang dalam perjalanan.
+  if (opsi.menyegarkan !== true) mulaiMencobaLagi(nomor);
   return true;
 }
 
 /** Pita yang menyebutkan panel ini dibaca dari simpanan, beserta usianya. */
-function pitaLuring(waktuIso) {
+function pitaLuring(waktuIso, menyegarkan = false) {
   const pita = buatElemen("div", "aleta-pita-luring");
   // usiaData memulangkan { teks, basi }, bukan untai - dibaca sebagai untai
   // ia menjadi [object Object] di tengah kalimat.
   const usia = usiaData(waktuIso).teks;
+
+  // Dua keadaan yang berbeda, dan membedakannya penting: yang satu berkata
+  // "ALETA mati", yang lain "ALETA sedang menjawab, ini dulu sambil
+  // menunggu". Menyebut keduanya "tidak terjangkau" membuat portal yang
+  // hanya berat terbaca sebagai portal yang mati.
+  if (menyegarkan) {
+    pita.classList.add("aleta-pita-luring-segar");
+    pita.textContent = `Menyegarkan dari ALETA — sementara ini keterangan simpanan${usia ? `, ${usia}` : ""}.`;
+    pita.title = "Panel digambar lebih dahulu dari simpanan supaya ada yang terbaca. Begitu jawaban ALETA tiba, panel diperbarui dan menetapkan hidup kembali.";
+    return pita;
+  }
+
   pita.textContent = `ALETA tidak terjangkau — keterangan ini dari simpanan${usia ? `, ${usia}` : ""}. Menetapkan dimatikan sementara.`;
   pita.title = "Usulan penetapan dihitung dari giliran dan beban perkara yang berubah tiap hari, jadi usulan lama tidak boleh dituliskan ke SIPP.";
   return pita;
@@ -8816,18 +8858,44 @@ function pitaLuring(waktuIso) {
 const JEDA_TUNGGU_MASUK = 5000;
 let jamTungguMasuk = null;
 
+/**
+ * ============================================================================
+ * JARAKNYA MUNDUR SENDIRI - LIMA DETIK HANYA UNTUK MENIT PERTAMA
+ * ============================================================================
+ *
+ * Penantian ini dipasang ketika panel berbunyi "Masuk ke ALETA", dan ia
+ * bertahan selama halamannya terbuka. Pada layar yang ditinggal semalam,
+ * jarak tetap lima detik berarti tujuh ribu panggilan ke portal untuk satu
+ * pertanyaan yang jawabannya tidak berubah - dan pada portal yang sedang
+ * berat, tiap satunya ikut memperlambat yang sedang dipakai orang.
+ *
+ * Menit pertama yang paling menentukan: di situlah orang benar-benar sedang
+ * masuk di tab sebelah. Sesudah itu jaraknya melar sampai setengah menit,
+ * dan kembalinya perhatian ke tab ini tetap memicu pemeriksaan SEKETIKA -
+ * lihat periksaSegeraBilaMenunggu.
+ */
+const JEDA_TUNGGU_MAKS = 30000;
+let jedaTungguSekarang = JEDA_TUNGGU_MASUK;
+
 function mulaiMenungguMasuk() {
   if (jamTungguMasuk) return;
-  jamTungguMasuk = setInterval(() => {
-    nomorTerakhir = "";
-    void segarkan();
-  }, JEDA_TUNGGU_MASUK);
+  jedaTungguSekarang = JEDA_TUNGGU_MASUK;
+  const jadwalkan = () => {
+    jamTungguMasuk = setTimeout(() => {
+      nomorTerakhir = "";
+      void segarkan();
+      jedaTungguSekarang = Math.min(Math.round(jedaTungguSekarang * 1.6), JEDA_TUNGGU_MAKS);
+      jadwalkan();
+    }, jedaTungguSekarang);
+  };
+  jadwalkan();
 }
 
 function berhentiMenungguMasuk() {
   if (!jamTungguMasuk) return;
-  clearInterval(jamTungguMasuk);
+  clearTimeout(jamTungguMasuk);
   jamTungguMasuk = null;
+  jedaTungguSekarang = JEDA_TUNGGU_MASUK;
 }
 
 /** Perhatian kembali ke tab ini - saat paling mungkin sesudah orang masuk. */
@@ -8939,6 +9007,24 @@ async function segarkan() {
   // keterangan ALETA tercetak di relas panggilan.
   if (halamanCetakAtauTemplat()) return;
 
+  // ==========================================================================
+  // TAB YANG TIDAK DILIHAT TIDAK MEMANGGIL PORTAL
+  // ==========================================================================
+  //
+  // Petugas membuka SIPP di beberapa tab sekaligus - satu daftar perkara,
+  // beberapa halaman perkara - dan tiap tab memasang pengamat DOM-nya
+  // sendiri. Pada portal yang sedang berat, tab yang tidak dilihat siapa pun
+  // ikut menambah antrean permintaan, dan yang menanggung lambatnya justru
+  // tab yang sedang dipandang.
+  //
+  // Ditunda, bukan dibatalkan: kembalinya perhatian ke tab ini memanggil
+  // segarkan() lagi - lihat pendengar visibilitychange di kaki berkas.
+  if (document.visibilityState === "hidden") {
+    tertundaKarenaTersembunyi = true;
+    return;
+  }
+  tertundaKarenaTersembunyi = false;
+
   catatAsalPortal();
   catatAkunSipp();
 
@@ -8993,12 +9079,45 @@ async function segarkan() {
 
   sedangAmbil = true;
   try {
-    // Same-origin: cookie sesi portal ikut sendiri, tanpa CORS dan tanpa
-    // menyimpan kredensial apa pun di ekstensi.
-    const respons = await fetch(`${ALETA_API}?nomor=${encodeURIComponent(nomor)}`, {
-      credentials: "include",
-      cache: "no-store",
-    });
+    // ======================================================================
+    // PANEL TIDAK MENUNGGU PORTAL YANG BERAT
+    // ======================================================================
+    //
+    // Panggilan ini menahan SELURUH panel: sampai ia menjawab, tidak ada
+    // apa pun yang tergambar. Pada portal yang sedang berat itu berarti
+    // halaman perkara SIPP terbuka tanpa panel selama beberapa detik, dan
+    // yang melihatnya menyimpulkan ekstensinya tidak jalan.
+    //
+    // Sekarang ia diberi PENDAHULU: bila belum menjawab dalam jeda pendek
+    // dan perkara ini pernah terbaca sebelumnya, panelnya digambar dari
+    // simpanan dengan pita yang menyebutkan ia sedang disegarkan. Begitu
+    // jawaban yang segar tiba, panel digambar ulang.
+    //
+    // Portal yang cepat tidak pernah melihat pendahulu ini sama sekali -
+    // jawabannya menang balapan, dan tidak ada satu kedipan pun.
+    const pendahulu = setTimeout(() => {
+      void gambarDariSimpanan(nomor, { menyegarkan: true });
+    }, JEDA_PENDAHULU_MS);
+
+    // Batas waktu supaya panggilan yang menggantung tidak menahan
+    // sedangAmbil selamanya - selama ia menahan, tidak ada penyegaran
+    // berikutnya yang boleh berjalan sama sekali.
+    const pembatal = new AbortController();
+    const batasKonteks = setTimeout(() => pembatal.abort(), BATAS_KONTEKS_MS);
+
+    let respons;
+    try {
+      // Same-origin: cookie sesi portal ikut sendiri, tanpa CORS dan tanpa
+      // menyimpan kredensial apa pun di ekstensi.
+      respons = await fetch(`${ALETA_API}?nomor=${encodeURIComponent(nomor)}`, {
+        credentials: "include",
+        cache: "no-store",
+        signal: pembatal.signal,
+      });
+    } finally {
+      clearTimeout(pendahulu);
+      clearTimeout(batasKonteks);
+    }
 
     if (respons.status === 401) {
       nomorTerakhir = nomor;

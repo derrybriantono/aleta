@@ -36,17 +36,43 @@ interface Alat {
  * fetch disuntikkan sebagai parameter supaya kegagalan sambungan dapat
  * dipalsukan tanpa menyentuh fetch global milik proses uji.
  */
+/**
+ * Dipotong PER NAMA, bukan dengan rentang bita.
+ *
+ * Pemotong lamanya mengambil dari "function alatSebabGagal(" sampai satu
+ * untai penutup yang kebetulan ada di ujung alatAmbil. Begitu alatAmbil
+ * tumbuh - batas waktu, penyatuan, percobaan kedua - potongannya meleset dan
+ * SELURUH berkas uji ini gagal dimuat, bukan satu penjaga pun berbunyi.
+ */
+function potongFungsi(isi: string, nama: string): string {
+  const baris = isi.split("\n");
+  const mulai = baris.findIndex((b) => new RegExp(`^(?:async )?function ${nama}\\(`).test(b));
+  if (mulai < 0) throw new Error(`fungsi ${nama} tidak ketemu di panel-alat.js`);
+  let j = mulai;
+  while (j < baris.length && baris[j] !== "}") j += 1;
+  return baris.slice(mulai, j + 1).join("\n");
+}
+
 function ambilAlat(fetchPalsu: unknown): Alat {
   const isi = readFileSync(berkasAlat, "utf8").replace(/\r\n/g, "\n");
-  const a = isi.indexOf("function alatSebabGagal(");
-  const penutup = "throw new Error(alatPesanGagal(galat, 0, yangDiminta));\n  }\n}";
-  const b = isi.indexOf(penutup, a);
-  if (a < 0 || b < 0) throw new Error("ketiga fungsi tidak ditemukan di panel-alat.js");
-  const sumber = isi.slice(a, b + penutup.length);
+  const sumber = [
+    potongFungsi(isi, "alatSebabGagal"),
+    potongFungsi(isi, "alatPesanGagal"),
+    potongFungsi(isi, "alatKunciPermintaan"),
+    potongFungsi(isi, "alatSekaliAmbil"),
+    potongFungsi(isi, "alatCatatKecepatan"),
+    potongFungsi(isi, "alatAmbil"),
+  ].join("\n\n");
 
   const buat = new Function(
     "fetch",
-    `${sumber}\nreturn { alatSebabGagal, alatPesanGagal, alatAmbil };`
+    `const ALAT_BATAS_MS = 9000;
+     const ALAT_AMBANG_LAMBAT_MS = 2500;
+     const ALAT_JEDA_ULANG_MS = 1;
+     const alatTerbang = new Map();
+     const alatKeadaanPortal = { lambat: false, terakhirMs: 0, gagalBerturut: 0 };
+     ${sumber}
+     return { alatSebabGagal, alatPesanGagal, alatAmbil };`
   ) as (f: unknown) => Alat;
   return buat(fetchPalsu);
 }
@@ -143,11 +169,47 @@ describe("alatAmbil menyalin kalimat itu ke tiap pemanggil", () => {
     // alatAmbil BUKAN penjaga status. Yang ditangkapnya hanya permintaan yang
     // tidak pernah sampai - status diperiksa pemanggilnya, yang tahu arti
     // 403 pada rutenya sendiri.
-    const alatLain = ambilAlat(() => Promise.resolve({ ok: false, status: 500 }));
+    //
+    // Sejak 1.111.0 bacaan yang dijawab 5xx diulang SEKALI sebelum diteruskan
+    // - portal yang sedang dibangun ulang menjawab 502 sekejap lalu hidup
+    // lagi. Yang diteruskan tetap jawaban apa adanya, hanya jawaban percobaan
+    // kedua. Jawabannya juga DISALIN untuk tiap pemanggil, sebab badan
+    // Response hanya dapat dibaca sekali.
+    let panggilan = 0;
+    const jawabanPalsu = (status: number) => ({
+      ok: status < 400,
+      status,
+      clone: () => jawabanPalsu(status),
+    });
+    const alatLain = ambilAlat(() => {
+      panggilan += 1;
+      return Promise.resolve(jawabanPalsu(500));
+    });
     const jawab = (await alatLain.alatAmbil("/aleta/api/apa-pun", {}, "Uji")) as {
       status: number;
     };
     expect(jawab.status).toBe(500);
+    expect(panggilan).toBe(2);
+  });
+
+  it("jawaban 4xx TIDAK diulang - ia jawaban yang sah, bukan kegagalan", async () => {
+    // 403 pada portal berarti perannya tidak berwenang. Mengulangnya hanya
+    // menanyakan hal yang sama kepada portal yang sudah menjawab dengan jelas.
+    let panggilan = 0;
+    const jawabanPalsu = (status: number) => ({
+      ok: status < 400,
+      status,
+      clone: () => jawabanPalsu(status),
+    });
+    const alatLain = ambilAlat(() => {
+      panggilan += 1;
+      return Promise.resolve(jawabanPalsu(403));
+    });
+    const jawab = (await alatLain.alatAmbil("/aleta/api/apa-pun", {}, "Uji")) as {
+      status: number;
+    };
+    expect(jawab.status).toBe(403);
+    expect(panggilan).toBe(1);
   });
 });
 

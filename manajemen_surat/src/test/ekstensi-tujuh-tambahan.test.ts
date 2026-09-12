@@ -175,15 +175,27 @@ describe("panel luring", () => {
     expect(potongFungsi(isi, "ambilKonteksLuring")).toContain("umur > UMUR_SIMPANAN_MAKS");
   });
 
-  it("dipakai HANYA ketika panggilan sungguhan gagal", () => {
-    // Panel yang lahir tua lalu berganti segar sedetik kemudian terbaca sebagai
-    // kedipan, bukan sebagai tema.
+  it("dipakai ketika panggilan sungguhan gagal, DAN sebagai pendahulu", () => {
+    // Sejak 1.111.0 ada dua jalan, dan keduanya disengaja:
+    //
+    //   PENDAHULU  panggilannya masih terbang tetapi sudah lewat 400 ms -
+    //              panel digambar dari simpanan supaya ada yang terbaca,
+    //              dengan pita yang menyebutkan ia sedang disegarkan.
+    //   CADANGAN   panggilannya gagal - panel digambar dari simpanan dengan
+    //              pita yang menyebutkan ALETA tidak terjangkau.
+    //
+    // Yang TIDAK berubah: keduanya mematikan kewenangan menulis sampai
+    // jawaban yang segar tiba.
     const isi = konten();
     const segarkan = potongFungsi(isi, "segarkan");
+    expect(segarkan).toContain("gambarDariSimpanan(nomor, { menyegarkan: true })");
     expect(segarkan).toContain("await gambarDariSimpanan(nomor)");
-    expect(segarkan.indexOf("gambarDariSimpanan")).toBeGreaterThan(
+    // Cadangannya tetap SESUDAH pemeriksaan jawabannya.
+    expect(segarkan.indexOf("await gambarDariSimpanan(nomor)")).toBeGreaterThan(
       segarkan.indexOf("if (!respons.ok)")
     );
+    // Dan keduanya sama-sama mematikan tulis - lihat gambarDariSimpanan.
+    expect(potongFungsi(isi, "gambarDariSimpanan")).toContain("sedangLuring = true;");
   });
 
   it("mencoba lagi sendiri, dan berhenti begitu jawabannya datang", () => {

@@ -853,6 +853,12 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
 /** Sebab yang dapat dibedakan dari satu kegagalan permintaan. */
 function alatSebabGagal(galat, status) {
   if (status === 401 || status === 403) return "masuk";
+
+  // Permintaan yang dihentikan sendiri karena melewati batas waktu. Dulu ia
+  // jatuh ke "lain" dan berbunyi sebagai galat yang tidak dikenali, padahal
+  // ia keadaan yang paling sering: portal hidup tetapi terlalu lambat.
+  if (galat && galat.name === "AbortError") return "lambat";
+
   if (status === 502 || status === 503 || status === 504) return "mati";
   if (typeof status === "number" && status >= 500) return "mati";
   if (typeof status === "number" && status > 0) return "jawaban";
@@ -874,6 +880,13 @@ function alatSebabGagal(galat, status) {
  */
 function alatPesanGagal(galat, status, yangDiminta) {
   const sebab = alatSebabGagal(galat, status);
+  if (sebab === "lambat") {
+    return (
+      `${yangDiminta || "Permintaan"} dihentikan karena ALETA tidak menjawab dalam ` +
+      `${Math.round(ALAT_BATAS_MS / 1000)} detik. Panel dan penanda SIPP tetap berjalan; ` +
+      "coba lagi sebentar lagi."
+    );
+  }
   const pekerjaan = yangDiminta ? `${yangDiminta} gagal` : "Permintaan gagal";
 
   if (sebab === "masuk") {
@@ -936,12 +949,130 @@ function alatPesanGagal(galat, status, yangDiminta) {
  * kosong. Angkanya dijaga uji ekstensi-pesan-gagal, supaya permintaan BARU
  * yang mentah memaksa penulisnya memilih dengan sadar - bukan lolos diam-diam.
  */
-async function alatAmbil(alamat, opsi, yangDiminta) {
+/**
+ * ============================================================================
+ * BATAS WAKTU, PENYATUAN, DAN SATU PERCOBAAN KEDUA
+ * ============================================================================
+ *
+ * Tiga hal yang membuat panel terasa menggantung ketika portal sedang berat,
+ * dan ketiganya tidak menghilangkan satu pun kemampuan:
+ *
+ *   BATAS WAKTU  fetch tanpa batas menggantung sampai peramban menyerah
+ *                sendiri - pada Chrome itu bermenit-menit. Selama itu
+ *                bagian panel tetap bertulis "memuat..." tanpa satu pun
+ *                keterangan, dan yang membacanya menyimpulkan ekstensinya
+ *                rusak. Sembilan detik: cukup untuk jaringan kantor yang
+ *                lambat, terlalu singkat untuk terasa sebagai panel macet.
+ *
+ *   PENYATUAN    halaman SIPP mengubah DOM-nya terus-menerus, dan beberapa
+ *                bagian panel meminta alamat yang SAMA dalam hitungan
+ *                milidetik. Permintaan yang sedang terbang dipakai bersama,
+ *                bukan diulang - jawabannya disalin untuk tiap peminta.
+ *
+ *   PERCOBAAN    satu kedipan jaringan tidak lagi berakhir sebagai pesan
+ *   KEDUA        galat. Diulang sekali, sesudah jeda pendek.
+ *
+ * ============================================================================
+ * HANYA BACAAN YANG DISATUKAN DAN DIULANG
+ * ============================================================================
+ *
+ * Ini pagar yang menentukan. Permintaan yang MENULIS - menetapkan,
+ * membongkar, mengesahkan - tidak pernah disatukan dan tidak pernah diulang:
+ * dua penetapan yang kebetulan beralamat sama bukan satu penetapan, dan
+ * permintaan tulis yang diulang sesudah jawabannya hilang di jalan akan
+ * menuliskannya DUA KALI ke dalam berkas perkara yang sungguhan.
+ *
+ * Yang dipakai sebagai pembeda method-nya: tanpa method berarti GET, dan
+ * hanya GET yang boleh disatukan maupun diulang.
+ */
+const ALAT_BATAS_MS = 9000;
+/** Jawaban yang lebih lama dari ini dicatat sebagai portal yang sedang berat. */
+const ALAT_AMBANG_LAMBAT_MS = 2500;
+const ALAT_JEDA_ULANG_MS = 400;
+
+/** Permintaan bacaan yang sedang terbang, menurut alamatnya. */
+const alatTerbang = new Map();
+
+/** Keadaan portal menurut permintaan terakhir - dibaca panel bila perlu. */
+const alatKeadaanPortal = { lambat: false, terakhirMs: 0, gagalBerturut: 0 };
+
+function alatCatatKecepatan(lamaMs, berhasil) {
+  alatKeadaanPortal.terakhirMs = lamaMs;
+  alatKeadaanPortal.lambat = berhasil && lamaMs > ALAT_AMBANG_LAMBAT_MS;
+  alatKeadaanPortal.gagalBerturut = berhasil ? 0 : alatKeadaanPortal.gagalBerturut + 1;
+}
+
+/** Kunci penyatuan - kosong berarti tidak boleh disatukan maupun diulang. */
+function alatKunciPermintaan(alamat, opsi) {
+  const cara = String((opsi && opsi.method) || "GET").toUpperCase();
+  if (cara !== "GET") return "";
+  return `GET ${alamat}`;
+}
+
+async function alatSekaliAmbil(alamat, opsi) {
+  const pembatal = new AbortController();
+  const jam = setTimeout(() => pembatal.abort(), ALAT_BATAS_MS);
   try {
-    return await fetch(alamat, opsi);
-  } catch (galat) {
-    throw new Error(alatPesanGagal(galat, 0, yangDiminta));
+    return await fetch(alamat, { ...(opsi || {}), signal: pembatal.signal });
+  } finally {
+    clearTimeout(jam);
   }
+}
+
+async function alatAmbil(alamat, opsi, yangDiminta) {
+  const kunci = alatKunciPermintaan(alamat, opsi);
+
+  // Jawaban DISALIN untuk tiap peminta. Badan Response hanya dapat dibaca
+  // sekali, dan dua bagian panel yang berbagi satu Response akan membuat
+  // yang kedua menerima "body already read" - galat yang tidak ada
+  // hubungannya dengan apa pun yang dikerjakannya.
+  if (kunci && alatTerbang.has(kunci)) {
+    return (await alatTerbang.get(kunci)).clone();
+  }
+
+  const kerja = (async () => {
+    const mulai = Date.now();
+    try {
+      const respons = await alatSekaliAmbil(alamat, opsi);
+
+      // 5xx pada BACAAN diulang sekali - portal yang sedang dibangun ulang
+      // menjawab 502 sekejap, lalu hidup lagi.
+      if (kunci && respons.status >= 500) {
+        await new Promise((r) => setTimeout(r, ALAT_JEDA_ULANG_MS));
+        const lagi = await alatSekaliAmbil(alamat, opsi);
+        alatCatatKecepatan(Date.now() - mulai, true);
+        return lagi;
+      }
+
+      alatCatatKecepatan(Date.now() - mulai, true);
+      return respons;
+    } catch (galat) {
+      // Batas waktu TIDAK diulang: yang sudah menunggu sembilan detik tidak
+      // ditolong dengan menunggu sembilan detik lagi.
+      if (kunci && galat && galat.name !== "AbortError") {
+        try {
+          await new Promise((r) => setTimeout(r, ALAT_JEDA_ULANG_MS));
+          const lagi = await alatSekaliAmbil(alamat, opsi);
+          alatCatatKecepatan(Date.now() - mulai, true);
+          return lagi;
+        } catch (galatKedua) {
+          alatCatatKecepatan(Date.now() - mulai, false);
+          throw new Error(alatPesanGagal(galatKedua, 0, yangDiminta));
+        }
+      }
+      alatCatatKecepatan(Date.now() - mulai, false);
+      throw new Error(alatPesanGagal(galat, 0, yangDiminta));
+    }
+  })();
+
+  if (!kunci) return kerja;
+
+  alatTerbang.set(kunci, kerja);
+  // Kegagalannya ditelan DI SINI saja - supaya penghapusan kuncinya tetap
+  // berjalan tanpa meninggalkan penolakan yang tidak tertangani. Penolakan
+  // yang sesungguhnya tetap sampai ke pemanggil lewat await di bawah.
+  void kerja.catch(() => {}).finally(() => alatTerbang.delete(kunci));
+  return (await kerja).clone();
 }
 
 /**

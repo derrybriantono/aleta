@@ -42,6 +42,22 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.111.0",
+    dirilis: "2026-09-12T21:20:00+08:00",
+    judul: "Hubungan ke portal dibuat tahan lambat - panel tidak lagi menggantung ketika ALETA berat",
+    butir: [
+      "BATAS WAKTU pada tiap permintaan panel. Sebelumnya tidak ada satu pun: fetch yang menggantung menunggu sampai peramban menyerah sendiri - pada Chrome itu bermenit-menit - dan selama itu bagian panel tetap bertulis 'memuat...' tanpa satu pun keterangan. Yang membacanya menyimpulkan ekstensinya rusak. Sembilan detik untuk permintaan panel, dua belas detik untuk panggilan konteks yang memang paling berat. Batas waktu yang lewat kini punya kalimatnya sendiri, bukan lagi jatuh sebagai galat yang tidak dikenali.",
+      "PANEL TIDAK MENUNGGU portal yang berat. Panggilan konteks menahan SELURUH panel - sampai ia menjawab, tidak ada apa pun yang tergambar, dan pada halaman perkara SIPP itu berarti beberapa detik tanpa panel sama sekali. Sekarang bila ia belum menjawab dalam 400 milidetik dan perkara itu pernah terbaca sebelumnya, panelnya digambar dari simpanan dengan pita yang menyebutkan ia sedang disegarkan; begitu jawaban yang segar tiba, panel digambar ulang. Portal yang cepat tidak pernah melihat pendahulu ini sama sekali - jawabannya menang balapan, dan tidak ada satu kedipan pun.",
+      "Pitanya dibedakan nadanya dari pita luring. Yang satu berkata ALETA mati, yang lain ALETA sedang menjawab - menyamakan keduanya membuat portal yang hanya berat terbaca sebagai portal yang mati, dan yang membacanya berhenti menunggu padahal jawabannya sedang datang.",
+      "PERMINTAAN YANG SAMA DISATUKAN. Halaman SIPP mengubah DOM-nya terus-menerus, dan beberapa bagian panel meminta alamat yang sama dalam hitungan milidetik. Yang sedang terbang kini dipakai bersama, bukan diulang - jawabannya disalin untuk tiap peminta.",
+      "SATU PERCOBAAN KEDUA untuk bacaan yang gagal jaringan atau dijawab 5xx: portal yang sedang dibangun ulang menjawab 502 sekejap, lalu hidup lagi, dan satu kedipan tidak lagi berakhir sebagai pesan galat.",
+      "Penyatuan dan percobaan kedua HANYA untuk bacaan, dan itu pagar yang tidak boleh bocor: dua penetapan yang kebetulan beralamat sama bukan satu penetapan, dan permintaan tulis yang diulang sesudah jawabannya hilang di jalan akan menuliskannya DUA KALI ke dalam berkas perkara yang sungguhan. Dijaga uji yang menjalankan lapisannya atas fetch palsu dan menghitung panggilan yang benar-benar terjadi.",
+      "TAB YANG TIDAK DILIHAT tidak memanggil portal. Petugas membuka SIPP di beberapa tab sekaligus, dan tiap tab memasang pengamatnya sendiri; pada portal yang berat, tab yang tidak dipandang siapa pun ikut menambah antrean - dan yang menanggung lambatnya justru tab yang sedang dipakai. Ditunda, bukan dibatalkan: kembalinya perhatian ke tab itu mengerjakannya seketika.",
+      "Penunggu 'Masuk ke ALETA' mundur jaraknya sendiri, lima detik sampai setengah menit. Pada layar yang ditinggal semalam, jarak tetap lima detik berarti tujuh ribu panggilan untuk satu pertanyaan yang jawabannya tidak berubah.",
+      "Seluruhnya berlaku di ketiga panel - SIPP, ABT, dan halaman ALETA - sebab ketiganya memakai lapisan permintaan yang sama. Tidak ada satu pun kemampuan yang dikurangi.",
+    ],
+  },
+  {
     versi: "1.110.0",
     dirilis: "2026-09-12T20:15:00+08:00",
     judul: "Nomor perkara di halaman daftar tidak lagi membawa angka urutnya",
