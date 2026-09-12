@@ -212,6 +212,28 @@
         return { ok: true, terbaca: elemen.value, catatan: "ckeditor_tidak_ada" };
       }
 
+      // Radio dan kotak centang tidak diisi dengan menyetel value - itu hanya
+      // mengubah nilai yang DIKIRIMKAN kotak itu, bukan memilihnya. Yang benar
+      // adalah menemukan anggota kelompok yang nilainya cocok lalu
+      // mencentangnya. Tanpa cabang ini, "nusyuz" pada borang putusan tampak
+      // terisi sementara yang tersimpan tetap kosong.
+      if (elemen.tagName.toLowerCase() === "input" && (elemen.type === "radio" || elemen.type === "checkbox")) {
+        const nama = elemen.getAttribute("name") || "";
+        const sekelompok = nama
+          ? Array.from(document.querySelectorAll(`input[name="${CSS.escape(nama)}"]`))
+          : [elemen];
+        const cocok =
+          sekelompok.find((kotak) => String(kotak.value) === teks) ||
+          sekelompok.find(
+            (kotak) => (labelMedan(kotak) || "").trim().toLowerCase() === teks.trim().toLowerCase()
+          );
+        if (!cocok) return { ok: false, alasan: "pilihan_tidak_ada", penunjuk, diminta: teks };
+        cocok.checked = true;
+        lepasPeristiwa(cocok);
+        const terpilih = sekelompok.find((kotak) => kotak.checked);
+        return { ok: true, terbaca: terpilih ? terpilih.value : "" };
+      }
+
       if (jenis === "pilih" || elemen.tagName.toLowerCase() === "select") {
         // Dicocokkan dengan nilai option lebih dulu, lalu dengan tulisannya.
         // SIPP kerap memakai id sebagai nilai dan nama orang sebagai tulisan,

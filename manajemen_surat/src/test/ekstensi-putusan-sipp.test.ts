@@ -101,9 +101,33 @@ describe("mengisi borang putusan SIPP", () => {
     // berarti menyimpang diam-diam pada hari SIPP mengubahnya.
     expect(konten).toContain('jenis: "pilihan"');
     expect(konten).toContain("jawabPilihan.tampak");
-    expect(konten).toContain('{ penunjuk: "#faktor_cerai"');
-    expect(konten).toContain('{ penunjuk: "#alasan_dispen"');
-    expect(konten).toContain('{ penunjuk: "#keadaan_istri"');
+    expect(konten).toContain('select[name="faktor_cerai"]');
+    expect(konten).toContain('select[name="alasan_dispen"]');
+    expect(konten).toContain('select[name="keadaan_istri"]');
+  });
+
+  it("medannya ditunjuk lewat NAMA, bukan id - sebab id di borang itu kembar", () => {
+    // Pada borang Putusan Akhir SIPP, select "status_reskom" memakai
+    // id="faktor_cerai" - sama dengan select faktor perceraian.
+    // querySelector("#faktor_cerai") memulangkan yang mana pun yang lebih dulu
+    // di dokumen, dan pada hari urutannya berubah, faktor perceraian terisi
+    // hasil reskom tanpa satu pun tanda.
+    const bagian = konten.slice(
+      konten.indexOf("const CALON_MEDAN"),
+      konten.indexOf("const medanTampak")
+    );
+    expect(bagian).not.toMatch(/penunjuk:\s*"#/);
+    expect(bagian).toContain('select[name="status_reskom"]');
+  });
+
+  it("radio nusyuz ikut ditawarkan, dan jembatan dapat mencentangnya", () => {
+    // Radio tidak diisi dengan menyetel value - itu hanya mengubah nilai yang
+    // dikirimkan kotaknya. Tanpa cabang khusus, nusyuz tampak terisi
+    // sementara yang tersimpan tetap kosong.
+    expect(konten).toContain('input[name="status_nusyuz"]');
+    const jembatan = baca("jembatan.js");
+    expect(jembatan).toContain('elemen.type === "radio"');
+    expect(jembatan).toContain("cocok.checked = true");
   });
 
   it("usulan yang berselisih tidak dicentang sendiri", () => {

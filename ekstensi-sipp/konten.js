@@ -2924,14 +2924,24 @@ function bagianIsiPutusan(nomorPerkara) {
     // lalu meminta ALETA memilih satu berdasarkan bunyi putusan. Medan yang
     // disembunyikan SIPP tidak pernah ditawarkan, dan itu sebabnya panel ini
     // tidak perlu tahu satu pun nomor jenis perkara.
+    //
+    // Penunjuknya berbasis NAMA, bukan id, dan itu bukan selera. Pada borang
+    // SIPP yang ini, select "status_reskom" memakai id="faktor_cerai" - id
+    // yang sama dengan select faktor perceraian. querySelector("#faktor_cerai")
+    // memulangkan yang mana pun yang lebih dulu di dokumen, dan pada hari
+    // urutannya berubah, faktor perceraian akan terisi dengan hasil reskom
+    // tanpa satu pun tanda. Nama medan tidak kembar, dan namanya pula yang
+    // dikirim ke peladen.
     const CALON_MEDAN = [
-      { penunjuk: "#faktor_cerai", label: "Faktor Penyebab Perceraian" },
-      { penunjuk: "#faktor_cerai_sekunder", label: "Faktor Penyebab Perceraian (Sekunder)" },
-      { penunjuk: "#keadaan_istri", label: "Keadaan Istri" },
-      { penunjuk: "#qobla", label: "Qobla/Ba'da Dukhul" },
-      { penunjuk: "#alasan_dispen", label: "Alasan Pengajuan Dispensasi Kawin" },
-      { penunjuk: "#akad_syariah_primer", label: "Jenis Akad Syariah" },
-      { penunjuk: "#status_reskom", label: "Hasil Restorative Justice/Reskom" },
+      { penunjuk: 'select[name="faktor_cerai"]', label: "Faktor Penyebab Perceraian" },
+      { penunjuk: 'select[name="faktor_cerai_sekunder"]', label: "Faktor Penyebab Perceraian (Sekunder)" },
+      { penunjuk: 'input[name="status_nusyuz"]', label: "Status Nusyuz" },
+      { penunjuk: 'select[name="qobla"]', label: "Qobla/Ba'da Dukhul" },
+      { penunjuk: 'select[name="keadaan_istri"]', label: "Keadaan Istri" },
+      { penunjuk: 'select[name="alasan_dispen"]', label: "Alasan Pengajuan Dispensasi Kawin" },
+      { penunjuk: 'select[name="akad_syariah_primer"]', label: "Jenis Akad Syariah" },
+      { penunjuk: 'select[name="status_reskom"]', label: "Hasil Reskom" },
+      { penunjuk: 'select[name="pengakhiran_id"]', label: "Jenis Pengakhiran" },
     ];
 
     const medanTampak = [];
