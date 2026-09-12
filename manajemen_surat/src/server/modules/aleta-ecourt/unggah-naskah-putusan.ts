@@ -143,10 +143,24 @@ export async function unggahNaskahPutusan(
     return { ok: false, sebab: SEBAB_BENTUK[bentuk] };
   }
 
-  const teks =
+  const teks = (
     bentuk === "rtf"
       ? bacaRtfDariBita(masukan.bita)
-      : new TextDecoder("utf-8").decode(masukan.bita).replace(/\r\n/g, "\n").trim();
+      : new TextDecoder("utf-8").decode(masukan.bita).replace(/\r\n/g, "\n").trim()
+  )
+    // ========================================================================
+    // U+0000 TIDAK BOLEH SAMPAI KE POSTGRES - DARI JALUR MANA PUN
+    // ========================================================================
+    //
+    // Kolom naskah bertipe text, dan Postgres menolak NUL di dalamnya dengan
+    // 'invalid byte sequence for encoding "UTF8": 0x00'. Yang terjadi lalu:
+    // rute menjawab 500, panel menerjemahkannya "server ALETA tidak
+    // terjangkau", dan petugas memeriksa jaringan yang tidak ada salahnya.
+    // Terjadi pada 204/Pdt.P/2026 dan 180/Pdt.P/2026 - NUL-nya dari definisi
+    // daftar Word di dalam RTF. Pembaca RTF kini membuangnya di sumbernya;
+    // baris ini menjaga jalur teks biasa, dan menjaga bila kelak pembaca lain
+    // meloloskannya lagi.
+    .replace(/\u0000/g, "");
 
   if (!teks) return { ok: false, sebab: "Tidak ada teks yang dapat dibaca dari berkas ini." };
 

@@ -83,6 +83,11 @@ function tanpaRuang(teks) {
   return String(teks || "")
     .replace(/<br\s*\/?>/gi, "")
     .replace(/<\/?div[^>]*>/gi, "")
+    // <p> ikut dibuang sejak perapian memakainya sebagai pemisah butir - lihat
+    // paragrafkanButir. Tanpa baris ini pagar isinya menolak perapiannya
+    // sendiri: teks yang semula tanpa tag menjadi bertag, dan perbandingannya
+    // berselisih walau tidak satu huruf gugatan pun berubah.
+    .replace(/<\/?p[^>]*>/gi, "")
     .replace(/[\s ]+/g, "");
 }
 
@@ -317,6 +322,85 @@ function periksaPosita(teks) {
 /** Tanda baca yang boleh mendahului penanda butir. */
 const SEBELUM_BUTIR = ".;:,)";
 
+/**
+ * ============================================================================
+ * <p> PER BUTIR - SEBAB <br> TIDAK PERNAH SAMPAI KE DOKUMEN CETAK SIPP
+ * ============================================================================
+ *
+ * Dibaca dari sumber SIPP di mesin ini, bukan disimpulkan dari tampilannya:
+ *
+ *   application/views/generate_template/cetak_putusan_agama.php baris 440
+ *     #petitum# -> $this->templatehelper->cleanHtmlTagSpecial($petitum)
+ *
+ *   application/libraries/TemplateHelper.php, cleanHtmlTagSpecial:
+ *     "  "      -> " "                                  (dua spasi jadi satu)
+ *     "</li>"   -> "</li> \par "
+ *     "<li>"    -> "<li> \tab "
+ *     "</p>"    -> "\par"
+ *     "<p>1."   -> "\pard \qj \li630 \linestarts 1. "
+ *     lalu filter_var(FILTER_SANITIZE_STRING) MENYAPU seluruh tag yang tersisa
+ *
+ * Tiga akibatnya, dan ketiganya terbaca pada dokumen yang dilaporkan:
+ *
+ *   1. <br> TIDAK ada dalam daftar itu. Ia hanya disapu - tanpa meninggalkan
+ *      satu pun pemisah. Posita yang dirapikan dengan <br> karena itu tetap
+ *      tercetak menggumpal di putusan yang dicetak SIPP.
+ *   2. Lekukan tiga spasi tidak menjadi \tab di sini (aturan itu milik ABT).
+ *      Dua spasinya malah runtuh menjadi satu, sehingga anak butir hanya
+ *      bergeser satu huruf - persis yang terlihat pada "a. Tergugat".
+ *   3. Butir pertama yang berbentuk PERSIS "<p>1." menyalakan \li630 - lekukan
+ *      seluruh blok, 630 twip. Sifat paragraf RTF bertahan melewati \par,
+ *      jadi satu pemicu di awal melekukkan seluruh daftar positanya. Itulah
+ *      sebabnya 6.269 posita yang memakai <p> tercetak rapi selama ini, dan
+ *      yang memakai <br> tidak.
+ *
+ * Maka pemisahnya sekarang <p>...</p>:
+ *
+ *   - SIPP  : </p> -> \par, dan "<p>1." menyalakan lekukan seluruh blok
+ *   - ABT   : </p> -> \par juga (lihat catatan di kepala berkas ini)
+ *
+ * <br> hanya dimengerti salah satunya; <p> dimengerti keduanya.
+ *
+ * Anak butir diberi tiga spasi tambahan. Di ABT tiga spasi menjadi \tab,
+ * sehingga ia menggantung di bawah induknya. Di SIPP spasi itu runtuh, tetapi
+ * \li630 sudah melekukkan seluruh blok - anak butirnya tetap terbaca sebagai
+ * anak sebab penanda hurufnya, bukan sebab lekukannya.
+ *
+ * TIDAK dipakai <li>, walau ia satu-satunya yang menghasilkan \tab di SIPP:
+ * ABT tidak menerjemahkannya, dan di sana ia akan disapu tanpa meninggalkan
+ * \par - anak butirnya menempel ke butir berikutnya. Menukar cacat di satu
+ * mesin dengan cacat di mesin lain bukan perbaikan.
+ */
+
+/** Penanda butir di awal paragraf: "12. " atau "b. ", selalu diikuti huruf besar. */
+const POLA_PENANDA = /^(\d{1,2}|[a-z])\.[ \t]+(?=[A-Z])/;
+
+function paragrafkanButir(teks) {
+  const isi = String(teks || "");
+  if (!isi.trim()) return isi;
+
+  // Sudah berparagraf? Jangan disusun ulang - yang dikerjakan hanya
+  // memastikan butir pertamanya berbentuk "<p>1." supaya \li630 menyala.
+  // Menyusun ulang HTML yang sudah rapi berarti mempertaruhkan 6.269 posita
+  // yang selama ini tercetak benar demi satu yang tidak.
+  if (/<p[ >]/i.test(isi)) return isi.replace(/^<p[^>]*>[ \t]*(?=\d{1,2}\.[ \t])/i, "<p>");
+
+  const potongan = isi
+    .split(/<br\s*\/?>/gi)
+    .map((satu) => satu.trim())
+    .filter(Boolean);
+  if (potongan.length === 0) return isi;
+
+  return potongan
+    .map((satu) => {
+      const penanda = POLA_PENANDA.exec(satu);
+      // Anak butir - hurufnya, bukan angkanya - digeser satu lekukan.
+      const anak = penanda && /^[a-z]/.test(penanda[1]);
+      return `<p>${anak ? "   " : ""}${satu}</p>`;
+    })
+    .join("");
+}
+
 function rapikanTeksPosita(teks) {
   let hasil = String(teks || "").replace(/\r\n/g, "\n");
 
@@ -393,7 +477,12 @@ function rapikanTeksPosita(teks) {
   hasil = hasil.replace(/<br\s*\/?>\s*(<p[^>]*>)/gi, "$1");
 
   // Pemisah di ujung tidak memisahkan apa pun.
-  return hasil.replace(/^(?:\s|<br\s*\/?>)+/i, "").replace(/(?:\s|<br\s*\/?>)+$/i, "");
+  hasil = hasil.replace(/^(?:\s|<br\s*\/?>)+/i, "").replace(/(?:\s|<br\s*\/?>)+$/i, "");
+
+  // Baru di sini <br> menjadi <p> per butir - sesudah seluruh pemecahan
+  // selesai, sehingga pemecahnya tetap satu bentuk sepanjang pengerjaan dan
+  // hanya bentuk AKHIRNYA yang berubah. Lihat paragrafkanButir.
+  return paragrafkanButir(hasil);
 }
 
 /**

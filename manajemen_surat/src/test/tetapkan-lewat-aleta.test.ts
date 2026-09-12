@@ -184,14 +184,18 @@ describe("penyambungan tombol ke mesin tulis", () => {
     expect(konten).toContain("if (!rencanaSudahDibaca && hasil.ok)");
   });
 
-  it("berhenti pada kegagalan pertama, dan menyebut yang tidak dilanjutkan", () => {
-    expect(konten).toContain("if (!berhasil) break;");
+  it("berhenti pada kegagalan SUNGGUHAN, dan menyebut yang tidak dilanjutkan", () => {
+    // Sejak 1.123.0 langkah yang SUDAH ADA dilewati dan rantainya berjalan
+    // terus; yang memutus hanya kegagalan yang sungguhan. Lihat
+    // ekstensi-penetapan-lanjut.test.ts untuk penjaga lengkapnya.
+    expect(konten).toContain("if (/_sudah_ada$/.test(kode)) {");
+    expect(konten).not.toContain("if (!berhasil) break;");
     expect(konten).toContain("Tidak dilanjutkan:");
   });
 
   it("sesudah menulis, tombolnya tidak dihidupkan lagi", () => {
     // Menekan kedua kalinya akan menuliskan penetapan yang sama dua kali.
-    expect(konten).toContain('hasil.ok ? "Sudah ditetapkan" : "Berhenti - periksa sebabnya"');
+    expect(konten).toContain('hasil.ok ? "Penetapan selesai" : "Berhenti - periksa sebabnya"');
   });
 
   it("penolakan lama sudah tidak ada", () => {

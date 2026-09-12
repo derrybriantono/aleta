@@ -176,7 +176,20 @@ export function paragrafButir(teks: string): string {
     .replace(/\r\n/g, "\n")
     .split("\n")
     .map((satu) => satu.trim())
-    .filter(Boolean);
+    // ========================================================================
+    // BARIS HAMPA DIBUANG - IA MENJADI BARIS KOSONG DI DOKUMEN CETAK
+    // ========================================================================
+    //
+    // filter(Boolean) menangkap baris yang benar-benar kosong, tetapi TIDAK
+    // menangkap baris yang isinya hanya &nbsp; - dan naskah yang pernah lewat
+    // penyunting kerap membawanya, terutama sebagai penutup tiap blok
+    // keterangan saksi. Satu baris semacam itu menjadi <p>&nbsp;</p>, lalu
+    // \par tersendiri di dokumen cetak: satu baris kosong yang berdiri tanpa
+    // isi antara keterangan saksi dan alinea berikutnya.
+    //
+    // Spasi tak-putus juga dibuang, sebab ia yang dihasilkan penyunting yang
+    // sama dan lolos dari trim().
+    .filter((satu) => satu.replace(/&nbsp;| /gi, "").trim().length > 0);
 
   // Naskah yang butirnya terlanjur mengalir dalam satu baris dipecah pada
   // penomorannya - tetapi hanya penomoran yang MENGAWALI butir, yakni yang

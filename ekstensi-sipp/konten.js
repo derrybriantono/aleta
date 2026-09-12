@@ -1037,6 +1037,71 @@ const URUTAN_TULIS = ["pmh", "ppp", "pjs", "phs"];
  * atas perkara terpilih di halaman daftar. Satu salinan, supaya urutan yang
  * tidak dapat dibalik itu hanya ada di satu tempat.
  */
+/**
+ * ============================================================================
+ * KODE PENOLAKAN BOT MENJADI KALIMAT YANG DAPAT DIKERJAKAN
+ * ============================================================================
+ *
+ * Bot menjawab penolakan dengan kode: "akun_pejabat_tidak_ketemu",
+ * "tanggal_penetapan_tidak_sah", "pmh_belum_ada". Kode itu tepat dan singkat
+ * - dan tidak berarti apa pun bagi petugas yang membacanya di panel.
+ *
+ * Lebih buruk lagi sebelumnya: seluruh penolakan tampil sebagai "ditolak",
+ * satu kata yang sama untuk sebab yang berbeda-beda, sebab rute portal
+ * meneruskan pembungkus gerbangnya dan bukan jawaban botnya. Penetapan
+ * massal yang berhenti di perkara pertama karena itu tidak dapat ditelusuri
+ * sama sekali.
+ *
+ * Yang diterjemahkan di sini hanya BUNYINYA. Kodenya tetap dibawa apa adanya
+ * pada hasil, sebab penjaga _sudah_ada di beberapa tempat mencocokkannya.
+ */
+const KALIMAT_ALASAN = [
+  {
+    pola: /^akun_pejabat_tidak_ketemu$/,
+    kalimat: (akun) =>
+      `Akun SIPP ${akun ? `"${akun}"` : "pejabat penetapnya"} tidak ada di SIPP. ` +
+      "Perbaiki pemetaan jabatan di ALETA - yang disimpan di sana harus NAMA AKUN SIPP " +
+      "(seperti ketua, hakim1, panitera), bukan nama orangnya.",
+  },
+  {
+    pola: /^tanggal_penetapan_tidak_sah$/,
+    kalimat: () => "Tanggal penetapannya tidak terbaca. Perkara ini mungkin belum punya tanggal pendaftaran yang sah di SIPP.",
+  },
+  {
+    pola: /^perkara_tidak_ketemu$/,
+    kalimat: () => "Perkara ini tidak ditemukan di SIPP.",
+  },
+  {
+    pola: /^operator_tidak_disebut$/,
+    kalimat: () => "Akun ALETA Anda tidak terbaca. Muat ulang panel, lalu coba lagi.",
+  },
+  {
+    pola: /^(pmh|ppp|pjs)_belum_ada$/,
+    kalimat: (_akun, kode) =>
+      `${kode.split("_")[0].toUpperCase()} belum tersimpan di SIPP, padahal langkah ini menuntutnya lebih dulu.`,
+  },
+  {
+    pola: /_sudah_ada$/,
+    kalimat: (_akun, kode) => `${kode.replace(/_sudah_ada$/, "").toUpperCase()} memang sudah ada di SIPP.`,
+  },
+  {
+    pola: /^jenis_tidak_didukung$/,
+    kalimat: () => "Jenis penetapan ini tidak dikenali ALETA.",
+  },
+];
+
+/** Bunyi yang dibaca petugas untuk satu kode penolakan. */
+function kalimatAlasan(kode, akun) {
+  const teks = String(kode || "").trim();
+  if (!teks) return "";
+  for (const satu of KALIMAT_ALASAN) {
+    if (satu.pola.test(teks)) return satu.kalimat(akun, teks);
+  }
+  // Yang belum punya terjemahannya dibiarkan apa adanya - kode yang asing
+  // masih dapat dicari, sedangkan kalimat karangan tidak.
+  return teks;
+}
+
 async function rantaiPenetapan(usulan, data, kering) {
   const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
   if (!perkaraId) return [{ jenis: "pmh", ok: false, alasan: "perkara tidak dikenali" }];
@@ -1098,16 +1163,42 @@ async function rantaiPenetapan(usulan, data, kering) {
     }
 
     const berhasil = jawab && jawab.ok !== false;
+    const kode = berhasil ? "" : String((jawab && jawab.alasan) || "ditolak");
     hasil.push({
       jenis,
       ok: berhasil,
-      alasan: berhasil ? "" : String((jawab && jawab.alasan) || "ditolak"),
+      // Kodenya dibawa apa adanya - penjaga _sudah_ada mencocokkannya.
+      alasan: kode,
+      // Dan bunyinya, untuk dibaca orang.
+      bunyi: berhasil
+        ? ""
+        : kalimatAlasan(kode, (jawab && jawab.username) || olehUsername),
       atasNama: jawab && jawab.atasNama,
       langkah: (jawab && jawab.langkah) || [],
       andaian: (jawab && jawab.andaian) || [],
       olehUsername,
     });
-    if (!berhasil) break;
+    // ======================================================================
+    // LANGKAH YANG SUDAH ADA DILEWATI - RANTAINYA TIDAK BERHENTI
+    // ======================================================================
+    //
+    // Sebelumnya tiap penolakan memutus rantai, termasuk "pmh_sudah_ada" -
+    // dan itu membuat perkara yang PMH-nya sudah ditetapkan tetapi PPP, PJS,
+    // dan PHS-nya belum TIDAK PERNAH dapat dilanjutkan. Pada penetapan
+    // massal akibatnya lebih besar lagi: satu perkara semacam itu di urutan
+    // pertama menghentikan seluruh halaman.
+    //
+    // "Sudah ada" bukan kegagalan - ia keadaan yang memang dituju. Langkahnya
+    // dicatat sebagai sudah ada, dimasukkan ke rantaiSebelum (sebab ia
+    // sungguh-sungguh ada, dan langkah berikutnya menuntutnya), lalu rantai
+    // berjalan terus. Yang benar-benar gagal tetap memutus.
+    if (!berhasil) {
+      if (/_sudah_ada$/.test(kode)) {
+        rantaiSebelum.push(jenis);
+        continue;
+      }
+      break;
+    }
     rantaiSebelum.push(jenis);
   }
 
@@ -1556,7 +1647,10 @@ function gambarHasilTulis(kabar, hasil, kering, rapor) {
           ? kering
             ? `${(satu.langkah || []).length} pernyataan disiapkan`
             : "ditetapkan"
-          : satu.alasan
+          : // Bunyinya, bukan kodenya - lihat kalimatAlasan. Kodenya tetap
+            // dipakai penjaga di tempat lain, tetapi yang DIBACA orang harus
+            // menyebutkan jalan keluarnya.
+            satu.bunyi || satu.alasan
       )
     );
     kotak.appendChild(baris);
@@ -8324,8 +8418,12 @@ function bagianPenetapanMassal(ringkasan) {
       gagal.push(...gagalSungguhan);
 
       if (gagal.length > 0) {
+        const bunyiGagal = gagal[0].bunyi || gagal[0].alasan;
         tandaiBaris(nomor, `${gagal[0].jenis.toUpperCase()}: ${gagal[0].alasan}`.slice(0, 70), "lewat");
-        kabar.textContent = `Berhenti di ${nomor}: ${gagal[0].jenis.toUpperCase()} ${gagal[0].alasan}`;
+        // Kalimat penuhnya di kabar - baris daftarnya terlalu sempit untuk
+        // kalimat yang menyebutkan jalan keluarnya, dan justru kalimat itulah
+        // yang dicari orang ketika seluruh halaman berhenti di perkara pertama.
+        kabar.textContent = `Berhenti di ${nomor} pada ${gagal[0].jenis.toUpperCase()}: ${bunyiGagal}`;
         return { berhasil, dilewati, berhentiDi: nomor };
       }
 

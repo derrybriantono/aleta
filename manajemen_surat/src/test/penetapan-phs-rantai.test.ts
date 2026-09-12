@@ -79,8 +79,11 @@ describe("rantainya diteruskan utuh dari peramban sampai bot", () => {
     // Didorong SESUDAH berhasil dan sesudah penjagaan berhenti-pada-gagal.
     // Kalau ia didorong lebih dulu, langkah yang gagal tetap dilaporkan
     // mendahului - dan PHS dinilai dengan andaian yang tidak terjadi.
-    const posDorong = bagian.indexOf("rantaiSebelum.push(jenis);");
-    const posBerhenti = bagian.indexOf("if (!berhasil) break;");
+    // Sejak 1.123.0 penjaganya bercabang: yang _sudah_ada didorong lalu
+    // dilanjutkan, yang gagal sungguhan memutus. Yang dijaga di sini tetap
+    // sama - dorongan untuk langkah yang LULUS berdiri sesudah penjaganya.
+    const posBerhenti = bagian.indexOf("if (!berhasil) {");
+    const posDorong = bagian.indexOf("rantaiSebelum.push(jenis);", posBerhenti + 1);
     expect(posDorong).toBeGreaterThan(-1);
     expect(posBerhenti).toBeGreaterThan(-1);
     expect(posBerhenti).toBeLessThan(posDorong);

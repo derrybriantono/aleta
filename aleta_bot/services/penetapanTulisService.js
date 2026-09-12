@@ -722,7 +722,17 @@ async function susunRencanaTulis(minta) {
   }
 
   const akun = await akunSipp(minta.olehUsername);
-  if (!akun) return { ok: false, alasan: "akun_pejabat_tidak_ketemu" };
+  if (!akun) {
+    // Nama akunnya IKUT disebutkan. Tanpa itu, yang membacanya hanya tahu
+    // "akun pejabat tidak ketemu" dan tidak punya satu pun petunjuk akun mana
+    // yang dicari - padahal yang dicari datang dari pemetaan jabatan ALETA,
+    // dan di situlah perbaikannya.
+    return {
+      ok: false,
+      alasan: "akun_pejabat_tidak_ketemu",
+      username: String(minta.olehUsername || ""),
+    };
+  }
 
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
@@ -1761,7 +1771,17 @@ async function susunRencanaHapus(minta) {
   }
 
   const akun = await akunSipp(minta.olehUsername);
-  if (!akun) return { ok: false, alasan: "akun_pejabat_tidak_ketemu" };
+  if (!akun) {
+    // Nama akunnya IKUT disebutkan. Tanpa itu, yang membacanya hanya tahu
+    // "akun pejabat tidak ketemu" dan tidak punya satu pun petunjuk akun mana
+    // yang dicari - padahal yang dicari datang dari pemetaan jabatan ALETA,
+    // dan di situlah perbaikannya.
+    return {
+      ok: false,
+      alasan: "akun_pejabat_tidak_ketemu",
+      username: String(minta.olehUsername || ""),
+    };
+  }
 
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };

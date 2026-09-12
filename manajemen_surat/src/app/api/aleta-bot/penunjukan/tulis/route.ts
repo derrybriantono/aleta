@@ -131,7 +131,33 @@ export async function POST(request: NextRequest) {
       rantaiSebelum,
     });
 
-    return Response.json(respons, { status: respons?.ok === false ? 409 : 200 });
+    // ========================================================================
+    // JAWABAN BOT DITERUSKAN APA ADANYA - BUKAN PEMBUNGKUS GERBANGNYA
+    // ========================================================================
+    //
+    // gatewayFetch memulangkan { ok, data?, error? }. Ketika bot MENOLAK -
+    // akun pejabat tidak ada di SIPP, tanggal tidak sah, langkah sudah ada -
+    // ia menjawab 4xx, dan pembungkusnya menjadi { ok: false, error: "..." }
+    // TANPA medan `alasan`.
+    //
+    // Yang diteruskan ke panel selama ini pembungkus itu. Panel membaca
+    // jawab.alasan, tidak menemukannya, lalu jatuh ke kata cadangannya:
+    // "ditolak". Seluruh penolakan bot karena itu tampil sebagai satu kata
+    // yang sama, dan tidak satu pun dapat ditelusuri sebabnya - persis yang
+    // terjadi pada penetapan massal yang berhenti di perkara pertama.
+    //
+    // Sekarang badan jawaban bot yang diteruskan, beserta alasannya. Kegagalan
+    // gerbang sendiri - bot mati, jaringan putus - tetap punya bentuknya
+    // sendiri, dan ia memang bukan penolakan.
+    //
+    // gatewayFetch SUDAH membaca `alasan` milik bot ke dalam `error`-nya -
+    // lihat catatannya di sana. Yang kurang hanya meneruskannya dengan nama
+    // yang dicari panel.
+    if (respons?.ok === false) {
+      return Response.json({ ok: false, alasan: respons.error ?? "ditolak" }, { status: 409 });
+    }
+    const badanBot = (respons?.data ?? {}) as Record<string, unknown>;
+    return Response.json(badanBot, { status: badanBot?.ok === false ? 409 : 200 });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

@@ -748,17 +748,27 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
     "3. Bahwa sejak awal pernikahan pada awal tahun 2018 Penggugat sudah mulai dianiaya.";
 
   const rapikan = (t: string) => layananPosita.rapikanTeksPosita(t);
-  /** Pemisah barisnya <br>, bukan ganti baris - lihat catatan di layanannya. */
-  const barisnya = (t: string) => rapikan(t).split(/<br\s*\/?>/i);
+  /**
+   * Pemisah barisnya <p>...</p> sejak 1.123.0 - lihat paragrafkanButir di
+   * layanannya. Tiap butir satu paragraf; yang dibaca di sini isinya.
+   */
+  const barisnya = (t: string) =>
+    rapikan(t)
+      .split("</p>")
+      .map((x) => x.replace(/^<p>/, ""))
+      .filter(Boolean);
 
-  it("pemisahnya <br>, sebab RTF tidak mengenal ganti baris", () => {
-    // TemplateHelper::cleanHtmlTagSpecial menerjemahkan <br> dan </p>
-    // menjadi \par, dan TIDAK menerjemahkan ganti baris sama sekali. Ganti
-    // baris mentah di dalam RTF hanyalah spasi - itu sebabnya posita yang
-    // dirapikan dengan ganti baris tetap tercetak menempel di Word.
+  it("pemisahnya <p>, sebab <br> disapu SIPP tanpa bekas", () => {
+    // TemplateHelper::cleanHtmlTagSpecial milik SIPP menerjemahkan </p>
+    // menjadi \par dan TIDAK menerjemahkan <br> sama sekali - ia hanya disapu
+    // filter_var. Ganti baris mentah pun bukan apa-apa bagi RTF. Yang
+    // dimengerti SIPP dan ABT sekaligus hanya <p>.
     const hasil = rapikan(POSITA);
-    expect(hasil).toContain("<br>");
+    expect(hasil).toContain("</p>");
+    expect(hasil).not.toContain("<br>");
     expect(hasil).not.toContain("\n");
+    // Butir pertama PERSIS "<p>1." - itu yang menyalakan \li630 di SIPP.
+    expect(hasil.startsWith("<p>1.")).toBe(true);
   });
 
   it("tiap butir induk mendapat barisnya sendiri", () => {
@@ -817,9 +827,18 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
     expect(rapikan(teks)).not.toContain("</p><br>");
   });
 
-  it("teks yang sudah rapi tidak diubah lagi", () => {
-    const rapi = "1. Bahwa satu.<br>2. Bahwa dua.";
+  it("teks yang sudah berparagraf tidak disusun ulang", () => {
+    // 6.269 dari 8.097 posita di PA Donggala sudah memakai <p> dan tercetak
+    // rapi selama ini - menyusunnya ulang mempertaruhkan semuanya.
+    const rapi = "<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>";
     expect(rapikan(rapi)).toBe(rapi);
+  });
+
+  it("teks yang dulu dirapikan dengan <br> naik ke <p> tanpa satu huruf berubah", () => {
+    const lama = "1. Bahwa satu.<br>2. Bahwa dua.";
+    const hasil = rapikan(lama);
+    expect(hasil).toBe("<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>");
+    expect(layananPosita.tanpaRuang(hasil)).toBe(layananPosita.tanpaRuang(lama));
   });
 });
 describe("nomor 8 - kalimat penutup keterangan saksi", () => {

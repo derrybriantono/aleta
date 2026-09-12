@@ -1918,7 +1918,10 @@ textarea.aleta-sunting:focus {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* flex-start, bukan space-between: yang mendorong ke kanan adalah margin
+     otomatis pada pintasan, sehingga ↻ dan versi berdiri BERSANDING di ujung
+     kanan - bukan tersebar merata dengan ↻ di tengah. */
+  justify-content: flex-start;
   gap: 8px;
   margin-top: 2px;
 }
@@ -1931,10 +1934,14 @@ textarea.aleta-sunting:focus {
 }
 
 .aleta-kaki-baris .aleta-kaki-pintasan {
-  /* Pintasan di kiri, sisanya terdorong ke kanan. */
+  /* Pintasan di kiri, sisanya terdorong ke kanan.
+     Bentuk lamanya menulis margin-right: auto LALU margin: 0 - dan tulisan
+     ringkas yang kedua menimpa yang pertama, sehingga tidak ada dorongan sama
+     sekali. Yang menyusun ketiganya lalu space-between di wadahnya: pintasan
+     di kiri, ↻ di TENGAH, versi di kanan. Tombol segarkan seharusnya bersanding
+     dengan versinya di ujung kanan. */
   flex: 0 1 auto;
-  margin-right: auto;
-  margin: 0;
+  margin: 0 auto 0 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

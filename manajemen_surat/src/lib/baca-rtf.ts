@@ -169,9 +169,30 @@ export function bacaRtf(isi: string): string {
       }
 
       // \'xx - satu bita dalam laman kodenya.
+      //
+      // ====================================================================
+      // BITA KENDALI BUKAN AKSARA - DAN POSTGRES MENOLAK SALAH SATUNYA
+      // ====================================================================
+      //
+      // Word menulis definisi daftarnya dengan bita mentah: {\leveltext
+      // \'02\'00.;} berarti "dua aksara, yang pertama nomor tingkat 0". Bita
+      // \'00 itu penunjuk, bukan huruf - dan pada dua penetapan itsbat nikah
+      // (204/Pdt.P/2026) dan dispensasi kawin (180/Pdt.P/2026) ia ikut
+      // tertulis 49 dan 32 kali, tepat di belakang tiap tanda butir "-".
+      //
+      // Akibatnya jauh di hilir: kolom naskah bertipe text, dan Postgres
+      // menolak U+0000 dengan 'invalid byte sequence for encoding "UTF8":
+      // 0x00'. Rute menjawab 500, dan panel menerjemahkannya sebagai "server
+      // ALETA tidak terjangkau" - kalimat yang mengirim orang memeriksa
+      // jaringan, padahal jaringannya sehat.
+      //
+      // Bita di bawah 0x20 selain tab karena itu tidak pernah ditulis. Tidak
+      // satu pun di antaranya pernah menjadi bagian naskah putusan.
       if (sesudah === "'") {
         const kode = Number.parseInt(isi.slice(i + 2, i + 4), 16);
-        if (!Number.isNaN(kode)) tulis(CP1252[kode] ?? String.fromCharCode(kode));
+        if (!Number.isNaN(kode) && (kode >= 0x20 || kode === 0x09)) {
+          tulis(CP1252[kode] ?? String.fromCharCode(kode));
+        }
         i += 4;
         continue;
       }
@@ -294,6 +315,11 @@ export function bacaRtfDariBita(bita: Uint8Array): string {
  */
 function rapikan(teks: string): string {
   return teks
+    // Aksara kendali yang lolos lewat jalan lain - \u0, misalnya - dibuang di
+    // sini juga. Satu pun tidak pernah menjadi naskah, dan U+0000 di antaranya
+    // ditolak Postgres. Baris baru dan tab bukan kendali di sini; keduanya
+    // justru batas yang dijaga pembaca ini.
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
     .replace(/ /g, " ")
     .replace(/[ \t]+/g, " ")
     .replace(/ *\n */g, "\n")

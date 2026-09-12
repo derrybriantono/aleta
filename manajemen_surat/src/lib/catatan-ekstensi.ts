@@ -42,6 +42,22 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.123.0",
+    dirilis: "2026-09-12T23:30:00+08:00",
+    judul: "Penetapan dilanjutkan dari tengah, posita tercetak berbaris, dan naskah penetapan itsbat/dispensasi dapat diunggah",
+    butir: [
+      "PENETAPAN MASSAL tidak lagi berhenti di perkara pertama. Tiga sebab yang bertumpuk: rute portal meneruskan pembungkus gerbangnya sehingga tiap penolakan berbunyi satu kata 'ditolak'; panel membaca keadaan penetapan dari tabel berkas PDF (perkara_dokumen_penetapan) sedangkan rantainya membaca perkara_penetapan, dan keduanya berselisih tepat pada perkara yang PMH-nya ada tetapi PDF-nya belum dicetak; dan 'pmh_sudah_ada' memutus rantai sehingga PPP, PJS, PHS tidak pernah dikerjakan.",
+      "RANTAI DILANJUTKAN DARI TENGAH. Langkah yang sudah ada dilewati dan rantai berjalan terus - PMH ada: PPP, PJS, PHS dikerjakan; PMH+PPP ada: PJS dan PHS; PMH+PPP+PJS ada: PHS. Diuji pada perkara sungguhan di kelima keadaan. Yang benar-benar gagal tetap memutus.",
+      "KODE PENOLAKAN MENJADI KALIMAT. 'akun_pejabat_tidak_ketemu' kini menyebut akun mana yang dicari dan mengarahkan ke pemetaan jabatan ALETA - yang disimpan di sana harus nama akun SIPP, bukan nama orangnya.",
+      "POSITA TERCETAK BERBARIS DI PUTUSAN SIPP. Dibaca dari sumber SIPP: cleanHtmlTagSpecial menerjemahkan </p> menjadi \\par dan TIDAK menerjemahkan <br> - ia hanya disapu. Posita yang dirapikan dengan <br> karena itu tercetak menggumpal. Pemisahnya kini <p> per butir, dan butir pertama persis '<p>1.' menyalakan lekukan blok (\\li630) milik SIPP sendiri - itulah sebabnya 6.269 posita yang memakai <p> tercetak rapi selama ini.",
+      "BARIS HAMPA sesudah keterangan saksi dibuang: baris yang isinya hanya &nbsp; atau spasi tak-putus tidak lagi menjadi paragraf kosong di dokumen cetak.",
+      "NASKAH PENETAPAN ITSBAT NIKAH DAN DISPENSASI KAWIN DAPAT DIUNGGAH. Word menulis definisi daftarnya dengan bita \\'00, dan pembaca RTF menuliskannya sebagai aksara - puluhan kali per berkas. Postgres menolak U+0000, rute menjawab 500, dan panel menyimpulkan 'server ALETA tidak terjangkau' padahal portalnya hidup. Bita kendali kini tidak pernah ditulis, dan jalur unggah menjaganya sekali lagi.",
+      "TOMBOL SEGARKAN di kaki panel bersanding dengan nomor versinya di ujung kanan - bukan lagi di tengah. Sebabnya satu baris CSS yang menimpa dirinya sendiri.",
+      "Pegangan panel ABT memakai pointerdown seperti panel lainnya, dan dua layar portal (riwayat penetapan, tanda tangan) membaca jawabannya dari dalam bungkus { ok, data } - sebelumnya daftarnya selalu kosong tanpa satu pun galat.",
+      "Mencakup 1.112.0 sampai 1.122.0: putusan otomatis dari draf ALETA dan dari naskah RTF, unggah putusan dan anonimisasi ke SIPP beserta antrean Direktori Putusan, medan putusan terdeteksi otomatis untuk tiap jenis perkara dan status putusan, pita identitas dengan chip berwarna per perkara dan per peran, kaki panel satu baris, alamat pihak dibersihkan, domisili elektronik dari gugatan, dan warna gelap CKEditor tanpa kedipan putih.",
+    ],
+  },
+  {
     versi: "1.111.0",
     dirilis: "2026-09-12T21:20:00+08:00",
     judul: "Hubungan ke portal dibuat tahan lambat - panel tidak lagi menggantung ketika ALETA berat",

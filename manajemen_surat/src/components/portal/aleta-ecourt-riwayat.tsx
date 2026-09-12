@@ -105,7 +105,11 @@ export function AletaEcourtRiwayat() {
             : `ALETA menjawab ${respons.status}.`
         );
       }
-      const isi = (await respons.json()) as { baris?: Jejak[] };
+      // Jawaban portal dibungkus { ok, data } - barisnya ada DI DALAM data.
+      // Membacanya dari bungkusnya menghasilkan daftar yang selalu kosong,
+      // tanpa satu pun galat. Lihat uji jawaban-portal-dibuka.
+      const bungkus = (await respons.json()) as { data?: { baris?: Jejak[] }; baris?: Jejak[] };
+      const isi = (bungkus.data ?? bungkus) as { baris?: Jejak[] };
       setBaris(Array.isArray(isi.baris) ? isi.baris : []);
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Riwayat tidak dapat dibaca.");

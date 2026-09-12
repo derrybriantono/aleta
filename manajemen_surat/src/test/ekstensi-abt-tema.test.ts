@@ -374,22 +374,28 @@ describe("kerusakan posita yang sudah terlanjur tersimpan", () => {
     // Sesudah terpecah, penanda sungguhan dan pecahan palsu tampak persis
     // sama. Pembedanya hurufnya: penanda butir tidak pernah melewati f.
     const rapi = layanan.rapikanTeksPosita(RUSAK);
-    expect(rapi).toContain("<br>   a. Tergugat mabuk.");
-    expect(rapi).toContain("<br>   b. Tergugat memukul;");
+    // Pemisahnya <p> sejak 1.123.0; lekukan tiga spasi anak butirnya tetap.
+    expect(rapi).toContain("<p>   a. Tergugat mabuk.");
+    expect(rapi).toContain("<p>   b. Tergugat memukul;");
   });
 
-  it("<div> diubah jadi <br> - ABT membuangnya tanpa jejak", () => {
-    // cleanHtmlTagSpecial menerjemahkan </p> dan <br> menjadi \par lalu
-    // memanggil filter_var(FILTER_SANITIZE_STRING) yang menyapu sisanya.
-    // <div> tidak pernah diterjemahkan - ia hanya lenyap, tanpa pemisah.
+  it("<div> diubah jadi <p> - ABT dan SIPP membuang <div> tanpa jejak", () => {
+    // cleanHtmlTagSpecial menerjemahkan </p> menjadi \par lalu memanggil
+    // filter_var(FILTER_SANITIZE_STRING) yang menyapu sisanya. <div> tidak
+    // pernah diterjemahkan - ia hanya lenyap, tanpa pemisah. <br> pun begitu
+    // di SIPP; karena itu pemisah akhirnya <p>, yang dimengerti keduanya.
     const rapi = layanan.rapikanTeksPosita(RUSAK);
     expect(rapi).not.toContain("<div");
-    expect(rapi).toContain("<br>");
+    expect(rapi).not.toContain("<br>");
+    expect(rapi).toContain("</p>");
   });
 
-  it("tidak ada baris kosong, dan lekukan anak butir utuh", () => {
+  it("tidak ada paragraf kosong, dan lekukan anak butir utuh", () => {
     const rapi = layanan.rapikanTeksPosita(RUSAK);
-    const baris = rapi.split(/<br\s*\/?>/i);
+    const baris = rapi
+      .split("</p>")
+      .map((x) => x.replace(/^<p>/, ""))
+      .filter((x) => x.length > 0);
     expect(baris.filter((x) => !x.trim()).length).toBe(0);
     expect(baris.some((x) => x.startsWith("   a. "))).toBe(true);
   });

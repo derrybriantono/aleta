@@ -71,7 +71,10 @@ export function AletaEcourtTandaTangan() {
             : `ALETA menjawab ${respons.status}.`
         );
       }
-      const isi = (await respons.json()) as { baris?: TandaTangan[] };
+      // Jawaban portal dibungkus { ok, data } - barisnya ada DI DALAM data.
+      // Dibaca dari bungkusnya, daftarnya selalu kosong tanpa satu pun galat.
+      const bungkus = (await respons.json()) as { data?: { baris?: TandaTangan[] }; baris?: TandaTangan[] };
+      const isi = (bungkus.data ?? bungkus) as { baris?: TandaTangan[] };
       setBaris(Array.isArray(isi.baris) ? isi.baris : []);
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Daftar tidak dapat dibaca.");
@@ -96,8 +99,15 @@ export function AletaEcourtTandaTangan() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(muatan),
         });
-        const isi = (await respons.json()) as { ok?: boolean; alasan?: string };
-        if (!respons.ok || isi.ok === false) {
+        // Penolakan datang di dalam bungkus { ok, data: { ok, alasan } } -
+        // alasannya harus dibaca dari data, bukan dari bungkusnya.
+        const bungkus = (await respons.json()) as {
+          ok?: boolean;
+          data?: { ok?: boolean; alasan?: string };
+          alasan?: string;
+        };
+        const isi = (bungkus.data ?? bungkus) as { ok?: boolean; alasan?: string };
+        if (!respons.ok || bungkus.ok === false || isi.ok === false) {
           throw new Error(isi.alasan || `ALETA menjawab ${respons.status}.`);
         }
         await muat();

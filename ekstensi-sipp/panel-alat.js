@@ -1295,7 +1295,9 @@ function alatPasangPetunjuk(akar) {
   });
 
   // Menekan, menggulung, atau mengetik berarti pertanyaannya sudah terjawab.
-  akar.addEventListener("mousedown", sembunyikan, true);
+  // Peristiwa pointer, bukan peristiwa tetikus: satu jalur untuk tetikus,
+  // sentuh, dan pena - sama dengan seluruh pegangan panel lainnya.
+  akar.addEventListener("pointerdown", sembunyikan, true);
   akar.addEventListener("scroll", sembunyikan, true);
   akar.addEventListener("keydown", sembunyikan, true);
 }

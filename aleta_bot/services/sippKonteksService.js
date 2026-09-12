@@ -499,29 +499,42 @@ async function identitasMassal(nomorBersih) {
   ]);
 
   // ==========================================================================
-  // PENETAPAN YANG SUDAH ADA
+  // PENETAPAN YANG SUDAH ADA - DARI perkara_penetapan, BUKAN DOKUMENNYA
   // ==========================================================================
   //
-  // jenis_dokumen_id pada perkara_dokumen_penetapan: 1 PMH, 2 PPP, 3 PJS,
-  // 4 PHS. Nomornya milik SIPP dan tidak pernah berubah - ia dipakai seluruh
-  // laporan yang menghitung penetapan.
+  // Percobaan pertama membaca perkara_dokumen_penetapan - tabel BERKAS PDF
+  // penetapan - dan itu keliru dengan cara yang hanya kelihatan pada perkara
+  // sungguhan. Perkara 564/Pdt.G/2026 punya tiga baris perkara_hakim_pn dan
+  // penetapan_majelis_hakim bertanggal 10 September, tetapi NOL baris
+  // dokumen: PMH-nya sudah ditetapkan, hanya PDF-nya belum pernah dicetak.
   //
-  // Dibaca sebagai ADA-TIDAKNYA baris, bukan sebagai tahapan perkara. Tahapan
-  // dapat maju karena sebab lain, sedangkan yang ditanyakan panel penetapan
-  // massal tepat satu hal: sudahkah dokumen penetapan ini pernah dibuat.
-  const JENIS_PENETAPAN = { 1: "pmh", 2: "ppp", 3: "pjs", 4: "phs" };
+  // Akibatnya panel menawarkannya sebagai "belum ditetapkan", rantai
+  // penetapan menolaknya "pmh_sudah_ada", dan seluruh halaman berhenti di
+  // perkara pertama. Dua pihak yang membaca tabel yang berbeda untuk satu
+  // pertanyaan yang sama pasti berselisih suatu saat - dan mereka berselisih
+  // tepat di sini.
+  //
+  // Sumbernya kini SAMA PERSIS dengan yang dipakai penetapanTulisService saat
+  // memutuskan *_sudah_ada: keempat kolom pada perkara_penetapan. Tanggal
+  // yang terisi berarti sudah; null berarti belum.
   const barisPenetapan = await amanSkema("penetapan", () =>
     runQuerySipp(
-      `SELECT DISTINCT perkara_id AS id, jenis_dokumen_id AS jenis
-         FROM perkara_dokumen_penetapan
-        WHERE perkara_id IN (${isianId}) AND jenis_dokumen_id IN (1, 2, 3, 4)`,
+      `SELECT perkara_id AS id,
+              penetapan_majelis_hakim AS pmh,
+              penetapan_panitera_pengganti AS ppp,
+              penetapan_jurusita AS pjs,
+              penetapan_hari_sidang AS phs
+         FROM perkara_penetapan
+        WHERE perkara_id IN (${isianId})`,
       daftarId
     )
   );
   for (const satu of Array.isArray(barisPenetapan) ? barisPenetapan : []) {
     const nomor = petaId.get(Number(satu.id));
-    const jenis = JENIS_PENETAPAN[Number(satu.jenis)];
-    if (nomor && jenis && hasil[nomor]) hasil[nomor].penetapan[jenis] = true;
+    if (!nomor || !hasil[nomor]) continue;
+    for (const jenis of ["pmh", "ppp", "pjs", "phs"]) {
+      hasil[nomor].penetapan[jenis] = Boolean(satu[jenis]);
+    }
   }
 
   tandai(ghaib, "ghaib");
