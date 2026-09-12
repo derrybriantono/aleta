@@ -61,7 +61,14 @@
   right: 12px;
   z-index: 2147483000;
   width: 380px;
-  max-height: calc(100vh - 130px);
+  /* Atap yang sama dengan yang dijaga JS - lihat jepitTinggiKeRuangTersisa.
+
+     Sebelumnya calc(100vh - 130px), yaitu hampir setinggi jendela. JS-nya
+     memang menjepit lebih rapat sesudah panel terpasang, tetapi pada cat
+     PERTAMA panelnya sempat digambar setinggi itu dahulu - dan pada halaman
+     yang lambat, sempat itu terbaca sebagai panel yang menutupi seluruh sisi
+     kanan SIPP lalu tiba-tiba memendek. */
+  max-height: 50vh;
   /* Yang menggulir isinya, bukan panelnya - lihat .aleta-isi.
      Pegangan tarik dipasang absolut di dalam panel, dan panel yang
      menggulir akan membawa pegangan itu hanyut ke atas bersama isi.
