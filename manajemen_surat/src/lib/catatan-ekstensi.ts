@@ -42,6 +42,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.110.0",
+    dirilis: "2026-09-12T20:15:00+08:00",
+    judul: "Nomor perkara di halaman daftar tidak lagi membawa angka urutnya",
+    butir: [
+      "Penetapan massal menyebut nomor perkara yang tidak pernah ada: 1564/Pdt.G/2026/PA.Dgl untuk perkara 564 pada baris ke-1, 10555/Pdt.G/2026/PA.Dgl untuk perkara 555 pada baris ke-10. Angka di depannya nomor urut barisnya.",
+      "Sebabnya satu sifat DOM yang mudah terlewat: textContent sebuah baris tabel menyambung isi tiap selnya TANPA pemisah apa pun - berbeda dari innerText, yang menyisipkannya. Sel kolom No berisi '1', sel berikutnya '564/Pdt.G/2026/PA.Dgl', dan keduanya terbaca sebagai satu untai. Lalu bagian angka di depan polanya menelan nomor urut itu sebagai bagian nomor perkaranya.",
+      "Cacat ini SUDAH LAMA ADA dan akibatnya diam - itu sebabnya ia bertahan. Penanda baris tidak menemukan sel bernomor itu sehingga tidak pernah tertempel, dan ringkasan massalnya menanyakan perkara yang tidak ada sehingga menjawab kosong: halaman penuh perkara terbaca sebagai 'tidak ada perkara yang berkeadaan khusus'. Jawaban yang masuk akal, dan karena itu tidak ada yang curiga. Penetapan massal hanya membuatnya terlihat, sebab ia menuliskan nomornya di layar.",
+      "Sekarang nomornya dicocokkan per SEL, bukan atas seluruh barisnya. innerText memang memisahkannya, tetapi ia menuntut peramban menghitung tata letak tiap baris - pada tabel berisi lima puluh baris itu terasa; menyapu selnya sendiri lebih murah dan lebih tepat. Dijaga uji yang menjalankan fungsinya atas tabel sebentuk halaman Daftar Perkara SIPP.",
+      "Ketemu di jalan yang sama: klasifikasi perkara berdua titik tidak pernah cocok dengan polanya. 12/Pdt.G.S/2026/PA.Dgl - gugatan sederhana - tidak pernah ditandai di halaman daftar dan nomornya tidak terbaca dari judul halaman perkaranya, sebab polanya hanya mengizinkan satu ruas bertitik. Diperluas menjadi paling banyak dua.",
+      "Penetapan massal menyebut jumlahnya apa adanya: '50 perkara di halaman ini, 25 pertama ditawarkan'. Sebelumnya ia berkata '25 perkara terbaca di halaman ini', dan yang membacanya akan menyangka setengah halamannya tidak terbaca ALETA.",
+    ],
+  },
+  {
     versi: "1.109.0",
     dirilis: "2026-09-12T19:30:00+08:00",
     judul: "Lencana akhirnya benar-benar hanya logo, dan penetapan dapat diterbitkan bertanda tangan ke SIPP",

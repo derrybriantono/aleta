@@ -126,7 +126,7 @@ function halamanCetakAtauTemplat() {
   return POLA_HALAMAN_CETAK.some((pola) => jalur.includes(pola));
 }
 
-const POLA_PERKARA = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4})?\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/g;
+const POLA_PERKARA = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/g;
 
 /** Apakah alamat halaman ini menyerupai halaman detail perkara? */
 function alamatHalamanPerkara() {
@@ -200,7 +200,7 @@ function cariNomorPerkara() {
   // SIPP memuat nomor perkara hanya di judul jendela.
   if (alamatHalamanPerkara()) {
     const dariJudul = String(document.title || "").match(
-      /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4})?\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/
+      /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/
     );
     if (dariJudul) return dariJudul[1];
   }
@@ -7256,12 +7256,19 @@ function bagianPenetapanMassal() {
   const nomorSemua = [...new Set(baris.map((x) => x.nomor))].slice(0, BATAS_PERKARA_MASSAL);
   const terpilih = new Set();
 
+  // Disebut apa adanya bila halamannya memuat lebih banyak daripada yang
+  // ditawarkan. "25 perkara terbaca" pada halaman berisi lima puluh perkara
+  // adalah kalimat yang keliru, dan yang membacanya akan menyangka
+  // setengah halamannya tidak terbaca ALETA.
+  const seluruhnya = [...new Set(baris.map((x) => x.nomor))].length;
   kotak.isi.appendChild(
     buatElemen(
       "div",
       "aleta-tetap-sebab",
-      `${nomorSemua.length} perkara terbaca di halaman ini. Centang yang hendak ditetapkan — ` +
-        "tidak ada yang tercentang sendiri."
+      (seluruhnya > nomorSemua.length
+        ? `${seluruhnya} perkara di halaman ini, ${nomorSemua.length} pertama ditawarkan. `
+        : `${nomorSemua.length} perkara di halaman ini. `) +
+        "Centang yang hendak ditetapkan — tidak ada yang tercentang sendiri."
     )
   );
 
@@ -8112,7 +8119,7 @@ async function terapkanTanda(konteks) {
 // mendesak. Tidak ada nama pihak, tidak ada nomor telepon: halaman daftar
 // terlihat siapa saja yang lewat di belakang layar.
 
-const POLA_PERKARA_BARIS = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4})?\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/;
+const POLA_PERKARA_BARIS = /\b(\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6})\b/;
 
 /**
  * Sel yang benar-benar memuat nomor perkaranya.
@@ -8135,10 +8142,35 @@ function barisPerkaraDiHalaman() {
 
   for (const baris of Array.from(document.querySelectorAll("tr"))) {
     if (baris.querySelector(`[${TANDA}]`)) continue;
-    const cocok = String(baris.textContent || "").match(POLA_PERKARA_BARIS);
-    if (!cocok) continue;
 
-    const nomor = cocok[1];
+    // ======================================================================
+    // DICOCOKKAN PER SEL, BUKAN ATAS SELURUH BARISNYA
+    // ======================================================================
+    //
+    // textContent satu baris tabel menyambung isi tiap selnya TANPA pemisah
+    // apa pun - berbeda dari innerText, yang menyisipkannya. Sel kolom "No"
+    // berisi "1", sel berikutnya "564/Pdt.G/2026/PA.Dgl", dan keduanya
+    // terbaca sebagai satu untai "1564/Pdt.G/2026/PA.Dgl".
+    //
+    // Lalu \d{1,5} di depan polanya menelan angka urut itu sebagai bagian
+    // nomor perkaranya, dan yang dipulangkan nomor perkara yang tidak pernah
+    // ada. Akibatnya diam: penandanya tidak menemukan selnya sehingga tidak
+    // tertempel, dan ringkasan massalnya menanyakan perkara yang tidak ada
+    // sehingga menjawab kosong - halaman penuh perkara terbaca sebagai
+    // "tidak ada yang berkeadaan khusus".
+    //
+    // innerText memang memisahkannya, tetapi ia menuntut peramban menghitung
+    // tata letak tiap baris; pada tabel berisi lima puluh baris itu terasa.
+    // Menyapu selnya sendiri lebih murah DAN lebih tepat.
+    let nomor = "";
+    for (const sel of baris.cells ? Array.from(baris.cells) : []) {
+      const cocokSel = String(sel.textContent || "").match(POLA_PERKARA_BARIS);
+      if (cocokSel) {
+        nomor = cocokSel[1];
+        break;
+      }
+    }
+    if (!nomor) continue;
     if (terlihat.has(nomor)) continue;
     terlihat.add(nomor);
     hasil.push({ nomor, baris });
