@@ -136,11 +136,15 @@ async function utama() {
   cek("penetapan disisipkan", tabel.includes("perkara_penetapan:INSERT"), true);
   cek("tiga baris hakim", tabel.filter((x) => x === "perkara_hakim_pn:INSERT").length, 3);
   cek("tabel perkara diperbarui", tabel.includes("perkara:UPDATE"), true);
+  // Enam sejak baris Riwayat Perkara (perkara_proses) ikut ditulis. Lima
+  // sebelumnya - dan selama lima itu, tab Riwayat Perkara pada perkara yang
+  // dikerjakan ALETA tidak pernah menyebutkan pejabat yang menunjuk.
   cek(
     "audit satu per langkah",
     tabel.filter((x) => x === "sys_audittrail:INSERT").length,
-    5
+    6
   );
+  cek("riwayat perkara ikut ditulis", tabel.includes("perkara_proses:REPLACE"), true);
 
   const barisPenetapan = rencana.langkah.find((x) => x.tabel === "perkara_penetapan");
   benar("id majelis dipisah koma", barisPenetapan.params.includes("26,28,31"));
@@ -162,13 +166,28 @@ async function utama() {
     "audit atas nama pejabat",
     audit.every((x) => x.params[2] === "fahri")
   );
+  // Judulnya kini berbentuk tulisan SIPP sendiri - itulah yang terbaca pada
+  // layar Audit Trail, yang kolomnya hanya menampilkan judul. Provenansinya
+  // pindah ke keterangan, tidak hilang.
   benar(
-    "audit menandai ALETA",
-    audit.every((x) => String(x.params[6]).startsWith("[ALETA]"))
+    "judul audit berbentuk tulisan SIPP",
+    audit.every((x) => /^(INSERT|UPDATE|REPLACE) table <b>\w+<\/b> dari halaman <b>/.test(String(x.params[6])))
   );
   benar(
-    "audit menyebut operatornya",
-    audit.every((x) => String(x.params[6]).includes("meja1g"))
+    "judul audit menyebut Primary Key perkaranya",
+    audit.every((x) => /dengan Primary Key \[perkara_id=\d+\]$/.test(String(x.params[6])))
+  );
+  benar(
+    "judul audit tidak lagi berawalan [ALETA]",
+    audit.every((x) => !String(x.params[6]).startsWith("[ALETA]"))
+  );
+  benar(
+    "penanda ALETA pindah ke keterangan, tidak hilang",
+    audit.every((x) => String(x.params[7]).includes("[ALETA]"))
+  );
+  benar(
+    "keterangan menyebut operatornya",
+    audit.every((x) => String(x.params[7]).includes("meja1g"))
   );
   benar(
     "keterangan audit berbentuk tabel SIPP",

@@ -79,8 +79,106 @@ const DAFTAR_TABEL = new Set([
   "perkara_jadwal_sidang",
   "perkara_penetapan_hari_sidang",
   "perkara_data_pernikahan",
+  // Riwayat Perkara. SIPP menulis satu baris ke sini pada TIAP langkah
+  // penetapan, dan itulah yang membuat tab Riwayat Perkara menyebutkan
+  // pejabat yang menunjuk beserta tanggalnya.
+  "perkara_proses",
   "sys_audittrail",
 ]);
+
+/**
+ * ============================================================================
+ * TABEL YANG id-NYA TIDAK BERTAMBAH SENDIRI
+ * ============================================================================
+ *
+ * Tidak seluruh tabel SIPP memakai auto_increment. Diperiksa pada basis data
+ * satker:
+ *
+ *   perkara_hakim_pn               auto_increment
+ *   perkara_panitera_pn            auto_increment
+ *   perkara_penetapan_hari_sidang  auto_increment
+ *   perkara_jurusita               TIDAK
+ *   perkara_jadwal_sidang          TIDAK
+ *
+ * Dua yang terakhir itu yang membuat penetapan berhenti di tengah jalan, dan
+ * keduanya gagal dengan cara yang sama sekali berbeda:
+ *
+ *   perkara_jurusita       INSERT tanpa id menghasilkan id=0. Perkara PERTAMA
+ *                          berhasil; perkara KEDUA bertabrakan dengan kunci
+ *                          utama yang sama dan seluruh langkahnya berhenti -
+ *                          sesudah perkara_penetapan telanjur diperbarui.
+ *
+ *   perkara_jadwal_sidang  INSERT tanpa id menghasilkan id=0, dan insertId
+ *                          yang dipulangkan pun 0. Langkah berikutnya menunggu
+ *                          id itu untuk menunjuk barisnya, membacanya sebagai
+ *                          "belum ada", lalu berhenti - meninggalkan jadwal
+ *                          sidang tanpa penetapan hari sidang.
+ *
+ * Karena itu id-nya dihitung sendiri, persis seperti yang dikerjakan SIPP:
+ * MAX(id) + 1, diambil sesaat sebelum baris itu ditulis.
+ */
+const TABEL_ID_DIHITUNG = new Set(["perkara_jurusita", "perkara_jadwal_sidang"]);
+
+/**
+ * ============================================================================
+ * RIWAYAT PERKARA - BARIS YANG SELAMA INI TIDAK PERNAH DITULIS
+ * ============================================================================
+ *
+ * Tab "Riwayat Perkara" pada SIPP dibaca dari perkara_proses, dan SIPP menulis
+ * satu baris ke sana pada TIAP langkah penetapan. ALETA tidak pernah
+ * menulisnya, sehingga perkara yang penetapannya dikerjakan lewat panel hanya
+ * menampilkan "Pendaftaran Perkara" - tanpa nama pejabat yang menunjuk, tanpa
+ * tanggalnya, seolah penetapannya tidak pernah terjadi.
+ *
+ * Yang tercatat sebagai penulisnya adalah PEJABAT yang menetapkan, sama dengan
+ * kolom diinput_oleh pada tabel penetapannya sendiri - bukan operator yang
+ * menekan tombolnya.
+ *
+ * REPLACE, bukan INSERT, sebab itulah yang dikerjakan SIPP: menetapkan ulang
+ * langkah yang sama tidak melahirkan baris riwayat kedua.
+ */
+function barisRiwayat({ perkaraId, jejak, tanggal, username, saat }) {
+  const nilai = {
+    perkara_id: perkaraId,
+    tahapan_id: jejak.tahapanId,
+    tahapan_nama: jejak.tahapanText,
+    proses_id: jejak.prosesId,
+    proses_nama: jejak.prosesText,
+    tanggal,
+    diinput_oleh: username,
+    diinput_tanggal: saat,
+  };
+  return {
+    tabel: "perkara_proses",
+    aksi: "REPLACE",
+    sql:
+      `REPLACE INTO perkara_proses
+         (perkara_id, tahapan_id, tahapan_nama, proses_id, proses_nama, tanggal,
+          diinput_oleh, diinput_tanggal)
+       VALUES (?,?,?,?,?,?,?,?)`,
+    params: [
+      perkaraId,
+      jejak.tahapanId,
+      jejak.tahapanText,
+      jejak.prosesId,
+      jejak.prosesText,
+      tanggal,
+      String(username).slice(0, 30),
+      saat,
+    ],
+    keterangan: `riwayat perkara: ${jejak.prosesText} atas nama ${username}`,
+    nilaiRiwayat: nilai,
+  };
+}
+
+/** MAX(id)+1 pada tabel yang id-nya tidak bertambah sendiri. */
+async function idBerikutnya(tabel) {
+  if (!DAFTAR_TABEL.has(tabel)) throw new Error(`tabel_di_luar_daftar:${tabel}`);
+  const baris = await runQuery(`SELECT COALESCE(MAX(id), 0) + 1 AS berikutnya FROM ${tabel}`);
+  const nomor = Number((Array.isArray(baris) && baris[0] && baris[0].berikutnya) || 0);
+  if (!Number.isFinite(nomor) || nomor <= 0) throw new Error(`id_berikutnya_tidak_terbaca:${tabel}`);
+  return nomor;
+}
 
 /** Tahapan dan proses yang dicatat pada tabel perkara - ditiru dari SIPP. */
 const JEJAK_PROSES = {
@@ -91,19 +189,32 @@ const JEJAK_PROSES = {
     prosesId: 20,
     prosesText: "Penetapan Majelis Hakim/Hakim",
   },
+  // ==========================================================================
+  // NAMA PROSESNYA DIBACA DARI SIPP, BUKAN DIKARANG
+  // ==========================================================================
+  //
+  // Ketiga nama di bawah pernah ditulis mengikuti nama FORMULIRNYA - "Penunjukan
+  // Panitera/Panitera Pengganti" - padahal yang disimpan SIPP pada kolom proses
+  // berbeda. Dihitung dari perkara_proses pada basis data satker: 9.840 baris
+  // berbunyi "Penunjukan Panitera Pengganti", 9.621 "Penunjukan Jurusita", dan
+  // 9.839 "Penetapan Hari Sidang Pertama" dengan proses_id 80 - bukan 50.
+  //
+  // Selisih itu tidak pernah berbunyi. Ia hanya membuat perkara yang dikerjakan
+  // ALETA berdiri sendiri pada tiap laporan yang mengelompokkan menurut nama
+  // proses, dan itulah tanda paling jelas bahwa barisnya tidak ditulis SIPP.
   ppp: {
     formulir: "TAMBAH PENUNJUKAN PANITERA/PANITERA PENGGANTI",
     tahapanId: 12,
     tahapanText: "Penetapan",
     prosesId: 30,
-    prosesText: "Penunjukan Panitera/Panitera Pengganti",
+    prosesText: "Penunjukan Panitera Pengganti",
   },
   pjs: {
     formulir: "TAMBAH PENUNJUKAN JURUSITA/JURUSITA PENGGANTI",
     tahapanId: 12,
     tahapanText: "Penetapan",
     prosesId: 40,
-    prosesText: "Penunjukan Jurusita/Jurusita Pengganti",
+    prosesText: "Penunjukan Jurusita",
   },
   dataUmum: {
     // SIPP memakai formulir yang sama untuk menambah dan menyunting perkara.
@@ -119,8 +230,8 @@ const JEJAK_PROSES = {
     formulir: "Tambah Penetapan Sidang Pertama",
     tahapanId: 12,
     tahapanText: "Penetapan",
-    prosesId: 50,
-    prosesText: "Penetapan Hari Sidang",
+    prosesId: 80,
+    prosesText: "Penetapan Hari Sidang Pertama",
   },
 };
 
@@ -217,11 +328,35 @@ function keteranganAudit(nilai) {
 /**
  * Satu baris sys_audittrail.
  *
- * `username` diisi nama akun PEJABAT - itulah maksud seluruh berkas ini. Yang
- * membedakannya dari tulisan SIPP adalah judulnya, yang selalu berawalan
- * TANDA_ALETA beserta nama operator yang benar-benar menekan tombolnya.
+ * `username` diisi nama akun PEJABAT - itulah maksud seluruh berkas ini.
+ *
+ * ============================================================================
+ * JUDULNYA MENGIKUTI BENTUK SIPP, PROVENANSINYA PINDAH KE KETERANGAN
+ * ============================================================================
+ *
+ * Judul dahulu berawalan "[ALETA]" dan berakhiran "· diisikan operator X".
+ * Akibatnya tiap baris ALETA berdiri sendiri di layar Audit Trail, yang
+ * kolomnya hanya menampilkan judul - dan barisnya terbaca seperti tempelan,
+ * bukan seperti catatan SIPP.
+ *
+ * Sekarang judulnya persis berbentuk tulisan SIPP sendiri, dibaca dari
+ * sys_audittrail pada basis data satker:
+ *
+ *   INSERT table <b>perkara_hakim_pn</b> dari halaman <b>TAMBAH PENETAPAN
+ *   HAKIM/MAJELIS HAKIM</b> dengan Primary Key [perkara_id=10116]
+ *
+ * Yang TIDAK dihapus: keterangan siapa yang sebenarnya menekan tombolnya.
+ * Ia pindah ke kolom description, yang terbaca ketika [detil] dibuka. Itu
+ * pilihan yang disengaja - sys_audittrail adalah catatan pemeriksaan, dan
+ * membuat tulisan mesin tidak dapat dibedakan dari tulisan tangan menghapus
+ * satu-satunya keterangan yang dapat menjawab "siapa yang mengerjakan ini"
+ * pada hari seseorang mempersoalkan penetapannya.
  */
-function barisAudit({ username, operator, tabel, formulir, aksi, nilai, ip, saat }) {
+function barisAudit({ username, operator, tabel, formulir, aksi, nilai, perkaraId, ip, saat }) {
+  // Kunci utamanya diambil dari nilai yang ditulis bila tidak disebut - tiap
+  // baris pada berkas ini selalu membawa perkara_id.
+  const idPerkara = Number(perkaraId || (nilai && nilai.perkara_id) || 0);
+  const kunci = idPerkara > 0 ? ` dengan Primary Key [perkara_id=${idPerkara}]` : "";
   return {
     tabel: "sys_audittrail",
     aksi: "INSERT",
@@ -235,12 +370,11 @@ function barisAudit({ username, operator, tabel, formulir, aksi, nilai, ip, saat
       tabel,
       formulir,
       aksi,
-      // Judulnya menyebut ALETA dan operatornya. Inilah satu-satunya tempat
-      // yang menyimpan siapa yang sebenarnya menekan tombolnya - dan tanpa
-      // itu, catatan ini menjadi catatan yang tidak dapat ditelusuri balik.
-      `${TANDA_ALETA} ${aksi} table <b>${tabel}</b> dari halaman <b>${formulir}</b>` +
-        (operator ? ` · diisikan operator ${operator}` : ""),
-      keteranganAudit(nilai),
+      `${aksi} table <b>${tabel}</b> dari halaman <b>${formulir}</b>${kunci}`,
+      // Provenansinya di sini, bukan di judul: terbaca ketika [detil] dibuka,
+      // tanpa membuat tiap baris menonjol di daftar.
+      keteranganAudit(nilai) +
+        `<br>${TANDA_ALETA}${operator ? ` diisikan operator ${operator}` : ""}`,
     ],
     keterangan: `catatan audit ${tabel} atas nama ${username}`,
   };
@@ -625,15 +759,24 @@ async function susunRencanaTulis(minta) {
       diinput_oleh: akun.username,
       diinput_tanggal: saat,
     };
+    // perkara_jurusita tidak memakai auto_increment - id-nya dihitung sendiri
+    // sesaat sebelum ditulis. Tanpa ini, perkara kedua dan seterusnya selalu
+    // bertabrakan pada id=0.
+    const idSendiri = TABEL_ID_DIHITUNG.has(tabelPetugas);
     langkah.push({
       tabel: tabelPetugas,
       aksi: "INSERT",
-      sql:
-        `INSERT INTO ${tabelPetugas}
-           (perkara_id, tahapan_id, tanggal_penetapan, urutan, ${kolomOrang}, ${kolomKode},
-            ${kolomNip}, ${kolomOrangNama}, aktif, diinput_oleh, diinput_tanggal)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      sql: idSendiri
+        ? `INSERT INTO ${tabelPetugas}
+             (id, perkara_id, tahapan_id, tanggal_penetapan, urutan, ${kolomOrang}, ${kolomKode},
+              ${kolomNip}, ${kolomOrangNama}, aktif, diinput_oleh, diinput_tanggal)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+        : `INSERT INTO ${tabelPetugas}
+             (perkara_id, tahapan_id, tanggal_penetapan, urutan, ${kolomOrang}, ${kolomKode},
+              ${kolomNip}, ${kolomOrangNama}, aktif, diinput_oleh, diinput_tanggal)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       params: [
+        ...(idSendiri ? [0] : []),
         perkara.perkaraId,
         TAHAPAN_TINGKAT_PERTAMA,
         minta.tanggalPenetapan,
@@ -646,6 +789,10 @@ async function susunRencanaTulis(minta) {
         akun.username,
         saat,
       ],
+      // Penjalannya yang mengisi id-nya, tepat sebelum pernyataan ini
+      // dijalankan - bukan saat rencana disusun, supaya jaraknya sesempit
+      // mungkin dari penulisan yang sesungguhnya.
+      idDihitung: idSendiri ? { tabel: tabelPetugas, posisiParam: 0 } : undefined,
       keterangan: `${sebutan.toLowerCase()}: ${orangNama}`,
     });
     langkah.push(
@@ -743,13 +890,20 @@ async function susunRencanaTulis(minta) {
     langkah.push({
       tabel: "perkara_jadwal_sidang",
       aksi: "INSERT",
+      // perkara_jadwal_sidang pun tanpa auto_increment. Di sini akibatnya
+      // lebih halus: id=0 membuat insertId ikut 0, dan langkah berikutnya -
+      // yang menunggu id ini untuk menunjuk barisnya - membacanya sebagai
+      // "belum ada" lalu berhenti. Jadwal sidangnya tertulis, penetapan hari
+      // sidangnya tidak.
       sql:
         `INSERT INTO perkara_jadwal_sidang
-           (perkara_id, verzet, keberatan, ikrar_talak, urutan, tanggal_sidang, jam_sidang,
+           (id, perkara_id, verzet, keberatan, ikrar_talak, urutan, tanggal_sidang, jam_sidang,
             sampai_jam, agenda, ruangan_id, ruangan, sidang_keliling, ditunda, sifat_sidang,
             diinput_oleh, diinput_tanggal)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      idDihitung: { tabel: "perkara_jadwal_sidang", posisiParam: 0 },
       params: [
+        0,
         perkara.perkaraId,
         "T",
         "T",
@@ -1014,6 +1168,34 @@ async function susunRencanaTulis(minta) {
     };
   }
 
+  // ---- Riwayat Perkara, sama untuk keempatnya -----------------------------
+  //
+  // Ditulis SEBELUM jejak pada tabel perkara, mengikuti urutan SIPP sendiri.
+  // Data Umum tidak punya langkah penetapan, jadi ia tidak menambah riwayat.
+  if (jejak.prosesId > 0) {
+    const riwayat = barisRiwayat({
+      perkaraId: perkara.perkaraId,
+      jejak,
+      tanggal: minta.tanggalPenetapan,
+      username: akun.username,
+      saat,
+    });
+    langkah.push(riwayat);
+    langkah.push(
+      barisAudit({
+        username: akun.username,
+        operator,
+        tabel: "perkara_proses",
+        formulir: jejak.formulir,
+        aksi: "INSERT",
+        nilai: riwayat.nilaiRiwayat,
+        perkaraId: perkara.perkaraId,
+        ip,
+        saat,
+      })
+    );
+  }
+
   // ---- jejak pada tabel perkara, sama untuk keempatnya --------------------
   const nilaiPerkara = {
     tahapan_terakhir_id: jejak.tahapanId,
@@ -1050,6 +1232,10 @@ async function susunRencanaTulis(minta) {
       formulir: jejak.formulir,
       aksi: "UPDATE",
       nilai: nilaiPerkara,
+      // nilaiPerkara hanya memuat kolom yang DIUBAH, dan perkara_id bukan
+      // salah satunya. Tanpa disebut di sini, judulnya menjadi satu-satunya
+      // baris audit tanpa Primary Key - dan justru itu yang menonjol.
+      perkaraId: perkara.perkaraId,
       ip,
       saat,
     })
@@ -1117,6 +1303,16 @@ async function jalankanRencana(rencana, opsi = {}) {
       // dengan null: baris penetapan hari sidang yang tidak menunjuk jadwal
       // sidang mana pun lebih buruk daripada tidak ada baris sama sekali.
       const params = [...satu.params];
+
+      // Tabel tanpa auto_increment: id-nya dihitung DI SINI, sedekat mungkin
+      // dengan penulisannya. Dihitung saat rencana disusun, jeda antara
+      // membaca MAX(id) dan memakainya selebar seluruh rencana - dan pada
+      // pengadilan yang dua petugasnya menekan Simpan bersamaan, jeda itu
+      // cukup untuk melahirkan dua baris berid sama.
+      if (satu.idDihitung) {
+        params[satu.idDihitung.posisiParam] = await idBerikutnya(satu.idDihitung.tabel);
+      }
+
       if (satu.isiDariLangkah) {
         const id = idBaru[satu.isiDariLangkah.indeks];
         if (!id) {
@@ -1132,7 +1328,13 @@ async function jalankanRencana(rencana, opsi = {}) {
       }
 
       const hasil = await runQuery(satu.sql, params);
-      idBaru[urutan] = hasil && hasil.insertId ? Number(hasil.insertId) : 0;
+      // id yang kita tentukan sendiri dipakai lebih dulu: pada tabel tanpa
+      // auto_increment, insertId yang dipulangkan basis data selalu 0.
+      idBaru[urutan] = satu.idDihitung
+        ? Number(params[satu.idDihitung.posisiParam])
+        : hasil && hasil.insertId
+          ? Number(hasil.insertId)
+          : 0;
       selesai.push({ tabel: satu.tabel, aksi: satu.aksi, keterangan: satu.keterangan });
     } catch (galat) {
       return {
