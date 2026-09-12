@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { usulkanAlasanPerkara, susunTeksAlasan } from "@/lib/alasan-perkara-sipp";
+import { petikDataNikah } from "@/lib/data-nikah-sipp";
 import { type MedanPilihan } from "@/lib/usulan-medan-putusan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
@@ -67,9 +68,6 @@ export async function POST(request: NextRequest) {
     }>(request);
 
     const medanMentah = Array.isArray(badan?.medan) ? badan.medan : [];
-    if (medanMentah.length === 0) {
-      return ok({ ada: false, sebab: "Tidak ada medan alasan yang perlu diusulkan di halaman ini." });
-    }
 
     const medan: MedanPilihan[] = medanMentah.slice(0, BATAS_MEDAN).map((satu) => ({
       kunci: String(satu?.kunci ?? ""),
@@ -95,11 +93,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ────────────────────────────────────────────────────────────────────
+    // DUA HAL YANG BERBEDA SIFATNYA, SATU PERMINTAAN
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // "usulan" adalah PENILAIAN: posita menyebut banyak hal dan salah satunya
+    // dipilih. "nikah" adalah KUTIPAN: nomor akta dan tanggalnya tertulis apa
+    // adanya, dan yang dikerjakan hanya menyalin dengan teliti.
+    //
+    // Keduanya berasal dari teks yang sama dan dipakai pada layar yang sama,
+    // jadi memisahkannya menjadi dua rute hanya membuat petugas menekan dua
+    // tombol untuk satu pekerjaan.
     return ok({
       ada: true,
       nomorPerkara: String(badan?.nomorPerkara ?? "").trim(),
       panjangTeks: dasar.length,
-      usulan: usulkanAlasanPerkara(teks, medan),
+      usulan: medan.length > 0 ? usulkanAlasanPerkara(teks, medan) : [],
+      nikah: petikDataNikah(String(badan?.teks?.posita ?? "").slice(0, BATAS_TEKS)),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {

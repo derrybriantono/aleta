@@ -2825,20 +2825,22 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
  * jadi yang dibaca adalah posita dan petitum yang ada di layar yang sama.
  */
 function bagianIsiAlasanPerkara(nomorPerkara) {
-  const kotak = bagian("Isi alasan perkara dari posita", "isiAlasanPerkara", true);
+  const kotak = bagian("Isi borang Data Umum dari posita", "isiAlasanPerkara", true);
   const isi = kotak.isi;
 
   isi.appendChild(
     buatElemen(
       "div",
       "aleta-tetap-sebab",
-      "Membaca posita dan petitum yang ada di layar ini, lalu mengusulkan pilihan untuk " +
-        "medan alasan yang sedang tampak. Angka inilah yang kelak menjadi laporan statistik " +
-        "perkara agama, jadi periksa tiap usulan. Tombol Simpan tetap Anda yang menekan."
+      "Membaca posita dan petitum yang ada di layar ini, lalu mengisikan dua hal yang " +
+        "berbeda sifatnya. Data pernikahan DIPETIK apa adanya - nomor akta dan tanggalnya " +
+        "tertulis di positanya, dan tiap petikan dapat Anda sunting sebelum diisikan. " +
+        "Medan alasan DIUSULKAN - angka itulah yang kelak menjadi laporan statistik perkara " +
+        "agama, jadi periksa tiap usulan. Tombol Simpan tetap Anda yang menekan."
     )
   );
 
-  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Baca posita, usulkan alasan");
+  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Baca posita, susun isian");
   tombol.type = "button";
   const kabar = buatElemen("div", "aleta-abt-kabar");
   const wadah = buatElemen("div", "aleta-isian-putusan");
@@ -2867,6 +2869,53 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
     { penunjuk: 'select[name="alasan_dispen"]', label: "Alasan Pengajuan Dispensasi Kawin" },
     { penunjuk: 'select[name="bidang_ekonomi_syariah"]', label: "Bidang Ekonomi Syariah" },
     { penunjuk: 'select[name="akad_syariah_primer"]', label: "Jenis Akad Syariah" },
+  ];
+
+  // ────────────────────────────────────────────────────────────────────────
+  // MEDAN YANG DIPETIK, BUKAN DIUSULKAN
+  // ────────────────────────────────────────────────────────────────────────
+  //
+  // Perkara cerai menuntut empat isian bertanda bintang yang seluruhnya
+  // tertulis apa adanya pada alinea pertama posita: tanggal menikah, tanggal
+  // dan nomor kutipan akta nikah, serta KUA tempat menikah. Permohonan itsbat
+  // menuntut tanggal dan tempat pernikahannya.
+  //
+  // Menyalinnya bukan penilaian melainkan ketelitian - dan ketelitian itulah
+  // yang paling cepat luntur pada perkara kesepuluh di hari yang sama. Karena
+  // itu tiap petikan diperlihatkan BESERTA kalimat asalnya dan dapat disunting
+  // sebelum diisikan.
+  //
+  // KUA sengaja tidak ada di daftar ini. Medannya daftar yang dicari ke
+  // peladen ketika petugas mengetik, dan pilihannya belum ada di halaman
+  // sebelum ia mengetik - jadi tidak ada yang dapat diisikan tanpa menebak
+  // kodenya. Namanya tetap diperlihatkan, supaya yang harus diketik sudah
+  // terbaca tanpa menggulung ke positanya.
+  const CALON_PETIKAN = [
+    { penunjuk: 'input[name="tgl_nikah"]', label: "Tanggal Menikah", kunciPetik: "tglNikah", jenisMedan: "tanggal" },
+    {
+      penunjuk: 'input[name="tgl_kutipan_akta_nikah"]',
+      label: "Tgl. Kutipan Akta Nikah",
+      kunciPetik: "tglKutipanAktaNikah",
+      jenisMedan: "tanggal",
+    },
+    {
+      penunjuk: 'input[name="no_kutipan_akta_nikah"]',
+      label: "No. Kutipan Akta Nikah",
+      kunciPetik: "noKutipanAktaNikah",
+      jenisMedan: "teks",
+    },
+    {
+      penunjuk: 'input[name="tgl_menikah_isbat"]',
+      label: "Tanggal Menikah (Isbat)",
+      kunciPetik: "tglNikah",
+      jenisMedan: "tanggal",
+    },
+    {
+      penunjuk: 'input[name="tempat_menikah_isbat"]',
+      label: "Tempat Menikah (Isbat)",
+      kunciPetik: "tempatNikah",
+      jenisMedan: "teks",
+    },
   ];
 
   tombol.addEventListener("click", async () => {
@@ -2912,15 +2961,25 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
       });
     }
 
-    if (medanTampak.length === 0) {
+    // Medan petikan ditanyakan dengan cara yang sama: yang menentukan ada dan
+    // tampaknya adalah HALAMAN, bukan daftar jenis perkara di sini.
+    const petikanTampak = [];
+    for (const calon of CALON_PETIKAN) {
+      const jawabNilai = await kirimKeJembatan({ jenis: "nilai", penunjuk: calon.penunjuk });
+      if (!jawabNilai || !jawabNilai.ok || !jawabNilai.tampak) continue;
+      petikanTampak.push({ ...calon, nilaiSekarang: jawabNilai.nilai || "" });
+    }
+
+    if (medanTampak.length === 0 && petikanTampak.length === 0) {
       kabar.className = "aleta-abt-kabar";
       kabar.textContent =
-        "Jenis perkara ini tidak menuntut medan alasan pada layar Data Umum, jadi tidak ada yang perlu diusulkan.";
+        "Layar ini tidak menampilkan satu pun medan yang dapat ALETA isikan untuk jenis perkara ini.";
       tombol.disabled = false;
       return;
     }
 
     let usulanMedan = [];
+    let dataNikah = null;
     try {
       const respons = await alatAmbil(
         ALETA_API_ALASAN_PERKARA,
@@ -2946,12 +3005,94 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
         return;
       }
       usulanMedan = jawab.usulan || [];
-      kabar.textContent = `${medanTampak.length} medan alasan tampak, dinilai dari ${jawab.panjangTeks} huruf posita dan petitum.`;
+      dataNikah = jawab.nikah || null;
+      kabar.textContent =
+        `${petikanTampak.length} medan dapat dipetik dan ${medanTampak.length} medan alasan tampak, ` +
+        `dibaca dari ${jawab.panjangTeks} huruf posita dan petitum.`;
     } catch (galat) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
       tombol.disabled = false;
       return;
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // KARTU PETIKAN - NILAINYA DAPAT DISUNTING SEBELUM DIISIKAN
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Yang diisikan adalah isi kotak saat Terapkan ditekan, BUKAN petikan
+    // semula. Sebagian petugas menambahkan kata "Duplikat" di depan nomor akta
+    // pengganti, dan sebagian kabupaten menuliskan kecamatan alih-alih desa -
+    // keduanya satu suntingan kecil, dan tanpa kotak ini seluruh petikannya
+    // menjadi tidak terpakai.
+    const petikanTerap = [];
+    for (const petik of petikanTampak) {
+      const hasilPetik = (dataNikah && dataNikah[petik.kunciPetik]) || null;
+      const kartu = buatElemen("div", "aleta-abt-kartu");
+
+      const kepala = buatElemen("div", "aleta-abt-kartu-kepala");
+      const centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-abt-centang";
+      centang.checked = Boolean(hasilPetik && hasilPetik.nilai);
+      centang.disabled = !(hasilPetik && hasilPetik.nilai);
+      kepala.appendChild(centang);
+      kepala.appendChild(buatElemen("span", "aleta-abt-nama", petik.label));
+      kepala.appendChild(
+        buatElemen(
+          "span",
+          `aleta-tanda ${hasilPetik && hasilPetik.nilai ? "aleta-tanda-hijau" : "aleta-tanda-abu"}`,
+          hasilPetik && hasilPetik.nilai ? "terbaca di posita" : "tidak terbaca"
+        )
+      );
+      kartu.appendChild(kepala);
+
+      const sanding = buatElemen("div", "aleta-abt-sanding");
+      const kini = buatElemen("div", "aleta-abt-kini");
+      kini.appendChild(buatElemen("span", "aleta-abt-label", "sekarang"));
+      kini.appendChild(buatElemen("span", "aleta-abt-isi", petik.nilaiSekarang || "(masih kosong)"));
+      sanding.appendChild(kini);
+      kartu.appendChild(sanding);
+
+      const kotakIsi = document.createElement("input");
+      kotakIsi.type = "text";
+      kotakIsi.className = "aleta-abt-sunting-kotak";
+      kotakIsi.value = (hasilPetik && hasilPetik.nilai) || "";
+      kotakIsi.setAttribute("aria-label", petik.label);
+      kotakIsi.addEventListener("input", () => {
+        centang.disabled = !kotakIsi.value.trim();
+        if (centang.disabled) centang.checked = false;
+      });
+      kartu.appendChild(kotakIsi);
+
+      if (hasilPetik && hasilPetik.kutipan) {
+        const kutip = buatElemen("div", "aleta-abt-kutipan");
+        kutip.appendChild(buatElemen("span", "aleta-abt-asal", "Posita"));
+        kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", hasilPetik.kutipan));
+        kartu.appendChild(kutip);
+      }
+
+      wadah.appendChild(kartu);
+      petikanTerap.push({
+        kunci: petik.penunjuk,
+        label: petik.label,
+        jenisMedan: petik.jenisMedan,
+        centang,
+        nilai: () => kotakIsi.value.trim(),
+      });
+    }
+
+    // KUA hanya diberitahukan. Medannya daftar yang dicari ke peladen, dan
+    // mengisinya menuntut kode yang tidak ada di halaman - jadi yang berguna
+    // adalah menyebutkan namanya, bukan berpura-pura dapat mengisinya.
+    if (dataNikah && dataNikah.kua && dataNikah.kua.nilai) {
+      const kabarKua = buatElemen(
+        "div",
+        "aleta-tetap-sebab",
+        `KUA tempat menikah menurut posita: ${dataNikah.kua.nilai}. Ketik nama itu pada kotak ` +
+          "KUA Tempat Menikah - daftarnya dicari SIPP sendiri, dan ALETA tidak dapat memilihkannya."
+      );
+      wadah.appendChild(kabarKua);
     }
 
     const pilihanTerap = [];
@@ -3017,7 +3158,11 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
 
     terapAlasan.addEventListener("click", async () => {
       const dipilih = pilihanTerap.filter((x) => x.centang.checked);
-      if (dipilih.length === 0) {
+      // Isi kotak dibaca SEKARANG, bukan petikan semula: tanpa itu suntingan
+      // petugas hilang tanpa satu pun tanda, dan yang masuk borang justru yang
+      // sudah ia perbaiki.
+      const dipetik = petikanTerap.filter((x) => x.centang.checked && x.nilai());
+      if (dipilih.length === 0 && dipetik.length === 0) {
         hasilAlasan.textContent = "Tidak ada yang dicentang.";
         return;
       }
@@ -3032,6 +3177,21 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
           penunjuk: satu.kunci,
           jenisMedan: "pilih",
           nilai: satu.nilai,
+        });
+        if (hasil && hasil.ok) berhasil += 1;
+        else gagal.push(`${satu.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+      }
+
+      for (const satu of dipetik) {
+        hasilAlasan.textContent = `Mengisi ${satu.label}…`;
+        // "tanggal" - jembatan yang juga menyentuh datepicker jQuery UI.
+        // Menyetel value saja membuat tampilannya berubah sementara tanggal
+        // yang dipegang datepicker tetap yang lama.
+        const hasil = await kirimKeJembatan({
+          jenis: "isi",
+          penunjuk: satu.kunci,
+          jenisMedan: satu.jenisMedan,
+          nilai: satu.nilai(),
         });
         if (hasil && hasil.ok) berhasil += 1;
         else gagal.push(`${satu.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);

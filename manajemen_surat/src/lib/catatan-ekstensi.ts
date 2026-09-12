@@ -42,6 +42,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.100.0",
+    dirilis: "2026-09-12T09:40:00+08:00",
+    judul: "Data pernikahan pada layar Data Umum dipetik dari posita",
+    butir: [
+      "Perkara cerai - sebagian besar perkara pengadilan agama - menuntut empat isian bertanda bintang pada layar Info Perkara Agama: tanggal menikah, tanggal dan nomor kutipan akta nikah, serta KUA tempat menikah. Keempatnya tertulis apa adanya pada alinea pertama posita, beberapa sentimeter di bawahnya pada layar yang sama, dan menyalinnya adalah ketelitian yang paling cepat luntur pada perkara kesepuluh di hari yang sama.",
+      "Panel kini memetik ketiganya dan mengisikannya. Permohonan itsbat nikah ikut dilayani: tanggal dan tempat pernikahannya dipetik dari kalimat yang bentuknya berbeda - harinya disebut lebih dahulu dan kata \"tanggal\" tidak ada sama sekali.",
+      "Diukur atas berkas sungguhan yang datanya sudah tersimpan petugas. Dari 1.200 gugatan cerai: tanggal menikah 1.139 sama dan 13 berbeda; tanggal kutipan akta 1.088 sama dan 16 berbeda; nomor kutipan akta 1.025 sama persis, 54 berbeda hanya pada kata \"Duplikat\" yang ditambahkan petugas, dan 46 memang memakai nomor kutipan pengganti yang tidak disebut positanya. Dari 115 permohonan itsbat: tanggal menikah 108 sama dan NOL berbeda.",
+      "Karena itu tiap petikan dapat disunting di panel sebelum diisikan, dan yang masuk borang adalah isi kotak saat Terapkan ditekan - bukan petikan semula. Kalimat posita yang menjadi asalnya diperlihatkan di bawah tiap petikan.",
+      "Tanggal diisikan lewat jalur datepicker, bukan sebagai teks biasa: menyetel nilainya saja membuat kotaknya berubah sementara tanggal yang dipegang datepicker tetap yang lama.",
+      "Medan KUA sengaja TIDAK diisikan - daftarnya dicari SIPP ke peladen ketika petugas mengetik, dan mengisinya menuntut menebak kode yang tidak ada di halaman. Nama KUA menurut posita tetap disebutkan, supaya yang harus diketik sudah terbaca.",
+      "Tanggal yang tidak ada di kalender ditolak, bukan digeser: \"31 April\" lolos pemeriksaan bentuk tetapi bukan tanggal, dan yang tersimpan darinya akan menjadi 1 Mei tanpa seorang pun melihatnya.",
+    ],
+  },
+  {
     versi: "1.99.0",
     dirilis: "2026-09-12T08:45:00+08:00",
     judul: "Alasan perkara di layar Info Perkara Agama diusulkan dari posita",

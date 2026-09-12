@@ -262,6 +262,75 @@ describe("bagian Isi alasan perkara pada ekstensi", () => {
   });
 });
 
+describe("medan yang DIPETIK pada bagian yang sama", () => {
+  const konten = bacaEkstensi("konten.js");
+  const bagian = konten.slice(
+    konten.indexOf("function bagianIsiAlasanPerkara("),
+    konten.indexOf("function bagianIsiPutusan(")
+  );
+  const daftar = bagian.slice(
+    bagian.indexOf("const CALON_PETIKAN"),
+    bagian.indexOf("tombol.addEventListener")
+  );
+
+  it("empat medan wajib perkara cerai dan dua medan itsbat ditawarkan", () => {
+    expect(daftar.length).toBeGreaterThan(200);
+    for (const nama of [
+      "tgl_nikah",
+      "tgl_kutipan_akta_nikah",
+      "no_kutipan_akta_nikah",
+      "tgl_menikah_isbat",
+      "tempat_menikah_isbat",
+    ]) {
+      expect(daftar).toContain(`input[name="${nama}"]`);
+    }
+  });
+
+  it("medan KUA TIDAK diisikan, hanya disebutkan", () => {
+    // Daftarnya dicari SIPP ke peladen ketika petugas mengetik, dan pilihannya
+    // belum ada di halaman sebelum itu. Mengisinya menuntut menebak kodenya,
+    // dan kode KUA yang salah menautkan perceraian ke kantor yang lain.
+    expect(daftar).not.toContain("ref_kua");
+    expect(bagian).toContain("ALETA tidak dapat memilihkannya");
+  });
+
+  it("tanggal diisi lewat jenis medan tanggal, bukan sebagai teks biasa", () => {
+    // Datepicker jQuery UI menyimpan tanggalnya terpisah dari value. Menyetel
+    // value saja membuat kotaknya berubah sementara tanggal yang dipegang
+    // datepicker tetap yang lama.
+    expect(daftar).toContain('jenisMedan: "tanggal"');
+  });
+
+  it("yang diisikan adalah isi kotak saat Terapkan ditekan, bukan petikan semula", () => {
+    // Tanpa ini, suntingan petugas - satu kata "Duplikat", satu nama desa yang
+    // dibetulkan - hilang tanpa satu pun tanda.
+    expect(bagian).toContain("nilai: () => kotakIsi.value.trim()");
+    expect(bagian).toContain("nilai: satu.nilai()");
+    expect(bagian).toContain("x.centang.checked && x.nilai()");
+  });
+
+  it("medan yang disembunyikan SIPP tidak ikut ditawarkan", () => {
+    expect(bagian).toContain("jawabNilai.tampak");
+  });
+
+  it("bagiannya tetap digambar walau perkara itu tidak punya medan alasan sama sekali", () => {
+    // Perkara cerai - sebagian besar perkara pengadilan agama - tidak punya
+    // satu pun medan alasan pada layar ini, tetapi punya empat medan wajib
+    // yang dapat dipetik. Berhenti karena daftar alasannya kosong berarti
+    // fitur ini mati justru pada perkara yang paling banyak.
+    expect(bagian).toContain("medanTampak.length === 0 && petikanTampak.length === 0");
+  });
+
+  it("rutenya memulangkan petikan nikah beserta usulan alasan", () => {
+    const rute = readFileSync(
+      path.resolve(process.cwd(), "src/app/api/aleta-ecourt/alasan-perkara/route.ts"),
+      "utf8"
+    );
+    expect(rute).toContain("petikDataNikah");
+    expect(rute).toContain("nikah:");
+  });
+});
+
 describe("jembatan dapat membaca nilai CKEditor", () => {
   const jembatan = bacaEkstensi("jembatan.js");
 
