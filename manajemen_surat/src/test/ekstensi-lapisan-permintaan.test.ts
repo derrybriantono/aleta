@@ -187,8 +187,23 @@ describe("batas waktu", () => {
   it("tiap percobaan dibatasi, dan jamnya selalu dibersihkan", () => {
     const badan = potongFungsi(alat(), "alatSekaliAmbil");
     expect(badan).toContain("new AbortController()");
-    expect(badan).toContain("setTimeout(() => pembatal.abort(), ALAT_BATAS_MS)");
+    expect(badan).toContain("setTimeout(() => pembatal.abort(), batas)");
     expect(badan).toContain("clearTimeout(jam)");
+    // ALAT_BATAS_MS tetap bawaannya. Pemanggil boleh menyebut batasnya
+    // sendiri, tetapi yang TIDAK menyebut apa pun tetap dibatasi - batas yang
+    // hanya berlaku bila diminta bukan batas.
+    expect(badan).toContain("ALAT_BATAS_MS");
+  });
+
+  it("batasMs tidak pernah ikut masuk ke fetch", () => {
+    // fetch tidak mengenalinya. Meninggalkannya di dalam opsi hanya menaruh
+    // medan asing di dalam permintaan, dan medan asing di dalam permintaan
+    // adalah hal yang tidak pernah dicari siapa pun ketika suatu hari
+    // permintaannya berperilaku aneh.
+    const badan = potongFungsi(alat(), "alatSekaliAmbil");
+    expect(badan).toContain("const { batasMs, ...sisa } = opsi || {}");
+    expect(badan).toContain("fetch(alamat, { ...sisa, signal: pembatal.signal })");
+    expect(badan).not.toContain("...(opsi || {})");
   });
 
   it("batas waktu yang lewat punya kalimatnya sendiri", () => {

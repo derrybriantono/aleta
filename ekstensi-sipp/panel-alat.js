@@ -1009,11 +1009,21 @@ function alatKunciPermintaan(alamat, opsi) {
   return `GET ${alamat}`;
 }
 
+/**
+ * Satu permintaan, dengan batas waktunya sendiri.
+ *
+ * batasMs boleh disebut pemanggil untuk pekerjaan yang memang lebih lama
+ * daripada satu bacaan panel - unggahan naskah, misalnya. Ia DIBUANG dari
+ * opsi sebelum diteruskan ke fetch: fetch tidak mengenalinya, dan
+ * meninggalkannya di sana hanya menaruh medan asing di dalam permintaan.
+ */
 async function alatSekaliAmbil(alamat, opsi) {
+  const { batasMs, ...sisa } = opsi || {};
+  const batas = Number(batasMs) > 0 ? Number(batasMs) : ALAT_BATAS_MS;
   const pembatal = new AbortController();
-  const jam = setTimeout(() => pembatal.abort(), ALAT_BATAS_MS);
+  const jam = setTimeout(() => pembatal.abort(), batas);
   try {
-    return await fetch(alamat, { ...(opsi || {}), signal: pembatal.signal });
+    return await fetch(alamat, { ...sisa, signal: pembatal.signal });
   } finally {
     clearTimeout(jam);
   }

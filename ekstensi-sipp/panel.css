@@ -1723,6 +1723,44 @@ tr.aleta-baris-disorot > td {
   line-height: 1.5;
 }
 
+/* --- Naskah putusan yang diterima dari berkas ---------------------------- */
+.aleta-unggah-naskah {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--aleta-garis);
+}
+
+.aleta-unggah-rinci {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.aleta-unggah-baris {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+
+.aleta-unggah-judul {
+  color: var(--aleta-tulisan);
+}
+
+.aleta-unggah-jumlah {
+  color: var(--aleta-aman);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aleta-unggah-kosong {
+  color: var(--aleta-tulisan-lembut);
+  text-align: right;
+}
+
 /* ==========================================================================
    TEMA GELAP UNTUK HALAMAN SIPP
    ==========================================================================
@@ -2065,6 +2103,126 @@ html[data-aleta-tema-sipp="gelap"] :is(.pagination > .active > a, .pagination > 
   background-color: var(--s-hijau) !important;
   color: #ffffff !important;
   border-color: var(--s-garis-hijau) !important;
+}
+
+/* --- CKEditor pada layar Putusan Akhir -----------------------------------
+   Tiga penyunting di satu layar: Pertimbangan Hukum, Amar, dan Amar Anonim.
+   Ketiganya datang dengan skin office2013 yang seluruhnya dirancang untuk
+   latar putih, dan tanpa aturan di bawah ini ketiganya tetap putih terang di
+   atas halaman yang sudah gelap.
+
+   Kelas .cke_* adalah kelas baku CKEditor 4, bukan kelas SIPP. Ia tidak
+   berubah antar pemasangan maupun antar satker - yang berubah hanya isinya.
+
+   Bagian DALAM bidang ketiknya tidak diatur di sini: ia dokumen tersendiri
+   di dalam iframe, dan berkas gaya tidak menyeberangi batas itu. Yang
+   mengurusnya warnaiCkeditor di konten.js. */
+html[data-aleta-tema-sipp="gelap"] :is(.cke, .cke_inner, .cke_reset_all) {
+  background: transparent !important;
+  border-color: var(--s-garis) !important;
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .cke_chrome {
+  border-color: var(--s-garis) !important;
+  box-shadow: none !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .cke_contents {
+  border-color: var(--s-garis) !important;
+}
+
+/* ── Kenapa bilah alatnya TIDAK ikut gelap ─────────────────────────────────
+ *
+ * Ikon CKEditor bukan huruf melainkan satu lembar gambar (icons.png) yang
+ * digambar gelap untuk latar putih. Bilah yang digelapkan membuat seluruh
+ * ikonnya gelap di atas gelap - dan satu-satunya cara memulihkannya adalah
+ * membalik warnanya dengan filter.
+ *
+ * Filter itu justru yang dilarang di berkas ini. Larangannya bukan selera:
+ * foto, tanda tangan pindaian, dan lampiran adalah DOKUMEN PENGADILAN, dan
+ * aturan sapu yang membalik warna tidak pernah berhenti tepat di tepi ikon.
+ * Yang paling mudah ditambahkan kemudian adalah aturan yang lebih luas dari
+ * yang dimaksudkan penulisnya.
+ *
+ * Maka bilahnya dibiarkan terang - tetapi diredupkan ke abu kehijauan yang
+ * sewarna dengan palet, bukan putih menyilaukan. Yang menyilaukan selama ini
+ * bukan bilah setinggi 60 piksel itu, melainkan BIDANG KETIK seluas layar di
+ * bawahnya - dan bidang itu memang menjadi gelap, lihat warnaiCkeditor di
+ * konten.js.
+ *
+ * Hasilnya: bidang tulis gelap seperti seluruh halaman, dengan satu bilah
+ * kendali yang teduh di atasnya - dan tiap ikonnya tetap terbaca. */
+html[data-aleta-tema-sipp="gelap"] :is(.cke_top, .cke_bottom) {
+  background: #c8d3ce !important;
+  color: #23302a !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(.cke_button, .cke_combo_text, .cke_path_item, .cke_combo_button) {
+  color: #23302a !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(.cke_toolgroup, .cke_combo_button) {
+  background: #dbe3df !important;
+  border-color: #a9b7b1 !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(.cke_button:hover, .cke_button:focus, .cke_button_on, .cke_combo_button:hover) {
+  background: #aebeb7 !important;
+  border-color: #8ea099 !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .cke_toolbar_separator {
+  background: #a9b7b1 !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .cke_path_empty {
+  color: var(--s-tulisan-lembut) !important;
+}
+
+/* Panel turunan - daftar Format, Font, dan Size. Bingkainya iframe juga,
+   sehingga yang diatur di sini hanya kotak luarnya. */
+html[data-aleta-tema-sipp="gelap"] :is(.cke_panel, .cke_menu_panel, .cke_combopanel) {
+  background: var(--s-permukaan-2) !important;
+  border-color: var(--s-garis) !important;
+}
+
+/* Tingkap CKEditor sendiri - Cari & Ganti, Sisip Tabel, dan sebagainya. */
+html[data-aleta-tema-sipp="gelap"] :is(.cke_dialog_body, .cke_dialog_contents, .cke_dialog_footer, .cke_dialog_tabs) {
+  background: var(--s-permukaan) !important;
+  border-color: var(--s-garis) !important;
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .cke_dialog_title {
+  background: var(--s-hijau-tua) !important;
+  color: #eef7f2 !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+/* --- Borang Putusan Akhir ------------------------------------------------
+   Borangnya dimuat SIPP ke dalam tingkap yang melayang di atas halaman
+   perkara, dan tingkap itu bukan #konten maupun .modal-content - dua tempat
+   yang selama ini menampung aturan isian. Karena itu dilingkupi ke borangnya
+   sendiri: id #frm_putusan tidak berubah antar versi SIPP, sedangkan nama
+   pembungkusnya berubah. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  #frm_putusan input,
+  #frm_putusan select,
+  #frm_putusan textarea
+) {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  #frm_putusan input[readonly],
+  #frm_putusan input:disabled,
+  #frm_putusan select:disabled
+) {
+  background-color: #101a16 !important;
+  color: var(--s-tulisan-lembut) !important;
 }
 
 /* --- Warna yang ditanam di atribut atau gaya sebaris ---------------------

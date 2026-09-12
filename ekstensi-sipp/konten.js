@@ -57,6 +57,14 @@ const ALETA_API_RIWAYAT = "/aleta/api/aleta-bot/penunjukan/riwayat";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
+const ALETA_API_UNGGAH_NASKAH = "/aleta/api/aleta-ecourt/putusan/unggah-naskah";
+/**
+ * Mengunggah naskah lebih lama daripada membaca satu bagian panel: berkasnya
+ * terkirim, diurai, lalu disimpan sebagai draf. Membatalkannya di detik
+ * kesembilan tidak melindungi apa pun - naskahnya sudah sampai, dan yang
+ * hilang hanya jawabannya.
+ */
+const BATAS_UNGGAH_NASKAH_MS = 45000;
 const ALETA_API_ALASAN_PERKARA = "/aleta/api/aleta-ecourt/alasan-perkara";
 const PENANDA = "aleta-panel-sipp";
 
@@ -3973,6 +3981,23 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
   return kotak;
 }
 
+/**
+ * perkara_id sebagaimana tertulis pada borang SIPP yang sedang terbuka.
+ *
+ * Borang Putusan Akhir harus membawanya - tanpa itu SIPP sendiri tidak tahu
+ * putusan ini milik perkara yang mana. Membacanya di sini menghemat satu
+ * pertanyaan ke SIPP lewat gerbang, yang jawabannya menghitung seluruh
+ * keadaan perkara padahal yang dibutuhkan satu angka.
+ *
+ * Kosong bukan kegagalan: portal menanyakannya sendiri bila tidak disebut.
+ */
+function perkaraIdDariHalaman() {
+  const pola = 'input[name="perkara_id"], input#perkara_id, input[name="perkaraId"]';
+  const borang = document.querySelector("#frm_putusan");
+  const medan = (borang && borang.querySelector(pola)) || document.querySelector(pola);
+  return medan && medan.value ? String(medan.value).trim() : "";
+}
+
 function bagianIsiPutusan(nomorPerkara) {
   const kotak = bagian("Isi formulir putusan dari ALETA", "isiPutusan", true);
   const isi = kotak.isi;
@@ -3992,6 +4017,119 @@ function bagianIsiPutusan(nomorPerkara) {
   const wadah = buatElemen("div", "aleta-isian-putusan");
   isi.appendChild(tombol);
   isi.appendChild(kabar);
+
+  // ========================================================================
+  // NASKAH YANG SUDAH JADI, DITERIMA APA ADANYA
+  // ========================================================================
+  //
+  // Draf ALETA yang dirakit dari fakta adalah jalan yang seharusnya, tetapi
+  // hari ini naskah putusan masih ditulis hakim di templat satker. Menyuruh
+  // menyalin pertimbangan 8.000 aksara ke CKEditor dengan tangan - lalu
+  // amarnya, lalu amar anonimnya - bukan otomisasi apa pun.
+  //
+  // RTF, BUKAN PDF. Keduanya memuat naskah yang sama, tetapi PDF memecah
+  // tiap paragraf menjadi baris cetak dan menyelipkan perabot halamannya
+  // ke tengah naskah. Diukur pada satu putusan yang sama: RTF 151 paragraf
+  // utuh, PDF 417 potongan baris. Menyambungnya kembali menuntut terkaan,
+  // dan terkaan yang salah menyambung satu pertimbangan ke pertimbangan
+  // berikutnya. Portal menolak PDF beserta sebabnya, bukan diam-diam.
+  const kotakUnggah = buatElemen('div', 'aleta-unggah-naskah');
+  kotakUnggah.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      "Belum ada drafnya? Ambil dari naskah putusan yang sudah Anda tulis - berkas RTF-nya, bukan PDF."
+    )
+  );
+  const kakiUnggah = buatElemen('div', 'aleta-tetap-kaki');
+  const pemilih = document.createElement("input");
+  pemilih.type = "file";
+  pemilih.accept = ".rtf,.txt";
+  pemilih.className = "aleta-berkas";
+  kakiUnggah.appendChild(pemilih);
+  kotakUnggah.appendChild(kakiUnggah);
+  isi.appendChild(kotakUnggah);
+
+  pemilih.addEventListener('change', async () => {
+    const berkas = pemilih.files && pemilih.files[0];
+    if (!berkas) return;
+    pemilih.disabled = true;
+    tombol.disabled = true;
+    wadah.textContent = "";
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = `Membaca ${berkas.name}…`;
+
+    let jawab;
+    try {
+      const badan = new FormData();
+      badan.append("berkas", berkas);
+      badan.append("nomorPerkara", nomorPerkara || "");
+      badan.append("perkaraId", perkaraIdDariHalaman());
+      const respons = await alatAmbil(
+        ALETA_API_UNGGAH_NASKAH,
+        {
+          method: "POST",
+          body: badan,
+          credentials: "include",
+          batasMs: BATAS_UNGGAH_NASKAH_MS,
+        },
+        "Mengirim naskah putusan"
+      );
+      if (!respons.ok) {
+        throw new Error(alatPesanGagal(null, respons.status, "Mengirim naskah putusan"));
+      }
+      const luar = await respons.json();
+      jawab = luar && luar.data ? luar.data : luar;
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+      pemilih.disabled = false;
+      tombol.disabled = false;
+      return;
+    }
+
+    pemilih.disabled = false;
+    tombol.disabled = false;
+    pemilih.value = "";
+
+    if (!jawab || !jawab.ok) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = (jawab && jawab.sebab) || "Naskahnya tidak dapat dibaca.";
+      return;
+    }
+
+    // Panjang tiap bagian diperlihatkan SEBELUM apa pun diisikan. Bagian
+    // yang terpotong salah hampir selalu kelihatan dari panjangnya - amar
+    // 8.000 aksara berarti pertimbangan ikut terbawa ke dalamnya.
+    const rinci = buatElemen('div', 'aleta-unggah-rinci');
+    for (const b of jawab.bagian || []) {
+      const baris = buatElemen('div', 'aleta-unggah-baris');
+      baris.appendChild(buatElemen('span', 'aleta-unggah-judul', b.judul));
+      baris.appendChild(
+        buatElemen(
+          'span',
+          b.aksara ? 'aleta-unggah-jumlah' : 'aleta-unggah-kosong',
+          b.aksara ? `${b.aksara.toLocaleString('id-ID')} aksara` : (b.halangan || 'kosong')
+        )
+      );
+      rinci.appendChild(baris);
+    }
+    wadah.textContent = '';
+    wadah.appendChild(rinci);
+
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent =
+      `Draf v${jawab.versi} tersimpan dari ${berkas.name}. ` +
+      (jawab.perabotDibuang
+        ? `${jawab.perabotDibuang} baris perabot halaman dibuang. `
+        : "") +
+      "Mengambil usulannya…";
+
+    // Langsung disambung ke pembacaan usulan - yang mengunggah naskah
+    // memang hendak mengisikannya, bukan hendak berhenti di sini.
+    tombol.click();
+  });
+
   isi.appendChild(wadah);
 
   /** Satu baris usulan: judul, cuplikan, dan centang. */
@@ -5571,6 +5709,112 @@ function simpanSalinanTema() {
   }
 }
 
+/** Penanda gaya yang disisipkan ke dalam bingkai CKEditor. */
+const GAYA_CKEDITOR = "aleta-tema-ckeditor";
+
+/**
+ * ==========================================================================
+ * BIDANG KETIKNYA IFRAME, DAN BERKAS GAYA BERHENTI DI TEPINYA
+ * ==========================================================================
+ *
+ * Layar Putusan Akhir memuat tiga CKEditor. Bilah alatnya bagian dari
+ * halaman dan sudah diwarnai panel.css, tetapi bidang ketiknya dokumen
+ * TERSENDIRI di dalam iframe, dengan contents.css milik SIPP yang memaksa
+ * latar putih.
+ *
+ * Karena keduanya satu origin, contentDocument-nya dapat dicapai - dan
+ * itulah satu-satunya jalan. Tanpa ini, tiga bidang putih seluas layar
+ * tetap berdiri di atas halaman gelap, dan justru bidang itulah yang paling
+ * lama dipandang saat menulis putusan.
+ *
+ * ==========================================================================
+ * GAYANYA DISISIPKAN KE <head>, TIDAK PERNAH KE <body>
+ * ==========================================================================
+ *
+ * getData() milik CKEditor membaca body.innerHTML - itulah yang tersimpan
+ * sebagai amar dan pertimbangan di SIPP. Satu elemen <style> di dalam body
+ * akan ikut tersimpan ke dalam putusan, lalu ikut tercetak.
+ *
+ * Di dalam <head> ia tidak pernah terbaca getData(), sehingga naskah yang
+ * tersimpan sama persis dengan tanpa ekstensi ini.
+ */
+function warnaiSatuBingkai(bingkai, gelap) {
+  let dok = null;
+  try {
+    dok = bingkai.contentDocument;
+  } catch {
+    // Bingkai yang belum siap atau berbeda origin - dilewati diam-diam;
+    // yang hilang hanya warnanya.
+    return;
+  }
+  if (!dok || !dok.head) return;
+
+  const lama = dok.getElementById(GAYA_CKEDITOR);
+  if (!gelap) {
+    // Mencabutnya mengembalikan bidang ketik persis seperti semula - sifat
+    // yang sama dengan penanda tema di halaman induknya.
+    if (lama) lama.remove();
+    return;
+  }
+  if (lama) return;
+
+  const gaya = dok.createElement("style");
+  gaya.id = GAYA_CKEDITOR;
+  gaya.textContent = [
+    "html, body { background: #141d19 !important; color: #dfe8e2 !important; }",
+    "body { caret-color: #7fd0a6; }",
+    "a { color: #7fd0a6 !important; }",
+    "table, td, th { border-color: #27342e !important; }",
+    "hr { border-color: #27342e !important; }",
+    "::selection { background: #22432f; color: #ffffff; }",
+    // Naskah yang ditempel dari Word membawa warnanya sendiri, dan warna
+    // itu hampir selalu hitam - hitam di atas gelap berarti hilang sama
+    // sekali. Yang dibatalkan HANYA yang mendekati hitam; warna yang
+    // sengaja dipilih penulis, seperti merah pada catatan, dibiarkan.
+    '[style*="color:#000"], [style*="color: #000"], [style*="color:black"],' +
+      ' [style*="color: black"], [style*="color:rgb(0,0,0)"], [style*="color: rgb(0, 0, 0)"],' +
+      ' font[color="#000000"], font[color="black"] { color: inherit !important; }',
+    // Begitu pula latar putih yang ikut tertempel.
+    '[style*="background-color:#fff"], [style*="background-color: #fff"],' +
+      ' [style*="background:#fff"], [style*="background: #fff"],' +
+      ' [style*="background-color:white"], [style*="background-color: white"]' +
+      " { background-color: transparent !important; }",
+  ].join("\n");
+  dok.head.appendChild(gaya);
+}
+
+/**
+ * Mewarnai seluruh bingkai CKEditor yang ada di halaman.
+ *
+ * Dipanggil tiap kali tema diterapkan dan tiap kali halaman berubah -
+ * CKEditor baru selesai membangun bingkainya beberapa saat SESUDAH tingkap
+ * Putusan Akhir muncul, jadi sekali panggil pada saat tingkapnya dibuka
+ * tidak pernah cukup.
+ *
+ * Pendengar load dipasang sekali per bingkai: CKEditor menulis ulang isi
+ * bingkainya saat berpindah antara Sumber dan WYSIWYG, dan tulisan ulang
+ * itu membuang gaya yang sudah disisipkan.
+ */
+function warnaiCkeditor() {
+  const gelap =
+    document.documentElement.getAttribute("data-aleta-tema-sipp") === "gelap";
+  const bingkai = document.querySelectorAll(
+    "iframe.cke_wysiwyg_frame, iframe.cke_panel_frame"
+  );
+  for (const satu of bingkai) {
+    warnaiSatuBingkai(satu, gelap);
+    if (satu.dataset.aletaTema !== "1") {
+      satu.dataset.aletaTema = "1";
+      satu.addEventListener("load", () => {
+        warnaiSatuBingkai(
+          satu,
+          document.documentElement.getAttribute("data-aleta-tema-sipp") === "gelap"
+        );
+      });
+    }
+  }
+}
+
 function terapkanTemaSipp() {
   // ==========================================================================
   // SATU PENANDA, BUKAN SATU LEMBAR GAYA YANG DISUNTIKKAN
@@ -5599,9 +5843,11 @@ function terapkanTemaSipp() {
   simpanSalinanTema();
   if (!temaSippMenyala || temaSekarang !== "gelap") {
     akar.removeAttribute("data-aleta-tema-sipp");
+    warnaiCkeditor();
     return;
   }
   akar.setAttribute("data-aleta-tema-sipp", "gelap");
+  warnaiCkeditor();
 }
 
 async function muatTema() {
@@ -8657,6 +8903,38 @@ function tampilkan(elemen) {
 
 let nomorTerakhir = "";
 let sedangAmbil = false;
+
+/**
+ * ==========================================================================
+ * BORANG SIPP DATANG BELAKANGAN, DAN PANELNYA SUDAH TERGAMBAR
+ * ==========================================================================
+ *
+ * Dua bagian panel hanya digambar bila borangnya memang ada di halaman:
+ * Isi formulir putusan menuntut #frm_putusan, dan Isi alasan perkara
+ * menuntut #frm_data_umum. Keduanya dikenali dari borangnya sendiri, bukan
+ * dari alamat halaman - dan itu memang benar, sebab alamat SIPP berubah
+ * bentuk antar versi sedangkan id borangnya tidak.
+ *
+ * Tetapi keduanya TIDAK ada saat halaman perkara pertama kali dibuka. SIPP
+ * memuatnya lewat AJAX ke dalam tingkap yang melayang di atas halaman yang
+ * sama: alamatnya tidak berpindah, dan nomor perkaranya tidak berubah.
+ *
+ * Penjaga nomorTerakhir karena itu menolak menggambar ulang, dan kedua
+ * bagian itu tidak pernah muncul sama sekali. Yang menekan "Tambah Putusan
+ * Akhir" melihat borang SIPP terbuka dengan panel ALETA di sebelahnya yang
+ * tidak menawarkan apa pun - lalu menyimpulkan fiturnya tidak ada.
+ *
+ * Maka yang dijaga bukan lagi nomor perkaranya saja, melainkan nomor
+ * perkara BESERTA borang yang sedang terbuka.
+ */
+function tandaBorang() {
+  return `${document.querySelector("#frm_putusan") ? "1" : "0"}${
+    document.querySelector("#frm_data_umum") ? "1" : "0"
+  }`;
+}
+
+/** Borang yang ada di halaman saat panel terakhir digambar. */
+let borangTerakhir = "";
 /** Usulan penunjukan yang terakhir dibaca - dipakai menebak peta kolom. */
 let usulanTerakhir = null;
 
@@ -9001,6 +9279,33 @@ function catatAkunSipp() {
   }
 }
 
+/**
+ * Menggambar ulang panel dari konteks yang SUDAH ada di memori.
+ *
+ * Dipakai ketika yang berubah hanya borang SIPP di halaman, bukan
+ * perkaranya. Tidak ada satu pun keterangan perkara yang berubah ketika
+ * tingkap Putusan Akhir dibuka, jadi menanyakannya lagi ke portal hanya
+ * menambah satu penantian - dan pada portal yang sedang berat, penantian
+ * itu yang justru terlihat sebagai ekstensi yang macet.
+ *
+ * Penandaan baris halaman sengaja TIDAK diulang: ia sudah terpasang sejak
+ * penggambaran sebelumnya, dan mengulangnya berarti menyapu seluruh tabel
+ * tiap kali sebuah tingkap dibuka.
+ */
+async function gambarUlangKonteks() {
+  if (!konteksTerakhir) return;
+  await muatLipatan();
+  await muatTema();
+  const posisi = await muatPosisi();
+  const panel = susunPanel(konteksTerakhir);
+  panel.setAttribute("data-tema", temaSekarang);
+  tampilkan(panel);
+  terapkanTemaSipp();
+  terapkanPosisi(panel, posisi);
+  normalkanJangkar(panel);
+  if (posisi && posisi.lencana) ciutkanKeLencana(panel, true);
+}
+
 async function segarkan() {
   // Halaman cetak dan templat diperiksa PALING AWAL, sebelum saklar mana
   // pun dibaca. Petugas yang menyalakan penandaan tidak sedang menyetujui
@@ -9075,7 +9380,23 @@ async function segarkan() {
     nomorTerakhir = "*daftar*";
     return;
   }
-  if (nomor === nomorTerakhir || sedangAmbil) return;
+  if (sedangAmbil) return;
+
+  // Perkara yang sama, tetapi borang yang terbuka berubah: tingkap Putusan
+  // Akhir atau Data Umum baru muncul, atau baru ditutup. Panelnya digambar
+  // ulang dari konteks yang sudah ada - portal tidak ditanya lagi.
+  const borang = tandaBorang();
+  if (nomor === nomorTerakhir) {
+    if (borang === borangTerakhir) return;
+    borangTerakhir = borang;
+    if (konteksTerakhir) {
+      await gambarUlangKonteks();
+      return;
+    }
+    // Konteksnya belum pernah terbaca - jalur biasa di bawah yang
+    // mengambilnya, sekalian menggambar bagian borangnya.
+  }
+  borangTerakhir = borang;
 
   sedangAmbil = true;
   try {
@@ -9277,6 +9598,10 @@ const pengamat = new MutationObserver((daftar) => {
 
   if (jeda) clearTimeout(jeda);
   jeda = setTimeout(() => {
+    // Bingkai CKEditor selesai dibangun beberapa saat sesudah tingkap
+    // Putusan Akhir muncul. Di sinilah ia tertangkap - tanpa satu pun
+    // pengamat tambahan, dan tanpa jam yang berdetak terus.
+    warnaiCkeditor();
     // Dikerjakan saat peramban senggang, supaya penyapuan tabel tidak pernah
     // bersaing dengan gulir atau ketikan petugas. Peramban lama yang belum
     // punya requestIdleCallback tetap dilayani lewat jalur biasa.

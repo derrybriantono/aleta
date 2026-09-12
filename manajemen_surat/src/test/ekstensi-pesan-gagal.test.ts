@@ -261,7 +261,10 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     const lewatAlat = isi.split("await alatAmbil(").length - 1;
     const mentah = isi.split("await fetch(").length - 1;
 
-    // 19 sejak berkas gugatan dapat dibaca dari arsip ALETA - berkas yang
+    // 20 sejak naskah putusan dapat diunggah dari berkas RTF - unggahan yang
+    // ditolak (PDF, berkas bukan putusan, jangkar yang tidak ketemu) harus
+    // berbunyi sebagai kalimat beserta jalan keluarnya, bukan sebagai kode.
+    // (19 sejak berkas gugatan dapat dibaca dari arsip ALETA - berkas yang
     // tidak ada di arsip harus berbunyi sebagai kalimat beserta jalan
     // keluarnya, bukan sebagai kode 404.
     // (18 sejak pembatalan menyeluruh ditambahkan - satu permintaan lagi yang
@@ -274,7 +277,7 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
     // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
     // ALETA", 12 sejak "Tetapkan lewat ALETA".)
-    expect(lewatAlat).toBe(19);
+    expect(lewatAlat).toBe(20);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU
