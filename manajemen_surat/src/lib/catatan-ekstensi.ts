@@ -42,6 +42,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.107.0",
+    dirilis: "2026-09-12T16:40:00+08:00",
+    judul: "Penetapan massal, praperiksa yang berbicara manusia, pintasan papan tik, dan panel yang tetap berguna saat ALETA mati",
+    butir: [
+      "PENETAPAN MASSAL dari halaman Daftar Perkara. Panel sudah lama membaca seluruh nomor perkara di halaman itu; sekarang tiap barisnya dapat dicentang dan keempat penetapannya dikerjakan berurutan. Tiga pagar menjaganya tidak menjadi alat perusak massal: tidak ada yang tercentang sendiri, tetap dua tekanan (yang pertama menjalankan uji kering atas TIAP perkara terpilih dan memperlihatkan hasilnya baris demi baris), dan berhenti pada kegagalan pertama - kegagalan pada penetapan massal hampir selalu menyeluruh, dan meneruskannya berarti mengulang kesalahan yang sama belasan kali sebelum ada yang sempat membacanya. Perkara yang sudah ditetapkan dilewati tanpa berbunyi.",
+      "PRAPERIKSA yang berbicara manusia. Uji kering dulu menjawab '7 pernyataan disiapkan' per langkah - benar, dan tidak menolong siapa pun. Sekarang ia menyebut siapa yang akan ditunjuk beserta alasannya, kapan sidangnya, apa yang sudah ada di SIPP, dan apa yang mengganjal: hari sidang yang jatuh pada Sabtu atau Minggu, sidang yang kurang dari tujuh hari sejak pendaftaran, pejabat yang berhalangan tanpa Plh. Ketiganya keadaan yang diterima SIPP tanpa mengeluh tetapi keliru menurut hukum acara atau menurut kalender - dan yang menemukannya sesudah penetapan tertulis harus membongkar empat langkah untuk memperbaiki satu tanggal. Rincian pernyataannya tetap ada di bawah.",
+      "MEMBATALKAN SELURUH PENETAPAN satu perkara sekali tekan. Sebelumnya menuntut empat kali dua tekanan, berurutan dari PHS mundur ke PMH, dan urutan itu tidak boleh keliru - delapan tekanan yang urutannya harus diingat adalah delapan kesempatan berhenti di tengah. Rantainya kini diurus di satu tempat, tetap dua tekanan, dan yang berhenti di tengah menyebutkan sampai mana perkaranya terbongkar.",
+      "PANEL TETAP BERGUNA ketika ALETA tidak terjangkau. Sebelumnya portal yang mati berarti panel yang tidak digambar sama sekali, dan kesimpulan yang selalu sama: ekstensinya rusak. Sekarang keterangan perkara yang terakhir terbaca disimpan (dua belas perkara terakhir, dibuang sesudah dua belas jam) dan digambar dengan pita yang menyebutkan umurnya. Yang DIBACA boleh tua; yang DITULIS tidak pernah - seluruh kewenangan menulis dimatikan selama panel luring, sebab usulan majelis dihitung dari giliran dan beban perkara yang berubah tiap hari.",
+      "PINTASAN PAPAN TIK: Alt+A menciutkan dan membentangkan panel, Alt+P membuka Penetapan, Alt+R membuka Riwayat ALETA, Alt+Enter menekan tombol Tetapkan - tetap dengan pengesahan tekanan keduanya. Diabaikan selagi kursor berada di kolom isian, dan tombol yang tidak dikenali diteruskan apa adanya ke SIPP. Keempatnya disebutkan di kaki panel: pintasan yang tidak diketahui siapa pun sama saja dengan pintasan yang tidak ada.",
+      "PETA KOLOM FORMULIR kini mengusulkan dirinya sendiri. Kolom di halaman yang isinya berpadanan dengan nilai yang memang diusulkan ALETA - nama juru sita, nama panitera pengganti, tanggal sidang - ditunjukkan beserta penunjuknya, siap disalin ke Pengaturan. Dugaan dari ISI kolomnya dapat diperiksa; dugaan dari nama kolomnya tidak. ALETA tidak pernah memasangnya sendiri: peta yang keliru mengisi kolom yang salah pada formulir yang sungguhan.",
+      "Layar RIWAYAT ALETA lintas perkara di portal, pada menu ALETA e-Court. Tab di panel menjawab 'apa yang pernah dikerjakan pada perkara INI'; layar ini menjawab 'apa saja yang dikerjakan hari ini, oleh siapa, dan ada berapa yang gagal'. Dapat disaring dan diunduh sebagai CSV - bahan bukti e-Audit yang selama ini dikumpulkan dengan tangan.",
+    ],
+  },
+  {
     versi: "1.106.0",
     dirilis: "2026-09-12T15:05:00+08:00",
     judul: "Basis data SIPP bersih dari nama ALETA, riwayatnya pindah ke ALETA sendiri, dan panel menciut jadi lencana di mana pun",

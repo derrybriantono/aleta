@@ -69,7 +69,9 @@ describe("rantainya diteruskan utuh dari peramban sampai bot", () => {
   it("ekstensi menyusun rantai dari langkah yang SUDAH lulus, bukan dari daftar tetap", () => {
     const konten = readFileSync(path.join(AKAR_EKSTENSI, "konten.js"), "utf8");
     const bagian = konten.slice(
-      konten.indexOf("async function tetapkanLewatAleta("),
+      // Rantainya pindah ke rantaiPenetapan pada 1.107.0 - dipisahkan dari
+      // penggambarannya supaya penetapan massal memakai salinan yang SAMA.
+      konten.indexOf("async function rantaiPenetapan("),
       konten.indexOf("function gambarHasilTulis(")
     );
     expect(bagian).toContain("const rantaiSebelum = [];");

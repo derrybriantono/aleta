@@ -942,6 +942,133 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
 
 /**
  * ============================================================================
+ * MEMBATALKAN SELURUH PENETAPAN SATU PERKARA
+ * ============================================================================
+ *
+ * Membatalkan satu per satu menuntut empat kali dua tekanan, berurutan dari
+ * PHS mundur ke PMH, dan urutan itu tidak boleh keliru - membongkar majelis
+ * selagi hari sidangnya masih berdiri meninggalkan sidang bagi majelis yang
+ * sudah tidak ada. Delapan tekanan yang urutannya harus diingat adalah
+ * delapan kesempatan berhenti di tengah, dan perkara yang separuh terbongkar
+ * justru keadaan yang paling sukar dibereskan.
+ *
+ * Di sini rantainya diurus satu tempat. Urutannya dibaca dari layanan, bukan
+ * ditulis ulang - lihat URUTAN_BONGKAR.
+ *
+ * KERING sebagai bawaan, sama seperti membongkar satu langkah: yang lupa
+ * menyebut { kering: false } menerima RENCANA, bukan pembongkarannya.
+ */
+router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+
+    const perkaraId = Number(badan.perkaraId);
+    if (!Number.isFinite(perkaraId) || perkaraId <= 0) {
+      res.status(400).json({ ok: false, alasan: "perkara_tidak_sah" });
+      return;
+    }
+
+    // Akun pejabat tiap jenis - pembongkaran tercatat atas nama yang sama
+    // dengan yang menuliskannya.
+    const akun = badan.akunPerJenis && typeof badan.akunPerJenis === "object" ? badan.akunPerJenis : {};
+    const kering = badan.kering !== false;
+    const ip = String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, "");
+
+    const langkah = [];
+    const rantaiDibongkar = [];
+    let berhentiKarena = null;
+
+    for (const jenis of penetapanTulisService.URUTAN_BONGKAR) {
+      const olehUsername = String(akun[jenis] || "").trim();
+
+      const rencana = await penetapanTulisService.susunRencanaHapus({
+        jenis,
+        perkaraId,
+        olehUsername,
+        operator,
+        ip,
+        kering,
+        rantaiDibongkar: [...rantaiDibongkar],
+      });
+
+      if (!rencana.ok) {
+        // Yang memang BELUM ADA dilewati tanpa berbunyi - perkara yang
+        // penetapannya baru sampai PPP tidak sedang bermasalah, ia hanya
+        // belum punya PJS dan PHS.
+        if (rencana.alasan === `${jenis}_belum_ada`) continue;
+
+        // Sisanya menghentikan rantainya. Melanjutkan berarti membongkar
+        // langkah yang lebih awal selagi yang lebih akhir masih berdiri.
+        berhentiKarena = { jenis, ...rencana };
+        break;
+      }
+
+      if (kering) {
+        langkah.push({
+          jenis,
+          atasNama: rencana.atasNama,
+          jumlahPernyataan: rencana.langkah.length,
+          tabel: [...new Set(rencana.langkah.map((x) => x.tabel))],
+        });
+        rantaiDibongkar.push(jenis);
+        continue;
+      }
+
+      const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering: false });
+
+      void jejakAletaService.catat({
+        aksi: "hapus",
+        jenis,
+        perkaraId,
+        nomorPerkara: rencana.perkara,
+        akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+        namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+        operator: rencana.operator,
+        ip,
+        berhasil: hasil.ok === true,
+        kering: false,
+        alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+        langkah: rencana.langkah,
+      });
+
+      langkah.push({
+        jenis,
+        atasNama: rencana.atasNama,
+        jumlahPernyataan: rencana.langkah.length,
+        tabel: [...new Set(rencana.langkah.map((x) => x.tabel))],
+        ok: hasil.ok === true,
+        alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      });
+
+      if (!hasil.ok) {
+        berhentiKarena = { jenis, ...hasil };
+        break;
+      }
+      rantaiDibongkar.push(jenis);
+    }
+
+    // Tidak ada satu pun yang dapat dibongkar BUKAN kegagalan - perkara yang
+    // memang belum ditetapkan menjawab begitu, dan itu jawaban yang benar.
+    res.status(berhentiKarena ? 409 : 200).json({
+      ok: !berhentiKarena,
+      kering,
+      perkaraId,
+      langkah,
+      jumlah: langkah.length,
+      berhentiKarena,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
  * RIWAYAT PERBUATAN ALETA
  * ============================================================================
  *

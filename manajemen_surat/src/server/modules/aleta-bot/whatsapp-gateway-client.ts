@@ -2337,6 +2337,25 @@ export async function kirimPenetapanHapusGateway(payload: {
 }
 
 /**
+ * Membongkar SELURUH rantai penetapan satu perkara dalam satu permintaan.
+ *
+ * Rantainya diurus bot, bukan di sini: urutannya tidak boleh keliru, dan
+ * empat permintaan terpisah dari peramban adalah empat kesempatan berhenti di
+ * tengah - perkara yang separuh terbongkar justru yang paling sukar dibereskan.
+ */
+export async function kirimPenetapanHapusSemuaGateway(payload: {
+  perkaraId: number;
+  akunPerJenis: Record<string, string>;
+  operator: string;
+  kering: boolean;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/hapus-semua", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
  * Riwayat perbuatan ALETA pada penetapan - dari basis data ALETA sendiri.
  *
  * Bukan dari sys_audittrail SIPP. Sejak 1.106.0 tidak ada satu kata pun

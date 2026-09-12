@@ -2651,6 +2651,159 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   pointer-events: none;
 }
 
+/* Daftar perkara untuk penetapan massal.
+
+   Digulung sendiri pada 40vh: halaman daftar SIPP dapat memuat lima puluh
+   baris, dan daftar sepanjang itu di dalam panel akan mendorong tombolnya
+   keluar layar - tombol yang tidak terlihat sama saja dengan tombol yang
+   tidak ada. */
+.aleta-massal-daftar {
+  max-height: 40vh;
+  overflow-y: auto;
+  margin: 6px 0;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+}
+
+.aleta-massal-baris {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.aleta-massal-baris:nth-child(odd) { background: var(--aleta-latar-naik); }
+.aleta-massal-centang { flex: none; margin: 0; }
+
+.aleta-massal-nomor {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Keadaan tiap baris selagi berjalan. Rata kanan supaya matanya dapat
+   menyusuri satu kolom, bukan mengejar teks yang panjangnya berubah-ubah. */
+.aleta-massal-keadaan {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aleta-peta-usulan {
+  margin: 6px 0 10px;
+  padding: 9px 11px;
+  background: var(--aleta-latar-naik);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+}
+
+/* Rapor praperiksa: apa yang akan terjadi, dalam kalimat.
+
+   Ditaruh di ATAS rincian pernyataannya dan diberi latar yang naik, sebab
+   inilah yang dibaca sebelum menekan - rincian di bawahnya baru dibaca ketika
+   ada yang perlu ditelusuri. */
+.aleta-praperiksa {
+  margin: 6px 0 10px;
+  padding: 9px 11px;
+  background: var(--aleta-latar-naik);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+}
+
+.aleta-praperiksa-baris {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+}
+
+.aleta-praperiksa-label {
+  flex: none;
+  width: 112px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-praperiksa-nilai { flex: 1; min-width: 0; }
+.aleta-praperiksa-isi { display: block; font-weight: 600; }
+
+.aleta-praperiksa-sebab {
+  display: block;
+  margin-top: 1px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+}
+
+.aleta-praperiksa-catatan {
+  margin-top: 6px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Ganjalan memakai nada MENDESAK, bukan nada gagal: tidak ada yang rusak -
+   ada yang perlu diputuskan orang sebelum menekan. */
+.aleta-praperiksa-ganjal {
+  margin-top: 6px;
+  padding: 5px 8px;
+  border-left: 3px solid var(--aleta-mendesak);
+  background: color-mix(in srgb, var(--aleta-mendesak) 12%, transparent);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+
+/* Pembatalan menyeluruh: dipisahkan garis dari pembatalan satu langkah.
+   Dua tombol yang sama-sama membatalkan tetapi berbeda jangkauannya menuntut
+   pembeda yang terlihat, bukan hanya tulisannya yang berbeda. */
+.aleta-bongkar-semua {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--aleta-garis);
+}
+
+.aleta-bongkar-rencana {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--aleta-latar-naik);
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+}
+
+/* Pita luring: panel yang dibaca dari simpanan.
+
+   Warnanya nada MENDESAK, bukan nada gagal. Yang tergambar di bawahnya bukan
+   kesalahan - ia keterangan yang benar pada waktunya, dan masih berguna
+   dibaca. Yang perlu diketahui pembacanya hanya satu: umurnya. */
+.aleta-pita-luring {
+  flex: none;
+  margin: 0;
+  padding: 7px 12px;
+  background: color-mix(in srgb, var(--aleta-mendesak) 16%, var(--aleta-latar));
+  border-bottom: 1px solid var(--aleta-mendesak);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+
+/* Baris pintasan di kaki panel. Sengaja paling redup di seluruh panel: ia
+   keterangan yang dibaca sekali lalu diingat, bukan yang dibaca tiap kali. */
+.aleta-kaki-pintasan {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--aleta-garis);
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
 /* ==========================================================================
    TEMA GELAP UNTUK HALAMAN ABT
    ==========================================================================

@@ -1624,6 +1624,29 @@ function rincianUntukHapus(jenis, perkara, jadwalSidangId) {
         params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.pmh],
         keterangan: `membongkar majelis hakim tanggal ${perkara.pmh}`,
       },
+      // ======================================================================
+      // BARIS SMART MAJELIS IKUT DIBONGKAR - DIPAGARI TANGGALNYA
+      // ======================================================================
+      //
+      // Baris Smart Majelis baru ditulis sejak 1.104.0, sedangkan
+      // pembongkaran ini ditulis sebelum itu. Akibatnya perkara yang
+      // majelisnya dibongkar tetap punya baris yang menyatakan majelisnya
+      // ditetapkan di luar rekomendasi - untuk majelis yang sudah tidak ada.
+      // Di laporan Smart Majelis ia terbaca sebagai perkara menyimpang,
+      // padahal perkaranya belum bermajelis sama sekali.
+      //
+      // Dipagari TANGGAL penetapannya, bukan perkara_id saja. Perkara 562
+      // punya baris Smart Majelis yang ditulis petugas pada 10 September, dan
+      // pembongkaran yang menyapu seluruh baris satu perkara pernah
+      // membuangnya - baris itu harus dipulihkan dari cadangan. Yang dibongkar
+      // hanya baris yang tanggalnya sama dengan penetapan yang sedang
+      // dibongkar; tulisan petugas dari hari lain tidak tersentuh.
+      {
+        tabel: "perkara_smartmajelis",
+        sql: `DELETE FROM perkara_smartmajelis WHERE perkara_id = ? AND DATE(tanggal) = ?`,
+        params: [perkara.perkaraId, tanggalIso(perkara.pmh)],
+        keterangan: `membongkar catatan smart majelis tanggal ${tanggalIso(perkara.pmh)}`,
+      },
     ];
   }
   if (jenis === "ppp") {
@@ -1710,7 +1733,29 @@ async function susunRencanaHapus(minta) {
   // Urutannya tidak dapat dibalik. Membongkar majelis selagi hari sidangnya
   // masih berdiri meninggalkan sidang bagi majelis yang sudah tidak ada.
   const sesudah = { pmh: ["ppp", "pjs", "phs"], ppp: ["phs"], pjs: ["phs"], phs: [] }[jenis];
-  const menghalangi = sesudah.filter((x) => Boolean(perkara[x]));
+
+  // ==========================================================================
+  // RANTAI YANG DIBONGKAR SEKALIGUS - HANYA PADA UJI KERING
+  // ==========================================================================
+  //
+  // Membatalkan SELURUH penetapan satu perkara menuntut rencana keempat
+  // langkahnya diperlihatkan lebih dahulu, sekaligus. Tetapi pada saat itu
+  // belum ada satu baris pun yang dihapus, sehingga penjaga di bawah akan
+  // menolak PJS selagi PHS-nya masih berdiri - padahal PHS itu memang akan
+  // dibongkar lebih dahulu pada rantai yang sama.
+  //
+  // Yang dilonggarkan HANYA uji keringnya. Pembongkaran sungguhan berjalan
+  // satu per satu dan basis datanya benar-benar berubah di antara langkah,
+  // jadi di sana penjaganya membaca keadaan yang sebenarnya dan tidak perlu
+  // dilonggarkan sedikit pun. Sepola dengan rantaiSebelum di jalur menulis.
+  const dibongkarDahulu =
+    minta.kering === true && Array.isArray(minta.rantaiDibongkar)
+      ? minta.rantaiDibongkar.map((x) => String(x || "").toLowerCase())
+      : [];
+
+  const menghalangi = sesudah.filter(
+    (x) => Boolean(perkara[x]) && !dibongkarDahulu.includes(x)
+  );
   if (menghalangi.length > 0) {
     return { ok: false, alasan: "langkah_sesudahnya_masih_ada", langkah: menghalangi };
   }
@@ -1934,7 +1979,16 @@ async function jalankanRencana(rencana, opsi = {}) {
   return { ok: true, kering: false, jumlahLangkah: selesai.length, selesai };
 }
 
+/**
+ * Urutan membongkar: dari yang paling akhir ditulis ke yang paling awal.
+ * Ditulis satu kali di sini supaya gerbang, ekstensi, dan uji membaca
+ * urutan yang sama - urutan yang berbeda di salah satunya akan berujung
+ * pada perkara yang separuh terbongkar.
+ */
+const URUTAN_BONGKAR = ["phs", "pjs", "ppp", "pmh"];
+
 module.exports = {
+  URUTAN_BONGKAR,
   TANDA_ALETA,
   DAFTAR_TABEL,
   JEJAK_PROSES,

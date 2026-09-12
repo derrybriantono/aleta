@@ -106,6 +106,19 @@
         select2: Boolean(elemen.classList.contains("select2") || elemen.nextElementSibling?.classList?.contains("select2")),
         ckeditor: Boolean(window.CKEDITOR && elemen.id && window.CKEDITOR.instances && window.CKEDITOR.instances[elemen.id]),
         jumlahPilihan: elemen.tagName.toLowerCase() === "select" ? elemen.options.length : 0,
+        // ====================================================================
+        // ISI KOLOMNYA IKUT - SEPOTONG, DAN BUKAN DARI SEMBARANG KOLOM
+        // ====================================================================
+        //
+        // Dipakai menebak peta kolom: kolom yang berisi nama juru sita yang
+        // diusulkan ALETA hampir pasti kolom juru sita. Tebakan dari ISI dapat
+        // diperiksa; tebakan dari nama kolom tidak.
+        //
+        // Kolom hidden dan password sudah disaring di atas, panel ALETA
+        // sendiri juga. Yang tersisa dipotong 200 aksara - yang dicocokkan
+        // nama dan tanggal, dan tidak ada gunanya membawa posita sepanjang
+        // tiga halaman melintasi jembatan hanya untuk itu.
+        nilai: String(elemen.value === null || elemen.value === undefined ? "" : elemen.value).slice(0, 200),
       });
       if (hasil.length >= 300) break;
     }

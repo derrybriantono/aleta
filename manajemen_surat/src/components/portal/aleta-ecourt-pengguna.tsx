@@ -17,6 +17,7 @@ import {
   Handshake,
   FileSearch,
   FolderCheck,
+  History,
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
@@ -67,6 +68,11 @@ const AletaEcourtMediasi = dynamic(
   { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
 );
 
+const AletaEcourtRiwayat = dynamic(
+  () => import("@/components/portal/aleta-ecourt-riwayat").then((m) => m.AletaEcourtRiwayat),
+  { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
+);
+
 const AletaEcourtArsipBerkas = dynamic(
   () => import("@/components/portal/aleta-ecourt-arsip-berkas").then((m) => m.AletaEcourtArsipBerkas),
   { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
@@ -102,7 +108,7 @@ export function AletaEcourtPengguna() {
   // (berulang, setiap hari). Menumpuk keduanya dalam satu halaman panjang
   // membuat yang sering dipakai selalu berada di bawah yang jarang dipakai.
   const [menu, setMenu] = useState<
-    "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "ekstensi"
+    "dasbor" | "sidang" | "mediasi" | "status" | "berkas" | "riwayat" | "ekstensi"
   >("dasbor");
   const [sidebarCiut, setSidebarCiut] = useState(false);
   const [cariMenu, setCariMenu] = useState("");
@@ -248,6 +254,15 @@ export function AletaEcourtPengguna() {
     },
     { id: "status" as const, label: "Status Perkara", keterangan: "Telusuri satu perkara", ikon: FileSearch },
     { id: "berkas" as const, label: "Kendali Berkas", keterangan: "Arsip per perkara", ikon: FolderCheck },
+    // Riwayat sesudah Kendali Berkas dan sebelum Ekstensi: ia dibaca
+    // berulang seperti keduanya yang di atas, sedangkan Ekstensi dibuka
+    // sekali lalu tidak lagi.
+    {
+      id: "riwayat" as const,
+      label: "Riwayat ALETA",
+      keterangan: "Yang dituliskan ke SIPP",
+      ikon: History,
+    },
     { id: "ekstensi" as const, label: "Ekstensi SIPP", keterangan: "Pasang di peramban", ikon: Puzzle },
   ];
   // Menu yang cocok dengan pencarian. Label dan keterangannya sama-sama
@@ -541,6 +556,8 @@ export function AletaEcourtPengguna() {
               }}
             />
           ) : null}
+
+          {menu === "riwayat" ? <AletaEcourtRiwayat /> : null}
 
           {menu === "ekstensi" ? (
       <Card>

@@ -87,8 +87,9 @@ describe("alamat halaman perkara yang boleh dibuka ulang", () => {
 describe("tidak ada lagi pemuatan ulang yang terjatuh ke dasbor", () => {
   it("kedua tempat memuat ulang memanggil muatUlangHalamanPerkara", () => {
     const isi = konten();
-    // Sesudah penetapan tertulis, dan sesudah penetapan dibongkar.
-    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(2);
+    // Tiga: sesudah penetapan tertulis, sesudah satu penetapan dibongkar, dan
+    // sesudah SELURUH penetapan perkara dibongkar sekaligus.
+    expect(isi.split("setTimeout(muatUlangHalamanPerkara,").length - 1).toBe(3);
     expect(isi.includes("setTimeout(() => location.reload()")).toBe(false);
   });
 
