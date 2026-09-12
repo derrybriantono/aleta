@@ -981,6 +981,12 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
   const rencana = (data && data.rencana && data.rencana.langkah) || [];
 
   const hasil = [];
+  // Jenis yang SUDAH lulus lebih dahulu pada rantai ini. Dikirim supaya uji
+  // kering menilai PHS atas keadaan yang akan ada sesudah PMH ditulis, bukan
+  // atas keadaan sekarang - tanpa itu PHS selalu ditolak "pmh_belum_ada" pada
+  // perkara yang baru didaftarkan, dan tidak satu pun penetapan pernah
+  // tertulis.
+  const rantaiSebelum = [];
   for (const jenis of URUTAN_TULIS) {
     const nilai = idUntukTulis(jenis, usulan, pilihanManual);
     if (!nilai) {
@@ -1014,6 +1020,7 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
             ...nilai,
             olehUsername,
             kering,
+            rantaiSebelum: rantaiSebelum.slice(),
           }),
         },
         kering ? "Menyusun rencana penetapan" : "Menulis penetapan"
@@ -1032,9 +1039,11 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
       alasan: berhasil ? "" : String((jawab && jawab.alasan) || "ditolak"),
       atasNama: jawab && jawab.atasNama,
       langkah: (jawab && jawab.langkah) || [],
+      andaian: (jawab && jawab.andaian) || [],
       olehUsername,
     });
     if (!berhasil) break;
+    rantaiSebelum.push(jenis);
   }
 
   gambarHasilTulis(kabar, hasil, kering);
@@ -1078,6 +1087,13 @@ function gambarHasilTulis(kabar, hasil, kering) {
       )
     );
     kotak.appendChild(baris);
+
+    // Andaian yang dipakai menyusun langkah ini - mis. PHS dinilai dengan
+    // menganggap PMH sudah ditulis. Disebutkan supaya yang membacanya tahu
+    // rencana ini dinilai atas keadaan yang BELUM ada.
+    for (const satuAndaian of satu.andaian || []) {
+      kotak.appendChild(buatElemen("div", "aleta-tulis-ket", `Andaian: ${satuAndaian}`));
+    }
   }
 
   // Yang tidak sempat dijalankan disebut apa adanya. Diamnya membuat orang

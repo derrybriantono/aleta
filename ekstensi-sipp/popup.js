@@ -29,6 +29,73 @@ const penyimpanan =
     ? chrome.storage.local
     : null;
 
+/**
+ * ============================================================================
+ * UKURAN HURUF PANEL
+ * ============================================================================
+ *
+ * Angka, bukan saklar - dan karena itu bentuknya bukan kotak centang. Yang
+ * tersimpan persen (80..160, kelipatan 10); panel membacanya lewat
+ * panel-alat.js dan memasangnya sebagai pengali pada tiap ukuran huruf.
+ *
+ * Batas dan langkahnya ditulis ULANG di sini, tidak diambil dari panel-alat.js:
+ * popup berjalan di halaman ekstensi yang TIDAK memuat berkas itu. Keduanya
+ * dijaga tetap sama oleh uji ekstensi - kalau berbeda, popup akan menawarkan
+ * angka yang kemudian dijepit panel tanpa ada yang mengatakannya.
+ */
+const SKALA_KUNCI = "skalaHuruf";
+const SKALA_BAWAAN = 100;
+const SKALA_MIN = 80;
+const SKALA_MAKS = 160;
+const SKALA_LANGKAH = 10;
+
+const skalaKurang = document.getElementById("skalaKurang");
+const skalaTambah = document.getElementById("skalaTambah");
+const skalaNilai = document.getElementById("skalaNilai");
+const skalaContoh = document.getElementById("skalaContoh");
+const skalaPulih = document.getElementById("skalaPulih");
+
+let skalaSekarang = SKALA_BAWAAN;
+
+function rapikanSkala(nilai) {
+  const angka = Number(nilai);
+  if (!Number.isFinite(angka)) return SKALA_BAWAAN;
+  const dibulatkan = Math.round(angka / SKALA_LANGKAH) * SKALA_LANGKAH;
+  return Math.min(SKALA_MAKS, Math.max(SKALA_MIN, dibulatkan));
+}
+
+/**
+ * Menggambarkan keadaan sekarang.
+ *
+ * Contoh teksnya ikut diperbesar di tempat, supaya yang memilih melihat
+ * akibatnya TANPA harus berpindah ke halaman SIPP lebih dulu. Tombol yang
+ * sudah mentok dimatikan - menekan sesuatu yang diam-diam tidak berbuat apa
+ * pun membuat orang menyangka setelannya rusak.
+ */
+function gambarSkala() {
+  if (!skalaNilai) return;
+  skalaNilai.textContent = `${skalaSekarang}%`;
+  if (skalaContoh) skalaContoh.style.fontSize = `${(12.5 * skalaSekarang) / 100}px`;
+  if (skalaKurang) skalaKurang.disabled = skalaSekarang <= SKALA_MIN;
+  if (skalaTambah) skalaTambah.disabled = skalaSekarang >= SKALA_MAKS;
+  if (skalaPulih) skalaPulih.disabled = skalaSekarang === SKALA_BAWAAN;
+}
+
+function setelSkala(nilai) {
+  const bersih = rapikanSkala(nilai);
+  if (bersih === skalaSekarang) {
+    gambarSkala();
+    return;
+  }
+  skalaSekarang = bersih;
+  gambarSkala();
+  simpan(SKALA_KUNCI, skalaSekarang);
+}
+
+if (skalaKurang) skalaKurang.addEventListener("click", () => setelSkala(skalaSekarang - SKALA_LANGKAH));
+if (skalaTambah) skalaTambah.addEventListener("click", () => setelSkala(skalaSekarang + SKALA_LANGKAH));
+if (skalaPulih) skalaPulih.addEventListener("click", () => setelSkala(SKALA_BAWAAN));
+
 function pasangNilai(simpan) {
   // Panel bawaannya MENYALA: ia hanya menambah lapisan di sisi kanan.
   kotak.checked = simpan.aktif !== false;
@@ -38,6 +105,11 @@ function pasangNilai(simpan) {
   // Penanda hanya menambah keterangan, jadi harganya rendah dan gunanya
   // tinggi; yang mematikannya tetap diingat.
   kotakTanda.checked = simpan.tandaiHalaman !== false;
+  // Ukuran huruf panel - angka, dan bawaannya 100%.
+  skalaSekarang = rapikanSkala(
+    simpan[SKALA_KUNCI] === undefined ? SKALA_BAWAAN : simpan[SKALA_KUNCI]
+  );
+  gambarSkala();
   // Menyisipkan ke dalam tabel SIPP lebih jauh lagi daripada menandai:
   // tampilannya menyatu, sehingga berkas ALETA terlihat seperti bagian
   // SIPP. Bawaannya mati, dan menyalakannya keputusan petugas.
@@ -63,7 +135,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "asalPortal"])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "asalPortal", SKALA_KUNCI])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {

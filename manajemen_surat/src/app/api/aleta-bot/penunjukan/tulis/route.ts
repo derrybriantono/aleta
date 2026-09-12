@@ -100,6 +100,16 @@ export async function POST(request: NextRequest) {
     // menghasilkan hasil kering, bukan tulisan.
     const kering = badan.kering !== false;
 
+    // Rantai yang mendahului langkah ini. Datang dari peramban, jadi disaring
+    // ke daftar tertutup - dan pengaruhnya pun hanya pada UJI KERING, yang
+    // tidak menulis apa pun. Pada penulisan sungguhan bot mengabaikannya dan
+    // tetap menuntut PMH benar-benar tersimpan.
+    const rantaiSebelum = Array.isArray(badan.rantaiSebelum)
+      ? (badan.rantaiSebelum as unknown[])
+          .map((x) => String(x).toLowerCase())
+          .filter((x) => Object.prototype.hasOwnProperty.call(JENIS_BAKU, x))
+      : [];
+
     const respons = await kirimPenetapanTulisGateway({
       jenis,
       perkaraId,
@@ -118,6 +128,7 @@ export async function POST(request: NextRequest) {
       olehUsername,
       operator,
       kering,
+      rantaiSebelum,
     });
 
     return Response.json(respons, { status: respons?.ok === false ? 409 : 200 });

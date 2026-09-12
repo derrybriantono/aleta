@@ -70,11 +70,17 @@ describe("pita identitas: satu bentuk di kepala dan di kaki, pada setiap panel",
 
 describe("huruf panel dibesarkan", () => {
   it("tidak ada lagi ukuran di bawah 11.5px, dasar panel 14px, dan panelnya 380px", () => {
+    // Sejak ukuran huruf panel dapat diskalakan petugas, tiap font-size
+    // ditulis calc(Npx * var(--aleta-skala-huruf, 1)). Yang dijaga di sini
+    // tetap N - ukuran DASAR sebelum dikali - sebab pengalinya bawaannya 1,
+    // dan N itulah yang dilihat orang yang tidak pernah menyentuh setelannya.
     const css = gaya();
-    const ukuran = [...css.matchAll(/font-size:\s*(\d+(?:\.\d+)?)px/g)].map((m) => Number(m[1]));
+    const ukuran = [...css.matchAll(/font-size:\s*calc\((\d+(?:\.\d+)?)px \* var\(/g)].map((m) =>
+      Number(m[1])
+    );
     expect(ukuran.length).toBeGreaterThan(50);
     expect(Math.min(...ukuran)).toBeGreaterThanOrEqual(11.5);
-    expect(css).toContain("font-size: 14px;");
+    expect(css).toContain("font-size: calc(14px * var(--aleta-skala-huruf, 1));");
     expect(css).toContain("width: 380px;");
   });
 });

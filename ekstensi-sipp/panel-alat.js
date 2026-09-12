@@ -917,3 +917,94 @@ async function alatAmbil(alamat, opsi, yangDiminta) {
     throw new Error(alatPesanGagal(galat, 0, yangDiminta));
   }
 }
+
+/**
+ * ============================================================================
+ * SKALA HURUF PANEL - SATU SETELAN, BERLAKU DI SELURUH PANEL
+ * ============================================================================
+ *
+ * Panel ALETA dipakai berjam-jam di sebelah SIPP, dan ukuran hurufnya dipilih
+ * dahulu untuk layar 1920 yang dekat. Di layar yang lebih besar, lebih jauh,
+ * atau oleh mata yang lebih tua, huruf 12,5px itu terlalu kecil - dan satu-
+ * satunya jalan yang tersedia selama ini adalah memperbesar SELURUH halaman
+ * SIPP dengan Ctrl+Plus, yang justru merusak tabel perkaranya.
+ *
+ * Yang diskalakan HANYA ukuran huruf, bukan seluruh panel. Tiap font-size di
+ * panel.css ditulis calc(Npx * var(--aleta-skala-huruf, 1)), jadi:
+ *
+ *   - tanpa setelan apa pun, pengalinya 1 dan tampilannya sama persis
+ *     seperti sebelum kemampuan ini ada;
+ *   - lebar panel, posisi, dan seluruh tata letaknya tidak bergeser, sehingga
+ *     panel yang sudah diatur letaknya tetap di tempatnya.
+ *
+ * Disetel di popup ikon peramban dan disimpan di penyimpanan ekstensi, yang
+ * MILIK PROFIL PERAMBAN masing-masing. Karena itu ia menjadi bawaan orang itu
+ * sendiri - di komputer bersama, tiap petugas yang memakai profil Chrome-nya
+ * sendiri punya ukurannya sendiri - dan bertahan sesudah halaman ditutup,
+ * peramban ditutup, dan ekstensi diperbarui.
+ *
+ * Disetel pada documentElement, bukan pada panelnya: satu halaman dapat
+ * memuat panel dan sisipan sekaligus, dan menyetelnya di akar membuat
+ * seluruhnya ikut tanpa satu pun daftar elemen yang harus dijaga tetap
+ * lengkap.
+ */
+const ALAT_SKALA_KUNCI = "skalaHuruf";
+const ALAT_SKALA_BAWAAN = 100;
+/** Di bawah ini huruf panel tidak lagi terbaca pada layar mana pun. */
+const ALAT_SKALA_MIN = 80;
+/** Di atas ini teks mulai melampaui kotaknya pada panel selebar 360px. */
+const ALAT_SKALA_MAKS = 160;
+const ALAT_SKALA_LANGKAH = 10;
+
+/**
+ * Nilai apa pun menjadi persen yang sah - dibulatkan ke kelipatan langkah.
+ *
+ * Yang tersimpan pernah ditulis tangan lewat penyimpanan ekstensi, dan nilai
+ * seperti 1000 akan membuat satu huruf memenuhi layar tanpa ada jalan kembali
+ * selain membuka popup yang hurufnya ikut raksasa.
+ */
+function alatRapikanSkala(nilai) {
+  const angka = Number(nilai);
+  if (!Number.isFinite(angka)) return ALAT_SKALA_BAWAAN;
+  const dibulatkan = Math.round(angka / ALAT_SKALA_LANGKAH) * ALAT_SKALA_LANGKAH;
+  return Math.min(ALAT_SKALA_MAKS, Math.max(ALAT_SKALA_MIN, dibulatkan));
+}
+
+/** Memasang pengalinya pada akar dokumen. */
+function alatTerapkanSkalaHuruf(persen) {
+  const bersih = alatRapikanSkala(persen);
+  try {
+    document.documentElement.style.setProperty("--aleta-skala-huruf", String(bersih / 100));
+  } catch {
+    /* halaman tanpa documentElement tidak mungkin ada - dan kalau ada,
+       ukuran huruf bukan yang perlu dirisaukan */
+  }
+  return bersih;
+}
+
+/** Membaca setelan tersimpan lalu memasangnya. Dipanggil sekali saat muat. */
+async function alatMuatSkalaHuruf() {
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_SKALA_KUNCI]);
+    return alatTerapkanSkalaHuruf(simpan[ALAT_SKALA_KUNCI]);
+  } catch {
+    // Penyimpanan tidak tersedia - ukuran bawaan tetap dipakai, dan panelnya
+    // tetap terbaca. Ini bukan keadaan yang pantas menghentikan apa pun.
+    return alatTerapkanSkalaHuruf(ALAT_SKALA_BAWAAN);
+  }
+}
+
+// Dipasang SEBELUM panel digambar, supaya tidak ada kedipan dari ukuran
+// bawaan ke ukuran pilihan petugas.
+void alatMuatSkalaHuruf();
+
+// Perubahan dari popup berlaku seketika di seluruh tab yang terbuka, tanpa
+// memuat ulang halaman dan tanpa izin "tabs".
+try {
+  chrome.storage.onChanged.addListener((perubahan, wilayah) => {
+    if (wilayah !== "local" || !perubahan[ALAT_SKALA_KUNCI]) return;
+    alatTerapkanSkalaHuruf(perubahan[ALAT_SKALA_KUNCI].newValue);
+  });
+} catch {
+  /* di luar ekstensi tidak ada chrome.storage - panelnya tetap tergambar */
+}

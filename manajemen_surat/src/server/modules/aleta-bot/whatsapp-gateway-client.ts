@@ -2300,6 +2300,15 @@ export async function kirimPenetapanTulisGateway(payload: {
   olehUsername: string;
   operator: string;
   kering: boolean;
+  /**
+   * Jenis penetapan yang ditulis LEBIH DAHULU pada rantai yang sama.
+   *
+   * Hanya berpengaruh pada uji kering, dan hanya untuk PHS: hari sidang
+   * menuntut majelisnya sudah tersimpan, sedangkan uji kering dijalankan
+   * sebelum satu baris pun ditulis. Pada penulisan sungguhan ruas ini tidak
+   * mengubah apa pun - pagarnya tetap penuh.
+   */
+  rantaiSebelum?: string[];
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis", {
     method: "POST",

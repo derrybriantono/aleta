@@ -404,6 +404,10 @@ async function susunRencanaTulis(minta) {
   const saat = await waktuBasisData();
   const ip = String(minta.ip || "127.0.0.1");
   const langkah = [];
+  // Andaian yang dipakai menyusun rencana ini - kosong pada keadaan biasa.
+  // Diteruskan apa adanya ke panel supaya yang membacanya tahu rencana ini
+  // dinilai atas keadaan yang BELUM ada, bukan yang sudah.
+  const andaian = [];
 
   // ---- PMH ---------------------------------------------------------------
   if (jenis === "pmh") {
@@ -669,10 +673,41 @@ async function susunRencanaTulis(minta) {
   // dengan isiDariLangkah, dan penjalannya yang mengisikan id itu. Pada
   // hasil kering, tempatnya terbaca sebagai "<id jadwal sidang baru>".
   if (jenis === "phs") {
-    if (!perkara.pmh) {
-      // Hari sidang ditetapkan ketua majelis. Selama majelisnya belum ada,
-      // tidak ada yang berwenang menetapkannya - dan SIPP pun menolaknya.
+    // ========================================================================
+    // UJI KERING DINILAI ATAS KEADAAN YANG AKAN ADA, BUKAN YANG ADA SEKARANG
+    // ========================================================================
+    //
+    // Hari sidang ditetapkan ketua majelis. Selama majelisnya belum ada, tidak
+    // ada yang berwenang menetapkannya - dan SIPP pun menolaknya. Pagar itu
+    // benar, dan tetap berlaku penuh pada penulisan sungguhan.
+    //
+    // Tetapi pada UJI KERING ia memagari yang salah. Uji kering dijalankan
+    // SEBELUM satu baris pun ditulis, jadi pada perkara yang baru didaftarkan
+    // PMH memang belum ada - dan tidak akan pernah ada selama uji keringnya
+    // sendiri yang menghalangi. Akibatnya, atas perkara yang justru paling
+    // lazim, keempat langkah tidak pernah sampai ke penulisan: PMH, PPP, dan
+    // PJS lulus, PHS ditolak "pmh_belum_ada", panel menyimpulkan rencananya
+    // belum siap, dan tombol "Tuliskan ke SIPP" tidak pernah menyala. Tidak
+    // ada satu pun penetapan yang tertulis, dan sebabnya tidak menunjuk ke
+    // sini sama sekali.
+    //
+    // Karena itu: bila pemanggilnya menyatakan PMH ditulis LEBIH DAHULU dalam
+    // rantai yang sama, uji kering menilai PHS seolah-olah PMH sudah ada, dan
+    // mengatakan andaian itu apa adanya. Pada penulisan sungguhan pemanggil
+    // benar-benar menulis PMH lebih dulu dan berhenti bila PMH gagal, sehingga
+    // saat PHS dijalankan majelisnya memang sudah tersimpan.
+    const pmhMenyusul =
+      minta.kering === true &&
+      Array.isArray(minta.rantaiSebelum) &&
+      minta.rantaiSebelum.map((x) => String(x).toLowerCase()).includes("pmh");
+
+    if (!perkara.pmh && !pmhMenyusul) {
       return { ok: false, alasan: "pmh_belum_ada" };
+    }
+    if (!perkara.pmh) {
+      andaian.push(
+        "PMH belum ada di SIPP saat rencana ini disusun. PHS dinilai dengan andaian PMH ditulis lebih dulu pada rantai yang sama - dan bila PMH gagal, PHS tidak dijalankan sama sekali."
+      );
     }
     if (perkara.phs) return { ok: false, alasan: "phs_sudah_ada" };
     if (!tanggalSah(minta.tanggalSidang)) return { ok: false, alasan: "tanggal_sidang_tidak_sah" };
@@ -1037,6 +1072,7 @@ async function susunRencanaTulis(minta) {
     tanggalPenetapan: minta.tanggalPenetapan,
     saat,
     langkah,
+    andaian,
   };
 }
 

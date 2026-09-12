@@ -125,6 +125,43 @@
   .saklar-nama { font-weight: 600; display: block; }
   .saklar-ket { display: block; margin-top: 2px; font-size: 11px; color: var(--tulisan-lembut); }
 
+  /* Skala huruf panel - bentuknya bukan saklar, sebab yang disimpan ANGKA,
+     bukan menyala-mati. Kotaknya tetap sebaris dengan saklar di atasnya
+     supaya kartunya terbaca sebagai satu keluarga setelan. */
+  .skala { display: block; padding: 10px; margin-bottom: 8px; border: 1px solid var(--garis); border-radius: 8px; }
+  .skala-atur { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .skala-tombol {
+    flex: none;
+    width: 34px;
+    height: 28px;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--tulisan);
+    background: var(--latar-naik);
+    border: 1px solid var(--garis);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .skala-tombol:hover:not(:disabled) { border-color: var(--merek); }
+  .skala-tombol:disabled { opacity: 0.45; cursor: default; }
+  /* Angkanya lebarnya tetap - tanpa itu tombolnya bergeser tiap kali
+     jumlah digitnya berubah, dan menekan berulang menjadi mengejar sasaran. */
+  .skala-nilai { flex: none; min-width: 52px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .skala-contoh { flex: 1; min-width: 0; color: var(--tulisan-lembut); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skala-pulih {
+    flex: none;
+    font: inherit;
+    font-size: 11px;
+    color: var(--tulisan-lembut);
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .skala-pulih:disabled { opacity: 0.35; cursor: default; text-decoration: none; }
+
   /* Tindakan, bukan saklar: ia mengerjakan sesuatu sekali lalu selesai,
      jadi bentuknya tombol - bukan kotak centang yang menyimpan keadaan. */
   .tindakan { padding: 4px 16px 12px; }
@@ -253,6 +290,22 @@
       </span>
     </span>
   </label>
+
+  <div class="skala">
+    <span class="saklar-nama">Ukuran huruf panel</span>
+    <span class="saklar-ket">
+      Hanya huruf di panel ALETA yang diperbesar &mdash; lebar dan letak panelnya tidak bergeser,
+      dan halaman SIPP tidak ikut berubah sama sekali. Setelan ini menjadi bawaan Anda sendiri:
+      ia tersimpan di profil peramban ini dan berlaku lagi setiap kali panel terbuka.
+    </span>
+    <div class="skala-atur">
+      <button type="button" id="skalaKurang" class="skala-tombol" title="Perkecil huruf panel" aria-label="Perkecil huruf panel">&minus;</button>
+      <span id="skalaNilai" class="skala-nilai" role="status" aria-live="polite">100%</span>
+      <button type="button" id="skalaTambah" class="skala-tombol" title="Perbesar huruf panel" aria-label="Perbesar huruf panel">+</button>
+      <span id="skalaContoh" class="skala-contoh">Contoh teks panel</span>
+      <button type="button" id="skalaPulih" class="skala-pulih" title="Kembali ke 100%">kembalikan</button>
+    </div>
+  </div>
 
   <label class="saklar">
     <input type="checkbox" id="tandaiHalaman" checked>

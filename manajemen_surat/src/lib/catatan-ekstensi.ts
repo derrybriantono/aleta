@@ -42,6 +42,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.102.0",
+    dirilis: "2026-09-12T11:20:00+08:00",
+    judul: "Penetapan tidak lagi tertahan di PHS, dan ukuran huruf panel dapat diatur sendiri",
+    butir: [
+      "Tombol \"Tetapkan dan tuliskan ke SIPP\" tidak pernah sampai menulis pada perkara yang baru didaftarkan. Sebabnya satu dan halus: uji kering dijalankan SEBELUM satu baris pun ditulis, sedangkan PHS menuntut PMH sudah tersimpan. Pada perkara baru PMH memang belum ada - dan tidak akan pernah ada selama uji keringnya sendiri yang menghalangi. PMH, PPP, dan PJS lulus, PHS ditolak \"pmh_belum_ada\", panel menyimpulkan rencananya belum siap, dan tombol kedua tidak pernah menyala.",
+      "Sekarang ekstensi menyebutkan langkah mana yang sudah lulus mendahului, dan uji kering menilai PHS atas keadaan yang AKAN ada sesudah PMH ditulis. Andaian itu dikatakan apa adanya di bawah barisnya, bukan didiamkan.",
+      "Pagarnya tetap utuh pada penulisan sungguhan: bila PMH benar-benar belum ada di SIPP, PHS tetap ditolak. Dibuktikan atas perkara sungguhan 562/Pdt.G/2026/PA.Dgl - uji kering lulus dengan delapan langkah, penulisan sungguhan tetap menolak. Urutan berhenti-pada-kegagalan juga tidak berubah: bila PMH gagal, PHS tidak dijalankan sama sekali.",
+      "Ukuran huruf panel kini dapat diatur dari popup ikon peramban, 80% sampai 160% dengan langkah 10%. Yang membesar hanya HURUF di panel ALETA - lebar dan letak panelnya tidak bergeser, dan halaman SIPP tidak ikut berubah sama sekali, tidak seperti Ctrl+Plus yang merusak tabel perkaranya.",
+      "Setelannya tersimpan di profil peramban masing-masing, jadi ia menjadi bawaan orang itu sendiri: berlaku lagi setiap kali panel terbuka, bertahan sesudah peramban ditutup dan sesudah ekstensi diperbarui. Perubahannya berlaku seketika di seluruh tab yang sedang terbuka, tanpa memuat ulang halaman.",
+    ],
+  },
+  {
     versi: "1.101.0",
     dirilis: "2026-09-12T10:30:00+08:00",
     judul: "Obyek Sengketa diusulkan dari kebiasaan satker, dan ekstensi benar-benar hidup di pemasangan setempat",

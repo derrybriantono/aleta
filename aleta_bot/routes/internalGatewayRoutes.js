@@ -782,10 +782,18 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       return;
     }
 
+    // Uji kering dinilai atas keadaan yang AKAN ada. Keduanya harus sampai ke
+    // penyusun rencana, bukan hanya ke penjalannya: PHS menuntut PMH sudah
+    // tersimpan, dan pada uji kering belum ada satu baris pun yang ditulis.
+    const kering = badan.kering !== false;
     const rencana = await penetapanTulisService.susunRencanaTulis({
       jenis: String(badan.jenis || ""),
       perkaraId: badan.perkaraId,
       tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+      kering,
+      // Jenis penetapan yang ditulis LEBIH DAHULU oleh pemanggil pada rantai
+      // yang sama. Hanya berpengaruh pada uji kering.
+      rantaiSebelum: Array.isArray(badan.rantaiSebelum) ? badan.rantaiSebelum : [],
       // PMH
       hakimId: Array.isArray(badan.hakimId) ? badan.hakimId : [],
       // PPP dan PJS
@@ -807,7 +815,6 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       return;
     }
 
-    const kering = badan.kering !== false;
     const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering });
 
     res.status(hasil.ok ? 200 : 409).json({
@@ -816,6 +823,7 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       perkara: rencana.perkara,
       atasNama: rencana.atasNama,
       operator: rencana.operator,
+      andaian: rencana.andaian || [],
       // Pada hasil kering, langkahnya dikirim lengkap supaya dapat dibaca
       // manusia sebelum apa pun terjadi.
       rencana: kering ? rencana.langkah.map((x) => ({
