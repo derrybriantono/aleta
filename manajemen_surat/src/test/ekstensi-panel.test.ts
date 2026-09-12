@@ -397,14 +397,14 @@ describe("Kerjakan paling atas, sisanya terlipat", () => {
     // Panel ini dibuka orang yang sedang MENGERJAKAN perkara. Sebelumnya
     // Kerjakan duduk paling bawah di balik tiga kelompok keterangan.
     const isi = konten();
-    expect(isi.indexOf('kelompok("Kerjakan", "kerjakan"')).toBeLessThan(
+    expect(isi.indexOf('kelompok("Penetapan", "kerjakan"')).toBeLessThan(
       isi.indexOf('kelompok("Berkas", "berkas"')
     );
   });
 
-  it("hanya Kerjakan yang terbuka", () => {
+  it("hanya Penetapan yang terbuka", () => {
     const isi = konten();
-    expect(isi).toContain('kelompok("Kerjakan", "kerjakan", false)');
+    expect(isi).toContain('kelompok("Penetapan", "kerjakan", false)');
     for (const tertutup of [
       'kelompok("Berkas", "berkas", true)',
       'kelompok("Perkara", "perkara", true)',

@@ -83,8 +83,22 @@ const DAFTAR_TABEL = new Set([
   // penetapan, dan itulah yang membuat tab Riwayat Perkara menyebutkan
   // pejabat yang menunjuk beserta tanggalnya.
   "perkara_proses",
+  // Laporan Smart Majelis. SIPP menulis ke sini tiap kali majelis ditetapkan
+  // di luar rekomendasi SK, beserta sebabnya.
+  "perkara_smartmajelis",
   "sys_audittrail",
 ]);
+
+/**
+ * Keadaan Smart Majelis yang dipakai ALETA.
+ *
+ * Dibaca dari addMajelis_c.php: 1 = rekomendasi diterima apa adanya,
+ * 2 dan 4 = susunannya diubah dari rekomendasi, 999 = tanpa Smart Majelis.
+ * ALETA selalu 2 - gilirannya dihitung ALETA sendiri, bukan diambil dari
+ * rekomendasi Smart Majelis SIPP, jadi menyebutnya "diterima apa adanya"
+ * akan keliru pada laporan yang justru dibuat untuk menghitung selisih itu.
+ */
+const SMART_MAJELIS_DI_LUAR_REKOMENDASI = 2;
 
 /**
  * ============================================================================
@@ -391,9 +405,15 @@ async function keadaanPerkara(perkaraId) {
             pen.penetapan_majelis_hakim AS pmh,
             pen.penetapan_panitera_pengganti AS ppp,
             pen.penetapan_jurusita AS pjs,
-            pen.penetapan_hari_sidang AS phs
+            pen.penetapan_hari_sidang AS phs,
+            -- Dipakai membongkar: yang dihapus hanya baris yang BENAR-BENAR
+            -- ditulis penetapan ini, dicocokkan pada id petugas dan tanggalnya.
+            pen.panitera_pengganti_id AS pppId,
+            pen.jurusita_id AS pjsId,
+            sm.perkara_id AS adaSmartMajelis
        FROM perkara p
        LEFT JOIN perkara_penetapan pen ON pen.perkara_id = p.perkara_id
+       LEFT JOIN perkara_smartmajelis sm ON sm.perkara_id = p.perkara_id
       WHERE p.perkara_id = ? LIMIT 1`,
     [id]
   ).catch(() => []);
@@ -619,6 +639,58 @@ async function susunRencanaTulis(minta) {
         formulir: jejak.formulir,
         aksi: perkara.adaPenetapan ? "UPDATE" : "INSERT",
         nilai: nilaiPenetapan,
+        ip,
+        saat,
+      })
+    );
+
+    // ======================================================================
+    // SMART MAJELIS - BARIS YANG SELAMA INI TIDAK PERNAH DITULIS
+    // ======================================================================
+    //
+    // SIPP mencatat di perkara_smartmajelis setiap kali majelis ditetapkan
+    // BERBEDA dari susunan yang direkomendasikan SK majelis tetap, beserta
+    // sebabnya. Itulah yang dibaca laporan Smart Majelis, dan perkara yang
+    // majelisnya ditetapkan ALETA sama sekali tidak muncul di sana.
+    //
+    // Bentuknya ditiru persis dari addMajelis_c.php: pada keadaan "majelis
+    // diubah dari rekomendasi" SIPP menyimpan hakim_id2, status, tanggal, dan
+    // keterangan - TANPA menyentuh majelis_id maupun hakim_id, yang memang
+    // milik SK-nya. Baris yang sudah ada diperbarui, bukan disisipkan kedua
+    // kalinya.
+    //
+    // status 2 = susunannya ditetapkan di luar rekomendasi otomatis. Itu yang
+    // benar untuk ALETA: giliran majelis dihitung ALETA sendiri, bukan diambil
+    // dari rekomendasi Smart Majelis SIPP.
+    const sebabMajelis = cleanText(minta.sebabMajelis) || "Ditetapkan lewat giliran majelis ALETA";
+    const nilaiSmart = {
+      perkara_id: perkara.perkaraId,
+      hakim_id2: idGabung,
+      status: SMART_MAJELIS_DI_LUAR_REKOMENDASI,
+      tanggal: saat,
+      keterangan: sebabMajelis.slice(0, 1000),
+    };
+    langkah.push({
+      tabel: "perkara_smartmajelis",
+      aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
+      sql: perkara.adaSmartMajelis
+        ? `UPDATE perkara_smartmajelis SET hakim_id2 = ?, status = ?, tanggal = ?, keterangan = ?
+           WHERE perkara_id = ?`
+        : `INSERT INTO perkara_smartmajelis (perkara_id, hakim_id2, status, tanggal, keterangan)
+           VALUES (?,?,?,?,?)`,
+      params: perkara.adaSmartMajelis
+        ? [idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan, perkara.perkaraId]
+        : [perkara.perkaraId, idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan],
+      keterangan: `smart majelis: ${sebabMajelis}`,
+    });
+    langkah.push(
+      barisAudit({
+        username: akun.username,
+        operator,
+        tabel: "perkara_smartmajelis",
+        formulir: jejak.formulir,
+        aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
+        nilai: nilaiSmart,
         ip,
         saat,
       })
@@ -1271,6 +1343,317 @@ async function susunRencanaTulis(minta) {
  * pertama, lalu memulangkan persis berapa langkah yang telanjur berhasil -
  * supaya yang membetulkannya tahu di mana harus melihat, bukan menebak.
  */
+/**
+ * ============================================================================
+ * MEMBATALKAN SATU PENETAPAN
+ * ============================================================================
+ *
+ * Penetapan yang salah tidak dapat diperbaiki dengan menekan ulang: tabelnya
+ * menolak baris kedua, dan yang tertinggal adalah perkara yang separuh
+ * tertulis. Selama ini jalan keluarnya membongkar dengan tangan dari beberapa
+ * tabel sekaligus - dan itu pula yang harus dikerjakan ketika ALETA sendiri
+ * berhenti di tengah jalan.
+ *
+ * Yang dikerjakan di sini KEBALIKAN dari susunRencanaTulis, langkah demi
+ * langkah, dengan tiga aturan yang tidak boleh dilanggar:
+ *
+ *   1. URUTANNYA TERBALIK. PHS dibongkar lebih dulu, PMH paling akhir -
+ *      sama seperti menulis, tetapi dari ujung yang lain. Membongkar PMH
+ *      selagi PHS masih ada meninggalkan hari sidang bagi majelis yang sudah
+ *      tidak ada.
+ *
+ *   2. HANYA LANGKAH ITU. Membatalkan PPP tidak menyentuh majelis maupun hari
+ *      sidang. SIPP sendiri menghapus seluruh perkara_penetapan ketika majelis
+ *      ditetapkan ulang, dan itu terlalu kasar untuk dipakai membatalkan satu
+ *      penunjukan.
+ *
+ *   3. JEJAKNYA TETAP ADA. Tiap pembongkaran menulis barisnya sendiri ke
+ *      sys_audittrail. Penetapan yang hilang tanpa jejak jauh lebih buruk
+ *      daripada penetapan yang salah.
+ */
+
+/** Kolom perkara_penetapan yang dikosongkan tiap jenis. */
+const KOLOM_DIKOSONGKAN = {
+  pmh: [
+    "penetapan_majelis_hakim",
+    "majelis_hakim_id",
+    "majelis_hakim_kode",
+    "majelis_hakim_nama",
+    "majelis_hakim_text",
+  ],
+  ppp: [
+    "penetapan_panitera_pengganti",
+    "panitera_pengganti_id",
+    "panitera_pengganti_text",
+  ],
+  pjs: ["penetapan_jurusita", "jurusita_id", "jurusita_text"],
+  phs: ["penetapan_hari_sidang", "sidang_pertama"],
+};
+
+/**
+ * ============================================================================
+ * YANG DIHAPUS HANYA BARIS MILIK PENETAPAN ITU
+ * ============================================================================
+ *
+ * Mula-mula pembongkaran menghapus seluruh baris milik satu perkara:
+ * DELETE FROM perkara_jurusita WHERE perkara_id = ?. Sekilas benar, dan pada
+ * perkara baru memang tidak ada bedanya.
+ *
+ * Pada perkara lama bedanya besar. Diuji atas sepuluh perkara tahun 2015,
+ * pembongkaran itu ikut membuang 10 baris juru sita dan 23 baris jadwal sidang
+ * yang sudah ada sejak perkaranya disidangkan - riwayat yang tidak ada
+ * hubungannya sama sekali dengan penetapan yang sedang dibatalkan. Ketahuan
+ * hanya karena cacah barisnya dibandingkan sebelum dan sesudah.
+ *
+ * Sekarang tiap penghapusan dipagari nilai yang TERCATAT pada
+ * perkara_penetapan: id petugasnya dan tanggal penetapannya. Jadwal sidang
+ * dipagari lebih rapat lagi - barisnya ditunjuk langsung oleh
+ * perkara_penetapan_hari_sidang.jadwalsidang_id, jadi yang terhapus tepat satu
+ * baris yang memang dibuat penetapan ini.
+ */
+function rincianUntukHapus(jenis, perkara, jadwalSidangId) {
+  if (jenis === "pmh") {
+    return [
+      {
+        tabel: "perkara_hakim_pn",
+        sql: `DELETE FROM perkara_hakim_pn WHERE perkara_id = ? AND tahapan_id = ? AND tanggal_penetapan = ?`,
+        params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.pmh],
+        keterangan: `membongkar majelis hakim tanggal ${perkara.pmh}`,
+      },
+    ];
+  }
+  if (jenis === "ppp") {
+    return [
+      {
+        tabel: "perkara_panitera_pn",
+        sql: `DELETE FROM perkara_panitera_pn WHERE perkara_id = ? AND tahapan_id = ? AND tanggal_penetapan = ? AND panitera_id = ?`,
+        params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.ppp, String(perkara.pppId ?? "")],
+        keterangan: `membongkar panitera pengganti tanggal ${perkara.ppp}`,
+      },
+    ];
+  }
+  if (jenis === "pjs") {
+    return [
+      {
+        tabel: "perkara_jurusita",
+        sql: `DELETE FROM perkara_jurusita WHERE perkara_id = ? AND tahapan_id = ? AND tanggal_penetapan = ? AND jurusita_id = ?`,
+        params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.pjs, String(perkara.pjsId ?? "")],
+        keterangan: `membongkar juru sita tanggal ${perkara.pjs}`,
+      },
+    ];
+  }
+  // PHS. Urutannya penting: penetapan hari sidang menunjuk jadwal sidang, jadi
+  // barisnya dibaca lebih dulu, baru keduanya dibongkar dari ujung yang benar.
+  const langkah = [
+    {
+      tabel: "perkara_penetapan_hari_sidang",
+      sql: `DELETE FROM perkara_penetapan_hari_sidang WHERE perkara_id = ? AND tanggal_penetapan = ?`,
+      params: [perkara.perkaraId, perkara.phs],
+      keterangan: `membongkar penetapan hari sidang tanggal ${perkara.phs}`,
+    },
+  ];
+  if (jadwalSidangId > 0) {
+    langkah.push({
+      tabel: "perkara_jadwal_sidang",
+      sql: `DELETE FROM perkara_jadwal_sidang WHERE id = ? AND perkara_id = ?`,
+      params: [jadwalSidangId, perkara.perkaraId],
+      keterangan: `membongkar jadwal sidang id ${jadwalSidangId}`,
+    });
+  }
+  return langkah;
+}
+
+/**
+ * Langkah mana yang menjadi tahapan terakhir sesudah satu langkah dibongkar.
+ *
+ * Dihitung dari kolom yang MASIH terisi, bukan ditebak dari jenis yang
+ * dibatalkan: petugas dapat membatalkan PPP sementara PJS masih ada, dan
+ * tahapan terakhirnya tetap PJS.
+ */
+function tahapanSetelahHapus(perkara, jenisDihapus) {
+  const masih = {
+    pmh: Boolean(perkara.pmh) && jenisDihapus !== "pmh",
+    ppp: Boolean(perkara.ppp) && jenisDihapus !== "ppp",
+    pjs: Boolean(perkara.pjs) && jenisDihapus !== "pjs",
+    phs: Boolean(perkara.phs) && jenisDihapus !== "phs",
+  };
+  for (const jenis of ["phs", "pjs", "ppp", "pmh"]) {
+    if (masih[jenis]) return JEJAK_PROSES[jenis];
+  }
+  // Tidak ada penetapan yang tersisa - kembali ke pendaftaran, sama seperti
+  // perkara yang baru didaftarkan kasir.
+  return { tahapanId: 10, tahapanText: "Pendaftaran Perkara", prosesId: 10, prosesText: "Pendaftaran Perkara" };
+}
+
+/**
+ * Rencana membongkar satu penetapan.
+ *
+ * Bentuk jawabannya sama persis dengan susunRencanaTulis, sehingga
+ * jalankanRencana dan uji keringnya berlaku tanpa perubahan apa pun.
+ */
+async function susunRencanaHapus(minta) {
+  const diminta = String((minta && minta.jenis) || "").toLowerCase();
+  const jenis = JENIS_MENURUT_HURUF_KECIL.get(diminta) || "";
+  const jejak = JEJAK_PROSES[jenis];
+  if (!jejak || !KOLOM_DIKOSONGKAN[jenis]) {
+    return { ok: false, alasan: "jenis_tidak_didukung", jenis: diminta };
+  }
+
+  const perkara = await keadaanPerkara(minta.perkaraId);
+  if (!perkara) return { ok: false, alasan: "perkara_tidak_ketemu" };
+  if (!perkara[jenis]) return { ok: false, alasan: `${jenis}_belum_ada` };
+
+  // Urutannya tidak dapat dibalik. Membongkar majelis selagi hari sidangnya
+  // masih berdiri meninggalkan sidang bagi majelis yang sudah tidak ada.
+  const sesudah = { pmh: ["ppp", "pjs", "phs"], ppp: ["phs"], pjs: ["phs"], phs: [] }[jenis];
+  const menghalangi = sesudah.filter((x) => Boolean(perkara[x]));
+  if (menghalangi.length > 0) {
+    return { ok: false, alasan: "langkah_sesudahnya_masih_ada", langkah: menghalangi };
+  }
+
+  const akun = await akunSipp(minta.olehUsername);
+  if (!akun) return { ok: false, alasan: "akun_pejabat_tidak_ketemu" };
+
+  const operator = cleanText(minta.operator);
+  if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
+
+  const saat = await waktuBasisData();
+  const ip = String(minta.ip || "127.0.0.1");
+  const langkah = [];
+
+  // Jadwal sidang mana yang dibuat penetapan ini - dibaca dari baris yang
+  // memang menunjuknya, bukan ditebak dari urutan atau tanggalnya.
+  let jadwalSidangId = 0;
+  if (jenis === "phs") {
+    const baris = await runQuery(
+      `SELECT jadwalsidang_id AS id FROM perkara_penetapan_hari_sidang
+        WHERE perkara_id = ? AND tanggal_penetapan = ? LIMIT 1`,
+      [perkara.perkaraId, perkara.phs]
+    ).catch(() => []);
+    jadwalSidangId = Number((Array.isArray(baris) && baris[0] && baris[0].id) || 0);
+  }
+
+  for (const rincian of rincianUntukHapus(jenis, perkara, jadwalSidangId)) {
+    if (!(await sippSkemaService.tabelAda(rincian.tabel))) continue;
+    langkah.push({ ...rincian, aksi: "DELETE" });
+    langkah.push(
+      barisAudit({
+        username: akun.username,
+        operator,
+        tabel: rincian.tabel,
+        formulir: jejak.formulir,
+        aksi: "DELETE",
+        nilai: { perkara_id: perkara.perkaraId, keterangan: rincian.keterangan },
+        perkaraId: perkara.perkaraId,
+        ip,
+        saat,
+      })
+    );
+  }
+
+  const kolom = KOLOM_DIKOSONGKAN[jenis];
+  langkah.push({
+    tabel: "perkara_penetapan",
+    aksi: "UPDATE",
+    sql:
+      `UPDATE perkara_penetapan SET ${kolom.map((k) => `${k} = NULL`).join(", ")}, ` +
+      `diperbaharui_oleh = ?, diperbaharui_tanggal = ? WHERE perkara_id = ?`,
+    params: [akun.username, saat, perkara.perkaraId],
+    keterangan: `mengosongkan ${kolom.join(", ")}`,
+  });
+  langkah.push(
+    barisAudit({
+      username: akun.username,
+      operator,
+      tabel: "perkara_penetapan",
+      formulir: jejak.formulir,
+      aksi: "UPDATE",
+      nilai: Object.fromEntries(kolom.map((k) => [k, null])),
+      perkaraId: perkara.perkaraId,
+      ip,
+      saat,
+    })
+  );
+
+  // Riwayat Perkara ikut dibongkar - baris yang tertinggal menyebutkan langkah
+  // yang sudah tidak ada, dan itu terbaca sebagai penetapan yang hilang.
+  langkah.push({
+    tabel: "perkara_proses",
+    aksi: "DELETE",
+    sql: `DELETE FROM perkara_proses WHERE perkara_id = ? AND tahapan_id = ? AND proses_id = ?`,
+    params: [perkara.perkaraId, jejak.tahapanId, jejak.prosesId],
+    keterangan: `membongkar riwayat: ${jejak.prosesText}`,
+  });
+  langkah.push(
+    barisAudit({
+      username: akun.username,
+      operator,
+      tabel: "perkara_proses",
+      formulir: jejak.formulir,
+      aksi: "DELETE",
+      nilai: { perkara_id: perkara.perkaraId, tahapan_id: jejak.tahapanId, proses_id: jejak.prosesId },
+      perkaraId: perkara.perkaraId,
+      ip,
+      saat,
+    })
+  );
+
+  const kembali = tahapanSetelahHapus(perkara, jenis);
+  langkah.push({
+    tabel: "perkara",
+    aksi: "UPDATE",
+    sql:
+      `UPDATE perkara SET tahapan_terakhir_id = ?, tahapan_terakhir_text = ?,
+         proses_terakhir_id = ?, proses_terakhir_text = ?,
+         diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+       WHERE perkara_id = ?`,
+    params: [
+      kembali.tahapanId,
+      kembali.tahapanText,
+      kembali.prosesId,
+      kembali.prosesText,
+      akun.username,
+      saat,
+      perkara.perkaraId,
+    ],
+    keterangan: `tahapan terakhir kembali menjadi ${kembali.prosesText}`,
+  });
+  langkah.push(
+    barisAudit({
+      username: akun.username,
+      operator,
+      tabel: "perkara",
+      formulir: jejak.formulir,
+      aksi: "UPDATE",
+      nilai: {
+        tahapan_terakhir_id: kembali.tahapanId,
+        proses_terakhir_id: kembali.prosesId,
+        proses_terakhir_text: kembali.prosesText,
+      },
+      perkaraId: perkara.perkaraId,
+      ip,
+      saat,
+    })
+  );
+
+  const diluar = langkah.filter((x) => !DAFTAR_TABEL.has(x.tabel));
+  if (diluar.length > 0) {
+    return { ok: false, alasan: "tabel_di_luar_daftar", tabel: diluar.map((x) => x.tabel) };
+  }
+
+  return {
+    ok: true,
+    jenis,
+    membongkar: true,
+    perkara: { perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara },
+    atasNama: { username: akun.username, namaLengkap: akun.fullname },
+    operator,
+    saat,
+    langkah,
+    andaian: [],
+  };
+}
+
 async function jalankanRencana(rencana, opsi = {}) {
   if (!rencana || rencana.ok !== true) {
     return { ok: false, alasan: (rencana && rencana.alasan) || "rencana_tidak_sah" };
@@ -1356,6 +1739,7 @@ module.exports = {
   DAFTAR_TABEL,
   JEJAK_PROSES,
   susunRencanaTulis,
+  susunRencanaHapus,
   jalankanRencana,
   // Diekspor untuk diuji satuan.
   keteranganAudit,

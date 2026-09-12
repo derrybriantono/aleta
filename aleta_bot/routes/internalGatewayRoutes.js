@@ -839,6 +839,58 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Membongkar satu penetapan yang sudah tertulis.
+ *
+ * Kering sebagai bawaan, sama seperti menulis: rencananya diperlihatkan lebih
+ * dahulu, dan membongkar sungguhan menuntut { kering: false } yang tegas.
+ */
+router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+
+    const kering = badan.kering !== false;
+    const rencana = await penetapanTulisService.susunRencanaHapus({
+      jenis: String(badan.jenis || ""),
+      perkaraId: badan.perkaraId,
+      olehUsername: String(badan.olehUsername || ""),
+      operator,
+      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+    });
+
+    if (!rencana.ok) {
+      res.status(400).json(rencana);
+      return;
+    }
+
+    const hasil = await penetapanTulisService.jalankanRencana(rencana, { kering });
+    res.status(hasil.ok ? 200 : 409).json({
+      ...hasil,
+      jenis: rencana.jenis,
+      membongkar: true,
+      perkara: rencana.perkara,
+      atasNama: rencana.atasNama,
+      operator: rencana.operator,
+      rencana: kering
+        ? rencana.langkah.map((x) => ({
+            tabel: x.tabel,
+            aksi: x.aksi,
+            keterangan: x.keterangan,
+            sql: String(x.sql).replace(/\s+/g, " ").trim(),
+            nilai: x.params,
+          }))
+        : undefined,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Padanan agenda sidang yang dapat disunting panitera. */
 router.get("/agenda/pengaturan", requireInternalToken, (req, res) => {
   try {

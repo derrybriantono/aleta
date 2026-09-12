@@ -199,12 +199,12 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     const lewatAlat = isi.split("await alatAmbil(").length - 1;
     const mentah = isi.split("await fetch(").length - 1;
 
-    // 15 sejak usulan alasan perkara pada layar Data Umum ditambahkan - satu
-    // permintaan lagi yang berbicara ke petugas, dan karena itu wajib
-    // melewati alatAmbil. (14 sejak usulan medan pilihan pada borang putusan,
-    // 13 sejak "Isi borang putusan dari ALETA", 12 sejak "Tetapkan lewat
-    // ALETA".)
-    expect(lewatAlat).toBe(15);
+    // 16 sejak pembatalan penetapan ditambahkan - satu permintaan lagi yang
+    // berbicara ke petugas, dan karena itu wajib melewati alatAmbil.
+    // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
+    // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
+    // ALETA", 12 sejak "Tetapkan lewat ALETA".)
+    expect(lewatAlat).toBe(16);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

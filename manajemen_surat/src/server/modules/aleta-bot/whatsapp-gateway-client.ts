@@ -2316,6 +2316,26 @@ export async function kirimPenetapanTulisGateway(payload: {
   });
 }
 
+/**
+ * Membongkar satu penetapan yang sudah tertulis.
+ *
+ * KERING sebagai bawaan, sama seperti menulis - bot tidak menghapus apa pun
+ * kecuali `kering: false` dikirim tegas. Nama operator TIDAK boleh datang dari
+ * peramban; pemanggil di portal mengisinya dari sesi ALETA yang sedang masuk.
+ */
+export async function kirimPenetapanHapusGateway(payload: {
+  jenis: string;
+  perkaraId: number;
+  olehUsername: string;
+  operator: string;
+  kering: boolean;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/hapus", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getGatewayPenunjukanUsulan(payload: {
   nomorPerkara: string;
   pengaturan: {

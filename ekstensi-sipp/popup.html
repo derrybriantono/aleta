@@ -138,7 +138,7 @@
     font-size: 15px;
     line-height: 1;
     color: var(--tulisan);
-    background: var(--latar-naik);
+    background: var(--latar-lembut);
     border: 1px solid var(--garis);
     border-radius: 6px;
     cursor: pointer;
@@ -176,7 +176,7 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .tombol-reset:hover { border-color: var(--aksen); color: var(--aksen); }
+  .tombol-reset:hover { border-color: var(--merek); color: var(--merek); }
   .tombol-reset:active { transform: translateY(1px); }
   .tombol-reset:disabled { opacity: .6; cursor: default; transform: none; }
 
@@ -291,35 +291,9 @@
     </span>
   </label>
 
-  <div class="skala">
-    <span class="saklar-nama">Pembaruan ekstensi</span>
-    <span class="saklar-ket">
-      Memasang versi terbaru tanpa membuka <strong class="saklar-nama">chrome://extensions</strong>.
-      Pada pemasangan yang dikelola peladen, Chrome mengunduh dan memasangnya sendiri;
-      pada pemasangan folder, tombol muat ulang membaca ulang berkasnya dari disk.
-    </span>
-    <div class="skala-atur">
-      <button type="button" id="perbaruiSekarang" class="tombol-reset">Perbarui sekarang</button>
-      <button type="button" id="muatUlangEkstensi" class="skala-pulih" hidden>muat ulang ekstensi</button>
-      <span id="perbaruiVersi" class="skala-contoh"></span>
-    </div>
     <p id="perbaruiKabar" class="saklar-ket" hidden></p>
   </div>
 
-  <div class="skala">
-    <span class="saklar-nama">Ukuran huruf panel</span>
-    <span class="saklar-ket">
-      Hanya huruf di panel ALETA yang diperbesar &mdash; lebar dan letak panelnya tidak bergeser,
-      dan halaman SIPP tidak ikut berubah sama sekali. Setelan ini menjadi bawaan Anda sendiri:
-      ia tersimpan di profil peramban ini dan berlaku lagi setiap kali panel terbuka.
-    </span>
-    <div class="skala-atur">
-      <button type="button" id="skalaKurang" class="skala-tombol" title="Perkecil huruf panel" aria-label="Perkecil huruf panel">&minus;</button>
-      <span id="skalaNilai" class="skala-nilai" role="status" aria-live="polite">100%</span>
-      <button type="button" id="skalaTambah" class="skala-tombol" title="Perbesar huruf panel" aria-label="Perbesar huruf panel">+</button>
-      <span id="skalaContoh" class="skala-contoh">Contoh teks panel</span>
-      <button type="button" id="skalaPulih" class="skala-pulih" title="Kembali ke 100%">kembalikan</button>
-    </div>
   </div>
 
   <label class="saklar">
@@ -359,6 +333,26 @@
       </span>
     </span>
   </label>
+
+  <div class="skala">
+    <span class="saklar-nama">Ukuran huruf panel</span>
+    <span class="saklar-ket">Hanya huruf di panel; letak panel dan halaman SIPP tidak berubah.</span>
+    <div class="skala-atur">
+      <button type="button" id="skalaKurang" class="skala-tombol" title="Perkecil huruf panel" aria-label="Perkecil huruf panel">&minus;</button>
+      <span id="skalaNilai" class="skala-nilai" role="status" aria-live="polite">100%</span>
+      <button type="button" id="skalaTambah" class="skala-tombol" title="Perbesar huruf panel" aria-label="Perbesar huruf panel">+</button>
+      <span id="skalaContoh" class="skala-contoh">Contoh teks panel</span>
+      <button type="button" id="skalaPulih" class="skala-pulih" title="Kembali ke 100%">kembalikan</button>
+    </div>
+
+  <div class="skala">
+    <span class="saklar-nama">Pembaruan ekstensi</span>
+    <span class="saklar-ket">Memasang versi terbaru tanpa membuka chrome://extensions.</span>
+    <div class="skala-atur">
+      <button type="button" id="perbaruiSekarang" class="tombol-reset">Perbarui sekarang</button>
+      <button type="button" id="muatUlangEkstensi" class="skala-pulih" hidden>muat ulang ekstensi</button>
+      <span id="perbaruiVersi" class="skala-contoh"></span>
+    </div>
 </div>
 
 <!-- ===================================================================

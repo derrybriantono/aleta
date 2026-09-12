@@ -42,6 +42,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.104.0",
+    dirilis: "2026-09-12T13:20:00+08:00",
+    judul: "Penetapan dapat dibatalkan, Smart Majelis ikut tercatat, dan tab Kerjakan menjadi Penetapan",
+    butir: [
+      "Penetapan yang salah kini dapat DIBATALKAN dari panel. Sebelumnya tidak ada jalan kembali sama sekali: menekan ulang ditolak tabelnya, dan membongkarnya menuntut tangan dari beberapa tabel sekaligus. Yang dibatalkan selalu langkah terakhir yang masih ada - urutannya tidak dapat dibalik - dan dua tekanan, sama seperti menetapkan: yang pertama memperlihatkan rencananya, yang kedua membongkar.",
+      "Yang dihapus hanya baris milik penetapan itu, dipagari id petugas dan tanggal penetapannya. Jadwal sidang dipagari lebih rapat lagi, ditunjuk langsung oleh baris penetapan hari sidang. Pagar ini bukan kehati-hatian yang berlebihan: rancangan pertamanya menghapus seluruh baris milik satu perkara, dan pada uji atas sepuluh perkara tahun 2015 ia ikut membuang riwayat juru sita dan jadwal sidang yang sudah ada sejak perkaranya disidangkan.",
+      "Smart Majelis ikut dicatat pada tiap penetapan majelis. Perkara yang majelisnya ditetapkan ALETA sama sekali tidak muncul di laporan Smart Majelis sebelum ini, sebab barisnya memang tidak pernah ditulis.",
+      "Diuji atas sepuluh penetapan penuh berturut-turut pada perkara sungguhan: keempat puluh langkahnya berhasil, tidak ada id kembar, dan sesudah seluruhnya dibatalkan cacah baris kedelapan tabel kembali persis seperti sebelum diuji.",
+      "Halaman perkara dimuat ulang sendiri sesudah penetapan tersimpan. Tanpa itu tab Penetapan tetap kosong dan Riwayat Perkara tetap hanya menyebut pendaftaran, sehingga petugas menyimpulkan penetapannya gagal lalu menekannya sekali lagi.",
+      "Tab \"Kerjakan\" menjadi \"Penetapan\", tombolnya menjadi \"Tetapkan\", dan hasil tiap langkah berbunyi \"ditetapkan\". Kata \"borang\" diganti \"formulir\" di seluruh teks yang dilihat petugas.",
+      "Popup ekstensi ditata ulang: saklar perilaku dikelompokkan lebih dulu, lalu ukuran huruf, lalu pembaruan. Keterangan kedua kartu terakhir dipendekkan menjadi satu baris.",
+    ],
+  },
+  {
     versi: "1.103.0",
     dirilis: "2026-09-12T11:40:00+08:00",
     judul: "Pembaruan dipasang sekali klik dari panel, tanpa membuka chrome://extensions",

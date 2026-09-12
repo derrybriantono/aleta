@@ -136,15 +136,21 @@ async function utama() {
   cek("penetapan disisipkan", tabel.includes("perkara_penetapan:INSERT"), true);
   cek("tiga baris hakim", tabel.filter((x) => x === "perkara_hakim_pn:INSERT").length, 3);
   cek("tabel perkara diperbarui", tabel.includes("perkara:UPDATE"), true);
-  // Enam sejak baris Riwayat Perkara (perkara_proses) ikut ditulis. Lima
-  // sebelumnya - dan selama lima itu, tab Riwayat Perkara pada perkara yang
-  // dikerjakan ALETA tidak pernah menyebutkan pejabat yang menunjuk.
+  // Tujuh sejak Smart Majelis ikut dicatat. Enam sejak baris Riwayat Perkara,
+  // lima sebelumnya - dan selama lima itu, tab Riwayat Perkara pada perkara
+  // yang dikerjakan ALETA tidak pernah menyebutkan pejabat yang menunjuk,
+  // sementara perkaranya tidak pernah muncul di laporan Smart Majelis.
   cek(
     "audit satu per langkah",
     tabel.filter((x) => x === "sys_audittrail:INSERT").length,
-    6
+    7
   );
   cek("riwayat perkara ikut ditulis", tabel.includes("perkara_proses:REPLACE"), true);
+  cek(
+    "smart majelis ikut dicatat",
+    tabel.some((x) => x.startsWith("perkara_smartmajelis:")),
+    true
+  );
 
   const barisPenetapan = rencana.langkah.find((x) => x.tabel === "perkara_penetapan");
   benar("id majelis dipisah koma", barisPenetapan.params.includes("26,28,31"));

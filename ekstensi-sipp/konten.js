@@ -50,6 +50,7 @@ const ALETA_API_CATAT = "/aleta/api/aleta-bot/penunjukan/catat";
 const ALETA_API_ANTREAN = "/aleta/api/aleta-bot/penunjukan/antrean";
 const ALETA_API_BERKAS_GUGATAN = "/aleta/api/aleta-bot/penunjukan/berkas";
 const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
+const ALETA_API_HAPUS = "/aleta/api/aleta-bot/penunjukan/hapus";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
@@ -1050,6 +1051,128 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
   return { ok: hasil.every((x) => x.ok), hasil };
 }
 
+/**
+ * ============================================================================
+ * MEMBATALKAN PENETAPAN YANG SUDAH TERTULIS
+ * ============================================================================
+ *
+ * Penetapan yang salah tidak dapat diperbaiki dengan menekan ulang: tabelnya
+ * menolak baris kedua, dan yang tertinggal perkara yang separuh tertulis.
+ * Sebelum ada tombol ini, jalan keluarnya membongkar dengan tangan dari
+ * beberapa tabel sekaligus.
+ *
+ * Yang dibatalkan selalu langkah TERAKHIR yang masih ada, dari PHS ke PMH.
+ * Urutannya tidak dapat dibalik - membongkar majelis selagi hari sidangnya
+ * masih berdiri meninggalkan sidang bagi majelis yang sudah tidak ada - dan
+ * servernya menolak permintaan semacam itu. Yang dikerjakan di sini hanya
+ * mencarikan langkah yang memang boleh dibongkar.
+ *
+ * Dua tekanan, sama seperti menulis: yang pertama memperlihatkan rencananya,
+ * yang kedua membongkar.
+ */
+const URUTAN_BONGKAR = ["phs", "pjs", "ppp", "pmh"];
+
+async function mintaBongkar(perkaraId, jenis, olehUsername, kering) {
+  try {
+    const respons = await alatAmbil(
+      ALETA_API_HAPUS,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jenis, perkaraId, olehUsername, kering }),
+      },
+      kering ? "Menyusun rencana pembatalan" : "Membatalkan penetapan"
+    );
+    const luar = await respons.json();
+    return (luar && luar.data ? luar.data : luar) || { ok: false, alasan: "tanpa_jawaban" };
+  } catch (galat) {
+    return { ok: false, alasan: String((galat && galat.message) || galat) };
+  }
+}
+
+/**
+ * Langkah terakhir yang masih ada dan boleh dibongkar.
+ *
+ * Dicari dengan uji kering, bukan ditebak dari layar: yang tahu langkah mana
+ * yang masih berdiri adalah basis data SIPP, dan panel ini mungkin sudah lama
+ * terbuka sejak keadaannya berubah.
+ */
+async function cariLangkahDibongkar(perkaraId, akunPerJenis) {
+  for (const jenis of URUTAN_BONGKAR) {
+    const oleh = akunPerJenis[jenis] || "";
+    if (!oleh) continue;
+    const jawab = await mintaBongkar(perkaraId, jenis, oleh, true);
+    if (jawab && jawab.ok) return { jenis, oleh, rencana: jawab };
+  }
+  return null;
+}
+
+function bagianBatalkanPenetapan(usulan, data) {
+  const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
+  const kotak = buatElemen("div", "aleta-tetap-kaki");
+  if (!perkaraId) return kotak;
+
+  const tombol = buatElemen("button", "aleta-portal-tautan", "Batalkan penetapan terakhir");
+  tombol.type = "button";
+  const kabar = buatElemen("span", "aleta-tetap-sebab", "");
+
+  // Akun pejabat tiap langkah - sama dengan yang dipakai menuliskannya, supaya
+  // pembongkarannya tercatat atas nama yang sama.
+  const rencanaLangkah = (data && data.rencana && data.rencana.langkah) || [];
+  const akunPerJenis = {};
+  for (const langkah of rencanaLangkah) {
+    if (langkah && langkah.jenis && langkah.akun && langkah.akun.username) {
+      akunPerJenis[langkah.jenis] = langkah.akun.username;
+    }
+  }
+  for (const jenis of URUTAN_BONGKAR) {
+    if (!akunPerJenis[jenis] && data && data.pejabatDipilih && data.pejabatDipilih[jenis]) {
+      akunPerJenis[jenis] = data.pejabatDipilih[jenis];
+    }
+  }
+
+  let siapDibongkar = null;
+
+  tombol.addEventListener("click", async () => {
+    tombol.disabled = true;
+
+    if (!siapDibongkar) {
+      kabar.textContent = "Mencari penetapan yang dapat dibatalkan…";
+      const ketemu = await cariLangkahDibongkar(perkaraId, akunPerJenis);
+      if (!ketemu) {
+        kabar.textContent =
+          "Tidak ada penetapan yang dapat dibatalkan dari sini. Langkah yang sudah diikuti langkah " +
+          "berikutnya harus dibatalkan dari yang paling akhir lebih dulu.";
+        tombol.disabled = false;
+        return;
+      }
+      siapDibongkar = ketemu;
+      const jumlah = (ketemu.rencana.rencana || []).length;
+      kabar.textContent =
+        `${ketemu.jenis.toUpperCase()} akan dibongkar atas nama ${ketemu.oleh} - ${jumlah} pernyataan, ` +
+        "termasuk baris Riwayat Perkara. Belum ada yang dihapus. Tekan sekali lagi untuk membatalkan.";
+      tombol.textContent = `Batalkan ${ketemu.jenis.toUpperCase()} sekarang`;
+      tombol.disabled = false;
+      return;
+    }
+
+    kabar.textContent = `Membatalkan ${siapDibongkar.jenis.toUpperCase()}…`;
+    const hasil = await mintaBongkar(perkaraId, siapDibongkar.jenis, siapDibongkar.oleh, false);
+    if (!hasil || !hasil.ok) {
+      kabar.textContent = `Gagal: ${(hasil && hasil.alasan) || "tidak diketahui"}`;
+      tombol.disabled = false;
+      return;
+    }
+    kabar.textContent = `${siapDibongkar.jenis.toUpperCase()} dibatalkan. Halaman dimuat ulang sebentar lagi.`;
+    setTimeout(() => location.reload(), 2000);
+  });
+
+  kotak.appendChild(tombol);
+  kotak.appendChild(kabar);
+  return kotak;
+}
+
 /** Menggambarkan hasil keempat langkah - kering maupun sungguhan. */
 function gambarHasilTulis(kabar, hasil, kering) {
   kabar.textContent = "";
@@ -1082,7 +1205,7 @@ function gambarHasilTulis(kabar, hasil, kering) {
         satu.ok
           ? kering
             ? `${(satu.langkah || []).length} pernyataan disiapkan`
-            : "tersimpan"
+            : "ditetapkan"
           : satu.alasan
       )
     );
@@ -1889,20 +2012,26 @@ function gambarPenunjukan(isi, data) {
     const catatan = buatElemen(
       "div",
       "aleta-kosong-lembut",
-      "Usulan di atas dapat disalin ke borang SIPP. Peran Anda tidak diberi akses menuliskannya langsung dari panel."
+      "Usulan di atas dapat disalin ke formulir SIPP. Peran Anda tidak diberi akses menuliskannya langsung dari panel."
     );
     isi.appendChild(catatan);
     return;
   }
 
   const kaki = buatElemen("div", "aleta-tetap-kaki");
-  const tombol = buatElemen("button", "aleta-tombol aleta-tombol-mati", "Kerjakan");
+  const tombol = buatElemen("button", "aleta-tombol aleta-tombol-mati", "Tetapkan");
   tombol.type = "button";
   tombol.disabled = true;
   const kabar = buatElemen("span", "aleta-tetap-sebab", "Memeriksa formulir di halaman ini…");
   kaki.appendChild(tombol);
   kaki.appendChild(kabar);
   isi.appendChild(kaki);
+
+  // Jalan kembali, bagi penetapan yang salah atau yang berhenti separuh
+  // tertulis. Ditaruh di bawah tombol menetapkan, bukan di sebelahnya:
+  // membatalkan bukan tindakan yang pantas berdampingan sejajar dengan
+  // menetapkan.
+  isi.appendChild(bagianBatalkanPenetapan(usulan, data));
 
   void siapkanKerjakan(tombol, kabar, usulan, data);
 }
@@ -2031,7 +2160,7 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
     tombol.classList.remove("aleta-tombol-mati");
     tombol.disabled = false;
     kabar.textContent =
-      "Borang SIPP tidak terbuka di halaman ini. ALETA dapat menuliskan keempatnya langsung - " +
+      "Formulir SIPP tidak terbuka di halaman ini. ALETA dapat menuliskan keempatnya langsung - " +
       "tekan sekali untuk melihat rencananya lebih dulu.";
 
     let rencanaSudahDibaca = false;
@@ -2068,7 +2197,28 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
       // Sesudah benar-benar menulis, tombolnya TIDAK dihidupkan lagi. Menekan
       // kedua kalinya akan menuliskan penetapan yang sama untuk kedua kalinya,
       // dan membongkarnya menuntut tangan.
-      tombol.textContent = hasil.ok ? "Sudah ditetapkan" : "Berhenti - periksa sebabnya";
+      tombol.textContent = hasil.ok ? "Penetapan selesai" : "Berhenti - periksa sebabnya";
+
+      // ====================================================================
+      // HALAMAN DIMUAT ULANG SESUDAH PENETAPAN BENAR-BENAR TERTULIS
+      // ====================================================================
+      //
+      // Yang berubah ada di basis data SIPP, bukan di halaman ini. Tanpa
+      // memuat ulang, tab Penetapan tetap kosong dan Riwayat Perkara tetap
+      // hanya menyebut pendaftaran - petugas menyimpulkan penetapannya gagal
+      // padahal keempatnya sudah tersimpan, lalu menekannya sekali lagi.
+      //
+      // Diberi jeda supaya hasil tiap langkah sempat terbaca lebih dahulu.
+      if (hasil.ok) {
+        kabar.appendChild(
+          buatElemen(
+            "div",
+            "aleta-tetap-sebab",
+            "Penetapan tersimpan. Halaman dimuat ulang sebentar lagi supaya tab Penetapan dan Riwayat Perkara menampilkan hasilnya."
+          )
+        );
+        setTimeout(() => location.reload(), 2500);
+      }
     });
     return;
   }
@@ -2445,7 +2595,7 @@ async function kerjakanBorang(rencana) {
   kabar.textContent = "Mengisi formulir…";
   const hasilIsi = await isiBorang(medanBorang, nilai);
   if (!hasilIsi.ok) {
-    kembalikan(`Berhenti di ${hasilIsi.alasan}. Borang terisi sebagian - periksa sebelum menyimpan.`);
+    kembalikan(`Berhenti di ${hasilIsi.alasan}. Formulir terisi sebagian - periksa sebelum menyimpan.`);
     return;
   }
 
@@ -2841,7 +2991,7 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
  * jadi yang dibaca adalah posita dan petitum yang ada di layar yang sama.
  */
 function bagianIsiAlasanPerkara(nomorPerkara) {
-  const kotak = bagian("Isi borang Data Umum dari posita", "isiAlasanPerkara", true);
+  const kotak = bagian("Isi formulir Data Umum dari posita", "isiAlasanPerkara", true);
   const isi = kotak.isi;
 
   isi.appendChild(
@@ -3305,14 +3455,14 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
 }
 
 function bagianIsiPutusan(nomorPerkara) {
-  const kotak = bagian("Isi borang putusan dari ALETA", "isiPutusan", true);
+  const kotak = bagian("Isi formulir putusan dari ALETA", "isiPutusan", true);
   const isi = kotak.isi;
 
   const terang = buatElemen(
     "div",
     "aleta-tetap-sebab",
     "Mengambil draf putusan ALETA yang terbaru untuk perkara ini, lalu mengisikan " +
-      "Pertimbangan Hukum, Amar, dan Amar Anonim ke borang di halaman ini. Tombol " +
+      "Pertimbangan Hukum, Amar, dan Amar Anonim ke formulir di halaman ini. Tombol " +
       "Simpan tetap Anda yang menekan."
   );
   isi.appendChild(terang);
@@ -3466,7 +3616,7 @@ function bagianIsiPutusan(nomorPerkara) {
         buatElemen(
           "div",
           "aleta-tetap-sebab",
-          `Borang ini juga menuntut ${medanTampak.length} pilihan yang berbeda menurut jenis perkara ` +
+          `Formulir ini juga menuntut ${medanTampak.length} pilihan yang berbeda menurut jenis perkara ` +
             "dan status putusannya. Angka inilah yang kelak menjadi laporan faktor penyebab perceraian " +
             "dan statistik dispensasi - jadi periksa tiap usulan sebelum dicentang."
         )
@@ -5714,7 +5864,7 @@ function susunPanel(konteks) {
   // justru dibuat untuk itu; menuntut salah satunya lalu menggambar keduanya
   // akan menawarkan papan penunjukan kepada yang tidak berwenang.
   if (boleh("penunjukan") || boleh("data-umum")) {
-    const kelKerja = kelompok("Kerjakan", "kerjakan", false);
+    const kelKerja = kelompok("Penetapan", "kerjakan", false);
 
     if (boleh("penunjukan")) kelKerja.isi.appendChild(bagianPenunjukan(konteks.nomorPerkara));
     if (boleh("data-umum")) kelKerja.isi.appendChild(bagianDataUmum(konteks));
@@ -5723,7 +5873,7 @@ function susunPanel(konteks) {
     // borangnya sendiri (#frm_putusan), bukan dari alamat halaman: alamat SIPP
     // berubah bentuk antar versi dan antar pemasangan, sedangkan id borangnya
     // tidak. Di halaman lain, bagian ini tidak digambar sama sekali - menu
-    // yang selalu ada tetapi hampir selalu menjawab "tidak ada borang di sini"
+    // yang selalu ada tetapi hampir selalu menjawab "tidak ada formulir di sini"
     // mengajari orang untuk berhenti membukanya.
     if (boleh("data-umum") && document.querySelector("#frm_putusan")) {
       kelKerja.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
