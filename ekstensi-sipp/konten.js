@@ -130,6 +130,52 @@ function alamatHalamanPerkara() {
   return /detil[_-]?perkara|detail[_-]?perkara/i.test(String(location.pathname || ""));
 }
 
+/**
+ * ============================================================================
+ * ALAMAT HALAMAN PERKARA YANG BOLEH DIBUKA ULANG
+ * ============================================================================
+ *
+ * location.reload() pada halaman detail perkara SIPP selalu berakhir di
+ * dasbor, dan itu bukan kebetulan. Nomor perkaranya tidak pernah ada di
+ * alamat; controller mengambilnya dari flash session yang HABIS begitu
+ * dibaca:
+ *
+ *     $idperkara = $this->nativesession->get_flash_session('perkara_id');
+ *     if(!is_numeric($idperkara)){ redirect('main'); }
+ *
+ * Pemuatan kedua membaca sesi yang sudah kosong, lalu dialihkan ke 'main'.
+ *
+ * Pintu masuk yang sesungguhnya adalah perkara_detil/<enc>, dengan <enc>
+ * nomor perkara yang disandikan. SIPP sendiri memakainya dari daftar
+ * perkara, dan ia boleh dipakai berkali-kali.
+ *
+ * <enc> milik halaman ini sudah tercetak di halamannya sendiri - pemuat tab
+ * Data Umum memakainya tanpa syarat, pada perkara apa pun:
+ *
+ *     $('#tabs1').load('<?php echo base_url("open_dataumum/".$enc);?>');
+ *
+ * Alamat pangkalnya ikut terbaca dari sana sekalian, jadi tidak perlu
+ * menebak ada tidaknya index.php maupun nama folder pemasangannya.
+ */
+function alamatMasukPerkara() {
+  if (!alamatHalamanPerkara()) return "";
+  const isi = document.documentElement ? String(document.documentElement.innerHTML || "") : "";
+  const cocok = /(https?:\/\/[^'"\s]*?\/)open_dataumum\/([^'"\/\s?#]+)/.exec(isi);
+  if (!cocok) return "";
+  return `${cocok[1]}perkara_detil/${cocok[2]}`;
+}
+
+/**
+ * Memuat ulang halaman perkara ini. Lewat pintu masuk yang sah bila ada, dan
+ * sebagai upaya terakhir memuat ulang apa adanya - halaman selain detail
+ * perkara memang tidak punya masalah sesi ini.
+ */
+function muatUlangHalamanPerkara() {
+  const alamat = alamatMasukPerkara();
+  if (alamat) location.assign(alamat);
+  else location.reload();
+}
+
 function cariNomorPerkara() {
   const teks = document.body ? String(document.body.innerText || "") : "";
 
@@ -1165,7 +1211,7 @@ function bagianBatalkanPenetapan(usulan, data) {
       return;
     }
     kabar.textContent = `${siapDibongkar.jenis.toUpperCase()} dibatalkan. Halaman dimuat ulang sebentar lagi.`;
-    setTimeout(() => location.reload(), 2000);
+    setTimeout(muatUlangHalamanPerkara, 2000);
   });
 
   kotak.appendChild(tombol);
@@ -2086,7 +2132,9 @@ async function catatRiwayatPerkaraSipp(nomor, konteks) {
     const baru = [
       {
         nomor,
-        url: location.href,
+        // Alamat yang sama masalahnya: location.href halaman ini tidak
+        // dapat dibuka ulang, jadi yang disimpan pintu masuknya.
+        url: alamatMasukPerkara() || location.href,
         jenis: (konteks && konteks.identitas && konteks.identitas.jenisPerkara) || "",
         waktu: new Date().toISOString(),
       },
@@ -2217,7 +2265,7 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
             "Penetapan tersimpan. Halaman dimuat ulang sebentar lagi supaya tab Penetapan dan Riwayat Perkara menampilkan hasilnya."
           )
         );
-        setTimeout(() => location.reload(), 2500);
+        setTimeout(muatUlangHalamanPerkara, 2500);
       }
     });
     return;

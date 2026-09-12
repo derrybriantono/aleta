@@ -17,6 +17,7 @@
  *   2. Jaraknya 1 sampai 10 menit, menaik menurut urutan langkah.
  *   3. Tidak pernah melampaui jam peladen pada tanggal yang sama.
  *   4. Dua perkara pada hari yang sama tidak jatuh pada jam yang sama.
+ *   5. Detik keempat langkah satu perkara tidak seluruhnya sama.
  *
  * Aturan kedua pernah gagal diam-diam: jedanya dihitung dengan pergeseran bit,
  * dan benih di atas 2,14 miliar berubah menjadi negatif sebagai int32 - enam
@@ -98,6 +99,19 @@ console.log("jam penetapan");
   // Jam yang berulang-ulang sama antar perkara justru menjadi pola tersendiri.
   const kembar = mulai.length - new Set(mulai).size;
   periksa("jam mulai jarang kembar antar perkara", kembar < 30, `${kembar} dari ${mulai.length}`);
+}
+
+// ------------------------------------------------ detik tiap langkah berbeda
+{
+  // Detik yang sama persis pada keempat langkah adalah pola yang kentara di
+  // layar Audit Trail - dan pernah benar-benar terjadi: 11:53:41, 11:57:41,
+  // 12:07:41, 12:09:41 pada perkara 561 tanggal 12 September 2026.
+  let seluruhnyaSama = 0;
+  for (let id = 1; id <= 3000; id += 1) {
+    const detik = rangkaian(id, "2026-09-12", "2026-09-12 23:00:00").map((x) => x.slice(-2));
+    if (new Set(detik).size === 1) seluruhnyaSama += 1;
+  }
+  periksa("detik keempat langkah tidak seluruhnya sama", seluruhnyaSama === 0, `${seluruhnyaSama} perkara`);
 }
 
 // --------------------------------------------- tidak melampaui jam peladen

@@ -434,11 +434,30 @@ function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer }) {
   // Titik mulai dan jeda tiap langkah - keduanya tetap bagi satu perkara.
   let menit = JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI);
   for (let i = 0; i < urutan; i += 1) menit += jedaLangkah(benih, i);
-  // Detiknya diambil dari BAGIAN LAIN benihnya, bukan dari sisa bagi yang sama
-  // dengan menitnya. Diambil dari sisa yang sama, dua perkara yang menitnya
-  // kebetulan sama selalu detiknya ikut sama - dan keduanya menjadi satu jam
-  // yang identik sampai ke detik.
-  const detik = Math.floor(benih / LEBAR_JENDELA_MULAI) % 60;
+  // Detiknya punya benih SENDIRI, yang ikut memuat urutan langkahnya.
+  //
+  // Dua kali salah sebelum bentuk ini. Mula-mula detiknya diambil dari sisa
+  // bagi yang sama dengan menitnya, sehingga dua perkara yang menitnya
+  // kebetulan sama selalu identik sampai ke detik. Lalu diambil dari bagian
+  // lain benihnya - benar antar perkara, tetapi TETAP bagi keempat langkah
+  // satu perkara: dibaca di layar Audit Trail, PMH, PPP, PJS, dan PHS
+  // seluruhnya berakhiran detik yang sama persis. Terbaca di basis data pada
+  // 12 September 2026: 11:53:41, 11:57:41, 12:07:41, 12:09:41.
+  //
+  // Empat keputusan yang ditulis manusia pada empat waktu yang berbeda tidak
+  // mungkin sedetik pun sama, jadi urutan langkahnya ikut menentukan detiknya.
+  //
+  // Bagian pertamanya - benih dibagi lebar jendela - yang memisahkan satu
+  // perkara dari perkara lain; itu yang membuat 3.000 perkara pada tanggal
+  // yang sama tidak ada satu pun yang jam mulainya kembar. Dua bagian
+  // berikutnya yang memisahkan langkah satu dari langkah lain di dalam satu
+  // perkara.
+  //
+  // Benih baru dari perkaraId dan urutan SUDAH DICOBA dan justru merusak yang
+  // pertama: nomor perkara yang beruntun membuat benihnya melangkah dengan
+  // kelipatan empat, sehingga sisa bagi 60-nya hanya pernah jatuh pada 15
+  // nilai - dan 862 dari 3.000 perkara kembali kembar jam mulainya.
+  const detik = (Math.floor(benih / LEBAR_JENDELA_MULAI) + jedaLangkah(benih, urutan) * 7 + urutan * 13) % 60;
 
   // Seluruh rangkaian digeser mundur bila ujungnya akan melampaui jam
   // sekarang. Yang dihitung ujungnya - PHS - supaya urutannya tetap utuh.

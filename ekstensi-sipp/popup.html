@@ -149,6 +149,22 @@
      jumlah digitnya berubah, dan menekan berulang menjadi mengejar sasaran. */
   .skala-nilai { flex: none; min-width: 52px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
   .skala-contoh { flex: 1; min-width: 0; color: var(--tulisan-lembut); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Peraga ukuran huruf: barisnya sendiri.
+
+     Sebaris dengan tombol - dan +, angka persen, dan tautan "kembalikan",
+     di popup selebar 300 piksel ia tersisa "Co..." saja - padahal justru
+     dialah satu-satunya bagian yang memperlihatkan besar hurufnya. */
+  .skala-peraga {
+    margin: 8px 0 0;
+    padding: 6px 8px;
+    color: var(--tulisan-lembut);
+    background: var(--latar-lembut);
+    border: 1px solid var(--garis);
+    border-radius: 6px;
+    line-height: 1.35;
+  }
+  /* Tautannya menepi ke kanan, terpisah dari kelompok tombol angka. */
+  #skalaPulih { margin-left: auto; }
   .skala-pulih {
     flex: none;
     font: inherit;
@@ -291,11 +307,6 @@
     </span>
   </label>
 
-    <p id="perbaruiKabar" class="saklar-ket" hidden></p>
-  </div>
-
-  </div>
-
   <label class="saklar">
     <input type="checkbox" id="tandaiHalaman" checked>
     <span>
@@ -341,9 +352,10 @@
       <button type="button" id="skalaKurang" class="skala-tombol" title="Perkecil huruf panel" aria-label="Perkecil huruf panel">&minus;</button>
       <span id="skalaNilai" class="skala-nilai" role="status" aria-live="polite">100%</span>
       <button type="button" id="skalaTambah" class="skala-tombol" title="Perbesar huruf panel" aria-label="Perbesar huruf panel">+</button>
-      <span id="skalaContoh" class="skala-contoh">Contoh teks panel</span>
       <button type="button" id="skalaPulih" class="skala-pulih" title="Kembali ke 100%">kembalikan</button>
     </div>
+    <p id="skalaContoh" class="skala-peraga">Contoh teks panel</p>
+  </div>
 
   <div class="skala">
     <span class="saklar-nama">Pembaruan ekstensi</span>
@@ -353,6 +365,8 @@
       <button type="button" id="muatUlangEkstensi" class="skala-pulih" hidden>muat ulang ekstensi</button>
       <span id="perbaruiVersi" class="skala-contoh"></span>
     </div>
+    <p id="perbaruiKabar" class="saklar-ket" hidden></p>
+  </div>
 </div>
 
 <!-- ===================================================================
@@ -372,11 +386,7 @@
   <button type="button" id="resetPosisi" class="tombol-reset">
     Kembalikan posisi panel
   </button>
-  <p class="saklar-ket">
-    Mengembalikan panel ke tempat, ukuran, dan tampilan bawaannya. Pakai ini bila panelnya
-    tergeser keluar layar dan tidak dapat ditemukan lagi. Berlaku seketika, tanpa memuat
-    ulang halaman.
-  </p>
+  <p class="saklar-ket">Dipakai bila panel tergeser keluar layar. Berlaku seketika.</p>
   <p class="saklar-ket" id="kabarReset" hidden></p>
 </div>
 
