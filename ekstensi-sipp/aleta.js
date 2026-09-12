@@ -173,15 +173,99 @@ function bagianEkstensi(siapa) {
       buatElemen(
         "div",
         "aleta-portal-awas",
-        `Ekstensi Anda ${terpasang}, yang tersedia ${tersedia}. Unduh lalu muat ulang dari chrome://extensions - selama tertinggal, sebagian menu di SIPP dapat tidak muncul.`
+        `Ekstensi Anda ${terpasang}, yang tersedia ${tersedia} - selama tertinggal, sebagian menu di SIPP dapat tidak muncul.`
       )
     );
   }
 
+  // ==========================================================================
+  // MEMASANG PEMBARUAN DARI SINI, BUKAN DARI chrome://extensions
+  // ==========================================================================
+  //
+  // Sebelumnya kotak ini hanya berkata "unduh lalu muat ulang dari
+  // chrome://extensions". Tiga langkah, dua di antaranya di halaman yang tidak
+  // pernah dibuka petugas - dan akibatnya beberapa rilis berturut-turut tidak
+  // pernah benar-benar terpasang di peramban siapa pun.
+  //
+  // Tombolnya tidak mengerjakan apa pun sendiri: requestUpdateCheck dan reload
+  // hanya ada di dalam konteks ekstensi, sedangkan berkas ini skrip konten.
+  // Yang dikerjakan mengirim pesan ke latar.js, lalu mengatakan apa adanya apa
+  // yang dijawab Chrome - termasuk ketika Chrome menolak, yang pada pemasangan
+  // tidak terkemas memang selalu terjadi.
+  const kabar = buatElemen("div", "aleta-portal-sebab");
+  kabar.hidden = true;
+
   const aksi = buatElemen("div", "aleta-portal-aksi");
-  aksi.appendChild(tautan(`${dasarPortal()}/aleta-ecourt`, tertinggal ? "Unduh versi terbaru" : "Halaman ekstensi", "aleta-tombol"));
+
+  const tombolPerbarui = buatElemen(
+    "button",
+    "aleta-tombol",
+    tertinggal ? "Perbarui sekarang" : "Periksa pembaruan"
+  );
+  tombolPerbarui.type = "button";
+
+  const tombolMuatUlang = buatElemen("button", "aleta-portal-tautan", "Muat ulang ekstensi");
+  tombolMuatUlang.type = "button";
+  // Disembunyikan sampai diperlukan: pada pemasangan CRX yang sehat tombol ini
+  // tidak pernah dibutuhkan, dan menawarkannya sejak awal hanya mengajak orang
+  // memuat ulang ekstensi tanpa sebab.
+  tombolMuatUlang.hidden = true;
+
+  function kabarkan(teks, buruk) {
+    kabar.textContent = teks;
+    kabar.hidden = false;
+    kabar.classList.toggle("aleta-portal-awas", Boolean(buruk));
+  }
+
+  /** Mengirim satu pesan ke pekerja latar, dengan galatnya ditangkap. */
+  async function mintaKeLatar(jenis) {
+    try {
+      return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis });
+    } catch (galat) {
+      // Terjadi ketika ekstensi sedang dimuat ulang - konteksnya mati sebelum
+      // jawabannya sampai. Itu justru pertanda perintahnya berjalan.
+      return { ok: false, keadaan: "konteks_mati", pesan: String((galat && galat.message) || galat) };
+    }
+  }
+
+  tombolPerbarui.addEventListener("click", async () => {
+    tombolPerbarui.disabled = true;
+    kabarkan("Menanyakan pembaruan kepada Chrome…", false);
+
+    const jawab = await mintaKeLatar("perbarui");
+    kabarkan((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.", !(jawab && jawab.ok));
+
+    if (jawab && jawab.ok && jawab.keadaan === "dipasang") {
+      // Ekstensi akan mati sebentar lagi, dan skrip konten TIDAK disuntikkan
+      // ulang ke halaman yang sudah terbuka. Tanpa memuat ulang halaman ini,
+      // panelnya tetap yang lama sampai petugas kebetulan berpindah halaman.
+      setTimeout(() => location.reload(), 1500);
+      return;
+    }
+
+    // Chrome tidak memasang apa pun. Jalan kedua ditawarkan HANYA sekarang,
+    // yaitu ketika ia memang berguna.
+    tombolMuatUlang.hidden = false;
+    tombolPerbarui.disabled = false;
+  });
+
+  tombolMuatUlang.addEventListener("click", async () => {
+    tombolMuatUlang.disabled = true;
+    kabarkan("Memuat ulang ekstensi dari berkasnya…", false);
+    const jawab = await mintaKeLatar("muat-ulang");
+    kabarkan(
+      (jawab && jawab.pesan) || "Ekstensi sedang dimuat ulang. Muat ulang halaman ini sebentar lagi.",
+      false
+    );
+    setTimeout(() => location.reload(), 1500);
+  });
+
+  aksi.appendChild(tombolPerbarui);
+  aksi.appendChild(tombolMuatUlang);
+  aksi.appendChild(tautan(`${dasarPortal()}/aleta-ecourt`, "Halaman ekstensi"));
   aksi.appendChild(tautan(`${dasarPortal()}/patch-notes#ekstensi`, "Catatan pembaruan"));
   isi.appendChild(aksi);
+  isi.appendChild(kabar);
   return kotak;
 }
 

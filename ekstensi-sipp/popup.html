@@ -292,6 +292,21 @@
   </label>
 
   <div class="skala">
+    <span class="saklar-nama">Pembaruan ekstensi</span>
+    <span class="saklar-ket">
+      Memasang versi terbaru tanpa membuka <strong class="saklar-nama">chrome://extensions</strong>.
+      Pada pemasangan yang dikelola peladen, Chrome mengunduh dan memasangnya sendiri;
+      pada pemasangan folder, tombol muat ulang membaca ulang berkasnya dari disk.
+    </span>
+    <div class="skala-atur">
+      <button type="button" id="perbaruiSekarang" class="tombol-reset">Perbarui sekarang</button>
+      <button type="button" id="muatUlangEkstensi" class="skala-pulih" hidden>muat ulang ekstensi</button>
+      <span id="perbaruiVersi" class="skala-contoh"></span>
+    </div>
+    <p id="perbaruiKabar" class="saklar-ket" hidden></p>
+  </div>
+
+  <div class="skala">
     <span class="saklar-nama">Ukuran huruf panel</span>
     <span class="saklar-ket">
       Hanya huruf di panel ALETA yang diperbesar &mdash; lebar dan letak panelnya tidak bergeser,

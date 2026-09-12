@@ -70,6 +70,9 @@ const BERKAS = [
   "aleta.js",
   "panel-alat.js",
   "tema-awal.js",
+  // Pekerja latar. Satu-satunya tempat requestUpdateCheck dan reload dapat
+  // dipanggil - skrip konten tidak punya keduanya.
+  "latar.js",
   "jembatan.js",
   "panel.css",
   "popup.html",

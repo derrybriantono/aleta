@@ -147,6 +147,80 @@ function simpan(kunci, nilai) {
   void penyimpanan.set({ [kunci]: nilai });
 }
 
+/**
+ * ============================================================================
+ * MEMASANG PEMBARUAN DARI POPUP
+ * ============================================================================
+ *
+ * Popup adalah halaman ekstensi, jadi ia SANGGUP memanggil requestUpdateCheck
+ * dan reload sendiri. Meski begitu keduanya tetap dititipkan ke latar.js -
+ * bukan karena tidak bisa, melainkan supaya aturan "apa yang terjadi pada tiap
+ * keadaan" hidup di SATU tempat. Popup dan panel di halaman SIPP menekan
+ * tombol yang berbeda dan menerima kalimat yang sama persis.
+ *
+ * Dan satu alasan yang lebih keras: reload() membunuh popupnya sendiri
+ * seketika. Dikerjakan dari sini, jawabannya tidak pernah sempat terbaca.
+ */
+const tombolPerbarui = document.getElementById("perbaruiSekarang");
+const tombolMuatUlangEkstensi = document.getElementById("muatUlangEkstensi");
+const perbaruiKabar = document.getElementById("perbaruiKabar");
+const perbaruiVersi = document.getElementById("perbaruiVersi");
+
+function kabarPerbarui(teks) {
+  if (!perbaruiKabar) return;
+  perbaruiKabar.textContent = teks;
+  perbaruiKabar.hidden = false;
+}
+
+async function mintaKeLatar(jenis) {
+  if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
+    return { ok: false, pesan: "Jendela ini tidak berjalan sebagai ekstensi." };
+  }
+  try {
+    return await chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis });
+  } catch (galat) {
+    // Ekstensi sedang dimuat ulang - konteksnya mati sebelum jawabannya
+    // sampai. Itu pertanda perintahnya berjalan, bukan gagal.
+    return { ok: true, keadaan: "konteks_mati", pesan: "Ekstensi sedang dimuat ulang." };
+  }
+}
+
+if (perbaruiVersi && typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
+  try {
+    perbaruiVersi.textContent = `versi ${chrome.runtime.getManifest().version}`;
+  } catch {
+    /* di luar ekstensi - versinya memang tidak dapat diketahui */
+  }
+}
+
+if (tombolPerbarui) {
+  tombolPerbarui.addEventListener("click", async () => {
+    tombolPerbarui.disabled = true;
+    kabarPerbarui("Menanyakan pembaruan kepada Chrome…");
+
+    const jawab = await mintaKeLatar("perbarui");
+    kabarPerbarui((jawab && jawab.pesan) || "Tidak ada jawaban dari ekstensi.");
+
+    if (jawab && jawab.ok && jawab.keadaan === "dipasang") return;
+
+    // Chrome tidak memasang apa pun. Jalan kedua ditawarkan hanya sekarang.
+    if (tombolMuatUlangEkstensi) tombolMuatUlangEkstensi.hidden = false;
+    tombolPerbarui.disabled = false;
+  });
+}
+
+if (tombolMuatUlangEkstensi) {
+  tombolMuatUlangEkstensi.addEventListener("click", async () => {
+    tombolMuatUlangEkstensi.disabled = true;
+    kabarPerbarui("Memuat ulang ekstensi dari berkasnya…");
+    const jawab = await mintaKeLatar("muat-ulang");
+    kabarPerbarui(
+      (jawab && jawab.pesan) ||
+        "Ekstensi sedang dimuat ulang. Muat ulang halaman SIPP yang terbuka sebentar lagi."
+    );
+  });
+}
+
 kotak.addEventListener("change", () => simpan("aktif", kotak.checked));
 kotakTanda.addEventListener("change", () => simpan("tandaiHalaman", kotakTanda.checked));
 kotakSisip.addEventListener("change", () => simpan("sisipJadwal", kotakSisip.checked));

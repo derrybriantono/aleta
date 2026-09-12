@@ -42,6 +42,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.103.0",
+    dirilis: "2026-09-12T11:40:00+08:00",
+    judul: "Pembaruan dipasang sekali klik dari panel, tanpa membuka chrome://extensions",
+    butir: [
+      "Kotak Ekstensi pada panel ALETA kini punya tombol \"Perbarui sekarang\". Sebelumnya kotak itu hanya berkata \"unduh lalu muat ulang dari chrome://extensions\" - tiga langkah, dua di antaranya di halaman yang hampir tidak pernah dibuka petugas, dan akibatnya beberapa rilis berturut-turut tidak pernah benar-benar terpasang di peramban siapa pun. Tombol yang sama ada di popup ikon peramban.",
+      "Pada pemasangan yang dikelola peladen (CRX lewat kebijakan Chrome), tombol itu meminta Chrome memeriksa updates.xml di portal seketika. Bila ada versi yang lebih baru, Chrome mengunduh dan memasangnya sendiri, ekstensi dimuat ulang, dan halaman ikut disegarkan supaya panelnya digambar kode yang baru. Itulah pemasangan sekali klik yang sesungguhnya.",
+      "Pada pemasangan folder (Load unpacked), Chrome mengabaikan pembaruan otomatis - dan itu dikatakan apa adanya, bukan disamarkan menjadi \"tidak ada pembaruan\" yang menyesatkan. Tombol kedua muncul di situ: memuat ulang ekstensi dari berkasnya di disk, menggantikan perjalanan ke chrome://extensions.",
+      "Ekstensi TIDAK dapat menulis ke foldernya sendiri, dan itu batas yang dipasang Chrome dengan sengaja: ekstensi yang dapat menimpa kodenya sendiri dari halaman web adalah ekstensi yang dapat dibajak halaman web. Pada pemasangan folder, berkasnya tetap harus sampai ke folder lebih dahulu oleh skrip rilis.",
+      "Ekstensi tidak pernah dimuat ulang ketika Chrome tidak memasang apa pun. Panel yang lenyap di tengah pengisian borang penetapan membuang pekerjaan petugas, dan itu dijaga uji tersendiri.",
+      "Pesan dari halaman yang bukan panel ALETA diabaikan pekerja latar. Tanpa itu, halaman web mana pun yang mengetahui id ekstensi dapat menyuruhnya memuat ulang.",
+    ],
+  },
+  {
     versi: "1.102.0",
     dirilis: "2026-09-12T11:20:00+08:00",
     judul: "Penetapan tidak lagi tertahan di PHS, dan ukuran huruf panel dapat diatur sendiri",
