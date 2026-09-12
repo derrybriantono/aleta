@@ -78,11 +78,9 @@ describe("chip jenis berwarna menurut keluarganya", () => {
     expect(talak).toBeLessThan(gugat);
   });
 
-  it("dipakai pada chip pita DAN chip identitas badan panel", () => {
-    // Dua chip untuk satu jenis harus berwarna sama, atau keduanya
-    // berhenti dipercaya.
-    expect(konten).toContain("tambah(`aleta-id-jenis ${kelasJenis(o.jenisPerkara)}`");
+  it("dipakai pada chip identitas badan panel - pita atas tidak lagi memuat jenis", () => {
     expect(konten).toContain("`aleta-tanda-jenis ${kelasJenis(identitas.jenisPerkara)}`");
+    expect(konten).not.toContain("tambah(`aleta-id-jenis ${kelasJenis(");
   });
 
   it("kelima warnanya punya padanan tema terang", () => {
@@ -93,8 +91,10 @@ describe("chip jenis berwarna menurut keluarganya", () => {
   });
 });
 
-describe("nomor di pita: klik menukar, klik ganda menyalin", () => {
-  const badan = potongFungsi(baca("konten.js"), "pitaIdentitas");
+describe("nomor di baris pertama badan: klik menukar, klik ganda menyalin", () => {
+  // Perilakunya pindah dari pita ke tombolNomorTukar (1.119.0) - satu tempat
+  // untuk nomor perkara dan nomor register, menggantikan dua tombol salin.
+  const badan = potongFungsi(baca("konten.js"), "tombolNomorTukar");
 
   it("nomor register e-Court ikut dari konteks", () => {
     expect(potongFungsi(baca("konten.js"), "jatiPita")).toContain(

@@ -1301,8 +1301,48 @@ tr.aleta-baris-disorot > td {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 8px 12px 4px;
+}
+
+/* Chip identitas di baris ini BULAT dan bertepi - bentuk yang tadinya
+   dipakai chip jenis di pita atas, dipindahkan ke sini bersama chipnya.
+   Warnanya dari kelas aleta-jenis-* yang sudah terpasang. */
+.aleta-kepala-perkara > .aleta-tanda-jenis,
+.aleta-kepala-perkara > .aleta-tanda-kumulasi,
+.aleta-kepala-perkara > .aleta-tanda-kuasa {
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+}
+
+/* Nomor yang dapat ditukar (klik) dan disalin (klik ganda). */
+.aleta-nomor-tukar {
+  font-family: ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: calc(13px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  color: var(--aleta-tulisan);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px dotted var(--aleta-garis-kuat);
+  padding-bottom: 1px;
+}
+
+.aleta-nomor-tukar:hover { color: var(--aleta-merek); }
+.aleta-nomor-tukar:focus-visible { outline: 2px solid var(--aleta-merek); outline-offset: 2px; }
+
+/* Sedang memperlihatkan nomor register e-Court. */
+.aleta-nomor-tukar.aleta-nomor-tukar-register { color: var(--aleta-merek); }
+
+/* Sekejap sesudah disalin. */
+.aleta-nomor-tukar.aleta-nomor-tukar-tersalin {
+  background: var(--aleta-merek);
+  color: #10231a;
+  border-radius: 3px;
+  transition: background 0.15s;
 }
 
 .aleta-kepala-siapa {
@@ -1324,7 +1364,69 @@ tr.aleta-baris-disorot > td {
 .aleta-kepala-peran {
   border: 1px solid var(--aleta-garis);
   border-radius: 999px;
-  padding: 0 6px;
+  padding: 0 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Warna menurut PERAN ─────────────────────────────────────────────────
+ *
+ * Super admin bergradasi berkilau bergerak, admin bergradasi diam, hakim
+ * dan panitera berwarna sendiri. Kilau super admin bukan hiasan semata:
+ * satu-satunya peran yang dapat mengubah pengaturan seluruh satker pantas
+ * dikenali dari jarak dua meter.
+ *
+ * Gerakannya dua lapis: gradasinya bergeser pelan (aleta-kilau), dan
+ * butir kerlipnya berkedip di atasnya (aleta-kerlip). Keduanya berhenti
+ * bila pengguna meminta gerak dikurangi - warnanya tetap, geraknya tidak. */
+.aleta-peran-super {
+  border-color: transparent !important;
+  color: #10231a !important;
+  font-weight: 700;
+  background: linear-gradient(115deg, #f6c453 0%, #7fd0a6 30%, #8bd3e6 55%, #c3b5f0 80%, #f6c453 100%);
+  background-size: 300% 100%;
+  animation: aleta-kilau 5s linear infinite;
+}
+
+.aleta-peran-super::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.75) 0 0.8px, transparent 1.4px);
+  background-size: 14px 10px, 9px 7px;
+  background-position: 0 0, 4px 3px;
+  animation: aleta-kerlip 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes aleta-kilau {
+  to { background-position: 300% 0; }
+}
+
+@keyframes aleta-kerlip {
+  from { opacity: 0.2; transform: translateX(0); }
+  to { opacity: 0.9; transform: translateX(-3px); }
+}
+
+.aleta-peran-admin {
+  border-color: transparent !important;
+  color: #eef7f2 !important;
+  font-weight: 700;
+  background: linear-gradient(115deg, #2f6b52, #245663);
+}
+
+.aleta-peran-hakim { background: #2a2340; border-color: #463a63 !important; color: #c3b5f0 !important; }
+.aleta-peran-panitera { background: #12313a; border-color: #245663 !important; color: #8bd3e6 !important; }
+
+.aleta-panel[data-tema="terang"] .aleta-peran-admin { background: linear-gradient(115deg, #a9c9b8, #a8c8d3); color: #10231a !important; }
+.aleta-panel[data-tema="terang"] .aleta-peran-hakim { background: #e6e1f4; border-color: #bcb0dd !important; color: #443289 !important; }
+.aleta-panel[data-tema="terang"] .aleta-peran-panitera { background: #dceaef; border-color: #a8c8d3 !important; color: #14556a !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aleta-peran-super, .aleta-peran-super::after { animation: none; }
 }
 
 .aleta-kepala-usia {
@@ -1810,6 +1912,10 @@ textarea.aleta-sunting:focus {
 /* Satu baris di bawah pita: pintasan yang disingkat di kiri, ikon segarkan
    di kanan. Tinggi barisnya tinggi ikonnya - tidak lebih. */
 .aleta-kaki-baris {
+  /* Selebar kaki - tanpa ini ia menyusut ke isinya dan seluruhnya
+     berkumpul di kiri, walau space-between sudah disebut. */
+  flex: 1 1 100%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1825,7 +1931,9 @@ textarea.aleta-sunting:focus {
 }
 
 .aleta-kaki-baris .aleta-kaki-pintasan {
-  flex: 1 1 auto;
+  /* Pintasan di kiri, sisanya terdorong ke kanan. */
+  flex: 0 1 auto;
+  margin-right: auto;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -3697,6 +3805,16 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
   min-width: 0;
 }
 .aleta-identitas-panel > span { white-space: nowrap; }
+
+/* Pembatas di antara keterangan pita. Dua akun yang berdampingan tanpa
+   pembatas terbaca sebagai satu nama panjang - dan itulah yang terjadi
+   pada "ALETA SUPER ADMIN DERRY SIPP Super Administrator". */
+.aleta-identitas-panel > span + span::before {
+  content: "|";
+  margin-right: 8px;
+  opacity: 0.4;
+  font-weight: 400;
+}
 .aleta-identitas-panel .aleta-id-akun {
   font-weight: 600;
   color: var(--aleta-tulisan);

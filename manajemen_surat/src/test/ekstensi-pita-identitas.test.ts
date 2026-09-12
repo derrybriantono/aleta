@@ -33,18 +33,17 @@ describe("pita identitas: satu bentuk di kepala dan di kaki, pada setiap panel",
     expect(isi).toContain("panel.appendChild(kakiPanel({}));");
   });
 
-  it("pita memuat keempat keterangan: akun ALETA, akun SIPP, nomor, jenis - seri di kaki", () => {
-    // Dulu lima: seri ekstensi ikut di pita. Sejak 1.118.0 seri pindah ke
-    // baris kaki - satu tempat untuk ketiga panel - sebab di pita ia
-    // mengulang dirinya di kepala dan kaki sekaligus.
+  it("pita memuat kedua akun saja: ALETA dan SIPP - nomor, jenis, seri di tempat lain", () => {
+    // Dulu lima. Seri pindah ke baris kaki (1.118.0); nomor dan jenis
+    // turun ke baris pertama badan (1.119.0), tempat chip identitasnya memang
+    // sudah berdiri - di pita keduanya mengulang baris itu satu jengkal di
+    // atasnya.
     const isi = konten();
     const potong = isi.slice(isi.indexOf("function pitaIdentitas(opsi) {"), isi.indexOf("function kakiPanel(opsi) {"));
     expect(potong).toContain('"aleta-id-akun aleta-id-aleta", "ALETA"');
     expect(potong).toContain('buatElemen("span", "aleta-akun-sipp", akunSipp)');
-    // Nomor bukan lagi tambah() biasa: ia dapat ditukar dan disalin.
-    expect(potong).toContain('buatElemen("span", "aleta-id-nomor", nomor)');
-    // Jenis membawa kelas warna keluarganya.
-    expect(potong).toContain("tambah(`aleta-id-jenis ${kelasJenis(o.jenisPerkara)}`");
+    expect(potong).not.toContain('"aleta-id-nomor"');
+    expect(potong).not.toContain("aleta-id-jenis");
     expect(potong).not.toContain("chrome.runtime.getManifest().version");
     // Yang tidak terbaca tidak ditulis - bukan "tidak diketahui".
     expect(potong).not.toContain("tidak diketahui");

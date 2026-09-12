@@ -1299,3 +1299,23 @@ function alatPasangPetunjuk(akar) {
   akar.addEventListener("scroll", sembunyikan, true);
   akar.addEventListener("keydown", sembunyikan, true);
 }
+
+/**
+ * ============================================================================
+ * KELAS WARNA CHIP MENURUT PERAN PENGGUNA
+ * ============================================================================
+ *
+ * Satu tempat untuk ketiga panel, supaya "Super Admin" berwarna sama di SIPP,
+ * ABT, dan ALETA. Super admin bergradasi berkilau bergerak, admin bergradasi
+ * diam, hakim dan panitera berwarna sendiri, selebihnya polos - urutannya
+ * dari yang paling khusus, sebab "super admin" memuat kata "admin".
+ */
+function alatKelasPeran(peran) {
+  const p = String(peran || "").toLowerCase();
+  if (!p) return "aleta-peran-lain";
+  if (/super/.test(p)) return "aleta-peran-super";
+  if (/admin/.test(p)) return "aleta-peran-admin";
+  if (/hakim|ketua|wakil/.test(p)) return "aleta-peran-hakim";
+  if (/panitera|jurusita|juru\s*sita|\bpp\b/.test(p)) return "aleta-peran-panitera";
+  return "aleta-peran-lain";
+}

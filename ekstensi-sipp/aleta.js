@@ -129,7 +129,7 @@ function pitaIdentitas(siapa) {
   if (siapa && siapa.nama) {
     tambah("aleta-id-akun aleta-id-aleta", "ALETA", siapa.nama, `Masuk ke ALETA sebagai ${siapa.nama}.`);
   }
-  if (siapa && siapa.peran) tambah("aleta-id-jenis", "", siapa.peran, "Peran yang sedang berlaku.");
+  if (siapa && siapa.peran) tambah(`aleta-id-jenis ${alatKelasPeran(siapa.peran)}`, "", siapa.peran, "Peran yang sedang berlaku.");
   // Seri ekstensi tidak lagi di pita - ia pindah ke baris kaki, satu
   // tempat untuk ketiga panel.
   return pita;

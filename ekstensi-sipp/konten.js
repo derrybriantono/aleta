@@ -7144,68 +7144,11 @@ function pitaIdentitas(opsi) {
     pita.appendChild(kotakAkun);
   }
 
-  // ==========================================================================
-  // NOMOR: KLIK MENUKAR, KLIK GANDA MENYALIN
-  // ==========================================================================
-  //
-  // Nomor perkara dipakai di SIPP; nomor register dipakai di e-Court. Petugas
-  // yang berpindah antara keduanya membutuhkan yang satu lalu yang lain, dan
-  // menyalinnya adalah pekerjaan yang paling sering dikerjakan pada pita ini.
-  //
-  // Klik tunggal ditunda sekejap dan dibatalkan oleh klik ganda - tanpa
-  // penundaan itu, tiap klik ganda menukar nomornya dua kali lalu menyalin
-  // yang tampil sesudahnya, yakni yang semula. Yang disalin selalu yang
-  // sedang TAMPIL, sebab itulah yang dilihat orang ketika menekannya.
-  if (o.nomorPerkara) {
-    const nomor = String(o.nomorPerkara);
-    const register = String(o.nomorRegister || "");
-    const kotakNomor = buatElemen("span", "aleta-id-nomor", nomor);
-    let tampilRegister = false;
-    const judul = () =>
-      register
-        ? `${tampilRegister ? "Nomor register e-Court" : "Nomor perkara"}. Klik: tukar ke ${
-            tampilRegister ? "nomor perkara" : "nomor register e-Court"
-          }. Klik ganda: salin.`
-        : "Nomor perkara yang sedang dibuka. Klik ganda: salin.";
-    const gambar = () => {
-      kotakNomor.textContent = tampilRegister ? register : nomor;
-      kotakNomor.classList.toggle("aleta-id-nomor-register", tampilRegister);
-      // Petunjuk dua detik memindahkan title ke data-aleta-tip pada sentuhan
-      // pertama; keduanya diperbarui supaya penjelasannya mengikuti keadaan.
-      kotakNomor.title = judul();
-      if (kotakNomor.hasAttribute("data-aleta-tip")) kotakNomor.setAttribute("data-aleta-tip", judul());
-    };
-    gambar();
-    let jamKlik = null;
-    kotakNomor.addEventListener("click", () => {
-      if (!register) return;
-      if (jamKlik) clearTimeout(jamKlik);
-      jamKlik = setTimeout(() => {
-        jamKlik = null;
-        tampilRegister = !tampilRegister;
-        gambar();
-      }, 250);
-    });
-    kotakNomor.addEventListener("dblclick", async () => {
-      if (jamKlik) {
-        clearTimeout(jamKlik);
-        jamKlik = null;
-      }
-      const berhasil = await salinTeks(tampilRegister ? register : nomor);
-      if (!berhasil) return;
-      kotakNomor.classList.add("aleta-id-nomor-tersalin");
-      setTimeout(() => kotakNomor.classList.remove("aleta-id-nomor-tersalin"), 700);
-    });
-    pita.appendChild(kotakNomor);
-  }
+  // Nomor dan jenis perkara TIDAK lagi di pita - keduanya turun ke baris
+  // kedua panel, tempat chip identitasnya memang sudah berdiri. Di pita
+  // keduanya mengulang baris itu satu jengkal di atasnya. Perilaku tukar
+  // dan salinnya ikut turun - lihat tombolNomorTukar.
 
-  if (o.jenisPerkara) {
-    const judul =
-      o.jenisPerkaraLengkap && o.jenisPerkaraLengkap !== o.jenisPerkara
-        ? String(o.jenisPerkaraLengkap)
-        : "Jenis perkara menurut SIPP.";
-    tambah(`aleta-id-jenis ${kelasJenis(o.jenisPerkara)}`, "", String(o.jenisPerkara), judul);
-  }
 
   // Seri ekstensi TIDAK lagi di pita: ia pindah ke baris kaki, satu-satunya
   // tempat yang memang dibaca orang ketika melapor. Di pita ia mengulang
@@ -7322,6 +7265,68 @@ function kelasJenis(jenis) {
   return "aleta-jenis-lain";
 }
 
+/**
+ * ============================================================================
+ * NOMOR PERKARA: KLIK MENUKAR, KLIK GANDA MENYALIN
+ * ============================================================================
+ *
+ * Nomor perkara dipakai di SIPP; nomor register dipakai di e-Court. Petugas
+ * yang berpindah antara keduanya membutuhkan yang satu lalu yang lain, dan
+ * menyalinnya adalah pekerjaan yang paling sering dikerjakan di baris ini.
+ *
+ * Klik tunggal ditunda sekejap dan dibatalkan oleh klik ganda - tanpa
+ * penundaan itu, tiap klik ganda menukar nomornya dua kali lalu menyalin
+ * yang tampil sesudahnya, yakni yang semula. Yang disalin selalu yang sedang
+ * TAMPIL, sebab itulah yang dilihat orang ketika menekannya.
+ *
+ * Menggantikan dua tombol salin yang dulu terpisah - nomor perkara di baris
+ * kedua, nomor register di baris ketiga. Satu tempat untuk keduanya.
+ */
+function tombolNomorTukar(nomorPerkara, nomorRegister) {
+  const nomor = String(nomorPerkara || "");
+  const register = String(nomorRegister || "");
+  const kotakNomor = buatElemen("span", "aleta-nomor-tukar", nomor);
+  kotakNomor.setAttribute("role", "button");
+  kotakNomor.tabIndex = 0;
+  let tampilRegister = false;
+  const judul = () =>
+    register
+      ? `${tampilRegister ? "Nomor register e-Court" : "Nomor perkara"}. Klik: tukar ke ${
+          tampilRegister ? "nomor perkara" : "nomor register e-Court"
+        }. Klik ganda: salin.`
+      : "Nomor perkara yang sedang dibuka. Klik ganda: salin.";
+  const gambar = () => {
+    kotakNomor.textContent = tampilRegister ? register : nomor;
+    kotakNomor.classList.toggle("aleta-nomor-tukar-register", tampilRegister);
+    // Petunjuk dua detik memindahkan title ke data-aleta-tip pada sentuhan
+    // pertama; keduanya diperbarui supaya penjelasannya mengikuti keadaan.
+    kotakNomor.title = judul();
+    if (kotakNomor.hasAttribute("data-aleta-tip")) kotakNomor.setAttribute("data-aleta-tip", judul());
+  };
+  gambar();
+  let jamKlik = null;
+  kotakNomor.addEventListener("click", () => {
+    if (!register) return;
+    if (jamKlik) clearTimeout(jamKlik);
+    jamKlik = setTimeout(() => {
+      jamKlik = null;
+      tampilRegister = !tampilRegister;
+      gambar();
+    }, 250);
+  });
+  kotakNomor.addEventListener("dblclick", async () => {
+    if (jamKlik) {
+      clearTimeout(jamKlik);
+      jamKlik = null;
+    }
+    const berhasil = await salinTeks(tampilRegister ? register : nomor);
+    if (!berhasil) return;
+    kotakNomor.classList.add("aleta-nomor-tukar-tersalin");
+    setTimeout(() => kotakNomor.classList.remove("aleta-nomor-tukar-tersalin"), 700);
+  });
+  return kotakNomor;
+}
+
 function jatiPita(konteks) {
   const identitas = (konteks && konteks.identitas) || {};
   return {
@@ -7414,15 +7419,17 @@ function susunPanel(konteks) {
   // yang membaca dan sejauh mana datanya. Tidak ada yang dibuang.
   const usia = usiaData(konteks.diperiksaPada);
 
-  // --- Baris 1: perkaranya -------------------------------------------------
+  // ------------------------------------------------------------------------
+  // BARIS PERTAMA BADAN: NOMOR YANG DAPAT DITUKAR DAN CHIP IDENTITAS
+  // ------------------------------------------------------------------------
   //
-  // Yang disalin nomor PERKARA, bukan nomor register. Nomor perkara yang
-  // dipakai sehari-hari - disebut di WhatsApp, dicari di SIPP, ditulis di
-  // berkas - sedangkan nomor register e-Court hampir hanya dipakai saat
-  // menelusuri e-Court itu sendiri. Registernya tetap ada, di baris kedua.
+  // Nomor perkara dan nomor register e-Court berdiri di satu tempat ini:
+  // klik menukar, klik ganda menyalin yang sedang tampil. Dulu keduanya dua
+  // tombol salin terpisah di dua baris, dan pita di kepala mengulang
+  // nomornya sekali lagi - tiga tempat untuk satu nomor.
   const barisPerkara = buatElemen("div", "aleta-kepala-perkara");
   if (konteks.nomorPerkara) {
-    barisPerkara.appendChild(tombolSalin(konteks.nomorPerkara, "Salin nomor perkara"));
+    barisPerkara.appendChild(tombolNomorTukar(konteks.nomorPerkara, konteks.nomorRegister || ""));
   }
 
   // Chip identitas dipindahkan ke baris ini apa adanya - jenis perkara,
@@ -7438,14 +7445,18 @@ function susunPanel(konteks) {
   if (penggunaTerakhir && penggunaTerakhir.nama) {
     barisSiapa.appendChild(buatElemen("span", "aleta-kepala-nama", penggunaTerakhir.nama));
     if (penggunaTerakhir.peran) {
-      barisSiapa.appendChild(buatElemen("span", "aleta-kepala-peran", penggunaTerakhir.peran));
+      // Warnanya menyebut perannya - lihat alatKelasPeran di panel-alat.js.
+      barisSiapa.appendChild(
+        buatElemen(
+          "span",
+          `aleta-kepala-peran ${alatKelasPeran(penggunaTerakhir.peran)}`,
+          penggunaTerakhir.peran
+        )
+      );
     }
   }
-  if (konteks.nomorRegister) {
-    const reg = tombolSalin(konteks.nomorRegister, "Salin nomor register untuk dicari di e-Court");
-    reg.classList.add("aleta-kepala-register");
-    barisSiapa.appendChild(reg);
-  }
+  // Nomor register tidak lagi punya tombolnya sendiri di sini - ia dapat
+  // ditukar dari nomor perkara di baris pertama badan (tombolNomorTukar).
 
   // Umur data TIDAK ikut dipadatkan ketika ia bermasalah. Yang basi tetap
   // mendapat barisnya sendiri dan warnanya sendiri - itu satu-satunya
