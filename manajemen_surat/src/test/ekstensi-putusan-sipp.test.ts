@@ -112,10 +112,19 @@ describe("mengisi borang putusan SIPP", () => {
     // querySelector("#faktor_cerai") memulangkan yang mana pun yang lebih dulu
     // di dokumen, dan pada hari urutannya berubah, faktor perceraian terisi
     // hasil reskom tanpa satu pun tanda.
-    const bagian = konten.slice(
-      konten.indexOf("const CALON_MEDAN"),
-      konten.indexOf("const medanTampak")
+    // Dipotong dari dalam bagianIsiPutusan lebih dulu. Nama seperti
+    // "medanTampak" dipakai juga oleh bagian alasan Data Umum yang duduk lebih
+    // atas di berkas ini; mencarinya di seluruh berkas memulangkan potongan
+    // kosong, dan penjaga yang memeriksa potongan kosong selalu lulus.
+    const seluruhPutusan = konten.slice(
+      konten.indexOf("function bagianIsiPutusan("),
+      konten.indexOf("function bagianBacaBorang(")
     );
+    const bagian = seluruhPutusan.slice(
+      seluruhPutusan.indexOf("const CALON_MEDAN"),
+      seluruhPutusan.indexOf("const medanTampak")
+    );
+    expect(bagian.length).toBeGreaterThan(200);
     expect(bagian).not.toMatch(/penunjuk:\s*"#/);
     expect(bagian).toContain('select[name="status_reskom"]');
   });
@@ -138,10 +147,12 @@ describe("mengisi borang putusan SIPP", () => {
     // Sebagian pilihan mengubah tampilan borang - qobla menentukan
     // muncul-tidaknya keadaan istri. Mengisinya belakangan berarti perubahan
     // itu terjadi ketika petugas sudah berhenti memperhatikan.
-    const bagian = konten.slice(
-      konten.indexOf("terap.addEventListener"),
+    const seluruhPutusan = konten.slice(
+      konten.indexOf("function bagianIsiPutusan("),
       konten.indexOf("function bagianBacaBorang(")
     );
+    const bagian = seluruhPutusan.slice(seluruhPutusan.indexOf("terap.addEventListener"));
+    expect(bagian.length).toBeGreaterThan(200);
     const pilihanDulu = bagian.indexOf('jenisMedan: "pilih"');
     const teksKemudian = bagian.indexOf('jenisMedan: "kaya"');
     expect(pilihanDulu).toBeGreaterThan(-1);

@@ -53,6 +53,7 @@ const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
+const ALETA_API_ALASAN_PERKARA = "/aleta/api/aleta-ecourt/alasan-perkara";
 const PENANDA = "aleta-panel-sipp";
 
 /**
@@ -2802,6 +2803,253 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
  *    situ mengubah jenis putusannya - bukan sekadar salah ketik. Yang
  *    dikerjakan ALETA hanya isian teks panjang yang selama ini disalin tangan.
  */
+/**
+ * ============================================================================
+ * ISIAN ALASAN PADA LAYAR INFO PERKARA AGAMA (DATA UMUM)
+ * ============================================================================
+ *
+ * Layar ini menuntut satu medan "alasan" yang berbeda untuk tiap jenis perkara
+ * agama, dan hanya satu di antaranya yang tampak pada satu perkara: alasan
+ * poligami, alasan pembatalan kawin, alasan penguasaan anak, alasan pengesahan
+ * anak, alasan asal usul anak, alasan itsbat nikah, alasan dispensasi kawin.
+ * Seluruhnya tersimpan ke satu tabel dengan penanda yang berbeda, dan angka
+ * itulah yang kelak menjadi laporan statistik perkara agama.
+ *
+ * Sama seperti borang putusan, tidak satu pun aturan "medan mana untuk perkara
+ * mana" disalin ke sini. Yang dikerjakan: menanyakan kepada HALAMAN medan mana
+ * yang sedang tampak, lalu meminta ALETA memilih satu dari daftar pilihan yang
+ * halaman itu sendiri berikan.
+ *
+ * Bedanya dengan borang putusan hanya pada BUKTINYA. Data Umum diisi pada hari
+ * perkara didaftarkan - belum ada draf putusan, belum ada pertimbangan hukum -
+ * jadi yang dibaca adalah posita dan petitum yang ada di layar yang sama.
+ */
+function bagianIsiAlasanPerkara(nomorPerkara) {
+  const kotak = bagian("Isi alasan perkara dari posita", "isiAlasanPerkara", true);
+  const isi = kotak.isi;
+
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      "Membaca posita dan petitum yang ada di layar ini, lalu mengusulkan pilihan untuk " +
+        "medan alasan yang sedang tampak. Angka inilah yang kelak menjadi laporan statistik " +
+        "perkara agama, jadi periksa tiap usulan. Tombol Simpan tetap Anda yang menekan."
+    )
+  );
+
+  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Baca posita, usulkan alasan");
+  tombol.type = "button";
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  const wadah = buatElemen("div", "aleta-isian-putusan");
+  isi.appendChild(tombol);
+  isi.appendChild(kabar);
+  isi.appendChild(wadah);
+
+  // Penunjuknya berbasis NAMA, bukan id, mengikuti pilihan yang sama pada
+  // borang putusan: pada borang SIPP ada select yang memakai id milik select
+  // lain, dan querySelector("#...") memulangkan yang mana pun yang lebih dulu
+  // di dokumen. Nama medan tidak kembar, dan namanya pula yang dikirim ke
+  // peladen.
+  //
+  // Medan berisi BANYAK pilihan sekaligus - objek wakaf dan akad syariah
+  // tambahan - sengaja TIDAK ditawarkan. Keduanya digambar oleh alat pilihan
+  // ganda milik halaman, yang menyimpan pilihannya di tempat lain dari select
+  // aslinya: menyetel nilainya membuat daftar di layar tidak ikut berubah,
+  // sehingga petugas melihat satu hal dan yang tersimpan hal lain.
+  const CALON_ALASAN = [
+    { penunjuk: 'select[name="alasan_poligami"]', label: "Alasan Pengajuan Poligami" },
+    { penunjuk: 'select[name="batal_kawin"]', label: "Alasan Pembatalan Kawin" },
+    { penunjuk: 'select[name="alasan_kuasa_anak"]', label: "Alasan Pengajuan Penguasaan Anak" },
+    { penunjuk: 'select[name="alasan_sah_anak"]', label: "Alasan Pengajuan Pengesahan Anak" },
+    { penunjuk: 'select[name="alasan_asalusul"]', label: "Alasan Pengajuan Asal Usul Anak" },
+    { penunjuk: 'select[name="alasan_isbat"]', label: "Alasan Pengajuan Isbat Nikah" },
+    { penunjuk: 'select[name="alasan_dispen"]', label: "Alasan Pengajuan Dispensasi Kawin" },
+    { penunjuk: 'select[name="bidang_ekonomi_syariah"]', label: "Bidang Ekonomi Syariah" },
+    { penunjuk: 'select[name="akad_syariah_primer"]', label: "Jenis Akad Syariah" },
+  ];
+
+  tombol.addEventListener("click", async () => {
+    tombol.disabled = true;
+    wadah.textContent = "";
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Membaca posita…";
+
+    // ────────────────────────────────────────────────────────────────────
+    // BUKTI DIBACA DARI LAYAR, BUKAN DARI BASIS DATA
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Yang dinilai haruslah yang sedang dilihat petugas. Ia mungkin baru
+    // menempelkan positanya dan belum menekan Simpan; membacanya dari basis
+    // data di saat itu memulangkan kekosongan, dan usulannya akan mengaku
+    // "tidak ditemukan" atas kalimat yang jelas terpampang.
+    const bacaPosita = await kirimKeJembatan({
+      jenis: "nilai",
+      penunjuk: "#posita",
+      jenisMedan: "kaya",
+    });
+    const bacaPetitum = await kirimKeJembatan({
+      jenis: "nilai",
+      penunjuk: "#petitum",
+      jenisMedan: "kaya",
+    });
+    const posita = (bacaPosita && bacaPosita.ok && bacaPosita.nilai) || "";
+    const petitum = (bacaPetitum && bacaPetitum.ok && bacaPetitum.nilai) || "";
+
+    kabar.textContent = "Memeriksa medan alasan yang tampak…";
+
+    const medanTampak = [];
+    for (const calon of CALON_ALASAN) {
+      const jawabPilihan = await kirimKeJembatan({ jenis: "pilihan", penunjuk: calon.penunjuk });
+      if (!jawabPilihan || !jawabPilihan.ok || !jawabPilihan.tampak) continue;
+      const pilihan = (jawabPilihan.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
+      if (pilihan.length === 0) continue;
+      medanTampak.push({
+        kunci: calon.penunjuk,
+        label: calon.label,
+        pilihan,
+        nilaiSekarang: jawabPilihan.nilaiSekarang || "",
+      });
+    }
+
+    if (medanTampak.length === 0) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent =
+        "Jenis perkara ini tidak menuntut medan alasan pada layar Data Umum, jadi tidak ada yang perlu diusulkan.";
+      tombol.disabled = false;
+      return;
+    }
+
+    let usulanMedan = [];
+    try {
+      const respons = await alatAmbil(
+        ALETA_API_ALASAN_PERKARA,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            nomorPerkara: nomorPerkara || "",
+            teks: { posita, petitum },
+            medan: medanTampak.map((x) => ({ kunci: x.kunci, label: x.label, pilihan: x.pilihan })),
+          }),
+        },
+        "Menyusun usulan alasan"
+      );
+      if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Menyusun usulan alasan"));
+      const luar = await respons.json();
+      const jawab = luar && luar.data ? luar.data : luar;
+      if (!jawab || !jawab.ada) {
+        kabar.className = "aleta-abt-kabar";
+        kabar.textContent = (jawab && jawab.sebab) || "Tidak ada usulan yang dapat disusun.";
+        tombol.disabled = false;
+        return;
+      }
+      usulanMedan = jawab.usulan || [];
+      kabar.textContent = `${medanTampak.length} medan alasan tampak, dinilai dari ${jawab.panjangTeks} huruf posita dan petitum.`;
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+      tombol.disabled = false;
+      return;
+    }
+
+    const pilihanTerap = [];
+    for (const medan of medanTampak) {
+      const usul = usulanMedan.find((x) => x.kunci === medan.kunci) || null;
+      const sekarang =
+        (medan.pilihan.find((x) => String(x.nilai) === String(medan.nilaiSekarang)) || {}).label || "";
+      const kartu = buatElemen("div", "aleta-abt-kartu");
+
+      const kepala = buatElemen("div", "aleta-abt-kartu-kepala");
+      const centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-abt-centang";
+      // Yang berselisih TIDAK dicentang sendiri: justru itu yang paling perlu
+      // dibaca manusia.
+      centang.checked = Boolean(usul && usul.nilai) && usul.keyakinan !== "bentrok";
+      centang.disabled = !(usul && usul.nilai);
+      kepala.appendChild(centang);
+      kepala.appendChild(buatElemen("span", "aleta-abt-nama", medan.label));
+      const nada =
+        !usul || !usul.nilai
+          ? { kelas: "aleta-tanda-abu", teks: "tidak ditemukan" }
+          : usul.keyakinan === "bentrok"
+          ? { kelas: "aleta-tanda-merah", teks: "posita menyebut lebih dari satu" }
+          : usul.keyakinan === "pasti"
+          ? { kelas: "aleta-tanda-hijau", teks: "disebut posita" }
+          : { kelas: "aleta-tanda-kuning", teks: "mendekati" };
+      kepala.appendChild(buatElemen("span", `aleta-tanda ${nada.kelas}`, nada.teks));
+      kartu.appendChild(kepala);
+
+      const sanding = buatElemen("div", "aleta-abt-sanding");
+      const kini = buatElemen("div", "aleta-abt-kini");
+      kini.appendChild(buatElemen("span", "aleta-abt-label", "sekarang"));
+      kini.appendChild(buatElemen("span", "aleta-abt-isi", sekarang || "(belum dipilih)"));
+      sanding.appendChild(kini);
+      if (usul && usul.nilai) {
+        const usulBaris = buatElemen("div", "aleta-abt-usul");
+        usulBaris.appendChild(buatElemen("span", "aleta-abt-label", "usulan"));
+        usulBaris.appendChild(buatElemen("span", "aleta-abt-isi", usul.nilaiLabel));
+        sanding.appendChild(usulBaris);
+      }
+      kartu.appendChild(sanding);
+
+      if (usul && usul.kutipan) {
+        const kutip = buatElemen("div", "aleta-abt-kutipan");
+        kutip.appendChild(buatElemen("span", "aleta-abt-asal", "Posita"));
+        kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", usul.kutipan));
+        kartu.appendChild(kutip);
+      }
+      if (usul && usul.alasan) kartu.appendChild(buatElemen("div", "aleta-abt-catatan", usul.alasan));
+
+      wadah.appendChild(kartu);
+      if (usul && usul.nilai) {
+        pilihanTerap.push({ kunci: medan.kunci, nilai: usul.nilai, label: medan.label, centang });
+      }
+    }
+
+    const terapAlasan = buatElemen("button", "aleta-permintaan-tombol", "Isikan yang dicentang");
+    terapAlasan.type = "button";
+    const hasilAlasan = buatElemen("div", "aleta-abt-kabar");
+    wadah.appendChild(terapAlasan);
+    wadah.appendChild(hasilAlasan);
+
+    terapAlasan.addEventListener("click", async () => {
+      const dipilih = pilihanTerap.filter((x) => x.centang.checked);
+      if (dipilih.length === 0) {
+        hasilAlasan.textContent = "Tidak ada yang dicentang.";
+        return;
+      }
+      terapAlasan.disabled = true;
+      const gagal = [];
+      let berhasil = 0;
+
+      for (const satu of dipilih) {
+        hasilAlasan.textContent = `Memilih ${satu.label}…`;
+        const hasil = await kirimKeJembatan({
+          jenis: "isi",
+          penunjuk: satu.kunci,
+          jenisMedan: "pilih",
+          nilai: satu.nilai,
+        });
+        if (hasil && hasil.ok) berhasil += 1;
+        else gagal.push(`${satu.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+      }
+
+      terapAlasan.disabled = false;
+      hasilAlasan.className = gagal.length ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar";
+      hasilAlasan.textContent = gagal.length
+        ? `${berhasil} terisi, ${gagal.length} gagal: ${gagal.join("; ")}`
+        : `${berhasil} alasan terisi. Periksa seluruhnya, lalu tekan Simpan sendiri.`;
+    });
+
+    tombol.disabled = false;
+  });
+
+  return kotak;
+}
+
 function bagianIsiPutusan(nomorPerkara) {
   const kotak = bagian("Isi borang putusan dari ALETA", "isiPutusan", true);
   const isi = kotak.isi;
@@ -5225,6 +5473,13 @@ function susunPanel(konteks) {
     // mengajari orang untuk berhenti membukanya.
     if (boleh("data-umum") && document.querySelector("#frm_putusan")) {
       kelKerja.isi.appendChild(bagianIsiPutusan(konteks.nomorPerkara));
+    }
+
+    // Dan hanya di layar Info Perkara Agama (Data Umum). Dikenali dari borangnya
+    // sendiri (#frm_data_umum) dengan alasan yang sama: alamat SIPP berubah
+    // bentuk antar versi, id borangnya tidak.
+    if (boleh("data-umum") && document.querySelector("#frm_data_umum")) {
+      kelKerja.isi.appendChild(bagianIsiAlasanPerkara(konteks.nomorPerkara));
     }
 
     // Alat pemasangan, bukan keterangan perkara - jawabannya sama pada perkara

@@ -42,6 +42,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.99.0",
+    dirilis: "2026-09-12T08:45:00+08:00",
+    judul: "Alasan perkara di layar Info Perkara Agama diusulkan dari posita",
+    butir: [
+      "Layar Info Perkara Agama (Data Umum) menuntut satu medan alasan yang berbeda untuk tiap jenis perkara, dan hanya satu di antaranya yang tampak pada satu perkara: alasan pengajuan poligami, alasan pembatalan kawin, alasan penguasaan anak, alasan pengesahan anak, alasan asal usul anak, alasan itsbat nikah, alasan dispensasi kawin, ditambah bidang ekonomi syariah dan jenis akad pada perkara ekonomi syariah.",
+      "Seluruhnya tersimpan ke satu tabel dengan penanda yang berbeda, dan angka itulah yang kelak menjadi laporan statistik perkara agama - termasuk statistik Dispensasi Kawin yang tiap tahun ditanyakan. Salah memilih tidak terlihat pada berkas perkaranya sama sekali.",
+      "Panel kini menanyakan kepada HALAMAN medan mana yang sedang tampak beserta daftar pilihannya, lalu ALETA memilih satu berdasarkan bunyi POSITA dan petitum, disertai kalimat yang menjadi dasarnya. Pada layar ini belum ada draf putusan - perkaranya baru didaftarkan - sehingga buktinya memang posita, bukan pertimbangan hukum.",
+      "Posita dibaca dari CKEditor di layar itu juga, bukan dari basis data. Bedanya terasa tepat ketika bacaan ini dipakai: petugas yang baru menempelkan positanya dan belum menekan Simpan akan tetap mendapat usulan yang benar.",
+      "Yang tidak disebut posita dibiarkan KOSONG beserta sebabnya - bukan diisi pilihan pertama. Yang positanya menyebut lebih dari satu alasan ditandai berselisih dan tidak dicentang sendiri.",
+      "Medan berisi banyak pilihan sekaligus - objek wakaf dan akad syariah tambahan - sengaja tidak ditawarkan: keduanya digambar alat pilihan ganda yang menyimpan pilihannya terpisah dari medan aslinya, sehingga mengisinya akan membuat petugas melihat satu hal sementara yang tersimpan hal lain. Tombol Simpan tetap ditekan petugas.",
+    ],
+  },
+  {
     versi: "1.98.1",
     dirilis: "2026-09-12T08:05:00+08:00",
     judul: "Medan borang putusan ditunjuk lewat nama, dan radio nusyuz benar-benar tercentang",

@@ -1,0 +1,113 @@
+import { type NextRequest } from "next/server";
+
+import { usulkanAlasanPerkara, susunTeksAlasan } from "@/lib/alasan-perkara-sipp";
+import { type MedanPilihan } from "@/lib/usulan-medan-putusan";
+import { getDatabase } from "@/server/db/client";
+import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { resolveActorUserId } from "@/server/shared/auth";
+import { readJsonBody } from "@/server/shared/request";
+import { ok } from "@/server/shared/http";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Usulan medan ALASAN pada layar Info Perkara Agama (Data Umum) SIPP.
+ *
+ *   POST { nomorPerkara?, teks: { posita, petitum }, medan: [{kunci,label,pilihan}] }
+ *
+ * ============================================================================
+ * KENAPA TEKSNYA DATANG DARI EKSTENSI, BUKAN DIBACA DI SINI
+ * ============================================================================
+ *
+ * Posita dan petitum sudah ada di layar yang sedang dibuka petugas - keduanya
+ * CKEditor pada borang yang sama dengan medan alasannya. Membacanya lagi dari
+ * basis data SIPP berarti satu pembacaan tambahan untuk memperoleh kalimat
+ * yang sudah terpampang, dan - lebih buruk - berarti yang dinilai bukan yang
+ * dilihat petugas: ia mungkin baru saja menyunting positanya dan belum
+ * menyimpannya.
+ *
+ * Yang dinilai haruslah yang ADA DI LAYAR, sebab itulah yang akan tersimpan
+ * bersama pilihan ini.
+ *
+ * ============================================================================
+ * TEKS DARI HALAMAN TIDAK PERNAH MENJADI PERINTAH
+ * ============================================================================
+ *
+ * Posita ditulis pihak berperkara dan disalin petugas; isinya kalimat orang
+ * lain. Di sini ia hanya DICOCOKKAN dengan daftar pilihan yang juga dikirim
+ * halaman, dan keluarannya tidak pernah lebih dari salah satu nilai dalam
+ * daftar itu. Tidak ada satu pun kalimat posita yang tersimpan, dikirimkan
+ * ulang, atau dijalankan.
+ *
+ * Rute ini pun tidak menulis apa pun - tidak ke ALETA, tidak ke SIPP. Yang
+ * menekan Simpan tetap petugas, sesudah membaca tiap usulan.
+ */
+
+/** Batas wajar satu posita. Yang lebih panjang dipotong, bukan ditolak. */
+const BATAS_TEKS = 200_000;
+/** Layar Data Umum tidak pernah menampilkan sebanyak ini medan alasan. */
+const BATAS_MEDAN = 20;
+
+export async function POST(request: NextRequest) {
+  let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
+  let actorUserId: string | null = null;
+  try {
+    db = await getDatabase();
+    actorUserId = await resolveActorUserId(request);
+    // Kewenangan "panel", sama dengan borang putusan: yang mengisi Data Umum
+    // adalah petugas meja dan panitera muda, bukan admin.
+    await pastikanKapabilitas(db, actorUserId, "panel");
+
+    const badan = await readJsonBody<{
+      nomorPerkara?: string;
+      teks?: { posita?: string; petitum?: string };
+      medan?: MedanPilihan[];
+    }>(request);
+
+    const medanMentah = Array.isArray(badan?.medan) ? badan.medan : [];
+    if (medanMentah.length === 0) {
+      return ok({ ada: false, sebab: "Tidak ada medan alasan yang perlu diusulkan di halaman ini." });
+    }
+
+    const medan: MedanPilihan[] = medanMentah.slice(0, BATAS_MEDAN).map((satu) => ({
+      kunci: String(satu?.kunci ?? ""),
+      label: String(satu?.label ?? ""),
+      pilihan: (Array.isArray(satu?.pilihan) ? satu.pilihan : []).map((x) => ({
+        nilai: String(x?.nilai ?? ""),
+        label: String(x?.label ?? ""),
+      })),
+    }));
+
+    const teks = {
+      posita: String(badan?.teks?.posita ?? "").slice(0, BATAS_TEKS),
+      petitum: String(badan?.teks?.petitum ?? "").slice(0, BATAS_TEKS),
+    };
+
+    const dasar = susunTeksAlasan(teks);
+    if (!dasar) {
+      return ok({
+        ada: false,
+        sebab:
+          "Posita dan petitum di halaman ini masih kosong, jadi tidak ada kalimat yang dapat dibaca. " +
+          "Isi positanya dulu, lalu minta usulan lagi.",
+      });
+    }
+
+    return ok({
+      ada: true,
+      nomorPerkara: String(badan?.nomorPerkara ?? "").trim(),
+      panjangTeks: dasar.length,
+      usulan: usulkanAlasanPerkara(teks, medan),
+    });
+  } catch (error) {
+    return handleAdminRouteError(error, request, {
+      db,
+      actorUserId,
+      action: "ALASAN_PERKARA_USULAN_GAGAL",
+      feature: "aleta_ecourt",
+      entityId: "alasan-perkara",
+    });
+  }
+}

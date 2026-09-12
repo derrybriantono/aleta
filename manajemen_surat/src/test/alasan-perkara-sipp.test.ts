@@ -1,0 +1,293 @@
+// @vitest-environment node
+
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+
+import {
+  susunTeksAlasan,
+  teksDariHtml,
+  usulkanAlasanPerkara,
+} from "@/lib/alasan-perkara-sipp";
+import { type MedanPilihan } from "@/lib/usulan-medan-putusan";
+
+/**
+ * ============================================================================
+ * ISIAN ALASAN PADA LAYAR INFO PERKARA AGAMA (DATA UMUM)
+ * ============================================================================
+ *
+ * Daftar pilihan di bawah ini disalin APA ADANYA dari tabel rujukan SIPP
+ * sipp_donggala - ref_dispensasi_kawin, ref_isbat_nikah, ref_izin_poligami -
+ * bukan dikarang untuk memudahkan uji. Angka yang dipilih di layar itu kelak
+ * menjadi laporan statistik perkara agama, jadi yang diuji di sini harus
+ * berhadapan dengan tulisan yang benar-benar dibaca petugas.
+ */
+
+const AKAR_EKSTENSI = path.resolve(process.cwd(), "..", "ekstensi-sipp");
+const bacaEkstensi = (nama: string) => readFileSync(path.join(AKAR_EKSTENSI, nama), "utf8");
+
+/** ref_dispensasi_kawin, apa adanya. */
+const MEDAN_DISPENSASI: MedanPilihan = {
+  kunci: 'select[name="alasan_dispen"]',
+  label: "Alasan Pengajuan Dispensasi Kawin",
+  pilihan: [
+    { nilai: "0", label: "- Pilih -" },
+    { nilai: "1", label: "Hamil" },
+    { nilai: "2", label: "Pergaulan Bebas/Hubungan Intim" },
+    { nilai: "3", label: "Ekonomi" },
+    { nilai: "4", label: "Budaya/Adat/Perjodohan" },
+    { nilai: "5", label: "Menghindari Zina/Hubungan Cinta" },
+  ],
+};
+
+/** ref_isbat_nikah, apa adanya. */
+const MEDAN_ISBAT: MedanPilihan = {
+  kunci: 'select[name="alasan_isbat"]',
+  label: "Alasan Pengajuan Isbat Nikah",
+  pilihan: [
+    { nilai: "0", label: "- Pilih -" },
+    { nilai: "1", label: "Perceraian" },
+    { nilai: "2", label: "Nikah dibawah tangan" },
+    { nilai: "3", label: "Akta nikah hilang" },
+    { nilai: "4", label: "Kelengkapan administrasi" },
+  ],
+};
+
+/** ref_izin_poligami, apa adanya. */
+const MEDAN_POLIGAMI: MedanPilihan = {
+  kunci: 'select[name="alasan_poligami"]',
+  label: "Alasan Pengajuan Poligami",
+  pilihan: [
+    { nilai: "0", label: "- Pilih -" },
+    { nilai: "1", label: "Istri tidak dapat menjalankan kewajiban" },
+    { nilai: "2", label: "Cacat badan atau penyakit yang tidak dapat disembuhkan" },
+    { nilai: "3", label: "Istri tidak dapat melahirkan keturunan" },
+  ],
+};
+
+describe("membaca posita dari isi CKEditor", () => {
+  it("membuang tag dan memulangkan kalimatnya", () => {
+    expect(teksDariHtml("<p>Bahwa Pemohon <strong>mengajukan</strong> permohonan.</p>")).toBe(
+      "Bahwa Pemohon mengajukan permohonan."
+    );
+  });
+
+  it("memisahkan alinea, sehingga akhir satu alinea tidak menempel pada awal alinea berikutnya", () => {
+    // Tanpa pemisahan ini "hamil" dan "Bahwa" melebur menjadi "hamilBahwa",
+    // dan kata yang dicari pencocok tidak pernah ditemukan.
+    const hasil = teksDariHtml("<p>Anak Pemohon telah hamil</p><p>Bahwa oleh karena itu</p>");
+    expect(hasil).toContain("hamil\nBahwa");
+    expect(hasil).not.toContain("hamilBahwa");
+  });
+
+  it("<br> juga memisahkan, termasuk yang ditulis <br/>", () => {
+    expect(teksDariHtml("satu<br>dua<br />tiga")).toBe("satu\ndua\ntiga");
+  });
+
+  it("menerjemahkan huruf ganti yang lazim dipakai CKEditor", () => {
+    expect(teksDariHtml("PT&nbsp;Bank &amp; Asuransi")).toBe("PT Bank & Asuransi");
+  });
+
+  it("tag dibuang LEBIH DULU, baru huruf gantinya diterjemahkan", () => {
+    // Petugas yang menulis "&lt;p&gt;" bermaksud menuliskan tanda itu, bukan
+    // membuat tag. Menerjemahkannya lebih dulu akan melahirkan tag sungguhan,
+    // lalu membuangnya - dan kalimat yang memuatnya hilang tanpa satu pun
+    // tanda.
+    expect(teksDariHtml("<p>ditulis &lt;p&gt; pada surat</p>")).toBe("ditulis <p> pada surat");
+  });
+
+  it("isi script dan style tidak ikut dinilai", () => {
+    const hasil = teksDariHtml("<p>Posita</p><script>var hamil = 1;</script>");
+    expect(hasil).toBe("Posita");
+  });
+
+  it("posita lebih dahulu, petitum sesudahnya", () => {
+    const hasil = susunTeksAlasan({ posita: "<p>Duduk perkaranya</p>", petitum: "<p>Mohon putusan</p>" });
+    expect(hasil.indexOf("Duduk perkaranya")).toBeLessThan(hasil.indexOf("Mohon putusan"));
+  });
+
+  it("petitum yang kosong tidak meninggalkan baris hampa", () => {
+    expect(susunTeksAlasan({ posita: "<p>Duduk perkaranya</p>", petitum: "" })).toBe("Duduk perkaranya");
+  });
+});
+
+describe("mengusulkan alasan perkara dari posita", () => {
+  it("dispensasi kawin: posita yang menyebut hamil memilih Hamil", () => {
+    const usulan = usulkanAlasanPerkara(
+      {
+        posita:
+          "<p>Bahwa anak Pemohon bernama ANI binti BUDI telah hamil 4 (empat) bulan, " +
+          "sehingga pernikahannya perlu segera dilangsungkan.</p>",
+      },
+      [MEDAN_DISPENSASI]
+    );
+
+    expect(usulan).toHaveLength(1);
+    expect(usulan[0].nilai).toBe("1");
+    expect(usulan[0].nilaiLabel).toBe("Hamil");
+    expect(usulan[0].kutipan).toContain("hamil");
+  });
+
+  it("isbat nikah: posita yang menyebut dua alasan sekaligus dilaporkan BENTROK, bukan dipilihkan diam-diam", () => {
+    // Inilah keadaan yang paling berbahaya: dua alasan sama-sama disebut,
+    // mesin memilih salah satunya dengan selisih tipis, dan angka yang
+    // tersimpan menentukan satu baris laporan tahunan. Yang benar adalah
+    // mengembalikannya kepada petugas.
+    const usulan = usulkanAlasanPerkara(
+      {
+        posita:
+          "<p>Bahwa pernikahan Pemohon dilaksanakan secara nikah dibawah tangan.</p>" +
+          "<p>Bahwa akta nikah hilang ketika rumah Pemohon terbakar.</p>",
+      },
+      [MEDAN_ISBAT]
+    );
+
+    expect(usulan[0].keyakinan).toBe("bentrok");
+    expect(usulan[0].alasan).toContain("lebih dari satu");
+  });
+
+  it("tidak menebak: posita yang tidak menyebut satu pun alasan memulangkan pilihan kosong", () => {
+    const usulan = usulkanAlasanPerkara(
+      { posita: "<p>Bahwa Pemohon adalah warga Kabupaten Donggala.</p>" },
+      [MEDAN_POLIGAMI]
+    );
+
+    expect(usulan[0].nilai).toBe("");
+    expect(usulan[0].keyakinan).toBe("kosong");
+    expect(usulan[0].alasan).toContain("tidak menebak");
+  });
+
+  it('"- Pilih -" tidak pernah diusulkan', () => {
+    const usulan = usulkanAlasanPerkara({ posita: "<p>Silakan pilih saja.</p>" }, [MEDAN_DISPENSASI]);
+    expect(usulan[0].nilai).not.toBe("0");
+    expect(usulan[0].nilaiLabel).not.toBe("- Pilih -");
+  });
+
+  it("posita kosong tidak menghasilkan usulan sama sekali", () => {
+    // Bukan usulan bernilai kosong melainkan TIDAK ADA usulan: bedanya
+    // menentukan pesan yang dilihat petugas - "isi positanya dulu", bukan
+    // "tidak ditemukan".
+    expect(usulkanAlasanPerkara({ posita: "<p>&nbsp;</p>" }, [MEDAN_DISPENSASI])).toEqual([]);
+  });
+
+  it("medan yang daftarnya hanya berisi - Pilih - dikatakan apa adanya", () => {
+    // ref_pengesahan_anak tidak ada pada sebagian pemasangan SIPP, dan
+    // selectnya lahir tanpa satu pun pilihan. Yang salah bukan positanya.
+    const usulan = usulkanAlasanPerkara({ posita: "<p>Bahwa anak Pemohon telah lahir.</p>" }, [
+      {
+        kunci: 'select[name="alasan_sah_anak"]',
+        label: "Alasan Pengajuan Pengesahan Anak",
+        pilihan: [{ nilai: "0", label: "- Pilih -" }],
+      },
+    ]);
+    expect(usulan[0].nilai).toBe("");
+    expect(usulan[0].alasan).toContain("tidak menawarkan pilihan");
+  });
+});
+
+describe("bagian Isi alasan perkara pada ekstensi", () => {
+  const konten = bacaEkstensi("konten.js");
+  const bagian = konten.slice(
+    konten.indexOf("function bagianIsiAlasanPerkara("),
+    konten.indexOf("function bagianIsiPutusan(")
+  );
+
+  it("bagiannya benar-benar ada", () => {
+    expect(bagian.length).toBeGreaterThan(2000);
+  });
+
+  it("tidak pernah menekan tombol Simpan", () => {
+    // Yang tersimpan dari layar ini menjadi statistik resmi perkara agama.
+    // Satu-satunya tempat manusia masih membacanya adalah sebelum Simpan
+    // ditekan.
+    expect(bagian).not.toContain('jenis: "tekan"');
+    expect(bagian).toContain("tekan Simpan sendiri");
+  });
+
+  it("hanya digambar di halaman yang memang memuat borang Data Umum", () => {
+    expect(konten).toContain('document.querySelector("#frm_data_umum")');
+    expect(konten).toContain("bagianIsiAlasanPerkara(konteks.nomorPerkara)");
+  });
+
+  it("medannya ditunjuk lewat NAMA, bukan id", () => {
+    // Alasan yang sama dengan borang putusan: pada borang SIPP ada select yang
+    // memakai id milik select lain, dan querySelector("#...") memulangkan yang
+    // mana pun yang lebih dulu di dokumen.
+    const daftar = bagian.slice(bagian.indexOf("const CALON_ALASAN"), bagian.indexOf("tombol.addEventListener"));
+    expect(daftar).not.toMatch(/penunjuk:\s*"#/);
+    for (const nama of [
+      "alasan_poligami",
+      "batal_kawin",
+      "alasan_kuasa_anak",
+      "alasan_sah_anak",
+      "alasan_asalusul",
+      "alasan_isbat",
+      "alasan_dispen",
+    ]) {
+      expect(daftar).toContain(`select[name="${nama}"]`);
+    }
+  });
+
+  it("medan pilihan ganda TIDAK ditawarkan", () => {
+    // objek_wakaf[] dan akad_syariah[] digambar alat pilihan ganda milik
+    // halaman, yang menyimpan pilihannya terpisah dari select aslinya.
+    // Menyetel nilainya membuat daftar di layar tidak ikut berubah - petugas
+    // melihat satu hal dan yang tersimpan hal lain.
+    expect(bagian).not.toContain("objek_wakaf");
+    expect(bagian).not.toContain('akad_syariah[]');
+  });
+
+  it("medan yang disembunyikan SIPP tidak pernah ditawarkan", () => {
+    expect(bagian).toContain('jenis: "pilihan"');
+    expect(bagian).toContain("jawabPilihan.tampak");
+  });
+
+  it("posita dibaca dari CKEditor di layar, bukan dari basis data", () => {
+    expect(bagian).toContain('jenis: "nilai"');
+    expect(bagian).toContain('penunjuk: "#posita"');
+    expect(bagian).toContain('penunjuk: "#petitum"');
+    expect(bagian).toContain('jenisMedan: "kaya"');
+  });
+
+  it("usulan yang berselisih tidak dicentang sendiri", () => {
+    expect(bagian).toContain('usul.keyakinan !== "bentrok"');
+  });
+
+  it("memakai rute portal yang memang ada", () => {
+    expect(konten).toContain(
+      'const ALETA_API_ALASAN_PERKARA = "/aleta/api/aleta-ecourt/alasan-perkara"'
+    );
+    const rute = path.resolve(process.cwd(), "src/app/api/aleta-ecourt/alasan-perkara/route.ts");
+    expect(readFileSync(rute, "utf8")).toContain("export async function POST");
+  });
+});
+
+describe("jembatan dapat membaca nilai CKEditor", () => {
+  const jembatan = bacaEkstensi("jembatan.js");
+
+  it("permintaan nilai dikenali dan dijawab", () => {
+    expect(jembatan).toContain("function bacaNilai(");
+    expect(jembatan).toContain('pesan.jenis === "nilai"');
+  });
+
+  it("isi CKEditor diambil dari editornya, bukan dari textarea di baliknya", () => {
+    // CKEditor baru menyalin isinya ke textarea ketika borang dikirim.
+    // Membaca textarea sebelum itu memulangkan isi terakhir yang TERSIMPAN,
+    // bukan yang sedang diketik - dan usulan yang lahir darinya akan mengaku
+    // "tidak ditemukan" atas kalimat yang jelas terpampang di layar.
+    const potongan = jembatan.slice(
+      jembatan.indexOf("function bacaNilai("),
+      jembatan.indexOf("function lepasPeristiwa(")
+    );
+    expect(potongan).toContain("editor.getData()");
+    expect(potongan).toContain('sumber: "ckeditor"');
+  });
+
+  it("tidak merapikan apa pun - yang membersihkan HTML adalah portal, tempat yang dapat diuji", () => {
+    const potongan = jembatan.slice(
+      jembatan.indexOf("function bacaNilai("),
+      jembatan.indexOf("function lepasPeristiwa(")
+    );
+    expect(potongan).not.toContain("replace(");
+  });
+});

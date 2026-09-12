@@ -177,6 +177,64 @@
     return { ok: true, penunjuk, tag, tampak, nilaiSekarang: elemen.value ?? "", pilihan: [] };
   }
 
+  /**
+   * Nilai satu medan APA ADANYA, termasuk yang dipegang CKEditor.
+   *
+   * ============================================================================
+   * KENAPA INI TIDAK DAPAT DIKERJAKAN DENGAN elemen.value SAJA
+   * ============================================================================
+   *
+   * Posita dan petitum pada layar Data Umum adalah CKEditor. CKEditor
+   * menyimpan isinya di dalam obyek JavaScript miliknya sendiri dan baru
+   * menyalinnya ke textarea asli ketika borangnya dikirim. Membaca
+   * textarea-nya sebelum itu memulangkan isi TERAKHIR YANG TERSIMPAN - bukan
+   * yang sedang diketik petugas.
+   *
+   * Bedanya justru paling besar tepat ketika bacaan ini dipakai: petugas baru
+   * saja menempelkan positanya dan belum menekan Simpan. Membaca textarea di
+   * saat itu memulangkan kekosongan, dan usulan yang lahir darinya akan
+   * mengaku "tidak ditemukan" atas kalimat yang jelas terpampang di layar.
+   *
+   * Yang dikembalikan tidak dirapikan sedikit pun - tag HTML-nya utuh. Yang
+   * membersihkannya adalah portal, di tempat yang dapat diuji.
+   */
+  function bacaNilai(penunjuk, jenis) {
+    const elemen = cariElemen(penunjuk);
+    if (!elemen) return { ok: false, alasan: "medan_tidak_ketemu", penunjuk };
+
+    const tampak = Boolean(elemen.offsetParent !== null || elemen.getClientRects().length);
+
+    try {
+      if (jenis === "kaya" && window.CKEDITOR && elemen.id) {
+        const editor = window.CKEDITOR.instances && window.CKEDITOR.instances[elemen.id];
+        if (editor) {
+          return { ok: true, penunjuk, tampak, sumber: "ckeditor", nilai: String(editor.getData() || "") };
+        }
+        // CKEditor diminta tetapi tidak ada. Textarea-nya tetap dibaca - itu
+        // jawaban terbaik yang tersisa - tetapi asalnya disebutkan, bukan
+        // didiamkan.
+        return {
+          ok: true,
+          penunjuk,
+          tampak,
+          sumber: "textarea",
+          catatan: "ckeditor_tidak_ada",
+          nilai: String(elemen.value === null || elemen.value === undefined ? "" : elemen.value),
+        };
+      }
+
+      return {
+        ok: true,
+        penunjuk,
+        tampak,
+        sumber: "medan",
+        nilai: String(elemen.value === null || elemen.value === undefined ? "" : elemen.value),
+      };
+    } catch (galat) {
+      return { ok: false, alasan: String(galat.message || galat).slice(0, 200), penunjuk };
+    }
+  }
+
   /** Melepas peristiwa yang biasa ditunggu kerangka kerja halaman. */
   function lepasPeristiwa(elemen) {
     for (const nama of ["input", "change", "blur"]) {
@@ -335,6 +393,8 @@
       jawab = bacaBorang();
     } else if (pesan.jenis === "pilihan") {
       jawab = bacaPilihan(pesan.penunjuk);
+    } else if (pesan.jenis === "nilai") {
+      jawab = bacaNilai(pesan.penunjuk, pesan.jenisMedan);
     } else if (pesan.jenis === "isi") {
       jawab = isiMedan(pesan.penunjuk, pesan.jenisMedan, pesan.nilai);
     } else if (pesan.jenis === "tekan") {
