@@ -210,6 +210,62 @@ describe("keadaan yang harus dijawab apa adanya", () => {
     expect(hasil[1].nilaiLabel).toBe("Peselisihan dan Pertengkaran Terus Menerus");
   });
 
+  // ==========================================================================
+  // DIUKUR ATAS 184 PERMOHONAN DISPENSASI KAWIN PA DONGGALA
+  // ==========================================================================
+  //
+  // Kedua uji di bawah ini lahir dari pengukuran, bukan dari bayangan tentang
+  // bagaimana posita ditulis. Berkas sungguhan diambil dari SIPP beserta
+  // alasan yang SUDAH dipilih petugas, lalu usulan mesin dibandingkan dengan
+  // pilihan itu. Dua bentuk salah muncul berulang-ulang, dan keduanya
+  // dijaga di sini supaya tidak kembali diam-diam.
+
+  it("kata yang tersebar di beberapa kalimat tidak mengalahkan kata penentu di satu kalimat", () => {
+    // Bentuk salah yang pertama. Posita dispensasi hampir selalu memuat
+    // "hubungan mereka telah erat" di satu alinea dan "saling mencintai" di
+    // alinea lain. Dihitung atas seluruh naskah, "hubungan" dan "cinta"
+    // tampak hadir bersama sebagai label yang lengkap dan mengalahkan satu
+    // kata "hamil" - padahal justru kehamilan itu alasan permohonannya.
+    const naskah = [
+      "Bahwa anak Pemohon tersebut telah saling mengenal selama kurang lebih 1 tahun, dan hubungan mereka telah sedemikian eratnya.",
+      "Bahwa anak Pemohon sekarang sedang hamil 24 minggu 5 hari.",
+      "Bahwa Pemohon memohon agar diberi izin menikahkan anak tersebut yang telah saling mencintai.",
+    ].join(" ");
+
+    const u = satu(usulkanMedanPutusan(naskah, [DISPENSASI]));
+    expect(u.nilaiLabel).toBe("Hamil");
+    expect(u.kutipan).toContain("hamil");
+  });
+
+  it("frasa utuh yang menang telak tetap ditandai berselisih bila saingannya juga disebut penuh", () => {
+    // Bentuk salah yang kedua, dan yang paling berbahaya: satu kalimat
+    // memuat frasa "hubungan cinta" DAN kata "hamil" sekaligus. Frasa utuh
+    // bernilai seratus lebih, satu kata penuh hanya dua puluhan, sehingga
+    // selisihnya tidak akan pernah "tipis" - dan usulannya tercentang
+    // sendiri meski petugas memilih yang lain. Kalimat ini disalin dari
+    // permohonan 49/Pdt.P/2021/PA.Dgl.
+    const naskah =
+      "Bahwa pernikahan tersebut sangat mendesak untuk dilangsungkan karena keduanya telah " +
+      "menjalin hubungan cinta kasih sejak kurang lebih 3 (tiga) bulan dan saat ini calon " +
+      "istri keponakan Pemohon telah hamil 3 bulan.";
+
+    const u = satu(usulkanMedanPutusan(naskah, [DISPENSASI]));
+    expect(u.keyakinan).toBe("bentrok");
+    expect(u.alasan).toContain("lebih dari satu");
+    // Saingannya diperlihatkan, sebab yang memilih tetap petugas.
+    expect(u.saingan.map((x) => x.label)).toContain("Hamil");
+  });
+
+  it("kutipannya kalimat yang menghasilkan skornya, bukan kalimat lain yang memuat kata yang sama", () => {
+    const naskah = [
+      "Bahwa Pemohon adalah penduduk Kabupaten Donggala.",
+      "Bahwa calon mempelai perempuan telah hamil 5 bulan menurut surat keterangan Puskesmas.",
+    ].join(" ");
+    const u = satu(usulkanMedanPutusan(naskah, [DISPENSASI]));
+    expect(u.kutipan).toContain("hamil 5 bulan");
+    expect(u.kutipan).not.toContain("penduduk Kabupaten Donggala");
+  });
+
   it("kunci dan label medan dipulangkan apa adanya, supaya ekstensi tahu tujuannya", () => {
     const u = satu(usulkanMedanPutusan("Menimbang bahwa hamil.", [DISPENSASI]));
     expect(u.kunci).toBe("#alasan_dispen");

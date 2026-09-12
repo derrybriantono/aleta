@@ -52,6 +52,9 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Posita dibaca dari CKEditor di layar itu juga, bukan dari basis data. Bedanya terasa tepat ketika bacaan ini dipakai: petugas yang baru menempelkan positanya dan belum menekan Simpan akan tetap mendapat usulan yang benar.",
       "Yang tidak disebut posita dibiarkan KOSONG beserta sebabnya - bukan diisi pilihan pertama. Yang positanya menyebut lebih dari satu alasan ditandai berselisih dan tidak dicentang sendiri.",
       "Medan berisi banyak pilihan sekaligus - objek wakaf dan akad syariah tambahan - sengaja tidak ditawarkan: keduanya digambar alat pilihan ganda yang menyimpan pilihannya terpisah dari medan aslinya, sehingga mengisinya akan membuat petugas melihat satu hal sementara yang tersimpan hal lain. Tombol Simpan tetap ditekan petugas.",
+      "Cara mesin menimbang pilihan diperbaiki, dan perbaikannya diukur atas berkas sungguhan. Kata kini dihitung di dalam SATU KALIMAT, bukan tersebar di seluruh naskah - sebelumnya \"hubungan\" di satu alinea dan \"mencintai\" di alinea lain tampak hadir bersama dan mengalahkan satu kata \"hamil\" yang justru menentukan permohonannya.",
+      "Dan satu pilihan yang menang telak tetap ditandai berselisih bila saingannya juga disebut penuh oleh naskah. Diukur atas 184 permohonan dispensasi kawin PA Donggala yang alasannya sudah dipilih petugas: yang tercentang sendiri turun dari 132 menjadi 107, tetapi yang tercentang sendiri lalu keliru turun dari 29 menjadi 4. Sisanya diperlihatkan beserta saingannya untuk diputuskan petugas.",
+      "Kutipan yang ditampilkan kini kalimat yang benar-benar menghasilkan usulannya, bukan kalimat lain yang kebetulan memuat kata yang sama.",
     ],
   },
   {

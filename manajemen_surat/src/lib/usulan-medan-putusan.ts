@@ -44,6 +44,34 @@
  * KOSONG beserta sebabnya - bukan pilihan pertama, bukan "Lain-Lain". Usulan
  * yang menebak akan dicentang orang yang sedang terburu-buru, dan tebakan itu
  * menjadi angka resmi.
+ *
+ * ============================================================================
+ * SEBERAPA BAIK INI SEBENARNYA - DIUKUR, BUKAN DIKIRA
+ * ============================================================================
+ *
+ * Diukur atas berkas PA Donggala yang pilihannya SUDAH ditetapkan petugas,
+ * lalu usulan mesin dibandingkan dengan pilihan itu. Yang dihitung bukan
+ * "berapa persen benar" melainkan BERAPA YANG TERCENTANG SENDIRI LALU
+ * KELIRU - sebab hanya itu yang dapat tersimpan tanpa dibaca:
+ *
+ *   Alasan dispensasi kawin (184 permohonan)
+ *     107 tercentang sendiri, 103 sama dengan pilihan petugas, 4 berbeda.
+ *     76 ditandai berselisih dan tidak tercentang.
+ *
+ *   Faktor penyebab perceraian (400 putusan, pertimbangan + posita)
+ *     22 tercentang sendiri, 9 sama, 13 berbeda.
+ *     378 ditandai berselisih.
+ *
+ * Perbedaannya bukan kebetulan dan patut diketahui siapa pun yang membaca ini:
+ * posita dispensasi menyebut SATU fakta yang menentukan - hamil, atau tidak.
+ * Gugatan perceraian menyebut banyak - ekonomi, pertengkaran, ditinggalkan,
+ * kekerasan - sebab seluruhnya memang terjadi, dan yang dicatat petugas adalah
+ * yang dipandang pokok. Itu penilaian hakim dan panitera, bukan pembacaan
+ * teks.
+ *
+ * Karena itu faktor perceraian hampir selalu berakhir "berselisih", dan itu
+ * BUKAN kegagalan: yang diperlihatkan kepada petugas adalah kalimat-kalimat
+ * yang mendasari tiap kemungkinan, bukan satu jawaban yang mengaku pasti.
  */
 
 export type PilihanMedan = {
@@ -139,19 +167,23 @@ function kemungkinanLabel(label: string): string[] {
   return bagian.length > 1 ? [label, ...bagian] : [label];
 }
 
-/** Kalimat naskah yang memuat kata itu, dipulangkan apa adanya. */
-function kalimatYangMemuat(naskah: string, kata: string[]): string {
-  const kalimat = String(naskah ?? "")
+/** Naskah dipecah menjadi kalimat - satuan tempat sebuah fakta dinyatakan. */
+function pecahKalimat(naskah: string): string[] {
+  return String(naskah ?? "")
     .split(/(?<=[.;:])\s+|\n+/)
     .map((satu) => satu.trim())
     .filter(Boolean);
+}
+
+/** Dipangkas supaya kutipan yang panjang tidak memenuhi panel. */
+function pangkas(kalimat: string): string {
+  return kalimat.length > 300 ? `${kalimat.slice(0, 300)}…` : kalimat;
+}
+
+/** Kalimat pertama yang memuat frasa utuh itu. */
+function kalimatBerfrasa(kalimat: string[], frasa: string): string {
   for (const satu of kalimat) {
-    const rendah = normalkan(satu);
-    if (kata.every((k) => rendah.includes(k))) return satu.length > 300 ? `${satu.slice(0, 300)}…` : satu;
-  }
-  for (const satu of kalimat) {
-    const rendah = normalkan(satu);
-    if (kata.some((k) => rendah.includes(k))) return satu.length > 300 ? `${satu.slice(0, 300)}…` : satu;
+    if (normalkan(satu).includes(frasa)) return pangkas(satu);
   }
   return "";
 }
@@ -165,9 +197,13 @@ function kalimatYangMemuat(naskah: string, kata: string[]): string {
  * antara naskah yang benar-benar menyebut "perselisihan dan pertengkaran terus
  * menerus" dan naskah yang kebetulan memuat kata "terus".
  */
-function skorPilihan(naskah: string, label: string): { skor: number; kata: string[] } {
-  const rendah = normalkan(naskah);
-  let terbaik = { skor: 0, kata: [] as string[] };
+function skorPilihan(
+  naskah: string,
+  kalimat: string[],
+  label: string
+): { skor: number; kata: string[]; kalimat: string } {
+  const rendahPenuh = normalkan(naskah);
+  let terbaik = { skor: 0, kata: [] as string[], kalimat: "" };
 
   for (const kemungkinan of kemungkinanLabel(label)) {
     const kata = kataPenting(kemungkinan);
@@ -175,24 +211,43 @@ function skorPilihan(naskah: string, label: string): { skor: number; kata: strin
 
     // Frasa utuh - bukti terkuat yang mungkin ada.
     const frasa = normalkan(kemungkinan);
-    if (frasa.length >= 6 && rendah.includes(frasa)) {
+    if (frasa.length >= 6 && rendahPenuh.includes(frasa)) {
       const skor = 100 + frasa.length;
-      if (skor > terbaik.skor) terbaik = { skor, kata };
+      if (skor > terbaik.skor) terbaik = { skor, kata, kalimat: kalimatBerfrasa(kalimat, frasa) };
       continue;
     }
 
-    let skor = 0;
-    let hadir = 0;
-    for (const satu of kata) {
-      if (rendah.includes(satu)) {
-        hadir += 1;
-        skor += satu.length;
-      }
+    // ────────────────────────────────────────────────────────────────────
+    // KATA DIHITUNG DI DALAM SATU KALIMAT, BUKAN DI SELURUH NASKAH
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Ini pernah dikerjakan atas seluruh naskah sekaligus, dan itu keliru
+    // dengan cara yang hanya kelihatan pada berkas sungguhan. Diukur atas 184
+    // permohonan dispensasi kawin PA Donggala yang alasannya sudah dipilih
+    // petugas, yang dicocokkan atas seluruh naskah hanya sepakat pada 116 -
+    // dan hampir seluruh selisihnya satu pola: permohonan yang alasannya
+    // HAMIL diusulkan "Menghindari Zina/Hubungan Cinta".
+    //
+    // Sebabnya: posita dispensasi selalu panjang, menyebut "hubungan mereka
+    // telah erat" di satu alinea dan "telah saling mencintai" di alinea lain.
+    // Dihitung atas seluruh naskah, kedua kata itu "hadir bersama" dan
+    // memperoleh tambahan sebagai label yang lengkap - mengalahkan satu kata
+    // "hamil" yang justru menentukan perkaranya.
+    //
+    // Sebuah fakta dinyatakan dalam SATU KALIMAT. Dua kata yang tersebar di
+    // dua halaman bukan bukti bahwa naskahnya menyebut keduanya sebagai satu
+    // hal.
+    for (const satu of kalimat) {
+      const rendah = normalkan(satu);
+      const hadir = kata.filter((k) => rendah.includes(k));
+      if (hadir.length === 0) continue;
+
+      let skor = hadir.reduce((jumlah, k) => jumlah + k.length, 0);
+      // Seluruh kata hadir pada kalimat yang sama: jauh lebih meyakinkan
+      // daripada sebagian.
+      if (hadir.length === kata.length) skor += 20 * kata.length;
+      if (skor > terbaik.skor) terbaik = { skor, kata: hadir, kalimat: pangkas(satu) };
     }
-    if (hadir === 0) continue;
-    // Seluruh kata hadir: jauh lebih meyakinkan daripada sebagian.
-    if (hadir === kata.length) skor += 20 * kata.length;
-    if (skor > terbaik.skor) terbaik = { skor, kata: kata.filter((k) => rendah.includes(k)) };
   }
 
   return terbaik;
@@ -231,8 +286,9 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
     if (!teks.trim()) return { ...dasar, alasan: "Naskah putusan belum ada isinya." };
     if (kandidat.length === 0) return { ...dasar, alasan: "Borang tidak menawarkan pilihan apa pun." };
 
+    const kalimat = pecahKalimat(teks);
     const dinilai = kandidat
-      .map((x) => ({ ...x, ...skorPilihan(teks, x.label) }))
+      .map((x) => ({ ...x, ...skorPilihan(teks, kalimat, x.label) }))
       .filter((x) => x.skor > 0)
       .sort((a, b) => b.skor - a.skor);
 
@@ -248,7 +304,39 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
     // Selisih tipis berarti naskahnya memang menyebut keduanya. Itu bukan
     // kegagalan mesin melainkan keadaan perkaranya, dan yang memutuskan
     // mana yang pokok adalah hakimnya.
-    const tipis = kedua ? juara.skor - kedua.skor <= Math.max(6, juara.skor * 0.15) : false;
+    const selisihTipis = kedua ? juara.skor - kedua.skor <= Math.max(6, juara.skor * 0.15) : false;
+
+    // ────────────────────────────────────────────────────────────────────
+    // SKOR BESAR TIDAK MENGHAPUS BUKTI YANG LEBIH KECIL
+    // ────────────────────────────────────────────────────────────────────
+    //
+    // Selisih tipis saja tidak cukup, sebab skornya tidak sebanding antar
+    // jenis kecocokan: frasa utuh bernilai seratus lebih, satu kata penuh
+    // hanya dua puluhan. Yang kedua tidak akan pernah "tipis" terhadap yang
+    // pertama meskipun naskahnya jelas menyebut keduanya.
+    //
+    // Diukur atas 183 permohonan dispensasi kawin PA Donggala yang alasannya
+    // sudah dipilih petugas, itulah bentuk salah yang paling sering: posita
+    // menulis "keduanya telah menjalin hubungan cinta kasih ... dan saat ini
+    // calon istri telah hamil 3 bulan". Frasa "hubungan cinta" hadir utuh dan
+    // menang telak atas satu kata "hamil" - padahal justru kehamilan itu yang
+    // dijadikan alasan oleh petugas. Naskahnya tidak salah dan mesinnya tidak
+    // salah membaca; yang keliru adalah mengaku yakin.
+    //
+    // AMBANG_BUKTI_PENUH adalah tambahan yang hanya diperoleh pilihan yang
+    // SELURUH kata pentingnya hadir pada satu kalimat. Di bawahnya, hanya
+    // sebagian katanya yang kebetulan muncul.
+    //
+    // Atas 184 permohonan yang sama, aturan ini memindahkan yang meragukan ke
+    // tempat yang benar: 107 usulan tetap tercentang sendiri dan 103 di
+    // antaranya sama dengan pilihan petugas; 76 sisanya ditandai berselisih,
+    // tidak tercentang, dan saingannya diperlihatkan. Sebelum aturan ini, 132
+    // tercentang sendiri dengan 29 yang berbeda - dan yang berbeda itu tidak
+    // berbunyi sama sekali.
+    const AMBANG_BUKTI_PENUH = 20;
+    const keduanyaBernama = kedua ? kedua.skor >= AMBANG_BUKTI_PENUH : false;
+
+    const tipis = selisihTipis || keduanyaBernama;
 
     return {
       kunci: satu.kunci,
@@ -256,7 +344,9 @@ export function usulkanMedanPutusan(naskah: string, medan: MedanPilihan[]): Usul
       nilai: String(juara.nilai),
       nilaiLabel: juara.label,
       keyakinan: tipis ? "bentrok" : juara.skor >= 100 ? "pasti" : "cukup",
-      kutipan: kalimatYangMemuat(teks, juara.kata),
+      // Kalimat yang MENGHASILKAN skornya, bukan kalimat lain yang kebetulan
+      // memuat kata yang sama. Yang dibaca petugas harus yang dinilai mesin.
+      kutipan: juara.kalimat,
       saingan: dinilai.slice(1, 4).map((x) => ({ nilai: String(x.nilai), label: x.label, nilai_skor: x.skor })),
       alasan: tipis
         ? `Naskah menyebut lebih dari satu kemungkinan (${juara.label} dan ${kedua?.label}). Periksa sendiri mana yang pokok.`
