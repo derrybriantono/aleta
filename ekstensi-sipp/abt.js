@@ -3760,6 +3760,42 @@ function bagianPetaBlangkoAbt(keadaan) {
     if (keadaan.muatDaftar) void keadaan.muatDaftar();
   });
   barisAksi.appendChild(ambil);
+
+  // Isi dari pohon blangko portal: set mana untuk jenis apa sudah diputuskan
+  // di portal, isi foldernya dibaca bot di peladen. Sesudah nama terisi,
+  // tokennya langsung dicari di ABT ini - satu tekanan, dua pekerjaan.
+  const dariPohon = buatElemen("button", "aleta-perkakas-aksi", "Isi dari pohon blangko");
+  dariPohon.type = "button";
+  dariPohon.title =
+    "Mengisi baris yang kosong atau bawaan dengan berkas skenario kabul dari set pohon blangko portal. " +
+    "Baris yang pernah Anda sunting tidak disentuh.";
+  dariPohon.addEventListener("click", async () => {
+    dariPohon.disabled = true;
+    kabarAmbil.textContent = "membaca pohon blangko dari portal…";
+    try {
+      const set = await alatAmbilPohonBlangko("");
+      keadaan.pohon = set;
+      const terisi = alatIsiPetaDariPohon(keadaan.peta, set, {});
+      await alatSimpanPetaBlangko(keadaan.peta);
+      alatCatat("massal", `pemetaan diisi dari pohon blangko: ${terisi.length} jenis`, terisi.map((x) => `${x.jenis} → ${x.berkas}`).join("; "));
+      gambar();
+      kabarAmbil.textContent = terisi.length
+        ? `${terisi.length} jenis terisi dari pohon - mencari tokennya di ABT…`
+        : "Tidak ada baris yang perlu diisi - semua sudah bernama atau pohonnya kosong.";
+      if (terisi.length) {
+        const token = await lengkapiTokenPeta(keadaan.peta, (t) => {
+          kabarAmbil.textContent = t;
+        });
+        kabarAmbil.textContent = `${terisi.length} jenis terisi dari pohon, ${token} token terisi dari ABT.`;
+        gambar();
+        if (keadaan.muatDaftar) void keadaan.muatDaftar();
+      }
+    } catch (galat) {
+      kabarAmbil.textContent = String((galat && galat.message) || galat);
+    }
+    dariPohon.disabled = false;
+  });
+  barisAksi.appendChild(dariPohon);
   barisAksi.appendChild(kabarAmbil);
   kotak.insertBefore(barisAksi, tabel);
 
@@ -3773,6 +3809,18 @@ function bagianPetaBlangkoAbt(keadaan) {
     masukan.placeholder = "mis. [01] [Kabul Verstek] Cerai (Format Lengkap)";
     masukan.value = (ada && ada.berkas) || "";
     pemilih.appendChild(masukan);
+    if (keadaan.pohon) {
+      const daftarNama = document.createElement("datalist");
+      daftarNama.id = `aleta-pohon-${kunci.replace(/[^a-z0-9]+/g, "-")}`;
+      for (const b of alatBerkasPohonUntukJenis(keadaan.pohon, label)) {
+        const o = document.createElement("option");
+        o.value = b.berkas;
+        o.label = `${b.blangko}${b.kategori ? ` · ${b.kategori}` : ""}`;
+        daftarNama.appendChild(o);
+      }
+      masukan.setAttribute("list", daftarNama.id);
+      pemilih.appendChild(daftarNama);
+    }
     const simpan = buatElemen("button", "aleta-perkakas-aksi", "Simpan nama");
     simpan.type = "button";
     simpan.addEventListener("click", async () => {

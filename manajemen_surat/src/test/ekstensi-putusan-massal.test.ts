@@ -451,3 +451,123 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
     expect(badan).toContain('"Tidak ada yang tercentang sendiri; yang sudah putus tidak ditawarkan."');
   });
 });
+
+// ============================================================================
+describe("pemetaan diisi dari pohon blangko portal (1.133.0)", () => {
+  const popupJs = readFileSync(path.join(AKAR, "popup.js"), "utf8");
+  const popupHtml = readFileSync(path.join(AKAR, "popup.html"), "utf8");
+  const ruteFile = path.resolve(__dirname, "../app/api/aleta-ecourt/blangko/pohon/route.ts");
+  const rute = readFileSync(ruteFile, "utf8");
+
+  const POHON = [
+    {
+      id: "putusan-cg",
+      nama: "Putusan Cerai Gugat",
+      folder: "derry_briantono/1 Perceraian CG",
+      untuk: ["cerai gugat"],
+      ada: true,
+      jenjang: [
+        { kunci: "kabul verstek", label: "Kabul Verstek", blangko: [{ berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf", kategori: "Kabul Verstek" }] },
+        { kunci: "tolak verstek", label: "Tolak Verstek", blangko: [{ berkas: "[01ab] [Tolak Verstek] Cerai - Tidak ada bukti.rtf", kategori: "Tolak Verstek" }] },
+      ],
+      usulan: { berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf", kategori: "Kabul Verstek", kunciJenjang: "kabul verstek" },
+    },
+    {
+      id: "putusan-itsbat",
+      nama: "Penetapan Itsbat Nikah",
+      folder: "derry_briantono/2 Itsbat Nikah",
+      untuk: ["istbat nikah", "itsbat nikah", "pengesahan perkawinan"],
+      ada: true,
+      jenjang: [{ kunci: "kabul", label: "Kabul", blangko: [{ berkas: "[01] [Kabul] IN.rtf", kategori: "Kabul" }] }],
+      usulan: { berkas: "[01] [Kabul] IN.rtf", kategori: "Kabul", kunciJenjang: "kabul" },
+    },
+    {
+      id: "putusan-dispensasi",
+      nama: "Penetapan Dispensasi Kawin",
+      folder: "derry_briantono/3 Dispensasi Kawin",
+      untuk: ["dispensasi kawin"],
+      ada: false,
+      sebab: "Folder blangko tidak ditemukan.",
+      jenjang: [],
+      usulan: null,
+    },
+  ];
+
+  it("nama tampil tanpa .rtf - persis seperti ABT menuliskannya di kartu", () => {
+    const k = jalankanAlat();
+    expect(k.alatNamaBerkasTampil("  [01] [Kabul] IN.RTF ")).toBe("[01] [Kabul] IN");
+  });
+
+  it("set yang cocok mengikuti aturan portal: kata kunci `untuk` terkandung di jenis", () => {
+    const k = jalankanAlat();
+    expect(k.alatSetCocokJenis(POHON, "Cerai Gugat").map((s: any) => s.id)).toEqual(["putusan-cg"]);
+    expect(k.alatSetCocokJenis(POHON, "Istbat Nikah").map((s: any) => s.id)).toEqual(["putusan-itsbat"]);
+    expect(k.alatSetCocokJenis(POHON, "Harta Bersama")).toEqual([]);
+  });
+
+  it("usulan per jenis: berkas skenario kabul dari set cocok pertama; set yang foldernya tak terbaca menjawab null", () => {
+    const k = jalankanAlat();
+    expect(k.alatUsulanDariPohon(POHON, "Cerai Gugat")).toMatchObject({
+      berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap)",
+      blangko: "Putusan Cerai Gugat",
+      kategori: "Kabul Verstek",
+    });
+    expect(k.alatUsulanDariPohon(POHON, "Dispensasi Kawin")).toBeNull();
+  });
+
+  it("mengisi baris kosong dan bawaan; baris yang pernah disunting tangan TIDAK disentuh", () => {
+    const k = jalankanAlat();
+    const peta: any = {
+      "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap)", bawaan: true },
+      "cerai talak": { jenisAsli: "Cerai Talak", berkas: "Pilihan saya sendiri", bawaan: false },
+      "itsbat nikah": { jenisAsli: "Itsbat Nikah", berkas: "", bawaan: false },
+    };
+    const terisi = k.alatIsiPetaDariPohon(peta, POHON, {});
+    // cerai gugat: nama sama dengan usulan - tidak ditulis ulang (tokennya bila ada tetap).
+    expect(peta["cerai gugat"].bawaan).toBe(true);
+    // cerai talak: suntingan tangan menang atas pohon.
+    expect(peta["cerai talak"].berkas).toBe("Pilihan saya sendiri");
+    // itsbat: kosong -> terisi dari pohon, bersumber pohon, bercatatan.
+    expect(peta["itsbat nikah"].berkas).toBe("[01] [Kabul] IN");
+    expect(peta["itsbat nikah"].sumber).toBe("pohon");
+    expect(peta["itsbat nikah"].catatan).toMatch(/dari pohon blangko/);
+    expect(terisi.map((x: any) => x.jenis)).toEqual(["Itsbat Nikah"]);
+    // timpa: true pun tidak mengubah baris yang jenisnya tidak punya set di
+    // pohon; baris lazim yang belum ada (cerai gugat, itsbat) tetap diisi.
+    const peta2: any = { "cerai talak": { jenisAsli: "Cerai Talak", berkas: "Pilihan saya sendiri" } };
+    const lagi = k.alatIsiPetaDariPohon(peta2, POHON, { timpa: true });
+    expect(peta2["cerai talak"].berkas).toBe("Pilihan saya sendiri");
+    expect(lagi.map((x: any) => x.jenis)).not.toContain("Cerai Talak");
+    expect(lagi.map((x: any) => x.jenis).sort()).toEqual(["Cerai Gugat", "Itsbat Nikah"]);
+  });
+
+  it("baris bersumber pohon boleh diperbarui ketika pohonnya berubah", () => {
+    const k = jalankanAlat();
+    const peta: any = { "itsbat nikah": { jenisAsli: "Itsbat Nikah", berkas: "[00] Lama", sumber: "pohon" } };
+    k.alatIsiPetaDariPohon(peta, POHON, {});
+    expect(peta["itsbat nikah"].berkas).toBe("[01] [Kabul] IN");
+  });
+
+  it("daftar nama pohon untuk satu jenis memuat seluruh jenjangnya", () => {
+    const k = jalankanAlat();
+    const nama = k.alatBerkasPohonUntukJenis(POHON, "Cerai Gugat").map((x: any) => x.berkas);
+    expect(nama).toEqual(["[01] [Kabul Verstek] Cerai (Format Lengkap)", "[01ab] [Tolak Verstek] Cerai - Tidak ada bukti"]);
+  });
+
+  it("rute portal membaca katalog tiap set putusan lewat jembatan bot, berurutan", () => {
+    expect(rute).toContain('callAletaBotSippBridge("blangko.katalog", { folder: set.folder })');
+    expect(rute).toContain('await pastikanKapabilitas(db, actorUserId, "panel");');
+    expect(rute).toContain("for (const satu of daftarSet) set.push(await isiSet(satu));");
+    expect(rute).toContain('SET_BLANGKO.filter((set) => set.jenis === "putusan")');
+  });
+
+  it("popup dan panel ABT punya tombolnya, dan panel ABT langsung mencari tokennya", () => {
+    expect(popupHtml).toContain('id="petaDariPohon"');
+    expect(popupJs).toContain("pohon = await ambilPohonBlangkoPopup(asal);");
+    expect(popupJs).toContain("if (bernama && ada.bawaan !== true && ada.sumber !== \"pohon\") continue;");
+    const editor = abt.slice(abt.indexOf("function bagianPetaBlangkoAbt("));
+    expect(editor).toContain('"Isi dari pohon blangko"');
+    expect(editor).toContain("const set = await alatAmbilPohonBlangko(\"\");");
+    expect(editor).toContain("const token = await lengkapiTokenPeta(keadaan.peta, (t) => {");
+  });
+});

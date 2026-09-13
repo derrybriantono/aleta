@@ -3191,3 +3191,106 @@ function alatCocokkanBerkas(daftar, nama) {
   if (!kunci) return null;
   return (daftar || []).find((b) => alatKunciBerkas(b.berkas) === kunci) || null;
 }
+
+/* ─── 1c. PEMETAAN DIISI DARI POHON BLANGKO PORTAL ─────────────────────────
+ *
+ * Portal sudah tahu set blangko mana untuk jenis perkara apa (SET_BLANGKO di
+ * lib/pohon-blangko.ts), dan bot sudah dapat membaca isi foldernya di
+ * peladen. Rute /aleta-ecourt/blangko/pohon menyatukan keduanya dan memberi
+ * satu USULAN bawaan per set - berkas pertama pada skenario kabul.
+ *
+ * Yang dikerjakan di sini hanya menuangkannya ke tabel pemetaan:
+ *   - baris kosong, bawaan, atau bertanda "dari pohon" diisi;
+ *   - baris yang pernah DISUNTING tangan tidak disentuh, kecuali diminta
+ *     menimpa. Yang diketik orang lebih berharga daripada bawaan mana pun.
+ * Token a/b tetap diambil dari halaman ABT seperti biasa - nama berkas dari
+ * pohon adalah nama yang sama persis dengan yang dirender ABT.
+ */
+const ALAT_API_POHON = "/aleta/api/aleta-ecourt/blangko/pohon";
+
+/** Nama tampil: tanpa akhiran .rtf - persis seperti ABT menuliskannya di kartu. */
+function alatNamaBerkasTampil(nama) {
+  return String(nama || "").replace(/\s+/g, " ").trim().replace(/\.rtf$/i, "").trim();
+}
+
+async function alatAmbilPohonBlangko(asal) {
+  const alamat = `${asal || ""}${ALAT_API_POHON}`;
+  const respons = await fetch(alamat, { credentials: "include", cache: "no-store" });
+  if (respons.status === 401 || respons.status === 403) throw new Error("Belum masuk portal ALETA.");
+  if (!respons.ok) throw new Error(`Portal menjawab ${respons.status} saat membaca pohon blangko.`);
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  const set = isi && Array.isArray(isi.set) ? isi.set : [];
+  return set;
+}
+
+/** Set yang cocok untuk satu jenis - aturan yang sama dengan setUntukPerkara di portal. */
+function alatSetCocokJenis(set, jenis) {
+  const j = alatKunciJenis(jenis);
+  if (!j) return [];
+  return (set || []).filter((s) => Array.isArray(s.untuk) && s.untuk.some((kata) => j.includes(String(kata).toLowerCase())));
+}
+
+/**
+ * Usulan untuk satu jenis: dari set cocok PERTAMA yang punya usulan.
+ * Pulang { berkas, blangko, kategori, folder } atau null.
+ */
+function alatUsulanDariPohon(set, jenis) {
+  for (const s of alatSetCocokJenis(set, jenis)) {
+    if (s && s.usulan && s.usulan.berkas) {
+      return {
+        berkas: alatNamaBerkasTampil(s.usulan.berkas),
+        blangko: String(s.nama || ""),
+        kategori: String(s.usulan.kategori || ""),
+        folder: String(s.folder || ""),
+      };
+    }
+  }
+  return null;
+}
+
+/** Seluruh nama berkas putusan yang dikenal pohon untuk satu jenis - untuk daftar pilihan. */
+function alatBerkasPohonUntukJenis(set, jenis) {
+  const hasil = [];
+  for (const s of alatSetCocokJenis(set, jenis)) {
+    for (const j of s.jenjang || []) {
+      for (const b of j.blangko || []) {
+        hasil.push({ berkas: alatNamaBerkasTampil(b.berkas), blangko: String(s.nama || ""), kategori: String(b.kategori || j.label || "") });
+      }
+    }
+  }
+  return hasil;
+}
+
+/**
+ * Menuangkan usulan pohon ke pemetaan. Pulang daftar { jenis, berkas, blangko }
+ * yang terisi; peta diubah di tempat, pemanggil yang menyimpannya.
+ */
+function alatIsiPetaDariPohon(peta, set, pilihan) {
+  const opsi = pilihan || {};
+  const jenisSemua = new Set(ALAT_JENIS_LAZIM.map(alatKunciJenis));
+  for (const k of Object.keys(peta || {})) jenisSemua.add(k);
+  const terisi = [];
+  for (const kunci of jenisSemua) {
+    const ada = peta[kunci];
+    const bolehDiisi =
+      !ada || !alatBlangkoTerpetakan(ada) || ada.bawaan === true || ada.sumber === "pohon" || opsi.timpa === true;
+    if (!bolehDiisi) continue;
+    const label = (ada && ada.jenisAsli) || ALAT_JENIS_LAZIM.find((x) => alatKunciJenis(x) === kunci) || kunci;
+    const usulan = alatUsulanDariPohon(set, label);
+    if (!usulan) continue;
+    // Nama yang sama tidak ditulis ulang - tokennya yang sudah terisi tetap.
+    if (ada && alatKunciBerkas(ada.berkas) === alatKunciBerkas(usulan.berkas)) continue;
+    peta[kunci] = {
+      jenisAsli: label,
+      berkas: usulan.berkas,
+      blangko: usulan.blangko,
+      bawaan: false,
+      sumber: "pohon",
+      catatan: `dari pohon blangko: ${usulan.blangko}${usulan.kategori ? ` · ${usulan.kategori}` : ""}`,
+      disimpanPada: new Date().toISOString(),
+    };
+    terisi.push({ jenis: label, berkas: usulan.berkas, blangko: usulan.blangko });
+  }
+  return terisi;
+}

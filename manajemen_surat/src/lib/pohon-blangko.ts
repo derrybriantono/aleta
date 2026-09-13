@@ -235,3 +235,49 @@ export function labelBlangko(jenis: "bas" | "putusan", item: BlangkoItem): strin
   const gabung = bagian.filter(Boolean).join(" — ");
   return gabung || item.judul || item.berkas;
 }
+
+/**
+ * Set PUTUSAN yang cocok dengan jenis perkara - untuk pemetaan blangko
+ * ekstensi, yang memilih satu berkas per jenis. BAS sengaja tidak ikut:
+ * ia dijenjangkan per sidang, bukan per skenario akhir, dan bukan yang
+ * dicetak sebagai putusan.
+ */
+export function setPutusanUntukPerkara(jenisPerkara: string): SetBlangko[] {
+  return setUntukPerkara(jenisPerkara).filter((set) => set.cocok && set.jenis === "putusan");
+}
+
+export type UsulanBerkas = {
+  berkas: string;
+  kategori: string;
+  kunciJenjang: string;
+};
+
+/**
+ * Satu berkas yang layak menjadi BAWAAN pemetaan dari jenjang putusan.
+ *
+ * Pilihannya SKENARIO KABUL - "Kabul", "Kabul Verstek", "Kabul Contra" -
+ * sebab itulah yang paling sering dicetak, dan yang salah pilih paling
+ * murah diganti: pemetaan hanya bawaan, tiap perkara masih dapat memilih
+ * blangkonya sendiri. Di dalam skenario itu diambil yang PERTAMA menurut
+ * urutan alami nama berkas, sehingga "[01] ..." mendahului "[01ab] ...".
+ * Bila tidak ada satu pun jenjang kabul, jatuh ke berkas pertama pada
+ * jenjang pertama yang bukan "lainnya" - dan bila hanya "lainnya" yang ada,
+ * dijawab null: menebak dari nama yang tidak berpola bukan bawaan, melainkan
+ * tebakan.
+ */
+export function usulanPutusanDariJenjang(jenjang: Jenjang[]): UsulanBerkas | null {
+  const bukanLainnya = jenjang.filter((j) => j.kunci !== "lainnya" && j.blangko.length > 0);
+  const kabul = bukanLainnya.find((j) => /^kabul(?: |$)/.test(j.kunci));
+  const dipilih = kabul ?? bukanLainnya[0];
+  if (!dipilih) return null;
+  // "[01]" mendahului "[01b]" dan "[01ab]": kode yang lebih pendek adalah
+  // induknya, varian berhuruf adalah turunannya. Kolasi lokal tidak
+  // dipercaya untuk membedakan "]" dari "b"; panjang kodenya yang dipercaya.
+  const item = [...dipilih.blangko].sort((a, b) => {
+    const ka = String(a.kode || "").length;
+    const kb = String(b.kode || "").length;
+    if (ka !== kb && ka > 0 && kb > 0) return ka - kb;
+    return urutkanAlami(a.berkas, b.berkas);
+  })[0];
+  return { berkas: item.berkas, kategori: item.kategori, kunciJenjang: dipilih.kunci };
+}

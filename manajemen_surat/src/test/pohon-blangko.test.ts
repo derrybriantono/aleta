@@ -5,7 +5,9 @@ import {
   SET_BLANGKO,
   jenjangkan,
   labelBlangko,
+  setPutusanUntukPerkara,
   setUntukPerkara,
+  usulanPutusanDariJenjang,
   type BlangkoItem,
 } from "@/lib/pohon-blangko";
 
@@ -195,5 +197,49 @@ describe("nama blangko di dalam jenjangnya", () => {
     // dengan yakin - dan panitera akan melewatinya.
     const label = labelBlangko("bas", blangko({ berkas: "Aneh.rtf", judul: "Aneh" }));
     expect(label).toBe("Aneh");
+  });
+});
+
+describe("usulan bawaan dari jenjang putusan - untuk pemetaan ekstensi", () => {
+  const item = (berkas: string, kategori: string): BlangkoItem =>
+    blangko({ berkas, kategori, judul: berkas.replace(/\.rtf$/i, "") });
+
+  it("memilih skenario KABUL, dan yang pertama menurut urutan alami di dalamnya", () => {
+    const jenjang = jenjangkan("putusan", [
+      item("[01ab] [Tolak Verstek] Cerai - Tidak ada bukti.rtf", "Tolak Verstek"),
+      item("[01b] [Kabul Verstek] Cerai (Ringkas).rtf", "Kabul Verstek"),
+      item("[01] [Kabul Verstek] Cerai (Format Lengkap).rtf", "Kabul Verstek"),
+      item("[98] [Cabut] 1. Cerai P Hadir.rtf", "Cabut"),
+    ]);
+    const usulan = usulanPutusanDariJenjang(jenjang);
+    expect(usulan).toMatchObject({
+      berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+      kunciJenjang: "kabul verstek",
+    });
+  });
+
+  it("tanpa jenjang kabul, jatuh ke jenjang pertama yang bukan 'lainnya'", () => {
+    const jenjang = jenjangkan("putusan", [
+      item("Blangko tanpa pola.rtf", ""),
+      item("[02] [Tolak] IN.rtf", "Tolak"),
+    ]);
+    expect(usulanPutusanDariJenjang(jenjang)?.berkas).toBe("[02] [Tolak] IN.rtf");
+  });
+
+  it("hanya 'lainnya' berarti null - nama tanpa pola bukan bawaan, melainkan tebakan", () => {
+    const jenjang = jenjangkan("putusan", [item("Blangko tanpa pola.rtf", ""), item("Lagi tanpa pola.rtf", "")]);
+    expect(usulanPutusanDariJenjang(jenjang)).toBeNull();
+    expect(usulanPutusanDariJenjang([])).toBeNull();
+  });
+
+  it("set putusan untuk jenis: BAS tidak ikut, dan hanya yang cocok", () => {
+    const cg = setPutusanUntukPerkara("Cerai Gugat");
+    expect(cg.length).toBeGreaterThan(0);
+    expect(cg.every((s) => s.jenis === "putusan")).toBe(true);
+    expect(cg.some((s) => s.id === "putusan-cg")).toBe(true);
+    expect(cg.some((s) => s.id === "bas-verstek")).toBe(false);
+    expect(setPutusanUntukPerkara("Dispensasi Kawin").map((s) => s.id)).toContain("putusan-dispensasi");
+    expect(setPutusanUntukPerkara("Itsbat Nikah").map((s) => s.id)).toContain("putusan-itsbat");
+    expect(setPutusanUntukPerkara("")).toEqual([]);
   });
 });

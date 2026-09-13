@@ -585,8 +585,10 @@ async function pasangPetaBlangkoPopup(peran) {
   const daftar = document.getElementById("daftarPeta");
   const masukanBaru = document.getElementById("petaJenisBaru");
   const tombolTambah = document.getElementById("petaTambah");
+  const tombolPohon = document.getElementById("petaDariPohon");
   const kabar = document.getElementById("petaKabar");
   if (!bagian || !daftar) return;
+  let pohon = null;
   if (!/super/i.test(String(peran || ""))) {
     bagian.hidden = true;
     return;
@@ -636,6 +638,20 @@ async function pasangPetaBlangkoPopup(peran) {
       masukan.placeholder = "nama berkas blangko ABT…";
       masukan.value = String(baris.berkas || "");
       wadah.appendChild(masukan);
+      // Nama-nama dari pohon disodorkan sebagai pilihan ketik - bila pohonnya
+      // sudah dibaca.
+      if (pohon) {
+        const daftarNama = document.createElement("datalist");
+        daftarNama.id = `pohon-${kunci.replace(/[^a-z0-9]+/g, "-")}`;
+        for (const b of berkasPohonUntukJenis(pohon, label.textContent)) {
+          const o = document.createElement("option");
+          o.value = b.berkas;
+          o.label = `${b.blangko}${b.kategori ? ` · ${b.kategori}` : ""}`;
+          daftarNama.appendChild(o);
+        }
+        masukan.setAttribute("list", daftarNama.id);
+        wadah.appendChild(daftarNama);
+      }
 
       const token = document.createElement("span");
       token.className = `peta-token ${baris.a && baris.b ? "ada" : "belum"}`;
@@ -698,6 +714,102 @@ async function pasangPetaBlangkoPopup(peran) {
     });
   }
 
+  if (tombolPohon) {
+    tombolPohon.addEventListener("click", async () => {
+      tombolPohon.disabled = true;
+      beritahu("Membaca pohon blangko dari portal…");
+      try {
+        const simpan = penyimpanan ? await penyimpanan.get(["asalPortal"]) : {};
+        const asal = String((simpan && simpan.asalPortal) || "").replace(/\/+$/, "");
+        if (!asal) throw new Error("Alamat portal ALETA belum diketahui - buka satu halaman SIPP dahulu.");
+        pohon = await ambilPohonBlangkoPopup(asal);
+        const terisi = isiPetaDariPohonPopup(peta, pohon);
+        if (await simpanPeta()) {
+          gambar();
+          beritahu(
+            terisi.length
+              ? `${terisi.length} jenis terisi dari pohon: ${terisi.map((x) => `${x.jenis} → ${x.berkas}`).join("; ")}. Tokennya diambil di halaman ABT.`
+              : "Tidak ada baris yang perlu diisi - semua sudah bernama, atau pohonnya kosong di peladen."
+          );
+        }
+      } catch (galat) {
+        beritahu(String((galat && galat.message) || galat));
+      }
+      tombolPohon.disabled = false;
+    });
+  }
+
   gambar();
   bagian.hidden = false;
+}
+
+/* Pohon blangko dari portal - salinan ringkas dari panel-alat.js, dengan
+ * aturan pencocokan jenis yang sama (kata kunci `untuk` terkandung di jenis). */
+async function ambilPohonBlangkoPopup(asal) {
+  const pembatal = new AbortController();
+  const penghenti = setTimeout(() => pembatal.abort(), 20000);
+  try {
+    const respons = await fetch(`${asal}/api/aleta-ecourt/blangko/pohon`, {
+      credentials: "include",
+      cache: "no-store",
+      signal: pembatal.signal,
+    });
+    if (respons.status === 401 || respons.status === 403) throw new Error("Belum masuk portal ALETA.");
+    if (!respons.ok) throw new Error(`Portal menjawab ${respons.status} saat membaca pohon blangko.`);
+    const luar = await respons.json();
+    const isi = luar && luar.data ? luar.data : luar;
+    return isi && Array.isArray(isi.set) ? isi.set : [];
+  } finally {
+    clearTimeout(penghenti);
+  }
+}
+
+function namaBerkasTampilPopup(nama) {
+  return String(nama || "").replace(/\s+/g, " ").trim().replace(/\.rtf$/i, "").trim();
+}
+
+function setCocokJenisPopup(set, jenis) {
+  const j = kunciJenisPopup(jenis);
+  if (!j) return [];
+  return (set || []).filter((s) => Array.isArray(s.untuk) && s.untuk.some((kata) => j.includes(String(kata).toLowerCase())));
+}
+
+function berkasPohonUntukJenis(set, jenis) {
+  const hasil = [];
+  for (const s of setCocokJenisPopup(set, jenis)) {
+    for (const jj of s.jenjang || []) {
+      for (const b of jj.blangko || []) {
+        hasil.push({ berkas: namaBerkasTampilPopup(b.berkas), blangko: String(s.nama || ""), kategori: String(b.kategori || jj.label || "") });
+      }
+    }
+  }
+  return hasil;
+}
+
+function isiPetaDariPohonPopup(peta, set) {
+  const terisi = [];
+  for (const kunci of Object.keys(peta)) {
+    const ada = peta[kunci] || {};
+    const bernama = Boolean(String(ada.berkas || "").trim());
+    if (bernama && ada.bawaan !== true && ada.sumber !== "pohon") continue;
+    const label = ada.jenisAsli || kunci;
+    const cocok = setCocokJenisPopup(set, label).find((s) => s && s.usulan && s.usulan.berkas);
+    if (!cocok) continue;
+    const berkas = namaBerkasTampilPopup(cocok.usulan.berkas);
+    if (kunciBerkasPopup(ada.berkas) === kunciBerkasPopup(berkas)) continue;
+    peta[kunci] = {
+      jenisAsli: label,
+      berkas,
+      blangko: String(cocok.nama || ""),
+      bawaan: false,
+      sumber: "pohon",
+      catatan: `dari pohon blangko: ${cocok.nama || ""}${cocok.usulan.kategori ? ` · ${cocok.usulan.kategori}` : ""}`,
+    };
+    terisi.push({ jenis: label, berkas });
+  }
+  return terisi;
+}
+
+function kunciBerkasPopup(nama) {
+  return namaBerkasTampilPopup(nama).toLowerCase();
 }

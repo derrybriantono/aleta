@@ -42,6 +42,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.133.0",
+    dirilis: "2026-09-14T13:00:00+08:00",
+    judul: "Pemetaan blangko diisi sendiri dari pohon blangko portal",
+    butir: [
+      "ISI DARI POHON BLANGKO. Portal sudah tahu set blangko mana untuk jenis perkara apa (SET_BLANGKO), dan bot sudah dapat membaca isi foldernya di peladen. Rute baru /aleta-ecourt/blangko/pohon menyatukan keduanya: untuk tiap jenis, ia menjenjangkan berkas set putusannya menurut skenario akhir dan mengusulkan satu bawaan - berkas skenario KABUL, yang kode terpendek (\"[01]\" mendahului \"[01b]\"). Satu tombol di popup super admin dan di panel ABT menuangkannya ke tabel pemetaan, jadi jenis lain tidak perlu diketik satu per satu.",
+      "YANG DIKETIK TANGAN TIDAK DISENTUH. Hanya baris kosong, bawaan, atau yang sebelumnya bersumber pohon yang diisi; baris yang pernah Anda sunting menang, kecuali diminta menimpa. Berkas dari pohon adalah nama yang sama persis dengan yang dirender ABT, jadi tokennya langsung dicari di halaman ABT sesudah nama terisi - satu tekanan, dua pekerjaan.",
+      "Kotak ketik nama di popup maupun panel ABT kini menyodorkan nama-nama dari pohon sebagai pilihan (datalist), lengkap dengan set dan kategorinya. Usulan hanya bawaan: tiap perkara di daftar massal tetap dapat memilih blangkonya sendiri.",
+    ],
+  },
+  {
     versi: "1.132.0",
     dirilis: "2026-09-14T11:00:00+08:00",
     judul: "Bawaan pemetaan blangko: itsbat nikah dan dispensasi kawin menyusul cerai",
