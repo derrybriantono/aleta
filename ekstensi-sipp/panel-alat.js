@@ -3093,9 +3093,26 @@ function alatBlangkoTerpetakan(baris) {
  * panel ABT begitu halamannya terbuka.
  */
 const ALAT_BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
+/** Seri yang sama di peladen: "[01] [Kabul] IN" untuk itsbat nikah. */
+const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
+/**
+ * Dispensasi kawin: nama seri peladennya belum diketahui kode ini - yang ada
+ * hanya nama di ABT setempat (salinan PA Bungku). Diisi dengan nama setempat
+ * yang paling lazim supaya barisnya tidak kosong; bila di peladen tidak
+ * ketemu, panel ABT menyebutnya "berkas tidak ditemukan" dan namanya tinggal
+ * disunting - tidak ada yang ditebak diam-diam.
+ */
+const ALAT_BERKAS_DISPENSASI_BAWAAN = "DK (Full) Perempuan Hamil V.2";
 const ALAT_PETA_BAWAAN = {
   "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
   "cerai talak": { jenisAsli: "Cerai Talak", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
+  "itsbat nikah": { jenisAsli: "Itsbat Nikah", berkas: ALAT_BERKAS_ITSBAT_BAWAAN, bawaan: true },
+  "dispensasi kawin": {
+    jenisAsli: "Dispensasi Kawin",
+    berkas: ALAT_BERKAS_DISPENSASI_BAWAAN,
+    bawaan: true,
+    catatan: "nama dari ABT setempat - periksa namanya di peladen",
+  },
 };
 
 /**

@@ -562,9 +562,18 @@ if (tombolTema) {
  */
 const KUNCI_PETA_BLANGKO = "petaBlangkoPutusan";
 const BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
+const BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
+const BERKAS_DISPENSASI_BAWAAN = "DK (Full) Perempuan Hamil V.2";
 const PETA_BAWAAN_POPUP = {
   "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
   "cerai talak": { jenisAsli: "Cerai Talak", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
+  "itsbat nikah": { jenisAsli: "Itsbat Nikah", berkas: BERKAS_ITSBAT_BAWAAN, bawaan: true },
+  "dispensasi kawin": {
+    jenisAsli: "Dispensasi Kawin",
+    berkas: BERKAS_DISPENSASI_BAWAAN,
+    bawaan: true,
+    catatan: "nama dari ABT setempat - periksa namanya di peladen",
+  },
 };
 
 function kunciJenisPopup(jenis) {
@@ -630,7 +639,7 @@ async function pasangPetaBlangkoPopup(peran) {
 
       const token = document.createElement("span");
       token.className = `peta-token ${baris.a && baris.b ? "ada" : "belum"}`;
-      token.textContent = baris.a && baris.b ? "token ✓" : "token belum diambil";
+      token.textContent = baris.a && baris.b ? "token ✓" : baris.catatan ? `token belum diambil — ${baris.catatan}` : "token belum diambil";
       token.title = baris.a && baris.b
         ? `Dari kelompok ${baris.blangko || "?"} - dipakai langsung.`
         : "Diambil sendiri oleh panel ALETA saat halaman blangko ABT terbuka.";

@@ -42,6 +42,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.132.0",
+    dirilis: "2026-09-14T11:00:00+08:00",
+    judul: "Bawaan pemetaan blangko: itsbat nikah dan dispensasi kawin menyusul cerai",
+    butir: [
+      "ITSBAT NIKAH -> \"[01] [Kabul] IN\" - seri peladen yang sama dengan blangko cerai, dikenal kode sejak korpus blangko dipelajari. Bernama saja; tokennya diambil panel ABT di peladen, seperti cerai.",
+      "DISPENSASI KAWIN -> \"DK (Full) Perempuan Hamil V.2\" - nama seri peladennya belum dikenal kode ini, jadi diisi nama ABT setempat yang paling lazim dan DITANDAI catatannya di popup maupun panel: periksa namanya di peladen. Bila tidak ketemu di sana, panel menyebutnya apa adanya dan namanya tinggal disunting - tidak ada yang ditebak diam-diam.",
+      "Otomatisasi itsbat dan dispensasi yang lama - empat belas variabel dari posita, alasan dispensasi, unggah naskah penetapan - tidak disentuh; ini hanya melengkapi tabel putusan massal.",
+    ],
+  },
+  {
     versi: "1.131.0",
     dirilis: "2026-09-14T09:00:00+08:00",
     judul: "Putusan massal: dari jadwal sidang ke ABT, ke SIPP, dan pemetaan blangko yang dapat disunting",

@@ -344,6 +344,11 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
     expect(peta["cerai gugat"].berkas).toBe("[01] [Kabul Verstek] Cerai (Format Lengkap)");
     expect(peta["cerai talak"].berkas).toBe("[01] [Kabul Verstek] Cerai (Format Lengkap)");
     expect(peta["cerai gugat"].a).toBeUndefined();
+    // Itsbat: seri peladen yang sama dengan cerai. Dispensasi: nama ABT
+    // setempat, ditandai catatannya - bukan tebakan yang diam.
+    expect(peta["itsbat nikah"].berkas).toBe("[01] [Kabul] IN");
+    expect(peta["dispensasi kawin"].berkas).toBe("DK (Full) Perempuan Hamil V.2");
+    expect(peta["dispensasi kawin"].catatan).toMatch(/periksa namanya di peladen/);
     // Disunting (termasuk dilepas menjadi kosong) - bawaan tidak kembali.
     await k.alatSimpanPetaBlangko({ "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: "", bawaan: false } });
     const lagi = await k.alatMuatPetaBlangkoLengkap();
@@ -419,7 +424,11 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
     expect(sumberAlat).toContain('const ALAT_PETA_BLANGKO_KUNCI = "petaBlangkoPutusan";');
     expect(popupJs).toContain('const BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";');
     expect(sumberAlat).toContain('const ALAT_BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";');
-    for (const kunci of ['"cerai gugat"', '"cerai talak"']) {
+    expect(popupJs).toContain('const BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";');
+    expect(sumberAlat).toContain('const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";');
+    expect(popupJs).toContain('const BERKAS_DISPENSASI_BAWAAN = "DK (Full) Perempuan Hamil V.2";');
+    expect(sumberAlat).toContain('const ALAT_BERKAS_DISPENSASI_BAWAAN = "DK (Full) Perempuan Hamil V.2";');
+    for (const kunci of ['"cerai gugat"', '"cerai talak"', '"itsbat nikah"', '"dispensasi kawin"']) {
       expect(popupJs).toContain(kunci);
       expect(sumberAlat).toContain(kunci);
     }
