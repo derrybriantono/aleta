@@ -2182,6 +2182,14 @@ export async function getGatewayAbtUsulan(muatan: {
   templat?: Array<{ no: string; tanya: string; jawab: string }>;
   /** Ciri alasan yang didalilkan - menyaring jawaban tentang penyebab. */
   alasan?: string[];
+  /**
+   * Modus keterangan tiap saksi: sama, sebagian, tidak-tahu, tidak-melihat,
+   * dari-cerita - beserta alasan pilihannya dan siapa yang bercerita.
+   */
+  modus?: {
+    saksi1?: { modus?: string; sumber?: string; alasan?: string[] };
+    saksi2?: { modus?: string; sumber?: string; alasan?: string[] };
+  };
 }) {
   return gatewayFetch<{
     sipp: Record<string, unknown> | null;

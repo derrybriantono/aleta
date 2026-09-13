@@ -326,7 +326,14 @@ describe("ekstensi terdaftar untuk halaman ABT", () => {
     const m = manifest();
     const abt = m.content_scripts.find((s) => (s.js || []).includes("abt.js"));
     expect(abt).toBeTruthy();
-    expect(abt?.matches).toContain("http://192.168.10.10/aps_badilag/abt/*");
+    // /aps_badilag/*, BUKAN /aps_badilag/abt/*. Alamat ABT yang sungguhan
+    // memuat index.php di tengahnya - /aps_badilag/index.php/abt/... - dan
+    // pola yang lebih sempit itu tidak pernah cocok satu halaman pun di
+    // peladen. Di mesin setempat polanya memang sudah /aps_badilag/*, jadi
+    // panelnya tampak biasa saja di sana; perbedaan itu yang membuatnya lama
+    // tidak tertangkap.
+    expect(abt?.matches).toContain("http://192.168.10.10/aps_badilag/*");
+    expect(abt?.matches).not.toContain("http://192.168.10.10/aps_badilag/abt/*");
     expect(abt?.css).toContain("panel.css");
   });
 
@@ -985,7 +992,8 @@ describe("nomor 2 - tema dipasang sebelum halaman digambar", () => {
     const awal = m.content_scripts.find((x) => (x.js || []).includes("tema-awal.js"));
     expect(awal?.run_at).toBe("document_start");
     expect(awal?.matches).toContain("http://192.168.10.10/SIPP/*");
-    expect(awal?.matches).toContain("http://192.168.10.10/aps_badilag/abt/*");
+    // Temanya pun tidak pernah sampai ke ABT peladen selama polanya sempit.
+    expect(awal?.matches).toContain("http://192.168.10.10/aps_badilag/*");
   });
 
   it("dibaca dari localStorage yang SINKRON, bukan chrome.storage", () => {
@@ -1105,9 +1113,11 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
   });
 
   it("tombol di dalam kepala tidak ikut menggeser panel", () => {
-    // Yang menekan tombol tutup tidak sedang memindahkan panel.
+    // Yang menekan tombol tutup tidak sedang memindahkan panel. Sejak 1.128.0
+    // baris pemilih warna ikut dikecualikan: ia melayang DI ATAS kepala, dan
+    // menekan celah antar titiknya tidak boleh menyeret panelnya.
     const isi = alat();
-    expect(isi).toContain('peristiwa.target.closest("button, a, input, select, textarea")');
+    expect(isi).toContain('peristiwa.target.closest("button, a, input, select, textarea, .aleta-warna-pilih")');
   });
 
   it("memakai pointer event, bukan mouse event", () => {

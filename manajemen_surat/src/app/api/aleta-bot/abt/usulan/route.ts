@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       pemohon2?: unknown;
       templat?: unknown;
       alasan?: unknown;
+  modus?: unknown;
     }>(request).catch(() => ({}) as Record<string, unknown>);
 
     const sumberMinta = String(body.sumber || "semua");
@@ -137,6 +138,23 @@ export async function POST(request: NextRequest) {
       // disimpan di mana pun pada jalur ini.
       posita: String(body.posita || "").slice(0, BATAS_TEKS),
       pemohon2: String(body.pemohon2 || "").slice(0, 40),
+      // Modus keterangan tiap saksi - dibatasi bentuknya di sini, dan disaring
+      // sekali lagi di bot. Dua pagar untuk masukan yang datang dari peramban.
+      modus:
+        body.modus && typeof body.modus === "object"
+          ? (() => {
+              const m = body.modus as Record<string, unknown>;
+              const satu = (x: unknown) => {
+                const r = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+                return {
+                  modus: String(r.modus || "").slice(0, 20),
+                  sumber: String(r.sumber || "").slice(0, 20),
+                  alasan: Array.isArray(r.alasan) ? (r.alasan as unknown[]).map((a) => String(a).slice(0, 80)).slice(0, 12) : [],
+                };
+              };
+              return { saksi1: satu(m.saksi1), saksi2: satu(m.saksi2) };
+            })()
+          : undefined,
       // Templat tanya-jawab, diambil ekstensi dari halaman penyunting ABT
       // (POST load_template) - ALETA tetap tidak membaca basis data ABT.
       // Dibatasi enam puluh baris dan panjang tiap ruasnya, sebab ia masukan.

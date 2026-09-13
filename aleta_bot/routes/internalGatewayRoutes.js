@@ -1564,10 +1564,25 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
     // satu substansi, dua bentuk kalimat.
     if (sumber === "saksi-sdg") {
+      // Modus tiap saksi - "sama", "sebagian", "tidak-tahu", "tidak-melihat",
+      // "dari-cerita" - beserta alasan pilihannya dan siapa yang bercerita.
+      // Disaring per medan: ia masukan dari peramban.
+      const modusMasuk = req.body?.modus && typeof req.body.modus === "object" ? req.body.modus : {};
+      const saringModus = (m) => {
+        const r = m && typeof m === "object" ? m : {};
+        return {
+          modus: String(r.modus || "").slice(0, 20),
+          sumber: String(r.sumber || "").slice(0, 20),
+          alasan: Array.isArray(r.alasan) ? r.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
+        };
+      };
       jawaban.saksiSdg = abtUsulanService.susunKeteranganSaksiSdg({
         templat: Array.isArray(req.body?.templat) ? req.body.templat.slice(0, 60) : [],
         alasan: Array.isArray(req.body?.alasan) ? req.body.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
         posita: String(req.body?.posita || ""),
+        pelaku: String(req.body?.pelaku || "").slice(0, 40),
+        lawan: String(req.body?.lawan || "").slice(0, 40),
+        modus: { saksi1: saringModus(modusMasuk.saksi1), saksi2: saringModus(modusMasuk.saksi2) },
       });
     }
     if (sumber === "semua" || sumber === "saksi") {

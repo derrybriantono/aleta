@@ -944,7 +944,10 @@ function ragamkanJawaban(jawaban, nomorSaksi, urutan) {
   let teks = String(jawaban || "").replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
   if (!teks) return "";
   const bank = RAGAM_PEMBUKA[nomorSaksi === 2 ? 1 : 0];
-  teks = teks.replace(/^(ya|benar|betul|iya)\s*,?\s*/i, "");
+  // \b wajib: tanpa batas kata, "yang saya ketahui" kehilangan "ya"-nya dan
+  // menjadi "ng saya ketahui". Kalimat templat lama kebetulan tidak pernah
+  // diawali "yang"; kalimat modus saksi iya - dan itulah yang menyingkapnya.
+  teks = teks.replace(/^(ya|benar|betul|iya)\b\s*,?\s*/i, "");
   if (nomorSaksi === 2) {
     RAGAM_KATA.forEach(([pola, ganti], i) => {
       // Berselang-seling menurut urutan pertanyaan supaya dua jawaban yang
@@ -985,6 +988,113 @@ function alasanDariPosita(posita) {
  *   alasan   ciri alasan yang didalilkan (kunci CIRI_ALASAN); bila kosong dan
  *            posita ada, diturunkan dari posita ("sama dengan gugatan")
  */
+/**
+ * ============================================================================
+ * MODUS KETERANGAN TIAP SAKSI - SEBAB DUA SAKSI JARANG TAHU HAL YANG SAMA
+ * ============================================================================
+ *
+ * Bentuk lamanya mengandaikan kedua saksi mengetahui SELURUH alasan yang
+ * didalilkan dan melihatnya sendiri. Di persidangan yang sungguhan tidak
+ * begitu: tetangga melihat pertengkarannya tetapi tidak tahu sebabnya; orang
+ * tua tahu sebabnya dari cerita anaknya tetapi tidak pernah menyaksikan;
+ * saudara hanya tahu keduanya sudah pisah rumah. Keterangan yang menyamakan
+ * semuanya bukan hanya tidak wajar - ia dapat dipatahkan lawan dengan satu
+ * pertanyaan.
+ *
+ * Maka tiap saksi punya MODUSNYA sendiri, dan tiap modus menjawab tiga
+ * kelompok pertanyaan dengan caranya:
+ *
+ *   sama          tahu seluruh alasan yang didalilkan, melihat sendiri
+ *   sebagian      hanya sebagian alasan yang ia ketahui - disebut mana saja
+ *   tidak-tahu    tahu mereka berselisih dan berpisah, tidak tahu sebabnya
+ *   tidak-melihat tidak pernah menyaksikan pertengkaran; tahu pisahnya saja
+ *   dari-cerita   tahu sebabnya dari CERITA salah satu pihak, bukan melihat
+ *
+ * Tiga kelompok pertanyaannya dikenali dari kata kuncinya:
+ *
+ *   penyebab      "penyebab", "sebab", "alasan"
+ *   menyaksikan   "melihat", "mendengar", "berapa kali", "menyaksikan"
+ *   cara tahu     "bagaimana ... mengetahui", "dari mana ... tahu"
+ *
+ * Pertanyaan lain (kenal, hubungan, tempat tinggal, pisah, rukun) dibiarkan
+ * memakai jawaban templat - modus tidak mengubah FAKTA yang sama bagi kedua
+ * saksi, hanya apa yang masing-masing saksi ketahui dan bagaimana ia tahu.
+ */
+const MODUS_SAKSI = new Set(["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita"]);
+
+/** Nama pihak yang bercerita, dari kode yang dikirim panel. */
+function sebutanSumberCerita(kode, pelaku, lawan) {
+  const k = String(kode || "").toLowerCase();
+  if (k === "lawan") return lawan || "Tergugat";
+  if (k === "keluarga") return "keluarga mereka";
+  return pelaku || "Penggugat";
+}
+
+/** Jawaban modus untuk tiga kelompok pertanyaan. Pola bervariasi per saksi. */
+function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi }) {
+  const daftar = alasan.join(nomorSaksi === 2 ? " serta " : " dan ");
+  const kedua = nomorSaksi === 2;
+
+  // CARA TAHU diperiksa PALING DULU. "Bagaimana saudara mengetahui penyebab
+  // perselisihan itu?" memuat kata "penyebab" juga - tetapi ia bertanya
+  // BAGAIMANA saksi tahu, bukan APA sebabnya. Diperiksa belakangan, ia akan
+  // dijawab sebagai pertanyaan penyebab, dan saksi yang "tidak pernah
+  // menyaksikan" mendadak mengaku "melihat sendiri".
+  if (/bagaimana .*(mengetahui|tahu)|dari mana .*(tahu|mengetahui)/i.test(tanya)) {
+    if (modus === "dari-cerita") {
+      return kedua
+        ? `saya mengetahuinya karena ${sumber} bercerita kepada saya`
+        : `saya mengetahui karena diceritakan oleh ${sumber}`;
+    }
+    if (modus === "tidak-melihat") {
+      return kedua
+        ? "saya mengetahuinya dari cerita orang-orang di sekitar mereka"
+        : "saya mengetahui dari cerita keluarga dan tetangga";
+    }
+    if (modus === "tidak-tahu") return null;
+    return kedua
+      ? "saya mengetahuinya karena melihat dan mendengar sendiri"
+      : "saya mengetahui karena saya melihat sendiri";
+  }
+
+  if (/penyebab|sebab|alasan/i.test(tanya)) {
+    if (modus === "tidak-tahu" || modus === "tidak-melihat") {
+      return kedua
+        ? "saya tidak mengetahui apa penyebabnya, yang saya tahu mereka sudah tidak rukun dan sudah berpisah"
+        : "saya tidak tahu persis penyebabnya, saya hanya mengetahui mereka sering berselisih dan kini sudah pisah rumah";
+    }
+    if (modus === "dari-cerita") {
+      return kedua
+        ? `menurut cerita ${sumber} kepada saya, penyebabnya adalah ${daftar || "perselisihan yang terus-menerus"}`
+        : `yang saya ketahui dari cerita ${sumber}, penyebabnya yaitu ${daftar || "perselisihan yang terus-menerus"}`;
+    }
+    if (modus === "sebagian") {
+      return kedua
+        ? `yang saya ketahui sendiri hanya ${daftar}, selebihnya saya tidak tahu`
+        : `sepengetahuan saya penyebabnya adalah ${daftar}, penyebab lainnya saya tidak mengetahui`;
+    }
+    return kedua
+      ? `penyebabnya sepengetahuan saya adalah ${daftar}`
+      : `penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu ${daftar}`;
+  }
+
+  if (/melihat|mendengar|menyaksikan|berapa kali/i.test(tanya)) {
+    if (modus === "tidak-melihat" || modus === "dari-cerita") {
+      return kedua
+        ? "saya tidak pernah melihat sendiri mereka bertengkar, saya mengetahuinya dari cerita"
+        : "saya tidak pernah menyaksikan langsung pertengkaran mereka";
+    }
+    if (modus === "tidak-tahu") {
+      return kedua
+        ? "saya pernah mendengar mereka bertengkar, tetapi tidak tahu apa yang dipersoalkan"
+        : "saya pernah melihat mereka bertengkar beberapa kali, namun tidak tahu sebabnya";
+    }
+    return null; // sama / sebagian: jawaban templat sudah tepat
+  }
+
+  return null;
+}
+
 function susunKeteranganSaksiSdg(opsi) {
   const templat = Array.isArray(opsi && opsi.templat) ? opsi.templat : [];
   let alasan = Array.isArray(opsi && opsi.alasan) ? opsi.alasan.filter(Boolean) : [];
@@ -997,29 +1107,50 @@ function susunKeteranganSaksiSdg(opsi) {
     return { ok: false, alasan: "templat_kosong", saksi1: [], saksi2: [], perluDiisi: [] };
   }
 
+  // Modus tiap saksi. Yang tidak disebut berarti "sama" - bentuk lama, dan
+  // masih bentuk yang paling sering benar untuk saksi pertama.
+  const modusMasuk = (opsi && opsi.modus) || {};
+  const modusUntuk = (n) => {
+    const m = modusMasuk[`saksi${n}`] || {};
+    const nama = MODUS_SAKSI.has(String(m.modus)) ? String(m.modus) : "sama";
+    const alasanSaksi =
+      nama === "sebagian" && Array.isArray(m.alasan) && m.alasan.length
+        ? m.alasan.map(String).filter(Boolean)
+        : alasan;
+    return {
+      modus: nama,
+      alasan: alasanSaksi,
+      sumber: sebutanSumberCerita(m.sumber, opsi && opsi.pelaku, opsi && opsi.lawan),
+    };
+  };
+
   const perluDiisi = [];
-  const susun = (nomorSaksi) =>
-    templat.map((baris, i) => {
+  const susun = (nomorSaksi) => {
+    const m = modusUntuk(nomorSaksi);
+    return templat.map((baris, i) => {
       const no = String((baris && (baris.no || baris.urutan_pertanyaan)) || i + 1);
       const tanya = String((baris && (baris.tanya || baris.pertanyaan)) || "").replace(/\s+/g, " ").trim();
       let jawab = String((baris && (baris.jawab || baris.jawaban)) || "");
 
-      // Pertanyaan tentang PENYEBAB: jawabannya disusun dari alasan yang
-      // didalilkan, bukan dari templat yang menyebut semua kemungkinan.
-      if (alasan.length && /penyebab|sebab|alasan/i.test(tanya)) {
-        const daftar = alasan.join(nomorSaksi === 2 ? " serta " : " dan ");
-        jawab =
-          nomorSaksi === 2
-            ? `penyebabnya sepengetahuan saya adalah ${daftar}`
-            : `penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu ${daftar}`;
-      }
+      // Modus menjawab lebih dulu; bila ia tidak punya jawaban untuk
+      // pertanyaan ini, templat yang bicara - seperti semula.
+      const dariModus = jawabMenurutModus({
+        tanya,
+        modus: m.modus,
+        alasan: m.alasan,
+        sumber: m.sumber,
+        nomorSaksi,
+      });
+      if (dariModus) jawab = dariModus;
 
       if (nomorSaksi === 1 && POLA_BELUM_TERISI.test(jawab)) perluDiisi.push({ no, tanya });
       return { no, tanya, jawab: ragamkanJawaban(jawab, nomorSaksi, i) };
     });
+  };
 
   const saksi1 = susun(1);
   const saksi2 = susun(2);
+  const modusDipakai = { saksi1: modusUntuk(1).modus, saksi2: modusUntuk(2).modus };
 
   // Dua saksi tidak boleh identik kata demi kata. Diperiksa, bukan diandaikan.
   const identik = saksi1.filter(
@@ -1034,6 +1165,9 @@ function susunKeteranganSaksiSdg(opsi) {
     identik,
     alasan,
     asalAlasan,
+    // Modus yang SUNGGUH dipakai - bukan yang diminta. Yang diminta dapat
+    // salah eja dan jatuh ke "sama", dan panel harus memperlihatkan itu.
+    modus: modusDipakai,
     catatan: perluDiisi.length
       ? `${perluDiisi.length} jawaban masih memuat titik-titik templat dan menunggu keterangan saksi yang sesungguhnya.`
       : "Seluruh jawaban tersusun; baca kembali sebelum disimpan ke ABT.",

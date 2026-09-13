@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>ALETA untuk SIPP</title>
+<title>ALETA E-Court</title>
 <style>
   /*
    * Popup ekstensi.
@@ -69,6 +69,31 @@
   }
 
   .tombol-tema:hover { border-color: var(--merek); color: var(--merek); }
+
+  /* Enam warna gelap super admin - satu baris titik di bawah kepala.
+     Titiknya sendiri pratinjaunya: warnanya warna merek tiap palet. */
+  .baris-warna {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--garis);
+    background: var(--latar-lembut);
+  }
+  .baris-warna-label { font-size: 11px; color: var(--tulisan-lembut); }
+  .pilih-warna { display: inline-flex; gap: 5px; margin-left: auto; }
+  .titik-warna {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid var(--garis);
+    padding: 0;
+    cursor: pointer;
+    background: var(--titik, #7fd0a6);
+    opacity: 0.75;
+  }
+  .titik-warna:hover { opacity: 1; transform: scale(1.15); }
+  .titik-warna[aria-pressed="true"] { opacity: 1; outline: 2px solid var(--tulisan); outline-offset: 1px; }
 
   * { box-sizing: border-box; }
 
@@ -256,15 +281,22 @@
 <div class="kepala">
   <img src="ikon/aleta-128.png" alt="Logo ALETA">
   <div>
-    <p class="judul">ALETA UNTUK SIPP</p>
-    <p class="anak-judul">Keterangan e-Court di halaman SIPP</p>
+    <p class="judul">ALETA E-COURT</p>
   </div>
-  <!-- Satu tombol, tiga keadaan, berputar: ikut peramban -> terang -> gelap.
+  <!-- Satu tombol, tiga keadaan, berputar: ikut sistem -> terang -> gelap.
        Tiga tombol untuk tiga keadaan memakan separuh kepala jendela sekecil
        ini, dan yang dipilih hanya satu. -->
   <button type="button" id="tombolTema" class="tombol-tema" title="Ganti tema jendela ini">
-    tema: ikut peramban
+    tema: ikut sistem
   </button>
+</div>
+
+<!-- Enam warna gelap super admin - satu baris titik, diisi popup.js dari
+     DAFTAR yang sama dengan panel. Tersembunyi bagi yang bukan super admin;
+     popup.js yang memutuskan sesudah membaca siapa yang masuk. -->
+<div id="barisWarna" class="baris-warna" hidden>
+  <span class="baris-warna-label">warna gelap</span>
+  <span id="pilihWarna" class="pilih-warna" role="group" aria-label="Warna tema gelap"></span>
 </div>
 
 <!-- ===================================================================

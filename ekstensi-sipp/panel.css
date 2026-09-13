@@ -48,6 +48,15 @@
   --aleta-aman: #7fd0a6;
   --aleta-mendesak: #e0bc6b;
   --aleta-lewat: #eb968c;
+  /* Turunan MEREK - dihitung dari --aleta-merek dan --aleta-latar, sehingga
+     keenam palet dan tema terang cukup mengganti keduanya. Sebelumnya chip
+     jenis perkara, tombol unduh, dan saklar menulis hijaunya sebagai angka
+     - dan pada palet jingga atau ungu semuanya tetap hijau. */
+  --aleta-merek-latar: color-mix(in srgb, var(--aleta-merek) 16%, var(--aleta-latar));
+  --aleta-merek-garis: color-mix(in srgb, var(--aleta-merek) 42%, var(--aleta-latar));
+  --aleta-merek-tombol: color-mix(in srgb, var(--aleta-merek) 26%, var(--aleta-latar));
+  --aleta-merek-tombol-sorot: color-mix(in srgb, var(--aleta-merek) 34%, var(--aleta-latar));
+  --aleta-merek-tulisan: color-mix(in srgb, var(--aleta-merek) 88%, var(--aleta-tulisan));
 
   position: fixed;
   /* Menempel di sudut kanan ATAS.
@@ -182,7 +191,7 @@
    jarang dipakai, dan yang sering dipakai harus lebih mudah ditemukan. */
 .aleta-bawaan {
   background: transparent;
-  border: 1px solid #33423d;
+  border: 1px solid var(--aleta-garis-kuat);
   color: var(--aleta-tulisan-lembut);
   width: 22px;
   height: 22px;
@@ -295,9 +304,9 @@ input.aleta-berkas {
 }
 
 .aleta-unduh {
-  background: #1f4d3a;
+  background: var(--aleta-merek-tombol);
   color: var(--aleta-tulisan);
-  border: 1px solid #2f6b52;
+  border: 1px solid var(--aleta-merek-garis);
   border-radius: 3px;
   padding: 3px 10px;
   font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
@@ -305,7 +314,7 @@ input.aleta-berkas {
   cursor: pointer;
   font-family: inherit;
 }
-.aleta-unduh:hover:not(:disabled) { background: #2f6b52; }
+.aleta-unduh:hover:not(:disabled) { background: var(--aleta-merek-tombol-sorot); }
 .aleta-unduh:disabled { opacity: 0.6; cursor: default; }
 
 .aleta-berkas-kosong { color: var(--aleta-tulisan-lembut); font-size: calc(12.5px * var(--aleta-skala-huruf, 1)); }
@@ -460,8 +469,8 @@ input.aleta-berkas {
 .aleta-verifikasi-pilih:hover { background: var(--aleta-garis); }
 
 /* Tombol kedua dibedakan tegas: inilah yang benar-benar menyimpan. */
-.aleta-verifikasi-ya { background: #1f4d3a; border-color: #2f6b52; }
-.aleta-verifikasi-ya:hover:not(:disabled) { background: #2f6b52; }
+.aleta-verifikasi-ya { background: var(--aleta-merek-tombol); border-color: var(--aleta-merek-garis); }
+.aleta-verifikasi-ya:hover:not(:disabled) { background: var(--aleta-merek-tombol-sorot); }
 .aleta-verifikasi-ya:disabled { opacity: 0.6; cursor: default; }
 
 .aleta-verifikasi-tanya {
@@ -535,7 +544,7 @@ input.aleta-berkas {
 .aleta-tanda-merah  { background: #b42318; color: #ffffff; border: 1px solid #8a1c13; }
 .aleta-tanda-kuning { background: #9a5b06; color: #ffffff; border: 1px solid #74440a; }
 .aleta-tanda-hijau  { background: #16704a; color: #ffffff; border: 1px solid #0f5334; }
-.aleta-tanda-abu    { background: #4a5b53; color: #ffffff; border: 1px solid #37453f; }
+.aleta-tanda-abu    { background: var(--aleta-garis-kuat); color: #ffffff; border: 1px solid var(--aleta-garis-kuat); }
 
 html[data-aleta-tema-sipp="gelap"] .aleta-tanda-merah {
   background: #43120f; color: #ffb4ab; border-color: #7f2a22;
@@ -703,9 +712,9 @@ tr.aleta-baris-disorot > td {
    dipertahankan hanya SELISIHNYA - keempatnya tetap dapat dibedakan sekilas,
    dan itulah satu-satunya kegunaan warna di sini. */
 .aleta-tanda-jenis {
-  background: #14352a;
-  border-color: #2a6047 !important;
-  color: #8fd9b0;
+  background: var(--aleta-merek-latar);
+  border-color: var(--aleta-merek-garis) !important;
+  color: var(--aleta-merek-tulisan);
   font-weight: 600;
 }
 
@@ -723,8 +732,8 @@ tr.aleta-baris-disorot > td {
 
 .aleta-tanda-tanpa-kuasa {
   background: #1a2320;
-  border-color: #2f3d36 !important;
-  color: #9db0a6;
+  border-color: var(--aleta-garis-kuat) !important;
+  color: var(--aleta-tulisan-lembut);
 }
 
 .aleta-panel[data-tema="terang"] .aleta-tanda-jenis {
@@ -808,7 +817,7 @@ tr.aleta-baris-disorot > td {
    yang paling mendesak. */
 .aleta-chip-merah  { background: #43120f; color: #ffb4ab; border: 1px solid #7f2a22; }
 .aleta-chip-kuning { background: #3a2a0b; color: #f0cb78; border: 1px solid #6b4f14; }
-.aleta-chip-abu    { background: #1b2521; color: #b3c2ba; border: 1px solid #33443c; }
+.aleta-chip-abu    { background: #1b2521; color: var(--aleta-tulisan-lembut); border: 1px solid var(--aleta-garis-kuat); }
 
 .aleta-panel[data-tema="terang"] .aleta-chip-merah  { background: #f7dedb; color: #8a1c13; border-color: #d3a3a0; }
 .aleta-panel[data-tema="terang"] .aleta-chip-kuning { background: #f3e6c4; color: #6b4f14; border-color: #d5bb74; }
@@ -873,9 +882,9 @@ tr.aleta-baris-disorot > td {
  * atasnya, padahal yang dikerjakannya hanya menarik berkas. */
 .aleta-permintaan-tombol {
   padding: 4px 10px;
-  border: 1px solid #2a6b49;
+  border: 1px solid var(--aleta-merek-garis);
   border-radius: 4px;
-  background: #1c5539;
+  background: var(--aleta-merek-tombol);
   color: #eaf3ee;
   font: inherit;
   font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
@@ -884,7 +893,7 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-permintaan-tombol:hover:not(:disabled) {
-  background: #27714d;
+  background: var(--aleta-merek-tombol-sorot);
 }
 
 .aleta-panel[data-tema="terang"] .aleta-permintaan-tombol {
@@ -1163,8 +1172,8 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-saklar-aktif {
-  border-color: #2f5a46;
-  background: #1c2d26;
+  border-color: var(--aleta-merek-garis);
+  background: var(--aleta-merek-latar);
   color: var(--aleta-merek);
   font-weight: 700;
 }
@@ -1223,7 +1232,7 @@ tr.aleta-baris-disorot > td {
   border-left: 2px solid rgba(111, 191, 149, 0.5);
   font-size: calc(12px * var(--aleta-skala-huruf, 1));
   line-height: 1.45;
-  color: #8fd3b0;
+  color: var(--aleta-merek-tulisan);
   overflow-wrap: anywhere;
 }
 
@@ -1276,7 +1285,7 @@ tr.aleta-baris-disorot > td {
 .aleta-berkas::file-selector-button {
   background: transparent;
   color: var(--aleta-merek);
-  border: 1px solid #2f5a46;
+  border: 1px solid var(--aleta-merek-garis);
   border-radius: 3px;
   padding: 2px 8px;
   margin-right: 8px;
@@ -1340,7 +1349,7 @@ tr.aleta-baris-disorot > td {
 /* Sekejap sesudah disalin. */
 .aleta-nomor-tukar.aleta-nomor-tukar-tersalin {
   background: var(--aleta-merek);
-  color: #10231a;
+  color: var(--aleta-latar);
   border-radius: 3px;
   transition: background 0.15s;
 }
@@ -1429,8 +1438,10 @@ tr.aleta-baris-disorot > td {
   animation: aleta-kilau 5s linear infinite;
 }
 
+/* Peran lain mengambil warnanya dari tema panel, bukan dari angka yang
+   ditulis sekali lalu tidak pernah ikut berubah temanya. */
 .aleta-panel[data-peran="admin"]::before {
-  background: linear-gradient(115deg, #2f6b52, #245663);
+  background: linear-gradient(115deg, var(--aleta-merek), var(--aleta-garis));
 }
 
 .aleta-panel[data-peran="hakim"]::before {
@@ -1445,6 +1456,30 @@ tr.aleta-baris-disorot > td {
 @media (prefers-reduced-motion: reduce) {
   .aleta-panel[data-peran="super"]::before { animation: none; }
 }
+
+/* ============================================================================
+   REL DAN CHIP SUPER ADMIN IKUT TEMA GELAP, TIDAK BERDIRI DI LUARNYA
+   ============================================================================
+
+   Paletnya pastel terang - kuning jagung, hijau pucat, biru langit, lavender.
+   Di atas panel terang ia pas. Di atas panel GELAP, apalagi sesudah halaman
+   SIPP dan ABT ikut digelapkan, ia menjadi satu-satunya bidang paling terang
+   di layar: pita berkilau yang menarik pandangan terus-menerus, tepat di
+   sebelah isi yang justru harus dibaca.
+
+   Warnanya TIDAK diganti - yang dikerjakan menurunkan terang dan pekatnya
+   sedikit, hanya pada tema gelap. Ia tetap terbaca sebagai kilau super admin,
+   dan berhenti berteriak. Chipnya ikut, supaya keduanya tetap sepalet. */
+.aleta-panel[data-tema="gelap"][data-peran="super"]::before,
+.aleta-panel:not([data-tema="terang"])[data-peran="super"]::before {
+  filter: brightness(0.82) saturate(0.92);
+}
+
+.aleta-panel[data-tema="gelap"] .aleta-peran-super,
+.aleta-panel:not([data-tema="terang"]) .aleta-peran-super {
+  filter: brightness(0.9) saturate(0.94);
+}
+
 
 .aleta-peran-super {
   border-color: transparent !important;
@@ -1482,7 +1517,7 @@ tr.aleta-baris-disorot > td {
   border-color: transparent !important;
   color: #eef7f2 !important;
   font-weight: 700;
-  background: linear-gradient(115deg, #2f6b52, #245663);
+  background: linear-gradient(115deg, var(--aleta-merek-tombol-sorot), #245663);
 }
 
 .aleta-peran-hakim { background: #2a2340; border-color: #463a63 !important; color: #c3b5f0 !important; }
@@ -1517,13 +1552,13 @@ tr.aleta-baris-disorot > td {
 }
 
 .aleta-salin-nilai:hover {
-  border-color: #2f5a46;
-  background: #1c2d26;
+  border-color: var(--aleta-merek-garis);
+  background: var(--aleta-merek-latar);
 }
 
 .aleta-salin-nilai.aleta-salin-berhasil {
   color: var(--aleta-aman);
-  border-color: #2f5a46;
+  border-color: var(--aleta-merek-garis);
 }
 
 .aleta-kepala-register {
@@ -2165,6 +2200,18 @@ html[data-aleta-tema-sipp="gelap"] {
   --s-sorot: #22432f;
   --s-kuning: #ffcf6b;
   --s-merah: #ff9d92;
+  /* Tulisan DI ATAS permukaan merek (kepala tabel, tombol, bilah) - bukan di
+     atas latar biasa. Dipisahkan sebab ia harus ikut berubah bersama warna
+     permukaannya, dan tidak boleh ikut berubah bersama tulisan badan. */
+  --s-tulisan-atas: #eef7f2;
+  /* Merek yang disorot - tombol yang disentuh kursor. */
+  --s-sorot-kuat: #27714d;
+  /* Kolom yang dimatikan: lebih gelap daripada permukaan, bukan lebih terang. */
+  --s-mati: #101a16;
+  /* Tulisan bayangan di kolom kosong. */
+  --s-tulisan-samar: #7b8f85;
+  /* Garis pemisah di dalam bilah menu - segelap latar, bukan segelap garis. */
+  --s-garis-dalam: #0e2c1e;
 
   background-color: var(--s-latar) !important;
   color: var(--s-tulisan) !important;
@@ -2221,13 +2268,13 @@ html[data-aleta-tema-sipp="gelap"] :is(#cssmenu, #cssmenu a, .navbar, .navbar a,
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(#cssmenu, .navbar) a {
-  border-right-color: #0e2c1e !important;
+  border-right-color: var(--s-garis-dalam) !important;
   border-left-color: var(--s-garis-hijau) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(#cssmenu > ul > li:hover > a, #cssmenu .has-sub ul li:hover a, #cssmenu .has-sub .has-sub ul li a:hover, .navbar a:hover) {
   background: var(--s-hijau) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(#cssmenu ul ul, #cssmenu .sub_about, .sub_about) {
@@ -2262,17 +2309,17 @@ html[data-aleta-tema-sipp="gelap"] :is(.cssTable td, .cssTable th) {
 html[data-aleta-tema-sipp="gelap"] :is(.cssTable tr:first-child td, .cssTable tr:first-child th) {
   background: var(--s-hijau-tua) !important;
   background-image: none !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .cssTable tr:hover {
   background: var(--s-sorot) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .cssTable tr:hover td {
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .cssTable a {
@@ -2298,18 +2345,18 @@ html[data-aleta-tema-sipp="gelap"] :is(.detil #tableDetilPerkara tr td, #tableDe
 
 html[data-aleta-tema-sipp="gelap"] :is(.detil #tableDetilPerkara tr td:first-child, #first-child) {
   background-color: var(--s-hijau-tua) !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
   border-bottom-color: var(--s-garis-hijau) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(.detil #tableDetilPerkara tr td.divider, #infoPerkara tr td.divider) {
   background-color: var(--s-hijau) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .detil #tableDetilPerkara tr td.header {
   background: var(--s-hijau-tua) !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] #infoPerkara tr td.header {
@@ -2333,7 +2380,7 @@ html[data-aleta-tema-sipp="gelap"] :is(.usual ul a, #usual2 a) {
 
 html[data-aleta-tema-sipp="gelap"] :is(.usual ul a.selected, #usual2 a.selected) {
   background: var(--s-hijau) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
   border-bottom-color: var(--s-hijau) !important;
 }
 
@@ -2345,7 +2392,7 @@ html[data-aleta-tema-sipp="gelap"] :is(.nav-tabs, .nav-tabs > li > a) {
 
 html[data-aleta-tema-sipp="gelap"] :is(.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus) {
   background-color: var(--s-hijau) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -2355,13 +2402,13 @@ html[data-aleta-tema-sipp="gelap"] :is(.nav-tabs > li.active > a, .nav-tabs > li
    tombol, dan itu kerusakan yang jauh lebih mahal daripada silau. */
 html[data-aleta-tema-sipp="gelap"] :is(.btn, .button, .btn_small, #search-btn1, #show-detil, #tutup, .tutup_windows) {
   background-color: var(--s-hijau) !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(.btn:hover, .button:hover, .btn_small:hover, #search-btn1:hover, #show-detil:hover) {
-  background-color: #27714d !important;
-  color: #ffffff !important;
+  background-color: var(--s-sorot-kuat) !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] .del_btn {
@@ -2396,12 +2443,12 @@ html[data-aleta-tema-sipp="gelap"] #konten input[readonly="readonly"],
 html[data-aleta-tema-sipp="gelap"] #konten input:disabled,
 html[data-aleta-tema-sipp="gelap"] #konten select:disabled,
 html[data-aleta-tema-sipp="gelap"] #konten textarea[readonly] {
-  background: #101a16 !important;
+  background: var(--s-mati) !important;
   color: var(--s-tulisan-lembut) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] ::placeholder {
-  color: #7b8f85 !important;
+  color: var(--s-tulisan-samar) !important;
 }
 
 /* --- Tingkap SIPP: kerangka dan daftar pilihannya -------------------------
@@ -2461,7 +2508,7 @@ html[data-aleta-tema-sipp="gelap"] input[type="file"]::file-selector-button {
 /* Kepala tingkap - judulnya berlatar hijau tua SIPP yang tidak ikut gelap. */
 html[data-aleta-tema-sipp="gelap"] :is(.centering, .templatepopcentering) :is(.pos, .divider) {
   background-color: var(--s-hijau-tua) !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -2471,7 +2518,7 @@ html[data-aleta-tema-sipp="gelap"] :is(#konten, #atas, #footer, .modal-content) 
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(.h_right, .h_right a, .front, .front span, #footer td) {
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 /* --- Bootstrap dan AdminLTE yang ikut terpakai --------------------------- */
@@ -2491,7 +2538,7 @@ html[data-aleta-tema-sipp="gelap"] .table-hover > tbody > tr:hover {
 
 html[data-aleta-tema-sipp="gelap"] :is(.panel-heading, .box-header) {
   background-color: var(--s-hijau-tua) !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -2506,7 +2553,7 @@ html[data-aleta-tema-sipp="gelap"] .dropdown-menu > li > a {
 
 html[data-aleta-tema-sipp="gelap"] .dropdown-menu > li > a:hover {
   background-color: var(--s-sorot) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-tema-sipp="gelap"] :is(.pagination > li > a, .pagination > li > span, .simple-pagination li a, .simple-pagination li span) {
@@ -2517,7 +2564,7 @@ html[data-aleta-tema-sipp="gelap"] :is(.pagination > li > a, .pagination > li > 
 
 html[data-aleta-tema-sipp="gelap"] :is(.pagination > .active > a, .pagination > .active > span, .simple-pagination li .current) {
   background-color: var(--s-hijau) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -2634,7 +2681,7 @@ html[data-aleta-tema-sipp="gelap"] :is(.cke_dialog_body, .cke_dialog_contents, .
 
 html[data-aleta-tema-sipp="gelap"] .cke_dialog_title {
   background: var(--s-hijau-tua) !important;
-  color: #eef7f2 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -2659,7 +2706,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
   #frm_putusan input:disabled,
   #frm_putusan select:disabled
 ) {
-  background-color: #101a16 !important;
+  background-color: var(--s-mati) !important;
   color: var(--s-tulisan-lembut) !important;
 }
 
@@ -3545,21 +3592,21 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#wrapper, #cont
 
 /* --- Bilah kepala dan menu: hijau ABT yang diturunkan --------------------- */
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#header, #cssmenu) {
-  background: #0f2f22 !important;
+  background: var(--s-hijau-tua) !important;
   border-bottom: 1px solid var(--s-garis-hijau) !important;
 }
 
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#header, #header a, #header b, #header small, #header i, .app, .satker, .h_right) {
-  color: #e4efe8 !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] #cssmenu a {
-  color: #cfe3d8 !important;
+  color: var(--s-tulisan-lembut) !important;
 }
 
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(#cssmenu a:hover, #cssmenu li:hover > a) {
   background: var(--s-hijau) !important;
-  color: #ffffff !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 /* --- Judul: "Cerai Gugat" nyaris tak terlihat sebelum ini ----------------- */
@@ -3570,7 +3617,7 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.about h2, .abo
 
 /* Nomor perkaranya di dalam <span> - biru ABT yang dilembutkan. */
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .w3l_header span {
-  color: #7fd0e8 !important;
+  color: var(--s-hijau-terang) !important;
 }
 
 /* --- Tabel variabel ------------------------------------------------------ */
@@ -3587,7 +3634,7 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(table td, table
 
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(thead th, thead td) {
   background: var(--s-hijau-tua) !important;
-  color: #dff0e6 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -3602,7 +3649,7 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .table-hover tbody 
 /* --- Warna sel yang ditulis inline oleh view.php -------------------------- */
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color:green"],
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color: green"] {
-  color: #7fd0a6 !important;
+  color: var(--s-hijau-terang) !important;
 }
 
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(td, a, span)[style*="color:blue"],
@@ -3664,8 +3711,8 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.agileinfo, .mf
 
 /* --- Kaki halaman -------------------------------------------------------- */
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.footer, .copyright, .agileits_footer) {
-  background: #0f2f22 !important;
-  color: #cfe3d8 !important;
+  background: var(--s-hijau-tua) !important;
+  color: var(--s-tulisan-lembut) !important;
 }
 
 /* ==========================================================================
@@ -3701,7 +3748,7 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.pop_up, .payme
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up .btn-primary {
   background: var(--s-hijau-tua) !important;
   border-color: var(--s-garis-hijau) !important;
-  color: #dff0e6 !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 /* Baris keterangan variabel: "Nomor Variabel", "Tipe Variabel", dan nilainya. */
@@ -3717,7 +3764,7 @@ html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up :is(input, 
 
 /* Petunjuk hijau "SPASI 3x berubah menjadi TAB" - hijau tuanya tenggelam. */
 html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pop_up :is(font, .text-green, [style*="color:green"], [style*="color: green"]) {
-  color: #7fd0a6 !important;
+  color: var(--s-hijau-terang) !important;
 }
 
 /* Tombol Simpan tetap kuning - ia satu-satunya tindakan di jendela itu, dan
@@ -3750,7 +3797,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box, .bo
 
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box-header, .box-title) {
   background-color: var(--s-hijau-tua) !important;
-  color: #dff0e6 !important;
+  color: var(--s-tulisan-atas) !important;
   border-color: var(--s-garis-hijau) !important;
 }
 
@@ -3758,7 +3805,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.box-head
    diturunkan, bukan dibuang: ia yang membedakan satu ringkasan dari yang lain. */
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.bg-aqua, .bg-green, .bg-yellow, .bg-red, .bg-blue, .bg-light-blue) {
   filter: brightness(0.55) saturate(0.85);
-  color: #f2f6f4 !important;
+  color: var(--s-tulisan-atas) !important;
 }
 
 /* Tulisan berwarna pada ringkasan - .text-red, .text-green, .text-muted -
@@ -3768,7 +3815,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .text-red {
 }
 
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .text-green {
-  color: #7fd0a6 !important;
+  color: var(--s-hijau-terang) !important;
 }
 
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.text-muted, .description-text) {
@@ -3962,7 +4009,7 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
 /* Sekejap sesudah disalin - tanda yang tidak menuntut satu kata pun. */
 .aleta-identitas-panel .aleta-id-nomor.aleta-id-nomor-tersalin {
   background: var(--aleta-merek);
-  color: #10231a;
+  color: var(--aleta-latar);
   border-radius: 3px;
   transition: background 0.15s;
 }
@@ -3986,11 +4033,11 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
  *
  * Diterapkan pada chip pita DAN chip identitas di badan panel - dua chip
  * untuk satu jenis harus berwarna sama, atau keduanya berhenti dipercaya. */
-.aleta-jenis-gugat { background: #14352a !important; border-color: #2a6047 !important; color: #8fd9b0 !important; }
+.aleta-jenis-gugat { background: var(--aleta-merek-latar) !important; border-color: var(--aleta-merek-garis) !important; color: var(--aleta-merek-tulisan) !important; }
 .aleta-jenis-talak { background: #12313a !important; border-color: #245663 !important; color: #8bd3e6 !important; }
 .aleta-jenis-permohonan { background: #2a2340 !important; border-color: #463a63 !important; color: #c3b5f0 !important; }
 .aleta-jenis-syariah { background: #3a2f12 !important; border-color: #6b5620 !important; color: #f0d27a !important; }
-.aleta-jenis-lain { background: #1a2320 !important; border-color: #2f3d36 !important; color: #9db0a6 !important; }
+.aleta-jenis-lain { background: #1a2320 !important; border-color: var(--aleta-garis-kuat) !important; color: var(--aleta-tulisan-lembut) !important; }
 
 .aleta-panel[data-tema="terang"] .aleta-jenis-gugat { background: #dcece3 !important; border-color: #a9c9b8 !important; color: #155c3c !important; }
 .aleta-panel[data-tema="terang"] .aleta-jenis-talak { background: #dceaef !important; border-color: #a8c8d3 !important; color: #14556a !important; }
@@ -4289,3 +4336,772 @@ button.aleta-portal-tautan:disabled { opacity: 0.5; cursor: default; text-decora
   color: #2b2721;
   border-color: #d5cec2;
 }
+
+
+/* ==========================================================================
+   LAPISAN GELAP GELOMBANG KEDUA - HALAMAN YANG SELAMA INI TERLEWAT
+   ==========================================================================
+
+   Peta warna gelombang pertama disusun dari halaman yang paling sering dibuka:
+   daftar perkara, detil perkara, dan borang penetapan. Halaman lain tidak
+   pernah ikut - bukan karena diputuskan begitu, melainkan karena tidak pernah
+   dibuka sewaktu petanya disusun.
+
+   Akibatnya bukan "agak terang", melainkan KEDIP PUTIH PENUH di antara dua
+   halaman gelap: masuk lewat halaman login yang menyala, membuka Antrian
+   Direktori Putusan yang seluruhnya putih, lalu kembali ke daftar perkara yang
+   gelap. Mata menanggung lompatan itu tiap kali.
+
+   Yang dipetakan di sini diambil dari markah halamannya sendiri - bukan
+   ditebak:
+
+     SIPP login       #kotak #kotakLogin #parent #footer .wrapper hr.login
+     SIPP AdminLTE    .box-header .box-body .info-box .todo-list .table
+                      .progress .small-box .nav-tabs-custom
+     SIPP laporan     table.cetakExcel #view_laporan
+     ABT/APS shell    .container-scroller .page-body-wrapper .auto-form-wrapper
+                      .auth-bg-1 .form-control .input-group-text .btn-primary
+     ABT blangko      .pricing-top .pricing-bottom .pricing-bottom-bottom
+
+   Pemilih borong tetap dihindari, dengan alasan yang sama seperti semula:
+   menggelapkan SETIAP div ikut menggelapkan kotak hijau yang memang sudah
+   benar warnanya, dan halaman kehilangan seluruh susunannya.
+   ========================================================================== */
+
+/* --- SIPP: halaman login --------------------------------------------------
+   Halaman pertama yang dilihat setiap hari, dan satu-satunya yang dilihat
+   SEBELUM ada yang tahu temanya gelap. Kotak hijaunya diturunkan, bukan
+   dihapus - hijau itu identitas SIPP, yang berlebihan hanya terangnya. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#kotak, #parent, #login) {
+  background-color: transparent !important;
+  color: var(--s-tulisan) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] #kotak {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid var(--s-garis) !important;
+  border-radius: 6px;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] #kotakLogin {
+  background-color: var(--s-hijau-tua) !important;
+  border: 1px solid var(--s-garis-hijau) !important;
+  color: var(--s-tulisan) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#kotakLogin strong, #kotakLogin td, #kotakLogin label) {
+  color: var(--s-tulisan) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] hr.login {
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#footer, .version_shading) {
+  background-color: #0a120f !important;
+  color: var(--s-tulisan-lembut) !important;
+}
+
+/* --- SIPP: halaman ber-AdminLTE ------------------------------------------
+   Antrian Direktori Putusan, Smart Majelis, verifikasi prodeo, perjanjian
+   bersama. Semuanya memakai kerangka AdminLTE yang putih secara bawaan, dan
+   .box sendiri sudah dipetakan sejak awal - yang belum justru isinya. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  .box-header,
+  .box-body,
+  .box-footer,
+  .info-box,
+  .info-box-content,
+  .small-box,
+  .nav-tabs-custom,
+  .nav-tabs-custom > .tab-content,
+  .todo-list,
+  .direct-chat-messages,
+  .table-responsive,
+  .chart,
+  .chart-responsive
+) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.todo-list > li, .products-list > .item) {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .progress {
+  background-color: var(--s-permukaan-3) !important;
+}
+
+/* --- SIPP: tabel bootstrap dan tabel laporan ------------------------------
+   .cssTable sudah dipetakan sejak awal; .table dan tabel laporan yang dicetak
+   ke Excel belum. Keduanya putih penuh, dan justru dipakai laporan bulanan
+   yang dibaca berlama-lama. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.table, table.cetakExcel, #view_laporan) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  .table > thead > tr > th,
+  .table > tbody > tr > td,
+  .table > tbody > tr > th,
+  .table-bordered > thead > tr > th,
+  .table-bordered > tbody > tr > td,
+  table.cetakExcel td,
+  table.cetakExcel th,
+  #view_laporan td,
+  #view_laporan th
+) {
+  background-color: transparent !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.table-striped > tbody > tr:nth-of-type(odd)) {
+  background-color: var(--s-permukaan-2) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .table-hover > tbody > tr:hover {
+  background-color: var(--s-sorot) !important;
+}
+
+/* Kepala tabel laporan berlatar hijau tua milik SIPP sendiri - diturunkan
+   terangnya, bukan diganti warnanya. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#view_laporan tr:first-child td, #view_laporan thead td, #view_laporan thead th) {
+  background-color: var(--s-hijau-tua) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* ==========================================================================
+   ABT / APS BADILAG - KERANGKA DI LUAR HALAMAN BLANGKO
+   ==========================================================================
+
+   Peta ABT gelombang pertama hanya menyentuh halaman BLANGKO (#wrapper,
+   #content, .about). Padahal pintu masuknya dua halaman lain yang sama
+   sekali berbeda kerangkanya - templat admin Bootstrap 4 dengan latar foto:
+
+     /aps_badilag/index.php/login  masuk
+     /aps_badilag/index.php/main   menu ikon
+
+   Keduanya menyala putih penuh, dan keduanya justru yang pertama dibuka.
+   ========================================================================== */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(
+  .container-scroller,
+  .page-body-wrapper,
+  .full-page-wrapper,
+  .auth-page
+) {
+  background-color: var(--s-latar) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* Latar fotonya dibiarkan - ia identitas halamannya - hanya diredupkan
+   supaya kartu di atasnya tetap terbaca. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.auth-bg-1, .content-wrapper.auth) {
+  background-color: var(--s-latar) !important;
+  background-blend-mode: multiply;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.auto-form-wrapper, .card, .card-body) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.form-control, .input-group-text) {
+  background-color: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .form-control::placeholder {
+  color: var(--s-tulisan-lembut) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.btn-primary, .submit-btn) {
+  background-color: var(--s-hijau) !important;
+  border-color: var(--s-garis-hijau) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* Kartu menu ikon pada halaman utama. Ikonnya gambar berwarna dan dibiarkan
+   apa adanya - yang diturunkan hanya kartunya. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .box.pointer {
+  background-color: var(--s-permukaan-2) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.footer-text, .text-primary, .text-warning, .text-success, .label) {
+  color: var(--s-tulisan-lembut) !important;
+}
+
+/* --- ABT: halaman daftar blangko -----------------------------------------
+   .pricing-top berlatar sembilan warna pekat dari customStyle.css - kuning,
+   magenta, nila, merah - dan berubah HIJAU #006640 begitu kursor berada di
+   atas kartunya. Dulu warnanya hanya diredupkan dengan filter; pada palet
+   ungu atau jingga, kepala kuning dan kepala hijau-saat-disentuh itulah yang
+   "nyelip". Kini kepalanya memakai warna tua paletnya, dan warna kelompok
+   blangko tinggal sebagai GARIS TEBAL di tepi kirinya - cara membedakan
+   kelompok sekilas tetap ada, tanpa satu bidang pun yang melawan paletnya.
+
+   .pricing-bottom berlatar #fff3b594 - krem terang dengan alfa, dan di situ
+   seluruh daftar blangko dibaca. Itu bidang paling terang yang tersisa di
+   ABT. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top {
+  background: var(--s-hijau-tua) !important;
+  border: 1px solid var(--s-garis-hijau);
+  box-shadow: inset 6px 0 0 var(--kelompok, var(--s-garis-hijau));
+  filter: none;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.satu { --kelompok: #feb800; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.dua { --kelompok: #e91e63; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.tiga { --kelompok: #5a4fe0; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.empat { --kelompok: #3a4ed5; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.lima { --kelompok: #ffb900; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.enam { --kelompok: #b04bad; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.tujuh { --kelompok: #b0245c; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.delapan { --kelompok: #e82222; }
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-top.sembilan { --kelompok: #00acee; }
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.pricing-top h3, .pricing-top p) {
+  color: var(--s-tulisan-atas) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.pricing-bottom, .pricing-bottom-bottom, .pricing_inner_w3ls, .pricing) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.pricing-bottom-bottom p, .pricing-bottom-bottom span, .pricing-bottom-bottom a) {
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pricing-bottom-bottom a:hover span {
+  color: var(--s-hijau-terang) !important;
+}
+
+/* Penyunting tanya-jawab saksi: panel Bootstrap putih. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.panel, .panel-body, .panel-heading, .panel-default) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.tbl_user_data, .tbl_user_data td, .tbl_user_data th, .row_data) {
+  background-color: transparent !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+
+/* ==========================================================================
+   GELOMBANG KETIGA - PUTIH YANG TIDAK DITULIS SEBAGAI KELAS
+   ==========================================================================
+
+   Dua gelombang sebelumnya mengejar NAMA KELAS, dan halaman demi halaman tetap
+   menyala. Sebabnya baru kelihatan sesudah markah halamannya dibaca satu per
+   satu: sebagian putihnya tidak punya nama sama sekali.
+
+     input_antrian_pihak_v.php   style="background:white"
+     d_efiling_prodeo.php        style="background-color: #EEEEE6"
+     smartmajelis/v_laporan.php  canvas { background: white }
+     resources/css/style.css     bilah #atas berlatar gambar top_repeat.jpg
+
+   Tiga bentuk, tiga sebab yang berbeda, dan tidak satu pun dapat ditangkap
+   dengan menambah nama kelas ke daftar:
+
+     1. GAYA SEBARIS. Ditulis di atribut style tiap elemennya, jadi ia menang
+        atas aturan kelas mana pun kecuali yang !important - dan tidak punya
+        nama untuk disebut. Yang dapat menyebutnya hanya pemilih atribut.
+     2. GAMBAR LATAR. #atas sudah lama diturunkan warna latarnya, dan itu tidak
+        pernah terlihat: hijaunya datang dari GAMBAR, bukan dari warna di
+        baliknya. Warna yang diturunkan di belakang gambar yang menutupinya
+        rapat tidak mengubah satu piksel pun.
+     3. KANVAS GRAFIK. Latarnya putih dan tulisannya digambar Chart.js dengan
+        warna gelap. Menggelapkan latarnya saja membuat seluruh sumbu dan
+        namanya lenyap - gelap di atas gelap.
+   ========================================================================== */
+
+/* --- 1. Putih yang ditulis sebaris ---------------------------------------
+   Elemen yang MENYEBUT dirinya putih memang bermaksud menjadi permukaan
+   terang; menurunkannya karena itu tidak pernah salah sasaran. Bendera i
+   dipakai supaya #FFF, #fff, dan White tertangkap satu aturan. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  [style*="background:white" i],
+  [style*="background: white" i],
+  [style*="background-color:white" i],
+  [style*="background-color: white" i],
+  [style*="background:#fff" i],
+  [style*="background: #fff" i],
+  [style*="background-color:#fff" i],
+  [style*="background-color: #fff" i],
+  [style*="background-color: #EEEEE6" i],
+  [style*="background-color:#EEEEE6" i]
+) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* Kuning penanda - diturunkan, bukan diputihkan: ia memang menandai sesuatu. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  [style*="background-color: #FFFF99" i],
+  [style*="background-color:#FFFF99" i]
+) {
+  background-color: #4a431f !important;
+  color: var(--s-tulisan) !important;
+}
+
+/* --- 2. Bilah atas: gambarnya diredupkan, bukan dibuang -------------------
+   Aturan lama sudah menurunkan warna latarnya, dan itu tidak pernah terlihat
+   sebab gambar top_repeat.jpg menutupinya rapat. background-blend-mode
+   mencampur gambar itu dengan warna gelap di baliknya: teksturnya tetap ada -
+   ia identitas halamannya - hanya terangnya yang turun. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] #atas {
+  background-blend-mode: multiply;
+}
+
+/* --- 3. Kanvas grafik -----------------------------------------------------
+   TIDAK dibalik. Membalik kanvas memang cara termudah menggelapkan grafik,
+   tetapi kanvas di SIPP juga memuat pindaian dokumen dan pratinjau tanda
+   tangan - dan dokumen pengadilan yang warnanya berubah adalah harga yang
+   terlalu mahal (penjaga "gambar dan pindaian tidak pernah difilter").
+
+   Yang dikerjakan: hanya kanvas grafik Smart Majelis, dan latarnya diturunkan
+   ke nada tengah - bukan gelap. Chart.js menggambar sumbu dan nama hakimnya
+   dengan kelabu gelap; di atas latar gelap semuanya lenyap, di atas nada
+   tengah ia tetap terbaca dan berhenti menyilaukan. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] canvas#chartHakim {
+  background-color: #c9d3cd !important;
+}
+
+/* --- Sisa permukaan AdminLTE dan layar antrian ---------------------------- */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(
+  .content,
+  .content-header,
+  .control-sidebar-bg,
+  .stats-container,
+  .thick-line,
+  .show_antrian,
+  #show_antrian,
+  .antrian_list,
+  .putus_list
+) {
+  background-color: var(--s-permukaan) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+
+/* ==========================================================================
+   GELOMBANG KEEMPAT - HIJAU YANG MASIH MENYELIP SESUDAH PALETNYA DIGANTI
+   ==========================================================================
+
+   Ditemukan bukan dari tangkapan layar, melainkan dengan menyalin markup
+   ABT dan SIPP ke halaman statis, memasang panel.css di atasnya, lalu
+   MENGUKUR warna terhitung tiap elemen pada ketujuh palet. Yang nadanya
+   tetap hijau di palet ungu dan jingga itulah yang tertinggal:
+
+   ABT
+     .pricing_inner_w3ls:hover .pricing-top  #006640 saat kursor di kartu -
+                                             persis kepala blangko hijau di
+                                             tangkapan layar yang dilaporkan
+     #wrapper #footer                         #006640
+     font di .pring_agile_its                 peringatan "DATA ISIAN ..." #38841a
+     .label-success .green-button             #5cb85c #5d9830, hijau Bootstrap
+     .onoffswitch-inner .codes.agileitsbg4    #007640 #2ecc71
+   SIPP
+     #usual2                                  #008C4B - bilah tab detail perkara
+     #atas                                    gambar top_repeat.jpg yang HIJAU;
+                                             dicampur multiply pun nadanya tetap
+     .label-success                           #00a65a
+
+   Hijau yang BERARTI sesuatu tetap dibiarkan: .bg-green kotak dasbor
+   AdminLTE dan .text-green penanda keadaan. */
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.pricing_inner_w3ls:hover .pricing-top, .pricing_inner_w3ls:hover a.with-zoom-anim) {
+  background: var(--s-sorot-kuat) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] #footer {
+  background: var(--s-hijau-tua) !important;
+  color: var(--s-tulisan-atas) !important;
+  border-top: 1px solid var(--s-garis-hijau) !important;
+  box-shadow: none !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] .pring_agile_its font[size="3"] {
+  color: var(--s-hijau-terang) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.label-success, .badge-success, .progress-bar-success, .green-button a, .onoffswitch-inner::before, .codes.agileitsbg4) {
+  background: var(--s-hijau) !important;
+  color: var(--s-tulisan-atas) !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html[data-aleta-halaman="abt"][data-aleta-tema-sipp="gelap"] :is(.alert-success, .panel-success > .panel-heading, .list-group-item-success) {
+  background: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] #usual2 {
+  background: var(--s-hijau-tua) !important;
+  border: 1px solid var(--s-garis-hijau) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.label-success, .badge-success, .progress-bar-success) {
+  background: var(--s-hijau) !important;
+  color: var(--s-tulisan-atas) !important;
+}
+
+/* Gambar bilah atas SIPP hanya serasi dengan palet dasar - gambarnya hijau.
+   Pada palet lain gambarnya dilepas dan bilahnya memakai warna tua paletnya;
+   pada palet dasar teksturnya tetap, seperti sebelumnya. */
+html:not([data-aleta-halaman="abt"])[data-aleta-warna][data-aleta-tema-sipp="gelap"] #atas {
+  background-image: none !important;
+  background-color: var(--s-hijau-tua) !important;
+}
+
+
+/* ==========================================================================
+   ENAM WARNA GELAP UNTUK SUPER ADMIN - SATU ATRIBUT, TIGA APLIKASI
+   ==========================================================================
+
+   Sumbernya enam palet dari artikel "Dark Mode Website Color Palette"
+   (vev.design). Palet itu disusun untuk laman pemasaran - tulisan putih
+   murni, aksen neon #00FF85, jingga #FF5722 - dan dipakai apa adanya ia akan
+   menyilaukan di panel yang dibaca berjam-jam. Maka tiap palet DIADAPTASI
+   dengan aturan yang sama yang sudah dipakai tema gelap bawaan:
+
+     - tulisan putih-gading (bukan #FFFFFF), kontras tetap di atas AA
+     - aksen neon diturunkan pekatnya sampai nyaman dipandang lama, tetapi
+       masih terbaca sebagai keluarga warna yang sama
+     - permukaan bertingkat: latar -> permukaan -> permukaan-2 -> permukaan-3,
+       tiap tingkat lebih terang sedikit, supaya kedalaman tetap terbaca
+       tanpa satu garis pun
+     - warna PERINGATAN (kuning, merah) tidak diganti - artinya harus tetap
+       sama di palet mana pun
+
+   Namanya dan asalnya:
+
+     arang     Monochromatic Minimalism  #121212 / #E0E0E0 / aksen #888888
+     neon      Neon Highlights           #0D0D0D / #00FF85 / #1E90FF
+     hangat    Warm Tones                #1C1C1C / #F5E8D8 / #FF6F61 / #DAA520
+     pastel    Muted Pastels             #2C2C2C / #A8DADC / #FFC1CC / #B39CD0
+     permata   Deep Jewel Tones          #1A1A1A / #004D61 / #822659 / #3E5641
+     vibran    Contrasting Vibrancy      #181818 / #FF5722 / #673AB7 / #FFEB3B
+
+   Yang tidak menyetel apa pun tetap memakai tema gelap bawaan - hijau SIPP.
+   Atributnya dipasang pada <html> (lapisan SIPP/ABT) DAN pada akar panel
+   (ALETA), dari satu nilai tersimpan, supaya ketiganya sewarna.
+
+   Hanya berlaku bila temanya GELAP. Pada tema terang atributnya dibiarkan
+   tidak berbuat apa-apa - palet gelap di atas panel terang bukan warna,
+   melainkan kerusakan.
+   ========================================================================== */
+
+/* --- arang: hitam arang, aksen kelabu. Yang paling tenang. ---------------- */
+html[data-aleta-warna="arang"][data-aleta-tema-sipp="gelap"] {
+  --s-latar: #121212;
+  --s-permukaan: #1a1a1a;
+  --s-permukaan-2: #202020;
+  --s-permukaan-3: #262626;
+  --s-garis: #383838;
+  --s-garis-hijau: #4a4a4a;
+  --s-tulisan: #e0e0e0;
+  --s-tulisan-lembut: #b0b0b0;
+  --s-hijau-tua: #2a2a2a;
+  --s-hijau: #3a3a3a;
+  --s-hijau-terang: #a8a8a8;
+  --s-sorot: #303030;
+  --s-tulisan-atas: #f0f0f0;
+  --s-sorot-kuat: #4a4a4a;
+  --s-mati: #0e0e0e;
+  --s-tulisan-samar: #8a8a8a;
+  --s-garis-dalam: #2a2a2a;
+}
+.aleta-panel[data-warna="arang"]:not([data-tema="terang"]) {
+  --aleta-latar: #171717;
+  --aleta-latar-naik: #1f1f1f;
+  --aleta-garis: #353535;
+  --aleta-garis-kuat: #464646;
+  --aleta-tulisan: #e0e0e0;
+  --aleta-tulisan-lembut: #a9a9a9;
+  --aleta-merek: #b8b8b8;
+  --aleta-aman: #9fc5a8;
+}
+
+/* --- neon: hitam pekat, hijau-biru neon yang diredupkan. -------------------
+   #00FF85 asli terlalu terang untuk tulisan; dipakai #35d98f untuk merek dan
+   #5aa9ff untuk tautan - masih neon, tidak lagi menyengat. */
+html[data-aleta-warna="neon"][data-aleta-tema-sipp="gelap"] {
+  --s-latar: #0d0d0d;
+  --s-permukaan: #141414;
+  --s-permukaan-2: #1a1a1a;
+  --s-permukaan-3: #202020;
+  --s-garis: #2c2c2c;
+  --s-garis-hijau: #1f6b45;
+  --s-tulisan: #f2f2f2;
+  --s-tulisan-lembut: #b4b4b4;
+  --s-hijau-tua: #10301f;
+  --s-hijau: #17482d;
+  --s-hijau-terang: #35d98f;
+  --s-sorot: #16352a;
+  --s-tulisan-atas: #eafff5;
+  --s-sorot-kuat: #1f6b45;
+  --s-mati: #0a0a0a;
+  --s-tulisan-samar: #7d8b84;
+  --s-garis-dalam: #17331f;
+}
+.aleta-panel[data-warna="neon"]:not([data-tema="terang"]) {
+  --aleta-latar: #111111;
+  --aleta-latar-naik: #191919;
+  --aleta-garis: #2a2a2a;
+  --aleta-garis-kuat: #3a3a3a;
+  --aleta-tulisan: #f2f2f2;
+  --aleta-tulisan-lembut: #b0b0b0;
+  --aleta-merek: #35d98f;
+  --aleta-aman: #35d98f;
+}
+
+/* --- hangat: arang hangat, tulisan krem, aksen koral dan emas. ------------ */
+html[data-aleta-warna="hangat"][data-aleta-tema-sipp="gelap"] {
+  --s-latar: #1c1a18;
+  --s-permukaan: #242220;
+  --s-permukaan-2: #2b2926;
+  --s-permukaan-3: #33302c;
+  --s-garis: #46423d;
+  --s-garis-hijau: #7a5a2c;
+  --s-tulisan: #f5e8d8;
+  --s-tulisan-lembut: #c9bba9;
+  --s-hijau-tua: #3d2c22;
+  --s-hijau: #57402f;
+  --s-hijau-terang: #f0907f;
+  --s-sorot: #4a3a2c;
+  --s-tulisan-atas: #fff5e8;
+  --s-sorot-kuat: #7a5a2c;
+  --s-mati: #171513;
+  --s-tulisan-samar: #9c8e7e;
+  --s-garis-dalam: #3a332c;
+}
+.aleta-panel[data-warna="hangat"]:not([data-tema="terang"]) {
+  --aleta-latar: #201d1a;
+  --aleta-latar-naik: #29251f;
+  --aleta-garis: #433d36;
+  --aleta-garis-kuat: #574f45;
+  --aleta-tulisan: #f5e8d8;
+  --aleta-tulisan-lembut: #c4b5a2;
+  --aleta-merek: #e9b64a;
+  --aleta-aman: #a9c98d;
+}
+
+/* --- pastel: kelabu lembut, aksen pastel biru muda dan lavender. ---------- */
+html[data-aleta-warna="pastel"][data-aleta-tema-sipp="gelap"] {
+  --s-latar: #262626;
+  --s-permukaan: #2c2c2c;
+  --s-permukaan-2: #333333;
+  --s-permukaan-3: #3a3a3a;
+  --s-garis: #4a4a4a;
+  --s-garis-hijau: #5d7f80;
+  --s-tulisan: #e4e4e4;
+  --s-tulisan-lembut: #b8b8b8;
+  --s-hijau-tua: #2f4344;
+  --s-hijau: #3f5d5f;
+  --s-hijau-terang: #a8dadc;
+  --s-sorot: #3b4d4e;
+  --s-tulisan-atas: #f2fbfc;
+  --s-sorot-kuat: #4e6d6e;
+  --s-mati: #1f1f1f;
+  --s-tulisan-samar: #8f8f8f;
+  --s-garis-dalam: #3f3f3f;
+}
+.aleta-panel[data-warna="pastel"]:not([data-tema="terang"]) {
+  --aleta-latar: #2a2a2a;
+  --aleta-latar-naik: #333333;
+  --aleta-garis: #474747;
+  --aleta-garis-kuat: #585858;
+  --aleta-tulisan: #e4e4e4;
+  --aleta-tulisan-lembut: #b5b5b5;
+  --aleta-merek: #a8dadc;
+  --aleta-aman: #b9dcb0;
+}
+
+/* --- permata: hitam pekat, hijau-biru laut dan anggur yang dalam. --------- */
+html[data-aleta-warna="permata"][data-aleta-tema-sipp="gelap"] {
+  --s-latar: #1a1a1a;
+  --s-permukaan: #202020;
+  --s-permukaan-2: #262626;
+  --s-permukaan-3: #2c2c2c;
+  --s-garis: #3a3a3a;
+  --s-garis-hijau: #00607a;
+  --s-tulisan: #f0f0f0;
+  --s-tulisan-lembut: #bdbdbd;
+  --s-hijau-tua: #003a49;
+  --s-hijau: #004d61;
+  --s-hijau-terang: #5fc3dd;
+  --s-sorot: #1f3f47;
+  --s-tulisan-atas: #eefaff;
+  --s-sorot-kuat: #00607a;
+  --s-mati: #141414;
+  --s-tulisan-samar: #8d8d8d;
+  --s-garis-dalam: #2b2b2b;
+}
+.aleta-panel[data-warna="permata"]:not([data-tema="terang"]) {
+  --aleta-latar: #1c1c1c;
+  --aleta-latar-naik: #242424;
+  --aleta-garis: #383838;
+  --aleta-garis-kuat: #4a4a4a;
+  --aleta-tulisan: #f0f0f0;
+  --aleta-tulisan-lembut: #b9b9b9;
+  --aleta-merek: #5fc3dd;
+  --aleta-aman: #8fc7a0;
+}
+
+/* --- vibran: hitam, jingga bata dan ungu yang diturunkan pekatnya. --------
+   #FF5722 asli menyala; #ff7a4d masih jingga bata, tidak lagi lampu sein. */
+html[data-aleta-warna="vibran"][data-aleta-tema-sipp="gelap"] {
+  --s-latar: #181818;
+  --s-permukaan: #1f1f1f;
+  --s-permukaan-2: #262626;
+  --s-permukaan-3: #2d2d2d;
+  --s-garis: #3b3b3b;
+  --s-garis-hijau: #6a3aa8;
+  --s-tulisan: #f7f7f7;
+  --s-tulisan-lembut: #bfbfbf;
+  --s-hijau-tua: #3a2560;
+  --s-hijau: #4e3283;
+  --s-hijau-terang: #ff7a4d;
+  --s-sorot: #3f2f5e;
+  --s-tulisan-atas: #fff1ea;
+  --s-sorot-kuat: #6a3aa8;
+  --s-mati: #121212;
+  --s-tulisan-samar: #909090;
+  --s-garis-dalam: #2f2f2f;
+}
+.aleta-panel[data-warna="vibran"]:not([data-tema="terang"]) {
+  --aleta-latar: #1a1a1a;
+  --aleta-latar-naik: #232323;
+  --aleta-garis: #383838;
+  --aleta-garis-kuat: #4b4b4b;
+  --aleta-tulisan: #f7f7f7;
+  --aleta-tulisan-lembut: #bcbcbc;
+  --aleta-merek: #ff7a4d;
+  --aleta-aman: #b39ddb;
+}
+
+/* --- Pemilih warnanya: satu titik di kepala, tujuh titik di baliknya ------
+   Di deret tombol kepala hanya ada SATU bulatan, sewarna palet yang aktif.
+   Menekannya membuka baris tujuh titik di bawah kepala. Tiap titik memakai
+   warna MEREK paletnya, jadi titiknya sendiri sudah menjadi pratinjaunya.
+
+   Kedua aturan tombol di bawah ini sengaja LEBIH SPESIFIK daripada
+   ".aleta-alat-kepala button": aturan itu menghapus latar dan garis setiap
+   tombol kepala, dan pada titik warna, latar itulah satu-satunya isinya.
+   Dengan pemilih umum, enam dari tujuh titik tidak pernah terlihat. */
+.aleta-alat-kepala { position: relative; }
+.aleta-alat-kepala button.aleta-warna-tombol,
+.aleta-alat-kepala button.aleta-warna-titik {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin: 0 3px;
+  border-radius: 999px;
+  border: 1px solid var(--aleta-garis-kuat);
+  background: var(--titik, #7fd0a6);
+  font-size: 0;
+  line-height: 0;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: transform 0.12s, opacity 0.12s;
+}
+.aleta-alat-kepala button.aleta-warna-tombol:hover,
+.aleta-alat-kepala button.aleta-warna-titik:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  background: var(--titik, #7fd0a6);
+}
+.aleta-alat-kepala button.aleta-warna-tombol[aria-expanded="true"],
+.aleta-alat-kepala button.aleta-warna-titik[aria-pressed="true"] {
+  opacity: 1;
+  outline: 2px solid var(--aleta-tulisan);
+  outline-offset: 1px;
+}
+.aleta-warna-pilih {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 7px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 999px;
+  background: var(--aleta-latar-naik);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
+  z-index: 3;
+}
+.aleta-warna-pilih[hidden] { display: none; }
+/* Pada tema terang pemilihnya disembunyikan - paletnya memang palet gelap. */
+.aleta-panel[data-tema="terang"] :is(.aleta-warna-pilih, .aleta-warna-tombol) { display: none; }
+/* Chip peran yang panjang tidak boleh mendorong deret tombol ke baris kedua;
+   ia dipangkas dengan elipsis, deretnya tetap satu baris. */
+.aleta-alat-kepala .aleta-kepala-peran {
+  max-width: 9.5em;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   SUNTING DI TEMPAT PADA HALAMAN ABT - IKUT WARNA HALAMANNYA
+   ==========================================================================
+
+   Kotak sunting ini disisipkan ke DALAM tabel milik ABT, bukan ke dalam
+   panel - karena itu warnanya dulu ditulis terang (#ffffff dengan tulisan
+   #1b2622) dan hijaunya sebagai angka (#1c6f46). Sewaktu halaman ABT masih
+   terang itu benar.
+
+   Sejak halaman ABT ikut digelapkan, kotak putih itu menjadi kilatan paling
+   terang di layar - tepat di tempat orang sedang mengetik - dan hijaunya
+   tinggal diam sementara sekitarnya berubah warna. Keduanya kini mengambil
+   nilainya dari token halaman, sehingga ikut palet mana pun yang dipilih. */
+html[data-aleta-tema-sipp="gelap"] .aleta-abt-ketik {
+  border-color: var(--s-garis-hijau) !important;
+  background: var(--s-permukaan-3) !important;
+  color: var(--s-tulisan) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .aleta-abt-dapat-disunting:hover {
+  border-left-color: var(--s-hijau-terang) !important;
+  background-color: var(--s-sorot) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] :is(.aleta-abt-simpan, .aleta-abt-batal) {
+  border-color: var(--s-garis-hijau) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .aleta-abt-simpan {
+  background: var(--s-hijau) !important;
+  color: var(--s-tulisan-atas) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"] .aleta-abt-batal {
+  color: var(--s-hijau-terang) !important;
+}
+
+/* --- Modus tiap saksi pada penyusun keterangan ---------------------------
+   Satu baris per saksi: label, pilihan modus, lalu sumber cerita dan alasan
+   sebagian yang hanya tampak bila modusnya menuntut. */
+.aleta-sdg-modus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+.aleta-sdg-modus .aleta-sdg-pilih { flex: 1 1 160px; min-width: 0; }
+.aleta-sdg-alasan-saksi { flex: 1 1 100%; margin-left: 4.6em; }

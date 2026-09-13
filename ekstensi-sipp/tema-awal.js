@@ -97,4 +97,27 @@ const KUNCI_SALINAN = "aleta-tema-sipp";
   if (tema === "gelap") {
     document.documentElement.setAttribute("data-aleta-tema-sipp", "gelap");
   }
+
+  // ==========================================================================
+  // WARNA GELAP PILIHAN - DIPASANG PADA GAMBAR PERTAMA, SEPERTI TEMANYA
+  // ==========================================================================
+  //
+  // Enam palet gelap super admin (lihat panel.css). Sama seperti temanya:
+  // sumber kebenarannya chrome.storage, salinannya di localStorage supaya
+  // dapat dibaca SINKRON di sini. Tanpa salinan ini halaman lahir hijau SIPP
+  // lalu berganti warna sesudah panel muncul - kelebat yang persis hendak
+  // dihilangkan berkas ini.
+  //
+  // Hanya dipasang bila temanya gelap: palet gelap di atas halaman terang
+  // bukan warna, melainkan kerusakan.
+  if (tema === "gelap") {
+    try {
+      const warna = window.localStorage.getItem("aleta-warna-gelap");
+      if (warna && /^[a-z]{3,12}$/.test(warna)) {
+        document.documentElement.setAttribute("data-aleta-warna", warna);
+      }
+    } catch {
+      /* tanpa salinannya, warna bawaan berlaku sampai panel memperbaikinya */
+    }
+  }
 })();

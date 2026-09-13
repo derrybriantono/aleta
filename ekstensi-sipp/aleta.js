@@ -388,10 +388,54 @@ async function susunPanelPortal(siapa) {
   // dipasang karena itu tidak pernah terbaca sampai halamannya dimuat
   // ulang seluruhnya - dan memuat ulang halaman ALETA berarti kehilangan
   // apa pun yang sedang dikerjakan di sana.
-  // Bentuk kaki yang sama dengan panel SIPP - satu baris, ikon di kanan.
-  // Panel ini tidak punya pintasan papan tik, jadi barisnya hanya berisi
-  // ikonnya; yang sama adalah tempat dan bentuknya, bukan isinya.
+  // Bentuk kaki yang sama dengan panel SIPP - satu baris, pintasan di kiri,
+  // ikon segarkan dan nomor seri di kanan. Barisan pintasan itu pula yang
+  // MENDORONG keduanya ke kanan lewat margin otomatisnya; tanpa barisnya,
+  // keduanya berdiri di kiri - dan itulah bentuk panel ini selama ini.
   const barisKaki = buatElemen("div", "aleta-kaki-baris");
+
+  // Keempatnya punya sasaran yang sungguh ada di panel ini. Yang tidak punya
+  // sasaran tidak didaftarkan: menjanjikan pintasan yang tidak berbuat apa-apa
+  // lebih buruk daripada tidak menjanjikannya.
+  const PINTASAN_PORTAL = [
+    {
+      tombol: "Alt+A",
+      kunci: "a",
+      nama: "ciutkan / bentangkan panel",
+      jalankan: (p) => alatCiutkan(p, KUNCI_POSISI_ALETA),
+    },
+    {
+      tombol: "Alt+P",
+      kunci: "p",
+      nama: "buka daftar Kembali ke SIPP",
+      jalankan: (p) => {
+        const daftar = p.querySelector(".aleta-portal-perkara, .aleta-portal-tautan");
+        if (daftar) daftar.scrollIntoView({ block: "nearest" });
+      },
+    },
+    {
+      tombol: "Alt+R",
+      kunci: "r",
+      nama: "buka Catatan pembaruan",
+      jalankan: (p) => {
+        for (const a of Array.from(p.querySelectorAll("a"))) {
+          if (/catatan pembaruan/i.test(a.textContent || "")) {
+            a.click();
+            return;
+          }
+        }
+      },
+    },
+    {
+      tombol: "Alt+Enter",
+      kunci: "Enter",
+      nama: "periksa pembaruan ekstensi",
+      jalankan: (p) => alatTekanPertama(p, "button.aleta-tombol"),
+    },
+  ];
+  barisKaki.appendChild(alatBarisPintasan(PINTASAN_PORTAL));
+  alatPasangPintasan(PENANDA_ALETA, PINTASAN_PORTAL);
+
   const segar = buatElemen("button", "aleta-kaki-segar", "↻");
   segar.type = "button";
   segar.setAttribute("aria-label", "Segarkan");

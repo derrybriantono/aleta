@@ -378,6 +378,9 @@ async function periksaAkunAleta(asal) {
       nama ? (peran ? `${nama} (${peran})` : nama) : "belum masuk portal ALETA",
       { kosong: !nama }
     );
+    // Pemilih warna gelap hanya bagi super admin - diputuskan di sini, sesudah
+    // portal menjawab siapa yang masuk. Sebelum itu barisnya tersembunyi.
+    void pasangPemilihWarnaPopup(peran);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -431,11 +434,11 @@ if (penyimpanan) {
  *
  * Tiga keadaan, berputar dengan satu tombol:
  *
- *   ikut peramban  tidak ada atribut - hanya prefers-color-scheme yang bicara
+ *   ikut sistem    tidak ada atribut - hanya prefers-color-scheme yang bicara
  *   terang         data-tema="terang", menang atas peramban yang gelap
  *   gelap          data-tema="gelap",  menang atas peramban yang terang
  *
- * Bawaannya mengikuti peramban. Itu yang paling jarang salah, dan yang tidak
+ * Bawaannya mengikuti setelan sistem. Itu yang paling jarang salah, dan yang tidak
  * pernah menyentuh tombol ini pun mendapat warna yang sama dengan seluruh
  * jendela lain di layarnya.
  *
@@ -445,7 +448,71 @@ if (penyimpanan) {
  */
 const KUNCI_TEMA_POPUP = "temaPopup";
 const URUTAN_TEMA = ["ikut", "terang", "gelap"];
-const SEBUTAN_TEMA = { ikut: "ikut peramban", terang: "terang", gelap: "gelap" };
+const SEBUTAN_TEMA = { ikut: "ikut sistem", terang: "terang", gelap: "gelap" };
+
+/**
+ * ============================================================================
+ * ENAM WARNA GELAP SUPER ADMIN - DARI POPUP JUGA
+ * ============================================================================
+ *
+ * Daftarnya disalin dari panel-alat.js, bukan diimpor: popup hidup di origin
+ * chrome-extension:// sendiri dan tidak memuat skrip konten. Keduanya dijaga
+ * uji supaya tidak berselisih.
+ *
+ * Yang ditulis hanya chrome.storage - popup tidak punya localStorage halaman
+ * SIPP. Salinan sinkronnya ditulis panel begitu halaman SIPP/ABT berikutnya
+ * dibuka (alatPasangPanel memulihkan dari chrome.storage lalu menyimpan
+ * ulang), jadi halaman itu berkelebat sekali - dan hanya sekali.
+ */
+const KUNCI_WARNA_GELAP = "warnaGelap";
+const DAFTAR_WARNA_GELAP = [
+  ["", "Hijau SIPP (bawaan)", "#7fd0a6"],
+  ["arang", "Arang - hitam, aksen kelabu", "#b8b8b8"],
+  ["neon", "Neon - hitam pekat, hijau neon", "#35d98f"],
+  ["hangat", "Hangat - krem, koral, emas", "#e9b64a"],
+  ["pastel", "Pastel - kelabu lembut, biru muda", "#a8dadc"],
+  ["permata", "Permata - biru laut dalam", "#5fc3dd"],
+  ["vibran", "Vibran - jingga bata, ungu", "#ff7a4d"],
+];
+
+async function pasangPemilihWarnaPopup(peran) {
+  const baris = document.getElementById("barisWarna");
+  const wadah = document.getElementById("pilihWarna");
+  if (!baris || !wadah) return;
+  if (!/super/i.test(String(peran || ""))) {
+    baris.hidden = true;
+    return;
+  }
+  let aktif = "";
+  try {
+    const simpan = penyimpanan ? await penyimpanan.get([KUNCI_WARNA_GELAP]) : {};
+    const nama = String((simpan && simpan[KUNCI_WARNA_GELAP]) || "");
+    aktif = DAFTAR_WARNA_GELAP.some(([k]) => k === nama) ? nama : "";
+  } catch {
+    aktif = "";
+  }
+  wadah.textContent = "";
+  const titikSemua = [];
+  const tandai = (nama) => {
+    for (const [t, k] of titikSemua) t.setAttribute("aria-pressed", k === nama ? "true" : "false");
+  };
+  for (const [nama, judul, contoh] of DAFTAR_WARNA_GELAP) {
+    const titik = document.createElement("button");
+    titik.type = "button";
+    titik.className = "titik-warna";
+    titik.title = judul;
+    titik.setAttribute("aria-label", judul);
+    titik.style.setProperty("--titik", contoh);
+    titik.addEventListener("click", () => {
+      tandai(nama);
+      if (penyimpanan) void penyimpanan.set({ [KUNCI_WARNA_GELAP]: nama });
+    });
+    wadah.appendChild(titik);
+    titikSemua.push([titik, nama]);
+  }
+  tandai(aktif);
+  baris.hidden = false;
+}
 
 const tombolTema = document.getElementById("tombolTema");
 let temaPopup = "ikut";

@@ -346,6 +346,45 @@ function halamanBlangko() {
   return barisVariabel().size >= 5 && jatiDiriPerkara() !== null;
 }
 
+/**
+ * ============================================================================
+ * PENYUNTING TANYA-JAWAB SAKSI - HALAMAN TEMPAT PEKERJAANNYA SUNGGUH TERJADI
+ * ============================================================================
+ *
+ * Penyusun keterangan dua saksi sudah ada sejak lama, tetapi HANYA di halaman
+ * daftar variabel blangko. Yang mengisi keterangan saksi tidak duduk di sana -
+ * ia duduk di abt/tanyajawab_perkara_edit, halaman yang barisnya
+ * pertanyaan-jawaban satu per satu, dan di halaman itu ALETA tidak muncul
+ * sama sekali.
+ *
+ * Akibatnya persis seperti yang dilaporkan: "belum ada deteksi otomisasi
+ * mengisi keterangan saksi". Kemampuannya ada, tempatnya yang salah - dan
+ * kemampuan yang tidak berada di tempat orang mengerjakannya sama saja dengan
+ * kemampuan yang tidak ada.
+ *
+ * Dikenali dari DUA hal sekaligus, bukan dari alamatnya saja: alamat dapat
+ * berubah, sedangkan borang tanya-jawab beserta tabel barisnya tidak.
+ */
+function halamanTanyaJawab() {
+  if (!/tanyajawab_perkara_edit/i.test(location.pathname + location.search)) return false;
+  return Boolean(document.querySelector(".tbl_user_data, .add_tanyajawab, .row_data"));
+}
+
+/**
+ * Saksi keberapa yang sedang disunting - dari judul halamannya.
+ *
+ * "419/Pdt.G/2026/PA.Dgl - TanyaJwb Saksi 1 P : Klinem binti Sarbini"
+ *
+ * Dipakai hanya untuk menyebutkannya kepada petugas. Yang menentukan variabel
+ * mana yang ditulis tetap alamat halamannya sendiri, sebab itulah yang dipakai
+ * rute simpan ABT.
+ */
+function saksiKeberapa() {
+  const teks = `${document.title} ${document.body ? document.body.innerText.slice(0, 400) : ""}`;
+  const cocok = teks.match(/TanyaJwb\s+Saksi\s+(\d)/i);
+  return cocok ? Number(cocok[1]) : 0;
+}
+
 // ─── Menyimpan lewat rute ABT ────────────────────────────────────────────────
 
 const tipeVariabel = new Map();
@@ -1887,15 +1926,44 @@ async function muatTemplatAbt(kodeTemplat, urutan) {
   });
   if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
   const teks = await respons.text();
-  const cocok = teks.match(/var\s+ajax_data\s*=\s*(\[[\s\S]*?\])\s*(?:\r?\n|;)/);
+
+  // ==========================================================================
+  // TEMPLAT DATANG SEBAGAI OBJEK, KETERANGAN TERSIMPAN SEBAGAI LARIK
+  // ==========================================================================
+  //
+  // Halaman yang sama menuliskan ajax_data dari dua sumber yang berbeda, dan
+  // bentuknya tidak sama. Terbaca dari model ABT:
+  //
+  //   GetKeteranganPihak(...)                    -> larik  [ {...}, {...} ]
+  //   replace_array_template(...)                -> OBJEK  { "0":{...}, ... }
+  //
+  // replace_array_template berakhir "return (object)$data;" - dan itulah yang
+  // dipanggil cabang load_template. Pola lama menuntut kurung siku, sehingga
+  // membaca keterangan yang SUDAH tersimpan selalu berhasil sementara memuat
+  // TEMPLAT selalu gagal dengan "templat tanya-jawab tidak terbaca" - satu
+  // fungsi, dua jalur, dan hanya satu yang pernah dicoba.
+  //
+  // Keduanya kini diterima. Objek berkunci angka diurutkan menurut kuncinya,
+  // bukan menurut urutan Object.values: yang menentukan urutan pertanyaan
+  // adalah nomornya, dan urutan kunci objek tidak dijamin bahasa mana pun.
+  const cocok = teks.match(/var\s+ajax_data\s*=\s*([[{][\s\S]*?[\]}])\s*(?:\r?\n|;)/);
   if (!cocok) throw new Error("templat tanya-jawab tidak terbaca dari halaman ABT");
-  let baris;
+  let urai;
   try {
-    baris = JSON.parse(cocok[1]);
+    urai = JSON.parse(cocok[1]);
   } catch {
     throw new Error("templat tanya-jawab tidak dapat diurai");
   }
-  return (Array.isArray(baris) ? baris : []).map((b, i) => ({
+  let baris = [];
+  if (Array.isArray(urai)) {
+    baris = urai;
+  } else if (urai && typeof urai === "object") {
+    baris = Object.keys(urai)
+      .sort((a, b) => Number(a) - Number(b))
+      .map((k) => urai[k]);
+  }
+  if (baris.length === 0) throw new Error("templat itu tidak memuat satu pun pertanyaan.");
+  return baris.map((b, i) => ({
     no: String((b && b.urutan_pertanyaan) || i + 1),
     tanya: String((b && b.pertanyaan) || ""),
     jawab: String((b && b.jawaban) || ""),
@@ -2001,6 +2069,29 @@ function susunPanelAbt(jatiDiri) {
   tombolSdg.type = "button";
   tombolSdg.title = "Dua keterangan dari satu templat ABT: substansi sama, kalimat berbeda.";
   tombolSdg.hidden = !petaAwal.has(VAR_SAKSI_1);
+
+  // ==========================================================================
+  // DI HALAMAN TANYA-JAWAB, HANYA INILAH YANG MASUK AKAL
+  // ==========================================================================
+  //
+  // Halaman itu tidak punya satu pun baris variabel: "Ambil data dari SIPP",
+  // "Isi dari posita permohonan", dan perapian posita tidak punya sasaran di
+  // sana, dan tombol yang ditekan lalu menjawab "tidak ada apa-apa" lebih
+  // buruk daripada tombol yang tidak ada.
+  //
+  // Yang tersisa justru yang dicari orang di halaman itu - dan ia dipaksa
+  // tampak, sebab penjaganya membaca baris variabel yang memang tidak ada.
+  const diTanyaJawab = halamanTanyaJawab();
+  if (diTanyaJawab) {
+    tombolSipp.hidden = true;
+    tombolSaksi.hidden = true;
+    tombolItsbat.hidden = true;
+    tombolSdg.hidden = false;
+    const saksiKe = saksiKeberapa();
+    tombolSdg.title =
+      `Menyusun keterangan kedua saksi dari satu templat ABT${saksiKe ? ` - halaman ini saksi ${saksiKe}` : ""}. ` +
+      "Keduanya diperlihatkan untuk dibaca sebelum disimpan.";
+  }
   tombolBaris.appendChild(tombolSipp);
   tombolBaris.appendChild(tombolSaksi);
   tombolBaris.appendChild(tombolItsbat);
@@ -2728,6 +2819,58 @@ function susunPanelAbt(jatiDiri) {
   // sampai halaman ABT dimuat ulang - dan memuat ulang halaman ABT
   // membuang isian blangko yang belum disimpan.
   const barisKaki = buatElemen("div", "aleta-kaki-baris");
+
+  // Pintasan yang SUNGGUH ada sasarannya di panel ini. Selain menyebutkannya,
+  // barisnya juga yang mendorong ikon segarkan dan nomor seri ke kanan lewat
+  // margin otomatisnya - tanpa baris ini keduanya berdiri di kiri.
+  const PINTASAN_ABT = [
+    { tombol: "Alt+A", kunci: "a", nama: "ciutkan / bentangkan panel", jalankan: (p) => alatCiutkan(p, PENANDA_ABT) },
+    {
+      tombol: "Alt+P",
+      kunci: "p",
+      nama: "ambil data dari SIPP",
+      jalankan: (p) => alatTekanPertama(p, ".aleta-abt-aksi .aleta-permintaan-tombol"),
+    },
+    {
+      tombol: "Alt+R",
+      kunci: "r",
+      nama: "buka Riwayat perubahan",
+      jalankan: (p) => {
+        for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol"))) {
+          if (/riwayat/i.test(t.textContent || "")) {
+            t.click();
+            return;
+          }
+        }
+      },
+    },
+    {
+      tombol: "Alt+Enter",
+      kunci: "Enter",
+      nama: "susun keterangan kedua saksi",
+      jalankan: (p) => {
+        // Yang sudah tergambar didahulukan: bila borangnya terbuka, Enter
+        // menyusun - bukan membuka borang yang sama sekali lagi.
+        for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol"))) {
+          if (/susun keterangan kedua saksi/i.test(t.textContent || "") && !t.disabled) {
+            t.scrollIntoView({ block: "nearest" });
+            t.click();
+            return;
+          }
+        }
+        for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol"))) {
+          if (/susun keterangan dua saksi/i.test(t.textContent || "") && !t.disabled && !t.hidden) {
+            t.scrollIntoView({ block: "nearest" });
+            t.click();
+            return;
+          }
+        }
+      },
+    },
+  ];
+  barisKaki.appendChild(alatBarisPintasan(PINTASAN_ABT));
+  alatPasangPintasan(PENANDA_ABT, PINTASAN_ABT);
+
   const segar = buatElemen("button", "aleta-kaki-segar", "↻");
   segar.type = "button";
   segar.setAttribute("aria-label", "Segarkan");
@@ -3057,6 +3200,15 @@ function susunPanelAbt(jatiDiri) {
       hasilSimpan.textContent = gagal.length
         ? `${tersimpan} tersimpan, ${gagal.length} gagal — ${gagal.join("; ")}`
         : "Keterangan kedua saksi tersimpan di ABT. Muat ulang halaman supaya isi variabel keterangan saksi ikut berubah.";
+
+      // Di halaman penyunting tanya-jawab, barisnya sendiri yang berubah -
+      // dan yang membacanya sedang memandang baris itu. Dimuat ulang begitu
+      // seluruhnya tersimpan; satu yang gagal berarti pesannya harus tetap
+      // terbaca, bukan terhapus oleh pemuatan ulang.
+      if (!gagal.length && halamanTanyaJawab()) {
+        hasilSimpan.textContent = "Tersimpan. Halaman dimuat ulang…";
+        setTimeout(() => location.reload(), 900);
+      }
     });
 
     return kotak;
@@ -3099,6 +3251,92 @@ function susunPanelAbt(jatiDiri) {
     barisSdg.appendChild(centangSdg);
     barisSdg.appendChild(document.createTextNode(" Sama dengan gugatan/permohonan - alasan dibaca dari positanya"));
     form.appendChild(barisSdg);
+
+    // ======================================================================
+    // MODUS TIAP SAKSI - DUA SAKSI JARANG TAHU HAL YANG SAMA
+    // ======================================================================
+    //
+    // Tetangga melihat pertengkarannya tetapi tidak tahu sebabnya; orang tua
+    // tahu sebabnya dari cerita anaknya tetapi tidak pernah menyaksikan;
+    // saudara hanya tahu keduanya sudah pisah rumah. Keterangan yang
+    // menyamakan semuanya dapat dipatahkan lawan dengan satu pertanyaan.
+    //
+    // Yang dipilih di sini menentukan jawaban tiga kelompok pertanyaan -
+    // penyebab, menyaksikan, cara mengetahui. Pertanyaan lain tetap dari
+    // templat. Bot yang menyusun kalimatnya; panel hanya menyampaikan
+    // pilihannya.
+    const DAFTAR_MODUS = [
+      ["sama", "Tahu seluruh alasan, melihat sendiri"],
+      ["sebagian", "Hanya sebagian alasan yang ia ketahui"],
+      ["tidak-tahu", "Tahu berselisih & berpisah, tidak tahu sebabnya"],
+      ["tidak-melihat", "Tidak pernah menyaksikan pertengkaran"],
+      ["dari-cerita", "Tahu dari cerita salah satu pihak"],
+    ];
+    const DAFTAR_SUMBER = [
+      ["pelaku", "Penggugat/Pemohon"],
+      ["lawan", "Tergugat/Termohon"],
+      ["keluarga", "keluarga"],
+    ];
+    const kendaliModus = [];
+    for (const nomorSaksi of [1, 2]) {
+      const baris = buatElemen("div", "aleta-sdg-modus");
+      baris.appendChild(buatElemen("span", "aleta-abt-label", `Saksi ${nomorSaksi}`));
+      const pilihModus = document.createElement("select");
+      pilihModus.className = "aleta-sdg-pilih";
+      for (const [nilai, nama] of DAFTAR_MODUS) {
+        const o = document.createElement("option");
+        o.value = nilai;
+        o.textContent = nama;
+        pilihModus.appendChild(o);
+      }
+      // Bawaan: saksi 1 tahu semuanya, saksi 2 hanya sebagian - bentuk yang
+      // paling sering ditemui, dan yang paling sukar dipatahkan.
+      pilihModus.value = nomorSaksi === 1 ? "sama" : "sebagian";
+      baris.appendChild(pilihModus);
+
+      const pilihSumber = document.createElement("select");
+      pilihSumber.className = "aleta-sdg-pilih";
+      pilihSumber.title = "Siapa yang bercerita kepada saksi ini";
+      for (const [nilai, nama] of DAFTAR_SUMBER) {
+        const o = document.createElement("option");
+        o.value = nilai;
+        o.textContent = `cerita dari ${nama}`;
+        pilihSumber.appendChild(o);
+      }
+      pilihSumber.hidden = pilihModus.value !== "dari-cerita";
+      baris.appendChild(pilihSumber);
+
+      // Alasan yang diketahui saksi ini - hanya bila "sebagian".
+      const kotakSebagian = buatElemen("div", "aleta-sdg-alasan aleta-sdg-alasan-saksi");
+      const centangSebagian = [];
+      for (const a of DAFTAR_ALASAN_SDG) {
+        const label = buatElemen("label", "aleta-sdg-centang");
+        const c = document.createElement("input");
+        c.type = "checkbox";
+        c.value = a;
+        label.appendChild(c);
+        label.appendChild(document.createTextNode(` ${a}`));
+        kotakSebagian.appendChild(label);
+        centangSebagian.push(c);
+      }
+      kotakSebagian.hidden = pilihModus.value !== "sebagian";
+      baris.appendChild(kotakSebagian);
+
+      pilihModus.addEventListener("change", () => {
+        pilihSumber.hidden = pilihModus.value !== "dari-cerita";
+        kotakSebagian.hidden = pilihModus.value !== "sebagian";
+      });
+      form.appendChild(baris);
+      kendaliModus.push({ pilihModus, pilihSumber, centangSebagian });
+    }
+    const bacaModus = () => {
+      const satu = (k) => ({
+        modus: k.pilihModus.value,
+        sumber: k.pilihSumber.value,
+        alasan: k.centangSebagian.filter((c) => c.checked).map((c) => c.value),
+      });
+      return { saksi1: satu(kendaliModus[0]), saksi2: satu(kendaliModus[1]) };
+    };
 
     const kotakAlasan = buatElemen("div", "aleta-sdg-alasan");
     kotakAlasan.appendChild(buatElemen("div", "aleta-abt-label", "Atau pilih alasan yang diterangkan saksi"));
@@ -3151,6 +3389,12 @@ function susunPanelAbt(jatiDiri) {
           templat,
           alasan,
           posita: centangSdg.checked && peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "",
+          // Sebutan pihak dari halaman blangko (0046 penggugat/pemohon, 0047
+          // tergugat/termohon); di halaman tanya-jawab keduanya kosong dan
+          // bot memakai sebutan bawaannya.
+          pelaku: (peta.get("0046") || {}).nilai || "",
+          lawan: (peta.get("0047") || {}).nilai || "",
+          modus: bacaModus(),
         });
         const hasil = isiJawaban.saksiSdg || {};
         if (hasil.ok === false) throw new Error(hasil.alasan === "templat_kosong" ? "Templat kosong." : "Keterangan tidak tersusun.");
@@ -3235,10 +3479,15 @@ let sudahDipasang = false;
 
 async function pasang() {
   if (sudahDipasang) return;
-  if (!halamanBlangko()) return;
+  const diTanyaJawab = halamanTanyaJawab();
+  if (!halamanBlangko() && !diTanyaJawab) return;
   if (!(await sedangAktif())) return;
 
-  const jatiDiri = jatiDiriPerkara();
+  // Di halaman tanya-jawab tidak ada satu pun tautan load_form, jadi jati diri
+  // perkaranya tidak dapat dibaca dari sana. Ia tidak diperlukan di situ:
+  // penyusun keterangan saksi menulis lewat rute tanya-jawab ABT, yang
+  // alamatnya dibaca dari alamat halaman ini sendiri (lihat ruasAlamatAbt).
+  const jatiDiri = jatiDiriPerkara() || (diTanyaJawab ? { perkaraId: "", perkTemp: "" } : null);
   if (!jatiDiri) return;
 
   sudahDipasang = true;

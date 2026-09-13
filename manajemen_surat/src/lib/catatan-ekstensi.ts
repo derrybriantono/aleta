@@ -42,6 +42,56 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.128.0",
+    dirilis: "2026-09-13T16:00:00+08:00",
+    judul: "Kepala panel satu baris, pemilih warna yang sungguh berfungsi, dan hijau terakhir yang menyelip",
+    butir: [
+      "PEMILIH WARNA SUPER ADMIN DIPERBAIKI. Dari tujuh titik warna di kepala hanya SATU yang pernah terlihat: aturan tombol kepala menghapus latar setiap tombol, dan pada titik warna latar itulah satu-satunya isinya. Yang tampak cuma lingkaran garis titik yang sedang aktif - ditekan berapa kali pun tidak berbuat apa-apa, sebab ia memang sudah aktif. Kini di kepala hanya ada satu bulatan sewarna palet yang aktif; menekannya membuka baris tujuh titik tepat di bawah kepala, memilih satu menutupnya lagi.",
+      "KEPALA PANEL KEMBALI SATU BARIS. Tujuh tombol yang melebar oleh padding tombol kepala itulah yang mematahkan chip peran dan tombol ciut, layar, segarkan, tutup ke baris kedua, sehingga kepalanya dua kali lebih tinggi. Dengan satu titik deretnya muat, dan chip peran yang panjang dipangkas elipsis, bukan didorong turun.",
+      "HIJAU TERAKHIR YANG MENYELIP DI ABT DAN SIPP. Dicari bukan dari tangkapan layar, melainkan dengan menyalin markup kedua halaman ke halaman statis, memasang panel.css di atasnya, dan MENGUKUR warna terhitung tiap elemen pada ketujuh palet. Yang tetap hijau di palet ungu: kepala blangko ABT saat kursor di atas kartunya (#006640 milik ABT sendiri - persis kepala hijau di tangkapan layar), kaki halaman ABT, peringatan DATA ISIAN, label-success, bilah tab detail perkara SIPP (#usual2), dan gambar bilah atas SIPP yang memang hijau - pada palet selain dasar gambarnya dilepas.",
+      "KEPALA BLANGKO ABT IKUT PALET. Sembilan warna kelompok blangko tidak lagi menjadi bidang kepala yang melawan paletnya: kepalanya memakai warna tua palet, dan warna kelompoknya tinggal sebagai garis tebal di tepi kiri - cara membedakan kelompok sekilas tetap ada.",
+      "PANEL SENDIRI IKUT PALET. Chip jenis perkara, tombol unduh dan verifikasi, saklar, tombol permintaan, dan chip kelabu menulis hijaunya sebagai angka sejak sebelum ada palet, jadi di palet jingga pun tetap hijau. Tiga puluh empat angka diganti lima token turunan merek (latar, garis, tombol, sorot, tulisan) yang dihitung dari warna merek paletnya dengan color-mix, dan kontrasnya diukur pada ketujuh palet.",
+      "PALET PASTEL: sorot tombol digelapkan. Tulisan di atasnya hanya 4,15 : 1, di bawah batas AA; kini 5,35. Ditemukan begitu keenam palet mulai DIUKUR oleh penjaga kontras - yang sebelumnya berhenti mengukur begitu warnanya menjadi token, dan itu bukan lulus.",
+    ],
+  },
+  {
+    versi: "1.127.0",
+    dirilis: "2026-09-13T14:00:00+08:00",
+    judul: "Palet berlaku ke seluruh halaman, pintasan sampai ke ABT dan portal, dan templat tanya-jawab terbaca",
+    butir: [
+      "WARNA PALET KINI BERLAKU MENYELURUH. Enam palet 1.126.0 hanya mengubah token, sedangkan belasan tempat di peta gelap menulis hijaunya sebagai ANGKA - kepala tabel, tombol, bilah menu, kolom yang dimatikan, tulisan bayangan. Selama hanya ada satu palet itu tidak kelihatan; begitu palet lain dipilih, semuanya tetap hijau sementara sekitarnya berubah. Dua puluh tiga angka diganti menjadi lima token baru (tulisan-atas, sorot-kuat, mati, tulisan-samar, garis-dalam), keenam palet mendeklarasikannya, dan penjaga menolak angka warna baru di aturan tema gelap mana pun. Warna yang BERARTI sesuatu - merah hapus, kuning penanda, sembilan warna kelompok blangko - sengaja tidak ikut.",
+      "KOTAK SUNTING DI HALAMAN ABT ikut gelap. Ia disisipkan ke dalam tabel milik ABT dan warnanya ditulis terang sejak sebelum halaman ABT digelapkan, sehingga menjadi kilatan putih paling terang di layar - tepat di tempat orang sedang mengetik.",
+      "PINTASAN PAPAN TIK SAMPAI KE ABT DAN HALAMAN ALETA. Alt+A, Alt+P, Alt+R, dan Alt+Enter kini ada di ketiga panel, masing-masing dengan sasaran yang sungguh ada di panel itu - bukan tulisan yang tidak berbuat apa-apa. Barisan pintasan itu pula yang mendorong ikon segarkan dan nomor seri ke KANAN; tanpa barisnya keduanya berdiri di kiri, dan itulah bentuk kedua panel selama ini.",
+      "TEMPLAT TANYA-JAWAB TERBACA. \"templat tanya-jawab tidak terbaca dari halaman ABT\" sebabnya satu baris di model ABT: replace_array_template berakhir \"return (object)$data;\", jadi templat datang sebagai OBJEK sementara keterangan yang sudah tersimpan datang sebagai larik. Pembacanya menuntut kurung siku, sehingga membaca keterangan selalu berhasil dan memuat templat selalu gagal - satu fungsi, dua jalur, hanya satu yang pernah dicoba. Keduanya kini diterima, dan objek berkunci angka diurutkan menurut nomornya.",
+    ],
+  },
+  {
+    versi: "1.126.0",
+    dirilis: "2026-09-13T11:30:00+08:00",
+    judul: "Enam warna gelap untuk super admin, keterangan saksi bermodus, dan grafik yang tidak lagi dibalik",
+    butir: [
+      "ENAM WARNA GELAP - hanya bagi super admin, dipilih lewat titik-titik kecil di kepala panel dan di jendela ekstensi. Sumbernya enam palet dari artikel dark-mode vev.design (Monochromatic, Neon, Warm, Muted Pastels, Deep Jewel, Contrasting Vibrancy), tiap palet DIADAPTASI untuk panel yang dibaca berjam-jam: tulisan putih-gading bukan #FFFFFF, aksen neon diturunkan pekatnya, permukaan bertingkat, dan warna peringatan (kuning, merah) tidak diganti di palet mana pun. Satu pilihan berlaku sekaligus di SIPP, ABT, dan halaman ALETA - dipasang pada gambar pertama seperti temanya, tanpa kelebat.",
+      "KETERANGAN SAKSI BERMODUS. Dua saksi jarang tahu hal yang sama: tetangga melihat pertengkaran tetapi tidak tahu sebabnya, orang tua tahu sebabnya dari cerita anaknya tetapi tidak pernah menyaksikan. Tiap saksi kini punya modusnya sendiri - tahu seluruh alasan; hanya sebagian (dipilih mana saja); tahu berselisih & berpisah tetapi tidak tahu sebabnya; tidak pernah menyaksikan; tahu dari cerita Penggugat/Pemohon, Tergugat/Termohon, atau keluarga. Modus menjawab tiga kelompok pertanyaan (penyebab, menyaksikan, cara mengetahui); pertanyaan lain tetap dari templat. Jawabannya dapat disunting di panel sebelum disimpan, dan di halaman tanya-jawab halaman dimuat ulang begitu tersimpan.",
+      "GRAFIK SMART MAJELIS TIDAK DIBALIK. Pembalikan warna kanvas yang dipasang 1.125.0 dicabut: kanvas di SIPP juga memuat pindaian dokumen dan pratinjau tanda tangan, dan dokumen pengadilan yang warnanya berubah adalah harga yang terlalu mahal. Yang disentuh hanya kanvas grafik Smart Majelis, latarnya nada tengah supaya sumbu kelabu Chart.js tetap terbaca.",
+      "Kawat e-Court diaudit statis ujung ke ujung: 61 rute portal, 70 panggilan gerbang, 139 jalur bot - tidak satu pun putus. Yang belum dapat dibuktikan setempat hanya sambungan ke situs e-Court sendiri, yang menuntut sesi di peladen.",
+    ],
+  },
+  {
+    versi: "1.125.0",
+    dirilis: "2026-09-13T09:30:00+08:00",
+    judul: "Lapisan gelap sampai ke halaman yang selama ini terlewat, dan keterangan saksi disusun di tempat ia dikerjakan",
+    butir: [
+      "HALAMAN MASUK SIPP ikut gelap. Ia halaman pertama yang dilihat tiap hari, dan satu-satunya yang dilihat SEBELUM ada yang tahu temanya gelap. Kotak hijaunya diturunkan terangnya, bukan dihapus - hijau itu identitas SIPP.",
+      "HALAMAN BER-AdminLTE ikut gelap: Antrian Direktori Putusan, Smart Majelis, verifikasi prodeo, pendaftaran perjanjian bersama. Kotaknya sudah dipetakan sejak awal; yang menyala justru ISINYA - box-header, box-body, info-box, todo-list, small-box. Tabel bootstrap dan tabel laporan yang dicetak ke Excel ikut, termasuk laporan mediasi bulanan yang dibaca berlama-lama.",
+      "HALAMAN MASUK DAN MENU IKON APS BADILAG ikut gelap. Keduanya templat admin Bootstrap 4 dengan latar foto - kerangka yang sama sekali berbeda dari halaman blangko, dan tidak satu pun pernah terpetakan. Fotonya dibiarkan, hanya diredupkan supaya kartu di atasnya terbaca.",
+      "DAFTAR BLANGKO ABT: krem #fff3b594 yang menjadi bidang paling terang di seluruh ABT kini ikut gelap. Sembilan warna kepala kelompoknya TIDAK diseragamkan - itulah cara petugas membedakan kelompok blangko sekilas; yang diturunkan hanya terangnya.",
+      "EKSTENSI KINI SUNGGUH BERJALAN DI ABT PELADEN. Polanya '/aps_badilag/abt/*' tidak pernah cocok satu halaman pun di sana: alamat ABT yang sungguhan memuat index.php di tengahnya. Tema dan panelnya karena itu tidak pernah muncul di peladen, sementara di mesin setempat keduanya tampak biasa saja - dan perbedaan itu yang membuatnya lama tidak tertangkap.",
+      "KETERANGAN SAKSI DAPAT DISUSUN DI HALAMAN TEMPAT IA DIKERJAKAN. Penyusun keterangan dua saksi sudah ada sejak lama, tetapi hanya di halaman daftar variabel blangko - sedangkan yang mengisi keterangan saksi duduk di penyunting tanya-jawab, dan di sana ALETA tidak muncul sama sekali. Kemampuan yang tidak berada di tempat orang mengerjakannya sama saja dengan kemampuan yang tidak ada. Di halaman itu hanya penyusun saksi yang tampak; tombol yang tidak punya sasaran di sana disembunyikan.",
+      "Jendela ekstensi bernama ALETA E-COURT, anak judulnya dihapus, dan pilihan temanya berbunyi \"ikut sistem\" - bukan \"ikut peramban\".",
+      "Rel peran di tepi panel ikut tema: kilau super admin diredupkan pada tema gelap supaya ia berhenti menjadi bidang paling terang di layar, dan peran lain mengambil warnanya dari token tema alih-alih angka yang ditulis sekali lalu tidak pernah ikut berubah.",
+    ],
+  },
+  {
     versi: "1.124.0",
     dirilis: "2026-09-13T02:30:00+08:00",
     judul: "Putusan disimpan sendiri dan dibuktikan, halaman perkara dibuka kembali, dan arsip e-Court diperiksa tanpa diminta",

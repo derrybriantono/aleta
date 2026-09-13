@@ -394,7 +394,7 @@ function alatPasangGeser(panel, kepala, kunci) {
   panel.addEventListener("pointerdown", (peristiwa) => {
     // Tombol di dalam kepala tidak boleh ikut menggeser - yang menekan tombol
     // tutup tidak sedang memindahkan panel.
-    if (peristiwa.target.closest("button, a, input, select, textarea")) return;
+    if (peristiwa.target.closest("button, a, input, select, textarea, .aleta-warna-pilih")) return;
     if (peristiwa.button !== 0) return;
     // ========================================================================
     // LENCANA DIGESER DARI LENCANANYA, PANEL DARI KEPALANYA
@@ -652,6 +652,240 @@ function alatTerapkanTemaHalaman(tema) {
     // hanya halaman berikutnya yang akan berkelebat sekali.
   }
 }
+/**
+ * ============================================================================
+ * ENAM WARNA GELAP SUPER ADMIN - SATU NILAI, TIGA APLIKASI
+ * ============================================================================
+ *
+ * Paletnya di panel.css (blok "ENAM WARNA GELAP UNTUK SUPER ADMIN"). Yang
+ * dikerjakan di sini hanya MENYAMPAIKAN pilihannya ke dua tempat sekaligus -
+ * akar panel (ALETA) dan <html> halaman (lapisan SIPP/ABT) - dan menyimpannya
+ * di dua tempat pula, dengan alasan yang sama seperti tema: chrome.storage
+ * sumber kebenarannya, localStorage salinan sinkron supaya halaman berikutnya
+ * lahir sudah berwarna (dibaca tema-awal.js pada document_start).
+ *
+ * Nama warnanya kunci pendek, bukan nilai heksa: yang tersimpan tidak boleh
+ * dapat menyuntikkan apa pun ke atribut HTML.
+ */
+const KUNCI_WARNA_GELAP = "warnaGelap";
+const KUNCI_SALINAN_WARNA = "aleta-warna-gelap";
+const DAFTAR_WARNA_GELAP = [
+  ["", "Hijau SIPP (bawaan)", "#7fd0a6"],
+  ["arang", "Arang - hitam, aksen kelabu", "#b8b8b8"],
+  ["neon", "Neon - hitam pekat, hijau neon", "#35d98f"],
+  ["hangat", "Hangat - krem, koral, emas", "#e9b64a"],
+  ["pastel", "Pastel - kelabu lembut, biru muda", "#a8dadc"],
+  ["permata", "Permata - biru laut dalam", "#5fc3dd"],
+  ["vibran", "Vibran - jingga bata, ungu", "#ff7a4d"],
+];
+
+/** Memasang satu warna ke panel DAN halaman, lalu menyimpannya. */
+function alatTerapkanWarna(panel, nama, simpan) {
+  const dikenal = DAFTAR_WARNA_GELAP.some(([k]) => k === nama);
+  const bersih = dikenal ? nama : "";
+  const akar = document.documentElement;
+  if (bersih) {
+    if (panel) panel.setAttribute("data-warna", bersih);
+    akar.setAttribute("data-aleta-warna", bersih);
+  } else {
+    if (panel) panel.removeAttribute("data-warna");
+    akar.removeAttribute("data-aleta-warna");
+  }
+  if (!simpan) return;
+  try {
+    window.localStorage.setItem(KUNCI_SALINAN_WARNA, bersih);
+  } catch {
+    /* halaman berikutnya berkelebat sekali - warnanya tetap berlaku kini */
+  }
+  try {
+    void chrome.storage.local.set({ [KUNCI_WARNA_GELAP]: bersih });
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+}
+
+/** Warna tersimpan, dari chrome.storage. Kosong berarti bawaan. */
+async function alatWarnaTersimpan() {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_WARNA_GELAP]);
+    const nama = String(simpan[KUNCI_WARNA_GELAP] || "");
+    return DAFTAR_WARNA_GELAP.some(([k]) => k === nama) ? nama : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Pemilih warnanya: tujuh titik kecil (bawaan + enam), hanya bagi super admin.
+ *
+ * Peran dibaca dari pilihan.peran bila pemanggilnya sudah tahu; bila belum,
+ * dari atribut data-peran pada akar panel yang dipasang alatTandaiPeranPanel.
+ * Yang bukan super admin tidak melihat apa pun - bukan tombol yang mati,
+ * melainkan tidak ada sama sekali.
+ */
+function alatPemilihWarna(panel, wadah, pilihan) {
+  const peran = String((pilihan && pilihan.peran) || (panel && panel.getAttribute("data-peran")) || "");
+  if (peran !== "super" && !/super/i.test(peran)) return null;
+  if (wadah.querySelector(".aleta-warna-pilih")) return null;
+
+  // ==========================================================================
+  // SATU TITIK DI KEPALA, TUJUH TITIK DI BALIKNYA
+  // ==========================================================================
+  //
+  // Dulu ketujuh titik berdiri sejajar di deret tombol kepala. Dua hal salah
+  // sekaligus, dan keduanya hanya terlihat oleh super admin - satu-satunya
+  // peran yang melihat pemilihnya:
+  //
+  //   1. Aturan ".aleta-alat-kepala button" menghapus latar dan garis setiap
+  //      tombol kepala (background: none; border: 0). Pada titik warna, latar
+  //      itulah satu-satunya isinya - jadi ENAM titik lenyap. Yang tersisa
+  //      hanya lingkaran garis luar titik yang sedang aktif: satu bulatan
+  //      kosong yang, ditekan berapa kali pun, tidak berbuat apa-apa sebab
+  //      ia memang sudah aktif. "Pemilihan warna tidak berfungsi".
+  //   2. Tujuh tombol bertambah lebar oleh padding tombol kepala; deretnya
+  //      tidak muat di baris pertama dan kepala panel patah ke baris kedua.
+  //
+  // Sekarang di kepala hanya ada SATU titik: warna palet yang sedang aktif.
+  // Menekannya membuka baris tujuh titik tepat di bawah kepala; memilih satu
+  // menutupnya lagi. Kepala tetap satu baris, dan yang ditekan sungguh
+  // berbuat sesuatu.
+  const tombol = document.createElement("button");
+  tombol.type = "button";
+  tombol.className = "aleta-warna-tombol";
+  tombol.setAttribute("aria-haspopup", "true");
+  tombol.setAttribute("aria-expanded", "false");
+
+  const kotak = document.createElement("span");
+  kotak.className = "aleta-warna-pilih";
+  kotak.setAttribute("role", "group");
+  kotak.setAttribute("aria-label", "Warna tema gelap");
+  kotak.hidden = true;
+
+  const titikSemua = [];
+  const tandai = (aktif) => {
+    const baris = DAFTAR_WARNA_GELAP.find(([k]) => k === aktif) || DAFTAR_WARNA_GELAP[0];
+    for (const [t, nama] of titikSemua) t.setAttribute("aria-pressed", nama === baris[0] ? "true" : "false");
+    tombol.style.setProperty("--titik", baris[2]);
+    tombol.title = `Warna tema gelap: ${baris[1]}. Tekan untuk mengganti.`;
+    tombol.setAttribute("aria-label", tombol.title);
+  };
+  const buka = (ya) => {
+    kotak.hidden = !ya;
+    tombol.setAttribute("aria-expanded", ya ? "true" : "false");
+  };
+  tombol.addEventListener("click", (peristiwa) => {
+    peristiwa.stopPropagation();
+    buka(kotak.hidden);
+  });
+  // Menekan di luar pemilih menutupnya. Dipasang sekali per pemilih, dan
+  // tidak berbuat apa-apa selama pemilihnya memang tertutup.
+  document.addEventListener("pointerdown", (peristiwa) => {
+    if (kotak.hidden) return;
+    if (kotak.contains(peristiwa.target) || tombol.contains(peristiwa.target)) return;
+    buka(false);
+  });
+
+  for (const [nama, judul, contoh] of DAFTAR_WARNA_GELAP) {
+    const titik = document.createElement("button");
+    titik.type = "button";
+    titik.className = "aleta-warna-titik";
+    titik.title = judul;
+    titik.setAttribute("aria-label", judul);
+    titik.style.setProperty("--titik", contoh);
+    titik.addEventListener("click", () => {
+      alatTerapkanWarna(panel, nama, true);
+      tandai(nama);
+      buka(false);
+    });
+    kotak.appendChild(titik);
+    titikSemua.push([titik, nama]);
+  }
+  // Pemulih di alatPasangPanel memanggil ini sesudah warna tersimpan dibaca -
+  // titik aktif dan warna tombol kepala ikut, bukan hanya atributnya.
+  kotak.aletaTandai = tandai;
+  tandai(panel.getAttribute("data-warna") || "");
+  wadah.appendChild(tombol);
+  wadah.appendChild(kotak);
+  return kotak;
+}
+
+/**
+ * ============================================================================
+ * PINTASAN PAPAN TIK DAN BARIS KAKI - SATU BENTUK UNTUK KETIGA PANEL
+ * ============================================================================
+ *
+ * Panel SIPP sudah lama punya keduanya; ABT dan halaman ALETA hanya punya
+ * ikon segarkan dan nomor seri. Akibatnya dua-duanya:
+ *
+ *   1. Pintasannya tidak ada, dan yang sudah hafal Alt+A di SIPP menekannya
+ *      di ABT lalu tidak terjadi apa-apa - itu mengajari orang bahwa
+ *      pintasannya tidak dapat dipercaya di mana pun.
+ *   2. Ikon segarkan dan nomor serinya berdiri di KIRI. Bukan karena diatur
+ *      begitu: yang mendorongnya ke kanan adalah margin otomatis pada
+ *      kalimat pintasan, dan tanpa kalimat itu tidak ada yang mendorong.
+ *
+ * Yang didaftarkan di sini HANYA pintasan yang benar-benar ada sasarannya di
+ * panel itu. Menampilkan Alt+R pada panel yang tidak punya riwayat berarti
+ * menjanjikan sesuatu yang tidak pernah terjadi - dan itu lebih buruk
+ * daripada tidak menampilkannya.
+ */
+function alatBarisPintasan(daftar) {
+  const pintasan = document.createElement("div");
+  pintasan.className = "aleta-kaki-pintasan";
+  pintasan.textContent = daftar.map((x) => x.tombol).join(" · ");
+  pintasan.title =
+    daftar.map((x) => `${x.tombol}  ${x.nama}`).join("\n") +
+    "\n\nTidak berlaku selagi mengetik di kolom isian.";
+  return pintasan;
+}
+
+/**
+ * Memasang pendengar pintasan untuk satu panel.
+ *
+ * Pada fase TANGKAP, sebab halaman SIPP dan ABT memasang pendengarnya sendiri
+ * dan menghentikan gelembungnya. Pendengarnya satu per panel dan menandai
+ * dirinya, supaya panel yang digambar ulang - ABT menggambar ulang tiap kali
+ * disegarkan - tidak menumpuk pendengar yang sama berkali-kali.
+ */
+function alatPasangPintasan(idPanel, daftar) {
+  const tanda = `aletaPintasan_${idPanel}`;
+  if (window[tanda]) document.removeEventListener("keydown", window[tanda], true);
+
+  const pendengar = (peristiwa) => {
+    if (!peristiwa.altKey || peristiwa.ctrlKey || peristiwa.metaKey) return;
+    const sasaran = peristiwa.target instanceof Element ? peristiwa.target : null;
+    if (sasaran && (sasaran.isContentEditable || sasaran.closest('input, textarea, select, [contenteditable="true"]'))) {
+      return;
+    }
+    const panel = document.getElementById(idPanel);
+    if (!panel) return;
+    const kunci = peristiwa.key === "Enter" ? "Enter" : String(peristiwa.key || "").toLowerCase();
+    const cocok = daftar.find((x) => x.kunci === kunci);
+    if (!cocok) return;
+    peristiwa.preventDefault();
+    try {
+      cocok.jalankan(panel);
+    } catch {
+      /* satu pintasan yang gagal tidak boleh mematikan yang lain */
+    }
+  };
+
+  window[tanda] = pendengar;
+  document.addEventListener("keydown", pendengar, true);
+}
+
+/** Menekan tombol pertama yang cocok dan tidak mati. Kosong bila tidak ada. */
+function alatTekanPertama(panel, pemilih) {
+  for (const t of Array.from(panel.querySelectorAll(pemilih))) {
+    if (!t.disabled && t.offsetParent !== null) {
+      t.scrollIntoView({ block: "nearest" });
+      t.click();
+      return true;
+    }
+  }
+  return false;
+}
+
 function alatTombolKepala(panel, kunci, opsi) {
   const pilihan = opsi || {};
   const wadah = document.createElement("span");
@@ -711,6 +945,10 @@ function alatTombolKepala(panel, kunci, opsi) {
     }
   });
   tema.textContent = panel.getAttribute("data-tema") === "gelap" ? "☀" : "☾";
+
+  // Enam warna gelap - hanya bagi super admin, dan hanya ikon. Dipasang
+  // sesudah tombol tema sebab warnanya memang anak dari tema gelap.
+  alatPemilihWarna(panel, wadah, pilihan);
 
   // ── Ciut ──────────────────────────────────────────────────────────────────
   //
@@ -780,6 +1018,21 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   } catch {
     panel.setAttribute("data-tema", "gelap");
     if (pilihan.temaHalaman) alatTerapkanTemaHalaman("gelap");
+  }
+
+  // Warna gelap pilihan dipulihkan sesudah temanya - ia anak dari tema gelap.
+  // Pemilihnya dipasang (lagi) di sini sebab data-peran pada akar panel
+  // kerap baru terpasang SESUDAH kepala disusun; pemasangannya idempoten,
+  // jadi yang sudah ada tidak digandakan.
+  try {
+    const warna = await alatWarnaTersimpan();
+    alatTerapkanWarna(panel, warna, false);
+    const kepalaAlat = kepala.querySelector(".aleta-alat-kepala");
+    if (kepalaAlat) alatPemilihWarna(panel, kepalaAlat, pilihan);
+    const pemilih = kepala.querySelector(".aleta-warna-pilih");
+    if (pemilih && typeof pemilih.aletaTandai === "function") pemilih.aletaTandai(warna);
+  } catch {
+    /* warna bawaan berlaku */
   }
 
   alatNormalkanJangkar(panel);

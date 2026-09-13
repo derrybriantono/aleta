@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * ALETA untuk SIPP — skrip konten.
+ * ALETA E-Court — skrip konten untuk halaman SIPP.
  *
  * ============================================================================
  * TIDAK MENGUBAH SIPP SAMA SEKALI
@@ -7090,7 +7090,7 @@ function pasangGeser(panel, kepala) {
 
   panel.addEventListener("mousedown", (peristiwa) => {
     if (peristiwa.button !== 0) return;
-    if (peristiwa.target.closest("button, a, input, select, textarea")) return;
+    if (peristiwa.target.closest("button, a, input, select, textarea, .aleta-warna-pilih")) return;
     // ========================================================================
     // LENCANA DIGESER DARI LENCANANYA, PANEL DARI KEPALANYA
     // ========================================================================
@@ -7487,6 +7487,13 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
     alatTandaiPeranPanel(panel, penggunaTerakhir.peran);
   }
   alatKepala.appendChild(tombolTema(panel));
+  // Enam warna gelap super admin - ikon saja, sesudah tombol tema. Panel
+  // SIPP menyusun kepalanya sendiri, jadi pemilihnya dipasang di sini; yang
+  // tersimpan dipulihkan lebih dulu supaya titik yang aktif benar.
+  void alatWarnaTersimpan().then((warna) => {
+    alatTerapkanWarna(panel, warna, false);
+    alatPemilihWarna(panel, alatKepala, { peran: penggunaTerakhir && penggunaTerakhir.peran });
+  });
 
   // ==========================================================================
   // LAYAR PENUH DAN CIUT MENJADI LOGO
@@ -8280,7 +8287,7 @@ function susunPanel(konteks) {
 function tombolMatikan() {
   const matikan = buatElemen("button", "aleta-matikan", "×");
   matikan.type = "button";
-  matikan.title = "Matikan ALETA untuk SIPP (dapat dinyalakan lagi dari ikon ekstensi)";
+  matikan.title = "Matikan ALETA E-Court untuk halaman ini (dapat dinyalakan lagi dari ikon ekstensi)";
   matikan.addEventListener("click", () => {
     try {
       void chrome.storage.local.set({ aktif: false });
