@@ -5630,7 +5630,7 @@ function bagianPenunjukan(nomor) {
 const BATAS_TUNGGU_JEMBATAN = 5000;
 let nomorPermintaan = 0;
 
-function kirimKeJembatan(pesan) {
+function kirimKeJembatanLangsung(pesan) {
   return new Promise((selesai) => {
     nomorPermintaan += 1;
     const id = `aleta-${Date.now()}-${nomorPermintaan}`;
@@ -5658,6 +5658,128 @@ function kirimKeJembatan(pesan) {
     window.postMessage({ sumber: "aleta-jembatan", id, ...pesan }, "*");
   });
 }
+
+/**
+ * ============================================================================
+ * SATU PINTU KE JEMBATAN - DICATAT, DAPAT DITAHAN, DAPAT DIPULIHKAN
+ * ============================================================================
+ *
+ * Tiap perintah ke halaman SIPP lewat sini. Karena satu pintu, tiga hal dapat
+ * dikerjakan sekaligus tanpa menyentuh satu pun dari puluhan pemanggilnya:
+ *
+ *   MENCATAT. Perintah yang gagal masuk kotak hitam apa adanya - bukan
+ *   pesannya yang sudah diterjemahkan untuk petugas.
+ *
+ *   MENAHAN. Mode kering menahan perintah "tekan" saja. Medan tetap diisi,
+ *   sebab yang ingin dilihat justru isiannya; SIPP tidak menyimpan apa pun
+ *   sampai tombol Simpan miliknya ditekan, dan tombol itulah yang ditahan.
+ *
+ *   MENGINGAT JALAN PULANG. Sebelum satu medan diisi, nilai lamanya dibaca
+ *   lebih dulu. Satu perjalanan tambahan ke jembatan - sepersekian milidetik -
+ *   dan dari situlah "pulihkan" di laci perkakas menjadi mungkin.
+ */
+async function kirimKeJembatan(pesan) {
+  const jenis = String((pesan && pesan.jenis) || "");
+  const penunjuk = String((pesan && pesan.penunjuk) || "");
+
+  if (jenis === "tekan" && alatKeringNyala()) {
+    alatCatat("kering", `DITAHAN tekan ${penunjuk}`, "mode kering aktif - SIPP tidak menyimpan apa pun");
+    alatCatatTindakan({
+      jenis: "tekan-ditahan",
+      penunjuk,
+      label: `tekan ${penunjuk}`,
+      nilaiBaru: "(ditahan mode kering)",
+      dapatPulih: false,
+    });
+    return { ok: false, alasan: "mode_kering" };
+  }
+
+  // lamaTerbaca dibedakan dari nilaiLama yang kosong, dan bedanya menentukan.
+  //
+  // Medan yang memang kosong sebelumnya PUNYA jalan pulang: dikosongkan lagi.
+  // Medan yang nilai lamanya GAGAL DIBACA tidak punya - dan menawarkan
+  // "Pulihkan" untuknya justru akan MENGOSONGKAN medan yang tadinya berisi,
+  // dengan meyakinkan, atas nama mengembalikan keadaan. Karena itu yang
+  // gagal dibaca tidak pernah ditawari tombol itu.
+  let nilaiLama = "";
+  let lamaTerbaca = false;
+  if (jenis === "isi") {
+    try {
+      const baca = await kirimKeJembatanLangsung({
+        jenis: "nilai",
+        penunjuk,
+        jenisMedan: pesan.jenisMedan,
+      });
+      if (baca && baca.ok && baca.tampak !== false) {
+        nilaiLama = String(baca.nilai === undefined || baca.nilai === null ? "" : baca.nilai);
+        lamaTerbaca = true;
+      }
+    } catch {
+      /* nilai lama tidak terbaca - medannya tetap diisi, hanya tanpa jalan pulang */
+    }
+  }
+
+  const jawab = await kirimKeJembatanLangsung(pesan);
+
+  if (jenis === "isi") {
+    alatCatatTindakan({
+      jenis: "isi",
+      penunjuk,
+      jenisMedan: String(pesan.jenisMedan || "teks"),
+      label: penunjuk,
+      nilaiLama,
+      nilaiBaru: String(pesan.nilai === undefined || pesan.nilai === null ? "" : pesan.nilai),
+      dapatPulih: Boolean(jawab && jawab.ok) && lamaTerbaca,
+    });
+  } else if (jenis === "tekan") {
+    alatCatatTindakan({
+      jenis: "tekan",
+      penunjuk,
+      label: `tekan ${penunjuk}`,
+      nilaiBaru: "(ditekan)",
+      dapatPulih: false,
+    });
+  }
+
+  if (!jawab || !jawab.ok) {
+    alatCatat("jembatan", `${jenis} ${penunjuk} gagal`, (jawab && jawab.alasan) || "tanpa alasan");
+  }
+  return jawab;
+}
+
+/**
+ * Pemulih memakai jalur LANGSUNG, dan itu disengaja dua kali.
+ *
+ * Pertama, memulihkan tidak boleh ikut tercatat sebagai tindakan baru -
+ * riwayat yang mencatat pemulihannya sendiri akan tumbuh tanpa henti.
+ * Kedua, memulihkan tidak boleh ditahan mode kering: mengembalikan keadaan
+ * selalu boleh, justru ketika mode kering sedang menyala.
+ */
+alatDaftarkanPemulih(async (baris) => {
+  const jawab = await kirimKeJembatanLangsung({
+    jenis: "isi",
+    penunjuk: baris.penunjuk,
+    jenisMedan: baris.jenisMedan || "teks",
+    nilai: baris.nilaiLama,
+  });
+  return { ok: Boolean(jawab && jawab.ok), alasan: (jawab && jawab.alasan) || "" };
+});
+
+/**
+ * Penunjuk yang MENENTUKAN di halaman SIPP.
+ *
+ * Yang wajib hanya kerangka halamannya - kalau ketiganya hilang, yang terbuka
+ * bukan SIPP. Sisanya milik halaman tertentu saja: menandainya wajib hanya
+ * akan membuat laporan penuh peringatan palsu di halaman yang memang tidak
+ * memilikinya, dan peringatan palsu adalah cara tercepat membuat orang
+ * berhenti membaca laporan.
+ */
+alatDaftarkanPenunjuk("Kerangka SIPP", ["#konten", ".wrapper"], { wajib: true });
+alatDaftarkanPenunjuk("Bilah atas", ["#atas"], { wajib: true });
+alatDaftarkanPenunjuk("Menu utama", ["#cssmenu"], { wajib: true });
+alatDaftarkanPenunjuk("Tab perkara", ["#usual2", ".usual"], { wajib: false, saat: "halaman detail perkara" });
+alatDaftarkanPenunjuk("Tabel detail", [".cssTable", "#tableDetilPerkara"], { wajib: false, saat: "halaman detail perkara" });
+alatDaftarkanPenunjuk("Simpan putusan", PENUNJUK_SIMPAN_PUTUSAN, { wajib: false, saat: "borang putusan" });
 
 /**
  * Borang mana yang sedang terbuka di halaman ini.
@@ -6604,9 +6726,14 @@ function tombolTema(panel) {
     } else {
       temaSekarang = temaSekarang === "gelap" ? "terang" : "gelap";
     }
-    panel.setAttribute("data-tema", temaSekarang);
-    terapkanTemaSipp();
-    perbaruiJudul();
+    // Tampilan didahulukan; penyimpanan menyusul. Lihat catatan yang sama di
+    // alatTombolKepala - menunggu chrome.storage membuat tombolnya terasa
+    // tidak berfungsi, dan yang menekannya menekan sekali lagi.
+    alatTanpaTransisi(() => {
+      panel.setAttribute("data-tema", temaSekarang);
+      terapkanTemaSipp();
+      perbaruiJudul();
+    });
     try {
       void chrome.storage.local.set({
         [KUNCI_TEMA]: temaSekarang,
@@ -7470,6 +7597,13 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // tutup - supaya jari yang sudah hafal di satu panel tidak salah tekan di
   // panel lain.
   const alatKepala = buatElemen("span", "aleta-alat-kepala");
+
+  // Lingkungan lebih dahulu daripada chip peran: yang menentukan aman atau
+  // tidaknya sebuah tekanan bukan siapa Anda, melainkan SIPP yang mana.
+  const lencanaLingkungan = alatLencanaLingkungan(penggunaTerakhir && penggunaTerakhir.peran);
+  if (lencanaLingkungan) alatKepala.appendChild(lencanaLingkungan);
+  alatTandaiLingkungan(panel);
+  alatPasangGulir(panel);
   // Chip peran berdiri PALING KIRI di deret ini - tepat sebelum tombol
   // tema. Ia keterangan, bukan tombol, dan menaruhnya di tengah deret
   // tombol membuat orang mencoba menekannya.
@@ -7493,6 +7627,14 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   void alatWarnaTersimpan().then((warna) => {
     alatTerapkanWarna(panel, warna, false);
     alatPemilihWarna(panel, alatKepala, { peran: penggunaTerakhir && penggunaTerakhir.peran });
+    alatTombolPerkakas(panel, alatKepala, {
+      peran: penggunaTerakhir && penggunaTerakhir.peran,
+      perkara: cariNomorPerkara(),
+      akun: {
+        aleta: penggunaTerakhir && penggunaTerakhir.nama ? `ALETA ${penggunaTerakhir.nama}` : "",
+        sipp: akunSipp() ? `SIPP ${akunSipp()}` : "",
+      },
+    });
   });
 
   // ==========================================================================
@@ -10669,6 +10811,30 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
   if (perubahan.aktif) saklar.aktif = perubahan.aktif.newValue !== false;
   if (perubahan.tandaiHalaman) saklar.tandaiHalaman = perubahan.tandaiHalaman.newValue === true;
   if (perubahan.sisipJadwal) saklar.sisipJadwal = perubahan.sisipJadwal.newValue === true;
+
+  // ==========================================================================
+  // TEMA DAN PALET IKUT SEKETIKA, TERMASUK DARI TAB LAIN
+  // ==========================================================================
+  //
+  // Petugas lazim membuka SIPP di beberapa tab sekaligus - daftar perkara,
+  // detail, jadwal sidang. Mengganti tema di salah satunya dulu tidak
+  // menyentuh yang lain sampai dimuat ulang, dan yang terbaca dari situ bukan
+  // "berlaku per tab" melainkan "saklarnya tidak berfungsi".
+  if (perubahan[KUNCI_TEMA] || perubahan[KUNCI_TEMA_SIPP]) {
+    if (perubahan[KUNCI_TEMA]) {
+      temaSekarang = perubahan[KUNCI_TEMA].newValue === "terang" ? "terang" : "gelap";
+    }
+    if (perubahan[KUNCI_TEMA_SIPP]) {
+      temaSippMenyala = perubahan[KUNCI_TEMA_SIPP].newValue !== false;
+    }
+    const panel = document.getElementById(PENANDA);
+    alatTanpaTransisi(() => {
+      if (panel) panel.setAttribute("data-tema", temaSekarang);
+      terapkanTemaSipp();
+      const tombol = panel && panel.querySelector(".aleta-tema");
+      if (tombol) tombol.textContent = temaSekarang === "gelap" ? "☀" : "☾";
+    });
+  }
 
   if (perubahan.aktif) {
     nomorTerakhir = "";

@@ -85,6 +85,14 @@ describe("palet dipakai SELURUH peta gelap, bukan hanya panelnya", () => {
     /\.text-(red|green|yellow|muted)|\.bg-(aqua|green|yellow|red|blue|light-blue)/,
     /canvas#chartHakim/,
     /\.color-sendbtns/,
+    // font[color="..."] - warna MUTLAK yang ditulis halaman SIPP sendiri di
+    // dalam markahnya, dan artinya bukan selera: di dasbor merah dan biru
+    // MEMBEDAKAN kolom (sisa bulan lalu dan perkara masuk), di bilah atas
+    // warnanya membedakan golongan pengguna. Tiap warna diganti padanan
+    // terangnya supaya terbaca di atas latar gelap - bukan diikutkan palet,
+    // sebab palet yang mengubah arti bukan palet melainkan kerusakan.
+    // Alasannya sama persis dengan [style*="color:..."] di atas.
+    /font\[color=/,
   ];
 
   it("tidak satu aturan tema gelap pun memakai angka warna", () => {

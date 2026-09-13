@@ -3477,6 +3477,17 @@ async function sedangAktif() {
 
 let sudahDipasang = false;
 
+/**
+ * Penunjuk yang menentukan di halaman ABT.
+ *
+ * Halaman blangko dan halaman tanya-jawab memakai kerangka yang sama, jadi
+ * yang wajib hanya kerangkanya; sisanya ditandai menurut halamannya.
+ */
+alatDaftarkanPenunjuk("Kerangka ABT", ["#wrapper", "#content"], { wajib: true });
+alatDaftarkanPenunjuk("Menu ABT", ["#cssmenu"], { wajib: true });
+alatDaftarkanPenunjuk("Daftar blangko", [".pricing-top", ".pricing_inner_w3ls"], { wajib: false, saat: "halaman blangko" });
+alatDaftarkanPenunjuk("Borang tanya-jawab", ["#tanyajawab", "table.tabel_tanyajawab", "form"], { wajib: false, saat: "halaman tanya-jawab" });
+
 async function pasang() {
   if (sudahDipasang) return;
   const diTanyaJawab = halamanTanyaJawab();

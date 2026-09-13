@@ -122,16 +122,9 @@
   contain: layout paint;
 }
 
-/* Gulir yang tidak mencolok - bilah gulir tebal bawaan Chrome memakan lebar
-   yang di panel selebar 340 piksel benar-benar terasa. */
-.aleta-panel::-webkit-scrollbar { width: 9px; }
-.aleta-panel::-webkit-scrollbar-track { background: transparent; }
-.aleta-panel::-webkit-scrollbar-thumb {
-  background: var(--aleta-garis-kuat);
-  border-radius: 999px;
-  border: 2px solid var(--aleta-latar);
-}
-.aleta-panel::-webkit-scrollbar-thumb:hover { background: var(--aleta-garis); }
+/* Aturan bilah gulir panel ada di blok "GULIR YANG MUDAH DILIHAT DAN MUDAH
+   DITEKAN" di akhir berkas ini - satu tempat untuk panel dan isinya sekaligus,
+   supaya keduanya tidak pernah dapat berselisih lebar. */
 
 .aleta-kepala {
   display: flex;
@@ -218,13 +211,6 @@
   overscroll-behavior: contain;
 }
 
-.aleta-isi::-webkit-scrollbar { width: 9px; }
-.aleta-isi::-webkit-scrollbar-track { background: transparent; }
-.aleta-isi::-webkit-scrollbar-thumb {
-  background: var(--aleta-garis-kuat);
-  border-radius: 5px;
-}
-.aleta-isi::-webkit-scrollbar-thumb:hover { background: var(--aleta-garis); }
 
 /*
  * ============================================================================
@@ -3822,6 +3808,66 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.text-mut
   color: var(--s-tulisan-lembut) !important;
 }
 
+/* ==========================================================================
+   TULISAN YANG NAMANYA MENYEBUT WARNA MUTLAK
+   ==========================================================================
+
+   .text-black ditulis AdminLTE untuk kertas putih, dan namanya menyebut
+   warnanya sendiri - bukan perannya. Di daftar "RASIO BEBAN PERKARA" ia
+   menjadi hitam di atas latar hampir hitam: diukur pada replika dasbor,
+   rasionya 1,15 : 1. Bukan sulit dibaca - TIDAK TERBACA, dan daftar itu
+   tampak kosong padahal isinya lengkap.
+
+   Diperiksa dengan mengukur, bukan dengan memandang: judul kotaknya sendiri
+   ternyata sudah 11,79 : 1 dan memang tidak perlu disentuh, walau di
+   tangkapan layar keduanya sama-sama tampak suram. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.text-black, .text-white) {
+  color: var(--s-tulisan) !important;
+}
+
+/* ==========================================================================
+   ANGKA BERWARNA DASBOR, DAN SAMBUTAN DI BILAH ATAS
+   ==========================================================================
+
+   Dasbor menulis angkanya dengan <font color="red"> dan <font color="blue">,
+   dan bilah atas menyapa penggunanya dengan <font color="red">. Ketiganya
+   warna MUTLAK yang dipilih untuk latar putih; di atas latar gelap, merah
+   murni 1,12 : 1 dan biru murni 1,92 : 1 - keduanya praktis lenyap.
+
+   Yang dikerjakan bukan meratakan semuanya menjadi satu warna: merah dan
+   biru di dasbor MEMBEDAKAN kolom (sisa bulan lalu dan perkara masuk), dan
+   warna di sapaan membedakan golongan pengguna. Tiap warna diganti padanan
+   terangnya, sehingga artinya utuh dan angkanya terbaca.
+
+   Wadahnya disebut satu per satu - .konten, .h_right, .box-footer - dengan
+   alasan yang sama seperti aturan font[color] di atas: pemilih borong
+   menyisir seluruh halaman untuk tiap elemen, dan halaman daftar perkara
+   berisi lima puluh baris. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.konten, .h_right, .box-footer) :is(font[color="red"], font[color="#ff0000"]) {
+  color: #ffa79c !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.konten, .h_right, .box-footer) :is(font[color="blue"], font[color="#0000ff"]) {
+  color: #93c9f2 !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.konten, .h_right, .box-footer) font[color="green"] {
+  color: var(--s-hijau-terang) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(.konten, .h_right, .box-footer) font[color="yellow"] {
+  color: #ffd98a !important;
+}
+
+/* Sapaan itu duduk di atas bilah berwarna palet, bukan di atas latar halaman.
+   Diberi alas paling gelap, ketiga warna golongan di atasnya kembali punya
+   tempat berpijak yang sama di palet mana pun. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .h_right table.badge {
+  background-color: var(--s-mati) !important;
+  border: 1px solid var(--s-garis-hijau) !important;
+  color: var(--s-tulisan) !important;
+}
+
 /* Deretan tab pada dashboard - Home, Banding, Kasasi, Peninjauan Kembali. */
 html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .nav-tabs-custom {
   background-color: var(--s-permukaan) !important;
@@ -4397,9 +4443,73 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] hr.login {
   border-color: var(--s-garis-hijau) !important;
 }
 
-html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] :is(#footer, .version_shading) {
-  background-color: #0a120f !important;
+/* ==========================================================================
+   KARTU LOGIN: WARNANYA SUDAH BENAR SEJAK AWAL - YANG MENUTUPINYA GAMBAR
+   ==========================================================================
+
+   Aturan #kotakLogin di atas sudah memberi kartu itu warna tua paletnya sejak
+   gelombang pertama, dan hasilnya tetap hijau di semua palet. Sebabnya bukan
+   warnanya salah, melainkan tidak pernah terlihat: login.css menulis
+
+       background-image: -webkit-linear-gradient(90deg, #168d59, #1ea167);
+
+   dan gradasi adalah GAMBAR latar, yang dicat DI ATAS warna latar. Menimpa
+   background-color pada elemen yang bergradasi tidak mengubah satu piksel
+   pun. Yang harus dibuang gambarnya.
+
+   Hal yang sama pada tombol Login (.tombol7, gradasi kuning) - ia bahkan
+   belum pernah disentuh sama sekali, sehingga tetap kuning cerah di atas
+   kartu yang sudah gelap: satu-satunya bidang paling terang di seluruh
+   halaman, tepat pada tombol yang memang harus ditekan setiap pagi. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] #kotakLogin {
+  background-image: none !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] input.login {
+  background: var(--s-permukaan-2) !important;
+  border: 1px solid var(--s-garis-hijau) !important;
+  color: var(--s-tulisan) !important;
+  box-shadow: none !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] input.login::placeholder {
+  color: var(--s-tulisan-samar) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .tombol7 {
+  background-image: none !important;
+  background-color: var(--s-hijau) !important;
+  color: var(--s-tulisan-atas) !important;
+  border: 1px solid var(--s-garis-hijau) !important;
+  text-shadow: none !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .tombol7:hover {
+  background-image: none !important;
+  background-color: var(--s-sorot-kuat) !important;
+}
+
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] #footer {
+  background-color: var(--s-mati) !important;
   color: var(--s-tulisan-lembut) !important;
+}
+
+/* ==========================================================================
+   NOMOR VERSI DI BILAH ATAS BUKAN KAKI HALAMAN
+   ==========================================================================
+
+   .version_shading dulu disamakan dengan #footer - keduanya diberi warna
+   paling gelap. Itu benar untuk kaki halaman dan salah untuk yang ini:
+   .version_shading duduk DI DALAM bilah #atas, melayang di atasnya
+   (position: absolute; top: -85px), dan isinya hanya satu label berhuruf
+   190 piksel dengan warna putih beralfa 0,1 - sebuah cap air.
+
+   Cap air yang diberi latar sendiri berhenti menjadi cap air: ia menjadi
+   kotak hitam selebar 300 piksel yang menganga di tengah bilah berwarna,
+   dengan angka versi separuh terpotong di dalamnya. Latarnya dibuat tembus
+   pandang, dan capnya kembali menumpang warna bilah di belakangnya. */
+html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] .version_shading {
+  background-color: transparent !important;
 }
 
 /* --- SIPP: halaman ber-AdminLTE ------------------------------------------
@@ -5105,3 +5215,409 @@ html[data-aleta-tema-sipp="gelap"] .aleta-abt-batal {
 }
 .aleta-sdg-modus .aleta-sdg-pilih { flex: 1 1 160px; min-width: 0; }
 .aleta-sdg-alasan-saksi { flex: 1 1 100%; margin-left: 4.6em; }
+
+/* ==========================================================================
+   GULIR YANG MUDAH DILIHAT DAN MUDAH DITEKAN
+   ==========================================================================
+
+   Dua hal yang salah pada bilah gulir lama, dan keduanya diperbaiki di sini:
+
+   1. TERLALU TIPIS. Sembilan piksel adalah sasaran yang meleset lebih sering
+      daripada kena - dan meleset di tepi kanan panel berarti menyeret
+      panelnya, bukan menggulir isinya. Sekarang jalurnya 12 piksel.
+      Pegangannya tetap TERLIHAT ramping karena bingkai tembus pandang
+      selebar 3 piksel dengan background-clip: padding-box: yang dilihat mata
+      6 piksel, yang ditangkap kursor 12.
+
+   2. SELALU TAMPAK. Garis terang di tepi kanan yang tidak pernah dibutuhkan
+      ketika isinya memang muat. Sekarang pegangannya tembus pandang, dan
+      muncul hanya ketika data-gulir="tampak" dipasang alatPasangGulir -
+      kursor masuk jalur kanan, isinya sedang digulir, atau fokus papan tik
+      berpindah ke dalam panel.
+
+   LEBARNYA TIDAK IKUT BERUBAH, hanya warnanya. Bilah yang melebar saat
+   disentuh menggeser isi panel tepat ketika orang sedang membidiknya. */
+.aleta-panel::-webkit-scrollbar,
+.aleta-panel .aleta-isi::-webkit-scrollbar,
+.aleta-panel .aleta-perkakas-isi::-webkit-scrollbar {
+  width: 12px;
+}
+
+.aleta-panel::-webkit-scrollbar-track,
+.aleta-panel .aleta-isi::-webkit-scrollbar-track,
+.aleta-panel .aleta-perkakas-isi::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.aleta-panel::-webkit-scrollbar-thumb,
+.aleta-panel .aleta-isi::-webkit-scrollbar-thumb,
+.aleta-panel .aleta-perkakas-isi::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+  transition: background-color 0.15s ease;
+}
+
+.aleta-panel[data-gulir="tampak"]::-webkit-scrollbar-thumb,
+.aleta-panel[data-gulir="tampak"] .aleta-isi::-webkit-scrollbar-thumb,
+.aleta-panel[data-gulir="tampak"] .aleta-perkakas-isi::-webkit-scrollbar-thumb {
+  background-color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-panel[data-gulir="tampak"]::-webkit-scrollbar-thumb:hover,
+.aleta-panel[data-gulir="tampak"] .aleta-isi::-webkit-scrollbar-thumb:hover,
+.aleta-panel[data-gulir="tampak"] .aleta-perkakas-isi::-webkit-scrollbar-thumb:hover {
+  background-color: var(--aleta-merek);
+}
+
+.aleta-panel[data-gulir="tampak"]::-webkit-scrollbar-thumb:active,
+.aleta-panel[data-gulir="tampak"] .aleta-isi::-webkit-scrollbar-thumb:active {
+  background-color: var(--aleta-merek);
+}
+
+/* Yang matanya tidak menangkap perubahan halus tetap dilayani: bila peramban
+   diminta mengurangi gerak, pegangannya tidak berkedip masuk-keluar melainkan
+   tinggal tetap terlihat. */
+@media (prefers-reduced-motion: reduce) {
+  .aleta-panel::-webkit-scrollbar-thumb,
+  .aleta-panel .aleta-isi::-webkit-scrollbar-thumb {
+    background-color: var(--aleta-tulisan-lembut);
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   LENCANA LINGKUNGAN - SIPP YANG MANA
+   ==========================================================================
+
+   Warnanya sengaja TIDAK ikut palet. Palet boleh berganti menurut selera;
+   yang menyatakan "ini bukan peladen" tidak boleh ikut berganti, sebab
+   artinya bukan hiasan. */
+/* Deret tombol kepala harus DAPAT MENYUSUT, dan hanya chip peran yang
+   menyusut. Tanpa ini, satu lencana tambahan membuat kepala patah ke baris
+   kedua lagi pada panel sempit - persis cacat yang baru diperbaiki 1.128.0.
+   Panelnya memang tidak selalu 460 piksel: panel ABT 400, dan panel SIPP
+   menjadi 300 pada layar selebar 1100 piksel ke bawah.
+
+   Tombol dan lencana tidak ikut menyusut - ikon yang terjepit berhenti dapat
+   ditekan, dan lencana lingkungan yang terpotong berhenti menjadi peringatan.
+   Chip peran boleh: ia sudah berelipsis, dan "Super…" masih terbaca. */
+.aleta-alat-kepala {
+  /* flex-basis 0, dan itu yang menentukan.
+   *
+   * Pada wadah yang boleh membungkus, peramban memutuskan PINDAH BARIS lebih
+   * dahulu daripada menyusutkan, dan keputusannya memakai lebar alami tiap
+   * anaknya. Dengan basis auto, deret tombol menyatakan lebar alaminya yang
+   * lebih dari 300 piksel, sehingga kepala patah ke baris kedua tanpa satu
+   * pun anaknya sempat menyusut - persis cacat yang baru diperbaiki 1.128.0,
+   * kembali dibangkitkan oleh satu lencana tambahan.
+   *
+   * Dengan basis 0 ia tidak pernah menuntut apa pun: ia tumbuh mengisi sisa
+   * baris pertama, lalu menyusut DI DALAM dirinya sendiri - dan yang menyusut
+   * hanya chip peran, satu-satunya yang boleh.
+   *
+   * Isinya dirapatkan ke kanan, sama seperti ketika margin-left: auto yang
+   * mendorongnya dahulu: tampilannya tidak berubah, hanya cara mendapatkannya. */
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.aleta-alat-kepala > button {
+  flex: none;
+}
+
+.aleta-alat-kepala .aleta-kepala-peran {
+  flex: 0 1 auto;
+  min-width: 2.5em;
+}
+
+.aleta-lingkungan {
+  flex: none;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.aleta-lingkungan-lokal {
+  background: #3b2f07;
+  color: #ffd98a;
+  border: 1px solid #7a6412;
+}
+
+.aleta-lingkungan-lain {
+  background: #43120f;
+  color: #ffb4ab;
+  border: 1px solid #7f2a22;
+}
+
+.aleta-lingkungan-peladen {
+  background: #242424;
+  color: #a8a8a8;
+  border: 1px solid #3d3d3d;
+}
+
+/* ==========================================================================
+   MODE KERING - TERLIHAT DARI SEBERANG RUANGAN
+   ==========================================================================
+
+   Mode kering yang terlupa aktif membuat setiap tombol tampak rusak: ditekan,
+   tidak terjadi apa-apa, dan pesannya mudah terlewat. Karena itu penandanya
+   bukan tulisan kecil melainkan bingkai putus-putus di seluruh tepi panel. */
+html[data-aleta-kering="ya"] .aleta-panel {
+  outline: 2px dashed #e0a52f;
+  outline-offset: -2px;
+}
+
+/* ==========================================================================
+   LACI PERKAKAS SUPER ADMIN
+   ========================================================================== */
+.aleta-perkakas-tombol {
+  position: relative;
+}
+
+.aleta-perkakas-tombol.aleta-perkakas-perlu::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #e0a52f;
+}
+
+.aleta-perkakas {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  background: var(--aleta-latar);
+  border-radius: 10px;
+}
+
+.aleta-perkakas[hidden] { display: none; }
+
+.aleta-perkakas-kepala {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--aleta-garis);
+}
+
+.aleta-perkakas-judul {
+  flex: 1 1 auto;
+  font-weight: 700;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-merek);
+}
+
+.aleta-perkakas-aksi {
+  flex: none;
+  border: 1px solid var(--aleta-merek-garis);
+  background: var(--aleta-merek-tombol);
+  color: var(--aleta-tulisan);
+  border-radius: 5px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+
+.aleta-perkakas-aksi:hover { background: var(--aleta-merek-tombol-sorot); }
+
+.aleta-perkakas-tutup {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font: inherit;
+  font-size: calc(15px * var(--aleta-skala-huruf, 1));
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.aleta-perkakas-tutup:hover { color: var(--aleta-tulisan); }
+
+.aleta-perkakas-isi {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 10px 12px;
+}
+
+.aleta-perkakas-kelompok { margin-bottom: 12px; }
+
+.aleta-perkakas-kelompok-judul {
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--aleta-tulisan-lembut);
+  margin-bottom: 4px;
+}
+
+.aleta-perkakas-kelompok-isi {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.aleta-perkakas-baris {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border-left: 3px solid var(--aleta-garis);
+  background: var(--aleta-latar-naik);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-perkakas-baik { border-left-color: var(--aleta-merek); }
+.aleta-perkakas-awas { border-left-color: #e0a52f; }
+.aleta-perkakas-buruk { border-left-color: #d9534f; }
+
+.aleta-perkakas-nama {
+  flex: none;
+  min-width: 8.5em;
+  font-weight: 600;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-perkakas-jam {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--aleta-tulisan-lembut);
+}
+
+.aleta-perkakas-nilai {
+  flex: 1 1 auto;
+  color: var(--aleta-tulisan-lembut);
+  overflow-wrap: anywhere;
+}
+
+.aleta-perkakas-tanda {
+  flex: none;
+  color: var(--aleta-tulisan-lembut);
+  font-style: italic;
+}
+
+.aleta-perkakas-pulih {
+  flex: none;
+  border: 1px solid var(--aleta-merek-garis);
+  background: transparent;
+  color: var(--aleta-tulisan);
+  border-radius: 4px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+
+.aleta-perkakas-pulih:hover:not(:disabled) { background: var(--aleta-merek-tombol); }
+.aleta-perkakas-pulih:disabled { opacity: 0.5; cursor: default; }
+
+.aleta-perkakas-saklar {
+  align-self: flex-start;
+  border: 1px solid var(--aleta-garis-kuat);
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font: inherit;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aleta-perkakas-saklar-nyala {
+  background: #3b2f07;
+  border-color: #7a6412;
+  color: #ffd98a;
+}
+
+.aleta-perkakas-ket {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-perkakas-tunggu {
+  color: var(--aleta-tulisan-lembut);
+  font-style: italic;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-perkakas-kabar {
+  flex: none;
+  padding: 6px 10px;
+  border-top: 1px solid var(--aleta-garis);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-perkakas-kabar-buruk { color: #ffb4ab; }
+
+.aleta-perkakas-laporan {
+  width: 100%;
+  height: 9em;
+  margin-bottom: 8px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 5px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Pada tema terang bingkai mode kering dan lencana lingkungan tetap terbaca -
+   keduanya memakai warna sendiri, bukan token panel. */
+.aleta-panel[data-tema="terang"] .aleta-lingkungan-lokal {
+  background: #fdf3d6;
+  color: #6b4f14;
+  border-color: #d9c48a;
+}
+
+.aleta-panel[data-tema="terang"] .aleta-lingkungan-lain {
+  background: #fbe4e1;
+  color: #7a1f19;
+  border-color: #e0a49c;
+}
+
+.aleta-panel[data-tema="terang"] .aleta-lingkungan-peladen {
+  background: #ececec;
+  color: #555555;
+  border-color: #c8c8c8;
+}
+
+/* ==========================================================================
+   SELAMA TEMA BERGANTI, TIDAK ADA YANG DIANIMASIKAN
+   ==========================================================================
+
+   Mengganti tema mengubah warna seluruh halaman dalam satu tarikan. SIPP,
+   AdminLTE, dan Bootstrap memasang transition pada ratusan elemen - tombol,
+   baris tabel, kotak, tautan - sehingga satu tekanan tombol menyalakan
+   ratusan animasi warna serentak. Itulah yang terasa tersendat: bukan
+   temanya yang lambat menghitung, melainkan perjalanan menuju temanya yang
+   dianimasikan semua.
+
+   Kelas ini dipasang alatTanpaTransisi selama dua bingkai gambar, lalu
+   dicabut lagi. Animasi yang memang milik ALETA - rel pelangi super admin -
+   hanya tertahan selama dua bingkai itu, dan tidak ada yang melihatnya. */
+html.aleta-ganti-tema,
+html.aleta-ganti-tema *,
+html.aleta-ganti-tema *::before,
+html.aleta-ganti-tema *::after {
+  transition: none !important;
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+}

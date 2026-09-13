@@ -34,21 +34,23 @@ const konten = readFileSync(path.join(AKAR, "konten.js"), "utf8");
 
 const tanpaCatatan = gaya.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
 
+/**
+ * SELURUH aturan dengan pemilih itu, disambung.
+ *
+ * Satu pemilih boleh muncul di beberapa tempat - dan memang begitu di berkas
+ * ini: warna kartu login ditulis di gelombang pertama, gradasinya dibuang di
+ * gelombang kemudian. Keduanya berlaku bersama di peramban. Penjaga yang
+ * hanya membaca aturan PERTAMA akan menuduh yang kedua tidak ada; yang hanya
+ * membaca yang TERAKHIR akan menuduh yang pertama hilang. Yang benar
+ * membaca semuanya, sebab itulah yang dilihat peramban.
+ */
 function aturan(pemilih: string): string {
+  const semua: string[] = [];
   for (const m of tanpaCatatan.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (m[1].trim().replace(/\s+/g, " ") === pemilih) return m[2];
+    if (m[1].trim().replace(/\s+/g, " ") === pemilih) semua.push(m[2]);
   }
-  throw new Error(`aturan tidak ditemukan: ${pemilih}`);
-}
-
-/** Aturan TERAKHIR dengan pemilih itu - yang menang di kaskade bila sama spesifiknya. */
-function aturanTerakhir(pemilih: string): string {
-  let akhir: string | null = null;
-  for (const m of tanpaCatatan.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (m[1].trim().replace(/\s+/g, " ") === pemilih) akhir = m[2];
-  }
-  if (akhir === null) throw new Error(`aturan tidak ditemukan: ${pemilih}`);
-  return akhir;
+  if (semua.length === 0) throw new Error(`aturan tidak ditemukan: ${pemilih}`);
+  return semua.join("\n");
 }
 
 // ── warna ────────────────────────────────────────────────────────────────────
@@ -157,7 +159,7 @@ describe("pemilih warna: satu titik di kepala, tujuh di baliknya", () => {
     expect(gaya).toContain(".aleta-warna-pilih[hidden] { display: none; }");
     // Aturan .aleta-alat-kepala pertama menyusun deretnya; yang terakhir -
     // milik pemilih warna - menjadikannya acuan posisi baris titik.
-    expect(aturanTerakhir(".aleta-alat-kepala")).toContain("position: relative;");
+    expect(aturan(".aleta-alat-kepala")).toContain("position: relative;");
   });
 
   it("pada tema terang tombol kepalanya pun ikut disembunyikan", () => {
@@ -165,7 +167,7 @@ describe("pemilih warna: satu titik di kepala, tujuh di baliknya", () => {
   });
 
   it("chip peran yang panjang dipangkas, bukan mendorong deret ke baris kedua", () => {
-    const chip = aturanTerakhir(".aleta-alat-kepala .aleta-kepala-peran");
+    const chip = aturan(".aleta-alat-kepala .aleta-kepala-peran");
     expect(chip).toContain("max-width: 9.5em;");
     expect(chip).toContain("text-overflow: ellipsis;");
   });
@@ -211,6 +213,63 @@ describe("hijau yang menyelip di ABT dan SIPP, satu aturan per temuan pengukuran
     expect(b).toContain("background-image: none !important;");
     expect(b).toContain("background-color: var(--s-hijau-tua) !important;");
     expect(aturan(`${SIPP} #atas`)).toContain("background-blend-mode: multiply;");
+  });
+});
+
+/**
+ * ============================================================================
+ * HALAMAN LOGIN SIPP - GRADASI MENANG ATAS WARNA LATAR
+ * ============================================================================
+ *
+ * Kartu login sudah diberi warna tua paletnya sejak gelombang pertama, dan
+ * selama itu pula ia tetap hijau di layar. Sebabnya bukan warnanya salah:
+ * login.css menulis background-image berupa gradasi, dan gambar latar dicat
+ * DI ATAS warna latar. Menimpa background-color pada elemen yang bergradasi
+ * tidak mengubah satu piksel pun.
+ *
+ * Pelajaran itulah yang dijaga di sini, bukan sekadar warnanya: di mana pun
+ * halaman aslinya memakai gradasi, yang harus dibuang GAMBARNYA.
+ */
+describe("halaman login SIPP ikut palet, bukan tinggal hijau", () => {
+  const SIPP = 'html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"]';
+
+  it("gradasi kartu login dibuang - bukan hanya warnanya ditimpa", () => {
+    expect(aturan(`${SIPP} #kotakLogin`)).toContain("background-image: none !important;");
+    // Warna latarnya tetap dari aturan gelombang pertama, dan itu memang cukup
+    // begitu gambarnya tidak lagi menutupinya.
+    const awal = aturan(`${SIPP} #kotakLogin`);
+    expect(awal).toBeTruthy();
+  });
+
+  it("tombol Login tidak lagi kuning - ia bidang paling terang di layar gelap", () => {
+    const b = aturan(`${SIPP} .tombol7`);
+    expect(b).toContain("background-image: none !important;");
+    expect(b).toContain("background-color: var(--s-hijau) !important;");
+    expect(b).toContain("color: var(--s-tulisan-atas) !important;");
+    expect(aturan(`${SIPP} .tombol7:hover`)).toContain("background-color: var(--s-sorot-kuat) !important;");
+  });
+
+  it("medan isian login ikut permukaan palet, dan tulisannya berhenti kuning", () => {
+    const b = aturan(`${SIPP} input.login`);
+    expect(b).toContain("background: var(--s-permukaan-2) !important;");
+    expect(b).toContain("color: var(--s-tulisan) !important;");
+  });
+
+  it("cap air nomor versi tidak diberi latar sendiri", () => {
+    // .version_shading duduk DI DALAM bilah #atas dan isinya hanya label
+    // berhuruf 190 piksel dengan alfa 0,1 - sebuah cap air. Diberi latar
+    // gelap sendiri, ia menjadi kotak hitam selebar 300 piksel yang menganga
+    // di tengah bilah berwarna.
+    expect(aturan(`${SIPP} .version_shading`)).toContain("background-color: transparent !important;");
+    // Kaki halaman TETAP paling gelap - di sana latar gelap memang benar -
+    // dan kini mengikuti palet lewat token, bukan angka tetap.
+    expect(aturan(`${SIPP} #footer`)).toContain("background-color: var(--s-mati) !important;");
+  });
+
+  it("keduanya tidak lagi digabung dalam satu aturan", () => {
+    // Menggabungkannya dulu terasa hemat: dua tempat yang sama-sama harus
+    // gelap. Ternyata hanya satu yang benar-benar begitu.
+    expect(gaya).not.toContain(":is(#footer, .version_shading)");
   });
 });
 

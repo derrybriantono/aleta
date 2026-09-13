@@ -641,6 +641,126 @@ function alatPasangUbahUkuran(panel, kunci) {
  */
 const KUNCI_SALINAN_TEMA_HALAMAN = "aleta-tema-sipp";
 
+/**
+ * ============================================================================
+ * MENGGANTI TEMA TANPA TERSENDAT
+ * ============================================================================
+ *
+ * Satu penanda di akar mengubah warna SELURUH halaman sekaligus. Masalahnya
+ * bukan pada penghitungan gayanya - itu beberapa milidetik - melainkan pada
+ * TRANSISI: SIPP, AdminLTE, dan Bootstrap memasang transition pada ratusan
+ * elemen (tombol, baris tabel, kotak, tautan). Mengganti tema berarti
+ * menyalakan ratusan animasi warna pada saat yang sama, dan itulah yang
+ * terasa sebagai tersendat - bukan temanya yang lambat, melainkan perjalanan
+ * menuju temanya yang dianimasikan semua.
+ *
+ * Selama pergantian, seluruh transisi dan animasi dimatikan; dua bingkai
+ * kemudian - satu untuk menghitung, satu untuk memastikan sudah tercat -
+ * semuanya dikembalikan. Hasilnya pergantian yang berkedip sekali dan
+ * selesai, bukan yang merayap selama setengah detik.
+ */
+function alatTanpaTransisi(kerjakan) {
+  const akar = document.documentElement;
+  let dipasang = false;
+  try {
+    akar.classList.add("aleta-ganti-tema");
+    dipasang = true;
+  } catch {
+    /* tanpa kelasnya, temanya tetap berganti - hanya dengan transisi */
+  }
+  try {
+    kerjakan();
+  } finally {
+    if (dipasang) {
+      const lepas = () => akar.classList.remove("aleta-ganti-tema");
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => requestAnimationFrame(lepas));
+      } else {
+        setTimeout(lepas, 50);
+      }
+    }
+  }
+}
+
+/**
+ * ============================================================================
+ * TEMA DAN PALET IKUT SEKETIKA DI SELURUH TAB
+ * ============================================================================
+ *
+ * Sebelumnya tombol tema hanya mengubah TAB TEMPAT IA DITEKAN. Petugas yang
+ * membuka SIPP di tiga tab - daftar perkara, detail, dan jadwal sidang, cara
+ * kerja yang paling lumrah - lalu mengganti tema di salah satunya, melihat
+ * dua tab lain tetap seperti semula sampai dimuat ulang. Yang terbaca dari
+ * situ bukan "berlaku per tab", melainkan "saklarnya tidak berfungsi".
+ *
+ * chrome.storage.onChanged sampai ke SEMUA tab tanpa izin tambahan apa pun.
+ * Panel yang terdaftar di sini ikut berganti seketika, beserta penanda
+ * halamannya dan salinan sinkron yang dibaca tema-awal.js.
+ */
+const alatPanelTema = [];
+
+function alatDaftarkanPanelTema(panel, pilihan) {
+  if (!panel) return;
+  if (alatPanelTema.some((x) => x.panel === panel)) return;
+  alatPanelTema.push({ panel, pilihan: pilihan || {} });
+}
+
+/** Satu tema diberlakukan ke panel yang terdaftar dan ke halamannya. */
+function alatSelaraskanTema(tema) {
+  const bersih = tema === "terang" ? "terang" : "gelap";
+  alatTanpaTransisi(() => {
+    for (const { panel, pilihan } of alatPanelTema) {
+      if (!panel.isConnected) continue;
+      panel.setAttribute("data-tema", bersih);
+      const tombol = panel.querySelector(".aleta-tema");
+      if (tombol) tombol.textContent = bersih === "gelap" ? "☀" : "☾";
+      if (pilihan.temaHalaman) alatTerapkanTemaHalaman(bersih);
+    }
+  });
+}
+
+function alatSelaraskanWarna(nama) {
+  alatTanpaTransisi(() => {
+    if (alatPanelTema.length === 0) {
+      alatTerapkanWarna(null, nama, false);
+      return;
+    }
+    for (const { panel } of alatPanelTema) {
+      if (!panel.isConnected) continue;
+      alatTerapkanWarna(panel, nama, false);
+      const pemilih = panel.querySelector(".aleta-warna-pilih");
+      if (pemilih && typeof pemilih.aletaTandai === "function") pemilih.aletaTandai(nama || "");
+    }
+  });
+  // Salinan sinkron halaman INI ikut diperbarui - kalau tidak, halaman
+  // berikutnya di tab ini lahir dengan warna lama lalu berkelebat.
+  try {
+    window.localStorage.setItem(KUNCI_SALINAN_WARNA, nama || "");
+  } catch {
+    /* halaman berikutnya berkelebat sekali - warnanya tetap berlaku kini */
+  }
+}
+
+function alatDengarkanTemaPalet() {
+  const tanda = "__aletaDengarTema";
+  if (globalThis[tanda]) return;
+  globalThis[tanda] = true;
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local") return;
+      if (ubah[KUNCI_WARNA_GELAP]) {
+        const nama = String(ubah[KUNCI_WARNA_GELAP].newValue || "");
+        alatSelaraskanWarna(DAFTAR_WARNA_GELAP.some(([k]) => k === nama) ? nama : "");
+      }
+      if (ubah.temaPanel) {
+        alatSelaraskanTema(ubah.temaPanel.newValue === "terang" ? "terang" : "gelap");
+      }
+    });
+  } catch {
+    /* tanpa pendengarnya, temanya berlaku di tab tempat ia ditekan saja */
+  }
+}
+
 function alatTerapkanTemaHalaman(tema) {
   const akar = document.documentElement;
   if (tema === "gelap") akar.setAttribute("data-aleta-tema-sipp", "gelap");
@@ -891,6 +1011,15 @@ function alatTombolKepala(panel, kunci, opsi) {
   const wadah = document.createElement("span");
   wadah.className = "aleta-alat-kepala";
 
+  // Lencana lingkungan berdiri PALING KIRI di deret ini, sebelum tombol
+  // apa pun. Ia menjawab pertanyaan yang harus dijawab SEBELUM menekan:
+  // panel ini menempel di SIPP yang mana. Lihat alatLencanaLingkungan -
+  // di peladen, petugas biasa tidak melihatnya sama sekali.
+  const lencanaLingkungan = alatLencanaLingkungan(
+    pilihan.peran || (panel && panel.getAttribute && panel.getAttribute("data-peran"))
+  );
+  if (lencanaLingkungan) wadah.appendChild(lencanaLingkungan);
+
   const buat = (kelas, teks, judul, saatKlik) => {
     const tombol = document.createElement("button");
     tombol.type = "button";
@@ -935,9 +1064,16 @@ function alatTombolKepala(panel, kunci, opsi) {
   // localStorage cache yang membuat halaman berikutnya lahir sudah benar.
   const tema = buat("aleta-tema", "", "Ganti tema ALETA dan halaman ini", async () => {
     const baru = panel.getAttribute("data-tema") === "gelap" ? "terang" : "gelap";
-    panel.setAttribute("data-tema", baru);
-    tema.textContent = baru === "gelap" ? "☀" : "☾";
-    if (pilihan.temaHalaman) alatTerapkanTemaHalaman(baru);
+    // Penanda dipasang LEBIH DAHULU dan tanpa menunggu apa pun. Menyimpan ke
+    // chrome.storage adalah panggilan asinkron lintas proses; menunggunya
+    // sebelum mengubah tampilan membuat tekanan tombol terasa tidak
+    // menghasilkan apa-apa selama sepersekian detik - dan yang menekannya
+    // menekan sekali lagi, yang justru mengembalikannya.
+    alatTanpaTransisi(() => {
+      panel.setAttribute("data-tema", baru);
+      tema.textContent = baru === "gelap" ? "☀" : "☾";
+      if (pilihan.temaHalaman) alatTerapkanTemaHalaman(baru);
+    });
     try {
       await chrome.storage.local.set({ [pilihan.kunciTema || "temaPanel"]: baru });
     } catch {
@@ -949,6 +1085,9 @@ function alatTombolKepala(panel, kunci, opsi) {
   // Enam warna gelap - hanya bagi super admin, dan hanya ikon. Dipasang
   // sesudah tombol tema sebab warnanya memang anak dari tema gelap.
   alatPemilihWarna(panel, wadah, pilihan);
+
+  // Kunci pas perkakas - juga hanya super admin, dan juga satu tombol saja.
+  alatTombolPerkakas(panel, wadah, pilihan);
 
   // ── Ciut ──────────────────────────────────────────────────────────────────
   //
@@ -1034,6 +1173,14 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   } catch {
     /* warna bawaan berlaku */
   }
+
+  // Lingkungan, bilah gulir, dan mode kering dipasang di sini supaya ketiga
+  // panel mendapatkannya tanpa satu baris tambahan di masing-masing berkas.
+  alatTandaiLingkungan(panel);
+  alatPasangGulir(panel);
+  alatDaftarkanPanelTema(panel, pilihan);
+  alatDengarkanTemaPalet();
+  void alatMuatKering();
 
   alatNormalkanJangkar(panel);
   const posisiTersimpan = await alatMuatPosisi(kunci);
@@ -1598,3 +1745,1028 @@ function alatKelasPeran(peran) {
   if (/panitera|jurusita|juru\s*sita|\bpp\b/.test(p)) return "aleta-peran-panitera";
   return "aleta-peran-lain";
 }
+
+/*
+ * ============================================================================
+ * PERKAKAS SUPER ADMIN - TUJUH ALAT DI SATU LACI
+ * ============================================================================
+ *
+ * Ketujuhnya menjawab satu keluhan yang sama, yang selama ini dijawab dengan
+ * tangkapan layar dan tebakan: KETIKA SESUATU TIDAK BERES, TIDAK ADA TEMPAT
+ * MELIHAT APA YANG SEBENARNYA TERJADI.
+ *
+ *   1. Lingkungan      - panel ini menempel di SIPP yang mana?
+ *   2. Versi terpasang - yang berjalan sudah versi terbaru, atau lupa Reload?
+ *   3. Mode kering     - coba dulu tanpa menyimpan apa pun.
+ *   4. Papan kesehatan - sepuluh pertanyaan yang biasanya dijawab lewat SSH.
+ *   5. Kotak hitam     - lima puluh kejadian terakhir, apa adanya.
+ *   6. Riwayat tindakan- apa yang ALETA ubah, dan bagaimana mengembalikannya.
+ *   7. Periksa penunjuk- masih ketemu tidak, tombol dan medan yang dicari?
+ *
+ * SEMUANYA HANYA UNTUK SUPER ADMIN, dan alasannya bukan kerahasiaan: ketujuh
+ * alat ini menjawab pertanyaan ORANG YANG MEMPERBAIKI, bukan pertanyaan orang
+ * yang sedang mengerjakan perkara. Petugas yang melihatnya hanya mendapat
+ * enam tombol lagi yang harus diabaikan.
+ *
+ * Mencatat TIDAK BOLEH MENJADI BEBAN. Semua catatan disimpan di memori dengan
+ * batas jumlah, disalin ke sessionStorage supaya selamat dari muat ulang
+ * halaman - itu justru saat yang paling dibutuhkan, sebab kegagalan unggah
+ * kerap diikuti halaman yang berpindah - dan tidak pernah dikirim ke mana
+ * pun. Tidak ada satu pun permintaan jaringan tambahan yang dibuat hanya
+ * untuk mencatat.
+ */
+
+/** Elemen ringkas - panel-alat.js tidak memuat buatElemen milik konten.js. */
+function alatEl(tag, kelas, teks) {
+  const e = document.createElement(tag);
+  if (kelas) e.className = kelas;
+  if (teks !== undefined && teks !== null) e.textContent = String(teks);
+  return e;
+}
+
+/* ─── 1. LINGKUNGAN: SIPP YANG MANA ─────────────────────────────────────────
+ *
+ * SIPP di komputer ini dan SIPP di peladen tampilannya SAMA PERSIS - judul
+ * yang sama, warna yang sama, nomor perkara yang sama, sebab basis datanya
+ * memang salinan. Satu-satunya beda ada di bilah alamat, yang justru bagian
+ * layar yang paling jarang dibaca ketika sedang bekerja.
+ *
+ * Akibat kekeliruannya tidak setara: yang salah menekan di komputer sendiri
+ * kehilangan data uji; yang salah menekan di peladen mengubah perkara
+ * sungguhan, dan penetapan massal tidak punya tombol batal.
+ *
+ * Karena itu lencananya TIDAK hanya untuk super admin: siapa pun yang sedang
+ * membuka SIPP di luar peladen harus melihatnya. Di peladen sendiri lencana
+ * itu justru DISEMBUNYIKAN dari petugas - di sanalah tempat yang benar, dan
+ * tulisan yang selalu ada berhenti dibaca. Super admin tetap melihat keduanya,
+ * sebab ia yang berpindah-pindah.
+ */
+const ALAT_INANG_PELADEN = "192.168.10.10";
+
+function alatLingkungan() {
+  let inang = "";
+  try {
+    inang = String(window.location.hostname || "");
+  } catch {
+    inang = "";
+  }
+  if (inang === ALAT_INANG_PELADEN) {
+    return { kunci: "peladen", label: "PELADEN", judul: `SIPP peladen ${ALAT_INANG_PELADEN} - data perkara SUNGGUHAN.` };
+  }
+  if (inang === "127.0.0.1" || inang === "localhost" || inang === "::1") {
+    return { kunci: "lokal", label: "LOKAL", judul: "SIPP di komputer ini - salinan untuk uji coba, bukan data peladen." };
+  }
+  return { kunci: "lain", label: inang || "?", judul: `SIPP di ${inang || "alamat yang tidak dikenali"} - bukan peladen, bukan komputer ini.` };
+}
+
+function alatTandaiLingkungan(panel) {
+  const l = alatLingkungan();
+  try {
+    document.documentElement.setAttribute("data-aleta-lingkungan", l.kunci);
+  } catch {
+    /* halaman tanpa akar - lencananya tetap terpasang */
+  }
+  if (panel && panel.setAttribute) panel.setAttribute("data-lingkungan", l.kunci);
+  return l;
+}
+
+function alatLencanaLingkungan(peran) {
+  const l = alatLingkungan();
+  const super_ = /super/i.test(String(peran || ""));
+  if (l.kunci === "peladen" && !super_) return null;
+  const chip = alatEl("span", `aleta-lingkungan aleta-lingkungan-${l.kunci}`, l.label);
+  chip.title = l.judul;
+  return chip;
+}
+
+/* ─── 2. KOTAK HITAM ────────────────────────────────────────────────────────
+ *
+ * Lima puluh kejadian terakhir: tiap permintaan ke portal beserta lama dan
+ * statusnya, tiap perintah ke jembatan, tiap galat yang tertangkap panel.
+ *
+ * Kenapa ini yang paling sering menolong: pesan yang sampai ke layar sudah
+ * DITERJEMAHKAN supaya dapat dibaca petugas. "Server ALETA tidak terjangkau"
+ * pernah berarti galat basis data karena satu bita kosong di dalam berkas RTF
+ * - tidak ada hubungannya dengan jangkauan. Yang menerjemahkan itu benar
+ * untuk petugas dan menyesatkan untuk yang memperbaiki; kotak hitam menyimpan
+ * yang belum diterjemahkan.
+ */
+const ALAT_KOTAK_MAKS = 50;
+const ALAT_KOTAK_KUNCI = "aleta-kotak-hitam";
+const alatKotak = [];
+let alatKotakNomor = 0;
+
+function alatKotakMuat() {
+  if (alatKotak.length > 0) return;
+  try {
+    const mentah = window.sessionStorage.getItem(ALAT_KOTAK_KUNCI);
+    if (!mentah) return;
+    const urai = JSON.parse(mentah);
+    if (Array.isArray(urai)) {
+      for (const x of urai.slice(-ALAT_KOTAK_MAKS)) alatKotak.push(x);
+      alatKotakNomor = alatKotak.length;
+    }
+  } catch {
+    /* sessionStorage ditutup atau isinya rusak - mulai dari kosong */
+  }
+}
+
+function alatKotakSimpan() {
+  try {
+    window.sessionStorage.setItem(ALAT_KOTAK_KUNCI, JSON.stringify(alatKotak));
+  } catch {
+    /* penuh atau ditutup - catatan tetap hidup di memori halaman ini */
+  }
+}
+
+/**
+ * Satu kejadian dicatat.
+ *
+ * `rinci` sengaja dipotong: satu jawaban JSON bisa puluhan kilobita, dan
+ * kotak hitam yang membuat halaman berat justru menambah cacat, bukan
+ * menemukannya.
+ */
+function alatCatat(jenis, ringkas, rinci) {
+  alatKotakMuat();
+  alatKotakNomor += 1;
+  const potong = (x) => {
+    if (x === undefined || x === null) return "";
+    const s = typeof x === "string" ? x : (() => { try { return JSON.stringify(x); } catch { return String(x); } })();
+    return s.length > 400 ? `${s.slice(0, 400)}…` : s;
+  };
+  alatKotak.push({
+    id: alatKotakNomor,
+    waktu: new Date().toISOString(),
+    jenis: String(jenis || "lain"),
+    ringkas: String(ringkas || "").slice(0, 200),
+    rinci: potong(rinci),
+  });
+  while (alatKotak.length > ALAT_KOTAK_MAKS) alatKotak.shift();
+  alatKotakSimpan();
+}
+
+function alatKotakHitam() {
+  alatKotakMuat();
+  return alatKotak.slice();
+}
+
+function alatKotakKosongkan() {
+  alatKotak.length = 0;
+  alatKotakSimpan();
+}
+
+/* ─── 3. MODE KERING ────────────────────────────────────────────────────────
+ *
+ * Satu saklar: coba semuanya, jangan simpan apa pun.
+ *
+ * Batasnya dipilih dengan sengaja, dan bukan "tidak boleh menyentuh apa-apa":
+ *
+ *   MEDAN TETAP DIISI. Justru itu yang ingin dilihat - apakah tanggal,
+ *   majelis, dan amar yang akan ditulis sudah benar. Mengisi medan tidak
+ *   mengubah apa pun di basis data SIPP; SIPP baru menyimpan ketika tombol
+ *   Simpan miliknya ditekan.
+ *
+ *   TOMBOL SIMPAN SIPP TIDAK PERNAH DITEKAN, dan tidak satu pun permintaan
+ *   tulis ke portal ALETA dikirim. Dua itulah yang benar-benar mengubah data.
+ *
+ * Jadi mode kering menjawab "apa yang akan terjadi" dengan memperlihatkannya
+ * di layar, bukan dengan menjanjikannya di teks.
+ */
+const ALAT_KERING_KUNCI = "modeKering";
+let alatKeringNyalaKini = false;
+/**
+ * Sudahkah saklarnya disentuh DI HALAMAN INI?
+ *
+ * Tanpa penanda ini ada lomba yang berakibat buruk satu arah. alatMuatKering
+ * dipanggil dua kali - saat berkas ini dimuat, dan saat panel dipasang - dan
+ * keduanya membaca penyimpanan secara asinkron. Yang menyalakan mode kering
+ * tepat sebelum salah satu bacaan itu kembali akan melihat saklarnya kembali
+ * mati sendiri, TANPA pemberitahuan apa pun.
+ *
+ * Arah salahnya yang membuatnya berbahaya: orang mengira tulisan sedang
+ * ditahan, padahal sudah tidak. Karena itu pilihan yang disetel di halaman
+ * ini selalu menang atas bacaan yang masih di jalan.
+ */
+let alatKeringDisetel = false;
+
+function alatKeringNyala() {
+  return alatKeringNyalaKini === true;
+}
+
+async function alatMuatKering() {
+  let terbaca = false;
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_KERING_KUNCI]);
+    terbaca = simpan[ALAT_KERING_KUNCI] === true;
+  } catch {
+    terbaca = false;
+  }
+  if (alatKeringDisetel) return alatKeringNyalaKini;
+  alatKeringNyalaKini = terbaca;
+  alatTandaiKering();
+  return alatKeringNyalaKini;
+}
+
+/**
+ * Saklarnya satu untuk seluruh peramban, jadi tab lain harus ikut seketika.
+ *
+ * Tanpa ini, mode kering yang dinyalakan di satu tab SIPP tidak berlaku di tab
+ * SIPP sebelahnya sampai halamannya dimuat ulang - dan tab sebelah itulah yang
+ * paling mungkin dipakai menekan sesuatu.
+ */
+function alatDengarkanKering() {
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah[ALAT_KERING_KUNCI]) return;
+      alatKeringNyalaKini = ubah[ALAT_KERING_KUNCI].newValue === true;
+      alatKeringDisetel = true;
+      alatTandaiKering();
+    });
+  } catch {
+    /* tanpa pendengarnya, mode kering tetap berlaku di tab tempat ia disetel */
+  }
+}
+
+async function alatSetelKering(nyala) {
+  alatKeringDisetel = true;
+  alatKeringNyalaKini = nyala === true;
+  alatTandaiKering();
+  alatCatat("kering", alatKeringNyalaKini ? "mode kering DINYALAKAN" : "mode kering dimatikan", "");
+  try {
+    await chrome.storage.local.set({ [ALAT_KERING_KUNCI]: alatKeringNyalaKini });
+  } catch {
+    /* berlaku untuk halaman ini saja */
+  }
+  return alatKeringNyalaKini;
+}
+
+/** Penanda di akar: dari sinilah pita miring di tepi panel mengambil isyarat. */
+function alatTandaiKering() {
+  try {
+    if (alatKeringNyalaKini) document.documentElement.setAttribute("data-aleta-kering", "ya");
+    else document.documentElement.removeAttribute("data-aleta-kering");
+  } catch {
+    /* tanpa penandanya, mode kering tetap berlaku - hanya tidak terlihat */
+  }
+}
+
+/**
+ * Bolehkah permintaan ini berangkat?
+ *
+ * Yang ditahan hanya TULISAN ke portal ALETA. Bacaan tetap berjalan - panel
+ * yang kosong tidak memperlihatkan apa pun untuk diperiksa, dan itu membuat
+ * mode kering tidak ada gunanya. Permintaan ke SIPP sendiri juga tidak
+ * disentuh: ALETA tidak pernah menulis ke SIPP lewat jaringan, melainkan lewat
+ * borangnya - dan borang itu ditahan di tempat lain (perintah "tekan").
+ */
+function alatKeringMenahan(alamat, opsi) {
+  if (!alatKeringNyala()) return false;
+  const cara = String((opsi && opsi.method) || "GET").toUpperCase();
+  if (cara === "GET" || cara === "HEAD") return false;
+  return /\/aleta\/api\//.test(String(alamat || ""));
+}
+
+/** Jawaban tiruan untuk permintaan yang ditahan - 423 Locked, dengan sebabnya. */
+function alatJawabanKering(alamat, opsi) {
+  const cara = String((opsi && opsi.method) || "POST").toUpperCase();
+  const badan = JSON.stringify({
+    ok: false,
+    alasan: "mode_kering",
+    pesan: "Mode kering aktif - tidak ada yang dikirim ke ALETA.",
+    yangDitahan: { cara, alamat: String(alamat || "") },
+  });
+  return new Response(badan, {
+    status: 423,
+    statusText: "Mode kering",
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/* ─── 4. PEMANTAU PERMINTAAN: SATU KAIT UNTUK SEMUANYA ──────────────────────
+ *
+ * Permintaan jaringan ekstensi ini keluar dari lebih dari tiga puluh tempat -
+ * sebagian lewat alatAmbil, sebagian lewat fetch langsung. Memasang catatan
+ * di tiap tempat berarti tiga puluh suntingan yang harus tetap lengkap
+ * selamanya, dan yang terlewat justru akan menjadi yang paling dibutuhkan.
+ *
+ * Karena itu yang dibungkus fetch-nya sendiri, SATU KALI. Ini fetch milik
+ * dunia terasing ekstensi - bukan fetch halaman SIPP: permintaan SIPP sendiri
+ * tidak ikut tercatat dan tidak ikut tertahan.
+ */
+function alatPasangPemantauAmbil() {
+  const tanda = "__aletaPemantauAmbil";
+  if (globalThis[tanda]) return;
+  const asli = globalThis.fetch;
+  if (typeof asli !== "function") return;
+  globalThis[tanda] = true;
+
+  globalThis.fetch = async function aletaFetch(masukan, opsi) {
+    const alamat = typeof masukan === "string" ? masukan : (masukan && masukan.url) || String(masukan);
+    const cara = String((opsi && opsi.method) || (masukan && masukan.method) || "GET").toUpperCase();
+
+    if (alatKeringMenahan(alamat, opsi || masukan)) {
+      alatCatat("kering", `DITAHAN ${cara} ${alatRingkasAlamat(alamat)}`, "mode kering aktif");
+      return alatJawabanKering(alamat, opsi || masukan);
+    }
+
+    const mulai = Date.now();
+    try {
+      const jawab = await asli.call(this, masukan, opsi);
+      const lama = Date.now() - mulai;
+      alatCatat(
+        jawab.ok ? "ambil" : "ambil-gagal",
+        `${cara} ${alatRingkasAlamat(alamat)} → ${jawab.status} (${lama} ms)`,
+        jawab.ok ? "" : `status ${jawab.status} ${jawab.statusText || ""}`
+      );
+      return jawab;
+    } catch (galat) {
+      alatCatat(
+        "ambil-galat",
+        `${cara} ${alatRingkasAlamat(alamat)} → ${(galat && galat.name) || "galat"} (${Date.now() - mulai} ms)`,
+        (galat && galat.message) || String(galat)
+      );
+      throw galat;
+    }
+  };
+}
+
+/** Alamat dipendekkan supaya satu baris kotak hitam tetap satu baris. */
+function alatRingkasAlamat(alamat) {
+  const s = String(alamat || "");
+  const tanpaAsal = s.replace(/^https?:\/\/[^/]+/i, "");
+  return tanpaAsal.length > 70 ? `${tanpaAsal.slice(0, 70)}…` : tanpaAsal;
+}
+
+/* ─── 5. RIWAYAT TINDAKAN, DAN JALAN PULANGNYA ──────────────────────────────
+ *
+ * Tiap medan yang diisi ALETA dicatat bersama NILAI SEBELUMNYA. Dari situlah
+ * "pulihkan" mungkin: mengisinya kembali dengan yang lama.
+ *
+ * Yang TIDAK dapat dipulihkan disebut apa adanya - penekanan tombol Simpan
+ * SIPP, unggahan berkas, penetapan yang sudah terbit. Menawarkan tombol
+ * pulihkan untuk sesuatu yang tidak dapat dipulihkan lebih buruk daripada
+ * tidak menawarkan apa-apa; yang menekannya akan mengira keadaannya sudah
+ * kembali.
+ */
+const ALAT_RIWAYAT_MAKS = 40;
+const ALAT_RIWAYAT_KUNCI = "aleta-riwayat-tindakan";
+const alatRiwayat = [];
+let alatRiwayatNomor = 0;
+
+function alatRiwayatMuat() {
+  if (alatRiwayat.length > 0) return;
+  try {
+    const mentah = window.sessionStorage.getItem(ALAT_RIWAYAT_KUNCI);
+    if (!mentah) return;
+    const urai = JSON.parse(mentah);
+    if (Array.isArray(urai)) {
+      for (const x of urai.slice(-ALAT_RIWAYAT_MAKS)) alatRiwayat.push(x);
+      alatRiwayatNomor = alatRiwayat.length;
+    }
+  } catch {
+    /* mulai dari kosong */
+  }
+}
+
+function alatRiwayatSimpan() {
+  try {
+    window.sessionStorage.setItem(ALAT_RIWAYAT_KUNCI, JSON.stringify(alatRiwayat));
+  } catch {
+    /* riwayat tetap hidup di memori halaman ini */
+  }
+}
+
+function alatCatatTindakan(tindakan) {
+  alatRiwayatMuat();
+  alatRiwayatNomor += 1;
+  const baris = {
+    id: alatRiwayatNomor,
+    waktu: new Date().toISOString(),
+    jenis: String((tindakan && tindakan.jenis) || "isi"),
+    penunjuk: String((tindakan && tindakan.penunjuk) || ""),
+    jenisMedan: String((tindakan && tindakan.jenisMedan) || ""),
+    label: String((tindakan && tindakan.label) || ""),
+    nilaiLama: (tindakan && tindakan.nilaiLama) === undefined ? "" : String(tindakan.nilaiLama).slice(0, 300),
+    nilaiBaru: (tindakan && tindakan.nilaiBaru) === undefined ? "" : String(tindakan.nilaiBaru).slice(0, 300),
+    dapatPulih: Boolean(tindakan && tindakan.dapatPulih),
+    dipulihkan: false,
+  };
+  alatRiwayat.push(baris);
+  while (alatRiwayat.length > ALAT_RIWAYAT_MAKS) alatRiwayat.shift();
+  alatRiwayatSimpan();
+  return baris;
+}
+
+function alatRiwayatTindakan() {
+  alatRiwayatMuat();
+  return alatRiwayat.slice();
+}
+
+function alatRiwayatKosongkan() {
+  alatRiwayat.length = 0;
+  alatRiwayatSimpan();
+}
+
+function alatTandaiDipulihkan(id) {
+  alatRiwayatMuat();
+  const baris = alatRiwayat.find((x) => x.id === id);
+  if (baris) {
+    baris.dipulihkan = true;
+    alatRiwayatSimpan();
+  }
+}
+
+/**
+ * Cara memulihkan berbeda di tiap panel - hanya panel SIPP yang punya
+ * jembatan ke borangnya. Panel yang punya mendaftarkan pemulihnya di sini;
+ * yang tidak, riwayatnya tetap terbaca tanpa tombol pulihkan.
+ */
+let alatPemulihTindakan = null;
+function alatDaftarkanPemulih(fungsi) {
+  alatPemulihTindakan = typeof fungsi === "function" ? fungsi : null;
+}
+
+/* ─── 6. PENUNJUK: MASIH KETEMU TIDAK? ──────────────────────────────────────
+ *
+ * Ekstensi ini mencari tombol dan medan SIPP lewat penunjuk CSS. Ketika SIPP
+ * diperbarui dan nama medannya berubah, penunjuk yang tidak ketemu TIDAK
+ * menimbulkan galat - querySelector hanya menjawab null, dan ekstensi diam
+ * saja tidak mengisi apa-apa. Rusaknya tidak bersuara; yang bersuara petugas,
+ * berhari-hari kemudian.
+ *
+ * Yang didaftarkan di sini penunjuk yang MENENTUKAN - yang kalau hilang,
+ * sebuah kemampuan berhenti bekerja. Penunjuk yang memang wajar tidak ada di
+ * halaman tertentu ditandai tidak wajib, supaya laporannya tidak penuh
+ * peringatan palsu yang lama-lama diabaikan.
+ */
+const alatPenunjukTerdaftar = [];
+
+function alatDaftarkanPenunjuk(nama, penunjuk, pilihan) {
+  if (!nama || !penunjuk) return;
+  const opsi = pilihan || {};
+  if (alatPenunjukTerdaftar.some((x) => x.nama === nama)) return;
+  alatPenunjukTerdaftar.push({
+    nama: String(nama),
+    penunjuk: Array.isArray(penunjuk) ? penunjuk.slice() : [String(penunjuk)],
+    wajib: opsi.wajib !== false,
+    saat: String(opsi.saat || "halaman ini"),
+  });
+}
+
+function alatPeriksaPenunjuk() {
+  const hasil = [];
+  for (const satu of alatPenunjukTerdaftar) {
+    let ketemu = "";
+    for (const p of satu.penunjuk) {
+      try {
+        if (document.querySelector(p)) {
+          ketemu = p;
+          break;
+        }
+      } catch {
+        /* penunjuk yang tidak sah dihitung tidak ketemu - dan itu memang cacat */
+      }
+    }
+    hasil.push({
+      nama: satu.nama,
+      ketemu: Boolean(ketemu),
+      dipakai: ketemu,
+      dicoba: satu.penunjuk,
+      wajib: satu.wajib,
+      saat: satu.saat,
+    });
+  }
+  return hasil;
+}
+
+/* ─── 7. PAPAN KESEHATAN ────────────────────────────────────────────────────
+ *
+ * Sepuluh pertanyaan yang biasanya dijawab dengan membuka SSH, membaca log,
+ * dan menjalankan beberapa perintah. Semuanya dijawab dari sini, dari apa
+ * yang memang sudah diketahui panel - TANPA satu pun permintaan tambahan,
+ * kecuali satu bacaan ringan ke portal untuk versi yang disajikannya.
+ */
+const ALAT_EKSTENSI_INFO = "/aleta/api/aleta-ecourt/ekstensi?info=versi";
+
+async function alatPapanKesehatan(opsi) {
+  const pilihan = opsi || {};
+  const baris = [];
+  const tambah = (nama, keadaan, ket) => baris.push({ nama, keadaan, ket: String(ket || "") });
+
+  const l = alatLingkungan();
+  tambah("Lingkungan", l.kunci === "peladen" ? "awas" : "baik", `${l.label} — ${l.judul}`);
+
+  let terpasang = "";
+  try {
+    terpasang = String(chrome.runtime.getManifest().version || "");
+  } catch {
+    terpasang = "";
+  }
+  tambah("Versi terpasang", terpasang ? "baik" : "buruk", terpasang || "tidak terbaca - ekstensi di luar konteksnya");
+
+  let disajikan = "";
+  let portalHidup = false;
+  const mulai = Date.now();
+  try {
+    const jawab = await fetch(ALAT_EKSTENSI_INFO, { credentials: "include", cache: "no-store" });
+    portalHidup = jawab.ok;
+    if (jawab.ok) {
+      const luar = await jawab.json();
+      const data = luar && luar.data ? luar.data : luar;
+      disajikan = String((data && data.versi) || "");
+    }
+  } catch {
+    portalHidup = false;
+  }
+  const lama = Date.now() - mulai;
+  tambah("Portal ALETA", portalHidup ? "baik" : "buruk", portalHidup ? `menjawab dalam ${lama} ms` : "tidak menjawab - portal mati, atau alamatnya salah");
+
+  if (terpasang && disajikan) {
+    const sama = terpasang === disajikan;
+    tambah(
+      "Ekstensi mutakhir",
+      sama ? "baik" : "awas",
+      sama ? `${terpasang} - sama dengan portal` : `portal menyajikan ${disajikan}, yang berjalan ${terpasang}. Unduh lalu tekan Muat Ulang di chrome://extensions.`
+    );
+  }
+
+  tambah(
+    "Mode kering",
+    alatKeringNyala() ? "awas" : "baik",
+    alatKeringNyala() ? "AKTIF - tidak ada yang disimpan maupun dikirim" : "mati - tindakan berlaku sungguhan"
+  );
+
+  const kecepatan = alatKeadaanPortal.terakhirMs;
+  tambah(
+    "Kecepatan terakhir",
+    alatKeadaanPortal.gagalBerturut > 0 ? "buruk" : alatKeadaanPortal.lambat ? "awas" : "baik",
+    alatKeadaanPortal.gagalBerturut > 0
+      ? `${alatKeadaanPortal.gagalBerturut} permintaan gagal berturut-turut`
+      : kecepatan
+        ? `${kecepatan} ms`
+        : "belum ada permintaan"
+  );
+
+  const kotak = alatKotakHitam();
+  const galat = kotak.filter((x) => x.jenis === "ambil-galat" || x.jenis === "ambil-gagal").length;
+  tambah("Kotak hitam", galat > 0 ? "awas" : "baik", `${kotak.length} kejadian tercatat, ${galat} di antaranya gagal`);
+
+  const penunjuk = alatPeriksaPenunjuk();
+  const hilang = penunjuk.filter((x) => x.wajib && !x.ketemu);
+  tambah(
+    "Penunjuk halaman",
+    penunjuk.length === 0 ? "baik" : hilang.length > 0 ? "buruk" : "baik",
+    penunjuk.length === 0
+      ? "tidak ada yang perlu diperiksa di halaman ini"
+      : hilang.length > 0
+        ? `${hilang.length} dari ${penunjuk.length} tidak ketemu: ${hilang.map((x) => x.nama).join(", ")}`
+        : `${penunjuk.length} penunjuk ketemu semua`
+  );
+
+  const riwayat = alatRiwayatTindakan();
+  tambah("Riwayat tindakan", "baik", `${riwayat.length} tindakan tercatat di tab ini`);
+
+  if (pilihan.akun) {
+    tambah("Akun", pilihan.akun.aleta || pilihan.akun.sipp ? "baik" : "awas", [pilihan.akun.aleta, pilihan.akun.sipp].filter(Boolean).join(" | ") || "belum terbaca");
+  }
+
+  return baris;
+}
+
+/* ─── LAPORAN UNTUK DITEMPEL ────────────────────────────────────────────────
+ *
+ * Satu tombol, satu tempelan. Yang selama ini dikerjakan dengan berganti-ganti
+ * tangkapan layar - dan tangkapan layar tidak memuat status HTTP, lama
+ * permintaan, maupun galat yang sudah terlanjut diterjemahkan.
+ */
+function alatLaporan(tambahan) {
+  const l = alatLingkungan();
+  let versi = "";
+  try {
+    versi = String(chrome.runtime.getManifest().version || "");
+  } catch {
+    versi = "?";
+  }
+  const baris = [];
+  baris.push("LAPORAN ALETA");
+  baris.push(`waktu      : ${new Date().toISOString()}`);
+  baris.push(`ekstensi   : ${versi}`);
+  baris.push(`lingkungan : ${l.label} (${l.kunci})`);
+  baris.push(`halaman    : ${String(window.location.pathname + window.location.search).slice(0, 200)}`);
+  baris.push(`mode kering: ${alatKeringNyala() ? "AKTIF" : "mati"}`);
+  if (tambahan && tambahan.perkara) baris.push(`perkara    : ${tambahan.perkara}`);
+  if (tambahan && tambahan.peran) baris.push(`peran      : ${tambahan.peran}`);
+
+  const penunjuk = alatPeriksaPenunjuk().filter((x) => !x.ketemu);
+  baris.push("");
+  baris.push(`PENUNJUK TIDAK KETEMU (${penunjuk.length})`);
+  for (const p of penunjuk) baris.push(`  ${p.wajib ? "!" : "-"} ${p.nama}: ${p.dicoba.join(" | ")}`);
+
+  const riwayat = alatRiwayatTindakan();
+  baris.push("");
+  baris.push(`RIWAYAT TINDAKAN (${riwayat.length})`);
+  for (const r of riwayat) {
+    baris.push(`  ${r.waktu} ${r.jenis} ${r.penunjuk} : "${r.nilaiLama}" → "${r.nilaiBaru}"${r.dipulihkan ? " [dipulihkan]" : ""}`);
+  }
+
+  const kotak = alatKotakHitam();
+  baris.push("");
+  baris.push(`KOTAK HITAM (${kotak.length} kejadian terakhir)`);
+  for (const k of kotak) {
+    baris.push(`  ${k.waktu} [${k.jenis}] ${k.ringkas}${k.rinci ? ` :: ${k.rinci}` : ""}`);
+  }
+  return baris.join("\n");
+}
+
+async function alatSalin(teks) {
+  try {
+    await navigator.clipboard.writeText(teks);
+    return true;
+  } catch {
+    // Papan klip ditolak - laporan tetap harus dapat diambil, jadi ia
+    // ditaruh di kotak teks yang sudah tersorot seluruhnya.
+    return false;
+  }
+}
+
+/* ─── GULIR YANG MUDAH DILIHAT DAN MUDAH DITEKAN ────────────────────────────
+ *
+ * Bilah gulir panel dulu selebar 9 piksel dan selalu tampak. Dua-duanya
+ * salah untuk panel ini: 9 piksel terlalu tipis untuk ditangkap kursor -
+ * meleset sedikit berarti menyeret panelnya - sementara bilah yang selalu
+ * tampak menjadi garis terang di tepi kanan yang tidak pernah dibutuhkan
+ * ketika isinya memang muat.
+ *
+ * Sekarang: lebarnya 12 piksel supaya mudah ditekan, dan pegangannya TEMBUS
+ * PANDANG selama tidak dipakai. Ia muncul pada tiga keadaan, dan ketiganya
+ * berarti "orang ini sedang berurusan dengan gulir":
+ *
+ *   - kursor masuk ke jalur selebar dua jempol di tepi kanan panel;
+ *   - isinya sedang digulir, dan sedetik sesudahnya;
+ *   - papan tik memindahkan fokus ke sesuatu di dalam panel.
+ *
+ * Lebarnya TIDAK ikut berubah - hanya warnanya. Bilah yang melebar saat
+ * disentuh menggeser isi panel tepat ketika orang sedang membidiknya.
+ */
+const ALAT_GULIR_JALUR = 30;
+const ALAT_GULIR_DIAM_MS = 1200;
+
+function alatPasangGulir(panel) {
+  if (!panel || panel.dataset.gulirTerpasang === "ya") return;
+  panel.dataset.gulirTerpasang = "ya";
+
+  let pewaktu = 0;
+  const tampak = (ya) => {
+    if (ya) panel.setAttribute("data-gulir", "tampak");
+    else panel.removeAttribute("data-gulir");
+  };
+  const tampakSebentar = () => {
+    tampak(true);
+    clearTimeout(pewaktu);
+    pewaktu = setTimeout(() => tampak(false), ALAT_GULIR_DIAM_MS);
+  };
+
+  // ==========================================================================
+  // SATU PEMBACAAN TATA LETAK PER BINGKAI, BUKAN SATU PER GERAKAN
+  // ==========================================================================
+  //
+  // getBoundingClientRect MEMAKSA peramban menghitung ulang tata letak saat
+  // itu juga. Dipanggil di dalam pointermove, ia berjalan puluhan kali per
+  // detik selama kursor bergerak di atas panel - di atas halaman SIPP yang
+  // tabelnya ribuan sel, itu cukup untuk membuat seluruh halaman terasa
+  // berat, termasuk hal-hal yang tidak ada hubungannya dengan panel.
+  //
+  // Sekarang letak tepinya dibaca paling banyak sekali per bingkai gambar.
+  let bingkai = 0;
+  let xTerakhir = 0;
+  panel.addEventListener("pointermove", (peristiwa) => {
+    xTerakhir = peristiwa.clientX;
+    if (bingkai) return;
+    bingkai = requestAnimationFrame(() => {
+      bingkai = 0;
+      const kotak = panel.getBoundingClientRect();
+      if (xTerakhir >= kotak.right - ALAT_GULIR_JALUR) {
+        clearTimeout(pewaktu);
+        tampak(true);
+      } else if (panel.getAttribute("data-gulir") === "tampak") {
+        tampakSebentar();
+      }
+    });
+  });
+
+  panel.addEventListener("pointerleave", () => {
+    clearTimeout(pewaktu);
+    tampak(false);
+  });
+
+  // Gulir ditangkap pada fase TANGKAP: yang bergulir kerap .aleta-isi atau
+  // laci perkakas di dalamnya, dan peristiwa scroll tidak menggelembung.
+  panel.addEventListener("scroll", tampakSebentar, true);
+  panel.addEventListener("focusin", tampakSebentar);
+}
+
+/* ─── LACI PERKAKAS: SATU TEMPAT, BUKAN TUJUH TOMBOL ────────────────────────
+ *
+ * Ketujuh alat tidak mendapat tombolnya sendiri-sendiri di kepala panel.
+ * Alasannya sama dengan yang membuat pemilih warna dirapikan lebih dulu:
+ * deret tombol kepala adalah tempat yang paling mahal di seluruh panel, dan
+ * alat yang dipakai ketika ada masalah tidak berhak menempatinya setiap hari.
+ *
+ * Satu tombol kunci pas membuka laci; lacinya menutupi isi panel selama
+ * dibuka, sebab yang membukanya memang sedang tidak membaca perkara.
+ */
+/**
+ * Versi yang berjalan tertinggal dari yang disajikan portal?
+ *
+ * Menjawab null bila sama, lebih baru, atau tidak dapat diketahui - dan
+ * "tidak dapat diketahui" sengaja diperlakukan sama dengan "tidak apa-apa":
+ * portal yang mati tidak boleh memunculkan peringatan tentang versi.
+ */
+async function alatVersiTertinggal() {
+  let terpasang = "";
+  try {
+    terpasang = String(chrome.runtime.getManifest().version || "");
+  } catch {
+    return null;
+  }
+  if (!terpasang) return null;
+  try {
+    const jawab = await fetch(ALAT_EKSTENSI_INFO, { credentials: "include", cache: "no-store" });
+    if (!jawab.ok) return null;
+    const luar = await jawab.json();
+    const data = luar && luar.data ? luar.data : luar;
+    const portal = String((data && data.versi) || "");
+    if (!portal || portal === terpasang) return null;
+    return { portal, terpasang };
+  } catch {
+    return null;
+  }
+}
+
+function alatLaciPerkakas(panel, opsi) {
+  const pilihan = opsi || {};
+  const laci = alatEl("div", "aleta-perkakas");
+  laci.hidden = true;
+
+  const kepala = alatEl("div", "aleta-perkakas-kepala");
+  kepala.appendChild(alatEl("span", "aleta-perkakas-judul", "Perkakas super admin"));
+  const tombolSegar = alatEl("button", "aleta-perkakas-aksi", "Segarkan");
+  tombolSegar.type = "button";
+  const tombolSalin = alatEl("button", "aleta-perkakas-aksi", "Salin laporan");
+  tombolSalin.type = "button";
+  tombolSalin.title = "Menyalin keadaan, riwayat, dan kotak hitam sebagai satu teks untuk ditempel.";
+  const tombolTutup = alatEl("button", "aleta-perkakas-tutup", "×");
+  tombolTutup.type = "button";
+  tombolTutup.title = "Tutup perkakas";
+  kepala.appendChild(tombolSegar);
+  kepala.appendChild(tombolSalin);
+  kepala.appendChild(tombolTutup);
+  laci.appendChild(kepala);
+
+  const badan = alatEl("div", "aleta-perkakas-isi");
+  laci.appendChild(badan);
+
+  const kabar = alatEl("div", "aleta-perkakas-kabar");
+  kabar.hidden = true;
+  laci.appendChild(kabar);
+
+  const beritahu = (teks, buruk) => {
+    kabar.textContent = teks;
+    kabar.classList.toggle("aleta-perkakas-kabar-buruk", Boolean(buruk));
+    kabar.hidden = false;
+  };
+
+  /** Satu kelompok berjudul di dalam laci. */
+  const kelompok = (judul) => {
+    const k = alatEl("div", "aleta-perkakas-kelompok");
+    k.appendChild(alatEl("div", "aleta-perkakas-kelompok-judul", judul));
+    const isi = alatEl("div", "aleta-perkakas-kelompok-isi");
+    k.appendChild(isi);
+    badan.appendChild(k);
+    return isi;
+  };
+
+  async function gambar() {
+    badan.textContent = "";
+
+    // --- Papan kesehatan -----------------------------------------------------
+    const isiPapan = kelompok("Papan kesehatan");
+    isiPapan.appendChild(alatEl("div", "aleta-perkakas-tunggu", "memeriksa…"));
+    // --- Mode kering ---------------------------------------------------------
+    const isiKering = kelompok("Mode kering");
+    const saklar = alatEl("button", "aleta-perkakas-saklar");
+    saklar.type = "button";
+    const gambarSaklar = () => {
+      const nyala = alatKeringNyala();
+      saklar.textContent = nyala ? "Mode kering: AKTIF" : "Mode kering: mati";
+      saklar.classList.toggle("aleta-perkakas-saklar-nyala", nyala);
+      saklar.setAttribute("aria-pressed", nyala ? "true" : "false");
+    };
+    gambarSaklar();
+    saklar.addEventListener("click", async () => {
+      await alatSetelKering(!alatKeringNyala());
+      gambarSaklar();
+      beritahu(
+        alatKeringNyala()
+          ? "Mode kering aktif. Medan tetap diisi supaya hasilnya terlihat, tetapi tombol Simpan SIPP tidak ditekan dan tidak ada yang dikirim ke ALETA."
+          : "Mode kering dimatikan. Tindakan berlaku sungguhan."
+      );
+    });
+    isiKering.appendChild(saklar);
+    isiKering.appendChild(
+      alatEl(
+        "div",
+        "aleta-perkakas-ket",
+        "Medan tetap diisi supaya dapat diperiksa; yang ditahan hanya penekanan Simpan milik SIPP dan pengiriman ke ALETA."
+      )
+    );
+
+    // --- Penunjuk ------------------------------------------------------------
+    const isiPenunjuk = kelompok("Penunjuk halaman");
+    const hasilPenunjuk = alatPeriksaPenunjuk();
+    if (hasilPenunjuk.length === 0) {
+      isiPenunjuk.appendChild(alatEl("div", "aleta-perkakas-ket", "Tidak ada penunjuk yang didaftarkan untuk halaman ini."));
+    } else {
+      for (const p of hasilPenunjuk) {
+        const baris = alatEl("div", `aleta-perkakas-baris aleta-perkakas-${p.ketemu ? "baik" : p.wajib ? "buruk" : "awas"}`);
+        baris.appendChild(alatEl("span", "aleta-perkakas-nama", p.nama));
+        baris.appendChild(
+          alatEl("span", "aleta-perkakas-nilai", p.ketemu ? p.dipakai : `tidak ketemu — dicoba: ${p.dicoba.join(" | ")}`)
+        );
+        isiPenunjuk.appendChild(baris);
+      }
+    }
+
+    // --- Riwayat tindakan ----------------------------------------------------
+    const isiRiwayat = kelompok("Riwayat tindakan");
+    const riwayat = alatRiwayatTindakan().slice().reverse();
+    if (riwayat.length === 0) {
+      isiRiwayat.appendChild(alatEl("div", "aleta-perkakas-ket", "Belum ada yang diubah ALETA di tab ini."));
+    } else {
+      for (const r of riwayat) {
+        const baris = alatEl("div", "aleta-perkakas-baris");
+        baris.appendChild(alatEl("span", "aleta-perkakas-nama", r.label || r.penunjuk));
+        baris.appendChild(
+          alatEl("span", "aleta-perkakas-nilai", `"${r.nilaiLama || "(kosong)"}" → "${r.nilaiBaru}"`)
+        );
+        if (r.dipulihkan) {
+          baris.appendChild(alatEl("span", "aleta-perkakas-tanda", "dipulihkan"));
+        } else if (r.dapatPulih && alatPemulihTindakan) {
+          const pulih = alatEl("button", "aleta-perkakas-pulih", "Pulihkan");
+          pulih.type = "button";
+          pulih.title = `Mengisi kembali ${r.penunjuk} dengan nilai sebelumnya. SIPP belum disimpan, jadi ini benar-benar mengembalikannya.`;
+          pulih.addEventListener("click", async () => {
+            pulih.disabled = true;
+            try {
+              const hasil = await alatPemulihTindakan(r);
+              if (hasil && hasil.ok) {
+                alatTandaiDipulihkan(r.id);
+                alatCatat("pulih", `dipulihkan ${r.penunjuk}`, `kembali ke "${r.nilaiLama}"`);
+                beritahu(`${r.label || r.penunjuk} dikembalikan ke nilai sebelumnya.`);
+                void gambar();
+              } else {
+                beritahu(`Tidak dapat dipulihkan: ${(hasil && hasil.alasan) || "medannya tidak ditemukan lagi"}.`, true);
+                pulih.disabled = false;
+              }
+            } catch (galat) {
+              beritahu(`Tidak dapat dipulihkan: ${(galat && galat.message) || galat}.`, true);
+              pulih.disabled = false;
+            }
+          });
+          baris.appendChild(pulih);
+        } else {
+          const tanda = alatEl("span", "aleta-perkakas-tanda", "tidak dapat dipulihkan");
+          tanda.title = "Penekanan Simpan, unggahan, dan penetapan yang sudah terbit tidak punya jalan kembali dari sini.";
+          baris.appendChild(tanda);
+        }
+        isiRiwayat.appendChild(baris);
+      }
+    }
+
+    // --- Kotak hitam ---------------------------------------------------------
+    const isiKotak = kelompok("Kotak hitam");
+    const kotak = alatKotakHitam().slice().reverse();
+    if (kotak.length === 0) {
+      isiKotak.appendChild(alatEl("div", "aleta-perkakas-ket", "Belum ada kejadian tercatat."));
+    } else {
+      for (const k of kotak) {
+        const buruk = k.jenis === "ambil-galat" || k.jenis === "ambil-gagal";
+        const baris = alatEl("div", `aleta-perkakas-baris${buruk ? " aleta-perkakas-buruk" : ""}`);
+        baris.appendChild(alatEl("span", "aleta-perkakas-jam", String(k.waktu).slice(11, 19)));
+        baris.appendChild(alatEl("span", "aleta-perkakas-nilai", k.ringkas));
+        if (k.rinci) baris.title = k.rinci;
+        isiKotak.appendChild(baris);
+      }
+      const kosongkan = alatEl("button", "aleta-perkakas-aksi", "Kosongkan catatan");
+      kosongkan.type = "button";
+      kosongkan.addEventListener("click", () => {
+        alatKotakKosongkan();
+        alatRiwayatKosongkan();
+        beritahu("Kotak hitam dan riwayat dikosongkan.");
+        void gambar();
+      });
+      isiKotak.appendChild(kosongkan);
+    }
+
+    // Papan kesehatan diisi belakangan - ia satu-satunya yang menunggu jaringan,
+    // dan menahan seluruh laci demi satu bacaan membuat lacinya terasa macet.
+    try {
+      const papan = await alatPapanKesehatan(pilihan);
+      isiPapan.textContent = "";
+      for (const b of papan) {
+        const baris = alatEl("div", `aleta-perkakas-baris aleta-perkakas-${b.keadaan}`);
+        baris.appendChild(alatEl("span", "aleta-perkakas-nama", b.nama));
+        baris.appendChild(alatEl("span", "aleta-perkakas-nilai", b.ket));
+        isiPapan.appendChild(baris);
+      }
+    } catch (galat) {
+      isiPapan.textContent = "";
+      isiPapan.appendChild(alatEl("div", "aleta-perkakas-ket", `Papan kesehatan gagal: ${(galat && galat.message) || galat}`));
+    }
+  }
+
+  tombolSegar.addEventListener("click", () => void gambar());
+  tombolTutup.addEventListener("click", () => {
+    laci.hidden = true;
+  });
+  tombolSalin.addEventListener("click", async () => {
+    const teks = alatLaporan(pilihan);
+    const berhasil = await alatSalin(teks);
+    if (berhasil) {
+      beritahu("Laporan disalin. Tempel saja ke chat.");
+      return;
+    }
+    // Papan klip ditolak peramban. Laporannya tetap harus dapat diambil -
+    // ditaruh di kotak teks yang isinya sudah tersorot seluruhnya.
+    const kotakTeks = alatEl("textarea", "aleta-perkakas-laporan");
+    kotakTeks.value = teks;
+    kotakTeks.readOnly = true;
+    badan.insertBefore(kotakTeks, badan.firstChild);
+    kotakTeks.focus();
+    kotakTeks.select();
+    beritahu("Papan klip ditolak peramban. Laporannya tersorot di atas - tekan Ctrl+C.", true);
+  });
+
+  laci.gambar = gambar;
+  return laci;
+}
+
+/**
+ * Tombol kunci pas di deret kepala - hanya super admin, dan hanya satu.
+ *
+ * Titik merah kecil muncul di atasnya ketika ada yang perlu dilihat: portal
+ * menyajikan versi yang lebih baru daripada yang berjalan, atau mode kering
+ * sedang aktif. Keduanya keadaan yang menjelaskan gejala aneh, dan keduanya
+ * mudah terlupa.
+ */
+function alatTombolPerkakas(panel, wadah, opsi) {
+  const pilihan = opsi || {};
+  const peran = String(pilihan.peran || (panel && panel.getAttribute("data-peran")) || "");
+  if (peran !== "super" && !/super/i.test(peran)) return null;
+  if (wadah.querySelector(".aleta-perkakas-tombol")) return null;
+
+  const tombol = alatEl("button", "aleta-perkakas-tombol", "⚙");
+  tombol.type = "button";
+  tombol.title = "Perkakas super admin: kesehatan, mode kering, kotak hitam, riwayat, penunjuk";
+  tombol.setAttribute("aria-expanded", "false");
+
+  const laci = alatLaciPerkakas(panel, pilihan);
+  panel.appendChild(laci);
+
+  tombol.addEventListener("click", () => {
+    const buka = laci.hidden;
+    laci.hidden = !buka;
+    tombol.setAttribute("aria-expanded", buka ? "true" : "false");
+    if (!buka) return;
+    // Panel digulir ke puncak lebih dulu. Laci ini diletakkan absolut di
+    // dalam panel yang BISA DIGULIR: kalau panelnya sedang tergulir ke
+    // bawah, lacinya ikut tergeser ke atas dan kepalanya keluar dari layar.
+    panel.scrollTop = 0;
+    void laci.gambar();
+  });
+
+  // Titik peringatan: mode kering aktif, atau versi tertinggal.
+  const tandai = () => tombol.classList.toggle("aleta-perkakas-perlu", alatKeringNyala());
+  void alatMuatKering().then(tandai);
+
+  // Versi tertinggal diperiksa sekali, diam-diam. Ekstensi yang dimuat dari
+  // folder tidak pernah memperbarui dirinya sendiri, dan yang lupa menekan
+  // Muat Ulang akan mencari kesalahan di portal - tempat yang salah.
+  void alatVersiTertinggal().then((tertinggal) => {
+    if (!tertinggal) return;
+    tombol.classList.add("aleta-perkakas-perlu");
+    tombol.title = `${tombol.title}
+
+Portal menyajikan ${tertinggal.portal}, yang berjalan ${tertinggal.terpasang}. Unduh lalu tekan Muat Ulang di chrome://extensions.`;
+  });
+
+  wadah.appendChild(tombol);
+  return tombol;
+}
+
+// Pemantau dipasang saat berkas ini dimuat, bukan saat panel digambar:
+// permintaan paling awal - pembacaan konteks perkara - berangkat sebelum
+// panelnya ada, dan justru itu yang paling sering gagal.
+alatPasangPemantauAmbil();
+alatDengarkanKering();
+void alatMuatKering();
