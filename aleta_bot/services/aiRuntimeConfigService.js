@@ -18,6 +18,52 @@ const PROVIDER_ENV_KEYS = {
   claude: ["ANTHROPIC_API_KEY", "CLAUDE_API_KEY", "ALETA_CLAUDE_API_KEY"],
 };
 
+/**
+ * ============================================================================
+ * DUA JALUR: "umum" DAN "perkara"
+ * ============================================================================
+ *
+ * Tahap 1c rencana agen. Yang dipisah bukan model, melainkan APA YANG BOLEH
+ * DIBACA model itu:
+ *
+ *   umum     pertanyaan yang TIDAK memuat isi perkara - menyusun kalimat,
+ *            memilah niat, merapikan bahasa. Boleh ke agregator mana pun,
+ *            boleh gonta-ganti model, boleh yang termurah.
+ *
+ *   perkara  posita, keterangan saksi, draf pertimbangan. Wajib lewat
+ *            penyamaran, dan penyedianya disetel terpisah - supaya memindahkan
+ *            jalur umum ke penyedia baru tidak diam-diam ikut memindahkan isi
+ *            perkara ke sana.
+ *
+ * Dipisah di TINGKAT SETELAN, bukan hanya di tingkat pemanggil: pemanggil
+ * dapat lupa, setelan tidak. Jalur perkara yang belum disetel berarti isi
+ * perkara TIDAK dapat dikirim sama sekali - dan itu keadaan awal yang benar.
+ */
+const JALUR_SAH = ["umum", "perkara"];
+
+const DEFAULT_JALUR = {
+  umum: { provider: "", model: "", endpointUrl: "", apiKeyEnvKey: "" },
+  perkara: { provider: "", model: "", endpointUrl: "", apiKeyEnvKey: "" },
+};
+
+function normalkanJalur(jalur) {
+  const bersih = String(jalur || "umum").trim().toLowerCase();
+  return JALUR_SAH.includes(bersih) ? bersih : "umum";
+}
+
+/** Setelan satu jalur, dilengkapi setelan dasar untuk ruas yang kosong. */
+function setelanJalur(config, jalur) {
+  const dipilih = normalkanJalur(jalur);
+  const dari = (config && config.jalur && config.jalur[dipilih]) || {};
+  return {
+    jalur: dipilih,
+    provider: String(dari.provider || "").trim(),
+    model: String(dari.model || "").trim(),
+    endpointUrl: String(dari.endpointUrl || "").trim(),
+    apiKeyEnvKey: String(dari.apiKeyEnvKey || "").trim(),
+  };
+}
+
 const DEFAULT_CONFIG = {
   enabled: false,
   publicQaEnabled: false,
@@ -32,6 +78,9 @@ const DEFAULT_CONFIG = {
   maxTokens: Number(process.env.ALETA_BOT_PUBLIC_QA_MAX_TOKENS || 400),
   temperature: Number(process.env.ALETA_BOT_PUBLIC_QA_TEMPERATURE || 0.2),
   promptPolicy: "public_qa_guarded",
+  // Dua jalur; kosong berarti "ikut setelan dasar" untuk umum, dan "belum
+  // disetel" untuk perkara - isi perkara tidak berangkat sampai disetel.
+  jalur: { ...DEFAULT_JALUR },
   syncedAt: null,
   lastSyncStatus: "never",
   lastSyncError: "",
@@ -140,6 +189,14 @@ function normalizeConfig(input = {}) {
     model,
     modelId: model,
     endpointUrl: String(input.endpointUrl || input.endpoint_url || "").trim(),
+    // Dua jalur selalu berbentuk sama, apa pun yang datang dari portal.
+    // Setelan yang bentuknya tidak menentu adalah setelan yang kelak dibaca
+    // salah oleh kode yang tidak menduganya - dan pada jalur "perkara",
+    // dibaca salah berarti isi perkara berangkat ke penyedia yang keliru.
+    jalur: {
+      umum: { ...DEFAULT_JALUR.umum, ...(((input.jalur || {}).umum) || {}) },
+      perkara: { ...DEFAULT_JALUR.perkara, ...(((input.jalur || {}).perkara) || {}) },
+    },
     apiKeyEnvKey,
     apiKeyConfigured: Boolean(apiKey || envApiKey || apiKeyEnvKey || input.apiKeyConfigured),
     apiKeyMasked: apiKey ? maskApiKey(apiKey) : envApiKey ? "env" : String(input.apiKeyMasked || ""),
@@ -545,6 +602,10 @@ async function updateAiRuntimeTestResult(result = {}) {
 
 module.exports = {
   SETTING_KEY,
+  JALUR_SAH,
+  DEFAULT_JALUR,
+  normalkanJalur,
+  setelanJalur,
   normalizeProvider,
   providerForPortal,
   validateAiRuntimeConfig,

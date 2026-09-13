@@ -232,6 +232,41 @@ async function requestLlama({ config, messages, temperature }) {
   };
 }
 
+/**
+ * ============================================================================
+ * GERBANG JALUR PERKARA - MENOLAK, BUKAN MEMPERINGATKAN
+ * ============================================================================
+ *
+ * Muatan yang memuat isi perkara hanya berangkat bila membawa BUKTI bahwa
+ * penyamaran sudah dijalankan (lihat penyamaranPerkaraService.siapkanMuatan).
+ * Tanpa bukti, permintaannya dilempar - tidak dikirim lalu dicatat, tidak
+ * dikirim dengan peringatan. Dilempar.
+ *
+ * Sebabnya satu arah: peringatan yang terlewat menghasilkan posita utuh di
+ * peladen perusahaan lain, dan itu tidak dapat ditarik kembali. Permintaan
+ * yang ditolak hanya menghasilkan galat yang terbaca di layar.
+ *
+ * `sisa` yang tidak kosong TIDAK otomatis menolak - ia keterangan, dan
+ * pemanggil yang memutuskan lewat `izinkanSisa`. Yang tidak boleh ditawar
+ * hanya satu: penyamaran harus SUDAH dijalankan.
+ */
+function gerbangJalurPerkara({ jalur, penyamaran, izinkanSisa }) {
+  if (jalur !== "perkara") return;
+  if (!penyamaran || penyamaran.diterapkan !== true) {
+    throw new Error(
+      "Jalur 'perkara' menuntut bukti penyamaran. Siapkan muatannya lewat " +
+        "penyamaranPerkaraService.siapkanMuatan() lalu sertakan buktinya sebagai `penyamaran`."
+    );
+  }
+  if (penyamaran.bersih !== true && izinkanSisa !== true) {
+    const jenis = (penyamaran.sisa || []).map((x) => `${x.jenis} (${x.jumlah})`).join(", ");
+    throw new Error(
+      `Penyamaran masih menyisakan data yang menyerupai data pribadi: ${jenis || "tidak dirinci"}. ` +
+        "Perbaiki daftar pihaknya, atau sebutkan izinkanSisa: true bila sisa itu memang bukan data pribadi."
+    );
+  }
+}
+
 async function completeChat({
   messages,
   systemPrompt,
@@ -242,13 +277,28 @@ async function completeChat({
   maxTokens,
   metadata = {},
   responseFormat,
+  jalur,
+  penyamaran,
+  izinkanSisa,
 } = {}) {
+  const jalurDipakai = aiRuntimeConfigService.normalkanJalur(jalur);
+  gerbangJalurPerkara({ jalur: jalurDipakai, penyamaran, izinkanSisa });
+
   const config = await aiRuntimeConfigService.getProviderClientConfig(provider);
-  const resolvedProvider = aiRuntimeConfigService.normalizeProvider(provider || config.provider);
+  // Setelan jalur menang atas setelan dasar; yang kosong ikut dasar. Jalur
+  // "perkara" yang belum disetel penyedianya berarti isi perkara tidak
+  // berangkat - keadaan awal yang benar, bukan cacat.
+  const setelan = aiRuntimeConfigService.setelanJalur(config, jalurDipakai);
+  if (jalurDipakai === "perkara" && !setelan.provider && !config.provider) {
+    throw new Error("Jalur 'perkara' belum disetel penyedianya di runtime AI ALETA Bot.");
+  }
+  const resolvedProvider = aiRuntimeConfigService.normalizeProvider(provider || setelan.provider || config.provider);
   const resolvedConfig = {
     ...config,
+    ...(setelan.endpointUrl ? { endpointUrl: setelan.endpointUrl } : {}),
+    ...(setelan.apiKeyEnvKey ? { apiKeyEnvKey: setelan.apiKeyEnvKey } : {}),
     provider: resolvedProvider,
-    model: model || config.model,
+    model: model || setelan.model || config.model,
     temperature: Number(temperature ?? config.temperature ?? 0.2),
     maxTokens: Number(maxTokens ?? config.maxTokens ?? 400),
     timeoutMs: Number(config.timeoutMs || 8000),
@@ -405,6 +455,7 @@ async function testProviderConnection(configOverride = {}) {
 }
 
 module.exports = {
+  gerbangJalurPerkara,
   completeChat,
   completeJson,
   testProviderConnection,
