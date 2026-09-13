@@ -2770,3 +2770,407 @@ Portal menyajikan ${tertinggal.portal}, yang berjalan ${tertinggal.terpasang}. U
 alatPasangPemantauAmbil();
 alatDengarkanKering();
 void alatMuatKering();
+
+/*
+ * ============================================================================
+ * PUTUSAN MASSAL - FONDASI YANG DIPAKAI PANEL ABT DAN PANEL SIPP
+ * ============================================================================
+ *
+ * Tiga hal tinggal di sini karena keduanya memakainya:
+ *
+ *   1. PEMETAAN BLANGKO  jenis perkara -> blangko ABT mana (a/b token, nama)
+ *   2. ANTREAN MASSAL    daftar perkara yang sedang dikerjakan, beserta
+ *                        keadaan tiap butirnya - di chrome.storage, sebab
+ *                        tab ABT dan tab SIPP beda asal dan sessionStorage
+ *                        tidak menyeberang
+ *   3. JADWAL SIDANG     sidang pada satu tanggal, dari ALETA - sumber
+ *                        "hari ini / pilih tanggal"
+ *
+ * Yang SENGAJA tidak ada di sini: penentuan "perkara ini siap diputus".
+ * Agenda sidang tidak dapat dipercaya sebagai penentu - layanan jadwal
+ * sendiri mencatat sidang ikrar beragenda "Musyawarah Majelis" - jadi ALETA
+ * menyodorkan kandidat beserta keterangannya, dan orang yang memutuskan.
+ */
+
+/* ─── 1. PEMETAAN BLANGKO ───────────────────────────────────────────────── */
+const ALAT_PETA_BLANGKO_KUNCI = "petaBlangkoPutusan";
+
+/**
+ * Jenis perkara yang lazim di Pengadilan Agama, sebagai baris awal editor.
+ * Jenis lain yang muncul dari jadwal sidang ditambahkan sendiri saat tampil.
+ */
+const ALAT_JENIS_LAZIM = [
+  "Cerai Gugat",
+  "Cerai Talak",
+  "Dispensasi Kawin",
+  "Itsbat Nikah",
+  "Penetapan Ahli Waris",
+  "Perwalian",
+  "Wali Adhal",
+  "Poligami",
+  "Harta Bersama",
+  "Kewarisan",
+  "Pengangkatan Anak",
+  "Asal Usul Anak",
+];
+
+/** Kunci pemetaan: nama jenis dirapikan supaya "Cerai gugat" dan "CERAI GUGAT" satu. */
+function alatKunciJenis(jenis) {
+  return String(jenis || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+async function alatMuatPetaBlangko() {
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_PETA_BLANGKO_KUNCI]);
+    const peta = simpan[ALAT_PETA_BLANGKO_KUNCI];
+    return peta && typeof peta === "object" ? peta : {};
+  } catch {
+    return {};
+  }
+}
+
+async function alatSimpanPetaBlangko(peta) {
+  try {
+    await chrome.storage.local.set({ [ALAT_PETA_BLANGKO_KUNCI]: peta || {} });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Satu baris pemetaan yang sah. Token a/b diperiksa bentuknya saja - keduanya
+ * hasil enkripsi ABT yang hanya ABT dapat membacanya; yang dijaga di sini
+ * cuma "bukan kosong, bukan berisi spasi atau tanda kutip".
+ */
+function alatRapikanBlangko(masukan) {
+  const b = masukan || {};
+  const token = (x) => String(x || "").trim();
+  const sah = (x) => /^[A-Za-z0-9+/=_%.-]{8,}$/.test(x);
+  const a = token(b.a);
+  const bb = token(b.b);
+  return {
+    blangko: String(b.blangko || "").replace(/\s+/g, " ").trim().slice(0, 120),
+    berkas: String(b.berkas || "").replace(/\s+/g, " ").trim().slice(0, 160),
+    a: sah(a) ? a : "",
+    b: sah(bb) ? bb : "",
+    d: String(b.d || "").trim().slice(0, 8),
+    disimpanPada: String(b.disimpanPada || new Date().toISOString()),
+  };
+}
+
+function alatBlangkoLengkap(baris) {
+  return Boolean(baris && baris.a && baris.b && baris.berkas);
+}
+
+/** Alamat RTF terisi untuk satu perkara, dari satu baris pemetaan. */
+function alatAlamatPreviewAbt(asal, baris, perkaraId) {
+  if (!alatBlangkoLengkap(baris) || !perkaraId) return "";
+  const q = new URLSearchParams();
+  q.set("c", String(perkaraId));
+  q.set("b", baris.b);
+  q.set("a", baris.a);
+  if (baris.d) q.set("d", baris.d);
+  return `${asal}/preview?${q.toString()}`;
+}
+
+/**
+ * Membaca a/b/c dari satu tautan berkas di halaman blangko ABT.
+ *
+ * ABT menulis tautannya sebagai onclick:
+ *   showLoading();post("…/abt/main/cari", { a:"<enc dir>", b:"<enc file>", c:"<id>" });
+ * dan halaman perkara sebagai href abt/preview?c=&b=&a=&d=. Keduanya dibaca.
+ */
+function alatTokenDariTautan(elemen) {
+  if (!elemen) return null;
+  const onclick = String(elemen.getAttribute("onclick") || "");
+  const cocok = onclick.match(/a\s*:\s*"([^"]+)"\s*,\s*b\s*:\s*"([^"]+)"/);
+  if (cocok) return { a: cocok[1], b: cocok[2], d: "" };
+  const href = String(elemen.getAttribute("href") || "");
+  if (/abt\/preview/.test(href)) {
+    try {
+      const u = new URL(href, location.origin).searchParams;
+      return { a: u.get("a") || "", b: u.get("b") || "", d: u.get("d") || "" };
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/* ─── 2. ANTREAN MASSAL ─────────────────────────────────────────────────── */
+const ALAT_ANTREAN_KUNCI = "antreanPutusanMassal";
+const ALAT_ANTREAN_MAKS = 120;
+
+/**
+ * Bentuk antrean:
+ *   {
+ *     id, dibuat, tanggalSidang, tahap: "abt"|"sipp", modus: "otomatis"|"manual",
+ *     kering: bool, posisi: number,
+ *     butir: [{ nomor, perkaraId, jenis, enc, keadaan, catatan, dokumen:{rtf,pdf,anonim,unggah} }]
+ *   }
+ * keadaan: menunggu | jalan | selesai | gagal | dilewati | jeda
+ */
+async function alatMuatAntrean() {
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_ANTREAN_KUNCI]);
+    const q = simpan[ALAT_ANTREAN_KUNCI];
+    return q && Array.isArray(q.butir) ? q : null;
+  } catch {
+    return null;
+  }
+}
+
+async function alatSimpanAntrean(antrean) {
+  try {
+    if (!antrean) await chrome.storage.local.remove([ALAT_ANTREAN_KUNCI]);
+    else await chrome.storage.local.set({ [ALAT_ANTREAN_KUNCI]: antrean });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function alatBuatAntrean(pilihan) {
+  const p = pilihan || {};
+  const butir = (p.butir || []).slice(0, ALAT_ANTREAN_MAKS).map((x) => ({
+    nomor: String(x.nomor || ""),
+    perkaraId: String(x.perkaraId || ""),
+    jenis: String(x.jenis || ""),
+    enc: String(x.enc || ""),
+    keadaan: "menunggu",
+    catatan: "",
+    dokumen: { rtf: "", pdf: "", anonim: "", unggah: "" },
+  }));
+  return {
+    id: `massal-${Date.now()}`,
+    dibuat: new Date().toISOString(),
+    tanggalSidang: String(p.tanggalSidang || ""),
+    tahap: p.tahap === "sipp" ? "sipp" : "abt",
+    modus: p.modus === "manual" ? "manual" : "otomatis",
+    kering: p.kering !== false,
+    posisi: 0,
+    butir,
+  };
+}
+
+/** Butir berikutnya yang masih menunggu - atau null bila habis. */
+function alatAntreanBerikutnya(antrean) {
+  if (!antrean) return null;
+  const i = antrean.butir.findIndex((x) => x.keadaan === "menunggu" || x.keadaan === "jalan");
+  if (i < 0) return null;
+  antrean.posisi = i;
+  return antrean.butir[i];
+}
+
+function alatAntreanRingkas(antrean) {
+  const hitung = { menunggu: 0, jalan: 0, selesai: 0, gagal: 0, dilewati: 0, jeda: 0 };
+  for (const b of (antrean && antrean.butir) || []) hitung[b.keadaan] = (hitung[b.keadaan] || 0) + 1;
+  return hitung;
+}
+
+/* ─── 3. JADWAL SIDANG PADA SATU TANGGAL ───────────────────────────────── */
+const ALAT_API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
+
+function alatTanggalIso(tanggal) {
+  const t = tanggal instanceof Date ? tanggal : new Date();
+  const y = t.getFullYear();
+  const m = String(t.getMonth() + 1).padStart(2, "0");
+  const d = String(t.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Sidang pada satu tanggal, dari ALETA. Baris yang datang sudah membawa
+ * sudahPutus, jenisPerkara, agenda, perkaraId - persis yang dibutuhkan untuk
+ * MENAWARKAN, bukan memutuskan.
+ */
+async function alatSidangPadaTanggal(tanggalIso) {
+  const q = new URLSearchParams({ dari: tanggalIso, sampai: tanggalIso, batas: "300" });
+  const respons = await alatAmbil(
+    `${ALAT_API_SIDANG}?${q.toString()}`,
+    { credentials: "include", cache: "no-store" },
+    "Membaca jadwal sidang"
+  );
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca jadwal sidang"));
+  const luar = await respons.json();
+  const isi = luar && luar.data ? luar.data : luar;
+  if (!isi || isi.available === false) {
+    throw new Error((isi && isi.message) || "ALETA belum dapat membaca jadwal sidang.");
+  }
+  const sidang = Array.isArray(isi.sidang) ? isi.sidang : [];
+  // Satu perkara bisa punya dua baris sidang di hari yang sama (ditunda lalu
+  // dijadwalkan ulang). Yang ditawarkan satu per perkara.
+  const per = new Map();
+  for (const s of sidang) {
+    const nomor = String(s.nomorPerkara || "");
+    if (!nomor || per.has(nomor)) continue;
+    per.set(nomor, {
+      nomor,
+      perkaraId: String(s.perkaraId || ""),
+      jenis: String(s.jenisPerkara || ""),
+      agenda: String(s.agenda || ""),
+      sudahPutus: Boolean(s.sudahPutus),
+      ditunda: Boolean(s.ditunda),
+      ikrar: Boolean(s.sidangIkrarTalak),
+      jam: String(s.jamSidang || ""),
+    });
+  }
+  return [...per.values()];
+}
+
+/** Pemilih tanggal kecil: hari ini sebagai bawaan, boleh diubah. */
+function alatPemilihTanggal(saatUbah) {
+  const wadah = alatEl("div", "aleta-massal-tanggal");
+  const label = alatEl("label", "aleta-massal-tanggal-label", "Tanggal sidang");
+  const masukan = document.createElement("input");
+  masukan.type = "date";
+  masukan.className = "aleta-massal-tanggal-isi";
+  masukan.value = alatTanggalIso(new Date());
+  const hariIni = alatEl("button", "aleta-perkakas-aksi", "Hari ini");
+  hariIni.type = "button";
+  hariIni.addEventListener("click", () => {
+    masukan.value = alatTanggalIso(new Date());
+    if (saatUbah) saatUbah(masukan.value);
+  });
+  masukan.addEventListener("change", () => {
+    if (saatUbah && masukan.value) saatUbah(masukan.value);
+  });
+  wadah.appendChild(label);
+  wadah.appendChild(masukan);
+  wadah.appendChild(hariIni);
+  wadah.nilai = () => masukan.value;
+  return wadah;
+}
+
+/** Jeda antar perkara - berurutan dan bernapas, bukan serentak. */
+const ALAT_JEDA_MASSAL_MS = 1500;
+function alatJeda(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/* ─── 1b. PEMETAAN MENURUT NAMA BERKAS, TOKEN MENYUSUL ──────────────────────
+ *
+ * Token a/b hanya dapat dibaca dari halaman ABT yang sedang terbuka, dan
+ * halaman ABT peladen tidak selalu terjangkau saat pemetaannya disusun -
+ * sepanjang sesi ini peladen mati. Kalau pemetaan menuntut token sejak awal,
+ * ia tidak dapat disusun sama sekali sampai peladen hidup.
+ *
+ * Karena itu satu baris pemetaan cukup memuat NAMA BERKAS. Tokennya dicari
+ * panel ABT sendiri ketika halamannya terbuka: bilah kelompok di beranda
+ * memuat tautan tiap kelompok, halaman kelompok memuat tautan tiap berkas
+ * beserta tokennya, dan namanya dicocokkan. Begitu ketemu, tokennya disimpan
+ * ke baris itu supaya tidak dicari lagi.
+ *
+ * Nama juga lebih tahan lama daripada token: token adalah hasil enkripsi
+ * ABT dengan kunci peladen, dan kunci yang berganti membuat seluruh token
+ * yang tersimpan mati diam-diam. Nama berkasnya tidak ikut berganti.
+ */
+
+/** Nama berkas dirapikan untuk dibandingkan: huruf kecil, spasi tunggal, tanpa .rtf. */
+function alatKunciBerkas(nama) {
+  // Dirapikan DULU, baru akhirannya dibuang: ".RTF " berekor spasi tidak
+  // pernah cocok dengan /\.rtf$/ sebelum spasinya dipangkas.
+  return String(nama || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\.rtf$/i, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** Baris yang sudah menyebut berkasnya - dengan atau tanpa token. */
+function alatBlangkoTerpetakan(baris) {
+  return Boolean(baris && String(baris.berkas || "").trim());
+}
+
+/**
+ * Pemetaan bawaan - cerai lebih dahulu, sesuai permintaan; jenis lain
+ * menyusul sesudah tersambung ke peladen. Tanpa token: tokennya diambil
+ * panel ABT begitu halamannya terbuka.
+ */
+const ALAT_BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
+const ALAT_PETA_BAWAAN = {
+  "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
+  "cerai talak": { jenisAsli: "Cerai Talak", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
+};
+
+/**
+ * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
+ * disentuh. Yang pernah disunting - termasuk yang sengaja dihapus lalu
+ * ditandai kosong - tidak ditimpa bawaan.
+ */
+async function alatMuatPetaBlangkoLengkap() {
+  const peta = await alatMuatPetaBlangko();
+  let berubah = false;
+  for (const [kunci, bawaan] of Object.entries(ALAT_PETA_BAWAAN)) {
+    if (peta[kunci] === undefined) {
+      peta[kunci] = { ...bawaan, disimpanPada: new Date().toISOString() };
+      berubah = true;
+    }
+  }
+  if (berubah) await alatSimpanPetaBlangko(peta);
+  return peta;
+}
+
+/**
+ * Tautan kelompok blangko dari HTML beranda ABT.
+ *
+ *   <a ... href="…/abt/main/beranda?a=ENC&c=">NAMA KELOMPOK</a>
+ *
+ * Dibaca dengan regex atas teks HTML, bukan DOM - supaya dapat dijalankan
+ * atas hasil fetch tanpa menggambarnya, dan dapat diuji tanpa peramban.
+ */
+function alatUraiKelompokDariHtml(html) {
+  const hasil = [];
+  const teks = String(html || "");
+  const pola = /<a\b[^>]*href=["']([^"']*\/abt\/main\/(?:beranda|daftar)\?a=([^"'&]+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = pola.exec(teks))) {
+    const nama = m[3].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    const a = m[2].trim();
+    if (!nama || !a) continue;
+    if (hasil.some((x) => x.a === a)) continue;
+    hasil.push({ kelompok: nama, a, href: m[1] });
+  }
+  return hasil;
+}
+
+/**
+ * Berkas blangko dari HTML satu halaman kelompok ABT.
+ *
+ *   <div class="pricing-top …"><h3>NAMA KELOMPOK</h3></div>
+ *   …<p><a title='ukuran file 300 kb' href='#' onclick='showLoading();post("…/cari", {
+ *        a:"ENCDIR", b:"ENCFILE", c:"…"});'># <span>NAMA BERKAS</span></a></p>
+ */
+function alatUraiBerkasDariHtml(html) {
+  const hasil = [];
+  const teks = String(html || "");
+  const judul = teks.match(/class=["'][^"']*pricing-top[^"']*["'][^>]*>\s*<h3>([\s\S]*?)<\/h3>/i);
+  const kelompok = judul ? judul[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() : "";
+  // Tiap <a …>…</a> dibaca utuh: atribut onclick ABT membentang beberapa
+  // baris (post("…", {\n\t\ta:"…",\n\t\tb:"…",\n\t\tc:"…"\n\t\t});) dan memuat
+  // tanda kutip ganda di dalam kutip tunggal, jadi token dicari di dalam
+  // seluruh isi tag, bukan lewat pola satu baris.
+  const tag = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = tag.exec(teks))) {
+    const atribut = m[1];
+    const token = atribut.match(/\ba\s*:\s*\\?["']([^"'\\]+)\\?["']\s*,\s*b\s*:\s*\\?["']([^"'\\]+)\\?["']/);
+    if (!token) continue;
+    const berkas = m[2].replace(/<[^>]+>/g, "").replace(/^#\s*/, "").replace(/\s+/g, " ").trim();
+    if (!berkas) continue;
+    hasil.push({ blangko: kelompok, berkas, a: token[1], b: token[2], d: "" });
+  }
+  return hasil;
+}
+
+/** Berkas yang namanya sama, dari daftar hasil urai. */
+function alatCocokkanBerkas(daftar, nama) {
+  const kunci = alatKunciBerkas(nama);
+  if (!kunci) return null;
+  return (daftar || []).find((b) => alatKunciBerkas(b.berkas) === kunci) || null;
+}

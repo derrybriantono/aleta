@@ -381,6 +381,7 @@ async function periksaAkunAleta(asal) {
     // Pemilih warna gelap hanya bagi super admin - diputuskan di sini, sesudah
     // portal menjawab siapa yang masuk. Sebelum itu barisnya tersembunyi.
     void pasangPemilihWarnaPopup(peran);
+    void pasangPetaBlangkoPopup(peran);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -543,4 +544,151 @@ if (tombolTema) {
     terapkanTemaPopup();
     if (penyimpanan) void penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup });
   });
+}
+
+/**
+ * ============================================================================
+ * PEMETAAN BLANGKO PUTUSAN - DISUNTING DI SINI, MENURUT NAMA
+ * ============================================================================
+ *
+ * Kunci penyimpanan, kunci jenis, dan bawaannya SAMA PERSIS dengan
+ * panel-alat.js (ALAT_PETA_BLANGKO_KUNCI, alatKunciJenis, ALAT_PETA_BAWAAN) -
+ * popup dan panel membaca satu tempat. Ada uji yang menjaga keduanya tidak
+ * berselisih.
+ *
+ * Yang dapat disunting di sini hanya NAMA berkasnya. Token a/b hanya dapat
+ * dibaca dari halaman ABT; panel ABT mengambilnya sendiri begitu halaman
+ * blangko terbuka, dan keadaannya terbaca di kolom "token".
+ */
+const KUNCI_PETA_BLANGKO = "petaBlangkoPutusan";
+const BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
+const PETA_BAWAAN_POPUP = {
+  "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
+  "cerai talak": { jenisAsli: "Cerai Talak", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
+};
+
+function kunciJenisPopup(jenis) {
+  return String(jenis || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+async function pasangPetaBlangkoPopup(peran) {
+  const bagian = document.getElementById("bagianPeta");
+  const daftar = document.getElementById("daftarPeta");
+  const masukanBaru = document.getElementById("petaJenisBaru");
+  const tombolTambah = document.getElementById("petaTambah");
+  const kabar = document.getElementById("petaKabar");
+  if (!bagian || !daftar) return;
+  if (!/super/i.test(String(peran || ""))) {
+    bagian.hidden = true;
+    return;
+  }
+
+  let peta = {};
+  try {
+    const simpan = penyimpanan ? await penyimpanan.get([KUNCI_PETA_BLANGKO]) : {};
+    const ada = simpan && simpan[KUNCI_PETA_BLANGKO];
+    peta = ada && typeof ada === "object" ? ada : {};
+  } catch {
+    peta = {};
+  }
+  for (const [k, v] of Object.entries(PETA_BAWAAN_POPUP)) if (peta[k] === undefined) peta[k] = { ...v };
+
+  const beritahu = (teks) => {
+    if (!kabar) return;
+    kabar.textContent = teks;
+    kabar.hidden = !teks;
+  };
+
+  const simpanPeta = async () => {
+    try {
+      if (penyimpanan) await penyimpanan.set({ [KUNCI_PETA_BLANGKO]: peta });
+      return true;
+    } catch {
+      beritahu("Tidak tersimpan - penyimpanan ekstensi ditolak.");
+      return false;
+    }
+  };
+
+  const gambar = () => {
+    daftar.textContent = "";
+    for (const kunci of Object.keys(peta).sort()) {
+      const baris = peta[kunci] || {};
+      const wadah = document.createElement("div");
+      wadah.className = "peta-baris";
+
+      const label = document.createElement("div");
+      label.className = "peta-jenis";
+      label.textContent = baris.jenisAsli || kunci;
+      wadah.appendChild(label);
+
+      const masukan = document.createElement("input");
+      masukan.type = "text";
+      masukan.className = "peta-isi";
+      masukan.placeholder = "nama berkas blangko ABT…";
+      masukan.value = String(baris.berkas || "");
+      wadah.appendChild(masukan);
+
+      const token = document.createElement("span");
+      token.className = `peta-token ${baris.a && baris.b ? "ada" : "belum"}`;
+      token.textContent = baris.a && baris.b ? "token ✓" : "token belum diambil";
+      token.title = baris.a && baris.b
+        ? `Dari kelompok ${baris.blangko || "?"} - dipakai langsung.`
+        : "Diambil sendiri oleh panel ALETA saat halaman blangko ABT terbuka.";
+      wadah.appendChild(token);
+
+      const simpan = document.createElement("button");
+      simpan.type = "button";
+      simpan.className = "skala-pulih";
+      simpan.textContent = "simpan";
+      simpan.addEventListener("click", async () => {
+        const nama = masukan.value.replace(/\s+/g, " ").trim();
+        if (!nama) {
+          beritahu("Nama berkas kosong - tidak disimpan. Pakai hapus bila memang hendak dilepas.");
+          return;
+        }
+        const berubah = nama !== String(baris.berkas || "");
+        // Nama yang berganti membuat token lama tidak berlaku - dilepas,
+        // supaya panel ABT mencarinya lagi untuk nama yang baru.
+        peta[kunci] = berubah
+          ? { jenisAsli: baris.jenisAsli || kunci, berkas: nama, bawaan: false }
+          : { ...baris, berkas: nama };
+        if (await simpanPeta()) {
+          beritahu(`${label.textContent} → ${nama} tersimpan${berubah ? "; token diambil ulang di halaman ABT" : ""}.`);
+          gambar();
+        }
+      });
+      wadah.appendChild(simpan);
+
+      const hapus = document.createElement("button");
+      hapus.type = "button";
+      hapus.className = "skala-pulih";
+      hapus.textContent = "hapus";
+      hapus.addEventListener("click", async () => {
+        // Dihapus = ditandai kosong, bukan dibuang: yang dibuang akan diisi
+        // bawaan lagi pada pemuatan berikutnya.
+        peta[kunci] = { jenisAsli: baris.jenisAsli || kunci, berkas: "", bawaan: false };
+        if (await simpanPeta()) {
+          beritahu(`${label.textContent} dilepas dari pemetaan.`);
+          gambar();
+        }
+      });
+      wadah.appendChild(hapus);
+
+      daftar.appendChild(wadah);
+    }
+  };
+
+  if (tombolTambah && masukanBaru) {
+    tombolTambah.addEventListener("click", async () => {
+      const jenis = masukanBaru.value.replace(/\s+/g, " ").trim();
+      const kunci = kunciJenisPopup(jenis);
+      if (!kunci) return;
+      if (!peta[kunci]) peta[kunci] = { jenisAsli: jenis, berkas: "", bawaan: false };
+      masukanBaru.value = "";
+      if (await simpanPeta()) gambar();
+    });
+  }
+
+  gambar();
+  bagian.hidden = false;
 }

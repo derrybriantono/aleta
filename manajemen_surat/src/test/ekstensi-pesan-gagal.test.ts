@@ -261,7 +261,12 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     const lewatAlat = isi.split("await alatAmbil(").length - 1;
     const mentah = isi.split("await fetch(").length - 1;
 
-    // 23 sejak borang putusan disimpan sendiri - tersimpannya dibuktikan
+    // 25 sejak putusan massal (1.131.0): dua pembacaan draf yang berbicara
+    // ke petugas - "Membaca draf putusan" ketika antrean mengisi satu perkara,
+    // dan "Memeriksa draf putusan" ketika antrean disusun dari tanggal sidang.
+    // Perkara tanpa draf harus disebut apa adanya beserta sebabnya, bukan
+    // dijanjikan lalu gagal di tengah dengan satu kode status.
+    // (23 sejak borang putusan disimpan sendiri - tersimpannya dibuktikan
     // dengan membaca keadaan putusan dari SIPP sebelum dan sesudah Simpan
     // ditekan, dan pembacaan itu berbicara ke petugas: "sesudah sepuluh detik
     // SIPP belum mencatat perubahan apa pun" adalah kalimat yang menentukan
@@ -289,7 +294,7 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
     // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
     // ALETA", 12 sejak "Tetapkan lewat ALETA".)
-    expect(lewatAlat).toBe(23);
+    expect(lewatAlat).toBe(25);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

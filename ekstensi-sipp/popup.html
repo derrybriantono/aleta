@@ -95,6 +95,20 @@
   .titik-warna:hover { opacity: 1; transform: scale(1.15); }
   .titik-warna[aria-pressed="true"] { opacity: 1; outline: 2px solid var(--tulisan); outline-offset: 1px; }
 
+  /* Pemetaan blangko putusan - hanya super admin. */
+  .bagian-peta { padding: 8px 12px; border-top: 1px solid var(--garis); }
+  .peta-judul { font-weight: 700; font-size: 12.5px; margin-bottom: 2px; }
+  .peta-daftar { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+  .peta-baris { display: grid; grid-template-columns: 1fr; gap: 3px; padding: 5px 6px; border-radius: 5px; background: var(--latar-lembut); }
+  .peta-jenis { font-weight: 600; font-size: 12px; }
+  .peta-isi { width: 100%; font: inherit; font-size: 12px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--garis); background: var(--latar); color: var(--tulisan); }
+  .peta-token { font-size: 11px; }
+  .peta-token.ada { color: var(--merek); }
+  .peta-token.belum { color: var(--tulisan-lembut); font-style: italic; }
+  .peta-baris .skala-pulih { justify-self: start; }
+  .peta-tambah { display: flex; gap: 6px; align-items: center; }
+  .peta-tambah .peta-isi { flex: 1 1 auto; }
+
   * { box-sizing: border-box; }
 
   body {
@@ -298,6 +312,24 @@
   <span class="baris-warna-label">warna gelap</span>
   <span id="pilihWarna" class="pilih-warna" role="group" aria-label="Warna tema gelap"></span>
 </div>
+
+<!-- ===================================================================
+     PEMETAAN BLANGKO PUTUSAN - JENIS PERKARA -> BERKAS ABT
+     ===================================================================
+     Disunting menurut NAMA berkas. Tokennya diambil panel ABT sendiri
+     saat halaman blangko terbuka, jadi pemetaan dapat disusun sekarang
+     walau ABT peladen belum terjangkau. Hanya bagi super admin. -->
+<div id="bagianPeta" class="bagian-peta" hidden>
+  <div class="peta-judul">Pemetaan blangko putusan</div>
+  <p class="saklar-ket">Jenis perkara → nama berkas blangko ABT. Token diambil sendiri di halaman ABT.</p>
+  <div id="daftarPeta" class="peta-daftar"></div>
+  <div class="peta-tambah">
+    <input type="text" id="petaJenisBaru" class="peta-isi" placeholder="Jenis perkara lain…">
+    <button type="button" id="petaTambah" class="skala-pulih">tambah</button>
+  </div>
+  <p id="petaKabar" class="saklar-ket" hidden></p>
+</div>
+
 
 <!-- ===================================================================
      VERSI DAN AKUN YANG SEDANG MASUK

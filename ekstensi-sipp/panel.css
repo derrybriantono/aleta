@@ -5621,3 +5621,113 @@ html.aleta-ganti-tema *::after {
   animation-duration: 0.001s !important;
   animation-delay: 0s !important;
 }
+
+/* ==========================================================================
+   PUTUSAN MASSAL - PANEL ABT DAN BAGIAN SIPP
+   ========================================================================== */
+.aleta-panel-massal { width: 520px; }
+.aleta-kepala-nama {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+.aleta-bagian-judul-statis {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  color: var(--aleta-merek);
+  margin: 8px 0 4px;
+}
+.aleta-massal-tanggal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 6px;
+}
+.aleta-massal-tanggal-label {
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+.aleta-massal-tanggal-isi {
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+.aleta-massal-peta,
+.aleta-massal-pilihan,
+.aleta-massal-neraca {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 4px 0 8px;
+}
+.aleta-massal-belum { color: #ffd98a; }
+.aleta-massal-tambah {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+.aleta-massal-pemilih {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  margin: 4px 0 8px;
+  border: 1px solid var(--aleta-merek-garis);
+  border-radius: 6px;
+  background: var(--aleta-merek-latar);
+}
+.aleta-massal-berkas {
+  text-align: left;
+  border: 1px solid var(--aleta-garis-kuat);
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+.aleta-massal-berkas:hover { background: var(--aleta-merek-tombol); }
+.aleta-massal-serah {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--aleta-garis-kuat);
+}
+.aleta-massal-serah .aleta-tetap-sebab { flex: 1 1 100%; }
+.aleta-massal-jeda {
+  border-left: 3px solid #e0a52f;
+  padding: 4px 8px;
+  background: var(--aleta-latar-naik);
+  border-radius: 4px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Pilihan blangko khusus per perkara, dan kotak ketik nama berkas. */
+.aleta-massal-pilih-berkas {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-top: 3px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+.aleta-massal-baris { flex-wrap: wrap; }
+.aleta-massal-ketik { width: 100%; }

@@ -8348,6 +8348,13 @@ function susunPanel(konteks) {
   if (boleh("penunjukan")) {
     kelPutusan.isi.appendChild(bagianUnggahPutusanSipp(konteks.nomorPerkara));
   }
+  // Antrean putusan massal - bila ada, disisipkan di puncak isi supaya
+  // langkah yang sedang ditunggu terbaca lebih dulu daripada perkaranya.
+  if (boleh("data-umum")) {
+    void bagianAntreanSipp(konteks.nomorPerkara).then((k) => {
+      if (k && isi.isConnected) isi.insertBefore(k, isi.firstChild);
+    });
+  }
   kelPutusan.isi.appendChild(malas("Putusan dan upaya hukum", "putusan", gambarPutusan));
   kelPutusan.isi.appendChild(malas("Putusan di e-Court", "putusanEcourt", gambarPutusanEcourt));
   isi.appendChild(kelPutusan);
@@ -8868,6 +8875,13 @@ function susunPanelDaftar(ringkasan) {
   // yang tidak berwenang berarti menawarkan tombol yang akan menolak.
   if (boleh("penunjukan") && boleh("kerjakan")) {
     isi.appendChild(bagianPenetapanMassal(ringkasan));
+  }
+  if (boleh("data-umum")) {
+    // Fitur 2: antrean SIPP disusun dari tanggal sidang, tanpa lewat ABT.
+    isi.appendChild(bagianMassalSipp());
+    void bagianAntreanSipp("").then((k) => {
+      if (k && isi.isConnected) isi.appendChild(k);
+    });
   }
 
   panel.appendChild(isi);
@@ -10872,3 +10886,419 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
 });
 
 void segarkan();
+
+/*
+ * ============================================================================
+ * PUTUSAN MASSAL DI SIPP - MELANJUTKAN ANTREAN, SATU PERKARA DI HALAMANNYA
+ * ============================================================================
+ *
+ * Dua jalan masuk, satu mesin:
+ *
+ *   FITUR 2  ALETA membaca sidang pada satu tanggal, menyusun antrean SIPP
+ *            sendiri, dan mengisikan putusan tiap perkara.
+ *   FITUR 3  Antrean datang dari tahap ABT (tab lain menuliskannya ke
+ *            chrome.storage); di sini tinggal isian datanya.
+ *
+ * Kenapa PER PERKARA DI HALAMANNYA, bukan berpindah sendiri:
+ *
+ *   Borang putusan SIPP hanya dapat diisi ketika halamannya terbuka - jembatan
+ *   menyentuh CKEditor dan select2 di halaman ini, bukan di halaman lain.
+ *   Membuka perkara berikutnya menuntut tautan perkara_detil/<token>, dan
+ *   tokennya hasil enkripsi SIPP yang tidak dapat dibuat dari sini. Karena itu
+ *   antreannya melangkah bersama Anda: begitu satu perkara tersimpan, ALETA
+ *   menandainya selesai dan menyebut perkara berikutnya - Anda membukanya,
+ *   dan pada mode otomatis ALETA langsung mengisikannya begitu borangnya ada.
+ *
+ * Yang membuatnya AMAN: tiap perkara diperiksa lebih dulu apakah sudah putus
+ * (tidak diisi ulang), isiannya dibuktikan tersimpan dari SIPP - bukan dari
+ * tombol yang berhasil ditekan - dan satu perkara gagal tidak menyentuh sisa
+ * antrean.
+ */
+
+/** Bagian antrean SIPP: muncul di panel perkara DAN panel daftar bila ada antrean. */
+async function bagianAntreanSipp(nomorHalaman) {
+  const antrean = await alatMuatAntrean();
+  if (!antrean || antrean.tahap !== "sipp") return null;
+
+  const kotak = bagian("Putusan massal · lanjutan SIPP", "antreanSipp", false);
+  const isi = kotak.isi;
+  const h = alatAntreanRingkas(antrean);
+
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      `Antrean dari ${antrean.tahap === "sipp" ? "tahap ABT" : "jadwal sidang"} — ` +
+        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal. ` +
+        `Mode: ${antrean.modus === "otomatis" ? "otomatis" : "manual (berhenti tiap perkara)"}.`
+    )
+  );
+
+  // Peta nomor→butir untuk mengenali "apakah perkara halaman ini di antrean".
+  const berikutnya = alatAntreanBerikutnya(antrean);
+  const daftar = buatElemen("div", "aleta-massal-daftar");
+  for (const b of antrean.butir) {
+    const baris = buatElemen("div", `aleta-perkakas-baris ${b.keadaan === "selesai" ? "aleta-perkakas-baik" : b.keadaan === "gagal" ? "aleta-perkakas-buruk" : b.keadaan === "dilewati" ? "" : "aleta-perkakas-awas"}`);
+    baris.appendChild(buatElemen("span", "aleta-perkakas-nama", b.nomor));
+    baris.appendChild(
+      buatElemen("span", "aleta-perkakas-nilai", b.catatan || NAMA_KEADAAN_ANTREAN[b.keadaan] || b.keadaan)
+    );
+    daftar.appendChild(baris);
+  }
+  isi.appendChild(daftar);
+
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  isi.appendChild(kabar);
+
+  const aksi = buatElemen("div", "aleta-abt-aksi");
+  isi.appendChild(aksi);
+
+  const halamanIni = nomorHalaman || cariNomorPerkara();
+  const butirIni = antrean.butir.find(
+    (x) => x.nomor === halamanIni && (x.keadaan === "menunggu" || x.keadaan === "jalan")
+  );
+  const adaBorang = Boolean(document.querySelector("#frm_putusan"));
+
+  if (butirIni && adaBorang) {
+    // Perkara halaman ini memang yang ditunggu, dan borangnya terbuka.
+    const tombol = buatElemen("button", "aleta-permintaan-tombol", "Isi putusan & simpan (dari draf ALETA)");
+    tombol.type = "button";
+    aksi.appendChild(tombol);
+    tombol.addEventListener("click", () => void jalankanSatuAntreanSipp(antrean, butirIni, kabar, tombol));
+
+    // Mode otomatis: langsung jalan, tanpa menunggu ditekan.
+    if (antrean.modus === "otomatis") {
+      kabar.textContent = "Mode otomatis — mengisi perkara ini…";
+      setTimeout(() => void jalankanSatuAntreanSipp(antrean, butirIni, kabar, tombol), 600);
+    }
+  } else if (berikutnya) {
+    // Bukan perkara yang ditunggu (atau borangnya belum dibuka). Sebutkan
+    // yang berikutnya, dan biarkan orang membukanya - tautannya tidak dapat
+    // dibuat dari sini.
+    isi.appendChild(
+      buatElemen(
+        "div",
+        "aleta-massal-jeda",
+        adaBorang
+          ? `Perkara berikutnya di antrean: ${berikutnya.nomor}. Buka perkara itu di SIPP, lalu buka borang putusannya.`
+          : `Perkara berikutnya: ${berikutnya.nomor}. Buka perkaranya dan buka tab Putusan — ALETA akan mengisikannya${antrean.modus === "otomatis" ? " sendiri" : ""}.`
+      )
+    );
+  } else {
+    isi.appendChild(buatElemen("div", "aleta-tetap-sebab", "Seluruh antrean selesai."));
+  }
+
+  const hentikan = buatElemen("button", "aleta-perkakas-aksi", "Akhiri antrean");
+  hentikan.type = "button";
+  hentikan.title = "Membuang antrean ini. Perkara yang sudah tersimpan tetap tersimpan.";
+  hentikan.addEventListener("click", async () => {
+    await alatSimpanAntrean(null);
+    alatCatat("massal", "antrean SIPP diakhiri oleh pengguna", "");
+    kotak.remove();
+  });
+  aksi.appendChild(hentikan);
+
+  return kotak;
+}
+
+const NAMA_KEADAAN_ANTREAN = {
+  menunggu: "menunggu",
+  jalan: "sedang dikerjakan",
+  selesai: "selesai",
+  gagal: "gagal",
+  dilewati: "dilewati",
+  jeda: "dijeda",
+};
+
+/**
+ * Satu perkara antrean, di halaman yang sedang terbuka:
+ *   1. sudah putus?  -> lewati, jangan isi ganda
+ *   2. baca draf ALETA
+ *   3. isi Pertimbangan, Amar, Amar Anonim
+ *   4. Simpan, dibuktikan dari SIPP
+ * Sesudah itu antrean maju satu langkah.
+ */
+async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
+  if (tombol) tombol.disabled = true;
+  butir.keadaan = "jalan";
+  await alatSimpanAntrean(antrean);
+
+  // 1. Jangan isi ulang yang sudah putus.
+  const segar = await bacaPutusanSegar(butir.nomor);
+  if (segar && segar.sudahPutus) {
+    butir.keadaan = "dilewati";
+    butir.catatan = "sudah putus - tidak diisi ulang";
+    await alatSimpanAntrean(antrean);
+    if (kabar) kabar.textContent = `${butir.nomor} sudah putus - dilewati.`;
+    alatCatat("massal", `${butir.nomor}: dilewati (sudah putus)`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
+  // 2. Draf ALETA.
+  let draf;
+  try {
+    if (kabar) kabar.textContent = "Membaca draf putusan…";
+    const respons = await alatAmbil(
+      `${ALETA_API_ISIAN_PUTUSAN}?nomorPerkara=${encodeURIComponent(butir.nomor)}`,
+      { credentials: "include", cache: "no-store" },
+      "Membaca draf putusan"
+    );
+    if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Membaca draf putusan"));
+    const luar = await respons.json();
+    draf = luar && luar.data ? luar.data : luar;
+  } catch (galat) {
+    butir.keadaan = "gagal";
+    butir.catatan = String((galat && galat.message) || galat);
+    await alatSimpanAntrean(antrean);
+    if (kabar) kabar.textContent = butir.catatan;
+    alatCatat("massal-galat", `${butir.nomor}: draf ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+  if (!draf || !draf.ada) {
+    butir.keadaan = "gagal";
+    butir.catatan = (draf && draf.sebab) || "belum ada draf putusan";
+    await alatSimpanAntrean(antrean);
+    if (kabar) kabar.textContent = butir.catatan;
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
+  // 3. Isi tiga medan CKEditor.
+  const isian = [
+    ["#perhum", draf.pertimbangan],
+    ["#amar", draf.amar],
+    ["#amar_anonim", draf.amarAnonim],
+  ];
+  const gagal = [];
+  let terisi = 0;
+  for (const [penunjuk, teks] of isian) {
+    if (!teks) continue;
+    if (kabar) kabar.textContent = `Mengisi ${penunjuk}…`;
+    const hasil = await kirimKeJembatan({ jenis: "isi", penunjuk, jenisMedan: "kaya", nilai: teks });
+    if (hasil && hasil.ok) terisi += 1;
+    else gagal.push(`${penunjuk}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+  }
+  if (gagal.length > 0) {
+    butir.keadaan = "gagal";
+    butir.catatan = `${terisi} terisi, gagal: ${gagal.join("; ")} — Simpan tidak ditekan`;
+    await alatSimpanAntrean(antrean);
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = butir.catatan;
+    }
+    alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
+  // 4. Simpan, dibuktikan dari SIPP.
+  const hasilSimpan = await simpanPutusanLaluBuka(butir.nomor, kabar);
+  if (hasilSimpan.ok) {
+    butir.keadaan = "selesai";
+    butir.catatan = "tersimpan di SIPP";
+    alatCatatTindakan({
+      jenis: "isi-putusan",
+      penunjuk: butir.nomor,
+      label: `putusan ${butir.nomor}`,
+      nilaiBaru: "(tersimpan)",
+      dapatPulih: false,
+    });
+    alatCatat("massal", `${butir.nomor}: putusan tersimpan`, "");
+  } else {
+    butir.keadaan = "gagal";
+    butir.catatan = hasilSimpan.bunyi;
+    alatCatat("massal-galat", `${butir.nomor}: simpan ${hasilSimpan.bunyi}`, "");
+  }
+  await alatSimpanAntrean(antrean);
+
+  // simpanPutusanLaluBuka memuat ulang halaman perkara sendiri bila berhasil;
+  // panel akan lahir kembali, membaca antrean, dan menunjuk perkara berikutnya.
+  if (kabar && !hasilSimpan.ok) {
+    kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+    kabar.textContent = butir.catatan;
+  }
+  if (tombol) tombol.disabled = false;
+}
+
+/*
+ * ============================================================================
+ * FITUR 2 - ANTREAN PUTUSAN SIPP DARI TANGGAL SIDANG, TANPA LEWAT ABT
+ * ============================================================================
+ *
+ * Draf putusan tiap perkara sudah ada di ALETA - dari naskah yang diunggah
+ * lewat panel perkara, atau dari tahap ABT sebelumnya. Yang belum ada hanya
+ * cara mengerjakannya BERURUTAN untuk seluruh perkara yang bersidang pada
+ * satu tanggal, tanpa membuka jadwal, mencatat nomornya, lalu mengetik satu
+ * per satu.
+ *
+ * Bagian ini menyusun antreannya; yang menjalankannya bagianAntreanSipp yang
+ * sama dengan lanjutan dari ABT - satu mesin, dua pintu masuk. Sebelum masuk
+ * antrean, draf tiap perkara diperiksa: yang belum punya draf tidak dijanjikan
+ * akan diisi, melainkan disebut apa adanya dan dilewati.
+ */
+function bagianMassalSipp() {
+  const kotak = bagian("Putusan massal · SIPP", "putusanMassalSipp", true);
+  const isi = kotak.isi;
+  const keadaan = { tanggal: alatTanggalIso(new Date()), sidang: [], draf: new Map() };
+
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      "Perkara yang bersidang pada tanggal ini dan sudah punya draf putusan di ALETA disusun menjadi antrean. " +
+        "Tidak ada yang tercentang sendiri; yang sudah putus tidak ditawarkan."
+    )
+  );
+  isi.appendChild(alatPemilihTanggal((t) => {
+    keadaan.tanggal = t;
+    void muat();
+  }));
+
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  isi.appendChild(kabar);
+  const daftar = buatElemen("div", "aleta-massal-daftar");
+  isi.appendChild(daftar);
+
+  const barisModus = buatElemen("div", "aleta-massal-pilihan");
+  const pilihModus = document.createElement("select");
+  pilihModus.className = "aleta-massal-pilih-berkas";
+  for (const [nilai, label] of [
+    ["manual", "Manual — berhenti di tiap perkara supaya diperiksa dahulu"],
+    ["otomatis", "Otomatis — ALETA mengisi dan menyimpan begitu borangnya terbuka"],
+  ]) {
+    const o = document.createElement("option");
+    o.value = nilai;
+    o.textContent = label;
+    pilihModus.appendChild(o);
+  }
+  barisModus.appendChild(pilihModus);
+  isi.appendChild(barisModus);
+
+  const aksi = buatElemen("div", "aleta-abt-aksi");
+  const tombolSusun = buatElemen("button", "aleta-permintaan-tombol", "Susun antrean");
+  tombolSusun.type = "button";
+  tombolSusun.disabled = true;
+  aksi.appendChild(tombolSusun);
+  isi.appendChild(aksi);
+
+  const centangPer = new Map();
+
+  async function adaDraf(nomor) {
+    if (keadaan.draf.has(nomor)) return keadaan.draf.get(nomor);
+    let hasil = { ada: false, sebab: "belum diperiksa" };
+    try {
+      const respons = await alatAmbil(
+        `${ALETA_API_ISIAN_PUTUSAN}?nomorPerkara=${encodeURIComponent(nomor)}`,
+        { credentials: "include", cache: "no-store" },
+        "Memeriksa draf putusan"
+      );
+      if (respons.ok) {
+        const luar = await respons.json();
+        const d = luar && luar.data ? luar.data : luar;
+        hasil = { ada: Boolean(d && d.ada), sebab: (d && d.sebab) || "" };
+      } else {
+        hasil = { ada: false, sebab: alatPesanGagal(null, respons.status, "Memeriksa draf putusan") };
+      }
+    } catch (galat) {
+      hasil = { ada: false, sebab: String((galat && galat.message) || galat) };
+    }
+    keadaan.draf.set(nomor, hasil);
+    return hasil;
+  }
+
+  async function muat() {
+    daftar.textContent = "";
+    centangPer.clear();
+    tombolSusun.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = `Membaca sidang ${keadaan.tanggal}…`;
+    try {
+      keadaan.sidang = await alatSidangPadaTanggal(keadaan.tanggal);
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+      return;
+    }
+    if (keadaan.sidang.length === 0) {
+      kabar.textContent = `Tidak ada sidang pada ${keadaan.tanggal}.`;
+      return;
+    }
+    const belum = keadaan.sidang.filter((s) => !s.sudahPutus);
+    kabar.textContent = `${keadaan.sidang.length} perkara bersidang; ${belum.length} belum putus. Memeriksa draf…`;
+
+    for (const s of keadaan.sidang) {
+      const label = buatElemen("label", "aleta-massal-baris");
+      const centang = document.createElement("input");
+      centang.type = "checkbox";
+      centang.className = "aleta-massal-centang";
+      centang.disabled = true;
+      label.appendChild(centang);
+      label.appendChild(buatElemen("span", "aleta-massal-nomor", s.nomor));
+      label.appendChild(buatElemen("span", "aleta-massal-keadaan", [s.jenis || "jenis tidak terbaca", s.agenda].filter(Boolean).join(" · ")));
+      const tanda = buatElemen("span", "aleta-massal-keadaan", s.sudahPutus ? "sudah putus" : "memeriksa draf…");
+      if (s.sudahPutus) tanda.classList.add("aleta-lencana-aman");
+      label.appendChild(tanda);
+      daftar.appendChild(label);
+      centangPer.set(s.nomor, { centang, sidang: s, tanda });
+    }
+
+    // Draf diperiksa berurutan - satu permintaan ringan per perkara - dan
+    // hasilnya langsung dituliskan di barisnya, supaya orang tidak menunggu
+    // seluruh daftar untuk mulai membaca.
+    let siap = 0;
+    for (const s of belum) {
+      const d = await adaDraf(s.nomor);
+      const t = centangPer.get(s.nomor);
+      if (!t) continue;
+      if (d.ada) {
+        t.centang.disabled = false;
+        t.tanda.textContent = "draf ada";
+        siap += 1;
+      } else {
+        t.tanda.textContent = d.sebab ? `tanpa draf: ${d.sebab}` : "belum ada draf";
+        t.tanda.classList.add("aleta-lencana-mendesak");
+        t.centang.title = "Unggah naskah putusannya dahulu di panel perkara, atau kerjakan lewat tahap ABT.";
+      }
+    }
+    kabar.textContent = `${keadaan.sidang.length} perkara bersidang; ${belum.length} belum putus; ${siap} punya draf dan dapat dicentang.`;
+    tombolSusun.disabled = siap === 0;
+  }
+
+  tombolSusun.addEventListener("click", async () => {
+    const dipilih = [...centangPer.values()]
+      .filter((x) => x.centang.checked && !x.centang.disabled)
+      .map((x) => x.sidang);
+    if (dipilih.length === 0) {
+      kabar.textContent = "Tidak ada yang dicentang.";
+      return;
+    }
+    const antrean = alatBuatAntrean({
+      tanggalSidang: keadaan.tanggal,
+      tahap: "sipp",
+      modus: pilihModus.value,
+      kering: false,
+      butir: dipilih.map((s) => ({ nomor: s.nomor, perkaraId: s.perkaraId, jenis: s.jenis })),
+    });
+    await alatSimpanAntrean(antrean);
+    alatCatat("massal", `antrean SIPP disusun dari sidang ${keadaan.tanggal}: ${dipilih.length} perkara (${pilihModus.value})`, "");
+    kabar.textContent =
+      `Antrean ${dipilih.length} perkara disusun (${pilihModus.value}). Buka perkara pertama - ${dipilih[0].nomor} - lalu tab Putusan; ` +
+      "bagian “Putusan massal · lanjutan SIPP” akan memandu tiap langkahnya.";
+    tombolSusun.disabled = true;
+  });
+
+  // Dimuat saat dibuka, bukan saat panel digambar - sama seperti menu malas
+  // lainnya: yang membuka panel daftar belum tentu hendak memutus massal.
+  const kepala = kotak.querySelector(".aleta-bagian-judul");
+  let sudah = false;
+  if (kepala) {
+    kepala.addEventListener("click", () => {
+      if (sudah) return;
+      sudah = true;
+      void muat();
+    });
+  }
+  return kotak;
+}

@@ -42,6 +42,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.131.0",
+    dirilis: "2026-09-14T09:00:00+08:00",
+    judul: "Putusan massal: dari jadwal sidang ke ABT, ke SIPP, dan pemetaan blangko yang dapat disunting",
+    butir: [
+      "PUTUSAN MASSAL DI ABT. Di halaman beranda blangko ABT ada panel baru: pilih tanggal sidang (hari ini bawaannya), ALETA menyodorkan seluruh perkara yang bersidang pada tanggal itu beserta jenis, agenda, dan sudah-belumnya putus. Tidak ada yang tercentang sendiri - agenda sidang tidak dapat dipercaya sebagai penentu, jadi yang memutuskan orang. Tekanan pertama menyusun RENCANA (kering); menjalankan menuntut tekanan kedua. Tiap perkara berdiri sendiri: RTF dari ABT, draf ke ALETA, PDF, anonimisasi, PDF anonim, dan bila diminta secara sadar, unggah dokumen ke SIPP. Satu yang gagal dicatat sebabnya, sisanya jalan terus.",
+      "LANJUTAN KE SIPP - OTOMATIS ATAU MANUAL. Sesudah tahap ABT, antrean diserahkan ke SIPP lewat penyimpanan ekstensi (tab ABT dan tab SIPP beda asal). Di SIPP, bagian Putusan massal memandu perkara demi perkara: otomatis mengisi dan menyimpan begitu borang putusannya terbuka; manual berhenti di tiap perkara supaya diperiksa dahulu. Tersimpannya dibuktikan dari SIPP, bukan dari tombol yang berhasil ditekan; yang sudah putus tidak pernah diisi ulang.",
+      "ANTREAN SIPP LANGSUNG DARI TANGGAL SIDANG. Bagi perkara yang drafnya sudah ada di ALETA, panel daftar perkara SIPP dapat menyusun antreannya sendiri dari tanggal sidang tanpa lewat ABT. Draf tiap perkara diperiksa lebih dulu; yang belum punya draf disebut apa adanya dan tidak dapat dicentang - bukan dijanjikan lalu gagal di tengah.",
+      "PEMETAAN BLANGKO MENURUT NAMA, DAPAT DISUNTING. Jenis perkara → nama berkas blangko ABT. Token a/b (hasil enkripsi ABT) hanya dapat dibaca dari halaman ABT yang terbuka, jadi pemetaan cukup menyebut NAMA-nya; panel ABT mengambil tokennya sendiri dengan menyusuri kelompok blangko, lalu menyimpannya. Nama juga lebih tahan lama daripada token: kunci ABT yang berganti mematikan seluruh token diam-diam, nama berkasnya tidak. Disunting di popup ekstensi (super admin) maupun di panel ABT - ketik nama, pilih dari halaman, atau Ambil token dari ABT. Bawaan cerai dahulu: Cerai Gugat dan Cerai Talak → [01] [Kabul Verstek] Cerai (Format Lengkap); jenis lain menyusul sesudah tersambung ke peladen.",
+      "BLANGKO KHUSUS PER PERKARA. Verstek dan contra adalah dua berkas berbeda untuk satu jenis perkara yang sama, jadi tiap baris perkara di daftar massal punya pilihan blangkonya sendiri yang menang atas pemetaan jenisnya.",
+      "Catatan di SIPP tetap seperti SIPP menulisnya - rancangan sejak 1.106.0; riwayat lengkap tiap langkah, termasuk yang gagal, ada di kotak hitam dan Riwayat ALETA.",
+    ],
+  },
+  {
     versi: "1.130.0",
     dirilis: "2026-09-13T21:00:00+08:00",
     judul: "Tema gelap yang benar-benar berganti dan tidak tersendat, halaman login ikut palet, dan tulisan dasbor yang tidak terbaca",
