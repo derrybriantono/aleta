@@ -216,3 +216,52 @@ describe("agregator: satu kunci banyak model, tanpa mengubah kode", () => {
     expect(isi).toContain('if (provider === "openai" && value.includes("gpt-3.5")) return "gpt-4o-mini";');
   });
 });
+
+// ============================================================================
+describe("borang dua jalur di portal - sisa Tahap 1c", () => {
+  const require2 = createRequire(import.meta.url);
+  const fs2 = require2("node:fs") as typeof import("node:fs");
+  const AKAR_PORTAL = path.resolve(__dirname, "../..");
+
+  const layananAi = fs2.readFileSync(path.join(AKAR_PORTAL, "src/server/modules/ai/service.ts"), "utf8");
+  const layananBot = fs2.readFileSync(path.join(AKAR_PORTAL, "src/server/modules/aleta-bot/service.ts"), "utf8");
+  const tipe = fs2.readFileSync(path.join(AKAR_PORTAL, "src/lib/types.ts"), "utf8");
+
+  it("dua jalur menjadi MODUL, bukan komponen baru - layar Pengaturan AI sudah menggambar satu baris per modul", () => {
+    expect(tipe).toContain('| "aleta_bot_umum"');
+    expect(tipe).toContain('| "aleta_bot_perkara"');
+    expect(layananAi).toContain('key: "aleta_bot_umum"');
+    expect(layananAi).toContain('key: "aleta_bot_perkara"');
+    // Keterangannya menyebut akibatnya, bukan hanya namanya.
+    expect(layananAi).toMatch(/Dibiarkan kosong berarti isi perkara tidak dikirim/);
+  });
+
+  it("pengenal alias memeriksa jalur SEBELUM aleta_bot - keduanya berawalan sama", () => {
+    const letakUmum = layananAi.indexOf('normalized === "aleta_bot_umum"');
+    const letakBot = layananAi.indexOf('normalized === "aleta_bot" ||');
+    expect(letakUmum).toBeGreaterThan(0);
+    expect(letakBot).toBeGreaterThan(letakUmum);
+  });
+
+  it("jalur ikut dikirim ke bot saat sinkronisasi", () => {
+    expect(layananBot).toContain('umum: jalurUntukBot(globalAiConfig, "aleta_bot_umum")');
+    expect(layananBot).toContain('perkara: jalurUntukBot(globalAiConfig, "aleta_bot_perkara")');
+  });
+
+  it("jalur PERKARA tidak boleh mewarisi sambungan global - ia harus dipilih", () => {
+    // Mewarisi berarti posita berangkat ke penyedia mana pun yang kebetulan
+    // dipasang orang untuk keperluan lain, tanpa satu keputusan yang menyebutnya.
+    const badan = layananBot.slice(layananBot.indexOf("function jalurUntukBot("));
+    const fungsi = badan.slice(0, badan.indexOf("\n}\n"));
+    expect(fungsi).toContain('if (moduleKey === "aleta_bot_perkara" && (modul.inheritGlobal || !modul.configuredConnectionId))');
+    // Yang dipilih menang atas yang diwariskan, untuk kedua jalur.
+    expect(fungsi).toContain("modul.configuredConnectionId ?? modul.activeConnectionId");
+  });
+
+  it("kunci API tidak digandakan per jalur", () => {
+    // Menyalin rahasia yang sama ke lebih banyak tempat tidak menambah satu pun
+    // kemampuan; ia hanya menambah tempat ia dapat bocor.
+    const badan = layananBot.slice(layananBot.indexOf("function jalurUntukBot("));
+    expect(badan.slice(0, badan.indexOf("\n}\n"))).toContain('apiKeyEnvKey: ""');
+  });
+});

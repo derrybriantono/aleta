@@ -134,12 +134,30 @@ const AI_MODULE_CATALOG: Array<{
     label: "ALETA Bot / WhatsApp AI",
     description: "AI untuk classifier, jawaban WhatsApp, dan notifikasi cerdas ALETA Bot.",
   },
+  {
+    key: "aleta_bot_umum",
+    label: "ALETA Bot - jalur UMUM",
+    description:
+      "Pekerjaan yang TIDAK memuat isi perkara: memilah niat, merapikan kalimat, menyusun ringkasan umum. " +
+      "Boleh memakai agregator mana pun dan boleh berganti model kapan saja.",
+  },
+  {
+    key: "aleta_bot_perkara",
+    label: "ALETA Bot - jalur ISI PERKARA",
+    description:
+      "Posita, keterangan saksi, draf pertimbangan. Selalu lewat penyamaran lebih dahulu, dan muatan tanpa bukti " +
+      "penyamaran DITOLAK oleh bot. Dibiarkan kosong berarti isi perkara tidak dikirim ke mana pun.",
+  },
 ];
 
 function normalizeAIModuleKey(value: string | null | undefined): AIModuleKey | null {
   const normalized = String(value || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   if (normalized === "manajemen_surat" || normalized === "surat" || normalized === "mail") return "manajemen_surat";
   if (normalized === "jlf" || normalized === "judicia" || normalized === "legal_form") return "jlf";
+  // Jalur diperiksa SEBELUM "aleta_bot", sebab keduanya berawalan sama dan
+  // pemeriksaan yang longgar akan menelan keduanya menjadi satu.
+  if (normalized === "aleta_bot_umum" || normalized === "jalur_umum") return "aleta_bot_umum";
+  if (normalized === "aleta_bot_perkara" || normalized === "jalur_perkara") return "aleta_bot_perkara";
   if (normalized === "aleta_bot" || normalized === "bot" || normalized === "whatsapp" || normalized === "public_qa") {
     return "aleta_bot";
   }

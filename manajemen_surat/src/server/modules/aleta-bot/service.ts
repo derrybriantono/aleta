@@ -4338,6 +4338,53 @@ function getBotAiEnvKeyForProvider(provider: string) {
   return "";
 }
 
+/**
+ * Satu jalur AI ALETA Bot, disusun dari modul yang sudah dipilih operator.
+ *
+ * Kosong berarti BELUM DISETEL, dan itu bukan cacat: jalur "perkara" yang
+ * belum disetel berarti isi perkara tidak dikirim ke mana pun - keadaan awal
+ * yang benar. Bot yang memutuskan (lihat setelanJalur di aiRuntimeConfigService);
+ * portal hanya menyampaikan pilihan.
+ */
+function jalurUntukBot(
+  globalAiConfig: Awaited<ReturnType<typeof getAISettingsFromDb>>,
+  moduleKey: "aleta_bot_umum" | "aleta_bot_perkara"
+) {
+  const kosong = { provider: "", model: "", endpointUrl: "", apiKeyEnvKey: "" };
+  const modul = globalAiConfig.moduleConfigs.find((item) => item.moduleKey === moduleKey) ?? null;
+  if (!modul || !modul.enabled) return kosong;
+
+  // ==========================================================================
+  // JALUR PERKARA HARUS DIPILIH, TIDAK BOLEH MEWARISI
+  // ==========================================================================
+  //
+  // Modul yang belum pernah disentuh mewarisi sambungan global - itu masuk akal
+  // untuk pekerjaan biasa, dan salah untuk isi perkara. Mewarisi berarti posita
+  // berangkat ke penyedia mana pun yang kebetulan dipasang orang untuk keperluan
+  // lain, tanpa satu pun keputusan yang menyebutnya.
+  //
+  // Karena itu jalur perkara hanya memakai sambungan yang BENAR-BENAR dipilih
+  // di layar Pengaturan AI. Belum dipilih = belum disetel = isi perkara tidak
+  // dikirim ke mana pun.
+  if (moduleKey === "aleta_bot_perkara" && (modul.inheritGlobal || !modul.configuredConnectionId)) {
+    return kosong;
+  }
+
+  const sambungan =
+    globalAiConfig.providers.find((item) => item.id === (modul.configuredConnectionId ?? modul.activeConnectionId)) ??
+    null;
+  const providerId = sambungan?.providerId ?? modul.providerId;
+  return {
+    provider: mapPortalProviderToBot(providerId),
+    model: sambungan?.modelId ?? modul.modelId ?? "",
+    endpointUrl: sambungan?.endpointUrl ?? "",
+    // Kunci TIDAK ikut dikirim per jalur - ia tetap satu untuk seluruh bot,
+    // lewat env. Menyalin kunci ke tiap jalur berarti menggandakan rahasia
+    // yang sama ke lebih banyak tempat tanpa menambah satu pun kemampuan.
+    apiKeyEnvKey: "",
+  };
+}
+
 async function buildAletaBotAiConfigPayload(db: AletaDatabase) {
   const globalAiConfig = await getAISettingsFromDb(db, { includeSecrets: true });
   const aiConfig = resolveAIConfigForModule(globalAiConfig, "aleta_bot");
@@ -4385,6 +4432,12 @@ async function buildAletaBotAiConfigPayload(db: AletaDatabase) {
     moduleKey: "aleta_bot",
     moduleConfig,
     moduleConfigs: globalAiConfig.moduleConfigs,
+    // Dua jalur ikut disinkronkan. Bot menolak muatan isi perkara yang tidak
+    // membawa bukti penyamaran, apa pun isi setelan ini.
+    jalur: {
+      umum: jalurUntukBot(globalAiConfig, "aleta_bot_umum"),
+      perkara: jalurUntukBot(globalAiConfig, "aleta_bot_perkara"),
+    },
     syncedAt: new Date().toISOString(),
   };
 }

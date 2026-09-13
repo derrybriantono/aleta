@@ -160,7 +160,24 @@ export type RegulationSource = "internal" | "external";
 export type AIRecommendationType = "routing" | "instruction" | "regulation";
 export type AIProviderId = string;
 export type AIConnectionStatus = "idle" | "connected" | "failed";
-export type AIModuleKey = "manajemen_surat" | "jlf" | "aleta_bot";
+/**
+ * Dua kunci terakhir adalah JALUR ALETA Bot, bukan modul tersendiri.
+ *
+ * Yang dipisah bukan pekerjaannya, melainkan APA YANG BOLEH DIBACA model itu:
+ * jalur umum tidak pernah memuat isi perkara, jalur perkara memuatnya dan
+ * karena itu wajib lewat penyamaran (lihat penyamaranPerkaraService di bot).
+ *
+ * Dijadikan modul supaya layar Pengaturan AI menggambarnya sendiri - satu
+ * baris per modul beserta pemilih sambungannya - tanpa satu komponen baru.
+ * Operator memilih sambungan yang berbeda untuk keduanya, dan sejak itu
+ * memindahkan jalur umum ke penyedia baru tidak ikut memindahkan isi perkara.
+ */
+export type AIModuleKey =
+  | "manajemen_surat"
+  | "jlf"
+  | "aleta_bot"
+  | "aleta_bot_umum"
+  | "aleta_bot_perkara";
 export type AIModuleConfigStatus = "global" | "custom" | "fallback";
 export type WhatsAppWebConnectionStatus = "active" | "inactive" | "failed";
 export type InstitutionIdentityEnrichmentStatus =
