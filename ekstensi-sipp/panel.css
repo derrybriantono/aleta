@@ -3373,6 +3373,57 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   border-radius: 4px;
 }
 
+/* Bilah cari, saring, dan urut - membungkus pada panel sempit, sebab panel
+   ini dapat selebar 300 piksel dan tiga medan berjajar paksa akan mendorong
+   daftarnya keluar. */
+.aleta-massal-bilah {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.aleta-massal-cari {
+  flex: 1 1 10em;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-massal-saring,
+.aleta-massal-urut {
+  flex: 0 1 auto;
+  max-width: 100%;
+  padding: 3px 4px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Berapa yang tampil dan berapa yang tercentang - termasuk yang tercentang
+   tetapi tersembunyi saringan, sebab itulah yang akan ikut dijalankan. */
+.aleta-massal-ringkas {
+  flex: 1 0 100%;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+/* Tombol lepas-warna duduk di deret tombol kepala bersama ⟲ dan ⛶, jadi ia
+   mewarisi gayanya; yang ditambahkan hanya penanda keadaan DILEPAS - tanpa
+   itu kedua keadaannya terlihat sama dan togglenya tidak dapat dibaca. */
+button.aleta-warna-lepas[aria-pressed="true"] {
+  color: var(--aleta-merek-tulisan);
+  background: var(--aleta-merek-latar);
+  border-radius: 4px;
+}
+
 .aleta-massal-baris {
   display: flex;
   gap: 7px;

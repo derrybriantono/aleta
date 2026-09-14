@@ -305,11 +305,39 @@ describe("pemasangan - ketiga panel, dan penjaganya", () => {
 
 // ============================================================================
 describe("tidak ada yang tercentang sendiri, dan kering dulu", () => {
-  it("ABT: rencana dulu (kering), jalankan menyala sesudah rencana dibaca", () => {
+  it("ABT: periksa dulu, jalankan menyala sesudah hasilnya dibaca", () => {
     const badan = abt.slice(abt.indexOf("function bagianMassalAbt("));
-    expect(badan).toContain('buatElemen("button", "aleta-permintaan-tombol", "Susun rencana (kering)")');
-    expect(badan).toContain("tombolJalan.disabled = true"); // menyala hanya sesudah rencana
+    // "kering" istilah pemrogram; yang menekannya panitera. Yang dijaga di
+    // sini bukan katanya melainkan JANJINYA: tombol pertama harus menyatakan
+    // bahwa belum ada yang dikerjakan.
+    expect(badan).toContain('buatElemen("button", "aleta-permintaan-tombol", "Periksa dulu - belum dijalankan")');
+    expect(badan).not.toContain("(kering)");
+    expect(badan).toContain("tombolJalan.disabled = true"); // menyala hanya sesudah diperiksa
     expect(badan).toContain('"Tidak ada yang tercentang sendiri."');
+  });
+
+  it("daftar massal dapat dicari, disaring, dan diurutkan", () => {
+    const badan = abt.slice(abt.indexOf("function bagianMassalAbt("));
+    expect(badan).toContain("aleta-massal-cari");
+    expect(badan).toContain("aleta-massal-saring");
+    expect(badan).toContain("aleta-massal-urut");
+    // Urutan bawaan: agenda yang menyebut putus berdiri di depan.
+    expect(badan).toContain("function agendaPutusan(s)");
+    expect(badan).toContain("/putus/i.test(String((s && s.agenda)");
+  });
+
+  it("yang tercentang TIDAK hilang ketika daftarnya disaring", () => {
+    // Saringan mengubah yang terlihat, bukan yang terpilih. Centang yang
+    // lenyap diam-diam ketika saringan diganti adalah cara paling halus untuk
+    // menjalankan perkara yang tidak dimaksudkan - atau melewatkan yang
+    // dimaksudkan.
+    const badan = abt.slice(abt.indexOf("function bagianMassalAbt("));
+    expect(badan).toContain("const dicentang = new Set();");
+    expect(badan).toContain("centang.checked = dicentang.has(s.nomor);");
+    // Yang dijalankan dibaca dari ingatan, bukan dari baris yang tergambar.
+    expect(badan).toContain("return keadaan.sidang.filter((s) => dicentang.has(s.nomor) && !s.sudahPutus);");
+    // Dan berapa yang tercentang tetapi tidak terlihat DISEBUT.
+    expect(badan).toContain("tidak terlihat");
   });
 
   it("unggah dokumen ke SIPP mati secara bawaan - ia yang benar-benar menulis", () => {

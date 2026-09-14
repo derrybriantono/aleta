@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.136.0",
+    dirilis: "2026-09-14T15:10:00+08:00",
+    judul: "Token blangko yang terbuang, warna SIPP yang tertinggal, dan daftar putusan massal yang dapat dicari",
+    butir: [
+      "TOKEN BLANGKO TIDAK LAGI DIBUANG PENJAGANYA SENDIRI. \"7 token terisi, 7 berkas tidak ditemukan\" - angka yang sama dua kali, dan itu memang satu peristiwa: ketujuh berkasnya KETEMU, lalu tokennya dihapus sebelum disimpan. Penjaga lamanya menuntut token hanya berisi [A-Za-z0-9+/=_%.-], padahal token ABT hasil enkripsi CodeIgniter kerap memuat \"~\". Diukur atas empat tautan blangko sungguhan di server: TIGA memuat \"~\", jadi tiga dari empat dibuang diam-diam. Sekarang yang ditolak hanya yang memang tidak mungkin token - kosong, terlalu pendek, berspasi, atau memuat huruf yang mematahkan tautan.",
+      "SIPP IKUT WARNA DARI POPUP, seperti ABT. Tema gelap/terang sudah diikuti sejak lama, tetapi WARNA paletnya tidak: panel ABT mendapatkannya lewat alatPasangPanel, sedangkan panel SIPP dibangun sendiri dan tidak pernah memanggilnya. Yang terbaca dari situ bukan \"belum tersambung\" melainkan \"popupnya tidak berlaku untuk SIPP\".",
+      "WARNA SATU HALAMAN DAPAT DILEPAS DARI POPUP - tombol baru di sebelah ⟲ pada kepala panel. SIPP, ABT, dan halaman ALETA kerap terbuka berdampingan, dan yang bekerja di antaranya perlu tahu sekilas sedang menatap yang mana. Yang dilepas menyimpan warnanya atas nama panelnya sendiri dan tidak lagi tersentuh popup; keadaannya disebut pada judul tombol, bukan didiamkan.",
+      "PUTUSAN MASSAL DAPAT DICARI, DISARING, DAN DIURUTKAN. Cari nomor/jenis/agenda; saring semua, belum putus, sudah putus, blangko siap, blangko belum, atau yang dicentang saja; urutkan menurut agenda putusan, nomor, jenis, atau keadaan. Bawaannya AGENDA PUTUSAN DAHULU - pada tanggal sidang mana pun hanya sebagian yang hendak diputus, dan agendanya satu-satunya petunjuk sebelum berkas dibuka. Ia urutan, bukan saringan: agenda tidak dapat dipercaya sebagai penentu, jadi yang lain tetap tergambar di bawah.",
+      "YANG TERCENTANG TIDAK HILANG KARENA DISARING. Saringan mengubah yang terlihat, bukan yang terpilih - dan berapa yang tercentang tetapi tidak terlihat DISEBUT di atas daftar, sebab menekan Jalankan sesudah menyaring tanpa keterangan itu akan mengerjakan perkara yang tidak ada di layar.",
+      "BAHASA: lencana \"PELADEN\" menjadi \"SERVER\", dan \"Susun rencana (kering)\" menjadi \"Periksa dulu - belum dijalankan\". \"Kering\" istilah pemrogram; yang menekannya panitera, dan yang perlu dijawab tombol itu satu - apakah menekannya mengubah sesuatu atau tidak.",
+    ],
+  },
+  {
     versi: "1.135.0",
     dirilis: "2026-09-14T12:15:00+08:00",
     judul: "Bawaan blangko dispensasi kawin diperbaiki menurut peladen",

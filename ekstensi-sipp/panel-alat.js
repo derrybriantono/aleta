@@ -699,10 +699,12 @@ function alatTanpaTransisi(kerjakan) {
  */
 const alatPanelTema = [];
 
-function alatDaftarkanPanelTema(panel, pilihan) {
+function alatDaftarkanPanelTema(panel, pilihan, kunci) {
   if (!panel) return;
   if (alatPanelTema.some((x) => x.panel === panel)) return;
-  alatPanelTema.push({ panel, pilihan: pilihan || {} });
+  // Kuncinya ikut dicatat: tanpa itu alatSelaraskanWarna tidak dapat tahu
+  // panel mana yang sudah dilepas dari popup.
+  alatPanelTema.push({ panel, pilihan: pilihan || {}, kunci: String(kunci || "") });
 }
 
 /** Satu tema diberlakukan ke panel yang terdaftar dan ke halamannya. */
@@ -719,18 +721,24 @@ function alatSelaraskanTema(tema) {
   });
 }
 
-function alatSelaraskanWarna(nama) {
+async function alatSelaraskanWarna(nama) {
+  // Panel yang dilepas dari popup TIDAK ikut - itulah arti dilepas. Dibaca
+  // lebih dulu supaya penggambarannya tetap satu tarikan tanpa transisi.
+  const mandiri = await alatPetaMandiri();
   alatTanpaTransisi(() => {
+    const ikut = alatPanelTema.filter((x) => x.panel.isConnected && !(x.kunci && mandiri[x.kunci] === true));
     if (alatPanelTema.length === 0) {
       alatTerapkanWarna(null, nama, false);
       return;
     }
-    for (const { panel } of alatPanelTema) {
-      if (!panel.isConnected) continue;
+    for (const { panel } of ikut) {
       alatTerapkanWarna(panel, nama, false);
       const pemilih = panel.querySelector(".aleta-warna-pilih");
       if (pemilih && typeof pemilih.aletaTandai === "function") pemilih.aletaTandai(nama || "");
     }
+    // Halaman hanya ikut bila ada satu pun panel yang masih terikat popup -
+    // kalau seluruhnya dilepas, atribut warna halaman milik yang dilepas.
+    if (ikut.length === 0) return;
   });
   // Salinan sinkron halaman INI ikut diperbarui - kalau tidak, halaman
   // berikutnya di tab ini lahir dengan warna lama lalu berkelebat.
@@ -788,6 +796,23 @@ function alatTerapkanTemaHalaman(tema) {
  * dapat menyuntikkan apa pun ke atribut HTML.
  */
 const KUNCI_WARNA_GELAP = "warnaGelap";
+/**
+ * ============================================================================
+ * WARNA YANG DILEPAS DARI POPUP
+ * ============================================================================
+ *
+ * Bawaannya satu warna untuk semua: diganti di popup, ketiga panel ikut.
+ * Itu yang dikehendaki hampir selalu - tetapi tidak selalu. SIPP, ABT, dan
+ * halaman ALETA kerap terbuka berdampingan di satu layar, dan yang bekerja
+ * di antaranya perlu tahu SEKILAS sedang menatap yang mana.
+ *
+ * Karena itu tiap panel boleh dilepas: warnanya disimpan atas namanya
+ * sendiri, dan perubahan dari popup tidak lagi menyentuhnya. Yang dilepas
+ * disebut di tombolnya, bukan didiamkan - warna yang tidak ikut berubah
+ * tanpa keterangan terbaca sebagai popup yang rusak.
+ */
+const KUNCI_WARNA_MANDIRI = "warnaMandiri";
+const KUNCI_WARNA_SENDIRI = "warnaSendiri";
 const KUNCI_SALINAN_WARNA = "aleta-warna-gelap";
 const DAFTAR_WARNA_GELAP = [
   ["", "Hijau SIPP (bawaan)", "#7fd0a6"],
@@ -800,7 +825,7 @@ const DAFTAR_WARNA_GELAP = [
 ];
 
 /** Memasang satu warna ke panel DAN halaman, lalu menyimpannya. */
-function alatTerapkanWarna(panel, nama, simpan) {
+function alatTerapkanWarna(panel, nama, simpan, kunci) {
   const dikenal = DAFTAR_WARNA_GELAP.some(([k]) => k === nama);
   const bersih = dikenal ? nama : "";
   const akar = document.documentElement;
@@ -817,11 +842,78 @@ function alatTerapkanWarna(panel, nama, simpan) {
   } catch {
     /* halaman berikutnya berkelebat sekali - warnanya tetap berlaku kini */
   }
+  // Ke tempat yang benar - milik panel ini bila dilepas dari popup, milik
+  // semua bila tidak. `kunci` datang dari pemanggil; tanpa itu ia global,
+  // sama seperti sebelum pelepasan ada.
+  void alatSimpanWarna(kunci, bersih);
+}
+
+/** Panel mana saja yang warnanya dilepas dari popup. */
+async function alatPetaMandiri() {
   try {
-    void chrome.storage.local.set({ [KUNCI_WARNA_GELAP]: bersih });
+    const simpan = await chrome.storage.local.get([KUNCI_WARNA_MANDIRI]);
+    const peta = simpan[KUNCI_WARNA_MANDIRI];
+    return peta && typeof peta === "object" ? peta : {};
   } catch {
-    /* di luar konteks ekstensi */
+    return {};
   }
+}
+
+async function alatWarnaMandiri(kunci) {
+  if (!kunci) return false;
+  return (await alatPetaMandiri())[kunci] === true;
+}
+
+/** Warna sendiri satu panel - dipakai hanya ketika panel itu dilepas. */
+async function alatWarnaSendiri(kunci) {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_WARNA_SENDIRI]);
+    const peta = simpan[KUNCI_WARNA_SENDIRI];
+    const nama = peta && typeof peta === "object" ? String(peta[kunci] || "") : "";
+    return DAFTAR_WARNA_GELAP.some(([k]) => k === nama) ? nama : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Menyimpan warna ke tempat yang benar: milik panel ini bila dilepas, milik
+ * semua bila tidak. Salah tempat berarti mengganti warna satu panel diam-diam
+ * mengganti warna dua panel lainnya.
+ */
+async function alatSimpanWarna(kunci, nama) {
+  const bersih = DAFTAR_WARNA_GELAP.some(([k]) => k === nama) ? nama : "";
+  try {
+    if (kunci && (await alatWarnaMandiri(kunci))) {
+      const simpan = await chrome.storage.local.get([KUNCI_WARNA_SENDIRI]);
+      const peta = simpan[KUNCI_WARNA_SENDIRI] && typeof simpan[KUNCI_WARNA_SENDIRI] === "object" ? simpan[KUNCI_WARNA_SENDIRI] : {};
+      peta[kunci] = bersih;
+      await chrome.storage.local.set({ [KUNCI_WARNA_SENDIRI]: peta });
+      return;
+    }
+    await chrome.storage.local.set({ [KUNCI_WARNA_GELAP]: bersih });
+  } catch {
+    /* di luar konteks ekstensi - warnanya tetap berlaku di halaman ini */
+  }
+}
+
+/** Menyalakan atau memadamkan pelepasan satu panel. */
+async function alatSetelWarnaMandiri(kunci, ya) {
+  if (!kunci) return;
+  try {
+    const peta = await alatPetaMandiri();
+    if (ya) peta[kunci] = true;
+    else delete peta[kunci];
+    await chrome.storage.local.set({ [KUNCI_WARNA_MANDIRI]: peta });
+  } catch {
+    /* tanpa penyimpanan, pelepasannya berlaku sampai halaman dimuat ulang */
+  }
+}
+
+/** Warna yang BERLAKU untuk satu panel: miliknya sendiri bila dilepas. */
+async function alatWarnaBerlaku(kunci) {
+  if (kunci && (await alatWarnaMandiri(kunci))) return alatWarnaSendiri(kunci);
+  return alatWarnaTersimpan();
 }
 
 /** Warna tersimpan, dari chrome.storage. Kosong berarti bawaan. */
@@ -913,7 +1005,9 @@ function alatPemilihWarna(panel, wadah, pilihan) {
     titik.setAttribute("aria-label", judul);
     titik.style.setProperty("--titik", contoh);
     titik.addEventListener("click", () => {
-      alatTerapkanWarna(panel, nama, true);
+      // kunciPanel menentukan ke mana warnanya disimpan: milik panel ini bila
+      // sudah dilepas, milik semua bila belum.
+      alatTerapkanWarna(panel, nama, true, (pilihan && pilihan.kunciPanel) || "");
       tandai(nama);
       buka(false);
     });
@@ -1115,6 +1209,37 @@ function alatTombolKepala(panel, kunci, opsi) {
     penuh.textContent = "⛶";
   });
 
+  // ── Lepas warna halaman ini dari popup ───────────────────────────────────
+  //
+  // Berdampingan dengan tombol kembalikan-bawaan sebab keduanya sejenis:
+  // mengatur panelnya sendiri, bukan isi perkaranya. Keadaannya DISEBUT pada
+  // judul tombol - warna yang berhenti mengikuti popup tanpa keterangan
+  // terbaca sebagai popup yang rusak, dan yang membacanya akan menekan
+  // popup berkali-kali.
+  //
+  // Hanya digambar untuk yang melihat pemilih warnanya. Tombol yang melepas
+  // sesuatu yang tidak dapat dipilih hanya menambah satu tanda tanya.
+  const bolehWarna = /super/i.test(String((opsi && opsi.peran) || panel.getAttribute("data-peran") || ""));
+  if (bolehWarna && kunci) {
+    const lepas = buat("aleta-warna-lepas", "⇄", "", async () => {
+      const kini = await alatWarnaMandiri(kunci);
+      await alatSetelWarnaMandiri(kunci, !kini);
+      // Yang baru dilepas mewarisi warna yang sedang tampak - kalau tidak, ia
+      // melompat ke bawaan pada tekanan pertama, dan yang menekannya mengira
+      // tombol ini mengganti warna, bukan melepasnya.
+      if (!kini) await alatSimpanWarna(kunci, panel.getAttribute("data-warna") || "");
+      tandaiLepas(!kini);
+    });
+    var tandaiLepas = (mandiri) => {
+      lepas.textContent = mandiri ? "⊘" : "⇄";
+      lepas.title = mandiri
+        ? "Warna halaman ini DILEPAS dari popup - hanya berubah dari panel ini. Tekan untuk mengikut lagi."
+        : "Warna halaman ini mengikuti popup ekstensi. Tekan untuk melepasnya.";
+      lepas.setAttribute("aria-pressed", mandiri ? "true" : "false");
+    };
+    void alatWarnaMandiri(kunci).then((m) => tandaiLepas(m));
+  }
+
   if (typeof pilihan.saatTutup === "function") {
     buat("aleta-matikan", "×", "Sembunyikan panel untuk halaman ini", pilihan.saatTutup);
   }
@@ -1164,10 +1289,12 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   // kerap baru terpasang SESUDAH kepala disusun; pemasangannya idempoten,
   // jadi yang sudah ada tidak digandakan.
   try {
-    const warna = await alatWarnaTersimpan();
+    // Warna yang BERLAKU untuk panel ini - miliknya sendiri bila sudah
+    // dilepas dari popup, warna bersama bila belum.
+    const warna = await alatWarnaBerlaku(kunci);
     alatTerapkanWarna(panel, warna, false);
     const kepalaAlat = kepala.querySelector(".aleta-alat-kepala");
-    if (kepalaAlat) alatPemilihWarna(panel, kepalaAlat, pilihan);
+    if (kepalaAlat) alatPemilihWarna(panel, kepalaAlat, { ...pilihan, kunciPanel: kunci });
     const pemilih = kepala.querySelector(".aleta-warna-pilih");
     if (pemilih && typeof pemilih.aletaTandai === "function") pemilih.aletaTandai(warna);
   } catch {
@@ -1178,7 +1305,7 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   // panel mendapatkannya tanpa satu baris tambahan di masing-masing berkas.
   alatTandaiLingkungan(panel);
   alatPasangGulir(panel);
-  alatDaftarkanPanelTema(panel, pilihan);
+  alatDaftarkanPanelTema(panel, pilihan, kunci);
   alatDengarkanTemaPalet();
   void alatMuatKering();
 
@@ -1811,12 +1938,12 @@ function alatLingkungan() {
     inang = "";
   }
   if (inang === ALAT_INANG_PELADEN) {
-    return { kunci: "peladen", label: "PELADEN", judul: `SIPP peladen ${ALAT_INANG_PELADEN} - data perkara SUNGGUHAN.` };
+    return { kunci: "peladen", label: "SERVER", judul: `SIPP server ${ALAT_INANG_PELADEN} - data perkara SUNGGUHAN.` };
   }
   if (inang === "127.0.0.1" || inang === "localhost" || inang === "::1") {
-    return { kunci: "lokal", label: "LOKAL", judul: "SIPP di komputer ini - salinan untuk uji coba, bukan data peladen." };
+    return { kunci: "lokal", label: "LOKAL", judul: "SIPP di komputer ini - salinan untuk uji coba, bukan data server." };
   }
-  return { kunci: "lain", label: inang || "?", judul: `SIPP di ${inang || "alamat yang tidak dikenali"} - bukan peladen, bukan komputer ini.` };
+  return { kunci: "lain", label: inang || "?", judul: `SIPP di ${inang || "alamat yang tidak dikenali"} - bukan server, bukan komputer ini.` };
 }
 
 function alatTandaiLingkungan(panel) {
@@ -2846,10 +2973,34 @@ async function alatSimpanPetaBlangko(peta) {
  * hasil enkripsi ABT yang hanya ABT dapat membacanya; yang dijaga di sini
  * cuma "bukan kosong, bukan berisi spasi atau tanda kutip".
  */
+/**
+ * ============================================================================
+ * PENJAGA TOKEN PERNAH MEMBUANG TIGA DARI EMPAT TOKEN SUNGGUHAN
+ * ============================================================================
+ *
+ * Penjaga lamanya menuntut token hanya berisi [A-Za-z0-9+/=_%.-]. Token ABT
+ * yang sesungguhnya - hasil enkripsi CodeIgniter - kerap memuat "~", dan
+ * diukur atas empat tautan blangko di peladen 14 September 2026: TIGA di
+ * antaranya memuat "~" dan karena itu dibuang di sini, diam-diam.
+ *
+ * Akibatnya persis seperti yang dilaporkan dari layar: "7 token terisi, 7
+ * berkas tidak ditemukan" - angka yang sama dua kali, sebab ketujuhnya
+ * memang ketemu, lalu tokennya dihapus penjaga ini sebelum disimpan. Yang
+ * membacanya menyimpulkan blangkonya tidak ada di ABT.
+ *
+ * Sekarang yang ditolak hanya yang memang tidak mungkin token: kosong,
+ * terlalu pendek, mengandung spasi, atau memuat huruf yang akan mematahkan
+ * tautan (< > " ' & ? #). Selebihnya diterima apa adanya - ia tetap dilewatkan
+ * URLSearchParams saat dipakai, jadi tidak ada yang dapat menyusup lewat sini.
+ */
+function alatTokenSah(x) {
+  return /^[^\s<>"'&?#]{8,}$/.test(String(x || ""));
+}
+
 function alatRapikanBlangko(masukan) {
   const b = masukan || {};
   const token = (x) => String(x || "").trim();
-  const sah = (x) => /^[A-Za-z0-9+/=_%.-]{8,}$/.test(x);
+  const sah = alatTokenSah;
   const a = token(b.a);
   const bb = token(b.b);
   return {

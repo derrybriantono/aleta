@@ -85,8 +85,12 @@ describe("tema berganti tanpa tersendat", () => {
 
 // ============================================================================
 describe("tema dan palet ikut seketika di seluruh tab", () => {
-  it("panel yang dipasang ikut terdaftar, dan pendengarnya dinyalakan sekali", () => {
-    expect(alat).toContain("alatDaftarkanPanelTema(panel, pilihan);");
+  it("panel yang dipasang ikut terdaftar beserta KUNCINYA, dan pendengarnya dinyalakan sekali", () => {
+    // Kuncinya ikut sejak 1.136.0: tanpa itu alatSelaraskanWarna tidak dapat
+    // tahu panel mana yang sudah dilepas dari popup, dan pelepasan yang tidak
+    // dikenali berarti warna panel itu tetap ditimpa - persis yang hendak
+    // dihindari pelepasannya.
+    expect(alat).toContain("alatDaftarkanPanelTema(panel, pilihan, kunci);");
     expect(alat).toContain("alatDengarkanTemaPalet();");
     const badan = alat.slice(alat.indexOf("function alatDengarkanTemaPalet("));
     expect(badan.slice(0, 400)).toContain('const tanda = "__aletaDengarTema";');
@@ -104,10 +108,37 @@ describe("tema dan palet ikut seketika di seluruh tab", () => {
   });
 
   it("panel yang sudah dilepas dari halaman dilewati, bukan disentuh", () => {
-    for (const nama of ["alatSelaraskanTema", "alatSelaraskanWarna"]) {
-      const badan = alat.slice(alat.indexOf(`function ${nama}(`));
-      expect(badan.slice(0, badan.indexOf("\n}\n")), nama).toContain("if (!panel.isConnected) continue;");
-    }
+    // Dua bentuk, satu maksud. alatSelaraskanTema menyaring di dalam loop;
+    // alatSelaraskanWarna menyaringnya lebih dulu sebab ia juga harus
+    // membuang panel yang warnanya dilepas dari popup. Yang dijaga di sini
+    // maksudnya - panel yang sudah tidak ada di halaman tidak disentuh -
+    // bukan bentuk penyaringannya.
+    const tema = alat.slice(alat.indexOf("function alatSelaraskanTema("));
+    expect(tema.slice(0, tema.indexOf("\n}\n"))).toContain("if (!panel.isConnected) continue;");
+
+    const warna = alat.slice(alat.indexOf("function alatSelaraskanWarna("));
+    expect(warna.slice(0, warna.indexOf("\n}\n"))).toContain("x.panel.isConnected");
+  });
+
+  it("panel yang DILEPAS dari popup tidak ikut berubah warnanya", () => {
+    // Itulah arti dilepas. Tanpa penyaringan ini, tombol lepas hanya berlaku
+    // sampai seseorang mengganti warna di popup - dan kegagalan seperti itu
+    // tidak berbunyi, ia hanya membuat tombolnya tampak tidak berfungsi.
+    const warna = alat.slice(alat.indexOf("function alatSelaraskanWarna("));
+    const fungsi = warna.slice(0, warna.indexOf("\n}\n"));
+    expect(fungsi).toContain("const mandiri = await alatPetaMandiri();");
+    expect(fungsi).toContain("!(x.kunci && mandiri[x.kunci] === true)");
+  });
+
+  it("SIPP ikut warna dari popup - dulu hanya temanya yang ikut", () => {
+    // Panel ABT dan halaman ALETA mendapatkannya lewat alatPasangPanel; panel
+    // SIPP dibangun sendiri di konten.js dan tidak pernah memanggilnya, jadi
+    // warna palet berhenti di ABT. Yang terbaca dari situ bukan "belum
+    // tersambung" melainkan "popupnya tidak berlaku untuk SIPP".
+    expect(konten).toContain("if (perubahan[KUNCI_WARNA_GELAP]) {");
+    expect(konten).toContain("void alatSelaraskanWarna(nama);");
+    // Didaftarkan dengan kuncinya, supaya pelepasan panel SIPP juga dikenali.
+    expect(konten).toContain("alatDaftarkanPanelTema(panel, { temaHalaman: false }, KUNCI_POSISI);");
   });
 
   it("panel SIPP menyimpan keadaannya sendiri, jadi ia mendengar sendiri", () => {

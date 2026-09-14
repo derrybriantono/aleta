@@ -3899,6 +3899,64 @@ function bagianMassalAbt(keadaan) {
 
   const kabar = buatElemen("div", "aleta-abt-kabar");
   kotak.appendChild(kabar);
+
+  // ==========================================================================
+  // CARI, SARING, URUTKAN
+  // ==========================================================================
+  //
+  // Dua puluh perkara sehari sudah melewati satu layar panel, dan yang dicari
+  // hampir selalu sebagian kecilnya: yang agendanya pembacaan putusan, yang
+  // blangkonya belum siap, atau satu nomor yang diingat sepotong. Tanpa
+  // ketiganya, yang mencari menggulung daftar sambil membaca satu per satu -
+  // dan pada gulungan kedua ia berhenti membaca.
+  //
+  // Yang TERCENTANG tidak pernah hilang karena disaring. Saringan mengubah
+  // yang TERLIHAT, bukan yang terpilih; centang yang lenyap diam-diam ketika
+  // saringan diganti adalah cara paling halus untuk menjalankan perkara yang
+  // tidak dimaksudkan - atau melewatkan yang dimaksudkan.
+  const bilah = buatElemen("div", "aleta-massal-bilah");
+  const cari = document.createElement("input");
+  cari.type = "search";
+  cari.className = "aleta-massal-cari";
+  cari.placeholder = "Cari nomor, jenis, atau agenda…";
+  cari.title = "Menyaring daftar di bawah. Yang sudah dicentang tetap terpilih meski tersembunyi.";
+  bilah.appendChild(cari);
+
+  const saring = document.createElement("select");
+  saring.className = "aleta-massal-saring";
+  saring.title = "Tampilkan hanya sebagian perkara.";
+  for (const [nilai, teks] of [
+    ["semua", "Semua perkara"],
+    ["belum", "Belum putus"],
+    ["sudah", "Sudah putus"],
+    ["siap", "Blangko siap"],
+    ["belumBlangko", "Blangko belum dipetakan"],
+    ["dicentang", "Yang dicentang saja"],
+  ]) {
+    const o = document.createElement("option");
+    o.value = nilai;
+    o.textContent = teks;
+    saring.appendChild(o);
+  }
+  bilah.appendChild(saring);
+
+  const urut = document.createElement("select");
+  urut.className = "aleta-massal-urut";
+  urut.title = "Urutan baris pada daftar.";
+  for (const [nilai, teks] of [
+    ["putus", "Agenda putusan dahulu"],
+    ["nomor", "Nomor perkara"],
+    ["jenis", "Jenis perkara"],
+    ["keadaan", "Belum putus dahulu"],
+  ]) {
+    const o = document.createElement("option");
+    o.value = nilai;
+    o.textContent = teks;
+    urut.appendChild(o);
+  }
+  bilah.appendChild(urut);
+  kotak.appendChild(bilah);
+
   const daftar = buatElemen("div", "aleta-massal-daftar");
   kotak.appendChild(daftar);
 
@@ -3925,12 +3983,14 @@ function bagianMassalAbt(keadaan) {
   kotak.appendChild(pilihan);
 
   const aksi = buatElemen("div", "aleta-abt-aksi");
-  const tombolRencana = buatElemen("button", "aleta-permintaan-tombol", "Susun rencana (kering)");
+  // "kering" istilah pemrogram; yang menekannya panitera. Yang perlu dijawab
+  // tombol ini satu: apakah menekannya mengubah sesuatu atau tidak.
+  const tombolRencana = buatElemen("button", "aleta-permintaan-tombol", "Periksa dulu - belum dijalankan");
   tombolRencana.type = "button";
   const tombolJalan = buatElemen("button", "aleta-permintaan-tombol", "Jalankan");
   tombolJalan.type = "button";
   tombolJalan.disabled = true;
-  tombolJalan.title = "Menyala sesudah rencana disusun dan dibaca.";
+  tombolJalan.title = "Menyala sesudah hasil pemeriksaan di atas dibaca.";
   const tombolHenti = buatElemen("button", "aleta-perkakas-aksi", "Hentikan");
   tombolHenti.type = "button";
   tombolHenti.hidden = true;
@@ -3943,6 +4003,14 @@ function bagianMassalAbt(keadaan) {
   kotak.appendChild(neraca);
 
   const centangPer = new Map();
+  /** Nomor perkara yang dicentang - bertahan meski barisnya tersaring keluar. */
+  const dicentang = new Set();
+  const ringkasTampil = buatElemen("div", "aleta-massal-ringkas", "");
+  bilah.appendChild(ringkasTampil);
+  for (const medan of [cari, saring, urut]) {
+    medan.addEventListener(medan === cari ? "input" : "change", () => gambarDaftar());
+    medan.addEventListener("click", (e) => e.stopPropagation());
+  }
 
   // Blangko KHUSUS per perkara - verstek dan contra adalah dua berkas berbeda
   // untuk satu jenis perkara yang sama. Yang dipilih di baris menang atas
@@ -3973,13 +4041,90 @@ function bagianMassalAbt(keadaan) {
     kabar.textContent =
       `${keadaan.sidang.length} perkara bersidang; ${belumPutus.length} belum putus dan ditawarkan. ` +
       "Tidak ada yang tercentang sendiri.";
+    gambarDaftar();
+    tombolRencana.disabled = false;
+  }
 
-    for (const s of keadaan.sidang) {
+  /**
+   * ==========================================================================
+   * AGENDA YANG MENYEBUT PUTUS BERDIRI DI DEPAN
+   * ==========================================================================
+   *
+   * Pada tanggal sidang mana pun, yang hendak diputus hari itu hanya
+   * sebagian - sisanya mediasi, jawaban, pembuktian. Agenda SIPP menyebutnya
+   * sendiri ("Pembacaan Putusan", "Musyawarah Majelis - Putusan"), dan itulah
+   * satu-satunya petunjuk yang ada sebelum berkasnya dibuka.
+   *
+   * Ia URUTAN, bukan saringan: agenda tidak dapat dipercaya sebagai penentu -
+   * perkara diputus pada agenda yang tertulis "pembuktian" bukan hal aneh -
+   * jadi yang lain tetap tergambar, hanya di bawah. Yang memutuskan tetap
+   * orang; yang dikerjakan di sini menaruh yang paling mungkin di tempat
+   * yang paling dahulu dibaca.
+   */
+  function agendaPutusan(s) {
+    return /putus/i.test(String((s && s.agenda) || ""));
+  }
+
+  /** Baris yang TERLIHAT sekarang - hasil pencarian, saringan, dan urutan. */
+  function sidangTampil() {
+    const kata = String(cari.value || "").trim().toLowerCase();
+    const pilihSaring = saring.value || "semua";
+    let hasil = keadaan.sidang.slice();
+
+    if (kata) {
+      hasil = hasil.filter((s) =>
+        [s.nomor, s.jenis, s.agenda].some((x) => String(x || "").toLowerCase().includes(kata))
+      );
+    }
+    if (pilihSaring === "belum") hasil = hasil.filter((s) => !s.sudahPutus);
+    else if (pilihSaring === "sudah") hasil = hasil.filter((s) => s.sudahPutus);
+    else if (pilihSaring === "siap") hasil = hasil.filter((s) => !s.sudahPutus && alatBlangkoLengkap(petaUntuk(s)));
+    else if (pilihSaring === "belumBlangko") hasil = hasil.filter((s) => !s.sudahPutus && !alatBlangkoLengkap(petaUntuk(s)));
+    else if (pilihSaring === "dicentang") hasil = hasil.filter((s) => dicentang.has(s.nomor));
+
+    const nomorUrut = (a, b) => String(a.nomor || "").localeCompare(String(b.nomor || ""), "id", { numeric: true });
+    const pilihUrut = urut.value || "putus";
+    if (pilihUrut === "nomor") hasil.sort(nomorUrut);
+    else if (pilihUrut === "jenis") hasil.sort((a, b) => String(a.jenis || "").localeCompare(String(b.jenis || ""), "id") || nomorUrut(a, b));
+    else if (pilihUrut === "keadaan") hasil.sort((a, b) => Number(a.sudahPutus) - Number(b.sudahPutus) || nomorUrut(a, b));
+    else hasil.sort((a, b) => Number(agendaPutusan(b)) - Number(agendaPutusan(a)) || Number(a.sudahPutus) - Number(b.sudahPutus) || nomorUrut(a, b));
+
+    return hasil;
+  }
+
+  function gambarDaftar() {
+    daftar.textContent = "";
+    centangPer.clear();
+    const tampil = sidangTampil();
+
+    // Yang terpilih tetapi TIDAK terlihat disebut - kalau tidak, menekan
+    // Jalankan sesudah menyaring akan mengerjakan perkara yang tidak ada di
+    // layar, dan itu persis kejutan yang paling mahal di sini.
+    const tersembunyi = [...dicentang].filter((n) => !tampil.some((s) => s.nomor === n)).length;
+    ringkasTampil.textContent = tersembunyi
+      ? `${tampil.length} dari ${keadaan.sidang.length} tampil · ${dicentang.size} dicentang (${tersembunyi} tidak terlihat)`
+      : `${tampil.length} dari ${keadaan.sidang.length} tampil · ${dicentang.size} dicentang`;
+
+    if (tampil.length === 0) {
+      daftar.appendChild(buatElemen("div", "aleta-tetap-sebab", "Tidak ada perkara yang cocok dengan pencarian atau saringan ini."));
+      return;
+    }
+
+    for (const s of tampil) {
       const label = buatElemen("label", "aleta-massal-baris");
       const centang = document.createElement("input");
       centang.type = "checkbox";
       centang.className = "aleta-massal-centang";
       centang.disabled = s.sudahPutus;
+      // Dipulihkan dari ingatan, bukan dari DOM: barisnya digambar ulang tiap
+      // kali saringan berubah, dan tanpa ini tiap pengetikan di kotak cari
+      // akan membatalkan seluruh centang.
+      centang.checked = dicentang.has(s.nomor);
+      centang.addEventListener("change", () => {
+        if (centang.checked) dicentang.add(s.nomor);
+        else dicentang.delete(s.nomor);
+        gambarDaftar();
+      });
       label.appendChild(centang);
       label.appendChild(buatElemen("span", "aleta-massal-nomor", s.nomor));
       const peta = petaUntuk(s);
@@ -4042,11 +4187,16 @@ function bagianMassalAbt(keadaan) {
       daftar.appendChild(label);
       centangPer.set(s.nomor, { centang, sidang: s, tanda });
     }
-    tombolRencana.disabled = false;
   }
 
+  /**
+   * Yang akan dikerjakan - dibaca dari INGATAN, bukan dari baris yang sedang
+   * tergambar. Perkara yang dicentang lalu tersembunyi oleh saringan tetap
+   * ikut; jumlahnya disebut pada ringkasan di atas daftar, dan pada hasil
+   * pemeriksaan sebelum apa pun dijalankan.
+   */
   function yangDicentang() {
-    return [...centangPer.values()].filter((x) => x.centang.checked && !x.sidang.sudahPutus).map((x) => x.sidang);
+    return keadaan.sidang.filter((s) => dicentang.has(s.nomor) && !s.sudahPutus);
   }
 
   tombolRencana.addEventListener("click", () => {
@@ -4056,7 +4206,7 @@ function bagianMassalAbt(keadaan) {
       neraca.appendChild(buatElemen("div", "aleta-tetap-sebab", "Tidak ada yang dicentang."));
       return;
     }
-    neraca.appendChild(buatElemen("div", "aleta-tetap-sebab", `RENCANA (belum ada yang dikerjakan) - ${dipilih.length} perkara:`));
+    neraca.appendChild(buatElemen("div", "aleta-tetap-sebab", `HASIL PEMERIKSAAN - belum ada yang dikerjakan. ${dipilih.length} perkara:`));
     let siap = 0;
     for (const s of dipilih) {
       const peta = petaUntuk(s);

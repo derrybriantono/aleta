@@ -115,9 +115,13 @@ describe("pemilih warna: satu titik di kepala, tujuh di baliknya", () => {
 
   it("memilih satu warna menutup barisnya lagi, dan menandai tombol kepala", () => {
     const klikTitik = fungsi.slice(fungsi.indexOf('titik.addEventListener("click"'));
-    expect(klikTitik.slice(0, 200)).toContain("alatTerapkanWarna(panel, nama, true);");
-    expect(klikTitik.slice(0, 200)).toContain("tandai(nama);");
-    expect(klikTitik.slice(0, 200)).toContain("buka(false);");
+    // Sejak 1.136.0 kuncinya ikut: ia yang menentukan warnanya disimpan
+    // sebagai milik panel ini (bila dilepas dari popup) atau milik semua.
+    // Tanpa kunci, mengganti warna satu panel yang sudah dilepas akan
+    // diam-diam mengganti warna dua panel lainnya.
+    expect(klikTitik.slice(0, 400)).toContain('alatTerapkanWarna(panel, nama, true, (pilihan && pilihan.kunciPanel) || "");');
+    expect(klikTitik.slice(0, 400)).toContain("tandai(nama);");
+    expect(klikTitik.slice(0, 400)).toContain("buka(false);");
     // tandai() mewarnai tombol kepala dengan swatch palet yang aktif.
     expect(fungsi).toContain('tombol.style.setProperty("--titik", baris[2]);');
   });

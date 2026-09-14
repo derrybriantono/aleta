@@ -3468,7 +3468,7 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
 
   const kaki = buatElemen("div", "aleta-tetap-kaki");
   const kabar = buatElemen("div", "aleta-tetap-sebab", "");
-  const tombol = buatElemen("button", "aleta-tombol", "Periksa dulu (kering)");
+  const tombol = buatElemen("button", "aleta-tombol", "Periksa dulu - belum ditulis");
   tombol.type = "button";
 
   let rencanaSiap = null;
@@ -7822,6 +7822,11 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   const lencanaLingkungan = alatLencanaLingkungan(penggunaTerakhir && penggunaTerakhir.peran);
   if (lencanaLingkungan) alatKepala.appendChild(lencanaLingkungan);
   alatTandaiLingkungan(panel);
+  // Didaftarkan supaya warna dari popup menemukannya - dan supaya pelepasan
+  // warna panel ini dikenali alatSelaraskanWarna. temaHalaman sengaja false:
+  // tema halaman SIPP diurus terapkanTemaSipp di berkas ini, dan dua yang
+  // mengurus hal yang sama akan saling menimpa.
+  alatDaftarkanPanelTema(panel, { temaHalaman: false }, KUNCI_POSISI);
   alatPasangGulir(panel);
   // Chip peran berdiri PALING KIRI di deret ini - tepat sebelum tombol
   // tema. Ia keterangan, bukan tombol, dan menaruhnya di tengah deret
@@ -11067,6 +11072,27 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
       const tombol = panel && panel.querySelector(".aleta-tema");
       if (tombol) tombol.textContent = temaSekarang === "gelap" ? "☀" : "☾";
     });
+  }
+
+  // ==========================================================================
+  // WARNA PALET IKUT SEKETIKA JUGA - INI YANG DULU TERTINGGAL
+  // ==========================================================================
+  //
+  // Tema (gelap/terang) sudah diikuti sejak lama oleh blok di atas, tetapi
+  // WARNA paletnya tidak: panel ABT mendapatkannya lewat alatPasangPanel yang
+  // memasang alatDengarkanTemaPalet, sedangkan panel SIPP dibangun sendiri di
+  // berkas ini dan tidak pernah memanggilnya.
+  //
+  // Akibatnya persis seperti yang dilaporkan: mengganti warna di popup
+  // mengubah ABT seketika sementara SIPP diam sampai dimuat ulang - dan yang
+  // membacanya menyimpulkan popupnya tidak berlaku untuk SIPP.
+  //
+  // Yang dipanggil di sini alatSelaraskanWarna, bukan alatTerapkanWarna
+  // langsung: hanya ia yang tahu panel mana yang sudah DILEPAS dari popup,
+  // dan panel yang dilepas memang tidak boleh ikut.
+  if (perubahan[KUNCI_WARNA_GELAP]) {
+    const nama = String(perubahan[KUNCI_WARNA_GELAP].newValue || "");
+    void alatSelaraskanWarna(nama);
   }
 
   if (perubahan.aktif) {
