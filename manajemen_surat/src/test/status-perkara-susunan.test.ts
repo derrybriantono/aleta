@@ -66,6 +66,12 @@ describe("susunan bagian mengikuti jalan perkara", () => {
     // jalannya
     "tahapan",
     "sidang",
+    // Kalender menggambar sidang yang sama pada satu bulan; relaas menjawab
+    // bagaimana para pihak dipanggil untuk sidang-sidang itu. Keduanya hanya
+    // berarti SESUDAH daftar sidangnya dibaca, dan karena itu berdiri persis
+    // di belakangnya.
+    "kalender",
+    "relaas",
     "mediasi",
     "saksi",
     // hasil
@@ -305,5 +311,140 @@ describe("para pihak dipisah menurut kedudukan", () => {
     const isi = readFileSync(berkas, "utf8");
     expect(isi).toContain("kuasa={kuasaSisi(1)}");
     expect(isi).toContain("kuasa={kuasaSisi(2)}");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// RELAAS PANGGILAN DAN KALENDER PERKARA
+// ---------------------------------------------------------------------------
+
+describe("relaas panggilan berdiri sendiri dan runut per sidang", () => {
+  const isi = () => readFileSync(berkas, "utf8");
+
+  it("kedelapan ruas yang sudah dikirim bot ikut dideklarasikan tipenya", () => {
+    // relaasSidang di bot memulangkan keenam belas ruas ini sejak lama;
+    // tipenya di layar hanya menyebut delapan, sehingga separuh jawaban yang
+    // sudah melintasi jaringan berhenti tanpa satu galat pun - dan yang
+    // membaca layar menyimpulkan SIPP-nya yang kosong.
+    const teks = isi();
+    for (const ruas of [
+      "tanggalKirimPos",
+      "statusPos",
+      "retur",
+      "ketHasilRelaas",
+      "bertemu",
+      "noResiPos",
+      "jurusitaNama",
+      "pihakKe",
+    ]) {
+      expect(teks, ruas).toContain(`${ruas}:`);
+    }
+  });
+
+  it("dikelompokkan per SIDANG, bukan per pihak, dan menaik", () => {
+    // Perkara yang bersidang enam kali mencatat dua nama yang sama dua belas
+    // kali. Yang ditanyakan majelis tiap kali sidang dibuka bukan "siapa saja
+    // yang pernah dipanggil", melainkan "untuk sidang ini, siapa yang sudah".
+    const teks = isi();
+    expect(teks).toContain("const kunci = baris.tanggalSidang");
+    expect(teks).toMatch(/tanggalUrut[\s\S]{0,200}\.sort\(\(a, b\) => \(a < b \? -1/);
+  });
+
+  it("relaas tanpa tautan sidang DISEBUT, bukan dibuang dari daftar", () => {
+    // sidang_id kosong adalah keadaan yang perlu diperbaiki di SIPP. Relaas
+    // yang hilang dari layar karena itu membuat orang menyangka panggilannya
+    // memang belum pernah dibuat.
+    const teks = isi();
+    expect(teks).toContain("relaas tanpa tautan sidang");
+    expect(teks).toContain("tidak dapat dipastikan untuk sidang yang mana");
+  });
+
+  it("jarak hari relaas ke sidang dihitung - itulah yang menentukan kepatutan", () => {
+    const teks = isi();
+    expect(teks).toContain("hari sebelum sidang");
+    // Relaas yang dilaksanakan SESUDAH sidangnya bukan sekadar angka negatif.
+    expect(teks).toContain("hari SESUDAH sidang");
+  });
+
+  it("kepatutan berbunyi kalimat, bukan kode alasan", () => {
+    const teks = isi();
+    expect(teks).toContain("function bunyiAlasanKepatutan");
+    expect(teks).toContain("dikirim setelah hari sidang");
+    expect(teks).toContain("penerimaannya belum terbukti");
+    // Penilaian ini alat bantu - kalimat itu harus ikut sampai ke layar.
+    expect(teks).toContain("bukan penetapan sah tidaknya panggilan");
+  });
+
+  it("daftar relaas tidak digambar dua kali", () => {
+    // Dua daftar untuk satu data akan berselisih pada suntingan berikutnya,
+    // dan tidak ada yang tahu mana yang usang. Bagian Berkas menyisakan
+    // hitungannya saja beserta penunjuk ke bagian yang memuat rinciannya.
+    const teks = isi();
+    expect(teks.split("jenis=relaas&id=").length - 1).toBe(1);
+    expect(teks).toContain("Rincian dan unduhannya ada di bagian");
+  });
+});
+
+describe("kalender perkara dihitung dari muatan yang sudah ada", () => {
+  const isi = () => readFileSync(berkas, "utf8");
+
+  it("tidak ada satu pun panggilan baru untuk menggambarnya", () => {
+    // Tiap tanggalnya sudah berada di layar ini, tersebar di enam bagian.
+    // Menambah rute hanya untuk mengumpulkannya berarti menunda jawabannya
+    // demi jawaban yang sama, dan menambah satu tempat lagi yang dapat gagal.
+    const teks = isi();
+    const badan = teks.slice(teks.indexOf("function susunPeristiwa("), teks.indexOf("function RelaasPanggilan("));
+    expect(badan).not.toContain("fetch(");
+    expect(badan).not.toContain("apiPath(");
+  });
+
+  it("seluruh peristiwa perkara ikut, bukan sidangnya saja", () => {
+    const teks = isi();
+    const badan = teks.slice(teks.indexOf("function susunPeristiwa("), teks.indexOf("function KalenderPerkara("));
+    for (const jenis of ["daftar", "penetapan", "relaas", "mediasi", "sidang", "putusan", "minutasi", "bht", "akta", "ikrar"]) {
+      expect(badan, jenis).toContain(`jenis: "${jenis}"`);
+    }
+  });
+
+  it("pendaftaran tidak dihitung dua kali", () => {
+    // Ia disebut identitas DAN tahapan; tanpa penjaga ini satu hari tampak
+    // memuat dua peristiwa yang sebenarnya satu.
+    const teks = isi();
+    expect(teks).toContain('if (tahap.kunci === "daftar" || tahap.kunci === "pendaftaran") continue;');
+  });
+
+  it("bulan yang dibuka bukan bulan ini, melainkan bulan peristiwa terdekat", () => {
+    // Perkara yang putus setahun lalu tidak punya apa pun pada bulan ini, dan
+    // kalender yang terbuka kosong terbaca seperti kalender yang rusak.
+    const teks = isi();
+    expect(teks).toContain("const berikut = peristiwa.find((x) => x.tanggal >= hariIni);");
+    expect(teks).toContain("peristiwa[peristiwa.length - 1]");
+  });
+
+  it("berpindah perkara menyetel ulang bulannya", () => {
+    // Komponennya tidak dibongkar saat perkara lain dibuka - hanya muatannya
+    // berganti. Tanpa ini kalender tetap berdiri di bulan perkara sebelumnya.
+    const teks = isi();
+    expect(teks).toContain("}, [bulanAwal, status.identitas.nomorPerkara]);");
+  });
+
+  it("keterangan warna hanya memuat jenis yang ada pada bulan itu", () => {
+    const teks = isi();
+    expect(teks).toContain("jenisBulanIni.has(jenis)");
+  });
+
+  it("tanpa satu pun tanggal, kalender mengatakannya - bukan menggambar bulan kosong", () => {
+    const teks = isi();
+    expect(teks).toContain("kalender tidak dapat disusun");
+  });
+
+  it("warna tiap jenis punya pasangan mode gelap", () => {
+    // Teks berwarna tanpa pasangan gelap menjadi tidak terbaca pada tema
+    // gelap - dan yang membacanya menyangka layarnya rusak.
+    const teks = isi();
+    const blok = teks.slice(teks.indexOf("const JENIS_PERISTIWA = {"), teks.indexOf("type JenisPeristiwa"));
+    const baris = blok.split("\n").filter((x) => x.includes("teks:"));
+    expect(baris.length).toBeGreaterThanOrEqual(10);
+    for (const satu of baris) expect(satu, satu.trim()).toContain("dark:");
   });
 });

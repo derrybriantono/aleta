@@ -1314,6 +1314,7 @@ async function statusLengkap(nomorPerkaraMentah) {
     putusanLengkap,
     ikrarTalak,
     konseptor,
+    courtCalendar,
   ] = await Promise.all([
     aman(
       () =>
@@ -1336,6 +1337,7 @@ async function statusLengkap(nomorPerkaraMentah) {
     aman(() => sippTahapanService.putusanLengkapPerkara(identitas.perkaraId), null),
     aman(() => sippTahapanService.ikrarTalakPerkara(identitas.perkaraId), null),
     aman(() => sippTahapanService.konseptorPutusanPerkara(identitas.perkaraId), null),
+    aman(() => sippTahapanService.courtCalendarPerkara(identitas.perkaraId), null),
   ]);
 
   const pendukung = {
@@ -1605,6 +1607,9 @@ async function statusLengkap(nomorPerkaraMentah) {
     putusanEcourt,
     ikrarTalak: ikrarTalak || { terbaca: false, ada: false, alasan: "" },
     konseptor: konseptor || { terbaca: false, alasan: "", baris: [] },
+    // Court Calendar - RENCANA sidang yang disusun majelis. Selisihnya
+    // dengan perkara_jadwal_sidang yang berguna, bukan salah satunya saja.
+    courtCalendar: courtCalendar || { terbaca: false, alasan: "", baris: [] },
     nilaiRelaas: nilaiRelaas || { terbaca: false, alasan: "", sumber: "", relaas: [] },
     dokumenRelaas: dokumenRelaas || { terbaca: false, jumlah: 0, berdokumen: 0, berresi: 0 },
     saksiRinci: saksiLengkapBaru || { terbaca: false, alasan: "", baris: [] },

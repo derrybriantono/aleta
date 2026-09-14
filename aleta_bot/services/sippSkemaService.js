@@ -105,6 +105,10 @@ const TABEL = [
   "sumber_hukum",
   "perkara_delegasi",
   "perkara_keterangan_saksi",
+  // Court Calendar - RENCANA sidang yang disusun majelis di awal perkara.
+  // Bukan pengganti perkara_jadwal_sidang: yang ini rencananya, yang itu
+  // pelaksanaannya, dan selisih keduanya justru yang dicari.
+  "perkara_court_calendar",
 
   // ==========================================================================
   // PENUNJUKAN: PMH, PPP, PJS, PHS

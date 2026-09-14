@@ -1378,6 +1378,116 @@ async function petitumPerkara(perkaraId) {
  * tersendiri: surat tercatat memerlukan keduanya - relaasnya dan bukti
  * kirimnya - dan menggabungkan keduanya menyembunyikan yang mana yang kurang.
  */
+/**
+ * ============================================================================
+ * COURT CALENDAR - RENCANA SIDANG, BUKAN SIDANGNYA
+ * ============================================================================
+ *
+ * perkara_court_calendar memuat rencana yang disusun majelis di awal:
+ * tanggal, jam, agenda, dan keterangan tiap sidang yang DIRENCANAKAN.
+ * perkara_jadwal_sidang memuat sidang yang benar-benar terjadi. Keduanya
+ * bukan salinan satu sama lain, dan selisihnyalah yang berguna: rencana yang
+ * tanggalnya lewat tanpa satu pun sidang adalah rencana yang meleset - dan
+ * itu tidak terlihat dari layar mana pun sebelum ini.
+ *
+ * Diukur pada SIPP PA Donggala 14 September 2026:
+ *
+ *   - 3.858 perkara punya court calendar; pada perkara 2026 baru 418 dari 791
+ *     (53%) - jadi KOSONG adalah keadaan yang lazim, bukan cacat, dan layar
+ *     harus mengatakannya begitu alih-alih menuduh;
+ *   - 1.108 dari 1.127 rencana 2026 (98%) benar-benar bersidang pada tanggal
+ *     yang direncanakan - sembilan belas yang meleset itulah yang dicari;
+ *   - 3.521 baris mengisi keterangan, jadi kolom itu memang dipakai.
+ *
+ * Terlaksana ditentukan dari ADANYA sidang pada tanggal itu, bukan dari
+ * kecocokan agendanya: agenda ditulis bebas dan ejaannya tidak ajek -
+ * "sidang pertama" 2.025 kali, "Sidang Kedua" 693 kali. Menuntut agendanya
+ * sama akan menandai hampir seluruh rencana meleset.
+ */
+async function courtCalendarPerkara(perkaraId) {
+  const id = Number(perkaraId);
+  if (!Number.isFinite(id) || id <= 0) return { terbaca: false, alasan: "perkara_id_tidak_sah", baris: [] };
+
+  if (!(await sippSkemaService.tabelAda("perkara_court_calendar"))) {
+    return {
+      terbaca: false,
+      alasan: "Tabel perkara_court_calendar tidak ada pada SIPP versi ini.",
+      baris: [],
+    };
+  }
+
+  const rows = await runQuery(
+    `SELECT cc.rencana_tanggal AS tanggal,
+            cc.rencana_jam     AS jam,
+            cc.rencana_agenda  AS agenda,
+            cc.keterangan      AS keterangan,
+            cc.diinput_oleh    AS diinputOleh,
+            cc.diinput_tanggal AS diinputTanggal,
+            EXISTS(
+              SELECT 1 FROM perkara_jadwal_sidang j
+               WHERE j.perkara_id = cc.perkara_id
+                 AND j.tanggal_sidang = cc.rencana_tanggal
+            ) AS adaSidang
+       FROM perkara_court_calendar cc
+      WHERE cc.perkara_id = ?
+      ORDER BY cc.rencana_tanggal ASC, cc.rencana_jam ASC, cc.id ASC
+      LIMIT 100`,
+    [id]
+  ).catch(() => null);
+
+  if (!rows) return { terbaca: false, alasan: "court_calendar_tidak_terbaca", baris: [] };
+
+  const hariIni = isoTanggal(new Date());
+  const baris = rows.map((row) => {
+    const tanggal = isoTanggal(row.tanggal);
+    const adaSidang = Number(row.adaSidang) === 1;
+    return {
+      tanggal,
+      // jam SIPP bertipe TIME ("09:00:00"); lima huruf pertama sudah jam dan menit.
+      jam: cleanText(row.jam).slice(0, 5),
+      agenda: cleanText(row.agenda),
+      keterangan: cleanText(row.keterangan),
+      diinputOleh: cleanText(row.diinputOleh),
+      diinputTanggal: isoTanggal(row.diinputTanggal),
+      adaSidang,
+      // ====================================================================
+      // EMPAT KEADAAN, DAN KEEMPATNYA BERBEDA BAGI YANG MEMBACANYA
+      // ====================================================================
+      //
+      //   terlaksana  tanggalnya sudah lewat DAN ada sidangnya
+      //   terjadwal   ada barisnya di jadwal, tetapi harinya belum tiba -
+      //               bukan "terlaksana": diukur pada perkara 540/2026,
+      //               rencana 22 September sudah punya baris jadwal pada
+      //               tanggal yang belum datang, dan menyebutnya terlaksana
+      //               adalah mengaku sidang yang belum terjadi
+      //   meleset     harinya sudah lewat tanpa satu pun sidang
+      //   menunggu    harinya belum tiba dan jadwalnya belum dibuat
+      //
+      // Rencana yang tanggalnya BELUM tiba tidak pernah disebut meleset -
+      // menyamakannya menyalakan peringatan pada tiap perkara yang berjalan,
+      // dan peringatan yang selalu menyala berhenti dibaca.
+      keadaan: adaSidang
+        ? tanggal && tanggal < hariIni
+          ? "terlaksana"
+          : "terjadwal"
+        : tanggal && tanggal < hariIni
+          ? "meleset"
+          : "menunggu",
+    };
+  });
+
+  return {
+    terbaca: true,
+    alasan: "",
+    baris,
+    jumlah: baris.length,
+    terlaksana: baris.filter((x) => x.keadaan === "terlaksana").length,
+    terjadwal: baris.filter((x) => x.keadaan === "terjadwal").length,
+    meleset: baris.filter((x) => x.keadaan === "meleset").length,
+    menunggu: baris.filter((x) => x.keadaan === "menunggu").length,
+  };
+}
+
 async function dokumenRelaasPerkara(perkaraId) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0) return { terbaca: false, alasan: "perkara_id_tidak_sah" };
@@ -3110,6 +3220,7 @@ module.exports = {
   SEBUTAN_PENETAPAN,
   TAHAPAN_PUTUSAN,
   arsipKeteranganPerkara,
+  courtCalendarPerkara,
   kenaliJenisPenetapan,
   konseptorPutusanPerkara,
   namaPengguna,
