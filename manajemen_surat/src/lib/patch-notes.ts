@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.15.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.15.0 - Penetapan Tanpa Berpindah Akun";
+export const APP_VERSION = "2.16.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.16.0 - Agen yang Membaca Sebelum Menulis";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,55 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.16.0",
+    title: "ALETA Judicia v2.16.0 - Agen yang Membaca Sebelum Menulis",
+    date: "2026-09-14",
+    status: "Operasional",
+    summary:
+      "Empat hari sejak 2.15.0, 69 commit, ekstensi 1.91.0 -> 1.134.0. Yang berubah bukan satu fitur melainkan arah: ALETA kini menulis putusan dan penetapan ke SIPP atas nama pejabatnya, dan karena itu ada yang MEMBACA lebih dulu sebelum menulis - praperiksa putusan yang berhenti bila bertentangan, penyamaran isi perkara yang diukur atas posita sungguhan sebelum satu kata pun keluar ke penyedia AI, dan mode kering yang membuktikan tidak ada yang tertulis. Tidak ada yang diperbaiki sendiri oleh mesin; orang yang memutuskan.",
+    added: [
+      "PRAPERIKSA PUTUSAN (ekstensi 1.134.0, Tahap 2 rencana agen). Tepat sebelum borang Putusan Akhir diisi dari draf ALETA, agen membaca fakta SIPP dan mengadunya dengan draf serta isian borang: tanggal putusan harus hari sidang perkara itu (1.643 dari 1.643 putusan 2025-2026 begitu), kata kerja amar harus berpadanan dengan Status Putusan (1.642 dari 1.643 - yang satu memang keliru), nama di amar harus pihak atau anak perkara ini, majelis yang disebut naskah harus majelis yang ditetapkan, perkaranya belum putus. Yang bertentangan MENAHAN. Diukur atas 200 putusan sungguhan: satu hentikan - dan itu kesalahan data nyata di SIPP.",
+      "DUA JALUR AI DAN PENYAMARAN ISI PERKARA (Tahap 1). Jalur UMUM untuk pekerjaan tanpa isi perkara, jalur ISI PERKARA yang penyedianya dipilih terpisah dan MENOLAK mewarisi sambungan global. Posita, amar, dan petitum disamarkan dengan kamus pihak dan anak yang DIKETAHUI SIPP - bukan ditebak - sebelum berangkat; muatan tanpa bukti penyamaran ditolak gerbang. Diukur atas 150 posita sungguhan: 147 bersih. Keduanya diisi dari layar Pengaturan AI sebagai dua modul.",
+      "PUTUSAN OTOMATIS LENGKAP. Naskah putusan RTF dari ABT diterima ALETA; pertimbangan, amar, amar anonim, dan kedelapan medan pilihan (status, verstek, faktor perceraian, qobla, nusyuz, keadaan istri, sumber hukum, dispensasi) diisi dari draf - medan tersembunyi dibuka sendiri; Simpan ditekan sendiri dan tersimpannya DIBUKTIKAN dari SIPP; putusan dan anonimisasinya diunggah ke SIPP.",
+      "PUTUSAN MASSAL dari jadwal sidang: di beranda blangko ABT pilih tanggal, ALETA menyusun rencana kering per perkara (RTF, draf, PDF, anonim), lalu antrean diserahkan ke SIPP - otomatis atau berhenti tiap perkara. Pemetaan blangko menurut NAMA yang dapat disunting, bawaan cerai/itsbat/dispensasi, dan dapat diisi dari pohon blangko portal.",
+      "PENETAPAN: tanda tangan pejabat masuk basis data dan penetapan terbit ke SIPP sebagai dokumen; penetapan massal untuk halaman yang campur; pembatalan satu atau seluruh penetapan; jam penetapan berjarak wajar; Smart Majelis tercatat.",
+      "PANEL SUPER ADMIN: enam palet gelap yang berlaku menyeluruh di SIPP, ABT, dan ALETA tanpa kelebat; pemilih warna di kepala panel; perkakas (lencana lingkungan, kotak hitam, MODE KERING yang menahan Simpan, Pulihkan satu medan, papan kesehatan, salin laporan); bilah gulir yang dapat ditekan; ukuran huruf dapat diatur; pita identitas di kepala dan kaki.",
+      "RIWAYAT ALETA pindah ke basis data sendiri: percobaan yang ditolak ikut tercatat beserta sebabnya; sys_audittrail SIPP tidak lagi memuat satu kata pun tentang ALETA.",
+      "PORTAL: kewenangan ekstensi per pegawai dan peran Operator (migrasi 0039); kartu dasbor dapat digeser dan susunan bawaan dari Super Admin (0040, 0042); masa berlaku sesi login (0041); saklar tiap jenis pesan bot dan kirim saat data lengkap (0043); riwayat pengiriman dengan lembar cetak; Update Manager mengunduh seluruh aplikasi, paket pembaruan, dan basis data; catatan pembaruan ekstensi di tiga layar.",
+      "E-AUDIT: Bab 2, 3, 4, 7, 8, 9, dan 12 katalog tersambung - rapor aparatur, keuangan perkara, statistik, metode analisis - dengan pustaka statistiknya sendiri.",
+      "Pengembang: dua skill (rilis-ekstensi, periksa-uji) dan skrip yang membedakan uji habis-waktu dari salah-hasil, sehingga 'merah' tidak lagi diulang membabi buta.",
+    ],
+    changed: [
+      "Ekstensi SIPP naik ke 1.134.0.",
+      "Alasan perkara, data pernikahan, dan Obyek Sengketa diusulkan dari posita dan kebiasaan satker; usulan ditimbang per kalimat dan yang berselisih berhenti mengaku yakin.",
+      "Hubungan ekstensi ke portal dibuat tahan lambat; panel tetap berguna saat ALETA mati (luring).",
+      "Selisih arsip e-Court diperiksa sendiri tiap malam, dan arsip yang hilang menyeluruh dibunyikan.",
+    ],
+    fixed: [
+      "Penetapan berhenti di tengah jalan lalu tidak dapat dilanjutkan; kini dilanjutkan dari langkah yang tersisa, dan Riwayat Perkara yang tidak pernah ditulis kini ditulis.",
+      "Nomor perkara di halaman daftar membawa angka urutnya; radio nusyuz tidak tercentang; medan borang putusan ditunjuk lewat id yang berubah - kini lewat nama.",
+      "Posita tercetak tanpa baris; SIPP membuang <br> saat mencetak, kini pemisahnya <p>.",
+      "Aksara kendali liar pada tiga berkas membuat satu penjaga uji selalu lulus.",
+      "Lima layanan penilaian mendaftar tanpa penjaga sehingga permintaan kedua selalu gagal; RG14/MP13/MP16 menautkan arsip lewat perkara_id yang nol.",
+      "\"Failed to fetch\" di halaman masuk diganti kalimat yang dapat dibaca petugas.",
+    ],
+    security: [
+      "Isi perkara tidak pernah keluar ke penyedia AI tanpa penyamaran yang berbukti; jalur perkara yang belum disetel berarti tidak dikirim ke mana pun.",
+      "Kunci API tidak digandakan per jalur - tetap satu, lewat env peladen.",
+    ],
+    operationalNotes: [
+      "Migrasi 0039-0043 WAJIB dijalankan (ALETA_RUN_DB_MIGRATIONS=1); seluruhnya CREATE/ADD IF NOT EXISTS, aman diulang. Sesudah pasang, cocokkan jumlah drizzle.__drizzle_migrations = 44.",
+      "Bot dinyalakan ulang oleh pembaruan - wajib, sebab rute praperiksa dan layanan penyamaran baru.",
+      "Ekstensi: petugas menekan Reload di chrome://extensions atau memasang dari panel (pembaruan sekali klik).",
+      "Pengaturan AI: isi modul 'jalur UMUM' dan 'jalur ISI PERKARA', lalu Sinkronkan AI. Jalur perkara yang dibiarkan kosong berarti praperiksa berjalan tanpa pendapat AI - dan menyebutnya.",
+      "Sahkan tanda tangan pejabat di ALETA e-Court - Tanda Tangan sebelum menerbitkan penetapan; pasangan nama-gambar tidak pernah ditebak mesin.",
+    ],
+    knownLimitations: [
+      "Seluruh rilis 1.92-1.134 dibangun ketika peladen mati dan hanya teruji setempat (replika statis, node:vm, basis data SIPP salinan). Jalankan `node scripts/ukur-penyamaran.js 150` di peladen sebelum mempercayai angka 147/150, dan ukur ulang praperiksa atas putusan peladen.",
+      "Putusan massal, unggah ke SIPP, dan pendapat AI belum pernah dijalankan atas perkara sungguhan di peladen - jalankan KERING dahulu pada satu perkara.",
+    ],
+  },
   {
     version: "2.15.0",
     title: "ALETA Judicia v2.15.0 - Penetapan Tanpa Berpindah Akun",
