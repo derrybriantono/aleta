@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.16.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.16.1 - Relaas, Kalender Perkara, dan Court Calendar";
+export const APP_VERSION = "2.16.2";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.16.2 - Token yang Terbuang, Warna yang Tertinggal, dan Daftar yang Dapat Dicari";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,39 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.16.2",
+    title: "ALETA Judicia v2.16.2 - Token yang Terbuang, Warna yang Tertinggal, dan Daftar yang Dapat Dicari",
+    date: "2026-09-14",
+    status: "Operasional",
+    summary:
+      "Tujuh perbaikan yang seluruhnya datang dari layar sungguhan di server, bukan dari membaca kode. Dua di antaranya cacat yang tidak pernah berbunyi: token blangko ABT dibuang oleh penjaganya sendiri, dan warna palet tidak pernah sampai ke SIPP. Sisanya bahasa yang dipakai orang, dan daftar putusan massal yang akhirnya dapat dicari.",
+    added: [
+      "CARI, SARING, DAN URUT pada daftar putusan massal ABT. Cari nomor, jenis, atau agenda; saring semua / belum putus / sudah putus / blangko siap / blangko belum / yang dicentang saja; urutkan menurut agenda putusan, nomor, jenis, atau keadaan. Dua puluh perkara sehari sudah melewati satu layar panel, dan yang dicari hampir selalu sebagian kecilnya.",
+      "URUTAN BAWAAN: AGENDA PUTUSAN DAHULU. Pada tanggal sidang mana pun hanya sebagian yang hendak diputus - sisanya mediasi, jawaban, pembuktian - dan agenda SIPP satu-satunya petunjuk sebelum berkasnya dibuka. Ia URUTAN, bukan saringan: perkara diputus pada agenda yang tertulis \"pembuktian\" bukan hal aneh, jadi yang lain tetap tergambar di bawah.",
+      "WARNA SATU HALAMAN DAPAT DILEPAS DARI POPUP - tombol baru di sebelah tombol kembalikan-bawaan pada kepala panel. SIPP, ABT, dan halaman ALETA kerap terbuka berdampingan di satu layar, dan yang bekerja di antaranya perlu tahu sekilas sedang menatap yang mana. Yang dilepas menyimpan warnanya atas nama panelnya sendiri dan tidak lagi tersentuh popup; keadaannya disebut pada judul tombol.",
+    ],
+    changed: [
+      "Lencana lingkungan \"PELADEN\" menjadi \"SERVER\".",
+      "\"Susun rencana (kering)\" menjadi \"Periksa dulu - belum dijalankan\", dan di panel SIPP \"Periksa dulu (kering)\" menjadi \"Periksa dulu - belum ditulis\". \"Kering\" istilah pemrogram; yang menekannya panitera, dan yang perlu dijawab tombol itu hanya satu - apakah menekannya mengubah sesuatu atau tidak.",
+      "Bawaan blangko dispensasi kawin menjadi \"[01] [Kabul] DK - (Anak P Cewek) Hamil\" - nama yang benar-benar ada di server. Bawaan sebelumnya nama dari ABT setempat yang sejak hari pertama ditandai \"periksa namanya di server\"; diperiksa, dan ternyata tidak ada di sana sama sekali.",
+      "Yang tercentang pada putusan massal tidak hilang ketika daftarnya disaring, dan berapa yang tercentang tetapi tidak terlihat disebut di atas daftar.",
+    ],
+    fixed: [
+      "TOKEN BLANGKO ABT TIDAK LAGI DIBUANG PENJAGANYA SENDIRI. Gejalanya angka kembar - \"7 token terisi, 7 berkas tidak ditemukan\" - dan itu memang satu peristiwa: ketujuh berkasnya KETEMU, lalu tokennya dihapus sebelum sempat disimpan. Penjaga lamanya menuntut token hanya berisi [A-Za-z0-9+/=_%.-], padahal token ABT hasil enkripsi CodeIgniter kerap memuat tilde. Diukur atas empat tautan blangko sungguhan di server: TIGA memuat tilde, jadi tiga dari empat dibuang diam-diam - dan yang membacanya menyimpulkan blangkonya tidak ada di ABT.",
+      "SIPP IKUT WARNA DARI POPUP, seperti ABT. Tema gelap/terang sudah diikuti sejak lama, tetapi WARNA paletnya tidak: panel ABT mendapatkannya lewat alatPasangPanel yang memasang pendengar palet, sedangkan panel SIPP dibangun sendiri dan tidak pernah memanggilnya. Yang terbaca dari situ bukan \"belum tersambung\" melainkan \"popupnya tidak berlaku untuk SIPP\".",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi basis data pada rilis ini.",
+      "Ekstensi naik dua tingkat sekaligus: 1.135.0 (bawaan blangko dispensasi) dan 1.136.0 (enam sisanya). Tekan Reload di chrome://extensions sesudah portal terpasang.",
+      "Pemetaan blangko yang sudah tersimpan TIDAK dihapus. Tokennya diambil ulang sendiri ketika panel dibuka di halaman beranda blangko ABT - atau dengan menekan \"Ambil token dari ABT\".",
+    ],
+    knownLimitations: [
+      "Penjaga token yang baru menerima hampir semua bentuk; yang menjaga isinya tetap ABT sendiri - token yang salah tetap dijawab halaman galat, dan ALETA menyebutnya apa adanya.",
+      "Pelepasan warna disimpan per panel, bukan per tab. Dua tab SIPP berbagi satu warna.",
+    ],
+  },
   {
     version: "2.16.1",
     title: "ALETA Judicia v2.16.1 - Relaas, Kalender Perkara, dan Court Calendar",
