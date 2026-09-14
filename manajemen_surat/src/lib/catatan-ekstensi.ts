@@ -29,6 +29,21 @@
  * dalam zona waktu satuan kerja (+08:00). Ditulis lengkap dengan zona supaya
  * tampilannya sama di komputer mana pun ia dibuka.
  *
+ * Sampai 1.135.0 aturan itu tidak dipatuhi: tiga belas entri terakhir berisi
+ * jam bulat yang ditulis tangan, dan sebagian bertanggal hari BERIKUTNYA
+ * daripada commitnya. Ketahuannya bukan dari membaca melainkan dari penjaga
+ * urutan - satu entri tertulis pukul 16:00 pada hari yang paginya baru
+ * berjalan, sehingga versi sesudahnya tidak dapat disisipkan sama sekali.
+ * Seluruhnya sudah diluruskan ke git log masing-masing.
+ *
+ * EMPAT yang tetap perkiraan, dan disebut begitu: 1.125.0, 1.126.0, 1.127.0,
+ * dan 1.129.0 tidak pernah punya commit sendiri - nomornya dinaikkan lalu
+ * ikut terbawa commit versi berikutnya, jadi waktu commitnya memang tidak
+ * ada. Keempatnya diletakkan di antara tetangganya yang terverifikasi, dan
+ * jamnya dibuat BULAT sebagai penandanya: angka yang tampak pasti untuk
+ * waktu yang tidak diketahui lebih buruk daripada angka yang jujur
+ * kira-kira.
+ *
  * Yang TIDAK ada: 1.83.0. Nomor itu dilewati - dua perbaikan digabung menjadi
  * 1.84.0 - dan tidak pernah terpasang di peramban siapa pun.
  */
@@ -42,8 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.135.0",
+    dirilis: "2026-09-14T12:15:00+08:00",
+    judul: "Bawaan blangko dispensasi kawin diperbaiki menurut peladen",
+    butir: [
+      "DISPENSASI KAWIN -> \"[01] [Kabul] DK - (Anak P Cewek) Hamil\". Bawaan sebelumnya \"DK (Full) Perempuan Hamil V.2\" adalah nama dari ABT setempat (salinan PA Bungku) dan sejak hari pertama ditandai \"periksa namanya di peladen\". Diperiksa langsung di folder blangko peladen 14 September 2026: nama itu tidak ada di sana sama sekali, jadi putusan massal dispensasi akan berhenti pada \"berkas tidak ditemukan\" tanpa ada yang tahu sebabnya. Kini namanya yang sungguh ada di peladen.",
+      "ADA DUA VARIAN KABUL yang berdampingan di peladen: anak perempuan yang hamil, dan anak laki-laki yang calon istrinya hamil. Keduanya jenis perkara yang SAMA di SIPP, jadi bawaan hanya dapat menyebut satu - yang lain dipilih per perkara lewat pilihan blangko pada daftar putusan massal. Catatan pemetaan menyebutkan nama varian satunya supaya tidak perlu dicari sendiri di ABT.",
+      "Bawaan cerai dan itsbat diperiksa pada folder yang sama dan keduanya sudah tepat - tidak diubah.",
+    ],
+  },
+  {
     versi: "1.134.0",
-    dirilis: "2026-09-14T16:00:00+08:00",
+    dirilis: "2026-09-14T09:07:25+08:00",
     judul: "Praperiksa putusan: agen yang membaca SIPP dan berhenti bila bertentangan",
     butir: [
       "PRAPERIKSA SEBELUM MENGISI. Tepat sebelum borang Putusan Akhir diisi dari draf ALETA - di panel maupun di putusan massal - agen membaca fakta SIPP dan mengadunya: tanggal putusan yang diketik harus hari sidang perkara itu (1.643 dari 1.643 putusan 2025-2026 begitu); kata kerja amar harus berpadanan dengan Status Putusan yang dipilih (1.642 dari 1.643 - yang satu memang keliru); nama bin/binti di amar harus pihak atau anak perkara ini; majelis yang disebut naskah harus majelis yang ditetapkan; perkaranya belum putus. Yang bertentangan MENAHAN: tombol Isikan mati, putusan massal menandai perkara itu 'ditahan praperiksa' dan tidak mengisinya. Tidak ada yang diperbaiki sendiri - agen ini membaca, orang yang memutuskan.",
@@ -54,7 +79,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.133.0",
-    dirilis: "2026-09-14T13:00:00+08:00",
+    dirilis: "2026-09-13T19:43:08+08:00",
     judul: "Pemetaan blangko diisi sendiri dari pohon blangko portal",
     butir: [
       "ISI DARI POHON BLANGKO. Portal sudah tahu set blangko mana untuk jenis perkara apa (SET_BLANGKO), dan bot sudah dapat membaca isi foldernya di peladen. Rute baru /aleta-ecourt/blangko/pohon menyatukan keduanya: untuk tiap jenis, ia menjenjangkan berkas set putusannya menurut skenario akhir dan mengusulkan satu bawaan - berkas skenario KABUL, yang kode terpendek (\"[01]\" mendahului \"[01b]\"). Satu tombol di popup super admin dan di panel ABT menuangkannya ke tabel pemetaan, jadi jenis lain tidak perlu diketik satu per satu.",
@@ -64,7 +89,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.132.0",
-    dirilis: "2026-09-14T11:00:00+08:00",
+    dirilis: "2026-09-13T18:32:49+08:00",
     judul: "Bawaan pemetaan blangko: itsbat nikah dan dispensasi kawin menyusul cerai",
     butir: [
       "ITSBAT NIKAH -> \"[01] [Kabul] IN\" - seri peladen yang sama dengan blangko cerai, dikenal kode sejak korpus blangko dipelajari. Bernama saja; tokennya diambil panel ABT di peladen, seperti cerai.",
@@ -74,7 +99,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.131.0",
-    dirilis: "2026-09-14T09:00:00+08:00",
+    dirilis: "2026-09-13T17:45:29+08:00",
     judul: "Putusan massal: dari jadwal sidang ke ABT, ke SIPP, dan pemetaan blangko yang dapat disunting",
     butir: [
       "PUTUSAN MASSAL DI ABT. Di halaman beranda blangko ABT ada panel baru: pilih tanggal sidang (hari ini bawaannya), ALETA menyodorkan seluruh perkara yang bersidang pada tanggal itu beserta jenis, agenda, dan sudah-belumnya putus. Tidak ada yang tercentang sendiri - agenda sidang tidak dapat dipercaya sebagai penentu, jadi yang memutuskan orang. Tekanan pertama menyusun RENCANA (kering); menjalankan menuntut tekanan kedua. Tiap perkara berdiri sendiri: RTF dari ABT, draf ke ALETA, PDF, anonimisasi, PDF anonim, dan bila diminta secara sadar, unggah dokumen ke SIPP. Satu yang gagal dicatat sebabnya, sisanya jalan terus.",
@@ -87,7 +112,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.130.0",
-    dirilis: "2026-09-13T21:00:00+08:00",
+    dirilis: "2026-09-13T14:58:03+08:00",
     judul: "Tema gelap yang benar-benar berganti dan tidak tersendat, halaman login ikut palet, dan tulisan dasbor yang tidak terbaca",
     butir: [
       "TEMA IKUT SEKETIKA DI SELURUH TAB. Sebelumnya tombol tema hanya mengubah tab tempat ia ditekan. Petugas lazim membuka SIPP di tiga tab - daftar perkara, detail, jadwal sidang - lalu mengganti tema di salah satunya dan melihat dua tab lain tetap seperti semula sampai dimuat ulang. Yang terbaca dari situ bukan \"berlaku per tab\", melainkan \"saklarnya tidak berfungsi\". chrome.storage.onChanged sampai ke semua tab tanpa izin tambahan, dan kini tema maupun palet berlaku di semuanya seketika.",
@@ -100,7 +125,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.129.0",
-    dirilis: "2026-09-13T18:30:00+08:00",
+    dirilis: "2026-09-13T13:30:00+08:00",
     judul: "Tujuh perkakas super admin, dan bilah gulir yang benar-benar dapat ditekan",
     butir: [
       "LENCANA LINGKUNGAN. SIPP di komputer sendiri dan SIPP di peladen tampilannya sama persis - basis datanya memang salinan - dan satu-satunya pembeda ada di bilah alamat, bagian layar yang paling jarang dibaca saat bekerja. Sekarang lencana LOKAL atau alamat asing berdiri paling kiri di kepala panel. Di peladen, petugas biasa TIDAK melihat apa-apa: di sanalah tempat yang benar, dan tulisan yang selalu ada berhenti dibaca. Super admin melihat keduanya, sebab ia yang berpindah-pindah.",
@@ -114,7 +139,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.128.0",
-    dirilis: "2026-09-13T16:00:00+08:00",
+    dirilis: "2026-09-13T12:28:24+08:00",
     judul: "Kepala panel satu baris, pemilih warna yang sungguh berfungsi, dan hijau terakhir yang menyelip",
     butir: [
       "PEMILIH WARNA SUPER ADMIN DIPERBAIKI. Dari tujuh titik warna di kepala hanya SATU yang pernah terlihat: aturan tombol kepala menghapus latar setiap tombol, dan pada titik warna latar itulah satu-satunya isinya. Yang tampak cuma lingkaran garis titik yang sedang aktif - ditekan berapa kali pun tidak berbuat apa-apa, sebab ia memang sudah aktif. Kini di kepala hanya ada satu bulatan sewarna palet yang aktif; menekannya membuka baris tujuh titik tepat di bawah kepala, memilih satu menutupnya lagi.",
@@ -127,7 +152,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.127.0",
-    dirilis: "2026-09-13T14:00:00+08:00",
+    dirilis: "2026-09-13T12:00:00+08:00",
     judul: "Palet berlaku ke seluruh halaman, pintasan sampai ke ABT dan portal, dan templat tanya-jawab terbaca",
     butir: [
       "WARNA PALET KINI BERLAKU MENYELURUH. Enam palet 1.126.0 hanya mengubah token, sedangkan belasan tempat di peta gelap menulis hijaunya sebagai ANGKA - kepala tabel, tombol, bilah menu, kolom yang dimatikan, tulisan bayangan. Selama hanya ada satu palet itu tidak kelihatan; begitu palet lain dipilih, semuanya tetap hijau sementara sekitarnya berubah. Dua puluh tiga angka diganti menjadi lima token baru (tulisan-atas, sorot-kuat, mati, tulisan-samar, garis-dalam), keenam palet mendeklarasikannya, dan penjaga menolak angka warna baru di aturan tema gelap mana pun. Warna yang BERARTI sesuatu - merah hapus, kuning penanda, sembilan warna kelompok blangko - sengaja tidak ikut.",
@@ -164,7 +189,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.124.0",
-    dirilis: "2026-09-13T02:30:00+08:00",
+    dirilis: "2026-09-13T07:05:06+08:00",
     judul: "Putusan disimpan sendiri dan dibuktikan, halaman perkara dibuka kembali, dan arsip e-Court diperiksa tanpa diminta",
     butir: [
       "TULISAN TIDAK LAGI BERTINDIHAN. Label 'sekarang' dan 'usulan' berlebar 54 piksel MATI sementara hurufnya dihitung dari skala huruf panel; begitu hurufnya dibesarkan, labelnya tidak muat, tumpah keluar kotak yang flex: none, lalu bertindihan dengan nilainya. Lebarnya kini dalam em dengan min-width - tidak dapat lebih sempit daripada tulisannya pada ukuran huruf mana pun. Dua tempat: kartu usulan putusan dan daftar praperiksa.",
@@ -178,7 +203,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.123.0",
-    dirilis: "2026-09-12T23:30:00+08:00",
+    dirilis: "2026-09-12T23:37:20+08:00",
     judul: "Penetapan dilanjutkan dari tengah, posita tercetak berbaris, dan naskah penetapan itsbat/dispensasi dapat diunggah",
     butir: [
       "PENETAPAN MASSAL tidak lagi berhenti di perkara pertama. Tiga sebab yang bertumpuk: rute portal meneruskan pembungkus gerbangnya sehingga tiap penolakan berbunyi satu kata 'ditolak'; panel membaca keadaan penetapan dari tabel berkas PDF (perkara_dokumen_penetapan) sedangkan rantainya membaca perkara_penetapan, dan keduanya berselisih tepat pada perkara yang PMH-nya ada tetapi PDF-nya belum dicetak; dan 'pmh_sudah_ada' memutus rantai sehingga PPP, PJS, PHS tidak pernah dikerjakan.",

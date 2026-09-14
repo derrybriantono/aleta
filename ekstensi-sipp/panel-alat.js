@@ -3096,13 +3096,27 @@ const ALAT_BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
 /** Seri yang sama di peladen: "[01] [Kabul] IN" untuk itsbat nikah. */
 const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
 /**
- * Dispensasi kawin: nama seri peladennya belum diketahui kode ini - yang ada
- * hanya nama di ABT setempat (salinan PA Bungku). Diisi dengan nama setempat
- * yang paling lazim supaya barisnya tidak kosong; bila di peladen tidak
- * ketemu, panel ABT menyebutnya "berkas tidak ditemukan" dan namanya tinggal
- * disunting - tidak ada yang ditebak diam-diam.
+ * ============================================================================
+ * DISPENSASI KAWIN - DIBACA DARI PELADEN, BUKAN LAGI DITEBAK
+ * ============================================================================
+ *
+ * Bawaan lamanya "DK (Full) Perempuan Hamil V.2" - nama dari ABT setempat
+ * (salinan PA Bungku), dipasang supaya barisnya tidak kosong dan DITANDAI
+ * "periksa namanya di peladen" sejak hari pertama.
+ *
+ * Diperiksa 14 September 2026 pada folder blangko peladen
+ * (_blangko_abt/derry_briantono/3 Dispensasi Kawin): tebakan itu tidak ada
+ * di sana sama sekali. Yang ada enam berkas, dan yang paling lazim untuk
+ * skenario dikabulkan adalah yang dipakai sekarang.
+ *
+ * Ada DUA varian kabul yang berdampingan - anak perempuan yang hamil, dan
+ * anak laki-laki yang calon istrinya hamil. Keduanya jenis perkara yang sama
+ * di SIPP, jadi bawaan hanya dapat menyebut satu; yang lain dipilih per
+ * perkara lewat pilihan blangko di daftar putusan massal. Itu sebabnya
+ * catatannya menyebutkan nama varian satunya - supaya yang memilih tidak
+ * perlu mencarinya sendiri di ABT.
  */
-const ALAT_BERKAS_DISPENSASI_BAWAAN = "DK (Full) Perempuan Hamil V.2";
+const ALAT_BERKAS_DISPENSASI_BAWAAN = "[01] [Kabul] DK - (Anak P Cewek) Hamil";
 const ALAT_PETA_BAWAAN = {
   "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
   "cerai talak": { jenisAsli: "Cerai Talak", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
@@ -3111,7 +3125,7 @@ const ALAT_PETA_BAWAAN = {
     jenisAsli: "Dispensasi Kawin",
     berkas: ALAT_BERKAS_DISPENSASI_BAWAAN,
     bawaan: true,
-    catatan: "nama dari ABT setempat - periksa namanya di peladen",
+    catatan: "nama dari peladen - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
   },
 };
 

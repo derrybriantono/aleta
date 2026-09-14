@@ -563,7 +563,7 @@ if (tombolTema) {
 const KUNCI_PETA_BLANGKO = "petaBlangkoPutusan";
 const BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
 const BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
-const BERKAS_DISPENSASI_BAWAAN = "DK (Full) Perempuan Hamil V.2";
+const BERKAS_DISPENSASI_BAWAAN = "[01] [Kabul] DK - (Anak P Cewek) Hamil";
 const PETA_BAWAAN_POPUP = {
   "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
   "cerai talak": { jenisAsli: "Cerai Talak", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
@@ -572,7 +572,7 @@ const PETA_BAWAAN_POPUP = {
     jenisAsli: "Dispensasi Kawin",
     berkas: BERKAS_DISPENSASI_BAWAAN,
     bawaan: true,
-    catatan: "nama dari ABT setempat - periksa namanya di peladen",
+    catatan: "nama dari peladen - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
   },
 };
 
