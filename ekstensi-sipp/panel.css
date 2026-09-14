@@ -3469,6 +3469,70 @@ html[data-aleta-tema-sipp="gelap"] :is(img, canvas, svg, embed, object, iframe, 
   line-height: 1.45;
 }
 
+/* Praperiksa ALETA (agen Tahap 2). Yang MENAHAN memakai nada lewat, bukan
+   mendesak: di sini ada pertentangan yang dibuktikan dari SIPP, bukan hal
+   yang tinggal diputuskan. Ganjalan mendesak tetap untuk tingkat perhatian. */
+.aleta-praperiksa-kepala {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.aleta-praperiksa-judul-agen {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-praperiksa-ringkas {
+  text-align: right;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-praperiksa-ringkas-henti {
+  color: var(--aleta-lewat);
+  font-weight: 600;
+}
+
+.aleta-praperiksa-henti {
+  margin-top: 6px;
+  padding: 5px 8px;
+  border-left: 3px solid var(--aleta-lewat);
+  background: color-mix(in srgb, var(--aleta-lewat) 14%, transparent);
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+
+.aleta-praperiksa-judul { display: block; font-weight: 600; }
+
+.aleta-praperiksa-rincian {
+  display: block;
+  margin-top: 1px;
+  color: var(--aleta-tulisan-lembut);
+}
+
+/* Catatan tidak menonjol: judulnya berbobot biasa, rinciannya lembut. */
+.aleta-praperiksa-catatan .aleta-praperiksa-judul {
+  font-weight: 500;
+  color: var(--aleta-tulisan);
+}
+
+.aleta-praperiksa-tetap {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 8px 0 6px;
+  color: var(--aleta-tulisan);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.45;
+}
+
 /* Pita simpanan yang sedang DISEGARKAN - berbeda nada dari pita luring.
 
    Yang satu berkata ALETA mati, yang lain ALETA sedang menjawab. Menyamakan

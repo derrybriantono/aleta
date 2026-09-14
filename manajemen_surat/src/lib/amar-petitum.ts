@@ -108,7 +108,7 @@ const KATA_UMUM = new Set([
 const AMBANG_SKOR = 0.5;
 const AMBANG_KATA = 2;
 
-function kataIsi(teks: string): string[] {
+export function kataIsi(teks: string): string[] {
   return String(teks ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")

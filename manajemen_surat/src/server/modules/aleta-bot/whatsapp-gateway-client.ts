@@ -2318,6 +2318,76 @@ export async function getGatewaySippObyekSengketa(
 }
 
 /**
+ * Fakta SIPP untuk praperiksa putusan - Tahap 2 rencana agen.
+ *
+ * Bot hanya membaca dan memulangkan apa adanya; yang menimbangnya terhadap
+ * draf adalah src/lib/praperiksa-putusan.ts, di tempat yang dapat diuji tanpa
+ * basis data.
+ */
+export type GatewayPraperiksaFakta = {
+  ok: boolean;
+  alasan: string;
+  nomorPerkara: string;
+  perkaraId: number;
+  jenisPerkara: string;
+  jenisPerkaraLengkap: string;
+  tanggalDaftar: string;
+  /** HTML CKEditor apa adanya. */
+  petitum: string;
+  pihak: Array<{ nama: string; pihakKe: number | null; peran: string }>;
+  anak: string[];
+  majelis: Array<{ nama: string; jabatan: string; urutan: number }>;
+  panitera: string[];
+  jadwal: Array<{ tanggalSidang: string; agenda: string; ditunda: boolean; urutan: number }>;
+  putusan: { ada: boolean; tanggalPutusan: string; statusPutusan: string; verstek: string };
+  ecourt: { terdaftar: boolean | null; pihak: Array<{ nama: string; peran: string }> };
+  libur: { tanggal: string; nama: string } | null;
+  hariIni: string;
+  tidakTerbaca: string[];
+};
+
+export async function getGatewayPraperiksaFakta(
+  nomor: string,
+  tanggal = ""
+): Promise<GatewayResult<GatewayPraperiksaFakta>> {
+  const params = new URLSearchParams({ nomor, tanggal });
+  return gatewayFetch(`/internal/aleta-bot/sipp/praperiksa-putusan/fakta?${params.toString()}`);
+}
+
+/**
+ * Pendapat AI atas amar vs petitum. Bot menyamarkan nama dengan kamus pihak
+ * yang DIKETAHUI SIPP lalu mengirim lewat jalur "perkara"; bila jalurnya
+ * belum disetel, jawabannya { ok: false, alasan } - dan itu bukan galat.
+ */
+export type GatewayPraperiksaPendapat = {
+  ok: boolean;
+  alasan?: string;
+  temuan?: Array<{ judul: string; rincian: string }>;
+  catatan?: string[];
+  provider?: string;
+  model?: string;
+  durationMs?: number;
+  penyamaran?: { jumlahPenggantian: number; jumlahKamus: number; bersih: boolean };
+};
+
+export async function mintaGatewayPraperiksaPendapat(isi: {
+  nomorPerkara: string;
+  petitum: string;
+  amar: string;
+  pihak: Array<{ nama: string; pihakKe: number | null; peran?: string }>;
+  anak: string[];
+}): Promise<GatewayResult<GatewayPraperiksaPendapat>> {
+  return gatewayFetch("/internal/aleta-bot/sipp/praperiksa-putusan/pendapat", {
+    method: "POST",
+    body: JSON.stringify(isi),
+    // Satu panggilan model, bukan satu kueri: batas waktu bot untuk penyedia
+    // AI sendiri sudah membatasinya; di sini hanya perlu tidak menyerah lebih
+    // dulu daripada bot.
+    timeoutMs: 45_000,
+  });
+}
+
+/**
  * Usulan penunjukan PMH, PPP, PJS, dan PHS untuk satu perkara.
  *
  * Aturannya dikirim bersama permintaan, tidak disimpan di bot: hari sidang

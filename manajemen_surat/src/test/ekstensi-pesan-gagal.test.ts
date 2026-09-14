@@ -261,7 +261,11 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     const lewatAlat = isi.split("await alatAmbil(").length - 1;
     const mentah = isi.split("await fetch(").length - 1;
 
-    // 25 sejak putusan massal (1.131.0): dua pembacaan draf yang berbicara
+    // 26 sejak praperiksa putusan (1.134.0): satu permintaan rapor agen yang
+    // berbicara ke petugas. Praperiksa yang tidak dapat diminta harus berbunyi
+    // "tidak ada yang diperiksa - bukan tanda lolos" beserta sebabnya, bukan
+    // kode status; rapor yang diam dibaca sebagai rapor yang lolos.
+    // (25 sejak putusan massal (1.131.0): dua pembacaan draf yang berbicara
     // ke petugas - "Membaca draf putusan" ketika antrean mengisi satu perkara,
     // dan "Memeriksa draf putusan" ketika antrean disusun dari tanggal sidang.
     // Perkara tanpa draf harus disebut apa adanya beserta sebabnya, bukan
@@ -294,7 +298,7 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
     // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
     // ALETA", 12 sejak "Tetapkan lewat ALETA".)
-    expect(lewatAlat).toBe(25);
+    expect(lewatAlat).toBe(26);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

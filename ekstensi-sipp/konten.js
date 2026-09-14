@@ -57,6 +57,7 @@ const ALETA_API_RIWAYAT = "/aleta/api/aleta-bot/penunjukan/riwayat";
 const ALETA_API_MASUK_PEJABAT = "/aleta/api/aleta-ecourt/masuk-pejabat";
 const ALETA_API_EKSTENSI = "/aleta/api/aleta-ecourt/ekstensi";
 const ALETA_API_ISIAN_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/isian-sipp";
+const ALETA_API_PRAPERIKSA_PUTUSAN = "/aleta/api/aleta-ecourt/putusan/praperiksa";
 const ALETA_API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
 const ALETA_API_UNGGAH_NASKAH = "/aleta/api/aleta-ecourt/putusan/unggah-naskah";
 const ALETA_API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
@@ -4384,6 +4385,176 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar) {
   };
 }
 
+/**
+ * ============================================================================
+ * PRAPERIKSA PUTUSAN - AGEN YANG MEMBACA DAN BERHENTI (Tahap 2 rencana agen)
+ * ============================================================================
+ *
+ * Tepat sebelum borang Putusan Akhir diisi dari draf ALETA, agen membaca
+ * fakta SIPP - jadwal sidang, majelis, pihak, putusan yang sudah ada,
+ * petitum - dan mengadunya dengan draf serta isian borang: tanggal putusan
+ * yang diketik petugas, Status Putusan, verstek. Seluruh penimbangannya di
+ * portal (src/lib/praperiksa-putusan.ts), di tempat yang dapat diuji; di
+ * sini hanya membaca borang, meminta rapor, menggambarnya, dan BERHENTI.
+ *
+ * Tiga tingkat: hentikan (pertentangan yang dibuktikan dari SIPP - Isikan
+ * mati, antrean menandai perkaranya ditahan), perhatian (tidak dapat
+ * dipastikan mesin), catatan (apa yang diperiksa dan apa yang tidak dapat).
+ * Tidak ada yang diperbaiki sendiri. Agen ini membaca; orang yang memutuskan.
+ *
+ * Yang tidak dapat diminta - portal tidak menjawab - DISEBUT, bukan
+ * didiamkan: rapor yang kosong akan dibaca sebagai rapor yang lolos.
+ */
+const PENUNJUK_TANGGAL_PUTUSAN = ["#tgl_putusan", 'input[name="tgl_putusan"]', 'input[name="tanggal_putusan"]'];
+
+/** Isian borang yang HANYA ada di halaman: tanggal putusan, status, verstek. */
+async function bacaUsulanBorangPutusan() {
+  let tanggalPutusan = "";
+  for (const penunjuk of PENUNJUK_TANGGAL_PUTUSAN) {
+    const jawab = await kirimKeJembatan({ jenis: "nilai", penunjuk });
+    if (jawab && jawab.ok) {
+      tanggalPutusan = String(jawab.nilai || "");
+      break;
+    }
+  }
+  const terpilih = async (penunjuk) => {
+    const jawab = await kirimKeJembatan({ jenis: "pilihan", penunjuk });
+    if (!jawab || !jawab.ok) return { nilai: "", label: "" };
+    const nilai = String(jawab.nilaiSekarang || "");
+    const pilihan = (jawab.pilihan || []).find((x) => String(x.nilai) === nilai);
+    return { nilai, label: pilihan ? String(pilihan.label || "") : "" };
+  };
+  const status = await terpilih('select[name="status_putusan"]');
+  const verstek = await terpilih('select[name="verstek"]');
+  return {
+    tanggalPutusan,
+    // "-1" adalah "Pilih Status Putusan" - belum dipilih, bukan status.
+    statusPutusan: status.nilai === "-1" ? "" : status.label,
+    // Borang SIPP menulis Y/T pada nilainya sendiri (edit_putusan_akhir.php).
+    verstek: verstek.nilai === "Y" || verstek.nilai === "T" ? verstek.nilai : "",
+  };
+}
+
+/** Meminta rapor praperiksa dari ALETA. Melempar bila ALETA tidak menjawab. */
+async function mintaPraperiksaPutusan(nomorPerkara, usulan) {
+  const respons = await alatAmbil(
+    ALETA_API_PRAPERIKSA_PUTUSAN,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ nomorPerkara: nomorPerkara || "", ...(usulan || {}) }),
+    },
+    "Praperiksa putusan"
+  );
+  if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Praperiksa putusan"));
+  const luar = await respons.json();
+  return luar && luar.data ? luar.data : luar;
+}
+
+/** Judul-judul yang menahan, dalam satu kalimat - untuk catatan antrean dan kotak hitam. */
+function ringkasHentikan(rapor) {
+  return ((rapor && rapor.temuan) || [])
+    .filter((t) => t.tingkat === "hentikan")
+    .map((t) => t.judul)
+    .join("; ");
+}
+
+/** Menggambar rapor agen: yang menahan di atas, perhatian di tengah, catatan di bawah. */
+function gambarRaporAgen(rapor) {
+  const kotak = buatElemen("div", "aleta-praperiksa aleta-praperiksa-agen");
+  const kepala = buatElemen("div", "aleta-praperiksa-kepala");
+  kepala.appendChild(buatElemen("span", "aleta-praperiksa-judul-agen", "Praperiksa ALETA"));
+  kepala.appendChild(
+    buatElemen(
+      "span",
+      `aleta-praperiksa-ringkas${rapor.hentikan ? " aleta-praperiksa-ringkas-henti" : ""}`,
+      rapor.ringkas || ""
+    )
+  );
+  kotak.appendChild(kepala);
+
+  for (const t of rapor.temuan || []) {
+    const kelas =
+      t.tingkat === "hentikan"
+        ? "aleta-praperiksa-henti"
+        : t.tingkat === "perhatian"
+        ? "aleta-praperiksa-ganjal"
+        : "aleta-praperiksa-catatan";
+    const baris = buatElemen("div", kelas);
+    baris.appendChild(buatElemen("span", "aleta-praperiksa-judul", t.judul || ""));
+    if (t.rincian) baris.appendChild(buatElemen("span", "aleta-praperiksa-rincian", t.rincian));
+    kotak.appendChild(baris);
+  }
+  if (!(rapor.temuan || []).length) {
+    kotak.appendChild(buatElemen("div", "aleta-praperiksa-catatan", "Tidak ada temuan."));
+  }
+  return kotak;
+}
+
+/**
+ * Menjalankan praperiksa dan menggambarnya ke wadah. Pulang rapornya, atau
+ * null bila tidak dapat diminta - dan ketidakdapatan itu ikut digambar.
+ */
+async function jalankanPraperiksaPanel(nomorPerkara, wadah) {
+  const tempat = buatElemen("div", "aleta-praperiksa-tempat");
+  tempat.appendChild(buatElemen("div", "aleta-memuat", "Praperiksa: membaca fakta SIPP dan mengadunya dengan draf…"));
+  wadah.appendChild(tempat);
+  try {
+    const usulan = await bacaUsulanBorangPutusan();
+    const rapor = await mintaPraperiksaPutusan(nomorPerkara, usulan);
+    tempat.textContent = "";
+    if (!rapor || !rapor.ada) {
+      tempat.appendChild(
+        buatElemen(
+          "div",
+          "aleta-praperiksa-catatan",
+          `Praperiksa tidak dijalankan: ${(rapor && rapor.sebab) || "tidak ada jawaban"}.`
+        )
+      );
+      return null;
+    }
+    tempat.appendChild(gambarRaporAgen(rapor));
+    alatCatat("praperiksa", `${nomorPerkara}: ${rapor.ringkas}`, ringkasHentikan(rapor));
+    return rapor;
+  } catch (galat) {
+    tempat.textContent = "";
+    tempat.appendChild(
+      buatElemen(
+        "div",
+        "aleta-praperiksa-ganjal",
+        `Praperiksa tidak dapat diminta: ${String((galat && galat.message) || galat)}. ` +
+          "Tidak ada yang diperiksa - ini bukan tanda lolos."
+      )
+    );
+    return null;
+  }
+}
+
+/**
+ * Praperiksa untuk alur massal - tanpa wadah gambar; rapornya dipulangkan
+ * dan yang menahan dituliskan pemanggil ke catatan antrean.
+ *
+ * Tidak dapat diminta bukan lolos, tetapi juga bukan pertentangan: dicatat
+ * di kotak hitam, dan antrean berjalan seperti sebelum agen ini ada.
+ */
+async function praperiksaSebelumMengisi(nomorPerkara, kabar) {
+  if (kabar) kabar.textContent = "Praperiksa: mengadu draf dengan fakta SIPP…";
+  try {
+    const usulan = await bacaUsulanBorangPutusan();
+    const rapor = await mintaPraperiksaPutusan(nomorPerkara, usulan);
+    if (!rapor || !rapor.ada) {
+      alatCatat("praperiksa", `${nomorPerkara}: tidak dijalankan - ${(rapor && rapor.sebab) || "tidak ada jawaban"}`, "");
+      return null;
+    }
+    alatCatat("praperiksa", `${nomorPerkara}: ${rapor.ringkas}`, ringkasHentikan(rapor));
+    return rapor;
+  } catch (galat) {
+    alatCatat("praperiksa", `${nomorPerkara}: tidak dapat diminta - ${String((galat && galat.message) || galat)}`, "");
+    return null;
+  }
+}
+
 function bagianIsiPutusan(nomorPerkara) {
   const kotak = bagian("Putusan otomatis", "isiPutusan", true);
   const isi = kotak.isi;
@@ -4718,6 +4889,10 @@ function bagianIsiPutusan(nomorPerkara) {
     return jumlah;
   }
 
+  // Rapor praperiksa terakhir untuk perkara ini. Dibaca lagi saat Isikan
+  // ditekan: yang menahan MENAHAN sampai orang menyatakan sudah membacanya.
+  let raporAgen = null;
+
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
     wadah.textContent = "";
@@ -4749,6 +4924,10 @@ function bagianIsiPutusan(nomorPerkara) {
     }
 
     kabar.textContent = `Draf versi ${jawab.versi} (${jawab.keadaan}).`;
+
+    // Praperiksa lebih dulu daripada usulan isian: yang membaca panel ini
+    // harus melihat pertentangannya SEBELUM melihat tombol Isikan.
+    raporAgen = await jalankanPraperiksaPanel(nomorPerkara, wadah);
 
     for (const satu of jawab.catatan || []) {
       wadah.appendChild(buatElemen("div", "aleta-tetap-sebab", satu));
@@ -4992,6 +5171,35 @@ function bagianIsiPutusan(nomorPerkara) {
     const terap = buatElemen("button", "aleta-permintaan-tombol", "Isikan yang dicentang");
     terap.type = "button";
     const hasilTerap = buatElemen("div", "aleta-abt-kabar");
+
+    // ======================================================================
+    // YANG MENAHAN MENAHAN - SAMPAI ORANG MENYATAKAN SUDAH MEMBACANYA
+    // ======================================================================
+    //
+    // Tombol Isikan mati selama praperiksa menemukan pertentangan yang
+    // dibuktikan dari SIPP. Ia dapat dinyalakan lagi, tetapi lewat kotak
+    // centang yang bunyinya jelas - dan bila dipilih, Simpan TIDAK ditekan
+    // sendiri: keputusan itu milik petugas, termasuk menekan Simpan.
+    if (raporAgen && raporAgen.hentikan) {
+      terap.disabled = true;
+      const tetap = buatElemen("label", "aleta-praperiksa-tetap");
+      const centangTetap = document.createElement("input");
+      centangTetap.type = "checkbox";
+      centangTetap.className = "aleta-abt-centang";
+      tetap.appendChild(centangTetap);
+      tetap.appendChild(
+        buatElemen(
+          "span",
+          "",
+          "Saya sudah membaca yang menahan di atas - tetap isikan borangnya. Simpan TIDAK akan ditekan sendiri."
+        )
+      );
+      wadah.appendChild(tetap);
+      centangTetap.addEventListener("change", () => {
+        terap.disabled = !centangTetap.checked;
+      });
+    }
+
     wadah.appendChild(terap);
     wadah.appendChild(hasilTerap);
 
@@ -5093,6 +5301,17 @@ function bagianIsiPutusan(nomorPerkara) {
       // Memuat ulang lebih awal membuang isian yang belum diterima SIPP.
       if (gagal.length > 0) {
         hasilTerap.textContent += " Simpan TIDAK ditekan selama masih ada yang gagal.";
+        return;
+      }
+      if (raporAgen && raporAgen.hentikan) {
+        hasilTerap.textContent +=
+          " Simpan TIDAK ditekan: praperiksa menahan dan Anda memilih mengisi sendiri - " +
+          "periksa borangnya, lalu tekan Simpan SIPP sendiri.";
+        alatCatat(
+          "praperiksa",
+          `${nomorPerkara}: diisi meski ditahan (${ringkasHentikan(raporAgen)}) - Simpan diserahkan ke petugas`,
+          ""
+        );
         return;
       }
       terap.disabled = true;
@@ -10929,7 +11148,7 @@ async function bagianAntreanSipp(nomorHalaman) {
       "div",
       "aleta-tetap-sebab",
       `Antrean dari ${antrean.tahap === "sipp" ? "tahap ABT" : "jadwal sidang"} — ` +
-        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal. ` +
+        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal, ${h.tertahan || 0} ditahan praperiksa. ` +
         `Mode: ${antrean.modus === "otomatis" ? "otomatis" : "manual (berhenti tiap perkara)"}.`
     )
   );
@@ -11008,6 +11227,7 @@ const NAMA_KEADAAN_ANTREAN = {
   gagal: "gagal",
   dilewati: "dilewati",
   jeda: "dijeda",
+  tertahan: "ditahan praperiksa",
 };
 
 /**
@@ -11065,6 +11285,24 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     return;
   }
 
+  // 2b. Praperiksa - agen yang membaca fakta SIPP dan BERHENTI bila
+  // bertentangan. Di antrean tidak ada kotak centang "tetap isikan": yang
+  // ditahan ditandai, disebut sebabnya, dan dibiarkan untuk dibuka orang.
+  const raporAgen = await praperiksaSebelumMengisi(butir.nomor, kabar);
+  if (raporAgen && raporAgen.hentikan) {
+    butir.keadaan = "tertahan";
+    butir.catatan = `ditahan praperiksa: ${ringkasHentikan(raporAgen)}`;
+    await alatSimpanAntrean(antrean);
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = "";
+      kabar.appendChild(gambarRaporAgen(raporAgen));
+    }
+    alatCatat("praperiksa", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
   // 3. Isi tiga medan CKEditor.
   const isian = [
     ["#perhum", draf.pertimbangan],
@@ -11097,7 +11335,13 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   const hasilSimpan = await simpanPutusanLaluBuka(butir.nomor, kabar);
   if (hasilSimpan.ok) {
     butir.keadaan = "selesai";
-    butir.catatan = "tersimpan di SIPP";
+    butir.catatan =
+      "tersimpan di SIPP" +
+      (raporAgen && raporAgen.jumlah && raporAgen.jumlah.perhatian
+        ? ` · ${raporAgen.jumlah.perhatian} perhatian praperiksa`
+        : raporAgen
+        ? ""
+        : " · tanpa praperiksa");
     alatCatatTindakan({
       jenis: "isi-putusan",
       penunjuk: butir.nomor,

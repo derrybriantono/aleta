@@ -24,6 +24,7 @@ const ecourtStatusService = require("../services/ecourtStatusService");
 const ecourtLoginService = require("../services/ecourtLoginService");
 const sippKonteksService = require("../services/sippKonteksService");
 const obyekSengketaService = require("../services/obyekSengketaService");
+const praperiksaPutusanService = require("../services/praperiksaPutusanService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
 const abtUsulanService = require("../services/abtUsulanService");
 const abtCetakService = require("../services/abtCetakService");
@@ -1481,6 +1482,49 @@ router.get("/sipp/obyek-sengketa/kebiasaan", requireInternalToken, async (req, r
   try {
     const hasil = await obyekSengketaService.kebiasaan(String(req.query.nomor || ""));
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * PRAPERIKSA PUTUSAN - FAKTA (Tahap 2 rencana agen)
+ * ============================================================================
+ *
+ * HANYA MEMBACA. Seluruh fakta SIPP untuk satu perkara dalam satu jawaban:
+ * jadwal sidang, majelis tercatat, pihak dan anak, putusan yang sudah ada,
+ * petitum, keikutsertaan e-Court. Yang menimbangnya terhadap draf adalah
+ * portal - di sinilah datanya, di sanalah drafnya dan aturannya.
+ *
+ * `tanggal` (YYYY-MM-DD) adalah tanggal putusan yang SEDANG diusulkan borang;
+ * dipakai hanya untuk menyertakan keterangan hari liburnya.
+ */
+router.get("/sipp/praperiksa-putusan/fakta", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await praperiksaPutusanService.bacaFakta(String(req.query.nomor || ""), {
+      tanggal: String(req.query.tanggal || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Pendapat AI atas amar vs petitum - DISAMARKAN lebih dulu, lewat jalur
+ * "perkara" yang gerbangnya menolak muatan tanpa bukti penyamaran.
+ *
+ * Jawabannya selalu 200: { ok: false, alasan } adalah jawaban yang sah -
+ * jalur belum disetel, penyamaran menyisakan nama, penyedia gagal - dan
+ * portal menuliskannya sebagai "pendapat AI dilewati", bukan sebagai galat.
+ * Pendapat AI tidak pernah menahan penulisan; yang menahan hanya
+ * pertentangan yang dibuktikan dari SIPP.
+ */
+router.post("/sipp/praperiksa-putusan/pendapat", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await praperiksaPutusanService.pendapatAi(req.body || {});
+    res.status(200).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

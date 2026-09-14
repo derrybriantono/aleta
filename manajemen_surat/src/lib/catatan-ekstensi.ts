@@ -42,6 +42,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.134.0",
+    dirilis: "2026-09-14T16:00:00+08:00",
+    judul: "Praperiksa putusan: agen yang membaca SIPP dan berhenti bila bertentangan",
+    butir: [
+      "PRAPERIKSA SEBELUM MENGISI. Tepat sebelum borang Putusan Akhir diisi dari draf ALETA - di panel maupun di putusan massal - agen membaca fakta SIPP dan mengadunya: tanggal putusan yang diketik harus hari sidang perkara itu (1.643 dari 1.643 putusan 2025-2026 begitu); kata kerja amar harus berpadanan dengan Status Putusan yang dipilih (1.642 dari 1.643 - yang satu memang keliru); nama bin/binti di amar harus pihak atau anak perkara ini; majelis yang disebut naskah harus majelis yang ditetapkan; perkaranya belum putus. Yang bertentangan MENAHAN: tombol Isikan mati, putusan massal menandai perkara itu 'ditahan praperiksa' dan tidak mengisinya. Tidak ada yang diperbaiki sendiri - agen ini membaca, orang yang memutuskan.",
+      "PERHATIAN DAN CATATAN. Yang tidak dapat dipastikan mesin - petitum yang tampak belum terjawab, verstek yang tidak disebut amar, pihak e-Court yang ejaannya berbeda, akhir pekan dan hari libur - hanya perhatian. Yang tidak dapat diperiksa disebut sebagai catatan: rapor yang diam tentang yang dilewatinya akan dibaca sebagai lolos. Bot yang mati pun disebut: 'praperiksa TIDAK dijalankan' - bukan rapor kosong.",
+      "PENDAPAT AI, DISAMARKAN, TIDAK PERNAH MENAHAN. Bila pemeriksaan pasti lolos dan jalur AI 'isi perkara' sudah disetel di Pengaturan AI, amar dan petitum disamarkan dahulu dengan kamus pihak SIPP lalu diminta pendapatnya; hasilnya perhatian. Bila jalurnya belum disetel, rapor menulis 'pendapat AI dilewati' beserta sebabnya.",
+      "Tetap mengisi meski ditahan tetap dapat dipilih di panel - lewat kotak centang yang bunyinya jelas - dan Simpan TIDAK ditekan sendiri: keputusan itu milik petugas, termasuk menekan Simpan. Di antrean massal tidak ada jalan pintas itu: yang ditahan dibiarkan untuk dibuka orang.",
+    ],
+  },
+  {
     versi: "1.133.0",
     dirilis: "2026-09-14T13:00:00+08:00",
     judul: "Pemetaan blangko diisi sendiri dari pohon blangko portal",

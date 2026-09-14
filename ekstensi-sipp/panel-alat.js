@@ -2967,7 +2967,7 @@ function alatAntreanBerikutnya(antrean) {
 }
 
 function alatAntreanRingkas(antrean) {
-  const hitung = { menunggu: 0, jalan: 0, selesai: 0, gagal: 0, dilewati: 0, jeda: 0 };
+  const hitung = { menunggu: 0, jalan: 0, selesai: 0, gagal: 0, dilewati: 0, jeda: 0, tertahan: 0 };
   for (const b of (antrean && antrean.butir) || []) hitung[b.keadaan] = (hitung[b.keadaan] || 0) + 1;
   return hitung;
 }
