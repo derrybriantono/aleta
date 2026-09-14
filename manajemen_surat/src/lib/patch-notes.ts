@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.16.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.16.0 - Agen yang Membaca Sebelum Menulis";
+export const APP_VERSION = "2.16.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.16.1 - Relaas, Kalender Perkara, dan Court Calendar";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.16.1",
+    title: "ALETA Judicia v2.16.1 - Relaas, Kalender Perkara, dan Court Calendar",
+    date: "2026-09-14",
+    status: "Operasional",
+    summary:
+      "Tiga pertanyaan yang dibawa petugas ke layar Status Perkara dan tidak pernah punya jawaban di sana: sudahkah para pihak dipanggil untuk sidang ini dan patutkah panggilannya; bulan ini perkara ini ada apa saja; rencana sidang yang disusun majelis, mana yang tidak jadi. Ketiganya dijawab dari keterangan yang SUDAH ada - dua di antaranya bahkan sudah dikirim bot selama ini dan berhenti di layar tanpa satu galat pun.",
+    added: [
+      "RELAAS PANGGILAN jadi bagian sendiri, runut per sidang. Dulu ia satu blok di dalam Berkas berupa deretan nama dan tombol unduh; tempatnya keliru - relaas bukan lampiran, melainkan perbuatan yang menentukan sidang boleh dilanjutkan atau harus ditunda. Tiap sidang menjadi satu kelompok berurut: siapa yang dipanggil, oleh jurusita siapa, bertemu orangnya atau tidak, keterangan hasilnya, jejak pos beserta resi dan returnya, berapa hari sebelum sidang - dan relaas yang dilaksanakan SESUDAH hari sidangnya berbunyi \"2 hari SESUDAH sidang\", bukan angka negatif yang terbaca seperti panggilan patut.",
+      "KEPATUTAN PANGGILAN PER PIHAK tergambar untuk pertama kalinya: jalur yang seharusnya dipakai, tanggal kirim, bukti penerimaan, tenggang beserta ambang dan dasar hukumnya. Penilaian ini sudah dihitung bot sejak lama dan tidak pernah sampai ke layar Status Perkara.",
+      "KALENDER PERKARA - pendaftaran, penetapan, relaas, mediasi, sidang, putusan, minutasi, BHT, akta cerai, dan ikrar talak pada satu bulan yang dapat ditelusuri. Bulan yang dibuka bukan bulan ini melainkan bulan peristiwa terdekat: perkara yang putus setahun lalu tidak punya apa pun pada bulan berjalan, dan kalender yang terbuka kosong terbaca seperti kalender yang rusak.",
+      "COURT CALENDAR SIPP - rencana sidang yang disusun majelis (tabel perkara_court_calendar) diadu dengan pelaksanaannya. SIPP menampilkan rencana dan jadwal di dua layar berbeda, sehingga \"rencana mana yang tidak jadi\" hanya dapat dijawab dengan membandingkan tanggal dengan mata. Empat keadaan: terlaksana, sudah dijadwalkan, lewat tanpa sidang, menunggu dijadwalkan.",
+    ],
+    changed: [
+      "Bagian Berkas menyisakan hitungan relaas beserta penunjuk ke bagian barunya - daftarnya tidak digambar dua kali. Dua daftar untuk satu data akan berselisih pada suntingan berikutnya, dan tidak ada yang tahu mana yang usang.",
+      "Delapan ruas relaas yang sudah dikirim bot sejak lama - jurusita, ketemu, keterangan hasil, tanggal kirim pos, status pos, retur, nomor resi, kedudukan pihak - kini dideklarasikan tipenya di layar dan benar-benar tampil.",
+    ],
+    fixed: [],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi basis data pada rilis ini. Bot tetap harus nyala ulang: pembaca Court Calendar adalah layanan baru.",
+      "Court Calendar hanya terisi pada sebagian perkara - diukur 418 dari 791 perkara 2026. Layar menyebut kekosongan itu lazim, bukan cacat.",
+      "Terlaksana dinilai dari ADANYA sidang pada tanggal yang direncanakan, bukan dari kecocokan agendanya: agenda ditulis bebas dan ejaannya tidak ajek di SIPP.",
+    ],
+    knownLimitations: [
+      "Kepatutan panggilan dinilai untuk SIDANG TERAKHIR yang tercatat, bukan untuk tiap sidang - itulah yang dihitung bot. Rincian per sidang lama harus dibaca dari daftar relaasnya.",
+      "Angka pengukuran Court Calendar diambil dari SIPP PA Donggala 14 September 2026; satuan kerja lain dapat sangat berbeda.",
+    ],
+  },
   {
     version: "2.16.0",
     title: "ALETA Judicia v2.16.0 - Agen yang Membaca Sebelum Menulis",
