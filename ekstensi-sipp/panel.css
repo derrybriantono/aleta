@@ -1172,6 +1172,41 @@ tr.aleta-baris-disorot > td {
   border-bottom: 1px solid var(--aleta-garis);
 }
 
+/* ==========================================================================
+   KEPALA DAN DROPDOWN-NYA ADALAH SATU KELOMPOK - GARISNYA DI BAWAH KELOMPOK
+   ==========================================================================
+
+   Tiap penetapan digambar sebagai KEPALA (.aleta-tetap: judul, nilai, sebab,
+   penetap) lalu DROPDOWN-nya (.aleta-pilih), kadang diselingi saklar,
+   peringatan, atau hitungan. Kepala bergaris bawah sedangkan dropdown tidak,
+   sehingga garis itu memotong kepala dari dropdown-nya sendiri: "Penunjukan
+   Juru Sita" tampak menutup blok, dan dropdown "Juru sita" di bawahnya
+   terbaca sebagai milik "Penetapan Hari Sidang". Terlihat pada perkara 585:
+   pembacanya menyangka seluruh kolom bergeser satu.
+
+   Kepala yang diikuti bagian kelompoknya melepas garis bawahnya; garis
+   pemisah lalu dipasang di ATAS kepala berikutnya, tepat ketika yang
+   mendahuluinya adalah bagian sebuah kelompok. Kepala yang berdiri sendiri
+   (tanpa dropdown - mode otomatis tanpa pilihan) tetap bergaris bawah. */
+.aleta-tetap:has(+ .aleta-pilih),
+.aleta-tetap:has(+ .aleta-pilih-bebas),
+.aleta-tetap:has(+ .aleta-saklar),
+.aleta-tetap:has(+ .aleta-tetap-awas),
+.aleta-tetap:has(+ .aleta-tetap-hitung) {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+
+.aleta-pilih + .aleta-tetap,
+.aleta-pilih-bebas + .aleta-tetap,
+.aleta-saklar + .aleta-tetap,
+.aleta-tetap-awas + .aleta-tetap,
+.aleta-tetap-hitung + .aleta-tetap {
+  border-top: 1px solid var(--aleta-garis);
+  margin-top: 6px;
+  padding-top: 9px;
+}
+
 .aleta-tetap-label {
   font-size: calc(12px * var(--aleta-skala-huruf, 1));
   font-weight: 700;

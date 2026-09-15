@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.149.0",
+    dirilis: "2026-09-15T18:20:00+08:00",
+    judul: "Kepala Penetapan Majelis Hakim kembali, dan tiap dropdown menempel pada kepalanya sendiri",
+    butir: [
+      "KEPALA PENETAPAN MAJELIS HAKIM ADA DI KEDUA MODE, dengan kode SK di depan namanya. Ia pernah disembunyikan di mode manual - waktu itu ia menampilkan usulan mesin yang BERBEDA dari majelis yang dipilih. Sejak mengganti majelis memuat ulang usulannya, yang tertulis adalah majelis yang dipilih itu sendiri; dan tanpa kepala ini dropdown Majelis berdiri tanpa penjelasan sementara tiap dropdown lain punya.",
+      "GARIS PEMISAH DI BAWAH KELOMPOK, bukan di bawah kepala. Kepala bergaris bawah sedangkan dropdown-nya tidak, sehingga garis itu memotong kepala dari dropdown-nya sendiri: Penunjukan Juru Sita tampak menutup blok, dan dropdown Juru sita terbaca milik Penetapan Hari Sidang. Seluruh susunan tampak bergeser satu kolom.",
+    ],
+  },
+  {
     versi: "1.148.0",
     dirilis: "2026-09-15T17:40:00+08:00",
     judul: "Mengganti majelis melepas tanggal sidang majelis lama",

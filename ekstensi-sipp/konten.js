@@ -2225,6 +2225,9 @@ function gambarPenunjukan(isi, data) {
   const manual = caraAktif === "manual";
   const pmh = usulan.pmh || {};
 
+  // Saklar "Hakim tunggal" hanya di mode otomatis: ia menampilkan PENGATURAN,
+  // bukan pilihan - menekannya tidak mengubah apa pun, dan di sebelah saklar
+  // Manual/Otomatis yang bekerja ia terbaca seolah ikut bekerja.
   if (!manual) {
     isi.appendChild(
       saklarPapan(
@@ -2236,21 +2239,37 @@ function gambarPenunjukan(isi, data) {
         aturan.kolamHakimTunggal === "ketua-wakil" ? "ketua-wakil" : "hakim"
       )
     );
+  }
 
-    // --- PMH -------------------------------------------------------------
-    const namaMajelis = (pmh.anggota || []).map((x) => x.nama).join(", ");
-    isi.appendChild(
-      barisPenetapan(
-        "Penetapan Majelis Hakim",
-        namaMajelis,
-        pmh.sebab,
-        pmh.perluNilai ? "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum." : "",
-        penetapUntuk(data, "pmh")
-      )
-    );
+  // ==========================================================================
+  // KEPALA "PENETAPAN MAJELIS HAKIM" ADA DI KEDUA MODE
+  // ==========================================================================
+  //
+  // Kepala ini pernah disembunyikan di mode manual, dan waktu itu alasannya
+  // benar: ia menampilkan usulan mesin yang BERBEDA dari majelis yang dipilih
+  // di dropdown - dua susunan berdampingan tanpa penanda mana yang mana.
+  //
+  // Sejak mengganti majelis memuat ulang usulannya, yang tertulis di sini
+  // adalah majelis yang dipilih itu sendiri, beserta panitera dan penanda
+  // tangan yang mengikutinya - bukan lagi usulan tandingan. Dan tanpa kepala
+  // ini, dropdown Majelis berdiri sendiri tanpa penjelasan sementara tiap
+  // dropdown lain punya kepalanya; pembaca lalu mengira tiap dropdown milik
+  // kepala di BAWAHNYA, dan seluruh susunan terbaca bergeser satu.
+  const namaMajelis = (pmh.anggota || []).map((x) => x.nama).join(", ");
+  isi.appendChild(
+    barisPenetapan(
+      "Penetapan Majelis Hakim",
+      (pmh.majelisKode ? `${pmh.majelisKode} — ` : "") + namaMajelis,
+      pmh.sebab,
+      pmh.perluNilai ? "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum." : "",
+      penetapUntuk(data, "pmh")
+    )
+  );
 
+  if (!manual) {
     // Hitungan hakim tunggal ditampilkan terbuka: angka inilah yang membuat
-    // "paling sedikit" dapat diperiksa, bukan sekadar dipercaya.
+    // "paling sedikit" dapat diperiksa, bukan sekadar dipercaya. Di mode
+    // manual angkanya sudah ada pada tiap baris dropdown.
     if ((pmh.hitungan || []).length > 1) {
       isi.appendChild(
         buatElemen(

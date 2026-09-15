@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.2";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.2 - Dua Temuan Pemeriksaan Rantai Penetapan";
+export const APP_VERSION = "2.19.3";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.3 - Kepala Majelis Kembali, dan Garis yang Memotong Kelompoknya Sendiri";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,24 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.3",
+    title: "ALETA Judicia v2.19.3 - Kepala Majelis Kembali, dan Garis yang Memotong Kelompoknya Sendiri",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Dari layar perkara 585: kepala Penetapan Majelis Hakim hilang di mode manual, dan garis bawah tiap kepala " +
+      "memotong kepala dari dropdown-nya sendiri - seluruh susunan terbaca bergeser satu kolom.",
+    added: [],
+    changed: [
+      "Kepala Penetapan Majelis Hakim kembali di mode manual, dengan kode SK di depan namanya. Ia pernah disembunyikan karena menampilkan usulan mesin yang berbeda dari pilihan; sejak mengganti majelis memuat ulang usulannya, yang tertulis adalah majelis yang dipilih itu sendiri.",
+      "Garis pemisah pindah dari bawah kepala ke bawah kelompok: kepala yang diikuti dropdown, saklar, peringatan, atau hitungan melepas garis bawahnya, dan garis dipasang di atas kepala berikutnya. Kepala yang berdiri sendiri tetap bergaris.",
+    ],
+    fixed: [],
+    security: [],
+    operationalNotes: ["Tidak ada migrasi baru. Ekstensi 1.149.0 - reload di chrome://extensions."],
+    knownLimitations: [],
+  },
   {
     version: "2.19.2",
     title: "ALETA Judicia v2.19.2 - Dua Temuan Pemeriksaan Rantai Penetapan",
