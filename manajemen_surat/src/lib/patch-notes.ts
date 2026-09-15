@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.0 - Mengganti Majelis Menghitung Ulang Seluruh Rantainya";
+export const APP_VERSION = "2.19.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.1 - Smart Majelis di Luar SK Tidak Lagi Memutus Rantainya";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,26 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.1",
+    title: "ALETA Judicia v2.19.1 - Smart Majelis di Luar SK Tidak Lagi Memutus Rantainya",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Pembuktian 2.19.0 di peladen: rantai manual terbukti utuh (pilih A -> Rabu, pilih B -> Selasa), tetapi jalur otomatis " +
+      "kini dikendalikan Smart Majelis SIPP yang mengusulkan trio di luar SK - kode jujur kosong, dan hari sidangnya ikut hilang.",
+    added: [],
+    changed: [
+      "Smart Majelis SIPP yang mengusulkan susunan di luar SK ditimpa giliran majelis SK - dan HANYA dalam keadaan itu. Usulan SIPP yang majelis SK tetap dihormati. Yang ditimpa disebut apa adanya: sebabnya menyebut usulan SIPP, dan dropdown tetap dapat mengembalikannya.",
+      "Susunan di luar SK tetap mendapat hari sidang - dipinjam dari kode ketuanya, dan sebabnya menyebut itu. Kodenya tetap kosong; kode palsu lebih buruk daripada tanpa kode, tetapi tanpa tanggal lebih buruk lagi.",
+    ],
+    fixed: [],
+    security: [],
+    operationalNotes: ["Tidak ada migrasi baru. Ekstensi tetap 1.147.0."],
+    knownLimitations: [
+      "Bila SK belum diisi sama sekali, Smart Majelis tetap satu-satunya sumber - tidak ada majelis SK untuk menggantikannya.",
+    ],
+  },
   {
     version: "2.19.0",
     title: "ALETA Judicia v2.19.0 - Mengganti Majelis Menghitung Ulang Seluruh Rantainya",

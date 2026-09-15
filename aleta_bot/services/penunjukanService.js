@@ -1627,7 +1627,23 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   };
 
   // --- PHS ----------------------------------------------------------------
-  const hariMajelis = pmh.majelisKode !== "" ? hariSidang[pmh.majelisKode] : undefined;
+  // ==========================================================================
+  // SUSUNAN DI LUAR SK: HARI SIDANGNYA MENGIKUTI KETUANYA
+  // ==========================================================================
+  //
+  // Kode majelis dikosongkan untuk susunan di luar SK - itu benar, dan tidak
+  // boleh berarti tanggal sidangnya ikut kosong. Majelis darurat tetap
+  // bersidang, dan yang paling masuk akal ia bersidang pada hari ketuanya.
+  // Kodenya tetap kosong; hanya hari sidangnya yang dipinjam dari ketua, dan
+  // sebabnya menyebut itu.
+  const kodeKetua = (pmh.anggota && pmh.anggota[0] && pmh.anggota[0].kode) || "";
+  const dariKetua = pmh.majelisKode === "" && kodeKetua !== "" && hariSidang[kodeKetua] !== undefined;
+  const hariMajelis =
+    pmh.majelisKode !== ""
+      ? hariSidang[pmh.majelisKode]
+      : dariKetua
+        ? hariSidang[kodeKetua]
+        : undefined;
   const jeda = Number(aturan.jedaMinimalHari) || 0;
   const tanggalSidang =
     hariMajelis === undefined
@@ -1638,7 +1654,9 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     usulan: tanggalSidang,
     sebut: tanggalSidang ? sebutTanggal(tanggalSidang) : "",
     sebab: tanggalSidang
-      ? `hari sidang Majelis ${pmh.majelisKode}, sekurangnya ${jeda} hari sesudah pendaftaran`
+      ? dariKetua
+        ? `hari sidang mengikuti ketua majelis (kode ${kodeKetua}) - susunan ini di luar SK; sekurangnya ${jeda} hari sesudah pendaftaran`
+        : `hari sidang Majelis ${pmh.majelisKode}, sekurangnya ${jeda} hari sesudah pendaftaran`
       : pmh.majelisKode
         ? `hari sidang Majelis ${pmh.majelisKode} belum diatur di ALETA`
         : "menunggu majelisnya ditentukan lebih dulu",
@@ -1957,9 +1975,55 @@ function susunPmh({
         aktif: Boolean(orang),
       };
     });
+
+    // ======================================================================
+    // SMART MAJELIS YANG MENGUSULKAN TRIO DI LUAR SK
+    // ======================================================================
+    //
+    // Terukur pada perkara 567 sesudah Smart Majelis SIPP dijalankan: ia
+    // mengusulkan B,C1,C3 - susunan yang tidak ada di SK Ketua. Dengan kode
+    // yang jujur kosong, hari sidangnya ikut hilang dan panitera sidangnya
+    // jatuh ke giliran beban: usulan yang tidak dapat dipakai menetapkan
+    // apa pun.
+    //
+    // Usulan Smart Majelis TETAP dihormati selama susunannya majelis SK.
+    // Yang ditimpa hanya keadaan ini: SIPP mengusulkan trio yang tidak
+    // pernah ditetapkan Ketua, sementara SK-nya sudah tersimpan di ALETA.
+    // Di antara keduanya, SK-lah keputusan pengadilan; Smart Majelis alat
+    // bantunya. Dan yang ditimpa disebut apa adanya di sebabnya, supaya yang
+    // membaca tahu SIPP mengusulkan lain.
+    const kodeSmart = kodeMajelisUntuk(anggota);
+    const majelisSkTersedia = (susunanTerpakai || []).filter(
+      (x) => x.dariSk && Array.isArray(x.anggota) && x.anggota.length >= 3
+    );
+    if (susunanSk.length > 0 && kodeSmart === "" && majelisSkTersedia.length > 0) {
+      const pilihan = [...majelisSkTersedia].sort(
+        (a, b) => a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci))
+      )[0];
+      return {
+        ...dasar,
+        majelisKode: pilihan.majelisKode,
+        anggota: pilihan.anggota.map((orang) => ({
+          hakimId: orang.hakimId,
+          kode: orang.kode,
+          nama: orang.nama,
+          aktif: true,
+        })),
+        hitungan: hitunganMajelis,
+        susunanTerpakai,
+        sebab:
+          `giliran majelis SK - Smart Majelis SIPP mengusulkan ${anggota.map((x) => x.kode || "?").join(",")}, ` +
+          `susunan di luar SK`,
+        keterangan:
+          `Smart Majelis SIPP mengusulkan ${anggota.map((x) => x.nama).join(", ")} - susunan yang tidak ada di SK Ketua. ` +
+          `Dipakai majelis SK yang paling sedikit menerima perkara tahun ini (${pilihan.perkara} perkara). ` +
+          `Ubah di dropdown bila usulan SIPP memang yang dimaksud.`,
+      };
+    }
+
     return {
       ...dasar,
-      majelisKode: kodeMajelisUntuk(anggota),
+      majelisKode: kodeSmart,
       anggota,
       hitungan: hitunganMajelis,
       susunanTerpakai,
