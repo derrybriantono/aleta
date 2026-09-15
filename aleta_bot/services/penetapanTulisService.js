@@ -2136,6 +2136,12 @@ async function susunRencanaHapus(minta) {
   for (const rincian of rincianUntukHapus(jenis, perkara, jadwalSidangId)) {
     if (!(await sippSkemaService.tabelAda(rincian.tabel))) continue;
     langkah.push({ ...rincian, aksi: "DELETE" });
+    // perkara_smartmajelis TIDAK diaudit - sama seperti jalur tulis. SIPP
+    // tidak pernah mencatat tabel ini di sys_audittrail (nol baris sejak
+    // 2016); baris DELETE-nya di sini adalah satu-satunya yang tersisa, dan
+    // terlihat pada bongkar perkara 567 pukul 15:19:43. Barisnya sendiri
+    // tetap dihapus - yang dicabut catatan auditnya.
+    if (rincian.tabel === "perkara_smartmajelis") continue;
     langkah.push(
       barisAudit({
         username: akun.username,

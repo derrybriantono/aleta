@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.148.0",
+    dirilis: "2026-09-15T17:40:00+08:00",
+    judul: "Mengganti majelis melepas tanggal sidang majelis lama",
+    butir: [
+      "Hari sidang tiap majelis berbeda - A Rabu, B Selasa. Tanggal yang dipilih dari daftar hari sidang majelis B tidak ada di daftar majelis A, dan sebelumnya ia jatuh ke jalur tanggal bebas: tetap terpakai, dengan peringatan di luar hari sidang majelis. Peringatannya benar, tetapi tanggal itu bukan pilihan orang - ia sisa.",
+      "Yang dipertahankan: tanggal bebas yang sengaja dibuka lewat saklarnya, ruangan sidang, dan juru sita - ketiganya bukan milik majelis.",
+    ],
+  },
+  {
     versi: "1.147.0",
     dirilis: "2026-09-15T16:10:00+08:00",
     judul: "Mengganti majelis menghitung ulang panitera sidang, hari sidang, dan penanda tangan PHS - di mode otomatis juga",

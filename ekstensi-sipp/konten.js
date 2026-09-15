@@ -2114,6 +2114,21 @@ async function muatUlangUsulan(isi, data, hakimId) {
     data.rencana = baru.rencana;
     if (baru.pengaturan) data.pengaturan = baru.pengaturan;
     data.majelisDipilih = Array.isArray(hakimId) && hakimId.length > 0 ? hakimId : null;
+    // ======================================================================
+    // TANGGAL SIDANG MILIK MAJELIS LAMA DILEPAS
+    // ======================================================================
+    //
+    // Hari sidang tiap majelis berbeda - A Rabu, B Selasa. Tanggal yang
+    // dipilih dari daftar hari sidang majelis B tidak ada di daftar majelis
+    // A, dan tanpa baris ini ia jatuh ke jalur "tanggal bebas": tetap
+    // terpakai, dengan peringatan "di luar hari sidang majelis". Peringatan
+    // itu benar, tetapi tanggalnya bukan pilihan orang - ia sisa.
+    //
+    // Yang DIPERTAHANKAN: tanggal bebas yang sengaja dibuka lewat saklarnya.
+    // Itu keputusan yang diketik, bukan sisa dari majelis lain.
+    if (data.pilihanManual && !data.pilihanManual.phsBebas) {
+      data.pilihanManual.phs = "";
+    }
     // Pejabat penetap disusun ulang server untuk majelis baru - pilihan lama
     // menunjuk ketua majelis yang sudah tidak berlaku.
     data.pejabatDipilih = {};

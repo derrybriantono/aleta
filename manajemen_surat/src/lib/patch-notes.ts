@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.1 - Smart Majelis di Luar SK Tidak Lagi Memutus Rantainya";
+export const APP_VERSION = "2.19.2";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.2 - Dua Temuan Pemeriksaan Rantai Penetapan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,27 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.2",
+    title: "ALETA Judicia v2.19.2 - Dua Temuan Pemeriksaan Rantai Penetapan",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Pemeriksaan rantai PMH/PPP/PJS/PHS atas data sungguhan sesudah 2.19.x terpasang: jalur tulis kini persis bentuk SIPP " +
+      "(kunci [id], dua UPDATE perkara pada PHS, jam berjeda 1-10 menit). Dua yang tersisa diperbaiki di sini.",
+    added: [],
+    changed: [
+      "Mengganti majelis melepas tanggal sidang yang dipilih untuk majelis lama. Hari sidang A (Rabu) dan B (Selasa) berbeda; tanggal majelis B yang bertahan jatuh ke jalur tanggal bebas dengan peringatan - tidak diam, tetapi ia sisa, bukan pilihan. Tanggal bebas yang sengaja dibuka lewat saklarnya tetap dipertahankan.",
+    ],
+    fixed: [
+      "Jalur bongkar tidak lagi mengaudit DELETE perkara_smartmajelis - tabel yang tidak pernah sekali pun dicatat SIPP. Jalur tulis sudah dicabut sejak 2.17.x; jalur bongkar tertinggal, dan terlihat pada bongkar 567 pukul 15:19:43. Barisnya sendiri tetap dihapus.",
+    ],
+    security: [],
+    operationalNotes: ["Tidak ada migrasi baru."],
+    knownLimitations: [
+      "Uji kering rantai TULIS atas perkara hidup belum dapat dijalankan: tidak ada perkara 2026 yang penetapannya belum lengkap. Rencananya dibuktikan luring; pendaftaran berikutnya menjadi bahannya.",
+    ],
+  },
   {
     version: "2.19.1",
     title: "ALETA Judicia v2.19.1 - Smart Majelis di Luar SK Tidak Lagi Memutus Rantainya",
