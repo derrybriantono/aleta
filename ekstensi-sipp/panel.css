@@ -1856,6 +1856,16 @@ tr.aleta-baris-disorot > td {
 
 /* Saklar tanggal bebas. Sengaja lebih kecil dan teredam daripada dropdown di
    atasnya: ia jalan keluar, bukan pilihan yang setara. */
+/* Baris pilihan tempat pada penetapan massal - muncul hanya saat saklar
+   sidang kelilingnya menyala, jadi ia tidak boleh menambah jarak saat
+   tersembunyi. */
+.aleta-massal-tempat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 0 6px;
+}
+
 .aleta-pilih-bebas {
   display: flex;
   align-items: center;

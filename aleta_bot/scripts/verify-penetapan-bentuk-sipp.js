@@ -1,0 +1,255 @@
+"use strict";
+
+/**
+ * ============================================================================
+ * RENCANA PENETAPAN DIBANDINGKAN DENGAN BENTUK SIPP YANG TERUKUR
+ * ============================================================================
+ *
+ * Penjaga teks memastikan kodenya berbunyi benar. Skrip ini memastikan
+ * RENCANANYA benar - daftar langkah yang sungguh tersusun, disandingkan dengan
+ * bentuk yang diukur dari sys_audittrail satker atas pekerjaan tangan:
+ *
+ *   TAMBAH PENETAPAN HAKIM/MAJELIS HAKIM   1.072 penetapan
+ *     perkara_penetapan INSERT, perkara_hakim_pn INSERT xN, perkara UPDATE
+ *
+ *   TAMBAH PENUNJUKAN PANITERA/JURUSITA      802 / 805
+ *     perkara_penetapan UPDATE, <petugas> INSERT, perkara UPDATE
+ *
+ *   Tambah Penetapan Sidang Pertama          818 penetapan
+ *     perkara_penetapan UPDATE, perkara_jadwal_sidang INSERT,
+ *     perkara_penetapan_hari_sidang INSERT, perkara UPDATE, perkara UPDATE
+ *
+ * Yang TIDAK pernah muncul di sana, nol baris sejak 2016: perkara_proses dan
+ * perkara_smartmajelis. Keduanya ditulis - riwayatnya memang harus ada - tetapi
+ * tidak dicatat di sys_audittrail, sebab SIPP pun tidak mencatatnya.
+ *
+ * Berjalan tanpa jaringan dan tanpa basis data - db_config diganti penadah.
+ */
+
+let lulus = 0;
+let gagal = 0;
+
+function periksa(nama, benar, tambahan = "") {
+  if (benar) {
+    lulus += 1;
+    console.log(`  OK    ${nama}`);
+  } else {
+    gagal += 1;
+    console.log(`  GAGAL ${nama}${tambahan ? ` - ${tambahan}` : ""}`);
+  }
+}
+
+// ---------------------------------------------------------------- penadah
+const idBerikutnya = { perkara_jurusita: 10274, perkara_jadwal_sidang: 20099 };
+/** Keadaan penetapan perkara yang dijawab penadah - diubah tiap bagian. */
+let keadaan = { pmh: "2026-09-15", ppp: null, pjs: null, phs: null };
+
+const dbPath = require.resolve("../db_config");
+require("../db_config");
+require.cache[dbPath].exports = {
+  query: (sql, params, selesai) => {
+    const teks = String(sql);
+    if (/COALESCE\(MAX\(id\), 0\) \+ 1/.test(teks)) {
+      const tabel = (/FROM (\w+)/.exec(teks) || [])[1];
+      return selesai(null, [{ berikutnya: idBerikutnya[tabel] || 1 }]);
+    }
+    if (/FROM perkara p\b/.test(teks)) {
+      return selesai(null, [
+        {
+          perkaraId: 10119,
+          nomorPerkara: "567/Pdt.G/2026/PA.Dgl",
+          // Baris perkara_penetapan lahir bersama PMH - sebelum itu ia
+          // memang belum ada, dan PMH pertama menyisipkannya.
+          adaPenetapan: keadaan.pmh ? 10119 : 0,
+          adaSmartMajelis: 0,
+          ...keadaan,
+        },
+      ]);
+    }
+    if (/FROM sys_users/.test(teks)) return selesai(null, [{ username: "sudarmin", fullname: "Sudarmin, S.H." }]);
+    if (/FROM jurusita/.test(teks)) return selesai(null, [{ id: 30, kode: "JS30", nip: "1987", namaGelar: "Mustini", nama: "Mustini" }]);
+    if (/FROM panitera_pn/.test(teks)) return selesai(null, [{ id: 30, kode: "PP30", nip: "1988", namaGelar: "Fikrianto, S.H.", nama: "Fikrianto" }]);
+    if (/FROM hakim_pn/.test(teks)) {
+      return selesai(null, [
+        { hakimId: 11, kode: "H11", nip: "1", nama: "Hakim Satu" },
+        { hakimId: 12, kode: "H12", nip: "2", nama: "Hakim Dua" },
+        { hakimId: 13, kode: "H13", nip: "3", nama: "Hakim Tiga" },
+      ]);
+    }
+    if (/FROM ruangan_sidang/.test(teks)) return selesai(null, [{ id: 1, nama: "Ruang Sidang 1", keliling: "T" }]);
+    if (/information_schema/.test(teks)) return selesai(null, [{ TABLE_NAME: "x", COLUMN_NAME: "y" }]);
+    if (/NOW\(\)|CURRENT_TIMESTAMP/i.test(teks)) return selesai(null, [{ saat: "2026-09-15 11:02:46" }]);
+    if (/FROM perkara_penetapan_hari_sidang/.test(teks)) return selesai(null, [{ id: 20099 }]);
+    return selesai(null, []);
+  },
+};
+
+const skemaPath = require.resolve("../services/sippSkemaService");
+const skemaAsli = require("../services/sippSkemaService");
+require.cache[skemaPath].exports = { ...skemaAsli, tabelAda: async () => true, muat: async () => ({}) };
+
+const layanan = require("../services/penetapanTulisService");
+
+const dasar = {
+  perkaraId: 10119,
+  tanggalPenetapan: "2026-09-15",
+  olehUsername: "sudarmin",
+  operator: "SUPER ADMIN DERRY",
+  ip: "192.168.9.121",
+};
+
+/** Daftar tabel yang diaudit, menurut urutan langkahnya. */
+const tabelDiaudit = (rencana) =>
+  rencana.langkah
+    .filter((x) => x.tabel === "sys_audittrail")
+    .map((x) => `${x.params[5]}:${x.params[3]}`);
+
+const langkahData = (rencana) =>
+  rencana.langkah.filter((x) => x.tabel !== "sys_audittrail").map((x) => `${x.aksi}:${x.tabel}`);
+
+(async () => {
+  console.log("rencana penetapan dibandingkan dengan bentuk SIPP");
+
+  // ======================================================================
+  // 1. PMH - smart majelis ditulis, tetapi tidak diaudit
+  // ======================================================================
+  keadaan = { pmh: null, ppp: null, pjs: null, phs: null };
+  const pmh = await layanan.susunRencanaTulis({ ...dasar, jenis: "pmh", hakimId: [11, 12, 13] });
+  periksa("rencana PMH tersusun", pmh.ok === true, pmh.alasan || "");
+  if (pmh.ok) {
+    const audit = tabelDiaudit(pmh);
+    console.log(`        data  : ${langkahData(pmh).join(", ")}`);
+    console.log(`        audit : ${audit.join(", ")}`);
+    periksa("PMH tetap MENULIS baris smart majelis", langkahData(pmh).some((x) => x.endsWith("perkara_smartmajelis")));
+    periksa("PMH tetap MENULIS baris riwayat", langkahData(pmh).some((x) => x.endsWith("perkara_proses")));
+    periksa("audit PMH TIDAK menyebut perkara_smartmajelis", !audit.some((x) => x.includes("perkara_smartmajelis")));
+    periksa("audit PMH TIDAK menyebut perkara_proses", !audit.some((x) => x.includes("perkara_proses")));
+    periksa(
+      "bentuk audit PMH sama dengan SIPP",
+      audit.join(", ") ===
+        "INSERT:perkara_penetapan, INSERT:perkara_hakim_pn, INSERT:perkara_hakim_pn, INSERT:perkara_hakim_pn, UPDATE:perkara",
+      audit.join(", ")
+    );
+  }
+
+  // ======================================================================
+  // 2. PHS - dua baris riwayat, dua kali UPDATE perkara
+  // ======================================================================
+  keadaan = { pmh: "2026-09-15", ppp: "2026-09-15", pjs: "2026-09-15", phs: null };
+  const phs = await layanan.susunRencanaTulis({
+    ...dasar,
+    jenis: "phs",
+    tanggalSidang: "2026-09-30",
+    ruanganId: 1,
+    rantaiSebelum: ["pmh", "ppp", "pjs"],
+  });
+  periksa("rencana PHS tersusun", phs.ok === true, phs.alasan || "");
+  if (phs.ok) {
+    const audit = tabelDiaudit(phs);
+    console.log(`        data  : ${langkahData(phs).join(", ")}`);
+    console.log(`        audit : ${audit.join(", ")}`);
+
+    const riwayat = phs.langkah.filter((x) => x.tabel === "perkara_proses");
+    periksa("PHS menulis DUA baris riwayat", riwayat.length === 2, String(riwayat.length));
+    periksa("baris pertama proses 80", riwayat[0] && riwayat[0].params[3] === 80, riwayat[0] && String(riwayat[0].params[3]));
+    periksa("baris kedua proses 81", riwayat[1] && riwayat[1].params[3] === 81, riwayat[1] && String(riwayat[1].params[3]));
+    periksa(
+      "baris kedua bernama Sidang pertama",
+      riwayat[1] && riwayat[1].params[4] === "Sidang pertama",
+      riwayat[1] && String(riwayat[1].params[4])
+    );
+    periksa(
+      "baris kedua bertanggal tanggal SIDANG",
+      riwayat[1] && riwayat[1].params[5] === "2026-09-30",
+      riwayat[1] && String(riwayat[1].params[5])
+    );
+    periksa(
+      "keduanya atas nama pejabat yang sama, pada detik yang sama",
+      riwayat[0] && riwayat[1] && riwayat[0].params[6] === riwayat[1].params[6] && riwayat[0].params[7] === riwayat[1].params[7]
+    );
+
+    const perkaraUpdate = phs.langkah.filter((x) => x.tabel === "perkara" && x.aksi === "UPDATE");
+    periksa("tabel perkara diperbarui DUA kali", perkaraUpdate.length === 2, String(perkaraUpdate.length));
+    periksa(
+      "keadaan AKHIR berbunyi Sidang pertama",
+      perkaraUpdate.length === 2 && perkaraUpdate[1].params[3] === "Sidang pertama",
+      perkaraUpdate.length === 2 ? String(perkaraUpdate[1].params[3]) : ""
+    );
+    periksa(
+      "keadaan akhir proses_terakhir_id 81",
+      perkaraUpdate.length === 2 && perkaraUpdate[1].params[2] === 81
+    );
+    periksa("audit PHS TIDAK menyebut perkara_proses", !audit.some((x) => x.includes("perkara_proses")));
+    periksa(
+      "audit perkara UPDATE muncul dua kali, seperti SIPP",
+      audit.filter((x) => x === "UPDATE:perkara").length === 2,
+      audit.join(", ")
+    );
+
+    const auditJadwal = phs.langkah.find((x) => x.tabel === "sys_audittrail" && x.params[3] === "perkara_jadwal_sidang");
+    periksa(
+      "kunci audit jadwal sidang memakai id barisnya sendiri",
+      Boolean(auditJadwal) && /Primary Key \[id=#ID#\]/.test(String(auditJadwal.params[6])),
+      auditJadwal ? String(auditJadwal.params[6]).slice(-40) : ""
+    );
+    periksa(
+      "penandanya tahu langkah mana yang melahirkan id-nya",
+      Boolean(auditJadwal && auditJadwal.kunciDariLangkah && typeof auditJadwal.kunciDariLangkah["#ID#"] === "number")
+    );
+  }
+
+  // ======================================================================
+  // 3. Bongkar - kembali ke Pendaftaran, dua baris riwayat ikut terbongkar
+  // ======================================================================
+  keadaan = { pmh: "2026-09-15", ppp: null, pjs: null, phs: "2026-09-15" };
+  const bongkarPhs = await layanan.susunRencanaHapus({ ...dasar, jenis: "phs" });
+  periksa("rencana bongkar PHS tersusun", bongkarPhs.ok === true, bongkarPhs.alasan || "");
+  if (bongkarPhs.ok) {
+    const riwayat = bongkarPhs.langkah.filter((x) => x.tabel === "perkara_proses");
+    periksa("bongkar PHS membuang DUA baris riwayat", riwayat.length === 2, String(riwayat.length));
+    periksa(
+      "keduanya proses 80 dan 81",
+      riwayat.length === 2 && riwayat[0].params[2] === 80 && riwayat[1].params[2] === 81
+    );
+    const audit = tabelDiaudit(bongkarPhs);
+    periksa("audit bongkar TIDAK menyebut perkara_proses", !audit.some((x) => x.includes("perkara_proses")));
+  }
+
+  // Seluruh penetapan dibongkar - tidak ada yang tersisa.
+  keadaan = { pmh: "2026-09-15", ppp: null, pjs: null, phs: null };
+  const bongkarPmh = await layanan.susunRencanaHapus({ ...dasar, jenis: "pmh" });
+  periksa("rencana bongkar PMH tersusun", bongkarPmh.ok === true, bongkarPmh.alasan || "");
+  if (bongkarPmh.ok) {
+    const kembali = bongkarPmh.langkah.filter((x) => x.tabel === "perkara" && x.aksi === "UPDATE").pop();
+    console.log(`        kembali ke: tahapan="${kembali.params[1]}" status="${kembali.params[3]}"`);
+    periksa("tahapannya Pendaftaran", kembali.params[1] === "Pendaftaran", String(kembali.params[1]));
+    periksa("statusnya Pendaftaran Perkara", kembali.params[3] === "Pendaftaran Perkara", String(kembali.params[3]));
+    periksa("keduanya BERBEDA", kembali.params[1] !== kembali.params[3]);
+  }
+
+  // PHS masih ada sesudah PPP dibongkar - keadaannya kembali ke Sidang pertama.
+  keadaan = { pmh: "2026-09-15", ppp: "2026-09-15", pjs: "2026-09-15", phs: "2026-09-15" };
+  const bongkarPpp = await layanan.susunRencanaHapus({ ...dasar, jenis: "ppp" });
+  if (bongkarPpp.ok) {
+    const kembali = bongkarPpp.langkah.filter((x) => x.tabel === "perkara" && x.aksi === "UPDATE").pop();
+    periksa(
+      "PHS yang tersisa mengembalikan status ke Sidang pertama",
+      kembali.params[3] === "Sidang pertama",
+      String(kembali.params[3])
+    );
+  }
+
+  // ======================================================================
+  // 4. Alamat audit datang dari pemanggil, bukan dikarang
+  // ======================================================================
+  if (pmh.ok) {
+    const satu = pmh.langkah.find((x) => x.tabel === "sys_audittrail");
+    periksa("alamat pada baris audit diteruskan apa adanya", satu && satu.params[1] === "192.168.9.121", satu && String(satu.params[1]));
+  }
+
+  console.log(`\nlulus ${lulus}, gagal ${gagal}`);
+  process.exit(gagal === 0 ? 0 : 1);
+})().catch((galat) => {
+  console.error("GAGAL TOTAL", galat);
+  process.exit(1);
+});

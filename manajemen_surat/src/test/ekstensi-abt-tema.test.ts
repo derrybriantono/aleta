@@ -321,7 +321,11 @@ describe("dua cacat yang dilaporkan dari layar", () => {
     // spasi, tidak boleh didahului huruf. Tanpa syarat itu, "Usia 5 tahun."
     // terpecah menjadi "tahu" dan butir baru "n.".
     expect(isi).toContain('const SEBELUM_BUTIR = ".;:,)";');
-    expect(isi).toContain("${awal}<br>   ${huruf}. ");
+    // Tandanya ikut tertangkap ke dalam ${huruf} - "a." maupun "a)" - dan
+    // dituliskan kembali apa adanya. Menuliskan titik di sini akan mengubah
+    // "a)" menjadi "a.", yaitu mengganti bentuk penomoran yang dipilih
+    // penyusun gugatan.
+    expect(isi).toContain("${awal}<br>   ${huruf} ");
   });
 
   it("pemisahnya <br>, sebab RTF mengabaikan ganti baris", () => {
@@ -398,7 +402,9 @@ describe("kerusakan posita yang sudah terlanjur tersimpan", () => {
     const rapi = layanan.rapikanTeksPosita(RUSAK);
     const baris = rapi
       .split("</p>")
-      .map((x) => x.replace(/^<p>/, ""))
+      // Ruang di depan dipangkas: tiap potongan berawalan pembatas kata
+      // kendali - satu ganti baris - sebelum <p>-nya.
+      .map((x) => x.replace(/^\s*<p[^>]*>/, ""))
       .filter((x) => x.length > 0);
     expect(baris.filter((x) => !x.trim()).length).toBe(0);
     expect(baris.some((x) => x.startsWith("   a. "))).toBe(true);
@@ -413,6 +419,8 @@ describe("kerusakan posita yang sudah terlanjur tersimpan", () => {
     // 6.269 dari 8.097 posita memakai <p>. Ganti baris di antara </p> dan
     // <p> berikutnya akan menjadi <br>, dan keduanya menjadi \par.
     const teks = "<p>1. Bahwa satu.</p>\n<p>2. Bahwa dua.</p>";
-    expect(layanan.rapikanTeksPosita(teks)).toBe("<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>");
+    expect(layanan.rapikanTeksPosita(teks)).toBe(
+      "<p>1. Bahwa satu.</p>\n<p>2. Bahwa dua.</p>"
+    );
   });
 });

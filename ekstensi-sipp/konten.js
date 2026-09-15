@@ -1933,6 +1933,40 @@ const SEBUTAN_PENETAP = {
  * rencananya belum ada, jabatannya saja yang disebut; itu tetap lebih berguna
  * daripada diam.
  */
+/**
+ * ============================================================================
+ * ANGKANYA BOBOT, DAN SELAMA INI DISEBUT "PERKARA"
+ * ============================================================================
+ *
+ * "Tanty Restianty - 278.5 perkara" tidak dapat dipahami siapa pun, sebab
+ * tidak ada setengah perkara. Angkanya memang bukan jumlah perkara melainkan
+ * BEBAN BERBOBOT, dihitung penyusun usulan supaya pemerataan tidak menyamakan
+ * perkara yang berat dengan yang ringan:
+ *
+ *   cerai gugat, cerai talak, itsbat nikah            1,0
+ *   harta bersama, kewarisan, P3HP, wasiat, eksyar    2,0
+ *   selain itu                                        1,5
+ *
+ * Dua perbaikan sekaligus, dan yang kedua lebih penting daripada yang pertama:
+ * angkanya dibulatkan supaya tidak berdesimal, DAN namanya diluruskan menjadi
+ * "beban". Membulatkan saja hanya menyembunyikan desimalnya - yang menyesatkan
+ * bukan koma lima itu melainkan kata "perkara" di belakangnya.
+ */
+function sebutBeban(nilai) {
+  const angka = Number(nilai);
+  if (!Number.isFinite(angka)) return "";
+  return `beban ${Math.round(angka)}`;
+}
+
+/** Keterangan sekali pakai yang menerangkan angka beban di atasnya. */
+function keteranganBeban() {
+  return buatElemen(
+    "div",
+    "aleta-tetap-hitung",
+    "Beban dihitung berbobot - cerai & itsbat 1, harta bersama/waris/wasiat/ekonomi syariah 2, selain itu 1,5."
+  );
+}
+
 function penetapUntuk(data, jenis) {
   const jabatan = SEBUTAN_PENETAP[jenis] || "";
   const rencana = data && data.rencana;
@@ -1940,7 +1974,23 @@ function penetapUntuk(data, jenis) {
     rencana && Array.isArray(rencana.langkah)
       ? rencana.langkah.find((x) => x.jenis === jenis)
       : null;
-  const akun = langkah ? langkah.akun : null;
+  // ==========================================================================
+  // YANG DIPILIH PETUGAS MENANG ATAS PILIHAN MESIN
+  // ==========================================================================
+  //
+  // `langkah.akun` adalah calon yang DIPILIH MESIN. Ketika petugas mengganti
+  // pejabatnya pada "Pejabat yang menetapkan", yang berubah hanya
+  // data.pejabatDipilih - dan baris keterangan ini tetap menyebut nama lama.
+  //
+  // Selisih itu tidak berbunyi: yang tertulis di SIPP adalah pilihan petugas,
+  // yang terbaca di layar pilihan mesin. Keduanya masuk akal, keduanya tampak
+  // benar, dan hanya satu yang tercatat.
+  const dipilih = data && data.pejabatDipilih && data.pejabatDipilih[jenis];
+  const calonDipilih =
+    dipilih && langkah && Array.isArray(langkah.calon)
+      ? langkah.calon.find((x) => x.username === dipilih)
+      : null;
+  const akun = calonDipilih || (langkah ? langkah.akun : null);
 
   if (!akun) return jabatan ? `Ditetapkan ${jabatan}` : "";
 
@@ -2080,40 +2130,62 @@ function gambarPenunjukan(isi, data) {
   );
 
   const aturan = (data.pengaturan && data.pengaturan.aturan) || {};
-  isi.appendChild(
-    saklarPapan(
-      "Hakim tunggal",
-      [
-        { nilai: "hakim", label: "Hakim" },
-        { nilai: "ketua-wakil", label: "Ketua/Wakil" },
-      ],
-      aturan.kolamHakimTunggal === "ketua-wakil" ? "ketua-wakil" : "hakim"
-    )
-  );
 
-  // --- PMH ---------------------------------------------------------------
+  // ==========================================================================
+  // USULAN PMH TIDAK DIGAMBAR DI MODE MANUAL
+  // ==========================================================================
+  //
+  // Ketiga hal ini menerangkan USULAN mesin: saklar kolam hakim tunggal, baris
+  // "Penetapan Majelis Hakim" beserta sebabnya, dan hitungan beban tiap hakim
+  // yang menjadi dasar usulan itu.
+  //
+  // Di mode manual tidak ada usulan yang sedang berlaku - majelisnya dipilih
+  // sendiri pada dropdown tepat di bawah. Yang terbaca petugas karena itu dua
+  // susunan berdampingan: satu yang dipilihnya dan satu lagi yang tidak akan
+  // dipakai, tanpa penanda mana yang mana.
+  //
+  // Saklar "Hakim tunggal" lebih menyesatkan lagi: ia menampilkan PENGATURAN,
+  // bukan pilihan - menekannya tidak mengubah apa pun. Di sebelah saklar
+  // "Manual/Otomatis" yang memang bekerja, ia terbaca seolah ikut bekerja.
+  const manual = caraAktif === "manual";
   const pmh = usulan.pmh || {};
-  const namaMajelis = (pmh.anggota || []).map((x) => x.nama).join(", ");
-  isi.appendChild(
-    barisPenetapan(
-      "Penetapan Majelis Hakim",
-      namaMajelis,
-      pmh.sebab,
-      pmh.perluNilai ? "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum." : "",
-      penetapUntuk(data, "pmh")
-    )
-  );
 
-  // Hitungan hakim tunggal ditampilkan terbuka: angka inilah yang membuat
-  // "paling sedikit" dapat diperiksa, bukan sekadar dipercaya.
-  if ((pmh.hitungan || []).length > 1) {
+  if (!manual) {
     isi.appendChild(
-      buatElemen(
-        "div",
-        "aleta-tetap-hitung",
-        pmh.hitungan.map((x) => `${x.nama} ${x.jumlah}`).join("  ·  ")
+      saklarPapan(
+        "Hakim tunggal",
+        [
+          { nilai: "hakim", label: "Hakim" },
+          { nilai: "ketua-wakil", label: "Ketua/Wakil" },
+        ],
+        aturan.kolamHakimTunggal === "ketua-wakil" ? "ketua-wakil" : "hakim"
       )
     );
+
+    // --- PMH -------------------------------------------------------------
+    const namaMajelis = (pmh.anggota || []).map((x) => x.nama).join(", ");
+    isi.appendChild(
+      barisPenetapan(
+        "Penetapan Majelis Hakim",
+        namaMajelis,
+        pmh.sebab,
+        pmh.perluNilai ? "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum." : "",
+        penetapUntuk(data, "pmh")
+      )
+    );
+
+    // Hitungan hakim tunggal ditampilkan terbuka: angka inilah yang membuat
+    // "paling sedikit" dapat diperiksa, bukan sekadar dipercaya.
+    if ((pmh.hitungan || []).length > 1) {
+      isi.appendChild(
+        buatElemen(
+          "div",
+          "aleta-tetap-hitung",
+          pmh.hitungan.map((x) => `${x.nama} ${Math.round(Number(x.jumlah) || 0)}`).join("  ·  ")
+        )
+      );
+      isi.appendChild(keteranganBeban());
+    }
   }
 
   // ========================================================================
@@ -2170,7 +2242,22 @@ function gambarPenunjukan(isi, data) {
           // Nama lengkap ketiganya, bukan kodenya: kode majelis di SIPP tidak
           // tetap - A, B, C1 berpindah orang - dan yang memilih perlu melihat
           // siapa, bukan huruf apa.
-          label: `${x.anggota.map((a) => a.nama).join(" · ")} — ${x.perkara} perkara`,
+          // ==============================================================
+          // KODE MAJELIS HANYA UNTUK YANG DITETAPKAN SK
+          // ==============================================================
+          //
+          // Susunan di luar SK tetap dapat dipilih - majelis memang disusun
+          // ulang ketika ada yang cuti - tetapi TANPA kode di sebelahnya.
+          // Kode majelis milik SK; menempelkannya pada susunan yang tidak
+          // ditetapkan siapa pun berarti menulis kode karangan ke berkas
+          // perkara, dan laporan yang mengelompokkan menurut majelis akan
+          // menghitungnya sebagai majelis itu.
+          //
+          // Urutannya sudah disusun bot: yang ber-SK di atas.
+          label:
+            (x.majelisKode ? `${x.majelisKode} — ` : "") +
+            `${x.anggota.map((a) => a.nama).join(" · ")} — ${sebutBeban(x.perkara)}` +
+            (x.majelisKode ? "" : " · di luar SK"),
         })),
         pilihanManual.majelis ?? "",
         (nilai) => {
@@ -2203,7 +2290,7 @@ function gambarPenunjukan(isi, data) {
             .filter((x) => !dipakaiLain.includes(String(x.hakimId ?? x.id ?? x.nama)))
             .map((x) => ({
               id: x.hakimId ?? x.id ?? x.nama,
-              label: `${x.nama} — ${x.jumlah} perkara`,
+              label: `${x.nama} — ${sebutBeban(x.jumlah)}`,
             })),
           kursi[urutan] ?? "",
           (nilai) => {
@@ -2239,7 +2326,13 @@ function gambarPenunjukan(isi, data) {
         "Panitera pengganti",
         ppp.calon.map((x) => ({
           id: x.id ?? x.paniteraId ?? x.nama,
-          label: `${x.nama}${x.jumlah !== undefined ? ` — ${x.jumlah} perkara` : ""}`,
+          // Kode panitera sidang menurut SK di depan namanya - dan hanya
+          // bagi yang memang disebut SK untuk majelis ini. Yang lain tetap
+          // dapat dipilih, di bawahnya, tanpa kode.
+          label:
+            (x.kodeSk ? `${x.kodeSk} — ` : "") +
+            `${x.nama}${x.jumlah !== undefined ? ` — ${sebutBeban(x.jumlah)}` : ""}` +
+            (x.dariSk ? " · panitera sidang majelis ini" : ""),
         })),
         pilihanManual.ppp ?? (ppp.usulan ? ppp.usulan.id ?? ppp.usulan.nama : ""),
         (nilai) => {
@@ -2269,7 +2362,7 @@ function gambarPenunjukan(isi, data) {
         "Juru sita",
         pjs.calon.map((x) => ({
           id: x.id ?? x.jurusitaId ?? x.nama,
-          label: `${x.nama}${x.jumlah !== undefined ? ` — ${x.jumlah} perkara` : ""}`,
+          label: `${x.nama}${x.jumlah !== undefined ? ` — ${sebutBeban(x.jumlah)}` : ""}`,
         })),
         pilihanManual.pjs ?? (pjs.usulan ? pjs.usulan.id ?? pjs.usulan.nama : ""),
         (nilai) => {
@@ -2314,7 +2407,49 @@ function gambarPenunjukan(isi, data) {
   // Yang ditawarkan hanya HARI SIDANG MAJELIS ITU, pekan ini dan tiga pekan
   // sesudahnya. Hari sembarang akan menghasilkan penetapan hari sidang pada
   // hari majelis itu tidak bersidang.
-  if (data.caraPapan === "manual" && (phs.calon || []).length > 1) {
+  // ==========================================================================
+  // SIDANG KELILING TIDAK DAPAT DITETAPKAN DI MODE OTOMATIS - SAMPAI SEKARANG
+  // ==========================================================================
+  //
+  // Pilihan hari sidang dan ruang sidang selama ini hanya digambar di mode
+  // MANUAL. Akibatnya penetapan sidang keliling menuntut petugas berpindah ke
+  // manual dan memilih ulang majelis, panitera pengganti, dan juru sita -
+  // padahal yang hendak diubahnya hanya TEMPATNYA.
+  //
+  // Yang paling merugikan bukan kerepotannya melainkan yang terjadi kalau ia
+  // tidak berpindah: penetapannya tetap berhasil, dengan ruangan dalam gedung
+  // dan sidang_keliling nol. Tidak ada yang berbunyi, dan laporan sidang
+  // keliling menghitung nol.
+  //
+  // Karena itu saklarnya ada di kedua mode. Di mode otomatis ia membuka HANYA
+  // hari sidang dan ruangannya; siapa yang bersidang tetap ditentukan mesin.
+  if (!manual && (phs.calon || []).length > 0) {
+    const saklarKeliling = buatElemen("label", "aleta-pilih-bebas");
+    const kotakKeliling = document.createElement("input");
+    kotakKeliling.type = "checkbox";
+    kotakKeliling.checked = Boolean(pilihanManual.sidkel);
+    saklarKeliling.appendChild(kotakKeliling);
+    saklarKeliling.appendChild(
+      buatElemen("span", "aleta-pilih-bebas-nama", "Sidang keliling - pilih hari dan tempatnya")
+    );
+    kotakKeliling.addEventListener("change", () => {
+      pilihanManual.sidkel = kotakKeliling.checked;
+      // Mematikannya MELEPAS kembali hari dan ruangannya. Menyimpannya
+      // diam-diam berarti saklar yang mati tetapi penetapannya tetap tertulis
+      // di luar gedung - saklar yang berbohong tentang apa yang akan terjadi.
+      if (!kotakKeliling.checked) {
+        pilihanManual.phs = "";
+        pilihanManual.ruangan = "";
+        pilihanManual.phsBebas = false;
+      }
+      isi.textContent = "";
+      gambarPenunjukan(isi, data);
+    });
+    isi.appendChild(saklarKeliling);
+  }
+
+  const bukaTempat = manual || Boolean(pilihanManual.sidkel);
+  if (bukaTempat && (phs.calon || []).length > 1) {
     // ======================================================================
     // BERAPA SIDANG YANG SUDAH ADA PADA TANGGAL ITU
     // ======================================================================
@@ -2382,15 +2517,46 @@ function gambarPenunjukan(isi, data) {
         keliling: "Sidang keliling",
         terpadu: "Sidang terpadu",
       };
+      // ====================================================================
+      // YANG SERING DIPAKAI DI ATAS, DAN SAAT SIDKEL MENYALA KELILING DULU
+      // ====================================================================
+      //
+      // Urutan dasarnya sudah disusun portal menurut pemakaian 24 bulan
+      // terakhir. Ketika petugas menyatakan ini sidang keliling, ruangan
+      // keliling dan terpadu dinaikkan ke atas daftar - yang dicarinya tidak
+      // boleh berada di bawah tiga belas baris ruangan dalam gedung.
+      //
+      // Yang di dalam gedung TIDAK dibuang: sidang keliling yang batal dan
+      // dipindahkan ke kantor terjadi, dan daftar yang menyembunyikannya
+      // memaksa petugas mematikan saklarnya lalu kehilangan tanggal yang
+      // sudah dipilih.
+      const urutTempat = Boolean(pilihanManual.sidkel)
+        ? [...ruanganTersimpan].sort((a, b) => {
+            const luar = (r) => (r.sifat === "keliling" ? 0 : r.sifat === "terpadu" ? 1 : 2);
+            return luar(a) - luar(b);
+          })
+        : ruanganTersimpan;
+
       isi.appendChild(
         pilihanOrang(
           "Ruang sidang",
-          ruanganTersimpan.map((r) => ({
+          urutTempat.map((r) => ({
             id: String(r.id),
             // Sifatnya disebut pada tiap barisnya, bukan hanya pada
             // pengelompokan: yang memilih cepat membaca satu baris, bukan
             // judul kelompok tiga baris di atasnya.
-            label: `${r.nama} — ${SEBUT[r.sifat] || r.sifat}`,
+            //
+            // Seberapa sering dipakai ikut tertulis. "Belum pernah dipakai"
+            // adalah keterangan yang paling perlu dibaca sebelum memilih -
+            // ruangan yang tidak pernah dipakai biasanya memang sudah tidak
+            // dipakai lagi, hanya belum dinonaktifkan di SIPP.
+            label:
+              `${r.nama} — ${SEBUT[r.sifat] || r.sifat}` +
+              (r.dipakai === undefined
+                ? ""
+                : r.dipakai > 0
+                  ? ` · ${r.dipakai} sidang 2 tahun terakhir`
+                  : " · belum pernah dipakai"),
           })),
           pilihanManual.ruangan ?? "",
           (nilai) => {
@@ -2400,6 +2566,32 @@ function gambarPenunjukan(isi, data) {
           }
         )
       );
+
+      // ====================================================================
+      // TEMPATNYA SUNGGUHAN - KUA WILAYAH ITU
+      // ====================================================================
+      //
+      // "Sidang Keliling Sigi Biromaru" adalah nama baris di SIPP, bukan
+      // alamat. Yang perlu diketahui petugas yang menyiapkan panggilan adalah
+      // ke mana para pihak dipanggil - dan untuk sidang keliling di sini
+      // tempatnya KUA kecamatan itu.
+      //
+      // Dicocokkan dari ref_kua di sisi bot menurut ekor nama ruangannya.
+      // Yang tidak berpasangan tidak menampilkan apa pun - menebak alamat
+      // lebih buruk daripada diam.
+      const tempatTerpilih = ruanganTersimpan.find(
+        (r) => String(r.id) === String(pilihanManual.ruangan)
+      );
+      if (tempatTerpilih && tempatTerpilih.kua) {
+        isi.appendChild(
+          buatElemen(
+            "div",
+            "aleta-tetap-hitung",
+            `Tempat: ${tempatTerpilih.kua}` +
+              (tempatTerpilih.kuaAlamat ? ` — ${tempatTerpilih.kuaAlamat}` : "")
+          )
+        );
+      }
     }
 
     // ======================================================================
@@ -2435,11 +2627,26 @@ function gambarPenunjukan(isi, data) {
       kalender.type = "date";
       kalender.className = "aleta-pilih-kotak";
       kalender.value = pilihanManual.phs || phs.usulan || "";
-      // Tidak boleh lebih awal dari usulan: usulan sudah hari sidang terdekat
-      // yang memenuhi jeda minimal menurut SK, dan memajukannya melanggar jeda
-      // itu. Kalender yang membiarkannya menjadikan pelanggaran itu semudah
-      // satu klik.
-      if (phs.usulan) kalender.min = phs.usulan;
+      // ====================================================================
+      // BATAS BAWAHNYA HARI INI, BUKAN TANGGAL USULAN
+      // ====================================================================
+      //
+      // Sebelum ini batasnya tanggal usulan, sehingga SELURUH tanggal sebelum
+      // usulan - termasuk hari ini dan pekan depan - tampil kelabu dan tidak
+      // dapat ditekan. Alasannya jeda minimal menurut SK, dan alasan itu
+      // benar; tetapi kalender bukan tempat menegakkannya.
+      //
+      // Keadaan yang menuntut tanggal lebih awal memang ada dan sah: perkara
+      // yang harus disidangkan cepat, sidang keliling yang jadwalnya sudah
+      // diumumkan, atau penetapan yang dibuat mundur untuk hari sidang yang
+      // sudah berlalu. Kalender yang mengunci semuanya memaksa petugas
+      // kembali mengetik di borang SIPP - dan di sana tidak ada peringatan
+      // apa pun.
+      //
+      // Karena itu batasnya HARI INI - tanggal yang sudah lewat memang tidak
+      // dapat dijadikan hari sidang pertama - dan jeda minimalnya diberitahu
+      // sebagai peringatan yang dibaca, bukan sebagai pintu yang dikunci.
+      kalender.min = new Date().toISOString().slice(0, 10);
       kalender.addEventListener("change", () => {
         pilihanManual.phs = kalender.value;
         isi.textContent = "";
@@ -2449,6 +2656,20 @@ function gambarPenunjukan(isi, data) {
       isi.appendChild(barisBebas);
 
       const dipilihBebas = pilihanManual.phs;
+
+      // Jeda minimalnya tidak lagi dikunci kalender, jadi ia harus BERBUNYI.
+      // Yang memilih tanggal lebih awal dari usulan sedang memperpendek jeda
+      // panggilan, dan itu keputusan yang boleh diambil - asal disadari.
+      if (dipilihBebas && phs.usulan && dipilihBebas < phs.usulan) {
+        isi.appendChild(
+          buatElemen(
+            "div",
+            "aleta-tetap-awas",
+            `Lebih awal dari usulan ${phs.usulan}. Usulan itu hari sidang terdekat yang masih memenuhi jeda panggilan menurut SK - memajukannya memperpendek jeda tersebut.`
+          )
+        );
+      }
+
       const adaDiCalon = (phs.calon || []).some((x) => x.tanggal === dipilihBebas);
       if (dipilihBebas && !adaDiCalon) {
         isi.appendChild(
@@ -2499,29 +2720,25 @@ function gambarPenunjukan(isi, data) {
   // tombolnya, sebagai kalimat terakhir sebelum ditekan. Satu nama yang salah
   // di sini berarti satu berkas perkara yang tercatat atas nama orang yang
   // tidak mengerjakannya, dan itu tidak dapat dibetulkan dengan menekan ulang.
-  const daftarPenetap = ["pmh", "ppp", "pjs", "phs"]
-    .map((jenis) => {
-      const rencana = data && data.rencana;
-      const langkah =
-        rencana && Array.isArray(rencana.langkah)
-          ? rencana.langkah.find((x) => x.jenis === jenis)
-          : null;
-      const akun = langkah && langkah.akun;
-      if (!akun || !akun.namaLengkap) return "";
-      return `${jenis.toUpperCase()} ${akun.namaLengkap}${akun.username ? ` (${akun.username})` : ""}`;
-    })
-    .filter(Boolean);
-
-  if (daftarPenetap.length > 0) {
-    const kotakNama = buatElemen("div", "aleta-tetap-atasnama");
-    kotakNama.appendChild(
-      buatElemen("div", "aleta-tetap-atasnama-judul", "Akan tercatat di SIPP atas nama")
-    );
-    for (const satu of daftarPenetap) {
-      kotakNama.appendChild(buatElemen("div", "aleta-tetap-atasnama-baris", satu));
-    }
-    isi.appendChild(kotakNama);
-  }
+  // ==========================================================================
+  // KOTAK RINGKASAN INI DICABUT - IA MENGULANG, DAN ULANGANNYA DAPAT BERBEDA
+  // ==========================================================================
+  //
+  // Dahulu di sini berdiri kotak merah "Akan tercatat di SIPP atas nama",
+  // mendaftar keempat penetap sekali lagi. Maksudnya baik: nama penetapnya
+  // terbaca tepat di sebelah tombol, bukan tersebar di empat baris di atas.
+  //
+  // Dua hal membuatnya lebih merugikan daripada menolong.
+  //
+  // Pertama, ia membaca `langkah.akun` - pilihan BAWAAN mesin - sementara
+  // "Pejabat yang menetapkan" tepat di bawahnya membiarkan pilihan itu
+  // diganti. Petugas yang mengganti PMH ke Wakil Ketua tetap membaca nama
+  // Ketua pada kotak merah. Ringkasan yang berbeda dari yang akan ditulis
+  // lebih buruk daripada tidak ada ringkasan sama sekali.
+  //
+  // Kedua, keterangan penetap sudah ada pada tiap barisnya - dan sejak
+  // sekarang keterangan itu IKUT BERUBAH ketika pejabatnya diganti. Kotak ini
+  // tinggal salinan ketiga dari keterangan yang sama.
 
   // ========================================================================
   // PEJABAT PENETAPNYA DAPAT DIPINDAH - BAWAANNYA YANG DIPILIH MESIN
@@ -2578,6 +2795,23 @@ function gambarPenunjukan(isi, data) {
 
       pilih.addEventListener("change", () => {
         data.pejabatDipilih[langkah.jenis] = pilih.value;
+        // ==================================================================
+        // PAPANNYA DIGAMBAR ULANG - KETERANGANNYA IKUT BERUBAH
+        // ==================================================================
+        //
+        // Sebelum ini pilihan tersimpan diam-diam dan tidak satu pun yang
+        // terlihat berubah. Baris "Ditetapkan Ketua Pengadilan - Fahri
+        // Saifuddin" tetap berbunyi begitu meskipun yang dipilih Wakil Ketua,
+        // dan satu-satunya cara mengetahui pilihan itu tersimpan adalah
+        // mempercayainya.
+        //
+        // Nama yang salah di sini berarti berkas perkara tercatat atas nama
+        // orang yang tidak mengerjakannya, dan itu tidak dapat dibetulkan
+        // dengan menekan ulang. Layar yang tidak berubah pada keputusan
+        // seberat itu bukan kehalusan yang hilang - ia kehilangan satu-satunya
+        // kesempatan petugas menyadari salah pilih.
+        isi.textContent = "";
+        gambarPenunjukan(isi, data);
       });
 
       baris.appendChild(pilih);
@@ -5880,8 +6114,12 @@ function bagianBacaBorang() {
  *   dulu   "boleh tidak saya mengerjakan ini?"
  *   kini   "kalau saya tekan sekarang, tercatat atas nama siapa?"
  *
- * Pertanyaan kedua sudah dijawab kotak "Akan tercatat di SIPP atas nama" tepat
- * di atas tombol Kerjakan. Mempertahankan bagian lamanya berarti menyimpan
+ * Pertanyaan kedua dijawab keterangan penetap pada tiap baris penetapan, yang
+ * ikut berubah ketika pejabatnya diganti pada "Pejabat yang menetapkan".
+ * (Kotak ringkasan "Akan tercatat di SIPP atas..." yang dahulu berdiri di atas
+ * tombol Kerjakan sudah dicabut: ia membaca pilihan bawaan mesin, sehingga
+ * dapat menyebut nama yang BUKAN yang akan ditulis.)
+ * Mempertahankan bagian lamanya berarti menyimpan
  * satu kotak yang menanyakan hal yang tidak lagi menentukan - dan yang paling
  * merugikan, ia terbaca seperti gerbang izin padahal tidak pernah menahan apa
  * pun sekali pun.
@@ -8994,6 +9232,111 @@ function bagianPenetapanMassal(ringkasan) {
   }
   kotak.isi.appendChild(daftar);
 
+  // ==========================================================================
+  // SIDANG KELILING PADA PENETAPAN MASSAL
+  // ==========================================================================
+  //
+  // Penetapan massal memang dipakai justru untuk sidang keliling: satu hari
+  // keliling menghasilkan belasan perkara yang seluruhnya ditetapkan ke tempat
+  // yang sama. Sampai sekarang panel ini tidak punya pilihan tempat sama
+  // sekali, jadi seluruhnya tertulis "Ruang Sidang 1 Dalam Gedung" dengan
+  // sidang_keliling nol.
+  //
+  // Gagalnya diam - penetapannya berhasil, berkasnya tercetak, sidangnya
+  // digelar - dan yang menyadarinya baru penyusun laporan tahunan.
+  //
+  // HANYA TEMPATNYA yang disamakan, bukan tanggalnya. Tiap majelis punya hari
+  // sidangnya sendiri, dan menyamakan tanggal seluruh perkara terpilih akan
+  // menetapkan sidang pada hari majelisnya tidak bersidang - belasan perkara
+  // sekaligus, dalam satu tekanan.
+  const tempatMassal = { ruangan: "" };
+  const saklarMassal = buatElemen("label", "aleta-pilih-bebas");
+  const kotakMassal = document.createElement("input");
+  kotakMassal.type = "checkbox";
+  saklarMassal.appendChild(kotakMassal);
+  saklarMassal.appendChild(
+    buatElemen("span", "aleta-pilih-bebas-nama", "Sidang keliling - satu tempat untuk semuanya")
+  );
+  kotak.isi.appendChild(saklarMassal);
+
+  const barisTempat = buatElemen("div", "aleta-massal-tempat");
+  barisTempat.hidden = true;
+  kotak.isi.appendChild(barisTempat);
+
+  function gambarTempatMassal() {
+    barisTempat.textContent = "";
+    if (!kotakMassal.checked) {
+      barisTempat.hidden = true;
+      tempatMassal.ruangan = "";
+      return;
+    }
+    barisTempat.hidden = false;
+
+    if (ruanganTersimpan === null) {
+      barisTempat.appendChild(buatElemen("div", "aleta-tetap-sebab", "Membaca daftar ruangan…"));
+      void muatRuangan().then(() => gambarTempatMassal());
+      return;
+    }
+    if (!ruanganTersimpan.length) {
+      barisTempat.appendChild(
+        buatElemen("div", "aleta-tetap-sebab", "Daftar ruangan tidak terbaca - tempatnya tidak dapat dipilih.")
+      );
+      return;
+    }
+
+    const SEBUT_MASSAL = {
+      "dalam-gedung": "Dalam gedung",
+      keliling: "Sidang keliling",
+      terpadu: "Sidang terpadu",
+    };
+    // Keliling dan terpadu di atas: yang menyalakan saklar ini sedang mencari
+    // salah satunya, bukan ruangan dalam gedung.
+    const urut = [...ruanganTersimpan].sort((a, b) => {
+      const luar = (r) => (r.sifat === "keliling" ? 0 : r.sifat === "terpadu" ? 1 : 2);
+      return luar(a) - luar(b);
+    });
+    barisTempat.appendChild(
+      pilihanOrang(
+        "Ruang sidang",
+        urut.map((r) => ({
+          id: String(r.id),
+          label:
+            `${r.nama} — ${SEBUT_MASSAL[r.sifat] || r.sifat}` +
+            (r.dipakai === undefined
+              ? ""
+              : r.dipakai > 0
+                ? ` · ${r.dipakai} sidang 2 tahun terakhir`
+                : " · belum pernah dipakai"),
+        })),
+        tempatMassal.ruangan,
+        (nilai) => {
+          tempatMassal.ruangan = nilai;
+          gambarTempatMassal();
+        }
+      )
+    );
+
+    const dipilih = ruanganTersimpan.find((r) => String(r.id) === String(tempatMassal.ruangan));
+    if (dipilih && dipilih.kua) {
+      barisTempat.appendChild(
+        buatElemen(
+          "div",
+          "aleta-tetap-hitung",
+          `Tempat: ${dipilih.kua}${dipilih.kuaAlamat ? ` — ${dipilih.kuaAlamat}` : ""}`
+        )
+      );
+    }
+    barisTempat.appendChild(
+      buatElemen(
+        "div",
+        "aleta-tetap-sebab",
+        "Hanya TEMPATNYA yang disamakan. Hari sidang tiap perkara tetap mengikuti hari majelisnya."
+      )
+    );
+  }
+
+  kotakMassal.addEventListener("change", gambarTempatMassal);
+
   const pilihSemua = buatElemen("button", "aleta-portal-tautan", "Centang semua");
   pilihSemua.type = "button";
   pilihSemua.addEventListener("click", () => {
@@ -9062,6 +9405,14 @@ function bagianPenetapanMassal(ringkasan) {
         tandaiBaris(nomor, "usulan tidak dapat disusun", "lewat");
         kabar.textContent = `Berhenti di ${nomor}: usulan tidak dapat disusun.`;
         return { berhasil, dilewati, berhentiDi: nomor };
+      }
+
+      // Tempat yang dipilih disisipkan ke tiap perkara - rantaiPenetapan
+      // membacanya dari data.pilihanManual, tempat yang sama yang dipakai
+      // papan satu perkara. Tanpa baris ini saklarnya tergambar tetapi tidak
+      // mengubah apa pun.
+      if (tempatMassal.ruangan) {
+        data.pilihanManual = { ...(data.pilihanManual || {}), ruangan: tempatMassal.ruangan };
       }
 
       const hasil = await rantaiPenetapan(usulan, data, kering);

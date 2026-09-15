@@ -145,6 +145,50 @@ async function perbaruiSekarang() {
   };
 }
 
+/**
+ * ============================================================================
+ * UNDUHAN ABT YANG BERNAMA "download" DIBERI NAMA PERKARANYA
+ * ============================================================================
+ *
+ * ABT menjawab tombol CETAK tanpa nama berkas yang masuk akal, jadi Chrome
+ * menamainya "download.rtf", "download.pdf", "download (1).rtf". Tiga berkas
+ * putusan tiga perkara berbeda karena itu tidak dapat dibedakan di folder
+ * unduhan tanpa membukanya satu per satu.
+ *
+ * Yang diubah HANYA nama yang benar-benar umum, dan HANYA bila datang dari
+ * alamat ABT. Nama yang sudah bermakna - dari mana pun - tidak disentuh:
+ * menimpa nama yang dipilih orang lain jauh lebih merugikan daripada
+ * membiarkan satu berkas bernama "download".
+ *
+ * Konteksnya juga harus BARU. Nomor perkara dari setengah jam lalu ditempelkan
+ * ke unduhan perkara lain adalah kekeliruan yang tidak akan pernah disadari -
+ * berkasnya terbuka benar, hanya namanya berbohong.
+ */
+let konteksAbt = null;
+const UMUR_KONTEKS_UNDUH = 5 * 60 * 1000;
+const POLA_NAMA_UMUM = /^download(?:\s*\(\d+\))?\.(rtf|pdf|doc|docx)$/i;
+
+if (chrome.downloads && chrome.downloads.onDeterminingFilename) {
+  chrome.downloads.onDeterminingFilename.addListener((barang, sarankan) => {
+    try {
+      const nama = String((barang && barang.filename) || "");
+      const asal = `${(barang && barang.url) || ""} ${(barang && barang.referrer) || ""}`;
+      const dariAbt = /\/aps_badilag\//i.test(asal) || /\/abt\//i.test(asal);
+      const baru = konteksAbt && Date.now() - konteksAbt.saat < UMUR_KONTEKS_UNDUH;
+
+      if (!dariAbt || !baru || !POLA_NAMA_UMUM.test(nama)) return false;
+
+      const akhiran = (nama.split(".").pop() || "rtf").toLowerCase();
+      const bagian = [konteksAbt.nomor, konteksAbt.keterangan, "putusan"].filter(Boolean);
+      const usul = `${bagian.join(" - ")}.${akhiran}`.replace(/[\\/:*?"<>|]+/g, "_");
+      sarankan({ filename: usul, conflictAction: "uniquify" });
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
 chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
@@ -196,6 +240,20 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
   //
   // Perbaikan yang sesungguhnya tetap HTTPS di peladen; ini menghapus
   // rintangan hariannya sambil menunggu.
+  // Konteks halaman ABT - dipakai menamai unduhan yang diterbitkan ABT
+  // sendiri. Disimpan satu, bukan per tab: unduhan ABT tidak membawa id tab,
+  // dan yang menekan CETAK selalu sedang menatap halaman yang baru saja
+  // mengabarkan konteksnya.
+  if (pesan.jenis === "konteks-unduh") {
+    konteksAbt = {
+      nomor: String(pesan.nomor || "").slice(0, 60),
+      keterangan: String(pesan.keterangan || "").slice(0, 60),
+      saat: Date.now(),
+    };
+    jawab({ ok: true });
+    return false;
+  }
+
   if (pesan.jenis === "unduh") {
     const nama = String(pesan.nama || "berkas").replace(/[\\/:*?"<>|]+/g, "_").slice(0, 180);
     const alamat = String(pesan.alamat || "");

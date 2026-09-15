@@ -333,6 +333,38 @@ function nilaiVariabel(kode) {
   return item ? item.nilai : "";
 }
 
+/**
+ * ============================================================================
+ * NAMA BLANGKO DARI KEPALA HALAMAN - "[01] [Kabul Verstek] Cerai (Format …)"
+ * ============================================================================
+ *
+ * Di dalamnya ada tiga keterangan yang dicari orang ketika membuka folder
+ * unduhan berbulan-bulan kemudian: jenis perkaranya (Cerai), amarnya (Kabul),
+ * dan apakah verstek. Ketiganya selama ini dibuang.
+ *
+ * Yang dibuang hanya perabotnya: kurung siku, kurung biasa beserta isinya
+ * ("Format Lengkap" bukan keterangan perkara), nomor urut blangko, serta
+ * huruf yang tidak dapat menjadi nama berkas.
+ */
+function ringkasBlangkoAbt() {
+  const judul = document.querySelector("h3.w3l_header span, h3 span");
+  let teks = String((judul && judul.textContent) || document.title || "");
+  // Nomor perkara ikut tertulis pada sebagian kepala halaman - ia sudah
+  // menjadi bagian depan nama berkas, jadi tidak perlu diulang.
+  teks = teks.replace(/\d{1,5}\/[A-Za-z.]+\/\d{4}\/[A-Za-z.]+/g, " ");
+  teks = teks
+    .replace(/\[\s*\d+\s*\]/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[\[\]]/g, " ")
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Terlalu panjang berarti kepala halamannya bukan nama blangko - lebih baik
+  // tidak menambahkan apa pun daripada menempelkan satu paragraf ke nama
+  // berkas.
+  return teks.length > 60 ? "" : teks;
+}
+
 /** Nomor perkara dari kepala halaman ABT. */
 function nomorPerkaraAbt() {
   const judul = document.querySelector("h3.w3l_header span, h3 span");
@@ -522,6 +554,19 @@ const POLA_PENUTUP = [
   // dan di sana kata "Bahwa" tidak ada. "Sudah cukup" tertangkap pola ketiga;
   // "tidak sanggup lagi" tidak tertangkap satu pun, dan akan lolos diam-diam.
   /^tidak\s+sanggup\s+lagi\b/i,
+  // ==========================================================================
+  // DENGAN "SUDAH" DI TENGAHNYA - BENTUK YANG PALING SERING DIPAKAI
+  // ==========================================================================
+  //
+  // "Bahwa sudah tidak sanggup lagi" tidak tertangkap satu pun pola di atas:
+  // yang berawalan "bahwa" menuntut "tidak" tepat sesudahnya, dan yang
+  // berawalan "tidak" menuntut kalimatnya dimulai dari situ. Kata "sudah" di
+  // tengah membuat keduanya meleset.
+  //
+  // Lolosnya tidak berbunyi - kalimatnya hanya tetap berdiri di dalam putusan,
+  // di antara keterangan saksi yang lain, seolah ia fakta yang dibuktikan.
+  /^bahwa\s+sudah\s+tidak\s+sanggup\s+lagi\b/i,
+  /^sudah\s+tidak\s+sanggup\s+lagi\b/i,
 ];
 
 function bersihkanKeteranganSaksi(teks) {
@@ -1151,7 +1196,12 @@ async function unduhBlob(blob, nama) {
  */
 function namaBerkas(nomorPerkara, akhiran, jenis) {
   const dasar = String(nomorPerkara || "putusan").replace(/[\\/:*?"<>|]+/g, "_");
-  return jenis ? `${dasar} - ${jenis}.${akhiran}` : `${dasar}.${akhiran}`;
+  // Keterangan blangko - amar dan verstek - disisipkan di antara nomor perkara
+  // dan jenis berkasnya. Dikosongkan bila kepala halamannya tidak terbaca;
+  // nama berkas yang memuat potongan kalimat lebih buruk daripada nama pendek.
+  const ket = ringkasBlangkoAbt();
+  const bagian = [dasar, ket, jenis].filter(Boolean);
+  return `${bagian.join(" - ")}.${akhiran}`;
 }
 
 function base64DariBuffer(buffer) {
@@ -1186,7 +1236,7 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
     if (!respons.ok) throw new Error(`ABT menjawab ${respons.status}`);
     isiRtf = await respons.arrayBuffer();
     if (isiRtf.byteLength < 32) throw new Error("berkasnya kosong");
-    unduhBlob(new Blob([isiRtf], { type: "application/rtf" }), namaBerkas(nomor, "rtf"));
+    unduhBlob(new Blob([isiRtf], { type: "application/rtf" }), namaBerkas(nomor, "rtf", "putusan"));
     hasil.rtf = "tersimpan";
   } catch (galat) {
     hasil.rtf = `gagal: ${String((galat && galat.message) || galat)}`;
@@ -1210,7 +1260,7 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
     const isi = luar?.data ?? luar;
     if (!isi?.available) throw new Error(isi?.message || alatPesanGagal(null, 0, "Membuat PDF"));
     const biner = Uint8Array.from(atob(isi.pdfBase64), (c) => c.charCodeAt(0));
-    unduhBlob(new Blob([biner], { type: "application/pdf" }), namaBerkas(nomor, "pdf"));
+    unduhBlob(new Blob([biner], { type: "application/pdf" }), namaBerkas(nomor, "pdf", "putusan pdf"));
     hasil.pdf = "tersimpan";
   } catch (galat) {
     hasil.pdf = `gagal: ${String((galat && galat.message) || galat)}`;
@@ -1249,7 +1299,7 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
       const pesan = teks.match(/Proses Anonim Gagal[^<]*/i);
       throw new Error(pesan ? pesan[0].slice(0, 120) : "ABT tidak mengembalikan berkas RTF");
     }
-    unduhBlob(new Blob([isi], { type: "application/rtf" }), namaBerkas(nomor, "rtf", "anonim"));
+    unduhBlob(new Blob([isi], { type: "application/rtf" }), namaBerkas(nomor, "rtf", "anonimisasi"));
     hasil.anonim = "tersimpan";
   } catch (galat) {
     hasil.anonim = `gagal: ${String((galat && galat.message) || galat)}`;
@@ -3726,8 +3776,46 @@ async function pasang() {
 // Halaman ABT tahu alamat portalnya sendiri - dan petugas yang seharian di
 // sini tidak pernah membuka SIPP.
 alatCatatAsalPortal();
+/**
+ * ============================================================================
+ * TOMBOL CETAK MILIK ABT SENDIRI MENGHASILKAN "download.rtf"
+ * ============================================================================
+ *
+ * Tiga berkas yang diterbitkan panel sudah bernama nomor perkara. Yang tidak:
+ * unduhan dari tombol CETAK milik ABT. Rutenya menjawab tanpa nama berkas yang
+ * masuk akal, sehingga Chrome menamainya "download.rtf", "download.pdf",
+ * "download (1).rtf" - dan folder unduhan petugas penuh berkas bernama sama
+ * yang tidak dapat dibedakan tanpa dibuka satu per satu.
+ *
+ * ABT tidak dapat diubah dari sini. Yang dapat dikerjakan: memberitahu pekerja
+ * latar perkara apa yang sedang terbuka, lalu membiarkannya menamai unduhan
+ * bernama umum yang datang dari ABT. Lihat latar.js.
+ *
+ * Dikirim sekali saat halaman dibuka - bukan pada tiap unduhan, sebab unduhan
+ * ABT tidak melewati skrip ini sama sekali.
+ */
+function kabarkanKonteksUnduh() {
+  const nomor = nomorPerkaraAbt();
+  if (!nomor) return;
+  try {
+    chrome.runtime.sendMessage(
+      {
+        sumber: "aleta-panel",
+        jenis: "konteks-unduh",
+        nomor,
+        keterangan: ringkasBlangkoAbt(),
+      },
+      () => void chrome.runtime.lastError
+    );
+  } catch {
+    // Pekerja latar sedang tidur atau ekstensi baru dimuat ulang - unduhannya
+    // tetap tersimpan, hanya namanya yang tidak berubah.
+  }
+}
+
 void pasang();
 void pasangMassalAbt();
+kabarkanKonteksUnduh();
 
 // ABT memuat sebagian isinya menyusul. Diperiksa beberapa kali, lalu berhenti -
 // pengamat yang hidup selamanya pada halaman yang tidak pernah berubah hanya

@@ -53,6 +53,13 @@ export type Ruangan = {
   /** Bendera SIPP sendiri. null bila ruangannya tidak terdaftar. */
   benderaKeliling: boolean | null;
   aktif: boolean;
+  /** Berapa sidang memakainya dalam 24 bulan terakhir. */
+  dipakai?: number;
+  /** Tanggal sidang terakhir di ruangan itu, "" bila tidak pernah. */
+  terakhirDipakai?: string;
+  /** KUA wilayahnya - tempat sidang keliling sesungguhnya digelar. */
+  kua?: string;
+  kuaAlamat?: string;
 };
 
 /** Ruangan yang terbaca sebagai di dalam gedung dari namanya. */
@@ -123,7 +130,56 @@ export function kelompokkanRuangan(daftar: Ruangan[]): Record<SifatRuangan, Ruan
     hasil[sifatRuangan(r.nama, r.benderaKeliling)].push(r);
   }
   for (const kunci of Object.keys(hasil) as SifatRuangan[]) {
-    hasil[kunci].sort((a, b) => a.nama.localeCompare(b.nama));
+    hasil[kunci].sort(urutPemakaian);
   }
   return hasil;
+}
+
+/**
+ * ============================================================================
+ * YANG SERING DIPAKAI LEBIH DAHULU, BUKAN YANG HURUF AWALNYA KECIL
+ * ============================================================================
+ *
+ * Urutan abjad memperlakukan keempat ruang sidang keliling sebagai setara.
+ * Terukur atas sidang PA Donggala sejak 2025, keempatnya sama sekali tidak
+ * setara:
+ *
+ *   Sigi Biromaru   128 sidang      Sirenja    14 sidang
+ *   Rio Pakava       40 sidang      Labuan      0 sidang
+ *
+ * Abjad menaruh Labuan - yang belum pernah dipakai - di atas Sigi Biromaru
+ * yang dipakai hampir tiap pekan. Petugas yang menetapkan sidang keliling
+ * karena itu menelusuri daftar yang urutannya tidak menyatakan apa pun.
+ *
+ * Yang belum pernah dipakai TIDAK dibuang - ruang sidang keliling baru selalu
+ * bermula dari nol, dan membuangnya berarti ia tidak akan pernah dapat
+ * dipakai pertama kali. Ia hanya turun ke bawah.
+ */
+export function urutPemakaian(a: Ruangan, b: Ruangan): number {
+  const pakaiA = Number(a.dipakai) || 0;
+  const pakaiB = Number(b.dipakai) || 0;
+  if (pakaiA !== pakaiB) return pakaiB - pakaiA;
+  return a.nama.localeCompare(b.nama);
+}
+
+/**
+ * Daftar rata untuk satu layar, sifatnya lebih dahulu lalu pemakaiannya.
+ *
+ * `dahulukan` menaikkan satu sifat ke atas - dipakai saat petugas menyatakan
+ * ini sidang keliling, sehingga yang dicarinya tidak berada di bawah tiga
+ * belas baris ruangan dalam gedung.
+ */
+export function ruanganTerurut(daftar: Ruangan[], dahulukan?: SifatRuangan): Ruangan[] {
+  const peringkat = (r: Ruangan) => {
+    const sifat = sifatRuangan(r.nama, r.benderaKeliling);
+    if (dahulukan && sifat === dahulukan) return 0;
+    if (dahulukan && dahulukan === "keliling" && sifat === "terpadu") return 1;
+    return sifat === "dalam-gedung" ? 2 : 3;
+  };
+  return [...daftar]
+    .filter((r) => r.aktif)
+    .sort((a, b) => {
+      const selisih = peringkat(a) - peringkat(b);
+      return selisih !== 0 ? selisih : urutPemakaian(a, b);
+    });
 }

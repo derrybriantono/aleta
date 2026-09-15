@@ -762,7 +762,9 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
   const barisnya = (t: string) =>
     rapikan(t)
       .split("</p>")
-      .map((x) => x.replace(/^<p>/, ""))
+      // Ruang di depan dipangkas lebih dulu: sejak pembatas kata kendali
+      // ditambahkan, tiap potongan berawalan ganti baris sebelum <p>-nya.
+      .map((x) => x.replace(/^\s*<p[^>]*>/, ""))
       .filter(Boolean);
 
   it("pemisahnya <p>, sebab <br> disapu SIPP tanpa bekas", () => {
@@ -773,7 +775,24 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
     const hasil = rapikan(POSITA);
     expect(hasil).toContain("</p>");
     expect(hasil).not.toContain("<br>");
-    expect(hasil).not.toContain("\n");
+    // ======================================================================
+    // GANTI BARIS SESUDAH </p> - PEMBATAS, BUKAN PEMISAH
+    // ======================================================================
+    //
+    // cleanHtmlTagSpecial mengubah "</p>" menjadi "\\par" TANPA spasi, lalu
+    // filter_var menyapu "<p>". Hasilnya "\\par2. Bahwa" - dan di RTF kata
+    // kendali menyerap parameter angka yang menempel padanya, sehingga "2"
+    // ditelan dan yang tercetak ". Bahwa". Paragraf berawalan huruf lebih
+    // parah: "\\parKedua" dibaca sebagai kata kendali bernama "parKedua",
+    // dan seluruh katanya hilang.
+    //
+    // Pemisahnya TETAP </p>. Yang ditambahkan satu ganti baris di belakangnya,
+    // semata sebagai pembatas kata kendali - dan justru KARENA ganti baris
+    // tidak berarti apa-apa bagi RTF, ia tidak menambah apa pun ke dokumen.
+    //
+    // Karena itu yang dilarang bukan ganti baris melainkan ganti baris yang
+    // BERDIRI SENDIRI sebagai pemisah - yang memang tidak memisahkan apa pun.
+    expect(hasil.split("</p>\n").join("</p>")).not.toContain("\n");
     // Butir pertama PERSIS "<p>1." - itu yang menyalakan \li630 di SIPP.
     expect(hasil.startsWith("<p>1.")).toBe(true);
   });
@@ -838,13 +857,17 @@ describe("nomor 6 - penomoran posita yang menempel", () => {
     // 6.269 dari 8.097 posita di PA Donggala sudah memakai <p> dan tercetak
     // rapi selama ini - menyusunnya ulang mempertaruhkan semuanya.
     const rapi = "<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>";
-    expect(rapikan(rapi)).toBe(rapi);
+    // Tidak disusun ulang: butirnya tetap, urutannya tetap, isinya tetap.
+    // Yang ditambahkan hanya pembatas kata kendali sesudah </p> - lihat
+    // catatan pada penjaga pemisah di atas.
+    expect(rapikan(rapi)).toBe("<p>1. Bahwa satu.</p>\n<p>2. Bahwa dua.</p>");
+    expect(rapikan(rapi).split("\n").join("")).toBe(rapi);
   });
 
   it("teks yang dulu dirapikan dengan <br> naik ke <p> tanpa satu huruf berubah", () => {
     const lama = "1. Bahwa satu.<br>2. Bahwa dua.";
     const hasil = rapikan(lama);
-    expect(hasil).toBe("<p>1. Bahwa satu.</p><p>2. Bahwa dua.</p>");
+    expect(hasil).toBe("<p>1. Bahwa satu.</p>\n<p>2. Bahwa dua.</p>");
     expect(layananPosita.tanpaRuang(hasil)).toBe(layananPosita.tanpaRuang(lama));
   });
 });

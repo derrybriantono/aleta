@@ -5,6 +5,7 @@ import { kirimPenetapanTulisGateway } from "@/server/modules/aleta-bot/whatsapp-
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { alamatIpPeramban } from "@/server/shared/request";
 import { getUserByIdFromDb } from "@/server/modules/organization/service";
 
 export const runtime = "nodejs";
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
       operator,
       kering,
       rantaiSebelum,
+      ip: alamatIpPeramban(request),
     });
 
     // ========================================================================

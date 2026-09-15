@@ -372,8 +372,65 @@ const SEBELUM_BUTIR = ".;:,)";
  * mesin dengan cacat di mesin lain bukan perbaikan.
  */
 
-/** Penanda butir di awal paragraf: "12. " atau "b. ", selalu diikuti huruf besar. */
-const POLA_PENANDA = /^(\d{1,2}|[a-z])\.[ \t]+(?=[A-Z])/;
+/**
+ * ============================================================================
+ * ANGKA BUTIR YANG DITELAN RTF - "2. Bahwa" TERCETAK ". Bahwa"
+ * ============================================================================
+ *
+ * Terbaca dari TemplateHelper::cleanHtmlTagSpecial milik ABT sendiri:
+ *
+ *   baris 18   str_replace("</p>", "\par", $text)        <- TANPA spasi
+ *   baris 19   str_replace(" <p",  "<p",    $text)        <- spasi DIBUANG
+ *   baris 42   filter_var($text, FILTER_SANITIZE_STRING)  <- <p> disapu
+ *
+ * Maka `</p><p>2. Bahwa` menjadi `\par2. Bahwa`.
+ *
+ * Di dalam RTF, kata kendali menyerap parameter angka yang menempel padanya:
+ * `\par2` BUKAN `\par` diikuti "2", melainkan kata kendali `\par`
+ * berparameter 2 - dan angkanya lenyap. Yang tercetak ". Bahwa".
+ *
+ * Lebih parah pada paragraf yang berawalan huruf: `\parKedua anak tersebut`
+ * dibaca sebagai kata kendali bernama `parKedua` - tidak dikenal, jadi
+ * SELURUH katanya dibuang, dan paragrafnya menempel ke paragraf sebelumnya.
+ * Itulah "Usia 20 tahunanak tersebut" pada putusan 521/Pdt.G/2026/PA.Dgl.
+ *
+ * Butir PERTAMA selamat, sebab tidak ada `\par` di depannya - dan itulah yang
+ * membuat cacat ini sulit terlihat: nomor 1 selalu benar.
+ *
+ * <br> TIDAK bermasalah: baris 26 menerjemahkannya menjadi "\par " dengan
+ * spasi di belakangnya. Hanya `</p>` yang tidak.
+ *
+ * Obatnya satu ganti baris di antara `</p>` dan `<p>` berikutnya. Ganti baris
+ * adalah pembatas kata kendali yang sah di RTF, dan baris 19 hanya membuang
+ * SPASI sebelum `<p>` - bukan ganti baris. Tidak satu huruf pun isi posita
+ * berubah; yang ditambahkan hanya pembatas di antara tagnya.
+ */
+function pisahkanParagrafRtf(html) {
+  return String(html || "")
+    .replace(/<\/p>[ \t]*(?=<p[ >])/gi, "</p>\n")
+    // Paragraf hampa menjadi \par ganda - itulah jarak yang tidak rata di
+    // atas dan di bawah butir pada dokumen cetak.
+    .replace(/<p[^>]*>(?:\s|&nbsp;|&#160;)*<\/p>/gi, "");
+}
+
+/**
+ * Penanda butir di awal paragraf.
+ *
+ * Empat bentuk, dan tiga di antaranya selama ini tidak dikenali sama sekali:
+ *
+ *   1.     butir induk                  dikenali
+ *   b.     anak butir                   dikenali
+ *   1.1    butir bertingkat             TIDAK dikenali - dan karena itu tidak
+ *          pernah dilekukkan maupun dipecah menjadi paragraf sendiri
+ *   a)     anak butir berkurung         TIDAK dikenali
+ *   1)     butir induk berkurung        TIDAK dikenali
+ *
+ * Ketiganya dipakai di dalam gugatan yang disusun advokat, dan posita yang
+ * memakainya tercetak sebagai satu gumpalan.
+ */
+// Bentuk bertingkat ditulis orang TANPA titik di belakangnya - "1.1 Bahwa",
+// bukan "1.1. Bahwa" - jadi tandanya pilihan, bukan keharusan.
+const POLA_PENANDA = /^(\d{1,2}(?:\.\d{1,2})+[.)]?|(?:\d{1,2}|[a-z])[.)])[ \t]+(?=[A-Z])/;
 
 function paragrafkanButir(teks) {
   const isi = String(teks || "");
@@ -383,7 +440,11 @@ function paragrafkanButir(teks) {
   // memastikan butir pertamanya berbentuk "<p>1." supaya \li630 menyala.
   // Menyusun ulang HTML yang sudah rapi berarti mempertaruhkan 6.269 posita
   // yang selama ini tercetak benar demi satu yang tidak.
-  if (/<p[ >]/i.test(isi)) return isi.replace(/^<p[^>]*>[ \t]*(?=\d{1,2}\.[ \t])/i, "<p>");
+  if (/<p[ >]/i.test(isi)) {
+    return pisahkanParagrafRtf(
+      isi.replace(/^<p[^>]*>[ \t]*(?=\d{1,2}\.[ \t])/i, "<p>")
+    );
+  }
 
   const potongan = isi
     .split(/<br\s*\/?>/gi)
@@ -391,14 +452,22 @@ function paragrafkanButir(teks) {
     .filter(Boolean);
   if (potongan.length === 0) return isi;
 
-  return potongan
-    .map((satu) => {
-      const penanda = POLA_PENANDA.exec(satu);
-      // Anak butir - hurufnya, bukan angkanya - digeser satu lekukan.
-      const anak = penanda && /^[a-z]/.test(penanda[1]);
-      return `<p>${anak ? "   " : ""}${satu}</p>`;
-    })
-    .join("");
+  return pisahkanParagrafRtf(
+    potongan
+      .map((satu) => {
+        const penanda = POLA_PENANDA.exec(satu);
+        // Anak butir digeser satu lekukan. Yang terhitung anak: penanda huruf
+        // ("b.", "a)") DAN penanda bertingkat ("1.1", "2.3") - keduanya
+        // bergantung pada butir di atasnya, dan keduanya harus menggantung.
+        // Anak butir: penanda huruf ("b.", "a)") ATAU bertingkat ("1.1").
+        // Butir induk "1." memuat titik juga, jadi yang dihitung bukan adanya
+        // titik melainkan adanya ANGKA KEDUA sesudahnya.
+        const anak =
+          Boolean(penanda) && (/^[a-z]/.test(penanda[1]) || /^\d+\.\d/.test(penanda[1]));
+        return `<p>${anak ? "   " : ""}${satu}</p>`;
+      })
+      .join("")
+  );
 }
 
 function rapikanTeksPosita(teks) {
@@ -431,9 +500,20 @@ function rapikanTeksPosita(teks) {
   // Butir induk: "2017.2. Bahwa" -> "2017.<br>2. Bahwa"
   // Harus didahului tanda baca. Tanpa syarat itu, "berjumlah 15. Bahwa"
   // terpecah menjadi "1" dan butir baru "5.".
+  // Bentuk bertingkat "1.1" ikut dikenali, dan ditulis kembali apa adanya -
+  // bukan diubah menjadi "1." yang membuang tingkatannya.
   hasil = hasil.replace(
-    new RegExp(`([${SEBELUM_BUTIR}])[ \\t]*(\\d{1,2})\\.[ \\t]+(?=[A-Z])`, "g"),
-    "$1<br>$2. "
+    new RegExp(
+      `([${SEBELUM_BUTIR}])[ \\t]*(\\d{1,2}(?:\\.\\d{1,2})+[.)]?|\\d{1,2}[.)])[ \\t]+(?=[A-Z])`,
+      "g"
+    ),
+    (cocok, sebelum, penanda) => {
+      // Penandanya ditulis kembali APA ADANYA - "1.1" tetap "1.1", "2)" tetap
+      // "2)". Menyeragamkannya menjadi "1." membuang tingkatan yang justru
+      // ditulis penyusun gugatan dengan sengaja.
+      const anak = /^\d+\.\d/.test(penanda);
+      return `${sebelum}<br>${anak ? "   " : ""}${penanda} `;
+    }
   );
 
   // Anak butir: "Tergugat.b. Setiap" atau "karena a. Tergugat".
@@ -442,14 +522,16 @@ function rapikanTeksPosita(teks) {
   // berurutan, yang kedua akan mengenai spasi yang baru saja ditulis yang
   // pertama dan menghasilkan dua <br> berturut-turut.
   hasil = hasil.replace(
-    new RegExp(`([${SEBELUM_BUTIR}]|[ \\t])[ \\t]*([a-z])\\.[ \\t]+(?=[A-Z])`, "g"),
+    new RegExp(`([${SEBELUM_BUTIR}]|[ \\t])[ \\t]*([a-z][.)])[ \\t]+(?=[A-Z])`, "g"),
     (cocok, sebelum, huruf) => {
       // Spasi yang mendahului tidak dituliskan kembali - ia digantikan
       // pemisahnya. Tanda baca dituliskan kembali; ia bagian dari kalimatnya.
       const awal = sebelum === " " || sebelum === "\t" ? "" : sebelum;
       // Tiga spasi, bukan satu: cleanHtmlTagSpecial menerjemahkannya menjadi
       // \tab, sehingga anak butirnya menggantung di bawah induknya.
-      return `${awal}<br>   ${huruf}. `;
+      // "a)" tetap "a)" - menuliskannya kembali sebagai "a." mengubah bentuk
+      // penomoran yang dipilih penyusun gugatan.
+      return `${awal}<br>   ${huruf} `;
     }
   );
 

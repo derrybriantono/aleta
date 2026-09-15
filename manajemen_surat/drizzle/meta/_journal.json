@@ -309,6 +309,13 @@
       "when": 1789125600000,
       "tag": "0043_saklar_pesan_bot",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1789212000000,
+      "tag": "0044_sk_susunan_majelis",
+      "breakpoints": true
     }
   ]
 }

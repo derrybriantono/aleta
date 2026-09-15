@@ -28,6 +28,7 @@ import { AletaEcourtArsip } from "@/components/portal/aleta-ecourt-arsip";
 import { AletaEcourtAkun } from "@/components/portal/aleta-ecourt-akun";
 import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt-panggilan-pengaturan";
 import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan";
+import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -324,6 +325,10 @@ export function AletaEcourtAdmin() {
           yang ditandai cacat di layar Jadwal Sidang, dan itu lebih sering
           ditengok daripada daftar kewenangan. */}
       <AletaEcourtPanggilanPengaturan />
+
+      {/* SK susunan majelis - satu-satunya tempat susunan majelis dan
+          panitera sidangnya dapat diubah tanpa menyentuh kode. */}
+      <AletaEcourtSkMajelis />
 
       {/* Jangkar untuk tombol "Atur kewenangan ekstensi" di halaman Ekstensi
           SIPP. Tanpa id ini tombolnya hanya membuka halaman admin dari atas,

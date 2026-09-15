@@ -45,17 +45,64 @@ export const NAMA_HARI = [
  * Dipakai hanya sebagai nilai awal - begitu ada baris tersimpan, baris itulah
  * yang berlaku, sehingga SK berikutnya cukup disunting dari menu.
  */
-const MAJELIS_BAWAAN: Record<string, { hari: number; paniteraKode: string }> = {
-  A: { hari: 3, paniteraKode: "D,D4" }, // Rabu
-  B: { hari: 2, paniteraKode: "D1,D5" }, // Selasa
-  C1: { hari: 1, paniteraKode: "D2,D3,D6" }, // Senin
+/**
+ * ============================================================================
+ * SK YANG SEDANG BERLAKU
+ * ============================================================================
+ *
+ * Keputusan Ketua Pengadilan Agama Donggala
+ * Nomor 254/KPA-W19-A5/SK.HK2.6/V/2026, tanggal 27 Agustus 2026, Lampiran I.
+ *
+ * Dipakai hanya sebagai NILAI AWAL. Begitu ada baris tersimpan, baris itulah
+ * yang berlaku - SK berikutnya cukup disunting dari layar pengaturan, tanpa
+ * menyentuh kode ini.
+ *
+ * Kode hakim (A, B, C1, C2, C3) cocok persis dengan hakim_pn di SIPP, jadi ia
+ * dapat dipakai menemukan orangnya.
+ *
+ * Kode panitera TIDAK - lihat catatan panjang pada migrasi 0044. Karena itu
+ * paniteraId dibiarkan KOSONG di sini: mengisinya dengan tebakan berarti
+ * menetapkan panitera pengganti yang salah pada berkas perkara tanpa berbunyi.
+ * Yang mengikatnya ke orang sungguhan adalah layar pengaturan, dan sampai itu
+ * dikerjakan panel tetap memakai perhitungan bebannya sendiri.
+ */
+export const SK_BERLAKU = {
+  nomor: "254/KPA-W19-A5/SK.HK2.6/V/2026",
+  tanggal: "2026-08-27",
+};
+
+const MAJELIS_BAWAAN: Record<
+  string,
+  { hari: number; paniteraKode: string; hakimKode: string }
+> = {
+  // Ketua majelis di depan - urutannya menentukan siapa yang menandatangani
+  // penetapan hari sidang.
+  A: { hari: 3, paniteraKode: "D,D4", hakimKode: "A,C1,C3" }, // Rabu
+  B: { hari: 2, paniteraKode: "D1,D5", hakimKode: "B,C2,C3" }, // Selasa
+  C1: { hari: 1, paniteraKode: "D2,D3,D6", hakimKode: "C1,C2,C3" }, // Senin
 };
 
 export type HariSidangMajelis = {
   majelisKode: string;
   hari: number;
   namaHari: string;
+  /** Kode panitera menurut SK - LABEL, bukan penunjuk orang. */
   paniteraKode: string[];
+  /**
+   * Kode SK beserta orangnya, BERPASANGAN.
+   *
+   * Dua daftar sejajar - kode di satu kolom, id di kolom lain - bergeser
+   * diam-diam begitu satu kode dihapus dari tengah: D4 menjadi milik orang
+   * yang seharusnya D5, dan tidak ada yang berbunyi. Karena itu keduanya
+   * disimpan sebagai satu nilai, "D=26,D4=21".
+   *
+   * id 0 berarti kodenya ada di SK tetapi belum diikat ke orang di SIPP.
+   */
+  panitera: { kode: string; id: number }[];
+  /** Kode hakim_pn menurut SK, ketua di depan. */
+  hakimKode: string[];
+  skNomor: string;
+  skTanggal: string;
   keterangan: string;
   bawaan: boolean;
 };
@@ -181,6 +228,10 @@ type BarisHari = {
   majelis_kode: string;
   hari: number;
   panitera_kode: string;
+  hakim_kode: string;
+  panitera_id: string;
+  sk_nomor: string;
+  sk_tanggal: string;
   keterangan: string;
 };
 
@@ -211,11 +262,42 @@ function daftarAtau(teks: string | undefined, bawaan: string[]): string[] {
   return isi;
 }
 
+/**
+ * Pasangan kode-orang panitera, dibaca dari "D=26,D4=21".
+ *
+ * Kode yang ada di SK tetapi belum tersimpan pasangannya tetap dipulangkan
+ * dengan id 0 - supaya layar pengaturan menampilkannya sebagai baris yang
+ * MENUNGGU diikat, bukan menghilangkannya seolah SK-nya memang tidak
+ * menyebutnya.
+ */
+function bacaPasanganPanitera(
+  tersimpan: string,
+  kodeSk: string[]
+): { kode: string; id: number }[] {
+  const peta = new Map<string, number>();
+  for (const potong of tersimpan.split(",")) {
+    const [kode, id] = potong.split("=");
+    const bersih = String(kode ?? "").trim().toUpperCase();
+    const nomor = Number(String(id ?? "").trim());
+    if (!bersih) continue;
+    peta.set(bersih, Number.isInteger(nomor) && nomor > 0 ? nomor : 0);
+  }
+
+  const hasil = kodeSk.map((kode) => ({ kode, id: peta.get(kode) ?? 0 }));
+  // Ikatan yang kodenya sudah tidak ada di SK tetap dipulangkan di belakang:
+  // membuangnya diam-diam menghapus pekerjaan yang sudah dilakukan seseorang.
+  for (const [kode, id] of peta) {
+    if (!kodeSk.includes(kode)) hasil.push({ kode, id });
+  }
+  return hasil;
+}
+
 /** Hari sidang tiap majelis, lengkap dengan yang masih memakai bawaan. */
 export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajelis[]> {
   const baris = await db
     .prepare(
-      "SELECT majelis_kode, hari, panitera_kode, keterangan FROM aleta_sipp_hari_sidang"
+      "SELECT majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, " +
+        "sk_nomor, sk_tanggal, keterangan FROM aleta_sipp_hari_sidang"
     )
     .all<BarisHari>();
 
@@ -235,14 +317,21 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
       const hari = item ? Number(item.hari) : bawaan?.hari ?? 1;
       const aman = Number.isInteger(hari) && hari >= 0 && hari <= 6 ? hari : 1;
       const kodePp = item ? String(item.panitera_kode ?? "") : bawaan?.paniteraKode ?? "";
+      const kodeHakim = item ? String(item.hakim_kode ?? "") : bawaan?.hakimKode ?? "";
+      const daftar = (teks: string) =>
+        teks
+          .split(",")
+          .map((x) => x.trim().toUpperCase())
+          .filter((x) => x.length > 0);
       return {
         majelisKode,
         hari: aman,
         namaHari: NAMA_HARI[aman],
-        paniteraKode: kodePp
-          .split(",")
-          .map((x) => x.trim().toUpperCase())
-          .filter((x) => x.length > 0),
+        paniteraKode: daftar(kodePp),
+        panitera: bacaPasanganPanitera(String(item?.panitera_id ?? ""), daftar(kodePp)),
+        hakimKode: daftar(kodeHakim),
+        skNomor: item ? String(item.sk_nomor ?? "") : SK_BERLAKU.nomor,
+        skTanggal: item ? String(item.sk_tanggal ?? "") : SK_BERLAKU.tanggal,
         keterangan: item ? String(item.keterangan ?? "") : "",
         bawaan: !item,
       };
@@ -308,6 +397,18 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
     paniteraMajelis: Object.fromEntries(
       hariSidang.map((x) => [x.majelisKode, x.paniteraKode])
     ),
+    // Susunan menurut SK - dipakai penyusun usulan untuk mendahulukan majelis
+    // yang memang ditetapkan, dan menandainya dengan kodenya.
+    susunanSk: hariSidang
+      .filter((x) => x.hakimKode.length > 0)
+      .map((x) => ({
+        majelisKode: x.majelisKode,
+        hakimKode: x.hakimKode,
+        // Hanya yang sudah terikat orangnya yang dikirim - kode tanpa orang
+        // tidak dapat dipakai menunjuk siapa pun.
+        panitera: x.panitera.filter((p) => p.id > 0),
+        hari: x.hari,
+      })),
     hariSidangRinci: hariSidang,
   };
 }
@@ -320,12 +421,20 @@ export async function simpanHariSidang(
     majelisKode,
     hari,
     paniteraKode,
+    hakimKode,
+    paniteraId,
+    skNomor,
+    skTanggal,
     keterangan,
   }: {
     actorUserId: string;
     majelisKode: string;
     hari: number;
     paniteraKode?: string;
+    hakimKode?: string;
+    paniteraId?: string;
+    skNomor?: string;
+    skTanggal?: string;
     keterangan?: string;
   }
 ) {
@@ -350,11 +459,16 @@ export async function simpanHariSidang(
     await tx
       .prepare(
         "INSERT INTO aleta_sipp_hari_sidang " +
-          "(majelis_kode, hari, panitera_kode, keterangan, updated_at, updated_by) " +
-          "VALUES (?, ?, ?, ?, ?, ?) " +
+          "(majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, " +
+          "sk_nomor, sk_tanggal, keterangan, updated_at, updated_by) " +
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
           "ON CONFLICT(majelis_kode) DO UPDATE SET " +
           "hari = excluded.hari, " +
           "panitera_kode = excluded.panitera_kode, " +
+          "hakim_kode = excluded.hakim_kode, " +
+          "panitera_id = excluded.panitera_id, " +
+          "sk_nomor = excluded.sk_nomor, " +
+          "sk_tanggal = excluded.sk_tanggal, " +
           "keterangan = excluded.keterangan, " +
           "updated_at = excluded.updated_at, " +
           "updated_by = excluded.updated_by"
@@ -363,6 +477,22 @@ export async function simpanHariSidang(
         kode,
         hari,
         String(paniteraKode ?? "").trim().toUpperCase(),
+        String(hakimKode ?? "").trim().toUpperCase(),
+        // Pasangan "KODE=ID". Yang tidak berbentuk pasangan dibuang di sini,
+        // bukan dibiarkan sampai ke berkas perkara.
+        String(paniteraId ?? "")
+          .split(",")
+          .map((potong) => {
+            const [kode, id] = potong.split("=");
+            const bersih = String(kode ?? "").trim().toUpperCase();
+            const nomor = Number(String(id ?? "").trim());
+            if (!bersih) return "";
+            return `${bersih}=${Number.isInteger(nomor) && nomor > 0 ? nomor : 0}`;
+          })
+          .filter(Boolean)
+          .join(","),
+        String(skNomor ?? "").trim(),
+        String(skTanggal ?? "").trim(),
         String(keterangan ?? ""),
         sekarang,
         actor.id

@@ -707,6 +707,31 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
         .filter((x) => x.length > 0);
     }
 
+    // ========================================================================
+    // SUSUNAN MENURUT SK - DISARING SEBELUM DIPAKAI
+    // ========================================================================
+    //
+    // Kode hakim dipakai MENUNJUK ORANG, jadi bentuknya dibatasi huruf dan
+    // angka. Panitera berpasangan kode-id: kodenya label yang dibaca petugas,
+    // id-nya yang menunjuk orangnya - lihat migrasi 0044.
+    const susunanSk = [];
+    for (const satu of Array.isArray(kirim.susunanSk) ? kirim.susunanSk : []) {
+      const kode = String((satu && satu.majelisKode) || "").trim().toUpperCase();
+      const hakim = (Array.isArray(satu && satu.hakimKode) ? satu.hakimKode : [])
+        .map((x) => String(x || "").trim().toUpperCase())
+        .filter((x) => /^[A-Z0-9]{1,8}$/.test(x));
+      if (!kode || hakim.length < 2) continue;
+
+      const panitera = (Array.isArray(satu && satu.panitera) ? satu.panitera : [])
+        .map((p) => ({
+          kode: String((p && p.kode) || "").trim().toUpperCase(),
+          id: Number((p && p.id) || 0),
+        }))
+        .filter((p) => p.kode && Number.isInteger(p.id) && p.id > 0);
+
+      susunanSk.push({ majelisKode: kode, hakimKode: hakim, panitera });
+    }
+
     const jeda = Number(aturanMasuk.jedaMinimalHari);
     const ambang = Number(aturanMasuk.ambangNilaiSengketa);
 
@@ -723,6 +748,7 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       },
       hariSidang,
       paniteraMajelis,
+      susunanSk,
     });
 
     res.status(hasil.ok ? 200 : 404).json(hasil);
@@ -787,6 +813,32 @@ router.post("/penunjukan/periksa", requireInternalToken, async (req, res) => {
  * milik SIPP sendiri. Yang memutuskan sifatnya (dalam gedung, keliling, atau
  * terpadu) adalah portal; di sini benderanya dikirim apa adanya.
  */
+/**
+ * Alamat yang dicatat pada baris audit SIPP.
+ *
+ * Yang dikirim portal adalah alamat PERAMBAN petugas - itulah yang dicatat
+ * SIPP untuk pekerjaan yang sama. req.ip di sini hanya alamat peti portal,
+ * yang di sys_audittrail satker tidak pernah muncul sekali pun selain dari
+ * ALETA sendiri.
+ *
+ * Disaring ke IPv4 sebab kolomnya varchar(15): alamat yang lebih panjang akan
+ * terpotong menjadi alamat lain yang keliru.
+ */
+function alamatAudit(req) {
+  const dariPortal = String((req.body && req.body.ip) || "").trim();
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(dariPortal) && dariPortal.length <= 15) return dariPortal;
+  return String(req.ip || (req.socket && req.socket.remoteAddress) || "").replace(/^::ffff:/, "");
+}
+
+/** Hakim dan panitera aktif - dipakai layar pengaturan SK susunan majelis. */
+router.get("/penunjukan/pegawai", requireInternalToken, async (req, res) => {
+  try {
+    res.json(await penunjukanService.pegawaiPenunjukan());
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.get("/penetapan/ruangan", requireInternalToken, async (req, res) => {
   try {
     const ruangan = await penetapanTulisService.daftarRuangan();
@@ -830,7 +882,7 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       jamSidang: String(badan.jamSidang || ""),
       olehUsername: String(badan.olehUsername || ""),
       operator,
-      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+      ip: alamatAudit(req),
     });
 
     if (!rencana.ok) {
@@ -844,7 +896,7 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
         tanggalPenetapan: String(badan.tanggalPenetapan || ""),
         akunSipp: String(badan.olehUsername || ""),
         operator,
-        ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+        ip: alamatAudit(req),
         berhasil: false,
         kering,
         alasan: String(rencana.alasan || "ditolak"),
@@ -865,7 +917,7 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
       namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
       operator: rencana.operator,
-      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+      ip: alamatAudit(req),
       berhasil: hasil.ok === true,
       kering,
       alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
@@ -915,7 +967,7 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
       perkaraId: badan.perkaraId,
       olehUsername: String(badan.olehUsername || ""),
       operator,
-      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+      ip: alamatAudit(req),
     });
 
     if (!rencana.ok) {
@@ -933,7 +985,7 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
       namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
       operator: rencana.operator,
-      ip: String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, ""),
+      ip: alamatAudit(req),
       berhasil: hasil.ok === true,
       kering,
       alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
@@ -999,7 +1051,7 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
     // dengan yang menuliskannya.
     const akun = badan.akunPerJenis && typeof badan.akunPerJenis === "object" ? badan.akunPerJenis : {};
     const kering = badan.kering !== false;
-    const ip = String(req.ip || req.socket?.remoteAddress || "").replace(/^::ffff:/, "");
+    const ip = alamatAudit(req);
 
     const langkah = [];
     const rantaiDibongkar = [];

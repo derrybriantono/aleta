@@ -1,6 +1,12 @@
 import { type NextRequest } from "next/server";
 
-import { type Ruangan, SEBUTAN_SIFAT, kelompokkanRuangan, sifatRuangan } from "@/lib/ruangan-sidang";
+import {
+  type Ruangan,
+  SEBUTAN_SIFAT,
+  kelompokkanRuangan,
+  ruanganTerurut,
+  sifatRuangan,
+} from "@/lib/ruangan-sidang";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { gatewayDaftarRuangan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -45,8 +51,13 @@ export async function GET(request: NextRequest) {
       tersedia: true,
       sebutan: SEBUTAN_SIFAT,
       kelompok,
-      // Rata - dipakai layar yang hanya perlu satu daftar.
-      ruangan: daftar.map((r) => ({ ...r, sifat: sifatRuangan(r.nama, r.benderaKeliling) })),
+      // Rata - dipakai layar yang hanya perlu satu daftar. Urutannya menurut
+      // seberapa sering dipakai, bukan menurut abjad: yang menetapkan sidang
+      // keliling hampir selalu memilih ruangan yang sama.
+      ruangan: ruanganTerurut(daftar).map((r) => ({
+        ...r,
+        sifat: sifatRuangan(r.nama, r.benderaKeliling),
+      })),
     });
   } catch (galat) {
     return handleAdminRouteError(galat, request, {

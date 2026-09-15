@@ -296,7 +296,21 @@ describe("bagian \"Penetapan yang dapat Anda tetapkan\" dibuang", () => {
   it("penggantinya sudah ada - kotak atas nama siapa penetapan tercatat", () => {
     // Pertanyaannya berganti: dari "boleh tidak saya mengerjakan ini" menjadi
     // "kalau saya tekan sekarang, tercatat atas nama siapa".
-    expect(konten()).toContain("Akan tercatat di SIPP atas nama");
+    // Kotak ringkasan itu DICABUT: ia membaca pilihan bawaan mesin
+    // sementara "Pejabat yang menetapkan" di bawahnya membiarkan pilihan
+    // itu diganti - sehingga ringkasannya dapat menyebut nama yang BUKAN
+    // yang akan ditulis. Keterangan penetap kini ada pada tiap barisnya
+    // dan ikut berubah saat pejabatnya diganti.
+    // Komentar dibuang lebih dahulu: kalimat yang menerangkan pencabutan
+    // kotak itu menyebut namanya, sehingga penjaga yang melarangnya justru
+    // tersandung pada penjelasan pelarangannya sendiri.
+    const tanpaKomentar = konten()
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .filter((baris) => !baris.trim().startsWith("//"))
+      .join("\n");
+    expect(tanpaKomentar).not.toContain("Akan tercatat di SIPP atas nama");
+    expect(konten()).toContain("Pejabat yang menetapkan");
   });
 });
 

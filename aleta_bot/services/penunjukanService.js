@@ -884,6 +884,104 @@ async function susunanMajelisTerpakai(tahun, hakimAktif = [], batas = 12) {
   return { terbaca: susunan.length > 0, alasan: "", susunan };
 }
 
+/**
+ * ============================================================================
+ * MENCOCOKKAN SUSUNAN YANG DIPAKAI DENGAN SUSUNAN YANG DITETAPKAN
+ * ============================================================================
+ *
+ * Dicocokkan menurut HIMPUNAN kode hakimnya, bukan urutannya: SIPP menyimpan
+ * urutan duduk, dan susunan yang sama dapat tercatat dengan ketua di urutan
+ * berbeda ketika penetapannya pernah diperbaiki. Menuntut urutan yang persis
+ * berarti susunan SK yang paling banyak dipakai justru tidak dikenali.
+ *
+ * Susunan SK yang BELUM pernah dipakai tahun ini tetap ditawarkan - majelis
+ * baru bermula dari nol perkara, dan daftar yang hanya memuat yang sudah
+ * pernah dipakai tidak akan pernah menawarkannya.
+ */
+function tandaiSusunanSk(terpakai, susunanSk, hakimAktif) {
+  const daftar = Array.isArray(terpakai) ? [...terpakai] : [];
+  if (!Array.isArray(susunanSk) || susunanSk.length === 0) {
+    return daftar.map((x) => ({ ...x, majelisKode: "", dariSk: false }));
+  }
+
+  const kunciKode = (kode) => [...kode].map((x) => String(x).toUpperCase()).sort().join("|");
+  const petaSk = new Map();
+  for (const sk of susunanSk) petaSk.set(kunciKode(sk.hakimKode), sk);
+
+  const sudah = new Set();
+  const hasil = daftar.map((satu) => {
+    const kode = (satu.anggota || []).map((x) => x.kode).filter(Boolean);
+    const sk = petaSk.get(kunciKode(kode));
+    if (sk) sudah.add(sk.majelisKode);
+    return {
+      ...satu,
+      majelisKode: sk ? sk.majelisKode : "",
+      dariSk: Boolean(sk),
+      panitera: sk ? sk.panitera || [] : [],
+    };
+  });
+
+  // Susunan SK yang belum terpakai tahun ini disisipkan dengan nol perkara.
+  const aktif = new Map(hakimAktif.map((x) => [String(x.kode).toUpperCase(), x]));
+  for (const sk of susunanSk) {
+    if (sudah.has(sk.majelisKode)) continue;
+    const anggota = sk.hakimKode.map((kode) => aktif.get(kode)).filter(Boolean);
+    // Susunan yang salah satu hakimnya sudah tidak aktif TIDAK ditawarkan -
+    // sama seperti susunan terpakai; menawarkannya berujung penolakan SIPP.
+    if (anggota.length !== sk.hakimKode.length) continue;
+    hasil.push({
+      kunci: anggota.map((x) => x.hakimId).join("-"),
+      hakimId: anggota.map((x) => x.hakimId),
+      anggota: anggota.map((x) => ({ hakimId: x.hakimId, kode: x.kode, nama: x.nama })),
+      perkara: 0,
+      majelisKode: sk.majelisKode,
+      dariSk: true,
+      panitera: sk.panitera || [],
+    });
+  }
+
+  // Yang ditetapkan SK di atas; di antara sesamanya, yang paling sedikit
+  // perkaranya lebih dahulu - asas giliran yang sama dengan juru sita.
+  return hasil.sort((a, b) => {
+    if (a.dariSk !== b.dariSk) return a.dariSk ? -1 : 1;
+    return a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci));
+  });
+}
+
+/**
+ * Hakim dan panitera aktif, apa adanya - untuk MENGIKAT SK ke orangnya.
+ *
+ * Kodenya ikut dikirim beserta keadaannya, sebab itulah yang membuat layar
+ * pengaturan dapat menunjukkan mengapa pengikatan ini perlu: di PA Donggala
+ * empat panitera berbagi kode "D" dan dua tidak berkode sama sekali, sehingga
+ * kode pada SK tidak dapat menemukan siapa pun.
+ */
+async function pegawaiPenunjukan() {
+  const [hakim, panitera] = await Promise.all([
+    (await sippSkemaService.tabelAda("hakim_pn"))
+      ? runQuery(
+          `SELECT id, kode, nama, nama_gelar AS namaGelar FROM hakim_pn
+            WHERE aktif = 'Y' ORDER BY kode ASC, nama ASC`
+        ).catch(() => [])
+      : [],
+    (await sippSkemaService.tabelAda("panitera_pn"))
+      ? runQuery(
+          `SELECT id, kode, nama, nama_gelar AS namaGelar FROM panitera_pn
+            WHERE aktif = 'Y' ORDER BY nama ASC`
+        ).catch(() => [])
+      : [],
+  ]);
+
+  const rapikan = (baris) =>
+    (Array.isArray(baris) ? baris : []).map((b) => ({
+      id: Number(b.id) || 0,
+      kode: cleanText(b.kode),
+      nama: cleanText(b.namaGelar) || cleanText(b.nama),
+    }));
+
+  return { ok: true, hakim: rapikan(hakim), panitera: rapikan(panitera) };
+}
+
 async function bebanHakimTunggal(tahun) {
   if (!(await sippSkemaService.tabelAda("perkara_hakim_pn"))) return new Map();
 
@@ -1258,7 +1356,7 @@ async function giliranPanitera(tahun, rasio = new Map()) {
  * Keempat baris papan penunjukan untuk satu perkara.
  *
  * @param {string} nomorPerkara nomor perkara yang sedang dibuka di SIPP
- * @param {object} pengaturan   { aturan, hariSidang, paniteraMajelis } dari portal
+ * @param {object} pengaturan   { aturan, hariSidang, susunanSk } dari portal
  */
 async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const aturan = pengaturan.aturan || {};
@@ -1273,7 +1371,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     if (bersih && Number.isFinite(nilai) && nilai > 0) rasioPanitera.set(bersih, nilai);
   }
   const hariSidang = pengaturan.hariSidang || {};
-  const paniteraMajelis = pengaturan.paniteraMajelis || {};
+  const susunanSk = Array.isArray(pengaturan.susunanSk) ? pengaturan.susunanSk : [];
 
   const identitas = await identitasPerkara(nomorPerkara);
   if (!identitas) {
@@ -1353,6 +1451,23 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // dibaca sesudahnya, bukan bersamaan.
   const terpakai = await susunanMajelisTerpakai(tahun, hakimAktif);
 
+  // ==========================================================================
+  // SUSUNAN MENURUT SK DIDAHULUKAN, DAN DIBERI KODENYA
+  // ==========================================================================
+  //
+  // Sebelum ini seluruh susunan berdiri setara: yang ditetapkan SK dan yang
+  // kebetulan pernah dipakai sekali karena seorang hakim berhalangan tampil
+  // berdampingan, terurut menurut jumlah perkaranya, tanpa satu pun tanda yang
+  // membedakan. Susunan darurat yang baru dipakai sekali justru naik ke atas,
+  // sebab perkaranya paling sedikit.
+  //
+  // Yang di luar SK TIDAK dibuang - majelis memang disusun ulang ketika ada
+  // yang cuti, dan daftar yang menolaknya memaksa petugas mengetik di borang
+  // SIPP. Ia hanya turun ke bawah DAN kehilangan kodenya: kode majelis milik
+  // SK, dan menempelkannya pada susunan yang tidak ada di SK berarti menulis
+  // kode yang tidak pernah ditetapkan siapa pun ke berkas perkara.
+  const susunanBerkode = tandaiSusunanSk(terpakai.susunan, susunanSk, hakimAktif);
+
   const bentuk = tentukanSusunan(identitas, aturan);
 
   // --- PMH ----------------------------------------------------------------
@@ -1365,47 +1480,99 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     namaHakim,
     beban,
     bebanMajelis,
-    susunanTerpakai: terpakai.susunan,
+    susunanTerpakai: susunanBerkode,
     aturan,
   });
 
   // --- PPP ----------------------------------------------------------------
   //
-  // Dua jalan, dan yang berlaku dipilih dari kenyataan pengadilan:
+  // ==========================================================================
+  // SK MENUNJUK ORANGNYA, BUKAN KODENYA - DAN INILAH SEBABNYA
+  // ==========================================================================
   //
-  //   1. Bila SK menautkan panitera pengganti ke majelis ini (kolom
-  //      panitera_kode terisi), pakai itu - tautan resmi mengalahkan giliran.
+  // Jalur SK di sini dahulu mencocokkan panitera_pn.kode dengan kode pada SK.
+  // Diperiksa pada SIPP PA Donggala, pencocokan itu TIDAK PERNAH dapat benar:
   //
-  //   2. Bila tidak - dan di PA Donggala memang tidak, panitera bergilir
-  //      seperti juru sita - usulkan yang paling sedikit bebannya. Nama panitera
-  //      yang DITAMPILKAN tetap seluruh calon aktif, terurut giliran, supaya
-  //      Panitera dapat menimpa bila ada yang berhalangan.
-  const kodePp = pmh.majelisKode ? paniteraMajelis[pmh.majelisKode] || [] : [];
-  const calonSk = paniteraAktif.filter((x) => x.kode && kodePp.includes(x.kode));
-  const ppp =
-    calonSk.length > 0
-      ? {
-          usulan: calonSk[0] || null,
-          calon: calonSk,
-          sebab: `panitera pengganti Majelis ${pmh.majelisKode} menurut SK`,
-          terbaca: true,
-        }
-      : {
-          usulan: panitera.usulan,
-          calon: panitera.terbaca ? panitera.daftar : paniteraAktif,
-          // Alasan pemilihan SELALU disebut lebih dulu. Sebelumnya peringatan
-          // berhalangan menggantikannya sama sekali - dan itu justru menimpa
-          // orang yang dipilih KARENA kurang bebannya, sehingga yang terbaca
-          // hanya kecurigaan tanpa alasan pilihannya.
-          sebab: panitera.terbaca
-            ? `giliran panitera pengganti - ${sebutKeadilan(panitera.usulan)}`
-            : "seluruh panitera aktif ditampilkan",
-          peringatan:
-            panitera.usulan && panitera.usulan.dugaanBerhalangan
-              ? `${panitera.usulan.nama} sudah lama tidak menerima penunjukan - pastikan tidak sedang berhalangan.`
-              : "",
-          terbaca: panitera.terbaca,
-        };
+  //   Sri Susilowati       kode "D"     SK menyebut D
+  //   Munifa               kode "D"     SK menyebut D1
+  //   Qadariyah            kode "D"     SK menyebut D3
+  //   Andini Puspita Sari  kode "D"     SK menyebut D4
+  //   Sitti Nurhidayah     kode "D8"    SK menyebut D6
+  //   Unun Fidiyasari P.   kode ""      SK menyebut D5
+  //   Fikrianto            kode ""      SK menyebut D2
+  //
+  // Untuk Majelis A yang kodenya "D,D4" pencocokan itu memulangkan EMPAT
+  // orang - Sri Susilowati, Munifa, Qadariyah, Andini - sebab keempatnya
+  // berkode "D"; dua di antaranya panitera Majelis B dan C1. Usulannya lalu
+  // diambil dari urutan pertama daftar itu, yang tidak berarti apa-apa.
+  // Untuk Majelis B dan C1 ia memulangkan NOL, sebab D1, D2, D3, D5, D6 tidak
+  // ada di SIPP sama sekali - jadi keduanya diam-diam kembali ke giliran.
+  //
+  // Tidak satu pun dari itu berbunyi. Penetapannya berhasil, berkasnya
+  // tercetak, dan yang tertulis panitera pengganti majelis lain.
+  //
+  // Sekarang SK menunjuk ORANGNYA (id panitera_pn), dan kodenya ikut dibawa
+  // sebagai LABEL yang terbaca di sebelah namanya - lihat migrasi 0044.
+  //
+  // ==========================================================================
+  // YANG DI LUAR SK TETAP DAPAT DIPILIH, DI BAWAHNYA, TANPA KODE
+  // ==========================================================================
+  //
+  // Daftar yang hanya memuat panitera SK memaksa petugas mengetik di borang
+  // SIPP setiap kali panitera majelis itu cuti atau sedang sidang lain - dan
+  // di borang SIPP tidak ada satu pun penjagaan. Karena itu seluruh panitera
+  // aktif tetap ditawarkan; yang menurut SK berada di atas dan berkode, yang
+  // lain di bawah tanpa kode.
+  const skMajelis = susunanSk.find((x) => x.majelisKode === pmh.majelisKode) || null;
+  const pasanganPp = (skMajelis && Array.isArray(skMajelis.panitera) ? skMajelis.panitera : [])
+    .filter((p) => Number(p.id) > 0);
+  const kodeMenurutSk = new Map(pasanganPp.map((p) => [Number(p.id), String(p.kode || "")]));
+
+  const dasarPp = panitera.terbaca ? panitera.daftar : paniteraAktif;
+  const denganKode = dasarPp.map((x) => {
+    const id = Number(x.id ?? x.paniteraId);
+    const kodeSk = kodeMenurutSk.get(id) || "";
+    return { ...x, kodeSk, dariSk: Boolean(kodeSk) };
+  });
+  // Urutan SK-nya sendiri dihormati - D sebelum D4 - bukan diurut ulang
+  // menurut beban: SK menyebut panitera sidang majelis itu, dan yang pertama
+  // disebut memang yang utama.
+  const urutanSk = new Map(pasanganPp.map((p, i) => [Number(p.id), i]));
+  const calonPp = [...denganKode].sort((a, b) => {
+    if (a.dariSk !== b.dariSk) return a.dariSk ? -1 : 1;
+    if (a.dariSk && b.dariSk) {
+      return (urutanSk.get(Number(a.id ?? a.paniteraId)) ?? 99) -
+        (urutanSk.get(Number(b.id ?? b.paniteraId)) ?? 99);
+    }
+    return 0;
+  });
+
+  const usulanSk = calonPp.find((x) => x.dariSk) || null;
+  const ppp = usulanSk
+    ? {
+        usulan: usulanSk,
+        calon: calonPp,
+        sebab:
+          `panitera sidang Majelis ${pmh.majelisKode} menurut SK` +
+          (usulanSk.kodeSk ? ` - ${usulanSk.kodeSk}` : ""),
+        terbaca: true,
+      }
+    : {
+        usulan: panitera.usulan,
+        calon: calonPp,
+        // Alasan pemilihan SELALU disebut lebih dulu. Sebelumnya peringatan
+        // berhalangan menggantikannya sama sekali - dan itu justru menimpa
+        // orang yang dipilih KARENA kurang bebannya, sehingga yang terbaca
+        // hanya kecurigaan tanpa alasan pilihannya.
+        sebab: panitera.terbaca
+          ? `giliran panitera pengganti - ${sebutKeadilan(panitera.usulan)}`
+          : "seluruh panitera aktif ditampilkan",
+        peringatan:
+          panitera.usulan && panitera.usulan.dugaanBerhalangan
+            ? `${panitera.usulan.nama} sudah lama tidak menerima penunjukan - pastikan tidak sedang berhalangan.`
+            : "",
+        terbaca: panitera.terbaca,
+      };
 
   // --- PJS ----------------------------------------------------------------
   const pjs = {
@@ -2019,4 +2186,5 @@ module.exports = {
   tanggalSidangPertama,
   tentukanSusunan,
   usulanPenunjukan,
+  pegawaiPenunjukan,
 };

@@ -522,6 +522,10 @@ const schemaStatements = [
     majelis_kode TEXT PRIMARY KEY,
     hari SMALLINT NOT NULL CHECK (hari BETWEEN 0 AND 6),
     panitera_kode TEXT NOT NULL DEFAULT '',
+    hakim_kode TEXT NOT NULL DEFAULT '',
+    panitera_id TEXT NOT NULL DEFAULT '',
+    sk_nomor TEXT NOT NULL DEFAULT '',
+    sk_tanggal TEXT NOT NULL DEFAULT '',
     keterangan TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL,
     updated_by TEXT

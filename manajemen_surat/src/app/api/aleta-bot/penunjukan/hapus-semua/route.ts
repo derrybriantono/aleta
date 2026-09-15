@@ -5,6 +5,7 @@ import { kirimPenetapanHapusSemuaGateway } from "@/server/modules/aleta-bot/what
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { alamatIpPeramban } from "@/server/shared/request";
 import { getUserByIdFromDb } from "@/server/modules/organization/service";
 
 export const runtime = "nodejs";
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
       akunPerJenis,
       operator,
       kering,
+      ip: alamatIpPeramban(request),
     });
 
     return Response.json(respons, { status: respons?.ok === false ? 409 : 200 });

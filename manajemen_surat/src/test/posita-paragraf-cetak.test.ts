@@ -105,8 +105,25 @@ describe("posita yang sudah berparagraf tidak disusun ulang", () => {
   // rapi selama ini. Menyusunnya ulang mempertaruhkan semuanya demi yang tidak.
   const sudahRapi = "<p>1. Bahwa pertama;</p><p>2. Bahwa kedua;</p>";
 
-  it("dibiarkan apa adanya", () => {
-    expect(layanan.rapikanTeksPosita(sudahRapi)).toBe(sudahRapi);
+  it("dibiarkan apa adanya - kecuali pembatas kata kendali", () => {
+    // ======================================================================
+    // GANTI BARIS SESUDAH </p> - PEMBATAS, BUKAN PEMISAH
+    // ======================================================================
+    //
+    // cleanHtmlTagSpecial mengubah "</p>" menjadi "\\par" TANPA spasi, lalu
+    // filter_var menyapu "<p>". Hasilnya "\\par2. Bahwa" - dan di RTF kata
+    // kendali menyerap parameter angka yang menempel padanya, sehingga "2"
+    // ditelan dan yang tercetak ". Bahwa". Paragraf berawalan huruf lebih
+    // parah: "\\parKedua" dibaca sebagai kata kendali bernama "parKedua",
+    // dan seluruh katanya hilang.
+    //
+    // Pemisahnya TETAP </p>. Yang ditambahkan satu ganti baris di belakangnya,
+    // semata sebagai pembatas kata kendali - dan justru KARENA ganti baris
+    // tidak berarti apa-apa bagi RTF, ia tidak menambah apa pun ke dokumen.
+    const hasil = layanan.rapikanTeksPosita(sudahRapi);
+    expect(hasil).toBe("<p>1. Bahwa pertama;</p>\n<p>2. Bahwa kedua;</p>");
+    // Dan tidak satu huruf pun selain itu yang berubah.
+    expect(hasil.split("\n").join("")).toBe(sudahRapi);
   });
 
   it("yang paragraf pertamanya berlekuk dirapatkan, supaya <p>1. menyala", () => {

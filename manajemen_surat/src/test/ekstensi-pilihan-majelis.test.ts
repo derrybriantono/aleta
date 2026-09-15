@@ -182,7 +182,11 @@ describe("nama medan layanan dan ekstensi tidak boleh berselisih", () => {
     // Dijaga dari dua arah: menamainya ulang di layanan tanpa mengubah
     // ekstensi akan mematikan dropdown-nya lagi, tanpa satu pun galat.
     const isi = layanan();
-    expect(isi).toContain("calon: calonSk,");
+    // Dahulu `calonSk` - daftar yang disusun dengan mencocokkan KODE panitera,
+    // yang di SIPP tabrakan sehingga daftarnya memuat panitera majelis lain.
+    // Penggantinya `calonPp`: seluruh panitera aktif, yang menurut SK di atas
+    // dan berkode, yang lain di bawah tanpa kode.
+    expect(isi).toContain("calon: calonPp,");
     expect(isi).toContain("calon: jurusita.daftar,");
   });
 });
@@ -308,10 +312,26 @@ describe("PHS: tanggal bebas ada, tetapi di balik saklar", () => {
     expect(isi).toContain("kotakBebas.checked = Boolean(pilihanManual.phsBebas);");
   });
 
-  it("kalendernya tidak boleh memilih lebih awal dari usulan", () => {
-    // Usulan sudah hari sidang terdekat yang memenuhi jeda minimal menurut SK;
-    // memajukannya melanggar jeda itu.
-    expect(konten()).toContain("if (phs.usulan) kalender.min = phs.usulan;");
+  it("kalendernya boleh tanggal berapa pun kecuali yang sudah lewat", () => {
+    // ======================================================================
+    // PENJAGA INI DIBALIK, DAN SENGAJA
+    // ======================================================================
+    //
+    // Dahulu batas bawahnya tanggal usulan, dengan alasan jeda minimal menurut
+    // SK. Alasannya benar; kalender bukan tempat menegakkannya. Akibatnya
+    // SELURUH tanggal sebelum usulan - termasuk hari ini dan pekan depan -
+    // tampil kelabu dan tidak dapat ditekan, sementara keadaan yang menuntut
+    // tanggal lebih awal memang ada dan sah: perkara yang harus disidangkan
+    // cepat, atau sidang keliling yang jadwalnya sudah diumumkan.
+    //
+    // Petugas yang tertahan kalender kembali mengetik di borang SIPP - dan di
+    // sana tidak ada peringatan apa pun. Kunci yang memaksa orang keluar dari
+    // jalur yang berpenjagaan bukan penjagaan.
+    expect(konten()).toContain("kalender.min = new Date().toISOString().slice(0, 10);");
+  });
+
+  it("jeda minimalnya tetap dijaga - sebagai peringatan, bukan kunci", () => {
+    expect(konten()).toContain("memperpendek jeda tersebut");
   });
 
   it("tanggal di luar hari majelis diperingatkan", () => {

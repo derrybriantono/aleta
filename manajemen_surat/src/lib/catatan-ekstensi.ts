@@ -57,6 +57,22 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.146.0",
+    dirilis: "2026-09-15T14:05:00+08:00",
+    judul: "Papan penetapan: kode majelis dari SK, sidang keliling di mode otomatis, dan nama berkas yang dapat dibedakan",
+    butir: [
+      "KODE MAJELIS DARI SK. Susunan yang ditetapkan SK Ketua muncul lebih dahulu beserta kodenya - A, B, C1. Susunan di luar SK tetap dapat dipilih, di bawahnya, TANPA kode dan bertanda \"di luar SK\": kode majelis milik SK, dan menempelkannya pada susunan yang tidak ditetapkan siapa pun membuat laporan per majelis menghitungnya sebagai majelis itu.",
+      "PANITERA SIDANG MENURUT SK, beserta kodenya. Sebelum ini pencocokan memakai kode panitera SIPP - dan kode itu tabrakan: empat panitera PA Donggala berbagi kode \"D\" sementara SK membedakannya D, D1, D3, D4, sehingga Majelis A memulangkan empat orang (dua di antaranya panitera majelis lain) dan Majelis B serta C1 memulangkan nol. Kini yang ditunjuk orangnya; kodenya tinggal label yang terbaca.",
+      "SIDANG KELILING DI MODE OTOMATIS dan di PENETAPAN MASSAL. Sebelumnya hari dan tempat sidang hanya dapat dipilih di mode manual, sehingga menetapkan sidang keliling menuntut pindah ke manual dan memilih ulang majelis, panitera, dan juru sita - padahal yang hendak diubah cuma tempatnya. Pada penetapan massal hanya TEMPATNYA yang disamakan: tiap majelis punya hari sidangnya sendiri.",
+      "Tempat sidang keliling diurut menurut pemakaian sungguhan - Sigi Biromaru 128 sidang sejak 2025, Rio Pakava 40, Sirenja 14, Labuan belum pernah - dan KUA wilayahnya ikut tampil. Urutan abjad menaruh Labuan di atas Sigi Biromaru.",
+      "KALENDER HARI SIDANG TIDAK LAGI TERKUNCI. Batas lamanya tanggal usulan, sehingga seluruh tanggal sebelumnya - termasuk hari ini - kelabu dan tidak dapat ditekan. Kini batasnya hari ini, dan jeda minimal menurut SK menjadi peringatan yang dibaca. Kunci yang memaksa petugas kembali mengetik di borang SIPP bukan penjagaan.",
+      "Usulan majelis tidak digambar di mode manual, dan kotak merah \"Akan tercatat di SIPP atas nama\" dicabut - ia membaca pilihan bawaan mesin sementara pejabatnya dapat diganti tepat di bawahnya, sehingga ringkasannya dapat menyebut nama yang BUKAN yang akan ditulis. Keterangan penetap kini ikut berubah saat pejabatnya diganti.",
+      "ANGKA BEBAN BERHENTI BERDESIMAL - dan berhenti disebut \"perkara\". \"278.5 perkara\" tidak dapat dipahami siapa pun sebab tidak ada setengah perkara; angkanya memang beban berbobot (cerai 1, harta bersama/waris/eksyar 2, lainnya 1,5). Membulatkan saja hanya menyembunyikan desimalnya - yang menyesatkan kata di belakangnya.",
+      "NAMA BERKAS UNDUHAN DAPAT DIBEDAKAN. Tiga berkas kini bernomor perkara, berketerangan blangko, dan berjenis - putusan, putusan pdf, anonimisasi. Unduhan dari tombol CETAK milik ABT sendiri, yang selama ini bernama \"download.rtf\", ikut dinamai pekerja latar; hanya nama yang benar-benar umum yang diubah.",
+      "\"Bahwa sudah tidak sanggup lagi\" ikut dibuang dari penutup keterangan saksi - bentuk berkata \"sudah\" di tengahnya lolos dari keempat pola lama, dan kalimatnya tetap berdiri di dalam putusan seolah fakta yang dibuktikan.",
+    ],
+  },
+  {
     versi: "1.145.0",
     dirilis: "2026-09-15T10:05:00+08:00",
     judul: "Panel menyingkir dengan Escape, reset kembali ke kanan, dan unduhan tidak lagi diblokir",

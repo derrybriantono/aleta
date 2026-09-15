@@ -2358,6 +2358,13 @@ export async function getGatewayPraperiksaFakta(
  * Daftar ruangan sidang yang dapat dipilih pada penetapan hari sidang,
  * beserta bendera sidang keliling milik SIPP.
  */
+/** Hakim dan panitera aktif di SIPP - untuk mengikat SK ke orangnya. */
+export async function gatewayPegawaiPenunjukan() {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penunjukan/pegawai", {
+    method: "GET",
+  });
+}
+
 export async function gatewayDaftarRuangan(): Promise<
   GatewayResult<{
     ruangan: {
@@ -2483,6 +2490,8 @@ export async function kirimPenetapanTulisGateway(payload: {
    * mengubah apa pun - pagarnya tetap penuh.
    */
   rantaiSebelum?: string[];
+  /** Alamat peramban operator, untuk kolom ipaddress sys_audittrail. */
+  ip?: string;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis", {
     method: "POST",
@@ -2503,6 +2512,7 @@ export async function kirimPenetapanHapusGateway(payload: {
   olehUsername: string;
   operator: string;
   kering: boolean;
+  ip?: string;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/hapus", {
     method: "POST",
@@ -2598,6 +2608,7 @@ export async function kirimPenetapanHapusSemuaGateway(payload: {
   akunPerJenis: Record<string, string>;
   operator: string;
   kering: boolean;
+  ip?: string;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/hapus-semua", {
     method: "POST",
@@ -2635,6 +2646,15 @@ export async function getGatewayPenunjukanUsulan(payload: {
     aturan: Record<string, unknown>;
     hariSidang: Record<string, number>;
     paniteraMajelis: Record<string, string[]>;
+    /**
+     * Susunan majelis menurut SK Ketua - kode majelis, kode hakim, dan
+     * panitera sidangnya sebagai pasangan kode-orang.
+     *
+     * Panitera dikirim sebagai id, bukan kode: kode panitera pada SIPP
+     * tabrakan - empat orang berbagi kode "D" - sehingga kode tidak dapat
+     * menunjuk siapa pun. Lihat migrasi 0044.
+     */
+    susunanSk?: Record<string, unknown>[];
   };
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penunjukan/usulan", {

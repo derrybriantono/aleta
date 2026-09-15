@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.17.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.17.0 - Penjaga Tenggat, Penyusun Pertimbangan, dan Arsip yang Bertindak";
+export const APP_VERSION = "2.18.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.18.0 - SK Susunan Majelis, dan Nomor Butir yang Ditelan RTF";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,71 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.18.0",
+    title: "ALETA Judicia v2.18.0 - SK Susunan Majelis, dan Nomor Butir yang Ditelan RTF",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "SK Ketua tentang susunan majelis hakim dan panitera sidangnya kini tersimpan dan dapat disunting, " +
+      "sesudah diketahui bahwa jalur lama yang mencocokkan KODE panitera tidak pernah dapat benar. " +
+      "Bersamanya: delapan perbaikan papan penunjukan, dan satu cacat pencetakan yang sudah lama diam - " +
+      "nomor butir posita yang ditelan RTF.",
+    added: [
+      "Layar SK susunan majelis hakim dan panitera sidang di Admin ALETA e-Court - majelis, kode hakim, panitera sidang beserta kodenya, hari sidang, nomor dan tanggal SK. Satu-satunya tempat susunan majelis dapat diubah tanpa menyentuh kode.",
+      "Saklar sidang keliling pada mode OTOMATIS dan pada penetapan massal - sebelumnya tempat sidang hanya dapat dipilih di mode manual, sehingga satu hari keliling yang menghasilkan belasan perkara seluruhnya tertulis di ruang dalam gedung.",
+      "Tempat sidang keliling diurut menurut pemakaian sungguhan, beserta KUA wilayahnya dari ref_kua.",
+    ],
+    changed: [
+      "Panitera sidang menurut SK ditunjuk lewat id orangnya, bukan lewat kode. Kodenya tetap tampil di sebelah namanya.",
+      "Susunan majelis yang ada di SK didahulukan dan diberi kodenya; yang di luar SK tetap dapat dipilih, di bawahnya, tanpa kode.",
+      "Kalender hari sidang tidak lagi mengunci tanggal sebelum usulan - batasnya hari ini, dan jeda minimal menurut SK menjadi peringatan yang dibaca.",
+      "Usulan PMH tidak digambar di mode manual, dan kotak ringkasan Akan tercatat di SIPP atas nama dicabut - ia membaca pilihan bawaan mesin sementara pilihan pejabatnya dapat diganti.",
+      "Angka beban tidak lagi disebut perkara dan tidak lagi berdesimal - ia bobot, dan bobotnya diterangkan.",
+      "Nama berkas unduhan ABT memuat nomor perkara, keterangan blangko, dan jenis berkasnya.",
+    ],
+    fixed: [
+      "NOMOR BUTIR POSITA YANG DITELAN RTF. cleanHtmlTagSpecial mengubah </p> menjadi \\par tanpa spasi, lalu filter_var menyapu <p> - sehingga </p><p>2. Bahwa menjadi \\par2. Bahwa, yang di RTF adalah kata kendali berparameter 2. Angkanya lenyap. Paragraf berawalan huruf lebih parah: \\parKedua dibaca sebagai kata kendali bernama parKedua, dan seluruh katanya hilang.",
+      "Panitera sidang menurut SK: pencocokan kode memulangkan EMPAT orang untuk Majelis A - keempatnya berkode D di SIPP, dua di antaranya panitera majelis lain - dan NOL untuk Majelis B dan C1.",
+      "Status perkara sesudah PHS berbunyi Sidang pertama, bukan nama penetapannya; SIPP menulis DUA baris riwayat pada PHS, ALETA hanya satu.",
+      "Tahapan sesudah penetapan dibongkar berbunyi Pendaftaran, bukan Pendaftaran Perkara.",
+      "Baris audit tidak lagi menyebut perkara_proses dan perkara_smartmajelis - dua tabel yang tidak pernah sekali pun dicatat SIPP sejak 2016.",
+      "Alamat pada baris audit memakai alamat peramban petugas, bukan alamat peti Docker yang tidak pernah muncul di sepuluh tahun riwayat SIPP.",
+      "Bahwa sudah tidak sanggup lagi ikut dibuang dari penutup keterangan saksi - bentuk berkata sudah di tengahnya lolos dari keempat pola lama.",
+      "Penanda butir bertingkat 1.1 dan berkurung a) dikenali perapian posita, dan ditulis kembali apa adanya.",
+    ],
+    security: [
+      "Kode hakim dan pasangan panitera dari SK disaring di gerbang bot sebelum dipakai - bentuknya dibatasi, id yang tidak masuk akal dibuang.",
+      "Alamat peramban diambil dari entri TERAKHIR X-Forwarded-For: Apache menambahkan alamatnya ke ujung, jadi entri pertama dapat dikarang peramban.",
+    ],
+    operationalNotes: [
+      "Migrasi 0044 menambah kolom pada aleta_sipp_hari_sidang - jalankan pemasangan dengan ALETA_RUN_DB_MIGRATIONS=1.",
+      "Sesudah terpasang: buka Admin - ALETA e-Court, ikat tiap kode panitera SK ke orangnya. Sampai itu dikerjakan, panel memakai giliran beban dan layarnya menyebutnya apa adanya.",
+    ],
+    knownLimitations: [
+      "Halaman 1, 2, 4, dan 5 SK tidak berlapisan teks - hanya Lampiran I yang terbaca mesin. Bila ada lampiran lain, isinya harus diketik di layar pengaturan.",
+      "Pemisah paragraf memperbaiki posita yang DIRAPIKAN ALETA. Posita yang belum pernah dirapikan tetap kehilangan nomor butirnya saat dicetak.",
+    ],
+    details: [
+      {
+        title: "Kode panitera yang tidak dapat menunjuk siapa pun",
+        items: [
+          "Sri Susilowati, Munifa, Qadariyah, dan Andini Puspita Sari berbagi satu kode SIPP: D.",
+          "Sitti Nurhidayah berkode D8 di SIPP, D6 menurut SK.",
+          "Unun Fidiyasari P. dan Fikrianto tidak berkode sama sekali di SIPP.",
+          "SK menulis Munifah, SIPP menulis Munifa - pencocokan nama pun meleset.",
+        ],
+      },
+      {
+        title: "Tempat sidang keliling, terukur sejak 2025",
+        items: [
+          "Sidang Keliling Sigi Biromaru 128 sidang, terakhir 1 Oktober 2026.",
+          "Sidang Keliling Rio Pakava 40 sidang; Sirenja 14; Labuan belum pernah.",
+          "Urutan abjad menaruh Labuan di atas Sigi Biromaru.",
+        ],
+      },
+    ],
+  },
   {
     version: "2.17.0",
     title: "ALETA Judicia v2.17.0 - Penjaga Tenggat, Penyusun Pertimbangan, dan Arsip yang Bertindak",

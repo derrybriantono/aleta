@@ -724,6 +724,20 @@ export const aletaSippHariSidang = pgTable("aleta_sipp_hari_sidang", {
   majelisKode: text("majelis_kode").primaryKey(),
   hari: integer("hari").notNull(),
   paniteraKode: text("panitera_kode").notNull().default(""),
+  /**
+   * Susunan hakim menurut SK, kode hakim_pn dipisah koma, ketua di depan.
+   * Kode hakim tunggal dan cocok persis dengan SIPP, jadi aman sebagai
+   * penunjuk orang - tidak seperti kode panitera.
+   */
+  hakimKode: text("hakim_kode").notNull().default(""),
+  /**
+   * Id panitera_pn dipisah koma. Id, BUKAN kode: empat panitera PA Donggala
+   * berbagi kode "D" sementara SK membedakannya D, D1, D3, D4 - dan dua di
+   * antaranya tidak berkode sama sekali di SIPP.
+   */
+  paniteraId: text("panitera_id").notNull().default(""),
+  skNomor: text("sk_nomor").notNull().default(""),
+  skTanggal: text("sk_tanggal").notNull().default(""),
   keterangan: text("keterangan").notNull().default(""),
   updatedAt: text("updated_at").notNull(),
   updatedBy: text("updated_by"),
