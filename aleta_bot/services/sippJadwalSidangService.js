@@ -113,10 +113,16 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       `(p.nomor_perkara LIKE ?
         OR p.jenis_perkara_nama LIKE ?
         OR j.agenda LIKE ?
-        OR EXISTS (SELECT 1 FROM v_pihak_perkara vp
-                    WHERE vp.perkara_id = p.perkara_id AND vp.nama LIKE ?))`
+        ${TABEL_PIHAK.map(
+          (n) => `OR EXISTS (SELECT 1 FROM perkara_pihak${n} xp
+                    WHERE xp.perkara_id = p.perkara_id AND xp.nama LIKE ?)`
+        ).join("\n        ")})`
     );
-    nilai.push(`%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`);
+    // EXISTS berkorelasi atas view = view dibentuk ulang untuk TIAP baris
+    // jadwal. Dipecah menjadi satu EXISTS per tabel supaya indeks perkara_id
+    // terpakai.
+    nilai.push(`%${kataCari}%`, `%${kataCari}%`, `%${kataCari}%`);
+    for (const _ of TABEL_PIHAK) nilai.push(`%${kataCari}%`);
   }
 
   const rows = await runQuery(
@@ -1155,6 +1161,61 @@ async function durasiMediasiPerkaraAman(perkaraId) {
  *
  * status_pos pada SIPP: 1 berhasil, 2 tidak berhasil (dikembalikan).
  */
+/**
+ * ============================================================================
+ * v_pihak_perkara TIDAK DAPAT DISARING DARI LUAR
+ * ============================================================================
+ *
+ * View itu UNION (bukan UNION ALL) dari perkara_pihak1..5, masing-masing
+ * di-join ke perkara dan membawa subkueri berkorelasi untuk status_perkara.
+ * UNION berpembeda memaksa MariaDB memakai algoritma TEMPTABLE: SELURUH view
+ * dibentuk dan disaring-ganda lebih dahulu, baru "WHERE perkara_id IN (...)"
+ * di luar dapat berlaku. Saringan kita tidak pernah sampai ke tabelnya.
+ *
+ * Terukur 14 September 2026 atas sipp_donggala (20.099 baris jadwal), mencari
+ * pihak untuk 20 perkara:
+ *
+ *   lewat v_pihak_perkara                    8.563 ms
+ *   langsung ke perkara_pihak1..5 (UNION ALL)  413 ms
+ *
+ * Dua puluh kali, dan jumlah barisnya sama persis - 40 lawan 40. Inilah sebab
+ * panel putusan massal menulis "aleta_bot tidak merespons dalam 8000ms":
+ * botnya sehat, jawabannya memang 13 detik.
+ *
+ * UNION ALL setara di sini: kolom `id` view berbentuk concat('pihakN_', id)
+ * sehingga unik per baris, jadi pembeda UNION tidak pernah membuang apa pun.
+ *
+ * Yang diganti HANYA jalur jadwal sidang. notifikasi.js dan query.js memakai
+ * view yang sama di puluhan tempat dengan kolom yang jauh lebih banyak;
+ * menyentuhnya sekaligus menukar satu kelambatan yang terukur dengan risiko
+ * yang tidak terukur.
+ */
+const TABEL_PIHAK = [1, 2, 3, 4, 5];
+
+/**
+ * Pengganti v_pihak_perkara untuk empat kolom yang benar-benar dipakai di
+ * berkas ini. `syarat` disisipkan ke DALAM tiap cabang - di situlah letak
+ * seluruh manfaatnya, sebab indeks perkara_id baru terpakai bila saringannya
+ * berada di dalam.
+ *
+ * Pemanggil WAJIB mengulang nilai isiannya sebanyak TABEL_PIHAK.length,
+ * berurutan sebelum isian lain yang muncul sesudahnya pada teks SQL.
+ */
+function pihakDariTabel(syarat = "") {
+  const saring = syarat ? ` WHERE ${syarat}` : "";
+  return TABEL_PIHAK.map(
+    (n) =>
+      `SELECT perkara_id, pihak_id, nama, urutan, ${n} AS pihak_ke FROM perkara_pihak${n}${saring}`
+  ).join(" UNION ALL ");
+}
+
+/** Nilai isian yang diulang untuk tiap cabang pihakDariTabel. */
+function isianPihakBerulang(nilai) {
+  const hasil = [];
+  for (let i = 0; i < TABEL_PIHAK.length; i += 1) hasil.push(...nilai);
+  return hasil;
+}
+
 async function keadaanPanggilanSidang(daftarSidang = []) {
   const sidang = daftarSidang.filter((x) => x && x.sidangId && x.perkaraId);
   if (sidang.length === 0) return {};
@@ -1182,20 +1243,19 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
               r.no_resi_pos AS noResiPos,
               vp.pihak_ke AS pihakKe
          FROM perkara_pelaksanaan_relaas r
-         LEFT JOIN v_pihak_perkara vp
+         LEFT JOIN (${pihakDariTabel(`perkara_id IN (${isianPerkara})`)}) vp
                 ON vp.pihak_id = r.pihak_id AND vp.perkara_id = r.perkara_id
         WHERE r.sidang_id IN (${isianSidang})`,
-      idSidang
+      [...isianPihakBerulang(idPerkara), ...idSidang]
     ),
     // Sisi pihak yang BENAR-BENAR ada pada tiap perkara. Permohonan kerap
     // hanya punya pemohon - menuntut adanya panggilan untuk termohon yang
     // memang tidak ada membuat hampir seluruh Pdt.P tertandai belum dipanggil.
     runQuery(
       `SELECT vp.perkara_id AS perkaraId, vp.pihak_ke AS pihakKe
-         FROM v_pihak_perkara vp
-        WHERE vp.perkara_id IN (${isianPerkara})
+         FROM (${pihakDariTabel(`perkara_id IN (${isianPerkara})`)}) vp
         GROUP BY vp.perkara_id, vp.pihak_ke`,
-      idPerkara
+      isianPihakBerulang(idPerkara)
     ),
   ]);
 
@@ -1380,10 +1440,25 @@ async function pihakBanyakPerkara(daftarPerkaraId = []) {
 
   const rows = await runQuery(
     `SELECT vp.perkara_id AS perkaraId, vp.nama AS nama, vp.pihak_ke AS pihakKe
-       FROM v_pihak_perkara vp
-      WHERE vp.perkara_id IN (${isian})
-      ORDER BY vp.perkara_id ASC, vp.pihak_ke ASC`,
-    dipakai
+       FROM (${pihakDariTabel(`perkara_id IN (${isian})`)}) vp
+      -- ==================================================================
+      -- URUTAN SIPP SENDIRI, SEBAB URUTAN LAMA TIDAK PERNAH STABIL
+      -- ==================================================================
+      --
+      -- Mula-mula saya hendak menyamakan persis dengan v_pihak_perkara supaya
+      -- perubahan ini murni kecepatan. Pengukuran membatalkan rencana itu:
+      -- view lama dijalankan DUA KALI atas data yang sama memulangkan urutan
+      -- yang BERBEDA - 542/Pdt.G/2026/PA.Dgl keluar [Indah, Intan, Salbi] lalu
+      -- [Salbi, Indah, Intan]. Tabel sementara yang dibentuk UNION berpembeda
+      -- tidak menjanjikan urutan apa pun, jadi tidak ada "urutan lama" untuk
+      -- disamakan.
+      --
+      -- Karena urutannya memang harus dipilih, yang dipilih adalah milik SIPP:
+      -- kolom urutan pada perkara_pihakN. Untuk 542 itu Salbi(1), Indah(2),
+      -- Intan(3) - Tergugat I, II, III. Itulah yang harus tertulis pada
+      -- putusan; abjad hanya kebetulan tabel sementara.
+      ORDER BY vp.perkara_id ASC, vp.pihak_ke ASC, vp.urutan ASC, vp.nama ASC`,
+    isianPihakBerulang(dipakai)
   );
 
   // ==========================================================================
@@ -1533,12 +1608,14 @@ async function relaasSidang(perkaraId, sidangId) {
        -- Kedudukan pihak - penggugat/pemohon atau tergugat/termohon. Inilah
        -- yang menentukan jalur panggilan yang seharusnya, dan tanpa ini
        -- pemohon terbaca seolah harus dipanggil lewat surat tercatat.
-       LEFT JOIN v_pihak_perkara vp
+       LEFT JOIN (${pihakDariTabel("perkara_id = ?")}) vp
               ON vp.pihak_id = r.pihak_id AND vp.perkara_id = r.perkara_id
       WHERE r.perkara_id = ?${nomorSidang ? " AND r.sidang_id = ?" : ""}
       ORDER BY sd.tanggal_sidang ASC, r.tanggal_relaas ASC, r.id ASC
       LIMIT 200`,
-    nomorSidang ? [perkaraId, nomorSidang] : [perkaraId]
+    nomorSidang
+      ? [...isianPihakBerulang([perkaraId]), perkaraId, nomorSidang]
+      : [...isianPihakBerulang([perkaraId]), perkaraId]
   );
 
   return rows.map((row) => ({

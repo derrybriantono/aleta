@@ -425,14 +425,23 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
   });
 
   it("panel ABT mencari token menurut nama, dan mengisinya ke pemetaan - tanpa menghapus yang tidak ketemu", () => {
-    expect(abt).toContain("async function cariTokenBlangko(namaBerkas, lapor) {");
+    // Dijaga MAKSUDNYA, bukan tanda tangannya: sejak 1.138.0 fungsinya juga
+    // menerima kelompok yang diharapkan, sebab nama berkas yang sama dapat
+    // berdiri di dua menu ABT sekaligus.
+    expect(abt).toContain("async function cariTokenBlangko(namaBerkas, lapor");
     const badan = abt.slice(abt.indexOf("async function lengkapiTokenPeta("));
     const fungsi = badan.slice(0, badan.indexOf("\n}\n"));
     expect(fungsi).toContain('baris.catatan = "berkas tidak ditemukan di ABT ini";');
     expect(fungsi).not.toContain("delete peta[");
-    // Halaman yang tergambar dibaca dahulu - tanpa jaringan.
+    // Halaman yang tergambar dibaca dahulu - tanpa jaringan. Sejak 1.139.0
+    // ada dua jalannya (dengan dan tanpa sebutan menu), jadi yang dijaga
+    // kehadiran pembacaan halaman itu, bukan satu baris tertentu.
     const cari = abt.slice(abt.indexOf("async function cariTokenBlangko("));
-    expect(cari.slice(0, 700)).toContain("alatCocokkanBerkas(berkasBlangkoDiHalaman(), namaBerkas)");
+    const badanCari = cari.slice(0, cari.indexOf("\n}\n"));
+    expect(badanCari).toContain("berkasBlangkoDiHalaman()");
+    expect(badanCari.indexOf("berkasBlangkoDiHalaman()")).toBeLessThan(
+      badanCari.indexOf("daftarKelompokBlangko()")
+    );
   });
 
   it("panel ABT: tiga keadaan baris, tombol Ketik dan Ambil token, dan token dilepas bila namanya berganti", () => {
@@ -454,25 +463,59 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
     expect(badan).not.toContain("keadaan.peta[alatKunciJenis(butir.jenis)]");
   });
 
-  it("popup menyunting pemetaan yang sama: kunci penyimpanan, bawaan, dan kunci jenis identik dengan panel", () => {
-    expect(popupJs).toContain('const KUNCI_PETA_BLANGKO = "petaBlangkoPutusan";');
+  it("PEMETAAN TIDAK LAGI DI POPUP - tempatnya di panel ABT (1.141.0)", () => {
+    // ========================================================================
+    // INVARIANNYA DIBALIK, DAN ITU DISENGAJA
+    // ========================================================================
+    //
+    // Sampai 1.140.0 penjaga ini menuntut popup dan panel memuat pemetaan yang
+    // SAMA. Sekarang ia menuntut popup TIDAK memuatnya sama sekali.
+    //
+    // Sebabnya bukan gaya: popup dibuka dari bilah ekstensi dan selebar kartu
+    // nama, sedangkan tokennya hanya dapat dipanen dari halaman blangko ABT -
+    // jadi apa pun yang disunting di popup selalu berupa setengah pekerjaan,
+    // sambil mendorong saklar harian keluar dari layar.
+    //
+    // Kunci penyimpanannya TIDAK berubah, jadi pemetaan yang pernah disusun
+    // lewat popup tetap terbaca panel ABT apa adanya - itu yang dijaga di
+    // bawah, dan itulah yang membuat pemindahan ini bukan kehilangan.
     expect(sumberAlat).toContain('const ALAT_PETA_BLANGKO_KUNCI = "petaBlangkoPutusan";');
-    expect(popupJs).toContain('const BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";');
+    for (const hilang of [
+      'id="bagianPeta"',
+      'id="daftarPeta"',
+      'id="petaDariPohon"',
+      'id="petaTambah"',
+    ]) {
+      expect(popupHtml, hilang).not.toContain(hilang);
+    }
+    for (const hilang of [
+      "pasangPetaBlangkoPopup",
+      "const KUNCI_PETA_BLANGKO",
+      "PETA_BAWAAN_POPUP",
+      "isiPetaDariPohonPopup",
+    ]) {
+      expect(popupJs, hilang).not.toContain(hilang);
+    }
+    // Dan panel ABT memang memilikinya - kalau tidak, fiturnya lenyap, bukan pindah.
+    expect(abt).toContain("function bagianPetaBlangkoAbt(");
     expect(sumberAlat).toContain('const ALAT_BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";');
-    expect(popupJs).toContain('const BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";');
     expect(sumberAlat).toContain('const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";');
-    expect(popupJs).toContain('const BERKAS_DISPENSASI_BAWAAN = "[01] [Kabul] DK - (Anak P Cewek) Hamil";');
     expect(sumberAlat).toContain('const ALAT_BERKAS_DISPENSASI_BAWAAN = "[01] [Kabul] DK - (Anak P Cewek) Hamil";');
     for (const kunci of ['"cerai gugat"', '"cerai talak"', '"itsbat nikah"', '"dispensasi kawin"']) {
-      expect(popupJs).toContain(kunci);
       expect(sumberAlat).toContain(kunci);
     }
-    expect(popupHtml).toContain('id="bagianPeta"');
-    expect(popupJs).toContain("void pasangPetaBlangkoPopup(peran);");
-    // Nama yang berganti melepas token lama - ia milik berkas yang lain.
-    expect(popupJs).toContain("? { jenisAsli: baris.jenisAsli || kunci, berkas: nama, bawaan: false }");
-    // Dihapus = ditandai kosong, supaya bawaan tidak kembali diam-diam.
-    expect(popupJs).toContain('peta[kunci] = { jenisAsli: baris.jenisAsli || kunci, berkas: "", bawaan: false };');
+  });
+
+  it("baris yang selesai disembunyikan, dan bagiannya menyingkir saat tuntas (1.141.0)", () => {
+    // Pemetaan adalah pekerjaan sekali jadi; barisnya tidak perlu dipandangi
+    // setiap hari sambil mendorong PUTUSAN MASSAL ke bawah layar.
+    expect(abt).toContain("if (sudah && !keadaan.petaTampilSemua) continue;");
+    expect(abt).toContain('buatElemen("button", "aleta-perkakas-aksi", "Pemetaan ulang")');
+    expect(abt).toContain('buatElemen("button", "aleta-perkakas-pulih", "Sembunyikan yang selesai")');
+    // Angkanya SELALU disebut - bagian yang hilang tanpa keterangan terbaca
+    // sebagai kerusakan, bukan sebagai pekerjaan yang sudah selesai.
+    expect(abt).toContain("sudah bertoken.");
+    expect(abt).toContain("sudah selesai dan disembunyikan");
   });
 
   it("fitur 2: antrean SIPP disusun dari tanggal sidang; yang tanpa draf tidak dijanjikan", () => {
@@ -597,12 +640,308 @@ describe("pemetaan diisi dari pohon blangko portal (1.133.0)", () => {
   });
 
   it("popup dan panel ABT punya tombolnya, dan panel ABT langsung mencari tokennya", () => {
-    expect(popupHtml).toContain('id="petaDariPohon"');
-    expect(popupJs).toContain("pohon = await ambilPohonBlangkoPopup(asal);");
-    expect(popupJs).toContain("if (bernama && ada.bawaan !== true && ada.sumber !== \"pohon\") continue;");
+    // Tombolnya tinggal di panel ABT saja sejak 1.141.0 - popup tidak lagi
+    // memuat pemetaan sama sekali.
+    // Pengisi dari pohon tinggal di panel ABT sejak 1.141.0; popup tidak lagi
+    // memuat pemetaan, jadi salinannya di sana dibuang seluruhnya.
+    expect(popupJs).not.toContain("ambilPohonBlangkoPopup");
     const editor = abt.slice(abt.indexOf("function bagianPetaBlangkoAbt("));
     expect(editor).toContain('"Isi dari pohon blangko"');
     expect(editor).toContain("const set = await alatAmbilPohonBlangko(\"\");");
     expect(editor).toContain("const token = await lengkapiTokenPeta(keadaan.peta, (t) => {");
+  });
+});
+
+// ============================================================================
+describe("padanan nama jenis perkara - SIPP menamainya dengan kata yang lain", () => {
+  /**
+   * Angka pada uji ini diukur atas sipp_donggala (salinan server, 14 September
+   * 2026), perkara sejak 2025. Bukan dugaan tentang nama yang mungkin ada.
+   */
+  it("empat nama SIPP menunjuk kunci yang sama", () => {
+    const k = jalankanAlat();
+    // 403 perkara - jenis KEDUA TERBANYAK di pengadilan ini.
+    expect(k.alatKunciJenis("Pengesahan Perkawinan/Istbat Nikah")).toBe("itsbat nikah");
+    // 26 perkara.
+    expect(k.alatKunciJenis("P3HP/Penetapan Ahli Waris")).toBe("penetapan ahli waris");
+    // 1 perkara.
+    expect(k.alatKunciJenis("Izin Poligami")).toBe("poligami");
+    // 1 perkara - EJAAN, bukan singkatan.
+    expect(k.alatKunciJenis("Wali Adhol")).toBe("wali adhal");
+  });
+
+  it("besar-kecil dan spasi tetap dirapikan seperti sebelumnya", () => {
+    const k = jalankanAlat();
+    expect(k.alatKunciJenis("  PENGESAHAN   PERKAWINAN/ISTBAT NIKAH ")).toBe("itsbat nikah");
+    expect(k.alatKunciJenis("Cerai  Gugat")).toBe("cerai gugat");
+  });
+
+  it("jenis yang memang berbeda TIDAK ikut disatukan", () => {
+    // Daftarnya ditulis satu per satu justru supaya ini tetap benar: aturan
+    // umum yang menyatukan ejaan akan ikut menyatukan yang memang lain.
+    const k = jalankanAlat();
+    expect(k.alatKunciJenis("Cerai Gugat")).toBe("cerai gugat");
+    expect(k.alatKunciJenis("Cerai Talak")).toBe("cerai talak");
+    expect(k.alatKunciJenis("Harta Bersama")).toBe("harta bersama");
+    expect(k.alatKunciJenis("Ekonomi Syariah")).toBe("ekonomi syariah");
+  });
+
+  it("nama lain dapat disebut layar, supaya barisnya tidak tampak hilang", () => {
+    const k = jalankanAlat();
+    expect(k.alatNamaLainJenis("itsbat nikah")).toContain("pengesahan perkawinan/istbat nikah");
+    expect(k.alatNamaLainJenis("cerai gugat")).toEqual([]);
+  });
+
+  it("baris lama berkunci nama lain DIGABUNG, dan yang disunting tangan menang", async () => {
+    // Kehilangan baris yang pernah disunting adalah kehilangan pekerjaan
+    // orang, bukan pembersihan.
+    const k = jalankanAlat();
+    await k.alatSimpanPetaBlangko({
+      "pengesahan perkawinan/istbat nikah": {
+        jenisAsli: "Pengesahan Perkawinan/Istbat Nikah",
+        blangko: "Putusan Itsbat Nikah",
+        berkas: "[01b] [Kabul] IN Itsbat Terpadu",
+        a: "AAAAAAAA",
+        b: "BBBBBBBB",
+        bawaan: false,
+      },
+    });
+    const peta = await k.alatMuatPetaBlangkoLengkap();
+    // Kunci lama tidak lagi ada; isinya pindah ke kunci baku.
+    expect(peta["pengesahan perkawinan/istbat nikah"]).toBeUndefined();
+    expect(peta["itsbat nikah"].berkas).toBe("[01b] [Kabul] IN Itsbat Terpadu");
+    // Yang disunting tangan MENGALAHKAN bawaan "[01] [Kabul] IN".
+    expect(peta["itsbat nikah"].bawaan).toBe(false);
+  });
+
+  it("bawaan tidak menimpa yang disunting, dan tidak digandakan", async () => {
+    const k = jalankanAlat();
+    await k.alatSimpanPetaBlangko({
+      "p3hp/penetapan ahli waris": {
+        jenisAsli: "P3HP/Penetapan Ahli Waris",
+        blangko: "x",
+        berkas: "berkas pilihan petugas",
+        a: "AAAAAAAA",
+        b: "BBBBBBBB",
+        bawaan: false,
+      },
+    });
+    const peta = await k.alatMuatPetaBlangkoLengkap();
+    expect(peta["p3hp/penetapan ahli waris"]).toBeUndefined();
+    expect(peta["penetapan ahli waris"].berkas).toBe("berkas pilihan petugas");
+    // Tetap satu baris untuk satu jenis - dua baris akan berselisih.
+    const kunciItsbat = Object.keys(peta).filter((x) => x.includes("ahli waris"));
+    expect(kunciItsbat).toEqual(["penetapan ahli waris"]);
+  });
+});
+
+// ============================================================================
+describe("cerai talak diambil dari menu cerai talak, bukan cerai gugat", () => {
+  /**
+   * Diukur 14 September 2026 atas ABT setempat (salinan peladen) dan folder
+   * blangko derry_briantono:
+   *
+   *   berkas  "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf" ADA DI KEDUA
+   *           folder - "1 Perceraian CG" dan "1a Perceraian CT" - dan identik
+   *           sampai bita terakhir (143.721 bita, md5 ad896109...)
+   *   menu    abt_menu 901 "Putusan Cerai Gugat" alias "Putusan CG"
+   *           abt_menu 902 "Putusan Cerai Talak" alias "Putusan CT"
+   *
+   * Dua nama untuk satu menu: alias muncul di bilah kiri, nama penuh pada
+   * judul halaman kelompok - dan yang tersimpan pada baris pemetaan adalah
+   * nama penuh, sebab dari sanalah tokennya dipanen.
+   */
+  const DAFTAR_CG = [
+    { blangko: "Putusan Cerai Gugat", berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap)", a: "AAA~1", b: "BBB~1" },
+  ];
+  const DAFTAR_CT = [
+    { blangko: "Putusan Cerai Talak", berkas: "[01] [Kabul Verstek] Cerai (Format Lengkap)", a: "AAA~2", b: "BBB~2" },
+  ];
+  const NAMA = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
+
+  it("pencocok berkelompok TIDAK punya cadangan sendiri", () => {
+    // Inilah cacat yang membatalkan perbaikan pertama: pemanggilnya memeriksa
+    // satu kelompok pada satu waktu, jadi cadangan di sini akan selalu menang
+    // di kelompok pertama yang senama - untuk cerai talak, itu justru gugat.
+    const k = jalankanAlat();
+    expect(k.alatCocokkanBerkasDiKelompok(DAFTAR_CG, NAMA, "Putusan Cerai Talak")).toBeNull();
+    expect(k.alatCocokkanBerkasDiKelompok(DAFTAR_CT, NAMA, "Putusan Cerai Talak").a).toBe("AAA~2");
+  });
+
+  it("pencocok menurut nama tidak melihat kelompok sama sekali", () => {
+    const k = jalankanAlat();
+    expect(k.alatCocokkanBerkas(DAFTAR_CG, NAMA).a).toBe("AAA~1");
+    expect(k.alatCocokkanBerkas(DAFTAR_CT, NAMA).a).toBe("AAA~2");
+  });
+
+  it("alias bilah kiri diterima juga - satu menu, dua nama", () => {
+    const k = jalankanAlat();
+    // Halaman kelompok menulis nama penuh; daftar yang diterima memuat keduanya.
+    expect(k.alatCocokkanBerkasDiKelompok(DAFTAR_CT, NAMA, ["Putusan Cerai Talak", "Putusan CT"]).a).toBe("AAA~2");
+    // Bilah kiri menulis alias - pengurutan pencarian harus tetap mengenalinya.
+    const kelompok = [{ kelompok: "Putusan CG" }, { kelompok: "Putusan Itsbat" }, { kelompok: "Putusan CT" }];
+    expect(
+      k.alatDahulukanKelompok(kelompok, ["Putusan Cerai Talak", "Putusan CT"]).map((x: any) => x.kelompok)
+    ).toEqual(["Putusan CT", "Putusan CG", "Putusan Itsbat"]);
+    // Tanpa sebutan - urutan ABT tidak diusik.
+    expect(k.alatDahulukanKelompok(kelompok, []).map((x: any) => x.kelompok)).toEqual([
+      "Putusan CG",
+      "Putusan Itsbat",
+      "Putusan CT",
+    ]);
+  });
+
+  it("bawaan menyebut menunya DAN aliasnya, dan nama berkas keduanya memang sama", async () => {
+    const k = jalankanAlat();
+    const peta = await k.alatMuatPetaBlangkoLengkap();
+    expect(peta["cerai talak"].blangko).toBe("Putusan Cerai Talak");
+    expect(peta["cerai talak"].blangkoLain).toEqual(["Putusan CT"]);
+    expect(peta["cerai gugat"].blangko).toBe("Putusan Cerai Gugat");
+    expect(peta["cerai gugat"].blangkoLain).toEqual(["Putusan CG"]);
+    // Justru inilah sebabnya menunya harus disebut: namanya tidak membedakan.
+    expect(peta["cerai talak"].berkas).toBe(peta["cerai gugat"].berkas);
+  });
+
+  it("baris bawaan dari pemasangan lama dilepas tokennya", async () => {
+    const k = jalankanAlat();
+    await k.alatSimpanPetaBlangko({
+      "cerai talak": {
+        jenisAsli: "Cerai Talak",
+        blangko: "Putusan Cerai Gugat",
+        berkas: NAMA,
+        a: "AAA~1",
+        b: "BBB~1",
+        bawaan: true,
+      },
+    });
+    const peta = await k.alatMuatPetaBlangkoLengkap();
+    expect(peta["cerai talak"].blangko).toBe("Putusan Cerai Talak");
+    expect(peta["cerai talak"].blangkoDiminta).toBe("Putusan Cerai Talak");
+    expect(peta["cerai talak"].a).toBe("");
+    // Namanya tidak diusik - yang keliru menunya, bukan berkasnya.
+    expect(peta["cerai talak"].berkas).toBe(NAMA);
+    expect(k.alatBlangkoLengkap(peta["cerai talak"])).toBe(false);
+  });
+
+  it("baris yang SAH mendarat di menu lain TIDAK dilepas berulang kali", async () => {
+    // ABT di hadapan petugas boleh saja tidak punya menu itu. Bila yang
+    // dibandingkan tempat-ditemukan, barisnya dianggap keliru pada SETIAP
+    // pemuatan: token dilepas, seluruh ABT dipindai ulang, hasilnya sama,
+    // dilepas lagi - panel yang selalu sibuk tanpa sebab.
+    const k = jalankanAlat();
+    await k.alatSimpanPetaBlangko({
+      "cerai talak": {
+        jenisAsli: "Cerai Talak",
+        blangko: "Putusan Cerai Gugat",
+        blangkoDiminta: "Putusan Cerai Talak",
+        berkas: NAMA,
+        a: "AAA~1",
+        b: "BBB~1",
+        bawaan: true,
+      },
+    });
+    const peta = await k.alatMuatPetaBlangkoLengkap();
+    expect(peta["cerai talak"].a).toBe("AAA~1");
+    expect(k.alatBlangkoLengkap(peta["cerai talak"])).toBe(true);
+  });
+
+  it("pemulihan berhenti: memuat dua kali tidak melepas token dua kali", async () => {
+    const k = jalankanAlat();
+    await k.alatSimpanPetaBlangko({
+      "cerai talak": {
+        jenisAsli: "Cerai Talak",
+        blangko: "Putusan Cerai Gugat",
+        berkas: NAMA,
+        a: "AAA~1",
+        b: "BBB~1",
+        bawaan: true,
+      },
+    });
+    await k.alatMuatPetaBlangkoLengkap();
+    // Seolah panel ABT sudah mengisinya dari menu yang benar.
+    const peta1 = await k.alatMuatPetaBlangko();
+    peta1["cerai talak"] = { ...peta1["cerai talak"], blangko: "Putusan Cerai Talak", a: "AAA~2", b: "BBB~2" };
+    await k.alatSimpanPetaBlangko(peta1);
+    const peta2 = await k.alatMuatPetaBlangkoLengkap();
+    expect(peta2["cerai talak"].a).toBe("AAA~2");
+  });
+
+  it("yang DISUNTING TANGAN ke menu gugat tidak dibatalkan diam-diam", async () => {
+    const k = jalankanAlat();
+    await k.alatSimpanPetaBlangko({
+      "cerai talak": {
+        jenisAsli: "Cerai Talak",
+        blangko: "Putusan Cerai Gugat",
+        berkas: NAMA,
+        a: "AAA~1",
+        b: "BBB~1",
+        bawaan: false,
+      },
+    });
+    const peta = await k.alatMuatPetaBlangkoLengkap();
+    expect(peta["cerai talak"].blangko).toBe("Putusan Cerai Gugat");
+    expect(peta["cerai talak"].a).toBe("AAA~1");
+  });
+
+  it("panel ABT memegang cadangannya sendiri, sesudah seluruh kelompok dilihat", () => {
+    const cari = abt.slice(abt.indexOf("async function cariTokenBlangko("));
+    const fungsi = cari.slice(0, cari.indexOf("\n}\n"));
+    // Yang tepat dipulangkan seketika; yang senama hanya DIINGAT.
+    expect(fungsi).toContain("alatCocokkanBerkasDiKelompok(daftar, namaBerkas, kelompokDiharapkan)");
+    expect(fungsi).toContain("if (!cadangan)");
+    expect(fungsi).toContain("return cadangan;");
+    // Halaman yang kebetulan terbuka bukan jawaban bila menunya disebut.
+    expect(fungsi).toContain("alatCocokkanBerkasDiKelompok(diHalaman, namaBerkas, kelompokDiharapkan)");
+    // Menu yang diminta ikut disimpan - tanpanya pemulihan berputar.
+    const isi = abt.slice(abt.indexOf("async function lengkapiTokenPeta("));
+    expect(isi.slice(0, 2400)).toContain("blangkoDiminta: diminta");
+  });
+
+  it("menu disebut di perkakas bersama - satu tempat, tidak ada salinan", () => {
+    // Sejak 1.141.0 popup tidak lagi memuat pemetaan, jadi tidak ada lagi dua
+    // salinan yang dapat berselisih. Yang dijaga sekarang: penyebutannya ada,
+    // dan hanya di panel-alat.js.
+    const popup = readFileSync(path.join(AKAR, "popup.js"), "utf8");
+    expect(sumberAlat).toContain('"Putusan Cerai Gugat"');
+    expect(sumberAlat).toContain('"Putusan Cerai Talak"');
+    expect(sumberAlat).toContain('"Putusan CT"');
+    expect(popup).not.toContain('"Putusan Cerai Talak"');
+  });
+});
+
+// ============================================================================
+describe("alamat portal dicatat dari setiap halaman", () => {
+  /**
+   * Popup tidak punya cara sendiri mengetahui alamat portal; ia memakai yang
+   * dicatatkan skrip konten. Selama hanya SIPP yang mencatat, petugas yang
+   * seharian di ABT memakai alamat yang tercatat entah kapan - dan sesudah
+   * pindah peladen, alamat itu menunjuk mesin yang sudah mati.
+   */
+  it("pencatatnya satu, di perkakas bersama", () => {
+    const k = jalankanAlat();
+    expect(typeof k.alatCatatAsalPortal).toBe("function");
+    // Sekali saja - alamatnya tidak berubah sepanjang halaman hidup.
+    expect(sumberAlat).toContain("if (alatAsalSudahDicatat) return;");
+  });
+
+  it("ketiga halaman memanggilnya - bukan SIPP saja", () => {
+    const popup = readFileSync(path.join(AKAR, "popup.js"), "utf8");
+    const aleta = readFileSync(path.join(AKAR, "aleta.js"), "utf8");
+    expect(konten).toContain("alatCatatAsalPortal();");
+    expect(abt).toContain("alatCatatAsalPortal();");
+    expect(aleta).toContain("alatCatatAsalPortal();");
+    // Dan popup masih membacanya dari tempat yang sama.
+    expect(popup).toContain("asalPortal");
+  });
+
+  it("tidak ada pencatat kedua yang dapat berselisih", () => {
+    // Dua salinan akan menulis nilai yang sama hari ini dan berbeda besok.
+    expect(konten).not.toContain("function catatAsalPortal(");
+    expect(abt).not.toContain("function catatAsalPortal(");
+  });
+
+  it("izin tabs tidak diminta - alamat satu halaman tidak menuntut seluruh tab", () => {
+    const manifest = readFileSync(path.join(AKAR, "manifest.json"), "utf8");
+    expect(JSON.parse(manifest).permissions).not.toContain("tabs");
   });
 });

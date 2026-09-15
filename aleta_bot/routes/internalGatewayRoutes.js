@@ -25,6 +25,9 @@ const ecourtLoginService = require("../services/ecourtLoginService");
 const sippKonteksService = require("../services/sippKonteksService");
 const obyekSengketaService = require("../services/obyekSengketaService");
 const praperiksaPutusanService = require("../services/praperiksaPutusanService");
+const penjagaTenggatService = require("../services/penjagaTenggatService");
+const penyusunPertimbanganService = require("../services/penyusunPertimbanganService");
+const arsipBertindakService = require("../services/arsipBertindakService");
 const ecourtPermintaanService = require("../services/ecourtPermintaanService");
 const abtUsulanService = require("../services/abtUsulanService");
 const abtCetakService = require("../services/abtCetakService");
@@ -779,6 +782,20 @@ router.post("/penunjukan/periksa", requireInternalToken, async (req, res) => {
  * sebenarnya menekan tombolnya dapat diisi apa saja - dan justru catatan itu
  * satu-satunya yang membedakan jalur ini dari memalsukan tanda tangan.
  */
+/**
+ * Daftar ruangan sidang yang dapat DIPILIH - beserta bendera sidang keliling
+ * milik SIPP sendiri. Yang memutuskan sifatnya (dalam gedung, keliling, atau
+ * terpadu) adalah portal; di sini benderanya dikirim apa adanya.
+ */
+router.get("/penetapan/ruangan", requireInternalToken, async (req, res) => {
+  try {
+    const ruangan = await penetapanTulisService.daftarRuangan();
+    res.json({ ok: true, ruangan });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
   try {
     const badan = req.body || {};
@@ -3178,6 +3195,61 @@ router.get("/sipp/jadwal-sidang/kalender", requireInternalToken, async (req, res
   try {
     const hasil = await sippJadwalSidangService.rekapBulanSidang(String(req.query.bulan || ""));
     res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * ============================================================================
+ * AGEN PENJAGA TENGGAT (TAHAP 3) - FAKTANYA SAJA
+ * ============================================================================
+ *
+ * Rute ini TIDAK memutuskan apa pun tentang terlampaui atau tidak. Ia hanya
+ * memulangkan fakta mentah; yang menilai adalah mesin aturan di portal
+ * (src/lib/penjaga-tenggat.ts), di tempat yang dapat diuji tanpa basis data.
+ *
+ * Pembagian yang sama dengan praperiksa putusan, dan sebabnya sama: aturan
+ * tenggat menuduh orang lalai, dan aturan yang menuduh harus berada di tempat
+ * yang penjaganya dapat menjalankannya seribu kali tanpa menyentuh SIPP.
+ */
+router.get("/sipp/penjaga-tenggat", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await penjagaTenggatService.bacaFakta(String(req.query.acuan || ""));
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * AGEN PENYUSUN PERTIMBANGAN (TAHAP 4) - FAKTA ALAT BUKTINYA.
+ *
+ * Membaca saja. Yang MENYUSUN kalimatnya adalah portal
+ * (src/lib/penyusun-pertimbangan.ts), dan yang menyetujuinya petugas.
+ */
+router.get("/sipp/pertimbangan/bukti", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await penyusunPertimbanganService.bacaFaktaBukti(String(req.query.nomor || ""));
+    res.status(hasil.ok ? 200 : 404).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * AGEN ARSIP e-COURT BERTINDAK (TAHAP 5) - PENCOCOKAN CAKRAM.
+ *
+ * Membaca catatan arsip dan memeriksa cakram. Tidak mengunduh, tidak
+ * menghapus. Yang memutuskan apakah pantas bertindak adalah portal
+ * (src/lib/arsip-ecourt-bertindak.ts), dan ia menolak bila akarnya tidak
+ * bertahan - menarik ulang ke direktori yang musnah tiap peti dibangun ulang
+ * adalah pekerjaan yang menghapus dirinya sendiri.
+ */
+router.get("/ecourt/arsip/cocokkan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await arsipBertindakService.cocokkanArsip(Number(req.query.batas) || 2000);
+    res.status(hasil.ok ? 200 : 500).json(hasil);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

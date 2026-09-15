@@ -215,6 +215,108 @@ function alatTerapkanPosisi(panel, posisi) {
 }
 
 /** Mengembalikan panel ke tempat, ukuran, dan tampilan bawaannya. */
+/**
+ * ============================================================================
+ * MENYINGKIR TANPA MENCARI TOMBOLNYA
+ * ============================================================================
+ *
+ * Panel ini melayang di atas halaman milik aplikasi lain dan kerap menutupi
+ * tepat bagian yang sedang dibaca. Tombol ciutnya ada di kepala panel - yang
+ * berarti untuk menyingkirkan panel, orang harus lebih dahulu menemukan
+ * panelnya.
+ *
+ * Dua jalan keluar yang sudah dikenal orang dari aplikasi lain:
+ *
+ *   Escape                 satu tekanan, tanpa memindahkan tangan dari papan
+ *   klik DUA KALI di luar   isyarat "saya sedang mengerjakan yang di bawah"
+ *
+ * Kenapa DUA kali, bukan sekali: panel ini dipakai berdampingan dengan
+ * halaman di bawahnya - petugas menyalin nomor perkara dari tabel SIPP lalu
+ * kembali ke panel. Menciutkannya pada klik pertama di luar membuat panel
+ * hilang setiap kali orang menyentuh halaman, dan ia harus dibentangkan lagi
+ * berkali-kali dalam satu menit.
+ *
+ * Escape TIDAK menciutkan bila sedang ada yang disunting: kotak isian memakai
+ * Escape untuk membatalkan suntingan, dan merebutnya berarti menutup panel
+ * sekaligus membuang ketikan orang.
+ */
+/**
+ * ============================================================================
+ * MODE SUNTING LANGSUNG DI ABT - BAWAANNYA MATI
+ * ============================================================================
+ *
+ * Panel ABT membuat tiap nilai variabel dapat disunting hanya dengan
+ * mengkliknya. Cepat bagi yang memang hendak menyunting, dan berbahaya bagi
+ * yang tidak: satu klik salah sasaran pada baris yang sedang dibaca membuka
+ * kotak isian di atas nilai yang benar, dan yang menutupnya dengan
+ * mengklik ke tempat lain tidak selalu sadar apakah ketikannya tersimpan.
+ *
+ * Halaman ABT adalah tempat naskah putusan disusun. Membuka suntingan karena
+ * kebetulan tersentuh adalah risiko yang tidak sebanding dengan waktu yang
+ * dihemat satu klik.
+ *
+ * MATI secara bawaan, dan itu keputusan: perilaku yang mengubah isi berkas
+ * perkara tidak pantas menyala tanpa ada yang menyalakannya. Saat mati, tiap
+ * baris tetap punya tombol suntingnya sendiri - jalannya lebih panjang satu
+ * tekanan, dan tekanan itulah yang menyatakan kehendak.
+ */
+const KUNCI_SUNTING_LANGSUNG = "suntingLangsungAbt";
+
+async function alatSuntingLangsung() {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_SUNTING_LANGSUNG]);
+    return simpan[KUNCI_SUNTING_LANGSUNG] === true;
+  } catch {
+    // Penyimpanan tidak terbaca = anggap MATI. Yang gagal dibaca tidak boleh
+    // menyalakan perilaku yang mengubah berkas perkara.
+    return false;
+  }
+}
+
+async function alatSetelSuntingLangsung(nyala) {
+  try {
+    await chrome.storage.local.set({ [KUNCI_SUNTING_LANGSUNG]: nyala === true });
+  } catch {
+    /* tanpa penyimpanan, saklarnya hanya berlaku selama halaman hidup */
+  }
+}
+
+function alatPasangJalanKeluar(panel, kunci) {
+  if (!panel || panel.dataset.jalanKeluar === "1") return;
+  panel.dataset.jalanKeluar = "1";
+
+  const sedangMenyunting = () => {
+    const fokus = document.activeElement;
+    if (!fokus) return false;
+    const tag = String(fokus.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return true;
+    return fokus.isContentEditable === true;
+  };
+
+  const ciutkan = () => {
+    if (panel.classList.contains("aleta-panel-lencana")) return;
+    alatCiutkan(panel, kunci, true);
+  };
+
+  document.addEventListener(
+    "keydown",
+    (peristiwa) => {
+      if (peristiwa.key !== "Escape" || !panel.isConnected) return;
+      if (sedangMenyunting()) return;
+      ciutkan();
+    },
+    true
+  );
+
+  document.addEventListener("dblclick", (peristiwa) => {
+    if (!panel.isConnected) return;
+    // Di DALAM panel, klik ganda adalah memilih kata - bukan permintaan
+    // menyingkir.
+    if (panel.contains(peristiwa.target)) return;
+    ciutkan();
+  });
+}
+
 function alatKembalikanBawaan(panel, kunci) {
   try {
     void chrome.storage.local.remove(kunci);
@@ -226,6 +328,25 @@ function alatKembalikanBawaan(panel, kunci) {
   }
   delete panel.dataset.tinggiSendiri;
   panel.classList.remove("aleta-panel-penuh", "aleta-panel-ciut");
+
+  // ==========================================================================
+  // DIJANGKARKAN KE KANAN SECARA EKSPLISIT, BUKAN DISERAHKAN KE CSS
+  // ==========================================================================
+  //
+  // Bawaan panel adalah top 12px KANAN 12px, dan membersihkan gaya sebaris
+  // seharusnya mengembalikannya ke sana. Nyatanya tidak selalu: panel yang
+  // pernah digeser sudah dijangkarkan ulang ke kiri oleh alatNormalkanJangkar
+  // (right:auto + left px), dan pada halaman yang aturan CSS-nya bertumpuk -
+  // ABT dan halaman ALETA di antaranya - jangkar kanan itu tidak selalu
+  // menang kembali. Hasilnya panel melompat ke KIRI, menutupi tempat kerja.
+  //
+  // Menuliskannya sendiri membuat hasilnya sama di ketiga halaman, tanpa
+  // bergantung pada aturan mana yang kebetulan lebih kuat.
+  panel.style.right = "12px";
+  panel.style.top = "12px";
+  panel.style.left = "auto";
+  panel.style.bottom = "auto";
+
   alatJepitTinggi(panel);
 }
 
@@ -1309,6 +1430,7 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   alatDengarkanTemaPalet();
   void alatMuatKering();
 
+  alatPasangJalanKeluar(panel, kunci);
   alatNormalkanJangkar(panel);
   const posisiTersimpan = await alatMuatPosisi(kunci);
   alatTerapkanPosisi(panel, posisiTersimpan);
@@ -2941,12 +3063,70 @@ const ALAT_JENIS_LAZIM = [
   "Asal Usul Anak",
 ];
 
-/** Kunci pemetaan: nama jenis dirapikan supaya "Cerai gugat" dan "CERAI GUGAT" satu. */
+/**
+ * ============================================================================
+ * SIPP MENAMAI JENIS PERKARA DENGAN KATA YANG LAIN
+ * ============================================================================
+ *
+ * Pemetaan blangko berkunci nama jenis perkara apa adanya dari SIPP. Selama
+ * namanya sama dengan yang kita daftar, ia bekerja. Diukur atas sipp_donggala
+ * (salinan server, 14 September 2026), perkara sejak 2025 - empat tidak sama:
+ *
+ *   Pengesahan Perkawinan/Istbat Nikah   403 perkara   kita: "itsbat nikah"
+ *   P3HP/Penetapan Ahli Waris             26 perkara   kita: "penetapan ahli waris"
+ *   Izin Poligami                          1 perkara   kita: "poligami"
+ *   Wali Adhol                             1 perkara   kita: "wali adhal"
+ *
+ * 431 perkara, dan yang pertama adalah jenis KEDUA TERBANYAK di pengadilan
+ * ini. Seluruhnya dilewati putusan massal dengan alasan "blangko belum
+ * dipetakan" - kalimat yang benar menurut kodenya dan menyesatkan menurut
+ * kenyataannya, sebab blangkonya SUDAH dipetakan, hanya di bawah nama lain.
+ *
+ * Yang keempat bukan singkatan melainkan EJAAN: "Wali Adhol" dan "Wali
+ * Adhal". Tidak ada aturan umum yang dapat menyatukan keduanya tanpa juga
+ * menyatukan kata yang memang berbeda - maka daftarnya ditulis satu per satu,
+ * dan tiap tambahan harus datang dari nama yang BENAR-BENAR ada di SIPP,
+ * bukan dari dugaan tentang nama yang mungkin ada.
+ */
+const ALAT_PADANAN_JENIS = [
+  [
+    "itsbat nikah",
+    [
+      "pengesahan perkawinan/istbat nikah",
+      "pengesahan perkawinan/itsbat nikah",
+      "pengesahan perkawinan",
+      "istbat nikah",
+      "isbat nikah",
+    ],
+  ],
+  ["penetapan ahli waris", ["p3hp/penetapan ahli waris", "p3hp"]],
+  ["poligami", ["izin poligami"]],
+  ["wali adhal", ["wali adhol", "wali adlal"]],
+];
+
+/** nama lain -> kunci baku. Disusun sekali; pencariannya satu langkah. */
+const ALAT_PETA_PADANAN = (() => {
+  const peta = new Map();
+  for (const [baku, lain] of ALAT_PADANAN_JENIS) for (const n of lain) peta.set(n, baku);
+  return peta;
+})();
+
+/**
+ * Kunci pemetaan: nama jenis dirapikan supaya "Cerai gugat" dan "CERAI GUGAT"
+ * satu, lalu dipadankan supaya nama SIPP yang berbeda menunjuk kunci yang sama.
+ */
 function alatKunciJenis(jenis) {
-  return String(jenis || "")
+  const bersih = String(jenis || "")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+  return ALAT_PETA_PADANAN.get(bersih) || bersih;
+}
+
+/** Nama lain yang menunjuk kunci ini - untuk disebut di layar. */
+function alatNamaLainJenis(kunci) {
+  const baris = ALAT_PADANAN_JENIS.find(([baku]) => baku === kunci);
+  return baris ? baris[1] : [];
 }
 
 async function alatMuatPetaBlangko() {
@@ -3244,6 +3424,47 @@ function alatBlangkoTerpetakan(baris) {
  * panel ABT begitu halamannya terbuka.
  */
 const ALAT_BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
+/**
+ * ============================================================================
+ * NAMA BERKAS TIDAK CUKUP - KELOMPOKNYA YANG MEMBEDAKAN
+ * ============================================================================
+ *
+ * Diukur 14 September 2026 atas folder blangko peladen (derry_briantono):
+ * berkas "[01] [Kabul Verstek] Cerai (Format Lengkap).rtf" ADA DI KEDUA
+ * folder - "1 Perceraian CG" dan "1a Perceraian CT" - dan keduanya identik
+ * sampai ke bita terakhir (md5 ad896109…, 143.721 bita).
+ *
+ * Pencarian token bekerja atas NAMA BERKAS, lalu memakai kelompok PERTAMA
+ * yang memuatnya. Di ABT "Putusan Cerai Gugat" (menu 901) berdiri sebelum
+ * "Putusan Cerai Talak" (menu 902), jadi Cerai Talak SELALU mendarat di menu
+ * Cerai Gugat. Isinya kebetulan sama, jadi tidak ada satu pun galat yang
+ * berbunyi - tetapi menu CG tidak memuat berkas khas talak sama sekali:
+ *
+ *   [01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak)
+ *   [02]  [Kabul] CT - F
+ *   [02]  [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak)
+ *   [02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F
+ *
+ * Selama barisnya tertambat ke menu CG, tak satu pun dari itu dapat dipilih
+ * untuk perkara cerai talak. Karena itu baris bawaan menyebut kelompoknya,
+ * dan pencarian token menghormati sebutan itu.
+ */
+const ALAT_KELOMPOK_CERAI_GUGAT = "Putusan Cerai Gugat";
+const ALAT_KELOMPOK_CERAI_TALAK = "Putusan Cerai Talak";
+/**
+ * ABT MENYEBUT SATU MENU DENGAN DUA NAMA, dan keduanya sama-sama kita baca:
+ *
+ *   abt_menu.nama        "Putusan Cerai Talak"  - judul <h3> di halaman kelompok
+ *   abt_menu.nama_alias  "Putusan CT"           - tulisan tautan di bilah kiri
+ *
+ * Yang tersimpan pada baris pemetaan adalah yang PERTAMA (dari <h3>), sebab
+ * dari sanalah tokennya dipanen. Yang dibaca saat mengurutkan pencarian
+ * adalah yang KEDUA. Menyebut satu saja membuat separuh kodenya tidak pernah
+ * cocok - dan diamnya tidak terlihat, ia hanya membuat pencarian memindai
+ * seluruh kelompok dengan urutan apa adanya.
+ */
+const ALAT_KELOMPOK_LAIN_CERAI_GUGAT = ["Putusan CG"];
+const ALAT_KELOMPOK_LAIN_CERAI_TALAK = ["Putusan CT"];
 /** Seri yang sama di peladen: "[01] [Kabul] IN" untuk itsbat nikah. */
 const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
 /**
@@ -3269,8 +3490,20 @@ const ALAT_BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
  */
 const ALAT_BERKAS_DISPENSASI_BAWAAN = "[01] [Kabul] DK - (Anak P Cewek) Hamil";
 const ALAT_PETA_BAWAAN = {
-  "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
-  "cerai talak": { jenisAsli: "Cerai Talak", berkas: ALAT_BERKAS_CERAI_BAWAAN, bawaan: true },
+  "cerai gugat": {
+    jenisAsli: "Cerai Gugat",
+    berkas: ALAT_BERKAS_CERAI_BAWAAN,
+    blangko: ALAT_KELOMPOK_CERAI_GUGAT,
+    blangkoLain: ALAT_KELOMPOK_LAIN_CERAI_GUGAT,
+    bawaan: true,
+  },
+  "cerai talak": {
+    jenisAsli: "Cerai Talak",
+    berkas: ALAT_BERKAS_CERAI_BAWAAN,
+    blangko: ALAT_KELOMPOK_CERAI_TALAK,
+    blangkoLain: ALAT_KELOMPOK_LAIN_CERAI_TALAK,
+    bawaan: true,
+  },
   "itsbat nikah": { jenisAsli: "Itsbat Nikah", berkas: ALAT_BERKAS_ITSBAT_BAWAAN, bawaan: true },
   "dispensasi kawin": {
     jenisAsli: "Dispensasi Kawin",
@@ -3288,11 +3521,80 @@ const ALAT_PETA_BAWAAN = {
 async function alatMuatPetaBlangkoLengkap() {
   const peta = await alatMuatPetaBlangko();
   let berubah = false;
+
+  // ==========================================================================
+  // BARIS YANG BERKUNCI NAMA LAIN DIGABUNG, TIDAK DITINGGALKAN
+  // ==========================================================================
+  //
+  // Sebelum padanan ada, baris dapat tersimpan dengan kunci "pengesahan
+  // perkawinan/istbat nikah". Sesudah padanan ada, kunci itu tidak akan
+  // pernah dicari lagi - dan baris yang pernah disunting tangan akan lenyap
+  // dari layar tanpa satu pun pemberitahuan. Itu kehilangan pekerjaan orang,
+  // bukan pembersihan.
+  //
+  // Yang menang saat keduanya ada: baris yang PERNAH DISUNTING mengalahkan
+  // bawaan, dan di antara dua yang sederajat, yang sudah punya token. Yang
+  // kalah tetap dibuang - dua baris untuk satu jenis akan berselisih.
+  for (const kunciLama of Object.keys(peta)) {
+    const kunciBaku = alatKunciJenis(kunciLama);
+    if (kunciBaku === kunciLama) continue;
+    const lama = peta[kunciLama];
+    const ada = peta[kunciBaku];
+    const lamaMenang =
+      !ada ||
+      (lama && !lama.bawaan && ada.bawaan) ||
+      (lama && Boolean(lama.bawaan) === Boolean(ada.bawaan) && alatBlangkoLengkap(lama) && !alatBlangkoLengkap(ada));
+    if (lamaMenang) peta[kunciBaku] = { ...lama, jenisAsli: (ada && ada.jenisAsli) || lama.jenisAsli || kunciBaku };
+    delete peta[kunciLama];
+    berubah = true;
+  }
+
   for (const [kunci, bawaan] of Object.entries(ALAT_PETA_BAWAAN)) {
     if (peta[kunci] === undefined) {
       peta[kunci] = { ...bawaan, disimpanPada: new Date().toISOString() };
       berubah = true;
+      continue;
     }
+    // ========================================================================
+    // BARIS BAWAAN YANG TERTAMBAT KE MENU YANG KELIRU DILEPAS
+    // ========================================================================
+    //
+    // Cerai Talak sudah tersimpan bertoken menu "Putusan Cerai Gugat" pada
+    // pemasangan sebelum ini - bukan karena ada yang memilihnya, melainkan
+    // karena pencarian berdasar nama berkas selalu menemukan CG lebih dulu.
+    // Token itu dilepas supaya diambil ulang dari menu yang benar.
+    //
+    // HANYA baris bawaan. Yang pernah disunting tangan menyatakan kehendak
+    // orang - kalau seseorang sengaja menautkan talak ke menu gugat, itu
+    // keputusannya, bukan kekeliruan yang boleh saya batalkan diam-diam.
+    // Yang dibandingkan adalah menu yang DIMINTA, bukan menu tempat tokennya
+    // akhirnya ditemukan. Keduanya bisa berbeda secara sah - bila ABT di
+    // hadapan petugas memang tidak punya menu itu, barisnya terisi dari menu
+    // lain dan itu sudah disebut pada catatannya.
+    //
+    // Membandingkan tempat-ditemukan akan membuat baris semacam itu dianggap
+    // keliru pada SETIAP pemuatan: token dilepas, seluruh ABT dipindai ulang,
+    // hasilnya sama, dilepas lagi. Berputar tanpa akhir, dan yang terlihat di
+    // layar hanya panel yang selalu sibuk tanpa sebab.
+    const ada = peta[kunci];
+    if (!ada || !ada.bawaan || !bawaan.blangko) continue;
+    const dimintaDulu = ada.blangkoDiminta || "";
+    const perluAmbilUlang = dimintaDulu
+      ? alatKunciKelompok(dimintaDulu) !== alatKunciKelompok(bawaan.blangko)
+      : true;
+    if (!perluAmbilUlang) continue;
+    peta[kunci] = {
+      ...ada,
+      blangko: bawaan.blangko,
+      blangkoDiminta: bawaan.blangko,
+      ...(bawaan.blangkoLain ? { blangkoLain: bawaan.blangkoLain } : {}),
+      a: "",
+      b: "",
+      d: "",
+      catatan: `menu disetel ke "${bawaan.blangko}" - token diambil ulang`,
+      disimpanPada: new Date().toISOString(),
+    };
+    berubah = true;
   }
   if (berubah) await alatSimpanPetaBlangko(peta);
   return peta;
@@ -3350,11 +3652,92 @@ function alatUraiBerkasDariHtml(html) {
   return hasil;
 }
 
-/** Berkas yang namanya sama, dari daftar hasil urai. */
+/**
+ * ============================================================================
+ * ALAMAT PORTAL DICATAT DARI SETIAP HALAMAN, BUKAN HANYA SIPP
+ * ============================================================================
+ *
+ * Popup berjalan di origin chrome-extension:// dan tidak punya cara lain
+ * mengetahui alamat portal. Dulu hanya skrip SIPP yang mencatatnya, dengan
+ * alasan "ia yang berjalan di halaman SIPP" - padahal ABT dan halaman ALETA
+ * berdiri di origin YANG SAMA dan sama-sama tahu.
+ *
+ * Akibatnya nyata: petugas yang seharian di ABT tidak pernah membuka SIPP,
+ * jadi popupnya memakai alamat yang tercatat entah kapan - dan sesudah
+ * pindah peladen, alamat itu menunjuk mesin yang sudah mati. Yang terbaca di
+ * layar "portal tidak terjangkau", seolah portalnya yang bermasalah.
+ *
+ * Menaruhnya di sini membuat ketiga skrip mencatat hal yang sama tanpa
+ * menyalin kodenya, dan tanpa izin "tabs" - izin itu memberi kemampuan
+ * membaca alamat SELURUH tab peramban, jauh lebih luas daripada yang
+ * dibutuhkan.
+ */
+let alatAsalSudahDicatat = false;
+
+function alatCatatAsalPortal() {
+  // Alamatnya tidak berubah sepanjang halaman ini hidup, jadi menuliskannya
+  // pada tiap penyegaran hanya menambah kerja tanpa menambah keterangan.
+  if (alatAsalSudahDicatat) return;
+  alatAsalSudahDicatat = true;
+  try {
+    chrome.storage.local.set({ asalPortal: `${location.origin}/aleta` });
+  } catch {
+    /* penyimpanan tidak tersedia: popup memakai keterangan cadangan */
+  }
+}
+
+/** Nama kelompok dirapikan untuk dibandingkan - besar-kecil dan spasi saja. */
+function alatKunciKelompok(nama) {
+  return String(nama || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** Nama-nama kelompok yang boleh diterima, dirapikan - satu nama atau daftar. */
+function alatKunciKelompokBanyak(kelompok) {
+  const daftar = Array.isArray(kelompok) ? kelompok : [kelompok];
+  return daftar.map(alatKunciKelompok).filter(Boolean);
+}
+
+/** Berkas yang namanya sama, dari daftar hasil urai. Kelompoknya tidak dilihat. */
 function alatCocokkanBerkas(daftar, nama) {
   const kunci = alatKunciBerkas(nama);
   if (!kunci) return null;
   return (daftar || []).find((b) => alatKunciBerkas(b.berkas) === kunci) || null;
+}
+
+/**
+ * Berkas senama YANG BERADA DI KELOMPOK YANG DIMINTA - atau null.
+ *
+ * ============================================================================
+ * KENAPA INI TIDAK BOLEH PUNYA CADANGAN SENDIRI
+ * ============================================================================
+ *
+ * Versi pertama perbaikan ini memulangkan "yang senama" bila kelompoknya tidak
+ * ketemu, dan itu membatalkan seluruh perbaikannya: pemanggilnya memeriksa
+ * satu kelompok pada satu waktu, jadi saat memindai Cerai Gugat ia langsung
+ * mendapat jawaban dan tidak pernah sampai ke Cerai Talak. Cadangannya harus
+ * dipegang pemanggil, yang melihat SELURUH kelompok - bukan di sini, yang
+ * hanya melihat satu.
+ */
+function alatCocokkanBerkasDiKelompok(daftar, nama, kelompokDiharapkan) {
+  const kunci = alatKunciBerkas(nama);
+  const diminta = alatKunciKelompokBanyak(kelompokDiharapkan);
+  if (!kunci || diminta.length === 0) return null;
+  return (
+    (daftar || []).find(
+      (b) => alatKunciBerkas(b.berkas) === kunci && diminta.includes(alatKunciKelompok(b.blangko))
+    ) || null
+  );
+}
+
+/** Kelompok yang diharapkan didahulukan, sisanya tetap pada urutan ABT. */
+function alatDahulukanKelompok(daftar, kelompokDiharapkan) {
+  const diminta = alatKunciKelompokBanyak(kelompokDiharapkan);
+  const semua = (daftar || []).slice();
+  if (diminta.length === 0) return semua;
+  const cocok = (k) => diminta.includes(alatKunciKelompok(k.kelompok));
+  const depan = semua.filter(cocok);
+  if (depan.length === 0) return semua;
+  return depan.concat(semua.filter((k) => !cocok(k)));
 }
 
 /* ─── 1c. PEMETAAN DIISI DARI POHON BLANGKO PORTAL ─────────────────────────

@@ -15,6 +15,7 @@ const kotak = document.getElementById("aktif");
 const kotakTanda = document.getElementById("tandaiHalaman");
 const kotakSisip = document.getElementById("sisipJadwal");
 const kotakCetak = document.getElementById("cetakTigaBerkas");
+const kotakSunting = document.getElementById("suntingLangsungAbt");
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -117,6 +118,9 @@ function pasangNilai(simpan) {
   // Bawaannya MATI: ia mengubah arti tombol CETAK milik ABT, dan satu tekanan
   // yang dulu menghasilkan satu berkas menjadi tiga.
   if (kotakCetak) kotakCetak.checked = simpan.cetakTigaBerkas === true;
+  // Bawaannya MATI - yang gagal dibaca tidak boleh menyalakan perilaku yang
+  // mengubah berkas perkara.
+  if (kotakSunting) kotakSunting.checked = simpan.suntingLangsungAbt === true;
 
   // Alamat portal dicatat skrip konten saat halaman SIPP dibuka. Popup
   // berjalan di origin chrome-extension://, sehingga tautan relatif di sini
@@ -135,7 +139,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "asalPortal", SKALA_KUNCI])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "asalPortal", SKALA_KUNCI])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -226,6 +230,9 @@ kotakTanda.addEventListener("change", () => simpan("tandaiHalaman", kotakTanda.c
 kotakSisip.addEventListener("change", () => simpan("sisipJadwal", kotakSisip.checked));
 if (kotakCetak) {
   kotakCetak.addEventListener("change", () => simpan("cetakTigaBerkas", kotakCetak.checked));
+  if (kotakSunting) {
+    kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked));
+  }
 }
 
 /**
@@ -381,7 +388,6 @@ async function periksaAkunAleta(asal) {
     // Pemilih warna gelap hanya bagi super admin - diputuskan di sini, sesudah
     // portal menjawab siapa yang masuk. Sebelum itu barisnya tersembunyi.
     void pasangPemilihWarnaPopup(peran);
-    void pasangPetaBlangkoPopup(peran);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -548,268 +554,23 @@ if (tombolTema) {
 
 /**
  * ============================================================================
- * PEMETAAN BLANGKO PUTUSAN - DISUNTING DI SINI, MENURUT NAMA
+ * PEMETAAN BLANGKO PUTUSAN TIDAK LAGI DI SINI
  * ============================================================================
  *
- * Kunci penyimpanan, kunci jenis, dan bawaannya SAMA PERSIS dengan
- * panel-alat.js (ALAT_PETA_BLANGKO_KUNCI, alatKunciJenis, ALAT_PETA_BAWAAN) -
- * popup dan panel membaca satu tempat. Ada uji yang menjaga keduanya tidak
- * berselisih.
+ * Dulu popup ini memuat tabel pemetaan lengkap dengan penyunting nama berkas,
+ * penambah jenis, dan pengisi dari pohon blangko. Popup dibuka dari bilah
+ * ekstensi dan lebarnya sebesar kartu nama; tabel belasan baris di dalamnya
+ * membuat saklar-saklar yang benar-benar harian - nyalakan ALETA, tandai
+ * halaman SIPP, cetak tiga berkas - terdorong jauh ke bawah gulungan.
  *
- * Yang dapat disunting di sini hanya NAMA berkasnya. Token a/b hanya dapat
- * dibaca dari halaman ABT; panel ABT mengambilnya sendiri begitu halaman
- * blangko terbuka, dan keadaannya terbaca di kolom "token".
+ * Lagi pula tempatnya memang bukan di sini: token hanya dapat dipanen dari
+ * halaman blangko ABT, jadi separuh pekerjaannya selalu menuntut membuka ABT.
+ * Yang disunting di popup selalu berupa setengah pekerjaan.
+ *
+ * Seluruhnya pindah ke panel PUTUSAN MASSAL di halaman ABT - satu tempat,
+ * berdampingan dengan daftar blangko yang menjadi sumbernya. Panel itu pula
+ * yang menyembunyikan baris yang sudah selesai.
+ *
+ * Kunci penyimpanannya tidak berubah (petaBlangkoPutusan), jadi pemetaan yang
+ * pernah disusun lewat popup tetap terbaca panel ABT apa adanya.
  */
-const KUNCI_PETA_BLANGKO = "petaBlangkoPutusan";
-const BERKAS_CERAI_BAWAAN = "[01] [Kabul Verstek] Cerai (Format Lengkap)";
-const BERKAS_ITSBAT_BAWAAN = "[01] [Kabul] IN";
-const BERKAS_DISPENSASI_BAWAAN = "[01] [Kabul] DK - (Anak P Cewek) Hamil";
-const PETA_BAWAAN_POPUP = {
-  "cerai gugat": { jenisAsli: "Cerai Gugat", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
-  "cerai talak": { jenisAsli: "Cerai Talak", berkas: BERKAS_CERAI_BAWAAN, bawaan: true },
-  "itsbat nikah": { jenisAsli: "Itsbat Nikah", berkas: BERKAS_ITSBAT_BAWAAN, bawaan: true },
-  "dispensasi kawin": {
-    jenisAsli: "Dispensasi Kawin",
-    berkas: BERKAS_DISPENSASI_BAWAAN,
-    bawaan: true,
-    catatan: "nama dari peladen - varian cowok: [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil",
-  },
-};
-
-function kunciJenisPopup(jenis) {
-  return String(jenis || "").replace(/\s+/g, " ").trim().toLowerCase();
-}
-
-async function pasangPetaBlangkoPopup(peran) {
-  const bagian = document.getElementById("bagianPeta");
-  const daftar = document.getElementById("daftarPeta");
-  const masukanBaru = document.getElementById("petaJenisBaru");
-  const tombolTambah = document.getElementById("petaTambah");
-  const tombolPohon = document.getElementById("petaDariPohon");
-  const kabar = document.getElementById("petaKabar");
-  if (!bagian || !daftar) return;
-  let pohon = null;
-  if (!/super/i.test(String(peran || ""))) {
-    bagian.hidden = true;
-    return;
-  }
-
-  let peta = {};
-  try {
-    const simpan = penyimpanan ? await penyimpanan.get([KUNCI_PETA_BLANGKO]) : {};
-    const ada = simpan && simpan[KUNCI_PETA_BLANGKO];
-    peta = ada && typeof ada === "object" ? ada : {};
-  } catch {
-    peta = {};
-  }
-  for (const [k, v] of Object.entries(PETA_BAWAAN_POPUP)) if (peta[k] === undefined) peta[k] = { ...v };
-
-  const beritahu = (teks) => {
-    if (!kabar) return;
-    kabar.textContent = teks;
-    kabar.hidden = !teks;
-  };
-
-  const simpanPeta = async () => {
-    try {
-      if (penyimpanan) await penyimpanan.set({ [KUNCI_PETA_BLANGKO]: peta });
-      return true;
-    } catch {
-      beritahu("Tidak tersimpan - penyimpanan ekstensi ditolak.");
-      return false;
-    }
-  };
-
-  const gambar = () => {
-    daftar.textContent = "";
-    for (const kunci of Object.keys(peta).sort()) {
-      const baris = peta[kunci] || {};
-      const wadah = document.createElement("div");
-      wadah.className = "peta-baris";
-
-      const label = document.createElement("div");
-      label.className = "peta-jenis";
-      label.textContent = baris.jenisAsli || kunci;
-      wadah.appendChild(label);
-
-      const masukan = document.createElement("input");
-      masukan.type = "text";
-      masukan.className = "peta-isi";
-      masukan.placeholder = "nama berkas blangko ABT…";
-      masukan.value = String(baris.berkas || "");
-      wadah.appendChild(masukan);
-      // Nama-nama dari pohon disodorkan sebagai pilihan ketik - bila pohonnya
-      // sudah dibaca.
-      if (pohon) {
-        const daftarNama = document.createElement("datalist");
-        daftarNama.id = `pohon-${kunci.replace(/[^a-z0-9]+/g, "-")}`;
-        for (const b of berkasPohonUntukJenis(pohon, label.textContent)) {
-          const o = document.createElement("option");
-          o.value = b.berkas;
-          o.label = `${b.blangko}${b.kategori ? ` · ${b.kategori}` : ""}`;
-          daftarNama.appendChild(o);
-        }
-        masukan.setAttribute("list", daftarNama.id);
-        wadah.appendChild(daftarNama);
-      }
-
-      const token = document.createElement("span");
-      token.className = `peta-token ${baris.a && baris.b ? "ada" : "belum"}`;
-      token.textContent = baris.a && baris.b ? "token ✓" : baris.catatan ? `token belum diambil — ${baris.catatan}` : "token belum diambil";
-      token.title = baris.a && baris.b
-        ? `Dari kelompok ${baris.blangko || "?"} - dipakai langsung.`
-        : "Diambil sendiri oleh panel ALETA saat halaman blangko ABT terbuka.";
-      wadah.appendChild(token);
-
-      const simpan = document.createElement("button");
-      simpan.type = "button";
-      simpan.className = "skala-pulih";
-      simpan.textContent = "simpan";
-      simpan.addEventListener("click", async () => {
-        const nama = masukan.value.replace(/\s+/g, " ").trim();
-        if (!nama) {
-          beritahu("Nama berkas kosong - tidak disimpan. Pakai hapus bila memang hendak dilepas.");
-          return;
-        }
-        const berubah = nama !== String(baris.berkas || "");
-        // Nama yang berganti membuat token lama tidak berlaku - dilepas,
-        // supaya panel ABT mencarinya lagi untuk nama yang baru.
-        peta[kunci] = berubah
-          ? { jenisAsli: baris.jenisAsli || kunci, berkas: nama, bawaan: false }
-          : { ...baris, berkas: nama };
-        if (await simpanPeta()) {
-          beritahu(`${label.textContent} → ${nama} tersimpan${berubah ? "; token diambil ulang di halaman ABT" : ""}.`);
-          gambar();
-        }
-      });
-      wadah.appendChild(simpan);
-
-      const hapus = document.createElement("button");
-      hapus.type = "button";
-      hapus.className = "skala-pulih";
-      hapus.textContent = "hapus";
-      hapus.addEventListener("click", async () => {
-        // Dihapus = ditandai kosong, bukan dibuang: yang dibuang akan diisi
-        // bawaan lagi pada pemuatan berikutnya.
-        peta[kunci] = { jenisAsli: baris.jenisAsli || kunci, berkas: "", bawaan: false };
-        if (await simpanPeta()) {
-          beritahu(`${label.textContent} dilepas dari pemetaan.`);
-          gambar();
-        }
-      });
-      wadah.appendChild(hapus);
-
-      daftar.appendChild(wadah);
-    }
-  };
-
-  if (tombolTambah && masukanBaru) {
-    tombolTambah.addEventListener("click", async () => {
-      const jenis = masukanBaru.value.replace(/\s+/g, " ").trim();
-      const kunci = kunciJenisPopup(jenis);
-      if (!kunci) return;
-      if (!peta[kunci]) peta[kunci] = { jenisAsli: jenis, berkas: "", bawaan: false };
-      masukanBaru.value = "";
-      if (await simpanPeta()) gambar();
-    });
-  }
-
-  if (tombolPohon) {
-    tombolPohon.addEventListener("click", async () => {
-      tombolPohon.disabled = true;
-      beritahu("Membaca pohon blangko dari portal…");
-      try {
-        const simpan = penyimpanan ? await penyimpanan.get(["asalPortal"]) : {};
-        const asal = String((simpan && simpan.asalPortal) || "").replace(/\/+$/, "");
-        if (!asal) throw new Error("Alamat portal ALETA belum diketahui - buka satu halaman SIPP dahulu.");
-        pohon = await ambilPohonBlangkoPopup(asal);
-        const terisi = isiPetaDariPohonPopup(peta, pohon);
-        if (await simpanPeta()) {
-          gambar();
-          beritahu(
-            terisi.length
-              ? `${terisi.length} jenis terisi dari pohon: ${terisi.map((x) => `${x.jenis} → ${x.berkas}`).join("; ")}. Tokennya diambil di halaman ABT.`
-              : "Tidak ada baris yang perlu diisi - semua sudah bernama, atau pohonnya kosong di peladen."
-          );
-        }
-      } catch (galat) {
-        beritahu(String((galat && galat.message) || galat));
-      }
-      tombolPohon.disabled = false;
-    });
-  }
-
-  gambar();
-  bagian.hidden = false;
-}
-
-/* Pohon blangko dari portal - salinan ringkas dari panel-alat.js, dengan
- * aturan pencocokan jenis yang sama (kata kunci `untuk` terkandung di jenis). */
-async function ambilPohonBlangkoPopup(asal) {
-  const pembatal = new AbortController();
-  const penghenti = setTimeout(() => pembatal.abort(), 20000);
-  try {
-    const respons = await fetch(`${asal}/api/aleta-ecourt/blangko/pohon`, {
-      credentials: "include",
-      cache: "no-store",
-      signal: pembatal.signal,
-    });
-    if (respons.status === 401 || respons.status === 403) throw new Error("Belum masuk portal ALETA.");
-    if (!respons.ok) throw new Error(`Portal menjawab ${respons.status} saat membaca pohon blangko.`);
-    const luar = await respons.json();
-    const isi = luar && luar.data ? luar.data : luar;
-    return isi && Array.isArray(isi.set) ? isi.set : [];
-  } finally {
-    clearTimeout(penghenti);
-  }
-}
-
-function namaBerkasTampilPopup(nama) {
-  return String(nama || "").replace(/\s+/g, " ").trim().replace(/\.rtf$/i, "").trim();
-}
-
-function setCocokJenisPopup(set, jenis) {
-  const j = kunciJenisPopup(jenis);
-  if (!j) return [];
-  return (set || []).filter((s) => Array.isArray(s.untuk) && s.untuk.some((kata) => j.includes(String(kata).toLowerCase())));
-}
-
-function berkasPohonUntukJenis(set, jenis) {
-  const hasil = [];
-  for (const s of setCocokJenisPopup(set, jenis)) {
-    for (const jj of s.jenjang || []) {
-      for (const b of jj.blangko || []) {
-        hasil.push({ berkas: namaBerkasTampilPopup(b.berkas), blangko: String(s.nama || ""), kategori: String(b.kategori || jj.label || "") });
-      }
-    }
-  }
-  return hasil;
-}
-
-function isiPetaDariPohonPopup(peta, set) {
-  const terisi = [];
-  for (const kunci of Object.keys(peta)) {
-    const ada = peta[kunci] || {};
-    const bernama = Boolean(String(ada.berkas || "").trim());
-    if (bernama && ada.bawaan !== true && ada.sumber !== "pohon") continue;
-    const label = ada.jenisAsli || kunci;
-    const cocok = setCocokJenisPopup(set, label).find((s) => s && s.usulan && s.usulan.berkas);
-    if (!cocok) continue;
-    const berkas = namaBerkasTampilPopup(cocok.usulan.berkas);
-    if (kunciBerkasPopup(ada.berkas) === kunciBerkasPopup(berkas)) continue;
-    peta[kunci] = {
-      jenisAsli: label,
-      berkas,
-      blangko: String(cocok.nama || ""),
-      bawaan: false,
-      sumber: "pohon",
-      catatan: `dari pohon blangko: ${cocok.nama || ""}${cocok.usulan.kategori ? ` · ${cocok.usulan.kategori}` : ""}`,
-    };
-    terisi.push({ jenis: label, berkas });
-  }
-  return terisi;
-}
-
-function kunciBerkasPopup(nama) {
-  return namaBerkasTampilPopup(nama).toLowerCase();
-}

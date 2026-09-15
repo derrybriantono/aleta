@@ -650,6 +650,38 @@ async function petugasUntuk(jenis, id) {
  * laporan sidang keliling salah hitung, dan tidak ada yang menyadarinya sampai
  * laporan tahunan disusun.
  */
+/**
+ * Seluruh ruangan sidang yang masih aktif, untuk DIPILIH di layar.
+ *
+ * Benderanya ikut dikirim apa adanya - yang memutuskan sifatnya (dalam
+ * gedung, keliling, atau terpadu) adalah src/lib/ruangan-sidang.ts di portal,
+ * yang dapat diuji tanpa basis data.
+ *
+ * Diukur di PA Donggala: ruangan_sidang memuat 13 baris, tetapi 2.140 sidang
+ * 2025-2026 memakai ruangan yang TIDAK ada di sana sama sekali - termasuk
+ * "Ruang Sidang 1" yang paling banyak dipakai. Daftar ini karena itu daftar
+ * PILIHAN, bukan daftar seluruh ruangan yang pernah dipakai.
+ */
+async function daftarRuangan() {
+  if (!(await sippSkemaService.tabelAda("ruangan_sidang"))) return [];
+  const baris = await runQuery(
+    `SELECT id, kode, nama, sidang_keliling AS keliling
+       FROM ruangan_sidang
+      WHERE aktif = 'Y'
+      ORDER BY kode ASC, nama ASC`
+  ).catch(() => []);
+  return (Array.isArray(baris) ? baris : []).map((b) => ({
+    id: Number(b.id) || 0,
+    kode: cleanText(b.kode),
+    nama: cleanText(b.nama),
+    benderaKeliling:
+      b.keliling == null
+        ? null
+        : String(b.keliling) === "1" || String(b.keliling).toUpperCase() === "Y",
+    aktif: true,
+  }));
+}
+
 async function ruanganUntuk(id) {
   const nomor = Number(id);
   if (!Number.isFinite(nomor) || nomor <= 0) return null;
@@ -2008,6 +2040,7 @@ async function jalankanRencana(rencana, opsi = {}) {
 const URUTAN_BONGKAR = ["phs", "pjs", "ppp", "pmh"];
 
 module.exports = {
+  daftarRuangan,
   URUTAN_BONGKAR,
   TANDA_ALETA,
   DAFTAR_TABEL,

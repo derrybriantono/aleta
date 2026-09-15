@@ -5846,3 +5846,45 @@ html.aleta-ganti-tema *::after {
 }
 .aleta-massal-baris { flex-wrap: wrap; }
 .aleta-massal-ketik { width: 100%; }
+
+/* ==========================================================================
+   BUNYI PASAL YANG DILIPAT
+   ==========================================================================
+
+   Nama pasalnya tetap terbaca pada ringkasan; bunyinya hanya muncul bila
+   memang hendak dibaca. Penunjuknya dibuat jelas dapat ditekan - <summary>
+   bawaan peramban tampak seperti tulisan biasa, dan yang tidak tampak dapat
+   ditekan tidak akan pernah ditekan. */
+.aleta-panel .aleta-abt-lipat {
+  margin: 6px 0 2px;
+  border-left: 2px solid var(--aleta-garis, rgba(127, 127, 127, 0.35));
+  padding-left: 8px;
+}
+.aleta-panel .aleta-abt-lipat-judul {
+  cursor: pointer;
+  /* Ikut diskalakan bersama seluruh panel - satu ukuran yang tertinggal
+     akan tetap kecil ketika panel diperbesar, dan justru itu yang tidak
+     pernah disadari. */
+  /* 11.5px adalah dasar terkecil panel - di bawah itu tidak terbaca pada
+     layar kantor. Penjaganya menuntut SELURUH ukuran memenuhinya. */
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.5;
+  opacity: 0.8;
+  list-style: none;
+  user-select: none;
+}
+.aleta-panel .aleta-abt-lipat-judul::-webkit-details-marker {
+  display: none;
+}
+.aleta-panel .aleta-abt-lipat-judul::before {
+  content: "▸ ";
+  display: inline-block;
+  width: 1em;
+}
+.aleta-panel .aleta-abt-lipat[open] > .aleta-abt-lipat-judul::before {
+  content: "▾ ";
+}
+.aleta-panel .aleta-abt-lipat-judul:hover {
+  opacity: 1;
+  text-decoration: underline;
+}

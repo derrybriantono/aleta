@@ -138,14 +138,26 @@ describe("bahasa hukum yang resmi, bukan singkatan SIPP", () => {
       '"Tulis 8503"',
       '"8503 — huruf alasan perceraian"',
       "Variabel 2021 dan 2022 masih kosong",
+      '"Ambil data dari SIPP"',
+      '"Susun dari keterangan saksi"',
+      '"Susun keterangan dua saksi"',
+      '"Riwayat perubahan"',
     ]) {
       expect(isi, lama).not.toContain(lama);
     }
-    expect(isi).toContain('"Ambil data dari SIPP"');
-    expect(isi).toContain('"Susun dari keterangan saksi"');
+    // Tulisan tombol menyebut PEKERJAANNYA beserta objeknya. Yang diganti
+    // pada 1.141.0: "Susun dari keterangan saksi" tidak pernah menyebut apa
+    // yang disusun, dan "Riwayat perubahan" adalah kata benda - ia tidak
+    // mengaku sebagai tombol.
+    expect(isi).toContain('"Isi blangko dari SIPP"');
+    expect(isi).toContain('"Susun posita dari keterangan saksi"');
     expect(isi).toContain('"Isi dari posita permohonan"');
-    expect(isi).toContain('"Susun keterangan dua saksi"');
-    expect(isi).toContain('"Tuliskan huruf alasan"');
+    expect(isi).toContain('"Susun keterangan saksi 1 & 2"');
+    expect(isi).toContain('"Lihat riwayat perubahan"');
+    expect(isi).toContain('"Rapikan posita & keterangan saksi"');
+    // Pintasan kaki mencocokkan TULISAN tombolnya - kalau tulisannya berubah
+    // tanpa pencocoknya ikut, Alt+Enter diam tanpa sebab yang terlihat.
+    expect(isi).toContain("/susun keterangan saksi 1 & 2/i");
   });
 });
 

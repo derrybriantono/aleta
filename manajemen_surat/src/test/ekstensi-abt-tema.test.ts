@@ -182,7 +182,11 @@ describe("penanda tiga berkas di samping CETAK", () => {
 
   it("berubah seketika saat saklarnya diubah dari popup", () => {
     const isi = baca("abt.js");
-    const potong = isi.slice(isi.indexOf("chrome.storage.onChanged.addListener"));
+    // Sejak 1.145.0 ada DUA pendengar onChanged di abt.js - saklar sunting
+    // langsung dan saklar cetak tiga berkas. Yang dijaga di sini pendengar
+    // yang memang mengurus penanda cetak, bukan yang kebetulan pertama.
+    const awal = isi.indexOf("KUNCI_CETAK_TIGA");
+    const potong = isi.slice(isi.indexOf("chrome.storage.onChanged.addListener", awal));
     expect(potong.slice(0, 600)).toContain("segarkanPenandaCetak();");
   });
 });

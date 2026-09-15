@@ -319,19 +319,9 @@
      Disunting menurut NAMA berkas. Tokennya diambil panel ABT sendiri
      saat halaman blangko terbuka, jadi pemetaan dapat disusun sekarang
      walau ABT peladen belum terjangkau. Hanya bagi super admin. -->
-<div id="bagianPeta" class="bagian-peta" hidden>
-  <div class="peta-judul">Pemetaan blangko putusan</div>
-  <p class="saklar-ket">Jenis perkara → nama berkas blangko ABT. Token diambil sendiri di halaman ABT.</p>
-  <div id="daftarPeta" class="peta-daftar"></div>
-  <div class="peta-tambah">
-    <input type="text" id="petaJenisBaru" class="peta-isi" placeholder="Jenis perkara lain…">
-    <button type="button" id="petaTambah" class="skala-pulih">tambah</button>
-  </div>
-  <div class="peta-tambah">
-    <button type="button" id="petaDariPohon" class="tombol-reset" title="Mengisi baris kosong/bawaan dengan berkas skenario kabul dari set pohon blangko portal. Baris yang pernah disunting tidak disentuh.">Isi dari pohon blangko ALETA</button>
-  </div>
-  <p id="petaKabar" class="saklar-ket" hidden></p>
-</div>
+<!-- Pemetaan blangko putusan TIDAK di sini - lihat catatan di popup.js.
+     Tempatnya di panel PUTUSAN MASSAL pada halaman ABT, berdampingan dengan
+     daftar blangko yang menjadi sumber tokennya. -->
 
 
 <!-- ===================================================================
@@ -382,6 +372,22 @@
         Menempelkan penanda di bawah nomor perkara pada daftar, dan di sebelah judul pada halaman
         perkara: pihak ghaib, perlu izin atasan, verzet, prodeo, panjar menipis. Hanya menambah
         keterangan &mdash; data SIPP tidak diubah.
+      </span>
+    </span>
+  </label>
+
+  <!-- Menyunting dengan satu klik cepat bagi yang memang hendak menyunting,
+       dan berbahaya bagi yang tidak: satu klik salah sasaran membuka kotak
+       isian di atas nilai yang benar. Halaman ABT tempat naskah putusan
+       disusun; bawaannya MATI. -->
+  <label class="saklar">
+    <input type="checkbox" id="suntingLangsungAbt">
+    <span>
+      <span class="saklar-nama">Sunting sekali klik di ABT</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">mati</strong>, nilai usulan tetap dapat disunting &mdash;
+        lewat tombol <strong class="saklar-nama">Sunting</strong> pada barisnya. Satu tekanan lebih
+        panjang, dan tekanan itulah yang menyatakan kehendak menyunting.
       </span>
     </span>
   </label>

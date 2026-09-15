@@ -51,6 +51,45 @@ const ALETA_API_ANTREAN = "/aleta/api/aleta-bot/penunjukan/antrean";
 const ALETA_API_BERKAS_GUGATAN = "/aleta/api/aleta-bot/penunjukan/berkas";
 const ALETA_API_BERKAS_ARSIP = "/aleta/api/aleta-bot/penunjukan/berkas-arsip";
 const ALETA_API_TULIS = "/aleta/api/aleta-bot/penunjukan/tulis";
+const ALETA_API_RUANGAN = "/aleta/api/aleta-bot/penunjukan/ruangan";
+
+/**
+ * ============================================================================
+ * DAFTAR RUANGAN SIDANG - DIBACA SEKALI, DISIMPAN SELAMA HALAMAN HIDUP
+ * ============================================================================
+ *
+ * Ruangan pengadilan berubah beberapa kali setahun, bukan beberapa kali
+ * semenit. Membacanya ulang tiap kali papan penunjukan digambar menambah satu
+ * permintaan jaringan pada tiap tekanan tanpa menambah satu keterangan pun.
+ *
+ * null  = belum pernah dibaca
+ * []    = sudah dibaca dan memang kosong (SIPP tanpa tabel ruangan_sidang)
+ */
+let ruanganTersimpan = null;
+let ruanganSedangDibaca = false;
+
+async function muatRuangan() {
+  if (ruanganTersimpan !== null || ruanganSedangDibaca) return ruanganTersimpan;
+  ruanganSedangDibaca = true;
+  try {
+    const respons = await alatAmbil(
+      ALETA_API_RUANGAN,
+      { credentials: "include", cache: "no-store" },
+      "Membaca daftar ruangan sidang"
+    );
+    const luar = await respons.json();
+    const isi = (luar && luar.data) || luar || {};
+    ruanganTersimpan = Array.isArray(isi.ruangan) ? isi.ruangan : [];
+  } catch {
+    // Gagal dibaca BUKAN "tidak ada ruangan": yang pertama membuat pemilihnya
+    // tidak digambar sama sekali, yang kedua akan menggambar daftar kosong
+    // yang terbaca seperti pengadilan tanpa ruang sidang.
+    ruanganTersimpan = null;
+  } finally {
+    ruanganSedangDibaca = false;
+  }
+  return ruanganTersimpan;
+}
 const ALETA_API_HAPUS = "/aleta/api/aleta-bot/penunjukan/hapus";
 const ALETA_API_HAPUS_SEMUA = "/aleta/api/aleta-bot/penunjukan/hapus-semua";
 const ALETA_API_RIWAYAT = "/aleta/api/aleta-bot/penunjukan/riwayat";
@@ -982,7 +1021,27 @@ function idUntukTulis(jenis, usulan, pilihanManual = {}) {
     const dipilih = calon.find((x) => x.tanggal === pilihanManual.phs);
     const tanggalSidang =
       (dipilih && dipilih.tanggal) || (usulan.phs && usulan.phs.usulan) || "";
-    return tanggalSidang ? { tanggalSidang } : null;
+    if (!tanggalSidang) return null;
+
+    // ========================================================================
+    // RUANGAN - TERMASUK SIDANG KELILING
+    // ========================================================================
+    //
+    // Sebelum ini ruangannya dipatok pada mesin tulis: ruanganId 1, "Ruang
+    // Sidang 1 Dalam Gedung". Penetapan hari sidang untuk sidang keliling
+    // karena itu SELALU menulis ruangan yang keliru, dan kolom
+    // sidang_keliling pada perkara_jadwal_sidang selalu 0.
+    //
+    // Gagalnya diam: penetapannya berhasil, berkasnya tercetak, sidangnya
+    // digelar - dan laporan sidang keliling menghitung nol. Yang menyadarinya
+    // baru penyusun laporan tahunan, berbulan-bulan kemudian.
+    //
+    // Dikirim HANYA bila petugas memilihnya. Tanpa pilihan, mesin tulis
+    // memakai bawaannya sendiri - perilaku lama, utuh.
+    const ruanganId = Number(pilihanManual.ruangan);
+    return Number.isFinite(ruanganId) && ruanganId > 0
+      ? { tanggalSidang, ruanganId }
+      : { tanggalSidang };
   }
 
   return null;
@@ -2291,6 +2350,57 @@ function gambarPenunjukan(isi, data) {
         }
       )
     );
+
+    // ======================================================================
+    // RUANG SIDANG - DAN INILAH TEMPAT SIDANG KELILING DIPILIH
+    // ======================================================================
+    //
+    // Sebelum ini ruangannya dipatok pada mesin tulis: "Ruang Sidang 1 Dalam
+    // Gedung", selalu. Penetapan hari sidang untuk sidang keliling karena itu
+    // menulis ruangan yang keliru DAN kolom sidang_keliling nol - sedangkan
+    // penetapannya berhasil, berkasnya tercetak, dan sidangnya digelar.
+    //
+    // Gagal yang paling mahal adalah yang tidak berbunyi: yang menyadarinya
+    // baru penyusun laporan tahunan, ketika sidang keliling terhitung nol.
+    //
+    // Diukur di PA Donggala, sidang 2025-2026: 459 sidang digelar di luar
+    // gedung - 180 sidang keliling dan 279 pelayanan terpadu.
+    //
+    // TERPADU DIPISAH DARI KELILING, sebab SIPP sendiri memisahkannya
+    // (ruangan_sidang.sidang_keliling = 0 pada keempat ruangan Terpadu).
+    // Menyatukannya membuat laporan sidang keliling melebih-lebihkan diri.
+    if (ruanganTersimpan === null) {
+      // Dibaca di latar; papannya digambar ulang begitu daftarnya tiba.
+      void muatRuangan().then((daftar) => {
+        if (!daftar) return;
+        isi.textContent = "";
+        gambarPenunjukan(isi, data);
+      });
+    } else if (ruanganTersimpan.length > 0) {
+      const SEBUT = {
+        "dalam-gedung": "Dalam gedung",
+        keliling: "Sidang keliling",
+        terpadu: "Sidang terpadu",
+      };
+      isi.appendChild(
+        pilihanOrang(
+          "Ruang sidang",
+          ruanganTersimpan.map((r) => ({
+            id: String(r.id),
+            // Sifatnya disebut pada tiap barisnya, bukan hanya pada
+            // pengelompokan: yang memilih cepat membaca satu baris, bukan
+            // judul kelompok tiga baris di atasnya.
+            label: `${r.nama} — ${SEBUT[r.sifat] || r.sifat}`,
+          })),
+          pilihanManual.ruangan ?? "",
+          (nilai) => {
+            pilihanManual.ruangan = nilai;
+            isi.textContent = "";
+            gambarPenunjukan(isi, data);
+          }
+        )
+      );
+    }
 
     // ======================================================================
     // TANGGAL BEBAS - DI BALIK SAKLAR, BUKAN BERDAMPINGAN
@@ -6976,6 +7086,26 @@ function kembalikanBawaan(panel) {
   for (const sifat of ["left", "top", "right", "bottom", "width", "height", "maxHeight"]) {
     panel.style[sifat] = "";
   }
+
+  // ==========================================================================
+  // DIJANGKARKAN KE KANAN SECARA EKSPLISIT - SAMA DENGAN panel-alat.js
+  // ==========================================================================
+  //
+  // Bawaan panel adalah top 12px KANAN 12px, dan membersihkan gaya sebaris
+  // seharusnya mengembalikannya ke sana. Nyatanya tidak selalu: panel yang
+  // pernah digeser sudah dijangkarkan ulang ke kiri (right:auto + left px),
+  // dan pada halaman yang aturan CSS-nya bertumpuk jangkar kanan tidak selalu
+  // menang kembali. Hasilnya panel melompat ke KIRI, menutupi tempat kerja.
+  //
+  // Ditulis di SINI juga, bukan hanya di panel-alat.js: keduanya kembar, dan
+  // ada penjaga yang menuntut keduanya membersihkan gaya yang sama persis.
+  // Memperbaiki satu saja berarti panel SIPP tetap melompat sementara ABT
+  // sudah benar - selisih yang justru paling membingungkan.
+  panel.style.right = "12px";
+  panel.style.top = "12px";
+  panel.style.left = "auto";
+  panel.style.bottom = "auto";
+
   // Kembali ke batas bawaan: tinggi pilihan sendiri sudah ikut dibuang
   // bersama posisinya.
   delete panel.dataset.tinggiSendiri;
@@ -10629,19 +10759,9 @@ function boleh(kunci) {
  * "tabs" - izin itu memberi ekstensi kemampuan membaca alamat SELURUH tab
  * peramban, jauh lebih luas daripada yang dibutuhkan.
  */
-let asalSudahDicatat = false;
-
-function catatAsalPortal() {
-  // Alamatnya tidak berubah sepanjang halaman ini hidup, jadi menuliskannya
-  // pada tiap penyegaran hanya menambah kerja tanpa menambah keterangan.
-  if (asalSudahDicatat) return;
-  asalSudahDicatat = true;
-  try {
-    void chrome.storage.local.set({ asalPortal: `${location.origin}/aleta` });
-  } catch {
-    /* penyimpanan tidak tersedia: popup memakai keterangan cadangan */
-  }
-}
+// Pencatatnya pindah ke panel-alat.js supaya ABT dan halaman ALETA ikut
+// mencatat - lihat alatCatatAsalPortal di sana. Yang di sini tinggal
+// panggilannya.
 
 /**
  * ============================================================================
@@ -10730,7 +10850,7 @@ async function segarkan() {
   }
   tertundaKarenaTersembunyi = false;
 
-  catatAsalPortal();
+  alatCatatAsalPortal();
   catatAkunSipp();
 
   if (!(await sedangAktif())) {

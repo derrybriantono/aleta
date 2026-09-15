@@ -173,6 +173,51 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
     return true;
   }
 
+  // ==========================================================================
+  // UNDUHAN DITERBITKAN DARI SINI, BUKAN DARI HALAMAN
+  // ==========================================================================
+  //
+  // Chrome memblokir unduhan yang berasal dari halaman http:// dengan bunyi
+  // "Chrome blocked this download because the site isn't using a secure
+  // connection". SIPP dan ABT berjalan di http://192.168.10.10, jadi SELURUH
+  // putusan, anonimisasi, dan PDF yang disusun panel jatuh ke sana - terlihat
+  // dicoret di riwayat unduhan, dan petugas harus membukanya satu per satu
+  // untuk memaksanya.
+  //
+  // Blob yang dibuat skrip konten TIDAK menolong: alamat blob mewarisi asal
+  // halamannya, jadi ia tetap http. Yang menolong adalah menerbitkannya dari
+  // ekstensi - chrome-extension:// adalah asal yang tepercaya, dan unduhan
+  // yang lahir di sini tidak pernah ditandai tidak aman.
+  //
+  // Ini BUKAN mengakali pengamanan Chrome. Berkasnya tidak melintasi jaringan
+  // lagi sama sekali: ia sudah ada di memori peramban, diambil lewat fetch
+  // yang sama yang dipakai panel untuk membacanya. Yang dipindahkan hanya
+  // siapa yang menuliskannya ke cakram.
+  //
+  // Perbaikan yang sesungguhnya tetap HTTPS di peladen; ini menghapus
+  // rintangan hariannya sambil menunggu.
+  if (pesan.jenis === "unduh") {
+    const nama = String(pesan.nama || "berkas").replace(/[\\/:*?"<>|]+/g, "_").slice(0, 180);
+    const alamat = String(pesan.alamat || "");
+    if (!alamat.startsWith("data:")) {
+      jawab({ ok: false, pesan: "alamat unduhan bukan data: - ditolak" });
+      return true;
+    }
+    try {
+      chrome.downloads.download({ url: alamat, filename: nama, saveAs: false }, (id) => {
+        const galat = chrome.runtime.lastError;
+        if (galat || id === undefined) {
+          jawab({ ok: false, pesan: String((galat && galat.message) || "unduhan ditolak peramban") });
+          return;
+        }
+        jawab({ ok: true, id });
+      });
+    } catch (e) {
+      jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) });
+    }
+    return true; // jawaban menyusul
+  }
+
   if (pesan.jenis === "keadaan-pembaruan") {
     jawab({
       ok: true,

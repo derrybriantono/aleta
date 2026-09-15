@@ -298,7 +298,9 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
     // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
     // ALETA", 12 sejak "Tetapkan lewat ALETA".)
-    expect(lewatAlat).toBe(26);
+    // 27 sejak 1.144.0: daftar ruangan sidang ikut lewat alatAmbil, supaya
+    // gagalnya berbunyi sama dengan permintaan lain yang dilihat petugas.
+    expect(lewatAlat).toBe(27);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

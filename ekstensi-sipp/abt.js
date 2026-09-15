@@ -1013,6 +1013,24 @@ async function simpanKeteranganSaksi(kode) {
  * pantas diambil sendiri oleh sebuah pembaruan - saklarnya ada di popup ikon
  * ALETA, dan selama mati, tombol CETAK berperilaku persis seperti semula.
  */
+/**
+ * Keadaan saklar sunting langsung, dibaca sekali lalu diikuti perubahannya -
+ * sama dengan saklar cetak tiga berkas di bawah. Bawaannya MATI; lihat
+ * catatan pada alatSuntingLangsung di panel-alat.js.
+ */
+let suntingLangsungNyala = false;
+void alatSuntingLangsung().then((n) => {
+  suntingLangsungNyala = n;
+});
+try {
+  chrome.storage.onChanged.addListener((perubahan, wilayah) => {
+    if (wilayah !== "local" || !perubahan[KUNCI_SUNTING_LANGSUNG]) return;
+    suntingLangsungNyala = perubahan[KUNCI_SUNTING_LANGSUNG].newValue === true;
+  });
+} catch {
+  /* di luar konteks ekstensi */
+}
+
 const KUNCI_CETAK_TIGA = "cetakTigaBerkas";
 const ALETA_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
 
@@ -1049,8 +1067,8 @@ async function muatSaklarCetak() {
   }
 }
 
-/** Menyimpan satu blob sebagai unduhan, dengan nama yang ditentukan di sini. */
-function unduhBlob(blob, nama) {
+/** Tautan cara lama - dipakai bila jalur ekstensi tidak tersedia. */
+function unduhLewatTautan(blob, nama) {
   const alamat = URL.createObjectURL(blob);
   const tautan = document.createElement("a");
   tautan.href = alamat;
@@ -1061,6 +1079,65 @@ function unduhBlob(blob, nama) {
   // Dilepas menyusul, bukan seketika: sebagian peramban membatalkan unduhan
   // yang alamat blob-nya sudah dicabut sebelum unduhannya benar-benar mulai.
   setTimeout(() => URL.revokeObjectURL(alamat), 30_000);
+}
+
+/** Blob menjadi data: URL, supaya dapat dikirim ke pekerja latar. */
+function blobKeData(blob) {
+  return new Promise((selesai, gagal) => {
+    const pembaca = new FileReader();
+    pembaca.onload = () => selesai(String(pembaca.result || ""));
+    pembaca.onerror = () => gagal(pembaca.error || new Error("berkas tidak terbaca"));
+    pembaca.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Menyimpan satu blob sebagai unduhan.
+ *
+ * ============================================================================
+ * DITERBITKAN EKSTENSI, BUKAN HALAMAN
+ * ============================================================================
+ *
+ * Chrome memblokir unduhan yang berasal dari halaman http:// - "Chrome blocked
+ * this download because the site isn't using a secure connection". SIPP dan
+ * ABT berjalan di http://192.168.10.10, jadi seluruh putusan, anonimisasi, dan
+ * PDF yang disusun panel jatuh ke sana: tercoret di riwayat unduhan, dan tiap
+ * berkas harus dipaksa satu per satu.
+ *
+ * Alamat blob TIDAK menolong - ia mewarisi asal halamannya, jadi tetap http.
+ * Yang menolong adalah menerbitkannya dari ekstensi; chrome-extension://
+ * adalah asal yang tepercaya.
+ *
+ * Berkasnya sendiri tidak melintasi jaringan lagi: ia sudah ada di memori,
+ * diambil lewat fetch yang sama yang dipakai panel untuk membacanya. Yang
+ * berpindah hanya siapa yang menuliskannya ke cakram.
+ *
+ * Bila jalur itu gagal - izin belum diberikan sesudah pembaruan, pekerja latar
+ * sedang tidur - ia jatuh ke cara lama. Unduhan yang tertahan peringatan masih
+ * jauh lebih baik daripada unduhan yang tidak terjadi.
+ */
+async function unduhBlob(blob, nama) {
+  try {
+    const alamat = await blobKeData(blob);
+    const jawab = await new Promise((selesai) => {
+      try {
+        chrome.runtime.sendMessage(
+          { sumber: "aleta-panel", jenis: "unduh", nama, alamat },
+          (hasil) => {
+            void chrome.runtime.lastError;
+            selesai(hasil);
+          }
+        );
+      } catch {
+        selesai(null);
+      }
+    });
+    if (jawab && jawab.ok) return;
+    alatCatat("massal-galat", `unduhan lewat ekstensi gagal: ${(jawab && jawab.pesan) || "tanpa jawaban"}`, "");
+  } catch (galat) {
+    alatCatat("massal-galat", `unduhan lewat ekstensi gagal: ${String((galat && galat.message) || galat)}`, "");
+  }
+  unduhLewatTautan(blob, nama);
 }
 
 /**
@@ -1490,6 +1567,14 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   isi.setAttribute("role", "button");
   isi.setAttribute("aria-label", `Sunting usulan ${u.nama}`);
 
+  // Jalan yang SELALU ada, menyala atau mati saklarnya. Saat menyala ia
+  // sekadar jalan kedua; saat mati ia satu-satunya - dan tekanan itulah yang
+  // menyatakan kehendak menyunting.
+  const tombolSunting = buatElemen("button", "aleta-perkakas-pulih", "Sunting");
+  tombolSunting.type = "button";
+  tombolSunting.title = "Sunting usulan ini sebelum dimasukkan ke ABT.";
+  tombolSunting.addEventListener("click", () => mulaiSunting());
+
   const tandaSunting = buatElemen("span", "aleta-tanda aleta-tanda-sunting", "disunting");
   tandaSunting.hidden = true;
 
@@ -1544,7 +1629,18 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     });
   }
 
-  isi.addEventListener("click", mulaiSunting);
+  // ==========================================================================
+  // KLIK MENYUNTING HANYA BILA SAKLARNYA MENYALA
+  // ==========================================================================
+  //
+  // Saat mati, nilai tetap dapat disunting - lewat tombol Sunting di baris
+  // ini. Yang berubah bukan kemampuannya melainkan seberapa mudah ia terbuka
+  // TANPA DIMAKSUD, dan pada halaman tempat naskah putusan disusun perbedaan
+  // itu yang menentukan.
+  isi.addEventListener("click", () => {
+    if (!suntingLangsungNyala) return;
+    mulaiSunting();
+  });
   isi.addEventListener("keydown", (peristiwa) => {
     if (peristiwa.key === "Enter" || peristiwa.key === " ") {
       peristiwa.preventDefault();
@@ -1553,6 +1649,9 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   });
 
   usul.appendChild(isi);
+  // Tombolnya sebelum tandanya: yang dicari mata saat hendak menyunting adalah
+  // tombolnya, dan tanda "disunting" baru berarti sesudah ada yang disunting.
+  usul.appendChild(tombolSunting);
   usul.appendChild(tandaSunting);
   sanding.appendChild(usul);
   kartu.appendChild(sanding);
@@ -2005,6 +2104,31 @@ function susunPanelAbt(jatiDiri) {
   panel.setAttribute("data-tema", "gelap");
 
   const kepala = buatElemen("div", "aleta-kepala");
+  // ==========================================================================
+  // LOGO DI KEPALA - SAMA DENGAN PANEL SIPP DAN ALETA
+  // ==========================================================================
+  //
+  // Panel ini melayang di atas halaman milik aplikasi lain dan tampilannya
+  // menyerupai bagian aplikasi itu sendiri. Logo membuat asalnya terbaca
+  // sekilas - siapa yang berbicara di sini - tanpa perlu membaca tulisan apa
+  // pun. Panel SIPP dan ALETA sudah memasangnya sejak lama; ABT satu-satunya
+  // yang tidak, dan itulah yang membuat ketiganya terasa tiga aplikasi.
+  //
+  // Diukur pada berkasnya: konten.js 2 pemakaian aleta-logo, aleta.js 1,
+  // abt.js NOL.
+  //
+  // Dibungkus try: di luar konteks ekstensi chrome.runtime tidak ada, dan
+  // kepala tanpa logo masih kepala - kepala yang gagal dibangun tidak.
+  try {
+    const logo = document.createElement("img");
+    logo.className = "aleta-logo";
+    logo.alt = "";
+    logo.src = chrome.runtime.getURL("ikon/aleta-32.png");
+    logo.addEventListener("error", () => logo.remove());
+    kepala.appendChild(logo);
+  } catch {
+    /* tanpa logo, kepala tetap utuh */
+  }
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
   // Pita identitas yang sama dengan panel SIPP - di kepala dan di kaki.
   let pitaKepala = pitaIdentitasAbt(penggunaAletaAbt);
@@ -2057,15 +2181,15 @@ function susunPanelAbt(jatiDiri) {
   // Tombol yang variabel sasarannya tidak ada di blangko ini tidak digambar.
   const petaAwal = barisVariabel();
   const tombolBaris = buatElemen("div", "aleta-abt-aksi");
-  const tombolSipp = buatElemen("button", "aleta-permintaan-tombol", "Ambil data dari SIPP");
+  const tombolSipp = buatElemen("button", "aleta-permintaan-tombol", "Isi blangko dari SIPP");
   tombolSipp.type = "button";
-  const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Susun dari keterangan saksi");
+  const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Susun posita dari keterangan saksi");
   tombolSaksi.type = "button";
   const tombolItsbat = buatElemen("button", "aleta-permintaan-tombol", "Isi dari posita permohonan");
   tombolItsbat.type = "button";
   tombolItsbat.title = "Tanggal dan tempat nikah, wali, saksi nikah, mahar, status, umur, dan anak - dibaca dari posita.";
   tombolItsbat.hidden = !(petaAwal.has("5197") || petaAwal.has("8087"));
-  const tombolSdg = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan dua saksi");
+  const tombolSdg = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan saksi 1 & 2");
   tombolSdg.type = "button";
   tombolSdg.title = "Dua keterangan dari satu templat ABT: substansi sama, kalimat berbeda.";
   tombolSdg.hidden = !petaAwal.has(VAR_SAKSI_1);
@@ -2074,7 +2198,7 @@ function susunPanelAbt(jatiDiri) {
   // DI HALAMAN TANYA-JAWAB, HANYA INILAH YANG MASUK AKAL
   // ==========================================================================
   //
-  // Halaman itu tidak punya satu pun baris variabel: "Ambil data dari SIPP",
+  // Halaman itu tidak punya satu pun baris variabel: "Isi blangko dari SIPP",
   // "Isi dari posita permohonan", dan perapian posita tidak punya sasaran di
   // sana, dan tombol yang ditekan lalu menjawab "tidak ada apa-apa" lebih
   // buruk daripada tombol yang tidak ada.
@@ -2207,7 +2331,7 @@ function susunPanelAbt(jatiDiri) {
               buatElemen(
                 "div",
                 "aleta-abt-catatan",
-                "Tekan \"Rapikan posita & saksi\" lagi untuk daftar yang segar - " +
+                "Tekan \"Rapikan posita & keterangan saksi\" lagi untuk daftar yang segar - " +
                   "urutan temuan bergeser sesudah satu disambung."
               )
             );
@@ -2277,12 +2401,44 @@ function susunPanelAbt(jatiDiri) {
     const sepihak = (hasil && hasil.ciriSepihak) || [];
     const diluar = (hasil && hasil.ciriDiluarGugatan) || [];
     const belum = (hasil && hasil.ciriBelumTerbukti) || [];
-    if (!sepihak.length && !diluar.length && !belum.length) return;
+    const terbukti = (hasil && hasil.ciri) || [];
+    if (!sepihak.length && !diluar.length && !belum.length && !terbukti.length) return;
 
     const kotak = buatElemen("div", "aleta-abt-kartu aleta-abt-kartu-awas");
+    // ========================================================================
+    // JUDUL YANG MENYEBUT PEKERJAANNYA, BUKAN NOMOR VARIABELNYA
+    // ========================================================================
+    //
+    // "Alasan yang TIDAK masuk 5227, beserta sebabnya" benar menurut kodenya
+    // dan hampir tidak berarti apa-apa bagi yang membacanya: 5227 adalah nomor
+    // variabel ABT, bukan sesuatu yang dipikirkan hakim saat menimbang. Dan
+    // kartunya hanya menyebut yang GAGAL - yang membaca tidak pernah tahu apa
+    // yang sebenarnya sudah siap dipakai.
     kotak.appendChild(
-      buatElemen("div", "aleta-abt-nama", "Alasan yang TIDAK masuk 5227, beserta sebabnya")
+      buatElemen("div", "aleta-abt-nama", "Alasan perceraian - yang siap dipakai dan yang belum")
     );
+
+    // Yang SIAP disebut lebih dahulu. Daftar yang seluruhnya berisi kekurangan
+    // membuat pembacanya mengira tidak ada yang berhasil.
+    if (terbukti.length) {
+      kotak.appendChild(
+        buatElemen("div", "aleta-abt-naskah", `Siap dipakai - ${terbukti.length} alasan`)
+      );
+      kotak.appendChild(
+        buatElemen(
+          "div",
+          "aleta-abt-catatan",
+          "Dikuatkan KEDUA saksi dan didalilkan dalam gugatan. Inilah yang sudah " +
+            "tertulis pada alasan perceraian (5227); tidak ada yang perlu dikerjakan."
+        )
+      );
+      for (const satu of terbukti) {
+        const baris = buatElemen("div", "aleta-abt-sanding");
+        baris.appendChild(buatElemen("span", "aleta-abt-label", "Terbukti"));
+        baris.appendChild(buatElemen("span", "aleta-abt-isi", satu.nama || satu));
+        kotak.appendChild(baris);
+      }
+    }
 
     if (!hasil || hasil.gugatanTerbaca !== true) {
       // Disebut apa adanya. Tanpa keterangan ini, "tidak ada yang di luar
@@ -2332,6 +2488,41 @@ function susunPanelAbt(jatiDiri) {
       belum,
       () => "Belum terbukti"
     );
+
+    // ========================================================================
+    // SARAN PENUTUP - SATU KALIMAT, DARI ANGKA DI ATASNYA
+    // ========================================================================
+    //
+    // Daftar tanpa penutup menuntut pembacanya menyimpulkan sendiri apa yang
+    // harus dikerjakan berikutnya, dan itu justru bagian yang paling mudah
+    // keliru: yang "di luar gugatan" dan yang "belum terbukti" menuntut
+    // tindakan yang BERLAWANAN - yang satu jangan dipakai, yang lain justru
+    // harus diadili.
+    //
+    // Saran ini usulan, bukan perintah. Yang memutus tetap majelis.
+    const saran = [];
+    if (terbukti.length) saran.push(`${terbukti.length} alasan sudah siap dipakai`);
+    if (sepihak.length) {
+      saran.push(
+        `${sepihak.length} baru disebut satu saksi - tanyakan kepada saksi satunya atau kuatkan dengan bukti lain`
+      );
+    }
+    if (diluar.length) {
+      saran.push(
+        `${diluar.length} terbukti tetapi di luar gugatan - JANGAN dimasukkan ke pertimbangan, itu memutus melebihi tuntutan`
+      );
+    }
+    if (belum.length) {
+      saran.push(
+        `${belum.length} didalilkan tetapi belum terbukti - harus tetap disinggung, dikabulkan atau ditolak dengan pertimbangan sendiri`
+      );
+    }
+    if (saran.length) {
+      kotak.appendChild(buatElemen("div", "aleta-abt-naskah", "Yang perlu dikerjakan"));
+      kotak.appendChild(
+        buatElemen("div", "aleta-abt-catatan", `${saran.join("; ")}. Usulan ALETA - yang memutus tetap majelis.`)
+      );
+    }
 
     wadahSepihak.appendChild(kotak);
   }
@@ -2419,12 +2610,35 @@ function susunPanelAbt(jatiDiri) {
 
       if (h.syarat) blok.appendChild(buatElemen("div", "aleta-abt-catatan", h.syarat));
 
-      for (const d of h.dasar || []) {
-        blok.appendChild(buatElemen("div", "aleta-abt-naskah", d.sumber.nama));
-        blok.appendChild(buatElemen("div", "aleta-abt-bunyi", d.bunyi));
-        if (d.catatanNaskah) {
-          blok.appendChild(buatElemen("div", "aleta-abt-kutipan-sumber", d.catatanNaskah));
+      // ======================================================================
+      // BUNYI PASAL DILIPAT - DIBUKA BILA MEMANG HENDAK DIBACA
+      // ======================================================================
+      //
+      // Tiap huruf membawa dua kutipan penuh (PP 9/1975 dan KHI) beserta
+      // catatan selisih naskahnya. Untuk tiga huruf itu enam paragraf hukum
+      // yang bunyinya sudah dihafal siapa pun yang mengerjakannya - dan ia
+      // mendorong tombol "Tuliskan huruf alasan" keluar dari layar.
+      //
+      // Yang dilipat hanya BUNYINYA. Nama pasalnya tetap terbaca pada ringkasan
+      // supaya yang memeriksa tahu dasar hukumnya ada tanpa harus membukanya.
+      const dasar = h.dasar || [];
+      if (dasar.length) {
+        const lipat = document.createElement("details");
+        lipat.className = "aleta-abt-lipat";
+        const ringkas = document.createElement("summary");
+        ringkas.className = "aleta-abt-lipat-judul";
+        ringkas.textContent = `Dasar hukum (${dasar.length}) - ${dasar
+          .map((d) => d.sumber.nama)
+          .join(" · ")}`;
+        lipat.appendChild(ringkas);
+        for (const d of dasar) {
+          lipat.appendChild(buatElemen("div", "aleta-abt-naskah", d.sumber.nama));
+          lipat.appendChild(buatElemen("div", "aleta-abt-bunyi", d.bunyi));
+          if (d.catatanNaskah) {
+            lipat.appendChild(buatElemen("div", "aleta-abt-kutipan-sumber", d.catatanNaskah));
+          }
         }
+        blok.appendChild(lipat);
       }
 
       kotak.appendChild(blok);
@@ -2513,7 +2727,7 @@ function susunPanelAbt(jatiDiri) {
    * Digambar ulang tiap kali dibuka, bukan disegarkan terus-menerus: yang
    * membukanya sedang mencari satu perubahan tertentu, bukan menonton daftar.
    */
-  const tombolRiwayat = buatElemen("button", "aleta-abt-batal", "Riwayat perubahan");
+  const tombolRiwayat = buatElemen("button", "aleta-abt-batal", "Lihat riwayat perubahan");
   tombolRiwayat.type = "button";
   tombolBaris.appendChild(tombolRiwayat);
 
@@ -2522,7 +2736,7 @@ function susunPanelAbt(jatiDiri) {
    * baru. Karena itu keduanya menampilkan pratinjau lebih dulu: yang diubah
    * bukan kolom kosong, melainkan tulisan yang sudah dibaca dan disetujui.
    */
-  const tombolRapikan = buatElemen("button", "aleta-abt-batal", "Rapikan posita & saksi");
+  const tombolRapikan = buatElemen("button", "aleta-abt-batal", "Rapikan posita & keterangan saksi");
   tombolRapikan.type = "button";
   tombolRapikan.title =
     "Memisahkan butir posita yang menempel, dan membuang kalimat penutup " +
@@ -2828,13 +3042,13 @@ function susunPanelAbt(jatiDiri) {
     {
       tombol: "Alt+P",
       kunci: "p",
-      nama: "ambil data dari SIPP",
+      nama: "isi blangko dari SIPP",
       jalankan: (p) => alatTekanPertama(p, ".aleta-abt-aksi .aleta-permintaan-tombol"),
     },
     {
       tombol: "Alt+R",
       kunci: "r",
-      nama: "buka Riwayat perubahan",
+      nama: "buka Lihat riwayat perubahan",
       jalankan: (p) => {
         for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol"))) {
           if (/riwayat/i.test(t.textContent || "")) {
@@ -2847,19 +3061,19 @@ function susunPanelAbt(jatiDiri) {
     {
       tombol: "Alt+Enter",
       kunci: "Enter",
-      nama: "susun keterangan kedua saksi",
+      nama: "susun keterangan saksi 1 & 2",
       jalankan: (p) => {
         // Yang sudah tergambar didahulukan: bila borangnya terbuka, Enter
         // menyusun - bukan membuka borang yang sama sekali lagi.
         for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol"))) {
-          if (/susun keterangan kedua saksi/i.test(t.textContent || "") && !t.disabled) {
+          if (/susun keterangan saksi 1 & 2|susun keterangan kedua saksi/i.test(t.textContent || "") && !t.disabled) {
             t.scrollIntoView({ block: "nearest" });
             t.click();
             return;
           }
         }
         for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol"))) {
-          if (/susun keterangan dua saksi/i.test(t.textContent || "") && !t.disabled && !t.hidden) {
+          if (/susun keterangan saksi 1 & 2/i.test(t.textContent || "") && !t.disabled && !t.hidden) {
             t.scrollIntoView({ block: "nearest" });
             t.click();
             return;
@@ -3509,6 +3723,9 @@ async function pasang() {
   pasangPenjagaCetak(jatiDiri, panel.lapor);
 }
 
+// Halaman ABT tahu alamat portalnya sendiri - dan petugas yang seharian di
+// sini tidak pernah membuka SIPP.
+alatCatatAsalPortal();
 void pasang();
 void pasangMassalAbt();
 
@@ -3607,6 +3824,31 @@ async function susunPanelMassalAbt() {
   panel.id = PENANDA_MASSAL_ABT;
   panel.setAttribute("data-tema", "gelap");
   const kepala = buatElemen("div", "aleta-kepala");
+  // ==========================================================================
+  // LOGO DI KEPALA - SAMA DENGAN PANEL SIPP DAN ALETA
+  // ==========================================================================
+  //
+  // Panel ini melayang di atas halaman milik aplikasi lain dan tampilannya
+  // menyerupai bagian aplikasi itu sendiri. Logo membuat asalnya terbaca
+  // sekilas - siapa yang berbicara di sini - tanpa perlu membaca tulisan apa
+  // pun. Panel SIPP dan ALETA sudah memasangnya sejak lama; ABT satu-satunya
+  // yang tidak, dan itulah yang membuat ketiganya terasa tiga aplikasi.
+  //
+  // Diukur pada berkasnya: konten.js 2 pemakaian aleta-logo, aleta.js 1,
+  // abt.js NOL.
+  //
+  // Dibungkus try: di luar konteks ekstensi chrome.runtime tidak ada, dan
+  // kepala tanpa logo masih kepala - kepala yang gagal dibangun tidak.
+  try {
+    const logo = document.createElement("img");
+    logo.className = "aleta-logo";
+    logo.alt = "";
+    logo.src = chrome.runtime.getURL("ikon/aleta-32.png");
+    logo.addEventListener("error", () => logo.remove());
+    kepala.appendChild(logo);
+  } catch {
+    /* tanpa logo, kepala tetap utuh */
+  }
   kepala.appendChild(buatElemen("span", "aleta-merek", "ALETA"));
   kepala.appendChild(buatElemen("span", "aleta-kepala-nama", "Putusan massal · ABT"));
   alatTandaiPeranPanel(panel, penggunaAletaAbt && penggunaAletaAbt.peran);
@@ -3627,6 +3869,88 @@ async function susunPanelMassalAbt() {
   isi.appendChild(bagianPetaBlangkoAbt(keadaan));
   isi.appendChild(bagianMassalAbt(keadaan));
 
+  // ==========================================================================
+  // KAKI YANG SAMA DENGAN PANEL SIPP, ALETA, DAN PERKARA ABT
+  // ==========================================================================
+  //
+  // Panel ini satu-satunya yang tidak punya kaki: tanpa baris pintasan, tanpa
+  // ikon segarkan, tanpa nomor seri. Yang bekerja berpindah antara tiga panel
+  // dalam satu jam, dan bagian bawah yang berbeda-beda membuat tiap panel
+  // terasa aplikasi yang lain.
+  //
+  // Nomor seri di kaki bukan hiasan: ketika ada yang melapor, pertanyaan
+  // pertama selalu "seri berapa yang terpasang" - dan di panel inilah
+  // pemetaan blangko dikerjakan, tempat laporan paling sering datang.
+  //
+  // Pintasannya HANYA yang benar-benar bersasaran di panel ini. Menyebut
+  // pintasan yang tidak berbuat apa-apa lebih buruk daripada tidak
+  // menyebutkannya.
+  const kaki = buatElemen("div", "aleta-kaki");
+  const barisKaki = buatElemen("div", "aleta-kaki-baris");
+  const tekanYangBertulis = (p, pola) => {
+    for (const t of Array.from(p.querySelectorAll(".aleta-permintaan-tombol, .aleta-perkakas-aksi"))) {
+      if (pola.test(t.textContent || "") && !t.disabled && !t.hidden) {
+        t.scrollIntoView({ block: "nearest" });
+        t.click();
+        return;
+      }
+    }
+  };
+  const PINTASAN_MASSAL = [
+    {
+      tombol: "Alt+A",
+      kunci: "a",
+      nama: "ciutkan / bentangkan panel",
+      jalankan: (p) => alatCiutkan(p, PENANDA_MASSAL_ABT),
+    },
+    {
+      tombol: "Alt+P",
+      kunci: "p",
+      nama: "periksa dulu - belum dijalankan",
+      jalankan: (p) => tekanYangBertulis(p, /periksa dulu/i),
+    },
+    {
+      tombol: "Alt+R",
+      kunci: "r",
+      nama: "ambil token dari ABT",
+      jalankan: (p) => tekanYangBertulis(p, /ambil token dari abt|pemetaan ulang/i),
+    },
+    {
+      tombol: "Alt+Enter",
+      kunci: "Enter",
+      nama: "jalankan putusan massal",
+      jalankan: (p) => tekanYangBertulis(p, /^jalankan$/i),
+    },
+  ];
+  barisKaki.appendChild(alatBarisPintasan(PINTASAN_MASSAL));
+  alatPasangPintasan(PENANDA_MASSAL_ABT, PINTASAN_MASSAL);
+
+  const segar = buatElemen("button", "aleta-kaki-segar", "↻");
+  segar.type = "button";
+  segar.setAttribute("aria-label", "Segarkan");
+  segar.title = "Segarkan - menyusun ulang panel dan membaca ulang pemetaan. Halaman ABT tidak dimuat ulang.";
+  segar.addEventListener("click", () => {
+    segar.disabled = true;
+    segar.classList.add("aleta-kaki-segar-jalan");
+    const lama = document.getElementById(PENANDA_MASSAL_ABT);
+    if (lama) lama.remove();
+    void pasangMassalAbt();
+  });
+  barisKaki.appendChild(segar);
+
+  try {
+    const seri = chrome.runtime.getManifest().version;
+    if (seri) {
+      const versi = buatElemen("span", "aleta-kaki-versi", `v${seri}`);
+      versi.title = "Seri ekstensi ALETA yang terpasang.";
+      barisKaki.appendChild(versi);
+    }
+  } catch {
+    /* di luar konteks ekstensi */
+  }
+  kaki.appendChild(barisKaki);
+  panel.appendChild(kaki);
+
   // Pemetaan yang baru bernama - dari popup, atau bawaan cerai - tokennya
   // diambil di latar dari halaman kelompok ABT, lalu daftarnya digambar ulang.
   // Tidak menahan panel: yang membuka panel belum tentu hendak memutus massal.
@@ -3640,18 +3964,47 @@ async function susunPanelMassalAbt() {
 /* ─── Editor pemetaan blangko ──────────────────────────────────────────── */
 function bagianPetaBlangkoAbt(keadaan) {
   const kotak = buatElemen("div", "aleta-bagian");
-  kotak.appendChild(buatElemen("div", "aleta-bagian-judul-statis", "Pemetaan blangko putusan"));
-  kotak.appendChild(
-    buatElemen(
-      "div",
-      "aleta-tetap-sebab",
-      "Jenis perkara → blangko ABT mana yang dipakai. Buka kelompok blangkonya di halaman ini, " +
-        "lalu pilih berkasnya dari daftar di bawah; tokennya dibaca dari tautan yang ABT sendiri buat."
-    )
+  const judul = buatElemen("div", "aleta-bagian-judul-statis", "Pemetaan blangko putusan");
+  kotak.appendChild(judul);
+  const sebab = buatElemen(
+    "div",
+    "aleta-tetap-sebab",
+    "Jenis perkara → blangko ABT mana yang dipakai. Buka kelompok blangkonya di halaman ini, " +
+      "lalu pilih berkasnya dari daftar di bawah; tokennya dibaca dari tautan yang ABT sendiri buat."
   );
+  kotak.appendChild(sebab);
+
+  // ==========================================================================
+  // YANG SUDAH SELESAI TIDAK PERLU DIPANDANGI SETIAP HARI
+  // ==========================================================================
+  //
+  // Pemetaan adalah pekerjaan sekali jadi: sesudah satu jenis punya berkas dan
+  // token, tidak ada lagi yang perlu diputuskan tentangnya. Tetapi barisnya
+  // tetap berdiri di paling atas panel, dan pada satker dengan belasan jenis
+  // perkara ia mendorong PUTUSAN MASSAL - pekerjaan hariannya - jauh ke bawah
+  // layar.
+  //
+  // Karena itu baris yang lengkap disembunyikan, dan bila SELURUHNYA lengkap
+  // bagian ini menyingkir sama sekali, menyisakan satu tombol untuk
+  // membukanya kembali. Disembunyikan, bukan dibuang: yang tersimpan tetap
+  // utuh dan satu tekanan mengembalikannya.
+  const ringkas = buatElemen("div", "aleta-tetap-sebab");
+  ringkas.hidden = true;
+  kotak.appendChild(ringkas);
+
+  const buka = buatElemen("button", "aleta-perkakas-aksi", "Pemetaan ulang");
+  buka.type = "button";
+  buka.hidden = true;
+  buka.title = "Menampilkan kembali seluruh baris pemetaan, termasuk yang sudah selesai.";
+  buka.addEventListener("click", () => {
+    keadaan.petaTampilSemua = true;
+    gambar();
+  });
+  kotak.appendChild(buka);
 
   const tabel = buatElemen("div", "aleta-massal-peta");
   kotak.appendChild(tabel);
+  let barisAksiRef = null;
 
   const berkasDiSini = berkasBlangkoDiHalaman();
 
@@ -3661,10 +4014,26 @@ function bagianPetaBlangkoAbt(keadaan) {
     for (const k of Object.keys(keadaan.peta)) jenisSemua.add(k);
     for (const s of keadaan.sidang) if (s.jenis) jenisSemua.add(alatKunciJenis(s.jenis));
 
+    let jumlahLengkap = 0;
+    let jumlahSemua = 0;
     for (const kunci of [...jenisSemua].sort()) {
+      jumlahSemua += 1;
+      // Dihitung dua kali - sekali di sini untuk memutuskan tampil atau tidak,
+      // sekali lagi di bawah untuk menyusun tulisannya. Menghitungnya sekali
+      // lalu menyimpannya justru membuat keduanya dapat berselisih.
+      const sudah = keadaan.peta[kunci] && alatBlangkoLengkap(keadaan.peta[kunci]);
+      if (sudah) jumlahLengkap += 1;
+      if (sudah && !keadaan.petaTampilSemua) continue;
       const baris = buatElemen("div", "aleta-perkakas-baris");
       const label = ALAT_JENIS_LAZIM.find((x) => alatKunciJenis(x) === kunci) || (keadaan.peta[kunci] && keadaan.peta[kunci].jenisAsli) || kunci;
-      baris.appendChild(buatElemen("span", "aleta-perkakas-nama", label));
+      const namaJenis = buatElemen("span", "aleta-perkakas-nama", label);
+      // Nama lain yang menunjuk baris ini disebut pada judulnya. Tanpa itu,
+      // yang mencari "Pengesahan Perkawinan/Istbat Nikah" - nama yang dipakai
+      // SIPP pada 403 perkara - tidak menemukan barisnya dan menyimpulkan
+      // jenisnya belum didukung.
+      const lain = alatNamaLainJenis(kunci);
+      if (lain.length > 0) namaJenis.title = `Termasuk nama SIPP: ${lain.join("; ")}`;
+      baris.appendChild(namaJenis);
       const ada = keadaan.peta[kunci];
       // Tiga keadaan, disebut apa adanya: lengkap (token ada), bernama saja
       // (token belum diambil - dicari sendiri saat kelompoknya terbaca), belum.
@@ -3730,6 +4099,46 @@ function bagianPetaBlangkoAbt(keadaan) {
     tambah.appendChild(masukan);
     tambah.appendChild(tombol);
     tabel.appendChild(tambah);
+
+    // ========================================================================
+    // TIGA KEADAAN BAGIAN INI, DISEBUT APA ADANYA
+    // ========================================================================
+    //
+    //   tuntas  - seluruh jenis punya token; bagiannya menyingkir, sisa tombol
+    //   sebagian- yang selesai disembunyikan, sisanya tetap dikerjakan
+    //   terbuka - pengguna menekan "Pemetaan ulang", semuanya tergambar
+    //
+    // Angkanya SELALU disebut. Bagian yang hilang tanpa keterangan terbaca
+    // sebagai kerusakan, bukan sebagai pekerjaan yang sudah selesai.
+    const tuntas = jumlahSemua > 0 && jumlahLengkap === jumlahSemua;
+    const semua = Boolean(keadaan.petaTampilSemua);
+
+    judul.hidden = tuntas && !semua;
+    sebab.hidden = tuntas && !semua;
+    tabel.hidden = tuntas && !semua;
+    if (barisAksiRef) barisAksiRef.hidden = tuntas && !semua;
+
+    buka.hidden = semua || !tuntas;
+    ringkas.hidden = semua || jumlahLengkap === 0;
+    if (!ringkas.hidden) {
+      ringkas.textContent = tuntas
+        ? `Pemetaan blangko putusan selesai - ${jumlahLengkap} jenis perkara sudah bertoken.`
+        : `${jumlahLengkap} dari ${jumlahSemua} jenis sudah selesai dan disembunyikan; ` +
+          `${jumlahSemua - jumlahLengkap} lagi menunggu.`;
+    }
+
+    // Saat semuanya tergambar atas permintaan, jalan kembalinya harus ada -
+    // kalau tidak, satu tekanan "Pemetaan ulang" mengunci panel dalam keadaan
+    // penuh sampai halaman dimuat ulang.
+    if (semua) {
+      const tutup = buatElemen("button", "aleta-perkakas-pulih", "Sembunyikan yang selesai");
+      tutup.type = "button";
+      tutup.addEventListener("click", () => {
+        keadaan.petaTampilSemua = false;
+        gambar();
+      });
+      tabel.appendChild(tutup);
+    }
   };
 
   const pemilih = buatElemen("div", "aleta-massal-pemilih");
@@ -3798,6 +4207,7 @@ function bagianPetaBlangkoAbt(keadaan) {
   barisAksi.appendChild(dariPohon);
   barisAksi.appendChild(kabarAmbil);
   kotak.insertBefore(barisAksi, tabel);
+  barisAksiRef = barisAksi;
 
   function bukaKetikNama(kunci, label, ada) {
     pemilih.textContent = "";
@@ -4565,15 +4975,44 @@ async function berkasDalamKelompok(kelompok) {
 /**
  * Mencari satu berkas menurut namanya di seluruh kelompok blangko.
  * Pulang { blangko, berkas, a, b, d } atau null bila tidak ada di ABT ini.
+ *
+ * kelompokDiharapkan - nama menu ABT yang seharusnya memuat berkas ini. Nama
+ * berkas saja tidak selalu cukup: "[01] [Kabul Verstek] Cerai (Format
+ * Lengkap)" berdiri di menu Cerai Gugat DAN Cerai Talak, dan tanpa sebutan
+ * ini yang pertamalah yang selalu menang.
  */
-async function cariTokenBlangko(namaBerkas, lapor) {
+async function cariTokenBlangko(namaBerkas, lapor, kelompokDiharapkan) {
   const kunci = alatKunciBerkas(namaBerkas);
   if (!kunci) return null;
-  // Yang tergambar di halaman ini lebih dulu - tanpa jaringan.
-  const diSini = alatCocokkanBerkas(berkasBlangkoDiHalaman(), namaBerkas);
-  if (diSini) return { blangko: diSini.blangko, berkas: diSini.berkas, a: diSini.a, b: diSini.b, d: diSini.d || "" };
+  const diminta = alatKunciKelompokBanyak(kelompokDiharapkan);
+  const bawa = (x, k) => ({ blangko: x.blangko || k || "", berkas: x.berkas, a: x.a, b: x.b, d: x.d || "" });
 
-  const kelompok = (await daftarKelompokBlangko()).slice(0, BATAS_KELOMPOK_DICARI);
+  // Yang tergambar di halaman ini lebih dulu - tanpa jaringan. Bila menunya
+  // disebut, halaman ini hanya dipakai kalau ia MEMANG menu itu; kalau tidak,
+  // pencarian tetap berjalan. Halaman yang kebetulan terbuka bukan jawaban.
+  const diHalaman = berkasBlangkoDiHalaman();
+  if (diminta.length > 0) {
+    const tepatDiSini = alatCocokkanBerkasDiKelompok(diHalaman, namaBerkas, kelompokDiharapkan);
+    if (tepatDiSini) return bawa(tepatDiSini);
+  } else {
+    const diSini = alatCocokkanBerkas(diHalaman, namaBerkas);
+    if (diSini) return bawa(diSini);
+  }
+
+  const kelompok = alatDahulukanKelompok(await daftarKelompokBlangko(), kelompokDiharapkan).slice(
+    0,
+    BATAS_KELOMPOK_DICARI
+  );
+  // ==========================================================================
+  // SATU PINDAIAN, DUA JAWABAN - DAN YANG TEPAT TIDAK BOLEH DIDAHULUI
+  // ==========================================================================
+  //
+  // Cadangan (berkas senama di menu mana pun) dipegang DI SINI, bukan di
+  // dalam pencocok per kelompok. Sebabnya sederhana dan mahal: pencocok itu
+  // hanya melihat satu kelompok, jadi cadangannya akan selalu menang di
+  // kelompok pertama yang senama - dan untuk cerai talak, kelompok pertama
+  // itu justru Cerai Gugat, yang hendak kita hindari.
+  let cadangan = null;
   for (let i = 0; i < kelompok.length; i += 1) {
     const k = kelompok[i];
     if (lapor) lapor(`mencari di ${k.kelompok} (${i + 1}/${kelompok.length})…`);
@@ -4584,11 +5023,20 @@ async function cariTokenBlangko(namaBerkas, lapor) {
       alatCatat("massal-galat", `kelompok ${k.kelompok}: ${String((galat && galat.message) || galat)}`, "");
       continue;
     }
-    const cocok = alatCocokkanBerkas(daftar, namaBerkas);
-    if (cocok) return { blangko: cocok.blangko || k.kelompok, berkas: cocok.berkas, a: cocok.a, b: cocok.b, d: "" };
+    if (diminta.length > 0) {
+      const tepat = alatCocokkanBerkasDiKelompok(daftar, namaBerkas, kelompokDiharapkan);
+      if (tepat) return bawa(tepat, k.kelompok);
+      if (!cadangan) {
+        const senama = alatCocokkanBerkas(daftar, namaBerkas);
+        if (senama) cadangan = bawa(senama, k.kelompok);
+      }
+    } else {
+      const cocok = alatCocokkanBerkas(daftar, namaBerkas);
+      if (cocok) return bawa(cocok, k.kelompok);
+    }
     if (!kelompokTerbaca.has(k.a)) await alatJeda(JEDA_ANTAR_KELOMPOK_MS);
   }
-  return null;
+  return cadangan;
 }
 
 /**
@@ -4600,12 +5048,30 @@ async function lengkapiTokenPeta(peta, lapor) {
   let terisi = 0;
   for (const [kunci, baris] of Object.entries(peta)) {
     if (!alatBlangkoTerpetakan(baris) || alatBlangkoLengkap(baris)) continue;
-    const hasil = await cariTokenBlangko(baris.berkas, lapor);
+    const diminta = baris.blangkoDiminta || baris.blangko || "";
+    const semuaNama = diminta ? [diminta, ...(baris.blangkoLain || [])] : [];
+    const hasil = await cariTokenBlangko(baris.berkas, lapor, semuaNama);
     if (!hasil) {
       baris.catatan = "berkas tidak ditemukan di ABT ini";
       continue;
     }
-    peta[kunci] = { ...alatRapikanBlangko({ ...hasil }), jenisAsli: baris.jenisAsli || kunci, bawaan: Boolean(baris.bawaan) };
+    // Kalau kelompok yang diminta tidak ada di ABT ini, barisnya tetap
+    // terisi - tetapi yang membaca layar berhak tahu ia mendarat di menu lain.
+    //
+    // blangkoDiminta DISIMPAN, dan itu bukan hiasan: tanpanya pemulihan baris
+    // di alatMuatPetaBlangkoLengkap akan melihat blangko yang "salah" lagi
+    // pada pemuatan berikutnya, melepas tokennya lagi, dan memindai ulang
+    // seluruh ABT setiap kali halaman dibuka - berputar tanpa akhir.
+    const menuLain =
+      diminta && !alatKunciKelompokBanyak(semuaNama).includes(alatKunciKelompok(hasil.blangko));
+    peta[kunci] = {
+      ...alatRapikanBlangko({ ...hasil }),
+      jenisAsli: baris.jenisAsli || kunci,
+      bawaan: Boolean(baris.bawaan),
+      ...(diminta ? { blangkoDiminta: diminta } : {}),
+      ...(baris.blangkoLain ? { blangkoLain: baris.blangkoLain } : {}),
+      ...(menuLain ? { catatan: `diminta dari "${diminta}", yang ada di ABT ini "${hasil.blangko}"` } : {}),
+    };
     terisi += 1;
     alatCatat("massal", `token blangko terisi: ${baris.jenisAsli || kunci} → ${hasil.blangko} / ${hasil.berkas}`, "");
   }

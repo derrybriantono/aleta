@@ -526,6 +526,9 @@ async function pasangPortal() {
   }
 }
 
+// Halaman portal itu sendiri - alamat yang paling pasti dari semuanya, dan
+// yang paling sering dibuka orang yang belum pernah menyentuh SIPP.
+alatCatatAsalPortal();
 void pasangPortal();
 
 // Portal berpindah halaman tanpa memuat ulang (Next.js). Skrip ini hanya

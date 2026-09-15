@@ -164,7 +164,10 @@ describe("isi ekstensi yang ditanam", () => {
     expect(manifest.manifest_version).toBe(3);
     // Izin tabs memberi kemampuan membaca alamat seluruh tab peramban.
     expect(JSON.stringify(manifest)).not.toContain('"tabs"');
-    expect(manifest.permissions).toEqual(["storage"]);
+    // "downloads" sejak 1.145.0: unduhan diterbitkan pekerja latar supaya
+    // Chrome tidak memblokirnya sebagai unduhan dari halaman http. Izinnya
+    // tetap dua - daftar ini menjaga agar tidak diam-diam bertambah lagi.
+    expect(manifest.permissions).toEqual(["storage", "downloads"]);
   });
 
   it("ikonnya ikut tertanam sebagai PNG yang utuh", async () => {

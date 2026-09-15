@@ -2355,6 +2355,65 @@ export async function getGatewayPraperiksaFakta(
 }
 
 /**
+ * Daftar ruangan sidang yang dapat dipilih pada penetapan hari sidang,
+ * beserta bendera sidang keliling milik SIPP.
+ */
+export async function gatewayDaftarRuangan(): Promise<
+  GatewayResult<{
+    ruangan: {
+      id: number;
+      kode: string;
+      nama: string;
+      benderaKeliling: boolean | null;
+      aktif: boolean;
+    }[];
+  }>
+> {
+  return gatewayFetch("/internal/aleta-bot/penetapan/ruangan");
+}
+
+/**
+ * Pencocokan arsip e-Court untuk Agen Arsip Bertindak (Tahap 5).
+ *
+ * Bot membaca catatan arsip dan memeriksa cakram; yang MEMUTUSKAN apakah
+ * pantas menarik ulang adalah src/lib/arsip-ecourt-bertindak.ts.
+ */
+export async function gatewayCocokkanArsip(): Promise<GatewayResult<{ fakta: unknown }>> {
+  return gatewayFetch("/internal/aleta-bot/ecourt/arsip/cocokkan");
+}
+
+/**
+ * Fakta alat bukti untuk Agen Penyusun Pertimbangan (Tahap 4).
+ *
+ * Bot membaca pihak dan data pernikahan dari SIPP; yang MENYUSUN kalimatnya
+ * src/lib/penyusun-pertimbangan.ts, dan yang menyetujuinya petugas.
+ */
+export async function gatewayFaktaBuktiPertimbangan(nomor: string): Promise<
+  GatewayResult<{ fakta: unknown }>
+> {
+  const params = new URLSearchParams({ nomor });
+  return gatewayFetch(`/internal/aleta-bot/sipp/pertimbangan/bukti?${params.toString()}`);
+}
+
+/**
+ * Fakta tenggat untuk Agen Penjaga Tenggat (Tahap 3).
+ *
+ * Bot hanya membaca; yang menilai terlampaui atau tidak adalah
+ * src/lib/penjaga-tenggat.ts. Tiap pembaca fakta gagal sendiri-sendiri, jadi
+ * `gagal` dapat berisi sebagian kode aturan tanpa membuat seluruhnya gagal.
+ */
+export async function getGatewayPenjagaTenggat(acuan = ""): Promise<
+  GatewayResult<{
+    acuan: string;
+    fakta: Record<string, unknown[]>;
+    gagal: Record<string, string>;
+  }>
+> {
+  const params = new URLSearchParams({ acuan });
+  return gatewayFetch(`/internal/aleta-bot/sipp/penjaga-tenggat?${params.toString()}`);
+}
+
+/**
  * Pendapat AI atas amar vs petitum. Bot menyamarkan nama dengan kamus pihak
  * yang DIKETAHUI SIPP lalu mengirim lewat jalur "perkara"; bila jalurnya
  * belum disetel, jawabannya { ok: false, alasan } - dan itu bukan galat.

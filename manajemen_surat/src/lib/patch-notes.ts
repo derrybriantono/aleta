@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.16.2";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.16.2 - Token yang Terbuang, Warna yang Tertinggal, dan Daftar yang Dapat Dicari";
+export const APP_VERSION = "2.17.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.17.0 - Penjaga Tenggat, Penyusun Pertimbangan, dan Arsip yang Bertindak";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,43 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.17.0",
+    title: "ALETA Judicia v2.17.0 - Penjaga Tenggat, Penyusun Pertimbangan, dan Arsip yang Bertindak",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Tiga agen baru - Tahap 3, 4, dan 5 - beserta jadwal sidang yang 50 kali lebih cepat. " +
+      "Yang paling berharga dari ketiganya bukan yang mereka kerjakan, melainkan yang mereka TOLAK kerjakan: " +
+      "aturan tenggat versi pertama menghasilkan 99 tuduhan palsu dari 101, dan seluruhnya tertangkap sebelum satu pesan pun terkirim.",
+    added: [
+      "AGEN PENJAGA TENGGAT (Tahap 3) - laporan harian WhatsApp atas tujuh tenggat: perkara lewat 5 bulan (SEMA 2/2014), ikrar talak yang gugur bila lewat 6 bulan (Pasal 70 ayat 6 UU 7/1989), akta cerai gugat sejak BHT, akta cerai talak sejak IKRAR, relaas sidang pertama, antrean Direktori Putusan yang gagal, dan putusan tanpa anonimisasi. Tiap ambangnya diukur atas data sungguhan, bukan ditebak.",
+      "AGEN PENYUSUN PERTIMBANGAN (Tahap 4) - draf daftar alat bukti surat (variabel ABT 1214, pekerjaan tangan terbanyak: 2.025 pengisian). Menyusun P.1 (KTP) dan P.2 (Kutipan Akta Nikah) dari data SIPP. TIDAK PERNAH MENYIMPAN SENDIRI.",
+      "AGEN ARSIP e-COURT BERTINDAK (Tahap 5) - mencocokkan catatan arsip dengan cakram, lalu menyusun rencana penarikan ulang berkas yang hilang. Diukur di peladen: 400 tercatat, 0 ada, 400 hilang.",
+    ],
+    changed: [
+      "Jadwal sidang 11-14 detik menjadi 138-260 ms. Sebabnya satu view: v_pihak_perkara adalah UNION berpembeda yang memaksa basis data membentuk SELURUH isinya sebelum saringan berlaku. Untuk 20 perkara: 8.563 ms lewat view, 413 ms langsung ke tabelnya - baris identik.",
+      "Urutan pihak menjadi TETAP. View lama dijalankan dua kali atas data yang sama memulangkan urutan yang berbeda - terukur 22 kali pada 210 daftar pihak. Yang dipakai sekarang urutan milik SIPP sendiri: Tergugat I, II, III.",
+      "Pemetaan blangko putusan keluar dari popup ekstensi dan pindah ke panel PUTUSAN MASSAL; baris yang selesai disembunyikan.",
+    ],
+    fixed: [
+      "Cerai talak mengambil blangko dari menu Cerai Talak, bukan Cerai Gugat. Berkas bernama sama berdiri di dua menu ABT dan identik sampai bita terakhir, jadi tidak ada satu pun galat yang berbunyi - tetapi menu Cerai Gugat tidak memuat satu pun berkas khas talak.",
+      "Nama jenis perkara SIPP dipadankan - 431 perkara yang selama ini dilewati putusan massal dengan alasan \"blangko belum dipetakan\", padahal blangkonya sudah dipetakan di bawah nama lain.",
+      "Alamat portal dicatat dari SIPP, ABT, dan halaman ALETA - bukan dari SIPP saja. Petugas yang seharian di ABT tidak pernah membuka SIPP, jadi popupnya memakai alamat lama dan menuduh portal tidak terjangkau.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Penjaga Tenggat MENYUSUN laporannya dan memulangkannya; pengirimannya terpisah. Laporan yang dapat dibaca lebih dahulu adalah laporan yang dapat diperbaiki sebelum seratus orang menerimanya.",
+      "Penyusun Pertimbangan tidak punya satu pun fungsi yang menulis, dan layanannya tidak punya satu pun pernyataan tulis - ada penjaga yang menuntut keduanya tetap begitu.",
+      "Arsip Bertindak memeriksa ketahanan direktori tujuannya SEBELUM menarik apa pun. Menarik ulang ke direktori yang musnah tiap peti dibangun ulang adalah pekerjaan yang menghapus dirinya sendiri - dan itu sudah pernah terjadi pada 400 berkas ini.",
+    ],
+    knownLimitations: [
+      "Tenggat akta cerai dan ikrar talak hanya berlaku pada perceraian yang DIKABULKAN. Tanpa saringan itu, 99 dari 101 perkara yang tertangkap adalah perkara dicabut, digugurkan, ditolak, atau gugur - yang akta cerainya memang tidak akan pernah terbit.",
+      "Tanggal terbit KTP tidak ada kolomnya di SIPP, jadi draf alat bukti SELALU menyisakan satu lubang yang harus diisi orang. Tanggal yang salah pada daftar alat bukti lebih buruk daripada lubang yang jelas.",
+      "Penarikan ulang arsip e-Court belum dijalankan - rencananya sudah dapat dibaca, tindakannya menunggu keputusan.",
+      "Antrean sinkron penetapan ke e-Court (majelis, panitera, jurusita, jadwal) berhenti diisi sejak pertengahan 2024 pada DUA pengadilan yang diperiksa. Perlu dipastikan dari portal e-Court apakah sinkronnya pindah jalur.",
+    ],
+  },
   {
     version: "2.16.2",
     title: "ALETA Judicia v2.16.2 - Token yang Terbuang, Warna yang Tertinggal, dan Daftar yang Dapat Dicari",
