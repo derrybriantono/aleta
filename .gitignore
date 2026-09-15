@@ -91,3 +91,6 @@ aleta_bot/resources/
 # Sesi peramban e-Court (setara dengan sedang login ke sistem MA)
 .aleta-ecourt-session/
 .wwebjs_auth/
+
+# Dump crash Git Bash (bash.exe.stackdump) - bukan bagian proyek
+*.stackdump
