@@ -140,6 +140,39 @@ const TABEL = [
   // tabel yang dikenali layanan skema; yang tidak tercantum di sini selalu
   // dijawab "tidak ada", tanpa galat dan tanpa peringatan.
   "ruangan_sidang",
+  // ==========================================================================
+  // ref_kua - TEMPAT SIDANG KELILING SESUNGGUHNYA DIGELAR
+  // ==========================================================================
+  //
+  // Jebakan yang sama persis dengan ruangan_sidang di atas, dan terjadi lagi:
+  // daftar ruangan sudah membawa angka pemakaiannya dengan benar - 4.027
+  // sidang di Ruang Sidang 1, 129 di Sigi Biromaru - tetapi kolom KUA-nya
+  // KOSONG pada seluruh ruangan, tanpa satu pun galat.
+  //
+  // Sebabnya bukan pencocokan namanya: KUA SIGI BIROMARU, KUA SIRENJA, KUA
+  // LABUAN, dan KUA RIO PAKAVA memang ada di ref_kua. Sebabnya tabelnya tidak
+  // tercantum di daftar ini, sehingga tabelAda("ref_kua") menjawab "tidak
+  // ada" - dan pembacanya pulang dengan peta kosong, diam-diam.
+  //
+  // Itulah bentuk kegagalan yang paling mahal di berkas ini: yang gagal tidak
+  // berbunyi, dan yang membaca layar menyangka KUA-nya memang belum diisi.
+  "ref_kua",
+  // ==========================================================================
+  // DUA LAGI, DITEMUKAN PENJAGA - BUKAN DARI LAYAR
+  // ==========================================================================
+  //
+  // Ditemukan uji tabel-sipp-terdaftar, yang menyisir tiap tabelAda("...") di
+  // seluruh layanan bot lalu mengadunya dengan daftar ini. Keduanya sudah
+  // lama ditanyakan sippTahapanService dan sudah lama dijawab "tidak ada".
+  //
+  //   perkara_putusan_pemberitahuan_putusan  17.415 baris di SIPP satker
+  //   arsip_pinjam                           0 baris - belum dipakai
+  //
+  // Yang pertama itulah yang merugikan: tujuh belas ribu baris pemberitahuan
+  // putusan tidak pernah terbaca pembaca tahapan, dan tahapannya tetap
+  // tergambar - hanya tanpa bagian itu. Tidak ada galat, tidak ada tanda.
+  "perkara_putusan_pemberitahuan_putusan",
+  "arsip_pinjam",
   // Gugatan balik. Tanpa didaftarkan di sini, tabelAda() menjawab "tidak ada"
   // walau tabelnya ada - dan penanda rekonvensi tidak akan pernah menyala.
   "perkara_rekonvensi",

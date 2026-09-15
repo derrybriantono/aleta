@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.18.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.18.0 - SK Susunan Majelis, dan Nomor Butir yang Ditelan RTF";
+export const APP_VERSION = "2.18.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.18.1 - Tiga tabel yang dijawab tidak ada tanpa galat";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,32 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.18.1",
+    title: "ALETA Judicia v2.18.1 - Tiga tabel yang dijawab tidak ada tanpa galat",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Verifikasi 2.18.0 di peladen menemukan kolom KUA kosong pada SELURUH ruangan sidang keliling - " +
+      "tanpa satu pun galat. Sebabnya bukan pencocokan nama: tabelnya tidak terdaftar di layanan skema, " +
+      "sehingga tabelAda() menjawab tidak ada. Penjaga yang dibuat untuk menutup kelas cacat itu menangkap dua lagi.",
+    added: [
+      "Penjaga tabel-sipp-terdaftar: menyisir tiap tabelAda(\"...\") di seluruh layanan bot lalu mengadunya dengan daftar TABEL. Pesan gagalnya menyebut nama tabel DAN berkasnya.",
+    ],
+    changed: [],
+    fixed: [
+      "ref_kua didaftarkan - KUA wilayah ruangan sidang keliling kini terbaca. KUA SIGI BIROMARU, SIRENJA, LABUAN, dan RIO PAKAVA memang ada di sana, 5.936 baris seluruhnya.",
+      "perkara_putusan_pemberitahuan_putusan didaftarkan - 17.415 baris yang selama ini tidak pernah terbaca pembaca tahapan. Tahapannya tetap tergambar, hanya tanpa bagian itu, tanpa tanda apa pun.",
+      "arsip_pinjam didaftarkan - masih nol baris, jadi belum merugikan; didaftarkan supaya tidak menjadi cacat diam berikutnya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi baru. 0044 sudah terpasang bersama 2.18.0.",
+    ],
+    knownLimitations: [
+      "Penjaganya hanya menangkap nama tabel yang ditulis TEGAS di dalam tabelAda(\"...\"). Nama yang disusun dari variabel tidak terjangkau.",
+    ],
+  },
   {
     version: "2.18.0",
     title: "ALETA Judicia v2.18.0 - SK Susunan Majelis, dan Nomor Butir yang Ditelan RTF",
