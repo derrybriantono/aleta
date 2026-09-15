@@ -56,15 +56,83 @@ export const SEBUTAN_HADIR: Record<number, string> = {
 };
 
 /**
- * Apakah sidang ini berpotensi verstek?
+ * ============================================================================
+ * POTENSI VERSTEK - DIBACA DARI SIDANG SEBELUMNYA, BUKAN DARI SIDANG INI
+ * ============================================================================
  *
- * Verstek dijatuhkan ketika tergugat yang sudah dipanggil patut tidak hadir.
- * Yang dapat dibaca sistem hanyalah GEJALANYA: hanya penggugat yang hadir.
- * Karena itu disebut "potensi", bukan kesimpulan - keputusannya milik majelis.
+ * Verstek dijatuhkan ketika tergugat yang sudah dipanggil patut tidak hadir
+ * lagi. Aturan lama membaca kehadiran sidang INI saja - "hanya penggugat yang
+ * hadir" - dan itu keliru pada sidang pertama: tergugat yang tidak datang
+ * pada sidang pertama BELUM membuka jalan verstek; majelis menunda dan
+ * memanggilnya sekali lagi. Yang berpotensi verstek justru sidang SESUDAHNYA:
+ * penggugat hadir pada sidang sebelumnya, tergugat tidak, dan hari ini
+ * tergugat tidak juga datang.
+ *
+ * Tiga syarat, semuanya dari data yang sudah ada pada tiap baris jadwal:
+ *
+ *   1. pada sidang SEBELUMNYA hanya penggugat/pemohon yang hadir (kode 2).
+ *      Ini sekaligus memastikan ada sidang sebelumnya - sidang pertama tidak
+ *      pernah masuk;
+ *   2. tergugat/termohon BELUM PERNAH hadir pada sidang mana pun sebelumnya.
+ *      Yang pernah hadir lalu absen diputus contradictoir, bukan verstek.
+ *      Ladang ini baru dikirim bot sejak 2.19.4; bila tidak terbaca, syarat
+ *      ini dilewati dan yang dibaca hanya sidang sebelumnya;
+ *   3. pada sidang INI tergugat tidak (atau belum) hadir: kehadirannya belum
+ *      dicatat, atau kembali hanya penggugat. Bila tergugat datang (1 atau 3)
+ *      jalannya tertutup; bila tidak ada yang datang (4) pun tertutup -
+ *      verstek menuntut penggugat hadir.
+ *
+ * Tetap disebut "potensi", bukan kesimpulan - keputusannya milik majelis.
  */
-export function potensiVerstek(dihadiriOleh: number | null) {
-  return dihadiriOleh === 2;
+export function potensiVerstek(baris: {
+  dihadiriOleh: number | null;
+  panggilan?: { hadirSebelumnya: number | null; tergugatPernahHadir?: boolean } | null;
+}): boolean {
+  const sebelumnya = baris.panggilan ? baris.panggilan.hadirSebelumnya : null;
+  if (sebelumnya !== 2) return false;
+  if (baris.panggilan && baris.panggilan.tergugatPernahHadir === true) return false;
+  const hariIni = baris.dihadiriOleh;
+  return hariIni === null || hariIni === undefined || hariIni === 2;
 }
+
+/**
+ * ============================================================================
+ * KELOMPOK KOTAK KEADAAN - MENURUT MAKSUDNYA, BUKAN MENURUT SEJARAHNYA
+ * ============================================================================
+ *
+ * Kotak keadaan ditambahkan satu demi satu sepanjang sebulan, dan deretannya
+ * mengikuti urutan penambahannya: Retur, Belum dipanggil, Ditunda, Belum ada
+ * BAS, Sidang pertama, Hari Putusan, Ikrar Talak, e-Litigasi, Sudah putus,
+ * Belum putus, Tidak perlu dipanggil, lalu tiga kotak antrian. Yang membaca
+ * tidak tahu sejarahnya; ia melihat "Tidak perlu dipanggil" sembilan kotak
+ * jauhnya dari "Belum dipanggil" dan menyangka keduanya soal yang berbeda.
+ *
+ * Kini tiap kotak punya kelompok, dan tiap kelompok menjawab satu pertanyaan:
+ *
+ *   panggilan   sudahkah pihaknya dipanggil, dan sampaikah panggilannya
+ *   sidang      bagaimana sidang ini berjalan - pertama, verstek, ditunda
+ *   putusan     berdirikah perkaranya di hadapan putusannya hari ini
+ *   antrian     sudahkah pihaknya mengambil nomor di ruang tunggu
+ *
+ * Di dalam kelompok, yang menuntut tindakan lebih dulu - urutannya di
+ * URUTAN_NADA, dari merah ke netral. Kotak gabungan "Perlu diperiksa" tetap
+ * paling depan, di luar kelompok mana pun: ia daftar pekerjaan, bukan
+ * saringan.
+ *
+ * Definisinya di sini, bukan di komponen, supaya ujinya dapat memeriksa
+ * urutan yang sungguh digambar tanpa merender komponen tiga ribu baris itu.
+ */
+export const KELOMPOK_KEADAAN = [
+  { kunci: "panggilan", label: "Panggilan" },
+  { kunci: "sidang", label: "Jalannya sidang" },
+  { kunci: "putusan", label: "Putusan" },
+  { kunci: "antrian", label: "Antrian" },
+] as const;
+
+export type KunciKelompokKeadaan = (typeof KELOMPOK_KEADAAN)[number]["kunci"];
+
+/** Dari yang menuntut tindakan ke yang sekadar keterangan. */
+export const URUTAN_NADA: readonly string[] = ["bahaya", "awas", "sejuk", "aman", "netral"];
 
 /**
  * Apakah agenda sidang ini termasuk tahapan e-Litigasi.

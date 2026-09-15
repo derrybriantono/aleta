@@ -494,6 +494,51 @@ console.log("\n== Panggilan: hanya sisi yang ada yang wajib dipanggil ==");
       JSON.stringify(hasil["42"].sisiBelumDipanggil) === "[2]"
     );
   }
+
+  console.log("\n== Kehadiran sebelumnya: tergugat pernah hadir atau belum ==");
+  {
+    // Tiga sidang satu perkara: pertama dihadiri kedua pihak, kedua hanya
+    // penggugat, ketiga belum dicatat. Sidang ketiga BUKAN potensi verstek -
+    // tergugat pernah hadir, dan yang pernah hadir lalu absen diputus
+    // contradictoir. Layar hanya dapat tahu itu bila bot yang mengatakannya.
+    const { sebelumnya, tergugatPernahHadir } = layanan.kehadiranSebelumnya([
+      { sidangId: 61, perkaraId: 800, tanggalSidang: "2026-08-01", dihadiriOleh: 1 },
+      { sidangId: 62, perkaraId: 800, tanggalSidang: "2026-08-15", dihadiriOleh: 2 },
+      { sidangId: 63, perkaraId: 800, tanggalSidang: "2026-08-30", dihadiriOleh: null },
+      // Perkara lain: sidang pertama hanya penggugat, kedua belum dicatat -
+      // inilah bentuk potensi verstek yang sesungguhnya.
+      { sidangId: 71, perkaraId: 801, tanggalSidang: "2026-08-02", dihadiriOleh: 2 },
+      { sidangId: 72, perkaraId: 801, tanggalSidang: "2026-08-16", dihadiriOleh: null },
+    ]);
+    periksa("sidang pertama: tidak ada kehadiran sebelumnya", sebelumnya["61"] === null);
+    periksa("sidang kedua membaca sidang pertama", sebelumnya["62"] === 1);
+    periksa("sidang ketiga membaca sidang kedua", sebelumnya["63"] === 2);
+    periksa("tergugat pernah hadir: sidang ketiga perkara 800", tergugatPernahHadir["63"] === true);
+    periksa("sidang pertama tidak pernah 'pernah hadir'", tergugatPernahHadir["61"] === false);
+    periksa("perkara 801: sidang kedua membaca penggugat saja", sebelumnya["72"] === 2);
+    periksa("perkara 801: tergugat belum pernah hadir", tergugatPernahHadir["72"] === false);
+    periksa("penanda tidak bocor antar perkara", tergugatPernahHadir["71"] === false);
+  }
+  {
+    bersihkan();
+    jawaban = {
+      sidang: [
+        { sidangId: 61, perkaraId: 800, tanggalSidang: "2026-08-01", dihadiriOleh: 1 },
+        { sidangId: 62, perkaraId: 800, tanggalSidang: "2026-08-15", dihadiriOleh: 2 },
+        { sidangId: 63, perkaraId: 800, tanggalSidang: "2026-08-30", dihadiriOleh: null },
+      ],
+      sisiPihak: [
+        { perkaraId: 800, pihakKe: 1 },
+        { perkaraId: 800, pihakKe: 2 },
+      ],
+      relaas: [],
+    };
+    const hasil = await layanan.keadaanPanggilanSidang([{ sidangId: 63, perkaraId: 800 }]);
+    // Sifat yang dijaga: ladangnya benar-benar SAMPAI ke keluaran panggilan -
+    // fungsi murninya benar tidak berarti apa-apa bila hasilnya tidak dikirim.
+    periksa("tergugatPernahHadir ikut terkirim pada panggilan", hasil["63"].tergugatPernahHadir === true);
+    periksa("hadirSebelumnya tetap seperti semula", hasil["63"].hadirSebelumnya === 2);
+  }
   {
     bersihkan();
     // Daftar pihak tidak terbaca sama sekali.

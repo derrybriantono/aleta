@@ -1216,6 +1216,53 @@ function isianPihakBerulang(nilai) {
   return hasil;
 }
 
+/**
+ * ============================================================================
+ * KEHADIRAN SEBELUM TIAP SIDANG - DUA HAL DARI SATU PENYUSURAN
+ * ============================================================================
+ *
+ * Daftar sidang datang terurut per perkara lalu per tanggal. Sekali susur
+ * menghasilkan, untuk TIAP sidang:
+ *
+ *   sebelumnya            kode kehadiran pada sidang tepat sebelumnya (null
+ *                         bila ini sidang pertama atau kehadirannya belum
+ *                         dicatat) - menentukan siapa yang wajib dipanggil;
+ *   tergugatPernahHadir   benar bila tergugat/termohon pernah hadir pada
+ *                         sidang MANA PUN sebelumnya (kode 1 atau 3) -
+ *                         menentukan potensi verstek. Tergugat yang pernah
+ *                         hadir lalu absen diputus contradictoir, bukan
+ *                         verstek; layar tidak boleh menyebutnya potensi
+ *                         verstek hanya karena pada sidang terakhir ia tidak
+ *                         datang.
+ *
+ * Dihitung di sini, bukan di layar: layar hanya memegang sidang yang sedang
+ * ditampilkan, sedangkan yang ditanya seluruh riwayat sidang perkaranya.
+ */
+function kehadiranSebelumnya(semuaSidang = []) {
+  const sebelumnya = {};
+  const tergugatPernahHadir = {};
+  let perkaraTerakhir = null;
+  let hadirTerakhir = null;
+  let tergugatHadir = false;
+  for (const baris of Array.isArray(semuaSidang) ? semuaSidang : []) {
+    const perkara = String(baris.perkaraId);
+    if (perkara !== perkaraTerakhir) {
+      perkaraTerakhir = perkara;
+      hadirTerakhir = null;
+      tergugatHadir = false;
+    }
+    const kunci = String(baris.sidangId);
+    sebelumnya[kunci] = hadirTerakhir;
+    tergugatPernahHadir[kunci] = tergugatHadir;
+    hadirTerakhir =
+      baris.dihadiriOleh === null || baris.dihadiriOleh === undefined
+        ? null
+        : Number(baris.dihadiriOleh);
+    if (hadirTerakhir === 1 || hadirTerakhir === 3) tergugatHadir = true;
+  }
+  return { sebelumnya, tergugatPernahHadir };
+}
+
 async function keadaanPanggilanSidang(daftarSidang = []) {
   const sidang = daftarSidang.filter((x) => x && x.sidangId && x.perkaraId);
   if (sidang.length === 0) return {};
@@ -1260,21 +1307,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
   ]);
 
   // --- Kehadiran pada sidang SEBELUMNYA, per sidang -------------------------
-  const sebelumnya = {};
-  let perkaraTerakhir = null;
-  let hadirTerakhir = null;
-  for (const baris of Array.isArray(semuaSidang) ? semuaSidang : []) {
-    const perkara = String(baris.perkaraId);
-    if (perkara !== perkaraTerakhir) {
-      perkaraTerakhir = perkara;
-      hadirTerakhir = null;
-    }
-    sebelumnya[String(baris.sidangId)] = hadirTerakhir;
-    hadirTerakhir =
-      baris.dihadiriOleh === null || baris.dihadiriOleh === undefined
-        ? null
-        : Number(baris.dihadiriOleh);
-  }
+  const { sebelumnya, tergugatPernahHadir } = kehadiranSebelumnya(semuaSidang);
 
   // --- Relaas per sidang, dikelompokkan menurut sisi pihak ------------------
   const relaasPerSidang = {};
@@ -1355,6 +1388,10 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
 
     hasil[kunci] = {
       hadirSebelumnya,
+      // Tergugat/termohon pernah hadir pada sidang mana pun sebelumnya. Layar
+      // memakainya untuk menutup "potensi verstek" pada perkara yang sudah
+      // contradictoir - lihat kehadiranSebelumnya.
+      tergugatPernahHadir: Boolean(tergugatPernahHadir[kunci]),
       wajibDipanggil: wajib,
       // Disebutkan supaya dapat ditelusuri bila penandanya terasa keliru.
       sisiPihakAda: sisiAda ? [...sisiAda].sort() : [],
@@ -2126,6 +2163,7 @@ module.exports = {
   perkaraFinal,
   perkaraLewatEcourt,
   keadaanPanggilanSidang,
+  kehadiranSebelumnya,
   petugasBanyakPerkara,
   pihakBanyakPerkara,
   putusanBanyakPerkara,

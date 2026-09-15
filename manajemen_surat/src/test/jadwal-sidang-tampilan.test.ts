@@ -585,7 +585,11 @@ describe("penanda Ikrar Talak", () => {
       path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
       "utf8"
     );
-    const potong = isi.slice(isi.indexOf('kunci: "belum-putus"'), isi.indexOf('kunci: "tidak-dipanggil"'));
+    // Irisannya dari kotak itu sendiri, bukan sampai kotak berikutnya: sejak
+    // kotak berkelompok, "Tidak perlu dipanggil" ada di kelompok Panggilan -
+    // jauh SEBELUM kelompok Putusan - dan irisan sampai ke sana kosong.
+    const awal = isi.indexOf('kunci: "belum-putus"');
+    const potong = isi.slice(awal, awal + 600);
     expect(potong).toContain("cocok: (x) => !x.sudahPutus");
   });
 });

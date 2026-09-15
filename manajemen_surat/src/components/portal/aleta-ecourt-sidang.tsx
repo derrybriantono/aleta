@@ -40,6 +40,7 @@ import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
   KELOMPOK_ALUR,
+  KELOMPOK_KEADAAN,
   KUNCI_PERLU_DIPERIKSA,
   NADA_PERLU_DIPERIKSA,
   SEBUTAN_HADIR,
@@ -106,6 +107,10 @@ type SidangBaris = {
   pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
   panggilan: {
     hadirSebelumnya: number | null;
+    // Tergugat/termohon pernah hadir pada sidang mana pun sebelumnya. Dikirim
+    // bot sejak 2.19.4; yang tidak terbaca tidak menutup potensi verstek -
+    // lihat potensiVerstek di lib.
+    tergugatPernahHadir?: boolean;
     wajibDipanggil: number[];
     belumDipanggil: number;
     // 1 penggugat/pemohon, 2 tergugat/termohon.
@@ -459,6 +464,12 @@ type KeadaanSidang = {
   kunci: string;
   label: string;
   nada: "bahaya" | "awas" | "aman" | "sejuk" | "netral";
+  // Pertanyaan yang dijawab kotak ini - lihat KELOMPOK_KEADAAN di lib.
+  // Deretan di layar digambar per kelompok, dan ujinya memeriksa daftar di
+  // bawah ditulis berkelompok pula. Kosong HANYA pada kotak gabungan "Perlu
+  // diperiksa": ia berdiri di luar kelompok mana pun - daftar pekerjaan,
+  // bukan saringan - dan digambar paling depan dengan pemisahnya sendiri.
+  kelompok?: (typeof KELOMPOK_KEADAAN)[number]["kunci"];
   judul: string;
   // Peta antrian ikut dikirim karena tiga keadaan terakhir menanyakannya.
   // Menaruhnya sebagai argumen, bukan menutupnya di dalam closure, membuat
@@ -495,10 +506,25 @@ const TAMPILKAN_PUTUSAN_ECOURT = false;
  * ia sapu akan menyapu dirinya sendiri.
  */
 const KEADAAN_DASAR: KeadaanSidang[] = [
+  // ==========================================================================
+  // URUTANNYA MENURUT KELOMPOK, LALU MENURUT NADA - LIHAT KELOMPOK_KEADAAN
+  // ==========================================================================
+  //
+  // Panggilan, jalannya sidang, putusan, antrian. Di dalam kelompok yang
+  // menuntut tindakan lebih dulu (URUTAN_NADA di lib). Deretan di layar
+  // digambar per kelompok dari daftar ini, dan ujinya memeriksa urutan
+  // tulisnya - kotak baru ditaruh di kelompoknya, bukan di ujung daftar.
+  //
+  // Sebelumnya lima belas kotak berjajar menurut urutan penambahannya, dan
+  // yang berkaitan berjauhan: "Tidak perlu dipanggil" sembilan kotak dari
+  // "Belum dipanggil", "Belum putus" dua kotak dari "Sudah putus".
+
+  // --- PANGGILAN: sudahkah pihaknya dipanggil, sampaikah panggilannya -------
   {
     kunci: "retur",
     label: "Retur",
     nada: "bahaya",
+    kelompok: "panggilan",
     judul: "Ada relaas yang kembali tidak terlaksana. Panggilan harus diulang.",
     cocok: (x) => x.panggilan.retur > 0,
   },
@@ -506,9 +532,78 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kunci: "belum-dipanggil",
     label: "Belum dipanggil",
     nada: "bahaya",
+    kelompok: "panggilan",
     judul: "Masih ada pihak yang wajib dipanggil dan relaasnya belum ada.",
     cocok: (x) => x.panggilan.belumDipanggil > 0,
   },
+  {
+    kunci: "tidak-dipanggil",
+    label: "Tidak perlu dipanggil",
+    nada: "netral",
+    kelompok: "panggilan",
+    judul:
+      "Tidak ada pihak yang wajib dipanggil untuk sidang ini - semuanya hadir pada sidang sebelumnya.",
+    cocok: (x) => x.panggilan.wajibDipanggil.length === 0,
+  },
+
+  // --- JALANNYA SIDANG: verstek, ditunda, berita acara, pertama, e-litigasi --
+  {
+    // ========================================================================
+    // POTENSI VERSTEK - DARI SIDANG SEBELUMNYA; ATURANNYA potensiVerstek DI LIB
+    // ========================================================================
+    //
+    // Dulu hanya tulisan kecil di dalam baris, dan menyala pada sidang
+    // pertama yang hanya dihadiri penggugat - keliru: tergugat yang tidak
+    // datang pada sidang pertama baru dipanggil sekali lagi. Kini kotak
+    // keadaan yang dapat menyaring, dan yang dibaca sidang SEBELUMNYA.
+    //
+    // Kuning, bukan merah. Ia gejala yang perlu disiapkan - kepatutan
+    // panggilan tergugat diperiksa, naskah verstek disiapkan - bukan
+    // pekerjaan yang membatalkan sidangnya bila tidak diurus. Merah akan
+    // memasukkannya ke kotak gabungan "Perlu diperiksa", dan itu salah alamat.
+    kunci: "potensi-verstek",
+    label: "Potensi verstek",
+    nada: "awas",
+    kelompok: "sidang",
+    judul:
+      "Pada sidang sebelumnya hanya penggugat/pemohon yang hadir dan tergugat/termohon belum pernah hadir; bila hari ini pun tergugat tidak datang, jalan putusan verstek terbuka. Keputusannya milik majelis.",
+    cocok: (x) => potensiVerstek(x),
+  },
+  {
+    kunci: "ditunda",
+    label: "Ditunda",
+    nada: "awas",
+    kelompok: "sidang",
+    judul: "Sidang ditunda ke tanggal lain.",
+    cocok: (x) => x.ditunda,
+  },
+  {
+    kunci: "belum-bas",
+    label: "Belum ada BAS",
+    nada: "awas",
+    kelompok: "sidang",
+    judul: "Berita acara sidang belum diunggah ke SIPP.",
+    cocok: (x) => !x.adaBas,
+  },
+  {
+    kunci: "sidang-pertama",
+    label: "Sidang pertama",
+    nada: "sejuk",
+    kelompok: "sidang",
+    judul: "Sidang pertama pada perkara ini.",
+    cocok: (x) => x.urutanSidang <= 1,
+  },
+  {
+    kunci: "e-litigasi",
+    label: "e-Litigasi",
+    nada: "sejuk",
+    kelompok: "sidang",
+    judul:
+      "Perkara terdaftar lewat e-Court DAN agendanya tahapan yang dipertukarkan elektronik: jawaban, replik, duplik, duplik rekonvensi, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan/putusan sela.",
+    cocok: (x) => sidangElitigasi(x),
+  },
+
+  // --- PUTUSAN: berdirikah perkaranya di hadapan putusannya hari ini --------
   // ==========================================================================
   // "Putusan e-Court" SENGAJA TIDAK DITAMPILKAN - LIHAT TAMPILKAN_PUTUSAN_ECOURT
   // ==========================================================================
@@ -526,32 +621,12 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
           kunci: "putusan-ecourt",
           label: "Putusan e-Court",
           nada: "bahaya" as const,
+          kelompok: "putusan" as const,
           judul: "Sudah putus, tetapi putusannya belum beres di e-Court.",
           cocok: (x: SidangBaris) => Boolean(x.putusanEcourt?.perluTindakan),
         },
       ]
     : []),
-  {
-    kunci: "ditunda",
-    label: "Ditunda",
-    nada: "awas",
-    judul: "Sidang ditunda ke tanggal lain.",
-    cocok: (x) => x.ditunda,
-  },
-  {
-    kunci: "belum-bas",
-    label: "Belum ada BAS",
-    nada: "awas",
-    judul: "Berita acara sidang belum diunggah ke SIPP.",
-    cocok: (x) => !x.adaBas,
-  },
-  {
-    kunci: "sidang-pertama",
-    label: "Sidang pertama",
-    nada: "sejuk",
-    judul: "Sidang pertama pada perkara ini.",
-    cocok: (x) => x.urutanSidang <= 1,
-  },
   {
     // ========================================================================
     // "MUSYAWARAH MAJELIS" DILEBUR KE SINI - LIHAT hariPutusan DI ATAS
@@ -572,6 +647,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kunci: "hari-putusan",
     label: "Hari Putusan",
     nada: "awas",
+    kelompok: "putusan",
     judul:
       "Hari ini perkaranya berdiri di hadapan putusannya - agendanya musyawarah majelis, pembacaan putusan, pembacaan penetapan, atau putusan sela; ATAU hasil sidangnya sudah tercatat putus. Sidang ikrar talak tidak ikut - ia punya penandanya sendiri.",
     cocok: (x) => hariPutusan(x),
@@ -601,17 +677,10 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kunci: "ikrar-talak",
     label: "Ikrar Talak",
     nada: "sejuk",
+    kelompok: "putusan",
     judul:
       "Sidang penyaksian ikrar talak menurut bendera SIPP sendiri. Putusannya sudah dijatuhkan sebelumnya - yang terjadi hari ini pengucapan ikrarnya di depan majelis.",
     cocok: (x) => sidangIkrar(x),
-  },
-  {
-    kunci: "e-litigasi",
-    label: "e-Litigasi",
-    nada: "sejuk",
-    judul:
-      "Perkara terdaftar lewat e-Court DAN agendanya tahapan yang dipertukarkan elektronik: jawaban, replik, duplik, duplik rekonvensi, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan/putusan sela.",
-    cocok: (x) => sidangElitigasi(x),
   },
   {
     // ========================================================================
@@ -631,6 +700,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kunci: "sudah-putus",
     label: "Sudah putus",
     nada: "aman",
+    kelompok: "putusan",
     judul:
       "Putusannya tercatat di SIPP bertanggal sama dengan sidang ini - diputus pada sidang hari itu, bukan pada sidang sebelumnya. Sidang ikrar talak tidak ikut.",
     cocok: (x) => putusHariIni(x),
@@ -657,35 +727,17 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kunci: "belum-putus",
     label: "Belum putus",
     nada: "netral",
+    kelompok: "putusan",
     judul: "Perkaranya belum punya putusan sama sekali - masih berjalan.",
     cocok: (x) => !x.sudahPutus,
   },
-  {
-    kunci: "tidak-dipanggil",
-    label: "Tidak perlu dipanggil",
-    nada: "netral",
-    judul:
-      "Tidak ada pihak yang wajib dipanggil untuk sidang ini - semuanya hadir pada sidang sebelumnya.",
-    cocok: (x) => x.panggilan.wajibDipanggil.length === 0,
-  },
-  {
-    kunci: "sudah-antri",
-    label: "Sudah ambil antrian",
-    nada: "sejuk",
-    judul: "Pihaknya sudah mengambil nomor antrian, dalam jaringan maupun di mesin antrian.",
-    cocok: (x, antrian) => Boolean(antrianUntuk(antrian, x)?.nomor),
-  },
-  {
-    kunci: "antri-online",
-    label: "Antrian online",
-    nada: "sejuk",
-    judul: "Antriannya diambil lewat WhatsApp, bukan di mesin antrian.",
-    cocok: (x, antrian) => Boolean(antrianUntuk(antrian, x)?.online),
-  },
+
+  // --- ANTRIAN: sudahkah pihaknya mengambil nomor di ruang tunggu -----------
   {
     kunci: "belum-antri",
     label: "Belum ambil antrian",
     nada: "awas",
+    kelompok: "antrian",
     judul:
       "Terdaftar di mesin antrian, tetapi belum ada pihak yang mengambil nomor. Perkara yang memang tidak memakai antrian tidak ikut terhitung.",
     cocok: (x, antrian) => {
@@ -699,6 +751,22 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
       // "tidak ada" menjadi kemungkinan yang sebenarnya.
       return punya !== undefined && !punya.nomor;
     },
+  },
+  {
+    kunci: "sudah-antri",
+    label: "Sudah ambil antrian",
+    nada: "sejuk",
+    kelompok: "antrian",
+    judul: "Pihaknya sudah mengambil nomor antrian, dalam jaringan maupun di mesin antrian.",
+    cocok: (x, antrian) => Boolean(antrianUntuk(antrian, x)?.nomor),
+  },
+  {
+    kunci: "antri-online",
+    label: "Antrian online",
+    nada: "sejuk",
+    kelompok: "antrian",
+    judul: "Antriannya diambil lewat WhatsApp, bukan di mesin antrian.",
+    cocok: (x, antrian) => Boolean(antrianUntuk(antrian, x)?.online),
   },
 ];
 
@@ -731,6 +799,36 @@ const KEADAAN_SIDANG: KeadaanSidang[] = [
   },
   ...KEADAAN_DASAR,
 ];
+
+/**
+ * Kotak yang TAMPAK: jumlahnya lebih dari nol, atau sedang menyala - lihat
+ * "YANG BERNILAI NOL TIDAK DITAMPILKAN" di tempat deretannya digambar.
+ */
+function keadaanTampak(
+  daftar: KeadaanSidang[],
+  jumlah: Record<string, number>,
+  terpilih: string[]
+): KeadaanSidang[] {
+  return daftar.filter(
+    (keadaan) => (jumlah[keadaan.kunci] ?? 0) > 0 || terpilih.includes(keadaan.kunci)
+  );
+}
+
+/**
+ * Kelompok kotak beserta anggotanya yang tampak, urut menurut KELOMPOK_KEADAAN.
+ * Kelompok yang seluruh anggotanya nol tidak ikut - judulnya pun tidak
+ * digambar, supaya tidak ada judul kelompok yang berdiri tanpa satu pun kotak.
+ */
+function kelompokKeadaanTampak(jumlah: Record<string, number>, terpilih: string[]) {
+  return KELOMPOK_KEADAAN.map((kelompok) => ({
+    ...kelompok,
+    anggota: keadaanTampak(
+      KEADAAN_DASAR.filter((keadaan) => keadaan.kelompok === kelompok.kunci),
+      jumlah,
+      terpilih
+    ),
+  })).filter((kelompok) => kelompok.anggota.length > 0);
+}
 
 /** Medan pencarian lanjutan untuk jadwal sidang. */
 const MEDAN_CARI_SIDANG = [
@@ -2907,10 +3005,13 @@ export function AletaEcourtSidang({
                 menjawab "bagaimana keadaannya". */}
             <span aria-hidden className="mx-1 h-5 w-px bg-border" />
 
-            {KEADAAN_SIDANG.filter(
-              (keadaan) =>
-                (jumlahKeadaan[keadaan.kunci] ?? 0) > 0 ||
-                keadaanTerpilih.includes(keadaan.kunci)
+            {/* Kotak gabungan lebih dulu, di luar kelompok mana pun: ia
+                daftar pekerjaan, bukan saringan - lihat catatannya pada
+                KEADAAN_SIDANG. */}
+            {keadaanTampak(
+              KEADAAN_SIDANG.filter((keadaan) => keadaan.kunci === KUNCI_PERLU_DIPERIKSA),
+              jumlahKeadaan,
+              keadaanTerpilih
             ).map((keadaan) => (
               <Fragment key={keadaan.kunci}>
                 <ChipSaring
@@ -2929,6 +3030,40 @@ export function AletaEcourtSidang({
                 {keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (
                   <span aria-hidden className="mx-1 h-5 w-px bg-border" />
                 ) : null}
+              </Fragment>
+            ))}
+
+            {/* ==========================================================
+                KOTAK SATUAN, BERKELOMPOK MENURUT MAKSUDNYA
+                ==========================================================
+
+                Panggilan, jalannya sidang, putusan, antrian - tiap kelompok
+                menjawab satu pertanyaan dan diberi judul kecil, supaya yang
+                membaca tidak perlu menebak "Tidak perlu dipanggil" itu soal
+                apa. Di dalam kelompok yang merah lebih dulu. Kelompok yang
+                seluruh kotaknya nol tidak digambar sama sekali - judul
+                tanpa satu pun kotak di bawahnya hanya membingungkan.
+
+                Sebelumnya lima belas kotak berjajar menurut urutan
+                penambahannya, dan yang berkaitan berjauhan: "Tidak perlu
+                dipanggil" sembilan kotak dari "Belum dipanggil". */}
+            {kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok, urutan) => (
+              <Fragment key={`kelompok-${kelompok.kunci}`}>
+                {urutan > 0 ? <span aria-hidden className="mx-1 h-5 w-px bg-border" /> : null}
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {kelompok.label}
+                </span>
+                {kelompok.anggota.map((keadaan) => (
+                  <ChipSaring
+                    key={keadaan.kunci}
+                    label={keadaan.label}
+                    jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
+                    nada={keadaan.nada}
+                    judul={keadaan.judul}
+                    aktif={keadaanTerpilih.includes(keadaan.kunci)}
+                    onTekan={() => alihkanKeadaan(keadaan.kunci)}
+                  />
+                ))}
               </Fragment>
             ))}
           </div>
@@ -3645,23 +3780,29 @@ export function AletaEcourtSidang({
                             ) : null}
 
                             {/* ==============================================
-                                KEHADIRAN - PINDAH DARI KISI KARTU YANG DIHAPUS
+                                KEHADIRAN, DAN POTENSI VERSTEK DARI SIDANG
+                                SEBELUMNYA
                                 ==============================================
 
                                 Ia dulu hanya ada di kisi kartu dalam panel
                                 alur, dan hilang bersama kisinya. Yang paling
-                                menentukan di antaranya "potensi verstek":
-                                hanya penggugat/pemohon yang hadir, dan itu
-                                gejala yang membuka jalan putusan verstek.
-                                Keputusannya tetap milik majelis - karena itu
-                                disebut potensi, bukan kesimpulan.
+                                menentukan di antaranya "potensi verstek" -
+                                dan dulu ia dibaca dari kehadiran sidang INI:
+                                hanya penggugat yang hadir. Itu keliru pada
+                                sidang pertama; tergugat yang tidak datang
+                                baru dipanggil sekali lagi. Kini ia dibaca
+                                dari sidang SEBELUMNYA, lewat aturan yang
+                                sama dengan kotak saringnya - potensiVerstek
+                                di lib. Keputusannya tetap milik majelis;
+                                karena itu potensi, bukan kesimpulan.
 
-                                Satu penanda saja per baris: keempat keadaan
-                                kehadiran saling meniadakan. */}
-                            {potensiVerstek(baris.dihadiriOleh) ? (
+                                Satu penanda saja per baris: potensi verstek
+                                lebih dulu (ia berlaku sebelum kehadiran hari
+                                ini dicatat), lalu kehadiran hari ini. */}
+                            {potensiVerstek(baris) ? (
                               <Badge
-                                variant="danger"
-                                title="Hanya penggugat/pemohon yang hadir pada sidang ini - membuka jalan putusan verstek. Keputusannya milik majelis."
+                                variant="warning"
+                                title="Pada sidang sebelumnya hanya penggugat/pemohon yang hadir dan tergugat/termohon belum pernah hadir; bila hari ini pun tergugat tidak datang, jalan putusan verstek terbuka. Keputusannya milik majelis."
                               >
                                 potensi verstek
                               </Badge>

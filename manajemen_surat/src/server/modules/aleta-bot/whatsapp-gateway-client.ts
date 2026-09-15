@@ -1251,6 +1251,8 @@ export type SidangBaris = {
   pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
   panggilan: {
     hadirSebelumnya: number | null;
+    /** Tergugat/termohon pernah hadir pada sidang mana pun sebelumnya. Sejak bot 2.19.4. */
+    tergugatPernahHadir?: boolean;
     wajibDipanggil: number[];
     belumDipanggil: number;
     retur: number;

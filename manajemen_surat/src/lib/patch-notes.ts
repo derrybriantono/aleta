@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.3";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.3 - Kepala Majelis Kembali, dan Garis yang Memotong Kelompoknya Sendiri";
+export const APP_VERSION = "2.19.4";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.4 - Potensi Verstek dari Sidang Sebelumnya, dan Kotak Keadaan yang Berkelompok";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,37 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.4",
+    title: "ALETA Judicia v2.19.4 - Potensi Verstek dari Sidang Sebelumnya, dan Kotak Keadaan yang Berkelompok",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Jadwal Sidang: potensi verstek tidak lagi menyala pada sidang pertama yang hanya dihadiri penggugat, melainkan pada " +
+      "sidang sesudahnya; ia menjadi kotak keadaan kuning yang dapat menyaring; dan lima belas kotak keadaan yang berjajar " +
+      "menurut urutan penambahannya kini berkelompok menurut maksudnya: Panggilan, Jalannya sidang, Putusan, Antrian.",
+    added: [
+      "Kotak keadaan Potensi verstek (kuning) di kelompok Jalannya sidang - dapat ditekan untuk menyaring, dihitung dengan aturan yang sama dengan penanda pada barisnya.",
+      "Judul kecil di atas tiap kelompok kotak keadaan. Kelompok yang seluruh kotaknya nol tidak digambar sama sekali.",
+    ],
+    changed: [
+      "Aturan potensi verstek: pada sidang SEBELUMNYA hanya penggugat/pemohon yang hadir, tergugat/termohon belum pernah hadir pada sidang mana pun, dan pada sidang ini tergugat tidak (atau belum) hadir. Sidang pertama tidak pernah masuk.",
+      "Urutan kotak keadaan: Panggilan (Retur, Belum dipanggil, Tidak perlu dipanggil), Jalannya sidang (Potensi verstek, Ditunda, Belum ada BAS, Sidang pertama, e-Litigasi), Putusan (Hari Putusan, Ikrar Talak, Sudah putus, Belum putus), Antrian (Belum ambil antrian, Sudah ambil antrian, Antrian online). Di dalam kelompok yang merah lebih dulu.",
+      "Penanda potensi verstek pada baris kuning, bukan merah: ia gejala yang perlu disiapkan, bukan pekerjaan yang membatalkan sidang - karena itu ia tidak ikut kotak gabungan Perlu diperiksa.",
+      "Bot mengirim ladang baru tergugatPernahHadir pada keadaan panggilan tiap sidang, dihitung dari seluruh riwayat sidang perkaranya.",
+    ],
+    fixed: [
+      "Sidang pertama yang hanya dihadiri penggugat/pemohon disebut potensi verstek. Tergugat yang tidak datang pada sidang pertama baru dipanggil sekali lagi; yang berpotensi verstek sidang berikutnya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi tetap 1.149.0.",
+      "Sampai bot 2.19.4 terpasang, ladang tergugatPernahHadir tidak terbaca dan yang dinilai hanya kehadiran sidang sebelumnya.",
+    ],
+    knownLimitations: [
+      "Kehadiran dibaca dari isian jurusita/panitera di SIPP. Sidang sebelumnya yang kehadirannya tidak dicatat membuat potensi verstek tidak terbaca - gagal-tertutup, sama seperti jalur penilaian lain.",
+    ],
+  },
   {
     version: "2.19.3",
     title: "ALETA Judicia v2.19.3 - Kepala Majelis Kembali, dan Garis yang Memotong Kelompoknya Sendiri",
