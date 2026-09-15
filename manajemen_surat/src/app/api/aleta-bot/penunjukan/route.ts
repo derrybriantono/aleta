@@ -53,6 +53,16 @@ export async function GET(request: NextRequest) {
 
     const pengaturan = await bacaPengaturanPenunjukan(db);
 
+    // Majelis pilihan petugas, dari papan: "?majelis=32,26,31" - id hakim_pn,
+    // ketua di depan. Datang dari peramban, jadi disaring ke bilangan bulat
+    // positif; selebihnya diputuskan bot, yang memeriksa id itu ke daftar
+    // hakim aktifnya sendiri.
+    const pilihanMajelis = String(request.nextUrl.searchParams.get("majelis") || "")
+      .split(",")
+      .map((x) => Number(x.trim()))
+      .filter((x) => Number.isInteger(x) && x > 0)
+      .slice(0, 5);
+
     const hasil = await getGatewayPenunjukanUsulan({
       nomorPerkara: nomor,
       pengaturan: {
@@ -62,6 +72,7 @@ export async function GET(request: NextRequest) {
         // Susunan menurut SK Ketua - majelis berkode didahulukan, dan panitera
         // sidangnya ditunjuk lewat id, bukan lewat kode yang tabrakan di SIPP.
         susunanSk: pengaturan.susunanSk as unknown as Record<string, unknown>[],
+        pilihanMajelis,
       },
     });
 

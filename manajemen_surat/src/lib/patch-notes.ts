@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.18.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.18.1 - Tiga tabel yang dijawab tidak ada tanpa galat";
+export const APP_VERSION = "2.19.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.0 - Mengganti Majelis Menghitung Ulang Seluruh Rantainya";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,34 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.0",
+    title: "ALETA Judicia v2.19.0 - Mengganti Majelis Menghitung Ulang Seluruh Rantainya",
+    date: "2026-09-15",
+    status: "Terpasang",
+    summary:
+      "Empat keluhan dari satu layar - otomatis selalu Sudarmin, panitera tidak ikut majelis, PHS tetap Sudarmin walau Fahri dipilih, " +
+      "hari sidang Selasa untuk majelis Rabu - ternyata satu akar: giliran memilih trio dadakan berperkara 5 lalu melabelinya dengan " +
+      "kode ketuanya, dan pilihan manual tidak pernah menghitung ulang apa pun.",
+    added: [
+      "Dropdown majelis pada mode OTOMATIS. Mengganti majelis di sana mengganti hakimnya, panitera sidangnya, juru sitanya, dan hari sidangnya - dihitung ulang server, bukan ditiru di peramban.",
+      "PHS ikut ditawarkan pada Pejabat yang menetapkan. Calonnya anggota majelis perkara itu saja, ketua di depan sebagai pilihan otomatis - ketua majelis yang cuti pada hari penetapannya tidak lagi memaksa petugas kembali ke borang SIPP.",
+    ],
+    changed: [
+      "Giliran berjalan di antara majelis SK saja. Terukur pada perkara 567: trio dadakan B,C1,C3 yang pernah dipakai 5 kali selalu menang atas ketiga majelis SK (259, 125, 60 perkara) - itulah sebab majelis Ketua tidak pernah dapat perkara dari usulan.",
+      "Kode majelis diambil dari SK, dan dikosongkan bila susunannya di luar SK. Kode ketua melabeli trio dadakan sebagai Majelis B, lalu panitera, hari sidang, dan penanda tangan PHS mengikuti majelis yang tidak sedang bersidang.",
+      "Mengganti majelis - di mode mana pun - memuat ulang usulan untuk majelis itu. Sebelumnya usulan disusun sekali saat papan dibuka, dan dropdown hanya mengubah pilihan di peramban.",
+      "Bongkar seluruh penetapan berjeda 1-10 menit per pejabat, seperti jalur tulis. Sebelumnya empat belas baris audit berdetik sama atas nama tiga akun - tanda pekerjaan mesin yang langsung terbaca. PHS paling awal, PMH paling akhir (= sekarang), sehingga di Audit Trail terbaca PMH, PPP, PJS, lalu PHS, dan tidak satu pun baris bertanggal masa depan.",
+    ],
+    fixed: [],
+    security: [
+      "Id hakim pilihan disaring di portal dan di gerbang bot - bilangan bulat positif, paling banyak lima - lalu diperiksa bot ke daftar hakim aktifnya sendiri. Hakim yang sudah tidak aktif menggagalkan pilihan, bukan mengurangi majelis.",
+    ],
+    operationalNotes: ["Tidak ada migrasi baru."],
+    knownLimitations: [
+      "Juru sita tidak ditetapkan per majelis oleh SK; ia tetap giliran beban dan dihitung ulang bersama yang lain supaya tampilannya segar, bukan karena majelis mengubahnya.",
+    ],
+  },
   {
     version: "2.18.1",
     title: "ALETA Judicia v2.18.1 - Tiga tabel yang dijawab tidak ada tanpa galat",

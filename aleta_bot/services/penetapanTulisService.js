@@ -458,6 +458,44 @@ function jedaLangkah(benih, i) {
  *
  * @returns {string} "YYYY-MM-DD HH:mm:ss"
  */
+/**
+ * ============================================================================
+ * JAM TIAP LANGKAH BONGKAR - SATU TEKANAN, EMPAT PEJABAT, EMPAT MENIT BERBEDA
+ * ============================================================================
+ *
+ * Jalur tulis sudah lama memberi tiap pejabat jamnya sendiri (waktuLangkah).
+ * Jalur bongkar tidak: keempat penetapan dibongkar dengan satu detik yang
+ * sama, atas nama tiga akun berbeda. Di Audit Trail SIPP itu terbaca sebagai
+ * tiga orang bekerja dalam detik yang sama - yang tidak pernah terjadi pada
+ * pekerjaan tangan, dan karena itu langsung menandai pekerjaan mesin.
+ *
+ * Bongkar berjalan PHS -> PJS -> PPP -> PMH (URUTAN_BONGKAR), sebab yang
+ * belakangan ditulis harus lebih dahulu dicabut. Jamnya mengikuti urutan
+ * itu: PHS paling awal, PMH paling akhir - dan yang paling akhir adalah jam
+ * SEKARANG, sehingga tidak satu pun baris bertanggal masa depan. Di Audit
+ * Trail, yang terurut dari yang terbaru, ia terbaca PMH, PPP, PJS, PHS.
+ *
+ * Jedanya 1-10 menit dari benih perkara yang sama dengan jalur tulis, digeser
+ * sedikit supaya pola jedanya tidak identik dengan pola saat penetapannya
+ * ditulis - dua rangkaian dengan jeda persis sama pun sebuah tanda.
+ *
+ * @returns {Promise<Record<string, string>>} jenis -> "YYYY-MM-DD HH:mm:ss"
+ */
+async function waktuBongkar(perkaraId) {
+  const akhir = await waktuBasisData();
+  const dasar = new Date(akhir.replace(" ", "T"));
+  const benih = benihDari(Number(perkaraId) * 3 + 1);
+  const hasil = {};
+  let mundurMenit = 0;
+  // Dibalik: pmh, ppp, pjs, phs - pmh mendapat jam sekarang, sisanya mundur.
+  const dariAkhir = [...URUTAN_BONGKAR].reverse();
+  dariAkhir.forEach((jenis, i) => {
+    if (i > 0) mundurMenit += jedaLangkah(benih, i - 1);
+    hasil[jenis] = waktuMysql(new Date(dasar.getTime() - mundurMenit * 60000));
+  });
+  return hasil;
+}
+
 function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer }) {
   const urutan = URUTAN_LANGKAH_WAKTU[jenis];
   // Data Umum bukan penetapan dan tidak ikut dalam rangkaian ini.
@@ -2074,7 +2112,12 @@ async function susunRencanaHapus(minta) {
   const operator = cleanText(minta.operator);
   if (!operator) return { ok: false, alasan: "operator_tidak_disebut" };
 
-  const saat = await waktuBasisData();
+  // Jam yang dipakai pemanggil bila ia menyusun rangkaian bongkar - lihat
+  // waktuBongkar. Tanpa itu, jam basis data sekarang - untuk bongkar satu
+  // langkah lewat tombol "Batalkan penetapan terakhir".
+  const saat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(minta.saat || ""))
+    ? String(minta.saat)
+    : await waktuBasisData();
   const ip = String(minta.ip || "127.0.0.1");
   const langkah = [];
 
@@ -2325,6 +2368,7 @@ module.exports = {
   susunRencanaTulis,
   susunRencanaHapus,
   jalankanRencana,
+  waktuBongkar,
   // Diekspor untuk diuji satuan.
   waktuLangkah,
   // Diekspor untuk diuji satuan.

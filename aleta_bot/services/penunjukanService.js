@@ -898,6 +898,26 @@ async function susunanMajelisTerpakai(tahun, hakimAktif = [], batas = 12) {
  * baru bermula dari nol perkara, dan daftar yang hanya memuat yang sudah
  * pernah dipakai tidak akan pernah menawarkannya.
  */
+/**
+ * Kode majelis menurut SK untuk satu susunan kode hakim - "" bila susunan itu
+ * tidak ada di SK.
+ *
+ * Dicocokkan menurut HIMPUNAN, bukan urutan, dengan alasan yang sama seperti
+ * tandaiSusunanSk di bawah. Dan "" memang jawaban yang benar untuk susunan di
+ * luar SK: kode majelis milik SK, dan memberi kode ketua kepada trio dadakan
+ * membuat panitera, hari sidang, dan penanda tangan PHS mengikuti majelis
+ * yang sebenarnya tidak sedang bersidang.
+ */
+function kodeSkUntuk(kodeHakim, susunanSk) {
+  const kunci = [...(kodeHakim || [])].map((x) => String(x || "").toUpperCase()).filter(Boolean).sort().join("|");
+  if (!kunci) return "";
+  for (const sk of Array.isArray(susunanSk) ? susunanSk : []) {
+    const kunciSk = [...(sk.hakimKode || [])].map((x) => String(x).toUpperCase()).sort().join("|");
+    if (kunciSk === kunci) return String(sk.majelisKode || "");
+  }
+  return "";
+}
+
 function tandaiSusunanSk(terpakai, susunanSk, hakimAktif) {
   const daftar = Array.isArray(terpakai) ? [...terpakai] : [];
   if (!Array.isArray(susunanSk) || susunanSk.length === 0) {
@@ -1373,6 +1393,23 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const hariSidang = pengaturan.hariSidang || {};
   const susunanSk = Array.isArray(pengaturan.susunanSk) ? pengaturan.susunanSk : [];
 
+  // ==========================================================================
+  // MAJELIS YANG DIPILIH PETUGAS DI PAPAN - MENGGANTIKAN GILIRAN
+  // ==========================================================================
+  //
+  // Sebelum ini usulan disusun SEKALI, saat papan dibuka. Ketika petugas
+  // mengganti majelis di dropdown, yang berubah hanya pilihan di peramban -
+  // panitera sidang, hari sidang, dan penanda tangan PHS tetap milik usulan
+  // lama. Pilih Majelis A, keluar hari Selasa, ditandatangani ketua Majelis
+  // B: itulah yang terlihat di layar, dan itulah sebabnya.
+  //
+  // Kini papan mengirim id hakim yang dipilih (urutan duduk, ketua di depan),
+  // dan seluruh turunannya dihitung ulang DI SINI - satu sumber kebenaran,
+  // bukan dua salinan yang saling menyimpang.
+  const pilihanMajelis = (Array.isArray(pengaturan.pilihanMajelis) ? pengaturan.pilihanMajelis : [])
+    .map((x) => Number(x))
+    .filter((x) => Number.isInteger(x) && x > 0);
+
   const identitas = await identitasPerkara(nomorPerkara);
   if (!identitas) {
     return { ok: false, alasan: "perkara_tidak_ketemu", nomorPerkara: cleanText(nomorPerkara) };
@@ -1481,6 +1518,8 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     beban,
     bebanMajelis,
     susunanTerpakai: susunanBerkode,
+    susunanSk,
+    pilihanMajelis,
     aturan,
   });
 
@@ -1747,6 +1786,8 @@ function susunPmh({
   beban,
   bebanMajelis,
   susunanTerpakai,
+  susunanSk = [],
+  pilihanMajelis = [],
   aturan,
 }) {
   const dasar = {
@@ -1791,6 +1832,37 @@ function susunPmh({
       }))
       .sort((a, b) => a.jumlah - b.jumlah || a.hakimId - b.hakimId);
 
+    // Kode majelis diambil dari SK bila SK ada. Tanpa SK sama sekali - satker
+    // yang belum mengisinya - kode ketuanya tetap dipakai seperti dahulu,
+    // supaya hari sidang yang sudah diatur per kode tidak mendadak hilang.
+    const kodeMajelisUntuk = (anggota) =>
+      susunanSk.length > 0
+        ? kodeSkUntuk(anggota.map((x) => x.kode), susunanSk)
+        : anggota.length > 0
+          ? anggota[0].kode
+          : "";
+
+    if (pilihanMajelis.length >= 2) {
+      const anggota = pilihanMajelis
+        .map((id) => namaHakim.get(id))
+        .filter(Boolean)
+        .map((orang) => ({ hakimId: orang.hakimId, kode: orang.kode, nama: orang.nama, aktif: true }));
+      // Id yang tidak dikenal berarti hakimnya sudah tidak aktif - pilihan
+      // itu tidak dapat dipakai, dan lebih baik jatuh ke giliran daripada
+      // menetapkan majelis yang kurang satu orang.
+      if (anggota.length === pilihanMajelis.length) {
+        return {
+          ...dasar,
+          majelisKode: kodeMajelisUntuk(anggota),
+          anggota,
+          hitungan: hitunganMajelis,
+          susunanTerpakai,
+          dipilihPetugas: true,
+          sebab: "majelis dipilih petugas di papan - panitera sidang, hari sidang, dan penanda tangan PHS mengikutinya",
+        };
+      }
+    }
+
     if (!smart.ada) {
       /**
        * ====================================================================
@@ -1824,9 +1896,26 @@ function susunPmh({
        * yang mengusulkan ALETA, atas dasar giliran - supaya ia dapat menolak
        * bila ada pertimbangan yang tidak diketahui mesin.
        */
-      const giliranMajelis = [...(susunanTerpakai || [])]
-        .filter((x) => Array.isArray(x.anggota) && x.anggota.length >= 3)
-        .sort((a, b) => a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci)));
+      // ==================================================================
+      // GILIRAN DI ANTARA MAJELIS SK - BUKAN DI ANTARA SEMUA SUSUNAN
+      // ==================================================================
+      //
+      // Dahulu giliran memilih susunan berperkara paling sedikit dari SEMUA
+      // yang pernah dipakai. Terukur pada PA Donggala: trio dadakan B,C1,C3
+      // yang hanya pernah dipakai 5 kali selalu menang atas ketiga majelis
+      // SK yang bekerja tiap hari (259, 125, 60 perkara). Akibatnya majelis
+      // Ketua tidak pernah dapat perkara dari usulan ini - dan trio itu lalu
+      // dilabeli "Majelis B" dari kode ketuanya, sehingga panitera, hari
+      // sidang, dan penanda tangan PHS mengikuti majelis yang salah.
+      //
+      // Kini giliran berjalan di antara majelis SK saja. Susunan di luar SK
+      // dipakai hanya bila tidak ada satu pun majelis SK yang dapat dipakai.
+      const lengkap = [...(susunanTerpakai || [])].filter(
+        (x) => Array.isArray(x.anggota) && x.anggota.length >= 3
+      );
+      const urutGiliran = (a, b) => a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci));
+      const majelisSk = lengkap.filter((x) => x.dariSk).sort(urutGiliran);
+      const giliranMajelis = majelisSk.length > 0 ? majelisSk : lengkap.sort(urutGiliran);
 
       const pilihan = giliranMajelis[0];
       if (!pilihan) {
@@ -1842,10 +1931,9 @@ function susunPmh({
 
       return {
         ...dasar,
-        // Kode majelisnya kode ketuanya - anggota pertama, sebab susunannya
-        // diurutkan menurut urutan duduk. Inilah yang dicari PHS untuk
-        // menemukan hari sidangnya.
-        majelisKode: pilihan.anggota[0].kode,
+        // Kode majelisnya dari SK - "" bila susunannya di luar SK. Bukan lagi
+        // kode ketuanya: itulah yang melabeli trio dadakan sebagai "Majelis B".
+        majelisKode: kodeMajelisUntuk(pilihan.anggota),
         anggota: pilihan.anggota.map((orang) => ({
           hakimId: orang.hakimId,
           kode: orang.kode,
@@ -1871,7 +1959,7 @@ function susunPmh({
     });
     return {
       ...dasar,
-      majelisKode: anggota.length > 0 ? anggota[0].kode : "",
+      majelisKode: kodeMajelisUntuk(anggota),
       anggota,
       hitungan: hitunganMajelis,
       susunanTerpakai,

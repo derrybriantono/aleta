@@ -732,6 +732,14 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       susunanSk.push({ majelisKode: kode, hakimKode: hakim, panitera });
     }
 
+    // Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan.
+    // Dibatasi lima: majelis tidak pernah lebih dari itu, dan daftar panjang
+    // dari peramban bukan pilihan melainkan kekeliruan.
+    const pilihanMajelis = (Array.isArray(kirim.pilihanMajelis) ? kirim.pilihanMajelis : [])
+      .map((x) => Number(x))
+      .filter((x) => Number.isInteger(x) && x > 0)
+      .slice(0, 5);
+
     const jeda = Number(aturanMasuk.jedaMinimalHari);
     const ambang = Number(aturanMasuk.ambangNilaiSengketa);
 
@@ -749,6 +757,7 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       hariSidang,
       paniteraMajelis,
       susunanSk,
+      pilihanMajelis,
     });
 
     res.status(hasil.ok ? 200 : 404).json(hasil);
@@ -1057,6 +1066,11 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
     const rantaiDibongkar = [];
     let berhentiKarena = null;
 
+    // Jam tiap langkah dihitung SEKALI untuk seluruh rangkaian: PHS paling
+    // awal, PMH paling akhir (= sekarang), berjeda 1-10 menit - seperti empat
+    // pejabat yang bekerja bergantian, bukan satu detik untuk semuanya.
+    const jamBongkar = await penetapanTulisService.waktuBongkar(perkaraId);
+
     for (const jenis of penetapanTulisService.URUTAN_BONGKAR) {
       const olehUsername = String(akun[jenis] || "").trim();
 
@@ -1067,6 +1081,7 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
         operator,
         ip,
         kering,
+        saat: jamBongkar[jenis],
         rantaiDibongkar: [...rantaiDibongkar],
       });
 

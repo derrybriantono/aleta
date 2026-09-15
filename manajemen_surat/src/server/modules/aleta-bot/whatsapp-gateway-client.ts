@@ -2655,6 +2655,8 @@ export async function getGatewayPenunjukanUsulan(payload: {
      * menunjuk siapa pun. Lihat migrasi 0044.
      */
     susunanSk?: Record<string, unknown>[];
+    /** Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan. */
+    pilihanMajelis?: number[];
   };
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penunjukan/usulan", {

@@ -855,9 +855,12 @@ function bagianMalas(judul, kunci, nomor, gambar) {
  * penunjukan juru sita tahun berjalan, dan itu tidak pantas dijalankan pada
  * tiap perkara yang kebetulan dibuka.
  */
-async function ambilUsulanPenunjukan(nomor) {
+async function ambilUsulanPenunjukan(nomor, pilihanMajelis) {
+  const majelis = Array.isArray(pilihanMajelis) && pilihanMajelis.length > 0
+    ? `&majelis=${encodeURIComponent(pilihanMajelis.join(","))}`
+    : "";
   const respons = await alatAmbil(
-    `${ALETA_API_PENUNJUKAN}?nomor=${encodeURIComponent(nomor)}`,
+    `${ALETA_API_PENUNJUKAN}?nomor=${encodeURIComponent(nomor)}${majelis}`,
     { credentials: "include", cache: "no-store" },
     "Menyusun usulan penunjukan"
   );
@@ -2074,6 +2077,56 @@ function pilihanDari(daftar, pengenal) {
   );
 }
 
+/**
+ * ============================================================================
+ * MENGGANTI MAJELIS = MENGHITUNG ULANG SELURUH RANTAINYA
+ * ============================================================================
+ *
+ * Panitera sidang, hari sidang, dan penanda tangan PHS semuanya TURUNAN dari
+ * majelis. Menggantinya di dropdown tanpa menghitung ulang turunannya berarti
+ * menampilkan majelis A di atas panitera, hari, dan penanda tangan majelis B -
+ * dan itulah yang terjadi selama ini.
+ *
+ * Perhitungannya diserahkan ke server, bukan ditiru di sini: server-lah yang
+ * memegang SK, hari sidang tiap majelis, dan beban tiap orang. Meniru
+ * sebagian di peramban berarti dua salinan aturan yang perlahan menyimpang.
+ *
+ * Yang DIPERTAHANKAN dari data lama: mode papan, pilihan manual lain
+ * (juru sita, tanggal bebas, ruangan), dan pejabat yang dipilih. Yang diganti
+ * hanya usulan dan rencananya.
+ */
+/** Kunci susunan - bentuk yang sama dengan yang disusun bot: id dipisah "-". */
+function kunciSusunan(hakimId) {
+  return (Array.isArray(hakimId) ? hakimId : []).map((x) => String(x)).join("-");
+}
+
+async function muatUlangUsulan(isi, data, hakimId) {
+  const nomor =
+    (data && data.nomorPerkara) ||
+    (data && data.usulan && data.usulan.perkara && data.usulan.perkara.nomorPerkara);
+  if (!nomor) return;
+
+  isi.textContent = "";
+  isi.appendChild(buatElemen("div", "aleta-memuat", "Menghitung ulang untuk majelis itu…"));
+  try {
+    const baru = await ambilUsulanPenunjukan(nomor, hakimId);
+    data.usulan = baru.usulan;
+    data.rencana = baru.rencana;
+    if (baru.pengaturan) data.pengaturan = baru.pengaturan;
+    data.majelisDipilih = Array.isArray(hakimId) && hakimId.length > 0 ? hakimId : null;
+    // Pejabat penetap disusun ulang server untuk majelis baru - pilihan lama
+    // menunjuk ketua majelis yang sudah tidak berlaku.
+    data.pejabatDipilih = {};
+    usulanTerakhir = data;
+  } catch (galat) {
+    isi.textContent = "";
+    isi.appendChild(buatElemen("div", "aleta-gagal", String(galat.message || galat).slice(0, 200)));
+    return;
+  }
+  isi.textContent = "";
+  gambarPenunjukan(isi, data);
+}
+
 function gambarPenunjukan(isi, data) {
   const usulan = data.usulan;
   if (!usulan || usulan.ok === false) {
@@ -2123,6 +2176,13 @@ function gambarPenunjukan(isi, data) {
         // berarti menekan "Otomatis" lalu tetap mendapat orang yang dipilih
         // tangan - saklar yang berbohong tentang apa yang akan terjadi.
         if (nilai === "otomatis") data.pilihanManual = {};
+        // Majelis yang dipilih di mode lama ikut dilepas, dan usulannya
+        // dihitung ulang dari giliran. Menyimpannya diam-diam berarti saklar
+        // yang berbohong tentang apa yang akan terjadi.
+        if (data.majelisDipilih) {
+          void muatUlangUsulan(isi, data, null);
+          return;
+        }
         isi.textContent = "";
         gambarPenunjukan(isi, data);
       }
@@ -2233,7 +2293,19 @@ function gambarPenunjukan(isi, data) {
 
   const caraHakim = adaSusunan ? pilihanManual.caraHakim || "majelis" : "orang";
 
-  if (bolehPilihHakim && adaSusunan && caraHakim === "majelis") {
+  // ==========================================================================
+  // DROPDOWN MAJELIS ADA DI MODE OTOMATIS JUGA
+  // ==========================================================================
+  //
+  // Di mode otomatis yang berubah hanya SATU keputusan - majelisnya - dan
+  // seluruh turunannya tetap dihitung mesin. Memaksa petugas pindah ke manual
+  // untuk itu berarti memaksanya memilih ulang panitera, juru sita, dan hari
+  // sidang yang sebenarnya tidak hendak diubahnya.
+  //
+  // Pilihan per orang tetap milik mode manual: menyusun majelis dari tiga
+  // kursi terpisah adalah pekerjaan manual, bukan sekadar mengganti pilihan.
+  const bolehPilihMajelis = adaSusunan && caraHakim === "majelis" && (pmh.hitungan || []).length > 1;
+  if (bolehPilihMajelis) {
     isi.appendChild(
       pilihanOrang(
         "Majelis",
@@ -2259,11 +2331,13 @@ function gambarPenunjukan(isi, data) {
             `${x.anggota.map((a) => a.nama).join(" · ")} — ${sebutBeban(x.perkara)}` +
             (x.majelisKode ? "" : " · di luar SK"),
         })),
-        pilihanManual.majelis ?? "",
+        pilihanManual.majelis ?? (data.majelisDipilih ? kunciSusunan(data.majelisDipilih) : ""),
         (nilai) => {
           pilihanManual.majelis = nilai;
-          isi.textContent = "";
-          gambarPenunjukan(isi, data);
+          const terpilih = (pmh.susunanTerpakai || []).find((x) => String(x.kunci) === String(nilai));
+          // Id hakimnya dikirim ke server; yang kembali adalah usulan utuh untuk
+          // majelis itu - panitera sidang, hari sidang, penanda tangan PHS.
+          void muatUlangUsulan(isi, data, terpilih ? terpilih.hakimId : null);
         }
       )
     );
@@ -6146,6 +6220,10 @@ function bagianPenunjukan(nomor) {
     void (async () => {
       try {
         const data = await ambilUsulanPenunjukan(nomor);
+        // Nomor perkaranya ikut disimpan: pemuat ulang usulan (ganti majelis)
+        // membutuhkannya, dan bentuk usulan bukan tempat yang aman untuk
+        // bergantung.
+        data.nomorPerkara = nomor;
         // Disimpan supaya menu Peta kolom formulir dapat mencocokkan isi
         // kolom di halaman dengan nilai yang memang diusulkan ALETA - lihat
         // usulkanPetaKolom. Hanya dibaca; tidak ada yang menulisinya lagi.

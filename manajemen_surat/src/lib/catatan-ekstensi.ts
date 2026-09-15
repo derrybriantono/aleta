@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.147.0",
+    dirilis: "2026-09-15T16:10:00+08:00",
+    judul: "Mengganti majelis menghitung ulang panitera sidang, hari sidang, dan penanda tangan PHS - di mode otomatis juga",
+    butir: [
+      "DROPDOWN MAJELIS DI MODE OTOMATIS. Yang berubah di sana hanya satu keputusan - majelisnya - dan seluruh turunannya tetap dihitung mesin. Memaksa petugas pindah ke manual untuk itu berarti memaksanya memilih ulang panitera, juru sita, dan hari sidang yang tidak hendak diubahnya.",
+      "MENGGANTI MAJELIS MEMUAT ULANG USULAN. Sebelumnya usulan disusun sekali saat papan dibuka; dropdown hanya mengubah pilihan di peramban, sementara panitera sidang, hari sidang, dan penanda tangan PHS tetap milik usulan lama. Pilih Majelis A, keluar Selasa, ditandatangani ketua Majelis B - itulah yang terlihat, dan itulah sebabnya.",
+      "Perhitungannya diserahkan ke server, bukan ditiru di peramban: server yang memegang SK, hari sidang tiap majelis, dan beban tiap orang. Meniru sebagian di peramban berarti dua salinan aturan yang perlahan menyimpang.",
+      "Pejabat penetap disusun ulang untuk majelis baru - pilihan lama menunjuk ketua majelis yang sudah tidak berlaku. Pilihan manual yang lain - juru sita, tanggal bebas, ruangan - dipertahankan.",
+      "Berpindah ke otomatis melepas majelis pilihan dan memuat ulang dari giliran. Saklar yang menyimpan pilihan diam-diam berbohong tentang apa yang akan terjadi.",
+      "PHS IKUT DITAWARKAN pada Pejabat yang menetapkan. Dahulu ia satu-satunya langkah tanpa pilihan - ketua majelis dianggap satu-satunya yang sah. Kolamnya sempit dengan sengaja: anggota majelis perkara itu saja, ketua di depan sebagai pilihan otomatis. Membuka seluruh hakim membuat PHS dapat tercatat atas nama hakim yang tidak duduk di majelisnya.",
+    ],
+  },
+  {
     versi: "1.146.0",
     dirilis: "2026-09-15T14:05:00+08:00",
     judul: "Papan penetapan: kode majelis dari SK, sidang keliling di mode otomatis, dan nama berkas yang dapat dibedakan",

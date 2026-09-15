@@ -459,9 +459,10 @@ function calonPenetap(
   terpilih: AkunSiapPakai | null,
   sebutanTerpilih: string
 ): CalonPenetap[] {
-  // Ketua majelis TIDAK ditawarkan penggantinya. Ia bukan jabatan yang dapat
-  // diwakilkan atas kesepakatan - PHS ditandatangani ketua majelis perkara
-  // itu sendiri, dan majelisnya sudah ditetapkan pada langkah sebelumnya.
+  // Calon PHS TIDAK disusun di sini: kolamnya bukan seluruh hakim melainkan
+  // anggota majelis perkara itu sendiri, dan daftar itu ada pada usulan -
+  // lihat calonPhs. Cabang ini tetap memulangkan kosong supaya pemanggil lama
+  // tidak mendadak menawarkan seluruh hakim untuk PHS.
   if (jabatan === "hakim") return [];
 
   const hidup = (x: AkunSiapPakai) => !x.diblokir && !x.kedaluwarsa;
@@ -483,6 +484,51 @@ function calonPenetap(
   // lebih dahulu, dan menaruhnya di tengah daftar membuat orang mengira
   // pilihannya belum ada.
   return daftar.sort((a, b) => Number(b.otomatis) - Number(a.otomatis));
+}
+
+/**
+ * ============================================================================
+ * PHS BOLEH DIPILIH PENANDA TANGANNYA - DI ANTARA ANGGOTA MAJELIS ITU SAJA
+ * ============================================================================
+ *
+ * Dahulu PHS satu-satunya langkah tanpa pilihan: ketua majelis dianggap
+ * satu-satunya yang sah, dan majelisnya sudah ditetapkan di langkah
+ * sebelumnya. Alasan itu benar untuk keadaan biasa - dan keadaan biasa
+ * bukan satu-satunya keadaan. Ketua majelis cuti pada hari penetapannya,
+ * atau sedang memimpin sidang lain, dan hakim anggota yang menandatangani.
+ * Tanpa pilihan di sini, petugas kembali ke borang SIPP untuk itu - tempat
+ * yang tidak punya satu pun penjagaan.
+ *
+ * Kolamnya SEMPIT dengan sengaja: hanya anggota majelis perkara ini. Membuka
+ * seluruh hakim membuat PHS dapat tercatat atas nama hakim yang tidak duduk
+ * di majelisnya, dan itu bukan kemudahan melainkan lubang.
+ *
+ * `otomatis` tetap pada ketua majelis. Yang memilih anggota tahu bahwa ia
+ * sedang menyimpang dari yang biasa.
+ */
+function calonPhs(
+  akun: AkunSiapPakai[],
+  anggotaHakimId: string[],
+  ketuaHakimId: string
+): CalonPenetap[] {
+  const hidup = (x: AkunSiapPakai | null): x is AkunSiapPakai =>
+    Boolean(x) && !x!.diblokir && !x!.kedaluwarsa;
+  const urut = [ketuaHakimId, ...anggotaHakimId.filter((id) => id !== ketuaHakimId)].filter(Boolean);
+  const hasil: CalonPenetap[] = [];
+  for (const id of urut) {
+    const orang = pilihAkunPejabat(akun, "hakim", id);
+    if (!hidup(orang)) continue;
+    if (hasil.some((x) => x.username === orang.username)) continue;
+    hasil.push({
+      username: orang.username,
+      namaLengkap: orang.namaLengkap,
+      sebutan: id === ketuaHakimId ? "Ketua Majelis" : "Hakim Anggota",
+      siap: orang.siap,
+      sebab: orang.sebabBelumSiap,
+      otomatis: id === ketuaHakimId,
+    });
+  }
+  return hasil;
 }
 
 function jadiAkunLangkah(akun: AkunSiapPakai | null, tentatif = false, sebutan = ""): AkunLangkah {
@@ -646,6 +692,9 @@ export function rakitRencana(args: {
       for (const c of pilihanPanitera.catatan) catatanPenetap.push(c);
     } else if (JABATAN_LANGKAH[jenis] === "hakim") {
       akun = jadiAkunLangkah(ketuaMajelis, phsTentatif, "Ketua Majelis");
+      // Anggota majelis dari usulan - yang tercatat hanya menyebut ketuanya,
+      // dan ketua yang tercatat selalu ikut lewat idKetuaPhs.
+      calon = calonPhs(akunPemetaan, usulan.pmh.anggotaHakimId, idKetuaPhs);
       if (phsTentatif) {
         catatan.push("Akun PHS ini dugaan dari usulan. Dipastikan sendiri dari perkara_hakim_pn begitu PMH tersimpan.");
         if (!ketuaMajelis) catatan.push("Belum ada akun SIPP untuk ketua majelis usulan.");
