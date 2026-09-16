@@ -1020,7 +1020,29 @@ function alasanDariPosita(posita) {
  * memakai jawaban templat - modus tidak mengubah FAKTA yang sama bagi kedua
  * saksi, hanya apa yang masing-masing saksi ketahui dan bagaimana ia tahu.
  */
-const MODUS_SAKSI = new Set(["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita"]);
+/**
+ * "tahu-pisah" ditambahkan 16 September 2026 atas permintaan pengguna.
+ *
+ * Bedanya dengan "tidak-tahu" halus tetapi menentukan di persidangan:
+ *
+ *   tidak-tahu   saksi TAHU mereka berselisih dan berpisah, hanya tidak tahu
+ *                apa sebabnya;
+ *   tahu-pisah   saksi tidak pernah tahu ada pertengkaran sama sekali - yang
+ *                ia ketahui hanya bahwa keduanya sudah tidak serumah.
+ *
+ * Saksi yang kedua itu nyata dan sering: saudara atau tetangga yang baru
+ * pindah, yang hanya menyaksikan salah satunya pulang ke rumah orang tuanya.
+ * Menyusun keterangannya seolah ia tahu pertengkaran membuatnya patah oleh
+ * satu pertanyaan silang.
+ */
+const MODUS_SAKSI = new Set([
+  "sama",
+  "sebagian",
+  "tidak-tahu",
+  "tidak-melihat",
+  "dari-cerita",
+  "tahu-pisah",
+]);
 
 /** Nama pihak yang bercerita, dari kode yang dikirim panel. */
 function sebutanSumberCerita(kode, pelaku, lawan) {
@@ -1055,6 +1077,28 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi }) {
     return kedua
       ? "saya mengetahuinya karena melihat dan mendengar sendiri"
       : "saya mengetahui karena saya melihat sendiri";
+  }
+
+  // Saksi yang hanya tahu pisahnya: tidak satu pun pertanyaan tentang
+  // pertengkaran boleh dijawab seolah ia menyaksikannya.
+  if (modus === "tahu-pisah") {
+    if (/penyebab|sebab|alasan/i.test(tanya)) {
+      return kedua
+        ? "saya tidak mengetahui adanya pertengkaran di antara mereka, yang saya ketahui hanya mereka sudah tidak tinggal serumah"
+        : "saya tidak pernah mengetahui mereka bertengkar; yang saya tahu keduanya sekarang sudah berpisah rumah";
+    }
+    if (/melihat|mendengar|menyaksikan|berapa kali/i.test(tanya)) {
+      return kedua
+        ? "saya tidak pernah melihat maupun mendengar mereka bertengkar"
+        : "saya belum pernah menyaksikan atau mendengar pertengkaran mereka";
+    }
+    if (/rukun|damai|mendamaikan|sanggup/i.test(tanya)) {
+      return kedua
+        ? "karena saya tidak mengetahui persoalannya, saya tidak dapat mendamaikan mereka"
+        : "saya tidak mengetahui pokok persoalannya, sehingga saya tidak sanggup mendamaikan";
+    }
+    // Pertanyaan tentang pisah rumah TIDAK dijawab di sini - itu justru yang
+    // diketahui saksi ini, dan templatnya sudah tepat.
   }
 
   if (/penyebab|sebab|alasan/i.test(tanya)) {
@@ -1095,6 +1139,97 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi }) {
   return null;
 }
 
+/**
+ * ============================================================================
+ * JAWABAN TEMPLAT YANG MASIH KOSONG - DIISI, BUKAN SEKADAR DILAPORKAN
+ * ============================================================================
+ *
+ * Templat keterangan saksi ABT memuat titik-titik yang harus diisi petugas:
+ * "perselisihan terjadi sejak ...", "berpisah kurang lebih ...", "yang
+ * meninggalkan kediaman bersama adalah ...", "_ kali". Sampai 2.19.8 ALETA
+ * hanya MENGHITUNGNYA dan berkata "3 jawaban masih memuat titik-titik" -
+ * lalu petugas mengetiknya satu per satu, enam belas pertanyaan dikali dua
+ * saksi.
+ *
+ * Padahal jawabannya sudah tertulis di gugatan yang sedang dikerjakan.
+ * Fungsi ini membaca fakta itu dari posita - kapan perselisihan mulai, sejak
+ * kapan dan berapa lama berpisah, siapa yang pergi - lalu memasangnya pada
+ * pertanyaan yang meminta. Yang TIDAK terbaca dibiarkan bertitik-titik dan
+ * tetap dihitung pada perluDiisi: mengarang tanggal pisah rumah ke dalam
+ * berita acara sidang jauh lebih berbahaya daripada titik-titik yang terlihat.
+ */
+function faktaDariPosita(posita, pelaku, lawan) {
+  const butir = kalimatPosita(posita);
+  const cari = (...kata) =>
+    butir.find((k) => {
+      const kecil = k.toLowerCase();
+      return kata.every((w) => kecil.includes(w));
+    }) || "";
+
+  const kalimatKonflik = cari("selisih") || cari("tengkar");
+  const kalimatPisah = cari("pisah");
+  const kalimatPergi = cari("meninggalkan") || kalimatPisah;
+
+  // Siapa yang pergi - dari kalimat "Penggugat meninggalkan kediaman bersama".
+  let siapaPergi = "";
+  const teksPergi = String(kalimatPergi || "");
+  if (/tergugat|termohon/i.test(teksPergi) && !/penggugat|pemohon/i.test(teksPergi)) {
+    siapaPergi = lawan || "Tergugat";
+  } else if (/penggugat|pemohon/i.test(teksPergi)) {
+    siapaPergi = pelaku || "Penggugat";
+  }
+
+  // ambilBulanTahun memulangkan { nilai, jenis } - yang dipakai di sini
+  // kalimatnya saja. Tanpa memetiknya, nama berkas dan jawaban saksi berisi
+  // "[object Object]" - dan itu tersimpan ke berita acara tanpa satu pun galat.
+  return {
+    awalKonflik: ambilBulanTahun(kalimatKonflik).nilai || "",
+    pisahSejak: ambilBulanTahun(kalimatPisah).nilai || "",
+    lamaPisah: ambilLamaPisah(kalimatPisah),
+    siapaPergi,
+  };
+}
+
+/**
+ * Mengisi satu jawaban templat dari fakta gugatan. Pulang jawaban yang sama
+ * bila tidak ada yang dapat diisi - pemanggil yang memutuskan apakah ia masih
+ * perlu dilaporkan.
+ */
+function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
+  let hasil = String(jawab || "");
+  // Lebih longgar daripada POLA_BELUM_TERISI, yang menuntut tiga titik atau
+  // tiga garis bawah. Templat ABT juga memakai satu garis bawah - "_ kali",
+  // "sejak _" - dan itu sama kosongnya bagi yang membacanya.
+  if (!/\.{3,}|_+|melihat\/mendengar|dilihat\/didengar|XX+/i.test(hasil)) return hasil;
+
+  // Titik-titik atau garis bawah, di mana pun letaknya dalam kalimat.
+  const ganti = (nilai) => {
+    if (!nilai) return false;
+    const semula = hasil;
+    hasil = hasil.replace(/\.{3,}|_+/, String(nilai));
+    return hasil !== semula;
+  };
+
+  if (/kapan.*(selisih|tengkar)|(selisih|tengkar).*sejak/i.test(tanya)) ganti(fakta.awalKonflik);
+  else if (/berapa lama.*pisah|lama.*berpisah/i.test(tanya)) ganti(fakta.lamaPisah);
+  else if (/pisah|serumah/i.test(tanya)) ganti(fakta.pisahSejak || fakta.lamaPisah);
+  else if (/siapa.*(meninggalkan|pergi)/i.test(tanya)) ganti(fakta.siapaPergi);
+
+  // "_ kali" - berapa kali saksi menyaksikan. Tidak ada di gugatan mana pun,
+  // dan angka karangan pada berita acara adalah keterangan palsu. Yang
+  // dipakai sebutan yang jujur.
+  if (/berapa kali/i.test(tanya)) {
+    hasil = hasil.replace(/(?:_+|\.{3,})\s*kali/i, "beberapa kali");
+  }
+
+  // "melihat/mendengar" - templat menyerahkan pilihannya kepada petugas.
+  hasil = hasil
+    .replace(/\bmelihat\/mendengar\b/gi, "melihat dan mendengar")
+    .replace(/\bdilihat\/didengar\b/gi, "dilihat dan didengar");
+
+  return hasil;
+}
+
 function susunKeteranganSaksiSdg(opsi) {
   const templat = Array.isArray(opsi && opsi.templat) ? opsi.templat : [];
   let alasan = Array.isArray(opsi && opsi.alasan) ? opsi.alasan.filter(Boolean) : [];
@@ -1124,7 +1259,11 @@ function susunKeteranganSaksiSdg(opsi) {
     };
   };
 
+  // Fakta gugatan - dipakai mengisi titik-titik templat. Dibaca sekali.
+  const fakta = faktaDariPosita(opsi && opsi.posita, opsi && opsi.pelaku, opsi && opsi.lawan);
+
   const perluDiisi = [];
+  const terisiDariPosita = [];
   const susun = (nomorSaksi) => {
     const m = modusUntuk(nomorSaksi);
     return templat.map((baris, i) => {
@@ -1142,6 +1281,12 @@ function susunKeteranganSaksiSdg(opsi) {
         nomorSaksi,
       });
       if (dariModus) jawab = dariModus;
+
+      // Yang masih bertitik-titik diisi dari gugatan. Yang tidak terbaca
+      // dibiarkan apa adanya dan tetap dilaporkan.
+      const sebelumIsi = jawab;
+      jawab = lengkapiJawabanTemplat({ tanya, jawab, fakta });
+      if (nomorSaksi === 1 && jawab !== sebelumIsi) terisiDariPosita.push({ no, tanya });
 
       if (nomorSaksi === 1 && POLA_BELUM_TERISI.test(jawab)) perluDiisi.push({ no, tanya });
       return { no, tanya, jawab: ragamkanJawaban(jawab, nomorSaksi, i) };
@@ -1162,20 +1307,29 @@ function susunKeteranganSaksiSdg(opsi) {
     saksi1,
     saksi2,
     perluDiisi,
+    // Yang BERHASIL diisi dari gugatan - disebut supaya yang membacanya tahu
+    // kalimat itu bukan ketikan petugas, dan memeriksanya lebih dahulu.
+    terisiDariPosita,
     identik,
     alasan,
     asalAlasan,
     // Modus yang SUNGGUH dipakai - bukan yang diminta. Yang diminta dapat
     // salah eja dan jatuh ke "sama", dan panel harus memperlihatkan itu.
     modus: modusDipakai,
-    catatan: perluDiisi.length
-      ? `${perluDiisi.length} jawaban masih memuat titik-titik templat dan menunggu keterangan saksi yang sesungguhnya.`
-      : "Seluruh jawaban tersusun; baca kembali sebelum disimpan ke ABT.",
+    catatan:
+      (terisiDariPosita.length
+        ? `${terisiDariPosita.length} jawaban diisi dari gugatan - periksa dahulu. `
+        : "") +
+      (perluDiisi.length
+        ? `${perluDiisi.length} jawaban masih memuat titik-titik templat dan menunggu keterangan saksi yang sesungguhnya.`
+        : "Seluruh jawaban tersusun; baca kembali sebelum disimpan ke ABT."),
   };
 }
 
 module.exports = {
   butirKeterangan,
+  faktaDariPosita,
+  lengkapiJawabanTemplat,
   ambilBulanTahun,
   ambilLamaPisah,
   usulkanHuruf,

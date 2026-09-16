@@ -150,7 +150,12 @@ describe("bahasa hukum yang resmi, bukan singkatan SIPP", () => {
     // yang disusun, dan "Riwayat perubahan" adalah kata benda - ia tidak
     // mengaku sebagai tombol.
     expect(isi).toContain('"Isi blangko dari SIPP"');
-    expect(isi).toContain('"Susun posita dari keterangan saksi"');
+    // Diganti lagi pada 1.154.0 atas permintaan pengguna: "Input ke ABT".
+    // Tombol ini memang tidak lagi menyebut objeknya - dan itu keputusan
+    // orang yang memakainya setiap hari, yang di layarnya berdiri di antara
+    // tombol-tombol lain yang semuanya menyusun, sehingga yang perlu
+    // dibedakan justru KE MANA hasilnya pergi.
+    expect(isi).toContain('"Input ke ABT"');
     expect(isi).toContain('"Isi dari posita permohonan"');
     expect(isi).toContain('"Susun keterangan saksi 1 & 2"');
     expect(isi).toContain('"Lihat riwayat perubahan"');

@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.8";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.8 - Unduhan yang Tertahan, dan Status Putusan pada Namanya";
+export const APP_VERSION = "2.20.0";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.20.0 - Keterangan Saksi yang Terisi dan Dapat Dipindahkan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,39 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.20.0",
+    title: "ALETA Judicia v2.20.0 - Keterangan Saksi yang Terisi dan Dapat Dipindahkan",
+    date: "2026-09-16",
+    status: "Terpasang",
+    summary:
+      "Lima perbaikan pada panel keterangan saksi dan alasan perceraian di ABT: titik-titik templat kini diisi dari " +
+      "gugatan, ada modus saksi yang hanya mengetahui pisahnya, dan tiap baris keterangan dapat digeser, disalin, " +
+      "ditambah, atau dihapus - termasuk dipindahkan ke saksi seberang.",
+    added: [
+      "Titik-titik dan garis bawah pada jawaban templat ABT diisi dari gugatan: kapan perselisihan mulai, sejak kapan dan berapa lama berpisah, siapa yang meninggalkan kediaman bersama. Yang tidak terbaca dari gugatan dibiarkan bertitik-titik dan tetap dilaporkan.",
+      "Modus saksi baru: tidak mengetahui pertengkarannya, hanya mengetahui keduanya sudah pisah. Bedanya dengan modus tidak tahu sebabnya halus tetapi menentukan di persidangan - saksi yang kedua ini tidak pernah tahu ada pertengkaran sama sekali.",
+      "Tiap baris keterangan dapat diseret ke atas, ke bawah, atau ke kolom saksi seberang; disalin ke saksi seberang; ditambah; dan dihapus. Pertanyaannya sendiri dapat disunting.",
+    ],
+    changed: [
+      "Tombol Susun posita dari keterangan saksi menjadi Input ke ABT.",
+      "Kartu alasan perceraian disusun sebagai empat blok berkepala nama dan jumlah, butirnya berjajar sebagai lencana - bukan satu tumpukan baris yang sama beratnya.",
+      "Tombol Tuliskan huruf alasan berdiri pada baris tindakan bersama Terapkan yang dicentang. Keduanya berarti tuliskan ke ABT, dan sebelumnya terpisah oleh seluruh daftar usulan.",
+    ],
+    fixed: [],
+    security: [
+      "Angka yang tidak ada di gugatan tidak pernah dikarang: berapa kali saksi menyaksikan pertengkaran diisi beberapa kali, bukan bilangan. Angka karangan pada berita acara sidang adalah keterangan palsu.",
+      "Jawaban yang diisi ALETA dari gugatan ditandai tersendiri, berbeda dari yang masih kosong - supaya dibaca dahulu sebelum disimpan.",
+      "Yang dipindahkan ke saksi seberang DISISIPKAN sebagai baris tambahan, tidak pernah menimpa keterangan yang sudah ada di sana.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.154.0 - reload di chrome://extensions.",
+      "Nomor tanya-jawab dihitung ulang menurut posisinya saat disimpan ke ABT, jadi memindahkan dan menghapus baris tidak meninggalkan nomor yang bolong.",
+    ],
+    knownLimitations: [
+      "Pengisian dari gugatan hanya sejauh gugatannya menyebutkan: bulan perselisihan, bulan dan lama pisah, serta siapa yang pergi. Selebihnya tetap menunggu keterangan saksi yang sesungguhnya.",
+    ],
+  },
   {
     version: "2.19.8",
     title: "ALETA Judicia v2.19.8 - Unduhan yang Tertahan, dan Status Putusan pada Namanya",

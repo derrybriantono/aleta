@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.154.0",
+    dirilis: "2026-09-16T13:00:00+08:00",
+    judul: "Keterangan saksi yang terisi, dan yang dapat dipindahkan",
+    butir: [
+      "TITIK-TITIK TEMPLAT DIISI DARI GUGATAN: kapan perselisihan mulai, sejak kapan dan berapa lama berpisah, siapa yang meninggalkan kediaman bersama. Yang tidak terbaca dibiarkan bertitik-titik - mengarang tanggal pisah rumah ke dalam berita acara jauh lebih berbahaya daripada titik-titik yang terlihat. Berapa kali saksi menyaksikan diisi \"beberapa kali\", bukan bilangan karangan.",
+      "MODUS SAKSI BARU: tidak tahu pertengkarannya, hanya tahu sudah pisah. Saudara atau tetangga yang hanya menyaksikan salah satunya pulang ke rumah orang tuanya - menyusun keterangannya seolah ia tahu pertengkaran membuatnya patah oleh satu pertanyaan silang.",
+      "TIAP BARIS DAPAT DIGESER, DISALIN, DITAMBAH, DIHAPUS. Seret pegangannya ke atas, ke bawah, atau ke kolom saksi seberang - di sana ia disisipkan sebagai baris tambahan, tidak pernah menimpa. Pertanyaannya sendiri boleh disunting; nomornya dihitung ulang saat disimpan.",
+      "Tombol \"Susun posita dari keterangan saksi\" menjadi \"Input ke ABT\"; kartu alasan perceraian menjadi empat blok berkepala jumlah; dan \"Tuliskan huruf alasan\" berdiri bersama \"Terapkan yang dicentang\".",
+    ],
+  },
+  {
     versi: "1.153.0",
     dirilis: "2026-09-16T12:00:00+08:00",
     judul: "Unduhan yang tertahan Chrome, dan status putusan pada nama berkas",

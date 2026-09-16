@@ -2268,7 +2268,7 @@ function susunPanelAbt(jatiDiri) {
   const tombolBaris = buatElemen("div", "aleta-abt-aksi");
   const tombolSipp = buatElemen("button", "aleta-permintaan-tombol", "Isi blangko dari SIPP");
   tombolSipp.type = "button";
-  const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Susun posita dari keterangan saksi");
+  const tombolSaksi = buatElemen("button", "aleta-permintaan-tombol", "Input ke ABT");
   tombolSaksi.type = "button";
   const tombolItsbat = buatElemen("button", "aleta-permintaan-tombol", "Isi dari posita permohonan");
   tombolItsbat.type = "button";
@@ -2505,25 +2505,11 @@ function susunPanelAbt(jatiDiri) {
 
     // Yang SIAP disebut lebih dahulu. Daftar yang seluruhnya berisi kekurangan
     // membuat pembacanya mengira tidak ada yang berhasil.
-    if (terbukti.length) {
-      kotak.appendChild(
-        buatElemen("div", "aleta-abt-naskah", `Siap dipakai - ${terbukti.length} alasan`)
-      );
-      kotak.appendChild(
-        buatElemen(
-          "div",
-          "aleta-abt-catatan",
-          "Dikuatkan KEDUA saksi dan didalilkan dalam gugatan. Inilah yang sudah " +
-            "tertulis pada alasan perceraian (5227); tidak ada yang perlu dikerjakan."
-        )
-      );
-      for (const satu of terbukti) {
-        const baris = buatElemen("div", "aleta-abt-sanding");
-        baris.appendChild(buatElemen("span", "aleta-abt-label", "Terbukti"));
-        baris.appendChild(buatElemen("span", "aleta-abt-isi", satu.nama || satu));
-        kotak.appendChild(baris);
-      }
-    }
+    // Digambar dengan pembantu yang sama seperti kelompok lain - lihat
+    // catatannya di bawah. Dipanggil lebih dahulu supaya yang SIAP berdiri
+    // paling atas: daftar yang seluruhnya berisi kekurangan membuat
+    // pembacanya mengira tidak ada yang berhasil.
+    const gambarKelompokAlasan = [];
 
     if (!hasil || hasil.gugatanTerbaca !== true) {
       // Disebut apa adanya. Tanpa keterangan ini, "tidak ada yang di luar
@@ -2538,24 +2524,54 @@ function susunPanelAbt(jatiDiri) {
       );
     }
 
-    const kelompok = (judul, keterangan, daftar, label) => {
+    // ========================================================================
+    // SATU KELOMPOK SATU BLOK - BUKAN SATU TUMPUKAN PANJANG
+    // ========================================================================
+    //
+    // Empat kelompok sebelumnya dituang berurutan ke dalam satu kartu: judul,
+    // keterangan, baris, judul, keterangan, baris - dan dibaca dari layar
+    // seluruhnya tampak satu tumpukan yang sama beratnya. Yang siap dipakai
+    // tidak terbedakan dari yang belum terbukti, padahal keduanya menuntut
+    // tindakan yang berlawanan.
+    //
+    // Kini tiap kelompok berdiri sebagai bloknya sendiri, berkepala nama dan
+    // JUMLAHNYA, dan butirnya berjajar sebagai lencana - bukan baris-baris
+    // yang panjangnya berubah-ubah.
+    const kelompok = (judul, keterangan, daftar, label, nada) => {
       if (!daftar.length) return;
-      kotak.appendChild(buatElemen("div", "aleta-abt-naskah", judul));
-      kotak.appendChild(buatElemen("div", "aleta-abt-catatan", keterangan));
+      const blok = buatElemen("div", `aleta-alasan-kelompok aleta-alasan-${nada || "netral"}`);
+      const kepala = buatElemen("div", "aleta-alasan-kepala");
+      kepala.appendChild(buatElemen("span", "aleta-alasan-judul", judul));
+      kepala.appendChild(buatElemen("span", "aleta-alasan-jumlah", String(daftar.length)));
+      blok.appendChild(kepala);
+      blok.appendChild(buatElemen("div", "aleta-abt-catatan", keterangan));
+      const deret = buatElemen("div", "aleta-alasan-deret");
       for (const satu of daftar) {
-        const baris = buatElemen("div", "aleta-abt-sanding");
-        baris.appendChild(buatElemen("span", "aleta-abt-label", label(satu)));
-        baris.appendChild(buatElemen("span", "aleta-abt-isi", satu.nama || satu));
-        kotak.appendChild(baris);
+        const butir = buatElemen("span", "aleta-alasan-butir");
+        butir.appendChild(buatElemen("span", "aleta-alasan-tanda", label(satu)));
+        butir.appendChild(buatElemen("span", "aleta-alasan-nama", satu.nama || satu));
+        deret.appendChild(butir);
       }
+      blok.appendChild(deret);
+      kotak.appendChild(blok);
     };
+
+    kelompok(
+      "Siap dipakai",
+      "Dikuatkan KEDUA saksi dan didalilkan dalam gugatan. Inilah yang sudah " +
+        "tertulis pada alasan perceraian (5227); tidak ada yang perlu dikerjakan.",
+      terbukti,
+      () => "Terbukti",
+      "siap"
+    );
 
     kelompok(
       "Hanya disebut satu saksi",
       "Perlu penguat. Tanyakan kepada saksi yang belum menyebutnya, atau kuatkan " +
         "dengan alat bukti lain sebelum memasukkannya sendiri ke 5227.",
       sepihak,
-      (x) => `Saksi ${x.saksi}`
+      (x) => `Saksi ${x.saksi}`,
+      "sebagian"
     );
 
     kelompok(
@@ -2563,7 +2579,8 @@ function susunPanelAbt(jatiDiri) {
       "Kedua saksi menerangkannya, tetapi gugatannya tidak pernah mendalilkannya. " +
         "Memasukkannya ke pertimbangan berarti memutus melebihi yang dituntut.",
       diluar,
-      () => "Di luar gugatan"
+      () => "Di luar gugatan",
+      "awas"
     );
 
     kelompok(
@@ -2571,7 +2588,8 @@ function susunPanelAbt(jatiDiri) {
       "Dalil yang masih harus dibuktikan - atau ditolak dengan pertimbangan " +
         "tersendiri. Yang tidak disinggung sama sekali adalah tuntutan yang tidak diadili.",
       belum,
-      () => "Belum terbukti"
+      () => "Belum terbukti",
+      "belum"
     );
 
     // ========================================================================
@@ -2738,7 +2756,20 @@ function susunPanelAbt(jatiDiri) {
       const terap = buatElemen("button", "aleta-permintaan-tombol", "Tuliskan huruf alasan");
       terap.type = "button";
       const kabarHuruf = buatElemen("div", "aleta-abt-kabar");
-      kotak.appendChild(terap);
+      // ======================================================================
+      // TOMBOLNYA BERDIRI DI BARIS TINDAKAN, BERSAMA "TERAPKAN YANG DICENTANG"
+      // ======================================================================
+      //
+      // Sebelumnya ia menutup kartu huruf, jauh di atas daftar usulan - dan
+      // yang mengerjakan harus menggulung ke atas untuk menulis hurufnya,
+      // lalu turun lagi untuk menerapkan usulannya. Dua tombol yang keduanya
+      // berarti "tuliskan ke ABT" pantas berdiri berdampingan.
+      //
+      // Dititipkan, bukan dipasang: gambarUsulan yang memasangnya, dan ia
+      // berjalan sesudah gambarHuruf. Bila ia tidak menggambar apa-apa,
+      // tombolnya dikembalikan ke kartunya sendiri - lebih baik di tempat
+      // lama daripada tidak ada sama sekali.
+      hurufMenunggu = { tombol: terap, kabar: kabarHuruf };
       kotak.appendChild(kabarHuruf);
 
       terap.addEventListener("click", async () => {
@@ -3209,6 +3240,12 @@ function susunPanelAbt(jatiDiri) {
     pitaKepala = kepalaBaru;
   });
 
+  /**
+   * Tombol "Tuliskan huruf alasan" yang menunggu dipasang di baris tindakan
+   * bersama "Terapkan yang dicentang" - lihat catatannya di gambarHuruf.
+   */
+  let hurufMenunggu = null;
+
   /** Menggambar daftar usulan beserta tombol penerapnya. */
   function gambarUsulan(daftar) {
     wadahUsulan.textContent = "";
@@ -3227,13 +3264,25 @@ function susunPanelAbt(jatiDiri) {
       wadahUsulan.appendChild(
         buatElemen("div", "aleta-kosong", "Tidak satu pun variabel itu ada di blangko yang sedang dibuka.")
       );
+      // Tidak ada baris tindakan di sini - tombol hurufnya dipasang sendiri,
+      // supaya ia tidak hilang bersama daftar yang kosong.
+      if (hurufMenunggu) {
+        wadahUsulan.appendChild(hurufMenunggu.tombol);
+        hurufMenunggu = null;
+      }
       return;
     }
 
     const terap = buatElemen("button", "aleta-permintaan-tombol", "Terapkan yang dicentang");
     terap.type = "button";
     const hasilTerap = buatElemen("div", "aleta-abt-kabar");
-    wadahUsulan.appendChild(terap);
+    const barisTindakan = buatElemen("div", "aleta-abt-tindakan");
+    barisTindakan.appendChild(terap);
+    if (hurufMenunggu) {
+      barisTindakan.appendChild(hurufMenunggu.tombol);
+      hurufMenunggu = null;
+    }
+    wadahUsulan.appendChild(barisTindakan);
     wadahUsulan.appendChild(hasilTerap);
 
     terap.addEventListener("click", async () => {
@@ -3418,30 +3467,172 @@ function susunPanelAbt(jatiDiri) {
     kotak.appendChild(buatElemen("div", "aleta-abt-catatan", ringkas.join(" ")));
 
     const perlu = new Set((hasil.perluDiisi || []).map((x) => String(x.no)));
+    const diisiGugatan = new Set((hasil.terisiDariPosita || []).map((x) => String(x.no)));
+
+    // ========================================================================
+    // KETERANGANNYA DAPAT DIGESER, DISALIN, DITAMBAH, DAN DIHAPUS
+    // ========================================================================
+    //
+    // Templat ABT menyusun enam belas tanya-jawab dengan urutan tetap, dan
+    // persidangan tidak pernah persis begitu: satu pertanyaan tidak jadi
+    // ditanyakan, satu jawaban sebenarnya milik saksi yang lain, satu hal
+    // muncul di luar daftar. Sampai sekarang jalan keluarnya mengetik ulang
+    // di kotak yang sudah terisi.
+    //
+    // Yang disimpan ke ABT selalu dinomori ULANG menurut posisinya
+    // (lihat `no: String(n + 1)` pada penyimpanan di bawah), jadi memindahkan
+    // dan menghapus baris aman - nomornya mengikuti, bukan tertinggal.
+    //
+    // MENYEBERANG = DISISIPKAN, bukan menimpa. Diputuskan pengguna 16
+    // September 2026: jawaban yang dipindahkan ke saksi seberang menjadi
+    // baris TAMBAHAN di sana. Menimpa akan menghapus keterangan yang sudah
+    // benar tanpa dapat dibatalkan.
+    const dataSaksi = [
+      (hasil.saksi1 || []).map((b) => ({ no: String(b.no), tanya: b.tanya, jawab: b.jawab })),
+      (hasil.saksi2 || []).map((b) => ({ no: String(b.no), tanya: b.tanya, jawab: b.jawab })),
+    ];
+
     const dua = buatElemen("div", "aleta-sdg-dua");
-    const kolomIsian = [];
-    for (const [nomorSaksi, daftar] of [
-      [1, hasil.saksi1 || []],
-      [2, hasil.saksi2 || []],
-    ]) {
-      const kolom = buatElemen("div", "aleta-sdg-kolom");
-      kolom.appendChild(buatElemen("div", "aleta-sdg-judul", `Saksi ${nomorSaksi}`));
-      const isian = [];
-      for (const b of daftar) {
-        const baris = buatElemen("div", `aleta-sdg-baris${perlu.has(String(b.no)) ? " aleta-sdg-perlu" : ""}`);
-        baris.appendChild(buatElemen("div", "aleta-sdg-tanya", `${b.no}. ${b.tanya}`));
-        const jawab = document.createElement("textarea");
-        jawab.className = "aleta-sdg-jawab";
-        jawab.rows = 2;
-        jawab.value = b.jawab;
-        if (perlu.has(String(b.no))) jawab.title = "Jawaban templat ini masih memuat titik-titik; lengkapi dari keterangan saksi yang sesungguhnya.";
-        baris.appendChild(jawab);
-        kolom.appendChild(baris);
-        isian.push({ no: b.no, tanya: b.tanya, jawab });
-      }
-      dua.appendChild(kolom);
-      kolomIsian.push(isian);
+    // Dipegang tetap: penyimpan di bawah menutupnya dalam closure, jadi
+    // isinya yang diganti, bukan wadahnya.
+    const kolomIsian = [[], []];
+    let sedangDiseret = null;
+
+    function pindahkan(dariKolom, dariIndeks, keKolom, keIndeks) {
+      const [butir] = dataSaksi[dariKolom].splice(dariIndeks, 1);
+      if (!butir) return;
+      const batas = Math.max(0, Math.min(keIndeks, dataSaksi[keKolom].length));
+      dataSaksi[keKolom].splice(batas, 0, butir);
+      gambarKolom();
     }
+
+    function gambarKolom() {
+      dua.textContent = "";
+      for (const nomorSaksi of [1, 2]) {
+        const k = nomorSaksi - 1;
+        const kolom = buatElemen("div", "aleta-sdg-kolom");
+        const kepala = buatElemen("div", "aleta-sdg-judul", `Saksi ${nomorSaksi}`);
+        kepala.appendChild(
+          buatElemen("span", "aleta-sdg-jumlah", `${dataSaksi[k].length} keterangan`)
+        );
+        kolom.appendChild(kepala);
+        kolomIsian[k].length = 0;
+
+        dataSaksi[k].forEach((b, i) => {
+          const tanda = perlu.has(b.no) ? " aleta-sdg-perlu" : diisiGugatan.has(b.no) ? " aleta-sdg-dari-gugatan" : "";
+          const baris = buatElemen("div", `aleta-sdg-baris${tanda}`);
+          baris.draggable = true;
+
+          const alat = buatElemen("div", "aleta-sdg-alat");
+          alat.appendChild(buatElemen("span", "aleta-sdg-pegangan", "⠿"));
+          alat.appendChild(buatElemen("span", "aleta-sdg-nomor", `${i + 1}.`));
+          const tanya = buatElemen("div", "aleta-sdg-tanya", b.tanya);
+          tanya.contentEditable = "true";
+          tanya.title = "Pertanyaannya boleh disunting - yang tersimpan ke ABT yang terbaca di sini.";
+          tanya.addEventListener("input", () => {
+            b.tanya = tanya.textContent.trim();
+          });
+          alat.appendChild(tanya);
+
+          const tombol = (teks, judul, kerja) => {
+            const tb = buatElemen("button", "aleta-sdg-tombol", teks);
+            tb.type = "button";
+            tb.title = judul;
+            tb.addEventListener("click", kerja);
+            alat.appendChild(tb);
+          };
+          tombol("↑", "Naikkan", () => i > 0 && pindahkan(k, i, k, i - 1));
+          tombol("↓", "Turunkan", () => i < dataSaksi[k].length - 1 && pindahkan(k, i, k, i + 1));
+          tombol("⇄", `Pindahkan ke Saksi ${nomorSaksi === 1 ? 2 : 1} - disisipkan sebagai baris tambahan`, () =>
+            pindahkan(k, i, 1 - k, dataSaksi[1 - k].length)
+          );
+          tombol("⧉", `Salin ke Saksi ${nomorSaksi === 1 ? 2 : 1} - yang ini tetap di tempatnya`, () => {
+            dataSaksi[1 - k].push({ no: b.no, tanya: b.tanya, jawab: b.jawab });
+            gambarKolom();
+          });
+          tombol("✕", "Hapus keterangan ini", () => {
+            dataSaksi[k].splice(i, 1);
+            gambarKolom();
+          });
+          baris.appendChild(alat);
+
+          const jawab = document.createElement("textarea");
+          jawab.className = "aleta-sdg-jawab";
+          jawab.rows = 2;
+          jawab.value = b.jawab;
+          jawab.addEventListener("input", () => {
+            b.jawab = jawab.value;
+          });
+          if (perlu.has(b.no)) {
+            jawab.title =
+              "Jawaban templat ini masih memuat titik-titik dan tidak terbaca dari gugatan; lengkapi dari keterangan saksi yang sesungguhnya.";
+          } else if (diisiGugatan.has(b.no)) {
+            jawab.title = "Diisi ALETA dari gugatan - periksa dahulu sebelum disimpan.";
+          }
+          baris.appendChild(jawab);
+
+          baris.addEventListener("dragstart", (e) => {
+            sedangDiseret = { kolom: k, indeks: i };
+            baris.classList.add("aleta-sdg-diseret");
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+          });
+          baris.addEventListener("dragend", () => {
+            sedangDiseret = null;
+            baris.classList.remove("aleta-sdg-diseret");
+          });
+          baris.addEventListener("dragover", (e) => {
+            if (!sedangDiseret) return;
+            e.preventDefault();
+            baris.classList.add("aleta-sdg-sasaran");
+          });
+          baris.addEventListener("dragleave", () => baris.classList.remove("aleta-sdg-sasaran"));
+          baris.addEventListener("drop", (e) => {
+            e.preventDefault();
+            baris.classList.remove("aleta-sdg-sasaran");
+            if (!sedangDiseret) return;
+            const asal = sedangDiseret;
+            sedangDiseret = null;
+            if (asal.kolom === k && asal.indeks === i) return;
+            pindahkan(asal.kolom, asal.indeks, k, i);
+          });
+
+          kolom.appendChild(baris);
+          kolomIsian[k].push({ no: b.no, tanya: b.tanya, jawab });
+        });
+
+        // Menjatuhkan di ruang kosong kolom berarti "taruh di paling bawah".
+        kolom.addEventListener("dragover", (e) => {
+          if (sedangDiseret) e.preventDefault();
+        });
+        kolom.addEventListener("drop", (e) => {
+          if (!sedangDiseret) return;
+          e.preventDefault();
+          const asal = sedangDiseret;
+          sedangDiseret = null;
+          pindahkan(asal.kolom, asal.indeks, k, dataSaksi[k].length);
+        });
+
+        const tambah = buatElemen("button", "aleta-sdg-tambah", "+ Tambah keterangan");
+        tambah.type = "button";
+        tambah.addEventListener("click", () => {
+          dataSaksi[k].push({ no: `t${dataSaksi[k].length + 1}`, tanya: "Pertanyaan baru", jawab: "" });
+          gambarKolom();
+        });
+        kolom.appendChild(tambah);
+        dua.appendChild(kolom);
+      }
+    }
+
+    gambarKolom();
+    kotak.appendChild(
+      buatElemen(
+        "div",
+        "aleta-abt-catatan",
+        "Seret ⠿ untuk memindahkan - ke atas, ke bawah, atau ke kolom saksi seberang " +
+          "(di sana ia disisipkan sebagai baris tambahan). ⧉ menyalin tanpa memindahkan, " +
+          "✕ menghapus. Pertanyaannya sendiri boleh disunting. Nomornya dihitung ulang saat disimpan."
+      )
+    );
     kotak.appendChild(dua);
 
     const simpan = buatElemen(
@@ -3570,6 +3761,7 @@ function susunPanelAbt(jatiDiri) {
       ["tidak-tahu", "Tahu berselisih & berpisah, tidak tahu sebabnya"],
       ["tidak-melihat", "Tidak pernah menyaksikan pertengkaran"],
       ["dari-cerita", "Tahu dari cerita salah satu pihak"],
+      ["tahu-pisah", "Tidak tahu pertengkarannya, hanya tahu sudah pisah"],
     ];
     const DAFTAR_SUMBER = [
       ["pelaku", "Penggugat/Pemohon"],

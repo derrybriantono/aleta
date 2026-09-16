@@ -5963,3 +5963,153 @@ html.aleta-ganti-tema *::after {
   color: var(--aleta-mendesak);
   font-weight: 600;
 }
+
+/* ==========================================================================
+   KETERANGAN SAKSI YANG DAPAT DIGESER, DAN KARTU ALASAN YANG BERBLOK
+   ==========================================================================
+
+   Persidangan tidak pernah persis seurut templat: satu pertanyaan tidak jadi
+   ditanyakan, satu jawaban sebenarnya milik saksi yang lain. Barisnya karena
+   itu dapat diseret - ke atas, ke bawah, atau menyeberang ke kolom saksi
+   lain, tempat ia disisipkan sebagai baris tambahan. */
+.aleta-sdg-baris { position: relative; }
+
+.aleta-sdg-alat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.aleta-sdg-pegangan {
+  cursor: grab;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  line-height: 1;
+}
+
+.aleta-sdg-nomor {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-sdg-alat .aleta-sdg-tanya {
+  flex: 1 1 60%;
+  min-width: 0;
+}
+
+/* Pertanyaan yang sedang disunting harus terlihat dapat disunting. */
+.aleta-sdg-tanya[contenteditable="true"]:focus {
+  outline: 1px solid var(--aleta-merek);
+  border-radius: 3px;
+}
+
+.aleta-sdg-tombol {
+  flex: none;
+  border: 1px solid var(--aleta-garis);
+  background: transparent;
+  color: var(--aleta-tulisan-lembut);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.aleta-sdg-tombol:hover { background: var(--aleta-latar-naik); color: var(--aleta-tulisan); }
+
+.aleta-sdg-jumlah {
+  margin-left: 6px;
+  color: var(--aleta-tulisan-lembut);
+  font-weight: 400;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-sdg-tambah {
+  width: 100%;
+  margin-top: 4px;
+  border: 1px dashed var(--aleta-garis);
+  background: transparent;
+  color: var(--aleta-tulisan-lembut);
+  border-radius: 4px;
+  padding: 3px 0;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+}
+
+.aleta-sdg-tambah:hover { background: var(--aleta-latar-naik); color: var(--aleta-tulisan); }
+
+.aleta-sdg-diseret { opacity: 0.45; }
+.aleta-sdg-sasaran { box-shadow: inset 0 2px 0 var(--aleta-merek); }
+
+/* Jawaban yang diisi ALETA dari gugatan ditandai - ia bukan ketikan petugas
+   dan harus dibaca dahulu, tetapi juga bukan kekurangan seperti .aleta-sdg-perlu. */
+.aleta-sdg-dari-gugatan { border-left: 2px solid var(--aleta-merek); padding-left: 5px; }
+
+/* --- kartu alasan perceraian: satu kelompok satu blok -------------------- */
+.aleta-alasan-kelompok {
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-top: 6px;
+}
+
+.aleta-alasan-kepala {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.aleta-alasan-judul {
+  font-weight: 700;
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-alasan-jumlah {
+  flex: none;
+  min-width: 18px;
+  text-align: center;
+  border-radius: 9px;
+  padding: 0 5px;
+  background: var(--aleta-latar-naik);
+  font-variant-numeric: tabular-nums;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-alasan-deret {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.aleta-alasan-butir {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+
+.aleta-alasan-tanda { color: var(--aleta-tulisan-lembut); }
+
+.aleta-alasan-siap { border-color: var(--aleta-aman); }
+.aleta-alasan-siap .aleta-alasan-tanda { color: var(--aleta-aman); }
+.aleta-alasan-awas { border-color: var(--aleta-mendesak); }
+.aleta-alasan-awas .aleta-alasan-tanda { color: var(--aleta-mendesak); }
+.aleta-alasan-sebagian .aleta-alasan-tanda,
+.aleta-alasan-belum .aleta-alasan-tanda { color: var(--aleta-lewat); }
+
+/* Dua tombol yang sama-sama berarti "tuliskan ke ABT" berdiri berdampingan. */
+.aleta-abt-tindakan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
