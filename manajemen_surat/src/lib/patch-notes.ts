@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.6";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.6 - Putusan Massal ABT: Tombol yang Menyebut Langkah Berikutnya, dan Rencana yang Kedaluwarsa";
+export const APP_VERSION = "2.19.7";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.7 - Nama Unduhan ABT yang Hilang Bersama Pekerja Latarnya";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.7",
+    title: "ALETA Judicia v2.19.7 - Nama Unduhan ABT yang Hilang Bersama Pekerja Latarnya",
+    date: "2026-09-16",
+    status: "Terpasang",
+    summary:
+      "Berkas yang diunduh dari tombol cetak milik ABT kembali bernama download.rtf dan download (2).pdf. " +
+      "Sebabnya bukan aturan penamaannya - itu benar sejak 2.18.0 - melainkan tempat keterangannya disimpan: " +
+      "satu variabel di pekerja latar Manifest V3, yang dimatikan Chrome sesudah kira-kira tiga puluh detik menganggur.",
+    added: [],
+    changed: [
+      "Keterangan perkara untuk penamaan unduhan disimpan di chrome.storage.session, yang hidup di luar pekerja latar dan ikut terhapus ketika peramban ditutup. Peramban yang belum mengenalnya jatuh ke storage.local dengan umur yang sama.",
+      "Halaman ABT menyegarkan keterangan itu tiap kali petugas menyentuhnya (paling sering sekali per sepuluh detik) dan tiap kali tabnya dibuka kembali. Umur lima menit kini berarti lima menit sejak terakhir disentuh, bukan sejak halaman dibuka - yang kedua hampir selalu sudah lewat ketika tombol cetak ditekan.",
+    ],
+    fixed: [
+      "Unduhan dari tombol cetak ABT tersimpan dengan nama bawaan (download.rtf, download (2).pdf) tanpa satu pun pesan galat. Terlihat pada 16 September 2026: enam berkas bernama download pada hari yang sama ketika unduhan lewat panel ALETA - yang menyebut namanya sendiri kepada peramban - bernama benar.",
+    ],
+    security: [
+      "Unduhan yang jelas bukan berasal dari ABT ditolak seketika, tanpa menunggu pembacaan penyimpanan - menahan jawaban pada tiap unduhan biasa akan menahan seluruh unduhan peramban.",
+      "Pada jalur mana pun, termasuk yang gagal membaca, saran nama dipanggil tepat sekali: listener yang menjanjikan nama lalu diam membuat unduhannya menggantung.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.152.0 - reload di chrome://extensions.",
+      "Berkas yang sudah terlanjur bernama download tidak berubah namanya sendiri; yang berlaku unduhan berikutnya.",
+    ],
+    knownLimitations: [
+      "Penamaan ini hanya menyentuh berkas yang namanya benar-benar umum (download, download (2), dan seterusnya). Nama lain yang dipilih ABT atau orang tidak pernah ditimpa.",
+    ],
+  },
   {
     version: "2.19.6",
     title: "ALETA Judicia v2.19.6 - Putusan Massal ABT: Tombol yang Menyebut Langkah Berikutnya, dan Rencana yang Kedaluwarsa",

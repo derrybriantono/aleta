@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.152.0",
+    dirilis: "2026-09-16T11:00:00+08:00",
+    judul: "Nama unduhan ABT tidak lagi hilang bersama pekerja latarnya",
+    butir: [
+      "BERKAS DARI TOMBOL CETAK ABT KEMBALI BERNAMA PERKARANYA. Aturan penamaannya benar sejak 1.146.0; yang keliru tempat keterangannya disimpan - satu variabel di pekerja latar Manifest V3, yang dimatikan Chrome sesudah ±30 detik menganggur. Halaman mengabarkannya sekali saat dibuka, dan ketika CETAK ditekan beberapa menit kemudian pekerjanya sudah dibangunkan ulang dengan keterangan kosong. Kini disimpan di chrome.storage.session.",
+      "KETERANGANNYA DISEGARKAN OLEH KEHADIRAN ANDA: tiap sentuhan pada halaman ABT (paling sering sekali per sepuluh detik) dan tiap kali tabnya dibuka kembali. Umur lima menitnya kini dihitung sejak terakhir Anda menyentuh halaman itu.",
+      "Unduhan lewat panel ALETA sendiri tidak pernah terkena - ia menyebut namanya langsung kepada peramban; itu sebabnya sebagian berkas bernama benar dan sebagian bernama download pada hari yang sama.",
+    ],
+  },
+  {
     versi: "1.151.0",
     dirilis: "2026-09-16T10:30:00+08:00",
     judul: "Putusan massal ABT menyebut langkah berikutnya, dan rencananya kedaluwarsa bila pilihannya berubah",

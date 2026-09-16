@@ -3791,8 +3791,14 @@ alatCatatAsalPortal();
  * latar perkara apa yang sedang terbuka, lalu membiarkannya menamai unduhan
  * bernama umum yang datang dari ABT. Lihat latar.js.
  *
- * Dikirim sekali saat halaman dibuka - bukan pada tiap unduhan, sebab unduhan
- * ABT tidak melewati skrip ini sama sekali.
+ * Dikirim saat halaman dibuka DAN disegarkan selama petugas masih mengerjakan
+ * halaman itu - bukan pada tiap unduhan, sebab unduhan ABT tidak melewati
+ * skrip ini sama sekali.
+ *
+ * Penyegaran itu yang membuat umur lima menit berarti "lima menit sejak
+ * terakhir Anda menyentuh halaman ini", bukan "lima menit sejak halaman
+ * dibuka". Yang kedua hampir selalu sudah lewat ketika CETAK ditekan:
+ * petugas membuka perkara, membaca, menyiapkan blangko, baru mencetak.
  */
 function kabarkanKonteksUnduh() {
   const nomor = nomorPerkaraAbt();
@@ -3816,6 +3822,30 @@ function kabarkanKonteksUnduh() {
 void pasang();
 void pasangMassalAbt();
 kabarkanKonteksUnduh();
+
+// ==========================================================================
+// DISEGARKAN OLEH KEHADIRAN PETUGAS, BUKAN OLEH JAM
+// ==========================================================================
+//
+// Tiap sentuhan pada halaman ini menyegarkan konteksnya, dibatasi sekali tiap
+// sepuluh detik supaya tidak menghujani pekerja latar. Yang dipakai peristiwa
+// pointerdown - ia mendahului "click", sehingga konteksnya sudah tersimpan
+// sebelum tombol CETAK milik ABT sempat menerbitkan unduhannya.
+//
+// Kembali ke tab ini pun menyegarkan: petugas kerap membuka SIPP di tab lain,
+// lalu kembali ke ABT untuk mencetak.
+const JEDA_SEGAR_KONTEKS_MS = 10 * 1000;
+let segarTerakhir = 0;
+function segarkanKonteksUnduh() {
+  const sekarang = Date.now();
+  if (sekarang - segarTerakhir < JEDA_SEGAR_KONTEKS_MS) return;
+  segarTerakhir = sekarang;
+  kabarkanKonteksUnduh();
+}
+document.addEventListener("pointerdown", segarkanKonteksUnduh, true);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") segarkanKonteksUnduh();
+});
 
 // ABT memuat sebagian isinya menyusul. Diperiksa beberapa kali, lalu berhenti -
 // pengamat yang hidup selamanya pada halaman yang tidak pernah berubah hanya

@@ -164,28 +164,93 @@ async function perbaruiSekarang() {
  * ke unduhan perkara lain adalah kekeliruan yang tidak akan pernah disadari -
  * berkasnya terbuka benar, hanya namanya berbohong.
  */
-let konteksAbt = null;
 const UMUR_KONTEKS_UNDUH = 5 * 60 * 1000;
 const POLA_NAMA_UMUM = /^download(?:\s*\(\d+\))?\.(rtf|pdf|doc|docx)$/i;
+const KUNCI_KONTEKS_UNDUH = "aleta-konteks-unduh";
+
+/**
+ * ============================================================================
+ * KONTEKSNYA DISIMPAN, BUKAN DIINGAT - PEKERJA MV3 DIMATIKAN TIAP ±30 DETIK
+ * ============================================================================
+ *
+ * Sebelumnya konteks ini satu variabel modul: `let konteksAbt = null`. Pada
+ * Manifest V3 pekerja latar bukan halaman yang hidup terus - Chrome
+ * mematikannya sesudah kira-kira tiga puluh detik menganggur, dan seluruh
+ * variabelnya hilang bersamanya. Halaman ABT mengabarkan konteksnya SEKALI
+ * saat dibuka; ketika petugas menekan CETAK beberapa menit kemudian, pekerja
+ * itu dibangunkan oleh unduhannya sendiri - dengan konteks kosong.
+ *
+ * Akibatnya tidak berbunyi sama sekali: berkasnya tersimpan, hanya bernama
+ * "download.rtf", "download (2).pdf", dan seterusnya. Terlihat pada folder
+ * unduhan 16 September 2026: enam berkas bernama download pada hari yang sama
+ * ketika unduhan lewat panel ALETA - yang menyebut namanya sendiri kepada
+ * chrome.downloads - bernama benar.
+ *
+ * chrome.storage.session hidup di luar pekerjanya dan ikut terhapus ketika
+ * peramban ditutup - persis umur yang pantas bagi keterangan ini. Peramban
+ * yang belum mengenalnya jatuh ke storage.local, dan di sana umurnya dijaga
+ * UMUR_KONTEKS_UNDUH yang sama.
+ */
+function penyimpananKonteks() {
+  return (chrome.storage && chrome.storage.session) || (chrome.storage && chrome.storage.local) || null;
+}
+
+async function simpanKonteksUnduh(konteks) {
+  const gudang = penyimpananKonteks();
+  if (!gudang) return;
+  try {
+    await gudang.set({ [KUNCI_KONTEKS_UNDUH]: konteks });
+  } catch {
+    // Penyimpanan penuh atau ditolak - unduhannya tetap tersimpan, hanya
+    // namanya yang tidak berubah.
+  }
+}
+
+async function bacaKonteksUnduh() {
+  const gudang = penyimpananKonteks();
+  if (!gudang) return null;
+  try {
+    const isi = await gudang.get(KUNCI_KONTEKS_UNDUH);
+    const konteks = isi && isi[KUNCI_KONTEKS_UNDUH];
+    if (!konteks || !konteks.nomor) return null;
+    return Date.now() - Number(konteks.saat || 0) < UMUR_KONTEKS_UNDUH ? konteks : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Nama yang diusulkan bagi satu unduhan - dipisah supaya dapat diuji. */
+function namaUnduhanAbt(nama, konteks) {
+  const akhiran = (String(nama).split(".").pop() || "rtf").toLowerCase();
+  const bagian = [konteks.nomor, konteks.keterangan, "putusan"].filter(Boolean);
+  return `${bagian.join(" - ")}.${akhiran}`.replace(/[\\/:*?"<>|]+/g, "_");
+}
 
 if (chrome.downloads && chrome.downloads.onDeterminingFilename) {
   chrome.downloads.onDeterminingFilename.addListener((barang, sarankan) => {
-    try {
-      const nama = String((barang && barang.filename) || "");
-      const asal = `${(barang && barang.url) || ""} ${(barang && barang.referrer) || ""}`;
-      const dariAbt = /\/aps_badilag\//i.test(asal) || /\/abt\//i.test(asal);
-      const baru = konteksAbt && Date.now() - konteksAbt.saat < UMUR_KONTEKS_UNDUH;
+    const nama = String((barang && barang.filename) || "");
+    const asal = `${(barang && barang.url) || ""} ${(barang && barang.referrer) || ""}`;
+    const dariAbt = /\/aps_badilag\//i.test(asal) || /\/abt\//i.test(asal);
 
-      if (!dariAbt || !baru || !POLA_NAMA_UMUM.test(nama)) return false;
+    // Yang tidak mungkin diubah dijawab SEKARANG. Menjawab benar lalu
+    // menunggu penyimpanan pada tiap unduhan biasa - gambar, lampiran,
+    // pemasang - menahan seluruh unduhan peramban selama pembacaan itu.
+    if (!dariAbt || !POLA_NAMA_UMUM.test(nama)) return false;
 
-      const akhiran = (nama.split(".").pop() || "rtf").toLowerCase();
-      const bagian = [konteksAbt.nomor, konteksAbt.keterangan, "putusan"].filter(Boolean);
-      const usul = `${bagian.join(" - ")}.${akhiran}`.replace(/[\\/:*?"<>|]+/g, "_");
-      sarankan({ filename: usul, conflictAction: "uniquify" });
-      return true;
-    } catch {
-      return false;
-    }
+    // Sisanya dibaca dari penyimpanan, dan karena itu menyusul. Chrome
+    // mengizinkannya asal listener-nya memulangkan true dan sarankan()
+    // dipanggil TEPAT sekali - termasuk pada jalan yang gagal, kalau tidak
+    // unduhannya menggantung tanpa nama.
+    bacaKonteksUnduh()
+      .then((konteks) => {
+        if (!konteks) {
+          sarankan();
+          return;
+        }
+        sarankan({ filename: namaUnduhanAbt(nama, konteks), conflictAction: "uniquify" });
+      })
+      .catch(() => sarankan());
+    return true;
   });
 }
 
@@ -245,11 +310,11 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
   // dan yang menekan CETAK selalu sedang menatap halaman yang baru saja
   // mengabarkan konteksnya.
   if (pesan.jenis === "konteks-unduh") {
-    konteksAbt = {
+    void simpanKonteksUnduh({
       nomor: String(pesan.nomor || "").slice(0, 60),
       keterangan: String(pesan.keterangan || "").slice(0, 60),
       saat: Date.now(),
-    };
+    });
     jawab({ ok: true });
     return false;
   }

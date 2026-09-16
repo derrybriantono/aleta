@@ -44,7 +44,10 @@ describe("butir 1 - nama berkas unduhan", () => {
   it("HANYA nama yang benar-benar umum yang diubah", () => {
     // Menimpa nama yang dipilih orang lain jauh lebih merugikan daripada
     // membiarkan satu berkas bernama "download".
-    expect(latar).toContain("if (!dariAbt || !baru || !POLA_NAMA_UMUM.test(nama)) return false;");
+    // Kesegaran konteksnya tidak lagi diperiksa di baris ini: sejak konteksnya
+    // dibaca dari penyimpanan (2.19.7), yang di sini hanya yang dapat dijawab
+    // SEKETIKA - asal dan bentuk namanya.
+    expect(latar).toContain("if (!dariAbt || !POLA_NAMA_UMUM.test(nama)) return false;");
   });
 
   it("konteks yang sudah basi tidak dipakai", () => {
@@ -52,7 +55,71 @@ describe("butir 1 - nama berkas unduhan", () => {
     // lain tidak akan pernah disadari: berkasnya terbuka benar, namanya
     // berbohong.
     expect(latar).toContain("const UMUR_KONTEKS_UNDUH =");
-    expect(latar).toContain("Date.now() - konteksAbt.saat < UMUR_KONTEKS_UNDUH");
+    expect(latar).toContain("Date.now() - Number(konteks.saat || 0) < UMUR_KONTEKS_UNDUH");
+  });
+
+  /**
+   * ==========================================================================
+   * KONTEKSNYA TIDAK BOLEH HIDUP DI INGATAN PEKERJA LATAR
+   * ==========================================================================
+   *
+   * Dilaporkan dari folder unduhan 16 September 2026: enam berkas bernama
+   * "download.rtf" dan "download (2).pdf" pada hari yang sama ketika unduhan
+   * lewat panel ALETA bernama benar. Sebabnya konteks perkara disimpan pada
+   * satu variabel modul di pekerja latar Manifest V3 - dan Chrome mematikan
+   * pekerja itu sesudah kira-kira tiga puluh detik menganggur. Halaman
+   * mengabarkan konteksnya sekali saat dibuka; ketika CETAK ditekan beberapa
+   * menit kemudian, pekerjanya dibangunkan oleh unduhan itu sendiri dengan
+   * konteks kosong, dan tidak ada satu pun pesan galat.
+   */
+  it("konteks disimpan di penyimpanan, bukan di variabel pekerja latar", () => {
+    expect(latar).toContain("const KUNCI_KONTEKS_UNDUH =");
+    expect(latar).toContain("chrome.storage.session");
+    expect(latar).toContain("async function bacaKonteksUnduh()");
+    // Bentuk lamanya tidak boleh kembali.
+    expect(latar).not.toContain("let konteksAbt = null;");
+    expect(latar).not.toContain("konteksAbt.saat");
+  });
+
+  it("peramban yang belum mengenal storage.session jatuh ke storage.local", () => {
+    expect(latar).toContain("(chrome.storage && chrome.storage.session) || (chrome.storage && chrome.storage.local)");
+  });
+
+  it("sarankan() dipanggil TEPAT sekali, termasuk pada jalan yang gagal", () => {
+    // Listener yang memulangkan true tetapi tidak pernah memanggil sarankan()
+    // membuat unduhannya menggantung tanpa nama.
+    const mulai = latar.indexOf("chrome.downloads.onDeterminingFilename.addListener");
+    expect(mulai).toBeGreaterThan(-1);
+    const badan = latar.slice(mulai, mulai + 1600);
+    expect(badan).toContain("sarankan();");
+    expect(badan).toContain(".catch(() => sarankan());");
+    expect(badan).toContain("conflictAction: \"uniquify\"");
+  });
+
+  it("yang jelas bukan unduhan ABT ditolak SEKARANG, tanpa menunggu penyimpanan", () => {
+    // Menjawab benar lalu membaca penyimpanan pada tiap unduhan biasa menahan
+    // seluruh unduhan peramban selama pembacaan itu.
+    const mulai = latar.indexOf("chrome.downloads.onDeterminingFilename.addListener");
+    const badan = latar.slice(mulai, mulai + 1600);
+    expect(badan).toContain("if (!dariAbt || !POLA_NAMA_UMUM.test(nama)) return false;");
+    expect(badan.indexOf("if (!dariAbt")).toBeLessThan(badan.indexOf("bacaKonteksUnduh()"));
+  });
+
+  it("konteksnya disegarkan selama petugas masih menyentuh halaman ABT", () => {
+    // Umur lima menit harus berarti "sejak terakhir Anda menyentuh halaman
+    // ini", bukan "sejak halaman dibuka" - yang kedua hampir selalu sudah
+    // lewat ketika CETAK ditekan.
+    expect(abt).toContain("function segarkanKonteksUnduh()");
+    expect(abt).toContain('document.addEventListener("pointerdown", segarkanKonteksUnduh, true);');
+    expect(abt).toContain('if (document.visibilityState === "visible") segarkanKonteksUnduh();');
+    // Dibatasi supaya tidak menghujani pekerja latar.
+    expect(abt).toContain("const JEDA_SEGAR_KONTEKS_MS =");
+    expect(abt).toContain("if (sekarang - segarTerakhir < JEDA_SEGAR_KONTEKS_MS) return;");
+  });
+
+  it("pointerdown, bukan click - konteksnya harus tersimpan sebelum CETAK menerbitkan unduhan", () => {
+    const mulai = abt.indexOf("function segarkanKonteksUnduh()");
+    expect(abt.slice(mulai, mulai + 600)).toContain("pointerdown");
   });
 });
 
