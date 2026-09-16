@@ -84,10 +84,62 @@ describe("aleta.js: mengikuti tema ALETA dan tidak membawa temanya sendiri", () 
     expect(isi).toContain("panel.style.setProperty(tujuan");
   });
 
-  it("saklar tema milik panel disingkirkan, dan tema tidak diterapkan ke halaman", () => {
+  it("saklar temanya kembali - sebab sekarang ia saklar yang SAMA", () => {
+    // 1.155.0. Dahulu tombol tema panel ini dibuang, dengan alasan yang benar
+    // pada zamannya: "dua saklar untuk satu tema hanya melahirkan dua tema
+    // yang berselisih" - tombol panel mengubah temaPanel, tombol ALETA
+    // mengubah kelas dark, dan keduanya tidak pernah bertemu.
+    //
+    // Sejak keduanya disambungkan, alasan itu hilang: menekan yang mana pun
+    // menggerakkan tema yang satu.
     const isi = aletaJs();
     expect(isi).toContain('kepala.querySelector(".aleta-tema")');
+    expect(isi).not.toContain("tombolTema.remove()");
+    // Penanda gelap milik SIPP tetap TIDAK dipasang di halaman portal: portal
+    // punya peta warnanya sendiri, dan dua peta warna berebut satu halaman.
     expect(isi).toContain("temaHalaman: false");
+  });
+
+  it("tema disambungkan dua arah dengan portal", () => {
+    const isi = aletaJs();
+    // portal berubah -> ditulis ke temaPanel, sehingga popup, SIPP, dan ABT
+    // ikut seketika
+    expect(isi).toContain('const KUNCI_TEMA_BERSAMA = "temaPanel";');
+    expect(isi).toContain("chrome.storage.local.set({ [KUNCI_TEMA_BERSAMA]: kini })");
+    // temaPanel berubah -> portal DIMINTA berganti lewat satu peristiwa DOM.
+    // Meminta, bukan menulis localStorage portal: temanya dipegang keadaan
+    // React, dan localStorage yang diubah dari luar baru terbaca pada
+    // pemuatan berikutnya - halamannya akan tampak menolak.
+    expect(isi).toContain('new CustomEvent("aleta-ekstensi-tema"');
+    expect(isi).toContain("function mintaPortalBertema(");
+    // Tidak meminta apa-apa bila temanya memang sudah sama - tanpa pagar ini
+    // keduanya saling mendorong tanpa henti.
+    expect(isi).toContain("if (temaAleta() === bersih) return;");
+  });
+
+  it("portal mendengarkan permintaan itu, dan hanya menerima satu kata", () => {
+    const portal = readFileSync(
+      path.resolve(process.cwd(), "src/lib/app-state.tsx"),
+      "utf8"
+    );
+    expect(portal).toContain('window.addEventListener("aleta-ekstensi-tema", dengar)');
+    expect(portal).toContain('if (tema !== "gelap" && tema !== "terang") return;');
+    expect(portal).toContain('window.removeEventListener("aleta-ekstensi-tema", dengar)');
+  });
+
+  it("panel yang ditutup dapat dibuka lagi tanpa memuat ulang", () => {
+    // Tombol × dahulu hanya panel.remove(). Sesudah itu tidak ada satu pun
+    // jalan kembali: berkas ini dijalankan sekali, pasangPortal() hanya
+    // dipanggil lagi ketika ALAMATNYA berpindah, dan portal yang sedang dibaca
+    // orang tidak berpindah alamat.
+    const isi = aletaJs();
+    expect(isi).toContain("saatTutup: () => tutupPanel(),");
+    expect(isi).toContain("function tutupPanel()");
+    expect(isi).toContain("chrome.storage.local.set({ aktif: false })");
+    // Dan saklar itu didengarkan di sini - tanpa pendengarnya, mencentangnya
+    // kembali hanya berlaku pada halaman yang dibuka SESUDAHNYA.
+    expect(isi).toContain("if (tempat !== \"local\" || !ubah.aktif) return;");
+    expect(isi).toContain("void pasangPortal();");
   });
 
   it("diam di halaman masuk, dan mengejar perpindahan halaman Next.js", () => {

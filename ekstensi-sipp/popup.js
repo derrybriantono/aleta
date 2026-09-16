@@ -240,15 +240,36 @@ if (kotakCetak) {
  * MENGEMBALIKAN PANEL YANG TERGESER KELUAR LAYAR
  * ============================================================================
  *
- * Yang dihapus hanya SATU kunci - posisiPanel, tempat letak dan ukuran panel
- * disimpan. Skrip konten mendengarkan penghapusan itu lalu mengembalikan
- * panelnya ke tempat bawaan, sehingga tidak perlu memuat ulang halaman dan
- * tidak perlu izin "tabs" hanya untuk menyentuh satu tab.
+ * Yang dihapus kunci LETAK - tempat posisi, ukuran, dan keadaan lencana tiap
+ * panel disimpan. Skrip konten mendengarkan penghapusan itu lalu mengembalikan
+ * panelnya ke tempat bawaan DAN membentangkannya lagi, sehingga tidak perlu
+ * memuat ulang halaman dan tidak perlu izin "tabs" hanya untuk menyentuh satu
+ * tab.
+ *
+ * ============================================================================
+ * KEEMPAT KUNCINYA, BUKAN HANYA MILIK SIPP
+ * ============================================================================
+ *
+ * Dahulu hanya "posisiPanel" yang dihapus - kunci panel SIPP. Panel ABT,
+ * panel putusan massal ABT, dan panel portal ALETA menyimpan letaknya di
+ * kunci masing-masing, dan tombol ini tidak menjangkau satu pun di antaranya.
+ *
+ * Akibatnya: panel yang diciutkan menjadi lencana lalu terseret ke tepi di
+ * halaman ABT atau portal ALETA tidak dapat dikembalikan dari mana pun -
+ * tidak dari panelnya (tombolnya ikut menciut), tidak dari sini. Satu-satunya
+ * jalan adalah memuat ulang halaman, dan lencananya lahir kembali di tempat
+ * yang sama persis.
  *
  * Saklar tampil/sembunyi, tema, dan lipatan menu TIDAK ikut terhapus: yang
  * hilang dari layar adalah letaknya, dan membuang pengaturan lain sekalian
  * berarti menghukum petugas atas kesalahan yang tidak ia perbuat.
  */
+const KUNCI_LETAK_PANEL = [
+  "posisiPanel",
+  "posisiPanelAbt",
+  "posisiPanelAbtMassal",
+  "posisiPanelAleta",
+];
 const tombolReset = document.getElementById("resetPosisi");
 const kabarReset = document.getElementById("kabarReset");
 
@@ -266,9 +287,11 @@ if (tombolReset) {
     }
     tombolReset.disabled = true;
     void penyimpanan
-      .remove("posisiPanel")
+      .remove(KUNCI_LETAK_PANEL)
       .then(() => {
-        kabarkan("Posisi panel dikembalikan. Buka kembali halaman SIPP bila belum terlihat.");
+        kabarkan(
+          "Posisi panel dikembalikan - SIPP, ABT, dan portal ALETA. Panel yang terciut ikut dibentangkan lagi."
+        );
       })
       .catch(() => {
         kabarkan("Gagal mengembalikan posisi. Coba lagi.");
@@ -436,26 +459,45 @@ if (penyimpanan) {
 
 /**
  * ============================================================================
- * TEMA JENDELA INI
+ * TEMA JENDELA INI - DAN SEKARANG TEMA SELURUH EKSTENSI
  * ============================================================================
  *
  * Tiga keadaan, berputar dengan satu tombol:
  *
- *   ikut sistem    tidak ada atribut - hanya prefers-color-scheme yang bicara
- *   terang         data-tema="terang", menang atas peramban yang gelap
- *   gelap          data-tema="gelap",  menang atas peramban yang terang
+ *   ikut ALETA     mengikuti tema panel (temaPanel) - tidak ada pilihan
+ *                  tersendiri untuk jendela ini
+ *   terang         data-tema="terang", DAN panel ikut menjadi terang
+ *   gelap          data-tema="gelap",  DAN panel ikut menjadi gelap
  *
- * Bawaannya mengikuti setelan sistem. Itu yang paling jarang salah, dan yang tidak
- * pernah menyentuh tombol ini pun mendapat warna yang sama dengan seluruh
- * jendela lain di layarnya.
+ * ============================================================================
+ * KENAPA "IKUT SISTEM" DIGANTI "IKUT ALETA"
+ * ============================================================================
  *
- * Disimpan di penyimpanan ekstensi, bukan localStorage: jendela ini hidup di
- * origin chrome-extension:// dan tidak berbagi apa pun dengan halaman SIPP,
- * sedangkan pilihannya harus bertahan antar-jendela.
+ * Bawaannya dahulu mengikuti setelan sistem, dengan alasan yang masuk akal:
+ * jendela sekecil kartu nama sebaiknya berwarna sama dengan jendela lain di
+ * layar yang sama.
+ *
+ * Yang tidak diperhitungkan: panel ALETA bawaannya GELAP, sedangkan Windows
+ * di meja petugas hampir selalu TERANG. Hasilnya jendela putih menyilaukan
+ * yang muncul di atas SIPP yang gelap - "warna putih pop up yang tidak sesuai
+ * dengan dark mode" - dan tombol tema di dalamnya tidak menyentuh panel sama
+ * sekali, sedangkan tombol tema di panel tidak menyentuh jendela ini.
+ *
+ * Dua saklar yang tidak saling mengenal, untuk satu hal yang oleh siapa pun
+ * disebut "tema ALETA".
+ *
+ * Sekarang temaPanel satu-satunya kebenaran: dibaca di sini, DITULIS di sini
+ * ketika terang atau gelap dipilih, dan diikuti seketika ketika ia berubah
+ * dari panel di tab mana pun - SIPP, ABT, maupun portal ALETA.
+ *
+ * KUNCI_TEMA_POPUP tetap ada dan tetap disimpan: yang tersimpan di situ
+ * PILIHAN jendela ini (ikut / terang / gelap), bukan warnanya. Tanpa itu,
+ * "ikut" tidak dapat dibedakan dari "kebetulan sama".
  */
 const KUNCI_TEMA_POPUP = "temaPopup";
+const KUNCI_TEMA_PANEL = "temaPanel";
 const URUTAN_TEMA = ["ikut", "terang", "gelap"];
-const SEBUTAN_TEMA = { ikut: "ikut sistem", terang: "terang", gelap: "gelap" };
+const SEBUTAN_TEMA = { ikut: "ikut ALETA", terang: "terang", gelap: "gelap" };
 
 /**
  * ============================================================================
@@ -523,20 +565,26 @@ async function pasangPemilihWarnaPopup(peran) {
 
 const tombolTema = document.getElementById("tombolTema");
 let temaPopup = "ikut";
+/** Tema panel yang sedang berlaku - bawaannya gelap, sama dengan panel. */
+let temaPanelSekarang = "gelap";
 
 function terapkanTemaPopup() {
   const akar = document.documentElement;
-  if (temaPopup === "ikut") akar.removeAttribute("data-tema");
-  else akar.setAttribute("data-tema", temaPopup);
+  // "ikut" tidak lagi berarti "tanpa atribut": ia berarti memakai tema panel.
+  // Membiarkannya tanpa atribut menyerahkan warnanya kepada peramban, dan
+  // itulah jendela putih di atas SIPP yang gelap.
+  const berlaku = temaPopup === "ikut" ? temaPanelSekarang : temaPopup;
+  akar.setAttribute("data-tema", berlaku === "terang" ? "terang" : "gelap");
   if (tombolTema) tombolTema.textContent = `tema: ${SEBUTAN_TEMA[temaPopup]}`;
 }
 
 if (penyimpanan) {
   void penyimpanan
-    .get([KUNCI_TEMA_POPUP])
+    .get([KUNCI_TEMA_POPUP, KUNCI_TEMA_PANEL])
     .then((simpan) => {
       const tersimpan = String((simpan && simpan[KUNCI_TEMA_POPUP]) || "");
       if (URUTAN_TEMA.includes(tersimpan)) temaPopup = tersimpan;
+      temaPanelSekarang = (simpan && simpan[KUNCI_TEMA_PANEL]) === "terang" ? "terang" : "gelap";
       terapkanTemaPopup();
     })
     .catch(() => terapkanTemaPopup());
@@ -545,11 +593,32 @@ if (penyimpanan) {
 }
 
 if (tombolTema) {
+  tombolTema.title =
+    "Tema ALETA - jendela ini, panel di SIPP dan ABT, dan panel di portal ALETA sekaligus";
   tombolTema.addEventListener("click", () => {
     temaPopup = URUTAN_TEMA[(URUTAN_TEMA.indexOf(temaPopup) + 1) % URUTAN_TEMA.length];
     terapkanTemaPopup();
-    if (penyimpanan) void penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup });
+    if (!penyimpanan) return;
+    void penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup });
+    // Pilihan tegas ikut menggerakkan panel. "ikut" tidak: ia mengikuti, dan
+    // yang mengikuti tidak menyuruh.
+    if (temaPopup === "terang" || temaPopup === "gelap") {
+      temaPanelSekarang = temaPopup;
+      void penyimpanan.set({ [KUNCI_TEMA_PANEL]: temaPopup });
+    }
   });
+}
+
+// Tema yang diganti dari panel - di tab SIPP, ABT, atau portal ALETA -
+// terbaca di sini seketika, selama jendela ini masih terbuka.
+try {
+  chrome.storage.onChanged.addListener((ubah, tempat) => {
+    if (tempat !== "local" || !ubah[KUNCI_TEMA_PANEL]) return;
+    temaPanelSekarang = ubah[KUNCI_TEMA_PANEL].newValue === "terang" ? "terang" : "gelap";
+    terapkanTemaPopup();
+  });
+} catch {
+  /* di luar konteks ekstensi: jendela ini memakai pilihannya sendiri */
 }
 
 /**

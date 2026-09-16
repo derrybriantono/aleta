@@ -2639,18 +2639,51 @@ function gambarPenunjukan(isi, data) {
       return `${x.jumlahSidang} sidang`;
     };
 
+    // ======================================================================
+    // TANGGAL DARI KALENDER IKUT BERDIRI DI DAFTAR INI
+    // ======================================================================
+    //
+    // Daftar ini disusun dari phs.calon - keempat hari sidang majelisnya.
+    // Tanggal yang dipilih sendiri dari kalender di bawah TIDAK ada di
+    // antaranya, sehingga daftarnya jatuh kembali ke baris pertama sementara
+    // yang sungguh akan ditulis adalah tanggal kalender.
+    //
+    // Yang terbaca dari situ: "sudah saya pilih tanggalnya, tetapi hari
+    // sidangnya tidak ikut berubah" - dan dugaan berikutnya, yang wajar,
+    // adalah bahwa pilihan kalendernya tidak terpakai.
+    //
+    // Sekarang tanggal kalender disisipkan sebagai baris tambahan, PALING
+    // ATAS dan bertanda asalnya. Ia tidak menggantikan satu pun calon:
+    // memilih kembali salah satu calon tetap dapat dilakukan dengan satu
+    // gerakan yang sama.
+    const calonTampil = phs.calon.map((x) => ({
+      id: x.tanggal,
+      label:
+        `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` +
+        ` · ${sebutBeban(x)}`,
+    }));
+    const dariKalender = String(pilihanManual.phs || "");
+    if (dariKalender && !calonTampil.some((c) => c.id === dariKalender)) {
+      calonTampil.unshift({
+        id: dariKalender,
+        label: `${sebutTanggal(dariKalender)} — dipilih dari kalender`,
+      });
+    }
+
     isi.appendChild(
       pilihanOrang(
         "Hari sidang",
-        phs.calon.map((x) => ({
-          id: x.tanggal,
-          label:
-            `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` +
-            ` · ${sebutBeban(x)}`,
-        })),
+        calonTampil,
         pilihanManual.phs ?? "",
         (nilai) => {
           pilihanManual.phs = nilai;
+          // Memilih kembali salah satu hari sidang majelis berarti tidak lagi
+          // memakai tanggal kalender - saklarnya ikut ditutup supaya kotak
+          // kalender tidak tertinggal terbuka dengan tanggal yang sudah tidak
+          // dipakai, yang kemudian terbaca sebagai dua pilihan yang berselisih.
+          if ((phs.calon || []).some((x) => x.tanggal === nilai)) {
+            pilihanManual.phsBebas = false;
+          }
           isi.textContent = "";
           gambarPenunjukan(isi, data);
         }
@@ -8446,6 +8479,27 @@ function pasangTombolKepala(panel, kepala, keadaanAwal) {
   // halaman ALETA.
   pasangLencana(panel);
 
+  // ==========================================================================
+  // ESCAPE DAN KLIK GANDA DI LUAR - DUA JALAN KELUAR YANG SELAMA INI HILANG
+  // ==========================================================================
+  //
+  // Keduanya dipasang alatPasangJalanKeluar, dan alatPasangJalanKeluar hanya
+  // dipanggil dari alatPasangPanel - satu-satunya pintu yang TIDAK dilewati
+  // panel SIPP. Panel ini menyusun kepalanya sendiri (lihat catatan di atas)
+  // dan memasang geser serta ubah-ukurannya sendiri pula, sehingga kedua
+  // jalan keluar itu tidak pernah sampai ke sini.
+  //
+  // Itulah "klik dua kali dan escape tidak berfungsi di sipp": bukan
+  // pendengarnya yang salah, melainkan tidak ada satu pun pendengar yang
+  // dipasang.
+  //
+  // Menciutnya lewat ciutkanKeLencana milik berkas ini, bukan alatCiutkan:
+  // keadaan lencana panel SIPP disimpan lewat simpanKeadaanPanel, dan dua
+  // penyimpan untuk satu keadaan akan saling menimpa.
+  alatPasangJalanKeluar(panel, KUNCI_POSISI, {
+    ciutkan: () => ciutkanKeLencana(panel, true),
+  });
+
   // Tombol kembali ke bawaan.
   //
   // Panel yang dapat digeser dan diubah ukurannya juga dapat tersesat: ditarik
@@ -11826,6 +11880,15 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
     if (panel) {
       kembalikanBawaan(panel);
       panel.classList.remove("aleta-panel-penuh", KELAS_LENCANA);
+      panel.removeAttribute("title");
+      // Tombolnya ikut dikembalikan. Panel yang sudah terbentang tetapi
+      // tombolnya masih bertuliskan "bentangkan" membuat tekanan berikutnya
+      // mengerjakan kebalikan dari yang dibaca orang.
+      const lipat = panel.querySelector(".aleta-lipat");
+      if (lipat) {
+        lipat.textContent = "–";
+        lipat.title = "Ciutkan menjadi lencana";
+      }
     }
   }
 

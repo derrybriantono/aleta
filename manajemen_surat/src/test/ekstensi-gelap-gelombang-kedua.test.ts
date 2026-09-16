@@ -209,10 +209,19 @@ describe("sebutan di jendela ekstensi", () => {
     expect(popupHtml).not.toContain("Keterangan e-Court di halaman SIPP");
   });
 
-  it("temanya ikut SISTEM, bukan ikut peramban", () => {
-    expect(popupJs).toContain('ikut: "ikut sistem"');
+  it("temanya ikut ALETA, bukan ikut peramban maupun sistem", () => {
+    // 1.155.0. Dahulu "ikut sistem", dan alasannya masuk akal: jendela sekecil
+    // kartu nama sebaiknya sewarna dengan jendela lain di layar yang sama.
+    //
+    // Yang tidak diperhitungkan: panel ALETA bawaannya GELAP sementara Windows
+    // di meja petugas hampir selalu TERANG - sehingga jendela ini lahir putih
+    // menyilaukan di atas SIPP yang gelap, dan tombol temanya tidak menyentuh
+    // panel sama sekali. Dua saklar yang tidak saling mengenal untuk satu hal
+    // yang oleh siapa pun disebut "tema ALETA".
+    expect(popupJs).toContain('ikut: "ikut ALETA"');
     expect(popupJs).not.toContain("ikut peramban");
     expect(popupHtml).not.toContain("ikut peramban");
+    expect(popupHtml).not.toContain("tema: ikut sistem");
   });
 });
 

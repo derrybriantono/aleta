@@ -281,40 +281,168 @@ async function alatSetelSuntingLangsung(nyala) {
   }
 }
 
-function alatPasangJalanKeluar(panel, kunci) {
+/**
+ * ============================================================================
+ * TINGKAP MILIK HALAMANNYA SENDIRI - ESCAPE DI SANA BUKAN MILIK KITA
+ * ============================================================================
+ *
+ * SIPP membuka borangnya lewat popup_form(): sebuah div berkelas .popup yang
+ * ditempelkan ke body dan diisi lewat AJAX. ABT memakai magnific popup
+ * (.mfp-wrap). Keduanya tingkap sungguhan di mata yang memakainya, dan
+ * Escape di atas tingkap yang terbuka berarti "tutup tingkap ini" - bukan
+ * "ciutkan panel ALETA di belakangnya".
+ *
+ * Merebutnya menghasilkan kejadian yang paling membingungkan: tingkapnya
+ * tetap terbuka menutupi layar, sementara panel yang TIDAK sedang dilihat
+ * diam-diam menciut di baliknya.
+ */
+function alatTingkapHalamanTerbuka() {
+  const PEMILIH =
+    "#popup_form, #popup_form_2nd, #popup_form_3rd, #popup_form_4th, #popup-detil, .mfp-wrap";
+  try {
+    for (const tingkap of document.querySelectorAll(PEMILIH)) {
+      // getClientRects, bukan offsetParent: tingkap SIPP position:fixed, dan
+      // offsetParent elemen fixed selalu null - pemeriksaan itu akan
+      // mengatakan "tidak ada" pada tingkap yang sedang menutupi layar.
+      if (tingkap.getClientRects().length > 0) return true;
+    }
+  } catch {
+    /* pemilih tidak dikenali peramban: anggap tidak ada tingkap */
+  }
+  return false;
+}
+
+/**
+ * ============================================================================
+ * SATU PASANG PENDENGAR UNTUK SELURUH HALAMAN, BUKAN SEPASANG TIAP PANEL
+ * ============================================================================
+ *
+ * Bentuk pertamanya memasang sepasang pendengar document tiap kali satu panel
+ * dipasang. Itu tidak terasa selama panelnya dibangun sekali seumur halaman -
+ * dan panel ABT maupun portal memang begitu.
+ *
+ * Panel SIPP tidak. Ia digambar ULANG tiap kali tingkap SIPP terbuka atau
+ * tertutup - Putusan Akhir, Data Umum, e-Doc - dan tiap penggambaran
+ * melahirkan panel baru beserta sepasang pendengar baru. Yang lama tidak
+ * pernah dilepas: ia hanya berhenti berbuat apa-apa sebab panelnya sudah
+ * tidak terpasang. Sesudah sehari bekerja, puluhan pendengar menumpuk di
+ * dokumen yang sama dan ikut dijalankan pada TIAP tekanan tombol.
+ *
+ * Sekarang pendengarnya satu pasang seumur halaman, dan panelnya yang
+ * didaftarkan ke sini. Yang panelnya sudah dibuang dikeluarkan dari daftar -
+ * tetapi hanya sesudah ia pernah benar-benar terpasang, sebab jalan keluar
+ * ini dipasang alatPasangPanel SEBELUM panelnya ditempelkan ke body (lihat
+ * susunPanelAbt); membuangnya lebih awal berarti membunuhnya di dalam
+ * kandungan.
+ */
+const alatDaftarKeluar = new Set();
+let alatKeluarTerpasang = false;
+
+/** Panel yang masih hidup, sekaligus membersihkan yang sudah tidak ada. */
+function alatPanelKeluarHidup() {
+  const hidup = [];
+  for (const entri of Array.from(alatDaftarKeluar)) {
+    if (!entri.panel.isConnected) {
+      if (entri.pernah) alatDaftarKeluar.delete(entri);
+      continue;
+    }
+    entri.pernah = true;
+    hidup.push(entri);
+  }
+  return hidup;
+}
+
+/**
+ * Escape dan klik ganda di luar - dua jalan keluar tanpa mencari tombolnya.
+ *
+ * `opsi.ciutkan` disediakan untuk panel yang menciut dengan caranya sendiri.
+ * Panel SIPP menyimpan keadaan lencananya lewat simpanKeadaanPanel di
+ * konten.js, bukan lewat alatSimpanPosisi - dan dua penyimpan untuk satu
+ * keadaan akan saling menimpa.
+ */
+function alatPasangJalanKeluar(panel, kunci, opsi) {
   if (!panel || panel.dataset.jalanKeluar === "1") return;
   panel.dataset.jalanKeluar = "1";
+  alatDaftarKeluar.add({ panel, kunci: String(kunci || ""), opsi: opsi || {}, pernah: false });
 
-  const sedangMenyunting = () => {
+  if (alatKeluarTerpasang) return;
+  alatKeluarTerpasang = true;
+
+  // ==========================================================================
+  // HANYA ISIAN DI DALAM PANEL YANG MEREBUT ESCAPE
+  // ==========================================================================
+  //
+  // Bentuk pertamanya memeriksa document.activeElement saja: isian mana pun
+  // yang sedang berfokus membatalkan Escape. Alasannya benar untuk isian
+  // MILIK PANEL - di sana Escape membatalkan suntingan, dan merebutnya
+  // berarti membuang ketikan orang.
+  //
+  // Tetapi SIPP dan ABT adalah halaman borang dari ujung ke ujung. Satu klik
+  // pada kolom mana pun - dan itulah yang dikerjakan orang sepanjang hari -
+  // membuat fokus tinggal di kotak isian halaman, sehingga Escape TIDAK
+  // PERNAH sampai ke panel. Di halaman portal ALETA, yang hampir tidak punya
+  // borang, jalan keluarnya bekerja seperti seharusnya.
+  //
+  // Itulah "escape tidak berfungsi di sipp dan abt, di aleta berfungsi":
+  // bukan pendengarnya tidak terpasang, melainkan syaratnya hampir selalu
+  // terpenuhi di kedua halaman itu.
+  const sedangMenyunting = (panel) => {
     const fokus = document.activeElement;
     if (!fokus) return false;
+    // Isian HALAMAN bukan urusan panel ini. Yang mengetik di kolom SIPP lalu
+    // menekan Escape tidak kehilangan apa pun - panelnya menciut, dan
+    // ketikannya utuh.
+    if (!panel.contains(fokus)) return false;
     const tag = String(fokus.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea" || tag === "select") return true;
     return fokus.isContentEditable === true;
   };
 
-  const ciutkan = () => {
+  const ciutkan = (entri) => {
+    const panel = entri.panel;
     if (panel.classList.contains("aleta-panel-lencana")) return;
-    alatCiutkan(panel, kunci, true);
+    if (entri.opsi && typeof entri.opsi.ciutkan === "function") {
+      entri.opsi.ciutkan();
+      return;
+    }
+    alatCiutkan(panel, entri.kunci, true);
   };
 
   document.addEventListener(
     "keydown",
     (peristiwa) => {
-      if (peristiwa.key !== "Escape" || !panel.isConnected) return;
-      if (sedangMenyunting()) return;
-      ciutkan();
+      if (peristiwa.key !== "Escape") return;
+      if (alatTingkapHalamanTerbuka()) return;
+      // continue, bukan return: dua panel dapat hidup berdampingan di halaman
+      // ABT, dan yang sedang disunting di salah satunya tidak menahan yang
+      // lain - itu pula perilaku bentuk lamanya, ketika tiap panel punya
+      // pendengarnya sendiri.
+      for (const entri of alatPanelKeluarHidup()) {
+        if (sedangMenyunting(entri.panel)) continue;
+        ciutkan(entri);
+      }
     },
     true
   );
 
-  document.addEventListener("dblclick", (peristiwa) => {
-    if (!panel.isConnected) return;
-    // Di DALAM panel, klik ganda adalah memilih kata - bukan permintaan
-    // menyingkir.
-    if (panel.contains(peristiwa.target)) return;
-    ciutkan();
-  });
+  // Pada fase TANGKAP, sama seperti Escape di atas. SIPP dan ABT keduanya
+  // halaman jQuery yang memasang pendengarnya sendiri di mana-mana, dan
+  // pendengar yang menghentikan gelembung membuat klik ganda tidak pernah
+  // sampai ke document - tanpa satu pun tanda bahwa ia dihentikan.
+  document.addEventListener(
+    "dblclick",
+    (peristiwa) => {
+      if (alatTingkapHalamanTerbuka()) return;
+      for (const entri of alatPanelKeluarHidup()) {
+        const panel = entri.panel;
+        // Di DALAM panel, klik ganda adalah memilih kata - bukan permintaan
+        // menyingkir.
+        if (panel.contains(peristiwa.target)) continue;
+        ciutkan(entri);
+      }
+    },
+    true
+  );
 }
 
 function alatKembalikanBawaan(panel, kunci) {
@@ -1362,7 +1490,15 @@ function alatTombolKepala(panel, kunci, opsi) {
   }
 
   if (typeof pilihan.saatTutup === "function") {
-    buat("aleta-matikan", "×", "Sembunyikan panel untuk halaman ini", pilihan.saatTutup);
+    // Judulnya menyebut jalan pulangnya. Tombol tutup yang tidak mengatakan
+    // cara membukanya kembali membuat orang menutupnya sekali lalu mengira
+    // panelnya rusak - dan itu yang terjadi selama ini di ABT dan portal.
+    buat(
+      "aleta-matikan",
+      "×",
+      pilihan.judulTutup || "Tutup panel - nyalakan lagi dari kotak centang di ikon ALETA pada bilah ekstensi",
+      pilihan.saatTutup
+    );
   }
 
   return wadah;
@@ -1457,6 +1593,49 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
     }
     alatJepitTinggi(panel);
   });
+
+  alatPasangPemulihPosisi(panel, kunci);
+}
+
+/**
+ * ============================================================================
+ * JALAN PULANG DARI LUAR PANEL - UNTUK PANEL YANG SUDAH TIDAK TERLIHAT
+ * ============================================================================
+ *
+ * Panel yang terciut menjadi lencana lalu digeser ke tepi, atau yang
+ * tertinggal di luar layar sesudah pindah monitor, tidak dapat dikembalikan
+ * dari panel itu sendiri: tombolnya ikut hilang bersamanya.
+ *
+ * Popup ikon Chrome karena itu menghapus kunci posisinya, dan pendengar ini
+ * yang mengembalikan panelnya - ke tempat bawaan DAN terbentang lagi.
+ * Membentangkan ikut dikerjakan dengan sengaja: yang menekan "Kembalikan
+ * posisi panel" sedang mencari panel yang hilang dari pandangannya, dan
+ * lencana di pojok bukan jawaban atas pencarian itu.
+ *
+ * Panel SIPP punya pendengarnya sendiri di konten.js - ia menyimpan
+ * keadaannya lewat jalur yang berbeda - jadi yang dilayani di sini panel ABT
+ * dan panel halaman ALETA, yang selama ini tidak punya jalan pulang sama
+ * sekali.
+ */
+function alatPasangPemulihPosisi(panel, kunci) {
+  if (!kunci) return;
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah[kunci]) return;
+      if (ubah[kunci].newValue !== undefined) return;
+      if (!panel.isConnected) return;
+      panel.classList.remove(KELAS_LENCANA, "aleta-panel-penuh");
+      panel.removeAttribute("title");
+      alatKembalikanBawaan(panel, kunci);
+      const lipat = panel.querySelector(".aleta-lipat");
+      if (lipat) {
+        lipat.textContent = "–";
+        lipat.title = "Ciutkan menjadi lencana";
+      }
+    });
+  } catch {
+    /* di luar konteks ekstensi: panel tetap dapat dikembalikan dari tombolnya */
+  }
 }
 
 /**

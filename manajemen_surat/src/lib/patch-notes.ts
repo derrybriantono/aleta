@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.20.0";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.20.0 - Keterangan Saksi yang Terisi dan Dapat Dipindahkan";
+export const APP_VERSION = "2.20.1";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.20.1 - Satu Tema, dan Jalan Pulang untuk Panel yang Disingkirkan";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,48 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.20.1",
+    title: "ALETA Judicia v2.20.1 - Satu Tema, dan Jalan Pulang untuk Panel yang Disingkirkan",
+    date: "2026-09-16",
+    status: "Terpasang",
+    summary:
+      "Lima perbaikan pada panel ekstensi: tingkap sembul SIPP ikut gelap, Escape dan klik ganda kembali " +
+      "menciutkan panel di SIPP dan ABT, panel yang ditutup atau terciut dapat dibuka lagi tanpa memuat ulang, " +
+      "tema popup dan tema panel menjadi satu di ketiga halaman, dan tanggal yang dipilih dari kalender tampak " +
+      "di daftar hari sidang.",
+    added: [
+      "Tema ALETA menjadi satu untuk jendela popup ekstensi, panel SIPP, panel ABT, dan panel di portal ALETA. Menekan tombol tema di mana pun menggerakkan keempatnya - termasuk tema portal itu sendiri, yang diminta berganti lewat satu peristiwa DOM dan bukan lewat localStorage yang baru terbaca pada pemuatan berikutnya.",
+      "Tombol tema panel di halaman portal ALETA kembali. Dahulu ia dibuang supaya tidak ada dua saklar yang berselisih; sejak keduanya menjadi satu saklar, ia justru saklar kedua di ujung lorong yang sama.",
+      "Tombol Kembalikan posisi panel di popup menjangkau keempat panel - SIPP, ABT, putusan massal ABT, dan portal - dan membentangkan yang terciut, bukan hanya memindahkannya.",
+    ],
+    changed: [
+      "Tema jendela popup: pilihan ikut sistem menjadi ikut ALETA. Panel bawaannya gelap sementara Windows di meja petugas hampir selalu terang, sehingga jendela itu lahir putih menyilaukan di atas SIPP yang gelap.",
+      "Tombol × di panel ABT dan panel portal kini mematikan saklar induk ALETA, sama seperti di SIPP - sehingga kotak centang di popup ekstensi menjadi jalan pulangnya, dan judul tombolnya menyebutkan itu.",
+      "Daftar Hari sidang pada papan penetapan menampilkan tanggal yang dipilih dari kalender sebagai baris tambahan paling atas, bertanda asalnya.",
+    ],
+    fixed: [
+      "Daftar pilihan select2 di dalam tingkap sembul SIPP - borang Data Umum di antaranya - tampil putih menyilaukan pada tema gelap, dengan kotak carinya putih di atas putih. Diukur pada replika markup SIPP: badan tingkapnya sudah gelap sejak dulu, tetapi kotak dan daftar select2 terukur rgb(255,255,255) sebab select2 menyatakan putihnya lewat nama kelas, bukan lewat gaya sebaris yang selama ini diburu.",
+      "Jendela popup ekstensi tampil putih di atas panel yang gelap, sebab bawaannya mengikuti setelan Windows sementara panel bawaannya gelap. Lihat perubahan tema di atas.",
+      "Escape dan klik ganda di luar panel tidak menciutkan panel di SIPP maupun ABT. Di SIPP keduanya memang tidak pernah terpasang - panel itu menyusun kepalanya sendiri dan tidak melewati pintu yang memasangnya. Di kedua halaman, syarat lama juga hampir selalu menahan Escape: satu klik pada kolom borang mana pun membuat fokus tinggal di isian halaman.",
+      "Panel yang ditutup di ABT dan di portal ALETA tidak dapat dipanggil kembali tanpa memuat ulang halaman - dan memuat ulang halaman ABT membuang isian blangko yang belum tersimpan.",
+      "Tombol segarkan di kaki panel ABT menghapus panelnya untuk selamanya: ia membuang panel lalu memanggil pemasangnya, yang keluar pada baris pertama karena penanda terpasang masih menyala.",
+      "Alt+A di halaman ABT menyimpan keadaan lencananya ke kunci yang tidak pernah dibaca siapa pun, sehingga panel yang diciutkan dengan pintasan itu tidak pernah pulih dan tidak terjangkau tombol Kembalikan posisi panel.",
+    ],
+    security: [
+      "Peristiwa tema dari ekstensi hanya membawa satu kata, gelap atau terang. Portal mengabaikan yang lain, dan tidak mengerjakan apa pun atas suruhan siapa pun selain mengganti warna.",
+      "Peta select2 mengecualikan halaman ABT dengan tegas - SIPP dan ABT berbagi satu penanda tema, dan ABT memakai select2 miliknya sendiri dengan warna halamannya sendiri.",
+      "Escape tidak direbut dari tingkap halaman yang sedang terbuka: menutup tingkap itu tetap milik halamannya.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.155.0 - reload di chrome://extensions.",
+      "Pengisian otomatis Data Umum (butir 1 dari permintaan) BELUM dikerjakan: borangnya baru ada di dokumen sesudah tombol Data Umum ditekan, dan itu pekerjaan tersendiri.",
+    ],
+    knownLimitations: [
+      "Tema portal hanya ikut berganti pada portal 2.20.1 ke atas. Ekstensi yang menghadap portal lama tidak rusak - permintaannya sekadar tidak ditangkap siapa pun, dan panel tetap mengikuti tema portal seperti sebelumnya.",
+      "Peta gelap select2 disusun dari borang Data Umum. Pustaka pihak ketiga lain yang menyatakan putihnya lewat nama kelas - dan bukan lewat gaya sebaris - masih akan tampil terang sampai namanya disebut juga.",
+    ],
+  },
   {
     version: "2.20.0",
     title: "ALETA Judicia v2.20.0 - Keterangan Saksi yang Terisi dan Dapat Dipindahkan",

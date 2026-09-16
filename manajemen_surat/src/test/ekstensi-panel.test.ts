@@ -495,12 +495,23 @@ describe("Kerjakan paling atas, sisanya terlipat", () => {
 });
 
 describe("posisi panel dapat dikembalikan dari popup Chrome", () => {
-  it("popup menghapus hanya kunci posisinya", () => {
+  it("popup menghapus kunci posisi KEEMPAT panel, dan tidak lebih", () => {
     // Saklar, tema, dan lipatan menu tidak ikut terhapus: yang hilang dari
     // layar adalah letaknya, dan membuang pengaturan lain sekalian berarti
     // menghukum petugas atas kesalahan yang tidak ia perbuat.
+    //
+    // Dahulu hanya "posisiPanel" - kunci panel SIPP - sehingga panel ABT dan
+    // panel portal ALETA yang terciut lalu terseret ke tepi tidak dapat
+    // dikembalikan dari mana pun: tidak dari panelnya (tombolnya ikut
+    // menciut), tidak dari sini. 1.155.0 menjangkau keempatnya.
     const isi = popup();
-    expect(isi).toContain('.remove("posisiPanel")');
+    expect(isi).toContain(".remove(KUNCI_LETAK_PANEL)");
+    for (const kunci of ["posisiPanel", "posisiPanelAbt", "posisiPanelAbtMassal", "posisiPanelAleta"]) {
+      expect(isi, kunci).toContain(`"${kunci}"`);
+    }
+    // Tema dan saklar tetap aman.
+    expect(isi).not.toContain('.remove("temaPanel")');
+    expect(isi).not.toContain('.remove("aktif")');
   });
 
   it("skrip konten mendengarkan penghapusan itu", () => {

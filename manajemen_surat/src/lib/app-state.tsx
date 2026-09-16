@@ -1695,6 +1695,39 @@ export function PortalProvider({
     document.documentElement.classList.toggle("dark", state.theme === "dark");
   }, [isHydrated, state.theme]);
 
+  // ==========================================================================
+  // TEMA YANG DIMINTA EKSTENSI ALETA
+  // ==========================================================================
+  //
+  // Ekstensi peramban memakai satu tema untuk jendela popup-nya, panel di
+  // halaman SIPP, panel di halaman ABT, dan panel di portal ini. Portal punya
+  // temanya sendiri, dan selama keduanya tidak saling mengenal petugas melihat
+  // panel gelap di atas portal terang - atau sebaliknya - lalu menyimpulkan
+  // salah satunya rusak.
+  //
+  // Ekstensi tidak dapat menyetel tema portal dengan menulis localStorage:
+  // temanya dipegang keadaan React di sini, dan localStorage yang diubah dari
+  // luar baru terbaca pada pemuatan berikutnya. Karena itu ia MEMINTA, lewat
+  // satu peristiwa DOM, dan permintaan itu dilayani di sini seperti tekanan
+  // tombol tema biasa - tersimpan, dan berlaku seketika.
+  //
+  // Peristiwanya hanya membawa satu kata, "gelap" atau "terang". Tidak ada
+  // data, tidak ada wewenang, dan yang tidak dikenali diabaikan - halaman ini
+  // tidak mengerjakan apa pun atas suruhan siapa pun selain mengganti warna.
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const dengar = (peristiwa: Event) => {
+      const rinci = (peristiwa as CustomEvent<{ tema?: unknown }>).detail;
+      const tema = rinci && typeof rinci === "object" ? String(rinci.tema ?? "") : "";
+      if (tema !== "gelap" && tema !== "terang") return;
+      dispatch({ type: "set-theme", theme: tema === "gelap" ? "dark" : "light" });
+    };
+
+    window.addEventListener("aleta-ekstensi-tema", dengar);
+    return () => window.removeEventListener("aleta-ekstensi-tema", dengar);
+  }, [isHydrated]);
+
   return (
     <PortalContext.Provider
       value={{

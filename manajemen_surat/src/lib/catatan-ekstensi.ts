@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.155.0",
+    dirilis: "2026-09-16T16:00:00+08:00",
+    judul: "Satu tema, dan jalan pulang untuk panel yang disingkirkan",
+    butir: [
+      "SATU TEMA UNTUK SEMUANYA: jendela popup, panel SIPP, panel ABT, dan panel di portal ALETA. Tombol tema yang mana pun menggerakkan keempatnya - beserta tema portal itu sendiri. Pilihan \"ikut sistem\" pada popup menjadi \"ikut ALETA\": panel bawaannya gelap sementara Windows di meja hampir selalu terang, dan itulah jendela putih menyilaukan yang muncul di atas SIPP yang gelap.",
+      "DAFTAR PILIHAN SELECT2 DI TINGKAP SIPP IKUT GELAP. Diukur pada replika markup borang Data Umum dengan berkas gaya yang sekarang terpasang: badan tingkapnya sudah gelap, tetapi kotak dan daftar select2 masih rgb(255,255,255) - dan kotak carinya putih di atas putih. Sebabnya select2 menyatakan putihnya lewat NAMA KELAS, sedangkan pemburuan putih selama ini menyasar gaya sebaris. Baris yang sedang disorot dibuat hijau tua, supaya tombol panah tetap dapat dipakai.",
+      "ESCAPE DAN KLIK DUA KALI KEMBALI MENCIUTKAN di SIPP dan ABT. Di SIPP keduanya memang tidak pernah terpasang. Di kedua halaman, syarat lamanya juga hampir selalu menahan: satu klik pada kolom borang mana pun membuat fokus tinggal di isian halaman, dan isian yang berfokus membungkam Escape. Sekarang hanya isian DI DALAM panel yang membungkamnya - dan tingkap halaman yang sedang terbuka tetap memegang Escape-nya sendiri.",
+      "PANEL YANG DITUTUP DAPAT DIBUKA LAGI. × di ABT dan di portal ALETA kini mematikan saklar induk, sama seperti di SIPP, sehingga kotak centang di popup menjadi jalan pulangnya - seketika, tanpa memuat ulang halaman yang sedang dikerjakan. Tombol Kembalikan posisi panel menjangkau keempat panel dan membentangkan yang terciut. Dua cacat lama ikut tertutup: tombol segarkan di kaki panel ABT yang menghapus panelnya untuk selamanya, dan Alt+A di ABT yang menyimpan keadaan lencananya ke kunci yang tidak pernah dibaca siapa pun.",
+      "TANGGAL DARI KALENDER TAMPAK DI DAFTAR HARI SIDANG, sebagai baris tambahan paling atas dan bertanda asalnya. Sebelumnya daftar itu hanya memuat empat hari sidang majelis, sehingga tanggal pilihan sendiri tidak terlihat di sana - dan yang membacanya menyangka pilihannya tidak terpakai.",
+    ],
+  },
+  {
     versi: "1.154.0",
     dirilis: "2026-09-16T13:00:00+08:00",
     judul: "Keterangan saksi yang terisi, dan yang dapat dipindahkan",

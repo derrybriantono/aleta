@@ -2234,7 +2234,12 @@ function susunPanelAbt(jatiDiri) {
     // halaman di belakangnya tetap gelap - dan itulah sebabnya light mode
     // terbaca sebagai tidak berfungsi.
     temaHalaman: true,
-    saatTutup: () => panel.remove(),
+    // × berarti mematikan saklar ALETA, bukan sekadar membuang panel ini dari
+    // halaman. Panel yang hanya dibuang tidak dapat dipanggil kembali: berkas
+    // ini berjalan sekali, dan tidak ada yang membangunnya ulang sampai
+    // halamannya dimuat ulang. Saklarnya tergambar di popup ikon Chrome -
+    // satu tekanan di sana mengembalikannya, di sini dan di SIPP sekaligus.
+    saatTutup: () => tutupPanelAbt(),
   });
 
   const isi = buatElemen("div", "aleta-isi");
@@ -3154,7 +3159,11 @@ function susunPanelAbt(jatiDiri) {
   // barisnya juga yang mendorong ikon segarkan dan nomor seri ke kanan lewat
   // margin otomatisnya - tanpa baris ini keduanya berdiri di kiri.
   const PINTASAN_ABT = [
-    { tombol: "Alt+A", kunci: "a", nama: "ciutkan / bentangkan panel", jalankan: (p) => alatCiutkan(p, PENANDA_ABT) },
+    // Kuncinya kunci POSISI, bukan id panelnya. Menciut lewat Alt+A dahulu
+    // menyimpan keadaannya ke kunci "aleta-panel-abt" - tempat yang tidak
+    // pernah dibaca siapa pun - sehingga lencananya tidak pernah pulih, dan
+    // tombol "Kembalikan posisi panel" di popup tidak menjangkaunya.
+    { tombol: "Alt+A", kunci: "a", nama: "ciutkan / bentangkan panel", jalankan: (p) => alatCiutkan(p, KUNCI_POSISI_ABT) },
     {
       tombol: "Alt+P",
       kunci: "p",
@@ -3208,8 +3217,20 @@ function susunPanelAbt(jatiDiri) {
   segar.addEventListener("click", () => {
     segar.disabled = true;
     segar.classList.add("aleta-kaki-segar-jalan");
-    const lama = document.getElementById(PENANDA_ABT);
-    if (lama) lama.remove();
+    // ======================================================================
+    // MEMBUANG PANELNYA SAJA MEMBUAT TOMBOL INI MENGHAPUS PANEL SELAMANYA
+    // ======================================================================
+    //
+    // Dahulu baris di sini hanya membuang panel lalu memanggil pasang().
+    // Tetapi pasang() keluar pada baris pertamanya selama sudahDipasang masih
+    // menyala - dan ia menyala sejak panel pertama dibangun. Hasilnya: panel
+    // hilang, tidak ada yang menggantikannya, dan satu-satunya jalan kembali
+    // adalah memuat ulang halaman ABT - yang membuang isian blangko yang
+    // belum tersimpan.
+    //
+    // buangPanelAbt melakukan keduanya sekaligus: membuang panelnya DAN
+    // memadamkan penandanya, sehingga pasang() benar-benar membangun ulang.
+    buangPanelAbt();
     void pasang();
   });
   barisKaki.appendChild(segar);
@@ -3993,11 +4014,68 @@ async function pasang() {
   if (!jatiDiri) return;
 
   sudahDipasang = true;
-  await muatSaklarCetak();
+  // Saklar cetak dibaca SEKALI seumur halaman: ia memasang pendengar
+  // chrome.storage sendiri, dan memanggilnya lagi saat panel dibangun ulang
+  // berarti dua pendengar yang mengerjakan hal yang sama pada tiap perubahan.
+  if (!saklarCetakDibaca) {
+    saklarCetakDibaca = true;
+    await muatSaklarCetak();
+  }
   pasangSunting(jatiDiri);
   const panel = susunPanelAbt(jatiDiri);
   document.body.appendChild(panel);
   pasangPenjagaCetak(jatiDiri, panel.lapor);
+}
+
+let saklarCetakDibaca = false;
+
+/**
+ * ============================================================================
+ * MENUTUP PANEL BERARTI MEMATIKAN SAKLARNYA - SUPAYA ADA JALAN PULANG
+ * ============================================================================
+ *
+ * Sama persis dengan panel SIPP dan panel portal ALETA. Yang membedakan
+ * halaman ini dahulu: × hanya membuang panelnya, dan pasang() tidak pernah
+ * dipanggil lagi - sudahDipasang tetap menyala sampai halamannya dimuat
+ * ulang. Panel yang ditutup karena menghalangi satu borang karena itu hilang
+ * sampai petugas menekan F5, dan kehilangan borang yang sedang diisinya.
+ */
+function tutupPanelAbt() {
+  try {
+    void chrome.storage.local.set({ aktif: false });
+  } catch {
+    /* penyimpanan tidak tersedia: panel tetap ditutup untuk halaman ini */
+  }
+  buangPanelAbt();
+}
+
+/**
+ * Membuang kedua panel ABT - panel blangko dan panel putusan massal di
+ * halaman depan - beserta penandanya, sehingga keduanya benar-benar dapat
+ * dibangun ulang. Penanda yang tertinggal menyala membuat pasang() keluar
+ * pada baris pertamanya, dan panelnya tidak pernah kembali.
+ */
+function buangPanelAbt() {
+  for (const panel of Array.from(document.querySelectorAll(".aleta-panel-abt"))) {
+    panel.remove();
+  }
+  sudahDipasang = false;
+  sudahDipasangMassalAbt = false;
+}
+
+// Saklar dari popup ikon Chrome berlaku seketika di halaman ABT juga.
+try {
+  chrome.storage.onChanged.addListener((ubah, tempat) => {
+    if (tempat !== "local" || !ubah.aktif) return;
+    if (ubah.aktif.newValue === false) {
+      buangPanelAbt();
+      return;
+    }
+    void pasang();
+    void pasangMassalAbt();
+  });
+} catch {
+  /* di luar konteks ekstensi */
 }
 
 // Halaman ABT tahu alamat portalnya sendiri - dan petugas yang seharian di
@@ -4202,7 +4280,14 @@ async function susunPanelMassalAbt() {
     kunciTema: KUNCI_TEMA_PANEL,
     temaHalaman: true,
     peran: penggunaAletaAbt && penggunaAletaAbt.peran,
-    saatTutup: () => panel.remove(),
+    // Panel halaman depan ABT. × di sini cukup membuangnya untuk kunjungan
+    // ini - tanpa menyentuh saklar induk yang mengatur ketiga halaman -
+    // sebab ia lahir kembali sendiri begitu halaman depan ABT dibuka lagi.
+    judulTutup: "Tutup panel putusan massal - muncul lagi saat halaman depan ABT dibuka",
+    saatTutup: () => {
+      panel.remove();
+      sudahDipasangMassalAbt = false;
+    },
   });
 
   const isi = buatElemen("div", "aleta-isi");

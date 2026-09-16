@@ -2543,6 +2543,80 @@ html[data-aleta-tema-sipp="gelap"] :is(.centering, .templatepopcentering) :is(.p
   border-color: var(--s-garis-hijau) !important;
 }
 
+/* ==========================================================================
+   TINGKAP SEMBUL SIPP - YANG SUDAH GELAP, DAN SATU YANG BELUM
+   ==========================================================================
+
+   popup_form() milik SIPP (resources/js/jquery-sipp.js) tidak membuka bingkai
+   terpisah: ia menempelkan <div class="popup"><div id="form_pop"></div></div>
+   ke body lalu memuat borangnya ke situ lewat AJAX. Seluruh borang itu karena
+   itu ada di dokumen yang sama, dan peta warna di atas menjangkaunya.
+
+   BADAN TINGKAPNYA SUDAH GELAP - DIUKUR, BUKAN DIDUGA
+
+   Dugaan pertama: putihnya datang dari gaya sebaris di dalam borang, yang
+   memang bertebaran di sana -
+
+     <div class="detil" style="padding:2px;background-color: white;">
+     <form id="frm_data_umum" style="background:white;...">
+
+   Dugaan itu SALAH, dan salahnya terbukti dengan mengukur. Replika markup
+   edit_data_umum.php dijalankan di peramban dengan panel.css yang SUDAH
+   terpasang, lalu warna terhitungnya dibaca: .detil rgb(19,28,24), form
+   rgb(19,28,24), judul rgb(20,60,41). Gelap seluruhnya. Yang mengerjakannya
+   blok gelombang ketiga jauh di bawah berkas ini - yang menyasar putih tak
+   bernama kelas; ia membaca [style*="background:white"] dan saudaranya.
+
+   Menambahkan aturan permukaan di sini karena itu hanya akan melahirkan
+   aturan yang mengulang aturan lain - dan pada berkas gaya sepanjang ini,
+   aturan yang mengulang adalah aturan yang kelak berselisih.
+
+   YANG SUNGGUH MASIH PUTIH: DAFTAR PILIHAN SELECT2
+
+   Borang Data Umum memuat select2 sendiri (edit_data_umum.php baris 2), dan
+   select2.min.css menyatakan putihnya lewat KELAS, bukan gaya sebaris -
+   pada .select2-dropdown ia menulis background-color putih dan garis #eee.
+
+   Gelombang ketiga tidak menjangkau bentuk itu - ia hanya membaca atribut
+   style - dan nama kelas select2 tidak pernah didaftarkan di mana pun pada
+   berkas ini (terhitung nol kemunculan sebelum blok ini). Daftarnya pun
+   digambar di BODY, di luar tingkapnya, jadi melingkupinya ke dalam tingkap
+   tidak akan pernah kena.
+
+   Halaman ABT dikecualikan dengan tegas: keduanya berbagi satu penanda tema,
+   dan ABT memakai select2 miliknya sendiri dengan warna halamannya sendiri. */
+html[data-aleta-tema-sipp="gelap"]:not([data-aleta-halaman="abt"]) :is(
+  .select2-dropdown,
+  .select2-search__field,
+  .select2-results__option,
+  .select2-container--default .select2-selection--single,
+  .select2-container--default .select2-selection--multiple
+) {
+  background-color: var(--s-permukaan-2) !important;
+  color: var(--s-tulisan) !important;
+  border-color: var(--s-garis) !important;
+}
+
+html[data-aleta-tema-sipp="gelap"]:not([data-aleta-halaman="abt"]) .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--s-tulisan) !important;
+}
+
+/* Baris yang sedang disorot - aslinya biru #5897fb dengan tulisan putih.
+   Dijadikan hijau tua SIPP: pada tema ini birunya berdiri sendirian, satu-
+   satunya warna yang tidak berasal dari paletnya.
+
+   DUA KELAS DISEBUT SEKALIGUS, dan itu bukan gaya penulisan melainkan
+   keharusan. Bentuk sebelumnya - satu kelas --highlighted saja - kalah
+   bobotnya oleh aturan .select2-results__option di atasnya, sehingga baris
+   yang sedang disorot digambar persis sama dengan baris biasa. Diukur:
+   sorot dan baris biasa keduanya rgb(23,33,28). Daftar pilihan yang tidak
+   menunjukkan baris mana yang sedang disorot membuat tombol panah tidak
+   dapat dipakai sama sekali. */
+html[data-aleta-tema-sipp="gelap"]:not([data-aleta-halaman="abt"]) .select2-results__options .select2-results__option.select2-results__option--highlighted {
+  background-color: var(--s-hijau-tua) !important;
+  color: var(--s-tulisan-atas) !important;
+}
+
 /* --- Pranala umum, di luar panel ALETA ----------------------------------- */
 html[data-aleta-tema-sipp="gelap"] :is(#konten, #atas, #footer, .modal-content) a {
   color: var(--s-hijau-terang) !important;

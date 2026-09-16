@@ -1,4 +1,18 @@
 <!doctype html>
+<!--
+  data-tema="gelap" dipasang PADA MARKUPNYA, bukan menunggu popup.js.
+
+  Tema tersimpan hanya dapat dibaca lewat chrome.storage yang asinkron - janji
+  yang paling cepat pun selesai sesudah gambar pertama. Tanpa penanda di sini,
+  jendela ini lahir PUTIH lalu berubah gelap sepersekian detik kemudian, tepat
+  di depan mata, tiap kali ikon ekstensi ditekan.
+
+  Bawaannya gelap sebab bawaan panel gelap - keduanya satu tema sekarang.
+  Yang memilih terang mendapat penandanya diganti popup.js, dan kelebatnya ke
+  arah sebaliknya: dari gelap ke terang, satu kali, pada jendela yang memang
+  ia setel terang.
+-->
+<html lang="id" data-tema="gelap">
 <meta charset="utf-8">
 <title>ALETA E-Court</title>
 <style>
@@ -297,11 +311,14 @@
   <div>
     <p class="judul">ALETA E-COURT</p>
   </div>
-  <!-- Satu tombol, tiga keadaan, berputar: ikut sistem -> terang -> gelap.
+  <!-- Satu tombol, tiga keadaan, berputar: ikut ALETA -> terang -> gelap.
        Tiga tombol untuk tiga keadaan memakan separuh kepala jendela sekecil
-       ini, dan yang dipilih hanya satu. -->
-  <button type="button" id="tombolTema" class="tombol-tema" title="Ganti tema jendela ini">
-    tema: ikut sistem
+       ini, dan yang dipilih hanya satu.
+
+       "ikut ALETA", bukan lagi "ikut sistem": temanya satu untuk jendela ini,
+       panel SIPP, panel ABT, dan panel portal ALETA. Lihat popup.js. -->
+  <button type="button" id="tombolTema" class="tombol-tema" title="Tema ALETA - jendela ini dan panel di SIPP, ABT, serta portal sekaligus">
+    tema: ikut ALETA
   </button>
 </div>
 
@@ -356,10 +373,13 @@
   <label class="saklar">
     <input type="checkbox" id="aktif" checked>
     <span>
-      <span class="saklar-nama">Nyalakan ALETA di SIPP</span>
+      <span class="saklar-nama">Nyalakan ALETA di SIPP, ABT, dan portal</span>
       <span class="saklar-ket">
         Saklar induk. Panel melayang di sisi kanan halaman perkara.
         Bila dimatikan, panel maupun sisipan tidak muncul sama sekali.
+        Menekan × di kepala panel mematikan saklar ini - dan mencentangnya
+        lagi di sini mengembalikan panel di ketiga halaman, seketika, tanpa
+        memuat ulang.
       </span>
     </span>
   </label>
@@ -459,7 +479,7 @@
   <button type="button" id="resetPosisi" class="tombol-reset">
     Kembalikan posisi panel
   </button>
-  <p class="saklar-ket">Dipakai bila panel tergeser keluar layar. Berlaku seketika.</p>
+  <p class="saklar-ket">Panel yang tergeser keluar layar atau terciut. Ketiga halaman, seketika.</p>
   <p class="saklar-ket" id="kabarReset" hidden></p>
 </div>
 
