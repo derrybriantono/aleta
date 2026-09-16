@@ -2659,6 +2659,17 @@ export async function getGatewayPenunjukanUsulan(payload: {
     susunanSk?: Record<string, unknown>[];
     /** Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan. */
     pilihanMajelis?: number[];
+    /**
+     * Perkara di antrean massal yang dianggap sudah tertulis - lihat
+     * @/lib/andaian-penunjukan. Paling banyak 25.
+     */
+    andaian?: Array<{
+      perkaraId: number;
+      hakimId: number[];
+      paniteraId: number;
+      jurusitaId: number;
+      tanggalSidang: string;
+    }>;
   };
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penunjukan/usulan", {

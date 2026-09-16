@@ -103,6 +103,8 @@ const DAFTAR_TABEL = new Set([
  * akan keliru pada laporan yang justru dibuat untuk menghitung selisih itu.
  */
 const SMART_MAJELIS_DI_LUAR_REKOMENDASI = 2;
+/** Susunan yang ditetapkan SAMA dengan rekomendasi - hakim_id2 dan keterangan kosong. */
+const SMART_MAJELIS_SESUAI_REKOMENDASI = "1";
 
 /**
  * ============================================================================
@@ -426,6 +428,17 @@ const JAM_MULAI_PALING_AWAL = 8 * 60;
 const LEBAR_JENDELA_MULAI = 360;
 const JEDA_MINIMUM = 1;
 const JEDA_MAKSIMUM = 10;
+/**
+ * Sebaran mundur terjauh, dalam detik, bagi rangkaian yang harus digeser
+ * karena ujungnya melampaui jam peladen - lihat waktuLangkah.
+ *
+ * Sebelum ada sebaran ini, tiap rangkaian yang digeser dipatok ujungnya TEPAT
+ * pada menit peladen. Diukur atas sepuluh perkara pada jam peladen 09:00:
+ * delapan PHS jatuh pada menit 09:00 yang sama. Untuk satu perkara itu tidak
+ * terlihat; untuk penetapan massal dua puluh perkara pada pagi hari, dua puluh
+ * PHS pada menit yang sama oleh akun yang sama adalah pola mesin.
+ */
+const SEBARAN_GESER_MAKSIMUM = 120 * 60;
 
 /** Benih tetap dari satu bilangan - sama tiap kali dihitung. */
 function benihDari(angka) {
@@ -496,61 +509,112 @@ async function waktuBongkar(perkaraId) {
   return hasil;
 }
 
+/**
+ * Detik di dalam menit untuk jeda ke-i - 0..59.
+ *
+ * Dari benih yang sama dengan jedaLangkah, tetapi dibagi pada pangkat yang
+ * berbeda (61, bukan 11) supaya detik dan menitnya tidak seiring: dua perkara
+ * yang kebetulan berjeda menit sama tidak lalu berjeda detik sama pula.
+ */
+function detikJeda(benih, i) {
+  return (Math.floor(benih / Math.pow(61, i + 1)) + i * 17 + 5) % 60;
+}
+
+/**
+ * Keempat jam satu perkara dalam DETIK sejak tengah malam, sebelum geseran:
+ * [pmh, ppp, pjs, phs]. Titik mulainya di jendela 08:00-14:00 dengan detik
+ * dari benihnya sendiri; tiap langkah berikutnya berjarak
+ * jedaLangkah menit + detikJeda detik dari langkah sebelumnya.
+ */
+function rangkaianDetik(benih) {
+  const mulai =
+    (JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI)) * 60 +
+    (Math.floor(benih / LEBAR_JENDELA_MULAI) % 60);
+  const detik = [mulai];
+  for (let i = 0; i < 3; i += 1) {
+    detik.push(detik[i] + jedaLangkah(benih, i) * 60 + detikJeda(benih, i));
+  }
+  return detik;
+}
+
+/**
+ * ============================================================================
+ * DIHITUNG DALAM DETIK, BUKAN MENIT - DAN INILAH SEBABNYA
+ * ============================================================================
+ *
+ * Bentuk sebelumnya menghitung MENIT tiap langkah, lalu menempelkan detik yang
+ * diacak terpisah. "Berjeda 1 sampai 10 menit" karena itu hanya benar pada
+ * angka menitnya: PPP 12:13:34 disusul PJS 12:14:08 berjeda satu menit di
+ * layar dan 34 detik pada kenyataannya. Diukur atas sepuluh perkara, tiga di
+ * antaranya berjeda nyata di bawah semenit (20, 27, dan 34 detik). Bukti
+ * lamanya membandingkan menit, sehingga hijau.
+ *
+ * Kini seluruhnya detik: jeda tiap langkah = jedaLangkah menit + detikJeda
+ * detik, sehingga selisih nyatanya SELALU 60 sampai 659 detik dan detiknya
+ * ikut menaik menurut langkahnya. Yang dijaga tetap sama: PMH paling awal,
+ * PHS paling akhir, tanggalnya tanggal penetapan.
+ *
+ * ============================================================================
+ * TIDAK MELAMPAUI JAM PELADEN - SAMPAI KE DETIKNYA
+ * ============================================================================
+ *
+ * Geseran lama pun bekerja pada menit: PHS dipatok pada MENIT peladen dan
+ * detiknya dibiarkan bebas, sehingga pada jam peladen 09:00:00 PHS dapat
+ * tercatat 09:00:21 - dua puluh satu detik sebelum terjadi. Kini yang
+ * dibandingkan detik penuh.
+ *
+ * ============================================================================
+ * GESERAN YANG DISEBAR PER PERKARA - MONOTON WALAU EMPAT PANGGILAN TERPISAH
+ * ============================================================================
+ *
+ * Keempat langkah dihitung pada EMPAT panggilan HTTP yang berbeda, beberapa
+ * detik berselang, masing-masing dengan jam peladennya sendiri. Rumus geseran
+ * karena itu harus MONOTON terhadap jam peladen: panggilan yang lebih
+ * belakangan tidak boleh menghasilkan jam yang lebih awal, atau PPP jatuh
+ * sebelum PMH. Sebaran acak dari modulus yang bergantung pada jam peladen
+ * melanggar itu - moduli yang berubah sedetik mengubah hasilnya sembarang.
+ *
+ * Rumus yang dipakai: mundur = f * min(S, ruang), dengan f pecahan tetap per
+ * perkara (0..1), S sebaran terjauh, dan ruang = jam peladen - 08:00 - panjang
+ * rangkaian (supaya PMH tidak jatuh sebelum jam kerja). Turunannya terhadap
+ * jam peladen tidak pernah di bawah 1 - f > 0, jadi ia monoton; dan karena
+ * mundur tidak pernah negatif, tidak satu pun jam melampaui peladen.
+ *
+ * @returns {string} "YYYY-MM-DD HH:mm:ss"
+ */
 function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer }) {
   const urutan = URUTAN_LANGKAH_WAKTU[jenis];
   // Data Umum bukan penetapan dan tidak ikut dalam rangkaian ini.
   if (urutan === undefined || !tanggalSah(tanggalPenetapan)) return saatServer;
 
   const benih = benihDari(perkaraId);
-
-  // Titik mulai dan jeda tiap langkah - keduanya tetap bagi satu perkara.
-  let menit = JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI);
-  for (let i = 0; i < urutan; i += 1) menit += jedaLangkah(benih, i);
-  // Detiknya punya benih SENDIRI, yang ikut memuat urutan langkahnya.
-  //
-  // Dua kali salah sebelum bentuk ini. Mula-mula detiknya diambil dari sisa
-  // bagi yang sama dengan menitnya, sehingga dua perkara yang menitnya
-  // kebetulan sama selalu identik sampai ke detik. Lalu diambil dari bagian
-  // lain benihnya - benar antar perkara, tetapi TETAP bagi keempat langkah
-  // satu perkara: dibaca di layar Audit Trail, PMH, PPP, PJS, dan PHS
-  // seluruhnya berakhiran detik yang sama persis. Terbaca di basis data pada
-  // 12 September 2026: 11:53:41, 11:57:41, 12:07:41, 12:09:41.
-  //
-  // Empat keputusan yang ditulis manusia pada empat waktu yang berbeda tidak
-  // mungkin sedetik pun sama, jadi urutan langkahnya ikut menentukan detiknya.
-  //
-  // Bagian pertamanya - benih dibagi lebar jendela - yang memisahkan satu
-  // perkara dari perkara lain; itu yang membuat 3.000 perkara pada tanggal
-  // yang sama tidak ada satu pun yang jam mulainya kembar. Dua bagian
-  // berikutnya yang memisahkan langkah satu dari langkah lain di dalam satu
-  // perkara.
-  //
-  // Benih baru dari perkaraId dan urutan SUDAH DICOBA dan justru merusak yang
-  // pertama: nomor perkara yang beruntun membuat benihnya melangkah dengan
-  // kelipatan empat, sehingga sisa bagi 60-nya hanya pernah jatuh pada 15
-  // nilai - dan 862 dari 3.000 perkara kembali kembar jam mulainya.
-  const detik = (Math.floor(benih / LEBAR_JENDELA_MULAI) + jedaLangkah(benih, urutan) * 7 + urutan * 13) % 60;
-
-  // Seluruh rangkaian digeser mundur bila ujungnya akan melampaui jam
-  // sekarang. Yang dihitung ujungnya - PHS - supaya urutannya tetap utuh.
-  let menitAkhir = JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI);
-  for (let i = 0; i < 3; i += 1) menitAkhir += jedaLangkah(benih, i);
+  const rangkaian = rangkaianDetik(benih);
+  let detik = rangkaian[urutan];
 
   const cocokServer = /^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(saatServer || ""));
   if (cocokServer && cocokServer[1] === tanggalPenetapan) {
-    const menitServer = Number(cocokServer[2]) * 60 + Number(cocokServer[3]);
-    if (menitAkhir > menitServer) {
-      const geser = menitAkhir - menitServer;
-      menit -= geser;
-      // Tidak pernah mundur melewati tengah malam. Pada jam yang sangat pagi
-      // rangkaiannya dirapatkan ke awal hari, bukan dilempar ke hari sebelumnya.
-      if (menit < 0) menit = Math.max(0, urutan);
+    const detikServer =
+      Number(cocokServer[2]) * 3600 + Number(cocokServer[3]) * 60 + Number(cocokServer[4]);
+    const akhir = rangkaian[3];
+    if (akhir > detikServer) {
+      const panjang = akhir - rangkaian[0];
+      const ruang = detikServer - JAM_MULAI_PALING_AWAL * 60 - panjang;
+      // Pecahan tetap per perkara, dari benih yang berbeda dari benih jam
+      // mulainya - supaya perkara yang jam mulainya berdekatan tidak ikut
+      // berdekatan sebarannya.
+      const pecahan = (benihDari(Number(perkaraId) * 7 + 3) % 1000) / 1000;
+      const mundur = Math.floor(pecahan * Math.min(SEBARAN_GESER_MAKSIMUM, Math.max(0, ruang)));
+      detik = detikServer - mundur - (akhir - rangkaian[urutan]);
+      // Dini hari yang mustahil: rapatkan ke awal hari, jangan ke hari
+      // sebelumnya, dan jaga urutannya.
+      if (detik < 0) detik = rangkaian[urutan] - rangkaian[0];
     }
   }
 
-  const jam = Math.floor(menit / 60);
-  const sisa = menit % 60;
-  return `${tanggalPenetapan} ${duaAngkaWaktu(jam)}:${duaAngkaWaktu(sisa)}:${duaAngkaWaktu(detik)}`;
+  const jam = Math.floor(detik / 3600) % 24;
+  const menit = Math.floor((detik % 3600) / 60);
+  const sisa = detik % 60;
+  return `${tanggalPenetapan} ${duaAngkaWaktu(jam)}:${duaAngkaWaktu(menit)}:${duaAngkaWaktu(sisa)}`;
 }
 
 /**
@@ -606,6 +670,11 @@ function barisAudit({
   kunciDariLangkah,
   ip,
   saat,
+  // Nama halaman pada JUDUL bila berbeda dari nama formulirnya. SIPP memakai
+  // ini pada baris perkara_hakim_pn: kolom formname tetap "TAMBAH PENETAPAN
+  // HAKIM/MAJELIS HAKIM", judulnya "dari halaman <b> Smart Majelis TAMBAH
+  // PENETAPAN HAKIM/MAJELIS HAKIM</b>" - dengan spasi di depan kata Smart.
+  judulHalaman,
 }) {
   // Kunci utamanya diambil dari nilai yang ditulis bila tidak disebut - tiap
   // baris pada berkas ini selalu membawa perkara_id.
@@ -642,7 +711,7 @@ function barisAudit({
       tabel,
       formulir,
       aksi,
-      `${aksi} table <b>${tabel}</b> dari halaman <b>${formulir}</b>${kunci}`,
+      `${aksi} table <b>${tabel}</b> dari halaman <b>${judulHalaman || formulir}</b>${kunci}`,
       // ======================================================================
       // TIDAK ADA SATU KATA PUN TENTANG ALETA DI SINI
       // ======================================================================
@@ -663,6 +732,82 @@ function barisAudit({
   };
 }
 
+/**
+ * ============================================================================
+ * KOMPETENSI MAJELIS MENURUT JENIS PERKARA - DIUKUR DARI TANGAN MANUSIA
+ * ============================================================================
+ *
+ * ref_majelis_tetap memuat susunan yang SAMA berkali-kali dengan majelis_id
+ * yang berbeda: trio 33,28,31 punya id 39 (kompetensi 22 Perdata Agama), 40
+ * (27 Permohonan), dan 46 (13 Ekonomi Syariah). Yang membedakan kompetensinya,
+ * dan SIPP memilih menurut jenis perkaranya.
+ *
+ * Petanya diturunkan dari 437 baris perkara_smartmajelis berstatus 1 yang
+ * ditulis petugas PA Donggala sesudah SK Juni 2026:
+ *
+ *   Cerai Gugat, Cerai Talak, Harta Bersama  -> 22 Perdata Agama
+ *   Istbat, Perwalian, P3HP, Asal Usul Anak  -> 27 Permohonan (nomor Pdt.P)
+ *   Kewarisan                                -> 11 Waris
+ *   Ekonomi Syariah                          -> 13 Ekonomi Syariah
+ *   Dispensasi Kawin                         -> 14 Dispensasi Kawin
+ *
+ * Yang tidak terpetakan jatuh ke Perdata Agama bagi Pdt.G dan Permohonan
+ * bagi Pdt.P - dua kelompok terbesar.
+ */
+const KOMPETENSI_MENURUT_JENIS = { 362: 14, 364: 11, 370: 13 };
+const KOMPETENSI_PERDATA_AGAMA = 22;
+const KOMPETENSI_PERMOHONAN = 27;
+
+function kompetensiMenurutPerkara(nomorPerkara, jenisPerkaraId) {
+  const jenis = Number(jenisPerkaraId) || 0;
+  if (KOMPETENSI_MENURUT_JENIS[jenis]) return KOMPETENSI_MENURUT_JENIS[jenis];
+  return /\/Pdt\.P\//i.test(String(nomorPerkara || "")) ? KOMPETENSI_PERMOHONAN : KOMPETENSI_PERDATA_AGAMA;
+}
+
+/**
+ * Susunan majelis tetap SIPP yang anggotanya persis hakim yang ditetapkan,
+ * pada kompetensi yang sesuai jenis perkaranya - atau null.
+ *
+ * Kolom aktif pada ref_majelis_tetap berisi '1', bukan 'Y' seperti tabel SIPP
+ * lainnya; menyaring 'Y' saja memulangkan nol baris, dan itulah yang membuat
+ * susunanMajelisTetap() di penunjukanService selama ini menjawab "kosong"
+ * pada satker yang 22 majelisnya aktif.
+ *
+ * Bila lebih dari satu yang cocok: SK terbaru, lalu id terkecil. Bila tidak
+ * ada yang cocok, pemanggil kembali ke bentuk "di luar rekomendasi" - lebih
+ * baik menyebut susunan menyimpang daripada menuliskan majelis_id yang keliru.
+ */
+async function majelisTetapUntuk(hakimId, nomorPerkara, jenisPerkaraId) {
+  const ingin = [...new Set((hakimId || []).map((x) => Number(x)).filter((x) => x > 0))];
+  if (ingin.length === 0) return null;
+  if (!(await sippSkemaService.tabelAda("ref_majelis_tetap"))) return null;
+
+  const rows = await runQuery(
+    `SELECT rmt.majelis_id AS majelisId, rmt.kompetensi_id AS kompetensiId,
+            rmt.sk_majelis_tetap_id AS skId,
+            GROUP_CONCAT(rmt.hakim_id ORDER BY rmt.urutan ASC SEPARATOR ',') AS hakim
+       FROM ref_majelis_tetap rmt
+      WHERE rmt.aktif IN ('1', 'Y')
+      GROUP BY rmt.majelis_id, rmt.kompetensi_id, rmt.sk_majelis_tetap_id`
+  ).catch(() => []);
+
+  const kompetensi = kompetensiMenurutPerkara(nomorPerkara, jenisPerkaraId);
+  const cocok = (Array.isArray(rows) ? rows : [])
+    .map((r) => ({
+      majelisId: Number(r.majelisId) || 0,
+      kompetensiId: Number(r.kompetensiId) || 0,
+      skId: Number(r.skId) || 0,
+      hakim: String(r.hakim || "")
+        .split(",")
+        .map((x) => Number(x.trim()))
+        .filter((x) => x > 0),
+    }))
+    .filter((r) => r.majelisId > 0 && r.hakim.length === ingin.length && ingin.every((id) => r.hakim.includes(id)))
+    .filter((r) => r.kompetensiId === kompetensi)
+    .sort((a, b) => b.skId - a.skId || a.majelisId - b.majelisId);
+  return cocok[0] || null;
+}
+
 /** Perkara beserta keadaan penetapannya - dibaca sebelum apa pun ditulis. */
 async function keadaanPerkara(perkaraId) {
   const id = Number(perkaraId);
@@ -670,6 +815,7 @@ async function keadaanPerkara(perkaraId) {
 
   const baris = await runQuery(
     `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
+            p.jenis_perkara_id AS jenisPerkaraId,
             pen.perkara_id AS adaPenetapan,
             pen.penetapan_majelis_hakim AS pmh,
             pen.penetapan_panitera_pengganti AS ppp,
@@ -1140,32 +1286,72 @@ async function susunRencanaTulis(minta) {
     // adalah alasan majelisnya menyimpang dari rekomendasi - dan alasan yang
     // sesungguhnya memang giliran serta beban perkara, bukan alat yang
     // dipakai mengetiknya.
-    const sebabMajelis =
-      cleanText(minta.sebabMajelis) ||
-      "Ditetapkan menurut giliran majelis dan pemerataan beban perkara";
-    const nilaiSmart = {
-      perkara_id: perkara.perkaraId,
-      hakim_id2: idGabung,
-      status: SMART_MAJELIS_DI_LUAR_REKOMENDASI,
-      tanggal: saat,
-      keterangan: sebabMajelis.slice(0, 1000),
-    };
-    langkah.push({
-      tabel: "perkara_smartmajelis",
-      aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
-      sql: perkara.adaSmartMajelis
-        ? `UPDATE perkara_smartmajelis SET hakim_id2 = ?, status = ?, tanggal = ?, keterangan = ?
-           WHERE perkara_id = ?`
-        : `INSERT INTO perkara_smartmajelis (perkara_id, hakim_id2, status, tanggal, keterangan)
-           VALUES (?,?,?,?,?)`,
-      params: perkara.adaSmartMajelis
-        ? [idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan, perkara.perkaraId]
-        : [perkara.perkaraId, idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan],
-      keterangan: `smart majelis: ${sebabMajelis}`,
-    });
+    // ======================================================================
+    // SESUAI REKOMENDASI (STATUS 1) BILA SUSUNANNYA MAJELIS SK
+    // ======================================================================
+    //
+    // Diukur pada 1.112 perkara PA Donggala tahun 2026 yang ditetapkan
+    // tangan: 782 memakai tombol Smart Majelis, dan yang susunannya diterima
+    // apa adanya berbaris status 1 - majelis_id menunjuk ref_majelis_tetap,
+    // hakim_id berisi susunan itu, hakim_id2 dan keterangan kosong. Sejak
+    // ALETA memilih majelis dari SK Ketua, susunan yang ditetapkannya adalah
+    // susunan yang sama dengan ref_majelis_tetap; menulisnya sebagai "di
+    // luar rekomendasi" membuat laporan Smart Majelis menghitung tiap perkara
+    // ALETA sebagai penyimpangan yang tidak pernah terjadi.
+    //
+    // Yang tidak ada di ref - hakim tunggal di luar dispensasi kawin, atau
+    // susunan darurat - tetap ditulis sebagai status 2 beserta sebabnya,
+    // seperti dahulu.
+    const majelisTetap = await majelisTetapUntuk(
+      hakim.map((x) => x.hakimId),
+      perkara.nomorPerkara,
+      perkara.jenisPerkaraId
+    );
+    if (majelisTetap) {
+      const idMenurutRef = majelisTetap.hakim.join(",");
+      langkah.push({
+        tabel: "perkara_smartmajelis",
+        aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
+        sql: perkara.adaSmartMajelis
+          ? `UPDATE perkara_smartmajelis SET majelis_id = ?, hakim_id = ?, hakim_id2 = NULL, status = ?,
+                    tanggal = ?, keterangan = NULL
+             WHERE perkara_id = ?`
+          : `INSERT INTO perkara_smartmajelis (perkara_id, majelis_id, hakim_id, hakim_id2, status, tanggal, keterangan)
+             VALUES (?,?,?,NULL,?,?,NULL)`,
+        params: perkara.adaSmartMajelis
+          ? [majelisTetap.majelisId, idMenurutRef, SMART_MAJELIS_SESUAI_REKOMENDASI, saat, perkara.perkaraId]
+          : [perkara.perkaraId, majelisTetap.majelisId, idMenurutRef, SMART_MAJELIS_SESUAI_REKOMENDASI, saat],
+        keterangan: `smart majelis: sesuai majelis tetap ${majelisTetap.majelisId}`,
+      });
+    } else {
+      const sebabMajelis =
+        cleanText(minta.sebabMajelis) ||
+        "Ditetapkan menurut giliran majelis dan pemerataan beban perkara";
+      const nilaiSmart = {
+        perkara_id: perkara.perkaraId,
+        hakim_id2: idGabung,
+        status: SMART_MAJELIS_DI_LUAR_REKOMENDASI,
+        tanggal: saat,
+        keterangan: sebabMajelis.slice(0, 1000),
+      };
+      langkah.push({
+        tabel: "perkara_smartmajelis",
+        aksi: perkara.adaSmartMajelis ? "UPDATE" : "INSERT",
+        sql: perkara.adaSmartMajelis
+          ? `UPDATE perkara_smartmajelis SET hakim_id2 = ?, status = ?, tanggal = ?, keterangan = ?
+             WHERE perkara_id = ?`
+          : `INSERT INTO perkara_smartmajelis (perkara_id, hakim_id2, status, tanggal, keterangan)
+             VALUES (?,?,?,?,?)`,
+        params: perkara.adaSmartMajelis
+          ? [idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan, perkara.perkaraId]
+          : [perkara.perkaraId, idGabung, SMART_MAJELIS_DI_LUAR_REKOMENDASI, saat, nilaiSmart.keterangan],
+        keterangan: `smart majelis: ${sebabMajelis}`,
+      });
+    }
     // Tanpa baris audit: sama seperti perkara_proses, SIPP tidak pernah
     // mencatat tabel ini di sys_audittrail - nol baris sejak 2016. Lihat
-    // catatan pada bagian Riwayat Perkara di bawah.
+    // catatan pada bagian Riwayat Perkara di bawah. Jejak "Smart Majelis" di
+    // Audit Trail justru ada pada JUDUL baris perkara_hakim_pn di bawah ini.
 
     hakim.forEach((orang, urutan) => {
       const nilaiHakim = {
@@ -1215,6 +1401,11 @@ async function susunRencanaTulis(minta) {
           username: akun.username,
           tabel: "perkara_hakim_pn",
           formulir: jejak.formulir,
+          // Persis tulisan SIPP saat petugas memakai tombol Smart Majelis:
+          // 782 dari 1.112 perkara 2026 di PA Donggala berjudul begini, dan
+          // hanya ketiga baris hakim_pn yang membawanya - baris
+          // perkara_penetapan dan perkara di sebelahnya tidak.
+          judulHalaman: ` Smart Majelis ${jejak.formulir}`,
           aksi: "INSERT",
           nilai: nilaiHakim,
           ip,
@@ -2377,6 +2568,9 @@ module.exports = {
   waktuBongkar,
   // Diekspor untuk diuji satuan.
   waktuLangkah,
+  rangkaianDetik,
+  majelisTetapUntuk,
+  kompetensiMenurutPerkara,
   // Diekspor untuk diuji satuan.
   keteranganAudit,
   waktuMysql,

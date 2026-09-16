@@ -855,12 +855,16 @@ function bagianMalas(judul, kunci, nomor, gambar) {
  * penunjukan juru sita tahun berjalan, dan itu tidak pantas dijalankan pada
  * tiap perkara yang kebetulan dibuka.
  */
-async function ambilUsulanPenunjukan(nomor, pilihanMajelis) {
+async function ambilUsulanPenunjukan(nomor, pilihanMajelis, andaian) {
   const majelis = Array.isArray(pilihanMajelis) && pilihanMajelis.length > 0
     ? `&majelis=${encodeURIComponent(pilihanMajelis.join(","))}`
     : "";
+  // Andaian antrean massal - perkara yang sudah diperiksa sebelumnya dan
+  // dianggap tertulis. Lihat serialkanAndaian.
+  const teksAndaian = serialkanAndaian(andaian);
+  const parameterAndaian = teksAndaian ? `&andaian=${encodeURIComponent(teksAndaian)}` : "";
   const respons = await alatAmbil(
-    `${ALETA_API_PENUNJUKAN}?nomor=${encodeURIComponent(nomor)}${majelis}`,
+    `${ALETA_API_PENUNJUKAN}?nomor=${encodeURIComponent(nomor)}${majelis}${parameterAndaian}`,
     { credentials: "include", cache: "no-store" },
     "Menyusun usulan penunjukan"
   );
@@ -1052,6 +1056,65 @@ function idUntukTulis(jenis, usulan, pilihanManual = {}) {
 
 /** Urutan yang tidak dapat dibalik - SIPP menolak PPP/PJS sebelum majelisnya ada. */
 const URUTAN_TULIS = ["pmh", "ppp", "pjs", "phs"];
+
+/**
+ * ============================================================================
+ * ANDAIAN ANTREAN MASSAL - PERKARA YANG SUDAH DIPERIKSA DIANGGAP TERTULIS
+ * ============================================================================
+ *
+ * Penetapan massal memeriksa dua puluh perkara lebih dahulu, lalu
+ * menuliskannya satu per satu. Pada pemeriksaan, seluruh perkara dihitung
+ * bot atas keadaan basis data yang SAMA - semuanya mengusulkan majelis,
+ * panitera pengganti, dan juru sita berbeban terendah yang sama. Pada
+ * penulisan, usulan diambil ulang sesudah tiap perkara tertulis, sehingga
+ * bergilir. Pratinjaunya benar satu per satu dan keliru sebagai antrean.
+ *
+ * Karena itu usulan perkara ke-n diminta dengan andaian perkara 1..n-1
+ * sudah tertulis - siapa majelisnya, panitera penggantinya, juru sitanya,
+ * kapan sidangnya - dan bot menambahkannya ke beban sebelum menghitung.
+ * Bentuk ringkasnya di alamat, sama persis dengan pembacanya di portal
+ * (src/lib/andaian-penunjukan.ts):
+ *
+ *   perkaraId:hakim.hakim.hakim:paniteraId:jurusitaId:tanggalSidang
+ *
+ * Dibatasi 25 - sebesar BATAS_PERKARA_MASSAL.
+ */
+const BATAS_ANDAIAN = 25;
+
+function serialkanAndaian(daftar) {
+  if (!Array.isArray(daftar) || daftar.length === 0) return "";
+  return daftar
+    .slice(0, BATAS_ANDAIAN)
+    .map((a) =>
+      [
+        a.perkaraId > 0 ? String(a.perkaraId) : "",
+        (a.hakimId || []).filter((x) => x > 0).join("."),
+        a.paniteraId > 0 ? String(a.paniteraId) : "",
+        a.jurusitaId > 0 ? String(a.jurusitaId) : "",
+        a.tanggalSidang || "",
+      ].join(":")
+    )
+    .join(";");
+}
+
+/** Andaian dari satu usulan yang lolos uji kering - siapa yang AKAN ditulis. */
+function andaianDari(usulan, pilihanManual) {
+  const pmh = idUntukTulis("pmh", usulan, pilihanManual) || {};
+  const ppp = idUntukTulis("ppp", usulan, pilihanManual) || {};
+  const pjs = idUntukTulis("pjs", usulan, pilihanManual) || {};
+  const phs = idUntukTulis("phs", usulan, pilihanManual) || {};
+  const hasil = {
+    perkaraId: Number((usulan.perkara && usulan.perkara.perkaraId) || 0),
+    hakimId: Array.isArray(pmh.hakimId) ? pmh.hakimId : [],
+    paniteraId: Number(ppp.petugasId) || 0,
+    jurusitaId: Number(pjs.petugasId) || 0,
+    tanggalSidang: phs.tanggalSidang || "",
+  };
+  if (hasil.hakimId.length === 0 && !hasil.paniteraId && !hasil.jurusitaId && !hasil.tanggalSidang) {
+    return null;
+  }
+  return hasil;
+}
 
 /**
  * ============================================================================
@@ -9314,7 +9377,9 @@ function bagianPenetapanMassal(ringkasan) {
     )
   );
 
-  const daftar = buatElemen("div", "aleta-massal-daftar");
+  // Tiap perkara satu BUTIR: baris centangnya, lalu rinciannya di bawah -
+  // lihat gambarRincianMassal. Belangnya per butir, bukan per baris.
+  const daftar = buatElemen("div", "aleta-massal-daftar aleta-massal-daftar-penetapan");
   const kotakCentang = new Map();
   for (const nomor of nomorSemua) {
     const label = buatElemen("label", "aleta-massal-baris");
@@ -9340,7 +9405,9 @@ function bagianPenetapanMassal(ringkasan) {
 )}`;
     const keadaan = buatElemen("span", "aleta-massal-keadaan", awalnya);
     label.appendChild(keadaan);
-    daftar.appendChild(label);
+    const butir = buatElemen("div", "aleta-massal-butir");
+    butir.appendChild(label);
+    daftar.appendChild(butir);
   }
   kotak.isi.appendChild(daftar);
 
@@ -9494,10 +9561,59 @@ function bagianPenetapanMassal(ringkasan) {
     tempat.className = `aleta-massal-keadaan${nada ? ` aleta-lencana-${nada}` : ""}`;
   }
 
+  /**
+   * ==========================================================================
+   * RINCIAN DI BAWAH TIAP PERKARA - YANG SELAMA INI HANYA DILIHAT PAPAN SATU
+   * ==========================================================================
+   *
+   * Papan satu perkara menggambar rapor uji kering: majelis, panitera
+   * pengganti, juru sita, hari sidang, dan ganjalannya (akhir pekan, kurang
+   * dari tujuh hari, nilai sengketa kosong, pejabat berhalangan). Penetapan
+   * massal hanya menulis "siap ditetapkan" - lalu menulis belasan penetapan
+   * yang majelis dan hari sidangnya tidak pernah diperlihatkan.
+   *
+   * Rapornya rapor yang SAMA (raporPraperiksa), digambar ringkas di bawah
+   * baris centangnya; andaian dari bot ("PHS dinilai seolah PMH sudah
+   * tertulis") ikut tertera.
+   */
+  function gambarRincianMassal(nomor, rapor, hasil) {
+    const centang = kotakCentang.get(nomor);
+    const butir = centang && centang.parentElement && centang.parentElement.parentElement;
+    if (!butir) return;
+    let wadah = butir.querySelector(".aleta-massal-rincian");
+    if (!wadah) {
+      wadah = buatElemen("div", "aleta-massal-rincian");
+      butir.appendChild(wadah);
+    }
+    wadah.textContent = "";
+    const isiBaris = (rapor.baris || []).map((b) => `${b.label}: ${b.nilai}`).join(" · ");
+    if (isiBaris) wadah.appendChild(buatElemen("div", "aleta-massal-rincian-isi", isiBaris));
+    for (const ganjalan of rapor.ganjalan || []) {
+      wadah.appendChild(buatElemen("div", "aleta-massal-ganjalan", ganjalan));
+    }
+    for (const satu of hasil || []) {
+      for (const andaianBot of satu.andaian || []) {
+        wadah.appendChild(
+          buatElemen("div", "aleta-massal-rincian-isi", `Andaian ${String(satu.jenis).toUpperCase()}: ${andaianBot}`)
+        );
+      }
+    }
+    if (rapor.sudahAda && rapor.sudahAda.length > 0) {
+      wadah.appendChild(
+        buatElemen("div", "aleta-massal-rincian-isi", `Sudah ada di SIPP: ${rapor.sudahAda.join(", ")}.`)
+      );
+    }
+  }
+
   async function jalankan(kering) {
     const urut = nomorSemua.filter((x) => terpilih.has(x));
     let berhasil = 0;
     let dilewati = 0;
+    // Perkara yang sudah lolos uji kering di antrean ini - dikirim sebagai
+    // andaian bagi perkara berikutnya, supaya gilirannya dihitung berurutan.
+    // Pada penulisan sungguhan tidak diperlukan: yang sudah tertulis memang
+    // sudah ada di basis data ketika perkara berikutnya diminta usulannya.
+    const andaian = [];
 
     for (const nomor of urut) {
       tandaiBaris(nomor, kering ? "memeriksa…" : "menetapkan…", "");
@@ -9505,7 +9621,7 @@ function bagianPenetapanMassal(ringkasan) {
 
       let data;
       try {
-        data = await ambilUsulanPenunjukan(nomor);
+        data = await ambilUsulanPenunjukan(nomor, null, kering ? andaian : []);
       } catch (galat) {
         tandaiBaris(nomor, String(galat.message || galat).slice(0, 60), "lewat");
         kabar.textContent = `Berhenti di ${nomor}: ${String(galat.message || galat).slice(0, 120)}`;
@@ -9536,6 +9652,14 @@ function bagianPenetapanMassal(ringkasan) {
       const sudahAda = gagal.filter((x) => /_sudah_ada$/.test(String(x.alasan || "")));
       const gagalSungguhan = gagal.filter((x) => !/_sudah_ada$/.test(String(x.alasan || "")));
       const dikerjakan = hasil.filter((x) => x.ok).length;
+
+      // Rincian yang akan (atau sudah) ditulis - dan, pada uji kering,
+      // andaian bagi perkara berikutnya di antrean.
+      gambarRincianMassal(nomor, raporPraperiksa(usulan, data, hasil), hasil);
+      if (kering && gagalSungguhan.length === 0) {
+        const satuAndaian = andaianDari(usulan, data.pilihanManual || {});
+        if (satuAndaian) andaian.push(satuAndaian);
+      }
 
       // Rantai yang TANGGUNG: sebagian langkahnya memang sudah ada, dan
       // sisanya baru saja dikerjakan. Itu keberhasilan, bukan kegagalan -
@@ -9591,7 +9715,7 @@ function bagianPenetapanMassal(ringkasan) {
       kabar.textContent =
         `${hasil.berhasil} perkara siap ditetapkan` +
         (hasil.dilewati ? `, ${hasil.dilewati} sudah ditetapkan dan akan dilewati` : "") +
-        ". Belum ada yang ditulis. Tekan sekali lagi untuk menetapkan.";
+        ". Belum ada yang ditulis - rinciannya tertera di bawah tiap perkara, dihitung berurutan. Tekan sekali lagi untuk menetapkan.";
       tombol.textContent = `Tetapkan ${hasil.berhasil} perkara sekarang`;
       tombol.disabled = hasil.berhasil === 0;
       return;

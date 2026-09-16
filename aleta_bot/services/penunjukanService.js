@@ -1373,6 +1373,136 @@ async function giliranPanitera(tahun, rasio = new Map()) {
 // ===========================================================================
 
 /**
+ * ============================================================================
+ * ANDAIAN - PERKARA DI ANTREAN MASSAL YANG DIANGGAP SUDAH TERTULIS
+ * ============================================================================
+ *
+ * Penetapan massal memeriksa dua puluh perkara lebih dahulu, lalu menuliskannya
+ * satu per satu. Pada pemeriksaan, seluruh perkara dihitung atas keadaan basis
+ * data yang SAMA: semuanya mengusulkan majelis, panitera pengganti, dan juru
+ * sita berbeban terendah yang sama. Pada penulisan, usulan diambil ulang
+ * sesudah tiap perkara tertulis, sehingga bergilir. Pratinjaunya benar satu
+ * per satu dan keliru sebagai antrean - dan begitu pratinjau menampilkan nama
+ * majelisnya, yang tertulis akan berbeda dari yang diperlihatkan.
+ *
+ * Karena itu papan mengirim ANDAIAN: perkara-perkara di antrean yang sudah
+ * diperiksa sebelumnya, beserta siapa yang diusulkan bagi masing-masing.
+ * Yang dihitung di sini menambahkan mereka ke beban seolah sudah tertulis:
+ * majelisnya ke hitungan susunan terpakai dan beban hakim, panitera dan juru
+ * sitanya ke giliran, hari sidangnya ke beban tanggal.
+ *
+ * Bobotnya bobot yang sama dengan kueri beban (BOBOT_JENIS menurut jenis
+ * perkaranya), supaya pratinjau dan penulisan menimbang dengan timbangan
+ * yang sama. Perkara yang jenisnya tidak terbaca memakai bobot bawaan.
+ *
+ * Dibatasi 25 - sebesar batas penetapan massal di papan. Yang datang dari
+ * peramban disaring dua kali: di rute gerbang dan di sini.
+ */
+const BATAS_ANDAIAN = 25;
+
+function normalkanAndaian(daftar) {
+  if (!Array.isArray(daftar)) return [];
+  const hasil = [];
+  for (const satu of daftar.slice(0, BATAS_ANDAIAN)) {
+    if (!satu || typeof satu !== "object") continue;
+    const bulat = (x) => (Number.isInteger(Number(x)) && Number(x) > 0 ? Number(x) : 0);
+    const hakimId = (Array.isArray(satu.hakimId) ? satu.hakimId : [])
+      .map(bulat)
+      .filter((x) => x > 0)
+      .slice(0, 5);
+    const tanggalSidang = /^\d{4}-\d{2}-\d{2}$/.test(String(satu.tanggalSidang || ""))
+      ? String(satu.tanggalSidang)
+      : "";
+    const paniteraId = bulat(satu.paniteraId);
+    const jurusitaId = bulat(satu.jurusitaId);
+    if (hakimId.length === 0 && !paniteraId && !jurusitaId && !tanggalSidang) continue;
+    hasil.push({ perkaraId: bulat(satu.perkaraId), hakimId, paniteraId, jurusitaId, tanggalSidang });
+  }
+  return hasil;
+}
+
+/** Bobot satu perkara menurut jenisnya - kembaran JS dari ekspresiBobot. */
+function bobotJenis(jenisPerkaraId) {
+  const bobot = BOBOT_JENIS[Number(jenisPerkaraId)];
+  return bobot === undefined ? BOBOT_BAWAAN : bobot;
+}
+
+/** Bobot tiap perkara andaian, dibaca dari jenis perkaranya di SIPP. */
+async function bobotAndaianPerkara(andaian) {
+  const peta = new Map();
+  const id = [...new Set(andaian.map((a) => a.perkaraId).filter((x) => x > 0))];
+  if (id.length === 0) return peta;
+  const rows = await runQuery(
+    `SELECT p.perkara_id AS perkaraId, p.jenis_perkara_id AS jenisPerkaraId
+       FROM perkara p
+      WHERE p.perkara_id IN (${id.map(() => "?").join(", ")})`,
+    id
+  ).catch(() => []);
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (Number(r.perkaraId) > 0) peta.set(Number(r.perkaraId), bobotJenis(r.jenisPerkaraId));
+  }
+  return peta;
+}
+
+/**
+ * Giliran petugas (juru sita / panitera pengganti) sesudah andaian: yang
+ * diandaikan kebagian bertambah bobotnya, selisih dari bagiannya ikut naik,
+ * dan ia menjadi yang paling baru kebagian. Lalu diurutkan lagi dengan
+ * kunci yang sama persis dengan giliranJurusita/giliranPanitera.
+ */
+function terapkanAndaianPetugas(giliran, daftarAndaian, kunciId) {
+  const dipakai = (daftarAndaian || []).filter((x) => x && Number(x.id) > 0);
+  if (!giliran || !giliran.terbaca || dipakai.length === 0) return giliran;
+  const daftar = (giliran.daftar || []).map((x) => ({ ...x }));
+  let terkena = 0;
+  for (const satu of dipakai) {
+    const orang = daftar.find((x) => Number(x[kunciId]) === Number(satu.id));
+    if (!orang) continue;
+    const bobot = Number.isFinite(satu.bobot) && satu.bobot > 0 ? satu.bobot : BOBOT_BAWAAN;
+    orang.jumlah = Math.round((Number(orang.jumlah) + bobot) * 100) / 100;
+    orang._selisih = Number(orang._selisih) + bobot;
+    orang.selisih = Math.round(orang._selisih);
+    orang.tertinggal = 0;
+    orang.diandaikan = (orang.diandaikan || 0) + 1;
+    terkena += 1;
+  }
+  if (terkena === 0) return giliran;
+  const urut = daftar.sort(
+    (a, b) =>
+      a._selisih - b._selisih ||
+      b.tertinggal - a.tertinggal ||
+      Number(a[kunciId]) - Number(b[kunciId])
+  );
+  return { ...giliran, daftar: urut, usulan: urut[0] || null, diandaikan: terkena };
+}
+
+/** Susunan majelis terpakai: yang diandaikan bertambah satu perkara. */
+function terapkanAndaianSusunan(susunan, andaian) {
+  const kunci = (id) => [...id].map(Number).sort((a, b) => a - b).join("-");
+  for (const satu of andaian || []) {
+    if (!satu || !Array.isArray(satu.hakimId) || satu.hakimId.length < 2) continue;
+    const cocok = (susunan || []).find((s) => kunci(s.hakimId || []) === kunci(satu.hakimId));
+    if (!cocok) continue;
+    cocok.perkara = Number(cocok.perkara || 0) + 1;
+    cocok.diandaikan = (cocok.diandaikan || 0) + 1;
+  }
+}
+
+/** Beban hakim tunggal dan beban majelis per hakim: yang diandaikan bertambah bobotnya. */
+function terapkanAndaianBeban(bebanTunggal, bebanMajelis, andaian, bobotAndaian) {
+  for (const satu of andaian || []) {
+    if (!satu || !Array.isArray(satu.hakimId) || satu.hakimId.length === 0) continue;
+    const bobot = (bobotAndaian && bobotAndaian.get(satu.perkaraId)) || BOBOT_BAWAAN;
+    if (satu.hakimId.length === 1 && bebanTunggal instanceof Map) {
+      bebanTunggal.set(satu.hakimId[0], (bebanTunggal.get(satu.hakimId[0]) || 0) + bobot);
+    }
+    if (satu.hakimId.length > 1 && bebanMajelis instanceof Map) {
+      for (const id of satu.hakimId) bebanMajelis.set(id, (bebanMajelis.get(id) || 0) + bobot);
+    }
+  }
+}
+
+/**
  * Keempat baris papan penunjukan untuk satu perkara.
  *
  * @param {string} nomorPerkara nomor perkara yang sedang dibuka di SIPP
@@ -1410,6 +1540,10 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     .map((x) => Number(x))
     .filter((x) => Number.isInteger(x) && x > 0);
 
+  // Perkara di antrean massal yang DIANDAIKAN sudah tertulis - lihat catatan
+  // pada normalkanAndaian di atas.
+  const andaian = normalkanAndaian(pengaturan.andaian);
+
   const identitas = await identitasPerkara(nomorPerkara);
   if (!identitas) {
     return { ok: false, alasan: "perkara_tidak_ketemu", nomorPerkara: cleanText(nomorPerkara) };
@@ -1423,8 +1557,8 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     smart,
     hakimAktifSemua,
     paniteraAktifSemua,
-    jurusitaSemua,
-    paniteraSemua,
+    jurusitaMentah,
+    paniteraMentah,
     beban,
     bebanMajelis,
     tercatat,
@@ -1444,6 +1578,21 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       petugasDiblokir(),
       rasioHakim(),
     ]);
+
+  // Andaian diterapkan SEBELUM penyaringan akun terblokir dan sebelum susunan
+  // dibaca, supaya seluruh hitungan di bawah melihat keadaan yang sama.
+  const bobotAndaian = await bobotAndaianPerkara(andaian);
+  const jurusitaSemua = terapkanAndaianPetugas(
+    jurusitaMentah,
+    andaian.map((a) => ({ id: a.jurusitaId, bobot: bobotAndaian.get(a.perkaraId) })),
+    "jurusitaId"
+  );
+  const paniteraSemua = terapkanAndaianPetugas(
+    paniteraMentah,
+    andaian.map((a) => ({ id: a.paniteraId, bobot: bobotAndaian.get(a.perkaraId) })),
+    "paniteraId"
+  );
+  terapkanAndaianBeban(beban, bebanMajelis, andaian, bobotAndaian);
 
   // ==========================================================================
   // YANG AKUNNYA DIBLOKIR DIKELUARKAN DARI SELURUH KOLAM
@@ -1487,6 +1636,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // Susunan yang benar-benar dipakai - menuntut daftar hakim aktif, jadi
   // dibaca sesudahnya, bukan bersamaan.
   const terpakai = await susunanMajelisTerpakai(tahun, hakimAktif);
+  terapkanAndaianSusunan(terpakai.susunan, andaian);
 
   // ==========================================================================
   // SUSUNAN MENURUT SK DIDAHULUKAN, DAN DIBERI KODENYA
@@ -1714,6 +1864,13 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // menumpuk sidang justru pada hari yang paling sibuk.
   if (phs.calon.length > 0) {
     const beban = await jumlahSidangPerTanggal(phs.calon.map((x) => x.tanggal));
+    // Hari sidang perkara andaian ikut dihitung - hanya pada tanggal yang
+    // bebannya memang terbaca. Andaian saja tidak boleh mengarang angka bagi
+    // tanggal yang bebannya tidak diketahui.
+    for (const satu of andaian) {
+      if (!satu.tanggalSidang || !beban.has(satu.tanggalSidang)) continue;
+      beban.set(satu.tanggalSidang, beban.get(satu.tanggalSidang) + 1);
+    }
     for (const satu of phs.calon) {
       const angka = beban.get(satu.tanggal);
       satu.jumlahSidang = angka === undefined ? null : angka;
@@ -2323,6 +2480,11 @@ module.exports = {
   geserHari,
   giliranJurusita,
   giliranPanitera,
+  normalkanAndaian,
+  bobotJenis,
+  terapkanAndaianPetugas,
+  terapkanAndaianSusunan,
+  terapkanAndaianBeban,
   identitasPerkara,
   penetapanPerkara,
   cocokSmartMajelis,

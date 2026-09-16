@@ -136,14 +136,16 @@ async function utama() {
   cek("penetapan disisipkan", tabel.includes("perkara_penetapan:INSERT"), true);
   cek("tiga baris hakim", tabel.filter((x) => x === "perkara_hakim_pn:INSERT").length, 3);
   cek("tabel perkara diperbarui", tabel.includes("perkara:UPDATE"), true);
-  // Tujuh sejak Smart Majelis ikut dicatat. Enam sejak baris Riwayat Perkara,
-  // lima sebelumnya - dan selama lima itu, tab Riwayat Perkara pada perkara
-  // yang dikerjakan ALETA tidak pernah menyebutkan pejabat yang menunjuk,
-  // sementara perkaranya tidak pernah muncul di laporan Smart Majelis.
+  // LIMA, persis bentuk SIPP: perkara_penetapan, tiga hakim_pn, perkara.
+  // Sempat tujuh ketika baris Smart Majelis dan Riwayat Perkara ikut diaudit
+  // - lalu diukur pada sys_audittrail satker: SIPP tidak pernah mengaudit
+  // perkara_smartmajelis maupun perkara_proses, dan dua baris lebih itulah
+  // yang membedakan tulisan ALETA dari tulisan tangan (2.19.2). Keduanya
+  // tetap DITULIS ke tabelnya - hanya tidak diaudit.
   cek(
-    "audit satu per langkah",
+    "audit satu per langkah, lima seperti SIPP",
     tabel.filter((x) => x === "sys_audittrail:INSERT").length,
-    7
+    5
   );
   cek("riwayat perkara ikut ditulis", tabel.includes("perkara_proses:REPLACE"), true);
   cek(

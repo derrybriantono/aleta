@@ -83,7 +83,12 @@ describe("majelis pilihan petugas menggantikan giliran", () => {
 
   it("rute portal membacanya dari ?majelis= dan meneruskannya", () => {
     expect(rute).toContain('searchParams.get("majelis")');
-    expect(rute).toContain("        pilihanMajelis,\n      },");
+    // Yang dijaga: ia benar-benar masuk ke PANGGILAN ke bot - bukan letaknya
+    // pada baris tertentu. Sejak andaian antrean massal ikut dikirim (2.19.5),
+    // ada baris baru di bawahnya, dan penjaga yang mematok dua baris
+    // berturut-turut pecah tanpa ada yang keliru.
+    const panggilan = rute.slice(rute.indexOf("getGatewayPenunjukanUsulan({"));
+    expect(panggilan.slice(0, panggilan.indexOf("});"))).toContain("pilihanMajelis,");
   });
 });
 

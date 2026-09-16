@@ -740,6 +740,18 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       .filter((x) => Number.isInteger(x) && x > 0)
       .slice(0, 5);
 
+    // Andaian antrean massal - perkara yang sudah diperiksa sebelumnya di
+    // papan dan dianggap tertulis. Disaring di sini DAN di layanannya:
+    // bilangan bulat positif, tanggal ISO, paling banyak 25.
+    const bulat = (x) => (Number.isInteger(Number(x)) && Number(x) > 0 ? Number(x) : 0);
+    const andaian = (Array.isArray(kirim.andaian) ? kirim.andaian : []).slice(0, 25).map((a) => ({
+      perkaraId: bulat(a && a.perkaraId),
+      hakimId: (Array.isArray(a && a.hakimId) ? a.hakimId : []).map(bulat).filter((x) => x > 0).slice(0, 5),
+      paniteraId: bulat(a && a.paniteraId),
+      jurusitaId: bulat(a && a.jurusitaId),
+      tanggalSidang: /^\d{4}-\d{2}-\d{2}$/.test(String((a && a.tanggalSidang) || "")) ? String(a.tanggalSidang) : "",
+    }));
+
     const jeda = Number(aturanMasuk.jedaMinimalHari);
     const ambang = Number(aturanMasuk.ambangNilaiSengketa);
 
@@ -757,6 +769,7 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       hariSidang,
       paniteraMajelis,
       susunanSk,
+      andaian,
       pilihanMajelis,
     });
 

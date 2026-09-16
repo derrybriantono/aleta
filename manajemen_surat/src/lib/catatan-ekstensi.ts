@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.150.0",
+    dirilis: "2026-09-16T09:30:00+08:00",
+    judul: "Penetapan massal memperlihatkan siapa dan kapan, dan menghitungnya berurutan",
+    butir: [
+      "RINCIAN DI BAWAH TIAP PERKARA sesudah Periksa: majelis (kode SK dan nama), panitera pengganti, juru sita, hari sidang, ganjalan (akhir pekan, kurang dari tujuh hari, nilai sengketa kosong, pejabat berhalangan), dan andaian bot. Rapor yang sama dengan papan satu perkara - selama ini penetapan massal menulis belasan penetapan tanpa pernah memperlihatkannya.",
+      "DIHITUNG BERURUTAN: usulan perkara ke-n memperhitungkan perkara 1 sampai n-1 di antrean seolah sudah tertulis, sehingga giliran majelis, panitera pengganti, dan juru sita pada pratinjau sama dengan yang tertulis nanti. Sebelumnya seluruh perkara mengusulkan yang berbeban terendah yang sama.",
+      "Di sisi peladen (2.19.5): jam tiap langkah penetapan dihitung sampai detik dan disebar pada pagi hari, dan jejak Smart Majelis di Audit Trail ditulis persis seperti tangan petugas.",
+    ],
+  },
+  {
     versi: "1.149.0",
     dirilis: "2026-09-15T18:20:00+08:00",
     judul: "Kepala Penetapan Majelis Hakim kembali, dan tiap dropdown menempel pada kepalanya sendiri",

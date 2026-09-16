@@ -43,6 +43,8 @@ function periksa(nama, benar, tambahan = "") {
 const idBerikutnya = { perkara_jurusita: 10274, perkara_jadwal_sidang: 20099 };
 /** Keadaan penetapan perkara yang dijawab penadah - diubah tiap bagian. */
 let keadaan = { pmh: "2026-09-15", ppp: null, pjs: null, phs: null };
+/** ref_majelis_tetap dijawab kosong - untuk menguji jalur "di luar rekomendasi". */
+let refKosong = false;
 
 const dbPath = require.resolve("../db_config");
 require("../db_config");
@@ -62,6 +64,7 @@ require.cache[dbPath].exports = {
           // memang belum ada, dan PMH pertama menyisipkannya.
           adaPenetapan: keadaan.pmh ? 10119 : 0,
           adaSmartMajelis: 0,
+          jenisPerkaraId: 347,
           ...keadaan,
         },
       ]);
@@ -80,6 +83,20 @@ require.cache[dbPath].exports = {
     if (/information_schema/.test(teks)) return selesai(null, [{ TABLE_NAME: "x", COLUMN_NAME: "y" }]);
     if (/NOW\(\)|CURRENT_TIMESTAMP/i.test(teks)) return selesai(null, [{ saat: "2026-09-15 11:02:46" }]);
     if (/FROM perkara_penetapan_hari_sidang/.test(teks)) return selesai(null, [{ id: 20099 }]);
+    // Susunan tetap SIPP: trio yang sama pada dua kompetensi, seperti PA
+    // Donggala (39 Perdata Agama, 40 Permohonan). Dikosongkan bila refKosong.
+    if (/FROM ref_majelis_tetap/.test(teks)) {
+      return selesai(
+        null,
+        refKosong
+          ? []
+          : [
+              { majelisId: 40, kompetensiId: 27, skId: 3, hakim: "11,12,13" },
+              { majelisId: 39, kompetensiId: 22, skId: 3, hakim: "11,12,13" },
+              { majelisId: 35, kompetensiId: 22, skId: 2, hakim: "11,12,13" },
+            ]
+      );
+    }
     return selesai(null, []);
   },
 };
@@ -130,6 +147,95 @@ const langkahData = (rencana) =>
         "INSERT:perkara_penetapan, INSERT:perkara_hakim_pn, INSERT:perkara_hakim_pn, INSERT:perkara_hakim_pn, UPDATE:perkara",
       audit.join(", ")
     );
+  }
+
+  // ======================================================================
+  // 1b. SMART MAJELIS - PADA JUDUL hakim_pn, DAN STATUS 1 BILA MAJELIS SK
+  // ======================================================================
+  //
+  // Diukur pada perkara 468/Pdt.G/2026 (tangan, 28 Juli 2026 09:21:09):
+  // ketiga baris perkara_hakim_pn berjudul "dari halaman <b> Smart Majelis
+  // TAMBAH PENETAPAN HAKIM/MAJELIS HAKIM</b>", formname tetap tanpa kata
+  // itu, dan baris perkara_penetapan serta perkara tidak menyebutnya.
+  // perkara_smartmajelis-nya: majelis_id 39, hakim_id "33,28,31", hakim_id2
+  // NULL, status 1, keterangan NULL.
+  keadaan = { pmh: null, ppp: null, pjs: null, phs: null };
+  const pmhSmart = await layanan.susunRencanaTulis({ ...dasar, jenis: "pmh", hakimId: [11, 12, 13] });
+  periksa("rencana PMH (smart) tersusun", pmhSmart.ok === true, pmhSmart.alasan || "");
+  if (pmhSmart.ok) {
+    const auditHakim = pmhSmart.langkah.filter((x) => x.tabel === "sys_audittrail" && x.params[3] === "perkara_hakim_pn");
+    const auditLain = pmhSmart.langkah.filter((x) => x.tabel === "sys_audittrail" && x.params[3] !== "perkara_hakim_pn");
+    periksa("tiga baris audit hakim_pn", auditHakim.length === 3, String(auditHakim.length));
+    periksa(
+      "judul hakim_pn menyebut Smart Majelis persis bentuk SIPP",
+      auditHakim.every((x) => x.params[6].includes("dari halaman <b> Smart Majelis TAMBAH PENETAPAN HAKIM/MAJELIS HAKIM</b>")),
+      auditHakim[0] && auditHakim[0].params[6]
+    );
+    periksa(
+      "formname hakim_pn TETAP tanpa kata Smart Majelis",
+      auditHakim.every((x) => x.params[4] === "TAMBAH PENETAPAN HAKIM/MAJELIS HAKIM"),
+      auditHakim[0] && auditHakim[0].params[4]
+    );
+    periksa(
+      "baris perkara_penetapan dan perkara TIDAK menyebut Smart Majelis",
+      auditLain.length === 2 && auditLain.every((x) => !x.params[6].includes("Smart Majelis"))
+    );
+    const smart = pmhSmart.langkah.find((x) => x.tabel === "perkara_smartmajelis");
+    periksa("baris smart majelis ada", Boolean(smart));
+    if (smart) {
+      periksa("status 1 - sesuai rekomendasi", smart.params.includes("1") && !smart.params.includes(2));
+      periksa("majelis_id kompetensi Perdata Agama (39) untuk Pdt.G, bukan 40 Permohonan atau 35 SK lama", smart.params[1] === 39, String(smart.params[1]));
+      periksa("hakim_id menurut urutan ref", smart.params[2] === "11,12,13", String(smart.params[2]));
+      periksa("hakim_id2 dan keterangan NULL", /hakim_id2, status, tanggal, keterangan\)\s+VALUES \(\?,\?,\?,NULL,\?,\?,NULL\)/.test(smart.sql));
+    }
+  }
+  {
+    refKosong = true;
+    keadaan = { pmh: null, ppp: null, pjs: null, phs: null };
+    const pmhLuar = await layanan.susunRencanaTulis({ ...dasar, jenis: "pmh", hakimId: [11, 12, 13] });
+    refKosong = false;
+    const smart = pmhLuar.ok && pmhLuar.langkah.find((x) => x.tabel === "perkara_smartmajelis");
+    periksa("tanpa susunan tetap yang cocok: kembali ke status 2 beserta sebabnya", Boolean(smart) && smart.params.includes(2));
+    const auditHakim = pmhLuar.ok ? pmhLuar.langkah.filter((x) => x.tabel === "sys_audittrail" && x.params[3] === "perkara_hakim_pn") : [];
+    periksa("judul Smart Majelis tetap ada walau susunannya di luar ref", auditHakim.length === 3 && auditHakim.every((x) => x.params[6].includes(" Smart Majelis ")));
+  }
+
+  // ======================================================================
+  // 1c. SATU PENETAPAN, SATU KALI AUDIT - TIDAK ADA BARIS KEMBAR
+  // ======================================================================
+  //
+  // Keluhan perkara 567: audit trail dipenuhi baris berulang. Yang dijaga:
+  // dalam satu rencana, tidak ada dua baris audit yang tabel, aksi, judul,
+  // DAN description-nya sama. Judul saja tidak cukup membedakan: ketiga baris
+  // hakim_pn SIPP berjudul identik (diukur pada 468) dan berbeda hanya pada
+  // description-nya (nama hakimnya); begitu pula dua UPDATE perkara pada PHS.
+  // Bentuk tiap langkah dicocokkan dengan SIPP: PMH 5, PPP 3, PJS 3, PHS 5.
+  {
+    const kunciAudit = (rencana) =>
+      rencana.langkah.filter((x) => x.tabel === "sys_audittrail").map((x) => `${x.params[3]}|${x.params[5]}|${x.params[6]}|${x.params[7]}`);
+    const kembar = (daftar) => daftar.length - new Set(daftar).size;
+
+    keadaan = { pmh: null, ppp: null, pjs: null, phs: null };
+    const rPmh = await layanan.susunRencanaTulis({ ...dasar, jenis: "pmh", hakimId: [11, 12, 13] });
+    keadaan = { pmh: "2026-09-15", ppp: null, pjs: null, phs: null };
+    const rPpp = await layanan.susunRencanaTulis({ ...dasar, jenis: "ppp", petugasId: 30 });
+    keadaan = { pmh: "2026-09-15", ppp: "2026-09-15", pjs: null, phs: null };
+    const rPjs = await layanan.susunRencanaTulis({ ...dasar, jenis: "pjs", petugasId: 30 });
+    keadaan = { pmh: "2026-09-15", ppp: "2026-09-15", pjs: "2026-09-15", phs: null };
+    const rPhs = await layanan.susunRencanaTulis({ ...dasar, jenis: "phs", tanggalSidang: "2026-09-23" });
+
+    for (const [nama, r, jumlah] of [["PMH", rPmh, 5], ["PPP", rPpp, 3], ["PJS", rPjs, 3], ["PHS", rPhs, 5]]) {
+      periksa(`rencana ${nama} tersusun`, r.ok === true, r.alasan || "");
+      if (!r.ok) continue;
+      const k = kunciAudit(r);
+      periksa(`${nama}: ${jumlah} baris audit, persis SIPP`, k.length === jumlah, String(k.length));
+      periksa(`${nama}: tidak ada baris audit kembar`, kembar(k) === 0, `${kembar(k)} kembar`);
+      if (nama === "PHS") {
+        periksa("PHS: dua UPDATE perkara berjudul sama, berbeda isinya - bentuk SIPP sendiri", k.filter((x) => x.startsWith("perkara|UPDATE|")).length === 2);
+      }
+    }
+    const semua = [rPmh, rPpp, rPjs, rPhs].filter((r) => r.ok).flatMap(kunciAudit);
+    periksa("seluruh rantai: 16 baris audit, tidak satu pun kembar", semua.length === 16 && kembar(semua) === 0, `${semua.length} baris, ${kembar(semua)} kembar`);
   }
 
   // ======================================================================

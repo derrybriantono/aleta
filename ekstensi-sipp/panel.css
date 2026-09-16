@@ -5933,3 +5933,33 @@ html.aleta-ganti-tema *::after {
   opacity: 1;
   text-decoration: underline;
 }
+
+/* ==========================================================================
+   PENETAPAN MASSAL: TIAP PERKARA SATU BUTIR - BARIS CENTANG + RINCIANNYA
+   ==========================================================================
+
+   Rincian (majelis, panitera pengganti, juru sita, hari sidang, ganjalan)
+   digambar di bawah baris centangnya. Belangnya pindah dari baris ke butir,
+   supaya rincian sewarna dengan barisnya - baris yang belang sendiri tanpa
+   rinciannya membuat rincian terbaca milik perkara di bawahnya. */
+.aleta-massal-daftar-penetapan .aleta-massal-baris { background: transparent; }
+.aleta-massal-daftar-penetapan .aleta-massal-butir:nth-child(odd) { background: var(--aleta-latar-naik); }
+
+.aleta-massal-rincian {
+  padding: 0 8px 6px 28px;
+  /* 11.5px, bukan 11: panel ini punya batas bawah huruf yang dijaga uji -
+     lihat ekstensi-pita-identitas. Yang lebih kecil dari itu tidak terbaca
+     pada layar SIPP di ruang panitera. */
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1.4;
+  color: var(--aleta-tulisan-lembut);
+  overflow-wrap: anywhere;
+}
+
+.aleta-massal-rincian-isi { margin-top: 1px; }
+
+.aleta-massal-ganjalan {
+  margin-top: 1px;
+  color: var(--aleta-mendesak);
+  font-weight: 600;
+}

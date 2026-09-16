@@ -2,7 +2,7 @@
 
 /**
  * ============================================================================
- * JAM YANG DICATAT PADA TIAP LANGKAH PENETAPAN
+ * JAM YANG DICATAT PADA TIAP LANGKAH PENETAPAN - DIUKUR SAMPAI DETIK
  * ============================================================================
  *
  * Keempat penetapan ditulis oleh satu tekanan tombol, dalam hitungan detik.
@@ -10,18 +10,23 @@
  * PHS terjadi pada detik yang berdempetan - padahal keempatnya empat keputusan
  * yang berbeda.
  *
- * Yang dijaga di sini empat aturan, dan ketiganya pernah dilanggar oleh
- * rancangan pertamanya:
+ * Yang dijaga di sini, dan ketiganya pernah dilanggar oleh rancangan yang
+ * mendahuluinya:
  *
  *   1. Tanggalnya SELALU sama untuk keempat langkah.
- *   2. Jaraknya 1 sampai 10 menit, menaik menurut urutan langkah.
- *   3. Tidak pernah melampaui jam peladen pada tanggal yang sama.
+ *   2. Selisih NYATA antar langkah 60 sampai 659 detik, menaik menurut urutan
+ *      langkah. Bentuk sebelumnya hanya menjaga angka MENITNYA: PPP 12:13:34
+ *      disusul PJS 12:14:08 lolos sebagai "satu menit" padahal 34 detik.
+ *   3. Tidak pernah melampaui jam peladen - SAMPAI DETIKNYA. Sebelumnya PHS
+ *      dipatok pada menit peladen dengan detik bebas, sehingga pada 09:00:00
+ *      PHS dapat tercatat 09:00:21.
  *   4. Dua perkara pada hari yang sama tidak jatuh pada jam yang sama.
- *   5. Detik keempat langkah satu perkara tidak seluruhnya sama.
- *
- * Aturan kedua pernah gagal diam-diam: jedanya dihitung dengan pergeseran bit,
- * dan benih di atas 2,14 miliar berubah menjadi negatif sebagai int32 - enam
- * dari delapan perkara menghasilkan PHS yang lebih awal daripada PMH-nya.
+ *   5. Rangkaian yang digeser (pagi hari) DISEBAR antar perkara, bukan
+ *      ditumpuk pada menit peladen: delapan dari sepuluh PHS pada menit 09:00
+ *      yang sama adalah pola mesin pada penetapan massal.
+ *   6. MONOTON terhadap jam peladen: keempat langkah dihitung pada empat
+ *      panggilan HTTP yang berselang beberapa detik, dan panggilan yang
+ *      belakangan tidak boleh menghasilkan jam yang lebih awal.
  *
  * Berjalan tanpa jaringan dan tanpa basis data.
  */
@@ -48,17 +53,28 @@ const layanan = require("../services/penetapanTulisService");
 const { waktuLangkah } = layanan;
 
 const URUT = ["pmh", "ppp", "pjs", "phs"];
+const JEDA_MIN = 60;
+const JEDA_MAKS = 10 * 60 + 59;
 
-/** Keempat jam satu perkara, dalam menit sejak tengah malam. */
 function rangkaian(perkaraId, tanggal, server) {
   return URUT.map((jenis) => waktuLangkah({ perkaraId, tanggalPenetapan: tanggal, jenis, saatServer: server }));
 }
-const keMenit = (teks) => {
+/** Detik sejak tengah malam. */
+const keDetik = (teks) => {
   const m = /(\d{2}):(\d{2}):(\d{2})$/.exec(teks);
-  return Number(m[1]) * 60 + Number(m[2]);
+  return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
 };
+function jedaSalah(w) {
+  const d = w.map(keDetik);
+  let salah = 0;
+  for (let i = 1; i < d.length; i += 1) {
+    const jeda = d[i] - d[i - 1];
+    if (jeda < JEDA_MIN || jeda > JEDA_MAKS) salah += 1;
+  }
+  return salah;
+}
 
-console.log("jam penetapan");
+console.log("jam penetapan (detik)");
 
 // --------------------------------------------------------------- bentuknya
 {
@@ -76,42 +92,29 @@ console.log("jam penetapan");
   const TANGGAL = "2026-09-12";
   const SERVER = "2026-09-12 23:00:00";
   let tanggalBeda = 0;
-  let jedaSalah = 0;
+  let salah = 0;
   let mundur = 0;
+  let sebelumJamKerja = 0;
   const mulai = [];
 
   for (let id = 1; id <= 3000; id += 1) {
     const w = rangkaian(id, TANGGAL, SERVER);
     if (new Set(w.map((x) => x.slice(0, 10))).size !== 1) tanggalBeda += 1;
-    const menit = w.map(keMenit);
-    for (let i = 1; i < menit.length; i += 1) {
-      const jeda = menit[i] - menit[i - 1];
-      if (jeda < 1 || jeda > 10) jedaSalah += 1;
-      if (jeda <= 0) mundur += 1;
-    }
+    salah += jedaSalah(w);
+    const d = w.map(keDetik);
+    for (let i = 1; i < d.length; i += 1) if (d[i] <= d[i - 1]) mundur += 1;
+    if (d[0] < 8 * 3600) sebelumJamKerja += 1;
     mulai.push(w[0]);
   }
 
   periksa("tanggal keempat langkah selalu sama", tanggalBeda === 0, `${tanggalBeda} perkara berbeda`);
-  periksa("jedanya selalu 1 sampai 10 menit", jedaSalah === 0, `${jedaSalah} jeda di luar batas`);
-  periksa("urutannya tidak pernah mundur", mundur === 0, `${mundur} jeda mundur`);
+  periksa("selisih nyata selalu 60 sampai 659 detik", salah === 0, `${salah} jeda di luar batas`);
+  periksa("urutannya tidak pernah mundur, sampai ke detik", mundur === 0, `${mundur} jeda mundur`);
+  periksa("tanpa geseran, PMH tidak pernah sebelum 08:00", sebelumJamKerja === 0, `${sebelumJamKerja} perkara`);
 
   // Jam yang berulang-ulang sama antar perkara justru menjadi pola tersendiri.
   const kembar = mulai.length - new Set(mulai).size;
   periksa("jam mulai jarang kembar antar perkara", kembar < 30, `${kembar} dari ${mulai.length}`);
-}
-
-// ------------------------------------------------ detik tiap langkah berbeda
-{
-  // Detik yang sama persis pada keempat langkah adalah pola yang kentara di
-  // layar Audit Trail - dan pernah benar-benar terjadi: 11:53:41, 11:57:41,
-  // 12:07:41, 12:09:41 pada perkara 561 tanggal 12 September 2026.
-  let seluruhnyaSama = 0;
-  for (let id = 1; id <= 3000; id += 1) {
-    const detik = rangkaian(id, "2026-09-12", "2026-09-12 23:00:00").map((x) => x.slice(-2));
-    if (new Set(detik).size === 1) seluruhnyaSama += 1;
-  }
-  periksa("detik keempat langkah tidak seluruhnya sama", seluruhnyaSama === 0, `${seluruhnyaSama} perkara`);
 }
 
 // --------------------------------------------- tidak melampaui jam peladen
@@ -119,19 +122,62 @@ console.log("jam penetapan");
   for (const jam of ["09:00:00", "10:30:00", "12:00:00", "23:59:00"]) {
     const server = `2026-09-12 ${jam}`;
     let melampaui = 0;
-    let jedaSalah = 0;
+    let salah = 0;
     for (let id = 1; id <= 500; id += 1) {
       const w = rangkaian(id, "2026-09-12", server);
-      const menit = w.map(keMenit);
-      if (menit[3] > keMenit(server)) melampaui += 1;
-      for (let i = 1; i < menit.length; i += 1) {
-        const jeda = menit[i] - menit[i - 1];
-        if (jeda < 1 || jeda > 10) jedaSalah += 1;
+      // Perbandingan teks sah: bentuknya tetap dan tanggalnya sama.
+      if (w[3] > server) melampaui += 1;
+      salah += jedaSalah(w);
+    }
+    periksa(`jam peladen ${jam}: tidak ada yang melampaui, sampai detiknya`, melampaui === 0, `${melampaui} perkara`);
+    periksa(`jam peladen ${jam}: jedanya tetap 60-659 detik sesudah digeser`, salah === 0, `${salah} jeda`);
+  }
+}
+
+// ---------------------------------------------- geseran disebar antar perkara
+{
+  // Dua puluh lima perkara pada jam peladen 09:00 - ukuran satu penetapan
+  // massal. Sebelumnya: seluruh PHS pada menit 09:00. Kini tersebar di
+  // antara 08:00 dan 09:00, tanpa satu pun sebelum jam kerja.
+  const server = "2026-09-12 09:00:00";
+  const phs = [];
+  let sebelumJamKerja = 0;
+  for (let id = 10101; id <= 10125; id += 1) {
+    const w = rangkaian(id, "2026-09-12", server);
+    phs.push(w[3]);
+    if (keDetik(w[0]) < 8 * 3600) sebelumJamKerja += 1;
+  }
+  const menitPhs = new Set(phs.map((x) => x.slice(11, 16)));
+  const padaMenitPeladen = phs.filter((x) => x.slice(11, 16) === "09:00").length;
+  periksa("25 perkara pukul 09:00: PHS tersebar pada banyak menit", menitPhs.size >= 12, `${menitPhs.size} menit berbeda`);
+  periksa("25 perkara pukul 09:00: tidak semuanya di menit 09:00", padaMenitPeladen <= 5, `${padaMenitPeladen} di 09:00`);
+  periksa("25 perkara pukul 09:00: detik PHS tidak ada yang kembar", new Set(phs).size === phs.length);
+  periksa("geseran tidak melempar PMH ke sebelum 08:00", sebelumJamKerja === 0, `${sebelumJamKerja} perkara`);
+}
+
+// ------------------------------------- monoton terhadap jam peladen per panggilan
+{
+  // Empat panggilan HTTP, empat detik berselang - persis cara rantainya
+  // berjalan. Yang dijaga: jam langkah berikutnya tetap lebih belakangan
+  // dari langkah sebelumnya sekurang-kurangnya 60 detik, walau tiap langkah
+  // dihitung dengan jam peladen yang berbeda.
+  let mundur = 0;
+  let sempit = 0;
+  for (let id = 1; id <= 500; id += 1) {
+    for (const dasar of [9 * 3600, 8 * 3600 + 20 * 60, 11 * 3600 + 30 * 60]) {
+      const jam = URUT.map((jenis, i) => {
+        const s = dasar + i * 4;
+        const server = `2026-09-12 ${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+        return keDetik(waktuLangkah({ perkaraId: id, tanggalPenetapan: "2026-09-12", jenis, saatServer: server }));
+      });
+      for (let i = 1; i < jam.length; i += 1) {
+        if (jam[i] <= jam[i - 1]) mundur += 1;
+        else if (jam[i] - jam[i - 1] < JEDA_MIN) sempit += 1;
       }
     }
-    periksa(`jam peladen ${jam}: tidak ada yang melampaui`, melampaui === 0, `${melampaui} perkara`);
-    periksa(`jam peladen ${jam}: jedanya tetap sah sesudah digeser`, jedaSalah === 0, `${jedaSalah} jeda`);
   }
+  periksa("panggilan berselang: tidak pernah mundur", mundur === 0, `${mundur} langkah`);
+  periksa("panggilan berselang: selisih tetap sekurang-kurangnya 60 detik", sempit === 0, `${sempit} langkah`);
 }
 
 // ------------------------------------------------------ tanggal yang lampau

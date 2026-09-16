@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.4";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.4 - Potensi Verstek dari Sidang Sebelumnya, dan Kotak Keadaan yang Berkelompok";
+export const APP_VERSION = "2.19.5";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.5 - Jam Penetapan Sampai Detik, Smart Majelis di Audit, dan Pratinjau Massal yang Bergilir";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,44 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.5",
+    title: "ALETA Judicia v2.19.5 - Jam Penetapan Sampai Detik, Smart Majelis di Audit, dan Pratinjau Massal yang Bergilir",
+    date: "2026-09-16",
+    status: "Terpasang",
+    summary:
+      "Tiga hal yang diukur atas SIPP satker lalu disamakan: jam tiap langkah penetapan kini dihitung sampai detik " +
+      "(selisih nyata 60-659 detik, tidak pernah mendahului jam peladen, dan penetapan massal pagi hari tidak lagi " +
+      "menumpuk pada satu menit); jejak Smart Majelis di Audit Trail ditulis persis seperti tangan petugas; dan pratinjau " +
+      "penetapan massal memperlihatkan majelis, panitera, juru sita, dan hari sidang tiap perkara - dihitung berurutan " +
+      "sehingga yang tertulis sama dengan yang tertera.",
+    added: [
+      "Rincian di bawah tiap perkara pada Penetapan massal sesudah Periksa: majelis, panitera pengganti, juru sita, hari sidang, ganjalan (akhir pekan, kurang dari 7 hari, nilai sengketa kosong, pejabat berhalangan), dan andaian bot - rapor yang sama dengan papan satu perkara.",
+      "Andaian antrean: usulan perkara ke-n pada pratinjau massal dihitung seolah perkara 1..n-1 sudah tertulis (bobot menurut jenis perkara, sama dengan kueri beban), sehingga giliran majelis, panitera pengganti, dan juru sita pada pratinjau sama dengan penulisannya.",
+    ],
+    changed: [
+      "Jam tiap langkah penetapan dihitung dalam detik: jeda PMH->PPP->PJS->PHS selalu 60-659 detik nyata (sebelumnya hanya angka menitnya yang dijaga; diukur 20-34 detik pada 3 dari 10 perkara), detiknya ikut menaik, dan tidak pernah melampaui jam peladen sampai ke detiknya (sebelumnya sampai 59 detik di masa depan pada pagi hari).",
+      "Rangkaian yang digeser mundur (pagi hari) disebar per perkara di antara 08:00 dan jam peladen - penetapan massal 25 perkara tidak lagi menaruh seluruh PHS pada menit yang sama.",
+      "Audit PMH: ketiga baris perkara_hakim_pn berjudul 'dari halaman Smart Majelis TAMBAH PENETAPAN HAKIM/MAJELIS HAKIM' persis tulisan SIPP saat petugas memakai tombol Smart Majelis (782 dari 1.112 perkara 2026); formname dan dua baris lainnya tidak berubah.",
+      "Baris perkara_smartmajelis berstatus 1 (sesuai rekomendasi) dengan majelis_id menurut ref_majelis_tetap dan kompetensi jenis perkaranya bila susunan yang ditetapkan adalah majelis SK; selain itu status 2 beserta sebabnya seperti sebelumnya. Laporan Smart Majelis SIPP tidak lagi menghitung tiap perkara ALETA sebagai penyimpangan.",
+    ],
+    fixed: [
+      "Pratinjau penetapan massal menampilkan majelis yang sama untuk seluruh perkara padahal penulisannya bergilir - kini dihitung dengan andaian berurutan.",
+      "Dua bukti luring yang usang: bukti audit menuntut 7 baris (bentuk SIPP 5 sejak 2.19.2) dan bukti PPP mencocokkan kode panitera yang tabrakan (SK menunjuk orang lewat id sejak 2.18.0).",
+    ],
+    security: [
+      "Andaian dari peramban disaring dua kali (rute portal dan gerbang bot): bilangan bulat positif, tanggal ISO, paling banyak 25 butir.",
+      "Bukti baru: tidak ada dua baris audit yang tabel, aksi, judul, dan isinya sama dalam satu rantai penetapan (16 baris: PMH 5, PPP 3, PJS 3, PHS 5 - persis SIPP).",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.150.0 - reload di chrome://extensions.",
+      "Penetapan yang sudah tertulis tidak disentuh; bentuk baru berlaku pada penetapan berikutnya.",
+      "Sidang keliling pada penetapan massal masih hanya menyamakan tempat; hari sidang tiap perkara mengikuti hari majelisnya - menunggu keputusan.",
+    ],
+    knownLimitations: [
+      "majelis_id dipilih menurut peta kompetensi yang diukur dari kebiasaan satker (Pdt.G -> Perdata Agama, Pdt.P -> Permohonan, Kewarisan -> Waris, Ekonomi Syariah, Dispensasi Kawin); susunan yang tidak ada di ref_majelis_tetap tetap ditulis sebagai status 2.",
+    ],
+  },
   {
     version: "2.19.4",
     title: "ALETA Judicia v2.19.4 - Potensi Verstek dari Sidang Sebelumnya, dan Kotak Keadaan yang Berkelompok",

@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { bacaAndaianPenunjukan } from "@/lib/andaian-penunjukan";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { type RoleId } from "@/lib/types";
 import { getDatabase } from "@/server/db/client";
@@ -63,6 +64,12 @@ export async function GET(request: NextRequest) {
       .filter((x) => Number.isInteger(x) && x > 0)
       .slice(0, 5);
 
+    // Andaian antrean massal: perkara yang sudah diperiksa sebelumnya di papan
+    // dan dianggap tertulis, supaya usulan perkara ini bergilir seperti
+    // penulisannya nanti. Bentuk ringkasnya dibaca pustaka murni yang diuji
+    // sendiri; bot menyaringnya sekali lagi.
+    const andaian = bacaAndaianPenunjukan(request.nextUrl.searchParams.get("andaian"));
+
     const hasil = await getGatewayPenunjukanUsulan({
       nomorPerkara: nomor,
       pengaturan: {
@@ -73,6 +80,7 @@ export async function GET(request: NextRequest) {
         // sidangnya ditunjuk lewat id, bukan lewat kode yang tabrakan di SIPP.
         susunanSk: pengaturan.susunanSk as unknown as Record<string, unknown>[],
         pilihanMajelis,
+        andaian,
       },
     });
 

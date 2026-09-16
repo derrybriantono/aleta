@@ -308,7 +308,19 @@ async function jalan() {
       "ketua majelisnya yang pertama - Sudarmin (B)",
       hasil.pmh.anggota[0].nama === "Sudarmin H.I.M. Tang" && hasil.pmh.majelisKode === "B"
     );
-    periksa("PP mengikuti kode D majelis B", hasil.ppp.usulan && hasil.ppp.usulan.kode === "D1");
+    // SK menunjuk ORANGNYA (id panitera_pn), bukan kodenya - kode panitera di
+    // SIPP tabrakan (empat orang berkode D). Lihat migrasi 0044. Penjaga lama
+    // menuntut kode D1 dari pencocokan kode yang sudah tidak ada.
+    const hasilSk = await layanan.usulanPenunjukan("468/Pdt.G/2026/PA.Dgl", {
+      ...PENGATURAN,
+      susunanSk: [{ majelisKode: "B", hakimKode: ["B", "C2", "C3"], panitera: [{ kode: "D1", id: 2 }] }],
+    });
+    periksa(
+      "PP mengikuti panitera SK majelis B - D1, id 2",
+      Boolean(hasilSk.ppp.usulan) &&
+        Number(hasilSk.ppp.usulan.paniteraId ?? hasilSk.ppp.usulan.id) === 2 &&
+        String(hasilSk.ppp.usulan.kodeSk || hasilSk.ppp.usulan.kode) === "D1"
+    );
     periksa("sidang pertama 2026-08-11", hasil.phs.usulan === "2026-08-11");
     periksa("jaraknya 14 hari", hasil.phs.jarakHari === 14);
     periksa("tanggal penetapan keempatnya satu", typeof hasil.tanggalPenetapan === "string");
