@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.153.0",
+    dirilis: "2026-09-16T12:00:00+08:00",
+    judul: "Unduhan yang tertahan Chrome, dan status putusan pada nama berkas",
+    butir: [
+      "UNDUHAN ABT TIDAK LAGI DITAHAN. Versi sebelumnya menjawab nama berkas MENYUSUL, dan Chrome menahan unduhannya - \"Insecure download blocked\". Jawabannya kembali seketika dari salinan di ingatan; penyimpanan sesi tetap dipakai, hanya untuk memulihkan ingatan itu saat pekerja latar bangun.",
+      "STATUS PUTUSAN DAN VERSTEK IKUT PADA NAMANYA: nomor perkara, keterangan blangko, status putusan, lalu jenis berkasnya. Dibaca dari jadwal sidang yang memang sudah dimuat panel.",
+      "Bila konteksnya belum sempat pulih, berkasnya memakai nama bawaan ABT - kekurangan yang terlihat dan dapat diperbaiki orang, tidak seperti unduhan yang tertahan.",
+    ],
+  },
+  {
     versi: "1.152.0",
     dirilis: "2026-09-16T11:00:00+08:00",
     judul: "Nama unduhan ABT tidak lagi hilang bersama pekerja latarnya",

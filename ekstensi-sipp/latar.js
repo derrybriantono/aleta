@@ -226,31 +226,56 @@ function namaUnduhanAbt(nama, konteks) {
   return `${bagian.join(" - ")}.${akhiran}`.replace(/[\\/:*?"<>|]+/g, "_");
 }
 
+/**
+ * ============================================================================
+ * DIJAWAB SEKETIKA - MENUNGGU MEMBUAT UNDUHANNYA TERTAHAN
+ * ============================================================================
+ *
+ * 2.19.7 menjawab MENYUSUL: pendengarnya memulangkan true, membaca
+ * penyimpanan, baru menyarankan namanya. Chrome mengizinkan bentuk itu, dan
+ * ujinya hijau - tetapi di peramban petugas hasilnya "Insecure download
+ * blocked" pada unduhan ABT yang sebelumnya lewat begitu saja. Unduhan yang
+ * tertahan jauh lebih merugikan daripada berkas bernama "download": yang
+ * pertama menghentikan pekerjaan, yang kedua hanya merepotkan.
+ *
+ * Karena itu jawabannya kembali SEKETIKA, dari salinan di ingatan. Ingatan
+ * pekerja MV3 memang hilang tiap ±30 detik menganggur (lihat 2.19.7), dan itu
+ * ditutup dari dua arah:
+ *
+ *   - penyimpanan sesi MEMULIHKANNYA saat pekerjanya bangun - menolong ketika
+ *     unduhannya datang beberapa detik sesudah pekerja hidup kembali;
+ *   - halaman ABT menyegarkan konteksnya pada tiap `pointerdown`, yaitu
+ *     beberapa milidetik SEBELUM tombol CETAK menerbitkan unduhannya. Pesan
+ *     itu sendiri yang membangunkan pekerjanya, dan ia tiba lebih dahulu.
+ *
+ * Yang tidak tertutup - konteksnya belum sempat pulih - berakhir dengan nama
+ * bawaan ABT. Itu kekurangan yang terlihat dan dapat diperbaiki orang;
+ * unduhan yang tertahan tidak.
+ */
+let konteksIngatan = null;
+
+// Dipulihkan sekali saat pekerja bangun. Tidak ditunggu siapa pun: yang
+// menunggu justru cacat yang baru saja diperbaiki.
+void bacaKonteksUnduh().then((konteks) => {
+  if (konteks && !konteksIngatan) konteksIngatan = konteks;
+});
+
 if (chrome.downloads && chrome.downloads.onDeterminingFilename) {
   chrome.downloads.onDeterminingFilename.addListener((barang, sarankan) => {
-    const nama = String((barang && barang.filename) || "");
-    const asal = `${(barang && barang.url) || ""} ${(barang && barang.referrer) || ""}`;
-    const dariAbt = /\/aps_badilag\//i.test(asal) || /\/abt\//i.test(asal);
+    try {
+      const nama = String((barang && barang.filename) || "");
+      const asal = `${(barang && barang.url) || ""} ${(barang && barang.referrer) || ""}`;
+      const dariAbt = /\/aps_badilag\//i.test(asal) || /\/abt\//i.test(asal);
+      const segar =
+        konteksIngatan && Date.now() - Number(konteksIngatan.saat || 0) < UMUR_KONTEKS_UNDUH;
 
-    // Yang tidak mungkin diubah dijawab SEKARANG. Menjawab benar lalu
-    // menunggu penyimpanan pada tiap unduhan biasa - gambar, lampiran,
-    // pemasang - menahan seluruh unduhan peramban selama pembacaan itu.
-    if (!dariAbt || !POLA_NAMA_UMUM.test(nama)) return false;
+      if (!dariAbt || !segar || !POLA_NAMA_UMUM.test(nama)) return false;
 
-    // Sisanya dibaca dari penyimpanan, dan karena itu menyusul. Chrome
-    // mengizinkannya asal listener-nya memulangkan true dan sarankan()
-    // dipanggil TEPAT sekali - termasuk pada jalan yang gagal, kalau tidak
-    // unduhannya menggantung tanpa nama.
-    bacaKonteksUnduh()
-      .then((konteks) => {
-        if (!konteks) {
-          sarankan();
-          return;
-        }
-        sarankan({ filename: namaUnduhanAbt(nama, konteks), conflictAction: "uniquify" });
-      })
-      .catch(() => sarankan());
-    return true;
+      sarankan({ filename: namaUnduhanAbt(nama, konteksIngatan), conflictAction: "uniquify" });
+      return true;
+    } catch {
+      return false;
+    }
   });
 }
 
@@ -310,11 +335,15 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
   // dan yang menekan CETAK selalu sedang menatap halaman yang baru saja
   // mengabarkan konteksnya.
   if (pesan.jenis === "konteks-unduh") {
-    void simpanKonteksUnduh({
+    // Ingatan lebih dahulu - itulah yang dibaca pendengar unduhan, dan ia
+    // harus sudah terisi begitu pesan ini selesai. Penyimpanan menyusul,
+    // untuk pekerja yang kelak bangun tanpa ingatan.
+    konteksIngatan = {
       nomor: String(pesan.nomor || "").slice(0, 60),
       keterangan: String(pesan.keterangan || "").slice(0, 60),
       saat: Date.now(),
-    });
+    };
+    void simpanKonteksUnduh(konteksIngatan);
     jawab({ ok: true });
     return false;
   }

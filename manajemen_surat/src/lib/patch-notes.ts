@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.7";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.7 - Nama Unduhan ABT yang Hilang Bersama Pekerja Latarnya";
+export const APP_VERSION = "2.19.8";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.8 - Unduhan yang Tertahan, dan Status Putusan pada Namanya";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,36 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.8",
+    title: "ALETA Judicia v2.19.8 - Unduhan yang Tertahan, dan Status Putusan pada Namanya",
+    date: "2026-09-16",
+    status: "Terpasang",
+    summary:
+      "Perbaikan 2.19.7 menimbulkan cacat yang lebih berat daripada yang diperbaikinya: unduhan ABT ditahan Chrome " +
+      "dengan pesan Insecure download blocked. Sebabnya pendengar nama berkas menjawab menyusul. Jawabannya kembali " +
+      "seketika. Sekalian dipenuhi permintaan yang tertinggal sejak 15 September: status putusan dan verstek ikut " +
+      "tertulis pada nama berkas.",
+    added: [
+      "Status putusan dan penanda verstek ikut pada nama berkas yang diunduh dari panel: nomor perkara, keterangan blangko, status putusan, lalu jenis berkasnya. Dibaca dari SIPP lewat jadwal sidang yang memang sudah dimuat panel - tanpa permintaan tambahan.",
+    ],
+    changed: [
+      "Pendengar nama unduhan menjawab seketika dari salinan di ingatan. Penyimpanan sesi tetap dipakai, tetapi hanya untuk MEMULIHKAN ingatan itu saat pekerja latar bangun - tidak lagi dibaca pada saat unduhannya datang.",
+    ],
+    fixed: [
+      "Unduhan dari ABT ditahan Chrome sejak 2.19.7 dengan pesan Insecure download blocked. Chrome memang menahan unduhan yang berasal dari halaman http, dan itulah sebabnya unduhan panel diterbitkan lewat ekstensi sejak semula; pendengar yang menjawab menyusul membuat unduhan ABT ikut jatuh ke penahanan itu.",
+      "Status putusan tidak pernah tertulis pada nama berkas, sehingga dua putusan dari perkara yang sama - satu verstek, satu contradictoir - hanya dapat dibedakan dengan membukanya.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.153.0 - reload di chrome://extensions.",
+      "Yang membuat namanya tetap benar adalah penyegaran konteks pada tiap sentuhan halaman ABT (2.19.7): ia terjadi beberapa milidetik sebelum tombol cetak menerbitkan unduhannya.",
+    ],
+    knownLimitations: [
+      "Bila pekerja latar baru saja dibangunkan dan konteksnya belum sempat pulih dari penyimpanan, berkasnya memakai nama bawaan ABT. Itu kekurangan yang terlihat dan dapat diperbaiki orang; unduhan yang tertahan tidak.",
+      "Status putusan hanya tertulis bila SIPP sudah mencatatnya - putusan yang baru dibacakan hari itu kerap belum.",
+    ],
+  },
   {
     version: "2.19.7",
     title: "ALETA Judicia v2.19.7 - Nama Unduhan ABT yang Hilang Bersama Pekerja Latarnya",

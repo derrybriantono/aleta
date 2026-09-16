@@ -47,7 +47,7 @@ describe("butir 1 - nama berkas unduhan", () => {
     // Kesegaran konteksnya tidak lagi diperiksa di baris ini: sejak konteksnya
     // dibaca dari penyimpanan (2.19.7), yang di sini hanya yang dapat dijawab
     // SEKETIKA - asal dan bentuk namanya.
-    expect(latar).toContain("if (!dariAbt || !POLA_NAMA_UMUM.test(nama)) return false;");
+    expect(latar).toContain("if (!dariAbt || !segar || !POLA_NAMA_UMUM.test(nama)) return false;");
   });
 
   it("konteks yang sudah basi tidak dipakai", () => {
@@ -85,24 +85,36 @@ describe("butir 1 - nama berkas unduhan", () => {
     expect(latar).toContain("(chrome.storage && chrome.storage.session) || (chrome.storage && chrome.storage.local)");
   });
 
-  it("sarankan() dipanggil TEPAT sekali, termasuk pada jalan yang gagal", () => {
-    // Listener yang memulangkan true tetapi tidak pernah memanggil sarankan()
-    // membuat unduhannya menggantung tanpa nama.
+  it("pendengarnya menjawab SEKETIKA - tidak pernah menunggu penyimpanan", () => {
+    // 2.19.7 menjawab menyusul (return true lalu sarankan asinkron). Chrome
+    // mengizinkannya dan ujinya hijau, tetapi di peramban petugas hasilnya
+    // "Insecure download blocked" pada unduhan ABT yang sebelumnya lewat
+    // begitu saja. Unduhan yang tertahan menghentikan pekerjaan; berkas
+    // bernama "download" hanya merepotkan.
     const mulai = latar.indexOf("chrome.downloads.onDeterminingFilename.addListener");
     expect(mulai).toBeGreaterThan(-1);
-    const badan = latar.slice(mulai, mulai + 1600);
-    expect(badan).toContain("sarankan();");
-    expect(badan).toContain(".catch(() => sarankan());");
+    // Dibatasi sampai pendengar berikutnya: irisan bertakar angka akan memuat
+    // kode lain, dan penjaganya lalu menyalahkan yang tidak bersalah.
+    const badan = latar.slice(mulai, latar.indexOf("chrome.runtime.onMessage.addListener", mulai));
+    expect(badan).not.toContain("bacaKonteksUnduh()");
+    expect(badan).not.toContain(".then(");
+    expect(badan).toContain("sarankan({ filename: namaUnduhanAbt(nama, konteksIngatan)");
     expect(badan).toContain("conflictAction: \"uniquify\"");
   });
 
-  it("yang jelas bukan unduhan ABT ditolak SEKARANG, tanpa menunggu penyimpanan", () => {
-    // Menjawab benar lalu membaca penyimpanan pada tiap unduhan biasa menahan
-    // seluruh unduhan peramban selama pembacaan itu.
+  it("satu keadaan saja yang tidak terpenuhi: namanya dibiarkan, unduhannya jalan terus", () => {
     const mulai = latar.indexOf("chrome.downloads.onDeterminingFilename.addListener");
-    const badan = latar.slice(mulai, mulai + 1600);
-    expect(badan).toContain("if (!dariAbt || !POLA_NAMA_UMUM.test(nama)) return false;");
-    expect(badan.indexOf("if (!dariAbt")).toBeLessThan(badan.indexOf("bacaKonteksUnduh()"));
+    const badan = latar.slice(mulai, latar.indexOf("chrome.runtime.onMessage.addListener", mulai));
+    expect(badan).toContain("if (!dariAbt || !segar || !POLA_NAMA_UMUM.test(nama)) return false;");
+  });
+
+  it("penyimpanan hanya MEMULIHKAN ingatannya, bukan dibaca saat unduhan datang", () => {
+    expect(latar).toContain("let konteksIngatan = null;");
+    expect(latar).toContain("void bacaKonteksUnduh().then((konteks) => {");
+    // Pesan dari halaman mengisi ingatannya lebih dahulu, penyimpanan menyusul.
+    const mulai = latar.indexOf('if (pesan.jenis === "konteks-unduh")');
+    const badan = latar.slice(mulai, mulai + 700);
+    expect(badan.indexOf("konteksIngatan = {")).toBeLessThan(badan.indexOf("simpanKonteksUnduh("));
   });
 
   it("konteksnya disegarkan selama petugas masih menyentuh halaman ABT", () => {

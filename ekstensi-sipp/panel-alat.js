@@ -3345,6 +3345,9 @@ async function alatSidangPadaTanggal(tanggalIso) {
       jenis: String(s.jenisPerkara || ""),
       agenda: String(s.agenda || ""),
       sudahPutus: Boolean(s.sudahPutus),
+      // Dipakai menamai berkas - lihat sebutStatusPutusan di abt.js.
+      statusPutusan: String(s.statusPutusan || ""),
+      verstek: Boolean(s.verstekPutusan),
       ditunda: Boolean(s.ditunda),
       ikrar: Boolean(s.sidangIkrarTalak),
       jam: String(s.jamSidang || ""),

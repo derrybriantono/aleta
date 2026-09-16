@@ -9,20 +9,20 @@ import { describe, expect, it } from "vitest";
  * PENAMAAN UNDUHAN ABT - DIJALANKAN, BUKAN DIBACA TEKSNYA
  * ============================================================================
  *
- * Aturan penamaannya sudah dijaga sejak 1.146.0, dan penjaganya hijau terus.
- * Meski begitu, 16 September 2026 folder unduhan berisi enam berkas bernama
- * "download.rtf" dan "download (2).pdf" - pada hari yang sama ketika unduhan
- * lewat panel ALETA bernama benar.
+ * Aturan penamaannya dijaga sejak 1.146.0 dan penjaganya hijau terus. Meski
+ * begitu, dua kekeliruan berturut-turut lolos darinya:
  *
- * Sebabnya tidak dapat dilihat dari teks kodenya: konteks perkara disimpan
- * pada satu variabel modul di pekerja latar Manifest V3, dan Chrome mematikan
- * pekerja itu sesudah kira-kira tiga puluh detik menganggur. Seluruh penjaga
- * teks tetap hijau karena setiap kata yang mereka cari memang masih ada.
+ *   16 Sep pagi  berkas bernama "download.rtf" - konteks perkara disimpan
+ *                pada variabel modul pekerja MV3, yang hilang tiap ±30 detik
+ *                menganggur;
+ *   16 Sep siang "Insecure download blocked" - perbaikannya menjawab
+ *                MENYUSUL (return true lalu sarankan asinkron), dan Chrome
+ *                menahan unduhan ABT yang sebelumnya lewat begitu saja.
  *
- * Karena itu berkas ini MENJALANKAN latar.js di dalam node:vm dengan chrome
- * tiruan, lalu memanggil pendengarnya seperti Chrome memanggilnya - termasuk
- * keadaan "pekerja baru saja dibangunkan, ingatannya kosong, tetapi
- * penyimpanannya masih ada".
+ * Keduanya tidak terlihat dari teks kodenya: tiap kata yang dicari penjaga
+ * memang ada. Karena itu berkas ini MENJALANKAN latar.js di dalam node:vm
+ * dengan chrome tiruan, memanggil pendengarnya seperti Chrome memanggilnya,
+ * dan memeriksa dua hal sekaligus - namanya benar, DAN jawabannya seketika.
  */
 
 const AKAR = path.resolve(__dirname, "../../../ekstensi-sipp");
@@ -40,6 +40,7 @@ type Unduhan = { filename: string; url: string; referrer?: string };
 function nyalakanPekerja(gudang: Record<string, unknown>) {
   let dengar: ((b: Unduhan, s: (u?: Saran) => void) => boolean) | null = null;
   const pesanMasuk: Array<(p: unknown, k: unknown, j: (x: unknown) => void) => unknown> = [];
+  let selisihWaktu = 0;
 
   const nyata: Record<string, unknown> = {
     storage: {
@@ -90,6 +91,15 @@ function nyalakanPekerja(gudang: Record<string, unknown>) {
       apply: () => undefined,
     });
 
+  // Jam yang dapat dimajukan - dipakai menguji konteks yang sudah basi tanpa
+  // menunggu lima menit sungguhan.
+  const DateAsli = Date;
+  class DateGeser extends DateAsli {
+    static now() {
+      return DateAsli.now() + selisihWaktu;
+    }
+  }
+
   const konteks: Record<string, unknown> = {
     console,
     setTimeout,
@@ -100,6 +110,7 @@ function nyalakanPekerja(gudang: Record<string, unknown>) {
     URL,
     TextDecoder,
     TextEncoder,
+    Date: DateGeser,
   };
   konteks.self = konteks;
   konteks.globalThis = konteks;
@@ -119,11 +130,19 @@ function nyalakanPekerja(gudang: Record<string, unknown>) {
         if (jawaban !== true) selesai(null);
       });
     },
+    /** Memanggil pendengarnya apa adanya - untuk memastikan jawabannya seketika. */
+    namaiMentah(unduhan: Unduhan, saran: (u?: Saran) => void) {
+      return dengar!(unduhan, saran);
+    },
     /** Seperti halaman ABT mengabarkan konteksnya. */
     kabarkan(nomor: string, keterangan: string) {
       for (const f of pesanMasuk) {
         f({ sumber: "aleta-panel", jenis: "konteks-unduh", nomor, keterangan }, {}, () => {});
       }
+    },
+    /** Memajukan jam pekerjanya - untuk membuat konteksnya basi. */
+    majuWaktu(ms: number) {
+      selisihWaktu += ms;
     },
   };
 }
@@ -131,33 +150,65 @@ function nyalakanPekerja(gudang: Record<string, unknown>) {
 const ABT = "http://192.168.10.10/aps_badilag/abt/preview?c=10119&b=x&a=y";
 
 describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => {
-  it("pekerja yang BARU DIBANGUNKAN tetap menamainya - inilah cacat 16 Sep 2026", async () => {
-    // Halaman mengabarkan konteksnya, lalu pekerjanya mati (Chrome mematikan
-    // pekerja MV3 sesudah ±30 detik menganggur), lalu unduhannya datang dan
-    // membangunkannya kembali. Sebelum perbaikan ini, pekerja yang baru
-    // bangun itu tidak ingat apa-apa dan berkasnya bernama "download".
-    const gudang: Record<string, unknown> = {};
-    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "[01] [Kabul Verstek] Cerai");
-
-    const sesudahBangun = nyalakanPekerja(gudang); // pekerja yang lain sama sekali
-    const usul = await sesudahBangun.namai({ filename: "download.rtf", url: ABT });
+  it("halaman yang baru mengabarkan konteksnya: unduhannya dinamai", async () => {
+    // Inilah jalan yang sesungguhnya ditempuh. Halaman ABT menyegarkan
+    // konteksnya pada tiap pointerdown - beberapa milidetik sebelum tombol
+    // CETAK menerbitkan unduhannya - sehingga pekerjanya sudah terbangun dan
+    // ingatannya terisi ketika unduhan itu tiba.
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "[01] [Kabul Verstek] Cerai");
+    const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
 
     expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - [01] [Kabul Verstek] Cerai - putusan.rtf");
     expect(usul?.conflictAction).toBe("uniquify");
   });
 
+  it("DIJAWAB SEKETIKA - pendengarnya tidak pernah menunggu apa pun", () => {
+    // 16 September siang: pendengarnya menjawab menyusul, dan Chrome menahan
+    // unduhannya - "Insecure download blocked". Unduhan yang tertahan
+    // menghentikan pekerjaan; berkas bernama "download" hanya merepotkan.
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    let dijawab = false;
+    const jawaban = pekerja.namaiMentah({ filename: "download.rtf", url: ABT }, () => {
+      dijawab = true;
+    });
+    // Sudah terjawab sebelum satu putaran mikrotugas pun berlalu.
+    expect(dijawab).toBe(true);
+    expect(jawaban).toBe(true);
+  });
+
+  it("yang ditolak pun ditolak seketika, tanpa janji yang menggantung", () => {
+    const pekerja = nyalakanPekerja({});
+    let dijawab = false;
+    const jawaban = pekerja.namaiMentah(
+      { filename: "download.rtf", url: "https://contoh.example/lampiran" },
+      () => {
+        dijawab = true;
+      }
+    );
+    // false berarti "tidak diubah" - Chrome meneruskan unduhannya sendiri.
+    expect(jawaban).toBe(false);
+    expect(dijawab).toBe(false);
+  });
+
   it("garis miring nomor perkara tidak menjadi folder", async () => {
     // "567/Pdt.G/2026" sebagai nama berkas akan membuat Chrome menaruhnya di
     // dalam folder bertingkat - atau menolaknya sama sekali.
-    const gudang: Record<string, unknown> = {};
-    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "");
-    const usul = await nyalakanPekerja(gudang).namai({ filename: "download (2).pdf", url: ABT });
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    const usul = await pekerja.namai({ filename: "download (2).pdf", url: ABT });
     expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - putusan.pdf");
     expect(usul?.filename).not.toContain("/");
   });
 
-  it("tanpa konteks sama sekali, namanya dibiarkan - bukan dikarang", async () => {
-    const usul = await nyalakanPekerja({}).namai({ filename: "download.rtf", url: ABT });
+  it("pekerja yang bangun tanpa ingatan MEMBIARKAN namanya - unduhannya tidak ditahan", async () => {
+    // Penyimpanan sesi memulihkan konteksnya, tetapi pemulihan itu menyusul.
+    // Yang dijaga: pada saat itu pendengarnya menolak seketika, bukan
+    // menunggu pemulihannya.
+    const gudang: Record<string, unknown> = {};
+    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    const usul = await nyalakanPekerja(gudang).namai({ filename: "download.rtf", url: ABT });
     expect(usul).toBeNull();
   });
 
@@ -165,21 +216,25 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
     // Nomor perkara dari setengah jam lalu yang ditempelkan ke unduhan
     // perkara lain tidak akan pernah disadari: berkasnya terbuka benar,
     // namanya berbohong.
-    const gudang: Record<string, unknown> = {
-      "aleta-konteks-unduh": {
-        nomor: "999/Pdt.G/2026/PA.Dgl",
-        keterangan: "",
-        saat: Date.now() - 6 * 60 * 1000,
-      },
-    };
-    const usul = await nyalakanPekerja(gudang).namai({ filename: "download.rtf", url: ABT });
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("999/Pdt.G/2026/PA.Dgl", "");
+    pekerja.majuWaktu(6 * 60 * 1000);
+    const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
     expect(usul).toBeNull();
   });
 
+  it("empat menit sesudahnya MASIH dipakai - batasnya lima menit, bukan sekejap", async () => {
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    pekerja.majuWaktu(4 * 60 * 1000);
+    const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
+    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - putusan.rtf");
+  });
+
   it("unduhan di luar ABT tidak disentuh sama sekali", async () => {
-    const gudang: Record<string, unknown> = {};
-    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "");
-    const usul = await nyalakanPekerja(gudang).namai({
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    const usul = await pekerja.namai({
       filename: "download.rtf",
       url: "https://contoh.example/lampiran",
     });
@@ -189,10 +244,10 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
   it("nama yang dipilih orang atau ABT sendiri tidak pernah ditimpa", async () => {
     // Menimpa nama yang dipilih orang lain jauh lebih merugikan daripada
     // membiarkan satu berkas bernama "download".
-    const gudang: Record<string, unknown> = {};
-    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    const pekerja = nyalakanPekerja({});
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
     for (const nama of ["Putusan Nomor 5.rtf", "salinan.pdf", "download.zip"]) {
-      const usul = await nyalakanPekerja(gudang).namai({ filename: nama, url: ABT });
+      const usul = await pekerja.namai({ filename: nama, url: ABT });
       expect(usul, nama).toBeNull();
     }
   });
@@ -200,11 +255,21 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
   it("konteks yang datang belakangan menggantikan yang lama", async () => {
     // Petugas berpindah perkara di tab yang sama. Yang terakhir dikabarkan
     // itulah yang sedang ditatapnya.
-    const gudang: Record<string, unknown> = {};
-    const pekerja = nyalakanPekerja(gudang);
+    const pekerja = nyalakanPekerja({});
     pekerja.kabarkan("111/Pdt.G/2026/PA.Dgl", "");
     pekerja.kabarkan("222/Pdt.G/2026/PA.Dgl", "");
-    const usul = await nyalakanPekerja(gudang).namai({ filename: "download.rtf", url: ABT });
+    const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
     expect(usul?.filename).toBe("222_Pdt.G_2026_PA.Dgl - putusan.rtf");
+  });
+
+  it("konteksnya tetap disimpan untuk pekerja yang kelak bangun", async () => {
+    // Ingatan yang menjawab unduhan, penyimpanan yang menolong sesudah
+    // pekerjanya mati - keduanya dipakai, bukan salah satu.
+    const gudang: Record<string, unknown> = {};
+    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "keterangan");
+    const tersimpan = gudang["aleta-konteks-unduh"] as Record<string, unknown>;
+    expect(tersimpan?.nomor).toBe("567/Pdt.G/2026/PA.Dgl");
+    expect(tersimpan?.keterangan).toBe("keterangan");
+    expect(typeof tersimpan?.saat).toBe("number");
   });
 });

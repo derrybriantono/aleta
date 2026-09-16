@@ -1194,14 +1194,49 @@ async function unduhBlob(blob, nama) {
  * mana pun, dan yang lolos pun menghasilkan tiga berkas dengan nama sepanjang
  * satu baris.
  */
+/**
+ * ============================================================================
+ * STATUS PUTUSAN IKUT PADA NAMANYA - TERMASUK VERSTEK
+ * ============================================================================
+ *
+ * Diminta sejak 15 September: nama berkas menyebut nomor perkara,
+ * deskripsinya, status putusannya, dan verstek atau bukan. Dua yang pertama
+ * sudah ada; status dan verstek belum, sehingga dua berkas dari perkara yang
+ * sama - satu dikabulkan verstek, satu contradictoir - hanya dapat dibedakan
+ * dengan membukanya.
+ *
+ * Sumbernya SIPP, lewat jadwal sidang yang sudah dibaca panel massal
+ * (statusPutusan dan verstekPutusan). Pada halaman satu perkara, panel
+ * menanyakannya sekali lalu menyimpannya di statusPutusanPerkara.
+ *
+ * Yang tidak terbaca tidak menambahkan apa pun - nama berkas yang mengarang
+ * status putusan jauh lebih berbahaya daripada nama yang pendek.
+ */
+const statusPutusanPerkara = new Map();
+
+/** "Dikabulkan" + verstek menjadi "Dikabulkan verstek". */
+function sebutStatusPutusan(nomorPerkara) {
+  const keadaan = statusPutusanPerkara.get(String(nomorPerkara || ""));
+  if (!keadaan) return "";
+  const status = String(keadaan.statusPutusan || "").trim();
+  const verstek = keadaan.verstek ? "verstek" : "";
+  // Status yang sudah menyebut verstek tidak diulang: SIPP menulis
+  // "DIKABULKAN (verstek)" pada sebagian baris.
+  if (verstek && /verstek/i.test(status)) return status;
+  return [status, verstek].filter(Boolean).join(" ");
+}
+
 function namaBerkas(nomorPerkara, akhiran, jenis) {
   const dasar = String(nomorPerkara || "putusan").replace(/[\\/:*?"<>|]+/g, "_");
   // Keterangan blangko - amar dan verstek - disisipkan di antara nomor perkara
   // dan jenis berkasnya. Dikosongkan bila kepala halamannya tidak terbaca;
   // nama berkas yang memuat potongan kalimat lebih buruk daripada nama pendek.
   const ket = ringkasBlangkoAbt();
-  const bagian = [dasar, ket, jenis].filter(Boolean);
-  return `${bagian.join(" - ")}.${akhiran}`;
+  const status = sebutStatusPutusan(nomorPerkara);
+  const bagian = [dasar, ket, status, jenis].filter(Boolean);
+  return `${bagian.join(" - ")}.${akhiran}`
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, " ");
 }
 
 function base64DariBuffer(buffer) {
@@ -4613,6 +4648,16 @@ function bagianMassalAbt(keadaan) {
       kabar.textContent = `Tidak ada sidang pada ${keadaan.tanggal}.`;
       return;
     }
+    // Status putusan tiap perkara diingat untuk penamaan berkas - lihat
+    // sebutStatusPutusan. Dibaca dari jadwal sidang yang baru saja dimuat,
+    // jadi tidak ada permintaan tambahan ke peladen.
+    for (const s of keadaan.sidang) {
+      statusPutusanPerkara.set(s.nomor, {
+        statusPutusan: s.statusPutusan || "",
+        verstek: Boolean(s.verstek),
+      });
+    }
+
     const belumPutus = keadaan.sidang.filter((s) => !s.sudahPutus);
     kabar.textContent =
       `${keadaan.sidang.length} perkara bersidang; ${belumPutus.length} belum putus dan ditawarkan. ` +
