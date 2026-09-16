@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.151.0",
+    dirilis: "2026-09-16T10:30:00+08:00",
+    judul: "Putusan massal ABT menyebut langkah berikutnya, dan rencananya kedaluwarsa bila pilihannya berubah",
+    butir: [
+      "SESUDAH DIPERIKSA, TOMBOLNYA BERBUNYI \"Jalankan N perkara sekarang\" dan di bawah daftar rencana tertulis kalimat yang menyuruh menekannya. Sebelumnya seluruh yang terlihat berbunyi \"belum\" - tombolnya \"Periksa dulu - belum dijalankan\", hasilnya \"belum ada yang dikerjakan\" - sehingga panelnya terbaca seperti buntu, dan dilaporkan sebagai tidak bisa dipakai.",
+      "RENCANA YANG BASI TIDAK DAPAT DIJALANKAN. Mencentang perkara lain, mengganti blangko, atau mematikan pilihan pekerjaan sesudah diperiksa membatalkan rencananya: tombol Jalankan mati, namanya pulih, dan sebabnya dikatakan. Sebelumnya ketujuh perkara dikerjakan padahal yang diperlihatkan hanya empat.",
+      "Menekan Jalankan dua kali tidak lagi mengulang perkara yang sama. Mencari, menyaring, dan mengurutkan tetap tidak membatalkan apa pun.",
+    ],
+  },
+  {
     versi: "1.150.0",
     dirilis: "2026-09-16T09:30:00+08:00",
     judul: "Penetapan massal memperlihatkan siapa dan kapan, dan menghitungnya berurutan",

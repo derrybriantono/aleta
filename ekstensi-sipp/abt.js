@@ -4471,6 +4471,9 @@ function bagianMassalAbt(keadaan) {
     l.appendChild(c);
     l.appendChild(buatElemen("span", "aleta-massal-nomor", label));
     if (judul) l.title = judul;
+    // Rencananya menyebut rantai pekerjaannya - "RTF → draf → PDF → anonim".
+    // Mematikan salah satunya sesudah diperiksa membuat rencana itu berbohong.
+    c.addEventListener("change", () => lupakanPemeriksaan("Pilihan pekerjaan berubah"));
     pilihan.appendChild(l);
     return c;
   };
@@ -4500,6 +4503,51 @@ function bagianMassalAbt(keadaan) {
   const neraca = buatElemen("div", "aleta-massal-neraca");
   kotak.appendChild(neraca);
 
+  /**
+   * ==========================================================================
+   * SUDAH DIPERIKSA - DAN APA SAJA YANG MEMBATALKANNYA
+   * ==========================================================================
+   *
+   * Dua tekanan: Periksa menyusun rencananya tanpa menulis apa pun, Jalankan
+   * mengerjakannya. Yang menghubungkan keduanya keadaan ini.
+   *
+   * Sebelum ada penanda ini, rencana yang sudah tergambar TIDAK pernah
+   * kedaluwarsa. Petugas memeriksa empat perkara, lalu mencentang tiga lagi,
+   * lalu menekan Jalankan - dan ketujuhnya dikerjakan, sementara yang
+   * diperlihatkan kepadanya hanya empat. Hal yang sama terjadi bila blangko
+   * satu perkara diganti, atau saklar PDF/anonimisasi dimatikan: rencananya
+   * menyebut satu hal, yang dikerjakan hal lain. Penetapan massal di panel
+   * SIPP sudah lama menjaga ini; panel ABT belum.
+   *
+   * Yang TIDAK membatalkan: mencari, menyaring, dan mengurutkan. Ketiganya
+   * mengubah yang terlihat, bukan yang terpilih - dan yang dijalankan dibaca
+   * dari ingatan, bukan dari baris yang tergambar.
+   */
+  let sudahDiperiksa = false;
+
+  function lupakanPemeriksaan(sebab) {
+    // Selagi berjalan, neraca memuat kemajuan tiap perkara. Mengosongkannya
+    // di tengah jalan menghapus satu-satunya keterangan tentang apa yang
+    // sudah terjadi pada berkas perkara.
+    if (keadaan.sedangJalan) return;
+    const perluDikatakan = sudahDiperiksa && Boolean(sebab);
+    sudahDiperiksa = false;
+    tombolJalan.disabled = true;
+    tombolJalan.textContent = "Jalankan";
+    tombolJalan.title = "Menyala sesudah hasil pemeriksaan di atas dibaca.";
+    tombolRencana.textContent = "Periksa dulu - belum dijalankan";
+    neraca.textContent = "";
+    if (perluDikatakan) {
+      neraca.appendChild(
+        buatElemen(
+          "div",
+          "aleta-tetap-sebab",
+          `${sebab} - hasil pemeriksaan tadi tidak berlaku lagi. Tekan "Periksa dulu" sekali lagi.`
+        )
+      );
+    }
+  }
+
   const centangPer = new Map();
   /** Nomor perkara yang dicentang - bertahan meski barisnya tersaring keluar. */
   const dicentang = new Set();
@@ -4520,7 +4568,7 @@ function bagianMassalAbt(keadaan) {
     daftar.textContent = "";
     neraca.textContent = "";
     centangPer.clear();
-    tombolJalan.disabled = true;
+    lupakanPemeriksaan("");
     kabar.className = "aleta-abt-kabar";
     kabar.textContent = `Membaca sidang ${keadaan.tanggal}…`;
     try {
@@ -4621,6 +4669,7 @@ function bagianMassalAbt(keadaan) {
       centang.addEventListener("change", () => {
         if (centang.checked) dicentang.add(s.nomor);
         else dicentang.delete(s.nomor);
+        lupakanPemeriksaan("Centang berubah");
         gambarDaftar();
       });
       label.appendChild(centang);
@@ -4674,6 +4723,7 @@ function bagianMassalAbt(keadaan) {
           const p = petaUntuk(s);
           tanda.textContent = alatBlangkoLengkap(p) ? `blangko: ${p.berkas}` : "blangko belum siap";
           tanda.className = `aleta-massal-keadaan ${alatBlangkoLengkap(p) ? "" : "aleta-lencana-mendesak"}`;
+          lupakanPemeriksaan(`Blangko ${s.nomor} diganti`);
         });
         label.appendChild(pilih);
       }
@@ -4722,8 +4772,31 @@ function bagianMassalAbt(keadaan) {
       neraca.appendChild(baris);
       if (alatBlangkoLengkap(peta)) siap += 1;
     }
+    // ========================================================================
+    // KALIMAT YANG MENYURUH MENEKAN JALANKAN
+    // ========================================================================
+    //
+    // Sebelum ini, sesudah diperiksa seluruh yang terlihat berbunyi "belum":
+    // tombolnya "Periksa dulu - belum dijalankan", judul hasilnya "belum ada
+    // yang dikerjakan". Tidak satu pun menyebut bahwa langkah berikutnya
+    // menekan Jalankan - dan satu-satunya petunjuk ada di tooltip tombol itu,
+    // yang hanya muncul bila kursor didiamkan di atasnya. Panel ini karena
+    // itu terbaca seperti buntu, dan dilaporkan sebagai "tidak bisa dipakai".
+    sudahDiperiksa = siap > 0;
     tombolJalan.disabled = siap === 0;
+    tombolJalan.textContent = siap ? `Jalankan ${siap} perkara sekarang` : "Jalankan";
     tombolJalan.title = siap ? `Mengerjakan ${siap} perkara berurutan.` : "Tidak ada yang dapat dikerjakan.";
+    tombolRencana.textContent = siap ? "Periksa ulang" : "Periksa dulu - belum dijalankan";
+    neraca.appendChild(
+      buatElemen(
+        "div",
+        "aleta-tetap-sebab",
+        siap
+          ? `Belum ada yang ditulis. Tekan "Jalankan ${siap} perkara sekarang" untuk mengerjakannya` +
+            (dipilih.length > siap ? `; ${dipilih.length - siap} dilewati karena blangkonya belum dipetakan.` : ".")
+          : "Tidak ada yang dapat dikerjakan - blangko perkara yang dicentang belum dipetakan."
+      )
+    );
   });
 
   tombolHenti.addEventListener("click", () => {
@@ -4732,6 +4805,10 @@ function bagianMassalAbt(keadaan) {
   });
 
   tombolJalan.addEventListener("click", async () => {
+    // Penjagaan kedua. Tombolnya memang dimatikan tiap kali rencananya basi,
+    // tetapi yang menulis ke berkas perkara tidak pantas bergantung pada satu
+    // penjagaan saja.
+    if (!sudahDiperiksa) return;
     const dipilih = yangDicentang().filter((s) => alatBlangkoLengkap(petaUntuk(s)));
     if (dipilih.length === 0) return;
     keadaan.berhenti = false;
@@ -4838,6 +4915,16 @@ function bagianMassalAbt(keadaan) {
     keadaan.sedangJalan = false;
     tombolHenti.hidden = true;
     tombolRencana.disabled = false;
+    // Rencananya habis terpakai: menekan Jalankan sekali lagi akan mengulang
+    // perkara yang sama - dan yang kedua kalinya menimpa draf serta dokumen
+    // yang baru saja dibuat. Hasilnya dibiarkan tampil, jadi keadaannya
+    // dikembalikan di sini, bukan lewat lupakanPemeriksaan yang mengosongkan
+    // neraca.
+    sudahDiperiksa = false;
+    tombolJalan.disabled = true;
+    tombolJalan.textContent = "Jalankan";
+    tombolJalan.title = "Menyala sesudah hasil pemeriksaan di atas dibaca.";
+    tombolRencana.textContent = "Periksa dulu - belum dijalankan";
   });
 
   keadaan.muatDaftar = muat;

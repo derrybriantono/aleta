@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.19.5";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.19.5 - Jam Penetapan Sampai Detik, Smart Majelis di Audit, dan Pratinjau Massal yang Bergilir";
+export const APP_VERSION = "2.19.6";
+export const APP_VERSION_LABEL = "ALETA Judicia v2.19.6 - Putusan Massal ABT: Tombol yang Menyebut Langkah Berikutnya, dan Rencana yang Kedaluwarsa";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +20,35 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.19.6",
+    title: "ALETA Judicia v2.19.6 - Putusan Massal ABT: Tombol yang Menyebut Langkah Berikutnya, dan Rencana yang Kedaluwarsa",
+    date: "2026-09-16",
+    status: "Terpasang",
+    summary:
+      "Dilaporkan dari layar ABT sebagai \"putusan massal tidak bisa dipakai\". Panelnya berjalan; yang membuat berhenti " +
+      "adalah kalimat di layar - sesudah Periksa ditekan, tombolnya tetap berbunyi \"belum dijalankan\" dan hasilnya " +
+      "\"belum ada yang dikerjakan\", tanpa satu pun kata tentang langkah berikutnya. Sekaligus diperbaiki cacat kedua " +
+      "yang menyentuh berkas perkara: rencana yang sudah tergambar tidak pernah kedaluwarsa.",
+    added: [],
+    changed: [
+      "Sesudah diperiksa, tombolnya berbunyi \"Jalankan N perkara sekarang\", tombol pertama menjadi \"Periksa ulang\", dan di bawah daftar rencana tertulis kalimat yang menyebut tombol mana yang harus ditekan beserta jumlahnya.",
+      "Perkara yang dilewati karena blangkonya belum dipetakan ikut disebut pada kalimat itu, bukan hanya terlihat dari warna barisnya.",
+    ],
+    fixed: [
+      "Mencentang perkara lain, mengganti blangko satu perkara, atau mematikan pilihan pekerjaan (draf, PDF, anonimisasi, unggah) SESUDAH diperiksa tidak membatalkan rencananya - Jalankan tetap menyala dan perkara yang rencananya tidak pernah diperlihatkan ikut dikerjakan. Kini rencananya kedaluwarsa, tombolnya mati, dan sebabnya dikatakan.",
+      "Jalankan menolak berjalan tanpa pemeriksaan yang masih berlaku - penjagaan kedua, sebab jalur ini menulis ke berkas perkara.",
+      "Menekan Jalankan dua kali mengulang perkara yang sama dan menimpa draf serta dokumen yang baru saja dibuat. Sesudah antreannya selesai, rencananya habis terpakai.",
+    ],
+    security: [
+      "Pembatalan rencana TIDAK mengosongkan neraca selagi antreannya berjalan - neraca itu satu-satunya keterangan tentang apa yang sudah terjadi pada berkas perkara.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.151.0 - reload di chrome://extensions.",
+      "Mencari, menyaring, dan mengurutkan tidak membatalkan pemeriksaan: ketiganya mengubah yang terlihat, bukan yang terpilih.",
+    ],
+    knownLimitations: [],
+  },
   {
     version: "2.19.5",
     title: "ALETA Judicia v2.19.5 - Jam Penetapan Sampai Detik, Smart Majelis di Audit, dan Pratinjau Massal yang Bergilir",

@@ -348,6 +348,109 @@ describe("tidak ada yang tercentang sendiri, dan kering dulu", () => {
 });
 
 // ============================================================================
+describe("sesudah diperiksa: apa yang harus ditekan, dan apa yang membatalkannya", () => {
+  const badan = () => abt.slice(abt.indexOf("function bagianMassalAbt("));
+
+  /**
+   * ==========================================================================
+   * DILAPORKAN DARI LAYAR: "PUTUSAN MASSAL TIDAK BISA DIPAKAI"
+   * ==========================================================================
+   *
+   * Panelnya berjalan; yang dibaca petugas yang membuat ia berhenti. Sesudah
+   * Periksa ditekan, seluruh yang terlihat berbunyi "belum": tombolnya
+   * "Periksa dulu - belum dijalankan", judul hasilnya "HASIL PEMERIKSAAN -
+   * belum ada yang dikerjakan". Tidak satu pun menyebut langkah berikutnya,
+   * dan satu-satunya petunjuk ada di tooltip tombol Jalankan.
+   */
+  it("hasil pemeriksaan menyebut tombol yang harus ditekan, dengan jumlahnya", () => {
+    expect(badan()).toContain('Belum ada yang ditulis. Tekan "Jalankan ${siap} perkara sekarang" untuk mengerjakannya');
+  });
+
+  it("tombol Jalankan menyebut jumlah perkaranya sesudah diperiksa", () => {
+    // Bukan sekadar "Jalankan": angka pada tombol itulah yang dicocokkan
+    // petugas dengan jumlah yang baru saja dibacanya.
+    expect(badan()).toContain("tombolJalan.textContent = siap ? `Jalankan ${siap} perkara sekarang` : \"Jalankan\";");
+    // Dan tombol pertama berhenti berkata "belum dijalankan" begitu diperiksa.
+    expect(badan()).toContain('tombolRencana.textContent = siap ? "Periksa ulang" : "Periksa dulu - belum dijalankan";');
+  });
+
+  it("yang dilewati karena blangkonya belum dipetakan ikut disebut", () => {
+    expect(badan()).toContain("dilewati karena blangkonya belum dipetakan.");
+  });
+
+  /**
+   * ==========================================================================
+   * RENCANA YANG BASI TIDAK BOLEH DIJALANKAN
+   * ==========================================================================
+   *
+   * Cacat kedua, dan yang ini menyentuh berkas perkara: mencentang tiga
+   * perkara lagi SESUDAH diperiksa tidak membatalkan rencananya. Jalankan
+   * tetap menyala, dan ketujuhnya dikerjakan - sementara yang diperlihatkan
+   * hanya empat. Penetapan massal di panel SIPP sudah lama menjaganya lewat
+   * sudahDiperiksa; panel ABT belum.
+   */
+  it("mencentang atau melepas centang membatalkan pemeriksaan", () => {
+    expect(badan()).toContain('lupakanPemeriksaan("Centang berubah");');
+  });
+
+  it("mengganti blangko satu perkara membatalkan pemeriksaan", () => {
+    expect(badan()).toContain("lupakanPemeriksaan(`Blangko ${s.nomor} diganti`);");
+  });
+
+  it("mengubah pilihan pekerjaan membatalkan pemeriksaan", () => {
+    // Rencananya menyebut rantainya - "RTF → draf → PDF → anonim". Mematikan
+    // PDF sesudah diperiksa membuat rencana itu berbohong.
+    expect(badan()).toContain('c.addEventListener("change", () => lupakanPemeriksaan("Pilihan pekerjaan berubah"));');
+  });
+
+  it("membatalkan berarti tombolnya mati, namanya pulih, dan sebabnya dikatakan", () => {
+    const isi = badan();
+    const mulai = isi.indexOf("function lupakanPemeriksaan(sebab)");
+    expect(mulai).toBeGreaterThan(-1);
+    const fungsi = isi.slice(mulai, mulai + 1200);
+    expect(fungsi).toContain("sudahDiperiksa = false;");
+    expect(fungsi).toContain("tombolJalan.disabled = true;");
+    expect(fungsi).toContain('tombolRencana.textContent = "Periksa dulu - belum dijalankan";');
+    expect(fungsi).toContain("hasil pemeriksaan tadi tidak berlaku lagi");
+  });
+
+  it("TIDAK mengosongkan neraca selagi antreannya berjalan", () => {
+    // Neraca memuat kemajuan tiap perkara. Mengosongkannya di tengah jalan
+    // menghapus satu-satunya keterangan tentang apa yang sudah terjadi pada
+    // berkas perkara.
+    const isi = badan();
+    const fungsi = isi.slice(isi.indexOf("function lupakanPemeriksaan(sebab)"));
+    expect(fungsi.slice(0, 400)).toContain("if (keadaan.sedangJalan) return;");
+  });
+
+  it("Jalankan menolak berjalan tanpa pemeriksaan yang masih berlaku", () => {
+    const isi = badan();
+    const mulai = isi.indexOf('tombolJalan.addEventListener("click"');
+    expect(mulai).toBeGreaterThan(-1);
+    expect(isi.slice(mulai, mulai + 400)).toContain("if (!sudahDiperiksa) return;");
+  });
+
+  it("sesudah dijalankan, rencananya habis terpakai", () => {
+    // Menekan Jalankan sekali lagi akan mengulang perkara yang sama - dan
+    // yang kedua kalinya menimpa draf serta dokumen yang baru saja dibuat.
+    const isi = badan();
+    const mulai = isi.indexOf("keadaan.sedangJalan = false;");
+    expect(mulai).toBeGreaterThan(-1);
+    const penutup = isi.slice(mulai, mulai + 800);
+    expect(penutup).toContain("sudahDiperiksa = false;");
+    expect(penutup).toContain("tombolJalan.disabled = true;");
+  });
+
+  it("mencari, menyaring, dan mengurutkan TIDAK membatalkan pemeriksaan", () => {
+    // Ketiganya mengubah yang terlihat, bukan yang terpilih - dan yang
+    // dijalankan dibaca dari ingatan, bukan dari baris yang tergambar.
+    const isi = badan();
+    const mulai = isi.indexOf("for (const medan of [cari, saring, urut])");
+    expect(mulai).toBeGreaterThan(-1);
+    expect(isi.slice(mulai, mulai + 300)).not.toContain("lupakanPemeriksaan");
+  });
+});
+
 describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", () => {
   const popupJs = readFileSync(path.join(AKAR, "popup.js"), "utf8");
   const popupHtml = readFileSync(path.join(AKAR, "popup.html"), "utf8");
