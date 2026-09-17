@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.157.0",
+    dirilis: "2026-09-17T15:10:00+08:00",
+    judul: "Nama berkas yang menyebut perkaranya, dan lencana yang terbuka seketika",
+    butir: [
+      "NAMA BERKAS UNDUHAN: nomor perkara - jenis perkara - status putusan, pada KEDUA jalur unduhan. Sebelumnya di tempat jenis perkara berdiri potongan kepala halaman blangko - yang bukan jenis perkara, berubah tiap halaman, dan hilang sama sekali ketika kepalanya tidak terbaca. Berkas anonimisasi tetap berpenanda \"anonim\" di ujungnya: tanpa itu ia bernama persis sama dengan putusannya dan menimpanya.",
+      "JENIS PERKARA DAN STATUS PUTUSAN KINI ADA DI HALAMAN SATU PERKARA. Papan massal sudah lama menerima keduanya bersama daftar sidang, tetapi membuang jenis perkaranya; halaman satu perkara tidak punya sumbernya sama sekali - tidak ada satu pun permintaan yang memulangkannya. Keduanya kini ditumpangkan pada permintaan usulan yang memang sudah berjalan, bukan pada perjalanan baru: panel ABT punya anggaran waktu yang ketat.",
+      "LENCANA YANG DIBENTANGKAN KEMBALI TIDAK LAGI TERTAHAN. Panel yang diciutkan menyembunyikan seluruh anaknya, sehingga membukanya kembali menata ulang SEMUA isinya sekaligus. Diukur atas replika panel, 25 putaran tiap ukuran: 200 simpul 7,90 menjadi 1,20 milidetik; 2.000 simpul 87,60 menjadi 15,10; 5.000 simpul 265,90 menjadi 35,90 - dan yang terburuk 565,80 menjadi 82,70. Daftar blangko ABT sendiri memuat ratusan kartu, dan di sanalah tertahannya paling terasa.",
+    ],
+  },
+  {
     versi: "1.155.0",
     dirilis: "2026-09-16T16:00:00+08:00",
     judul: "Satu tema, dan jalan pulang untuk panel yang disingkirkan",

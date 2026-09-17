@@ -6187,3 +6187,38 @@ html.aleta-ganti-tema *::after {
   align-items: center;
   margin-top: 6px;
 }
+
+/* ==========================================================================
+   MEMBENTANGKAN LENCANA TIDAK MENGHITUNG ULANG SELURUH ISI PANEL
+   ==========================================================================
+
+   Panel yang diciutkan menyembunyikan seluruh anaknya dengan display:none.
+   Membentangkannya kembali karena itu menuntut peramban menata ulang SEMUA
+   isinya sekaligus, dan biayanya tumbuh lurus dengan jumlah simpulnya.
+
+   Diukur atas replika panel yang sama, 25 putaran tiap ukuran, tiap putaran
+   dipaksa menghitung tata letak:
+
+       simpul     sekarang        dengan aturan ini
+          200      7,90 ms                 1,20 ms
+          800     34,10 ms                 4,80 ms
+        2.000     87,60 ms                15,10 ms
+        5.000    265,90 ms                35,90 ms   (terburuk 565,80 -> 82,70)
+
+   Daftar blangko ABT sendiri memuat ratusan kartu, jadi panel di halaman itu
+   berada di ujung kanan tabel - dan di sanalah klik pada lencana terasa
+   tertahan hampir setengah detik.
+
+   content-visibility:auto membuat peramban hanya menata kartu yang benar-benar
+   terlihat; sisanya menunggu sampai tergulir. contain-intrinsic-size memberi
+   ukuran sementara bagi yang belum ditata, supaya bilah gulir tidak melonjak.
+
+   Hanya pada DAFTAR yang panjang - bukan pada seluruh panel. Aturan yang
+   ditebar ke mana-mana menghemat sedikit dan menyulitkan banyak: elemen yang
+   belum ditata tidak dapat diukur, dan sebagian panel memang mengukur dirinya.
+   ========================================================================== */
+.aleta-abt-daftar > .aleta-abt-kartu,
+.aleta-massal-daftar > .aleta-massal-butir {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 64px;
+}

@@ -333,37 +333,6 @@ function nilaiVariabel(kode) {
   return item ? item.nilai : "";
 }
 
-/**
- * ============================================================================
- * NAMA BLANGKO DARI KEPALA HALAMAN - "[01] [Kabul Verstek] Cerai (Format …)"
- * ============================================================================
- *
- * Di dalamnya ada tiga keterangan yang dicari orang ketika membuka folder
- * unduhan berbulan-bulan kemudian: jenis perkaranya (Cerai), amarnya (Kabul),
- * dan apakah verstek. Ketiganya selama ini dibuang.
- *
- * Yang dibuang hanya perabotnya: kurung siku, kurung biasa beserta isinya
- * ("Format Lengkap" bukan keterangan perkara), nomor urut blangko, serta
- * huruf yang tidak dapat menjadi nama berkas.
- */
-function ringkasBlangkoAbt() {
-  const judul = document.querySelector("h3.w3l_header span, h3 span");
-  let teks = String((judul && judul.textContent) || document.title || "");
-  // Nomor perkara ikut tertulis pada sebagian kepala halaman - ia sudah
-  // menjadi bagian depan nama berkas, jadi tidak perlu diulang.
-  teks = teks.replace(/\d{1,5}\/[A-Za-z.]+\/\d{4}\/[A-Za-z.]+/g, " ");
-  teks = teks
-    .replace(/\[\s*\d+\s*\]/g, " ")
-    .replace(/\([^)]*\)/g, " ")
-    .replace(/[\[\]]/g, " ")
-    .replace(/[\\/:*?"<>|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  // Terlalu panjang berarti kepala halamannya bukan nama blangko - lebih baik
-  // tidak menambahkan apa pun daripada menempelkan satu paragraf ke nama
-  // berkas.
-  return teks.length > 60 ? "" : teks;
-}
 
 /** Nomor perkara dari kepala halaman ABT. */
 function nomorPerkaraAbt() {
@@ -1226,15 +1195,36 @@ function sebutStatusPutusan(nomorPerkara) {
   return [status, verstek].filter(Boolean).join(" ");
 }
 
+/** Jenis perkara menurut daftar sidang - "" bila perkaranya belum dikenal. */
+function sebutJenisPerkara(nomorPerkara) {
+  const keadaan = statusPutusanPerkara.get(String(nomorPerkara || ""));
+  return String((keadaan && keadaan.jenisPerkara) || "").trim();
+}
+
+/**
+ * ============================================================================
+ * NOMOR PERKARA - JENIS PERKARA - STATUS PUTUSAN
+ * ============================================================================
+ *
+ * Bentuk yang diminta satker, dan bentuk yang dipakai seluruh jalur unduhan -
+ * lewat panel maupun lewat pendengar unduhan di latar.js.
+ *
+ * Bentuk sebelumnya menyisipkan ringkasBlangkoAbt() di tempat jenis perkara.
+ * Itu bukan jenis perkara melainkan potongan kepala halaman blangko, yang
+ * berbunyi lain di tiap halaman dan hilang sama sekali ketika kepalanya tidak
+ * terbaca. Jenis perkara kini datang dari daftar sidang - sumber yang sama
+ * yang dipakai panel massal - dan dari keterangan perkara pada jalur satu
+ * perkara.
+ *
+ * Penanda jenis berkas hanya ditempelkan bila BUKAN putusan utamanya: tanpa
+ * itu berkas anonimisasi bernama persis sama dengan putusannya, dan yang
+ * kedua menimpa yang pertama.
+ */
 function namaBerkas(nomorPerkara, akhiran, jenis) {
   const dasar = String(nomorPerkara || "putusan").replace(/[\\/:*?"<>|]+/g, "_");
-  // Keterangan blangko - amar dan verstek - disisipkan di antara nomor perkara
-  // dan jenis berkasnya. Dikosongkan bila kepala halamannya tidak terbaca;
-  // nama berkas yang memuat potongan kalimat lebih buruk daripada nama pendek.
-  const ket = ringkasBlangkoAbt();
-  const status = sebutStatusPutusan(nomorPerkara);
-  const bagian = [dasar, ket, status, jenis].filter(Boolean);
-  return `${bagian.join(" - ")}.${akhiran}`
+  const bagian = [dasar, sebutJenisPerkara(nomorPerkara), sebutStatusPutusan(nomorPerkara)];
+  if (jenis && jenis !== "putusan") bagian.push(jenis);
+  return `${bagian.filter(Boolean).join(" - ")}.${akhiran}`
     .replace(/[\\/:*?"<>|]+/g, "_")
     .replace(/\s+/g, " ");
 }
@@ -1295,7 +1285,7 @@ async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
     const isi = luar?.data ?? luar;
     if (!isi?.available) throw new Error(isi?.message || alatPesanGagal(null, 0, "Membuat PDF"));
     const biner = Uint8Array.from(atob(isi.pdfBase64), (c) => c.charCodeAt(0));
-    unduhBlob(new Blob([biner], { type: "application/pdf" }), namaBerkas(nomor, "pdf", "putusan pdf"));
+    unduhBlob(new Blob([biner], { type: "application/pdf" }), namaBerkas(nomor, "pdf", "putusan"));
     hasil.pdf = "tersimpan";
   } catch (galat) {
     hasil.pdf = `gagal: ${String((galat && galat.message) || galat)}`;
@@ -1967,7 +1957,29 @@ async function mintaUsulan(muatan) {
   const luar = await respons.json();
   const isi = luar?.data ?? luar;
   if (!isi?.available) throw new Error(isi?.message || alatPesanGagal(null, 0, "Membaca usulan"));
+  // Keterangan perkara ditumpangkan pada jawaban ini sejak 2.20.4 - jenis
+  // perkara dan status putusannya, yang menyusun nama berkas. Diingat di sini,
+  // pada satu tempat yang dilewati SELURUH pemanggil, bukan di tiap pemanggil.
+  ingatKeteranganPerkara(muatan?.nomorPerkara, isi?.sipp?.keteranganPerkara);
   return isi;
+}
+
+/**
+ * Menyimpan jenis perkara dan status putusan satu perkara.
+ *
+ * Tidak menimpa dengan yang KOSONG: papan massal mengisinya dari daftar
+ * sidang, dan permintaan usulan atas perkara yang belum putus tidak boleh
+ * menghapus status yang sudah terbaca di sana.
+ */
+function ingatKeteranganPerkara(nomorPerkara, keterangan) {
+  const nomor = String(nomorPerkara || "").trim();
+  if (!nomor || !keterangan) return;
+  const lama = statusPutusanPerkara.get(nomor) || {};
+  statusPutusanPerkara.set(nomor, {
+    jenisPerkara: String(keterangan.jenisPerkara || "").trim() || lama.jenisPerkara || "",
+    statusPutusan: String(keterangan.statusPutusan || "").trim() || lama.statusPutusan || "",
+    verstek: keterangan.verstek === undefined ? Boolean(lama.verstek) : Boolean(keterangan.verstek),
+  });
 }
 
 /**
@@ -4114,7 +4126,12 @@ function kabarkanKonteksUnduh() {
         sumber: "aleta-panel",
         jenis: "konteks-unduh",
         nomor,
-        keterangan: ringkasBlangkoAbt(),
+        // Dua medan yang menyusun nama berkas, bukan lagi potongan kepala
+        // halaman: jenis perkara dan status putusan. Keduanya kosong bila
+        // perkaranya belum dikenal - dan nama yang pendek lebih baik daripada
+        // nama yang mengarang.
+        jenisPerkara: sebutJenisPerkara(nomor),
+        statusPutusan: sebutStatusPutusan(nomor),
       },
       () => void chrome.runtime.lastError
     );
@@ -4930,6 +4947,11 @@ function bagianMassalAbt(keadaan) {
     // jadi tidak ada permintaan tambahan ke peladen.
     for (const s of keadaan.sidang) {
       statusPutusanPerkara.set(s.nomor, {
+        // Jenis perkaranya ikut disimpan sejak 2.20.4: ia bagian tengah nama
+        // berkas, dan daftar sidang ini memang sudah memulangkannya. Sebelum
+        // ini ia dibuang, lalu tempatnya diisi potongan kepala halaman blangko
+        // - yang bukan jenis perkara dan berubah-ubah menurut halamannya.
+        jenisPerkara: s.jenis || "",
         statusPutusan: s.statusPutusan || "",
         verstek: Boolean(s.verstek),
       });

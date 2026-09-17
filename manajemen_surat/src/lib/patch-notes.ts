@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.20.3";
+export const APP_VERSION = "2.20.4";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.20.3 - Penetapan yang Tidak Lagi Mendahului Pendaftaran Perkaranya";
+  "ALETA Judicia v2.20.4 - Nama Berkas yang Menyebut Perkaranya, dan Lencana yang Terbuka Seketika";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,40 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.20.4",
+    title: "ALETA Judicia v2.20.4 - Nama Berkas yang Menyebut Perkaranya, dan Lencana yang Terbuka Seketika",
+    date: "2026-09-17",
+    status: "Terpasang",
+    summary:
+      "Dua keluhan petugas yang keduanya terukur: berkas unduhan ABT bernama bawaan peramban alih-alih " +
+      "menyebut perkaranya, dan panel yang diciutkan menjadi lencana tertahan hampir setengah detik ketika " +
+      "dibentangkan kembali.",
+    added: [],
+    changed: [
+      "Nama berkas unduhan menjadi nomor perkara - jenis perkara - status putusan, pada kedua jalur unduhan: yang diterbitkan panel ALETA sendiri dan yang diterbitkan ABT lalu dinamai pekerja latar. Dua jalur dengan dua bentuk nama membuat satu perkara punya dua pola di folder yang sama.",
+      "Jenis perkara dan status putusan ditumpangkan pada permintaan usulan yang memang sudah berjalan di halaman satu perkara, bukan pada permintaan baru - panel ABT punya anggaran waktu yang ketat, dan satu perjalanan tambahan tiap membuka halaman adalah harga yang tidak perlu dibayar untuk sekadar menamai berkas.",
+      "Daftar panjang pada panel - kartu blangko ABT dan butir papan massal - hanya ditata sejauh yang terlihat, sisanya menunggu sampai tergulir.",
+    ],
+    fixed: [
+      "Nama berkas memuat potongan kepala halaman blangko di tempat jenis perkara. Itu bukan jenis perkara, berubah bunyinya tiap halaman, dan hilang sama sekali ketika kepala halamannya tidak terbaca - dan ketika hilang, yang tersisa nama bawaan peramban seperti download (9).rtf.",
+      "Papan massal sudah menerima jenis perkara bersama daftar sidang tetapi membuangnya; halaman satu perkara tidak punya sumbernya sama sekali.",
+      "Berkas anonimisasi bernama persis sama dengan putusannya sehingga yang kedua menimpa yang pertama. Kini ia berpenanda anonim di ujungnya; putusan utamanya tidak.",
+      "Membentangkan panel dari lencana menata ulang SELURUH isinya sekaligus. Diukur atas replika panel, 25 putaran tiap ukuran, tiap putaran dipaksa menghitung tata letak: 200 simpul 7,90 menjadi 1,20 milidetik; 800 simpul 34,10 menjadi 4,80; 2.000 simpul 87,60 menjadi 15,10; 5.000 simpul 265,90 menjadi 35,90 - dan yang terburuk 565,80 menjadi 82,70.",
+    ],
+    security: [
+      "Unduhan tetap dijawab SEKETIKA. Jawaban yang menyusul pernah dicoba pada 2.19.7 dan hasilnya Insecure download blocked di peramban petugas - unduhan yang tertahan menghentikan pekerjaan, sedangkan berkas bernama download hanya merepotkan.",
+      "Aturan tata letak hanya dikenakan pada DAFTAR yang panjang, bukan seluruh panel: elemen yang belum ditata tidak dapat diukur, dan sebagian panel memang mengukur dirinya sendiri.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi 1.157.0 - reload di chrome://extensions. Nomor 1.156.0 tidak pernah ada: ia sempat ditanam lalu dikoreksi sebelum sempat dirilis.",
+      "Nama berkas hanya selengkap yang diketahui SIPP. Perkara yang belum putus tidak punya status putusan, dan namanya berhenti pada jenis perkara - itu disengaja; nama yang mengarang status lebih berbahaya daripada nama yang pendek.",
+    ],
+    knownLimitations: [
+      "Cetak relaas panggilan/pemberitahuan dan berita acara sidang - per perkara maupun massal - BELUM dikerjakan. Blangkonya sudah ditemukan di ABT (enam berkas relaas dan empat folder BAS, seluruhnya RTF), tetapi korpusnya belum dipelajari di peladen.",
+      "Cap waktu baris audit yang ditulis ALETA masih dapat lebih awal daripada baris bernomor id di dekatnya. Keputusannya belum diambil.",
+    ],
+  },
   {
     version: "2.20.3",
     title: "ALETA Judicia v2.20.3 - Penetapan yang Tidak Lagi Mendahului Pendaftaran Perkaranya",

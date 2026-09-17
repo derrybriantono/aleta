@@ -219,10 +219,21 @@ async function bacaKonteksUnduh() {
   }
 }
 
-/** Nama yang diusulkan bagi satu unduhan - dipisah supaya dapat diuji. */
+/**
+ * Nama yang diusulkan bagi satu unduhan - dipisah supaya dapat diuji.
+ *
+ * Bentuknya SAMA dengan namaBerkas di abt.js: nomor perkara - jenis perkara -
+ * status putusan. Dua jalur unduhan yang menamai berkasnya dengan dua bentuk
+ * berbeda membuat satu perkara punya dua pola nama di folder yang sama, dan
+ * yang mencarinya harus tahu lewat jalur mana berkas itu turun.
+ *
+ * Bentuk lama menempelkan `keterangan` - potongan kepala halaman blangko - dan
+ * kata "putusan" pada tiap berkas. Yang pertama bukan jenis perkara; yang
+ * kedua menjadikan seluruh berkas bernama sama ketika perkaranya sama.
+ */
 function namaUnduhanAbt(nama, konteks) {
   const akhiran = (String(nama).split(".").pop() || "rtf").toLowerCase();
-  const bagian = [konteks.nomor, konteks.keterangan, "putusan"].filter(Boolean);
+  const bagian = [konteks.nomor, konteks.jenisPerkara, konteks.statusPutusan].filter(Boolean);
   return `${bagian.join(" - ")}.${akhiran}`.replace(/[\\/:*?"<>|]+/g, "_");
 }
 
@@ -340,7 +351,8 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
     // untuk pekerja yang kelak bangun tanpa ingatan.
     konteksIngatan = {
       nomor: String(pesan.nomor || "").slice(0, 60),
-      keterangan: String(pesan.keterangan || "").slice(0, 60),
+      jenisPerkara: String(pesan.jenisPerkara || "").slice(0, 60),
+      statusPutusan: String(pesan.statusPutusan || "").slice(0, 60),
       saat: Date.now(),
     };
     void simpanKonteksUnduh(konteksIngatan);

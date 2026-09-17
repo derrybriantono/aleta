@@ -134,10 +134,20 @@ function nyalakanPekerja(gudang: Record<string, unknown>) {
     namaiMentah(unduhan: Unduhan, saran: (u?: Saran) => void) {
       return dengar!(unduhan, saran);
     },
-    /** Seperti halaman ABT mengabarkan konteksnya. */
-    kabarkan(nomor: string, keterangan: string) {
+    /**
+     * Seperti halaman ABT mengabarkan konteksnya.
+     *
+     * Sejak 2.20.4 yang dikabarkan JENIS PERKARA dan STATUS PUTUSAN, bukan
+     * lagi potongan kepala halaman blangko - itulah bentuk nama yang diminta
+     * satker: nomor perkara - jenis perkara - status putusan.
+     */
+    kabarkan(nomor: string, jenisPerkara = "", statusPutusan = "") {
       for (const f of pesanMasuk) {
-        f({ sumber: "aleta-panel", jenis: "konteks-unduh", nomor, keterangan }, {}, () => {});
+        f(
+          { sumber: "aleta-panel", jenis: "konteks-unduh", nomor, jenisPerkara, statusPutusan },
+          {},
+          () => {}
+        );
       }
     },
     /** Memajukan jam pekerjanya - untuk membuat konteksnya basi. */
@@ -156,10 +166,10 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
     // CETAK menerbitkan unduhannya - sehingga pekerjanya sudah terbangun dan
     // ingatannya terisi ketika unduhan itu tiba.
     const pekerja = nyalakanPekerja({});
-    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "[01] [Kabul Verstek] Cerai");
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "Cerai Gugat", "Dikabulkan verstek");
     const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
 
-    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - [01] [Kabul Verstek] Cerai - putusan.rtf");
+    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - Cerai Gugat - Dikabulkan verstek.rtf");
     expect(usul?.conflictAction).toBe("uniquify");
   });
 
@@ -196,9 +206,9 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
     // "567/Pdt.G/2026" sebagai nama berkas akan membuat Chrome menaruhnya di
     // dalam folder bertingkat - atau menolaknya sama sekali.
     const pekerja = nyalakanPekerja({});
-    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "Cerai Gugat");
     const usul = await pekerja.namai({ filename: "download (2).pdf", url: ABT });
-    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - putusan.pdf");
+    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - Cerai Gugat.pdf");
     expect(usul?.filename).not.toContain("/");
   });
 
@@ -225,10 +235,10 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
 
   it("empat menit sesudahnya MASIH dipakai - batasnya lima menit, bukan sekejap", async () => {
     const pekerja = nyalakanPekerja({});
-    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "");
+    pekerja.kabarkan("567/Pdt.G/2026/PA.Dgl", "Cerai Gugat");
     pekerja.majuWaktu(4 * 60 * 1000);
     const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
-    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - putusan.rtf");
+    expect(usul?.filename).toBe("567_Pdt.G_2026_PA.Dgl - Cerai Gugat.rtf");
   });
 
   it("unduhan di luar ABT tidak disentuh sama sekali", async () => {
@@ -256,20 +266,21 @@ describe("unduhan ABT dinamai menurut perkaranya - dijalankan sungguhan", () => 
     // Petugas berpindah perkara di tab yang sama. Yang terakhir dikabarkan
     // itulah yang sedang ditatapnya.
     const pekerja = nyalakanPekerja({});
-    pekerja.kabarkan("111/Pdt.G/2026/PA.Dgl", "");
-    pekerja.kabarkan("222/Pdt.G/2026/PA.Dgl", "");
+    pekerja.kabarkan("111/Pdt.G/2026/PA.Dgl", "Cerai Talak");
+    pekerja.kabarkan("222/Pdt.G/2026/PA.Dgl", "Cerai Gugat");
     const usul = await pekerja.namai({ filename: "download.rtf", url: ABT });
-    expect(usul?.filename).toBe("222_Pdt.G_2026_PA.Dgl - putusan.rtf");
+    expect(usul?.filename).toBe("222_Pdt.G_2026_PA.Dgl - Cerai Gugat.rtf");
   });
 
   it("konteksnya tetap disimpan untuk pekerja yang kelak bangun", async () => {
     // Ingatan yang menjawab unduhan, penyimpanan yang menolong sesudah
     // pekerjanya mati - keduanya dipakai, bukan salah satu.
     const gudang: Record<string, unknown> = {};
-    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "keterangan");
+    nyalakanPekerja(gudang).kabarkan("567/Pdt.G/2026/PA.Dgl", "Cerai Gugat", "Dikabulkan");
     const tersimpan = gudang["aleta-konteks-unduh"] as Record<string, unknown>;
     expect(tersimpan?.nomor).toBe("567/Pdt.G/2026/PA.Dgl");
-    expect(tersimpan?.keterangan).toBe("keterangan");
+    expect(tersimpan?.jenisPerkara).toBe("Cerai Gugat");
+    expect(tersimpan?.statusPutusan).toBe("Dikabulkan");
     expect(typeof tersimpan?.saat).toBe("number");
   });
 });

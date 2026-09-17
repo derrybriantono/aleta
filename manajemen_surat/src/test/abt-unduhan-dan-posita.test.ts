@@ -18,22 +18,29 @@ const latar = baca("ekstensi-sipp/latar.js");
 const posita = baca("aleta_bot/services/sippPositaService.js");
 
 describe("butir 1 - nama berkas unduhan", () => {
-  it("nama blangko ikut, sesudah perabotnya dibuang", () => {
-    // "[01] [Kabul Verstek] Cerai (Format Lengkap)" memuat tiga keterangan yang
-    // dicari orang berbulan-bulan kemudian: jenis perkara, amar, dan verstek.
-    expect(abt).toContain("function ringkasBlangkoAbt()");
-    expect(abt).toContain("const ket = ringkasBlangkoAbt();");
+  it("jenis perkara dari SIPP, bukan dari kepala halaman blangko", () => {
+    // Sampai 2.20.3 nama berkas menyisipkan ringkasBlangkoAbt() - potongan
+    // kepala halaman seperti "[01] [Kabul Verstek] Cerai (Format Lengkap)".
+    // Niatnya benar: di dalamnya memang ada jenis perkara, amar, dan verstek.
+    // Tetapi ia kepala HALAMAN, bukan keterangan PERKARA - bunyinya berbeda di
+    // tiap halaman blangko dan hilang sama sekali ketika kepalanya tidak
+    // terbaca, dan yang tersisa ketika itu nama bawaan peramban.
+    //
+    // Yang diminta satker: nomor perkara - jenis perkara - status putusan,
+    // ketiganya dari SIPP.
+    expect(abt).toContain("function sebutJenisPerkara(nomorPerkara)");
+    expect(abt).toContain("sebutJenisPerkara(nomorPerkara), sebutStatusPutusan(nomorPerkara)");
+    expect(abt).not.toContain("function ringkasBlangkoAbt()");
   });
 
-  it("kepala halaman yang bukan nama blangko TIDAK ditempelkan", () => {
-    // Nama berkas yang memuat satu paragraf lebih buruk daripada nama pendek.
-    expect(abt).toContain('return teks.length > 60 ? "" : teks;');
-  });
-
-  it("ketiga berkas disebut seperti yang dikenal petugas", () => {
+  it("ketiga berkas dinamai dengan bentuk yang sama", () => {
+    // RTF dan PDF putusan hanya berbeda akhirannya - keduanya putusan yang
+    // sama, jadi tidak ada penanda tambahan pada namanya. Yang anonim
+    // berpenanda, sebab tanpa itu ia menimpa putusannya.
     expect(abt).toContain('namaBerkas(nomor, "rtf", "putusan")');
-    expect(abt).toContain('namaBerkas(nomor, "pdf", "putusan pdf")');
+    expect(abt).toContain('namaBerkas(nomor, "pdf", "putusan")');
     expect(abt).toContain('namaBerkas(nomor, "rtf", "anonimisasi")');
+    expect(abt).toContain('if (jenis && jenis !== "putusan") bagian.push(jenis);');
   });
 
   it("unduhan ABT sendiri dinamai pekerja latar", () => {

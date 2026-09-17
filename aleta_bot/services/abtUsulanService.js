@@ -610,8 +610,28 @@ async function dariSipp(nomorPerkara) {
   const nomor = String(nomorPerkara || "").trim();
   if (!nomor) return { ok: false, alasan: "nomor_kosong", usulan: [] };
 
+  // ==========================================================================
+  // JENIS PERKARA DAN STATUS PUTUSAN IKUT DIBACA - UNTUK NAMA BERKAS
+  // ==========================================================================
+  //
+  // Nama berkas unduhan ABT berbentuk "nomor perkara - jenis perkara - status
+  // putusan". Pada papan massal ketiganya sudah datang bersama daftar sidang;
+  // pada halaman satu perkara TIDAK ADA satu pun permintaan yang
+  // memulangkannya, sehingga namanya tinggal nomor perkara - atau, ketika
+  // konteksnya belum sempat pulih, nama bawaan peramban.
+  //
+  // Ditumpangkan pada kueri yang memang sudah berjalan di sini, bukan pada
+  // permintaan baru: panel ABT punya anggaran waktu yang ketat, dan satu
+  // perjalanan tambahan tiap membuka halaman adalah harga yang tidak perlu
+  // dibayar hanya untuk menamai berkas.
   const baris = await runQuery(
-    "SELECT perkara_id, prodeo FROM perkara WHERE nomor_perkara = ? LIMIT 1",
+    `SELECT p.perkara_id, p.prodeo,
+            p.jenis_perkara_text AS jenisPerkara,
+            pp.status_putusan_text AS statusPutusan,
+            pp.putusan_verstek AS verstek
+       FROM perkara p
+       LEFT JOIN perkara_putusan pp ON pp.perkara_id = p.perkara_id
+      WHERE p.nomor_perkara = ? LIMIT 1`,
     [nomor]
   );
   if (!Array.isArray(baris) || !baris[0]) {
@@ -619,6 +639,11 @@ async function dariSipp(nomorPerkara) {
   }
   const perkaraId = baris[0].perkara_id;
   const prodeo = Number(baris[0].prodeo) === 1;
+  const keteranganPerkara = {
+    jenisPerkara: String(baris[0].jenisPerkara || "").trim(),
+    statusPutusan: String(baris[0].statusPutusan || "").trim(),
+    verstek: String(baris[0].verstek || "") === "Y",
+  };
 
   const kuasa = await runQuery(
     `SELECT nama, alamat, nomor_kuasa,
@@ -691,7 +716,15 @@ async function dariSipp(nomorPerkara) {
     },
   ];
 
-  return { ok: true, perkaraId, prodeo, jumlahKuasa: daftarKuasa.length, usulan: hasil };
+  return {
+    ok: true,
+    perkaraId,
+    prodeo,
+    jumlahKuasa: daftarKuasa.length,
+    // Dipakai panel untuk menamai berkas - lihat namaBerkas di abt.js.
+    keteranganPerkara,
+    usulan: hasil,
+  };
 }
 
 /* ==========================================================================
