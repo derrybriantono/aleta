@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.20.2";
+export const APP_VERSION = "2.20.3";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.20.2 - Jejak yang Menyebut Nomor Perkaranya, dan Pihak yang Tidak Lagi Ditunggu";
+  "ALETA Judicia v2.20.3 - Penetapan yang Tidak Lagi Mendahului Pendaftaran Perkaranya";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,39 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.20.3",
+    title: "ALETA Judicia v2.20.3 - Penetapan yang Tidak Lagi Mendahului Pendaftaran Perkaranya",
+    date: "2026-09-17",
+    status: "Terpasang",
+    summary:
+      "Jam yang dicatat ALETA pada keempat penetapan tidak lagi dapat jatuh sebelum kasir menyelesaikan " +
+      "Pendaftaran Perkara. Titik mulainya kini mengikuti jam pendaftaran perkara itu sendiri, bukan jam " +
+      "kerja yang dipatok 08.00.",
+    added: [],
+    changed: [
+      "Titik mulai rangkaian jam penetapan menjadi LANTAI: yang lebih akhir di antara pukul 08.00 dan sepuluh menit sesudah kasir menyelesaikan Pendaftaran Perkara. Jam pendaftarannya dibaca dari perkara_proses tahapan 10 - satker ini hanya memuat satu proses di situ, diperiksa atas 10.146 baris.",
+      "Perkara yang didaftarkan sesudah pukul 14.00 memakai jendela selebar sekurangnya 30 menit yang dibuka dari lantai barunya. Jendela yang menyempit menjadi nol membuat seluruh perkara sore itu jatuh pada menit yang sama - pola mesin yang justru dihindari sejak awal.",
+      "Perkara yang baru saja didaftarkan: keempat langkahnya dirapatkan merata ke sela yang benar-benar ada, bukan dimundurkan. Memundurkan berarti mendahului pendaftaran, memaksakan lebarnya berarti mencatat jam yang belum terjadi. Yang rapat pun wajar - diperiksa pada perkara 600, petugas menyelesaikan keempat langkahnya dalam 1 menit 43 detik.",
+    ],
+    fixed: [
+      "Penetapan dapat tercatat SEBELUM perkaranya didaftarkan. Diukur pada sepuluh perkara uji: satu melanggar - perkara 571 didaftarkan pukul 09.34 dan penetapannya tercatat pukul 08.27.40, satu jam enam menit sebelum perkaranya ada. Sesudah perbaikan, PMH perkara itu jatuh pukul 10.11.30 dan nol dari sepuluh yang melanggar.",
+      "Cacat itu tidak tersembunyi di dalam basis data: tab Riwayat Perkara SIPP mengurut menurut tanggal, sehingga baris Penetapan duduk DI ATAS baris Pendaftaran Perkara dan terbaca siapa pun yang membuka perkaranya. Risikonya tidak kecil - 350 dari 799 perkara 2026 didaftarkan pukul 10.00 ke atas.",
+      "Batas bawah geseran rangkaian kini lantainya, bukan tengah malam. Batas lama itulah yang membiarkan rangkaian yang digeser mendarat sebelum pendaftarannya.",
+    ],
+    security: [
+      "Tidak ada perubahan pada APA yang ditulis ke SIPP - hanya JAM yang dicatat. Aturannya diambil dari pekerjaan pegawai sendiri: diukur pada 825 perkara 2026 di peladen, PMH selalu sesudah kasir, nol yang mendahului.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi tetap 1.155.0.",
+      "Penetapan yang sudah terlanjur tertulis dengan jam yang keliru tidak diperbaiki surut; yang tercatat di peladen hanya satu perkara dan jamnya masih sesudah pendaftarannya.",
+      "Bukti luring verify-waktu-penetapan.js naik dari 25 ke 37 pemeriksaan - jalankan dengan docker exec aleta-bot node scripts/verify-waktu-penetapan.js.",
+    ],
+    knownLimitations: [
+      "Nama berkas unduhan ABT dan lambatnya panel yang dibentangkan kembali dari lencana BELUM dikerjakan - keduanya menunggu reproduksi di peramban, bukan tebakan atas kode.",
+      "Cap waktu baris audit yang ditulis ALETA masih dapat lebih awal daripada baris bernomor id di dekatnya, walau lantai baru ini mempersempitnya. Keputusannya belum diambil.",
+    ],
+  },
   {
     version: "2.20.2",
     title:

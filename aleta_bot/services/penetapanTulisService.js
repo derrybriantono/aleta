@@ -439,6 +439,45 @@ const JEDA_MAKSIMUM = 10;
  * PHS pada menit yang sama oleh akun yang sama adalah pola mesin.
  */
 const SEBARAN_GESER_MAKSIMUM = 120 * 60;
+/** Ujung jendela titik mulai - 14:00, sebagaimana sebelumnya. */
+const AKHIR_JENDELA_MULAI = JAM_MULAI_PALING_AWAL + LEBAR_JENDELA_MULAI;
+/**
+ * ============================================================================
+ * TIDAK PERNAH MENDAHULUI PENDAFTARAN PERKARANYA
+ * ============================================================================
+ *
+ * Jendela 08:00-14:00 disusun tanpa mengetahui jam berapa kasir mendaftarkan
+ * perkaranya, dan itu melanggar urutan yang paling dasar: penetapan majelis
+ * dikerjakan SESUDAH Pendaftaran Perkara selesai, tidak pernah sebelumnya.
+ *
+ * Diukur pada basis data peladen, 825 perkara tahun 2026: PMH selalu sesudah
+ * kasir - nol perkara yang mendahului. Jedanya di bawah 15 menit pada 189
+ * perkara, 15-60 menit pada 361, 1-3 jam pada 218, 3-24 jam pada 57.
+ *
+ * Diukur pada sepuluh perkara uji yang ditetapkan ALETA di salinan setempat:
+ * SATU di antaranya melanggar - perkara 571 didaftarkan pukul 09.34 dan
+ * penetapannya tercatat pukul 08.27.40, satu jam enam menit sebelum perkaranya
+ * ada. Dan itu bukan kejanggalan yang tersembunyi di dalam basis data: tab
+ * Riwayat Perkara SIPP mengurut menurut tanggal, sehingga baris Penetapan
+ * duduk DI ATAS baris Pendaftaran Perkara, terbaca siapa pun yang membukanya.
+ *
+ * Risikonya tidak kecil: 350 dari 799 perkara 2026 didaftarkan pukul 10.00 ke
+ * atas, dan bagi seluruhnya jendela lama dapat mendarat sebelum pendaftaran.
+ *
+ * Karena itu titik mulainya kini LANTAI, bukan jam tetap: yang lebih akhir di
+ * antara 08:00 dan "sepuluh menit sesudah kasir". Lantai itu hanya berlaku
+ * bila pendaftarannya SETANGGAL dengan penetapannya - perkara yang didaftarkan
+ * hari-hari sebelumnya tidak menahan apa pun.
+ */
+const JEDA_SESUDAH_DAFTAR = 10;
+/**
+ * Lebar jendela paling sempit, dalam menit.
+ *
+ * Perkara yang didaftarkan sore hari mendorong lantainya melewati 14:00.
+ * Jendela yang menyempit menjadi nol membuat seluruh perkara sore itu jatuh
+ * pada menit yang sama - pola mesin yang justru dihindari sejak awal.
+ */
+const LEBAR_JENDELA_MINIMUM = 30;
 
 /** Benih tetap dari satu bilangan - sama tiap kali dihitung. */
 function benihDari(angka) {
@@ -526,10 +565,9 @@ function detikJeda(benih, i) {
  * dari benihnya sendiri; tiap langkah berikutnya berjarak
  * jedaLangkah menit + detikJeda detik dari langkah sebelumnya.
  */
-function rangkaianDetik(benih) {
-  const mulai =
-    (JAM_MULAI_PALING_AWAL + (benih % LEBAR_JENDELA_MULAI)) * 60 +
-    (Math.floor(benih / LEBAR_JENDELA_MULAI) % 60);
+function rangkaianDetik(benih, lantaiMenit = JAM_MULAI_PALING_AWAL, lebarMenit = LEBAR_JENDELA_MULAI) {
+  const lebar = Math.max(1, Math.floor(lebarMenit));
+  const mulai = (lantaiMenit + (benih % lebar)) * 60 + (Math.floor(benih / lebar) % 60);
   const detik = [mulai];
   for (let i = 0; i < 3; i += 1) {
     detik.push(detik[i] + jedaLangkah(benih, i) * 60 + detikJeda(benih, i));
@@ -582,13 +620,35 @@ function rangkaianDetik(benih) {
  *
  * @returns {string} "YYYY-MM-DD HH:mm:ss"
  */
-function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer }) {
+/**
+ * Menit sejak tengah malam yang menjadi LANTAI titik mulai rangkaian.
+ *
+ * Bawaannya jam kerja paling awal. Bila perkaranya didaftarkan pada tanggal
+ * yang SAMA dengan penetapannya, lantainya naik ke sepuluh menit sesudah
+ * kasir: penetapan tidak pernah mendahului pendaftarannya.
+ *
+ * Pendaftaran hari-hari sebelumnya tidak menahan apa pun - penetapan susulan
+ * atas perkara kemarin memang dikerjakan pagi ini.
+ */
+function lantaiMulaiMenit(tanggalPenetapan, didaftar) {
+  const cocok = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(
+    didaftar instanceof Date ? waktuMysql(didaftar) : String(didaftar || "")
+  );
+  if (!cocok || cocok[1] !== tanggalPenetapan) return JAM_MULAI_PALING_AWAL;
+  const menitDaftar = Number(cocok[2]) * 60 + Number(cocok[3]);
+  return Math.max(JAM_MULAI_PALING_AWAL, menitDaftar + JEDA_SESUDAH_DAFTAR);
+}
+
+function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer, didaftar }) {
   const urutan = URUTAN_LANGKAH_WAKTU[jenis];
   // Data Umum bukan penetapan dan tidak ikut dalam rangkaian ini.
   if (urutan === undefined || !tanggalSah(tanggalPenetapan)) return saatServer;
 
   const benih = benihDari(perkaraId);
-  const rangkaian = rangkaianDetik(benih);
+  const lantaiMenit = lantaiMulaiMenit(tanggalPenetapan, didaftar);
+  const lantaiDetik = lantaiMenit * 60;
+  const lebar = Math.max(LEBAR_JENDELA_MINIMUM, AKHIR_JENDELA_MULAI - lantaiMenit);
+  const rangkaian = rangkaianDetik(benih, lantaiMenit, lebar);
   let detik = rangkaian[urutan];
 
   const cocokServer = /^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(saatServer || ""));
@@ -596,18 +656,33 @@ function waktuLangkah({ perkaraId, tanggalPenetapan, jenis, saatServer }) {
     const detikServer =
       Number(cocokServer[2]) * 3600 + Number(cocokServer[3]) * 60 + Number(cocokServer[4]);
     const akhir = rangkaian[3];
-    if (akhir > detikServer) {
-      const panjang = akhir - rangkaian[0];
-      const ruang = detikServer - JAM_MULAI_PALING_AWAL * 60 - panjang;
+    const panjang = akhir - rangkaian[0];
+    if (lantaiDetik + panjang > detikServer) {
+      // ==================================================================
+      // SELANYA TERLALU SEMPIT - DIRAPATKAN, BUKAN DIMUNDURKAN
+      // ==================================================================
+      //
+      // Perkara yang baru saja didaftarkan tidak menyisakan ruang untuk
+      // rangkaian selebar 3 sampai 33 menit. Memundurkannya berarti
+      // mendahului pendaftaran; memaksakan lebarnya berarti mencatat jam
+      // yang belum terjadi. Keduanya salah, jadi keempat langkahnya
+      // dirapatkan merata ke sela yang benar-benar ada.
+      //
+      // Itu pun bentuk yang wajar: pada perkara 600 petugas menyelesaikan
+      // keempat langkahnya dalam 1 menit 43 detik.
+      const sela = Math.max(0, detikServer - lantaiDetik);
+      detik = lantaiDetik + Math.round((sela * urutan) / 3);
+    } else if (akhir > detikServer) {
+      const ruang = detikServer - lantaiDetik - panjang;
       // Pecahan tetap per perkara, dari benih yang berbeda dari benih jam
       // mulainya - supaya perkara yang jam mulainya berdekatan tidak ikut
       // berdekatan sebarannya.
       const pecahan = (benihDari(Number(perkaraId) * 7 + 3) % 1000) / 1000;
       const mundur = Math.floor(pecahan * Math.min(SEBARAN_GESER_MAKSIMUM, Math.max(0, ruang)));
       detik = detikServer - mundur - (akhir - rangkaian[urutan]);
-      // Dini hari yang mustahil: rapatkan ke awal hari, jangan ke hari
-      // sebelumnya, dan jaga urutannya.
-      if (detik < 0) detik = rangkaian[urutan] - rangkaian[0];
+      // Tidak pernah turun di bawah lantainya - dahulu batasnya tengah malam,
+      // dan itulah yang membiarkan penetapan mendahului pendaftarannya.
+      if (detik < lantaiDetik) detik = lantaiDetik + (rangkaian[urutan] - rangkaian[0]);
     }
   }
 
@@ -825,7 +900,13 @@ async function keadaanPerkara(perkaraId) {
             -- ditulis penetapan ini, dicocokkan pada id petugas dan tanggalnya.
             pen.panitera_pengganti_id AS pppId,
             pen.jurusita_id AS pjsId,
-            sm.perkara_id AS adaSmartMajelis
+            sm.perkara_id AS adaSmartMajelis,
+            -- Jam kasir menyelesaikan Pendaftaran Perkara. Dipakai sebagai
+            -- LANTAI jam penetapan: penetapan tidak pernah mendahului
+            -- pendaftarannya. Tahapan 10 hanya memuat satu proses pada satker
+            -- ini - diperiksa atas 10.146 baris, seluruhnya proses_id 10.
+            (SELECT MAX(pr.diinput_tanggal) FROM perkara_proses pr
+              WHERE pr.perkara_id = p.perkara_id AND pr.tahapan_id = 10) AS didaftar
        FROM perkara p
        LEFT JOIN perkara_penetapan pen ON pen.perkara_id = p.perkara_id
        LEFT JOIN perkara_smartmajelis sm ON sm.perkara_id = p.perkara_id
@@ -1175,6 +1256,8 @@ async function susunRencanaTulis(minta) {
     tanggalPenetapan: minta.tanggalPenetapan,
     jenis,
     saatServer,
+    // Lantai jamnya: penetapan tidak pernah mendahului Pendaftaran Perkara.
+    didaftar: perkara.didaftar,
   });
   const ip = String(minta.ip || "127.0.0.1");
   const langkah = [];

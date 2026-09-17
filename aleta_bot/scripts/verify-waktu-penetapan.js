@@ -56,8 +56,10 @@ const URUT = ["pmh", "ppp", "pjs", "phs"];
 const JEDA_MIN = 60;
 const JEDA_MAKS = 10 * 60 + 59;
 
-function rangkaian(perkaraId, tanggal, server) {
-  return URUT.map((jenis) => waktuLangkah({ perkaraId, tanggalPenetapan: tanggal, jenis, saatServer: server }));
+function rangkaian(perkaraId, tanggal, server, didaftar) {
+  return URUT.map((jenis) =>
+    waktuLangkah({ perkaraId, tanggalPenetapan: tanggal, jenis, saatServer: server, didaftar })
+  );
 }
 /** Detik sejak tengah malam. */
 const keDetik = (teks) => {
@@ -201,6 +203,61 @@ console.log("jam penetapan (detik)");
     "tanggal yang tidak sah memulangkan jam peladen",
     waktuLangkah({ perkaraId: 1, tanggalPenetapan: "", jenis: "pmh", saatServer: server }) === server
   );
+}
+
+// ------------------------------------------- tidak mendahului pendaftaran
+//
+// Aturan yang paling dasar dan yang paling lama dilanggar: penetapan majelis
+// dikerjakan SESUDAH kasir menyelesaikan Pendaftaran Perkara. Diukur pada 825
+// perkara 2026 di peladen, nol yang mendahului; diukur pada sepuluh perkara
+// uji ALETA, SATU yang mendahului - perkara 571, didaftarkan 09:34 dan
+// penetapannya tercatat 08:27:40.
+//
+// Ini bukan kejanggalan di dalam basis data: tab Riwayat Perkara mengurut
+// menurut tanggal, sehingga barisnya duduk di atas baris pendaftarannya.
+{
+  const takMendahului = (w, batas) => w.every((x) => x.slice(11) >= batas);
+  const menaik = (w) => w.every((x, i) => i === 0 || x >= w[i - 1]);
+
+  // Perkara 571 yang dahulu melanggar.
+  const w571 = rangkaian(10123, "2026-09-16", "2026-09-16 13:46:00", "2026-09-16 09:34:00");
+  periksa("didaftarkan 09:34: tidak satu pun sebelum 09:34", takMendahului(w571, "09:34:00"), w571.join(" "));
+  periksa("didaftarkan 09:34: PMH sekurangnya 09:44", w571[0].slice(11) >= "09:44:00", w571[0]);
+
+  // Perkara 600 di layar SIPP: kasir 13:32:33, penetapan sore itu juga.
+  const w600 = rangkaian(10150, "2026-09-16", "2026-09-16 16:00:00", "2026-09-16 13:32:33");
+  periksa("didaftarkan 13:32: tidak satu pun sebelum 13:32", takMendahului(w600, "13:32:33"), w600.join(" "));
+  periksa("didaftarkan 13:32: urutannya tetap menaik", menaik(w600), w600.join(" "));
+
+  // Didaftarkan sore, jendela lama sudah lewat seluruhnya.
+  const wSore = rangkaian(10151, "2026-09-16", "2026-09-16 17:30:00", "2026-09-16 15:30:00");
+  periksa("didaftarkan 15:30: tidak satu pun sebelum 15:30", takMendahului(wSore, "15:30:00"), wSore.join(" "));
+  periksa("didaftarkan 15:30: tidak melampaui jam peladen", wSore.every((x) => x.slice(11) <= "17:30:00"), wSore.join(" "));
+
+  // Baru saja didaftarkan - selanya tiga menit, rangkaiannya dirapatkan.
+  const wSempit = rangkaian(10152, "2026-09-16", "2026-09-16 10:15:00", "2026-09-16 10:00:00");
+  periksa("sela tiga menit: tidak satu pun sebelum pendaftaran", takMendahului(wSempit, "10:00:00"), wSempit.join(" "));
+  periksa("sela tiga menit: tidak melampaui jam peladen", wSempit.every((x) => x.slice(11) <= "10:15:00"), wSempit.join(" "));
+  periksa("sela tiga menit: urutannya tetap menaik", menaik(wSempit), wSempit.join(" "));
+
+  // Didaftarkan kemarin - lantainya tetap 08:00, perilakunya tidak berubah.
+  const wKemarin = rangkaian(10153, "2026-09-16", "2026-09-16 13:00:00", "2026-09-15 14:00:00");
+  const wTanpa = rangkaian(10153, "2026-09-16", "2026-09-16 13:00:00");
+  periksa("didaftarkan kemarin: sama persis dengan tanpa pendaftaran", wKemarin.join() === wTanpa.join(), wKemarin.join(" "));
+
+  // Obyek Date dari penggerak mysql, bukan teks.
+  const wDate = rangkaian(10123, "2026-09-16", "2026-09-16 13:46:00", new Date(2026, 8, 16, 9, 34, 0));
+  periksa("pendaftaran berbentuk Date ikut menahan", takMendahului(wDate, "09:34:00"), wDate.join(" "));
+
+  // Lima puluh perkara, lima jam pendaftaran - tidak satu pun yang melanggar.
+  let melanggar = 0;
+  for (const jam of ["07:15:00", "09:34:00", "11:05:00", "13:32:33", "15:30:00"]) {
+    for (let id = 10100; id < 10150; id += 1) {
+      const w = rangkaian(id, "2026-09-16", "2026-09-16 16:45:00", `2026-09-16 ${jam}`);
+      if (!takMendahului(w, jam) || !menaik(w)) melanggar += 1;
+    }
+  }
+  periksa("250 rangkaian: nol yang mendahului pendaftarannya", melanggar === 0, `melanggar ${melanggar}`);
 }
 
 console.log("");
