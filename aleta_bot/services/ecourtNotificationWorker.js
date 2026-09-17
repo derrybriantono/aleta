@@ -51,21 +51,52 @@ function runQuery(sql, params = []) {
 /**
  * Mencari pihak pada sebuah perkara beserta nomor teleponnya.
  *
- * Memakai pola yang sama dengan publicQaVerificationService.fetchCaseRecipients:
- * v_pihak_perkara untuk pihak, perkara_pengacara untuk kuasa hukum. SIPP
- * hanya DIBACA - tidak ada tulisan apa pun ke sana.
+ * SIPP hanya DIBACA - tidak ada tulisan apa pun ke sana.
+ *
+ * ============================================================================
+ * TABELNYA LANGSUNG, BUKAN LEWAT v_pihak_perkara - DAN INI TERUKUR
+ * ============================================================================
+ *
+ * Bentuk sebelumnya membaca v_pihak_perkara lalu menyaring lewat
+ * `c.nomor_perkara = ?` pada tabel yang DI-JOIN. Saringan itu tidak dapat
+ * didorong masuk ke dalam tampilannya: v_pihak_perkara menggabungkan
+ * perkara_pihak1..5 dengan UNION dan membawa subkueri berkorelasi ke
+ * status_pihak pada tiap barisnya, sehingga MariaDB menyusun SELURUH isinya -
+ * dua puluh ribu baris berisi kolom alamat yang panjang - hanya untuk
+ * mengambil dua baris milik satu perkara.
+ *
+ * Diukur pada salinan SIPP PA Donggala (10.110 perkara), satu perkara:
+ *
+ *   lewat v_pihak_perkara   7,48 detik
+ *   tabel langsung          0,12 detik
+ *
+ * Angka itu menentukan: konteks perkara memakai 10 detik seluruhnya, sedangkan
+ * gerbang portal menyerah pada 8 detik dan ekstensi pada 9. Panel karena itu
+ * jatuh ke keterangan simpanan dan bagian penetapannya tidak pernah digambar -
+ * gejala yang terbaca sebagai "ekstensi tidak jalan", padahal satu kueri inilah
+ * sebabnya.
+ *
+ * Kolom dan urutannya dipertahankan persis seperti tampilannya: nama, pihak_ke,
+ * jenis, telepon. Kelima cabang pihak disebut satu per satu sebagaimana
+ * v_pihak_perkara menyebutnya, sehingga tidak ada pihak yang hilang.
  */
+const CABANG_PIHAK = [1, 2, 3, 4, 5];
+
 async function fetchCaseParties(nomorPerkara) {
-  const sql = `
+  const pihak = CABANG_PIHAK.map(
+    (ke) => `
     SELECT
       a.nama,
-      a.pihak_ke,
+      ${ke} AS pihak_ke,
       'pihak' AS jenis,
       b.telepon
-    FROM v_pihak_perkara a
+    FROM perkara_pihak${ke} a
     JOIN perkara c ON c.perkara_id = a.perkara_id
     LEFT JOIN pihak b ON b.id = a.pihak_id
-    WHERE c.nomor_perkara = ?
+    WHERE c.nomor_perkara = ?`
+  ).join("\n    UNION ALL");
+
+  const sql = `${pihak}
     UNION ALL
     SELECT
       a.nama,
@@ -77,7 +108,8 @@ async function fetchCaseParties(nomorPerkara) {
     LEFT JOIN pihak b ON b.id = a.pengacara_id
     WHERE c.nomor_perkara = ?
   `;
-  return runQuery(sql, [nomorPerkara, nomorPerkara]);
+  const nilai = CABANG_PIHAK.map(() => nomorPerkara).concat([nomorPerkara]);
+  return runQuery(sql, nilai);
 }
 
 /**

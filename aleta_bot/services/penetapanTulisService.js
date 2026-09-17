@@ -2131,7 +2131,7 @@ function rincianUntukHapus(jenis, perkara, jadwalSidangId) {
         tabel: "perkara_hakim_pn",
         sql: `DELETE FROM perkara_hakim_pn WHERE perkara_id = ? AND tahapan_id = ? AND tanggal_penetapan = ?`,
         params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.pmh],
-        keterangan: `membongkar majelis hakim tanggal ${perkara.pmh}`,
+        keterangan: `membongkar majelis hakim tanggal ${tanggalIso(perkara.pmh)}`,
       },
       // ======================================================================
       // BARIS SMART MAJELIS IKUT DIBONGKAR - DIPAGARI TANGGALNYA
@@ -2164,7 +2164,7 @@ function rincianUntukHapus(jenis, perkara, jadwalSidangId) {
         tabel: "perkara_panitera_pn",
         sql: `DELETE FROM perkara_panitera_pn WHERE perkara_id = ? AND tahapan_id = ? AND tanggal_penetapan = ? AND panitera_id = ?`,
         params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.ppp, String(perkara.pppId ?? "")],
-        keterangan: `membongkar panitera pengganti tanggal ${perkara.ppp}`,
+        keterangan: `membongkar panitera pengganti tanggal ${tanggalIso(perkara.ppp)}`,
       },
     ];
   }
@@ -2174,7 +2174,7 @@ function rincianUntukHapus(jenis, perkara, jadwalSidangId) {
         tabel: "perkara_jurusita",
         sql: `DELETE FROM perkara_jurusita WHERE perkara_id = ? AND tahapan_id = ? AND tanggal_penetapan = ? AND jurusita_id = ?`,
         params: [perkara.perkaraId, TAHAPAN_TINGKAT_PERTAMA, perkara.pjs, String(perkara.pjsId ?? "")],
-        keterangan: `membongkar juru sita tanggal ${perkara.pjs}`,
+        keterangan: `membongkar juru sita tanggal ${tanggalIso(perkara.pjs)}`,
       },
     ];
   }
@@ -2185,7 +2185,7 @@ function rincianUntukHapus(jenis, perkara, jadwalSidangId) {
       tabel: "perkara_penetapan_hari_sidang",
       sql: `DELETE FROM perkara_penetapan_hari_sidang WHERE perkara_id = ? AND tanggal_penetapan = ?`,
       params: [perkara.perkaraId, perkara.phs],
-      keterangan: `membongkar penetapan hari sidang tanggal ${perkara.phs}`,
+      keterangan: `membongkar penetapan hari sidang tanggal ${tanggalIso(perkara.phs)}`,
     },
   ];
   if (jadwalSidangId > 0) {

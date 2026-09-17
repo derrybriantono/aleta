@@ -934,7 +934,10 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
       aksi: "tulis",
       jenis: rencana.jenis,
       perkaraId: badan.perkaraId,
-      nomorPerkara: rencana.perkara,
+      // rencana.perkara adalah OBYEK { perkaraId, nomorPerkara } - nomornya
+      // yang dicatat, bukan bungkusnya. Lihat nomorPerkaraSaja di
+      // jejakAletaService.
+      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
       tanggalPenetapan: String(badan.tanggalPenetapan || ""),
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
       namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
@@ -1003,7 +1006,10 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
       aksi: "hapus",
       jenis: rencana.jenis,
       perkaraId: badan.perkaraId,
-      nomorPerkara: rencana.perkara,
+      // rencana.perkara adalah OBYEK { perkaraId, nomorPerkara } - nomornya
+      // yang dicatat, bukan bungkusnya. Lihat nomorPerkaraSaja di
+      // jejakAletaService.
+      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
       akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
       namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
       operator: rencana.operator,
@@ -1127,7 +1133,10 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
         aksi: "hapus",
         jenis,
         perkaraId,
-        nomorPerkara: rencana.perkara,
+        // rencana.perkara adalah OBYEK { perkaraId, nomorPerkara } - nomornya
+        // yang dicatat, bukan bungkusnya. Lihat nomorPerkaraSaja di
+        // jejakAletaService.
+        nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
         akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
         namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
         operator: rencana.operator,

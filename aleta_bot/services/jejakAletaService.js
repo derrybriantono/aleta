@@ -108,6 +108,30 @@ function potong(nilai, panjang) {
   return String(nilai === null || nilai === undefined ? "" : nilai).slice(0, panjang);
 }
 
+/**
+ * ============================================================================
+ * NOMOR PERKARA: TERIMA TEKSNYA, TERIMA JUGA BUNGKUSNYA
+ * ============================================================================
+ *
+ * Rencana penetapan membawa perkaranya sebagai OBYEK - `{ perkaraId,
+ * nomorPerkara }` - dan pemanggilnya meneruskan obyek itu apa adanya. String()
+ * atasnya menghasilkan "[object Object]", yang lolos tanpa galat dan baru
+ * ketahuan berbulan kemudian: seluruh 64 baris jejak di peladen kantor
+ * tercatat tanpa nomor perkara, pada tabel yang justru dibuat supaya perbuatan
+ * ALETA dapat ditelusuri per perkara.
+ *
+ * Pemanggilnya diperbaiki, tetapi penjagaan diletakkan DI SINI juga: jejak
+ * tidak boleh kehilangan nomor perkara karena satu pemanggil baru lupa
+ * membongkar bungkusnya. Yang dicatat harus tetap terbaca walau bentuk yang
+ * dikirim berubah.
+ */
+function nomorPerkaraSaja(nilai) {
+  if (nilai && typeof nilai === "object") {
+    return potong(nilai.nomorPerkara || nilai.nomor_perkara || "", 120);
+  }
+  return potong(nilai, 120);
+}
+
 function waktuMysqlSekarang() {
   const d = new Date();
   const dua = (n) => String(n).padStart(2, "0");
@@ -161,7 +185,7 @@ async function catat(jejak) {
         potong(j.aksi || "tulis", 12),
         potong(j.jenis, 20),
         Number(j.perkaraId) || 0,
-        potong(j.nomorPerkara, 120),
+        nomorPerkaraSaja(j.nomorPerkara),
         tanggalSaja(j.tanggalPenetapan),
         potong(j.akunSipp, 60),
         potong(j.namaPejabat, 150),
