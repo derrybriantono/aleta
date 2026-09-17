@@ -1,5 +1,6 @@
-export const APP_VERSION = "2.20.1";
-export const APP_VERSION_LABEL = "ALETA Judicia v2.20.1 - Satu Tema, dan Jalan Pulang untuk Panel yang Disingkirkan";
+export const APP_VERSION = "2.20.2";
+export const APP_VERSION_LABEL =
+  "ALETA Judicia v2.20.2 - Jejak yang Menyebut Nomor Perkaranya, dan Pihak yang Tidak Lagi Ditunggu";
 
 export type PatchNote = {
   version: string;
@@ -20,6 +21,39 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.20.2",
+    title:
+      "ALETA Judicia v2.20.2 - Jejak yang Menyebut Nomor Perkaranya, dan Pihak yang Tidak Lagi Ditunggu",
+    date: "2026-09-17",
+    status: "Terpasang",
+    summary:
+      "Tiga perbaikan yang ditemukan dari membaca data peladen kantor, bukan dari membaca kode: riwayat " +
+      "perbuatan ALETA kembali menyebut nomor perkaranya, keterangan bongkar kembali berbahasa Indonesia, " +
+      "dan daftar pihak perkara dibaca dari tabelnya langsung sehingga panel ekstensi tidak lagi kehabisan " +
+      "waktu sebelum sempat digambar.",
+    added: [],
+    changed: [
+      "Daftar pihak perkara dibaca dari perkara_pihak1..5 langsung, bukan lewat tampilan v_pihak_perkara. Terukur di basis data peladen atas satu perkara: 828 milidetik menjadi 5 milidetik, dengan hasil yang sama persis. Di salinan setempat yang lebih berat angkanya 7,48 detik menjadi 0,12 detik, dan konteks perkara seluruhnya 10,08 detik menjadi 0,88 detik.",
+    ],
+    fixed: [
+      "Riwayat perbuatan ALETA menyimpan nomor perkara sebagai [object Object] - keenam puluh empat barisnya, sejak tabel itu dipakai. Pemanggilnya meneruskan bungkus rencana yang berisi perkaraId dan nomorPerkara, dan String() atas obyek tidak pernah melempar galat, sehingga cacatnya diam: kolom perkara_id benar, nomornya hilang. Tabel yang justru dibuat supaya perbuatan ALETA dapat ditelusuri per perkara karena itu tidak dapat ditelusuri per perkara.",
+      "Keterangan bongkar penetapan memuat tanggal berbahasa Inggris - membongkar juru sita tanggal Tue Sep 15 2026 00:00:00 GMT+0000 - sebab kolom DATE ditempel apa adanya ke dalam kalimat. Hanya catatan ALETA sendiri; tidak satu pun baris SIPP terpengaruh.",
+      "Panel ekstensi jatuh ke keterangan simpanan dan bagian penetapannya tidak pernah digambar, karena satu kueri pihak memakan lebih lama daripada batas 8 detik gerbang portal dan 9 detik ekstensi. Gejalanya terbaca sebagai ekstensi tidak jalan; sebabnya satu kueri.",
+    ],
+    security: [
+      "Tidak ada perubahan pada apa yang ditulis ALETA ke SIPP. Kedua perbaikan pertama menyentuh catatan milik ALETA sendiri, yang ketiga hanya MEMBACA.",
+      "Penjagaan nomor perkara diletakkan di layanan jejaknya juga, bukan hanya di pemanggilnya - riwayat tidak boleh kehilangan nomor perkara karena satu pemanggil baru lupa membongkar bungkusnya.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi. Ekstensi tetap 1.155.0 - tidak perlu reload bila 2.20.1 sudah dipasang.",
+      "Enam puluh empat baris riwayat yang terlanjur tersimpan tanpa nomor perkara tidak diperbaiki surut; kolom perkara_id-nya benar, jadi penelusurannya tetap dapat dikerjakan lewat kolom itu.",
+    ],
+    knownLimitations: [
+      "Cap waktu baris audit yang ditulis ALETA masih disebar ke jam pagi, sehingga jamnya dapat lebih awal daripada baris bernomor id di dekatnya. Diukur atas 20.000 id audit terakhir di peladen: hanya tiga kali jam mundur, dua di antaranya milik ALETA. Hanya terlihat oleh yang membandingkan nomor baris dengan jam langsung di basis data; layar Audit Trail SIPP mengurut menurut jam. Menukarnya dengan jam sekarang menghilangkan selisih ini tetapi menimbulkan selisih lain, sebab pada pekerjaan pegawai jam perkara_proses dan jam audit selalu sama - keputusannya belum diambil.",
+      "Keterangan Smart Majelis yang ditulis ALETA berupa satu kalimat tetap, sedangkan petugas memakai frasa pendek yang berbeda-beda. Bila ALETA dipakai rutin, kalimat tetap itu akan menumpuk.",
+    ],
+  },
   {
     version: "2.20.1",
     title: "ALETA Judicia v2.20.1 - Satu Tema, dan Jalan Pulang untuk Panel yang Disingkirkan",
