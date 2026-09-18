@@ -950,6 +950,23 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Grafik",
   },
   {
+    id: "beban-konseptor",
+    label: "Beban Kinerja Konseptor",
+    description: "Berat pekerjaan konseptor putusan, bukan sekadar jumlahnya.",
+    href: "/beban-konseptor",
+    icon: "chart-column",
+    // Layar ini menyebut NAMA ORANG beserta peringkatnya. Ia karena itu tidak
+    // dibuka untuk seluruh peran seperti Statistik, melainkan untuk pimpinan
+    // dan kepaniteraan yang memang memikul pembagian bebannya.
+    roleIds: ["super-admin", "ketua", "wakil-ketua", "panitera", "sekretaris"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-violet-100",
+    iconFgClass: "text-violet-700",
+    cardClass: "border-violet-200/80 bg-violet-50/70",
+    badgeLabel: "Kinerja",
+  },
+  {
     id: "disposisi",
     label: "Disposisi Digital",
     description: "Teruskan disposisi dan pantau penyelesaiannya.",

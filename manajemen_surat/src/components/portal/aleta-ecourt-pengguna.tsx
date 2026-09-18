@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePortal } from "@/lib/app-state";
-import { apiPath } from "@/lib/base-path";
+import { apiPath, withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import Link from "next/link";
@@ -545,6 +545,13 @@ export function AletaEcourtPengguna() {
               onBukaStatus={(nomorPerkara) => {
                 setPerkaraDibuka(nomorPerkara);
                 setMenu("status");
+              }}
+              // Halaman tersendiri, bukan panel di dalam layar ini: yang
+              // ditulisnya SIPP sungguhan, dan halaman yang berdiri sendiri
+              // punya alamat yang dapat dibagikan, ditinggalkan, lalu dibuka
+              // lagi tanpa kehilangan tempat.
+              onBukaTunda={({ sidangId }) => {
+                window.location.assign(withBasePath(`/sidang-tunda/${encodeURIComponent(sidangId)}`));
               }}
             />
           ) : null}

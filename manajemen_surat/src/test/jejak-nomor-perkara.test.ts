@@ -99,11 +99,23 @@ describe("nomor perkara pada jejak ALETA", () => {
   });
 
   it("gerbang tidak lagi meneruskan obyek rencana.perkara", () => {
+    // Dituntut SIFATNYA, bukan jumlahnya.
+    //
+    // Dahulu tuntutan ini berbunyi `toBe(3)` - jumlah pemanggil pada hari ia
+    // ditulis. Ia menyala merah ketika penulis penundaan sidang dan penulis
+    // putusan menambah dua pemanggil yang KEDUANYA sudah benar. Tuntutan yang
+    // menghitung pemanggil menghukum kode yang bertambah, bukan kode yang
+    // keliru - dan yang dijaga di sini memang bukan berapa banyak yang
+    // memanggil, melainkan tidak ada satu pun yang meneruskan obyeknya.
     expect(gerbang).not.toContain("nomorPerkara: rencana.perkara,");
-    const pakai = gerbang.match(
-      /nomorPerkara: \(rencana\.perkara && rencana\.perkara\.nomorPerkara\) \|\| "",/g
-    );
-    expect(pakai?.length).toBe(3);
+    expect(gerbang).not.toMatch(/nomorPerkara:\s*rencana\.perkara\s*[,}]/);
+
+    const semua = gerbang.match(/nomorPerkara: [^,\n]+/g) || [];
+    const dariRencana = semua.filter((b) => b.includes("rencana.perkara"));
+    expect(dariRencana.length).toBeGreaterThanOrEqual(3);
+    for (const baris of dariRencana) {
+      expect(baris, baris).toBe('nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || ""');
+    }
   });
 });
 

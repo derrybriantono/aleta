@@ -48,6 +48,10 @@ export type ModuleId =
   | "surat-keluar"
   | "arsip"
   | "statistik"
+  // Beban kinerja konseptor putusan - dihitung dari berat perkaranya, bukan
+  // dari jumlahnya. Terpisah dari "statistik" dengan sengaja: statistik
+  // menghitung perkara, layar ini menghitung orang.
+  | "beban-konseptor"
   | "disposisi"
   | "search"
   | "mapping-user-jabatan"

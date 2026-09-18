@@ -66,9 +66,12 @@ const selisihHarianService = require("../services/selisihHarianService");
 const tandaTanganService = require("../services/tandaTanganService");
 const dokumenPenetapanService = require("../services/dokumenPenetapanService");
 const penetapanTulisService = require("../services/penetapanTulisService");
+const sidangHasilService = require("../services/sidangHasilService");
+const putusanTulisService = require("../services/putusanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
+const penilaianKonseptorService = require("../services/penilaianKonseptorService");
 const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
@@ -965,6 +968,260 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
         sql: String(x.sql).replace(/\s+/g, " ").trim(),
         nilai: x.params,
       })) : undefined,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Keadaan satu baris jadwal sidang - dibaca sebelum apa pun ditawarkan.
+ *
+ * Panitera sidang membuka layar ini dari kotak nomor perkara pada antrian
+ * sidang, dan yang pertama ia butuhkan bukan borang melainkan JAWABAN: sidang
+ * ini sudah ditunda atau belum, agendanya apa, jamnya berapa.
+ */
+router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
+  try {
+    const keadaan = await sidangHasilService.keadaanJadwal(req.query.jadwalId);
+    if (!keadaan) {
+      res.status(404).json({ ok: false, alasan: "jadwal_tidak_ketemu" });
+      return;
+    }
+    res.json({ ok: true, keadaan });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menunda satu sidang - menulis ke SIPP dan menggerakkan antriannya.
+ *
+ * ============================================================================
+ * KERING SEBAGAI BAWAAN, SAMA SEPERTI PENETAPAN
+ * ============================================================================
+ *
+ * Menulis sungguhan menuntut { kering: false } yang TEGAS. Bukan kehati-hatian
+ * berlebihan: yang ditulis ini `perkara_jadwal_sidang` dan `perkara` pada basis
+ * data SIPP yang sedang dipakai, dan tiga baris audit yang harus terbaca
+ * sebagaimana petugas menuliskannya sendiri. Rencananya diperlihatkan lebih
+ * dahulu supaya ada yang dapat membacanya sebelum apa pun terjadi.
+ *
+ * ============================================================================
+ * ANTRIAN DIGERAKKAN SESUDAHNYA, DAN GAGALNYA TIDAK MEMBATALKAN PENUNDAAN
+ * ============================================================================
+ *
+ * Penundaan sidang adalah catatan resmi; antrian hanya papan panggil di ruang
+ * tunggu. Bila antriannya tidak tergerakkan - perkaranya memang tidak mengambil
+ * nomor, misalnya - penundaannya TETAP sah dan tetap tercatat. Yang dikerjakan
+ * hanya melaporkan bahwa antriannya tidak ikut bergerak, bukan membatalkan
+ * yang sudah benar.
+ */
+router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const kering = badan.kering !== false;
+
+    const rencana = await sidangHasilService.susunRencanaTunda({
+      jadwalId: badan.jadwalId,
+      alasanTunda: String(badan.alasanTunda || ""),
+      tanggalBerikut: String(badan.tanggalBerikut || ""),
+      jamBerikut: String(badan.jamBerikut || ""),
+      jamSekarang: String(badan.jamSekarang || ""),
+      agendaBerikut: String(badan.agendaBerikut || ""),
+      jenisPengadilan: badan.jenisPengadilan,
+      olehUsername: String(badan.olehUsername || ""),
+      operator,
+      ip: alamatAudit(req),
+    });
+
+    if (!rencana.ok) {
+      // Yang DITOLAK ikut tercatat - di sys_audittrail percobaan yang gagal
+      // tidak meninggalkan jejak, dan justru itu yang dicari ketika panitera
+      // sidang bertanya kenapa penundaannya tidak jadi.
+      void jejakAletaService.catat({
+        aksi: "tunda",
+        jenis: "penundaan",
+        perkaraId: badan.perkaraId,
+        akunSipp: String(badan.olehUsername || ""),
+        operator,
+        ip: alamatAudit(req),
+        berhasil: false,
+        kering,
+        alasan: String(rencana.alasan || "ditolak"),
+        langkah: [],
+      });
+      res.status(400).json(rencana);
+      return;
+    }
+
+    const hasil = await sidangHasilService.jalankanRencana(rencana, { kering });
+
+    // Antrian digerakkan HANYA bila penundaannya sungguh tertulis. Pada uji
+    // kering ia ikut kering, supaya yang dibaca panitera sidang adalah rencana
+    // yang utuh - termasuk apa yang akan terjadi pada papan panggilnya.
+    let antrian = null;
+    if (hasil.ok) {
+      antrian = await sidangHasilService.setelAntrian({
+        perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+        tanggalSidang: rencana.sidangSekarang && rencana.sidangSekarang.tanggal,
+        ruangId: badan.ruangId,
+        keadaan: sidangHasilService.ANTRIAN_SELESAI,
+        kering,
+      });
+    }
+
+    void jejakAletaService.catat({
+      aksi: "tunda",
+      jenis: "penundaan",
+      perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
+      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      operator: rencana.operator,
+      ip: alamatAudit(req),
+      berhasil: hasil.ok === true,
+      kering,
+      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      langkah: rencana.langkah,
+    });
+
+    res.status(hasil.ok ? 200 : 409).json({
+      ...hasil,
+      perkara: rencana.perkara,
+      atasNama: rencana.atasNama,
+      operator: rencana.operator,
+      sidangSekarang: rencana.sidangSekarang,
+      sidangBerikutnya: rencana.sidangBerikutnya,
+      andaian: rencana.andaian || [],
+      antrian,
+      rencana: kering
+        ? rencana.langkah.map((x) => ({
+            tabel: x.tabel,
+            aksi: x.aksi,
+            keterangan: x.keterangan,
+            sql: String(x.sql).replace(/\s+/g, " ").trim(),
+            nilai: x.params,
+          }))
+        : undefined,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Status putusan yang dapat dipilih - dibaca dari tabel rujukan SIPP.
+ *
+ * Tidak disalin ke dalam kode: daftar yang disalin akan basi tanpa berbunyi,
+ * dan yang basi di sini berarti putusan tercatat dengan status yang salah.
+ */
+router.get("/sidang/status-putusan", requireInternalToken, async (req, res) => {
+  try {
+    const daftar = await putusanTulisService.daftarStatusPutusan();
+    res.json({ ok: true, daftar });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menulis putusan akhir ke SIPP.
+ *
+ * ============================================================================
+ * TULISAN PALING BERAT YANG DIKERJAKAN ALETA
+ * ============================================================================
+ *
+ * Yang dicatat di sini dibaca pengadilan tingkat banding, dipakai menyusun akta
+ * cerai, dan dikirim ke Direktori Putusan. Karena itu kering sebagai bawaan
+ * berlaku sama tegasnya seperti pada penetapan dan penundaan - `kering: false`
+ * harus disebut, tidak pernah tersirat.
+ *
+ * Bentuk tulisannya diukur dari satu sesi memutus sungguhan: dua baris pada
+ * detik yang sama - `perkara_putusan` dan `perkara_pertimbangan_hukum` - dengan
+ * judul audit yang berbeda dari seluruh modul SIPP lainnya, dan kolom
+ * `diinput_tanggal` berjam dua belas. Lihat putusanTulisService.
+ */
+router.post("/sidang/putus", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const kering = badan.kering !== false;
+
+    const rencana = await putusanTulisService.susunRencanaPutus({
+      perkaraId: badan.perkaraId,
+      tanggalPutusan: String(badan.tanggalPutusan || ""),
+      statusPutusanId: badan.statusPutusanId,
+      amarPutusan: String(badan.amarPutusan || ""),
+      catatanPutusan: String(badan.catatanPutusan || ""),
+      sumberHukumId: String(badan.sumberHukumId || ""),
+      verstek: String(badan.verstek || ""),
+      pertimbanganHukum: String(badan.pertimbanganHukum || ""),
+      olehUsername: String(badan.olehUsername || ""),
+      operator,
+      ip: alamatAudit(req),
+    });
+
+    if (!rencana.ok) {
+      void jejakAletaService.catat({
+        aksi: "putus",
+        jenis: "putusan",
+        perkaraId: badan.perkaraId,
+        akunSipp: String(badan.olehUsername || ""),
+        operator,
+        ip: alamatAudit(req),
+        berhasil: false,
+        kering,
+        alasan: String(rencana.alasan || "ditolak"),
+        langkah: [],
+      });
+      res.status(400).json(rencana);
+      return;
+    }
+
+    const hasil = await putusanTulisService.jalankanRencana(rencana, { kering });
+
+    void jejakAletaService.catat({
+      aksi: "putus",
+      jenis: "putusan",
+      perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
+      tanggalPenetapan: rencana.putusan && rencana.putusan.tanggalPutusan,
+      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      operator: rencana.operator,
+      ip: alamatAudit(req),
+      berhasil: hasil.ok === true,
+      kering,
+      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      langkah: rencana.langkah,
+    });
+
+    res.status(hasil.ok ? 200 : 409).json({
+      ...hasil,
+      perkara: rencana.perkara,
+      atasNama: rencana.atasNama,
+      operator: rencana.operator,
+      putusan: rencana.putusan,
+      andaian: rencana.andaian || [],
+      rencana: kering
+        ? rencana.langkah.map((x) => ({
+            tabel: x.tabel,
+            aksi: x.aksi,
+            keterangan: x.keterangan,
+            sql: String(x.sql).replace(/\s+/g, " ").trim(),
+            nilai: x.params,
+          }))
+        : undefined,
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
@@ -2373,6 +2630,47 @@ router.get("/sipp/analisa", requireInternalToken, async (req, res) => {
 /** Daftar analisis yang tersedia - supaya layar tidak menyalinnya sendiri. */
 router.get("/sipp/analisa/daftar", requireInternalToken, async (req, res) => {
   res.json({ ok: true, daftar: analisaLanjutService.DAFTAR_ANALISA });
+});
+
+/**
+ * Beban kinerja konseptor putusan.
+ *
+ * Diukur di salinan satker sebelum dibuka: rentang setahun 2,1 detik, rentang
+ * seluruh basis data (9.993 putusan) 5,4 detik. Gerbang menyerah pada 8 detik,
+ * jadi "total" muat - tetapi tanpa marginnya banyak. Karena itu rincian per
+ * perkara DIMATIKAN sendiri begitu rentangnya melewati seribu putusan: yang
+ * dibaca orang pada rentang selebar itu memang bukan daftar sembilan ribu
+ * perkara.
+ */
+router.get("/sipp/konseptor", requireInternalToken, async (req, res) => {
+  try {
+    const bobot = req.query.bobot ? JSON.parse(String(req.query.bobot)) : undefined;
+    const hasil = await penilaianKonseptorService.hitung({
+      periode: String(req.query.periode || "bulan"),
+      acuan: String(req.query.acuan || ""),
+      dari: String(req.query.dari || ""),
+      sampai: String(req.query.sampai || ""),
+      dasar: String(req.query.dasar || "ketua-majelis"),
+      rinci: String(req.query.rinci || "") !== "0",
+      // Usul bobot dari data satker dihitung hanya bila diminta - ia menyisir
+      // ulang seluruh baris untuk kuadrat terkecilnya.
+      usulBobot: String(req.query.usulBobot || "") === "1",
+      bobot,
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Pilihan periode, dasar konseptor dan bobot awalnya - supaya layar tidak menyalinnya. */
+router.get("/sipp/konseptor/pilihan", requireInternalToken, (req, res) => {
+  res.json({
+    ok: true,
+    periode: penilaianKonseptorService.PERIODE,
+    dasar: penilaianKonseptorService.DASAR,
+    bobotAwal: penilaianKonseptorService.BOBOT_AWAL,
+  });
 });
 
 /**

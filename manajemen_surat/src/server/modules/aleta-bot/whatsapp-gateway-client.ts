@@ -1878,6 +1878,100 @@ export async function getGatewayAnalisaPerkara(
 }
 
 /**
+ * Beban kinerja konseptor putusan pada satu rentang.
+ *
+ * Diukur di salinan satker: setahun 2,1 detik, seluruh basis data (9.993
+ * putusan) 5,4 detik. Gerbang menyerah pada 8 detik - muat, tetapi tidak
+ * dengan margin yang longgar, jadi rentang lebar memulangkan angkanya tanpa
+ * daftar rincian per perkara.
+ */
+/**
+ * Keadaan satu baris jadwal sidang.
+ *
+ * Dibaca sebelum borang penundaan ditawarkan: yang pertama dibutuhkan panitera
+ * sidang bukan borang, melainkan jawaban - sidang ini sudah ditunda atau belum.
+ */
+export async function getGatewayKeadaanSidang(
+  jadwalId: number | string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ jadwalId: String(jadwalId) });
+  return gatewayFetch(`/internal/aleta-bot/sidang/keadaan?${kueri.toString()}`);
+}
+
+/**
+ * Menunda satu sidang - menulis ke SIPP dan menggerakkan antriannya.
+ *
+ * KERING sebagai bawaan. Menulis sungguhan menuntut `kering: false` yang tegas,
+ * sebab yang ditulis ini `perkara_jadwal_sidang` dan `perkara` pada basis data
+ * SIPP yang sedang dipakai petugas.
+ */
+export async function postGatewayTundaSidang(
+  isi: Record<string, unknown>
+): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sidang/tunda`, {
+    method: "POST",
+    body: JSON.stringify(isi),
+  });
+}
+
+/**
+ * Status putusan yang sungguh dipakai satker - dibaca dari data, bukan daftar.
+ */
+export async function getGatewayStatusPutusan(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sidang/status-putusan`);
+}
+
+/**
+ * Menulis putusan akhir ke SIPP.
+ *
+ * KERING sebagai bawaan, sama tegasnya seperti penetapan dan penundaan. Yang
+ * dicatat di sini dibaca pengadilan tingkat banding, dipakai menyusun akta
+ * cerai, dan dikirim ke Direktori Putusan.
+ */
+export async function postGatewayTulisPutusan(
+  isi: Record<string, unknown>
+): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sidang/putus`, {
+    method: "POST",
+    body: JSON.stringify(isi),
+  });
+}
+
+export async function getGatewayBebanKonseptor(pilihan: {
+  periode: string;
+  acuan?: string;
+  dari?: string;
+  sampai?: string;
+  dasar?: string;
+  rinci?: boolean;
+  usulBobot?: boolean;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ periode: pilihan.periode });
+  if (pilihan.usulBobot) kueri.set("usulBobot", "1");
+  if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
+  if (pilihan.dari) kueri.set("dari", pilihan.dari);
+  if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
+  if (pilihan.dasar) kueri.set("dasar", pilihan.dasar);
+  if (pilihan.rinci === false) kueri.set("rinci", "0");
+  // Batas waktu penilaian, bukan batas waktu bawaan delapan detik.
+  //
+  // Diukur di salinan satker pada mesin yang tidak sedang dibebani: rentang
+  // seluruh basis data (9.993 putusan) 7,9 detik, setahun 2,5 detik, sebulan
+  // 1,2 detik. Angka pertama itu MELEWATI batas bawaan begitu mesinnya
+  // mengerjakan hal lain - dan yang sampai ke petugas bukan "lambat"
+  // melainkan "tidak berhasil", persis kekeliruan yang sudah diperbaiki pada
+  // penilaian lanjutan.
+  //
+  // Enam puluh detik dipilih dengan alasan yang sama seperti penilaian
+  // lanjutan: yang menyerah lebih dulu harus batas waktu kueri di sisi bot,
+  // supaya sebab yang sampai ke pengawas adalah kueri mana yang lambat, bukan
+  // "bot tidak menjawab".
+  return gatewayFetch(`/internal/aleta-bot/sipp/konseptor?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/**
  * Bahan penyusun perintah putusan.
  *
  * Hanya bahannya; perangkaiannya di layar, supaya penyusun melihat

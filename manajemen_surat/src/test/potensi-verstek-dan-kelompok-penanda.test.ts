@@ -104,8 +104,11 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
     expect(awal).toBeGreaterThan(-1);
     expect(akhir).toBeGreaterThan(awal);
     const potong = isi.slice(awal, akhir);
+    // labelPendek disisipkan di antara label dan nada pada kotak yang kata
+    // pengulangnya sudah berdiri sebagai judul kelompoknya - ia boleh ada,
+    // boleh tidak.
     const pola =
-      /kunci: "([a-z-]+)",\s*label: "[^"]+",\s*nada: "([a-z]+)"(?: as const)?,\s*kelompok: "([a-z]+)"/g;
+      /kunci: "([a-z-]+)",\s*label: "[^"]+",\s*(?:labelPendek: "[^"]+",\s*)?nada: "([a-z]+)"(?: as const)?,\s*kelompok: "([a-z]+)"/g;
     const hasil: Array<{ kunci: string; nada: string; kelompok: string }> = [];
     for (const m of potong.matchAll(pola)) hasil.push({ kunci: m[1], nada: m[2], kelompok: m[3] });
     return hasil;
@@ -113,9 +116,9 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
 
   it("tiap kotak punya kelompok, dan kelompoknya dikenal", () => {
     const kotak = daftarKotak();
-    // Lima belas kotak lama + Potensi verstek. Putusan e-Court tetap dimatikan
-    // tetapi tetap tertulis, dan ikut terhitung.
-    expect(kotak.length).toBe(16);
+    // Lima belas kotak lama + Potensi verstek + Belum tunda. Putusan e-Court
+    // tetap dimatikan tetapi tetap tertulis, dan ikut terhitung.
+    expect(kotak.length).toBe(17);
     const dikenal: string[] = KELOMPOK_KEADAAN.map((k) => k.kunci);
     for (const k of kotak) {
       expect(dikenal, `${k.kunci} berkelompok "${k.kelompok}"`).toContain(k.kelompok);
@@ -154,8 +157,15 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
     const isi = komponen();
     expect(isi).toContain("function kelompokKeadaanTampak(");
     expect(isi).toContain(".filter((kelompok) => kelompok.anggota.length > 0)");
-    expect(isi).toContain("{kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok, urutan) => (");
+    expect(isi).toContain("{kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok) => (");
     expect(isi).toContain("{kelompok.label}");
+    // Sejak deretannya dipadatkan, judul kelompok dan kotaknya dikurung SATU
+    // pil - supaya judul tidak pernah tertinggal di ujung baris sementara
+    // kotaknya turun ke baris berikutnya. Kotaknya bentuk padat, dan label
+    // utuhnya pindah ke judul gantung.
+    expect(isi).toContain("inline-flex flex-wrap items-center gap-0.5 rounded-full");
+    expect(isi).toContain("label={keadaan.labelPendek ?? keadaan.label}");
+    expect(isi).toContain("`${keadaan.label} — ${keadaan.judul}`");
     // Kotak gabungan tetap paling depan, di luar kelompok mana pun.
     expect(isi.indexOf("keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (")).toBeLessThan(
       isi.indexOf("{kelompokKeadaanTampak(")

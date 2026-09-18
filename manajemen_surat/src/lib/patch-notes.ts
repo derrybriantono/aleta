@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.20.4";
+export const APP_VERSION = "2.21.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.20.4 - Nama Berkas yang Menyebut Perkaranya, dan Lencana yang Terbuka Seketika";
+  "ALETA Judicia v2.21.0 - Beban yang Diukur, dan Hasil Sidang yang Ditulis Sendiri";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,56 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.21.0",
+    title: "ALETA Judicia v2.21.0 - Beban yang Diukur, dan Hasil Sidang yang Ditulis Sendiri",
+    date: "2026-09-18",
+    status: "Terpasang",
+    summary:
+      "Dua pekerjaan besar. Pertama, penilaian beban kinerja konseptor putusan - dihitung dari berat " +
+      "perkaranya, bukan dari jumlahnya, dan tiap komponennya diukur di data satker sebelum boleh masuk " +
+      "rumus. Kedua, panitera sidang kini dapat menuliskan hasil sidang - penundaan maupun putusan akhir - " +
+      "langsung ke SIPP dari kotak nomor perkara pada Antrian Sidang.",
+    added: [
+      "Beban kinerja konseptor: tiap putusan diberi bobot dari verstek atau contradictoir, status putusannya, rekonvensi, putusan sela, jumlah saksi, jumlah pihak, jumlah sidang, panjang naskah pertimbangan, mediasi, dan ragam perkaranya. Dapat dipilih per minggu, bulan, triwulan, semester, tahun, seluruhnya, atau rentang tanggal sendiri.",
+      "Tiga sumbu, bukan satu angka: beban yang dipikul, kelengkapan berkas, dan bagian perkara yang lebih berat daripada median satker. Satu angka menyembunyikan pertukarannya.",
+      "Beban per BULAN AKTIF di samping totalnya. Terukur: satu konseptor 702 skor atas 7,6 bulan dan yang lain 354 atas 4,0 bulan - 92,5 lawan 87,7 per bulan. Nyaris sama beratnya, sementara totalnya berselisih dua kali lipat.",
+      "Usul bobot yang DITURUNKAN dari riwayat satker sendiri, dengan jumlah sidang dan panjang naskah sebagai berat teramati. Ditampilkan berdampingan dengan bobot yang berlaku, tidak pernah menggantikannya.",
+      "Panitera sidang menuliskan penundaan sidang ke SIPP beserta audit trail-nya, lalu menandai antrian sidangnya selesai. Pintunya kotak nomor perkara pada Jadwal Perkara yang Bersidang.",
+      "Panitera sidang menuliskan putusan akhir dan pertimbangan hukumnya ke SIPP - dua baris pada detik yang sama, sebagaimana SIPP sendiri menuliskannya.",
+      "Delapan bentuk grafik statistik menggantikan tiga, tanpa satu pun pustaka grafik ditambahkan.",
+    ],
+    changed: [
+      "Penilaian lanjutan status perkara 71% lebih cepat: 31 analisis dari 139.958 menjadi 40.998 milidetik, dan analisis pihak dari 59.844 menjadi 1.511. Gerbang menyerah pada 8 detik, jadi enam puluh detik tidak terbaca sebagai lambat melainkan sebagai TIDAK BERHASIL.",
+      "Rekonvensi dibaca dari naskah pertimbangannya, bukan hanya dari tabelnya. Tabel mencatat 10 perkara, naskah berkepala Dalam Rekonvensi atau Dalam Konvensi mencatat 22, gabungannya 31 - tabelnya sendirian melewatkan dua pertiga.",
+      "Palet grafik kategori diganti: yang lama gagal pengukuran chroma (#0f766e terbaca abu-abu) dan DIPUTAR, sehingga kategori ketujuh berwarna sama dengan yang pertama. Palet baru delapan slot, diperiksa pada tema terang dan gelap; yang melewati delapan dilipat menjadi Lainnya dengan jumlahnya disebut.",
+    ],
+    fixed: [
+      "Layar beban konseptor membaca ok langsung dari bungkus jawaban portal - selalu bernilai benar, sehingga cabang gagalnya tidak akan pernah menyala meski peladen sudah menyiapkan alasannya.",
+      "Rencana penundaan menampilkan Tue Mar 09 2027 00:00:00 GMT+0800 pada layar berbahasa Indonesia: kolom DATE dipulangkan penggerak MySQL sebagai obyek Date.",
+      "Rentang bulan aktif tiap konseptor terbaca NOL untuk semua orang - sebab yang sama, dan tanpa satu pun galat berbunyi.",
+    ],
+    security: [
+      "Menulis ke SIPP KERING sebagai bawaan pada ketiga lapis - gerbang, rute portal, dan layar. Tombol tulis terkunci sampai rencananya dibaca, dan akun SIPP yang namanya tercatat di audit trail disebut pemanggil: ALETA tidak pernah menulis atas nama dirinya sendiri.",
+      "Percobaan yang DITOLAK ikut tercatat di jejak ALETA. Di sys_audittrail percobaan yang gagal tidak meninggalkan jejak sama sekali - padahal justru itu yang dicari ketika petugas bertanya kenapa penundaannya tidak jadi.",
+      "Bentuk tulisan putusan diukur dari sesi memutus sungguhan: judul auditnya berbeda dari seluruh modul SIPP lain, dan kolom diinput_tanggal modul putusan berjam dua belas - 5,0% barisnya berjam di atas 13, sementara perkara_penetapan 42,0%.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Versi ekstensi tidak berubah - tetap 1.157.0.",
+      "Ketepatan minutasi TIDAK dinilai: tanggal_minutasi sama dengan tanggal_putusan pada 683 dari 683 putusan. Jeda nol di sana bukan minutasi seketika, melainkan kolom yang terisi sendiri.",
+      "Eksepsi belum dapat dinilai: tidak ada tabelnya, dan kepala Dalam Eksepsi nol dari 2.228 naskah pertimbangan. Majelis di satker ini menulis kepala eksepsi dengan kalimat lain, dan kalimat itu belum diketahui.",
+      "Kuasa hukum tetap berbobot tetapi padam sendiri: pihak_pengacara hanya menyentuh 4 dari 9.993 perkara. Ia akan menyala sendiri begitu satker mulai mengisinya, tanpa kode disentuh lagi.",
+      "Ketepatan waktu sengaja tidak dibuat: rata daftar sampai putus 37 hari, dan hanya 1 dari 683 melewati 150 hari. Komponen yang hampir selalu bernilai sama tidak membedakan siapa pun.",
+      "Banding dan kasasi ditampilkan sebagai keterangan, tidak pernah masuk skor - putusan yang dibanding bukan putusan yang salah.",
+      "Layar Beban Kinerja Konseptor hanya terbuka untuk super-admin, ketua, wakil ketua, panitera, dan sekretaris: ia menyebut nama orang beserta peringkatnya.",
+    ],
+    knownLimitations: [
+      "Bobot bawaan adalah karangan yang masuk akal, bukan kebenaran. Komponen panjang naskah menyumbang sekitar 40-45% skor pada perkara Dikabulkan rata-rata - konseptor yang menulis panjang menang atas yang menulis padat, dan panjang bukan mutu. Inilah bobot yang paling perlu disesuaikan satker.",
+      "Pada rentang yang panjang perbandingannya tidak adil: 52 dari 76 konseptor pada seluruh basis data tidak punya satu pun naskah pertimbangan tersimpan, sebab kolomnya baru dipakai belakangan. Layarnya menyebut ini, tetapi angkanya tetap timpang.",
+      "Nama yang tertulis beberapa cara di SIPP terhitung sebagai orang yang berbeda dan TIDAK digabungkan otomatis - 21 nama semacam itu pada seluruh basis data. Penggabungan nama adalah tebakan, dan tebakan pada layar yang menilai orang berakhir sebagai tuduhan.",
+      "Rentang seluruh basis data 7,9 detik pada mesin yang tidak dibebani. Batas waktunya dinaikkan ke enam puluh detik untuk panggilan ini, tetapi rentang selebar itu memang berat bagi MySQL satker.",
+    ],
+  },
   {
     version: "2.20.4",
     title: "ALETA Judicia v2.20.4 - Nama Berkas yang Menyebut Perkaranya, dan Lencana yang Terbuka Seketika",

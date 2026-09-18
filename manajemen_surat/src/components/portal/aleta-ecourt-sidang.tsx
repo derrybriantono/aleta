@@ -463,6 +463,19 @@ function nilaiUrutSidang(
 type KeadaanSidang = {
   kunci: string;
   label: string;
+  /**
+   * Label pendek untuk deretan padat.
+   *
+   * Hanya bagi kotak yang mengulang kata yang SUDAH berdiri sebagai judul
+   * kelompoknya: di bawah ANTRIAN, "Sudah ambil antrian" kehilangan kata
+   * "antrian"; di bawah PUTUSAN, "Sudah putus" kehilangan kata "putus". Yang
+   * utuh tidak hilang - ia tetap terbaca pada judul gantung (title) bersama
+   * keterangan panjangnya.
+   *
+   * Diukur atas deretan yang sungguhnya digambar layar ini: pada lebar isi
+   * 1.400 piksel, dua baris kotak menjadi satu - 68 piksel menjadi 27.
+   */
+  labelPendek?: string;
   nada: "bahaya" | "awas" | "aman" | "sejuk" | "netral";
   // Pertanyaan yang dijawab kotak ini - lihat KELOMPOK_KEADAAN di lib.
   // Deretan di layar digambar per kelompok, dan ujinya memeriksa daftar di
@@ -531,6 +544,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
   {
     kunci: "belum-dipanggil",
     label: "Belum dipanggil",
+    labelPendek: "Belum",
     nada: "bahaya",
     kelompok: "panggilan",
     judul: "Masih ada pihak yang wajib dipanggil dan relaasnya belum ada.",
@@ -539,6 +553,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
   {
     kunci: "tidak-dipanggil",
     label: "Tidak perlu dipanggil",
+    labelPendek: "Tidak perlu",
     nada: "netral",
     kelompok: "panggilan",
     judul:
@@ -578,8 +593,34 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     cocok: (x) => x.ditunda,
   },
   {
+    // ========================================================================
+    // BELUM TUNDA - SIDANG YANG HASILNYA BELUM DICATAT SAMA SEKALI
+    // ========================================================================
+    //
+    // Tiap sidang berakhir pada salah satu dari dua hal: DITUNDA ke tanggal
+    // lain, atau DIPUTUS. Yang belum keduanya berarti hasilnya belum dicatat -
+    // sidangnya sudah berjalan tetapi panitera sidang belum menekan apa pun.
+    //
+    // Ia BUKAN kebalikan "Ditunda". Perkara yang diputus hari ini juga tidak
+    // ditunda, dan menghitungnya sebagai pekerjaan yang tertinggal akan
+    // mengirim panitera memeriksa perkara yang sudah selesai. Karena itu
+    // syaratnya dua: belum ditunda DAN belum putus hari ini.
+    //
+    // Kuning, bukan merah: pada pagi hari sebagian besar sidang memang belum
+    // berhasil - merah akan menyalakan seluruh daftar tiap hari sebelum
+    // sidang pertama dimulai.
+    kunci: "belum-tunda",
+    label: "Belum tunda",
+    nada: "awas",
+    kelompok: "sidang",
+    judul:
+      "Hasil sidangnya belum dicatat: belum ditunda ke tanggal lain, dan belum diputus hari ini. Selama masih begini, agenda sidang berikutnya tidak terbentuk.",
+    cocok: (x) => !x.ditunda && !putusHariIni(x),
+  },
+  {
     kunci: "belum-bas",
     label: "Belum ada BAS",
+    labelPendek: "Belum BAS",
     nada: "awas",
     kelompok: "sidang",
     judul: "Berita acara sidang belum diunggah ke SIPP.",
@@ -699,6 +740,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     // Lihat putusHariIni di atas untuk pengukurannya.
     kunci: "sudah-putus",
     label: "Sudah putus",
+    labelPendek: "Sudah",
     nada: "aman",
     kelompok: "putusan",
     judul:
@@ -726,6 +768,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     // itu.
     kunci: "belum-putus",
     label: "Belum putus",
+    labelPendek: "Belum",
     nada: "netral",
     kelompok: "putusan",
     judul: "Perkaranya belum punya putusan sama sekali - masih berjalan.",
@@ -736,6 +779,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
   {
     kunci: "belum-antri",
     label: "Belum ambil antrian",
+    labelPendek: "Belum ambil",
     nada: "awas",
     kelompok: "antrian",
     judul:
@@ -755,6 +799,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
   {
     kunci: "sudah-antri",
     label: "Sudah ambil antrian",
+    labelPendek: "Sudah ambil",
     nada: "sejuk",
     kelompok: "antrian",
     judul: "Pihaknya sudah mengambil nomor antrian, dalam jaringan maupun di mesin antrian.",
@@ -1665,21 +1710,51 @@ function SelAntrianJam({
     );
   }
 
+  // ==========================================================================
+  // HIJAU BERARTI SIDANGNYA SUDAH SELESAI, BUKAN SEKADAR SUDAH DIPANGGIL
+  // ==========================================================================
+  //
+  // Sampai 2.20.4 hijau hanya menyala pada ANGKA antriannya, dan hanya ketika
+  // pihaknya sudah dipanggil masuk. Dipanggil masuk bukan selesai: perkara
+  // yang pihaknya masuk pukul 09.50 dan sidangnya masih berjalan sampai siang
+  // tetap hijau sejak menit pertama, sehingga menyusuri kolom antrian tidak
+  // pernah menjawab "yang mana yang sudah beres".
+  //
+  // Sekarang hijaunya menandai SELESAI - hasil sidangnya sudah dicatat, entah
+  // ditunda ke tanggal lain atau diputus hari ini. Batasnya sama persis dengan
+  // kotak "Belum tunda", jadi keduanya tidak pernah berselisih: yang bertanda
+  // "Belum tunda" tidak pernah hijau, dan yang hijau tidak pernah bertanda itu.
+  //
+  // Yang sudah dipanggil tetapi belum selesai TIDAK kehilangan tandanya - ia
+  // tetap disebut pada baris "dipanggil 09.52" di bawah nomornya. Yang
+  // berpindah hanya arti warnanya.
+  const sidangSelesai = baris.ditunda || putusHariIni(baris);
+
   return (
     <>
       {antrian.nomor ? (
-        <div className="flex items-baseline gap-1.5">
+        <div
+          className={cn(
+            "flex items-baseline gap-1.5",
+            sidangSelesai &&
+              "-mx-1 rounded-md border-l-2 border-emerald-500 bg-emerald-500/10 px-1 dark:border-emerald-400"
+          )}
+        >
           <span
             className={cn(
               "text-xl font-bold leading-none tabular-nums",
-              antrian.keadaan === "dipanggil"
+              sidangSelesai
                 ? "text-emerald-600 dark:text-emerald-400"
-                : "text-primary"
+                : antrian.keadaan === "dipanggil"
+                  ? "text-primary"
+                  : "text-primary"
             )}
             title={
-              antrian.keadaan === "dipanggil"
-                ? `Nomor antrian ${antrian.nomor} — sudah dipanggil masuk`
-                : `Nomor antrian ${antrian.nomor} — menunggu dipanggil`
+              sidangSelesai
+                ? `Nomor antrian ${antrian.nomor} — sidangnya sudah selesai`
+                : antrian.keadaan === "dipanggil"
+                  ? `Nomor antrian ${antrian.nomor} — sudah dipanggil masuk, sidangnya belum selesai`
+                  : `Nomor antrian ${antrian.nomor} — menunggu dipanggil`
             }
           >
             {antrian.nomor}
@@ -2089,8 +2164,22 @@ function KalenderSidang({
  */
 export function AletaEcourtSidang({
   onBukaStatus,
+  onBukaTunda,
 }: {
   onBukaStatus?: (nomorPerkara: string) => void;
+  /**
+   * Dipanggil saat kotak nomor perkara diketuk, dan MENDAHULUI onBukaStatus.
+   *
+   * Yang memegang layar ini sedang duduk di persidangan. Yang ia butuhkan dari
+   * satu ketukan pada nomor perkara bukan halaman bacaan, melainkan tempat
+   * menuliskan hasil sidangnya. Status perkara tetap terjangkau lewat kisi
+   * kartu alur - jalan yang memang sudah ada sebelum nomor perkara dijadikan
+   * tombol.
+   *
+   * Tetap opsional: layar lain yang memakai komponen ini tidak menyediakannya,
+   * dan di sana nomor perkara tetap membuka status seperti sediakala.
+   */
+  onBukaTunda?: (baris: { nomorPerkara: string; sidangId: string }) => void;
 } = {}) {
   const [dari, setDari] = useState(hariIni());
   const [sampai, setSampai] = useState(hariIni());
@@ -3047,24 +3136,54 @@ export function AletaEcourtSidang({
                 Sebelumnya lima belas kotak berjajar menurut urutan
                 penambahannya, dan yang berkaitan berjauhan: "Tidak perlu
                 dipanggil" sembilan kotak dari "Belum dipanggil". */}
-            {kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok, urutan) => (
-              <Fragment key={`kelompok-${kelompok.kunci}`}>
-                {urutan > 0 ? <span aria-hidden className="mx-1 h-5 w-px bg-border" /> : null}
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {/* ==========================================================
+                SATU PIL PER KELOMPOK - JUDULNYA IKUT MASUK KE DALAMNYA
+                ==========================================================
+
+                Bentuk sebelumnya: judul kelompok berdiri sendiri di antara
+                garis pemisah, kotaknya berbaris di belakangnya, dan
+                seluruhnya membungkus ke baris berikutnya sekehendak lebar
+                layar - sehingga "ANTRIAN" dapat berakhir di ujung baris
+                pertama sementara kedua kotaknya turun ke baris kedua.
+
+                Sekarang judul dan kotaknya dikurung satu pil. Ia tidak
+                pernah terpisah, dan pilnya yang membungkus - bukan isinya.
+                Diukur atas deretan yang sungguhnya digambar layar ini,
+                tinggi yang benar-benar dipakai:
+
+                    lebar isi   sebelum   sesudah
+                      1400 px    68 px     27 px    dua baris menjadi satu
+                      1100 px    68 px     57 px
+                       820 px   105 px     57 px
+
+                Tidak satu kotak pun dibuang. */}
+            {kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok) => (
+              <span
+                key={`kelompok-${kelompok.kunci}`}
+                className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/70 bg-muted/40 py-0.5 pl-2 pr-1"
+              >
+                <span className="mr-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {kelompok.label}
                 </span>
                 {kelompok.anggota.map((keadaan) => (
                   <ChipSaring
                     key={keadaan.kunci}
-                    label={keadaan.label}
+                    padat
+                    label={keadaan.labelPendek ?? keadaan.label}
                     jumlah={jumlahKeadaan[keadaan.kunci] ?? 0}
                     nada={keadaan.nada}
-                    judul={keadaan.judul}
+                    // Label utuhnya tidak hilang - ia dibawa judul gantung,
+                    // di depan keterangan panjangnya.
+                    judul={
+                      keadaan.labelPendek
+                        ? `${keadaan.label} — ${keadaan.judul}`
+                        : keadaan.judul
+                    }
                     aktif={keadaanTerpilih.includes(keadaan.kunci)}
                     onTekan={() => alihkanKeadaan(keadaan.kunci)}
                   />
                 ))}
-              </Fragment>
+              </span>
             ))}
           </div>
         ) : null}
@@ -3575,7 +3694,18 @@ export function AletaEcourtSidang({
                               menyediakan jalan ke status perkara - tombol yang
                               tidak mengerjakan apa pun lebih buruk daripada
                               tulisan biasa. */}
-                          {onBukaStatus ? (
+                          {onBukaTunda ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onBukaTunda({ nomorPerkara: baris.nomorPerkara, sidangId: baris.sidangId })
+                              }
+                              title={`Tunda atau putus sidang ${baris.nomorPerkara}`}
+                              className="text-left text-[0.95rem] font-extrabold tracking-tight underline decoration-transparent underline-offset-2 transition hover:decoration-primary hover:text-primary"
+                            >
+                              {baris.nomorPerkara}
+                            </button>
+                          ) : onBukaStatus ? (
                             <button
                               type="button"
                               onClick={() => onBukaStatus(baris.nomorPerkara)}

@@ -90,6 +90,13 @@ const DAFTAR_TABEL = new Set([
   // Laporan Smart Majelis. SIPP menulis ke sini tiap kali majelis ditetapkan
   // di luar rekomendasi SK, beserta sebabnya.
   "perkara_smartmajelis",
+  // Antrian sidang. Digerakkan penulis hasil sidang - dipanggil, diskors,
+  // selesai - dan itulah satu-satunya tabel baru yang ia sentuh.
+  "antrian",
+  // Putusan akhir dan pertimbangan hukumnya. Keduanya ditulis penulis putusan
+  // pada detik yang sama, sebagaimana SIPP menuliskannya.
+  "perkara_putusan",
+  "perkara_pertimbangan_hukum",
   "sys_audittrail",
 ]);
 
@@ -750,6 +757,18 @@ function barisAudit({
   // HAKIM/MAJELIS HAKIM", judulnya "dari halaman <b> Smart Majelis TAMBAH
   // PENETAPAN HAKIM/MAJELIS HAKIM</b>" - dengan spasi di depan kata Smart.
   judulHalaman,
+  // Judul yang disusun SENDIRI, bukan dari cetakan "AKSI table <b>x</b> dari
+  // halaman <b>y</b>".
+  //
+  // Modul putusan SIPP memakai bentuk yang lain sama sekali - diukur dari baris
+  // buatan petugas:
+  //
+  //   tambah Data Putusan Akhir <br />dengan perkara_id [id=10049]
+  //   tambah Data Pertimbangan Hukum <br />dengan perkara_id [id=10049]
+  //
+  // Memakai cetakan yang biasa di sana akan menghasilkan judul yang tidak
+  // pernah ditulis SIPP untuk tabel itu.
+  judulSendiri,
 }) {
   // Kunci utamanya diambil dari nilai yang ditulis bila tidak disebut - tiap
   // baris pada berkas ini selalu membawa perkara_id.
@@ -786,7 +805,7 @@ function barisAudit({
       tabel,
       formulir,
       aksi,
-      `${aksi} table <b>${tabel}</b> dari halaman <b>${judulHalaman || formulir}</b>${kunci}`,
+      judulSendiri || `${aksi} table <b>${tabel}</b> dari halaman <b>${judulHalaman || formulir}</b>${kunci}`,
       // ======================================================================
       // TIDAK ADA SATU KATA PUN TENTANG ALETA DI SINI
       // ======================================================================
@@ -2657,4 +2676,9 @@ module.exports = {
   // Diekspor untuk diuji satuan.
   keteranganAudit,
   waktuMysql,
+  // Dipakai penulis hasil sidang - lihat sidangHasilService. Bentuk baris
+  // audit hanya boleh punya SATU definisi: dua salinan akan menyimpang
+  // perlahan, dan yang menyimpang justru baris yang dibaca pemeriksa.
+  barisAudit,
+  tanggalIso,
 };

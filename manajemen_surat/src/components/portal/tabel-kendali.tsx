@@ -228,6 +228,7 @@ export function ChipSaring({
   aktif,
   onTekan,
   judul,
+  padat = false,
 }: {
   label: string;
   jumlah: number;
@@ -235,6 +236,20 @@ export function ChipSaring({
   aktif: boolean;
   onTekan: () => void;
   judul?: string;
+  /**
+   * Bentuk padat - dipakai ketika kotaknya berbaris puluhan di dalam satu
+   * papan kendali. Diukur atas deretan yang sungguhnya digambar layar Jadwal
+   * Sidang (dua belas kotak, lima kelompok), tinggi yang benar-benar dipakai:
+   *
+   *   lebar isi   sekarang   padat
+   *     1400 px     68 px    27 px    dua baris menjadi satu
+   *     1100 px     68 px    57 px
+   *      820 px    105 px    57 px
+   *
+   * Tidak satu kotak pun dibuang - yang berubah ukurannya, dan label yang
+   * kata pengulangnya sudah berdiri sebagai judul kelompoknya.
+   */
+  padat?: boolean;
 }) {
   const kosong = jumlah === 0;
   const warna = NADA[nada];
@@ -247,7 +262,10 @@ export function ChipSaring({
       aria-pressed={aktif}
       title={judul}
       className={cn(
-        "inline-flex items-baseline gap-1.5 rounded-lg border px-2.5 py-1 text-left text-xs transition",
+        "inline-flex items-baseline text-left transition",
+        padat
+          ? "gap-1 rounded-full border px-1.5 py-px text-[11px]"
+          : "gap-1.5 rounded-lg border px-2.5 py-1 text-xs",
         kosong && !aktif
           ? "cursor-default border-dashed border-border text-muted-foreground/50"
           : aktif
@@ -255,7 +273,9 @@ export function ChipSaring({
             : warna.mati
       )}
     >
-      <span className="text-sm font-semibold tabular-nums">{jumlah}</span>
+      <span className={cn("tabular-nums", padat ? "text-[11px] font-bold" : "text-sm font-semibold")}>
+        {jumlah}
+      </span>
       <span>{label}</span>
     </button>
   );
