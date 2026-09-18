@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { apiPath } from "@/lib/base-path";
+import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
@@ -848,6 +848,29 @@ function Bagian({
 }
 
 /**
+ * Ringkasan para pihak untuk kepala bagian yang terciut.
+ *
+ * Yang disebut hanya HITUNGANNYA, tidak satu nama pun: kepala bagian selalu
+ * terlihat, juga oleh yang kebetulan lewat di depan meja - dan menaruh nama
+ * orang di sana membatalkan gunanya bagian itu diciutkan.
+ */
+function ringkasPihak(pihak: Array<{ jenis: string; adaNomor: boolean }>) {
+  if (!Array.isArray(pihak) || pihak.length === 0) return "Pihak belum tercatat.";
+  const tanpaNomor = pihak.filter((x) => !x.adaNomor).length;
+  const sisi = new Map<string, number>();
+  for (const x of pihak) {
+    const nama = String(x.jenis || "").trim() || "tidak disebut";
+    sisi.set(nama, (sisi.get(nama) ?? 0) + 1);
+  }
+  const rincian = [...sisi.entries()].map(([nama, n]) => `${n} ${nama}`).join(", ");
+  return (
+    `${pihak.length} pihak - ${rincian}` +
+    (tanpaNomor > 0 ? `; ${tanpaNomor} tanpa nomor di SIPP` : "") +
+    ". Terciut sebagai bawaan - nama pihak adalah data pribadi."
+  );
+}
+
+/**
  * @param nomorAwal perkara yang langsung dibuka, dikirim layar Jadwal Sidang.
  */
 export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: string } = {}) {
@@ -1606,7 +1629,34 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
 
             Kelompok yang kosong tidak digambar. Judul "Saksi tergugat" di atas
             ruang kosong menyatakan sesuatu yang tidak dinyatakan siapa pun. */}
-        <Bagian judul="Para pihak" kunci="pihak">
+        {/* ==================================================================
+            TERCIUT SEBAGAI BAWAAN, DENGAN RINGKASANNYA DI KEPALA
+
+            Nama para pihak adalah data pribadi, dan layar ini dibuka di meja
+            yang kerap terlihat orang lain. Sebelumnya daftar lengkapnya - nama,
+            kedudukan, dan nomor telepon samar tiap orang - terbentang sendiri
+            begitu perkara dibuka, tiap kali, untuk siapa pun yang lewat.
+
+            Yang tersisa di kepala hanya hitungannya. Yang perlu membacanya
+            menekan sekali, dan itu memang niatnya.
+            ================================================================== */}
+        <Bagian
+          judul="Para pihak"
+          kunci="pihak"
+          keterangan={ringkasPihak(status.pihak)}
+          ciutBawaan
+        >
+          {/* Jalan ke Peta Perkara. Ditaruh di sini, bukan di menu samping,
+              sebab pertanyaan "dari mana perkara seperti ini datang" justru
+              muncul ketika seseorang sedang menatap satu perkara - dan alamat
+              pihak inilah bahan sebarannya. */}
+          <a
+            href={withBasePath("/peta-perkara")}
+            className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/50"
+          >
+            Lihat sebaran perkara sejenis pada Peta Perkara
+          </a>
+
           {status.pihak.length === 0 ? (
             <p className="text-sm text-muted-foreground">Pihak belum tercatat.</p>
           ) : (

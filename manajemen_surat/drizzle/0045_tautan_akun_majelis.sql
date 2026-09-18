@@ -1,0 +1,52 @@
+-- =============================================================================
+-- Tautan akun portal untuk susunan majelis - satu kolom pada baris yang sudah
+-- ada.
+--
+-- 0044 membuat susunan majelis tersimpan dari SK: hakim_kode menyebut A, B,
+-- C1, C2, C3 sesuai hakim_pn SIPP, dan panitera_id memasangkan kode SK dengan
+-- id panitera_pn karena kodenya sendiri tidak dapat menunjuk orang.
+--
+-- Yang masih hilang: tautan ke AKUN PORTAL. Majelis tersimpan sebagai orang
+-- SIPP, bukan sebagai pengguna ALETA. Akibatnya ALETA tahu "perkara ini
+-- majelis A" tetapi tidak tahu akun mana yang boleh membukanya, siapa yang
+-- harus diberi tahu, dan tanda tangan siapa yang dibubuhkan.
+--
+-- =============================================================================
+-- KENAPA SATU KOLOM, BUKAN TABEL TERSENDIRI
+-- =============================================================================
+--
+-- Satker memintanya begini, dan permintaannya benar secara kelembagaan:
+--
+--     "hanya bisa ditautkan apabila masuk majelis, tidak bisa satu per satu"
+--
+-- Tabel tersendiri berisi pasangan orang-akun akan mengizinkan penautan yang
+-- berdiri di luar majelis mana pun - dan tautan semacam itu tidak berarti apa
+-- pun, sebab yang menyidangkan perkara adalah MAJELIS, bukan orang lepas.
+--
+-- Disimpan sebagai satu kolom pada baris majelisnya, tautan itu tidak punya
+-- tempat untuk hidup sendirian. Menghapus majelisnya menghapus tautannya;
+-- tidak ada jalan menambahkan tautan tanpa menyebut majelisnya.
+--
+-- =============================================================================
+-- BENTUKNYA BERPASANGAN, BUKAN DUA DAFTAR SEJAJAR
+-- =============================================================================
+--
+--     akun_id = 'A=usr_7f3a,C1=usr_22b1,D=usr_9c04'
+--
+-- Bentuk yang sama dengan panitera_id di 0044, dan dengan alasan yang sama
+-- persis: daftar sejajar bergeser diam-diam begitu satu kode dihapus dari
+-- tengahnya. C1 menjadi milik orang yang seharusnya C3, dan tidak ada yang
+-- berbunyi - penetapan berikutnya sudah menyebut orang yang salah.
+--
+-- Kuncinya kode SK - hakim (A, B, C1, C2, C3) maupun panitera (D, D1, D4) -
+-- dalam SATU kolom, sebab keduanya adalah anggota majelis yang sama dan
+-- memisahkannya menjadi dua kolom hanya menggandakan tempat yang harus
+-- diperiksa.
+--
+-- Berbawaan '' - baris lama terbaca sebagai "belum ada yang ditautkan", dan
+-- seluruh perilaku sebelumnya berjalan persis seperti sediakala sampai
+-- seseorang mengisinya.
+-- =============================================================================
+
+ALTER TABLE aleta_sipp_hari_sidang
+  ADD COLUMN IF NOT EXISTS akun_id TEXT NOT NULL DEFAULT '';

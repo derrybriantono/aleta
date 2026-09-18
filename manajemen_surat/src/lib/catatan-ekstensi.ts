@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.157.1",
+    dirilis: "2026-09-18T11:20:00+08:00",
+    judul: "Tab Berkas dan Perkara tidak lagi memajang keadaan sebelum ALETA menulis",
+    butir: [
+      "SIMPANAN KEADAAN PERKARA DIBATALKAN SESUDAH MENULIS. Seluruh menu panel - Berkas, Perkara, Putusan - membaca satu simpanan yang sama, dan itulah yang membuat mereka sepakat. Simpanan itu dahulu hanya dibuang ketika pengambilannya GAGAL, tidak ketika penetapan atau Data Umum BERHASIL ditulis - padahal justru saat itulah ia menjadi salah. Yang terlihat petugas: tab Berkas dan tab Perkara menyebutkan hal yang berbeda tentang perkara yang sama, dan tidak satu pun cocok dengan yang baru saja ia kerjakan. Tidak ada galat yang berbunyi; datanya memang terbaca, hanya terbaca dari sebelum pekerjaan itu terjadi.",
+      "MENU YANG SUDAH TERBUKA IKUT DIGAMBAR ULANG. Membuang simpanan saja hanya menolong menu yang belum dibuka - yang sudah terbentang sudah selesai menggambar dan tidak akan mengambil apa pun lagi. Padahal menu terbentang itulah yang paling dilihat orang sesudah menulis. Yang tertutup cukup ditandai belum dimuat: menggambar ulang menu tertutup berarti memanggil ALETA untuk sesuatu yang tidak sedang dilihat siapa pun.",
+      "UJI KERING TIDAK MEMBATALKAN APA PUN, dan nomor perkaranya dicocokkan - menulis pada perkara A tidak membuang simpanan perkara B yang sedang dibaca di tab sebelah. Satu-satunya jalan memperbaikinya dahulu adalah menutup lalu membuka halaman SIPP, dan tidak ada apa pun di layar yang menyarankan itu.",
+    ],
+  },
+  {
     versi: "1.157.0",
     dirilis: "2026-09-17T15:10:00+08:00",
     judul: "Nama berkas yang menyebut perkaranya, dan lencana yang terbuka seketika",

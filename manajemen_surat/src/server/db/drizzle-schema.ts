@@ -731,6 +731,19 @@ export const aletaSippHariSidang = pgTable("aleta_sipp_hari_sidang", {
    */
   hakimKode: text("hakim_kode").notNull().default(""),
   /**
+   * Tautan ke AKUN portal, berpasangan dengan kode SK:
+   *
+   *     'A=usr_7f3a,C1=usr_22b1,D=usr_9c04'
+   *
+   * Hakim dan panitera dalam satu kolom - keduanya anggota majelis yang sama,
+   * dan memisahkannya hanya menggandakan tempat yang harus diperiksa.
+   *
+   * Tidak ada tabel tersendiri dengan sengaja: tautan yang berdiri di luar
+   * majelis mana pun tidak berarti apa-apa, sebab yang menyidangkan perkara
+   * adalah MAJELIS, bukan orang lepas.
+   */
+  akunId: text("akun_id").notNull().default(""),
+  /**
    * Id panitera_pn dipisah koma. Id, BUKAN kode: empat panitera PA Donggala
    * berbagi kode "D" sementara SK membedakannya D, D1, D3, D4 - dan dua di
    * antaranya tidak berkode sama sekali di SIPP.

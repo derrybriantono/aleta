@@ -40,6 +40,8 @@ type Majelis = {
   paniteraKode: string[];
   panitera: { kode: string; id: number }[];
   hakimKode: string[];
+  /** Kode SK beserta akun portalnya - hakim maupun panitera, satu daftar. */
+  akun: { kode: string; akunId: string }[];
   skNomor: string;
   skTanggal: string;
   keterangan: string;
@@ -48,10 +50,22 @@ type Majelis = {
 
 type Pegawai = { id: number; kode: string; nama: string };
 
+/** Akun portal yang dapat ditautkan ke anggota majelis. */
+type AkunPortal = {
+  id: string;
+  nama: string;
+  peran: string;
+  peranLabel: string;
+  jabatan: string;
+  subPeran: string;
+};
+
 export function AletaEcourtSkMajelis() {
   const [majelis, setMajelis] = useState<Majelis[]>([]);
   const [hakim, setHakim] = useState<Pegawai[]>([]);
   const [panitera, setPanitera] = useState<Pegawai[]>([]);
+  const [akun, setAkun] = useState<AkunPortal[]>([]);
+  const [akunAlasan, setAkunAlasan] = useState("");
   const [namaHari, setNamaHari] = useState<string[]>([]);
   const [skBerlaku, setSkBerlaku] = useState<{ nomor: string; tanggal: string } | null>(null);
   const [pegawaiAlasan, setPegawaiAlasan] = useState("");
@@ -71,6 +85,8 @@ export function AletaEcourtSkMajelis() {
       setMajelis((data.majelis ?? []) as Majelis[]);
       setHakim((data.hakim ?? []) as Pegawai[]);
       setPanitera((data.panitera ?? []) as Pegawai[]);
+      setAkun((data.akun ?? []) as AkunPortal[]);
+      setAkunAlasan(String(data.akunAlasan ?? ""));
       setNamaHari((data.namaHari ?? []) as string[]);
       setSkBerlaku((data.skBerlaku ?? null) as { nomor: string; tanggal: string } | null);
       setPegawaiAlasan(String(data.pegawaiAlasan ?? ""));
@@ -118,6 +134,11 @@ export function AletaEcourtSkMajelis() {
             hakimKode: gabung.hakimKode.join(","),
             // Pasangan kode=id - bentuk yang sama yang tersimpan.
             paniteraId: gabung.panitera.map((p) => `${p.kode}=${p.id}`).join(","),
+            // Tautan akun portal - bentuk yang sama, dan dikirim BERSAMA
+            // majelisnya. Tidak ada alamat lain yang menerimanya, dan itulah
+            // yang membuat "hanya dapat ditautkan apabila masuk majelis"
+            // berlaku sungguhan, bukan sekadar dianjurkan di layar.
+            akunId: (gabung.akun ?? []).map((a) => `${a.kode}=${a.akunId}`).join(","),
             skNomor: gabung.skNomor,
             skTanggal: gabung.skTanggal,
             keterangan: gabung.keterangan,
@@ -270,6 +291,87 @@ export function AletaEcourtSkMajelis() {
                       <span className="text-xs text-amber-600">
                         belum diikat — panel memakai giliran beban
                       </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* ==============================================================
+                TAUTAN AKUN PORTAL - HAKIM DAN PANITERA SEKALIGUS
+
+                Dua hal yang berbeda, dan keduanya perlu: pengikatan di atas
+                menunjuk orang di SIPP, yang ini menunjuk AKUN di ALETA. SIPP
+                tahu siapa yang menyidangkan; portal tahu siapa yang boleh
+                membuka layarnya, siapa yang diberi tahu, dan tanda tangan
+                siapa yang dibubuhkan.
+
+                Berdiri DI DALAM baris majelis, dan itu disengaja: satker
+                meminta "hanya bisa ditautkan apabila masuk majelis, tidak bisa
+                satu per satu". Di sini tautan itu tidak punya tempat untuk
+                hidup sendirian - menghapus majelisnya menghapus tautannya.
+                ============================================================== */}
+            <div className="space-y-2">
+              <p className="text-muted-foreground">Akun portal tiap anggota majelis</p>
+              {akunAlasan ? (
+                <p className="text-xs text-amber-600">
+                  Daftar akun tidak terbaca: {akunAlasan}. Susunan majelisnya tetap dapat disunting.
+                </p>
+              ) : null}
+              {[...satu.hakimKode, ...satu.paniteraKode].length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Belum ada kode hakim maupun panitera pada majelis ini — isi kodenya lebih dahulu,
+                  lalu akunnya dapat ditautkan.
+                </p>
+              ) : null}
+              {[...satu.hakimKode, ...satu.paniteraKode].map((kode) => {
+                const tertaut = (satu.akun ?? []).find((a) => a.kode === kode);
+                const orang = tertaut ? akun.find((u) => u.id === tertaut.akunId) : null;
+                const hakimKah = satu.hakimKode.includes(kode);
+                return (
+                  <label key={`akun-${kode}`} className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="w-14 justify-center"
+                      title={hakimKah ? "Kode hakim" : "Kode panitera sidang"}
+                    >
+                      {kode}
+                    </Badge>
+                    <span className="w-20 text-xs text-muted-foreground">
+                      {hakimKah ? (satu.hakimKode[0] === kode ? "ketua" : "hakim") : "panitera"}
+                    </span>
+                    <select
+                      className="h-9 min-w-64 rounded-md border border-input bg-background px-2"
+                      value={tertaut?.akunId ?? ""}
+                      disabled={sibuk === satu.majelisKode || akun.length === 0}
+                      onChange={(e) => {
+                        const akunId = e.target.value;
+                        const lain = (satu.akun ?? []).filter((a) => a.kode !== kode);
+                        void simpan(satu, {
+                          akun: akunId ? [...lain, { kode, akunId }] : lain,
+                        });
+                      }}
+                    >
+                      <option value="">— belum ditautkan —</option>
+                      {akun.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.nama} — {u.peranLabel}
+                          {u.jabatan ? ` · ${u.jabatan}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {orang ? (
+                      <span className="text-xs text-muted-foreground">
+                        {orang.peranLabel}
+                        {orang.jabatan ? ` · ${orang.jabatan}` : ""}
+                        {orang.subPeran ? ` · +${orang.subPeran}` : ""}
+                      </span>
+                    ) : tertaut ? (
+                      <span className="text-xs text-amber-600">
+                        akunnya sudah tidak aktif atau tidak terlihat
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">belum ditautkan</span>
                     )}
                   </label>
                 );

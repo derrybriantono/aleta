@@ -8,6 +8,10 @@ import {
   SK_BERLAKU,
   simpanHariSidang,
 } from "@/server/modules/aleta-ecourt/penunjukan-pengaturan";
+import { getPositionsFromDb } from "@/server/modules/organization/service";
+import { listUsersFromDb } from "@/server/modules/users/service";
+import { getRoleLabel } from "@/lib/permissions";
+import type { RoleId } from "@/lib/types";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -49,8 +53,45 @@ export async function GET(request: NextRequest) {
     const majelis = await bacaHariSidang(db);
     const pegawai = await gatewayPegawaiPenunjukan();
 
+    // ========================================================================
+    // DAFTAR AKUN PORTAL IKUT DIKIRIM
+    // ========================================================================
+    //
+    // Layar ini sudah menerima daftar hakim dan panitera dari SIPP lewat bot.
+    // Yang ditambahkan di sini daftar AKUN portal - dua hal yang berbeda:
+    // yang pertama orang di SIPP, yang kedua orang yang dapat masuk ke ALETA.
+    //
+    // Keduanya perlu, dan keduanya tidak dapat saling menggantikan: SIPP tahu
+    // siapa yang menyidangkan, portal tahu siapa yang boleh membuka layarnya.
+    let akun: Array<Record<string, string>> = [];
+    let akunAlasan = "";
+    try {
+      const [daftar, jabatan] = await Promise.all([
+        listUsersFromDb(db, actorUserId),
+        getPositionsFromDb(db),
+      ]);
+      const namaJabatan = new Map(jabatan.map((j) => [String(j.id), String(j.name ?? "")]));
+      akun = (daftar ?? [])
+        .filter((u) => u.isActive !== false)
+        .map((u) => ({
+          id: String(u.id),
+          nama: String(u.name ?? ""),
+          peran: String(u.roleId ?? ""),
+          peranLabel: getRoleLabel(u.roleId),
+          jabatan: namaJabatan.get(String(u.positionId ?? "")) ?? "",
+          subPeran: (u.additionalRoleIds ?? []).map((r) => getRoleLabel(r as RoleId)).join(", "),
+        }))
+        .sort((a, b) => a.nama.localeCompare(b.nama));
+    } catch (galat) {
+      // Sama seperti gagalnya bot: susunan yang tersimpan tetap terbaca dan
+      // tetap dapat disunting. Yang hilang hanya kemampuan menautkan akun.
+      akunAlasan = galat instanceof Error ? galat.message : "Daftar akun portal tidak terbaca.";
+    }
+
     return ok({
       majelis,
+      akun,
+      akunAlasan,
       namaHari: NAMA_HARI,
       skBerlaku: SK_BERLAKU,
       // Gagalnya bot TIDAK menggagalkan layar: susunan yang sudah tersimpan
@@ -94,6 +135,11 @@ export async function POST(request: NextRequest) {
       paniteraKode: String(badan.paniteraKode ?? ""),
       hakimKode: String(badan.hakimKode ?? ""),
       paniteraId: String(badan.paniteraId ?? ""),
+      // Tautan akun portal - hanya sampai ke sini bersama majelisnya, sebab
+      // tidak ada alamat lain yang menerimanya. Itulah yang membuat "hanya
+      // dapat ditautkan apabila masuk majelis" berlaku, bukan sekadar
+      // dianjurkan.
+      akunId: String(badan.akunId ?? ""),
       skNomor: String(badan.skNomor ?? ""),
       skTanggal: String(badan.skTanggal ?? ""),
       keterangan: String(badan.keterangan ?? ""),

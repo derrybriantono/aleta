@@ -52,6 +52,10 @@ export type ModuleId =
   // dari jumlahnya. Terpisah dari "statistik" dengan sengaja: statistik
   // menghitung perkara, layar ini menghitung orang.
   | "beban-konseptor"
+  // Peta perkara - sebaran wilayah, faktor perceraian, dan siapa yang
+  // mengajukan. Terpisah dari "statistik" sebagaimana beban konseptor:
+  // statistik menghitung perkara, ini menghitung ASAL perkara.
+  | "peta-perkara"
   | "disposisi"
   | "search"
   | "mapping-user-jabatan"

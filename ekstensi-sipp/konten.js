@@ -735,6 +735,61 @@ function terapkanLipatan(kepala, isi, terlipat) {
 
 let simpananStatus = { nomor: "", data: null, sedang: null };
 
+/**
+ * Menu malas yang hidup di halaman ini.
+ *
+ * Panel digambar ulang tiap kali perkara berganti, dan tiap gambar melahirkan
+ * menu baru - jadi daftar ini dikosongkan di sana, bukan dibiarkan tumbuh
+ * sepanjang umur halaman.
+ */
+let menuMalasHidup = [];
+
+/**
+ * ============================================================================
+ * MEMBATALKAN SIMPANAN KEADAAN PERKARA
+ * ============================================================================
+ *
+ * `simpananStatus` menyimpan satu jawaban keadaan perkara selama halaman
+ * hidup, dan SELURUH menu panel membacanya dari sana - Berkas, Perkara,
+ * Putusan, semuanya. Itu yang membuat mereka sepakat satu sama lain.
+ *
+ * Sampai ALETA menulis sesuatu.
+ *
+ * Simpanan itu dahulu hanya dibatalkan ketika pengambilannya GAGAL. Ketika
+ * penetapan berhasil ditulis, ia dibiarkan apa adanya - sehingga:
+ *
+ *   - menu yang sudah terbuka tetap memajang keadaan SEBELUM penetapan
+ *   - menu yang baru dibuka sesudahnya ikut menggambar dari simpanan basi itu
+ *   - dan keduanya berselisih dengan halaman SIPP di belakangnya, yang sudah
+ *     berubah
+ *
+ * Yang terlihat petugas: tab Berkas dan tab Perkara menyebutkan hal yang
+ * berbeda tentang perkara yang sama, dan tidak satu pun cocok dengan apa yang
+ * baru saja ia kerjakan. Tidak ada galat yang berbunyi - datanya memang
+ * terbaca, hanya terbaca dari kemarin.
+ *
+ * Satu-satunya jalan memperbaikinya dahulu: menutup lalu membuka halaman SIPP.
+ */
+function lupakanStatusPerkara(nomor) {
+  // Nomor yang disebut dicocokkan supaya menulis pada perkara A tidak membuang
+  // simpanan perkara B yang sedang dibaca di tab sebelah.
+  if (nomor && simpananStatus.nomor && simpananStatus.nomor !== nomor) return false;
+  simpananStatus = { nomor: "", data: null, sedang: null };
+
+  // Simpanan yang dibuang tidak menolong menu yang SUDAH terbentang - ia
+  // sudah selesai menggambar dan tidak akan mengambil apa pun lagi. Menu
+  // itulah yang paling dilihat orang sesudah menulis, dan justru itulah yang
+  // dahulu paling lama basi.
+  for (const kotak of menuMalasHidup) {
+    try {
+      if (kotak && typeof kotak.gambarUlang === "function") kotak.gambarUlang();
+    } catch (galat) {
+      // Satu menu yang gagal digambar tidak boleh menghentikan yang lain.
+    }
+  }
+  return true;
+}
+
 async function ambilStatusPerkara(nomor) {
   if (simpananStatus.nomor === nomor) {
     if (simpananStatus.data) return simpananStatus.data;
@@ -792,6 +847,11 @@ function bagianMalas(judul, kunci, nomor, gambar) {
   const kotak = bagian(judul, kunci, true);
   let sudahDimuat = false;
 
+  // Didaftarkan supaya dapat digambar ulang dari luar. Tanpa ini, membatalkan
+  // simpanan hanya menolong menu yang BELUM dibuka - yang sudah terbentang
+  // tetap memajang gambar lama sampai panelnya ditutup dan dibuka lagi.
+  menuMalasHidup.push(kotak);
+
   // Menu ini sekarang tidak lagi menunggu ditekan untuk menyebutkan isinya:
   // lencananya diisi panggilan latar, dan itu yang membuat panel dapat dibaca
   // tanpa membuka satu pun menu.
@@ -821,6 +881,22 @@ function bagianMalas(judul, kunci, nomor, gambar) {
         sudahDimuat = false;
       }
     })();
+  };
+
+  /**
+   * Menggambar ulang dari awal.
+   *
+   * Yang TERBUKA digambar ulang seketika; yang tertutup cukup ditandai belum
+   * dimuat, supaya ia mengambil yang baru saat dibuka. Menggambar ulang menu
+   * yang tertutup berarti memanggil ALETA untuk sesuatu yang tidak sedang
+   * dilihat siapa pun.
+   */
+  kotak.gambarUlang = () => {
+    sudahDimuat = false;
+    const isi = kotak.isi;
+    if (!isi || isi.style.display === "none") return;
+    isi.textContent = "";
+    muatBagian();
   };
 
   kepala.addEventListener("click", muatBagian);
@@ -1289,6 +1365,15 @@ async function rantaiPenetapan(usulan, data, kering) {
     }
 
     const berhasil = jawab && jawab.ok !== false;
+
+    // Tulisan yang SUNGGUHAN mengubah SIPP membuat simpanan keadaan perkara
+    // basi seketika. Dibatalkan di sini, bukan di pemanggil: tiap jenis
+    // penetapan lewat gelung ini, dan menaruhnya di pemanggil berarti satu
+    // jenis yang ditambahkan kelak akan terlewat tanpa berbunyi.
+    //
+    // Uji keringnya TIDAK membatalkan apa pun - ia memang tidak menulis.
+    if (berhasil && !kering) lupakanStatusPerkara(String((usulan.perkara && usulan.perkara.nomorPerkara) || ""));
+
     const kode = berhasil ? "" : String((jawab && jawab.alasan) || "ditolak");
     hasil.push({
       jenis,
@@ -4066,6 +4151,9 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
         return;
       }
 
+      // Data Umum menulis ke tabel perkara - keadaan yang dipajang menu
+      // Berkas dan Perkara ikut berubah karenanya.
+      lupakanStatusPerkara(String((konteks && konteks.nomorPerkara) || ""));
       kabar.textContent = `Tersimpan. ${(h.selesai || []).length} pernyataan dijalankan.`;
       tombol.textContent = "Sudah ditulis";
     } catch (galat) {
@@ -8928,6 +9016,12 @@ function susunPanel(konteks) {
   // Menu yang lencananya diisi panggilan latar. Dikumpulkan supaya dapat
   // diisi belakangan tanpa mencari-cari elemennya lagi di DOM.
   const menuMalas = {};
+
+  // Daftar menu hidup dikosongkan tiap panel digambar ulang. Dibiarkan
+  // bertambah, ia akan menyimpan menu dari perkara-perkara sebelumnya yang
+  // elemennya sudah dibuang dari halaman - dan menggambar ulang menu yang
+  // sudah tidak ada memanggil ALETA untuk sesuatu yang tidak ada yang melihat.
+  menuMalasHidup = [];
   const kelompokSemua = [];
 
   /** Membuat menu malas sekaligus mendaftarkannya untuk diberi lencana. */

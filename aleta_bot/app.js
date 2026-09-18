@@ -174,6 +174,11 @@ app.use("/internal/aleta-bot/abt/pdf", express.json({ limit: "28mb" }));
 // batas 1 MB di bawah - yang gagalnya berbunyi "request entity too large",
 // kalimat yang tidak menyebut berkas mana pun.
 app.use("/internal/aleta-bot/sipp/putusan-unggah", express.json({ limit: "28mb" }));
+// Tanda tangan yang diunggah dari layar juga base64 di dalam JSON. Layanannya
+// menerima gambar sampai 8 MB, dan 8 MB menjadi ~10,7 MB sesudah base64 -
+// batas 1 MB di bawah akan menolaknya dengan "request entity too large",
+// kalimat yang tidak menyebut gambar mana pun dan tidak menyebut batasnya.
+app.use("/internal/aleta-bot/tanda-tangan/tambah", express.json({ limit: "12mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static("public"));
 

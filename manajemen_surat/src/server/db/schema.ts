@@ -524,6 +524,7 @@ const schemaStatements = [
     panitera_kode TEXT NOT NULL DEFAULT '',
     hakim_kode TEXT NOT NULL DEFAULT '',
     panitera_id TEXT NOT NULL DEFAULT '',
+    akun_id TEXT NOT NULL DEFAULT '',
     sk_nomor TEXT NOT NULL DEFAULT '',
     sk_tanggal TEXT NOT NULL DEFAULT '',
     keterangan TEXT NOT NULL DEFAULT '',

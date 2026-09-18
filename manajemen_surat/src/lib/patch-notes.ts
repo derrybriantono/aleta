@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.21.0";
+export const APP_VERSION = "2.22.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.21.0 - Beban yang Diukur, dan Hasil Sidang yang Ditulis Sendiri";
+  "ALETA Judicia v2.22.0 - Tanda Tangan yang Bertuan, Majelis yang Berakun, dan Peta Perkara";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,48 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.22.0",
+    title: "ALETA Judicia v2.22.0 - Tanda Tangan yang Bertuan, Majelis yang Berakun, dan Peta Perkara",
+    date: "2026-09-18",
+    status: "Terpasang",
+    summary:
+      "Lima pekerjaan. Tanda tangan kini dapat ditambahkan sendiri dan ditautkan ke akun portal; " +
+      "susunan majelis pada SK dapat diikat ke akun - hanya di dalam majelis, tidak satu per satu; " +
+      "tab Berkas dan Perkara di ekstensi tidak lagi memajang keadaan sebelum ALETA menulis; identitas " +
+      "para pihak muncul ringkas pada Status Perkara; dan layar baru Peta Perkara menjawab dari mana " +
+      "perkara datang beserta faktor perceraiannya.",
+    added: [
+      "TOMBOL TAMBAH TANDA TANGAN. Sampai 2.21.0 gambar hanya dapat masuk lewat skrip pengimpor yang membaca berkas .doc satuan kerja di peladen - pejabat yang tanda tangannya tidak ada di dokumen itu tidak punya jalan sama sekali. Yang diunggah TETAP menunggu pengesahan orang kedua, dan jenis gambarnya dibaca dari bitanya sendiri: berkas bernama .png yang isinya bukan PNG akan gagal digambar pada penetapan, dan gagalnya baru terlihat di kertas.",
+      "TANDA TANGAN TERTAUT KE AKUN PORTAL beserta peran, jabatan, dan peran tambahannya - pada gambar baru maupun yang sudah ada. Ketiganya DISALIN saat penautan, bukan dibaca ulang kelak: yang harus terbaca pada penetapan lama adalah jabatan orang itu ketika ia menandatangani, bukan jabatannya hari ini.",
+      "SUSUNAN MAJELIS PADA SK DAPAT DIIKAT KE AKUN PORTAL - hakim maupun panitera sidang, dalam satu daftar. Hanya dapat ditautkan di dalam majelis, dan itu dijamin bukan oleh larangan di layar melainkan oleh tidak adanya tempat menyimpannya: satu kolom pada baris majelis, satu-satunya alamat yang menerimanya adalah alamat simpan majelis, dan menghapus majelisnya menghapus tautannya.",
+      "LAYAR PETA PERKARA: sebaran perkara dari provinsi sampai desa yang dapat ditelusuri turun, faktor perceraian dari akta cerai, dan siapa yang mengajukan - laki-laki atau perempuan. Perceraian digabung satu halaman dengan cerai gugat bertanda merah dan cerai talak biru; jenis perkara lain punya halamannya masing-masing.",
+      "IDENTITAS PARA PIHAK pada Status Perkara - ringkas, terciut sebagai bawaan, dengan nomor telepon yang tetap samar. Nama pihak adalah data pribadi dan layar ini dibuka di meja yang kerap terlihat orang lain, jadi yang membukanya melakukannya dengan sengaja.",
+    ],
+    changed: [
+      "Peta perkara dihitung dengan SATU kueri, bukan tiga. Ketiganya dahulu menyusun ulang tabel turunan yang sama persis - dan itu saja 2,4 detik tiap kali. Terukur: kecamatan 9,6 menjadi 4,8 detik untuk seluruh basis data, dan 0,5 detik untuk rentang setahun.",
+      "Kode wilayah BPS diterjemahkan menjadi nama tempat. Kolom kecamatan pada SIPP berisi \"72.10.01\", bukan \"Sigi Biromaru\" - sebaran yang dibangun langsung darinya akan menuliskan kodenya sebagai nama tempat.",
+      "Dua era pengisian data disatukan: 11.213 baris berkode angka dan 583 baris bertulis nama (\"Kab. Sigi\"). Dibiarkan apa adanya, Kabupaten Donggala muncul dua kali pada daftar yang sama - 1.047 dari baris berkode dan 122 lagi sebagai \"(kode Kab. Donggala)\".",
+    ],
+    fixed: [
+      "TAB BERKAS DAN PERKARA TIDAK LAGI BERSELISIH. Keduanya memang membaca satu simpanan yang sama, dan simpanan itu dibatalkan hanya ketika pengambilannya GAGAL - tidak ketika penetapan atau Data Umum BERHASIL ditulis, padahal justru saat itulah ia menjadi salah. Menu yang sudah terbuka kini ikut digambar ulang; membuang simpanan saja hanya menolong menu yang belum dibuka.",
+    ],
+    security: [
+      "Daftar pengguna untuk penautan dikirim oleh rute tanda tangan dan rute SK majelis sendiri, bukan dengan menyuruh layar memanggil manajemen pengguna: kewenangannya berbeda, dan pemilih yang kosong akan terbaca sebagai \"tidak ada pegawai\" alih-alih \"Anda tidak berhak melihatnya\". Yang dikirim seperlunya saja - nama, peran, jabatan - tanpa surel, NIP, atau nomor WhatsApp.",
+      "Alamat unggah tanda tangan diberi batas badan tersendiri 12 MB. Batas umum 1 MB akan menolak gambar 8 MB dengan kalimat yang tidak menyebut gambar mana pun dan tidak menyebut batasnya.",
+    ],
+    operationalNotes: [
+      "Migrasi 0045 - satu kolom akun_id pada aleta_sipp_hari_sidang, berbawaan kosong. Ekstensi 1.157.1 - reload di chrome://extensions.",
+      "Kolom tautan pada tabel tanda tangan ditambahkan lewat ALTER, bukan hanya pada CREATE TABLE: di peladen tabelnya sudah berisi lima puluh gambar, dan CREATE TABLE IF NOT EXISTS tidak menyentuh tabel yang sudah ada.",
+      "TIDAK ADA PETA GEOGRAFIS, dan itu keputusan yang diukur. Koordinat kode_pos tertukar kolomnya - longitude memuat lintang - dan sesudah ditukar pun tiap kabupaten hanya punya SATU titik yang sebagian menunjuk pulau lain: Morowali Utara jatuh di Papua, Banggai di Laut Sawu, Marawola di Sigi mendarat dekat Manado. Donggala sendiri benar, dan justru itu yang membuatnya berbahaya - petanya tampak masuk akal bagi yang melihat Donggala lalu diam-diam salah untuk kabupaten lain.",
+      "Alamat pihak hanya tercatat pada 30% perkara yang diputus sepanjang riwayat - pada perceraian 43%. Angka itu ditampilkan DI ATAS sebarannya, bukan di catatan kaki. Tahun-tahun terakhir jauh lebih lengkap: 2026 mencapai 100%.",
+    ],
+    knownLimitations: [
+      "Peta perkara belum menggambar batas wilayah. Kalau kelak satker punya berkas batas yang benar, peta geografisnya dapat ditambahkan di atas data yang sama - yang tidak boleh adalah menggambarnya dari koordinat kode_pos.",
+      "Tanda tangan yang ditautkan ke akun tidak otomatis ikut berubah ketika jabatan orangnya berganti. Itu disengaja, tetapi berarti tautan lama harus disunting sendiri bila yang diinginkan jabatan terkininya.",
+      "Faktor perceraian hanya ada pada perkara yang sudah berakta cerai. Perkara yang diputus tetapi aktanya belum terbit tidak muncul pada sebaran faktor - dan jumlahnya karena itu lebih kecil daripada jumlah putusan perceraian.",
+    ],
+  },
   {
     version: "2.21.0",
     title: "ALETA Judicia v2.21.0 - Beban yang Diukur, dan Hasil Sidang yang Ditulis Sendiri",

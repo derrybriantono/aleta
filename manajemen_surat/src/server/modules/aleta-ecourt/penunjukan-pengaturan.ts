@@ -101,6 +101,15 @@ export type HariSidangMajelis = {
   panitera: { kode: string; id: number }[];
   /** Kode hakim_pn menurut SK, ketua di depan. */
   hakimKode: string[];
+  /**
+   * Kode SK beserta AKUN PORTAL-nya, berpasangan - hakim maupun panitera.
+   *
+   * Hanya hidup di dalam baris majelis, dan itu disengaja: satker meminta
+   * "hanya bisa ditautkan apabila masuk majelis, tidak bisa satu per satu".
+   * Tautan yang berdiri di luar majelis mana pun tidak berarti apa-apa, sebab
+   * yang menyidangkan perkara adalah MAJELIS, bukan orang lepas.
+   */
+  akun: { kode: string; akunId: string }[];
   skNomor: string;
   skTanggal: string;
   keterangan: string;
@@ -230,6 +239,7 @@ type BarisHari = {
   panitera_kode: string;
   hakim_kode: string;
   panitera_id: string;
+  akun_id: string;
   sk_nomor: string;
   sk_tanggal: string;
   keterangan: string;
@@ -292,11 +302,36 @@ function bacaPasanganPanitera(
   return hasil;
 }
 
+/**
+ * Membaca 'A=usr_7f3a,C1=usr_22b1' menjadi pasangan kode SK dengan id akun.
+ *
+ * Yang tidak berbentuk pasangan DIBUANG di sini, bukan dibiarkan sampai ke
+ * berkas perkara: potongan tanpa tanda sama dengan tidak menunjuk siapa pun,
+ * dan menyimpannya hanya menunda pertanyaannya sampai ke tempat yang lebih
+ * mahal untuk salah.
+ */
+function bacaPasanganAkun(tersimpan: string): { kode: string; akunId: string }[] {
+  const hasil: { kode: string; akunId: string }[] = [];
+  const sudah = new Set<string>();
+  for (const potong of String(tersimpan ?? "").split(",")) {
+    const [kodeMentah, idMentah] = potong.split("=");
+    const kode = String(kodeMentah ?? "").trim().toUpperCase();
+    const akunId = String(idMentah ?? "").trim();
+    if (!kode || !akunId) continue;
+    // Kode yang sama disebut dua kali - yang pertama menang, dan yang kedua
+    // dibuang tanpa berbunyi. Satu kode menunjuk satu orang.
+    if (sudah.has(kode)) continue;
+    sudah.add(kode);
+    hasil.push({ kode, akunId });
+  }
+  return hasil;
+}
+
 /** Hari sidang tiap majelis, lengkap dengan yang masih memakai bawaan. */
 export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajelis[]> {
   const baris = await db
     .prepare(
-      "SELECT majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, " +
+      "SELECT majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, " +
         "sk_nomor, sk_tanggal, keterangan FROM aleta_sipp_hari_sidang"
     )
     .all<BarisHari>();
@@ -329,6 +364,7 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
         namaHari: NAMA_HARI[aman],
         paniteraKode: daftar(kodePp),
         panitera: bacaPasanganPanitera(String(item?.panitera_id ?? ""), daftar(kodePp)),
+        akun: bacaPasanganAkun(String(item?.akun_id ?? "")),
         hakimKode: daftar(kodeHakim),
         skNomor: item ? String(item.sk_nomor ?? "") : SK_BERLAKU.nomor,
         skTanggal: item ? String(item.sk_tanggal ?? "") : SK_BERLAKU.tanggal,
@@ -423,6 +459,7 @@ export async function simpanHariSidang(
     paniteraKode,
     hakimKode,
     paniteraId,
+    akunId,
     skNomor,
     skTanggal,
     keterangan,
@@ -433,6 +470,7 @@ export async function simpanHariSidang(
     paniteraKode?: string;
     hakimKode?: string;
     paniteraId?: string;
+    akunId?: string;
     skNomor?: string;
     skTanggal?: string;
     keterangan?: string;
@@ -459,14 +497,15 @@ export async function simpanHariSidang(
     await tx
       .prepare(
         "INSERT INTO aleta_sipp_hari_sidang " +
-          "(majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, " +
+          "(majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, " +
           "sk_nomor, sk_tanggal, keterangan, updated_at, updated_by) " +
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
           "ON CONFLICT(majelis_kode) DO UPDATE SET " +
           "hari = excluded.hari, " +
           "panitera_kode = excluded.panitera_kode, " +
           "hakim_kode = excluded.hakim_kode, " +
           "panitera_id = excluded.panitera_id, " +
+          "akun_id = excluded.akun_id, " +
           "sk_nomor = excluded.sk_nomor, " +
           "sk_tanggal = excluded.sk_tanggal, " +
           "keterangan = excluded.keterangan, " +
@@ -488,6 +527,20 @@ export async function simpanHariSidang(
             const nomor = Number(String(id ?? "").trim());
             if (!bersih) return "";
             return `${bersih}=${Number.isInteger(nomor) && nomor > 0 ? nomor : 0}`;
+          })
+          .filter(Boolean)
+          .join(","),
+        // Pasangan "KODE=ID AKUN". Berbeda dari panitera_id, id akun portal
+        // BUKAN bilangan - ia teks - jadi yang diperiksa keberadaannya, bukan
+        // kebilangannya.
+        String(akunId ?? "")
+          .split(",")
+          .map((potong) => {
+            const [kodeMentah, idMentah] = potong.split("=");
+            const bersih = String(kodeMentah ?? "").trim().toUpperCase();
+            const akun = String(idMentah ?? "").trim();
+            if (!bersih || !akun) return "";
+            return `${bersih}=${akun}`;
           })
           .filter(Boolean)
           .join(","),

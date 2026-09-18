@@ -72,6 +72,7 @@ const antrianSidangService = require("../services/antrianSidangService");
 const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
 const penilaianKonseptorService = require("../services/penilaianKonseptorService");
+const petaPerkaraService = require("../services/petaPerkaraService");
 const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
@@ -1543,6 +1544,41 @@ router.post("/tanda-tangan/:id/nama", requireInternalToken, async (req, res) => 
     const hasil = await tandaTanganService.namai(req.params.id, {
       namaPejabat: String(badan.namaPejabat || ""),
       jabatan: String(badan.jabatan || ""),
+      // Tautan ke akun portal - boleh kosong, sebab tanda tangan pejabat dari
+      // luar satker memang tidak punya akun di sini.
+      penggunaId: String(badan.penggunaId || ""),
+      peran: String(badan.peran || ""),
+      subPeran: String(badan.subPeran || ""),
+      oleh: String(badan.oleh || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Mengunggah SATU tanda tangan baru.
+ *
+ * Sampai 2.21.0 gambar hanya dapat masuk lewat skrip pengimpor yang membaca
+ * berkas .doc satuan kerja di peladen. Pejabat yang tanda tangannya tidak ada
+ * di dokumen itu karena itu tidak punya jalan sama sekali.
+ *
+ * Yang diunggah TETAP menunggu pengesahan orang kedua, persis seperti yang
+ * diimpor - itulah yang memisahkannya dari tanda tangan palsu pada penetapan.
+ */
+router.post("/tanda-tangan/tambah", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await tandaTanganService.tambah({
+      isiBase64: String(badan.isiBase64 || ""),
+      jenisBerkas: String(badan.jenisBerkas || ""),
+      namaPejabat: String(badan.namaPejabat || ""),
+      jabatan: String(badan.jabatan || ""),
+      penggunaId: String(badan.penggunaId || ""),
+      peran: String(badan.peran || ""),
+      subPeran: String(badan.subPeran || ""),
+      asal: String(badan.asal || "unggahan layar"),
       oleh: String(badan.oleh || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
@@ -2658,6 +2694,42 @@ router.get("/sipp/konseptor", requireInternalToken, async (req, res) => {
       bobot,
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Peta perkara - sebaran wilayah, faktor, dan siapa yang datang.
+ *
+ * Diukur di salinan satker: rentang setahun 0,5 detik, seluruh basis data 4,8
+ * detik. Batas waktunya sama dengan penilaian lanjutan.
+ */
+router.get("/sipp/peta-perkara", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await petaPerkaraService.hitung({
+      kelompok: String(req.query.kelompok || "perceraian"),
+      tingkat: String(req.query.tingkat || "kecamatan"),
+      induk: String(req.query.induk || ""),
+      periode: String(req.query.periode || "tahun"),
+      acuan: String(req.query.acuan || ""),
+      dari: String(req.query.dari || ""),
+      sampai: String(req.query.sampai || ""),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/** Menu jenis perkara - disusun dari yang SUNGGUH diputus, bukan dari daftar. */
+router.get("/sipp/peta-perkara/menu", requireInternalToken, async (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      menu: await petaPerkaraService.daftarJenis(),
+      tingkat: petaPerkaraService.TINGKAT,
+    });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

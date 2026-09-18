@@ -1937,6 +1937,41 @@ export async function postGatewayTulisPutusan(
   });
 }
 
+/**
+ * Peta perkara - sebaran wilayah, faktor perceraian, dan siapa yang datang.
+ *
+ * Batas waktu penilaian, bukan bawaan delapan detik: rentang seluruh basis
+ * data diukur 4,8 detik pada mesin yang tidak dibebani, dan angka itu melewati
+ * batas bawaan begitu mesinnya mengerjakan hal lain.
+ */
+export async function getGatewayPetaPerkara(pilihan: {
+  kelompok: string;
+  tingkat?: string;
+  induk?: string;
+  periode?: string;
+  acuan?: string;
+  dari?: string;
+  sampai?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ kelompok: pilihan.kelompok });
+  if (pilihan.tingkat) kueri.set("tingkat", pilihan.tingkat);
+  if (pilihan.induk) kueri.set("induk", pilihan.induk);
+  if (pilihan.periode) kueri.set("periode", pilihan.periode);
+  if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
+  if (pilihan.dari) kueri.set("dari", pilihan.dari);
+  if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
+  return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/** Menu jenis perkara - disusun dari yang sungguh diputus. */
+export async function getGatewayPetaPerkaraMenu(): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara/menu`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
 export async function getGatewayBebanKonseptor(pilihan: {
   periode: string;
   acuan?: string;
@@ -2640,9 +2675,38 @@ export async function ambilGambarTandaTangan(id: number): Promise<Response> {
   });
 }
 
+/**
+ * Mengunggah satu tanda tangan baru dari layar.
+ *
+ * Gambarnya base64 di dalam JSON, dan bot memberi alamat ini batas badan
+ * tersendiri (12 MB) - batas umum 1 MB akan menolaknya dengan kalimat yang
+ * tidak menyebut gambar mana pun.
+ *
+ * Yang diunggah TETAP menunggu pengesahan orang kedua.
+ */
+export async function kirimTandaTanganTambah(payload: {
+  isiBase64: string;
+  jenisBerkas?: string;
+  namaPejabat: string;
+  jabatan?: string;
+  penggunaId?: string;
+  peran?: string;
+  subPeran?: string;
+  asal?: string;
+  oleh: string;
+}) {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/tambah`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function kirimTandaTanganNama(id: number, payload: {
   namaPejabat: string;
   jabatan?: string;
+  penggunaId?: string;
+  peran?: string;
+  subPeran?: string;
   oleh: string;
 }) {
   return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/nama`, {

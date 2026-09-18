@@ -6,11 +6,15 @@ import {
   kirimTandaTanganHapus,
   kirimTandaTanganNama,
   kirimTandaTanganSahkan,
+  kirimTandaTanganTambah,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
-import { getUserByIdFromDb } from "@/server/modules/organization/service";
+import { getPositionsFromDb, getUserByIdFromDb } from "@/server/modules/organization/service";
+import { listUsersFromDb } from "@/server/modules/users/service";
+import { getRoleLabel } from "@/lib/permissions";
+import type { RoleId } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,7 +64,50 @@ export async function GET(request: NextRequest) {
 
     const hanyaSah = request.nextUrl.searchParams.get("hanyaSah") === "1";
     const respons = await getGatewayTandaTangan(hanyaSah);
-    return Response.json(respons, { status: respons?.ok === false ? 502 : 200 });
+
+    // ========================================================================
+    // DAFTAR PENGGUNA IKUT DIKIRIM DARI SINI
+    // ========================================================================
+    //
+    // Bukan dibiarkan layar memanggil /api/users sendiri, dan sebabnya
+    // kewenangan: layar ini menuntut "blangko-abt", sedangkan /api/users
+    // menuntut aktor yang terdaftar pada modul pengguna. Petugas yang berhak
+    // menamai tanda tangan belum tentu berhak membuka manajemen pengguna -
+    // dan pemilih yang kosong akan terbaca sebagai "tidak ada pegawai",
+    // bukan sebagai "Anda tidak berhak melihatnya".
+    //
+    // Yang dikirim SEPERLUNYA saja: nama, peran, jabatan, dan sub-peran. Tidak
+    // ada surel, nomor WhatsApp, atau NIP - layar ini hanya perlu menautkan.
+    let pengguna: Array<Record<string, string>> = [];
+    let penggunaAlasan = "";
+    try {
+      const [daftar, jabatan] = await Promise.all([
+        listUsersFromDb(sesi.db, sesi.actorUserId),
+        getPositionsFromDb(sesi.db),
+      ]);
+      const namaJabatan = new Map(jabatan.map((j) => [String(j.id), String(j.name ?? "")]));
+      pengguna = (daftar ?? [])
+        .filter((u) => u.isActive !== false)
+        .map((u) => ({
+          id: String(u.id),
+          nama: String(u.name ?? ""),
+          peran: String(u.roleId ?? ""),
+          peranLabel: getRoleLabel(u.roleId),
+          jabatan: namaJabatan.get(String(u.positionId ?? "")) ?? "",
+          subPeran: (u.additionalRoleIds ?? []).map((r) => getRoleLabel(r as RoleId)).join(", "),
+        }))
+        .sort((a, b) => a.nama.localeCompare(b.nama));
+    } catch (galat) {
+      // Gagalnya daftar pengguna TIDAK menjatuhkan layar tanda tangan -
+      // menamai dengan mengetik tangan tetap jalan, dan itu memang yang
+      // dikerjakan selama ini.
+      penggunaAlasan = galat instanceof Error ? galat.message : "Daftar pengguna tidak terbaca.";
+    }
+
+    return Response.json(
+      { ...(respons as Record<string, unknown>), pengguna, penggunaAlasan },
+      { status: respons?.ok === false ? 502 : 200 }
+    );
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
@@ -83,17 +130,38 @@ export async function POST(request: NextRequest) {
     }
 
     const badan = (await request.json()) as Record<string, unknown>;
+    const tindakan = String(badan.tindakan ?? "");
+
+    // Menambah tanda tangan baru BELUM punya id - diperiksa sebelum penjagaan
+    // id di bawah, yang kalau tidak akan menolaknya dengan "id_tidak_sah",
+    // alasan yang sama sekali tidak menerangkan apa yang salah.
+    if (tindakan === "tambah") {
+      const respons = await kirimTandaTanganTambah({
+        isiBase64: String(badan.isiBase64 ?? ""),
+        jenisBerkas: String(badan.jenisBerkas ?? ""),
+        namaPejabat: String(badan.namaPejabat ?? "").slice(0, 150),
+        jabatan: String(badan.jabatan ?? "").slice(0, 120),
+        penggunaId: String(badan.penggunaId ?? "").slice(0, 64),
+        peran: String(badan.peran ?? "").slice(0, 64),
+        subPeran: String(badan.subPeran ?? "").slice(0, 255),
+        asal: `unggahan layar oleh ${sesi.nama}`,
+        oleh: sesi.nama,
+      });
+      return Response.json(respons, { status: respons?.ok === false ? 400 : 200 });
+    }
+
     const id = Number(badan.id);
     if (!Number.isFinite(id) || id <= 0) {
       return Response.json({ ok: false, alasan: "id_tidak_sah" }, { status: 400 });
     }
 
-    const tindakan = String(badan.tindakan ?? "");
-
     if (tindakan === "nama") {
       const respons = await kirimTandaTanganNama(id, {
         namaPejabat: String(badan.namaPejabat ?? "").slice(0, 150),
         jabatan: String(badan.jabatan ?? "").slice(0, 120),
+        penggunaId: String(badan.penggunaId ?? "").slice(0, 64),
+        peran: String(badan.peran ?? "").slice(0, 64),
+        subPeran: String(badan.subPeran ?? "").slice(0, 255),
         oleh: sesi.nama,
       });
       return Response.json(respons, { status: respons?.ok === false ? 400 : 200 });

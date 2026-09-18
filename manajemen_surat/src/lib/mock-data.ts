@@ -950,6 +950,24 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Grafik",
   },
   {
+    id: "peta-perkara",
+    label: "Peta Perkara",
+    description: "Dari mana perkara datang, dan faktor apa yang paling sering disebut.",
+    href: "/peta-perkara",
+    icon: "map",
+    // Tidak menyebut nama orang - isinya sebaran wilayah dan faktor, bukan
+    // peringkat pegawai. Karena itu terbuka lebih luas daripada beban
+    // konseptor, tetapi tetap bukan untuk semua peran: alamat pihak berperkara
+    // adalah data pribadi.
+    roleIds: ["super-admin", "admin", "ketua", "wakil-ketua", "panitera", "sekretaris", "hakim", "panitera-muda"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-teal-100",
+    iconFgClass: "text-teal-700",
+    cardClass: "border-teal-200/80 bg-teal-50/70",
+    badgeLabel: "Sebaran",
+  },
+  {
     id: "beban-konseptor",
     label: "Beban Kinerja Konseptor",
     description: "Berat pekerjaan konseptor putusan, bukan sekadar jumlahnya.",

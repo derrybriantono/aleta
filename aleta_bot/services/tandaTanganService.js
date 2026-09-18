@@ -71,6 +71,19 @@ function pastikanTabel() {
       disahkan_oleh VARCHAR(120) NOT NULL DEFAULT '',
       disahkan_pada DATETIME NULL,
       asal VARCHAR(255) NOT NULL DEFAULT '',
+      -- Tautan ke AKUN portal, bukan sekadar nama yang diketik.
+      --
+      -- Nama sebagai teks bebas sudah membuktikan rapuhnya di tempat lain:
+      -- SK menulis "Munifah, S.H." sedangkan SIPP menulis "Munifa" - beda satu
+      -- huruf, dan pencocokan nama yang meleset memasang tanda tangan orang
+      -- lain pada penetapan pengadilan.
+      --
+      -- Peran dan sub-perannya ikut DISALIN saat penautan, bukan dibaca ulang
+      -- dari portal tiap kali: yang harus terbaca pada penetapan lama adalah
+      -- jabatan orang itu KETIKA ia menandatangani, bukan jabatannya hari ini.
+      pengguna_id VARCHAR(64) NOT NULL DEFAULT '',
+      peran VARCHAR(64) NOT NULL DEFAULT '',
+      sub_peran VARCHAR(255) NOT NULL DEFAULT '',
       diinput_oleh VARCHAR(120) NOT NULL DEFAULT '',
       diinput_tanggal DATETIME NOT NULL,
       PRIMARY KEY (id),
@@ -78,10 +91,30 @@ function pastikanTabel() {
       KEY idx_ttd_nama (nama_pejabat),
       KEY idx_ttd_sah (disahkan)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `).catch((galat) => {
-    siapPromise = null;
-    throw galat;
-  });
+  `)
+    // CREATE TABLE IF NOT EXISTS tidak menyentuh tabel yang SUDAH ada - dan di
+    // peladen tabel ini sudah berisi lima puluh gambar. Tanpa ALTER di bawah,
+    // kolom tautannya hanya lahir di pemasangan baru, dan yang lama akan
+    // menjawab "Unknown column" pada tiap penautan.
+    .then(async () => {
+      for (const [kolom, bentuk] of [
+        ["pengguna_id", "VARCHAR(64) NOT NULL DEFAULT ''"],
+        ["peran", "VARCHAR(64) NOT NULL DEFAULT ''"],
+        ["sub_peran", "VARCHAR(255) NOT NULL DEFAULT ''"],
+      ]) {
+        const ada = await kueri(
+          `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+          [TABEL, kolom]
+        ).catch(() => [{ n: 1 }]);
+        const punya = Array.isArray(ada) && Number(ada[0] && ada[0].n) > 0;
+        if (!punya) await kueri(`ALTER TABLE ${TABEL} ADD COLUMN ${kolom} ${bentuk}`);
+      }
+    })
+    .catch((galat) => {
+      siapPromise = null;
+      throw galat;
+    });
   return siapPromise;
 }
 
@@ -210,12 +243,128 @@ async function impor(isiDoc, { asal = "", oleh = "" } = {}) {
   return { ok: true, ditemukan: gambar.length, masuk, dilewati, namaTerbaca: nama };
 }
 
+/**
+ * Menambahkan SATU tanda tangan yang diunggah orang.
+ *
+ * ============================================================================
+ * KENAPA PERLU, PADAHAL SUDAH ADA PENGIMPOR
+ * ============================================================================
+ *
+ * Pengimpor membaca berkas .doc satuan kerja dan menyapu bita mencari tanda
+ * berkas PNG dan JPEG. Ia hanya memulangkan yang KEBETULAN ada di dokumen itu:
+ * pejabat baru, pejabat yang tanda tangannya berubah, dan siapa pun yang tidak
+ * pernah masuk dokumen itu tidak punya jalan sama sekali - selain meminta
+ * seseorang menyunting .doc-nya lalu menjalankan skrip di peladen.
+ *
+ * ============================================================================
+ * TETAP MENUNGGU PENGESAHAN
+ * ============================================================================
+ *
+ * Yang diunggah TIDAK langsung sah, sama seperti yang diimpor. Gambar yang
+ * diunggah seseorang sambil mengetikkan nama orang lain persis sama
+ * berbahayanya dengan gambar yang tertukar di dalam .doc - dan pengesahan oleh
+ * orang kedua adalah satu-satunya hal yang memisahkan keduanya dari tanda
+ * tangan palsu pada penetapan pengadilan.
+ *
+ * Sidiknya tetap diperiksa: gambar yang sama persis tidak masuk dua kali,
+ * walau diunggah dari layar alih-alih dibaca dari dokumen.
+ */
+async function tambah({
+  isiBase64 = "",
+  jenisBerkas = "",
+  namaPejabat = "",
+  jabatan = "",
+  penggunaId = "",
+  peran = "",
+  subPeran = "",
+  asal = "unggahan layar",
+  oleh = "",
+} = {}) {
+  await pastikanTabel();
+
+  const nama = potong(namaPejabat, 150).trim();
+  if (!nama) return { ok: false, alasan: "nama_pejabat_kosong" };
+
+  const bersih = String(isiBase64 || "").replace(/^data:[^;]+;base64,/, "").trim();
+  if (!bersih) return { ok: false, alasan: "gambar_kosong" };
+
+  let isi;
+  try {
+    isi = Buffer.from(bersih, "base64");
+  } catch (galat) {
+    return { ok: false, alasan: "gambar_tidak_terbaca" };
+  }
+  if (!isi || isi.length === 0) return { ok: false, alasan: "gambar_kosong" };
+  if (isi.length > BATAS_BESAR) return { ok: false, alasan: "gambar_terlalu_besar", ukuran: isi.length };
+  if (isi.length < BATAS_KECIL) return { ok: false, alasan: "gambar_terlalu_kecil", ukuran: isi.length };
+
+  // Jenisnya dibaca dari BITANYA, bukan dari nama berkas atau dari apa yang
+  // disebut peramban. Berkas bernama .png yang isinya bukan PNG akan gagal
+  // digambar pada penetapan, dan gagalnya baru terlihat di kertas.
+  const jenis = jenisDariBita(isi);
+  if (!jenis) return { ok: false, alasan: "bukan_gambar_png_atau_jpeg" };
+  if (jenisBerkas && String(jenisBerkas).toLowerCase().replace("jpeg", "jpg") !== jenis.replace("jpeg", "jpg")) {
+    // Bukan penolakan - hanya laporan. Yang dipakai tetap jenis dari bitanya.
+  }
+
+  const sidik = crypto.createHash("sha1").update(isi).digest("hex");
+  const ada = await kueri(`SELECT id, nama_pejabat FROM ${TABEL} WHERE sidik = ? LIMIT 1`, [sidik]);
+  if (Array.isArray(ada) && ada.length > 0) {
+    return {
+      ok: false,
+      alasan: "gambar_sudah_ada",
+      id: Number(ada[0].id),
+      namaPejabat: String(ada[0].nama_pejabat || ""),
+    };
+  }
+
+  const hasil = await kueri(
+    `INSERT INTO ${TABEL}
+       (sidik, nama_pejabat, jabatan, pengguna_id, peran, sub_peran,
+        jenis_berkas, ukuran, isi, asal, diinput_oleh, diinput_tanggal)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      sidik,
+      nama,
+      potong(jabatan, 120).trim(),
+      potong(penggunaId, 64).trim(),
+      potong(peran, 64).trim(),
+      potong(subPeran, 255).trim(),
+      jenis,
+      isi.length,
+      isi,
+      potong(asal, 255),
+      potong(oleh, 120),
+      waktuMysqlSekarang(),
+    ]
+  );
+
+  return {
+    ok: true,
+    id: Number(hasil && hasil.insertId) || 0,
+    namaPejabat: nama,
+    jenisBerkas: jenis,
+    ukuran: isi.length,
+    // Disebut TEGAS supaya layar tidak perlu menyimpulkannya sendiri.
+    disahkan: false,
+    keterangan: "Tanda tangan tersimpan tetapi BELUM disahkan - ia belum dapat dipakai membubuhi penetapan.",
+  };
+}
+
+/** Jenis gambar dari bitanya sendiri - "png", "jpg", atau kosong bila bukan keduanya. */
+function jenisDariBita(isi) {
+  if (isi.length >= 8 && isi[0] === 0x89 && isi[1] === 0x50 && isi[2] === 0x4e && isi[3] === 0x47) return "png";
+  if (isi.length >= 3 && isi[0] === 0xff && isi[1] === 0xd8 && isi[2] === 0xff) return "jpg";
+  return "";
+}
+
 /** Daftar tanda tangan - TANPA isi gambarnya, yang dibaca terpisah. */
 async function daftar({ hanyaSah = false } = {}) {
   await pastikanTabel();
   const baris = await kueri(
     `SELECT id, sidik, nama_pejabat, jabatan, jenis_berkas, ukuran, disahkan,
-            disahkan_oleh, disahkan_pada, asal, diinput_oleh, diinput_tanggal
+            disahkan_oleh, disahkan_pada, asal, diinput_oleh, diinput_tanggal,
+            pengguna_id, peran, sub_peran
        FROM ${TABEL}
       ${hanyaSah ? "WHERE disahkan = 1" : ""}
       ORDER BY disahkan DESC, nama_pejabat, id`
@@ -233,6 +382,9 @@ async function daftar({ hanyaSah = false } = {}) {
       disahkanOleh: String(b.disahkan_oleh || ""),
       disahkanPada: b.disahkan_pada ? new Date(b.disahkan_pada).toISOString() : "",
       asal: String(b.asal || ""),
+      penggunaId: String(b.pengguna_id || ""),
+      peran: String(b.peran || ""),
+      subPeran: String(b.sub_peran || ""),
     })),
   };
 }
@@ -260,7 +412,10 @@ async function gambar(id) {
  * atas nama A lalu diganti namanya menjadi B adalah tanda tangan A pada
  * penetapan B - persis keadaan yang hendak dicegah.
  */
-async function namai(id, { namaPejabat = "", jabatan = "", oleh = "" } = {}) {
+async function namai(
+  id,
+  { namaPejabat = "", jabatan = "", penggunaId = "", peran = "", subPeran = "", oleh = "" } = {}
+) {
   await pastikanTabel();
   const nomor = Number(id);
   if (!Number.isFinite(nomor) || nomor <= 0) return { ok: false, alasan: "id_tidak_sah" };
@@ -282,19 +437,24 @@ async function namai(id, { namaPejabat = "", jabatan = "", oleh = "" } = {}) {
   // namanya TIDAK berubah tidak boleh kehilangan catatan siapa dan kapan
   // mengesahkannya, dan satu pernyataan yang mengisi ruas itu dengan nilai
   // bersyarat terlalu mudah menuliskan null ke sana tanpa ada yang menyadarinya.
+  const idAkun = potong(penggunaId, 64).trim();
+  const peranAkun = potong(peran, 64).trim();
+  const subPeranAkun = potong(subPeran, 255).trim();
+
   if (berubah) {
     await kueri(
       `UPDATE ${TABEL}
-          SET nama_pejabat = ?, jabatan = ?, disahkan = 0, disahkan_oleh = '', disahkan_pada = NULL
+          SET nama_pejabat = ?, jabatan = ?, pengguna_id = ?, peran = ?, sub_peran = ?,
+              disahkan = 0, disahkan_oleh = '', disahkan_pada = NULL
         WHERE id = ?`,
-      [nama, potong(jabatan, 120).trim(), nomor]
+      [nama, potong(jabatan, 120).trim(), idAkun, peranAkun, subPeranAkun, nomor]
     );
   } else {
-    await kueri(`UPDATE ${TABEL} SET nama_pejabat = ?, jabatan = ? WHERE id = ?`, [
-      nama,
-      potong(jabatan, 120).trim(),
-      nomor,
-    ]);
+    await kueri(
+      `UPDATE ${TABEL} SET nama_pejabat = ?, jabatan = ?, pengguna_id = ?, peran = ?, sub_peran = ?
+        WHERE id = ?`,
+      [nama, potong(jabatan, 120).trim(), idAkun, peranAkun, subPeranAkun, nomor]
+    );
   }
 
   return { ok: true, id: nomor, namaPejabat: nama, pengesahanDibatalkan: berubah && sudahDisahkan, oleh };
@@ -368,6 +528,8 @@ module.exports = {
   ukirGambar,
   ukirNama,
   impor,
+  tambah,
+  jenisDariBita,
   daftar,
   gambar,
   namai,
