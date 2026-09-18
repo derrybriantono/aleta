@@ -80,6 +80,25 @@ function sapu(): Pelanggaran[] {
       const nama = baris[i].match(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*\(?await\s/)?.[1];
       if (!nama) continue;
 
+      // ====================================================================
+      // BERKAS STATIS BUKAN JAWABAN PORTAL
+      // ====================================================================
+      //
+      // Aturan berkas ini tentang BUNGKUS { ok, data } yang dipasang rute
+      // portal. Berkas statis di `public/` tidak punya bungkus itu - ia
+      // memang harus dibaca apa adanya.
+      //
+      // Penyapu ini masuk ke berkas mana pun yang menyebut "/api/aleta" di
+      // suatu tempat, jadi satu layar yang memanggil rute portal DAN membaca
+      // berkas statis akan tertuduh atas yang kedua. Terjadi pada peta titik
+      // perkara: koordinat desanya berkas statis, dan lapisan relaasnya rute
+      // portal - keduanya di berkas yang sama.
+      //
+      // Yang diperiksa alamat pengambilannya, bukan nama peubahnya.
+      const pengambilan = baris.slice(Math.max(0, i - 6), i + 1).join(" ");
+      const alamat = pengambilan.match(/fetch\(\s*([^)]*)/)?.[1] ?? "";
+      if (alamat && !alamat.includes("/api/")) continue;
+
       // Bentuk (await x.json())?.data - dibuka di baris yang sama.
       if (/\.json\(\)\s*\)?\s*\??\.\s*data\b/.test(baris[i])) continue;
 

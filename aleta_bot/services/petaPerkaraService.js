@@ -41,9 +41,21 @@
  * provinsi -> kabupaten -> kecamatan -> desa, seluruhnya dari kode wilayah
  * resmi, tanpa satu pun koordinat yang dikarang.
  *
- * Kalau kelak satker punya berkas batas wilayah yang benar, peta geografisnya
- * dapat ditambahkan di atas data yang sama - yang tidak boleh adalah
- * menggambarnya dari koordinat ini.
+ * ============================================================================
+ * DAN SEKARANG ADA PETANYA - TETAPI KOORDINATNYA DARI SUMBER LAIN
+ * ============================================================================
+ *
+ * Sejak 2.24.0 peta titiknya ada. Koordinatnya TIDAK datang dari `kode_pos`
+ * dan tidak datang dari SIPP sama sekali - seluruh basis data SIPP disisir
+ * lewat information_schema dan `kode_pos` adalah satu-satunya tabel yang punya
+ * kolom lintang/bujur. Titiknya datang dari OpenStreetMap, dijodohkan SEKALI
+ * di luar portal, disimpan berkunci kode wilayah BPS, dan yang tidak
+ * berhasil dijodohkan tidak ditaruh di peta sama sekali.
+ *
+ * Yang dikirim dari sini hanya HITUNGANNYA per kode desa (lihat titikDesa).
+ * Layanan ini tidak tahu-menahu soal koordinat, dan memang tidak boleh tahu:
+ * begitu koordinat masuk ke sini, ia akan ikut tersimpan pada jawaban yang
+ * disinggah dan berumur lebih panjang daripada sumbernya.
  *
  * ============================================================================
  * KODE WILAYAH BUKAN NAMA WILAYAH
@@ -364,6 +376,56 @@ function kelompokkan(baris, tingkat, induk) {
 }
 
 /**
+ * ============================================================================
+ * TITIK PETA - SATU BARIS PER DESA, DIKUNCI KODE DAN BUKAN NAMA
+ * ============================================================================
+ *
+ * `kelompokkan` mengunci barisnya dengan NAMA, dan itu benar untuk daftar yang
+ * ditelusuri turun: di dalam satu kecamatan tidak ada dua desa senama, dan
+ * mengunci nama-lah yang menyatukan baris berkode dengan baris bertulis nama.
+ *
+ * Untuk PETA aturannya terbalik. Petanya memajang seluruh desa sekaligus,
+ * tanpa induk, dan di tingkat itu nama berulang: "Labuan" ada di Donggala dan
+ * ada pula di tempat lain. Dikunci nama, keduanya menyatu menjadi satu titik
+ * yang jumlahnya benar untuk dua desa sekaligus dan salah untuk masing-masing.
+ *
+ * Karena itu di sini kuncinya KODE. Akibatnya baris yang wilayahnya tersimpan
+ * sebagai teks - 583 baris dari era pengisian yang lama - tidak punya tempat
+ * di peta. Itu disebutkan sebagai `tanpaKode`, bukan dibulatkan ke desa
+ * terdekat: yang disebut terlihat, yang dibulatkan tidak.
+ */
+function titikDesa(baris) {
+  const peta = new Map();
+  let tanpaKode = 0;
+  for (const b of baris) {
+    const kode = String(b.kodeKelurahan || "").trim();
+    if (!kode) {
+      tanpaKode += 1;
+      continue;
+    }
+    if (!peta.has(kode)) {
+      peta.set(kode, {
+        kode,
+        nama: String(b.namaKelurahan || "").trim() || kode,
+        kecamatan: String(b.namaKecamatan || "").trim(),
+        kabupaten: String(b.namaKabupaten || "").trim(),
+        perkara: 0,
+        lelaki: 0,
+        perempuan: 0,
+        jenis: {},
+      });
+    }
+    const t = peta.get(kode);
+    t.perkara += 1;
+    if (String(b.kelamin || "").toUpperCase() === "L") t.lelaki += 1;
+    else if (String(b.kelamin || "").toUpperCase() === "P") t.perempuan += 1;
+    const j = String(b.jenisPerkara || "");
+    t.jenis[j] = (t.jenis[j] || 0) + 1;
+  }
+  return { titik: [...peta.values()].sort((a, b) => b.perkara - a.perkara), tanpaKode };
+}
+
+/**
  * Mengelompokkan baris perkara menurut faktor perceraiannya.
  *
  * Yang tidak berfaktor dilewati, bukan dihitung sebagai "tidak diketahui":
@@ -386,6 +448,155 @@ function kelompokkanFaktor(baris) {
     t.jenis[j] = (t.jenis[j] || 0) + 1;
   }
   return [...peta.values()].sort((a, b) => b.perkara - a.perkara);
+}
+
+
+/**
+ * ============================================================================
+ * LAPISAN PANGGILAN TIDAK BERTEMU - DAN SANDI YANG BERGANTI ARTI
+ * ============================================================================
+ *
+ * Jurusita menanyakan satu hal yang tidak dijawab peta jumlah perkara: desa
+ * mana yang panggilannya paling sering TIDAK SAMPAI. Itu menentukan berapa
+ * kali ia harus kembali, dan desa mana yang layak diusulkan jadi tempat sidang
+ * keliling.
+ *
+ * Datanya ada di `perkara_pelaksanaan_relaas.ket_temu`. Tetapi kolom itu
+ * BERGANTI ARTI, dan itu terukur:
+ *
+ *     2019 - 2024   Y (bertemu) dan T (tidak bertemu)
+ *     2025 - 2026   hampir seluruhnya S dan E; 'T' tinggal 2 baris setahun
+ *
+ * S dan E menandai SALURAN pengiriman, bukan hasil pertemuan. Dihitung apa
+ * adanya, dua tahun terakhir akan memulangkan 0% tidak bertemu - dan angka itu
+ * terbaca sebagai "pelayanan sempurna", bukan sebagai "kolomnya berganti
+ * makna". Justru kesalahan yang paling sukar ketahuan, sebab hasilnya masuk
+ * akal.
+ *
+ * Karena itu yang dihitung HANYA baris bersandi Y atau T - 7.751 dari 14.495
+ * baris (53%) - dan jangkauannya disebut di layar. Pembatasan ini menyesuaikan
+ * diri sendiri: begitu satker kembali memakai Y/T, barisnya ikut terhitung
+ * tanpa kode ini disentuh.
+ *
+ * AMBANG MINIMAL. Desa dengan tiga relaas yang dua di antaranya gagal bukan
+ * "67% gagal" - itu kebetulan. Yang di bawah ambang tetap dikirim beserta
+ * jumlahnya, tetapi ditandai `cukup: false`; layar tidak mewarnainya.
+ */
+const SANDI_TEMU = ["Y", "T"];
+const AMBANG_RELAAS = 10;
+
+async function sebaranRelaas(dari, sampai) {
+  const baris = await kueri(
+    `SELECT p.kelurahan          AS kode,
+            kl.kelurahan_nama    AS nama,
+            kc.kecamatan_nama    AS kecamatan,
+            COUNT(*)             AS relaas,
+            SUM(r.ket_temu = 'T') AS takTemu
+       FROM perkara_pelaksanaan_relaas r
+       JOIN pihak p ON p.id = r.pihak_id
+       LEFT JOIN ref_kelurahan_new kl ON kl.kelurahan_kode = p.kelurahan
+       LEFT JOIN ref_kecamatan_new kc ON kc.kecamatan_kode = p.kecamatan
+      WHERE r.ket_temu IN (${SANDI_TEMU.map(() => "?").join(",")})
+        AND r.tanggal_relaas BETWEEN ? AND ?
+        AND p.kelurahan IS NOT NULL AND p.kelurahan <> ''
+      GROUP BY p.kelurahan, kl.kelurahan_nama, kc.kecamatan_nama`,
+    [...SANDI_TEMU, dari, sampai]
+  );
+
+  let relaasSemua = 0;
+  let takTemuSemua = 0;
+  const desa = [];
+  for (const b of baris) {
+    const relaas = Number(b.relaas) || 0;
+    const takTemu = Number(b.takTemu) || 0;
+    relaasSemua += relaas;
+    takTemuSemua += takTemu;
+    desa.push({
+      kode: String(b.kode || ""),
+      nama: String(b.nama || b.kode || ""),
+      kecamatan: String(b.kecamatan || ""),
+      relaas,
+      takTemu,
+      persen: relaas > 0 ? Math.round((takTemu / relaas) * 100) : 0,
+      cukup: relaas >= AMBANG_RELAAS,
+    });
+  }
+
+  desa.sort((a, b) => b.persen - a.persen || b.relaas - a.relaas);
+  return {
+    ambang: AMBANG_RELAAS,
+    relaas: relaasSemua,
+    takTemu: takTemuSemua,
+    persen: relaasSemua > 0 ? Math.round((takTemuSemua / relaasSemua) * 100) : 0,
+    desa,
+  };
+}
+
+/**
+ * Daftar perkara satu desa - dibaca ketika lingkaran peta diketuk.
+ *
+ * Tidak ikut muatan peta. Sembilan ribu nomor perkara beserta tanggalnya
+ * berukuran ratusan kilobita, dan yang dibuka orang paling banyak satu atau
+ * dua desa. Dibaca saat diketuk, ia satu kueri berindeks nomor desa.
+ */
+const BATAS_PERKARA_DESA = 300;
+
+async function perkaraDesa(kelompok, kode, dari, sampai) {
+  const kodeDesa = String(kode || "").trim();
+  if (!kodeDesa) return { ok: false, alasan: "kode_desa_kosong" };
+
+  const jenis = saringJenis(kelompok, "pk");
+  const baris = await kueri(
+    `SELECT pk.nomor_perkara       AS nomorPerkara,
+            pk.jenis_perkara_text  AS jenisPerkara,
+            pk.tanggal_pendaftaran AS tanggalDaftar,
+            pp.tanggal_putusan     AS tanggalPutusan,
+            p.jenis_kelamin        AS kelamin,
+            p.nama                 AS namaPihak
+       FROM ${SATU_PIHAK} satu
+       JOIN pihak p ON p.id = satu.pihak_id
+       JOIN perkara pk ON pk.perkara_id = satu.perkara_id
+       JOIN perkara_putusan pp ON pp.perkara_id = pk.perkara_id
+      WHERE p.kelurahan = ?
+        AND ${jenis.sql}
+      ORDER BY pp.tanggal_putusan DESC
+      LIMIT ${BATAS_PERKARA_DESA}`,
+    [dari, sampai, kodeDesa, ...jenis.params]
+  );
+
+  return {
+    ok: true,
+    kode: kodeDesa,
+    batas: BATAS_PERKARA_DESA,
+    perkara: baris.map((b) => ({
+      nomorPerkara: String(b.nomorPerkara || ""),
+      jenisPerkara: String(b.jenisPerkara || ""),
+      tanggalDaftar: tanggalIsoPeta(b.tanggalDaftar),
+      tanggalPutusan: tanggalIsoPeta(b.tanggalPutusan),
+      kelamin: String(b.kelamin || "").toUpperCase(),
+      // Nama pihak TIDAK dikirim utuh - hanya huruf pertama tiap kata. Peta
+      // dibuka di layar yang kerap terlihat orang lain, dan daftar nama orang
+      // berperkara per desa adalah hal yang paling tidak boleh terpajang.
+      inisial: String(b.namaPihak || "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((k) => k[0].toUpperCase())
+        .join("."),
+    })),
+  };
+}
+
+/** Tanggal kolom DATE menjadi "YYYY-MM-DD" - penggerak memulangkan obyek Date. */
+function tanggalIsoPeta(nilai) {
+  if (!nilai) return "";
+  if (nilai instanceof Date) {
+    if (Number.isNaN(nilai.getTime())) return "";
+    const b = String(nilai.getMonth() + 1).padStart(2, "0");
+    const h = String(nilai.getDate()).padStart(2, "0");
+    return `${nilai.getFullYear()}-${b}-${h}`;
+  }
+  const teks = String(nilai);
+  return /^\d{4}-\d{2}-\d{2}/.test(teks) ? teks.slice(0, 10) : "";
 }
 
 /**
@@ -429,6 +640,11 @@ async function hitung(minta = {}) {
   // tersendiri dahulu menyusun ulang tabel turunan "satu pihak per perkara"
   // yang persis sama, dan itu saja 2,4 detik.
   const daftarFaktor = perceraian ? kelompokkanFaktor(baris) : [];
+  // Titik peta dihitung dari BARIS YANG SAMA - bukan kueri kedua. Barisnya
+  // sudah di tangan; mengelompokkannya sekali lagi berlangsung dalam hitungan
+  // milidetik, sedangkan memintanya kembali ke MySQL berarti menyusun ulang
+  // tabel turunan yang sama untuk ketiga kalinya.
+  const sebaranTitik = titikDesa(baris);
 
   // Jangkauannya dihitung dari baris yang sama - tidak perlu kueri tersendiri.
   const diputus = baris.length;
@@ -457,14 +673,19 @@ async function hitung(minta = {}) {
     induk,
     periode,
     rentang: { dari, sampai },
-    // Sengaja disebut supaya layar tidak menggambar peta geografis dari data
-    // ini - lihat keterangan di kepala berkas.
+    // Petanya ADA sejak 2.24.0, tetapi koordinatnya bukan urusan layanan ini -
+    // lihat keterangan di kepala berkas. Yang dikirim dari sini hanya
+    // hitungan per kode desa; yang menjodohkannya dengan titik adalah berkas
+    // statis di portal, dan desa yang tidak berjodoh tidak digambar.
     petaGeografis: false,
     alasanTanpaPeta:
-      "Koordinat kode_pos tidak dapat dipakai: kolom lintang dan bujurnya tertukar, dan sesudah ditukar " +
-      "pun tiap kabupaten hanya punya satu titik yang sebagian menunjuk pulau lain - Morowali Utara " +
-      "jatuh di Papua, Banggai di Laut Sawu. Sebarannya karena itu disusun berjenjang dari kode wilayah " +
-      "resmi, tanpa koordinat yang dikarang.",
+      "Koordinat di dalam SIPP tidak dapat dipakai: satu-satunya tabel yang punya kolom lintang/bujur " +
+      "adalah kode_pos, dan seluruh 2.023 baris Sulawesi Tengah di dalamnya hanya memuat 9 titik - satu " +
+      "per kabupaten, disalin ke tiap desa di bawahnya. Titik peta karena itu diambil dari " +
+      "OpenStreetMap dan dijodohkan lebih dahulu di luar portal; desa yang tidak berjodoh tidak " +
+      "digambar, bukan digeser ke tempat terdekat.",
+    titik: sebaranTitik.titik,
+    titikTanpaKode: sebaranTitik.tanpaKode,
     ringkas: {
       diputus,
       beralamat,
@@ -492,6 +713,14 @@ module.exports = {
   bakukanNamaWilayah,
   indukBaris,
   kelompokkan,
+  // Dikunci kode, bukan nama - lihat keterangannya. Diekspor untuk diuji
+  // satuan: perbedaan kunci inilah yang menentukan benar-salahnya angka pada
+  // peta, dan perbedaan itu tidak terlihat dari hasilnya.
+  titikDesa,
+  // Lapisan panggilan tidak bertemu, dan daftar perkara satu desa.
+  sebaranRelaas,
+  perkaraDesa,
+  AMBANG_RELAAS,
   kelompokkanFaktor,
   hitung,
 };

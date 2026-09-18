@@ -90,6 +90,10 @@ describe("susunan bagian mengikuti jalan perkara", () => {
     "sk",
     // alat
     "analisa-lanjut",
+    // Perbandingan adalah pertanyaan yang muncul SESUDAH satu perkara selesai
+    // dibaca - "kok yang ini lebih lama dari yang itu?" - bukan pertanyaan
+    // pembuka. Karena itu ia berdiri sesudah analisis, bukan di antara fakta.
+    "banding-perkara",
     "prompt-putusan",
     "analisa",
   ];
@@ -446,5 +450,106 @@ describe("kalender perkara dihitung dari muatan yang sudah ada", () => {
     const baris = blok.split("\n").filter((x) => x.includes("teks:"));
     expect(baris.length).toBeGreaterThanOrEqual(10);
     for (const satu of baris) expect(satu, satu.trim()).toContain("dark:");
+  });
+});
+
+describe("jalan ke layar penilaian yang berdiri sendiri", () => {
+  /**
+   * ==========================================================================
+   * KENAPA TAUTANNYA DIJAGA, PADAHAL HANYA TAUTAN
+   * ==========================================================================
+   *
+   * Beban Kinerja Konseptor dan Peta Perkara TIDAK muncul di beranda - hanya
+   * di menu samping - dan Beban Kinerja Konseptor bahkan hanya untuk pimpinan
+   * serta kepaniteraan. Petugas yang membaca nama konseptor pada layar ini
+   * karena itu wajar menyimpulkan penilaiannya tidak ada; itu memang yang
+   * dilaporkan satker.
+   *
+   * Tautan yang hilang tidak akan berbunyi apa pun - layarnya tetap benar,
+   * hanya jalannya lenyap. Karena itu keberadaannya dituntut di sini.
+   */
+  const isi = () => readFileSync(berkas, "utf8");
+
+  it("ada di sebelah kolom Konseptor", () => {
+    const teks = isi();
+    const iKonseptor = teks.indexOf("<dt className=\"text-sm text-muted-foreground\">Konseptor</dt>");
+    expect(iKonseptor).toBeGreaterThan(-1);
+    const iTautan = teks.indexOf("Lihat beban kinerja konseptor", iKonseptor);
+    expect(iTautan).toBeGreaterThan(iKonseptor);
+    // Masih di dalam blok kolom yang sama - bukan terlempar jauh ke bawah.
+    expect(iTautan - iKonseptor).toBeLessThan(3000);
+  });
+
+  it("ada juga di kepala Analisis lanjutan", () => {
+    const teks = isi();
+    const iBagian = teks.indexOf('kunci="analisa-lanjut"');
+    const iAnalisa = teks.indexOf("<AletaAnalisaPerkara", iBagian);
+    const iKonseptor = teks.indexOf("Beban Kinerja Konseptor", iBagian);
+    const iPeta = teks.indexOf("Peta Perkara —", iBagian);
+    expect(iBagian).toBeGreaterThan(-1);
+    // Di KEPALA bagian, yaitu sebelum daftar tiga puluh satu tombolnya.
+    expect(iKonseptor).toBeGreaterThan(iBagian);
+    expect(iKonseptor).toBeLessThan(iAnalisa);
+    expect(iPeta).toBeGreaterThan(iBagian);
+    expect(iPeta).toBeLessThan(iAnalisa);
+  });
+
+  it("haknya ditanyakan ke sumber yang sama dengan menu samping", () => {
+    // Daftar peran yang DISALIN ke layar ini akan menyimpang diam-diam begitu
+    // satker mengubah Akses Menu - dan yang menyimpang justru tautan yang
+    // berujung penolakan.
+    const teks = isi();
+    expect(teks).toContain("const { accessibleModules } = usePortal();");
+    expect(teks).toContain('accessibleModules.some((m) => m.id === "beban-konseptor")');
+    expect(teks).not.toMatch(/roleIds\s*[:=]/);
+  });
+
+  it("tautan konseptor tidak digambar bagi yang tidak berhak", () => {
+    const teks = isi();
+    expect(teks).toContain("{bolehBebanKonseptor ? (");
+  });
+});
+
+describe("warna terang selalu punya pasangan mode gelap", () => {
+  /**
+   * ==========================================================================
+   * PORTAL INI BERTEMA GELAP SECARA BAWAAN
+   * ==========================================================================
+   *
+   * `layout.tsx` menaruh kelas `dark` pada <html> SEBELUM halaman digambar,
+   * dan `prefers-color-scheme` tidak pernah ditanyakan. Warna Tailwind
+   * berangka besar - 700, 800, 900 - dibuat untuk latar TERANG.
+   *
+   * Terukur pada berkas ini sebelum diperbaiki: 19 atribut kelas memakai amber
+   * tanpa satu pun pasangan `dark:`. Di layar petugas itu tulisan cokelat tua
+   * di atas latar hampir hitam, dan `bg-amber-50` menjadi kotak nyaris putih
+   * di tengah halaman gelap.
+   *
+   * Tidak ada galat yang berbunyi: halamannya tergambar, hanya tidak terbaca.
+   * Karena itu ia dijaga di sini, bukan diserahkan kepada mata yang kebetulan
+   * membuka layar itu dalam tema gelap.
+   */
+  const WARNA_TERANG =
+    /\b(?:text|bg|border)-(?:amber|emerald|rose|red|blue|teal|slate|violet|sky)-(?:50|100|200|700|800|900)\b/;
+
+  it("tidak ada atribut kelas berwarna terang tanpa pasangan gelap", () => {
+    const isi = readFileSync(berkas, "utf8");
+    const pelanggar: string[] = [];
+
+    // Diperiksa per ATRIBUT, bukan per baris: satu className kerap memanjang
+    // beberapa baris, dan pasangan gelapnya berada di baris yang lain.
+    for (const cocok of isi.matchAll(/className="([^"]*)"/g)) {
+      const kelas = cocok[1];
+      if (!WARNA_TERANG.test(kelas)) continue;
+      if (!kelas.includes("dark:")) pelanggar.push(kelas.slice(0, 90));
+    }
+    // Rangkaian ternary di dalam cn() ikut diperiksa lewat potongan teksnya.
+    for (const cocok of isi.matchAll(/"((?:bg|text|border)-[^"]*)"/g)) {
+      const kelas = cocok[1];
+      if (!WARNA_TERANG.test(kelas)) continue;
+      if (!kelas.includes("dark:")) pelanggar.push(kelas.slice(0, 90));
+    }
+
+    expect(pelanggar, `tanpa pasangan gelap:\n${pelanggar.join("\n")}`).toEqual([]);
   });
 });

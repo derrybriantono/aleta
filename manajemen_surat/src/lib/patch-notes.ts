@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.23.0";
+export const APP_VERSION = "2.24.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.23.0 - Hasil Sidang: Ditunda atau Diputus, Satu Layar Satu Pilihan";
+  "ALETA Judicia v2.24.0 - Peta yang Menjawab, Layar yang Menyapa, dan Sepuluh Pertanyaan Baru";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,80 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.24.0",
+    title: "ALETA Judicia v2.24.0 - Peta yang Menjawab, Layar yang Menyapa, dan Sepuluh Pertanyaan Baru",
+    date: "2026-09-18",
+    status: "Belum terpasang",
+    summary:
+      "Dua pekerjaan. Peta Perkara kini punya peta sungguhan - satu lingkaran per desa di atas peta " +
+      "jalan, luasnya sebanding dengan jumlah perkara, koordinatnya dari OpenStreetMap sebab " +
+      "satu-satunya tabel SIPP yang punya lintang/bujur memuat sembilan titik untuk seluruh Sulawesi " +
+      "Tengah. Dan Status Perkara: nama pihak yang diketuk membuka identitasnya, perkara dapat " +
+      "dijajarkan dengan perkara lain beserta selisihnya, serta dua puluh enam tempat yang warnanya " +
+      "tidak terbaca pada tema gelap - tema bawaan portal ini - diperbaiki.",
+    added: [
+      "PETA TITIK PER DESA di halaman Peta Perkara, sebagai tab pertama. Satu lingkaran per desa di atas peta jalan sungguhan; arahkan penunjuk untuk melihat nama desa, kecamatan, jumlah perkara, pembagian laki-laki/perempuan, dan jenis perkara terbanyak di desa itu.",
+      "Warna lingkaran mengikuti jenis perkara terbanyak di desa itu - cerai gugat merah, cerai talak biru, sama dengan lencana di daftar. Warnanya diturunkan dari penanda yang sudah ditetapkan satker, bukan dipilih ulang di layar peta.",
+      "Keterangan ukuran memakai ANGKA SUNGGUHAN dari data yang sedang tampil - tiga lingkaran contoh beserta jumlah perkaranya - bukan sekadar kalimat \"besar berarti banyak\".",
+      "Pilihan ubinan peta lewat NEXT_PUBLIC_PETA_UBIN, supaya satker dapat menunjuk peladen ubin di jaringan dalam bila kelak ada.",
+      "JALAN KE BEBAN KINERJA KONSEPTOR dari Status Perkara - tepat di sebelah kolom Konseptor, dan sekali lagi di kepala Analisis lanjutan. Nama konseptornya selama ini sudah ada di layar itu, tetapi penilaian bebannya ada di layar lain yang TIDAK muncul di beranda - hanya di menu samping, dan hanya untuk pimpinan serta kepaniteraan. Petugas yang membaca namanya karena itu wajar menyimpulkan penilaiannya tidak ada; itu memang yang dilaporkan satker.",
+      "SEPULUH ANALISIS BARU di Status Perkara - dari 31 menjadi 41: jeda antar tahapan (di mana perkara ini berhenti lama), hari sidang dibanding pengadilan, kecepatan relaas beserta Pasal 122 HIR, kehadiran pihak tiap sidang, perkara lain dari desa yang sama, beban majelis pada bulan pendaftaran, jeda putus ke minutasi ke BHT ke akta cerai, jam sidang, ruang sidang, dan rombongan sepekan - perkara yang masuk pada pekan yang sama, pembanding yang paling adil sebab majelisnya sama-sama sibuk dan panggilan jurusitanya berebut hari yang sama.",
+      "SEPULUH ALAT BARU di kepala Status Perkara: salin ringkasan (sebagai kalimat, bukan tabel - yang ditempel ke WhatsApp kehilangan seluruh kolomnya), salin tautan perkara, cetak, buka semua bagian, tutup semua bagian, cari bagian di antara dua puluh tujuh, loncat ke bagian itu, riwayat perkara yang baru dibuka, sematkan perkara yang sedang dikerjakan, dan buka SIPP. Seluruhnya di peramban; tidak satu pun menyentuh peladen.",
+      "LAPISAN PANGGILAN TIDAK BERTEMU pada peta - desa mana yang relaasnya paling sering gagal. Pertanyaan jurusita yang tidak dapat dijawab peta jumlah perkara, dan yang menentukan berapa kali ia harus kembali serta desa mana yang layak diusulkan jadi tempat sidang keliling. Terukur pada data satker: Kapirowe 10 dari 10 relaas tidak bertemu, Kalora 9 dari 10, Langaleso 8 dari 11 - sementara rata-ratanya 38%.",
+      "LINGKARAN PETA YANG DIKETUK MEMBUKA DAFTAR PERKARA desa itu - nomor, jenis, dan tanggal putusnya. Peta yang hanya dapat dilihat berhenti pada \"oh, banyak\"; yang dapat diketuk meneruskan ke pekerjaan. Nama pihaknya berupa INISIAL, bukan nama utuh.",
+      "DIPERKECIL, PETANYA MENGELOMPOK PER KECAMATAN - bukan per petak layar. Pengelompokan menurut piksel menghasilkan satuan yang tidak berarti apa pun (\"delapan titik yang kebetulan berdekatan pada zum sembilan\"); kecamatan adalah satuan wilayah sungguhan yang langsung terbaca petugas. Titiknya pusat rata-rata desa anggotanya, bukan titik kecamatan yang dikarang.",
+      "KARTU RINGKAS di kepala Status Perkara - keadaan perkara, lama prosesnya, sidang berikutnya, majelis dan panitera sidangnya. Dua puluh enam bagian di bawahnya, dan yang membuka layar ini hampir selalu datang dengan tiga pertanyaan yang sama; ketiganya sebelumnya menuntut menggulung melewati bagian yang terciut.",
+      "DAFTAR PERLU TINDAKAN di bawah kartu itu - majelis belum ditetapkan, lewat lima bulan (SEMA 2/2014), mediasi lewat tiga puluh hari (PERMA 1/2016), belum ada sidang berikutnya, minutasi atau BHT belum tercatat, akta cerai belum diserahkan. Peringatannya DIKUMPULKAN dari yang sudah tampil di bagian-bagian di bawah, bukan dilahirkan di sini: kalau ia melahirkan sendiri, akan ada dua sumber kebenaran yang menyimpang diam-diam.",
+      "NAMA PIHAK YANG DIKETUK MEMBUKA IDENTITASNYA - kedudukan, jenis kelamin, tempat dan tanggal lahir beserta umurnya, pekerjaan, pendidikan, agama, status kawin, kewarganegaraan, wilayah berjenjang, alamat, RT/RW, NIK dan telepon yang disamarkan. Selama ini keempat yang pertama menuntut petugas membuka SIPP di jendela lain, padahal justru itu yang ditanyakan ketika menyusun penetapan dan memeriksa relaas.",
+      "BANDINGKAN DENGAN PERKARA LAIN - isi satu nomor perkara, dan kedua perkara dijajarkan pada dua belas butir beserta SELISIHNYA: jenis, tanggal daftar, tanggal putusan, status putusan, lama proses, jeda minutasi, jumlah sidang, penundaan, jumlah pihak, majelis, panitera sidang, dan mediasi. Selisihnya dihitung, bukan dibiarkan dihitung mata - itulah pekerjaan yang sedang dihindari orang yang membuka layar ini.",
+      "Jalan ke Peta Perkara ditambahkan di kepala Analisis lanjutan juga. Ketiga puluh satu analisis di sana menjawab pertanyaan tentang PERKARA atau tentang PENGADILAN; dua pertanyaan yang kerap ditanyakan dari sana justru tentang ORANG dan tentang TEMPAT, dan daftar tiga puluh satu tombol adalah tempat yang buruk untuk menyembunyikan dua jawaban yang tidak ada di dalamnya.",
+    ],
+    changed: [
+      "Keputusan \"tidak ada peta\" pada 2.22.0 DIBALIK, dan pembalikannya diukur. Yang tidak boleh ternyata bukan \"peta\", melainkan \"koordinat dari kode_pos\". Seluruh SIPP disisir lewat information_schema: kode_pos adalah satu-satunya tabel yang punya kolom lintang/bujur, dan 2.023 barisnya untuk Sulawesi Tengah hanya memuat SEMBILAN titik unik - satu per kabupaten, disalin ke tiap desa di bawahnya. Digambar apa adanya, 1.917 desa menumpuk menjadi 9 titik.",
+      "Layanan peta perkara kini mengirim satu baris per desa yang dikunci KODE wilayah, bukan nama. Daftar yang ditelusuri turun tetap dikunci nama - di dalam satu kecamatan tidak ada dua desa senama - tetapi peta memajang seluruh desa sekaligus, dan di tingkat itu nama berulang: \"Labuan\" ada enam kali di Sulawesi Tengah, tersebar 1,9 derajat. Dikunci nama, keenamnya menyatu jadi satu titik yang jumlahnya benar untuk enam desa sekaligus dan salah untuk masing-masing.",
+      "Hitungan titiknya disusun dari baris yang SAMA dengan sebaran berjenjang - bukan kueri ketiga ke SIPP. Barisnya sudah di tangan; mengelompokkannya sekali lagi berlangsung dalam hitungan milidetik.",
+    ],
+    fixed: [
+      "MODE GELAP PETA TIDAK PERNAH MENYALA. Petanya membaca tema dari atribut data-theme lalu jatuh ke pengaturan peramban - dua hal yang tidak dipakai portal ini sama sekali. Portal ALETA menyalakan temanya lewat kelas dark pada <html>, dan bawaannya GELAP. Akibatnya peta jalan yang menyilaukan di atas halaman gelap, tanpa satu pun galat berbunyi. Kini dibaca dari kelas itu; ubinan petanya dibalik, lingkarannya TETAP warnanya.",
+      "DUA PULUH ENAM TEMPAT DI STATUS PERKARA TIDAK TERBACA PADA TEMA GELAP. Warna Tailwind berangka besar - 700, 800, 900 - dibuat untuk latar terang; di layar petugas yang bawaannya gelap itu tulisan cokelat tua di atas latar hampir hitam, dan kotak bg-amber-50 menjadi kotak nyaris putih di tengah halaman gelap. Terukur: 19 atribut kelas amber tanpa satu pun pasangan dark:, ditambah tujuh pada lencana rubrik, rose, dan sky. Kini dijaga penjaga yang menyisir tiap atribut kelas di berkas itu.",
+    ],
+    security: [
+      "Pustaka petanya (Leaflet 1.9.4) dimuat dari peladen sendiri di public/vendor, bukan dari CDN. Pengadilan ini bekerja di jaringan yang tidak selalu punya jalan keluar, dan pustaka yang dipanggil dari luar membuat halaman ini gagal total di hari jaringan luar mati - gagalnya berupa layar kosong tanpa sebab yang tertulis. Cara yang sama sudah dipakai pdf.js sejak lama.",
+      "Ia juga TIDAK ditambahkan sebagai kebergantungan npm: hanya satu halaman yang memakainya, dan menambahkannya ke package.json berarti ia ikut ditimbang pada tiap build dan ikut menjadi urusan tiap `npm ci` di peladen.",
+      "Penyebutan sumber ubinan tidak dapat dimatikan dari layar - data OpenStreetMap berlisensi ODbL dan syaratnya menyebut sumber.",
+      "NIK dan nomor telepon pihak disamarkan DI PELADEN, bukan di layar - bentuknya cukup untuk mencocokkan dengan berkas di tangan, tidak cukup untuk disalin. Yang disamarkan di layar tetap melintasi jaringan dalam bentuk utuhnya dan tetap terbaca siapa pun yang membuka alat pengembang.",
+      "Tautan Beban Kinerja Konseptor hanya digambar bagi peran yang memang dapat membukanya, dan haknya ditanyakan ke sumber yang SAMA dengan yang menyusun menu samping - bukan dengan menyalin daftar perannya ke layar Status Perkara. Daftar peran yang disalin menyimpang diam-diam begitu satker mengubah Akses Menu, dan yang menyimpang justru tautan yang berujung penolakan.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Versi ekstensi tidak berubah.",
+      "KUERI ANALISIS BARU DIPERCEPAT SEBELUM DIPASANG, dan sebabnya satu: syarat yang MEMBUNGKUS kolom tanggal. DATE_FORMAT(tgl,'%Y-%m') = ? dan YEARWEEK(tgl,1) = ? memaksa MySQL menghitung fungsinya untuk setiap baris lebih dahulu, sehingga indeksnya tidak terpakai. Terukur: beban majelis 17.952 ms menjadi 94 ms, rombongan sepekan 4.345 ms menjadi 46 ms, perkara sedesa 6.657 ms menjadi 1.168 ms. Ketiganya menjawab BENAR sebelum diperbaiki - tidak ada yang akan menangkapnya selain pengukuran.",
+      "Kesepuluh analisis baru hidup di berkasnya sendiri (analisaTambahanService) dan MENERIMA alatnya dari penyalur - runQuery, cleanText, median, selisihHari yang sama. Menyalinnya akan melahirkan dua median yang membulatkan berbeda, dan bedanya baru terlihat pada angka yang sudah tercetak di laporan.",
+      "Riwayat perkara dan sematan disimpan di PERAMBAN, bukan di peladen. Keduanya menyebutkan perkara mana yang dibuka seseorang; disimpan di peladen, ia menjadi catatan siapa memeriksa perkara siapa - keterangan yang tidak diminta siapa pun dan yang keberadaannya sendiri menimbulkan pertanyaan.",
+      "SANDI ket_temu BERGANTI ARTI, dan lapisan panggilan dibatasi karenanya. Sampai 2024 kolom itu berisi Y (bertemu) dan T (tidak bertemu); sejak 2025 hampir seluruhnya S dan E - sandi yang menandai SALURAN pengiriman, bukan hasil pertemuan. Terukur: 'T' tinggal 2 baris setahun pada 2025 dan 2026. Dihitung apa adanya, dua tahun terakhir memulangkan 0% tidak bertemu, dan angka itu terbaca sebagai pelayanan sempurna. Yang dihitung karena itu HANYA baris bersandi Y/T - 7.751 dari 14.495 - dan pembatasannya disebut di layar. Ia menyesuaikan diri sendiri: begitu satker kembali memakai Y/T, barisnya ikut terhitung tanpa kode disentuh.",
+      "Desa dengan kurang dari sepuluh relaas dibiarkan KELABU di peta, tidak dipersenkan. Tiga relaas yang dua di antaranya gagal bukan \"67% gagal\" - itu kebetulan, dan mewarnainya seperti desa lain membuat kebetulan terbaca sebagai temuan.",
+      "Daftar perlu tindakan sengaja dapat KOSONG. Daftar yang selalu berisi sesuatu akan diabaikan orang dalam sepekan, dan yang diabaikan sama saja dengan tidak ada.",
+      "Identitas pihak punya ALAMATNYA SENDIRI dan dibaca hanya ketika satu nama diketuk - tidak ditempelkan ke muatan status. Ini data pribadi, dan layar Status Perkara dibuka di meja yang kerap terlihat orang lain; ditempelkan ke muatan status, ia ikut terkirim pada setiap perkara yang dibuka siapa pun - termasuk yang hanya ingin melihat jadwal sidang - lalu ikut tersimpan di singgahan peramban.",
+      "Arti angka status kawin TIDAK ditebak. Kolomnya berisi 1/2/3/4 tanpa tabel rujukan di basis data; artinya dibaca dari kode SIPP sendiri: 1 Kawin, 2 Belum Kawin, 3 Duda, 4 Janda. Sebarannya cocok - 26.115 baris berstatus kawin dari 36.451 pihak. Angka di luar keempatnya tidak diterjemahkan dan tidak ditampilkan.",
+      "Kolom nama_ayah dan nama_ibu tidak dibaca sama sekali: NOL dari 36.451 baris terisi, dan kolom yang selalu kosong hanya menambah baris bertanda hubung pada layar.",
+      "CAKUPANNYA DIUKUR, DAN DISEBUT DI LAYAR: 521 dari 704 desa yang pernah muncul di perkara punya titik - 74,0% desa, tetapi 85,7% BARIS PIHAK, sebab desa yang tidak berjodoh rata-rata kecil. Angka itu ditampilkan di bawah peta, bukan disembunyikan.",
+      "Desa yang tidak berjodoh TIDAK digambar di pusat kecamatannya. Itu akan membuat petanya terlihat lengkap sambil memindahkan perkara ke desa yang bukan asalnya, dan tidak ada yang akan memeriksanya.",
+      "Penjodohan dikerjakan SEKALI di luar portal (kerja/jodohkan-desa.py) dan hasilnya disimpan berkunci kode BPS - portal hanya mencari kunci. Penjodohan nama adalah tebakan terdidik; menjalankannya tiap kali halaman dibuka berarti jawabannya dapat berubah antara pagi dan sore tanpa ada yang menyentuh apa pun.",
+      "Ubinan petanya tetap datang dari luar. Bila jaringan satker terputus, peta jalannya kosong tetapi lingkarannya tetap tergambar, dan sebaran berjenjang di tab sebelahnya tidak terpengaruh sama sekali.",
+    ],
+    knownLimitations: [
+      "136 desa (13,2% baris pihak) belum punya titik karena memang belum ada di OpenStreetMap - antara lain Tinggede dan Kotapulu di Sigi, Maleni dan Kavaya di Donggala, Besusu Barat di Palu. Daftarnya tersimpan di kerja/desa-belum-berkoordinat.tsv; menambahkannya berarti memetakannya di OSM atau menyediakan berkas koordinat satker sendiri.",
+      "47 desa masih punya beberapa calon titik yang berjauhan dan sengaja TIDAK dipilihkan salah satunya - seluruhnya hanya 125 baris pihak (1,1%). Menebak akan benar kira-kira separuh waktu, dan separuh yang salah tidak akan terlihat oleh siapa pun.",
+      "Identitas pihak hanya selengkap isian SIPP-nya. Terukur pada 36.451 baris: alamat dan jenis kelamin 100%, pekerjaan 99%, tanggal lahir 96%, tempat lahir 67% - tetapi NIK hanya 35%, telepon 18%, agama 16%, dan pendidikan 13%. Baris yang kosong tidak digambar sama sekali, bukan diisi tanda hubung.",
+      "Perbandingan perkara membaca SIPP untuk perkara kedua, jadi ia menuntut satu pembacaan lagi. Yang dibandingkan dua belas butir yang sudah ada pada muatan status - bukan seluruh isinya.",
+      "Analisis 'jeda sesudah putus' memberi peringatan pada jeda minutasinya sendiri: tanggal_minutasi terisi sendiri sama dengan tanggal putusan pada seluruh 683 putusan 2026. Nol hari di sana berarti kolomnya mati, bukan minutasi seketika. Jeda BHT dan akta cerai terukur sungguhan - rata 20 dan 3 hari.",
+      "Analisis 'ruang sidang' menemukan satu ruangan dengan DUA EJAAN: \"Ruang Sidang 1 Dalam Gedung\" 1.353 baris dan \"Ruang Sidang Dalam Gedung 1\" 211 baris. Laporan apa pun yang mengelompokkan menurut nama ruangan menghitungnya sebagai dua ruangan - itu keadaan data SIPP, bukan sesuatu yang dapat diperbaiki dari sini.",
+      "Lapisan panggilan tidak bertemu praktis hanya bercerita tentang 2019-2024. Menambah tahun berjalan menuntut satker kembali mengisi ket_temu dengan Y/T, atau arti sandi S dan E dipastikan lebih dahulu - keduanya keputusan satker, bukan keputusan alat yang menumpang membaca.",
+      "Daftar perlu tindakan memakai muatan yang sudah ada di layar. Ia karena itu tidak dapat memperingatkan hal yang tidak dikirim peladen - misalnya relaas yang kurang satu pihak, yang perlu pembacaan tersendiri.",
+      "Peta menggambar SELURUH rentang yang dipilih, bukan hasil penelusuran turun. Menelusuri ke satu kecamatan mengubah daftar dan grafiknya, bukan petanya.",
+      "Belum ada batas wilayah yang diwarnai (choropleth) - hanya titik. Batas desa se-Sulawesi Tengah belum terpetakan lengkap di OSM, dan mewarnai batas yang setengah ada menghasilkan peta berlubang yang terbaca sebagai \"tidak ada perkara\".",
+    ],
+  },
   {
     version: "2.23.0",
     title: "ALETA Judicia v2.23.0 - Hasil Sidang: Ditunda atau Diputus, Satu Layar Satu Pilihan",

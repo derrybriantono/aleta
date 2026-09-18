@@ -1981,6 +1981,60 @@ export async function getGatewayPetaPerkara(pilihan: {
   });
 }
 
+/**
+ * Identitas para pihak satu perkara - dibaca hanya ketika satu nama diketuk.
+ *
+ * Batas waktu bawaan, bukan batas penilaian: kuerinya satu, berindeks nomor
+ * perkara, dan memulangkan paling banyak belasan baris.
+ */
+export async function getGatewayIdentitasPihak(
+  nomorPerkara: string
+): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ nomorPerkara });
+  return gatewayFetch(`/internal/aleta-bot/sipp/identitas-pihak?${kueri.toString()}`);
+}
+
+/**
+ * Lapisan panggilan tidak bertemu per desa.
+ *
+ * Batas waktu penilaian: kuerinya menyisir seluruh relaas pada rentangnya, dan
+ * terukur 884 milidetik untuk delapan tahun pada mesin yang tidak dibebani.
+ */
+export async function getGatewayPetaRelaas(pilihan: {
+  periode?: string;
+  acuan?: string;
+  dari?: string;
+  sampai?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams();
+  if (pilihan.periode) kueri.set("periode", pilihan.periode);
+  if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
+  if (pilihan.dari) kueri.set("dari", pilihan.dari);
+  if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
+  return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara/relaas?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/** Daftar perkara satu desa - dibaca ketika lingkaran peta diketuk. */
+export async function getGatewayPerkaraDesa(pilihan: {
+  kelompok: string;
+  kode: string;
+  periode?: string;
+  acuan?: string;
+  dari?: string;
+  sampai?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ kelompok: pilihan.kelompok, kode: pilihan.kode });
+  if (pilihan.periode) kueri.set("periode", pilihan.periode);
+  if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
+  if (pilihan.dari) kueri.set("dari", pilihan.dari);
+  if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
+  return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara/desa?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
 /** Menu jenis perkara - disusun dari yang sungguh diputus. */
 export async function getGatewayPetaPerkaraMenu(): Promise<GatewayResult<Record<string, unknown>>> {
   return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara/menu`, {

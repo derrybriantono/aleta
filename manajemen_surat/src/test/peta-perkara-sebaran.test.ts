@@ -1,19 +1,22 @@
 /**
  * ============================================================================
- * PETA PERKARA - DAN PETA YANG SENGAJA TIDAK DIBUAT
+ * PETA PERKARA - PETANYA ADA, KOORDINATNYA DARI LUAR SIPP
  * ============================================================================
  *
  * Satker meminta peta perkara yang "dinamis, keren, efisien namun tidak
- * membuat lag dan error". Peta titik memang sempat dibangun dari koordinat
- * `kode_pos`. Dua pengukuran membatalkannya:
+ * membuat lag dan error", dan kemudian meminta peta sungguhan dengan titik di
+ * tiap desa. Keduanya dikerjakan - tetapi koordinatnya TIDAK boleh datang dari
+ * SIPP, dan itulah yang dijaga berkas ini.
  *
- *   1. KOLOMNYA TERTUKAR. `longitude` memuat lintang dan `latitude` memuat
- *      bujur. Dari 2.023 baris Sulawesi Tengah, NOL masuk akal bila dibaca apa
- *      adanya - seluruhnya mendarat di Samudra Atlantik.
+ * Peta titik sempat dibangun dari koordinat `kode_pos`. Dua pengukuran
+ * membatalkan SUMBERNYA - bukan petanya:
  *
- *   2. SESUDAH DITUKAR PUN, KOORDINATNYA SALAH. Keenam belas kabupaten
- *      Sulawesi Tengah masing-masing hanya punya SATU titik, dan sebagian
- *      menunjuk pulau lain:
+ *   1. KOLOMNYA TERTUKAR pada berkas asalnya - `longitude` memuat lintang.
+ *
+ *   2. DAN SESUDAH DITUKAR PUN SALAH, dengan sebab yang jauh lebih mematikan:
+ *      2.023 baris Sulawesi Tengah, 1.917 nama desa - dan hanya SEMBILAN titik
+ *      koordinat unik. Satu per kabupaten, disalin ke tiap desa di bawahnya.
+ *      Sebagian titik itu pun menunjuk pulau lain:
  *
  *          Banggai          -10,2065 / 120,3529   Laut Sawu, dekat Sumba
  *          Morowali Utara    -4,5536 / 136,0339   PAPUA
@@ -25,7 +28,9 @@
  * seluruh kabupaten lain. Peta yang salah lebih buruk daripada tidak ada peta -
  * tidak ada yang memeriksa peta.
  *
- * Yang dibangun karena itu sebaran BERJENJANG dari kode wilayah resmi.
+ * Sejak 2.24.0 titiknya datang dari OpenStreetMap, dijodohkan sekali di luar
+ * portal dan disimpan berkunci kode BPS. Sebaran BERJENJANG dari kode wilayah
+ * resmi tetap ada di sebelahnya, dan tidak bergantung pada peta sama sekali.
  *
  * ============================================================================
  * DUA ERA PENGISIAN DATA, SATU NAMA
@@ -69,20 +74,42 @@ const kode = layanan
   .filter((b) => !/^\s*(\*|\/\/|\/\*)/.test(b))
   .join("\n");
 
-describe("tidak ada peta geografis, dan sebabnya tercatat", () => {
-  it("tidak ada satu pun koordinat yang dipakai", () => {
+describe("petanya ada, tetapi koordinatnya TIDAK boleh datang dari SIPP", () => {
+  /**
+   * ==========================================================================
+   * PEMBALIKAN YANG DISENGAJA, DAN SEBAB PEMBALIKANNYA
+   * ==========================================================================
+   *
+   * Sampai 2.23.0 berkas ini menuntut TIDAK ADA peta sama sekali. Tuntutan itu
+   * benar untuk sumber data yang ada waktu itu, dan salah sebagai aturan
+   * selamanya: yang tidak boleh bukan "peta", melainkan "koordinat dari
+   * kode_pos".
+   *
+   * Diukur ulang 18 Sep 2026 lewat information_schema: `kode_pos` adalah
+   * SATU-SATUNYA tabel di seluruh SIPP yang punya kolom lintang/bujur, dan
+   * 2.023 barisnya untuk Sulawesi Tengah hanya memuat SEMBILAN titik - satu
+   * per kabupaten, disalin ke tiap desa di bawahnya. 1.917 desa akan menumpuk
+   * menjadi 9 titik.
+   *
+   * Sejak 2.24.0 petanya ada, dan titiknya datang dari OpenStreetMap yang
+   * dijodohkan SEKALI di luar portal. Yang dijaga berkas ini karena itu
+   * berubah sasaran, bukan dilonggarkan: larangan atas kode_pos tetap penuh,
+   * dan bertambah larangan baru yang tidak ada sebelumnya - bahwa desa yang
+   * tidak berkoordinat tidak boleh digeser ke tempat terdekat.
+   */
+  it("tidak ada satu pun koordinat yang dibaca dari SIPP", () => {
     // Dituntut PEMAKAIANNYA, bukan penyebutannya: kata "lintang" memang harus
-    // ada di dalam kalimat yang menerangkan kenapa petanya tidak dibuat, dan
+    // ada di dalam kalimat yang menerangkan dari mana titiknya datang, dan
     // tuntutan yang melarang katanya akan menghukum penjelasan itu sendiri.
-    // `kode_pos` masih disebut sekali - di dalam kalimat yang diperlihatkan
-    // kepada pengguna sebagai alasan. Yang dilarang membacanya sebagai TABEL.
     expect(kode).not.toMatch(/\b(FROM|JOIN)\s+\S*kode_pos/i);
     expect(kode).not.toMatch(/\blongitude\b/);
     expect(kode).not.toMatch(/\blatitude\b/);
-    // Tidak ada medan koordinat yang dipulangkan ke layar.
+    // Tidak ada medan koordinat yang dipulangkan layanan ini ke layar. Yang
+    // dikirimnya hanya HITUNGAN per kode desa; koordinatnya berkas statis.
     expect(kode).not.toMatch(/lintang:\s/);
     expect(kode).not.toMatch(/bujur:\s/);
-    expect(kode).not.toContain("titik:");
+    expect(kode).not.toMatch(/\blat\s*:/);
+    expect(kode).not.toMatch(/\blon\s*:/);
   });
 
   it("dinyatakan TEGAS, bukan dibiarkan disimpulkan layar", () => {
@@ -99,11 +126,105 @@ describe("tidak ada peta geografis, dan sebabnya tercatat", () => {
     expect(layar).toContain("hasil.alasanTanpaPeta");
   });
 
-  it("tidak ada pustaka peta yang ditambahkan", () => {
+  it("tidak ada pustaka peta yang ditambahkan sebagai kebergantungan", () => {
+    // Leaflet DIPAKAI, tetapi dari public/vendor - sama seperti pdf.js. Ia
+    // hanya dipakai satu halaman; menambahkannya ke package.json berarti ia
+    // ikut ditimbang pada tiap build dan ikut menjadi urusan tiap `npm ci` di
+    // peladen, demi satu layar.
     const paket = baca("manajemen_surat/package.json");
     for (const pustaka of ["leaflet", "mapbox-gl", "maplibre-gl", "react-simple-maps", "d3-geo"]) {
       expect(paket, pustaka).not.toContain(`"${pustaka}"`);
     }
+  });
+});
+
+describe("titik peta - dikunci kode, dijodohkan di luar, dan yang kosong tidak digeser", () => {
+  const pemuat = baca("manajemen_surat/src/lib/peta-leaflet.ts");
+  const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
+
+  it("titikDesa dikunci KODE, bukan nama", () => {
+    // `kelompokkan` mengunci nama, dan itu benar untuk daftar yang ditelusuri
+    // turun. Peta memajang seluruh desa sekaligus tanpa induk, dan di tingkat
+    // itu nama berulang: "Labuan" ada enam kali di Sulawesi Tengah, tersebar
+    // 1,9 derajat. Dikunci nama, keenamnya menyatu jadi satu titik yang
+    // jumlahnya benar untuk enam desa sekaligus dan salah untuk masing-masing.
+    expect(kode).toContain("function titikDesa(baris)");
+    expect(kode).toContain('const kode = String(b.kodeKelurahan || "").trim();');
+    expect(kode).toContain("if (!peta.has(kode)) {");
+    expect(kode).toContain("tanpaKode");
+  });
+
+  it("dihitung dari baris yang SAMA - bukan kueri ketiga", () => {
+    const potongan = kode.slice(kode.indexOf("const daftarFaktor"));
+    expect(potongan).toContain("const sebaranTitik = titikDesa(baris);");
+    expect(potongan).not.toMatch(/await\s+barisWilayah/);
+  });
+
+  it("berkas koordinat berkunci kode BPS, dan dijodohkan di luar portal", () => {
+    const berkas = baca("manajemen_surat/public/peta/titik-desa.json");
+    const isi = JSON.parse(berkas) as {
+      titik: Record<string, [number, number]>;
+      cakupan: { desaBerkoordinat: number; desaSeluruhnya: number };
+    };
+    const kunci = Object.keys(isi.titik);
+    expect(kunci.length).toBeGreaterThan(300);
+    // Kode wilayah BPS tingkat desa: 72.03.08.1020 - empat ruas.
+    for (const k of kunci.slice(0, 40)) {
+      expect(k, k).toMatch(/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/);
+    }
+    // Koordinatnya berada di Indonesia, bukan di laut sebelah mana pun.
+    for (const k of kunci.slice(0, 200)) {
+      const [lat, lon] = isi.titik[k];
+      expect(lat, k).toBeGreaterThan(-11.5);
+      expect(lat, k).toBeLessThan(6.5);
+      expect(lon, k).toBeGreaterThan(94);
+      expect(lon, k).toBeLessThan(142);
+    }
+  });
+
+  it("desa tanpa koordinat TIDAK digeser ke tempat terdekat", () => {
+    // Inilah larangan yang paling mudah dilanggar dengan niat baik: menaruh
+    // desa yang tidak berjodoh di pusat kecamatannya membuat petanya terlihat
+    // lengkap sambil memindahkan perkara ke desa yang bukan asalnya.
+    expect(petaLayar).toContain("const pos = koordinat[t.kode];");
+    expect(petaLayar).toContain("if (pos) hasil.push({ t, pos });");
+    expect(petaLayar).toContain("takBerkoordinat");
+    expect(petaLayar).toContain("tidak digeser ke desa terdekat");
+  });
+
+  it("jari-jari memakai AKAR jumlahnya - mata membaca luas, bukan jari-jari", () => {
+    expect(petaLayar).toContain("Math.sqrt(jml) / Math.sqrt(terbesar)");
+  });
+
+  it("digambar di kanvas, bukan ratusan simpul DOM", () => {
+    expect(petaLayar).toContain("preferCanvas: true");
+  });
+
+  it("pustaka petanya dimuat dari peladen sendiri, bukan dari CDN", () => {
+    // Pengadilan ini bekerja di jaringan yang tidak selalu punya jalan keluar.
+    expect(pemuat).toContain('withBasePath("/vendor/leaflet/leaflet.js")');
+    expect(pemuat).toContain('withBasePath("/vendor/leaflet/leaflet.css")');
+    expect(pemuat).not.toMatch(/https?:\/\/[^\s"']*(unpkg|cdnjs|jsdelivr)/);
+  });
+
+  it("berkas pustakanya sungguh ada di repo, bukan hanya alamatnya", () => {
+    const js = baca("manajemen_surat/public/vendor/leaflet/leaflet.js");
+    const css = baca("manajemen_surat/public/vendor/leaflet/leaflet.css");
+    expect(js).toContain("Leaflet 1.9.4");
+    expect(js.length).toBeGreaterThan(100_000);
+    expect(css).toContain(".leaflet-pane");
+  });
+
+  it("penyebutan sumber ubinan tidak dapat dimatikan", () => {
+    // Data OpenStreetMap berlisensi ODbL, dan syaratnya menyebut sumber.
+    expect(petaLayar).toContain("openstreetmap.org/copyright");
+    expect(petaLayar).toContain("attribution: SEBUT");
+  });
+
+  it("peta dimuat hanya ketika tabnya dibuka", () => {
+    expect(layar).toContain("const LazyPetaTitik = dynamic(");
+    expect(layar).toContain('lihat === "peta" ? (');
+    expect(layar).toContain("ssr: false");
   });
 });
 
@@ -268,5 +389,84 @@ describe("para pihak pada status perkara - diringkas, bukan digandakan", () => {
   it("menyediakan jalan ke peta perkara", () => {
     expect(status).toContain('withBasePath("/peta-perkara")');
     expect(status).toContain("Lihat sebaran perkara sejenis");
+  });
+});
+
+describe("lapisan panggilan tidak bertemu - dan sandi yang berganti arti", () => {
+  /**
+   * ==========================================================================
+   * KOLOM YANG BERGANTI MAKNA ADALAH CACAT YANG PALING SUKAR KETAHUAN
+   * ==========================================================================
+   *
+   * `perkara_pelaksanaan_relaas.ket_temu` berisi Y/T (bertemu/tidak) sampai
+   * 2024, lalu hampir seluruhnya S dan E sejak 2025 - sandi yang menandai
+   * SALURAN pengiriman, bukan hasil pertemuan. Terukur: 'T' tinggal 2 baris
+   * setahun pada 2025 dan 2026.
+   *
+   * Dihitung apa adanya, dua tahun terakhir memulangkan 0% tidak bertemu, dan
+   * angka itu terbaca sebagai "pelayanan sempurna". Hasilnya masuk akal, dan
+   * itulah yang membuatnya berbahaya.
+   */
+  const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
+
+  it("hanya baris bersandi Y/T yang dihitung", () => {
+    expect(kode).toContain('const SANDI_TEMU = ["Y", "T"];');
+    expect(kode).toContain("r.ket_temu IN (");
+  });
+
+  it("sebab pembatasannya tercatat di sumbernya, bukan hanya di catatan rilis", () => {
+    expect(layanan).toContain("BERGANTI ARTI");
+    expect(layanan).toContain("2025");
+  });
+
+  it("desa yang relaasnya terlalu sedikit tidak dipersenkan di peta", () => {
+    // Tiga relaas yang dua di antaranya gagal bukan "67% gagal" - itu
+    // kebetulan, dan mewarnainya seperti desa lain membuat kebetulan terbaca
+    // sebagai temuan.
+    expect(kode).toContain("const AMBANG_RELAAS = 10;");
+    expect(kode).toContain("cukup: relaas >= AMBANG_RELAAS");
+    expect(petaLayar).toContain("if (!d || !d.cukup) return WARNA_TAK_CUKUP;");
+  });
+
+  it("jangkauannya disebut di layar, bukan disembunyikan", () => {
+    expect(petaLayar).toContain("BERGANTI ARTI sejak 2025");
+  });
+
+  it("tangga warnanya satu rona - besaran tunggal, bukan kelompok", () => {
+    // Merah-kuning-hijau menyiratkan tiga jenis yang berbeda. Yang digambar
+    // satu besaran yang bertambah.
+    expect(petaLayar).toContain("const TANGGA_RELAAS = [");
+    expect(petaLayar).not.toMatch(/TANGGA_RELAAS[\s\S]{0,400}#22c55e/);
+  });
+});
+
+describe("lingkaran yang diketuk, dan pengelompokan per kecamatan", () => {
+  const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
+
+  it("daftar perkara satu desa dibaca saat diketuk, bukan ikut muatan peta", () => {
+    // Sembilan ribu nomor perkara beserta tanggalnya berukuran ratusan
+    // kilobita, dan yang dibuka orang paling banyak satu desa.
+    expect(kode).toContain("async function perkaraDesa(kelompok, kode, dari, sampai)");
+    expect(petaLayar).toContain("lingkar.on(\"click\", () => setDesaDibuka(milik));");
+  });
+
+  it("nama pihak TIDAK dikirim utuh ke peta", () => {
+    // Peta dibuka di layar yang kerap terlihat orang lain, dan daftar nama
+    // orang berperkara per desa adalah hal yang paling tidak boleh terpajang.
+    expect(kode).toContain("inisial:");
+    expect(kode).not.toMatch(/namaPihak:\s*String\(b\.namaPihak/);
+  });
+
+  it("dikelompokkan per KECAMATAN, bukan per petak layar", () => {
+    // "Delapan titik yang kebetulan berdekatan pada zum sembilan" bukan satuan
+    // yang dikenal siapa pun di pengadilan.
+    expect(petaLayar).toContain("const ZUM_DESA = 10;");
+    expect(petaLayar).toContain("const kunci = `${x.t.kabupaten}|${x.t.kecamatan}`");
+  });
+
+  it("pandangan awal hanya disesuaikan SEKALI", () => {
+    // Menyesuaikannya tiap gambar ulang membuat peta melompat kembali ke
+    // tempat asalnya tiap kali orang berpindah lapisan - tidak dapat dipakai.
+    expect(petaLayar).toContain("if (!sudahDipaskan.current) {");
   });
 });

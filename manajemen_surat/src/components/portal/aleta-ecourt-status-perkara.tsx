@@ -25,6 +25,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BandingPerkara, ringkasDariStatus } from "@/components/portal/banding-perkara";
+import {
+  KartuIdentitasPihak,
+  useIdentitasPihak,
+} from "@/components/portal/identitas-pihak";
+import { usePortal } from "@/lib/app-state";
+import { ringkasStatus } from "@/lib/ringkas-status";
+import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
+import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { cn } from "@/lib/utils";
@@ -795,7 +804,10 @@ function Bagian({
   ciutBawaan?: boolean;
   keterangan?: string;
 }) {
-  const kunciSimpan = kunci ? `aleta.status-perkara.ciut.${kunci}` : "";
+  // Bentuk kuncinya milik `alat-bagian` - dua tempat yang menyusunnya
+  // sendiri akan menyimpang diam-diam, dan yang menyimpang justru keadaan
+  // yang diingat peramban.
+  const kunciSimpan = kunci ? kunciCiut(kunci) : "";
 
   const [ciut, setCiut] = useState(() => {
     if (!kunciSimpan) return ciutBawaan;
@@ -820,8 +832,31 @@ function Bagian({
     }
   };
 
+  /**
+   * Mendaftarkan diri supaya bilah pintasan tahu bagian apa saja yang hidup,
+   * dan mendengarkan aba-aba "buka semua", "tutup semua", serta "buka satu".
+   *
+   * Keadaan ciutnya TETAP milik bagian ini - yang datang dari luar hanya
+   * aba-aba. Menaikkan keadaannya ke induk akan membuat seluruh layar digambar
+   * ulang tiap kali satu bagian dibuka, dan sebagian bagian memuat tabel
+   * beratus baris.
+   */
+  useEffect(() => {
+    if (!kunci) return;
+    const lepasDaftar = daftarkanBagian(kunci, judul);
+    const lepasAba = langgananAba((aba) => {
+      if (aba.jenis === "buka-semua") setCiut(false);
+      else if (aba.jenis === "tutup-semua") setCiut(true);
+      else if (aba.jenis === "buka" && aba.kunci === kunci) setCiut(false);
+    });
+    return () => {
+      lepasDaftar();
+      lepasAba();
+    };
+  }, [kunci, judul]);
+
   return (
-    <section className="rounded-lg border bg-card">
+    <section id={kunci ? `bagian-${kunci}` : undefined} className="rounded-lg border bg-card scroll-mt-4">
       <button
         type="button"
         onClick={ganti}
@@ -1352,7 +1387,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         ) : null}
 
         {galat ? (
-          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-300">
             {galat}
           </p>
         ) : null}
@@ -1401,13 +1436,77 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           </div>
         ) : null}
 
-        {status ? <IsiStatus status={status} onKembali={() => setStatus(null)} /> : null}
+        {status ? (
+          <IsiStatus status={status} onKembali={() => setStatus(null)} onBuka={(n) => void buka(n)} />
+        ) : null}
       </CardContent>
     </Card>
   );
 }
 
-function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => void }) {
+function IsiStatus({
+  status,
+  onKembali,
+  onBuka,
+}: {
+  status: Status;
+  onKembali: () => void;
+  /** Membuka perkara lain - dipakai riwayat dan sematan pada bilah alat. */
+  onBuka: (nomorPerkara: string) => void;
+}) {
+  /**
+   * ==========================================================================
+   * BOLEH TIDAKNYA MEMBUKA BEBAN KINERJA KONSEPTOR
+   * ==========================================================================
+   *
+   * Ditanyakan kepada SUMBER YANG SAMA dengan yang menyusun menu samping -
+   * `accessibleModules` - bukan dengan menyalin daftar perannya ke sini.
+   * Daftar peran yang disalin akan menyimpang diam-diam begitu satker
+   * mengubah Akses Menu, dan yang menyimpang justru tautan yang berujung
+   * penolakan.
+   *
+   * Layar itu menyebut nama orang beserta peringkatnya, jadi ia memang tidak
+   * untuk semua peran. Tautan yang muncul bagi yang tidak berhak lebih buruk
+   * daripada tidak ada tautan: ia menyalahkan orangnya atas pintu yang memang
+   * bukan untuk dia.
+   */
+  const { accessibleModules } = usePortal();
+  const bolehBebanKonseptor = useMemo(
+    () => accessibleModules.some((m) => m.id === "beban-konseptor"),
+    [accessibleModules]
+  );
+
+  /**
+   * ==========================================================================
+   * NAMA YANG DIKETUK MEMBUKA IDENTITASNYA
+   * ==========================================================================
+   *
+   * Satu nama terbuka pada satu waktu. Membuka seluruhnya sekaligus mengubah
+   * daftar pihak menjadi lima kartu panjang, dan yang mencari satu orang harus
+   * menggulung melewati empat orang lain untuk menemukannya.
+   *
+   * Pembacaan SIPP-nya baru berjalan ketika nama PERTAMA diketuk - lihat
+   * `useIdentitasPihak`. Perkara yang dibuka untuk melihat jadwal sidang tidak
+   * pernah menyentuh identitas siapa pun.
+   */
+  /**
+   * ==========================================================================
+   * RINGKASAN SATU LAYAR
+   * ==========================================================================
+   *
+   * Disusun dari muatan yang SUDAH ada - tidak ada pembacaan tambahan ke SIPP.
+   * Tanggal acuannya disuntikkan, bukan dibaca di dalam penyusunnya, supaya
+   * perilakunya dapat diuji tanpa bergantung pada hari uji itu dijalankan.
+   */
+  const ringkas = useMemo(() => {
+    const d = new Date();
+    const p = (x: number) => String(x).padStart(2, "0");
+    return ringkasStatus(status, `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
+  }, [status]);
+
+  const [pihakDibuka, setPihakDibuka] = useState("");
+  const identitas = useIdentitasPihak(status.identitas.nomorPerkara, Boolean(pihakDibuka));
+
   const sidangBerikut = status.jadwal.find(
     (x) => x.tanggalSidang >= new Date().toISOString().slice(0, 10)
   );
@@ -1573,6 +1672,91 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
         />
       </div>
 
+      {/* Bilah alat - sepuluh pekerjaan kecil yang selama ini dikerjakan
+          tangan. Seluruhnya di peramban; tidak satu pun menyentuh peladen. */}
+      <AlatStatusPerkara
+        nomorPerkara={status.identitas.nomorPerkara}
+        jenisPerkara={status.identitas.jenisPerkara}
+        ringkas={ringkas}
+        onBuka={onBuka}
+      />
+
+      {/* ==================================================================
+          KARTU RINGKAS - TIGA PERTANYAAN PEMBUKA
+          ==================================================================
+
+          Dua puluh enam bagian di bawah, dan yang membuka layar ini hampir
+          selalu datang dengan tiga pertanyaan yang sama: perkara ini sekarang
+          DI MANA, apa yang TERLAMBAT, apa BERIKUTNYA. Ketiganya sebelumnya
+          menuntut menggulung melewati bagian yang terciut.
+
+          Tidak ada pembacaan tambahan ke SIPP - seluruhnya dari muatan yang
+          sudah ada di layar ini. */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-xs text-muted-foreground">Keadaan</p>
+          <p
+            className={cn(
+              "text-sm font-semibold",
+              ringkas.keadaanBerat && "text-amber-700 dark:text-amber-300"
+            )}
+          >
+            {ringkas.keadaan}
+          </p>
+          <p className="text-xs text-muted-foreground">{ringkas.umurKalimat}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-xs text-muted-foreground">Sidang berikutnya</p>
+          <p className="text-sm font-semibold">{ringkas.berikutnya}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-xs text-muted-foreground">Majelis</p>
+          <p className="text-sm font-semibold">{ringkas.majelisKalimat}</p>
+          <p className="text-xs text-muted-foreground">
+            {status.panitera.length > 0
+              ? status.panitera.map((x) => x.nama).join(", ")
+              : "Panitera sidang belum ditunjuk"}
+          </p>
+        </div>
+      </div>
+
+      {/* ==================================================================
+          PERLU TINDAKAN - PERINGATAN YANG DIKUMPULKAN, BUKAN DILAHIRKAN
+          ==================================================================
+
+          Tiap butir di sini sudah tampil di salah satu bagian di bawah,
+          tersebar di antara dua puluh enam bagian yang sebagian besarnya
+          terciut. Yang dikerjakan di sini mengumpulkannya.
+
+          Yang tidak dapat ditindaklanjuti petugas TIDAK masuk: "perkara ini
+          dibanding" adalah keadaan, bukan pekerjaan. */}
+      {ringkas.peringatan.length > 0 ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+          <p className="mb-1 text-sm font-semibold">
+            Perlu tindakan — {ringkas.peringatan.length} butir
+          </p>
+          <ul className="space-y-1">
+            {ringkas.peringatan.map((x) => (
+              <li key={x.pesan} className="flex items-start gap-2 text-sm">
+                <span
+                  className={cn(
+                    "mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full",
+                    x.berat ? "bg-amber-600 dark:bg-amber-400" : "bg-muted-foreground/60"
+                  )}
+                  aria-hidden
+                />
+                <span>
+                  {x.pesan}
+                  {x.sebab ? (
+                    <span className="block text-xs text-muted-foreground">{x.sebab}</span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="grid gap-3 lg:grid-cols-2">
         <Bagian judul="Majelis dan petugas" kunci="majelis">
           {status.majelis.length > 0 ? (
@@ -1692,6 +1876,49 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
               const nomor = (orang: (typeof status.pihak)[number]) =>
                 orang.adaNomor ? ` · ${orang.nomorSamar}` : " · tanpa nomor";
 
+              /**
+               * Nama yang dapat diketuk untuk membuka identitasnya.
+               *
+               * Tetap tombol, bukan tautan: yang dibuka bukan halaman lain
+               * melainkan keterangan di tempatnya sendiri. Tautan yang tidak
+               * menuju ke mana-mana merusak klik-tengah, "buka di tab baru",
+               * dan pembaca layar sekaligus.
+               *
+               * Kata "tombol" dieja begitu dengan sengaja - penjaga
+               * button-wiring menyisir teks mentah dan menganggap lambang
+               * tombol di dalam keterangan sebagai tombol sungguhan.
+               */
+              const NamaPihak = ({
+                orang,
+                nomor: keteranganNomor,
+              }: {
+                orang: (typeof status.pihak)[number];
+                nomor: string;
+              }) => {
+                const terbuka = pihakDibuka === orang.nama;
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setPihakDibuka(terbuka ? "" : orang.nama)}
+                      aria-expanded={terbuka}
+                      title={terbuka ? "Tutup identitas" : `Lihat identitas ${orang.nama}`}
+                      className="text-left font-medium underline decoration-dotted decoration-muted-foreground/60 underline-offset-4 transition hover:text-primary hover:decoration-primary"
+                    >
+                      {orang.nama}
+                    </button>
+                    <span className="text-sm text-muted-foreground">{keteranganNomor}</span>
+                    {terbuka ? (
+                      <KartuIdentitasPihak
+                        orang={identitas.cari(orang.nama)}
+                        memuat={identitas.memuat}
+                        galat={identitas.galat}
+                      />
+                    ) : null}
+                  </>
+                );
+              };
+
               const Kelompok = ({
                 judul,
                 pihak,
@@ -1710,15 +1937,13 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                     <ul className="space-y-0.5">
                       {pihak.map((orang, urutan) => (
                         <li key={`${judul}-${orang.nama}-${urutan}`}>
-                          <span className="font-medium">{orang.nama}</span>
-                          <span className="text-sm text-muted-foreground">{nomor(orang)}</span>
+                          <NamaPihak orang={orang} nomor={nomor(orang)} />
                         </li>
                       ))}
                       {kuasa.map((orang, urutan) => (
                         <li key={`${judul}-kuasa-${orang.nama}-${urutan}`} className="pl-3">
                           <span className="text-sm text-muted-foreground">kuasa: </span>
-                          <span className="font-medium">{orang.nama}</span>
-                          <span className="text-sm text-muted-foreground">{nomor(orang)}</span>
+                          <NamaPihak orang={orang} nomor={nomor(orang)} />
                         </li>
                       ))}
                     </ul>
@@ -1798,13 +2023,13 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                     </td>
                     <td className="py-1.5 pr-2">
                       {!tahap.terbaca ? (
-                        <span className="text-sm text-amber-700" title={tahap.alasan}>
+                        <span className="text-sm text-amber-700 dark:text-amber-300" title={tahap.alasan}>
                           kolom tidak ada
                         </span>
                       ) : tahap.tanggal ? (
                         tahap.tanggal
                       ) : (
-                        <span className="text-amber-700">belum</span>
+                        <span className="text-amber-700 dark:text-amber-300">belum</span>
                       )}
                     </td>
                     <td className="py-1.5 pr-2 text-right tabular-nums text-muted-foreground">
@@ -1820,13 +2045,13 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                     </td>
                     <td className="py-1.5 pr-2">
                       {!tahap.inputTerbaca ? (
-                        <span className="text-sm text-amber-700" title={tahap.alasanInput}>
+                        <span className="text-sm text-amber-700 dark:text-amber-300" title={tahap.alasanInput}>
                           kolom tidak ada
                         </span>
                       ) : tahap.diinput ? (
                         tahap.diinput
                       ) : (
-                        <span className="text-amber-700">belum</span>
+                        <span className="text-amber-700 dark:text-amber-300">belum</span>
                       )}
                     </td>
                     <td className="py-1.5 pr-2 text-right tabular-nums text-muted-foreground">
@@ -1922,9 +2147,9 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
             })()}
           </div>
         ) : (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
             {status.tahapan.alasan} Jalankan{" "}
-            <code className="rounded bg-amber-100 px-1">scripts/sipp-periksa-kolom.js</code> di server
+            <code className="rounded bg-amber-100 px-1 dark:bg-amber-500/20">scripts/sipp-periksa-kolom.js</code> di server
             untuk melihat nama kolom yang sebenarnya.
           </p>
         )}
@@ -2101,14 +2326,14 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
         }
       >
         {!status.mediasi.terbaca ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
             <p>{status.mediasi.alasan}</p>
             {/* Nama kolom yang sebenarnya ada, langsung di layar. Tanpa ini,
                 menemukan nama yang benar menuntut membuka Navicat. */}
             {status.mediasi.kolomTersedia && status.mediasi.kolomTersedia.length > 0 ? (
               <p className="mt-1 text-sm">
                 Tambahkan nama yang sesuai ke daftar calon pada
-                <code className="mx-1 rounded bg-amber-100 px-1">services/sippSkemaService.js</code>
+                <code className="mx-1 rounded bg-amber-100 px-1 dark:bg-amber-500/20">services/sippSkemaService.js</code>
                 lalu nyalakan ulang bot.
               </p>
             ) : null}
@@ -2183,7 +2408,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                       {baris.lamaHari === null ? "—" : `${baris.lamaHari} hari`}
 
                       {baris.lewatTenggang ? (
-                        <span className="ml-1 text-amber-700">lewat 30 hari (PERMA 1/2016)</span>
+                        <span className="ml-1 text-amber-700 dark:text-amber-300">lewat 30 hari (PERMA 1/2016)</span>
                       ) : null}
                     </dd>
                   </div>
@@ -2237,7 +2462,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                   {x.sampaiJam ? `-${x.sampaiJam}` : ""}
                   {x.tempat ? ` — ${x.tempat}` : ""}
                   {/* ditunda = T pada SIPP berarti pertemuan itu tidak jadi. */}
-                  {x.ditunda ? <span className="ml-1 text-amber-700">ditunda</span> : null}
+                  {x.ditunda ? <span className="ml-1 text-amber-700 dark:text-amber-300">ditunda</span> : null}
                 </li>
               ))}
             </ul>
@@ -2264,7 +2489,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
         }
       >
         {!status.saksiRinci.terbaca ? (
-          <p className="text-sm text-amber-700">{status.saksiRinci.alasan}</p>
+          <p className="text-sm text-amber-700 dark:text-amber-300">{status.saksiRinci.alasan}</p>
         ) : status.saksiRinci.baris.length === 0 ? (
           <p className="text-sm text-muted-foreground">Belum ada keterangan saksi.</p>
         ) : (
@@ -2289,7 +2514,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                       {/* Apa yang belum diisi - supaya jelas apa yang harus
                           dilengkapi, bukan sekadar tahu nilainya kurang. */}
                       {baris.isianKurang && baris.isianKurang.length > 0 ? (
-                        <div className="text-amber-700">belum: {baris.isianKurang.join(", ")}</div>
+                        <div className="text-amber-700 dark:text-amber-300">belum: {baris.isianKurang.join(", ")}</div>
                       ) : null}
                     </td>
                   </tr>
@@ -2425,6 +2650,35 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                     ? status.konseptor.catatan ||
                       "Tahapan putusan tidak tercatat pada perkara_proses untuk perkara ini."
                     : status.konseptor.alasan || "Konseptor tidak dapat dibaca dari SIPP."}
+                </dd>
+              ) : null}
+
+              {/* ==========================================================
+                  JALAN KE BEBAN KINERJA KONSEPTOR
+                  ==========================================================
+
+                  Nama konseptornya ada di sini; berat pekerjaannya ada di
+                  layar lain, dan layar itu TIDAK tampil di beranda - hanya di
+                  menu samping, dan hanya untuk pimpinan serta kepaniteraan.
+                  Petugas yang membaca nama di sini karena itu wajar
+                  menyimpulkan penilaiannya tidak ada.
+
+                  Tautannya ditaruh tepat di sebelah namanya, bukan di menu:
+                  pertanyaan "berapa berat beban orang ini" muncul justru
+                  ketika seseorang sedang menatap namanya.
+
+                  Muncul pada peran yang memang dapat membukanya saja - tautan
+                  yang berujung penolakan lebih buruk daripada tidak ada
+                  tautan, sebab ia menyalahkan orangnya atas pintu yang memang
+                  tidak untuk dia. */}
+              {bolehBebanKonseptor ? (
+                <dd className="mt-1">
+                  <a
+                    href={withBasePath("/beban-konseptor")}
+                    className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground transition hover:bg-muted/50"
+                  >
+                    Lihat beban kinerja konseptor
+                  </a>
                 </dd>
               ) : null}
             </div>
@@ -2576,7 +2830,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
               <dt className="text-sm text-muted-foreground">Tanggal ikrar talak</dt>
               <dd className="font-medium">
                 {status.ikrarTalak.tanggalIkrar || (
-                  <span className="text-amber-700">belum diucapkan</span>
+                  <span className="text-amber-700 dark:text-amber-300">belum diucapkan</span>
                 )}
               </dd>
             </div>
@@ -2915,7 +3169,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
         keterangan={status.arsipKeterangan.sudahDiarsipkan ? "sudah diarsipkan" : ""}
       >
         {!status.arsipKeterangan.terbaca ? (
-          <p className="text-sm text-amber-700">{status.arsipKeterangan.alasan}</p>
+          <p className="text-sm text-amber-700 dark:text-amber-300">{status.arsipKeterangan.alasan}</p>
         ) : !status.arsipKeterangan.sudahDiarsipkan ? (
           <p className="text-sm text-muted-foreground">Berkas perkara ini belum diarsipkan.</p>
         ) : (
@@ -3126,7 +3380,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                     {/* SK III.3: kurang dari 6 hari sebelum sidang mengurangi
                         nilai - relaasnya berisiko tidak sampai tepat waktu. */}
                     {x.panggilan && x.nilai !== null && x.nilai < 0 ? (
-                      <span className="text-amber-700">nilai {x.nilai}</span>
+                      <span className="text-amber-700 dark:text-amber-300">nilai {x.nilai}</span>
                     ) : null}
                     {!x.panggilan ? (
                       <span className="text-muted-foreground">pemberitahuan - tidak dinilai</span>
@@ -3462,7 +3716,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
         </div>
 
         {/* Batasnya disebutkan di layar, bukan disembunyikan. */}
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
           {status.penilaian.catatan} Butir bertanda &quot;belum waktunya&quot; - sidang belum ada yang
           berlalu, perkara belum diputus - tidak ikut membagi nilai, sehingga perkara yang baru
           berjalan dinilai atas apa yang sudah menjadi kewajibannya. Bobot dan ambangnya diubah di
@@ -3507,13 +3761,13 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
                             "w-16 shrink-0 rounded px-1.5 py-0.5 text-right text-sm font-semibold tabular-nums",
                             x.pengurang
                               ? (x.poin ?? 0) === 0
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-rose-100 text-rose-800"
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+                                : "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-200"
                               : (x.poin ?? 0) >= 5
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
                                 : (x.poin ?? 0) >= 2
-                                  ? "bg-amber-100 text-amber-800"
-                                  : "bg-rose-100 text-rose-800"
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200"
+                                  : "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-200"
                           )}
                         >
                           {x.poin} / {x.pengurang ? 0 : 5}
@@ -3529,7 +3783,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
           })}
         </div>
 
-        <p className="mt-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+        <p className="mt-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200">
           {status.penilaianSk.catatan} Dasar: {status.penilaianSk.dasar}
         </p>
 
@@ -3541,13 +3795,13 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
             <li>
               Nilai relaas dari: <span className="font-medium">{status.nilaiRelaas.sumber}</span>
               {status.nilaiRelaas.dariAudit ? (
-                <span className="ml-1 text-amber-700">
+                <span className="ml-1 text-amber-700 dark:text-amber-300">
                   (ditelusuri dari jejak audit, bukan kolom resmi)
                 </span>
               ) : null}
             </li>
           ) : status.nilaiRelaas.alasan ? (
-            <li className="text-amber-700">{status.nilaiRelaas.alasan}</li>
+            <li className="text-amber-700 dark:text-amber-300">{status.nilaiRelaas.alasan}</li>
           ) : null}
           {status.durasiMediasi.terbaca && status.durasiMediasi.hari > 0 ? (
             <li>
@@ -3561,7 +3815,7 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
         </ul>
 
         {status.penilaianSk.unsurBelumTersambung.length > 0 ? (
-          <details className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <details className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
             <summary className="cursor-pointer font-semibold">
               {status.penilaianSk.unsurBelumTersambung.length} unsur belum dapat dinilai
             </summary>
@@ -3648,10 +3902,62 @@ function IsiStatus({ status, onKembali }: { status: Status; onKembali: () => voi
       <Bagian
         judul="Analisis lanjutan"
         kunci="analisa-lanjut"
-        keterangan="Tiga puluh satu analisis; masing-masing dihitung hanya saat ditekan."
+        keterangan="Empat puluh satu analisis; masing-masing dihitung hanya saat ditekan."
         ciutBawaan
       >
+        {/* ==============================================================
+            LAYAR PENILAIAN YANG BERDIRI SENDIRI
+            ==============================================================
+
+            Keempat puluh satu analisis di bawah menjawab pertanyaan tentang
+            PERKARA atau tentang PENGADILAN. Dua pertanyaan yang kerap
+            ditanyakan dari sini justru tentang ORANG dan tentang TEMPAT, dan
+            keduanya punya layarnya sendiri - tidak muncul di beranda, hanya di
+            menu samping, sehingga yang mencarinya dari sini menyimpulkan
+            layarnya tidak ada.
+
+            Ditaruh di kepala bagian ini, bukan di ujung bawah: yang membuka
+            "Analisis lanjutan" sedang mencari jawaban, dan daftar empat puluh
+            satu tombol adalah tempat yang buruk untuk menyembunyikan dua
+            jawaban yang tidak ada di dalamnya. */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {bolehBebanKonseptor ? (
+            <a
+              href={withBasePath("/beban-konseptor")}
+              className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/50"
+            >
+              Beban Kinerja Konseptor — berat pekerjaan, bukan jumlahnya
+            </a>
+          ) : null}
+          <a
+            href={withBasePath("/peta-perkara")}
+            className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-foreground transition hover:bg-muted/50"
+          >
+            Peta Perkara — sebaran per desa dan faktor perceraiannya
+          </a>
+        </div>
+
         <AletaAnalisaPerkara nomorPerkara={status.identitas.nomorPerkara} />
+      </Bagian>
+
+      {/* ==================================================================
+          BANDINGKAN DENGAN PERKARA LAIN
+          ==================================================================
+
+          Ditaruh SESUDAH analisis lanjutan dan sebelum penyusun perintah:
+          perbandingan adalah pertanyaan yang muncul setelah satu perkara
+          selesai dibaca - "kok yang ini lebih lama dari yang itu?" - bukan
+          pertanyaan pembuka.
+
+          Terciut sebagai bawaan. Ia membaca SIPP lagi untuk perkara kedua,
+          dan yang tidak membandingkan tidak perlu membayarnya. */}
+      <Bagian
+        judul="Bandingkan dengan perkara lain"
+        kunci="banding-perkara"
+        keterangan="Menjajarkan perkara ini dengan perkara lain beserta selisihnya."
+        ciutBawaan
+      >
+        <BandingPerkara sekarang={ringkasDariStatus(status)} />
       </Bagian>
 
       {/* Penyusun perintah untuk Project Claude ALETA AI PA CLAUDE. Ditaruh

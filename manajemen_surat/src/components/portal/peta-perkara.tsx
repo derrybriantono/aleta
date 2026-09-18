@@ -12,6 +12,7 @@ import { apiPath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
 import { JENIS_GRAFIK, type JenisGrafik } from "@/components/portal/statistics-chart";
+import type { TitikPerkara } from "@/components/portal/peta-titik-perkara";
 
 const LazyStatisticsChart = dynamic(
   () => import("@/components/portal/statistics-chart").then((m) => m.StatisticsChart),
@@ -20,6 +21,52 @@ const LazyStatisticsChart = dynamic(
     loading: () => <div className="min-h-[300px] rounded-[1.4rem] border border-border bg-muted/30" />,
   }
 );
+
+/**
+ * Peta dimuat HANYA ketika tab petanya dibuka.
+ *
+ * Leaflet beserta gayanya berukuran 162 KB dan berkas titik desanya menyusul
+ * sesudah itu. Yang datang ke halaman ini kerap hanya ingin membaca daftar
+ * sebaran - membuatnya menunggu pustaka peta yang tidak ia buka adalah ongkos
+ * yang dibayar setiap orang demi sebagian orang.
+ *
+ * ssr:false, dan bukan sekadar demi kecepatan: Leaflet menyentuh `window` saat
+ * modulnya dimuat, dan peladen tidak punya `window`.
+ */
+const LazyPetaTitik = dynamic(
+  () => import("@/components/portal/peta-titik-perkara").then((m) => m.PetaTitikPerkara),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid h-[26rem] w-full place-items-center rounded-[0.9rem] border border-border bg-muted/30 text-sm text-muted-foreground sm:h-[32rem]">
+        Memuat peta…
+      </div>
+    ),
+  }
+);
+
+/**
+ * Warna nyata penanda jenis perkara.
+ *
+ * Dipisah dari kelas Tailwind di bawah karena peta menggambar di KANVAS -
+ * kanvas tidak mengenal kelas, ia menuntut warna. Nilainya sengaja sama dengan
+ * red-500 dan blue-500 supaya lingkaran di peta dan lencana di daftar terbaca
+ * sebagai satu penanda yang sama, bukan dua warna yang kebetulan mirip.
+ */
+const WARNA_NYATA: Record<string, string> = {
+  merah: "#ef4444",
+  biru: "#3b82f6",
+};
+
+/**
+ * Daftar kosong yang SATU, bukan yang baru tiap gambar ulang.
+ *
+ * `hasil.titik ?? []` melahirkan larik baru pada tiap penggambaran ketika
+ * peladennya belum mengirim medan itu - versi bot yang lebih tua. Larik baru
+ * berarti prop yang berubah, dan prop yang berubah membuat peta membuang lalu
+ * menggambar ulang seluruh lingkarannya untuk data yang sama persis.
+ */
+const TANPA_TITIK: TitikPerkara[] = [];
 
 type Tempat = {
   nama: string;
@@ -43,6 +90,10 @@ type HasilPeta = {
   rentang: { dari: string; sampai: string };
   petaGeografis: boolean;
   alasanTanpaPeta: string;
+  /** Satu baris per desa, dikunci KODE wilayah - bukan nama. Lihat titikDesa. */
+  titik?: TitikPerkara[];
+  /** Perkara yang alamatnya tersimpan sebagai tulisan, tanpa kode wilayah. */
+  titikTanpaKode?: number;
   ringkas: {
     diputus: number;
     beralamat: number;
@@ -107,7 +158,7 @@ export function PetaPerkara() {
   const [periode, setPeriode] = useState("tahun");
   const [acuan, setAcuan] = useState(hariIni());
   const [bentuk, setBentuk] = useState<JenisGrafik>("bar-h");
-  const [lihat, setLihat] = useState<"wilayah" | "faktor">("wilayah");
+  const [lihat, setLihat] = useState<"peta" | "wilayah" | "faktor">("peta");
 
   /**
    * Jejak penelusuran - tiap langkah menyimpan tingkat, kode, dan namanya.
@@ -171,6 +222,22 @@ export function PetaPerkara() {
     () => daftar.slice(0, 20).map((t) => ({ label: t.nama, value: t.perkara })),
     [daftar]
   );
+
+  /**
+   * Warna nyata per jenis perkara, untuk lingkaran di peta.
+   *
+   * Diturunkan dari penanda yang dikirim peladen ("merah"/"biru"), bukan
+   * disusun sendiri di sini: yang menentukan cerai gugat merah dan cerai talak
+   * biru adalah satker, dan keputusan itu sudah tersimpan di satu tempat.
+   */
+  const warnaJenis = useMemo(() => {
+    const hasilWarna: Record<string, string> = {};
+    for (const [jenis, penanda] of Object.entries(hasil?.penanda ?? {})) {
+      const w = WARNA_NYATA[penanda];
+      if (w) hasilWarna[jenis] = w;
+    }
+    return hasilWarna;
+  }, [hasil?.penanda]);
 
   const tingkatIni = TINGKAT.find((t) => t.nilai === tingkat);
   const bisaTurun = Boolean(tingkatIni?.anak) && lihat === "wilayah";
@@ -355,6 +422,15 @@ export function PetaPerkara() {
             <Button
               type="button"
               size="sm"
+              variant={lihat === "peta" ? "default" : "outline"}
+              onClick={() => setLihat("peta")}
+            >
+              <MapPin className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              Peta
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               variant={lihat === "wilayah" ? "default" : "outline"}
               onClick={() => setLihat("wilayah")}
             >
@@ -389,7 +465,40 @@ export function PetaPerkara() {
             ) : null}
           </div>
 
-          {dataGrafik.length > 0 ? (
+          {/* ==============================================================
+              PETA TITIK - hanya saat tabnya dibuka
+              ==============================================================
+
+              Pustaka petanya baru diunduh ketika tab ini dipilih; yang datang
+              untuk membaca daftar tidak ikut menunggunya. */}
+          {lihat === "peta" ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Peta sebaran per desa</CardTitle>
+                <CardDescription>
+                  Satu lingkaran per desa; luasnya sebanding dengan jumlah perkara. Arahkan
+                  penunjuk ke satu lingkaran untuk melihat rinciannya.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LazyPetaTitik
+                  titik={hasil.titik ?? TANPA_TITIK}
+                  tanpaKode={hasil.titikTanpaKode ?? 0}
+                  warnaJenis={warnaJenis}
+                  penandaJenis={hasil.penanda}
+                  saringan={{
+                    kelompok,
+                    periode,
+                    acuan,
+                    dari: hasil.rentang.dari,
+                    sampai: hasil.rentang.sampai,
+                  }}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {lihat !== "peta" && dataGrafik.length > 0 ? (
             <Card>
               <CardContent className="pt-5">
                 <LazyStatisticsChart type={bentuk} data={dataGrafik} />
@@ -413,7 +522,9 @@ export function PetaPerkara() {
                   ? "Ketuk satu baris untuk menelusuri turun ke tingkat berikutnya."
                   : lihat === "faktor"
                     ? "Dibaca dari akta cerai — terisi pada hampir seluruh akta yang terbit."
-                    : "Tingkat terakhir; tidak ada lagi di bawahnya."}
+                    : lihat === "peta"
+                      ? "Angka yang sama dengan yang digambar di peta, dalam bentuk yang dapat dibaca berurutan — termasuk desa yang belum punya titik."
+                      : "Tingkat terakhir; tidak ada lagi di bawahnya."}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">

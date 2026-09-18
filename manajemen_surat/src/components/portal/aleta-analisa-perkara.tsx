@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * ANALISIS LANJUTAN - SATU TOMBOL, SATU PERHITUNGAN
  * ============================================================================
  *
- * Tiga puluh satu analisis, dan tidak satu pun berjalan sampai tombolnya
+ * Empat puluh satu analisis, dan tidak satu pun berjalan sampai tombolnya
  * ditekan.
  *
  * Itu bukan kehati-hatian yang berlebihan: layar Status Perkara sudah
@@ -99,6 +99,24 @@ const ANALISA: Array<{
   { kunci: "berisiko", lingkup: "pengadilan", label: "Perkara berisiko", keterangan: "Yang mendekati atau melewati ambang lima bulan" },
   { kunci: "anomali", lingkup: "pengadilan", label: "Deteksi anomali", keterangan: "Perkara yang menyimpang dari kebiasaan jenisnya" },
   { kunci: "upayaHukum", lingkup: "pengadilan", label: "Profil upaya hukum", keterangan: "Angka dasar banding, kasasi, dan PK - bukan prakiraan" },
+
+  // ---- sepuluh tambahan (2.24.0) ----
+  //
+  // Daftarnya disalin dari peladen, bukan diminta darinya. Alamat daftar
+  // memang ada, tetapi memintanya berarti layar ini menunggu satu pembacaan
+  // sebelum dapat menggambar satu tombol pun - dan yang digambar hanya nama.
+  // Yang TIDAK boleh menyimpang adalah KUNCInya; label boleh berbeda ejaan,
+  // kunci yang berbeda berarti tombol yang menjawab "jenis tidak dikenali".
+  { kunci: "jedaTahapan", lingkup: "perkara", label: "Jeda antar tahapan", keterangan: "Di mana perkara ini berhenti lama" },
+  { kunci: "hariSidang", lingkup: "perkara", label: "Hari sidang", keterangan: "Hari apa perkara ini bersidang, dibanding pengadilan" },
+  { kunci: "kecepatanRelaas", lingkup: "perkara", label: "Kecepatan relaas", keterangan: "Jarak panggilan ke sidang, dan Pasal 122 HIR" },
+  { kunci: "kehadiranPihak", lingkup: "perkara", label: "Kehadiran pihak", keterangan: "Siapa yang datang pada tiap sidang" },
+  { kunci: "desaPihak", lingkup: "perkara", label: "Perkara sedesa", keterangan: "Perkara lain dari desa pihak pertama" },
+  { kunci: "bebanMajelisBulan", lingkup: "perkara", label: "Beban majelis bulan itu", keterangan: "Berapa perkara dipikul majelisnya bulan pendaftaran" },
+  { kunci: "jedaSesudahPutus", lingkup: "perkara", label: "Jeda sesudah putus", keterangan: "Minutasi, BHT, dan akta cerai" },
+  { kunci: "jamSidang", lingkup: "perkara", label: "Jam sidang", keterangan: "Jam berapa perkara ini disidangkan" },
+  { kunci: "ruangSidang", lingkup: "perkara", label: "Ruang sidang", keterangan: "Dalam gedung atau sidang keliling" },
+  { kunci: "rombonganSepekan", lingkup: "perkara", label: "Rombongan sepekan", keterangan: "Perkara yang masuk pada pekan yang sama" },
 ];
 
 export function AletaAnalisaPerkara({ nomorPerkara }: { nomorPerkara: string }) {

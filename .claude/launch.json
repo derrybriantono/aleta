@@ -70,6 +70,18 @@
         "D:/aleta-dev/kerja/pratinjau-aleta"
       ],
       "port": 8097
+    },
+    {
+      "name": "uji-peta-titik",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8098",
+        "--directory",
+        "D:/aleta-dev/kerja"
+      ],
+      "port": 8098
     }
   ]
 }

@@ -36,6 +36,9 @@
 
 const db = require("../db_config");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
+// Sepuluh analisis tambahan hidup di berkasnya sendiri dan MENERIMA alatnya
+// dari sini - lihat keterangan di kepala berkas itu.
+const analisaTambahan = require("./analisaTambahanService");
 
 /**
  * ============================================================================
@@ -3489,6 +3492,9 @@ const DAFTAR_ANALISA = [
   { kunci: "berisiko", lingkup: "pengadilan", label: "Perkara berisiko", keterangan: "Yang mendekati atau melewati ambang lima bulan." },
   { kunci: "anomali", lingkup: "pengadilan", label: "Deteksi anomali", keterangan: "Perkara yang menyimpang dari kebiasaan jenisnya." },
   { kunci: "upayaHukum", lingkup: "pengadilan", label: "Profil upaya hukum", keterangan: "Angka dasar banding, kasasi, dan PK - bukan prakiraan." },
+
+  // ---- sepuluh tambahan, lihat analisaTambahanService ----
+  ...analisaTambahan.DAFTAR_TAMBAHAN,
 ];
 
 /**
@@ -3549,6 +3555,17 @@ const PENGERJA = Object.assign(Object.create(null), {
   berisiko: () => perkaraBerisiko(),
   anomali: () => deteksiAnomali(),
   upayaHukum: () => profilUpayaHukum(),
+
+  // Sepuluh tambahan. Alatnya disuntikkan di sini - `runQuery` yang sama,
+  // `cleanText` yang sama, `median` dan `selisihHari` yang sama. Menyalinnya ke
+  // berkas sebelah akan melahirkan dua median yang membulatkan berbeda, dan
+  // bedanya baru terlihat pada angka yang sudah tercetak di laporan.
+  ...Object.fromEntries(
+    Object.entries(analisaTambahan.PENGERJA_TAMBAHAN).map(([kunci, kerja]) => [
+      kunci,
+      (p) => kerja(p, { runQuery, cleanText, median, selisihHari, tanggalIso: tanggalAnalisa }),
+    ])
+  ),
 });
 
 /**
@@ -3557,6 +3574,24 @@ const PENGERJA = Object.assign(Object.create(null), {
  * Kunci dicocokkan dengan daftar tertutup - nama fungsi tidak pernah datang
  * dari peramban.
  */
+/**
+ * Kolom DATE menjadi "YYYY-MM-DD".
+ *
+ * Penggerak mysql memulangkan kolom DATE sebagai obyek Date. Menyisipkannya apa
+ * adanya ke layar berbahasa Indonesia menghasilkan "Tue Jul 30 2026 00:00:00
+ * GMT+0800" - dan itulah yang akan dibaca petugas sebagai tanggal.
+ */
+function tanggalAnalisa(nilai) {
+  if (!nilai) return "";
+  if (nilai instanceof Date) {
+    if (Number.isNaN(nilai.getTime())) return "";
+    const p = (n) => String(n).padStart(2, "0");
+    return `${nilai.getFullYear()}-${p(nilai.getMonth() + 1)}-${p(nilai.getDate())}`;
+  }
+  const teks = String(nilai);
+  return /^\d{4}-\d{2}-\d{2}/.test(teks) ? teks.slice(0, 10) : "";
+}
+
 async function jalankanAnalisa(nomorPerkara, jenis) {
   const kunci = cleanText(jenis);
   // Lapis kedua: hanya milik sendiri, dan harus berupa fungsi. Lihat

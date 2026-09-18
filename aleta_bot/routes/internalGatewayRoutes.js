@@ -73,6 +73,7 @@ const antrianSinkronService = require("../services/antrianSinkronService");
 const analisaLanjutService = require("../services/analisaLanjutService");
 const penilaianKonseptorService = require("../services/penilaianKonseptorService");
 const petaPerkaraService = require("../services/petaPerkaraService");
+const identitasPihakService = require("../services/identitasPihakService");
 const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
@@ -2822,6 +2823,79 @@ router.get("/sipp/peta-perkara", requireInternalToken, async (req, res) => {
       sampai: String(req.query.sampai || ""),
     });
     res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Identitas para pihak satu perkara.
+ *
+ * ============================================================================
+ * ALAMATNYA SENDIRI, DAN ITU DISENGAJA
+ * ============================================================================
+ *
+ * Ini data pribadi, dan Status Perkara dibuka di meja yang kerap terlihat
+ * orang lain. Menempelkannya ke muatan status berarti ia ikut terkirim pada
+ * SETIAP perkara yang dibuka siapa pun - termasuk yang hanya ingin melihat
+ * jadwal sidang - lalu ikut tersimpan di singgahan peramban.
+ *
+ * Di sini ia dibaca hanya ketika satu nama diketuk. NIK dan teleponnya
+ * disamarkan di layanan, bukan di layar: yang disamarkan di layar tetap
+ * melintasi jaringan dalam bentuk utuhnya.
+ */
+router.get("/sipp/identitas-pihak", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await identitasPihakService.identitasPihak(String(req.query.nomorPerkara || ""));
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Lapisan panggilan tidak bertemu per desa.
+ *
+ * Dihitung HANYA dari baris bersandi Y/T - sandi `ket_temu` berganti arti sejak
+ * 2025, dan dihitung apa adanya dua tahun terakhir akan memulangkan 0% tidak
+ * bertemu. Lihat keterangan panjang pada petaPerkaraService.
+ */
+router.get("/sipp/peta-perkara/relaas", requireInternalToken, async (req, res) => {
+  try {
+    const { dari, sampai } = petaPerkaraService.rentangPeriode(
+      String(req.query.periode || "tahun"),
+      String(req.query.acuan || ""),
+      String(req.query.dari || ""),
+      String(req.query.sampai || "")
+    );
+    const hasil = await petaPerkaraService.sebaranRelaas(dari, sampai);
+    res.json({ ok: true, rentang: { dari, sampai }, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Daftar perkara satu desa - dibaca ketika lingkaran peta diketuk.
+ *
+ * Tidak ikut muatan peta: sembilan ribu nomor perkara beserta tanggalnya
+ * berukuran ratusan kilobita, dan yang dibuka orang paling banyak satu desa.
+ */
+router.get("/sipp/peta-perkara/desa", requireInternalToken, async (req, res) => {
+  try {
+    const { dari, sampai } = petaPerkaraService.rentangPeriode(
+      String(req.query.periode || "tahun"),
+      String(req.query.acuan || ""),
+      String(req.query.dari || ""),
+      String(req.query.sampai || "")
+    );
+    const hasil = await petaPerkaraService.perkaraDesa(
+      String(req.query.kelompok || "perceraian"),
+      String(req.query.kode || ""),
+      dari,
+      sampai
+    );
+    res.status(hasil.ok ? 200 : 400).json({ ...hasil, rentang: { dari, sampai } });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
