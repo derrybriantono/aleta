@@ -2676,6 +2676,12 @@ module.exports = {
   // Diekspor untuk diuji satuan.
   keteranganAudit,
   waktuMysql,
+  // Jam yang BENAR - ditanyakan kepada basis data, bukan kepada container.
+  // Node di dalam container jatuh ke UTC bila env TZ tidak diset, dan seluruh
+  // baris audit ALETA akan tercatat delapan jam sebelum kejadiannya - lihat
+  // keterangan panjang di atas waktuBasisData. Diekspor supaya penulis hasil
+  // sidang dan penulis putusan memakai jam yang sama, bukan jam masing-masing.
+  waktuBasisData,
   // Dipakai penulis hasil sidang - lihat sidangHasilService. Bentuk baris
   // audit hanya boleh punya SATU definisi: dua salinan akan menyimpang
   // perlahan, dan yang menyimpang justru baris yang dibaca pemeriksa.

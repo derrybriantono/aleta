@@ -1915,6 +1915,22 @@ export async function postGatewayTundaSidang(
 }
 
 /**
+ * Memutus satu sidang - panitera sidang mencatat bahwa hari ini perkaranya
+ * diputus.
+ *
+ * BUKAN borang hakim: amar dan pertimbangan hukumnya tidak ditanyakan, sebab
+ * aplikasi antrian sidang satker sendiri mengisi amar dengan "BELUM DIINPUT".
+ */
+export async function postGatewayPutusSidang(
+  isi: Record<string, unknown>
+): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sidang/putus-sidang`, {
+    method: "POST",
+    body: JSON.stringify(isi),
+  });
+}
+
+/**
  * Status putusan yang sungguh dipakai satker - dibaca dari data, bukan daftar.
  */
 export async function getGatewayStatusPutusan(): Promise<GatewayResult<Record<string, unknown>>> {

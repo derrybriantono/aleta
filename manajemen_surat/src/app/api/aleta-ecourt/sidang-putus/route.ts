@@ -4,6 +4,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
   getGatewayStatusPutusan,
+  postGatewayPutusSidang,
   postGatewayTulisPutusan,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -64,6 +65,40 @@ export async function POST(request: NextRequest) {
     await pastikanKapabilitas(db, actorUserId, "panel");
 
     const badan = (await request.json()) as Record<string, unknown>;
+
+    // ========================================================================
+    // DUA JALUR MEMUTUS, DAN KEDUANYA SAH
+    // ========================================================================
+    //
+    // "sidang" adalah borang PANITERA SIDANG: ia mencatat bahwa hari ini
+    // perkaranya diputus dan jenis putusannya apa. Amar dan pertimbangan
+    // hukumnya tidak ditanyakan - aplikasi antrian sidang satker sendiri
+    // mengisi amar dengan "BELUM DIINPUT", sebab naskahnya ditulis hakim
+    // beberapa hari kemudian.
+    //
+    // Tanpa jalur ini, pencatatan putusan tertahan sampai naskahnya jadi -
+    // padahal yang dibutuhkan papan antrian, laporan harian, dan akta cerai
+    // adalah FAKTA bahwa perkaranya sudah diputus, hari ini.
+    if (String(badan.jalur ?? "") === "sidang") {
+      const respons = await postGatewayPutusSidang({
+        jadwalId: badan.jadwalId,
+        perkaraId: badan.perkaraId,
+        statusPutusanId: badan.statusPutusanId,
+        tanggalPutus: String(badan.tanggalPutus ?? ""),
+        verstek: String(badan.verstek ?? ""),
+        jamSekarang: String(badan.jamSekarang ?? ""),
+        dihadiriOleh: badan.dihadiriOleh,
+        ruangId: badan.ruangId,
+        operator: actorUserId || "portal",
+        kering: badan.kering !== false,
+      });
+      if (!respons.ok) {
+        return ok({ available: false, ok: false, alasan: respons.error || "ALETA Bot belum dapat dihubungi." });
+      }
+      return ok({ available: true, ...(respons.data as Record<string, unknown>) });
+    }
+
+    // Jalur HAKIM - menuntut amar dan pertimbangan, dan memang seharusnya.
     const olehUsername = String(badan.olehUsername || "").trim();
     if (!olehUsername) {
       return ok({

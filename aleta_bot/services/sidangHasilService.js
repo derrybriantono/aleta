@@ -95,11 +95,40 @@ function jamSah(jam) {
 }
 
 /**
+ * ============================================================================
+ * `sampai_jam` ADALAH KOLOM TIME, DAN HANYA MENERIMA JAM
+ * ============================================================================
+ *
+ * Aplikasi antrian menuliskannya `sampai_jam = NOW()`. MySQL memotong sendiri
+ * bagian tanggalnya ketika NOW() masuk ke kolom TIME - tetapi hanya karena
+ * NOW() memang nilai waktu, bukan tulisan.
+ *
+ * Yang dikirim ALETA adalah TULISAN "2026-09-18 05:15:21". Ke kolom TIME,
+ * tulisan itu dibaca sebagai bentuk 'D HH:MM:SS' dan hasilnya bukan jam yang
+ * dimaksud; pada pengaturan ketat ia ditolak sama sekali. Sama buruknya:
+ * tulisan kosong "" masuk sebagai 00:00:00 tanpa satu pun galat.
+ *
+ * Karena itu jam dipisahkan dari cap waktunya, satu tempat, dan dipakai
+ * kedua-duanya - penundaan maupun putusan.
+ */
+function jamDariCap(cap) {
+  const cocok = String(cap || "").match(/(\d{2}):(\d{2}):(\d{2})/);
+  return cocok ? `${cocok[1]}:${cocok[2]}:${cocok[3]}` : "";
+}
+
+/**
  * Keadaan satu baris jadwal sidang beserta perkaranya.
  *
  * Dibaca SEBELUM apa pun ditulis, dan dari satu kueri: baris jadwal yang
  * dibaca terpisah dari perkaranya membuka jendela bagi perkara yang berpindah
  * tahapan di antara kedua pembacaan.
+ *
+ * `alasan_ditunda` ikut dibaca, dan bukan sebagai keterangan tambahan: sidang
+ * yang BELUM dicatat dan sidang yang sudah DIPUTUS sama-sama berbendera
+ * `ditunda = 'T'`. Yang memisahkan keduanya hanya isi kolom ini - "putus
+ * DIKABULKAN" pada yang sudah, angka "0" bawaan pada yang belum. Tanpa
+ * kolomnya, layar hasil sidang menutup borangnya bagi setiap sidang yang belum
+ * disentuh sama sekali.
  */
 async function keadaanJadwal(jadwalId) {
   const id = Number(jadwalId);
@@ -115,6 +144,7 @@ async function keadaanJadwal(jadwalId) {
             j.agenda_id     AS agendaId,
             j.urutan        AS urutan,
             j.ditunda       AS ditunda,
+            j.alasan_ditunda AS alasanDitunda,
             j.ruangan_id    AS ruanganId,
             j.ruangan       AS ruangan,
             j.sidang_keliling AS sidangKeliling,
@@ -131,7 +161,28 @@ async function keadaanJadwal(jadwalId) {
       WHERE j.id = ? LIMIT 1`,
     [id]
   ).catch(() => []);
-  return (Array.isArray(baris) && baris[0]) || null;
+  const satu = (Array.isArray(baris) && baris[0]) || null;
+  if (!satu) return null;
+
+  // ------------------------------------------------------------------------
+  // TANGGALNYA DIPULANGKAN SEBAGAI TULISAN, BUKAN SEBAGAI OBYEK Date
+  // ------------------------------------------------------------------------
+  //
+  // Penggerak MySQL memulangkan kolom DATE sebagai obyek Date beralamat waktu
+  // setempat. Keadaan ini dikirim ke portal sebagai JSON, dan JSON.stringify
+  // menuliskan Date dalam UTC:
+  //
+  //     sidang 2026-09-18 00:00 WITA  ->  "2026-09-17T16:00:00.000Z"
+  //
+  // Layar yang mengambil sepuluh huruf pertamanya - cara yang paling wajar -
+  // membaca sidangnya SEHARI LEBIH AWAL, dan dari situ menghitung usulan
+  // tanggal sidang berikutnya yang juga sehari lebih awal. Tidak ada galat
+  // yang berbunyi: tanggalnya ada, hanya salah satu hari.
+  //
+  // Diubah di sini, satu kali, bukan di tiap pembacanya: pembaca berikutnya
+  // tidak akan tahu ada yang perlu diwaspadai.
+  satu.tanggalSidang = penetapan.tanggalIso(satu.tanggalSidang);
+  return satu;
 }
 
 /** Akun pejabat yang dipakai menulis - harus benar-benar ada di SIPP. */
@@ -146,6 +197,101 @@ async function akunSipp(username) {
 }
 
 /** Tahapan dan proses menurut alur perkaranya - sumber yang sama dengan SIPP. */
+/**
+ * ============================================================================
+ * AKUN DITURUNKAN DARI PERKARANYA, TIDAK PERNAH DIKETIK
+ * ============================================================================
+ *
+ * Aplikasi antrian sidang satker mengambilnya begini - dibaca langsung dari
+ * `antrian/php/_fungsi.php` di peladen:
+ *
+ *     SELECT d.username FROM perkara_panitera_pn c
+ *       JOIN v_users d ON c.panitera_id = d.panitera_id
+ *      WHERE d.block = 0 AND c.aktif = 'Y' AND c.perkara_id = ?
+ *
+ * dan hakimnya dari perkara_hakim_pn dengan bentuk yang sama.
+ *
+ * Penundaan ditulis atas nama PANITERA PENGGANTI perkara itu; putusannya atas
+ * nama HAKIM-nya. Keduanya sudah melekat pada perkaranya sejak penetapan.
+ *
+ * Borang yang menyuruh mengetik username membuka pintu menulis atas nama orang
+ * lain, dan tidak ada satu pun pemeriksaan yang akan menangkapnya - audit
+ * trail SIPP hanya mencatat nama yang diberikan kepadanya. Isian itu karena
+ * itu dibuang, bukan sekadar diisi otomatis.
+ */
+async function akunPerkara(perkaraId) {
+  const id = Number(perkaraId);
+  if (!Number.isInteger(id) || id <= 0) return { panitera: null, hakim: null };
+
+  const [pp, hk] = [
+    await kueri(
+      `SELECT d.username, d.fullname
+         FROM perkara_panitera_pn c
+         JOIN v_users d ON d.panitera_id = c.panitera_id
+        WHERE d.block = 0 AND c.aktif = 'Y' AND c.perkara_id = ?
+        LIMIT 1`,
+      [id]
+    ).catch(() => []),
+    await kueri(
+      `SELECT b.username, b.fullname
+         FROM perkara_hakim_pn a
+         JOIN v_users b ON b.hakim_id = a.hakim_id
+        WHERE b.block = 0 AND a.aktif = 'Y' AND a.perkara_id = ?
+        ORDER BY a.urutan
+        LIMIT 1`,
+      [id]
+    ).catch(() => []),
+  ];
+
+  return {
+    panitera: (Array.isArray(pp) && pp[0]) || null,
+    hakim: (Array.isArray(hk) && hk[0]) || null,
+  };
+}
+
+/**
+ * Jam sidang berikutnya menurut agendanya.
+ *
+ * Aplikasi antrian menetapkan 09:00 untuk semua - `scriptTunda(..., '09:00:00',
+ * ...)`. Satker menambahkan satu pengecualian: agenda jawab-menjawab dan
+ * kesimpulan disidangkan sore, pukul 15:00.
+ *
+ * Sebabnya praktis, dan itulah kenapa ia ditulis di sini alih-alih dihafal:
+ * agenda itu tidak menuntut kehadiran saksi, jadi ia dapat ditaruh sesudah
+ * sidang-sidang yang menuntutnya - dan para pihak tidak perlu menunggu
+ * sepanjang pagi untuk sepuluh menit pertukaran berkas.
+ */
+const AGENDA_SORE = ["jawaban", "replik", "duplik", "kesimpulan", "jawab"];
+
+function jamMenurutAgenda(agenda) {
+  const teks = String(agenda || "").toLowerCase();
+  return AGENDA_SORE.some((k) => teks.includes(k)) ? "15:00" : "09:00";
+}
+
+/**
+ * Tanggal sidang berikutnya - dua pekan sesudah sidang ini.
+ *
+ * Bukan aturan aplikasi antrian, melainkan kebiasaan satker: dua pekan adalah
+ * jarak yang cukup bagi panggilan sampai ke para pihak tanpa membuat perkara
+ * berjalan lebih lama daripada perlu.
+ *
+ * Yang dipulangkan USULAN, bukan keputusan - panitera sidang tetap dapat
+ * menggantinya, dan hari liburnya tetap diperiksa penyusun rencana.
+ */
+function tanggalDuaPekan(tanggalSidang) {
+  // tanggalIso, bukan String().slice(0,10): kolom DATE dipulangkan penggerak
+  // MySQL sebagai obyek Date, dan String(date) berbunyi "Fri Sep 18 2026 ..."
+  // - sepuluh huruf pertamanya "Fri Sep 18", yang gagal cocok-pola di bawah
+  // dan membuat fungsi ini memulangkan kosong pada tanggal yang sebenarnya ada.
+  // Terjadi, dan ketahuan hanya karena dijalankan atas jadwal sungguhan.
+  const iso = penetapan.tanggalIso(tanggalSidang);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + 14);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 async function prosesAlur(alurPerkaraId, prosesId) {
   const baris = await kueri(
     `SELECT tahapan_id AS tahapanId, tahapan_nama AS tahapanNama,
@@ -184,8 +330,22 @@ async function susunRencanaTunda(minta = {}) {
   if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
   if (bersih(keadaan.ditunda) === "Y") return { ok: false, alasan: "sidang_sudah_ditunda" };
 
-  const akun = await akunSipp(minta.olehUsername);
-  if (!akun) return { ok: false, alasan: "akun_sipp_tidak_ketemu" };
+  // ==========================================================================
+  // AKUNNYA DITURUNKAN DARI PERKARA, TIDAK LAGI DIKETIK
+  // ==========================================================================
+  //
+  // Sebelumnya username-nya disebut pemanggil dan borangnya menanyakannya.
+  // Aplikasi antrian sidang satker tidak pernah bertanya - ia membaca panitera
+  // pengganti perkara itu dari perkara_panitera_pn. Bertanya membuka pintu
+  // menulis atas nama orang lain, dan audit trail SIPP hanya mencatat nama
+  // yang diberikan kepadanya: tidak ada satu pun pemeriksaan yang akan
+  // menangkapnya.
+  //
+  // Username yang disebut pemanggil masih diterima sebagai CADANGAN - hanya
+  // untuk perkara yang panitera penggantinya belum tercatat.
+  const dariPerkara = await akunPerkara(keadaan.perkaraId);
+  const akun = dariPerkara.panitera || (await akunSipp(minta.olehUsername));
+  if (!akun) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
 
   const alasanTunda = bersih(minta.alasanTunda);
   if (!alasanTunda) return { ok: false, alasan: "alasan_tunda_kosong" };
@@ -202,7 +362,7 @@ async function susunRencanaTunda(minta = {}) {
   // ==========================================================================
   // TANGGALNYA DIPERIKSA DI SINI, BUKAN SESUDAH BARISNYA LAHIR
   // ==========================================================================
-  const tanggalSekarang = penetapan.waktuMysql().slice(0, 10);
+  const tanggalSekarang = (await penetapan.waktuBasisData()).slice(0, 10);
   if (tanggalBerikut <= tanggalSekarang) {
     return { ok: false, alasan: "tanggal_berikut_tidak_maju", diminta: tanggalBerikut };
   }
@@ -231,16 +391,35 @@ async function susunRencanaTunda(minta = {}) {
   const jenisPengadilan = Number(minta.jenisPengadilan) || 0;
   const { prosesId, perbaruiRiwayat } = prosesUntukTunda(keadaan, jenisPengadilan);
 
-  const saat = penetapan.waktuMysql();
+  const saat = await penetapan.waktuBasisData();
   const ip = bersih(minta.ip) || "127.0.0.1";
   const langkah = [];
 
   // ---- 1. Baris sidang hari ini: ditunda ----------------------------------
   const nilaiUbah = {
     jam_sidang: bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
-    sampai_jam: bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam),
+    // Jam selesainya sidang. Kosong bukan pilihan: "" masuk ke kolom TIME
+    // sebagai 00:00:00 tanpa satu pun galat - lihat jamDariCap.
+    sampai_jam: bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam) || jamDariCap(saat),
     agenda: bersih(minta.agendaSekarang) || bersih(keadaan.agenda),
-    dihadiri_oleh: Number(minta.dihadiriOleh) || Number(keadaan.dihadiriOleh) || 1,
+    // ------------------------------------------------------------------
+    // KEHADIRAN PIHAK - ANGKANYA MILIK SIPP, DAN BUKAN 0..3
+    // ------------------------------------------------------------------
+    //
+    // Dibaca langsung dari `antrian/php/menu.sidang.php` di peladen:
+    //
+    //     1  SEMUA HADIR          2  PIHAK PERTAMA SAJA
+    //     3  PIHAK KEDUA SAJA     4  PIHAK TIDAK HADIR
+    //
+    // Terukur pada 20.171 baris `perkara_jadwal_sidang` satker:
+    // 2 -> 10.061, 1 -> 7.503, kosong -> 1.373, 4 -> 1.061, 3 -> 169.
+    //
+    // Cadangannya 4, bukan 1. Aplikasi antrian menaruh "PIHAK TIDAK HADIR"
+    // sebagai pilihan pertama, sehingga baris yang belum pernah diisi
+    // terkirim sebagai 4. Cadangan 1 menuliskan "semua hadir" pada sidang
+    // yang mungkin tidak dihadiri siapa pun - dan itu pernyataan yang
+    // terbaca sebagai fakta persidangan, bukan sekadar nilai bawaan.
+    dihadiri_oleh: Number(minta.dihadiriOleh) || Number(keadaan.dihadiriOleh) || 4,
     ditunda: "Y",
     alasan_ditunda: alasanTunda,
     sifat_sidang: bersih(minta.sifatSidang) || bersih(keadaan.sifatSidang),
@@ -453,6 +632,264 @@ async function susunRencanaTunda(minta = {}) {
 }
 
 /**
+ * ============================================================================
+ * AMAR PUTUSAN DIISI "BELUM DIINPUT", DAN ITU BUKAN KEKURANGAN
+ * ============================================================================
+ *
+ * Dibaca dari aplikasi antrian sidang satker sendiri:
+ *
+ *     $amar_put = "<b> B E L U M  &nbsp; D I I N P U T</b>";
+ *
+ * Panitera sidang TIDAK menulis amar, TIDAK menulis pertimbangan hukum, dan
+ * TIDAK memilih sumber hukum - sumber_hukum_id selalu '8,11', tetap. Yang ia
+ * catat hanya bahwa hari ini perkaranya diputus dan jenis putusannya apa.
+ *
+ * Amar dan pertimbangannya pekerjaan HAKIM, lewat layar SIPP-nya sendiri, dan
+ * biasanya beberapa hari kemudian. Borang panitera sidang yang menuntut amar
+ * akan menahan pencatatan sampai naskahnya jadi - padahal yang dibutuhkan
+ * papan antrian, laporan harian, dan akta cerai adalah FAKTA bahwa perkaranya
+ * sudah diputus, hari ini.
+ *
+ * Inilah sebabnya berkas ini tidak memakai putusanTulisService: yang itu
+ * borang HAKIM - ia menuntut amar dan pertimbangan, dan memang seharusnya.
+ * Keduanya menulis ke tabel yang sama pada saat yang berbeda, dan `ON
+ * DUPLICATE KEY UPDATE` di bawah itulah yang membuat keduanya dapat hidup
+ * berdampingan.
+ */
+const AMAR_BELUM = "<b> B E L U M  &nbsp; D I I N P U T</b>";
+
+/** Sumber hukum tetap - aplikasi antrian tidak menanyakannya. */
+const SUMBER_HUKUM_TETAP = "8,11";
+
+/** Status yang mengisi tanggal tersendiri di luar tanggal putusan. */
+const STATUS_DIGUGURKAN = 65;
+const STATUS_DICABUT = 67;
+
+/** Tahapan dan proses sesudah perkara diputus. */
+const TAHAPAN_PUTUSAN = 15;
+const PROSES_PUTUSAN = 210;
+
+/**
+ * Menyusun rencana MEMUTUS satu sidang - TIDAK menulis apa pun.
+ *
+ * Bentuknya meniru aplikasi antrian sidang baris demi baris, dan tiga hal di
+ * dalamnya mudah terlewat kalau ditebak:
+ *
+ *   1. `ditunda` diisi 'T', bukan 'Y'. Sidang yang diputus bukan sidang yang
+ *      ditunda - dan papan antrian membaca kolom itu untuk tahu mana yang
+ *      masih berjalan.
+ *   2. `alasan_ditunda` DIPAKAI ULANG memuat "putus DIKABULKAN (verstek)".
+ *      Kolomnya bernama alasan ditunda, isinya hasil sidang; begitulah SIPP
+ *      menyimpannya, dan menaruhnya di tempat lain membuat layar SIPP kosong.
+ *   3. Tidak ada baris jadwal BARU. Perkara yang diputus tidak bersidang lagi.
+ */
+async function susunRencanaPutus(minta = {}) {
+  const keadaan = await keadaanJadwal(minta.jadwalId);
+  if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
+
+  const akun = await akunPerkara(keadaan.perkaraId);
+  if (!akun.panitera) return { ok: false, alasan: "panitera_sidang_tidak_ketemu" };
+  // Hakimnya boleh tidak ketemu - putusannya lalu dicatat atas nama panitera
+  // sidang, dan itu disebutkan pada andaian, bukan dibiarkan senyap.
+  const penulisPutusan = akun.hakim || akun.panitera;
+
+  const statusId = Number(minta.statusPutusanId);
+  if (!Number.isInteger(statusId) || statusId <= 0) {
+    return { ok: false, alasan: "status_putusan_belum_dipilih" };
+  }
+  const status = await kueri(`SELECT id, nama FROM status_putusan WHERE id = ? LIMIT 1`, [statusId]).catch(
+    () => []
+  );
+  if (!Array.isArray(status) || status.length === 0) {
+    return { ok: false, alasan: "status_putusan_tidak_dikenal" };
+  }
+  const namaStatus = String(status[0].nama || "");
+
+  // tanggalIso, bukan slice: penggerak MySQL memulangkan kolom DATE sebagai
+  // obyek Date, dan String(date).slice(0,10) menghasilkan "Tue Mar 09" -
+  // cocok-pola tanggalnya gagal, dan putusannya ditolak dengan alasan
+  // "tanggal tidak sah" atas tanggal yang sebenarnya ada.
+  const tanggalPutus = bersih(minta.tanggalPutus) || penetapan.tanggalIso(keadaan.tanggalSidang);
+  if (!tanggalSah(tanggalPutus)) return { ok: false, alasan: "tanggal_putus_tidak_sah" };
+
+  const verstek = bersih(minta.verstek).toUpperCase() === "Y" ? "Y" : "T";
+  const dihadiri = Number(minta.dihadiriOleh);
+  const saat = await penetapan.waktuBasisData();
+  const ip = bersih(minta.ip) || "127.0.0.1";
+  const andaian = [];
+  if (!akun.hakim) {
+    andaian.push(
+      "Hakim perkara ini tidak ketemu di SIPP, jadi putusannya dicatat atas nama panitera sidang. " +
+        "Pada aplikasi antrian ia dicatat atas nama hakim."
+    );
+  }
+
+  const langkah = [];
+
+  // ---- 1. Sidang hari ini: SELESAI, bukan ditunda ------------------------
+  const nilaiJadwal = {
+    // Jam saja - kolomnya TIME. Cap waktu utuh "2026-09-18 05:15:21" dibaca
+    // MySQL sebagai bentuk 'D HH:MM:SS' dan hasilnya bukan jam yang dimaksud.
+    sampai_jam: jamDariCap(saat),
+    alasan_ditunda: `putus ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
+    jam_sidang: bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+    ditunda: "T",
+    diperbaharui_oleh: akun.panitera.username,
+    diperbaharui_tanggal: saat,
+  };
+  // Hanya 1..4 yang punya arti - lihat daftarnya pada susunRencanaTunda. Di
+  // luar itu kolomnya TIDAK disentuh sama sekali: menuliskan angka yang tidak
+  // ada artinya lebih buruk daripada membiarkan yang sudah ada.
+  const adaDihadiri = Number.isInteger(dihadiri) && dihadiri >= 1 && dihadiri <= 4;
+  langkah.push({
+    tabel: "perkara_jadwal_sidang",
+    aksi: "UPDATE",
+    keterangan: `sidang ${penetapan.tanggalIso(keadaan.tanggalSidang)} selesai - ${nilaiJadwal.alasan_ditunda}`,
+    sql:
+      `UPDATE perkara_jadwal_sidang
+          SET sampai_jam = ?, alasan_ditunda = ?, jam_sidang = ?, ditunda = ?,
+              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+        WHERE id = ?`,
+    params: adaDihadiri
+      ? [
+          nilaiJadwal.sampai_jam,
+          nilaiJadwal.alasan_ditunda,
+          nilaiJadwal.jam_sidang,
+          nilaiJadwal.ditunda,
+          dihadiri,
+          nilaiJadwal.diperbaharui_oleh,
+          nilaiJadwal.diperbaharui_tanggal,
+          keadaan.jadwalId,
+        ]
+      : [
+          nilaiJadwal.sampai_jam,
+          nilaiJadwal.alasan_ditunda,
+          nilaiJadwal.jam_sidang,
+          nilaiJadwal.ditunda,
+          nilaiJadwal.diperbaharui_oleh,
+          nilaiJadwal.diperbaharui_tanggal,
+          keadaan.jadwalId,
+        ],
+  });
+  langkah.push(
+    penetapan.barisAudit({
+      username: akun.panitera.username,
+      tabel: "perkara_jadwal_sidang",
+      formulir: NAMA_HALAMAN,
+      aksi: "UPDATE",
+      nilai: nilaiJadwal,
+      kunciSendiri: `id=${keadaan.jadwalId}`,
+      ip,
+      saat,
+    })
+  );
+
+  // ---- 2. Putusannya ------------------------------------------------------
+  const nilaiPutusan = {
+    perkara_id: keadaan.perkaraId,
+    tanggal_putusan: tanggalPutus,
+    putusan_verstek: verstek,
+    sumber_hukum_id: SUMBER_HUKUM_TETAP,
+    status_putusan_id: statusId,
+    tanggal_cabut: statusId === STATUS_DICABUT ? tanggalPutus : null,
+    tanggal_gugur: statusId === STATUS_DIGUGURKAN ? tanggalPutus : null,
+    amar_putusan: AMAR_BELUM,
+    diinput_oleh: penulisPutusan.username,
+    diinput_tanggal: saat,
+  };
+  langkah.push({
+    tabel: "perkara_putusan",
+    aksi: "INSERT",
+    keterangan: `putusan ${keadaan.nomorPerkara} - ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
+    // ON DUPLICATE KEY UPDATE, sama seperti aplikasi antrian: memutus ulang
+    // memperbarui barisnya, bukan gagal. Perkara yang jenis putusannya
+    // dikoreksi sesudah sidang bukan hal aneh.
+    sql:
+      `INSERT INTO perkara_putusan
+         (perkara_id, tanggal_putusan, putusan_verstek, sumber_hukum_id, status_putusan_id,
+          tanggal_cabut, tanggal_gugur, amar_putusan, diinput_oleh, diinput_tanggal)
+       VALUES (?,?,?,?,?,?,?,?,?,?)
+       ON DUPLICATE KEY UPDATE
+         tanggal_putusan = VALUES(tanggal_putusan),
+         putusan_verstek = VALUES(putusan_verstek),
+         sumber_hukum_id = VALUES(sumber_hukum_id),
+         status_putusan_id = VALUES(status_putusan_id),
+         tanggal_cabut = VALUES(tanggal_cabut),
+         tanggal_gugur = VALUES(tanggal_gugur)`,
+    params: [
+      nilaiPutusan.perkara_id,
+      nilaiPutusan.tanggal_putusan,
+      nilaiPutusan.putusan_verstek,
+      nilaiPutusan.sumber_hukum_id,
+      nilaiPutusan.status_putusan_id,
+      nilaiPutusan.tanggal_cabut,
+      nilaiPutusan.tanggal_gugur,
+      nilaiPutusan.amar_putusan,
+      nilaiPutusan.diinput_oleh,
+      nilaiPutusan.diinput_tanggal,
+    ],
+  });
+  langkah.push(
+    penetapan.barisAudit({
+      username: penulisPutusan.username,
+      tabel: "perkara_putusan",
+      formulir: "TAMBAH DATA PUTUSAN AKHIR",
+      aksi: "tambah",
+      nilai: nilaiPutusan,
+      perkaraId: keadaan.perkaraId,
+      ip,
+      saat,
+      // Modul putusan SIPP memakai judul yang berbeda dari modul lain.
+      judulSendiri: `tambah Data Putusan Akhir <br />dengan perkara_id [id=${keadaan.perkaraId}]`,
+    })
+  );
+
+  // ---- 3. Tahapan terakhir menjadi Putusan --------------------------------
+  const alur = await prosesAlur(keadaan.alurPerkaraId, PROSES_PUTUSAN);
+  langkah.push({
+    tabel: "perkara",
+    aksi: "UPDATE",
+    keterangan: `tahapan terakhir ${keadaan.nomorPerkara} menjadi Putusan`,
+    sql:
+      `UPDATE perkara
+          SET tahapan_terakhir_id = ?, tahapan_terakhir_text = ?,
+              proses_terakhir_id = ?, proses_terakhir_text = ?
+        WHERE perkara_id = ?`,
+    params: [
+      TAHAPAN_PUTUSAN,
+      (alur && alur.tahapanNama) || "Putusan",
+      PROSES_PUTUSAN,
+      (alur && alur.prosesNama) || "Putusan",
+      keadaan.perkaraId,
+    ],
+  });
+
+  return {
+    ok: true,
+    jenis: "putus",
+    perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
+    atasNama: {
+      username: akun.panitera.username,
+      namaLengkap: akun.panitera.fullname,
+      putusanAtasNama: penulisPutusan.username,
+    },
+    operator: bersih(minta.operator),
+    saat,
+    putusan: {
+      tanggalPutus,
+      status: namaStatus,
+      statusPutusanId: statusId,
+      verstek: verstek === "Y",
+      // Disebut TEGAS supaya layar tidak perlu menerangkannya sendiri, dan
+      // supaya tidak ada yang mengira amarnya hilang.
+      amar: "Diisi \"BELUM DIINPUT\" - amar dan pertimbangan hukumnya ditulis hakim lewat SIPP.",
+    },
+    langkah,
+    andaian,
+  };
+}
+
+/**
  * Menggerakkan antrian sidang - dipanggil, diskors, atau selesai.
  *
  * Terpisah dari penundaannya dan disengaja: antrian bergerak beberapa kali
@@ -494,8 +931,14 @@ module.exports = {
   ANTRIAN_SKORS,
   ANTRIAN_SELESAI,
   keadaanJadwal,
+  akunPerkara,
+  jamMenurutAgenda,
+  tanggalDuaPekan,
   prosesUntukTunda,
   susunRencanaTunda,
+  susunRencanaPutus,
+  AMAR_BELUM,
+  SUMBER_HUKUM_TETAP,
   setelAntrian,
   // Rencana dijalankan oleh mesin yang sama dengan penetapan - satu penjalan,
   // satu daftar putih tabel, satu cara mengisi kunci utama pada judul audit.

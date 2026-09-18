@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  FileSearch,
   Filter,
   Gauge,
   ListOrdered,
@@ -2323,6 +2324,45 @@ export function AletaEcourtSidang({
   const [dibuka, setDibuka] = useState("");
 
   /**
+   * ==========================================================================
+   * RINCIAN YANG TERPOTONG - DUA SEBAB, DUA PERBAIKAN
+   * ==========================================================================
+   *
+   * Petugas melaporkan "masih terpotong tampilan ketika di klik antrian".
+   * Ditelusuri, sebabnya dua dan keduanya harus diperbaiki - memperbaiki satu
+   * saja menyisakan terpotong yang persis sama di keadaan yang lain.
+   *
+   *   1. LEBAR. Baris rincian adalah satu sel di dalam tabel selebar 980px,
+   *      dan tabel itu duduk di dalam kotak bergulir mendatar. Di layar yang
+   *      lebih sempit, isinya melebar mengikuti TABELNYA, bukan mengikuti apa
+   *      yang terlihat - sehingga separuh rinciannya berada di luar layar dan
+   *      hanya dapat dibaca dengan menggulung ke samping.
+   *
+   *      Perbaikannya: pembungkus rincian dipaku `sticky left-0` dan diberi
+   *      lebar SEBESAR YANG TERLIHAT. Ia lalu tinggal diam saat tabelnya
+   *      digulung ke samping, dan tidak pernah ada bagian yang keluar layar.
+   *
+   *   2. TINGGI. Dari lg ke atas kotaknya dibatasi 70vh. Rincian sidang jauh
+   *      lebih tinggi daripada itu, sehingga membukanya melahirkan gulir
+   *      bersarang: halaman menggulung, dan di dalamnya kotak menggulung
+   *      sendiri. Pembatasan itu dilepas selama ada rincian yang terbuka -
+   *      gunanya (kepala kolom menempel pada daftar panjang) memang hanya
+   *      berlaku ketika yang dibaca daftarnya, bukan rinciannya.
+   */
+  const kotakTabel = useRef<HTMLDivElement | null>(null);
+  const [lebarTampak, setLebarTampak] = useState(0);
+
+  useEffect(() => {
+    const kotak = kotakTabel.current;
+    if (!kotak || typeof ResizeObserver === "undefined") return;
+    const ukur = () => setLebarTampak(kotak.clientWidth);
+    ukur();
+    const pengamat = new ResizeObserver(ukur);
+    pengamat.observe(kotak);
+    return () => pengamat.disconnect();
+  }, []);
+
+  /**
    * Ringkas atau lengkap. Bawaannya LENGKAP - tampilan yang sudah ada -
    * supaya tidak ada yang kehilangan kolom yang biasa dipakainya tanpa
    * memintanya. Pilihannya diingat per peramban, sebab yang memilih ringkas
@@ -3475,9 +3515,16 @@ export function AletaEcourtSidang({
             halamanlah yang menggulung; pembatasan tinggi baru berlaku dari lg
             ke atas. */}
         <div
+          ref={kotakTabel}
           className={cn(
             "overflow-x-auto rounded-xl border",
-            kendaliCiut ? "lg:max-h-[82vh] lg:overflow-auto" : "lg:max-h-[70vh] lg:overflow-auto"
+            // Pembatasan tinggi dilepas selama ada rincian yang terbuka -
+            // lihat sebab (2) pada catatan lebarTampak di atas.
+            dibuka
+              ? ""
+              : kendaliCiut
+                ? "lg:max-h-[82vh] lg:overflow-auto"
+                : "lg:max-h-[70vh] lg:overflow-auto"
           )}
         >
           <table
@@ -4275,19 +4322,47 @@ export function AletaEcourtSidang({
                             tidak lagi dapat ditekan - lihat keterangan di atas
                             <tr>. */}
                         <td className="px-2 py-2 align-top text-right">
-                          <button
-                            type="button"
-                            onClick={() => void buka(baris)}
-                            aria-expanded={dibuka === kunci}
-                            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                          >
-                            {dibuka === kunci ? (
-                              <ChevronUp className="h-3.5 w-3.5" />
-                            ) : (
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            )}
-                            Rincian
-                          </button>
+                          <div className="inline-flex flex-col items-stretch gap-1">
+                            <button
+                              type="button"
+                              onClick={() => void buka(baris)}
+                              aria-expanded={dibuka === kunci}
+                              className="inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                            >
+                              {dibuka === kunci ? (
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              ) : (
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              )}
+                              Rincian
+                            </button>
+
+                            {/* ============================================
+                                JALAN KE STATUS PERKARA, DIKEMBALIKAN
+                                ============================================
+
+                                Kotak nomor perkara dahulu membuka status
+                                perkara. Begitu ia dialihkan ke layar hasil
+                                sidang, jalan ke status perkara HILANG - dan
+                                hilangnya tidak berbunyi apa-apa: tombolnya
+                                masih ada, hanya membuka tempat yang berbeda.
+
+                                Dikembalikan sebagai tombolnya sendiri di
+                                bawah Rincian, bukan dengan menarik pulang
+                                kotak nomornya: keduanya dibutuhkan, dan yang
+                                satu tidak boleh menggantikan yang lain. */}
+                            {onBukaStatus ? (
+                              <button
+                                type="button"
+                                onClick={() => onBukaStatus(baris.nomorPerkara)}
+                                title={`Buka status perkara ${baris.nomorPerkara}`}
+                                className="inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                              >
+                                <FileSearch className="h-3.5 w-3.5" />
+                                Status
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
 
@@ -4296,17 +4371,27 @@ export function AletaEcourtSidang({
                           rincian ini milik baris yang mana. */}
                       {dibuka === kunci ? (
                         <tr className="border-t border-border bg-muted/40">
-                          <td className="border-l-4 border-l-primary px-4 py-4" colSpan={8}>
-                            {memuatRincian ? (
-                              <p className="text-sm text-muted-foreground">Memuat keterangan sidang…</p>
-                            ) : (
-                              <RincianSidang
-                                rincian={rincian}
-                                nomorPerkara={baris.nomorPerkara}
-                                perkaraId={baris.perkaraId}
-                                sidangId={baris.sidangId}
-                              />
-                            )}
+                          <td className="p-0 align-top" colSpan={8}>
+                            {/* Dipaku pada tepi kiri yang TERLIHAT, selebar
+                                yang terlihat - lihat sebab (1) pada catatan
+                                lebarTampak. Tanpa lebar terukur ia jatuh ke
+                                perilaku lama, bukan ke nol: peladen menggambar
+                                halaman ini sebelum ada yang dapat diukur. */}
+                            <div
+                              className="sticky left-0 border-l-4 border-l-primary px-4 py-4"
+                              style={lebarTampak > 0 ? { width: `${lebarTampak}px` } : undefined}
+                            >
+                              {memuatRincian ? (
+                                <p className="text-sm text-muted-foreground">Memuat keterangan sidang…</p>
+                              ) : (
+                                <RincianSidang
+                                  rincian={rincian}
+                                  nomorPerkara={baris.nomorPerkara}
+                                  perkaraId={baris.perkaraId}
+                                  sidangId={baris.sidangId}
+                                />
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ) : null}

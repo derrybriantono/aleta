@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.22.0";
+export const APP_VERSION = "2.23.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.22.0 - Tanda Tangan yang Bertuan, Majelis yang Berakun, dan Peta Perkara";
+  "ALETA Judicia v2.23.0 - Hasil Sidang: Ditunda atau Diputus, Satu Layar Satu Pilihan";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,55 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.23.0",
+    title: "ALETA Judicia v2.23.0 - Hasil Sidang: Ditunda atau Diputus, Satu Layar Satu Pilihan",
+    date: "2026-09-18",
+    status: "Terpasang",
+    summary:
+      "Sepuluh perbaikan pada layar hasil sidang, seluruhnya diminta satker sesudah memakainya. " +
+      "Alurnya kini ditiru dari aplikasi antrian sidang satker sendiri - dibaca dari sumbernya di " +
+      "peladen, bukan dikira-kira - sementara tampilannya tidak ditiru. Yang paling menentukan: akun " +
+      "SIPP tidak lagi ditanyakan, dan memutus tidak lagi menuntut amar putusan.",
+    added: [
+      "SATU LAYAR, SATU PILIHAN: Ditunda atau Diputus. Sidang tidak dapat ditunda DAN diputus sekaligus, dan dua borang yang berdiri berdampingan adalah undangan mengisi keduanya. Borangnya baru muncul sesudah salah satunya dipilih.",
+      "TOMBOL STATUS di bawah Rincian pada Jadwal Perkara yang Bersidang. Kotak nomor perkara kini membuka hasil sidang, dan jalan ke Status Perkara ikut hilang bersamanya - hilang tanpa berbunyi apa pun, sebab tombolnya masih ada, hanya membuka tempat yang berbeda. Keduanya kini berdiri sendiri-sendiri.",
+      "ALASAN PENUNDAAN DITAWARKAN - sembilan yang paling lazim, dan tetap boleh diketik sendiri. Daftar tertutup akan memaksa panitera sidang memilih alasan yang bukan alasannya, dan alasan keliru pada berkas perkara lebih buruk daripada alasan yang diketik panjang.",
+      "TANGGAL DAN JAM SIDANG BERIKUTNYA TERISI SENDIRI: dua pekan sesudah sidang ini, pukul 09:00 - kecuali agenda jawab-menjawab dan kesimpulan yang disidangkan pukul 15:00. Keduanya usulan: hari liburnya tetap diperiksa peladen, dan jam yang sudah disetel tangan tidak ditimpa ketika agendanya diketik ulang.",
+      "TANGGAL PUTUSAN BAWAANNYA HARI INI dan jenis putusannya Dikabulkan - keduanya masih dapat diganti. Borang yang dibuka pada hari putusnya menanyakan tanggal yang sudah diketahuinya sendiri.",
+    ],
+    changed: [
+      "AKUN SIPP TIDAK LAGI DITANYAKAN - pada penundaan maupun putusan. Penundaan ditulis atas nama PANITERA SIDANG perkara itu dan putusannya atas nama HAKIM-nya; keduanya sudah melekat pada perkaranya sejak penetapan, dan aplikasi antrian sidang satker membacanya dari perkara_panitera_pn dan perkara_hakim_pn - tidak pernah menanyakannya. Isian itu dibuang, bukan sekadar diisi otomatis: isian yang terisi sendiri masih dapat disunting, dan yang dapat disunting akan disunting.",
+      "MEMUTUS TIDAK LAGI MENUNTUT AMAR, PERTIMBANGAN HUKUM, SUMBER HUKUM, ATAU CATATAN. Panitera sidang mencatat FAKTA bahwa hari ini perkaranya diputus; naskahnya ditulis hakim beberapa hari kemudian lewat SIPP. Aplikasi antrian satker sendiri mengisi amar dengan harfiah \"BELUM DIINPUT\" dan sumber hukumnya tetap '8,11'. Borang yang menuntut amar menahan pencatatan sampai naskahnya jadi - padahal papan antrian, laporan harian, dan akta cerai membutuhkan faktanya hari ini.",
+      "Putus menandai sidangnya SELESAI, bukan ditunda: ditunda = 'T', dan alasan_ditunda memuat \"putus DIKABULKAN (verstek)\". Itulah yang dibaca papan hasil sidang, dan itu pula bentuk yang ditulis aplikasi antrian.",
+      "Kehadiran pihak memakai angka SIPP yang sebenarnya - 1 semua hadir, 2 pihak pertama saja, 3 pihak kedua saja, 4 tidak hadir - dibaca dari menu.sidang.php di peladen. Pihak pertama dan kedua hanya ditawarkan pada perkara gugatan; permohonan tidak punya pihak kedua.",
+    ],
+    fixed: [
+      "RINCIAN SIDANG YANG TERPOTONG, dua sebab sekaligus. Pertama lebarnya: baris rincian adalah satu sel di dalam tabel selebar 980px yang duduk dalam kotak bergulir mendatar, sehingga isinya melebar mengikuti TABELNYA, bukan mengikuti yang terlihat - separuhnya berada di luar layar. Kini ia dipaku pada tepi kiri yang terlihat, selebar yang terlihat. Kedua tingginya: pembatasan 70vh melahirkan gulir bersarang begitu rincian dibuka, dan pembatasan itu kini dilepas selama ada rincian terbuka.",
+      "Cadangan kehadiran pihak dahulu 1 - \"semua hadir\" - pada sidang yang kolomnya kosong. Kosong pada 1.373 dari 20.171 baris, dan menuliskan \"semua hadir\" di sana adalah pernyataan yang terbaca sebagai fakta persidangan. Cadangannya kini 4, sama dengan pilihan pertama aplikasi antrian.",
+      "Sidang yang BELUM dicatat dahulu terbaca sebagai sudah diputus. Keduanya berbendera ditunda = 'T' - itu nilai bawaan kolomnya - dan yang memisahkannya hanya isi alasan_ditunda. Aturan pemisahnya yang sudah diukur atas 20.063 baris kini dipakai ulang, bukan ditulis lagi.",
+      "JAM YANG TERCATAT DELAPAN JAM TERLALU AWAL. Penulis hasil sidang dan penulis putusan menanyakan jam kepada container, bukan kepada basis data - dan Node di dalam container jatuh ke UTC bila env TZ tidak diset. Terukur di peladen: basis data menjawab 13:16 WITA sementara Node menjawab 05:16. Seluruh baris sys_audittrail yang ditulis ALETA karena itu tercatat delapan jam sebelum kejadiannya, berselisih dengan baris SIPP di tabel yang sama yang jamnya benar. Penulis penetapan sudah memakai jam basis data sejak lama; kedua penulis ini tertinggal, dan tertinggalnya tidak berbunyi apa pun.",
+      "Kolom sampai_jam dahulu diisi tulisan kosong pada penundaan dan cap waktu utuh pada putusan. Kolomnya TIME: yang kosong masuk sebagai 00:00:00 tanpa galat, dan cap waktu utuh dibaca sebagai bentuk 'D HH:MM:SS' yang bukan jam yang dimaksud. Keduanya kini jam saja, dari cap waktu yang sama.",
+      "Tanggal sidang dikirim ke portal sebagai obyek Date, dan JSON menuliskannya dalam UTC - sidang 18 September pukul 00:00 WITA terkirim sebagai \"2026-09-17T16:00\". Layar membaca sidangnya SEHARI LEBIH AWAL, lalu menghitung usulan sidang berikutnya dari tanggal yang salah itu. Diubah menjadi tulisan di satu tempat, bukan di tiap pembacanya.",
+      "ANTRIAN SIDANG TIDAK PERNAH TERGERAKKAN PADA PENUNDAAN - sebab yang sama. Tanggal yang diserahkan kepada penggerak antrian adalah obyek Date itu juga, dan pemeriksa bentuknya menolak setiap kali: layar berkata \"Antrian tidak tergerakkan: tanggal_tidak_sah\" pada penundaan yang sebenarnya berhasil. Terukur sesudah perbaikan: antriannya kini benar-benar ditandai selesai.",
+    ],
+    security: [
+      "Kering sebagai bawaan tetap berlaku pada ketiga lapis, dan kini juga pada jalur putus panitera sidang: tombol tulis terkunci sampai rencananya dibaca, dan rencana itu menyebutkan tiap baris yang akan ditulis termasuk barisnya di sys_audittrail.",
+      "Menghapus isian akun SIPP menutup satu pintu yang tidak ada penjaganya: audit trail SIPP hanya mencatat nama yang diberikan kepadanya, jadi nama yang salah ketik - atau nama orang lain - akan tercatat sebagaimana adanya tanpa satu pun pemeriksaan menangkapnya.",
+      "Angka kehadiran di luar 1..4 tidak menyentuh kolomnya sama sekali. Menuliskan angka yang tidak punya arti lebih buruk daripada membiarkan yang sudah ada.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Versi ekstensi tidak berubah.",
+      "Alamat halamannya tetap /sidang-tunda meski isinya kini tunda DAN putus. Alamat itu sudah tertanam pada layar antrian dan pada tautan yang mungkin sudah dibuka orang; menggantinya demi kerapian nama menukar satu ketidaknyamanan dengan tautan yang mati.",
+      "Cetak birunya dibaca langsung dari /var/www/html/antrian/php/_fungsi.php dan menu.sidang.php di peladen - termasuk urutan langkah, nilai tetap sumber hukum, dan angka kehadiran pihak. Yang ditiru alurnya; tampilannya sengaja tidak.",
+      "Berkas sidang-tunda.tsx dan sidang-putus.tsx dihapus, digantikan hasil-sidang.tsx. Penjaga yang dahulu menunjuk keduanya kini menunjuk berkas baru itu, dan tuntutan tentang akun SIPP dibalik dengan sengaja - bukan dilonggarkan.",
+    ],
+    knownLimitations: [
+      "Jalur HAKIM - menulis amar dan pertimbangan hukum lengkap - masih ada di peladen dan tetap berfungsi, tetapi belum punya layarnya sendiri di portal. Yang ada sekarang hanya jalur panitera sidang.",
+      "Jarak dua pekan adalah kebiasaan satker, bukan aturan. Ia usulan yang selalu dapat diganti, dan hari liburnya memang diperiksa - tetapi hari sidang majelisnya hanya diperingatkan, tidak ditolak.",
+      "Putusan yang sudah tercatat tidak dapat disunting dari layar ini. SIPP sendiri menghapus lalu menyisipkan ulang ketika putusannya disunting - 8.220 baris DELETE pada basis data ini - dan meniru penyuntingan adalah pekerjaan yang berbeda dari mencatat putusan baru.",
+    ],
+  },
   {
     version: "2.22.0",
     title: "ALETA Judicia v2.22.0 - Tanda Tangan yang Bertuan, Majelis yang Berakun, dan Peta Perkara",

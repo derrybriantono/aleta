@@ -1036,7 +1036,9 @@ router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
       jamSekarang: String(badan.jamSekarang || ""),
       agendaBerikut: String(badan.agendaBerikut || ""),
       jenisPengadilan: badan.jenisPengadilan,
+      // Cadangan saja - panitera sidang perkaranya dibaca dari SIPP.
       olehUsername: String(badan.olehUsername || ""),
+      dihadiriOleh: badan.dihadiriOleh,
       operator,
       ip: alamatAudit(req),
     });
@@ -1099,6 +1101,109 @@ router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
       operator: rencana.operator,
       sidangSekarang: rencana.sidangSekarang,
       sidangBerikutnya: rencana.sidangBerikutnya,
+      andaian: rencana.andaian || [],
+      antrian,
+      rencana: kering
+        ? rencana.langkah.map((x) => ({
+            tabel: x.tabel,
+            aksi: x.aksi,
+            keterangan: x.keterangan,
+            sql: String(x.sql).replace(/\s+/g, " ").trim(),
+            nilai: x.params,
+          }))
+        : undefined,
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Memutus satu sidang - panitera sidang mencatat bahwa hari ini perkaranya
+ * diputus.
+ *
+ * BUKAN borang hakim. Amar dan pertimbangan hukumnya tidak ditanyakan: aplikasi
+ * antrian sidang satker mengisi amar_putusan dengan "BELUM DIINPUT" dan
+ * sumber_hukum_id tetap '8,11'. Naskahnya ditulis hakim belakangan lewat SIPP.
+ *
+ * Alamat /sidang/putus yang lama - yang menuntut amar dan pertimbangan - tetap
+ * ada untuk jalur hakim. Keduanya menulis ke tabel yang sama pada saat yang
+ * berbeda, dan ON DUPLICATE KEY UPDATE membuat keduanya hidup berdampingan.
+ */
+router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const kering = badan.kering !== false;
+
+    const rencana = await sidangHasilService.susunRencanaPutus({
+      jadwalId: badan.jadwalId,
+      statusPutusanId: badan.statusPutusanId,
+      tanggalPutus: String(badan.tanggalPutus || ""),
+      verstek: String(badan.verstek || ""),
+      jamSekarang: String(badan.jamSekarang || ""),
+      dihadiriOleh: badan.dihadiriOleh,
+      operator,
+      ip: alamatAudit(req),
+    });
+
+    if (!rencana.ok) {
+      void jejakAletaService.catat({
+        aksi: "putus",
+        jenis: "putus-sidang",
+        perkaraId: badan.perkaraId,
+        operator,
+        ip: alamatAudit(req),
+        berhasil: false,
+        kering,
+        alasan: String(rencana.alasan || "ditolak"),
+        langkah: [],
+      });
+      res.status(400).json(rencana);
+      return;
+    }
+
+    const hasil = await sidangHasilService.jalankanRencana(rencana, { kering });
+
+    // Antrian ditandai selesai, sama seperti pada penundaan - dan gagalnya
+    // tidak membatalkan putusan yang sudah benar.
+    let antrian = null;
+    if (hasil.ok) {
+      antrian = await sidangHasilService.setelAntrian({
+        perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+        tanggalSidang: rencana.putusan && rencana.putusan.tanggalPutus,
+        ruangId: badan.ruangId,
+        keadaan: sidangHasilService.ANTRIAN_SELESAI,
+        kering,
+      });
+    }
+
+    void jejakAletaService.catat({
+      aksi: "putus",
+      jenis: "putus-sidang",
+      perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+      nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
+      tanggalPenetapan: rencana.putusan && rencana.putusan.tanggalPutus,
+      akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+      namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+      operator: rencana.operator,
+      ip: alamatAudit(req),
+      berhasil: hasil.ok === true,
+      kering,
+      alasan: hasil.ok ? "" : String(hasil.alasan || "gagal"),
+      langkah: rencana.langkah,
+    });
+
+    res.status(hasil.ok ? 200 : 409).json({
+      ...hasil,
+      perkara: rencana.perkara,
+      atasNama: rencana.atasNama,
+      operator: rencana.operator,
+      putusan: rencana.putusan,
       andaian: rencana.andaian || [],
       antrian,
       rencana: kering

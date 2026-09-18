@@ -30,8 +30,10 @@ export const dynamic = "force-dynamic";
  *   1. KERING SEBAGAI BAWAAN. `kering: false` harus disebut dengan tegas.
  *      Permintaan yang lupa menyebutnya menghasilkan rencana yang dapat
  *      dibaca, bukan tulisan yang tidak dapat ditarik kembali.
- *   2. AKUN SIPP-nya disebut pemanggil, dan itulah yang muncul pada audit
- *      trail. ALETA tidak pernah menulis atas nama dirinya sendiri.
+ *   2. AKUN SIPP-nya DITURUNKAN DARI PERKARANYA - panitera sidang yang aktif
+ *      pada `perkara_panitera_pn` - dan itulah yang muncul pada audit trail.
+ *      ALETA tidak pernah menulis atas nama dirinya sendiri, dan tidak pernah
+ *      pula menerima nama yang diketik orang.
  *   3. Kewenangannya "panel", sama dengan layar antrian sidang yang menjadi
  *      pintu masuknya.
  */
@@ -76,15 +78,24 @@ export async function POST(request: NextRequest) {
     await pastikanKapabilitas(db, actorUserId, "panel");
 
     const badan = (await request.json()) as Record<string, unknown>;
-    const olehUsername = String(badan.olehUsername || "").trim();
-    if (!olehUsername) {
-      return ok({
-        available: true,
-        ok: false,
-        alasan: "Akun SIPP yang menuliskannya wajib disebut - audit trail memakai namanya.",
-      });
-    }
 
+    // ========================================================================
+    // AKUN SIPP TIDAK LAGI DITANYAKAN - IA DITURUNKAN DARI PERKARANYA
+    // ========================================================================
+    //
+    // Sampai 2.22.0 rute ini MENOLAK permintaan yang tidak menyebut username,
+    // dan layarnya menanyakannya. Itu keliru, dan kelirunya bukan soal
+    // kenyamanan: penundaan ditulis atas nama PANITERA SIDANG perkara itu, dan
+    // siapa panitera sidangnya sudah melekat pada perkaranya sejak penetapan -
+    // aplikasi antrian sidang satker membacanya dari `perkara_panitera_pn`,
+    // tidak pernah menanyakannya.
+    //
+    // Isian yang menanyakannya membuka pintu menulis atas nama orang lain, dan
+    // tidak ada satu pun pemeriksaan yang akan menangkapnya: audit trail SIPP
+    // hanya mencatat nama yang diberikan kepadanya.
+    //
+    // Yang dikirim tetap diteruskan sebagai CADANGAN - dipakai layanan hanya
+    // bila perkaranya sungguh tidak punya panitera sidang aktif.
     const hasil = await postGatewayTundaSidang({
       jadwalId: badan.jadwalId,
       perkaraId: badan.perkaraId,
@@ -95,7 +106,8 @@ export async function POST(request: NextRequest) {
       agendaBerikut: String(badan.agendaBerikut || ""),
       jenisPengadilan: badan.jenisPengadilan,
       ruangId: badan.ruangId,
-      olehUsername,
+      dihadiriOleh: badan.dihadiriOleh,
+      olehUsername: String(badan.olehUsername || ""),
       // Operator adalah orang portal yang menekan tombolnya - terpisah dari
       // akun SIPP yang namanya tercatat di audit trail. Keduanya disimpan,
       // supaya pertanyaan "siapa yang menjalankannya" tetap ada jawabannya.

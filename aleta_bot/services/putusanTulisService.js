@@ -224,7 +224,7 @@ async function susunRencanaPutus(minta = {}) {
   const tanggalPutusan = bersih(minta.tanggalPutusan);
   if (!tanggalSah(tanggalPutusan)) return { ok: false, alasan: "tanggal_putusan_tidak_sah" };
 
-  const saat = penetapan.waktuMysql();
+  const saat = await penetapan.waktuBasisData();
   const hariIni = saat.slice(0, 10);
   // Putusan bertanggal esok hari adalah putusan yang belum diucapkan. Yang
   // bertanggal lampau boleh - putusan memang sering diketik beberapa hari

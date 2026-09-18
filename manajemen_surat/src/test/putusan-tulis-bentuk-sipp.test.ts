@@ -54,7 +54,10 @@ const penetapan = baca("aleta_bot/services/penetapanTulisService.js");
 const tunda = baca("aleta_bot/services/sidangHasilService.js");
 const gerbang = baca("aleta_bot/routes/internalGatewayRoutes.js");
 const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/sidang-putus/route.ts");
-const layar = baca("manajemen_surat/src/components/portal/sidang-putus.tsx");
+// Layar panitera sidang - satu berkas untuk tunda dan putus sekaligus. Jalur
+// HAKIM yang dijaga berkas ini tidak punya layar tersendiri di portal; yang
+// dituntut di sini hanya bahwa daftar status putusannya dibaca dari data.
+const layar = baca("manajemen_surat/src/components/portal/hasil-sidang.tsx");
 
 /** Kode saja - supaya tuntutan tidak lulus atas keterangannya sendiri. */
 const kode = layanan
@@ -68,10 +71,17 @@ describe("dua baris, satu detik, satu akun", () => {
     expect(kode).toContain("INSERT INTO perkara_pertimbangan_hukum");
   });
 
-  it("keduanya memakai cap waktu yang sama", () => {
-    // Satu `saat`, dipakai kedua langkah - bukan dua panggilan waktuMysql().
-    const panggilan = kode.match(/penetapan\.waktuMysql\(\)/g) || [];
+  it("keduanya memakai cap waktu yang sama, dan jamnya dari BASIS DATA", () => {
+    // Satu `saat`, dipakai kedua langkah - bukan dua panggilan jam.
+    const panggilan = kode.match(/penetapan\.waktuBasisData\(\)/g) || [];
     expect(panggilan.length).toBe(1);
+
+    // waktuMysql() membaca jam CONTAINER, dan Node di dalam container jatuh ke
+    // UTC bila env TZ tidak diset - terukur: basis data menjawab 13:15 WITA
+    // sementara Node menjawab 05:15. Seluruh baris audit ALETA akan tercatat
+    // delapan jam sebelum kejadiannya, berselisih dengan baris SIPP di tabel
+    // yang sama yang jamnya benar.
+    expect(kode).not.toContain("penetapan.waktuMysql()");
   });
 
   it("riwayat perkara TIDAK disentuh - terukur 0 baris sedetik", () => {

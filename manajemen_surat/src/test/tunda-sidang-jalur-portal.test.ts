@@ -38,7 +38,10 @@ const baca = (jalur: string) => readFileSync(path.join(AKAR, jalur), "utf8").rep
 const gerbang = baca("aleta_bot/routes/internalGatewayRoutes.js");
 const klien = baca("manajemen_surat/src/server/modules/aleta-bot/whatsapp-gateway-client.ts");
 const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/sidang-tunda/route.ts");
-const layar = baca("manajemen_surat/src/components/portal/sidang-tunda.tsx");
+// Satu layar untuk kedua hasil sidang. Dahulu dua berkas - `sidang-tunda.tsx`
+// dan `sidang-putus.tsx` - dan keduanya dapat terbuka bersamaan, padahal sidang
+// tidak dapat ditunda DAN diputus sekaligus.
+const layar = baca("manajemen_surat/src/components/portal/hasil-sidang.tsx");
 const antrian = baca("manajemen_surat/src/components/portal/aleta-ecourt-sidang.tsx");
 const pengguna = baca("manajemen_surat/src/components/portal/aleta-ecourt-pengguna.tsx");
 
@@ -65,20 +68,53 @@ describe("kering sebagai bawaan di tiap lapis", () => {
 });
 
 describe("audit trail memakai nama petugas, bukan nama ALETA", () => {
-  it("akun SIPP wajib disebut, dan rute menolak bila kosong", () => {
-    expect(rute).toContain("Akun SIPP yang menuliskannya wajib disebut");
+  /**
+   * ==========================================================================
+   * AKUN DITURUNKAN DARI PERKARANYA, TIDAK PERNAH DIKETIK
+   * ==========================================================================
+   *
+   * Sampai 2.22.0 rute ini MENOLAK permintaan yang tidak menyebut username,
+   * dan layarnya menanyakannya. Berkas ini menuntut kebalikannya sekarang -
+   * dan pembalikan itu disengaja, bukan pelonggaran.
+   *
+   * Penundaan ditulis atas nama PANITERA SIDANG perkara itu, dan siapa
+   * panitera sidangnya sudah melekat pada perkaranya sejak penetapan.
+   * Aplikasi antrian sidang satker membacanya dari `perkara_panitera_pn`
+   * (`antrian/php/_fungsi.php`), tidak pernah menanyakannya.
+   *
+   * Isian yang menanyakannya membuka pintu menulis atas nama orang lain, dan
+   * TIDAK ADA satu pun pemeriksaan yang akan menangkapnya: audit trail SIPP
+   * hanya mencatat nama yang diberikan kepadanya.
+   */
+  const layanan = baca("aleta_bot/services/sidangHasilService.js");
+
+  it("layanan membaca panitera sidang dari perkaranya", () => {
+    expect(layanan).toContain("async function akunPerkara(perkaraId) {");
+    expect(layanan).toContain("FROM perkara_panitera_pn c");
+    expect(layanan).toContain("JOIN v_users d ON d.panitera_id = c.panitera_id");
   });
 
-  it("operator portal disimpan terpisah dari akun SIPP", () => {
+  it("penundaan memakai panitera perkaranya, bukan nama yang dikirim", () => {
+    expect(layanan).toContain("const dariPerkara = await akunPerkara(keadaan.perkaraId);");
+    expect(layanan).toContain("dariPerkara.panitera || (await akunSipp(minta.olehUsername))");
+  });
+
+  it("rute TIDAK lagi menolak permintaan tanpa username", () => {
+    expect(rute).not.toContain("Akun SIPP yang menuliskannya wajib disebut");
+  });
+
+  it("operator portal tetap tercatat, dan username hanya diteruskan sebagai cadangan", () => {
     // Dua pertanyaan yang berbeda: siapa yang namanya tercatat di SIPP, dan
     // siapa yang menekan tombolnya di portal.
     expect(rute).toContain('operator: actorUserId || "portal"');
-    expect(rute).toContain("olehUsername,");
+    expect(rute).toContain('olehUsername: String(badan.olehUsername || ""),');
   });
 
-  it("layar menerangkan nama siapa yang akan muncul", () => {
-    expect(layar).toContain("Nama inilah yang muncul pada audit trail SIPP");
-    expect(layar).toContain("ALETA tidak pernah menulis atas nama dirinya sendiri");
+  it("layar tidak menanyakan akun SIPP sama sekali", () => {
+    // Bukan sekadar "tidak wajib" - tidak ada isiannya. Isian yang diisi
+    // otomatis masih dapat disunting, dan yang dapat disunting akan disunting.
+    expect(layar).not.toMatch(/olehUsername/);
+    expect(layar).toContain("Aplikasi antrian membaca panitera");
   });
 
   it("percobaan yang DITOLAK ikut tercatat di jejak ALETA", () => {
@@ -110,7 +146,7 @@ describe("antrian digerakkan sesudahnya, dan gagalnya tidak membatalkan penundaa
 
   it("layar menyebut nol baris bukan galat", () => {
     expect(layar).toContain("Nol baris bukan galat");
-    expect(layar).toContain("Penundaannya tetap sah dan tetap tercatat");
+    expect(layar).toContain("Catatannya tetap sah dan tetap tersimpan");
   });
 });
 

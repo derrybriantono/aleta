@@ -160,7 +160,17 @@ describe("tanggal diperiksa sebelum satu baris pun ditulis", () => {
   });
 
   it("akun pejabatnya harus benar-benar ada di SIPP", () => {
-    expect(badan).toContain('alasan: "akun_sipp_tidak_ketemu"');
+    // Sebabnya berganti nama pada 2.23.0, bukan berganti maksud. Akunnya tidak
+    // lagi diketik pemanggil melainkan diturunkan dari perkaranya - panitera
+    // pengganti yang aktif pada perkara_panitera_pn - sehingga yang ditolak
+    // bukan lagi "username yang disebut tidak ada" melainkan "perkara ini tidak
+    // punya panitera sidang".
+    //
+    // Yang dijaga di sini tetap satu hal: TIDAK ADA baris yang ditulis tanpa
+    // pejabat yang sungguh ada. Nama alasannya boleh berubah lagi; yang tidak
+    // boleh hilang adalah penolakannya.
+    expect(badan).toContain('alasan: "panitera_sidang_tidak_ketemu"');
+    expect(badan).toContain("const dariPerkara = await akunPerkara(keadaan.perkaraId);");
   });
 });
 
