@@ -37,6 +37,48 @@
 const db = require("../db_config");
 const { cleanText, normalizeCaseNumber } = require("./ecourtTextService");
 
+/**
+ * ============================================================================
+ * PIHAK PERKARA TANPA ${PIHAK_PERKARA} - DAN INI TERUKUR
+ * ============================================================================
+ *
+ * Sepuluh kueri pada berkas ini membaca pihak lewat tampilan ${PIHAK_PERKARA},
+ * dan empat di antaranya menjadi analisis paling lambat di layar. Diukur atas
+ * perkara 565/Pdt.G/2026/PA.Dgl di salinan satker, ketiga puluh satu analisis
+ * dijalankan satu per satu:
+ *
+ *     pihak      59.844 ms        profil     13.571 ms
+ *     pasangan   28.201 ms        wilayah    10.383 ms
+ *
+ * Enam puluh detik. Gerbang portal menyerah pada 8 detik dan ekstensi pada 9 -
+ * jadi yang terbaca petugas bukan "lambat", melainkan "tidak berhasil".
+ *
+ * Sebabnya bentuk tampilannya: ia menggabungkan perkara_pihak1..5 dengan UNION
+ * dan membawa subkueri berkorelasi pada tiap barisnya, sehingga saringan
+ * perkara_id TIDAK dapat didorong masuk - seluruh isinya disusun lebih dahulu
+ * untuk mengambil dua baris.
+ *
+ * Yang dipakai kueri-kueri ini hanya EMPAT kolom: perkara_id, pihak_id,
+ * pihak_ke, nama. Tampilannya memikul tujuh belas, berikut sambungan ke tabel
+ * perkara yang tidak satu pun dibaca di sini.
+ *
+ * Diukur pada kueri yang sama, satu perkara:
+ *
+ *     lewat tampilan     996 ms
+ *     union empat kolom   77 ms
+ *
+ * Saringannya didorong masuk sendiri oleh basis data, jadi bentuk pemanggilnya
+ * tidak berubah sama sekali - tidak ada parameter tambahan, tidak ada kueri
+ * yang perlu ditulis ulang.
+ */
+const PIHAK_PERKARA = `(
+  SELECT perkara_id, pihak_id, 1 AS pihak_ke, nama FROM perkara_pihak1
+  UNION ALL SELECT perkara_id, pihak_id, 2, nama FROM perkara_pihak2
+  UNION ALL SELECT perkara_id, pihak_id, 3, nama FROM perkara_pihak3
+  UNION ALL SELECT perkara_id, pihak_id, 4, nama FROM perkara_pihak4
+  UNION ALL SELECT perkara_id, pihak_id, 5, nama FROM perkara_pihak5
+)`;
+
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.query(sql, params, (error, rows) => {
@@ -372,7 +414,7 @@ async function riwayatPihak(perkara) {
             ph.tanggal_lahir AS tanggalLahir,
             ph.alamat AS alamat,
             vp.pihak_ke AS pihakKe
-       FROM v_pihak_perkara vp
+       FROM ${PIHAK_PERKARA} vp
        JOIN pihak ph ON ph.id = vp.pihak_id
       WHERE vp.perkara_id = ?
       LIMIT 20`,
@@ -411,60 +453,205 @@ async function riwayatPihak(perkara) {
    * SELECT - verify-pemisahan-database.js memeriksanya secara statis, dan
    * kueri yang disusun dari peubah tidak dapat lagi ia baca.
    */
-  const cariPihak = (syarat, params) =>
+  // ==========================================================================
+  // DUA LANGKAH, SUPAYA INDEKSNYA TERPAKAI
+  // ==========================================================================
+  //
+  // Bentuk satu kueri - `FROM pihak ph JOIN (union) vp ON vp.pihak_id = ph.id`
+  // memaksa basis data menyusun SELURUH gabungan pihak lebih dahulu, sebab
+  // tabel turunan tidak punya indeks untuk disambung. Diukur dengan mencatat
+  // tiap kueri analisis ini: satu pencarian menurut NIK memakan 10.939
+  // milidetik, dan satu pencarian saksi 6.327 - dua kueri itu saja sudah 17
+  // dari 18 detik seluruhnya.
+  //
+  // Sebabnya: `pihak.nomor_indentitas` TIDAK berindeks (hanya `nama` yang
+  // berindeks), sehingga 36.451 baris dipindai, lalu hasilnya disambungkan ke
+  // gabungan yang juga harus disusun utuh.
+  //
+  // Dipecah dua, keduanya memakai indeks yang memang ada:
+  //
+  //   1. `pihak` disaring sendirian - menghasilkan segelintir id;
+  //   2. kelima cabang `perkara_pihak1..5` disaring `pihak_id IN (...)`, dan
+  //      kolom itu berindeks pada tiap cabangnya.
+  //
+  // Terukur pada langkah yang sama: 2 ms + 182 ms.
+  //
+  // Tidak ada indeks baru yang ditambahkan ke basis data pengadilan. Menambah
+  // indeks pada tabel SIPP adalah perubahan skema milik satker, bukan milik
+  // alat yang menumpang membacanya.
+  const BATAS_ORANG = 200;
+
+  /** Orang yang cocok dengan syaratnya - dari tabel pihak yang berindeks. */
+  const cariOrang = (syarat, params) =>
     runQuery(
-      `SELECT vp.perkara_id AS perkaraId,
-            vp.pihak_ke AS pihakKe,
-            pk.nomor_perkara AS nomorPerkara,
-            pk.jenis_perkara_nama AS jenisPerkara,
-            pk.tanggal_pendaftaran AS tanggalDaftar,
-            pu.tanggal_putusan AS tanggalPutusan,
-            pu.tanggal_cabut AS tanggalCabut,
-            pu.tanggal_gugur AS tanggalGugur,
-            pu.status_putusan_nama AS statusPutusan,
-            pu.putusan_verstek AS verstek
-       FROM pihak ph
-       JOIN v_pihak_perkara vp ON vp.pihak_id = ph.id
-       JOIN perkara pk ON pk.perkara_id = vp.perkara_id
-       LEFT JOIN perkara_putusan pu ON pu.perkara_id = pk.perkara_id
-      WHERE ${syarat}
-      ORDER BY pk.tanggal_pendaftaran DESC
-      LIMIT 30`,
+      `SELECT ph.id AS pihakId,
+              ph.nomor_indentitas AS nikCocok,
+              ph.nama AS namaCocok,
+              ph.tanggal_lahir AS lahirCocok
+         FROM pihak ph
+        WHERE ${syarat}
+        LIMIT ${BATAS_ORANG}`,
       params
     ).catch(() => []);
 
-  for (const satu of pihak) {
-    const nama = cleanText(satu.nama);
-    const nik = cleanText(satu.nik);
-    const lahir = isoTanggal(satu.tanggalLahir);
+  /** Perkara lain yang memuat orang-orang itu - disaring lewat pihak_id. */
+  const perkaraOrang = (idOrang, batas) => {
+    if (!Array.isArray(idOrang) || idOrang.length === 0) return Promise.resolve([]);
+    const tandaId = idOrang.map(() => "?").join(",");
+    const nilai = [];
+    for (let i = 0; i < 5; i += 1) nilai.push(...idOrang);
+    nilai.push(perkara.perkaraId);
+    return runQuery(
+      `SELECT vp.perkara_id AS perkaraId,
+              vp.pihak_ke AS pihakKe,
+              vp.pihak_id AS pihakIdCocok,
+              pk.nomor_perkara AS nomorPerkara,
+              pk.jenis_perkara_nama AS jenisPerkara,
+              pk.tanggal_pendaftaran AS tanggalDaftar,
+              pu.tanggal_putusan AS tanggalPutusan,
+              pu.tanggal_cabut AS tanggalCabut,
+              pu.tanggal_gugur AS tanggalGugur,
+              pu.status_putusan_nama AS statusPutusan,
+              pu.putusan_verstek AS verstek
+         FROM (SELECT perkara_id, pihak_id, 1 AS pihak_ke FROM perkara_pihak1 WHERE pihak_id IN (${tandaId})
+               UNION ALL SELECT perkara_id, pihak_id, 2 FROM perkara_pihak2 WHERE pihak_id IN (${tandaId})
+               UNION ALL SELECT perkara_id, pihak_id, 3 FROM perkara_pihak3 WHERE pihak_id IN (${tandaId})
+               UNION ALL SELECT perkara_id, pihak_id, 4 FROM perkara_pihak4 WHERE pihak_id IN (${tandaId})
+               UNION ALL SELECT perkara_id, pihak_id, 5 FROM perkara_pihak5 WHERE pihak_id IN (${tandaId})) vp
+         JOIN perkara pk ON pk.perkara_id = vp.perkara_id
+         LEFT JOIN perkara_putusan pu ON pu.perkara_id = pk.perkara_id
+        WHERE vp.perkara_id <> ?
+        ORDER BY pk.tanggal_pendaftaran DESC
+        LIMIT ${Number(batas) || 30}`,
+      nilai
+    ).catch(() => []);
+  };
 
-    // --- tingkat 1: NIK ---
-    if (/^[0-9]{16}$/.test(nik)) {
-      const temuan = await cariPihak(
-        "ph.nomor_indentitas = ? AND vp.perkara_id <> ?",
-        [nik, perkara.perkaraId]
-      );
-      for (const t of temuan) catat(satu, t, "NIK");
-    }
+  /** Perkara tempat orang-orang itu tercatat sebagai SAKSI. */
+  const perkaraSaksi = (idOrang, batas) => {
+    if (!Array.isArray(idOrang) || idOrang.length === 0) return Promise.resolve([]);
+    const tandaId = idOrang.map(() => "?").join(",");
+    return runQuery(
+      `SELECT DISTINCT p5.perkara_id AS perkaraId,
+              p5.pihak_id AS pihakIdCocok,
+              pk.nomor_perkara AS nomorPerkara,
+              pk.jenis_perkara_nama AS jenisPerkara,
+              pk.tanggal_pendaftaran AS tanggalDaftar,
+              p5.nama AS namaSaksi
+         FROM perkara_pihak5 p5
+         JOIN perkara pk ON pk.perkara_id = p5.perkara_id
+        WHERE p5.pihak_id IN (${tandaId})
+        ORDER BY pk.tanggal_pendaftaran DESC
+        LIMIT ${Number(batas) || 30}`,
+      idOrang
+    ).catch(() => []);
+  };
 
-    // --- tingkat 2: nama dan tanggal lahir ---
-    if (nama.length >= 4 && lahir) {
-      const temuan = await cariPihak(
-        "ph.nama = ? AND ph.tanggal_lahir = ? AND vp.perkara_id <> ?",
-        [nama, lahir, perkara.perkaraId]
-      );
-      for (const t of temuan) catat(satu, t, "nama + tanggal lahir");
-    }
+  // ==========================================================================
+  // SATU KUERI PER TINGKAT, BUKAN SATU KUERI PER PIHAK
+  // ==========================================================================
+  //
+  // Bentuk sebelumnya mengulang pencarian untuk TIAP pihak: sampai dua puluh
+  // pihak dikali tiga tingkat, lalu diulang lagi untuk saksi - seratus dua
+  // puluh kueri untuk satu layar. Terukur atas perkara 565/Pdt.G/2026/PA.Dgl
+  // di salinan satker: analisis ini 59.844 milidetik, dan sesudah tampilan
+  // v_pihak_perkara dibuang pun masih 21.094. Gerbang portal menyerah pada 8
+  // detik - jadi yang terbaca petugas "tidak berhasil", bukan "lambat".
+  //
+  // Sekarang tiap TINGKAT dicari sekali untuk seluruh pihak sekaligus, dan
+  // kunci pencocokannya ikut dipulangkan supaya tiap temuan tetap tahu ia
+  // milik pihak yang mana. Hasilnya sama persis: `catat` sudah membuang
+  // ganda per pasangan (pihak, perkara), dan tingkat yang lebih pasti tetap
+  // dijalankan lebih dahulu - jadi urutan antar pihak tidak pernah berarti.
+  //
+  // Batas 30 per pihak menjadi batas bersama yang naik menurut jumlah
+  // pihaknya, dengan langit-langit. Batas yang tetap 30 akan membuat pihak
+  // terakhir kehabisan jatah gara-gara pihak pertama.
+  const BATAS_SEBARIS = 30;
+  const batasBersama = Math.min(600, Math.max(BATAS_SEBARIS, pihak.length * BATAS_SEBARIS));
 
-    // --- tingkat 3: nama saja ---
-    if (nama.length >= 5) {
-      const temuan = await cariPihak(
-        "ph.nama = ? AND vp.perkara_id <> ?",
-        [nama, perkara.perkaraId]
-      );
-      for (const t of temuan) catat(satu, t, "nama saja");
+  /** Kunci -> daftar pihak yang memilikinya. Satu NIK dapat dipegang dua baris. */
+  const petaDari = (ambil) => {
+    const peta = new Map();
+    for (const satu of pihak) {
+      const kunci = ambil(satu);
+      if (!kunci) continue;
+      if (!peta.has(kunci)) peta.set(kunci, []);
+      peta.get(kunci).push(satu);
     }
-  }
+    return peta;
+  };
+
+  const tanda = (n) => Array.from({ length: n }, () => "?").join(",");
+
+  /**
+   * Satu tingkat pencocokan, dikerjakan untuk SELURUH pihak sekaligus.
+   *
+   * Dua langkah: orangnya dicari lebih dahulu dari tabel `pihak`, lalu
+   * perkaranya dicari lewat `pihak_id` yang berindeks. Kunci pencocokannya
+   * dipetakan kembali ke pihak asal, supaya tiap temuan tetap tahu ia milik
+   * siapa - itulah yang dahulu dijamin oleh gelung per pihak.
+   */
+  const jalankanTingkat = async (peta, syarat, nilai, label, ambilKunci) => {
+    if (peta.size === 0) return { idOrang: [], idKeAsal: new Map() };
+    const orang = await cariOrang(syarat, nilai);
+    const idKeAsal = new Map();
+    for (const o of orang) {
+      const asal = peta.get(ambilKunci(o)) || [];
+      if (asal.length > 0) idKeAsal.set(String(o.pihakId), asal);
+    }
+    const idOrang = [...idKeAsal.keys()].map((x) => Number(x)).filter((x) => x > 0);
+    if (idOrang.length === 0) return { idOrang, idKeAsal };
+
+    const temuan = await perkaraOrang(idOrang, batasBersama);
+    for (const t of temuan) {
+      for (const asal of idKeAsal.get(String(t.pihakIdCocok)) || []) catat(asal, t, label);
+    }
+    return { idOrang, idKeAsal };
+  };
+
+  // --- tingkat 1: NIK ---
+  const petaNik = petaDari((x) => {
+    const nik = cleanText(x.nik);
+    return /^[0-9]{16}$/.test(nik) ? nik : "";
+  });
+  const hasilNik = await jalankanTingkat(
+    petaNik,
+    `ph.nomor_indentitas IN (${tanda(petaNik.size)})`,
+    [...petaNik.keys()],
+    "NIK",
+    (o) => cleanText(o.nikCocok)
+  );
+
+  // --- tingkat 2: nama dan tanggal lahir ---
+  const petaNamaLahir = petaDari((x) => {
+    const nama = cleanText(x.nama);
+    const lahir = isoTanggal(x.tanggalLahir);
+    return nama.length >= 4 && lahir ? `${nama}|${lahir}` : "";
+  });
+  const pasanganNamaLahir = [...petaNamaLahir.keys()].map((k) => k.split("|"));
+  const nilaiNamaLahir = [];
+  for (const [nama, lahir] of pasanganNamaLahir) nilaiNamaLahir.push(nama, lahir);
+  const hasilNamaLahir = await jalankanTingkat(
+    petaNamaLahir,
+    pasanganNamaLahir.map(() => "(ph.nama = ? AND ph.tanggal_lahir = ?)").join(" OR "),
+    nilaiNamaLahir,
+    "nama + tanggal lahir",
+    (o) => `${cleanText(o.namaCocok)}|${isoTanggal(o.lahirCocok)}`
+  );
+
+  // --- tingkat 3: nama saja ---
+  const petaNama = petaDari((x) => {
+    const nama = cleanText(x.nama);
+    return nama.length >= 5 ? nama : "";
+  });
+  await jalankanTingkat(
+    petaNama,
+    `ph.nama IN (${tanda(petaNama.size)})`,
+    [...petaNama.keys()],
+    "nama saja",
+    (o) => cleanText(o.namaCocok)
+  );
 
   // --- pernah menjadi saksi ---
   //
@@ -475,19 +662,23 @@ async function riwayatPihak(perkara) {
   // Dicocokkan bertingkat sama seperti pencocokan pihak di atas: satu orang
   // dapat punya beberapa baris `pihak` yang berbeda pada perkara yang
   // berbeda, sehingga mencocokkan pihak_id saja melewatkan sebagian besar.
-  const cariSaksi = (syarat, params) =>
+  const cariSaksi = (syarat, params, batas = 30) =>
     runQuery(
       `SELECT DISTINCT p5.perkara_id AS perkaraId,
               pk.nomor_perkara AS nomorPerkara,
               pk.jenis_perkara_nama AS jenisPerkara,
               pk.tanggal_pendaftaran AS tanggalDaftar,
-              p5.nama AS namaSaksi
+              p5.nama AS namaSaksi,
+              p5.pihak_id AS pihakIdCocok,
+              ph.nomor_indentitas AS nikCocok,
+              ph.nama AS namaCocok,
+              ph.tanggal_lahir AS lahirCocok
          FROM perkara_pihak5 p5
          JOIN pihak ph ON ph.id = p5.pihak_id
          JOIN perkara pk ON pk.perkara_id = p5.perkara_id
         WHERE ${syarat}
         ORDER BY pk.tanggal_pendaftaran DESC
-        LIMIT 30`,
+        LIMIT ${Number(batas) || 30}`,
       params
     ).catch(() => []);
 
@@ -504,24 +695,32 @@ async function riwayatPihak(perkara) {
     }
   };
 
+  // Saksi memakai orang yang SUDAH ditemukan pada ketiga tingkat di atas -
+  // tidak ada pencarian keempat. Yang ditambahkan hanya satu pertanyaan:
+  // perkara mana saja yang mencatat orang-orang itu sebagai saksi.
+  //
+  // Tingkat "id pihak" dari bentuk lama dilebur ke sini: pihak pada perkara
+  // ini sendiri sudah punya id-nya, dan ketiga tingkat lainnya menghasilkan id
+  // orang yang cocok. Menggabungkannya menjadi satu kueri menggantikan tiga.
+  const idSaksi = new Map();
   for (const satu of pihak) {
-    const nama = cleanText(satu.nama);
-    const nik = cleanText(satu.nik);
-    const lahir = isoTanggal(satu.tanggalLahir);
-    const idOrang = Number(satu.pihakId);
+    const id = Number(satu.pihakId);
+    if (Number.isFinite(id) && id > 0) idSaksi.set(String(id), [satu]);
+  }
+  for (const { idKeAsal } of [hasilNik, hasilNamaLahir]) {
+    for (const [id, asal] of idKeAsal) {
+      if (!idSaksi.has(id)) idSaksi.set(id, asal);
+    }
+  }
 
-    if (Number.isFinite(idOrang) && idOrang > 0) {
-      catatSaksi(await cariSaksi("p5.pihak_id = ?", [idOrang]), satu, "id pihak");
-    }
-    if (/^[0-9]{16}$/.test(nik)) {
-      catatSaksi(await cariSaksi("ph.nomor_indentitas = ?", [nik]), satu, "NIK");
-    }
-    if (nama.length >= 4 && lahir) {
-      catatSaksi(
-        await cariSaksi("ph.nama = ? AND ph.tanggal_lahir = ?", [nama, lahir]),
-        satu,
-        "nama + tanggal lahir"
-      );
+  if (idSaksi.size > 0) {
+    const rows = await perkaraSaksi(
+      [...idSaksi.keys()].map((x) => Number(x)),
+      batasBersama
+    );
+    for (const row of rows) {
+      const asal = idSaksi.get(String(row.pihakIdCocok)) || [];
+      if (asal.length > 0) catatSaksi([row], asal[0], "daftar saksi");
     }
   }
 
@@ -600,7 +799,7 @@ async function pasanganPihak(perkara) {
   const pihak = await runQuery(
     `SELECT ph.id AS pihakId, ph.nama AS nama, ph.nomor_indentitas AS nik,
             ph.tanggal_lahir AS tanggalLahir, vp.pihak_ke AS pihakKe
-       FROM v_pihak_perkara vp
+       FROM ${PIHAK_PERKARA} vp
        JOIN pihak ph ON ph.id = vp.pihak_id
       WHERE vp.perkara_id = ?
       LIMIT 20`,
@@ -636,7 +835,7 @@ async function pasanganPihak(perkara) {
       tambah(
         await runQuery(
           `SELECT vp.perkara_id AS perkaraId FROM pihak ph
-             JOIN v_pihak_perkara vp ON vp.pihak_id = ph.id
+             JOIN ${PIHAK_PERKARA} vp ON vp.pihak_id = ph.id
             WHERE ph.nomor_indentitas = ? LIMIT 100`,
           [nik]
         ).catch(() => [])
@@ -646,7 +845,7 @@ async function pasanganPihak(perkara) {
       tambah(
         await runQuery(
           `SELECT vp.perkara_id AS perkaraId FROM pihak ph
-             JOIN v_pihak_perkara vp ON vp.pihak_id = ph.id
+             JOIN ${PIHAK_PERKARA} vp ON vp.pihak_id = ph.id
             WHERE ph.nama = ? AND ph.tanggal_lahir = ? LIMIT 100`,
           [nama, lahir]
         ).catch(() => [])
@@ -735,7 +934,7 @@ async function analisaPanggilan(id) {
        FROM perkara_pelaksanaan_relaas r
        LEFT JOIN perkara_jadwal_sidang sd ON sd.id = r.sidang_id
        LEFT JOIN pihak pk ON pk.id = r.pihak_id
-       LEFT JOIN v_pihak_perkara vp ON vp.pihak_id = r.pihak_id AND vp.perkara_id = r.perkara_id
+       LEFT JOIN ${PIHAK_PERKARA} vp ON vp.pihak_id = r.pihak_id AND vp.perkara_id = r.perkara_id
        LEFT JOIN jurusita jm ON jm.id = r.jurusita_id
       WHERE r.perkara_id = ?
       ORDER BY sd.tanggal_sidang ASC, r.tanggal_relaas ASC
@@ -1466,7 +1665,7 @@ async function tenggangPanggilan(id) {
        LEFT JOIN perkara_jurusita js ON js.jurusita_id = r.jurusita_id AND js.perkara_id = r.perkara_id
        LEFT JOIN jurusita jm ON jm.id = r.jurusita_id
        LEFT JOIN pihak pk ON pk.id = r.pihak_id
-       LEFT JOIN v_pihak_perkara vp ON vp.pihak_id = r.pihak_id AND vp.perkara_id = r.perkara_id
+       LEFT JOIN ${PIHAK_PERKARA} vp ON vp.pihak_id = r.pihak_id AND vp.perkara_id = r.perkara_id
       WHERE r.perkara_id = ?
       ORDER BY sd.tanggal_sidang ASC, r.tanggal_relaas ASC
       LIMIT 100`,
@@ -1847,7 +2046,7 @@ async function sebaranWilayah() {
     `SELECT rk.kecamatan_nama AS kecamatan,
             COUNT(DISTINCT vp.perkara_id) AS jumlah
        FROM pihak ph
-       JOIN v_pihak_perkara vp ON vp.pihak_id = ph.id
+       JOIN ${PIHAK_PERKARA} vp ON vp.pihak_id = ph.id
        JOIN perkara p ON p.perkara_id = vp.perkara_id
        JOIN ref_kecamatan_new rk ON rk.kecamatan_kode = ph.kecamatan
       WHERE ph.kecamatan <> ''
@@ -2066,7 +2265,7 @@ async function profilPihak() {
               MAX(TIMESTAMPDIFF(YEAR, ph.tanggal_lahir, p.tanggal_pendaftaran)) AS tertua,
               COUNT(*) AS jumlah
          FROM pihak ph
-         JOIN v_pihak_perkara vp ON vp.pihak_id = ph.id
+         JOIN ${PIHAK_PERKARA} vp ON vp.pihak_id = ph.id
          JOIN perkara p ON p.perkara_id = vp.perkara_id
         WHERE ph.tanggal_lahir IS NOT NULL
           AND TIMESTAMPDIFF(YEAR, ph.tanggal_lahir, p.tanggal_pendaftaran) BETWEEN 15 AND 100`,
@@ -3154,7 +3353,7 @@ async function ringkasPerkara(perkara) {
     ).catch(() => []),
     runQuery(
       `SELECT vp.nama AS nama, vp.pihak_ke AS pihakKe
-         FROM v_pihak_perkara vp WHERE vp.perkara_id = ? LIMIT 40`,
+         FROM ${PIHAK_PERKARA} vp WHERE vp.perkara_id = ? LIMIT 40`,
       [perkara.perkaraId]
     ).catch(() => []),
   ]);

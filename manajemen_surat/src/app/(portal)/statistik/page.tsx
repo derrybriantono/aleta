@@ -12,6 +12,8 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
 
+import { JENIS_GRAFIK, type JenisGrafik } from "@/components/portal/statistics-chart";
+
 const LazyStatisticsChart = dynamic(
   () => import("@/components/portal/statistics-chart").then((module) => module.StatisticsChart),
   {
@@ -63,7 +65,7 @@ function monthLabel(value: string) {
 export default function StatistikPage() {
   const { accessibleLetters, aiConfig, currentUser, metrics } = usePortal();
   const [manualFilterMode, setManualFilterMode] = useState<"simple" | "advanced">("simple");
-  const [chartType, setChartType] = useState<"bar" | "line" | "pie">("bar");
+  const [chartType, setChartType] = useState<JenisGrafik>("bar");
   const [dimension, setDimension] = useState<"jenis" | "tahun" | "triwulan" | "klasifikasi" | "asal" | "status">(
     "jenis"
   );
@@ -378,10 +380,22 @@ export default function StatistikPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-4">
-            <NativeSelect value={chartType} onChange={(event) => setChartType(event.target.value as "bar" | "line" | "pie")} className="h-12 text-base">
-              <option value="bar">Bar Chart</option>
-              <option value="line">Line Chart</option>
-              <option value="pie">Pie Chart</option>
+            {/* Daftarnya dibaca dari komponen grafiknya sendiri - layar tidak
+                menyalin daftar bentuk, supaya bentuk yang ditambahkan di sana
+                tidak pernah tertinggal di sini. Keterangan "untuk" ikut
+                terbaca sebagai judul gantung: bentuk yang salah pilih membuat
+                data yang benar terbaca keliru. */}
+            <NativeSelect
+              value={chartType}
+              onChange={(event) => setChartType(event.target.value as JenisGrafik)}
+              className="h-12 text-base"
+              title={JENIS_GRAFIK.find((x) => x.nilai === chartType)?.untuk}
+            >
+              {JENIS_GRAFIK.map((jenis) => (
+                <option key={jenis.nilai} value={jenis.nilai} title={jenis.untuk}>
+                  {jenis.label}
+                </option>
+              ))}
             </NativeSelect>
             <NativeSelect
               value={dimension}
@@ -501,12 +515,12 @@ export default function StatistikPage() {
               {analyticsSummary}
             </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              {chartType === "bar" ? (
-                <ChartColumn className="h-4 w-4 text-primary" />
-              ) : chartType === "line" ? (
+              {chartType === "line" || chartType === "area" ? (
                 <LineChart className="h-4 w-4 text-primary" />
-              ) : (
+              ) : chartType === "pie" || chartType === "donut" || chartType === "treemap" ? (
                 <PieChart className="h-4 w-4 text-primary" />
+              ) : (
+                <ChartColumn className="h-4 w-4 text-primary" />
               )}
               <TrendingUp className="h-4 w-4 text-primary" />
               Insight dibaca dari chart aktif dan filter statistik yang sedang dipakai.
