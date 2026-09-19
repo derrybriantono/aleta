@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
+  getGatewayLapisanPeta,
   getGatewayPerkaraDesa,
   getGatewayPetaRelaas,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
@@ -62,6 +63,25 @@ export async function GET(request: NextRequest) {
         return ok({ available: false, ok: false, alasan: hasil.error || "ALETA Bot belum dapat dihubungi." });
       }
       return ok({ available: true, ...(hasil.data as Record<string, unknown>) });
+    }
+
+    // Sembilan lapisan lain - biaya, faktor, kehadiran, berulang, perubahan,
+    // jurusita, sidang keliling yang ada, dan desa tanpa perkara. Masing-masing
+    // dibaca HANYA ketika lapisannya dipilih.
+    const apa = String(cari.get("apa") || "");
+    if (apa && apa !== "relaas") {
+      const lapis = await getGatewayLapisanPeta({
+        apa,
+        induk: String(cari.get("induk") || ""),
+        periode,
+        acuan,
+        dari,
+        sampai,
+      });
+      if (!lapis.ok) {
+        return ok({ available: false, ok: false, alasan: lapis.error || "ALETA Bot belum dapat dihubungi." });
+      }
+      return ok({ available: true, ...(lapis.data as Record<string, unknown>) });
     }
 
     const hasil = await getGatewayPetaRelaas({ periode, acuan, dari, sampai });

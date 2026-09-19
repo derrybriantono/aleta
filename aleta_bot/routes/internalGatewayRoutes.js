@@ -74,6 +74,7 @@ const analisaLanjutService = require("../services/analisaLanjutService");
 const penilaianKonseptorService = require("../services/penilaianKonseptorService");
 const petaPerkaraService = require("../services/petaPerkaraService");
 const identitasPihakService = require("../services/identitasPihakService");
+const lapisanPetaService = require("../services/lapisanPetaService");
 const promptPutusanService = require("../services/promptPutusanService");
 // Penilaian dan pengawasan - lihat rute /penilaian/* dan /laporan-perkara/*.
 const kerangkaPenilaianService = require("../services/kerangkaPenilaianService");
@@ -2896,6 +2897,53 @@ router.get("/sipp/peta-perkara/desa", requireInternalToken, async (req, res) => 
       sampai
     );
     res.status(hasil.ok ? 200 : 400).json({ ...hasil, rentang: { dari, sampai } });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Sembilan lapisan peta - biaya, faktor, kehadiran, berulang, perubahan,
+ * jurusita, sidang keliling yang ada, dan desa tanpa perkara.
+ *
+ * Satu alamat, satu bentuk jawaban. Tiap lapisan dibaca HANYA ketika dipilih:
+ * biaya panggilan sendiri menyisir seluruh transaksi pada rentangnya, dan
+ * tidak ada gunanya dibayar oleh yang hanya melihat jumlah perkara.
+ */
+router.get("/sipp/peta-perkara/lapisan", requireInternalToken, async (req, res) => {
+  try {
+    const { dari, sampai } = petaPerkaraService.rentangPeriode(
+      String(req.query.periode || "tahun"),
+      String(req.query.acuan || ""),
+      String(req.query.dari || ""),
+      String(req.query.sampai || "")
+    );
+    const apa = String(req.query.apa || "");
+
+    if (apa === "keliling") {
+      const hasil = await lapisanPetaService.kelilingAda(dari, sampai);
+      res.json({ ok: true, rentang: { dari, sampai }, ...hasil });
+      return;
+    }
+    if (apa === "kosong") {
+      const hasil = await lapisanPetaService.desaKosong(String(req.query.induk || ""));
+      res.json({ ok: true, ...hasil });
+      return;
+    }
+
+    // Daftar tertutup, dan dibaca dengan hasOwnProperty: nama fungsi tidak
+    // pernah datang dari peramban. Lihat keterangan PENGERJA pada layanan
+    // analisis - "constructor" dan "toString" pernah menembus daftar yang
+    // tampak tertutup.
+    const kerja = Object.prototype.hasOwnProperty.call(lapisanPetaService.LAPISAN, apa)
+      ? lapisanPetaService.LAPISAN[apa]
+      : null;
+    if (typeof kerja !== "function") {
+      res.status(400).json({ ok: false, alasan: "lapisan_tidak_dikenali" });
+      return;
+    }
+    const hasil = await kerja(dari, sampai);
+    res.json({ ok: true, apa, rentang: { dari, sampai }, ...hasil });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }

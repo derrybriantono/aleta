@@ -31,6 +31,8 @@ export type PetaLeaflet = {
     posisi: [number, number],
     opsi?: Record<string, unknown>
   ) => PetaTitik;
+  /** Lingkaran berjari-jari METER - dipakai cincin jarak, bukan penanda titik. */
+  circle: (posisi: [number, number], opsi?: Record<string, unknown>) => PetaTitik;
   layerGroup: () => PetaKumpulan;
   latLngBounds: (titik: [number, number][]) => PetaBatas;
   control: { attribution: (opsi?: Record<string, unknown>) => PetaLapisan };

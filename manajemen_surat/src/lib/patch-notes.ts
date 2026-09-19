@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.24.0";
+export const APP_VERSION = "2.25.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.24.0 - Peta yang Menjawab, Layar yang Menyapa, dan Sepuluh Pertanyaan Baru";
+  "ALETA Judicia v2.25.0 - Peta yang Mengusulkan";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,56 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.25.0",
+    title: "ALETA Judicia v2.25.0 - Peta yang Mengusulkan",
+    date: "2026-09-19",
+    status: "Belum terpasang",
+    summary:
+      "Peta Perkara berubah dari alat MELIHAT menjadi alat MEMUTUSKAN. Delapan lapisan baru, " +
+      "cincin jarak dari kantor, dan usulan sidang keliling yang dihitung - bukan dikira. " +
+      "Pembukanya satu angka: hanya 11% perkara datang dari radius sepuluh kilometer, sementara " +
+      "dua desa berjarak 163 km menyumbang 145 perkara tanpa pernah disidangi keliling.",
+    added: [
+      "CINCIN JARAK 10/25/50/100 KM dari kantor pengadilan, beserta penanda kantornya. Terukur: 11% perkara dari radius 10 km, 29% dari 25 km, 60% dari 50 km, 92% dari 100 km. Tanpa cincin, angka itu tidak terlihat sama sekali - peta hanya memperlihatkan titik yang tersebar.",
+      "USULAN SIDANG KELILING YANG DIHITUNG: banyaknya perkara x jarak x angka panggilan gagal, dan yang kecamatannya SUDAH terlayani dikeluarkan. Tanpa pengecualian itu, usulannya akan terus menyebut Sigi Biromaru yang justru sudah 126 kali disidangi keliling. Teratas pada data satker: Ogoamas I dan II di Sojol Utara - 145 perkara, 163 km, belum pernah terlayani.",
+      "LAPISAN BIAYA PANGGILAN. Terukur dan selisihnya besar: Alitupu rata Rp 409.800 per panggilan, Sibayu Rp 166.208 - dua setengah kali lipat. Berguna menakar panjar dan menilai kewajaran radius.",
+      "LAPISAN PIHAK TIDAK HADIR - berbeda dari panggilan tidak bertemu, dan perbedaannya penting: yang ini SUDAH dipanggil dan panggilannya sampai, ia tetap tidak datang. Yang satu masalah jurusita, yang ini kepatuhan pihak.",
+      "LAPISAN PIHAK BERULANG - orang yang berperkara lebih dari sekali, dicocokkan lewat NIK bukan nama. 295 orang di seluruh basis data, dan mereka mengelompok: satu desa di Sigi Biromaru memuat 12 orang dengan 24 perkara.",
+      "LAPISAN PERUBAHAN ANTAR TAHUN. Desa yang MELONJAK lebih menarik daripada desa yang memang selalu banyak: Labuan Toposo 8 perkara menjadi 46, dan satu desa Sigi Biromaru dari nol menjadi 33.",
+      "LAPISAN FAKTOR PERCERAIAN DOMINAN per desa - terisi pada 4.603 dari 4.607 akta. Desa mana yang faktornya ekonomi dan mana yang perselisihan belum pernah bisa dijawab, dan itu bahan penyuluhan.",
+      "LAPISAN JURUSITA YANG MELAYANI - siapa mengantar relaas ke desa mana. Disandingkan dengan lapisan panggilan tidak bertemu, ia menjawab pembagian tugas.",
+      "PENANDA SIDANG KELILING YANG SUDAH ADA - Sigi Biromaru 126 sidang, Rio Pakava 40, Terpadu Sindue 39. Tanpa ini, usulan sidang keliling tidak dapat dinilai siapa pun: yang terlihat hanya desa jauh, bukan desa jauh YANG BELUM TERLAYANI.",
+      "DAFTAR DESA TANPA PERKARA per kabupaten. Terukur di Donggala dan hasilnya sendiri sebuah jawaban: hanya 13 desa yang tidak pernah muncul - hampir tiap desa di wilayah hukum ini pernah berperkara.",
+      "UNDUH CSV isi lapisan yang sedang tampil, lengkap dengan tanda urutan bita supaya Excel tidak merusak huruf nama desanya.",
+    ],
+    changed: [
+      "Tangga warna tiap lapisan disusun dari data yang SEDANG TAMPIL, bukan dari batas tetap. Batas yang cocok untuk biaya panggilan (ratusan ribu rupiah) tidak cocok untuk persentase, dan yang cocok untuk keduanya tidak cocok untuk selisih yang dapat negatif.",
+      "Selisih antar tahun diwarnai DUA rona yang bertemu di tengah, bukan satu rona yang menua: nol pada selisih berarti tidak berubah - ia tengah, bukan ujung.",
+      "Faktor perceraian dan nama jurusita memakai palet KATEGORI berjumlah delapan, dan yang melewatinya jatuh ke kelabu alih-alih diputar. Warna yang berputar membuat kategori kesembilan berwarna sama dengan yang pertama, dan pembacanya menyangka keduanya hal yang sama.",
+      "Titik kantor pengadilan dapat diganti lewat NEXT_PUBLIC_PETA_KANTOR, supaya satker lain memakai layar yang sama tanpa menyentuh kode.",
+    ],
+    fixed: [
+      "DUA KOLOM BERNAMA jurusita_id YANG BUKAN HAL YANG SAMA. Susunan pertama menyambung perkara_pelaksanaan_relaas.jurusita_id ke perkara_jurusita.jurusita_id - namanya sama, isinya bukan: dari 14.495 relaas, NOL yang menemukan namanya. Tidak ada galat; hanya kolom nama yang kosong seluruhnya, dan peta yang seluruh desanya bertulis tidak tercatat. Yang benar tabel induk jurusita lewat id - 7.101 dari 14.495 (49%).",
+    ],
+    security: [
+      "Daftar lapisan dibaca dengan hasOwnProperty atas objek tanpa induk: nama fungsi tidak pernah datang dari peramban. constructor dan toString pernah menembus daftar yang tampak tertutup pada layanan analisis - lihat catatan 2.19.x.",
+      "Nama pihak pada daftar perkara per desa tetap berupa INISIAL. Peta dibuka di layar yang kerap terlihat orang lain.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Versi ekstensi tidak berubah.",
+      "SATU ORANG, LIMA EJAAN. Tabel jurusita memuat MOH.SYUKRI S.H 2.727 relaas, Mohammad Syukri SH 1.041, Moh.Syukri 478, dan MOH SYUKRI 431 - satu orang yang sama. Ejaannya SENGAJA tidak disatukan: menebak kemiripan nama adalah cara tercepat menggabungkan dua orang yang berbeda. Yang dikerjakan menyebutkan keadaan itu di layar.",
+      "Tiap lapisan dibaca HANYA ketika dipilih, dan disimpan sesudahnya. Lapisan biaya sendiri menyisir seluruh transaksi pada rentangnya - terukur 938 milidetik untuk delapan tahun - dan tidak ada gunanya dibayar oleh yang hanya melihat jumlah perkara.",
+      "Waktu tiap lapisan pada data satker: perubahan 64 ms, jurusita 147 ms, berulang 226 ms, faktor 506 ms, kehadiran 845 ms, biaya 938 ms, desa tanpa perkara 2.497 ms.",
+    ],
+    knownLimitations: [
+      "PETANYA TIDAK DAPAT DIUNDUH SEBAGAI GAMBAR, dan itu bukan kelalaian: ubinan peta datang dari peladen lain tanpa izin lintas-asal, sehingga kanvas yang memuatnya menjadi ternoda dan peramban menolak mengubahnya menjadi berkas. Yang diberikan angkanya - CSV - dan untuk laporan, angka justru lebih berguna daripada gambar.",
+      "Angka panggilan gagal pada usulan sidang keliling hanya terisi bila lapisan panggilan tidak bertemu sudah dibuka sekali; ia dibaca terpisah dan tidak dibayar oleh yang tidak membukanya.",
+      "Nama jurusita hanya terbaca pada 49% relaas, dan NIK hanya terisi pada 35% pihak - lapisan pihak berulang karena itu BATAS BAWAH, bukan hitungan penuh.",
+      "Belum ada dua peta berdampingan untuk membandingkan dua rentang. Lapisan perubahan antar tahun menjawab pertanyaan yang sama dengan satu peta, dan itu yang dikerjakan lebih dahulu.",
+      "Kepadatan per penduduk tetap tidak dapat dihitung - tidak ada data penduduk di SIPP. Itu ukuran yang paling benar (desa besar wajar banyak perkara) dan menuntut data dari luar.",
+    ],
+  },
   {
     version: "2.24.0",
     title: "ALETA Judicia v2.24.0 - Peta yang Menjawab, Layar yang Menyapa, dan Sepuluh Pertanyaan Baru",

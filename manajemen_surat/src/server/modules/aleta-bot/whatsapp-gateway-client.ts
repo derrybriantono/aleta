@@ -2016,6 +2016,32 @@ export async function getGatewayPetaRelaas(pilihan: {
   });
 }
 
+/**
+ * Satu lapisan peta - biaya, faktor, kehadiran, berulang, perubahan, jurusita,
+ * sidang keliling, atau desa tanpa perkara.
+ *
+ * Batas waktu penilaian: lapisan biaya menyisir seluruh transaksi pada
+ * rentangnya, terukur 938 milidetik untuk delapan tahun.
+ */
+export async function getGatewayLapisanPeta(pilihan: {
+  apa: string;
+  induk?: string;
+  periode?: string;
+  acuan?: string;
+  dari?: string;
+  sampai?: string;
+}): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ apa: pilihan.apa });
+  if (pilihan.induk) kueri.set("induk", pilihan.induk);
+  if (pilihan.periode) kueri.set("periode", pilihan.periode);
+  if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
+  if (pilihan.dari) kueri.set("dari", pilihan.dari);
+  if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
+  return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara/lapisan?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
 /** Daftar perkara satu desa - dibaca ketika lingkaran peta diketuk. */
 export async function getGatewayPerkaraDesa(pilihan: {
   kelompok: string;

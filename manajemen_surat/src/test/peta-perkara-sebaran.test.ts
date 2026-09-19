@@ -470,3 +470,90 @@ describe("lingkaran yang diketuk, dan pengelompokan per kecamatan", () => {
     expect(petaLayar).toContain("if (!sudahDipaskan.current) {");
   });
 });
+
+
+describe("sembilan lapisan peta, cincin jarak, dan usulan sidang keliling", () => {
+  const lapisan = baca("aleta_bot/services/lapisanPetaService.js");
+  const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
+  const kodeLapisan = lapisan
+    .split("\n")
+    .filter((b) => !/^\s*(\*|\/\/|\/\*)/.test(b))
+    .join("\n");
+
+  it("kesembilan lapisan ada di peladen dan di layar", () => {
+    for (const kunci of ["biaya", "faktor", "kehadiran", "berulang", "perubahan", "jurusita"]) {
+      expect(kodeLapisan, kunci).toContain(kunci);
+      expect(petaLayar, kunci).toContain(`apa: "${kunci}"`);
+    }
+    expect(kodeLapisan).toContain("async function kelilingAda");
+    expect(kodeLapisan).toContain("async function desaKosong");
+  });
+
+  it("daftar lapisannya TERTUTUP - nama fungsi tidak datang dari peramban", () => {
+    // "constructor" dan "toString" pernah menembus daftar yang tampak tertutup;
+    // lihat keterangan PENGERJA pada layanan analisis.
+    expect(gerbang).toContain("Object.prototype.hasOwnProperty.call(lapisanPetaService.LAPISAN, apa)");
+    expect(lapisan).toContain("Object.create(null)");
+  });
+
+  it("kolom tanggal tidak dibungkus fungsi", () => {
+    // YEAR(tgl) = ? memaksa MySQL menghitung fungsinya untuk SETIAP baris.
+    expect(kodeLapisan).not.toMatch(/WHERE[^`]*YEAR\(/);
+    expect(kodeLapisan).toContain("BETWEEN ? AND ?");
+  });
+
+  it("dua kolom bernama jurusita_id yang BUKAN hal yang sama", () => {
+    // Susunan pertama menyambung relaas ke perkara_jurusita: dari 14.495
+    // relaas, NOL yang menemukan namanya. Yang benar tabel induk `jurusita`.
+    expect(kodeLapisan).toContain("LEFT JOIN jurusita js ON js.id = r.jurusita_id");
+    expect(kodeLapisan).not.toContain("js.jurusita_id = r.jurusita_id");
+    expect(lapisan).toContain("NOL yang menemukan namanya");
+  });
+
+  it("satu orang dengan beberapa ejaan disebut, bukan disatukan diam-diam", () => {
+    // Menebak kemiripan nama adalah cara tercepat menggabungkan dua orang yang
+    // berbeda.
+    expect(lapisan).toContain("SATU ORANG, LIMA EJAAN");
+    expect(lapisan).toContain("2.727");
+  });
+
+  it("titik kantor dapat diganti tanpa menyentuh kode", () => {
+    expect(petaLayar).toContain("NEXT_PUBLIC_PETA_KANTOR");
+    expect(petaLayar).toContain("const CINCIN_KM = [10, 25, 50, 100];");
+  });
+
+  it("usulan sidang keliling MENGELUARKAN yang sudah terlayani", () => {
+    // Tanpa itu, usulannya akan terus menyebut Sigi Biromaru yang justru sudah
+    // 126 kali disidangi.
+    expect(petaLayar).toContain("const terlayani =");
+    expect(petaLayar).toContain("skor: terlayani ? 0 :");
+  });
+
+  it("selisih diwarnai dua rona, bukan satu rona menua", () => {
+    // Selisih punya NOL yang berarti - tidak berubah. Satu rona menua
+    // menyiratkan nol adalah ujung, padahal ia tengah.
+    expect(petaLayar).toContain('if (satuan === "selisih")');
+  });
+
+  it("kategori tidak memakai warna yang berputar", () => {
+    // Warna yang berputar membuat kategori kesembilan berwarna sama dengan
+    // yang pertama, dan pembacanya menyangka keduanya hal yang sama.
+    expect(petaLayar).toContain("const WARNA_KATEGORI = [");
+    expect(petaLayar).toContain("urut < WARNA_KATEGORI.length ? WARNA_KATEGORI[urut] : WARNA_TAK_CUKUP");
+  });
+
+  it("peta tidak menjanjikan unduhan GAMBAR, dan sebabnya tercatat", () => {
+    // Ubinan peta datang dari peladen lain tanpa izin lintas-asal; kanvas yang
+    // memuatnya ternoda dan peramban menolak mengubahnya jadi berkas.
+    expect(petaLayar).toContain("TIDAK DAPAT DIUNDUH SEBAGAI GAMBAR");
+    expect(petaLayar).toContain("ternoda");
+    expect(petaLayar).toContain("peta-perkara-${lapisan}.csv");
+  });
+
+  it("CSV diberi tanda urutan bita supaya Excel tidak merusak hurufnya", () => {
+    // Dituntut sebagai TEKS SUMBER. Tuntutan yang ditulis sebagai untaian biasa
+    // akan menguraikan lolosannya lebih dahulu lalu mencari huruf tak terlihat
+    // di dalam berkas - yang memang tidak ada di sana.
+    expect(petaLayar).toContain(String.raw`"\uFEFF" + teks`);
+  });
+});

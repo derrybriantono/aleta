@@ -154,6 +154,76 @@ const TANGGA_RELAAS = [
 
 const WARNA_TAK_CUKUP = "#94a3b8";
 
+/**
+ * ============================================================================
+ * KANTOR PENGADILAN - SATU TITIK, DAN KENAPA IA DAPAT DIGANTI
+ * ============================================================================
+ *
+ * Cincin jarak dan usulan sidang keliling keduanya bersandar pada satu titik
+ * ini. Bawaannya kantor PA Donggala di Gunung Bale, Banawa - diambil dari
+ * berkas koordinat yang sama dengan desa-desanya, bukan dikarang.
+ *
+ * Dapat diganti lewat NEXT_PUBLIC_PETA_KANTOR ("lintang,bujur") supaya satker
+ * lain dapat memakai layar yang sama tanpa menyentuh kode.
+ */
+const KANTOR: [number, number] = (() => {
+  const setelan = String(process.env.NEXT_PUBLIC_PETA_KANTOR || "").split(",");
+  const lat = Number(setelan[0]);
+  const lon = Number(setelan[1]);
+  return Number.isFinite(lat) && Number.isFinite(lon) ? [lat, lon] : [-0.6748, 119.7471];
+})();
+
+/** Cincin jarak, dalam kilometer. Terukur: 11% perkara di dalam 10 km, 60% di dalam 50 km. */
+const CINCIN_KM = [10, 25, 50, 100];
+
+/**
+ * Lapisan yang dapat dipilih.
+ *
+ * `apa` kosong berarti lapisan itu tidak membaca apa pun - jumlah perkara sudah
+ * ada pada muatan peta. Yang lain dibaca HANYA ketika dipilih; lapisan biaya
+ * sendiri menyisir seluruh transaksi pada rentangnya (terukur 938 ms).
+ */
+const LAPISAN: Array<{ kunci: string; apa: string; label: string; naikBaik: boolean }> = [
+  { kunci: "perkara", apa: "", label: "Jumlah perkara", naikBaik: false },
+  { kunci: "relaas", apa: "relaas", label: "Panggilan tidak bertemu", naikBaik: false },
+  { kunci: "kehadiran", apa: "kehadiran", label: "Pihak tidak hadir", naikBaik: false },
+  { kunci: "biaya", apa: "biaya", label: "Biaya panggilan", naikBaik: false },
+  { kunci: "berulang", apa: "berulang", label: "Pihak berulang", naikBaik: false },
+  { kunci: "perubahan", apa: "perubahan", label: "Perubahan antar tahun", naikBaik: false },
+  { kunci: "faktor", apa: "faktor", label: "Faktor perceraian", naikBaik: false },
+  { kunci: "jurusita", apa: "jurusita", label: "Jurusita yang melayani", naikBaik: false },
+];
+
+/**
+ * Warna untuk lapisan berkategori - faktor perceraian, nama jurusita.
+ *
+ * Palet kategori, bukan tangga: yang dibedakan JENIS, dan tangga satu rona
+ * menyiratkan urutan yang tidak ada. Delapan slot, dan yang melewatinya jatuh
+ * ke kelabu alih-alih diputar - warna yang berputar membuat kategori kesembilan
+ * berwarna sama dengan yang pertama.
+ */
+const WARNA_KATEGORI = [
+  "#ef4444",
+  "#3b82f6",
+  "#f59e0b",
+  "#10b981",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
+];
+
+/** Jarak bumi antara dua titik, kilometer. */
+function jarakKm(a: [number, number], b: [number, number]) {
+  const R = 6371;
+  const dLat = ((b[0] - a[0]) * Math.PI) / 180;
+  const dLon = ((b[1] - a[1]) * Math.PI) / 180;
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a[0] * Math.PI) / 180) * Math.cos((b[0] * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
 const angka = (n: number) => n.toLocaleString("id-ID");
 
 /** Nama yang aman disisipkan ke dalam tooltip HTML Leaflet. */
@@ -174,6 +244,25 @@ type DesaRelaas = {
   persen: number;
   cukup: boolean;
 };
+
+type BarisLapisan = {
+  kode: string;
+  nilai: number;
+  label?: string;
+  keterangan: string;
+  cukup: boolean;
+};
+
+type MuatanLapisan = {
+  ok?: boolean;
+  alasan?: string;
+  judul?: string;
+  satuan?: string;
+  keterangan?: string;
+  desa?: BarisLapisan[];
+};
+
+type TempatKeliling = { tempat: string; sidang: number; perkara: number; terakhir: string };
 
 type MuatanRelaas = {
   ok?: boolean;
@@ -226,11 +315,29 @@ export function PetaTitikPerkara({
   const [berkas, setBerkas] = useState<BerkasTitik | null>(null);
   const [gelap, setGelap] = useState(false);
 
-  /** Lapisan yang sedang digambar - jumlah perkara, atau panggilan tak bertemu. */
-  const [lapisan, setLapisan] = useState<"perkara" | "relaas">("perkara");
+  /** Lapisan yang sedang digambar - lihat daftar LAPISAN. */
+  const [lapisan, setLapisan] = useState("perkara");
   const [relaas, setRelaas] = useState<MuatanRelaas | null>(null);
   const [galatRelaas, setGalatRelaas] = useState("");
   const [memuatRelaas, setMemuatRelaas] = useState(false);
+
+  /**
+   * Lapisan lain, disimpan per kunci.
+   *
+   * Disimpan supaya berpindah kembali ke lapisan yang sudah dibaca tidak
+   * membaca SIPP lagi - dan pada rentang delapan tahun, lapisan biaya sendiri
+   * hampir satu detik.
+   */
+  const [lapis, setLapis] = useState<Record<string, MuatanLapisan>>({});
+  const [galatLapis, setGalatLapis] = useState("");
+  const [memuatLapis, setMemuatLapis] = useState(false);
+
+  /** Sidang keliling yang SUDAH ada - penanda, bukan lapisan. */
+  const [keliling, setKeliling] = useState<TempatKeliling[]>([]);
+
+  /** Cincin jarak dari kantor, dan usulan sidang keliling. */
+  const [cincin, setCincin] = useState(false);
+  const [usul, setUsul] = useState(false);
 
   /** Desa yang lingkarannya diketuk, beserta daftar perkaranya. */
   const [desaDibuka, setDesaDibuka] = useState<TitikPerkara | null>(null);
@@ -334,6 +441,78 @@ export function PetaTitikPerkara({
       hidup = false;
     };
   }, [lapisan, saringan.periode, saringan.acuan, saringan.dari, saringan.sampai]);
+
+  // --------------------------------------------------------------------
+  // Lapisan lain - dibaca sekali per kunci, ketika lapisannya dipilih.
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    const pilih = LAPISAN.find((x) => x.kunci === lapisan);
+    if (!pilih || !pilih.apa || pilih.apa === "relaas") return;
+    if (lapis[lapisan]) return;
+    let hidup = true;
+    setMemuatLapis(true);
+    setGalatLapis("");
+    void (async () => {
+      try {
+        const kueri = new URLSearchParams({
+          apa: pilih.apa,
+          periode: saringan.periode,
+          acuan: saringan.acuan,
+          dari: saringan.dari,
+          sampai: saringan.sampai,
+        });
+        const jawab = await fetch(apiPath(`/api/aleta-ecourt/peta-relaas?${kueri.toString()}`), {
+          cache: "no-store",
+        });
+        const isi = await bukaBungkus<MuatanLapisan>(jawab);
+        if (!hidup) return;
+        if (isi.ok === false) {
+          setGalatLapis(isi.alasan || "Lapisan tidak dapat dibaca.");
+          return;
+        }
+        setLapis((lama) => ({ ...lama, [lapisan]: isi }));
+      } catch (e) {
+        if (hidup) setGalatLapis(e instanceof Error ? e.message : "Lapisan gagal dibaca.");
+      } finally {
+        if (hidup) setMemuatLapis(false);
+      }
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, [lapisan, lapis, saringan.periode, saringan.acuan, saringan.dari, saringan.sampai]);
+
+  // --------------------------------------------------------------------
+  // Sidang keliling yang sudah ada - dibaca sekali, ketika penandanya
+  // dinyalakan. Tanpa ini, usulan sidang keliling tidak dapat dinilai siapa
+  // pun: yang terlihat hanya desa jauh, bukan desa jauh YANG BELUM TERLAYANI.
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    if (!usul || keliling.length > 0) return;
+    let hidup = true;
+    void (async () => {
+      try {
+        const kueri = new URLSearchParams({
+          apa: "keliling",
+          periode: saringan.periode,
+          acuan: saringan.acuan,
+          dari: saringan.dari,
+          sampai: saringan.sampai,
+        });
+        const jawab = await fetch(apiPath(`/api/aleta-ecourt/peta-relaas?${kueri.toString()}`), {
+          cache: "no-store",
+        });
+        const isi = await bukaBungkus<{ tempat?: TempatKeliling[] }>(jawab);
+        if (hidup && Array.isArray(isi.tempat)) setKeliling(isi.tempat);
+      } catch {
+        // Penanda yang gagal dibaca menyisakan usulannya tetap terbaca -
+        // hanya tanpa keterangan mana yang sudah terlayani.
+      }
+    })();
+    return () => {
+      hidup = false;
+    };
+  }, [usul, keliling.length, saringan.periode, saringan.acuan, saringan.dari, saringan.sampai]);
 
   // --------------------------------------------------------------------
   // Daftar perkara satu desa - dibaca ketika lingkarannya diketuk.
@@ -462,6 +641,39 @@ export function PetaTitikPerkara({
     return peta;
   }, [relaas]);
 
+  /** Nilai lapisan yang sedang tampil, per kode desa. */
+  const petaLapis = useMemo(() => {
+    const peta = new Map<string, BarisLapisan>();
+    for (const d of lapis[lapisan]?.desa ?? []) peta.set(d.kode, d);
+    return peta;
+  }, [lapis, lapisan]);
+
+  const satuan = lapis[lapisan]?.satuan ?? "";
+
+  /**
+   * Nilai terbesar dan terkecil lapisan yang tampil.
+   *
+   * Tangga warnanya disusun dari data yang SEDANG TAMPIL, bukan dari batas
+   * tetap. Batas tetap yang cocok untuk biaya panggilan tidak cocok untuk
+   * persentase, dan yang cocok untuk keduanya tidak cocok untuk selisih yang
+   * dapat negatif.
+   */
+  const jangkauLapis = useMemo(() => {
+    const nilai = (lapis[lapisan]?.desa ?? []).filter((x) => x.cukup).map((x) => x.nilai);
+    if (nilai.length === 0) return { min: 0, max: 0 };
+    return { min: Math.min(...nilai), max: Math.max(...nilai) };
+  }, [lapis, lapisan]);
+
+  /** Urutan kategori - dipakai lapisan faktor dan jurusita. */
+  const urutKategori = useMemo(() => {
+    const hitung = new Map<string, number>();
+    for (const d of lapis[lapisan]?.desa ?? []) {
+      const nama = d.label || String(d.nilai);
+      hitung.set(nama, (hitung.get(nama) || 0) + 1);
+    }
+    return [...hitung.entries()].sort((a, b) => b[1] - a[1]).map(([nama]) => nama);
+  }, [lapis, lapisan]);
+
   /**
    * Yang sungguh digambar: desa pada zum dekat, kecamatan pada zum jauh.
    *
@@ -568,6 +780,40 @@ export function PetaTitikPerkara({
    */
   const warnaTitik = useCallback(
     (jenis: Record<string, number>, kode: string) => {
+      // ------------------------------------------------------------------
+      // LAPISAN LAIN - tangga disusun dari data yang SEDANG TAMPIL
+      // ------------------------------------------------------------------
+      //
+      // Batas tetap yang cocok untuk biaya panggilan (ratusan ribu rupiah)
+      // tidak cocok untuk persentase, dan yang cocok untuk keduanya tidak
+      // cocok untuk selisih yang dapat NEGATIF. Karena itu tangganya dihitung
+      // dari jangkauan nilai lapisan itu sendiri.
+      if (lapisan !== "perkara" && lapisan !== "relaas") {
+        const d = petaLapis.get(kode);
+        if (!d || !d.cukup) return WARNA_TAK_CUKUP;
+
+        if (satuan === "kategori") {
+          const urut = urutKategori.indexOf(d.label || String(d.nilai));
+          return urut >= 0 && urut < WARNA_KATEGORI.length ? WARNA_KATEGORI[urut] : WARNA_TAK_CUKUP;
+        }
+
+        // Selisih punya NOL yang berarti - tidak berubah - jadi ia memakai dua
+        // rona yang bertemu di tengah, bukan satu rona yang menua.
+        if (satuan === "selisih") {
+          if (d.nilai > 0) return d.nilai >= 10 ? "#b91c1c" : "#f59e0b";
+          if (d.nilai < 0) return d.nilai <= -10 ? "#1d4ed8" : "#60a5fa";
+          return WARNA_TAK_CUKUP;
+        }
+
+        const rentang = jangkauLapis.max - jangkauLapis.min;
+        const bagian = rentang > 0 ? (d.nilai - jangkauLapis.min) / rentang : 0;
+        const urut = Math.min(
+          TANGGA_RELAAS.length - 1,
+          Math.floor((1 - bagian) * TANGGA_RELAAS.length)
+        );
+        return TANGGA_RELAAS[urut].warna;
+      }
+
       if (lapisan === "relaas") {
         const d = petaRelaas.get(kode);
         if (!d || !d.cukup) return WARNA_TAK_CUKUP;
@@ -636,6 +882,16 @@ export function PetaTitikPerkara({
           .map(([j, n]) => `${aman(j)} ${angka(n)}`)
           .join(" · ");
 
+        const dl = x.titik ? petaLapis.get(x.titik.kode) : null;
+        const barisLapis =
+          dl && lapisan !== "perkara" && lapisan !== "relaas"
+            ? dl.cukup
+              ? `<b>${aman(dl.label || String(dl.nilai))}${
+                  satuan === "persen" ? "%" : satuan === "rupiah" ? "" : ""
+                }</b><span>${aman(dl.keterangan)}</span>`
+              : `<span>${aman(dl.keterangan)} — terlalu sedikit untuk dibandingkan</span>`
+            : "";
+
         const d = x.titik ? petaRelaas.get(x.titik.kode) : null;
         const barisRelaas =
           lapisan === "relaas"
@@ -653,6 +909,7 @@ export function PetaTitikPerkara({
              <strong>${aman(x.nama)}</strong>
              <span>${aman(x.bawah)}${x.anggota > 1 ? ` · ${angka(x.anggota)} desa` : ""}</span>
              ${barisRelaas}
+             ${barisLapis}
              <b>${angka(x.perkara)} perkara</b>
              <span>${angka(x.lelaki)} laki-laki · ${angka(x.perempuan)} perempuan</span>
              ${rincianJenis ? `<span>${rincianJenis}</span>` : ""}
@@ -661,6 +918,42 @@ export function PetaTitikPerkara({
           { direction: "top", opacity: 1, className: "aleta-peta-tooltip" }
         );
         kumpulan.addLayer(lingkar);
+      }
+
+      // ------------------------------------------------------------------
+      // CINCIN JARAK DAN PENANDA KANTOR
+      // ------------------------------------------------------------------
+      //
+      // Terukur: hanya 11% perkara datang dari radius 10 km, 60% dari 50 km,
+      // dan 92% dari 100 km. Tanpa cincin, angka itu tidak terlihat sama
+      // sekali - peta hanya memperlihatkan titik yang tersebar.
+      if (cincin) {
+        for (const km of CINCIN_KM) {
+          kumpulan.addLayer(
+            L.circle(KANTOR, {
+              radius: km * 1000,
+              color: "#64748b",
+              weight: 1,
+              opacity: 0.55,
+              fill: false,
+              dashArray: "4 4",
+            })
+          );
+        }
+        kumpulan.addLayer(
+          L.circleMarker(KANTOR, {
+            radius: 6,
+            color: "#0f172a",
+            weight: 2,
+            fillColor: "#facc15",
+            fillOpacity: 1,
+          }).bindTooltip(
+            `<div class="aleta-peta-tip"><strong>Kantor pengadilan</strong><span>cincin ${CINCIN_KM.join(
+              ", "
+            )} km</span></div>`,
+            { direction: "top", opacity: 1, className: "aleta-peta-tooltip" }
+          )
+        );
       }
 
       // ------------------------------------------------------------------
@@ -709,7 +1002,107 @@ export function PetaTitikPerkara({
         }
       }
     })();
-  }, [siap, digambar, jariJari, warnaTitik, lapisan, petaRelaas]);
+  }, [siap, digambar, jariJari, warnaTitik, lapisan, petaRelaas, petaLapis, satuan, cincin]);
+
+  /**
+   * ==========================================================================
+   * USULAN SIDANG KELILING - DIHITUNG, BUKAN DIKIRA
+   * ==========================================================================
+   *
+   * Tiga hal yang membuat sebuah desa layak: BANYAK perkaranya, JAUH dari
+   * kantor, dan panggilannya SERING GAGAL. Skornya perkalian ketiganya, sebab
+   * desa yang banyak tetapi dekat tidak menghemat apa pun, dan desa yang jauh
+   * tetapi satu perkara setahun tidak sepadan dengan satu rombongan sidang.
+   *
+   * Yang SUDAH terlayani dikeluarkan - itulah gunanya penanda sidang keliling
+   * yang ada. Tanpanya, usulan ini akan terus menyebut Sigi Biromaru yang
+   * justru sudah 126 kali disidangi.
+   *
+   * Dihitung di peramban dari data yang sudah ada di tangan: titik desa, jarak
+   * ke kantor, dan lapisan relaas. Tidak ada kueri baru.
+   */
+  const usulan = useMemo(() => {
+    if (!usul) return [];
+    const namaTerlayani = keliling
+      .map((k) => k.tempat.toLowerCase())
+      .join(" ");
+    const hasil = tergambar.map(({ t: desa, pos }) => {
+      const km = jarakKm(KANTOR, pos);
+      const r = petaRelaas.get(desa.kode);
+      const gagal = r && r.cukup ? r.persen : 0;
+      // Kecamatannya sudah disebut salah satu tempat sidang keliling?
+      const terlayani =
+        Boolean(desa.kecamatan) && namaTerlayani.includes(desa.kecamatan.toLowerCase());
+      return {
+        desa,
+        km,
+        gagal,
+        terlayani,
+        // Jarak dibagi sepuluh supaya angkanya terbaca; perbandingannya tidak
+        // berubah karena pembaginya sama untuk semua.
+        skor: terlayani ? 0 : (desa.perkara * (km / 10) * (1 + gagal / 100)),
+      };
+    });
+    return hasil
+      .filter((x) => x.skor > 0 && x.km >= 20)
+      .sort((a, b) => b.skor - a.skor)
+      .slice(0, 8);
+  }, [usul, tergambar, petaRelaas, keliling]);
+
+  /**
+   * Isi lapisan sebagai CSV.
+   *
+   * PETANYA SENDIRI TIDAK DAPAT DIUNDUH SEBAGAI GAMBAR, dan itu bukan
+   * kelalaian: ubinan peta datang dari peladen lain tanpa izin lintas-asal,
+   * sehingga kanvas yang memuatnya menjadi "ternoda" dan peramban menolak
+   * mengubahnya jadi berkas. Yang dapat diberikan adalah ANGKANYA - dan untuk
+   * laporan, angka justru lebih berguna daripada gambar.
+   */
+  const unduhCsv = useCallback(() => {
+    const judul = LAPISAN.find((x) => x.kunci === lapisan)?.label ?? lapisan;
+    const baris = [["kode", "desa", "kecamatan", "kabupaten", "perkara", judul, "keterangan"]];
+    for (const { t: desa } of tergambar) {
+      const dl = petaLapis.get(desa.kode);
+      const dr = petaRelaas.get(desa.kode);
+      const nilai =
+        lapisan === "perkara"
+          ? String(desa.perkara)
+          : lapisan === "relaas"
+            ? dr && dr.cukup
+              ? `${dr.persen}%`
+              : ""
+            : dl && dl.cukup
+              ? String(dl.label ?? dl.nilai)
+              : "";
+      baris.push([
+        desa.kode,
+        desa.nama,
+        desa.kecamatan,
+        desa.kabupaten,
+        String(desa.perkara),
+        nilai,
+        // Keterangan relaas disusun di sini - bentuknya "8 dari 14 relaas" -
+        // sebab DesaRelaas memulangkan hitungannya, bukan kalimatnya.
+        (lapisan === "relaas"
+          ? dr
+            ? `${dr.takTemu} dari ${dr.relaas} relaas`
+            : ""
+          : dl?.keterangan) ?? "",
+      ]);
+    }
+    const teks = baris
+      .map((b) => b.map((x) => `"${String(x).replace(/"/g, '""')}"`).join(";"))
+      .join("\r\n");
+    // Tanda urutan bita di depan - tanpanya Excel membaca "Marawola" sebagai
+    // huruf berantakan pada berkas berhuruf non-ASCII.
+    const bita = new Blob(["\uFEFF" + teks], { type: "text/csv;charset=utf-8" });
+    const alamat = URL.createObjectURL(bita);
+    const tautan = document.createElement("a");
+    tautan.href = alamat;
+    tautan.download = `peta-perkara-${lapisan}.csv`;
+    tautan.click();
+    URL.revokeObjectURL(alamat);
+  }, [lapisan, tergambar, petaLapis, petaRelaas]);
 
   const jenisTampil = useMemo(
     () => Object.keys(penandaJenis).filter((j) => warnaJenis[j]),
@@ -794,30 +1187,58 @@ export function PetaTitikPerkara({
           panggilan tidak bertemu adalah NISBAH. Digambar bersamaan pada satu
           lingkaran, keduanya berebut arti warna dan ukuran - dan pembacanya
           tidak dapat tahu yang mana yang sedang ia lihat. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={lapisan === "perkara" ? "default" : "outline"}
-          onClick={() => setLapisan("perkara")}
-        >
-          Jumlah perkara
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={lapisan === "relaas" ? "default" : "outline"}
-          onClick={() => setLapisan("relaas")}
-        >
-          Panggilan tidak bertemu
-        </Button>
-        {memuatRelaas ? (
-          <span className="text-xs text-muted-foreground">membaca relaas…</span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {LAPISAN.map((l) => (
+          <Button
+            key={l.kunci}
+            type="button"
+            size="sm"
+            variant={lapisan === l.kunci ? "default" : "outline"}
+            onClick={() => setLapisan(l.kunci)}
+          >
+            {l.label}
+          </Button>
+        ))}
+        {memuatRelaas || memuatLapis ? (
+          <span className="text-xs text-muted-foreground">membaca…</span>
         ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Button
+          type="button"
+          size="sm"
+          variant={cincin ? "default" : "outline"}
+          onClick={() => setCincin((x) => !x)}
+          title="Lingkaran 10, 25, 50, dan 100 km dari kantor pengadilan"
+        >
+          <Maximize2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Cincin jarak
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={usul ? "default" : "outline"}
+          onClick={() => setUsul((x) => !x)}
+        >
+          <MapPin className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Usul sidang keliling
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={unduhCsv}>
+          <Layers className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Unduh CSV
+        </Button>
         <span className="ml-auto text-xs text-muted-foreground">
           {zum >= ZUM_DESA ? "tingkat desa" : "tingkat kecamatan — perbesar untuk desa"}
         </span>
       </div>
+
+      {lapisan !== "perkara" && lapisan !== "relaas" && lapis[lapisan]?.keterangan ? (
+        <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>{galatLapis || lapis[lapisan]?.keterangan}</span>
+        </p>
+      ) : null}
 
       {lapisan === "relaas" ? (
         <p className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs">
@@ -965,6 +1386,63 @@ export function PetaTitikPerkara({
             kurang.
           </span>
         </p>
+      ) : null}
+
+      {/* ==================================================================
+          USULAN SIDANG KELILING
+          ==================================================================
+
+          Tiga hal dikalikan: banyak perkaranya, jauh dari kantor, dan
+          panggilannya sering gagal. Yang kecamatannya SUDAH terlayani sidang
+          keliling dikeluarkan - tanpa itu, usulan ini akan terus menyebut Sigi
+          Biromaru yang justru sudah 126 kali disidangi. */}
+      {usul ? (
+        <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+          <p className="mb-1.5 text-sm font-semibold">
+            Usulan sidang keliling — delapan teratas
+          </p>
+          {usulan.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Tidak ada desa berjarak lebih dari 20 km yang belum terlayani pada rentang ini.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[30rem] text-xs">
+                <thead className="text-left text-muted-foreground">
+                  <tr>
+                    <th className="py-1 pr-2 font-medium">Desa</th>
+                    <th className="py-1 pr-2 font-medium">Kecamatan</th>
+                    <th className="py-1 pr-2 text-right font-medium">Perkara</th>
+                    <th className="py-1 pr-2 text-right font-medium">Jarak</th>
+                    <th className="py-1 text-right font-medium">Panggilan gagal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usulan.map((u) => (
+                    <tr key={u.desa.kode} className="border-t border-border/60">
+                      <td className="py-1 pr-2 font-medium">{u.desa.nama}</td>
+                      <td className="py-1 pr-2 text-muted-foreground">{u.desa.kecamatan}</td>
+                      <td className="py-1 pr-2 text-right tabular-nums">{angka(u.desa.perkara)}</td>
+                      <td className="py-1 pr-2 text-right tabular-nums">{Math.round(u.km)} km</td>
+                      <td className="py-1 text-right tabular-nums">
+                        {u.gagal > 0 ? `${u.gagal}%` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {keliling.length > 0 ? (
+            <p className="mt-1.5 text-[0.7rem] text-muted-foreground">
+              Sudah terlayani: {keliling.slice(0, 5).map((k) => `${k.tempat} (${angka(k.sidang)})`).join(" · ")}
+            </p>
+          ) : null}
+          <p className="mt-1 text-[0.7rem] text-muted-foreground">
+            Angka panggilan gagal hanya terisi bila lapisan &quot;panggilan tidak bertemu&quot; sudah
+            dibuka sekali — ia dibaca terpisah, dan tidak dibayar oleh yang tidak membukanya.
+          </p>
+        </div>
       ) : null}
 
       {/* ==================================================================
