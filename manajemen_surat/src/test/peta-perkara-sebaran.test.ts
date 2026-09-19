@@ -539,7 +539,10 @@ describe("sembilan lapisan peta, cincin jarak, dan usulan sidang keliling", () =
     // Warna yang berputar membuat kategori kesembilan berwarna sama dengan
     // yang pertama, dan pembacanya menyangka keduanya hal yang sama.
     expect(petaLayar).toContain("const WARNA_KATEGORI = [");
-    expect(petaLayar).toContain("urut < WARNA_KATEGORI.length ? WARNA_KATEGORI[urut] : WARNA_TAK_CUKUP");
+    // Dituntut SIFATNYA, bukan nama peubahnya: yang kesembilan harus jatuh ke
+    // kelabu, dan tidak boleh ada sisa bagi yang memutarnya kembali ke awal.
+    expect(petaLayar).toMatch(/< WARNA_KATEGORI\.length \? WARNA_KATEGORI\[\w+\] : WARNA_TAK_CUKUP/);
+    expect(petaLayar).not.toContain("% WARNA_KATEGORI.length");
   });
 
   it("peta tidak menjanjikan unduhan GAMBAR, dan sebabnya tercatat", () => {
@@ -555,5 +558,189 @@ describe("sembilan lapisan peta, cincin jarak, dan usulan sidang keliling", () =
     // akan menguraikan lolosannya lebih dahulu lalu mencari huruf tak terlihat
     // di dalam berkas - yang memang tidak ada di sana.
     expect(petaLayar).toContain(String.raw`"\uFEFF" + teks`);
+  });
+});
+
+describe("tirai pembanding - dua lapisan pada satu peta", () => {
+  const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
+
+  /**
+   * ==========================================================================
+   * GUNTINGANNYA PADA KANVAS, BUKAN PADA PANEL - DAN INI PERNAH SALAH
+   * ==========================================================================
+   *
+   * Rancangan pertama menggunting PANEL Leaflet dengan clip-path berpersen.
+   * Diuji pada halaman mandiri, hasilnya: SELURUH lingkaran lenyap, kedua sisi,
+   * di segala letak tirai.
+   *
+   *     panelKiri.getBoundingClientRect() -> { width: 0, height: 0 }
+   *
+   * Panel Leaflet tidak berukuran - anak-anaknya berposisi mutlak. clip-path
+   * berpersen pada kotak 0x0 menghasilkan persegi 0x0, yaitu menggunting
+   * semuanya. Tanpa galat, tanpa peringatan; yang tampak hanya peta yang
+   * lingkarannya hilang - dan itu akan terbaca sebagai "datanya belum ada".
+   *
+   * Sesudah dipindahkan ke kanvas dan dihitung dalam piksel, tepi guntingan
+   * jatuh TEPAT di garis tirai pada lima gabungan zum-geseran-tirai (550,00 /
+   * 275,00 / 825,00 / 55,00 / 1.045,00 - ketiga angka tiap baris sama).
+   */
+  it("digunting pada kanvas dalam piksel, bukan pada panel dalam persen", () => {
+    expect(petaLayar).toContain('peta.getPane("aletaKiri")?.querySelector("canvas")');
+    expect(petaLayar).toContain("getBoundingClientRect()");
+    // Persen pada panel adalah bentuk yang sudah terbukti menggunting semuanya.
+    expect(petaLayar).not.toMatch(/getPane\("aleta(Kiri|Kanan)"\)[^\n]*clipPath = `inset\(0 \$\{100 -/);
+    expect(petaLayar).toContain("Panel Leaflet TIDAK BERUKURAN");
+  });
+
+  it("dihitung ulang ketika petanya bergeser - kanvasnya ikut bergeser", () => {
+    expect(petaLayar).toContain('peta.on("move zoom zoomend resize", pasangTirai)');
+    expect(petaLayar).toContain('peta.off("move zoom zoomend resize", pasangTirai)');
+  });
+
+  it("sisi kanan DIBACA, bukan diketuk", () => {
+    // Kanvas sisi kanan menutupi SELURUH peta - bukan hanya separuh kanan -
+    // sehingga membiarkannya menerima ketukan merampas ketukan sisi kiri di
+    // bagian layar tempat ia bahkan tidak terlihat.
+    expect(petaLayar).toContain('panelKanan.style.pointerEvents = "none"');
+    expect(petaLayar).toContain("interactive: false");
+  });
+
+  it("guntingan kedua sisi dilepas sendiri-sendiri", () => {
+    // Ketika tirai dimatikan, lingkaran sisi kanan dihapus lebih dahulu, dan
+    // Leaflet mencabut kanvasnya. Pembersihan yang menunggu kedua kanvas ada
+    // akan meninggalkan sisi KIRI tergunting selamanya.
+    expect(petaLayar).toContain('if (kiri) kiri.style.clipPath = "";');
+    expect(petaLayar).toContain('if (kanan) kanan.style.clipPath = "";');
+  });
+
+  it("tangga warna kedua sisi disusun dari lapisannya masing-masing", () => {
+    for (const nama of ["petaLapisB", "satuanB", "jangkauLapisB", "urutKategoriB", "warnaTitikB"]) {
+      expect(petaLayar, nama).toContain(nama);
+    }
+  });
+
+  it("memilih lapisan sisi kanan berarti MENUKAR, bukan menduakan", () => {
+    // Tanpa ini, kedua sisi tirai memuat lapisan yang sama - dan pilihan
+    // kanan lenyap dari daftarnya sendiri, meninggalkan kotak pilihan yang
+    // tampak kosong.
+    expect(petaLayar).toContain("if (l.kunci === lapisanB) setLapisanB(lapisan);");
+    expect(petaLayar).toContain("LAPISAN.filter((l) => l.kunci !== lapisan)");
+  });
+
+  it("kedua lapisan dibaca satu per satu, bukan berbarengan", () => {
+    // Dua kueri berat yang berjalan bersamaan pada SIPP satker membuat
+    // keduanya lambat, bukan salah satunya cepat.
+    expect(petaLayar).toContain("const kunci = [lapisan, lapisanB].find(");
+  });
+});
+
+describe("warna lapisan tidak boleh tertinggal di balik useCallback", () => {
+  const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
+
+  /**
+   * ==========================================================================
+   * DELAPAN LAPISAN 2.25.0 YANG SELURUH DESANYA KELABU
+   * ==========================================================================
+   *
+   * `warnaTitik` dahulu berupa useCallback yang memeluk `petaLapis`, `satuan`,
+   * `jangkauLapis`, dan `urutKategori` langsung dari ruang lingkupnya -
+   * sementara keempatnya TIDAK ada di daftar kebergantungannya. Urutannya:
+   *
+   *   1. lapisan "Biaya panggilan" dipilih -> `lapisan` berubah -> warnaTitik
+   *      dibuat ulang, memeluk petaLapis yang MASIH KOSONG
+   *   2. datanya tiba -> penggambar berjalan lagi (petaLapis ada di
+   *      kebergantungan EFEK-nya)
+   *   3. tetapi warnaTitik TIDAK dibuat ulang - ia masih memeluk peta kosong
+   *
+   * Seluruh desa karena itu berwarna kelabu "tidak cukup" pada pemilihan
+   * PERTAMA tiap lapisan. Berpindah lapisan lalu kembali membuatnya benar - dan
+   * itulah yang membuat cacat ini menyamar sebagai data yang belum lengkap.
+   *
+   * Ditemukan dengan membaca, lalu dipastikan oleh `npx eslint`, yang
+   * menyebutkan tepat kelima nama itu sebagai kebergantungan yang hilang.
+   *
+   * Bentuk barunya PABRIK: tiap datanya masuk lewat parameter, sehingga tidak
+   * ada lagi yang dapat tertinggal.
+   */
+  it("aturan warnanya menerima datanya sebagai parameter", () => {
+    expect(petaLayar).toContain("const buatWarna = useCallback(");
+    expect(petaLayar).toContain("function warnaLapisan(");
+    // Keempat nama itu tidak boleh lagi dipeluk dari ruang lingkup luar.
+    const iPabrik = petaLayar.indexOf("const buatWarna = useCallback(");
+    const iTutup = petaLayar.indexOf("[warnaJenis, petaRelaas]", iPabrik);
+    expect(iTutup).toBeGreaterThan(iPabrik);
+    const badan = petaLayar.slice(iPabrik, iTutup);
+    for (const nama of ["petaLapis", "jangkauLapis", "urutKategori"]) {
+      expect(badan, nama).not.toContain(nama);
+    }
+  });
+
+  it("kedua pemakainya menyebutkan seluruh datanya", () => {
+    expect(petaLayar).toContain(
+      "[buatWarna, lapisan, petaLapis, satuan, jangkauLapis, urutKategori]"
+    );
+    expect(petaLayar).toContain(
+      "[buatWarna, lapisanB, petaLapisB, satuanB, jangkauLapisB, urutKategoriB]"
+    );
+  });
+});
+
+describe("membandingkan lebih dari dua perkara", () => {
+  const banding = baca("manajemen_surat/src/components/portal/banding-perkara.tsx");
+
+  /**
+   * Satu pembanding menjawab "kenapa yang ini lebih lama dari yang itu". Yang
+   * ditanyakan berikutnya justru "kenapa TIGA perkara majelis ini lebih lama" -
+   * dan itu menuntut kolom ketiga dan keempat.
+   */
+  it("pembandingnya jamak, dan dibatasi", () => {
+    expect(banding).toContain("useState<Ringkas[]>([])");
+    expect(banding).toContain("const BATAS_BANDING = 4;");
+    expect(banding).toContain("lawan.length >= BATAS_BANDING");
+  });
+
+  it("selisih dihitung ke perkara yang SEDANG DIBUKA, bukan berantai", () => {
+    // Yang dibandingkan orang adalah perkaranya sendiri dengan yang lain,
+    // bukan rantai perbandingan antar kolom sebelah.
+    expect(banding).toContain("const barisUntuk = useCallback(");
+    expect(banding).toContain("(lawanSatu: Ringkas): Baris[]");
+    expect(banding).toContain("Selisih selalu dihitung dari perkara INI ke tiap pembanding");
+  });
+
+  it("satu susunan baris untuk seluruh kolom, bukan salinan per kolom", () => {
+    // Tiga salinan akan menyimpang diam-diam begitu satu butir ditambahkan.
+    const iAwal = banding.indexOf("const barisUntuk = useCallback(");
+    const iAkhir = banding.indexOf("const tabel = useMemo(");
+    expect(iAkhir).toBeGreaterThan(iAwal);
+    expect(banding.slice(iAwal, iAkhir).match(/bandingTeks\(|bandingAngka\(/g)?.length).toBeGreaterThan(8);
+  });
+
+  it("tiap pembanding dapat dikeluarkan sendiri", () => {
+    expect(banding).toContain("lama.filter((x) => x.nomorPerkara !== l.nomorPerkara)");
+  });
+});
+
+describe("kartu identitas pihak punya jalan ke riwayatnya", () => {
+  const ident = baca("manajemen_surat/src/components/portal/identitas-pihak.tsx");
+  const bagian = baca("manajemen_surat/src/lib/alat-bagian.ts");
+  const analisa = baca("manajemen_surat/src/components/portal/aleta-analisa-perkara.tsx");
+
+  /**
+   * Analisis "Riwayat pihak" sudah menghitung perkara lain orang itu sejak
+   * lama - lewat NIK, nama, dan tanggal lahir. Yang tidak ada JALANNYA: yang
+   * sedang menatap nama seseorang harus menutup kartunya, menggulung ke
+   * Analisis lanjutan, membukanya, lalu mencari satu tombol di antara empat
+   * puluh satu.
+   */
+  it("aba-abanya ada, dan analisisnya mendengarkan", () => {
+    expect(bagian).toContain('| { jenis: "analisa"; kunci: string }');
+    expect(ident).toContain('siarkanAba({ jenis: "analisa", kunci: "pihak" })');
+    expect(analisa).toContain('if (aba.jenis !== "analisa") return;');
+  });
+
+  it("lewat aba-aba, bukan keadaan yang dinaikkan ke induk", () => {
+    // Menaikkannya berarti layar sepanjang dua puluh tujuh bagian digambar
+    // ulang seluruhnya tiap kali satu analisis dipilih.
+    expect(analisa).toContain("langgananAba((aba) =>");
   });
 });

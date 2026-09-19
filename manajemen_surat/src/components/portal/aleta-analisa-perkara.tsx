@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
+import { langgananAba, siarkanAba } from "@/lib/alat-bagian";
 
 /**
  * ============================================================================
@@ -125,12 +126,35 @@ export function AletaAnalisaPerkara({ nomorPerkara }: { nomorPerkara: string }) 
   // Hasil yang sudah diambil disimpan supaya tidak dihitung ulang.
   const [simpanan, setSimpanan] = useState<Record<string, Hasil>>({});
 
+  /**
+   * Analisis yang diminta dari tempat lain - kartu identitas pihak, misalnya.
+   *
+   * Didengarkan di sini alih-alih diterima sebagai prop: prop menuntut
+   * induknya memegang keadaan, dan induknya adalah layar sepanjang dua puluh
+   * tujuh bagian yang akan digambar ulang seluruhnya tiap kali satu analisis
+   * dipilih.
+   */
+  // Disimpan pada ref supaya pendengarnya tidak perlu dipasang ulang tiap kali
+  // `ambil` lahir kembali - dan `ambil` lahir kembali tiap kali simpanannya
+  // berubah, yaitu tiap kali satu analisis selesai dihitung.
+  const ambilRef = useRef<((kunci: string, paksa?: boolean) => Promise<void>) | null>(null);
+
+  useEffect(
+    () =>
+      langgananAba((aba) => {
+        if (aba.jenis !== "analisa") return;
+        if (!ANALISA.some((x) => x.kunci === aba.kunci)) return;
+        void ambilRef.current?.(aba.kunci, true);
+      }),
+    []
+  );
+
   const ambil = useCallback(
-    async (kunci: string) => {
+    async (kunci: string, paksa = false) => {
       // Menekan tombol yang sedang terbuka menutupnya kembali - layar ini
       // panjang, dan menutup yang sudah dibaca lebih sering diperlukan
       // daripada membacanya dua kali.
-      if (terpilih === kunci) {
+      if (terpilih === kunci && !paksa) {
         setTerpilih("");
         return;
       }
@@ -165,6 +189,8 @@ export function AletaAnalisaPerkara({ nomorPerkara }: { nomorPerkara: string }) 
   );
 
   const hasil = terpilih ? simpanan[terpilih] : null;
+
+  ambilRef.current = ambil;
 
   return (
     <div className="space-y-3">

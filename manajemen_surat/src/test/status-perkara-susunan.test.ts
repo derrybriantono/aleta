@@ -472,7 +472,11 @@ describe("jalan ke layar penilaian yang berdiri sendiri", () => {
 
   it("ada di sebelah kolom Konseptor", () => {
     const teks = isi();
-    const iKonseptor = teks.indexOf("<dt className=\"text-sm text-muted-foreground\">Konseptor</dt>");
+    // Ukuran hurufnya sengaja TIDAK dikunci di sini: yang dijaga uji ini
+            // adalah tautannya, dan mengunci kelasnya membuat penataan huruf
+            // mematahkan penjaga yang sama sekali bukan urusannya. Hierarki
+            // ukuran dijaga tersendiri di bawah.
+    const iKonseptor = teks.search(/<dt className="[^"]*">Konseptor<\/dt>/);
     expect(iKonseptor).toBeGreaterThan(-1);
     const iTautan = teks.indexOf("Lihat beban kinerja konseptor", iKonseptor);
     expect(iTautan).toBeGreaterThan(iKonseptor);
@@ -551,5 +555,59 @@ describe("warna terang selalu punya pasangan mode gelap", () => {
     }
 
     expect(pelanggar, `tanpa pasangan gelap:\n${pelanggar.join("\n")}`).toEqual([]);
+  });
+});
+
+describe("hierarki ukuran huruf - label, nilai, dan keterangan", () => {
+  /**
+   * ==========================================================================
+   * KENAPA LAYARNYA TERASA PADAT - DAN INI TERUKUR
+   * ==========================================================================
+   *
+   * Disisir sebelum disentuh:
+   *
+   *     text-sm    249 pemakaian
+   *     text-xs     13
+   *     text-lg      2
+   *
+   * Hampir seluruhnya SATU ukuran. Yang membuat layar terasa padat bukan
+   * banyaknya isi - dua puluh tujuh bagian memang banyak - melainkan tidak
+   * adanya apa pun yang memberi tahu mata mana yang label dan mana yang nilai.
+   * Keduanya sama besar, sama beratnya, dan berjejer.
+   *
+   * Yang dikecilkan hanya yang PERANNYA sekunder, dan perannya dikenali dari
+   * bentuknya: <dt> adalah nama medan, <thead> adalah kepala tabel. Dua ratus
+   * sisanya - yang memuat NILAINYA - tidak disentuh: layar yang seluruhnya
+   * kecil sama tidak berhierarkinya dengan layar yang seluruhnya sedang.
+   *
+   * Dijaga di sini sebab kemunduran ini tidak berbunyi apa pun. Satu <dt> baru
+   * yang ditulis dengan text-sm hanya akan tampak sedikit lebih besar dari
+   * tetangganya, dan tidak ada yang memeriksanya.
+   */
+  const isi = () => readFileSync(berkas, "utf8");
+
+  it("nama medan <dt> selalu lebih kecil daripada nilainya", () => {
+    const pelanggar = [...isi().matchAll(/<dt className="([^"]*)"/g)]
+      .map((m) => m[1])
+      .filter((k) => k.includes("text-sm"));
+    expect(pelanggar, `<dt> yang masih sebesar nilainya:\n${pelanggar.join("\n")}`).toEqual([]);
+  });
+
+  it("kepala tabel lebih kecil daripada isinya", () => {
+    const pelanggar = [...isi().matchAll(/<thead className="([^"]*)"/g)]
+      .map((m) => m[1])
+      .filter((k) => k.includes("text-sm"));
+    expect(pelanggar, `<thead> sebesar isinya:\n${pelanggar.join("\n")}`).toEqual([]);
+  });
+
+  it("ketiga tingkatnya sungguh dipakai - bukan satu ukuran untuk semua", () => {
+    const teks = isi();
+    const hitung = (p: RegExp) => (teks.match(p) || []).length;
+    const kecil = hitung(/\btext-xs\b/g);
+    const sedang = hitung(/\btext-sm\b/g);
+    // Bukan angka pas - yang dijaga PERBANDINGANNYA. Sebelum disunting,
+    // text-xs hanya 13 dari 262; sesudahnya 60 dari 262.
+    expect(kecil, "keterangan sekunder").toBeGreaterThan(40);
+    expect(sedang, "nilai").toBeGreaterThan(150);
   });
 });

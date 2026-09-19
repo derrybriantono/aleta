@@ -45,6 +45,16 @@ export type PetaObjek = {
   invalidateSize: () => void;
   getZoom: () => number;
   on: (peristiwa: string, tangani: () => void) => void;
+  off: (peristiwa: string, tangani: () => void) => void;
+  /**
+   * Panel gambar tersendiri.
+   *
+   * Dipakai TIRAI pembanding: dua panel terpisah dapat digunting sisi luarnya
+   * sendiri-sendiri, sedangkan ubinan dan cincin jarak tinggal di panel bawaan
+   * dan karena itu tidak ikut tergunting.
+   */
+  createPane: (nama: string) => HTMLElement;
+  getPane: (nama: string) => HTMLElement | undefined;
 };
 
 export type PetaLapisan = { addTo: (peta: PetaObjek) => PetaLapisan };

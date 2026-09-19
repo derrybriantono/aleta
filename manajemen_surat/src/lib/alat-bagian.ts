@@ -36,7 +36,20 @@ const pendengarAba = new Set<(aba: Aba) => void>();
 export type Aba =
   | { jenis: "buka-semua" }
   | { jenis: "tutup-semua" }
-  | { jenis: "buka"; kunci: string };
+  | { jenis: "buka"; kunci: string }
+  /**
+   * Meminta SATU analisis lanjutan dibuka.
+   *
+   * Dipakai kartu identitas pihak: yang sedang menatap nama seseorang ingin
+   * langsung melihat perkara lain orang itu. Analisisnya sudah ada sejak lama
+   * - yang tidak ada JALANNYA, dan tanpa jalan itu ia harus menutup kartunya,
+   * menggulung ke Analisis lanjutan, lalu mencari satu tombol di antara empat
+   * puluh satu.
+   *
+   * Lewat aba-aba, bukan lewat keadaan yang dinaikkan ke induk: menaikkannya
+   * berarti seluruh layar digambar ulang tiap kali satu analisis dipilih.
+   */
+  | { jenis: "analisa"; kunci: string };
 
 /** Kunci penyimpanan keadaan ciut - satu bentuk, dipakai bersama. */
 export function kunciCiut(kunci: string) {

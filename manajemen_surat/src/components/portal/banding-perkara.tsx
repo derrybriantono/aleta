@@ -109,6 +109,17 @@ export function ringkasDariStatus(status: StatusMentah): Ringkas {
   };
 }
 
+/**
+ * Paling banyak empat pembanding.
+ *
+ * Bukan angka yang dikarang: dengan kolom label, kolom perkara yang sedang
+ * dibuka, dan kolom selisih, empat pembanding sudah membuat tabelnya berkolom
+ * tujuh - dan tabel berkolom tujuh menuntut digulung ke samping pada layar
+ * petugas. Perbandingan yang harus digulung bukan perbandingan lagi: yang
+ * dibandingkan orang justru dua kolom yang tidak dapat dilihat bersamaan.
+ */
+const BATAS_BANDING = 4;
+
 const angka = (n: number) => n.toLocaleString("id-ID");
 
 /** Satu baris perbandingan - label, dua nilai, dan selisihnya. */
@@ -156,7 +167,14 @@ function bandingTeks(label: string, a: string, b: string): Baris {
 
 export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
   const [nomor, setNomor] = useState("");
-  const [lawan, setLawan] = useState<Ringkas | null>(null);
+  /**
+   * Perkara pembanding - JAMAK.
+   *
+   * Sengaja dibatasi empat. Tabel berkolom tujuh sudah menuntut digulung ke
+   * samping pada layar petugas, dan perbandingan yang harus digulung bukan
+   * perbandingan lagi.
+   */
+  const [lawan, setLawan] = useState<Ringkas[]>([]);
   const [galat, setGalat] = useState("");
   const [memuat, setMemuat] = useState(false);
 
@@ -190,37 +208,64 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
         setGalat("Itu perkara yang sedang dibuka — pilih perkara yang lain.");
         return;
       }
-      setLawan(ringkas);
+      if (lawan.some((x) => x.nomorPerkara === ringkas.nomorPerkara)) {
+        setGalat("Perkara itu sudah ada di dalam perbandingan.");
+        return;
+      }
+      if (lawan.length >= BATAS_BANDING) {
+        setGalat(`Paling banyak ${BATAS_BANDING} pembanding - hapus salah satu lebih dahulu.`);
+        return;
+      }
+      setLawan((lama) => [...lama, ringkas]);
+      setNomor("");
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Perkara pembanding tidak dapat dibaca.");
     } finally {
       setMemuat(false);
     }
-  }, [nomor, sekarang.nomorPerkara]);
+  }, [nomor, sekarang.nomorPerkara, lawan]);
 
-  const baris = useMemo<Baris[]>(() => {
-    if (!lawan) return [];
-    return [
-      bandingTeks("Jenis perkara", sekarang.jenisPerkara, lawan.jenisPerkara),
-      bandingTeks("Tanggal daftar", sekarang.tanggalDaftar, lawan.tanggalDaftar),
-      bandingTeks("Tanggal putusan", sekarang.tanggalPutusan, lawan.tanggalPutusan),
-      bandingTeks("Status putusan", sekarang.statusPutusan, lawan.statusPutusan),
-      bandingAngka("Lama proses", sekarang.hariBerjalan, lawan.hariBerjalan, "hari"),
-      bandingAngka("Jeda minutasi", sekarang.hariMinutasi, lawan.hariMinutasi, "hari"),
-      bandingAngka("Jumlah sidang", sekarang.jumlahSidang, lawan.jumlahSidang, "kali"),
-      bandingAngka("Penundaan", sekarang.jumlahPenundaan, lawan.jumlahPenundaan, "kali"),
-      bandingAngka("Pihak berperkara", sekarang.jumlahPihak, lawan.jumlahPihak, "orang"),
-      bandingTeks("Majelis", sekarang.majelis, lawan.majelis),
-      bandingTeks("Panitera sidang", sekarang.panitera, lawan.panitera),
+  /**
+   * Baris perbandingan untuk SATU pembanding.
+   *
+   * Dipisah menjadi fungsi supaya kolom kedua, ketiga, dan keempat disusun
+   * dengan aturan yang persis sama - bukan tiga salinan yang akan menyimpang
+   * diam-diam begitu satu butir ditambahkan.
+   */
+  const barisUntuk = useCallback(
+    (lawanSatu: Ringkas): Baris[] => [
+      bandingTeks("Jenis perkara", sekarang.jenisPerkara, lawanSatu.jenisPerkara),
+      bandingTeks("Tanggal daftar", sekarang.tanggalDaftar, lawanSatu.tanggalDaftar),
+      bandingTeks("Tanggal putusan", sekarang.tanggalPutusan, lawanSatu.tanggalPutusan),
+      bandingTeks("Status putusan", sekarang.statusPutusan, lawanSatu.statusPutusan),
+      bandingAngka("Lama proses", sekarang.hariBerjalan, lawanSatu.hariBerjalan, "hari"),
+      bandingAngka("Jeda minutasi", sekarang.hariMinutasi, lawanSatu.hariMinutasi, "hari"),
+      bandingAngka("Jumlah sidang", sekarang.jumlahSidang, lawanSatu.jumlahSidang, "kali"),
+      bandingAngka("Penundaan", sekarang.jumlahPenundaan, lawanSatu.jumlahPenundaan, "kali"),
+      bandingAngka("Pihak berperkara", sekarang.jumlahPihak, lawanSatu.jumlahPihak, "orang"),
+      bandingTeks("Majelis", sekarang.majelis, lawanSatu.majelis),
+      bandingTeks("Panitera sidang", sekarang.panitera, lawanSatu.panitera),
       bandingTeks(
         "Mediasi",
         sekarang.adaMediasi ? "ada" : "tidak ada",
-        lawan.adaMediasi ? "ada" : "tidak ada"
+        lawanSatu.adaMediasi ? "ada" : "tidak ada"
       ),
-    ];
-  }, [sekarang, lawan]);
+    ],
+    [sekarang]
+  );
 
-  const berbeda = baris.filter((b) => !b.sama && b.selisih).length;
+  /** Satu baris label, lalu satu kolom per pembanding. */
+  const tabel = useMemo(() => {
+    if (lawan.length === 0) return [];
+    const kolom = lawan.map((l) => barisUntuk(l));
+    return kolom[0].map((_, i) => ({
+      label: kolom[0][i].label,
+      kiri: kolom[0][i].kiri,
+      kolom: kolom.map((k) => k[i]),
+    }));
+  }, [lawan, barisUntuk]);
+
+  const berbeda = tabel.filter((b) => b.kolom.some((k) => !k.sama && k.selisih)).length;
 
   return (
     <div className="flex flex-col gap-3">
@@ -241,14 +286,14 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
         </label>
         <Button type="button" onClick={() => void ambil()} disabled={memuat || !nomor.trim()}>
           <Plus className="mr-1.5 h-4 w-4" aria-hidden />
-          {memuat ? "Membaca…" : "Bandingkan"}
+          {memuat ? "Membaca…" : lawan.length === 0 ? "Bandingkan" : "Tambah pembanding"}
         </Button>
-        {lawan ? (
+        {lawan.length > 0 ? (
           <Button
             type="button"
             variant="ghost"
             onClick={() => {
-              setLawan(null);
+              setLawan([]);
               setNomor("");
               setGalat("");
             }}
@@ -266,13 +311,14 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
         </p>
       ) : null}
 
-      {!lawan ? (
+      {lawan.length === 0 ? (
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>
-            Isi nomor perkara lain untuk menjajarkannya dengan perkara ini. Yang dibandingkan
-            jenisnya, tanggalnya, lama prosesnya, banyaknya sidang dan penundaan, majelis, panitera
-            sidang, dan mediasinya — beserta selisihnya, supaya tidak perlu dikurangi sendiri.
+            Isi nomor perkara lain untuk menjajarkannya dengan perkara ini — sampai
+            {BATAS_BANDING} sekaligus. Yang dibandingkan jenisnya, tanggalnya, lama prosesnya,
+            banyaknya sidang dan penundaan, majelis, panitera sidang, dan mediasinya — beserta
+            selisihnya, supaya tidak perlu dikurangi sendiri.
           </span>
         </p>
       ) : (
@@ -281,8 +327,9 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
             <ArrowLeftRight className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span>
               {berbeda === 0
-                ? "Kedua perkara sama pada seluruh butir yang dibandingkan."
-                : `${berbeda} butir berbeda dari ${baris.length} yang dibandingkan.`}
+                ? "Seluruh butir yang dibandingkan sama."
+                : `${berbeda} butir berbeda dari ${tabel.length} yang dibandingkan` +
+                  (lawan.length > 1 ? ` pada ${lawan.length} pembanding.` : ".")}
             </span>
           </p>
 
@@ -292,41 +339,64 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
                 <tr>
                   <th className="px-3 py-2 font-medium">Butir</th>
                   <th className="px-3 py-2 font-medium">{sekarang.nomorPerkara}</th>
-                  <th className="px-3 py-2 font-medium">{lawan.nomorPerkara}</th>
+                  {lawan.map((l) => (
+                    <th key={l.nomorPerkara} className="px-3 py-2 font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        {l.nomorPerkara}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLawan((lama) => lama.filter((x) => x.nomorPerkara !== l.nomorPerkara))
+                          }
+                          title="Keluarkan dari perbandingan"
+                          className="text-muted-foreground transition hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" aria-hidden />
+                        </button>
+                      </span>
+                    </th>
+                  ))}
                   <th className="px-3 py-2 text-right font-medium">Selisih</th>
                 </tr>
               </thead>
               <tbody>
-                {baris.map((b) => (
-                  <tr
-                    key={b.label}
-                    className={cn(
-                      "border-b border-border/60 last:border-0",
-                      // Yang SAMA diredupkan, bukan disembunyikan: menghilangkannya
-                      // membuat pembaca menyangka butirnya tidak diperiksa.
-                      b.sama && "text-muted-foreground"
-                    )}
-                  >
-                    <td className="px-3 py-1.5">{b.label}</td>
-                    <td className="px-3 py-1.5">{b.kiri}</td>
-                    <td className="px-3 py-1.5">{b.kanan}</td>
-                    <td
+                {tabel.map((b) => {
+                  const semuaSama = b.kolom.every((k) => k.sama);
+                  return (
+                    <tr
+                      key={b.label}
                       className={cn(
-                        "px-3 py-1.5 text-right tabular-nums",
-                        !b.sama && b.selisih && "font-medium text-foreground"
+                        "border-b border-border/60 last:border-0",
+                        // Yang SAMA diredupkan, bukan disembunyikan: menghilangkannya
+                        // membuat pembaca menyangka butirnya tidak diperiksa.
+                        semuaSama && "text-muted-foreground"
                       )}
                     >
-                      {b.selisih || "—"}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="px-3 py-1.5">{b.label}</td>
+                      <td className="px-3 py-1.5">{b.kiri}</td>
+                      {b.kolom.map((k, i) => (
+                        <td key={i} className="px-3 py-1.5">
+                          {k.kanan}
+                        </td>
+                      ))}
+                      <td className="px-3 py-1.5 text-right tabular-nums">
+                        {b.kolom
+                          .map((k) => k.selisih || "—")
+                          .join(" · ")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Selisih dihitung dari perkara ini ke perkara pembanding: tanda tambah berarti
-            pembandingnya lebih besar.
+            Selisih selalu dihitung dari perkara INI ke tiap pembanding - bukan berantai dari
+            kolom sebelahnya: yang dibandingkan orang adalah perkaranya sendiri dengan yang lain.
+            Tanda tambah berarti pembandingnya lebih besar. Paling banyak {BATAS_BANDING}
+            pembanding; tabel berkolom tujuh sudah menuntut digulung ke samping, dan perbandingan
+            yang harus digulung bukan perbandingan lagi.
           </p>
         </>
       )}

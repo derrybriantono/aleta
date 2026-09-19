@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Info } from "lucide-react";
 
 import { apiPath } from "@/lib/base-path";
+import { siarkanAba } from "@/lib/alat-bagian";
+import { Button } from "@/components/ui/button";
 
 /**
  * ============================================================================
@@ -193,6 +195,34 @@ export function KartuIdentitasPihak({
       <Baris label="NIK" nilai={orang.adaNik ? orang.nikSamar : ""} />
       <Baris label="Telepon" nilai={orang.adaTelepon ? orang.teleponSamar : ""} />
       {orang.difabel ? <Baris label="Difabel" nilai="Ya - perlu penyesuaian layanan" /> : null}
+
+      {/* ==============================================================
+          JALAN KE PERKARA LAIN ORANG INI
+          ==============================================================
+
+          Analisis "Riwayat pihak" sudah menghitungnya sejak lama - lewat NIK,
+          nama, dan tanggal lahir. Yang tidak ada JALANNYA: yang sedang menatap
+          nama seseorang harus menutup kartu ini, menggulung ke Analisis
+          lanjutan, membukanya, lalu mencari satu tombol di antara empat puluh
+          satu. */}
+      <div className="pt-1">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            siarkanAba({ jenis: "buka", kunci: "analisa-lanjut" });
+            siarkanAba({ jenis: "analisa", kunci: "pihak" });
+            window.setTimeout(() => {
+              document
+                .getElementById("bagian-analisa-lanjut")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 80);
+          }}
+        >
+          Perkara lain orang ini
+        </Button>
+      </div>
 
       {/* Yang disamarkan disebutkan SEBAB penyamarannya, bukan dibiarkan
           terlihat seperti data rusak. */}

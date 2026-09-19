@@ -874,7 +874,7 @@ function Bagian({
           {judul}
         </h5>
         {keterangan ? (
-          <span className="text-sm font-normal normal-case text-muted-foreground">{keterangan}</span>
+          <span className="text-xs font-normal normal-case text-muted-foreground">{keterangan}</span>
         ) : null}
       </button>
       {ciut ? null : <div className="border-t px-3 py-2.5">{children}</div>}
@@ -1766,7 +1766,7 @@ function IsiStatus({
                   <span className="font-mono text-sm">{orang.kode || "—"}</span>{" "}
                   <span className="font-medium">{orang.nama}</span>
                   {orang.jabatan ? (
-                    <span className="text-sm text-muted-foreground"> · {orang.jabatan}</span>
+                    <span className="text-xs text-muted-foreground"> · {orang.jabatan}</span>
                   ) : null}
                 </li>
               ))}
@@ -1775,11 +1775,11 @@ function IsiStatus({
             <p className="text-sm text-muted-foreground">Majelis belum ditetapkan.</p>
           )}
           <p className="mt-2 text-sm">
-            <span className="text-sm text-muted-foreground">Panitera: </span>
+            <span className="text-xs text-muted-foreground">Panitera: </span>
             {status.panitera.map((x) => x.nama).join(", ") || "—"}
           </p>
           <p className="text-sm">
-            <span className="text-sm text-muted-foreground">Jurusita: </span>
+            <span className="text-xs text-muted-foreground">Jurusita: </span>
             {status.jurusita.map((x) => x.nama).join(", ") || "—"}
           </p>
         </Bagian>
@@ -1907,7 +1907,7 @@ function IsiStatus({
                     >
                       {orang.nama}
                     </button>
-                    <span className="text-sm text-muted-foreground">{keteranganNomor}</span>
+                    <span className="text-xs text-muted-foreground">{keteranganNomor}</span>
                     {terbuka ? (
                       <KartuIdentitasPihak
                         orang={identitas.cari(orang.nama)}
@@ -1942,7 +1942,7 @@ function IsiStatus({
                       ))}
                       {kuasa.map((orang, urutan) => (
                         <li key={`${judul}-kuasa-${orang.nama}-${urutan}`} className="pl-3">
-                          <span className="text-sm text-muted-foreground">kuasa: </span>
+                          <span className="text-xs text-muted-foreground">kuasa: </span>
                           <NamaPihak orang={orang} nomor={nomor(orang)} />
                         </li>
                       ))}
@@ -2003,7 +2003,7 @@ function IsiStatus({
         {status.tahapan.terbaca ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-sm uppercase text-muted-foreground">
+              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-1 text-left font-medium">Tahap</th>
                   <th className="py-1 text-left font-medium">Tanggal</th>
@@ -2180,7 +2180,7 @@ function IsiStatus({
                   ) : null}
                   <span className="text-sm">{sidang.agenda || "tanpa agenda"}</span>
                   {sidang.ruangan ? (
-                    <span className="text-sm text-muted-foreground">Ruang {sidang.ruangan}</span>
+                    <span className="text-xs text-muted-foreground">Ruang {sidang.ruangan}</span>
                   ) : null}
                   {sidang.ditunda ? (
                     <Badge variant="warning">
@@ -2495,7 +2495,7 @@ function IsiStatus({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-sm uppercase text-muted-foreground">
+              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-1 text-left font-medium">Nama</th>
                   <th className="py-1 text-left font-medium">Diajukan</th>
@@ -2550,11 +2550,11 @@ function IsiStatus({
           ) : null}
           <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-sm text-muted-foreground">Tanggal putusan</dt>
+              <dt className="text-xs text-muted-foreground">Tanggal putusan</dt>
               <dd className="font-medium">{status.putusanLengkap.tanggalPutusan || "—"}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Status putusan</dt>
+              <dt className="text-xs text-muted-foreground">Status putusan</dt>
               {/* Warna tulisan, bukan lencana: di dalam daftar keterangan
                   berpasangan, lencana penuh menarik mata melebihi ruas lain
                   yang sama pentingnya. Warnanya tetap dari aturan yang sama,
@@ -2570,38 +2570,38 @@ function IsiStatus({
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Jenis putusan</dt>
+              <dt className="text-xs text-muted-foreground">Jenis putusan</dt>
               <dd className="font-medium">
                 {status.putusan?.verstek ? "Verstek" : "Contradictoir"}
               </dd>
             </div>
             {status.putusanLengkap.sumberHukum ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Sumber hukum</dt>
+                <dt className="text-xs text-muted-foreground">Sumber hukum</dt>
                 <dd>{status.putusanLengkap.sumberHukum}</dd>
               </div>
             ) : null}
             {status.putusanLengkap.faktorPrimer ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Faktor perceraian (primer)</dt>
+                <dt className="text-xs text-muted-foreground">Faktor perceraian (primer)</dt>
                 <dd>{status.putusanLengkap.faktorPrimer}</dd>
               </div>
             ) : null}
             {status.putusanLengkap.faktorSekunder ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Faktor perceraian (sekunder)</dt>
+                <dt className="text-xs text-muted-foreground">Faktor perceraian (sekunder)</dt>
                 <dd>{status.putusanLengkap.faktorSekunder}</dd>
               </div>
             ) : null}
             {status.putusanLengkap.qoblaBada ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Qobla / Bada dukhul</dt>
+                <dt className="text-xs text-muted-foreground">Qobla / Bada dukhul</dt>
                 <dd>{status.putusanLengkap.qoblaBada}</dd>
               </div>
             ) : null}
             {status.putusanLengkap.statusNusyuz ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Status nusyuz</dt>
+                <dt className="text-xs text-muted-foreground">Status nusyuz</dt>
                 <dd>{status.putusanLengkap.statusNusyuz}</dd>
               </div>
             ) : null}
@@ -2618,7 +2618,7 @@ function IsiStatus({
                 mencarinya menyimpulkan fiturnya tidak ada. Sekarang kolomnya
                 tetap muncul dan menerangkan sendiri mengapa kosong. */}
             <div>
-              <dt className="text-sm text-muted-foreground">Konseptor</dt>
+              <dt className="text-xs text-muted-foreground">Konseptor</dt>
               <dd>
                 {status.konseptor.baris.length > 0 ? (
                   <>
@@ -2715,7 +2715,7 @@ function IsiStatus({
         <Bagian judul="Putusan dan tindak lanjutnya" kunci="putusan">
           <dl className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Minutasi</dt>
+              <dt className="text-xs text-muted-foreground">Minutasi</dt>
               <dd className="font-medium">
                 {status.putusan.tanggalMinutasi || (
                   <span className="text-amber-700 dark:text-amber-300">belum</span>
@@ -2728,7 +2728,7 @@ function IsiStatus({
               </dd>
             </div>
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Berkekuatan hukum tetap</dt>
+              <dt className="text-xs text-muted-foreground">Berkekuatan hukum tetap</dt>
               <dd className="font-medium">
                 {status.putusan.tanggalBht || (
                   <span className="text-amber-700 dark:text-amber-300">belum</span>
@@ -2736,7 +2736,7 @@ function IsiStatus({
               </dd>
             </div>
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Akta cerai</dt>
+              <dt className="text-xs text-muted-foreground">Akta cerai</dt>
               <dd className="font-medium">
                 {status.putusan.aktaCerai?.nomor || (
                   <span className="text-muted-foreground">belum terbit</span>
@@ -2744,7 +2744,7 @@ function IsiStatus({
               </dd>
             </div>
             <div className="rounded-md border bg-muted/30 px-3 py-2">
-              <dt className="text-sm text-muted-foreground">Upaya hukum</dt>
+              <dt className="text-xs text-muted-foreground">Upaya hukum</dt>
               <dd className="font-medium">
                 {status.putusan.upayaHukum.length > 0
                   ? status.putusan.upayaHukum.map((x) => x.jenis).join(", ")
@@ -2802,32 +2802,32 @@ function IsiStatus({
 
           <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-sm text-muted-foreground">Penetapan majelis hakim</dt>
+              <dt className="text-xs text-muted-foreground">Penetapan majelis hakim</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanMajelis || "—"}</dd>
               {status.ikrarTalak.majelis ? (
                 <dd className="text-sm text-muted-foreground">{status.ikrarTalak.majelis}</dd>
               ) : null}
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Penunjukan panitera pengganti</dt>
+              <dt className="text-xs text-muted-foreground">Penunjukan panitera pengganti</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanPp || "—"}</dd>
               {status.ikrarTalak.panitera ? (
                 <dd className="text-sm text-muted-foreground">{status.ikrarTalak.panitera}</dd>
               ) : null}
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Penunjukan juru sita</dt>
+              <dt className="text-xs text-muted-foreground">Penunjukan juru sita</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanJs || "—"}</dd>
               {status.ikrarTalak.jurusita ? (
                 <dd className="text-sm text-muted-foreground">{status.ikrarTalak.jurusita}</dd>
               ) : null}
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Penetapan sidang ikrar talak</dt>
+              <dt className="text-xs text-muted-foreground">Penetapan sidang ikrar talak</dt>
               <dd className="font-medium">{status.ikrarTalak.penetapanSidang || "—"}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Tanggal ikrar talak</dt>
+              <dt className="text-xs text-muted-foreground">Tanggal ikrar talak</dt>
               <dd className="font-medium">
                 {status.ikrarTalak.tanggalIkrar || (
                   <span className="text-amber-700 dark:text-amber-300">belum diucapkan</span>
@@ -2836,7 +2836,7 @@ function IsiStatus({
             </div>
             {status.ikrarTalak.nomorSk ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Nomor penetapan</dt>
+                <dt className="text-xs text-muted-foreground">Nomor penetapan</dt>
                 <dd>{status.ikrarTalak.nomorSk}</dd>
               </div>
             ) : null}
@@ -2913,7 +2913,7 @@ function IsiStatus({
                         </span>
                       ) : null}
                     </h4>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {upaya.dicabut
                         ? "dicabut"
                         : upaya.gugur
@@ -2949,7 +2949,7 @@ function IsiStatus({
                         .filter(([, nilai]) => nilai)
                         .map(([label, nilai]) => (
                           <div key={label}>
-                            <dt className="text-sm text-muted-foreground">{label}</dt>
+                            <dt className="text-xs text-muted-foreground">{label}</dt>
                             <dd>{nilai}</dd>
                           </div>
                         ))}
@@ -3077,25 +3077,25 @@ function IsiStatus({
             <dl className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2 lg:grid-cols-3">
               {status.putusanEcourt.ecourt.nomorPutusan ? (
                 <div>
-                  <dt className="text-sm text-muted-foreground">Nomor putusan di e-Court</dt>
+                  <dt className="text-xs text-muted-foreground">Nomor putusan di e-Court</dt>
                   <dd>{status.putusanEcourt.ecourt.nomorPutusan}</dd>
                 </div>
               ) : null}
               {status.putusanEcourt.ecourt.tanggalPutusanTeks ? (
                 <div>
-                  <dt className="text-sm text-muted-foreground">Tanggal putusan</dt>
+                  <dt className="text-xs text-muted-foreground">Tanggal putusan</dt>
                   <dd>{status.putusanEcourt.ecourt.tanggalPutusanTeks}</dd>
                 </div>
               ) : null}
               {status.putusanEcourt.ecourt.tanggalBhtTeks ? (
                 <div>
-                  <dt className="text-sm text-muted-foreground">Tanggal BHT</dt>
+                  <dt className="text-xs text-muted-foreground">Tanggal BHT</dt>
                   <dd>{status.putusanEcourt.ecourt.tanggalBhtTeks}</dd>
                 </div>
               ) : null}
 
               <div>
-                <dt className="text-sm text-muted-foreground">Dokumen salinan putusan</dt>
+                <dt className="text-xs text-muted-foreground">Dokumen salinan putusan</dt>
                 <dd
                   className={
                     status.putusanEcourt.ecourt.dokumenAda
@@ -3112,13 +3112,13 @@ function IsiStatus({
               {/* Siapa yang mengunggah dan kapan - dua pertanyaan yang selalu
                   menyusul begitu salinannya dipersoalkan. */}
               <div>
-                <dt className="text-sm text-muted-foreground">Diupload oleh</dt>
+                <dt className="text-xs text-muted-foreground">Diupload oleh</dt>
                 <dd className={status.putusanEcourt.ecourt.diunggahOleh ? "" : "text-muted-foreground"}>
                   {status.putusanEcourt.ecourt.diunggahOleh || "\u2014"}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-muted-foreground">Tanggal upload</dt>
+                <dt className="text-xs text-muted-foreground">Tanggal upload</dt>
                 <dd
                   className={
                     status.putusanEcourt.ecourt.tanggalUnggahTeks ? "" : "text-muted-foreground"
@@ -3129,7 +3129,7 @@ function IsiStatus({
               </div>
 
               <div className="sm:col-span-2">
-                <dt className="text-sm text-muted-foreground">Panitera</dt>
+                <dt className="text-xs text-muted-foreground">Panitera</dt>
                 <dd>
                   {status.putusanEcourt.ecourt.paniteraNama || "\u2014"}
                   {status.putusanEcourt.ecourt.paniteraTte ? (
@@ -3490,7 +3490,7 @@ function IsiStatus({
                           namaCadangan={`bas-${status.identitas.nomorPerkara}-${sidang.tanggalSidang}.pdf`}
                         />
                       ) : (
-                        <span className="text-sm text-muted-foreground">BAS belum diunggah</span>
+                        <span className="text-xs text-muted-foreground">BAS belum diunggah</span>
                       )}
                     </li>
                   ))}
@@ -3563,7 +3563,7 @@ function IsiStatus({
             </div>
 
             <p className="text-sm">
-              <span className="text-sm text-muted-foreground">Keterangan saksi: </span>
+              <span className="text-xs text-muted-foreground">Keterangan saksi: </span>
               {status.saksi.ada
                 ? `${status.saksi.jumlahSaksi} saksi, ${status.saksi.jumlahKeterangan} keterangan`
                 : "belum ada"}
@@ -4551,7 +4551,7 @@ function CourtCalendarSipp({ status }: { status: Status }) {
     <div className="rounded-md border bg-muted/30 p-2">
       <div className="mb-1.5 flex flex-wrap items-baseline gap-2 border-b pb-1">
         <p className="text-sm font-semibold">Court Calendar SIPP</p>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           rencana majelis - {cc.jumlah ?? cc.baris.length} agenda
         </span>
         <span className="ml-auto flex flex-wrap gap-1">
@@ -4718,7 +4718,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                     Sidang ke-{urutan + 1} · {namaHariIso(tanggal)}, {tanggalPanjang(tanggal)}
                   </span>
                   {sidang?.agenda ? (
-                    <span className="text-sm text-muted-foreground">{sidang.agenda}</span>
+                    <span className="text-xs text-muted-foreground">{sidang.agenda}</span>
                   ) : null}
                   {sidang?.ditunda ? <Badge variant="warning">ditunda</Badge> : null}
                   <span className="ml-auto text-sm text-muted-foreground">
@@ -4809,7 +4809,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                     </td>
                     <td className="px-2 py-1.5">
                       {!pihak.kepatutan.perluDiterima ? (
-                        <span className="text-sm text-muted-foreground">tidak disyaratkan</span>
+                        <span className="text-xs text-muted-foreground">tidak disyaratkan</span>
                       ) : pihak.diterima === true ? (
                         <>
                           <Badge variant="success">diterima</Badge>
@@ -4886,7 +4886,7 @@ function BarisRelaas({
     <li className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-l-2 border-border pl-2">
       <span className="font-medium">{relaas.namaPihak || "tanpa nama pihak"}</span>
       {relaas.peran ? (
-        <span className="text-sm text-muted-foreground">{relaas.peran}</span>
+        <span className="text-xs text-muted-foreground">{relaas.peran}</span>
       ) : null}
 
       {relaas.tanggalRelaas ? (
@@ -4904,7 +4904,7 @@ function BarisRelaas({
       )}
 
       {relaas.jurusitaNama ? (
-        <span className="text-sm text-muted-foreground">oleh {relaas.jurusitaNama}</span>
+        <span className="text-xs text-muted-foreground">oleh {relaas.jurusitaNama}</span>
       ) : null}
 
       {/* Bertemu orangnya atau tidak - inilah yang menentukan panggilan sah
@@ -4917,7 +4917,7 @@ function BarisRelaas({
       ) : null}
 
       {relaas.tanggalKirimPos ? (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           dikirim pos {relaas.tanggalKirimPos}
           {relaas.noResiPos ? ` · resi ${relaas.noResiPos}` : ""}
         </span>
@@ -4933,7 +4933,7 @@ function BarisRelaas({
             namaCadangan={`relaas-${relaas.id}.pdf`}
           />
         ) : (
-          <span className="text-sm text-muted-foreground">relaas belum diunggah</span>
+          <span className="text-xs text-muted-foreground">relaas belum diunggah</span>
         )}
         {relaas.adaResi ? (
           <TombolUnduh
@@ -5090,7 +5090,7 @@ function KetepatanInput({
         <div key={`input-${satu.kunci}`} className="flex flex-wrap items-center gap-2 text-sm">
           <span className="min-w-[9rem] flex-1">
             <span className="font-medium">{satu.label}</span>{" "}
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {satu.tanggal} → {satu.diinput}
             </span>
           </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, Info, Layers, Maximize2, MapPin, Users, X } from "lucide-react";
+import { AlertTriangle, Columns2, Info, Layers, Maximize2, MapPin, Users, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
@@ -227,6 +227,74 @@ function jarakKm(a: [number, number], b: [number, number]) {
 const angka = (n: number) => n.toLocaleString("id-ID");
 
 /** Nama yang aman disisipkan ke dalam tooltip HTML Leaflet. */
+/**
+ * ============================================================================
+ * TANGGA WARNA SATU LAPISAN - SATU ATURAN, DIPAKAI DUA KALI
+ * ============================================================================
+ *
+ * Sejak peta punya TIRAI pembanding, tangga warna harus disusun dua kali: satu
+ * untuk sisi kiri, satu untuk sisi kanan. Menyalin aturannya akan meninggalkan
+ * dua salinan yang menyimpang diam-diam - dan yang menyimpang justru
+ * perbandingannya, satu-satunya hal yang dicari orang yang menarik tirai itu.
+ */
+function petaBarisLapisan(m?: MuatanLapisan) {
+  const peta = new Map<string, BarisLapisan>();
+  for (const d of m?.desa ?? []) peta.set(d.kode, d);
+  return peta;
+}
+
+/**
+ * Nilai terbesar dan terkecil satu lapisan.
+ *
+ * Tangganya disusun dari data yang SEDANG TAMPIL, bukan dari batas tetap.
+ * Batas tetap yang cocok untuk biaya panggilan (ratusan ribu rupiah) tidak
+ * cocok untuk persentase, dan yang cocok untuk keduanya tidak cocok untuk
+ * selisih yang dapat NEGATIF.
+ */
+function jangkauanLapisan(m?: MuatanLapisan) {
+  const nilai = (m?.desa ?? []).filter((x) => x.cukup).map((x) => x.nilai);
+  if (nilai.length === 0) return { min: 0, max: 0 };
+  return { min: Math.min(...nilai), max: Math.max(...nilai) };
+}
+
+/** Urutan kategori menurut banyaknya - dipakai lapisan faktor dan jurusita. */
+function urutanKategori(m?: MuatanLapisan) {
+  const hitung = new Map<string, number>();
+  for (const d of m?.desa ?? []) {
+    const nama = d.label || String(d.nilai);
+    hitung.set(nama, (hitung.get(nama) || 0) + 1);
+  }
+  return [...hitung.entries()].sort((a, b) => b[1] - a[1]).map(([nama]) => nama);
+}
+
+/** Warna satu desa pada satu lapisan - aturan yang sama untuk kiri dan kanan. */
+function warnaLapisan(
+  d: BarisLapisan | undefined,
+  satuan: string,
+  jangkau: { min: number; max: number },
+  urut: string[]
+) {
+  if (!d || !d.cukup) return WARNA_TAK_CUKUP;
+
+  if (satuan === "kategori") {
+    const ke = urut.indexOf(d.label || String(d.nilai));
+    return ke >= 0 && ke < WARNA_KATEGORI.length ? WARNA_KATEGORI[ke] : WARNA_TAK_CUKUP;
+  }
+
+  // Selisih punya NOL yang berarti - tidak berubah - jadi ia memakai dua rona
+  // yang bertemu di tengah, bukan satu rona yang menua.
+  if (satuan === "selisih") {
+    if (d.nilai > 0) return d.nilai >= 10 ? "#b91c1c" : "#f59e0b";
+    if (d.nilai < 0) return d.nilai <= -10 ? "#1d4ed8" : "#60a5fa";
+    return WARNA_TAK_CUKUP;
+  }
+
+  const rentang = jangkau.max - jangkau.min;
+  const bagian = rentang > 0 ? (d.nilai - jangkau.min) / rentang : 0;
+  const ke = Math.min(TANGGA_RELAAS.length - 1, Math.floor((1 - bagian) * TANGGA_RELAAS.length));
+  return TANGGA_RELAAS[ke].warna;
+}
+
 function aman(teks: string) {
   return String(teks || "")
     .replace(/&/g, "&amp;")
@@ -307,6 +375,10 @@ export function PetaTitikPerkara({
   const wadah = useRef<HTMLDivElement | null>(null);
   const petaRef = useRef<PetaObjek | null>(null);
   const kumpulanRef = useRef<PetaKumpulan | null>(null);
+  /** Lingkaran sisi kanan tirai, beserta penggambar tiap panel. */
+  const kumpulanBRef = useRef<PetaKumpulan | null>(null);
+  const gambarKiriRef = useRef<unknown>(null);
+  const gambarKananRef = useRef<unknown>(null);
   /** Pandangan awal hanya disesuaikan sekali - lihat penggambar di bawah. */
   const sudahDipaskan = useRef(false);
   const [galat, setGalat] = useState("");
@@ -317,6 +389,19 @@ export function PetaTitikPerkara({
 
   /** Lapisan yang sedang digambar - lihat daftar LAPISAN. */
   const [lapisan, setLapisan] = useState("perkara");
+
+  /**
+   * ====================================================================
+   * TIRAI PEMBANDING
+   * ====================================================================
+   *
+   * Kosong berarti mati - dan mati adalah keadaan bawaannya. Dua lapisan yang
+   * tampil bersamaan menuntut pembacanya menahan dua arti warna sekaligus, dan
+   * itu beban yang hanya sepadan ketika ia memang sedang membandingkan.
+   */
+  const [lapisanB, setLapisanB] = useState("");
+  /** Letak tirai dalam persen lebar peta. */
+  const [tirai, setTirai] = useState(50);
   const [relaas, setRelaas] = useState<MuatanRelaas | null>(null);
   const [galatRelaas, setGalatRelaas] = useState("");
   const [memuatRelaas, setMemuatRelaas] = useState(false);
@@ -446,9 +531,16 @@ export function PetaTitikPerkara({
   // Lapisan lain - dibaca sekali per kunci, ketika lapisannya dipilih.
   // --------------------------------------------------------------------
   useEffect(() => {
-    const pilih = LAPISAN.find((x) => x.kunci === lapisan);
-    if (!pilih || !pilih.apa || pilih.apa === "relaas") return;
-    if (lapis[lapisan]) return;
+    // Sisi kiri DAN sisi kanan tirai dibaca dengan aturan yang sama, satu per
+    // satu: `lapis` ikut jadi kebergantungan, jadi begitu yang pertama tiba,
+    // efek ini berjalan lagi dan mengambil yang kedua. Dua bacaan sekaligus
+    // hanya akan membuat SIPP mengerjakan dua kueri berat berbarengan.
+    const kunci = [lapisan, lapisanB].find((k) => {
+      const p = LAPISAN.find((x) => x.kunci === k);
+      return !!p && !!p.apa && p.apa !== "relaas" && !lapis[k];
+    });
+    if (!kunci) return;
+    const pilih = LAPISAN.find((x) => x.kunci === kunci)!;
     let hidup = true;
     setMemuatLapis(true);
     setGalatLapis("");
@@ -470,7 +562,7 @@ export function PetaTitikPerkara({
           setGalatLapis(isi.alasan || "Lapisan tidak dapat dibaca.");
           return;
         }
-        setLapis((lama) => ({ ...lama, [lapisan]: isi }));
+        setLapis((lama) => ({ ...lama, [kunci]: isi }));
       } catch (e) {
         if (hidup) setGalatLapis(e instanceof Error ? e.message : "Lapisan gagal dibaca.");
       } finally {
@@ -480,7 +572,15 @@ export function PetaTitikPerkara({
     return () => {
       hidup = false;
     };
-  }, [lapisan, lapis, saringan.periode, saringan.acuan, saringan.dari, saringan.sampai]);
+  }, [
+    lapisan,
+    lapisanB,
+    lapis,
+    saringan.periode,
+    saringan.acuan,
+    saringan.dari,
+    saringan.sampai,
+  ]);
 
   // --------------------------------------------------------------------
   // Sidang keliling yang sudah ada - dibaca sekali, ketika penandanya
@@ -583,7 +683,27 @@ export function PetaTitikPerkara({
             ),
         }).addTo(peta);
 
+        // Dua panel terpisah supaya TIRAI dapat menggunting satu sisi saja.
+        // Ubinan dan cincin jarak tinggal di panel bawaan dan karena itu tidak
+        // ikut tergunting - yang tergunting hanya lingkaran desanya.
+        peta.createPane("aletaKiri");
+        peta.createPane("aletaKanan");
+        const panelKiri = peta.getPane("aletaKiri");
+        const panelKanan = peta.getPane("aletaKanan");
+        if (panelKiri) panelKiri.style.zIndex = "620";
+        if (panelKanan) {
+          panelKanan.style.zIndex = "630";
+          // Lapisan pembanding DIBACA, bukan diketuk. Kanvasnya menutupi
+          // seluruh peta - bukan hanya separuh kanan - sehingga membiarkannya
+          // menerima ketukan akan merampas ketukan milik sisi kiri, termasuk
+          // di bagian layar tempat ia tidak terlihat sama sekali.
+          panelKanan.style.pointerEvents = "none";
+        }
+        gambarKiriRef.current = L.canvas({ pane: "aletaKiri" });
+        gambarKananRef.current = L.canvas({ pane: "aletaKanan" });
+
         kumpulanRef.current = L.layerGroup().addTo(peta);
+        kumpulanBRef.current = L.layerGroup().addTo(peta);
         // Zum diikuti supaya penggambarnya tahu kapan berpindah dari desa ke
         // kecamatan. Dibaca dari petanya sendiri, bukan dihitung sendiri:
         // fitBounds mengubah zum tanpa ada yang menekan tombol.
@@ -604,6 +724,9 @@ export function PetaTitikPerkara({
         petaRef.current.remove();
         petaRef.current = null;
         kumpulanRef.current = null;
+        kumpulanBRef.current = null;
+        gambarKiriRef.current = null;
+        gambarKananRef.current = null;
       }
     };
   }, []);
@@ -642,37 +765,16 @@ export function PetaTitikPerkara({
   }, [relaas]);
 
   /** Nilai lapisan yang sedang tampil, per kode desa. */
-  const petaLapis = useMemo(() => {
-    const peta = new Map<string, BarisLapisan>();
-    for (const d of lapis[lapisan]?.desa ?? []) peta.set(d.kode, d);
-    return peta;
-  }, [lapis, lapisan]);
-
+  const petaLapis = useMemo(() => petaBarisLapisan(lapis[lapisan]), [lapis, lapisan]);
   const satuan = lapis[lapisan]?.satuan ?? "";
+  const jangkauLapis = useMemo(() => jangkauanLapisan(lapis[lapisan]), [lapis, lapisan]);
+  const urutKategori = useMemo(() => urutanKategori(lapis[lapisan]), [lapis, lapisan]);
 
-  /**
-   * Nilai terbesar dan terkecil lapisan yang tampil.
-   *
-   * Tangga warnanya disusun dari data yang SEDANG TAMPIL, bukan dari batas
-   * tetap. Batas tetap yang cocok untuk biaya panggilan tidak cocok untuk
-   * persentase, dan yang cocok untuk keduanya tidak cocok untuk selisih yang
-   * dapat negatif.
-   */
-  const jangkauLapis = useMemo(() => {
-    const nilai = (lapis[lapisan]?.desa ?? []).filter((x) => x.cukup).map((x) => x.nilai);
-    if (nilai.length === 0) return { min: 0, max: 0 };
-    return { min: Math.min(...nilai), max: Math.max(...nilai) };
-  }, [lapis, lapisan]);
-
-  /** Urutan kategori - dipakai lapisan faktor dan jurusita. */
-  const urutKategori = useMemo(() => {
-    const hitung = new Map<string, number>();
-    for (const d of lapis[lapisan]?.desa ?? []) {
-      const nama = d.label || String(d.nilai);
-      hitung.set(nama, (hitung.get(nama) || 0) + 1);
-    }
-    return [...hitung.entries()].sort((a, b) => b[1] - a[1]).map(([nama]) => nama);
-  }, [lapis, lapisan]);
+  /** Sisi kanan tirai - bentuknya persis sama, sumbernya lapisan yang lain. */
+  const petaLapisB = useMemo(() => petaBarisLapisan(lapis[lapisanB]), [lapis, lapisanB]);
+  const satuanB = lapis[lapisanB]?.satuan ?? "";
+  const jangkauLapisB = useMemo(() => jangkauanLapisan(lapis[lapisanB]), [lapis, lapisanB]);
+  const urutKategoriB = useMemo(() => urutanKategori(lapis[lapisanB]), [lapis, lapisanB]);
 
   /**
    * Yang sungguh digambar: desa pada zum dekat, kecamatan pada zum jauh.
@@ -768,71 +870,82 @@ export function PetaTitikPerkara({
   );
 
   /**
-   * Warna lingkaran, menurut lapisan yang dipilih.
+   * ====================================================================
+   * WARNA LINGKARAN - SATU PABRIK, DUA PEMAKAI
+   * ====================================================================
    *
    *   perkara  jenis perkara yang paling banyak di tempat itu
    *   relaas   persentase panggilan tidak bertemu, satu rona menua
+   *   lainnya  tangga yang disusun dari jangkauan lapisan itu sendiri
    *
    * Pada lapisan relaas, tempat yang relaasnya TERLALU SEDIKIT diberi warna
    * kelabu - bukan warna termuda. Desa dengan tiga relaas yang dua di antaranya
    * gagal bukan "67% gagal", itu kebetulan; mewarnainya seperti desa lain
    * membuat kebetulan terbaca sebagai temuan.
+   *
+   * --------------------------------------------------------------------
+   * KENAPA BERUPA PABRIK, DAN BUKAN SATU useCallback SEPERTI SEBELUMNYA
+   * --------------------------------------------------------------------
+   *
+   * Sisi kiri dan sisi kanan tirai memerlukan aturan yang SAMA atas data yang
+   * BERBEDA. Bentuk lama - satu useCallback yang memeluk petaLapis, satuan,
+   * jangkauLapis, dan urutKategori langsung dari ruang lingkupnya - tidak dapat
+   * dipakai dua kali, dan keempatnya juga tidak ada di daftar
+   * kebergantungannya.
+   *
+   * Yang terakhir itu cacat sungguhan, bukan kerapian: begitu data lapisan
+   * tiba, penggambar berjalan lagi (petaLapis ada di kebergantungan EFEK-nya)
+   * tetapi memanggil warnaTitik yang masih memeluk peta KOSONG - sehingga
+   * seluruh desa kelabu "tidak cukup" pada pemilihan pertama tiap lapisan.
+   * Berpindah lapisan lalu kembali membuatnya benar, dan itulah yang membuat
+   * cacat ini menyamar sebagai data yang belum lengkap.
+   *
+   * Sebagai pabrik, tiap datanya masuk lewat parameter dan tidak ada lagi yang
+   * dapat tertinggal di daftar kebergantungan.
    */
-  const warnaTitik = useCallback(
-    (jenis: Record<string, number>, kode: string) => {
-      // ------------------------------------------------------------------
-      // LAPISAN LAIN - tangga disusun dari data yang SEDANG TAMPIL
-      // ------------------------------------------------------------------
-      //
-      // Batas tetap yang cocok untuk biaya panggilan (ratusan ribu rupiah)
-      // tidak cocok untuk persentase, dan yang cocok untuk keduanya tidak
-      // cocok untuk selisih yang dapat NEGATIF. Karena itu tangganya dihitung
-      // dari jangkauan nilai lapisan itu sendiri.
-      if (lapisan !== "perkara" && lapisan !== "relaas") {
-        const d = petaLapis.get(kode);
-        if (!d || !d.cukup) return WARNA_TAK_CUKUP;
-
-        if (satuan === "kategori") {
-          const urut = urutKategori.indexOf(d.label || String(d.nilai));
-          return urut >= 0 && urut < WARNA_KATEGORI.length ? WARNA_KATEGORI[urut] : WARNA_TAK_CUKUP;
+  const buatWarna = useCallback(
+    (
+      kunci: string,
+      pl: Map<string, BarisLapisan>,
+      sat: string,
+      jang: { min: number; max: number },
+      urut: string[]
+    ) =>
+      (jenis: Record<string, number>, kode: string) => {
+        if (kunci !== "perkara" && kunci !== "relaas") {
+          return warnaLapisan(pl.get(kode), sat, jang, urut);
         }
 
-        // Selisih punya NOL yang berarti - tidak berubah - jadi ia memakai dua
-        // rona yang bertemu di tengah, bukan satu rona yang menua.
-        if (satuan === "selisih") {
-          if (d.nilai > 0) return d.nilai >= 10 ? "#b91c1c" : "#f59e0b";
-          if (d.nilai < 0) return d.nilai <= -10 ? "#1d4ed8" : "#60a5fa";
-          return WARNA_TAK_CUKUP;
+        if (kunci === "relaas") {
+          const d = petaRelaas.get(kode);
+          if (!d || !d.cukup) return WARNA_TAK_CUKUP;
+          for (const langkah of TANGGA_RELAAS) {
+            if (d.persen >= langkah.batas) return langkah.warna;
+          }
+          return TANGGA_RELAAS[TANGGA_RELAAS.length - 1].warna;
         }
 
-        const rentang = jangkauLapis.max - jangkauLapis.min;
-        const bagian = rentang > 0 ? (d.nilai - jangkauLapis.min) / rentang : 0;
-        const urut = Math.min(
-          TANGGA_RELAAS.length - 1,
-          Math.floor((1 - bagian) * TANGGA_RELAAS.length)
-        );
-        return TANGGA_RELAAS[urut].warna;
-      }
+        let terbanyak = "";
+        let jml = -1;
+        for (const [j, n] of Object.entries(jenis)) {
+          if (n > jml) {
+            jml = n;
+            terbanyak = j;
+          }
+        }
+        return warnaJenis[terbanyak] || "#6366f1";
+      },
+    [warnaJenis, petaRelaas]
+  );
 
-      if (lapisan === "relaas") {
-        const d = petaRelaas.get(kode);
-        if (!d || !d.cukup) return WARNA_TAK_CUKUP;
-        for (const langkah of TANGGA_RELAAS) {
-          if (d.persen >= langkah.batas) return langkah.warna;
-        }
-        return TANGGA_RELAAS[TANGGA_RELAAS.length - 1].warna;
-      }
-      let terbanyak = "";
-      let jml = -1;
-      for (const [j, n] of Object.entries(jenis)) {
-        if (n > jml) {
-          jml = n;
-          terbanyak = j;
-        }
-      }
-      return warnaJenis[terbanyak] || "#6366f1";
-    },
-    [warnaJenis, lapisan, petaRelaas]
+  const warnaTitik = useMemo(
+    () => buatWarna(lapisan, petaLapis, satuan, jangkauLapis, urutKategori),
+    [buatWarna, lapisan, petaLapis, satuan, jangkauLapis, urutKategori]
+  );
+
+  const warnaTitikB = useMemo(
+    () => buatWarna(lapisanB, petaLapisB, satuanB, jangkauLapisB, urutKategoriB),
+    [buatWarna, lapisanB, petaLapisB, satuanB, jangkauLapisB, urutKategoriB]
   );
 
   // --------------------------------------------------------------------
@@ -854,6 +967,8 @@ export function PetaTitikPerkara({
       for (const x of urut) {
         const warna = warnaTitik(x.jenis, x.kunci);
         const lingkar: PetaTitik = L.circleMarker(x.pos, {
+          // Panel tersendiri supaya tirai dapat menggunting sisi ini saja.
+          renderer: gambarKiriRef.current ?? undefined,
           radius: jariJari(x.perkara),
           color: warna,
           weight: 1.2,
@@ -1003,6 +1118,119 @@ export function PetaTitikPerkara({
       }
     })();
   }, [siap, digambar, jariJari, warnaTitik, lapisan, petaRelaas, petaLapis, satuan, cincin]);
+
+  // --------------------------------------------------------------------
+  // GUNTINGAN TIRAI - pada KANVAS, dalam piksel, bukan pada panel
+  // --------------------------------------------------------------------
+  //
+  // Panel Leaflet TIDAK BERUKURAN: anak-anaknya berposisi mutlak, jadi kotak
+  // panelnya sendiri 0x0. clip-path berpersen pada kotak 0x0 menghasilkan
+  // persegi 0x0 - yaitu menggunting seluruhnya, tanpa galat dan tanpa
+  // peringatan. Yang tampak hanya peta yang seluruh lingkarannya hilang, dan
+  // itu persis yang terjadi pada rancangan pertama.
+  //
+  // Yang berukuran nyata adalah KANVAS di dalam panel. Guntingannya karena itu
+  // dihitung dalam piksel dari letak kanvas terhadap kotak peta.
+  //
+  // Kanvas ikut bergeser bersama peta, jadi hitungannya diulang pada tiap
+  // `move`, `zoom`, dan `resize`. Murah: satu penulisan gaya pada dua elemen,
+  // bukan sembilan ratus lingkaran yang disusun ulang - karena itu tirainya
+  // dapat digeser terus-menerus tanpa peta tersendat.
+  // --------------------------------------------------------------------
+  const pasangTirai = useCallback(() => {
+    const peta = petaRef.current;
+    const kotak = wadah.current;
+    if (!peta || !kotak) return;
+    const kiri = peta.getPane("aletaKiri")?.querySelector("canvas");
+    const kanan = peta.getPane("aletaKanan")?.querySelector("canvas");
+
+    // Dibersihkan SENDIRI-SENDIRI, bukan sesudah keduanya dipastikan ada.
+    // Ketika tirai dimatikan, lingkaran sisi kanan dihapus lebih dahulu -
+    // dan menghapus lingkaran terakhir yang memakai satu penggambar membuat
+    // Leaflet mencabut kanvasnya dari halaman. Bila pembersihan menunggu
+    // kanvas kanan, guntingan sisi KIRI tidak akan pernah dilepas, dan
+    // petanya tertinggal separuh selamanya.
+    if (!lapisanB) {
+      if (kiri) kiri.style.clipPath = "";
+      if (kanan) kanan.style.clipPath = "";
+      return;
+    }
+    if (!kiri || !kanan) return;
+
+    const rk = kotak.getBoundingClientRect();
+    const garis = rk.left + (tirai / 100) * rk.width;
+    const a = kiri.getBoundingClientRect();
+    const b = kanan.getBoundingClientRect();
+    kiri.style.clipPath = `inset(0 ${Math.max(0, a.width - (garis - a.left))}px 0 0)`;
+    kanan.style.clipPath = `inset(0 0 0 ${Math.max(0, garis - b.left)}px)`;
+  }, [lapisanB, tirai]);
+
+  useEffect(() => {
+    const peta = petaRef.current;
+    if (!siap || !peta) return;
+    pasangTirai();
+    peta.on("move zoom zoomend resize", pasangTirai);
+    return () => peta.off("move zoom zoomend resize", pasangTirai);
+  }, [siap, pasangTirai]);
+
+  // --------------------------------------------------------------------
+  // SISI KANAN TIRAI - lingkarannya saja
+  // --------------------------------------------------------------------
+  //
+  // Tanpa keterangan melayang, tanpa ketukan, tanpa penegasan saat penunjuk
+  // lewat. Yang dibandingkan orang di sini adalah WARNANYA; menyalin seluruh
+  // keterangan ke sisi kanan hanya akan membuat dua kotak keterangan berebut
+  // tempat pada satu desa yang sama - dan yang menang bukan yang sedang
+  // dilihat, melainkan yang digambar belakangan.
+  //
+  // Angka sisi kanan tetap dapat dibaca: ketukan pada desanya membuka daftar
+  // perkara desa itu, dan keterangan di bawah peta menyebut kedua lapisan.
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    if (!siap || !kumpulanBRef.current) return;
+    const kumpulan = kumpulanBRef.current;
+    kumpulan.clearLayers();
+    if (!lapisanB || digambar.length === 0) return;
+
+    let hidup = true;
+    void (async () => {
+      const L = await muatLeaflet();
+      if (!hidup) return;
+      // Urutan yang sama dengan sisi kiri: yang terbesar lebih dahulu, supaya
+      // lingkaran kecil tidak tertimbun.
+      const urut = [...digambar].sort((a, b) => b.perkara - a.perkara);
+      for (const x of urut) {
+        const warna = warnaTitikB(x.jenis, x.kunci);
+        kumpulan.addLayer(
+          L.circleMarker(x.pos, {
+            renderer: gambarKananRef.current ?? undefined,
+            radius: jariJari(x.perkara),
+            color: warna,
+            weight: 1.2,
+            opacity: 0.85,
+            fillColor: warna,
+            fillOpacity: lapisanB === "relaas" ? 0.55 : 0.32,
+            interactive: false,
+          })
+        );
+      }
+      // ----------------------------------------------------------------
+      // Tirainya dipasang SESUDAH kanvasnya lahir, bukan sebelum.
+      //
+      // Kanvas sisi kanan baru dilahirkan Leaflet ketika lingkaran pertama
+      // yang memakainya ditambahkan - dan itu terjadi di sini, di dalam blok
+      // tak-serentak, jauh sesudah efek pemasang tirai berjalan. Tanpa
+      // panggilan susulan ini, tirai pada penyalaan PERTAMA tidak tergunting
+      // sama sekali.
+      // ----------------------------------------------------------------
+      pasangTirai();
+    })();
+
+    return () => {
+      hidup = false;
+    };
+  }, [siap, lapisanB, digambar, jariJari, warnaTitikB, pasangTirai]);
+
 
   /**
    * ==========================================================================
@@ -1194,13 +1422,73 @@ export function PetaTitikPerkara({
             type="button"
             size="sm"
             variant={lapisan === l.kunci ? "default" : "outline"}
-            onClick={() => setLapisan(l.kunci)}
+            onClick={() => {
+              // Memilih lapisan yang sedang berada di sisi KANAN berarti
+              // MENUKAR keduanya. Tanpa ini, kedua sisi tirai memuat lapisan
+              // yang sama - dan pilihan kanan lenyap dari daftarnya sendiri,
+              // meninggalkan kotak pilihan yang tampak kosong.
+              if (l.kunci === lapisanB) setLapisanB(lapisan);
+              setLapisan(l.kunci);
+            }}
           >
             {l.label}
           </Button>
         ))}
         {memuatRelaas || memuatLapis ? (
           <span className="text-xs text-muted-foreground">membaca…</span>
+        ) : null}
+      </div>
+
+      {/* ==================================================================
+          TIRAI PEMBANDING - SATU PETA, BUKAN DUA PETA BERDAMPINGAN
+          ==================================================================
+
+          Dua peta berdampingan menuntut zum dan geseran keduanya disamakan
+          terus-menerus, dan sekali saja tidak sama, yang dibandingkan orang
+          adalah dua tempat yang berbeda. Dua peta juga meminta ubinan dua kali
+          kepada penyedia yang sama, dan memaksa mata berpindah sejauh lebar
+          layar tiap kali satu desa diperiksa.
+
+          Satu peta bertirai tidak menuntut apa pun disamakan - keduanya memang
+          peta yang sama - dan mata tidak berpindah sama sekali. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Columns2 className="h-3.5 w-3.5" aria-hidden />
+          Tirai pembanding
+          <select
+            value={lapisanB}
+            onChange={(e) => setLapisanB(e.target.value)}
+            title="Lapisan kedua, digambar di sisi kanan tirai"
+            className="max-w-[12rem] rounded-lg border border-input bg-background px-2 py-1 text-xs"
+          >
+            <option value="">mati</option>
+            {LAPISAN.filter((l) => l.kunci !== lapisan).map((l) => (
+              <option key={l.kunci} value={l.kunci}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {lapisanB ? (
+          <label className="inline-flex flex-1 items-center gap-2 text-xs text-muted-foreground">
+            <span className="whitespace-nowrap">
+              {LAPISAN.find((l) => l.kunci === lapisan)?.label ?? lapisan}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={tirai}
+              onChange={(e) => setTirai(Number(e.target.value))}
+              aria-label="Letak tirai"
+              className="min-w-[8rem] flex-1 accent-primary"
+            />
+            <span className="whitespace-nowrap">
+              {LAPISAN.find((l) => l.kunci === lapisanB)?.label ?? lapisanB}
+            </span>
+          </label>
         ) : null}
       </div>
 
@@ -1269,12 +1557,35 @@ export function PetaTitikPerkara({
         )}
       >
         <div ref={wadah} className="h-[26rem] w-full sm:h-[32rem]" />
+        {/* Garis tirainya sendiri. Tanpa garis, batas antara dua lapisan hanya
+            terbaca sebagai warna yang berubah mendadak - dan warna yang berubah
+            mendadak pada peta terbaca sebagai temuan, bukan sebagai batas. */}
+        {lapisanB && siap ? (
+          <div
+            className="pointer-events-none absolute inset-y-0 z-[640] w-px bg-foreground/60"
+            style={{ left: `${tirai}%` }}
+            aria-hidden
+          />
+        ) : null}
         {!siap && !galat ? (
           <div className="absolute inset-0 grid place-items-center bg-muted/40 text-sm text-muted-foreground">
             Menggambar peta…
           </div>
         ) : null}
       </div>
+
+      {lapisanB ? (
+        <p className="flex items-start gap-2 text-xs text-muted-foreground">
+          <Columns2 className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>
+            Kiri tirai <b>{LAPISAN.find((l) => l.kunci === lapisan)?.label ?? lapisan}</b>, kanan{" "}
+            <b>{LAPISAN.find((l) => l.kunci === lapisanB)?.label ?? lapisanB}</b>. Tangga warna
+            kedua sisi disusun dari jangkauan lapisannya MASING-MASING, jadi yang dibandingkan
+            letak desanya pada tangga sisinya sendiri — bukan warnanya dengan warna sebelah.
+            Keterangan melayang dan ketukan tetap milik sisi kiri.
+          </span>
+        </p>
+      ) : null}
 
       {/* ==================================================================
           KETERANGAN - UKURAN, WARNA, DAN YANG TIDAK ADA DI PETA

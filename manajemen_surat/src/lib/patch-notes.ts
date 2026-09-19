@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.25.0";
+export const APP_VERSION = "2.26.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.25.0 - Peta yang Mengusulkan";
+  "ALETA Judicia v2.26.0 - Tirai Pembanding, dan Warna yang Kembali";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,48 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.26.0",
+    title: "ALETA Judicia v2.26.0 - Tirai Pembanding, dan Warna yang Kembali",
+    date: "2026-09-19",
+    status: "Belum terpasang",
+    summary:
+      "Butir terpentingnya bukan yang baru, melainkan yang diperbaiki: delapan lapisan peta yang " +
+      "dirilis pada 2.25.0 ternyata mewarnai SELURUH desa kelabu pada pemilihan pertama, dan " +
+      "berpindah lapisan lalu kembali membuatnya benar - sehingga cacat itu menyamar sebagai data " +
+      "yang belum lengkap. Di sebelahnya: tirai pembanding pada Peta Perkara, perbandingan sampai " +
+      "empat perkara sekaligus, dan Status Perkara yang akhirnya punya hierarki ukuran huruf.",
+    added: [
+      "TIRAI PEMBANDING pada Peta Perkara - dua lapisan pada satu peta, dipisah garis yang digeser. Bukan dua peta berdampingan, dan itu pilihan: dua peta menuntut zum dan geseran keduanya disamakan terus-menerus, dan sekali saja tidak sama, yang dibandingkan orang adalah dua tempat yang berbeda. Satu peta bertirai tidak menuntut apa pun disamakan, dan mata tidak berpindah sejauh lebar layar tiap kali satu desa diperiksa.",
+      "Tangga warna kedua sisi tirai disusun dari jangkauan lapisannya MASING-MASING. Yang dibandingkan karena itu letak sebuah desa pada tangga sisinya sendiri - bukan warnanya dengan warna sebelah, yang memang tidak sebanding.",
+      "MEMBANDINGKAN SAMPAI EMPAT PERKARA sekaligus pada Status Perkara, bukan lagi satu lawan satu. Satu pembanding menjawab kenapa yang ini lebih lama dari yang itu; yang ditanyakan berikutnya justru kenapa TIGA perkara majelis ini lebih lama. Selisihnya tetap dihitung dari perkara yang sedang dibuka ke tiap pembanding - bukan berantai dari kolom sebelahnya.",
+      "JALAN DARI KARTU IDENTITAS PIHAK ke analisis Riwayat pihak. Analisisnya sudah menghitung perkara lain orang itu sejak lama - lewat NIK, nama, dan tanggal lahir; yang tidak ada adalah JALANNYA. Yang sedang menatap nama seseorang harus menutup kartunya, menggulung ke Analisis lanjutan, membukanya, lalu mencari satu tombol di antara empat puluh satu.",
+    ],
+    changed: [
+      "HIERARKI UKURAN HURUF pada Status Perkara. Disisir sebelum disentuh: text-sm 249 pemakaian, text-xs 13, text-lg 2 - hampir seluruhnya satu ukuran. Yang membuat layar terasa padat bukan banyaknya isi (dua puluh tujuh bagian memang banyak) melainkan tidak adanya apa pun yang memberi tahu mata mana yang label dan mana yang nilai.",
+      "Yang dikecilkan hanya yang perannya sekunder dan perannya dikenali dari bentuknya: 27 nama medan, 17 penjelas di samping nilainya, dan 2 kepala tabel. Dua ratus sisanya - yang memuat NILAINYA - tidak disentuh sama sekali: layar yang seluruhnya kecil sama tidak berhierarkinya dengan layar yang seluruhnya sedang.",
+      "Aturan warna peta disusun ulang menjadi PABRIK yang menerima datanya lewat parameter. Bentuk lamanya memeluk data lapisan langsung dari ruang lingkupnya, dan itulah yang melahirkan cacat kelabu di bawah - sekaligus membuatnya tidak dapat dipakai sisi kedua tirai.",
+    ],
+    fixed: [
+      "DELAPAN LAPISAN PETA 2.25.0 YANG SELURUH DESANYA KELABU. warnaTitik memeluk petaLapis, satuan, jangkauLapis, dan urutKategori tanpa menyebut keempatnya sebagai kebergantungan. Urutannya: lapisan dipilih, aturan warnanya dibuat sewaktu datanya MASIH KOSONG; datanya tiba, penggambar berjalan lagi - tetapi aturan warnanya tidak dibuat ulang, dan tetap memeluk data kosong. Seluruh desa karena itu berwarna kelabu tidak cukup pada pemilihan PERTAMA tiap lapisan; berpindah lapisan lalu kembali membuatnya benar. Tidak ada galat apa pun, dan hasilnya terbaca sebagai datanya memang belum diisi. Lapisan panggilan tidak bertemu tidak terkena - kebetulan datanya ada di daftar kebergantungan.",
+      "Penjaga tautan Beban Kinerja Konseptor sebelumnya mengunci UKURAN HURUF kolom Konseptor, sehingga penataan huruf mematahkan penjaga yang sama sekali bukan urusannya. Kini ia menjaga tautannya saja.",
+    ],
+    security: [
+      "Sisi kanan tirai digambar tanpa ketukan dan tanpa keterangan melayang. Bukan penghematan: kanvasnya menutupi SELURUH peta - bukan hanya separuh kanan - sehingga membiarkannya menerima ketukan akan merampas ketukan milik sisi kiri di bagian layar tempat ia bahkan tidak terlihat.",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Versi ekstensi tidak berubah.",
+      "Kedua lapisan tirai dibaca SATU PER SATU, bukan berbarengan: dua kueri berat yang berjalan bersamaan pada SIPP satker membuat keduanya lambat, bukan salah satunya cepat.",
+      "Guntingan tirai hanya mengubah satu sifat gaya pada dua elemen - bukan menyusun ulang sembilan ratus lingkaran - sehingga tirainya dapat digeser terus-menerus tanpa peta tersendat.",
+      "Tirai diuji pada halaman mandiri berisi Leaflet dan 400 titik desa sungguhan, bukan di dalam portal yang berjalan: peta portal menuntut masuk akun, dan itu tidak dikerjakan. Yang terukur di sana tepi guntingannya, pada lima gabungan zum-geseran-tirai - dan kelima-limanya jatuh tepat pada pikselnya.",
+    ],
+    knownLimitations: [
+      "Sisi kanan tirai tidak dapat diketuk dan tidak memunculkan keterangan melayang - keduanya tetap milik sisi kiri. Angka sisi kanan terbaca dengan menggeser tirai melewati desanya, atau dengan menukar kedua lapisan.",
+      "Selama gerak zum berlangsung, garis tirai dapat sesaat tidak sejajar dengan tepi warnanya; keduanya bertemu kembali begitu geraknya selesai.",
+      "Perbandingan dibatasi empat pembanding. Dengan kolom label, kolom perkara yang sedang dibuka, dan kolom selisih, empat sudah membuat tabelnya berkolom tujuh - dan tabel yang harus digulung ke samping bukan perbandingan lagi: yang dibandingkan justru dua kolom yang tidak dapat dilihat bersamaan.",
+      "Cacat warna kelabu di atas ditemukan dengan MEMBACA kode, lalu dipastikan oleh eslint yang menyebutkan tepat kelima nama kebergantungan yang hilang - bukan dengan melihat petanya di portal yang berjalan. Pemasangan di peladen tetap perlu diperiksa mata.",
+    ],
+  },
   {
     version: "2.25.0",
     title: "ALETA Judicia v2.25.0 - Peta yang Mengusulkan",
