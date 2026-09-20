@@ -104,22 +104,52 @@
  * SIAPA YANG DISEBUT KONSEPTOR
  * ============================================================================
  *
- * SIPP tidak punya kolom "konseptor". Tiga calon, dan ketiganya berarti hal
+ * SIPP tidak punya kolom "konseptor". Empat calon, dan keempatnya berarti hal
  * yang berbeda:
  *
- *   ketua-majelis   hakim ketua perkara itu. 13 orang atas 683 putusan. BAWAAN.
+ *   konseptor       yang MENGUNGGAH putusan pada tahapan putusan
+ *                   (perkara_proses, tahapan 210). BAWAAN.
+ *   ketua-majelis   hakim ketua perkara itu. 13 orang atas 683 putusan.
  *   penginput       perkara_putusan.diinput_oleh - yang MENGETIK. Hanya 8 akun,
  *                   satu bernama "Waka062024".
  *   panitera        panitera pengganti perkara itu. 12 orang.
+ *
+ * ============================================================================
+ * KENAPA KETUA MAJELIS BUKAN LAGI BAWAANNYA
+ * ============================================================================
+ *
+ * Ketua majelis adalah yang BERTANGGUNG JAWAB atas konsepnya, bukan yang
+ * mengerjakannya. Pada satker ini konsep putusan dikerjakan anggota majelis
+ * bergantian, lalu diunggah oleh yang mengerjakannya - dan menghitung seluruh
+ * bebannya atas nama ketua membuat layar ini menjawab pertanyaan yang tidak
+ * pernah ditanyakan orang. Yang ditanyakan "siapa yang menulis putusan ini",
+ * dan jawabannya sudah ada di layar Status Perkara.
+ *
+ * Sumbernya dibuat SAMA PERSIS dengan layar itu - perkara_proses pada tahapan
+ * putusan, pencatat yang paling awal - sebab dua layar yang menyebut angka
+ * berbeda untuk satu perkara yang sama tidak dibaca sebagai dua ukuran,
+ * melainkan sebagai satu yang keliru.
+ *
+ * Bedanya dengan `penginput`, yang sekilas mirip: `penginput` membaca
+ * perkara_putusan.diinput_oleh - akun yang mengetikkan BARIS PUTUSANNYA,
+ * terukur hanya 8 akun dan salah satunya akun jabatan. Yang dibaca di sini
+ * tahapan putusannya, dan itulah yang ditunjuk satker sebagai konseptor.
+ *
+ * Putusan yang tahapan putusannya tidak pernah tercatat tidak dikarang
+ * pemiliknya: ia jatuh ke "(tidak tercatat)" dan tetap terlihat di layar.
+ * Menyebar sisa itu ke ketua majelis akan membuat angka yang salah tampak
+ * lengkap - dan yang lengkap tidak pernah diperiksa lagi.
  */
 
 const db = require("../db_config");
+const sippSkemaService = require("./sippSkemaService");
+const sippTahapanService = require("./sippTahapanService");
 
 /** Periode yang dapat dipilih - "rentang" memakai tanggal yang disebut sendiri. */
 const PERIODE = ["minggu", "bulan", "triwulan", "semester", "tahun", "total", "rentang"];
 
-/** Dasar penyebutan konseptor. */
-const DASAR = ["ketua-majelis", "penginput", "panitera"];
+/** Dasar penyebutan konseptor. Yang pertama menjadi bawaannya. */
+const DASAR = ["konseptor", "ketua-majelis", "penginput", "panitera"];
 
 /**
  * Jenis perkara KEBENDAAN - di luar hubungan perkawinan.
@@ -389,6 +419,35 @@ async function fakta(dari, sampai, dasar) {
         GROUP BY pen.perkara_id`,
       p
     );
+
+  /**
+   * Konseptor sungguhan: yang mengunggah putusan pada tahapan putusan.
+   *
+   * Nama kolomnya TIDAK ditulis tetap. Versi SIPP berbeda menamai kolom
+   * perkara_proses dengan cara yang berbeda, dan skema itu sudah dikenali
+   * sippSkemaService - menuliskannya tetap di sini berarti kueri yang gagal
+   * diam-diam pada satker yang versinya lain, dan kegagalan yang ditelan
+   * `catch` akan tampak sebagai seluruh putusan tanpa konseptor.
+   *
+   * Seluruh barisnya diambil, bukan hanya yang terawal lewat SQL: satu perkara
+   * dapat punya beberapa baris tahapan putusan, dan pemilihan yang terawal
+   * dikerjakan di JS supaya tidak bergantung pada fungsi jendela yang belum
+   * ada pada MySQL 5.7.
+   */
+  const konseptor = async () => {
+    if (!(await sippSkemaService.tabelAda("perkara_proses").catch(() => false))) return [];
+    const kol = await sippSkemaService.kolomTerpilih().catch(() => ({}));
+    if (!kol.prosesTahapanId || !kol.prosesDiinputOleh) return [];
+    const pilih = ["pr.perkara_id", `pr.${kol.prosesDiinputOleh} AS pengguna`];
+    if (kol.prosesTanggal) pilih.push(`pr.${kol.prosesTanggal} AS tanggal`);
+    return kueri(
+      `SELECT ${pilih.join(", ")}
+         FROM perkara_proses pr
+         JOIN perkara_putusan pp ON pp.perkara_id = pr.perkara_id
+        WHERE pr.${kol.prosesTahapanId} = ? AND ${saring}`,
+      [sippTahapanService.TAHAPAN_PUTUSAN, ...p]
+    ).catch(() => []);
+  };
   // Panjang naskah DAN penanda rekonvensi di dalamnya dibaca SEKALI.
   //
   // Keduanya membaca tabel yang sama dan sama-sama harus membuka longtext-nya.
@@ -530,8 +589,9 @@ async function fakta(dari, sampai, dasar) {
   // `penginput` tidak menuntut kueri sama sekali - ia sudah ada pada kueri
   // inti.
   const kosong = () => Promise.resolve([]);
-  const [b, h, pn, ak, sk, sd, ph, rk, sl, an, md, ku, bd] = await berurutan([
+  const [b, kn, h, pn, ak, sk, sd, ph, rk, sl, an, md, ku, bd] = await berurutan([
     inti,
+    dasar === "konseptor" ? konseptor : kosong,
     dasar === "ketua-majelis" ? hakim : kosong,
     dasar === "panitera" ? panitera : kosong,
     aksara,
@@ -548,6 +608,7 @@ async function fakta(dari, sampai, dasar) {
 
   const namaHakim = petaNama(h);
   const namaPanitera = petaNama(pn);
+  const petaKonseptor = await petaKonseptorPutusan(kn);
   const petaAksara = petaAngka(ak);
   const petaRekonvensiNaskah = new Map();
   for (const b of ak) petaRekonvensiNaskah.set(String(b.perkara_id), Number(b.adaRekonvensi) > 0 ? 1 : 0);
@@ -565,6 +626,7 @@ async function fakta(dari, sampai, dasar) {
     const id = String(satu.perkaraId);
     return {
       ...satu,
+      konseptor: petaKonseptor.get(id) || "",
       ketuaMajelis: namaHakim.get(id) || "",
       panitera: namaPanitera.get(id) || "",
       panjangPertimbangan: petaAksara.get(id) || 0,
@@ -581,11 +643,67 @@ async function fakta(dari, sampai, dasar) {
   });
 }
 
+/**
+ * Perkara -> nama konseptornya, dari baris tahapan putusan.
+ *
+ * Dua hal dikerjakan di sini, dan keduanya tidak dapat dikerjakan SQL dengan
+ * murah:
+ *
+ * Pertama, memilih baris yang PALING AWAL bila satu perkara punya beberapa
+ * baris tahapan putusan - putusan yang diperbaiki lalu diunggah ulang punya
+ * dua, dan yang mengerjakannya adalah yang pertama. Ini aturan yang sama
+ * dengan layar Status Perkara, yang mengurutkan tanggal menaik lalu mengambil
+ * yang pertama.
+ *
+ * Kedua, menerjemahkan nama pengguna menjadi nama lengkap. Tanpa itu layarnya
+ * memeringkat "hakim01" dan "dbriantono", dan peringkat yang tidak menyebut
+ * nama orang tidak dapat ditunjukkan kepada orangnya.
+ *
+ * Diterjemahkan BERKELOMPOK lima puluh, sebab namaPengguna membatasi diri
+ * lima puluh nama per kueri - satker dengan konseptor lebih banyak dari itu
+ * akan kehilangan sisanya tanpa satu pun galat.
+ */
+async function petaKonseptorPutusan(baris) {
+  const hasil = new Map();
+  if (!Array.isArray(baris) || baris.length === 0) return hasil;
+
+  const terawal = new Map();
+  for (const row of baris) {
+    const id = String(row.perkara_id);
+    const pengguna = String(row.pengguna || "").trim();
+    if (!pengguna) continue;
+    // Tanpa kolom tanggal seluruhnya bernilai 0, dan yang bertahan adalah
+    // baris pertama yang datang - urutan SIPP sendiri.
+    const waktu = row.tanggal ? new Date(row.tanggal).getTime() : 0;
+    const lama = terawal.get(id);
+    if (!lama || (Number.isFinite(waktu) && waktu < lama.waktu)) {
+      terawal.set(id, { pengguna, waktu: Number.isFinite(waktu) ? waktu : 0 });
+    }
+  }
+
+  const pengguna = [...new Set([...terawal.values()].map((x) => x.pengguna))];
+  const nama = {};
+  for (let i = 0; i < pengguna.length; i += 50) {
+    const sepotong = await sippTahapanService
+      .namaPengguna(pengguna.slice(i, i + 50))
+      .catch(() => ({}));
+    Object.assign(nama, sepotong);
+  }
+
+  // Nama lengkap bila terbaca; nama penggunanya bila tidak - bukan kosong.
+  // Kosong akan melebur ke "(tidak tercatat)" bersama putusan yang memang
+  // tidak punya tahapan putusan, dan dua hal berbeda itu tidak boleh dihitung
+  // sebagai satu.
+  for (const [id, x] of terawal) hasil.set(id, nama[x.pengguna] || x.pengguna);
+  return hasil;
+}
+
 /** Nama konseptor satu baris, menurut dasar yang dipilih. */
 function sebutKonseptor(baris, dasar) {
+  if (dasar === "ketua-majelis") return String(baris.ketuaMajelis || "").trim();
   if (dasar === "penginput") return String(baris.penginput || "").trim();
   if (dasar === "panitera") return String(baris.panitera || "").trim();
-  return String(baris.ketuaMajelis || "").trim();
+  return String(baris.konseptor || "").trim();
 }
 
 /** Kebendaan, gugatan, atau permohonan - dari jenis perkara dan nomornya. */
@@ -1028,7 +1146,7 @@ function bacaan(daftar, ringkas, kolomMinutasiMati, padam, banding) {
  */
 async function hitung(minta = {}) {
   const periode = PERIODE.includes(String(minta.periode)) ? String(minta.periode) : "bulan";
-  const dasar = DASAR.includes(String(minta.dasar)) ? String(minta.dasar) : "ketua-majelis";
+  const dasar = DASAR.includes(String(minta.dasar)) ? String(minta.dasar) : DASAR[0];
   const bobot = { ...BOBOT_AWAL, ...(minta.bobot || {}) };
   bobot.penggandaStatus = { ...BOBOT_AWAL.penggandaStatus, ...((minta.bobot || {}).penggandaStatus || {}) };
   bobot.penggandaJenis = { ...BOBOT_AWAL.penggandaJenis, ...((minta.bobot || {}).penggandaJenis || {}) };

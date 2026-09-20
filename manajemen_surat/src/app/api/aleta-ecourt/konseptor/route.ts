@@ -21,9 +21,9 @@ export const dynamic = "force-dynamic";
  * angka orang yang salah berakhir sebagai tuduhan, bukan sebagai laporan.
  * Karena itu tiga hal dijaga sampai ke sini:
  *
- *   1. dasarnya ikut - "ketua-majelis", "penginput" atau "panitera" - sebab
- *      ketiganya menghitung pekerjaan yang berbeda dan hanya salah satunya
- *      yang sedang dilihat
+ *   1. dasarnya ikut - "konseptor", "ketua-majelis", "penginput" atau
+ *      "panitera" - sebab keempatnya menghitung pekerjaan yang berbeda dan
+ *      hanya salah satunya yang sedang dilihat
  *   2. bacaan ikut - termasuk peringatan bahwa satu nama tertulis beberapa
  *      cara di SIPP, atau bahwa naskah pertimbangannya tidak pernah tersimpan
  *   3. rincian per perkara ikut selama rentangnya cukup sempit, supaya angka
@@ -58,7 +58,10 @@ export async function GET(request: NextRequest) {
       acuan: String(cari.get("acuan") || "").trim(),
       dari,
       sampai,
-      dasar: String(cari.get("dasar") || "ketua-majelis").trim(),
+      // Bawaannya konseptor - yang MENGERJAKAN putusannya, sama dengan yang
+      // disebut layar Status Perkara. Bukan ketua majelis, yang bertanggung
+      // jawab atas konsepnya tetapi belum tentu menulisnya.
+      dasar: String(cari.get("dasar") || "konseptor").trim(),
       rinci: String(cari.get("rinci") || "") !== "0",
       usulBobot: String(cari.get("usulBobot") || "") === "1",
     });

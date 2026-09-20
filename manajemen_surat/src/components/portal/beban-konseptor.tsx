@@ -134,15 +134,25 @@ const PERIODE: { nilai: string; label: string }[] = [
 ];
 
 /**
- * Ketiganya menghitung pekerjaan yang BERBEDA, dan keterangannya ikut di layar
+ * Keempatnya menghitung pekerjaan yang BERBEDA, dan keterangannya ikut di layar
  * - bukan hanya di dalam kode. Pengguna yang memilih "penginput" tanpa tahu
  * artinya akan membaca peringkat mengetik sebagai peringkat mengarang.
+ *
+ * Yang pertama menjadi bawaannya, dan urutannya bukan selera: yang paling
+ * sering benar diletakkan paling atas, sebab daftar pilihan dibaca dari atas
+ * dan yang di bawah jarang dibuka.
  */
 const DASAR: { nilai: string; label: string; arti: string }[] = [
   {
+    nilai: "konseptor",
+    label: "Konseptor putusan",
+    arti:
+      "Yang mengunggah putusan pada tahapan putusan di SIPP - sumber yang sama dengan Konseptor pada layar Status Perkara. Inilah yang menulis putusannya.",
+  },
+  {
     nilai: "ketua-majelis",
     label: "Ketua majelis",
-    arti: "Hakim ketua pada perkara itu - yang bertanggung jawab atas konsepnya.",
+    arti: "Hakim ketua pada perkara itu - yang bertanggung jawab atas konsepnya, belum tentu yang menulisnya.",
   },
   {
     nilai: "penginput",
@@ -174,7 +184,7 @@ const NADA: Record<string, string> = {
 
 export function BebanKonseptor() {
   const [periode, setPeriode] = useState("tahun");
-  const [dasar, setDasar] = useState("ketua-majelis");
+  const [dasar, setDasar] = useState(DASAR[0].nilai);
   const [acuan, setAcuan] = useState(hariIni());
   const [dari, setDari] = useState(`${new Date().getFullYear()}-01-01`);
   const [sampai, setSampai] = useState(hariIni());

@@ -180,8 +180,28 @@ describe("angkanya dapat dibantah", () => {
 });
 
 describe("dasar konseptor dipilih, dan artinya terbaca di layar", () => {
-  it("ketiganya ada di layanan", () => {
-    expect(kode).toContain('const DASAR = ["ketua-majelis", "penginput", "panitera"];');
+  it("keempatnya ada di layanan", () => {
+    expect(kode).toContain(
+      'const DASAR = ["konseptor", "ketua-majelis", "penginput", "panitera"];'
+    );
+  });
+
+  // Yang pertama menjadi bawaannya - di layanan, di rutenya, dan di layar.
+  // Ketiganya harus menyebut dasar yang SAMA: rute yang bawaannya berbeda dari
+  // layar membuat halaman yang baru dibuka menampilkan angka satu dasar dengan
+  // nama dasar yang lain, dan tidak ada yang menyadarinya.
+  it("bawaannya konseptor, bukan ketua majelis", () => {
+    expect(kode).toContain("DASAR.includes(String(minta.dasar)) ? String(minta.dasar) : DASAR[0]");
+    expect(rute).toContain('String(cari.get("dasar") || "konseptor")');
+    expect(layar).toContain("useState(DASAR[0].nilai)");
+  });
+
+  it("konseptor dibaca dari tahapan putusan, bukan dari baris putusannya", () => {
+    // Bedanya halus dan mudah tertukar dengan `penginput`, yang membaca
+    // perkara_putusan.diinput_oleh. Yang ini membaca perkara_proses pada
+    // tahapan putusan - sumber yang sama dengan layar Status Perkara.
+    expect(kode).toContain("FROM perkara_proses pr");
+    expect(kode).toContain("sippTahapanService.TAHAPAN_PUTUSAN");
   });
 
   it("layar menerangkan bahwa penginput mengukur mengetik, bukan mengarang", () => {

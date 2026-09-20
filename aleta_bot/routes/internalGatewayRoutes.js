@@ -2793,7 +2793,11 @@ router.get("/sipp/konseptor", requireInternalToken, async (req, res) => {
       acuan: String(req.query.acuan || ""),
       dari: String(req.query.dari || ""),
       sampai: String(req.query.sampai || ""),
-      dasar: String(req.query.dasar || "ketua-majelis"),
+      // Bawaannya TIDAK ditulis di sini. Layanannya sudah menentukan yang
+      // pertama pada DASAR, dan bawaan kedua di rute akan tertinggal begitu
+      // yang di layanan berganti - persis yang terjadi saat konseptor
+      // menggantikan ketua majelis.
+      dasar: String(req.query.dasar || ""),
       rinci: String(req.query.rinci || "") !== "0",
       // Usul bobot dari data satker dihitung hanya bila diminta - ia menyisir
       // ulang seluruh baris untuk kuadrat terkecilnya.

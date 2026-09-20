@@ -3223,6 +3223,11 @@ module.exports = {
   courtCalendarPerkara,
   kenaliJenisPenetapan,
   konseptorPutusanPerkara,
+  // Dipakai penilaianKonseptorService untuk membaca konseptor SELURUH putusan
+  // pada satu rentang. Diekspor, bukan disalin ke sana: nomor tahapan yang
+  // ditulis di dua tempat akan menyimpang begitu salah satunya disunting, dan
+  // yang menyimpang justru siapa yang disebut mengerjakan putusannya.
+  TAHAPAN_PUTUSAN,
   namaPengguna,
   arsipPerkara,
   JENIS_DELEGASI_PANGGILAN,
