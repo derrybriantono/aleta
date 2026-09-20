@@ -461,7 +461,58 @@ describe("lingkaran yang diketuk, dan pengelompokan per kecamatan", () => {
     // "Delapan titik yang kebetulan berdekatan pada zum sembilan" bukan satuan
     // yang dikenal siapa pun di pengadilan.
     expect(petaLayar).toContain("const ZUM_DESA = 10;");
-    expect(petaLayar).toContain("const kunci = `${x.t.kabupaten}|${x.t.kecamatan}`");
+    expect(petaLayar).toContain("function kunciKecamatan(t: TitikPerkara)");
+    expect(petaLayar).toContain("return `${t.kabupaten}|${t.kecamatan}`;");
+  });
+
+  /**
+   * ==========================================================================
+   * KUNCINYA DISUSUN SATU KALI - DAN KENAPA ITU DIKUNCI DI SINI
+   * ==========================================================================
+   *
+   * Penyusun kunci kecamatan dahulu hanya ada di dalam `digambar`, sedangkan
+   * `petaLapis` dan `petaRelaas` tetap berkunci KODE DESA. Di bawah ZUM_DESA
+   * tiap pencarian karena itu meleset, `warnaLapisan` memulangkan
+   * WARNA_TAK_CUKUP, dan seluruh lapisan selain "perkara" tergambar kelabu
+   * seluruhnya.
+   *
+   * Zum awalnya 9 - di bawah ambang - sehingga peta kelabu itulah yang dilihat
+   * orang lebih dahulu, dan kelabu di atas ubinan gelap terbaca sebagai peta
+   * yang tidak menggambar apa-apa sama sekali.
+   *
+   * Kunci yang meleset TIDAK menimbulkan galat: tidak ada yang gagal, tidak
+   * ada yang tercatat, hanya warna yang hilang. Karena itu bentuknya yang
+   * dikunci di sini - tidak ada cara lain menangkapnya.
+   */
+  it("nilai lapisan ikut digabung per kecamatan, bukan dicari dengan kode desa", () => {
+    expect(petaLayar).toContain("function gabungLapisan(");
+    expect(petaLayar).toContain("const petaLapisTampil = useMemo(");
+    expect(petaLayar).toContain("const petaRelaasTampil = useMemo(");
+    // Ketiganya - lingkaran, nilai lapisan, dan angka relaas - harus memakai
+    // penyusun kunci yang SAMA.
+    const pemakai = petaLayar.split("kunciKecamatan(x.t)").length - 1;
+    expect(pemakai).toBeGreaterThanOrEqual(3);
+  });
+
+  it("relaas sekecamatan dijumlahkan pembilang dan penyebutnya", () => {
+    // Merata-rata persentase desa menghasilkan angka yang tidak pernah ada:
+    // sepuluh dari dua puluh ditambah satu dari sepuluh adalah sebelas dari
+    // tiga puluh - 37%, bukan rata-rata 50% dan 10% yang menghasilkan 30%.
+    expect(petaLayar).toContain("k.takTemu / k.relaas");
+  });
+
+  it("layar penuh punya jalan keluarnya, dan ukurannya dihitung ulang", () => {
+    // Tombol tanpa jalan keluar mengurung petanya di layar penuh; dan tanpa
+    // invalidateSize ubinannya tertinggal di kotak yang lama sementara sisanya
+    // kelabu.
+    expect(petaLayar).toContain("requestFullscreen");
+    expect(petaLayar).toContain("exitFullscreen");
+    expect(petaLayar).toContain('document.addEventListener("fullscreenchange"');
+    expect(petaLayar).toContain("peta.invalidateSize();");
+    // Penolakan Fullscreen API - halaman di dalam bingkai tanpa
+    // allowfullscreen - jatuh ke layar penuh semu, bukan ke tombol yang diam.
+    expect(petaLayar).toContain("setPenuhSemu(true)");
+    expect(petaLayar).toContain('if (e.key !== "Escape") return;');
   });
 
   it("pandangan awal hanya disesuaikan SEKALI", () => {
@@ -667,7 +718,7 @@ describe("warna lapisan tidak boleh tertinggal di balik useCallback", () => {
     expect(petaLayar).toContain("function warnaLapisan(");
     // Keempat nama itu tidak boleh lagi dipeluk dari ruang lingkup luar.
     const iPabrik = petaLayar.indexOf("const buatWarna = useCallback(");
-    const iTutup = petaLayar.indexOf("[warnaJenis, petaRelaas]", iPabrik);
+    const iTutup = petaLayar.indexOf("[warnaJenis, petaRelaasTampil]", iPabrik);
     expect(iTutup).toBeGreaterThan(iPabrik);
     const badan = petaLayar.slice(iPabrik, iTutup);
     for (const nama of ["petaLapis", "jangkauLapis", "urutKategori"]) {
@@ -677,10 +728,10 @@ describe("warna lapisan tidak boleh tertinggal di balik useCallback", () => {
 
   it("kedua pemakainya menyebutkan seluruh datanya", () => {
     expect(petaLayar).toContain(
-      "[buatWarna, lapisan, petaLapis, satuan, jangkauLapis, urutKategori]"
+      "[buatWarna, lapisan, petaLapisTampil, satuan, jangkauLapis, urutKategori]"
     );
     expect(petaLayar).toContain(
-      "[buatWarna, lapisanB, petaLapisB, satuanB, jangkauLapisB, urutKategoriB]"
+      "[buatWarna, lapisanB, petaLapisBTampil, satuanB, jangkauLapisB, urutKategoriB]"
     );
   });
 });
