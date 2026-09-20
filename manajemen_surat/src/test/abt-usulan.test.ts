@@ -1567,3 +1567,87 @@ describe("ragam kalimat keterangan saksi", () => {
     expect(susun({ templat, posita }).perluDiisi.map((x) => x.no)).toContain("12");
   });
 });
+
+/**
+ * ============================================================================
+ * FAKTA GUGATAN MENGISI TITIK-TITIK TEMPLAT
+ * ============================================================================
+ *
+ * Kapan menikah, berapa anaknya, dan di mana mereka tinggal ditanyakan kepada
+ * hampir tiap saksi - dan ketiganya sudah tertulis di posita yang sedang
+ * dikerjakan. Selama ini ketiganya diketik petugas satu per satu, dikali dua
+ * saksi.
+ *
+ * Yang dijaga di sini BATASNYA sama kuatnya dengan kemampuannya: yang tidak
+ * tertulis tidak boleh dikarang, sebab keterangan palsu di berita acara tidak
+ * pernah diperiksa lagi setelah ditandatangani.
+ */
+describe("fakta gugatan mengisi titik-titik templat", () => {
+  type Baris = { no: string; tanya: string; jawab: string };
+  type Hasil = {
+    saksi1: Baris[];
+    perluDiisi: { no: string }[];
+    terisiDariPosita: { no: string }[];
+  };
+  const susun = (layanan as unknown as {
+    susunKeteranganSaksiSdg: (o: { templat: Baris[]; posita: string }) => Hasil;
+  }).susunKeteranganSaksiSdg;
+
+  const posita =
+    "Bahwa Penggugat dan Tergugat menikah pada tanggal 12 Maret 2015 di KUA Banawa; " +
+    "Bahwa dari perkawinan tersebut dikaruniai 2 orang anak; " +
+    "Bahwa keduanya bertempat tinggal di Desa Gunung Bale Kecamatan Banawa;";
+
+  it("tanggal nikah, jumlah anak, dan kediaman terbaca dari posita", () => {
+    const h = susun({
+      templat: [
+        { no: "3", tanya: "Kapan Penggugat dan Tergugat menikah?", jawab: "Mereka menikah pada ...........;" },
+        { no: "5", tanya: "Di mana mereka bertempat tinggal?", jawab: "Mereka tinggal di ...........;" },
+      ],
+      posita,
+    });
+    expect(h.saksi1[0].jawab).toContain("12 Maret 2015");
+    expect(h.saksi1[1].jawab).toContain("Desa Gunung Bale");
+    expect(h.perluDiisi).toHaveLength(0);
+  });
+
+  /**
+   * Templat kerap SUDAH menyebut "anak" sesudah titik-titiknya. Menyisipkan
+   * "2 orang anak" ke situ menerbitkan "dikaruniai 2 orang anak anak".
+   */
+  it("kata yang sudah ada di templat tidak digandakan", () => {
+    const h = susun({
+      templat: [{ no: "4", tanya: "Berapa orang anak mereka?", jawab: "Mereka dikaruniai ........... anak;" }],
+      posita,
+    });
+    expect(h.saksi1[0].jawab).toContain("2 orang anak");
+    expect(h.saksi1[0].jawab).not.toMatch(/anak\s+anak/i);
+  });
+
+  it("posita yang tidak menyebut faktanya tidak dikarang", () => {
+    const h = susun({
+      templat: [
+        { no: "3", tanya: "Kapan mereka menikah?", jawab: "Mereka menikah pada ...........;" },
+        { no: "4", tanya: "Berapa anak mereka?", jawab: "Sebanyak ...........;" },
+      ],
+      posita: "Bahwa Penggugat mohon agar gugatannya dikabulkan;",
+    });
+    expect(h.saksi1[0].jawab).toMatch(/\.{3,}/);
+    expect(h.perluDiisi.map((x) => x.no)).toEqual(["3", "4"]);
+  });
+
+  /**
+   * "belum mempunyai anak" pada templat berpola "dikaruniai ... anak"
+   * menghasilkan "dikaruniai belum mempunyai anak anak". Dibiarkan
+   * bertitik-titik: kalimat kacau di berita acara lebih buruk daripada satu
+   * titik-titik yang jelas menunggu petugas.
+   */
+  it("keadaan yang tidak muat pada templatnya dibiarkan menunggu petugas", () => {
+    const h = susun({
+      templat: [{ no: "4", tanya: "Berapa orang anak mereka?", jawab: "Mereka dikaruniai ........... anak;" }],
+      posita: "Bahwa keduanya belum dikaruniai anak;",
+    });
+    expect(h.saksi1[0].jawab).toMatch(/\.{3,}/);
+    expect(h.perluDiisi.map((x) => x.no)).toContain("4");
+  });
+});

@@ -1452,11 +1452,69 @@ function faktaDariPosita(posita, pelaku, lawan) {
   // ambilBulanTahun memulangkan { nilai, jenis } - yang dipakai di sini
   // kalimatnya saja. Tanpa memetiknya, nama berkas dan jawaban saksi berisi
   // "[object Object]" - dan itu tersimpan ke berita acara tanpa satu pun galat.
+  // --------------------------------------------------------------------
+  // TIGA FAKTA YANG SELALU DITANYAKAN DI PERSIDANGAN
+  // --------------------------------------------------------------------
+  //
+  // Kapan menikah, berapa anaknya, dan di mana mereka tinggal ditanyakan
+  // kepada hampir tiap saksi, dan ketiganya sudah tertulis di posita yang
+  // sedang dikerjakan. Selama ini ketiganya dibiarkan bertitik-titik dan
+  // diketik petugas satu per satu, dikali dua saksi.
+  //
+  // Yang diambil HANYA yang tertulis. Tidak ada yang disimpulkan: posita yang
+  // tidak menyebut jumlah anak memulangkan kosong, dan jawaban templatnya
+  // tetap bertitik-titik beserta tandanya di perluDiisi. Mengarang jumlah anak
+  // ke dalam berita acara adalah keterangan palsu, dan tidak ada yang
+  // memeriksanya kembali setelah ditandatangani.
+
+  const kalimatNikah = cari("menikah") || cari("perkawinan") || cari("akad nikah");
+  const kalimatAnak = cari("anak");
+  const kalimatKediaman =
+    cari("bertempat tinggal") || cari("kediaman bersama") || cari("tinggal bersama");
+
+  // Tanggal lengkap bila ada; kalau tidak, bulan dan tahunnya saja.
+  const tanggalNikah = (() => {
+    const teks = String(kalimatNikah || "");
+    const lengkap = teks.match(
+      new RegExp(`\\b(\\d{1,2})\\s+(${BULAN.join("|")})\\s+(\\d{4})\\b`, "i")
+    );
+    if (lengkap) {
+      const namaBulan = BULAN.find((b) => b.toLowerCase() === lengkap[2].toLowerCase());
+      return `${lengkap[1]} ${namaBulan} ${lengkap[3]}`;
+    }
+    return ambilBulanTahun(kalimatNikah).nilai || "";
+  })();
+
+  // "dikaruniai 2 orang anak", "dikaruniai dua orang anak", "mempunyai 3 anak".
+  const jumlahAnak = (() => {
+    const teks = String(kalimatAnak || "").toLowerCase();
+    if (/belum (?:di)?karuniai|belum mempunyai anak|tidak mempunyai anak|belum ada anak/.test(teks)) {
+      return "belum mempunyai anak";
+    }
+    const cocok = teks.match(
+      /(?:dikaruniai|karuniai|mempunyai|memiliki|lahir)\s+(?:sebanyak\s+)?(\d+|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan)\s*(?:\(\s*[a-z]+\s*\)\s*)?(?:orang\s+)?anak/
+    );
+    return cocok ? `${cocok[1]} orang anak` : "";
+  })();
+
+  // Nama tempat sesudah "bertempat tinggal di ...". Dipotong pada tanda baca:
+  // posita menyambung kalimatnya panjang, dan menyalin seluruh sisa kalimat ke
+  // jawaban saksi menghasilkan kalimat yang tidak dapat dibaca.
+  const kediaman = (() => {
+    const cocok = String(kalimatKediaman || "").match(
+      /(?:bertempat tinggal|kediaman bersama|tinggal bersama)\s+(?:di|pada)\s+([^;,.]{3,80})/i
+    );
+    return cocok ? cocok[1].trim() : "";
+  })();
+
   return {
     awalKonflik: ambilBulanTahun(kalimatKonflik).nilai || "",
     pisahSejak: ambilBulanTahun(kalimatPisah).nilai || "",
     lamaPisah: ambilLamaPisah(kalimatPisah),
     siapaPergi,
+    tanggalNikah,
+    jumlahAnak,
+    kediaman,
   };
 }
 
@@ -1480,10 +1538,32 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
     return hasil !== semula;
   };
 
+  // Urutannya bukan selera. Yang lebih khusus diperiksa lebih dahulu, sebab
+  // "sejak kapan mereka pisah rumah" memuat kata "pisah" DAN kata "kapan" -
+  // dan pola yang lebih longgar akan menelannya bila didahulukan.
   if (/kapan.*(selisih|tengkar)|(selisih|tengkar).*sejak/i.test(tanya)) ganti(fakta.awalKonflik);
   else if (/berapa lama.*pisah|lama.*berpisah/i.test(tanya)) ganti(fakta.lamaPisah);
   else if (/pisah|serumah/i.test(tanya)) ganti(fakta.pisahSejak || fakta.lamaPisah);
   else if (/siapa.*(meninggalkan|pergi)/i.test(tanya)) ganti(fakta.siapaPergi);
+  // Tiga fakta yang selalu ditanyakan dan selama ini diketik sendiri.
+  else if (/kapan.*(menikah|nikah|kawin)|(menikah|perkawinan).*kapan|tanggal.*nikah/i.test(tanya)) {
+    ganti(fakta.tanggalNikah);
+  } else if (/berapa.*anak|anak.*berapa|dikaruniai|keturunan/i.test(tanya)) {
+    // Templat kerap SUDAH menyebut "anak" sesudah titik-titiknya - "dikaruniai
+    // ........... anak". Menyisipkan "2 orang anak" ke situ menerbitkan
+    // "dikaruniai 2 orang anak anak".
+    const templatSudahMenyebut = /(?:\.{3,}|_+)\s*(?:orang\s+)?anak/i.test(hasil);
+    if (!templatSudahMenyebut) ganti(fakta.jumlahAnak);
+    else if (/^\d+\s+orang\s+anak$/.test(fakta.jumlahAnak)) {
+      ganti(fakta.jumlahAnak.replace(/\s+anak$/, ""));
+    }
+    // "belum mempunyai anak" sengaja TIDAK dipasang pada templat berpola itu:
+    // hasilnya "dikaruniai belum mempunyai anak anak". Dibiarkan bertitik-titik
+    // dan tetap ditandai perlu diisi - kalimat yang kacau di berita acara lebih
+    // buruk daripada satu titik-titik yang jelas menunggu petugas.
+  } else if (/di mana.*(tinggal|kediaman|berdiam)|tempat tinggal|alamat.*tinggal/i.test(tanya)) {
+    ganti(fakta.kediaman);
+  }
 
   // "_ kali" - berapa kali saksi menyaksikan. Tidak ada di gugatan mana pun,
   // dan angka karangan pada berita acara adalah keterangan palsu. Yang
