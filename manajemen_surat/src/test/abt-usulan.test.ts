@@ -542,9 +542,9 @@ describe("nomor 6 - huruf alasan diambil dari naskah resmi", () => {
     for (const huruf of ["C", "D", "E"]) {
       const h = aturan.HURUF.find((x) => x.huruf === huruf);
       expect(h?.dasar[0].sumber.nama, huruf).toContain("PP Nomor 9 Tahun 1975");
-      // Bunyi KHI-nya belum ada, dan itu harus dinyatakan - bukan dibiarkan
-      // tampak lengkap.
-      expect(h?.dasar[0].catatanNaskah, huruf).toContain("KHI");
+      // Kini KHI-nya ada juga - dua dasar, seperti huruf A, B, dan F.
+      expect(h?.dasar, huruf).toHaveLength(2);
+      expect(h?.dasar[1].sumber.nama, huruf).toContain("Kompilasi Hukum Islam");
     }
   });
 
@@ -1721,5 +1721,74 @@ describe("fakta gugatan mengisi titik-titik templat", () => {
     });
     expect(h.saksi1[0].jawab).toMatch(/\.{3,}/);
     expect(h.perluDiisi.map((x) => x.no)).toContain("4");
+  });
+});
+
+/**
+ * ============================================================================
+ * BUNYI KHI UNTUK HURUF BARU - DAN KERAGUAN YANG HARUS IKUT TERTULIS
+ * ============================================================================
+ *
+ * Naskah KHI yang diberikan satker adalah SALINAN 1 - terbukti demikian, bukan
+ * diandaikan: huruf a dan f yang sudah lebih dulu tercatat cocok kata demi
+ * kata dengan pindaian itu, sedangkan b dan h berbeda justru pada salah baca
+ * yang memang sudah dikoreksi di berkas aturan ("mninggalkan", "tau").
+ * Pindaian itu bahkan menulis penanda huruf terakhir sebagai "k." alih-alih
+ * "h." - persis yang dicatat berkas aturan sejak semula.
+ *
+ * Yang dijaga di sini bukan hanya bunyinya ada, melainkan keraguannya IKUT
+ * TERTULIS. Huruf yang bunyinya baru melewati satu salinan tetapi catatannya
+ * kosong akan terbaca sebagai huruf yang sudah dibanding-bandingkan - dan
+ * tidak ada yang memeriksanya lagi dari layar.
+ */
+describe("bunyi KHI untuk huruf yang baru ditambahkan", () => {
+  const khi = (huruf: string) =>
+    aturan.HURUF.find((x) => x.huruf === huruf)?.dasar.find((d) =>
+      d.sumber.nama.includes("Kompilasi Hukum Islam")
+    );
+
+  it("kedelapan huruf kini punya bunyi KHI-nya", () => {
+    for (const h of ["A", "B", "C", "D", "E", "F", "G", "H"]) {
+      expect(khi(h), h).toBeTruthy();
+      expect(String(khi(h)?.bunyi || "").trim().length, h).toBeGreaterThan(20);
+    }
+  });
+
+  it("huruf C, D, E, dan G membawa catatan bahwa salinannya baru satu", () => {
+    for (const h of ["C", "D", "E"]) {
+      expect(khi(h)?.catatanNaskah, h).toContain("SATU salinan");
+    }
+    // G tidak punya pembanding PP sama sekali - Pasal 19 PP berhenti di f.
+    expect(khi("G")?.catatanNaskah).toContain("pembanding");
+  });
+
+  /**
+   * Salah baca yang dikoreksi harus DISEBUT, bukan dirapikan diam-diam.
+   * "sakah" dan "badab" bukan kata Indonesia, jadi koreksinya tidak meragukan -
+   * tetapi yang membaca berkas ini berhak tahu naskahnya pernah disentuh.
+   */
+  it("koreksi salah baca disebutkan pada catatannya", () => {
+    expect(khi("E")?.catatanNaskah).toContain("sakah");
+    expect(khi("E")?.catatanNaskah).toContain("badab");
+    expect(khi("G")?.catatanNaskah).toContain("menlanggar");
+  });
+
+  it("selisih nyata antara KHI dan PP disebut, bukan dipilih diam-diam", () => {
+    // KHI "membahayakan pihak lain" lawan PP "membahayakan pihak yang lain".
+    expect(khi("D")?.catatanNaskah).toContain("SELISIH NYATA");
+    expect(aturan.HURUF.find((x) => x.huruf === "D")?.dasar[0].bunyi).toContain("pihak yang lain");
+    expect(khi("D")?.bunyi).toContain("pihak lain");
+  });
+
+  /**
+   * Huruf G tetap belum siap meski bunyinya sudah terisi - dan sebabnya DUA.
+   * Mengubahnya menjadi siap hanya karena bunyinya ada akan melewatkan sebab
+   * yang kedua, yaitu blangko yang belum mengenalinya.
+   */
+  it("huruf G tetap belum siap, dengan dua sebab yang tertulis", () => {
+    const g = aturan.HURUF.find((x) => x.huruf === "G");
+    expect(g?.siap).toBe(false);
+    expect(g?.syarat).toContain("satu salinan");
+    expect(g?.syarat).toContain("TIDAK BENAR QUERY NYA");
   });
 });

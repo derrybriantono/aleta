@@ -191,7 +191,14 @@ const HURUF = [
         sumber: SUMBER_PP_9_1975,
         bunyi:
           "Salah satu pihak mendapat hukuman penjara 5 (lima) tahun atau hukuman yang lebih berat setelah perkawinan berlangsung",
-        catatanNaskah: "Bunyi KHI Pasal 116 huruf c belum disalin - lihat catatan di atas.",
+        catatanNaskah: "",
+      },
+      {
+        sumber: SUMBER_KHI,
+        bunyi:
+          "salah satu pihak mendapat hukuman penjara 5 (lima) tahun atau hukuman yang lebih berat setelah perkawinan berlangsung",
+        catatanNaskah:
+          "Pindaian huruf c bersih dari salah baca, dan bunyinya sama kata demi kata dengan naskah PP kecuali huruf besar pada awal kalimat. Baru melewati SATU salinan KHI - lihat catatan di atas.",
       },
     ],
     // "dihukum" saja SENGAJA tidak dipakai: posita dan keterangan saksi
@@ -209,7 +216,14 @@ const HURUF = [
         sumber: SUMBER_PP_9_1975,
         bunyi:
           "Salah satu pihak melakukan kekejaman atau penganiayaan berat yang membahayakan pihak yang lain",
-        catatanNaskah: "Bunyi KHI Pasal 116 huruf d belum disalin - lihat catatan di atas.",
+        catatanNaskah: "",
+      },
+      {
+        sumber: SUMBER_KHI,
+        bunyi:
+          "salah satu pihak melakukan kekejaman atau penganiayaan berat yang membahayakan pihak lain",
+        catatanNaskah:
+          'SELISIH NYATA dengan PP, dan belum dapat dipastikan: KHI menulis "membahayakan pihak lain", PP menulis "membahayakan pihak yang lain". Tidak ada salah baca ejaan di sekitarnya, sehingga selisih satu kata "yang" itu kemungkinan memang ada di naskahnya - tetapi baru melewati SATU salinan KHI. Periksa naskah cetak bila selisih ini menentukan.',
       },
     ],
     ciri: [
@@ -236,7 +250,14 @@ const HURUF = [
         sumber: SUMBER_PP_9_1975,
         bunyi:
           "Salah satu pihak mendapat cacat badan atau penyakit dengan akibat tidak dapat menjalankan kewajibannya sebagai suami/isteri",
-        catatanNaskah: "Bunyi KHI Pasal 116 huruf e belum disalin - lihat catatan di atas.",
+        catatanNaskah: "",
+      },
+      {
+        sumber: SUMBER_KHI,
+        bunyi:
+          "salah satu pihak mendapat cacat badan atau penyakit dengan akibat tidak dapat menjalankan kewajibannya sebagai suami atau isteri",
+        catatanNaskah:
+          'Pindaiannya memuat DUA salah baca yang dikoreksi dengan naskah PP sebagai pembanding: "sakah satu pihak" -> "salah satu pihak", "cacat badab" -> "cacat badan". Keduanya bukan kata Indonesia, sehingga koreksinya tidak meragukan. Yang TIDAK dikoreksi: KHI menutup dengan "sebagai suami atau isteri" sedangkan PP menulis "sebagai suami/isteri" - itu selisih penulisan yang nyata, bukan salah baca. Baru melewati SATU salinan KHI.',
       },
     ],
     // "penyakit" dan "sakit" SENGAJA tidak dipakai sendirian - "sakit hati"
@@ -286,11 +307,21 @@ const HURUF = [
    */
   {
     huruf: "G",
+    // Bunyinya SUDAH ada, tetapi tetap belum siap - dan sebabnya dua, bukan
+    // satu. Lihat syarat di bawah. Begitu keduanya terpenuhi, ubah menjadi
+    // true; jangan mengubahnya hanya karena bunyinya sudah terisi.
     siap: false,
-    dasar: [],
+    dasar: [
+      {
+        sumber: SUMBER_KHI,
+        bunyi: "Suami melanggar taklik talak",
+        catatanNaskah:
+          'Pindaiannya menulis "menlanggar" - bukan kata Indonesia, dikoreksi menjadi "melanggar". Huruf ini TIDAK punya pembanding sama sekali: Pasal 19 PP Nomor 9 Tahun 1975 berhenti di huruf f, sehingga koreksinya hanya bersandar pada satu salinan. Perhatikan pula ia dimulai huruf besar "Suami" sedangkan huruf lain huruf kecil - belum dapat dipastikan itu memang naskahnya atau ciri pindaian.',
+      },
+    ],
     ciri: ["taklik talak", "taklik", "ta'lik"],
     syarat:
-      "bunyi Pasal 116 huruf g KHI belum disalin dari naskah resmi - huruf ini hanya ada di KHI, Pasal 19 PP Nomor 9 Tahun 1975 berhenti di huruf f",
+      "DUA hal harus beres sebelum huruf ini diusulkan. Pertama, bunyinya baru melewati satu salinan KHI dan tidak punya pembanding PP - berkas ini menuntut dua salinan yang disepakati. Kedua, blangko [01] belum punya cabang untuk huruf G, sehingga 8503 yang berisi G membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan.",
   },
   {
     huruf: "H",
