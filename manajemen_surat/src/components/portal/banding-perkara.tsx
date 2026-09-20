@@ -32,6 +32,23 @@ import { cn } from "@/lib/utils";
  * perbandingannya.
  *
  * ============================================================================
+ * DICARI DAHULU, BARU DIJAJARKAN - SAMA DENGAN KOTAK PENCARIAN DI ATASNYA
+ * ============================================================================
+ *
+ * Kotak ini dahulu menuntut nomor perkara UTUH. Petugas yang mengetik "233" -
+ * persis yang diterima kotak pencarian beberapa baris di atasnya - dijawab
+ * "perkara tidak ditemukan", padahal perkaranya ada; begitu pula kata keadaan
+ * seperti "verstek". Dua kotak yang berdampingan namun menerima isian berbeda
+ * tidak dibaca orang sebagai dua kemampuan, melainkan sebagai satu yang rusak.
+ *
+ * Karena itu isian di sini melewati PENCARIAN yang sama lebih dahulu: nomor
+ * urut saja, nomor utuh, kata keadaan, atau nama pihak. Satu yang cocok
+ * langsung dijajarkan; lebih dari satu DITAWARKAN untuk dipilih - sebab "233"
+ * dapat berarti Pdt.G maupun Pdt.P dan tahun yang berbeda, dan mengambil salah
+ * satunya begitu saja berarti membandingkan perkara yang keliru tanpa ada yang
+ * menyadarinya.
+ *
+ * ============================================================================
  * SELISIHNYA DIHITUNG, BUKAN DIBIARKAN DIHITUNG MATA
  * ============================================================================
  *
@@ -56,6 +73,30 @@ type Ringkas = {
   panitera: string;
   jumlahPihak: number;
   adaMediasi: boolean;
+};
+
+/**
+ * Satu perkara pada DAFTAR hasil pencarian - bukan muatan status yang penuh.
+ *
+ * Bentuknya sengaja disalin dari layar Status Perkara, bukan dibagi lewat
+ * berkas bersama: yang dipakai di sini hanya secukupnya untuk membedakan satu
+ * kartu dari kartu lain, dan menyeret tipe besar ke sini justru mengikat
+ * perbandingan pada medan yang tidak pernah ditampilkannya.
+ */
+type Ditemukan = {
+  nomorPerkara: string;
+  jenisPerkara?: string;
+  tanggalDaftar?: string;
+  sudahPutus?: boolean;
+  tanggalPutusan?: string;
+  /**
+   * Mengapa perkara ini muncul.
+   *
+   * Saat yang diketik kata keadaan atau nama pihak, tidak satu pun keterangan
+   * lain di kartu ini menyebut kata itu - dan daftar berisi dua puluh nomor
+   * perkara tidak dapat dibedakan satu sama lain.
+   */
+  cocok?: Array<{ medan: string; nilai: string }>;
 };
 
 type StatusMentah = {
@@ -120,7 +161,27 @@ export function ringkasDariStatus(status: StatusMentah): Ringkas {
  */
 const BATAS_BANDING = 4;
 
+/**
+ * Banyaknya perkara yang ditawarkan saat isiannya cocok pada lebih dari satu.
+ *
+ * Lebih kecil daripada pencarian utama yang meminta seratus: di sini daftarnya
+ * bukan hasil yang dibaca, melainkan pilihan yang harus ditunjuk SEKARANG -
+ * dan seratus kartu di bawah kotak isian bukan pilihan lagi, melainkan layar
+ * kedua yang menutupi tabel perbandingan yang sedang dikerjakan orangnya.
+ */
+const BATAS_CARI = 25;
+
 const angka = (n: number) => n.toLocaleString("id-ID");
+
+/**
+ * Hasil percobaan menambahkan satu perkara.
+ *
+ * Bukan sekadar kalimat galat: pemanggilnya perlu membedakan "tidak ada yang
+ * cocok" - satu-satunya keadaan yang masih layak dicoba ulang sebagai nomor
+ * utuh - dari sebab lain seperti gerbang yang mati. Membedakannya dengan
+ * mencocokkan kalimat galat akan putus diam-diam begitu kalimatnya disunting.
+ */
+type HasilTambah = { ok: true } | { ok: false; tidakDitemukan: boolean; pesan: string };
 
 /** Satu baris perbandingan - label, dua nilai, dan selisihnya. */
 type Baris = {
@@ -175,55 +236,177 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
    * perbandingan lagi.
    */
   const [lawan, setLawan] = useState<Ringkas[]>([]);
+  /**
+   * Perkara yang cocok pada isian, tetapi belum tentu yang dimaksud.
+   *
+   * Hanya terisi bila cocoknya LEBIH DARI SATU. Satu yang cocok tidak pernah
+   * ditawarkan - menyuruh orang menunjuk satu-satunya pilihan yang ada adalah
+   * ketukan yang tidak menjawab apa pun.
+   */
+  const [pilihan, setPilihan] = useState<Ditemukan[]>([]);
   const [galat, setGalat] = useState("");
   const [memuat, setMemuat] = useState(false);
 
-  const ambil = useCallback(async () => {
-    const dicari = nomor.trim();
-    if (!dicari) return;
-    setMemuat(true);
-    setGalat("");
-    try {
+  const penuh = lawan.length >= BATAS_BANDING;
+
+  /**
+   * Membaca satu perkara dari nomornya yang UTUH, lalu menaruhnya di tabel.
+   *
+   * Pemeriksaan "sedang dibuka" dan "sudah ada" dijalankan di sini, bukan di
+   * pemanggilnya: nomor dapat datang dari isian yang diketik maupun dari kartu
+   * yang ditunjuk, dan dua salinan pemeriksaan yang sama akan menyimpang.
+   */
+  const tambahNomor = useCallback(
+    async (nomorPerkara: string): Promise<HasilTambah> => {
       const jawaban = await fetch(
-        apiPath(`/api/aleta-ecourt/status-perkara?nomor=${encodeURIComponent(dicari)}`),
+        apiPath(`/api/aleta-ecourt/status-perkara?nomor=${encodeURIComponent(nomorPerkara)}`),
         { cache: "no-store" }
       );
       const isi = await jawaban.json();
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca perkara pembanding."));
       const data = isi?.data ?? isi;
       if (!data?.available) {
-        setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
-        return;
+        return {
+          ok: false,
+          tidakDitemukan: false,
+          pesan: String(data?.message || "ALETA Bot belum dapat dihubungi."),
+        };
       }
       if (!data.status) {
-        setGalat(
-          String(data.alasan) === "perkara_tidak_ditemukan"
+        const tidakDitemukan = String(data.alasan) === "perkara_tidak_ditemukan";
+        return {
+          ok: false,
+          tidakDitemukan,
+          pesan: tidakDitemukan
             ? "Perkara pembanding tidak ditemukan di SIPP."
-            : String(data.alasan || "Perkara pembanding tidak dapat dibaca.")
-        );
-        return;
+            : String(data.alasan || "Perkara pembanding tidak dapat dibaca."),
+        };
       }
       const ringkas = ringkasDariStatus(data.status as StatusMentah);
       if (ringkas.nomorPerkara === sekarang.nomorPerkara) {
-        setGalat("Itu perkara yang sedang dibuka — pilih perkara yang lain.");
-        return;
+        return {
+          ok: false,
+          tidakDitemukan: false,
+          pesan: "Itu perkara yang sedang dibuka — pilih perkara yang lain.",
+        };
       }
       if (lawan.some((x) => x.nomorPerkara === ringkas.nomorPerkara)) {
-        setGalat("Perkara itu sudah ada di dalam perbandingan.");
-        return;
-      }
-      if (lawan.length >= BATAS_BANDING) {
-        setGalat(`Paling banyak ${BATAS_BANDING} pembanding - hapus salah satu lebih dahulu.`);
-        return;
+        return {
+          ok: false,
+          tidakDitemukan: false,
+          pesan: "Perkara itu sudah ada di dalam perbandingan.",
+        };
       }
       setLawan((lama) => [...lama, ringkas]);
+      setPilihan([]);
       setNomor("");
+      return { ok: true };
+    },
+    [lawan, sekarang.nomorPerkara]
+  );
+
+  /**
+   * Isian diselesaikan: dicari dahulu, baru dibaca.
+   *
+   * Urutannya penting. Yang diketik orang paling sering BUKAN nomor utuh
+   * melainkan nomor urutnya saja, dan pencarianlah yang tahu nomor urut itu
+   * milik perkara yang mana.
+   */
+  const ambil = useCallback(async () => {
+    const dicari = nomor.trim();
+    if (!dicari) return;
+    if (penuh) {
+      setGalat(`Paling banyak ${BATAS_BANDING} pembanding - hapus salah satu lebih dahulu.`);
+      return;
+    }
+    setMemuat(true);
+    setGalat("");
+    setPilihan([]);
+    try {
+      const kueri = new URLSearchParams({ cari: dicari, batas: String(BATAS_CARI) });
+      const jawaban = await fetch(
+        apiPath(`/api/aleta-ecourt/status-perkara?${kueri.toString()}`),
+        { cache: "no-store" }
+      );
+      const isi = await jawaban.json();
+      if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal mencari perkara pembanding."));
+      const data = isi?.data ?? isi;
+      if (!data?.available) {
+        setGalat(String(data?.message || "ALETA Bot belum dapat dihubungi."));
+        return;
+      }
+
+      const ditemukan = ((data.perkara ?? []) as Ditemukan[]).filter((x) =>
+        String(x?.nomorPerkara || "").trim()
+      );
+
+      // Yang sedang dibuka dan yang sudah dijajarkan dikeluarkan dari pilihan.
+      // Membiarkannya berarti menawarkan ketukan yang pasti dijawab penolakan.
+      const tersisa = ditemukan.filter(
+        (x) =>
+          x.nomorPerkara !== sekarang.nomorPerkara &&
+          !lawan.some((l) => l.nomorPerkara === x.nomorPerkara)
+      );
+
+      if (tersisa.length > 1) {
+        setPilihan(tersisa);
+        return;
+      }
+
+      if (tersisa.length === 1) {
+        const hasil = await tambahNomor(tersisa[0].nomorPerkara);
+        if (!hasil.ok) setGalat(hasil.pesan);
+        return;
+      }
+
+      // Cocok seluruhnya, tetapi tidak ada yang tersisa untuk ditambahkan.
+      if (ditemukan.length > 0) {
+        setGalat(
+          ditemukan.length === 1
+            ? "Perkara yang cocok itu sudah ada di dalam perbandingan."
+            : "Seluruh perkara yang cocok sudah ada di dalam perbandingan."
+        );
+        return;
+      }
+
+      // Pencarian tidak mengenalinya. Masih dicoba sebagai nomor perkara utuh:
+      // pencarian dan pembacaan satu perkara tidak selalu menjangkau register
+      // yang persis sama, dan menyerah di sini akan menolak nomor yang sah.
+      const hasil = await tambahNomor(dicari);
+      if (!hasil.ok) {
+        setGalat(
+          hasil.tidakDitemukan
+            ? `Tidak ada perkara yang cocok dengan "${dicari}".`
+            : hasil.pesan
+        );
+      }
     } catch (e) {
       setGalat(e instanceof Error ? e.message : "Perkara pembanding tidak dapat dibaca.");
     } finally {
       setMemuat(false);
     }
-  }, [nomor, sekarang.nomorPerkara, lawan]);
+  }, [nomor, penuh, sekarang.nomorPerkara, lawan, tambahNomor]);
+
+  /** Satu kartu pada daftar pilihan ditunjuk. */
+  const pilih = useCallback(
+    async (nomorPerkara: string) => {
+      if (penuh) {
+        setGalat(`Paling banyak ${BATAS_BANDING} pembanding - hapus salah satu lebih dahulu.`);
+        return;
+      }
+      setMemuat(true);
+      setGalat("");
+      try {
+        const hasil = await tambahNomor(nomorPerkara);
+        if (!hasil.ok) setGalat(hasil.pesan);
+      } catch (e) {
+        setGalat(e instanceof Error ? e.message : "Perkara pembanding tidak dapat dibaca.");
+      } finally {
+        setMemuat(false);
+      }
+    },
+    [penuh, tambahNomor]
+  );
 
   /**
    * Baris perbandingan untuk SATU pembanding.
@@ -281,19 +464,20 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
                 void ambil();
               }
             }}
-            placeholder="mis. 473/Pdt.G/2026/PA.Dgl"
+            placeholder="473, 473/Pdt.G/2026/PA.Dgl, verstek, atau nama pihak"
           />
         </label>
         <Button type="button" onClick={() => void ambil()} disabled={memuat || !nomor.trim()}>
           <Plus className="mr-1.5 h-4 w-4" aria-hidden />
           {memuat ? "Membaca…" : lawan.length === 0 ? "Bandingkan" : "Tambah pembanding"}
         </Button>
-        {lawan.length > 0 ? (
+        {lawan.length > 0 || pilihan.length > 0 ? (
           <Button
             type="button"
             variant="ghost"
             onClick={() => {
               setLawan([]);
+              setPilihan([]);
               setNomor("");
               setGalat("");
             }}
@@ -311,14 +495,58 @@ export function BandingPerkara({ sekarang }: { sekarang: Ringkas }) {
         </p>
       ) : null}
 
+      {/* Daftar pilihan hanya muncul bila memang ada lebih dari satu yang cocok.
+          Satu yang cocok sudah langsung dijajarkan tanpa menuntut ketukan. */}
+      {pilihan.length > 0 ? (
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground">
+            {pilihan.length} perkara cocok dengan yang diketik — pilih yang akan dibandingkan:
+          </p>
+          <div className="grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
+            {pilihan.map((item) => (
+              <button
+                key={item.nomorPerkara}
+                type="button"
+                disabled={memuat}
+                onClick={() => void pilih(item.nomorPerkara)}
+                className="rounded-lg border bg-card p-3 text-left transition hover:border-primary/50 hover:bg-muted/50 disabled:opacity-60"
+              >
+                <p className="text-sm font-medium">{item.nomorPerkara}</p>
+                <p className="text-xs text-muted-foreground">{item.jenisPerkara || "—"}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Daftar {item.tanggalDaftar || "—"}
+                  {item.sudahPutus ? ` · putus ${item.tanggalPutusan || "—"}` : " · belum putus"}
+                </p>
+
+                {/* APA yang cocok, bukan sekadar bahwa ia cocok. Tanpa ini,
+                    mengetik "verstek" menghasilkan dua puluh kartu yang tidak
+                    satu pun menyebut kata itu. */}
+                {item.cocok && item.cocok.length > 0 ? (
+                  <div className="mt-2 space-y-0.5 border-t pt-2">
+                    {item.cocok.map((satu) => (
+                      <p key={satu.medan} className="text-[11px] leading-snug">
+                        <span className="font-medium text-muted-foreground">{satu.medan}: </span>
+                        <span className="text-foreground">{satu.nilai}</span>
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {lawan.length === 0 ? (
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>
-            Isi nomor perkara lain untuk menjajarkannya dengan perkara ini — sampai
-            {BATAS_BANDING} sekaligus. Yang dibandingkan jenisnya, tanggalnya, lama prosesnya,
-            banyaknya sidang dan penundaan, majelis, panitera sidang, dan mediasinya — beserta
-            selisihnya, supaya tidak perlu dikurangi sendiri.
+            Isi perkara lain untuk menjajarkannya dengan perkara ini — sampai {BATAS_BANDING}{" "}
+            sekaligus. Isiannya sama dengan kotak pencarian di atas: cukup nomor urutnya saja,
+            nomor perkara utuh, kata keadaan seperti verstek, atau nama pihak; bila cocoknya lebih
+            dari satu, perkaranya ditawarkan untuk dipilih. Yang dibandingkan jenisnya, tanggalnya,
+            lama prosesnya, banyaknya sidang dan penundaan, majelis, panitera sidang, dan
+            mediasinya — beserta selisihnya, supaya tidak perlu dikurangi sendiri.
           </span>
         </p>
       ) : (
