@@ -209,7 +209,12 @@ describe("modus keterangan saksi", () => {
       modus: { saksi2: { modus: "tidak-tahu" } },
     });
     expect(h.modus.saksi2).toBe("tidak-tahu");
-    expect(jawab(h.saksi2, "2")).toContain("tidak mengetahui");
+    // Dituntut MAKNANYA, bukan bunyinya. Tiap modus punya beberapa bentuk
+    // kalimat yang setara, dan yang terpilih bergantung urutan pertanyaannya.
+    // Menuntut satu bunyi persis membuat tiap penambahan bentuk memecahkan
+    // uji ini - padahal yang dijaga seharusnya bahwa saksi menyatakan TIDAK
+    // TAHU, bukan bahwa ia menyatakannya dengan kata tertentu.
+    expect(jawab(h.saksi2, "2")).toMatch(/tidak (?:saya ketahui|mengetahui|tahu)/);
     expect(jawab(h.saksi2, "2")).not.toContain("judi");
     expect(jawab(h.saksi2, "2")).not.toContain("mabuk");
     // Saksi 1 tidak ikut berubah.
@@ -224,9 +229,13 @@ describe("modus keterangan saksi", () => {
       lawan: "Tergugat",
       modus: { saksi1: { modus: "dari-cerita", sumber: "lawan" } },
     });
-    expect(jawab(h.saksi1, "2")).toContain("cerita tergugat");
+    expect(jawab(h.saksi1, "2")).toContain("tergugat");
     expect(jawab(h.saksi1, "3")).toContain("tidak pernah");
-    expect(jawab(h.saksi1, "4")).toContain("diceritakan oleh tergugat");
+    // Yang dijaga: jawaban "bagaimana saudara mengetahui" menyebut SUMBER
+    // ceritanya dan tidak mengaku menyaksikan sendiri.
+    expect(jawab(h.saksi1, "4")).toMatch(/(?:diceritakan|bercerita|menceritakan|penuturan)/);
+    expect(jawab(h.saksi1, "4")).toContain("tergugat");
+    expect(jawab(h.saksi1, "4")).not.toMatch(/melihat sendiri|menyaksikan sendiri/);
   });
 
   it("sebagian: hanya alasan yang dipilih untuk saksi itu, bukan seluruh dalil", () => {
@@ -238,7 +247,11 @@ describe("modus keterangan saksi", () => {
     expect(jawab(h.saksi2, "2")).toContain("mabuk");
     expect(jawab(h.saksi2, "2")).not.toContain("judi");
     expect(jawab(h.saksi2, "2")).not.toContain("nafkah");
-    expect(jawab(h.saksi2, "2")).toContain("selebihnya saya tidak tahu");
+    // Yang dijaga: saksi menyatakan ada bagian yang TIDAK ia ketahui - bukan
+    // bahwa ia mengatakannya dengan kalimat tertentu.
+    expect(jawab(h.saksi2, "2")).toMatch(
+      /selebihnya saya tidak tahu|penyebab lainnya saya tidak mengetahui|selain itu saya tidak dapat menerangkan/
+    );
   });
 
   it("tidak-melihat: tidak pernah menyaksikan, tahu dari sekitar", () => {
@@ -247,8 +260,11 @@ describe("modus keterangan saksi", () => {
       alasan: ["judi"],
       modus: { saksi1: { modus: "tidak-melihat" } },
     });
-    expect(jawab(h.saksi1, "3")).toContain("tidak pernah menyaksikan");
-    expect(jawab(h.saksi1, "4")).toContain("cerita keluarga dan tetangga");
+    // Tidak pernah MENYAKSIKAN sendiri, dan tahunya dari orang sekitar.
+    expect(jawab(h.saksi1, "3")).toMatch(
+      /tidak pernah (?:menyaksikan|melihat)|tidak pernah saya saksikan/
+    );
+    expect(jawab(h.saksi1, "4")).toMatch(/keluarga|tetangga|orang-orang di sekitar|warga sekitar|berdekatan/);
   });
 
   it("modus yang salah eja jatuh ke 'sama' - dan itu DISEBUTKAN pada hasilnya", () => {
