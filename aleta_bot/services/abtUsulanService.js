@@ -231,8 +231,54 @@ function hitungLamaPisah(nilai0246, tanggalSidang) {
  * kesimpulannya kepada manusia. Ciri bukan kesimpulan, dan bedanya dinyatakan
  * di tampilan.
  */
+/**
+ * ============================================================================
+ * SATU CIRI, BANYAK BUNYI - SEBAB POSITA TIDAK PERNAH SERAGAM
+ * ============================================================================
+ *
+ * Posita disusun ulang oleh tiap penyusunnya. Perkara yang persis sama dapat
+ * berbunyi "terjadi perselisihan dan pertengkaran", "sering cekcok", "sudah
+ * tidak harmonis lagi", atau "rumah tangga tidak rukun" - dan gugatan berbeda
+ * dari permohonan lagi bunyinya. Daftar yang hanya mengenal satu bunyi akan
+ * menyatakan perkara itu tidak berciri apa-apa, padahal positanya jelas.
+ *
+ * Tiap baris di bawah karena itu satu BUNYI, bukan satu alasan; beberapa baris
+ * boleh menunjuk kunci yang sama. Yang dicocokkan `kata` harus muncul SEMUA di
+ * dalam satu kalimat yang sama - bukan tersebar di seluruh naskah, sebab dua
+ * kata yang berjauhan bukan satu pernyataan.
+ *
+ * ============================================================================
+ * YANG SENGAJA TIDAK DITAMBAHKAN, DAN KENAPA
+ * ============================================================================
+ *
+ * Tidak ada penyangkal di sini - tidak ada aturan yang membatalkan kecocokan
+ * karena kalimatnya memuat "tidak". Dalam bahasa Indonesia kata itu justru
+ * kerap MENEGASKAN alasannya: "tidak memberi nafkah", "tidak pernah pulang",
+ * "tidak menjalankan kewajiban". Penyangkal yang dipasang tanpa memahami
+ * kalimatnya akan memadamkan justru alasan yang paling sering didalilkan.
+ *
+ * Kata yang terlalu umum juga ditolak meski menggoda: "sakit" muncul pada
+ * "sakit hati", "pergi" pada hampir tiap posita. Ciri yang salah menyala
+ * membuat tiap perkara tampak punya satu alasan lebih banyak daripada yang
+ * sebenarnya didalilkan - dan yang membacanya di layar tidak punya cara
+ * memeriksanya.
+ */
 const CIRI_ALASAN = [
-  { kunci: "perselisihan terus-menerus", kata: ["perselisihan", "pertengkaran"] },
+  // --- huruf f: perselisihan dan pertengkaran terus-menerus -----------------
+  //
+  // Dahulu satu baris yang menuntut "perselisihan" DAN "pertengkaran" sekaligus.
+  // Posita yang menulis salah satunya saja - dan itu lazim - tidak terdeteksi
+  // sama sekali. Dipecah supaya masing-masing berdiri sendiri.
+  { kunci: "perselisihan terus-menerus", kata: ["perselisihan"] },
+  { kunci: "perselisihan terus-menerus", kata: ["pertengkaran"] },
+  { kunci: "perselisihan terus-menerus", kata: ["percekcokan"] },
+  { kunci: "perselisihan terus-menerus", kata: ["cekcok"] },
+  { kunci: "perselisihan terus-menerus", kata: ["bertengkar"] },
+  { kunci: "perselisihan terus-menerus", kata: ["berselisih"] },
+  { kunci: "perselisihan terus-menerus", kata: ["tidak harmonis"] },
+  { kunci: "perselisihan terus-menerus", kata: ["tidak rukun"] },
+  { kunci: "perselisihan terus-menerus", kata: ["tidak ada kecocokan"] },
+  { kunci: "perselisihan terus-menerus", kata: ["syiqaq"] },
   // "meninggalkan" saja SENGAJA tidak dipakai sebagai ciri.
   //
   // Hampir tiap keterangan saksi memuatnya - "meninggalkan tempat kediaman
@@ -241,32 +287,134 @@ const CIRI_ALASAN = [
   // menuntut jangka waktu tertentu, dan jangka itu tidak dapat disimpulkan
   // dari kata kerjanya. Menyalakannya di sini membuat tiap perkara tampak
   // punya satu alasan lebih banyak daripada yang sebenarnya didalilkan.
+  // --- huruf d: kekejaman atau penganiayaan berat ---------------------------
   { kunci: "kekerasan dalam rumah tangga", kata: ["kdrt"] },
   { kunci: "kekerasan dalam rumah tangga", kata: ["memukul"] },
   { kunci: "kekerasan dalam rumah tangga", kata: ["kekerasan"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["menganiaya"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["penganiayaan"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["menampar"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["menendang"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["mencekik"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["kekejaman"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["main tangan"] },
+  // "mengancam" saja terlalu luas - ancaman cerai ada di hampir tiap posita.
+  // Yang dijadikan ciri hanya ancaman terhadap NYAWA atau dengan senjata.
+  { kunci: "kekerasan dalam rumah tangga", kata: ["mengancam", "bunuh"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["ancaman", "senjata"] },
+
+  // --- nafkah -------------------------------------------------------------
+  //
+  // "nafkah" saja dibiarkan seperti semula, sebab posita cerai menyebutnya
+  // sebagai alasan jauh lebih sering daripada sebagai tuntutan. Yang
+  // ditambahkan bunyi yang menunjuk alasannya tanpa memakai kata itu sama
+  // sekali - dan itu justru yang selama ini lolos.
   { kunci: "tidak memberi nafkah", kata: ["nafkah"] },
+  { kunci: "tidak memberi nafkah", kata: ["menelantarkan"] },
+  { kunci: "tidak memberi nafkah", kata: ["terlantar"] },
+  { kunci: "tidak memberi nafkah", kata: ["tidak menafkahi"] },
+  { kunci: "tidak memberi nafkah", kata: ["tidak bertanggung jawab"] },
+  { kunci: "tidak memberi nafkah", kata: ["lalai", "kewajiban"] },
+
+  // --- pihak ketiga --------------------------------------------------------
   { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["idaman lain"] },
+  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["selingkuh"] },
+  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["perselingkuhan"] },
+  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["pihak ketiga"] },
+  // Singkatan WIL dan PIL SENGAJA tidak dipakai. Pencocokannya potongan teks
+  // tanpa batas kata - imbuhan bahasa Indonesia membuat batas kata mustahil
+  // dipakai, sebab "berjudi" harus tetap cocok pada "judi" - sehingga "wil"
+  // akan menyala pada "wilayah" dan "pil" pada "dipilih". Bentuk panjangnya
+  // sudah tertangkap "idaman lain" di atas.
   { kunci: "cemburu", kata: ["cemburu"] },
   // Ketiganya dipisah - dulu satu kunci untuk tiganya, sehingga saksi yang
   // hanya menerangkan judi menghasilkan kalimat yang menuduh mabuk dan obat
   // terlarang sekaligus. Lihat catatan di frasaCiri.
   { kunci: "obat terlarang", kata: ["sabu"] },
   { kunci: "obat terlarang", kata: ["narkoba"] },
+  { kunci: "obat terlarang", kata: ["narkotika"] },
   { kunci: "obat terlarang", kata: ["pemadat"] },
+  { kunci: "obat terlarang", kata: ["madat"] },
+  { kunci: "obat terlarang", kata: ["ganja"] },
   { kunci: "judi", kata: ["judi"] },
+  { kunci: "judi", kata: ["togel"] },
   { kunci: "mabuk", kata: ["mabuk"] },
   { kunci: "mabuk", kata: ["minuman keras"] },
+  { kunci: "mabuk", kata: ["miras"] },
+  { kunci: "mabuk", kata: ["pemabuk"] },
+  { kunci: "mabuk", kata: ["pemabok"] },
+
+  // --- huruf a: zina -------------------------------------------------------
+  //
+  // Terpisah dari "pihak lain". Berhubungan dengan perempuan/laki-laki lain
+  // dan berbuat zina bukan dalil yang sama: yang kedua menuntut pembuktian
+  // yang jauh lebih berat, dan menyamakan keduanya berarti menaikkan dalil
+  // orang tanpa ia memintanya.
+  { kunci: "zina", kata: ["zina"] },
+  { kunci: "zina", kata: ["berzina"] },
+
+  // --- huruf c: dihukum pidana penjara -------------------------------------
+  //
+  // "penjara" saja tidak dipakai - posita kerap menyebutnya sebagai peristiwa
+  // yang sudah lewat atau sebagai keterangan tempat. Yang dijadikan ciri
+  // hanya bunyi yang menyatakan salah satu pihak MENJALANI pidananya.
+  { kunci: "salah satu pihak menjalani pidana penjara", kata: ["dipenjara"] },
+  { kunci: "salah satu pihak menjalani pidana penjara", kata: ["dihukum", "penjara"] },
+  { kunci: "salah satu pihak menjalani pidana penjara", kata: ["menjalani", "pidana"] },
+  { kunci: "salah satu pihak menjalani pidana penjara", kata: ["lembaga pemasyarakatan"] },
+
+  // --- huruf e: cacat badan atau penyakit ----------------------------------
+  //
+  // "sakit" saja ditolak - ia muncul pada "sakit hati" di hampir tiap posita
+  // perselisihan. Yang dipakai bunyi yang menunjuk keadaan badan yang membuat
+  // kewajiban tidak dapat dijalankan.
+  { kunci: "cacat badan atau penyakit", kata: ["cacat badan"] },
+  { kunci: "cacat badan atau penyakit", kata: ["cacat tetap"] },
+  { kunci: "cacat badan atau penyakit", kata: ["penyakit", "tidak dapat menjalankan"] },
+  { kunci: "cacat badan atau penyakit", kata: ["impoten"] },
+  { kunci: "cacat badan atau penyakit", kata: ["gangguan jiwa"] },
+
+  // --- huruf g: melanggar taklik talak -------------------------------------
+  { kunci: "pelanggaran taklik talak", kata: ["taklik talak"] },
+  { kunci: "pelanggaran taklik talak", kata: ["taklik"] },
+  { kunci: "pelanggaran taklik talak", kata: ["ta'lik"] },
+
+  // --- huruf h: murtad -----------------------------------------------------
   { kunci: "murtad/pindah agama", kata: ["murtad"] },
+  { kunci: "murtad/pindah agama", kata: ["pindah agama"] },
+  { kunci: "murtad/pindah agama", kata: ["keluar dari agama islam"] },
 ];
 
-function usulkanHuruf(butirGabungan) {
-  const semua = butirGabungan.join(" ").toLowerCase();
+/** Benar bila SATU kalimat memenuhi seluruh kata sebuah baris ciri. */
+function kalimatBerciri(kalimatKecil, baris) {
+  return baris.kata.every((kata) => kalimatKecil.includes(kata));
+}
+
+/**
+ * Ciri yang ditemukan pada sekumpulan kalimat.
+ *
+ * Dicocokkan PER KALIMAT, bukan atas naskah yang disambung menjadi satu.
+ * Bentuk lamanya menyambung seluruh butir lebih dahulu, sehingga aturan
+ * berkata lebih dari satu dapat terpenuhi oleh dua kata yang berada di
+ * paragraf yang berbeda - "dihukum" di butir 2 dan "penjara" di butir 9
+ * bukan pernyataan bahwa seseorang dihukum penjara.
+ *
+ * Satu tempat untuk ketiga pemakainya - usulan dari keterangan saksi, alasan
+ * dari posita, dan pencarian kalimat pemicunya - supaya ketiganya tidak
+ * pernah menjawab berbeda atas naskah yang sama.
+ */
+function ciriDariKalimat(butir) {
+  const kecil = (butir || []).map((k) => String(k || "").toLowerCase());
   const ciri = [];
   for (const baris of CIRI_ALASAN) {
-    if (!baris.kata.every((kata) => semua.includes(kata))) continue;
-    if (!ciri.includes(baris.kunci)) ciri.push(baris.kunci);
+    if (ciri.includes(baris.kunci)) continue;
+    if (kecil.some((k) => kalimatBerciri(k, baris))) ciri.push(baris.kunci);
   }
   return ciri;
+}
+
+function usulkanHuruf(butirGabungan) {
+  return ciriDariKalimat(butirGabungan);
 }
 
 /**
@@ -319,8 +467,8 @@ function usulan(kode, nama, hasil, sumber) {
 function kalimatPemicu(butir, ciri) {
   const aturan = CIRI_ALASAN.filter((c) => c.kunci === ciri);
   for (const baris of butir) {
-    const kecil = baris.toLowerCase();
-    if (aturan.some((c) => c.kata.every((k) => kecil.includes(k)))) return baris;
+    const kecil = String(baris || "").toLowerCase();
+    if (aturan.some((c) => kalimatBerciri(kecil, c))) return baris;
   }
   return "";
 }
@@ -1002,14 +1150,7 @@ function ragamkanJawaban(jawaban, nomorSaksi, urutan) {
  * penyebab hanya boleh memuat alasan yang memang didalilkan.
  */
 function alasanDariPosita(posita) {
-  const butir = kalimatPosita(posita);
-  const kecil = butir.map((k) => k.toLowerCase());
-  const hasil = [];
-  for (const c of CIRI_ALASAN) {
-    if (hasil.includes(c.kunci)) continue;
-    if (kecil.some((k) => c.kata.every((kata) => k.includes(kata)))) hasil.push(c.kunci);
-  }
-  return hasil;
+  return ciriDariKalimat(kalimatPosita(posita));
 }
 
 /**
@@ -1256,12 +1397,30 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
   }
 
   // "melihat/mendengar" - templat menyerahkan pilihannya kepada petugas.
+  //
+  // Digabung menjadi "melihat dan mendengar" supaya kalimatnya utuh dibaca,
+  // TETAPI barisnya tetap ditandai menunggu keterangan saksi yang sesungguhnya
+  // - lihat PILIHAN_TEMPLAT di bawah. Saksi yang hanya MENDENGAR pertengkaran
+  // dari balik dinding tidak melihatnya, dan berita acara yang menuliskan
+  // keduanya menaikkan nilai kesaksiannya tanpa saksi itu mengatakannya. Itu
+  // persis jenis karangan yang dihindari fungsi ini pada tanggal dan nama.
   hasil = hasil
     .replace(/\bmelihat\/mendengar\b/gi, "melihat dan mendengar")
     .replace(/\bdilihat\/didengar\b/gi, "dilihat dan didengar");
 
   return hasil;
 }
+
+/**
+ * Pilihan templat yang SUDAH digabung tetapi belum dipilih orang.
+ *
+ * Dicocokkan pada jawaban SESUDAH pengisian: bentuk miringnya sudah hilang,
+ * jadi POLA_BELUM_TERISI tidak lagi mengenalinya dan barisnya lenyap dari
+ * daftar yang harus diperiksa. Yang lenyap dari daftar tidak pernah diperiksa
+ * lagi - dan inilah satu-satunya butir yang menyangkut cara saksi mengetahui
+ * peristiwanya, yaitu hal yang paling ditanyakan kembali di persidangan.
+ */
+const PILIHAN_TEMPLAT = /\b(melihat dan mendengar|dilihat dan didengar)\b/i;
 
 function susunKeteranganSaksiSdg(opsi) {
   const templat = Array.isArray(opsi && opsi.templat) ? opsi.templat : [];
@@ -1321,7 +1480,9 @@ function susunKeteranganSaksiSdg(opsi) {
       jawab = lengkapiJawabanTemplat({ tanya, jawab, fakta });
       if (nomorSaksi === 1 && jawab !== sebelumIsi) terisiDariPosita.push({ no, tanya });
 
-      if (nomorSaksi === 1 && POLA_BELUM_TERISI.test(jawab)) perluDiisi.push({ no, tanya });
+      if (nomorSaksi === 1 && (POLA_BELUM_TERISI.test(jawab) || PILIHAN_TEMPLAT.test(jawab))) {
+        perluDiisi.push({ no, tanya });
+      }
       return { no, tanya, jawab: ragamkanJawaban(jawab, nomorSaksi, i) };
     });
   };

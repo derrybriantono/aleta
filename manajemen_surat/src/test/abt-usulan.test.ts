@@ -47,6 +47,7 @@ type HasilSaksi = {
 };
 
 type Layanan = {
+  alasanDariPosita: (posita: string) => string[];
   butirKeterangan: (teks: string) => string[];
   hitungLamaPisah: (a: string, b: string) => { teks: string; totalBulan: number } | null;
   dariKeteranganSaksi: (
@@ -1400,5 +1401,84 @@ describe("nomor 9 - layanan konversi RTF ke PDF", () => {
     );
     expect(klien).toContain("TIMEOUT_KONVERSI_MS");
     expect(klien).toContain("timeoutMs: TIMEOUT_KONVERSI_MS");
+  });
+});
+
+/**
+ * ============================================================================
+ * SATU CIRI, BANYAK BUNYI - POSITA TIDAK PERNAH SERAGAM
+ * ============================================================================
+ *
+ * Daftar ciri dahulu menuntut bunyi baku "perselisihan DAN pertengkaran"
+ * sekaligus dalam satu aturan. Posita yang menulis salah satunya saja - atau
+ * menulis "tidak harmonis", "sering cekcok", "tidak ada kecocokan" - dinyatakan
+ * tidak berciri apa-apa, padahal dalilnya jelas. Gugatan dan permohonan pun
+ * berbeda bunyinya lagi.
+ *
+ * Yang dijaga di sini BUNYI-BUNYINYA, bukan jumlah barisnya: menambah sinonim
+ * tidak boleh sampai memadamkan yang sudah ada.
+ */
+describe("ciri alasan dibaca dari bunyi posita yang berbeda-beda", () => {
+  const ciri = (posita: string) => layanan.alasanDariPosita(posita);
+
+  it("bunyi baku tetap terbaca", () => {
+    expect(ciri("Bahwa sering terjadi perselisihan dan pertengkaran;")).toContain(
+      "perselisihan terus-menerus"
+    );
+  });
+
+  it("bunyi lain untuk alasan yang sama ikut terbaca", () => {
+    for (const bunyi of [
+      "Bahwa rumah tangga keduanya sudah tidak harmonis lagi;",
+      "Bahwa Pemohon dan Termohon sering cekcok;",
+      "Bahwa antara keduanya sudah tidak ada kecocokan lagi;",
+      "Bahwa keduanya sering bertengkar sejak 2021;",
+    ]) {
+      expect(ciri(bunyi), bunyi).toContain("perselisihan terus-menerus");
+    }
+  });
+
+  it("alasan yang dahulu tidak punya ciri sama sekali kini terbaca", () => {
+    expect(ciri("Bahwa Tergugat dihukum pidana penjara selama 6 tahun;")).toContain(
+      "salah satu pihak menjalani pidana penjara"
+    );
+    expect(ciri("Bahwa Tergugat telah melanggar taklik talak;")).toContain(
+      "pelanggaran taklik talak"
+    );
+    expect(ciri("Bahwa Tergugat telah berbuat zina;")).toContain("zina");
+    expect(ciri("Bahwa Termohon telah pindah agama;")).toContain("murtad/pindah agama");
+  });
+
+  /**
+   * Kata yang terlalu pendek atau terlalu umum TIDAK boleh menyala.
+   *
+   * Pencocokannya potongan teks tanpa batas kata - imbuhan bahasa Indonesia
+   * membuat batas kata mustahil dipakai, sebab "berjudi" harus tetap cocok
+   * pada "judi". Akibatnya singkatan seperti WIL dan PIL akan menyala pada
+   * "wilayah" dan "dipilih", dan "sakit" pada "sakit hati". Ciri yang salah
+   * menyala membuat perkara tampak punya alasan yang tidak pernah didalilkan.
+   */
+  it("kata umum dan potongan kata tidak menyalakan ciri", () => {
+    for (const jebakan of [
+      "Bahwa keduanya tinggal di wilayah Kecamatan Banawa;",
+      "Bahwa rumah itu dipilih bersama;",
+      "Bahwa Penggugat sakit hati atas perbuatan Tergugat;",
+    ]) {
+      expect(ciri(jebakan), jebakan).toEqual([]);
+    }
+  });
+
+  /**
+   * Aturan berkata lebih dari satu harus terpenuhi dalam SATU kalimat.
+   *
+   * Bentuk lamanya menyambung seluruh butir menjadi satu naskah lebih dahulu,
+   * sehingga "dihukum" di butir 2 dan "penjara" di butir 9 terbaca sebagai
+   * pernyataan bahwa seseorang dihukum penjara - padahal keduanya kalimat yang
+   * sama sekali berlainan.
+   */
+  it("dua kata yang berjauhan bukan satu pernyataan", () => {
+    expect(
+      ciri("Bahwa Tergugat dihukum oleh atasannya; Bahwa rumahnya dekat penjara;")
+    ).not.toContain("salah satu pihak menjalani pidana penjara");
   });
 });
