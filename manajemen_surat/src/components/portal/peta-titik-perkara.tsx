@@ -1,7 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, Columns2, Info, Layers, Maximize2, MapPin, Users, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Columns2,
+  Info,
+  Layers,
+  Maximize2,
+  MapPin,
+  Minimize2,
+  Users,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
@@ -295,6 +305,97 @@ function warnaLapisan(
   return TANGGA_RELAAS[ke].warna;
 }
 
+/**
+ * ============================================================================
+ * KUNCI KELOMPOK KECAMATAN - SATU TEMPAT, DIPAKAI TIGA KALI
+ * ============================================================================
+ *
+ * Di bawah ZUM_DESA lingkaran tidak lagi mewakili satu desa melainkan satu
+ * kecamatan, dan kuncinya bukan kode desa lagi. Tiga tempat harus menyusun
+ * kunci yang PERSIS sama - lingkarannya, nilai lapisannya, dan angka relaasnya.
+ * Tiga salinan penyusun kunci akan menyimpang diam-diam, dan yang menyimpang
+ * tidak menimbulkan galat: petanya hanya kehilangan seluruh warnanya.
+ */
+function kunciKecamatan(t: TitikPerkara) {
+  return `${t.kabupaten}|${t.kecamatan}`;
+}
+
+/**
+ * ============================================================================
+ * NILAI LAPISAN UNTUK SATU KECAMATAN
+ * ============================================================================
+ *
+ * Tanpa ini, seluruh lapisan selain "perkara" KELABU SELURUHNYA pada tampilan
+ * awal. Sebabnya sunyi: `petaLapis` berkunci kode desa, sedangkan lingkaran di
+ * bawah ZUM_DESA berkunci "kabupaten|kecamatan", jadi tiap pencarian meleset
+ * dan `warnaLapisan` memulangkan warna "tidak cukup" untuk semuanya. Peta yang
+ * seluruhnya kelabu terbaca sebagai peta yang kosong - dan zum awalnya 9,
+ * sehingga itulah yang dilihat orang lebih dahulu.
+ *
+ * Yang digabung HANYA desa yang datanya sudah dinyatakan cukup di hulu. Desa
+ * yang kelabu karena relaasnya cuma tiga tidak boleh ikut menarik angka
+ * kecamatan; membiarkannya ikut berarti kebetulan tiga desa kecil menjadi
+ * temuan sekecamatan.
+ *
+ * Ditimbang JUMLAH PERKARA, bukan dirata-rata polos: kecamatan dengan satu
+ * desa berperkara dua ratus dan enam desa berperkara satu bukan tujuh tempat
+ * yang setara, dan rata-rata polos akan membuat enam desa kecil menenggelamkan
+ * satu-satunya desa yang sungguh menanggung bebannya.
+ */
+function gabungLapisan(
+  anggota: Array<{ baris: BarisLapisan | undefined; bobot: number }>,
+  kode: string,
+  satuan: string
+): BarisLapisan | undefined {
+  const cukup = anggota.filter((x) => x.baris?.cukup);
+  if (cukup.length === 0) return undefined;
+
+  // Kategori tidak dapat dirata-rata - "Cerai Gugat" ditambah "Cerai Talak"
+  // dibagi dua bukan apa-apa. Yang dipulangkan kategori yang menanggung
+  // perkara terbanyak.
+  if (satuan === "kategori") {
+    const hitung = new Map<string, number>();
+    for (const x of cukup) {
+      const label = String(x.baris?.label ?? x.baris?.nilai ?? "");
+      hitung.set(label, (hitung.get(label) ?? 0) + Math.max(1, x.bobot));
+    }
+    let juara = "";
+    let tertinggi = -1;
+    for (const [label, n] of hitung) {
+      if (n > tertinggi) {
+        tertinggi = n;
+        juara = label;
+      }
+    }
+    return {
+      kode,
+      nilai: 0,
+      label: juara,
+      keterangan: `${juara} — terbanyak dari ${cukup.length} desa kecamatan ini`,
+      cukup: true,
+    };
+  }
+
+  let jumlah = 0;
+  let jumlahBobot = 0;
+  for (const x of cukup) {
+    const bobot = Math.max(1, x.bobot);
+    jumlah += (x.baris?.nilai ?? 0) * bobot;
+    jumlahBobot += bobot;
+  }
+  // Dibulatkan satu desimal. Rata-rata berbobot memulangkan pecahan sepanjang
+  // ketelitian mesin, dan "12,333333333333334%" pada keterangan melayang
+  // bukan ketelitian melainkan kebisingan - lebarnya pun mendorong kotak
+  // keterangan keluar dari peta.
+  const nilai = jumlah / jumlahBobot;
+  return {
+    kode,
+    nilai: Math.round(nilai * 10) / 10,
+    keterangan: `rata-rata ${cukup.length} desa, ditimbang jumlah perkara`,
+    cukup: true,
+  };
+}
+
 function aman(teks: string) {
   return String(teks || "")
     .replace(/&/g, "&amp;")
@@ -431,6 +532,27 @@ export function PetaTitikPerkara({
 
   /** Zum berjalan - penentu desa atau kecamatan yang digambar. */
   const [zum, setZum] = useState(9);
+
+  /**
+   * ====================================================================
+   * LAYAR PENUH
+   * ====================================================================
+   *
+   * Peta setinggi 32rem cukup untuk melihat SUDAH di mana perkaranya, tetapi
+   * tidak untuk membandingkan dua kabupaten yang berjauhan - dan tidak untuk
+   * tirai pembanding, yang seluruh gunanya justru bersandar pada lebar layar.
+   *
+   * Dua jalan, dan yang kedua bukan hiasan: Fullscreen API ditolak diam-diam
+   * pada peramban yang memuat halaman ini di dalam bingkai tanpa izin
+   * `allowfullscreen`. Kalau permintaan itu satu-satunya jalan, tombolnya
+   * tidak melakukan apa-apa dan tidak ada yang tahu sebabnya. Karena itu
+   * penolakannya dijatuhkan ke layar penuh SEMU - kotak berposisi tetap yang
+   * menutupi jendela - yang tampak sama bagi yang memakainya.
+   */
+  const kotakPeta = useRef<HTMLDivElement | null>(null);
+  const [layarPenuh, setLayarPenuh] = useState(false);
+  /** Benar bila penuhnya ditiru dengan CSS, bukan diberikan peramban. */
+  const [penuhSemu, setPenuhSemu] = useState(false);
 
   // --------------------------------------------------------------------
   // Tema. Ubinan peta jalan selalu terang; di tema gelap ia menyilaukan dan
@@ -770,11 +892,94 @@ export function PetaTitikPerkara({
   const jangkauLapis = useMemo(() => jangkauanLapisan(lapis[lapisan]), [lapis, lapisan]);
   const urutKategori = useMemo(() => urutanKategori(lapis[lapisan]), [lapis, lapisan]);
 
+  /**
+   * ==================================================================
+   * NILAI YANG DIPAKAI LINGKARAN - MENGIKUTI TINGKAT YANG SEDANG TAMPIL
+   * ==================================================================
+   *
+   * Pada tingkat desa keduanya sama persis dengan peta aslinya. Di bawah
+   * ZUM_DESA barulah nilainya digabung per kecamatan, sebab di situ kunci
+   * lingkarannya berganti dan pencarian per kode desa pasti meleset.
+   */
+  const petaLapisTampil = useMemo(() => {
+    if (zum >= ZUM_DESA) return petaLapis;
+    const kumpul = new Map<string, Array<{ baris: BarisLapisan | undefined; bobot: number }>>();
+    for (const x of tergambar) {
+      const kunci = kunciKecamatan(x.t);
+      const daftar = kumpul.get(kunci) ?? [];
+      daftar.push({ baris: petaLapis.get(x.t.kode), bobot: x.t.perkara });
+      kumpul.set(kunci, daftar);
+    }
+    const hasil = new Map<string, BarisLapisan>();
+    for (const [kunci, anggota] of kumpul) {
+      const gabung = gabungLapisan(anggota, kunci, satuan);
+      if (gabung) hasil.set(kunci, gabung);
+    }
+    return hasil;
+  }, [zum, tergambar, petaLapis, satuan]);
+
+  /**
+   * Relaas digabung dengan menjumlahkan PEMBILANG dan PENYEBUTNYA, bukan
+   * dengan merata-rata persentase desa. Sepuluh dari dua puluh ditambah satu
+   * dari sepuluh adalah sebelas dari tiga puluh - 37%, bukan rata-rata 50%
+   * dan 10% yang menghasilkan 30%. Yang kedua itu angka yang tidak pernah ada.
+   */
+  const petaRelaasTampil = useMemo(() => {
+    if (zum >= ZUM_DESA) return petaRelaas;
+    const kumpul = new Map<string, { relaas: number; takTemu: number; desa: number }>();
+    for (const x of tergambar) {
+      const d = petaRelaas.get(x.t.kode);
+      // Desa yang relaasnya terlalu sedikit sudah dinyatakan tidak cukup di
+      // hulu - ia tidak ikut menarik angka kecamatan.
+      if (!d || !d.cukup) continue;
+      const kunci = kunciKecamatan(x.t);
+      const k = kumpul.get(kunci) ?? { relaas: 0, takTemu: 0, desa: 0 };
+      k.relaas += d.relaas;
+      k.takTemu += d.takTemu;
+      k.desa += 1;
+      kumpul.set(kunci, k);
+    }
+    const hasil = new Map<string, DesaRelaas>();
+    for (const [kunci, k] of kumpul) {
+      const kecamatan = kunci.split("|")[1] || kunci;
+      hasil.set(kunci, {
+        kode: kunci,
+        nama: kecamatan,
+        kecamatan,
+        relaas: k.relaas,
+        takTemu: k.takTemu,
+        // Dibulatkan seperti angka desa dari hulu - keterangan melayang
+        // menampilkannya apa adanya.
+        persen: k.relaas > 0 ? Math.round((k.takTemu / k.relaas) * 100) : 0,
+        cukup: k.desa > 0,
+      });
+    }
+    return hasil;
+  }, [zum, tergambar, petaRelaas]);
+
   /** Sisi kanan tirai - bentuknya persis sama, sumbernya lapisan yang lain. */
   const petaLapisB = useMemo(() => petaBarisLapisan(lapis[lapisanB]), [lapis, lapisanB]);
   const satuanB = lapis[lapisanB]?.satuan ?? "";
   const jangkauLapisB = useMemo(() => jangkauanLapisan(lapis[lapisanB]), [lapis, lapisanB]);
   const urutKategoriB = useMemo(() => urutanKategori(lapis[lapisanB]), [lapis, lapisanB]);
+
+  /** Sisi kanan digabung dengan aturan yang sama - bukan salinan yang kedua. */
+  const petaLapisBTampil = useMemo(() => {
+    if (zum >= ZUM_DESA) return petaLapisB;
+    const kumpul = new Map<string, Array<{ baris: BarisLapisan | undefined; bobot: number }>>();
+    for (const x of tergambar) {
+      const kunci = kunciKecamatan(x.t);
+      const daftar = kumpul.get(kunci) ?? [];
+      daftar.push({ baris: petaLapisB.get(x.t.kode), bobot: x.t.perkara });
+      kumpul.set(kunci, daftar);
+    }
+    const hasil = new Map<string, BarisLapisan>();
+    for (const [kunci, anggota] of kumpul) {
+      const gabung = gabungLapisan(anggota, kunci, satuanB);
+      if (gabung) hasil.set(kunci, gabung);
+    }
+    return hasil;
+  }, [zum, tergambar, petaLapisB, satuanB]);
 
   /**
    * Yang sungguh digambar: desa pada zum dekat, kecamatan pada zum jauh.
@@ -816,7 +1021,7 @@ export function PetaTitikPerkara({
       }
     >();
     for (const x of tergambar) {
-      const kunci = `${x.t.kabupaten}|${x.t.kecamatan}` || x.t.kode;
+      const kunci = kunciKecamatan(x.t);
       if (!peta.has(kunci)) {
         peta.set(kunci, {
           kunci,
@@ -917,7 +1122,7 @@ export function PetaTitikPerkara({
         }
 
         if (kunci === "relaas") {
-          const d = petaRelaas.get(kode);
+          const d = petaRelaasTampil.get(kode);
           if (!d || !d.cukup) return WARNA_TAK_CUKUP;
           for (const langkah of TANGGA_RELAAS) {
             if (d.persen >= langkah.batas) return langkah.warna;
@@ -935,17 +1140,17 @@ export function PetaTitikPerkara({
         }
         return warnaJenis[terbanyak] || "#6366f1";
       },
-    [warnaJenis, petaRelaas]
+    [warnaJenis, petaRelaasTampil]
   );
 
   const warnaTitik = useMemo(
-    () => buatWarna(lapisan, petaLapis, satuan, jangkauLapis, urutKategori),
-    [buatWarna, lapisan, petaLapis, satuan, jangkauLapis, urutKategori]
+    () => buatWarna(lapisan, petaLapisTampil, satuan, jangkauLapis, urutKategori),
+    [buatWarna, lapisan, petaLapisTampil, satuan, jangkauLapis, urutKategori]
   );
 
   const warnaTitikB = useMemo(
-    () => buatWarna(lapisanB, petaLapisB, satuanB, jangkauLapisB, urutKategoriB),
-    [buatWarna, lapisanB, petaLapisB, satuanB, jangkauLapisB, urutKategoriB]
+    () => buatWarna(lapisanB, petaLapisBTampil, satuanB, jangkauLapisB, urutKategoriB),
+    [buatWarna, lapisanB, petaLapisBTampil, satuanB, jangkauLapisB, urutKategoriB]
   );
 
   // --------------------------------------------------------------------
@@ -997,7 +1202,10 @@ export function PetaTitikPerkara({
           .map(([j, n]) => `${aman(j)} ${angka(n)}`)
           .join(" · ");
 
-        const dl = x.titik ? petaLapis.get(x.titik.kode) : null;
+        // Dicari lewat kunci lingkarannya, bukan lewat kode desa: pada tingkat
+        // kecamatan tidak ada kode desa, dan keterangan yang hilang di situ
+        // membuat warna yang baru saja diperbaiki menjadi warna tanpa angka.
+        const dl = petaLapisTampil.get(x.kunci);
         const barisLapis =
           dl && lapisan !== "perkara" && lapisan !== "relaas"
             ? dl.cukup
@@ -1007,7 +1215,7 @@ export function PetaTitikPerkara({
               : `<span>${aman(dl.keterangan)} — terlalu sedikit untuk dibandingkan</span>`
             : "";
 
-        const d = x.titik ? petaRelaas.get(x.titik.kode) : null;
+        const d = petaRelaasTampil.get(x.kunci);
         const barisRelaas =
           lapisan === "relaas"
             ? d
@@ -1117,7 +1325,17 @@ export function PetaTitikPerkara({
         }
       }
     })();
-  }, [siap, digambar, jariJari, warnaTitik, lapisan, petaRelaas, petaLapis, satuan, cincin]);
+  }, [
+    siap,
+    digambar,
+    jariJari,
+    warnaTitik,
+    lapisan,
+    petaRelaasTampil,
+    petaLapisTampil,
+    satuan,
+    cincin,
+  ]);
 
   // --------------------------------------------------------------------
   // GUNTINGAN TIRAI - pada KANVAS, dalam piksel, bukan pada panel
@@ -1172,6 +1390,80 @@ export function PetaTitikPerkara({
     peta.on("move zoom zoomend resize", pasangTirai);
     return () => peta.off("move zoom zoomend resize", pasangTirai);
   }, [siap, pasangTirai]);
+
+  // --------------------------------------------------------------------
+  // LAYAR PENUH - masuk, keluar, dan ukuran yang harus dihitung ulang
+  // --------------------------------------------------------------------
+  const ubahLayarPenuh = useCallback(async () => {
+    const kotak = kotakPeta.current;
+    if (!kotak) return;
+
+    if (layarPenuh) {
+      if (typeof document !== "undefined" && document.fullscreenElement) {
+        try {
+          await document.exitFullscreen();
+        } catch {
+          // Keluar yang ditolak tetap harus melepas keadaan semunya di bawah.
+        }
+      }
+      setPenuhSemu(false);
+      setLayarPenuh(false);
+      return;
+    }
+
+    if (typeof kotak.requestFullscreen === "function") {
+      try {
+        await kotak.requestFullscreen();
+        // Keadaannya TIDAK disetel di sini - fullscreenchange yang
+        // menyalakannya, supaya keluar lewat Esc melewati jalan yang sama.
+        return;
+      } catch {
+        // Ditolak - jatuh ke layar penuh semu.
+      }
+    }
+    setPenuhSemu(true);
+    setLayarPenuh(true);
+  }, [layarPenuh]);
+
+  // Esc, tombol keluar peramban, dan berpindah tab semuanya lewat sini -
+  // bukan hanya tombol kita sendiri. Tanpa pendengar ini, keluar lewat Esc
+  // meninggalkan tombol yang masih bertuliskan "Keluar layar penuh".
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const dengar = () => {
+      if (penuhSemu) return;
+      setLayarPenuh(document.fullscreenElement === kotakPeta.current);
+    };
+    document.addEventListener("fullscreenchange", dengar);
+    return () => document.removeEventListener("fullscreenchange", dengar);
+  }, [penuhSemu]);
+
+  // Layar penuh semu tidak punya Esc dari peramban - ia harus disediakan,
+  // sebab Esc adalah yang pertama ditekan orang untuk keluar.
+  useEffect(() => {
+    if (!penuhSemu || typeof document === "undefined") return;
+    const tekan = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setPenuhSemu(false);
+      setLayarPenuh(false);
+    };
+    document.addEventListener("keydown", tekan);
+    return () => document.removeEventListener("keydown", tekan);
+  }, [penuhSemu]);
+
+  // Kotaknya berganti ukuran tanpa jendela ikut berganti, jadi Leaflet tidak
+  // diberi tahu siapa pun. Tanpa ini ubinannya hanya mengisi kotak yang lama
+  // dan sisanya kelabu. Tirai ikut dipasang ulang: guntingannya dihitung
+  // dalam piksel, dan pikselnya baru saja berubah.
+  useEffect(() => {
+    const peta = petaRef.current;
+    if (!siap || !peta) return;
+    const jeda = window.setTimeout(() => {
+      peta.invalidateSize();
+      pasangTirai();
+    }, 180);
+    return () => window.clearTimeout(jeda);
+  }, [layarPenuh, siap, pasangTirai]);
 
   // --------------------------------------------------------------------
   // SISI KANAN TIRAI - lingkarannya saja
@@ -1551,12 +1843,38 @@ export function PetaTitikPerkara({
       ) : null}
 
       <div
+        ref={kotakPeta}
         className={cn(
           "aleta-peta-wadah relative overflow-hidden rounded-[0.9rem] border border-border",
-          gelap && "aleta-peta-gelap"
+          gelap && "aleta-peta-gelap",
+          // Sudut membulat pada kotak yang menutupi seluruh layar hanya
+          // menyisakan empat serpih latar di pojoknya.
+          layarPenuh && "rounded-none bg-background",
+          penuhSemu && "fixed inset-0 z-[1200]"
         )}
       >
-        <div ref={wadah} className="h-[26rem] w-full sm:h-[32rem]" />
+        <div
+          ref={wadah}
+          className={cn("w-full", layarPenuh ? "h-full" : "h-[26rem] sm:h-[32rem]")}
+        />
+
+        {/* Tombolnya di dalam peta, bukan di bilah alat di atasnya: yang
+            menekan layar penuh sedang melihat petanya, dan setelah penuh
+            bilah alat itu tidak ikut terbawa. */}
+        <button
+          type="button"
+          onClick={() => void ubahLayarPenuh()}
+          aria-pressed={layarPenuh}
+          title={layarPenuh ? "Keluar layar penuh (Esc)" : "Layar penuh"}
+          className="absolute right-3 top-3 z-[1000] inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/90 px-2.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur transition hover:bg-muted"
+        >
+          {layarPenuh ? (
+            <Minimize2 className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+          )}
+          {layarPenuh ? "Keluar layar penuh" : "Layar penuh"}
+        </button>
         {/* Garis tirainya sendiri. Tanpa garis, batas antara dua lapisan hanya
             terbaca sebagai warna yang berubah mendadak - dan warna yang berubah
             mendadak pada peta terbaca sebagai temuan, bukan sebagai batas. */}
