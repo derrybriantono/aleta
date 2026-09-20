@@ -136,6 +136,93 @@ const HURUF = [
     ciri: ["meninggalkan"],
     syarat: "menuntut 2 (dua) tahun berturut-turut - periksa lama pisahnya lebih dulu",
   },
+  /**
+   * ==========================================================================
+   * HURUF C, D, DAN E - BUNYI PP SUDAH ADA, BUNYI KHI BELUM
+   * ==========================================================================
+   *
+   * Ketiganya diambil dari naskah PP yang sama dengan huruf A, B, dan F -
+   * peraturan.go.id/files/pp9-1975.pdf, diekstrak ulang 20 September 2026.
+   * Pengambilan itu memeriksa dirinya sendiri: huruf a, b, dan f yang sudah
+   * lebih dulu ada di berkas ini terbukti sama kata demi kata dengan yang baru
+   * diekstrak, sehingga huruf c, d, dan e dari ekstraksi yang sama berdiri di
+   * atas dasar yang sudah terbukti.
+   *
+   * Bunyi KHI-nya BELUM ada, dan itu disebut apa adanya pada tiap
+   * catatanNaskah - bukan dibiarkan tampak lengkap. Kedua terbitan Kementerian
+   * Agama yang dirujuk berkas ini berukuran lebih dari sepuluh megabita dan
+   * tidak dapat diambil dari mesin ini. Keduanya tetap harus disalin dan
+   * dibandingkan seperti huruf A, B, F, dan H - selisih "pemabok" lawan
+   * "pemabuk" pada huruf A membuktikan selisih itu nyata dan ikut tercetak ke
+   * dalam putusan.
+   *
+   * Ketiganya tetap `siap` sebab dasar PP-nya utuh dan sah dikutip: Pasal 19
+   * PP Nomor 9 Tahun 1975 berlaku bagi semua perkawinan, termasuk yang
+   * diperiksa Pengadilan Agama. Yang menyusun putusan melihat sendiri dasar
+   * mana yang tersedia dan memilih mengutipnya atau menunggu.
+   */
+  {
+    huruf: "C",
+    siap: true,
+    dasar: [
+      {
+        sumber: SUMBER_PP_9_1975,
+        bunyi:
+          "Salah satu pihak mendapat hukuman penjara 5 (lima) tahun atau hukuman yang lebih berat setelah perkawinan berlangsung",
+        catatanNaskah: "Bunyi KHI Pasal 116 huruf c belum disalin - lihat catatan di atas.",
+      },
+    ],
+    // "dihukum" saja SENGAJA tidak dipakai: posita dan keterangan saksi
+    // memakainya untuk hukuman apa pun, termasuk teguran atasan. Yang
+    // dijadikan ciri hanya bunyi yang menunjuk pidana penjaranya.
+    ciri: ["hukuman penjara", "dipenjara", "pidana penjara", "lembaga pemasyarakatan"],
+    syarat:
+      "menuntut DUA hal sekaligus: hukumannya 5 (lima) tahun atau lebih berat, DAN dijatuhkan setelah perkawinan berlangsung - periksa putusan pidananya, keduanya tidak dapat disimpulkan dari keterangan saksi",
+  },
+  {
+    huruf: "D",
+    siap: true,
+    dasar: [
+      {
+        sumber: SUMBER_PP_9_1975,
+        bunyi:
+          "Salah satu pihak melakukan kekejaman atau penganiayaan berat yang membahayakan pihak yang lain",
+        catatanNaskah: "Bunyi KHI Pasal 116 huruf d belum disalin - lihat catatan di atas.",
+      },
+    ],
+    ciri: [
+      "kekejaman",
+      "penganiayaan",
+      "menganiaya",
+      "kdrt",
+      "kekerasan",
+      "memukul",
+      "menampar",
+      "mencekik",
+    ],
+    // Bukan syarat angka melainkan syarat DERAJAT, dan derajat itu tidak
+    // terbaca dari kata "memukul". Sekali menampar dan penganiayaan yang
+    // membahayakan nyawa sama-sama memicu ciri di atas.
+    syarat:
+      "menuntut kekejaman atau penganiayaan yang BERAT dan MEMBAHAYAKAN pihak lain - periksa derajatnya, sebab ciri di atas menyala pada kekerasan tingkat apa pun",
+  },
+  {
+    huruf: "E",
+    siap: true,
+    dasar: [
+      {
+        sumber: SUMBER_PP_9_1975,
+        bunyi:
+          "Salah satu pihak mendapat cacat badan atau penyakit dengan akibat tidak dapat menjalankan kewajibannya sebagai suami/isteri",
+        catatanNaskah: "Bunyi KHI Pasal 116 huruf e belum disalin - lihat catatan di atas.",
+      },
+    ],
+    // "penyakit" dan "sakit" SENGAJA tidak dipakai sendirian - "sakit hati"
+    // ada di hampir tiap keterangan saksi perkara perselisihan.
+    ciri: ["cacat badan", "cacat tetap", "impoten", "gangguan jiwa"],
+    syarat:
+      "menuntut AKIBAT: cacat atau penyakitnya harus mengakibatkan tidak dapat menjalankan kewajiban sebagai suami/isteri - periksa apakah akibat itu terbukti, bukan penyakitnya saja",
+  },
   {
     huruf: "F",
     siap: true,
@@ -155,6 +242,33 @@ const HURUF = [
     ],
     ciri: ["perselisihan", "pertengkaran", "tidak rukun", "tidak harmonis"],
     syarat: "",
+  },
+  /**
+   * ==========================================================================
+   * HURUF G - TIDAK DAPAT DIISI, DAN ITU DINYATAKAN
+   * ==========================================================================
+   *
+   * Pelanggaran taklik talak hanya ada di KHI: Pasal 19 PP Nomor 9 Tahun 1975
+   * berhenti di huruf f. Tidak ada naskah kedua yang dapat dipakai sebagai
+   * gantinya, sehingga huruf ini TIDAK punya satu pun dasar selama naskah KHI
+   * belum dapat disalin.
+   *
+   * Ia dicatat di sini dengan `siap: false` alih-alih dibiarkan tidak ada sama
+   * sekali. Bedanya nyata bagi yang memakai layar: huruf yang tidak tercatat
+   * tampak seperti huruf yang tidak pernah dipikirkan, sedangkan huruf yang
+   * tercatat belum siap muncul pada belumSiap() beserta sebabnya - dan yang
+   * menyusun putusan tahu bahwa alasan ini ada, hanya bunyinya yang belum
+   * diambil dari naskah resmi.
+   *
+   * `usulkan()` tidak pernah memulangkannya, berapa pun cirinya cocok.
+   */
+  {
+    huruf: "G",
+    siap: false,
+    dasar: [],
+    ciri: ["taklik talak", "taklik", "ta'lik"],
+    syarat:
+      "bunyi Pasal 116 huruf g KHI belum disalin dari naskah resmi - huruf ini hanya ada di KHI, Pasal 19 PP Nomor 9 Tahun 1975 berhenti di huruf f",
   },
   {
     huruf: "H",

@@ -483,8 +483,80 @@ describe("nomor 6 - huruf alasan diambil dari naskah resmi", () => {
     expect(h?.dasar[0].sumber.pembanding).not.toBe(h?.dasar[0].sumber.tautan);
   });
 
-  it("tidak ada lagi huruf yang bunyinya belum diambil", () => {
-    expect(aturan.belumSiap()).toEqual([]);
+  /**
+   * ==========================================================================
+   * YANG BELUM SIAP HANYA G - DAN SEBABNYA HARUS DISEBUT
+   * ==========================================================================
+   *
+   * Tuntutan ini dahulu berbunyi `belumSiap()` harus KOSONG, dan itu benar
+   * selama hanya empat huruf yang tercatat. Sejak huruf C, D, E, dan G ikut
+   * dicatat, kosong bukan lagi ukuran yang tepat: huruf G hanya ada di KHI,
+   * dan naskah KHI belum dapat disalin dari mesin ini.
+   *
+   * Yang dijaga karena itu bergeser, bukan dilonggarkan. Daftar belum-siap
+   * tidak boleh MENUMPUK diam-diam, dan tiap huruf yang dinyatakan siap harus
+   * sungguh punya bunyi - dua hal yang dituntut terpisah di bawah.
+   */
+  it("hanya huruf G yang bunyinya belum diambil, dan sebabnya disebut", () => {
+    const belum = aturan.belumSiap();
+    expect(belum.map((x) => x.huruf)).toEqual(["G"]);
+    expect(belum[0].sebab).toContain("KHI");
+  });
+
+  it("tiap huruf yang dinyatakan siap sungguh punya bunyi", () => {
+    // Inilah yang sebenarnya dijaga tuntutan lama: huruf setengah jadi tidak
+    // boleh menyamar sebagai huruf yang lengkap. `usulkan()` memulangkan
+    // seluruh dasar apa adanya, sehingga dasar yang kosong akan muncul di
+    // layar sebagai huruf tanpa naskah - dan huruf tanpa naskah pada layar
+    // penyusun putusan lebih buruk daripada huruf yang tidak muncul.
+    for (const h of aturan.HURUF) {
+      if (!h.siap) continue;
+      expect(h.dasar.length, h.huruf).toBeGreaterThan(0);
+      for (const d of h.dasar) {
+        expect(String(d.bunyi || "").trim().length, `${h.huruf} - ${d.sumber.nama}`).toBeGreaterThan(20);
+      }
+    }
+  });
+
+  /**
+   * Huruf C, D, dan E disalin dari naskah PP yang SAMA dengan huruf A, B, F.
+   *
+   * Ekstraksi itu memeriksa dirinya sendiri: huruf a, b, dan f yang sudah
+   * lebih dulu ada terbukti sama kata demi kata dengan yang baru diekstrak,
+   * sehingga c, d, dan e dari ekstraksi yang sama berdiri di atas dasar yang
+   * sudah terbukti. Bunyinya dikunci di sini - satu kata yang berubah
+   * mengubah dasar hukum putusan.
+   */
+  it("huruf C, D, dan E memuat bunyi Pasal 19 PP apa adanya", () => {
+    const bunyi = (huruf: string) =>
+      aturan.HURUF.find((x) => x.huruf === huruf)?.dasar[0]?.bunyi ?? "";
+    expect(bunyi("C")).toBe(
+      "Salah satu pihak mendapat hukuman penjara 5 (lima) tahun atau hukuman yang lebih berat setelah perkawinan berlangsung"
+    );
+    expect(bunyi("D")).toBe(
+      "Salah satu pihak melakukan kekejaman atau penganiayaan berat yang membahayakan pihak yang lain"
+    );
+    expect(bunyi("E")).toBe(
+      "Salah satu pihak mendapat cacat badan atau penyakit dengan akibat tidak dapat menjalankan kewajibannya sebagai suami/isteri"
+    );
+    for (const huruf of ["C", "D", "E"]) {
+      const h = aturan.HURUF.find((x) => x.huruf === huruf);
+      expect(h?.dasar[0].sumber.nama, huruf).toContain("PP Nomor 9 Tahun 1975");
+      // Bunyi KHI-nya belum ada, dan itu harus dinyatakan - bukan dibiarkan
+      // tampak lengkap.
+      expect(h?.dasar[0].catatanNaskah, huruf).toContain("KHI");
+    }
+  });
+
+  /**
+   * Huruf C dan E membawa syarat yang tidak dapat disimpulkan dari kata
+   * pemicunya - persis seperti huruf B dan H.
+   */
+  it("huruf yang menuntut syarat tidak dibiarkan tanpa syarat", () => {
+    for (const huruf of ["C", "D", "E"]) {
+      const h = aturan.HURUF.find((x) => x.huruf === huruf);
+      expect(String(h?.syarat || "").length, huruf).toBeGreaterThan(20);
+    }
   });
 
   it("huruf H membawa syarat AKIBAT, bukan sekadar kata murtad", () => {
