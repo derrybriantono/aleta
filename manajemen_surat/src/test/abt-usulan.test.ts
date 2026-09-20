@@ -1482,3 +1482,88 @@ describe("ciri alasan dibaca dari bunyi posita yang berbeda-beda", () => {
     ).not.toContain("salah satu pihak menjalani pidana penjara");
   });
 });
+
+/**
+ * ============================================================================
+ * RAGAM KALIMAT - DI DALAM SATU BERITA ACARA, DAN DI ANTARA BANYAK PERKARA
+ * ============================================================================
+ *
+ * Tiap keadaan dahulu punya TEPAT DUA bunyi: satu untuk saksi pertama, satu
+ * untuk saksi kedua. Di dalam satu berkas itu cukup; di seluruh register
+ * tidak - perkara kedua puluh berbunyi sama kata demi kata dengan perkara
+ * pertama, dan berita acara yang begitu tidak lagi terbaca sebagai keterangan
+ * saksi.
+ *
+ * Dua sifat yang harus berjalan bersama, dan keduanya mudah rusak sendirian:
+ * jawabannya berganti bentuk, TETAPI berkas yang sama disusun ulang harus
+ * memberi hasil yang sama persis.
+ */
+describe("ragam kalimat keterangan saksi", () => {
+  type Baris = { no: string; tanya: string; jawab: string };
+  type Hasil = {
+    saksi1: Baris[];
+    saksi2: Baris[];
+    identik: number;
+    perluDiisi: { no: string }[];
+  };
+  const susun = (layanan as unknown as {
+    susunKeteranganSaksiSdg: (o: { templat: Baris[]; posita: string }) => Hasil;
+  }).susunKeteranganSaksiSdg;
+
+  const templat: Baris[] = [
+    { no: "7", tanya: "Apakah saksi tahu penyebab perselisihan mereka?", jawab: "Ya, penyebabnya yaitu ...........;" },
+    { no: "8", tanya: "Bagaimana saudara mengetahui penyebab itu?", jawab: "Saya ...........;" },
+    { no: "12", tanya: "Apakah saksi pernah melihat mereka bertengkar?", jawab: "Saya (melihat/mendengar) sendiri;" },
+  ];
+  const posita = "Bahwa sejak 2023 rumah tangga sering cekcok karena Tergugat tidak memberi nafkah;";
+
+  it("disusun dua kali memberi hasil yang sama persis", () => {
+    // Acak berarti petugas yang mencetak dua kali memegang dua naskah yang
+    // berbeda tanpa tahu mana yang dipakai.
+    const a = susun({ templat, posita });
+    const b = susun({ templat, posita });
+    expect(JSON.stringify(a.saksi1)).toBe(JSON.stringify(b.saksi1));
+    expect(JSON.stringify(a.saksi2)).toBe(JSON.stringify(b.saksi2));
+  });
+
+  it("dua saksi tidak menjawab sama kata demi kata", () => {
+    expect(susun({ templat, posita }).identik).toBe(0);
+  });
+
+  /**
+   * Pembuka tidak boleh ditumpuk.
+   *
+   * Bentuk modus yang baru sebagian sudah menyatakan sendiri sejauh mana saksi
+   * mengetahuinya ("sepanjang yang saya ketahui, ..."). Pembuka yang tetap
+   * ditambahkan di depannya menerbitkan "Yang saya ketahui, sepanjang yang
+   * saya ketahui, ..." - dua kali hal yang sama dalam satu kalimat, dan itu
+   * justru kesan naskah mesin yang dihindari seluruh bagian ragam ini.
+   */
+  it("pembuka tidak ditumpuk di atas kalimat yang sudah berpembuka", () => {
+    const h = susun({ templat, posita });
+    for (const baris of [...h.saksi1, ...h.saksi2]) {
+      expect(baris.jawab, baris.jawab).not.toMatch(
+        /\b(saya ketahui|saya tahu|setahu saya|sepengetahuan saya)\b[^;]*\b(sepanjang|sejauh|sepengetahuan|setahu)\b/i
+      );
+    }
+  });
+
+  it("tiap jawaban dimulai huruf besar", () => {
+    const h = susun({ templat, posita });
+    for (const baris of [...h.saksi1, ...h.saksi2]) {
+      expect(baris.jawab.charAt(0), baris.jawab).toBe(baris.jawab.charAt(0).toUpperCase());
+    }
+  });
+
+  /**
+   * Pilihan templat tetap ditandai meski kalimatnya sudah digabung.
+   *
+   * "(melihat/mendengar)" digabung menjadi "melihat dan mendengar" supaya
+   * kalimatnya utuh dibaca - tetapi saksi yang hanya MENDENGAR dari balik
+   * dinding tidak melihatnya. Barisnya harus tetap menunggu keterangan yang
+   * sesungguhnya; yang lenyap dari daftar tidak pernah diperiksa lagi.
+   */
+  it("pilihan melihat/mendengar tetap menunggu keterangan sesungguhnya", () => {
+    expect(susun({ templat, posita }).perluDiisi.map((x) => x.no)).toContain("12");
+  });
+});

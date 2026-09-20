@@ -1092,11 +1092,18 @@ function dariPositaItsbat(posita, pihak) {
 
 /** Dua bank pembuka kalimat, satu untuk tiap saksi. Substansi tidak berubah. */
 const RAGAM_PEMBUKA = [
-  ["Ya, ", "Benar, ", "Betul, ", "Setahu saya, ", "Sepengetahuan saya, "],
-  ["Benar, ", "Iya, ", "Ya, ", "Yang saya ketahui, ", "Seingat saya, "],
+  ["Ya, ", "Benar, ", "Betul, ", "Setahu saya, ", "Sepengetahuan saya, ", "Sepanjang saya tahu, ", "Yang saya alami, "],
+  ["Benar, ", "Iya, ", "Ya, ", "Yang saya ketahui, ", "Seingat saya, ", "Sejauh yang saya tahu, ", "Menurut yang saya lihat, "],
 ];
 
-/** Pasangan kata yang boleh saling mengganti tanpa mengubah makna hukumnya. */
+/**
+ * Pasangan kata yang boleh saling mengganti tanpa mengubah makna hukumnya.
+ *
+ * Syaratnya ketat: yang berganti harus cara mengatakannya, BUKAN apa yang
+ * dikatakan. "sering" dan "kerap" sama; "sering" dan "selalu" tidak - yang
+ * kedua menaikkan keterangan saksi menjadi lebih tegas daripada yang ia
+ * ucapkan, dan itu bukan ragam bahasa melainkan perubahan kesaksian.
+ */
 const RAGAM_KATA = [
   [/\bkarena\b/g, "sebab"],
   [/\bsudah\b/g, "telah"],
@@ -1108,7 +1115,33 @@ const RAGAM_KATA = [
   [/\bbertempat tinggal\b/g, "berdiam"],
   [/\bsaat ini\b/g, "sekarang ini"],
   [/\bsampai sekarang\b/g, "hingga kini"],
+  [/\bkemudian\b/g, "lalu"],
+  [/\bnamun\b/g, "tetapi"],
+  [/\bsehingga\b/g, "hingga"],
+  [/\bberselisih\b/g, "bertengkar"],
+  [/\bpertengkaran\b/g, "perselisihan"],
+  [/\brumah tangga\b/g, "kehidupan rumah tangga"],
+  [/\bpisah rumah\b/g, "tinggal terpisah"],
+  [/\bmeninggalkan\b/g, "pergi meninggalkan"],
+  [/\bterakhir kali\b/g, "penghabisan kali"],
+  [/\bsejak\b/g, "terhitung sejak"],
+  [/\bkeluarga\b/g, "pihak keluarga"],
+  [/\btetangga\b/g, "warga sekitar"],
+  [/\bmendamaikan\b/g, "merukunkan"],
+  [/\bbenar\b/gi, "betul"],
 ];
+
+/**
+ * Kalimat yang SUDAH menyatakan sejauh mana saksi mengetahuinya.
+ *
+ * Pembuka tidak boleh ditambahkan di depannya. Tanpa pemeriksaan ini terbit
+ * "Yang saya ketahui, sepanjang yang saya ketahui, mereka bertengkar karena
+ * ..." - dua kali menyatakan hal yang sama dalam satu kalimat, dan itu terbaca
+ * sebagai naskah yang disusun mesin, persis kesan yang dihindari seluruh
+ * bagian ragam ini.
+ */
+const POLA_SUDAH_BERPEMBUKA =
+  /^(ya|benar|betul|iya|setahu|sepengetahuan|sepanjang|sejauh|seingat|menurut|yang saya|sebatas)\b/i;
 
 /** Penanda jawaban templat yang masih menunggu isian manusia. */
 const POLA_BELUM_TERISI = /\.{3,}|_{3,}|\bmelihat\/mendengar\b|\bdilihat\/didengar\b|\bXX+\b/i;
@@ -1138,6 +1171,14 @@ function ragamkanJawaban(jawaban, nomorSaksi, urutan) {
   }
   // Kalimat penutup "Sudah cukup" dan jawaban satu-dua kata tidak diberi pembuka.
   if (/^(sudah|cukup|tidak ada)/i.test(teks) || teks.split(" ").length < 3) return teks.replace(/[;.]?$/, ";");
+  // Begitu pula kalimat yang sudah menyatakan sendiri sejauh mana saksi
+  // mengetahuinya - menambahkan pembuka di depannya mengulang hal yang sama.
+  // Huruf pertamanya dibesarkan di sini: tanpa pembuka, tidak ada lagi yang
+  // memulai kalimatnya, dan jawaban berhuruf kecil di dalam berita acara
+  // terbaca sebagai potongan yang terlanjur tersalin.
+  if (POLA_SUDAH_BERPEMBUKA.test(teks)) {
+    return (teks.charAt(0).toUpperCase() + teks.slice(1)).replace(/[;.]?$/, ";");
+  }
   const pembuka = bank[(urutan + (nomorSaksi === 2 ? 2 : 0)) % bank.length];
   teks = pembuka + teks.charAt(0).toLowerCase() + teks.slice(1);
   return teks.replace(/[;.]?$/, ";");
@@ -1227,9 +1268,36 @@ function sebutanSumberCerita(kode, pelaku, lawan) {
 }
 
 /** Jawaban modus untuk tiga kelompok pertanyaan. Pola bervariasi per saksi. */
-function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi }) {
+/**
+ * ============================================================================
+ * SATU MODUS, BEBERAPA BENTUK KALIMAT
+ * ============================================================================
+ *
+ * Tiap keadaan dahulu punya TEPAT DUA bunyi - satu untuk saksi pertama, satu
+ * untuk saksi kedua. Di dalam satu berita acara itu cukup; di seluruh register
+ * tidak. Perkara kedua puluh memakai kalimat yang sama persis dengan perkara
+ * pertama, dan berita acara yang berbunyi sama kata demi kata pada dua puluh
+ * perkara berbeda tidak lagi terbaca sebagai keterangan saksi.
+ *
+ * Yang dipilih ditentukan nomor saksi DAN urutan pertanyaannya - bukan diacak.
+ * Acak berarti menyusun ulang berkas yang sama menghasilkan berita acara yang
+ * berbeda, dan petugas yang mencetak dua kali akan memegang dua naskah yang
+ * tidak sama tanpa tahu mana yang dipakai.
+ *
+ * Bentuk-bentuk dalam satu bank harus SETARA maknanya. Yang berbeda cara
+ * mengatakannya, bukan apa yang dikatakan - keterangan saksi bukan tempat
+ * mengarang isi.
+ */
+function ragamModus(bentuk, nomorSaksi, urutan) {
+  if (!Array.isArray(bentuk) || bentuk.length === 0) return null;
+  const geser = (nomorSaksi === 2 ? 1 : 0) + (Number(urutan) || 0);
+  return bentuk[geser % bentuk.length];
+}
+
+function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan }) {
   const daftar = alasan.join(nomorSaksi === 2 ? " serta " : " dan ");
   const kedua = nomorSaksi === 2;
+  const pilih = (bentuk) => ragamModus(bentuk, nomorSaksi, urutan);
 
   // CARA TAHU diperiksa PALING DULU. "Bagaimana saudara mengetahui penyebab
   // perselisihan itu?" memuat kata "penyebab" juga - tetapi ia bertanya
@@ -1238,38 +1306,53 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi }) {
   // menyaksikan" mendadak mengaku "melihat sendiri".
   if (/bagaimana .*(mengetahui|tahu)|dari mana .*(tahu|mengetahui)/i.test(tanya)) {
     if (modus === "dari-cerita") {
-      return kedua
-        ? `saya mengetahuinya karena ${sumber} bercerita kepada saya`
-        : `saya mengetahui karena diceritakan oleh ${sumber}`;
+      return pilih([
+        `saya mengetahui karena diceritakan oleh ${sumber}`,
+        `saya mengetahuinya karena ${sumber} bercerita kepada saya`,
+        `${sumber} sendiri yang menceritakan hal itu kepada saya`,
+        `saya tahu dari penuturan ${sumber} langsung`,
+      ]);
     }
     if (modus === "tidak-melihat") {
-      return kedua
-        ? "saya mengetahuinya dari cerita orang-orang di sekitar mereka"
-        : "saya mengetahui dari cerita keluarga dan tetangga";
+      return pilih([
+        "saya mengetahui dari cerita keluarga dan tetangga",
+        "saya mengetahuinya dari cerita orang-orang di sekitar mereka",
+        "hal itu saya dengar dari pembicaraan keluarga mereka",
+        "saya tahu dari orang-orang yang tinggal berdekatan dengan mereka",
+      ]);
     }
     if (modus === "tidak-tahu") return null;
-    return kedua
-      ? "saya mengetahuinya karena melihat dan mendengar sendiri"
-      : "saya mengetahui karena saya melihat sendiri";
+    return pilih([
+      "saya mengetahui karena saya melihat sendiri",
+      "saya mengetahuinya karena melihat dan mendengar sendiri",
+      "saya menyaksikannya sendiri di rumah mereka",
+      "saya mengetahuinya karena saya sendiri yang menyaksikan",
+    ]);
   }
 
   // Saksi yang hanya tahu pisahnya: tidak satu pun pertanyaan tentang
   // pertengkaran boleh dijawab seolah ia menyaksikannya.
   if (modus === "tahu-pisah") {
     if (/penyebab|sebab|alasan/i.test(tanya)) {
-      return kedua
-        ? "saya tidak mengetahui adanya pertengkaran di antara mereka, yang saya ketahui hanya mereka sudah tidak tinggal serumah"
-        : "saya tidak pernah mengetahui mereka bertengkar; yang saya tahu keduanya sekarang sudah berpisah rumah";
+      return pilih([
+        "saya tidak pernah mengetahui mereka bertengkar; yang saya tahu keduanya sekarang sudah berpisah rumah",
+        "saya tidak mengetahui adanya pertengkaran di antara mereka, yang saya ketahui hanya mereka sudah tidak tinggal serumah",
+        "perselisihan mereka tidak saya ketahui; yang saya tahu hanya keduanya kini tinggal terpisah",
+      ]);
     }
     if (/melihat|mendengar|menyaksikan|berapa kali/i.test(tanya)) {
-      return kedua
-        ? "saya tidak pernah melihat maupun mendengar mereka bertengkar"
-        : "saya belum pernah menyaksikan atau mendengar pertengkaran mereka";
+      return pilih([
+        "saya belum pernah menyaksikan atau mendengar pertengkaran mereka",
+        "saya tidak pernah melihat maupun mendengar mereka bertengkar",
+        "tidak pernah sekalipun saya melihat atau mendengar mereka bertengkar",
+      ]);
     }
     if (/rukun|damai|mendamaikan|sanggup/i.test(tanya)) {
-      return kedua
-        ? "karena saya tidak mengetahui persoalannya, saya tidak dapat mendamaikan mereka"
-        : "saya tidak mengetahui pokok persoalannya, sehingga saya tidak sanggup mendamaikan";
+      return pilih([
+        "saya tidak mengetahui pokok persoalannya, sehingga saya tidak sanggup mendamaikan",
+        "karena saya tidak mengetahui persoalannya, saya tidak dapat mendamaikan mereka",
+        "saya tidak sanggup mendamaikan sebab persoalan mereka tidak saya ketahui",
+      ]);
     }
     // Pertanyaan tentang pisah rumah TIDAK dijawab di sini - itu justru yang
     // diketahui saksi ini, dan templatnya sudah tepat.
@@ -1277,35 +1360,48 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi }) {
 
   if (/penyebab|sebab|alasan/i.test(tanya)) {
     if (modus === "tidak-tahu" || modus === "tidak-melihat") {
-      return kedua
-        ? "saya tidak mengetahui apa penyebabnya, yang saya tahu mereka sudah tidak rukun dan sudah berpisah"
-        : "saya tidak tahu persis penyebabnya, saya hanya mengetahui mereka sering berselisih dan kini sudah pisah rumah";
+      return pilih([
+        "saya tidak tahu persis penyebabnya, saya hanya mengetahui mereka sering berselisih dan kini sudah pisah rumah",
+        "saya tidak mengetahui apa penyebabnya, yang saya tahu mereka sudah tidak rukun dan sudah berpisah",
+        "penyebabnya tidak saya ketahui; yang saya lihat mereka memang sering berselisih dan sekarang sudah berpisah",
+      ]);
     }
     if (modus === "dari-cerita") {
-      return kedua
-        ? `menurut cerita ${sumber} kepada saya, penyebabnya adalah ${daftar || "perselisihan yang terus-menerus"}`
-        : `yang saya ketahui dari cerita ${sumber}, penyebabnya yaitu ${daftar || "perselisihan yang terus-menerus"}`;
+      const isi = daftar || "perselisihan yang terus-menerus";
+      return pilih([
+        `yang saya ketahui dari cerita ${sumber}, penyebabnya yaitu ${isi}`,
+        `menurut cerita ${sumber} kepada saya, penyebabnya adalah ${isi}`,
+        `${sumber} menceritakan kepada saya bahwa penyebabnya ${isi}`,
+      ]);
     }
     if (modus === "sebagian") {
-      return kedua
-        ? `yang saya ketahui sendiri hanya ${daftar}, selebihnya saya tidak tahu`
-        : `sepengetahuan saya penyebabnya adalah ${daftar}, penyebab lainnya saya tidak mengetahui`;
+      return pilih([
+        `sepengetahuan saya penyebabnya adalah ${daftar}, penyebab lainnya saya tidak mengetahui`,
+        `yang saya ketahui sendiri hanya ${daftar}, selebihnya saya tidak tahu`,
+        `sebatas yang saya ketahui penyebabnya ${daftar}; selain itu saya tidak dapat menerangkan`,
+      ]);
     }
-    return kedua
-      ? `penyebabnya sepengetahuan saya adalah ${daftar}`
-      : `penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu ${daftar}`;
+    return pilih([
+      `penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu ${daftar}`,
+      `penyebabnya sepengetahuan saya adalah ${daftar}`,
+      `sepanjang yang saya ketahui, mereka berselisih karena ${daftar}`,
+    ]);
   }
 
   if (/melihat|mendengar|menyaksikan|berapa kali/i.test(tanya)) {
     if (modus === "tidak-melihat" || modus === "dari-cerita") {
-      return kedua
-        ? "saya tidak pernah melihat sendiri mereka bertengkar, saya mengetahuinya dari cerita"
-        : "saya tidak pernah menyaksikan langsung pertengkaran mereka";
+      return pilih([
+        "saya tidak pernah menyaksikan langsung pertengkaran mereka",
+        "saya tidak pernah melihat sendiri mereka bertengkar, saya mengetahuinya dari cerita",
+        "pertengkaran itu tidak pernah saya saksikan sendiri, hanya saya dengar dari cerita",
+      ]);
     }
     if (modus === "tidak-tahu") {
-      return kedua
-        ? "saya pernah mendengar mereka bertengkar, tetapi tidak tahu apa yang dipersoalkan"
-        : "saya pernah melihat mereka bertengkar beberapa kali, namun tidak tahu sebabnya";
+      return pilih([
+        "saya pernah melihat mereka bertengkar beberapa kali, namun tidak tahu sebabnya",
+        "saya pernah mendengar mereka bertengkar, tetapi tidak tahu apa yang dipersoalkan",
+        "beberapa kali saya melihat mereka bertengkar, tetapi persoalannya tidak saya ketahui",
+      ]);
     }
     return null; // sama / sebagian: jawaban templat sudah tepat
   }
@@ -1471,6 +1567,11 @@ function susunKeteranganSaksiSdg(opsi) {
         alasan: m.alasan,
         sumber: m.sumber,
         nomorSaksi,
+        // Urutan pertanyaan ikut menentukan bentuk kalimat yang dipilih -
+        // supaya dua jawaban berdekatan dalam satu berita acara tidak memakai
+        // bentuk yang sama, dan supaya pilihannya tetap sama tiap kali berkas
+        // yang sama disusun ulang.
+        urutan: i,
       });
       if (dariModus) jawab = dariModus;
 
