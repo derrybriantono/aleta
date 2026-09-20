@@ -160,6 +160,28 @@ const HURUF = [
    * PP Nomor 9 Tahun 1975 berlaku bagi semua perkawinan, termasuk yang
    * diperiksa Pengadilan Agama. Yang menyusun putusan melihat sendiri dasar
    * mana yang tersedia dan memilih mengutipnya atau menunggu.
+   *
+   * ==========================================================================
+   * BLANGKO [01] BELUM MENGENAL KETIGANYA - DAN ITU HARUS TERBACA LEBIH DULU
+   * ==========================================================================
+   *
+   * Diperiksa langsung pada aps_badilag.abt_variabel 20 September 2026: kueri
+   * 4020, 8521, 8522, 8528, dan 8530 seluruhnya berupa CASE atas '#8503#', dan
+   * tidak satu pun punya cabang untuk C, D, E, atau G. Yang dikenali hanya
+   * A, B, F, H beserta gabungan AB, AF, BF, dan ABF.
+   *
+   * Huruf yang tidak dikenali jatuh ke cabang ELSE, yang berbunyi "TIDAK BENAR
+   * QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT" - dan kalimat itu ikut TERCETAK
+   * ke dalam putusan.
+   *
+   * Ekstensi sudah menahannya sesudah 8503 ditulis, tetapi peringatan yang
+   * datang sesudah orang memilih bukan peringatan yang menolong. Karena itu
+   * keadaan ini ikut disebut pada `syarat` masing-masing - yang ditampilkan di
+   * sebelah kotak centangnya, sebelum dicentang.
+   *
+   * Begitu cabang barunya ditambahkan ke blangko, kalimat ini dihapus dari
+   * ketiga syarat di bawah. Sampai saat itu, ia yang menahan putusan tercetak
+   * dengan kalimat galat di dalamnya.
    */
   {
     huruf: "C",
@@ -177,7 +199,7 @@ const HURUF = [
     // dijadikan ciri hanya bunyi yang menunjuk pidana penjaranya.
     ciri: ["hukuman penjara", "dipenjara", "pidana penjara", "lembaga pemasyarakatan"],
     syarat:
-      "menuntut DUA hal sekaligus: hukumannya 5 (lima) tahun atau lebih berat, DAN dijatuhkan setelah perkawinan berlangsung - periksa putusan pidananya, keduanya tidak dapat disimpulkan dari keterangan saksi",
+      "menuntut DUA hal sekaligus: hukumannya 5 (lima) tahun atau lebih berat, DAN dijatuhkan setelah perkawinan berlangsung - periksa putusan pidananya, keduanya tidak dapat disimpulkan dari keterangan saksi | PERHATIAN: blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisi huruf ini membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan",
   },
   {
     huruf: "D",
@@ -204,7 +226,7 @@ const HURUF = [
     // terbaca dari kata "memukul". Sekali menampar dan penganiayaan yang
     // membahayakan nyawa sama-sama memicu ciri di atas.
     syarat:
-      "menuntut kekejaman atau penganiayaan yang BERAT dan MEMBAHAYAKAN pihak lain - periksa derajatnya, sebab ciri di atas menyala pada kekerasan tingkat apa pun",
+      "menuntut kekejaman atau penganiayaan yang BERAT dan MEMBAHAYAKAN pihak lain - periksa derajatnya, sebab ciri di atas menyala pada kekerasan tingkat apa pun | PERHATIAN: blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisi huruf ini membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan",
   },
   {
     huruf: "E",
@@ -221,7 +243,7 @@ const HURUF = [
     // ada di hampir tiap keterangan saksi perkara perselisihan.
     ciri: ["cacat badan", "cacat tetap", "impoten", "gangguan jiwa"],
     syarat:
-      "menuntut AKIBAT: cacat atau penyakitnya harus mengakibatkan tidak dapat menjalankan kewajiban sebagai suami/isteri - periksa apakah akibat itu terbukti, bukan penyakitnya saja",
+      "menuntut AKIBAT: cacat atau penyakitnya harus mengakibatkan tidak dapat menjalankan kewajiban sebagai suami/isteri - periksa apakah akibat itu terbukti, bukan penyakitnya saja | PERHATIAN: blangko [01] belum punya cabang untuk huruf ini - 8503 yang berisi huruf ini membuat 4020, 8521, 8522, 8528, dan 8530 berbunyi 'TIDAK BENAR QUERY NYA' dan kalimat itu ikut tercetak ke dalam putusan",
   },
   {
     huruf: "F",
