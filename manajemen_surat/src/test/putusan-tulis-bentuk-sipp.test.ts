@@ -204,11 +204,34 @@ describe("kering sebagai bawaan, tiap lapis", () => {
     expect(rute).toContain("kering: badan.kering !== false,");
   });
 
-  it("layar - tombol tulis terkunci sampai rencananya dibaca", () => {
+  it("layar - TIAP tombol tulis terkunci sampai rencananya dibaca", () => {
     expect(layar).toContain("const rencanaKering = hasil?.ok === true && hasil.kering === true;");
     expect(layar).toContain("disabled={!rencanaKering || sibuk || sudahTertulis}");
-    const kirimFalse = layar.match(/kirim\(false\)/g) || [];
-    expect(kirimFalse.length).toBe(1);
+
+    // ====================================================================
+    // YANG DIJAGA BUKAN JUMLAHNYA, MELAINKAN PENGUNCINYA
+    // ====================================================================
+    //
+    // Berkas ini kini berisi DUA komponen yang menulis ke SIPP: borang
+    // lengkapnya, dan CatatHasilRingkas yang dipakai langsung dari baris
+    // antrian. Keduanya terkunci sampai rencananya dibaca - hanya caranya
+    // berbeda: yang satu tombol yang dinonaktifkan, yang lain tombol yang
+    // belum digambar sama sekali.
+    //
+    // Menghitung kemunculannya karena itu salah sasaran. Yang dimaksud bukan
+    // "hanya ada satu tombol tulis" melainkan "tidak ada tombol tulis yang
+    // TIDAK terkunci" - dan itulah yang dituntut di bawah. Tombol tulis
+    // ketiga yang lupa dikunci tetap merah.
+    const semua = [...layar.matchAll(/kirim\(false\)/g)];
+    expect(semua.length, "tidak ada satu pun tombol tulis").toBeGreaterThan(0);
+    for (const cocok of semua) {
+      const i = cocok.index ?? 0;
+      const sebelum = layar.slice(Math.max(0, i - 400), i);
+      expect(
+        sebelum,
+        `pemanggilan kering=false pada huruf ke-${i} tidak terkunci rencanaKering`
+      ).toContain("rencanaKering");
+    }
   });
 
   it("percobaan yang ditolak ikut tercatat di jejak ALETA", () => {

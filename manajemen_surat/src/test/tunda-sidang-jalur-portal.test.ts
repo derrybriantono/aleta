@@ -59,11 +59,17 @@ describe("kering sebagai bawaan di tiap lapis", () => {
     expect(layar).toContain("disabled={!rencanaKering || sibuk || sudahTertulis}");
   });
 
-  it("layar tidak pernah mengirim kering:false tanpa tombol keduanya", () => {
-    // Satu-satunya pemanggilan dengan kering=false adalah tombol "Tulis ke
-    // SIPP", dan tombol itu sendiri terkunci sampai rencananya dibaca.
-    const kirimFalse = layar.match(/kirim\(false\)/g) || [];
-    expect(kirimFalse.length).toBe(1);
+  it("layar tidak pernah mengirim kering:false tanpa tombol yang terkunci", () => {
+    // Tiap pemanggilan dengan kering=false berasal dari tombol "Tulis ke
+    // SIPP", dan tiap tombol itu terkunci sampai rencananya dibaca. Yang
+    // dijaga penguncinya, bukan jumlahnya - berkas ini memuat dua komponen
+    // penulis sejak borang ringkas dipakai dari baris antrian.
+    const semua = [...layar.matchAll(/kirim\(false\)/g)];
+    expect(semua.length).toBeGreaterThan(0);
+    for (const cocok of semua) {
+      const i = cocok.index ?? 0;
+      expect(layar.slice(Math.max(0, i - 400), i)).toContain("rencanaKering");
+    }
   });
 });
 

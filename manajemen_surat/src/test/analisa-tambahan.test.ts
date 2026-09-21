@@ -124,6 +124,7 @@ describe("sepuluh alat baru di Status Perkara", () => {
   const bagian = baca("manajemen_surat/src/lib/alat-bagian.ts");
   const riwayat = baca("manajemen_surat/src/lib/riwayat-perkara.ts");
   const status = baca("manajemen_surat/src/components/portal/aleta-ecourt-status-perkara.tsx");
+  const ciut = baca("manajemen_surat/src/components/portal/bagian-ciut.tsx");
 
   it("kesepuluhnya ada", () => {
     for (const tanda of [
@@ -156,13 +157,23 @@ describe("sepuluh alat baru di Status Perkara", () => {
     // Menaikkannya ke induk membuat seluruh layar digambar ulang tiap kali
     // satu bagian dibuka, dan sebagian bagian memuat tabel beratus baris.
     expect(bagian).toContain("export function siarkanAba");
-    expect(status).toContain("const lepasAba = langgananAba((aba) => {");
-    expect(status).toContain("if (aba.jenis === \"buka-semua\") setCiut(false);");
+    // Komponen Bagian DIPINDAHKAN ke bagian-ciut.tsx supaya layar Antrian
+    // Sidang memakai komponen yang SAMA, bukan salinannya. Yang dijaga tetap
+    // sama - hanya berkas yang memuatnya yang berpindah.
+    expect(ciut).toContain("const lepasAba = langgananAba((aba) => {");
+    expect(ciut).toContain("if (aba.jenis === \"buka-semua\") setCiut(false);");
+    // Dan layar status memang MEMAKAINYA, tidak menyimpan salinannya sendiri.
+    expect(status).toContain('from "@/components/portal/bagian-ciut"');
+    expect(status).not.toContain("function Bagian({");
   });
 
   it("bentuk kunci penyimpanan hanya punya SATU definisi", () => {
     expect(bagian).toContain("export function kunciCiut(kunci: string)");
-    expect(status).toContain("kunci ? kunciCiut(kunci) : \"\"");
+    expect(ciut).toContain("kunci ? kunciCiut(kunci) : \"\"");
+    // Satu definisi saja: layar yang menyusun bentuk kuncinya sendiri akan
+    // menyimpang diam-diam, dan yang menyimpang justru keadaan yang diingat
+    // peramban.
+    expect(status).not.toContain("kunciCiut(kunci)");
     // Dua tempat yang menyusunnya sendiri akan menyimpang diam-diam.
     expect(status).not.toContain("`aleta.status-perkara.ciut.${kunci}`");
   });

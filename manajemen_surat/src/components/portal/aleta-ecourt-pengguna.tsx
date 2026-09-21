@@ -303,7 +303,12 @@ export function AletaEcourtPengguna() {
     // menuliskannya sekali lagi di dalam halaman memakan ruang yang justru
     // dibutuhkan jadwal sidang - dan pada layar laptop, tiap seperempat
     // layar adalah lima baris sidang yang tidak terlihat.
-    <div className="space-y-4 p-4 sm:p-5">
+    // Padding ATAS dipangkas, samping dan bawah dibiarkan. Jarak dari tepi
+    // kepala halaman ke judul jadwal terukur 64 px pada sm ke atas, dan pada
+    // layar laptop tiap seperempat layar adalah lima baris sidang yang tidak
+    // terlihat. Yang dipangkas hanya ruang kosong di atas - bukan jarak antar
+    // kartu di bawahnya, yang justru memisahkan bagian.
+    <div className="space-y-4 p-4 pt-1 sm:p-5 sm:pt-1">
       {catatan ? <p className="rounded border border-border bg-muted/40 p-3 text-sm">{catatan}</p> : null}
 
       <div

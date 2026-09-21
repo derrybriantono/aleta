@@ -146,6 +146,25 @@ function perkaraGugatan(nomorPerkara: string) {
  * ditaruh sesudah sidang-sidang yang menuntutnya - dan para pihak tidak perlu
  * menunggu sepanjang pagi untuk sepuluh menit pertukaran berkas.
  */
+/**
+ * Usulan agenda sidang berikutnya - satu langkah sesudah agenda hari ini.
+ *
+ * USULAN, bukan keputusan, persis seperti tanggal dua pekan yang sudah lebih
+ * dahulu diusulkan borang ini. Perkara tidak selalu berjalan menurut urutan
+ * baku: pembuktian dapat berulang, mediasi menyela, dan gugatan dapat diubah.
+ * Karena itu yang dipulangkan hanya isian awal yang terlihat dan dapat
+ * diganti - bukan nilai yang terkirim diam-diam.
+ *
+ * Agenda yang tidak dikenali memulangkan kosong. Menebak dari kalimat yang
+ * tidak dikenali berarti menuliskan agenda karangan ke jadwal sidang orang.
+ */
+export function usulanAgendaBerikut(agendaSekarang: string) {
+  const teks = String(agendaSekarang || "").trim().toLowerCase();
+  const i = AGENDA_LAZIM.findIndex((a) => a.toLowerCase() === teks);
+  if (i < 0 || i >= AGENDA_LAZIM.length - 1) return "";
+  return AGENDA_LAZIM[i + 1];
+}
+
 const AGENDA_SORE = ["jawaban", "replik", "duplik", "kesimpulan", "jawab"];
 
 function jamMenurutAgenda(agenda: string) {
@@ -686,6 +705,449 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
           </CardContent>
         </Card>
       ) : null}
+    </div>
+  );
+}
+
+
+/**
+ * ============================================================================
+ * CATAT HASIL SIDANG LANGSUNG DARI BARIS ANTRIAN
+ * ============================================================================
+ *
+ * Panitera sidang mencatat hasil belasan sidang dalam satu pagi, dan sampai
+ * sekarang tiap satunya menuntut membuka nomor perkaranya, menunggu layar
+ * Hasil Sidang termuat, lalu kembali ke daftar untuk perkara berikutnya.
+ * Yang dicatat sendiri hanya dua hal: ditunda dengan alasan apa, atau diputus
+ * dengan status apa.
+ *
+ * ============================================================================
+ * MESINNYA SATU, TEMPATNYA DUA
+ * ============================================================================
+ *
+ * Alamat, bentuk muatan, jalan kering, dan seluruh nilai bawaannya SAMA
+ * dengan layar Hasil Sidang - itu sebabnya komponen ini duduk di berkas yang
+ * sama alih-alih di berkasnya sendiri. Dua jalan menulis ke SIPP yang disusun
+ * terpisah akan menyimpang diam-diam: yang satu diperbaiki, yang lain tidak,
+ * dan yang menyimpang adalah apa yang tertulis di berkas perkara orang.
+ *
+ * ============================================================================
+ * TETAP DUA TEKAN: RENCANA DAHULU, BARU TULIS
+ * ============================================================================
+ *
+ * "Instan" di sini berarti tanpa berpindah layar - BUKAN tanpa diperiksa.
+ * Rencananya tetap ditarik lebih dahulu lewat jalan kering dan diperlihatkan
+ * apa adanya, sebab yang ditulis ke SIPP tercatat atas nama panitera sidang
+ * perkara itu. Menghilangkan langkah itu demi satu tekan berarti menulis ke
+ * berkas perkara tanpa seorang pun melihat apa yang ditulis.
+ *
+ * Jalan PUTUS memang dapat selesai dalam dua tekan: statusnya berbawaan
+ * Dikabulkan - terukur 8.935 dari 9.993 putusan satker - dan tanggalnya hari
+ * ini. Jalan TUNDA tidak, dan itu disengaja: alasan penundaan tidak punya
+ * bawaan yang jujur. Alasan yang keliru pada berkas perkara lebih buruk
+ * daripada satu tekan tambahan.
+ */
+export function CatatHasilRingkas({
+  jadwalId,
+  nomorPerkara,
+  jalan,
+  onTutup,
+  onSelesai,
+}: {
+  jadwalId: string;
+  nomorPerkara: string;
+  jalan: "tunda" | "putus";
+  onTutup: () => void;
+  onSelesai: () => void;
+}) {
+  const [keadaan, setKeadaan] = useState<KeadaanSidang | null>(null);
+  const [galatMuat, setGalatMuat] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusPutusan[]>([]);
+
+  const [alasanTunda, setAlasanTunda] = useState("");
+  const [tanggalBerikut, setTanggalBerikut] = useState("");
+  const [jamBerikut, setJamBerikut] = useState("09:00");
+  const [agendaBerikut, setAgendaBerikut] = useState("");
+  const [dihadiri, setDihadiri] = useState(KEHADIRAN_BAWAAN);
+
+  // Langsung hari ini, TANPA efek - berbeda dari HasilSidang, dan sebabnya
+  // ada pada tempatnya dipasang. Borang ini hanya lahir sesudah tombolnya
+  // ditekan, jadi ia tidak pernah digambar peladen; selisih jam UTC/WITA yang
+  // memaksa HasilSidang menunda penyetelannya tidak dapat terjadi di sini.
+  const [tanggalPutus, setTanggalPutus] = useState(() => hariIni());
+  const [statusId, setStatusId] = useState("");
+  const [verstek, setVerstek] = useState(false);
+
+  const [hasil, setHasil] = useState<Hasil | null>(null);
+  const [sibuk, setSibuk] = useState(false);
+  const [sudahTertulis, setSudahTertulis] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      setGalatMuat(null);
+      try {
+        const balasan = await fetch(apiPath(`/api/aleta-ecourt/sidang-tunda?jadwalId=${jadwalId}`), {
+          cache: "no-store",
+        });
+        const isi = await bukaBungkus<{ ok: boolean; alasan?: string; keadaan?: KeadaanSidang }>(balasan);
+        if (!isi.ok || !isi.keadaan) {
+          setGalatMuat(isi.alasan || "Jadwal sidang tidak ditemukan.");
+          return;
+        }
+        setKeadaan(isi.keadaan);
+        const sudahAda = Number(isi.keadaan.dihadiriOleh);
+        if (KEHADIRAN.some((k) => k.nilai === sudahAda)) setDihadiri(sudahAda);
+        const tgl = String(isi.keadaan.tanggalSidang || "").slice(0, 10);
+        setTanggalBerikut(tambahHari(tgl, 14));
+        const usul = usulanAgendaBerikut(isi.keadaan.agenda);
+        if (usul) {
+          setAgendaBerikut(usul);
+          setJamBerikut(jamMenurutAgenda(usul));
+        }
+      } catch (e) {
+        setGalatMuat(e instanceof Error ? e.message : "Jadwal sidang tidak dapat dibaca.");
+      }
+    })();
+  }, [jadwalId]);
+
+  useEffect(() => {
+    if (jalan !== "putus") return;
+    void (async () => {
+      try {
+        const balasan = await fetch(apiPath("/api/aleta-ecourt/sidang-putus"), { cache: "no-store" });
+        const isi = await bukaBungkus<{ ok: boolean; daftar?: StatusPutusan[] }>(balasan);
+        if (isi.ok && Array.isArray(isi.daftar)) {
+          setStatus(isi.daftar);
+          const dikabulkan = isi.daftar.find((s) => /dikabulkan/i.test(s.nama));
+          if (dikabulkan) setStatusId(String(dikabulkan.id));
+        }
+      } catch {
+        // Daftar status yang gagal dimuat menyisakan pilihannya kosong.
+      }
+    })();
+  }, [jalan]);
+
+  /**
+   * ==========================================================================
+   * RENCANA BASI DIKENALI DARI SIDIK ISIANNYA, BUKAN DIBERSIHKAN BELAKANGAN
+   * ==========================================================================
+   *
+   * Rencana yang sudah ditarik menjadi BASI begitu isiannya diubah, dan tombol
+   * "Tulis ke SIPP" yang masih memegangnya akan menuliskan sesuatu yang
+   * berbeda dari yang diperlihatkan - persis kejadian yang membuat langkah
+   * rencana ini ada.
+   *
+   * Membersihkannya lewat useEffect terlambat satu gambar: di antara isian
+   * berubah dan efeknya berjalan, tombolnya masih terpasang dan masih dapat
+   * ditekan. Sidik isian menutup celah itu seluruhnya - rencananya dinilai
+   * berlaku atau tidak pada gambar yang SAMA dengan perubahannya.
+   */
+  const sidikIsian = JSON.stringify([
+    jalan,
+    alasanTunda,
+    tanggalBerikut,
+    jamBerikut,
+    agendaBerikut,
+    dihadiri,
+    statusId,
+    tanggalPutus,
+    verstek,
+  ]);
+  const [sidikRencana, setSidikRencana] = useState("");
+
+  const kirim = useCallback(
+    async (kering: boolean) => {
+      if (!keadaan) return;
+      setSibuk(true);
+      try {
+        const alamat = jalan === "tunda" ? "/api/aleta-ecourt/sidang-tunda" : "/api/aleta-ecourt/sidang-putus";
+        const muatan =
+          jalan === "tunda"
+            ? {
+                jadwalId: keadaan.jadwalId,
+                perkaraId: keadaan.perkaraId,
+                alasanTunda,
+                tanggalBerikut,
+                jamBerikut,
+                jamSekarang: keadaan.jamSidang,
+                agendaBerikut,
+                dihadiriOleh: dihadiri,
+                ruangId: keadaan.ruanganId,
+                kering,
+              }
+            : {
+                jalur: "sidang",
+                jadwalId: keadaan.jadwalId,
+                perkaraId: keadaan.perkaraId,
+                statusPutusanId: Number(statusId),
+                tanggalPutus,
+                verstek: verstek ? "Y" : "T",
+                jamSekarang: keadaan.jamSidang,
+                dihadiriOleh: dihadiri,
+                ruangId: keadaan.ruanganId,
+                kering,
+              };
+        const balasan = await fetch(apiPath(alamat), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(muatan),
+        });
+        const isi = await bukaBungkus<Hasil>(balasan);
+        setHasil(isi);
+        // Sidik isian yang MELAHIRKAN rencana ini ikut disimpan - itulah yang
+        // dibandingkan saat menilai rencananya masih menggambarkan isiannya.
+        if (kering) setSidikRencana(sidikIsian);
+        if (isi.ok && kering === false) {
+          setSudahTertulis(true);
+          onSelesai();
+        }
+      } catch (e) {
+        setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });
+      } finally {
+        setSibuk(false);
+      }
+    },
+    [keadaan, jalan, alasanTunda, tanggalBerikut, jamBerikut, agendaBerikut, dihadiri, statusId, tanggalPutus, verstek, onSelesai, sidikIsian]
+  );
+
+  const lengkap =
+    jalan === "tunda"
+      ? Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim())
+      : Boolean(statusId && tanggalPutus);
+  const rencanaKering =
+    hasil?.ok === true && hasil.kering === true && sidikRencana === sidikIsian;
+
+  if (galatMuat) {
+    return (
+      <div className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>{galatMuat}</span>
+        <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
+          Tutup
+        </Button>
+      </div>
+    );
+  }
+
+  if (!keadaan) {
+    return <p className="text-sm text-muted-foreground">Memuat keadaan sidang {nomorPerkara}…</p>;
+  }
+
+  if (sudahTertulis) {
+    return (
+      <div className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <div>
+          <p className="font-semibold">
+            {jalan === "tunda" ? "Penundaan" : "Putusan"} {nomorPerkara} tercatat di SIPP.
+          </p>
+          {hasil?.atasNama ? (
+            <p className="text-xs">
+              Atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username}).
+            </p>
+          ) : null}
+        </div>
+        <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
+          Tutup
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        {jalan === "tunda" ? (
+          <PauseCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+        ) : (
+          <Gavel className="h-4 w-4 text-primary" aria-hidden="true" />
+        )}
+        <span className="text-sm font-semibold">
+          {jalan === "tunda" ? "Tunda sidang" : "Catat putusan"} {nomorPerkara}
+        </span>
+        <Badge variant="muted">{keadaan.agenda || "tanpa agenda"}</Badge>
+        <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
+          Tutup
+        </Button>
+      </div>
+
+      {jalan === "tunda" ? (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-xs">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Alasan penundaan</span>
+            <input
+              list={`alasan-ringkas-${jadwalId}`}
+              value={alasanTunda}
+              onChange={(e) => setAlasanTunda(e.target.value)}
+              placeholder="Pilih atau ketik alasannya"
+              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            />
+            <datalist id={`alasan-ringkas-${jadwalId}`}>
+              {ALASAN_LAZIM.map((a) => (
+                <option key={a} value={a} />
+              ))}
+            </datalist>
+          </label>
+          <label className="text-xs">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Agenda berikutnya</span>
+            <input
+              list={`agenda-ringkas-${jadwalId}`}
+              value={agendaBerikut}
+              onChange={(e) => {
+                setAgendaBerikut(e.target.value);
+                setJamBerikut(jamMenurutAgenda(e.target.value));
+              }}
+              placeholder="Agenda sidang berikutnya"
+              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            />
+            <datalist id={`agenda-ringkas-${jadwalId}`}>
+              {AGENDA_LAZIM.map((a) => (
+                <option key={a} value={a} />
+              ))}
+            </datalist>
+          </label>
+          <label className="text-xs">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal berikutnya</span>
+            <input
+              type="date"
+              value={tanggalBerikut}
+              onChange={(e) => setTanggalBerikut(e.target.value)}
+              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            />
+          </label>
+          <label className="text-xs">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Jam</span>
+            <input
+              type="time"
+              value={jamBerikut}
+              onChange={(e) => setJamBerikut(e.target.value)}
+              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            />
+          </label>
+        </div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="text-xs">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Status putusan</span>
+            <NativeSelect
+              value={statusId}
+              onChange={(e) => setStatusId(e.target.value)}
+              className="h-8 text-sm"
+            >
+              <option value="">Pilih status</option>
+              {status.map((s) => (
+                <option key={s.id} value={String(s.id)}>
+                  {s.nama}
+                </option>
+              ))}
+            </NativeSelect>
+          </label>
+          <label className="text-xs">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal putusan</span>
+            <input
+              type="date"
+              value={tanggalPutus}
+              onChange={(e) => setTanggalPutus(e.target.value)}
+              className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            />
+          </label>
+          <label className="flex items-end gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={verstek}
+              onChange={(e) => setVerstek(e.target.checked)}
+              className="mb-1.5 h-4 w-4"
+            />
+            <span className="mb-1">Putusan verstek</span>
+          </label>
+        </div>
+      )}
+
+      <label className="block text-xs sm:max-w-md">
+        <span className="mb-0.5 block font-medium text-muted-foreground">Kehadiran pihak</span>
+        <NativeSelect
+          value={String(dihadiri)}
+          onChange={(e) => setDihadiri(Number(e.target.value))}
+          className="h-8 text-sm"
+        >
+          {KEHADIRAN.filter(
+            (k) => !k.hanyaGugatan || perkaraGugatan(keadaan.nomorPerkara) || k.nilai === dihadiri
+          ).map((k) => (
+            <option key={k.nilai} value={String(k.nilai)}>
+              {k.label}
+            </option>
+          ))}
+        </NativeSelect>
+      </label>
+
+      {/* ====================================================================
+          RENCANA DAHULU - TIDAK ADA JALAN PINTAS MELEWATINYA
+          ====================================================================
+
+          Tombol "Tulis ke SIPP" baru muncul sesudah rencananya ada di layar.
+          Ia bukan tombol yang dinonaktifkan - ia belum ada, sebab tombol tulis
+          yang kelihatan sejak awal mengundang orang menekannya lebih dahulu
+          dan kecewa, lalu mencari cara melewati langkah rencananya. */}
+      {hasil && !hasil.ok ? (
+        <p className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{hasil.alasan || "Permintaan ditolak peladen."}</span>
+        </p>
+      ) : null}
+
+      {rencanaKering ? (
+        <div className="rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-xs dark:border-sky-500/40 dark:bg-sky-500/10">
+          <p className="flex items-center gap-1.5 font-semibold text-sky-900 dark:text-sky-100">
+            <FileSearch className="h-3.5 w-3.5" aria-hidden="true" />
+            Rencana - belum ada yang tertulis
+          </p>
+          {hasil?.atasNama ? (
+            <p className="mt-0.5 text-sky-900 dark:text-sky-100">
+              Akan tercatat atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username}).
+            </p>
+          ) : null}
+          <ul className="mt-1 space-y-0.5 text-sky-900 dark:text-sky-100">
+            {(hasil?.rencana ?? []).map((l, n) => (
+              <li key={`${l.tabel}-${n}`}>
+                <span className="font-mono">{l.tabel}</span> {l.aksi} - {l.keterangan}
+              </li>
+            ))}
+          </ul>
+          {(hasil?.andaian ?? []).length > 0 ? (
+            <ul className="mt-1 space-y-0.5 text-amber-800 dark:text-amber-200">
+              {(hasil?.andaian ?? []).map((a, n) => (
+                <li key={`andaian-${n}`} className="flex items-start gap-1">
+                  <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span>{a}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="outline" disabled={!lengkap || sibuk} onClick={() => void kirim(true)}>
+          {sibuk && !rencanaKering ? "Menyusun…" : "Lihat rencana"}
+        </Button>
+        {rencanaKering ? (
+          <Button
+            size="sm"
+            className={cn(jalan === "tunda" ? "bg-amber-600 hover:bg-amber-700" : undefined)}
+            disabled={sibuk}
+            onClick={() => void kirim(false)}
+          >
+            {sibuk ? "Menulis…" : "Tulis ke SIPP"}
+          </Button>
+        ) : null}
+        {!lengkap ? (
+          <span className="text-xs text-muted-foreground">
+            {jalan === "tunda"
+              ? "Alasan, agenda, tanggal, dan jam harus terisi."
+              : "Status putusan dan tanggalnya harus terisi."}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

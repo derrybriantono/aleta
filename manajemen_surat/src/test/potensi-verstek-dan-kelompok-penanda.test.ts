@@ -157,7 +157,13 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
     const isi = komponen();
     expect(isi).toContain("function kelompokKeadaanTampak(");
     expect(isi).toContain(".filter((kelompok) => kelompok.anggota.length > 0)");
-    expect(isi).toContain("{kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok) => (");
+    // Dituntut PEMANGGILANNYA, bukan bentuk barisnya. Sejak deretnya dapat
+    // diciutkan (butir 3), panggilan ini dipecah beberapa baris untuk
+    // menyisipkan saringan "saat terciut, hanya kotak yang menyala" - dan
+    // penjaga yang mengunci satu baris utuh memaksa penulisnya memilih antara
+    // kode yang terbaca dan penjaga yang hijau.
+    expect(isi).toContain("kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih)");
+    expect(isi).toMatch(/\.map\(\(kelompok\) => \(/);
     expect(isi).toContain("{kelompok.label}");
     // Sejak deretannya dipadatkan, judul kelompok dan kotaknya dikurung SATU
     // pil - supaya judul tidak pernah tertinggal di ujung baris sementara

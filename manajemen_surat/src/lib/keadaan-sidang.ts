@@ -413,6 +413,75 @@ export function putusHariIni(baris: {
  * lewatEcourt yang tidak terbaca dianggap BUKAN e-Court: gagal-tertutup, sama
  * seperti jalur penilaian lain di ALETA.
  */
+/**
+ * ============================================================================
+ * SUDAH PUTUS HARI INI - DUA SUMBER, SATU JAWABAN
+ * ============================================================================
+ *
+ * SIPP menyimpan "sudah diputus" di DUA tempat yang tidak saling tahu:
+ *
+ *   perkara_putusan              baris resmi putusannya - dibaca putusHariIni
+ *   perkara_jadwal_sidang        kolom alasan_ditunda, tempat panitera
+ *                                mengetik hasil sidang - dibaca hasilSidangPutusan
+ *
+ * Tidak ada satu pun yang lengkap sendirian, dan itu terukur pada data satker:
+ *
+ *     2026-09-08   layar menghitung 1 sudah putus, hasil sidang menyebut 6
+ *                  (lima di antaranya tanpa satu baris pun di perkara_putusan)
+ *     2026-09-04   layar menghitung 18, hasil sidang menyebut 0
+ *                  (putusannya diisi di SIPP tanpa hasil sidang pernah diketik)
+ *
+ * Sepanjang sejarah 3.905 baris hasil-putus: 3.890 bertanggal sama, 4 berbeda,
+ * 11 tanpa baris putusan sama sekali. Perpecahannya kecil - tetapi ia SELALU
+ * jatuh pada hari yang sedang berjalan, yaitu hari yang justru sedang dilihat
+ * orang. Itulah sebabnya layar tampak berbohong pada dirinya sendiri: kotak
+ * hijau "Hasil sidang - putus DIKABULKAN (verstek)" berdiri di baris yang
+ * kolom putusannya berbunyi merah "putusan belum tercatat".
+ *
+ * Keduanya sah dan tidak boleh disatukan di basis data - yang satu catatan
+ * resmi, yang lain catatan ruang sidang. Yang disatukan PEMBACAANNYA, di sini.
+ */
+export function sudahPutusHariIni(baris: {
+  sudahPutus?: boolean;
+  tanggalPutusan?: string;
+  tanggalSidang?: string;
+  agenda?: string;
+  sidangIkrarTalak?: boolean;
+  ditunda?: boolean;
+  alasanDitunda?: string;
+}): boolean {
+  if (putusHariIni(baris)) return true;
+  // SIDANG IKRAR TALAK DIKECUALIKAN DI KEDUA JALUR, bukan hanya di
+  // putusHariIni. Putusannya dijatuhkan berbulan-bulan sebelumnya; yang
+  // dikerjakan hari ini pengucapan ikrarnya. Menghitungnya "diputus hari ini"
+  // membuat kotak Sudah putus menyebut perkara yang sudah lama selesai - dan
+  // itulah persis cacat yang dahulu sudah diperbaiki, yang tidak boleh kembali
+  // lewat pintu yang baru dibuka ini.
+  if (sidangIkrar(baris)) return false;
+  // hasilSidangPutusan sudah menolak baris yang bendera ditundanya menyala -
+  // yang ditunda bukan yang diputus.
+  return Boolean(hasilSidangPutusan(Boolean(baris.ditunda), String(baris.alasanDitunda || "")));
+}
+
+/**
+ * Sidangnya sudah selesai hari ini - ditunda ATAU diputus.
+ *
+ * Dipakai penanda baris pada daftar antrian. Ditunda ikut dihitung selesai:
+ * yang ditunda sudah dibuka, dibacakan, dan ditutup - ruangnya kosong lagi,
+ * dan itulah yang ditanyakan orang yang melihat daftar antrian.
+ */
+export function sidangSelesaiHariIni(baris: {
+  sudahPutus?: boolean;
+  tanggalPutusan?: string;
+  tanggalSidang?: string;
+  agenda?: string;
+  sidangIkrarTalak?: boolean;
+  ditunda?: boolean;
+  alasanDitunda?: string;
+}): boolean {
+  return Boolean(baris.ditunda) || sudahPutusHariIni(baris);
+}
+
 export function sidangElitigasi(baris: { agenda?: string; lewatEcourt?: boolean }): boolean {
   if (!baris.lewatEcourt) return false;
   return agendaElitigasi(baris.agenda || "");

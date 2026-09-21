@@ -885,6 +885,25 @@ const schemaStatements = [
     dicatat_at TEXT NOT NULL,
     diperbarui_at TEXT NOT NULL DEFAULT ''
   )`,
+  /**
+   * Konseptor SEMENTARA - tunjukan tangan sebelum SIPP punya jawabannya.
+   *
+   * SIPP baru menyebut konseptor sesudah ada yang mengerjakan naskahnya;
+   * namanya terbaca dari jejak tahapan, dan jejak itu baru lahir ketika
+   * naskahnya disentuh. Baris ini mengisi rentang di antaranya - dan berhenti
+   * berlaku dengan sendirinya begitu SIPP punya jawaban, tanpa dihapus.
+   * Selisih antara yang DITUNJUK dan yang SUNGGUH mengerjakan adalah
+   * keterangan tersendiri. Lihat 0046_konseptor_sementara.sql.
+   */
+  `CREATE TABLE IF NOT EXISTS aleta_konseptor_sementara (
+    perkara_id TEXT PRIMARY KEY,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    nama TEXT NOT NULL DEFAULT '',
+    pengguna TEXT NOT NULL DEFAULT '',
+    catatan TEXT NOT NULL DEFAULT '',
+    ditetapkan_oleh TEXT NOT NULL DEFAULT '',
+    ditetapkan_at TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

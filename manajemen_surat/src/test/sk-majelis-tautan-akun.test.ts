@@ -55,10 +55,27 @@ const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/sk-majelis/route.ts"
 const layar = baca("manajemen_surat/src/components/portal/aleta-ecourt-sk-majelis.tsx");
 
 describe("migrasi 0045", () => {
-  it("terdaftar pada jurnal dengan nomornya sendiri", () => {
+  it("terdaftar pada jurnal dengan nomornya sendiri, dan tidak ada idx kembar", () => {
     expect(jurnal).toContain('"tag": "0045_tautan_akun_majelis"');
-    // 0046 belum boleh ada - sesi lain yang mengklaimnya akan terlihat di sini.
-    expect(jurnal).not.toContain('"idx": 46');
+
+    // ====================================================================
+    // YANG DILARANG BENTROKAN, BUKAN ADANYA MIGRASI BERIKUTNYA
+    // ====================================================================
+    //
+    // Bentuk sebelumnya menuntut jurnal tidak memuat `"idx": 46` sama sekali.
+    // Maksudnya benar - dua sesi yang menambah migrasi bersamaan menulis idx
+    // yang sama tanpa galat, dan bentrokannya baru terlihat di peladen ketika
+    // salah satunya diam-diam dilewati - tetapi sasarannya keliru: ia merah
+    // setiap kali seseorang menambah migrasi yang SAH. Penjaga yang merah
+    // karena pekerjaan yang benar akan dilonggarkan orang, lalu berhenti
+    // menjaga apa pun.
+    const isi = JSON.parse(jurnal) as { entries: Array<{ idx: number; tag: string }> };
+    const nomor = isi.entries.map((e) => e.idx);
+    expect(new Set(nomor).size, "ada idx kembar di _journal.json").toBe(nomor.length);
+
+    const punya45 = isi.entries.filter((e) => e.idx === 45);
+    expect(punya45.length).toBe(1);
+    expect(punya45[0].tag).toBe("0045_tautan_akun_majelis");
   });
 
   it("menambah kolom, bukan membuat tabel baru", () => {

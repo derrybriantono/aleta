@@ -32,6 +32,8 @@ import {
   putusHariIni,
   sidangElitigasi,
   sidangIkrar,
+  sidangSelesaiHariIni,
+  sudahPutusHariIni,
 } from "@/lib/keadaan-sidang";
 import { warnaStatusPutusan } from "@/lib/warna-putusan";
 
@@ -242,6 +244,8 @@ describe("aturannya satu, bukan salinan yang dapat menyimpang", () => {
       "sidangIkrar",
       "hariPutusan",
       "putusHariIni",
+      "sudahPutusHariIni",
+      "sidangSelesaiHariIni",
       "sidangElitigasi",
       "perkaraVerzetDari",
       "kelompokAlur",
@@ -263,6 +267,8 @@ describe("aturannya satu, bukan salinan yang dapat menyimpang", () => {
       "sidangIkrar",
       "hariPutusan",
       "putusHariIni",
+      "sudahPutusHariIni",
+      "sidangSelesaiHariIni",
       "sidangElitigasi",
       "perkaraVerzetDari",
       "warnaStatusPutusan",
@@ -572,7 +578,13 @@ describe("penanda Ikrar Talak", () => {
       "utf8"
     );
     const potong = isi.slice(isi.indexOf('kunci: "sudah-putus"'), isi.indexOf('kunci: "belum-putus"'));
-    expect(potong).toContain("cocok: (x) => putusHariIni(x)");
+    // Sejak butir 1+2 kotak ini membaca DUA sumber lewat sudahPutusHariIni:
+    // putusan resmi dan hasil sidang. Yang dijaga tuntutan ini tetap sama -
+    // sidang ikrar talak tidak boleh ikut - dan pengecualian itu kini berada
+    // di DALAM sudahPutusHariIni, sehingga berlaku bagi kedua jalurnya. Tanpa
+    // itu, ikrar talak yang hasil sidangnya menyebut "putus" akan menyelinap
+    // masuk lewat pintu yang baru dibuka.
+    expect(potong).toContain("cocok: (x) => sudahPutusHariIni(x)");
     // Bentuk lama - benar bagi tiap sidang lanjutan sesudah putusan.
     expect(potong).not.toContain("cocok: (x) => x.sudahPutus");
   });
@@ -746,8 +758,18 @@ describe("ketiganya ada apa adanya di komponen", () => {
     // Jumlah pada kotak ALUR tetap dari seluruh hari - kalau ikut menyusut,
     // alur lain menjadi nol dan pilihannya mustahil dilepas kembali.
     expect(isi).toContain("ringkasAlur(sidang)");
-    // Keempat penyaring kartu ikut sampai ke tabel.
-    expect(isi).toContain("const sidangTampil = adaSaringanKartu");
+    // Keempat penyaring kartu ikut sampai ke tabel. Sejak penyaring "perkara
+    // saya" ada, rantainya dua langkah - dan KEDUANYA dijaga di sini: memutus
+    // salah satu membuat tabel mengabaikan penyaring kartu tanpa satu galat
+    // pun.
+    expect(isi).toContain("const sidangSetelahKartu = adaSaringanKartu");
+    expect(isi).toContain("const sidangTampil = milikSaya.baris;");
+    const iSaring = isi.indexOf("saringPerkaraSendiri(");
+    expect(iSaring, "penyaring perkara saya tidak dipanggil").toBeGreaterThan(-1);
+    expect(
+      isi.slice(iSaring, iSaring + 120),
+      "penyaring perkara saya tidak memakai hasil saringan kartu"
+    ).toContain("sidangSetelahKartu");
   });
 
   it("kisi kartu yang menyalin tabel sudah tidak ada", () => {
@@ -898,5 +920,128 @@ describe("kotak gabungan Perlu diperiksa", () => {
     // Tanpa pemisah ia terbaca sebagai salah satu penanda satuan, dan tidak
     // akan pernah ditekan orang yang sedang mencari pekerjaannya.
     expect(komponen()).toContain("keadaan.kunci === KUNCI_PERLU_DIPERIKSA ? (");
+  });
+});
+
+describe("dua sumber putusan, satu jawaban - butir 1, 2, dan 4", () => {
+  // Tiap describe di berkas ini memegang penolongnya sendiri - diikuti apa
+  // adanya supaya susunan yang sudah ada tidak berubah.
+  const komponen = () =>
+    readFileSync(
+      path.resolve(process.cwd(), "src/components/portal/aleta-ecourt-sidang.tsx"),
+      "utf8"
+    );
+
+  /**
+   * ==========================================================================
+   * LAYAR YANG BERBANTAH DENGAN DIRINYA SENDIRI
+   * ==========================================================================
+   *
+   * SIPP menyimpan "sudah diputus" di DUA tabel yang tidak saling tahu:
+   * perkara_putusan (baris resmi) dan perkara_jadwal_sidang.alasan_ditunda
+   * (tempat panitera mengetik hasil sidang). Tidak ada satu pun yang lengkap
+   * sendirian, dan itu terukur pada data satker:
+   *
+   *     2026-09-08   kotak "Sudah" menghitung 1, hasil sidang menyebut 6
+   *                  (lima tanpa satu baris pun di perkara_putusan)
+   *     2026-09-04   kotak "Sudah" menghitung 18, hasil sidang menyebut 0
+   *
+   * Sepanjang sejarah 3.905 baris hasil-putus: 3.890 bertanggal sama, 4
+   * berbeda, 11 tanpa baris putusan sama sekali. Perpecahannya kecil - tetapi
+   * SELALU jatuh pada hari yang sedang berjalan, yaitu hari yang justru sedang
+   * dilihat orang.
+   *
+   * Yang terlihat petugas: kotak hijau "Hasil sidang - putus DIKABULKAN
+   * (verstek)" berdiri di baris yang kolom putusannya berbunyi "putusan belum
+   * tercatat", dan baris itu tidak ikut terhitung "Sudah".
+   */
+  const SIDANG = "2026-09-21";
+
+  const barisHasilPutusSaja = {
+    sudahPutus: false,
+    tanggalPutusan: "",
+    tanggalSidang: SIDANG,
+    agenda: "Pembacaan putusan",
+    ditunda: false,
+    alasanDitunda: "putus DIKABULKAN (verstek)",
+  };
+
+  const barisPutusanResmiSaja = {
+    sudahPutus: true,
+    tanggalPutusan: SIDANG,
+    tanggalSidang: SIDANG,
+    agenda: "Pembacaan putusan",
+    ditunda: false,
+    alasanDitunda: "",
+  };
+
+  const barisDitunda = {
+    sudahPutus: false,
+    tanggalPutusan: "",
+    tanggalSidang: SIDANG,
+    agenda: "Panggil Tergugat",
+    ditunda: true,
+    alasanDitunda: "Tergugat tidak Hadir",
+  };
+
+  const barisBelumApaApa = {
+    sudahPutus: false,
+    tanggalPutusan: "",
+    tanggalSidang: SIDANG,
+    agenda: "Pemeriksaan pokok perkara",
+    ditunda: false,
+    alasanDitunda: "",
+  };
+
+  it("hasil sidang yang berbunyi putus dihitung SUDAH PUTUS walau baris putusannya belum ada", () => {
+    // Inilah keadaan yang dilaporkan pengguna dan yang dahulu luput.
+    expect(putusHariIni(barisHasilPutusSaja), "putusHariIni sendirian memang tidak melihatnya").toBe(false);
+    expect(sudahPutusHariIni(barisHasilPutusSaja)).toBe(true);
+  });
+
+  it("putusan resmi tanpa hasil sidang tetap terhitung", () => {
+    // Arah sebaliknya - 2026-09-04 memperlihatkan 18 baris seperti ini.
+    expect(sudahPutusHariIni(barisPutusanResmiSaja)).toBe(true);
+  });
+
+  it("yang DITUNDA bukan yang diputus", () => {
+    // hasilSidangPutusan menolak baris yang bendera ditundanya menyala, dan
+    // aturan ini bersandar padanya - bukan pada kata "putus" di teksnya.
+    expect(sudahPutusHariIni(barisDitunda)).toBe(false);
+    expect(sudahPutusHariIni(barisBelumApaApa)).toBe(false);
+  });
+
+  it("sidang yang ditunda tetap terhitung SELESAI hari itu", () => {
+    // Yang ditunda sudah dibuka, dibacakan, dan ditutup - ruangnya kosong
+    // lagi, dan itulah yang ditanyakan orang yang melihat daftar antrian.
+    expect(sidangSelesaiHariIni(barisDitunda)).toBe(true);
+    expect(sidangSelesaiHariIni(barisHasilPutusSaja)).toBe(true);
+    expect(sidangSelesaiHariIni(barisPutusanResmiSaja)).toBe(true);
+    expect(sidangSelesaiHariIni(barisBelumApaApa)).toBe(false);
+  });
+
+  it("ketiga kotak penanda memakai aturan gabungan, bukan putusHariIni sendirian", () => {
+    const isi = komponen();
+    expect(isi).toContain("cocok: (x) => sudahPutusHariIni(x),");
+    expect(isi).toContain("cocok: (x) => !x.sudahPutus && !sudahPutusHariIni(x),");
+    expect(isi).toContain("cocok: (x) => !x.ditunda && !sudahPutusHariIni(x),");
+  });
+
+  it("penanda SELURUH BARIS dihitung sekali di tingkat baris, bukan di dalam sel antrian", () => {
+    // Dahulu sel antrian menghitungnya sendiri - dan karena sel itu keluar
+    // lebih awal ketika perkaranya tidak terdaftar di mesin antrian, penanda
+    // hijaunya tidak pernah muncul pada perkara itu walau sidangnya selesai.
+    const isi = komponen();
+    expect(isi).toContain("const sidangSelesai = sidangSelesaiHariIni(baris);");
+    expect(isi).toContain("sidangSelesai={sidangSelesai}");
+    expect(isi).not.toContain("const sidangSelesai = baris.ditunda || putusHariIni(baris);");
+  });
+
+  it("tandanya tidak bergantung pada warna saja", () => {
+    // Hijau dan biru portal hampir sama terangnya - luminans 0,4962 lawan
+    // 0,5370, selisih 7,6% - sehingga yang membedakan praktis hanya rona.
+    const isi = komponen();
+    expect(isi).toContain("border-l-4 border-l-emerald-500");
+    expect(isi).toContain("text-emerald-600 opacity-70 dark:text-emerald-400");
   });
 });
