@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.26.0";
+export const APP_VERSION = "2.27.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.26.0 - Tirai Pembanding, dan Warna yang Kembali";
+  "ALETA Judicia v2.27.0 - Delapan Huruf Alasan Perceraian";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,59 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.27.0",
+    title: "ALETA Judicia v2.27.0 - Delapan Huruf Alasan Perceraian",
+    date: "2026-09-21",
+    status: "Belum terpasang",
+    summary:
+      "Selama ini ALETA hanya mengenal EMPAT dari delapan huruf alasan perceraian - A, B, F, dan H. " +
+      "Huruf C, D, E, dan G tidak pernah dapat diusulkan sama sekali, berapa pun cirinya cocok, sebab " +
+      "bunyinya memang tidak ada di dalamnya. Kedelapannya kini bertuliskan bunyi PP maupun KHI-nya, " +
+      "beserta keraguan yang ikut tertulis apa adanya. Di sebelahnya: beban konseptor akhirnya dihitung " +
+      "atas konseptornya, dan keterangan saksi tidak lagi berbunyi sama kata demi kata pada dua puluh " +
+      "perkara yang berbeda.",
+    added: [
+      "HURUF C, D, DAN E ALASAN PERCERAIAN, diambil dari naskah yang SAMA dengan huruf yang sudah ada - Pasal 19 PP Nomor 9 Tahun 1975, diekstrak ulang dengan pdfjs. Ekstraksinya memeriksa dirinya sendiri: huruf a, b, dan f yang sudah lebih dulu tercatat terbukti sama kata demi kata dengan yang baru diekstrak, sehingga c, d, dan e dari ekstraksi yang sama berdiri di atas dasar yang sudah terbukti.",
+      "BUNYI KHI UNTUK KEDELAPAN HURUF. Naskah KHI yang diberikan satker diekstrak dan TERBUKTI salinan yang sama - bukan diandaikan demikian: huruf a dan f yang sudah tercatat cocok kata demi kata, sedangkan b dan h berbeda justru pada salah baca yang memang sudah dikoreksi. Huruf C, D, dan E karena itu kini berdiri di atas dua dasar, seperti A, B, dan F.",
+      "HURUF G DICATAT, justru karena belum dapat diisi. Pelanggaran taklik talak hanya ada di KHI - Pasal 19 PP berhenti di huruf f - sehingga tidak ada naskah kedua sebagai pembanding. Ia tercatat dengan siap:false alih-alih tidak ada sama sekali: huruf yang tidak tercatat tampak seperti huruf yang tidak pernah dipikirkan, sedangkan huruf yang tercatat belum siap muncul beserta sebabnya.",
+      "SYARAT TIAP HURUF ikut ditulis, sebab tidak satu pun dapat disimpulkan dari kata pemicunya: huruf C menuntut 5 tahun DAN sesudah perkawinan, huruf D menuntut derajat BERAT padahal cirinya menyala pada kekerasan tingkat apa pun, huruf E menuntut AKIBAT tidak dapat menjalankan kewajiban.",
+      "EMPAT ALASAN YANG DAHULU TIDAK PUNYA CIRI SAMA SEKALI kini punya: zina, pidana penjara, cacat badan atau penyakit, dan pelanggaran taklik talak. Sebelumnya keempatnya tidak pernah dapat terbaca dari posita - tidak ada satu pun barisnya.",
+      "TIGA FAKTA GUGATAN MENGISI SENDIRI TEMPLATNYA: kapan menikah, berapa anaknya, dan di mana bertempat tinggal. Ketiganya ditanyakan kepada hampir tiap saksi dan sudah tertulis di posita, tetapi selama ini diketik petugas satu per satu, dikali dua saksi.",
+      "RAGAM KALIMAT KETERANGAN SAKSI. Tiap keadaan dahulu punya TEPAT DUA bunyi; kini tiga sampai empat bentuk yang setara maknanya. Yang dipilih ditentukan nomor saksi DAN urutan pertanyaannya - bukan diacak, sebab acak berarti mencetak dua kali menghasilkan dua naskah yang berbeda.",
+      "DASAR \"KONSEPTOR\" pada Beban Kinerja Konseptor, dan ia menjadi bawaannya.",
+    ],
+    changed: [
+      "BEBAN KONSEPTOR DIHITUNG ATAS KONSEPTORNYA, BUKAN KETUA MAJELIS. Ketua majelis yang bertanggung jawab atas konsepnya, bukan yang mengerjakannya - konsep dikerjakan anggota majelis bergantian. Terukur atas 683 putusan 2026: konseptor menyebut 8 orang dan seluruh 683 putusan bertuan, sedangkan ketua majelis menyebut 13 orang yang enam di antaranya nama sama tertulis dua cara.",
+      "Sumber nama konseptor dibuat SAMA PERSIS dengan Status Perkara - perkara_proses pada tahapan putusan, pencatat paling awal, nama lengkap dari sys_users. Dua layar yang menyebut nama berbeda untuk satu perkara yang sama tidak dibaca sebagai dua ukuran, melainkan sebagai satu yang keliru.",
+      "Pencocokan ciri alasan dipindahkan ke PER KALIMAT. Bentuk lamanya menyambung seluruh butir lebih dahulu, sehingga \"dihukum\" di butir 2 dan \"penjara\" di butir 9 terbaca sebagai pernyataan bahwa seseorang dihukum penjara.",
+      "Peladen pengembangan memakai Turbopack dan cachenya tidak lagi dibuang tiap start. Terukur: satu proses next dev memegang 2.040 MB dan 177 detik CPU, sebab --webpack dipaksa sementara cache Turbopack justru dihapus - dua baris yang saling meniadakan.",
+    ],
+    fixed: [
+      "PILIHAN TEMPLAT YANG HILANG DARI DAFTAR PERIKSA. Baris \"(melihat/mendengar)\" digabung menjadi satu kalimat SESUDAH pemeriksa isian berjalan, sehingga ia lenyap dari daftar yang perlu diisi - padahal inilah butir yang menyangkut CARA saksi mengetahui peristiwanya, dan saksi yang hanya mendengar dari balik dinding tidak melihatnya. Skrip pemeriksanya kini 38 lulus 0 gagal, dari sebelumnya 37 lulus 1 gagal.",
+      "PEMBUKA YANG DITUMPUK pada keterangan saksi: sebagian bentuk baru sudah menyatakan sendiri sejauh mana saksi mengetahuinya, sehingga pembuka yang tetap ditambahkan menerbitkan \"Yang saya ketahui, sepanjang yang saya ketahui, mereka bertengkar karena...\" - dua kali hal yang sama dalam satu kalimat.",
+      "Templat yang sudah menyebut \"anak\" sesudah titik-titiknya tidak lagi menerbitkan \"anak anak\" ketika diisi otomatis.",
+      "Warna peta yang hilang di tingkat kecamatan, dan layar penuh yang tidak punya jalan keluar.",
+      "Tiga galat tsc pada uji abt-usulan: anotasi tipenya tidak mengenal medan syarat yang sungguh ada pada kedelapan huruf.",
+    ],
+    security: [
+      "Yang tidak tertulis di posita tidak dikarang. Posita yang tidak menyebut jumlah anak memulangkan kosong, jawabannya tetap bertitik-titik, dan barisnya tetap ditandai perlu diisi - keterangan palsu di berita acara tidak pernah diperiksa lagi setelah ditandatangani.",
+      "Singkatan WIL dan PIL sengaja DITOLAK meski menggoda: pencocokannya potongan teks tanpa batas kata, sehingga keduanya akan menyala pada \"wilayah\" dan \"dipilih\". \"sakit\" ditolak sebab ia muncul pada \"sakit hati\".",
+    ],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Versi ekstensi tidak berubah - tetap 1.157.1, yang sudah terpasang sejak 2.23.0.",
+      "ENAM BARIS VARIABEL ABT harus dipasang di MariaDB satker (aps_badilag.abt_variabel no_var 4020, 8503, 8521, 8522, 8528, 8530). Berkasnya latin1 ber-CRLF dan memuat tanda kutip melengkung cp1252 - salin sebagai biner, dan muat dengan --default-character-set=latin1. Membukanya di editor lalu menyimpannya sebagai UTF-8 merusak naskah putusan tanpa memberi tanda apa pun.",
+      "Tiga salah baca naskah KHI dikoreksi dan koreksinya DISEBUT pada catatan masing-masing: \"sakah satu pihak\" dan \"cacat badab\" pada huruf e, \"menlanggar\" pada huruf g. Satu selisih NYATA tidak dikoreksi melainkan dicatat berdampingan: huruf d KHI menulis \"membahayakan pihak lain\", PP menulis \"membahayakan pihak yang lain\".",
+      "Huruf baru melewati SATU salinan KHI, dan itu ikut tertulis pada catatannya. Berkas aturannya menuntut dua salinan yang disepakati; untuk c, d, dan e naskah PP dipakai sebagai pembanding silang.",
+    ],
+    knownLimitations: [
+      "BLANGKO [01] BELUM PUNYA CABANG UNTUK C, D, E, DAN G. Diperiksa langsung pada aps_badilag.abt_variabel: kueri 4020, 8521, 8522, 8528, dan 8530 seluruhnya CASE atas #8503#, dan yang dikenali hanya A, B, F, H beserta gabungan AB, AF, BF, dan ABF. Mencentang C, D, atau E membuat kelima kueri jatuh ke cabang ELSE yang berbunyi \"TIDAK BENAR QUERY NYA / BELUM ISI ALASAN DI KOLOM ABT\" - dan kalimat itu ikut TERCETAK ke dalam putusan. Keadaan ini disebut pada syarat tiap huruf, ditampilkan di sebelah kotak centangnya SEBELUM dicentang; ekstensi sudah menahannya, tetapi sesudah 8503 ditulis, dan peringatan yang datang sesudah orang memilih bukan peringatan yang menolong.",
+      "HURUF G BELUM DIUSULKAN - masih siap:false, dengan dua sebab: salinan KHI-nya baru satu tanpa pembanding, DAN blangko [01] belum punya cabangnya. Keduanya tertulis pada syaratnya supaya yang membacanya tidak mengubah siap menjadi true hanya karena bunyinya sudah terisi.",
+      "GABUNGAN ALASAN \"AB\" DAN \"FA\" masih jatuh ke cabang ELSE pada sebagian variabel. Cacat lama, belum diperbaiki.",
+      "Variabel #5227# (Alasan-Alasan Cerai) WAJIB diisi untuk huruf C, D, E, dan G. Kalau kosong, kalimat pertimbangan berlubang di tengah.",
+      "\"belum mempunyai anak\" sengaja TIDAK dipasang pada templat berpola \"dikaruniai ... anak\" dan dibiarkan bertitik-titik: kalimat kacau di berita acara lebih buruk daripada satu titik-titik yang jelas menunggu petugas.",
+    ],
+  },
   {
     version: "2.26.0",
     title: "ALETA Judicia v2.26.0 - Tirai Pembanding, dan Warna yang Kembali",
