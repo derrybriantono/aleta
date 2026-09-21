@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.27.0";
+export const APP_VERSION = "2.28.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.27.0 - Delapan Huruf Alasan Perceraian";
+  "ALETA Judicia v2.28.0 - Dua Belas Permintaan Layar Antrian Sidang";
 
 export type PatchNote = {
   version: string;
@@ -22,10 +22,52 @@ export type PatchNote = {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: "2.28.0",
+    title: "ALETA Judicia v2.28.0 - Dua Belas Permintaan Layar Antrian Sidang",
+    date: "2026-09-21",
+    status: "Belum terpasang",
+    summary:
+      "Dua belas permintaan atas layar Antrian Sidang, dikerjakan seluruhnya lalu DIPERIKSA ULANG oleh " +
+      "delapan agen yang membaca kodenya dan mencoba menjatuhkan tiap klaim 'sudah selesai'. Pemeriksaan " +
+      "itu menemukan tiga butir yang belum utuh dan tiga butir yang benar tetapi tidak dijaga satu uji " +
+      "pun - keenamnya ikut dibereskan. Di sebelahnya: unduhan massal lewat panel akhirnya bernama benar, " +
+      "dan layar penuh peta perkara tidak lagi kosong.",
+    added: [
+      "TUNDA DAN PUTUS LANGSUNG DARI BARIS ANTRIAN, di kiri nomor perkara. Mesinnya SATU dengan layar Hasil Sidang - alamat, bentuk muatan, dan seluruh nilai bawaannya sama - sehingga tidak ada dua jalan menulis ke SIPP yang dapat menyimpang diam-diam. 'Instan' berarti tanpa berpindah layar, BUKAN tanpa diperiksa: rencananya tetap ditarik lewat jalan kering lebih dahulu.",
+      "KONSEPTOR SEMENTARA - tunjukan tangan siapa yang menyusun putusan, berlaku sampai SIPP punya namanya sendiri. SIPP baru dapat menyebut konseptor SESUDAH naskahnya disentuh, dan justru pada rentang sebelum itulah pertanyaannya paling sering diajukan. Diberi penanda bila tunjukannya BERBEDA dari yang sungguh mengerjakan - tetapi hanya ketika keduanya ada.",
+      "TIAP AKUN MELIHAT PERKARANYA SENDIRI, berdasarkan peran dan namanya, dengan tombol 'tampilkan semua perkara'. Penyaringnya GAGAL-TERBUKA: nama yang tidak cocok satu baris pun tetap melihat seluruh daftar beserta keterangannya, sebab layar kosong pada daftar sidang terbaca sebagai 'hari ini tidak ada sidang'.",
+      "JARAK WAKTU ANTAR PERKARA di bawah tombol antrian, berwarna menurut rentangnya. Ambang 5/15/30/60 menit diukur atas 10.989 jarak dari 1.753 kelompok (hari x ruang) pada jadwal sidang satker.",
+      "PENANDA 'DITERIMA PIHAK LAWAN?' pada keterangan relaas - panggilan untuk tergugat yang diterima orang bernama sama dengan penggugat. Diukur atas SELURUH 14.495 relaas satker sebelum dipasang: menyala 10 kali dari 11.150 baris yang dapat dinilai.",
+      "TIAP KELOMPOK PENANDA dapat diciutkan sendiri-sendiri - Panggilan, Jalannya sidang, Putusan, Antrian - dengan tombol induk yang mengatur keempatnya sekaligus.",
+      "SEMBILAN BAGIAN PANEL RINCIAN dapat diciutkan, memakai komponen yang SAMA dengan layar Status Perkara alih-alih salinannya.",
+    ],
+    changed: [
+      "SELURUH JADWAL SIDANG dipindahkan ke bawah Riwayat panggilan sebelumnya.",
+      "PENANDA SIDANG SELESAI menandai SELURUH BARIS, bukan angka antriannya saja: garis kiri 4 piksel terbaca tanpa bergantung pada warna.",
+      "JARAK KEPALA HALAMAN ke judul jadwal dirapatkan di kedua tempat yang menyusunnya.",
+    ],
+    fixed: [
+      "KOTAK 'SUDAH PUTUS' TIDAK LAGI KURANG HITUNG. SIPP menyimpan 'sudah diputus' di DUA tempat yang tidak saling tahu, dan tidak ada satu pun yang lengkap sendirian. Terukur pada data satker: 2026-09-08 kotak menghitung 1 sementara hasil sidang menyebut 6; 2026-09-07 menghitung 6 lawan 8; 2026-09-01 menghitung 9 lawan 10. Perpecahannya SELALU jatuh pada hari yang sedang berjalan - hari yang justru sedang dilihat orang.",
+      "KOLOM PUTUSAN BERHENTI BERBANTAH dengan kotak hijau hasil sidang di baris yang sama. Ia kini mendahulukan 'putus (hasil sidang)' lalu 'belum tercatat di SIPP'; keterangan tunggakan pencatatannya tidak dihapus, sebab ia menagih pekerjaan yang memang belum dikerjakan.",
+      "PENYARING 'PERKARA SAYA' TIDAK LAGI MENCAMPUR DUA ORANG. Terukur pada data satker: 'M. Tang' dan 'Sudarmin H.I.M. Tang' adalah dua orang berbeda dengan NIP berbeda, dan aturan pertama membawa perkara Sudarmin ke daftar M. Tang. Sesudah nama gabungan dipecah lebih dahulu: 63 dari 63 orang mencocoki tulisan namanya sendiri, tabrakan antar-orang nol.",
+      "OPERATOR DAN PENJAGA SIDANG MELIHAT SEMUANYA. Operator SELALU peran tambahan, bukan peran utama - penyaring yang hanya membaca peran utama justru menyaring orang yang diminta melihat semua perkara, dan kegagalannya hanya tampak sebagai daftar yang lebih pendek.",
+      "LAYAR PENUH PETA PERKARA TIDAK LAGI KOSONG. Kotaknya berkelas relative, dan gaya penulis mengalahkan gaya bawaan :fullscreen - sehingga posisinya kembali relative sementara height 100%-nya dihitung terhadap induk setinggi auto, yaitu mengerut. Terukur di peramban: dengan position relative, height 100% meninggalkan kotaknya pada 708 piksel sedangkan 100vh memberinya 770.",
+    ],
+    security: [],
+    operationalNotes: [
+      "MIGRASI 0046 - tabel aleta_konseptor_sementara. Pemasangannya WAJIB memakai ALETA_RUN_DB_MIGRATIONS=1; tanpa itu migrasinya dilewati diam-diam tetapi pemasangannya tetap dilaporkan berhasil.",
+      "EKSTENSI 1.158.1 ikut tertanam. Sesudah pemasangan, petugas harus menekan Reload di chrome://extensions - ekstensi unpacked tidak memperbarui dirinya.",
+    ],
+    knownLimitations: [
+      "TITIK PERKARA PADA PETA belum diperbaiki. Mesin penggambarnya terbukti sehat - replika susunannya menggambar 150 lingkaran dengan 6.729 piksel - dan berkas koordinat, Leaflet, serta kebergantungan hooknya seluruhnya bersih. Sebabnya karena itu ada pada keadaan halaman yang sedang berjalan, dan belum dapat dilihat tanpa bacaan dari peramban satker.",
+      "PENANDA KONSEPTOR BERBEDA hanya ada di panel Rincian, bukan pada baris daftar. Nama konseptor sungguhan menuntut pembacaan jejak tahapan per perkara, dan menariknya untuk tiap baris daftar berarti puluhan pembacaan tambahan tiap kali tanggalnya diganti.",
+    ],
+  },
+  {
     version: "2.27.0",
     title: "ALETA Judicia v2.27.0 - Delapan Huruf Alasan Perceraian",
     date: "2026-09-21",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Selama ini ALETA hanya mengenal EMPAT dari delapan huruf alasan perceraian - A, B, F, dan H. " +
       "Huruf C, D, E, dan G tidak pernah dapat diusulkan sama sekali, berapa pun cirinya cocok, sebab " +
