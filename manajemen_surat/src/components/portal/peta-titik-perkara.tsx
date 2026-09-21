@@ -1847,9 +1847,34 @@ export function PetaTitikPerkara({
         className={cn(
           "aleta-peta-wadah relative overflow-hidden rounded-[0.9rem] border border-border",
           gelap && "aleta-peta-gelap",
+          // ================================================================
+          // TINGGINYA DIPASTIKAN SENDIRI, TIDAK DITITIPKAN KE PERAMBAN
+          // ================================================================
+          //
+          // Gaya bawaan peramban untuk :fullscreen berbunyi
+          //
+          //     position: fixed; inset: 0; width: 100%; height: 100%;
+          //
+          // tetapi gaya penulis mengalahkan gaya bawaan, dan kotak ini
+          // berkelas `relative` - sehingga posisinya kembali relative
+          // sedangkan height: 100%-nya tetap berlaku. Unsur berposisi relative
+          // masih berada di dalam alur, jadi blok penampungnya INDUKNYA yang
+          // setinggi auto - dan 100% terhadap auto memulangkan auto.
+          //
+          // Terukur di peramban pada susunan yang sama: dengan position
+          // relative, height 100% meninggalkan kotaknya pada 708 px - tidak
+          // berubah sama sekali - sedangkan 100vh memberinya 770 px.
+          //
+          // Anak di dalamnya berkelas h-full, jadi ia ikut mengerut ke nol.
+          // Peta setinggi nol tidak menggambar ubinan maupun lingkaran, dan
+          // itulah layar penuh yang kosong sama sekali.
+          //
+          // `relative` DIPERTAHANKAN: tombol keluar di dalamnya berposisi
+          // absolut terhadap kotak ini.
+          //
           // Sudut membulat pada kotak yang menutupi seluruh layar hanya
           // menyisakan empat serpih latar di pojoknya.
-          layarPenuh && "rounded-none bg-background",
+          layarPenuh && "h-screen w-screen rounded-none bg-background",
           penuhSemu && "fixed inset-0 z-[1200]"
         )}
       >
