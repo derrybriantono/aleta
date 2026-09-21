@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.160.0",
+    dirilis: "2026-09-22T05:45:00+08:00",
+    judul: "Pratinjau penetapan menyebut tanggal, ruang sidang, dan pejabat penetapnya",
+    butir: [
+      "TIGA DARI EMPAT hal yang dapat dipilih tangan tidak pernah terbaca sebelum ditekan. Diperiksa satu per satu: pejabat penetap hanya muncul bila BERMASALAH, tanggal penetapan tidak pernah dipajang sama sekali, ruang sidang pun tidak - padahal ruang sidang sudah DIKIRIM ke mesin tulis sejak lama. Ketiganya kini menjadi baris tersendiri di pratinjau.",
+      "RUANG SIDANG yang paling merugikan selama ini: gagalnya diam. Penetapannya berhasil, berkasnya tercetak, sidangnya digelar - dan laporan sidang keliling menghitung nol, ketahuan berbulan kemudian oleh penyusun laporan. Namanya yang dipajang, bukan nomornya: \"3\" tidak memberi tahu siapa pun ruangan mana yang dimaksud. Daftar ruangan yang belum terbaca dikatakan apa adanya, bukan disamarkan menjadi nomor yang tampak pasti.",
+      "PEJABAT PENETAP tiap langkah disebut dengan NAMA beserta AKUN SIPP-nya, misalnya \"Fahri Saifuddin, S.H.I., M.H. (ketua)\". Akunnya ikut disebut sebab itulah yang mendarat di kolom pengguna dan di sys_audittrail - kalau pemetaan jabatan ALETA keliru, ketahuannya di sini, sebelum tertulis.",
+      "YANG DIPILIH TANGAN DITANDAI \"pilihan Anda\"; yang dari mesin tidak. Tanpa tanda itu, petugas yang baru saja memilih pejabat lain tidak punya cara memastikan pilihannya sampai - dan pilihan yang tidak sampai tidak berbunyi apa pun.",
+      "SESUDAH EKSEKUSI tanggalnya diulang pada tiap langkah yang berhasil. Yang sudah tertulis ke SIPP tidak dapat dilihat lagi dari panel tanpa membuka SIPP, sehingga yang ingin memastikan apa yang barusan terjadi harus berpindah aplikasi.",
+      "Hari sidang yang dipajang tetap diambil lewat idUntukTulis - sumber yang SAMA dengan yang ditulis. Dua perhitungan terpisah berarti pratinjau yang benar sendiri dan tulisan yang benar sendiri, dan bedanya hanya ketahuan sesudah tertulis.",
+    ],
+  },
+  {
     versi: "1.159.1",
     dirilis: "2026-09-21T20:55:00+08:00",
     judul: "Tombol tata letak saksi mengikuti lantai keterbacaan panel",

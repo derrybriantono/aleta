@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.29.0";
+export const APP_VERSION = "2.30.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.29.0 - Layar Antrian Sidang Dapat Disetel Sendiri";
+  "ALETA Judicia v2.30.0 - Rantai Penetapan Melintasi Hari, dan Pratinjau yang Jujur";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,38 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.30.0",
+    title: "ALETA Judicia v2.30.0 - Rantai Penetapan Melintasi Hari, dan Pratinjau yang Jujur",
+    date: "2026-09-22",
+    status: "Belum terpasang",
+    summary:
+      "Dua permintaan atas penetapan otomatis, dan keduanya tentang hal yang sama: yang menekan " +
+      "tombol harus tahu persis apa yang akan terjadi. Rantai PMH-PPP-PJS-PHS kini tidak lagi " +
+      "ditolak mentah hanya karena tanggalnya berbeda, dan pratinjaunya menyebut seluruh yang " +
+      "dipilih tangan - tanggal, ruang sidang, dan pejabat penetapnya - beserta tanda mana yang " +
+      "pilihan orang dan mana yang usulan mesin.",
+    added: [
+      "PRATINJAU MENYEBUT TANGGAL PENETAPAN, RUANG SIDANG, DAN PEJABAT PENETAP tiap langkah. Sebelumnya tiga dari empat hal yang dapat dipilih tangan tidak pernah terbaca sebelum ditekan. Ruang sidang yang paling merugikan: ia sudah dikirim ke mesin tulis sejak lama tanpa pernah dipajang, sehingga sidang keliling yang salah ruangannya baru ketahuan berbulan kemudian oleh penyusun laporan - penetapannya berhasil, berkasnya tercetak, sidangnya digelar, dan laporannya menghitung nol.",
+      "PENANDA \"pilihan Anda\" pada baris yang datang dari tangan. Tanpa itu, petugas yang baru saja memilih pejabat atau ruangan lain tidak punya cara memastikan pilihannya sampai - dan pilihan yang tidak sampai tidak berbunyi apa pun.",
+      "TANGGALNYA DIULANG SESUDAH EKSEKUSI pada tiap langkah yang berhasil. Yang sudah tertulis ke SIPP tidak dapat dilihat lagi dari panel tanpa membuka SIPP.",
+    ],
+    changed: [
+      "PENOLAKAN TANGGAL DIPERSEMPIT dari \"berbeda\" menjadi \"mendahului\". Penjaga lama menolak mentah tiap langkah yang tanggalnya berbeda dari langkah lain yang sudah ada. Terukur pada SIPP satker, penetapan 2026: dari 800 perkara ber-PMH, 637 PPP setanggal (80%) dan 161 BERBEDA (20%); PHS 679 setanggal (85%) dan 119 berbeda (15%). Selisih yang paling sering +1 hari, lalu +3, +2, +4. Penjaga lama karena itu menolak satu dari lima perkara yang sah. Yang ditolak sekarang hanya yang mustahil - langkah yang ditanggali lebih awal daripada langkah yang sudah ada, sebab PPP tidak dapat ditetapkan sebelum PMH-nya ada.",
+      "BEDA TANGGAL DIBAWA SEBAGAI CATATAN ke pratinjau, bukan ditelan diam-diam. Ditelan diam-diam berarti yang menekan tombol tidak tahu penetapannya bertanggal lain daripada PMH-nya, dan baru menyadarinya ketika laporan per hari tidak cocok.",
+    ],
+    fixed: [],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Nomor Drizzle bebas berikutnya tetap 0047.",
+      "TANGGAL LANJUTAN TETAP MENGIKUTI PMH - diputuskan pengguna 22 September 2026, sebab 80% praktik satker memang setanggal. Yang berubah hanya KEMUNGKINANNYA: tanggal lain tidak lagi ditolak mentah. Bawaannya tidak berubah sedikit pun, dan ada penjaga yang menahannya supaya tidak berubah diam-diam.",
+      "Jam tiap langkah tetap disebar seperti tangan manusia lewat waktuLangkah, dan tidak pernah mencatat jam yang belum terjadi. Rantai yang kini boleh melintasi hari melewati jalur yang sama.",
+    ],
+    knownLimitations: [
+      "RANTAINYA SENDIRI SUDAH BERJALAN SEBELUM VERSI INI - langkah yang sudah ada dicatat lalu dilewati, dan langkah berikutnya tetap dikerjakan. Yang ditambahkan versi ini bukan kemampuan merantainya, melainkan kemungkinan melanjutkannya pada tanggal yang berbeda, dan keterbacaan apa yang akan ditulis.",
+      "Perubahan ini BELUM diuji di SIPP sungguhan - hanya diukur atas basis data setempat dan dijaga uji. Penetapan yang salah tidak dapat dibatalkan dengan menekan ulang; coba pada satu perkara lebih dahulu.",
+    ],
+  },
   {
     version: "2.29.0",
     title: "ALETA Judicia v2.29.0 - Layar Antrian Sidang Dapat Disetel Sendiri",

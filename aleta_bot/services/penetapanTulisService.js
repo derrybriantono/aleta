@@ -1254,18 +1254,65 @@ async function susunRencanaTulis(minta) {
   // jauh lebih menolong - "pmh_sudah_ada" menyuruh petugas membatalkan dulu,
   // sedangkan "tanggal tidak sama" mengirimnya membetulkan tanggal yang tidak
   // ada salahnya.
-  const tanggalTerpakai = ["pmh", "ppp", "pjs", "phs"]
+  //
+  // ==========================================================================
+  // YANG DITOLAK HANYA YANG MUSTAHIL, BUKAN YANG SEKADAR BERBEDA
+  // ==========================================================================
+  //
+  // Penjaga ini dahulu menolak MENTAH tiap langkah yang tanggalnya berbeda
+  // dari langkah lain yang sudah ada. Terukur pada SIPP satker, itu menolak
+  // satu dari lima perkara yang sah:
+  //
+  //     penetapan 2026 yang punya PMH        800
+  //     PPP setanggal dengan PMH             637   (80%)
+  //     PPP BEDA tanggal                     161   (20%)
+  //     PHS setanggal dengan PMH             679   (85%)
+  //     PHS BEDA tanggal                     119   (15%)
+  //
+  //     selisih PMH -> PPP yang paling sering +1 hari, lalu +3, +2, +4
+  //
+  // Akibatnya perkara yang PMH-nya ditetapkan kemarin tidak dapat dilanjutkan
+  // ke PPP/PJS/PHS hari ini SAMA SEKALI - padahal itu praktik yang biasa, dan
+  // penetapan memang ditanggali hari ia ditandatangani.
+  //
+  // Sekarang yang ditolak hanya yang MUSTAHIL: langkah yang ditanggali lebih
+  // awal daripada langkah yang sudah ada. PPP tidak dapat ditetapkan sebelum
+  // PMH-nya ada; itu bukan selera, itu urutan.
+  //
+  // Yang setanggal atau sesudahnya diterima, dan bedanya dibawa ke panel
+  // sebagai CATATAN - lihat catatanTanggal di bawah. Ditelan diam-diam berarti
+  // yang menekan tombol tidak tahu penetapannya bertanggal lain daripada
+  // PMH-nya, dan baru menyadarinya ketika laporan per hari tidak cocok.
+  //
+  // Tidak ada tanggal yang dikarang mundur agar cocok. Itu akan memalsukan
+  // tanggal penetapan - dokumen hukum - demi kerapian angka.
+  const tanggalLangkahLain = ["pmh", "ppp", "pjs", "phs"]
     .filter((x) => x !== jenis)
-    .map((x) => tanggalIso(perkara[x]))
+    .map((x) => ({ jenis: x, tanggal: tanggalIso(perkara[x]) }))
+    .filter((x) => x.tanggal);
+
+  const palingAwal = tanggalLangkahLain
+    .map((x) => x.tanggal)
+    .sort()
     .find(Boolean);
-  if (tanggalTerpakai && tanggalTerpakai !== minta.tanggalPenetapan) {
+
+  if (palingAwal && minta.tanggalPenetapan < palingAwal) {
     return {
       ok: false,
-      alasan: "tanggal_penetapan_tidak_sama",
-      seharusnya: tanggalTerpakai,
+      alasan: "tanggal_penetapan_mendahului",
+      seharusnya: palingAwal,
       diminta: minta.tanggalPenetapan,
     };
   }
+
+  // Catatan, bukan penolakan. Kosong ketika seluruhnya setanggal - keadaan
+  // yang paling sering, dan tidak ada yang perlu dikatakan tentangnya.
+  const catatanTanggal = tanggalLangkahLain
+    .filter((x) => x.tanggal !== minta.tanggalPenetapan)
+    .map(
+      (x) =>
+        `${x.jenis.toUpperCase()} bertanggal ${x.tanggal}, sedangkan langkah ini ${minta.tanggalPenetapan}.`
+    );
 
   const saatServer = await waktuBasisData();
   // Jam yang DICATAT ke SIPP - berjarak satu sampai sepuluh menit tiap
@@ -2146,6 +2193,10 @@ async function susunRencanaTulis(minta) {
     saat,
     langkah,
     andaian,
+    // Kosong pada keadaan biasa - seluruh langkah setanggal. Berisi ketika
+    // rantainya dilanjutkan pada hari yang berbeda; panel menampilkannya
+    // sebagai catatan, bukan sebagai kegagalan.
+    catatanTanggal,
   };
 }
 

@@ -1387,6 +1387,12 @@ async function rantaiPenetapan(usulan, data, kering) {
       atasNama: jawab && jawab.atasNama,
       langkah: (jawab && jawab.langkah) || [],
       andaian: (jawab && jawab.andaian) || [],
+      // Kosong pada keadaan biasa. Berisi ketika rantainya dilanjutkan pada
+      // hari yang berbeda - lihat catatanTanggal di penetapanTulisService.
+      catatanTanggal: (jawab && jawab.catatanTanggal) || [],
+      // Dibawa supaya hasil SESUDAH eksekusi dapat mengulang apa yang
+      // sungguh ditulis, bukan hanya mengatakan "ditetapkan".
+      tanggalPenetapan: (jawab && jawab.tanggalPenetapan) || "",
       olehUsername,
     });
     // ======================================================================
@@ -1711,6 +1717,22 @@ function raporPraperiksa(usulan, data, hasilKering) {
   const baris = [];
   const ganjalan = [];
 
+  // ==========================================================================
+  // TANGGAL PENETAPAN - PALING ATAS, SEBAB IA MENGIKAT KETIGA LANGKAH LAIN
+  // ==========================================================================
+  //
+  // Dahulu tidak pernah dipajang sama sekali. Selama seluruh langkah wajib
+  // setanggal, itu masih dapat dimaklumi - tanggalnya hanya satu dan tidak
+  // dapat lain. Sejak rantainya boleh dilanjutkan pada hari yang berbeda,
+  // justru tanggal inilah yang paling perlu diperiksa sebelum ditekan.
+  if (usulan.tanggalPenetapan) {
+    baris.push({
+      label: "Tanggal penetapan",
+      nilai: sebutTanggal(usulan.tanggalPenetapan),
+      sebab: "",
+    });
+  }
+
   const pmh = usulan.pmh || {};
   const susunan = susunanTerpilih(pmh, pilihanManual.majelis);
   const anggota = (susunan && susunan.anggota) || pmh.anggota || [];
@@ -1741,6 +1763,68 @@ function raporPraperiksa(usulan, data, hasilKering) {
       .filter(Boolean)
       .join(" · ");
     baris.push({ label: "Hari sidang", nilai: sebutTanggal(tanggalSidang), sebab: sebabPhs });
+  }
+
+  // ==========================================================================
+  // RUANG SIDANG - DIKIRIM SEJAK LAMA, TIDAK PERNAH DIPAJANG
+  // ==========================================================================
+  //
+  // pilihanManual.ruangan sudah diteruskan ke mesin tulis sejak ruangan dapat
+  // dipilih, tetapi tidak pernah muncul di pratinjau. Akibatnya ruangan yang
+  // keliru - sidang keliling yang tertulis di dalam gedung - tidak dapat
+  // ketahuan sebelum ditekan, dan gagalnya diam: penetapannya berhasil,
+  // berkasnya tercetak, sidangnya digelar, dan laporan sidang keliling
+  // menghitung nol.
+  //
+  // Namanya dicari dari daftar yang sudah tersimpan, bukan nomornya yang
+  // dipajang: "3" tidak memberi tahu siapa pun ruangan mana yang dimaksud.
+  const idRuangan = Number(pilihanManual.ruangan);
+  if (Number.isFinite(idRuangan) && idRuangan > 0) {
+    const tempat = (ruanganTersimpan || []).find((r) => String(r.id) === String(idRuangan));
+    baris.push({
+      label: "Ruang sidang",
+      // Daftarnya belum terbaca - dikatakan apa adanya, bukan disamarkan
+      // menjadi nomor yang tampak pasti.
+      nilai: tempat ? tempat.nama || `ruangan ${idRuangan}` : `ruangan ${idRuangan} (namanya belum terbaca)`,
+      sebab: "pilihan Anda",
+    });
+  }
+
+  // ==========================================================================
+  // PEJABAT PENETAP TIAP LANGKAH - SIAPA YANG MENANDATANGANINYA
+  // ==========================================================================
+  //
+  // Dahulu hanya muncul ketika BERMASALAH, sebagai ganjalan. Pada keadaan
+  // biasa - yang paling sering - pratinjau sama sekali tidak menyebut atas
+  // nama siapa penetapan akan tertulis, padahal namanya itulah yang mendarat
+  // di kolom pengguna dan di sys_audittrail.
+  //
+  // Yang dipilih tangan ditandai. Tanpa tanda itu, petugas yang baru saja
+  // memilih pejabat lain tidak punya cara memastikan pilihannya sampai -
+  // dan pilihan yang tidak sampai tidak berbunyi apa pun.
+  const pejabatDipilih = (data && data.pejabatDipilih) || {};
+  for (const langkah of (data && data.rencana && data.rencana.langkah) || []) {
+    const jenis = String((langkah && langkah.jenis) || "").toUpperCase();
+    if (!jenis) continue;
+    const tangan = pejabatDipilih[String(langkah.jenis)];
+    const akun = (langkah && langkah.akun) || {};
+    const username = tangan || akun.username || "";
+    if (!username) continue;
+    const nama = akun.namaLengkap || akun.nama || "";
+    baris.push({
+      label: `Penetap ${jenis}`,
+      nilai: nama ? `${nama} (${username})` : username,
+      sebab: tangan ? "pilihan Anda" : "",
+    });
+  }
+
+  // Rantai yang dilanjutkan pada hari berbeda - dari bot, bukan dihitung
+  // ulang di sini. Bukan ganjalan: ia sah, dan satu dari lima perkara di
+  // satker ini memang begitu. Tetapi ia HARUS terbaca sebelum ditekan.
+  for (const hasil of hasilKering || []) {
+    for (const catatan of (hasil && hasil.catatanTanggal) || []) {
+      if (catatan) ganjalan.push(catatan);
+    }
   }
 
   // ==========================================================================
@@ -1865,6 +1949,28 @@ function gambarHasilTulis(kabar, hasil, kering, rapor) {
       )
     );
     kotak.appendChild(baris);
+
+    // ======================================================================
+    // TANGGALNYA DIULANG SESUDAH EKSEKUSI
+    // ======================================================================
+    //
+    // Yang sudah tertulis ke SIPP tidak dapat dilihat lagi dari panel tanpa
+    // membuka SIPP. Rapor praperiksa menyebut tanggalnya sebelum ditekan,
+    // lalu hilang begitu tertulis - sehingga yang ingin memastikan apa yang
+    // barusan terjadi harus berpindah aplikasi.
+    //
+    // Hanya pada penulisan SUNGGUHAN: pada uji kering tanggalnya sudah
+    // disebut rapor di atas, dan mengulangnya di tiap baris hanya
+    // memanjangkan yang sudah terbaca.
+    if (!kering && satu.ok && satu.tanggalPenetapan) {
+      kotak.appendChild(
+        buatElemen("div", "aleta-tulis-ket", `Bertanggal ${sebutTanggal(satu.tanggalPenetapan)}`)
+      );
+    }
+
+    for (const catatan of satu.catatanTanggal || []) {
+      if (catatan) kotak.appendChild(buatElemen("div", "aleta-tulis-ket", catatan));
+    }
 
     // Andaian yang dipakai menyusun langkah ini - mis. PHS dinilai dengan
     // menganggap PMH sudah ditulis. Disebutkan supaya yang membacanya tahu
