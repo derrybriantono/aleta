@@ -194,11 +194,17 @@ describe("terpasang di layar antrian", () => {
     "utf8"
   );
 
-  it("menyala sejak awal - tombolnya berbunyi 'tampilkan semua'", () => {
-    // Kalimat "Tampilkan semua perkara" hanya masuk akal bila yang tampil
-    // sebelumnya belum semuanya.
+  it("menyala sejak awal - tombolnya menawarkan melihat semuanya", () => {
+    // Kalimat penawarannya hanya masuk akal bila yang tampil sebelumnya belum
+    // semuanya.
+    //
+    // 2.29.0 memindahkan tombolnya ke sudut kanan atas dan memendekkan
+    // tulisannya dari "Tampilkan semua perkara" menjadi "Semua perkara" -
+    // kepala kartu tidak memuat kalimat sepanjang itu di samping judul.
+    // Yang DIJAGA tetap sama: keadaan awalnya menyaring, dan tombolnya
+    // menawarkan kebalikannya.
     expect(layar).toContain("const [hanyaMilikSaya, setHanyaMilikSaya] = useState(true);");
-    expect(layar).toContain("Tampilkan semua perkara");
+    expect(layar).toContain('hanyaMilikSaya ? "Perkara saya" : "Semua perkara"');
   });
 
   it("disaring PALING AKHIR, sesudah saringan kartu", () => {

@@ -4417,14 +4417,59 @@ html:not([data-aleta-halaman="abt"])[data-aleta-tema-sipp="gelap"] [style*="bord
   flex-direction: column;
   gap: 8px;
 }
+/* ==========================================================================
+   TATA LETAK KETERANGAN DUA SAKSI - BERDAMPINGAN SEBAGAI BAWAAN
+   ==========================================================================
+
+   Dahulu bawaannya atas-bawah, dan berdampingan hanya terjadi bila panelnya
+   dilebarkan lebih dulu. Yang menyunting keterangan saksi membandingkan
+   jawaban saksi 1 dengan saksi 2 baris demi baris - dan perbandingan itulah
+   pekerjaannya. Atas-bawah memaksanya menggulung bolak-balik antara dua
+   kolom yang isinya sengaja mirip, dan pada layar itu tidak ada satu pun
+   petunjuk bahwa panelnya boleh dilebarkan.
+
+   Sekarang tata letaknya dipilih dengan TOMBOL, bukan dengan melebarkan
+   panel - lihat tombolnya di gambarPratinjauSdg. Kelas panel penuh/lebar
+   tidak lagi ikut menentukan: ia mengubah lebar, bukan pilihan orangnya.
+
+   minmax(0, 1fr), bukan 1fr: kolom grid berlebar auto tidak mau mengecil di
+   bawah lebar isinya, dan satu jawaban panjang tanpa spasi akan melebarkan
+   kolomnya melewati panel - membawa serta gulir mendatar pada seluruh
+   panelnya. */
 .aleta-sdg-dua {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
 }
-.aleta-panel-penuh .aleta-sdg-dua,
-.aleta-panel-lebar .aleta-sdg-dua {
-  grid-template-columns: 1fr 1fr;
+.aleta-sdg-dua.aleta-sdg-tumpuk {
+  grid-template-columns: minmax(0, 1fr);
+}
+.aleta-sdg-tata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.aleta-sdg-tata-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 6px;
+  background: transparent;
+  padding: 2px 8px;
+  /* 11,5px, bukan 11px: panel ini punya lantai keterbacaan yang dijaga
+     ekstensi-pita-identitas.test.ts, dan lantainya bukan selera - ia hasil
+     penyisiran ketika seluruh huruf panel dibesarkan. Tombol baru yang
+     diam-diam lebih kecil daripada tetangganya adalah cara paling mudah
+     memulangkan panel ini ke keadaan yang dahulu sudah diperbaiki. */
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  cursor: pointer;
+  white-space: nowrap;
+}
+.aleta-sdg-tata-tombol:hover {
+  background: var(--aleta-sorot, rgba(0, 0, 0, 0.06));
 }
 .aleta-sdg-kolom {
   display: flex;

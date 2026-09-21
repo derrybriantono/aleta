@@ -725,10 +725,21 @@ describe("ketiganya ada apa adanya di komponen", () => {
     // bertanda - dan yang dilaporkan kemudian "kotaknya bilang dua, yang
     // bertanda satu".
     const isi = readFileSync(berkasKomponen, "utf8");
-    expect(isi).toContain("{hariPutusan(baris) ? (");
-    expect(isi).toContain("{sidangIkrar(baris) ? (");
+    // Sejak 2.29.0 penandanya didahului saklar tampilannya, sehingga
+    // bentuknya "tampil(...) && hariPutusan(baris)". Kurung kurawal pembuka
+    // karena itu tidak lagi menempel pada namanya.
+    //
+    // Yang DIJAGA tidak berubah sedikit pun: penanda barisnya memanggil
+    // aturan yang sama dengan kotak saringnya. Saklar tampilan tidak boleh
+    // menjadi celah untuk diam-diam menggantinya dengan perhitungan sendiri -
+    // dan itulah yang membuat laporan "kotaknya bilang dua, yang bertanda
+    // satu" dahulu muncul.
+    expect(isi).toContain("hariPutusan(baris) ? (");
+    expect(isi).toContain("sidangIkrar(baris) ? (");
     expect(isi).toContain("cocok: (x) => hariPutusan(x)");
     expect(isi).toContain("cocok: (x) => sidangIkrar(x)");
+    // Dan tidak ada perhitungan tandingan yang membaca agendanya sendiri.
+    expect(isi).not.toContain('baris.agenda.includes("utus")');
   });
 
   it("bendera ikrar_talak diambil dari SIPP, bukan ditebak dari agenda", () => {

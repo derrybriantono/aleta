@@ -57,6 +57,28 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.159.1",
+    dirilis: "2026-09-21T20:55:00+08:00",
+    judul: "Tombol tata letak saksi mengikuti lantai keterbacaan panel",
+    butir: [
+      "TOMBOL TUKAR TATA LETAK SAKSI dinaikkan dari 11px ke 11,5px - lantai keterbacaan panel ini, yang dijaga ekstensi-pita-identitas.test.ts. Lantainya bukan selera melainkan hasil penyisiran ketika seluruh huruf panel dibesarkan, dan tombol baru yang diam-diam lebih kecil daripada tetangganya adalah cara paling mudah memulangkan panel ini ke keadaan yang dahulu sudah diperbaiki.",
+      "Nomornya dinaikkan, bukan ditanam ulang di bawah 1.159.0: salinan 1.159.0 sudah sempat sampai ke folder yang dimuat Chrome sebelum ujinya merah. Chrome membandingkan NOMOR VERSI, bukan isinya - menanam isi berbeda di bawah nomor yang sama membuat salinan lama tidak akan pernah diperbarui, dan diamnya tidak berbunyi apa pun di layar.",
+    ],
+  },
+  {
+    versi: "1.159.0",
+    dirilis: "2026-09-21T20:30:00+08:00",
+    judul: "Keterangan dua saksi: berdampingan atau atas-bawah, dipilih sendiri",
+    butir: [
+      "BERDAMPINGAN MENJADI TAMPILAN AWAL pada penyunting keterangan dua saksi. Sebelumnya bawaannya atas-bawah, dan berdampingan hanya terjadi bila panelnya dilebarkan lebih dulu - padahal yang menyunting keterangan saksi sedang membandingkan jawaban saksi 1 dengan saksi 2 baris demi baris, dan perbandingan itulah pekerjaannya. Atas-bawah memaksanya menggulung bolak-balik di antara dua daftar yang isinya sengaja mirip.",
+      "TOMBOL TUKAR TATA LETAK di ujung kanan kepala bagian itu. Tulisannya menyebut yang AKAN terjadi bila ditekan - \"Jadikan atas-bawah\" - bukan keadaan sekarang: tombol yang menyebut keadaan dibaca separuh orang sebagai keadaan dan separuh lagi sebagai tindakan, lalu ditekan dua kali.",
+      "PILIHANNYA DIINGAT per peramban lewat chrome.storage.local, bukan per perkara: ia tentang cara orang itu bekerja, bukan tentang perkaranya. Gagal membacanya jatuh ke berdampingan, bukan ke galat - tata letak yang salah tidak pantas menghentikan penyuntingan.",
+      "TOMBOLNYA DI LUAR wadah kolom, dan itu bukan kebetulan: wadah itu dikosongkan tiap kali baris keterangan digeser, disalin, atau dihapus, sehingga tombol yang duduk di dalamnya akan lenyap pada penggeseran pertama.",
+      "KOLOMNYA MEMAKAI minmax(0, 1fr), bukan 1fr. Kolom grid berlebar auto tidak mau mengecil di bawah lebar isinya, dan satu jawaban panjang tanpa spasi akan melebarkan kolomnya melewati panel - membawa gulir mendatar ke seluruh panel, bukan hanya ke kolom itu.",
+      "Kelas panel penuh/lebar tidak lagi ikut menentukan tata letaknya: ia mengubah LEBAR, bukan pilihan orangnya.",
+    ],
+  },
+  {
     versi: "1.158.1",
     dirilis: "2026-09-21T16:05:00+08:00",
     judul: "Panel yang diciutkan dapat dibuka lagi, dan unduhan tidak lagi bernama download",

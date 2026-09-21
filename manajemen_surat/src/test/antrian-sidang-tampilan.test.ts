@@ -129,8 +129,19 @@ describe("kolom tabel jadwal disatukan", () => {
   it("colSpan mengikuti jumlah kolom yang tersisa", () => {
     // colSpan yang tertinggal membuat baris "tidak ada hasil" melebar keluar
     // tabel - rusak yang hanya terlihat ketika tabelnya kebetulan kosong.
-    expect(berkas).not.toContain("colSpan={10}");
-    expect(berkas).toContain("colSpan={8}");
+    //
+    // Sejak 2.29.0 angkanya TIDAK BOLEH lagi ditulis tetap. Kolom "Siap"
+    // benar-benar tidak digambar ketika skor kesiapan dimatikan lewat saklar
+    // tampilan - kepalanya dan selnya sekaligus - sehingga tabelnya kadang
+    // berkolom 8 dan kadang 7. colSpan tetap akan membentang satu kolom lebih
+    // jauh daripada tabelnya persis pada keadaan yang kedua.
+    //
+    // Yang dijaga sekarang lebih kuat daripada sebelumnya: bukan "angkanya 8",
+    // melainkan "tidak ada satu pun angka tetap", ditambah tuntutan bahwa
+    // penghitungnya sungguh dihitung dari saklarnya.
+    expect(berkas).not.toMatch(/colSpan=\{\d+\}/);
+    expect(berkas).toContain("colSpan={kolomTabel}");
+    expect(berkas).toContain('const kolomTabel = tampil(tampilan, "skor-kesiapan") ? 8 : 7;');
   });
 
   it("ruang tetap terbaca pada mode ringkas", () => {

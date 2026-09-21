@@ -81,8 +81,13 @@ describe("potensi verstek menjadi kotak keadaan berwarna", () => {
   });
 
   it("penanda baris memakai aturan yang sama, bukan kode kehadiran sidang ini", () => {
+    // Sejak 2.29.0 penandanya didahului saklar tampilannya, sehingga bentuknya
+    // "tampil(...) && potensiVerstek(baris)". Yang DIJAGA tidak berubah: ia
+    // memakai aturan bersama potensiVerstek, bukan membaca kehadiran sidang
+    // ini sendiri. Saklarnya tidak boleh menjadi celah untuk diam-diam
+    // menggantinya dengan perhitungan sendiri.
     const isi = komponen();
-    expect(isi).toContain("{potensiVerstek(baris) ? (");
+    expect(isi).toContain("potensiVerstek(baris) ? (");
     expect(isi).not.toContain("potensiVerstek(baris.dihadiriOleh)");
   });
 
@@ -90,7 +95,7 @@ describe("potensi verstek menjadi kotak keadaan berwarna", () => {
     // Kalau merah, ia ikut masuk kotak gabungan "Perlu diperiksa" - dan verstek
     // bukan sesuatu yang harus diurus supaya sidangnya jadi.
     const isi = komponen();
-    const awal = isi.indexOf("{potensiVerstek(baris) ? (");
+    const awal = isi.indexOf("potensiVerstek(baris) ? (");
     expect(isi.slice(awal, awal + 200)).toContain('variant="warning"');
   });
 });
@@ -118,7 +123,12 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
     const kotak = daftarKotak();
     // Lima belas kotak lama + Potensi verstek + Belum tunda. Putusan e-Court
     // tetap dimatikan tetapi tetap tertulis, dan ikut terhitung.
-    expect(kotak.length).toBe(17);
+    //
+    // 2.29.0 menambah dua kotak kelompok putusan - Belum minutasi dan Belum
+    // unggah putusan - sehingga 17 menjadi 19. Angkanya SENGAJA dikunci, bukan
+    // dilonggarkan menjadi "lebih dari": kotak yang bertambah tanpa disadari
+    // adalah cara paling mudah membuat deretan saring ini menjadi dinding.
+    expect(kotak.length).toBe(19);
     const dikenal: string[] = KELOMPOK_KEADAAN.map((k) => k.kunci);
     for (const k of kotak) {
       expect(dikenal, `${k.kunci} berkelompok "${k.kelompok}"`).toContain(k.kelompok);

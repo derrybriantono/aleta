@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.28.0";
+export const APP_VERSION = "2.29.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.28.0 - Dua Belas Permintaan Layar Antrian Sidang";
+  "ALETA Judicia v2.29.0 - Layar Antrian Sidang Dapat Disetel Sendiri";
 
 export type PatchNote = {
   version: string;
@@ -22,10 +22,53 @@ export type PatchNote = {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: "2.29.0",
+    title: "ALETA Judicia v2.29.0 - Layar Antrian Sidang Dapat Disetel Sendiri",
+    date: "2026-09-21",
+    status: "Belum terpasang",
+    summary:
+      "Layar Antrian Sidang dipakai empat macam orang yang pekerjaannya berbeda, dan tiap penanda " +
+      "berguna bagi salah satunya sekaligus menjadi kebisingan bagi tiga sisanya. Mulai versi ini tiap " +
+      "penanda, keterangan, dan tombol punya saklarnya sendiri - kecuali empat yang mendesak, yang " +
+      "sengaja tidak dapat dimatikan siapa pun. Tunggakan minutasi kini punya kotak saringnya sendiri " +
+      "dan rinciannya menyebutkan berkas apa yang masih kurang. Termasuk pula perbaikan peta sebaran " +
+      "perkara yang belum sempat dipasang pada 2.28.1.",
+    added: [
+      "SAKLAR TAMPILAN. Tombol Tampilan di sudut kanan atas membuka panel berisi tiap penanda, keterangan, dan tombol di layar ini beserta saklarnya, dikelompokkan bertiga. Pilihannya tersimpan di peramban dan tidak mengubah data apa pun. Angka pada tombolnya menyebut berapa yang sedang dimatikan: tanpa itu, layar yang penandanya sudah dipadamkan berbulan lalu terbaca sebagai layar yang memang tidak punya penanda, dan yang membacanya akan menyimpulkan perkaranya bersih.",
+      "EMPAT PENANDA SENGAJA TIDAK DAPAT DIMATIKAN - retur, belum dipanggil, belum minutasi, dan belum unggah putusan. Saklar yang dimatikan hari ini tersimpan di peramban dan tidak dinyalakan lagi besok; untuk keterangan yang sekadar menolong itu tidak merugikan, untuk keempat hal ini akibatnya sidang yang batal atau berkas yang tidak pernah dijahit. Saklarnya tetap digambar - menyala dan tidak dapat ditekan - beserta sebabnya, supaya tidak ada yang mengira penandanya sudah hilang lalu mencarinya.",
+      "KOTAK SARING BELUM MINUTASI, membaca DUA sumber. Terukur pada SIPP setempat: dari 9.993 baris perkara_putusan, NOL yang tanggal minutasinya kosong - kotak yang hanya membaca tabel itu tidak akan pernah menyala satu kali pun dan terbaca sebagai tidak ada tunggakan. Tunggakannya justru pada perkara yang baris putusannya belum pernah dibuat: 12 perkara yang hasil sidangnya berbunyi putus tanpa satu baris putusan pun.",
+      "KOTAK SARING BELUM UNGGAH PUTUSAN, dipisahkan dari minutasi karena orangnya berbeda - naskah disusun hakim, minutasi dijahit panitera pengganti. Terukur: 90 dari 9.993 perkara yang sudah putus belum punya naskahnya di SIPP.",
+      "HAKIM DIKENALI PADA TUNJUKAN KONSEPTOR SEMENTARA. Mengetik sebagian nama atau kode hakim - A, B, C1, C2, C3 - memunculkan daftar tawaran, dan yang dipilih mengisi namanya lengkap dengan gelar seperti tertulis di SIPP. Nama yang sudah persis diberi lencana hijau \"Hakim terdeteksi\" beserta kodenya. Kotaknya TETAP kotak isian biasa, bukan kotak pilihan: konseptor tidak selalu hakim - panitera pengganti pun menyusun naskah - jadi nama di luar daftar cukup diketik lalu disimpan, tanpa memilih apa pun, dan tidak diberi tanda peringatan apa pun sebab ia memang sah.",
+      "PENCARIANNYA DIJENJANG, bukan sekadar mengandung. Kode dicocokkan PERSIS - mencocokkannya sebagai potongan akan membuat huruf a mana pun memanggil hakim berkode A, yaitu hampir tiap ketikan. Huruf gelar tidak dihitung sebagai kata: nama dibakukan menjadi \"derry briantono s h\", dan tanpa pembuangan kata sehuruf mengetik s menawarkan kelima-limanya karena semuanya bergelar S.H. atau S.H.I. Potongan yang mengandung di tengah kata baru ditawarkan sejak tiga huruf.",
+      "SEBAB MINUTASI TERTAHAN DI RINCIAN PERKARA. Panel Rincian kini mendaftar apa yang masih kurang - berapa dari berapa sidang yang belum ada berita acaranya, naskah putusan, naskah anonim - dihitung dari data yang sudah ada di panel itu, tanpa satu pun pembacaan tambahan ke SIPP. Yang menahan dibedakan dari yang sekadar tertunggak: naskah anonim tidak menahan minutasi, sebab SIPP sendiri menghitungnya dari perkara yang SUDAH diminutasi.",
+    ],
+    changed: [
+      "TOMBOL PERKARA SAYA PINDAH KE SUDUT KANAN ATAS. Sebelumnya ia berdiri sendirian pada satu baris selebar layar tepat di atas tabel, sehingga yang didapat sebuah baris kosong yang mendorong seluruh daftar sidang turun. Di kepala ia tidak memakai baris sama sekali. Peringatan bahwa nama pemakainya tidak ketemu pada satu baris pun TIDAK ikut pindah menjadi title - title tidak terlihat tanpa disentuh, dan yang membaca daftar penuh akan menyangka seluruh perkara itu miliknya.",
+      "MINUTASI TIDAK LAGI DIBACA DARI STRING KOSONG SAJA. SIPP menulis tanggal nol pada sebagian barisnya, dan pemeriksaan yang hanya menanyakan kosong atau tidak akan menyimpulkan perkaranya sudah diminutasi - lalu memadamkan lencana justru pada baris yang paling perlu menyalakannya.",
+    ],
+    fixed: [
+      "TITIK PERKARA MUNCUL KEMBALI. globals.css memberi seluruh img, svg, video, dan canvas max-width 100% - benar bagi hampir semuanya, dan menghancurkan peta. Kanvas Leaflet duduk di dalam panel berposisi mutlak yang anak satu-satunya juga berposisi mutlak, sehingga lebar panelnya NOL; max-width 100% terhadap nol berarti nol, dan max-width mengalahkan width sebaris yang dipasang Leaflet. Terukur di peramban satker: kanvas bersimpanan 2180x1190 dengan 40.729 piksel sungguh tergambar, ditampilkan 0x595. Tingginya benar - hanya lebarnya nol, dan justru itu yang membuatnya sulit dikenali.",
+      "UBINAN SELAMAT SEJAK AWAL karena leaflet.css melindunginya dengan max-width none !important - tetapi daftar itu memuat img, TIDAK memuat canvas. Karena itu petanya tampak sehat sementara seluruh lapisan vektornya hilang.",
+      "PERBAIKAN PETA DI BAWAH INI SEMULA BERNOMOR 2.28.1 dan tidak jadi dipasang karena peladen satker sedang tidak dapat dihubungi. Nomornya dilebur ke sini supaya sesi PC cukup menyelaraskan satu nomor.",
+      "LAYAR PENUH PETA TIDAK LAGI KOSONG. Kotaknya berkelas relative, dan gaya penulis mengalahkan gaya bawaan :fullscreen - sehingga posisinya kembali relative sementara height 100%-nya dihitung terhadap induk setinggi auto, yaitu mengerut. Terukur di peramban: dengan position relative, height 100% meninggalkan kotaknya pada 708 piksel sedangkan 100vh memberinya 770.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi basis data pada versi ini. Nomor migrasi Drizzle bebas berikutnya tetap 0047.",
+      "SAKLAR TAMPILAN TERSIMPAN PER PERAMBAN, bukan per akun. Petugas yang berpindah komputer memulai dengan seluruh penanda menyala - itu keadaan bawaan, dan bawaan yang mematikan sesuatu akan menghilangkan penanda dari layar orang yang tidak pernah meminta apa pun.",
+    ],
+    knownLimitations: [
+      "DAFTAR TAWARAN KONSEPTOR HANYA MEMUAT HAKIM AKTIF, bukan panitera pengganti - padahal panitera pengganti pun menyusun naskah. Namanya tetap dapat diketik apa adanya dan tersimpan dengan benar; yang belum ada hanya tawarannya. Menambahkan panitera menuntut keputusan tersendiri, sebab kode panitera di SIPP bertabrakan - empat orang berbagi kode D.",
+      "SIPP SENDIRI TIDAK MENOLAK tanggal minutasi karena berkas kurang - diperiksa pada sumbernya, dan yang ada hanya satu pemeriksaan bahwa tanggal BHT tidak boleh mendahului minutasi. Daftar sebab di panel Rincian karena itu daftar berkas yang harus ada di dalam bundel, BUKAN syarat aplikasi; menyebutnya syarat akan membuat orang mencari tombol yang tidak pernah ada.",
+      "SEBAB MINUTASI DI BARIS DAFTAR hanya menyebut naskah putusannya. Kelengkapan BAS menuntut jadwal SELURUH perkara, dan baris daftar hanya tahu BAS sidangnya sendiri - daftar lengkapnya karena itu ada di panel Rincian, dan lencananya menunjuk ke sana.",
+      "PENANDA KONSEPTOR BERBEDA hanya ada di panel Rincian, bukan pada baris daftar. Nama konseptor sungguhan menuntut pembacaan jejak tahapan per perkara, dan menariknya untuk tiap baris daftar berarti puluhan pembacaan tambahan tiap kali tanggalnya diganti.",
+    ],
+  },
+  {
     version: "2.28.0",
     title: "ALETA Judicia v2.28.0 - Dua Belas Permintaan Layar Antrian Sidang",
     date: "2026-09-21",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Dua belas permintaan atas layar Antrian Sidang, dikerjakan seluruhnya lalu DIPERIKSA ULANG oleh " +
       "delapan agen yang membaca kodenya dan mencoba menjatuhkan tiap klaim 'sudah selesai'. Pemeriksaan " +

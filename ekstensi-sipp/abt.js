@@ -1046,6 +1046,39 @@ try {
 }
 
 const KUNCI_CETAK_TIGA = "cetakTigaBerkas";
+
+/**
+ * Tata letak penyunting keterangan dua saksi: "damping" atau "tumpuk".
+ *
+ * Bawaannya BERDAMPINGAN - diputuskan pengguna 21 September 2026. Yang
+ * menyunting keterangan saksi membandingkan jawaban saksi 1 dengan saksi 2
+ * baris demi baris, dan perbandingan itu yang menjadi pekerjaannya.
+ *
+ * Diingat per peramban, bukan per perkara: pilihannya tentang cara orang itu
+ * bekerja, bukan tentang perkaranya. Gagal membacanya jatuh ke bawaan, bukan
+ * ke galat - tata letak yang salah tidak pantas menghentikan penyuntingan.
+ */
+const KUNCI_TATA_SAKSI = "tataLetakSaksi";
+let tataSaksi = "damping";
+
+async function muatTataSaksi() {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_TATA_SAKSI]);
+    tataSaksi = simpan[KUNCI_TATA_SAKSI] === "tumpuk" ? "tumpuk" : "damping";
+  } catch {
+    tataSaksi = "damping";
+  }
+}
+
+function simpanTataSaksi(nilai) {
+  tataSaksi = nilai === "tumpuk" ? "tumpuk" : "damping";
+  try {
+    void chrome.storage.local.set({ [KUNCI_TATA_SAKSI]: tataSaksi });
+  } catch {
+    // Pilihannya tetap berlaku selama halaman ini terbuka. Yang hilang hanya
+    // ingatannya - dan itu tidak pantas menjatuhkan penyuntingan.
+  }
+}
 const ALETA_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
 
 /**
@@ -3528,6 +3561,41 @@ function susunPanelAbt(jatiDiri) {
     const dua = buatElemen("div", "aleta-sdg-dua");
     // Dipegang tetap: penyimpan di bawah menutupnya dalam closure, jadi
     // isinya yang diganti, bukan wadahnya.
+
+    // ========================================================================
+    // BILAH TATA LETAK - TOMBOLNYA DI UJUNG KANAN
+    // ========================================================================
+    //
+    // Di LUAR `dua`, dan itu bukan kebetulan: gambarKolom() mengosongkan
+    // `dua` tiap kali barisnya digeser, disalin, atau dihapus. Tombol yang
+    // duduk di dalamnya akan lenyap pada penggeseran pertama.
+    const bilahTata = buatElemen("div", "aleta-sdg-tata");
+    bilahTata.appendChild(
+      buatElemen("span", "aleta-abt-label", "Keterangan dua saksi")
+    );
+    const tombolTata = buatElemen("button", "aleta-sdg-tata-tombol");
+    tombolTata.type = "button";
+
+    function segarkanTata() {
+      const tumpuk = tataSaksi === "tumpuk";
+      dua.classList.toggle("aleta-sdg-tumpuk", tumpuk);
+      // Tulisannya menyebut yang AKAN terjadi bila ditekan, bukan keadaan
+      // sekarang. Tombol yang menyebut keadaan sekarang dibaca separuh orang
+      // sebagai keadaan dan separuh lagi sebagai tindakan, dan yang salah
+      // membacanya menekannya dua kali lalu menyerah.
+      tombolTata.textContent = tumpuk ? "⬍ Jadikan berdampingan" : "⬌ Jadikan atas-bawah";
+      tombolTata.title = tumpuk
+        ? "Sekarang atas-bawah. Tekan untuk menjajarkan saksi 1 dan saksi 2 berdampingan."
+        : "Sekarang berdampingan. Tekan untuk menumpuk saksi 1 di atas saksi 2 - berguna pada panel sempit.";
+      tombolTata.setAttribute("aria-pressed", tumpuk ? "true" : "false");
+    }
+
+    tombolTata.addEventListener("click", () => {
+      simpanTataSaksi(tataSaksi === "tumpuk" ? "damping" : "tumpuk");
+      segarkanTata();
+    });
+    bilahTata.appendChild(tombolTata);
+    segarkanTata();
     const kolomIsian = [[], []];
     let sedangDiseret = null;
 
@@ -3666,6 +3734,7 @@ function susunPanelAbt(jatiDiri) {
           "✕ menghapus. Pertanyaannya sendiri boleh disunting. Nomornya dihitung ulang saat disimpan."
       )
     );
+    kotak.appendChild(bilahTata);
     kotak.appendChild(dua);
 
     const simpan = buatElemen(
@@ -4032,6 +4101,7 @@ async function pasang() {
   if (!saklarCetakDibaca) {
     saklarCetakDibaca = true;
     await muatSaklarCetak();
+    await muatTataSaksi();
   }
   pasangSunting(jatiDiri);
   const panel = susunPanelAbt(jatiDiri);

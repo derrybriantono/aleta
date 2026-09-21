@@ -113,10 +113,22 @@ describe("butir 5 - jarak kepala halaman ke judul jadwal", () => {
 });
 
 describe("butir 6 - tombol ciut tiap bagian di panel Rincian", () => {
-  it("kesembilan bagian memakai komponen Bagian bersama", () => {
+  it("tiap bagian memakai komponen Bagian bersama, tidak ada yang dibuat sendiri", () => {
     expect(LAYAR).toContain('from "@/components/portal/bagian-ciut"');
     const pakai = LAYAR.match(/<Bagian\s/g) ?? [];
-    expect(pakai.length).toBe(9);
+
+    // Angkanya dikunci, BUKAN dilonggarkan jadi "lebih dari nol". Yang dijaga
+    // di sini bukan banyaknya bagian - itu boleh bertambah - melainkan bahwa
+    // tiap bagian baru ikut memakai komponen bersamanya. Penjaga yang hanya
+    // menuntut "ada" akan tetap hijau ketika seseorang menambah bagian
+    // kesebelas dengan kotak ciut buatan sendiri, dan dua mekanisme ciut yang
+    // berdampingan akan saling menyangkal keadaan terbuka/tertutupnya.
+    //
+    // Bertambah ke 10 pada 2.29.0: bagian "Putusan belum tercatat di SIPP",
+    // untuk perkara yang diputus di ruang sidang tetapi baris putusannya
+    // belum ada - 12 perkara di SIPP setempat yang sebelumnya membuka rincian
+    // yang diam.
+    expect(pakai.length).toBe(10);
   });
 
   it("kuncinya BERAWALAN sidang- supaya tidak menabrak layar Status Perkara", () => {
