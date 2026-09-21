@@ -102,6 +102,17 @@ const pustaka = require_(
   path.resolve(process.cwd(), "../aleta_bot/services/abtKalimatBaku.js")
 ) as Pustaka;
 
+/**
+ * Membuang komentar sebelum menyisir kode.
+ *
+ * Penjaga di berkas ini menyisir TEKS MENTAH, jadi sebuah kata yang dilarang
+ * muncul di kode akan ikut tertangkap ketika ia muncul di penjelasan yang
+ * justru menerangkan kenapa kata itu dihindari.
+ */
+function tanpaKomentar(isi: string): string {
+  return isi.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+}
+
 const abtJs = () => readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/abt.js"), "utf8");
 const dockerfileBot = () =>
   readFileSync(path.resolve(process.cwd(), "../aleta_bot/Dockerfile"), "utf8");
@@ -1225,7 +1236,15 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
   it("memakai pointer event, bukan mouse event", () => {
     // Satu jalur untuk tetikus, sentuh, dan pena; dan setPointerCapture
     // menahan tarikan cepat yang keluar dari jendela.
-    const isi = alat();
+    //
+    // KOMENTARNYA DIKECUALIKAN, dan itu bukan kelonggaran. Tuntutan ini sempat
+    // merah pada 1.158.0 bukan karena panel-alat.js kembali memakai mousedown,
+    // melainkan karena penjelasan di dalamnya MENYEBUT kata itu - menerangkan
+    // kenapa panel SIPP di konten.js selamat dari cacat lencana justru sebab ia
+    // memakai mousedown. Penjaga yang melarang sebuah kata muncul di komentar
+    // memaksa penulisnya menyamarkan sebab, dan sebab yang disamarkan adalah
+    // sebab yang hilang.
+    const isi = tanpaKomentar(alat());
     expect(isi).toContain("setPointerCapture");
     expect(isi).not.toContain("mousedown");
   });

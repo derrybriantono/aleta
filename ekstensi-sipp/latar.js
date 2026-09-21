@@ -231,6 +231,15 @@ async function bacaKonteksUnduh() {
  * kata "putusan" pada tiap berkas. Yang pertama bukan jenis perkara; yang
  * kedua menjadikan seluruh berkas bernama sama ketika perkaranya sama.
  */
+/** Memotong nama tanpa memakan akhirannya. */
+function potongNamaBerkas(nama, batas) {
+  if (nama.length <= batas) return nama;
+  const titik = nama.lastIndexOf(".");
+  if (titik <= 0 || nama.length - titik > 8) return nama.slice(0, batas);
+  const akhiran = nama.slice(titik);
+  return nama.slice(0, Math.max(1, batas - akhiran.length)) + akhiran;
+}
+
 function namaUnduhanAbt(nama, konteks) {
   const akhiran = (String(nama).split(".").pop() || "rtf").toLowerCase();
   const bagian = [konteks.nomor, konteks.jenisPerkara, konteks.statusPutusan].filter(Boolean);
@@ -265,6 +274,86 @@ function namaUnduhanAbt(nama, konteks) {
  */
 let konteksIngatan = null;
 
+/**
+ * ============================================================================
+ * ANTREAN NAMA UNDUHAN - BUKAN SATU SLOT
+ * ============================================================================
+ *
+ * Bentuk sebelumnya menyimpan SATU nama, dan pendengar onDeterminingFilename
+ * menghapusnya begitu dipakai. Selama unduhannya satu per satu dan pekerjanya
+ * hidup terus, itu cukup. Unduhan MASSAL melanggar kedua andaian itu:
+ *
+ *   - beberapa unduhan dapat lahir sebelum yang pertama sempat dinamai, dan
+ *     yang kedua menimpa slotnya; sisanya turun bernama "download";
+ *   - pekerja MV3 mati kira-kira tiap tiga puluh detik, sedangkan unduhan
+ *     massal berjalan bermenit-menit. Variabel modulnya hilang di tengah
+ *     jalan tanpa satu pun galat.
+ *
+ * Antrean ini disimpan di chrome.storage.session, jadi ia selamat dari pekerja
+ * yang mati, dan ia memuat lebih dari satu nama. Urutannya masuk-keluar:
+ * Chrome menerbitkan onDeterminingFilename menurut urutan unduhan dibuat.
+ *
+ * DIBATASI UMUR DAN JUMLAH, dan itu bukan kerapian. Unduhan yang batal tidak
+ * pernah memanggil pendengarnya; nama yang tertinggal akan dipakai berkas
+ * BERIKUTNYA - berkas yang salah nama, dan salahnya diam.
+ */
+const KUNCI_ANTREAN = "aletaAntreanNama";
+const UMUR_NAMA = 5 * 60 * 1000;
+const BATAS_ANTREAN = 500;
+
+let antreanNama = [];
+
+/** Membuang yang kedaluwarsa - dipanggil pada tiap sentuhan antrean. */
+function bersihkanAntrean(daftar) {
+  const sekarang = Date.now();
+  return (Array.isArray(daftar) ? daftar : [])
+    .filter((x) => x && typeof x.nama === "string" && sekarang - Number(x.saat || 0) < UMUR_NAMA)
+    .slice(-BATAS_ANTREAN);
+}
+
+function simpanAntrean() {
+  try {
+    if (chrome.storage && chrome.storage.session) {
+      void chrome.storage.session.set({ [KUNCI_ANTREAN]: antreanNama });
+    }
+  } catch {
+    // Penyimpanan sesi yang gagal tidak boleh menggagalkan unduhannya - yang
+    // hilang hanya ketahanan terhadap pekerja yang mati.
+  }
+}
+
+/**
+ * Dipulihkan sekali saat pekerja bangun.
+ *
+ * TIDAK ditunggu siapa pun. Menunggunya berarti pesan `unduh` yang tiba lebih
+ * dahulu tertahan, dan penundaan itulah cacat yang dahulu sudah diperbaiki.
+ */
+void (async () => {
+  try {
+    if (!chrome.storage || !chrome.storage.session) return;
+    const isi = await chrome.storage.session.get(KUNCI_ANTREAN);
+    const pulih = bersihkanAntrean(isi && isi[KUNCI_ANTREAN]);
+    // Yang sudah masuk selagi pemulihan berjalan didahulukan - ia lebih baru.
+    if (pulih.length) antreanNama = [...pulih, ...antreanNama];
+  } catch {
+    // Antrean yang tidak terbaca menyisakan perilaku lama, bukan kegagalan.
+  }
+})();
+
+/** Menaruh satu nama untuk unduhan yang sebentar lagi dibuat. */
+function antrikanNama(nama) {
+  antreanNama = bersihkanAntrean([...antreanNama, { nama, saat: Date.now() }]);
+  simpanAntrean();
+}
+
+/** Mengambil nama terdepan yang masih berlaku, atau kosong bila tidak ada. */
+function ambilNamaAntrean() {
+  antreanNama = bersihkanAntrean(antreanNama);
+  const depan = antreanNama.shift();
+  simpanAntrean();
+  return depan ? depan.nama : "";
+}
+
 // Dipulihkan sekali saat pekerja bangun. Tidak ditunggu siapa pun: yang
 // menunggu justru cacat yang baru saja diperbaiki.
 void bacaKonteksUnduh().then((konteks) => {
@@ -275,7 +364,40 @@ if (chrome.downloads && chrome.downloads.onDeterminingFilename) {
   chrome.downloads.onDeterminingFilename.addListener((barang, sarankan) => {
     try {
       const nama = String((barang && barang.filename) || "");
-      const asal = `${(barang && barang.url) || ""} ${(barang && barang.referrer) || ""}`;
+      const alamat = String((barang && barang.url) || "");
+
+      // ----------------------------------------------------------------
+      // UNDUHAN EKSTENSI SENDIRI - NAMANYA DISARANKAN DI SINI, BUKAN
+      // DIANDALKAN PADA chrome.downloads.download
+      // ----------------------------------------------------------------
+      //
+      // Jalur panel sudah menyerahkan nama lengkap lewat properti `filename`,
+      // dan tetap tersimpan sebagai "download (11).rtf". Sebabnya terbaca dari
+      // riwayat unduhan peramban: unduhan itu beralamat `data:` dan TANPA
+      // referrer, sehingga pagar `dariAbt` di bawah bernilai salah, pendengar
+      // ini mundur, dan nama bawaan peramban yang dipakai. Sembilan dari
+      // sembilan unduhan beratribut ekstensi bernama "download (n)", sedangkan
+      // berkas yang SAMA yang turun lewat tautan halaman bernama benar.
+      //
+      // Pendengar inilah satu-satunya yang benar-benar dapat memaksakan nama,
+      // jadi di sinilah ia disarankan - serentak, tanpa menunggu apa pun,
+      // supaya unduhannya tidak tertahan seperti pada 2.19.7.
+      if (alamat.startsWith("data:")) {
+        const diminta = ambilNamaAntrean();
+        if (diminta) {
+          sarankan({ filename: diminta, conflictAction: "uniquify" });
+          return true;
+        }
+        // Antrean kosong pada alamat data: berarti namanya hilang di jalan -
+        // pekerja yang mati, atau unduhan yang bukan dari panel. Nama yang
+        // dibawa unduhannya sendiri masih lebih baik daripada "download".
+        if (nama && !POLA_NAMA_UMUM.test(nama)) {
+          sarankan({ filename: nama, conflictAction: "uniquify" });
+          return true;
+        }
+      }
+
+      const asal = `${alamat} ${(barang && barang.referrer) || ""}`;
       const dariAbt = /\/aps_badilag\//i.test(asal) || /\/abt\//i.test(asal);
       const segar =
         konteksIngatan && Date.now() - Number(konteksIngatan.saat || 0) < UMUR_KONTEKS_UNDUH;
@@ -361,7 +483,14 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
   }
 
   if (pesan.jenis === "unduh") {
-    const nama = String(pesan.nama || "berkas").replace(/[\\/:*?"<>|]+/g, "_").slice(0, 180);
+    // Dipotong pada BATANGNYA, bukan dari belakang: memotong nama utuh
+    // membuang akhiran ".rtf" atau ".pdf"-nya, dan berkas tanpa akhiran tidak
+    // dapat dibuka dengan dua ketukan.
+    const nama = potongNamaBerkas(
+      String(pesan.nama || "berkas").replace(/[\\/:*?"<>|]+/g, "_"),
+      180
+    );
+    antrikanNama(nama);
     const alamat = String(pesan.alamat || "");
     if (!alamat.startsWith("data:")) {
       jawab({ ok: false, pesan: "alamat unduhan bukan data: - ditolak" });

@@ -628,8 +628,32 @@ function alatPasangLencana(panel, kunci) {
     alatCiutkan(panel, kunci, false);
   };
 
-  lencana.addEventListener("click", bentangkan);
-  lencana.addEventListener("dblclick", (peristiwa) => {
+  // ------------------------------------------------------------------
+  // PENDENGARNYA PADA PANEL, BUKAN PADA LENCANA - DAN ITU BUKAN KELALAIAN
+  // ------------------------------------------------------------------
+  //
+  // alatPasangGeser menangkap penunjuk pada PANEL di setiap pointerdown, dan
+  // selama tangkapan itu berlaku peramban membelokkan `click` serta `dblclick`
+  // ke elemen penangkap. Lencana hanya ANAK panel, jadi peristiwa yang mendarat
+  // di induk tidak pernah turun kepadanya: dipasang pada lencana, pendengar ini
+  // tidak pernah berjalan sekali pun, dan panel yang sudah diciutkan tidak
+  // dapat dibuka lagi - tanpa satu galat pun tercatat.
+  //
+  // Halaman SIPP tidak terkena sebab konten.js menggeser panelnya dengan
+  // mousedown dan tidak pernah menangkap penunjuk. Yang terkena hanya ALETA dan
+  // ABT, yang berbagi berkas ini - persis seperti yang dilaporkan.
+  //
+  // Dipasang pada panel, ia benar pada KEDUA keadaan: saat tangkapan berlaku
+  // klik memang mendarat di panel, dan saat tidak, klik menggelembung dari
+  // lencana ke panel. Panel yang sedang terbentang tetap aman - bentangkan()
+  // sudah berpagar KELAS_LENCANA di atas.
+  //
+  // Terukur pada harness yang memuat berkas ini apa adanya, dengan klik tetikus
+  // sungguhan: sebelum diperbaiki pendengar berjalan 0 kali dan panel tetap
+  // terciut; sesudahnya berjalan 1 kali dan panel terbentang kembali ke lebar
+  // semula.
+  panel.addEventListener("click", bentangkan);
+  panel.addEventListener("dblclick", (peristiwa) => {
     delete panel.dataset.baruDigeser;
     bentangkan(peristiwa);
   });
@@ -670,6 +694,24 @@ function alatPasangGeser(panel, kepala, kunci) {
       atas: kotak.top,
     };
     panel.classList.add("aleta-menggeser");
+    // ------------------------------------------------------------------
+    // TANGKAPAN PENUNJUK SENGAJA TETAP DI SINI - JANGAN DITUNDA
+    // ------------------------------------------------------------------
+    //
+    // Tangkapan ini membelokkan `click` dan `dblclick` ke panel, dan itu dahulu
+    // membuat panel terciut tidak dapat dibentangkan lagi: pendengarnya
+    // terpasang pada anak (.aleta-lencana), yang tidak pernah kebagian.
+    // Perbaikannya ADA DI alatPasangLencana - pendengarnya yang dipindahkan ke
+    // panel, bukan tangkapannya yang dibuang dari sini.
+    //
+    // Menunda tangkapan sampai ambang 4 piksel terlewati SUDAH DICOBA dan
+    // ditolak, sesudah diukur di Chromium sungguhan pada berkas ini apa adanya:
+    // kliknya memang sembuh, tetapi tarikan JAUH mati sama sekali. Tanpa
+    // tangkapan, pointermove hanya sampai ke panel selama penunjuk masih di
+    // ATAS panel - dan lencana hanya 54x54 piksel, sehingga tarikan cepat
+    // meninggalkannya sebelum ambangnya sempat menangkap. Terukur: tarikan
+    // pendek di dalam lencana berpindah, tarikan ke seberang layar tidak
+    // bergerak satu piksel pun.
     try {
       panel.setPointerCapture(peristiwa.pointerId);
     } catch {
@@ -702,11 +744,32 @@ function alatPasangGeser(panel, kepala, kunci) {
     geser = null;
     panel.classList.remove("aleta-menggeser");
     const kotak = panel.getBoundingClientRect();
+    // ------------------------------------------------------------------
+    // MENGGESER LENCANA TIDAK BOLEH MENGHAPUS KEADAAN LENCANANYA
+    // ------------------------------------------------------------------
+    //
+    // alatSimpanPosisi menulis dengan storage.local.set, yang MENGGANTI
+    // seluruh objek alih-alih menggabungkannya. Bentuk lama tidak menyertakan
+    // medan `lencana`, sehingga sekali lencana digeser penanda itu lenyap -
+    // dan `lebar` terisi 52, yaitu ukuran lencana, bukan ukuran panel.
+    // Akibatnya pada pemuatan berikutnya panel yang ditinggalkan terciut
+    // terbentang sendiri, seukuran lencana.
+    // Bentuknya disamakan dengan alatCiutkan: undefined, bukan nol - keduanya
+    // sama-sama diabaikan alatTerapkanPosisi yang berpagar `> 0`, tetapi nol
+    // yang tersimpan membuat pembacanya mengira ada ukuran yang berarti.
+    const jadiLencana = panel.classList.contains(KELAS_LENCANA);
+    const lebarSemula = Number(panel.dataset.lebarSemula) || undefined;
+    const tinggiSemula = Number(panel.dataset.tinggiSemula) || undefined;
     alatSimpanPosisi(kunci, {
       kiri: Math.round(kotak.left),
       atas: Math.round(kotak.top),
-      lebar: Math.round(kotak.width),
-      tinggi: panel.dataset.tinggiSendiri === "1" ? Math.round(kotak.height) : 0,
+      lebar: jadiLencana ? lebarSemula : Math.round(kotak.width),
+      tinggi: jadiLencana
+        ? tinggiSemula
+        : panel.dataset.tinggiSendiri === "1"
+          ? Math.round(kotak.height)
+          : 0,
+      lencana: jadiLencana,
     });
     alatJepitTinggi(panel);
   };
@@ -1519,11 +1582,14 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   alatPasangGeser(panel, kepala, kunci);
   alatPasangUbahUkuran(panel, kunci);
 
-  // Lencana dipasang pada panel yang SAMA, dan digeser lewat perkakas yang
-  // sama pula - hanya pegangannya yang berbeda. Kepalanya tidak dapat
-  // dipakai sebagai pegangan saat menciut, sebab ia yang disembunyikan.
-  const lencana = alatPasangLencana(panel, kunci);
-  alatPasangGeser(panel, lencana, kunci);
+  // Lencana dipasang pada panel yang SAMA. Gesernya TIDAK didaftarkan lagi:
+  // alatPasangGeser memasang pendengarnya pada `panel`, bukan pada argumen
+  // keduanya - argumen itu hanya dipakai sebagai pagar `kepala.contains(...)`,
+  // dan pagar itu sudah korslet sendiri begitu panel menyandang KELAS_LENCANA.
+  // Pendaftaran kedua karena itu tidak menambah kemampuan apa pun; yang
+  // ditambahnya hanya dua salinan logika geser pada tiap tarikan, dua kali
+  // penulisan posisi ke penyimpanan, dan dua kali tangkapan penunjuk.
+  alatPasangLencana(panel, kunci);
 
   try {
     const simpan = await chrome.storage.local.get([pilihan.kunciTema || "temaPanel"]);

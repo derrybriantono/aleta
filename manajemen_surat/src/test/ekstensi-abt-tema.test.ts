@@ -129,8 +129,21 @@ describe("lencana - panel yang diciutkan", () => {
   it("dapat digeser lewat lencananya sendiri", () => {
     // Kepalanya tidak dapat dipakai sebagai pegangan saat menciut - ia yang
     // disembunyikan.
+    //
+    // Yang dituntut SIFATNYA, bukan bentuk pemanggilannya. Sampai 1.157.1
+    // tuntutan ini berbunyi `alatPasangGeser(panel, lencana, kunci)` - yaitu
+    // pendaftaran KEDUA. Pendaftaran itu ternyata mubazir: alatPasangGeser
+    // memasang seluruh pendengarnya pada `panel`, bukan pada argumen keduanya,
+    // dan argumen itu hanya dipakai sebagai pagar `kepala.contains(...)` yang
+    // sudah korslet sendiri begitu panel menyandang KELAS_LENCANA. Mendaftar
+    // dua kali karena itu hanya menggandakan logika geser dan tulisan posisi.
+    //
+    // Yang menjaga kemampuannya kini pagar itu sendiri.
     const isi = baca("panel-alat.js");
-    expect(isi).toContain("alatPasangGeser(panel, lencana, kunci);");
+    expect(isi).toContain(
+      "if (!panel.classList.contains(KELAS_LENCANA) && !kepala.contains(peristiwa.target)) return;"
+    );
+    expect(isi).not.toContain("alatPasangGeser(panel, lencana, kunci);");
   });
 
   it("klik membedakan diri dari tarikan lewat JARAK, bukan waktu", () => {
@@ -142,9 +155,21 @@ describe("lencana - panel yang diciutkan", () => {
   });
 
   it("satu klik dan klik ganda keduanya membentangkan", () => {
+    // Pendengarnya pada PANEL, bukan pada lencana - dan itu perbaikan 1.158.0,
+    // bukan kelalaian.
+    //
+    // alatPasangGeser menangkap penunjuk pada panel di setiap pointerdown, dan
+    // selama tangkapan itu berlaku peramban membelokkan click serta dblclick ke
+    // elemen PENANGKAP. Lencana hanya ANAK panel, jadi dipasang di sana
+    // pendengar ini tidak pernah berjalan sekali pun: panel yang diciutkan di
+    // halaman ALETA dan ABT tidak dapat dibuka lagi, tanpa satu galat pun
+    // tercatat. Terukur dengan klik tetikus sungguhan - sebelum diperbaiki
+    // pendengarnya berjalan 0 kali, sesudahnya panel terbentang dan lebarnya
+    // pulih 324 piksel.
     const isi = baca("panel-alat.js");
-    expect(isi).toContain('lencana.addEventListener("click", bentangkan)');
-    expect(isi).toContain('lencana.addEventListener("dblclick"');
+    expect(isi).toContain('panel.addEventListener("click", bentangkan)');
+    expect(isi).toContain('panel.addEventListener("dblclick"');
+    expect(isi).not.toContain('lencana.addEventListener("click", bentangkan)');
   });
 
   it("keadaan terciut ikut dipulihkan saat halaman dibuka lagi", () => {

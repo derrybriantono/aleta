@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.158.1",
+    dirilis: "2026-09-21T16:05:00+08:00",
+    judul: "Panel yang diciutkan dapat dibuka lagi, dan unduhan tidak lagi bernama download",
+    butir: [
+      "PANEL TERCIUT DAPAT DIBUKA KEMBALI di halaman ALETA dan ABT. Sebelumnya lencananya diklik dan tidak terjadi apa-apa - satu-satunya jalan mengembalikannya adalah memuat ulang halaman. Sebabnya bukan panel yang hilang melainkan kliknya yang mati: perkakas geser menangkap penunjuk pada panel di setiap tekanan, dan selama tangkapan itu berlaku peramban membelokkan click serta dblclick ke elemen PENANGKAP. Pendengar yang membentangkan panel terpasang pada anaknya, dan peristiwa yang mendarat di induk tidak pernah turun ke anak. Tidak ada satu pun galat yang tercatat - itu sebabnya ia bertahan lama.",
+      "HALAMAN SIPP TIDAK PERNAH TERKENA, dan itu bukan kebetulan: panel SIPP digeser dengan mousedown dan tidak pernah menangkap penunjuk. Yang terkena hanya ALETA dan ABT, yang berbagi satu berkas perkakas - persis seperti yang dilaporkan.",
+      "TANGKAPAN PENUNJUKNYA TIDAK DIBUANG. Menundanya sampai ambang empat piksel terlewati sudah dicoba dan DITOLAK sesudah diukur di peramban sungguhan: kliknya memang sembuh, tetapi tarikan JAUH mati sama sekali - tanpa tangkapan, gerakan hanya sampai ke panel selama penunjuk masih di atasnya, dan lencana hanya 54 piksel. Terukur: tarikan pendek di dalam lencana berpindah, tarikan ke seberang layar tidak bergerak satu piksel pun. Yang dipindahkan karena itu pendengarnya, ke elemen yang memang menerima kliknya.",
+      "MENGGESER LENCANA TIDAK LAGI MENGHAPUS KEADAANNYA. Penyimpanan posisi mengganti seluruh catatannya alih-alih menggabungkan, dan bentuk lamanya tidak menyertakan penanda lencana - sehingga sekali lencana digeser, penanda itu lenyap dan lebarnya terisi 52, yaitu ukuran lencana. Panel yang ditinggalkan terciut lalu terbentang sendiri pada pemuatan berikutnya, seukuran lencana.",
+      "PENDAFTARAN GESER GANDA DIBUANG. Perkakasnya dipasang dua kali pada panel yang sama, sebab argumen keduanya hanya dipakai sebagai pagar - bukan sebagai tempat pendengar. Akibatnya tiap tarikan menjalankan dua salinan logika yang sama dan menulis posisinya ke penyimpanan dua kali.",
+      "UNDUHAN LEWAT PANEL BERNAMA BENAR, tidak lagi \"download (11).rtf\". Namanya sudah disusun dan sudah diserahkan kepada peramban, tetapi hilang sesudahnya: unduhan ekstensi beralamat data: dan TANPA rujukan halaman, sehingga penamaan ulang milik ekstensi sendiri - yang mengenali unduhan ABT dari alamatnya - mundur dan membiarkan nama bawaan peramban dipakai. Terbaca dari riwayat unduhan: sembilan dari sembilan unduhan beratribut ekstensi bernama download, sedangkan berkas yang SAMA yang turun lewat tautan halaman bernama benar.",
+      "UNDUHAN MASSAL IKUT BERNAMA BENAR, bukan hanya berkas pertamanya. Nama yang menunggu disimpan pada SATU slot yang dihapus begitu dipakai, dan unduhan massal melanggar dua andaian di baliknya sekaligus: beberapa unduhan dapat lahir sebelum yang pertama sempat dinamai sehingga slotnya tertimpa, dan pekerja latar MV3 mati kira-kira tiap tiga puluh detik sedangkan unduhan massal berjalan bermenit-menit - variabel modulnya hilang di tengah jalan tanpa satu pun galat. Gantinya antrean yang disimpan di penyimpanan sesi: ia selamat dari pekerja yang mati dan memuat lebih dari satu nama. Yang kedaluwarsa lima menit dibuang, sebab unduhan yang batal tidak pernah mengambil namanya - dan nama yang tertinggal akan dipakai berkas BERIKUTNYA, yang lalu salah nama diam-diam.",
+      "NAMA PANJANG DIPOTONG PADA BATANGNYA, bukan dari belakang. Pemotongan 180 huruf yang lama memakan akhiran .rtf maupun .pdf-nya, dan berkas tanpa akhiran tidak dapat dibuka dengan dua ketukan. Belum menggigit selama namanya pendek - tetapi ia menunggu di jalur yang sama begitu jenis perkara dan status putusan sungguh ikut pada namanya.",
+    ],
+  },
+  {
     versi: "1.157.1",
     dirilis: "2026-09-18T11:20:00+08:00",
     judul: "Tab Berkas dan Perkara tidak lagi memajang keadaan sebelum ALETA menulis",
