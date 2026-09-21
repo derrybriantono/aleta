@@ -109,6 +109,43 @@
     max-width: 100%;
   }
 
+  /* ======================================================================
+     KANVAS DAN SVG LEAFLET DIKECUALIKAN DARI max-width DI ATAS
+     ======================================================================
+
+     Kanvas Leaflet duduk di dalam PANEL yang berposisi mutlak tanpa lebar.
+     Anak satu-satunya - kanvas itu sendiri - juga berposisi mutlak, sehingga
+     tidak menyumbang lebar apa pun kepada induknya: lebar panelnya NOL.
+     max-width 100% terhadap nol berarti NOL, dan max-width mengalahkan width
+     sebaris yang dipasang Leaflet.
+
+     Terukur di peramban satker sebelum diperbaiki:
+
+         KANVAS css  0x595   | attr 2180x1190
+         PETA   css  908x496
+         ISI    kotak piksel x 890..1273  y 28..1051
+
+     Lingkarannya SUDAH tergambar - 40.729 piksel, tepat di tengah - dan
+     tingginya pun benar. Yang nol hanya lebar tampilnya, dan justru itulah
+     yang membuat cacatnya sulit dikenali: petanya tampak sehat, ubinannya
+     lengkap, tidak ada satu galat pun di Console, sementara SELURUH lapisan
+     vektornya hilang.
+
+     Ubinan selamat karena leaflet.css melindunginya secara tegas dengan
+     max-width none !important - tetapi daftar itu memuat img, TIDAK memuat
+     canvas.
+
+     Dikecualikan di sini, bukan di komponen petanya: yang cacat aturan
+     globalnya, dan tiap peta Leaflet lain di aplikasi ini terkena hal yang
+     sama. */
+  .leaflet-container canvas,
+  .leaflet-container svg,
+  .leaflet-pane > canvas,
+  .leaflet-pane > svg {
+    max-width: none;
+    max-height: none;
+  }
+
   @media (max-width: 640px) {
     body {
       line-height: 1.55;
