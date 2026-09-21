@@ -68,6 +68,12 @@ type Aturan = {
   HURUF: {
     huruf: string;
     siap: boolean;
+    // Syarat yang tidak dapat disimpulkan dari kata pemicunya - huruf B, C, E,
+    // dan H membawanya, dan huruf G memakainya untuk menyebutkan sebab ia
+    // belum siap. Medan ini ADA pada kedelapan entri di abtAturanAlasan.js;
+    // yang tertinggal hanya pengakuannya di sini, dan tsc menangkapnya sebagai
+    // tiga galat pada uji yang justru benar.
+    syarat: string;
     dasar: {
       bunyi: string;
       catatanNaskah: string;
