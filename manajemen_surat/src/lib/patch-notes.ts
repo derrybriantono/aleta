@@ -26,7 +26,7 @@ export const PATCH_NOTES: PatchNote[] = [
     title:
       "ALETA Judicia v2.32.0 - Dua Puluh Satu Permintaan, dan Tiga Cacat yang Gagal dalam Diam",
     date: "2026-09-22",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Dua puluh satu permintaan pengguna, dikerjakan dalam dua putaran. Di antaranya TIGA cacat " +
       "yang sama-sama gagal dalam DIAM - tanpa satu pun galat di layar, dan justru itu yang " +
@@ -102,7 +102,7 @@ export const PATCH_NOTES: PatchNote[] = [
     version: "2.31.1",
     title: "ALETA Judicia v2.31.1 - Error yang Menumpuk Diam-diam di Halaman ABT",
     date: "2026-09-22",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Satu error yang berulang tiap halaman ABT dibuka, tanpa satu pun gejala di layar - dan " +
       "justru itu yang membuatnya berbahaya. Nomor portal ikut naik sebab ekstensi yang tertanam " +
