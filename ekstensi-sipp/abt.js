@@ -4224,6 +4224,35 @@ function kabarkanKonteksUnduh() {
   }
 }
 
+/**
+ * ============================================================================
+ * DIDEKLARASIKAN DI SINI, DI ATAS PEMANGGILNYA - DAN ITU BUKAN KERAPIAN
+ * ============================================================================
+ *
+ * Dahulu ia berdiri tepat di atas pasangMassalAbt, ratusan baris DI BAWAH
+ * pemanggilan ini. Deklarasi `function` terangkat ke atas sehingga
+ * pasangMassalAbt sudah dapat dipanggil dari sini; deklarasi `let` TIDAK - ia
+ * ada tetapi belum boleh disentuh sampai barisnya sendiri dijalankan.
+ *
+ * Dan baris pertama pasangMassalAbt justru membacanya:
+ *
+ *     Uncaught (in promise) ReferenceError:
+ *     Cannot access 'sudahDipasangMassalAbt' before initialization
+ *
+ * Fungsinya async, tetapi badannya berjalan serempak sampai await pertama, dan
+ * pembacaan itu ada sebelum await mana pun - jadi ia meledak seketika.
+ *
+ * Panelnya tetap muncul, dan itulah yang membuatnya tidak pernah terlihat:
+ * gelung ulangan di bawah memanggilnya lagi, dan pada panggilan kedua barisnya
+ * sudah lewat. Yang tersisa satu error di chrome://extensions tiap halaman ABT
+ * dibuka - tanpa satu pun gejala di layar.
+ *
+ * Itu yang berbahaya. Lencana merah Chrome yang selalu menyala membuat error
+ * SUNGGUHAN berikutnya tenggelam; tidak ada yang membuka daftar yang memang
+ * selalu merah.
+ */
+let sudahDipasangMassalAbt = false;
+
 void pasang();
 void pasangMassalAbt();
 kabarkanKonteksUnduh();
@@ -4337,8 +4366,6 @@ function berkasBlangkoDiHalaman() {
   }
   return hasil;
 }
-
-let sudahDipasangMassalAbt = false;
 
 async function pasangMassalAbt() {
   if (sudahDipasangMassalAbt) return;

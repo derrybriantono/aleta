@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.161.1",
+    dirilis: "2026-09-22T10:35:00+08:00",
+    judul: "Error yang menumpuk diam-diam tiap halaman ABT dibuka",
+    butir: [
+      "ReferenceError TDZ pada pemasangan panel massal ABT. Bunyinya di chrome://extensions, berulang tiap halaman ABT dibuka: \"Cannot access 'sudahDipasangMassalAbt' before initialization\". Sebabnya urutan, bukan logika - fungsinya dipanggil di tingkat atas berkas, sementara let yang dibacanya baru dideklarasikan ratusan baris di bawah. Deklarasi function terangkat ke atas sehingga pemanggilannya sah; deklarasi let tidak - ia ada tetapi belum boleh disentuh sampai barisnya sendiri dijalankan.",
+      "PANELNYA TETAP MUNCUL, dan itulah yang membuatnya tidak pernah terlihat. Ada gelung ulangan yang memanggilnya lagi, dan pada panggilan kedua barisnya sudah lewat. Tidak ada satu pun gejala di layar - yang tersisa hanya satu error di daftar Chrome tiap halaman ABT dibuka. Justru itu bahayanya: lencana merah yang selalu menyala membuat error SUNGGUHAN berikutnya tenggelam, sebab tidak ada yang membuka daftar yang memang selalu merah.",
+      "ADA SEJAK commit putusan massal - bukan dari perubahan hari ini; diperiksa pada tiga commit terakhir dan ketiganya sama. Baru ketahuan ketika daftar error itu kebetulan dibuka.",
+      "Deklarasinya dipindah ke ATAS pemanggilnya, bukan diubah menjadi var. var memang terangkat, tetapi ia mengangkat pula kebiasaan lama yang sudah ditinggalkan berkas ini.",
+      "PENJAGA BARU menyisir kedelapan berkas ekstensi untuk pola yang sama - fungsi tingkat atas yang membaca let/const yang belum lahir - dan ia sendiri diuji atas contoh buatan, supaya penjaga yang regexnya patah tidak diam-diam selalu hijau.",
+    ],
+  },
+  {
     versi: "1.161.0",
     dirilis: "2026-09-22T08:05:00+08:00",
     judul: "Unggah putusan: tidak lagi menyerah di tengah, tidak lagi antre satu per satu",
