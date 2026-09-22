@@ -71,12 +71,35 @@ describe("2. rincian tidak lagi terpotong", () => {
     // mengikuti tabel berada separuh di luar layar pada layar sempit.
     expect(antrian).toContain("const [lebarTampak, setLebarTampak] = useState(0);");
     expect(antrian).toContain("new ResizeObserver(ukur)");
-    expect(antrian).toContain('className="sticky left-0 border-l-4 border-l-primary px-4 py-4"');
+    expect(antrian).toContain(
+      'className="sticky left-0 overflow-x-auto border-l-4 border-l-primary px-4 py-4"'
+    );
+  });
+
+  it("isi yang lebih lebar MENGGULIR di dalam wadahnya, bukan menarik halaman", () => {
+    // Diminta pengguna dua kali - "kenapa ketika di klik rincian tiba-tiba dia
+    // melebar ke samping kanan" lalu "ini sangat mengganggu". Mengunci
+    // lebarnya saja tidak cukup: tanpa overflow-x-auto isi yang lebih lebar
+    // tetap mendorong selnya, dan seluruh tabel ikut melar.
+    expect(antrian).toContain("overflow-x-auto border-l-4 border-l-primary");
   });
 
   it("lebar yang belum terukur jatuh ke perilaku lama, bukan ke nol", () => {
     // Peladen menggambar halaman ini sebelum ada yang dapat diukur.
-    expect(antrian).toContain("style={lebarTampak > 0 ? { width: `${lebarTampak}px` } : undefined}");
+    const i = antrian.indexOf("className=\"sticky left-0 overflow-x-auto border-l-4 border-l-primary");
+    expect(i, "pembungkus rincian tidak ditemukan").toBeGreaterThan(-1);
+    const blok = antrian.slice(i, i + 400);
+    expect(blok).toContain("lebarTampak > 0");
+    expect(blok).toContain(": undefined");
+
+    // maxWidth dan minWidth: 0 IKUT DIJAGA. width saja tidak mengikat sel
+    // tabel - <td> melebar mengikuti isinya walau lebar anaknya sudah
+    // disebut, dan minWidth otomatis pada kotak bergulir menolak menyusut.
+    // Ketiganya harus ada bersama; yang satu tanpa yang lain mengembalikan
+    // tarikan ke samping tanpa satu pun tanda.
+    expect(blok).toContain("width: `${lebarTampak}px`");
+    expect(blok).toContain("maxWidth: `${lebarTampak}px`");
+    expect(blok).toContain("minWidth: 0");
   });
 
   it("pembatasan tinggi dilepas selama ada rincian terbuka", () => {

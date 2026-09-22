@@ -50,6 +50,13 @@ export type SaklarTampilan = {
    * akan membuat orang mengira penandanya tidak ada, lalu mencarinya.
    */
   wajib?: boolean;
+  /**
+   * Bawaannya MATI, bukan menyala.
+   *
+   * Pengecualian, dan hanya bagi yang mematikannya tidak menghilangkan satu
+   * pun fakta tentang perkara - lihat sebabnya pada daftarnya di bawah.
+   */
+  bawaanMati?: boolean;
 };
 
 export const KELOMPOK_TAMPILAN = [
@@ -185,6 +192,46 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "keterangan",
   },
 
+  // ==========================================================================
+  // DUA SAKLAR YANG BAWAANNYA MATI - PENGECUALIAN, DAN SEBABNYA DITULIS
+  // ==========================================================================
+  //
+  // Seluruh saklar lain bawaannya MENYALA: layar ini sudah berjalan sebelum
+  // saklarnya ada, dan bawaan yang mematikan sesuatu menghilangkan penanda
+  // dari layar orang yang tidak pernah meminta apa pun.
+  //
+  // Kedua ini sebaliknya, atas permintaan pengguna 22 September 2026. Keduanya
+  // BUKAN penanda yang hilang - keduanya keterangan yang selama ini SELALU
+  // ADA dan tidak pernah dapat disingkirkan:
+  //
+  //   kolom Siap    memakan satu kolom penuh pada tiap baris, padahal skornya
+  //                 hanya dihitung bila tombolnya ditekan;
+  //   catatan kaki  kalimat penjelasan yang sama persis pada tiap perkara -
+  //                 "Tenggang dihitung dari tanggal panggilan dikirim...",
+  //                 "Angka ambang dapat diubah di menu Integrasi e-Court" -
+  //                 dibaca sekali seumur hidup pemakainya, lalu dilewati
+  //                 selamanya sambil tetap memakan ruang.
+  //
+  // Yang dimatikan di sini tidak menghilangkan satu pun FAKTA tentang perkara;
+  // yang hilang hanya kalimat yang menerangkan cara ALETA menghitung. Itu
+  // sebabnya keduanya boleh mati sejak awal, sementara yang lain tidak.
+  {
+    kunci: "kolom-siap",
+    label: "Kolom Siap",
+    keterangan:
+      "Kolom skor kesiapan beserta kepala kolomnya. Dimatikan sejak awal - skornya hanya dihitung bila tombol Hitung skor ditekan.",
+    kelompok: "keterangan",
+    bawaanMati: true,
+  },
+  {
+    kunci: "catatan-cara-hitung",
+    label: "Catatan cara menghitung",
+    keterangan:
+      "Kalimat yang menerangkan cara ALETA menghitung - tenggang panggilan, ambang penilaian, dan sejenisnya. Sama pada tiap perkara, dan dibaca sekali seumur hidup.",
+    kelompok: "keterangan",
+    bawaanMati: true,
+  },
+
   // --- Tombol dan alat -----------------------------------------------------
   {
     kunci: "skor-kesiapan",
@@ -228,7 +275,7 @@ export type PilihanTampilan = Record<string, boolean>;
  */
 export function tampilanBawaan(): PilihanTampilan {
   const hasil: PilihanTampilan = {};
-  for (const saklar of SAKLAR_TAMPILAN) hasil[saklar.kunci] = true;
+  for (const saklar of SAKLAR_TAMPILAN) hasil[saklar.kunci] = !saklar.bawaanMati;
   return hasil;
 }
 
@@ -243,9 +290,15 @@ export function tampil(pilihan: PilihanTampilan | undefined, kunci: string): boo
   if (SAKLAR_WAJIB.includes(kunci)) return true;
   if (!pilihan) return true;
   const nilai = pilihan[kunci];
-  // Yang belum pernah disimpan - saklar yang baru ditambahkan versi ini -
-  // menyala. Lihat tampilanBawaan untuk sebabnya.
-  return nilai === undefined ? true : nilai;
+  if (nilai !== undefined) return nilai;
+  // Yang belum pernah disimpan memakai bawaannya - menyala bagi hampir
+  // semuanya, mati bagi dua yang ditandai bawaanMati. Lihat tampilanBawaan.
+  //
+  // Dibaca dari daftarnya, bukan dikembalikan true begitu saja: simpanan yang
+  // ditulis versi sebelum kedua saklar itu ada tidak memuat kuncinya, dan
+  // mengembalikan true akan menyalakan keduanya bagi seluruh pemakai lama -
+  // yaitu kebalikan dari yang diminta.
+  return !SAKLAR_TAMPILAN.find((x) => x.kunci === kunci)?.bawaanMati;
 }
 
 /**
@@ -276,7 +329,13 @@ export function bacaTampilan(mentah: string | null): PilihanTampilan {
 
 /** Berapa banyak yang sedang dimatikan - untuk lencana kecil pada tombolnya. */
 export function jumlahDimatikan(pilihan: PilihanTampilan): number {
-  return SAKLAR_TAMPILAN.filter((x) => !x.wajib && pilihan[x.kunci] === false).length;
+  // Yang BAWAANNYA memang mati tidak dihitung sebagai "dimatikan orang" -
+  // angka pada tombol menyatakan berapa yang disingkirkan dari keadaan
+  // biasanya, dan menghitung bawaan membuatnya berbunyi 2 pada layar yang
+  // belum pernah disentuh siapa pun.
+  return SAKLAR_TAMPILAN.filter(
+    (x) => !x.wajib && !x.bawaanMati && pilihan[x.kunci] === false
+  ).length;
 }
 
 /** Kelompok beserta anggotanya, untuk digambar panel saklarnya. */

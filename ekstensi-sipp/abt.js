@@ -4533,7 +4533,7 @@ function bagianPetaBlangkoAbt(keadaan) {
   kotak.appendChild(judul);
   const sebab = buatElemen(
     "div",
-    "aleta-tetap-sebab",
+    "aleta-tetap-sebab aleta-remeh",
     "Jenis perkara → blangko ABT mana yang dipakai. Buka kelompok blangkonya di halaman ini, " +
       "lalu pilih berkasnya dari daftar di bawah; tokennya dibaca dari tautan yang ABT sendiri buat."
   );

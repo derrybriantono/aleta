@@ -272,7 +272,7 @@ function amarBakuPraperiksa(teks: string): boolean {
  * secara hitungan, kosong secara makna. Diukur: pada 200 putusan sungguhan,
  * pencabutan menyumbang sebagian besar perhatian aduan sebelum saringan ini.
  */
-const POLA_STATUS_TANPA_ADUAN = /cabut|gugur|tidak\s+dapat\s+diterima|niet|n\.?o\.?\b|ditolak|tolak|damai/;
+const POLA_STATUS_TANPA_ADUAN = /cabut|gugur|tidak\s+(dapat\s+)?diterima|niet|n\.?o\.?\b|ditolak|tolak|damai/;
 
 /**
  * ============================================================================
@@ -503,8 +503,16 @@ export function bakukanNomor(nomor: unknown): string {
  * ditahan. Daftar ini dibaca berurutan; yang pertama cocok yang dipakai.
  */
 const HARAPAN_STATUS: Array<{ pola: RegExp; kata: RegExp; sebutan: string }> = [
-  { pola: /tidak\s+dapat\s+diterima|n\.?o\.?\b|niet/, kata: /tidak\s+dapat\s+diterima|niet\s*ontvankelijk/, sebutan: "Tidak Dapat Diterima" },
+  // "dapat" dibuat opsional: SIPP menulis "Tidak Dapat Diterima", tetapi
+  // pilihan yang tertulis di sebagian borang berbunyi "Tidak Diterima" saja -
+  // dan status yang tidak dikenali membuat pemeriksaan padanan amar DILEWATI
+  // diam-diam, tepat pada putusan yang amarnya paling mudah tertukar.
+  { pola: /tidak\s+(dapat\s+)?diterima|n\.?o\.?\b|niet/, kata: /tidak\s+dapat\s+diterima|tidak\s+diterima|niet\s*ontvankelijk/, sebutan: "Tidak Dapat Diterima" },
   { pola: /dicabut|cabut/, kata: /cabut/, sebutan: "Dicabut" },
+  // "Gugur" dan "Digugurkan" adalah dua status berbeda di SIPP - yang pertama
+  // gugurnya gugatan karena penggugat tidak hadir, yang kedua penetapan yang
+  // menggugurkan. Kata kerja amarnya sama-sama berakar "gugur", jadi satu
+  // baris cukup; sebutannya menyebut keduanya supaya pesannya tidak keliru.
   { pola: /gugur/, kata: /gugur/, sebutan: "Gugur/Digugurkan" },
   { pola: /damai/, kata: /damai/, sebutan: "Perdamaian" },
   { pola: /ditolak|tolak/, kata: /menolak/, sebutan: "Ditolak" },

@@ -330,6 +330,20 @@
       "when": 1789298401000,
       "tag": "0046_konseptor_sementara",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1789298401001,
+      "tag": "0047_keterangan_perkara",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1789384801001,
+      "tag": "0048_rekam_antrian",
+      "breakpoints": true
     }
   ]
 }

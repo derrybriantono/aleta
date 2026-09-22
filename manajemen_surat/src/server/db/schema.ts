@@ -904,6 +904,51 @@ const schemaStatements = [
     ditetapkan_oleh TEXT NOT NULL DEFAULT '',
     ditetapkan_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS aleta_keterangan_perkara (
+    id TEXT PRIMARY KEY,
+    perkara_id TEXT NOT NULL,
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    urutan INTEGER NOT NULL DEFAULT 1,
+    isi TEXT NOT NULL DEFAULT '',
+    ditulis_oleh TEXT NOT NULL DEFAULT '',
+    nama_penulis TEXT NOT NULL DEFAULT '',
+    jabatan TEXT NOT NULL DEFAULT '',
+    ditulis_at TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_keterangan_perkara_urut
+    ON aleta_keterangan_perkara (perkara_id, urutan)`,
+  /**
+   * Salinan ALETA atas antrian sidang hari itu.
+   *
+   * Tabel antrian_sidang milik aplikasi ruang tunggu dipakai ulang tiap hari,
+   * sehingga keadaan sebuah hari hilang begitu harinya lewat. Yang disimpan di
+   * sini: urutan antrian, waktu pengambilan, nama petugas yang melayani, dan
+   * jarak ke perkara sebelum maupun sesudahnya di ruang yang sama.
+   * Lihat 0048_rekam_antrian.sql.
+   */
+  `CREATE TABLE IF NOT EXISTS aleta_rekam_antrian (
+    id TEXT PRIMARY KEY,
+    tanggal_sidang TEXT NOT NULL DEFAULT '',
+    sidang_id TEXT NOT NULL DEFAULT '',
+    perkara_id TEXT NOT NULL DEFAULT '',
+    nomor_perkara TEXT NOT NULL DEFAULT '',
+    ruangan TEXT NOT NULL DEFAULT '',
+    nomor_antrian INTEGER,
+    urutan_ruang INTEGER,
+    waktu_ambil TEXT NOT NULL DEFAULT '',
+    jam_panggil TEXT NOT NULL DEFAULT '',
+    online INTEGER NOT NULL DEFAULT 0,
+    keadaan TEXT NOT NULL DEFAULT '',
+    nama_petugas TEXT NOT NULL DEFAULT '',
+    jarak_sebelum_menit INTEGER,
+    jarak_berikut_menit INTEGER,
+    pertama_direkam_at TEXT NOT NULL DEFAULT '',
+    direkam_at TEXT NOT NULL DEFAULT ''
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_rekam_antrian_hari
+    ON aleta_rekam_antrian (tanggal_sidang, ruangan, urutan_ruang)`,
+  `CREATE INDEX IF NOT EXISTS idx_rekam_antrian_perkara
+    ON aleta_rekam_antrian (perkara_id, tanggal_sidang)`,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

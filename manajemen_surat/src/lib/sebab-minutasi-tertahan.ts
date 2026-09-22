@@ -39,17 +39,50 @@
  *   amar_putusan_dok                 naskah putusan
  *   amar_putusan_anonimisasi_dok     naskah anonim
  *
- * Yang tidak terbaca - tanda tangan basah, pemberkasan fisik, kelengkapan
- * relaas dalam bundel - TIDAK dikarang menjadi butir. Daftar yang memuat
- * tuduhan yang tidak dapat diperiksa lebih buruk daripada daftar pendek: satu
- * butir palsu membuat seluruh daftarnya tidak dipercaya.
+ * Yang tidak terbaca - tanda tangan basah, pemberkasan fisik - TIDAK dikarang
+ * menjadi butir. Daftar yang memuat tuduhan yang tidak dapat diperiksa lebih
+ * buruk daripada daftar pendek: satu butir palsu membuat seluruh daftarnya
+ * tidak dipercaya.
+ *
+ * RELAAS dulu ikut ditolak di sini dengan alasan yang sama. Alasan itu sudah
+ * tidak benar: bot memulangkan adaDokumen per relaas, dan angka yang sama
+ * sudah lama dipajang panel sebagai "Relaas berdokumen 4 dari 4". Sejak
+ * 22 September 2026 ia menjadi butir PELENGKAP - yang terbaca ada tidaknya
+ * pindaiannya, bukan sah tidaknya panggilannya, dan menahan minutasi atas
+ * dasar itu berarti menahannya atas hal yang tidak diukur.
  */
+
+/** Satu berkas yang kurang, disebut namanya. */
+export type ButirKurang = {
+  /** Sebutan pendeknya, mis. "Sidang ke-3" atau "Relaas Tergugat". */
+  label: string;
+  /** Keterangan di belakangnya, mis. tanggal dan agendanya. */
+  catatan?: string;
+};
 
 /** Satu hal yang masih tertinggal sebelum berkasnya patut diminutasi. */
 export type SebabMinutasi = {
   kunci: string;
   /** Kalimat pendek untuk layar. */
   pesan: string;
+  /**
+   * YANG KURANG, DISEBUT SATU PER SATU
+   * ==================================
+   *
+   * Diminta pengguna 22 September 2026: "disebut berkas perkara sidang ke
+   * berapa dan agenda berapa". Kalimatnya sendiri tidak diubah - lima penjaga
+   * mengikat isinya, dan yang lebih penting: "2 dari 5" adalah angka yang
+   * dibaca sekilas, dan membenamkan lima nama sidang ke dalamnya justru
+   * menghapus angka itu dari pandangan.
+   *
+   * Daftar ini digambar sebagai sub-daftar di bawah kalimatnya. Yang
+   * membacanya sedang menyusun bundel; ia butuh tahu sidang MANA yang harus
+   * dibuka, bukan berapa banyak.
+   *
+   * Kosong bila butirnya memang tidak menunjuk berkas tertentu - naskah
+   * putusan, misalnya, hanya ada satu.
+   */
+  rincian?: ButirKurang[];
   /**
    * "penghalang" - selama masih ada, minutasi belum patut dikerjakan.
    * "pelengkap"  - tidak menahan minutasi, tetapi tetap tertunggak.
@@ -85,7 +118,38 @@ export type BahanMinutasi = {
    * Daftar KOSONG bukan berarti "semua BAS lengkap": ia berarti jadwalnya
    * belum terbaca. Keduanya dibedakan di bawah - lihat basBelumTerbaca.
    */
-  jadwal: Array<{ adaBas: boolean; tanggalSidang?: string; agenda?: string }>;
+  jadwal: Array<{
+    adaBas: boolean;
+    tanggalSidang?: string;
+    agenda?: string;
+    /**
+     * Sidang keberapa menurut SIPP (kolom perkara_jadwal_sidang.urutan).
+     *
+     * Dapat 0: bot menulis `Number(row.urutan) || 0` dan kolomnya kosong pada
+     * sebagian baris lama. Nol BUKAN nomor - yang menulis "sidang ke-0" pada
+     * layar menyuruh orang mencari sesuatu yang tidak ada di SIPP.
+     */
+    urutanSidang?: number;
+  }>;
+  /**
+   * Relaas panggilan beserta ada tidaknya dokumen pindaiannya.
+   *
+   * Ditambahkan 22 September 2026 atas permintaan pengguna, yang menyebut
+   * relaas bersama putusan dan berita acara sidang.
+   *
+   * Sampai saat itu berkas ini menolak menghitung relaas - lihat catatan di
+   * kepala berkas - dengan alasan kelengkapannya "tidak terbaca". Alasan itu
+   * sudah tidak benar: bot memulangkan adaDokumen per relaas, dan angka yang
+   * sama sudah dipajang panel sebagai "Relaas berdokumen 4 dari 4".
+   *
+   * Tetap PELENGKAP, bukan penghalang: yang terbaca adalah ada tidaknya
+   * PINDAIAN relaas, bukan sah tidaknya panggilannya. Menahan minutasi atas
+   * dasar itu berarti menahannya atas hal yang tidak diukur.
+   *
+   * Tidak wajib dikirim - pemanggil lama tetap sah, dan tanpa daftar ini
+   * butirnya sekadar tidak muncul.
+   */
+  relaas?: Array<{ adaDokumen: boolean; namaPihak?: string; tanggalRelaas?: string }>;
 };
 
 /**
@@ -144,6 +208,59 @@ function sidangSampaiPutusan(bahan: BahanMinutasi) {
 }
 
 /**
+ * Tanggal yang terbaca orang, dari apa pun bentuk yang dikirim SIPP.
+ *
+ * SIPP mengirim "2026-06-10" pada satu tempat dan "2026-06-10 09:00:00" pada
+ * tempat lain. Menuliskannya mentah menghasilkan "10 Jun 2026 00:00:00" di
+ * tengah kalimat - dan jam yang tidak pernah diminta siapa pun.
+ */
+function tanggalPendek(nilai?: string): string {
+  const t = String(nilai || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return "";
+  const [tahun, bulan, hari] = t.split("-");
+  const NAMA = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const nama = NAMA[Number(bulan)] ?? bulan;
+  return `${Number(hari)} ${nama} ${tahun}`;
+}
+
+/**
+ * Menyebut satu sidang dengan sebutan yang dikenali orang.
+ *
+ * ============================================================================
+ * NOMOR DULU, TANGGAL BILA NOMORNYA TIDAK ADA
+ * ============================================================================
+ *
+ * "Sidang ke-3" adalah sebutan yang dipakai di ruang panitera dan yang
+ * tertulis di berkasnya. Tanggal dipakai hanya bila nomornya tidak terbaca -
+ * dan nomornya memang tidak selalu terbaca: bot menulis nol bila kolom
+ * urutan SIPP kosong, dan "sidang ke-0" menyuruh orang mencari sesuatu yang
+ * tidak ada.
+ *
+ * Agenda ditulis apa adanya dari SIPP - ejaannya tidak ajek di sana, dan
+ * merapikannya berarti menebak. Yang kosong menjadi "tanpa agenda", sebab
+ * tanda hubung menggantung di akhir kalimat terbaca seperti teks yang
+ * terpotong.
+ *
+ * Tidak di-export: penjaga menuntut tiap export berkas ini disebut namanya di
+ * layar, dan pembantu yang hanya dipakai di sini tidak punya urusan di sana.
+ */
+function sebutSidang(x: {
+  urutanSidang?: number;
+  tanggalSidang?: string;
+  agenda?: string;
+}): ButirKurang {
+  const urutan = Number(x.urutanSidang) || 0;
+  const tanggal = tanggalPendek(x.tanggalSidang);
+  const label = urutan > 0 ? `Sidang ke-${urutan}` : tanggal ? `Sidang ${tanggal}` : "Sidang";
+  const agenda = String(x.agenda || "").trim();
+  const bagian: string[] = [];
+  // Tanggalnya tidak diulang bila ia sudah menjadi labelnya.
+  if (urutan > 0 && tanggal) bagian.push(tanggal);
+  bagian.push(agenda || "tanpa agenda");
+  return { label, catatan: bagian.join(" — ") };
+}
+
+/**
  * Apa saja yang masih tertinggal sebelum berkasnya patut diminutasi.
  *
  * Mengembalikan daftar KOSONG bila:
@@ -174,6 +291,9 @@ export function sebabMinutasiTertahan(bahan: BahanMinutasi): SebabMinutasi[] {
         kurangBas.length === dalamBundel.length
           ? `Berita acara sidang belum ada sama sekali (${kurangBas.length} sidang).`
           : `${kurangBas.length} dari ${dalamBundel.length} sidang belum ada berita acaranya.`,
+      // Sidang MANA - bukan berapa banyak. Angkanya sudah di kalimat di atas;
+      // yang menyusun bundel perlu tahu berkas mana yang harus dicari.
+      rincian: kurangBas.map(sebutSidang),
       tingkat: "penghalang",
     });
   }
@@ -208,11 +328,43 @@ export function sebabMinutasiTertahan(bahan: BahanMinutasi): SebabMinutasi[] {
     });
   }
 
+  // --- Relaas: PELENGKAP, dan sebabnya tertulis ----------------------------
+  //
+  // Diminta pengguna 22 September 2026. Yang terbaca ada tidaknya PINDAIAN
+  // relaas, bukan sah tidaknya panggilannya - lihat catatan pada BahanMinutasi.
+  // Karena itu ia tidak menahan minutasi; ia tertunggak dan disebut.
+  //
+  // Daftar yang TIDAK dikirim sama sekali berbeda artinya dari daftar kosong:
+  // yang pertama berarti pemanggilnya belum menyediakannya, yang kedua berarti
+  // memang tidak ada relaas. Keduanya sama-sama tidak menghasilkan butir, dan
+  // itu disengaja - menuduh "relaas kurang" atas data yang tidak dikirim
+  // persis kesalahan yang dihindari seluruh berkas ini.
+  if (Array.isArray(bahan.relaas) && bahan.relaas.length > 0) {
+    const kurangRelaas = bahan.relaas.filter((x) => !x.adaDokumen);
+    if (kurangRelaas.length > 0) {
+      sebab.push({
+        kunci: "relaas",
+        pesan: `${kurangRelaas.length} dari ${bahan.relaas.length} relaas belum ada dokumen pindaiannya.`,
+        rincian: kurangRelaas.map((x) => ({
+          label: String(x.namaPihak || "").trim() || "Relaas",
+          catatan: tanggalPendek(x.tanggalRelaas) || "tanpa tanggal",
+        })),
+        tingkat: "pelengkap",
+      });
+    }
+  }
+
   // --- Naskah putusan ------------------------------------------------------
   if (!bahan.adaBerkasPutusan) {
     sebab.push({
       kunci: "naskah-putusan",
       pesan: "Naskah putusan belum diunggah ke SIPP.",
+      // Tanggal putusannya disebut supaya yang mencari berkasnya tahu folder
+      // tanggal mana yang harus dibuka - SIPP menyimpan naskah menurut
+      // tanggal putusannya, bukan menurut nomor perkaranya.
+      rincian: tanggalPendek(bahan.tanggalPutusan)
+        ? [{ label: "Putusan", catatan: tanggalPendek(bahan.tanggalPutusan) }]
+        : undefined,
       tingkat: "penghalang",
     });
   }

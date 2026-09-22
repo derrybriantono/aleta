@@ -223,14 +223,63 @@ describe("palet irisan pai - hasil pengukuran, bukan selera", () => {
 describe("warna status putusan", () => {
   it("tujuh status yang benar-benar dipakai PA Donggala", () => {
     // Dari tabel status_putusan SIPP, bukan daftar yang dikarang.
+    //
+    // Sejak 2.32.0 warnanya lebih bervariasi atas permintaan pengguna: Gugur
+    // dan Digugurkan tidak lagi berbagi kuning dengan Tidak Dapat Diterima,
+    // dan Dicabut tidak lagi berbagi kelabu dengan lencana yang kosong.
     expect(warnaStatusPutusan("Dikabulkan")).toBe("success");
     expect(warnaStatusPutusan("Dikabulkan Sebagian")).toBe("success");
     expect(warnaStatusPutusan("Perdamaian")).toBe("success");
     expect(warnaStatusPutusan("Ditolak")).toBe("danger");
-    expect(warnaStatusPutusan("Digugurkan")).toBe("warning");
     expect(warnaStatusPutusan("Gugur")).toBe("warning");
-    expect(warnaStatusPutusan("Dicabut")).toBe("muted");
-    expect(warnaStatusPutusan("Dicoret dari Register")).toBe("muted");
+    expect(warnaStatusPutusan("Digugurkan")).toBe("netral");
+    expect(warnaStatusPutusan("Dicabut")).toBe("info");
+    expect(warnaStatusPutusan("Dicoret dari Register")).toBe("info");
+  });
+
+  it("hanya SATU yang merah - dan itu memang satu-satunya kekalahan pokok", () => {
+    // Inilah yang sesungguhnya dijaga, dan ia bertahan walau warnanya diganti.
+    // Merah pada status yang bukan kekalahan membuat pihak yang membacanya
+    // menyimpulkan perkaranya habis, padahal boleh diajukan kembali.
+    const merah = [
+      "Dikabulkan",
+      "Dikabulkan Sebagian",
+      "Perdamaian",
+      "Tidak Dapat Diterima",
+      "Gugur",
+      "Digugurkan",
+      "Dicabut",
+      "Dicoret dari Register",
+    ].filter((s) => warnaStatusPutusan(s) === "danger");
+    expect(merah, `status bukan-kekalahan berwarna merah: ${merah.join(", ")}`).toEqual([]);
+    expect(warnaStatusPutusan("Ditolak")).toBe("danger");
+  });
+
+  it("yang artinya BERBEDA tidak berbagi satu warna", () => {
+    // Sebelum 2.32.0 empat status berbagi kuning, dan warnanya berhenti
+    // memberi tahu apa pun - itulah sebab pengguna memintanya bervariasi.
+    //
+    // Yang dijaga KEBERBEDAANNYA, bukan warna tertentu, supaya paletnya
+    // boleh disetel lagi tanpa diam-diam mengembalikan tabrakannya.
+    //
+    // "Gugur" dan "Tidak Dapat Diterima" SENGAJA tetap sewarna: keduanya satu
+    // keluarga - perkaranya berhenti tanpa pokoknya diperiksa dan boleh
+    // diajukan kembali. Memisahkannya hanya demi keberagaman warna akan
+    // memberi tahu sesuatu yang tidak benar.
+    const keluargaKuning = warnaStatusPutusan("Gugur");
+    expect(warnaStatusPutusan("Tidak Dapat Diterima")).toBe(keluargaKuning);
+
+    // Ketiga inilah yang artinya berlainan, dan ketiganya harus berlainan pula.
+    const berbeda = [
+      keluargaKuning,
+      warnaStatusPutusan("Digugurkan"), // dijatuhkan majelis
+      warnaStatusPutusan("Dicabut"), // ditarik pemohonnya sendiri
+      warnaStatusPutusan("Ditolak"), // pokoknya diperiksa, tidak berdasar
+      warnaStatusPutusan("Dikabulkan"),
+    ];
+    expect(new Set(berbeda).size, `warnanya bertabrakan: ${berbeda.join(", ")}`).toBe(
+      berbeda.length
+    );
   });
 
   it("Tidak Dapat Diterima kuning, BUKAN merah", () => {

@@ -1,7 +1,9 @@
 import { type NextRequest } from "next/server";
 
+import { susunRekamAntrian } from "@/lib/rekam-antrian";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { rekamAntrian } from "@/server/modules/aleta-ecourt/rekam-antrian";
 import {
   getGatewayArsipRincian,
   getGatewayJadwalSidang,
@@ -153,6 +155,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // ========================================================================
+    // REKAMAN ANTRIAN DITULIS DI SINI, BUKAN DARI PERAMBAN
+    // ========================================================================
+    //
+    // Sebabnya dua.
+    //
+    // Pertama, tidak ada permintaan tambahan. Layar jadwal memuat ulang
+    // sendiri secara berkala; satu permintaan rekam per pemuatan berarti
+    // menggandakan lalu lintasnya seharian untuk catatan yang tidak dilihat
+    // siapa pun saat itu.
+    //
+    // Kedua, yang direkam tidak berasal dari peramban. Angka yang dikirim
+    // balik oleh halaman dapat disunting siapa saja yang membuka DevTools, dan
+    // catatan pelayanan yang dapat disunting dari luar tidak berguna sebagai
+    // catatan pelayanan.
+    //
+    // Gagalnya TIDAK menjatuhkan jadwalnya - lihat catatan pada rekamAntrian.
+    let rekam = { ditulis: 0, gagal: "" };
+    const antrianData = hasil.data?.antrian;
+    if (antrianData?.terbaca && sidang.length > 0) {
+      rekam = await rekamAntrian(
+        db,
+        susunRekamAntrian(
+          sidang.map((baris) => ({
+            perkaraId: String(baris.perkaraId ?? ""),
+            nomorPerkara: String(baris.nomorPerkara ?? ""),
+            sidangId: String(baris.sidangId ?? ""),
+            tanggalSidang: String(baris.tanggalSidang ?? ""),
+            ruangan: String(baris.ruangan ?? ""),
+          })),
+          antrianData.peta
+        )
+      );
+    }
+
     return ok({
       available: true,
       dari: hasil.data?.dari ?? "",
@@ -161,6 +198,10 @@ export async function GET(request: NextRequest) {
       sidang,
       kesiapan,
       kesiapanDinilai,
+      // Disebutkan apa adanya. Rekaman yang diam-diam tidak pernah tertulis -
+      // sebab migrasinya terlewat, misalnya - akan ditemukan berbulan-bulan
+      // kemudian sebagai riwayat yang kosong, dan saat itu harinya sudah lewat.
+      rekamAntrian: rekam,
       // Diteruskan apa adanya, termasuk saat tidak terbaca. Layar jadwal yang
       // menampilkan kolom antrian kosong tanpa sebab akan disangka rusak;
       // yang menyebutkan "sambungan antrian tidak terbaca" dapat ditindaklanjuti.

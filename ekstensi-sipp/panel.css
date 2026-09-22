@@ -1603,6 +1603,21 @@ tr.aleta-baris-disorot > td {
   overflow: hidden;
 }
 
+/* Kepala KELOMPOK KECIL di dalam satu bagian - mis. "Berkas jawab-menjawab"
+   dan "Berkas pendaftaran" di dalam Dokumen e-Court.
+
+   Sengaja BUKAN .aleta-kelompok-judul: yang itu tombol selebar panel yang
+   dapat diklik untuk melipat, dan memakainya di sini menjanjikan lipatan yang
+   tidak ada. Yang ini sekadar tulisan. */
+.aleta-sub-judul {
+  margin: 6px 9px 2px;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .aleta-kelompok-judul {
   display: flex;
   align-items: center;
@@ -2080,6 +2095,80 @@ textarea.aleta-sunting:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: help;
+}
+
+/* Pembungkus tombol ringkas + pintasan.
+
+   display: contents - anaknya menjadi anak langsung .aleta-kaki-baris, jadi
+   margin-right otomatis pada .aleta-kaki-pintasan tetap bekerja persis seperti
+   sebelum pembungkus ini ada. Membungkusnya dengan flex biasa akan
+   memindahkan dorongan itu ke pembungkusnya, dan ↻ melompat ke tengah kaki -
+   kesalahan yang persis sama sudah pernah terjadi di sini. */
+.aleta-kaki-baris .aleta-kaki-kiri {
+  display: contents;
+}
+
+/* Saklar panel ringkas. Sebesar ikon segarkan supaya kaki tetap satu tinggi. */
+.aleta-kaki-ringkas {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--aleta-tulisan-lembut);
+  /* 11.5px, bukan 11px: ada lantai ukuran huruf panel yang dijaga uji -
+     lihat ekstensi-pita-identitas. */
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* --aleta-latar-naik, BUKAN --aleta-latar-lembut: yang kedua tidak pernah ada.
+   Peubah yang tidak terdefinisi membuat latarnya jatuh ke transparan - hover
+   yang tidak berbunyi apa pun, dan tidak ada satu galat pun yang muncul.
+   Dijaga uji peubah-warna panel. */
+.aleta-kaki-ringkas:hover {
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+}
+
+/* Menyala: rupanya BERBEDA, bukan hanya tersimpan diam-diam. Yang
+   menyalakannya lalu lupa harus dapat melihat mengapa panelnya kehilangan
+   penjelasan. */
+/* --aleta-merek-latar/-tulisan, BUKAN --aleta-aksen: yang terakhir tidak
+   pernah ada. Peubah yang tidak terdefinisi membuat warnanya jatuh ke warisan
+   induknya - tombol yang menyala tampak sama persis dengan yang mati, dan
+   tidak ada satu galat pun yang muncul. Pasangan merek inilah yang sudah
+   dipakai tombol lain untuk keadaan "menyala" (lihat .aleta-warna-lepas). */
+.aleta-kaki-ringkas[aria-pressed="true"] {
+  border-color: var(--aleta-merek-latar);
+  background: var(--aleta-merek-latar);
+  color: var(--aleta-merek-tulisan);
+}
+
+/* ==========================================================================
+   PANEL RINGKAS - YANG BERTANDA SAJA
+   ==========================================================================
+
+   Hanya .aleta-remeh dan beberapa kelas keterangan yang memang keterangan.
+   TIDAK .aleta-tetap-sebab telanjang: separuh pemakaiannya kotak kabar yang
+   lahir kosong lalu diisi pesan galat, dan menyembunyikannya membuat panel
+   diam ketika sesuatu gagal.
+
+   Tiap pemilih dijangkar pada kelas berawalan .aleta- supaya tidak pernah
+   menyentuh satu pun elemen milik SIPP atau ABT. */
+html[data-aleta-ringkas="ya"] .aleta-remeh,
+html[data-aleta-ringkas="ya"] .aleta-praperiksa-sebab,
+html[data-aleta-ringkas="ya"] .aleta-praperiksa-catatan,
+html[data-aleta-ringkas="ya"] .aleta-portal-sebab,
+html[data-aleta-ringkas="ya"] .aleta-versi-sebab {
+  display: none;
 }
 
 .aleta-kaki-segar {

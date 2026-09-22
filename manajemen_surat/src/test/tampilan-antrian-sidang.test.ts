@@ -17,14 +17,43 @@ const AKAR = path.resolve(process.cwd(), "..");
 const baca = (jalur: string) =>
   readFileSync(path.join(AKAR, jalur), "utf8").replace(/\r\n/g, "\n");
 
+/**
+ * Saklar yang BOLEH mati sejak awal - disebut satu per satu, dengan sengaja.
+ *
+ * Keduanya diminta pengguna 22 September 2026, dan keduanya punya sifat yang
+ * sama: yang hilang bukan FAKTA tentang perkara, melainkan kalimat yang
+ * menerangkan cara ALETA menghitung. Kolom Siap pun kosong sampai tombol
+ * Hitung skor ditekan.
+ *
+ * Daftarnya dikunci di sini supaya "bawaanMati" tidak menjadi jalan pintas
+ * yang dipakai lagi pada perapian berikutnya. Bawaan yang mematikan penanda
+ * menghilangkan sesuatu dari layar orang yang tidak pernah meminta apa pun -
+ * dan hilangnya tidak berbunyi.
+ */
+const BOLEH_MATI_SEJAK_AWAL = ["kolom-siap", "catatan-cara-hitung"];
+
 describe("saklar tampilan", () => {
-  it("bawaannya menyala SEMUA", () => {
-    // Layar ini sudah berjalan sebelum saklarnya ada. Bawaan yang mematikan
-    // sesuatu menghilangkan penanda dari layar orang yang tidak pernah
-    // meminta apa pun - perubahan yang tidak diminta dan tidak diumumkan.
+  it("bawaannya menyala, kecuali dua yang disebut pengguna", () => {
     const bawaan = tampilanBawaan();
     for (const saklar of SAKLAR_TAMPILAN) {
-      expect(bawaan[saklar.kunci]).toBe(true);
+      expect(
+        bawaan[saklar.kunci],
+        `saklar ${saklar.kunci} berubah bawaannya tanpa disebut`
+      ).toBe(!BOLEH_MATI_SEJAK_AWAL.includes(saklar.kunci));
+    }
+  });
+
+  it("yang boleh mati sejak awal hanya dua itu - tidak boleh bertambah diam-diam", () => {
+    const mati = SAKLAR_TAMPILAN.filter((x) => x.bawaanMati).map((x) => x.kunci);
+    expect([...mati].sort()).toEqual([...BOLEH_MATI_SEJAK_AWAL].sort());
+  });
+
+  it("yang wajib tidak boleh sekaligus bawaanMati", () => {
+    // Saklar wajib selalu dipaksa menyala oleh tampil(); menandainya
+    // bawaanMati membuat tampilanBawaan() dan tampil() menjawab berbeda untuk
+    // kunci yang sama, dan yang membaca salah satunya akan keliru.
+    for (const saklar of SAKLAR_TAMPILAN) {
+      if (saklar.wajib) expect(saklar.bawaanMati ?? false).toBe(false);
     }
   });
 
@@ -85,7 +114,22 @@ describe("yang mendesak tidak dapat dimatikan", () => {
     const jahat = Object.fromEntries(SAKLAR_TAMPILAN.map((x) => [x.kunci, false]));
     // Yang wajib tidak pernah benar-benar mati, jadi menghitungnya akan
     // memajang angka yang tidak sesuai dengan apa yang hilang dari layar.
-    expect(jumlahDimatikan(jahat)).toBe(SAKLAR_TAMPILAN.length - SAKLAR_WAJIB.length);
+    //
+    // Yang bawaannya memang mati juga tidak dihitung, dan sebabnya sejenis:
+    // angka itu berbunyi "ada yang Anda sembunyikan". Menyalakannya pada layar
+    // yang belum pernah disetel siapa pun membuatnya berbunyi tanpa sebab -
+    // dan lencana yang selalu menyala berhenti dibaca.
+    expect(jumlahDimatikan(jahat)).toBe(
+      SAKLAR_TAMPILAN.length - SAKLAR_WAJIB.length - BOLEH_MATI_SEJAK_AWAL.length
+    );
+  });
+
+  it("yang bawaannya mati TETAP dapat dinyalakan dan dihitung sesudahnya", () => {
+    // Kalau menyalakannya tidak berpengaruh, saklarnya hanya hiasan.
+    for (const kunci of BOLEH_MATI_SEJAK_AWAL) {
+      expect(tampil({ [kunci]: true }, kunci), `${kunci} tidak dapat dinyalakan`).toBe(true);
+      expect(tampil({}, kunci), `${kunci} menyala padahal bawaannya mati`).toBe(false);
+    }
   });
 
   it("saklarnya TETAP digambar - tidak dibuang dari daftar", () => {

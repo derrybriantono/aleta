@@ -87,10 +87,48 @@ describe("medan yang tersembunyi di balik pintunya", () => {
 
   it("yang dibuka sendiri DIKATAKAN, bukan didiamkan", () => {
     // Panel yang diam-diam mengubah isian borang adalah panel yang tidak
-    // dapat dipercaya. Yang diubahnya disebut, beserta cara membatalkannya.
+    // dapat dipercaya. Yang diubahnya disebut.
+    //
+    // Kalimatnya berubah pada 2.32.0 karena perilakunya berubah: dulu panel
+    // menulis Status Putusan APA PUN yang sudah ada di sana, dan kalimatnya
+    // "ubah sendiri bila keliru" - keterangan yang datang SESUDAH pilihan
+    // petugas terlanjur tertimpa. Sekarang yang sudah dipilih tidak disentuh,
+    // jadi kalimatnya pun harus menyatakan itu.
     const badan = potongFungsi(konten, "bagianIsiPutusan");
-    expect(badan).toContain("Status Putusan sudah dipilihkan lebih dulu");
-    expect(badan).toContain("ubah sendiri bila keliru");
+    expect(badan).toContain("yang masih kosong dipilihkan lebih dulu");
+    expect(badan).toContain("yang sudah Anda pilih TIDAK disentuh");
+  });
+
+  it("yang SUDAH dipilih petugas tidak pernah ditimpa", () => {
+    // ========================================================================
+    // INILAH YANG SESUNGGUHNYA DIJAGA, DAN AKIBATNYA BUKAN TAMPILAN
+    // ========================================================================
+    //
+    // Petugas yang sudah memilih "Dicabut" lalu membuka panel mendapati
+    // pilihannya berganti sendiri menjadi usulan ALETA - yang pada sebagian
+    // besar perkara berbunyi "Dikabulkan". Status putusan yang keliru
+    // tersimpan ke perkara orang, lalu mengalir ke laporan dan ke Direktori
+    // Putusan.
+    //
+    // Lebih buruk lagi: praperiksa dijalankan SEBELUM pintunya dibuka, atas
+    // status yang lama. Status baru yang dituliskan panel karena itu tidak
+    // pernah diadu dengan amar drafnya oleh siapa pun.
+    const badan = potongFungsi(konten, "bagianIsiPutusan");
+    const i = badan.indexOf("const sudahDipilihOrang =");
+    expect(i, "keadaan borang tidak diperiksa sebelum menulis").toBeGreaterThan(-1);
+
+    // "-1" adalah "Pilih Status Putusan" milik SIPP - itu BELUM dipilih.
+    // Menganggapnya pilihan membuat pintunya tidak pernah terbuka.
+    expect(badan).toContain('nilaiSekarang !== ""');
+    expect(badan).toContain('nilaiSekarang !== "-1"');
+
+    // Cabang "sudah dipilih" tidak boleh menulis apa pun ke borang.
+    const cabang = badan.slice(
+      badan.indexOf("if (sudahDipilihOrang) {"),
+      badan.indexOf("continue;", badan.indexOf("if (sudahDipilihOrang) {"))
+    );
+    expect(cabang.length, "cabang lewati tidak ada").toBeGreaterThan(0);
+    expect(cabang, "masih menulis ke borang").not.toContain('jenis: "isi"');
   });
 
   it("pembacaan dan permintaan usulannya satu tempat, dipakai tiap putaran", () => {

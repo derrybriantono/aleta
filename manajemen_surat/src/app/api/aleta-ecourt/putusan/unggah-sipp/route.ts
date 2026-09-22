@@ -2,7 +2,10 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
-import { gatewayUnggahPutusanSipp } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import {
+  gatewayUnggahPutusanSipp,
+  getGatewayStatusPerkara,
+} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -40,12 +43,55 @@ export async function POST(request: NextRequest) {
     await pastikanKapabilitas(db, actorUserId, "penunjukan");
 
     const formulir = await request.formData();
-    const perkaraId = String(formulir.get("perkaraId") ?? "").trim();
+    let perkaraId = String(formulir.get("perkaraId") ?? "").trim();
     const nomorPerkara = String(formulir.get("nomorPerkara") ?? "").trim();
     const olehUsername = String(formulir.get("olehUsername") ?? "").trim();
 
-    if (!perkaraId) return ok({ ok: false, sebab: "perkara_id belum disebut." });
+    // ========================================================================
+    // perkara_id DITANYAKAN SENDIRI BILA EKSTENSI TIDAK MENYEBUTNYA
+    // ========================================================================
+    //
+    // Sampai 22 September 2026 rute ini menolak di sini dengan "perkara_id
+    // belum disebut." - dan penolakan itu terjadi pada SETIAP unggahan dari
+    // halaman perkara agama, tanpa kecuali.
+    //
+    // Sebabnya bukan ekstensi yang lupa. perkaraIdDariHalaman() membaca
+    // input[name="perkara_id"] di dalam #frm_putusan, dan medan itu TIDAK
+    // PERNAH ADA di sana: SIPP mengenali perkara pada borang Putusan Akhir
+    // lewat `enc` - nomor perkara tersandi - dan perkara_id hanya dipakai pada
+    // borang grasi dan peninjauan kembali. Di halaman detil_perkara_agama,
+    // #frm_putusan bahkan belum lahir sampai tingkapnya dibuka.
+    //
+    // Rute saudaranya, unggah-naskah, sudah lama punya jalan mundur ini -
+    // hanya rute ini yang tidak pernah diberi. Itu sebabnya yang satu bekerja
+    // dan yang lain selalu gagal dari halaman yang sama.
+    //
+    // Nomor perkara diperiksa LEBIH DULU: ia yang menjadi kunci pertanyaan ke
+    // gerbang, dan menanyakan perkara tanpa nomor hanya menambah satu
+    // perjalanan yang sudah pasti gagal.
     if (!nomorPerkara) return ok({ ok: false, sebab: "Nomor perkara belum disebut." });
+
+    if (!perkaraId) {
+      const status = await getGatewayStatusPerkara(nomorPerkara);
+      // Bot yang mati DIBEDAKAN dari perkara yang tidak ada. Menyamakan
+      // keduanya mengirim petugas memeriksa nomor perkaranya - yang sudah
+      // benar - sementara yang perlu diperiksa sambungan botnya.
+      if (!status.ok) {
+        return ok({
+          ok: false,
+          sebab: status.error || "ALETA Bot belum dapat dihubungi, jadi perkaranya belum dapat dikenali.",
+        });
+      }
+      const identitas = (status.data?.identitas ?? null) as { perkaraId?: string } | null;
+      perkaraId = String(identitas?.perkaraId ?? "").trim();
+    }
+
+    if (!perkaraId) {
+      return ok({
+        ok: false,
+        sebab: `Nomor perkara ${nomorPerkara} tidak ditemukan di SIPP, jadi berkasnya tidak dapat ditautkan ke perkara mana pun.`,
+      });
+    }
 
     const bacaBerkas = async (nama: string): Promise<string> => {
       const berkas = formulir.get(nama);

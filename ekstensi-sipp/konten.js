@@ -4373,7 +4373,7 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
   isi.appendChild(
     buatElemen(
       "div",
-      "aleta-tetap-sebab",
+      "aleta-tetap-sebab aleta-remeh",
       "Membaca posita dan petitum yang ada di layar ini, lalu mengisikan dua hal yang " +
         "berbeda sifatnya. Data pernikahan DIPETIK apa adanya - nomor akta dan tanggalnya " +
         "tertulis di positanya, dan tiap petikan dapat Anda sunting sebelum diisikan. " +
@@ -4876,12 +4876,29 @@ function bagianIsiAlasanPerkara(nomorPerkara) {
 /**
  * perkara_id sebagaimana tertulis pada borang SIPP yang sedang terbuka.
  *
- * Borang Putusan Akhir harus membawanya - tanpa itu SIPP sendiri tidak tahu
- * putusan ini milik perkara yang mana. Membacanya di sini menghemat satu
- * pertanyaan ke SIPP lewat gerbang, yang jawabannya menghitung seluruh
- * keadaan perkara padahal yang dibutuhkan satu angka.
+ * ============================================================================
+ * DI HALAMAN PERKARA AGAMA, INI SELALU KOSONG - DAN ITU BUKAN CACAT
+ * ============================================================================
  *
- * Kosong bukan kegagalan: portal menanyakannya sendiri bila tidak disebut.
+ * Diperiksa 22 September 2026, sesudah unggah putusan selalu ditolak dengan
+ * "perkara_id belum disebut.". Andaian lama di sini - "borang Putusan Akhir
+ * harus membawanya" - SALAH:
+ *
+ *   - SIPP mengenali perkara pada borang Putusan Akhir lewat `enc`, nomor
+ *     perkara yang tersandi (edit_putusan_akhir.php). perkara_id hanya dipakai
+ *     pada borang grasi dan peninjauan kembali.
+ *   - Di halaman detil_perkara_agama, #frm_putusan bahkan belum lahir sampai
+ *     tingkapnya dibuka; tab Putusan Akhir hanya memuat halaman tampilan.
+ *
+ * Jadi fungsi ini memang hampir selalu memulangkan untai kosong, dan itu
+ * TIDAK boleh menjadi kegagalan. Kedua rute yang menerimanya - unggah-naskah
+ * dan unggah-sipp - menanyakannya sendiri ke SIPP lewat gerbang bila kosong.
+ * Yang satu sudah punya jalan mundur itu sejak awal; yang lain baru diberi
+ * pada 2.32.0, dan selama itu tidak satu pun unggahan dari halaman ini
+ * berhasil.
+ *
+ * Fungsinya dipertahankan, bukan dibuang: pada borang yang MEMANG membawanya,
+ * membacanya di sini menghemat satu perjalanan ke gerbang.
  */
 function perkaraIdDariHalaman() {
   const pola = 'input[name="perkara_id"], input#perkara_id, input[name="perkaraId"]';
@@ -4915,7 +4932,7 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
   isi.appendChild(
     buatElemen(
       "div",
-      "aleta-tetap-sebab",
+      "aleta-tetap-sebab aleta-remeh",
       "Putusan akhir dan anonimisasinya diunggah sekaligus - berkas, kolom dokumen, " +
         "baris Direktori Putusan, dan antreannya. PDF saja."
     )
@@ -4924,6 +4941,10 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
   const pilihBerkas = (label, keterangan) => {
     const baris = buatElemen("div", "aleta-unggah-sipp-baris");
     baris.appendChild(buatElemen("div", "aleta-unggah-sipp-label", label));
+    // "aleta-remeh": keterangan tetap tiap pemilih berkas ("Tersimpan di
+    // resources/file/doc menurut tanggal putusannya."). Isinya tidak pernah
+    // berubah dan tidak pernah memuat pesan galat, jadi ia boleh ikut
+    // disembunyikan saat panel ringkas dinyalakan.
     if (keterangan) baris.appendChild(buatElemen("div", "aleta-tetap-sebab", keterangan));
     const pemilih = document.createElement("input");
     pemilih.type = "file";
@@ -4952,6 +4973,36 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     if (!berkasPutusan && !berkasAnonim) {
       kabar.className = "aleta-abt-kabar";
       kabar.textContent = "Belum ada berkas yang dipilih.";
+      return;
+    }
+
+    // ====================================================================
+    // BUKAN PDF DITOLAK DI SINI, BUKAN SESUDAH BOLAK-BALIK KE PELADEN
+    // ====================================================================
+    //
+    // Bot menolak apa pun yang empat bita pertamanya bukan "%PDF"
+    // (putusanUnggahService.js) - dikenali dari BITANYA, bukan dari nama
+    // berkasnya, sebab nama dapat diubah siapa saja. Sebabnya tertulis di
+    // sana: yang terbit di Direktori Putusan harus PDF, dan ALETA sengaja
+    // tidak menjalankan pengubah soffice seperti SIPP - pengubahan yang
+    // gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik.
+    //
+    // Diperiksa di sini pula karena atribut accept pada pemilih berkas hanya
+    // SARAN: yang memilih "All files" tetap dapat mengirim .rtf atau .docx,
+    // dan itu yang terjadi. Menunggu peladen menolaknya berarti mengunggah
+    // berkas yang sudah pasti ditolak, lalu membaca pesan yang datang
+    // belasan detik kemudian.
+    const bukanPdf = [
+      { berkas: berkasPutusan, judul: "Putusan akhir" },
+      { berkas: berkasAnonim, judul: "Putusan anonimisasi" },
+    ].filter((x) => x.berkas && !/\.pdf$/i.test(String(x.berkas.name || "")));
+    if (bukanPdf.length > 0) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent =
+        `${bukanPdf.map((x) => `${x.judul} (${x.berkas.name})`).join(" dan ")} bukan PDF. ` +
+        "Yang terbit di Direktori Putusan harus PDF, dan ALETA tidak mengubahnya sendiri — " +
+        "pengubahan yang gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik. " +
+        "Simpan naskahnya sebagai PDF lebih dulu.";
       return;
     }
 
@@ -5366,7 +5417,7 @@ function bagianIsiPutusan(nomorPerkara) {
   kotakUnggah.appendChild(
     buatElemen(
       "div",
-      "aleta-tetap-sebab",
+      "aleta-tetap-sebab aleta-remeh",
       "Belum ada drafnya? Ambil dari naskah putusan yang sudah Anda tulis - berkas RTF-nya, bukan PDF."
     )
   );
@@ -5712,6 +5763,38 @@ function bagianIsiPutusan(nomorPerkara) {
       );
     }
 
+    // ======================================================================
+    // BORANG PUTUSAN MEMANG BERGANTI BENTUK - TETAPI BUKAN DI BAGIAN INI
+    // ======================================================================
+    //
+    // Versi 1.162.0 menyelidiki lebih dulu apakah #perhum, #amar, dan
+    // #amar_anonim ada di halaman, lalu hanya menggambar yang ada. Premisnya
+    // SALAH, dan diukur salahnya di dua tempat:
+    //
+    //   1. Koreksi pengguna, 22 September 2026: pada status selain Dikabulkan
+    //      borangnya TETAP punya Pertimbangan Hukum, Tanggal Putusan, Status
+    //      Putusan, Sumber Hukum, Amar Putusan, dan Amar Putusan Anonimisasi.
+    //      Yang tidak muncul justru medan PILIHAN - verstek, qobla/ba'da
+    //      dukhul, faktor perceraian, nusyuz, keadaan istri.
+    //
+    //   2. Sumber SIPP-nya sendiri (edit_putusan_akhir.php). Medan yang
+    //      hilang itu disembunyikan dengan jQuery .hide() - display:none,
+    //      elemennya TETAP di DOM. Pada status Dicabut yang disembunyikan
+    //      #verstek_tr, #popup_faktor_tr, dan #popup_keadaan_tr; baris sumber
+    //      hukum tidak pernah disembunyikan.
+    //
+    // Jadi penyelidikan itu tidak pernah dapat bekerja: jembatan menjawab
+    // "ada" untuk elemen yang disembunyikan sekalipun, sebab yang
+    // diperiksanya keberadaan di DOM - bukan kelihatan atau tidak. Ia hanya
+    // memberi kalimat yang terdengar pasti atas sesuatu yang tidak diperiksa.
+    //
+    // Penyaring yang BENAR untuk medan pilihan sudah lama ada dan memang
+    // memeriksa yang seharusnya: bacaMedanTampak() membuang medan yang
+    // jawabannya tidak `tampak`, dan `tampak` dihitung dari offsetParent -
+    // yang justru mengenali .hide() milik SIPP.
+    //
+    // Karena itu ketiga baris naskah digambar apa adanya, seperti sebelum
+    // 1.162.0.
     const daftar = [
       barisIsian("Pertimbangan Hukum", "#perhum", jawab.pertimbangan, ""),
       barisIsian("Amar Putusan", "#amar", jawab.amar, ""),
@@ -5743,6 +5826,14 @@ function bagianIsiPutusan(nomorPerkara) {
     let usulanMedan = [];
     const sudahDibuka = new Set();
     let gagalUsulan = null;
+    /**
+     * Pintu yang SUDAH dipilih petugas dan usulan ALETA berbeda.
+     *
+     * Dikumpulkan, bukan diterapkan. Selisih pada Status Putusan adalah
+     * perbedaan pendapat tentang bagaimana perkara ini diputus - dan yang
+     * berwenang memutuskannya bukan panel ini.
+     */
+    const bedaPintu = [];
 
     for (let putaran = 0; putaran < 3; putaran += 1) {
       const terbaca = await bacaMedanTampak();
@@ -5760,13 +5851,66 @@ function bagianIsiPutusan(nomorPerkara) {
       medanTampak = terbaca;
       usulanMedan = usulanMedan.concat(usulanBaru);
 
-      // Pintu yang BELUM dibuka dan memang diusulkan ALETA - diterapkan
-      // supaya medan di baliknya ikut terbaca pada putaran berikutnya.
+      // ====================================================================
+      // PINTU YANG SUDAH DIPILIH PETUGAS TIDAK PERNAH DITIMPA
+      // ====================================================================
+      //
+      // Inilah yang sesungguhnya merusak perkara CABUT, dan ia jauh lebih
+      // berbahaya daripada baris naskah yang hilang.
+      //
+      // Sampai 1.162.0 panel menuliskan Status Putusan usulan ALETA ke borang
+      // TANPA melihat apa yang sudah ada di sana. Petugas yang sudah memilih
+      // "Dicabut" lalu membuka panel ini mendapati pilihannya berganti
+      // sendiri menjadi usulan ALETA - yang pada sebagian besar perkara
+      // berbunyi "Dikabulkan", sebab itulah status yang paling sering benar.
+      // Borangnya lalu menggambar ulang, medan verstek dan faktor perceraian
+      // yang seharusnya tersembunyi ikut muncul, dan satu-satunya keterangan
+      // yang tertinggal adalah kalimat "ubah sendiri bila keliru" di bawah
+      // daftar - sesudah semuanya terjadi.
+      //
+      // Akibatnya bukan tampilan: status putusan yang keliru tersimpan ke
+      // perkara orang, dan ia mengalir ke laporan serta ke Direktori Putusan.
+      //
+      // Lebih buruk lagi, praperiksa sudah dijalankan SEBELUM baris ini -
+      // atas status yang LAMA. Jadi status baru yang dituliskan panel tidak
+      // pernah diadu dengan amar drafnya oleh siapa pun.
+      //
+      // Sekarang: pintu hanya diisi bila memang BELUM dipilih. Yang sudah
+      // berisi dibiarkan apa adanya, dan bila usulan ALETA berbeda, selisih
+      // itu DISEBUTKAN - bukan dikerjakan diam-diam.
       let adaYangDibuka = false;
       for (const pintu of MEDAN_PINTU) {
         if (sudahDibuka.has(pintu)) continue;
         const usul = usulanBaru.find((x) => x.kunci === pintu);
         if (!usul || !usul.nilai) continue;
+
+        // Keadaan borang saat ini - dari pembacaan yang barusan, bukan dari
+        // tebakan. "-1" dan kosong sama-sama berarti belum dipilih; itulah
+        // nilai "Pilih Status Putusan" milik SIPP.
+        const sekarang = terbaca.find((x) => x.kunci === pintu);
+        const nilaiSekarang = String((sekarang && sekarang.nilaiSekarang) || "").trim();
+        const sudahDipilihOrang = nilaiSekarang !== "" && nilaiSekarang !== "-1";
+
+        if (sudahDipilihOrang) {
+          sudahDibuka.add(pintu);
+          if (String(usul.nilai) !== nilaiSekarang) {
+            const namaPintu =
+              (CALON_MEDAN_PANEL.find((x) => x.penunjuk === pintu) || {}).label || pintu;
+            const labelUsul =
+              ((sekarang && sekarang.pilihan) || []).find(
+                (x) => String(x.nilai) === String(usul.nilai)
+              ) || {};
+            const labelKini =
+              ((sekarang && sekarang.pilihan) || []).find((x) => String(x.nilai) === nilaiSekarang) ||
+              {};
+            bedaPintu.push(
+              `${namaPintu}: borang sudah berisi "${labelKini.label || nilaiSekarang}", ` +
+                `ALETA mengusulkan "${labelUsul.label || usul.nilai}"`
+            );
+          }
+          continue;
+        }
+
         const hasilIsi = await kirimKeJembatan({
           jenis: "isi",
           penunjuk: pintu,
@@ -5792,8 +5936,22 @@ function bagianIsiPutusan(nomorPerkara) {
             "dan status putusannya. Angka inilah yang kelak menjadi laporan faktor penyebab perceraian " +
             "dan statistik dispensasi - jadi periksa tiap usulan sebelum dicentang." +
             (sudahDibuka.size > 0
-              ? " Status Putusan sudah dipilihkan lebih dulu supaya medan di baliknya ikut terbaca; ubah sendiri bila keliru."
+              ? " Status Putusan yang masih kosong dipilihkan lebih dulu supaya medan di baliknya ikut terbaca; yang sudah Anda pilih TIDAK disentuh."
               : "")
+        )
+      );
+    }
+
+    // Selisih pendapat pada pintu yang sudah dipilih petugas - disebutkan,
+    // tidak dikerjakan. Warnanya merah sebab yang dipersoalkan bukan kerapian
+    // melainkan bagaimana perkara ini diputus.
+    if (bedaPintu.length > 0) {
+      wadah.appendChild(
+        buatElemen(
+          "div",
+          "aleta-gagal",
+          `Pilihan Anda dibiarkan apa adanya, tetapi ALETA membacanya lain — ${bedaPintu.join("; ")}. ` +
+            "Periksa mana yang benar sebelum menyimpan. Praperiksa di atas dijalankan atas pilihan yang SEKARANG ada di borang."
         )
       );
 
@@ -6429,7 +6587,7 @@ function bagianBacaBorang() {
       isi.appendChild(
         buatElemen(
           "div",
-          "aleta-tetap-sebab",
+          "aleta-tetap-sebab aleta-remeh",
           "Ini alat PEMASANGAN, bukan penampil data. Yang tercantum di bawah adalah " +
             "penunjuk kolom di halaman ini - bukan isinya."
         )
@@ -6437,7 +6595,7 @@ function bagianBacaBorang() {
       isi.appendChild(
         buatElemen(
           "div",
-          "aleta-tetap-sebab",
+          "aleta-tetap-sebab aleta-remeh",
           `${berpenunjuk.length} kolom terbaca. Salin penunjuknya ke Pengaturan - Peta kolom ` +
             "formulir. Sesudah petanya lengkap, tombol Kerjakan dapat mengisi formulir ini " +
             "sendiri, dan menu ini tidak perlu dibuka lagi."
@@ -8870,7 +9028,20 @@ function kakiPanel(opsi) {
   pintasan.title =
     PINTASAN_PANEL.map((x) => `${x.tombol}  ${x.nama}`).join("\n") +
     "\n\nTidak berlaku selagi mengetik di kolom isian.";
-  barisKaki.appendChild(pintasan);
+
+  // Saklar panel ringkas, di samping deretan pintasan - diminta pengguna
+  // 22 September 2026. Dipasang SEBELUM pintasannya: .aleta-kaki-pintasan
+  // memegang margin-right otomatis yang mendorong ikon segarkan dan nomor
+  // versi ke kanan, dan tombol yang ditaruh sesudahnya ikut terdorong ke sana.
+  //
+  // Panel ini menyusun kakinya sendiri, tidak memakai alatBarisPintasan -
+  // jadi tombolnya dipasang di sini pula. Menyatukan keduanya bukan
+  // pekerjaan hari ini: bentuk barisnya berbeda, dan penjaga menyisir teks
+  // PINTASAN_PANEL.map((x) di berkas ini.
+  const bungkusKiri = buatElemen("div", "aleta-kaki-kiri");
+  bungkusKiri.appendChild(alatTombolRingkas());
+  bungkusKiri.appendChild(pintasan);
+  barisKaki.appendChild(bungkusKiri);
 
   // ==========================================================================
   // SEGARKAN ADA DI KAKI, BUKAN HANYA DI KEPALA
@@ -9265,7 +9436,80 @@ function susunPanel(konteks) {
   if (konteks.dokumen.length > 0) {
     const kotak = bagian("Dokumen e-Court", "dokumen");
     setLencana(kotak, seketika.dokumen);
-    for (const d of konteks.dokumen) {
+
+    // ========================================================================
+    // DIPISAH: BERKAS PENDAFTARAN DAN BERKAS JAWAB-MENJAWAB
+    // ========================================================================
+    //
+    // Diminta pengguna 22 September 2026 - ia menyebutkan jawaban, replik,
+    // duplik, duplik rekonvensi, kesimpulan, dan fotokopi alat bukti, dan
+    // mengira berkas itu belum ditarik ALETA. Sudah ditarik sejak lama; yang
+    // membuatnya tidak terlihat adalah tombol unduhnya yang disembunyikan
+    // (lihat sippKonteksService.dokumenPerkara) dan daftar yang tercampur.
+    //
+    // Pemisahnya statusVerifikasi "tidak_perlu" - itulah tanda yang SIPP dan
+    // e-Court sendiri pakai untuk berkas pendaftaran, yang memang tidak
+    // diverifikasi majelis. Bukan tebakan dari judulnya.
+    //
+    // Yang dicari hakim hampir selalu berkas jawab-menjawab, jadi kelompok itu
+    // digambar LEBIH DULU. Berkas pendaftaran dibaca sekali di awal perkara.
+    const pendaftaran = (konteks.dokumen || []).filter((d) => d.statusVerifikasi === "tidak_perlu");
+    const persidangan = (konteks.dokumen || []).filter((d) => d.statusVerifikasi !== "tidak_perlu");
+    const berurut = [
+      { judul: "Berkas jawab-menjawab", isi: persidangan },
+      { judul: "Berkas pendaftaran", isi: pendaftaran },
+    ];
+
+    for (const kelompok of berurut) {
+      if (kelompok.isi.length === 0) continue;
+      // Kepala kelompok hanya digambar bila KEDUANYA ada. Satu judul di atas
+      // satu-satunya kelompok tidak menerangkan apa pun, hanya memakan baris.
+      if (pendaftaran.length > 0 && persidangan.length > 0) {
+        kotak.isi.appendChild(
+          buatElemen(
+            "div",
+            "aleta-sub-judul",
+            `${kelompok.judul} (${kelompok.isi.length})`
+          )
+        );
+      }
+      for (const d of kelompok.isi) gambarBarisDokumen(d, kotak);
+    }
+
+    // ========================================================================
+    // SAKLAR YANG MATI SEJAK AWAL HARUS DISEBUTKAN, BUKAN DITUNGGU
+    // ========================================================================
+    //
+    // ALETA sudah lama dapat menempelkan berkas jawab-menjawab langsung ke
+    // baris Jadwal Sidang SIPP, di samping tombol Unggah BAS - dicocokkan
+    // menurut agendanya. Tetapi saklarnya MATI sejak awal, dan tidak ada satu
+    // pun tempat di panel ini yang menyebutkan bahwa saklar itu ada.
+    //
+    // Akibatnya kemampuan itu tidak pernah dipakai siapa pun, dan pengguna
+    // memintanya sebagai hal baru pada 22 September 2026. Fitur yang tidak
+    // diketahui sama dengan fitur yang tidak ada.
+    //
+    // Hanya disebut bila memang ADA yang dapat ditempelkan - kalimat yang
+    // muncul pada perkara tanpa berkas persidangan hanya menambah satu baris
+    // yang tidak menawarkan apa pun.
+    if (persidangan.length > 0 && !saklar.sisipJadwal) {
+      kotak.isi.appendChild(
+        buatElemen(
+          "div",
+          "aleta-tetap-sebab aleta-remeh",
+          `${persidangan.length} berkas jawab-menjawab ini dapat ditempelkan langsung ke baris ` +
+            "Jadwal Sidang SIPP, di samping tombol Unggah BAS, dicocokkan menurut agendanya. " +
+            'Nyalakan "Sisipkan berkas ke Jadwal Sidang" di tingkap ALETA (ikon ekstensi).'
+        )
+      );
+    }
+
+    // Badan penggambar satu baris - dipisah supaya kedua kelompok memakai
+    // penggambar yang SAMA. Dua salinan yang lambat laun berbeda adalah cara
+    // tercepat membuat satu kelompok kehilangan tombol yang dimiliki kelompok
+    // lain tanpa ada yang menyadarinya.
+    // eslint-disable-next-line no-inner-declarations
+    function gambarBarisDokumen(d, kotakDok) {
       const baris = buatElemen("div", "aleta-baris");
       baris.appendChild(buatElemen("div", "aleta-baris-judul", d.judulDokumen || "Dokumen"));
 
@@ -9290,8 +9534,19 @@ function susunPanel(konteks) {
       if (d.adaPdf) tombolBerkas.appendChild(tombolUnduh(d, "pdf", "PDF"));
       if (d.adaWord) tombolBerkas.appendChild(tombolUnduh(d, "word", "Word"));
       if (!d.adaPdf && !d.adaWord) {
+        // Tercatat pernah diunduh tetapi berkasnya hilang dari cakram
+        // DIBEDAKAN dari tidak pernah ada. Tindakannya berbeda: yang satu
+        // menyuruh memeriksa arsipnya, yang lain menyuruh pihak mengunggah.
+        // Arsip e-Court pernah lenyap seluruhnya di sini karena volume Docker
+        // belum di-mount, dan lenyapnya tidak berbunyi apa pun.
         tombolBerkas.appendChild(
-          buatElemen("span", "aleta-berkas-kosong", "berkas belum tersimpan")
+          buatElemen(
+            "span",
+            "aleta-berkas-kosong",
+            d.berkasHilang
+              ? "tercatat ada, berkasnya hilang dari arsip"
+              : "berkas belum tersimpan"
+          )
         );
       }
       baris.appendChild(tombolBerkas);
@@ -9311,8 +9566,9 @@ function susunPanel(konteks) {
       ) {
         baris.appendChild(kotakVerifikasi(d));
       }
-      kotak.isi.appendChild(baris);
+      kotakDok.isi.appendChild(baris);
     }
+
     kelBerkas.isi.appendChild(kotak);
   }
 
@@ -10598,12 +10854,31 @@ function kotakSisipan(dokumenSehari, ambangHari, sebabCocok = "") {
  * Urutannya menentukan: "duplik rekonvensi" diperiksa SEBELUM "duplik", sebab
  * yang belakangan juga cocok dengan yang pertama dan akan merebutnya.
  */
+/**
+ * ============================================================================
+ * URUTANNYA MENENTUKAN, DAN YANG BERAWALAN REKONVENSI HARUS DI DEPAN
+ * ============================================================================
+ *
+ * Daftar ini dibaca berurutan dan yang PERTAMA cocok yang dipakai. "Duplik
+ * Rekonvensi" juga cocok dengan pola /\bduplik\b/, jadi ia harus lebih dulu -
+ * kalau tidak, berkas duplik konvensi dan rekonvensi tertukar, dan
+ * tertukarnya tidak berbunyi apa pun: kotaknya tetap terisi, isinya saja yang
+ * milik tahapan lain.
+ *
+ * Tiga baris rekonvensi ditambahkan 22 September 2026 atas permintaan
+ * pengguna, yang menyebut "jawaban, replik, duplik, duplik rekonvensi,
+ * kesimpulan, fotokopi alat bukti dan lainnya".
+ */
 const TAHAPAN_BERKAS = [
   { agenda: /duplik\s+rekonvensi/i, berkas: /duplik\s+rekonvensi/i },
+  { agenda: /jawaban\s+rekonvensi/i, berkas: /jawaban\s+rekonvensi/i },
+  { agenda: /replik\s+rekonvensi/i, berkas: /replik\s+rekonvensi/i },
+  { agenda: /kesimpulan\s+rekonvensi/i, berkas: /kesimpulan\s+rekonvensi/i },
   { agenda: /\bjawaban\b/i, berkas: /\bjawaban\b/i },
   { agenda: /\breplik\b/i, berkas: /\breplik\b/i },
   { agenda: /\bduplik\b/i, berkas: /\bduplik\b/i },
   { agenda: /\bkesimpulan\b/i, berkas: /\bkesimpulan\b/i },
+  // "fotokopi alat bukti" dan "bukti surat" sama-sama tertangkap /bukti/.
   { agenda: /pembuktian|bukti/i, berkas: /bukti|pembuktian/i },
   { agenda: /gugatan|permohonan/i, berkas: /gugatan|permohonan/i },
 ];
@@ -12333,6 +12608,16 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   }
 
   // 3. Isi tiga medan CKEditor.
+  //
+  // Versi 1.162.0 menyelidiki lebih dulu apakah tiap medan ada, dan menahan
+  // perkara yang drafnya berisi untuk medan yang "tidak ada". Premisnya SALAH
+  // - lihat catatan panjangnya pada panel satu perkara di atas: borang
+  // putusan SIPP tetap punya ketiga bagian naskah pada status apa pun, dan
+  // yang berganti hanyalah medan PILIHAN, yang sudah disaring bacaMedanTampak
+  // lewat `tampak`.
+  //
+  // Yang tersisa dari percobaan itu satu hal yang memang benar dan dibiarkan:
+  // medan yang sungguh gagal terisi TETAP menahan Simpan.
   const isian = [
     ["#perhum", draf.pertimbangan],
     ["#amar", draf.amar],
@@ -12347,18 +12632,6 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     if (hasil && hasil.ok) terisi += 1;
     else gagal.push(`${penunjuk}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
   }
-  if (gagal.length > 0) {
-    butir.keadaan = "gagal";
-    butir.catatan = `${terisi} terisi, gagal: ${gagal.join("; ")} — Simpan tidak ditekan`;
-    await alatSimpanAntrean(antrean);
-    if (kabar) {
-      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = butir.catatan;
-    }
-    alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
-    if (tombol) tombol.disabled = false;
-    return;
-  }
 
   // 4. Simpan, dibuktikan dari SIPP.
   const hasilSimpan = await simpanPutusanLaluBuka(butir.nomor, kabar);
@@ -12366,6 +12639,9 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     butir.keadaan = "selesai";
     butir.catatan =
       "tersimpan di SIPP" +
+      // Bagian yang memang tidak ada di borang statusnya ikut disebut. Tanpa
+      // ini, "tersimpan" pada perkara cabut terbaca seolah ketiga bagian
+      // naskahnya tertulis - padahal borangnya hanya punya satu.
       (raporAgen && raporAgen.jumlah && raporAgen.jumlah.perhatian
         ? ` · ${raporAgen.jumlah.perhatian} perhatian praperiksa`
         : raporAgen
@@ -12429,7 +12705,7 @@ function bagianMassalBerkas(isi) {
   kotak.appendChild(
     buatElemen(
       "div",
-      "aleta-tetap-sebab",
+      "aleta-tetap-sebab aleta-remeh",
       "Pilih beberapa naskah putusan sekaligus. Nomor perkaranya dibaca dari NAMA berkas, " +
         "diperlihatkan untuk diperiksa, lalu tiap naskah disimpan sebagai draf dan masuk antrean."
     )
@@ -12588,7 +12864,7 @@ function bagianMassalSipp() {
   isi.appendChild(
     buatElemen(
       "div",
-      "aleta-tetap-sebab",
+      "aleta-tetap-sebab aleta-remeh",
       "Perkara yang bersidang pada tanggal ini dan sudah punya draf putusan di ALETA disusun menjadi antrean. " +
         "Tidak ada yang tercentang sendiri; yang sudah putus tidak ditawarkan."
     )

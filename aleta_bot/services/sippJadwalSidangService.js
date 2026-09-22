@@ -1238,6 +1238,70 @@ function isianPihakBerulang(nilai) {
  * Dihitung di sini, bukan di layar: layar hanya memegang sidang yang sedang
  * ditampilkan, sedangkan yang ditanya seluruh riwayat sidang perkaranya.
  */
+/**
+ * ============================================================================
+ * CARA PENYAMPAIAN RELAAS - SEMBILAN SANDI, BUKAN YA/TIDAK
+ * ============================================================================
+ *
+ * perkara_pelaksanaan_relaas.ket_temu menyimpan CARA penyampaiannya, bukan
+ * berhasil atau tidaknya. Diukur pada SIPP satker, 14.495 baris:
+ *
+ *     Y  5.084  Bertemu
+ *     E  3.532  Panggilan Elektronik
+ *     S  3.104  Diterima orang serumah
+ *     T  2.667  Tidak Bertemu
+ *     R     45  Radiogram
+ *     W     21  Pengumuman website/papan pengumuman
+ *     N     14  Tidak Dapat Dilaksanakan
+ *     P      6  Pengumuman lewat Bupati/email
+ *     M      3  Radiogram RRI
+ *
+ * Sebelum ini ALETA membacanya sebagai boolean - `ketTemu === "Y"` - sehingga
+ * SEGALA yang bukan Y jatuh menjadi "tidak bertemu". 6.725 dari 14.495 baris,
+ * 46,4%, salah dilabeli.
+ *
+ * Yang paling merugikan bukan E melainkan S: "diterima orang serumah" adalah
+ * penyampaian yang SAH menurut HIR - relaasnya patut dan sidangnya boleh
+ * berjalan. Menampilkannya "tidak bertemu" membuat yang membacanya menunda
+ * sidang yang sebenarnya sudah boleh jalan.
+ *
+ * ASAL ARTINYA, dan keduanya dibedakan:
+ *
+ *   Y, T, E, N   dari sumber SIPP sendiri - dropdown pada
+ *                views/data_persidangan/pelaksanaan_relaas_v.php:112-115
+ *   S, R, W, P, M  TIDAK ada di dropdown itu; artinya dibaca dari isi
+ *                ket_hasil_relaas masing-masing. Karena itu ditandai
+ *                `terbaca: false` - ia dugaan yang beralasan, bukan kepastian.
+ *
+ * Sandi yang tidak dikenali dipulangkan apa adanya, bukan ditebak.
+ */
+const SANDI_CARA_RELAAS = {
+  Y: { cara: "Bertemu langsung", sampai: true, terbaca: true },
+  T: { cara: "Tidak bertemu", sampai: false, terbaca: true },
+  E: { cara: "Panggilan elektronik", sampai: true, terbaca: true },
+  N: { cara: "Tidak dapat dilaksanakan", sampai: false, terbaca: true },
+  S: { cara: "Diterima orang serumah", sampai: true, terbaca: false },
+  R: { cara: "Radiogram", sampai: true, terbaca: false },
+  M: { cara: "Radiogram RRI", sampai: true, terbaca: false },
+  W: { cara: "Pengumuman website/papan pengumuman", sampai: true, terbaca: false },
+  P: { cara: "Pengumuman lewat pemerintah daerah", sampai: true, terbaca: false },
+};
+
+/**
+ * Cara penyampaian satu relaas.
+ *
+ * Sandi asing dipulangkan apa adanya beserta terbaca:false - menebaknya
+ * "berhasil" akan menyatakan panggilan patut atas dasar yang tidak diketahui,
+ * dan menebaknya "gagal" mengulang cacat yang justru sedang diperbaiki.
+ */
+function caraRelaas(ketTemu) {
+  const sandi = cleanText(ketTemu).toUpperCase();
+  if (!sandi) return { sandi: "", cara: "", sampai: null, terbaca: false };
+  const kenal = SANDI_CARA_RELAAS[sandi];
+  if (kenal) return { sandi, ...kenal };
+  return { sandi, cara: `Sandi SIPP "${sandi}"`, sampai: null, terbaca: false };
+}
+
 function kehadiranSebelumnya(semuaSidang = []) {
   const sebelumnya = {};
   const tergugatPernahHadir = {};
@@ -1674,7 +1738,15 @@ async function relaasSidang(perkaraId, sidangId) {
     retur: Number(row.statusPos) === 2,
     ketHasilRelaas: cleanText(row.ketHasilRelaas),
     // 'Y' berarti jurusita bertemu langsung dengan yang dipanggil.
+    //
+    // TIDAK dibuang walau caranya sekarang dibaca terpisah: empat tempat di
+    // portal memakainya, dan artinya tetap tepat - bertemu LANGSUNG. Yang
+    // ditambahkan keterangan di sebelahnya, bukan penggantinya.
     bertemu: cleanText(row.ketTemu).toUpperCase() === "Y",
+    // Cara penyampaiannya - lihat SANDI_CARA_RELAAS. Sebelum ini segala yang
+    // bukan "Y" tampil sebagai "tidak bertemu", termasuk panggilan elektronik
+    // dan relaas yang diterima orang serumah; 46,4% baris salah dilabeli.
+    caraRelaas: caraRelaas(row.ketTemu),
     noResiPos: cleanText(row.noResiPos),
     // Tiga sumber, dari yang paling khusus: penugasan pada perkara ini, lalu
     // nama bergelar pada daftar induk, lalu namanya saja.

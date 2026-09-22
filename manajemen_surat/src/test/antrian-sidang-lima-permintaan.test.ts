@@ -210,9 +210,15 @@ describe("butir 4 - sebab minutasi tertahan di rincian perkara", () => {
   });
 
   it("membedakan yang MENAHAN dari yang sekadar tertunggak", () => {
-    const i = layar.indexOf("sebabMinutasiTertahan({");
-    const blok = layar.slice(i, i + 2000);
-    expect(blok).toContain('"penghalang"');
+    // Dijangkar pada penggambaran daftarnya, bukan pada jendela 2.000 aksara
+    // sesudah pemanggilannya. Jendela selebar itu bergeser tiap kali satu
+    // baris ditambahkan ke pemanggilan - dan merahnya menuduh sesuatu yang
+    // tidak rusak, sementara pemindahan yang SUNGGUH merusak (pembedaan
+    // tingkatnya dihapus dari layar) lolos selama byte-nya kebetulan cukup.
+    const i = layar.indexOf("sebab.map((x) => (");
+    expect(i, "daftar sebab minutasi tidak digambar").toBeGreaterThan(-1);
+    const blok = layar.slice(i, layar.indexOf("</ul>", i));
+    expect(blok, "tingkat penghalang tidak lagi dibedakan").toContain('x.tingkat === "penghalang"');
   });
 
   it("lencana di baris daftar menunjuk tempat daftar lengkapnya", () => {

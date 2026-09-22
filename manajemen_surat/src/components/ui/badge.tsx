@@ -13,6 +13,12 @@ const badgeVariants = cva(
         warning: "border-amber-300/70 bg-amber-100 text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/70 dark:text-amber-300",
         danger: "border-rose-300/70 bg-rose-100 text-rose-700 dark:border-rose-700/50 dark:bg-rose-950/70 dark:text-rose-300",
         muted: "border-border/75 bg-muted/80 text-muted-foreground dark:border-border/55 dark:bg-muted/60 dark:text-muted-foreground",
+        // Dua warna tambahan supaya status putusan tidak lagi berbagi kuning
+        // bertiga - lihat warnaStatusPutusan. Ungu dan biru dipilih sebab
+        // keduanya belum dipakai penanda lain di layar jadwal sidang.
+        info: "border-sky-300/70 bg-sky-100 text-sky-800 dark:border-sky-700/50 dark:bg-sky-950/70 dark:text-sky-300",
+        netral:
+          "border-violet-300/70 bg-violet-100 text-violet-800 dark:border-violet-700/50 dark:bg-violet-950/70 dark:text-violet-300",
       },
     },
     defaultVariants: {

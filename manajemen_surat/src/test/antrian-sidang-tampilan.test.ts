@@ -141,7 +141,29 @@ describe("kolom tabel jadwal disatukan", () => {
     // penghitungnya sungguh dihitung dari saklarnya.
     expect(berkas).not.toMatch(/colSpan=\{\d+\}/);
     expect(berkas).toContain("colSpan={kolomTabel}");
-    expect(berkas).toContain('const kolomTabel = tampil(tampilan, "skor-kesiapan") ? 8 : 7;');
+
+    // ======================================================================
+    // SAKLARNYA HARUS SATU DAN SAMA - ITU YANG SESUNGGUHNYA DIJAGA
+    // ======================================================================
+    //
+    // Sampai 2.31.0 penghitungnya membaca saklar "skor-kesiapan"; sejak
+    // kolom Siap punya saklarnya sendiri ("kolom-siap", diminta pengguna
+    // 22 September 2026) penghitungnya ikut pindah.
+    //
+    // Yang dijaga BUKAN nama saklarnya, melainkan bahwa penghitung kolom dan
+    // penggambar kolomnya membaca saklar YANG SAMA. Dua saklar berbeda pada
+    // dua tempat itu menghasilkan colSpan yang meleset satu kolom - persis
+    // cacat yang hendak dicegah penjaga ini - dan melesetnya hanya terlihat
+    // ketika tabelnya kebetulan kosong.
+    const hitung = berkas.match(/const kolomTabel = tampil\(tampilan, "([\w-]+)"\) \? 8 : 7;/);
+    expect(hitung, "kolomTabel tidak lagi dihitung dari saklar tampilan").toBeTruthy();
+    const saklar = hitung?.[1] ?? "";
+    // Kepala kolom dan selnya harus digantungkan pada saklar itu juga.
+    const dipakai = berkas.split(`tampil(tampilan, "${saklar}")`).length - 1;
+    expect(
+      dipakai,
+      `saklar "${saklar}" dipakai ${dipakai}x - seharusnya penghitung, kepala kolom, dan selnya`
+    ).toBeGreaterThanOrEqual(3);
   });
 
   it("ruang tetap terbaca pada mode ringkas", () => {

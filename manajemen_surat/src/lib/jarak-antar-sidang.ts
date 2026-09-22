@@ -176,6 +176,56 @@ export type BarisJarak = {
  * karena pengurutan bukan angka tentang sidang.
  */
 export function petaJarakAntarSidang(baris: BarisJarak[]): Record<string, number> {
+  const hasil: Record<string, number> = {};
+  for (const deret of deretPerRuang(baris)) {
+    for (let i = 1; i < deret.length; i += 1) {
+      hasil[deret[i].kunci] = deret[i].menit - deret[i - 1].menit;
+    }
+  }
+  return hasil;
+}
+
+/**
+ * Jarak tiap baris terhadap baris SESUDAHNYA di ruang yang sama.
+ *
+ * ============================================================================
+ * KENAPA PERLU DUA ARAH
+ * ============================================================================
+ *
+ * Diminta pengguna 22 September 2026: "perbandingan jarak antara perkara
+ * dengan perkara selanjutnya". Yang sudah ada menjawab pertanyaan yang
+ * berbeda - "berapa lama sesudah perkara sebelumnya" - dan keduanya dibaca
+ * oleh orang yang berbeda.
+ *
+ * Yang menyusun jadwal melihat ke DEPAN: sesudah perkara ini, berapa lama
+ * sampai yang berikutnya duduk. Yang sedang menjaga ruang sidang melihat ke
+ * BELAKANG: sudah berapa lama sejak perkara sebelumnya dipanggil.
+ *
+ * Angka terakhir di tiap ruang tidak punya jarak berikutnya, dan itu memang
+ * tidak diisi - bukan nol. Nol berarti "dipanggil bersamaan", dan itu keadaan
+ * yang sungguh terjadi serta patut diwarnai merah.
+ */
+export function petaJarakBerikutSidang(baris: BarisJarak[]): Record<string, number> {
+  const hasil: Record<string, number> = {};
+  for (const deret of deretPerRuang(baris)) {
+    for (let i = 0; i < deret.length - 1; i += 1) {
+      hasil[deret[i].kunci] = deret[i + 1].menit - deret[i].menit;
+    }
+  }
+  return hasil;
+}
+
+/**
+ * Baris yang punya jam panggil, dikelompokkan per ruang dan diurutkan menurut
+ * jamnya.
+ *
+ * Dipakai bersama oleh kedua peta di atas supaya keduanya tidak pernah
+ * mengurutkan dengan cara yang berbeda: jarak-ke-belakang dan jarak-ke-depan
+ * yang dihitung dari dua urutan yang berlainan akan saling bertentangan pada
+ * baris yang sama, dan tidak ada pada layarnya yang memberi tahu mana yang
+ * benar.
+ */
+function deretPerRuang(baris: BarisJarak[]): Array<Array<{ kunci: string; menit: number }>> {
   const perRuang = new Map<string, Array<{ kunci: string; menit: number }>>();
   for (const b of baris) {
     const menit = menitHari(String(b.jamPanggil || ""));
@@ -184,13 +234,6 @@ export function petaJarakAntarSidang(baris: BarisJarak[]): Record<string, number
     if (!perRuang.has(ruang)) perRuang.set(ruang, []);
     perRuang.get(ruang)!.push({ kunci: b.kunci, menit });
   }
-
-  const hasil: Record<string, number> = {};
-  for (const deret of perRuang.values()) {
-    deret.sort((a, b) => a.menit - b.menit);
-    for (let i = 1; i < deret.length; i += 1) {
-      hasil[deret[i].kunci] = deret[i].menit - deret[i - 1].menit;
-    }
-  }
-  return hasil;
+  for (const deret of perRuang.values()) deret.sort((a, b) => a.menit - b.menit);
+  return [...perRuang.values()];
 }

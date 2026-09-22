@@ -1,3 +1,20 @@
+/**
+ * Cara penyampaian satu relaas, dari sandi ket_temu milik SIPP.
+ *
+ * `sampai` bukan sama dengan `bertemu`: panggilan elektronik dan relaas yang
+ * diterima orang serumah SAMPAI tanpa pertemuan langsung, dan keduanya sah.
+ * null berarti sandinya tidak dikenali - tidak ditebak ke salah satu sisi.
+ *
+ * `terbaca` false berarti artinya dibaca dari keterangan relaasnya sendiri,
+ * bukan dari daftar pilihan SIPP. Dugaan yang beralasan, bukan kepastian.
+ */
+export type CaraRelaas = {
+  sandi: string;
+  cara: string;
+  sampai: boolean | null;
+  terbaca: boolean;
+};
+
 import type { AletaBotSnapshot, AletaBotDeadLetter, AletaBotWorkerState } from "@/lib/aleta-bot-types";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
 
@@ -1323,6 +1340,7 @@ export type RincianSidang = {
     statusPos: number | null;
     retur: boolean;
     bertemu: boolean;
+    caraRelaas?: CaraRelaas;
     noResiPos: string;
     jurusitaNama: string;
     adaDokumen: boolean;
@@ -1622,7 +1640,17 @@ export async function getGatewayJadwalSidang(params: {
       alasan: string;
       tanggal: string[];
       jumlahDiambil?: number;
-      peta: Record<string, Record<string, unknown>>;
+      /**
+       * Berkunci perkara_id, BUKAN sidang_id - itu bentuk tabel antriannya.
+       * Yang memakainya wajib memeriksa tanggalSidang tiap baris: perkara yang
+       * bersidang dua kali dalam rentang yang dibuka akan mendapat baris
+       * antrian hari lain kalau tidak diperiksa.
+       *
+       * Ditulis dengan bentuk yang sesungguhnya, bukan Record<string, unknown>.
+       * Bentuk longgar di sini pernah membuat rute hakim membaca ruas yang
+       * tidak pernah ada tanpa satu pun peringatan dari TypeScript.
+       */
+      peta: Record<string, AntrianBarisGateway>;
     };
   }>
 > {
@@ -2585,9 +2613,46 @@ export async function getGatewayPraperiksaFakta(
  * Daftar ruangan sidang yang dapat dipilih pada penetapan hari sidang,
  * beserta bendera sidang keliling milik SIPP.
  */
-/** Hakim dan panitera aktif di SIPP - untuk mengikat SK ke orangnya. */
+/** Satu orang pada daftar pegawai penunjukan - bentuknya sama untuk keduanya. */
+export type PegawaiPenunjukan = {
+  id: number;
+  kode: string;
+  nama: string;
+};
+
+/**
+ * Hakim dan panitera aktif di SIPP - untuk mengikat SK ke orangnya.
+ *
+ * ============================================================================
+ * BENTUKNYA DISEBUTKAN, BUKAN Record<string, unknown>
+ * ============================================================================
+ *
+ * Dahulu bertipe Record<string, unknown>. Itu tampak aman - tidak ada yang
+ * dijanjikan - tetapi akibatnya justru sebaliknya: pemanggilnya harus menebak
+ * bentuknya, dan tebakan yang ditulis sebagai cast MEMBUNGKAM pemeriksa tipe.
+ *
+ * Yang terjadi pada rute /api/aleta-ecourt/hakim: ia membaca
+ *
+ *     (pegawai as { hakim?: unknown })?.hakim
+ *
+ * padahal gatewayFetch memulangkan { ok, data } - sehingga nilainya SELALU
+ * undefined dan daftar hakimnya selalu kosong. Tidak ada galat, tidak ada
+ * kalimat di layar; kotak isiannya memang dirancang tetap dapat dipakai tanpa
+ * daftar, jadi tidak ada satu pun tanda bahwa ada yang rusak.
+ *
+ * Bentuknya sekarang disebutkan supaya pemanggil tidak perlu menebak - dan
+ * supaya yang menebak keliru ditolak tsc di tempat, bukan berbulan kemudian
+ * oleh orang yang mengetik kode hakim dan tidak mendapat apa-apa.
+ *
+ * Ruasnya dibaca dari sumbernya, penunjukanService.pegawaiPenunjukan:
+ *   return { ok: true, hakim: rapikan(hakim), panitera: rapikan(panitera) };
+ */
 export async function gatewayPegawaiPenunjukan() {
-  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penunjukan/pegawai", {
+  return gatewayFetch<{
+    ok?: boolean;
+    hakim?: PegawaiPenunjukan[];
+    panitera?: PegawaiPenunjukan[];
+  }>("/internal/aleta-bot/penunjukan/pegawai", {
     method: "GET",
   });
 }

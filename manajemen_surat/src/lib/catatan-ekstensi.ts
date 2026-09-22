@@ -57,6 +57,37 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.163.1",
+    dirilis: "2026-09-22T14:20:00+08:00",
+    judul: "Unggah putusan yang selalu ditolak, dan status putusan yang ditimpa diam-diam",
+    butir: [
+      "UNGGAH PUTUSAN SELALU DITOLAK \"perkara_id belum disebut.\" dari halaman perkara agama - setiap kali, tanpa kecuali. Sebabnya bukan berkas yang salah pilih: perkaraIdDariHalaman() membaca input[name=\"perkara_id\"] di dalam #frm_putusan, dan medan itu TIDAK PERNAH ADA di sana. SIPP mengenali perkara pada borang Putusan Akhir lewat `enc` - nomor perkara tersandi - dan perkara_id hanya dipakai pada borang grasi dan peninjauan kembali. Rute saudaranya (unggah naskah) sudah lama menanyakannya sendiri ke SIPP bila kosong; rute unggah berkas tidak pernah diberi jalan mundur yang sama. Itu sebabnya yang satu bekerja dan yang lain selalu gagal dari halaman yang sama.",
+      "BERKAS BUKAN PDF DITOLAK DI PANEL, bukan sesudah bolak-balik ke peladen. Bot menolak apa pun yang empat bita pertamanya bukan %PDF - dikenali dari bitanya, bukan dari nama berkasnya - sebab yang terbit di Direktori Putusan harus PDF dan ALETA sengaja tidak menjalankan pengubah soffice seperti SIPP: pengubahan yang gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik. Atribut accept pada pemilih berkas hanya SARAN; yang memilih \"All files\" tetap dapat memilih .rtf, dan itulah yang terjadi.",
+      "STATUS PUTUSAN YANG SUDAH ANDA PILIH TIDAK LAGI DITIMPA. Sampai 1.162.0 panel menuliskan Status Putusan usulan ALETA ke borang tanpa melihat apa yang sudah ada di sana. Petugas yang sudah memilih \"Dicabut\" mendapati pilihannya berganti sendiri menjadi usulan ALETA - yang pada sebagian besar perkara berbunyi \"Dikabulkan\". Akibatnya bukan tampilan: status putusan yang keliru tersimpan ke perkara orang, lalu mengalir ke laporan dan ke Direktori Putusan. Lebih buruk lagi, praperiksa sudah dijalankan SEBELUMNYA atas status yang lama, jadi status baru itu tidak pernah diadu dengan amar drafnya oleh siapa pun.",
+      "Sekarang pintunya hanya diisi bila memang BELUM dipilih. Yang sudah berisi dibiarkan apa adanya, dan bila usulan ALETA berbeda, selisih itu DISEBUTKAN merah beserta keterangan bahwa praperiksa berpegang pada pilihan yang sekarang ada di borang.",
+      "PENYELIDIKAN KEBERADAAN MEDAN NASKAH DICABUT - premisnya salah. 1.162.0 mengira borang putusan tidak punya Pertimbangan Hukum dan Amar Anonim pada status selain Dikabulkan. Koreksi pengguna dan sumber SIPP-nya sendiri sama-sama membantahnya: keenam medan itu selalu ada; yang disembunyikan justru medan PILIHAN (verstek, qobla, faktor perceraian, nusyuz, keadaan istri), dan disembunyikannya dengan jQuery .hide() sehingga elemennya TETAP di DOM. Penyelidikan itu karena itu tidak pernah dapat bekerja - ia hanya memberi kalimat yang terdengar pasti atas sesuatu yang tidak diperiksa. Penyaring yang benar sudah lama ada dan memang memeriksa yang seharusnya.",
+      "SAKLAR PANEL RINGKAS di samping deretan pintasan Alt. Menyembunyikan keterangan panjang yang dibaca sekali seumur hidup; tombol, isian, dan pesan galat TETAP tampil. Yang disembunyikan hanya kalimat yang sudah ditandai satu per satu dengan tangan - bukan seluruh kelas keterangannya, sebab separuh pemakaian kelas itu kotak kabar yang lahir kosong lalu diisi pesan galat, dan menyembunyikannya membuat panel diam ketika sesuatu gagal.",
+      "Dua peubah warna yang TIDAK PERNAH ADA sempat dipakai tombol saklarnya - --aleta-latar-lembut dan --aleta-aksen. Akibatnya tombol itu tidak berbunyi apa pun: tidak berubah saat disentuh, dan tidak berubah saat menyala, sebab peubah yang tidak terdefinisi jatuh ke transparan dan ke warisan induknya. Tidak ada satu galat pun yang muncul; yang menemukannya penjaga peubah warna panel.",
+      "BERKAS JAWAB-MENJAWAB AKHIRNYA TERLIHAT. Jawaban, replik, duplik, duplik rekonvensi, kesimpulan, dan fotokopi alat bukti sudah lama ditarik ALETA dari e-Court - yang membuatnya tampak tidak ada adalah tombol unduhnya yang disembunyikan: ada tidaknya berkas dibaca dari kolom cermin yang basi (terisi pada 23 dan 8 dari 394 dokumen) sementara tabel berkasnya mencatat seluruh 400. Sekarang dibaca dari tabel berkasnya, dan keberadaan berkasnya di cakram ikut dibuktikan - yang tercatat ada tetapi hilang dari arsip disebut apa adanya, bukan disamakan dengan yang tidak pernah ada.",
+      "DOKUMEN E-COURT DIPISAH menjadi \"Berkas jawab-menjawab\" dan \"Berkas pendaftaran\", yang dicari hakim lebih dulu. Pemisahnya tanda yang SIPP dan e-Court sendiri pakai, bukan tebakan dari judulnya.",
+      "AGENDA REKONVENSI didahulukan atas agenda konvensinya pada pencocokan berkas ke baris Jadwal Sidang. \"Duplik Rekonvensi\" juga cocok dengan pola duplik biasa, dan tertukarnya tidak berbunyi apa pun: kotaknya tetap terisi, isinya saja milik tahapan lain.",
+      "SAKLAR \"Sisipkan berkas ke Jadwal Sidang\" DISEBUTKAN di panel. Kemampuan menempelkan berkas ke baris Jadwal Sidang - di samping tombol Unggah BAS, dicocokkan menurut agendanya - sudah ada sejak lama, tetapi saklarnya mati sejak awal dan tidak ada satu pun tempat yang menyebutkannya. Fitur yang tidak diketahui sama dengan fitur yang tidak ada.",
+    ],
+  },
+  {
+    versi: "1.162.0",
+    dirilis: "2026-09-22T13:10:00+08:00",
+    judul: "Putusan cabut dan gugur: borangnya memang tidak punya semua bagian",
+    butir: [
+      "SIPP MENYUSUN HALAMAN PUTUSAN AKHIR BERBEDA MENURUT STATUSNYA. Perkara yang dicabut, gugur, tidak dapat diterima, digugurkan, atau ditolak tidak selalu punya Pertimbangan Hukum maupun Amar Anonim di halamannya - dan itu memang benar, bukan halaman yang rusak.",
+      "SAMPAI VERSI SEBELUMNYA PANEL MENGGAMBAR KETIGANYA APA PUN STATUSNYA, lalu mencoba mengisi bagian yang tidak ada. Jembatan menjawab \"medan tidak ketemu\", panel menghitungnya sebagai GAGAL, dan pagar \"selama masih ada yang gagal Simpan tidak ditekan\" menghentikan seluruh pengisian - tepat pada jenis perkara yang paling sederhana dan paling banyak jumlahnya. Yang terbaca petugas hanya \"2 gagal\", tanpa satu pun keterangan bahwa bagiannya memang tidak ada.",
+      "SEKARANG BORANGNYA DITANYA LEBIH DULU. Yang tidak ada tidak digambar, dan ketiadaannya disebutkan beserta status putusan yang sedang terpilih - supaya yang membacanya tahu sebabnya, bukan menyangka alatnya rusak.",
+      "YANG TIDAK BOLEH DILEWATI DIAM-DIAM: draf yang BERISI sesuatu untuk bagian yang tidak ada di borang. Isi itu tidak akan pernah sampai ke SIPP. Pada panel satu perkara ia menjadi peringatan merah; pada antrean massal perkaranya DITAHAN, tidak dilewati - draf yang memuat pertimbangan sementara borangnya tidak punya tempatnya berarti salah satu di antara keduanya keliru, kemungkinan besar statusnya.",
+      "PERKARA YANG TERSIMPAN MENYEBUT BAGIAN YANG TIDAK ADA DI BORANGNYA. Tanpa itu, \"tersimpan\" pada perkara cabut terbaca seolah ketiga bagian naskahnya tertulis - padahal borangnya hanya punya satu.",
+      "PAGARNYA TIDAK DILONGGARKAN. Yang dihapus kegagalan PALSU, bukan pagarnya: borang yang sungguh gagal terisi tetap tidak disimpan.",
+    ],
+  },
+  {
     versi: "1.161.1",
     dirilis: "2026-09-22T10:35:00+08:00",
     judul: "Error yang menumpuk diam-diam tiap halaman ABT dibuka",

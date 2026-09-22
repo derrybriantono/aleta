@@ -1,5 +1,7 @@
 "use client";
 
+import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ChevronDown } from "lucide-react";
@@ -296,6 +298,7 @@ export type Status = {
     ketHasilRelaas: string;
     /** Jurusita bertemu langsung dengan yang dipanggil. */
     bertemu: boolean;
+    caraRelaas?: CaraRelaas;
     noResiPos: string;
     jurusitaNama: string;
     adaDokumen: boolean;
@@ -4131,7 +4134,7 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
         relaas.peran,
         relaas.jurusitaNama ? `jurusita ${relaas.jurusitaNama}` : "",
         relaas.tanggalSidang ? `untuk sidang ${relaas.tanggalSidang}` : "",
-        relaas.bertemu ? "bertemu orangnya" : "",
+        relaas.caraRelaas?.cara || (relaas.bertemu ? "bertemu orangnya" : ""),
         relaas.retur ? "surat RETUR" : "",
       ]
         .filter(Boolean)
@@ -4817,7 +4820,35 @@ function BarisRelaas({
       {/* Bertemu orangnya atau tidak - inilah yang menentukan panggilan sah
           disampaikan langsung, atau lewat kepala desa. Diam berarti tidak
           tercatat, dan itu berbeda dari "tidak bertemu". */}
-      {relaas.bertemu ? (
+      {relaas.caraRelaas?.cara ? (
+        // ====================================================================
+        // CARANYA DARI SANDI SIPP, BUKAN DARI "BUKAN BERTEMU"
+        // ====================================================================
+        //
+        // Sebelum ini hanya "bertemu orangnya" yang punya lencana hijau;
+        // sisanya jatuh ke keterangan relaas apa adanya, atau diam. Padahal
+        // panggilan elektronik dan relaas yang diterima orang serumah SAMPAI
+        // dan sah - keduanya tercatat 3.532 dan 3.104 baris di SIPP satker.
+        //
+        // Warnanya mengikuti SAMPAI atau tidaknya, bukan mengikuti pertemuan
+        // langsung.
+        <Badge
+          variant={
+            relaas.caraRelaas.sampai === true
+              ? "success"
+              : relaas.caraRelaas.sampai === false
+                ? "warning"
+                : "muted"
+          }
+          title={
+            relaas.caraRelaas.terbaca
+              ? `Sandi SIPP "${relaas.caraRelaas.sandi}".`
+              : `Sandi SIPP "${relaas.caraRelaas.sandi}" tidak ada di daftar pilihan SIPP; artinya dibaca dari keterangan relaasnya sendiri.`
+          }
+        >
+          {relaas.caraRelaas.cara}
+        </Badge>
+      ) : relaas.bertemu ? (
         <Badge variant="success">bertemu orangnya</Badge>
       ) : relaas.ketHasilRelaas ? (
         <Badge variant="muted">{relaas.ketHasilRelaas}</Badge>

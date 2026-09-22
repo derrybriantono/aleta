@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.31.0";
+export const APP_VERSION = "2.32.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.31.0 - Unggah Putusan: Cepat, Tidak Menyerah, dan Dari Mana Saja";
+  "ALETA Judicia v2.32.0 - Dua Puluh Satu Permintaan, dan Tiga Cacat yang Gagal dalam Diam";
 
 export type PatchNote = {
   version: string;
@@ -22,10 +22,112 @@ export type PatchNote = {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: "2.32.0",
+    title:
+      "ALETA Judicia v2.32.0 - Dua Puluh Satu Permintaan, dan Tiga Cacat yang Gagal dalam Diam",
+    date: "2026-09-22",
+    status: "Belum terpasang",
+    summary:
+      "Dua puluh satu permintaan pengguna, dikerjakan dalam dua putaran. Di antaranya TIGA cacat " +
+      "yang sama-sama gagal dalam DIAM - tanpa satu pun galat di layar, dan justru itu yang " +
+      "membuat ketiganya bertahan: separuh relaas satker salah dilabeli dan dapat membuat sidang " +
+      "ditunda tanpa sebab; daftar hakim pada tunjukan konseptor tidak pernah terisi sejak " +
+      "fiturnya lahir; dan unggah putusan dari halaman perkara agama SELALU ditolak, setiap kali, " +
+      "tanpa kecuali.",
+    added: [
+      "KETERANGAN PERKARA - catatan bebas di bawah tunjuk konseptor, dapat diisi siapa pun pegawai pengadilan. Tombolnya abu-abu ketika kosong dan MERAH ketika ada isinya; warnanya satu-satunya cara mengetahui ada catatan tanpa membuka apa pun, dan pada daftar dua puluh tujuh baris membuka satu per satu bukan pilihan. Isinya TIDAK tampil sampai ditekan - memajangnya di tiap baris mengubah daftar sidang menjadi daftar catatan.",
+      "TIAP SUNTINGAN MENJADI PERUBAHAN BERNOMOR, bukan menimpa yang lama. Yang tampil perubahan terakhir beserta nama penulis, jabatannya, tanggal dan jamnya; keterangan sebelumnya tersembunyi sampai diminta, tersusun menurut nomornya. Sebabnya bukan kerapian: catatan semacam ini dibaca orang untuk mengambil keputusan - menunda sidang, menunggu berkas - dan ketika keputusan itu kelak dipertanyakan, yang ditanyakan justru apa tulisannya waktu itu. Menimpa baris lama menghapus jawabannya. Karena itu tabelnya tidak punya UPDATE maupun DELETE sama sekali.",
+      "NAMA DAN JABATAN PENULIS DIAMBIL DARI SESI, tidak dapat diketik sendiri oleh pengirim - catatan ini dibaca sebagai keterangan resmi tentang perkara orang. Jabatannya DISALIN saat menulis, bukan dibaca ulang saat ditampilkan: jabatan orang berubah, dan membacanya ulang membuat catatan tiga bulan lalu tampak ditulis oleh jabatan yang baru dijabat pekan ini.",
+      "REKAMAN ANTRIAN SIDANG - ALETA kini menyimpan sendiri urutan antrian, waktu pengambilannya, nama petugas yang melayani, dan jarak tiap perkara terhadap perkara sebelum maupun sesudahnya. Sebabnya: tabel antrian milik aplikasi ruang tunggu adalah tabel KERJA yang dipakai ulang tiap hari sidang, sehingga keadaan sebuah hari hilang begitu harinya lewat - dan pertanyaan yang paling sering ditanyakan tentang pelayanan (\"berapa lama para pihak menunggu bulan lalu\", \"hari mana yang ruangnya paling berdesakan\") tidak dapat dijawab sama sekali.",
+      "JARAK KE PERKARA BERIKUTNYA, di samping jarak dari perkara sebelumnya yang sudah ada. Keduanya dibaca orang yang berbeda: yang menjaga ruang sidang melihat ke belakang - sudah berapa lama sejak perkara sebelumnya dipanggil; yang menyusun jadwal melihat ke depan - sesudah perkara ini berapa lama sampai yang berikutnya duduk, dan di sanalah penumpukan terlihat sebelum terjadi. Keduanya dihitung dari urutan yang SAMA, per ruang dan per hari.",
+      "NAMA PETUGAS YANG MELAYANI PENGAMBILAN NOMOR kini digambar. Namanya sudah ikut terkirim dari aplikasi antrian sejak lama - tersimpan di dalam tipe, tidak pernah ditampilkan sekali pun.",
+      "SATU KOTAK PENCARIAN menggantikan dua. Dulu ada \"Cari nomor perkara\" yang dikirim ke SIPP dan \"Saring di dalam hasil\" yang menyaring baris yang sudah termuat - dua kotak berbentuk sama, di layar yang sama, tanpa apa pun pada bentuknya yang memberi tahu mana yang mana. Sekarang: mengetik menyaring seketika, menekan Enter melebarkan pencarian ke SIPP. Kata kunci yang sedang berlaku di sisi SIPP disebutkan di bawah kotaknya beserta tombol melepasnya - tanpa itu, daftar yang menyusut karenanya akan disangka jadwal yang memang sepi.",
+      "SAKLAR TAMPILAN BARU, dan dua di antaranya MATI sejak awal: Kolom Siap dan Catatan cara menghitung. Keduanya boleh mati sejak awal karena yang hilang bukan fakta tentang perkara, melainkan kalimat yang menerangkan cara ALETA menghitung - dan kolom Siap memang kosong sampai tombol Hitung skor ditekan. Keduanya tidak ikut dihitung pada angka \"berapa yang dimatikan\": lencana yang selalu menyala berhenti dibaca.",
+      "UNGGAH PUTUSAN UNTUK STATUS SELAIN DIKABULKAN - cabut, gugur, tidak dapat diterima, digugurkan, ditolak. SIPP menyusun halaman Putusan Akhir BERBEDA menurut statusnya; panel kini menanyakan lebih dulu bagian mana yang benar-benar ada di borang, hanya menggambar yang ada, dan menyebutkan ketiadaan yang lain beserta sebabnya.",
+      "WARNA LENCANA STATUS PUTUSAN DIBEDAKAN. \"Gugur\" dan \"digugurkan\" adalah dua hal berbeda dan kini berwarna berbeda; dicabut dan dicoret punya warnanya sendiri. Satu warna untuk semua yang bukan dikabulkan membuat mata berhenti membedakannya.",
+      "NOMOR SIDANG KEBERAPA pada riwayat panggilan dan seluruh jadwal sidang perkara - angka saja, di sisi kiri. Diturunkan dari jadwal perkaranya, bukan dari penomoran ulang daftar relaas: satu sidang dapat punya beberapa relaas, dan menomori relaasnya menghasilkan angka yang tidak pernah cocok dengan berkas perkara.",
+      "JADWAL PERKARA YANG BERSIDANG beserta jabatan dan nama penggunanya, di kepala rincian.",
+      "TOMBOL MEDIATOR di samping Tunda dan Putus, muncul hanya pada sidang yang berurusan dengan mediasi. Ambangnya DIUKUR, bukan dikira: pada 20.109 baris jadwal sidang satker, 841 menyebut mediasi di alasan tunda dan 619 di agendanya - 1.407 pada salah satunya. Karena itu keduanya dibaca; membaca alasan tundanya saja melewatkan 566 baris. Bendera ditunda TIDAK disyaratkan - 49 baris beragenda mediasi justru berbendera tidak-ditunda. Polanya akar kata, sebab tulisannya bebas dan banyak salah ketik: \"peroses mediasi\", \"Peoses Mediasi\", \"Proses Mediasin\" semuanya benar-benar ada di data.",
+      "SAKLAR PANEL RINGKAS pada ekstensi, di samping deretan pintasan Alt. Menyembunyikan keterangan panjang yang dibaca sekali seumur hidup; tombol, isian, dan pesan galat TETAP tampil.",
+      "SEBAB MINUTASI MENYEBUT SIDANG KEBERAPA DAN AGENDANYA. Sebelumnya hanya \"Berita acara sidang belum ada sama sekali (1 sidang)\" - angka tanpa alamat. Sekarang tiap butir membawa sub-daftar yang menyebut sidangnya satu per satu. Angkanya tetap di kalimat induknya: \"2 dari 5\" dibaca sekilas, dan membenamkan lima nama sidang ke dalamnya justru menghapus angka itu dari pandangan.",
+      "RELAAS IKUT MENJADI BUTIR MINUTASI - sebagai pelengkap, bukan penghalang. Berkas ini dulu menolak menghitung relaas dengan alasan kelengkapannya \"tidak terbaca\"; alasan itu sudah tidak benar, dan angka yang sama sudah lama dipajang panel sebagai \"Relaas berdokumen 4 dari 4\". Tetap pelengkap sebab yang terbaca ada tidaknya PINDAIAN relaas, bukan sah tidaknya panggilannya - menahan minutasi atas dasar itu berarti menahannya atas hal yang tidak diukur.",
+      "DOKUMEN E-COURT DIPISAH menjadi \"Berkas jawab-menjawab\" dan \"Berkas pendaftaran\", yang dicari hakim lebih dulu. Pemisahnya tanda yang SIPP dan e-Court sendiri pakai, bukan tebakan dari judulnya.",
+    ],
+    changed: [
+      "BENTUK DAFTAR PEGAWAI PENUNJUKAN DISEBUTKAN di klien gerbang, menggantikan Record<string, unknown>. Tipe yang longgar tampak aman - tidak ada yang dijanjikan - tetapi akibatnya sebaliknya: pemanggilnya harus menebak bentuknya, dan tebakan yang ditulis sebagai cast MEMBUNGKAM pemeriksa tipe. Itulah yang terjadi pada rute hakim. Bentuk peta antrian pada gerbang jadwal sidang ikut disebutkan atas sebab yang sama.",
+      "TOMBOL PENANDA MENJADI IKON SAJA - dua anak panah yang merapat berarti ciutkan, yang merenggang berarti bentangkan. Namanya tidak ikut hilang: aria-label tetap menyebutkannya, sebab tombol tanpa nama sama sekali tidak dapat disebut oleh siapa pun yang tidak melihatnya.",
+      "TOMBOL PENCARIAN LANJUTAN DAN RESET pindah sejejer dengan Hitung skor, Cetak, dan Daftarkan ke antrian. Sebelumnya keduanya menempati baris tersendiri yang hanya berisi mereka berdua - satu baris penuh terpakai oleh dua tombol, dan jumlah sidang yang terlihat berkurang sebanyak itu.",
+      "KOLOM \"PERAN ANDA BERHAK MELIHAT SELURUH PERKARA SATKER\" dihapus dari rincian - keterangan yang sama pada tiap baris, dibaca sekali seumur hidup.",
+      "TOMBOL TUNDA DAN PUTUS pindah ke samping kanan jenis perkara.",
+      "BERKAS BUKAN PDF DITOLAK DI PANEL EKSTENSI, bukan sesudah bolak-balik ke peladen. Bot menolak apa pun yang empat bita pertamanya bukan %PDF - dikenali dari bitanya, bukan dari nama berkasnya. Atribut accept pada pemilih berkas hanya SARAN; yang memilih \"All files\" tetap dapat memilih .rtf.",
+      "SAKLAR \"Sisipkan berkas ke Jadwal Sidang\" DISEBUTKAN di panel. Kemampuan menempelkan berkas ke baris Jadwal Sidang - di samping tombol Unggah BAS, dicocokkan menurut agendanya - sudah ada sejak lama, tetapi saklarnya mati sejak awal dan tidak ada satu pun tempat yang menyebutkannya. Fitur yang tidak diketahui sama dengan fitur yang tidak ada.",
+    ],
+    fixed: [
+      "SEPARUH RELAAS SALAH DILABELI. ALETA membaca ket_temu milik SIPP sebagai benar/salah - ketTemu === \"Y\" - padahal kolom itu menyimpan CARA penyampaiannya, dan SIPP memakai sembilan sandi. Terukur pada 14.495 baris relaas satker: 6.725 baris (46,4%) jatuh menjadi \"tidak bertemu\" padahal bukan. Yang terbesar E = Panggilan Elektronik (3.532) dan S = Diterima orang serumah (3.104).",
+      "YANG PALING MERUGIKAN BUKAN PANGGILAN ELEKTRONIK, MELAINKAN \"DITERIMA ORANG SERUMAH\". Penyampaian itu SAH menurut HIR - relaasnya patut dan sidangnya boleh berjalan. Menampilkannya sebagai \"tidak bertemu\" membuat yang membacanya menyimpulkan panggilannya tidak patut, lalu menunda sidang yang sebenarnya sudah boleh jalan. Itu kerugian pada perkara orang, bukan kerugian tampilan.",
+      "ARTI SANDINYA DIBEDAKAN MENURUT ASALNYA. Y, T, E, dan N dibaca dari daftar pilihan SIPP sendiri. S, R, W, P, dan M tidak ada di sana - artinya dibaca dari isi keterangan relaasnya, dan karena itu ditandai sebagai dugaan yang beralasan, bukan kepastian; keterangannya disebut pada title. Sandi yang sama sekali tidak dikenali tidak ditebak ke salah satu sisi.",
+      "WARNA LENCANANYA mengikuti SAMPAI atau tidaknya, bukan mengikuti pertemuan langsung - panggilan elektronik dan relaas yang diterima orang serumah sama-sama sampai tanpa pertemuan langsung. Kedua layar yang menampilkan relaas diperbaiki bersamaan; memperbaiki satu saja membuat keduanya berselisih untuk perkara yang sama.",
+      "DAFTAR HAKIM PADA TUNJUKAN KONSEPTOR TIDAK PERNAH TERISI sejak fiturnya lahir di 2.29.0. Rutenya membaca pegawai.hakim lewat cast, padahal gerbang memulangkan pembungkus { ok, data } - nilainya SELALU undefined. Gagalnya sempurna dalam diam: kotak isiannya memang dirancang tetap dapat dipakai tanpa daftar, jadi tidak ada satu pun tanda bahwa ada yang rusak.",
+      "HALAMAN TERTARIK KE SAMPING KETIKA RINCIAN DIBUKA. Baris rincian membentang selebar isinya, bukan selebar layar, sehingga seluruh tabel ikut melar dan kolomnya tidak lagi sejajar. Lebarnya kini dikunci pada lebar yang sungguh tampak, dan isinya yang lebih lebar menggulir di dalam wadahnya sendiri.",
+      "UNGGAH PUTUSAN MASSAL BERHENTI PADA PERKARA CABUT DAN GUGUR. Panel mencoba mengisi Pertimbangan Hukum dan Amar Anonim yang memang TIDAK ADA di borang status itu; jembatan menjawab \"medan tidak ketemu\", panel menghitungnya sebagai gagal, dan pagar \"selama masih ada yang gagal Simpan tidak ditekan\" menghentikan seluruh pengisian - tepat pada jenis perkara yang paling sederhana dan paling banyak jumlahnya. Yang terbaca petugas hanya \"2 gagal\", tanpa satu pun keterangan bahwa bagiannya memang tidak ada.",
+      "DRAF YANG BERISI UNTUK BAGIAN YANG TIDAK ADA DI BORANG kini DITAHAN, bukan dilewati. Isi itu tidak akan pernah sampai ke SIPP; tanpa penahanan ini panel akan berkata \"tersimpan\" atas putusan yang kehilangan pertimbangannya, dan hilangnya baru ketahuan ketika salinannya dibaca orang.",
+      "STATUS \"TIDAK DITERIMA\" - tanpa kata \"dapat\" - tidak dikenali agen praperiksa, sehingga pemeriksaan padanan amarnya DILEWATI diam-diam tepat pada putusan yang amarnya paling mudah tertukar.",
+      "UNGGAH PUTUSAN DARI HALAMAN PERKARA AGAMA SELALU DITOLAK dengan \"perkara_id belum disebut.\" - setiap kali, tanpa kecuali. Sebabnya bukan berkas yang salah pilih: ekstensi membaca perkara_id dari medan tersembunyi di dalam borang putusan, dan medan itu TIDAK PERNAH ADA di sana. SIPP mengenali perkara pada borang Putusan Akhir lewat `enc`, nomor perkara tersandi; perkara_id hanya dipakai pada borang grasi dan peninjauan kembali. Rute saudaranya sudah lama menanyakannya sendiri ke SIPP bila kosong - hanya rute ini yang tidak pernah diberi jalan mundur yang sama.",
+      "BOT YANG MATI DIBEDAKAN DARI PERKARA YANG TIDAK ADA pada pesan gagalnya. Menyamakan keduanya mengirim petugas memeriksa nomor perkaranya - yang sudah benar - sementara yang perlu diperiksa sambungan botnya.",
+      "STATUS PUTUSAN YANG SUDAH DIPILIH PETUGAS DITIMPA DIAM-DIAM oleh panel ekstensi. Yang sudah memilih \"Dicabut\" mendapati pilihannya berganti sendiri menjadi usulan ALETA - yang pada sebagian besar perkara berbunyi \"Dikabulkan\" - lalu borangnya menggambar ulang dan medan yang seharusnya tersembunyi ikut muncul. Akibatnya bukan tampilan: status putusan yang keliru tersimpan ke perkara orang, lalu mengalir ke laporan dan ke Direktori Putusan. Lebih buruk lagi, praperiksa sudah dijalankan SEBELUMNYA atas status yang lama.",
+      "BERKAS JAWAB-MENJAWAB E-COURT TIDAK PERNAH TERLIHAT - jawaban, replik, duplik, duplik rekonvensi, kesimpulan, fotokopi alat bukti. Semuanya sudah lama ditarik ALETA; yang membuatnya tampak tidak ada adalah tombol unduhnya yang disembunyikan. Ada tidaknya berkas dibaca dari kolom cermin yang basi - terisi pada 23 dan 8 dari 394 dokumen - sementara tabel berkasnya mencatat seluruh 400. Tidak ada satu galat pun yang berbunyi.",
+      "BERKAS YANG TERCATAT ADA TETAPI HILANG DARI ARSIP kini disebut apa adanya, bukan disamakan dengan yang tidak pernah ada. Tindakannya berbeda: yang satu menyuruh memeriksa arsipnya, yang lain menyuruh pihak mengunggah. Arsip e-Court pernah lenyap seluruhnya di sini karena volume Docker belum di-mount.",
+      "AGENDA REKONVENSI TERTUKAR DENGAN KONVENSINYA pada pencocokan berkas ke baris Jadwal Sidang - \"Duplik Rekonvensi\" juga cocok dengan pola duplik biasa. Tertukarnya tidak berbunyi apa pun: kotaknya tetap terisi, isinya saja milik tahapan lain.",
+    ],
+    security: [],
+    operationalNotes: [
+      "MIGRASI 0047 DAN 0048 - tabel aleta_keterangan_perkara dan aleta_rekam_antrian. Nomor Drizzle bebas berikutnya kini 0049; beri tahu sesi PC. Keduanya juga ada di jalur idempoten schema.ts, sebab basis data dalam memori dan pemasangan yang melewati migrasi mengandalkan jalur itu.",
+      "PEMASANGAN WAJIB MEMBAWA ALETA_RUN_DB_MIGRATIONS=1. Tanpa itu skrip pembaruan MELEWATI migrasi dan tetap melaporkan berhasil - dan rekaman antrian akan diam-diam tidak pernah tertulis sampai ada yang memeriksanya berbulan-bulan kemudian.",
+      "REKAMAN ANTRIAN DITULIS DARI PELADEN tiap kali jadwal sidang dimuat, bukan dari peramban. Gagalnya tidak menjatuhkan jadwalnya - jumlah yang tertulis beserta sebab gagalnya ikut dipulangkan rute jadwal sidang.",
+      "PEMBACAAN RELAAS YANG BARU MENGUBAH APA YANG TAMPIL pada relaas yang sudah lama tersimpan - tidak ada data yang diubah, hanya cara membacanya. Relaas yang kemarin berbunyi \"tidak bertemu\" dapat berubah menjadi \"Panggilan elektronik\" atau \"Diterima orang serumah\"; itu pembetulan, bukan perubahan data.",
+      "EKSTENSI PERLU DI-RELOAD di chrome://extensions sesudah rilis ini - ekstensi unpacked tidak memperbarui dirinya.",
+      "BERKAS PUTUSAN YANG DIUNGGAH HARUS PDF. Yang terbit di Direktori Putusan harus PDF, dan ALETA sengaja tidak menjalankan pengubah soffice seperti SIPP - pengubahan yang gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik. Simpan naskahnya sebagai PDF lebih dulu; .rtf dan .docx ditolak.",
+    ],
+    knownLimitations: [
+      "ARTI LIMA SANDI RELAAS (S, R, W, P, M) DIBACA DARI ISI KETERANGAN RELAASNYA, bukan dari daftar resmi SIPP - sandi itu tidak ada di dropdown mana pun yang terbaca. Keduanya sudah ditandai berbeda di layar, tetapi bila satker tahu arti resminya, sebutkan supaya dapat dipastikan.",
+      "PERBAIKAN RUTE HAKIM BELUM DICOBA DI SIPP SUNGGUHAN - hanya dari pembacaan kode. Sesudah terpasang, ketik kode hakim seperti C3 pada tunjukan konseptor untuk memastikan daftarnya muncul.",
+      "BAGIAN NASKAH YANG ADA PADA TIAP STATUS PUTUSAN BELUM DIUKUR DARI SIPP SUNGGUHAN - yang diperbaiki adalah cara panel menyikapi ketiadaannya, bukan daftar bagian per status. Sesudah terpasang, buka satu perkara cabut dan satu perkara gugur untuk memastikan yang digambar memang yang ada.",
+      "REKAMAN ANTRIAN BELUM PUNYA LAYARNYA SENDIRI. Rute bacanya sudah ada (/api/aleta-ecourt/rekam-antrian, per rentang tanggal atau per perkara) beserta ringkasan jarak terapat, terenggang, dan reratanya; layar yang menampilkannya belum dibuat.",
+      "TOMBOL MEDIATOR BELUM DAPAT MENUNJUK MEDIATOR. Diperiksa di seluruh repositori: tidak ada satu pun jalur yang menulis penetapan mediator ke SIPP. Tombolnya membuka keterangan mediasi yang memang sudah dibaca ALETA, dan mengatakan apa adanya bahwa penunjukannya masih dikerjakan di SIPP - menjanjikan yang belum ada lebih merugikan daripada tidak menawarkan apa pun.",
+      "TANGGAL SIDANG TIAP DOKUMEN E-COURT MASIH KOSONG pada seluruh 394 dokumen - jembatan tidak pernah menuliskannya, dan kolom agendanya diisi agenda TERAKHIR seluruh perkara. Akibatnya pencocokan berkas ke baris Jadwal Sidang hanya dapat mengandalkan agendanya. Itu sudah bekerja, tetapi berkas yang agendanya tidak dikenali tidak tertempel di mana pun. Perbaikannya di jembatan e-Court, belum dikerjakan.",
+      "KATA MINIMAL YANG DITANDAI REMEH BARU SEMBILAN TEMPAT. Penandaan otomatis dicoba dua kali dan gagal dua kali ke arah yang sama - menandai terlalu banyak, termasuk kotak kabar dan kalimat yang melaporkan keadaan. Sisanya ditandai dengan tangan dan sengaja sedikit: panel yang ringkas tetapi diam ketika sesuatu gagal lebih buruk daripada panel yang penuh.",
+    ],
+  },
+  {
+    version: "2.31.1",
+    title: "ALETA Judicia v2.31.1 - Error yang Menumpuk Diam-diam di Halaman ABT",
+    date: "2026-09-22",
+    status: "Belum terpasang",
+    summary:
+      "Satu error yang berulang tiap halaman ABT dibuka, tanpa satu pun gejala di layar - dan " +
+      "justru itu yang membuatnya berbahaya. Nomor portal ikut naik sebab ekstensi yang tertanam " +
+      "di dalamnya berubah; isinya berbeda, maka nomornya harus berbeda.",
+    added: [],
+    changed: [],
+    fixed: [
+      "ReferenceError TDZ pada pemasangan panel massal ABT: \"Cannot access 'sudahDipasangMassalAbt' before initialization\". Sebabnya urutan, bukan logika - fungsinya dipanggil di tingkat atas berkas sementara let yang dibacanya baru dideklarasikan ratusan baris di bawah. Deklarasi function terangkat ke atas sehingga pemanggilannya sah; deklarasi let tidak.",
+      "PANELNYA TETAP MUNCUL selama ini, dan itulah yang membuatnya tidak pernah terlihat - gelung ulangan memanggilnya lagi, dan pada panggilan kedua barisnya sudah lewat. Yang tersisa hanya satu error di daftar Chrome tiap halaman ABT dibuka. Bahayanya justru di situ: lencana merah yang selalu menyala membuat error SUNGGUHAN berikutnya tenggelam, sebab tidak ada yang membuka daftar yang memang selalu merah.",
+      "Ada sejak commit putusan massal, bukan dari perubahan kemarin - diperiksa pada tiga commit terakhir dan ketiganya sama.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Nomor Drizzle bebas berikutnya tetap 0047.",
+      "NOMOR PORTAL NAIK WALAU YANG BERUBAH HANYA EKSTENSI. Ekstensi tertanam di dalam build portal; memasang isi yang berbeda di bawah nomor yang sama membuat layar melaporkan versi yang tidak sesuai dengan apa yang sungguh disajikannya.",
+    ],
+    knownLimitations: [
+      "PENJAGA TDZ HANYA MEMERIKSA PEMANGGILAN TINGKAT ATAS - yang tanpa lekukan. Pemanggilan di dalam fungsi lain berjalan belakangan dan tidak pernah kena TDZ; memasukkannya hanya menghasilkan merah palsu, dan itu terjadi pada percobaan pertama penyisirnya lalu dibetulkan.",
+    ],
+  },
+  {
     version: "2.31.0",
     title: "ALETA Judicia v2.31.0 - Unggah Putusan: Cepat, Tidak Menyerah, dan Dari Mana Saja",
     date: "2026-09-22",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Empat permintaan atas unggah putusan, dan dua di antaranya berakar pada satu angka yang " +
       "salah urutan: ekstensi menyerah lebih dahulu daripada gerbangnya, sehingga unggahan yang " +
@@ -60,7 +162,7 @@ export const PATCH_NOTES: PatchNote[] = [
     version: "2.30.0",
     title: "ALETA Judicia v2.30.0 - Rantai Penetapan Melintasi Hari, dan Pratinjau yang Jujur",
     date: "2026-09-22",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Dua permintaan atas penetapan otomatis, dan keduanya tentang hal yang sama: yang menekan " +
       "tombol harus tahu persis apa yang akan terjadi. Rantai PMH-PPP-PJS-PHS kini tidak lagi " +
@@ -92,7 +194,7 @@ export const PATCH_NOTES: PatchNote[] = [
     version: "2.29.0",
     title: "ALETA Judicia v2.29.0 - Layar Antrian Sidang Dapat Disetel Sendiri",
     date: "2026-09-21",
-    status: "Belum terpasang",
+    status: "Terpasang",
     summary:
       "Layar Antrian Sidang dipakai empat macam orang yang pekerjaannya berbeda, dan tiap penanda " +
       "berguna bagi salah satunya sekaligus menjadi kebisingan bagi tiga sisanya. Mulai versi ini tiap " +

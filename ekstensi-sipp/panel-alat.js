@@ -1362,7 +1362,19 @@ function alatBarisPintasan(daftar) {
   pintasan.title =
     daftar.map((x) => `${x.tombol}  ${x.nama}`).join("\n") +
     "\n\nTidak berlaku selagi mengetik di kolom isian.";
-  return pintasan;
+
+  // Tombol panel ringkas dibungkus bersama pintasannya, bukan dipasang
+  // terpisah - yang memakai helper ini ada tiga panel, dan menuntut ketiganya
+  // memasangnya sendiri berarti satu di antaranya kelak terlupakan.
+  //
+  // margin-right otomatis TETAP melekat pada .aleta-kaki-pintasan; pembungkus
+  // ini mewarisinya lewat display:contents, sehingga tata letak kaki tidak
+  // berubah sama sekali - lihat panel.css.
+  const bungkus = document.createElement("div");
+  bungkus.className = "aleta-kaki-kiri";
+  bungkus.appendChild(alatTombolRingkas());
+  bungkus.appendChild(pintasan);
+  return bungkus;
 }
 
 /**
@@ -2505,6 +2517,142 @@ function alatTandaiKering() {
 }
 
 /**
+ * ============================================================================
+ * PANEL RINGKAS - KETERANGAN PANJANG DISEMBUNYIKAN, PESAN TIDAK
+ * ============================================================================
+ *
+ * Diminta pengguna 22 September 2026: satu saklar di samping deretan pintasan
+ * Alt, untuk meminimalkan "segala keterangan yang tidak terlalu penting" -
+ * contohnya "Putusan akhir dan anonimisasinya diunggah sekaligus - berkas,
+ * kolom dokumen, baris Direktori Putusan, dan antreannya. PDF saja."
+ *
+ * Kalimat semacam itu ditulis untuk orang yang PERTAMA KALI membuka panelnya.
+ * Yang sudah memakainya tiap hari membacanya ratusan kali, dan tiap kalimat
+ * mendorong tombol yang sungguh dipakainya makin ke bawah.
+ *
+ * ============================================================================
+ * YANG DISEMBUNYIKAN HANYA YANG BERTANDA, BUKAN SELURUH KELASNYA
+ * ============================================================================
+ *
+ * Kelas .aleta-tetap-sebab bermuka dua: separuh pemakaiannya kotak KABAR yang
+ * lahir kosong lalu diisi pesan galat, kemajuan, atau hasil. Menyembunyikan
+ * kelasnya begitu saja membuat panel DIAM ketika sesuatu gagal - penetapan
+ * yang tidak tersimpan akan tampak seperti tidak terjadi apa-apa.
+ *
+ * Karena itu keterangan tetapnya diberi kelas kedua .aleta-remeh, dan hanya
+ * itu yang disembunyikan. Aturan CSS-nya ada di panel.css dan seluruhnya
+ * dijangkar pada kelas berawalan .aleta- supaya tidak pernah menyentuh satu
+ * pun elemen milik SIPP.
+ *
+ * Bawaannya MATI. Yang belum pernah menyalakannya tidak boleh kehilangan
+ * keterangan yang tidak pernah ia minta dihilangkan.
+ */
+const ALAT_RINGKAS_KUNCI = "panelRingkas";
+let alatRingkasNyalaKini = false;
+/** Sebabnya sama dengan alatKeringDisetel - lihat catatannya di atas. */
+let alatRingkasDisetel = false;
+
+function alatRingkasNyala() {
+  return alatRingkasNyalaKini === true;
+}
+
+async function alatMuatRingkas() {
+  let terbaca = false;
+  try {
+    const simpan = await chrome.storage.local.get([ALAT_RINGKAS_KUNCI]);
+    terbaca = simpan[ALAT_RINGKAS_KUNCI] === true;
+  } catch {
+    terbaca = false;
+  }
+  if (alatRingkasDisetel) return alatRingkasNyalaKini;
+  alatRingkasNyalaKini = terbaca;
+  alatTandaiRingkas();
+  return alatRingkasNyalaKini;
+}
+
+function alatDengarkanRingkas() {
+  try {
+    chrome.storage.onChanged.addListener((ubah, tempat) => {
+      if (tempat !== "local" || !ubah[ALAT_RINGKAS_KUNCI]) return;
+      alatRingkasNyalaKini = ubah[ALAT_RINGKAS_KUNCI].newValue === true;
+      alatRingkasDisetel = true;
+      alatTandaiRingkas();
+      alatSegarkanTombolRingkas();
+    });
+  } catch {
+    /* tanpa pendengarnya, pilihannya tetap berlaku di tab tempat ia disetel */
+  }
+}
+
+async function alatSetelRingkas(nyala) {
+  alatRingkasDisetel = true;
+  alatRingkasNyalaKini = nyala === true;
+  alatTandaiRingkas();
+  alatSegarkanTombolRingkas();
+  try {
+    await chrome.storage.local.set({ [ALAT_RINGKAS_KUNCI]: alatRingkasNyalaKini });
+  } catch {
+    /* berlaku untuk halaman ini saja */
+  }
+  return alatRingkasNyalaKini;
+}
+
+function alatTandaiRingkas() {
+  try {
+    if (alatRingkasNyalaKini) document.documentElement.setAttribute("data-aleta-ringkas", "ya");
+    else document.documentElement.removeAttribute("data-aleta-ringkas");
+  } catch {
+    /* tanpa penandanya, keterangannya tetap tampil - tidak ada yang rusak */
+  }
+}
+
+/**
+ * Menyegarkan SELURUH tombolnya, bukan yang ditekan saja.
+ *
+ * Satu halaman dapat memuat lebih dari satu panel - ABT membuka panel perkara
+ * dan panel massal berdampingan - dan keduanya menggambar kakinya sendiri.
+ * Tombol yang tidak ikut disegarkan akan menunjukkan keadaan yang berlawanan
+ * dengan apa yang sedang berlaku, dan itu lebih membingungkan daripada tidak
+ * ada tombol sama sekali.
+ */
+function alatSegarkanTombolRingkas() {
+  try {
+    const semua = document.querySelectorAll(".aleta-kaki-ringkas");
+    for (const tombol of semua) alatRupaTombolRingkas(tombol);
+  } catch {
+    /* tombol yang tidak tersegarkan hanya keliru rupanya, bukan kerjanya */
+  }
+}
+
+function alatRupaTombolRingkas(tombol) {
+  const nyala = alatRingkasNyala();
+  tombol.setAttribute("aria-pressed", nyala ? "true" : "false");
+  tombol.textContent = nyala ? "⌄" : "⌃";
+  tombol.title = nyala
+    ? "Keterangan panjang sedang disembunyikan. Tekan untuk menampilkannya kembali."
+    : "Sembunyikan keterangan panjang. Tombol, isian, dan pesan galat tetap tampil.";
+}
+
+/**
+ * Tombol saklarnya, untuk ditaruh di kaki panel.
+ *
+ * SEBELUM deretan pintasan, bukan sesudahnya: .aleta-kaki-pintasan memegang
+ * margin-right otomatis yang mendorong ikon segarkan dan nomor versi ke
+ * kanan. Tombol yang ditaruh sesudahnya ikut terdorong ke ujung kanan, jauh
+ * dari tulisan Alt+A yang menjadi acuan pengguna.
+ */
+function alatTombolRingkas() {
+  const tombol = document.createElement("button");
+  tombol.type = "button";
+  tombol.className = "aleta-kaki-ringkas";
+  alatRupaTombolRingkas(tombol);
+  tombol.addEventListener("click", () => {
+    void alatSetelRingkas(!alatRingkasNyala());
+  });
+  return tombol;
+}
+
+/**
  * Bolehkah permintaan ini berangkat?
  *
  * Yang ditahan hanya TULISAN ke portal ALETA. Bacaan tetap berjalan - panel
@@ -3264,6 +3412,12 @@ Portal menyajikan ${tertinggal.portal}, yang berjalan ${tertinggal.terpasang}. U
 alatPasangPemantauAmbil();
 alatDengarkanKering();
 void alatMuatKering();
+// Panel ringkas dipasang di tingkat modul atas sebab yang sama: berkas ini
+// dimuat lebih dulu daripada konten.js, abt.js, dan aleta.js pada keempat
+// konteks, jadi penandanya sudah terpasang sebelum satu panel pun digambar -
+// dan tidak ada kedipan keterangan yang muncul lalu hilang.
+alatDengarkanRingkas();
+void alatMuatRingkas();
 
 /*
  * ============================================================================

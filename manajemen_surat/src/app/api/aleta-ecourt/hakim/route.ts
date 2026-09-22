@@ -49,16 +49,39 @@ export async function GET(request: NextRequest) {
 
     try {
       const pegawai = await gatewayPegawaiPenunjukan();
-      const mentah = (pegawai as { hakim?: unknown })?.hakim;
-      const hakim = (Array.isArray(mentah) ? mentah : [])
-        .map((x) => {
-          const baris = x as { id?: unknown; kode?: unknown; nama?: unknown };
-          return {
-            id: Number(baris.id) || 0,
-            kode: String(baris.kode ?? "").trim(),
-            nama: String(baris.nama ?? "").trim(),
-          };
-        })
+
+      // ======================================================================
+      // PEMBUNGKUSNYA DIBUKA, DAN TANPA CAST
+      // ======================================================================
+      //
+      // gatewayFetch memulangkan { ok: true, data } atau { ok: false, error } -
+      // bukan isinya langsung. Versi pertama rute ini membaca `pegawai.hakim`
+      // lewat cast, dan itu SELALU undefined: daftarnya selalu kosong, dan
+      // diam-diam, sebab kotak isiannya memang dirancang tetap dapat dipakai
+      // tanpa daftar. Tidak ada satu pun tanda bahwa ada yang rusak.
+      //
+      // Cast itulah yang membungkam TypeScript. GatewayResult tidak punya ruas
+      // `hakim`, dan tanpa cast pemeriksanya akan menolaknya di tempat.
+      // Karena itu di sini tidak ada cast sama sekali - biar tipe
+      // pembungkusnya yang bekerja, bukan keyakinan penulisnya.
+      //
+      // Bentuk yang sama sudah dipakai /sk-majelis sejak lama.
+      if (!pegawai.ok) {
+        return ok({
+          ada: false,
+          hakim: [],
+          alasan: pegawai.error || "ALETA Bot belum dapat dihubungi.",
+        });
+      }
+
+      // Tanpa cast: gatewayPegawaiPenunjukan sudah menyebutkan bentuknya,
+      // sehingga yang salah baca ditolak tsc di tempat.
+      const hakim = (pegawai.data?.hakim ?? [])
+        .map((baris) => ({
+          id: Number(baris.id) || 0,
+          kode: String(baris.kode ?? "").trim(),
+          nama: String(baris.nama ?? "").trim(),
+        }))
         // Yang tanpa nama dibuang: barisnya tidak dapat dipilih maupun
         // dicocokkan, dan hanya menambah baris kosong di dalam daftar.
         .filter((x) => x.nama.length > 0);

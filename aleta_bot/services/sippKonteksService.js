@@ -97,6 +97,51 @@ async function dokumenPerkara(nomorPerkara) {
     [nomorPerkara]
   );
 
+  /**
+   * ==========================================================================
+   * BERKASNYA DIBACA DARI TABEL BERKAS, BUKAN DARI KOLOM CERMIN
+   * ==========================================================================
+   *
+   * `berkas_pdf` dan `berkas_word` pada tabel dokumen hanya CERMIN, diisi saat
+   * unduhan berhasil lalu ditimpa ulang oleh penyelarasan berikutnya. Diukur
+   * pada basis data yang berjalan: dari 394 dokumen, cerminnya terisi pada 23
+   * (pdf) dan 8 (word) saja, sementara aleta_bot_ecourt_files mencatat seluruh
+   * 400 berkas.
+   *
+   * getBerkas() di bawah sudah dibetulkan membaca tabel berkas; fungsi ini
+   * tertinggal. Akibatnya berkasnya DAPAT disajikan peladen, tetapi tombol
+   * unduhnya disembunyikan ekstensi - sebab tombolnya digantungkan pada
+   * adaPdf/adaWord yang dihitung di sini. Itulah sebab berkas jawab-menjawab
+   * (jawaban, replik, duplik, kesimpulan, alat bukti) tampak tidak pernah ada,
+   * padahal sudah lama terunduh.
+   *
+   * Yang dijanjikan tombol harus BENAR-BENAR dapat diunduh, jadi keberadaan
+   * berkasnya di cakram ikut dibuktikan - bukan sekadar ada catatannya.
+   * Berkas yang tercatat tetapi hilang dari cakram disebut sendiri lewat
+   * berkasHilang, bukan didiamkan sebagai "tidak ada": arsip yang lenyap
+   * karena volume Docker belum di-mount adalah keadaan yang pernah terjadi di
+   * sini, dan ia harus kelihatan.
+   */
+  const berkasRows = await botDb
+    .query(
+      `SELECT document_key, format, jalur_berkas
+         FROM aleta_bot_ecourt_files
+        WHERE nomor_perkara = ? AND dihapus_retensi IS NULL`,
+      [nomorPerkara]
+    )
+    .catch(() => []);
+
+  const adaBerkas = new Map();
+  const hilangBerkas = new Map();
+  for (const b of Array.isArray(berkasRows) ? berkasRows : []) {
+    const kunci = `${b.document_key}|${String(b.format || "").toLowerCase()}`;
+    const jalur = b.jalur_berkas;
+    if (!jalur) continue;
+    const punya = ecourtDocumentService.describeEcourtDocument(jalur);
+    if (punya && punya.ok) adaBerkas.set(kunci, true);
+    else hilangBerkas.set(kunci, true);
+  }
+
   return (Array.isArray(rows) ? rows : []).map((row) => ({
     documentKey: row.document_key,
     judulDokumen: row.judul_dokumen,
@@ -114,8 +159,22 @@ async function dokumenPerkara(nomorPerkara) {
     diunggahPada: row.diunggah_pada,
     batasUnggahTeks: row.batas_unggah_teks || "",
     sisaHari: sisaHari(row.batas_unggah),
-    adaPdf: Boolean(row.berkas_pdf),
-    adaWord: Boolean(row.berkas_word),
+    // Tabel berkas lebih dulu, cermin jadi cadangan - lihat catatan di atas.
+    adaPdf: adaBerkas.has(`${row.document_key}|pdf`) || Boolean(row.berkas_pdf),
+    adaWord: adaBerkas.has(`${row.document_key}|word`) || Boolean(row.berkas_word),
+    /**
+     * Tercatat pernah diunduh, tetapi berkasnya TIDAK ADA di cakram.
+     *
+     * Dibedakan dari "tidak ada berkas" karena tindakannya berbeda: yang ini
+     * menyuruh orang memeriksa arsipnya, bukan menyuruh pihak mengunggah
+     * ulang. Arsip e-Court pernah lenyap seluruhnya di sini karena volume
+     * Docker belum di-mount, dan lenyapnya tidak berbunyi apa pun.
+     */
+    berkasHilang:
+      (hilangBerkas.has(`${row.document_key}|pdf`) &&
+        !adaBerkas.has(`${row.document_key}|pdf`)) ||
+      (hilangBerkas.has(`${row.document_key}|word`) &&
+        !adaBerkas.has(`${row.document_key}|word`)),
     sudahDiberitahukan: Boolean(row.diberitahukan_pada),
     // Kapan pihak diberi tahu, bukan sekadar sudah atau belum. Inilah yang
     // ditanyakan pihak lewat telepon - "saya belum menerima apa pun" - dan
