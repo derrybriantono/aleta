@@ -4934,7 +4934,9 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
       "div",
       "aleta-tetap-sebab aleta-remeh",
       "Putusan akhir dan anonimisasinya diunggah sekaligus - berkas, kolom dokumen, " +
-        "baris Direktori Putusan, dan antreannya. PDF saja."
+        "baris Direktori Putusan, dan antreannya. RTF, DOC, DOCX, atau PDF; " +
+        "yang bukan PDF diubah ALETA menjadi PDF untuk Direktori Putusan, dan " +
+        "naskah aslinya tetap tersimpan sebagai e-Doc."
     )
   );
 
@@ -4948,7 +4950,12 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     if (keterangan) baris.appendChild(buatElemen("div", "aleta-tetap-sebab", keterangan));
     const pemilih = document.createElement("input");
     pemilih.type = "file";
-    pemilih.accept = ".pdf,application/pdf";
+    // Keempat bentuk yang sungguh dipakai satker. Diukur pada kolom
+    // perkara_putusan.amar_putusan_dok, 9.903 nilai terisi: .rtf 8.686
+    // (87,7%), .docx 458, .doc 442, .pdf 315 (3,2%) - jadi PDF justru yang
+    // paling jarang, dan menyaring ke PDF saja menyembunyikan hampir seluruh
+    // naskah yang sah dari pemilih berkasnya.
+    pemilih.accept = ".rtf,.doc,.docx,.pdf";
     pemilih.className = "aleta-berkas";
     baris.appendChild(pemilih);
     isi.appendChild(baris);
@@ -4977,32 +4984,33 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
     }
 
     // ====================================================================
-    // BUKAN PDF DITOLAK DI SINI, BUKAN SESUDAH BOLAK-BALIK KE PELADEN
+    // YANG DITOLAK HANYA BENTUK YANG MEMANG TIDAK DAPAT DIPAKAI
     // ====================================================================
     //
-    // Bot menolak apa pun yang empat bita pertamanya bukan "%PDF"
-    // (putusanUnggahService.js) - dikenali dari BITANYA, bukan dari nama
-    // berkasnya, sebab nama dapat diubah siapa saja. Sebabnya tertulis di
-    // sana: yang terbit di Direktori Putusan harus PDF, dan ALETA sengaja
-    // tidak menjalankan pengubah soffice seperti SIPP - pengubahan yang
-    // gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik.
+    // Sampai 1.163.1 apa pun yang bukan PDF ditolak di sini, dengan alasan
+    // "yang terbit di Direktori Putusan harus PDF dan ALETA tidak
+    // mengubahnya sendiri". Kedua bagian alasan itu salah, dan salahnya
+    // terukur:
     //
-    // Diperiksa di sini pula karena atribut accept pada pemilih berkas hanya
-    // SARAN: yang memilih "All files" tetap dapat mengirim .rtf atau .docx,
-    // dan itu yang terjadi. Menunggu peladen menolaknya berarti mengunggah
-    // berkas yang sudah pasti ditolak, lalu membaca pesan yang datang
-    // belasan detik kemudian.
-    const bukanPdf = [
+    //   - Yang tersimpan sebagai e-Doc di satker hampir seluruhnya BUKAN
+    //     PDF: .rtf 8.686 dari 9.903 (87,7%), .pdf hanya 315 (3,2%).
+    //   - ALETA sudah lama punya pengubahnya - abtCetakService - dan bot
+    //     kini memakainya: naskah asli disimpan sebagai e-Doc, PDF hasil
+    //     konversinya yang masuk Direktori Putusan. Persis cara SIPP.
+    //
+    // Yang tersisa di sini hanya saringan bentuk yang memang tidak dapat
+    // dipakai sama sekali - gambar hasil pindai, misalnya - supaya orangnya
+    // tidak menunggu unggahan yang sudah pasti ditolak bot.
+    const BENTUK_DITERIMA = /\.(rtf|doc|docx|pdf)$/i;
+    const bentukAsing = [
       { berkas: berkasPutusan, judul: "Putusan akhir" },
       { berkas: berkasAnonim, judul: "Putusan anonimisasi" },
-    ].filter((x) => x.berkas && !/\.pdf$/i.test(String(x.berkas.name || "")));
-    if (bukanPdf.length > 0) {
+    ].filter((x) => x.berkas && !BENTUK_DITERIMA.test(String(x.berkas.name || "")));
+    if (bentukAsing.length > 0) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent =
-        `${bukanPdf.map((x) => `${x.judul} (${x.berkas.name})`).join(" dan ")} bukan PDF. ` +
-        "Yang terbit di Direktori Putusan harus PDF, dan ALETA tidak mengubahnya sendiri — " +
-        "pengubahan yang gagal separuh menghasilkan berkas rusak yang sudah terlanjur publik. " +
-        "Simpan naskahnya sebagai PDF lebih dulu.";
+        `${bentukAsing.map((x) => `${x.judul} (${x.berkas.name})`).join(" dan ")} bukan naskah ` +
+        "putusan. Yang diterima RTF, DOC, DOCX, atau PDF.";
       return;
     }
 

@@ -163,4 +163,124 @@ async function rtfKePdf(isiRtf) {
   }
 }
 
-module.exports = { rtfKePdf, periksaMesin, BATAS_BYTE };
+/**
+ * ============================================================================
+ * JENIS DOKUMEN DIKENALI DARI BITANYA, BUKAN DARI NAMANYA
+ * ============================================================================
+ *
+ * Nama berkas dapat diubah siapa saja; kepala berkasnya tidak. Keempat bentuk
+ * inilah yang sungguh dipakai satker - diukur pada kolom
+ * perkara_putusan.amar_putusan_dok, 9.903 nilai terisi:
+ *
+ *     .rtf   8.686   (87,7%)
+ *     .docx    458
+ *     .doc     442
+ *     .pdf     315   ( 3,2%)
+ *
+ * Jadi PDF justru yang paling JARANG. Yang lazim ditulis hakim adalah RTF dari
+ * templat satker.
+ */
+function kenaliDokumen(isi) {
+  if (!Buffer.isBuffer(isi) || isi.length < 5) return "";
+  const kepala = isi.subarray(0, 8);
+  if (kepala.subarray(0, 5).toString("latin1").startsWith("%PDF-")) return "pdf";
+  if (kepala.subarray(0, 5).toString("latin1").startsWith("{\\rtf")) return "rtf";
+  // docx, xlsx, dan seluruh Open XML adalah zip - "PK\x03\x04".
+  if (kepala[0] === 0x50 && kepala[1] === 0x4b && kepala[2] === 0x03 && kepala[3] === 0x04) {
+    return "docx";
+  }
+  // doc lama: OLE Compound File, D0 CF 11 E0 A1 B1 1A E1.
+  if (kepala[0] === 0xd0 && kepala[1] === 0xcf && kepala[2] === 0x11 && kepala[3] === 0xe0) {
+    return "doc";
+  }
+  return "";
+}
+
+/**
+ * Mengubah RTF, DOC, atau DOCX menjadi PDF. PDF dikembalikan apa adanya.
+ *
+ * ============================================================================
+ * KENAPA INI ADA, PADAHAL rtfKePdf SUDAH ADA
+ * ============================================================================
+ *
+ * rtfKePdf menolak apa pun yang bukan RTF, dan penolakan itu benar untuk
+ * pemanggilnya - dokumen penetapan memang selalu RTF dari blangko ALETA.
+ * Unggah putusan berbeda: yang diserahkan hakim adalah naskah yang sudah ia
+ * tulis, dan bentuknya apa saja di antara keempat itu.
+ *
+ * soffice menangani ketiganya dengan argumen yang sama persis; yang berbeda
+ * hanya akhiran berkas sementaranya, dan soffice memang mengenali jenisnya
+ * dari akhiran itu.
+ *
+ * PDF TIDAK diubah apa-apa. Melewatkannya ke soffice hanya menambah satu
+ * kesempatan gagal atas berkas yang sudah benar bentuknya.
+ *
+ * @param {Buffer} isi isi berkas apa adanya
+ * @returns {Promise<{ok: boolean, pdf?: Buffer, jenis?: string, alasan?: string}>}
+ */
+async function dokumenKePdf(isi) {
+  if (!Buffer.isBuffer(isi) || isi.length === 0) {
+    return { ok: false, alasan: "Berkasnya kosong." };
+  }
+  if (isi.length > BATAS_BYTE) {
+    return {
+      ok: false,
+      alasan: `Berkas ${Math.round(isi.length / 1024 / 1024)} MB melewati batas ${BATAS_BYTE / 1024 / 1024} MB.`,
+    };
+  }
+
+  const jenis = kenaliDokumen(isi);
+  if (!jenis) {
+    return {
+      ok: false,
+      alasan: "Isinya bukan PDF, RTF, DOC, maupun DOCX - dikenali dari kepala berkasnya.",
+    };
+  }
+  if (jenis === "pdf") return { ok: true, pdf: isi, jenis };
+
+  const mesin = await periksaMesin();
+  if (!mesin.ada) return { ok: false, jenis, alasan: mesin.sebab };
+
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), "aleta-pdf-"));
+  const berkasAsal = path.join(folder, `naskah.${jenis}`);
+  const berkasPdf = path.join(folder, "naskah.pdf");
+
+  try {
+    await fs.writeFile(berkasAsal, isi);
+    await jalankan(
+      SOFFICE,
+      [
+        "--headless",
+        "--norestore",
+        `-env:UserInstallation=file://${path.join(folder, "profil")}`,
+        "--convert-to",
+        "pdf",
+        berkasAsal,
+        "--outdir",
+        folder,
+      ],
+      { cwd: folder }
+    );
+
+    const pdf = await fs.readFile(berkasPdf);
+    // Diperiksa HASILNYA, bukan kode keluar soffice. soffice pernah selesai
+    // dengan kode 0 sambil menghasilkan berkas kosong.
+    if (!pdf.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
+      return { ok: false, jenis, alasan: "soffice selesai tetapi hasilnya bukan PDF." };
+    }
+    return { ok: true, pdf, jenis, versiMesin: mesin.versi };
+  } catch (galat) {
+    if (galat.killed) {
+      return { ok: false, jenis, alasan: `Konversi melewati ${BATAS_WAKTU_MS / 1000} detik dan dihentikan.` };
+    }
+    if (galat.code === "ENOENT") {
+      return { ok: false, jenis, alasan: "soffice selesai tanpa menghasilkan berkas PDF." };
+    }
+    return { ok: false, jenis, alasan: String(galat.message || galat).slice(0, 200) };
+  } finally {
+    // Folder yang tertinggal berisi putusan lengkap beserta nama pihaknya.
+    await fs.rm(folder, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+module.exports = { rtfKePdf, dokumenKePdf, kenaliDokumen, periksaMesin, BATAS_BYTE };

@@ -63,8 +63,8 @@ describe("B5 - sembilan sandi ket_temu, bukan ya/tidak", () => {
   });
 
   it("yang SAMPAI dibedakan dari yang BERTEMU LANGSUNG", () => {
-    // Inti perbaikannya. Panggilan elektronik dan relaas yang diterima orang
-    // serumah sampai tanpa pertemuan langsung, dan keduanya sah.
+    // Inti perbaikannya. Panggilan elektronik sampai tanpa pertemuan
+    // langsung, dan itu sah.
     const i = layanan.indexOf("const SANDI_CARA_RELAAS = {");
     const blok = layanan.slice(i, layanan.indexOf("\n};", i));
     const barisSandi = (s: string) => {
@@ -72,9 +72,52 @@ describe("B5 - sembilan sandi ket_temu, bukan ya/tidak", () => {
       return blok.slice(j, blok.indexOf("\n", j));
     };
     expect(barisSandi("E"), "panggilan elektronik harus terhitung sampai").toContain("sampai: true");
-    expect(barisSandi("S"), "diterima orang serumah harus terhitung sampai").toContain("sampai: true");
     expect(barisSandi("T")).toContain("sampai: false");
     expect(barisSandi("N")).toContain("sampai: false");
+  });
+
+  it("SURAT TERCATAT tidak dinyatakan sampai oleh sandinya sendiri", () => {
+    // Pada 22 September 2026 sandi 'S' saya artikan "Diterima orang serumah"
+    // dan saya tandai sampai:true. Keduanya salah:
+    //
+    //   - Artinya SURAT TERCATAT (POS), menurut komentar kolom ket_temu pada
+    //     skema SIPP - satu-satunya definisi resmi yang ada. Kalimat "tinggal
+    //     serumah" yang saya baca kemarin ada di TEKS BEBAS ket_hasil_relaas,
+    //     yang menerangkan apa yang terjadi, bukan cara panggilannya.
+    //   - Surat yang DIKIRIM belum tentu SAMPAI. Yang menentukan status
+    //     posnya, bukan sandinya; menuliskan true di sini menyatakan
+    //     panggilan patut atas dasar yang belum diperiksa.
+    const i = layanan.indexOf("const SANDI_CARA_RELAAS = {");
+    const blok = layanan.slice(i, layanan.indexOf("\n};", i));
+    const barisS = blok.slice(blok.indexOf("S: {"), blok.indexOf("\n", blok.indexOf("S: {")));
+    expect(barisS).toContain("Surat tercatat");
+    expect(barisS, "surat tercatat tidak boleh dinyatakan sampai oleh sandinya").toContain(
+      "sampai: null"
+    );
+    expect(barisS, "arti lama yang keliru kembali").not.toContain("serumah");
+  });
+
+  it("arti tiap sandi sama dengan komentar kolom SIPP", () => {
+    // Komentar kolom perkara_pelaksanaan_relaas.ket_temu:
+    //   'Y / T, E=Elektonik, S=surat tercatat, W=Web/Papan Pengumuman
+    //    Pengadilan, P=papan pengumuman pemda, M=media massa
+    //    cetak/elektornik, R=radio'
+    // Dua di antaranya pernah saya tebak dari teks bebasnya dan keduanya
+    // meleset - penjaga ini mengunci artinya ke sumbernya.
+    const i = layanan.indexOf("const SANDI_CARA_RELAAS = {");
+    const blok = layanan.slice(i, layanan.indexOf("\n};", i));
+    const barisSandi = (s: string) => {
+      const j = blok.indexOf(`${s}: {`);
+      return blok.slice(j, blok.indexOf("\n", j));
+    };
+    expect(barisSandi("E").toLowerCase()).toContain("elektronik");
+    expect(barisSandi("S").toLowerCase()).toContain("surat tercatat");
+    expect(barisSandi("R").toLowerCase()).toContain("radio");
+    expect(barisSandi("M").toLowerCase()).toContain("media massa");
+    expect(barisSandi("W").toLowerCase()).toContain("pengumuman");
+    expect(barisSandi("P").toLowerCase()).toContain("pemda");
+    // Arti lama 'M' yang keliru tidak boleh kembali.
+    expect(barisSandi("M"), "M bukan radiogram RRI").not.toContain("Radiogram RRI");
   });
 
   it("sandi yang artinya DITEBAK ditandai, bukan disamakan dengan yang pasti", () => {
@@ -92,9 +135,14 @@ describe("B5 - sembilan sandi ket_temu, bukan ya/tidak", () => {
         "terbaca: true"
       );
     }
+    // S, R, W, P, dan M dulu ditandai terbaca:false karena saya kira artinya
+    // hanya dugaan dari teks bebas. Ternyata kelimanya TERTULIS di komentar
+    // kolom ket_temu - sumber yang sama resminya dengan dropdown SIPP. Jadi
+    // kelimanya kini terbaca:true, dan yang tersisa terbaca:false hanya sandi
+    // yang sungguh tidak dikenali.
     for (const s of ["S", "R", "W", "P", "M"]) {
-      expect(barisSandi(s), `${s} tidak ada di daftar SIPP, seharusnya terbaca:false`).toContain(
-        "terbaca: false"
+      expect(barisSandi(s), `${s} tertulis di komentar kolom SIPP, seharusnya terbaca:true`).toContain(
+        "terbaca: true"
       );
     }
   });

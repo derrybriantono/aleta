@@ -539,26 +539,73 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
 
   // 7035 - siapa yang meninggalkan kediaman bersama. Jawabannya satu kata,
   // dan blangkonya memang menuntut satu kata.
+  //
+  // ==========================================================================
+  // SEBUTAN PIHAKNYA IKUT JENIS PERKARA - DAN DULU TIDAK
+  // ==========================================================================
+  //
+  // Sampai 2.32.0 fungsi ini hanya mencari untai "tergugat" dan "penggugat".
+  // Pada perkara PERMOHONAN dan CERAI TALAK pihaknya disebut Pemohon dan
+  // Termohon, jadi kalimat "Yang meninggalkan tempat tinggal bersama adalah
+  // Termohon;" DITEMUKAN - kutipannya tetap tampil di panel - tetapi
+  // nilainya kosong, dan lencananya berbunyi "tidak ditemukan".
+  //
+  // Terukur pada abt_keterangan_saksi (66.506 jawaban): dari 4.337 jawaban
+  // yang memuat kata "meninggalkan", 846 (19,5%) HANYA menyebut
+  // Pemohon/Termohon - menyentuh 331 perkara.
+  //
+  // Yang dipulangkan sekarang SEBUTAN YANG DIPAKAI PERKARA ITU, bukan untai
+  // tetap: pihak.pelaku dan pihak.lawan datang dari variabel ABT 0046 dan
+  // 0047, yang memang berisi "Pemohon"/"Penggugat" dan
+  // "Termohon"/"Tergugat" menurut perkaranya.
+  //
+  // PERHATIAN pada urutan huruf: "termohon" TIDAK memuat "pemohon" sebagai
+  // bagian kata (t-e-r-m-o-h-o-n), jadi keduanya aman dicari terpisah. Yang
+  // TIDAK boleh dipakai adalah "mohon" telanjang - ia menyala pada keduanya.
   const siapa = (butir) => {
     // Kalimat yang MENJAWAB dicari lebih dulu: "yang meninggalkan tempat
     // tinggal bersama ADALAH Tergugat". Tanpa mendahulukannya, yang terkutip
     // adalah kalimat puncak perselisihan yang kebetulan juga memuat kata
     // "meninggalkan" - jawabannya tetap benar, tetapi sumbernya jadi kalimat
     // yang lebih lemah, dan sumber itulah yang dibaca orang untuk memeriksa.
+    //
+    // "meninggalkan rumah" ikut dicari sejak 2.32.0: 442 jawaban memakai
+    // bentuk "pergi meninggalkan rumah kediaman bersama", dan untai
+    // "meninggalkan kediaman" tidak cocok dengan itu - ada kata "rumah" di
+    // tengahnya.
     const kalimat =
       cariButir(butir, ["meninggalkan tempat", "adalah"]) ||
       cariButir(butir, ["meninggalkan kediaman", "adalah"]) ||
+      cariButir(butir, ["meninggalkan rumah", "adalah"]) ||
       cariButir(butir, ["meninggalkan tempat"]) ||
-      cariButir(butir, ["meninggalkan kediaman"]);
+      cariButir(butir, ["meninggalkan kediaman"]) ||
+      cariButir(butir, ["meninggalkan rumah"]);
     if (!kalimat) return { nilai: "", kalimat: "" };
     const kecil = kalimat.toLowerCase();
-    const posT = kecil.lastIndexOf("tergugat");
-    const posP = kecil.lastIndexOf("penggugat");
-    // "Penggugat" memuat "tergugat" sebagai bagian kata? tidak - tetapi
-    // "Tergugat" tidak memuat "Penggugat", jadi yang disebut PALING AKHIR
-    // pada kalimat "yang meninggalkan ... adalah X" itulah jawabannya.
-    if (posT < 0 && posP < 0) return { nilai: "", kalimat };
-    return { nilai: posT > posP ? "Tergugat" : "Penggugat", kalimat };
+    // Keempat sebutan dicari, bukan dua. Yang disebut PALING AKHIR pada
+    // kalimat "yang meninggalkan ... adalah X" itulah jawabannya.
+    const posTergugat = Math.max(kecil.lastIndexOf("tergugat"), kecil.lastIndexOf("termohon"));
+    const posPenggugat = Math.max(kecil.lastIndexOf("penggugat"), kecil.lastIndexOf("pemohon"));
+    if (posTergugat < 0 && posPenggugat < 0) return { nilai: "", kalimat };
+    // ======================================================================
+    // NAMA RUASNYA MENJEBAK - PERIKSA SEBELUM MENYUNTING
+    // ======================================================================
+    //
+    //   pihak.pelaku  = variabel ABT 0047 = "Tergugat" / "Termohon"
+    //   pihak.lawan   = variabel ABT 0046 = "Penggugat" / "Pemohon"
+    //
+    // Kebalikan dari yang disangka namanya, dan saya sendiri tertukar sekali
+    // saat menulis ini. Lihat VAR_PIHAK_LAWAN/VAR_PIHAK_PELAKU di
+    // ekstensi-sipp/abt.js - di sanalah pasangannya ditetapkan.
+    //
+    // Karena itu penamaan lokal di sini memakai kata yang TIDAK dapat
+    // tertukar: posTergugat dan posPenggugat.
+    //
+    // Cadangannya untai lama - perkara yang variabel 0046/0047-nya belum
+    // terbaca tetap mendapat jawaban, hanya sebutannya bentuk gugatan.
+    const sebutanTergugat = String((pihak && pihak.pelaku) || "").trim() || "Tergugat";
+    const sebutanPenggugat = String((pihak && pihak.lawan) || "").trim() || "Penggugat";
+    return { nilai: posTergugat > posPenggugat ? sebutanTergugat : sebutanPenggugat, kalimat };
   };
   const siapa1 = siapa(b1);
   const siapa2 = siapa(b2);
@@ -572,7 +619,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     if (!kalimat) return { nilai: "", kalimat: "" };
     const gagal = /tidak berhasil|namun gagal|tidak membuahkan/i.test(kalimat);
     // Kalimatnya dari pustaka, bukan disusun di sini - lihat abtKalimatBaku.js.
-    return { nilai: kalimatBaku.kalimatUpayaDamai(gagal), kalimat };
+    return { nilai: kalimatBaku.kalimatUpayaDamai(gagal, pihak), kalimat };
   };
   const damai1 = damai(b1);
   const damai2 = damai(b2);
@@ -1440,13 +1487,33 @@ function faktaDariPosita(posita, pelaku, lawan) {
   const kalimatPisah = cari("pisah");
   const kalimatPergi = cari("meninggalkan") || kalimatPisah;
 
-  // Siapa yang pergi - dari kalimat "Penggugat meninggalkan kediaman bersama".
+  // ==========================================================================
+  // SIAPA YANG PERGI - DAN KEDUA SEBUTANNYA PERNAH TERTUKAR DI SINI
+  // ==========================================================================
+  //
+  // Nama ruasnya menjebak, dan jebakannya sudah memakan korban:
+  //
+  //   pelaku = variabel ABT 0047 = "Tergugat" / "Termohon"
+  //   lawan  = variabel ABT 0046 = "Penggugat" / "Pemohon"
+  //
+  // Kebalikan dari yang disangka namanya. Sampai 2.32.0 baris di bawah ini
+  // memulangkan `lawan` ketika kalimatnya menyebut Tergugat, dan `pelaku`
+  // ketika menyebut Penggugat - tertukar keduanya.
+  //
+  // Cadangan harfiahnya ("Tergugat", "Penggugat") justru BENAR, jadi cacatnya
+  // hanya muncul ketika 0046/0047 sungguh terbaca - yaitu pada pemakaian
+  // normal. Itulah sebabnya ia bertahan: pada uji yang variabelnya kosong,
+  // jawabannya selalu benar.
+  //
+  // Yang salah di sini bukan tampilan. Jawaban "siapa yang meninggalkan
+  // kediaman bersama" masuk ke berita acara sidang yang ditandatangani, dan
+  // menyebut pihak yang keliru di sana lebih mahal daripada mengosongkannya.
   let siapaPergi = "";
   const teksPergi = String(kalimatPergi || "");
   if (/tergugat|termohon/i.test(teksPergi) && !/penggugat|pemohon/i.test(teksPergi)) {
-    siapaPergi = lawan || "Tergugat";
+    siapaPergi = pelaku || "Tergugat";
   } else if (/penggugat|pemohon/i.test(teksPergi)) {
-    siapaPergi = pelaku || "Penggugat";
+    siapaPergi = lawan || "Penggugat";
   }
 
   // ambilBulanTahun memulangkan { nilai, jenis } - yang dipakai di sini

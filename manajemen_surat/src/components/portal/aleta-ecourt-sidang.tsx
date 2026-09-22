@@ -236,10 +236,19 @@ type KesiapanRingkas = {
   penghambat: Penghambat[];
 };
 
-/** Nama jalur panggilan untuk ditampilkan. */
+/**
+ * Nama jalur panggilan untuk ditampilkan.
+ *
+ * "pengumuman" ditambahkan 22 September 2026 bersama perbaikan pembaca sandi
+ * ket_temu: panggilan lewat radio, media massa, papan pengumuman pengadilan,
+ * dan papan pengumuman Pemda dulu ikut jatuh ke salah satu dari ketiga nama
+ * di bawah - paling sering ke "Elektronik (e-Summons)", yang keliru pada
+ * ketiga-tiganya.
+ */
 const NAMA_JALUR: Record<string, string> = {
   elektronik: "Elektronik (e-Summons)",
   surat_tercatat: "Surat tercatat",
+  pengumuman: "Pengumuman (radio, media, papan pengumuman)",
   biasa: "Jurusita (panggilan biasa)",
 };
 
@@ -1495,9 +1504,20 @@ function MenuLayarAntrian() {
 
   return (
     <div className="relative" ref={wadah}>
-      <Button size="sm" variant="outline" onClick={() => setTerbuka((buka) => !buka)}>
+      {/* "Layar antrian", BUKAN "Tampilan".
+          Sampai 2.32.0 tombol ini berbunyi "Tampilan" - kata yang SAMA PERSIS
+          dengan tombol saklar tampilan di kepala layar yang sama. Dua tombol
+          sewarna dan sebentuk dengan satu nama, mengerjakan hal yang sama
+          sekali berbeda: yang satu menyetel kepadatan daftar, yang ini membuka
+          layar untuk televisi ruang tunggu. */}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setTerbuka((buka) => !buka)}
+        title="Membuka layar antrian untuk televisi ruang tunggu dan layar operator"
+      >
         <MonitorPlay className="mr-1.5 h-4 w-4" />
-        Tampilan
+        Layar antrian
       </Button>
 
       {terbuka ? (
@@ -3414,6 +3434,20 @@ export function AletaEcourtSidang({
   const [penandaCiut, setPenandaCiut] = useState(false);
 
   /**
+   * Baris tombol TINDAKAN diciutkan sendiri - diminta pengguna 22 Sep 2026.
+   *
+   * Berbeda dari kendaliCiut, yang menyembunyikan seluruh kendali termasuk
+   * pencarian. Yang ini hanya Hitung skor, Layar antrian, Cetak, dan
+   * Daftarkan ke antrian - tiga di antaranya tidak dikerjakan tiap kali layar
+   * dibuka, dan barisnya tetap memakan tempat sepanjang hari.
+   *
+   * TIDAK diingat peramban, alasan yang sama dengan hanyaMilikSaya: yang
+   * diingat terbawa ke akun lain pada komputer bersama di ruang panitera, dan
+   * orang berikutnya mendapati tombol yang hilang tanpa tahu sebabnya.
+   */
+  const [alatCiut, setAlatCiut] = useState(false);
+
+  /**
    * Kelompok penanda mana saja yang sedang diciutkan.
    *
    * Empat kelompoknya - Panggilan, Jalannya sidang, Putusan, Antrian - dapat
@@ -4328,13 +4362,7 @@ export function AletaEcourtSidang({
             menampilkan tanda kurung kosong - jabatan yang belum terisi adalah
             keadaan yang sah, dan kurung kosong terbaca seperti data yang
             hilang. */}
-        {currentUser ? (
-          <p className="w-full basis-full text-xs text-muted-foreground">
-            {currentUser.name}
-            {jabatanSaya ? ` · ${jabatanSaya}` : ""}
-          </p>
-        ) : null}
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
         {/* ==================================================================
             "PERKARA SAYA" DI SUDUT KANAN ATAS
             ==================================================================
@@ -4454,6 +4482,27 @@ export function AletaEcourtSidang({
           {kendaliCiut ? "Kendali" : "Ciutkan"}
         </button>
         </div>
+        {/* ==================================================================
+            SIAPA YANG SEDANG MEMBUKANYA - DI BAWAH, BUKAN DI ANTARA TOMBOL
+            ==================================================================
+
+            Menggantikan baris "Peran Anda berhak melihat seluruh perkara
+            satker" yang dibuang 22 September 2026.
+
+            Letaknya SESUDAH kelompok tombol, dan itu yang membuat tombolnya
+            duduk di kanan baris judul. Ketika ia berdiri di antara judul dan
+            tombol, w-full basis-full miliknya memaksa pembungkusan - dan
+            tombol terdorong ke baris ketiga, tempat justify-end tidak
+            berpengaruh apa pun sebab pembungkusnya menyusut ke isinya.
+
+            Ia keterangan, bukan kendali; menaruhnya di antara tombol membuat
+            orang mencoba menekannya. */}
+        {currentUser ? (
+          <p className="w-full basis-full text-xs text-muted-foreground">
+            {currentUser.name}
+            {jabatanSaya ? ` · ${jabatanSaya}` : ""}
+          </p>
+        ) : null}
       </CardHeader>
 
       <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
@@ -4690,21 +4739,73 @@ export function AletaEcourtSidang({
               Sekarang: mengetik menyaring seketika; menekan Enter melebarkan
               pencarian ke SIPP. Lihat catatan pada kirimCariKeSipp. */}
           <div className={cn("space-y-1.5", kendaliCiut && "hidden")}>
-            <div className="relative">
-              <FileSearch
-                aria-hidden="true"
-                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                value={cariCepat}
-                onChange={(e) => setCariCepat(e.target.value)}
-                onKeyDown={(peristiwa) => {
-                  if (peristiwa.key === "Enter") kirimCariKeSipp();
-                }}
-                placeholder="Cari nomor perkara, pihak, agenda, majelis, ruang… — Enter untuk mencari ke SIPP"
-                aria-label="Cari perkara. Mengetik menyaring daftar yang tampil; menekan Enter mencari ke SIPP."
-                className="h-9 pl-8 text-sm"
-              />
+            {/* ==============================================================
+                LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA
+                ==============================================================
+
+                Diminta pengguna 22 September 2026: "rounded search terlalu
+                panjang jadi tidak estetik ... taruh tombol pencarian lanjutan
+                disampingnya".
+
+                Kotak selebar layar bukan sekadar tidak sedap dipandang: ia
+                menjanjikan isian sepanjang itu, padahal yang diketik orang
+                nomor perkara atau satu nama. Dan barisnya menjadi baris yang
+                isinya satu benda saja - satu baris penuh yang mendorong
+                seluruh daftar sidang turun.
+
+                Pencarian lanjutan, angka "x dari y", dan Reset pindah ke sini
+                dari baris tombol tindakan: ketiganya tentang MENYARING, dan
+                tempatnya memang di sebelah kotak saringnya. Yang tinggal di
+                baris tindakan hanya yang MENGERJAKAN sesuatu. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[15rem] flex-1 sm:max-w-xl">
+                <FileSearch
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  value={cariCepat}
+                  onChange={(e) => setCariCepat(e.target.value)}
+                  onKeyDown={(peristiwa) => {
+                    if (peristiwa.key === "Enter") kirimCariKeSipp();
+                  }}
+                  placeholder="Cari perkara, pihak, agenda… — Enter untuk mencari ke SIPP"
+                  aria-label="Cari perkara. Mengetik menyaring daftar yang tampil; menekan Enter mencari ke SIPP."
+                  className="h-9 pl-8 text-sm"
+                />
+              </div>
+
+              {sidang.length > 0 ? (
+                <Button
+                  size="sm"
+                  variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
+                  onClick={() => setLanjutTerbuka((buka) => !buka)}
+                >
+                  <Filter className="mr-1.5 h-4 w-4" />
+                  Pencarian lanjutan
+                  {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
+                </Button>
+              ) : null}
+
+              {/* Angka "x dari y" menempel pada Reset: yang paling sering
+                  ditanyakan saat daftar menyusut adalah berapa yang
+                  disembunyikan. */}
+              {adaSaringan && sidang.length > 0 ? (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    {sidangTampil.length} dari {sidang.length} perkara
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={resetSemuaSaringan}
+                    title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
+                  >
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                    Reset ke {sidang.length} perkara
+                  </Button>
+                </>
+              ) : null}
             </div>
 
             {/* Kata kunci yang sedang berlaku DI SISI SIPP disebutkan, karena
@@ -4728,11 +4829,40 @@ export function AletaEcourtSidang({
             ) : null}
           </div>
 
-          {/* Tombol tindakan berdiri sendiri dan IKUT CIUT: mencetak,
-              menghitung skor, dan mendaftarkan antrian tidak dikerjakan tiap
-              kali layar dibuka. */}
-          <div className={cn("flex flex-wrap items-center gap-2", kendaliCiut && "hidden")}>
+          {/* ==============================================================
+              BARIS TOMBOL TINDAKAN - DAPAT DICIUTKAN SENDIRI
+              ==============================================================
+
+              Diminta pengguna 22 September 2026: "buat tab ini ada logo
+              diciutkan agar bisa tersembunyi (kalau diciutkan tab yang rounded
+              tag itu naik menempati tabnya)".
+
+              Berbeda dari tombol Ciutkan di kepala, yang menyembunyikan
+              SELURUH kendali termasuk pencarian dan kotak penanda. Yang ini
+              menyembunyikan tombol TINDAKAN saja - Hitung skor, Layar antrian,
+              Cetak, Daftarkan ke antrian - dan justru itu yang paling jarang
+              dipakai: ketiganya tidak dikerjakan tiap kali layar dibuka.
+
+              Ketika diciutkan barisnya benar-benar HILANG, bukan dikosongkan,
+              sehingga deretan kotak penanda naik menempati tempatnya. Ikon
+              pembentangnya pindah ke deretan itu - lihat di bawah - supaya
+              jalan kembalinya tidak ikut hilang bersama barisnya. */}
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-2",
+              (kendaliCiut || alatCiut) && "hidden"
+            )}
+          >
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAlatCiut(true)}
+                aria-expanded={true}
+                title="Sembunyikan tombol tindakan supaya daftar sidang lebih panjang"
+                className="inline-flex h-8 w-6 items-center justify-center rounded-md border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
               {/* Tombol skor ikut saklarnya. Yang mematikannya juga
                   memadamkan lencana nilai di tiap baris - lihat LencanaKesiapan
                   di bawah. Membiarkan lencananya hidup sementara tombolnya
@@ -4798,48 +4928,6 @@ export function AletaEcourtSidang({
               </Button>
               ) : null}
 
-              {/* ==========================================================
-                  PENCARIAN LANJUTAN DAN RESET BERDIRI DI BARIS INI
-                  ==========================================================
-
-                  Diminta pengguna 22 September 2026: sejejer dengan Hitung
-                  skor, Cetak, dan Daftarkan ke antrian. Sebelumnya keduanya
-                  menempati baris tersendiri di bawah deretan kotak penanda,
-                  dan baris itu hanya berisi mereka berdua - satu baris penuh
-                  terpakai oleh dua tombol, dan jumlah sidang yang terlihat
-                  berkurang sebanyak itu.
-
-                  Angka "x dari y" tetap menempel pada tombol Reset: yang
-                  paling sering ditanyakan saat daftar menyusut adalah berapa
-                  yang disembunyikan. */}
-              {sidang.length > 0 ? (
-                <Button
-                  size="sm"
-                  variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
-                  onClick={() => setLanjutTerbuka((buka) => !buka)}
-                >
-                  <Filter className="mr-1.5 h-4 w-4" />
-                  Pencarian lanjutan
-                  {cariLanjut.jumlahAktif > 0 ? ` (${cariLanjut.jumlahAktif})` : ""}
-                </Button>
-              ) : null}
-
-              {adaSaringan && sidang.length > 0 ? (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    {sidangTampil.length} dari {sidang.length} perkara
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={resetSemuaSaringan}
-                    title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
-                  >
-                    <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                    Reset ke {sidang.length} perkara
-                  </Button>
-                </>
-              ) : null}
             </div>
           </div>
 
@@ -4908,6 +4996,30 @@ export function AletaEcourtSidang({
                 tidak dapat dimatikan lagi: daftarnya tampak kehilangan baris
                 tanpa satu pun keterangan mengapa. Aturan yang sama sudah
                 berlaku bagi kotak bernilai nol tepat di bawah ini. */}
+            {/* ==============================================================
+                JALAN KEMBALI KE TOMBOL TINDAKAN YANG DICIUTKAN
+                ==============================================================
+
+                Barisnya benar-benar hilang saat diciutkan - itulah yang
+                membuat deretan ini naik menempati tempatnya, sebagaimana
+                diminta. Tetapi ikon pembentangnya TIDAK boleh ikut hilang:
+                tombol yang menyembunyikan dirinya sendiri tanpa jalan kembali
+                mengubah penciutan menjadi penghapusan, dan yang menekannya
+                sekali harus memuat ulang halaman untuk mendapatkannya lagi.
+                Karena itu ia pindah ke sini, di kepala deretan yang naik. */}
+            {alatCiut ? (
+              <button
+                type="button"
+                onClick={() => setAlatCiut(false)}
+                aria-expanded={false}
+                aria-label="Tampilkan tombol tindakan"
+                title="Tampilkan kembali Hitung skor, Layar antrian, Cetak, dan Daftarkan ke antrian"
+                className="mr-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-muted/40 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              >
+                <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            ) : null}
+
             {/* IKON SAJA - TETAPI NAMANYA TIDAK IKUT HILANG.
 
                 Diminta pengguna 22 September 2026. Kata "Penanda" dibuang dari

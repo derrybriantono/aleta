@@ -36,17 +36,55 @@ const POSITA = [
   "Bahwa yang meninggalkan kediaman bersama adalah Penggugat;",
 ].join("\n");
 
+/**
+ * ============================================================================
+ * URUTAN ARGUMEN faktaDariPosita - PERIKSA SEBELUM MENYUNTING
+ * ============================================================================
+ *
+ *   faktaDariPosita(posita, pelaku, lawan)
+ *
+ *   pelaku = variabel ABT 0047 = "Termohon/ Tergugat"
+ *   lawan  = variabel ABT 0046 = "Pemohon/ Penggugat"
+ *
+ * Kebalikan dari yang disangka namanya. Dibuktikan dari tabel variabel ABT
+ * sendiri (aps_badilag.abt_variabel) dan dari VAR_PIHAK_LAWAN/VAR_PIHAK_PELAKU
+ * di ekstensi-sipp/abt.js.
+ *
+ * Sampai 2.32.0 uji ini memanggilnya dengan ("Siti", "Budi") lalu menuntut
+ * jawaban "Siti" atas posita yang berbunyi "yang meninggalkan kediaman
+ * bersama adalah PENGGUGAT". Dengan urutan di atas, Siti adalah TERGUGAT -
+ * jadi tuntutan itu mengunci pihak yang tertukar, dan cacatnya ikut terkunci
+ * di kode selama berbulan-bulan.
+ *
+ * Namanya di sini sengaja menyebut perannya, supaya jebakan yang sama tidak
+ * dapat terulang tanpa terlihat.
+ */
+const TERGUGAT = "Siti"; // 0047 - argumen `pelaku`
+const PENGGUGAT = "Budi"; // 0046 - argumen `lawan`
+
 describe("butir 1 - jawaban templat diisi dari gugatan", () => {
   it("fakta gugatan terbaca: awal konflik, sejak kapan pisah, berapa lama, siapa yang pergi", () => {
-    const fakta = layanan.faktaDariPosita(POSITA, "Siti", "Budi");
+    const fakta = layanan.faktaDariPosita(POSITA, TERGUGAT, PENGGUGAT);
     expect(fakta.awalKonflik).toMatch(/Oktober 2025/i);
     expect(fakta.pisahSejak).toMatch(/Januari 2026/i);
     expect(fakta.lamaPisah).toMatch(/8 bulan/i);
-    expect(fakta.siapaPergi).toBe("Siti");
+    // Positanya menyebut PENGGUGAT yang pergi - jadi jawabannya Budi.
+    expect(fakta.siapaPergi).toBe(PENGGUGAT);
+  });
+
+  it("yang pergi TERGUGAT pun terbaca benar - tidak tertukar ke sisi lain", () => {
+    // Arah sebaliknya diuji pula. Cacat yang tertukar selalu BENAR pada satu
+    // arah; yang menguji satu arah saja tidak pernah melihatnya.
+    const positaTergugat = POSITA.replace(
+      "adalah Penggugat;",
+      "adalah Tergugat;"
+    );
+    const fakta = layanan.faktaDariPosita(positaTergugat, TERGUGAT, PENGGUGAT);
+    expect(fakta.siapaPergi).toBe(TERGUGAT);
   });
 
   it("titik-titik pada jawaban diganti fakta itu", () => {
-    const fakta = layanan.faktaDariPosita(POSITA, "Siti", "Budi");
+    const fakta = layanan.faktaDariPosita(POSITA, TERGUGAT, PENGGUGAT);
     const isi = (tanya: string, jawab: string) =>
       layanan.lengkapiJawabanTemplat({ tanya, jawab, fakta });
 
@@ -57,7 +95,7 @@ describe("butir 1 - jawaban templat diisi dari gugatan", () => {
       "8 bulan"
     );
     expect(isi("Siapa yang meninggalkan tempat tinggal bersama?", "yang meninggalkan adalah ...;")).toContain(
-      "Siti"
+      PENGGUGAT
     );
   });
 

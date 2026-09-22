@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.32.0";
+export const APP_VERSION = "2.33.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.32.0 - Dua Puluh Satu Permintaan, dan Tiga Cacat yang Gagal dalam Diam";
+  "ALETA Judicia v2.33.0 - Tiga Aturan yang Saya Karang Sendiri, dan Semuanya Salah";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,53 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.33.0",
+    title: "ALETA Judicia v2.33.0 - Tiga Aturan yang Saya Karang Sendiri, dan Semuanya Salah",
+    date: "2026-09-22",
+    status: "Belum terpasang",
+    summary:
+      "Delapan permintaan pengguna, dan tiga di antaranya mencabut aturan yang ALETA karang " +
+      "sendiri tanpa memeriksa datanya: putusan harus PDF, saluran panggilan ditebak dari resi " +
+      "pos, dan keterangan saksi hanya mengenal Penggugat/Tergugat. Ketiganya diukur ulang " +
+      "terhadap basis data satker, dan ketiganya meleset jauh - yang pertama menolak 96,8% " +
+      "naskah yang sah, yang kedua salah pada 69% baris, yang ketiga membutakan 331 perkara.",
+    added: [
+      "TOMBOL TINDAKAN DAPAT DICIUTKAN SENDIRI lewat ikon, terpisah dari tombol Ciutkan yang menyembunyikan seluruh kendali. Yang diciutkan barisnya benar-benar hilang, sehingga deretan kotak penanda naik menempati tempatnya - persis yang diminta. Ikon pembentangnya pindah ke deretan itu: tombol yang menyembunyikan dirinya tanpa jalan kembali mengubah penciutan menjadi penghapusan.",
+      "RTF, DOC, DAN DOCX DITERIMA pada unggah putusan. PDF untuk Direktori Putusan dibuat ALETA sendiri lewat pengubah yang sudah lama ada - dengan folder sekali pakai, batas 20 MB, batas 90 detik, dan hasil yang diperiksa harus diawali %PDF sebelum satu berkas pun ditulis.",
+      "SALURAN PANGGILAN \"Pengumuman\" ditambahkan sebagai jalur tersendiri - radio, media massa, papan pengumuman pengadilan, dan papan pengumuman Pemda. Keempatnya dulu jatuh ke salah satu dari tiga nama yang ada, paling sering ke \"Elektronik (e-Summons)\".",
+    ],
+    changed: [
+      "KOTAK PENCARIAN TIDAK LAGI SELEBAR LAYAR, dan Pencarian lanjutan duduk di sebelahnya bersama angka \"x dari y\" serta tombol Reset. Kotak selebar layar menjanjikan isian sepanjang itu, padahal yang diketik orang nomor perkara atau satu nama - dan barisnya menjadi baris yang isinya satu benda saja.",
+      "PERKARA SAYA, TAMPILAN, RINGKAS/LENGKAP, DAN CIUTKAN pindah ke kanan baris judul. Sebelumnya baris nama pengguna memaksa pembungkusan, dan kelompok tombol terdorong ke baris ketiga tempat rata-kanan tidak berpengaruh apa pun. Satu baris lebih hemat.",
+      "TOMBOL LAYAR RUANG TUNGGU berganti nama dari \"Tampilan\" menjadi \"Layar antrian\". Dua tombol sewarna dan sebentuk dengan satu nama pada layar yang sama, mengerjakan hal yang sama sekali berbeda: yang satu menyetel kepadatan daftar, yang lain membuka layar untuk televisi ruang tunggu.",
+    ],
+    fixed: [
+      "PUTUSAN RTF DITOLAK PADAHAL ITULAH YANG LAZIM. ALETA menolak apa pun yang bukan PDF, dengan alasan yang saya tulis sendiri: \"yang terbit di Direktori Putusan harus PDF, dan ALETA tidak menjalankan pengubah itu\". Kedua bagian alasan itu salah. Diukur pada perkara_putusan.amar_putusan_dok satker, 9.903 nilai terisi: .rtf 8.686 (87,7%), .docx 458, .doc 442, .pdf hanya 315 (3,2%). PDF justru yang paling jarang. Dan pengubahnya SUDAH ADA sejak lama, dipakai dokumen penetapan.",
+      "SATU NASKAH MENGHASILKAN DUA BERKAS, dan dulu keduanya diisi jalur yang SAMA. SIPP menyimpan berkas asli sebagai e-Doc dan PDF hasil konversinya untuk Direktori Putusan - diperiksa pada perkara September 2026 satker: satu perkara memegang ..._putusan_akhir.RTF pada kolom e-Doc dan ..._putusan_akhir.PDF pada dirput_dokumen. Mengisi keduanya dengan satu jalur membuat Direktori Putusan menunjuk berkas yang tidak dapat dibacanya - dan 26 baris .rtf yang ada di dirput_dokumen satker adalah bekas kegagalan itu, salah satunya sudah terbit.",
+      "SALURAN PANGGILAN DITEBAK DARI RESI POS, bukan dibaca dari sandinya. Aturannya: ada resi berarti surat tercatat, tidak ada resi berarti - pada perkara e-Court - panggilan elektronik. Terukur salah pada 7.839 dari 11.371 baris (69%) yang mungkin kena label \"Elektronik (e-Summons)\" - termasuk 5.084 relaas yang jurusitanya BERTEMU LANGSUNG dengan orangnya. Sekarang sandi ket_temu yang menentukan.",
+      "2.681 PANGGILAN YANG GAGAL DIHITUNG SAMPAI. Sandi T (tidak bertemu, 2.667 baris) dan N (tidak dapat dilaksanakan, 14) TETAP punya tanggal relaas - jurusita mencatat pelaksanaannya walau tidak bertemu siapa pun - dan aturan lama membaca tanggal itu sebagai bukti penerimaan. Di atas angka itulah kepatutan panggilan dinilai. Sidang yang berjalan atas dasar panggilan yang tidak pernah sampai adalah kerugian pada perkara orang.",
+      "DUA SANDI RELAAS SAYA ARTIKAN KELIRU pada 2.32.0. Sandi S saya baca \"Diterima orang serumah\" - itu teks bebas yang kebetulan sering menyertainya - padahal artinya SURAT TERCATAT (POS). Sandi M saya baca \"Radiogram RRI\" padahal \"media massa cetak/elektronik\". Keduanya kini diambil dari komentar kolom ket_temu pada skema SIPP, satu-satunya definisi resmi yang ada. Sandi E memang benar berarti elektronik - dikuatkan 3.532 baris yang seluruhnya tanpa resi pos.",
+      "KETERANGAN SAKSI TIDAK TERBACA PADA PERMOHONAN DAN CERAI TALAK. Mesinnya hanya mencari untai \"tergugat\" dan \"penggugat\"; kalimat \"Yang meninggalkan tempat tinggal bersama adalah Termohon\" DITEMUKAN - kutipannya tetap tampil - tetapi nilainya kosong dan lencananya berbunyi \"tidak ditemukan\". Terukur pada 66.506 jawaban saksi ABT: dari 4.337 yang memuat kata \"meninggalkan\", 846 (19,5%) hanya menyebut Pemohon/Termohon, menyentuh 331 perkara.",
+      "BENTUK \"MENINGGALKAN RUMAH\" TIDAK PERNAH DICARI. Untai yang dicari hanya \"meninggalkan tempat\" dan \"meninggalkan kediaman\", sementara 442 jawaban berbunyi \"pergi meninggalkan rumah kediaman bersama\" - tidak cocok, sebab ada kata \"rumah\" di tengahnya.",
+      "PIHAK YANG PERGI TERTUKAR pada penyusun fakta dari posita. Nama ruasnya menjebak: pelaku berisi variabel 0047 (Tergugat/Termohon) dan lawan berisi 0046 (Penggugat/Pemohon) - kebalikan dari yang disangka. Cadangan harfiahnya justru benar, jadi cacatnya hanya muncul ketika variabelnya sungguh terbaca, yaitu pada pemakaian normal. Jawaban \"siapa yang meninggalkan kediaman bersama\" masuk ke berita acara sidang yang ditandatangani.",
+      "KALIMAT UPAYA DAMAI MEMATOK \"Penggugat dan Tergugat\" pada perkara yang pihaknya Pemohon dan Termohon - menyebut pihak yang tidak ada di perkaranya, pada kalimat yang masuk berita acara.",
+    ],
+    security: [],
+    operationalNotes: [
+      "TIDAK ADA MIGRASI BASIS DATA. Nomor Drizzle bebas berikutnya tetap 0049.",
+      "MENCABUT CATATAN 2.32.0 yang berbunyi \"berkas putusan yang diunggah harus PDF, .rtf dan .docx ditolak\". Aturan itu keliru dan sudah dihapus; RTF, DOC, dan DOCX kini diterima.",
+      "soffice (LibreOffice) HARUS ADA di dalam container bot supaya PDF Direktori Putusan dapat dibuat. Bila tidak ada, e-Doc TETAP tersimpan dan baris Direktori Putusan ditunda beserta sebabnya - bukan seluruh unggahan ditolak. Periksa dengan `docker exec aleta-bot soffice --version` sesudah pemasangan.",
+      "PEMBACAAN SALURAN PANGGILAN YANG BARU MENGUBAH APA YANG TAMPIL pada relaas lama - tidak ada data yang diubah, hanya cara membacanya. Panggilan yang kemarin berbunyi \"Elektronik (e-Summons)\" dapat berubah menjadi \"Jurusita (panggilan biasa)\" atau \"Surat tercatat\"; itu pembetulan.",
+      "EKSTENSI PERLU DI-RELOAD di chrome://extensions sesudah rilis ini.",
+    ],
+    knownLimitations: [
+      "TOMBOL \"DAFTARKAN KE ANTRIAN\" TIDAK DIHAPUS, dan sengaja. Diminta pengguna memeriksa apakah ia berguna; jawabannya tidak dapat diukur dari sini - basis data aplikasi antrian (sipp_turunan_antrian) hanya hidup di jaringan satker dan tidak ada di salinan lokal. Yang diketahui: tombol itu satu-satunya jalur ALETA menulis ke aplikasi antrian, rancangannya berpihak pada tidak menulis (uji kering sebagai bawaan, hanya menambah, tidak menyentuh kolom milik mesin antrian), dan layar sendiri menunjukkan 24 dari 27 perkara sudah mengambil nomor. Yang belum diketahui: siapa yang mendaftarkan ke-24 itu. Bila aplikasi antrian menariknya sendiri dari SIPP, tombol ini memang tidak berguna - dan itu satu pertanyaan yang menjawab seluruhnya.",
+      "PEMISAHAN e-DOC DAN DIREKTORI PUTUSAN BELUM DICOBA DI SIPP SUNGGUHAN - peladen sedang tidak tersambung saat perbaikan ini ditulis. Sesudah terpasang, unggah satu putusan RTF dan periksa di SIPP: kolom e-Doc harus menunjuk berkas .rtf, dan Direktori Putusan menunjuk .pdf dengan nama pokok yang sama.",
+      "PENGHAPUS e-DOC MILIK SIPP hanya menghapus satu berkas. Sejak satu naskah menghasilkan dua berkas dengan nama pokok yang sama, menghapus e-Doc dari SIPP akan meninggalkan PDF-nya di cakram. Tidak berbahaya - barisnya ikut terhapus - tetapi patut diketahui.",
+      "TATA LETAK BARU BELUM DILIHAT DI PERAMBAN. Layar ini menuntut sesi yang sah, dan kata sandi bukan sesuatu yang boleh saya pegang; yang diperiksa hanya tsc, eslint, dan penjaga tata letaknya. Perhatikan pada pemakaian pertama: rata-kanan kelompok tombol kepala pada layar sempit, dan naiknya deretan penanda saat baris tindakan diciutkan.",
+    ],
+  },
   {
     version: "2.32.0",
     title:

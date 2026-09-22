@@ -1267,11 +1267,41 @@ function isianPihakBerulang(nilai) {
  *
  * ASAL ARTINYA, dan keduanya dibedakan:
  *
- *   Y, T, E, N   dari sumber SIPP sendiri - dropdown pada
- *                views/data_persidangan/pelaksanaan_relaas_v.php:112-115
- *   S, R, W, P, M  TIDAK ada di dropdown itu; artinya dibaca dari isi
- *                ket_hasil_relaas masing-masing. Karena itu ditandai
- *                `terbaca: false` - ia dugaan yang beralasan, bukan kepastian.
+ * ============================================================================
+ * SUMBERNYA KOMENTAR KOLOM SIPP, BUKAN TEBAKAN DARI TEKS BEBASNYA
+ * ============================================================================
+ *
+ * Definisi resminya HANYA hidup di satu tempat - komentar kolom
+ * perkara_pelaksanaan_relaas.ket_temu pada skema SIPP:
+ *
+ *   'Y / T, E=Elektonik, S=surat tercatat, W=Web/Papan Pengumuman Pengadilan,
+ *    P=papan pengumuman pemda, M=media massa cetak/elektornik, R=radio'
+ *
+ * (Salah ketik "Elektonik" dan "elektornik" ada pada aslinya.) Tidak ada tabel
+ * master jenis_relaas maupun cara_panggilan di basis data mana pun - dicari,
+ * tidak ada.
+ *
+ * Dikuatkan dua sumber lain yang berdiri sendiri:
+ *   - edit_pelaksanaan.php:32-33 - E dan S adalah DUA pilihan terpisah pada
+ *     satu dropdown: "Panggilan Elektronik" dan "Surat Tercatat POS".
+ *   - Ukuran atas 14.495 baris relaas satker: seluruh 3.532 baris 'E'
+ *     nomor resi posnya KOSONG, sementara seluruh 3.104 baris 'S' resinya
+ *     TERISI - 100% pada keduanya.
+ *
+ * ============================================================================
+ * DUA DI ANTARANYA PERNAH SAYA ARTIKAN KELIRU - DAN SEBABNYA PATUT DICATAT
+ * ============================================================================
+ *
+ * Pada 22 September 2026 sandi 'S' saya artikan "Diterima orang serumah" dan
+ * 'M' saya artikan "Radiogram RRI". Keduanya salah, dan keduanya salah karena
+ * sebab yang sama: artinya saya baca dari TEKS BEBAS ket_hasil_relaas - yang
+ * memang sering berbunyi "diterima oleh ... yang tinggal serumah" pada baris
+ * 'S' - bukan dari definisinya.
+ *
+ * Teks bebas menerangkan apa yang TERJADI pada satu relaas; sandinya
+ * menyatakan CARA panggilan itu ditempuh. Yang satu tidak menentukan yang
+ * lain: surat tercatat memang lazim diterima orang serumah, dan itu tidak
+ * membuat "diterima orang serumah" menjadi arti sandinya.
  *
  * Sandi yang tidak dikenali dipulangkan apa adanya, bukan ditebak.
  */
@@ -1280,11 +1310,14 @@ const SANDI_CARA_RELAAS = {
   T: { cara: "Tidak bertemu", sampai: false, terbaca: true },
   E: { cara: "Panggilan elektronik", sampai: true, terbaca: true },
   N: { cara: "Tidak dapat dilaksanakan", sampai: false, terbaca: true },
-  S: { cara: "Diterima orang serumah", sampai: true, terbaca: false },
-  R: { cara: "Radiogram", sampai: true, terbaca: false },
-  M: { cara: "Radiogram RRI", sampai: true, terbaca: false },
-  W: { cara: "Pengumuman website/papan pengumuman", sampai: true, terbaca: false },
-  P: { cara: "Pengumuman lewat pemerintah daerah", sampai: true, terbaca: false },
+  // sampai: null - BUKAN true. Surat tercatat yang dikirim belum tentu
+  // sampai; yang menentukan status posnya, bukan sandinya. Menuliskan true
+  // di sini menyatakan panggilan patut atas dasar yang belum diperiksa.
+  S: { cara: "Surat tercatat (POS)", sampai: null, terbaca: true },
+  R: { cara: "Radio (radiogram RRI)", sampai: true, terbaca: true },
+  M: { cara: "Media massa cetak/elektronik", sampai: true, terbaca: true },
+  W: { cara: "Pengumuman web/papan pengumuman pengadilan", sampai: true, terbaca: true },
+  P: { cara: "Pengumuman papan pengumuman Pemda", sampai: true, terbaca: true },
 };
 
 /**

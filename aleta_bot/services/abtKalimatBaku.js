@@ -40,9 +40,13 @@ const KALIMAT = {
    * Dua keadaan, dua kalimat. Yang membedakan hanya berhasil atau tidak, dan
    * perbedaan itu memang menentukan: yang berhasil tidak berujung perceraian.
    */
+  // {pelaku} dan {lawan} diisi sebutan pihak perkara ini - lihat
+  // kalimatUpayaDamai di bawah. Pada cerai talak dan permohonan, kalimat yang
+  // mematok "Penggugat dan Tergugat" menyebut pihak yang tidak ada di
+  // perkaranya, dan kalimat itu masuk ke berita acara yang ditandatangani.
   upayaDamai: {
-    gagal: "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat, namun tidak berhasil",
-    berhasil: "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat",
+    gagal: "pihak keluarga telah berusaha untuk mendamaikan {pelaku} dan {lawan}, namun tidak berhasil",
+    berhasil: "pihak keluarga telah berusaha untuk mendamaikan {pelaku} dan {lawan}",
   },
 
   /**
@@ -188,8 +192,24 @@ function susunAlasan(daftarCiri, pihak) {
 }
 
 /** Kalimat upaya damai menurut berhasil atau tidaknya. */
-function kalimatUpayaDamai(gagal) {
-  return gagal ? KALIMAT.upayaDamai.gagal : KALIMAT.upayaDamai.berhasil;
+/**
+ * Kalimat upaya damai keluarga, bersebutan pihak perkara ini.
+ *
+ * pihak.lawan  = variabel ABT 0046 = "Penggugat" / "Pemohon"
+ * pihak.pelaku = variabel ABT 0047 = "Tergugat"  / "Termohon"
+ *
+ * Nama ruasnya kebalikan dari yang disangka - periksa sebelum menyunting.
+ * Yang disebut lebih dulu dalam kalimat adalah yang MENGAJUKAN, yaitu 0046.
+ *
+ * Tanpa pihak, kalimatnya jatuh ke bentuk gugatan seperti sebelumnya - itu
+ * bentuk yang benar untuk 82% perkara, dan menolak menyusun kalimat karena
+ * sebutannya belum terbaca hanya mengosongkan blangko yang dapat diisi.
+ */
+function kalimatUpayaDamai(gagal, pihak) {
+  const pengaju = String((pihak && pihak.lawan) || "").trim() || "Penggugat";
+  const termohon = String((pihak && pihak.pelaku) || "").trim() || "Tergugat";
+  const pola = gagal ? KALIMAT.upayaDamai.gagal : KALIMAT.upayaDamai.berhasil;
+  return pola.replace("{pelaku}", pengaju).replace("{lawan}", termohon);
 }
 
 module.exports = { KALIMAT, susunAlasan, kalimatUpayaDamai };

@@ -154,13 +154,26 @@ describe("butir 3 - unggah putusan yang selalu ditolak", () => {
     expect(ruteUnggah).toContain("tidak ditemukan di SIPP");
   });
 
-  it("ekstensi menolak yang bukan PDF SEBELUM mengirim", () => {
-    // Bot menolak apa pun yang empat bita pertamanya bukan "%PDF". Atribut
-    // accept pada pemilih berkas hanya SARAN - yang memilih "All files" tetap
-    // dapat memilih .rtf, dan itulah yang terjadi.
-    expect(konten).toContain("bukanPdf");
-    expect(konten).toContain("bukan PDF");
-    expect(konten).toContain("Simpan naskahnya sebagai PDF lebih dulu");
+  it("RTF TIDAK ditolak - penolakan PDF-saja itu keliru dan dicabut", () => {
+    // Pada 22 September 2026 saya menambahkan penolakan "bukan PDF" di sini,
+    // meniru penolakan yang sudah ada di bot. Keduanya salah, dan salahnya
+    // terukur: pada perkara_putusan.amar_putusan_dok satker, 9.903 nilai
+    // terisi berisi .rtf 8.686 (87,7%) dan .pdf hanya 315 (3,2%). PDF justru
+    // yang paling jarang.
+    //
+    // Syarat PDF hanya berlaku bagi baris Direktori Putusan, dan PDF-nya
+    // dibuat ALETA sendiri lewat abtCetakService - persis cara SIPP.
+    expect(konten, "penolakan lama kembali").not.toContain("bukanPdf");
+    expect(konten).not.toContain("Simpan naskahnya sebagai PDF lebih dulu");
+    expect(konten).toContain('pemilih.accept = ".rtf,.doc,.docx,.pdf";');
+  });
+
+  it("bentuk yang memang tidak dapat dipakai TETAP ditolak di panel", () => {
+    // Melepas syarat PDF bukan berarti menerima apa saja: gambar hasil
+    // pindai tetap tidak dapat dipakai, dan menunggu bot menolaknya berarti
+    // mengunggah berkas yang sudah pasti gagal.
+    expect(konten).toContain("BENTUK_DITERIMA");
+    expect(konten).toContain("bukan naskah ");
   });
 
   it("komentar perkaraIdDariHalaman menyebut kenyataannya", () => {

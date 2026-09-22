@@ -300,16 +300,97 @@ function normalkanNama(nilai) {
  * Memakai tanggal pelaksanaan untuk menghitung tenggang akan membuat surat
  * yang lama di jalan tampak dikirim terlambat.
  */
+/**
+ * ============================================================================
+ * SALURANNYA DITENTUKAN SANDI ket_temu, BUKAN ADA-TIDAKNYA RESI POS
+ * ============================================================================
+ *
+ * Sampai 2.32.0 saluran ditebak begini: ada resi pos berarti surat tercatat,
+ * tidak ada resi berarti - pada perkara e-Court - panggilan elektronik.
+ * Tebakan itu salah pada 69% baris yang mungkin kena label "Elektronik
+ * (e-Summons)".
+ *
+ * Diukur pada 14.495 baris relaas satker, dikelompokkan menurut ket_temu:
+ *
+ *     sandi  jumlah  resi terisi
+ *     Y       5.084       0        bertemu langsung
+ *     E       3.532       0        panggilan elektronik
+ *     S       3.104   3.104        surat tercatat POS
+ *     T       2.667       0        tidak bertemu
+ *     R/W/N/P/M  89        0        pengumuman, radio, tidak terlaksana
+ *
+ * Yang tidak berresi DAN bukan 'E' berjumlah 7.839 baris - termasuk 5.084
+ * relaas yang jurusitanya BERTEMU LANGSUNG dengan orangnya. Seluruhnya dulu
+ * dapat dilabeli "dipanggil lewat Elektronik (e-Summons)" pada perkara
+ * e-Court. Itulah kalimat yang dikeluhkan pengguna.
+ *
+ * ============================================================================
+ * YANG LEBIH BERAT: PANGGILAN GAGAL DIHITUNG SAMPAI
+ * ============================================================================
+ *
+ * 'T' (tidak bertemu, 2.667 baris) dan 'N' (tidak dapat dilaksanakan, 14)
+ * TETAP punya tanggal_relaas - jurusita mencatat pelaksanaannya walau tidak
+ * bertemu siapa pun. Aturan lama memulangkan diterima:true untuk keduanya,
+ * dengan bukti "relaas jurusita".
+ *
+ * 2.681 panggilan yang justru GAGAL karena itu terbaca sebagai sampai - dan
+ * di atas angka itulah kepatutan panggilan dinilai. Sidang yang berjalan atas
+ * dasar panggilan yang tidak pernah sampai adalah kerugian pada perkara
+ * orang, bukan kerugian tampilan.
+ *
+ * Sandi yang KOSONG atau tidak dikenali tidak ditebak ke mana pun: jalurnya
+ * dipulangkan "" dan penilaiannya diserahkan pada jejak lain. Lebih baik diam
+ * daripada menuduh.
+ */
+const JALUR_SANDI = {
+  Y: "langsung",
+  T: "langsung",
+  N: "langsung",
+  E: "elektronik",
+  S: "pos",
+  R: "pengumuman",
+  W: "pengumuman",
+  P: "pengumuman",
+  M: "pengumuman",
+};
+
+/** Sandi yang menyatakan panggilannya TIDAK sampai. */
+const SANDI_GAGAL = new Set(["T", "N"]);
+
 function bacaRelaas(relaas) {
   if (!relaas) return { jalur: "", tanggalKirim: null, diterima: null, bukti: "" };
 
-  const lewatPos = Boolean(relaas.noResiPos) || Boolean(relaas.tanggalKirimPos);
+  // Sandi dibaca dari caraRelaas bila ada - itulah yang disiapkan
+  // sippJadwalSidangService - dan dari ketTemu mentah sebagai cadangan.
+  const sandi = String(
+    (relaas.caraRelaas && relaas.caraRelaas.sandi) || relaas.ketTemu || ""
+  )
+    .trim()
+    .toUpperCase();
+  const jalurSandi = JALUR_SANDI[sandi] || "";
+
+  // Panggilan yang sandinya menyatakan GAGAL tidak pernah dihitung sampai,
+  // walau jurusita mencatat tanggal pelaksanaannya.
+  if (SANDI_GAGAL.has(sandi)) {
+    return {
+      jalur: "langsung",
+      sandi,
+      tanggalKirim: relaas.tanggalRelaas || null,
+      diterima: false,
+      bukti: sandi === "N" ? "relaas: tidak dapat dilaksanakan" : "relaas: tidak bertemu",
+    };
+  }
+
+  const lewatPos = jalurSandi === "pos" || Boolean(relaas.noResiPos) || Boolean(relaas.tanggalKirimPos);
 
   if (!lewatPos) {
     // Relaas tanpa jejak pos: dilaksanakan langsung atau lewat saluran
-    // elektronik, dan tanggal pelaksanaannya adalah tanggal panggilannya.
+    // elektronik. Sandinya yang menentukan yang mana - bukan ada tidaknya
+    // pendaftaran e-Court, yang hanya menyatakan pihaknya BOLEH dipanggil
+    // elektronik, bukan bahwa panggilan INI ditempuh begitu.
     return {
-      jalur: "langsung",
+      jalur: jalurSandi || "langsung",
+      sandi,
       tanggalKirim: relaas.tanggalRelaas || null,
       diterima: relaas.tanggalRelaas ? true : null,
       bukti: relaas.tanggalRelaas ? "relaas jurusita" : "",
@@ -321,6 +402,7 @@ function bacaRelaas(relaas) {
 
   return {
     jalur: "pos",
+    sandi,
     tanggalKirim: relaas.tanggalKirimPos || relaas.tanggalRelaas || null,
     // Diterima bila lacak kiriman berhasil ATAU jurusita sudah mencatat
     // pelaksanaan relaasnya - keduanya bukti penerimaan yang sah.
@@ -439,9 +521,30 @@ function susunKeadaanPanggilan({
     let buktiPenerimaan = "";
 
     if (jejakRelaas.tanggalKirim) {
-      // Relaas tanpa jejak pos: pada perkara e-Court itu panggilan elektronik,
-      // pada perkara biasa itu panggilan jurusita seperti biasa.
-      terlaksana = jejakRelaas.jalur === "pos" ? "surat_tercatat" : lewatEcourt ? "elektronik" : "biasa";
+      // ==================================================================
+      // SANDINYA YANG MENENTUKAN, BUKAN PENDAFTARAN e-COURT-NYA
+      // ==================================================================
+      //
+      // Aturan lama: tanpa jejak pos, perkara e-Court dilabeli "elektronik".
+      // Itu menyamakan dua hal yang berbeda - pihak yang TERDAFTAR e-Court
+      // (boleh dipanggil elektronik) dengan panggilan yang MEMANG ditempuh
+      // secara elektronik. Terukur salah pada 7.839 baris, termasuk 5.084
+      // relaas yang jurusitanya bertemu langsung dengan orangnya.
+      //
+      // Pendaftaran e-Court kini hanya dipakai ketika sandinya tidak terbaca
+      // sama sekali - dan bahkan di sana ia hanya tebakan terakhir.
+      terlaksana =
+        jejakRelaas.jalur === "pos"
+          ? "surat_tercatat"
+          : jejakRelaas.jalur === "elektronik"
+            ? "elektronik"
+            : jejakRelaas.jalur === "pengumuman"
+              ? "pengumuman"
+              : jejakRelaas.jalur === "langsung"
+                ? "biasa"
+                : lewatEcourt
+                  ? "elektronik"
+                  : "biasa";
       tanggalPanggilan = jejakRelaas.tanggalKirim;
       diterima = jejakRelaas.diterima;
       buktiPenerimaan = jejakRelaas.bukti;

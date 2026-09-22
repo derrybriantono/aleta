@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.164.0",
+    dirilis: "2026-09-22T21:10:00+08:00",
+    judul: "Putusan RTF diterima, dan tata letak layar Antrian Sidang dirapikan",
+    butir: [
+      "PUTUSAN RTF TIDAK LAGI DITOLAK. Penolakan \"bukan PDF\" yang saya tambahkan kemarin dicabut - aturannya saya karang sendiri tanpa memeriksa datanya. Diukur pada perkara_putusan.amar_putusan_dok satker, 9.903 nilai terisi: .rtf 8.686 (87,7%), .docx 458, .doc 442, .pdf hanya 315 (3,2%). PDF justru yang paling jarang, dan menyaring ke PDF saja menolak 96,8% naskah yang sah.",
+      "Yang diterima sekarang RTF, DOC, DOCX, dan PDF. PDF untuk Direktori Putusan dibuat bot sendiri; naskah aslinya tetap tersimpan sebagai e-Doc - persis cara SIPP. Saringan di panel hanya tinggal menolak bentuk yang memang tidak dapat dipakai sama sekali.",
+      "KOTAK PENCARIAN TIDAK LAGI SELEBAR LAYAR, dan tombol Pencarian lanjutan duduk di sebelahnya bersama angka \"x dari y\" serta Reset. Kotak selebar layar menjanjikan isian sepanjang itu, padahal yang diketik orang nomor perkara atau satu nama.",
+      "PERKARA SAYA, TAMPILAN, RINGKAS/LENGKAP, DAN CIUTKAN pindah ke kanan baris judul - satu baris lebih hemat di atas daftar sidang.",
+      "BARIS TOMBOL TINDAKAN DAPAT DICIUTKAN SENDIRI lewat ikon, terpisah dari tombol Ciutkan yang menyembunyikan seluruh kendali. Yang diciutkan barisnya benar-benar hilang, sehingga deretan kotak penanda naik menempati tempatnya. Ikon pembentangnya pindah ke deretan itu supaya jalan kembalinya tidak ikut hilang.",
+      "TOMBOL LAYAR RUANG TUNGGU berganti nama dari \"Tampilan\" menjadi \"Layar antrian\". Dua tombol sewarna dan sebentuk dengan satu nama pada layar yang sama, mengerjakan hal yang berbeda sama sekali.",
+      "SALURAN PANGGILAN \"Pengumuman\" ditambahkan - radio, media massa, papan pengumuman pengadilan, papan pengumuman Pemda. Keempatnya dulu jatuh ke salah satu dari tiga nama yang ada, paling sering ke \"Elektronik (e-Summons)\".",
+    ],
+  },
+  {
     versi: "1.163.1",
     dirilis: "2026-09-22T14:20:00+08:00",
     judul: "Unggah putusan yang selalu ditolak, dan status putusan yang ditimpa diam-diam",

@@ -22,9 +22,16 @@ const konten = readFileSync(path.join(akar, "ekstensi-sipp/konten.js"), "utf8");
 
 describe("nama berkas dan letaknya meniru SIPP", () => {
   it("nomor perkara disusun TERBALIK, seperti fileupload_putusan_c.php", () => {
-    // 492/Pdt.G/2026/PA.Dgl -> PA.Dgl_2026_Pdt.G_492_putusan_akhir.pdf
-    expect(bot).toContain("`${bagian[3]}_${bagian[2]}_${bagian[1]}_${bagian[0]}_${akhiran}.pdf`");
+    // 492/Pdt.G/2026/PA.Dgl -> PA.Dgl_2026_Pdt.G_492_putusan_akhir.<ekstensi>
+    expect(bot).toContain("`${bagian[3]}_${bagian[2]}_${bagian[1]}_${bagian[0]}_${akhiran}.${ext}`");
     expect(bot).toContain('.replace(/ /g, "_")');
+  });
+
+  it("ekstensinya DIBATASI - nama berkas tidak boleh menembus folder", () => {
+    // Ekstensi kini datang dari bentuk berkas yang diunggah. Yang datang apa
+    // adanya dari luar adalah jalan masuk bagi nama yang menembus folder
+    // ("../"), dan yang ditulis di sini berada di dalam cakram SIPP.
+    expect(bot).toContain('/^[a-z0-9]{1,5}$/i.test(String(ekstensi))');
   });
 
   it("nomor yang bentuknya lain ditolak, bukan disusun seadanya", () => {
@@ -36,7 +43,12 @@ describe("nama berkas dan letaknya meniru SIPP", () => {
   it("foldernya dari TANGGAL PUTUSAN, bukan tanggal hari ini", () => {
     // Putusan bulan lalu yang diunggah hari ini akan tersimpan di folder yang
     // salah - barisnya benar, berkasnya ada, dan tetap tidak ketemu.
-    expect(bot).toContain("function jalurRelatif(nomorPerkara, jenis, tanggalPutusan)");
+    // Ekstensi ditambahkan sebagai argumen keempat sejak RTF/DOC/DOCX
+    // diterima: satu naskah menghasilkan dua jalur, dan keduanya berbeda
+    // hanya pada akhirannya.
+    expect(bot).toContain(
+      'function jalurRelatif(nomorPerkara, jenis, tanggalPutusan, ekstensi = "pdf")'
+    );
     expect(bot).toContain("SELECT tanggal_putusan FROM perkara_putusan");
     expect(bot).toContain("resources/file/${FOLDER[jenis]}/${tgl[0]}/${tgl[1]}/${berkas}");
   });
@@ -56,7 +68,7 @@ describe("baris yang ditulis ke SIPP", () => {
 
   it("berkas ditulis DAHULU, barisnya sesudahnya", () => {
     const badan = bot.slice(bot.indexOf("async function unggahSatu("));
-    const tulisBerkas = badan.indexOf("fs.writeFileSync(penuh, pdf)");
+    const tulisBerkas = badan.indexOf("fs.writeFileSync(penuhAsli, pdf)");
     const tulisBaris = badan.indexOf("UPDATE perkara_putusan SET");
     expect(tulisBerkas).toBeGreaterThan(-1);
     expect(tulisBaris).toBeGreaterThan(tulisBerkas);
@@ -100,9 +112,68 @@ describe("baris yang ditulis ke SIPP", () => {
   });
 });
 
+describe("e-Doc dan Direktori Putusan adalah DUA berkas", () => {
+  /**
+   * Cacat struktur yang paling lama tersembunyi: kolom perkara_putusan dan
+   * baris dirput_dokumen dulu diisi JALUR YANG SAMA.
+   *
+   * SIPP mengisinya dengan dua jalur berbeda - diperiksa pada perkara
+   * September 2026 satker: perkara_id 10001 memegang
+   * ..._putusan_akhir.RTF pada kolom e-Doc dan ..._putusan_akhir.PDF pada
+   * dirput_dokumen. Mengisi keduanya dengan satu jalur membuat Direktori
+   * Putusan menunjuk berkas yang tidak dapat dibacanya.
+   */
+  it("kolom perkara_putusan menerima jalur ASLI", () => {
+    expect(bot).toContain("SET ${kolom} = ? WHERE perkara_id = ?`, [relatifAsli, perkaraId]");
+  });
+
+  it("dirput_dokumen menerima jalur PDF, bukan jalur aslinya", () => {
+    const i = bot.indexOf("INSERT INTO dirput_dokumen");
+    expect(i).toBeGreaterThan(-1);
+    const blok = bot.slice(i, i + 700);
+    expect(blok).toContain("path.basename(relatifPdf), relatifPdf");
+    expect(blok, "jalur asli tidak boleh masuk Direktori Putusan").not.toContain(
+      "path.basename(relatifAsli)"
+    );
+  });
+
+  it("PDF dibuat UTUH DI MEMORI sebelum satu berkas pun ditulis", () => {
+    // Inilah yang menjawab ketakutan "pengubahan yang gagal separuh": yang
+    // mencegahnya URUTAN, bukan penolakan.
+    const badan = bot.slice(bot.indexOf("async function unggahSatu("));
+    const konversi = badan.indexOf("abtCetakService.dokumenKePdf(pdf)");
+    const tulis = badan.indexOf("fs.writeFileSync(penuhAsli, pdf)");
+    expect(konversi).toBeGreaterThan(-1);
+    expect(tulis, "berkas ditulis sebelum konversinya selesai").toBeGreaterThan(konversi);
+  });
+
+  it("tanpa PDF, baris Direktori Putusan TIDAK ditulis - dan itu disebut", () => {
+    // Ke-26 baris .rtf yang ada di dirput_dokumen satker adalah bekas
+    // konversi yang gagal; salah satunya published = 1, artinya berkas yang
+    // tidak dapat dibaca Direktori Putusan terlanjur terbit.
+    expect(bot).toContain('alasan: "pdf_belum_dapat_dibuat"');
+    expect(bot).toContain("sebagian: true");
+    const i = bot.indexOf('alasan: "pdf_belum_dapat_dibuat"');
+    const j = bot.indexOf("INSERT INTO dirput_dokumen");
+    expect(i, "penundaan harus MENDAHULUI penulisan barisnya").toBeLessThan(j);
+  });
+
+  it("e-Doc tetap tersimpan walau soffice tidak ada", () => {
+    // Menolak seluruh unggahan karena pengubahnya belum terpasang menahan
+    // pekerjaan yang sebenarnya sudah dapat diselesaikan separuh - dan SIPP
+    // sendiri menyimpan berkasnya lebih dulu, mengubah kemudian.
+    const i = bot.indexOf('alasan: "pdf_belum_dapat_dibuat"');
+    const blok = bot.slice(Math.max(0, i - 400), i + 400);
+    expect(blok).toContain("ok: true");
+    expect(blok).toContain("jalur: relatifAsli");
+  });
+});
+
 describe("yang ditolak, beserta sebabnya", () => {
-  it("PDF dikenali dari BITANYA, bukan dari nama berkasnya", () => {
-    expect(bot).toContain('pdf.slice(0, 4).toString("latin1") !== "%PDF"');
+  it("bentuk berkas dikenali dari BITANYA, bukan dari nama berkasnya", () => {
+    // Nama dapat diubah siapa saja; kepala berkasnya tidak.
+    expect(bot).toContain("abtCetakService.kenaliDokumen(pdf)");
+    expect(bot).toContain('alasan: "bentuk_tidak_dikenali"');
   });
 
   it("perkara yang belum diputus ditolak dengan kalimat yang menyebut jalan keluarnya", () => {
@@ -116,9 +187,12 @@ describe("yang ditolak, beserta sebabnya", () => {
 });
 
 describe("panel", () => {
-  it("hanya menerima PDF", () => {
+  it("menerima RTF, DOC, DOCX, dan PDF", () => {
+    // Diukur pada perkara_putusan.amar_putusan_dok satker, 9.903 nilai
+    // terisi: .rtf 8.686 (87,7%), .docx 458, .doc 442, .pdf 315 (3,2%).
+    // Menyaring ke PDF saja menolak 96,8% naskah yang sah.
     const badan = konten.slice(konten.indexOf("function bagianUnggahPutusanSipp("));
-    expect(badan.slice(0, 4000)).toContain('pemilih.accept = ".pdf,application/pdf";');
+    expect(badan.slice(0, 5000)).toContain('pemilih.accept = ".rtf,.doc,.docx,.pdf";');
   });
 
   it("kewenangannya penunjukan - ini menulis ke SIPP, bukan membaca", () => {
