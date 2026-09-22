@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.30.0";
+export const APP_VERSION = "2.31.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.30.0 - Rantai Penetapan Melintasi Hari, dan Pratinjau yang Jujur";
+  "ALETA Judicia v2.31.0 - Unggah Putusan: Cepat, Tidak Menyerah, dan Dari Mana Saja";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,41 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.31.0",
+    title: "ALETA Judicia v2.31.0 - Unggah Putusan: Cepat, Tidak Menyerah, dan Dari Mana Saja",
+    date: "2026-09-22",
+    status: "Belum terpasang",
+    summary:
+      "Empat permintaan atas unggah putusan, dan dua di antaranya berakar pada satu angka yang " +
+      "salah urutan: ekstensi menyerah lebih dahulu daripada gerbangnya, sehingga unggahan yang " +
+      "hampir selesai dibatalkan di layar sementara botnya terus bekerja. Ditambah pemeriksaan " +
+      "draf yang tidak lagi antre satu per satu, unggah dari halaman ABT, dan antrean massal yang " +
+      "boleh bermula dari berkas.",
+    added: [
+      "UNGGAH PUTUSAN DARI HALAMAN ABT untuk perkara yang sedang dibuka. Seluruh rangkaiannya sudah ada sejak lama - RTF dari blangko, draf ke ALETA, PDF, anonim, unggah ke SIPP - tetapi hanya dapat dipanggil dari dalam gelung antrean massal, dan antrean itu selalu bermula dari TANGGAL SIDANG. Petugas yang membuka satu perkara di ABT harus menyusun antrean sehari penuh lebih dahulu lalu mencentang satu baris. Panelnya tidak menyalin satu baris pun logika unggah.",
+      "PUTUSAN MASSAL DARI BERKAS. Pilih beberapa naskah sekaligus; nomor perkaranya dipetik dari NAMA berkas, seluruh pasangan diperlihatkan untuk diperiksa, baru dikirim. Sebelum ini tidak satu pun pemilih berkas di ekstensi menerima lebih dari satu berkas - ketiganya membaca files[0] tanpa multiple - dan berkas tidak pernah dicocokkan dengan perkaranya.",
+    ],
+    changed: [
+      "TOMBOL TUNDA DAN PUTUS PINDAH KE SAMPING JENIS PERKARA, dari depan nomor perkara. Di tempat lamanya keduanya berdiri persis di titik yang paling dahulu dibaca mata, sehingga yang pertama terbaca pada tiap baris bukan perkaranya melainkan dua tombol yang bentuknya sama persis pada dua puluh tujuh baris - dan nomor perkara, satu-satunya hal yang membedakan baris, terdorong ke kanan sejauh panjang penandanya sehingga tidak lagi berbaris lurus ke bawah. Ditaruh di samping jenis perkara, bukan di ujung barisnya sendiri: jenis perkara menentukan apa yang akan dicatat - Cerai Talak yang ditunda berbeda akibatnya dari Cerai Gugat yang ditunda, sebab yang pertama masih menunggu ikrar.",
+      "PEMERIKSAAN DRAF BERBARENGAN, ENAM SEKALIGUS. Dahulu berurutan; pada dua puluh perkara itu sepuluh detik menunggu sebelum satu baris pun dapat dicentang. Terbatas enam, bukan seluruhnya: dua puluh permintaan serentak ke SIPP lewat satu gerbang menukar menunggu dengan menumpuk, dan yang menumpuk menahan permintaan lain di layar yang sama.",
+      "DRAF TIDAK LAGI DITARIK DUA KALI - pemeriksaan menariknya utuh lalu membuangnya, dan pengisian borang menariknya lagi.",
+    ],
+    fixed: [
+      "UNGGAH ANONIMISASI YANG \"ERROR DAN TIDAK MAU TERUPLOAD\". Batas waktu ekstensi 45 detik LEBIH PENDEK daripada batas gerbang 60 detik. Unggahan yang memakan 45 sampai 60 detik karena itu dibatalkan di layar - petugas melihat galat - sementara botnya terus bekerja dan mungkin menyelesaikannya. Komentar pada gerbang itu sendiri sudah menyebut akibatnya: meninggalkan berkas yang sudah tertulis tanpa barisnya. Anonimisasi paling sering kena karena kedua berkas dikirim dalam satu permintaan, jadi bitanya dua kali lipat.",
+      "BATAS WAKTU ABT yang dahulu PERSIS SAMA dengan gerbangnya - 60000 lawan 60000, tanpa selisih sama sekali - sehingga keduanya menyerah pada saat yang sama. Urutannya kini menaik dari dalam ke luar: bot, gerbang, lalu ekstensi.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi basis data. Nomor Drizzle bebas berikutnya tetap 0047.",
+      "\"Satu kesatuan\" antara unggah putusan dan anonimisasi SUDAH ADA sejak lama - rute bot, rute portal, dan panel ekstensi ketiganya mengirim keduanya sekaligus. Yang rusak hanya batas waktunya.",
+    ],
+    knownLimitations: [
+      "PERBAIKAN BATAS WAKTU BELUM DIBUKTIKAN SEBAGAI SEBABNYA. Kedua angkanya terukur dan urutannya memang salah, tetapi bunyi galat yang dilihat petugas belum pernah dibaca. Bila unggah anonimisasi masih gagal sesudah versi ini, kirimkan tangkapan Console-nya.",
+      "POSITA YANG TIDAK RAPI BUKAN CACAT KODE. Perapinya sudah ada di rapikanTeksPosita dan sudah menangani <div>; diuji atas posita sungguhan perkara 505 ia mengubah 0 pemisah paragraf menjadi 27, dengan nol angka butir tertelan. Yang terjadi: ia tidak pernah DIJALANKAN atas perkara itu - ia tindakan yang harus ditekan orang. Menjadikannya berjalan sendiri sebagai bagian alur putusan belum dikerjakan.",
+      "SELURUH PERUBAHAN INI BELUM DICOBA DI SIPP SUNGGUHAN - hanya dari pembacaan kode dan pengukuran basis data setempat. Coba pada satu perkara lebih dahulu.",
+    ],
+  },
   {
     version: "2.30.0",
     title: "ALETA Judicia v2.30.0 - Rantai Penetapan Melintasi Hari, dan Pratinjau yang Jujur",

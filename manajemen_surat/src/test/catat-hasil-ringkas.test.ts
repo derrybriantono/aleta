@@ -195,4 +195,38 @@ describe("tombolnya di baris antrian", () => {
     expect(SIDANG).toContain("aria-label={`Tunda sidang ${baris.nomorPerkara}`}");
     expect(SIDANG).toContain("aria-label={`Catat putusan ${baris.nomorPerkara}`}");
   });
+
+  it("tombolnya di SAMPING jenis perkara, bukan di depan nomor", () => {
+    // ========================================================================
+    // DIMINTA PENGGUNA 22 SEPTEMBER 2026
+    // ========================================================================
+    //
+    // Sebelumnya keduanya berdiri di DEPAN nomor perkara - tempat yang paling
+    // dahulu dibaca mata. Akibatnya yang pertama terbaca pada tiap baris bukan
+    // perkaranya, melainkan dua tombol yang bentuknya sama persis pada dua
+    // puluh tujuh baris; dan nomor perkara, satu-satunya hal yang membedakan
+    // baris, terdorong ke kanan sejauh panjang penandanya - sehingga tidak
+    // lagi berbaris lurus ke bawah.
+    //
+    // Dijaga lewat URUTAN TULIS, bukan lewat nama kelas: kelas dapat diganti
+    // tanpa memindahkan apa pun, dan yang diminta pengguna letaknya.
+    const iNomor = SIDANG.indexOf("{baris.nomorPerkara}");
+    const iJenis = SIDANG.indexOf('{baris.jenisPerkara || "—"}');
+    const iTunda = SIDANG.indexOf('{ kunci, jalan: "tunda" }');
+    expect(iNomor, "nomor perkara tidak ketemu").toBeGreaterThan(-1);
+    expect(iJenis, "jenis perkara tidak ketemu").toBeGreaterThan(-1);
+    expect(iTunda, "tombol tunda tidak ketemu").toBeGreaterThan(-1);
+
+    expect(iTunda, "tombol tunda mendahului nomor perkara").toBeGreaterThan(iNomor);
+    expect(iTunda, "tombol tunda tidak bersebelahan dengan jenis perkara").toBeGreaterThan(iJenis);
+  });
+
+  it("keduanya berbagi satu baris dengan jenis perkara", () => {
+    // Bukan sekadar berurutan di berkas - keduanya harus benar-benar duduk di
+    // dalam pembungkus yang sama, kalau tidak ia turun ke baris sendiri dan
+    // justru menambah tinggi tiap baris daftar.
+    const i = SIDANG.indexOf('{baris.jenisPerkara || "—"}');
+    const blok = SIDANG.slice(Math.max(0, i - 400), i);
+    expect(blok).toContain("flex flex-wrap items-center");
+  });
 });

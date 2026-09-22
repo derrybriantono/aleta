@@ -2360,6 +2360,19 @@ function susunPanelAbt(jatiDiri) {
   const kabar = buatElemen("div", "aleta-abt-kabar");
   isi.appendChild(kabar);
 
+  // ==========================================================================
+  // UNGGAH PUTUSAN PERKARA INI - BUTIR 3
+  // ==========================================================================
+  //
+  // Di panel PERKARA, bukan di panel massal. Yang membuka satu perkara di ABT
+  // dan hendak mengunggah yang satu itu tidak seharusnya menyusun antrean
+  // sehari penuh lebih dahulu lalu mencentang satu baris.
+  //
+  // Memulangkan null pada halaman yang tidak memuat perkara - lihat di dalam
+  // fungsinya. Panel yang tergambar tetapi tidak dapat dipakai hanya menambah
+  // tombol yang menolak.
+  bagianUnggahSatuAbt(isi);
+
   /**
    * ==========================================================================
    * RIWAYAT DITARUH DI ATAS, BUKAN DI KAKI PANEL
@@ -4281,7 +4294,15 @@ const PENANDA_MASSAL_ABT = "aleta-panel-abt-massal";
 const KUNCI_POSISI_MASSAL_ABT = "posisiPanelAbtMassal";
 const ALETA_API_UNGGAH_NASKAH_ABT = "/aleta/api/aleta-ecourt/putusan/unggah-naskah";
 const ALETA_API_UNGGAH_SIPP_ABT = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
-const BATAS_UNGGAH_MASSAL_MS = 60000;
+/**
+ * Harus LEBIH LAMA daripada batas gerbangnya (timeoutMs 60000 pada
+ * gatewayUnggahPutusanSipp). Dahulu persis sama - tanpa selisih sama sekali -
+ * sehingga keduanya menyerah pada saat yang sama, dan yang membatalkan lebih
+ * dahulu meninggalkan berkas yang sudah tertulis tanpa barisnya.
+ *
+ * Urutannya harus menaik dari dalam ke luar: bot, gerbang, lalu ekstensi.
+ */
+const BATAS_UNGGAH_MASSAL_MS = 90000;
 
 /** Halaman daftar blangko ABT: ada bilah kelompok di kiri dan kartu berkas di kanan. */
 function halamanBerandaAbt() {
@@ -5383,6 +5404,157 @@ function bagianMassalAbt(keadaan) {
  * "RTF ok · draf v3 · PDF ok · anonim gagal: ABT menjawab 500" - bukan
  * sekadar berhasil/gagal.
  */
+
+/**
+ * ============================================================================
+ * UNGGAH PUTUSAN PERKARA INI - DARI HALAMAN ABT
+ * ============================================================================
+ *
+ * Seluruh rangkaiannya sudah ada di kerjakanSatuPerkaraAbt; yang ditambahkan
+ * di sini hanya pintunya bagi perkara yang SEDANG DIBUKA.
+ *
+ * Tidak satu baris pun logika unggah disalin. Menyalinnya berarti dua jalur
+ * yang lambat laun berbeda - dan yang berbeda diam-diam adalah yang menulis ke
+ * SIPP.
+ *
+ * Empat centangnya sama dengan yang di panel massal, dan bawaannya pun sama:
+ * draf, PDF, anonim, unggah. Yang membuka satu perkara di ABT hampir selalu
+ * hendak mengerjakan keempatnya - dan yang tidak, tinggal mematikannya.
+ */
+function bagianUnggahSatuAbt(isi) {
+  const jatiDiri = jatiDiriPerkara();
+  const nomor = nomorPerkaraAbt();
+
+  // Halaman ABT yang tidak memuat satu perkara pun tidak diberi panel ini.
+  // Panel yang tergambar tetapi tidak dapat dipakai hanya menambah tombol yang
+  // menolak - dan yang menekannya menyangka ada yang rusak.
+  if (!jatiDiri || !jatiDiri.perkaraId) return null;
+
+  const kotak = buatElemen("div", "aleta-abt-bagian");
+  kotak.appendChild(buatElemen("div", "aleta-abt-judul", "Unggah putusan perkara ini ke SIPP"));
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "aleta-abt-catatan",
+      nomor
+        ? `${nomor} - RTF diambil dari blangko ABT, diubah ke PDF, lalu diunggah beserta anonimisasinya.`
+        : "Nomor perkaranya tidak terbaca dari kepala halaman; unggahannya tetap memakai perkara yang sedang dibuka."
+    )
+  );
+
+  // ==========================================================================
+  // BLANGKONYA DIPILIH, BUKAN DITEBAK DARI HALAMAN
+  // ==========================================================================
+  //
+  // Halaman ABT tidak menyebutkan jenis perkaranya dalam bentuk yang dapat
+  // dibaca dengan pasti - yang ada hanya judul dan daftar variabel. Menebaknya
+  // dari sana berarti kadang benar dan kadang mengambil blangko perkara lain,
+  // dan blangko yang salah menghasilkan putusan yang salah bentuknya.
+  //
+  // Karena itu dipilih. Daftarnya diisi dari pemetaan yang sudah ada, jadi
+  // yang tampil hanya blangko yang memang sudah dipetakan - bukan seluruh
+  // blangko ABT yang sebagian belum punya tokennya.
+  const barisBlangko = buatElemen("label", "aleta-abt-centang-baris");
+  barisBlangko.appendChild(buatElemen("span", "aleta-abt-nama", "Blangko"));
+  const pilihBlangko = document.createElement("select");
+  pilihBlangko.className = "aleta-sdg-pilih";
+  const kosong = document.createElement("option");
+  kosong.value = "";
+  kosong.textContent = "memuat daftar blangko…";
+  pilihBlangko.appendChild(kosong);
+  barisBlangko.appendChild(pilihBlangko);
+  kotak.appendChild(barisBlangko);
+
+  void alatMuatPetaBlangkoLengkap().then((peta) => {
+    pilihBlangko.textContent = "";
+    const kunci = Object.keys(peta || {}).filter((k) => alatBlangkoLengkap(peta[k]));
+    if (kunci.length === 0) {
+      const tidakAda = document.createElement("option");
+      tidakAda.value = "";
+      tidakAda.textContent = "belum ada blangko yang dipetakan";
+      pilihBlangko.appendChild(tidakAda);
+      return;
+    }
+    kunci.sort();
+    for (const k of kunci) {
+      const opsi = document.createElement("option");
+      opsi.value = k;
+      opsi.textContent = (peta[k] && peta[k].jenisAsli) || k;
+      pilihBlangko.appendChild(opsi);
+    }
+  });
+
+  const pilihan = {};
+  const centang = (kunci, label, bawaan) => {
+    const baris = buatElemen("label", "aleta-abt-centang-baris");
+    const kotakCentang = document.createElement("input");
+    kotakCentang.type = "checkbox";
+    kotakCentang.className = "aleta-abt-centang";
+    kotakCentang.checked = bawaan;
+    baris.appendChild(kotakCentang);
+    baris.appendChild(buatElemen("span", "aleta-abt-nama", label));
+    kotak.appendChild(baris);
+    pilihan[kunci] = kotakCentang;
+  };
+  centang("draf", "Simpan draf ke ALETA", true);
+  centang("pdf", "Buat PDF putusan", true);
+  centang("anonim", "Buat PDF anonimisasi", true);
+  centang("unggah", "Unggah ke SIPP", true);
+
+  const tombol = buatElemen("button", "aleta-abt-tombol", "Kerjakan perkara ini");
+  tombol.type = "button";
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  kotak.appendChild(tombol);
+  kotak.appendChild(kabar);
+
+  tombol.addEventListener("click", async () => {
+    tombol.disabled = true;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = "Menyiapkan…";
+    try {
+      // Peta blangko dibaca SEKARANG, bukan disimpan saat panel dibangun:
+      // pemetaannya dapat diubah orang di panel lain sementara halaman ini
+      // terbuka, dan yang dipakai harus yang berlaku saat tombolnya ditekan.
+      const jenis = pilihBlangko.value;
+      if (!jenis) throw new Error("Pilih blangko yang dipakai lebih dahulu.");
+      // Peta dibaca SEKARANG, bukan yang tersimpan saat panel dibangun:
+      // pemetaannya dapat disunting di panel lain sementara halaman ini
+      // terbuka, dan yang dipakai harus yang berlaku saat tombolnya ditekan.
+      const peta = await alatMuatPetaBlangkoLengkap();
+      const petaJenis = peta && peta[jenis];
+      if (!petaJenis) {
+        throw new Error(`Blangko "${jenis}" sudah tidak ada lagi di pemetaan. Muat ulang halaman.`);
+      }
+      const butir = { nomor: nomor || "", perkaraId: jatiDiri.perkaraId, jenis };
+      const opsi = {
+        draf: pilihan.draf.checked,
+        pdf: pilihan.pdf.checked,
+        anonim: pilihan.anonim.checked,
+        unggah: pilihan.unggah.checked,
+      };
+      const hasil = await kerjakanSatuPerkaraAbt(
+        butir,
+        petaJenis,
+        opsi,
+        namaPenggunaAbt(),
+        (teks) => {
+          kabar.textContent = teks;
+        }
+      );
+      kabar.className = hasil.ok ? "aleta-abt-kabar" : "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = hasil.ringkas || (hasil.ok ? "selesai" : "gagal");
+    } catch (galat) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = String((galat && galat.message) || galat);
+    } finally {
+      tombol.disabled = false;
+    }
+  });
+
+  isi.appendChild(kotak);
+  return kotak;
+}
+
 async function kerjakanSatuPerkaraAbt(butir, peta, opsi, olehUsername, lapor) {
   const dokumen = { rtf: "", draf: "", pdf: "", anonim: "", anonimPdf: "", unggah: "" };
   const ringkas = [];

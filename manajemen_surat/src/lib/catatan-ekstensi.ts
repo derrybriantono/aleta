@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.161.0",
+    dirilis: "2026-09-22T08:05:00+08:00",
+    judul: "Unggah putusan: tidak lagi menyerah di tengah, tidak lagi antre satu per satu",
+    butir: [
+      "BATAS WAKTU YANG MENYEBABKAN \"ERROR DAN TIDAK MAU TERUPLOAD\". Ekstensi menyerah pada detik ke-45 sementara gerbangnya memberi bot 60 detik - jadi unggahan yang memakan 45 sampai 60 detik dibatalkan di layar, petugas melihat galat, dan botnya TERUS BEKERJA. Komentar pada gerbang itu sendiri sudah menyebut akibatnya: meninggalkan berkas yang sudah tertulis tanpa barisnya. Anonimisasi paling sering kena, dan sebabnya aritmetika - putusan dan anonimisasi dikirim dalam SATU permintaan, jadi bitanya dua kali lipat, dan yang dua kali lipat itulah yang menyeberangi garis 45 detik. Batasnya kini 90 detik dan terpisah dari batas unggah naskah.",
+      "BATAS ABT IKUT DIBETULKAN. Ia dahulu 60000 - PERSIS SAMA dengan gerbangnya, tanpa selisih sama sekali, sehingga keduanya menyerah pada saat yang sama. Urutan batas waktu harus menaik dari dalam ke luar: bot, gerbang, lalu ekstensi.",
+      "PEMERIKSAAN DRAF BERBARENGAN, ENAM SEKALIGUS. Dahulu berurutan - satu perkara harus selesai sebelum berikutnya dimulai - dengan komentar yang menyebutnya \"satu permintaan ringan per perkara\". Ringan ia tidak: rutenya memulangkan SELURUH draf. Pada dua puluh perkara itu sepuluh detik menunggu sebelum satu baris pun dapat dicentang. Enam sekaligus, bukan seluruhnya: dua puluh permintaan serentak lewat satu gerbang menukar menunggu dengan menumpuk.",
+      "DRAF TIDAK LAGI DITARIK DUA KALI. Pemeriksaan menarik seluruh draf lalu membuangnya, menyimpan hanya ada/tidak - lalu pengisian borang menariknya LAGI utuh. Sekarang jawabannya disimpan apa adanya.",
+      "UNGGAH PUTUSAN DARI HALAMAN ABT, untuk perkara yang sedang dibuka. Seluruh rangkaiannya sudah ada - RTF dari blangko, draf, PDF, anonim, unggah - tetapi hanya dapat dipanggil dari dalam antrean massal, dan antrean itu selalu bermula dari tanggal sidang. Petugas yang membuka satu perkara harus menyusun antrean sehari penuh lalu mencentang satu baris. Panel baru ini pintunya, dan ia TIDAK menyalin satu baris pun logika unggah - dua salinan akan lambat laun berbeda, dan yang berbeda diam-diam adalah yang menulis ke SIPP.",
+      "BLANGKONYA DIPILIH, BUKAN DITEBAK. Halaman ABT tidak menyebut jenis perkaranya dalam bentuk yang dapat dibaca pasti; blangko yang salah menghasilkan putusan yang salah bentuknya, dan itu baru ketahuan sesudah tercetak. Daftarnya hanya memuat blangko yang memang sudah dipetakan.",
+      "PUTUSAN MASSAL DARI BERKAS. Pilih beberapa naskah sekaligus; nomor perkaranya dibaca dari NAMA berkas, seluruh pasangan diperlihatkan untuk diperiksa, baru ditekan. Sebelum ini tidak satu pun pemilih berkas di ekstensi menerima lebih dari satu berkas, dan berkas tidak pernah dicocokkan dengan perkaranya - nomornya selalu datang dari halaman yang sedang terbuka.",
+      "YANG TIDAK TERBACA TIDAK DITEBAK. Berkas yang nomor perkaranya tidak terbaca dari namanya ditandai dan dilewati - bukan dipasangkan ke perkara terdekat. Memasangkan naskah putusan ke perkara yang salah berarti putusan orang lain masuk ke berkas orang ini, dan itu tidak dapat dibatalkan dengan menekan ulang.",
+    ],
+  },
+  {
     versi: "1.160.0",
     dirilis: "2026-09-22T05:45:00+08:00",
     judul: "Pratinjau penetapan menyebut tanggal, ruang sidang, dan pejabat penetapnya",

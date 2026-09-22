@@ -107,6 +107,34 @@ const ALETA_API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
  * hilang hanya jawabannya.
  */
 const BATAS_UNGGAH_NASKAH_MS = 45000;
+
+/**
+ * ============================================================================
+ * MENULIS KE SIPP MENUNGGU LEBIH LAMA - DAN HARUS LEBIH LAMA DARIPADA GERBANG
+ * ============================================================================
+ *
+ * Batas ini TIDAK boleh lebih pendek daripada batas gerbangnya. Terbaca dari
+ * kedua angkanya:
+ *
+ *     gerbang   timeoutMs: 60000    whatsapp-gateway-client.ts, gatewayUnggahPutusanSipp
+ *
+ * Selama ini unggah ke SIPP memakai BATAS_UNGGAH_NASKAH_MS yang 45 detik -
+ * lebih pendek daripada gerbangnya. Unggahan yang memakan 45 sampai 60 detik
+ * karena itu dibatalkan ekstensi sementara botnya terus bekerja: petugas
+ * melihat galat, dan berkasnya mungkin tetap tertulis. Komentar pada
+ * gerbangnya sendiri sudah menyebut akibatnya - "membatalkannya di tengah
+ * meninggalkan berkas yang sudah tertulis tanpa barisnya".
+ *
+ * Yang paling sering terkena ANONIMISASI, dan sebabnya aritmetika: putusan dan
+ * anonimisasi dikirim dalam SATU permintaan, jadi bitanya dua kali lipat - dan
+ * yang dua kali lipat itulah yang menyeberangi garis 45 detik.
+ *
+ * Urutan batas waktu harus MENAIK dari dalam ke luar: bot, gerbang, lalu
+ * ekstensi. Yang di luar menyerah lebih dahulu meninggalkan pekerjaan setengah
+ * jalan tanpa ada yang tahu hasilnya - dan itu keadaan yang paling sulit
+ * diperbaiki, sebab tidak ada yang tahu apa yang sudah tertulis.
+ */
+const BATAS_UNGGAH_SIPP_MS = 90000;
 const ALETA_API_ALASAN_PERKARA = "/aleta/api/aleta-ecourt/alasan-perkara";
 const PENANDA = "aleta-panel-sipp";
 
@@ -4941,7 +4969,7 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
       if (berkasAnonim) badan.append("anonimisasi", berkasAnonim);
       const respons = await alatAmbil(
         ALETA_API_UNGGAH_SIPP,
-        { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_NASKAH_MS },
+        { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_SIPP_MS },
         "Mengunggah putusan ke SIPP"
       );
       if (!respons.ok) {
@@ -10074,6 +10102,11 @@ function susunPanelDaftar(ringkasan) {
   if (boleh("data-umum")) {
     // Fitur 2: antrean SIPP disusun dari tanggal sidang, tanpa lewat ABT.
     isi.appendChild(bagianMassalSipp());
+    // Fitur 3: antrean yang sama, tetapi bermula dari BERKAS. Diletakkan
+    // sesudah yang dari tanggal sidang, bukan sebelumnya: yang dari tanggal
+    // sidang dipakai tiap hari, yang dari berkas hanya ketika naskahnya sudah
+    // terkumpul di satu folder.
+    bagianMassalBerkas(isi);
     void bagianAntreanSipp("").then((k) => {
       if (k && isi.isConnected) isi.appendChild(k);
     });
@@ -12362,6 +12395,175 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   if (tombol) tombol.disabled = false;
 }
 
+
+/**
+ * ============================================================================
+ * FITUR 3 - ANTREAN PUTUSAN MASSAL DARI BERKAS
+ * ============================================================================
+ *
+ * Bermula dari BERKAS, bukan dari tanggal sidang. Petugas memilih beberapa
+ * naskah putusan sekaligus; tiap berkas dicocokkan dengan perkaranya lewat
+ * nomor yang tertulis pada NAMA berkasnya, dikirim ke ALETA sebagai draf, lalu
+ * masuk antrean yang sama dengan antrean massal biasa.
+ *
+ * Sesudah antreannya jadi, pengisian borang SIPP dikerjakan mesin yang sudah
+ * ada - satu perkara sekali, di halaman yang sedang dibuka. Tidak ada jalur
+ * pengisian baru; yang ditambahkan hanya cara MENGISI ANTREANNYA.
+ *
+ * ============================================================================
+ * YANG TIDAK DICOCOKKAN, TIDAK DITEBAK
+ * ============================================================================
+ *
+ * Berkas yang nomor perkaranya tidak terbaca dari namanya ditandai dan
+ * dilewati - bukan dipasangkan ke perkara terdekat, dan bukan pula dikirim
+ * dengan nomor kosong.
+ *
+ * Memasangkan naskah putusan ke perkara yang salah berarti putusan orang lain
+ * masuk ke berkas orang ini. Itu tidak dapat dibatalkan dengan menekan ulang:
+ * drafnya sudah tersimpan, dan yang mengisi borang berikutnya akan membacanya
+ * sebagai naskah yang sah.
+ */
+function bagianMassalBerkas(isi) {
+  const kotak = buatElemen("div", "aleta-tetap-bagian");
+  kotak.appendChild(buatElemen("div", "aleta-tetap-judul", "Putusan massal - dari berkas"));
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab",
+      "Pilih beberapa naskah putusan sekaligus. Nomor perkaranya dibaca dari NAMA berkas, " +
+        "diperlihatkan untuk diperiksa, lalu tiap naskah disimpan sebagai draf dan masuk antrean."
+    )
+  );
+
+  const pemilih = document.createElement("input");
+  pemilih.type = "file";
+  pemilih.multiple = true;
+  pemilih.accept = ".rtf,.doc,.docx,.pdf";
+  pemilih.className = "aleta-berkas";
+  kotak.appendChild(pemilih);
+
+  const daftar = buatElemen("div", "aleta-massal-daftar");
+  kotak.appendChild(daftar);
+
+  const tombol = buatElemen("button", "aleta-permintaan-tombol", "Kirim naskah lalu susun antrean");
+  tombol.type = "button";
+  tombol.disabled = true;
+  kotak.appendChild(tombol);
+
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  kotak.appendChild(kabar);
+
+  /** Berkas beserta nomor perkara yang terbaca dari namanya. */
+  let pasangan = [];
+
+  /**
+   * Nomor perkara dari nama berkas.
+   *
+   * POLA_PERKARA berbendera /g, dan RegExp berbendera g MENGINGAT posisinya di
+   * antara pemanggilan. Tanpa menyetel lastIndex, berkas kedua dicari mulai
+   * dari tempat berkas pertama berhenti - dan nomor yang ada tidak ketemu.
+   * Jebakan yang sama sudah tercatat di pemakaian POLA_PERKARA yang lain.
+   */
+  function nomorDariNama(nama) {
+    POLA_PERKARA.lastIndex = 0;
+    const cocok = POLA_PERKARA.exec(String(nama || ""));
+    return cocok ? cocok[1] : "";
+  }
+
+  function gambarDaftar() {
+    daftar.textContent = "";
+    let cocok = 0;
+    for (const p of pasangan) {
+      const baris = buatElemen("div", "aleta-massal-baris");
+      baris.appendChild(buatElemen("span", "aleta-massal-nomor", p.berkas.name));
+      const tanda = buatElemen(
+        "span",
+        "aleta-massal-keadaan",
+        p.nomor || "nomor perkara tidak terbaca dari namanya - dilewati"
+      );
+      tanda.classList.add(p.nomor ? "aleta-lencana-aman" : "aleta-lencana-mendesak");
+      baris.appendChild(tanda);
+      daftar.appendChild(baris);
+      if (p.nomor) cocok += 1;
+    }
+    tombol.disabled = cocok === 0;
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent = `${pasangan.length} berkas dipilih; ${cocok} terbaca nomornya.`;
+  }
+
+  pemilih.addEventListener("change", () => {
+    pasangan = Array.from(pemilih.files || []).map((berkas) => ({
+      berkas,
+      nomor: nomorDariNama(berkas.name),
+    }));
+    gambarDaftar();
+  });
+
+  tombol.addEventListener("click", async () => {
+    const dikerjakan = pasangan.filter((p) => p.nomor);
+    if (dikerjakan.length === 0) return;
+    tombol.disabled = true;
+    pemilih.disabled = true;
+
+    const berhasil = [];
+    let gagal = 0;
+    // BERURUTAN, dan itu disengaja. Tiap berkas dikirim utuh ke peladen lalu
+    // diurai di sana; mengirim dua puluh sekaligus berarti dua puluh naskah
+    // berada di memori peladen pada saat yang sama. Yang ditunggu orang di
+    // sini pengunggahan sekali seumur hari, bukan tiap kali layar dibuka.
+    for (let i = 0; i < dikerjakan.length; i += 1) {
+      const p = dikerjakan[i];
+      kabar.textContent = `Mengirim ${i + 1} dari ${dikerjakan.length}: ${p.berkas.name}…`;
+      try {
+        const badan = new FormData();
+        badan.append("berkas", p.berkas);
+        badan.append("nomorPerkara", p.nomor);
+        // perkaraId TIDAK dikirim - ia tidak diketahui dari berkas, dan rute
+        // naskah memang membolehkannya kosong. Menebaknya berarti menautkan
+        // draf ke perkara yang salah.
+        const respons = await alatAmbil(
+          ALETA_API_UNGGAH_NASKAH,
+          { method: "POST", body: badan, credentials: "include", batasMs: BATAS_UNGGAH_NASKAH_MS },
+          "Mengirim naskah putusan"
+        );
+        if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Mengirim naskah putusan"));
+        const luar = await respons.json();
+        const jawab = luar && luar.data ? luar.data : luar;
+        if (!jawab || !jawab.ok) throw new Error((jawab && jawab.sebab) || "naskahnya tidak dapat dibaca");
+        berhasil.push({ nomor: p.nomor, perkaraId: "", jenis: "" });
+      } catch (galat) {
+        gagal += 1;
+        alatCatat("massal-galat", `${p.nomor}: ${String((galat && galat.message) || galat)}`, "");
+      }
+    }
+
+    pemilih.disabled = false;
+    tombol.disabled = false;
+
+    if (berhasil.length === 0) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = `Tidak satu pun naskah tersimpan. ${gagal} gagal - lihat catatan.`;
+      return;
+    }
+
+    const antrean = alatBuatAntrean({
+      tanggalSidang: "",
+      tahap: "sipp",
+      modus: "draf",
+      butir: berhasil,
+    });
+    await alatSimpanAntrean(antrean);
+    kabar.className = "aleta-abt-kabar";
+    kabar.textContent =
+      `${berhasil.length} draf tersimpan dan masuk antrean` +
+      (gagal ? `, ${gagal} gagal` : "") +
+      ". Buka perkara pertamanya di SIPP; panel antrean akan menuntun sisanya.";
+  });
+
+  isi.appendChild(kotak);
+  return kotak;
+}
+
 /*
  * ============================================================================
  * FITUR 2 - ANTREAN PUTUSAN SIPP DARI TANGGAL SIDANG, TANPA LEWAT ABT
@@ -12437,7 +12639,15 @@ function bagianMassalSipp() {
       if (respons.ok) {
         const luar = await respons.json();
         const d = luar && luar.data ? luar.data : luar;
-        hasil = { ada: Boolean(d && d.ada), sebab: (d && d.sebab) || "" };
+        // ==================================================================
+        // JAWABANNYA DISIMPAN UTUH, BUKAN DIBUANG
+        // ==================================================================
+        //
+        // Rute ini memulangkan SELURUH draf - bukan jawaban ya/tidak.
+        // Sebelumnya isinya dibuang dan hanya { ada, sebab } yang disimpan,
+        // lalu pengisian borang menariknya LAGI utuh. Dua tarikan untuk satu
+        // draf yang sama, dan tarikan keduanya justru yang ditunggu petugas.
+        hasil = { ada: Boolean(d && d.ada), sebab: (d && d.sebab) || "", isi: d || null };
       } else {
         hasil = { ada: false, sebab: alatPesanGagal(null, respons.status, "Memeriksa draf putusan") };
       }
@@ -12446,6 +12656,32 @@ function bagianMassalSipp() {
     }
     keadaan.draf.set(nomor, hasil);
     return hasil;
+  }
+
+  /**
+   * Menjalankan kerja atas banyak butir, BERBARENGAN tetapi terbatas.
+   *
+   * Enam sekaligus, bukan seluruhnya. Dua puluh permintaan serentak ke SIPP
+   * lewat satu gerbang menukar menunggu dengan menumpuk - dan yang menumpuk
+   * membuat permintaan lain di layar yang sama ikut tertahan, termasuk yang
+   * sedang ditunggu orang lain.
+   *
+   * Urutan pemanggilannya tidak dijamin; yang menuntut urutan harus
+   * menuliskan hasilnya ke tempatnya sendiri, bukan menumpuknya berurutan.
+   */
+  async function berbarenganTerbatas(daftar, sekaligus, kerja) {
+    const butir = Array.from(daftar);
+    let berikut = 0;
+    async function pekerja() {
+      for (;;) {
+        const i = berikut;
+        berikut += 1;
+        if (i >= butir.length) return;
+        await kerja(butir[i], i);
+      }
+    }
+    const jumlah = Math.max(1, Math.min(sekaligus, butir.length));
+    await Promise.all(Array.from({ length: jumlah }, () => pekerja()));
   }
 
   async function muat() {
@@ -12484,14 +12720,23 @@ function bagianMassalSipp() {
       centangPer.set(s.nomor, { centang, sidang: s, tanda });
     }
 
-    // Draf diperiksa berurutan - satu permintaan ringan per perkara - dan
-    // hasilnya langsung dituliskan di barisnya, supaya orang tidak menunggu
-    // seluruh daftar untuk mulai membaca.
+    // ========================================================================
+    // DIPERIKSA BERBARENGAN, ENAM SEKALIGUS
+    // ========================================================================
+    //
+    // Dahulu berurutan, dengan komentar yang menyebutnya "satu permintaan
+    // ringan per perkara". Ringan ia tidak: rutenya memulangkan SELURUH draf.
+    // Pada dua puluh perkara yang masing-masing memakan setengah detik, itu
+    // sepuluh detik menunggu sebelum satu baris pun dapat dicentang.
+    //
+    // Hasilnya tetap dituliskan ke barisnya masing-masing begitu tiba,
+    // sehingga daftarnya terisi berangsur seperti sediakala - yang berubah
+    // hanya kecepatannya, bukan cara membacanya.
     let siap = 0;
-    for (const s of belum) {
+    await berbarenganTerbatas(belum, 6, async (s) => {
       const d = await adaDraf(s.nomor);
       const t = centangPer.get(s.nomor);
-      if (!t) continue;
+      if (!t) return;
       if (d.ada) {
         t.centang.disabled = false;
         t.tanda.textContent = "draf ada";
@@ -12501,7 +12746,7 @@ function bagianMassalSipp() {
         t.tanda.classList.add("aleta-lencana-mendesak");
         t.centang.title = "Unggah naskah putusannya dahulu di panel perkara, atau kerjakan lewat tahap ABT.";
       }
-    }
+    });
     kabar.textContent = `${keadaan.sidang.length} perkara bersidang; ${belum.length} belum putus; ${siap} punya draf dan dapat dicentang.`;
     tombolSusun.disabled = siap === 0;
   }

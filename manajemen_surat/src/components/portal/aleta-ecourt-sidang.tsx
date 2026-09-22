@@ -2035,6 +2035,15 @@ function SelKonseptorSementara({
  * spasi tertinggal dari ketikan sebelumnya akan membuat daftarnya terbuka
  * kembali seketika di atas tombol Simpan.
  */
+/**
+ * Nama simpul daftar tawaran hakim.
+ *
+ * Tetap, bukan dihitung per baris: borang konseptor hanya ada SATU pada satu
+ * waktu - ia lahir ketika satu baris dibuka dan mati ketika ditutup. Dua
+ * borang tidak pernah terbuka bersamaan, jadi tidak ada nama yang bertabrakan.
+ */
+const ID_DAFTAR_HAKIM = "aleta-daftar-hakim-konseptor";
+
 function bandingIsian(a: string, b: string): boolean {
   const rapi = (x: string) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
   return rapi(a) === rapi(b);
@@ -2147,6 +2156,10 @@ function BorangKonseptorSementara({
         autoFocus
         role="combobox"
         aria-expanded={usul.length > 0}
+        // Menunjuk daftar tawarannya. Tanpa ini pembaca layar mengumumkan
+        // "combobox" tanpa pernah menyebut ada berapa pilihan dan apa isinya -
+        // dan yang memakainya hanya mendengar kotak isian biasa.
+        aria-controls={ID_DAFTAR_HAKIM}
         aria-autocomplete="list"
         className="mt-0.5 h-7 w-full rounded border bg-background px-1.5 text-xs"
       />
@@ -2155,7 +2168,7 @@ function BorangKonseptorSementara({
           tabel yang dapat digulung, dan kotak melayang di dalam gulungan
           bersarang ikut tergeser dari kotak isiannya. */}
       {usul.length > 0 ? (
-        <ul className="mt-1 max-h-32 overflow-auto rounded border bg-card">
+        <ul id={ID_DAFTAR_HAKIM} className="mt-1 max-h-32 overflow-auto rounded border bg-card">
           {usul.map((h, i) => (
             <li key={h.id || h.nama}>
               <button
@@ -4963,70 +4976,6 @@ export function AletaEcourtSidang({
                               menyediakan jalan ke status perkara - tombol yang
                               tidak mengerjakan apa pun lebih buruk daripada
                               tulisan biasa. */}
-                          {/* ==================================================
-                              TUNDA DAN PUTUS DI KIRI NOMORNYA
-                              ==================================================
-
-                              Panitera sidang mencatat hasil belasan sidang
-                              dalam satu pagi. Sampai sekarang tiap satunya
-                              menuntut membuka nomor perkaranya, menunggu layar
-                              Hasil Sidang termuat, lalu kembali ke daftar.
-
-                              Keduanya tetap membuka borang - yang hilang hanya
-                              perpindahan layarnya. Rencananya tetap ditarik
-                              lebih dahulu sebelum apa pun tertulis; lihat
-                              catatan pada CatatHasilRingkas.
-
-                              Disembunyikan pada sidang yang hasilnya SUDAH
-                              tercatat: menuliskan penundaan kedua atas sidang
-                              yang sudah diputus menambah baris jadwal yang
-                              tidak pernah disidangkan. */}
-                          {sidangSelesai ? null : (
-                            <span className="mr-1.5 inline-flex align-middle">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCatat((lama) =>
-                                    lama && lama.kunci === kunci && lama.jalan === "tunda"
-                                      ? null
-                                      : { kunci, jalan: "tunda" }
-                                  )
-                                }
-                                title={`Tunda sidang ${baris.nomorPerkara} tanpa berpindah layar`}
-                                aria-label={`Tunda sidang ${baris.nomorPerkara}`}
-                                aria-pressed={catat?.kunci === kunci && catat.jalan === "tunda"}
-                                className={cn(
-                                  "rounded-l-md border px-1.5 py-0.5 text-[11px] font-semibold transition",
-                                  catat?.kunci === kunci && catat.jalan === "tunda"
-                                    ? "border-amber-600 bg-amber-600 text-white"
-                                    : "border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/15"
-                                )}
-                              >
-                                tunda
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCatat((lama) =>
-                                    lama && lama.kunci === kunci && lama.jalan === "putus"
-                                      ? null
-                                      : { kunci, jalan: "putus" }
-                                  )
-                                }
-                                title={`Catat putusan ${baris.nomorPerkara} tanpa berpindah layar`}
-                                aria-label={`Catat putusan ${baris.nomorPerkara}`}
-                                aria-pressed={catat?.kunci === kunci && catat.jalan === "putus"}
-                                className={cn(
-                                  "-ml-px rounded-r-md border px-1.5 py-0.5 text-[11px] font-semibold transition",
-                                  catat?.kunci === kunci && catat.jalan === "putus"
-                                    ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-primary/50 text-primary hover:bg-primary/10"
-                                )}
-                              >
-                                putus
-                              </button>
-                            </span>
-                          )}
                           {onBukaTunda ? (
                             <button
                               type="button"
@@ -5129,7 +5078,11 @@ export function AletaEcourtSidang({
                             </div>
                           ) : null}
 
-                          {/* Jenis perkara kini di bawah nomornya - keduanya
+                          {/* ==================================================
+                              JENIS PERKARA, DAN TUNDA/PUTUS DI SAMPINGNYA
+                              ==================================================
+
+                              Jenis perkara kini di bawah nomornya - keduanya
                               menjawab pertanyaan yang sama, "perkara apa ini",
                               dan memisahkannya jadi dua kolom hanya memaksa
                               mata bolak-balik.
@@ -5137,9 +5090,81 @@ export function AletaEcourtSidang({
                               Ditebalkan: "Cerai Gugat" dan "Cerai Talak"
                               menentukan jalan perkaranya sama sekali - siapa
                               yang memohon, apakah ada ikrar talak - dan
-                              sebelumnya ia sekelabu nama pihak di atasnya. */}
-                          <div className="mt-0.5 text-sm font-extrabold text-foreground/90">
-                            {baris.jenisPerkara || "—"}
+                              sebelumnya ia sekelabu nama pihak di atasnya.
+
+                              TUNDA DAN PUTUS PINDAH KE SINI, dari kiri nomor
+                              perkara. Diminta pengguna 22 September 2026.
+
+                              Di kiri nomor, keduanya berdiri di tempat yang
+                              paling dahulu dibaca mata - sehingga yang pertama
+                              terbaca pada tiap baris bukan perkaranya,
+                              melainkan dua tombol yang bentuknya sama persis
+                              pada dua puluh tujuh baris. Nomor perkara, satu-
+                              satunya hal yang membedakan baris, terdorong ke
+                              kanan dan tidak lagi berbaris lurus ke bawah
+                              sebab panjang penandanya berbeda-beda.
+
+                              Di samping jenis perkara, bukan di ujung barisnya
+                              sendiri: jenis perkara menentukan apa yang akan
+                              dicatat. Cerai Talak yang ditunda berbeda
+                              akibatnya dari Cerai Gugat yang ditunda - yang
+                              pertama masih menunggu ikrar. Bersebelahan,
+                              keduanya terbaca sekali pandang.
+
+                              Disembunyikan pada sidang yang hasilnya SUDAH
+                              tercatat: menuliskan penundaan kedua atas sidang
+                              yang sudah diputus menambah baris jadwal yang
+                              tidak pernah disidangkan. */}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="text-sm font-extrabold text-foreground/90">
+                              {baris.jenisPerkara || "—"}
+                            </span>
+                            {sidangSelesai ? null : (
+                              <span className="inline-flex align-middle">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setCatat((lama) =>
+                                      lama && lama.kunci === kunci && lama.jalan === "tunda"
+                                        ? null
+                                        : { kunci, jalan: "tunda" }
+                                    )
+                                  }
+                                  title={`Tunda sidang ${baris.nomorPerkara} tanpa berpindah layar`}
+                                  aria-label={`Tunda sidang ${baris.nomorPerkara}`}
+                                  aria-pressed={catat?.kunci === kunci && catat.jalan === "tunda"}
+                                  className={cn(
+                                    "rounded-l-md border px-1.5 py-0.5 text-[11px] font-semibold transition",
+                                    catat?.kunci === kunci && catat.jalan === "tunda"
+                                      ? "border-amber-600 bg-amber-600 text-white"
+                                      : "border-amber-400 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-500/15"
+                                  )}
+                                >
+                                  tunda
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setCatat((lama) =>
+                                      lama && lama.kunci === kunci && lama.jalan === "putus"
+                                        ? null
+                                        : { kunci, jalan: "putus" }
+                                    )
+                                  }
+                                  title={`Catat putusan ${baris.nomorPerkara} tanpa berpindah layar`}
+                                  aria-label={`Catat putusan ${baris.nomorPerkara}`}
+                                  aria-pressed={catat?.kunci === kunci && catat.jalan === "putus"}
+                                  className={cn(
+                                    "-ml-px rounded-r-md border px-1.5 py-0.5 text-[11px] font-semibold transition",
+                                    catat?.kunci === kunci && catat.jalan === "putus"
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-primary/50 text-primary hover:bg-primary/10"
+                                  )}
+                                >
+                                  putus
+                                </button>
+                              </span>
+                            )}
                           </div>
 
                           {/* ==================================================
