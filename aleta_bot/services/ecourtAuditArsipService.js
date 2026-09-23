@@ -101,7 +101,10 @@ function periksaSatu(baris) {
   if (info.size > BATAS_BACA_PENUH) {
     // Berkas sangat besar: penanda awalnya saja - lihat catatan di atas.
     const awalan = bacaAwalan(jalur, 1024);
-    const bentuk = berkasIntegritasService.periksaIsi(awalan, { format });
+    // potongan: yang dibawa hanya 1 KB pertama, jadi ambang ukuran dan ekor
+    // %%EOF tidak berlaku - keduanya menuntut berkas utuh, dan menerapkannya
+    // pada potongan akan menandai SELURUH berkas besar sebagai rusak.
+    const bentuk = berkasIntegritasService.periksaIsi(awalan, { format, potongan: true });
     return bentuk.ok ? { ok: true, alasan: "" } : { ok: false, alasan: bentuk.alasan };
   }
 

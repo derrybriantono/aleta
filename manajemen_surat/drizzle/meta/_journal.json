@@ -344,6 +344,13 @@
       "when": 1789384801001,
       "tag": "0048_rekam_antrian",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1789471201001,
+      "tag": "0049_antrian_publik",
+      "breakpoints": true
     }
   ]
 }

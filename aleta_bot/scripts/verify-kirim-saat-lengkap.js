@@ -183,7 +183,34 @@ console.log("\n== Sebutan dan penulisan waktu ==");
   periksa("pihak ke-2 gugatan: Tergugat", layanan.sebutanPihak(2, "pihak", "Cerai Gugat"), "Tergugat");
   periksa("pihak ke-1 permohonan: Pemohon", layanan.sebutanPihak(1, "pihak", "Itsbat Nikah"), "Pemohon");
   periksa("pihak ke-2 permohonan: Termohon", layanan.sebutanPihak(2, "pihak", "Dispensasi Kawin"), "Termohon");
-  periksa("kuasa disebut kuasa", layanan.sebutanPihak(1, "kuasa", "Cerai Talak"), "Kuasa Penggugat");
+  // ==========================================================================
+  // EJAAN SIPP YANG SESUNGGUHNYA, BUKAN EJAAN KARANGAN
+  // ==========================================================================
+  //
+  // "Itsbat Nikah" di atas tidak pernah ada satu baris pun di basis data -
+  // SIPP menulis "Pengesahan Perkawinan/Istbat Nikah" (3.885 perkara) dan
+  // "Istbat Nikah" (87). Ejaan karangan itulah yang membuat penjaga ini hijau
+  // selama 3.972 perkara nyata dijawab "Penggugat".
+  periksa(
+    "ejaan SIPP: Pengesahan Perkawinan/Istbat Nikah",
+    layanan.sebutanPihak(1, "pihak", "Pengesahan Perkawinan/Istbat Nikah"),
+    "Pemohon"
+  );
+  periksa("ejaan SIPP: Wali Adhol", layanan.sebutanPihak(1, "pihak", "Wali Adhol"), "Pemohon");
+  // ==========================================================================
+  // CERAI TALAK BERSEBUTAN PEMOHON - DAN PENJAGA INI DULU MENUNTUT SEBALIKNYA
+  // ==========================================================================
+  //
+  // jenis_perkara_id 346, 1.166 perkara di satker ini, bernomor /Pdt.G/ tetapi
+  // bersebutan Pemohon/Termohon menurut kueri ABT sendiri. Keluaran fungsi ini
+  // dikirim ke nomor WhatsApp pihak berperkara; menyapa Pemohon sebagai
+  // "Penggugat" bukan salah kata, ia salah alamat.
+  periksa("kuasa disebut kuasa", layanan.sebutanPihak(1, "kuasa", "Cerai Gugat"), "Kuasa Penggugat");
+  periksa(
+    "cerai talak: Kuasa Pemohon, bukan Kuasa Penggugat",
+    layanan.sebutanPihak(1, "kuasa", "Cerai Talak"),
+    "Kuasa Pemohon"
+  );
   periksa("hakim urutan 1: Ketua Majelis", layanan.sebutanPetugas("hakim", 1), "Ketua Majelis");
   periksa("hakim urutan 2: Hakim Anggota", layanan.sebutanPetugas("hakim", 2), "Hakim Anggota");
   periksa("panitera", layanan.sebutanPetugas("panitera", 0), "Panitera Pengganti");

@@ -2953,6 +2953,34 @@ router.get("/sipp/peta-perkara/lapisan", requireInternalToken, async (req, res) 
   }
 });
 
+/**
+ * ============================================================================
+ * SEBARAN RELAAS PER JURUSITA
+ * ============================================================================
+ *
+ * Kebalikan arah dari lapisan peta "Jurusita yang melayani": bukan "siapa yang
+ * melayani desa ini", melainkan "desa mana saja yang dikerjakan orang ini,
+ * berapa banyak, dan berapa yang kembali".
+ *
+ * Rentangnya dibaca dengan penghitung yang sama dengan lapisan peta, supaya
+ * kedua layar tidak pernah menjawab rentang yang berbeda untuk pilihan yang
+ * sama.
+ */
+router.get("/sipp/sebaran-jurusita", requireInternalToken, async (req, res) => {
+  try {
+    const { dari, sampai } = petaPerkaraService.rentangPeriode(
+      String(req.query.periode || "tahun"),
+      String(req.query.acuan || ""),
+      String(req.query.dari || ""),
+      String(req.query.sampai || "")
+    );
+    const hasil = await lapisanPetaService.sebaranJurusita(dari, sampai);
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Menu jenis perkara - disusun dari yang SUNGGUH diputus, bukan dari daftar. */
 router.get("/sipp/peta-perkara/menu", requireInternalToken, async (req, res) => {
   try {

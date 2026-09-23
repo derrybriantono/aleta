@@ -3169,7 +3169,11 @@ async function ikrarTalakPerkara(perkaraId) {
     };
   }
 
-  const kolomId = await sippSkemaService.pilihKolom("perkara_ikrar_talak", ["id"]);
+  // "id" disebut lebih dulu demi satker yang skemanya berbeda, tetapi pada
+  // SIPP 6.2.4 kolom itu tidak ada: kunci utamanya perkara_id. Tanpa
+  // menyebutkannya di sini, ikrarId selalu kosong - dan tombol unduh
+  // penetapan ikrar talak tidak pernah muncul sama sekali.
+  const kolomId = await sippSkemaService.pilihKolom("perkara_ikrar_talak", ["id", "perkara_id"]);
   const pilihan = MEDAN.map((x) => `t.${x.kunci} AS ${x.alias}`);
   if (kolomId) pilihan.push(`t.${kolomId} AS ikrarId`);
 

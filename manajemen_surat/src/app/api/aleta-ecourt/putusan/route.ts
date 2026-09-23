@@ -1,4 +1,6 @@
 import { type NextRequest } from "next/server";
+import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
+
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
@@ -171,7 +173,20 @@ export async function POST(request: NextRequest) {
           jenisNaskah: masukan.jenisNaskah,
           jenisPerkara: String(masukan.jenisPerkara ?? ""),
           fakta: masukan.fakta ?? {},
-          dudukPerkara: masukan.dudukPerkara ?? {
+          // ================================================================
+          // SEBUTAN PIHAK IKUT DIKIRIM - DAN DULU TIDAK PERNAH
+          // ================================================================
+          //
+          // susunDudukPerkara dan perakitPutusan sudah lama menerima
+          // sebutanPenggugat/sebutanTergugat, lengkap dengan sakelar
+          // "permohonan"/"gugatan" pada kalimat pembukanya. Yang tidak ada:
+          // satu pun pemanggil yang mengisinya. Diukur: nol kemunculan di
+          // aleta_bot/, nol di ekstensi-sipp/, nol di components/.
+          //
+          // Akibatnya seluruh duduk perkara berbunyi "Menimbang, bahwa
+          // Penggugat ... telah mengajukan gugatan" - termasuk pada 1.166
+          // perkara cerai talak, yang seharusnya "Pemohon ... permohonan".
+          dudukPerkara: {
             nomorPerkara: String(masukan.nomorPerkara ?? ""),
             tanggalDaftar: "",
             penggugat: "",
@@ -179,6 +194,21 @@ export async function POST(request: NextRequest) {
             rangkaian: [],
             catatan: [],
             saksi: [],
+            ...(masukan.dudukPerkara ?? {}),
+            // Yang dikirim pemanggil menang; yang kosong diisi dari jenis
+            // perkaranya sendiri.
+            sebutanPenggugat:
+              masukan.dudukPerkara?.sebutanPenggugat ||
+              sebutanPihakPerkara({
+                jenisPerkaraNama: String(masukan.jenisPerkara ?? ""),
+                nomorPerkara: String(masukan.nomorPerkara ?? ""),
+              }).satu,
+            sebutanTergugat:
+              masukan.dudukPerkara?.sebutanTergugat ||
+              sebutanPihakPerkara({
+                jenisPerkaraNama: String(masukan.jenisPerkara ?? ""),
+                nomorPerkara: String(masukan.nomorPerkara ?? ""),
+              }).dua,
           },
           petitum: masukan.petitum ?? [],
           amar: masukan.amar ?? [],

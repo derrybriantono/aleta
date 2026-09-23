@@ -21,6 +21,7 @@
  */
 
 const db = require("../db_config");
+const sebutanPihakService = require("./sebutanPihakService");
 
 function jalankan(sql, nilai = []) {
   return new Promise((selesai, gagal) => {
@@ -40,9 +41,21 @@ function isoTanggal(nilai) {
   return cocok ? `${cocok[1]}-${cocok[2]}-${cocok[3]}` : null;
 }
 
-/** "Pemohon" pada cerai talak, "Penggugat" pada selainnya. */
-function peranPihakPertama(jenisPerkara) {
-  return /talak|permohonan|Pdt\.P/i.test(String(jenisPerkara || "")) ? "Pemohon" : "Penggugat";
+/**
+ * "Pemohon" pada perkara permohonan, "Penggugat" pada gugatan.
+ *
+ * Pola lama hanya mengenal "talak", "permohonan", dan "Pdt.P" - sehingga
+ * seluruh perkara Pengesahan Perkawinan/Istbat Nikah, Dispensasi Kawin,
+ * Perwalian, dan Penetapan Ahli Waris dijawab "Penggugat". Diukur: salah pada
+ * 4.415 dari 5.581 perkara bersebutan Pemohon di satker ini.
+ */
+function peranPihakPertama(pokok) {
+  return sebutanPihakService.sebutanSatuPihak(1, {
+    alurPerkaraId: pokok && pokok.alurPerkaraId,
+    jenisPerkaraId: pokok && pokok.jenisPerkaraId,
+    jenisPerkaraNama: pokok && pokok.jenisPerkara,
+    nomorPerkara: pokok && pokok.nomorPerkara,
+  });
 }
 
 /**
@@ -58,8 +71,14 @@ async function bacaFaktaBukti(nomorPerkara) {
   if (!nomor) return { ok: false, alasan: "nomor perkara kosong" };
 
   const perkara = await jalankan(
+    // alur_perkara_id dan jenis_perkara_id ikut dibaca. Keduanya yang
+    // MEMUTUSKAN sebutan pihak menurut ABT sendiri; namanya hanya cadangan,
+    // dan cadangan itu meleset pada cerai talak (1.166 perkara) yang
+    // bernomor /Pdt.G/ tetapi bersebutan Pemohon/Termohon.
     `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
-            p.jenis_perkara_nama AS jenisPerkara
+            p.jenis_perkara_nama AS jenisPerkara,
+            p.alur_perkara_id AS alurPerkaraId,
+            p.jenis_perkara_id AS jenisPerkaraId
        FROM perkara p
       WHERE p.nomor_perkara = ?
       LIMIT 1`,
@@ -98,7 +117,7 @@ async function bacaFaktaBukti(nomorPerkara) {
         ? {
             nama: String(pihak[0].nama || ""),
             nomorIdentitas: String(pihak[0].nomorIdentitas || ""),
-            peran: peranPihakPertama(pokok.jenisPerkara),
+            peran: peranPihakPertama(pokok),
           }
         : null,
       nikah: nikah.length

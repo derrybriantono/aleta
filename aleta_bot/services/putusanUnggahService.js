@@ -266,8 +266,20 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
     else sebabTanpaPdf = ubah.alasan || "Pengubahan ke PDF gagal tanpa keterangan.";
   }
 
-  const akar = dokumenPenetapanService.akarSipp();
-  if (!akar) return { jenis, ok: false, alasan: "akar_sipp_belum_disetel" };
+  // Dua halangan yang berbeda, dan dulu keduanya bersembunyi di balik satu
+  // kalimat. "Belum disetel" dapat diperbaiki lewat pengaturan; "hanya baca"
+  // menuntut mount baru di docker-compose.yml dan container dijalankan ulang.
+  // Petugas yang membaca layar tidak dapat membedakannya sendiri, jadi
+  // pesannya yang harus membedakannya.
+  // Folder tujuannya disebut, sebab akar SIPP memang tetap hanya-baca dan
+  // yang dibuka untuk ditulis hanya folder putusan serta anonimisasinya.
+  const keadaanAkar = dokumenPenetapanService.periksaAkarSipp(undefined, {
+    relatif: `resources/file/${FOLDER[jenis] || "doc"}`,
+  });
+  if (!keadaanAkar.dapatDitulis) {
+    return { jenis, ok: false, alasan: keadaanAkar.alasan, pesan: keadaanAkar.pesan };
+  }
+  const akar = keadaanAkar.akar;
 
   // ==========================================================================
   // DUA JALUR, BUKAN SATU - DAN DULU KEDUANYA DIISI JALUR YANG SAMA
@@ -289,8 +301,16 @@ async function unggahSatu({ perkaraId, nomorPerkara, jenis, pdf, tanggalPutusan,
   try {
     fs.mkdirSync(path.dirname(penuhAsli), { recursive: true });
     fs.writeFileSync(penuhAsli, pdf);
+    // Pemilik dan izinnya disamakan dengan berkas bikinan SIPP sendiri.
+    // Tanpa itu berkasnya tercatat benar di basis data tetapi tidak terbaca
+    // oleh proses SIPP - gejalanya sama persis dengan berkas yang tidak
+    // pernah tertulis.
+    dokumenPenetapanService.samakanPemilikSipp(penuhAsli, akar);
     // PDF ditulis hanya bila ia memang ada DAN bukan berkas yang sama.
-    if (pdfTerbit && relatifPdf !== relatifAsli) fs.writeFileSync(penuhPdf, pdfTerbit);
+    if (pdfTerbit && relatifPdf !== relatifAsli) {
+      fs.writeFileSync(penuhPdf, pdfTerbit);
+      dokumenPenetapanService.samakanPemilikSipp(penuhPdf, akar);
+    }
   } catch (galat) {
     return {
       jenis,

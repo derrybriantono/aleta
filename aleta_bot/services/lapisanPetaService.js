@@ -326,42 +326,67 @@ async function kelilingAda(dari, sampai) {
  * bertemu, ia menjawab pertanyaan pembagian tugas - bukan menilai orangnya.
  *
  * ==========================================================================
- * DUA KOLOM BERNAMA jurusita_id YANG BUKAN HAL YANG SAMA
+ * jurusita_id PADA RELAAS BUKAN id JURUSITA - IA userid PENGGUNA SIPP
  * ==========================================================================
  *
- * Susunan pertama menyambung `perkara_pelaksanaan_relaas.jurusita_id` ke
- * `perkara_jurusita.jurusita_id`. Namanya sama, isinya bukan: dari 14.495
- * relaas, NOL yang menemukan namanya. Tidak ada galat - hanya kolom nama yang
- * kosong seluruhnya, dan peta yang seluruh desanya bertulis "tidak tercatat".
+ * Tiga sambungan dicoba, dan hanya satu yang benar. Diukur pada 14.495 baris
+ * perkara_pelaksanaan_relaas satker, 23 September 2026:
  *
- * Yang benar tabel induk `jurusita` lewat `id`: 7.101 dari 14.495 (49%).
+ *     ke perkara_jurusita.jurusita_id        0 dari 14.495  (0%)
+ *     ke jurusita.id                     7.101 dari 14.495  (49%)
+ *     ke sys_users.userid               14.490 dari 14.495  (99,97%)
+ *
+ * Dibuktikan pula oleh SIPP sendiri: data_relaas_c.php menulis
+ * 'jurusita_id' => $this->session->userdata('userid') - yang disimpan di
+ * sana userid orang yang MENGINPUT, bukan id jurusita.
+ *
+ * Bukti ketiga yang berdiri sendiri: kolom diinput_oleh pada baris yang sama
+ * mencocokkan sys_users.username pada 14.490 dari 14.490 - seratus persen.
  *
  * ==========================================================================
- * SATU ORANG, LIMA EJAAN
+ * "SATU ORANG, LIMA EJAAN" ITU KELIRU - MEREKA LIMA ORANG YANG BERBEDA
  * ==========================================================================
  *
- * Terukur pada tabel `jurusita`:
+ * Catatan lama di sini menyimpulkan bahwa empat ejaan pada tabel `jurusita`
+ * adalah satu orang yang sama, dan memutuskan untuk tidak menyatukannya.
+ * Kesimpulan itu salah, dan salahnya ke arah yang paling merugikan: nama yang
+ * disandingkan memang tidak cocok dengan orangnya.
  *
- *     MOH.SYUKRI, S.H        2.727 relaas
- *     Mohammad Syukri, SH    1.041
- *     Moh.Syukri               478
- *     MOH SYUKRI               431
+ *   userid  nama dari tabel jurusita   nama sebenarnya (sys_users)   baris
+ *   ------  ------------------------   --------------------------   -----
+ *     18    MOH.SYUKRI, S.H            Mohammad Syukri, S.H.        2.727  benar
+ *     20    MOH.SAM'AN                 Nurhadi                      2.016  SALAH
+ *     21    Mohammad Syukri, SH        Aguslin                      1.041  SALAH
+ *     17    Moh.Syukri                 Muh. Sam'an                    478  SALAH
+ *     19    MOH SYUKRI                 Fikrianto, S.H.                431  SALAH
+ *      1    Fikrianto, S.H.            (akun admin)                   408  SALAH
+ *     44    (tidak ada)                Tanty Restianty              3.279  HILANG
+ *     68    (tidak ada)                Mustini                      2.429  HILANG
  *
- * Empat baris itu satu orang. Dihitung apa adanya, ia tampak sebagai empat
- * jurusita yang masing-masing memikul seperempat beban. Ejaannya TIDAK
- * disatukan di sini - menyamakan nama orang dengan menebak kemiripan adalah
- * cara tercepat menggabungkan dua orang yang berbeda. Yang dikerjakan
- * menyebutkan keadaan itu di layar.
+ * Jadi 4.374 dari 7.101 baris yang dinamai (61,6%) menyebut ORANG LAIN, dan
+ * dua jurusita tersibuk - Tanty Restianty dan Mustini, bersama 5.708 relaas -
+ * tidak pernah muncul sama sekali karena userid mereka tidak ada di tabel
+ * `jurusita`.
+ *
+ * Tabel `jurusita` sendiri memang basi: user_jurusita memetakan userid 17
+ * yang fullname-nya "Muh. Sam'an" ke Aguslin, userid 43 "Artia Toha" ke
+ * Mohammad Syukri, dan seterusnya. Karena itu ia tidak dipakai untuk nama.
+ *
+ * Peta ini menyebut siapa yang melayani desa mana. Menyebut nama yang keliru
+ * di sana bukan ketidakrapian - ia menuduh orang yang tidak mengerjakannya,
+ * dan memuji orang yang tidak mengantarkannya.
  */
 async function jurusitaDesa(dari, sampai) {
   const baris = await kueri(
-    `SELECT p.kelurahan AS kode, js.nama AS jurusita, COUNT(*) AS n
+    `SELECT p.kelurahan AS kode,
+            COALESCE(NULLIF(u.fullname, ''), NULLIF(r.diinput_oleh, '')) AS jurusita,
+            COUNT(*) AS n
        FROM perkara_pelaksanaan_relaas r
        JOIN pihak p ON p.id = r.pihak_id
-       LEFT JOIN jurusita js ON js.id = r.jurusita_id
+       LEFT JOIN sys_users u ON u.userid = r.jurusita_id
       WHERE r.tanggal_relaas BETWEEN ? AND ?
         AND p.kelurahan IS NOT NULL AND p.kelurahan NOT IN ('', '0')
-      GROUP BY p.kelurahan, js.nama`,
+      GROUP BY p.kelurahan, jurusita`,
     [dari, sampai]
   );
 
@@ -383,11 +408,10 @@ async function jurusitaDesa(dari, sampai) {
     satuan: "kategori",
     judul: "Jurusita yang melayani",
     keterangan:
-      "Jurusita yang paling sering mengantar relaas ke desa itu. Nama terbaca pada 7.101 dari " +
-      "14.495 relaas (49%). SATU ORANG KADANG PUNYA BEBERAPA EJAAN di tabel jurusita - " +
-      "\"MOH.SYUKRI, S.H\" 2.727 relaas dan \"Mohammad Syukri, SH\" 1.041 adalah orang yang sama - " +
-      "dan ejaannya sengaja tidak disatukan: menebak kemiripan nama adalah cara tercepat " +
-      "menggabungkan dua orang yang berbeda.",
+      "Jurusita yang paling sering mengantar relaas ke desa itu. Namanya dibaca dari akun " +
+      "penggunanya di SIPP - terbaca pada 14.490 dari 14.495 relaas (99,97%). Sampai 2.33.0 " +
+      "nama itu dicari di tabel jurusita lewat id yang bukan miliknya, dan 61,6% baris yang " +
+      "bernama menyebut ORANG LAIN sementara dua jurusita tersibuk tidak pernah muncul.",
     desa: [...peta.values()].map((x) => ({
       kode: x.kode,
       nilai: x.orang,
@@ -442,6 +466,107 @@ const LAPISAN = Object.assign(Object.create(null), {
   jurusita: jurusitaDesa,
 });
 
+/**
+ * ============================================================================
+ * SEBARAN RELAAS PER JURUSITA - PERTANYAAN YANG BERLAWANAN ARAH
+ * ============================================================================
+ *
+ * Lapisan "Jurusita yang melayani" menjawab "siapa yang paling sering ke desa
+ * ini". Yang ditanyakan di sini kebalikannya, dan ia dibaca orang yang
+ * berbeda: ketua atau panitera yang hendak membagi beban, bukan yang sedang
+ * melihat peta.
+ *
+ *     desa mana saja yang dikerjakan orang ini
+ *     berapa relaas, berapa desa, berapa yang KEMBALI
+ *
+ * Diminta pengguna 22 September 2026.
+ *
+ * ============================================================================
+ * BERDIRI DI ATAS SAMBUNGAN NAMA YANG BARU DIBETULKAN
+ * ============================================================================
+ *
+ * Sampai 2.33.0 nama jurusita dicari di tabel `jurusita` lewat id yang bukan
+ * miliknya - jurusita_id pada relaas adalah sys_users.userid, bukan
+ * jurusita.id. Akibatnya 61,6% baris yang bernama menyebut ORANG LAIN, dan
+ * dua jurusita tersibuk (Tanty Restianty 3.279 relaas, Mustini 2.429) tidak
+ * pernah muncul sama sekali.
+ *
+ * Daftar beban yang disusun di atas sambungan itu bukan sekadar tidak
+ * berguna - ia menuduh orang yang salah, dengan angka yang tampak pasti.
+ *
+ * ============================================================================
+ * RETUR DIBACA DARI status_pos, DAN HANYA ITU
+ * ============================================================================
+ *
+ * status_pos = 2 berarti surat kembali. Panggilan yang gagal karena jurusita
+ * tidak bertemu pihaknya TIDAK dihitung di sini - itu sandi ket_temu, dan
+ * keduanya persoalan yang berbeda: yang satu alamatnya, yang lain orangnya.
+ */
+async function sebaranJurusita(dari, sampai) {
+  const baris = await kueri(
+    `SELECT COALESCE(NULLIF(u.fullname, ''), NULLIF(r.diinput_oleh, '')) AS jurusita,
+            p.kelurahan AS desa,
+            COUNT(*) AS n,
+            SUM(CASE WHEN r.status_pos = 2 THEN 1 ELSE 0 END) AS retur
+       FROM perkara_pelaksanaan_relaas r
+       LEFT JOIN pihak p ON p.id = r.pihak_id
+       LEFT JOIN sys_users u ON u.userid = r.jurusita_id
+      WHERE r.tanggal_relaas BETWEEN ? AND ?
+      GROUP BY jurusita, p.kelurahan`,
+    [dari, sampai]
+  );
+
+  const orang = new Map();
+  for (const b of baris) {
+    // Yang namanya tidak terbaca dikumpulkan sendiri, bukan dibuang. Nol
+    // relaas tanpa nama akan terbaca sebagai "seluruhnya sudah bernama" -
+    // dan justru ketidaklengkapannya yang perlu diketahui.
+    // "0" diperlakukan sama dengan kosong: itu nilai bawaan kolom
+    // diinput_oleh yang tidak pernah diisi, bukan nama seseorang.
+    const namaMentah = bersih(b.jurusita);
+    const nama = !namaMentah || namaMentah === "0" ? "tidak tercatat" : namaMentah;
+    const isi = orang.get(nama) || { nama, relaas: 0, retur: 0, desa: new Map() };
+    const n = bilangan(b.n);
+    const kembali = bilangan(b.retur);
+    isi.relaas += n;
+    isi.retur += kembali;
+    const kodeDesa = bersih(b.desa);
+    if (kodeDesa && kodeDesa !== "0") {
+      const lama = isi.desa.get(kodeDesa) || { kode: kodeDesa, relaas: 0, retur: 0 };
+      lama.relaas += n;
+      lama.retur += kembali;
+      isi.desa.set(kodeDesa, lama);
+    }
+    orang.set(nama, isi);
+  }
+
+  const daftar = [...orang.values()]
+    .map((x) => ({
+      nama: x.nama,
+      relaas: x.relaas,
+      retur: x.retur,
+      // Persen retur disusun di sini, bukan di layar: dua layar yang
+      // menghitungnya sendiri-sendiri akan berselisih pada pembulatan.
+      persenRetur: x.relaas > 0 ? Math.round((x.retur / x.relaas) * 1000) / 10 : 0,
+      jumlahDesa: x.desa.size,
+      desa: [...x.desa.values()].sort((a, b) => b.relaas - a.relaas).slice(0, 25),
+    }))
+    .sort((a, b) => b.relaas - a.relaas);
+
+  const total = daftar.reduce((n, x) => n + x.relaas, 0);
+  const tanpaNama = daftar.find((x) => x.nama === "tidak tercatat");
+
+  return {
+    dari,
+    sampai,
+    total,
+    // Disebutkan apa adanya supaya angkanya dapat ditimbang. Daftar beban
+    // yang menyembunyikan bagian tak bernamanya akan dibaca sebagai lengkap.
+    tanpaNama: tanpaNama ? tanpaNama.relaas : 0,
+    jurusita: daftar.filter((x) => x.nama !== "tidak tercatat"),
+  };
+}
+
 module.exports = {
   LAPISAN,
   AMBANG,
@@ -454,4 +579,5 @@ module.exports = {
   pihakBerulang,
   perubahanTahun,
   jurusitaDesa,
+  sebaranJurusita,
 };

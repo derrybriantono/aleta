@@ -616,6 +616,38 @@ function alatPasangLencana(panel, kunci) {
   // dblclick tetap dipasang supaya tarikan yang berakhir dengan ketukan
   // cepat - yang penandanya masih menyala - tetap dapat membentangkan.
   const bentangkan = (peristiwa) => {
+    // ====================================================================
+    // KLIK DARI SEBUAH TOMBOL BUKAN KLIK PADA LENCANA
+    // ====================================================================
+    //
+    // Inilah yang membuat tombol ciutkan "tidak bekerja" di panel ABT dan
+    // panel portal - dan kerjanya justru sempurna, hanya dibatalkan
+    // seketika oleh pendengar ini.
+    //
+    // Urutannya dalam SATU peristiwa klik:
+    //   1. tombol .aleta-lipat ditekan  -> alatCiutkan(..., true)
+    //   2. panel menyandang KELAS_LENCANA          <- sudah menciut
+    //   3. peristiwa yang sama menggelembung ke panel
+    //   4. bentangkan berjalan; pagar KELAS_LENCANA di bawah justru TERBUKA,
+    //      sebab kelasnya baru saja dipasang tiga langkah sebelumnya
+    //   5. alatCiutkan(..., false)                 <- terbentang lagi
+    //
+    // Hasil bersihnya nol, tanpa satu galat pun. Bukti yang menguatkan:
+    // tombolnya BERHASIL tepat sesudah panel digeser - sebab penanda
+    // baruDigeser masih menyala dan menghentikan langkah 4.
+    //
+    // Panel SIPP tidak terkena karena pendengarnya dipasang pada elemen
+    // lencananya, bukan pada panel. Di sini ia memang harus pada panel -
+    // tangkapan penunjuk membelokkan klik ke panel, lihat catatan panjang di
+    // bawah - jadi yang ditambahkan pagarnya, bukan tempatnya.
+    //
+    // Aman: begitu panel menjadi lencana, seluruh kepala beserta tombolnya
+    // display:none, sehingga tidak ada tombol yang dapat ditekan untuk
+    // membentangkannya kembali.
+    const sasaran = peristiwa && peristiwa.target;
+    if (sasaran && typeof sasaran.closest === "function") {
+      if (sasaran.closest("button, a, input, select, textarea, label")) return;
+    }
     if (!panel.classList.contains(KELAS_LENCANA)) return;
     if (panel.dataset.baruDigeser === "1") {
       // Tarikan, bukan klik. Penandanya dilepas supaya klik BERIKUTNYA -

@@ -93,7 +93,10 @@ function alineaPembuka(masukan: {
 
   const teks =
     `Menimbang, bahwa ${masukan.sebutanPenggugat} ${penggugat || "[belum tercatat]"} telah mengajukan ` +
-    `${masukan.sebutanPenggugat === "Pemohon" ? "permohonan" : "gugatan"} terhadap ` +
+    // Kesamaan PERSIS dengan "Pemohon" tidak cukup: sebutannya dapat
+    // berbunyi "para Pemohon" pada perkara berpihak banyak, dan "Penuntut
+    // Umum" pada jinayat. Yang diperiksa awalannya.
+    `${/^(para\s+)?Pemohon$/i.test(masukan.sebutanPenggugat) ? "permohonan" : "gugatan"} terhadap ` +
     `${masukan.sebutanTergugat} ${tergugat || "[belum tercatat]"}, yang didaftarkan di kepaniteraan ` +
     `pada tanggal ${tanggal ? tanggalIndonesia(tanggal) : "[belum tercatat]"} ` +
     `dengan Nomor ${nomor || "[belum tercatat]"};`;

@@ -47,6 +47,7 @@ const {
 } = require("../config/runtime-config");
 const db = require("../db_config");
 const logService = require("./logService");
+const sebutanPihakService = require("./sebutanPihakService");
 const messageQueueService = require("./messageQueueService");
 const sippSkemaService = require("./sippSkemaService");
 const { cleanText } = require("./ecourtTextService");
@@ -197,15 +198,26 @@ function cocokkanPegawai(namaSipp, recipients) {
   );
 }
 
-/** Sebutan pihak menurut kedudukan dan jenis perkaranya. */
-function sebutanPihak(pihakKe, jenis, jenisPerkara) {
-  const permohonan = /permohonan|itsbat|dispensasi|wali|poligami|asal.?usul|perwalian|pengangkatan/i.test(
-    String(jenisPerkara || "")
+/**
+ * Sebutan pihak menurut kedudukan dan jenis perkaranya.
+ *
+ * ============================================================================
+ * SALAH PADA 5.254 DARI 5.581 PERKARA - DAN KELUARANNYA DIKIRIM KE ORANGNYA
+ * ============================================================================
+ *
+ * Pola lama menuntut kata "itsbat", sedangkan SIPP menulis "Istbat". Satu
+ * huruf yang tertukar, dan 3.972 perkara pengesahan perkawinan menerima pesan
+ * WhatsApp yang menyapa mereka "Penggugat" padahal mereka Pemohon. Ia juga
+ * tidak mengenal cerai talak sama sekali - 1.166 perkara lagi.
+ *
+ * Aturannya kini satu tempat saja; sebab dan angkanya di sebutanPihakService.
+ */
+function sebutanPihak(pihakKe, jenis, jenisPerkara, bahanTambahan) {
+  return sebutanPihakService.sebutanSatuPihak(
+    pihakKe,
+    { ...(bahanTambahan || {}), jenisPerkaraNama: jenisPerkara },
+    jenis
   );
-  const pokok = Number(pihakKe) === 2
-    ? permohonan ? "Termohon" : "Tergugat"
-    : permohonan ? "Pemohon" : "Penggugat";
-  return jenis === "kuasa" ? `Kuasa ${pokok}` : pokok;
 }
 
 /** Peran petugas untuk kalimat pesan. */
@@ -271,7 +283,11 @@ function paraPihakRapi(teks) {
 function susunPesanPihak(perkara, penerima, runtimeConfig) {
   const pengadilan = namaPengadilan(runtimeConfig);
   const kontak = kontakPengadilan(runtimeConfig);
-  const kedudukan = sebutanPihak(penerima.pihakKe, penerima.jenis, perkara.jenisPerkara);
+  const kedudukan = sebutanPihak(penerima.pihakKe, penerima.jenis, perkara.jenisPerkara, {
+    alurPerkaraId: perkara.alurPerkaraId,
+    jenisPerkaraId: perkara.jenisPerkaraId,
+    nomorPerkara: perkara.nomorPerkara,
+  });
   const baris = [
     "Assalamu'alaikum Warahmatullahi Wabarakatuh.",
     "",
@@ -383,9 +399,16 @@ async function bacaPerkaraLengkap(jendelaHari) {
   }
 
   const rows = await runQuery(
+    // alur_perkara_id dan jenis_perkara_id ikut dibaca. Tanpa keduanya,
+    // sebutan pihak jatuh ke pencocokan KATA - dan kata "Istbat Nikah" ada
+    // pada 81 perkara satker yang alurnya justru GUGATAN, sehingga mereka
+    // akan disapa "Pemohon" padahal Penggugat. Pesan ini dikirim ke nomor
+    // WhatsApp orangnya.
     `SELECT p.perkara_id                    AS perkaraId,
             p.nomor_perkara                 AS nomorPerkara,
             p.jenis_perkara_nama            AS jenisPerkara,
+            p.alur_perkara_id               AS alurPerkaraId,
+            p.jenis_perkara_id              AS jenisPerkaraId,
             p.tanggal_pendaftaran           AS tanggalDaftar,
             p.para_pihak                    AS paraPihak,
             pp.penetapan_majelis_hakim      AS pmh,
@@ -433,6 +456,8 @@ async function bacaPerkaraLengkap(jendelaHari) {
     perkaraId: Number(row.perkaraId) || 0,
     nomorPerkara: cleanText(row.nomorPerkara),
     jenisPerkara: cleanText(row.jenisPerkara),
+    alurPerkaraId: row.alurPerkaraId,
+    jenisPerkaraId: row.jenisPerkaraId,
     tanggalDaftar: row.tanggalDaftar,
     paraPihak: String(row.paraPihak || ""),
     pmh: row.pmh,
@@ -572,7 +597,11 @@ async function susunDaftar(definisi, perkaraSemua, runtimeConfig) {
           nomorPerkara: satu.nomorPerkara,
           nomor,
           nama: orang.nama,
-          peran: sebutanPihak(orang.pihakKe, orang.jenis, satu.jenisPerkara),
+          peran: sebutanPihak(orang.pihakKe, orang.jenis, satu.jenisPerkara, {
+            alurPerkaraId: satu.alurPerkaraId,
+            jenisPerkaraId: satu.jenisPerkaraId,
+            nomorPerkara: satu.nomorPerkara,
+          }),
           kunci: kunciIdempoten(definisi, satu, `${orang.jenis}-${orang.pihakId || nomor}`),
           pesan: susunPesanPihak(satu, orang, runtimeConfig),
         });

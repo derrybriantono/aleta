@@ -57,6 +57,30 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.166.0",
+    dirilis: "2026-09-23T15:40:00+08:00",
+    judul: "Saklar centang yang tercentang tetapi tidak menyala",
+    butir: [
+      "SAKLAR TERCENTANG TETAPI FITURNYA TIDAK MUNCUL, dan baru muncul sesudah dimatikan lalu dinyalakan lagi. Dilaporkan pada \"Sisipkan berkas ke Jadwal Sidang\", dan sebabnya ternyata mengenai SELURUH saklar penanda halaman. Halaman perkara SIPP memuat isinya bertahap - baris Jadwal Sidang, Data Relaas, dan Data Persidangan datang lewat AJAX beberapa saat sesudah panel ALETA selesai digambar. Ketika baris-baris itu muncul, ALETA memeriksa apakah perlu menggambar ulang, mendapati nomor perkaranya belum berganti, lalu pulang - sehingga penanda dan sisipan hanya pernah terpasang pada isi yang SUDAH ada saat penggambaran pertama. Mematikan lalu menyalakan saklarnya menempuh jalur lain yang memasang penandanya langsung, dan itulah sebabnya ia seolah baru bekerja sesudah diutak-atik.",
+      "SELURUH LIMA SAKLAR DIPERIKSA, bukan hanya yang dilaporkan. Keadaan saklar disalin ke memori dan diperbarui pendengar penyimpanan; salinan itu dapat basi tanpa satu pun tanda - tab yang dibekukan peramban tidak menerima pemberitahuan perubahan, dan ekstensi yang dimuat ulang meninggalkan tab lama tanpa pendengar sama sekali. Sekarang salinannya disegarkan sekali tiap putaran penggambaran, dan dua saklar yang menentukan PERBUATAN - cetak tiga berkas dan sunting langsung ABT - dibaca ulang tepat sebelum dipakai. Gagal membaca dianggap MATI, bukan menyala.",
+      "JEDA ANTAR-PERKARA PADA ANTRIAN SIDANG kini menyebut nomor antrian tetangganya. Angkanya sudah benar sejak awal, tetapi tidak dapat diperiksa siapa pun: antrian 1 bertulis \"H-35\" sedangkan antrian 2 tepat di bawahnya bertulis \"+4\" - padahal jamnya berjarak 39 menit. Keduanya benar, sebab ada perkara yang dipanggil di antaranya dan tidak ikut tergambar karena daftarnya sedang disaring. Yang tidak tampil pun sekarang dikatakan, bukan didiamkan.",
+    ],
+  },
+  {
+    versi: "1.165.0",
+    dirilis: "2026-09-23T12:10:00+08:00",
+    judul: "Saklar cetak tiga berkas yang tidak menuruti keadaannya, dan unggah putusan yang berhenti sebelum mulai",
+    butir: [
+      "CETAK TIGA BERKAS TETAP BERJALAN WALAU SAKLARNYA DIMATIKAN. Keadaan saklar disalin ke memori saat panel dibangun, lalu diikuti lewat chrome.storage.onChanged - dan salinan itu dapat basi tanpa satu pun tanda: tab yang dibekukan peramban tidak menerima onChanged, panel yang ditutup lalu dibuka melewati pembacaannya, dan ekstensi yang dimuat ulang meninggalkan tab lama tanpa pendengar sama sekali. Sekarang saklarnya DIBACA ULANG sesudah klik ditahan, sebelum satu berkas pun diterbitkan; bila ternyata mati, tautan CETAK milik ABT dijalankan apa adanya sehingga yang turun satu blangko saja - sebagaimana yang diminta.",
+      "UNDUHAN YANG DIBLOKIR PERAMBAN tidak lagi dikira berhasil. Chrome memulangkan id unduhan lalu memblokirnya kemudian sebagai berkas tidak terverifikasi; panel yang hanya membaca id mengira berhasil, dan cara cadangannya tidak pernah dipakai. Keberhasilannya kini dibuktikan sebentar, dan yang terputus turun lewat tautan halaman.",
+      "KODE GALAT UNGGAH PUTUSAN diterjemahkan ke kalimat yang dapat dikerjakan. \"akar_sipp_belum_disetel\" yang tampil merah di layar benar sebagai kode dan tidak berguna sama sekali bagi panitera pengganti yang membacanya; sekarang ia berbunyi apa yang tidak dapat dikerjakan ALETA dan siapa yang dapat mengerjakannya.",
+      "BERKAS e-COURT DICOCOKKAN LEWAT TANGGAL SIDANG, kata sebagai cadangan. Tiap dokumen kini membawa tanggal sidang bloknya sendiri dari halaman e-Court, sedangkan pencocokan dari kata gagal memisahkan pada 15,6% pasangan (perkara, kata-tahapan) - 304 dari 1.947 punya lebih dari satu baris sidang berkata sama, dan berkas yang sama menempel di semuanya.",
+      "CHIP JENIS PERKARA pada kepala panel ABT membaca variabel 0048 (\"Cerai Gugat\", \"Dispensasi Kawin\"), bukan alur dari nomor perkara. Seluruh perkara Pdt.P dulu berbunyi \"Permohonan\" - benar, dan tidak menerangkan apa pun.",
+      "PELAKU DAN LAWAN TIDAK LAGI TERTUKAR pada panel saksi SDG. Kesepakatannya pelaku = 0047 (Tergugat/Termohon), dan jalur ini satu-satunya yang mengirimnya terbalik - sehingga jawaban \"siapa yang meninggalkan kediaman bersama\" menyebut pihak yang keliru, dan jawaban itu masuk ke berita acara sidang yang ditandatangani.",
+      "TOMBOL CIUTKAN PANEL yang \"tidak bekerja\" ternyata bekerja: panel menciut, lalu klik yang sama menggelembung ke panel dan langsung membentangkannya kembali dalam satu peristiwa. Klik yang berasal dari sebuah tombol kini tidak lagi membentangkan.",
+    ],
+  },
+  {
     versi: "1.164.0",
     dirilis: "2026-09-22T21:10:00+08:00",
     judul: "Putusan RTF diterima, dan tata letak layar Antrian Sidang dirapikan",

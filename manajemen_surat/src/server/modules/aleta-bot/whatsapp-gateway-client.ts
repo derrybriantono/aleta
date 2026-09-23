@@ -980,7 +980,20 @@ export type JenisBerkasSipp =
 
 export async function ambilBerkasSippGateway(
   jenis: JenisBerkasSipp,
-  id: string
+  id: string,
+  /**
+   * Sinyal pembatal dari pemanggil.
+   *
+   * Dulu tidak ada sama sekali, dan fetch tanpa batas waktu berarti satu
+   * berkas yang menggantung menggantungkan SELURUH permintaan - termasuk
+   * penyusunan ZIP yang menarik puluhan berkas berurutan. Di peladen ini ada
+   * satu inode XFS rusak (berita acara sidang 2018) yang membuat pembacaan
+   * gagal dengan EUCLEAN sesudah menggantung, jadi keadaan itu bukan
+   * kemungkinan teoretis.
+   *
+   * Pemanggil yang tidak menyebutnya tetap berjalan seperti sebelumnya.
+   */
+  signal?: AbortSignal
 ): Promise<Response> {
   const params = new URLSearchParams({ jenis, id });
   const token = getGatewayToken();
@@ -989,6 +1002,7 @@ export async function ambilBerkasSippGateway(
     {
       headers: token ? { "x-aleta-internal-token": token } : {},
       cache: "no-store",
+      signal,
     }
   );
 }
@@ -1314,7 +1328,18 @@ export type RincianSidang = {
   ok: boolean;
   alasan: string;
   nomorPerkara: string;
+  /**
+   * perkara_id pada SIPP.
+   *
+   * Bot sudah memulangkannya sejak lama (sippJadwalSidangService.rincianSidang),
+   * tetapi tipenya tidak pernah menyebutnya - jadi tidak satu pun pemanggil
+   * TypeScript dapat memakainya, dan setiap yang membutuhkannya terpaksa
+   * memintanya dari peramban. Jalur berkas tidak boleh datang dari peramban.
+   */
+  perkaraId: string;
   jenisPerkara: string;
+  /** Gugatan atau permohonan - kolom perkara.petitum_dok, bukan perkara_dokumen. */
+  petitum?: { ada: boolean; berkas: string };
   majelis: Array<{ kode: string; nama: string; jabatan: string }>;
   panitera: Array<{ kode: string; nama: string }>;
   jurusita: Array<{ kode: string; nama: string }>;
@@ -1673,6 +1698,15 @@ export type AntrianBarisGateway = {
   pihak2: string;
   saksi: string;
   keadaan: "menunggu" | "dipanggil" | "belum-ambil";
+  /**
+   * Sudah berapa menit menunggu giliran - dihitung basis data mesin antrian
+   * sendiri, bukan oleh Node maupun peramban.
+   *
+   * null berarti TIDAK dihitung: sudah dipanggil masuk, atau belum ada yang
+   * mengambil nomor. Nol berarti baru saja mengambil - keadaan yang sungguh
+   * terjadi, dan berbeda sama sekali dari null.
+   */
+  menitMenunggu?: number | null;
   jamPanggil: string;
   noRuang: number | null;
   ruanganId: number | null;
@@ -2066,6 +2100,51 @@ export async function getGatewayLapisanPeta(pilihan: {
   if (pilihan.dari) kueri.set("dari", pilihan.dari);
   if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
   return gatewayFetch(`/internal/aleta-bot/sipp/peta-perkara/lapisan?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/** Satu jurusita beserta sebaran pekerjaannya. */
+export type SebaranJurusita = {
+  nama: string;
+  relaas: number;
+  retur: number;
+  /** Disusun di bot, bukan di layar - dua layar yang menghitungnya sendiri akan berselisih pembulatan. */
+  persenRetur: number;
+  jumlahDesa: number;
+  desa: Array<{ kode: string; relaas: number; retur: number }>;
+};
+
+export type SebaranJurusitaGateway = {
+  ok: boolean;
+  dari: string;
+  sampai: string;
+  total: number;
+  /** Relaas yang nama jurusitanya tidak terbaca - disebut apa adanya. */
+  tanpaNama: number;
+  jurusita: SebaranJurusita[];
+};
+
+/**
+ * Sebaran relaas per jurusita - siapa mengerjakan berapa, di berapa desa, dan
+ * berapa yang kembali.
+ *
+ * Berdiri di atas sambungan nama yang dibetulkan 23 September 2026. Sebelum
+ * itu, 61,6% baris yang bernama menyebut ORANG LAIN - daftar beban yang
+ * disusun di atasnya bukan sekadar tidak berguna, ia menuduh yang salah.
+ */
+export async function getGatewaySebaranJurusita(pilihan: {
+  periode?: string;
+  acuan?: string;
+  dari?: string;
+  sampai?: string;
+}): Promise<GatewayResult<SebaranJurusitaGateway>> {
+  const kueri = new URLSearchParams();
+  if (pilihan.periode) kueri.set("periode", pilihan.periode);
+  if (pilihan.acuan) kueri.set("acuan", pilihan.acuan);
+  if (pilihan.dari) kueri.set("dari", pilihan.dari);
+  if (pilihan.sampai) kueri.set("sampai", pilihan.sampai);
+  return gatewayFetch(`/internal/aleta-bot/sipp/sebaran-jurusita?${kueri.toString()}`, {
     timeoutMs: TIMEOUT_PENILAIAN_MS,
   });
 }

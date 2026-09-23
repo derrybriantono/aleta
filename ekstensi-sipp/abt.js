@@ -76,6 +76,15 @@ const VAR_POSITA = "5125";
  * jadi keduanya TIDAK ditebak dari klasifikasi perkara, melainkan dibaca dari
  * variabel yang memang menyimpannya.
  */
+/**
+ * "Jenis Perkara" menurut SIPP - perkara.jenis_perkara_nama.
+ *
+ * Berisi kalimat yang sungguh menerangkan: "Cerai Gugat", "Dispensasi Kawin",
+ * "Pengesahan Perkawinan/Istbat Nikah". Bandingkan dengan alur pada nomor
+ * perkara, yang hanya memisahkan gugatan dari permohonan.
+ */
+const VAR_JENIS_PERKARA = "0048";
+
 const VAR_PIHAK_LAWAN = "0046";
 const VAR_PIHAK_PELAKU = "0047";
 
@@ -1036,6 +1045,24 @@ let suntingLangsungNyala = false;
 void alatSuntingLangsung().then((n) => {
   suntingLangsungNyala = n;
 });
+
+/**
+ * Membaca ulang saklar sunting langsung dari penyimpanan.
+ *
+ * Sama sebabnya dengan saklarCetakSekarang: salinan di memori dapat basi
+ * tanpa satu pun tanda, dan yang ditentukannya PERBUATAN - menulis langsung
+ * ke blangko ABT. Gagal membaca dianggap MATI, bukan menyala: yang ragu tidak
+ * menulis apa pun ke berkas orang.
+ */
+async function suntingLangsungSekarang() {
+  try {
+    const nyala = await alatSuntingLangsung();
+    suntingLangsungNyala = nyala === true;
+    return suntingLangsungNyala;
+  } catch {
+    return false;
+  }
+}
 try {
   chrome.storage.onChanged.addListener((perubahan, wilayah) => {
     if (wilayah !== "local" || !perubahan[KUNCI_SUNTING_LANGSUNG]) return;
@@ -1089,6 +1116,33 @@ const ALETA_API_PDF = "/aleta/api/aleta-bot/abt/pdf";
  * sebesar itu tidak pantas diambil sendiri oleh sebuah pembaruan.
  */
 let cetakTigaMenyala = false;
+
+/**
+ * Membaca ulang saklar dari penyimpanan, bukan dari salinan di memori.
+ *
+ * Dipakai tepat sebelum tiga berkas diterbitkan. Salinan di memori dapat basi
+ * tanpa satu pun tanda - lihat keterangan panjang di pasangPenjagaCetak - dan
+ * yang dipertaruhkan bukan kerapian melainkan tiga unduhan yang tidak diminta.
+ *
+ * Gagal membaca dianggap MATI, bukan menyala. Yang ragu tidak menerbitkan apa
+ * pun: petugas masih mendapat blangko ABT-nya, dan itu keadaan yang dapat
+ * diperbaiki sendiri. Tiga berkas yang tidak diminta tidak.
+ */
+async function saklarCetakSekarang() {
+  try {
+    const simpan = await chrome.storage.local.get([KUNCI_CETAK_TIGA]);
+    const nyala = simpan[KUNCI_CETAK_TIGA] === true;
+    // Salinannya ikut diluruskan, supaya penanda "3" pada tautan berhenti
+    // berbohong pada tekanan berikutnya.
+    if (nyala !== cetakTigaMenyala) {
+      cetakTigaMenyala = nyala;
+      segarkanPenandaCetak();
+    }
+    return nyala;
+  } catch {
+    return false;
+  }
+}
 
 async function muatSaklarCetak() {
   try {
@@ -1283,6 +1337,19 @@ function base64DariBuffer(buffer) {
  * kehilangan berkas yang sebenarnya sudah siap.
  */
 async function terbitkanTigaBerkas(alamatPreview, jatiDiri, lapor) {
+  // ==========================================================================
+  // PAGAR TERAKHIR - DAN SENGAJA BERLAPIS DENGAN YANG DI PEMANGGILNYA
+  // ==========================================================================
+  //
+  // Pemanggilnya sudah memeriksa saklarnya. Pemeriksaan kedua di sini menjaga
+  // pemanggil yang KELAK ditambahkan dan lupa memeriksanya - dan fungsi yang
+  // menerbitkan tiga unduhan tanpa diminta adalah fungsi yang tidak boleh
+  // bergantung pada kehati-hatian pemanggilnya.
+  if (!(await saklarCetakSekarang())) {
+    lapor("Cetak tiga berkas sedang dimatikan - tidak ada yang diterbitkan.", true);
+    return { rtf: "dimatikan", pdf: "dimatikan", anonim: "dimatikan" };
+  }
+
   const nomor = nomorPerkaraAbt();
   const hasil = { rtf: "", pdf: "", anonim: "" };
 
@@ -1746,8 +1813,18 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   // TANPA DIMAKSUD, dan pada halaman tempat naskah putusan disusun perbedaan
   // itu yang menentukan.
   isi.addEventListener("click", () => {
-    if (!suntingLangsungNyala) return;
-    mulaiSunting();
+    // Dibaca ULANG dari penyimpanan, bukan dari salinan di memori. Salinan itu
+    // dapat basi tanpa satu pun tanda - tab yang dibekukan peramban tidak
+    // menerima onChanged, dan ekstensi yang dimuat ulang meninggalkan tab lama
+    // tanpa pendengar sama sekali.
+    //
+    // Menunggu satu putaran tidak terasa oleh yang menekan, dan yang dicegah
+    // nyata: penyunting yang terbuka TANPA DIMAKSUD pada halaman tempat naskah
+    // putusan disusun.
+    void (async () => {
+      if (!(await suntingLangsungSekarang())) return;
+      mulaiSunting();
+    })();
   });
   isi.addEventListener("keydown", (peristiwa) => {
     if (peristiwa.key === "Enter" || peristiwa.key === " ") {
@@ -1972,8 +2049,40 @@ function pasangPenjagaCetak(jatiDiri, lapor) {
       // popup - lihat cetakTigaMenyala.
       if (!cetakTigaMenyala) return;
 
+      // ====================================================================
+      // DITAHAN DULU, DIBUKTIKAN KEMUDIAN - DAN URUTAN ITU DISENGAJA
+      // ====================================================================
+      //
+      // Salinan di memori dapat BASI: tab yang dibekukan peramban tidak
+      // menerima chrome.storage.onChanged, panel yang ditutup lalu dibuka
+      // melewati muatSaklarCetak, dan ekstensi yang dimuat ulang
+      // meninggalkan tab lama tanpa pendengar sama sekali. Pada ketiganya
+      // salinannya tetap menyala walau saklarnya sudah dimatikan - dan
+      // itulah keluhan 23 September 2026: dimatikan, tetapi tetap tiga
+      // berkas.
+      //
+      // Klik tetap ditahan lebih dulu, sebab menahannya kemudian sudah
+      // terlambat - halamannya keburu berpindah. Sesudah ditahan, saklarnya
+      // dibaca ULANG dari penyimpanan; bila ternyata mati, tautan ABT-nya
+      // dijalankan sendiri sehingga petugas tetap mendapat blangkonya, satu
+      // berkas, sebagaimana yang dimintanya.
       peristiwa.preventDefault();
-      void terbitkanTigaBerkas(tautan.href, jatiDiri, lapor);
+      void (async () => {
+        if (await saklarCetakSekarang()) {
+          void terbitkanTigaBerkas(tautan.href, jatiDiri, lapor);
+          return;
+        }
+        // Dijalankan seperti tautan biasa - bukan window.open, yang tertahan
+        // pemblokir popup, dan bukan location.assign, yang menukar halaman
+        // blangko yang sedang dikerjakan petugas dengan halaman unduhan.
+        const pengganti = document.createElement("a");
+        pengganti.href = tautan.href;
+        pengganti.rel = "noopener";
+        if (tautan.target) pengganti.target = tautan.target;
+        document.body.appendChild(pengganti);
+        pengganti.click();
+        pengganti.remove();
+      })();
     });
   }
 }
@@ -2062,8 +2171,22 @@ async function muatPenggunaAleta() {
   return penggunaAletaAbt;
 }
 
-/** Jenis perkara dari nomornya: Pdt.G gugatan, Pdt.P permohonan. */
-function jenisPerkaraDariNomor(nomor) {
+/**
+ * ALUR perkara dari nomornya: Pdt.G gugatan, Pdt.P permohonan.
+ *
+ * Namanya dulu jenisPerkaraDariNomor, dan nama itu MENJANJIKAN yang tidak
+ * dikerjakannya. Yang dibacanya kode pada nomor perkara, dan kode itu hanya
+ * memisahkan gugatan dari permohonan - dua alur, bukan jenis.
+ *
+ * Jenis perkara adalah "Cerai Gugat", "Dispensasi Kawin", "Pengesahan
+ * Perkawinan/Istbat Nikah" - dan tidak satu pun dapat diturunkan dari
+ * nomornya. Seluruh perkara Pdt.P memakai kode yang sama, entah ia istbat
+ * nikah, dispensasi kawin, atau penetapan ahli waris.
+ *
+ * Dipertahankan sebagai CADANGAN TERAKHIR: perkara yang variabel 0048-nya
+ * belum terbaca tetap mendapat sesuatu, walau kasar.
+ */
+function alurPerkaraDariNomor(nomor) {
   const teks = String(nomor || "");
   if (/Pdt\.G/i.test(teks)) return "Gugatan";
   if (/Pdt\.P/i.test(teks)) return "Permohonan";
@@ -2085,8 +2208,37 @@ function pitaIdentitasAbt(pengguna) {
   }
   const nomor = nomorPerkaraAbt();
   if (nomor) tambah("aleta-id-nomor", "", nomor, "Nomor perkara pada blangko yang sedang dibuka.");
-  const jenis = jenisPerkaraDariNomor(nomor);
-  if (jenis) tambah("aleta-id-jenis", "", jenis, "Jenis perkara menurut nomornya.");
+  // ==========================================================================
+  // JENIS PERKARA, BUKAN ALURNYA
+  // ==========================================================================
+  //
+  // Diminta pengguna 23 September 2026: "ganti dari keterangan di abt ekstensi
+  // aleta dari alur perkara (contoh permohonan dan gugatan) jadi jenis perkara
+  // (contoh cerai gugat atau dispensasi kawin)".
+  //
+  // "Permohonan" benar tetapi tidak menerangkan apa pun: seluruh perkara Pdt.P
+  // berbunyi begitu, entah istbat nikah, dispensasi kawin, atau penetapan ahli
+  // waris. Yang membaca kepala panel sedang memastikan ia membuka blangko yang
+  // tepat, dan untuk itu alurnya tidak cukup.
+  //
+  // Sumbernya berjenjang, dari yang paling pasti:
+  //
+  //   1. variabel 0048 pada halaman blangko - "Jenis Perkara" menurut SIPP
+  //      sendiri (perkara.jenis_perkara_nama). Dibaca langsung dari DOM,
+  //      seketika, tanpa satu permintaan jaringan pun.
+  //   2. peta keterangan perkara - terisi sesudah ada permintaan ke ALETA,
+  //      jadi ia cadangan, bukan sumber utama.
+  //   3. alur dari nomornya - kasar, tetapi lebih baik daripada kosong.
+  const jenis =
+    nilaiVariabel(VAR_JENIS_PERKARA) || sebutJenisPerkara(nomor) || alurPerkaraDariNomor(nomor);
+  if (jenis) {
+    tambah(
+      "aleta-id-jenis",
+      "",
+      jenis,
+      "Jenis perkara menurut SIPP (variabel 0048 pada blangko ini)."
+    );
+  }
   // Seri ekstensi tidak lagi di pita - ia pindah ke baris kaki, satu
   // tempat untuk ketiga panel.
   return pita;
@@ -3878,9 +4030,21 @@ function susunPanelAbt(jatiDiri) {
       ["dari-cerita", "Tahu dari cerita salah satu pihak"],
       ["tahu-pisah", "Tidak tahu pertengkarannya, hanya tahu sudah pisah"],
     ];
+    // ======================================================================
+    // KODENYA MENYEBUT PIHAKNYA, BUKAN NAMA RUAS MUATAN
+    // ======================================================================
+    //
+    // Dulu kodenya "pelaku" dan "lawan" - nama ruas yang di panel ini berarti
+    // Penggugat dan Tergugat, sedangkan di bot berarti KEBALIKANNYA (pelaku =
+    // 0047 = Tergugat/Termohon). Dua arti, satu nama, dan tidak ada satu pun
+    // tempat yang memperlihatkan pertukarannya.
+    //
+    // Sejak 23 September 2026 kodenya menyebut pihaknya langsung, dan nama
+    // sebutannya ikut dikirim apa adanya (sumberNama) supaya bot tidak perlu
+    // menafsirkan kode sama sekali.
     const DAFTAR_SUMBER = [
-      ["pelaku", "Penggugat/Pemohon"],
-      ["lawan", "Tergugat/Termohon"],
+      ["penggugat", "Penggugat/Pemohon"],
+      ["tergugat", "Tergugat/Termohon"],
       ["keluarga", "keluarga"],
     ];
     const kendaliModus = [];
@@ -3935,10 +4099,18 @@ function susunPanelAbt(jatiDiri) {
       form.appendChild(baris);
       kendaliModus.push({ pilihModus, pilihSumber, centangSebagian });
     }
+    // Sebutan yang sungguh dipilih, dibaca dari blangko ini juga. Dikirim apa
+    // adanya supaya artinya tidak bergantung pada tafsiran kode di seberang.
+    const sebutanSumber = (kode) => {
+      if (kode === "keluarga") return "keluarga mereka";
+      if (kode === "tergugat") return nilaiVariabel(VAR_PIHAK_PELAKU) || "Tergugat";
+      return nilaiVariabel(VAR_PIHAK_LAWAN) || "Penggugat";
+    };
     const bacaModus = () => {
       const satu = (k) => ({
         modus: k.pilihModus.value,
         sumber: k.pilihSumber.value,
+        sumberNama: sebutanSumber(k.pilihSumber.value),
         alasan: k.centangSebagian.filter((c) => c.checked).map((c) => c.value),
       });
       return { saksi1: satu(kendaliModus[0]), saksi2: satu(kendaliModus[1]) };
@@ -3995,11 +4167,24 @@ function susunPanelAbt(jatiDiri) {
           templat,
           alasan,
           posita: centangSdg.checked && peta.get(VAR_POSITA) ? peta.get(VAR_POSITA).selNilai.innerText : "",
-          // Sebutan pihak dari halaman blangko (0046 penggugat/pemohon, 0047
-          // tergugat/termohon); di halaman tanya-jawab keduanya kosong dan
-          // bot memakai sebutan bawaannya.
-          pelaku: (peta.get("0046") || {}).nilai || "",
-          lawan: (peta.get("0047") || {}).nilai || "",
+          // ================================================================
+          // PELAKU = 0047, LAWAN = 0046 - DAN DULU TERTUKAR DI SINI
+          // ================================================================
+          //
+          // Kesepakatannya ditetapkan di puncak berkas ini (VAR_PIHAK_PELAKU =
+          // "0047", VAR_PIHAK_LAWAN = "0046") dan dipakai bot di seluruh
+          // kalimat bakunya: "pelaku" adalah pihak yang diadukan -
+          // Tergugat/Termohon - dan "lawan" adalah pengajunya.
+          //
+          // Jalur ini satu-satunya yang mengirimnya terbalik. Akibatnya
+          // jawaban "siapa yang meninggalkan kediaman bersama" pada panel
+          // saksi SDG menyebut pihak yang KELIRU, dan jawaban itu masuk ke
+          // berita acara sidang yang ditandatangani.
+          //
+          // Tetapannya dipakai langsung, bukan nomornya diketik ulang -
+          // supaya tidak ada tempat kedua yang dapat tertukar lagi.
+          pelaku: (peta.get(VAR_PIHAK_PELAKU) || {}).nilai || "",
+          lawan: (peta.get(VAR_PIHAK_LAWAN) || {}).nilai || "",
           modus: bacaModus(),
         });
         const hasil = isiJawaban.saksiSdg || {};

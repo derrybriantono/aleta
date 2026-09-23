@@ -1,3 +1,5 @@
+
+import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import type { QueryResultRow } from "pg";
 
 import { JLF_PERMISSION } from "@/lib/judicia-legal-form-types";
@@ -327,6 +329,23 @@ function resolveListSource(items: unknown[], sourceKey: string) {
   return found.length ? found : items;
 }
 
+/**
+ * Sebutan para pihak untuk konteks ini.
+ *
+ * alur_perkara_id dan jenis_perkara_id dipakai bila berkasnya membawanya;
+ * bila tidak, nama jenis perkara, lalu nomor perkara. Urutan itu yang
+ * menentukan, dan sebabnya di src/lib/sebutan-pihak.ts.
+ */
+function sebutanKonteks(context: JlfResolverContext, caseType: string) {
+  const detail = context.options?.caseBundle?.detail;
+  return sebutanPihakPerkara({
+    alurPerkaraId: pickFirstObjectValue(detail, ["alurPerkaraId", "alur_perkara_id"]) as number | undefined,
+    jenisPerkaraId: pickFirstObjectValue(detail, ["jenisPerkaraId", "jenis_perkara_id"]) as number | undefined,
+    jenisPerkaraNama: caseType,
+    nomorPerkara: context.nomorPerkara,
+  });
+}
+
 function resolveComputedValue(context: JlfResolverContext, sourceKey: string, variableKey: string) {
   const key = (sourceKey || variableKey).toLowerCase();
   const caseType = stringifyValueForDocument(
@@ -348,14 +367,22 @@ function resolveComputedValue(context: JlfResolverContext, sourceKey: string, va
   }
   if (key.includes("nama_satker") && key.includes("uppercase")) return "PENGADILAN AGAMA DONGGALA";
   if (key.includes("nama_satker") || key.includes("satker")) return "Pengadilan Agama Donggala";
+  // ==========================================================================
+  // SEBUTAN PIHAK TIDAK LAGI DITEBAK DARI NOMOR PERKARA
+  // ==========================================================================
+  //
+  // "/Pdt.P/" benar untuk seluruh perkara permohonan bernomor Pdt.P - tetapi
+  // tidak seluruh permohonan bernomor begitu. Cerai talak (1.166 perkara) dan
+  // izin poligami (12) berbentuk /Pdt.G/ dan tetap bersebutan Pemohon/Termohon.
+  // Diukur: aturan lama salah pada 1.178 dari 10.120 perkara satker ini.
   if (key.includes("jenis_gugatan_permohonan") || key.includes("jenis_permohonan_gugatan")) {
-    return caseType.includes("permohonan") || context.nomorPerkara.includes("/Pdt.P/") ? "permohonan" : "gugatan";
+    return sebutanKonteks(context, caseType).surat;
   }
   if (key.includes("kumulasi_gugatan_permohonan") || key.includes("jenis_perkara_terurai")) {
-    return caseType || (context.nomorPerkara.includes("/Pdt.P/") ? "permohonan" : "gugatan");
+    return caseType || sebutanKonteks(context, caseType).surat;
   }
-  if (key.includes("penyebutan_pihak1")) return context.nomorPerkara.includes("/Pdt.P/") ? "Pemohon" : "Penggugat";
-  if (key.includes("penyebutan_pihak2")) return context.nomorPerkara.includes("/Pdt.P/") ? "Termohon" : "Tergugat";
+  if (key.includes("penyebutan_pihak1")) return sebutanKonteks(context, caseType).satu;
+  if (key.includes("penyebutan_pihak2")) return sebutanKonteks(context, caseType).dua;
   if (key.includes("putusan_atau_penetapan")) return context.nomorPerkara.includes("/Pdt.P/") ? "penetapan" : "putusan";
   if (key.includes("sidang.terpilih") || key.includes("sidang_terpilih")) {
     const hearing = context.options?.selectedHearing;

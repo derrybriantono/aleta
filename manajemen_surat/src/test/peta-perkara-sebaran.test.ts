@@ -553,18 +553,46 @@ describe("sembilan lapisan peta, cincin jarak, dan usulan sidang keliling", () =
     expect(kodeLapisan).toContain("BETWEEN ? AND ?");
   });
 
-  it("dua kolom bernama jurusita_id yang BUKAN hal yang sama", () => {
-    // Susunan pertama menyambung relaas ke perkara_jurusita: dari 14.495
-    // relaas, NOL yang menemukan namanya. Yang benar tabel induk `jurusita`.
-    expect(kodeLapisan).toContain("LEFT JOIN jurusita js ON js.id = r.jurusita_id");
+  it("jurusita_id pada relaas adalah userid SIPP, bukan id jurusita", () => {
+    // ========================================================================
+    // PENJAGA INI DULU MENGUNCI SAMBUNGAN YANG SALAH
+    // ========================================================================
+    //
+    // Yang dituntutnya "LEFT JOIN jurusita js ON js.id = r.jurusita_id" -
+    // sambungan yang sudah lebih benar daripada pendahulunya (perkara_jurusita,
+    // nol dari 14.495), tetapi masih salah.
+    //
+    // jurusita_id pada perkara_pelaksanaan_relaas adalah sys_users.userid,
+    // dibuktikan langsung oleh kode SIPP: data_relaas_c.php menuliskan
+    // $this->session->userdata('userid') ke kolom itu. Yang tersimpan userid
+    // orang yang MENGINPUT.
+    //
+    // Terukur:
+    //     ke perkara_jurusita        0 dari 14.495  ( 0%)
+    //     ke jurusita.id         7.101 dari 14.495  (49%) - 61,6% di antaranya
+    //                                                 menyebut ORANG LAIN
+    //     ke sys_users.userid   14.490 dari 14.495  (99,97%)
+    //
+    // Dua juru sita tersibuk - Tanty Restianty 3.279 relaas dan Mustini 2.429 -
+    // tidak pernah muncul sama sekali lewat sambungan lama.
+    expect(kodeLapisan).toContain("LEFT JOIN sys_users u ON u.userid = r.jurusita_id");
+    expect(kodeLapisan, "sambungan ke tabel jurusita tidak boleh kembali").not.toContain(
+      "LEFT JOIN jurusita js ON js.id = r.jurusita_id"
+    );
     expect(kodeLapisan).not.toContain("js.jurusita_id = r.jurusita_id");
-    expect(lapisan).toContain("NOL yang menemukan namanya");
+    // Sebabnya tertulis, beserta bukti dari kode SIPP-nya sendiri.
+    expect(lapisan).toContain("BUKAN id JURUSITA");
   });
 
-  it("satu orang dengan beberapa ejaan disebut, bukan disatukan diam-diam", () => {
-    // Menebak kemiripan nama adalah cara tercepat menggabungkan dua orang yang
-    // berbeda.
-    expect(lapisan).toContain("SATU ORANG, LIMA EJAAN");
+  it("cerita lama 'satu orang lima ejaan' dinyatakan keliru, bukan dihapus", () => {
+    // Catatan lama menyimpulkan bahwa empat ejaan pada tabel `jurusita` adalah
+    // satu orang yang sama. Kesimpulan itu salah ke arah yang paling
+    // merugikan: nama yang disandingkan memang bukan orangnya, dan cerita itu
+    // membuat kekeliruannya tampak sudah dipertimbangkan.
+    //
+    // Yang dijaga: pembantahannya tetap tertulis. Menghapusnya begitu saja
+    // membuat orang berikutnya menyimpulkan hal yang sama lagi.
+    expect(lapisan).toContain("ITU KELIRU - MEREKA LIMA ORANG YANG BERBEDA");
     expect(lapisan).toContain("2.727");
   });
 

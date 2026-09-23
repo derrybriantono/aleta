@@ -354,8 +354,20 @@ async function utama() {
     periksa(`pihak terbaca (${hasil.length})`, Array.isArray(hasil) && hasil.length === 2);
     periksa("nomor perkara dikirim sebagai parameter, bukan disambung ke SQL",
       sippState.paramsTerakhir.includes("620/Pdt.G/2025/PA.Dgl") && !sippState.sqlTerakhir.includes("620/Pdt.G"));
-    periksa("kueri membaca pihak dan kuasa hukum",
-      /v_pihak_perkara/.test(sippState.sqlTerakhir) && /perkara_pengacara/.test(sippState.sqlTerakhir));
+    // Dulu penjaga ini menuntut v_pihak_perkara. View itu sengaja
+    // DITINGGALKAN: ia menghabiskan 8,5 detik untuk 20 perkara dan urutan
+    // barisnya berubah tiap kali dijalankan, sehingga hasil yang sama
+    // membuahkan daftar penerima yang berbeda-beda. Penggantinya menyebut
+    // kelima cabang pihak satu per satu dan menyaring di dalam tiap cabang.
+    //
+    // Yang dijaga sekarang maksudnya, bukan bentuk lamanya: kelima cabang
+    // terbaca (satu cabang yang terlupa berarti satu pihak tidak pernah
+    // dikabari), kuasa hukum terbaca, dan view lama tidak diam-diam kembali.
+    periksa("kueri membaca kelima cabang pihak dan kuasa hukum",
+      [1, 2, 3, 4, 5].every((ke) => new RegExp(`perkara_pihak${ke}\\b`).test(sippState.sqlTerakhir))
+        && /perkara_pengacara/.test(sippState.sqlTerakhir));
+    periksa("view lama yang lambat tidak kembali",
+      !/v_pihak_perkara/.test(sippState.sqlTerakhir));
     periksa("kueri hanya SELECT", /^\s*SELECT/i.test(sippState.sqlTerakhir.trim()) && !/INSERT|UPDATE|DELETE/i.test(sippState.sqlTerakhir));
 
     // Galat harus MELEMPAR, bukan mengembalikan daftar kosong. Daftar kosong

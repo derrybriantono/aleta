@@ -237,3 +237,46 @@ function deretPerRuang(baris: BarisJarak[]): Array<Array<{ kunci: string; menit:
   for (const deret of perRuang.values()) deret.sort((a, b) => a.menit - b.menit);
   return [...perRuang.values()];
 }
+
+/**
+ * ============================================================================
+ * TETANGGA MANA - SUPAYA ANGKANYA DAPAT DIPERIKSA
+ * ============================================================================
+ *
+ * Keluhan pengguna 23 September 2026: jeda antar-perkara pada layar Antrian
+ * Sidang terasa tidak cocok satu sama lain. Dari tangkapan layarnya sendiri,
+ * antrian 1 bertulis "→35" sedangkan antrian 2 tepat di bawahnya bertulis
+ * "+4" - padahal 09:22 ke 10:01 berjarak 39 menit.
+ *
+ * Keduanya BENAR. Ada perkara ketiga yang dipanggil 09:57 di ruang yang sama,
+ * dan ia tidak ikut tergambar karena tabelnya sedang disaring atau diurutkan
+ * menurut hal lain. Angkanya menunjuk tetangga di RUANG yang sama menurut JAM
+ * PANGGIL - bukan baris di atas atau di bawahnya pada tabel.
+ *
+ * Yang salah karena itu bukan hitungannya melainkan bahwa ia tidak dapat
+ * diperiksa: tidak ada yang menyebutkan tetangga MANA yang dimaksud, sehingga
+ * dua angka yang benar terbaca sebagai dua angka yang bertengkar.
+ *
+ * Kedua peta di bawah memulangkan KUNCI tetangganya, supaya layar dapat
+ * menyebut nomor antriannya di dalam judul penandanya.
+ */
+export function petaTetanggaSebelum(baris: BarisJarak[]): Record<string, string> {
+  const hasil: Record<string, string> = {};
+  for (const deret of deretPerRuang(baris)) {
+    for (let i = 1; i < deret.length; i += 1) {
+      hasil[deret[i].kunci] = deret[i - 1].kunci;
+    }
+  }
+  return hasil;
+}
+
+/** Pasangan petaTetanggaSebelum - lihat keterangannya di sana. */
+export function petaTetanggaBerikut(baris: BarisJarak[]): Record<string, string> {
+  const hasil: Record<string, string> = {};
+  for (const deret of deretPerRuang(baris)) {
+    for (let i = 0; i < deret.length - 1; i += 1) {
+      hasil[deret[i].kunci] = deret[i + 1].kunci;
+    }
+  }
+  return hasil;
+}

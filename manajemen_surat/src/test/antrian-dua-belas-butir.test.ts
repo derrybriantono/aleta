@@ -128,7 +128,14 @@ describe("butir 6 - tombol ciut tiap bagian di panel Rincian", () => {
     // untuk perkara yang diputus di ruang sidang tetapi baris putusannya
     // belum ada - 12 perkara di SIPP setempat yang sebelumnya membuka rincian
     // yang diam.
-    expect(pakai.length).toBe(10);
+    //
+    // Bertambah ke 11 pada 2.34.0: bagian "Rincian waktu perkara" - berapa
+    // hari sejak didaftarkan, berapa hari mediasi yang dikeluarkan beserta
+    // tanggal dan hasilnya, dan berapa sisa sampai batas lima bulan. Angka
+    // tunggal tidak dapat dibantah maupun dibuktikan; rinciannya dapat
+    // keduanya.
+    expect(pakai.length).toBe(11);
+    expect(LAYAR).toContain('kunci="sidang-durasi"');
   });
 
   it("kuncinya BERAWALAN sidang- supaya tidak menabrak layar Status Perkara", () => {

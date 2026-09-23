@@ -726,10 +726,27 @@ function buildPernikahanQuery(ctx: QueryPreviewContext) {
   });
 }
 
+/**
+ * ============================================================================
+ * KEDUANYA HARUS SEPASANG - DAN DULU TIDAK
+ * ============================================================================
+ *
+ * Kueri ini punya cabang cerai talak (jenis_perkara_id 346), pasangannya di
+ * bawah tidak punya satu pun. Akibatnya pada 1.166 perkara cerai talak satu
+ * naskah yang sama berbunyi "Pemohon" untuk #0046# dan "Tergugat" untuk
+ * #0047# - dua sebutan dari dua jenis perkara yang berbeda, berdampingan di
+ * halaman yang sama.
+ *
+ * Izin poligami (341) ditambahkan pada keduanya: ia ada di kueri ABT asli,
+ * hilang di sini, dan menyangkut 12 perkara satker.
+ *
+ * Kalau salah satunya disunting, sunting keduanya.
+ */
 function buildPenyebutanPihak1Query() {
   return `SELECT
   CASE
-    WHEN p1.urutan = 1 AND p1.alur_perkara_id = 15 AND p1.jenis_perkara_id = 346 THEN 'Pemohon'
+    WHEN p1.urutan = 1 AND p1.alur_perkara_id = 15 AND p1.jenis_perkara_id IN (346, 341) THEN 'Pemohon'
+    WHEN p1.urutan BETWEEN 2 AND 100 AND p1.alur_perkara_id = 15 AND p1.jenis_perkara_id IN (346, 341) THEN 'para Pemohon'
     WHEN p1.urutan = 1 AND p1.alur_perkara_id = 15 THEN 'Penggugat'
     WHEN p1.urutan BETWEEN 2 AND 100 AND p1.alur_perkara_id = 15 THEN 'para Penggugat'
     WHEN p1.urutan = 1 AND p1.alur_perkara_id = 16 THEN 'Pemohon'
@@ -748,9 +765,12 @@ FROM (
 ) AS p1;`;
 }
 
+/** Pasangan buildPenyebutanPihak1Query - lihat keterangannya di sana. */
 function buildPenyebutanPihak2Query() {
   return `SELECT
   CASE
+    WHEN p2.urutan = 1 AND p2.alur_perkara_id = 15 AND p2.jenis_perkara_id IN (346, 341) THEN 'Termohon'
+    WHEN p2.urutan BETWEEN 2 AND 100 AND p2.alur_perkara_id = 15 AND p2.jenis_perkara_id IN (346, 341) THEN 'para Termohon'
     WHEN p2.urutan = 1 AND p2.alur_perkara_id = 15 THEN 'Tergugat'
     WHEN p2.urutan BETWEEN 2 AND 100 AND p2.alur_perkara_id = 15 THEN 'para Tergugat'
     WHEN p2.urutan = 1 AND p2.alur_perkara_id = 16 THEN 'Termohon'

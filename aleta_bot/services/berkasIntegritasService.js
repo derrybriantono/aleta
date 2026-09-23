@@ -29,8 +29,19 @@
  * halaman galat yang kebetulan ber-tipe benar.
  */
 
-/** Ukuran paling kecil yang masuk akal. Di bawah ini pasti bukan dokumen. */
+/**
+ * Ukuran paling kecil yang masuk akal, PER FORMAT.
+ *
+ * Satu angka untuk keduanya terlalu longgar bagi docx: wadah ZIP yang sah pun
+ * sudah lebih dari 3 kB sebelum satu huruf pun ditulis di dalamnya, sehingga
+ * berkas 600 byte yang "lolos" pasti bukan dokumen. PDF satu halaman kosong
+ * lazimnya di atas 5 kB.
+ *
+ * Tetap disebut UKURAN_MINIMUM untuk pemanggil lama; nilainya kini peta.
+ */
 const UKURAN_MINIMUM = 512;
+
+const UKURAN_MINIMUM_FORMAT = { pdf: 5120, word: 3072 };
 
 const PENANDA = {
   pdf: [{ nama: "PDF", awalan: Buffer.from("%PDF-", "ascii") }],
@@ -55,32 +66,92 @@ const AWALAN_HALAMAN = ["<!doctype", "<html", "<?xml", "<!--", "{", "["];
  * @param {{ format?: string }} opsi format "pdf" atau "word".
  * @returns {{ ok: boolean, jenis: string, alasan: string }}
  */
-function periksaIsi(isi, { format = "pdf" } = {}) {
+/**
+ * ============================================================================
+ * POTONGAN AWALAN BUKAN BERKAS UTUH - DAN DUA PEMERIKSAAN TIDAK BOLEH BERLAKU
+ * ============================================================================
+ *
+ * ecourtAuditArsipService membaca 1 KB pertama saja untuk berkas yang sangat
+ * besar, lalu menyerahkannya ke sini. Dua pemeriksaan yang menuntut berkas
+ * UTUH akan menolak seluruhnya:
+ *
+ *   - ambang ukuran: 1.024 byte selalu di bawah 5.120, sehingga tiap berkas
+ *     arsip yang besar dinyatakan "terlalu kecil";
+ *   - ekor %%EOF: penutup PDF ada di ujung berkas, bukan di 1 KB pertamanya.
+ *
+ * Keduanya akan menandai SELURUH berkas besar sebagai rusak - dan penjadwal
+ * arsip memakai tanda itu. Karena itu pemanggil yang hanya membawa potongan
+ * menyebutnya, dan kedua pemeriksaan itu dilewati.
+ */
+function periksaIsi(isi, { format = "pdf", potongan = false } = {}) {
   if (!Buffer.isBuffer(isi) || isi.length === 0) {
     return { ok: false, jenis: "", alasan: "berkas_kosong" };
   }
 
-  if (isi.length < UKURAN_MINIMUM) {
+  // ==========================================================================
+  // PENANDA BENTUK LEBIH DULU - DAN URUTAN INI PERNAH SALAH DUA KALI
+  // ==========================================================================
+  //
+  // Pertama: ukuran diperiksa sebelum halaman web, sehingga halaman galat
+  // e-Court berukuran 2 kB dilaporkan "terlalu_kecil". Petugas yang
+  // membacanya akan mengira batas ukurannya terlalu ketat, padahal yang perlu
+  // dikerjakan login ulang.
+  //
+  // Kedua, saat memperbaiki yang pertama: pengendusan halaman web dipindah ke
+  // PALING ATAS - dan SELURUH berkas RTF pun dinyatakan halaman web, sebab
+  // RTF diawali "{" persis seperti jawaban JSON yang hendak ditangkap.
+  //
+  // Yang benar: penanda bentuk lebih dulu, sebab ia yang PASTI. Halaman web
+  // tidak pernah punya penanda bentuk yang cocok, jadi maksud perbaikan
+  // pertama tetap tercapai tanpa mengorbankan RTF.
+  const daftar = PENANDA[format === "word" ? "word" : "pdf"];
+  let cocok = null;
+  for (const penanda of daftar) {
+    if (isi.subarray(0, penanda.awalan.length).equals(penanda.awalan)) {
+      cocok = penanda;
+      break;
+    }
+  }
+
+  if (!cocok) {
+    const awal = isi.subarray(0, 64).toString("utf8").trim().toLowerCase();
+    if (AWALAN_HALAMAN.some((pola) => awal.startsWith(pola))) {
+      return { ok: false, jenis: "halaman/teks", alasan: "isinya_halaman_web_bukan_dokumen" };
+    }
+  }
+
+  const batasUkuran = UKURAN_MINIMUM_FORMAT[format === "word" ? "word" : "pdf"] || UKURAN_MINIMUM;
+  if (!potongan && isi.length < batasUkuran) {
     // Bukan penolakan karena ukurannya sendiri, melainkan karena dokumen
     // sungguhan tidak pernah sekecil ini - yang sekecil ini selalu halaman
     // galat atau potongan yang gagal.
     return { ok: false, jenis: "", alasan: `terlalu_kecil_${isi.length}_byte` };
   }
 
-  const daftar = PENANDA[format === "word" ? "word" : "pdf"];
-  for (const penanda of daftar) {
-    if (isi.subarray(0, penanda.awalan.length).equals(penanda.awalan)) {
-      return { ok: true, jenis: penanda.nama, alasan: "" };
+  if (cocok) {
+    // ========================================================================
+    // EKOR PDF - UNDUHAN TERPOTONG YANG SELAMA INI LOLOS SELURUHNYA
+    // ========================================================================
+    //
+    // PDF yang sah selalu diakhiri "%%EOF". Berkas yang awalannya benar
+    // tetapi ekornya tidak ada berarti unduhannya putus di tengah - dan itu
+    // sebab kegagalan paling sering KEDUA sesudah halaman galat.
+    //
+    // Sampai sekarang berkas seperti itu dinyatakan SAH: awalannya %PDF-,
+    // ukurannya di atas ambang, jadi tidak ada satu pun pemeriksaan yang
+    // menyentuhnya. Ia baru ketahuan ketika hakim membukanya.
+    if (!potongan && String(format) !== "word" && isi.subarray(0, 5).toString("ascii") === "%PDF-") {
+      const ekor = isi.subarray(Math.max(0, isi.length - 2048)).toString("latin1");
+      if (!ekor.includes("%%EOF")) {
+        return { ok: false, jenis: cocok.nama, alasan: "pdf_terpotong_tanpa_penutup" };
+      }
     }
+    return { ok: true, jenis: cocok.nama, alasan: "" };
   }
 
   // Menyebutkan APA yang sebenarnya diterima, bukan sekadar "tidak sah".
   // Petugas yang membaca catatan ini perlu tahu bedanya halaman login dari
   // berkas terpotong - keduanya menuntut tindakan berbeda.
-  const awal = isi.subarray(0, 64).toString("utf8").trim().toLowerCase();
-  if (AWALAN_HALAMAN.some((pola) => awal.startsWith(pola))) {
-    return { ok: false, jenis: "halaman/teks", alasan: "isinya_halaman_web_bukan_dokumen" };
-  }
 
   const cuplikan = isi
     .subarray(0, 16)
@@ -88,6 +159,45 @@ function periksaIsi(isi, { format = "pdf" } = {}) {
     .replace(/(.{2})/g, "$1 ")
     .trim();
   return { ok: false, jenis: "", alasan: `penanda_tidak_dikenali (${cuplikan})` };
+}
+
+/**
+ * ============================================================================
+ * DUGAAN HASIL PINDAI - KIRA-KIRA, DAN DIKATAKAN BEGITU
+ * ============================================================================
+ *
+ * PDF hasil pindai tidak punya lapisan teks: yang membukanya melihat
+ * dokumennya, tetapi tidak dapat menyalin satu kata pun, dan pencarian di
+ * dalam berkas tidak menemukan apa-apa. Untuk arsip perkara itu persoalan
+ * nyata - putusan yang tidak dapat dicari tidak dapat ditelusuri.
+ *
+ * Jawaban yang JUJUR menuntut mengurai PDF-nya dan menghitung huruf yang
+ * benar-benar terurai per halaman; itu ada di portal (pdfjs-dist), bukan di
+ * sini. Yang dikerjakan fungsi ini penandaan kasar tanpa pustaka apa pun:
+ * kamus objek PDF tidak dipadatkan walaupun aliran isinya dipadatkan, jadi
+ * kemunculan /Font dan /DCTDecode dapat dihitung dari byte mentahnya.
+ *
+ * PDF pindaian lazimnya NOL /Font dengan banyak /DCTDecode atau
+ * /CCITTFaxDecode. Karena ini kira-kira, hasilnya TIDAK PERNAH menolak
+ * berkasnya - ia hanya menandainya, dan kata "diduga" ikut dalam namanya.
+ */
+function dugaHasilPindai(isi) {
+  if (!Buffer.isBuffer(isi) || isi.length === 0) return { diduga: false, alasan: "" };
+  if (isi.subarray(0, 5).toString("ascii") !== "%PDF-") return { diduga: false, alasan: "" };
+
+  const teks = isi.toString("latin1");
+  const hitung = (pola) => (teks.match(pola) || []).length;
+
+  const font = hitung(/\/Font\b/g);
+  const gambar = hitung(/\/DCTDecode\b/g) + hitung(/\/CCITTFaxDecode\b/g) + hitung(/\/JPXDecode\b/g);
+
+  if (font === 0 && gambar > 0) {
+    return {
+      diduga: true,
+      alasan: `diduga_hasil_pindai (0 font, ${gambar} gambar)`,
+    };
+  }
+  return { diduga: false, alasan: "" };
 }
 
 /** Menebak format dari nama berkas - dipakai pemeriksa arsip. */
@@ -99,6 +209,8 @@ function formatDariNama(namaBerkas) {
 }
 
 module.exports = {
+  dugaHasilPindai,
+  UKURAN_MINIMUM_FORMAT,
   UKURAN_MINIMUM,
   formatDariNama,
   periksaIsi,

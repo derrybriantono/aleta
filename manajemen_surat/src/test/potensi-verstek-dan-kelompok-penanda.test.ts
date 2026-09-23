@@ -128,7 +128,16 @@ describe("kotak keadaan berkelompok menurut maksudnya", () => {
     // unggah putusan - sehingga 17 menjadi 19. Angkanya SENGAJA dikunci, bukan
     // dilonggarkan menjadi "lebih dari": kotak yang bertambah tanpa disadari
     // adalah cara paling mudah membuat deretan saring ini menjadi dinding.
-    expect(kotak.length).toBe(19);
+    //
+    // 2.34.0 menambah satu lagi pada kelompok panggilan - "Tenggang mepet",
+    // yaitu jarak panggilan ke hari sidang yang kurang dari ambang jalurnya.
+    // Diukur atas 20 sidang empat belas hari ke depan: 6 menyala, seluruhnya
+    // karena sidangnya sudah dekat sementara pihak wajibnya belum punya relaas
+    // sama sekali. Sembilan belas menjadi dua puluh.
+    expect(kotak.length).toBe(20);
+    // Dan kotak barunya memang ada namanya - angka yang cocok tanpa nama yang
+    // cocok berarti kotak lain yang bertambah diam-diam.
+    expect(kotak.map((k) => k.kunci)).toContain("tenggang-mepet");
     const dikenal: string[] = KELOMPOK_KEADAAN.map((k) => k.kunci);
     for (const k of kotak) {
       expect(dikenal, `${k.kunci} berkelompok "${k.kelompok}"`).toContain(k.kelompok);

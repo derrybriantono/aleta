@@ -347,8 +347,14 @@ async function recordDocument(input = {}) {
       `UPDATE aleta_bot_ecourt_documents
           SET status_verifikasi = ?,
               jenis_dokumen = ?,
-              agenda = ?,
-              tanggal_sidang = ?,
+              -- Agenda dan tanggal sidang TIDAK dikosongkan oleh sinkronisasi
+              -- yang gagal membacanya. Dulu keduanya ditimpa apa adanya:
+              -- satu penarikan yang tidak berhasil mengurai kepala blok
+              -- menghapus tanggal yang sudah benar, dan menghapusnya diam-diam.
+              -- Perlakuannya kini sama dengan berkas_pdf dan perkara_id di
+              -- bawah - yang sudah terbukti hanya diganti oleh yang terbukti.
+              agenda = CASE WHEN ? = '' THEN agenda ELSE ? END,
+              tanggal_sidang = COALESCE(?, tanggal_sidang),
               -- Batas waktu ikut disegarkan tiap sinkronisasi karena e-Court dapat
               -- menggesernya saat sidang ditunda.
               batas_unggah = ?,
@@ -372,6 +378,7 @@ async function recordDocument(input = {}) {
       [
         status,
         cleanText(input.jenisDokumen),
+        cleanText(input.agenda),
         cleanText(input.agenda),
         toDateOrNull(input.tanggalSidang) ? botDb.toMysqlDate(toDateOrNull(input.tanggalSidang)) : null,
         toDateOrNull(input.batasUnggah) ? botDb.toMysqlDate(toDateOrNull(input.batasUnggah)) : null,

@@ -117,8 +117,19 @@ describe("sunting sekali klik di ABT - bawaannya MATI", () => {
     expect(fungsi.slice(0, 400)).toContain("return false;");
   });
 
-  it("klik hanya menyunting bila saklarnya menyala", () => {
-    expect(abt).toContain("if (!suntingLangsungNyala) return;");
+  it("klik hanya menyunting bila saklarnya menyala - dibaca ULANG", () => {
+    // Salinan di memori dapat basi tanpa satu pun tanda: tab yang dibekukan
+    // peramban tidak menerima chrome.storage.onChanged, dan ekstensi yang
+    // dimuat ulang meninggalkan tab lama tanpa pendengar sama sekali. Pada
+    // keadaan itu centang di tingkap ekstensi berkata satu hal dan halaman
+    // mengerjakan yang lain.
+    //
+    // Yang dicegah nyata: penyunting yang terbuka TANPA DIMAKSUD pada
+    // halaman tempat naskah putusan disusun.
+    expect(abt).toContain("if (!(await suntingLangsungSekarang())) return;");
+    expect(abt, "salinan memori tidak boleh jadi penentu").not.toContain(
+      "if (!suntingLangsungNyala) return;"
+    );
   });
 
   it("saat mati, tombol Sunting per baris tetap ada", () => {

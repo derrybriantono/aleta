@@ -17,6 +17,7 @@
 
 const db = require("../db_config");
 const { normalizeIndonesianPhoneNumber } = require("../utils/phoneFormatter");
+const sebutanPihakService = require("./sebutanPihakService");
 
 /** Batas wajar; seorang pihak jarang punya perkara sebanyak ini. */
 const MAX_CASES_PER_PHONE = 20;
@@ -147,15 +148,25 @@ function describeCaseType(nomorPerkara) {
   return "Perkara";
 }
 
-/** Peran pihak pada perkara, untuk label menu. */
+/**
+ * Peran pihak pada perkara, untuk label menu.
+ *
+ * Perbandingan lamanya `jenis === "Permohonan"` - kesamaan PERSIS dengan satu
+ * kata. Tidak satu pun dari 10.120 perkara satker punya jenis_perkara_nama
+ * yang berbunyi persis begitu; namanya "Pengesahan Perkawinan/Istbat Nikah",
+ * "Dispensasi Kawin", "Cerai Talak". Jadi cabang itu tidak pernah sekali pun
+ * berjalan, dan seluruh 5.581 perkara permohonan berlabel "Penggugat".
+ */
 function describeRole(item = {}) {
   if (item.recipientType === "kuasa") return "Kuasa Hukum";
-  const jenis = String(item.jenisPerkara || "");
   const ke = String(item.pihakKe || "").toLowerCase();
-  if (jenis === "Permohonan") return ke === "2" || ke === "t" ? "Termohon" : "Pemohon";
-  if (ke === "2" || ke === "t") return "Tergugat";
-  if (ke === "1" || ke === "p") return "Penggugat";
-  return "Pihak";
+  if (ke !== "1" && ke !== "2" && ke !== "p" && ke !== "t") return "Pihak";
+  return sebutanPihakService.sebutanSatuPihak(ke, {
+    alurPerkaraId: item.alurPerkaraId,
+    jenisPerkaraId: item.jenisPerkaraId,
+    jenisPerkaraNama: item.jenisPerkara,
+    nomorPerkara: item.nomorPerkara,
+  });
 }
 
 /** Membuang cache satu nomor. Dipakai bila data perkaranya baru berubah. */

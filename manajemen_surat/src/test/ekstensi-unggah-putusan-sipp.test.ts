@@ -19,6 +19,15 @@ import { describe, expect, it } from "vitest";
 const akar = path.resolve(process.cwd(), "..");
 const bot = readFileSync(path.join(akar, "aleta_bot/services/putusanUnggahService.js"), "utf8");
 const konten = readFileSync(path.join(akar, "ekstensi-sipp/konten.js"), "utf8");
+/**
+ * Pemeriksaan akar SIPP hidup di sini sejak 23 September 2026 - unggah putusan
+ * dan unggah penetapan menanyakan jawaban yang sama, supaya keduanya tidak
+ * pernah berselisih tentang folder mana yang berlaku.
+ */
+const botPenetapan = readFileSync(
+  path.join(akar, "aleta_bot/services/dokumenPenetapanService.js"),
+  "utf8"
+);
 
 describe("nama berkas dan letaknya meniru SIPP", () => {
   it("nomor perkara disusun TERBALIK, seperti fileupload_putusan_c.php", () => {
@@ -182,7 +191,35 @@ describe("yang ditolak, beserta sebabnya", () => {
   });
 
   it("akar SIPP yang belum disetel disebut, bukan ditebak", () => {
-    expect(bot).toContain('alasan: "akar_sipp_belum_disetel"');
+    // ========================================================================
+    // TIGA KEADAAN, BUKAN SATU - DAN DULU KETIGANYA SATU KALIMAT
+    // ========================================================================
+    //
+    // Penjaga ini dulu menuntut kalimatnya ada di putusanUnggahService sendiri.
+    // Sejak 23 September 2026 pemeriksaannya pindah ke dokumenPenetapanService
+    // supaya unggah putusan dan penetapan memakai jawaban yang sama, dan
+    // sekalian membedakan tiga keadaan yang dahulu tertutup satu kalimat:
+    //
+    //     belum disetel   dapat diperbaiki lewat pengaturan ALETA
+    //     tidak ada       mount-nya tidak sampai ke container
+    //     hanya baca      menuntut mount baru dan container dijalankan ulang
+    //
+    // Diukur di peladen: pengaturannya memang null DAN folder SIPP terpasang
+    // hanya-baca, sehingga menyetel pengaturan saja hanya memindahkan galatnya
+    // satu langkah. Petugas tidak dapat membedakan ketiganya sendiri, jadi
+    // pesannya yang harus membedakannya.
+    expect(botPenetapan).toContain('alasan: "akar_sipp_belum_disetel"');
+    expect(botPenetapan).toContain('alasan: "akar_sipp_tidak_ada"');
+    expect(botPenetapan).toContain('alasan: "akar_sipp_hanya_baca"');
+    // Unggah putusan menanyakannya, tidak memutuskannya sendiri - dan
+    // WAJIB menyebut folder tujuannya. Bentuk tanpa argumen menguji izin
+    // tulis pada AKAR SIPP, yang memang tetap hanya-baca; dengan bentuk itu
+    // unggahan berhenti pada "hanya baca" selamanya walau folder putusannya
+    // sudah dapat ditulis.
+    expect(bot).toContain("dokumenPenetapanService.periksaAkarSipp(undefined, {");
+    expect(bot, "bentuk tanpa folder tujuan tidak boleh kembali").not.toContain(
+      "dokumenPenetapanService.periksaAkarSipp()"
+    );
   });
 });
 

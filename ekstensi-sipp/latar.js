@@ -412,6 +412,52 @@ if (chrome.downloads && chrome.downloads.onDeterminingFilename) {
   });
 }
 
+/**
+ * Mengikuti satu unduhan sebentar, lalu melaporkan keadaannya.
+ *
+ * BATAS WAKTUNYA PENDEK DAN ITU DISENGAJA. Panel menunggu jawaban ini sebelum
+ * meneruskan ke berkas berikutnya; menunggu lama membuat tiga berkas terasa
+ * seperti aplikasi yang menggantung. Unduhan yang belum selesai dalam waktu
+ * itu dianggap BERHASIL - ia memang sedang berjalan, dan yang diperiksa di
+ * sini penolakan seketika, bukan kecepatan cakram.
+ */
+const BATAS_PANTAU_UNDUH_MS = 2500;
+
+function ikutiUnduhan(id, selesai) {
+  let sudah = false;
+  const tutup = (hasil) => {
+    if (sudah) return;
+    sudah = true;
+    try {
+      chrome.downloads.onChanged.removeListener(dengar);
+    } catch {
+      /* pendengar sudah lepas */
+    }
+    selesai(hasil);
+  };
+
+  const dengar = (ubah) => {
+    if (!ubah || ubah.id !== id) return;
+    const keadaan = ubah.state && ubah.state.current;
+    if (keadaan === "complete") {
+      tutup({ ok: true, id });
+      return;
+    }
+    if (keadaan === "interrupted") {
+      const sebab = (ubah.error && ubah.error.current) || "terputus";
+      tutup({ ok: false, id, pesan: `unduhan diblokir peramban (${sebab})` });
+    }
+  };
+
+  try {
+    chrome.downloads.onChanged.addListener(dengar);
+  } catch {
+    tutup({ ok: true, id });
+    return;
+  }
+  setTimeout(() => tutup({ ok: true, id }), BATAS_PANTAU_UNDUH_MS);
+}
+
 chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
@@ -503,7 +549,20 @@ chrome.runtime.onMessage.addListener((pesan, _pengirim, jawab) => {
           jawab({ ok: false, pesan: String((galat && galat.message) || "unduhan ditolak peramban") });
           return;
         }
-        jawab({ ok: true, id });
+        // ====================================================================
+        // DITERIMA BUKAN BERARTI TERSIMPAN
+        // ====================================================================
+        //
+        // Chrome memulangkan id lalu MEMBLOKIR unduhannya kemudian - "file
+        // tidak terverifikasi", yang dilaporkan pengguna 23 September 2026.
+        // Panel yang hanya membaca id akan mengira berhasil, dan cara
+        // cadangannya tidak pernah dipakai; berkasnya hilang tanpa satu pun
+        // pesan.
+        //
+        // Diikuti sebentar saja. Yang berakhir "interrupted" dilaporkan
+        // sebagai gagal, sehingga panel menurunkannya lewat tautan halaman -
+        // cara lama yang lolos, hanya bertanda peringatan.
+        ikutiUnduhan(id, (hasil) => jawab(hasil));
       });
     } catch (e) {
       jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) });

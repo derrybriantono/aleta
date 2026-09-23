@@ -40,6 +40,9 @@ const sippSkemaService = require("./sippSkemaService");
 const sippTahapanService = require("./sippTahapanService");
 const arsipBerkasService = require("./arsipBerkasService");
 const putusanEcourtService = require("./putusanEcourtService");
+// Aturan tenggang panggilan - tiga jalur beserta dasar hukumnya. Tidak
+// melingkar: layanan itu hanya memuat runtime-config dan logService.
+const ecourtPanggilanService = require("./ecourtPanggilanService");
 const { satukanPetugas } = require("./petugasPerkaraUtil");
 
 function runQuery(sql, params = []) {
@@ -213,6 +216,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaKuasa,
     petaSaksi,
     petaEcourt,
+    petaDurasi,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
@@ -237,6 +241,10 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     // seluruhnya ditandai. Menandai saat ragu berarti menyalakan penanda pada
     // perkara yang mungkin tidak pernah menyentuh e-Court.
     aman(() => ecourtBanyakPerkara(idPerkara)),
+    // Umur perkara, dengan hari mediasi dikeluarkan sebagaimana PERMA 1/2016
+    // Pasal 24. Gagal-terbuka: jadwal sidang tetap berguna tanpa angka umur,
+    // dan pemasangan yang tabel mediasinya berbeda tidak boleh menjatuhkannya.
+    aman(() => durasiBanyakPerkara(idPerkara)),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -295,6 +303,17 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
         retur: 0,
         aman: true,
       },
+      // ====================================================================
+      // UMUR PERKARA - DAN HARI MEDIASI TIDAK DIHITUNG
+      // ====================================================================
+      //
+      // Diminta pengguna 23 September 2026. Dasarnya PERMA 1/2016 Pasal 24
+      // ayat (2) dan (3): jangka waktu mediasi TIDAK termasuk jangka waktu
+      // penyelesaian perkara. Batas penyelesaiannya lima bulan (SEMA 2/2014).
+      //
+      // null bila tanggal pendaftarannya tidak terbaca - bukan nol. Nol
+      // berarti perkaranya didaftarkan hari ini.
+      durasi: petaDurasi[String(row.perkaraId)] || null,
       majelisKode: (petaPetugas[String(row.perkaraId)] || {}).majelisKode || "",
       majelisNama: (petaPetugas[String(row.perkaraId)] || {}).majelisNama || "",
       paniteraNama: (petaPetugas[String(row.perkaraId)] || {}).paniteraNama || "",
@@ -797,6 +816,273 @@ async function kuasaBanyakPerkara(daftarPerkaraId = []) {
 }
 
 /** Keadaan putusan untuk sekumpulan perkara sekaligus. */
+/**
+ * ============================================================================
+ * DURASI PERKARA - DAN HARI MEDIASI TIDAK DIHITUNG
+ * ============================================================================
+ *
+ * Pasal 24 ayat (2) dan (3) PERMA 1/2016: jangka waktu mediasi TIDAK termasuk
+ * jangka waktu penyelesaian perkara. Menghitungnya begitu saja dari tanggal
+ * pendaftaran berarti menuduh majelis atas hari-hari yang menurut peraturan
+ * memang bukan miliknya - dan pada perkara yang mediasinya berjalan penuh itu
+ * selisih sampai tiga puluh hari.
+ *
+ * Batasnya lima bulan (SEMA 2/2014), yang di ALETA sudah tertulis sebagai
+ * AMBANG_HARI = 150 pada analisaPerkaraService. Angkanya disalin, bukan
+ * diambil lewat require - berkas itu sengaja dibuat murni tanpa basis data,
+ * dan menukar arah kebergantungannya akan mengotorinya.
+ *
+ * ============================================================================
+ * DIBACA DARI perkara_mediasi, BUKAN DARI VIEW
+ * ============================================================================
+ *
+ * SIPP punya view v_durasi_mediasi, dan sippTahapanService memakainya untuk
+ * satu perkara. Di sini tabelnya yang dibaca langsung, karena dua hal:
+ *
+ *   1. impor dump SIPP memulihkan tabel tetapi TIDAK memulihkan satu pun view
+ *      (0 dari 125 terukur), sehingga jalur view mati diam-diam pada
+ *      pemasangan hasil impor;
+ *   2. yang dibutuhkan di sini BANYAK perkara sekaligus - satu kueri untuk
+ *      lima ratus baris jadwal, bukan lima ratus kueri.
+ *
+ * ============================================================================
+ * TIGA KEADAAN DATA YANG SUNGGUH ADA, DAN PENAWARNYA
+ * ============================================================================
+ *
+ *   - keputusan_mediasi lebih awal daripada dimulai_mediasi (terpendek -10
+ *     hari di satker ini). Tiap potongan dijepit ke nol; tanggal yang terbalik
+ *     tidak boleh MENAMBAH umur perkara.
+ *   - mediasi yang belum selesai (67 baris tanpa keputusan). Dihitung sampai
+ *     hari ini - ia memang sedang berjalan.
+ *   - satu perkara dengan beberapa baris mediasi (2-3). Seluruhnya dijumlah;
+ *     mediasi lanjutan sesudah tahap pertama gagal memang menambah waktunya.
+ */
+const AMBANG_DURASI_HARI = 150;
+
+async function durasiBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+
+  const adaMediasi = await sippSkemaService.tabelAda("perkara_mediasi");
+
+  const rows = await runQuery(
+    `SELECT p.perkara_id       AS perkaraId,
+            p.tanggal_pendaftaran AS tanggalDaftar,
+            MAX(pu.tanggal_putusan) AS tanggalPutusan
+       FROM perkara p
+       LEFT JOIN perkara_putusan pu ON pu.perkara_id = p.perkara_id
+      WHERE p.perkara_id IN (${isian})
+      GROUP BY p.perkara_id, p.tanggal_pendaftaran`,
+    dipakai
+  ).catch(() => []);
+
+  const mediasiRows = adaMediasi
+    ? await runQuery(
+        `SELECT m.perkara_id        AS perkaraId,
+                m.dimulai_mediasi   AS mulai,
+                m.keputusan_mediasi AS selesai,
+                m.hasil_mediasi     AS hasil,
+                m.mediator_text     AS mediator
+           FROM perkara_mediasi m
+          WHERE m.perkara_id IN (${isian})
+            AND m.dimulai_mediasi IS NOT NULL
+          ORDER BY m.perkara_id ASC, m.dimulai_mediasi ASC`,
+        dipakai
+      ).catch(() => [])
+    : [];
+
+  const mediasiPerPerkara = {};
+  for (const baris of Array.isArray(mediasiRows) ? mediasiRows : []) {
+    const kunci = String(baris.perkaraId);
+    if (!mediasiPerPerkara[kunci]) mediasiPerPerkara[kunci] = [];
+    mediasiPerPerkara[kunci].push({
+      mulai: isoTanggal(baris.mulai),
+      selesai: isoTanggal(baris.selesai),
+      hasil: sebutanHasilMediasi(baris.hasil),
+      mediator: cleanText(baris.mediator),
+    });
+  }
+
+  const hariIni = isoTanggal(new Date());
+  const hasil = {};
+  for (const baris of Array.isArray(rows) ? rows : []) {
+    const kunci = String(baris.perkaraId);
+    const tanggalDaftar = isoTanggal(baris.tanggalDaftar);
+    const tanggalPutusan = isoTanggal(baris.tanggalPutusan);
+    const mediasi = mediasiPerPerkara[kunci] || [];
+
+    const sampai = tanggalPutusan || hariIni;
+    const hariTotal = selisihHariKalender(tanggalDaftar, sampai);
+
+    const { hari: hariMediasi, dibatasi: mediasiDibatasi } = hariMediasiBersih(
+      mediasi,
+      tanggalDaftar,
+      sampai
+    );
+
+    const hariBersih = hariTotal === null ? null : Math.max(0, hariTotal - hariMediasi);
+
+    hasil[kunci] = {
+      tanggalDaftar,
+      tanggalPutusan,
+      sudahPutus: Boolean(tanggalPutusan),
+      hariTotal,
+      hariMediasi,
+      /**
+       * true bila potongan mediasinya dipotong ke batas PERMA (60 hari).
+       * Disebutkan supaya angka yang tampak "bulat" dapat ditelusuri - dan
+       * supaya tidak ada yang mengira ALETA menyembunyikan selisihnya.
+       */
+      mediasiDibatasi,
+      hariBersih,
+      ambangHari: AMBANG_DURASI_HARI,
+      // Sisa hari sampai batas lima bulan. Negatif berarti sudah lewat.
+      sisaHari: hariBersih === null ? null : AMBANG_DURASI_HARI - hariBersih,
+      mediasi,
+    };
+  }
+  return hasil;
+}
+
+/**
+ * ============================================================================
+ * BATAS MEDIASI MENURUT PERMA, BUKAN MENURUT ISI KOLOMNYA
+ * ============================================================================
+ *
+ * PERMA 1/2016 Pasal 24: mediasi berlangsung paling lama 30 hari, dapat
+ * diperpanjang 30 hari atas kesepakatan para pihak. Paling lama 60 hari,
+ * karena itu, yang boleh dikeluarkan dari jangka penyelesaian perkara.
+ *
+ * Batas ini BUKAN kehati-hatian yang berlebihan - ia menjawab keadaan data
+ * yang sungguh ada dan sudah terukur di satker ini:
+ *
+ *   perkara 1495 menghasilkan "mediasi 3.488 hari" atas perkara yang umurnya
+ *   87 hari, sebab satu baris mediasinya tidak punya keputusan_mediasi dan
+ *   karena itu terbaca seolah masih berjalan sejak 2017.
+ */
+/**
+ * CATATAN: berbeda dari BATAS_MEDIASI_HARI di bawah, yang bernilai 30.
+ *
+ *   BATAS_MEDIASI_HARI (30)        tenggat mediasi sejak mediator ditetapkan
+ *   BATAS_POTONG_MEDIASI_HARI (60) paling banyak yang boleh DIKELUARKAN dari
+ *                                  jangka penyelesaian perkara - 30 hari
+ *                                  ditambah perpanjangan 30 hari
+ *
+ * Dua angka, dua pertanyaan. Menyatukannya akan membuat perkara yang
+ * mediasinya diperpanjang tampak melewati tenggat, atau perkara yang
+ * mediasinya salah catat mendapat potongan dua kali lipat.
+ */
+const BATAS_POTONG_MEDIASI_HARI = 60;
+
+/**
+ * Hari mediasi yang boleh dikeluarkan, sesudah tiga penyaringan.
+ *
+ * 1. Tiap rentang DIJEPIT ke umur perkaranya sendiri. Mediasi tidak dapat
+ *    dimulai sebelum perkaranya didaftarkan, dan tidak berlanjut sesudah
+ *    perkaranya diputus - baris yang mengatakan sebaliknya salah catat.
+ * 2. Rentang yang BERTINDIHAN disatukan, tidak dijumlah. Satu perkara di
+ *    satker ini punya tiga baris mediasi dengan tanggal mulai yang sama
+ *    persis; menjumlahkannya menghitung hari yang sama tiga kali.
+ * 3. Jumlahnya dibatasi 60 hari - batas PERMA.
+ */
+function hariMediasiBersih(mediasi, tanggalDaftar, tanggalSampai) {
+  const batasAwal = tanggalDaftar || "";
+  const batasAkhir = tanggalSampai || "";
+  if (!batasAwal || !batasAkhir) return { hari: 0, dibatasi: false };
+
+  // ==========================================================================
+  // BARIS KEMBAR: YANG BERUJUNG MENANG ATAS YANG MENGGANTUNG
+  // ==========================================================================
+  //
+  // Beberapa baris mediasi dengan tanggal mulai yang SAMA menerangkan mediasi
+  // yang sama - salah satunya belum sempat diisi keputusannya. Terukur di
+  // satker ini: perkara 1495 punya dua baris begitu, perkara 2285 punya tiga.
+  //
+  // Memperlakukan yang menggantung sebagai "masih berjalan" membuat mediasi
+  // SATU HARI terbaca 59 hari, dan perkara 87 hari terbaca seolah hanya 28
+  // hari yang menjadi tanggung jawab majelis. Angka yang menyenangkan, dan
+  // sama sekali tidak benar.
+  const perMulai = new Map();
+  for (const m of mediasi) {
+    if (!m.mulai) continue;
+    const kelompok = perMulai.get(m.mulai) || [];
+    kelompok.push(m);
+    perMulai.set(m.mulai, kelompok);
+  }
+
+  const rentang = [];
+  for (const [mulaiMentah, kelompok] of perMulai) {
+    const berujung = kelompok.filter((m) => m.selesai);
+    // Yang menggantung hanya dipakai bila TIDAK SATU PUN baris sekelompoknya
+    // punya keputusan - barulah ia sungguh mediasi yang sedang berjalan.
+    const selesaiMentah = berujung.length
+      ? berujung.map((m) => m.selesai).sort().pop()
+      : batasAkhir;
+
+    // Mediasi tidak dapat dimulai sebelum perkaranya didaftarkan, dan tidak
+    // berlanjut sesudah perkaranya diputus - baris yang mengatakan sebaliknya
+    // salah catat.
+    const mulai = mulaiMentah > batasAwal ? mulaiMentah : batasAwal;
+    const selesai = selesaiMentah < batasAkhir ? selesaiMentah : batasAkhir;
+    if (selesai <= mulai) continue;
+    rentang.push({ mulai, selesai });
+  }
+  if (rentang.length === 0) return { hari: 0, dibatasi: false };
+
+  rentang.sort((a, b) => a.mulai.localeCompare(b.mulai));
+  const gabung = [rentang[0]];
+  for (let i = 1; i < rentang.length; i += 1) {
+    const akhir = gabung[gabung.length - 1];
+    if (rentang[i].mulai <= akhir.selesai) {
+      if (rentang[i].selesai > akhir.selesai) akhir.selesai = rentang[i].selesai;
+    } else {
+      gabung.push(rentang[i]);
+    }
+  }
+
+  let hari = 0;
+  for (const r of gabung) {
+    const n = selisihHariKalender(r.mulai, r.selesai);
+    if (n !== null && n > 0) hari += n;
+  }
+
+  if (hari > BATAS_POTONG_MEDIASI_HARI) return { hari: BATAS_POTONG_MEDIASI_HARI, dibatasi: true };
+  return { hari, dibatasi: false };
+}
+
+/** Selisih hari kalender antara dua tanggal ISO, atau null bila tidak terbaca. */
+function selisihHariKalender(dari, sampai) {
+  const a = /^\d{4}-\d{2}-\d{2}$/.test(String(dari || "")) ? new Date(`${dari}T00:00:00`) : null;
+  const b = /^\d{4}-\d{2}-\d{2}$/.test(String(sampai || "")) ? new Date(`${sampai}T00:00:00`) : null;
+  if (!a || !b || Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+/**
+ * Sandi hasil mediasi menurut keterangan kolomnya sendiri di SIPP:
+ * Y1 berhasil dengan kesepakatan, Y2 berhasil dengan pencabutan,
+ * S berhasil sebagian, T tidak berhasil, D tidak dapat dilaksanakan.
+ *
+ * Dibaca dari komentar kolom, bukan ditebak - tiga sandi cara relaas pernah
+ * ditebak dari teks bebas dan ketiganya salah.
+ */
+const HASIL_MEDIASI = {
+  Y1: "berhasil dengan kesepakatan",
+  Y2: "berhasil dengan pencabutan",
+  S: "berhasil sebagian",
+  T: "tidak berhasil",
+  D: "tidak dapat dilaksanakan",
+};
+
+function sebutanHasilMediasi(sandi) {
+  const kode = cleanText(sandi).toUpperCase();
+  if (!kode) return "";
+  return HASIL_MEDIASI[kode] || kode;
+}
+
 async function putusanBanyakPerkara(daftarPerkaraId = []) {
   const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
   if (id.length === 0) return {};
@@ -1381,9 +1667,15 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       idPerkara
     ),
     runQuery(
+      // ket_temu dan tanggal_jursit_pos ikut dibaca - keduanya sudah dipakai
+      // rincianSidang, jadi tidak ada kolom baru maupun kueri baru di sini.
+      // Tanpa keduanya, jalur panggilan harus DITEBAK, dan tebakan itulah yang
+      // sebelumnya salah pada 69% baris.
       `SELECT r.sidang_id AS sidangId,
               r.status_pos AS statusPos,
               r.tanggal_relaas AS tanggalRelaas,
+              r.tanggal_jursit_pos AS tanggalKirimPos,
+              r.ket_temu AS ketTemu,
               r.no_resi_pos AS noResiPos,
               vp.pihak_ke AS pihakKe
          FROM perkara_pelaksanaan_relaas r
@@ -1415,6 +1707,14 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       pihakKe: baris.pihakKe === null || baris.pihakKe === undefined ? null : Number(baris.pihakKe),
       statusPos: baris.statusPos === null || baris.statusPos === undefined ? null : Number(baris.statusPos),
       adaRelaas: Boolean(baris.tanggalRelaas) || Boolean(cleanText(baris.noResiPos)),
+      // Tanggalnya TIDAK dibuang lagi. Tanpa ketiganya, kepatutan tenggang
+      // hanya dapat dihitung di panel rincian satu sidang - satu perkara pada
+      // satu waktu - sementara yang ditanyakan justru "sidang mana minggu ini
+      // yang panggilannya mepet".
+      tanggalRelaas: isoTanggal(baris.tanggalRelaas),
+      tanggalKirimPos: isoTanggal(baris.tanggalKirimPos),
+      ketTemu: cleanText(baris.ketTemu),
+      noResiPos: cleanText(baris.noResiPos),
     });
   }
 
@@ -1426,6 +1726,14 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
     if (!Number.isFinite(sisi)) continue;
     if (!sisiPerkara[kunci]) sisiPerkara[kunci] = new Set();
     sisiPerkara[kunci].add(sisi);
+  }
+
+  // Tanggal tiap sidang, dari kueri yang sudah berjalan di atas. Pemanggil
+  // keadaanPanggilanSidang hanya mengirim sidangId dan perkaraId, jadi
+  // tanggalnya harus diambil dari sini - bukan diminta ulang.
+  const tanggalPerSidang = {};
+  for (const baris of Array.isArray(semuaSidang) ? semuaSidang : []) {
+    tanggalPerSidang[String(baris.sidangId)] = isoTanggal(baris.tanggalSidang);
   }
 
   const hasil = {};
@@ -1483,8 +1791,31 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
     // wajib: surat yang kembali tetap perlu ditindaklanjuti.
     const retur = relaas.filter((r) => r.statusPos === 2).length;
 
+    // ======================================================================
+    // HITUNG MUNDUR TENGGANG - ATURANNYA TIDAK DIKARANG DI SINI
+    // ======================================================================
+    //
+    // Seluruh angkanya datang dari ecourtPanggilanService: tiga jalur
+    // (elektronik 3 hari kalender, surat tercatat 6 hari kalender dan wajib
+    // terbukti diterima, biasa 3 hari KERJA), masing-masing dengan dasar
+    // hukumnya, dan seluruhnya dapat disetel tanpa menyentuh kode.
+    //
+    // Yang dikerjakan di sini hanya memilih relaas TERAKHIR tiap sisi lalu
+    // menanyakannya - jalurnya pun tidak ditebak, melainkan diturunkan
+    // bacaRelaas dari sandi ket_temu.
+    const tenggang = nilaiTenggangSidang(relaas, tanggalPerSidang[kunci] || "", wajib);
+
     hasil[kunci] = {
       hadirSebelumnya,
+      // Berapa hari lagi sidangnya. Negatif berarti sudah lewat.
+      sisaHariKeSidang: tenggang.sisaHariKeSidang,
+      // Pihak yang paling genting - bukan rata-rata, sebab satu panggilan
+      // yang tidak patut sudah cukup membatalkan sidangnya.
+      tenggangTersempit: tenggang.tersempit,
+      // Menyala bila ada pihak yang tenggangnya kurang dari ambang jalurnya,
+      // ATAU sidangnya tinggal kurang dari ambang sementara pihak wajibnya
+      // belum punya relaas sama sekali.
+      tenggangMepet: tenggang.mepet,
       // Tergugat/termohon pernah hadir pada sidang mana pun sebelumnya. Layar
       // memakainya untuk menutup "potensi verstek" pada perkara yang sudah
       // contradictoir - lihat kehadiranSebelumnya.
@@ -1506,6 +1837,121 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
   }
 
   return hasil;
+}
+
+/**
+ * Tenggang panggilan satu sidang: seberapa mepet, dan siapa yang paling genting.
+ *
+ * ============================================================================
+ * TERSEMPIT, BUKAN RATA-RATA
+ * ============================================================================
+ *
+ * Satu panggilan yang tidak patut sudah cukup membatalkan sidangnya. Angka
+ * rata-rata akan menyembunyikan justru pihak yang bermasalah di balik pihak
+ * yang panggilannya sudah lama beres.
+ *
+ * ============================================================================
+ * YANG BELUM DIPANGGIL PUN DIHITUNG
+ * ============================================================================
+ *
+ * Sidang yang tinggal dua hari lagi sementara tergugatnya belum punya relaas
+ * sama sekali TIDAK menghasilkan "tenggang kurang" - ia tidak menghasilkan
+ * apa-apa, sebab tidak ada tanggal yang dapat dibandingkan. Padahal itulah
+ * keadaan yang paling genting. Karena itu ketiadaan relaas pada sisi yang
+ * wajib ikut menyalakan penandanya, dengan alasannya sendiri.
+ */
+function nilaiTenggangSidang(relaas, tanggalSidang, sisiWajib = []) {
+  const hariIni = isoTanggal(new Date());
+  const sisaHariKeSidang = ecourtPanggilanService.selisihHari(hariIni, tanggalSidang, {
+    hariKerja: false,
+  });
+
+  if (!tanggalSidang) {
+    return { sisaHariKeSidang: null, tersempit: null, mepet: false };
+  }
+
+  // Relaas TERAKHIR tiap sisi - panggilan ulang menggantikan yang sebelumnya.
+  const terakhirPerSisi = new Map();
+  for (const r of relaas) {
+    const sisi = r.pihakKe === null || r.pihakKe === undefined ? 0 : Number(r.pihakKe);
+    const sebelumnya = terakhirPerSisi.get(sisi);
+    const tanggal = r.tanggalKirimPos || r.tanggalRelaas || "";
+    const tanggalSebelumnya = sebelumnya
+      ? sebelumnya.tanggalKirimPos || sebelumnya.tanggalRelaas || ""
+      : "";
+    if (!sebelumnya || tanggal > tanggalSebelumnya) terakhirPerSisi.set(sisi, r);
+  }
+
+  let tersempit = null;
+  let mepet = false;
+  for (const [sisi, r] of terakhirPerSisi) {
+    const dibaca = ecourtPanggilanService.bacaRelaas(r);
+    const nilai = ecourtPanggilanService.nilaiKepatutan({
+      tanggalPanggilan: dibaca.tanggalKirim || r.tanggalRelaas || "",
+      tanggalSidang,
+      // "pos" bukan kunci aturan - ia harus diterjemahkan menjadi
+      // "surat_tercatat" dulu, atau ambangJalur diam-diam memakai Pasal 122
+      // HIR (3 hari KERJA) untuk surat tercatat yang menuntut 6 hari kalender
+      // dan bukti penerimaan. Menyangkut 21% relaas di satker ini.
+      jalur: ecourtPanggilanService.jalurAturan(dibaca.jalur),
+      diterima: dibaca.diterima,
+    });
+    if (nilai.dinilai && nilai.patut === false && nilai.alasan === "tenggang_kurang_dari_ambang") {
+      mepet = true;
+    }
+    if (
+      nilai.selisih !== null &&
+      (tersempit === null || tersempit.selisih === null || nilai.selisih < tersempit.selisih)
+    ) {
+      tersempit = { sisi, ...nilai };
+    }
+  }
+
+  // ==========================================================================
+  // RELAAS TANPA KEDUDUKAN DIKREDITKAN - SAMA SEPERTI DI ATASNYA
+  // ==========================================================================
+  //
+  // keadaanPanggilanSidang sengaja mengkreditkan relaas ber-pihakKe null ke
+  // sisi yang belum tertutup: panggilan elektronik kerap tersimpan tanpa
+  // pihak_id yang tersambung, dan mengabaikannya menandai perkara yang JELAS
+  // sudah dipanggil sebagai belum.
+  //
+  // Penghitung ini dulu tidak ikut melakukannya, sehingga dua ruas pada baris
+  // yang SAMA saling membantah: belumDipanggil = 0 dan aman = true, sementara
+  // tenggangMepet = true dengan alasan "belum dipanggil". Diukur di
+  // sipp_donggala: 435 dari 14.496 relaas tidak menemukan kedudukannya (3,0%),
+  // dan 60 sidang yang SELURUH relaas bertanggalnya tanpa kedudukan.
+  const tanpaKedudukan = terakhirPerSisi.has(0) ? 1 : 0;
+  let kreditTersisa = tanpaKedudukan;
+
+  // Sisi wajib yang belum punya relaas sama sekali, sementara sidangnya sudah
+  // dekat. Ambangnya diambil dari jalur "biasa" - jalur paling longgar - supaya
+  // penandanya tidak menyala pada sidang yang masih jauh.
+  if (!mepet && sisaHariKeSidang !== null && sisaHariKeSidang >= 0) {
+    const ambangLonggar = ecourtPanggilanService.ambangJalur("biasa").hari;
+    for (const sisi of sisiWajib) {
+      if (terakhirPerSisi.has(Number(sisi))) continue;
+      if (kreditTersisa > 0) {
+        kreditTersisa -= 1;
+        continue;
+      }
+      if (sisaHariKeSidang < ambangLonggar) {
+        mepet = true;
+        if (!tersempit) {
+          tersempit = {
+            sisi: Number(sisi),
+            dinilai: false,
+            patut: false,
+            selisih: null,
+            alasan: "belum_dipanggil_sidang_sudah_dekat",
+            ambang: ambangLonggar,
+          };
+        }
+      }
+    }
+  }
+
+  return { sisaHariKeSidang, tersempit, mepet };
 }
 
 /**
@@ -2087,10 +2533,24 @@ async function jalurDokumenSipp(jenis, id) {
   if (jenis === "ikrar-talak") {
     const kolom = await sippSkemaService.kolomTerpilih();
     if (!kolom.ikrarDokumen) return null;
+    // ========================================================================
+    // KUNCINYA perkara_id, BUKAN id
+    // ========================================================================
+    //
+    // perkara_ikrar_talak tidak punya kolom "id" sama sekali - diperiksa pada
+    // sipp_donggala maupun sipp (PA Bungku), nol kolom bernama itu pada
+    // keduanya. Kuerinya karena itu tidak pernah memulangkan satu baris pun,
+    // dan .catch(() => []) di bawah membuat kegagalannya tidak berbunyi.
     const rows = await runQuery(
-      `SELECT t.${kolom.ikrarDokumen} AS berkas FROM perkara_ikrar_talak t WHERE t.id = ? LIMIT 1`,
+      `SELECT t.${kolom.ikrarDokumen} AS berkas FROM perkara_ikrar_talak t WHERE t.perkara_id = ? LIMIT 1`,
       [nomor]
-    ).catch(() => []);
+    ).catch((galat) => {
+      // Sebabnya dicatat, bukan ditelan. Kolom atau tabel yang tidak ada
+      // menghasilkan gejala yang persis sama dengan berkas yang memang belum
+      // diunggah, dan selama keduanya diam tidak ada cara membedakannya.
+      console.warn(`[sipp] ikrar-talak tidak terbaca: ${galat && galat.message}`);
+      return [];
+    });
     const berkas = cleanText(rows[0] && rows[0].berkas);
     if (!berkas) return null;
     return { jalur: berkas, judul: berkas.split("/").pop() };
@@ -2259,6 +2719,10 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
 }
 
 module.exports = {
+  durasiBanyakPerkara,
+  AMBANG_DURASI_HARI,
+  BATAS_POTONG_MEDIASI_HARI,
+  hariMediasiBersih,
   daftarSidang,
   daftarJadwalMediasi,
   BATAS_MEDIASI_HARI,

@@ -36,14 +36,31 @@ process.env.ALETA_ECOURT_SESSION_DIR = FOLDER_UJI;
 const integritas = require("../services/berkasIntegritasService");
 const sesi = require("../tools/ecourt-bridge/sesi");
 
-/** Berkas tiruan berukuran cukup, diawali penanda yang diminta. */
-function berkasPalsu(awalan, panjang = 2048) {
+/**
+ * Berkas tiruan berukuran cukup, diawali penanda yang diminta.
+ *
+ * Panjangnya dinaikkan 23 September 2026 mengikuti ambang per format
+ * (pdf 5.120 byte, word 3.072). Tiruan 2.048 byte yang dipakai sebelumnya
+ * kini ditolak - dan ditolaknya BENAR: dokumen sungguhan tidak pernah
+ * sekecil itu, dan yang sekecil itu selalu halaman galat atau unduhan yang
+ * putus di tengah.
+ */
+function berkasPalsu(awalan, panjang = 8192) {
   return Buffer.concat([Buffer.from(awalan, "binary"), Buffer.alloc(panjang)]);
+}
+
+/** PDF tiruan yang UTUH - berpenutup %%EOF, seperti PDF sungguhan. */
+function pdfPalsu(panjang = 8192) {
+  return Buffer.concat([
+    Buffer.from("%PDF-1.7\n", "binary"),
+    Buffer.alloc(panjang),
+    Buffer.from("\n%%EOF\n", "binary"),
+  ]);
 }
 
 console.log("\n== Keutuhan berkas: yang sah diterima ==");
 {
-  periksa("PDF diterima", integritas.periksaIsi(berkasPalsu("%PDF-1.7"), { format: "pdf" }).ok);
+  periksa("PDF diterima", integritas.periksaIsi(pdfPalsu(), { format: "pdf" }).ok);
   periksa(
     "docx diterima",
     integritas.periksaIsi(berkasPalsu("PK\x03\x04"), { format: "word" }).ok
@@ -53,6 +70,69 @@ console.log("\n== Keutuhan berkas: yang sah diterima ==");
     integritas.periksaIsi(berkasPalsu("\xd0\xcf\x11\xe0"), { format: "word" }).ok
   );
   periksa("RTF diterima", integritas.periksaIsi(berkasPalsu("{\\rtf1"), { format: "word" }).ok);
+}
+
+console.log("\n== Keutuhan berkas: yang rusak TIDAK lolos diam-diam ==");
+{
+  // ==========================================================================
+  // PDF TERPOTONG - SELAMA INI LOLOS SELURUHNYA
+  // ==========================================================================
+  //
+  // Awalannya %PDF-, ukurannya di atas ambang, jadi tidak satu pun pemeriksaan
+  // menyentuhnya. Ia baru ketahuan ketika hakim membukanya di ruang sidang.
+  const terpotong = Buffer.concat([Buffer.from("%PDF-1.7\n", "binary"), Buffer.alloc(8192)]);
+  const hasilTerpotong = integritas.periksaIsi(terpotong, { format: "pdf" });
+  periksa("PDF tanpa %%EOF ditolak", hasilTerpotong.ok === false);
+  periksa(
+    "sebabnya disebut terpotong, bukan 'penanda tidak dikenali'",
+    hasilTerpotong.alasan === "pdf_terpotong_tanpa_penutup"
+  );
+
+  // ==========================================================================
+  // HALAMAN GALAT DIPERIKSA SEBELUM UKURAN
+  // ==========================================================================
+  //
+  // Halaman galat e-Court berukuran 2 kB. Dulu ia dilaporkan "terlalu_kecil",
+  // dan alasan itu menyuruh petugas menaikkan batas ukuran - padahal yang
+  // perlu dikerjakan login ulang ke e-Court.
+  const halamanGalat = Buffer.from(
+    "<!doctype html><html><body>Sesi Anda telah berakhir</body></html>",
+    "utf8"
+  );
+  const hasilHalaman = integritas.periksaIsi(halamanGalat, { format: "pdf" });
+  periksa("halaman web ditolak", hasilHalaman.ok === false);
+  periksa(
+    "sebabnya halaman web, BUKAN terlalu kecil",
+    hasilHalaman.alasan === "isinya_halaman_web_bukan_dokumen"
+  );
+
+  // Berkas yang memang terlalu kecil tetap disebut terlalu kecil.
+  const kecil = Buffer.concat([Buffer.from("%PDF-1.7\n", "binary"), Buffer.alloc(200)]);
+  periksa(
+    "yang memang kecil tetap disebut kecil",
+    /^terlalu_kecil_/.test(integritas.periksaIsi(kecil, { format: "pdf" }).alasan)
+  );
+}
+
+console.log("\n== Dugaan hasil pindai: menandai, TIDAK menolak ==");
+{
+  const pindai = Buffer.concat([
+    Buffer.from("%PDF-1.7\n/DCTDecode /DCTDecode\n", "binary"),
+    Buffer.alloc(8192),
+    Buffer.from("\n%%EOF\n", "binary"),
+  ]);
+  periksa("PDF tanpa font dan berisi gambar diduga hasil pindai", integritas.dugaHasilPindai(pindai).diduga === true);
+  // Yang paling penting: dugaan TIDAK menolak berkasnya. Ia kira-kira, dan
+  // kira-kira tidak boleh membuang berkas perkara.
+  periksa("berkasnya TETAP dinyatakan sah", integritas.periksaIsi(pindai, { format: "pdf" }).ok === true);
+
+  const berteks = Buffer.concat([
+    Buffer.from("%PDF-1.7\n/Font /Font\n", "binary"),
+    Buffer.alloc(8192),
+    Buffer.from("\n%%EOF\n", "binary"),
+  ]);
+  periksa("PDF berfont tidak diduga hasil pindai", integritas.dugaHasilPindai(berteks).diduga === false);
+  periksa("docx tidak pernah diduga hasil pindai", integritas.dugaHasilPindai(berkasPalsu("PK\x03\x04")).diduga === false);
 }
 
 console.log("\n== Keutuhan berkas: yang rusak ditolak ==");

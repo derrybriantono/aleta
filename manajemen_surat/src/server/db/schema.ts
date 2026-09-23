@@ -949,6 +949,36 @@ const schemaStatements = [
     ON aleta_rekam_antrian (tanggal_sidang, ruangan, urutan_ruang)`,
   `CREATE INDEX IF NOT EXISTS idx_rekam_antrian_perkara
     ON aleta_rekam_antrian (perkara_id, tanggal_sidang)`,
+  /**
+   * Pengaturan layar antrian yang dapat dibuka TANPA LOGIN.
+   *
+   * Diminta pengguna 23 September 2026. Pranalanya sudah lama ada
+   * (/antrian-layar dan /api/antrian-ruang); yang belum ada kendalinya - ruas
+   * mana yang boleh tampil di sana. Bawaannya seluruhnya tampil, dan ruas yang
+   * menyangkut identitas ditandai "peka" di layar pengaturannya.
+   * Lihat 0049_antrian_publik.sql dan src/lib/antrian-publik.ts.
+   */
+  `CREATE TABLE IF NOT EXISTS aleta_antrian_publik (
+    id SMALLINT PRIMARY KEY CHECK (id = 1),
+    aktif BOOLEAN NOT NULL DEFAULT TRUE,
+    tampil_json TEXT NOT NULL DEFAULT '{}',
+    judul TEXT NOT NULL DEFAULT '',
+    catatan TEXT NOT NULL DEFAULT '',
+    diperbarui_oleh TEXT,
+    diperbarui_pada TEXT NOT NULL DEFAULT '',
+    CONSTRAINT fk_aleta_antrian_publik_oleh FOREIGN KEY (diperbarui_oleh) REFERENCES users(id)
+  )`,
+  /**
+   * Baris tunggalnya, sama dengan yang disisipkan 0049_antrian_publik.sql.
+   *
+   * Tanpa ini, pemasangan yang dibangun dari schema.ts membaca tabel KOSONG,
+   * dan layanan memperlakukan tabel kosong sebagai "tidak terbaca" - lalu
+   * jatuh ke bentuk paling sempit. Dua pemasangan yang sama versinya karena
+   * itu akan berbeda bawaannya, dan yang satu berlawanan dengan yang diminta.
+   */
+  `INSERT INTO aleta_antrian_publik (id, aktif, tampil_json, judul, catatan, diperbarui_pada)
+   VALUES (1, TRUE, '{}', '', '', '')
+   ON CONFLICT (id) DO NOTHING`,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

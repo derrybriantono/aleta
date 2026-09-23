@@ -135,6 +135,42 @@ function saveSettings({ hariElektronik, hariSuratTercatat, hariBiasa, olehSiapa 
 }
 
 /** Ambang yang berlaku untuk satu jalur, beserta keterangannya. */
+/**
+ * ============================================================================
+ * DUA KOSAKATA JALUR YANG BERBEDA, DAN SALAH SATUNYA DIAM-DIAM JATUH KE BIASA
+ * ============================================================================
+ *
+ * bacaRelaas() memulangkan jalur menurut sandi relaas:
+ *     "langsung" | "pos" | "elektronik" | "pengumuman"
+ *
+ * ambangJalur() hanya mengenal kunci ATURAN:
+ *     "biasa" | "surat_tercatat" | "elektronik"
+ *
+ * Yang tidak dikenali jatuh ke JALUR.biasa TANPA BERBUNYI. Akibatnya
+ * "pos" - surat tercatat - dinilai dengan Pasal 122 HIR (3 hari KERJA,
+ * penerimaan tidak perlu dibuktikan) alih-alih SK KMA 363 (6 hari kalender
+ * DAN wajib terbukti diterima). Diukur di sipp_donggala: sandi S dipakai pada
+ * 3.104 dari 14.495 relaas (21%), seluruhnya ber-nomor resi.
+ *
+ * Terjemahannya sudah ada dan benar di susunKeadaanPanggilan, tetapi terkubur
+ * di dalam satu ungkapan bersyarat. Di sini ia berdiri sendiri supaya tidak
+ * ada pemanggil baru yang lupa memakainya.
+ */
+const JALUR_ATURAN = {
+  pos: "surat_tercatat",
+  elektronik: "elektronik",
+  pengumuman: "pengumuman",
+  langsung: "biasa",
+};
+
+function jalurAturan(jalurRelaas) {
+  const kunci = String(jalurRelaas || "").trim().toLowerCase();
+  if (!kunci) return "biasa";
+  // Kunci aturan yang memang sudah benar dibiarkan apa adanya.
+  if (JALUR[kunci]) return kunci;
+  return JALUR_ATURAN[kunci] || "biasa";
+}
+
 function ambangJalur(jalur) {
   const pengaturan = getSettings();
   const acuan = JALUR[jalur] || JALUR.biasa;
@@ -646,6 +682,7 @@ module.exports = {
   JALUR,
   ambangJalur,
   bacaRelaas,
+  jalurAturan,
   getSettings,
   jalurSeharusnya,
   nilaiKepatutan,

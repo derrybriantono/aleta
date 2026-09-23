@@ -18,6 +18,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { AletaEcourtKendaliSipp } from "@/components/portal/aleta-ecourt-kendali-sipp";
+import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -426,70 +427,6 @@ function TombolTarikPerkara({
       {catatan ? (
         <p className="max-w-[14rem] text-xs text-muted-foreground">{catatan}</p>
       ) : null}
-    </div>
-  );
-}
-
-/**
- * Mengunduh SELURUH berkas satu perkara sebagai satu ZIP.
- *
- * Majelis yang menyiapkan sidang memerlukan seluruh berkas, bukan satu per
- * satu. ZIP disusun di server dari berkas yang SUDAH tersimpan - e-Court tidak
- * disentuh sama sekali oleh tombol ini.
- */
-function TombolUnduhZip({ nomorPerkara }: { nomorPerkara: string }) {
-  const [sibuk, setSibuk] = useState(false);
-  const [catatan, setCatatan] = useState("");
-
-  const unduh = async () => {
-    setSibuk(true);
-    setCatatan("");
-    try {
-      const params = new URLSearchParams({ nomor: nomorPerkara });
-      const respons = await fetch(apiPath(`/api/aleta-ecourt/berkas-zip?${params.toString()}`), {
-        cache: "no-store",
-      });
-
-      const tipe = respons.headers.get("content-type") || "";
-      if (!respons.ok || tipe.includes("application/json")) {
-        const isi = await respons.json().catch(() => null);
-        setCatatan(pesanGalatPortal(isi, `HTTP ${respons.status}`).replace(/_/g, " "));
-        return;
-      }
-
-      const blob = await respons.blob();
-      if (blob.size === 0) {
-        setCatatan("ZIP-nya kosong.");
-        return;
-      }
-
-      const alamat = URL.createObjectURL(blob);
-      const tautan = document.createElement("a");
-      tautan.href = alamat;
-
-      const disposisi = respons.headers.get("content-disposition") || "";
-      const cocok = disposisi.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
-      tautan.download = cocok
-        ? decodeURIComponent(cocok[1])
-        : `ecourt-${nomorPerkara.replace(/[^\w.-]+/g, "-")}.zip`;
-
-      document.body.appendChild(tautan);
-      tautan.click();
-      tautan.remove();
-      window.setTimeout(() => URL.revokeObjectURL(alamat), 60000);
-    } catch (kesalahan) {
-      setCatatan(kesalahan instanceof Error ? kesalahan.message : "Gagal mengunduh ZIP.");
-    } finally {
-      setSibuk(false);
-    }
-  };
-
-  return (
-    <div className="space-y-1">
-      <Button size="sm" variant="outline" disabled={sibuk} onClick={() => void unduh()}>
-        {sibuk ? "Menyusun…" : "Unduh ZIP"}
-      </Button>
-      {catatan ? <p className="max-w-[14rem] text-xs text-muted-foreground">{catatan}</p> : null}
     </div>
   );
 }

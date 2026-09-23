@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.33.0";
+export const APP_VERSION = "2.34.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.33.0 - Tiga Aturan yang Saya Karang Sendiri, dan Semuanya Salah";
+  "ALETA Judicia v2.34.0 - Sebelas Permintaan, dan Sebelas Penurun Sebutan yang Berselisih";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,52 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.34.0",
+    title: "ALETA Judicia v2.34.0 - Sebelas Permintaan, dan Sebelas Penurun Sebutan yang Berselisih",
+    date: "2026-09-23",
+    status: "Terpasang",
+    summary:
+      "Sebelas permintaan pengguna dikerjakan sekaligus - papan hari ini, tanda menunggu lama, arsip ZIP dua sumber, tanggal sidang tiap dokumen e-Court, hitung mundur tenggang panggilan, sebaran relaas per juru sita, sebutan para pihak, layar antrian tanpa login, unggah putusan yang berhenti sebelum mulai, durasi perkara tanpa hari mediasi, dan saklar cetak ABT yang tidak menuruti keadaannya. Yang terbesar bukan salah satunya: sebelas tempat menurunkan sebutan para pihak dengan tujuh aturan berbeda, dan lima di antaranya salah pada 21% sampai 55% perkara satker.",
+    added: [
+      "Papan \"hari ini beres atau belum\" di atas daftar sidang - satu baris, tiap angka dapat ditekan, dan tetap tampil walau nol. Angkanya diambil dari hitungan yang sudah ada; hitungan kedua akan berbeda dari yang pertama suatu hari, dan tidak ada pada layarnya yang memberi tahu mana yang benar.",
+      "Tanda \"sudah menunggu N menit\" pada kolom antrian, dihitung basis data mesin antrian sendiri - bukan Node, bukan jam PC petugas. Ambangnya 30 menit, sama dengan pita jarak antar-sidang yang sudah diukur dari 10.989 jarak nyata.",
+      "Arsip ZIP satu tekan kini memuat DUA sumber - gugatan, relaas beserta resi pos, berita acara sidang, putusan, lampiran, dan berkas e-Court - berkelompok menurut jenisnya beserta daftar isi. Sebelumnya hanya e-Court, sehingga perkara yang tidak pernah lewat e-Court dijawab 404 walau 41 relaas dan 8 berita acaranya tersimpan rapi.",
+      "Kotak keadaan \"Tenggang mepet\" pada layar Jadwal Sidang, beserta hitung mundur H-3 di barisnya. Aturannya dipinjam dari mesin kepatutan yang sudah ada - elektronik 3 hari kalender, surat tercatat 6 hari kalender dan wajib terbukti diterima, biasa 3 hari kerja. Diukur atas 20 sidang empat belas hari ke depan: 6 menyala.",
+      "Sebaran relaas per juru sita di halaman Peta Perkara - siapa mengerjakan berapa, di berapa desa, dan berapa yang kembali. Terukur pada 2026: tiga juru sita membagi 2.337 relaas hampir rata (793, 788, 756) tetapi returnya 5,7%, 0,3%, dan 5,3%.",
+      "Layar antrian sidang yang dapat dibuka TANPA LOGIN, beserta pengaturan di admin tentang ruas mana yang boleh tampil. Bawaannya seluruhnya tampil sebagaimana diminta; empat ruas yang menyangkut identitas ditandai \"peka\" tiap kali pengaturannya dibuka.",
+      "Durasi perkara berjalan di bawah agenda, dan rinciannya lengkap di panel Rincian - dengan hari mediasi TIDAK dihitung, sebagaimana PERMA 1/2016 Pasal 24.",
+      "Nomor sidang di kiri daftar relaas, berita acara, dan dokumen e-Court.",
+    ],
+    changed: [
+      "Urutan bawaan daftar sidang mengikuti nomor antrian; yang belum bernomor turun ke bawah tanpa diacak.",
+      "Pemeriksa keutuhan berkas kini mengenali PDF yang terpotong - berkas yang awalannya benar tetapi tanpa penutup %%EOF selama ini dinyatakan sah dan baru ketahuan ketika hakim membukanya. PDF hasil pindai ditandai \"diduga\", dan dugaan itu tidak pernah menolak berkasnya.",
+      "Batas ukuran berkas dipisah per bentuk - PDF 5 kB, dokumen Word 3 kB. Satu angka untuk keduanya terlalu longgar bagi docx: wadah ZIP yang sah pun sudah lebih dari 3 kB sebelum satu huruf ditulis di dalamnya.",
+    ],
+    fixed: [
+      "SEBELAS PENURUN SEBUTAN PARA PIHAK disatukan menjadi satu sumber. Diukur atas seluruh 10.120 perkara satker, dibandingkan dengan kueri ABT sendiri: kelengkapanDataService salah pada 5.254 (51,9%), caseDirectoryService 5.581 (55,1%), penyusunPertimbangan 4.415 (43,6%), isian-putusan-sipp 3.999 (39,5%), jlf-variable-resolver 1.178 (11,6%). Aturan baru: 0 dari 10.120. Sebab utamanya sepele dan tidak pernah tertangkap uji - SIPP menulis \"Istbat Nikah\" sedangkan seluruh pola ALETA menulis \"itsbat\", dan 3.972 perkara luput karena satu huruf.",
+      "UNGGAH PUTUSAN YANG BERHENTI PADA \"akar_sipp_belum_disetel\". Diukur di peladen dan ditemukan DUA halangan: pengaturan folder SIPP bernilai null, dan folder itu terpasang hanya-baca sehingga menyetelnya saja hanya memindahkan galatnya satu langkah. Kini folder SIPP punya cadangan dari mount yang memang sudah ada, keadaan hanya-baca dibedakan dari belum-disetel, dan dua folder putusan dibuka untuk ditulis di docker-compose.",
+      "TANGGAL SIDANG TIAP DOKUMEN e-COURT tidak pernah terisi, dan agenda seluruh dokumen satu perkara berisi agenda TERAKHIR perkara itu. Halaman e-Court sebenarnya menuliskan tanggalnya dengan jelas per blok agenda; yang hilang penyambungnya. Sinkronisasi juga berhenti MENGOSONGKAN kembali tanggal yang sudah benar.",
+      "PENETAPAN IKRAR TALAK tidak pernah dapat diunduh: kuerinya mencari kolom \"id\" pada perkara_ikrar_talak, dan tabel itu tidak punya kolom bernama begitu - kunci utamanya perkara_id. Kegagalannya ditelan .catch(), jadi tombolnya hanya tidak pernah muncul.",
+      "Nama juru sita pada peta relaas salah pada 61,6% baris yang bernama, dan dua juru sita tersibuk tidak pernah muncul sama sekali.",
+    ],
+    security: [
+      "Layar antrian tanpa login: pengaturan yang TIDAK terbaca jatuh ke bentuk paling sempit, bukan ke bawaan \"semua tampil\". Ruas peka yang tampil karena kegagalan pembacaan adalah ruas yang tidak pernah diputuskan siapa pun.",
+      "Hanya Admin atau Super Admin yang dapat mengubah ruas mana yang tampil tanpa login, dan tiap perubahan tercatat beserta nama penulisnya.",
+      "Rute antrian per ruang yang lama TIDAK ikut berubah - televisi ruang tunggu yang sudah berjalan tetap menjawab empat hal saja.",
+      "Dua folder SIPP dibuka untuk ditulis, dan hanya dua: resources/file/doc dan resources/file/anonimisasi. Pohon SIPP selebihnya tetap hanya-baca.",
+    ],
+    operationalNotes: [
+      "Migrasi 0049_antrian_publik menambahkan tabel pengaturan layar antrian tanpa login, dengan satu baris bawaan yang seluruh ruasnya menyala.",
+      "docker-compose.yml berubah dan TIDAK dikirim skrip pemasangan - dua mount baru harus dipasang di peladen secara terpisah, lalu container bot dijalankan ulang.",
+      "Berkas e-Court lama belum bertanggal sidang. Jalankan scripts/isi-tanggal-sidang-dokumen.js untuk mengisinya dari SIPP; tanpa --tulis ia hanya melapor, dan --periksa membuktikan anggapannya.",
+    ],
+    knownLimitations: [
+      "Bawaan layar antrian tanpa login adalah SELURUH ruas tampil, termasuk nomor perkara dan nama para pihak - diminta dengan tegas. Dengan bawaan itu keduanya dapat dibaca siapa pun yang dapat membuka alamatnya, tanpa jejak siapa yang membacanya. Matikan yang tidak diperlukan televisi ruang tunggu.",
+      "Papan \"hari ini\" berlingkup sidang hari yang dibuka, bukan tunggakan seluruh perkara. Diukur: \"belum minutasi\" bernilai nol pada tiap hari sidang yang diperiksa, sehingga angka besar pada contoh permintaan hanya mungkin bila lingkupnya se-satker - dan lingkup itu belum ada sumbernya.",
+      "Dugaan \"hasil pindai\" dihitung dari byte mentah PDF tanpa menguraikannya. Jawaban yang jujur menuntut pustaka PDF di bot, yang belum ada.",
+    ],
+  },
   {
     version: "2.33.0",
     title: "ALETA Judicia v2.33.0 - Tiga Aturan yang Saya Karang Sendiri, dan Semuanya Salah",

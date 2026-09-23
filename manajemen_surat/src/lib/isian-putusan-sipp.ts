@@ -1,3 +1,5 @@
+
+import { sebutanSatuPihak, type BahanSebutan } from "@/lib/sebutan-pihak";
 import { pecahNaskahPutusan } from "@/lib/susunan-putusan";
 
 /**
@@ -70,8 +72,11 @@ function bersih(nilai: unknown): string {
  * jenis perkaranya di mata siapa pun yang membaca putusan itu kelak di
  * Direktori Putusan.
  */
-const POLA_PERMOHONAN =
-  /permohonan|cerai\s*talak|itsbat|isbat|dispensasi|wali\s*adhal|poligami|asal.?usul|perwalian|pengangkatan|penetapan ahli waris|p3hp/i;
+// Pola lama ditulis di sini dan salah pada 3.999 dari 10.120 perkara satker,
+// sebagian besar hanya karena SIPP menulis "Istbat" sedangkan polanya
+// "itsbat". Aturannya kini satu tempat - lihat src/lib/sebutan-pihak.ts,
+// yang memakai alur_perkara_id dan jenis_perkara_id lebih dulu dan menyimpan
+// pencocokan kata sebagai cadangan terakhir.
 
 /**
  * Sebutan acara untuk satu pihak.
@@ -80,10 +85,13 @@ const POLA_PERMOHONAN =
  * Penggugat/Tergugat. Salah menyebutnya pada amar anonim bukan sekadar salah
  * kata: ia mengubah jenis perkaranya di mata yang membaca.
  */
-export function sebutanPihak(pihakKe: number | null | undefined, jenisPerkara: string, jenis?: string): string {
-  const permohonan = POLA_PERMOHONAN.test(bersih(jenisPerkara));
-  const pokok = Number(pihakKe) === 2 ? (permohonan ? "Termohon" : "Tergugat") : permohonan ? "Pemohon" : "Penggugat";
-  return bersih(jenis).toLowerCase() === "kuasa" ? `Kuasa ${pokok}` : pokok;
+export function sebutanPihak(
+  pihakKe: number | null | undefined,
+  jenisPerkara: string,
+  jenis?: string,
+  bahanTambahan?: BahanSebutan
+): string {
+  return sebutanSatuPihak(pihakKe, { ...(bahanTambahan ?? {}), jenisPerkaraNama: jenisPerkara }, jenis);
 }
 
 /** Memasang tanda pelarian untuk dipakai di dalam ekspresi reguler. */

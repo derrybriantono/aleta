@@ -300,6 +300,77 @@ function extractDocumentLinks(potonganHtml) {
   return hasil;
 }
 
+/**
+ * Kepala satu blok agenda, dibaca SESUDAH "Agenda Sidang :" dipotong.
+ *
+ * Bentuk aslinya di halaman:
+ *
+ *   Agenda Sidang : Jawaban Tergugat Silahkan Mengupload Berkas Persidangan
+ *   Sebelum : Selasa, 09 Desember 2025 Pukul : 15:00:00 WIB
+ *
+ * Tanggal dan jam pada baris "Sebelum" itu BUKAN sekadar tenggat: ia tanggal
+ * dan jam sidangnya sendiri. Diuji atas perkara 620/Pdt.G/2025/PA.Dgl - dua
+ * dari dua blok cocok tepat dengan perkara_jadwal_sidang di SIPP, sampai ke
+ * jamnya (15:00, yang hanya dipakai 111 dari 20.109 baris jadwal, jadi
+ * kecocokannya bukan kebetulan).
+ *
+ * Pola pertama menuntut baris "Sebelum" ada. Pola kedua menerima blok yang
+ * hanya menyebut nama agendanya - sebagian agenda lama sudah lewat tenggatnya
+ * dan e-Court berhenti menuliskan barisnya, dan blok seperti itu tetap punya
+ * dokumen yang perlu dikenali agendanya.
+ */
+function bacaKepalaAgenda(blokHtml) {
+  const teks = stripTags(blokHtml).slice(0, 400);
+
+  const penuh = teks.match(
+    /^\s*([^\n]+?)\s*Silahkan Mengupload Berkas Persidangan\s*Sebelum\s*:\s*([^\n]+?)(?:\n|$)/i
+  );
+  if (penuh) {
+    const batasTeks = cleanText(penuh[2]);
+    return {
+      agenda: cleanText(penuh[1]),
+      batasWaktu: parseIndonesianDate(batasTeks),
+      batasWaktuTeks: batasTeks,
+    };
+  }
+
+  const hanyaNama = teks.match(/^\s*([^\n]+?)(?:\s*Silahkan Mengupload|\n|$)/i);
+  return {
+    agenda: hanyaNama ? cleanText(hanyaNama[1]) : "",
+    batasWaktu: null,
+    batasWaktuTeks: "",
+  };
+}
+
+/**
+ * ============================================================================
+ * DUA TINGKAT PEMOTONGAN, BUKAN SATU
+ * ============================================================================
+ *
+ * Halaman perkara e-Court berbentuk berlapis: beberapa BLOK AGENDA, dan di
+ * dalam tiap blok beberapa DOKUMEN.
+ *
+ *   Agenda Sidang : Jawaban Tergugat ... Sebelum : 09 Desember 2025 15:00
+ *     Dokumen diupload oleh : Tergugat - ...
+ *   Agenda Sidang : Replik Penggugat ... Sebelum : 16 Desember 2025 15:00
+ *     Dokumen diupload oleh : Penggugat - ...
+ *
+ * Dulu pemotongan hanya satu tingkat, pada "Dokumen diupload oleh :". Judul
+ * bloknya berdiri di LUAR potongan itu, jadi tiap dokumen keluar tanpa tahu
+ * blok mana pemiliknya - dan run.js menutupi kekosongan itu dengan menempelkan
+ * agenda TERAKHIR perkara ke SELURUH dokumennya. Akibatnya berkas Jawaban
+ * tercatat beragenda "Kesimpulan", dan kolom tanggal sidang tidak pernah
+ * terisi sama sekali.
+ *
+ * Tingkat pertama memotong pada "Agenda Sidang :". Bagian ke-0 - segala yang
+ * berdiri sebelum agenda pertama - TIDAK dibuang: dokumen di sana tetap
+ * dibaca, hanya tanpa agenda. Membuangnya berarti kehilangan dokumen;
+ * memberinya agenda blok pertama berarti menempelkannya pada sidang yang
+ * keliru, dan nomor yang keliru di sana lebih buruk daripada kosong.
+ *
+ * Tingkat kedua memotong isi tiap blok pada "Dokumen diupload oleh :", persis
+ * seperti sebelumnya.
+ */
 function extractHearingDocuments(html) {
   const hasil = [];
 
@@ -307,45 +378,63 @@ function extractHearingDocuments(html) {
   // tagnya. Membuang tag lebih dulu ikut menghapus <a href> - dan itulah
   // sebabnya dokumen persidangan tidak pernah punya alamat unduh sama sekali,
   // sehingga Jawaban, Replik, dan Duplik tidak pernah terunduh.
-  const potonganHtml = String(html || "").split(/Dokumen diupload oleh\s*:/i).slice(1);
+  const blokHtml = String(html || "").split(/Agenda Sidang\s*:/i);
 
-  for (const bagianHtml of potonganHtml) {
-    // Berhenti sebelum dokumen berikutnya dimulai, supaya tautan milik dokumen
-    // lain tidak ikut terhitung sebagai milik dokumen ini.
-    const potonganMilikSendiri = bagianHtml.split(/Dokumen diupload oleh\s*:/i)[0];
-    const tautan = extractDocumentLinks(potonganMilikSendiri);
-    const bagian = stripTags(potonganMilikSendiri);
-    // Hanya bagian awal tiap potongan yang berisi keterangan dokumen ini;
-    // sisanya sudah masuk dokumen atau agenda berikutnya.
-    const kepala = bagian.slice(0, 900);
+  for (let nomorBlok = 0; nomorBlok < blokHtml.length; nomorBlok += 1) {
+    // Bagian ke-0 berdiri sebelum agenda pertama: ia tidak punya kepala, dan
+    // tidak boleh meminjam kepala blok sesudahnya.
+    const kepalaBlok =
+      nomorBlok === 0
+        ? { agenda: "", batasWaktu: null, batasWaktuTeks: "" }
+        : bacaKepalaAgenda(blokHtml[nomorBlok]);
 
-    const pengunggah = kepala.match(/^\s*([^\n]+?)\s*-\s*([^\s\n]+@[^\s\n]+)/);
-    const peran = pengunggah ? cleanText(pengunggah[1]) : "";
-    const email = pengunggah ? cleanText(pengunggah[2]) : "";
+    const potonganHtml = blokHtml[nomorBlok].split(/Dokumen diupload oleh\s*:/i).slice(1);
 
-    const unggahPada = kepala.match(/Upload pada\s*:\s*([^\n]+?)(?=\s*Status Dokumen|\n|$)/i);
-    const status = kepala.match(/Status Dokumen\s*:?\s*([^\n]+?)(?=\s*Jenis\s*:|\n|$)/i);
-    const jenis = kepala.match(/Jenis\s*:\s*([^\n]+?)(?=\s*Judul Dokumen|\n|$)/i);
-    const judul = kepala.match(/Judul Dokumen\s*:\s*([^\n]+?)(?=\s*Dokumen\s*:|\n|$)/i);
+    for (const bagianHtml of potonganHtml) {
+      // Berhenti sebelum dokumen berikutnya dimulai, supaya tautan milik
+      // dokumen lain tidak ikut terhitung sebagai milik dokumen ini.
+      const potonganMilikSendiri = bagianHtml.split(/Dokumen diupload oleh\s*:/i)[0];
+      const tautan = extractDocumentLinks(potonganMilikSendiri);
+      const bagian = stripTags(potonganMilikSendiri);
+      // Hanya bagian awal tiap potongan yang berisi keterangan dokumen ini;
+      // sisanya sudah masuk dokumen berikutnya.
+      const kepala = bagian.slice(0, 900);
 
-    const judulDokumen = judul ? cleanText(judul[1]) : cleanText(jenis ? jenis[1] : "");
-    if (!judulDokumen && !email) continue;
+      const pengunggah = kepala.match(/^\s*([^\n]+?)\s*-\s*([^\s\n]+@[^\s\n]+)/);
+      const peran = pengunggah ? cleanText(pengunggah[1]) : "";
+      const email = pengunggah ? cleanText(pengunggah[2]) : "";
 
-    hasil.push({
-      judul: judulDokumen,
-      jenis: jenis ? cleanText(jenis[1]) : "",
-      peranPengunggah: peran,
-      emailPengunggah: email,
-      diunggahPada: unggahPada ? parseIndonesianDate(unggahPada[1]) : null,
-      statusMentah: status ? cleanText(status[1]) : "",
-      tautan,
-      // Dipertahankan supaya pemanggil lama tetap berjalan.
-      // Bidang lama, dipertahankan demi pemanggil yang mungkin masih
-      // membacanya. Sejak PDF hanya membawa penanda, yang diisi di sini
-      // adalah alamat pertama yang MEMANG ada - bukan alamat kosong milik
-      // PDF, yang akan terbaca seolah dokumennya tidak punya berkas.
-      url: (tautan.find((x) => x.url) || {}).url || "",
-    });
+      const unggahPada = kepala.match(/Upload pada\s*:\s*([^\n]+?)(?=\s*Status Dokumen|\n|$)/i);
+      const status = kepala.match(/Status Dokumen\s*:?\s*([^\n]+?)(?=\s*Jenis\s*:|\n|$)/i);
+      const jenis = kepala.match(/Jenis\s*:\s*([^\n]+?)(?=\s*Judul Dokumen|\n|$)/i);
+      const judul = kepala.match(/Judul Dokumen\s*:\s*([^\n]+?)(?=\s*Dokumen\s*:|\n|$)/i);
+
+      const judulDokumen = judul ? cleanText(judul[1]) : cleanText(jenis ? jenis[1] : "");
+      if (!judulDokumen && !email) continue;
+
+      hasil.push({
+        judul: judulDokumen,
+        jenis: jenis ? cleanText(jenis[1]) : "",
+        peranPengunggah: peran,
+        emailPengunggah: email,
+        diunggahPada: unggahPada ? parseIndonesianDate(unggahPada[1]) : null,
+        statusMentah: status ? cleanText(status[1]) : "",
+        tautan,
+        // Agenda dan tanggal sidang MILIK BLOKNYA SENDIRI - bukan agenda
+        // terakhir perkara. Kosong pada dokumen yang berdiri sebelum blok
+        // agenda pertama, dan kekosongan itu disengaja.
+        agendaBlok: kepalaBlok.agenda,
+        tanggalSidang: kepalaBlok.batasWaktu,
+        batasUnggahBlok: kepalaBlok.batasWaktu,
+        batasUnggahTeksBlok: kepalaBlok.batasWaktuTeks,
+        // Dipertahankan supaya pemanggil lama tetap berjalan.
+        // Bidang lama, dipertahankan demi pemanggil yang mungkin masih
+        // membacanya. Sejak PDF hanya membawa penanda, yang diisi di sini
+        // adalah alamat pertama yang MEMANG ada - bukan alamat kosong milik
+        // PDF, yang akan terbaca seolah dokumennya tidak punya berkas.
+        url: (tautan.find((x) => x.url) || {}).url || "",
+      });
+    }
   }
 
   return hasil;

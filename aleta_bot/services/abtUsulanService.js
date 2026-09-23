@@ -1306,11 +1306,30 @@ const MODUS_SAKSI = new Set([
   "tahu-pisah",
 ]);
 
-/** Nama pihak yang bercerita, dari kode yang dikirim panel. */
-function sebutanSumberCerita(kode, pelaku, lawan) {
-  const k = String(kode || "").toLowerCase();
-  if (k === "lawan") return lawan || "Tergugat";
+/**
+ * Nama pihak yang bercerita.
+ *
+ * ============================================================================
+ * NAMA YANG DIKIRIM MENANG ATAS KODENYA
+ * ============================================================================
+ *
+ * Kode "pelaku"/"lawan" pernah berarti dua hal yang berlawanan: di panel SDG
+ * ia menyebut Penggugat dan Tergugat, di bot ia menyebut ruas muatan yang
+ * artinya justru terbalik. Selama artinya bergantung versi ekstensi yang
+ * sedang terpasang, tidak ada jawaban yang benar untuk semua orang.
+ *
+ * Karena itu ekstensi kini mengirim sebutannya apa adanya, dan jalur kode di
+ * bawah tinggal cadangan bagi ekstensi lama - yang muatannya memang tertukar,
+ * sehingga pemetaan lamanya tetap benar BAGINYA. Jangan "dibetulkan":
+ * membetulkannya justru mematahkan ekstensi lama.
+ */
+function sebutanSumberCerita(m, pelaku, lawan) {
+  const nama = String((m && m.sumberNama) || "").trim();
+  if (nama) return nama;
+
+  const k = String((m && m.sumber) || "").toLowerCase();
   if (k === "keluarga") return "keluarga mereka";
+  if (k === "lawan") return lawan || "Tergugat";
   return pelaku || "Penggugat";
 }
 
@@ -1690,7 +1709,7 @@ function susunKeteranganSaksiSdg(opsi) {
     return {
       modus: nama,
       alasan: alasanSaksi,
-      sumber: sebutanSumberCerita(m.sumber, opsi && opsi.pelaku, opsi && opsi.lawan),
+      sumber: sebutanSumberCerita(m, opsi && opsi.pelaku, opsi && opsi.lawan),
     };
   };
 

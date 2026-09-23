@@ -70,8 +70,70 @@ const LOGIN_TIMEOUT_MS = Number(process.env.ALETA_ECOURT_LOGIN_TIMEOUT_MS || 10 
  */
 const PAGE_DELAY_MS = Number(process.env.ALETA_ECOURT_PAGE_DELAY_MS || 1500);
 
+/**
+ * Berapa perkara TERBARU yang selalu didahulukan.
+ *
+ * Diminta pengguna 23 September 2026. Bukan pembatas - seluruh perkara tetap
+ * ditarik pada putaran-putaran berikutnya - melainkan urutan: yang paling
+ * baru didaftarkan adalah yang tenggatnya sedang berjalan, dan itulah yang
+ * paling mahal bila terlambat diketahui.
+ */
+const BATAS_TERBARU = Number(process.env.ALETA_ECOURT_PRIORITAS_TERBARU || 200);
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * ============================================================================
+ * JEDA YANG TIDAK PERNAH SAMA - SEBAB YANG SELALU SAMA ADALAH MESIN
+ * ============================================================================
+ *
+ * PAGE_DELAY_MS dipakai apa adanya sampai 23 September 2026: tiap permintaan
+ * berjarak TEPAT 1.500 milidetik. Pada catatan server pengadilan, deretan
+ * jarak yang identik adalah tanda pengenal yang paling murah dibaca - lebih
+ * mencolok daripada jumlah permintaannya sendiri, sebab manusia tidak pernah
+ * menekan sesuatu tiap 1,5 detik selama sembilan puluh menit.
+ *
+ * Aturan tetap pengguna: "ingat seperti dikerjakan manusia jadi timingnya
+ * tidak boleh sama".
+ *
+ * Tiga hal yang membuatnya menyerupai orang:
+ *
+ *   1. SEBARAN, bukan angka. Jaraknya 0,6x sampai 1,8x jeda dasarnya, dan
+ *      condong ke yang pendek - persis bentuk jeda antar-klik orang yang
+ *      sedang bekerja cepat.
+ *   2. BERHENTI SEBENTAR. Kira-kira satu dari dua puluh kali, jedanya
+ *      berlipat tiga sampai enam - orang membaca layarnya, menjawab telepon,
+ *      atau berpindah tab.
+ *   3. MELAMBAT KETIKA DITOLAK. Sesudah jawaban gagal beruntun, jedanya
+ *      digandakan. Mesin yang ditolak justru mempercepat; orang tidak.
+ *
+ * Tidak memakai Math.random sebagai satu-satunya sumber - tiap pemanggilan
+ * menerima `berat` yang menggeser sebarannya, supaya dua putaran penarikan
+ * pada hari yang sama pun tidak berpola sama.
+ */
+let gagalBeruntun = 0;
+
+function jedaManusiawi(dasar = PAGE_DELAY_MS) {
+  // Condong ke pendek: hasil kali dua acakan selalu lebih sering kecil
+  // daripada acakan tunggal, dan itulah bentuk jeda orang yang bekerja cepat.
+  const condong = Math.random() * Math.random();
+  let ms = dasar * (0.6 + condong * 1.2);
+
+  // Berhenti sebentar - kira-kira 1 dari 20.
+  if (Math.random() < 0.05) ms *= 3 + Math.random() * 3;
+
+  // Ditolak beruntun: melambat, bukan mempercepat. Dibatasi supaya satu
+  // rentetan galat tidak menghentikan penarikan berjam-jam.
+  if (gagalBeruntun > 0) ms *= Math.min(1 + gagalBeruntun * 0.5, 6);
+
+  return sleep(Math.round(ms));
+}
+
+/** Dipanggil tiap kali satu permintaan berhasil atau gagal. */
+function catatIrama(berhasil) {
+  gagalBeruntun = berhasil ? 0 : Math.min(gagalBeruntun + 1, 10);
 }
 
 function parseArgs(argv) {
@@ -569,7 +631,7 @@ async function kumpulkanTautan(page, acuan, ringkasan) {
     log(`  Menyapu daftar "${kunci}" (${jumlah} perkara menurut SIPP)...`);
     try {
       await page.goto(alamat, { waitUntil: "networkidle2", timeout: 60000 });
-      await sleep(PAGE_DELAY_MS);
+      await jedaManusiawi();
       const peta = await navigasi.sapuDaftar(page, (pesan) => log(pesan));
       for (const [register, url] of peta.entries()) {
         const kunciRegister = String(register || "").toUpperCase();
@@ -629,7 +691,7 @@ async function kumpulkanTautan(page, acuan, ringkasan) {
 /** Memproses satu halaman detail perkara. */
 async function processCase(page, url, ringkasan, args, acuan) {
   await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(PAGE_DELAY_MS);
+  await jedaManusiawi();
 
   const html = await page.content();
   const detail = scraper.parseCaseDetail(html);
@@ -690,6 +752,21 @@ async function processCase(page, url, ringkasan, args, acuan) {
   }
 
   const folder = ecourtDocumentService.caseFolder(caseNumberToFolder(detail.nomorPerkara));
+
+  // ==========================================================================
+  // AGENDA TERAKHIR TINGGAL CADANGAN
+  // ==========================================================================
+  //
+  // Nilai ini dulu ditempelkan ke SELURUH dokumen perkara - satu agenda untuk
+  // semuanya. Akibatnya berkas Jawaban tercatat beragenda "Kesimpulan" bila
+  // kesimpulan adalah agenda terakhir perkara itu, dan siapa pun yang membuka
+  // baris agenda di SIPP mengunduh berkas perkara yang keliru tanpa ada yang
+  // menyadarinya.
+  //
+  // Sekarang tiap dokumen membawa agenda bloknya sendiri (scraper.js,
+  // extractHearingDocuments). Nilai ini TETAP dipertahankan sebagai cadangan:
+  // dokumen yang berdiri sebelum blok agenda pertama - dan halaman yang
+  // bentuknya berubah kelak - tetap mendapat sesuatu, walau kasar.
   const agendaTerakhir = detail.agenda.length > 0 ? detail.agenda[detail.agenda.length - 1] : "";
 
   // Batas waktu unggah yang PALING BELAKANG adalah yang masih berlaku. Halaman
@@ -911,12 +988,38 @@ async function processCase(page, url, ringkasan, args, acuan) {
 
           const unduh = await downloadFile(page, alamatBerkas, null);
           if (!unduh.ok) {
+            catatIrama(false);
+            // ================================================================
+            // 404 ADALAH JAWABAN, BUKAN KEGAGALAN
+            // ================================================================
+            //
+            // Diukur pada penarikan 23 September 2026: 145 dari 168 galat
+            // berbunyi 'Gagal unduh pdf "KTP": HTTP 404'. e-Court memang
+            // tidak menyediakan berkas KTP untuk diunduh, dan 404-nya tetap
+            // begitu tiap kali ditanya.
+            //
+            // Mengulanginya tiap putaran memberi tiga kerugian sekaligus:
+            // seratus empat puluh lima permintaan yang sudah pasti ditolak,
+            // kira-kira dua puluh menit yang terbuang, dan deretan permintaan
+            // gagal pada catatan server pengadilan yang tidak pantas ada.
+            //
+            // Karena itu ia dicatat sebagai "tidak tersedia" - bukan galat -
+            // dan tidak dihitung sebagai kegagalan penarikan. Dokumennya tetap
+            // tercatat; yang berubah hanya berhentinya kita bertanya.
+            const tetap = /\b404\b/.test(String(unduh.reason || ""));
+            if (tetap) {
+              log(`    ${item.format} "${dokumen.judul}" tidak tersedia di e-Court (404) - tidak diulang.`);
+              ringkasan.tidakTersedia = (ringkasan.tidakTersedia || 0) + 1;
+              sebabGagalTerakhir = `berkas ${item.format} tidak disediakan e-Court`;
+              continue;
+            }
             log(`    Gagal unduh ${item.format} "${dokumen.judul}": ${unduh.reason}`);
             ringkasan.jumlahGalat += 1;
             ringkasan.galatTerakhir = `${dokumen.judul}: ${unduh.reason}`;
             sebabGagalTerakhir = String(unduh.reason || "gagal diunduh");
             continue;
           }
+          catatIrama(true);
 
           // ================================================================
           // ISINYA DIPERIKSA SEBELUM DISIMPAN, BUKAN SESUDAHNYA
@@ -974,7 +1077,7 @@ async function processCase(page, url, ringkasan, args, acuan) {
           ringkasan.galatTerakhir = error.message;
           sebabGagalTerakhir = String(error.message || "gagal diunduh");
         }
-        await sleep(PAGE_DELAY_MS);
+        await jedaManusiawi();
       }
 
       // Hitungan kegagalan diperbarui SEKALI, sesudah seluruh bentuk berkas
@@ -1002,9 +1105,24 @@ async function processCase(page, url, ringkasan, args, acuan) {
         statusVerifikasi: ecourtStoreService.normalizeStatus(dokumen.statusMentah, {
           perluVerifikasi: dokumen.perluVerifikasi !== false,
         }),
-        agenda: agendaTerakhir,
-        batasUnggah: batasTerakhir ? batasTerakhir.batasWaktu : null,
-        batasUnggahTeks: batasTerakhir ? batasTerakhir.batasWaktuTeks : "",
+        // Milik bloknya sendiri lebih dulu; agenda terakhir perkara hanya
+        // dipakai bila dokumen ini memang tidak berada di blok agenda mana
+        // pun (berkas pendaftaran, dan dokumen yang berdiri sebelum agenda
+        // pertama).
+        agenda: dokumen.agendaBlok || agendaTerakhir,
+        // Tanggal sidang dokumen ini, dibaca dari baris "Sebelum : <tanggal>
+        // Pukul : <jam>" pada kepala bloknya. Inilah kunci pencocokan yang
+        // ANDAL ke baris Jadwal Sidang di SIPP - agenda berupa teks bebas,
+        // dan 15,6% pasangan (perkara, kata-tahapan) punya lebih dari satu
+        // baris sidang berkata sama, jadi pencocokan dari kata-katanya
+        // menempelkan berkas yang sama ke beberapa baris sekaligus.
+        //
+        // TIDAK ditebak: dokumen tanpa blok agenda dikirim null, dan kolomnya
+        // dibiarkan kosong.
+        tanggalSidang: dokumen.tanggalSidang || null,
+        batasUnggah: dokumen.batasUnggahBlok || (batasTerakhir ? batasTerakhir.batasWaktu : null),
+        batasUnggahTeks:
+          dokumen.batasUnggahTeksBlok || (batasTerakhir ? batasTerakhir.batasWaktuTeks : ""),
         sumberUrl: url,
       });
       if (hasil.baru) ringkasan.dokumenBaru += 1;
@@ -1260,7 +1378,25 @@ async function utama() {
           if (!nomor) return 0;
           return terakhir.get(normalizeCaseNumber(nomor)) ?? 0;
         };
-        perluDiperiksa.sort((a, b) => kapan(a) - kapan(b));
+        // ==================================================================
+        // DUA LAPIS: 200 TERBARU LEBIH DULU, GILIRAN DI DALAM TIAP LAPIS
+        // ==================================================================
+        //
+        // Diminta pengguna 23 September 2026: "saya ingin seluruh file bisa
+        // ditarik dari e-Court, tetapi yang paling penting dan utama yaitu
+        // 200 perkara terakhir ini".
+        //
+        // Daftar SIPP sudah terurut dari yang terbaru, tetapi pengurutan
+        // giliran di bawah MENGHAPUS urutan itu seluruhnya: perkara 2015 yang
+        // belum pernah diperiksa akan selalu mendahului perkara yang
+        // didaftarkan minggu ini, dan perkara yang tenggatnya sedang berjalan
+        // menunggu di belakang ribuan perkara lama.
+        //
+        // Keadilan giliran tidak dibuang - ia tetap berlaku DI DALAM tiap
+        // lapis, sehingga tidak ada perkara yang tidak pernah tersapu.
+        const urutanAwal = new Map(perluDiperiksa.map((url, i) => [url, i]));
+        const lapis = (url) => (Number(urutanAwal.get(url) ?? 0) < BATAS_TERBARU ? 0 : 1);
+        perluDiperiksa.sort((a, b) => lapis(a) - lapis(b) || kapan(a) - kapan(b));
       } catch (error) {
         // Urutan giliran adalah penyempurnaan, bukan syarat. Bila catatannya
         // tidak terbaca, urutan daftar SIPP dipakai apa adanya - seperti dulu.

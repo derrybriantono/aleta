@@ -63,6 +63,63 @@ const KUNCI_KONEKSI = "antrian_sidang";
  * Layanan ini melaporkan berapa tanggal yang terbaca supaya keadaan itu
  * terlihat, bukan didiamkan.
  */
+/**
+ * ============================================================================
+ * AMBANG "MENUNGGU LAMA" - 40 MENIT, DIMINTA PENGGUNA
+ * ============================================================================
+ *
+ * Empat puluh menit (perhatian) dan enam puluh (mendesak).
+ *
+ * Saya sempat mengusulkan 30, dan alasannya masih berdiri: 30 dan 60 sudah
+ * menjadi batas pita jarak antar-sidang di layar yang sama (BATAS_JARAK
+ * [5, 15, 30, 60]), diukur dari 10.989 jarak nyata pada 1.753 kelompok hari x
+ * ruang sidang. Empat puluh menjadi batas keenam yang tidak diukur dari apa
+ * pun.
+ *
+ * Alasan itu tidak menang atas keputusan yang memimpin satuan kerja. Berapa
+ * lama orang pantas menunggu di ruang tunggunya sendiri bukan pertanyaan yang
+ * dijawab sebaran data - ia dijawab orang yang bertanggung jawab atas
+ * pelayanannya.
+ *
+ * Keduanya tetap dapat disetel lewat lingkungan, dan angkanya hidup di SINI
+ * saja - bukan ditulis ulang di tiap tempat yang membacanya.
+ */
+const AMBANG_MENUNGGU_MENIT = Number(process.env.ALETA_ANTRIAN_AMBANG_MENUNGGU || 40);
+const AMBANG_MENUNGGU_MENDESAK_MENIT = Number(
+  process.env.ALETA_ANTRIAN_AMBANG_MENUNGGU_MENDESAK || 60
+);
+
+/**
+ * Berapa menit baris ini sudah menunggu, atau null bila tidak dihitung.
+ *
+ * Yang SUDAH dipanggil tidak dihitung lagi - lihat keterangannya di tempat
+ * pemakaiannya. Yang belum mengambil nomor pun tidak: ia tidak sedang
+ * menunggu giliran, ia belum datang.
+ */
+function menitMenungguBaris(baris) {
+  const keadaan = keadaanAntrian(baris);
+  if (keadaan !== "menunggu") return null;
+
+  // ==========================================================================
+  // HANYA BARIS HARI INI
+  // ==========================================================================
+  //
+  // Tabel antrian menyimpan satu baris untuk TIAP tanggal sidang dan tidak
+  // pernah dibersihkan saat berganti hari - keterangan itu sudah tertulis di
+  // antrianOnlineService, yang menyaringnya dengan CURDATE() karena sebab yang
+  // sama.
+  //
+  // Baris kemarin yang tidak pernah ditandai dipanggil akan terus dihitung:
+  // "menunggu 1.500 menit", dan penandanya menyala terus untuk perkara yang
+  // tidak ada orangnya di ruang tunggu. Penanda yang selalu menyala berhenti
+  // dibaca.
+  const hari = isoTanggal(baris.tanggalSidang);
+  if (hari && hari !== isoTanggal(new Date())) return null;
+  const n = Number(baris.menitSejakAmbil);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
 const SQL_URUTAN = `
   SELECT
     a.perkara_id AS perkaraId,
@@ -81,7 +138,35 @@ const SQL_URUTAN = `
       WHEN a.pihak_1 IS NOT NULL AND a.pihak_2 IS NOT NULL THEN LEAST(a.pihak_1, a.pihak_2)
       WHEN a.pihak_1 IS NOT NULL THEN a.pihak_1
       ELSE a.pihak_2
-    END AS waktuAmbil
+    END AS waktuAmbil,
+    /*
+     * SUDAH BERAPA LAMA MENUNGGU - DIHITUNG MySQL, BUKAN NODE
+     * =====================================================================
+     *
+     * Selisihnya dihitung oleh basis data yang SAMA dengan yang menulis NOW()
+     * saat pihaknya mengambil nomor. Tiga sebab, dan ketiganya nyata:
+     *
+     *   1. Dua basis waktu yang bertemu menghasilkan selisih yang salah tanpa
+     *      satu pun galat - peringatan itu sudah tertulis di
+     *      kehadiranAntrianService.
+     *   2. Kolam koneksi ke mesin antrian dibuat TANPA pilihan zona waktu,
+     *      jadi Date bikinan Node dapat bergeser berjam-jam terhadapnya.
+     *   3. Jam PC petugas tidak dapat dipercaya sebagai patokan; yang
+     *      menghitung di peramban akan mendapat angka yang berbeda-beda di
+     *      tiap meja.
+     *
+     * Angkanya MENTAH - berhenti atau tidaknya ditentukan keadaan, dan itu
+     * diputuskan di JavaScript di bawah supaya aturannya terbaca satu tempat.
+     */
+    TIMESTAMPDIFF(
+      MINUTE,
+      CASE
+        WHEN a.pihak_1 IS NOT NULL AND a.pihak_2 IS NOT NULL THEN LEAST(a.pihak_1, a.pihak_2)
+        WHEN a.pihak_1 IS NOT NULL THEN a.pihak_1
+        ELSE a.pihak_2
+      END,
+      NOW()
+    ) AS menitSejakAmbil
   FROM sipp_turunan_antrian.antrian_sidang a
   WHERE a.pihak_1 IS NOT NULL OR a.pihak_2 IS NOT NULL
   ORDER BY waktuAmbil ASC, a.perkara_id ASC, a.majelis_hakim_kode ASC`;
@@ -196,6 +281,17 @@ async function petaAntrian() {
       pihak2: jamMenit(baris.pihak2),
       saksi: jamMenit(baris.saksi),
       keadaan: keadaanAntrian(baris),
+      // ====================================================================
+      // BERHENTI BEGITU DIPANGGIL
+      // ====================================================================
+      //
+      // Angka yang terus tumbuh sesudah orangnya masuk ruang sidang adalah
+      // angka yang salah - dan ia akan menyalakan penanda "menunggu lama"
+      // pada perkara yang justru sedang disidangkan.
+      //
+      // null, bukan nol: nol berarti baru saja mengambil nomor, keadaan yang
+      // sungguh terjadi dan berbeda sama sekali dari "tidak dihitung".
+      menitMenunggu: menitMenungguBaris(baris),
       jamPanggil: jamMenit(baris.jamPanggil),
       noRuang: baris.noRuang === null || baris.noRuang === undefined ? null : Number(baris.noRuang),
       ruanganId: baris.ruanganId === null || baris.ruanganId === undefined ? null : Number(baris.ruanganId),
@@ -221,6 +317,8 @@ async function petaAntrian() {
       pihak2: "",
       saksi: "",
       keadaan: "belum-ambil",
+      // Belum ada yang datang: tidak ada yang menunggu, dan itu bukan nol menit.
+      menitMenunggu: null,
       jamPanggil: jamMenit(baris.jamPanggil),
       noRuang: baris.noRuang === null || baris.noRuang === undefined ? null : Number(baris.noRuang),
       ruanganId: baris.ruanganId === null || baris.ruanganId === undefined ? null : Number(baris.ruanganId),
@@ -265,6 +363,8 @@ async function antrianUntukPerkara(daftarPerkaraId = []) {
 }
 
 module.exports = {
+  AMBANG_MENUNGGU_MENIT,
+  AMBANG_MENUNGGU_MENDESAK_MENIT,
   KUNCI_KONEKSI,
   SQL_BELUM_AMBIL,
   SQL_URUTAN,

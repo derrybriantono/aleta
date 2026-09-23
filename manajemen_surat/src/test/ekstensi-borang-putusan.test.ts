@@ -42,7 +42,14 @@ describe("panel digambar ulang ketika borang SIPP muncul", () => {
     const isi = konten();
     expect(isi).toContain("function tandaBorang()");
     expect(isi).toContain("if (nomor === nomorTerakhir) {");
-    expect(isi).toContain("if (borang === borangTerakhir) return;");
+    // Pagarnya tetap ada - yang berubah hanya badannya. Sejak 23 September
+    // 2026 penandaan halaman diulang lebih dulu sebelum pulang, sebab isi
+    // halaman SIPP bertambah lewat AJAX SESUDAH panel digambar dan pulang
+    // begitu saja membuat penanda hanya pernah terpasang pada isi yang lama.
+    expect(isi).toContain("if (borang === borangTerakhir) {");
+    expect(isi).toContain("if (konteksTerakhir) await terapkanTanda(konteksTerakhir);");
+    // Pulang tanpa menandai apa pun tidak boleh kembali.
+    expect(isi).not.toContain("if (borang === borangTerakhir) return;");
     // Penjaga lamanya harus benar-benar hilang, bukan tersisa di suatu cabang.
     expect(isi).not.toContain("if (nomor === nomorTerakhir || sedangAmbil) return;");
   });

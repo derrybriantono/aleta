@@ -5,6 +5,7 @@ import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-cli
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,8 @@ import {
   petaJarakAntarSidang,
   petaJarakBerikutSidang,
   pitaJarak,
+  petaTetanggaBerikut,
+  petaTetanggaSebelum,
   sebutanJarak,
 } from "@/lib/jarak-antar-sidang";
 import { sebabMinutasiTertahan, sudahDiminutasi } from "@/lib/sebab-minutasi-tertahan";
@@ -138,6 +141,28 @@ type SidangBaris = {
   urutanSidang: number;
   dihadiriOleh: number | null;
   adaBas: boolean;
+  /**
+   * Umur perkara, dengan hari mediasi DIKELUARKAN.
+   *
+   * Dasarnya PERMA 1/2016 Pasal 24 ayat (2) dan (3): jangka waktu mediasi
+   * tidak termasuk jangka waktu penyelesaian perkara. Batas penyelesaiannya
+   * lima bulan - SEMA 2/2014, 150 hari.
+   *
+   * null bila tanggal pendaftarannya tidak terbaca. Bukan nol: nol berarti
+   * perkaranya didaftarkan hari ini.
+   */
+  durasi?: {
+    tanggalDaftar: string;
+    tanggalPutusan: string;
+    sudahPutus: boolean;
+    hariTotal: number | null;
+    hariMediasi: number;
+    mediasiDibatasi?: boolean;
+    hariBersih: number | null;
+    ambangHari: number;
+    sisaHari: number | null;
+    mediasi: Array<{ mulai: string; selesai: string; hasil: string; mediator: string }>;
+  } | null;
   pihak: { penggugat: string[]; tergugat: string[]; saksi?: string[]; lain?: string[] };
   panggilan: {
     hadirSebelumnya: number | null;
@@ -151,6 +176,27 @@ type SidangBaris = {
     sisiBelumDipanggil?: number[];
     retur: number;
     aman: boolean;
+    /**
+     * Berapa hari lagi sidangnya. Negatif berarti sudah lewat, null bila
+     * tanggalnya tidak terbaca - dan null BUKAN nol: nol berarti hari ini.
+     */
+    sisaHariKeSidang?: number | null;
+    /**
+     * Pihak yang tenggang panggilannya paling genting. Bukan rata-rata: satu
+     * panggilan yang tidak patut sudah cukup membatalkan sidangnya.
+     */
+    tenggangTersempit?: {
+      sisi?: number;
+      selisih: number | null;
+      ambang?: number;
+      hariKerja?: boolean;
+      patut: boolean | null;
+      alasan: string;
+      dasarHukum?: string;
+      jalur?: string;
+    } | null;
+    /** Jarak panggilan ke hari sidang kurang dari ambang jalurnya. */
+    tenggangMepet?: boolean;
   };
   // Keadaan putusan di e-Court. null bila perkaranya belum putus - dan itu
   // BUKAN masalah, hanya belum waktunya diperiksa.
@@ -208,6 +254,15 @@ type AntrianBaris = {
   pihak2: string;
   saksi: string;
   keadaan: "menunggu" | "dipanggil" | "belum-ambil";
+  /**
+   * Sudah berapa menit menunggu giliran - dihitung basis data mesin antrian
+   * sendiri, bukan oleh Node maupun peramban.
+   *
+   * null berarti TIDAK dihitung: sudah dipanggil masuk, atau belum ada yang
+   * mengambil nomor. Nol berarti baru saja mengambil - keadaan yang sungguh
+   * terjadi, dan berbeda sama sekali dari null.
+   */
+  menitMenunggu?: number | null;
   jamPanggil: string;
   noRuang: number | null;
   ruanganId: number | null;
@@ -396,6 +451,17 @@ type Rincian = {
     statusVerifikasi: string;
     adaPdf: boolean;
     adaWord: boolean;
+    /**
+     * Tanggal sidang tempat dokumen ini dipertukarkan.
+     *
+     * SUDAH dikirim bot sejak lama (sippKonteksService.dokumenPerkara), hanya
+     * tidak pernah disebut di tipe ini - jadi tidak pernah dapat dipakai.
+     * Kosong pada sebagian besar baris sampai jembatan e-Court menuliskannya;
+     * yang memakainya harus menyiapkan keadaan kosong itu.
+     */
+    tanggalSidang?: string | null;
+    /** Tercatat pernah diunduh tetapi berkasnya tidak ada di cakram. */
+    berkasHilang?: boolean;
   }>;
   pesanEcourt: string;
   pihak: Array<{
@@ -648,6 +714,35 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kelompok: "panggilan",
     judul: "Masih ada pihak yang wajib dipanggil dan relaasnya belum ada.",
     cocok: (x) => x.panggilan.belumDipanggil > 0,
+  },
+  {
+    // ========================================================================
+    // TENGGANG MEPET - ATURANNYA TIDAK DIKARANG DI LAYAR INI
+    // ========================================================================
+    //
+    // Angkanya datang dari bot, yang menurunkannya dari ecourtPanggilanService:
+    // elektronik 3 hari kalender (SK KMA 363/2022), surat tercatat 6 hari
+    // kalender dan wajib terbukti diterima, panggilan biasa 3 hari KERJA
+    // (Pasal 122 HIR). Jalurnya pun tidak ditebak - ia dibaca dari sandi
+    // ket_temu pada relaasnya.
+    //
+    // Menyala juga ketika sidangnya sudah dekat sementara pihak wajibnya belum
+    // punya relaas sama sekali. Keadaan itu tidak menghasilkan "tenggang
+    // kurang" - tidak ada tanggal yang dapat dibandingkan - padahal justru ia
+    // yang paling genting. Diukur 23 September 2026 atas 20 sidang empat belas
+    // hari ke depan: 6 menyala, seluruhnya karena sebab itu.
+    //
+    // Nadanya "bahaya", jadi ia otomatis masuk kotak gabungan "Perlu
+    // diperiksa" - penyaringnya membaca nada, bukan daftar tersendiri.
+    kunci: "tenggang-mepet",
+    label: "Tenggang mepet",
+    labelPendek: "Mepet",
+    nada: "bahaya",
+    kelompok: "panggilan",
+    judul:
+      "Jarak panggilan ke hari sidang kurang dari ambang yang berlaku untuk jalurnya - " +
+      "SK KMA 363/2022 untuk e-Summons, Pasal 122 HIR untuk panggilan biasa.",
+    cocok: (x) => x.panggilan.tenggangMepet === true,
   },
   {
     kunci: "tidak-dipanggil",
@@ -1801,12 +1896,192 @@ function TombolAmbilAntrian({
   );
 }
 
+/**
+ * ============================================================================
+ * PAPAN "HARI INI BERES ATAU BELUM"
+ * ============================================================================
+ *
+ * Diminta pengguna 23 September 2026. Pertanyaannya satu kalimat - "hari ini
+ * beres atau belum" - dan sampai sekarang menjawabnya menuntut membaca
+ * sembilan kotak saringan lalu menjumlahkannya sendiri.
+ *
+ * Yang ditulis di sini BUKAN angka baru. Seluruhnya diambil dari jumlahKeadaan
+ * yang sudah dihitung untuk kotak saringan; melahirkan hitungan kedua berarti
+ * melahirkan angka yang suatu saat akan berbeda dari angka pertama, dan tidak
+ * ada pada layarnya yang memberi tahu mana yang benar.
+ *
+ * ============================================================================
+ * TETAP TAMPIL WALAU NOL - DAN JUSTRU ITU YANG DIMINTA
+ * ============================================================================
+ *
+ * Kotak saringan menyembunyikan yang bernilai nol, dan itu benar bagi saringan:
+ * kotak mati tidak dapat menyaring apa pun. Papan ini kebalikannya. "Nol retur"
+ * adalah jawaban, bukan ketiadaan jawaban - dan orang yang menanyakan "beres
+ * atau belum" justru sedang mencari nol.
+ *
+ * ============================================================================
+ * MENEKAN ANGKANYA MENGGANTI SARINGAN, BUKAN MENUMPUKNYA
+ * ============================================================================
+ *
+ * Papan ini dibaca sebagai daftar pekerjaan, dan yang menekan "3 retur" ingin
+ * melihat ketiganya - bukan ketiganya ditambah apa pun yang kebetulan sedang
+ * menyala. Menumpuk saringan di sini menghasilkan daftar yang tidak
+ * dimintanya, dan ia tidak punya cara menduga mengapa.
+ */
+function PapanHariIni({
+  keadaan,
+  jumlah,
+  total,
+  terpilih,
+  onPilih,
+}: {
+  keadaan: KeadaanSidang[];
+  jumlah: Record<string, number>;
+  total: number;
+  terpilih: string[];
+  onPilih: (kunci: string) => void;
+}) {
+  if (total === 0) return null;
+
+  const perluTindakan = keadaan.reduce((n, k) => n + (jumlah[k.kunci] ?? 0), 0);
+  const beres = perluTindakan === 0;
+
+  return (
+    <div
+      className={cn(
+        "mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border px-3 py-2 text-sm",
+        beres
+          ? "border-emerald-400 bg-emerald-50 text-emerald-900 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-100"
+          : "border-amber-400 bg-amber-50 text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/10 dark:text-amber-100"
+      )}
+    >
+      <span className="font-semibold">
+        {beres ? "Tidak ada yang perlu ditindaklanjuti" : "Perlu ditindaklanjuti"}
+      </span>
+      <span className="text-xs opacity-80">dari {total} sidang</span>
+
+      {keadaan.map((k) => {
+        const n = jumlah[k.kunci] ?? 0;
+        const aktif = terpilih.length === 1 && terpilih[0] === k.kunci;
+        return (
+          <button
+            key={`papan-${k.kunci}`}
+            type="button"
+            onClick={() => onPilih(k.kunci)}
+            disabled={n === 0}
+            title={
+              n === 0
+                ? `Tidak ada yang ${k.label.toLowerCase()}.`
+                : `Tampilkan hanya yang ${k.label.toLowerCase()} - saringan lain dimatikan.`
+            }
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums transition",
+              n === 0
+                ? "cursor-default border-border/50 opacity-60"
+                : "border-current hover:bg-background/60",
+              aktif ? "ring-2 ring-current ring-offset-1 ring-offset-background" : ""
+            )}
+          >
+            <span className="font-semibold">{n}</span>
+            <span className="font-normal">{(k.labelPendek || k.label).toLowerCase()}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * ============================================================================
+ * UMUR PERKARA - DAN HARI MEDIASI TIDAK DIHITUNG
+ * ============================================================================
+ *
+ * Diminta pengguna 23 September 2026: "dibawah agenda tambahkan durasi perkara
+ * berjalan (ingat mediasi tidak dihitung harinya)".
+ *
+ * Dasarnya PERMA 1/2016 Pasal 24 ayat (2) dan (3) - jangka waktu mediasi TIDAK
+ * termasuk jangka waktu penyelesaian perkara. Menghitungnya begitu saja dari
+ * tanggal pendaftaran berarti menuduh majelis atas hari-hari yang menurut
+ * peraturan bukan miliknya, dan pada perkara yang mediasinya berjalan penuh
+ * selisihnya sampai dua bulan.
+ *
+ * ============================================================================
+ * WARNANYA MENGIKUTI SISA WAKTU, BUKAN UMURNYA
+ * ============================================================================
+ *
+ * Yang membaca kolom ini sedang bertanya "masih sempat atau tidak", bukan
+ * "sudah berapa lama". Perkara 140 hari yang masih sepuluh hari dari batas
+ * jauh lebih genting daripada perkara 140 hari yang sudah diputus.
+ */
+function UmurPerkara({ durasi }: { durasi: SidangBaris["durasi"] }) {
+  if (!durasi || durasi.hariBersih === null) return null;
+
+  const sisa = durasi.sisaHari;
+  const nada =
+    durasi.sudahPutus
+      ? "border-border text-muted-foreground"
+      : sisa !== null && sisa < 0
+        ? "border-red-500 bg-red-100 text-red-900 dark:bg-red-500/15 dark:text-red-200"
+        : sisa !== null && sisa <= 30
+          ? "border-amber-500 bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+          : "border-border text-muted-foreground";
+
+  const rinci = [
+    `Didaftarkan ${durasi.tanggalDaftar || "—"}.`,
+    durasi.sudahPutus
+      ? `Diputus ${durasi.tanggalPutusan} - ${durasi.hariTotal} hari sejak pendaftaran.`
+      : `Berjalan ${durasi.hariTotal} hari sejak pendaftaran.`,
+    durasi.hariMediasi > 0
+      ? `Mediasi ${durasi.hariMediasi} hari TIDAK dihitung (PERMA 1/2016 Pasal 24).`
+      : "Tidak ada hari mediasi yang dikeluarkan.",
+    durasi.mediasiDibatasi
+      ? "Potongan mediasinya dibatasi 60 hari - batas PERMA, termasuk perpanjangan."
+      : "",
+    sisa === null
+      ? ""
+      : sisa < 0
+        ? `LEWAT ${Math.abs(sisa)} hari dari batas ${durasi.ambangHari} hari (SEMA 2/2014).`
+        : `Sisa ${sisa} hari sampai batas ${durasi.ambangHari} hari (SEMA 2/2014).`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div className="mt-1">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium tabular-nums",
+          nada
+        )}
+        title={rinci}
+      >
+        <span className="font-semibold">{durasi.hariBersih} hari</span>
+        {durasi.hariMediasi > 0 ? (
+          <span className="font-normal opacity-80">(mediasi {durasi.hariMediasi} hari dipotong)</span>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
 function PenandaPanggilan({
   panggilan,
 }: {
   panggilan: SidangBaris["panggilan"] | undefined;
 }) {
-  if (!panggilan || panggilan.aman) return null;
+  // ==========================================================================
+  // "AMAN" TIDAK LAGI BERARTI TIDAK ADA APA-APA
+  // ==========================================================================
+  //
+  // aman = tidak ada yang belum dipanggil DAN tidak ada retur. Itu benar
+  // sampai 2.34.0, ketika tenggang mepet masuk - dan tenggang mepet justru
+  // keadaan yang paling sering terjadi pada sidang yang panggilannya sudah
+  // LENGKAP: seluruh pihak dipanggil, hanya terlambat.
+  //
+  // Keluar lebih awal di sini membuat penandanya tidak pernah tampil pada
+  // perkara yang justru menjadi sebab fitur itu ada.
+  if (!panggilan) return null;
+  if (panggilan.aman && !panggilan.tenggangMepet) return null;
 
   return (
     <>
@@ -1838,8 +2113,68 @@ function PenandaPanggilan({
           retur{panggilan.retur > 1 ? ` ${panggilan.retur}` : ""}
         </span>
       ) : null}
+
+      {/* ==================================================================
+          TENGGANG MEPET
+          ==================================================================
+
+          Muncul HANYA bila memang mepet. Penanda yang selalu menyala berhenti
+          dibaca, dan yang pertama berhenti membacanya justru orang yang paling
+          sering melihatnya.
+
+          Yang ditulis di badannya hitung mundur ke hari sidang - itulah yang
+          dipakai memutuskan apakah masih sempat memanggil ulang. Sebabnya
+          lengkap beserta dasar hukumnya ada di judulnya. */}
+      {panggilan.tenggangMepet ? (
+        <span
+          className="rounded bg-amber-600 px-1.5 py-0.5 text-[11px] font-semibold text-white"
+          title={sebabTenggang(panggilan)}
+        >
+          {sebutanHitungMundur(panggilan.sisaHariKeSidang)}
+        </span>
+      ) : null}
     </>
   );
+}
+
+/**
+ * "H-3", "hari ini", "lewat 2 hari".
+ *
+ * null TIDAK dijadikan nol. Nol berarti sidangnya hari ini - keterangan yang
+ * berbeda sama sekali dari "tanggalnya tidak terbaca".
+ */
+function sebutanHitungMundur(sisa: number | null | undefined) {
+  if (sisa === null || sisa === undefined || !Number.isFinite(Number(sisa))) return "tenggang mepet";
+  const n = Number(sisa);
+  if (n === 0) return "sidang hari ini";
+  if (n < 0) return `lewat ${Math.abs(n)} hari`;
+  return `H-${n}`;
+}
+
+/** Sebab lengkap, beserta dasar hukum yang dipakai bot menghitungnya. */
+function sebabTenggang(panggilan: NonNullable<SidangBaris["panggilan"]>) {
+  const t = panggilan.tenggangTersempit;
+  const bagian: string[] = [];
+
+  if (t?.alasan === "belum_dipanggil_sidang_sudah_dekat") {
+    bagian.push(
+      "Sidangnya sudah dekat sementara pihak yang wajib dipanggil belum punya relaas sama sekali."
+    );
+  } else if (t?.alasan === "tenggang_kurang_dari_ambang") {
+    bagian.push(
+      `Jarak panggilan ke hari sidang ${t.selisih ?? "?"} hari${t.hariKerja ? " kerja" : ""}, ` +
+        `sedangkan yang berlaku untuk jalur ini ${t.ambang ?? "?"} hari.`
+    );
+  } else if (t?.alasan === "dikirim_setelah_hari_sidang") {
+    bagian.push("Panggilannya dikirim SESUDAH hari sidang.");
+  } else {
+    bagian.push("Jarak panggilan ke hari sidang kurang dari ambang yang berlaku.");
+  }
+
+  if (t?.jalur) bagian.push(`Jalur: ${t.jalur}.`);
+  if (t?.dasarHukum) bagian.push(`Dasar: ${t.dasarHukum}.`);
+  bagian.push(sebutanSisi(t?.sisi ? [t.sisi] : undefined) || "");
+  return bagian.filter(Boolean).join(" ");
 }
 
 /**
@@ -1851,6 +2186,31 @@ function PenandaPanggilan({
  * terbuka sepanjang jam kerja berarti sekitar 640 pemuatan - masih jauh di
  * bawah beban satu petugas yang menekan Tampilkan berulang kali.
  */
+/**
+ * ============================================================================
+ * SEJAK BERAPA MENIT MENUNGGU PATUT DITANDAI - 40, DAN ITU KEPUTUSAN PENGGUNA
+ * ============================================================================
+ *
+ * Empat puluh menit, diminta pengguna 22 September 2026.
+ *
+ * Saya sempat memasangnya 30, dan alasannya masih berdiri: 30 dan 60 sudah
+ * menjadi batas pita warna jeda antar-sidang di layar YANG SAMA - diukur dari
+ * 10.989 jarak nyata pada 1.753 kelompok hari x ruang sidang - sehingga 40
+ * menjadi batas keenam yang tidak diukur dari apa pun, dan penanda 40 menit
+ * akan berwarna sama dengan penanda 35 menit di sebelahnya.
+ *
+ * Alasan itu ditulis di sini supaya dapat ditimbang ulang kapan saja. Yang
+ * memutuskan angkanya tetap yang memimpin satuan kerja: dialah yang tahu
+ * berapa lama orang pantas menunggu di ruang tunggunya sendiri, dan itu bukan
+ * pertanyaan yang dijawab sebaran data.
+ *
+ * Bot memakai tetapan yang sama namanya dan dapat disetel lewat lingkungan
+ * (ALETA_ANTRIAN_AMBANG_MENUNGGU); bila kelak keduanya berbeda, yang
+ * menentukan penampakan penandanya nilai di sini, dan yang menentukan
+ * pemberitahuan nilai di bot.
+ */
+const AMBANG_MENUNGGU_MENIT = 40;
+
 const JEDA_MUAT_ULANG_MS = 45_000;
 
 function hariIni() {
@@ -1969,7 +2329,24 @@ function ukuranTerbaca(byte: number) {
  * nol berarti dipanggil bersamaan, keadaan yang sungguh terjadi dan patut
  * diwarnai merah.
  */
-function JarakAntarSidang({ menit, menitBerikut }: { menit?: number; menitBerikut?: number }) {
+function JarakAntarSidang({
+  menit,
+  menitBerikut,
+  nomorSebelum,
+  nomorBerikut,
+}: {
+  menit?: number;
+  menitBerikut?: number;
+  /**
+   * Nomor antrian tetangganya, bila ia ikut tergambar.
+   *
+   * Kosong bila tetangganya TIDAK tampil - dan justru itulah keadaan yang
+   * membuat dua angka yang benar terbaca sebagai bertengkar. Karena itu
+   * ketiadaannya pun dikatakan, bukan didiamkan.
+   */
+  nomorSebelum?: number;
+  nomorBerikut?: number;
+}) {
   const pita = pitaJarak(menit);
   const pitaBerikut = pitaJarak(menitBerikut);
   const adaSebelum = Boolean(pita) && menit !== undefined;
@@ -1983,7 +2360,14 @@ function JarakAntarSidang({ menit, menitBerikut }: { menit?: number; menitBeriku
             "inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
             pita.kelas
           )}
-          title={`Jeda ${sebutanJarak(menit as number)} dari perkara sebelumnya di ruang yang sama - ${pita.sebutan}. Dipakai menaksir giliran berikutnya, bukan lamanya sidang ini.`}
+          title={
+            `Jeda ${sebutanJarak(menit as number)} sejak ` +
+            (nomorSebelum
+              ? `antrian ${nomorSebelum} dipanggil`
+              : "perkara sebelumnya di ruang yang sama dipanggil - perkara itu TIDAK tampil pada daftar yang sedang disaring ini") +
+            `. Jaraknya ke tetangga di ruang yang sama menurut jam panggil, bukan ke baris di atasnya. ` +
+            `${pita.sebutan}. Dipakai menaksir giliran berikutnya, bukan lamanya sidang ini.`
+          }
         >
           +{sebutanJarak(menit as number)}
         </span>
@@ -1994,7 +2378,13 @@ function JarakAntarSidang({ menit, menitBerikut }: { menit?: number; menitBeriku
             "inline-flex items-center rounded-full border border-dashed px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
             pitaBerikut.kelas
           )}
-          title={`Jeda ${sebutanJarak(menitBerikut as number)} sampai perkara berikutnya di ruang yang sama - ${pitaBerikut.sebutan}.`}
+          title={
+            `Jeda ${sebutanJarak(menitBerikut as number)} sampai ` +
+            (nomorBerikut
+              ? `antrian ${nomorBerikut} dipanggil`
+              : "perkara berikutnya di ruang yang sama dipanggil - perkara itu TIDAK tampil pada daftar yang sedang disaring ini") +
+            `. ${pitaBerikut.sebutan}.`
+          }
         >
           →{sebutanJarak(menitBerikut as number)}
         </span>
@@ -2894,6 +3284,45 @@ function SelAntrianJam({
           belum ambil
         </div>
       )}
+
+      {/* ====================================================================
+          SUDAH MENUNGGU BERAPA LAMA
+          ====================================================================
+
+          Diminta pengguna 23 September 2026: tanda bagi pihak yang sudah
+          menunggu lama di ruang tunggu.
+
+          Muncul HANYA selagi keadaannya masih "menunggu" dan sudah melewati
+          ambang. Dua sebab:
+
+            - angka yang terus tumbuh sesudah orangnya masuk ruang sidang
+              adalah angka yang salah, dan ia akan menyalakan penanda pada
+              perkara yang justru sedang disidangkan;
+            - penanda yang menyala pada setiap baris berhenti dibaca, dan yang
+              pertama berhenti membacanya justru petugas yang paling sering
+              melihatnya.
+
+          Warnanya memakai pita jarak yang SAMA dengan jeda antar-sidang di
+          layar ini - ambangnya 5/15/30/60 menit, diukur dari 10.989 jarak
+          nyata. Menambah ambang keenam yang tidak diukur dari apa pun akan
+          membuat dua warna berbeda untuk angka yang sama di satu layar. */}
+      {antrian.keadaan === "menunggu" &&
+      typeof antrian.menitMenunggu === "number" &&
+      antrian.menitMenunggu >= AMBANG_MENUNGGU_MENIT ? (
+        <div className="mt-0.5">
+          <span
+            className={cn(
+              "inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+              pitaJarak(antrian.menitMenunggu)?.kelas ?? ""
+            )}
+            title={`Pihaknya sudah mengambil nomor ${sebutanJarak(
+              antrian.menitMenunggu
+            )} yang lalu dan belum dipanggil masuk.`}
+          >
+            menunggu {sebutanJarak(antrian.menitMenunggu)}
+          </span>
+        </div>
+      ) : null}
 
       <div className="mt-0.5 text-sm tabular-nums text-muted-foreground">{jam}</div>
 
@@ -3909,6 +4338,39 @@ export function AletaEcourtSidang({
       );
     }
 
+    // ========================================================================
+    // URUTAN BAWAAN: NOMOR ANTRIAN, DARI YANG PERTAMA
+    // ========================================================================
+    //
+    // Diminta pengguna 23 September 2026: "antrian paling pertama paling atas,
+    // selanjutnya mengikuti sesuai sekarang".
+    //
+    // Sebabnya dapat dilihat di ruang sidang: yang dipanggil berikutnya adalah
+    // nomor antrian terkecil yang belum dipanggil, bukan yang jam sidangnya
+    // paling awal - sebab jam sidang hampir seluruhnya tertulis sama. Daftar
+    // yang urutannya berbeda dari urutan panggilan menuntut mata mencari,
+    // padahal yang dicari selalu baris teratas.
+    //
+    // Yang BELUM mengambil nomor turun ke bawah, dan urutan di antara mereka
+    // TIDAK diacak - tetap seperti yang datang dari bot (tanggal, lalu jam).
+    // Itulah "selanjutnya mengikuti sesuai sekarang".
+    //
+    // Hanya berlaku ketika tidak ada kepala kolom yang ditekan. Begitu orang
+    // memilih urutan sendiri, pilihannya menang.
+    if (!urutTabel) {
+      const nomorAntrian = (baris: SidangBaris) => {
+        const punya = antrianUntuk(antrian.peta, baris);
+        const n = Number(punya?.nomor);
+        // Number.MAX_SAFE_INTEGER, bukan 0: yang belum bernomor harus jatuh ke
+        // BAWAH, dan nol akan melemparkannya ke puncak daftar.
+        return Number.isFinite(n) && n > 0 ? n : Number.MAX_SAFE_INTEGER;
+      };
+      // Urutan asalnya dipertahankan bagi yang bernomor sama maupun yang
+      // sama-sama belum bernomor - Array.prototype.sort dijamin stabil sejak
+      // ES2019, jadi indeks cadangan tidak diperlukan.
+      return [...hasil].sort((a, b) => nomorAntrian(a) - nomorAntrian(b));
+    }
+
     return urutkan(hasil, urutTabel, (baris, kunci) =>
       nilaiUrutSidang(baris, kunci, kesiapan, antrian.peta)
     );
@@ -3997,6 +4459,38 @@ export function AletaEcourtSidang({
    * bertentangan pada baris yang sama.
    */
   const jarakBerikut = useMemo(() => petaJarakBerikutSidang(bahanJarak), [bahanJarak]);
+
+  /**
+   * ==========================================================================
+   * TETANGGA MANA - SUPAYA ANGKANYA DAPAT DIPERIKSA
+   * ==========================================================================
+   *
+   * Dilaporkan pengguna 23 September 2026: antrian 1 bertulis "→35" sedangkan
+   * antrian 2 tepat di bawahnya bertulis "+4", padahal 09:22 ke 10:01
+   * berjarak 39 menit.
+   *
+   * Keduanya benar - ada perkara yang dipanggil 09:57 di ruang yang sama dan
+   * tidak ikut tergambar karena tabelnya sedang disaring atau diurutkan
+   * menurut hal lain. Jaraknya memang ke tetangga di ruang yang sama menurut
+   * jam panggil, bukan ke baris di atas atau di bawahnya pada tabel.
+   *
+   * Karena itu nomor antrian tetangganya ikut disebut di dalam judul
+   * penandanya. Angka yang dapat ditelusuri berhenti terbaca sebagai angka
+   * yang bertengkar.
+   */
+  const tetanggaSebelum = useMemo(() => petaTetanggaSebelum(bahanJarak), [bahanJarak]);
+  const tetanggaBerikut = useMemo(() => petaTetanggaBerikut(bahanJarak), [bahanJarak]);
+
+  /** Nomor antrian menurut kunci baris - dipakai menyebut tetangganya. */
+  const nomorPerKunci = useMemo(() => {
+    const peta: Record<string, number> = {};
+    for (const b of sidangTampil) {
+      const punya = antrianUntuk(antrian.peta, b);
+      const n = Number(punya?.nomor);
+      if (Number.isFinite(n) && n > 0) peta[`${b.nomorPerkara}|${b.sidangId}`] = n;
+    }
+    return peta;
+  }, [sidangTampil, antrian.peta]);
 
   /**
    * Melepas SELURUH saringan sekaligus.
@@ -4985,6 +5479,24 @@ export function AletaEcourtSidang({
             melewati sembilan kotak mati sebelum sampai ke yang hidup.
             Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
             angkanya nol, saringannya tidak dapat dimatikan lagi. */}
+        {/* Papan ringkas dibaca LEBIH DULU daripada deret saringan, dan ia
+            tetap tampil walau kendalinya diciutkan: yang menciutkan kendali
+            sedang memperpanjang daftar, bukan sedang menolak tahu keadaan
+            hari itu. */}
+        {sidang.length > 0 ? (
+          <PapanHariIni
+            keadaan={KEADAAN_MENUNTUT_TINDAKAN}
+            jumlah={jumlahKeadaan}
+            total={sidangSealur.length}
+            terpilih={keadaanTerpilih}
+            onPilih={(kunci) =>
+              setKeadaanTerpilih((sekarang) =>
+                sekarang.length === 1 && sekarang[0] === kunci ? [] : [kunci]
+              )
+            }
+          />
+        ) : null}
+
         {sidang.length > 0 && !kendaliCiut ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {/* ============================================================
@@ -5761,6 +6273,8 @@ export function AletaEcourtSidang({
                             <JarakAntarSidang
                               menit={jarakAntar[kunci]}
                               menitBerikut={jarakBerikut[kunci]}
+                              nomorSebelum={nomorPerKunci[tetanggaSebelum[kunci]]}
+                              nomorBerikut={nomorPerKunci[tetanggaBerikut[kunci]]}
                             />
                           ) : null}
                         </td>
@@ -6365,6 +6879,11 @@ export function AletaEcourtSidang({
                             </div>
                           ) : null}
 
+                          {/* Umur perkara, tepat di bawah agendanya - diminta
+                              pengguna 23 September 2026. Hari mediasi tidak
+                              dihitung; sebabnya di komponen UmurPerkara. */}
+                          <UmurPerkara durasi={baris.durasi} />
+
                           {/* Keadaan putusan ikut di sini pada mode RINGKAS.
                               Kolom Putusan disembunyikan di mode itu, sehingga
                               perkara yang sudah putus tidak dapat dibedakan
@@ -6729,6 +7248,7 @@ export function AletaEcourtSidang({
                                   sidangId={baris.sidangId}
                                   tunjukan={tunjukan[String(baris.perkaraId)]}
                                   tampilCatatanHitung={tampil(tampilan, "catatan-cara-hitung")}
+                                  durasi={baris.durasi}
                                 />
                               )}
                             </div>
@@ -6784,10 +7304,20 @@ function RincianSidang({
   sidangId,
   tunjukan,
   tampilCatatanHitung,
+  durasi,
 }: {
   rincian: Rincian | null;
   nomorPerkara: string;
   perkaraId: string;
+  /**
+   * Umur perkara, dikirim dari barisnya.
+   *
+   * Tidak dibaca ulang di sini: angkanya sudah dihitung bot untuk seluruh
+   * daftar dalam satu kueri, dan menghitungnya sekali lagi di panel berarti
+   * melahirkan angka kedua yang suatu hari akan berbeda dari yang pertama -
+   * tanpa satu pun tanda di layar yang memberi tahu mana yang benar.
+   */
+  durasi?: SidangBaris["durasi"];
   /** Sidang yang sedang dibuka - pemisah antara panggilan hari ini dan riwayat. */
   sidangId: string;
   /** Tunjukan konseptor sementara perkara ini - lihat SelKonseptorSementara. */
@@ -6817,6 +7347,37 @@ function RincianSidang({
       const id = String(jadwal.sidangId || "");
       const urut = Number(jadwal.urutanSidang);
       if (id && Number.isFinite(urut) && urut > 0) peta.set(id, urut);
+    }
+    return peta;
+  }, [rincian?.sipp?.jadwalPerkara]);
+
+  /**
+   * Tanggal sidang -> sidang keberapa.
+   *
+   * Dokumen e-Court tidak membawa sidang_id; yang dimilikinya tanggal sidang.
+   * Peta ini menjembataninya supaya berkas jawab-menjawab pun dapat menyebut
+   * sidang keberapa ia dipertukarkan.
+   *
+   * Tanggal yang dipakai SATU HARI saja (sepuluh huruf pertama) - SIPP
+   * menuliskannya kadang beserta jam, dan dua bentuk yang sama harinya tidak
+   * boleh menjadi dua kunci yang berbeda.
+   *
+   * Hari yang memuat LEBIH DARI SATU sidang tidak dipetakan sama sekali:
+   * menebak salah satunya berarti menempelkan nomor yang keliru pada berkas
+   * perkara, dan nomor yang keliru di sana lebih buruk daripada tidak ada
+   * nomor.
+   */
+  const urutanSidangPerTanggal = useMemo(() => {
+    const hitung = new Map<string, number[]>();
+    for (const jadwal of rincian?.sipp?.jadwalPerkara ?? []) {
+      const hari = String(jadwal.tanggalSidang || "").slice(0, 10);
+      const urut = Number(jadwal.urutanSidang);
+      if (!hari || !Number.isFinite(urut) || urut <= 0) continue;
+      hitung.set(hari, [...(hitung.get(hari) ?? []), urut]);
+    }
+    const peta = new Map<string, number>();
+    for (const [hari, daftar] of hitung) {
+      if (daftar.length === 1) peta.set(hari, daftar[0]);
     }
     return peta;
   }, [rincian?.sipp?.jadwalPerkara]);
@@ -7296,6 +7857,97 @@ function RincianSidang({
               </li>
             ))}
           </ul>
+        </Bagian>
+      ) : null}
+
+      {/* ====================================================================
+          RINCIAN WAKTU - DAN DARI MANA TIAP ANGKANYA DATANG
+          ====================================================================
+
+          Diminta pengguna 23 September 2026: "tambahkan juga di rincian waktu
+          durasi perkara secara lengkap".
+
+          Yang ditulis di sini bukan satu angka melainkan JALAN menuju angka
+          itu: berapa hari sejak didaftarkan, berapa hari mediasi yang
+          dikeluarkan beserta tanggal dan hasilnya, dan berapa sisa sampai
+          batas lima bulan. Angka tunggal tidak dapat dibantah maupun
+          dibuktikan; rinciannya dapat keduanya. */}
+      {durasi && durasi.hariBersih !== null ? (
+        <Bagian judul="Rincian waktu perkara" kunci="sidang-durasi">
+          <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm">
+            <dt className="text-muted-foreground">Didaftarkan</dt>
+            <dd className="tabular-nums">{durasi.tanggalDaftar || "—"}</dd>
+
+            <dt className="text-muted-foreground">
+              {durasi.sudahPutus ? "Diputus" : "Sampai hari ini"}
+            </dt>
+            <dd className="tabular-nums">
+              {durasi.sudahPutus ? durasi.tanggalPutusan : "belum diputus"}
+            </dd>
+
+            <dt className="text-muted-foreground">Berjalan</dt>
+            <dd className="tabular-nums">{durasi.hariTotal ?? "—"} hari</dd>
+
+            <dt className="text-muted-foreground">Mediasi dikeluarkan</dt>
+            <dd className="tabular-nums">
+              {durasi.hariMediasi} hari
+              {durasi.mediasiDibatasi ? (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  (dibatasi 60 hari - batas PERMA termasuk perpanjangan)
+                </span>
+              ) : null}
+            </dd>
+
+            <dt className="font-semibold">Durasi yang dihitung</dt>
+            <dd className="font-semibold tabular-nums">{durasi.hariBersih} hari</dd>
+
+            <dt className="text-muted-foreground">Batas penyelesaian</dt>
+            <dd className="tabular-nums">
+              {durasi.ambangHari} hari
+              <span className="ml-1 text-xs text-muted-foreground">(SEMA 2/2014, lima bulan)</span>
+            </dd>
+
+            <dt className="text-muted-foreground">Sisa</dt>
+            <dd
+              className={cn(
+                "tabular-nums",
+                durasi.sisaHari !== null && durasi.sisaHari < 0
+                  ? "font-semibold text-red-700 dark:text-red-300"
+                  : ""
+              )}
+            >
+              {durasi.sisaHari === null
+                ? "—"
+                : durasi.sisaHari < 0
+                  ? `LEWAT ${Math.abs(durasi.sisaHari)} hari`
+                  : `${durasi.sisaHari} hari`}
+            </dd>
+          </dl>
+
+          {durasi.mediasi.length > 0 ? (
+            <div className="mt-2">
+              <p className="mb-1 text-xs font-semibold">Mediasi yang tercatat</p>
+              <ul className="space-y-1 text-xs">
+                {durasi.mediasi.map((m, i) => (
+                  <li key={`mediasi-${m.mulai}-${i}`} className="flex flex-wrap items-center gap-2">
+                    <span className="tabular-nums">
+                      {m.mulai || "—"} &rarr; {m.selesai || "belum berujung"}
+                    </span>
+                    {m.hasil ? <Badge variant="outline">{m.hasil}</Badge> : null}
+                    {m.mediator ? (
+                      <span className="text-muted-foreground">mediator: {m.mediator}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            Hari mediasi tidak dihitung sebagai jangka penyelesaian perkara - PERMA 1/2016
+            Pasal 24 ayat (2) dan (3). Baris mediasi yang bertanggal mulai sama dianggap
+            satu mediasi, dan yang sudah punya keputusan menang atas yang belum.
+          </p>
         </Bagian>
       ) : null}
 
@@ -7934,6 +8586,11 @@ function RincianSidang({
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-muted/40 text-left">
                 <tr>
+                  {/* Angka saja - judul kolomnya pun satu kata. Diminta
+                      pengguna 23 September 2026. */}
+                  <th className="w-10 px-2 py-2 text-center font-medium" title="Sidang keberapa">
+                    Sdg
+                  </th>
                   <th className="px-3 py-2 font-medium">Judul Dokumen</th>
                   <th className="px-3 py-2 font-medium">Pengunggah</th>
                   <th className="px-3 py-2 font-medium">Verifikasi</th>
@@ -7943,6 +8600,17 @@ function RincianSidang({
               <tbody>
                 {rincian.ecourt.map((dokumen) => (
                   <tr key={dokumen.documentKey} className="border-t border-border">
+                    {/* Kosong bila tanggal sidang dokumennya belum terisi -
+                        dan pada sebagian besar dokumen ia memang masih kosong,
+                        sebab jembatan e-Court belum menuliskannya. Kolom yang
+                        kosong lebih jujur daripada nomor yang ditebak. */}
+                    <td className="px-2 py-2 text-center align-top">
+                      <NomorSidang
+                        urutan={urutanSidangPerTanggal.get(
+                          String(dokumen.tanggalSidang || "").slice(0, 10)
+                        )}
+                      />
+                    </td>
                     <td className="px-3 py-2">
                       {dokumen.judulDokumen || "Dokumen"}
                       {dokumen.jenisDokumen ? (
@@ -7996,6 +8664,27 @@ function RincianSidang({
           satu daftar tanpa urutan. */}
       <Bagian judul="Berkas tersimpan di SIPP" kunci="sidang-berkas-sipp">
 
+        {/* ==================================================================
+            SATU TEKAN UNTUK SELURUHNYA
+            ==================================================================
+
+            Tombol ZIP dulu hanya ada di panel Arsip e-Court, dan panel itu
+            hanya menampilkan perkara yang PUNYA berkas e-Court. Perkara yang
+            berkasnya hanya tersimpan di SIPP - gugatan, relaas, berita acara,
+            putusan - tidak pernah ditawari ZIP sama sekali.
+
+            Di sinilah orang bekerja: seluruh daftarnya sudah terbentang di
+            bawah, dan tombolnya berdiri di atas daftar itu. */}
+        {sipp ? (
+          <div className="mb-3 flex flex-wrap items-start gap-2">
+            <TombolUnduhZip nomorPerkara={nomorPerkara} sumber="semua" />
+            <p className="max-w-md text-xs text-muted-foreground">
+              Gugatan, relaas beserta resi pos, berita acara sidang, putusan, lampiran,
+              dan berkas e-Court - berkelompok menurut jenisnya, beserta daftar isi.
+            </p>
+          </div>
+        ) : null}
+
         {/* Seluruh bagian ini bergantung pada rincian SIPP. Dijaga sekali di
             sini, bukan pada tiap barisnya. */}
         {!sipp ? (
@@ -8040,6 +8729,11 @@ function RincianSidang({
               <ul className="space-y-1 text-sm">
                 {sipp.relaas.map((baris) => (
                   <li key={baris.id} className="flex flex-wrap items-center gap-2">
+                    {/* Sidang keberapa - angka saja, di kiri. Diminta pengguna
+                        23 September 2026. Satu relaas dapat menempel pada
+                        sidang yang sama dengan relaas lain; nomornya diambil
+                        dari sidangId, bukan dari urutan barisnya sendiri. */}
+                    <NomorSidang urutan={urutanSidangPer.get(String(baris.sidangId || ""))} />
                     <span className="min-w-0 flex-1 truncate" title={baris.namaPihak}>
                       {baris.namaPihak || "tanpa nama pihak"}
                       {baris.tanggalRelaas ? (
@@ -8083,6 +8777,7 @@ function RincianSidang({
               <ul className="space-y-1 text-sm">
                 {sipp.jadwalPerkara.map((sidang) => (
                   <li key={sidang.sidangId} className="flex flex-wrap items-center gap-2">
+                    <NomorSidang urutan={sidang.urutanSidang} />
                     <span className="min-w-0 flex-1 truncate">
                       {sidang.tanggalSidang}
                       <span className="ml-1 text-xs text-muted-foreground">

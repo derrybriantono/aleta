@@ -131,6 +131,23 @@ services:
       # Sesuaikan path kiri bila docroot SIPP satker berbeda; bila folder tidak ada,
       # bot otomatis jatuh ke ALETA_BOT_SIPP_DOCUMENT_BASE_URL (HTTP).
       - /var/www/html/SIPP:/usr/src/app/SIPP:ro
+      # DUA PENGECUALIAN dari aturan hanya-baca di atas, dan hanya dua.
+      #
+      # Unggah putusan menulis naskahnya ke tempat yang SAMA dengan yang
+      # dipakai SIPP sendiri: resources/file/doc untuk e-Doc, dan
+      # resources/file/anonimisasi untuk salinan yang terbit di Direktori
+      # Putusan. Tanpa mount ini keduanya gagal dengan "Read-only file system",
+      # dan petugas melihat kalimat yang tidak dapat ia perbaiki sendiri.
+      #
+      # Sengaja dipersempit ke dua folder itu saja. Membuka seluruh pohon SIPP
+      # untuk ditulis berarti satu kekeliruan kode dapat menyentuh basis
+      # berkas perkara yang tidak ada hubungannya dengan putusan.
+      #
+      # Mount yang lebih dalam menang atas yang di atasnya, jadi urutannya
+      # tidak menentukan - tetapi ditulis sesudahnya supaya terbaca sebagai
+      # pengecualian, bukan sebagai aturan yang setara.
+      - /var/www/html/SIPP/resources/file/doc:/usr/src/app/SIPP/resources/file/doc
+      - /var/www/html/SIPP/resources/file/anonimisasi:/usr/src/app/SIPP/resources/file/anonimisasi
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]

@@ -1,3 +1,4 @@
+import { AletaSebaranJurusita } from "@/components/portal/aleta-sebaran-jurusita";
 import { PageIntro } from "@/components/portal/shared";
 import { PetaPerkara } from "@/components/portal/peta-perkara";
 
@@ -19,6 +20,12 @@ export default function HalamanPetaPerkara() {
         description="Sebaran perkara dari provinsi sampai desa, faktor perceraian, dan siapa yang mengajukan. Bagian perkara yang alamatnya belum tercatat disebutkan apa adanya — sebaran dari sebagian data tidak boleh terbaca sebagai sebaran seluruhnya."
       />
       <PetaPerkara />
+      {/* Pertanyaan yang berlawanan arah dengan petanya, dan dibaca orang
+          yang berbeda: peta menjawab "siapa yang melayani desa ini", daftar
+          ini menjawab "orang ini mengerjakan apa saja". Ditaruh di halaman
+          yang sama sebab keduanya berdiri di atas sambungan nama yang sama -
+          dan bila sambungan itu salah, keduanya salah bersama. */}
+      <AletaSebaranJurusita periode="tahun" />
     </div>
   );
 }

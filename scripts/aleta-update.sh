@@ -1,6 +1,41 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# ============================================================================
+# SKRIP INI MENIMPA DIRINYA SENDIRI - JADI IA DIJALANKAN DARI SALINAN
+# ============================================================================
+#
+# Paket pembaruan memuat scripts/, dan langkah "menerapkan paket" di bawah
+# menyalinnya ke tempat berkas ini sendiri berada - sementara ia masih
+# berjalan.
+#
+# Bash membaca skrip BERTAHAP, dari offset bita. Selama isi barunya sama
+# persis dengan yang lama, offsetnya tetap cocok dan tidak ada yang terjadi -
+# itulah sebabnya cacat ini tidak terlihat selama berbulan-bulan, sebab
+# skripnya memang jarang berubah. Begitu isinya BERBEDA, bash melanjutkan
+# membaca dari offset lama pada berkas yang baru, dan yang dibacanya potongan
+# di tengah baris:
+#
+#     scripts/aleta-update.sh: baris 207: EOF tidak terduga
+#
+# Yang terjadi 23 September 2026: berkasnya sudah tersalin, tetapi build,
+# migrasi, dan penyalaan ulang tidak pernah berjalan. Peladen tertinggal
+# separuh - sumber versi baru, kontainer versi lama - dan itu keadaan yang
+# tidak disebut satu baris pun di lognya.
+#
+# Karena itu langkah pertamanya menyalin diri ke /tmp lalu melanjutkan dari
+# sana. Yang berjalan bukan lagi berkas yang kelak ditimpa.
+if [ -z "${ALETA_UPDATE_DARI_SALINAN:-}" ]; then
+  ALETA_SALINAN_SKRIP="$(mktemp /tmp/aleta-update-XXXXXXXX.sh)"
+  cat "$0" > "$ALETA_SALINAN_SKRIP"
+  chmod +x "$ALETA_SALINAN_SKRIP"
+  export ALETA_UPDATE_DARI_SALINAN=1
+  export ALETA_SALINAN_SKRIP
+  exec bash "$ALETA_SALINAN_SKRIP" "$@"
+fi
+# Salinannya dibuang sesudah selesai, berhasil maupun gagal.
+trap '[ -n "${ALETA_SALINAN_SKRIP:-}" ] && rm -f "$ALETA_SALINAN_SKRIP"' EXIT
+
 BUNDLE_INPUT="${1:-}"
 if [ -z "$BUNDLE_INPUT" ]; then
   echo "Usage: bash scripts/aleta-update.sh /path/aleta-update-<version>.tar.gz"
@@ -110,6 +145,25 @@ echo "Membuat backup sebelum update..."
     fi
   done
 
+  # ==========================================================================
+  # KODE KELUAR 1 DARI tar ADALAH PERINGATAN, BUKAN KEGAGALAN
+  # ==========================================================================
+  #
+  #   0   berhasil
+  #   1   ada berkas yang berubah saat dibaca - arsipnya TETAP lengkap
+  #   2+  galat sungguhan
+  #
+  # Skrip ini berjalan di bawah `set -Eeuo pipefail`, jadi kode 1 dulu
+  # membunuhnya seketika - tepat sebelum baris "Backup dibuat" tercetak.
+  # Terjadi 23 September 2026 pada pemasangan 2.33.0: cadangannya 7,6 MB
+  # berisi 2.504 entri dan kesebelas kelompoknya lengkap, tetapi pemasangan
+  # berhenti di situ dan peladen tetap di versi lama. Tidak ada yang rusak -
+  # hanya tidak ada yang terjadi, dan sebabnya tidak terbaca dari lognya.
+  #
+  # Berkas yang berubah saat dibaca memang terjadi pada aplikasi yang sedang
+  # berjalan, dan menolak mencadangkan karenanya berarti menolak memasang apa
+  # pun selama aplikasinya hidup.
+  set +e
   tar \
     --exclude='manajemen_surat/node_modules' \
     --exclude='manajemen_surat/.next' \
@@ -118,9 +172,54 @@ echo "Membuat backup sebelum update..."
     --exclude='aleta_bot/temp' \
     --exclude='.git' \
     -czf "$BACKUP_FILE" "${backup_items[@]}"
+  TAR_RC=$?
+  set -e
+  if [ "$TAR_RC" -ge 2 ]; then
+    echo "Backup GAGAL - tar keluar dengan kode $TAR_RC. Pemasangan dihentikan."
+    exit "$TAR_RC"
+  fi
+  if [ "$TAR_RC" -eq 1 ]; then
+    echo "Catatan: ada berkas yang berubah saat dicadangkan (tar kode 1). Arsipnya diperiksa di bawah."
+  fi
 )
 
-echo "Backup dibuat: $BACKUP_FILE"
+# ============================================================================
+# CADANGAN DIBUKTIKAN, BUKAN DIPERCAYA
+# ============================================================================
+#
+# Ia satu-satunya jalan pulang bila pemasangan ini keliru. Menerimanya tanpa
+# membuktikannya sama saja tidak punya cadangan - dan ketiadaannya baru
+# ketahuan pada saat ia paling dibutuhkan.
+if [ ! -s "$BACKUP_FILE" ]; then
+  echo "Backup tidak terbentuk atau kosong: $BACKUP_FILE. Pemasangan dihentikan."
+  exit 66
+fi
+# Daftar isinya dibaca SEKALI, lalu daftar itu yang diperiksa.
+#
+# JANGAN memakai `tar -tzf ... | grep -q X` di sini. Di bawah `set -o pipefail`
+# bentuk itu SELALU gagal justru ketika yang dicari KETEMU: grep -q berhenti
+# pada kecocokan pertama, pipanya tertutup, tar menerima SIGPIPE dan keluar
+# bukan-nol - dan pipefail membaca kode itu sebagai kegagalan pipanya.
+# Semakin cepat yang dicari ketemu, semakin pasti ia dinyatakan tidak ada.
+set +e
+BACKUP_LIST="$(tar -tzf "$BACKUP_FILE" 2>/dev/null)"
+set -e
+BACKUP_ENTRIES="$(printf '%s\n' "$BACKUP_LIST" | grep -c . || true)"
+if [ "${BACKUP_ENTRIES:-0}" -lt 100 ]; then
+  echo "Backup hanya berisi ${BACKUP_ENTRIES:-0} entri - tidak masuk akal. Pemasangan dihentikan."
+  exit 66
+fi
+# grep atas HERE-STRING, bukan atas pipa. Here-string bukan pipa, jadi
+# pipefail tidak berlaku di sini dan berhentinya grep lebih awal tidak dapat
+# merusak apa pun di hulunya.
+for wajib in manajemen_surat aleta_bot scripts docker-compose.yml; do
+  if ! grep -q -- "^${wajib}" <<<"$BACKUP_LIST"; then
+    echo "Backup tidak memuat $wajib - tidak dapat dipakai memulihkan. Pemasangan dihentikan."
+    exit 66
+  fi
+done
+
+echo "Backup dibuat: $BACKUP_FILE ($BACKUP_ENTRIES entri)"
 echo "Menerapkan paket update $TARGET_VERSION..."
 
 echo "Membersihkan source aplikasi yang dikelola paket agar file lama tidak tertinggal..."

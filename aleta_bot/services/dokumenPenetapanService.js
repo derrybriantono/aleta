@@ -240,6 +240,23 @@ async function ambilBlangko(jenis, nomorPerkara, { batasMs = 30000 } = {}) {
 }
 
 /**
+ * Folder SIPP yang dicoba bila pengaturannya kosong.
+ *
+ * Nilainya sengaja SAMA dengan ALETA_BOT_SIPP_DOCUMENT_ROOTS (sippDocumentService
+ * b.17-24): folder yang dipakai membaca gugatan adalah folder yang sama dengan
+ * yang dipakai menulis putusan, dan menyebutnya dua kali dengan nilai berbeda
+ * hanya menunggu salah satunya basi.
+ */
+const AKAR_SIPP_CADANGAN = String(
+  process.env.ALETA_BOT_SIPP_DOCUMENT_ROOTS ||
+    process.env.ALETA_BOT_SIPP_DOCUMENT_ROOT ||
+    "/var/www/html/SIPP,/usr/src/app/SIPP"
+)
+  .split(/[;,]/)
+  .map((x) => x.trim())
+  .filter(Boolean);
+
+/**
  * Akar folder resources SIPP - tempat berkasnya benar-benar ditulis.
  *
  * Dari pengaturan, sebab letak SIPP berbeda antara peladen dan pemasangan
@@ -249,7 +266,157 @@ async function ambilBlangko(jenis, nomorPerkara, { batasMs = 30000 } = {}) {
  */
 function akarSipp(runtimeConfig = readRuntimeConfig()) {
   const dari = (runtimeConfig && runtimeConfig.blangkoPenetapan) || {};
-  return String(dari.akarSipp || process.env.ALETA_SIPP_ROOT || "").trim();
+  const disetel = String(dari.akarSipp || process.env.ALETA_SIPP_ROOT || "").trim();
+  if (disetel) return disetel;
+
+  // ==========================================================================
+  // CADANGAN: FOLDER YANG MEMANG SUDAH TERPASANG
+  // ==========================================================================
+  //
+  // Sampai 23 September 2026 tidak ada cadangan sama sekali, dan akibatnya
+  // terukur: pada peladen satker blangkoPenetapan bernilai null, sehingga
+  // seluruh unggahan putusan berhenti pada kalimat "akar_sipp_belum_disetel"
+  // - satu pengaturan yang tidak pernah muncul di layar mana pun, dan yang
+  // tidak seorang pun tahu harus diisi.
+  //
+  // Padahal folder SIPP-nya SUDAH terpasang di container, dan alamatnya sudah
+  // disebut oleh pengaturan yang lain: ALETA_BOT_SIPP_DOCUMENT_ROOTS. Yang
+  // dipakai untuk membaca gugatan adalah folder yang sama dengan yang dipakai
+  // untuk menulis putusan.
+  //
+  // Cadangannya TIDAK menebak: hanya folder yang benar-benar ada yang
+  // dipulangkan. Folder yang tidak ada tetap menghasilkan "belum disetel",
+  // sebab menulis ke folder yang keliru mencatat berkas sebagai ada padahal
+  // tidak pernah dapat dibuka - persis yang dihindari keterangan di atas.
+  for (const calon of AKAR_SIPP_CADANGAN) {
+    try {
+      if (fs.existsSync(calon) && fs.statSync(calon).isDirectory()) return calon;
+    } catch {
+      // Folder yang tidak dapat diperiksa dilewati, bukan dipakai.
+    }
+  }
+  return "";
+}
+
+/**
+ * Keadaan akar SIPP: ada atau tidak, dan DAPAT DITULIS atau tidak.
+ *
+ * Dipisahkan dari akarSipp supaya kegagalan dapat menyebut sebab yang
+ * sesungguhnya. Tanpa ini, folder yang terpasang read-only menghasilkan
+ * "berkas_tidak_dapat_ditulis - EROFS" di layar petugas: benar secara teknis,
+ * dan tidak berguna sama sekali bagi orang yang harus memperbaikinya.
+ *
+ * Mount read-only itu bukan kekeliruan, melainkan keputusan yang tercatat di
+ * docker-compose.yml: bot hanya MEMBACA SIPP. Unggah putusan mengubah
+ * keputusan itu untuk dua folder saja - resources/file/doc dan
+ * resources/file/anonimisasi - dan pesan di sini yang menyebutkannya.
+ */
+function periksaAkarSipp(runtimeConfig = readRuntimeConfig(), { relatif = "" } = {}) {
+  const akar = akarSipp(runtimeConfig);
+  if (!akar) {
+    return {
+      akar: "",
+      ada: false,
+      dapatDitulis: false,
+      alasan: "akar_sipp_belum_disetel",
+      pesan:
+        "Folder SIPP belum diketahui. Setel blangkoPenetapan.akarSipp di pengaturan ALETA, " +
+        "atau pasang folder SIPP ke container (ALETA_BOT_SIPP_DOCUMENT_ROOTS).",
+    };
+  }
+
+  let ada = false;
+  try {
+    ada = fs.existsSync(akar) && fs.statSync(akar).isDirectory();
+  } catch {
+    ada = false;
+  }
+  if (!ada) {
+    return {
+      akar,
+      ada: false,
+      dapatDitulis: false,
+      alasan: "akar_sipp_tidak_ada",
+      pesan: `Folder SIPP "${akar}" tidak ada dari dalam container. Periksa mount-nya di docker-compose.yml.`,
+    };
+  }
+
+  // ==========================================================================
+  // YANG DIPERIKSA FOLDER TUJUANNYA, BUKAN AKARNYA
+  // ==========================================================================
+  //
+  // Akar SIPP memang terpasang HANYA-BACA, dan memang seharusnya begitu:
+  // membuka seluruh pohon SIPP untuk ditulis berarti satu kekeliruan kode
+  // dapat menyentuh basis berkas perkara yang tidak ada hubungannya dengan
+  // putusan. Yang dibuka untuk ditulis hanya dua folder - resources/file/doc
+  // dan resources/file/anonimisasi.
+  //
+  // Memeriksa W_OK pada AKARNYA karena itu selalu gagal, dan unggahan akan
+  // berhenti pada "hanya baca" selama-lamanya - walau folder tujuannya justru
+  // sudah dapat ditulis. Dibuktikan di container peladen:
+  //
+  //     [ -w /usr/src/app/SIPP ] -> HANYA BACA        (memang disengaja)
+  //     [ -w /usr/src/app/SIPP/resources/file/doc ]   (inilah yang menentukan)
+  //
+  // Yang diperiksa: leluhur TERDEKAT yang sudah ada dari jalur tujuannya.
+  // Folder tahun dan bulan memang belum ada sebelum berkas pertama ditulis,
+  // dan ketiadaannya bukan keadaan yang salah - ia dibuat mkdirSync.
+  const jalurUji = relatif ? path.join(akar, relatif) : akar;
+  let leluhur = jalurUji;
+  while (leluhur && leluhur !== path.dirname(leluhur) && !fs.existsSync(leluhur)) {
+    leluhur = path.dirname(leluhur);
+  }
+  let dapatDitulis = false;
+  try {
+    fs.accessSync(leluhur, fs.constants.W_OK);
+    dapatDitulis = true;
+  } catch {
+    dapatDitulis = false;
+  }
+  if (!dapatDitulis) {
+    return {
+      akar,
+      ada: true,
+      dapatDitulis: false,
+      alasan: "akar_sipp_hanya_baca",
+      pesan:
+        `Folder SIPP "${leluhur}" terpasang hanya-baca, jadi berkasnya tidak dapat ditulis. ` +
+        "Pada docker-compose.yml, tambahkan mount yang dapat ditulis untuk " +
+        "resources/file/doc dan resources/file/anonimisasi (tanpa :ro), lalu jalankan ulang container bot.",
+    };
+  }
+
+  return { akar, ada: true, dapatDitulis: true, alasan: "", pesan: "" };
+}
+
+/**
+ * Menyamakan pemilik dan izin berkas dengan yang dibuat SIPP sendiri.
+ *
+ * Bot berjalan sebagai root, sedangkan seluruh isi resources/file milik uid 48
+ * (apache) dengan izin 0750. Berkas bikinan root akan tercatat benar di basis
+ * data tetapi tidak dapat dibaca proses SIPP-nya - dan gejalanya persis sama
+ * dengan berkas yang tidak pernah tertulis: tombol cetak yang berujung galat.
+ *
+ * Sengaja SEBISANYA: kegagalannya tidak membatalkan unggahan, sebab pada
+ * pemasangan yang tidak memakai uid 48 berkasnya memang sudah benar apa adanya.
+ */
+function samakanPemilikSipp(jalurPenuh, akar) {
+  try {
+    // Ditiru dari folder yang MEMUATNYA, bukan dari akar SIPP. Akar dan
+    // resources/file dapat berbeda pemilik pada pemasangan yang folder
+    // putusannya dipasang terpisah - dan justru pemasangan seperti itulah
+    // yang dipakai peladen ini.
+    const induk = fs.statSync(path.dirname(jalurPenuh));
+    fs.chownSync(jalurPenuh, induk.uid, induk.gid);
+    // Izin berkas ditiru dari foldernya, dikurangi bit "dapat dijalankan" -
+    // berkas putusan bukan program. Mengunci ke satu angka tetap membuat
+    // pemasangan yang folder resources/file-nya lebih longgar tidak dapat
+    // membaca berkas bikinan ALETA, dan gejalanya sama persis dengan berkas
+    // yang tidak pernah tertulis.
+    fs.chmodSync(jalurPenuh, induk.mode & 0o666);
+  } catch {
+    // Tidak menggagalkan apa pun.
+  }
 }
 
 /**
@@ -271,8 +438,11 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
     return { ok: false, alasan: "tabel_dokumen_penetapan_tidak_ada" };
   }
 
-  const akar = akarSipp();
-  if (!akar) return { ok: false, alasan: "akar_sipp_belum_disetel" };
+  const keadaanAkar = periksaAkarSipp(undefined, { relatif: "resources/file/doc" });
+  if (!keadaanAkar.dapatDitulis) {
+    return { ok: false, alasan: keadaanAkar.alasan, pesan: keadaanAkar.pesan };
+  }
+  const akar = keadaanAkar.akar;
 
   const relatif = jalurDokumen(nomorPerkara, kunci, saat);
   const penuh = path.join(akar, relatif);
@@ -392,6 +562,8 @@ module.exports = {
   sisipkanTandaTangan,
   ambilBlangko,
   akarSipp,
+  periksaAkarSipp,
+  samakanPemilikSipp,
   simpanKeSipp,
   terbitkan,
 };

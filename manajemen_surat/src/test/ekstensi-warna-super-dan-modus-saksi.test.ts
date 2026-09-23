@@ -222,12 +222,17 @@ describe("modus keterangan saksi", () => {
   });
 
   it("dari-cerita: menyebut sumber ceritanya, dan tidak mengaku melihat sendiri", () => {
+    // Muatan mengikuti kesepakatan: pelaku = 0047 = Tergugat/Termohon.
+    // Ekstensi kini mengirim sebutannya apa adanya (sumberNama), dan itulah
+    // yang menentukan - kode "tergugat" hanya menyertainya.
     const h = usulan.susunKeteranganSaksiSdg({
       templat: TEMPLAT,
       alasan: ["judi"],
-      pelaku: "Penggugat",
-      lawan: "Tergugat",
-      modus: { saksi1: { modus: "dari-cerita", sumber: "lawan" } },
+      pelaku: "Tergugat",
+      lawan: "Penggugat",
+      modus: {
+        saksi1: { modus: "dari-cerita", sumber: "tergugat", sumberNama: "Tergugat" },
+      },
     });
     expect(jawab(h.saksi1, "2")).toContain("tergugat");
     expect(jawab(h.saksi1, "3")).toContain("tidak pernah");
@@ -360,14 +365,40 @@ describe("panel ABT menawarkan modusnya", () => {
     for (const m of ["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita"]) {
       expect(abt).toContain(`["${m}", `);
     }
-    expect(abt).toContain('["pelaku", "Penggugat/Pemohon"]');
-    expect(abt).toContain('["lawan", "Tergugat/Termohon"]');
+    // Kodenya menyebut PIHAKNYA, bukan nama ruas muatan. Kode "pelaku" dan
+    // "lawan" pernah berarti dua hal yang berlawanan di dua sisi kawat yang
+    // sama, dan tidak ada satu pun tempat yang memperlihatkannya.
+    expect(abt).toContain('["penggugat", "Penggugat/Pemohon"]');
+    expect(abt).toContain('["tergugat", "Tergugat/Termohon"]');
     expect(abt).toContain("aleta-sdg-alasan-saksi");
   });
 
-  it("pilihannya dikirim ke bot bersama sebutan pihak", () => {
+  it("pilihannya dikirim ke bot bersama sebutan pihak yang TIDAK tertukar", () => {
     expect(abt).toContain("modus: bacaModus(),");
-    expect(abt).toContain('pelaku: (peta.get("0046") || {}).nilai || "",');
+
+    // ======================================================================
+    // PENJAGA INI DULU MENGUNCI CACATNYA
+    // ======================================================================
+    //
+    // Yang dituntutnya persis baris yang salah: pelaku diambil dari 0046.
+    // Kesepakatan di puncak abt.js menetapkan sebaliknya - VAR_PIHAK_PELAKU =
+    // "0047" (Tergugat/Termohon), VAR_PIHAK_LAWAN = "0046" - dan bot memakai
+    // kesepakatan itu di seluruh kalimat bakunya.
+    //
+    // Akibat pertukarannya: jawaban "siapa yang meninggalkan kediaman
+    // bersama" pada panel saksi SDG menyebut pihak yang keliru, dan jawaban
+    // itu masuk ke berita acara sidang yang ditandatangani.
+    expect(abt).toContain("pelaku: (peta.get(VAR_PIHAK_PELAKU) || {}).nilai");
+    expect(abt).toContain("lawan: (peta.get(VAR_PIHAK_LAWAN) || {}).nilai");
+
+    // Bentuk terbalik yang lama dilarang dengan tegas - termasuk bila kelak
+    // ditulis ulang dengan nomornya langsung.
+    expect(abt, "pelaku tidak boleh diambil dari 0046").not.toContain('pelaku: (peta.get("0046")');
+    expect(abt, "lawan tidak boleh diambil dari 0047").not.toContain('lawan: (peta.get("0047")');
+
+    // Sebutannya ikut dikirim apa adanya, supaya arti kodenya tidak perlu
+    // ditafsirkan di seberang sama sekali.
+    expect(abt).toContain("sumberNama: sebutanSumber(");
   });
 
   it("di halaman tanya-jawab, halaman dimuat ulang HANYA bila seluruhnya tersimpan", () => {

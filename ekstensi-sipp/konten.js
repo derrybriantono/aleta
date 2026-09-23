@@ -303,8 +303,27 @@ function cariNomorPerkara() {
  */
 const saklar = { aktif: true, tandaiHalaman: false, sisipJadwal: false, siap: false };
 
-async function muatSaklar() {
-  if (saklar.siap) return saklar;
+/**
+ * ============================================================================
+ * SALINAN DI MEMORI DAPAT BASI - DAN BASINYA TIDAK BERBUNYI
+ * ============================================================================
+ *
+ * Salinan ini diperbarui pendengar chrome.storage.onChanged di kaki berkas.
+ * Pendengar itu tidak selalu sampai:
+ *
+ *   - tab yang dibekukan peramban tidak menerimanya selama dibekukan;
+ *   - ekstensi yang dimuat ulang meninggalkan tab lama tanpa pendengar sama
+ *     sekali, sementara salinannya masih memegang nilai lama;
+ *   - pemasangannya dibungkus try/catch yang diam bila gagal.
+ *
+ * Pada ketiganya centang di tingkap ekstensi berkata satu hal dan halaman
+ * mengerjakan yang lain - persis keluhan 23 September 2026.
+ *
+ * `paksa` dipakai sekali tiap putaran penggambaran, bukan sekali tiap
+ * pemanggilan: satu pembacaan penyimpanan per penyegaran, bukan tiga.
+ */
+async function muatSaklar(paksa = false) {
+  if (saklar.siap && !paksa) return saklar;
   try {
     const simpan = await chrome.storage.local.get(["aktif", "tandaiHalaman", "sisipJadwal"]);
     saklar.aktif = simpan.aktif !== false;
@@ -4925,6 +4944,53 @@ function perkaraIdDariHalaman() {
  * menjalankan pengubah itu, sebab pengubahan yang gagal separuh
  * meninggalkan berkas rusak yang barisnya sudah terlanjur tercatat.
  */
+/**
+ * ============================================================================
+ * KODE ALASAN, DAN KALIMAT YANG DAPAT DIKERJAKAN
+ * ============================================================================
+ *
+ * Bot memulangkan kode seperti "akar_sipp_belum_disetel". Kode itu benar, dan
+ * sampai 23 September 2026 kode itulah yang tampil apa adanya di layar -
+ * merah, tanpa satu pun petunjuk apa yang harus diperbuat.
+ *
+ * Yang membaca layar ini panitera pengganti, bukan yang memasang peladen.
+ * Kalimatnya karena itu menyebut apa yang tidak dapat dikerjakan ALETA DAN
+ * siapa yang dapat mengerjakannya - bukan nama pengaturan yang tidak pernah
+ * ia lihat.
+ *
+ * Kode yang tidak dikenali tetap ditampilkan apa adanya. Menyembunyikannya di
+ * balik "terjadi kesalahan" menghapus satu-satunya keterangan yang tersisa.
+ */
+const PESAN_GAGAL_UNGGAH = {
+  akar_sipp_belum_disetel:
+    "ALETA belum tahu di folder mana SIPP menyimpan berkasnya. Minta petugas peladen " +
+    "menyetel folder SIPP pada pengaturan ALETA.",
+  akar_sipp_tidak_ada:
+    "Folder SIPP tidak terjangkau dari ALETA. Minta petugas peladen memeriksa " +
+    "pemasangan folder SIPP ke ALETA.",
+  akar_sipp_hanya_baca:
+    "ALETA hanya diizinkan MEMBACA folder SIPP, jadi berkasnya tidak dapat disimpan. " +
+    "Minta petugas peladen memberi izin tulis pada folder putusan dan anonimisasi.",
+  bentuk_tidak_dikenali:
+    "Isi berkasnya bukan naskah putusan - dikenali dari isinya, bukan dari namanya. " +
+    "Yang diterima RTF, DOC, DOCX, atau PDF.",
+  berkas_tidak_dapat_ditulis: "Berkasnya tidak dapat disimpan ke folder SIPP.",
+  nomor_atau_tanggal_putusan_tidak_sah:
+    "Nomor perkara atau tanggal putusannya belum terisi benar di SIPP, sehingga nama " +
+    "berkasnya tidak dapat disusun.",
+  pdf_belum_dapat_dibuat:
+    "Naskahnya tersimpan sebagai e-Doc, tetapi PDF untuk Direktori Putusan belum dapat " +
+    "dibuat. Barisnya ditunda, bukan dibatalkan.",
+  berkas_kosong: "Berkasnya kosong.",
+};
+
+function pesanGagalUnggah(b) {
+  const kode = String((b && b.alasan) || "");
+  const kenal = PESAN_GAGAL_UNGGAH[kode];
+  if (kenal) return b && b.pesan ? `${kenal} (${b.pesan})` : kenal;
+  return `${kode.replace(/_/g, " ")}${b && b.pesan ? ` — ${b.pesan}` : ""}`;
+}
+
 function bagianUnggahPutusanSipp(nomorPerkara) {
   const kotak = bagian("Unggah putusan ke SIPP", "unggahPutusanSipp", true);
   const isi = kotak.isi;
@@ -5064,7 +5130,7 @@ function bagianUnggahPutusanSipp(nomorPerkara) {
         buatElemen(
           "span",
           b.ok ? "aleta-unggah-jumlah" : "aleta-unggah-kosong",
-          b.ok ? b.jalur : `${b.alasan}${b.pesan ? ` — ${b.pesan}` : ""}`
+          b.ok ? b.jalur : pesanGagalUnggah(b)
         )
       );
       rinci.appendChild(baris);
@@ -10936,33 +11002,43 @@ function sisipkanKeJadwalSidang(konteks) {
     if (sel.querySelector(`[${TANDA}]`)) continue; // sudah disisipi
 
     // ======================================================================
-    // AGENDA LEBIH DULU, TANGGAL SEBAGAI CADANGAN
+    // TANGGAL LEBIH DULU, KATA SEBAGAI CADANGAN
     // ======================================================================
     //
-    // Sebelumnya HANYA tanggal. Akibatnya baris beragenda Jawaban menerima
-    // seluruh berkas yang kebetulan bertanggal sama - replik, duplik,
-    // kesimpulan - dan yang sedang mencari jawabannya harus memilah sendiri.
-    // Lebih buruk lagi: berkas yang tanggal sidangnya tidak tercatat tidak
-    // pernah tertempel di mana pun, meski agendanya jelas menunggunya.
+    // Urutannya pernah dibalik dua kali, dan keduanya benar pada zamannya.
     //
-    // Sekarang agendanya diperiksa lebih dulu. Bila agenda baris ini adalah
-    // tahapan pertukaran berkas dan ada berkas yang menjadi miliknya, itulah
-    // yang ditempelkan - beserta sebab pencocokannya, supaya yang membacanya
-    // tahu ini bukan kebetulan tanggal.
-    const cocokAgenda = berkasUntukAgenda(baris.textContent, dokumen);
-    if (cocokAgenda.length > 0) {
-      sel.appendChild(kotakSisipan(cocokAgenda, ambang, "cocok agenda"));
+    // Mula-mula HANYA tanggal. Lalu agenda didahulukan - sebab waktu itu tiap
+    // dokumen menerima tanggal yang sama (agenda terakhir perkara ditempelkan
+    // ke seluruh dokumennya, dan tanggal sidangnya tidak pernah terisi sama
+    // sekali), sehingga baris beragenda Jawaban kebanjiran replik dan duplik
+    // yang kebetulan setanggal.
+    //
+    // Sejak 23 September 2026 dasarnya berubah: tiap dokumen membawa tanggal
+    // sidang BLOKNYA SENDIRI, dibaca dari kepala blok agenda di halaman
+    // e-Court ("Silahkan Mengupload Berkas Persidangan Sebelum : <tanggal>
+    // Pukul : <jam>"). Tanggal itu tidak lagi kebetulan - ia keterangan
+    // e-Court sendiri tentang sidang mana yang menunggu berkas itu.
+    //
+    // Karena itu tanggal kembali didahulukan, dan kali ini alasannya terukur:
+    // pencocokan dari kata-kata GAGAL memisahkan pada 15,6% pasangan
+    // (perkara, kata-tahapan) - 304 dari 1.947 pasangan punya lebih dari satu
+    // baris sidang berkata sama, dan berkas yang sama menempel di semuanya.
+    // Perkara 1396 punya tujuh baris beragenda "bukti".
+    //
+    // Kata TETAP dipakai sebagai cadangan: dokumen lama yang tersimpan
+    // sebelum perbaikan masih bertanggal kosong, dan tanpa cadangan ini
+    // seluruh sisipannya lenyap sekaligus.
+    const tanggal = tanggalDariTeksSipp(baris.textContent);
+    const cocokTanggal = tanggal ? perTanggal.get(tanggal) : null;
+    if (cocokTanggal && cocokTanggal.length > 0) {
+      sel.appendChild(kotakSisipan(cocokTanggal, ambang, "cocok tanggal sidang"));
       continue;
     }
 
-    // Tanggal dibaca dari sel kedua baris ini, tempat SIPP menuliskannya.
-    const tanggal = tanggalDariTeksSipp(baris.textContent);
-    if (!tanggal) continue;
+    const cocokAgenda = berkasUntukAgenda(baris.textContent, dokumen);
+    if (cocokAgenda.length === 0) continue;
 
-    const cocok = perTanggal.get(tanggal);
-    if (!cocok || cocok.length === 0) continue;
-
-    sel.appendChild(kotakSisipan(cocok, ambang, "cocok tanggal sidang"));
+    sel.appendChild(kotakSisipan(cocokAgenda, ambang, "cocok agenda"));
   }
 }
 
@@ -12010,6 +12086,10 @@ async function segarkan() {
   alatCatatAsalPortal();
   catatAkunSipp();
 
+  // Saklar disegarkan dari penyimpanan sekali tiap putaran - lihat catatan
+  // pada muatSaklar tentang salinan yang dapat basi tanpa berbunyi.
+  await muatSaklar(true);
+
   if (!(await sedangAktif())) {
     const lama = document.getElementById(PENANDA);
     if (lama) {
@@ -12067,7 +12147,33 @@ async function segarkan() {
   // ulang dari konteks yang sudah ada - portal tidak ditanya lagi.
   const borang = tandaBorang();
   if (nomor === nomorTerakhir) {
-    if (borang === borangTerakhir) return;
+    if (borang === borangTerakhir) {
+      // ====================================================================
+      // ISI HALAMAN BERTAMBAH SESUDAH PANEL DIGAMBAR
+      // ====================================================================
+      //
+      // Halaman perkara SIPP memuat isinya BERTAHAP: baris Jadwal Sidang,
+      // Data Relaas, dan Data Persidangan datang lewat AJAX beberapa saat
+      // sesudah panel ALETA selesai digambar. Ketika baris-baris itu muncul,
+      // pengamat DOM memanggil segarkan() - dan dahulu segarkan() pulang di
+      // sini, sebab nomor perkaranya memang belum berganti.
+      //
+      // Akibatnya penanda halaman dan sisipan berkas hanya pernah terpasang
+      // pada isi yang SUDAH ada saat panel pertama digambar, dan pengguna
+      // melaporkannya sebagai "saklarnya tercentang tetapi tidak muncul,
+      // kecuali saya matikan lalu nyalakan lagi" - sebab mematikan dan
+      // menyalakan menempuh jalur lain, yaitu pendengar chrome.storage yang
+      // memanggil terapkanTanda secara langsung.
+      //
+      // Penandaannya karena itu diulang di sini, dan hanya itu: konteks
+      // perkaranya tidak diminta ulang ke portal, panelnya tidak digambar
+      // ulang, dan keadaan lipatan maupun posisinya tidak tersentuh.
+      //
+      // Tidak berputar: terapkanTanda mengerjakan seluruh tulisannya di dalam
+      // tanpaPengamat(), jadi sentuhannya sendiri tidak memicu pengamat.
+      if (konteksTerakhir) await terapkanTanda(konteksTerakhir);
+      return;
+    }
     borangTerakhir = borang;
     if (konteksTerakhir) {
       await gambarUlangKonteks();
