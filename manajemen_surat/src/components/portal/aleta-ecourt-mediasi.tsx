@@ -1076,11 +1076,23 @@ export function AletaEcourtMediasi({
                         perkara, dan baris yang ikut menanggapi tekanan
                         membuka rincian yang tidak diminta. */}
                     <td className="px-2 py-2 text-right">
+                      {/* Berwarna primer selama rinciannya terbuka, kembali ke
+                          rupa semula begitu ditutup - rupanya sama dengan
+                          tombol Rincian di Antrian Sidang, lihat catatan di
+                          sana. Warnanya diturunkan dari dibuka === kunciBaris,
+                          ungkapan yang sama yang menggambar panel rinciannya,
+                          jadi tidak ada jalan menutup yang lupa memulihkannya.
+                          Bentuk dan tebal hurufnya sengaja tidak berubah. */}
                       <button
                         type="button"
                         onClick={() => setDibuka((lama) => (lama === kunciBaris ? "" : kunciBaris))}
                         aria-expanded={dibuka === kunciBaris}
-                        className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                        title={dibuka === kunciBaris ? "Tutup rincian mediasi" : "Buka rincian mediasi"}
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition ${
+                          dibuka === kunciBaris
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }`}
                       >
                         {dibuka === kunciBaris ? (
                           <ChevronUp className="h-3.5 w-3.5" />

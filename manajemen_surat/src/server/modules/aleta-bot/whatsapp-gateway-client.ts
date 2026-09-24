@@ -1275,6 +1275,26 @@ export type SidangBaris = {
    * lupa dikirim bot membuat penandanya mati selamanya tanpa satu pun galat.
    */
   sidangIkrarTalak: boolean;
+  /**
+   * Sidang ikrar yang ikrarnya SUDAH tercatat di perkara_ikrar_talak pada
+   * tanggal sidang ini (tgl_ikrar_talak sama dengan tanggal sidangnya) - hasil
+   * sidangnya ada walau alasan_ditunda kosong atau "0". Diukur di PA Donggala,
+   * Jan 2025 - 10 Sep 2026: 26 dari 33 sidang ikrar beralasan kosong.
+   *
+   * Sejak tinjauan 24 September 2026 tidak lagi bersyarat bendera ikrar_talak:
+   * ikrar yang diucapkan pada tanggal sidang ini berarti sidang itulah sidang
+   * ikrarnya, apa pun benderanya.
+   */
+  ikrarTercatat?: boolean;
+  /**
+   * Peta putusan dan peta ikrar di bot TERBACA untuk daftar ini. Peta yang
+   * gagal dibaca kosong, dan peta kosong terbaca "tidak ada yang putus" - yang
+   * membuat tanda merah "Belum ditunda" menuduh sidang yang sudah diputus.
+   * Portal menyalakan tanda merah hanya bila keduanya true; bot lama yang
+   * tidak mengirimnya membuat tanda merah diam (gagal-tertutup).
+   */
+  putusanTerbaca?: boolean;
+  ikrarTerbaca?: boolean;
   urutanSidang: number;
   /** 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir. */
   dihadiriOleh: number | null;
@@ -1441,6 +1461,18 @@ export type KeadaanPanggilanPihak = {
   belumDipanggil: boolean;
   tidakPerluDipanggil?: boolean;
   salahSaluran: boolean;
+  /**
+   * Sandi relaas SIPP (ket_temu) yang dinilai untuk sidang ini, dan apakah
+   * e-Court mencatat e-Summons kepada pihak ini untuk sidang ini. Sandi 'E'
+   * tanpa e-Summons tidak lagi menjadi salah saluran - salurannya
+   * dikosongkan dan catatanSaluran menjelaskan sebabnya (perkara
+   * 385/Pdt.G/2026/PA.Dgl). Opsional: bot lama tidak mengirimnya.
+   */
+  sandiRelaas?: string;
+  eSummonsTerkirim?: boolean;
+  /** Pihak ini terbaca di tabel persetujuan e-Court. */
+  terbacaEcourt?: boolean;
+  catatanSaluran?: string;
   tanggalPanggilan: string | null;
   diterima: boolean | null;
   buktiPenerimaan: string;
@@ -1464,11 +1496,16 @@ export type KesiapanLengkap = KesiapanRingkas & {
     pengaturan: PengaturanPanggilan;
     jalur: JalurPanggilan;
     lewatEcourt: boolean;
+    /** Sidang yang dinilai. Opsional: bot lama tidak mengirimnya. */
+    sidangId?: string | null;
+    tanggalSidang?: string | null;
     pihak: KeadaanPanggilanPihak[];
     ringkasan: {
       jumlahPihak: number;
       belumDipanggil: number;
       salahSaluran: number;
+      /** Relaas bersandi 'E' tanpa e-Summons tercatat - bukan salah saluran. */
+      saluranBelumPasti?: number;
       tidakPatut: number;
       penerimaanBelumTerbukti: number;
       patut: number;

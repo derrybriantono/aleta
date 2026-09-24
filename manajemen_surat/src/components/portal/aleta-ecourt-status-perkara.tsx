@@ -17,12 +17,12 @@ import { AletaAnalisaPerkara } from "@/components/portal/aleta-analisa-perkara";
 // sedikit, yang dipotong disebutkan, dan garis ambang membawa dasar hukumnya.
 import {
   DiagramBatang,
-  DiagramGaris,
   DiagramPai,
+  DiagramPerjalananSidang,
   type TitikData,
 } from "@/components/portal/bentuk-sajian";
 import { AletaPromptPutusan } from "@/components/portal/aleta-prompt-putusan";
-import { TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
+import { NomorSidang, TombolUnduh } from "@/components/portal/aleta-ecourt-sidang";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,8 @@ import {
   useIdentitasPihak,
 } from "@/components/portal/identitas-pihak";
 import { usePortal } from "@/lib/app-state";
-import { ringkasStatus } from "@/lib/ringkas-status";
+import { AMBANG_HARI_SEMA, ringkasStatus } from "@/lib/ringkas-status";
+import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
 import { AlatStatusPerkara } from "@/components/portal/alat-status-perkara";
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
@@ -334,7 +335,9 @@ export type Status = {
     menunggu?: number;
   };
   /**
-   * Kepatutan panggilan per pihak untuk sidang TERAKHIR yang tercatat.
+   * Kepatutan panggilan per pihak untuk sidang TERAKHIR yang punya relaas -
+   * relaas sidang itu saja, bukan relaas seluruh perkara (bot 24 Sep 2026;
+   * bot yang lebih lama menilai sidang terakhir yang tercatat).
    *
    * Dinilai bot (ecourtPanggilanService) terhadap jalur yang SEHARUSNYA
    * dipakai - bukan jalur yang terlanjur dipakai - supaya panggilan lewat
@@ -345,6 +348,17 @@ export type Status = {
    */
   panggilan?: {
     lewatEcourt: boolean;
+    /**
+     * Sidang yang dinilai - yang terakhir punya relaas, bukan sekadar yang
+     * terakhir tercatat. Boleh tidak ada: bot versi lama belum mengirimkannya.
+     */
+    tanggalSidang?: string | null;
+    /**
+     * Nomor sidang yang dinilai. Dipakai memeriksa apakah sidang itu memang
+     * punya relaas - bila tidak ada satu pun, bot jatuh ke sidang terakhir
+     * yang tercatat, dan kalimatnya harus mengatakan begitu.
+     */
+    sidangId?: string | number | null;
     pihak: Array<{
       nama: string;
       peran: string;
@@ -355,6 +369,13 @@ export type Status = {
       tidakPerluDipanggil: boolean;
       belumDipanggil: boolean;
       salahSaluran: boolean;
+      /**
+       * Sandi relaas SIPP yang bertentangan dengan e-Court - mis. 'E' kepada
+       * pihak yang tidak punya email di e-Court dan tidak pernah dikirimi
+       * e-Summons. Bukan salah saluran: yang janggal catatannya, bukan
+       * panggilannya. Boleh tidak ada: bot versi lama belum mengirimkannya.
+       */
+      catatanSaluran?: string;
       tanggalPanggilan: string;
       diterima: boolean | null;
       buktiPenerimaan: string;
@@ -377,6 +398,8 @@ export type Status = {
       belumDipanggil: number;
       tidakPerluDipanggil: number;
       salahSaluran: number;
+      /** Pihak yang ber-catatanSaluran - dihitung tersendiri, bukan disembunyikan. */
+      saluranBelumPasti?: number;
       tidakPatut: number;
       penerimaanBelumTerbukti: number;
       patut: number;
@@ -655,6 +678,14 @@ export type Status = {
       jenisPenetapan: string;
       tanggalPenetapan: string;
       tanggalLaporan: string;
+      /**
+       * dimulai_mediasi apa adanya - ujung awal yang dipakai v_durasi_mediasi.
+       * Sudah dikirim bot sejak lama (sippTahapanService.mediasiLengkapPerkara);
+       * tipenya saja yang belum menyebut, sehingga ruasnya berhenti di sini.
+       * Dipakai grafik Umur perkara pada tiap sidang untuk menempatkan hari
+       * mediasi yang tidak dihitung pada TANGGALNYA.
+       */
+      tanggalDimulaiTercatat?: string;
       tanggalKesepakatan: string;
       isiKesepakatan: string;
       nomorSk: string;
@@ -1417,9 +1448,17 @@ function IsiStatus({
   const [pihakDibuka, setPihakDibuka] = useState("");
   const identitas = useIdentitasPihak(status.identitas.nomorPerkara, Boolean(pihakDibuka));
 
-  const sidangBerikut = status.jadwal.find(
-    (x) => x.tanggalSidang >= new Date().toISOString().slice(0, 10)
-  );
+  // Satu urutan untuk seluruh daftar sidang di layar ini - Perjalanan sidang
+  // dan BAS di Berkas - supaya nomor yang sama berdiri di baris yang sama pada
+  // keduanya. sidangBerikut/sidangTerakhir di bawah sengaja tetap membaca
+  // status.jadwal: "berikut" adalah pertanyaan tanggal, bukan nomor.
+  const jadwalUrut = useMemo(() => urutkanMenurutNomorSidang(status.jadwal), [status.jadwal]);
+
+  // "Hari ini" menurut jam PERAMBAN, sama dengan grafik Umur perkara pada tiap
+  // sidang dan Kalender perkara. Dulu toISOString() - tanggal UTC - sehingga
+  // pada pukul 00.00-08.00 WITA lencana "Sidang berikut" masih menyebut sidang
+  // kemarin sementara grafiknya sudah menggambar sidang hari ini berongga.
+  const sidangBerikut = status.jadwal.find((x) => x.tanggalSidang >= hariIniIso());
   const sidangTerakhir = status.jadwal[status.jadwal.length - 1];
 
   return (
@@ -2082,8 +2121,12 @@ function IsiStatus({
             </div>
 
             <ol className="space-y-1 text-sm">
-              {status.jadwal.map((sidang) => (
+              {jadwalUrut.map((sidang) => (
                 <li key={sidang.sidangId} className="flex flex-wrap items-baseline gap-x-2 border-l-2 border-border pl-2">
+                  {/* Nomor sidang di tepi kiri - diminta pengguna 24 September
+                      2026, sama dengan panel Rincian di Antrian Sidang. Angkanya
+                      kolom urutan SIPP, bukan nomor baris daftar ini. */}
+                  <NomorSidang urutan={sidang.urutanSidang} />
                   <span className="font-medium">{sidang.tanggalSidang}</span>
                   {sidang.jamSidang ? (
                     <span className="text-sm tabular-nums text-muted-foreground">{sidang.jamSidang}</span>
@@ -2114,55 +2157,62 @@ function IsiStatus({
             </ol>
 
             {/* ============================================================
-                UMUR PERKARA TIAP SIDANG, TERHADAP AMBANG LIMA BULAN
+                UMUR PERKARA PADA TIAP SIDANG, TERHADAP AMBANG SK DAN SEMA
                 ============================================================
 
                 Daftar sidang di atas menjawab "kapan saja sidangnya". Yang
                 TIDAK dijawabnya - dan yang justru ditanyakan pengawasan tiap
                 bulan - adalah "sejauh mana perkara ini sudah berjalan
-                terhadap ambangnya".
+                terhadap ambangnya, dan di penundaan mana waktunya habis".
 
-                Sumbu tegaknya hari sejak pendaftaran, jadi kemiringan garis
-                terbaca sebagai kecepatan: yang landai berarti sidangnya rapat,
-                yang curam berarti ada jeda panjang di antara dua sidang.
+                Dihitung dengan cara yang SAMA dengan "Lama perkara" di kepala
+                layar ini: hari pendaftaran hari ke-1, dan hari mediasi yang
+                sama - status.umur.hariMediasi - dikeluarkan (PERMA 1/2016
+                Pasal 24). Grafik lama menggambar hari kalender; 94 dari 1.977
+                perkara putus bersidang tiga kali atau lebih di satker ini
+                jatuh pada pita yang berbeda dari kepala layarnya.
 
-                Garis sasaran 150 hari membawa dasar hukumnya - SEMA 2/2014.
-                Ambang tanpa dasar hanya angka yang harus dipercaya; ambang
-                yang menyebut dasarnya dapat dibantah.
+                Sidang sesudah putusan - ikrar talak, yang dapat ditunda enam
+                bulan - tidak digambar: SEMA 2/2014 berhenti pada putusan.
+                Dengannya, 94 dari 158 perkara yang tampak melewati 150 hari
+                ternyata melewatinya HANYA karena sidang sesudah putusan.
 
-                Hari pendaftaran ikut dihitung sebagai hari ke-0, sama seperti
-                perhitungan umur perkara di kepala layar ini - dua tempat yang
-                menghitung hal sama tidak boleh berbeda satu hari. */}
+                Tiga pita, dua dasar: 90 dan 120 hari dari SK Dirjen Badilag
+                048/2024 (nilai 5 dan 3 pada rubrik waktu putus), 150 hari dari
+                SEMA 2/2014. Warnanya hijau, kuning, oranye, lalu merah di atas
+                150 - sebutan yang sama dengan pita waktu putus
+                (lib/pita-waktu-putus.ts). Ambang tanpa dasar hanya angka yang
+                harus dipercaya; ambang yang menyebut dasarnya dapat dibantah.
+
+                Titiknya menyebut nomor sidang SIPP (urutanSidang), angka yang
+                sama dengan tepi kiri daftar di atas. */}
             {(() => {
-              const daftar = status.identitas.tanggalDaftar;
-              if (!daftar) return null;
-
-              const mulai = Date.parse(`${daftar}T00:00:00Z`);
-              if (Number.isNaN(mulai)) return null;
-
-              const titik: TitikData[] = [];
-              for (const sidang of status.jadwal) {
-                const kapan = Date.parse(`${sidang.tanggalSidang}T00:00:00Z`);
-                if (Number.isNaN(kapan)) continue;
-                titik.push({
-                  label: sidang.tanggalSidang,
-                  nilai: Math.round((kapan - mulai) / 86400000),
-                  keterangan: sidang.agenda || "",
-                });
-              }
+              const perjalanan = susunPerjalananSidang({
+                tanggalDaftar: status.identitas.tanggalDaftar,
+                tanggalPutusan: status.putusan && status.putusan.sudahPutus ? status.putusan.tanggalPutusan : "",
+                hariMediasi: status.umur.hariMediasi,
+                jadwal: status.jadwal,
+                mediasi: status.mediasi.terbaca ? status.mediasi.baris : [],
+                hariIni: hariIniIso(),
+              });
 
               // Dua titik selalu membentuk garis lurus, dan garis lurus
               // terbaca seperti pola. Penggambarnya sendiri menolak di bawah
-              // tiga titik; diperiksa di sini juga supaya judulnya pun tidak
+              // tiga sidang; diperiksa di sini juga supaya judulnya pun tidak
               // sempat tergambar untuk gambar yang tidak akan ada.
-              if (titik.length < 3) return null;
+              if (!perjalanan || perjalanan.titik.length < 3) return null;
 
               return (
                 <div className="mt-3">
-                  <DiagramGaris
-                    data={titik}
-                    judul="Hari sejak pendaftaran pada tiap sidang"
-                    sasaran={{ nilai: 150, label: "5 bulan - SEMA 2/2014" }}
+                  <DiagramPerjalananSidang
+                    perjalanan={perjalanan}
+                    judul="Umur perkara pada tiap sidang"
+                    hariIniDihitung={status.umur.sudahPutus ? null : status.umur.hariBersih}
+                    pita={[
+                      { sampai: 90, singkat: "3 bln", label: "3 bulan - SK Dirjen Badilag 048/2024", nada: "hijau" },
+                      { sampai: 120, singkat: "4 bln", label: "4 bulan - SK Dirjen Badilag 048/2024", nada: "kuning" },
+                      { sampai: AMBANG_HARI_SEMA, singkat: "5 bln", label: "5 bulan - SEMA 2/2014", nada: "oranye" },
+                    ]}
                   />
                 </div>
               );
@@ -3383,8 +3433,11 @@ function IsiStatus({
                 <p className="text-sm text-muted-foreground">Belum ada sidang tercatat.</p>
               ) : (
                 <ul className="space-y-1 text-sm">
-                  {status.jadwal.map((sidang) => (
+                  {jadwalUrut.map((sidang) => (
                     <li key={sidang.sidangId} className="flex flex-wrap items-center gap-2">
+                      {/* Sidang keberapa - angka yang sama dengan Perjalanan
+                          sidang dan dengan daftar BAS di Antrian Sidang. */}
+                      <NomorSidang urutan={sidang.urutanSidang} />
                       <span className="min-w-0 flex-1 truncate">
                         {sidang.tanggalSidang}
                         <span className="ml-1 text-sm text-muted-foreground">
@@ -3990,6 +4043,60 @@ function namaHariIso(iso: string) {
 }
 
 // ===========================================================================
+// NOMOR SIDANG
+// ===========================================================================
+
+/**
+ * ============================================================================
+ * NOMOR SIDANG ADALAH KOLOM `urutan` SIPP, BUKAN NOMOR BARIS
+ * ============================================================================
+ *
+ * perkara_jadwal_sidang.urutan diisi SIPP sendiri tiap kali sidang
+ * ditambahkan. Diukur pada SIPP PA Donggala 24 September 2026 atas 20.109
+ * baris jadwal (10.116 perkara): selalu mulai dari 1, tanpa lubang, tanpa
+ * kembar - dan sidang ikrar talak MENERUSKAN nomor sidang pokoknya, tidak
+ * mulai lagi dari 1.
+ *
+ * Nomor itu sama dengan urutan tanggal pada 20.105 baris. Empat sisanya (dua
+ * perkara) adalah dua sidang pada HARI yang sama yang jamnya tercatat terbalik.
+ * Diurutkan menurut NOMORNYA, sebab nomor itulah yang dicetak SIPP dan disebut
+ * di BAS - "sidang ke-5" harus berdiri di baris kelima.
+ *
+ * Yang tidak bernomor (nol - bot yang belum mengirimnya) jatuh ke bawah dengan
+ * urutan asalnya, dan TIDAK diberi nomor karangan: nomor yang keliru pada
+ * berkas perkara lebih buruk daripada kosong.
+ */
+export function urutkanMenurutNomorSidang<T extends { urutanSidang?: number }>(jadwal: T[]): T[] {
+  const kunci = (x: T) => {
+    const n = Number(x.urutanSidang);
+    return Number.isFinite(n) && n > 0 ? n : Number.MAX_SAFE_INTEGER;
+  };
+  // Salinan, bukan .sort() di tempat: status.jadwal juga dibaca sidangBerikut,
+  // ringkasan, dan kalender - mengurutkan larik aslinya mengubah mereka diam-diam.
+  return [...jadwal].sort((a, b) => kunci(a) - kunci(b));
+}
+
+/**
+ * sidangId -> nomor sidang.
+ *
+ * Relaas membawa sidangId, bukan nomornya. Menomori ulang kelompok relaas
+ * menyebut "sidang ke-2" untuk panggilan sidang ketujuh - diukur: 510 dari
+ * 5.086 perkara berelaas di PA Donggala punya sidang tanpa relaas di antara
+ * sidang-sidang yang berelaas, dan pada semuanya nomor lama itu keliru.
+ */
+export function petaNomorSidang(
+  jadwal: Array<{ sidangId: string; urutanSidang?: number }>
+): Map<string, number> {
+  const peta = new Map<string, number>();
+  for (const sidang of jadwal) {
+    const id = String(sidang.sidangId || "");
+    const n = Number(sidang.urutanSidang);
+    if (id && Number.isFinite(n) && n > 0) peta.set(id, n);
+  }
+  return peta;
+}
+
+// ===========================================================================
 // KALENDER PERKARA
 // ===========================================================================
 
@@ -4218,10 +4325,19 @@ export function KalenderPerkara({ status }: { status: Status }) {
   // Perkara lain dibuka dari layar yang sama - komponennya tidak dibongkar,
   // hanya muatannya berganti. Tanpa ini, kalender tetap berdiri di bulan
   // perkara sebelumnya dan tampak kosong.
-  useEffect(() => {
+  //
+  // Disetel SAAT MENGGAMBAR, bukan di useEffect: efek yang memanggil setState
+  // menggambar kalender perkara lama sekali dulu, baru menggantinya - dan
+  // eslint (react-hooks/set-state-in-effect) menolaknya. Ini pola "menyesuaikan
+  // state ketika prop berubah" dari dokumentasi React: kuncinya dibandingkan,
+  // dan setState hanya terpanggil sekali tiap kali kuncinya berganti.
+  const kunciBulanAwal = `${status.identitas.nomorPerkara}|${bulanAwal}`;
+  const [kunciTerakhir, setKunciTerakhir] = useState(kunciBulanAwal);
+  if (kunciTerakhir !== kunciBulanAwal) {
+    setKunciTerakhir(kunciBulanAwal);
     setBulan(bulanAwal);
     setDipilih("");
-  }, [bulanAwal, status.identitas.nomorPerkara]);
+  }
 
   if (peristiwa.length === 0) {
     return (
@@ -4416,6 +4532,22 @@ export function KalenderPerkara({ status }: { status: Status }) {
 function CourtCalendarSipp({ status }: { status: Status }) {
   const cc = status.courtCalendar;
 
+  // Tanggal -> nomor sidang yang MELAKSANAKAN rencana itu, HANYA bila hari itu
+  // memuat SATU sidang - aturan yang sama dengan urutanSidangPerTanggal di
+  // Antrian Sidang. Hari berisi dua sidang (terukur pada dua perkara) tidak
+  // diberi keterangan: menebak salah satunya menempelkan nomor yang keliru.
+  // Tanggalnya sepuluh huruf pertama saja, sama seperti di sana.
+  const sidangPerHari = new Map<string, number[]>();
+  for (const s of status.jadwal) {
+    const hari = String(s.tanggalSidang || "").slice(0, 10);
+    const n = Number(s.urutanSidang);
+    if (hari && Number.isFinite(n) && n > 0) sidangPerHari.set(hari, [...(sidangPerHari.get(hari) ?? []), n]);
+  }
+  const sidangKeHari = (tanggal: string) => {
+    const nomor = sidangPerHari.get(String(tanggal || "").slice(0, 10)) ?? [];
+    return nomor.length === 1 ? nomor[0] : 0;
+  };
+
   // Bot lama tidak mengirimkannya sama sekali - diam saja lebih jujur
   // daripada menuliskan "tidak ada rencana" untuk keterangan yang memang
   // tidak pernah ditanyakan.
@@ -4474,15 +4606,35 @@ function CourtCalendarSipp({ status }: { status: Status }) {
       {/* Diurutkan DI SINI, bukan dipercayakan pada pengirimnya. Kuerinya
           memang sudah ORDER BY rencana_tanggal, tetapi bagian ini menjanjikan
           urutan waktu kepada yang membacanya - dan janji yang bergantung pada
-          kerapian pemanggil akan diingkari pada hari pemanggilnya berubah. */}
+          kerapian pemanggil akan diingkari pada hari pemanggilnya berubah.
+
+          Jam menjadi pemecah seri: 22 perkara PA Donggala punya dua rencana
+          pada tanggal yang sama. */}
       <ol className="space-y-1 text-sm">
         {[...cc.baris]
-          .sort((a, b) => (a.tanggal < b.tanggal ? -1 : a.tanggal > b.tanggal ? 1 : 0))
+          .sort((a, b) =>
+            a.tanggal !== b.tanggal
+              ? a.tanggal < b.tanggal
+                ? -1
+                : 1
+              : (a.jam || "") < (b.jam || "")
+                ? -1
+                : (a.jam || "") > (b.jam || "")
+                  ? 1
+                  : 0
+          )
           .map((baris, ke) => (
           <li
             key={`${baris.tanggal}-${ke}`}
             className="flex flex-wrap items-baseline gap-x-2 border-l-2 border-border pl-2"
           >
+            {/* Nomor rencana 1..N - sama dengan kolom "No" pada cetak Court
+                Calendar SIPP (cetak.php), yang juga menomori menurut
+                rencana_tanggal. Tabel perkara_court_calendar TIDAK punya kolom
+                urutan, jadi nomornya memang urutan baris - dan karena itu
+                dihitung SESUDAH .sort() di atas. Bukan nomor sidang: rencana
+                dan sidang tidak selalu sama banyak. */}
+            <NomorSidang urutan={ke + 1} sebutan="Rencana" />
             <span className="font-medium">{tanggalPanjang(baris.tanggal)}</span>
             {baris.jam ? <span className="text-muted-foreground">{baris.jam}</span> : null}
             <span>{baris.agenda || "tanpa agenda"}</span>
@@ -4490,6 +4642,12 @@ function CourtCalendarSipp({ status }: { status: Status }) {
               <span className="text-muted-foreground">{baris.keterangan}</span>
             ) : null}
             <Badge variant={nada(baris.keadaan)}>{bunyi(baris.keadaan)}</Badge>
+            {/* Sidang keberapa yang melaksanakan rencana ini - nomor SIPP,
+                bukan nomor rencana di tepi kiri. Hanya pada rencana yang
+                bersidang dan harinya memuat satu sidang saja. */}
+            {baris.adaSidang && sidangKeHari(baris.tanggal) > 0 ? (
+              <span className="text-xs text-muted-foreground">sidang ke-{sidangKeHari(baris.tanggal)}</span>
+            ) : null}
           </li>
         ))}
       </ol>
@@ -4510,6 +4668,7 @@ function bunyiAlasanKepatutan(alasan: string) {
   if (alasan === "dikirim_setelah_hari_sidang") return "dikirim setelah hari sidang";
   if (alasan === "tenggang_kurang_dari_ambang") return "tenggangnya kurang dari ambang";
   if (alasan === "belum_dikirim") return "belum dikirim";
+  if (alasan === "tidak_wajib_dipanggil") return "tidak dinilai - hadir pada sidang sebelumnya";
   if (alasan === "belum_diterima") return "belum diterima";
   if (alasan === "penerimaan_belum_terbukti") return "penerimaannya belum terbukti";
   if (alasan === "tanggal_sidang_tidak_diketahui") return "tanggal sidangnya tidak diketahui";
@@ -4549,6 +4708,20 @@ export function RelaasPanggilan({ status }: { status: Status }) {
   const agendaSidang = new Map(
     status.jadwal.map((sidang) => [sidang.tanggalSidang, sidang])
   );
+
+  // Nomor sidang diambil dari JADWAL lewat sidangId, bukan dari urutan
+  // kelompok di daftar ini. Relaas hanya dibuat untuk sidang yang ada
+  // panggilannya, sehingga sidang tanpa relaas membuat nomor urut kelompok
+  // bergeser: pada 385/Pdt.G/2026 relaas sidang KETUJUH dahulu tertulis
+  // "Sidang ke-2".
+  const nomorSidangPer = petaNomorSidang(status.jadwal);
+
+  // Sidang yang dinilai memang punya relaas? Bot yang mengirim sidangId
+  // dicocokkan tepat; bot lama cukup ditanya ada tidaknya relaas sama sekali.
+  const acuanBerelaas =
+    status.panggilan?.sidangId != null && status.panggilan.sidangId !== ""
+      ? status.relaas.some((r) => String(r.sidangId ?? "") === String(status.panggilan?.sidangId))
+      : status.relaas.length > 0;
 
   // Kelompok per tanggal sidang. Yang tanggal sidangnya kosong dikumpulkan di
   // akhir dan DISEBUT apa adanya - relaas yang tidak tertaut sidang mana pun
@@ -4598,6 +4771,13 @@ export function RelaasPanggilan({ status }: { status: Status }) {
             {ringkasan.salahSaluran > 0 ? (
               <Badge variant="warning">{ringkasan.salahSaluran} salah saluran</Badge>
             ) : null}
+            {/* Sandi relaas SIPP yang bertentangan dengan e-Court - mis. 'E'
+                kepada pihak tanpa email di e-Court. Bukan salah saluran, dan
+                karena itu tidak berwarna: yang perlu dibetulkan catatannya,
+                bukan panggilannya. Dihitung tersendiri, bukan disembunyikan. */}
+            {(ringkasan.saluranBelumPasti ?? 0) > 0 ? (
+              <Badge variant="muted">{ringkasan.saluranBelumPasti} saluran belum pasti</Badge>
+            ) : null}
             {ringkasan.tidakPerluDipanggil > 0 ? (
               <Badge variant="muted">
                 {ringkasan.tidakPerluDipanggil} tidak perlu dipanggil
@@ -4605,7 +4785,17 @@ export function RelaasPanggilan({ status }: { status: Status }) {
             ) : null}
           </div>
           <p className="text-sm text-muted-foreground">
-            Kepatutan di atas dinilai untuk <strong>sidang terakhir yang tercatat</strong>, menurut
+            {/* Bot jatuh ke sidang terakhir yang TERCATAT bila tidak ada satu
+                pun sidang yang punya relaas - kalimatnya harus mengikuti,
+                bukan mengaku sidang itu punya relaas (40 dari 823 perkara
+                bersidang 2026 tanpa relaas sama sekali). */}
+            Kepatutan di atas dinilai untuk{" "}
+            <strong>
+              {acuanBerelaas
+                ? "sidang terakhir yang punya relaas"
+                : "sidang terakhir yang tercatat - belum ada relaas untuk sidang itu"}
+            </strong>
+            {panggilan?.tanggalSidang ? ` (${tanggalPanjang(panggilan.tanggalSidang)})` : ""}, menurut
             jalur yang SEHARUSNYA dipakai
             {panggilan?.lewatEcourt ? " (perkara e-Court)" : " (perkara biasa)"} - bukan jalur yang
             terlanjur dipakai. Alat bantu, bukan penetapan sah tidaknya panggilan.
@@ -4618,14 +4808,26 @@ export function RelaasPanggilan({ status }: { status: Status }) {
         <p className="text-sm text-muted-foreground">Belum ada relaas tercatat.</p>
       ) : (
         <ol className="space-y-2">
-          {tanggalUrut.map((tanggal, urutan) => {
+          {tanggalUrut.map((tanggal) => {
             const sidang = agendaSidang.get(tanggal);
             const baris = kelompok.get(tanggal) ?? [];
+            // Satu hari biasanya satu sidang. Bila dua (terukur pada dua
+            // perkara), kedua nomornya disebut - bukan ditebak salah satunya.
+            // Relaas yang sidangId-nya tidak ada di jadwal tidak diberi nomor
+            // karangan: kepalanya berbunyi "Sidang" saja.
+            const nomor = [
+              ...new Set(
+                baris
+                  .map((r) => nomorSidangPer.get(String(r.sidangId || "")))
+                  .filter((n): n is number => typeof n === "number")
+              ),
+            ].sort((a, b) => a - b);
             return (
               <li key={tanggal} className="rounded-md border bg-muted/30 p-2">
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b pb-1">
                   <span className="text-sm font-semibold">
-                    Sidang ke-{urutan + 1} · {namaHariIso(tanggal)}, {tanggalPanjang(tanggal)}
+                    {nomor.length > 0 ? `Sidang ke-${nomor.join(" & ke-")}` : "Sidang"} ·{" "}
+                    {namaHariIso(tanggal)}, {tanggalPanjang(tanggal)}
                   </span>
                   {sidang?.agenda ? (
                     <span className="text-xs text-muted-foreground">{sidang.agenda}</span>
@@ -4694,6 +4896,11 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                             dipakai {SEBUTAN_JALUR[pihak.terlaksana] || pihak.terlaksana}
                           </Badge>
                         </div>
+                      ) : pihak.catatanSaluran ? (
+                        // Bukan lencana: sandi SIPP bertentangan dengan e-Court,
+                        // dan yang perlu dibetulkan catatannya, bukan
+                        // panggilannya. Lihat ecourtPanggilanService di bot.
+                        <div className="mt-0.5 text-sm text-muted-foreground">{pihak.catatanSaluran}</div>
                       ) : null}
                     </td>
                     <td className="px-2 py-1.5">
@@ -4736,7 +4943,13 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                       )}
                     </td>
                     <td className="px-2 py-1.5">
-                      {pihak.kepatutan.patut === true ? (
+                      {pihak.kepatutan.alasan === "tidak_wajib_dipanggil" ? (
+                        // Hadir pada sidang sebelumnya dan memang tidak
+                        // dipanggil - tidak ada yang dapat dinilai, dan kuning
+                        // "belum dikirim" di sini dahulu berdiri di samping
+                        // "tidak perlu dipanggil" (tinjauan 24 September 2026).
+                        <Badge variant="muted">{bunyiAlasanKepatutan(pihak.kepatutan.alasan)}</Badge>
+                      ) : pihak.kepatutan.patut === true ? (
                         <Badge variant="success">patut · {pihak.kepatutan.selisih} hari</Badge>
                       ) : pihak.kepatutan.patut === false ? (
                         <Badge variant="danger">

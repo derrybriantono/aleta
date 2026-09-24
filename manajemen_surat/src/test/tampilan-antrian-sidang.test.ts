@@ -11,6 +11,7 @@ import {
   kelompokTampilan,
   tampil,
   tampilanBawaan,
+  tampilanSemuaMati,
 } from "@/lib/tampilan-antrian-sidang";
 
 const AKAR = path.resolve(process.cwd(), "..");
@@ -80,13 +81,27 @@ describe("saklar tampilan", () => {
 });
 
 describe("yang mendesak tidak dapat dimatikan", () => {
-  // Keempat ini disebut pengguna satu per satu. Penjaga ini ada supaya
-  // keempatnya tidak berpindah ke daftar yang dapat dimatikan pada suatu
+  // Keempat pertama disebut pengguna satu per satu. Penjaga ini ada supaya
+  // semuanya tidak berpindah ke daftar yang dapat dimatikan pada suatu
   // perapian di kemudian hari - dan hilangnya tidak akan berbunyi apa pun
   // sampai satu sidang batal atau satu berkas tidak pernah dijahit.
-  const WAJIB = ["retur", "belum-dipanggil", "belum-minutasi", "belum-unggah-putusan"];
+  //
+  // Menjadi ENAM pada 24 September 2026:
+  //   tenggang-mepet           kotak merah sejak 2.34.0 yang lupa didaftarkan
+  //                            - panel saklar diam tentangnya satu rilis penuh
+  //   belum-tunda-lewat-batas  diminta pengguna: sidang yang lewat 15:00 WITA
+  //                            dan hasilnya belum dicatat
+  // Tetap dikunci toEqual - daftar persis, bukan "sekurangnya".
+  const WAJIB = [
+    "retur",
+    "belum-dipanggil",
+    "tenggang-mepet",
+    "belum-minutasi",
+    "belum-unggah-putusan",
+    "belum-tunda-lewat-batas",
+  ];
 
-  it("keempatnya bertanda wajib", () => {
+  it("keenamnya bertanda wajib", () => {
     for (const kunci of WAJIB) {
       const saklar = SAKLAR_TAMPILAN.find((x) => x.kunci === kunci);
       expect(saklar, `saklar ${kunci} hilang dari daftar`).toBeDefined();
@@ -180,6 +195,108 @@ describe("bacaTampilan", () => {
     const hasil = bacaTampilan(JSON.stringify({ saksi: "tidak", kuasa: 0 }));
     expect(hasil.saksi).toBe(true);
     expect(hasil.kuasa).toBe(true);
+  });
+});
+
+describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
+  const layar = baca("manajemen_surat/src/components/portal/aleta-ecourt-sidang.tsx");
+
+  it("tiap kotak keadaan MERAH di layar punya saklar wajib yang sekunci", () => {
+    // Wajib mengikuti warna, bukan ingatan. Tenggang mepet pernah lolos
+    // karena daftar ini ditulis tangan.
+    const awal = layar.indexOf("const KEADAAN_DASAR: KeadaanSidang[] = [");
+    const akhir = layar.indexOf("const KEADAAN_MENUNTUT_TINDAKAN");
+    expect(awal).toBeGreaterThan(-1);
+    expect(akhir).toBeGreaterThan(awal);
+    const pola = /kunci: "([a-z-]+)",\s*label: "[^"]+",\s*(?:labelPendek: "[^"]+",\s*)?nada: "([a-z]+)"/g;
+    let merah = [...layar.slice(awal, akhir).matchAll(pola)]
+      .filter((m) => m[2] === "bahaya")
+      .map((m) => m[1]);
+    // Putusan e-Court tertulis merah tetapi dimatikan keras; begitu
+    // dinyalakan, pengecualian ini gugur sendiri.
+    if (layar.includes("const TAMPILKAN_PUTUSAN_ECOURT = false;")) {
+      merah = merah.filter((k) => k !== "putusan-ecourt");
+    }
+    expect(merah.length, "pola tidak menangkap kotak").toBeGreaterThanOrEqual(5);
+    for (const k of merah) expect(SAKLAR_WAJIB, `kotak merah ${k} tanpa saklar wajib`).toContain(k);
+  });
+
+  it("anggota berjam Perlu diperiksa juga wajib, dan TIDAK dipakai menggambar", () => {
+    // Tanda merah Belum ditunda hanya hidup sesudah 15:00 pada hari sidangnya;
+    // saklar mati yang tersimpan akan membuatnya bisu tepat pada saat itu.
+    expect(SAKLAR_WAJIB).toContain("belum-tunda-lewat-batas");
+    expect(layar).not.toContain('tampil(tampilan, "belum-tunda-lewat-batas")');
+    expect(layar).toContain("{belumTundaLewatBatas(baris, saat) ? (");
+  });
+
+  it("Perlu diperiksa sendiri TIDAK punya saklar - ia daftar pekerjaan hari itu", () => {
+    expect(SAKLAR_TAMPILAN.find((x) => x.kunci === "perlu-diperiksa")).toBeUndefined();
+  });
+
+  it("saklar untuk penanda dan tombol yang baru ada", () => {
+    for (const kunci of [
+      "agenda-elitigasi",
+      "umur-perkara",
+      "menunggu-lama",
+      "urutan-sidang",
+      "hasil-tundaan",
+      "rincian-antrian",
+      "tombol-tunda-putus",
+      "tombol-mediator",
+      "ambil-antrian",
+      "tunjuk-konseptor",
+      "keterangan-perkara",
+    ]) {
+      const saklar = SAKLAR_TAMPILAN.find((x) => x.kunci === kunci);
+      expect(saklar, `saklar ${kunci} hilang`).toBeDefined();
+      expect(saklar?.wajib ?? false, kunci).toBe(false);
+      expect(saklar?.bawaanMati ?? false, kunci).toBe(false);
+    }
+    // 20 sebelum 24 September 2026 (dihitung dari HEAD 8489ebf, bukan
+    // dikira); 20 + 2 wajib + 11 yang dapat dimatikan.
+    expect(SAKLAR_TAMPILAN.length).toBe(33);
+  });
+
+  it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {
+    // Saklar yang tidak mengubah apa pun di mode yang sedang dipakai tampak
+    // rusak - "petugas" pernah diam soal itu.
+    for (const kunci of ["belum-bas", "tidak-dipanggil", "petugas"]) {
+      expect(SAKLAR_TAMPILAN.find((x) => x.kunci === kunci)?.keterangan, kunci).toContain("mode Ringkas");
+    }
+    for (const kunci of ["kolom-siap", "tunjuk-konseptor", "keterangan-perkara"]) {
+      expect(SAKLAR_TAMPILAN.find((x) => x.kunci === kunci)?.keterangan, kunci).toContain("mode Lengkap");
+    }
+  });
+
+  it("yang KOSONG disembunyikan, isinya tidak", () => {
+    // Tunjukan dan keterangan yang sudah ditulis untuk orang berikutnya tidak
+    // boleh hilang oleh saklar orang sebelumnya di komputer bersama.
+    const iK = layar.indexOf("function SelKonseptorSementara(");
+    const blokK = layar.slice(iK, layar.indexOf("function BorangKonseptorSementara(", iK));
+    const pulang = blokK.indexOf("if (!terbuka && !tunjukan?.nama && !tampilKosong) return null;");
+    expect(pulang).toBeGreaterThan(-1);
+    // Sesudah seluruh hook - urutan hook tidak boleh berubah antar gambar.
+    expect(pulang).toBeGreaterThan(blokK.lastIndexOf("useState("));
+    const iT = layar.indexOf("function SelKeteranganPerkara(");
+    const blokT = layar.slice(iT, layar.indexOf("function BorangKeteranganPerkara(", iT));
+    expect(blokT).toContain("if (!terbuka && !adaIsi && !tampilKosong) return null;");
+  });
+
+  it("Sembunyikan semua mematikan yang dapat dimatikan, yang wajib tetap menyala", () => {
+    const mati = tampilanSemuaMati();
+    for (const saklar of SAKLAR_TAMPILAN) {
+      expect(tampil(mati, saklar.kunci), saklar.kunci).toBe(Boolean(saklar.wajib));
+    }
+    expect(jumlahDimatikan(mati)).toBe(
+      SAKLAR_TAMPILAN.length - SAKLAR_WAJIB.length - BOLEH_MATI_SEJAK_AWAL.length
+    );
+    expect(layar).toContain("Sembunyikan semua");
+    expect(layar).toContain("const baru = tampilanSemuaMati();");
+  });
+
+  it("jumlah yang wajib tidak ditulis tangan di panel", () => {
+    expect(layar).not.toMatch(/Mengapa (empat|lima|enam|tujuh) penanda/);
+    expect(layar).toContain("SAKLAR_TAMPILAN.filter((x) => x.wajib)");
   });
 });
 

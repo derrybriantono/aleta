@@ -152,7 +152,14 @@ describe("grafik memakai penggambar yang sudah ada", () => {
     // angka sambil menggulir - dan yang mengingat sambil menggulir keliru.
     const isi = readFileSync(berkas, "utf8");
     expect(isi).toContain("Jeda antara peristiwa dan penginputannya");
-    expect(isi).toContain("Hari sejak pendaftaran pada tiap sidang");
+    // Sejak 24 Sep 2026 judulnya "Umur perkara": sumbu tegaknya hari yang
+    // DIHITUNG (hari pendaftaran hari ke-1, mediasi dikeluarkan), bukan lagi
+    // hari kalender sejak pendaftaran. Grafiknya tetap di bagian yang sama.
+    expect(isi).toContain('judul="Umur perkara pada tiap sidang"');
+    const iSidang = isi.indexOf('kunci="sidang"');
+    const iGrafik = isi.indexOf('judul="Umur perkara pada tiap sidang"');
+    expect(iGrafik).toBeGreaterThan(iSidang);
+    expect(iGrafik).toBeLessThan(isi.indexOf('kunci="kalender"'));
     expect(isi).toContain("Komposisi pengeluaran");
     expect(isi).toContain("Poin yang diperoleh tiap aspek");
   });
@@ -177,6 +184,122 @@ describe("grafik memakai penggambar yang sudah ada", () => {
     const isi = readFileSync(berkas, "utf8");
     expect(isi).toContain("x.terbaca && x.poin !== null");
     expect(isi).toContain("bukan dihitung");
+  });
+});
+
+describe("umur perkara pada tiap sidang dihitung seperti kepala layarnya", () => {
+  /**
+   * Diminta 24 Sep 2026: grafik lama "terlalu datar dan tidak memberi
+   * informasi". Begitu pita 90/120/150 hari digambar, pita itu menjadi
+   * PENILAIAN - dan penilaiannya harus memakai hari yang sama dengan "Lama
+   * perkara" di kepala layar: terukur 94 dari 1.977 perkara putus bersidang
+   * tiga kali atau lebih jatuh pada pita yang berbeda bila grafiknya memakai
+   * hari kalender. Hitungannya sendiri diuji perjalanan-sidang.test.ts.
+   */
+  const isi = () => readFileSync(berkas, "utf8");
+
+  it("potongan mediasinya angka yang SAMA dengan Lama perkara, bukan hitungan sendiri", () => {
+    const teks = isi();
+    expect(teks).toContain("susunPerjalananSidang({");
+    expect(teks).toContain("hariMediasi: status.umur.hariMediasi,");
+  });
+
+  it("sidang sesudah putusan tidak dinilai terhadap ambang", () => {
+    expect(isi()).toContain(
+      'tanggalPutusan: status.putusan && status.putusan.sudahPutus ? status.putusan.tanggalPutusan : ""'
+    );
+  });
+
+  it("ketiga pita membawa dasarnya, dan batas lima bulan dari satu sumber", () => {
+    const teks = isi();
+    expect(teks).toContain('label: "3 bulan - SK Dirjen Badilag 048/2024"');
+    expect(teks).toContain('label: "4 bulan - SK Dirjen Badilag 048/2024"');
+    expect(teks).toContain("sampai: AMBANG_HARI_SEMA");
+  });
+
+  it("warna pita hijau, kuning, oranye - lalu merah di atas 150 - urut menurut batasnya", () => {
+    // Sebutan yang sama dengan pita waktu putus (lib/pita-waktu-putus.ts);
+    // tipenya dipinjam di bentuk-sajian, jadi sebutan lain tidak lolos tsc.
+    const teks = isi();
+    const i90 = teks.indexOf('{ sampai: 90, singkat: "3 bln"');
+    const i120 = teks.indexOf('{ sampai: 120, singkat: "4 bln"');
+    const i150 = teks.indexOf('{ sampai: AMBANG_HARI_SEMA, singkat: "5 bln"');
+    expect(i90).toBeGreaterThan(-1);
+    expect(i120).toBeGreaterThan(i90);
+    expect(i150).toBeGreaterThan(i120);
+    expect(teks.slice(i90, teks.indexOf("}", i90))).toContain('nada: "hijau"');
+    expect(teks.slice(i120, teks.indexOf("}", i120))).toContain('nada: "kuning"');
+    expect(teks.slice(i150, teks.indexOf("}", i150))).toContain('nada: "oranye"');
+  });
+
+  it("grafik hari kalender yang lama tidak kembali", () => {
+    expect(isi()).not.toContain("<DiagramGaris");
+  });
+
+  it('"hari ini" menurut jam peramban, bukan tanggal UTC', () => {
+    // toISOString() memberi tanggal UTC: pukul 00.00-08.00 WITA lencana
+    // "Sidang berikut" masih menyebut sidang kemarin sementara grafiknya sudah
+    // menggambar sidang hari ini berongga.
+    const teks = isi();
+    expect(teks).not.toContain("new Date().toISOString().slice(0, 10)");
+    expect(teks).toContain("hariIni: hariIniIso(),");
+    expect(teks).toContain("const sidangBerikut = status.jadwal.find((x) => x.tanggalSidang >= hariIniIso());");
+  });
+});
+
+describe("nomor sidang di Status Perkara", () => {
+  /**
+   * Diminta 24 Sep 2026 (butir 12 dan 13): tiap daftar sidang bernomor di
+   * tepi kiri dan urut menurut nomornya - nomor SIPP perkara_jadwal_sidang.
+   * urutan, sama dengan panel Rincian di Antrian Sidang. Court Calendar
+   * bernomor rencana 1..N seperti kolom "No" pada cetak SIPP-nya.
+   */
+  const isi = () => readFileSync(berkas, "utf8");
+
+  it("tidak ada lagi daftar sidang yang digambar menurut urutan kiriman bot", () => {
+    expect(isi()).not.toContain("{status.jadwal.map((sidang) => (");
+    expect(isi()).toContain("const jadwalUrut = useMemo(() => urutkanMenurutNomorSidang(status.jadwal), [status.jadwal]);");
+  });
+
+  it("Perjalanan sidang dan BAS di Berkas sama-sama bernomor", () => {
+    const teks = isi();
+    expect(teks.split("<NomorSidang urutan={sidang.urutanSidang} />").length - 1).toBe(2);
+    // Keduanya di dalam bagian masing-masing, bukan di tempat lain.
+    const iSidang = teks.indexOf('kunci="sidang"');
+    const iNomor1 = teks.indexOf("<NomorSidang urutan={sidang.urutanSidang} />");
+    expect(iNomor1).toBeGreaterThan(iSidang);
+    expect(iNomor1).toBeLessThan(teks.indexOf('kunci="kalender"'));
+    const iBas = teks.indexOf("--- Berita acara sidang ---");
+    const iNomor2 = teks.indexOf("<NomorSidang urutan={sidang.urutanSidang} />", iNomor1 + 1);
+    expect(iNomor2).toBeGreaterThan(iBas);
+  });
+
+  it("komponennya DIIMPOR dari Antrian Sidang, bukan disalin", () => {
+    // Dua salinan akan berselisih lebar atau warnanya pada suntingan
+    // berikutnya, dan nomor yang sama tampak berbeda di dua layar.
+    const teks = isi();
+    expect(teks).toMatch(
+      /import \{[^}]*\bNomorSidang\b[^}]*\} from "@\/components\/portal\/aleta-ecourt-sidang"/
+    );
+    expect(teks).not.toContain("function NomorSidang(");
+  });
+
+  it("nomor Court Calendar dihitung SESUDAH diurutkan, dan bukan nomor sidang", () => {
+    const teks = isi();
+    const blok = teks.slice(teks.indexOf("function CourtCalendarSipp("), teks.indexOf("function bunyiAlasanKepatutan("));
+    const iNomor = blok.indexOf('<NomorSidang urutan={ke + 1} sebutan="Rencana" />');
+    expect(iNomor).toBeGreaterThan(-1);
+    expect(iNomor).toBeGreaterThan(blok.indexOf(".sort("));
+    // Keterangan "sidang ke-N" pada rencana memakai aturan satu-sidang-sehari.
+    expect(blok).toContain("return nomor.length === 1 ? nomor[0] : 0;");
+  });
+
+  it("relaas bernomor menurut sidangId-nya, bukan menurut urutan kelompok", () => {
+    const teks = isi();
+    expect(teks).not.toContain("Sidang ke-{urutan + 1}");
+    const blok = teks.slice(teks.indexOf("export function RelaasPanggilan("));
+    expect(blok).toContain("petaNomorSidang(status.jadwal)");
+    expect(blok).toContain('.map((r) => nomorSidangPer.get(String(r.sidangId || "")))');
   });
 });
 
@@ -477,8 +600,19 @@ describe("kalender perkara dihitung dari muatan yang sudah ada", () => {
   it("berpindah perkara menyetel ulang bulannya", () => {
     // Komponennya tidak dibongkar saat perkara lain dibuka - hanya muatannya
     // berganti. Tanpa ini kalender tetap berdiri di bulan perkara sebelumnya.
+    //
+    // Sejak 24 Sep 2026 disetel saat menggambar, bukan di useEffect (eslint
+    // react-hooks/set-state-in-effect menolak bentuk lama). Kuncinya tetap
+    // nomor perkara DAN bulan awal - keduanya, seperti dependensi efek dulu -
+    // dan perilakunya kini diuji digambar di status-perkara-relaas-kalender.
     const teks = isi();
-    expect(teks).toContain("}, [bulanAwal, status.identitas.nomorPerkara]);");
+    expect(teks).toContain("const kunciBulanAwal = `${status.identitas.nomorPerkara}|${bulanAwal}`;");
+    const i = teks.indexOf("if (kunciTerakhir !== kunciBulanAwal) {");
+    expect(i).toBeGreaterThan(-1);
+    const blok = teks.slice(i, teks.indexOf("}", i));
+    expect(blok).toContain("setKunciTerakhir(kunciBulanAwal);");
+    expect(blok).toContain("setBulan(bulanAwal);");
+    expect(blok).toContain('setDipilih("");');
   });
 
   it("keterangan warna hanya memuat jenis yang ada pada bulan itu", () => {

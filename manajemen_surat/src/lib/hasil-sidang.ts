@@ -78,3 +78,15 @@ export function hasilSidangPutusan(ditunda: boolean, alasan: string): string {
 export function adaHasilSidang(ditunda: boolean, alasan: string): boolean {
   return hasilSidangPutusan(ditunda, alasan) !== "";
 }
+
+/**
+ * Kolom alasan_ditunda BERISI sesuatu - apa pun isinya, asal bukan nilai
+ * bawaan yang tidak pernah diisi (BUKAN_ISI).
+ *
+ * Berbeda dari hasilSidangPutusan, yang hanya mau "putus". Pertanyaan di sini
+ * "sudahkah panitera mencatat SESUATU", dan "telah ikrar talak" - 127 baris di
+ * satker, 2025 s.d. September 2026 - adalah catatan hasil walau bukan putusan.
+ */
+export function alasanTerisi(alasan: string | null | undefined): boolean {
+  return !BUKAN_ISI.has(String(alasan ?? "").trim().toLowerCase());
+}

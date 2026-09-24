@@ -1,10 +1,12 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import {
   KalenderPerkara,
   RelaasPanggilan,
+  petaNomorSidang,
   susunPeristiwa,
+  urutkanMenurutNomorSidang,
   type Status,
 } from "@/components/portal/aleta-ecourt-status-perkara";
 
@@ -395,6 +397,26 @@ describe("kalender perkara digambar", () => {
     expect(screen.queryByText(/Rab, 9 September 2026/)).toBeNull();
   });
 
+  it("membuka perkara lain di komponen yang sama menyetel ulang bulan dan pilihannya", () => {
+    // Komponennya tidak dibongkar saat perkara lain dibuka - hanya muatannya
+    // berganti. Tanpa penyetelan ulang, kalender tetap berdiri di bulan dan
+    // tanggal terpilih perkara sebelumnya.
+    const { rerender } = render(<KalenderPerkara status={status()} />);
+    fireEvent.click(screen.getByLabelText("Bulan sebelumnya"));
+    expect(screen.getByText("Agustus 2026")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(/^5 Agustus 2026:/));
+    expect(screen.getByText(/Rab, 5 Agustus 2026/)).toBeTruthy();
+
+    const lain = status({
+      identitas: { ...status().identitas, nomorPerkara: "124/Pdt.G/2026/PA.Dgl" },
+    } as Partial<Status>);
+    rerender(<KalenderPerkara status={lain} />);
+    // Bulan awal perkara yang baru - bukan Agustus yang tadi dibuka.
+    expect(screen.getByText("September 2026")).toBeTruthy();
+    expect(screen.queryByText("Agustus 2026")).toBeNull();
+    expect(screen.queryByText(/Rab, 5 Agustus 2026/)).toBeNull();
+  });
+
   it("tanggal tanpa peristiwa tidak membuka apa pun", () => {
     render(<KalenderPerkara status={status()} />);
     fireEvent.click(screen.getByLabelText(/^2 September 2026: tanpa peristiwa/));
@@ -548,5 +570,197 @@ describe("relaas panggilan digambar runut per sidang", () => {
   it("perkara tanpa relaas sama sekali mengatakannya", () => {
     render(<RelaasPanggilan status={status({ relaas: [], panggilan: undefined })} />);
     expect(screen.getByText(/Belum ada relaas tercatat pada perkara ini/)).toBeTruthy();
+  });
+
+  it("sandi E tanpa e-Summons tampil sebagai catatan, bukan salah saluran", () => {
+    // 385/Pdt.G/2026/PA.Dgl: tergugat tanpa email di e-Court, dipanggil surat
+    // tercatat, relaasnya bersandi E. Bot kini tidak menuduhnya salah saluran;
+    // layar menampilkan catatannya tanpa lencana.
+    const dasar = status();
+    const p = dasar.panggilan!;
+    const pihak = p.pihak.map((x, i) =>
+      i === 1
+        ? {
+            ...x,
+            seharusnya: "surat_tercatat",
+            terlaksana: "",
+            salahSaluran: false,
+            catatanSaluran:
+              "SIPP mencatat Panggilan Elektronik, tetapi pihak ini tidak punya email di e-Court dan e-Court tidak mencatat e-Summons kepadanya - sandi relaas di SIPP kemungkinan keliru.",
+          }
+        : x
+    );
+    render(
+      <RelaasPanggilan
+        status={status({
+          panggilan: {
+            ...p,
+            tanggalSidang: "2026-09-09",
+            pihak,
+            ringkasan: { ...p.ringkasan, salahSaluran: 0, saluranBelumPasti: 1 },
+          },
+        })}
+      />
+    );
+    expect(screen.getByText(/tidak punya email di e-Court/)).toBeTruthy();
+    expect(screen.queryByText("1 salah saluran")).toBeNull();
+    expect(screen.queryByText(/^dipakai /)).toBeNull();
+    expect(screen.getByText("1 saluran belum pasti")).toBeTruthy();
+    // Sidang yang dinilai disebut tanggalnya.
+    expect(screen.getByText(/\(9 September 2026\), menurut/)).toBeTruthy();
+  });
+
+  it("bot lama tanpa ruas saluran: tidak ada lencana atau catatan tambahan", () => {
+    render(<RelaasPanggilan status={status()} />);
+    expect(screen.queryByText(/saluran belum pasti/)).toBeNull();
+    expect(screen.queryByText(/tidak punya email di e-Court/)).toBeNull();
+  });
+});
+
+// ===========================================================================
+describe("nomor sidang diambil dari SIPP, bukan dari urutan baris", () => {
+  /** Tiga sidang; relaas hanya untuk sidang ke-1 dan ke-3 - kasus 385/Pdt.G/2026. */
+  function tigaSidang(): Status {
+    const dasar = status();
+    const [r1, r2] = dasar.relaas;
+    const sidang = (sidangId: string, tanggalSidang: string, urutanSidang: number) => ({
+      ...dasar.jadwal[0],
+      sidangId,
+      tanggalSidang,
+      urutanSidang,
+    });
+    return status({
+      jadwal: [sidang("1", "2026-08-05", 1), sidang("2", "2026-08-19", 2), sidang("3", "2026-09-09", 3)],
+      relaas: [
+        r1,
+        { ...r2, id: "r3", sidangId: "3", tanggalSidang: "2026-09-09", tanggalRelaas: "2026-09-02" },
+      ],
+    });
+  }
+
+  it("nomor relaas diambil dari jadwal, bukan dari urutan kelompok", () => {
+    render(<RelaasPanggilan status={tigaSidang()} />);
+    const kepala = screen.getAllByText(/^Sidang ke-\d+ ·/).map((x) => x.textContent ?? "");
+    expect(kepala).toHaveLength(2);
+    expect(kepala[0]).toContain("Sidang ke-1 ·");
+    // Dulu tertulis "Sidang ke-2" - posisi kelompoknya, bukan sidangnya.
+    expect(kepala[1]).toContain("Sidang ke-3 ·");
+    expect(screen.queryByText(/^Sidang ke-2 ·/)).toBeNull();
+  });
+
+  it("relaas yang sidangId-nya tidak ada di jadwal tidak diberi nomor karangan", () => {
+    const dasar = tigaSidang();
+    const [r1] = dasar.relaas;
+    render(
+      <RelaasPanggilan
+        status={{
+          ...dasar,
+          relaas: [...dasar.relaas, { ...r1, id: "r99", sidangId: "99", tanggalSidang: "2026-10-01" }],
+        }}
+      />
+    );
+    expect(screen.getByText(/^Sidang · .*1 Oktober 2026/)).toBeTruthy();
+    expect(screen.queryByText(/^Sidang ke-\d+ · .*1 Oktober 2026/)).toBeNull();
+  });
+
+  it("dua sidang pada hari yang sama: kedua nomornya disebut, bukan ditebak salah satunya", () => {
+    const dasar = tigaSidang();
+    const [r1] = dasar.relaas;
+    render(
+      <RelaasPanggilan
+        status={{
+          ...dasar,
+          jadwal: [...dasar.jadwal, { ...dasar.jadwal[0], sidangId: "4", tanggalSidang: "2026-08-05", urutanSidang: 4 }],
+          relaas: [...dasar.relaas, { ...r1, id: "r4", sidangId: "4" }],
+        }}
+      />
+    );
+    expect(screen.getByText(/^Sidang ke-1 & ke-4 ·/)).toBeTruthy();
+  });
+
+  it("Court Calendar bernomor 1..N menurut tanggal, apa pun urutan kirimnya", () => {
+    const acak = status({
+      courtCalendar: {
+        terbaca: true,
+        alasan: "",
+        baris: [
+          { tanggal: "2026-12-01", jam: "", agenda: "Ketiga", keterangan: "", diinputOleh: "", diinputTanggal: "", adaSidang: false, keadaan: "menunggu" },
+          { tanggal: "2026-08-05", jam: "", agenda: "Pertama", keterangan: "", diinputOleh: "", diinputTanggal: "", adaSidang: true, keadaan: "terlaksana" },
+          { tanggal: "2026-08-19", jam: "", agenda: "Kedua", keterangan: "", diinputOleh: "", diinputTanggal: "", adaSidang: false, keadaan: "meleset" },
+        ],
+      },
+    });
+    render(<KalenderPerkara status={acak} />);
+    const ol = screen.getByText("Court Calendar SIPP").closest(".rounded-md")?.querySelector("ol") as HTMLElement;
+    expect(ol).toBeTruthy();
+    const daftar = [...ol.querySelectorAll(":scope > li")];
+    expect(daftar.map((x) => (x.textContent ?? "").match(/Pertama|Kedua|Ketiga/)?.[0])).toEqual([
+      "Pertama",
+      "Kedua",
+      "Ketiga",
+    ]);
+    expect(daftar.map((x) => x.querySelector('[title^="Rencana ke-"]')?.textContent)).toEqual(["1", "2", "3"]);
+    expect(daftar.map((x) => x.querySelector('[title^="Rencana ke-"]')?.getAttribute("title"))).toEqual([
+      "Rencana ke-1",
+      "Rencana ke-2",
+      "Rencana ke-3",
+    ]);
+    // Nomor rencana BUKAN nomor sidang - tidak boleh berbunyi "Sidang".
+    expect(ol.querySelector('[title^="Sidang ke-"]')).toBeNull();
+    // Rencana yang bersidang menyebut sidang SIPP yang melaksanakannya; yang
+    // tidak bersidang tidak menyebut apa pun.
+    expect(within(daftar[0] as HTMLElement).getByText("sidang ke-1")).toBeTruthy();
+    expect(within(daftar[1] as HTMLElement).queryByText(/^sidang ke-/)).toBeNull();
+    expect(within(daftar[2] as HTMLElement).queryByText(/^sidang ke-/)).toBeNull();
+  });
+
+  it("Court Calendar: hari berisi dua sidang tidak diberi keterangan sidang ke-", () => {
+    const dasar = status();
+    const duaSehari = status({
+      jadwal: [...dasar.jadwal, { ...dasar.jadwal[0], sidangId: "9", jamSidang: "13:00", urutanSidang: 3 }],
+    });
+    render(<KalenderPerkara status={duaSehari} />);
+    const ol = screen.getByText("Court Calendar SIPP").closest(".rounded-md")?.querySelector("ol") as HTMLElement;
+    const baris = [...ol.querySelectorAll(":scope > li")].find((x) =>
+      (x.textContent ?? "").includes("Panggil Tergugat")
+    ) as HTMLElement;
+    expect(baris).toBeTruthy();
+    // Bersidang, tetapi harinya memuat dua sidang - nomor mana pun tebakan.
+    expect(within(baris).getByText("terlaksana")).toBeTruthy();
+    expect(within(baris).queryByText(/^sidang ke-/)).toBeNull();
+    // Pembanding: dengan satu sidang pada hari itu keterangannya ADA.
+    cleanup();
+    render(<KalenderPerkara status={status()} />);
+    const olTunggal = screen.getByText("Court Calendar SIPP").closest(".rounded-md")?.querySelector("ol") as HTMLElement;
+    expect(within(olTunggal).getByText("sidang ke-1")).toBeTruthy();
+  });
+
+  it("urutkanMenurutNomorSidang: menurut nomor, yang nol di bawah, masukan tidak diubah", () => {
+    const masukan = [
+      { sidangId: "c", urutanSidang: 3 },
+      { sidangId: "x", urutanSidang: 0 },
+      { sidangId: "a", urutanSidang: 1 },
+      { sidangId: "y", urutanSidang: 0 },
+      { sidangId: "b", urutanSidang: 2 },
+    ];
+    const salinan = masukan.map((x) => ({ ...x }));
+    const hasil = urutkanMenurutNomorSidang(masukan);
+    expect(hasil.map((x) => x.sidangId)).toEqual(["a", "b", "c", "x", "y"]);
+    // Larik aslinya dibaca sidangBerikut, ringkasan, dan kalender.
+    expect(masukan).toEqual(salinan);
+    expect(hasil).not.toBe(masukan);
+  });
+
+  it("petaNomorSidang: sidangId kosong dan nomor nol dilewati", () => {
+    const peta = petaNomorSidang([
+      { sidangId: "1", urutanSidang: 1 },
+      { sidangId: "", urutanSidang: 2 },
+      { sidangId: "3", urutanSidang: 0 },
+      { sidangId: "4", urutanSidang: 4 },
+    ]);
+    expect([...peta.entries()]).toEqual([
+      ["1", 1],
+      ["4", 4],
+    ]);
   });
 });

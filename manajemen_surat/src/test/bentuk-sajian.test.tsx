@@ -20,6 +20,9 @@
  * sebenarnya perlu dilihat.
  */
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -30,6 +33,7 @@ import {
   DiagramBatang,
   DiagramGaris,
   DiagramPai,
+  DiagramPerjalananSidang,
   DiagramSebar,
   GarisMini,
   HURUF_DIKENALI,
@@ -37,8 +41,11 @@ import {
   PetaKendali,
   TabelRincian,
   hurufTakDikenali,
+  type PitaUmur,
   type TitikData,
 } from "@/components/portal/bentuk-sajian";
+import { susunPerjalananSidang } from "@/lib/perjalanan-sidang";
+import { PITA_WAKTU_PUTUS } from "@/lib/pita-waktu-putus";
 
 const KOSONG: TitikData[] = [];
 const SATU: TitikData[] = [{ label: "Januari", nilai: 12 }];
@@ -281,5 +288,148 @@ describe("sepuluh bentuk sajian tahan data batas", () => {
     render(<DiagramBatang data={bercampur} />);
     expect(screen.getByTitle("Ada")).toBeInTheDocument();
     expect(screen.queryByTitle("Belum")).not.toBeInTheDocument();
+  });
+});
+
+/* ==========================================================================
+ * PERJALANAN SIDANG - UMUR PERKARA PADA TIAP SIDANG
+ * ========================================================================== */
+
+/**
+ * jsdom tidak punya ResizeObserver, jadi lebarnya jatuh ke 640 piksel dan jarak
+ * antar titik pada delapan sidang 76 piksel - cukup lebar untuk menulis "+N hari".
+ * Datanya 385/Pdt.G/2026/PA.Dgl dari sipp_donggala lokal.
+ */
+const PITA: PitaUmur[] = [
+  { sampai: 90, singkat: "3 bln", label: "3 bulan", nada: "hijau" },
+  { sampai: 120, singkat: "4 bln", label: "4 bulan", nada: "kuning" },
+  { sampai: 150, singkat: "5 bln", label: "5 bulan - SEMA 2/2014", nada: "oranye" },
+];
+
+function p385(hariIni = "2026-09-17", bernomor = false) {
+  const d: Array<[string, string, string]> = [
+    ["2026-07-15", "Sidang Pertama", "proses mediasi"],
+    ["2026-08-12", "hasil mediasi", "Jawaban Tergugat"],
+    ["2026-08-18", "Jawaban", "Jawaban Tergugat"],
+    ["2026-08-21", "Replik", "Duplik Tergugat"],
+    ["2026-08-24", "Duplik", "Pembuktian Penggugat"],
+    ["2026-08-26", "Pembuktian", "Panggil Tergugat"],
+    ["2026-09-09", "Pembuktian", "Pembuktian Tergugat"],
+    ["2026-09-16", "Pembuktian Tergugat", ""],
+  ];
+  return susunPerjalananSidang({
+    tanggalDaftar: "2026-06-30",
+    tanggalPutusan: "",
+    hariMediasi: 26,
+    hariIni,
+    jadwal: d.map(([tanggalSidang, agenda, alasanDitunda], i) => ({
+      sidangId: String(i + 1),
+      tanggalSidang,
+      agenda,
+      alasanDitunda,
+      ditunda: alasanDitunda !== "",
+      // Nomor SIPP sengaja BERBEDA dari posisinya (mulai dari 3, seolah dua
+      // sidang pertama tidak ikut terkirim) supaya terbukti mana yang dipakai.
+      urutanSidang: bernomor ? i + 3 : 0,
+    })),
+    mediasi: [
+      { tanggalMulai: "2026-07-15", tanggalDimulaiTercatat: "2026-07-15", tanggalLaporan: "2026-08-10", tanggalSelesai: "2026-08-10" },
+    ],
+  })!;
+}
+
+describe("perjalanan sidang", () => {
+  it("menolak menggambar di bawah tiga sidang", () => {
+    const p = p385();
+    render(<DiagramPerjalananSidang perjalanan={{ ...p, titik: p.titik.slice(0, 2) }} pita={PITA} />);
+    expect(screen.getByText(/tidak digambar di bawah tiga sidang/i)).toBeInTheDocument();
+  });
+
+  it("jarak tiap penundaan tertulis, dan yang terpanjang disebut beserta alasannya", () => {
+    render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} />);
+    expect(screen.getByText("+28 hari")).toBeInTheDocument();
+    expect(screen.getByText("+14 hari")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Jeda terpanjang \+28 hari, dari sidang ke-1 ke sidang ke-2 \(ditunda: proses mediasi\)/)
+    ).toBeInTheDocument();
+  });
+
+  it("sumbu mendatar dan kalimat jeda menyebut nomor sidang SIPP, bukan posisinya", () => {
+    render(<DiagramPerjalananSidang perjalanan={p385("2026-09-17", true)} pita={PITA} />);
+    expect(screen.getByText("ke-3")).toBeInTheDocument();
+    expect(screen.getByText("ke-10")).toBeInTheDocument();
+    expect(screen.queryByText("ke-1")).not.toBeInTheDocument();
+    expect(screen.getByText(/Jeda terpanjang \+28 hari, dari sidang ke-3 ke sidang ke-4/)).toBeInTheDocument();
+  });
+
+  it("sumbu tidak dipaksa sampai 150 - batas yang jauh DISEBUT, dan keterangan hanya pita yang tampak", () => {
+    render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} />);
+    expect(screen.getByText(/5 bulan - SEMA 2\/2014: 150 hari/)).toBeInTheDocument();
+    expect(screen.getByText(/sampai 90 hari · 3 bulan/)).toBeInTheDocument();
+    expect(screen.queryByText(/lebih dari 150 hari/)).not.toBeInTheDocument();
+    // Sumbu tegak BERANGKA - dulu tidak satu pun angka.
+    for (const angka of ["0", "15", "30", "45", "60", "75", "90"]) {
+      expect(screen.getAllByText(angka).length, angka).toBeGreaterThan(0);
+    }
+  });
+
+  it("rentang mediasi diarsir dan disebut", () => {
+    render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} />);
+    expect(screen.getByText("mediasi")).toBeInTheDocument();
+    expect(screen.getByText("mediasi - tidak dihitung")).toBeInTheDocument();
+  });
+
+  it("sidang yang belum berlangsung digambar berongga", () => {
+    const { container } = render(<DiagramPerjalananSidang perjalanan={p385("2026-09-10")} pita={PITA} />);
+    expect(container.querySelectorAll("circle.fill-card")).toHaveLength(1);
+    expect(screen.getByText("belum berlangsung")).toBeInTheDocument();
+  });
+
+  it("umur hari ini disebut terhadap batas terakhir", () => {
+    render(<DiagramPerjalananSidang perjalanan={p385()} pita={PITA} hariIniDihitung={61} />);
+    expect(screen.getByText(/Hari ini hari ke-61 yang dihitung - 89 hari lagi sampai batas 5 bulan - SEMA 2\/2014/)).toBeInTheDocument();
+  });
+
+  it("pita di atas batas terakhir merah, dan disebut", () => {
+    // Puncak data melewati 150: seluruh empat pita tampak, termasuk merahnya.
+    const p = p385();
+    const tinggi = { ...p, titik: p.titik.map((t, i) => ({ ...t, hari: t.hari + i * 30 })) };
+    const { container } = render(<DiagramPerjalananSidang perjalanan={tinggi} pita={PITA} />);
+    expect(screen.getByText("lebih dari 150 hari")).toBeInTheDocument();
+    expect(container.querySelector("rect.fill-red-500\\/15")).not.toBeNull();
+  });
+});
+
+describe("warna pita perjalanan sidang selaras dengan pita waktu putus", () => {
+  /**
+   * Diminta 24 Sep 2026: hijau sampai 3 bulan, kuning 4 bulan, oranye 5 bulan,
+   * merah lewat 5 bulan - satu arti, satu keluarga warna di seluruh portal.
+   * Lencana umur perkara (lib/pita-waktu-putus.ts) dan pita grafik ini tidak
+   * boleh menyebut dua warna berbeda untuk perkara yang sama. Kelas Tailwind
+   * harus tertulis harfiah di sumbernya, jadi yang dicocokkan teks mentahnya.
+   */
+  const sumber = readFileSync(path.resolve(process.cwd(), "src/components/portal/bentuk-sajian.tsx"), "utf8").replace(
+    /\r\n/g,
+    "\n"
+  );
+  const awal = sumber.indexOf("const WARNA_PITA");
+  const blok = sumber.slice(awal, sumber.indexOf("\n};", awal));
+
+  it("keempat sebutan warna ada, masing-masing dengan keluarga yang sama", () => {
+    expect(awal).toBeGreaterThan(-1);
+    expect(PITA_WAKTU_PUTUS.map((p) => p.warna)).toEqual(["hijau", "kuning", "oranye", "merah"]);
+    for (const p of PITA_WAKTU_PUTUS) {
+      const keluarga = /\btext-([a-z]+)-700\b/.exec(p.kelasTeks)?.[1];
+      expect(keluarga, p.warna).toBeTruthy();
+      const i = blok.indexOf(`  ${p.warna}: {`);
+      expect(i, `WARNA_PITA.${p.warna}`).toBeGreaterThan(-1);
+      const entri = blok.slice(i, blok.indexOf("},", i));
+      for (const ruas of ["latar", "garis", "teks", "contoh"]) {
+        const kelas = new RegExp(`${ruas}: "([^"]*)"`).exec(entri)?.[1] ?? "";
+        expect(kelas, `${p.warna}.${ruas}`).toContain(`-${keluarga}-`);
+        // Portal ini bertema gelap secara bawaan - tiap kelas punya langkah gelapnya.
+        expect(kelas, `${p.warna}.${ruas}`).toContain("dark:");
+      }
+    }
   });
 });

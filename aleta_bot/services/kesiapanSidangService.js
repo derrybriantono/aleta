@@ -66,6 +66,7 @@ const TINGKAT = { berat: "berat", sedang: "sedang", ringan: "ringan" };
  * @param {{
  *   agenda?: string,
  *   tanggalSidang?: any,
+ *   sidangId?: string|number,
  *   majelis?: Array, panitera?: Array,
  *   persetujuan?: Array, panggilan?: Array, relaas?: Array,
  *   dokumen?: Array, nomorPihak?: Array, sisiWajib?: Array|null,
@@ -88,6 +89,9 @@ function nilaiKesiapan(fakta = {}) {
     // berat "belum dipanggil" - padahal yang hadir memang tidak dipanggil
     // lagi, karena sudah diberitahu di ruang sidang.
     sisiWajib: Array.isArray(fakta.sisiWajib) ? fakta.sisiWajib : null,
+    // Sidang yang dinilai - relaas dan e-Summons sidang LAIN tidak dinilai
+    // untuk sidang ini. Lihat ecourtPanggilanService.susunKeadaanPanggilan.
+    sidangId: fakta.sidangId || null,
   });
 
   const rp = keadaanPanggilan.ringkasan;
@@ -124,6 +128,18 @@ function nilaiKesiapan(fakta = {}) {
         kunci: "salah_saluran",
         pesan: `${rp.salahSaluran} pihak dipanggil lewat saluran yang tidak sesuai persetujuannya.`,
         sumber: "e-Court",
+      });
+    }
+    if (rp.saluranBelumPasti > 0) {
+      // RINGAN dan tidak mengurangi skor: tenggang dan penerimaannya tetap
+      // dinilai menurut jalur yang SEHARUSNYA. Yang janggal catatan SIPP-nya,
+      // bukan panggilannya - tindak lanjutnya membetulkan sandi relaas, bukan
+      // menunda sidang. Dulu keadaan ini menyalakan salah saluran BERAT.
+      penghambat.push({
+        tingkat: TINGKAT.ringan,
+        kunci: "saluran_belum_pasti",
+        pesan: `${rp.saluranBelumPasti} relaas tercatat Panggilan Elektronik di SIPP, tetapi e-Court tidak mencatat e-Summons kepada pihaknya - periksa sandi relaasnya.`,
+        sumber: "SIPP + e-Court",
       });
     }
     if (rp.tidakPatut > 0) {
@@ -342,6 +358,7 @@ async function nilaiKesiapanPerkara(
   return nilaiKesiapan({
     agenda,
     tanggalSidang,
+    sidangId: sidangId || null,
     majelis: rincian.majelis,
     panitera: rincian.panitera,
     relaas: rincian.relaas,

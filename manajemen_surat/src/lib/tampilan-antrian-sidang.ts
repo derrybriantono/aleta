@@ -17,21 +17,34 @@
  * YANG MENDESAK TIDAK PUNYA SAKLAR - DAN ITU DISENGAJA
  * ============================================================================
  *
- * Empat penanda tidak dapat dimatikan siapa pun:
+ * Enam penanda tidak dapat dimatikan siapa pun:
  *
  *   retur                 relaas kembali; panggilan HARUS diulang atau
  *                         sidangnya batal
  *   belum dipanggil       masih ada pihak yang wajib dipanggil dan
  *                         relaasnya belum ada
+ *   tenggang mepet        panggilannya ada, tetapi jaraknya ke hari sidang
+ *                         kurang dari ambang jalurnya - tidak patut
  *   belum minutasi        perkara sudah putus, berkasnya belum dijahit
  *   belum unggah putusan  naskahnya belum ada di SIPP
+ *   belum ditunda (15:00) hasil sidang belum dicatat sesudah pukul 15:00
+ *                         WITA; agenda sidang berikutnya tidak terbentuk
  *
  * Sebabnya bukan kerapian. Saklar yang dimatikan hari ini tidak dinyalakan
  * lagi besok - ia tersimpan di peramban dan dilupakan - sehingga penanda yang
  * dimatikan sekali menjadi penanda yang tidak pernah terlihat lagi. Untuk
- * keterangan yang sekadar menolong itu tidak merugikan. Untuk keempat hal di
- * atas, akibatnya perkara yang batal sidangnya atau berkas yang tidak pernah
- * dijahit, dan tidak ada apa pun di layar yang akan menyebutkannya.
+ * keterangan yang sekadar menolong itu tidak merugikan. Untuk keenam hal di
+ * atas, akibatnya perkara yang batal sidangnya, berkas yang tidak pernah
+ * dijahit, atau hasil sidang yang tidak pernah dicatat, dan tidak ada apa pun
+ * di layar yang akan menyebutkannya.
+ *
+ * Aturannya satu dan dijaga uji: tiap kotak keadaan bernada MERAH di layar
+ * (NADA_PERLU_DIPERIKSA) punya saklar wajib yang sekunci. Tenggang mepet masuk
+ * 2.34.0 sebagai kotak merah dan lupa didaftarkan di sini - panel saklar diam
+ * tentangnya selama satu rilis. Kotak gabungan "Perlu diperiksa" TIDAK punya
+ * saklar sama sekali: ia daftar pekerjaan hari itu, satu-satunya yang
+ * menjawab "hari ini beres atau belum" sejak papan "Perlu ditindaklanjuti"
+ * dihapus (24 September 2026).
  *
  * Yang mematikan penanda menyembunyikannya dari dirinya sendiri; yang
  * membaca layar sesudahnya belum tentu orang yang mematikannya.
@@ -59,10 +72,15 @@ export type SaklarTampilan = {
   bawaanMati?: boolean;
 };
 
+// "Tombol dan alat" dipecah dua pada 24 September 2026: tombol yang hidup di
+// tiap BARIS (tunda|putus, mediator, antrian, konseptor) dan alat yang hidup
+// sekali di ATAS tabel (skor, cetak, antrian, layar). Memindahkan saklar antar
+// kelompok aman - simpanan peramban hanya berkunci `kunci` saklarnya.
 export const KELOMPOK_TAMPILAN = [
   { kunci: "penanda", label: "Penanda pada baris" },
   { kunci: "keterangan", label: "Keterangan tambahan" },
-  { kunci: "alat", label: "Tombol dan alat" },
+  { kunci: "alat", label: "Tombol pada baris" },
+  { kunci: "atas", label: "Di atas tabel" },
 ] as const;
 
 export type KunciKelompokTampilan = (typeof KELOMPOK_TAMPILAN)[number]["kunci"];
@@ -87,6 +105,32 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "belum-dipanggil",
     label: "Belum dipanggil",
     keterangan: "Masih ada pihak yang wajib dipanggil dan relaasnya belum ada.",
+    kelompok: "penanda",
+    wajib: true,
+  },
+  {
+    // Merah sejak 2.34.0 dan ikut "Perlu diperiksa", tetapi tidak pernah
+    // didaftarkan di sini. Wajib dengan sebab yang sama dengan retur:
+    // panggilan yang tenggangnya kurang tidak patut - sidangnya harus ditunda
+    // dan panggilannya diulang.
+    kunci: "tenggang-mepet",
+    label: "Tenggang mepet",
+    keterangan:
+      "Lencana H-n, \"sidang hari ini\", atau \"lewat n hari\" di samping nomor perkara, beserta kotak saringnya: jarak panggilan ke hari sidang kurang dari ambang jalurnya.",
+    kelompok: "penanda",
+    wajib: true,
+  },
+  {
+    // Diminta pengguna 24 September 2026. Wajib dengan alasan yang sama
+    // dengan retur: ia anggota kotak gabungan "Perlu diperiksa", dan tanda
+    // yang dimatikan sekali tidak pernah terlihat lagi - sementara sidang yang
+    // hasilnya tidak dicatat tidak punya agenda berikutnya. Tanda ini hanya
+    // hidup sesudah 15:00 pada hari sidangnya sendiri; saklar mati yang
+    // tersimpan akan membuatnya bisu tepat pada satu-satunya saat ia berguna.
+    kunci: "belum-tunda-lewat-batas",
+    label: "Belum ditunda lewat 15:00",
+    keterangan:
+      "Tanda merah pada baris sidang yang sudah lewat pukul 15:00 WITA pada hari sidangnya tetapi hasilnya belum dicatat - belum ditunda, belum diputus. Ikut dihitung di kotak Perlu diperiksa.",
     kelompok: "penanda",
     wajib: true,
   },
@@ -123,6 +167,32 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     keterangan: "Penanda biru pada sidang penyaksian ikrar talak.",
     kelompok: "penanda",
   },
+  // Warna TULISAN, bukan lencana. Sel Agenda tidak mendapat kotak baru, dan
+  // lencana berlatar merah (retur, belum dipanggil) tetap satu-satunya yang
+  // berlatar merah. Bawaannya MENYALA: yang diminta pengguna adalah warnanya,
+  // dan saklar ini hanya jalan keluar bagi yang merasa merahnya terlalu ramai
+  // - misalnya hari itsbat terpadu, ketika 15 dari 19 sidang e-Litigasi.
+  {
+    kunci: "agenda-elitigasi",
+    label: "Agenda e-Litigasi merah",
+    keterangan:
+      "Tulisan agenda berwarna merah pada sidang e-Litigasi - perkara e-Court yang agendanya jawaban, replik, duplik, kesimpulan, musyawarah majelis, atau pembacaan putusan/penetapan, selain sidang pertama. Aturannya sama dengan kotak e-Litigasi.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "umur-perkara",
+    label: "Umur perkara",
+    keterangan:
+      "Lencana jumlah hari di bawah agenda - hari mediasi tidak dihitung - berwarna menurut pita Waktu Putus SK Dirjen Badilag 048/2024: hijau, kuning, oranye, merah. Rinciannya tetap ada di panel Rincian.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "menunggu-lama",
+    label: "Menunggu lama",
+    keterangan:
+      "Lencana \"menunggu N menit\" di kolom Antrian bila pihaknya sudah mengambil nomor 40 menit lebih dan belum dipanggil masuk.",
+    kelompok: "penanda",
+  },
   {
     kunci: "potensi-verstek",
     label: "Potensi verstek",
@@ -138,6 +208,10 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
   // ==========================================================================
   // DUA YANG HANYA HIDUP DI MODE RINGKAS - DAN ITU DISEBUTKAN
   // ==========================================================================
+  //
+  // (Yang ketiga, "petugas", ada di kelompok Keterangan tambahan - hingga 24
+  // September 2026 keterangannya diam soal mode Ringkas, dan saklarnya tampak
+  // rusak di mode Lengkap yang bawaan. Kini disebutkan juga.)
   //
   // Keduanya digambar di dalam baris berkelas `hanya-ringkas`, sebab di mode
   // Lengkap keterangannya sudah punya kolomnya sendiri. Saklarnya karena itu
@@ -170,7 +244,8 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
   {
     kunci: "petugas",
     label: "Majelis, PP, juru sita, ruang",
-    keterangan: "Baris keterangan petugas di bawah nomor perkara.",
+    keterangan:
+      "Baris Majelis, PP, JS, dan Ruang di bawah nomor perkara. Hanya tampil di mode Ringkas; di Lengkap keterangannya punya kolom sendiri (Majelis & Petugas).",
     kelompok: "keterangan",
   },
   {
@@ -189,6 +264,26 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "jarak-sidang",
     label: "Jeda antar sidang",
     keterangan: "Lencana +menit dari perkara sebelumnya di ruang yang sama.",
+    kelompok: "keterangan",
+  },
+  {
+    kunci: "urutan-sidang",
+    label: "Sidang ke-N",
+    keterangan: "Tulisan \"sidang ke-N\" di bawah agenda. Kotak saring Sidang pertama tidak terpengaruh.",
+    kelompok: "keterangan",
+  },
+  {
+    kunci: "hasil-tundaan",
+    label: "Tundaan dan hasil sidang",
+    keterangan:
+      "Kotak kuning \"Ditunda sampai …\" beserta alasannya dan kotak hijau \"Hasil sidang\" di bawah nama pihak. Kotak saring Ditunda, tanda hijau baris yang selesai, dan kolom Putusan tidak terpengaruh.",
+    kelompok: "keterangan",
+  },
+  {
+    kunci: "rincian-antrian",
+    label: "Jam ambil antrian",
+    keterangan:
+      "Jam ambil tiap sisi (P, T, Saksi) dan nama petugas pelayanan di bawah nomor antrian. Nomor antriannya dan tulisan \"dipanggil\" tetap tampil.",
     kelompok: "keterangan",
   },
 
@@ -219,7 +314,7 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "kolom-siap",
     label: "Kolom Siap",
     keterangan:
-      "Kolom skor kesiapan beserta kepala kolomnya. Dimatikan sejak awal - skornya hanya dihitung bila tombol Hitung skor ditekan.",
+      "Kolom skor kesiapan beserta kepala kolomnya. Dimatikan sejak awal - skornya hanya dihitung bila tombol Hitung skor ditekan. Hanya ada di mode Lengkap.",
     kelompok: "keterangan",
     bawaanMati: true,
   },
@@ -232,30 +327,70 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     bawaanMati: true,
   },
 
-  // --- Tombol dan alat -----------------------------------------------------
+  // --- Tombol pada baris ---------------------------------------------------
+  {
+    kunci: "tombol-tunda-putus",
+    label: "Tombol tunda | putus",
+    keterangan:
+      "Dua tombol pencatat hasil di samping jenis perkara. Hasil sidang tetap dapat dicatat di layar hasil sidang atau di SIPP.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "tombol-mediator",
+    label: "Tombol mediator",
+    keterangan:
+      "Tombol pada sidang yang agenda atau alasan tundanya menyebut mediasi. Keterangan mediasinya tetap ada di Status Perkara, bagian Mediasi.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "ambil-antrian",
+    label: "Tombol Antrian di kolom jam",
+    keterangan:
+      "Tombol mengambil nomor antrian dan mereset kehadiran dari meja pelayanan. Mesin antrian ruang tunggu tidak terpengaruh.",
+    kelompok: "alat",
+  },
+  {
+    // Yang KOSONG saja. Tunjukan yang sudah ada ditulis untuk orang
+    // berikutnya, dan yang mematikan saklar di komputer bersama bukan orang
+    // yang harus membacanya.
+    kunci: "tunjuk-konseptor",
+    label: "Tunjuk konseptor (kosong)",
+    keterangan:
+      "Tombol bergaris \"tunjuk konseptor\" di kolom Putusan pada perkara yang belum ditunjuk. Konseptor sementara yang SUDAH ditunjuk tetap tampil. Hanya ada di mode Lengkap.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "keterangan-perkara",
+    label: "Keterangan perkara (kosong)",
+    keterangan:
+      "Tombol bergaris \"keterangan\" di kolom Putusan pada perkara yang belum punya keterangan. Keterangan yang SUDAH berisi tetap tampil. Hanya ada di mode Lengkap.",
+    kelompok: "alat",
+  },
+
+  // --- Di atas tabel -------------------------------------------------------
   {
     kunci: "skor-kesiapan",
     label: "Skor kesiapan",
     keterangan: "Tombol Hitung skor beserta lencana nilainya di tiap baris.",
-    kelompok: "alat",
+    kelompok: "atas",
   },
   {
     kunci: "cetak",
     label: "Cetak jadwal",
     keterangan: "Tombol mencetak jadwal yang sedang tampil.",
-    kelompok: "alat",
+    kelompok: "atas",
   },
   {
     kunci: "daftar-antrian",
     label: "Daftarkan ke antrian",
     keterangan: "Tombol mendaftarkan perkara ke aplikasi antrian ruang tunggu.",
-    kelompok: "alat",
+    kelompok: "atas",
   },
   {
     kunci: "layar-antrian",
     label: "Menu layar antrian",
     keterangan: "Tautan ke layar antrian dan layar panggil.",
-    kelompok: "alat",
+    kelompok: "atas",
   },
 ];
 
@@ -276,6 +411,22 @@ export type PilihanTampilan = Record<string, boolean>;
 export function tampilanBawaan(): PilihanTampilan {
   const hasil: PilihanTampilan = {};
   for (const saklar of SAKLAR_TAMPILAN) hasil[saklar.kunci] = !saklar.bawaanMati;
+  return hasil;
+}
+
+/**
+ * "Sembunyikan semua" - pasangan tombol "Nyalakan semua".
+ *
+ * Diminta pengguna 24 September 2026 ("mode sembunyikan yang lain"): dari
+ * seluruh-mati, satu centang menyalakan hanya yang hendak dilihat.
+ *
+ * Yang wajib ditulis true, bukan dilewati: tampil() memang memaksanya menyala,
+ * tetapi simpanan yang berbunyi false untuknya adalah simpanan yang berbohong
+ * kepada siapa pun yang membacanya lewat DevTools.
+ */
+export function tampilanSemuaMati(): PilihanTampilan {
+  const hasil: PilihanTampilan = {};
+  for (const saklar of SAKLAR_TAMPILAN) hasil[saklar.kunci] = Boolean(saklar.wajib);
   return hasil;
 }
 

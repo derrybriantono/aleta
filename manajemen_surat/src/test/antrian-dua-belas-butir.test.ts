@@ -134,36 +134,107 @@ describe("butir 6 - tombol ciut tiap bagian di panel Rincian", () => {
     // tanggal dan hasilnya, dan berapa sisa sampai batas lima bulan. Angka
     // tunggal tidak dapat dibantah maupun dibuktikan; rinciannya dapat
     // keduanya.
+    //
+    // TETAP 11 pada 24 September 2026: Rincian waktu perkara DIPINDAH ke
+    // paling bawah panel, bukan ditambah; kuncinya kini berakhiran -v2.
     expect(pakai.length).toBe(11);
-    expect(LAYAR).toContain('kunci="sidang-durasi"');
+    expect(LAYAR).toContain('kunci="sidang-durasi-v2"');
   });
 
   it("kuncinya BERAWALAN sidang- supaya tidak menabrak layar Status Perkara", () => {
     // kunciCiut() memaku satu awalan untuk seluruh pemakai. Dua layar yang
     // memakai kunci sama akan saling menutup bagian, dan tidak ada yang tahu
     // kenapa.
+    //
+    // Enam kunci berakhiran -v2 sejak 24 September 2026 - lihat "garis batas"
+    // di bawah. Daftarnya kini sebelas, bukan sembilan: lebih ketat.
     const KUNCI = [
       "sidang-majelis",
       "sidang-pihak",
       "sidang-relaas-ini",
       "sidang-relaas-riwayat",
       "sidang-jadwal",
-      "sidang-putusan",
-      "sidang-kesiapan",
-      "sidang-ecourt",
-      "sidang-berkas-sipp",
+      "sidang-putusan-v2",
+      "sidang-putus-belum-tercatat-v2",
+      "sidang-kesiapan-v2",
+      "sidang-ecourt-v2",
+      "sidang-berkas-sipp-v2",
+      "sidang-durasi-v2",
     ];
     for (const kunci of KUNCI) {
       expect(LAYAR, `kunci ${kunci} hilang`).toContain(`kunci="${kunci}"`);
     }
   });
 
-  it("tidak ada yang diciutkan secara bawaan", () => {
-    // Yang diminta KEMAMPUAN menciutkan, bukan layar yang tiba-tiba
-    // menyembunyikan isinya.
+  // ==========================================================================
+  // GARIS BATAS - DIMINTA PENGGUNA 24 SEPTEMBER 2026
+  // ==========================================================================
+  //
+  // Penjaga lama berbunyi "tidak ada yang diciutkan secara bawaan", dan
+  // sesudah kuncinya berganti ia justru menjadi HIJAU KOSONG: indexOf kunci
+  // lama bernilai -1, irisannya kosong, dan not.toContain atas string kosong
+  // selalu lulus. Diganti dengan dua sisi garisnya, masing-masing diukur dari
+  // tag - bukan dari kunci yang dapat berganti nama.
+  it("yang DI ATAS Seluruh jadwal - dan jadwalnya sendiri - tidak terciut sebagai bawaan", () => {
+    // Yang diminta semula KEMAMPUAN menciutkan. Permintaan 24 September 2026
+    // mengubahnya HANYA untuk yang di bawah Seluruh jadwal.
     const i = LAYAR.indexOf('kunci="sidang-majelis"');
-    const blokSembilan = LAYAR.slice(i, LAYAR.indexOf('kunci="sidang-berkas-sipp"') + 200);
-    expect(blokSembilan).not.toContain("ciutBawaan");
+    const j = LAYAR.indexOf('<Bagian judul="Seluruh jadwal sidang perkara ini"');
+    expect(i).toBeGreaterThan(-1);
+    expect(j).toBeGreaterThan(i);
+    expect(LAYAR.slice(i, j)).not.toContain("ciutBawaan");
+    expect(LAYAR).toContain('<Bagian judul="Seluruh jadwal sidang perkara ini" kunci="sidang-jadwal">');
+  });
+
+  it("SELURUH bagian sesudah Seluruh jadwal terciut sebagai bawaan", () => {
+    // Dihitung dari tag, bukan dari daftar judul: bagian baru di bawah jadwal
+    // tanpa ciutBawaan langsung memerahkan ini. RincianSidang fungsi terakhir
+    // berkas, jadi irisan sampai akhir berkas hanya memuat panel Rincian.
+    const j = LAYAR.indexOf('judul="Seluruh jadwal sidang perkara ini"');
+    expect(j).toBeGreaterThan(-1);
+    const tag = LAYAR.slice(j).match(/<Bagian\s[^>]*>/g) ?? [];
+    expect(tag.length).toBe(6);
+    for (const t of tag) expect(t, t).toContain("ciutBawaan");
+  });
+
+  it("kunci lama keenam bagian itu tidak kembali", () => {
+    // Nama lama menghidupkan lagi simpanan "0" di peramban pemakai lama - dan
+    // bawaan barunya diam-diam tidak berlaku bagi mereka.
+    for (const lama of [
+      "sidang-putusan",
+      "sidang-putus-belum-tercatat",
+      "sidang-kesiapan",
+      "sidang-ecourt",
+      "sidang-berkas-sipp",
+      "sidang-durasi",
+    ]) {
+      expect(LAYAR, `kunci lama ${lama} kembali`).not.toContain(`kunci="${lama}"`);
+    }
+  });
+
+  it("bagian yang terciut menyebut ringkasan isinya di kepalanya", () => {
+    // Kesiapan yang terciut tidak boleh menyembunyikan penghambat BERAT tanpa
+    // tanda apa pun di kepalanya.
+    expect(LAYAR).toMatch(/kunci="sidang-kesiapan-v2" ciutBawaan keterangan=\{keteranganKesiapan\}/);
+    expect(LAYAR).toMatch(/kunci="sidang-durasi-v2" ciutBawaan keterangan=\{keteranganWaktu\}/);
+  });
+});
+
+describe("24 Sep butir 7 - Rincian waktu perkara di paling bawah panel", () => {
+  it("adalah bagian PALING BAWAH panel Rincian", () => {
+    const iWaktu = LAYAR.indexOf('<Bagian judul="Rincian waktu perkara"');
+    expect(iWaktu).toBeGreaterThan(-1);
+    expect(iWaktu).toBeGreaterThan(LAYAR.indexOf('judul="Kesiapan sidang dan panggilan para pihak"'));
+    expect(iWaktu).toBeGreaterThan(LAYAR.indexOf('judul="Berkas tersimpan di SIPP"'));
+    // Tidak ada bagian sesudahnya.
+    expect(LAYAR.lastIndexOf("<Bagian ")).toBe(iWaktu);
+  });
+
+  it("dan tidak lagi di antara Riwayat panggilan dan Seluruh jadwal", () => {
+    const iRiwayat = LAYAR.indexOf('judul="Riwayat panggilan sebelumnya"');
+    const iJadwal = LAYAR.indexOf('judul="Seluruh jadwal sidang perkara ini"');
+    expect(iRiwayat).toBeGreaterThan(-1);
+    expect(LAYAR.slice(iRiwayat, iJadwal)).not.toContain('judul="Rincian waktu perkara"');
   });
 });
 

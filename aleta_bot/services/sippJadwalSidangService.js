@@ -43,6 +43,9 @@ const putusanEcourtService = require("./putusanEcourtService");
 // Aturan tenggang panggilan - tiga jalur beserta dasar hukumnya. Tidak
 // melingkar: layanan itu hanya memuat runtime-config dan logService.
 const ecourtPanggilanService = require("./ecourtPanggilanService");
+// Penilaian SK 048/2024 - berkas murni tanpa require, tidak melingkar. Waktu
+// putus dan pitanya dihitung DI SANA, bukan di sini.
+const penilaianSippService = require("./penilaianSippService");
 const { satukanPetugas } = require("./petugasPerkaraUtil");
 
 function runQuery(sql, params = []) {
@@ -199,10 +202,23 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   // sebagai subkueri per baris. Ketiganya berjalan bersamaan dan gagal
   // sendiri-sendiri: jadwalnya tetap tampil walau salah satu tidak terbaca.
   const idPerkara = rows.map((row) => row.perkaraId);
-  const aman = async (kerja) => {
+  // ==========================================================================
+  // YANG GAGAL DIBACA DICATAT, BUKAN HANYA DITELAN
+  // ==========================================================================
+  //
+  // aman() tetap memulangkan peta kosong supaya jadwalnya tampil. Tetapi peta
+  // putusan yang kosong karena GAGAL tidak sama dengan "tidak ada yang
+  // putus": sejak 24 September 2026 portal menandai merah sidang yang lewat
+  // pukul 15:00 tanpa hasil tercatat, dan membaca "tidak putus" dari peta
+  // yang gagal berarti menuduh - diukur 18 sidang pada 4 September 2026 saja
+  // yang hanya tertahan oleh peta putusan. Karena itu tiap baris membawa
+  // putusanTerbaca dan ikrarTerbaca, dan portal diam bila salah satunya false.
+  const gagal = new Set();
+  const aman = async (kerja, nama = "") => {
     try {
       return await kerja();
     } catch {
+      if (nama) gagal.add(nama);
       return {};
     }
   };
@@ -217,10 +233,11 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     petaSaksi,
     petaEcourt,
     petaDurasi,
+    petaIkrar,
   ] = await Promise.all([
     aman(() => pihakBanyakPerkara(idPerkara)),
     aman(() => petugasBanyakPerkara(idPerkara)),
-    aman(() => putusanBanyakPerkara(idPerkara)),
+    aman(() => putusanBanyakPerkara(idPerkara), "putusan"),
     aman(() =>
       keadaanPanggilanSidang(
         rows.map((row) => ({ sidangId: row.sidangId, perkaraId: row.perkaraId }))
@@ -245,6 +262,23 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     // Pasal 24. Gagal-terbuka: jadwal sidang tetap berguna tanpa angka umur,
     // dan pemasangan yang tabel mediasinya berbeda tidak boleh menjatuhkannya.
     aman(() => durasiBanyakPerkara(idPerkara)),
+    // Tanggal ikrar talak yang tercatat - untuk SELURUH perkara di daftar,
+    // bukan hanya yang sidangnya berbendera ikrar: layar juga mengenali sidang
+    // ikrar dari agendanya (sidangIkrar), dan sidang beragenda "Sidang Ikrar
+    // Talak" berbendera T yang ikrarnya tercatat dahulu tetap tertuduh merah
+    // (terukur 2 baris, 2020 dan 2026). Satu kueri IN, bukan per baris.
+    //
+    // Peta yang tidak terbaca - kuerinya gagal, atau tabel/kolomnya tidak ada -
+    // dicatat sebagai GAGAL, bukan sebagai "tidak ada ikrar": lihat catatan
+    // pada aman() di atas.
+    aman(async () => {
+      const peta = await ikrarBanyakPerkara(idPerkara);
+      if (peta === null) {
+        gagal.add("ikrar");
+        return {};
+      }
+      return peta;
+    }, "ikrar"),
   ]);
 
   // Keadaan putusan di e-Court, sekali untuk seluruh daftar. Bersandar pada
@@ -289,6 +323,23 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // Sidang penyaksian ikrar talak, menurut bendera SIPP sendiri. Lihat
       // catatan panjang di kuerinya - agendanya tidak dapat dipakai menebak.
       sidangIkrarTalak: cleanText(row.ikrarTalak).toUpperCase() === "Y",
+      // Sidang yang ikrarnya SUDAH tercatat di perkara_ikrar_talak pada
+      // tanggal sidang ini - hasil sidangnya ada walau alasan_ditunda kosong
+      // atau "0" (26 dari 33 sidang ikrar beralasan kosong, Jan 2025 - Sep
+      // 2026). Lihat ikrarBanyakPerkara.
+      //
+      // TANPA syarat bendera ikrar_talak sejak tinjauan 24 September 2026:
+      // ikrar yang diucapkan pada tanggal sidang ini berarti sidang itulah
+      // sidang ikrarnya, apa pun benderanya - dan layar mengenali sidang
+      // ikrar dari agendanya juga.
+      ikrarTercatat:
+        Boolean(petaIkrar[String(row.perkaraId)]) &&
+        petaIkrar[String(row.perkaraId)] === isoTanggal(row.tanggalSidang),
+      // Terbaca tidaknya kedua peta yang menentukan "hasil sidang sudah
+      // dicatat" - lihat catatan pada aman(). false berarti portal TIDAK
+      // menandai merah, sebab ketiadaan hasilnya tidak terbukti.
+      putusanTerbaca: !gagal.has("putusan"),
+      ikrarTerbaca: !gagal.has("ikrar"),
       urutanSidang: Number(row.urutanSidang) || 0,
       dihadiriOleh: row.dihadiriOleh === null || row.dihadiriOleh === undefined ? null : Number(row.dihadiriOleh),
       adaBas: Boolean(cleanText(row.edocBas)),
@@ -311,8 +362,9 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // ayat (2) dan (3): jangka waktu mediasi TIDAK termasuk jangka waktu
       // penyelesaian perkara. Batas penyelesaiannya lima bulan (SEMA 2/2014).
       //
-      // null bila tanggal pendaftarannya tidak terbaca - bukan nol. Nol
-      // berarti perkaranya didaftarkan hari ini.
+      // null bila tanggal pendaftarannya tidak terbaca - bukan nol. Sejak 24
+      // September 2026 hari pendaftaran ikut dihitung (cara SK 048/2024), jadi
+      // perkara yang didaftarkan hari ini berumur 1 hari, bukan 0.
       durasi: petaDurasi[String(row.perkaraId)] || null,
       majelisKode: (petaPetugas[String(row.perkaraId)] || {}).majelisKode || "",
       majelisNama: (petaPetugas[String(row.perkaraId)] || {}).majelisNama || "",
@@ -815,6 +867,74 @@ async function kuasaBanyakPerkara(daftarPerkaraId = []) {
   return hasil;
 }
 
+/**
+ * ============================================================================
+ * TANGGAL IKRAR TALAK YANG TERCATAT - UNTUK SIDANG IKRAR YANG ALASANNYA KOSONG
+ * ============================================================================
+ *
+ * Sidang ikrar talak yang ikrarnya sudah terlaksana sering hanya dicatat di
+ * perkara_ikrar_talak (tgl_ikrar_talak), sementara alasan_ditunda di jadwalnya
+ * dibiarkan kosong atau "0". Layar Antrian Sidang lalu menandainya merah
+ * "Belum ditunda" - tuduhan palsu, sebab hasil sidangnya memang tercatat,
+ * hanya di tabel lain.
+ *
+ * Diukur di sipp_donggala 24 September 2026 atas sidang berbendera
+ * ikrar_talak = 'Y':
+ *
+ *   seluruh tahun              1.024 sidang ikrar, 832 ikrarTercatat;
+ *                              488 alasan kosong/"0", 394 di antaranya
+ *                              ikrarTercatat
+ *   1 Jan 2025 - 10 Sep 2026     191 sidang ikrar, 153 ikrarTercatat;
+ *                                33 alasan kosong/"0", 26 di antaranya
+ *                                ikrarTercatat - 26 dari 33 tanda merah
+ *                                palsu tertutup
+ *
+ * DICOCOKKAN LEWAT TANGGAL, BUKAN perkara_ikrar_talak.sidang_id: kolom itu
+ * menunjuk sidang yang lain. Pada rentang yang sama 26 baris bertanggal ikrar
+ * sama dengan tanggal sidangnya tetapi sidang_id-nya menunjuk sidang ikrar
+ * lain perkara itu (misalnya perkara 8240: sidang 21 Jan 2025, sidang_id
+ * menunjuk sidang 10 Des 2024).
+ *
+ * Satu kueri untuk seluruh daftar, bukan subkueri per baris di kueri jadwal:
+ * keterangan pelengkap di berkas ini diambil sekali dan gagal sendiri-sendiri.
+ * Menanamkannya di kueri jadwal berarti tabel yang tidak ada menjatuhkan
+ * SELURUH jadwal. Tabel dan kolomnya dicek lewat sippSkemaService (tabel
+ * terdaftar di TABEL, kolom lewat CALON ikrarTanggal); bila tidak ada,
+ * yang dipulangkan null - BUKAN peta kosong. Peta kosong berarti "tidak ada
+ * ikrar yang tercatat"; null berarti "tidak diketahui", dan pemanggilnya
+ * mencatatnya sebagai gagal dibaca (ikrarTerbaca false) supaya layar tidak
+ * menuduh sidang ikrar yang ikrarnya barangkali tercatat.
+ *
+ * @returns {Promise<Record<string, string> | null>} perkaraId -> tanggal ikrar (YYYY-MM-DD)
+ */
+async function ikrarBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+  if (!(await sippSkemaService.tabelAda("perkara_ikrar_talak"))) return null;
+  const kolom = await sippSkemaService.kolomTerpilih();
+  if (!kolom.ikrarTanggal) return null;
+
+  const dipakai = id.slice(0, 500);
+  const isian = dipakai.map(() => "?").join(", ");
+
+  const baris = await runQuery(
+    `SELECT it.perkara_id AS perkaraId,
+            it.${kolom.ikrarTanggal} AS tanggalIkrar
+       FROM perkara_ikrar_talak it
+      WHERE it.perkara_id IN (${isian})`,
+    dipakai
+  );
+
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const tanggal = isoTanggal(b.tanggalIkrar);
+    // perkara_id kunci utama tabel itu - satu baris per perkara. Bila suatu
+    // pemasangan berbeda, yang pertama bertanggal dipakai.
+    if (tanggal && !hasil[String(b.perkaraId)]) hasil[String(b.perkaraId)] = tanggal;
+  }
+  return hasil;
+}
+
 /** Keadaan putusan untuk sekumpulan perkara sekaligus. */
 /**
  * ============================================================================
@@ -856,6 +976,11 @@ async function kuasaBanyakPerkara(daftarPerkaraId = []) {
  *     hari ini - ia memang sedang berjalan.
  *   - satu perkara dengan beberapa baris mediasi (2-3). Seluruhnya dijumlah;
  *     mediasi lanjutan sesudah tahap pertama gagal memang menambah waktunya.
+ *
+ * Sejak 24 September 2026 warnanya mengikuti tangga unsur Waktu Putus Perkara
+ * SK Dirjen Badilag 048/DJA/SK.KP3.4.3/IV/2024 - hari bersih dan nilainya
+ * dihitung penilaianSippService.hitungWaktuPutus, bukan di berkas ini - atas
+ * hari berjalan di luar mediasi, TANPA pengecualian perkara khusus.
  */
 const AMBANG_DURASI_HARI = 150;
 
@@ -894,6 +1019,23 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
       ).catch(() => [])
     : [];
 
+  // ==========================================================================
+  // PERKARA GHAIB SENGAJA TIDAK DIKURANGI DI SINI
+  // ==========================================================================
+  //
+  // SK 048/2024 Tabel 2 nomor 1 memberi perkara ghaib kelonggaran 120 hari
+  // dalam PENILAIAN waktu putus. Pengguna mendefinisikan angka di Antrian
+  // Sidang sebagai "perkara berjalan di luar hari mediasi" - dan hanya itu.
+  // Kelonggaran ghaib pernah ikut dipotong (rancangan 24 September 2026), dan
+  // tinjauan membuktikan akibatnya: perkara 232/Pdt.G/2026, berjalan 163 hari,
+  // tampil "43 hari, sisa 107" terhadap batas lima bulan SEMA 2/2014 - batas
+  // yang TIDAK mengenal kelonggaran itu, dan kewajiban lapornya tersembunyi.
+  //
+  // Karena itu angka dan warnanya di sini tidak memotong ghaib. Penilaian SK
+  // di layar Status Perkara tetap memotongnya; perkara ghaib karena itu dapat
+  // berwarna lebih buruk di sini daripada nilai SK-nya di sana, dan catatan
+  // di layar menyebutkannya.
+
   const mediasiPerPerkara = {};
   for (const baris of Array.isArray(mediasiRows) ? mediasiRows : []) {
     const kunci = String(baris.perkaraId);
@@ -923,13 +1065,39 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
       sampai
     );
 
-    const hariBersih = hariTotal === null ? null : Math.max(0, hariTotal - hariMediasi);
+    // ======================================================================
+    // TANGGA WAKTU PUTUS DARI PENILAIAN SK, BUKAN DITULIS ULANG DI SINI
+    // ======================================================================
+    //
+    // Hari pendaftaran ikut dihitung dan mediasi dipotong, lalu dinilai
+    // dengan TANGGA SK 048/2024 (90/120/150 hari) lewat fungsi yang sama yang
+    // menilai unsur waktu putus di layar Status Perkara. hariBersih karena
+    // itu satu hari lebih besar daripada sebelum 24 September: dulu hari
+    // pendaftaran tidak dihitung, dan perkara "90 hari" di sini bernilai 3
+    // di sana.
+    //
+    // Yang TIDAK sama: pengecualian perkara khusus (ghaib, mafqud, izin
+    // atasan) tidak dipotong di sini - lihat catatan ghaib di atas - dan hari
+    // mediasinya dibaca dari perkara_mediasi (dibatasi 60 hari), bukan dari
+    // view v_durasi_mediasi yang dipakai Status Perkara.
+    const waktuPutus =
+      hariTotal === null
+        ? null
+        : penilaianSippService.hitungWaktuPutus({
+            tanggalDaftar,
+            tanggalPutus: sampai,
+            hariMediasi,
+            perkaraGhaib: false,
+          });
+    const hariBersih = waktuPutus ? waktuPutus.bersih : null;
 
     hasil[kunci] = {
       tanggalDaftar,
       tanggalPutusan,
       sudahPutus: Boolean(tanggalPutusan),
       hariTotal,
+      // hariTotal + 1 - hari pendaftaran ikut dihitung, cara SK.
+      hariKotor: waktuPutus ? waktuPutus.kotor : null,
       hariMediasi,
       /**
        * true bila potongan mediasinya dipotong ke batas PERMA (60 hari).
@@ -939,8 +1107,19 @@ async function durasiBanyakPerkara(daftarPerkaraId = []) {
       mediasiDibatasi,
       hariBersih,
       ambangHari: AMBANG_DURASI_HARI,
-      // Sisa hari sampai batas lima bulan. Negatif berarti sudah lewat.
+      // Sisa hari sampai batas lima bulan SEMA 2/2014. Negatif berarti lewat.
       sisaHari: hariBersih === null ? null : AMBANG_DURASI_HARI - hariBersih,
+      // Nilai unsur waktu putus SK 048/2024. Layar hanya menerjemahkan nilai
+      // ini ke warna - lihat lib/pita-waktu-putus di portal.
+      waktuPutusSk: waktuPutus
+        ? {
+            nilai: waktuPutus.nilai,
+            sebutan: waktuPutus.sebutan,
+            dariHari: waktuPutus.dariHari,
+            sampaiHari: waktuPutus.sampaiHari,
+            sisaDiPita: tanggalPutusan ? null : waktuPutus.sisaDiPita,
+          }
+        : null,
       mediasi,
     };
   }
@@ -2720,6 +2899,7 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
 
 module.exports = {
   durasiBanyakPerkara,
+  ikrarBanyakPerkara,
   AMBANG_DURASI_HARI,
   BATAS_POTONG_MEDIASI_HARI,
   hariMediasiBersih,

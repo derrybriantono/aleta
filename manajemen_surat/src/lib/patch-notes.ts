@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.34.0";
+export const APP_VERSION = "2.35.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.34.0 - Sebelas Permintaan, dan Sebelas Penurun Sebutan yang Berselisih";
+  "ALETA Judicia v2.35.0 - Empat Belas Permintaan, dan Relaas Sidang Lain yang Dinilai untuk Sidang Ini";
 
 export type PatchNote = {
   version: string;
@@ -22,6 +22,50 @@ export type PatchNote = {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: "2.35.0",
+    title: "ALETA Judicia v2.35.0 - Empat Belas Permintaan, dan Relaas Sidang Lain yang Dinilai untuk Sidang Ini",
+    date: "2026-09-24",
+    status: "Terpasang",
+    summary:
+      "Empat belas permintaan pengguna pada layar Antrian Sidang dan Status Perkara - papan kuning dihapus, aturan pukul 15:00, agenda e-Litigasi merah, warna umur perkara menurut SK Dirjen Badilag 048/2024, panel Rincian yang lebih ringkas, saklar Tampilan untuk yang baru, tombol Rincian berwarna, nomor sidang, dan grafik perjalanan sidang yang dapat dibaca. Yang terbesar ditemukan saat menelusuri butir 9: panel Rincian menilai relaas SIDANG LAIN untuk sidang yang dibuka - 115 sidang e-Court yang tergugatnya belum dipanggil tampil \"terkirim, patut\" karena relaas sidang sebelumnya.",
+    added: [
+      "Sesudah pukul 15:00:00 WITA, sidang yang hasilnya belum dicatat - belum ditunda, belum diputus, kolom hasilnya di SIPP masih kosong - masuk kotak Perlu diperiksa dan barisnya diberi tanda merah \"Belum ditunda\". Jamnya menurut zona pengadilan (Asia/Makassar), bukan zona komputer yang membuka layar, dan menyala tepat pada detiknya tanpa menunggu muat ulang. Sidang tanggal lampau yang belum dicatat ikut, sidang tanggal depan tidak pernah.",
+      "Tulisan agenda merah pada sidang e-Litigasi - aturannya sama dengan kotak e-Litigasi, sehingga kotak yang berbunyi 4 menunjuk empat baris yang merah. Bukan seluruh perkara e-Court: 1.913 dari 1.923 sidang 2026 perkaranya e-Court, dan warna yang ada di tiap baris tidak membedakan apa pun.",
+      "Warna umur perkara menurut tangga unsur Waktu Putus Perkara SK Dirjen Badilag 048/DJA/SK.KP3.4.3/IV/2024 - paling lama 3 bulan hijau, 4 bulan kuning, 5 bulan oranye, lebih dari 5 bulan merah - atas hari perkara berjalan di luar mediasi, sebagaimana didefinisikan pengguna. Tangganya ditulis sekali di bot dan dipakai juga penilaian SK di Status Perkara; dua aturan untuk satu pertanyaan pasti suatu hari berselisih.",
+      "Tombol \"Sembunyikan semua\" di menu Tampilan, dan sebelas saklar baru untuk yang belum punya: agenda e-Litigasi merah, umur perkara, menunggu lama, sidang ke-N, tundaan dan hasil sidang, jam ambil antrian, tombol tunda|putus, tombol mediator, tombol Antrian, serta tombol kosong tunjuk konseptor dan keterangan (yang sudah berisi tetap tampil).",
+      "Nomor sidang di tepi kiri Perjalanan sidang dan daftar berita acara di Status Perkara, diurutkan menurut nomor sidang SIPP; Court Calendar bernomor rencana 1..N beserta sidang ke berapa yang melaksanakannya.",
+      "Grafik \"Umur perkara pada tiap sidang\" menggantikan grafik lama yang datar: angka pada sumbu, pita hijau/kuning/oranye/merah, jarak antar sidang (+N hari) di bawah tiap ruas, rentang mediasi diarsir, sidang yang belum berlangsung berongga, dan rincian tiap titik saat ditunjuk atau diketuk.",
+    ],
+    changed: [
+      "Papan kuning \"Perlu ditindaklanjuti\" dihapus - fungsinya sudah ada di kotak Perlu diperiksa. Dua sifatnya dipindahkan supaya tidak hilang diam-diam: Perlu diperiksa kini tetap digambar walau nol, dan tetap terlihat saat kendali diciutkan.",
+      "Lencana umur perkara hanya menyebut hari yang dihitung; keterangan \"(mediasi N hari dipotong)\" pindah ke panel Rincian. Angkanya kini menghitung hari pendaftaran sebagai hari ke-1 - cara SK dan layar Status Perkara - sehingga naik satu hari.",
+      "Panel Rincian: \"Rincian waktu perkara\" dipindah ke paling bawah, dan seluruh bagian di bawah \"Seluruh jadwal sidang perkara ini\" terciut sebagai bawaan. Kuncinya diganti supaya bawaan baru berlaku juga bagi yang pernah membukanya; kepala bagian yang terciut menyebut ringkasan isinya.",
+      "Tombol Rincian berwarna primer selama rinciannya terbuka dan kembali ke rupa semula saat ditutup - di Antrian Sidang dan di Mediasi.",
+      "Sidang pertama tidak lagi dihitung e-Litigasi: persetujuan bersidang elektronik baru diketahui PADA sidang pertama. 58 dari 311 sidang yang dahulu tertandai sepanjang 2026 adalah permohonan sidang-sehari yang agendanya menyebut \"Kesimpulan\".",
+      "Kotak kuning Belum tunda tidak lagi menagih sidang ikrar talak yang sudah dicatat \"telah ikrar talak\", maupun yang ikrarnya tercatat di tabel ikrar talak pada tanggal sidangnya.",
+    ],
+    fixed: [
+      "\"DIPANGGIL LEWAT ELEKTRONIK (e-SUMMONS)\" pada tergugat yang dipanggil surat tercatat. Sandi relaas 'E' di SIPP dibaca sebagai bukti e-Summons terkirim, padahal tergugatnya tidak punya email di e-Court dan e-Court tidak pernah mengirim apa pun kepadanya. Tuduhan salah saluran kini menuntut e-Summons yang TERCATAT di e-Court; tanpanya salurannya tidak ditebak, dan catatan abu-abu menyarankan sandi relaasnya dibetulkan.",
+      "PANEL RINCIAN MENILAI RELAAS SIDANG LAIN. Relaas seluruh perkara dipetakan per nama dan yang terakhir menang, sehingga sidang yang belum ada relaasnya tampil \"terkirim, patut\" berkat relaas sidang sebelumnya - 115 sidang e-Court sejak 2025 - dan sidang lama dinilai dengan relaas sesudahnya. Kini hanya relaas untuk sidang itu yang dinilai, sama seperti daftar jadwal sejak awal.",
+      "Pencocokan tanggal e-Summons tidak pernah cocok: tanggalnya tiba sebagai Date, dan String(Date) berbunyi \"Wed Sep 23\", bukan \"2026-09-23\". Yang terpakai selalu e-Summons PERTAMA pihak itu.",
+      "Relaas bersandi kosong tidak lagi ditebak \"panggilan biasa\" lalu dituduh salah saluran pada penggugat e-Court.",
+      "Nomor \"Sidang ke-N\" pada Relaas panggilan di Status Perkara dihitung dari urutan kelompok relaas, bukan nomor sidangnya - relaas sidang ketujuh tertulis \"Sidang ke-2\". Salah pada 510 dari 5.086 perkara berelaas.",
+      "Status Perkara menilai panggilan dengan relaas seluruh perkara terhadap tanggal sidang terakhir; kini terhadap sidang terakhir yang punya relaas, beserta sisi yang wajib dipanggil.",
+      "Tenggang mepet - kotak merah sejak 2.34.0 - kini terdaftar sebagai saklar wajib di menu Tampilan; selama satu rilis panel itu diam tentangnya.",
+      "Tinjauan sebelum pasang menemukan sebelas cacat pada rancangan rilis ini sendiri, seluruhnya diperbaiki sebelum dipasang. Yang terberat: menilai relaas per sidang membuat pihak yang hadir pada sidang sebelumnya dihitung \"tidak patut\" dan bertanda merah \"belum dapat dinilai\" - kini tidak dinilai, dan rubrik Status Perkara hanya membagi dengan pihak yang wajib dipanggil; memotong pengecualian ghaib dari umur perkara menyembunyikan perkara yang sudah lewat lima bulan SEMA - kini tidak dipotong; dan tanda merah 15:00 akan menuduh sidang yang sudah diputus bila peta putusan gagal dibaca - kini bot melaporkan keterbacaannya dan tanda merah diam bila tidak terbukti.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Bot dan portal sama-sama berubah; tidak ada migrasi. Warna SK, catatan saluran, dan ikrar tercatat baru muncul sesudah citra bot dibangun ulang - portal baru dengan bot lama menampilkan lencana umur tanpa warna, tanpa galat.",
+      "Keadaan ciut panel Rincian memakai kunci baru (-v2): bagian yang pernah dibuka akan terciut sekali, lalu pilihan tiap orang diingat lagi.",
+    ],
+    knownLimitations: [
+      "Aturan 15:00 berlaku juga bagi sidang yang dijadwalkan pukul 15:00 atau sesudahnya - diukur 96 jadwal sejak 2025, kebanyakan pertukaran e-Litigasi. Batasnya dipasang persis seperti diminta.",
+      "Warna umur perkara di Antrian Sidang tidak memotong pengecualian perkara khusus SK (ghaib 120 hari, mafqud, izin atasan), sebab angkanya didefinisikan \"perkara berjalan di luar hari mediasi\" dan batas lima bulan SEMA tidak mengenal pengecualian itu. Penilaian SK di Status Perkara memotongnya, sehingga perkara ghaib dapat bernilai lebih baik di sana.",
+      "Hari mediasi di Antrian Sidang dibaca dari catatan mediasi SIPP (dibatasi 60 hari), sedangkan Status Perkara membaca angka SIPP yang menghitung mediasi tanpa laporan mediator sampai hari ini - pada perkara lama yang laporan mediatornya kosong kedua angka berbeda, dan grafiknya menyebutkannya.",
+    ],
+  },
+  {
     version: "2.34.0",
     title: "ALETA Judicia v2.34.0 - Sebelas Permintaan, dan Sebelas Penurun Sebutan yang Berselisih",
     date: "2026-09-23",
@@ -30,7 +74,7 @@ export const PATCH_NOTES: PatchNote[] = [
       "Sebelas permintaan pengguna dikerjakan sekaligus - papan hari ini, tanda menunggu lama, arsip ZIP dua sumber, tanggal sidang tiap dokumen e-Court, hitung mundur tenggang panggilan, sebaran relaas per juru sita, sebutan para pihak, layar antrian tanpa login, unggah putusan yang berhenti sebelum mulai, durasi perkara tanpa hari mediasi, dan saklar cetak ABT yang tidak menuruti keadaannya. Yang terbesar bukan salah satunya: sebelas tempat menurunkan sebutan para pihak dengan tujuh aturan berbeda, dan lima di antaranya salah pada 21% sampai 55% perkara satker.",
     added: [
       "Papan \"hari ini beres atau belum\" di atas daftar sidang - satu baris, tiap angka dapat ditekan, dan tetap tampil walau nol. Angkanya diambil dari hitungan yang sudah ada; hitungan kedua akan berbeda dari yang pertama suatu hari, dan tidak ada pada layarnya yang memberi tahu mana yang benar.",
-      "Tanda \"sudah menunggu N menit\" pada kolom antrian, dihitung basis data mesin antrian sendiri - bukan Node, bukan jam PC petugas. Ambangnya 30 menit, sama dengan pita jarak antar-sidang yang sudah diukur dari 10.989 jarak nyata.",
+      "Tanda \"sudah menunggu N menit\" pada kolom antrian, dihitung basis data mesin antrian sendiri - bukan Node, bukan jam PC petugas. Ambangnya 40 menit atas permintaan pengguna (catatan ini semula menulis 30 - angka rancangan awal yang diganti sebelum dipasang).",
       "Arsip ZIP satu tekan kini memuat DUA sumber - gugatan, relaas beserta resi pos, berita acara sidang, putusan, lampiran, dan berkas e-Court - berkelompok menurut jenisnya beserta daftar isi. Sebelumnya hanya e-Court, sehingga perkara yang tidak pernah lewat e-Court dijawab 404 walau 41 relaas dan 8 berita acaranya tersimpan rapi.",
       "Kotak keadaan \"Tenggang mepet\" pada layar Jadwal Sidang, beserta hitung mundur H-3 di barisnya. Aturannya dipinjam dari mesin kepatutan yang sudah ada - elektronik 3 hari kalender, surat tercatat 6 hari kalender dan wajib terbukti diterima, biasa 3 hari kerja. Diukur atas 20 sidang empat belas hari ke depan: 6 menyala.",
       "Sebaran relaas per juru sita di halaman Peta Perkara - siapa mengerjakan berapa, di berapa desa, dan berapa yang kembali. Terukur pada 2026: tiga juru sita membagi 2.337 relaas hampir rata (793, 788, 756) tetapi returnya 5,7%, 0,3%, dan 5,3%.",

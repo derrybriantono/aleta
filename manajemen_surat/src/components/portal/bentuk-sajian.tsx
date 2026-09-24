@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import type { PerjalananSidang, TitikPerjalanan } from "@/lib/perjalanan-sidang";
+import type { PitaWaktuPutus } from "@/lib/pita-waktu-putus";
 
 /**
  * ============================================================================
@@ -376,6 +379,541 @@ export function DiagramGaris(p: {
 
 export function DiagramArea(p: { data: TitikData[]; judul?: string; sasaran?: { nilai: number; label: string } }) {
   return <GarisAtauArea {...p} area />;
+}
+
+/* ==========================================================================
+ * PERJALANAN SIDANG - UMUR PERKARA PADA TIAP SIDANG
+ * ========================================================================== */
+
+/**
+ * ============================================================================
+ * KENAPA TIDAK MEMAKAI DiagramGaris
+ * ============================================================================
+ *
+ * DiagramGaris dibuat untuk deret per periode, sengaja tanpa angka pada
+ * sumbunya - yang dicari bentuknya. Dipakai untuk perjalanan sidang, pengguna
+ * melaporkannya "terlalu datar dan tidak memberi informasi" (24 Sep 2026).
+ * Diukur pada 385/Pdt.G/2026/PA.Dgl, sebabnya lima:
+ *
+ *   1. sumbu tegak dipaksa sampai 150 oleh garis sasaran, sehingga sidang hari
+ *      ke-15 sampai ke-86 terhimpit di separuh bawah;
+ *   2. tidak satu pun angka pada sumbu tegak - tingginya tidak dapat dibaca;
+ *   3. hanya tanggal pertama dan terakhir yang tertulis;
+ *   4. agenda dikirim sebagai `keterangan`, tetapi TIDAK PERNAH digambar;
+ *   5. jarak antar sidang - pertanyaan yang sebenarnya - tidak tampak.
+ *
+ * Sumbu mendatarnya SENGAJA per sidang, bukan per tanggal. Dengan sumbu
+ * tanggal, umur perkara hanyalah garis diagonal lurus yang sama pada tiap
+ * perkara. Dengan sumbu per sidang, kemiringan tiap ruas ADALAH jaraknya - ruas
+ * yang curam berarti penundaan yang panjang - dan jaraknya ditulis pula sebagai
+ * angka, sebab kemiringan hanya menjawab "lebih lama atau tidak".
+ *
+ * Tetap SATU sumbu tegak. Pita latar memakai satuan yang sama - hari yang
+ * dihitung - jadi tidak ada sumbu kedua yang harus dicocokkan mata.
+ *
+ * Bukan huruf katalog: HURUF_DIKENALI tidak bertambah.
+ */
+
+/**
+ * Nada pita memakai SEBUTAN WARNA yang sama dengan pita waktu putus
+ * (lib/pita-waktu-putus.ts) - lencana umur perkara di Antrian Sidang. Diminta
+ * pengguna 24 September 2026: hijau sampai 3 bulan, kuning 4 bulan, oranye 5
+ * bulan, merah lewat 5 bulan. Satu perkara yang hijau di lencananya tidak boleh
+ * berdiri di pita berwarna lain pada grafik ini, dan tipe yang dipinjam
+ * membuat sebutan keempatnya tidak dapat menyimpang diam-diam.
+ */
+type NadaPita = PitaWaktuPutus["warna"];
+
+export type PitaUmur = {
+  /** Batas atas pita, dalam hari yang DIHITUNG. */
+  sampai: number;
+  /** Sebutan pendek di tepi kanan gambar, mis. "3 bln". */
+  singkat: string;
+  /** Sebutan lengkap beserta dasarnya - untuk keterangan warna. */
+  label: string;
+  /** Di atas pita terakhir selalu merah - karena itu merah tidak dapat dipilih. */
+  nada: Exclude<NadaPita, "merah">;
+};
+
+/**
+ * Hijau, kuning, oranye, merah - keluarga warna yang SAMA dengan kelas pita
+ * waktu putus (emerald, yellow, orange, red; dijaga bentuk-sajian.test.tsx).
+ * Kuning memakai yellow, bukan amber, dengan alasan yang sama di sana: amber
+ * dan oranye nyaris tak terbedakan.
+ *
+ * LATARNYA sengaja tipis: pita adalah keterangan, bukan data - garis dan titik
+ * harus tetap yang paling menonjol. Tiap mode punya langkahnya sendiri; portal
+ * ini bertema gelap secara bawaan.
+ */
+const WARNA_PITA: Record<NadaPita, { latar: string; garis: string; teks: string; contoh: string }> = {
+  hijau: {
+    latar: "fill-emerald-500/10 dark:fill-emerald-400/10",
+    garis: "stroke-emerald-600/60 dark:stroke-emerald-400/60",
+    teks: "fill-emerald-700 dark:fill-emerald-300",
+    contoh: "bg-emerald-500/30 dark:bg-emerald-400/30",
+  },
+  kuning: {
+    latar: "fill-yellow-400/15 dark:fill-yellow-300/10",
+    garis: "stroke-yellow-600/70 dark:stroke-yellow-300/60",
+    teks: "fill-yellow-700 dark:fill-yellow-300",
+    contoh: "bg-yellow-400/40 dark:bg-yellow-300/30",
+  },
+  oranye: {
+    latar: "fill-orange-500/15 dark:fill-orange-400/15",
+    garis: "stroke-orange-600/70 dark:stroke-orange-400/70",
+    teks: "fill-orange-700 dark:fill-orange-300",
+    contoh: "bg-orange-500/35 dark:bg-orange-400/35",
+  },
+  merah: {
+    latar: "fill-red-500/15 dark:fill-red-400/15",
+    garis: "stroke-red-600/70 dark:stroke-red-400/70",
+    teks: "fill-red-700 dark:fill-red-300",
+    contoh: "bg-red-500/35 dark:bg-red-400/35",
+  },
+};
+
+const BULAN_PENDEK = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const BULAN_UTUH = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+/** "2026-08-12" -> "12 Agu", atau "12 Agu '26" bila tahunnya perlu disebut. */
+function tanggalRingkas(iso: string, denganTahun: boolean) {
+  const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!cocok) return iso;
+  const dasar = `${Number(cocok[3])} ${BULAN_PENDEK[Number(cocok[2]) - 1] ?? cocok[2]}`;
+  return denganTahun ? `${dasar} '${cocok[1].slice(2)}` : dasar;
+}
+
+/** "2026-08-12" -> "12 Agustus 2026". */
+function tanggalUtuh(iso: string) {
+  const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!cocok) return iso;
+  return `${Number(cocok[3])} ${BULAN_UTUH[Number(cocok[2]) - 1] ?? cocok[2]} ${cocok[1]}`;
+}
+
+/** Rincian satu sidang - untuk tooltip dan baris rincian di bawah gambar. */
+function rincianTitik(t: TitikPerjalanan): string[] {
+  return [
+    `Sidang ke-${t.ke} · ${tanggalUtuh(t.tanggal)}${t.hariPutus ? " · hari putusan" : ""}${
+      t.akanDatang ? " · belum berlangsung" : ""
+    }`,
+    `Agenda: ${t.agenda || "tanpa agenda"}`,
+    t.potonganMediasi > 0
+      ? `Dihitung ${t.hari} hari - ${t.hariKalender} hari kalender sejak pendaftaran, mediasi ${t.potonganMediasi} hari tidak dihitung`
+      : `Dihitung ${t.hari} hari - ${t.hariKalender} hari kalender sejak pendaftaran, hari pendaftaran ikut dihitung`,
+    t.jeda === null ? "Sidang pertama" : `+${t.jeda} hari dari sidang sebelumnya`,
+    t.alasanTunda ? `Ditunda: ${t.alasanTunda}` : t.keterangan ? `Keterangan: ${t.keterangan}` : "",
+  ].filter(Boolean);
+}
+
+type LapisanPita = { dari: number; sampai: number; nada: NadaPita; label: string };
+
+/** "sampai 90 hari · ...", "91-120 hari · ...", "lebih dari 150 hari". */
+function sebutanPita(l: LapisanPita) {
+  if (l.nada === "merah") return `lebih dari ${l.dari} hari`;
+  const rentang = l.dari === 0 ? `sampai ${l.sampai} hari` : `${l.dari + 1}-${l.sampai} hari`;
+  return `${rentang} · ${l.label}`;
+}
+
+/**
+ * Tempat sebuah TANGGAL pada sumbu yang berjarak per sidang - untuk arsiran
+ * mediasi. Di antara dua sidang tempatnya sebanding harinya; di luar sidang
+ * pertama dan terakhir ia dijepit ke tepi.
+ */
+function xDariTanggal(iso: string, waktuTitik: number[], xTitik: number[]) {
+  const w = Date.parse(`${iso}T00:00:00Z`);
+  const akhir = waktuTitik.length - 1;
+  if (Number.isNaN(w) || w <= waktuTitik[0]) return xTitik[0];
+  if (w >= waktuTitik[akhir]) return xTitik[akhir];
+  for (let i = 0; i < akhir; i += 1) {
+    if (w <= waktuTitik[i + 1]) {
+      const rentang = waktuTitik[i + 1] - waktuTitik[i];
+      return rentang > 0
+        ? xTitik[i] + ((w - waktuTitik[i]) / rentang) * (xTitik[i + 1] - xTitik[i])
+        : xTitik[i];
+    }
+  }
+  return xTitik[akhir];
+}
+
+export function DiagramPerjalananSidang({
+  perjalanan,
+  pita,
+  judul,
+  hariIniDihitung = null,
+}: {
+  perjalanan: PerjalananSidang;
+  /** Urut naik. Di atas pita terakhir: merah. */
+  pita: PitaUmur[];
+  judul?: string;
+  /** Umur perkara HARI INI dalam hari yang dihitung; null bila sudah putus. */
+  hariIniDihitung?: number | null;
+}) {
+  const { titik } = perjalanan;
+  const cukup = titik.length >= 3;
+
+  // Lebar DIUKUR, bukan diregangkan lewat viewBox. SVG yang diregangkan ikut
+  // membesarkan tulisannya: huruf 10 piksel menjadi 16 piksel di layar lebar
+  // dan 6 piksel di layar sempit. Diukur, huruf tetap 10 piksel di mana pun, dan
+  // yang terlalu sempit digulir mendatar alih-alih ditumpuk.
+  const kotak = useRef<HTMLDivElement>(null);
+  const [lebarKotak, setLebarKotak] = useState(0);
+  const [pilihan, setPilihan] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = kotak.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    // Tanpa pengukuran serentak di badan efek (react-hooks/set-state-in-effect):
+    // ResizeObserver sendiri memanggil sekali begitu mulai mengamati.
+    const pengamat = new ResizeObserver((catat) => {
+      const lebar = catat[0]?.contentRect.width ?? 0;
+      if (lebar > 0) setLebarKotak(Math.round(lebar));
+    });
+    pengamat.observe(el);
+    return () => pengamat.disconnect();
+  }, [cukup]);
+
+  // Aturan 2: dua titik selalu membentuk garis lurus.
+  if (!cukup) {
+    return (
+      <div>
+        <Kepala judul={judul} />
+        <Kosong
+          pesan={`Baru ${titik.length} sidang. Perjalanan tidak digambar di bawah tiga sidang - dua titik selalu membentuk garis lurus.`}
+        />
+      </div>
+    );
+  }
+
+  const n = titik.length;
+  const KIRI = 34; // angka sumbu tegak
+  const KANAN = 42; // sebutan pita, mis. "5 bln"
+  const ATAS = 26; // keterangan batas, dan angka di atas titik tertinggi
+  const TINGGI = 200; // bidang gambar
+  const BAWAH = 50; // tiga baris: sidang ke-, tanggal, jarak
+  const TEPI = 16; // titik pertama dan terakhir tidak menempel ke tepi
+  const JARAK_MIN = 46; // di bawah ini tulisan dua sidang saling menimpa
+
+  const W = Math.max(lebarKotak > 0 ? lebarKotak : 640, KIRI + KANAN + 2 * TEPI + (n - 1) * JARAK_MIN);
+  const H = ATAS + TINGGI + BAWAH;
+  const dasarY = ATAS + TINGGI;
+  const kananPlot = W - KANAN;
+  const xAwal = KIRI + TEPI;
+  const langkah = (kananPlot - TEPI - xAwal) / (n - 1);
+  const xTitik = titik.map((_, i) => xAwal + i * langkah);
+  const waktuTitik = titik.map((t) => Date.parse(`${t.tanggal}T00:00:00Z`));
+
+  // Aturan 1: sumbu bermula dari NOL. Puncaknya batas pita terdekat di atas data
+  // beserta ruang kepala 8 persen - bukan selalu 150. Batas yang jauh di atas
+  // tetap DISEBUT di kepala gambar, tidak dihilangkan.
+  const puncakData = Math.max(1, ...titik.map((t) => t.hari));
+  const berkepala = puncakData * 1.08;
+  const atas = pita.map((p) => p.sampai).find((b) => b >= berkepala) ?? Math.ceil(berkepala / 30) * 30;
+  const y = (v: number) => dasarY - (Math.min(Math.max(v, 0), atas) / atas) * TINGGI;
+  // Kelipatan 30 - satu bulan menurut SK - kecuali pada skala sempit.
+  const langkahTik = atas <= 90 ? 15 : 30 * Math.ceil(atas / 180);
+  const tik: number[] = [];
+  for (let v = 0; v <= atas; v += langkahTik) tik.push(v);
+
+  const lapisan: LapisanPita[] = [];
+  let dari = 0;
+  for (const p of pita) {
+    lapisan.push({ dari, sampai: p.sampai, nada: p.nada, label: p.label });
+    dari = p.sampai;
+  }
+  lapisan.push({ dari, sampai: Number.POSITIVE_INFINITY, nada: "merah", label: "" });
+  const lapisanTampak = lapisan.filter((l) => l.dari < atas);
+
+  const batasAkhir = pita.length > 0 ? pita[pita.length - 1] : null;
+  const batasDiAtas = batasAkhir && batasAkhir.sampai > atas ? batasAkhir : null;
+
+  const arsir = perjalanan.rentangMediasi
+    .map((r) => ({
+      ...r,
+      x1: xDariTanggal(r.mulai, waktuTitik, xTitik),
+      x2: xDariTanggal(r.selesai, waktuTitik, xTitik),
+    }))
+    .filter((r) => r.x2 - r.x1 >= 1);
+
+  const jedaTerpanjang = Math.max(0, ...titik.map((t) => t.jeda ?? 0));
+  const ruasTerpanjang = jedaTerpanjang > 0 ? titik.findIndex((t) => t.jeda === jedaTerpanjang) : -1;
+  const sisa = hariIniDihitung !== null && batasAkhir ? batasAkhir.sampai - hariIniDihitung : null;
+
+  // Aturan 3: yang dipotong dikatakan - dan yang tidak dapat dipastikan pun.
+  // Titik hari putusan memotong mediasi yang jatuh SEBELUM putusan saja.
+  // "Lama perkara" di kepala layar memotong angka SIPP (v_durasi_mediasi),
+  // yang menghitung mediasi tanpa laporan mediator sampai HARI INI - juga
+  // pada perkara yang sudah lama putus. Bila keduanya berbeda, dikatakan -
+  // bukan diaku sama (tinjauan 24 September 2026; terukur 52 perkara putus).
+  const titikPutus = titik.find((t) => t.hariPutus) ?? null;
+  const selisihDenganKepala =
+    titikPutus && !perjalanan.potonganTakTerletak && perjalanan.hariMediasi > titikPutus.potonganMediasi
+      ? perjalanan.hariMediasi - titikPutus.potonganMediasi
+      : 0;
+
+  const catatan = [
+    `${n} sidang${
+      perjalanan.sesudahPutus > 0
+        ? ` sampai putusan. ${perjalanan.sesudahPutus} sidang sesudah putusan (mis. ikrar talak) tidak digambar - bukan bagian jangka penyelesaian perkara`
+        : ""
+    }.`,
+    "Tinggi titik: hari yang dihitung - hari pendaftaran hari ke-1, hari mediasi tidak dihitung (PERMA 1/2016 Pasal 24), dengan cara Lama perkara. Angka di bawah sumbu: jarak dari sidang sebelumnya.",
+    selisihDenganKepala > 0
+      ? `Lama perkara di kepala layar memotong ${perjalanan.hariMediasi} hari mediasi menurut SIPP, yang menghitung mediasi tanpa laporan mediator sampai hari ini; grafik hanya memotong ${titikPutus?.potonganMediasi ?? 0} hari yang jatuh sebelum putusan - karena itu titik putusannya ${selisihDenganKepala} hari lebih tinggi.`
+      : "",
+    ruasTerpanjang > 0
+      ? `Jeda terpanjang +${jedaTerpanjang} hari, dari sidang ke-${titik[ruasTerpanjang - 1].ke} ke sidang ke-${titik[ruasTerpanjang].ke}${
+          titik[ruasTerpanjang - 1].alasanTunda ? ` (ditunda: ${titik[ruasTerpanjang - 1].alasanTunda})` : ""
+        }.`
+      : "",
+    sisa !== null && batasAkhir
+      ? sisa >= 0
+        ? `Hari ini hari ke-${hariIniDihitung} yang dihitung - ${sisa} hari lagi sampai batas ${batasAkhir.label}.`
+        : `Hari ini hari ke-${hariIniDihitung} yang dihitung - batas ${batasAkhir.label} sudah lewat ${-sisa} hari.`
+      : "",
+    perjalanan.potonganTakTerletak
+      ? `Mediasi ${perjalanan.hariMediasi} hari belum dapat ditempatkan pada tanggalnya - titik memakai hari kalender, lebih tinggi daripada Lama perkara.`
+      : "",
+    perjalanan.mediasiTakTerpotong
+      ? "Lama mediasi belum terbaca dari SIPP - rentangnya diarsir tetapi tidak dipotong, sama seperti Lama perkara."
+      : "",
+    perjalanan.rentangMediasi.some((r) => r.tanpaLaporan)
+      ? "Ada mediasi tanpa tanggal laporan mediator - di grafik dianggap berjalan sampai putusan atau hari ini (SIPP sendiri menghitungnya sampai hari ini, juga pada perkara yang sudah putus). Periksa laporan mediatornya."
+      : "",
+    perjalanan.tanpaTanggal > 0
+      ? `${perjalanan.tanpaTanggal} sidang dengan tanggal tak terbaca atau sebelum pendaftaran tidak digambar.`
+      : "",
+  ].filter(Boolean);
+
+  const terpilih = pilihan !== null && pilihan < n ? titik[pilihan] : null;
+
+  return (
+    <div>
+      <Kepala judul={judul} />
+      <ul className="mb-2 space-y-0.5 text-xs leading-5 text-muted-foreground">
+        {catatan.map((kalimat) => (
+          <li key={kalimat}>{kalimat}</li>
+        ))}
+      </ul>
+      <div className="overflow-x-auto rounded-lg border border-border/80 bg-card/40 p-3">
+        <div ref={kotak} className="w-full">
+          <svg
+            width={W}
+            height={H}
+            viewBox={`0 0 ${W} ${H}`}
+            className="block"
+            role="img"
+            aria-label={`Umur perkara pada ${n} sidang, dari ${titik[0].hari} sampai ${titik[n - 1].hari} hari yang dihitung`}
+          >
+            {/* Pita latar - hijau, kuning, oranye, merah. */}
+            {lapisanTampak.map((l) => {
+              const yAtas = y(Math.min(l.sampai, atas));
+              return (
+                <rect
+                  key={`pita-${l.dari}`}
+                  x={KIRI}
+                  y={yAtas}
+                  width={kananPlot - KIRI}
+                  height={y(l.dari) - yAtas}
+                  className={WARNA_PITA[l.nada].latar}
+                />
+              );
+            })}
+
+            {/* Kisi dan angka sumbu tegak. */}
+            {tik.map((v) => (
+              <g key={`tik-${v}`}>
+                <line
+                  x1={KIRI}
+                  y1={y(v)}
+                  x2={kananPlot}
+                  y2={y(v)}
+                  className={v === 0 ? "stroke-border" : "stroke-border/50"}
+                  strokeWidth="1"
+                />
+                <text x={KIRI - 6} y={y(v) + 3} textAnchor="end" className="fill-muted-foreground text-[10px] tabular-nums">
+                  {v}
+                </text>
+              </g>
+            ))}
+            <text x={KIRI - 6} y={ATAS - 12} textAnchor="end" className="fill-muted-foreground text-[10px]">
+              hari
+            </text>
+
+            {/* Rentang mediasi - hari yang tidak dihitung. Teal, sama dengan
+                mediasi pada Kalender perkara. */}
+            {arsir.map((r) => (
+              <g key={`mediasi-${r.mulai}`}>
+                <title>{`Mediasi ${tanggalUtuh(r.mulai)} sampai ${tanggalUtuh(r.selesai)}${
+                  r.tanpaLaporan ? " (belum ada laporan mediator)" : ""
+                } - ${r.hari} hari, tidak dihitung (PERMA 1/2016 Pasal 24)`}</title>
+                <rect x={r.x1} y={ATAS} width={r.x2 - r.x1} height={TINGGI} className="fill-teal-500/15 dark:fill-teal-400/15" />
+                {r.x2 - r.x1 >= 44 ? (
+                  <text x={r.x1 + 4} y={ATAS + 12} className="fill-teal-700 text-[10px] font-medium dark:fill-teal-300">
+                    mediasi
+                  </text>
+                ) : null}
+              </g>
+            ))}
+
+            {/* Garis batas tiap pita, diwarnai pita yang DIMASUKINYA. */}
+            {pita
+              .filter((p) => p.sampai <= atas)
+              .map((p) => {
+                const nada = (lapisan.find((l) => l.dari === p.sampai) || lapisan[lapisan.length - 1]).nada;
+                return (
+                  <g key={`batas-${p.sampai}`}>
+                    <title>{`${p.sampai} hari - ${p.label}`}</title>
+                    <line
+                      x1={KIRI}
+                      y1={y(p.sampai)}
+                      x2={kananPlot}
+                      y2={y(p.sampai)}
+                      className={WARNA_PITA[nada].garis}
+                      strokeWidth="1"
+                      strokeDasharray="5 4"
+                    />
+                    <text x={kananPlot + 4} y={y(p.sampai) + 3} className={`${WARNA_PITA[nada].teks} text-[10px] font-medium`}>
+                      {p.singkat}
+                    </text>
+                  </g>
+                );
+              })}
+            {batasDiAtas ? (
+              <text x={kananPlot} y={ATAS - 12} textAnchor="end" className="fill-muted-foreground text-[10px]">
+                {`↑ ${batasDiAtas.label}: ${batasDiAtas.sampai} hari`}
+              </text>
+            ) : null}
+
+            {/* Ruas antar sidang - kemiringannya adalah jaraknya. */}
+            {titik.slice(1).map((t, j) => {
+              const s = titik[j];
+              const d = `M ${xTitik[j].toFixed(1)} ${y(s.hari).toFixed(1)} L ${xTitik[j + 1].toFixed(1)} ${y(t.hari).toFixed(1)}`;
+              return (
+                <g key={`ruas-${t.kunci}`}>
+                  <title>{`+${t.jeda ?? "?"} hari: sidang ke-${s.ke} (${tanggalUtuh(s.tanggal)}) ke sidang ke-${t.ke} (${tanggalUtuh(t.tanggal)})${
+                    s.alasanTunda ? `\nDitunda: ${s.alasanTunda}` : ""
+                  }`}</title>
+                  <path d={d} className="fill-none stroke-transparent" strokeWidth="12" />
+                  <path
+                    d={d}
+                    className="fill-none stroke-primary"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeDasharray={t.akanDatang ? "5 4" : undefined}
+                  />
+                </g>
+              );
+            })}
+
+            {/* Titik - satu sidang. Berongga: belum berlangsung. Bercincin: hari putusan. */}
+            {titik.map((t, i) => {
+              const cx = xTitik[i];
+              const cy = y(t.hari);
+              return (
+                <g
+                  key={`titik-${t.kunci}`}
+                  className="cursor-pointer"
+                  onMouseEnter={() => setPilihan(i)}
+                  onClick={() => setPilihan(i)}
+                >
+                  <title>{rincianTitik(t).join("\n")}</title>
+                  <circle cx={cx} cy={cy} r="12" className="fill-transparent" />
+                  {t.hariPutus ? (
+                    <circle cx={cx} cy={cy} r="8" className="fill-none stroke-primary" strokeWidth="1.5" />
+                  ) : null}
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={t.akanDatang ? 4 : t.hariPutus ? 4.5 : 3.5}
+                    className={t.akanDatang ? "fill-card stroke-primary" : "fill-primary stroke-card"}
+                    strokeWidth={t.akanDatang ? 2 : 1.5}
+                  />
+                  <text
+                    x={cx}
+                    y={cy - (t.hariPutus ? 12 : 8)}
+                    textAnchor="middle"
+                    className={`text-[10px] tabular-nums ${t.akanDatang ? "fill-muted-foreground" : "fill-foreground font-medium"}`}
+                  >
+                    {t.hariPutus ? `${t.hari} · putus` : t.hari}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Sumbu mendatar: sidang ke-, tanggal, dan jarak di antaranya.
+                "ke-" adalah nomor sidang SIPP - angka yang sama dengan tepi
+                kiri daftar Perjalanan sidang di atas gambar ini. */}
+            {titik.map((t, i) => {
+              const tahunBerganti = i === 0 || t.tanggal.slice(0, 4) !== titik[i - 1].tanggal.slice(0, 4);
+              return (
+                <g key={`sumbu-${t.kunci}`}>
+                  <line x1={xTitik[i]} y1={dasarY} x2={xTitik[i]} y2={dasarY + 4} className="stroke-border" />
+                  <text x={xTitik[i]} y={dasarY + 15} textAnchor="middle" className="fill-foreground/70 text-[10px] font-medium">
+                    {`ke-${t.ke}`}
+                  </text>
+                  <text x={xTitik[i]} y={dasarY + 27} textAnchor="middle" className="fill-muted-foreground text-[10px]">
+                    {tanggalRingkas(t.tanggal, tahunBerganti)}
+                  </text>
+                  {i > 0 && t.jeda !== null ? (
+                    <text
+                      x={(xTitik[i - 1] + xTitik[i]) / 2}
+                      y={dasarY + 42}
+                      textAnchor="middle"
+                      className={`text-[10px] tabular-nums ${
+                        i === ruasTerpanjang ? "fill-foreground font-semibold" : "fill-muted-foreground"
+                      }`}
+                    >
+                      {`+${t.jeda}${langkah >= 60 ? " hari" : ""}`}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Keterangan warna - hanya yang tampak pada gambar ini. */}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {lapisanTampak.map((l) => (
+            <span key={`kunci-${l.dari}`} className="inline-flex items-center gap-1.5">
+              <span className={`h-2.5 w-4 rounded-sm ${WARNA_PITA[l.nada].contoh}`} />
+              {sebutanPita(l)}
+            </span>
+          ))}
+          {arsir.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-4 rounded-sm bg-teal-500/30 dark:bg-teal-400/30" />
+              mediasi - tidak dihitung
+            </span>
+          ) : null}
+          {titik.some((t) => t.hariPutus) ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-primary ring-1 ring-primary ring-offset-1 ring-offset-card" />
+              hari putusan
+            </span>
+          ) : null}
+          {titik.some((t) => t.akanDatang) ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full border-2 border-primary" />
+              belum berlangsung
+            </span>
+          ) : null}
+        </div>
+
+        {/* Rincian terpilih - tooltip tidak ada pada layar sentuh. */}
+        <p className="mt-1.5 min-h-[1.25rem] text-xs leading-5" aria-live="polite">
+          {terpilih ? (
+            rincianTitik(terpilih).join(" · ")
+          ) : (
+            <span className="text-muted-foreground">Arahkan atau ketuk titik untuk rincian sidangnya.</span>
+          )}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 /* ==========================================================================

@@ -1451,13 +1451,63 @@ async function statusLengkap(nomorPerkaraMentah) {
   })();
 
   // --- keadaan panggilan ---------------------------------------------------
+  //
+  // Dinilai untuk SATU sidang: yang terakhir punya relaas. Dulu relaas seluruh
+  // perkara dicampur dengan tanggal sidang terakhir - relaas sidang lama
+  // dinilai terhadap sidang yang tidak pernah ia panggil. Sisi yang wajib
+  // dipanggil dibaca dari kehadiran sidang sebelumnya, sama seperti skor
+  // kesiapan; tanpa itu pihak yang hadir tertandai belum dipanggil.
+  //
+  // sidangId dan sisiWajib WAJIB dikirim bersama. Menyaring per sidang tanpa
+  // sisi wajib menandai penggugat yang hadir sebagai belum dipanggil. Bila
+  // kueri kehadirannya gagal, sisiWajib null dan seluruh pihak dianggap wajib
+  // dipanggil - gagal-tertutup, disengaja.
+  const relaasPerkara = rincian && rincian.ok ? rincian.relaas || [] : [];
+  const sidangBerelaas = new Set(relaasPerkara.map((r) => String(r.sidangId || "")).filter(Boolean));
+  const sidangAcuan =
+    [...jadwal].reverse().find((x) => sidangBerelaas.has(String(x.sidangId))) ||
+    (jadwal.length > 0 ? jadwal[jadwal.length - 1] : null);
+  const keadaanAcuan =
+    sidangAcuan && rincian && rincian.ok && rincian.perkaraId
+      ? await aman(
+          () =>
+            sippJadwalSidangService.keadaanPanggilanSidang([
+              { sidangId: sidangAcuan.sidangId, perkaraId: rincian.perkaraId },
+            ]),
+          null
+        )
+      : null;
+  const wajibAcuan =
+    keadaanAcuan && sidangAcuan && keadaanAcuan[String(sidangAcuan.sidangId)]
+      ? keadaanAcuan[String(sidangAcuan.sidangId)].wajibDipanggil
+      : null;
   const keadaanPanggilan = ecourtPanggilanService.susunKeadaanPanggilan({
     persetujuan: panggilanEcourt.pihak,
     panggilan: panggilanEcourt.panggilan,
-    relaas: rincian && rincian.ok ? rincian.relaas : [],
-    tanggalSidang: jadwal.length > 0 ? jadwal[jadwal.length - 1].tanggalSidang : null,
+    relaas: relaasPerkara,
+    tanggalSidang: sidangAcuan ? sidangAcuan.tanggalSidang : null,
+    sidangId: sidangAcuan ? sidangAcuan.sidangId : null,
     lewatEcourt: rincian && rincian.ok ? rincian.lewatEcourt === true : false,
+    sisiWajib: wajibAcuan,
   });
+
+  // ==========================================================================
+  // YANG DINILAI HANYA PIHAK YANG WAJIB DIPANGGIL
+  // ==========================================================================
+  //
+  // Sejak relaas dinilai per sidang, pihak yang hadir pada sidang sebelumnya
+  // lazimnya tidak punya relaas untuk sidang acuan - dan memang tidak perlu.
+  // Membaginya dengan seluruh pihak membuat rubrik menulis "1 dari 2 pihak
+  // dipanggil patut" dan analisa menulis "1 dari 2 pihak belum dipanggil
+  // secara patut" atas penggugat yang hadir (perkara 521/Pdt.G/2026 - diukur
+  // 770 dari 1.703 perkara berelaas sejak 2025 punya sisi seperti itu).
+  // Pihak tidak wajib yang TOH dipanggil tetap dinilai: relaasnya fakta.
+  const pihakWajib = keadaanPanggilan.pihak.filter((p) => !(p.tidakPerluDipanggil && !p.sudahDikirim));
+  const panggilanWajib = {
+    jumlahPihak: pihakWajib.length,
+    patut: pihakWajib.filter((p) => p.kepatutan && p.kepatutan.patut === true).length,
+    tidakWajib: keadaanPanggilan.pihak.length - pihakWajib.length,
+  };
 
   // --- sidang yang sudah berlalu, dan berapa yang ada BAS-nya --------------
   const hariIni = isoTanggal(new Date());
@@ -1476,10 +1526,7 @@ async function statusLengkap(nomorPerkaraMentah) {
     nomorPihakBermasalah: nomorPihak.filter(
       (n) => !n.adaNomor || n.statusVerifikasi === "ditolak" || n.statusVerifikasi === "menunggu"
     ).length,
-    panggilan: {
-      jumlahPihak: keadaanPanggilan.ringkasan.jumlahPihak,
-      patut: keadaanPanggilan.ringkasan.patut,
-    },
+    panggilan: panggilanWajib,
     sidangLewat: sidangLewat.length,
     basAda,
     adaBerkasPutusan: Boolean(putusan && putusan.adaBerkasPutusan),
@@ -1580,7 +1627,11 @@ async function statusLengkap(nomorPerkaraMentah) {
       tahapan,
       jadwal,
       biaya,
-      panggilan: keadaanPanggilan.ringkasan,
+      panggilan: {
+        ...keadaanPanggilan.ringkasan,
+        jumlahPihak: panggilanWajib.jumlahPihak,
+        patut: panggilanWajib.patut,
+      },
       penilaian,
       hariBerjalan,
       hariBersih,

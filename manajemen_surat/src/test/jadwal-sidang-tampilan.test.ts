@@ -28,6 +28,7 @@ import {
   agendaElitigasi,
   agendaMusyawarah,
   hariPutusan,
+  hasilSidangBelumDicatat,
   perkaraVerzetDari,
   putusHariIni,
   sidangElitigasi,
@@ -906,9 +907,18 @@ describe("kotak gabungan Perlu diperiksa", () => {
     const isi = komponen();
     expect(isi).toContain("const KEADAAN_MENUNTUT_TINDAKAN = KEADAAN_DASAR.filter((x) =>");
     expect(isi).toContain("NADA_PERLU_DIPERIKSA.includes(x.nada)");
+    // Sejak 24 September 2026 cocok() menerima saat pengadilan juga, dan
+    // satu anggota berjam disebut dengan namanya - lihat NADA_PERLU_DIPERIKSA.
     expect(isi).toContain(
-      "KEADAAN_MENUNTUT_TINDAKAN.some((keadaan) => keadaan.cocok(baris, antrian))"
+      "KEADAAN_MENUNTUT_TINDAKAN.some((keadaan) => keadaan.cocok(baris, antrian, saat))"
     );
+    const awal = isi.indexOf("kunci: KUNCI_PERLU_DIPERIKSA");
+    const blok = isi.slice(awal, isi.indexOf("...KEADAAN_DASAR,", awal));
+    expect(blok).toContain("belumTundaLewatBatas(baris, saat)");
+    expect(blok).toContain("JAM_BATAS_HASIL_SIDANG");
+    // Tepat tiga pemakaian: cocok gabungan, hitungan judulnya, dan tanda
+    // baris. Pemakaian keempat - mis. kotak saringan kembar - menyala merah.
+    expect(isi.split("belumTundaLewatBatas(baris, saat)").length - 1).toBe(3);
   });
 
   it("kotak gabungan tidak ikut menyapu dirinya sendiri", () => {
@@ -1035,7 +1045,26 @@ describe("dua sumber putusan, satu jawaban - butir 1, 2, dan 4", () => {
     const isi = komponen();
     expect(isi).toContain("cocok: (x) => sudahPutusHariIni(x),");
     expect(isi).toContain("cocok: (x) => !x.sudahPutus && !sudahPutusHariIni(x),");
-    expect(isi).toContain("cocok: (x) => !x.ditunda && !sudahPutusHariIni(x),");
+    // Belum tunda lewat lib sejak 24 September 2026 - satu fungsi dengan
+    // kotak gabungan dan tanda merah di baris, dan sudahPutusHariIni tetap
+    // dipakai di DALAMNYA.
+    expect(isi).toContain("cocok: (x) => hasilSidangBelumDicatat(x),");
+    expect(isi).not.toContain("cocok: (x) => !x.ditunda && !sudahPutusHariIni(x),");
+  });
+
+  it("hasil sidang belum dicatat: bukan yang ditunda, bukan yang diputus, bukan ikrar yang tercatat", () => {
+    expect(hasilSidangBelumDicatat(barisDitunda)).toBe(false);
+    expect(hasilSidangBelumDicatat(barisHasilPutusSaja)).toBe(false);
+    expect(hasilSidangBelumDicatat(barisPutusanResmiSaja)).toBe(false);
+    expect(hasilSidangBelumDicatat(barisBelumApaApa)).toBe(true);
+    // Ikrar yang dicatat "telah ikrar talak" - 127 baris 2025 s.d. Sep 2026.
+    expect(
+      hasilSidangBelumDicatat({ ...barisBelumApaApa, sidangIkrarTalak: true, alasanDitunda: "telah ikrar talak" })
+    ).toBe(false);
+    // Ikrar yang hanya tercatat di perkara_ikrar_talak.
+    expect(hasilSidangBelumDicatat({ ...barisBelumApaApa, sidangIkrarTalak: true, ikrarTercatat: true })).toBe(false);
+    // "0" adalah nilai bawaan yang tidak pernah diisi, bukan catatan.
+    expect(hasilSidangBelumDicatat({ ...barisBelumApaApa, alasanDitunda: "0" })).toBe(true);
   });
 
   it("penanda SELURUH BARIS dihitung sekali di tingkat baris, bukan di dalam sel antrian", () => {

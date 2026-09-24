@@ -1,4 +1,5 @@
-import { hasilSidangPutusan } from "@/lib/hasil-sidang";
+import { alasanTerisi, hasilSidangPutusan } from "@/lib/hasil-sidang";
+import type { SaatPengadilan } from "@/lib/waktu-pengadilan";
 
 /**
  * ============================================================================
@@ -482,8 +483,130 @@ export function sidangSelesaiHariIni(baris: {
   return Boolean(baris.ditunda) || sudahPutusHariIni(baris);
 }
 
-export function sidangElitigasi(baris: { agenda?: string; lewatEcourt?: boolean }): boolean {
+/**
+ * ============================================================================
+ * HASIL SIDANG BELUM DICATAT - SATU ATURAN UNTUK KOTAK, KOTAK GABUNGAN, TANDA
+ * ============================================================================
+ *
+ * Belum ditunda, belum diputus hari ini, DAN kolom hasilnya di SIPP masih
+ * kosong. Syarat ketiga itu yang baru (24 September 2026). Tanpanya, sidang
+ * ikrar talak yang sudah dicatat "telah ikrar talak" ikut tertagih -
+ * sudahPutusHariIni sengaja menolak sidang ikrar, dan ikrar yang terlaksana
+ * tetap ditunda = T. Diukur 1 Agustus - 11 September 2026 pada SIPP satker:
+ * rumus lama menagih 11 sidang, rumus ini 2.
+ *
+ * Satu pengecualian lagi datang dari bot: sidang ikrar yang ikrarnya sudah
+ * tercatat di perkara_ikrar_talak pada tanggal sidang yang sama
+ * (ikrarTercatat), walau kolom hasilnya dibiarkan kosong - panitera mencatat
+ * ikrarnya di tabel ikrar, bukan di kolom hasil sidang.
+ *
+ * Selama kotaknya kuning kekeliruan itu kecil. Sejak pukul 15:00 WITA ia ikut
+ * kotak merah "Perlu diperiksa", dan menagih merah pekerjaan yang sudah
+ * dikerjakan adalah cara tercepat membuat kotak itu tidak dipercaya.
+ *
+ * "belum ditunda atau belum ada keterangan sidangnya" - kata pengguna -
+ * dibaca sebagai SATU keadaan: hasil sidangnya belum dicatat. Dibaca sebagai
+ * "atau" harfiah, setiap sidang yang diputus ikut tertagih, sebab sidang yang
+ * diputus bertanda ditunda = T.
+ */
+export function hasilSidangBelumDicatat(baris: {
+  sudahPutus?: boolean;
+  tanggalPutusan?: string;
+  tanggalSidang?: string;
+  agenda?: string;
+  sidangIkrarTalak?: boolean;
+  ikrarTercatat?: boolean;
+  ditunda?: boolean;
+  alasanDitunda?: string;
+  tanggalSidangBerikut?: string;
+}): boolean {
+  if (baris.ditunda) return false;
+  if (sudahPutusHariIni(baris)) return false;
+  if (baris.ikrarTercatat) return false;
+  // Sidang BERIKUTNYA pada perkara yang sama sudah ada di jadwal: lanjutannya
+  // terbukti terbentuk, walau bendera tundanya tidak disetel. Menagihnya
+  // "agenda sidang berikutnya tidak terbentuk" menyatakan hal yang tidak
+  // benar (tinjauan 24 September 2026; terukur beberapa baris lampau).
+  if (baris.tanggalSidangBerikut) return false;
+  return !alasanTerisi(baris.alasanDitunda);
+}
+
+/**
+ * Pukul 15:00 WITA pada HARI SIDANGNYA sudah lewat.
+ *
+ * Tanggal lampau: selalu lewat - sidang kemarin yang belum dicatat lebih
+ * tertunggak daripada sidang hari ini, bukan kurang. Tanggal depan: tidak
+ * pernah. Jam yang belum terbaca (tanggal kosong): tidak pernah.
+ */
+export function lewatBatasHariSidang(
+  tanggalSidang: string | undefined,
+  saat: SaatPengadilan
+): boolean {
+  if (!tanggalSidang || !saat.tanggal) return false;
+  if (tanggalSidang < saat.tanggal) return true;
+  if (tanggalSidang > saat.tanggal) return false;
+  return saat.lewatBatas;
+}
+
+/**
+ * Anggota berjam kotak "Perlu diperiksa", dan syarat tanda merah di baris.
+ *
+ * ============================================================================
+ * GAGAL-TERTUTUP: MERAH HANYA BILA KETIADAAN HASILNYA TERBUKTI
+ * ============================================================================
+ *
+ * "Belum diputus" dibaca dari peta putusan bot, dan "ikrarnya belum tercatat"
+ * dari peta ikrar. Bila salah satunya GAGAL dibaca, peta itu kosong - dan
+ * peta kosong terbaca "tidak ada yang putus". Tinjauan 24 September 2026
+ * mengukurnya: pada 4 September 2026 saja 18 sidang yang sudah diputus hanya
+ * tertahan oleh peta putusan.
+ *
+ * Karena itu bot mengirim putusanTerbaca dan ikrarTerbaca tiap baris, dan
+ * tanda merah menyala hanya bila keduanya terbukti terbaca (ikrar hanya
+ * dituntut pada sidang ikrar). Yang tidak mengirimnya - bot lama - dianggap
+ * tidak terbaca: tanda merahnya diam, kotak kuning Belum tunda tetap ada.
+ */
+export function belumTundaLewatBatas(
+  baris: Parameters<typeof hasilSidangBelumDicatat>[0] & {
+    putusanTerbaca?: boolean;
+    ikrarTerbaca?: boolean;
+  },
+  saat: SaatPengadilan
+): boolean {
+  if (baris.putusanTerbaca !== true) return false;
+  if (sidangIkrar(baris) && baris.ikrarTerbaca !== true) return false;
+  return lewatBatasHariSidang(baris.tanggalSidang, saat) && hasilSidangBelumDicatat(baris);
+}
+
+/**
+ * ============================================================================
+ * SIDANG PERTAMA TIDAK PERNAH e-LITIGASI
+ * ============================================================================
+ *
+ * Persetujuan tergugat untuk bersidang secara elektronik baru diketahui PADA
+ * sidang pertama (lihat AGENDA_ELITIGASI di atas) - sidang itu sendiri selalu
+ * dihadiri di ruang sidang. Diukur di SIPP satker: 58 dari 311 sidang yang
+ * dahulu tertandai e-Litigasi sepanjang 2026 (19%) adalah sidang pertama,
+ * hampir semuanya permohonan sidang-sehari yang agendanya ditulis
+ * "Pemeriksaan Identitas, Penasihatan, Pemeriksaan Pokok Perkara, Kesimpulan"
+ * - tertandai hanya karena kata "kesimpulan".
+ *
+ * Sejak 24 September 2026 tulisan agenda e-Litigasi dimerahkan di Antrian
+ * Sidang, dan kekeliruan itu menjadi mencolok: sidang yang wajib dihadiri
+ * tampak "lewat aplikasi". Dipotong di SINI, bukan di layar, supaya kotak
+ * e-Litigasi dan warna agendanya berubah bersama - kotak yang menghitung 4
+ * harus menunjuk 4 baris yang merah.
+ *
+ * `=== 1`, bukan `<= 1`: di layar urutanSidang 0 berarti TIDAK TERBACA, dan
+ * yang tidak terbaca tidak dikecualikan diam-diam.
+ */
+export function sidangElitigasi(baris: {
+  agenda?: string;
+  lewatEcourt?: boolean;
+  urutanSidang?: number;
+}): boolean {
   if (!baris.lewatEcourt) return false;
+  if (baris.urutanSidang === 1) return false;
   return agendaElitigasi(baris.agenda || "");
 }
 
@@ -554,8 +677,28 @@ export function perkaraVerzetDari(...teks: Array<string | undefined | null>): bo
  * diperbarui: penanda merah baru ditambahkan, tidak masuk kelompoknya, dan
  * tidak ada yang gagal - kotaknya hanya diam-diam menghitung kurang. Karena
  * itu keanggotaannya dihitung dari nada masing-masing penanda.
+ *
+ * ============================================================================
+ * SATU ANGGOTA YANG TIDAK DIBACA DARI NADA: BELUM TUNDA SESUDAH 15:00 WITA
+ * ============================================================================
+ *
+ * Diminta pengguna 24 September 2026. "Belum tunda" tetap kuning - alasan
+ * belum-bas di atas berlaku juga baginya pada pagi hari. Yang berubah hanya
+ * sesudah pukul 15:00 WITA pada hari sidangnya. Nada adalah sifat tetap
+ * sebuah kotak, sedangkan ini sifat yang berubah menurut jam, sehingga ia
+ * tidak dapat diungkapkan sebagai nada. Kotak merah tersendiri ditolak: dua
+ * kotak yang menyaring hal yang hampir sama membuat pembacanya mencari beda
+ * yang tidak ada. Karena itu ia disebut SATU kali, dengan namanya, pada
+ * cocok() kotak gabungan - lihat belumTundaLewatBatas.
  */
 export const NADA_PERLU_DIPERIKSA: readonly string[] = ["bahaya"];
 
 /** Kunci kotak gabungan. Dipakai komponen dan ujinya. */
 export const KUNCI_PERLU_DIPERIKSA = "perlu-diperiksa";
+
+/**
+ * Bagian angka "Perlu diperiksa" yang datang dari aturan pukul 15:00 - hanya
+ * disebut di judulnya, bukan kotak sendiri. Sama dengan kunci saklar
+ * Tampilan-nya (wajib) di tampilan-antrian-sidang.
+ */
+export const KUNCI_BELUM_TUNDA_LEWAT_BATAS = "belum-tunda-lewat-batas";

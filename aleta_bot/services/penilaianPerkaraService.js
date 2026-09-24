@@ -360,6 +360,16 @@ function nilaiPerkara(fakta = {}) {
     catat("panggilanPatut", null, "Belum ada sidang yang berlalu, jadi belum ada panggilan yang jatuh tempo.", {
       berlaku: false,
     });
+  } else if (fakta.panggilan && fakta.panggilan.jumlahPihak === 0 && Number(fakta.panggilan.tidakWajib) > 0) {
+    // Seluruh pihak hadir pada sidang sebelumnya - tidak ada panggilan yang
+    // wajib, jadi tidak ada yang dapat dinilai patut atau tidak. Bukan
+    // "tidak terbaca": keadaannya terbaca, dan jawabannya memang kosong.
+    catat(
+      "panggilanPatut",
+      null,
+      "Seluruh pihak hadir pada sidang sebelumnya - tidak ada panggilan yang wajib untuk sidang acuan.",
+      { berlaku: false }
+    );
   } else if (!fakta.panggilan || fakta.panggilan.jumlahPihak === 0) {
     catat("panggilanPatut", null, "Sidang sudah berlalu, tetapi keadaan panggilannya tidak terbaca.");
   } else {

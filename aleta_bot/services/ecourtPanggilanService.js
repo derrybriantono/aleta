@@ -480,22 +480,72 @@ function susunKeadaanPanggilan({
   // SEBELUMNYA. null berarti tidak diketahui - dan yang tidak diketahui
   // tidak membebaskan siapa pun. Lihat catatan pada penandaan di bawah.
   sisiWajib = null,
+  // Sidang yang dinilai. Relaas SIPP membawa sidang_id-nya sendiri; tanpa
+  // nomor ini yang dipakai tanggal sidangnya.
+  sidangId = null,
 } = {}) {
+  const tanggalIni = teksTanggal(tanggalSidang);
+  const idSidangIni = sidangId ? String(sidangId) : "";
+
+  // ======================================================================
+  // HANYA PANGGILAN UNTUK SIDANG INI
+  // ======================================================================
+  //
+  // rincianSidang sengaja memulangkan SELURUH relaas perkara - riwayatnya
+  // dibaca layar. Dulu seluruhnya dipetakan per nama dan yang terakhir
+  // menang, sehingga relaas sidang LAIN dinilai untuk sidang ini:
+  //
+  //   - sidang lama dibuka: relaas sidang sesudahnya yang terpakai, lalu
+  //     dinilai "dikirim setelah sidang";
+  //   - sidang ini belum ada relaasnya: relaas sidang sebelumnya terpakai
+  //     dan dinilai "terkirim, patut". Diukur di sipp_donggala, perkara
+  //     e-Court Jan 2025 - Sep 2026: 1.372 sidang lanjutan yang tergugatnya
+  //     wajib dipanggil; 115 di antaranya tanpa relaas tergugat untuk sidang
+  //     itu tetapi punya relaas lama - seluruhnya tampil sudah dipanggil.
+  //
+  // Daftar jadwal (keadaanPanggilanSidang) sejak awal menyaring per
+  // sidang_id; panel rincian kini menjawab hal yang sama.
+  //
+  // sidang_id pada relaas adalah sidang YANG DIPANGGIL: 14.462 dari 14.462
+  // relaas bertanggal jatuh pada atau sebelum tanggal sidangnya. Baris tanpa
+  // keterangan sidang sama sekali tidak dapat dipastikan untuk sidang mana
+  // dan diikutkan seperti semula (di SIPP satker: nol baris).
+  const untukSidangIni = (item) => {
+    // Sidang yang dinilai TIDAK diketahui sama sekali (jadwalnya gagal
+    // dibaca, atau pemanggil lama): tidak ada yang dapat disaring, dan
+    // seluruh relaas dipakai seperti sebelum penyaringan ini ada. Membuang
+    // seluruhnya membuat tiap pihak tampil "belum dipanggil" - tuduhan yang
+    // lahir dari ketidaktahuan (tinjauan 24 September 2026).
+    if (!idSidangIni && !tanggalIni) return true;
+    const idItem = item && item.sidangId ? String(item.sidangId) : "";
+    const tanggalItem = item ? teksTanggal(item.tanggalSidang) : null;
+    if (idSidangIni && idItem) return idItem === idSidangIni;
+    if (tanggalIni && tanggalItem) return tanggalItem === tanggalIni;
+    return !idItem && !tanggalItem;
+  };
+
+  // ======================================================================
+  // e-SUMMONS SIDANG LAIN BUKAN PANGGILAN SIDANG INI
+  // ======================================================================
+  //
+  // Tanggal sidang dari aleta_bot_ecourt_panggilan tiba sebagai Date, bukan
+  // teks. String(Date) dipotong sepuluh huruf berbunyi "Wed Sep 23" dan TIDAK
+  // PERNAH sama dengan "2026-09-23" - pencocokan lama selalu gagal, lalu yang
+  // tersimpan e-Summons PERTAMA pihak itu, yaitu yang paling lama.
   const petaPanggilan = new Map();
   for (const item of panggilan) {
     const kunci = normalkanNama(item.namaPihak);
     if (!kunci) continue;
-    const cocokSidang =
-      tanggalSidang && item.tanggalSidang
-        ? String(item.tanggalSidang).slice(0, 10) === String(tanggalSidang).slice(0, 10)
-        : false;
-    if (!petaPanggilan.has(kunci) || cocokSidang) petaPanggilan.set(kunci, item);
+    const tanggalItem = teksTanggal(item.tanggalSidang);
+    if (tanggalIni && tanggalItem && tanggalItem !== tanggalIni) continue;
+    petaPanggilan.set(kunci, item);
   }
 
   const petaRelaas = new Map();
   for (const item of relaas) {
     const kunci = normalkanNama(item.namaPihak);
     if (!kunci) continue;
+    if (!untukSidangIni(item)) continue;
     petaRelaas.set(kunci, item);
   }
 
@@ -518,21 +568,40 @@ function susunKeadaanPanggilan({
   const catatPihak = (nama, isian) => {
     const kunci = normalkanNama(nama);
     if (!kunci) return;
-    const sudah = petaPihak.get(kunci) || { nama, peran: "", persetujuan: "belum" };
+    const sudah = petaPihak.get(kunci) || {
+      nama,
+      peran: "",
+      persetujuan: "belum",
+      email: "",
+      terbacaEcourt: false,
+    };
     petaPihak.set(kunci, {
       nama: sudah.nama || nama,
       // Kedudukan dari mana pun yang menyebutkannya lebih dulu; keduanya
       // menyebut hal yang sama.
       peran: sudah.peran || isian.peran || "",
       persetujuan: isian.persetujuan || sudah.persetujuan || "belum",
+      // Email dari tabel persetujuan e-Court - domisili elektronik pihak.
+      // Kosong DI SANA berarti e-Summons mustahil terkirim kepadanya.
+      email: sudah.email || String(isian.email || "").trim(),
+      // Pihak ini terbaca di tabel persetujuan e-Court. Tanpa itu, "tanpa
+      // email" hanya berarti "belum ditarik", bukan "tidak punya".
+      terbacaEcourt: sudah.terbacaEcourt || isian.terbacaEcourt === true,
     });
   };
 
+  // Daftar pihak tetap dibangun dari SELURUH relaas perkara - kedudukan pihak
+  // dibaca dari sana. Yang disaring per sidang hanya jejak panggilannya.
   for (const item of relaas) {
     catatPihak(item.namaPihak, { peran: item.peran || "" });
   }
   for (const item of persetujuan) {
-    catatPihak(item.nama, { peran: item.peran || "", persetujuan: item.persetujuan });
+    catatPihak(item.nama, {
+      peran: item.peran || "",
+      persetujuan: item.persetujuan,
+      email: item.email || "",
+      terbacaEcourt: true,
+    });
   }
 
   const daftarPihak = [...petaPihak.values()];
@@ -567,20 +636,27 @@ function susunKeadaanPanggilan({
       // secara elektronik. Terukur salah pada 7.839 baris, termasuk 5.084
       // relaas yang jurusitanya bertemu langsung dengan orangnya.
       //
-      // Pendaftaran e-Court kini hanya dipakai ketika sandinya tidak terbaca
-      // sama sekali - dan bahkan di sana ia hanya tebakan terakhir.
+      // Sandi kosong atau asing tanpa jejak pos tidak ditebak ke mana pun (19
+      // baris ket_temu kosong di SIPP satker) - terlaksana dikosongkan, persis
+      // janji di kepala JALUR_SANDI.
+      //
+      // Dulu bacaRelaas memulangkan jalur "langsung" untuk sandi kosong, lalu
+      // di sini terbaca "biasa", lalu penggugat e-Court tertuduh salah
+      // saluran. Cabang tebakan pendaftaran e-Court di ujung ungkapan lama
+      // karena itu kode mati - komentarnya berjanji "tidak ditebak", kodenya
+      // menebak "biasa". Jalur pos tetap dikenali dari resi atau tanggal pos
+      // walau sandinya kosong: itu jejak nyata, bukan tebakan.
+      const sandiDikenal = Boolean(JALUR_SANDI[jejakRelaas.sandi]);
       terlaksana =
         jejakRelaas.jalur === "pos"
           ? "surat_tercatat"
-          : jejakRelaas.jalur === "elektronik"
-            ? "elektronik"
-            : jejakRelaas.jalur === "pengumuman"
-              ? "pengumuman"
-              : jejakRelaas.jalur === "langsung"
-                ? "biasa"
-                : lewatEcourt
-                  ? "elektronik"
-                  : "biasa";
+          : !sandiDikenal
+            ? ""
+            : jejakRelaas.jalur === "elektronik"
+              ? "elektronik"
+              : jejakRelaas.jalur === "pengumuman"
+                ? "pengumuman"
+                : "biasa";
       tanggalPanggilan = jejakRelaas.tanggalKirim;
       diterima = jejakRelaas.diterima;
       buktiPenerimaan = jejakRelaas.bukti;
@@ -604,19 +680,57 @@ function susunKeadaanPanggilan({
       buktiPenerimaan = "tercatat terkirim di e-Court";
     }
 
+    // ====================================================================
+    // SANDI 'E' DI SIPP BUKAN BUKTI e-SUMMONS TERKIRIM
+    // ====================================================================
+    //
+    // ket_temu 'E' dipilih jurusita pada borang relaas SIPP; ia menyatakan apa
+    // yang DICATAT, bukan apa yang dikirim e-Court. Yang membuktikan panggilan
+    // elektronik sungguh terkirim adalah tabel e-Summons e-Court - dan
+    // e-Summons mustahil terkirim kepada pihak yang tidak punya email di sana.
+    //
+    // Perkara 385/Pdt.G/2026/PA.Dgl: tergugat belum menjawab persetujuan,
+    // tidak punya email di e-Court, dipanggil lewat surat tercatat - tetapi
+    // relaasnya bersandi 'E'. Relaas 4 September-nya bahkan melampirkan
+    // berkas resi pos (resi_19975_35524.pdf) di kolom relaas: satu-satunya
+    // baris 'E' berlampiran resi dari 14.495 relaas satker. ALETA menuduhnya
+    // "dipanggil lewat Elektronik (e-Summons)", penghambat BERAT.
+    //
+    // Penjagaan aslinya tetap: e-Summons yang TERCATAT terkirim di e-Court
+    // kepada tergugat yang belum setuju tetap salah saluran. Yang dicabut
+    // hanya tuduhan yang bersandar pada sandi SIPP saja. Salurannya juga tidak
+    // ditebak menjadi surat tercatat - relaasnya tanpa resi - melainkan
+    // dikosongkan dan diberi catatan supaya sandinya dibetulkan: tanpa sandi
+    // S dan nomor resi, bukti lacak kiriman yang dituntut angka 8 huruf c
+    // tidak pernah tercatat di SIPP.
+    //
+    // pihak.email di SIPP sengaja TIDAK dipakai: 22 relaas 'E' kepada tergugat
+    // e-Court tahun 2026 pihaknya tanpa email di SIPP, dan 10 di antaranya
+    // berketerangan "panggilan elektronik" - kolom itu tidak lengkap, bukan
+    // bukti ketiadaan domisili elektronik.
+    const eSummonsTerkirim = Boolean(panggilanElektronik && panggilanElektronik.dikirimPada);
+    let catatanSaluran = "";
+    if (
+      terlaksana === "elektronik" &&
+      jejakRelaas.sandi === "E" &&
+      seharusnya !== "elektronik" &&
+      !eSummonsTerkirim
+    ) {
+      terlaksana = "";
+      // Perkara yang tidak terdaftar e-Court tidak punya apa pun untuk ditarik
+      // dari sana - menyuruh menariknya adalah tindak lanjut yang tidak akan
+      // pernah menjawab catatannya (sekitar 80 relaas 'E' pada perkara bukan
+      // e-Court di SIPP satker, 2020-2024).
+      catatanSaluran = !lewatEcourt
+        ? "SIPP mencatat Panggilan Elektronik pada perkara yang tidak terdaftar lewat e-Court - periksa sandi relaasnya. Bila dikirim lewat pos, sandinya Surat Tercatat POS beserta nomor resinya; bila disampaikan jurusita, sandinya Bertemu atau Tidak Bertemu."
+        : !pihak.terbacaEcourt
+        ? "SIPP mencatat Panggilan Elektronik, tetapi persetujuan dan e-Summons pihak ini belum terbaca dari e-Court - tarik perkaranya dari Kendali Berkas untuk memastikan salurannya."
+        : !pihak.email
+          ? "SIPP mencatat Panggilan Elektronik, tetapi pihak ini tidak punya email di e-Court dan e-Court tidak mencatat e-Summons kepadanya - sandi relaas di SIPP kemungkinan keliru. Bila dikirim lewat pos, sandinya Surat Tercatat POS beserta nomor resinya."
+          : "SIPP mencatat Panggilan Elektronik, tetapi e-Court tidak mencatat e-Summons kepada pihak ini untuk sidang ini - periksa sandi relaas di SIPP.";
+    }
+
     tanggalPanggilan = teksTanggal(tanggalPanggilan);
-
-    const kepatutan = nilaiKepatutan({
-      tanggalPanggilan,
-      tanggalSidang,
-      // Dinilai menurut jalur yang SEHARUSNYA, bukan yang terlanjur dipakai.
-      // Panggilan lewat jalur keliru tidak menjadi patut hanya karena jalur
-      // kelirunya kebetulan berambang lebih longgar.
-      jalur: seharusnya,
-      diterima,
-    });
-
-    const salahSaluran = Boolean(terlaksana) && terlaksana !== seharusnya;
 
     // ====================================================================
     // YANG HADIR SIDANG LALU TIDAK PERLU DIPANGGIL LAGI
@@ -635,6 +749,38 @@ function susunKeadaanPanggilan({
     const tidakPerluDipanggil =
       Array.isArray(sisiWajib) && sisi !== 0 && !sisiWajib.includes(sisi);
 
+    const kepatutanDasar = nilaiKepatutan({
+      tanggalPanggilan,
+      tanggalSidang,
+      // Dinilai menurut jalur yang SEHARUSNYA, bukan yang terlanjur dipakai.
+      // Panggilan lewat jalur keliru tidak menjadi patut hanya karena jalur
+      // kelirunya kebetulan berambang lebih longgar.
+      jalur: seharusnya,
+      diterima,
+    });
+
+    // ====================================================================
+    // PIHAK YANG TIDAK WAJIB DIPANGGIL TIDAK DINILAI KEPATUTANNYA
+    // ====================================================================
+    //
+    // Sejak relaas dinilai per sidang (24 September 2026), pihak yang hadir
+    // pada sidang sebelumnya lazimnya tidak punya relaas untuk sidang ini -
+    // memang tidak ada yang perlu dikirim. Tanpa pembeda ini nilaiKepatutan
+    // menjawab "belum_dikirim", layar menggambar lencana merah "belum dapat
+    // dinilai" di samping "tidak perlu dipanggil", dan Status Perkara
+    // menghitungnya tidak patut. Diukur di SIPP satker: 865 dari 1.129 sidang
+    // lanjutan 2026 penggugatnya hadir di sidang sebelumnya dan tidak punya
+    // relaas untuk sidang itu.
+    //
+    // Yang tetap dinilai: pihak tidak wajib yang TOH dipanggil - relaasnya
+    // ada, dan kepatutannya fakta yang dapat diperiksa.
+    const kepatutan =
+      tidakPerluDipanggil && !tanggalPanggilan
+        ? { ...kepatutanDasar, perluDiterima: false, alasan: "tidak_wajib_dipanggil" }
+        : kepatutanDasar;
+
+    const salahSaluran = Boolean(terlaksana) && terlaksana !== seharusnya;
+
     hasil.push({
       nama: pihak.nama,
       peran: pihak.peran,
@@ -645,6 +791,12 @@ function susunKeadaanPanggilan({
       tidakPerluDipanggil,
       belumDipanggil: !tanggalPanggilan && !tidakPerluDipanggil,
       salahSaluran,
+      // Sandi relaas SIPP yang dinilai, dan apakah e-Court mencatat e-Summons
+      // kepada pihak ini untuk sidang ini - supaya catatannya dapat ditelusuri.
+      sandiRelaas: jejakRelaas.sandi || "",
+      eSummonsTerkirim,
+      terbacaEcourt: pihak.terbacaEcourt === true,
+      catatanSaluran,
       tanggalPanggilan,
       diterima,
       buktiPenerimaan,
@@ -662,6 +814,9 @@ function susunKeadaanPanggilan({
     // diberitahu di ruang sidang.
     tidakPerluDipanggil: hasil.filter((x) => x.tidakPerluDipanggil).length,
     salahSaluran: hasil.filter((x) => x.salahSaluran).length,
+    // Sandi E tanpa e-Summons - bukan salah saluran, melainkan catatan SIPP
+    // yang bertentangan dengan e-Court. Dihitung tersendiri, bukan disembunyikan.
+    saluranBelumPasti: hasil.filter((x) => Boolean(x.catatanSaluran)).length,
     tidakPatut: hasil.filter((x) => x.kepatutan.patut === false).length,
     // Terkirim tepat waktu tetapi penerimaannya belum terbukti - berbeda dari
     // tidak patut, dan tindak lanjutnya pun berbeda.
@@ -674,7 +829,16 @@ function susunKeadaanPanggilan({
     patut: hasil.filter((x) => x.kepatutan.patut === true).length,
   };
 
-  return { pengaturan: getSettings(), jalur: JALUR, lewatEcourt, pihak: hasil, ringkasan };
+  return {
+    pengaturan: getSettings(),
+    jalur: JALUR,
+    lewatEcourt,
+    // Sidang yang dinilai - layar status perkara menyebutkannya.
+    sidangId: idSidangIni || null,
+    tanggalSidang: tanggalIni,
+    pihak: hasil,
+    ringkasan,
+  };
 }
 
 module.exports = {

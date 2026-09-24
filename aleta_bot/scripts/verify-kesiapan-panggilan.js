@@ -268,12 +268,16 @@ console.log("\n== Perkara nyata 399/Pdt.G/2026/PA.Dgl, sidang 23 Juli 2026 ==");
     ],
     panggilan: [],
     relaas: [
+      // Sandinya sandi SIPP sungguhan perkara ini (Sakina E, Kuswandi S).
+      // Sejak 2.33.0 sandi kosong tidak ditebak ke jalur mana pun; fixture
+      // tanpa ketTemu karena itu tidak lagi menggambarkan relaas yang ada.
       {
         namaPihak: "Sakina alias Nur Sakina binti Moh. Iwan",
         tanggalRelaas: "2026-07-09",
         tanggalKirimPos: null,
         statusPos: null,
         noResiPos: "",
+        ketTemu: "E",
       },
       {
         namaPihak: "Kuswandi bin Said Hada",
@@ -281,6 +285,7 @@ console.log("\n== Perkara nyata 399/Pdt.G/2026/PA.Dgl, sidang 23 Juli 2026 ==");
         tanggalKirimPos: "2026-07-11",
         statusPos: 1,
         noResiPos: "P2607110003017",
+        ketTemu: "S",
       },
     ],
   });
@@ -524,6 +529,8 @@ console.log("\n== Kedudukan pihak dibaca dari SIPP saat e-Court belum ditarik ==
         tanggalKirimPos: null,
         statusPos: null,
         noResiPos: "",
+        // Sandi SIPP sungguhan relaas ini.
+        ketTemu: "E",
       },
     ],
   });
@@ -576,6 +583,176 @@ console.log("\n== Pihak dari kedua sumber digabung ==");
   periksa("kedudukan dari SIPP terbawa", hasil.pihak[0].peran === "Tergugat/Termohon");
   periksa("persetujuan dari e-Court terbawa", hasil.pihak[0].persetujuan === "tidak_setuju");
   periksa("jalurnya surat tercatat", hasil.pihak[0].seharusnya === "surat_tercatat");
+}
+
+console.log("\n== Sandi kosong tidak ditebak ==");
+{
+  // Sifat yang dijaga: relaas tanpa sandi dan tanpa jejak pos tidak ditebak
+  // ke jalur mana pun - tidak "biasa", tidak pula "elektronik" karena
+  // perkaranya terdaftar e-Court. Menebak berarti menuduh salah saluran.
+  const hasil = panggilan.susunKeadaanPanggilan({
+    tanggalSidang: "2026-08-31", lewatEcourt: true, persetujuan: [], panggilan: [],
+    relaas: [{ namaPihak: "Renaldi", peran: "Penggugat/Pemohon", pihakKe: 1, tanggalRelaas: "2026-08-20", noResiPos: "" }],
+  });
+  periksa("sandi kosong: saluran tidak ditebak", hasil.pihak[0].terlaksana === "");
+  periksa("sandi kosong: tidak salah saluran", hasil.ringkasan.salahSaluran === 0);
+  periksa("sandi kosong: tidak pula dicatat sebagai saluran belum pasti", hasil.ringkasan.saluranBelumPasti === 0);
+}
+{
+  // Jejak pos tetap dikenali walau sandinya kosong - resi adalah jejak nyata.
+  const hasil = panggilan.susunKeadaanPanggilan({
+    tanggalSidang: "2026-08-31", lewatEcourt: true, persetujuan: [], panggilan: [],
+    relaas: [{ namaPihak: "Salbi", peran: "Tergugat/Termohon", pihakKe: 2, tanggalRelaas: "2026-08-22", tanggalKirimPos: "2026-08-20", statusPos: 1, noResiPos: "P9" }],
+  });
+  periksa("sandi kosong berresi: tetap surat tercatat", hasil.pihak[0].terlaksana === "surat_tercatat");
+}
+
+console.log("\n== Sandi E tanpa e-Summons: 385/Pdt.G/2026/PA.Dgl, sidang ke-9 23 Sep 2026 ==");
+const relaas385 = [
+  { sidangId: "19489", tanggalSidang: "2026-07-15", namaPihak: "Isabella binti Muhamad Aini", peran: "Penggugat/Pemohon", pihakKe: 1, tanggalRelaas: "2026-06-30", noResiPos: "", ketTemu: "E" },
+  { sidangId: "19489", tanggalSidang: "2026-07-15", namaPihak: "Taufik Qurahman bin Dasril", peran: "Tergugat/Termohon", pihakKe: 2, tanggalRelaas: "2026-07-03", tanggalKirimPos: "2026-07-02", statusPos: 1, noResiPos: "P2607020023688", ketTemu: "S" },
+  { sidangId: "19975", tanggalSidang: "2026-09-09", namaPihak: "Taufik Qurahman bin Dasril", peran: "Tergugat/Termohon", pihakKe: 2, tanggalRelaas: "2026-09-04", noResiPos: "", ketTemu: "E" },
+  { sidangId: "S9", tanggalSidang: "2026-09-23", namaPihak: "Taufik Qurahman bin Dasril", peran: "Tergugat/Termohon", pihakKe: 2, tanggalRelaas: "2026-09-17", noResiPos: "", ketTemu: "E" },
+];
+const isian385 = {
+  tanggalSidang: "2026-09-23", sidangId: "S9", lewatEcourt: true, sisiWajib: [2],
+  persetujuan: [
+    { nama: "Isabella binti Muhamad Aini", peran: "Penggugat", email: "isabella@contoh.id", persetujuan: "setuju" },
+    { nama: "Taufik Qurahman bin Dasril", peran: "Tergugat", email: "", persetujuan: "belum" },
+  ],
+  panggilan: [{ namaPihak: "Isabella binti Muhamad Aini", tanggalSidang: "2026-07-15", dikirimPada: "2026-06-30" }],
+  relaas: relaas385,
+};
+const taufik = (h) => h.pihak.find((x) => /Taufik/.test(x.nama));
+{
+  const h = panggilan.susunKeadaanPanggilan(isian385);
+  const t = taufik(h);
+  periksa("tergugat: jalur seharusnya surat tercatat", t.seharusnya === "surat_tercatat");
+  // Sifat yang dijaga: sandi E di SIPP saja BUKAN bukti e-Summons terkirim.
+  periksa("tergugat: tidak ditandai salah saluran", t.salahSaluran === false && h.ringkasan.salahSaluran === 0);
+  periksa("tergugat: salurannya tidak ditebak", t.terlaksana === "");
+  periksa("sebabnya disebut: tidak punya email di e-Court", /tidak punya email/.test(t.catatanSaluran));
+  periksa("sandi yang dinilai ikut dikirim", t.sandiRelaas === "E" && t.eSummonsTerkirim === false && t.terbacaEcourt === true);
+  periksa("dihitung sebagai saluran belum pasti", h.ringkasan.saluranBelumPasti === 1);
+  periksa("relaas SIDANG INI yang dipakai (17 Sep)", t.tanggalPanggilan === "2026-09-17");
+  periksa("dinilai dengan ambang surat tercatat", t.kepatutan.ambang === 6);
+  periksa("6 hari kalender: patut", t.kepatutan.patut === true);
+  periksa("sidang yang dinilai disebutkan", h.sidangId === "S9" && h.tanggalSidang === "2026-09-23");
+
+  const siap = kesiapan.nilaiKesiapan({
+    ...isian385,
+    majelis: [{ nama: "Ahmad" }], panitera: [{ nama: "Dewi" }],
+    dokumen: [{ adaPdf: true, statusVerifikasi: "valid" }], nomorPihak: [{ adaNomor: true }],
+  });
+  periksa("penghambat berat salah saluran tidak menyala", !siap.penghambat.some((x) => x.kunci === "salah_saluran"));
+  const catatan = siap.penghambat.find((x) => x.kunci === "saluran_belum_pasti");
+  periksa("diganti catatan ringan", Boolean(catatan) && catatan.tingkat === "ringan");
+  periksa("sidang tidak disebut bermasalah karena itu", siap.keadaan !== "bermasalah");
+}
+{
+  // Sifat yang dijaga: penjagaan asli TIDAK dibungkam. e-Summons yang tercatat
+  // terkirim kepada tergugat yang belum setuju tetap salah saluran.
+  const h = panggilan.susunKeadaanPanggilan({
+    ...isian385,
+    persetujuan: [isian385.persetujuan[0], { nama: "Taufik Qurahman bin Dasril", peran: "Tergugat", email: "t@contoh.id", persetujuan: "belum" }],
+    panggilan: [{ namaPihak: "Taufik Qurahman bin Dasril", tanggalSidang: "2026-09-23", dikirimPada: "2026-09-17" }],
+  });
+  periksa("e-Summons sungguh terkirim: tetap salah saluran", taufik(h).salahSaluran === true);
+  periksa("dan tanpa catatan saluran", !taufik(h).catatanSaluran);
+  periksa("dan tidak dihitung saluran belum pasti", h.ringkasan.saluranBelumPasti === 0);
+}
+{
+  // Tanggal dari basis data ALETA tiba sebagai Date - dulu tidak pernah cocok.
+  const h = panggilan.susunKeadaanPanggilan({
+    ...isian385,
+    panggilan: [{ namaPihak: "Taufik Qurahman bin Dasril", tanggalSidang: new Date(2026, 8, 23), dikirimPada: new Date(2026, 8, 17, 10) }],
+  });
+  periksa("tanggal sidang ber-tipe Date tetap cocok", taufik(h).eSummonsTerkirim === true);
+  const lain = panggilan.susunKeadaanPanggilan({
+    ...isian385,
+    panggilan: [{ namaPihak: "Taufik Qurahman bin Dasril", tanggalSidang: "2026-09-09", dikirimPada: "2026-09-04" }],
+  });
+  periksa("e-Summons sidang lain bukan bukti sidang ini", taufik(lain).salahSaluran === false);
+  periksa("e-Summons sidang lain: tidak terbaca terkirim", taufik(lain).eSummonsTerkirim === false);
+}
+{
+  const h = panggilan.susunKeadaanPanggilan({ ...isian385, persetujuan: [] });
+  periksa("e-Court belum ditarik: tidak menuduh", taufik(h).salahSaluran === false);
+  periksa("e-Court belum ditarik: disebut belum terbaca", /belum terbaca/.test(taufik(h).catatanSaluran));
+}
+{
+  // Pihak punya email di e-Court tetapi e-Court tidak mencatat e-Summons -
+  // kalimatnya berbeda dari yang tanpa email.
+  const h = panggilan.susunKeadaanPanggilan({
+    ...isian385,
+    persetujuan: [isian385.persetujuan[0], { nama: "Taufik Qurahman bin Dasril", peran: "Tergugat", email: "t@contoh.id", persetujuan: "belum" }],
+  });
+  periksa("beremail tanpa e-Summons: tidak salah saluran", taufik(h).salahSaluran === false);
+  periksa("beremail tanpa e-Summons: disuruh periksa sandi", /periksa sandi relaas/.test(taufik(h).catatanSaluran));
+}
+
+console.log("\n== Relaas untuk SIDANG INI, bukan yang terakhir di perkara ==");
+{
+  const pertama = taufik(panggilan.susunKeadaanPanggilan({ ...isian385, tanggalSidang: "2026-07-15", sidangId: "19489", sisiWajib: null }));
+  periksa("sidang ke-1: relaas pos 2 Jul yang dipakai", pertama.tanggalPanggilan === "2026-07-02");
+  periksa("sidang ke-1: bukan 'dikirim setelah sidang'", pertama.kepatutan.alasan !== "dikirim_setelah_hari_sidang");
+  // Sifat yang dijaga: relaas sidang lama tidak menutupi panggilan yang belum ada.
+  const belum = taufik(panggilan.susunKeadaanPanggilan({ ...isian385, relaas: relaas385.slice(0, 3) }));
+  periksa("sidang ke-9 tanpa relaasnya: belum dipanggil", belum.belumDipanggil === true);
+  periksa("dan tidak dinilai patut", belum.kepatutan.patut !== true);
+  const tanpaId = taufik(panggilan.susunKeadaanPanggilan({ ...isian385, sidangId: null }));
+  periksa("tanpa nomor sidang, tanggalnya mencukupi", tanpaId.tanggalPanggilan === "2026-09-17");
+  // Pihak tetap terdaftar walau relaasnya untuk sidang lain - kedudukannya
+  // dibaca dari seluruh relaas perkara.
+  periksa("pihak tetap terdaftar dari seluruh relaas", belum.peran === "Tergugat/Termohon");
+}
+
+console.log("\n== Tinjauan 24 Sep 2026: pihak yang tidak wajib dipanggil tidak dinilai ==");
+{
+  // Isabella (penggugat) hadir sidang sebelumnya: sisiWajib [2]. Relaasnya
+  // hanya untuk sidang pertama, jadi untuk sidang ke-9 memang tidak ada.
+  const h = panggilan.susunKeadaanPanggilan(isian385);
+  const isabella = h.pihak.find((x) => /Isabella/.test(x.nama));
+  periksa("penggugat yang hadir: tidak perlu dipanggil", isabella.tidakPerluDipanggil === true);
+  periksa("penggugat yang hadir: kepatutannya tidak dinilai", isabella.kepatutan.alasan === "tidak_wajib_dipanggil");
+  periksa("penggugat yang hadir: bukan patut=false", isabella.kepatutan.patut !== false);
+  periksa("penggugat yang hadir: penerimaan tidak disyaratkan", isabella.kepatutan.perluDiterima === false);
+  periksa("penggugat yang hadir: tidak dihitung tidak patut", h.ringkasan.tidakPatut === 0);
+  // Pihak tidak wajib yang TOH dipanggil tetap dinilai - relaasnya fakta.
+  const dipanggilJuga = panggilan.susunKeadaanPanggilan({
+    ...isian385,
+    relaas: [
+      ...relaas385,
+      { sidangId: "S9", tanggalSidang: "2026-09-23", namaPihak: "Isabella binti Muhamad Aini", peran: "Penggugat/Pemohon", pihakKe: 1, tanggalRelaas: "2026-09-10", noResiPos: "", ketTemu: "E" },
+    ],
+  });
+  const isabella2 = dipanggilJuga.pihak.find((x) => /Isabella/.test(x.nama));
+  periksa("pihak tidak wajib yang dipanggil tetap dinilai", isabella2.kepatutan.alasan !== "tidak_wajib_dipanggil");
+}
+
+console.log("\n== Tinjauan 24 Sep 2026: sidang acuan tidak diketahui tidak membuang relaas ==");
+{
+  const h = panggilan.susunKeadaanPanggilan({ ...isian385, tanggalSidang: null, sidangId: null, sisiWajib: null });
+  periksa("tanpa acuan: tidak semua pihak belum dipanggil", h.ringkasan.belumDipanggil === 0);
+  periksa("tanpa acuan: relaas tetap terbaca", h.pihak.every((x) => x.sudahDikirim === true));
+}
+
+console.log("\n== Tinjauan 24 Sep 2026: perkara bukan e-Court tidak disuruh menarik dari e-Court ==");
+{
+  const h = panggilan.susunKeadaanPanggilan({
+    tanggalSidang: "2023-05-10",
+    sidangId: "B1",
+    lewatEcourt: false,
+    persetujuan: [],
+    panggilan: [],
+    relaas: [
+      { sidangId: "B1", tanggalSidang: "2023-05-10", namaPihak: "Ani", peran: "Penggugat/Pemohon", pihakKe: 1, tanggalRelaas: "2023-05-02", noResiPos: "", ketTemu: "E" },
+    ],
+  });
+  const ani = h.pihak[0];
+  periksa("bukan e-Court: tidak salah saluran", ani.salahSaluran === false);
+  periksa("bukan e-Court: catatan tidak menyuruh menarik dari Kendali Berkas", !/Kendali Berkas/.test(ani.catatanSaluran));
+  periksa("bukan e-Court: catatan menyebut perkaranya tidak terdaftar e-Court", /tidak terdaftar lewat e-Court/.test(ani.catatanSaluran));
 }
 
 console.log("\n== Pengurai halaman e-Court ==");

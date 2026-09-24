@@ -17,7 +17,9 @@ import {
  * LANJUTAN PERMINTAAN 23 SEPTEMBER 2026
  * ============================================================================
  *
- *    1. papan "hari ini beres atau belum"
+ *    1. papan "hari ini beres atau belum" - DIHAPUS 24 September 2026 atas
+ *       permintaan pengguna ("fungsi itu sudah ada di perlu diperiksa");
+ *       penjaganya kini menjaga PEMINDAHAN fungsinya, bukan papannya
  *    3. tanda "sudah menunggu berapa lama"
  *    4. arsip ZIP satu tekan - SIPP dan e-Court
  *    6. hitung mundur tenggang panggilan
@@ -39,29 +41,46 @@ const abt = baca("ekstensi-sipp/abt.js");
 // BUTIR 1
 // ===========================================================================
 
-describe("butir 1 - papan hari ini", () => {
-  it("angkanya dari jumlahKeadaan yang sudah ada, bukan hitungan kedua", () => {
-    // Hitungan kedua akan berbeda dari yang pertama suatu hari, dan tidak ada
-    // pada layarnya yang memberi tahu mana yang benar.
-    expect(layar).toContain("<PapanHariIni");
-    expect(layar).toContain("jumlah={jumlahKeadaan}");
-    expect(layar).toContain("keadaan={KEADAAN_MENUNTUT_TINDAKAN}");
+describe("butir 1 - papan dihapus 24 Sep 2026, fungsinya di Perlu diperiksa", () => {
+  it("papan kuning Perlu ditindaklanjuti tidak ada lagi", () => {
+    expect(layar).not.toContain("function PapanHariIni(");
+    expect(layar).not.toContain("<PapanHariIni");
+    // Diperiksa pada kode SAJA - komentar yang menerangkan penghapusannya
+    // memang menyebut namanya, dan itu bukan papan yang kembali.
+    const kode = layar
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    expect(kode).not.toMatch(/ditindaklanjuti/i);
   });
 
-  it("tetap tampil walau nol - nol adalah jawaban, bukan ketiadaan jawaban", () => {
-    const i = layar.indexOf("function PapanHariIni(");
-    const blok = layar.slice(i, layar.indexOf("function PenandaPanggilan(", i));
-    // Kotak saringan menyembunyikan yang nol; papan ini kebalikannya.
-    expect(blok, "papan tidak boleh menyaring yang bernilai nol").not.toMatch(
-      /\.filter\([^)]*jumlah[^)]*>\s*0/
+  it("kelima anggota papan tetap merah - tetap dihitung Perlu diperiksa", () => {
+    for (const k of [
+      "retur",
+      "belum-dipanggil",
+      "tenggang-mepet",
+      "belum-minutasi",
+      "belum-unggah-putusan",
+    ]) {
+      const i = layar.indexOf(`kunci: "${k}"`);
+      expect(i, `kotak ${k} hilang`).toBeGreaterThan(-1);
+      expect(layar.slice(i, i + 400), `kotak ${k} tidak lagi merah`).toContain('nada: "bahaya"');
+    }
+  });
+
+  it("nol tetap jawaban - Perlu diperiksa digambar walau nol", () => {
+    // Sifat papan yang dipindahkan: kotak saringan biasa menyembunyikan yang
+    // nol, kotak gabungan ini tidak lagi.
+    expect(layar).not.toMatch(
+      /keadaanTampak\(\s*KEADAAN_SIDANG\.filter\(\(keadaan\) => keadaan\.kunci === KUNCI_PERLU_DIPERIKSA\)/
     );
-    expect(blok).toContain("disabled={n === 0}");
+    expect(layar.split("KEADAAN_PERLU_DIPERIKSA.map(").length - 1).toBe(2);
   });
 
-  it("menekan angkanya MENGGANTI saringan, bukan menumpuknya", () => {
-    const i = layar.indexOf("<PapanHariIni");
-    const blok = layar.slice(i, i + 600);
-    expect(blok).toContain("sekarang.length === 1 && sekarang[0] === kunci ? [] : [kunci]");
+  it("tetap terlihat saat kendali diciutkan", () => {
+    const i = layar.indexOf("sidang.length > 0 && kendaliCiut ? (");
+    expect(i).toBeGreaterThan(-1);
+    expect(layar.slice(i, i + 800)).toContain("KEADAAN_PERLU_DIPERIKSA.map(");
   });
 });
 
@@ -411,7 +430,11 @@ describe("butir 15 - durasi perkara, hari mediasi tidak dihitung", () => {
 
   it("tampil di bawah agenda DAN di panel rincian", () => {
     expect(layar).toContain("<UmurPerkara durasi={baris.durasi} />");
-    expect(layar).toContain('<Bagian judul="Rincian waktu perkara" kunci="sidang-durasi">');
+    // Sejak 24 September 2026 paling bawah panel, terciut sebagai bawaan,
+    // dengan kunci baru - lihat antrian-dua-belas-butir "garis batas".
+    expect(layar).toContain(
+      '<Bagian judul="Rincian waktu perkara" kunci="sidang-durasi-v2" ciutBawaan keterangan={keteranganWaktu}>'
+    );
   });
 
   it("panel rincian tidak menghitung ulang - angkanya dikirim dari barisnya", () => {

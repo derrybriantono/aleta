@@ -37,6 +37,10 @@ const { cleanText } = require("./ecourtTextService");
 const sippSkemaService = require("./sippSkemaService");
 const sippAuditService = require("./sippAuditService");
 const arsipBerkasService = require("./arsipBerkasService");
+// Penilaian SK 048/2024 - murni, tanpa require, jadi tidak melingkar. Di sini
+// hanya dipinjam penciri ghaib-nya, supaya Status Perkara dan Antrian Sidang
+// memakai satu angka yang sama.
+const penilaianSippService = require("./penilaianSippService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -1742,7 +1746,7 @@ async function penandaPerkara(perkaraId, { tanggalPhs = "", sidangPertama = "" }
 
   // 3. Jarak PHS ke sidang pertama - penciri yang dipakai SK sendiri.
   const jarak = selisihHari(tanggalPhs, sidangPertama);
-  if (jarak !== null && jarak >= 120) {
+  if (jarak !== null && jarak >= penilaianSippService.JARAK_PHS_GHAIB_HARI) {
     ghaib = true;
     sumber.push(`jarak PHS ke sidang pertama ${jarak} hari`);
   }

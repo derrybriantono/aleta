@@ -167,6 +167,113 @@ function urutanTerbalik(selisih, sebutan) {
 
 /**
  * ============================================================================
+ * WAKTU PUTUS - SATU-SATUNYA TEMPAT TANGGANYA DITULIS
+ * ============================================================================
+ *
+ * Lampiran SK huruf a "Kriteria Waktu Putus Perkara": 3 bulan nilai 5,
+ * 4 bulan nilai 3, 5 bulan nilai 1, lebih dari 5 bulan nilai 0. SK tidak
+ * menyebut berapa hari sebulan; di sini 30 hari, sehingga ambangnya jatuh
+ * pada 90, 120, dan 150 - sama dengan notifikasi SIPP setempat, dan 150-nya
+ * sama dengan lima bulan SEMA 2/2014 yang dikutip SK di halaman yang sama.
+ *
+ * Dipakai DUA layar: unsur waktuPutus di bawah (penilaian SK di Status
+ * Perkara) dan warna umur perkara di Antrian Sidang (sippJadwalSidangService,
+ * diminta pengguna 24 September 2026). Sebelumnya Antrian Sidang mewarnai
+ * menurut sisa terhadap 150 hari dengan aturannya sendiri: perkara 100 hari
+ * tampak netral di sana padahal di sini nilainya sudah turun dari 5 ke 3.
+ * Dua aturan untuk satu pertanyaan pasti suatu hari berselisih, dan tidak
+ * ada yang tahu mana yang benar.
+ */
+const TANGGA_WAKTU_PUTUS = Object.freeze([
+  Object.freeze({ sampaiHari: 90, nilai: 5, sebutan: "paling lama 3 bulan" }),
+  Object.freeze({ sampaiHari: 120, nilai: 3, sebutan: "4 bulan" }),
+  Object.freeze({ sampaiHari: 150, nilai: 1, sebutan: "5 bulan" }),
+  Object.freeze({ sampaiHari: null, nilai: 0, sebutan: "lebih dari 5 bulan" }),
+]);
+
+/**
+ * Penciri perkara ghaib menurut SK Tabel 2 nomor 1 angka 1: "terindikasi
+ * dengan jarak waktu penetapan hari sidang ke sidang pertama >=120 hari".
+ * Dipakai penanda perkara di sippTahapanService dan kelonggaran umur perkara
+ * di Antrian Sidang - satu angka, dua pemakai.
+ */
+const JARAK_PHS_GHAIB_HARI = 120;
+
+/**
+ * Waktu putus satu perkara, dari fakta ke nilai. Perkara yang BELUM putus
+ * diukur sampai tanggal yang dikirim pemanggil sebagai tanggalPutus -
+ * Antrian Sidang mengirim hari ini. null bila salah satu tanggal tidak terbaca.
+ */
+function hitungWaktuPutus(f = {}) {
+  const selisih = hari(f.tanggalDaftar, f.tanggalPutus);
+  if (selisih === null) return null;
+
+  // ====================================================================
+  // HARI PENDAFTARAN IKUT DIHITUNG
+  // ====================================================================
+  //
+  // Perkara yang didaftarkan dan diputus pada hari yang sama berjalan
+  // SATU hari, bukan nol. Itulah cara notifikasi SIPP pengadilan ini
+  // menghitung sejak lama - DATEDIFF ditambah satu - dan memakai cara
+  // yang sama membuat angka ALETA dapat disandingkan dengan angka yang
+  // sudah biasa dibaca orang.
+  const kotor = selisih + 1;
+
+  // ====================================================================
+  // LAMA MEDIASI DIPOTONG - TETAPI TIDAK MELEBIHI LAMA PERKARANYA
+  // ====================================================================
+  //
+  // Mediasi wajib menurut PERMA 1/2016, dan selama berjalan perkaranya
+  // memang berhenti - bukan karena majelis lambat, melainkan karena hukum
+  // acaranya memerintahkan begitu. Menghitungnya sebagai keterlambatan
+  // berarti menghukum majelis atas kepatuhan.
+  //
+  // Tetapi angka yang dipotong dijepit lebih dulu. View v_durasi_mediasi
+  // pada SIPP setempat kadang menghasilkan angka ribuan hari - tampaknya
+  // untuk perkara lama yang mediasinya tidak pernah ditutup, sehingga
+  // terhitung sampai hari ini. Memotongnya apa adanya membuat perkara
+  // yang berjalan setahun terbaca selesai dalam waktu negatif, dan
+  // bernilai 5 tanpa berhak.
+  //
+  // Karena itu potongan tidak boleh melebihi lama perkaranya sendiri, dan
+  // sisanya tidak boleh kurang dari satu hari.
+  const mediasiMentah = Math.max(0, Number(f.hariMediasi) || 0);
+  const mediasi = Math.min(mediasiMentah, Math.max(0, kotor - 1));
+
+  // Pengecualian perkara khusus - lampiran SK Tabel 2 nomor 1. Dijepit sama
+  // seperti mediasi: perkara ghaib yang baru berjalan 50 hari tidak terbaca
+  // "-69 hari". NILAINYA tidak berubah karena penjepitan ini - apa pun di
+  // bawah 90 hari tetap bernilai 5 - yang berubah hanya angka yang dibaca.
+  const kelonggaran = kelonggaranWaktuPutus(f);
+  const potonganHari = Math.min(kelonggaran.hari, Math.max(0, kotor - mediasi - 1));
+  const bersih = kotor - mediasi - potonganHari;
+
+  let dariHari = 1;
+  for (const anak of TANGGA_WAKTU_PUTUS) {
+    if (anak.sampaiHari === null || bersih <= anak.sampaiHari) {
+      return {
+        kotor,
+        mediasi,
+        mediasiMentah,
+        potongan: { hari: potonganHari, hariMentah: kelonggaran.hari, sebab: kelonggaran.sebab },
+        bersih,
+        nilai: anak.nilai,
+        sebutan: anak.sebutan,
+        dariHari,
+        sampaiHari: anak.sampaiHari,
+        // Sekurangnya berapa hari lagi pita ini bertahan bila perkaranya
+        // belum diputus. "Sekurangnya": mediasi yang masih berjalan ikut
+        // bertambah dan memperpanjangnya.
+        sisaDiPita: anak.sampaiHari === null ? null : anak.sampaiHari - bersih,
+      };
+    }
+    dariHari = anak.sampaiHari + 1;
+  }
+  return null;
+}
+
+/**
+ * ============================================================================
  * ASPEK KINERJA PENANGANAN PERKARA - bobot 50%
  * ============================================================================
  *
@@ -182,64 +289,26 @@ const KINERJA = [
     dasar: "SK 048/2024 Tabel 1 dan huruf a - 3 bulan (90 hari) nilai 5, 4 bulan (120 hari) nilai 3, 5 bulan (150 hari) nilai 1, lebih dari itu nilai 0. Lama mediasi dipotong lebih dulu.",
     keterangan: "Dihitung dari tanggal pendaftaran sampai tanggal putus, hari pendaftaran ikut dihitung, dikurangi lama mediasi dan kelonggaran perkara khusus.",
     nilai(f) {
-      const selisih = hari(f.tanggalDaftar, f.tanggalPutus);
-      if (selisih === null) return belumTerbaca("Tanggal daftar atau tanggal putus belum tercatat.");
-
-      // ====================================================================
-      // HARI PENDAFTARAN IKUT DIHITUNG
-      // ====================================================================
-      //
-      // Perkara yang didaftarkan dan diputus pada hari yang sama berjalan
-      // SATU hari, bukan nol. Itulah cara notifikasi SIPP pengadilan ini
-      // menghitung sejak lama - DATEDIFF ditambah satu - dan memakai cara
-      // yang sama membuat angka ALETA dapat disandingkan dengan angka yang
-      // sudah biasa dibaca orang.
-      const kotor = selisih + 1;
-
-      // ====================================================================
-      // LAMA MEDIASI DIPOTONG - TETAPI TIDAK MELEBIHI LAMA PERKARANYA
-      // ====================================================================
-      //
-      // Mediasi wajib menurut PERMA 1/2016, dan selama berjalan perkaranya
-      // memang berhenti - bukan karena majelis lambat, melainkan karena hukum
-      // acaranya memerintahkan begitu. Menghitungnya sebagai keterlambatan
-      // berarti menghukum majelis atas kepatuhan.
-      //
-      // Tetapi angka yang dipotong dijepit lebih dulu. View v_durasi_mediasi
-      // pada SIPP setempat kadang menghasilkan angka ribuan hari - tampaknya
-      // untuk perkara lama yang mediasinya tidak pernah ditutup, sehingga
-      // terhitung sampai hari ini. Memotongnya apa adanya membuat perkara
-      // yang berjalan setahun terbaca selesai dalam waktu negatif, dan
-      // bernilai 5 tanpa berhak.
-      //
-      // Karena itu potongan tidak boleh melebihi lama perkaranya sendiri, dan
-      // sisanya tidak boleh kurang dari satu hari.
-      const mediasiMentah = Math.max(0, Number(f.hariMediasi) || 0);
-      const mediasi = Math.min(mediasiMentah, Math.max(0, kotor - 1));
-
-      // Pengecualian perkara khusus - lampiran SK Tabel 2 nomor 1.
-      const potongan = kelonggaranWaktuPutus(f);
-      const bersih = kotor - mediasi - potongan.hari;
-
-      // SK memakai satuan bulan; satu bulan dihitung 30 hari, sehingga
-      // ambangnya jatuh pada 90, 120, dan 150 hari - persis ambang yang
-      // dipakai notifikasi SIPP setempat.
-      const nilai = bersih <= 90 ? 5 : bersih <= 120 ? 3 : bersih <= 150 ? 1 : 0;
-
-      const rinci = [`${kotor} hari sejak pendaftaran`];
-      if (mediasi > 0) {
+      // Hitungan dan tangganya di hitungWaktuPutus - satu sumber untuk unsur
+      // ini dan untuk warna umur perkara di Antrian Sidang.
+      const h = hitungWaktuPutus(f);
+      if (h === null) return belumTerbaca("Tanggal daftar atau tanggal putus belum tercatat.");
+      const rinci = [`${h.kotor} hari sejak pendaftaran`];
+      if (h.mediasi > 0) {
         rinci.push(
-          mediasi < mediasiMentah
-            ? `dikurangi ${mediasi} hari mediasi (dijepit dari ${mediasiMentah})`
-            : `dikurangi ${mediasi} hari mediasi`
+          h.mediasi < h.mediasiMentah
+            ? `dikurangi ${h.mediasi} hari mediasi (dijepit dari ${h.mediasiMentah})`
+            : `dikurangi ${h.mediasi} hari mediasi`
         );
       }
-      if (potongan.hari > 0) rinci.push(`dikurangi ${potongan.hari} hari (${potongan.sebab})`);
-
-      return poin(
-        nilai,
-        `${rinci.join(", ")} = ${bersih} hari (${(bersih / 30).toFixed(1)} bulan).`
-      );
+      if (h.potongan.hari > 0) {
+        rinci.push(
+          h.potongan.hari < h.potongan.hariMentah
+            ? `dikurangi ${h.potongan.hari} hari (${h.potongan.sebab}, dijepit dari ${h.potongan.hariMentah})`
+            : `dikurangi ${h.potongan.hari} hari (${h.potongan.sebab})`
+        );
+      }
+      return poin(h.nilai, `${rinci.join(", ")} = ${h.bersih} hari (${(h.bersih / 30).toFixed(1)} bulan).`);
     },
   },
   {
@@ -1058,8 +1127,11 @@ module.exports = {
   KELENGKAPAN,
   KINERJA,
   INPUT_DATA,
+  JARAK_PHS_GHAIB_HARI,
   POIN_MAKSIMAL,
+  TANGGA_WAKTU_PUTUS,
   UNSUR,
+  hitungWaktuPutus,
   kategoriSatker,
   kelonggaranWaktuPutus,
   nilaiSatker,

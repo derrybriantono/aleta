@@ -107,6 +107,40 @@ cek(
   180
 );
 
+console.log("hitungWaktuPutus - satu sumber untuk unsur SK dan warna Antrian Sidang");
+{
+  const hitung = (selisih, tambahan = {}) => {
+    const daftar = tanggal("2025-01-01");
+    return penilaian.hitungWaktuPutus({
+      tanggalDaftar: daftar,
+      tanggalPutus: new Date(daftar.getTime() + selisih * 24 * 60 * 60 * 1000),
+      ...tambahan,
+    });
+  };
+  // Tangga ditulis sekali; tepinya sama dengan pemeriksaan unsur di atas.
+  cek("tangga: 90/120/150/lebih", penilaian.TANGGA_WAKTU_PUTUS.map((x) => x.sampaiHari), [90, 120, 150, null]);
+  cek("tangga: nilai 5/3/1/0", penilaian.TANGGA_WAKTU_PUTUS.map((x) => x.nilai), [5, 3, 1, 0]);
+  cek("penciri ghaib SK: 120 hari", penilaian.JARAK_PHS_GHAIB_HARI, 120);
+  cek("tanggal tidak terbaca = null", penilaian.hitungWaktuPutus({ tanggalDaftar: tanggal("2025-01-01") }), null);
+  const tepi = hitung(90);
+  cek("91 hari: pita 4 bulan mulai hari ke-91", [tepi.bersih, tepi.nilai, tepi.dariHari, tepi.sampaiHari, tepi.sisaDiPita], [91, 3, 91, 120, 29]);
+  cek("lebih dari 5 bulan: tidak ada sisa di pita", hitung(400).sisaDiPita, null);
+  // Kelonggaran ghaib DIJEPIT seperti mediasi: perkara ghaib 51 hari tidak
+  // terbaca "-69 hari". Nilainya tetap 5 - yang berubah hanya angka catatan.
+  const muda = hitung(50, { perkaraGhaib: true });
+  cek("ghaib 51 hari: sisa dijepit 1 hari", [muda.bersih, muda.potongan.hari, muda.potongan.hariMentah], [1, 50, 120]);
+  cek("ghaib 51 hari: nilainya tetap 5", muda.nilai, 5);
+  const catatanMuda = penilaian
+    .poinPerkara({ tanggalDaftar: tanggal("2025-01-01"), tanggalPutus: new Date(tanggal("2025-01-01").getTime() + 50 * 86400000), perkaraGhaib: true })
+    .rinci.find((x) => x.kunci === "waktuPutus").catatan;
+  cek("catatan menyebut penjepitan ghaib", catatanMuda.includes("dijepit dari 120") && catatanMuda.includes("= 1 hari"), true);
+  // Ghaib yang tidak perlu dijepit tetap tertulis polos.
+  const catatanTua = penilaian
+    .poinPerkara({ tanggalDaftar: tanggal("2025-01-01"), tanggalPutus: new Date(tanggal("2025-01-01").getTime() + 200 * 86400000), perkaraGhaib: true })
+    .rinci.find((x) => x.kunci === "waktuPutus").catatan;
+  cek("ghaib 201 hari: catatan tanpa kata dijepit", catatanTua.includes("dikurangi 120 hari (perkara ghaib)") && !catatanTua.includes("dijepit"), true);
+}
+
 // ---------------------------------------------------------------------------
 console.log("Tabel 2 huruf b - waktu minutasi berkas perkara");
 // ---------------------------------------------------------------------------
