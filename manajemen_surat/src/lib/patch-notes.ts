@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.37.0";
+export const APP_VERSION = "2.37.1";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.37.0 - Putusan Massal yang Tersimpan, Alasan Cerai yang Lebih Lengkap, dan Sumber Isian ABT yang Terukur";
+  "ALETA Judicia v2.37.1 - Faktor Sekunder Ekonomi Menurut Praktik Satker";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,24 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.37.1",
+    title: "ALETA Judicia v2.37.1 - Faktor Sekunder Ekonomi Menurut Praktik Satker",
+    date: "2026-09-26",
+    status: "Belum terpasang",
+    summary:
+      "Keputusan pengguna 26 September 2026 atas dua pertanyaan terbuka 2.37.0: perkara yang pertimbangannya menyebut masalah ekonomi berpokok Perselisihan dengan Ekonomi sebagai faktor SEKUNDER (praktik satker sejak 556/Pdt.G/2025), dan bunyi nafkah kedua saksi SDG tetap satu.",
+    added: [],
+    changed: [
+      "Borang Putusan Akhir: bila kalimat fakta pertimbangan menyebut masalah/faktor/persoalan ekonomi dan pokoknya Perselisihan, faktor sekunder diusulkan Ekonomi. Sebelumnya Ekonomi kalah hitungan oleh 'pisah rumah' (Meninggalkan) yang disebut di hampir tiap putusan cerai - hanya 7 dari 31 putusan bermasalah ekonomi bersekunder Ekonomi. Diukur atas 960 putusan cerai dikabulkan: pokok tetap 582 benar; sekunder 116 → 117 benar (78/Pdt.G/2026 dan 21/Pdt.G/2026 kini sesuai petugas; 259/Pdt.G/2026 yang petugasnya memilih Meninggalkan kini berbeda). Keempat putusan 2026 yang petugasnya memilih Ekonomi sekunder kini diusulkan benar.",
+      "Pokok yang bukan Perselisihan (misalnya huruf (b) dengan kepergian dua tahun) tidak berubah: sekundernya tetap Perselisihan. Masalah ekonomi yang hanya ada di kutipan pasal tidak dihitung.",
+      "Bunyi nafkah dua saksi SDG tetap 'melalaikan kewajiban nafkah lahir' untuk keduanya (keputusan pengguna), supaya derajat faktanya sama.",
+    ],
+    fixed: [],
+    security: [],
+    operationalNotes: ["Hanya portal yang berubah; ekstensi tetap 1.169.0 dan tidak ada migrasi baru (nomor bebas berikutnya 0051)."],
+    knownLimitations: [],
+  },
   {
     version: "2.37.0",
     title: "ALETA Judicia v2.37.0 - Putusan Massal yang Tersimpan, Alasan Cerai yang Lebih Lengkap, dan Sumber Isian ABT yang Terukur",

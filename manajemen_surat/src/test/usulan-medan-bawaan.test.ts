@@ -192,6 +192,47 @@ describe("faktor perceraian: pokok dan sekunder", () => {
   });
 });
 
+/**
+ * Keputusan pengguna 26 September 2026, "pakai praktik sekarang": perkara yang
+ * pertimbangannya menyebut masalah ekonomi berpokok Perselisihan dengan Ekonomi
+ * sebagai sekunder. "Pisah rumah" disebut di hampir tiap putusan cerai, dan
+ * tanpa aturan ini ia (Meninggalkan) menang hitungan atas Ekonomi.
+ */
+describe("faktor sekunder: masalah ekonomi di bawah Perselisihan", () => {
+  const PISAH =
+    "- Bahwa sejak Juni 2025 Penggugat dan Tergugat telah pisah rumah;\n- Bahwa selama pisah rumah Tergugat tidak pernah datang;\n- Bahwa Penggugat dan Tergugat pisah rumah sampai sekarang;";
+  const PENUTUP =
+    "Menimbang, bahwa rumah tangga Penggugat dan Tergugat telah pecah karena perselisihan dan pertengkaran terus menerus, sehingga telah terpenuhi Pasal 19 huruf (f) Peraturan Pemerintah Nomor 9 Tahun 1975 jo. Pasal 116 huruf (f) Kompilasi Hukum Islam;";
+  const EKONOMI = "- Bahwa penyebab perselisihan dan pertengkaran Penggugat dan Tergugat adalah masalah ekonomi;";
+
+  it("pokok Perselisihan, sekunder Ekonomi - walau pisah rumah lebih sering disebut", () => {
+    const [pokok, sekunder] = usulkanMedanPutusan([EKONOMI, PISAH, PENUTUP].join("\n"), [FAKTOR_POKOK, FAKTOR_SEKUNDER]);
+    expect(pokok.nilaiLabel).toBe("Perselisihan Dan Pertengkaran Terus Menerus");
+    expect(sekunder.nilaiLabel).toBe("Ekonomi");
+    expect(sekunder.alasan).toContain("praktik satker");
+    expect(sekunder.kutipan).toContain("masalah ekonomi");
+  });
+
+  it("kendali: tanpa sebutan masalah ekonomi, sekundernya tetap ciri terbanyak (Meninggalkan)", () => {
+    const [pokok, sekunder] = usulkanMedanPutusan([PISAH, PENUTUP].join("\n"), [FAKTOR_POKOK, FAKTOR_SEKUNDER]);
+    expect(pokok.nilaiLabel).toBe("Perselisihan Dan Pertengkaran Terus Menerus");
+    expect(sekunder.nilaiLabel).toBe("Meninggalkan Salah Satu Pihak");
+  });
+
+  it("pokok selain Perselisihan (huruf b, dua tahun): sekundernya tetap Perselisihan, bukan Ekonomi", () => {
+    const [pokok, sekunder] = usulkanMedanPutusan(NASKAH_492, [FAKTOR_POKOK, FAKTOR_SEKUNDER]);
+    expect(pokok.nilaiLabel).toBe("Meninggalkan Salah Satu Pihak");
+    expect(sekunder.nilaiLabel).toBe("Perselisihan Dan Pertengkaran Terus Menerus");
+  });
+
+  it("masalah ekonomi yang hanya dikutip dari dalil hukum tidak dihitung sebagai fakta", () => {
+    const kutipan =
+      "Menimbang, bahwa menurut Pasal 34 ayat (1) Undang-Undang Nomor 1 Tahun 1974: suami wajib melindungi isterinya dan memberikan segala sesuatu keperluan hidup berumah tangga, termasuk mengatasi masalah ekonomi keluarga;";
+    const [, sekunder] = usulkanMedanPutusan([kutipan, PISAH, PENUTUP].join("\n"), [FAKTOR_POKOK, FAKTOR_SEKUNDER]);
+    expect(sekunder.nilaiLabel).toBe("Meninggalkan Salah Satu Pihak");
+  });
+});
+
 describe("sumber hukum pada alinea pasal", () => {
   it("ketiganya terbaca dari satu alinea penutup pertimbangan", () => {
     // Inilah bentuk alinea tempat sumber hukum selalu muncul: sesudah

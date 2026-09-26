@@ -632,6 +632,13 @@ const POLA_ADA_PERSELISIHAN =
 const POLA_KALIMAT_PIHAK = /\b(?:penggugat|tergugat|pemohon|termohon|suami|isteri|istri)\b/i;
 
 /**
+ * "Masalah ekonomi" disebut sebagai penyebab (bentuk yang dipakai pertimbangan
+ * satker). Keputusan pengguna 26 September 2026, "pakai praktik sekarang":
+ * pokoknya Perselisihan, Ekonomi menjadi SEKUNDER - lihat susunFaktorPerceraian.
+ */
+const POLA_MASALAH_EKONOMI = /\b(?:masalah|faktor|persoalan|permasalahan|alasan)\s+ekonomi\b/i;
+
+/**
  * Ciri alasan pada kalimat fakta, dan label faktor yang ditunjuknya.
  *
  * Urutan daftar ini dipakai sebagai pemecah seri: bila dua ciri sama sering
@@ -1876,12 +1883,31 @@ function susunFaktorPerceraian(hasil: UsulanDalam[], medan: MedanPilihan[], kont
     const ciri = hitungCiri(pilihanSekunder).filter((x) => String(x.pilihan.nilai) !== nilaiPokok);
     const pokokPerselisihan = Boolean(nilaiPokok) && POLA_FAKTOR_PERSELISIHAN.test(labelPokok);
 
+    // Keputusan pengguna 26 September 2026 ("pakai praktik sekarang"): bila
+    // kalimat fakta menyebut masalah ekonomi dan pokoknya Perselisihan,
+    // sekundernya Ekonomi - praktik satker sejak 556/Pdt.G/2025 (sampai
+    // 477/Pdt.G/2025 Ekonomi dijadikan pokok). Tanpa aturan ini Ekonomi kalah
+    // hitungan oleh "pisah rumah" (Meninggalkan), yang disebut hampir di tiap
+    // putusan cerai: hanya 7 dari 31 putusan bermasalah ekonomi bersekunder
+    // Ekonomi.
+    const ekonomi = pokokPerselisihan ? pilihanBerlabel(pilihanSekunder, /ekonomi/i) : undefined;
+    const kalimatEkonomi =
+      ekonomi && !pilihanKosong(ekonomi) && String(ekonomi.nilai) !== nilaiPokok
+        ? kalimatBerpola(kalimatFakta, POLA_MASALAH_EKONOMI)
+        : "";
+
     let pilih: { pilihan: PilihanMedan; kalimat: string; alasan: string } | null = null;
     if (nilaiPokok && !pokokPerselisihan && perselisihan && adaPerselisihan && String(perselisihan.nilai) !== nilaiPokok) {
       pilih = {
         pilihan: perselisihan,
         kalimat: kalimatBerpola(kalimatFakta, POLA_ADA_PERSELISIHAN),
         alasan: `Pokoknya ${labelPokok}; perselisihan yang disebut naskah menjadi sekunder. Periksa sendiri.`,
+      };
+    } else if (ekonomi && kalimatEkonomi) {
+      pilih = {
+        pilihan: ekonomi,
+        kalimat: kalimatEkonomi,
+        alasan: `Pertimbangan menyebut masalah ekonomi; pokoknya ${labelPokok}, jadi Ekonomi menjadi sekunder menurut praktik satker (keputusan 26 September 2026). Periksa sendiri.`,
       };
     } else if (ciri.length > 0) {
       pilih = {
