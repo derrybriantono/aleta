@@ -15,21 +15,23 @@
  * dilewati: TIDAK SATU VARIABEL PUN DIUSULKAN SEBELUM DIUKUR.
  *
  * ============================================================================
- * GERBANG UKUR - SIAP, ATAU BELUM SIAP BESERTA ANGKANYA
+ * GERBANG UKUR DAN KEPUTUSAN SUMBER
  * ============================================================================
  *
  * Tiap aturan dijalankan atas perkara yang variabelnya SUDAH diisi manusia
- * (aps_badilag.abt_data_teks, dibaca baca-saja oleh skrip di folder kerja
- * t1-deteksi-saksi-bot/ukur-lain.js - bukan oleh bot), dengan nilai yang
- * diubah sesudah 1 September 2026 dikeluarkan. Sebuah variabel SIAP hanya bila
+ * (aps_badilag.abt_data_teks, dibaca baca-saja oleh skrip di folder kerja -
+ * bukan oleh bot), dengan nilai yang diubah sesudah 1 September 2026
+ * dikeluarkan. Sebuah variabel diusulkan hanya bila
  *
- *     presisi >= 0,9  DAN  n >= 10
+ *     presisi >= 0,9  DAN  n >= 10  (atas pembanding yang sah)
+ *     DAN tidak lebih buruk dari BAWAAN ABT pada perkara yang sama
  *
  * (n = banyaknya usulan yang dapat dibandingkan dengan isian manusia).
- * Selebihnya masuk `belumSiap` beserta presisi dan n-nya, dan TIDAK
- * diusulkan - aturan deteksi hasil tebakan sudah tiga kali salah di repo ini.
- * Daftar SIAP di bawah adalah hasil ukur itu, dicatat apa adanya; mengubahnya
- * tanpa mengukur ulang berarti melewati pagarnya.
+ * Selebihnya masuk `bawaanAbt` (ABT menawarkan isian bawaan) atau `belumSiap`
+ * beserta presisi dan n-nya, dan TIDAK diusulkan - aturan deteksi hasil
+ * tebakan sudah tiga kali salah di repo ini. Angkanya ada di UKUR_SUMBER,
+ * dicatat apa adanya; mengubahnya tanpa mengukur ulang berarti melewati
+ * pagarnya.
  *
  * Yang TIDAK dilakukan: menebak. Nilai lazim ("Islam", "gadis") tidak pernah
  * diusulkan tanpa kalimat posita yang menyebutnya.
@@ -176,6 +178,34 @@ function kuaPenolak(kalimat) {
   return { kecamatan: m[1].trim(), kabupaten: `${m[2]} ${m[3].trim()}`, kalimat: m[0] };
 }
 
+/**
+ * Ayah calon PASANGAN anak para Pemohon (1551): blangko Derry menulis "orang
+ * tua calon suami/istri anak para Pemohon yang bernama #1551# dan #1552#".
+ * Yang dapat dibaca dari posita hanya nama sesudah "bin/binti" calon yang
+ * BUKAN anak para Pemohon - anak pemohon ialah nama pertama di kalimat
+ * "menikahkan anak para Pemohon yang bernama ...". Ibu (1552) tidak pernah
+ * disebut posita, jadi tidak ada aturannya.
+ */
+function ayahCalonPasangan(konteks) {
+  const m = konteks.mempelai;
+  if (!m || !m.kalimat || !m.wanita || !m.pria) return { nilai: "", kalimat: "" };
+  const anakDulu = m.kalimat.indexOf(m.wanita) < m.kalimat.indexOf(m.pria) ? m.wanita : m.pria;
+  const pasangan = anakDulu === m.wanita ? m.pria : m.wanita;
+  const ayah = pasangan.split(/\s+\b(?:bin|binti)\b\s+/i)[1] || "";
+  return ayah ? { nilai: ayah.trim(), kalimat: m.kalimat } : { nilai: "", kalimat: "" };
+}
+
+/**
+ * Umur kandungan (0999): "sedang hamil 20 Minggu", "hamil 18-19 Minggu",
+ * "hamil 25/26 Minggu", "hamil 5 (lima) bulan". Rentang disalin apa adanya -
+ * yang memilih satu angka adalah petugas, bukan ALETA.
+ */
+function umurKandungan(teks) {
+  const m = teks.match(/\bhamil\s+(?:kurang lebih\s+|lebih kurang\s+|±\s*)?(\d{1,2}(?:\s*[-/]\s*\d{1,2})?)\s*(?:\([^)]{1,30}\)\s*)?(minggu|bulan)\b/i);
+  if (!m) return { nilai: "", kalimat: "" };
+  return { nilai: `${m[1].replace(/\s+/g, "")} ${m[2].toLowerCase()}`, kalimat: m[0] };
+}
+
 /** Lama saling mengenal: "saling mengenal (selama) (kurang lebih) N tahun/bulan". */
 function lamaMengenal(teks) {
   const m = teks.match(
@@ -262,18 +292,13 @@ const ATURAN_LAIN = {
     { kode: "0600", nama: "Nama calon mempelai pria", banding: "nama", ambil: (t, k) => ({ nilai: k.mempelai.pria || "", kalimat: k.mempelai.kalimat }) },
     { kode: "0607", nama: "Umur calon mempelai wanita", banding: "angka", ambil: (t, k) => umurCalon(t, k.mempelai.wanita, k.mempelai) },
     { kode: "0601", nama: "Umur calon mempelai pria", banding: "angka", ambil: (t, k) => umurCalon(t, k.mempelai.pria, k.mempelai) },
-    {
-      kode: "3333",
-      nama: "KUA kecamatan yang menolak",
-      banding: "rapat",
-      ambil: (t, konteks) => {
-        const k = kuaPenolak(konteks.kalimat);
-        return k ? { nilai: `${k.kecamatan}, ${k.kabupaten}`, kalimat: k.kalimat } : { nilai: "", kalimat: "" };
-      },
-    },
+    // 3333 ("KUA Kecamatan ...", bentuk "X, Kabupaten Y") TIDAK diusulkan: tidak
+    // ada di satu pun dari 908 RTF _blangko_abt - blangko DK kini memakai 5178.
+    // Isian 3333 lama (2022-2025) tetap dipakai, sebagai BUKTI pengurai yang
+    // sama untuk 5178 (UKUR_SUMBER, `gabung`), karena maknanya terbukti sama.
     {
       kode: "5178",
-      nama: "KUA kecamatan (lengkap)",
+      nama: "KUA kecamatan yang menolak",
       banding: "rapat",
       ambil: (t, konteks) => {
         const k = kuaPenolak(konteks.kalimat);
@@ -281,6 +306,8 @@ const ATURAN_LAIN = {
       },
     },
     { kode: "1666", nama: "Lama saling mengenal", banding: "waktu", ambil: (t) => lamaMengenal(t) },
+    { kode: "1551", nama: "Nama ayah calon pasangan", banding: "nama", ambil: (t, k) => ayahCalonPasangan(k) },
+    { kode: "0999", nama: "Umur kandungan", banding: "waktu", ambil: (t) => umurKandungan(t) },
   ],
   perwalian: [
     { kode: "1025", nama: "Nama almarhum/almarhumah", banding: "nama", ambil: (t) => almarhum(t) },
@@ -289,6 +316,8 @@ const ATURAN_LAIN = {
     { kode: "5110", nama: "Nama anak", banding: "nama", ambil: (t) => namaAnakPerwalian(t) },
     { kode: "8171", nama: "Keperluan permohonan", banding: "nama", ambil: (t) => keperluanPerwalian(t) },
   ],
+  // Asal usul: ketujuhnya punya bawaan ABT (#10101#-#10112#, #1177#). Diusulkan
+  // hanya bila sumberUsulanTerukur memilih ALETA - 26 Sep 2026 belum (n=2).
   "asal-usul": [
     { kode: "5197", nama: "Tanggal nikah", banding: "nama", ambil: dariItsbat("5197") },
     { kode: "5105", nama: "Alamat tempat menikah", banding: "nama", ambil: dariItsbat("5105") },
@@ -306,99 +335,382 @@ const ATURAN_LAIN = {
 };
 
 /* ============================================================================
- * HASIL GERBANG UKUR - 26 September 2026
+ * KEPUTUSAN SUMBER TERUKUR - ALETA, BAWAAN ABT, ATAU BELUM ADA
  * ============================================================================
  *
- * Diukur ukur-lain.js (folder kerja t1-deteksi-saksi-bot) atas
- * dataset-lain.json: 55 perkara DK, 33 perwalian, 7 asal usul, dan 2 harta
- * bersama PA Donggala yang punya isian ABT manusia (sipp_donggala +
- * aps_badilag, baca-saja; nilai yang diubah sesudah 1 September 2026
- * dikeluarkan). Angkanya disalin APA ADANYA dari hasil-ukur-lain.json.
+ * Satu variabel blangko dapat mendapat isian dari dua sumber:
  *
- *   n        usulan yang dapat dibandingkan (aturan menghasilkan nilai DAN
- *            manusia mengisi variabelnya)
- *   benar    sama dengan isian manusia. Untuk nama: huruf kecil, selain
- *            huruf/angka jadi spasi; isian manusia yang MENGHILANGKAN
- *            bin/binti ("Yusnaeni" untuk "Yusnaeni binti Jufri") dihitung sama
- *            - orangnya sama dan usulannya lebih lengkap. Angka tanpa
- *            kelonggaran itu dicatat sebagai presisiKetat.
+ *   ALETA        aturan di atas, dibaca dari posita (atau pengurai itsbat).
+ *   bawaan ABT   default_data variabel data_teks yang menunjuk kueri data_sql
+ *                buatan pengguna (#10101#-#10112#, #1177#, #8492#). Ini BUKAN
+ *                isian otomatis: ABT menaruh jawaban kuerinya sebagai ISIAN
+ *                BAWAAN di kotak popup (popup_data.php), yang baru tersimpan
+ *                bila petugas membuka kotak itu lalu menyimpan (Abt_model.php);
+ *                kotak yang tidak dibuka tercetak "..." (abt_helper.php).
  *
- * Yang GAGAL gerbang tetap dicatat di sini, supaya belumSiap menyebut
- * angkanya - bukan sekadar "belum".
+ * Prinsip lama - "jangan usulkan yang ditangani ABT" - mengunci sumber yang
+ * belum tentu lebih benar. DK 5178: bawaan #10103# membawa sisa kalimat
+ * posita ("..., guna mencatatkan ..., namun ditolak dengan alasan ...") ke
+ * dalam kalimat blangko yang sudah menyebut penolakannya, sedangkan aturan
+ * ALETA sama dengan isian petugas. Penggantinya diukur per (jalur, jenis,
+ * variabel) - sumberUsulanTerukur():
  *
- * Perwalian tidak punya satu pun variabel siap, dan bukan karena aturannya
- * buruk: variabel yang diisi manusia paling banyak 5-7 perkara, jadi n tidak
- * pernah mencapai 10. Gerbangnya TIDAK diturunkan untuk itu.
+ *   'aleta'          aturan ALETA LULUS GERBANG (presisi >= 0,9 DAN n >= 10
+ *                    atas pembanding yang sah) DAN TIDAK LEBIH BURUK dari
+ *                    bawaan ABT pada perkara yang sama. Hanya ini diusulkan.
+ *   'abt'            ada bawaan ABT, dan ALETA tidak memenuhi syarat di atas:
+ *                    ALETA diam, dan panel berkata jujur bahwa ABT MENAWARKAN
+ *                    isian bawaan dari kuerinya - bukan "diisi otomatis".
+ *   'belum-terukur'  tidak ada bawaan ABT dan aturan ALETA belum lulus
+ *                    gerbang (atau belum diukur sama sekali).
+ *
+ * Pembanding yang sah:
+ *   - isian manusia yang tidak kosong dan tidak diubah sesudah 1 September
+ *     2026 (sesudahnya ALETA sudah mengusulkan - bukan lagi bukti bebas);
+ *   - bila variabel punya bawaan ABT: hanya isian SESUDAH bawaan itu dipasang
+ *     (abt_variabel.modified), pada perkara yang sama untuk kedua sumber
+ *     (`pasang`) - satu-satunya masa ketika pilihan dua sumber itu nyata.
+ *     Itsbat 1217 menunjukkan mengapa: 0,907 sepanjang masa, 0,871 di masa
+ *     bawaan ABT;
+ *   - isian yang SAMA PERSIS dengan bawaan ABT dikeluarkan bila bawaan itu
+ *     TERBUKTI SAMPAH (`sampah` menyebut buktinya): menyimpan bawaan tanpa
+ *     membacanya bukan bukti bahwa bawaan itu benar;
+ *   - bukti variabel lain boleh digabung (`gabung`) HANYA bila maknanya
+ *     terbukti sama dari data, dengan dasarnya ditulis.
+ *
+ * Kolom tabel:
+ *   aleta   {n, benar, ketat?}  aturan ALETA atas SEMUA isian sah; dasar
+ *                               gerbang bila tidak ada bawaan ABT. ketat =
+ *                               tanpa kelonggaran bin/binti (jalur posita-lain).
+ *   abt     {acuan, n, benar, kosong, nMentah, benarMentah, dipangkas}
+ *                               bawaan ABT atas isian sesudah dipasang; mentah
+ *                               = sebelum isian-sama-sampah dikeluarkan;
+ *                               dipangkas = petugas menyimpan awalannya saja.
+ *   pasang  {n, aleta, abt}     perkara yang sama di kedua pembanding, benar
+ *                               masing-masing: dasar gerbang DAN pembanding
+ *                               bila ada bawaan ABT.
+ *   gabung  {n, benar, dasar}   bukti tambahan yang maknanya terbukti sama.
+ *
+ * Diukur 26 September 2026 oleh D:/aleta-dev/kerja/pembetul-perkara-lain/
+ * ukur-sumber.js (baca-saja; sipp_donggala + aps_badilag; kueri bawaan
+ * dijalankan persis seperti ABT, #NNNN# bersarang diganti lebih dulu). Angka
+ * disalin APA ADANYA dari tabel-ukur-sumber.txt keluaran skrip itu; gabung
+ * dan sampah dari keluaran "makna" dan "blangko DK" skrip yang sama.
+ * Pembanding: nama = huruf kecil, selain huruf/angka jadi spasi, isian manusia
+ * tanpa bin/binti dihitung sama; rapat = seperti nama tanpa spasi; angka =
+ * angka pertama; waktu = angka + satuan; jalur itsbat = nama atau rapat (sama
+ * dengan banding-itsbat.js pembangun). Perwalian tidak punya variabel siap
+ * karena n tidak pernah mencapai 10, dan gerbangnya TIDAK diturunkan untuk itu.
  */
 const GERBANG = { presisiMinimal: 0.9, nMinimal: 10 };
 
-const HASIL_UKUR = {
-  "dispensasi-kawin": {
-    "0606": { n: 44, benar: 43, presisi: 0.977, presisiKetat: 0.886 }, // SIAP
-    "0600": { n: 36, benar: 33, presisi: 0.917, presisiKetat: 0.861 }, // SIAP
-    "0607": { n: 36, benar: 34, presisi: 0.944, presisiKetat: 0.944 }, // SIAP
-    "0601": { n: 11, benar: 10, presisi: 0.909, presisiKetat: 0.909 }, // SIAP (cakupan 11 dari 25)
-    "3333": { n: 11, benar: 11, presisi: 1, presisiKetat: 1 }, // SIAP
-    "5178": { n: 8, benar: 6, presisi: 0.75, presisiKetat: 0.75 }, // n<10
-    "1666": { n: 8, benar: 4, presisi: 0.5, presisiKetat: 0.5 }, // n<10, presisi<0,9
+/**
+ * ============================================================================
+ * GERBANG JALUR ITSBAT - MEMILIH SUMBER, BUKAN MEMBUKA USULAN BARU
+ * ============================================================================
+ *
+ * Gerbang 0,9 di atas menjaga usulan BARU (perkara lain): yang belum terbukti
+ * tidak ditawarkan sama sekali. Jalur itsbat lain soal - pengurainya sudah
+ * dipakai petugas sejak lama, dan ke-14 variabelnya punya bawaan ABT. Yang
+ * diputuskan di sini hanya SUMBER MANA yang lebih tepat pada perkara yang
+ * sama. Dengan gerbang 0,9 tidak satu pun dari ke-14 lolos, padahal ALETA
+ * jauh lebih tepat untuk 5197 (0,785 lawan 0,158), 0650, 0651, dan 1217 -
+ * menghentikan semuanya merusak yang sudah berjalan.
+ *
+ * Maka, diputuskan 26 September 2026: ALETA mengusulkan bila (a) n pasangan
+ * >= 10, (b) ketepatannya >= 0,5, dan (c) tidak kalah dari bawaan ABT lebih
+ * dari 0,02 pada perkara yang sama (1003 0,973 lawan 0,983 dan 7211 0,794
+ * lawan 0,803 dianggap setara). Hasilnya: 5178, 5105, 1046, 1002, dan 0007
+ * diserahkan ke bawaan ABT; sembilan lainnya tetap diusulkan ALETA.
+ *
+ * Asal usul, perwalian, dan harta bersama memakai pengurai yang SAMA (tombol
+ * itsbat tampil karena blangkonya memuat #5197#), tetapi n-nya 0-2. Selama
+ * begitu, keputusannya dipinjam dari ukuran itsbat nikah - bukti terbaik atas
+ * pengurai yang sama - dan alasannya menyebut peminjaman itu.
+ */
+const GERBANG_ITSBAT = { presisiMinimal: 0.5, nMinimal: 10, selisihAbtMaks: 0.02, jenisWakil: "itsbat-nikah" };
+
+const UKUR_SUMBER = {
+  "posita-lain": {
+    "dispensasi-kawin": {
+      "0606": { aleta: { n: 44, benar: 43, ketat: 39 } },
+      "0600": { aleta: { n: 36, benar: 33, ketat: 31 } },
+      "0607": { aleta: { n: 36, benar: 34, ketat: 34 } },
+      "0601": { aleta: { n: 11, benar: 10, ketat: 10 } },
+      "5178": {
+        aleta: { n: 7, benar: 6, ketat: 6 },
+        abt: { acuan: "10103", n: 7, benar: 0, kosong: 0, nMentah: 8, benarMentah: 1, dipangkas: 6 },
+        pasang: { n: 7, aleta: 6, abt: 0 },
+        sampah:
+          "Kalimat blangko DK sendiri sudah menyebut penolakannya di sekitar #5178# (30 kemunculan di 5 blangko: " +
+          "'ditolak oleh #5178#', 'Pegawai Pencatat Nikah #5178# menolak dengan alasan'), sedangkan bawaan #10103# " +
+          "membawa sisa kalimat posita '..., guna mencatatkan ..., namun ditolak dengan alasan ...'. Tersimpan utuh, " +
+          "penolakannya tercetak dua kali. Petugas memangkasnya 6 dari 8 kali; 1 isian yang sama persis dengan bawaan " +
+          "dikeluarkan dari pembanding (1 lagi diubah sesudah 1 September 2026).",
+        gabung: {
+          n: 11,
+          benar: 11,
+          dasar:
+            "3333 'KUA Kecamatan ...' - blangko lama, diisi 2022-12-01 s.d. 2025-06-10, tidak ada lagi di 908 RTF " +
+            "_blangko_abt. Maknanya sama dengan 5178: pada 6 posita yang menyebut dua KUA atau lebih, isian 3333 selalu " +
+            "KUA yang MENOLAK (6/6) dan tidak pernah KUA yang disebut pertama (0/6); isian 5178 sama (4/4, 0/4). " +
+            "Pengurai kuaPenolak cocok 11/11 setelah awalan 'Kantor Urusan Agama Kecamatan' dibuang.",
+        },
+      },
+      "1666": { aleta: { n: 8, benar: 4, ketat: 4 } },
+      "1551": { aleta: { n: 7, benar: 2, ketat: 2 } }, // manusia menulis "X bin Y", posita hanya "X"
+      "0999": { aleta: { n: 3, benar: 1, ketat: 1 } }, // manusia memilih satu angka dari rentang
+    },
+    perwalian: {
+      "1025": { aleta: { n: 5, benar: 2, ketat: 2 } },
+      "0712": { aleta: { n: 5, benar: 5, ketat: 5 } },
+      "0709": { aleta: { n: 5, benar: 5, ketat: 5 } },
+      "5110": { aleta: { n: 1, benar: 1, ketat: 1 } },
+      "8171": { aleta: { n: 5, benar: 0, ketat: 0 } },
+    },
+    "asal-usul": {
+      "5197": { aleta: { n: 2, benar: 1, ketat: 1 }, abt: { acuan: "10101", n: 2, benar: 1, kosong: 0, nMentah: 2, benarMentah: 1, dipangkas: 0 }, pasang: { n: 2, aleta: 1, abt: 1 } },
+      "5105": { aleta: { n: 0, benar: 0, ketat: 0 }, abt: { acuan: "10102", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "8087": { aleta: { n: 2, benar: 2, ketat: 2 }, abt: { acuan: "10109", n: 2, benar: 0, kosong: 0, nMentah: 2, benarMentah: 0, dipangkas: 2 }, pasang: { n: 2, aleta: 2, abt: 0 } },
+      "1217": { aleta: { n: 2, benar: 2, ketat: 2 }, abt: { acuan: "1177", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "0650": { aleta: { n: 2, benar: 2, ketat: 2 }, abt: { acuan: "10110", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "0651": { aleta: { n: 2, benar: 2, ketat: 2 }, abt: { acuan: "10111", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "1001": { aleta: { n: 2, benar: 2, ketat: 2 }, abt: { acuan: "10112", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+    },
+    "harta-bersama": {},
   },
-  perwalian: {
-    "1025": { n: 5, benar: 2, presisi: 0.4, presisiKetat: 0.4 },
-    "0712": { n: 5, benar: 5, presisi: 1, presisiKetat: 1 },
-    "0709": { n: 5, benar: 5, presisi: 1, presisiKetat: 1 },
-    "5110": { n: 1, benar: 1, presisi: 1, presisiKetat: 1 },
-    "8171": { n: 5, benar: 0, presisi: 0, presisiKetat: 0 },
+  // Jalur itsbat (abtUsulanService.dariPositaItsbat, tombol "Isi dari posita
+  // permohonan" pada blangko bermuat #5197#/#8087#) - dipakai jalur itu, bukan
+  // oleh dariPositaLain. Blangko asal usul, perwalian, dan harta bersama juga
+  // memuat #5197#, jadi tombol itsbat tampil di sana dan perkaranya diukur.
+  itsbat: {
+    "itsbat-nikah": {
+      "1001": { aleta: { n: 643, benar: 285 }, abt: { acuan: "10112", n: 307, benar: 207, kosong: 0, nMentah: 307, benarMentah: 207, dipangkas: 2 }, pasang: { n: 282, aleta: 213, abt: 206 } },
+      "1002": { aleta: { n: 544, benar: 98 }, abt: { acuan: "10106", n: 312, benar: 234, kosong: 1, nMentah: 312, benarMentah: 234, dipangkas: 0 }, pasang: { n: 308, aleta: 85, abt: 231 } },
+      "1003": { aleta: { n: 522, benar: 310 }, abt: { acuan: "10107", n: 312, benar: 305, kosong: 1, nMentah: 312, benarMentah: 305, dipangkas: 0 }, pasang: { n: 301, aleta: 293, abt: 296 } },
+      "1046": { aleta: { n: 174, benar: 91 }, abt: { acuan: "10108", n: 309, benar: 187, kosong: 78, nMentah: 309, benarMentah: 187, dipangkas: 0 }, pasang: { n: 15, aleta: 0, abt: 1 } },
+      "1217": { aleta: { n: 637, benar: 578 }, abt: { acuan: "1177", n: 285, benar: 196, kosong: 9, nMentah: 285, benarMentah: 196, dipangkas: 0 }, pasang: { n: 280, aleta: 244, abt: 193 } },
+      "5105": { aleta: { n: 300, benar: 10 }, abt: { acuan: "10102", n: 322, benar: 137, kosong: 0, nMentah: 322, benarMentah: 137, dipangkas: 3 }, pasang: { n: 260, aleta: 10, abt: 107 } },
+      "5178": { aleta: { n: 249, benar: 0 }, abt: { acuan: "10103", n: 264, benar: 245, kosong: 0, nMentah: 264, benarMentah: 245, dipangkas: 2 }, pasang: { n: 247, aleta: 0, abt: 232 } },
+      "5197": { aleta: { n: 297, benar: 233 }, abt: { acuan: "10101", n: 338, benar: 62, kosong: 0, nMentah: 338, benarMentah: 62, dipangkas: 37 }, pasang: { n: 297, aleta: 233, abt: 47 } },
+      "7211": { aleta: { n: 224, benar: 175 }, abt: { acuan: "10104", n: 264, benar: 205, kosong: 0, nMentah: 264, benarMentah: 205, dipangkas: 41 }, pasang: { n: 218, aleta: 173, abt: 175 } },
+      "7212": { aleta: { n: 219, benar: 170 }, abt: { acuan: "10105", n: 264, benar: 202, kosong: 0, nMentah: 264, benarMentah: 202, dipangkas: 39 }, pasang: { n: 213, aleta: 169, abt: 168 } },
+      "8087": { aleta: { n: 517, benar: 266 }, abt: { acuan: "10109", n: 310, benar: 192, kosong: 0, nMentah: 310, benarMentah: 192, dipangkas: 31 }, pasang: { n: 298, aleta: 196, abt: 189 } },
+      "0007": { aleta: { n: 496, benar: 62 }, abt: { acuan: "8492", n: 334, benar: 50, kosong: 0, nMentah: 334, benarMentah: 50, dipangkas: 0 }, pasang: { n: 277, aleta: 33, abt: 39 } },
+      "0650": { aleta: { n: 569, benar: 509 }, abt: { acuan: "10110", n: 307, benar: 133, kosong: 0, nMentah: 307, benarMentah: 133, dipangkas: 67 }, pasang: { n: 302, aleta: 265, abt: 133 } },
+      "0651": { aleta: { n: 543, benar: 476 }, abt: { acuan: "10111", n: 306, benar: 96, kosong: 0, nMentah: 306, benarMentah: 96, dipangkas: 6 }, pasang: { n: 286, aleta: 248, abt: 92 } },
+    },
+    "asal-usul": {
+      "1001": { aleta: { n: 2, benar: 2 }, abt: { acuan: "10112", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "1002": { aleta: { n: 2, benar: 0 }, abt: { acuan: "10106", n: 2, benar: 1, kosong: 1, nMentah: 2, benarMentah: 1, dipangkas: 0 }, pasang: { n: 2, aleta: 0, abt: 1 } },
+      "1003": { aleta: { n: 2, benar: 2 }, abt: { acuan: "10107", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "1046": { aleta: { n: 2, benar: 0 }, abt: { acuan: "10108", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 0, abt: 2 } },
+      "1217": { aleta: { n: 2, benar: 2 }, abt: { acuan: "1177", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "5178": { aleta: { n: 1, benar: 0 }, abt: { acuan: "10103", n: 1, benar: 1, kosong: 0, nMentah: 1, benarMentah: 1, dipangkas: 0 }, pasang: { n: 1, aleta: 0, abt: 1 } },
+      "5197": { aleta: { n: 2, benar: 1 }, abt: { acuan: "10101", n: 2, benar: 1, kosong: 0, nMentah: 2, benarMentah: 1, dipangkas: 0 }, pasang: { n: 2, aleta: 1, abt: 1 } },
+      "7211": { aleta: { n: 1, benar: 1 }, abt: { acuan: "10104", n: 1, benar: 1, kosong: 0, nMentah: 1, benarMentah: 1, dipangkas: 0 }, pasang: { n: 1, aleta: 1, abt: 1 } },
+      "7212": { aleta: { n: 1, benar: 1 }, abt: { acuan: "10105", n: 1, benar: 1, kosong: 0, nMentah: 1, benarMentah: 1, dipangkas: 0 }, pasang: { n: 1, aleta: 1, abt: 1 } },
+      "8087": { aleta: { n: 2, benar: 2 }, abt: { acuan: "10109", n: 2, benar: 0, kosong: 0, nMentah: 2, benarMentah: 0, dipangkas: 2 }, pasang: { n: 2, aleta: 2, abt: 0 } },
+      "0007": { aleta: { n: 1, benar: 0 }, abt: { acuan: "8492", n: 1, benar: 0, kosong: 0, nMentah: 1, benarMentah: 0, dipangkas: 0 }, pasang: { n: 1, aleta: 0, abt: 0 } },
+      "0650": { aleta: { n: 2, benar: 2 }, abt: { acuan: "10110", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+      "0651": { aleta: { n: 2, benar: 2 }, abt: { acuan: "10111", n: 2, benar: 2, kosong: 0, nMentah: 2, benarMentah: 2, dipangkas: 0 }, pasang: { n: 2, aleta: 2, abt: 2 } },
+    },
+    perwalian: {
+      "1046": { aleta: { n: 0, benar: 0 }, abt: { acuan: "10108", n: 0, benar: 0, kosong: 0, nMentah: 0, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "1217": { aleta: { n: 0, benar: 0 }, abt: { acuan: "1177", n: 0, benar: 0, kosong: 0, nMentah: 0, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "5105": { aleta: { n: 0, benar: 0 }, abt: { acuan: "10102", n: 3, benar: 0, kosong: 0, nMentah: 3, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "5178": { aleta: { n: 0, benar: 0 }, abt: { acuan: "10103", n: 3, benar: 1, kosong: 0, nMentah: 3, benarMentah: 1, dipangkas: 2 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "5197": { aleta: { n: 0, benar: 0 }, abt: { acuan: "10101", n: 3, benar: 0, kosong: 0, nMentah: 3, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "0007": { aleta: { n: 0, benar: 0 }, abt: { acuan: "8492", n: 3, benar: 0, kosong: 0, nMentah: 3, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+    },
+    "harta-bersama": {
+      "5178": { aleta: { n: 0, benar: 0 }, abt: { acuan: "10103", n: 0, benar: 0, kosong: 0, nMentah: 0, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "5197": { aleta: { n: 0, benar: 0 }, abt: { acuan: "10101", n: 0, benar: 0, kosong: 0, nMentah: 0, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+      "0007": { aleta: { n: 0, benar: 0 }, abt: { acuan: "8492", n: 0, benar: 0, kosong: 0, nMentah: 0, benarMentah: 0, dipangkas: 0 }, pasang: { n: 0, aleta: 0, abt: 0 } },
+    },
   },
-  "asal-usul": {
-    "5197": { n: 2, benar: 1, presisi: 0.5, presisiKetat: 0.5 },
-    "5105": { n: 0, benar: 0, presisi: null, presisiKetat: null },
-    "8087": { n: 2, benar: 2, presisi: 1, presisiKetat: 1 },
-    "1217": { n: 2, benar: 2, presisi: 1, presisiKetat: 1 },
-    "0650": { n: 2, benar: 2, presisi: 1, presisiKetat: 1 },
-    "0651": { n: 2, benar: 2, presisi: 1, presisiKetat: 1 },
-    "1001": { n: 2, benar: 2, presisi: 1, presisiKetat: 1 },
-  },
-  "harta-bersama": {},
 };
 
 /**
- * Variabel yang lulus gerbang, per jenis - diturunkan dari HASIL_UKUR di atas,
- * bukan ditulis tangan, supaya keduanya tidak dapat berselisih.
- * Hasil 26 September 2026: DK 0606, 0600, 0607, 0601, 3333; jenis lain kosong.
+ * Jenis yang dikenal keputusan sumber: empat jenis perkara lain, ditambah
+ * itsbat nikah untuk jalur itsbat. dariPositaLain TIDAK melayani itsbat -
+ * kenaliJenis tetap hanya JENIS_LAIN.
  */
-const VARIABEL_SIAP = Object.freeze(
-  Object.fromEntries(
-    Object.entries(ATURAN_LAIN).map(([jenis, aturan]) => [
-      jenis,
-      Object.freeze(aturan.filter((a) => keadaanGerbang(jenis, a.kode).siap).map((a) => a.kode)),
-    ])
-  )
-);
+const JENIS_TERUKUR = Object.freeze([
+  ...JENIS_LAIN,
+  // SIPP menulis "Istbat"; "Pengesahan Perkawinan/Istbat Nikah" = 360.
+  { kunci: "itsbat-nikah", nama: "Itsbat Nikah", jenisPerkaraId: 360, pola: /\bi[st]{1,2}bat\b|pengesahan\s+perkawinan/i },
+]);
 
-/** Kunci jenis dari masukan: id jenis perkara SIPP, nama, atau kunci. */
-function kenaliJenis(jenisPerkara, alur) {
-  void alur;
+/** Jenis dari id SIPP, kunci, atau nama, dicari di `daftar`. */
+function cariJenis(daftar, jenisPerkara) {
   const teks = String(jenisPerkara === undefined || jenisPerkara === null ? "" : jenisPerkara).trim();
   if (!teks) return null;
   const angka = Number(teks);
   return (
-    JENIS_LAIN.find((j) => j.kunci === teks) ||
-    (Number.isFinite(angka) ? JENIS_LAIN.find((j) => j.jenisPerkaraId === angka) : null) ||
-    JENIS_LAIN.find((j) => j.pola.test(teks)) ||
+    daftar.find((j) => j.kunci === teks) ||
+    (Number.isFinite(angka) ? daftar.find((j) => j.jenisPerkaraId === angka) : null) ||
+    daftar.find((j) => j.pola.test(teks)) ||
     null
   );
 }
 
-/** Siap atau belum menurut hasil ukur yang tercatat. */
-function keadaanGerbang(jenis, kode) {
-  const u = (HASIL_UKUR[jenis] || {})[kode];
-  if (!u) return { siap: false, alasan: "belum diukur", presisi: null, n: 0 };
-  if (u.n < GERBANG.nMinimal) return { siap: false, alasan: `n<${GERBANG.nMinimal}`, presisi: u.presisi, n: u.n };
-  if (u.presisi === null || u.presisi < GERBANG.presisiMinimal) {
-    return { siap: false, alasan: `presisi<${GERBANG.presisiMinimal}`, presisi: u.presisi, n: u.n };
-  }
-  return { siap: true, alasan: "", presisi: u.presisi, n: u.n };
+/** Kunci jenis dari masukan: id jenis perkara SIPP, nama, atau kunci. */
+function kenaliJenis(jenisPerkara, alur) {
+  void alur;
+  return cariJenis(JENIS_LAIN, jenisPerkara);
 }
+
+/** Seperti kenaliJenis, ditambah itsbat nikah - untuk keputusan sumber. */
+function kenaliJenisTerukur(jenisPerkara) {
+  return cariJenis(JENIS_TERUKUR, jenisPerkara);
+}
+
+/** Nomor variabel ABT 4 digit ("5178", 5178, "#5178#"); 5 digit apa adanya. */
+function kodeVariabel(kode) {
+  const d = String(kode === undefined || kode === null ? "" : kode).replace(/\D/g, "");
+  return d && d.length < 4 ? d.padStart(4, "0") : d;
+}
+
+/** Satu baris UKUR_SUMBER, atau null. */
+function barisUkur(jalur, kunciJenis, kode) {
+  return ((UKUR_SUMBER[jalur] || {})[kunciJenis] || {})[kodeVariabel(kode)] || null;
+}
+
+const bulat3 = (x) => Number(x.toFixed(3));
+
+/**
+ * Dasar gerbang satu baris: `pasang` bila ada bawaan ABT (perkara yang sama,
+ * masa bawaan), selainnya semua isian sah (`aleta`); ditambah `gabung`.
+ */
+function dasarGerbang(u) {
+  const g = u.gabung || { n: 0, benar: 0 };
+  const inti = u.abt ? { n: u.pasang.n, benar: u.pasang.aleta } : { n: u.aleta.n, benar: u.aleta.benar };
+  return { n: inti.n + g.n, benar: inti.benar + g.benar };
+}
+
+/**
+ * Baris ukur yang berlaku. Jalur itsbat meminjam baris itsbat nikah bila baris
+ * jenisnya sendiri belum mencapai n minimal (lihat GERBANG_ITSBAT); `wakil`
+ * menyebut peminjaman itu, null bila barisnya milik jenis itu sendiri.
+ */
+function barisBerlaku(jalur, kunciJenis, kode) {
+  const u = barisUkur(jalur, kunciJenis, kode);
+  if (jalur !== "itsbat" || kunciJenis === GERBANG_ITSBAT.jenisWakil) return { u, wakil: null };
+  const nSendiri = u ? dasarGerbang(u).n : 0;
+  if (nSendiri >= GERBANG_ITSBAT.nMinimal) return { u, wakil: null };
+  const w = barisUkur(jalur, GERBANG_ITSBAT.jenisWakil, kode);
+  return w ? { u: w, wakil: { jenis: GERBANG_ITSBAT.jenisWakil, nSendiri } } : { u, wakil: null };
+}
+
+/** Siap atau belum menurut dasar gerbang (jalur bawaan: posita-lain). */
+function keadaanGerbang(jenis, kode, jalur) {
+  const j = jalur || "posita-lain";
+  const { u } = barisBerlaku(j, jenis, kode);
+  if (!u) return { siap: false, alasan: "belum diukur", presisi: null, n: 0 };
+  const g = j === "itsbat" ? GERBANG_ITSBAT : GERBANG;
+  const d = dasarGerbang(u);
+  const presisi = d.n ? bulat3(d.benar / d.n) : null;
+  if (d.n < g.nMinimal) return { siap: false, alasan: `n<${g.nMinimal}`, presisi, n: d.n };
+  if (d.benar / d.n < g.presisiMinimal) return { siap: false, alasan: `presisi<${g.presisiMinimal}`, presisi, n: d.n };
+  return { siap: true, alasan: "", presisi, n: d.n };
+}
+
+/**
+ * KEPUTUSAN SUMBER TERUKUR untuk satu variabel - dipakai dariPositaLain, dan
+ * disediakan untuk jalur itsbat (abtUsulanService) dengan opsi.jalur 'itsbat'.
+ *
+ * @param {string|number} jenisPerkara id jenis perkara SIPP (362, 360, ...), nama, atau kunci
+ * @param {string|number} kode nomor variabel ABT ("5178")
+ * @param {{jalur?: 'posita-lain'|'itsbat'}} [opsi] jalur aturan ALETA; bawaan 'posita-lain'
+ * @returns {{
+ *   sumber: 'aleta'|'abt'|'belum-terukur',
+ *   jalur: string, jenis: string|null, kode: string,
+ *   presisiAleta: number|null, n: number,
+ *   ketepatanAbt: number|null, nAbt: number, acuan: string|null,
+ *   gerbang: {siap: boolean, alasan: string, presisi: number|null, n: number},
+ *   alasan: string
+ * }}
+ *   presisiAleta/n   atas dasar gerbang (pembanding yang sah)
+ *   ketepatanAbt/nAbt bawaan ABT atas perkara yang sama dengan ALETA (pasang)
+ *   acuan            kueri bawaan ABT ("10103"), null bila tidak ada
+ *   jenisUkur        jenis yang barisnya dipakai - itsbat nikah bila jalur
+ *                    itsbat meminjamnya (GERBANG_ITSBAT)
+ * Hanya sumber 'aleta' yang boleh diusulkan ALETA. 'abt' berarti ABT
+ * MENAWARKAN isian bawaan dari kueri #acuan# yang wajib diperiksa petugas.
+ * Jalur itsbat memakai GERBANG_ITSBAT; jalur posita-lain memakai GERBANG.
+ */
+function sumberUsulanTerukur(jenisPerkara, kode, opsi) {
+  const jalur = (opsi && opsi.jalur) || "posita-lain";
+  const jenis = kenaliJenisTerukur(jenisPerkara);
+  const k = kodeVariabel(kode);
+  const hasil = {
+    sumber: "belum-terukur",
+    jalur,
+    jenis: jenis ? jenis.kunci : null,
+    kode: k,
+    presisiAleta: null,
+    n: 0,
+    ketepatanAbt: null,
+    nAbt: 0,
+    acuan: null,
+    jenisUkur: null,
+    gerbang: { siap: false, alasan: "belum diukur", presisi: null, n: 0 },
+    alasan: "",
+  };
+  if (!jenis) return { ...hasil, gerbang: { ...hasil.gerbang, alasan: "jenis tidak dikenal" }, alasan: "jenis perkara tidak dikenal" };
+  const { u, wakil } = barisBerlaku(jalur, jenis.kunci, k);
+  if (!u) return { ...hasil, alasan: "belum diukur" };
+  const gerbang = keadaanGerbang(jenis.kunci, k, jalur);
+  Object.assign(hasil, { gerbang, presisiAleta: gerbang.presisi, n: gerbang.n, jenisUkur: wakil ? wakil.jenis : jenis.kunci });
+  if (u.abt) {
+    Object.assign(hasil, {
+      acuan: u.abt.acuan,
+      nAbt: u.pasang.n,
+      ketepatanAbt: u.pasang.n ? bulat3(u.pasang.abt / u.pasang.n) : null,
+    });
+  }
+  const kueri = u.abt ? `#${u.abt.acuan}#` : "";
+  const pinjam = wakil ? `diukur pada ${wakil.jenis} - pengurai yang sama, ${jenis.kunci} baru n ${wakil.nSendiri}; ` : "";
+  if (!gerbang.siap) {
+    return u.abt
+      ? { ...hasil, sumber: "abt", alasan: `${pinjam}aturan ALETA belum lulus gerbang (${gerbang.alasan}); ABT menawarkan isian bawaan dari kueri ${kueri}` }
+      : { ...hasil, sumber: "belum-terukur", alasan: `${pinjam}aturan ALETA belum lulus gerbang (${gerbang.alasan})` };
+  }
+  if (!u.abt) return { ...hasil, sumber: "aleta", alasan: `${pinjam}lulus gerbang (presisi ${gerbang.presisi}, n ${gerbang.n}); tidak ada bawaan ABT` };
+  if (!u.pasang.n) return { ...hasil, sumber: "abt", alasan: `${pinjam}bawaan ABT ${kueri} belum dapat dibandingkan pada perkara yang sama` };
+  const banding = `ALETA ${u.pasang.aleta}/${u.pasang.n}, ABT ${u.pasang.abt}/${u.pasang.n} pada perkara yang sama`;
+  if (u.pasang.aleta >= u.pasang.abt) {
+    return { ...hasil, sumber: "aleta", alasan: `${pinjam}lulus gerbang dan tidak lebih buruk dari bawaan ABT ${kueri} (${banding})` };
+  }
+  // Jalur itsbat: kalah tipis dari bawaan ABT masih dianggap setara.
+  if (jalur === "itsbat" && u.pasang.aleta / u.pasang.n >= u.pasang.abt / u.pasang.n - GERBANG_ITSBAT.selisihAbtMaks) {
+    return {
+      ...hasil,
+      sumber: "aleta",
+      alasan: `${pinjam}lulus gerbang dan setara dengan bawaan ABT ${kueri} (selisih paling banyak ${GERBANG_ITSBAT.selisihAbtMaks}; ${banding})`,
+    };
+  }
+  return { ...hasil, sumber: "abt", alasan: `${pinjam}bawaan ABT ${kueri} terukur lebih tepat (${banding})` };
+}
+
+/**
+ * Variabel yang boleh diusulkan dariPositaLain, per jenis: sumber terukurnya
+ * 'aleta'. Diturunkan dari ATURAN_LAIN dan UKUR_SUMBER, bukan ditulis tangan.
+ * Hasil 26 September 2026: DK 0606, 0600, 0607, 0601, 5178; jenis lain kosong.
+ */
+function susunVariabelSiap() {
+  return Object.fromEntries(
+    Object.entries(ATURAN_LAIN).map(([jenis, aturan]) => [
+      jenis,
+      aturan.filter((a) => sumberUsulanTerukur(jenis, a.kode).sumber === "aleta").map((a) => a.kode),
+    ])
+  );
+}
+
+const VARIABEL_SIAP = Object.freeze(
+  Object.fromEntries(Object.entries(susunVariabelSiap()).map(([jenis, daftar]) => [jenis, Object.freeze(daftar)]))
+);
 
 /** Konteks yang dipakai bersama beberapa aturan satu jenis. */
 function konteksAturan(posita) {
@@ -411,7 +723,15 @@ function konteksAturan(posita) {
  *
  * @param {string} posita posita apa adanya (boleh HTML)
  * @param {{jenisPerkara?: string|number, alur?: string|number, sebutan?: object, tipeKeluaran?: object}} opsi
- * @returns {{ok: boolean, jenis: string, usulan: object[], belumSiap: object[], alasan?: string, catatan?: string}}
+ * @returns {{ok: boolean, jenis: string, usulan: object[], belumSiap: object[], bawaanAbt: object[], alasan?: string, catatan?: string}}
+ *
+ * Tiap aturan jenis itu masuk TEPAT SATU daftar, menurut sumberUsulanTerukur:
+ *   usulan     sumber 'aleta' - {kode, nama, nilai, keyakinan, sumber, siap}
+ *   bawaanAbt  sumber 'abt' - {kode, acuan, alasan}: ALETA tidak mengusulkan;
+ *              ABT menawarkan isian bawaan dari kueri #acuan# di kotak
+ *              popupnya, dan petugas wajib memeriksanya sebelum menyimpan
+ *   belumSiap  sumber 'belum-terukur' - {kode, alasan, presisi, n}
+ * Ketiga daftar selalu ada, juga pada ok:false (kosong).
  *
  * `sebutan` dan `tipeKeluaran` diterima sesuai kontrak; belum ada daftar tipe
  * keluaran untuk perkara lain, dan sebutan pihak tidak dipakai aturan mana pun
@@ -421,19 +741,27 @@ function dariPositaLain(posita, opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
   const jenis = kenaliJenis(o.jenisPerkara, o.alur);
   if (!jenis) {
-    return { ok: false, jenis: "", usulan: [], belumSiap: [], alasan: "jenis_perkara_tidak_dilayani" };
+    return { ok: false, jenis: "", usulan: [], belumSiap: [], bawaanAbt: [], alasan: "jenis_perkara_tidak_dilayani" };
   }
   const teks = polos(posita);
   if (!teks) {
-    return { ok: false, jenis: jenis.kunci, usulan: [], belumSiap: [], alasan: "posita_kosong" };
+    return { ok: false, jenis: jenis.kunci, usulan: [], belumSiap: [], bawaanAbt: [], alasan: "posita_kosong" };
   }
   const konteks = konteksAturan(posita);
   const usulan = [];
   const belumSiap = [];
+  const bawaanAbt = [];
   for (const aturan of ATURAN_LAIN[jenis.kunci] || []) {
-    const gerbang = keadaanGerbang(jenis.kunci, aturan.kode);
-    if (!gerbang.siap) {
-      belumSiap.push({ kode: aturan.kode, alasan: gerbang.alasan, presisi: gerbang.presisi, n: gerbang.n });
+    const keputusan = sumberUsulanTerukur(jenis.kunci, aturan.kode);
+    // Bawaan ABT lebih tepat, atau ALETA belum lulus padahal ABT punya
+    // bawaan: disebut beserta kuerinya - bukan hilang diam-diam.
+    if (keputusan.sumber === "abt") {
+      bawaanAbt.push({ kode: aturan.kode, acuan: keputusan.acuan, alasan: keputusan.alasan });
+      continue;
+    }
+    if (keputusan.sumber !== "aleta") {
+      const g = keputusan.gerbang;
+      belumSiap.push({ kode: aturan.kode, alasan: g.alasan, presisi: g.presisi, n: g.n });
       continue;
     }
     const hasil = aturan.ambil(teks, konteks);
@@ -446,23 +774,68 @@ function dariPositaLain(posita, opsi) {
       siap: true,
     });
   }
-  const jawaban = { ok: true, jenis: jenis.kunci, usulan, belumSiap };
+  const jawaban = { ok: true, jenis: jenis.kunci, usulan, belumSiap, bawaanAbt };
   if (!(ATURAN_LAIN[jenis.kunci] || []).length) {
     jawaban.catatan = `Belum ada aturan ${jenis.nama} yang dapat diukur: isian ABT manusianya terlalu sedikit dan tidak berasal dari posita.`;
   }
   return jawaban;
 }
 
+/**
+ * ============================================================================
+ * JALUR ITSBAT - USULAN PENGURAI DISARING MENURUT SUMBER TERUKUR
+ * ============================================================================
+ *
+ * dariPositaItsbat (abtUsulanService) tetap mengurai ke-14 variabel: aturan
+ * perkara lain meminjam hasilnya (lihat pemakaiannya di ATURAN_LAIN), dan uji
+ * pengurainya membaca semuanya. Yang disaring hanya yang DIKIRIM ke panel
+ * lewat rute /abt/usulan sumber 'itsbat', dengan GERBANG_ITSBAT:
+ *   'aleta'          tetap di `usulan`;
+ *   'abt'            pindah ke `bawaanAbt` - panel menyebut kuerinya sebagai
+ *                    tawaran ABT yang wajib diperiksa (kabarPositaLain);
+ *   'belum-terukur'  pindah ke `belumSiap`.
+ * Bentuknya sama dengan dariPositaLain, sehingga panel memakai satu kabar.
+ *
+ * @param {object} hasil keluaran dariPositaItsbat
+ * @param {string|number} [jenisPerkara] kosong/tidak dikenal = itsbat nikah
+ */
+function saringUsulanItsbat(hasil, jenisPerkara) {
+  if (!hasil || hasil.ok === false || !Array.isArray(hasil.usulan)) return hasil;
+  const jenis = kenaliJenisTerukur(jenisPerkara) ? jenisPerkara : GERBANG_ITSBAT.jenisWakil;
+  const usulan = [];
+  const bawaanAbt = [];
+  const belumSiap = [];
+  for (const u of hasil.usulan) {
+    const k = sumberUsulanTerukur(jenis, u.kode, { jalur: "itsbat" });
+    if (k.sumber === "aleta") usulan.push(u);
+    else if (k.sumber === "abt") bawaanAbt.push({ kode: u.kode, nama: u.nama, acuan: k.acuan, alasan: k.alasan });
+    else belumSiap.push({ kode: u.kode, nama: u.nama, alasan: k.gerbang.alasan, presisi: k.gerbang.presisi, n: k.gerbang.n });
+  }
+  const ditemukan = usulan.filter((u) => u.nilai).length;
+  // Posita yang sama sekali tidak berpola itsbat tetap memakai kabar pengurai.
+  if (!hasil.ditemukan) return { ...hasil, ditemukan, usulan, bawaanAbt, belumSiap };
+  const diserahkan = bawaanAbt.length
+    ? ` ${bawaanAbt.length} variabel diserahkan ke isian bawaan ABT yang terukur lebih tepat.`
+    : "";
+  const catatan = `${ditemukan} dari ${usulan.length} variabel usulan ALETA terbaca dari posita; sisanya dikosongkan, bukan ditebak.${diserahkan}`;
+  return { ...hasil, ditemukan, usulan, bawaanAbt, belumSiap, catatan };
+}
+
 module.exports = {
   JENIS_LAIN,
   ATURAN_LAIN,
   GERBANG,
-  HASIL_UKUR,
+  GERBANG_ITSBAT,
+  UKUR_SUMBER,
   VARIABEL_SIAP,
   kenaliJenis,
+  kenaliJenisTerukur,
   keadaanGerbang,
+  sumberUsulanTerukur,
+  susunVariabelSiap,
   konteksAturan,
   calonMempelai,
   namaBerpenyambung,
   dariPositaLain,
+  saringUsulanItsbat,
 };

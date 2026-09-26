@@ -4010,11 +4010,17 @@ const ALAT_ANTREAN_MAKS = 120;
 /**
  * Bentuk antrean:
  *   {
- *     id, dibuat, tanggalSidang, tahap: "abt"|"sipp", modus: "otomatis"|"manual",
- *     kering: bool, posisi: number,
- *     butir: [{ nomor, perkaraId, jenis, enc, keadaan, catatan, dokumen:{rtf,pdf,anonim,unggah} }]
+ *     id, dibuat, tanggalSidang, tahap: "abt"|"sipp", asal: "abt"|"sidang"|"berkas"|"",
+ *     modus: "otomatis"|"manual", kering: bool, posisi: number,
+ *     butir: [{ nomor, perkaraId, jenis, enc, keadaan, catatan, sebabTahan?, pemegang?,
+ *               isianPilihan?, dokumen:{rtf,pdf,anonim,unggah} }]
  *   }
- * keadaan: menunggu | jalan | selesai | gagal | dilewati | jeda
+ * keadaan: menunggu | jalan | selesai | gagal | dilewati | jeda | tertahan
+ * sebabTahan (lanjutan SIPP): praperiksa | pilihan-kosong | pilihan-beda | gagal-isi |
+ *   medan-tambahan | antrean-diakhiri ("pilihan" = keduanya, butir sebelum 26 Sep 2026)
+ * pemegang: ALAT_PENANDA_HALAMAN halaman yang sedang mengerjakannya
+ * isianPilihan: [{ medan, nilai, asal: "bawaan"|"tegas"|"usulan" }] - pilihan borang
+ *   yang diisikan ALETA pada perkara itu
  */
 async function alatMuatAntrean() {
   try {
@@ -4026,7 +4032,70 @@ async function alatMuatAntrean() {
   }
 }
 
-async function alatSimpanAntrean(antrean) {
+/**
+ * ============================================================================
+ * ANTREAN DIUBAH PER BUTIR, BUKAN DITIMPA DENGAN SALINAN LAMA
+ * ============================================================================
+ *
+ * Sampai 26 September 2026 tiap langkah antrean SIPP menulis SELURUH antrean
+ * dari salinan yang dibacanya di awal pengerjaan. Salinan itu basi begitu tab
+ * lain - atau tombol "Akhiri antrean" - menulis: perkara yang sudah tersimpan
+ * di tab lain tercatat "menunggu" lagi (lalu disimpan kedua kalinya), antrean
+ * yang sudah diakhiri hidup kembali, dan antrean baru yang disusun dari berkas
+ * tertimpa antrean lama.
+ *
+ * Kini tiap tulis dari pengerjaan antrean adalah baca-ubah-tulis SATU butir
+ * (alatUbahButirAntrean): antrean dibaca segar, dipastikan masih antrean yang
+ * sama (id), satu butir diubah, lalu ditulis. Antrean yang sudah diakhiri atau
+ * diganti tidak ditulis sama sekali.
+ *
+ * Baca-ubah-tulis itu - dan tiap tulis utuh lewat alatSimpanAntrean -
+ * digilir lewat satu kunci Web Locks bila peramban menyediakannya. Kunci itu
+ * berlaku lintas tab seasal, jadi dua tab SIPP tidak dapat sama-sama membaca
+ * "menunggu" lalu sama-sama mengklaim perkara yang sama. Tanpa Web Locks
+ * semuanya tetap berjalan seperti sebelumnya, hanya tanpa giliran.
+ *
+ * NAVIGATOR.LOCKS HANYA ADA DI SECURE CONTEXT (https, localhost, 127.0.0.1).
+ * SIPP satker yang dibuka lewat http://192.168.10.10 bukan secure context,
+ * jadi di sana - menurut spesifikasinya; belum diukur di peramban kantor -
+ * kunci ini tidak ada. Yang tetap menjaga di sana: penanda pemegang
+ * (butir.pemegang) yang diperiksa pada tiap tulis, dan pemeriksaan segar
+ * TEPAT sebelum Simpan di jalankanSatuAntreanSipp - dua tab yang sama-sama
+ * mengklaim satu perkara hanya meloloskan pemegang terakhir.
+ */
+const ALAT_ANTREAN_NAMA_KUNCI = "aleta-antrean-putusan-massal";
+
+/**
+ * Penanda halaman ini. Butir yang sedang dikerjakan membawa penanda halaman
+ * yang mengerjakannya (butir.pemegang); halaman lain tidak menulis ke butir
+ * itu, dan halaman ini tidak menekan Simpan bila butirnya sudah dipegang
+ * halaman lain.
+ */
+const ALAT_PENANDA_HALAMAN = `halaman-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+/** Menjalankan `kerja` di bawah kunci antrean bila Web Locks ada; tanpanya langsung. */
+async function alatDalamKunciAntrean(kerja) {
+  const kunci =
+    typeof navigator !== "undefined" && navigator && navigator.locks && typeof navigator.locks.request === "function"
+      ? navigator.locks
+      : null;
+  if (!kunci) return kerja();
+  let mulai = false;
+  try {
+    return await kunci.request(ALAT_ANTREAN_NAMA_KUNCI, () => {
+      mulai = true;
+      return kerja();
+    });
+  } catch (galat) {
+    // Galat dari kerjanya sendiri diteruskan. Web Locks yang menolak sebelum
+    // kerja dimulai berarti berjalan tanpa giliran - seperti sebelum ada kunci.
+    if (mulai) throw galat;
+    return kerja();
+  }
+}
+
+/** Tulis utuh TANPA kunci - hanya untuk dipanggil dari dalam kunci antrean. */
+async function alatTulisAntreanLangsung(antrean) {
   try {
     if (!antrean) await chrome.storage.local.remove([ALAT_ANTREAN_KUNCI]);
     else await chrome.storage.local.set({ [ALAT_ANTREAN_KUNCI]: antrean });
@@ -4034,6 +4103,42 @@ async function alatSimpanAntrean(antrean) {
   } catch {
     return false;
   }
+}
+
+/** Menyimpan antrean UTUH (menyusun baru, mengakhiri) - bergiliran dengan tulisan lain. */
+async function alatSimpanAntrean(antrean) {
+  return alatDalamKunciAntrean(() => alatTulisAntreanLangsung(antrean));
+}
+
+/**
+ * Baca-ubah-tulis SATU butir antrean. `ubah(butir)` mengubah butir SEGAR di
+ * tempat; memulangkan false berarti batal dan tidak ada yang ditulis.
+ *
+ * Pulang { ok, sebab, butir } - butir adalah salinan sesudah diubah (atau
+ * sebelum, bila batal). sebab: "diakhiri" (antrean sudah tidak ada),
+ * "diganti" (antrean lain), "tidak-ada" (nomornya tidak di antrean), "ditolak"
+ * (ubah memulangkan false), "gagal-tulis".
+ */
+async function alatUbahButirAntrean(idAntrean, nomor, ubah) {
+  return alatDalamKunciAntrean(async () => {
+    const antrean = await alatMuatAntrean();
+    if (!antrean) return { ok: false, sebab: "diakhiri", butir: null };
+    if (antrean.id !== idAntrean) return { ok: false, sebab: "diganti", butir: null };
+    const butir = antrean.butir.find((x) => x.nomor === nomor);
+    if (!butir) return { ok: false, sebab: "tidak-ada", butir: null };
+    if (ubah(butir) === false) return { ok: false, sebab: "ditolak", butir: { ...butir } };
+    const tertulis = await alatTulisAntreanLangsung(antrean);
+    return { ok: tertulis, sebab: tertulis ? "" : "gagal-tulis", butir: { ...butir } };
+  });
+}
+
+/** Membaca SATU butir antrean segar - tanpa menulis. Bentuk pulangnya sama. */
+async function alatBacaButirAntrean(idAntrean, nomor) {
+  const antrean = await alatMuatAntrean();
+  if (!antrean) return { ok: false, sebab: "diakhiri", butir: null };
+  if (antrean.id !== idAntrean) return { ok: false, sebab: "diganti", butir: null };
+  const butir = antrean.butir.find((x) => x.nomor === nomor);
+  return butir ? { ok: true, sebab: "", butir: { ...butir } } : { ok: false, sebab: "tidak-ada", butir: null };
 }
 
 function alatBuatAntrean(pilihan) {
@@ -4048,11 +4153,18 @@ function alatBuatAntrean(pilihan) {
     dokumen: { rtf: "", pdf: "", anonim: "", unggah: "" },
   }));
   return {
-    id: `massal-${Date.now()}`,
+    // Ekor acak: dua antrean yang disusun pada milidetik yang sama tetap
+    // berbeda id - id-lah yang membedakan antrean lama dari penggantinya.
+    id: `massal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     dibuat: new Date().toISOString(),
     tanggalSidang: String(p.tanggalSidang || ""),
     tahap: p.tahap === "sipp" ? "sipp" : "abt",
-    modus: p.modus === "manual" ? "manual" : "otomatis",
+    // Asal antrean - disebut apa adanya di panel lanjutan SIPP.
+    asal: ["abt", "sidang", "berkas"].includes(p.asal) ? p.asal : "",
+    // Otomatis HANYA bila diminta dengan namanya. Mode otomatis menekan
+    // Simpan SIPP sendiri; sampai 26 September 2026 nilai yang tidak dikenal
+    // - "draf" dari antrean berkas - diam-diam menjadi otomatis.
+    modus: p.modus === "otomatis" ? "otomatis" : "manual",
     kering: p.kering !== false,
     posisi: 0,
     butir,
@@ -4072,6 +4184,40 @@ function alatAntreanRingkas(antrean) {
   const hitung = { menunggu: 0, jalan: 0, selesai: 0, gagal: 0, dilewati: 0, jeda: 0, tertahan: 0 };
   for (const b of (antrean && antrean.butir) || []) hitung[b.keadaan] = (hitung[b.keadaan] || 0) + 1;
   return hitung;
+}
+
+/**
+ * ============================================================================
+ * ANTREAN BARU TIDAK DIAM-DIAM MENGGANTI YANG BELUM SELESAI
+ * ============================================================================
+ *
+ * Hanya ada SATU antrean tersimpan: menyusun antrean baru (dari berkas, dari
+ * jadwal sidang, atau dari tahap ABT) menggantinya. Sampai 26 September 2026
+ * penggantian itu diam - perkara antrean lama yang belum dikerjakan hilang
+ * tanpa kabar. Kini petugas ditanya dulu bila antrean lama masih punya
+ * perkara menunggu atau sedang dikerjakan; antrean yang sudah habis diganti
+ * tanpa bertanya. Halaman tanpa window.confirm (uji lama) berperilaku seperti
+ * sebelumnya: diganti.
+ *
+ * @param {string} asalBaru sebutan antrean baru, untuk kalimat pertanyaannya
+ * @returns {Promise<boolean>} true = boleh mengganti
+ */
+async function alatBolehGantiAntrean(asalBaru) {
+  const lama = await alatMuatAntrean();
+  if (!lama) return true;
+  const h = alatAntreanRingkas(lama);
+  const belum = (h.menunggu || 0) + (h.jalan || 0);
+  if (belum === 0) return true;
+  const w = typeof window !== "undefined" ? window : null;
+  if (!w || typeof w.confirm !== "function") return true;
+  const asalLama = { abt: "tahap ABT", sidang: "jadwal sidang", berkas: "berkas putusan" }[lama.asal] || "sebelumnya";
+  return Boolean(
+    w.confirm(
+      `Antrean putusan massal dari ${asalLama}${lama.tanggalSidang ? ` (sidang ${lama.tanggalSidang})` : ""} ` +
+        `masih punya ${belum} perkara yang belum dikerjakan. Antrean baru${asalBaru ? ` dari ${asalBaru}` : ""} ` +
+        "akan menggantinya, dan perkara itu tidak dilanjutkan. Lanjutkan?"
+    )
+  );
 }
 
 /* ─── 3. JADWAL SIDANG PADA SATU TANGGAL ───────────────────────────────── */

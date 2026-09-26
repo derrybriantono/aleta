@@ -531,15 +531,25 @@ describe("sambungan: rute portal, gerbang bot, dan ekstensi", () => {
     }
   });
 
-  it("antrean massal: praperiksa berjalan SEBELUM medan diisi, dan yang ditahan tidak diisi", () => {
+  // Sampai 26 September 2026 praperiksa berjalan SEBELUM medan diisi - dan
+  // karena itu membaca Status Putusan yang masih "Pilih Status Putusan":
+  // status yang kemudian dipilih antrean sendiri tidak pernah diadu dengan
+  // amar. Kini ia berjalan sesudah pilihan dan naskah diisi, sebelum Simpan.
+  // Perilakunya dijaga ekstensi-massal-ujung-ke-ujung.test.ts (praperiksa
+  // sungguhan atas status yang dipilih antrean); di sini letaknya.
+  it("antrean massal: praperiksa berjalan SESUDAH pilihan borang diisi dan SEBELUM Simpan", () => {
     const badan = konten.slice(konten.indexOf("async function jalankanSatuAntreanSipp("));
     const fungsi = badan.slice(0, badan.indexOf("\n}\n"));
     const letakPraperiksa = fungsi.indexOf("await praperiksaSebelumMengisi(butir.nomor, kabar)");
-    const letakIsi = fungsi.indexOf("// 3. Isi tiga medan CKEditor.");
-    expect(letakPraperiksa).toBeGreaterThan(0);
-    expect(letakPraperiksa).toBeLessThan(letakIsi);
+    const letakPilihan = fungsi.indexOf("// 3a. Medan PILIHAN borang");
+    const letakTahanPilihan = fungsi.indexOf("// 3b'. Pilihan wajib");
+    const letakSimpan = fungsi.indexOf("await simpanPutusanLaluBuka(butir.nomor, kabar)");
+    expect(letakPilihan).toBeGreaterThan(0);
+    expect(letakPraperiksa).toBeGreaterThan(letakTahanPilihan);
+    expect(letakPraperiksa).toBeLessThan(letakSimpan);
+    expect(fungsi.split("await praperiksaSebelumMengisi(").length - 1).toBe(1);
     expect(fungsi).toContain('butir.keadaan = "tertahan";');
-    expect(konten).toContain('tertahan: "ditahan praperiksa"');
+    expect(konten).toContain('praperiksa: "ditahan praperiksa"');
   });
 
   it("panel tunggal: Isikan mati saat ditahan; tetap mengisi harus dinyatakan; Simpan tidak ditekan sendiri", () => {

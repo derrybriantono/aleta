@@ -111,8 +111,11 @@ const identikTerisi = sdg.saksi1.filter(
   (b, i) => !nomorPilihan.has(b.no) && sdg.saksi2[i] && b.jawab === sdg.saksi2[i].jawab && !/^(sudah|cukup|tidak ada)/i.test(b.jawab)
 ).length;
 periksa("tidak ada jawaban terisi yang identik kata demi kata", identikTerisi === 0, `identik ${identikTerisi} (seluruhnya ${sdg.identik}, termasuk baris pilihan)`);
-// "tidak menafkahi" adalah frasa setara (abtKalimatBaku frasaSetara, dari korpus BAS petugas).
-periksa("jawaban penyebab memuat alasan yang didalilkan saja", /tidak (memberi nafkah|menafkahi)/.test(sdg.saksi1[1].jawab) && /mabuk/.test(sdg.saksi2[1].jawab) && !/\.{3}/.test(sdg.saksi1[1].jawab));
+// Nafkah diucapkan dengan frasanya: setara "tidak memberi nafkah"/"tidak
+// menafkahi" dilepas 26 September 2026 karena berbeda DERAJAT dengan
+// "melalaikan kewajiban nafkah lahir" (abtKalimatBaku, catatan SETARA).
+periksa("jawaban penyebab memuat alasan yang didalilkan saja", /melalaikan kewajiban nafkah lahir/.test(sdg.saksi1[1].jawab) && /mabuk/.test(sdg.saksi2[1].jawab) && !/\.{3}/.test(sdg.saksi1[1].jawab));
+periksa("kedua saksi menyebut nafkah dengan derajat yang sama", /melalaikan kewajiban nafkah lahir/.test(sdg.saksi2[1].jawab), sdg.saksi2[1].jawab);
 periksa("kalimat penutup tidak diberi pembuka", sdg.saksi1[4].jawab === "Sudah cukup;" && sdg.saksi2[4].jawab === "Sudah cukup;");
 periksa("titik-titik templat ditandai perlu diisi", sdg.perluDiisi.length === 1 && sdg.perluDiisi[0].no === "12", JSON.stringify(sdg.perluDiisi));
 periksa("substansi lama pisah tetap 4 bulan pada keduanya", /4 bulan/.test(sdg.saksi1[2].jawab) && /4 bulan/.test(sdg.saksi2[2].jawab));

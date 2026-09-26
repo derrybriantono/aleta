@@ -306,12 +306,25 @@ const CIRI_ALASAN = [
   { kunci: "kekerasan dalam rumah tangga", kata: ["ancaman", "senjata"] },
   // Bentuk yang dipakai saksi sungguhan dan dahulu lolos: "melakukan
   // pemukulan", "dipukul oleh Tergugat", "menyakiti fisik", "mengancam dengan
-  // benda tajam" (terukur pada 25 September 2026). hanyaDeteksi: lihat
-  // CIRI_ALASAN_SDG di bawah daftar ini.
-  { kunci: "kekerasan dalam rumah tangga", kata: ["pemukulan"], hanyaDeteksi: true },
-  { kunci: "kekerasan dalam rumah tangga", kata: ["dipukul"], hanyaDeteksi: true },
+  // benda tajam" (terukur pada 25 September 2026).
+  //
+  // Dibuka untuk SDG 26 September 2026: "pemukulan" 9/10, "dipukul" 10/10,
+  // "mengancam + tajam" 10/10 kalimat saksi sungguhan benar-benar menyatakan
+  // kekerasan (dibaca satu per satu; folder kerja penguatan-putusan/
+  // alasan-cerai, label-presisi.json). "menyakiti + fisik" hanya 4 kemunculan
+  // - tidak cukup untuk diukur, tetap hanyaDeteksi.
+  { kunci: "kekerasan dalam rumah tangga", kata: ["pemukulan"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["dipukul"] },
   { kunci: "kekerasan dalam rumah tangga", kata: ["menyakiti", "fisik"], hanyaDeteksi: true },
-  { kunci: "kekerasan dalam rumah tangga", kata: ["mengancam", "tajam"], hanyaDeteksi: true },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["mengancam", "tajam"] },
+  // Bentuk pasif dan sehari-hari yang ditulis petugas di BAS: "Penggugat
+  // pernah dicekik", "ditampar", "ringan tangan". "pukul" telanjang SENGAJA
+  // tidak dipakai - "pukul 10.00" adalah keterangan waktu.
+  { kunci: "kekerasan dalam rumah tangga", kata: ["dicekik"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["ditampar"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["ditendang"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["menjambak"] },
+  { kunci: "kekerasan dalam rumah tangga", kata: ["ringan tangan"] },
 
   // --- nafkah -------------------------------------------------------------
   //
@@ -335,17 +348,49 @@ const CIRI_ALASAN = [
   // hubungan dengan wanita lain" dan "memiliki hubungan asmara dengan wanita
   // lain" masing-masing 3 perkara - dahulu tidak terbaca karena tidak memuat
   // "idaman lain" maupun "selingkuh".
-  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["wanita lain"], hanyaDeteksi: true },
-  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["perempuan lain"], hanyaDeteksi: true },
+  //
+  // 26 September 2026, dibaca satu per satu atas BAS petugas: "wanita lain"
+  // 10/10 dan "perempuan lain" 9/10 memang menyatakan hubungan dengan pihak
+  // lain - dibuka untuk SDG. "laki-laki lain" dan "pria lain" hanya 5 dari 10:
+  // separuhnya TUDUHAN suami yang cemburu ("Tergugat menuduh Penggugat ada
+  // hubungan dengan laki-laki lain"), yaitu ciri cemburu, bukan pihak lain.
+  // Keduanya (dan "lelaki lain" yang terlalu jarang untuk diukur) tetap
+  // hanyaDeteksi. "hubungan asmara" 8/10 dan "pria idaman" 7/10 karena sebab
+  // yang sama tidak ditambahkan.
+  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["wanita lain"] },
+  { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["perempuan lain"] },
   { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["laki-laki lain"], hanyaDeteksi: true },
   { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["lelaki lain"], hanyaDeteksi: true },
   { kunci: "pihak lain (wanita/pria idaman lain)", kata: ["pria lain"], hanyaDeteksi: true },
+  // "menjalin hubungan" SENGAJA tidak dipakai: ia hanya menambah 2 perkara
+  // di atas baris lain, dan satu di antaranya "tidak mau lagi menjalin
+  // hubungan suami istri" - bukan pihak lain.
+  // ============================================================================
+  // MENIKAH LAGI - KUNCI SENDIRI, BUKAN "PIHAK LAIN"
+  // ============================================================================
+  //
+  // "Tergugat telah menikah lagi dengan wanita lain" bukan perselingkuhan:
+  // menyamakannya membuat keterangan saksi SDG berbunyi "Tergugat
+  // berselingkuh" untuk perkawinan yang diakui. SIPP pun memisahkannya
+  // (faktor Poligami). "menikah lagi" 9/10 (satu pengandaian: "harus menikah
+  // lagi"), "menikah dengan wanita ..." 10/10, "menikah dengan laki-laki ..."
+  // 10/10.
+  { kunci: "menikah lagi", kata: ["menikah lagi"] },
+  { kunci: "menikah lagi", kata: ["kawin lagi"] },
+  { kunci: "menikah lagi", kata: ["menikah dengan wanita"] },
+  { kunci: "menikah lagi", kata: ["menikah dengan perempuan"] },
+  { kunci: "menikah lagi", kata: ["menikah dengan laki"] },
+  { kunci: "menikah lagi", kata: ["menikah dengan pria"] },
+  { kunci: "menikah lagi", kata: ["menikah siri"] },
   // Singkatan WIL dan PIL SENGAJA tidak dipakai. Pencocokannya potongan teks
   // tanpa batas kata - imbuhan bahasa Indonesia membuat batas kata mustahil
   // dipakai, sebab "berjudi" harus tetap cocok pada "judi" - sehingga "wil"
   // akan menyala pada "wilayah" dan "pil" pada "dipilih". Bentuk panjangnya
   // sudah tertangkap "idaman lain" di atas.
   { kunci: "cemburu", kata: ["cemburu"] },
+  // "curiga" SENGAJA tidak dipakai: dari 7 perkara yang baru terbaca
+  // karenanya, 3 bukan kecemburuan ("Penggugat mencurigai Tergugat telah
+  // mengambil uang", "mencurigai barang tersebut milik Tergugat").
   // Ketiganya dipisah - dulu satu kunci untuk tiganya, sehingga saksi yang
   // hanya menerangkan judi menghasilkan kalimat yang menuduh mabuk dan obat
   // terlarang sekaligus. Lihat catatan di frasaCiri.
@@ -353,10 +398,11 @@ const CIRI_ALASAN = [
   // "shabu" TIDAK memuat "sabu" (s-h-a-b-u), jadi ejaan ini dulu lolos -
   // padahal ia bentuk yang dipakai petugas sendiri ("obat-obatan terlarang
   // jenis Shabu").
-  { kunci: "obat terlarang", kata: ["shabu"], hanyaDeteksi: true },
+  // Dibuka untuk SDG 26 September 2026 - 10/10 (lihat catatan kekerasan).
+  { kunci: "obat terlarang", kata: ["shabu"] },
   // "obat-obatan terlarang" tidak memuat "obat terlarang" - ada "-obatan" di
-  // tengahnya. Kedua kata dituntut dalam SATU kalimat.
-  { kunci: "obat terlarang", kata: ["obat", "terlarang"], hanyaDeteksi: true },
+  // tengahnya. Kedua kata dituntut dalam SATU kalimat. 10/10.
+  { kunci: "obat terlarang", kata: ["obat", "terlarang"] },
   { kunci: "obat terlarang", kata: ["narkoba"] },
   { kunci: "obat terlarang", kata: ["narkotika"] },
   { kunci: "obat terlarang", kata: ["pemadat"] },
@@ -364,6 +410,9 @@ const CIRI_ALASAN = [
   { kunci: "obat terlarang", kata: ["ganja"] },
   { kunci: "judi", kata: ["judi"] },
   { kunci: "judi", kata: ["togel"] },
+  // "bermain judi sabung ayam", "judi slot online" - 10/10.
+  { kunci: "judi", kata: ["sabung ayam"] },
+  { kunci: "judi", kata: ["slot"] },
   { kunci: "mabuk", kata: ["mabuk"] },
   { kunci: "mabuk", kata: ["minuman keras"] },
   { kunci: "mabuk", kata: ["miras"] },
@@ -381,39 +430,114 @@ const CIRI_ALASAN = [
   // dan sikap (5 perkara). "kasar" TELANJANG tidak dipakai - ia menyala pada
   // kedua bentuk sekaligus dan menerbitkan dua perbuatan dari satu kalimat.
   //
-  // Seluruh baris di bagian ini hanyaDeteksi - keempat kuncinya belum dikenal
-  // SDG. Lihat CIRI_ALASAN_SDG di bawah daftar ini.
-  { kunci: "malas bekerja", kata: ["malas bekerja"], hanyaDeteksi: true },
-  { kunci: "malas bekerja", kata: ["malas dalam bekerja"], hanyaDeteksi: true },
-  { kunci: "malas bekerja", kata: ["malasbekerja"], hanyaDeteksi: true },
-  { kunci: "malas bekerja", kata: ["malas mencari pekerjaan"], hanyaDeteksi: true },
-  { kunci: "malas bekerja", kata: ["malas cari pekerjaan"], hanyaDeteksi: true },
-  { kunci: "malas bekerja", kata: ["malas mencari kerja"], hanyaDeteksi: true },
+  // Keempat kunci ini hanyaDeteksi sampai 26 September 2026. Sejak itu
+  // dibuka untuk SDG, sesudah tiap bunyinya dibaca atas BAS petugas
+  // sungguhan (1.498 perkara cerai 2024-2026, sepuluh kalimat tersebar per
+  // bunyi; folder kerja penguatan-putusan/alasan-cerai, label-presisi.json):
+  //   temperamental  temperam/tempram/sering marah/marah-marah/mudah marah/
+  //                  suka marah 10/10 masing-masing, emosional 9/9,
+  //                  tersulut emosi 9/9 (keduanya kembali hanyaDeteksi:
+  //                  di POSITA 3/6 dan 0/2 - lihat barisnya)
+  //   malas bekerja  malas bekerja 10/10, malas + kerja 10/10,
+  //                  tidak mau bekerja 10/10
+  //   berkata kasar  kata kasar 10/10
+  //   bersikap kasar sikap kasar 9/10 (satu penyangkalan: "tidak pernah
+  //                  bersikap kasar")
+  // "marah" telanjang TIDAK dipakai - 5 dari 10 kemunculannya kemarahan
+  // sesaat ("Tergugat marah terhadap Penggugat"), bukan watak. "kasar"
+  // telanjang juga tidak (lihat di atas), begitu pula "memaki" 9/10 dan
+  // "mencaci" 8/10 yang dua kali berbunyi "tidak pernah mendengar".
+  { kunci: "malas bekerja", kata: ["malas bekerja"] },
+  { kunci: "malas bekerja", kata: ["malas dalam bekerja"] },
+  { kunci: "malas bekerja", kata: ["malasbekerja"] },
+  { kunci: "malas bekerja", kata: ["malas mencari pekerjaan"] },
+  { kunci: "malas bekerja", kata: ["malas cari pekerjaan"] },
+  { kunci: "malas bekerja", kata: ["malas mencari kerja"] },
+  // "malas kerja", "malas untuk bekerja", "malas dan tidak mau berusaha
+  // mencari pekerjaan" - satu kalimat memuat keduanya.
+  { kunci: "malas bekerja", kata: ["malas", "kerja"] },
+  { kunci: "malas bekerja", kata: ["tidak mau bekerja"] },
   // "temperam" dan "tempram", bukan "temperamen": ejaan saksi beragam
   // ("temperamantal", "tempramental"), dan potongan ini tidak muncul di kata
   // lain. "marah-marah" ikut di sini sebab petugas sendiri menuliskannya
   // begitu - saksi berkata "sering marah-marah", isian 5227 manusianya
   // "bersikap temperamental" (perkara 412/Pdt.G/2025, 493/Pdt.G/2025).
-  { kunci: "temperamental", kata: ["temperam"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["tempram"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["teperamen"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["temparamen"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["sering marah"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["marah-marah"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["marah marah"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["mudah marah"], hanyaDeteksi: true },
-  { kunci: "temperamental", kata: ["pemarah"], hanyaDeteksi: true },
-  { kunci: "berkata kasar", kata: ["kata kasar"], hanyaDeteksi: true },
-  { kunci: "berkata kasar", kata: ["kata-kata kasar"], hanyaDeteksi: true },
-  { kunci: "berkata kasar", kata: ["bicara kasar"], hanyaDeteksi: true },
-  { kunci: "berkata kasar", kata: ["ucapan kasar"], hanyaDeteksi: true },
-  { kunci: "berkata kasar", kata: ["berucap kasar"], hanyaDeteksi: true },
-  { kunci: "berkata kasar", kata: ["perkataan kasar"], hanyaDeteksi: true },
-  { kunci: "bersikap kasar", kata: ["sikap kasar"], hanyaDeteksi: true },
-  { kunci: "bersikap kasar", kata: ["berlaku kasar"], hanyaDeteksi: true },
-  { kunci: "bersikap kasar", kata: ["perlakuan kasar"], hanyaDeteksi: true },
-  { kunci: "bersikap kasar", kata: ["berbuat kasar"], hanyaDeteksi: true },
-  { kunci: "bersikap kasar", kata: ["bertindak kasar"], hanyaDeteksi: true },
+  { kunci: "temperamental", kata: ["temperam"] },
+  { kunci: "temperamental", kata: ["tempram"] },
+  { kunci: "temperamental", kata: ["teperamen"] },
+  { kunci: "temperamental", kata: ["temparamen"] },
+  { kunci: "temperamental", kata: ["sering marah"] },
+  { kunci: "temperamental", kata: ["marah-marah"] },
+  { kunci: "temperamental", kata: ["marah marah"] },
+  { kunci: "temperamental", kata: ["mudah marah"] },
+  { kunci: "temperamental", kata: ["pemarah"] },
+  { kunci: "temperamental", kata: ["suka marah"] },
+  { kunci: "temperamental", kata: ["cepat marah"] },
+  { kunci: "temperamental", kata: ["gampang marah"] },
+  // "emosional" dan "tersulut emosi" 9/9 di BAS petugas, tetapi SDG membaca
+  // POSITA - dan di sana (diukur pemeriksa 26 September 2026 atas posita
+  // perkara cerai sipp_donggala) "emosional" benar 3 dari 6 kalimat
+  // ("kedekatan emosional", "hubungan emosional pun memudar") dan "tersulut
+  // emosi" 0 dari 2 (pengandaian tentang Penggugat sendiri). Keduanya tetap
+  // dideteksi untuk 5227, tidak diucapkan saksi SDG.
+  { kunci: "temperamental", kata: ["emosional"], hanyaDeteksi: true },
+  { kunci: "temperamental", kata: ["tersulut emosi"], hanyaDeteksi: true },
+  { kunci: "temperamental", kata: ["mudah emosi"] },
+  { kunci: "berkata kasar", kata: ["kata kasar"] },
+  { kunci: "berkata kasar", kata: ["kata-kata kasar"] },
+  { kunci: "berkata kasar", kata: ["bicara kasar"] },
+  { kunci: "berkata kasar", kata: ["ucapan kasar"] },
+  { kunci: "berkata kasar", kata: ["berucap kasar"] },
+  { kunci: "berkata kasar", kata: ["perkataan kasar"] },
+  { kunci: "bersikap kasar", kata: ["sikap kasar"] },
+  { kunci: "bersikap kasar", kata: ["berlaku kasar"] },
+  { kunci: "bersikap kasar", kata: ["perlakuan kasar"] },
+  { kunci: "bersikap kasar", kata: ["berbuat kasar"] },
+  { kunci: "bersikap kasar", kata: ["bertindak kasar"] },
+
+  // --- ekonomi dan pekerjaan: kunci baru 26 September 2026 -----------------
+  //
+  // "tidak memiliki pekerjaan tetap" BUKAN "malas bekerja": yang pertama
+  // keadaan, yang kedua watak. Hanya bentuk yang menyebut "tetap" (atau
+  // "penghasilan tetap") yang dipakai - "tidak bekerja" telanjang dapat
+  // berarti menganggur, sakit, atau baru diberhentikan, dan mengucapkannya
+  // sebagai salah satunya mengubah keterangan. 9/9 kalimat saksi.
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["tidak memiliki pekerjaan tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["tidak mempunyai pekerjaan tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["tidak punya pekerjaan tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["belum memiliki pekerjaan tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["belum mempunyai pekerjaan tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["tidak memiliki pekerjaan yang tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["tidak memiliki penghasilan tetap"] },
+  { kunci: "tidak memiliki pekerjaan tetap", kata: ["tidak mempunyai penghasilan tetap"] },
+  // "karena masalah ekonomi" - 117 perkara di BAS petugas, 10/10. Kuncinya
+  // sekaligus bunyinya: tidak ada pelaku, jadi SDG mengucapkannya di luar
+  // daftar perbuatan ("... dan masalah ekonomi"), dan kalimat 5227 yang
+  // berpelaku melaporkannya sebagai tanpaFrasa.
+  { kunci: "masalah ekonomi", kata: ["masalah ekonomi"] },
+  { kunci: "masalah ekonomi", kata: ["faktor ekonomi"] },
+  { kunci: "masalah ekonomi", kata: ["persoalan ekonomi"] },
+  { kunci: "masalah ekonomi", kata: ["permasalahan ekonomi"] },
+  { kunci: "masalah ekonomi", kata: ["alasan ekonomi"] },
+
+  // --- ciri baru 26 September 2026 yang hanya dideteksi --------------------
+  //
+  // Terbaca tepat di BAS petugas ("ikut campur" 10/10, "tidak menghargai"
+  // 10/10, "keluar malam" 10/10, "pulang larut" 10/10), tetapi TIDAK ada
+  // bunyi korpus yang dapat diucapkan saksi SDG tanpa mengubahnya: campur
+  // tangan dilakukan KELUARGA, bukan pelaku; "tidak menghargai" sasarannya
+  // beragam (pihak lawan, orang tua, saksi); dan bunyi terbanyak keluar
+  // malam memuat "sering" - kata frekuensi yang tidak boleh ditambahkan.
+  // Kalimat 5227 melaporkannya sebagai tanpaFrasa; SDG tidak memakainya.
+  { kunci: "campur tangan keluarga", kata: ["ikut campur"], hanyaDeteksi: true },
+  { kunci: "campur tangan keluarga", kata: ["turut campur"], hanyaDeteksi: true },
+  { kunci: "campur tangan keluarga", kata: ["campur tangan"], hanyaDeteksi: true },
+  { kunci: "campur tangan keluarga", kata: ["mencampuri"], hanyaDeteksi: true },
+  { kunci: "tidak menghargai", kata: ["tidak menghargai"], hanyaDeteksi: true },
+  { kunci: "tidak menghargai", kata: ["tidak menghormati"], hanyaDeteksi: true },
+  { kunci: "keluar malam", kata: ["keluar malam"], hanyaDeteksi: true },
+  { kunci: "keluar malam", kata: ["pulang larut"], hanyaDeteksi: true },
+  { kunci: "keluar malam", kata: ["pulang pagi"], hanyaDeteksi: true },
 
   // --- huruf a: zina -------------------------------------------------------
   //
@@ -484,8 +608,21 @@ const CIRI_ALASAN = [
  * dan memberinya bunyi. Membuka satu baris untuk SDG berarti membuang
  * tandanya DAN memperbarui BARIS_SDG di saksi-deteksi-korpus.test.ts;
  * penjaganya merah bila hanya satu yang dilakukan.
+ *
+ * 26 September 2026 (permintaan pengguna 1 dan 7): baris yang kalimat BAS
+ * petugasnya dibaca satu per satu dan benar sedikitnya 9 dari 10 dibuka -
+ * keempat kunci perilaku di atas, "wanita lain", "perempuan lain", "shabu",
+ * "obat + terlarang", "pemukulan", "dipukul", "mengancam + tajam" - beserta
+ * kunci baru "menikah lagi", "tidak memiliki pekerjaan tetap", dan "masalah
+ * ekonomi". Semua kunci terbuka punya bunyi korpus (frasaCiri) atau berbunyi
+ * sendiri ("masalah ekonomi"), sehingga label mentah tidak tercetak. Yang
+ * tetap hanyaDeteksi dan sebabnya tertulis di barisnya masing-masing.
  */
 const CIRI_ALASAN_SDG = CIRI_ALASAN.filter((baris) => !baris.hanyaDeteksi);
+/** Kunci yang SELURUH barisnya hanyaDeteksi - tidak pernah diucapkan saksi SDG. */
+const KUNCI_HANYA_DETEKSI = new Set(
+  CIRI_ALASAN.filter((baris) => !CIRI_ALASAN_SDG.some((b) => b.kunci === baris.kunci)).map((baris) => baris.kunci)
+);
 
 /** Benar bila SATU kalimat memenuhi seluruh kata sebuah baris ciri. */
 function kalimatBerciri(kalimatKecil, baris) {
@@ -507,12 +644,102 @@ function kalimatBerciri(kalimatKecil, baris) {
  */
 function ciriDariKalimat(butir, daftarCiri) {
   const kecil = (butir || []).map((k) => String(k || "").toLowerCase());
+  const daftar = daftarCiri || CIRI_ALASAN;
   const ciri = [];
-  for (const baris of daftarCiri || CIRI_ALASAN) {
+  for (const baris of daftar) {
     if (ciri.includes(baris.kunci)) continue;
-    if (kecil.some((k) => kalimatBerciri(k, baris))) ciri.push(baris.kunci);
+    if (kecil.some((k) => barisBerlaku(k, baris, daftar))) ciri.push(baris.kunci);
   }
   return ciri;
+}
+
+/**
+ * Satu kalimat memenuhi satu baris ciri - kata barisnya lengkap, dan
+ * saringan konteksnya lolos. Dipakai ciriDariKalimat dan kalimatPemicu
+ * supaya kalimat pemicu yang ditampilkan selalu kalimat yang menyalakannya.
+ */
+function barisBerlaku(kalimatKecil, baris, daftar) {
+  return kalimatBerciri(kalimatKecil, baris) && !objekMenikahLagi(kalimatKecil, baris, daftar) && menikahLagiTerjadi(kalimatKecil, baris);
+}
+
+/**
+ * ============================================================================
+ * "MENIKAH LAGI" HANYA PERKAWINAN PELAKU YANG SUDAH TERJADI
+ * ============================================================================
+ *
+ * Kalimat 5227 dan keterangan saksi SDG selalu berbunyi "{pelaku} telah
+ * menikah lagi" - pelaku = variabel 0047 = Tergugat/Termohon. Pemeriksa 26
+ * September 2026 membaca 896 kalimat berkata nikah di BAS petugas dan posita
+ * perkara cerai: +-18 salah, dan kalimat SDG-nya menuduh:
+ *   - subjeknya PIHAK LAWAN - "Ya, Pemohon telah menikah lagi" (396/Pdt.G/
+ *     2025, cerai talak) menjadi "Termohon telah menikah lagi";
+ *   - baru NIAT, izin, ancaman, atau suruhan - "Tergugat ingin menikah
+ *     lagi namun tidak mendapat restu", "meminta izin ingin menikah lagi",
+ *     "menyuruh Pemohon untuk menikah lagi", "harus menikah lagi";
+ *   - tidak terjadi - "Termohon tidak jadi menikah dengan laki-laki
+ *     tersebut".
+ * Tiap kemunculan kata baris diperiksa sendiri; cukup SATU yang lolos
+ * ("Tergugat ingin menikah lagi ... dan sekarang Tergugat sudah menikah
+ * dengan wanita tersebut" tetap menikah lagi). Dikenali dari KUNCI baris,
+ * supaya daftar ciri kiriman portal diperlakukan sama.
+ */
+const POLA_NIAT_NIKAH =
+  /\b(?:ingin|mau|hendak|akan|berniat|niat|niatnya|berencana|rencana|bermaksud|izin|ijin|mengizinkan|mengijinkan|restu|merestui|menyuruh|suruh|disuruh|menyarankan|mengancam|ancam|diancam|mengajak|memaksa|dipaksa|harus|boleh|silakan|silahkan|untuk|agar|supaya|tidak|belum|batal)\s+(?:\S+\s+)?$/;
+/** Sebutan pihak di depan kata nikah yang BUKAN subjeknya: objek, milik, atau sasaran. */
+const POLA_BUKAN_SUBJEK =
+  /\b(?:kepada|terhadap|dengan|pada|ke|dari|oleh|untuk|bagi|bersama|antara|meninggalkan|ditinggalkan|menceraikan|memukul|menyuruh|mengajak|mengizinkan|mengijinkan|melarang|menafkahi|menelantarkan|restu|izin|ijin|suami|isteri|istri|tua|orangtua|keluarga|anak|ibu|ayah|bapak|mertua|saudara|adik|kakak|sepengetahuan|persetujuan)\s+$/;
+/** Sebutan pihak yang mengajukan perkara (0046) - bukan pelaku. */
+const SEBUTAN_LAWAN = new Set(["penggugat", "pemohon"]);
+
+function menikahLagiTerjadi(kalimatKecil, baris) {
+  if (baris.kunci !== "menikah lagi") return true;
+  const kata = baris.kata[0];
+  for (let i = kalimatKecil.indexOf(kata); i >= 0; i = kalimatKecil.indexOf(kata, i + 1)) {
+    const depan = kalimatKecil.slice(0, i);
+    if (POLA_NIAT_NIKAH.test(depan.slice(-40))) continue;
+    let subjek = "";
+    for (const m of depan.matchAll(/\b(penggugat|tergugat|pemohon|termohon)\b/g)) {
+      if (POLA_BUKAN_SUBJEK.test(depan.slice(Math.max(0, m.index - 20), m.index))) continue;
+      subjek = m[1];
+    }
+    if (SEBUTAN_LAWAN.has(subjek)) continue;
+    return true;
+  }
+  return false;
+}
+
+/**
+ * ============================================================================
+ * "MENIKAH LAGI DENGAN WANITA LAIN" BUKAN PERSELINGKUHAN
+ * ============================================================================
+ *
+ * Baris "wanita lain", "perempuan lain", "laki-laki lain", "lelaki lain",
+ * dan "pria lain" hanya MENAMAI orang ketiganya. Dalam kalimat yang juga
+ * menyatakan perkawinan ("Tergugat telah menikah lagi dengan wanita lain"),
+ * orang itu istri/suami barunya - bukan tanda perselingkuhan - dan
+ * menghitungnya membuat saksi SDG berkata "Tergugat berselingkuh dan telah
+ * menikah lagi" dari satu kalimat posita. Baris yang menyatakan hubungan itu
+ * sendiri ("selingkuh", "idaman lain", "menjalin hubungan") tetap dihitung.
+ *
+ * Dikenali dari KATA barisnya, bukan dari tanda di baris, supaya daftar ciri
+ * kiriman portal (putusan.alasan.ciri) diperlakukan sama.
+ */
+const KATA_OBJEK_PIHAK_LAIN = new Set(["wanita lain", "perempuan lain", "laki-laki lain", "lelaki lain", "pria lain"]);
+/**
+ * Benar bila SETIAP kemunculan kata objek dalam kalimat itu didahului kata
+ * perkawinan dalam 30 huruf di depannya ("menikah lagi dengan wanita lain").
+ * "memiliki hubungan dengan wanita lain dan sudah menikah lagi" tetap
+ * dihitung sebagai pihak lain - orang itu disebut sebagai hubungan, bukan
+ * sebagai pasangan nikah.
+ */
+function objekMenikahLagi(kalimatKecil, baris, daftar) {
+  if (baris.kata.length !== 1 || !KATA_OBJEK_PIHAK_LAIN.has(baris.kata[0])) return false;
+  if (!daftar.some((b) => b.kunci === "menikah lagi" && kalimatBerciri(kalimatKecil, b))) return false;
+  const kata = baris.kata[0];
+  for (let i = kalimatKecil.indexOf(kata); i >= 0; i = kalimatKecil.indexOf(kata, i + 1)) {
+    if (!/menikah|kawin/.test(kalimatKecil.slice(Math.max(0, i - 30), i))) return false;
+  }
+  return true;
 }
 
 /**
@@ -626,10 +853,11 @@ function usulan(kode, nama, hasil, sumber) {
  * dan bila lebih dari sekali, yang pertama yang menjadi dasar.
  */
 function kalimatPemicu(butir, ciri, daftarCiri) {
-  const aturan = (daftarCiri || CIRI_ALASAN).filter((c) => c.kunci === ciri);
+  const daftar = daftarCiri || CIRI_ALASAN;
+  const aturan = daftar.filter((c) => c.kunci === ciri);
   for (const baris of butir) {
     const kecil = String(baris || "").toLowerCase();
-    if (aturan.some((c) => kalimatBerciri(kecil, c))) return baris;
+    if (aturan.some((c) => barisBerlaku(kecil, c, daftar))) return baris;
   }
   return "";
 }
@@ -2237,6 +2465,12 @@ function daftarUcapan(alasan, pihak, peta, pilih) {
   }
   perbuatan.sort((a, b) => a.urutan - b.urutan);
   const gabung = (xs) => (xs.length <= 1 ? xs[0] || "" : `${xs.slice(0, -1).join(", ")} dan ${xs[xs.length - 1]}`);
+  // Perbuatan berpelaku dan alasan tanpa pelaku ("masalah ekonomi") dirangkai
+  // dengan "serta" - bukan "dan" kedua, yang membuat "... dan telah menikah
+  // lagi dan masalah ekonomi" terbaca sebagai satu daftar perbuatan.
+  if (perbuatan.length && lepas.length) {
+    return `${pelaku} ${gabung(perbuatan.map((p) => p.teks))}, serta ${gabung(lepas)}`;
+  }
   const bagianDaftar = [];
   if (perbuatan.length) bagianDaftar.push(`${pelaku} ${gabung(perbuatan.map((p) => p.teks))}`);
   bagianDaftar.push(...lepas);
@@ -2752,9 +2986,25 @@ function pecahHubungan(jawab, mentah) {
 function susunKeteranganSaksiSdg(opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
   const templat = Array.isArray(o.templat) ? o.templat : [];
-  let alasan = Array.isArray(o.alasan) ? o.alasan.map(String).filter(Boolean) : [];
+  // Kunci yang HANYA dideteksi (seluruh barisnya hanyaDeteksi - "keluar
+  // malam", "tidak menghargai", "campur tangan keluarga") tidak punya bunyi
+  // korpus yang dapat diucapkan saksi: kiriman eksplisitnya dahulu tercetak
+  // sebagai label tanpa subjek ("... yaitu tidak menghargai dan keluar
+  // malam;"). Kini ditolak dan disebut di alasanDitolak - tidak dikarang
+  // bunyinya, tidak ditelan diam-diam.
+  const alasanDitolak = [];
+  const saringSdg = (daftar) =>
+    daftar.filter((kunci) => {
+      if (!KUNCI_HANYA_DETEKSI.has(kunci)) return true;
+      if (!alasanDitolak.some((x) => x.kunci === kunci)) alasanDitolak.push({ kunci, sebab: "hanya_deteksi" });
+      return false;
+    });
+  const alasanMasuk = Array.isArray(o.alasan) ? o.alasan.map(String).filter(Boolean) : [];
+  let alasan = saringSdg(alasanMasuk);
   let asalAlasan = alasan.length ? "dipilih" : "";
-  if (!alasan.length && o.posita) {
+  // Posita hanya menggantikan pilihan yang memang KOSONG - pilihan yang
+  // seluruhnya ditolak tidak diam-diam berubah menjadi "sama dengan gugatan".
+  if (!alasanMasuk.length && o.posita) {
     alasan = alasanDariPosita(o.posita);
     asalAlasan = alasan.length ? "posita" : "";
   }
@@ -2798,7 +3048,7 @@ function susunKeteranganSaksiSdg(opsi) {
   const modusUntuk = (m) => {
     const nama = MODUS_SAKSI.has(String(m.modus)) ? String(m.modus) : "sama";
     const alasanSaksi =
-      nama === "sebagian" && Array.isArray(m.alasan) && m.alasan.length ? m.alasan.map(String).filter(Boolean) : alasan;
+      nama === "sebagian" && Array.isArray(m.alasan) && m.alasan.length ? saringSdg(m.alasan.map(String).filter(Boolean)) : alasan;
     return { modus: nama, alasan: alasanSaksi, sumber: sebutanSumberCerita(m, o.pelaku, o.lawan) };
   };
 
@@ -2972,6 +3222,7 @@ function susunKeteranganSaksiSdg(opsi) {
   };
   if (pelanggaranInvarian) hasil.invarian = { dilepas: pelanggaranInvarian, contoh: contohPelanggaran };
   if (ditolak.length) hasil.tipeKeluaranDitolak = ditolak;
+  if (alasanDitolak.length) hasil.alasanDitolak = alasanDitolak;
   return hasil;
 }
 

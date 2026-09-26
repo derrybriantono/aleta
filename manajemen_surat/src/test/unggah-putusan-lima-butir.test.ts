@@ -195,7 +195,9 @@ describe("butir 5 - massal bermula dari berkas", () => {
   })();
 
   it("panelnya ada dan dipasang", () => {
-    expect(konten).toContain("bagianMassalBerkas(isi);");
+    // Sejak 26 September 2026 dengan sesudahSusun: antrean yang baru disusun
+    // langsung tampil di panel daftar (tampilkanAntreanSipp).
+    expect(konten).toContain("bagianMassalBerkas(isi, () => void tampilkanAntreanSipp(isi));");
   });
 
   it("pemilihnya menerima LEBIH DARI SATU berkas", () => {

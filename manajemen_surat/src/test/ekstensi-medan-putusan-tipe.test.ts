@@ -60,10 +60,15 @@ function potongFungsi(isi: string, nama: string): string {
   return baris.slice(mulai, j + 1).join("\n");
 }
 
+/** Satu tetapan tingkat modul - satu baris, atau objek berbaris banyak yang ditutup "};". */
 function tetapan(isi: string, nama: string): string {
-  const baris = isi.split("\n").find((b) => b.startsWith(`const ${nama} = `));
-  if (!baris) throw new Error(`tetapan ${nama} tidak ketemu`);
-  return baris;
+  const baris = isi.split("\n");
+  const mulai = baris.findIndex((b) => b.startsWith(`const ${nama} = `));
+  if (mulai < 0) throw new Error(`tetapan ${nama} tidak ketemu`);
+  if (baris[mulai].trimEnd().endsWith(";")) return baris[mulai];
+  let j = mulai;
+  while (j < baris.length && baris[j] !== "};") j += 1;
+  return baris.slice(mulai, j + 1).join("\n");
 }
 
 const polos = <T>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -172,6 +177,8 @@ type Pilihan = {
   borang?: Record<string, MedanBorang>;
   singgahan?: Record<string, unknown>;
   siapa?: unknown;
+  /** Usulan tiruan untuk satu medan (mis. bentrok); kosong = bawaan tiruan. */
+  usulan?: (kunci: string) => Record<string, unknown> | undefined;
 };
 
 function muat(p: Pilihan = {}) {
@@ -246,6 +253,8 @@ function muat(p: Pilihan = {}) {
         muatanUsulan.push(badan);
         // Usulan: pilihan pertama yang bukan isian bawaan, keyakinan pasti.
         const usulan = badan.medan.map((m: { kunci: string; pilihan: Array<{ nilai: string; label: string }> }) => {
+          const lain = p.usulan?.(m.kunci);
+          if (lain) return { kunci: m.kunci, ...lain };
           const x = m.pilihan.find((y) => y.nilai !== "-1")!;
           return { kunci: m.kunci, nilai: x.nilai, nilaiLabel: x.label, keyakinan: "pasti", nilaiBanyak: [x] };
         });
@@ -308,6 +317,9 @@ function muat(p: Pilihan = {}) {
     [
       tetapan(konten, "ALETA_API_ISIAN_PUTUSAN"),
       tetapan(konten, "ALETA_API_SIAPA"),
+      // Naik ke tingkat modul 26 September 2026 - dipakai bersama panel dan
+      // antrean. Salinan kode yang lebih tua (pembukti gigitan) belum punya.
+      ...(/^const NILAI_BAWAAN_BORANG = /m.test(konten) ? [tetapan(konten, "NILAI_BAWAAN_BORANG")] : []),
       "let penggunaTerakhir = null;",
       "let kapabilitasTerakhir = null;",
       ...[
@@ -315,6 +327,7 @@ function muat(p: Pilihan = {}) {
         "ringkasHentikan",
         "kirimKeJembatan",
         "nilaiTerpilihMedan",
+        ...(/^function nilaiTerpilihBukanBawaan\(/m.test(konten) ? ["nilaiTerpilihBukanBawaan"] : []),
         "muatanUsulanMedan",
         "bagianIsiPutusan",
         "jalankanSatuAntreanSipp",
@@ -591,12 +604,18 @@ describe("5. antrean massal SIPP: aturan yang sama", () => {
 
   async function antrean(m: ReturnType<typeof muat>) {
     const a = vm.runInContext(`alatBuatAntrean({ butir: [{ nomor: "7/Pdt.G/2026/PA.Uji" }], tahap: "sipp", modus: "otomatis" })`, m.k) as Antrean;
+    // Antrean yang dikerjakan selalu antrean yang TERSIMPAN: sejak 26
+    // September 2026 keadaan butir ditulis per butir ke antrean segar, dan
+    // antrean yang tidak ada (sudah diakhiri) tidak dikerjakan.
+    await m.k.alatSimpanAntrean(a);
     const kabar = m.dokumen.createElement("div");
     await m.k.__uji.jalankanSatuAntreanSipp(a, a.butir[0], kabar, m.dokumen.createElement("button"));
     return { butir: a.butir[0], kabar: kabar.textContent || "" };
   }
+  // Hanya tiga medan NASKAH. Sejak 26 September 2026 antrean juga mengisi
+  // medan pilihan bawaan (blok 3a) - dijaga ekstensi-massal-ujung-ke-ujung.
   const naskahDiisi = (m: ReturnType<typeof muat>) =>
-    m.jembatan.filter((x) => x.jenis === "isi").map((x) => x.penunjuk);
+    m.jembatan.filter((x) => x.jenis === "isi" && x.penunjuk.startsWith("#")).map((x) => x.penunjuk);
 
   it("1 tambahan tampak: naskah tetap diisi, Simpan 0 kali, tertahan 'medan-tambahan'", async () => {
     const borang = borangBaru({
@@ -613,6 +632,22 @@ describe("5. antrean massal SIPP: aturan yang sama", () => {
     expect(m.catatan.some((c) => c.jenis === "massal-galat" && /medan tambahan/.test(c.ringkas))).toBe(true);
   });
 
+  it("medan tambahan yang tampak TIDAK dibaca untuk diusulkan dan TIDAK diisi antrean - hanya menahan", async () => {
+    const m = muat({ portal: () => jawabanPortal([TAMBAHAN_ANAK]), borang: borangDenganAnak() });
+    const { butir } = await antrean(m);
+    const ANAK = 'select[name="jumlah_anak_asuh"]';
+    // Tiruan usulan menjawab SETIAP medan yang diminta (pilihan pertama,
+    // pasti) - andai tambahan ikut dibaca di 3a, ia pasti diusulkan dan diisi.
+    expect(m.muatanUsulan.flatMap((x) => x.medan.map((y) => y.kunci))).not.toContain(ANAK);
+    expect(m.jembatan.filter((x) => x.jenis === "isi" && x.penunjuk === ANAK)).toEqual([]);
+    expect(m.borang[ANAK].nilai).toBe("-1");
+    // Kendali: medan bawaan yang sama-sama tampak memang diusulkan dan diisi.
+    expect(m.muatanUsulan.flatMap((x) => x.medan.map((y) => y.kunci))).toContain('select[name="faktor_cerai"]');
+    expect(m.borang['select[name="faktor_cerai"]'].nilai).toBe("1");
+    expect(butir.sebabTahan).toBe("medan-tambahan");
+    expect(m.simpanDitekan).toEqual([]);
+  });
+
   it("tambahan tidak tampak: Simpan 1 kali, selesai", async () => {
     const borang = borangBaru({
       'select[name="jumlah_anak_asuh"]': { tampak: false, pilihan: [{ nilai: "1", label: "Satu" }], nilai: "" },
@@ -623,13 +658,21 @@ describe("5. antrean massal SIPP: aturan yang sama", () => {
     expect(butir.keadaan).toBe("selesai");
   });
 
-  it("bawaan saja (tabel kosong) dan portal mati: Simpan 1 kali, tanpa satu pembacaan medan pun", async () => {
+  // Sampai 26 September 2026 uji ini menuntut "tanpa satu pembacaan medan
+  // pun" - dan justru itulah sebab antrean tidak pernah dapat menyimpan:
+  // Sumber Hukum dan Status Putusan dibiarkan kosong, lalu SIPP menolak.
+  // Yang dijaga kini: medan BAWAAN dibaca dan diisi, tambahan tidak disentuh.
+  it("bawaan saja (tabel kosong) dan portal mati: medan bawaan dibaca dan diisi, Simpan 1 kali", async () => {
     for (const portal of [() => jawabanPortal(), undefined]) {
       const m = muat({ portal });
       const { butir } = await antrean(m);
       expect(m.simpanDitekan).toHaveLength(1);
       expect(butir.keadaan).toBe("selesai");
-      expect(pilihanDibaca(m)).toEqual([]);
+      expect(pilihanDibaca(m).slice(0, 12)).toEqual(PENUNJUK_CALON);
+      expect(pilihanDibaca(m)).not.toContain('select[name="jumlah_anak_asuh"]');
+      expect(m.jembatan.filter((x) => x.jenis === "isi" && !x.penunjuk.startsWith("#")).map((x) => x.penunjuk)).toContain(
+        'select[name="status_putusan"]'
+      );
     }
   });
 
@@ -655,5 +698,134 @@ describe("5. antrean massal SIPP: aturan yang sama", () => {
     const { butir } = await antrean(m);
     expect(butir.sebabTahan).toBe("gagal-isi");
     expect(m.simpanDitekan).toEqual([]);
+  });
+});
+
+// ============================================================================
+describe("6. kartu Status panel satu perkara: pilihan petugas tidak ditimpa Isikan", () => {
+  const STATUS = 'select[name="status_putusan"]';
+
+  it("Status yang sudah dipilih petugas dan berbeda dari usulan: kartunya TIDAK tercentang, kedua nilai tampak, Isikan tidak menimpanya", async () => {
+    const borang = borangBaru();
+    borang[STATUS].nilai = "2"; // petugas memilih pilihan kedua; usulan tiruan = pilihan pertama
+    const m = muat({ portal: () => jawabanPortal(), borang });
+    const { kotak } = await jalankanPanel(m);
+
+    const kartu = [...kotak.querySelectorAll(".aleta-abt-kartu")].find(
+      (x) => x.querySelector(".aleta-abt-nama")?.textContent === "Status Putusan"
+    )!;
+    expect(kartu).toBeTruthy();
+    expect((kartu.querySelector("input.aleta-abt-centang") as HTMLInputElement).checked).toBe(false);
+    expect(kartu.textContent).toContain(borang[STATUS].pilihan[2].label); // sekarang
+    expect(kartu.textContent).toContain(borang[STATUS].pilihan[1].label); // usulan
+    expect(kartu.textContent).toContain("Status sudah dipilih di halaman");
+    expect(m.jembatan.filter((x) => x.jenis === "isi" && x.penunjuk === STATUS)).toEqual([]);
+    expect(m.borang[STATUS].nilai).toBe("2");
+  });
+
+  it("kendali: Status yang belum dipilih - kartunya tercentang dan Isikan mengisinya", async () => {
+    const m = muat({ portal: () => jawabanPortal() });
+    const { kotak } = await jalankanPanel(m);
+    const kartu = [...kotak.querySelectorAll(".aleta-abt-kartu")].find(
+      (x) => x.querySelector(".aleta-abt-nama")?.textContent === "Status Putusan"
+    )!;
+    expect((kartu.querySelector("input.aleta-abt-centang") as HTMLInputElement).checked).toBe(true);
+    expect(kartu.textContent).not.toContain("Status sudah dipilih di halaman");
+    expect(m.borang[STATUS].nilai).toBe("1");
+  });
+
+  it("kendali: Status yang sama dengan usulan - kartunya tetap tercentang", async () => {
+    const borang = borangBaru();
+    borang[STATUS].nilai = "1";
+    const m = muat({ portal: () => jawabanPortal(), borang });
+    const { kotak } = await jalankanPanel(m);
+    const kartu = [...kotak.querySelectorAll(".aleta-abt-kartu")].find(
+      (x) => x.querySelector(".aleta-abt-nama")?.textContent === "Status Putusan"
+    )!;
+    expect((kartu.querySelector("input.aleta-abt-centang") as HTMLInputElement).checked).toBe(true);
+  });
+});
+
+// ============================================================================
+describe("7. beda yang disengaja: pintu yang usulannya bentrok", () => {
+  // Panel satu perkara MEMBUKA pintu dengan usulan yang bentrok - petugas
+  // yang menekan Isikan melihat kartunya lebih dulu, dan kartu yang bentrok
+  // tidak tercentang. Antrean tidak punya orang di depan borang: pintu yang
+  // bentrok dibiarkan, dan Status yang kosong menahan Simpan. Kesamaan daftar
+  // CALON tidak berarti kesamaan perilaku - perbedaan ini dinyatakan di sini.
+  const STATUS = 'select[name="status_putusan"]';
+  const bentrok = (kunci: string) =>
+    kunci === STATUS ? { nilai: "1", nilaiLabel: "Status Putusan A", keyakinan: "bentrok" } : undefined;
+
+  it("panel: pintu Status dibuka dengan usulan bentrok sebelum Isikan ditekan", async () => {
+    const m = muat({ portal: () => jawabanPortal(), usulan: bentrok });
+    const kotak = m.k.__uji.bagianIsiPutusan("12/Pdt.G/2026/PA.Uji") as HTMLDivElement;
+    tombolBertulisan(kotak, "Ambil usulan dari ALETA")!.click();
+    await tunggu(() => Boolean(tombolBertulisan(kotak, "Isikan yang dicentang")), "tombol Isikan muncul");
+    expect(m.jembatan.filter((x) => x.jenis === "isi" && x.penunjuk === STATUS).map((x) => x.nilai)).toEqual(["1"]);
+    expect(m.simpanDitekan).toEqual([]);
+  });
+
+  it("antrean: pintu Status yang bentrok TIDAK dibuka - tertahan 'pilihan-kosong', Simpan tidak ditekan", async () => {
+    const m = muat({ portal: () => jawabanPortal(), usulan: bentrok });
+    const a = vm.runInContext('alatBuatAntrean({ butir: [{ nomor: "7/Pdt.G/2026/PA.Uji" }], tahap: "sipp", modus: "otomatis" })', m.k);
+    await m.k.alatSimpanAntrean(a);
+    await m.k.__uji.jalankanSatuAntreanSipp(a, a.butir[0], m.dokumen.createElement("div"), m.dokumen.createElement("button"));
+    const butir = a.butir[0] as { keadaan: string; sebabTahan?: string; catatan: string };
+    expect(m.jembatan.filter((x) => x.jenis === "isi" && x.penunjuk === STATUS)).toEqual([]);
+    expect(butir.keadaan).toBe("tertahan");
+    expect(butir.sebabTahan).toBe("pilihan-kosong");
+    expect(butir.catatan).toContain("Status Putusan (naskah menyebut lebih dari satu)");
+    expect(m.simpanDitekan).toEqual([]);
+  });
+});
+
+// ============================================================================
+describe("8. panel satu perkara: nilai yang dipilih borang SIPP sendiri bukan pilihan petugas", () => {
+  // Borang Putusan Akhir yang baru dibuka sudah memilih "Tidak" pada Verstek
+  // dan "Qobla Dukhul" pada qobla ($qobla_bada NULL, dan NULL == 0 di PHP).
+  // Bila keduanya dikirim sebagai "terpilih", hormatiTerpilih portal
+  // membeonya: perkara ba'da dukhul diusulkan Qobla Dukhul. Pilihan yang
+  // sungguh dibuat petugas tetap dikirim.
+  const VERSTEK = 'select[name="verstek"]';
+  const QOBLA = 'select[name="qobla"]';
+  const borangSipp = (verstek: string, qobla: string) =>
+    borangBaru({
+      [VERSTEK]: {
+        tampak: true,
+        pilihan: [
+          { nilai: "T", label: "Tidak" },
+          { nilai: "Y", label: "Ya" },
+        ],
+        nilai: verstek,
+      },
+      [QOBLA]: {
+        tampak: true,
+        pilihan: [
+          { nilai: "-1", label: "Pilih Salah Satu" },
+          { nilai: "0", label: "Qobla Dukhul" },
+          { nilai: "1", label: "Ba'da Dukhul" },
+        ],
+        nilai: qobla,
+      },
+    });
+  async function terpilihTerkirim(borang: Record<string, MedanBorang>) {
+    const m = muat({ portal: () => jawabanPortal(), borang });
+    const kotak = m.k.__uji.bagianIsiPutusan("12/Pdt.G/2026/PA.Uji") as HTMLDivElement;
+    tombolBertulisan(kotak, "Ambil usulan dari ALETA")!.click();
+    await tunggu(() => m.muatanUsulan.length > 0, "usulan diminta");
+    const medan = m.muatanUsulan.flatMap((x) => x.medan);
+    const dari = (kunci: string) => medan.find((x) => x.kunci === kunci);
+    expect(dari(VERSTEK), "verstek ikut dibaca").toBeTruthy();
+    expect(dari(QOBLA), "qobla ikut dibaca").toBeTruthy();
+    return { verstek: dari(VERSTEK)!.terpilih, qobla: dari(QOBLA)!.terpilih };
+  }
+
+  it("borang baru (Verstek 'Tidak', 'Qobla Dukhul' bawaan): keduanya TIDAK dikirim sebagai terpilih", async () => {
+    expect(await terpilihTerkirim(borangSipp("T", "0"))).toEqual({ verstek: undefined, qobla: undefined });
+  });
+
+  it("kendali: pilihan yang bukan bawaan borang (Ya, Ba'da Dukhul) tetap dikirim sebagai terpilih", async () => {
+    expect(await terpilihTerkirim(borangSipp("Y", "1"))).toEqual({ verstek: "Y", qobla: "1" });
   });
 });

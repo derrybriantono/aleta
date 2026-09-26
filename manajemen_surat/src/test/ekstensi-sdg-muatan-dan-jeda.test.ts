@@ -29,7 +29,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
  *      satu permintaan dalam satu waktu, TANPA jeda tiruan - keputusan
  *      25 September 2026 membatalkan jeda "antar-saksi";
  *   4. pemetaan variabel saksi cocok dengan ekspor aps_badilag.abt_variabel;
- *   5. pilihan alasan: portal mati -> 9 tertanam; portal -> 13 kunci;
+ *   5. pilihan alasan: portal mati -> 16 tertanam; portal -> 13 kunci;
  *   6. kartu usulan 1268 yang bot ragukan menggambar pilihan bunyinya dan
  *      tidak tercentang sendiri.
  *
@@ -512,6 +512,8 @@ const SEMBILAN = [
   "mabuk",
   "murtad/pindah agama",
 ];
+/** Dibuka untuk SDG 26 September 2026 - tertanam di belakang sembilan yang lama. */
+const TUJUH_BARU = ["temperamental", "berkata kasar", "bersikap kasar", "malas bekerja", "tidak memiliki pekerjaan tetap", "masalah ekonomi", "menikah lagi"];
 const EMPAT_TAMBAHAN = ["zina", "salah satu pihak menjalani pidana penjara", "cacat badan atau penyakit", "pelanggaran taklik talak"];
 
 describe("pilihan alasan SDG dari tipe keluaran", () => {
@@ -527,9 +529,9 @@ describe("pilihan alasan SDG dari tipe keluaran", () => {
     };
   }
 
-  it("portal mati -> 9 tertanam, dan asalnya disebut", async () => {
+  it("portal mati -> 16 tertanam, dan asalnya disebut", async () => {
     const { kunci, kabar } = await kunciAlasan();
-    expect(kunci).toEqual(SEMBILAN);
+    expect(kunci).toEqual([...SEMBILAN, ...TUJUH_BARU]);
     expect(kabar).toContain("daftar tertanam");
   });
 

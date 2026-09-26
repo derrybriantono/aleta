@@ -134,7 +134,12 @@ describe("medan yang tersembunyi di balik pintunya", () => {
   it("pembacaan dan permintaan usulannya satu tempat, dipakai tiap putaran", () => {
     expect(konten).toContain("async function bacaMedanTampak()");
     expect(konten).toContain("async function mintaUsulanMedan(daftar, jenisPerkara)");
-    // Tidak ada lagi salinan kedua permintaan usulan di dalam badan.
-    expect(konten.split("Menyusun usulan pilihan").length - 1).toBeLessThanOrEqual(3);
+    // Tidak ada lagi salinan kedua permintaan usulan di dalam badan panel.
+    // Dihitung di badan bagianIsiPutusan saja sejak 26 September 2026: antrean
+    // massal (jalankanSatuAntreanSipp) kini meminta usulan pilihan sendiri,
+    // sekali per putaran - itu permintaan antrean, bukan salinan di panel.
+    const badan = potongFungsi(konten, "bagianIsiPutusan");
+    expect(badan.split("Menyusun usulan pilihan").length - 1).toBeLessThanOrEqual(3);
+    expect(badan.split("ALETA_API_ISIAN_PUTUSAN,").length - 1, "permintaan usulan kedua di panel").toBe(1);
   });
 });

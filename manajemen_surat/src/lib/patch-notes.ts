@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.36.0";
+export const APP_VERSION = "2.37.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.36.0 - Cetak Relaas dari Antrian Sidang, Status Perkara Lengkap, dan Tipe Keluaran Ekstensi";
+  "ALETA Judicia v2.37.0 - Putusan Massal yang Tersimpan, Alasan Cerai yang Lebih Lengkap, dan Sumber Isian ABT yang Terukur";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,52 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.37.0",
+    title: "ALETA Judicia v2.37.0 - Putusan Massal yang Tersimpan, Alasan Cerai yang Lebih Lengkap, dan Sumber Isian ABT yang Terukur",
+    date: "2026-09-26",
+    status: "Belum terpasang",
+    summary:
+      "Penguatan otomatisasi putusan atas permintaan pengguna 26 September 2026: penyebab perceraian dari keterangan saksi ABT, keadaan istri dan nusyuz yang tetap bawaan kecuali disebut tegas di pertimbangan hukum, mode massal yang berfungsi, perkara lain menurut deteksi posita blangko ABT, alasan baru di kalimat BAS, dan dua saksi yang berbeda bunyi tetapi sama faktanya. Temuan terbesarnya: putusan massal SIPP TIDAK PERNAH dapat menyimpan satu perkara pun - pilihan wajib borang tidak pernah diisi - dan borang Putusan Akhir SIPP yang baru dibuka sudah memilih 'Qobla Dukhul' sendiri. Pemeriksa mandiri juga menangkap, sebelum rilis, aturan keadaan istri yang akan menjawab 'pasti Hamil' dari kehamilan yang sudah lewat.",
+    added: [
+      "ALASAN CERAI DARI KETERANGAN SAKSI ABT, diukur atas 1.498 perkara cerai berputusan 2024-2026 yang keterangan saksinya ada di ABT, dan tiap bentuk dibaca atas kalimat BAS petugas (benar sedikitnya 9 dari 10): temperamen kini juga 'suka/cepat/gampang marah' dan 'mudah emosi' (333 → 338 perkara), malas bekerja juga 'tidak mau bekerja' (131 → 150), kekerasan juga bentuk pasif - dipukul, ditampar, dicekik, ditendang, dijambak (456 → 460). Kata yang terlalu sering salah ditolak: 'marah' telanjang (5/10), 'pukul' (jam), 'wil' (tertangkap di 'wilayah'), 'curiga', 'menjalin hubungan' (termasuk 'hubungan suami istri').",
+      "Alasan baru yang diucapkan saksi SDG: menikah lagi, masalah ekonomi (129 perkara), dan tidak memiliki pekerjaan tetap (14). Tiga lagi hanya dideteksi, belum diucapkan: campur tangan keluarga (44), tidak menghargai (44), keluar malam (41). 'Menikah lagi dengan wanita lain' tidak lagi dibaca sebagai selingkuh.",
+      "Tujuh alasan dapat dipilih petugas di panel SDG ABT (dulu sembilan, kini enam belas): temperamental, berkata kasar, bersikap kasar, malas bekerja, tidak memiliki pekerjaan tetap, masalah ekonomi, menikah lagi - masing-masing berbunyi kalimat dari BAS petugas, dan penjaga uji menjalankan bot untuk tiap pilihan sehingga label mentah tidak dapat tercetak.",
+      "PUTUSAN MASSAL SIPP BERFUNGSI (ekstensi 1.169.0): pilihan wajib borang diisi dari usulan ALETA dengan urutan pintu panel satu perkara; yang tidak dapat dipastikan menahan perkara dengan sebabnya; praperiksa memeriksa nilai yang benar-benar akan disimpan; tiap pilihan yang diisikan dicatat per perkara, dan yang dari bawaan ditandai 'diisi bawaan - periksa'.",
+      "DISPENSASI KAWIN mengusulkan KUA yang menolak (5178): ALETA 17 benar dari 18 atas isian petugas, sedangkan bawaan ABT #10103# 0 dari 7 pada perkara yang sama - bawaannya membawa sisa kalimat posita ('…, namun ditolak dengan alasan …') ke kalimat blangko yang sudah menyebut penolakannya. Variabel 3333 tidak lagi diusulkan: ia tidak ada di satu pun dari 908 berkas blangko, dan maknanya terbukti sama dengan 5178.",
+      "Keputusan sumber isian per variabel, bukan 'jangan usulkan yang ditangani ABT': bawaan ABT dari kueri Anda (#101xx#) hanyalah isian awal kotak popup yang tersimpan bila kotaknya dibuka dan disimpan, dan mutunya berbeda per variabel. Yang lebih tepat pada perkara yang sama yang dipakai; yang diserahkan ke ABT disebut di panel sebagai 'ABT menawarkan isian bawaan … periksa sebelum menyimpan'.",
+    ],
+    changed: [
+      "ITSBAT NIKAH memilih sumber yang lebih tepat per variabel (n ≥ 10, ketepatan ALETA ≥ 0,5, dan tidak kalah dari bawaan ABT lebih dari 0,02 pada perkara yang sama): 5178 (ABT 0,939, ALETA 0), 5105 (0,412 lawan 0,038), 1046, 1002 (0,750 lawan 0,276), dan 0007 diserahkan ke bawaan ABT; 1001, 1003, 1217, 5197 (ALETA 0,785 lawan 0,158), 7211, 7212, 8087, 0650, dan 0651 tetap diusulkan ALETA. Gerbang 0,9 perkara lain sengaja tidak dipakai di sini: ia akan menghentikan ke-14 variabel, termasuk yang ALETA jauh lebih tepat. Asal usul dan perwalian (n 0-2) meminjam keputusan itsbat nikah karena pengurainya sama, dan alasannya menyebut peminjaman itu.",
+      "KEADAAN ISTRI DAN NUSYUZ tetap bawaan, kecuali pertimbangan hukum menyebutnya tegas ('tidak nusyuz', suci, haid, hamil saat ini). Aturan tegas hanya membaca PERTIMBANGAN HUKUM, bukan duduk perkara. Isi kutipan pasal atau hadits sesudah titik dua (Pasal 121/122 KHI, kaidah talak bid'i) tidak dibaca sebagai fakta perkara, dan 'tidak nusyuz' tidak dipastikan dari pengakuan pihak atau dari kaidah umum. Faktor pokok benar tetap 582/960 dan sekunder 116/252 tanpa regresi.",
+      "DUA SAKSI SDG menyebut alasan dengan derajat yang sama: bunyi yang berbeda derajat dilepas dari pasangan setara ('melalaikan kewajiban nafkah lahir' tidak lagi berpasangan dengan 'tidak menafkahi', demikian pula 'bermain judi' dan 'tidak mau bekerja'). Bentuk kalimat dua saksi dibuat lebih beragam - jawaban identik antar saksi turun dari 62,1% menjadi 51,8% pada ukuran pembangun, sebelum tiga bunyi itu dilepas.",
+      "Panel ABT perkara lain: tombolnya hanya muncul bila blangko memuat variabel siap milik jenis perkaranya, dan kabarnya hanya menyebut variabel yang ada di blangko yang dibuka.",
+    ],
+    fixed: [
+      "PUTUSAN MASSAL SIPP TIDAK PERNAH MENYIMPAN. Antrean hanya mengisi naskah lalu menekan Simpan, dan SIPP selalu menolak dengan 'Sumber Hukum Belum Dipilih'. Lima cacat lain ikut terbukti dan dibetulkan: satu perkara dapat disimpan dua kali, perkara yang terputus di tengah dikerjakan ulang sendiri, satu galat membuat antrean macet, 'Akhiri antrean' tidak menghentikan (perkara berikutnya tetap disimpan), dan antrean dari berkas mengaku 'draf' sementara menekan Simpan sendiri.",
+      "BORANG PUTUSAN AKHIR SIPP MEMILIH 'QOBLA DUKHUL' SENDIRI: kolomnya diisi dari akta cerai yang belum ada sebelum putusan, dan di PHP NULL == 0. Nilai itu (dan Verstek 'Tidak') tidak lagi dianggap pilihan petugas di antrean maupun di panel satu perkara, sehingga usulan ALETA tidak lagi membeonya.",
+      "Keadaan istri 'pasti Hamil' yang akan lahir dari kehamilan lampau ('meninggalkan Penggugat dalam keadaan hamil' tahun 2018), kehamilan orang lain, 'tidak dalam keadaan hamil', dan 'petitum masih mengandung kekaburan' - ditangkap pemeriksa sebelum rilis. Usulan pasti baru yang salah atas pertimbangan, posita, dan BAS: 0 (sebelumnya 11 perkara, 9 salah).",
+      "'Menikah lagi' hanya bila Tergugat/Termohon sungguh sudah menikah lagi: niat, izin, ancaman, suruhan, 'tidak jadi', dan perkawinan Penggugat/Pemohon ditolak (31 kalimat dari 896). Sebelumnya posita cerai talak 'Pemohon sudah menikah lagi' menjadi keterangan saksi 'Termohon telah menikah lagi'.",
+      "'Emosional' dan 'tersulut emosi' di gugatan ('kedekatan emosional', 'hubungan emosional memudar') tidak lagi dijadikan watak temperamental di keterangan saksi SDG; keduanya tetap dibaca untuk deteksi keterangan saksi BAS.",
+      "Alasan yang hanya dideteksi, bila dikirim eksplisit, ditolak dengan keterangan - tidak lagi tercetak tanpa subjek ('… yaitu tidak menghargai dan keluar malam').",
+      "Blangko relaas ikrar talak dicari di menu ABT 25 (Relaas Ikrar Talak, rentang proses 290-600), bukan di menu relaas biasa (80-220) yang menolak ikrar.",
+    ],
+    security: [],
+    operationalNotes: [
+      "Tidak ada migrasi baru (0050 dari 2.36.0; nomor bebas berikutnya 0051). Citra bot WAJIB dibangun ulang - layanan usulan ABT dan rute /abt/usulan berubah - begitu pula portal.",
+      "Ekstensi SIPP naik ke 1.169.0. Ekstensi unpacked tidak memperbarui dirinya - tekan Reload pada chrome://extensions sesudah berkasnya disalin.",
+      "PENGATURAN ABT DI SATKER (dikerjakan pengguna sendiri): hak akses menu 900 'Blangko Derry' menjadi 1|10|20|600|650; blangko relaas ikrar dipindah ke folder '_ikrar_talak/2 Relaas Ikrar Talak' (menu 25); kueri #10106#/#10107# tertukar (cerai hidup ↔ cerai mati); bawaan #10103# membawa sisa kalimat posita.",
+      "Penjaga dua tab memakai Web Locks bila peramban menyediakannya - hanya di HTTPS atau localhost. Di SIPP satker lewat http://192.168.10.10 yang menjaga adalah penanda pemegang dan pemeriksaan tepat sebelum Simpan.",
+      "Uji manual wajib sebelum dipakai: satu antrean massal otomatis dan satu manual atas perkara cerai di SIPP sungguhan (periksa isian qobla, nusyuz, dan keadaan istri yang tersimpan), tombol itsbat pada blangko itsbat, dan panel SDG dengan alasan baru.",
+    ],
+    knownLimitations: [
+      "Faktor pokok untuk 'masalah ekonomi' tidak diubah: petugas memilih Ekonomi sebagai pokok sampai perkara 477/2025, lalu Perselisihan dengan Ekonomi sekunder sejak 556/2025. Aturan mana pun yang dicoba merusak 4-12 perkara yang sekarang benar - menunggu keputusan pengguna.",
+      "Kedua saksi SDG kini selalu menulis 'melalaikan kewajiban nafkah lahir'; mengikuti derajat posita ('tidak memberi' atau 'kurang memberikan') butuh ukur baru.",
+      "Penyaring 'menikah lagi' mungkin menolak sekitar 4 kalimat yang benar (salah ketik atau susunan tak lazim).",
+      "Keterangan 'alasan ditolak' dari bot belum ditampilkan panel.",
+      "Mode massal dan panel yang berubah baru teruji di SIPP/ABT tiruan yang disetarakan dengan aturan validasi SIPP asli, belum di peramban sungguhan.",
+    ],
+  },
   {
     version: "2.36.0",
     title: "ALETA Judicia v2.36.0 - Cetak Relaas dari Antrian Sidang, Status Perkara Lengkap, dan Tipe Keluaran Ekstensi",

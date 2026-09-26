@@ -622,9 +622,11 @@ describe("pemetaan menurut NAMA - token menyusul dari halaman ABT (1.131.0)", ()
   });
 
   it("fitur 2: antrean SIPP disusun dari tanggal sidang; yang tanpa draf tidak dijanjikan", () => {
-    expect(konten).toContain("function bagianMassalSipp()");
-    expect(konten).toContain("isi.appendChild(bagianMassalSipp());");
-    const badan = konten.slice(konten.indexOf("function bagianMassalSipp()"));
+    // Sejak 26 September 2026 menerima sesudahSusun: antrean yang baru
+    // disusun langsung tampil di panel (tampilkanAntreanSipp).
+    expect(konten).toContain("function bagianMassalSipp(sesudahSusun)");
+    expect(konten).toContain("isi.appendChild(bagianMassalSipp(() => void tampilkanAntreanSipp(isi)));");
+    const badan = konten.slice(konten.indexOf("function bagianMassalSipp(sesudahSusun)"));
     expect(badan).toContain("centang.disabled = true;");
     expect(badan).toContain('t.tanda.textContent = "draf ada";');
     expect(badan).toContain('tahap: "sipp",');

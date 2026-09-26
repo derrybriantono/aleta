@@ -256,7 +256,11 @@ export async function POST(request: NextRequest) {
       ada: true,
       versi: baris.versi,
       keadaan: baris.keadaan,
-      usulan: usulkanMedanPutusan(dasar, medan, { jenisPerkara, amar, tipe }),
+      // Nusyuz dan keadaan isteri adalah TEMUAN majelis: dibaca dari
+      // pertimbangan saja. Duduk perkara memuat posita, jawaban, dan saksi
+      // yang menceritakan kehamilan lampau dan klaim para pihak (pemeriksa
+      // 26 September 2026). Medan lain tetap membaca `dasar`.
+      usulan: usulkanMedanPutusan(dasar, medan, { jenisPerkara, amar, tipe, pertimbangan: bagian.pertimbangan ?? "" }),
       // Hanya muncul bila ada yang perlu dikatakan, supaya jawaban pada
       // keadaan biasa sama persis dengan sebelum daftar ini disambung.
       ...(kabar.length ? { kabarTipeKeluaran: kabar } : {}),

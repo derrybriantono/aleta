@@ -40,9 +40,11 @@ import type { Cermin } from "@/lib/tipe-keluaran/kontrak";
  *               kemunculan di >= 3 perkara. Bentuk sekunci SETARA maknanya.
  *
  *   profil      kunci = kelompok pertanyaan (kelompokTanya di pemilih-ragam),
- *               data {peluangRagam, rumusan}. Pokok 1; rumusan dan lainnya
- *               = 1 - persen identik dua saksi manusia. Kunci 'lain' untuk
- *               pertanyaan tanpa kelompok.
+ *               data {peluangRagam, rumusan}. Pokok 1; rumusan = 1 - persen
+ *               identik dua saksi manusia; kelompok lain 1 sejak 26
+ *               September 2026 (permintaan pengguna 9: dua saksi berbeda
+ *               susunan, sama fakta). Kunci 'lain' untuk pertanyaan tanpa
+ *               kelompok.
  */
 export const CERMIN_BAS_SAKSI = {
   "bas.saksi.pembuka": [
@@ -171,12 +173,12 @@ export const CERMIN_BAS_SAKSI = {
     { kunci: "nafkah", nilai: "", data: { peluangRagam: 0.08, rumusan: true }, urutan: 11 },
     { kunci: "kenapa cerai", nilai: "", data: { peluangRagam: 0.09, rumusan: true }, urutan: 12 },
     { kunci: "maksud", nilai: "", data: { peluangRagam: 0.12, rumusan: true }, urutan: 13 },
-    { kunci: "sanggup", nilai: "", data: { peluangRagam: 0.01, rumusan: false }, urutan: 14 },
-    { kunci: "hubungan pihak", nilai: "", data: { peluangRagam: 0.15, rumusan: false }, urutan: 15 },
-    { kunci: "siapa pergi", nilai: "", data: { peluangRagam: 0.21, rumusan: false }, urutan: 16 },
-    { kunci: "anak", nilai: "", data: { peluangRagam: 0.44, rumusan: false }, urutan: 17 },
-    { kunci: "awal perselisihan", nilai: "", data: { peluangRagam: 0.45, rumusan: false }, urutan: 18 },
-    { kunci: "lain", nilai: "", data: { peluangRagam: 0.28, rumusan: false }, urutan: 19 },
+    { kunci: "sanggup", nilai: "", data: { peluangRagam: 1, rumusan: false }, urutan: 14 },
+    { kunci: "hubungan pihak", nilai: "", data: { peluangRagam: 1, rumusan: false }, urutan: 15 },
+    { kunci: "siapa pergi", nilai: "", data: { peluangRagam: 1, rumusan: false }, urutan: 16 },
+    { kunci: "anak", nilai: "", data: { peluangRagam: 1, rumusan: false }, urutan: 17 },
+    { kunci: "awal perselisihan", nilai: "", data: { peluangRagam: 1, rumusan: false }, urutan: 18 },
+    { kunci: "lain", nilai: "", data: { peluangRagam: 1, rumusan: false }, urutan: 19 },
   ],
 } satisfies Cermin;
 

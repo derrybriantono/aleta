@@ -223,6 +223,9 @@ function bukaPanelMassal() {
   w.alatCatat = () => {};
   w.alatBuatAntrean = (pilihan: any) => ({ ...pilihan });
   w.alatSimpanAntrean = async (a: any) => void antrean.push(a);
+  // Tidak ada antrean lama yang belum selesai di sini - boleh mengganti
+  // (pertanyaannya diuji di ekstensi-massal-ujung-ke-ujung, bagian I).
+  w.alatBolehGantiAntrean = async () => true;
   w.eval(
     [
       tetapan(isi, "ALETA_API_UNGGAH_NASKAH"),

@@ -6047,8 +6047,9 @@ function bagianIsiPutusan(nomorPerkara) {
         banyak: Boolean(calon.banyak),
         tambahan: Boolean(calon.tambahan),
         nilaiSekarang: jawabPilihan.nilaiSekarang || "",
-        // Yang SUDAH terpilih di halaman ikut dikirim (K9) - lihat nilaiTerpilihMedan.
-        terpilih: nilaiTerpilihMedan(jawabPilihan, Boolean(calon.banyak)),
+        // Yang SUDAH terpilih di halaman ikut dikirim (K9) - lihat nilaiTerpilihMedan;
+        // nilai yang dipilih borang SIPP sendiri (NILAI_BAWAAN_BORANG) tidak.
+        terpilih: nilaiTerpilihBukanBawaan(calon.penunjuk, nilaiTerpilihMedan(jawabPilihan, Boolean(calon.banyak))),
       });
     }
     return hasil;
@@ -6359,9 +6360,21 @@ function bagianIsiPutusan(nomorPerkara) {
         const centang = document.createElement("input");
         centang.type = "checkbox";
         centang.className = "aleta-abt-centang";
+        // Status Putusan yang SUDAH dipilih petugas dan berbeda dengan usulan
+        // juga tidak dicentang sendiri. Sampai 26 September 2026 kartunya
+        // tercentang, dan "Isikan" menimpa status pilihan petugas - padahal
+        // pintunya sendiri (di atas) sudah menolak menimpanya. "-1" dan
+        // kosong berarti belum dipilih, sama dengan penjaga pintu itu.
+        const statusKini = String(medan.nilaiSekarang || "").trim();
+        const statusDipilihBeda =
+          medan.kunci === 'select[name="status_putusan"]' &&
+          Boolean(usul && usul.nilai) &&
+          statusKini !== "" &&
+          statusKini !== "-1" &&
+          String(usul.nilai) !== statusKini;
         // Yang berselisih TIDAK dicentang sendiri: justru itu yang paling
         // perlu dibaca manusia.
-        centang.checked = Boolean(usul && usul.nilai) && usul.keyakinan !== "bentrok";
+        centang.checked = Boolean(usul && usul.nilai) && usul.keyakinan !== "bentrok" && !statusDipilihBeda;
         // Medan tanpa usulan pun boleh diisi sendiri, jadi centangnya hanya
         // mati selama memang belum ada yang terpilih - bukan selama ALETA
         // tidak mengusulkan apa pun.
@@ -6394,6 +6407,16 @@ function bagianIsiPutusan(nomorPerkara) {
           sanding.appendChild(usulBaris);
         }
         kartu.appendChild(sanding);
+        if (statusDipilihBeda) {
+          kartu.appendChild(
+            buatElemen(
+              "div",
+              "aleta-abt-catatan aleta-status-dipilih-beda",
+              `Status sudah dipilih di halaman: "${sekarang || statusKini}". ALETA mengusulkan "${usul.nilaiLabel || usul.nilai}". ` +
+                "Tidak dicentang - centang sendiri bila usulan ALETA yang benar."
+            )
+          );
+        }
 
         if (usul && usul.kutipan) {
           const kutip = buatElemen("div", "aleta-abt-kutipan");
@@ -6666,6 +6689,39 @@ function bagianIsiPutusan(nomorPerkara) {
 
 /**
  * ============================================================================
+ * NILAI YANG DIPILIH BORANG SIPP SENDIRI - BUKAN PILIHAN SIAPA PUN
+ * ============================================================================
+ *
+ * Pada borang Putusan Akhir yang baru dibuka (views/putusan/
+ * edit_putusan_akhir.php dan managePutusanAkhir.php):
+ *   verstek  tidak punya isian "Pilih", dan $verstek kosong - peramban
+ *            memilih pilihan pertama, "Tidak".
+ *   qobla    $qobla_bada hanya di-set dari baris perkara_akta_cerai, yang
+ *            belum ada sebelum putusan. Variabel yang tidak di-set bernilai
+ *            NULL, dan di PHP `NULL == 0` benar: "Qobla Dukhul" tercetak
+ *            `selected` pada TIAP borang baru. (Di sipp_donggala 26 Sep
+ *            2026: 0 dari 4.607 baris akta cerai ada sebelum putusan.)
+ * Nilai itu tidak dianggap pilihan petugas - di panel satu perkara maupun di
+ * antrean massal: tidak dikirim sebagai "terpilih" (usulan ALETA tidak
+ * membeonya lewat hormatiTerpilih), boleh diganti usulan ALETA, dan di
+ * antrean pilihan wajib yang MASIH pada nilai ini tanpa dikukuhkan usulan
+ * ALETA menahan Simpan - "Qobla Dukhul" bawaan bukan jawaban.
+ *
+ * Isian "Pilih ..."/-1/kosong sudah dikenali nilaiTerpilihMedan. Akad
+ * syariah sengaja tidak di sini: pilihannya berasal dari data perkara.
+ */
+const NILAI_BAWAAN_BORANG = {
+  'select[name="verstek"]': "T",
+  'select[name="qobla"]': "0",
+};
+
+/** Nilai terpilih yang dikirim ke portal: nilai bawaan borang SIPP bukan pilihan. */
+function nilaiTerpilihBukanBawaan(penunjuk, terpilih) {
+  return terpilih !== undefined && NILAI_BAWAAN_BORANG[penunjuk] === terpilih ? undefined : terpilih;
+}
+
+/**
+ * ============================================================================
  * YANG SUDAH TERPILIH DI HALAMAN IKUT DIKIRIM (KONTRAK K9)
  * ============================================================================
  *
@@ -6678,7 +6734,9 @@ function bagianIsiPutusan(nomorPerkara) {
  * nilai -1 ("Pilih Status", "Pilih Faktor", "Pilih Salah Satu"), nilai kosong
  * ("Pilih Keadaan Istri"), dan nilai 0 bertulisan "- Pilih -" atau
  * "Referensi belum ada" pada alasan dispensasi. Nilai 0 pada qobla justru SAH
- * ("Qobla Dukhul") - jadi yang menentukan tulisannya, bukan angkanya.
+ * ("Qobla Dukhul") - jadi yang menentukan tulisannya, bukan angkanya. Nilai
+ * yang dipilih borang SIPP SENDIRI pada borang baru (qobla 0, verstek T)
+ * disaring terpisah oleh nilaiTerpilihBukanBawaan di atas.
  *
  * Medan bernilai banyak (kotak centang sumber hukum) memulangkan daftar; yang
  * lain satu nilai. Yang belum terpilih memulangkan undefined, dan ruasnya
@@ -10833,12 +10891,14 @@ function susunPanelDaftar(ringkasan) {
   }
   if (boleh("data-umum")) {
     // Fitur 2: antrean SIPP disusun dari tanggal sidang, tanpa lewat ABT.
-    isi.appendChild(bagianMassalSipp());
+    // Antrean yang baru disusun langsung tampil di panel ini - tanpa memuat
+    // ulang halaman (tampilkanAntreanSipp).
+    isi.appendChild(bagianMassalSipp(() => void tampilkanAntreanSipp(isi)));
     // Fitur 3: antrean yang sama, tetapi bermula dari BERKAS. Diletakkan
     // sesudah yang dari tanggal sidang, bukan sebelumnya: yang dari tanggal
     // sidang dipakai tiap hari, yang dari berkas hanya ketika naskahnya sudah
     // terkumpul di satu folder.
-    bagianMassalBerkas(isi);
+    bagianMassalBerkas(isi, () => void tampilkanAntreanSipp(isi));
     void bagianAntreanSipp("").then((k) => {
       if (k && isi.isConnected) isi.appendChild(k);
     });
@@ -12964,6 +13024,8 @@ async function bagianAntreanSipp(nomorHalaman) {
   if (!antrean || antrean.tahap !== "sipp") return null;
 
   const kotak = bagian("Putusan massal · lanjutan SIPP", "antreanSipp", false);
+  // Penanda untuk menggantinya di tempat - lihat tampilkanAntreanSipp.
+  kotak.classList.add("aleta-antrean-sipp");
   const isi = kotak.isi;
   const h = alatAntreanRingkas(antrean);
 
@@ -12980,18 +13042,44 @@ async function bagianAntreanSipp(nomorHalaman) {
     const sebab = b.sebabTahan || "praperiksa";
     tahan[sebab] = (tahan[sebab] || 0) + 1;
   }
-  const namaSebabTahan = { praperiksa: "ditahan praperiksa", "gagal-isi": "tertahan karena medan gagal terisi" };
+  // Nama tiap sebab satu tempat dengan baris antrean dan kabar - lihat
+  // NAMA_SEBAB_TAHAN di bawah jalankanAntreanSippSekali.
   const teksTahan = Object.keys(tahan)
-    .map((sebab) => `${tahan[sebab]} ${namaSebabTahan[sebab] || `tertahan (${sebab})`}`)
+    .map((sebab) => `${tahan[sebab]} ${NAMA_SEBAB_TAHAN[sebab] || `tertahan (${sebab})`}`)
     .join(", ");
 
+  // Asalnya disebut apa adanya. Sampai 26 September 2026 kalimat ini berbunyi
+  // "Antrean dari tahap ABT" untuk SETIAP antrean di sini - termasuk yang
+  // disusun dari berkas dan dari jadwal sidang - sebab tahap ketiganya "sipp".
+  const ASAL_ANTREAN = {
+    abt: "tahap ABT",
+    sidang: `jadwal sidang ${antrean.tanggalSidang || ""}`.trim(),
+    berkas: "berkas naskah putusan",
+  };
   isi.appendChild(
     buatElemen(
       "div",
       "aleta-tetap-sebab",
-      `Antrean dari ${antrean.tahap === "sipp" ? "tahap ABT" : "jadwal sidang"} — ` +
-        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal, ${teksTahan}. ` +
-        `Mode: ${antrean.modus === "otomatis" ? "otomatis" : "manual (berhenti tiap perkara)"}.`
+      `Antrean dari ${ASAL_ANTREAN[antrean.asal] || "putusan massal"} — ` +
+        `${h.selesai} selesai, ${h.menunggu + h.jalan} menunggu, ${h.gagal} gagal, ${teksTahan}.`
+    )
+  );
+  // ==========================================================================
+  // YANG MENEKAN SIMPAN DISEBUT - DI TIAP MODE
+  // ==========================================================================
+  //
+  // Kedua mode menekan tombol Simpan SIPP. Sampai 26 September 2026 layar
+  // hanya berkata "Mode: otomatis", dan antrean dari berkas - yang diam-diam
+  // menjadi otomatis - tidak menyebutnya di mana pun.
+  isi.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-massal-simpan",
+      antrean.modus === "otomatis"
+        ? "Mode otomatis: begitu borang Putusan Akhir perkara di antrean terbuka, ALETA mengisinya dari draf " +
+            "lalu MENEKAN SIMPAN SIPP SENDIRI - satu kali per perkara. Perkara yang tertahan tidak disimpan."
+        : "Mode manual: ALETA berhenti di tiap perkara. Tombol “Isi putusan & simpan” mengisi borang " +
+            "lalu MENEKAN SIMPAN SIPP untuk perkara itu."
     )
   );
 
@@ -13001,10 +13089,21 @@ async function bagianAntreanSipp(nomorHalaman) {
   for (const b of antrean.butir) {
     const baris = buatElemen("div", `aleta-perkakas-baris ${b.keadaan === "selesai" ? "aleta-perkakas-baik" : b.keadaan === "gagal" ? "aleta-perkakas-buruk" : b.keadaan === "dilewati" ? "" : "aleta-perkakas-awas"}`);
     baris.appendChild(buatElemen("span", "aleta-perkakas-nama", b.nomor));
-    baris.appendChild(
-      buatElemen("span", "aleta-perkakas-nilai", b.catatan || NAMA_KEADAAN_ANTREAN[b.keadaan] || b.keadaan)
-    );
+    baris.appendChild(buatElemen("span", "aleta-perkakas-nilai", b.catatan || namaKeadaanButir(b)));
     daftar.appendChild(baris);
+    // Pilihan borang yang diisikan ALETA dari BAWAAN - naskahnya diam, jadi
+    // nilai itu kesimpulan, bukan kutipan. Disebut per perkara supaya
+    // diperiksa, juga sesudah tersimpan (lihat isianPilihan pada 3a).
+    const dariBawaan = (b.isianPilihan || []).filter((x) => x && x.asal === "bawaan");
+    if (dariBawaan.length > 0) {
+      daftar.appendChild(
+        buatElemen(
+          "div",
+          "aleta-perkakas-baris aleta-perkakas-awas aleta-massal-bawaan",
+          `${b.nomor}: diisi bawaan - periksa: ${dariBawaan.map((x) => `${x.medan} "${x.nilai}"`).join(", ")}`
+        )
+      );
+    }
   }
   isi.appendChild(daftar);
 
@@ -13025,12 +13124,38 @@ async function bagianAntreanSipp(nomorHalaman) {
     const tombol = buatElemen("button", "aleta-permintaan-tombol", "Isi putusan & simpan (dari draf ALETA)");
     tombol.type = "button";
     aksi.appendChild(tombol);
-    tombol.addEventListener("click", () => void jalankanSatuAntreanSipp(antrean, butirIni, kabar, tombol));
+    tombol.addEventListener("click", () => void jalankanAntreanSippSekali(antrean, butirIni, kabar, tombol, false));
 
     // Mode otomatis: langsung jalan, tanpa menunggu ditekan.
+    //
+    // ========================================================================
+    // SATU PERKARA, SATU SIMPAN - WALAU PANELNYA DIGAMBAR ULANG
+    // ========================================================================
+    //
+    // Panel perkara digambar ulang tiap borang di halaman berganti, dan tiap
+    // gambar memanggil bagian ini. Sampai 26 September 2026 tiap gambar
+    // memasang pewaktunya sendiri, dan pewaktu dari panel yang sudah dibuang
+    // tetap berbunyi: dua gambar dalam 600 ms berarti dua pengisian serentak
+    // atas perkara yang sama - dan Simpan SIPP ditekan dua kali. Kini pewaktu
+    // panel yang sudah lepas dari halaman diam, dan jalankanAntreanSippSekali
+    // menolak berjalan kedua kalinya di halaman yang sama.
+    //
+    // Perkara yang tercatat "sedang dikerjakan" ketika halaman dimuat berarti
+    // pekerjaan sebelumnya TERPUTUS (halaman dimuat ulang atau ditutup di
+    // tengah jalan). Simpan-nya mungkin sudah ditekan; mengulangnya sendiri
+    // bisa menekannya lagi. Diserahkan ke petugas lewat tombolnya.
     if (antrean.modus === "otomatis") {
-      kabar.textContent = "Mode otomatis — mengisi perkara ini…";
-      setTimeout(() => void jalankanSatuAntreanSipp(antrean, butirIni, kabar, tombol), 600);
+      if (butirIni.keadaan === "jalan") {
+        kabar.textContent =
+          `${butirIni.nomor} tercatat sedang dikerjakan ketika halaman ini dimuat - pekerjaan sebelumnya terputus. ` +
+          "Tidak diulang sendiri: periksa borangnya, lalu tekan tombol di bawah bila memang belum tersimpan.";
+      } else {
+        kabar.textContent = "Mode otomatis — mengisi perkara ini lalu menekan Simpan SIPP…";
+        setTimeout(() => {
+          if (!kotak.isConnected) return;
+          void jalankanAntreanSippSekali(antrean, butirIni, kabar, tombol, true);
+        }, 600);
+      }
     }
   } else if (berikutnya) {
     // Bukan perkara yang ditunggu (atau borangnya belum dibuka). Sebutkan
@@ -13042,7 +13167,7 @@ async function bagianAntreanSipp(nomorHalaman) {
         "aleta-massal-jeda",
         adaBorang
           ? `Perkara berikutnya di antrean: ${berikutnya.nomor}. Buka perkara itu di SIPP, lalu buka borang putusannya.`
-          : `Perkara berikutnya: ${berikutnya.nomor}. Buka perkaranya dan buka tab Putusan — ALETA akan mengisikannya${antrean.modus === "otomatis" ? " sendiri" : ""}.`
+          : `Perkara berikutnya: ${berikutnya.nomor}. Buka perkaranya dan buka tab Putusan — ALETA akan mengisikannya${antrean.modus === "otomatis" ? " sendiri lalu menekan Simpan SIPP" : ""}.`
       )
     );
   } else {
@@ -13062,6 +13187,95 @@ async function bagianAntreanSipp(nomorHalaman) {
   return kotak;
 }
 
+/**
+ * Nomor perkara antrean yang SEDANG dikerjakan di halaman ini, atau kosong.
+ * Satu halaman, satu pengerjaan - lihat catatan pada mode otomatis di
+ * bagianAntreanSipp.
+ */
+let antreanSippBerjalan = "";
+
+/**
+ * Pintu tunggal ke jalankanSatuAntreanSipp dari panel antrean - tombol maupun
+ * mode otomatis.
+ *
+ * Keadaan perkaranya dibaca ULANG dari penyimpanan sebelum mulai: panel yang
+ * digambar sebelum perkara ini disentuh memegang salinan lama, dan salinan
+ * lama itulah yang dahulu menjawab "masih menunggu" atas perkara yang sudah
+ * tersimpan. Mode otomatis hanya mengerjakan yang masih MENUNGGU; tombol
+ * boleh pula melanjutkan yang terputus ("jalan").
+ *
+ * Membaca dan menandai "jalan" kini SATU baca-ubah-tulis (klaim) di bawah
+ * kunci antrean - lihat alatUbahButirAntrean di panel-alat.js. Sampai 26
+ * September 2026 keduanya terpisah: dua tab yang membuka borang perkara yang
+ * sama sama-sama membaca "menunggu", lalu Simpan SIPP ditekan dua kali.
+ */
+async function jalankanAntreanSippSekali(antrean, butir, kabar, tombol, otomatis) {
+  if (antreanSippBerjalan) {
+    if (kabar) kabar.textContent = `${antreanSippBerjalan} sedang dikerjakan di halaman ini - tunggu sampai selesai.`;
+    return;
+  }
+  antreanSippBerjalan = butir.nomor;
+  try {
+    const klaim = await alatUbahButirAntrean(antrean.id, butir.nomor, (b) => {
+      const boleh = b.keadaan === "menunggu" || (!otomatis && b.keadaan === "jalan");
+      if (!boleh) return false;
+      b.keadaan = "jalan";
+      b.pemegang = ALAT_PENANDA_HALAMAN;
+    });
+    if (!klaim.ok) {
+      if (kabar) {
+        kabar.textContent =
+          klaim.sebab === "diakhiri" || klaim.sebab === "diganti"
+            ? "Antrean ini sudah diakhiri atau diganti antrean lain - tidak ada yang dikerjakan."
+            : `${butir.nomor} sudah ${klaim.butir ? namaKeadaanButir(klaim.butir) : "tidak ada di antrean"} - tidak dikerjakan lagi.`;
+      }
+      return;
+    }
+    const kini = klaim.butir;
+    try {
+      await jalankanSatuAntreanSipp(antrean, kini, kabar, tombol);
+    } catch (galat) {
+      // Tidak ditelan. Dahulu galat di sini hanya menjadi penolakan janji
+      // yang tidak ditunggu siapa pun: perkaranya tertinggal "sedang
+      // dikerjakan", tombolnya mati, dan kabarnya tetap "mengisi…". Kini ia
+      // gagal beserta sebabnya, dan antrean dapat berlanjut. Simpan mungkin
+      // sudah ditekan sebelum galatnya terjadi - itu disebut, bukan ditebak.
+      const pesan = String((galat && galat.message) || galat);
+      kini.keadaan = "gagal";
+      kini.catatan = `pengerjaan terhenti oleh galat: ${pesan} - periksa di SIPP apakah putusannya sudah tersimpan`;
+      // Hanya butir ini, hanya pada antrean yang sama, dan hanya selama masih
+      // dipegang halaman ini - bukan salinan utuh yang mungkin sudah basi.
+      await alatUbahButirAntrean(antrean.id, kini.nomor, (b) => {
+        if (b.pemegang && b.pemegang !== ALAT_PENANDA_HALAMAN) return false;
+        b.keadaan = kini.keadaan;
+        b.catatan = kini.catatan;
+      });
+      alatCatat("massal-galat", `${kini.nomor}: ${kini.catatan}`, "");
+      if (kabar) {
+        kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+        kabar.textContent = `${kini.nomor}: ${kini.catatan}`;
+      }
+      if (tombol) tombol.disabled = false;
+    }
+  } finally {
+    antreanSippBerjalan = "";
+  }
+}
+
+/**
+ * Bagian antrean di panel daftar, digambar (atau diganti di tempat) SEKETIKA
+ * sesudah antreannya disusun. Sebelumnya bagian itu baru muncul sesudah
+ * halamannya dimuat ulang, sehingga yang baru menyusun antrean tidak melihat
+ * apa pun yang menuntunnya.
+ */
+async function tampilkanAntreanSipp(wadah) {
+  const k = await bagianAntreanSipp("");
+  if (!k || !wadah || !wadah.isConnected) return;
+  const lama = wadah.querySelector(".aleta-antrean-sipp");
+  if (lama) lama.replaceWith(k);
+  else wadah.appendChild(k);
+}
+
 const NAMA_KEADAAN_ANTREAN = {
   menunggu: "menunggu",
   jalan: "sedang dikerjakan",
@@ -13069,28 +13283,98 @@ const NAMA_KEADAAN_ANTREAN = {
   gagal: "gagal",
   dilewati: "dilewati",
   jeda: "dijeda",
-  tertahan: "ditahan praperiksa",
+  // Bunyinya menurut SEBAB-nya - lihat namaKeadaanButir. Sampai 26 September
+  // 2026 di sini tertulis "ditahan praperiksa" untuk setiap sebab, sehingga
+  // perkara yang tertahan karena medannya gagal terisi pun dikabarkan
+  // "sudah ditahan praperiksa".
+  tertahan: "tertahan",
 };
+
+/**
+ * Nama sebab tertahan - satu tempat untuk ringkasan antrean, baris perkara,
+ * dan kabar. "pilihan" adalah sebab gabungan butir yang tersimpan sebelum
+ * pilihan kosong dan pilihan berbeda dipisah (26 September 2026).
+ */
+const NAMA_SEBAB_TAHAN = {
+  praperiksa: "ditahan praperiksa",
+  "pilihan-kosong": "tertahan karena pilihan wajib kosong",
+  "pilihan-beda": "tertahan karena pilihan petugas berbeda",
+  pilihan: "tertahan karena pilihan borang belum pasti",
+  "gagal-isi": "tertahan karena medan gagal terisi",
+  "medan-tambahan": "tertahan karena medan tambahan satker",
+  "antrean-diakhiri": "tertahan karena antrean diakhiri",
+};
+
+/** Keadaan satu butir dalam kata-kata - yang tertahan disebut sebabnya. */
+function namaKeadaanButir(b) {
+  if (!b) return "";
+  if (b.keadaan === "tertahan") {
+    // Butir tanpa sebabTahan berasal dari praperiksa - satu-satunya penahan
+    // sebelum ruas itu lahir (lihat ringkasan di bagianAntreanSipp).
+    const sebab = b.sebabTahan || "praperiksa";
+    return NAMA_SEBAB_TAHAN[sebab] || `tertahan (${sebab})`;
+  }
+  return NAMA_KEADAAN_ANTREAN[b.keadaan] || b.keadaan;
+}
 
 /**
  * Satu perkara antrean, di halaman yang sedang terbuka:
  *   1. sudah putus?  -> lewati, jangan isi ganda
  *   2. baca draf ALETA
+ *   3a. pilih medan pilihan borang (pintu lebih dulu)
  *   3. isi Pertimbangan, Amar, Amar Anonim
- *   4. Simpan, dibuktikan dari SIPP
+ *   3b/3b'. yang gagal terisi atau belum pasti menahan Simpan
+ *   3p. praperiksa atas isian yang AKAN disimpan
+ *   3c. medan tambahan satker menahan Simpan
+ *   4. Simpan - hanya bila antreannya masih ada dan perkara ini masih
+ *      dipegang halaman ini - dibuktikan dari SIPP
  * Sesudah itu antrean maju satu langkah.
  */
 async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   if (tombol) tombol.disabled = true;
+
+  // ==========================================================================
+  // TIAP TULIS: BUTIR INI SAJA, PADA ANTREAN SEGAR
+  // ==========================================================================
+  //
+  // Sampai 26 September 2026 tiap langkah di bawah menulis `antrean` UTUH -
+  // salinan yang dibaca saat pengerjaan dimulai. Tab lain yang sementara itu
+  // menyelesaikan perkaranya sendiri kehilangan catatannya, antrean yang
+  // diakhiri petugas hidup kembali, dan antrean baru dari berkas tertimpa.
+  // Kini keadaan butir ini disalin ke antrean SEGAR (alatUbahButirAntrean),
+  // hanya bila antreannya masih yang sama dan butirnya tidak dipegang halaman
+  // lain. Yang tidak dapat ditulis tidak ditulis - antrean yang sudah
+  // diakhiri tetap berakhir.
+  const tulisButir = () =>
+    alatUbahButirAntrean(antrean.id, butir.nomor, (b) => {
+      if (b.pemegang && b.pemegang !== ALAT_PENANDA_HALAMAN) return false;
+      b.pemegang = ALAT_PENANDA_HALAMAN;
+      b.keadaan = butir.keadaan;
+      b.catatan = butir.catatan || "";
+      if (butir.sebabTahan) b.sebabTahan = butir.sebabTahan;
+      else delete b.sebabTahan;
+      if (butir.isianPilihan) b.isianPilihan = butir.isianPilihan;
+    });
+
   butir.keadaan = "jalan";
-  await alatSimpanAntrean(antrean);
+  const awal = await tulisButir();
+  if (!awal.ok) {
+    if (kabar) {
+      kabar.textContent =
+        awal.sebab === "ditolak"
+          ? `${butir.nomor} sedang dikerjakan di halaman lain - tidak dikerjakan di sini.`
+          : "Antrean ini sudah diakhiri atau diganti antrean lain - tidak ada yang dikerjakan.";
+    }
+    if (tombol) tombol.disabled = false;
+    return;
+  }
 
   // 1. Jangan isi ulang yang sudah putus.
   const segar = await bacaPutusanSegar(butir.nomor);
   if (segar && segar.sudahPutus) {
     butir.keadaan = "dilewati";
     butir.catatan = "sudah putus - tidak diisi ulang";
-    await alatSimpanAntrean(antrean);
+    await tulisButir();
     if (kabar) kabar.textContent = `${butir.nomor} sudah putus - dilewati.`;
     alatCatat("massal", `${butir.nomor}: dilewati (sudah putus)`, "");
     if (tombol) tombol.disabled = false;
@@ -13112,7 +13396,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   } catch (galat) {
     butir.keadaan = "gagal";
     butir.catatan = String((galat && galat.message) || galat);
-    await alatSimpanAntrean(antrean);
+    await tulisButir();
     if (kabar) kabar.textContent = butir.catatan;
     alatCatat("massal-galat", `${butir.nomor}: draf ${butir.catatan}`, "");
     if (tombol) tombol.disabled = false;
@@ -13121,30 +13405,280 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
   if (!draf || !draf.ada) {
     butir.keadaan = "gagal";
     butir.catatan = (draf && draf.sebab) || "belum ada draf putusan";
-    await alatSimpanAntrean(antrean);
+    await tulisButir();
     if (kabar) kabar.textContent = butir.catatan;
     if (tombol) tombol.disabled = false;
     return;
   }
 
-  // 2b. Praperiksa - agen yang membaca fakta SIPP dan BERHENTI bila
-  // bertentangan. Di antrean tidak ada kotak centang "tetap isikan": yang
-  // ditahan ditandai, disebut sebabnya, dan dibiarkan untuk dibuka orang.
-  const raporAgen = await praperiksaSebelumMengisi(butir.nomor, kabar);
-  if (raporAgen && raporAgen.hentikan) {
-    butir.keadaan = "tertahan";
-    butir.sebabTahan = "praperiksa";
-    butir.catatan = `ditahan praperiksa: ${ringkasHentikan(raporAgen)}`;
-    await alatSimpanAntrean(antrean);
-    if (kabar) {
-      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
-      kabar.textContent = "";
-      kabar.appendChild(gambarRaporAgen(raporAgen));
-    }
-    alatCatat("praperiksa", `${butir.nomor}: ${butir.catatan}`, "");
-    if (tombol) tombol.disabled = false;
-    return;
+  // Praperiksa (dahulu 2b, di sini) kini berjalan SESUDAH pilihan borang
+  // dipilih - lihat 3p di bawah.
+
+  // 3a. Medan PILIHAN borang - Status Putusan, Verstek, Sumber Hukum, faktor
+  // perceraian, keadaan istri, dan kawan-kawannya.
+  //
+  // ==========================================================================
+  // SAMPAI 26 SEPTEMBER 2026 ANTREAN TIDAK PERNAH MENYIMPAN APA PUN
+  // ==========================================================================
+  //
+  // Antrean hanya mengisi tiga medan naskah, lalu menekan Simpan. SIPP menolak
+  // tiap borang Putusan Akhir yang Sumber Hukum, Status Putusan, atau
+  // Verstek-nya belum dipilih (managePutusanAkhir::validateInput: "Sumber
+  // Hukum Belum Dipilih", "Status Putusan Wajib Dipilih"). Pada borang yang
+  // baru dibuka ketiganya kosong, dan mode otomatis mulai 600 ms sesudah
+  // borangnya lahir - sebelum siapa pun sempat memilih. Setiap perkara
+  // berakhir "gagal" dengan penolakan SIPP. Dijaga
+  // ekstensi-massal-ujung-ke-ujung.test.ts, yang menjalankan antreannya atas
+  // SIPP tiruan beraturan simpan yang sama.
+  //
+  // Daftar medannya sama dengan panel satu perkara (bagianIsiPutusan): dari
+  // putusan.medan-borang (cadangan tertanam = CALON_MEDAN_PANEL), hanya yang
+  // TAMPAK. Pintu (Status Putusan, Qobla) dibuka lebih dulu bila masih
+  // kosong, lalu tiap medan yang masih kosong - atau masih pada nilai bawaan
+  // borang SIPP (NILAI_BAWAAN_BORANG) - diisi usulan ALETA yang tidak
+  // bentrok. Medan tambahan satker tidak diisi di sini - blok 3c yang
+  // menahannya.
+  //
+  // Yang SUDAH dipilih petugas tidak ditimpa: pintu MAUPUN medan lain yang
+  // berisi nilai selain kosong dan selain bawaan borang, dan berbeda dengan
+  // usulan ALETA, menahan Simpan (sebab "pilihan-beda"). Sampai 26 September
+  // 2026 hanya pintu yang dijaga begitu; faktor perceraian pilihan petugas
+  // ditimpa usulan ALETA tanpa kabar, lalu disimpan.
+  //
+  // Beda dengan panel satu perkara, yang disengaja: panel MEMBUKA pintu
+  // dengan usulan yang bentrok (petugas yang menekan Isikan melihatnya lebih
+  // dulu), antrean tidak - pintu yang usulannya bentrok dibiarkan dan
+  // menahan Simpan sebagai pilihan wajib yang kosong.
+  //
+  // CALON_PILIHAN adalah SALINAN CALON_MEDAN_PANEL di bagianIsiPutusan (di
+  // sana ia tetapan dalam fungsi). Keduanya dijaga sama oleh uji yang sama.
+  const CALON_PILIHAN = [
+    { penunjuk: 'select[name="status_putusan"]', label: "Status Putusan" },
+    { penunjuk: 'select[name="verstek"]', label: "Putusan Verstek" },
+    { penunjuk: 'input[name="sumber_hukum[]"]', label: "Sumber Hukum", banyak: true },
+    { penunjuk: 'select[name="faktor_cerai"]', label: "Faktor Penyebab Perceraian" },
+    { penunjuk: 'select[name="faktor_cerai_sekunder"]', label: "Faktor Penyebab Perceraian (Sekunder)" },
+    { penunjuk: 'input[name="status_nusyuz"]', label: "Status Nusyuz" },
+    { penunjuk: 'select[name="qobla"]', label: "Qobla/Ba'da Dukhul" },
+    { penunjuk: 'select[name="keadaan_istri"]', label: "Keadaan Istri" },
+    { penunjuk: 'select[name="alasan_dispen"]', label: "Alasan Pengajuan Dispensasi Kawin" },
+    { penunjuk: 'select[name="akad_syariah_primer"]', label: "Jenis Akad Syariah" },
+    { penunjuk: 'select[name="status_reskom"]', label: "Hasil Reskom" },
+    { penunjuk: 'select[name="pengakhiran_id"]', label: "Jenis Pengakhiran" },
+  ];
+  const PINTU_PILIHAN = ['select[name="status_putusan"]', 'select[name="qobla"]'];
+  // Yang ditolak SIPP bila kosong - selama medannya TAMPAK (SIPP
+  // menyembunyikan faktor, qobla, nusyuz, dan keadaan istri bila tidak
+  // berlaku). managePutusanAkhir::validateInput, alur 15, cerai dikabulkan:
+  // "Qobla/Bada Belum Diisi" dan "Status Nusyuz Wajib Dipilih" ikut di
+  // sini sejak 26 September 2026 - sebelumnya perkara tanpa usulan nusyuz
+  // tetap dikirim, lalu ditolak SIPP.
+  const PILIHAN_WAJIB = [
+    'select[name="status_putusan"]',
+    'select[name="verstek"]',
+    'input[name="sumber_hukum[]"]',
+    'select[name="faktor_cerai"]',
+    'select[name="qobla"]',
+    'input[name="status_nusyuz"]',
+    'select[name="keadaan_istri"]',
+  ];
+  // NILAI_BAWAAN_BORANG (tingkat modul, di atas nilaiTerpilihMedan): nilai
+  // yang dipilih borang SIPP sendiri, bukan pilihan petugas.
+  // Asal nilai yang DIISIKAN ALETA - dicatat pada butir.isianPilihan dan
+  // ditandai di daftar antrean:
+  //   tegas   naskah menyebutnya tegas (keyakinan "pasti")
+  //   bawaan  naskah diam - bawaan ALETA atau satker, tanpa kutipan naskah
+  //   usulan  disimpulkan dari kalimat naskah, belum tegas
+  const asalUsulan = (usul) =>
+    usul.keyakinan === "pasti"
+      ? "tegas"
+      : usul.sumberUsulan === "bawaan-satker" || !String(usul.kutipan || "").trim()
+        ? "bawaan"
+        : "usulan";
+  /** Pilihan borang yang diisikan ALETA pada perkara ini. */
+  const isianPilihan = [];
+  /** Medan yang nilainya diisikan (atau dikukuhkan) ALETA dari usulannya. */
+  const dipastikan = new Set();
+  const gagal = [];
+  let daftarPilihan = CALON_PILIHAN;
+  try {
+    const hasilTipe = await alatTipeKeluaran("putusan.medan-borang", {
+      tertanam: () =>
+        CALON_PILIHAN.map((c, urutan) => ({
+          kunci: "putusan-akhir",
+          nilai: c.label,
+          data: c.banyak ? { penunjuk: c.penunjuk, banyak: true } : { penunjuk: c.penunjuk },
+          urutan,
+          asal: "bawaan",
+          sidik: "",
+        })),
+    });
+    const bawaan = hasilTipe.entri
+      .filter((e) => e.asal !== "tambahan")
+      .map((e) => ({ penunjuk: e.data.penunjuk, label: e.nilai, banyak: Boolean(e.data.banyak) }));
+    if (bawaan.length > 0) daftarPilihan = bawaan;
+  } catch {
+    // Cadangan tertanam dipakai. Kegagalan yang sama MENAHAN di blok 3c.
   }
+  const bacaPilihan = async () => {
+    const hasil = [];
+    for (const c of daftarPilihan) {
+      const j = await kirimKeJembatan({ jenis: "pilihan", penunjuk: c.penunjuk });
+      if (!j || !j.ok || !j.tampak) continue;
+      const pilihan = (j.pilihan || []).map((x) => ({ nilai: x.nilai, label: x.label }));
+      if (pilihan.length === 0) continue;
+      const terpilihHalaman = nilaiTerpilihMedan(j, Boolean(c.banyak));
+      const bawaanBorang =
+        !c.banyak &&
+        terpilihHalaman !== undefined &&
+        NILAI_BAWAAN_BORANG[c.penunjuk] !== undefined &&
+        String(terpilihHalaman) === NILAI_BAWAAN_BORANG[c.penunjuk];
+      hasil.push({
+        kunci: c.penunjuk,
+        label: c.label,
+        pilihan,
+        banyak: Boolean(c.banyak),
+        nilaiSekarang: j.nilaiSekarang || "",
+        // Nilai bawaan borang bukan pilihan: tidak terpilih di mata usulan
+        // maupun penjaga pilihan petugas di bawah.
+        terpilih: bawaanBorang ? undefined : terpilihHalaman,
+        bawaanBorang,
+      });
+    }
+    return hasil;
+  };
+  const labelNilai = (medan, nilai) =>
+    ((medan.pilihan || []).find((x) => String(x.nilai) === String(nilai)) || {}).label || String(nilai);
+  /** Mencatat satu nilai yang BERHASIL diisikan ALETA - lihat isianPilihan. */
+  const catatIsian = (medan, usul, nilai) => {
+    dipastikan.add(medan.kunci);
+    const label = labelNilai(medan, nilai);
+    const ada = isianPilihan.find((x) => x.kunci === medan.kunci);
+    if (ada) ada.nilai = medan.banyak ? `${ada.nilai}, ${label}` : label;
+    else isianPilihan.push({ kunci: medan.kunci, medan: medan.label, nilai: label, asal: asalUsulan(usul) });
+  };
+  let usulanPilihan = [];
+  let tampakPilihan = [];
+  const pintuDisentuh = new Set();
+  /** Pilihan petugas (pintu atau bukan) yang berbeda dengan usulan ALETA. */
+  const bedaPilihan = [];
+  /** Borang berubah (pintu dibuka) sesudah bacaan terakhir - baca lagi sebelum mengisi. */
+  let bacaanBasi = false;
+  for (let putaran = 0; putaran < 3; putaran += 1) {
+    const terbaca = await bacaPilihan();
+    bacaanBasi = false;
+    const baru = terbaca.filter((x) => !tampakPilihan.some((y) => y.kunci === x.kunci));
+    tampakPilihan = terbaca;
+    if (baru.length === 0) break;
+    try {
+      if (kabar) kabar.textContent = "Menyusun usulan pilihan borang…";
+      const respons = await alatAmbil(
+        ALETA_API_ISIAN_PUTUSAN,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(muatanUsulanMedan(butir.nomor, draf.jenisPerkara || "", baru)),
+        },
+        "Menyusun usulan pilihan"
+      );
+      if (!respons.ok) throw new Error(alatPesanGagal(null, respons.status, "Menyusun usulan pilihan"));
+      const luar = await respons.json();
+      const isiUsulan = luar && luar.data ? luar.data : luar;
+      usulanPilihan = usulanPilihan.concat((isiUsulan && isiUsulan.usulan) || []);
+    } catch (galat) {
+      // Tanpa usulan, medan wajib tetap kosong dan SIPP pasti menolak -
+      // menahan di 3b lebih jujur daripada menekan Simpan yang sia-sia.
+      gagal.push(`usulan pilihan: ${String((galat && galat.message) || galat)}`);
+      break;
+    }
+    let pintuTerbuka = false;
+    for (const pintu of PINTU_PILIHAN) {
+      if (pintuDisentuh.has(pintu)) continue;
+      const medan = terbaca.find((x) => x.kunci === pintu);
+      const usul = usulanPilihan.find((x) => x.kunci === pintu);
+      if (!medan || !usul || !usul.nilai || usul.keyakinan === "bentrok") continue;
+      pintuDisentuh.add(pintu);
+      if (medan.terpilih !== undefined) {
+        if (String(medan.terpilih) !== String(usul.nilai)) {
+          bedaPilihan.push(
+            `${medan.label}: borang berisi "${labelNilai(medan, medan.terpilih)}", ` +
+              `ALETA mengusulkan "${usul.nilaiLabel || labelNilai(medan, usul.nilai)}"`
+          );
+        }
+        continue;
+      }
+      if (kabar) kabar.textContent = `Memilih ${medan.label}…`;
+      const hasil = await kirimKeJembatan({ jenis: "isi", penunjuk: pintu, jenisMedan: "pilih", nilai: usul.nilai });
+      if (hasil && hasil.ok) {
+        pintuTerbuka = true;
+        catatIsian(medan, usul, usul.nilai);
+      } else gagal.push(`${medan.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+    }
+    if (!pintuTerbuka) break;
+    bacaanBasi = true;
+    // SIPP menggambar ulang bagian borangnya - sama dengan panel satu perkara.
+    await new Promise((selesai) => setTimeout(selesai, 350));
+  }
+  // Medan selain pintu: usulan yang tidak bentrok DIISIKAN ke medan yang
+  // masih kosong atau masih pada nilai bawaan borang (NILAI_BAWAAN_BORANG) -
+  // Putusan Verstek tidak punya isian "Pilih" dan selalu terbuka pada
+  // "Tidak", jadi usulan "Ya" menggantikannya. Medan satu-nilai yang SUDAH
+  // berisi pilihan lain tidak ditimpa: bila berbeda dengan usulan, Simpan
+  // ditahan (bedaPilihan), sama seperti pintu. Yang sudah sama tidak
+  // disentuh lagi; kotak centang hanya ditambah, tidak pernah dilepas.
+  if (gagal.length === 0) {
+    // Bacaan terakhir putaran di atas dipakai lagi bila borang tidak berubah
+    // sesudahnya - satu putaran jembatan lebih sedikit per perkara.
+    for (const medan of bacaanBasi ? await bacaPilihan() : tampakPilihan) {
+      if (PINTU_PILIHAN.includes(medan.kunci)) continue;
+      const usul = usulanPilihan.find((x) => x.kunci === medan.kunci);
+      if (!usul || usul.keyakinan === "bentrok") continue;
+      if (!medan.banyak && medan.terpilih !== undefined) {
+        if (usul.nilai && String(medan.terpilih) !== String(usul.nilai)) {
+          bedaPilihan.push(
+            `${medan.label}: borang berisi "${labelNilai(medan, medan.terpilih)}", ` +
+              `ALETA mengusulkan "${usul.nilaiLabel || labelNilai(medan, usul.nilai)}"`
+          );
+        }
+        continue;
+      }
+      const sudah = new Set([].concat(medan.terpilih === undefined ? [] : medan.terpilih).map(String));
+      const nilaiDipakai = (
+        medan.banyak
+          ? (usul.nilaiBanyak || []).map((x) => String(x && x.nilai !== undefined ? x.nilai : x))
+          : usul.nilai
+            ? [String(usul.nilai)]
+            : []
+      ).filter((nilai) => !sudah.has(nilai));
+      for (const nilai of nilaiDipakai) {
+        if (kabar) kabar.textContent = `Memilih ${medan.label}…`;
+        const hasil = await kirimKeJembatan({ jenis: "isi", penunjuk: medan.kunci, jenisMedan: "pilih", nilai });
+        if (hasil && hasil.ok) catatIsian(medan, usul, nilai);
+        else gagal.push(`${medan.label}: ${(hasil && hasil.alasan) || "tidak terisi"}`);
+      }
+    }
+  }
+  // Pilihan wajib yang TAMPAK dan masih kosong sesudah semua itu - dibaca
+  // dari borang, bukan dari yang diminta. Nilai bawaan borang yang tidak
+  // dikukuhkan usulan ALETA dihitung kosong. Usulan yang bentrok atau tidak
+  // ada tidak ditebak.
+  const wajibKosong = [];
+  if (gagal.length === 0) {
+    for (const medan of await bacaPilihan()) {
+      if (!PILIHAN_WAJIB.includes(medan.kunci) || medan.terpilih !== undefined) continue;
+      if (medan.bawaanBorang && dipastikan.has(medan.kunci)) continue;
+      const usul = usulanPilihan.find((x) => x.kunci === medan.kunci);
+      const sebab =
+        usul && usul.keyakinan === "bentrok"
+          ? "naskah menyebut lebih dari satu"
+          : medan.bawaanBorang
+            ? `masih bawaan borang "${labelNilai(medan, medan.nilaiSekarang)}", tidak ada usulan ALETA`
+            : "tidak ada usulan ALETA";
+      wajibKosong.push(`${medan.label} (${sebab})`);
+    }
+  }
+  butir.isianPilihan = isianPilihan.map(({ medan, nilai, asal }) => ({ medan, nilai, asal }));
 
   // 3. Isi tiga medan CKEditor.
   //
@@ -13162,7 +13696,6 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     ["#amar", draf.amar],
     ["#amar_anonim", draf.amarAnonim],
   ];
-  const gagal = [];
   let terisi = 0;
   for (const [penunjuk, teks] of isian) {
     if (!teks) continue;
@@ -13187,7 +13720,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     butir.keadaan = "tertahan";
     butir.sebabTahan = "gagal-isi";
     butir.catatan = `Simpan tidak ditekan - gagal terisi: ${gagal.join("; ")}`;
-    await alatSimpanAntrean(antrean);
+    await tulisButir();
     if (kabar) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = `${butir.nomor}: ${butir.catatan}. Periksa borangnya, lalu Simpan sendiri bila sudah benar.`;
@@ -13197,12 +13730,71 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     return;
   }
 
+  // 3b'. Pilihan wajib yang tidak dapat dipastikan, atau pilihan yang sudah
+  // dipilih petugas berbeda dengan usulan ALETA - Simpan TIDAK ditekan.
+  // Yang pertama ditolak SIPP (atau, pada nilai bawaan borang, disimpan
+  // sebagai jawaban yang tidak diberikan siapa pun); yang kedua perbedaan
+  // pendapat tentang bagaimana perkara ini diputus, dan yang memutuskannya
+  // bukan antrean. Sebabnya dipisah sejak 26 September 2026; bila keduanya
+  // ada, sebabnya pilihan petugas yang berbeda - itu yang harus dibaca orang.
+  if (wajibKosong.length > 0 || bedaPilihan.length > 0) {
+    butir.keadaan = "tertahan";
+    butir.sebabTahan = bedaPilihan.length > 0 ? "pilihan-beda" : "pilihan-kosong";
+    butir.catatan =
+      "Simpan tidak ditekan - " +
+      [
+        wajibKosong.length ? `pilihan wajib belum terisi: ${wajibKosong.join(", ")}` : "",
+        bedaPilihan.length ? `pilihan berbeda dengan usulan ALETA: ${bedaPilihan.join("; ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("; ");
+    await tulisButir();
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Pilih sendiri di borang, lalu Simpan sendiri.`;
+    }
+    alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
+  // 3p. Praperiksa - agen yang membaca fakta SIPP dan BERHENTI bila
+  // bertentangan. Di antrean tidak ada kotak centang "tetap isikan": yang
+  // ditahan ditandai, disebut sebabnya, dan dibiarkan untuk dibuka orang.
+  //
+  // ==========================================================================
+  // SESUDAH PILIHAN BORANG DIPILIH, BUKAN SEBELUMNYA
+  // ==========================================================================
+  //
+  // Praperiksa membaca tanggal putusan, Status Putusan, dan verstek DARI
+  // BORANG (bacaUsulanBorangPutusan) lalu mengadunya dengan amar. Sampai 26
+  // September 2026 ia berjalan sebelum blok 3a, ketika borang yang baru
+  // dibuka masih "Pilih Status Putusan" - sehingga status yang kemudian
+  // dipilih ANTREAN SENDIRI tidak pernah diperiksa: "Dikabulkan" atas amar
+  // "Menolak" tersimpan. Kini ia membaca isian yang akan disimpan. Yang
+  // ditahan di sini sudah terisi di borang, tetapi Simpan tidak ditekan.
+  const raporAgen = await praperiksaSebelumMengisi(butir.nomor, kabar);
+  if (raporAgen && raporAgen.hentikan) {
+    butir.keadaan = "tertahan";
+    butir.sebabTahan = "praperiksa";
+    butir.catatan = `ditahan praperiksa: ${ringkasHentikan(raporAgen)}`;
+    await tulisButir();
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = "";
+      kabar.appendChild(gambarRaporAgen(raporAgen));
+    }
+    alatCatat("praperiksa", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
   // 3c. Medan tambahan satker menahan Simpan - aturan yang sama dengan panel
   // satu perkara (bagianIsiPutusan). Yang dihitung hanya entri
   // putusan.medan-borang berasal 'tambahan' yang TAMPAK dan berpilihan di
-  // borang ini - penyaring yang sama dengan bacaMedanTampak. Antrean tidak
-  // mengisi medan pilihan sama sekali, jadi medan tambahan yang tampak berarti
-  // borang yang belum dinilai utuh oleh siapa pun. Cadangan tertanam sengaja
+  // borang ini - penyaring yang sama dengan bacaMedanTampak. Antrean hanya
+  // mengisi medan pilihan BAWAAN (blok 3a), jadi medan tambahan yang tampak
+  // berarti borang yang belum dinilai utuh oleh siapa pun. Cadangan tertanam sengaja
   // kosong: yang dicari hanya tambahan, dan portal mati berarti tidak ada
   // tambahan yang diketahui - perilaku sebelum daftar ini ada. Pemeriksaan
   // yang sendiri gagal MENAHAN, tidak diloloskan diam-diam.
@@ -13224,12 +13816,41 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     butir.catatan = galatTambahan
       ? `Simpan tidak ditekan - medan tambahan satker tidak dapat diperiksa: ${galatTambahan}`
       : `Simpan tidak ditekan - borang memuat medan tambahan satker: ${medanTambahan.join(", ")}`;
-    await alatSimpanAntrean(antrean);
+    await tulisButir();
     if (kabar) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isi medannya, periksa borangnya, lalu Simpan sendiri.`;
     }
     alatCatat("massal-galat", `${butir.nomor}: ${butir.catatan}`, "");
+    if (tombol) tombol.disabled = false;
+    return;
+  }
+
+  // 4a. Antreannya masih ada, masih antrean yang sama, dan perkara ini masih
+  // dipegang halaman ini? Dibaca segar TEPAT sebelum Simpan. Sampai 26
+  // September 2026 hal itu hanya diperiksa saat pengerjaan dimulai: petugas
+  // yang menekan "Akhiri antrean" selagi perkara dikerjakan tetap mendapati
+  // Simpan-nya ditekan, dan antrean yang disusun ulang dari berkas tertimpa.
+  const pegangan = await alatBacaButirAntrean(antrean.id, butir.nomor);
+  if (!pegangan.ok || pegangan.butir.keadaan !== "jalan" || pegangan.butir.pemegang !== ALAT_PENANDA_HALAMAN) {
+    const sebab = !pegangan.ok
+      ? pegangan.sebab === "diganti"
+        ? "antrean ini sudah diganti antrean lain"
+        : pegangan.sebab === "tidak-ada"
+          ? "perkara ini sudah tidak ada di antrean"
+          : "antrean sudah diakhiri"
+      : "perkara ini sudah dipegang halaman lain";
+    butir.keadaan = "tertahan";
+    butir.sebabTahan = "antrean-diakhiri";
+    butir.catatan = `Simpan tidak ditekan - ${sebab} sebelum Simpan`;
+    // Tidak menulis apa pun ke antrean yang sudah diakhiri atau diganti -
+    // tulisButir menolaknya sendiri. Yang tersisa hanya kabar di halaman ini.
+    await tulisButir();
+    if (kabar) {
+      kabar.className = "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = `${butir.nomor}: ${butir.catatan}. Isian borang dibiarkan; Simpan sendiri bila memang dikehendaki.`;
+    }
+    alatCatat("massal", `${butir.nomor}: ${butir.catatan}`, "");
     if (tombol) tombol.disabled = false;
     return;
   }
@@ -13261,7 +13882,7 @@ async function jalankanSatuAntreanSipp(antrean, butir, kabar, tombol) {
     butir.catatan = hasilSimpan.bunyi;
     alatCatat("massal-galat", `${butir.nomor}: simpan ${hasilSimpan.bunyi}`, "");
   }
-  await alatSimpanAntrean(antrean);
+  await tulisButir();
 
   // simpanPutusanLaluBuka memuat ulang halaman perkara sendiri bila berhasil;
   // panel akan lahir kembali, membaca antrean, dan menunjuk perkara berikutnya.
@@ -13420,7 +14041,7 @@ function pilahBerkasMassal(daftar, bacaNomor) {
   return hasil;
 }
 
-function bagianMassalBerkas(isi) {
+function bagianMassalBerkas(isi, sesudahSusun) {
   const kotak = buatElemen("div", "aleta-tetap-bagian");
   kotak.appendChild(buatElemen("div", "aleta-tetap-judul", "Putusan massal - dari berkas"));
   kotak.appendChild(
@@ -13432,6 +14053,26 @@ function bagianMassalBerkas(isi) {
         "Anonimisasi, BAS, PHS/PMH/PPP/PJS, relaas, sampul, dan akta ditandai dan tidak dikirim."
     )
   );
+  // ==========================================================================
+  // ANTREAN INI MENEKAN SIMPAN SIPP - DAN KINI MENYEBUTNYA
+  // ==========================================================================
+  //
+  // Sejak 2.31.0 antrean dari berkas disusun dengan modus "draf", nilai yang
+  // tidak dikenal alatBuatAntrean - dan yang tidak dikenal dahulu menjadi
+  // "otomatis". Antrean yang disebut layar sebagai "disimpan sebagai draf"
+  // karena itu mengisi borang dan menekan Simpan SIPP sendiri, tanpa satu
+  // kalimat pun yang menyebutnya. Modusnya kini dipilih di sini, dan
+  // akibatnya tertulis.
+  kotak.appendChild(
+    buatElemen(
+      "div",
+      "aleta-tetap-sebab aleta-massal-simpan",
+      "Sesudah itu antrean dijalankan di halaman tiap perkara. Otomatis: begitu borang Putusan Akhir " +
+        "perkaranya dibuka, ALETA mengisinya lalu MENEKAN SIMPAN SIPP SENDIRI, satu kali per perkara. " +
+        "Manual: ALETA berhenti di tiap perkara, dan tombol “Isi putusan & simpan” yang Anda tekan " +
+        "mengisi borang lalu menekan Simpan SIPP."
+    )
+  );
 
   const pemilih = document.createElement("input");
   pemilih.type = "file";
@@ -13440,6 +14081,19 @@ function bagianMassalBerkas(isi) {
   pemilih.accept = ".rtf,.txt";
   pemilih.className = "aleta-berkas";
   kotak.appendChild(pemilih);
+
+  const pilihModus = document.createElement("select");
+  pilihModus.className = "aleta-massal-pilih-berkas";
+  for (const [nilai, label] of [
+    ["otomatis", "Otomatis — ALETA mengisi dan MENEKAN SIMPAN SIPP begitu borangnya terbuka"],
+    ["manual", "Manual — berhenti di tiap perkara; tombol ALETA mengisi lalu menekan Simpan SIPP"],
+  ]) {
+    const o = document.createElement("option");
+    o.value = nilai;
+    o.textContent = label;
+    pilihModus.appendChild(o);
+  }
+  kotak.appendChild(pilihModus);
 
   const daftar = buatElemen("div", "aleta-massal-daftar");
   kotak.appendChild(daftar);
@@ -13567,18 +14221,35 @@ function bagianMassalBerkas(isi) {
       return;
     }
 
+    const modus = pilihModus.value === "manual" ? "manual" : "otomatis";
+    // Antrean lama yang belum selesai tidak diganti diam-diam (alatBolehGantiAntrean).
+    if (!(await alatBolehGantiAntrean("berkas putusan"))) {
+      kabar.className = "aleta-abt-kabar";
+      kabar.textContent =
+        `${berhasil.length} draf tersimpan` +
+        (gagal ? `, ${gagal} gagal` : "") +
+        ". Antrean lama dipertahankan - antrean baru tidak disusun.";
+      return;
+    }
     const antrean = alatBuatAntrean({
       tanggalSidang: "",
       tahap: "sipp",
-      modus: "draf",
+      asal: "berkas",
+      modus,
       butir: berhasil,
     });
     await alatSimpanAntrean(antrean);
+    alatCatat("massal", `antrean SIPP disusun dari ${berhasil.length} berkas (${modus})`, "");
     kabar.className = "aleta-abt-kabar";
     kabar.textContent =
       `${berhasil.length} draf tersimpan dan masuk antrean` +
       (gagal ? `, ${gagal} gagal` : "") +
-      ". Buka perkara pertamanya di SIPP; panel antrean akan menuntun sisanya.";
+      `. Mode ${modus}: ` +
+      (modus === "otomatis"
+        ? "ALETA menekan Simpan SIPP sendiri begitu borang Putusan Akhir tiap perkara dibuka. "
+        : "tombol ALETA di tiap perkara mengisi borang lalu menekan Simpan SIPP. ") +
+      `Buka perkara pertamanya - ${berhasil[0].nomor} - di SIPP; panel antrean akan menuntun sisanya.`;
+    if (typeof sesudahSusun === "function") sesudahSusun();
   });
 
   isi.appendChild(kotak);
@@ -13601,7 +14272,7 @@ function bagianMassalBerkas(isi) {
  * antrean, draf tiap perkara diperiksa: yang belum punya draf tidak dijanjikan
  * akan diisi, melainkan disebut apa adanya dan dilewati.
  */
-function bagianMassalSipp() {
+function bagianMassalSipp(sesudahSusun) {
   const kotak = bagian("Putusan massal · SIPP", "putusanMassalSipp", true);
   const isi = kotak.isi;
   const keadaan = { tanggal: alatTanggalIso(new Date()), sidang: [], draf: new Map() };
@@ -13628,8 +14299,8 @@ function bagianMassalSipp() {
   const pilihModus = document.createElement("select");
   pilihModus.className = "aleta-massal-pilih-berkas";
   for (const [nilai, label] of [
-    ["manual", "Manual — berhenti di tiap perkara supaya diperiksa dahulu"],
-    ["otomatis", "Otomatis — ALETA mengisi dan menyimpan begitu borangnya terbuka"],
+    ["manual", "Manual — berhenti di tiap perkara; tombol ALETA mengisi lalu menekan Simpan SIPP"],
+    ["otomatis", "Otomatis — ALETA mengisi dan MENEKAN SIMPAN SIPP begitu borangnya terbuka"],
   ]) {
     const o = document.createElement("option");
     o.value = nilai;
@@ -13780,9 +14451,15 @@ function bagianMassalSipp() {
       kabar.textContent = "Tidak ada yang dicentang.";
       return;
     }
+    // Antrean lama yang belum selesai tidak diganti diam-diam (alatBolehGantiAntrean).
+    if (!(await alatBolehGantiAntrean(`jadwal sidang ${keadaan.tanggal}`))) {
+      kabar.textContent = "Antrean lama dipertahankan - antrean baru tidak disusun.";
+      return;
+    }
     const antrean = alatBuatAntrean({
       tanggalSidang: keadaan.tanggal,
       tahap: "sipp",
+      asal: "sidang",
       modus: pilihModus.value,
       kering: false,
       butir: dipilih.map((s) => ({ nomor: s.nomor, perkaraId: s.perkaraId, jenis: s.jenis })),
@@ -13793,6 +14470,7 @@ function bagianMassalSipp() {
       `Antrean ${dipilih.length} perkara disusun (${pilihModus.value}). Buka perkara pertama - ${dipilih[0].nomor} - lalu tab Putusan; ` +
       "bagian “Putusan massal · lanjutan SIPP” akan memandu tiap langkahnya.";
     tombolSusun.disabled = true;
+    if (typeof sesudahSusun === "function") sesudahSusun();
   });
 
   // Dimuat saat dibuka, bukan saat panel digambar - sama seperti menu malas

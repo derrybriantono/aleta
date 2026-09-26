@@ -133,11 +133,24 @@ const KALIMAT = {
     // subjek {pelaku} di depannya. Yang menambah kata frekuensi ("sering") atau
     // mempersempit maknanya ("kurang menafkahi", "kekerasan fisik") TIDAK
     // dipakai - itu mengubah keterangan, bukan cara mengatakannya.
+    // ========================================================================
+    // SETARA HARUS SATU DERAJAT DENGAN FRASANYA (pemeriksa 26 September 2026)
+    // ========================================================================
+    //
+    // Dua saksi SDG memilih bunyi masing-masing dari [frasa, ...setara]. Bila
+    // bunyinya berbeda DERAJAT, fakta hukum kedua keterangan berbeda -
+    // "melalaikan kewajiban nafkah lahir" (lalai: kurang atau tidak sama
+    // sekali) lawan "tidak menafkahi Penggugat" (tidak sama sekali). Karena
+    // itu dilepas dari setara: "tidak memberikan nafkah", "tidak memberi
+    // nafkah", "tidak menafkahi {lawan}" (211/122, 36/24, 25/12 - di BAS
+    // petugas bersaing dengan "kurang dalam memberikan nafkah" 43/29 dan
+    // "kurang memberikan nafkah" 38/28, jadi kuncinya sendiri mencakup dua
+    // derajat), "tidak mau bekerja" (menolak, bukan malas), dan "bermain
+    // judi" (perbuatan, bukan kebiasaan "menjadi penjudi"). Yang tersisa
+    // bentuk lain dari derajat yang SAMA. Dijaga saksi-deteksi-korpus.test.ts.
     "tidak memberi nafkah": {
       urutan: 10,
       frasa: "melalaikan kewajiban nafkah lahir",
-      // 211/122, 36/24, 25/12
-      setara: ["tidak memberikan nafkah", "tidak memberi nafkah", "tidak menafkahi {lawan}"],
     },
     cemburu: {
       urutan: 20,
@@ -179,7 +192,7 @@ const KALIMAT = {
     // urusan 8503, bukan urusan kalimat ini. Yang ditulis di sini apa yang
     // benar-benar diterangkan.
     "mabuk": { urutan: 50, frasa: "menjadi pemabuk", setara: ["suka mabuk", "suka mabuk-mabukan"] }, // 14/12, 5/4
-    "judi": { urutan: 51, frasa: "menjadi penjudi", setara: ["suka bermain judi", "bermain judi", "suka main judi"] }, // 38/28, 36/29, 16/11
+    "judi": { urutan: 51, frasa: "menjadi penjudi", setara: ["suka bermain judi", "suka main judi"] }, // 38/28, 16/11 ("bermain judi" 36/29 dilepas - lihat SETARA)
     "obat terlarang": {
       urutan: 52,
       frasa: "menjadi pemakai obat terlarang",
@@ -203,10 +216,22 @@ const KALIMAT = {
     //   malas bekerja           21 / 21  ("malas dalam bekerja" 6)
     //
     // Syaratnya sama dengan varian BAS: sedikitnya 3 kemunculan di 3 perkara.
-    "malas bekerja": { urutan: 15, frasa: "malas bekerja", setara: ["tidak mau bekerja"] }, // 165/119, 22/19
+    "malas bekerja": { urutan: 15, frasa: "malas bekerja" }, // 165/119 ("tidak mau bekerja" 22/19 dilepas - lihat SETARA)
     temperamental: { urutan: 25, frasa: "bersikap temperamental", setara: ["suka marah", "mudah marah"] }, // 13/12, 8/8
     "berkata kasar": { urutan: 26, frasa: "berkata kasar" },
     "bersikap kasar": { urutan: 27, frasa: "bersikap kasar" },
+    // ========================================================================
+    // KUNCI BARU 26 SEPTEMBER 2026 - FRASANYA DARI BAS PETUGAS
+    // ========================================================================
+    //
+    // Dihitung atas keterangan saksi 1.498 perkara cerai 2024-2026 PA
+    // Donggala, bersubjek sebutan pihak (skrip folder kerja penguatan-putusan/
+    // alasan-cerai): "{pelaku} telah menikah lagi" 64 kemunculan / 43 perkara,
+    // "sudah menikah lagi" 48/36; "{pelaku} tidak memiliki pekerjaan tetap"
+    // 7/5. "masalah ekonomi" SENGAJA tanpa frasa - tidak berpelaku, lihat
+    // CIRI_ALASAN.
+    "tidak memiliki pekerjaan tetap": { urutan: 16, frasa: "tidak memiliki pekerjaan tetap" },
+    "menikah lagi": { urutan: 31, frasa: "telah menikah lagi", setara: ["sudah menikah lagi"] },
     // ========================================================================
     // ZINA, PENJARA, CACAT BADAN, DAN TAKLIK SENGAJA TANPA FRASA
     // ========================================================================

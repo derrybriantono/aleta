@@ -285,12 +285,23 @@ const PROFIL = [
   { kunci: "nafkah", data: { peluangRagam: 0.08, rumusan: true } }, // 92,3%, n=1.011
   { kunci: "kenapa cerai", data: { peluangRagam: 0.09, rumusan: true } }, // 91,2%, n=910
   { kunci: "maksud", data: { peluangRagam: 0.12, rumusan: true } }, // 87,9%, n=1.387
-  { kunci: "sanggup", data: { peluangRagam: 0.01, rumusan: false } }, // 99,5%, n=196
-  { kunci: "hubungan pihak", data: { peluangRagam: 0.15, rumusan: false } }, // 84,8%, n=277
-  { kunci: "siapa pergi", data: { peluangRagam: 0.21, rumusan: false } }, // 79,4%, n=1.417
-  { kunci: "anak", data: { peluangRagam: 0.44, rumusan: false } }, // 56,0%, n=2.633
-  { kunci: "awal perselisihan", data: { peluangRagam: 0.45, rumusan: false } }, // 54,5%, n=983
-  { kunci: "lain", data: { peluangRagam: 0.28, rumusan: false } }, // 72,2%, n=3.463
+  // Enam kelompok "lain" di bawah dinaikkan ke 1 pada 26 September 2026
+  // (permintaan pengguna 9): keterangan dua saksi harus BERBEDA susunannya
+  // tetapi sama fakta hukumnya. Peluang lamanya meniru saksi manusia yang
+  // kerap disalin petugas (angka di komentar = persen identik manusia);
+  // pengguna memilih keduanya berbeda selama bank bentuknya cukup.
+  // periksaInvarian menjaga angka, sebutan, dan penyangkal - bentuk yang
+  // mengubahnya dilepas penyusun; derajat bunyi alasan dijaga setara satu
+  // derajat di abtKalimatBaku.frasaCiri. (Angka "fakta sama 67.030/67.030"
+  // di folder kerja pembangun sebenarnya KUNCI sama - kuncinya diturunkan
+  // dari kosakata frasa yang sama - bukan bukti fakta sama; pemeriksa 26
+  // September 2026.) Kelompok rumusan tidak diubah.
+  { kunci: "sanggup", data: { peluangRagam: 1, rumusan: false } }, // manusia 99,5% identik, n=196
+  { kunci: "hubungan pihak", data: { peluangRagam: 1, rumusan: false } }, // 84,8%, n=277
+  { kunci: "siapa pergi", data: { peluangRagam: 1, rumusan: false } }, // 79,4%, n=1.417
+  { kunci: "anak", data: { peluangRagam: 1, rumusan: false } }, // 56,0%, n=2.633
+  { kunci: "awal perselisihan", data: { peluangRagam: 1, rumusan: false } }, // 54,5%, n=983
+  { kunci: "lain", data: { peluangRagam: 1, rumusan: false } }, // 72,2%, n=3.463
 ];
 
 module.exports = { PEMBUKA, AWAL_BOLEH_DIKECILKAN, RAGAM_KATA, JAWABAN_MODUS, BENTUK, PROFIL };

@@ -2526,7 +2526,13 @@ function pitaIdentitasAbt(pengguna) {
  * disebut terang-terangan sebelum tombolnya ditekan.
  */
 
-/** Cermin CIRI_ALASAN di abtUsulanService - kunci alasan yang dikenal portal. */
+/**
+ * Cermin CIRI_ALASAN_SDG di abtUsulanService - kunci alasan yang bot ucapkan
+ * sebagai keterangan saksi. Tujuh yang terakhir dibuka 26 September 2026
+ * (permintaan pengguna 1 dan 7) sesudah bunyinya diambil dari korpus BAS
+ * petugas; urutannya ditambahkan di belakang agar urutan sembilan yang lama
+ * tidak bergeser.
+ */
 const DAFTAR_ALASAN_SDG = [
   "perselisihan terus-menerus",
   "kekerasan dalam rumah tangga",
@@ -2537,11 +2543,18 @@ const DAFTAR_ALASAN_SDG = [
   "judi",
   "mabuk",
   "murtad/pindah agama",
+  "temperamental",
+  "berkata kasar",
+  "bersikap kasar",
+  "malas bekerja",
+  "tidak memiliki pekerjaan tetap",
+  "masalah ekonomi",
+  "menikah lagi",
 ];
 
 /**
  * ============================================================================
- * PILIHAN ALASAN SAKSI - DARI PORTAL, DENGAN CADANGAN SEMBILAN TERTANAM
+ * PILIHAN ALASAN SAKSI - DARI PORTAL, DENGAN CADANGAN ENAM BELAS TERTANAM
  * ============================================================================
  *
  * Daftar bas.saksi.alasan-pilihan dapat ditambah admin di portal (zina,
@@ -2757,25 +2770,69 @@ async function muatTemplatMentahAbt(kodeKumpulan) {
  * ============================================================================
  *
  * Cermin abtUsulanLainService.VARIABEL_SIAP (26 September 2026: dispensasi
- * kawin 0606, 0600, 0607, 0601, 3333; perwalian, asal usul, dan harta bersama
+ * kawin 0606, 0600, 0607, 0601, 5178; perwalian, asal usul, dan harta bersama
  * belum punya satu pun). Ujinya membandingkan keduanya: bila bot menambah
- * variabel siap, uji merah sampai cermin ini ikut.
+ * variabel siap, uji merah sampai cermin ini ikut. Yang masuk hanya variabel
+ * yang keputusan sumber terukur bot memilih ALETA: lulus gerbang DAN tidak
+ * lebih buruk dari bawaan ABT pada perkara yang sama (DK 5178: ALETA 6/7,
+ * bawaan #10103# 0/7).
  *
- * Tombol "Isi dari posita permohonan" untuk perkara lain hanya tergambar pada
- * blangko yang memuat salah satunya - tombol yang ditekan lalu menjawab
- * "belum ada aturan" lebih buruk daripada tombol yang tidak ada.
+ * Tombol "Isi dari posita permohonan" untuk perkara lain tergambar hanya bila
+ * blangko memuat variabel siap MILIK JENIS PERKARANYA (0048). 5178 juga ada
+ * di blangko itsbat, perwalian, dan asal usul - di sana tombol ini hanya
+ * akan menjawab "belum dilayani" atau kosong, dan tombol yang ditekan lalu
+ * menjawab "belum ada aturan" lebih buruk daripada tombol yang tidak ada.
+ * Jenis yang tidak terbaca = tidak tergambar.
  */
 const VARIABEL_SIAP_POSITA_LAIN = Object.freeze({
-  "dispensasi-kawin": Object.freeze(["0606", "0600", "0607", "0601", "3333"]),
+  "dispensasi-kawin": Object.freeze(["0606", "0600", "0607", "0601", "5178"]),
   perwalian: Object.freeze([]),
   "asal-usul": Object.freeze([]),
   "harta-bersama": Object.freeze([]),
 });
 
-/** Blangko ini memuat sekurang-kurangnya satu variabel perkara lain yang siap? */
-function blangkoMemuatVariabelSiapLain(petaVariabel) {
+/** Kunci jenis perkara lain dari nama atau id SIPP (cermin kenaliJenis bot); null bila bukan/ tak terbaca. */
+const KUNCI_JENIS_LAIN = Object.freeze({ 362: "dispensasi-kawin", 354: "perwalian", 358: "asal-usul", 348: "harta-bersama" });
+function kunciJenisLain(namaAtauId) {
+  const teks = String(namaAtauId || "").replace(/\s+/g, " ").trim();
+  if (!teks) return null;
+  const id = idJenisPerkaraSipp(teks);
+  if (KUNCI_JENIS_LAIN[id]) return KUNCI_JENIS_LAIN[id];
+  if (/dispensasi/i.test(teks)) return "dispensasi-kawin";
+  if (/perwalian/i.test(teks)) return "perwalian";
+  if (/asal\s*-?\s*usul/i.test(teks)) return "asal-usul";
+  if (/harta[\s-]+bersama|gono\s*-?\s*gini/i.test(teks)) return "harta-bersama";
+  return null;
+}
+
+/** Blangko ini memuat sekurang-kurangnya satu variabel siap MILIK jenis perkara ini? */
+function blangkoMemuatVariabelSiapLain(petaVariabel, kunciJenis) {
   if (!petaVariabel || typeof petaVariabel.has !== "function") return false;
-  return Object.values(VARIABEL_SIAP_POSITA_LAIN).some((daftar) => daftar.some((k) => petaVariabel.has(k)));
+  const daftar = VARIABEL_SIAP_POSITA_LAIN[kunciJenis];
+  return Boolean(daftar) && daftar.some((k) => petaVariabel.has(k));
+}
+
+/**
+ * Kabar sesudah "Isi dari posita permohonan" perkara lain - HANYA variabel
+ * yang ADA di blangko yang sedang dibuka (blangko Cabut DK tidak memuat
+ * 5178, 1666, 1551, 0999; menyebutnya hanya membingungkan).
+ *
+ * Bawaan ABT disebut apa adanya: ABT MENAWARKAN isian bawaan dari kuerinya
+ * di kotak popup, yang baru tersimpan bila petugas membuka dan menyimpannya -
+ * bukan "diisi otomatis".
+ */
+function kabarPositaLain(lain, petaVariabel) {
+  const ada = (k) => Boolean(petaVariabel && typeof petaVariabel.has === "function" && petaVariabel.has(k));
+  const hasil = lain || {};
+  const bawaan = (hasil.bawaanAbt || []).filter((b) => ada(b.kode)).map((b) => `${b.kode} dari kueri #${b.acuan}#`);
+  const belum = (hasil.belumSiap || []).filter((b) => ada(b.kode)).map((b) => `${b.kode} (${b.alasan})`);
+  return [
+    hasil.catatan || "",
+    bawaan.length ? `ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: ${bawaan.join(", ")}.` : "",
+    belum.length ? `Belum lulus gerbang ukur, tidak diusulkan: ${belum.join(", ")}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /** Daftar templat yang ditawarkan ABT pada halaman penyunting keterangan saksi 1. */
@@ -2981,14 +3038,16 @@ function susunPanelAbt(jatiDiri) {
   tombolItsbat.title = "Tanggal dan tempat nikah, wali, saksi nikah, mahar, status, umur, dan anak - dibaca dari posita.";
   tombolItsbat.hidden = !(petaAwal.has("5197") || petaAwal.has("8087"));
   // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
-  // hanya pada blangko yang memuat variabel yang lulus gerbang ukur.
+  // hanya pada blangko yang memuat variabel siap milik JENIS perkaranya (0048,
+  // atau daftar sidang) - lihat VARIABEL_SIAP_POSITA_LAIN.
   const tombolPositaLain = buatElemen("button", "aleta-permintaan-tombol", "Isi dari posita permohonan");
   tombolPositaLain.type = "button";
-  tombolPositaLain.hidden = !blangkoMemuatVariabelSiapLain(petaAwal);
+  const jenisAwal = (petaAwal.get(VAR_JENIS_PERKARA) || {}).nilai || sebutJenisPerkara(nomorPerkaraAbt());
+  tombolPositaLain.hidden = !blangkoMemuatVariabelSiapLain(petaAwal, kunciJenisLain(jenisAwal));
   if (!tombolPositaLain.hidden && !tombolItsbat.hidden) tombolPositaLain.textContent = "Isi dari posita permohonan (perkara lain)";
   tombolPositaLain.title =
-    "Variabel perkara lain yang lulus gerbang ukur (presisi ≥ 0,9 atas isian manusia) - dibaca dari posita. " +
-    "Tidak satu pun tersimpan sebelum dicentang dan diterapkan.";
+    "Variabel perkara lain yang lulus gerbang ukur (presisi ≥ 0,9 atas isian manusia) dan tidak lebih buruk dari " +
+    "isian bawaan ABT - dibaca dari posita. Tidak satu pun tersimpan sebelum dicentang dan diterapkan.";
   const tombolSdg = buatElemen("button", "aleta-permintaan-tombol", "Susun keterangan saksi 1 & 2");
   tombolSdg.type = "button";
   // Tulisannya tetap "saksi 1 & 2" - pintasan Alt+Enter di kaki panel
@@ -4171,7 +4230,10 @@ function susunPanelAbt(jatiDiri) {
       });
       const itsbat = isiJawaban.itsbat || {};
       if (itsbat.ok === false) throw new Error(itsbat.alasan || "Posita tidak dapat dibaca.");
-      kabar.textContent = itsbat.catatan || "";
+      // Bot menyerahkan variabel yang bawaan ABT-nya terukur lebih tepat
+      // (bawaanAbt) - disebut sebagai tawaran ABT, sama dengan perkara lain.
+      // Bot lama tanpa bawaanAbt: kabarnya tetap catatan saja.
+      kabar.textContent = kabarPositaLain(itsbat, peta);
       gambarSelisih([]);
       gambarSepihak(null);
       gambarHuruf([], []);
@@ -4226,11 +4288,9 @@ function susunPanelAbt(jatiDiri) {
         throw new Error(sebab[lain.alasan] || lain.alasan || "Posita tidak dapat dibaca.");
       }
       if (!lain.ok) throw new Error("ALETA Bot belum mengenal pengisian perkara lain dari posita.");
-      const belum = (lain.belumSiap || []).map((b) => `${b.kode} (${b.alasan})`);
-      kabar.textContent =
-        [lain.catatan || "", belum.length ? `Belum lulus gerbang ukur, tidak diusulkan: ${belum.join(", ")}.` : ""]
-          .filter(Boolean)
-          .join(" ");
+      // Hanya variabel blangko ini; bawaan ABT disebut sebagai TAWARAN yang
+      // wajib diperiksa - lihat kabarPositaLain.
+      kabar.textContent = kabarPositaLain(lain, peta);
       gambarSelisih([]);
       gambarSepihak(null);
       gambarHuruf([], []);
@@ -6352,6 +6412,11 @@ function bagianMassalAbt(keadaan) {
     if (!sudahDiperiksa) return;
     const dipilih = yangDicentang().filter((s) => alatBlangkoLengkap(petaUntuk(s)));
     if (dipilih.length === 0) return;
+    // Antrean lama yang belum selesai tidak diganti diam-diam (alatBolehGantiAntrean).
+    if (!(await alatBolehGantiAntrean(`tahap ABT sidang ${keadaan.tanggal}`))) {
+      neraca.textContent = "Antrean lama dipertahankan - putusan massal ABT tidak dijalankan.";
+      return;
+    }
     keadaan.sedangJalan = true;
     keadaan.pembatal = new AbortController();
     tombolJalan.disabled = true;
@@ -6363,6 +6428,7 @@ function bagianMassalAbt(keadaan) {
     const antrean = alatBuatAntrean({
       tanggalSidang: keadaan.tanggal,
       tahap: "abt",
+      asal: "abt",
       kering: false,
       butir: dipilih.map((s) => ({ nomor: s.nomor, perkaraId: s.perkaraId, jenis: s.jenis })),
     });
@@ -6458,7 +6524,7 @@ function bagianMassalAbt(keadaan) {
         antrean.posisi = 0;
         await alatSimpanAntrean(antrean);
         alatCatat("massal", `antrean diserahkan ke SIPP (${modus})`, "");
-        window.open(`${location.origin}/index.php/dashboard`, "_blank");
+        window.open(alamatSippDariAbt(), "_blank");
         serah.appendChild(
           buatElemen("div", "aleta-tetap-sebab", "Tab SIPP dibuka. Buka daftar perkara Perdata di sana - panel ALETA akan menawarkan melanjutkan antrean.")
         );
@@ -6663,6 +6729,23 @@ function bagianUnggahSatuAbt(isi) {
  * menyebut "→ PDF → anonim" padahal hasilnya dibuang adalah rencana yang
  * berbohong - dan itulah yang terjadi sampai 1.167 pada setelan bawaan.
  */
+
+/**
+ * Alamat SIPP yang dibuka tombol "Lanjutkan ke SIPP" pada putusan massal ABT.
+ *
+ * Sampai 26 September 2026 tombolnya membuka `${location.origin}/index.php/dashboard`.
+ * Itu SIPP hanya di mesin setempat, tempat SIPP duduk di akar
+ * (127.0.0.1/index.php). Di peladen satker SIPP berada di bawah /SIPP/ -
+ * lihat manifest.json, yang memasang konten.js hanya pada
+ * http://192.168.10.10/SIPP/* dan http://127.0.0.1/index.php/* - jadi
+ * tab yang dibuka di kantor adalah alamat di luar SIPP: tanpa panel ALETA,
+ * tanpa antrean yang dilanjutkan. Alamat /SIPP/ yang sama dipakai tautan
+ * "Buka SIPP" di aleta.js.
+ */
+function alamatSippDariAbt() {
+  if (location.hostname === "127.0.0.1") return `${location.origin}/index.php/dashboard`;
+  return `${location.origin}/SIPP/`;
+}
 
 /** Anonimisasi dipakai hanya bila diunggah ke SIPP atau diunduh. */
 function anonimDipakaiAbt(opsi) {

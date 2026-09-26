@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import vm from "node:vm";
 
@@ -173,12 +174,67 @@ describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang di
 });
 
 describe("bas.saksi.alasan-pilihan = DAFTAR_ALASAN_SDG (abt.js)", () => {
-  it("9 alasan; kunci = label = string sumber", () => {
+  it("16 alasan; kunci = label = string sumber", () => {
     const sumber = deklarasiDari("abt.js", "DAFTAR_ALASAN_SDG") as string[];
     const cermin = CERMIN_EKSTENSI["bas.saksi.alasan-pilihan"];
-    expect(sumber).toHaveLength(9);
+    expect(sumber).toHaveLength(16);
     expect(cermin.map((e) => e.kunci)).toEqual(sumber);
     expect(cermin.map((e) => e.nilai)).toEqual(sumber);
+  });
+
+  /**
+   * Panel mengirim KUNCI pilihan petugas ke bot, dan bot mengucapkannya
+   * sebagai keterangan saksi. Kunci yang tidak dikenal CIRI_ALASAN_SDG, atau
+   * yang dikenal tetapi tidak punya bunyi, tercetak sebagai label mentah
+   * ("... dan judi dan temperamental") - itulah yang terjadi 25 September
+   * ketika empat kunci baru dideteksi tetapi belum diberi bunyi. Maka bot
+   * DIJALANKAN untuk tiap pilihan: kuncinya harus terbuka untuk SDG, harus
+   * mengubah jawaban saksi (bukan dibuang diam-diam), dan jawabannya tidak
+   * boleh memuat kurung atau garis miring label.
+   */
+  it("tiap pilihan diucapkan bot sebagai keterangan saksi, tanpa label mentah", () => {
+    const require_ = createRequire(import.meta.url);
+    const layanan = require_(path.resolve(process.cwd(), "../aleta_bot/services/abtUsulanService.js")) as {
+      CIRI_ALASAN: { kunci: string; hanyaDeteksi?: boolean }[];
+      susunKeteranganSaksiSdg: (o: Record<string, unknown>) => {
+        ok: boolean;
+        alasan: string[];
+        saksi1: { jawab: string }[];
+        saksi2: { jawab: string }[];
+      };
+    };
+    const pustaka = require_(path.resolve(process.cwd(), "../aleta_bot/services/abtKalimatBaku.js")) as {
+      susunAlasanRinci: (daftar: string[], pihak?: { pelaku: string; lawan: string }) => { tanpaFrasa: string[] };
+    };
+    // Satu-satunya kunci yang BUNYINYA kuncinya sendiri: penyebab tanpa pelaku
+    // ("... serta masalah ekonomi"), lihat daftarUcapan di abtUsulanService.
+    // Kunci lain tanpa frasa berbunyi "Tergugat ... dan temperamental".
+    const BERBUNYI_SENDIRI = new Set(["masalah ekonomi"]);
+    const terbuka = new Set(layanan.CIRI_ALASAN.filter((b) => !b.hanyaDeteksi).map((b) => b.kunci));
+    const templat = [{ no: "1", tanya: "Apa penyebab pertengkaran Penggugat dan Tergugat?", jawab: "karena ..." }];
+    const susun = (alasan: string[]) =>
+      layanan.susunKeteranganSaksiSdg({ templat, alasan, pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" });
+    const tanpaAlasan = susun([]);
+    const sumber = deklarasiDari("abt.js", "DAFTAR_ALASAN_SDG") as string[];
+    for (const kunci of sumber) {
+      expect(terbuka.has(kunci), `${kunci} terbuka untuk SDG di CIRI_ALASAN`).toBe(true);
+      const tanpaFrasa = pustaka.susunAlasanRinci([kunci], { pelaku: "Tergugat", lawan: "Penggugat" }).tanpaFrasa;
+      expect(tanpaFrasa, `${kunci} punya frasa di abtKalimatBaku`).toEqual(BERBUNYI_SENDIRI.has(kunci) ? [kunci] : []);
+      const h = susun([kunci]);
+      expect(h.ok, kunci).toBe(true);
+      expect(h.alasan, kunci).toEqual([kunci]);
+      for (const [ke, s] of [
+        [1, h.saksi1[0].jawab],
+        [2, h.saksi2[0].jawab],
+      ] as const) {
+        expect(s, `saksi ${ke} - ${kunci}: ${s}`).not.toMatch(/[()/]/);
+        // Perselisihan adalah AKIBAT, bukan penyebab: dipilih sendirian, jawaban
+        // "apa penyebabnya" tetap menunggu diisi petugas (sama seperti uji
+        // korpus SDG di saksi-deteksi-korpus.test.ts).
+        if (kunci === "perselisihan terus-menerus") continue;
+        expect(s, `saksi ${ke} - ${kunci} tidak mengubah jawaban`).not.toBe(ke === 1 ? tanpaAlasan.saksi1[0].jawab : tanpaAlasan.saksi2[0].jawab);
+      }
+    }
   });
 });
 

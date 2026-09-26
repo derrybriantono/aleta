@@ -99,5 +99,12 @@ export const CERMIN_EKSTENSI = {
     { kunci: "judi", nilai: "judi", urutan: 6 },
     { kunci: "mabuk", nilai: "mabuk", urutan: 7 },
     { kunci: "murtad/pindah agama", nilai: "murtad/pindah agama", urutan: 8 },
+    { kunci: "temperamental", nilai: "temperamental", urutan: 9 },
+    { kunci: "berkata kasar", nilai: "berkata kasar", urutan: 10 },
+    { kunci: "bersikap kasar", nilai: "bersikap kasar", urutan: 11 },
+    { kunci: "malas bekerja", nilai: "malas bekerja", urutan: 12 },
+    { kunci: "tidak memiliki pekerjaan tetap", nilai: "tidak memiliki pekerjaan tetap", urutan: 13 },
+    { kunci: "masalah ekonomi", nilai: "masalah ekonomi", urutan: 14 },
+    { kunci: "menikah lagi", nilai: "menikah lagi", urutan: 15 },
   ],
 } satisfies Cermin;

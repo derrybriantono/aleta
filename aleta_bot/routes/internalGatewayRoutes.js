@@ -2360,7 +2360,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     // dikirim ekstensi dari halaman ABT (variabel 5125), bukan dibaca dari
     // basis data aps_badilag: aturan "ALETA tidak membaca aps_badilag" tetap.
     if (sumber === "itsbat") {
-      jawaban.itsbat = abtUsulanService.dariPositaItsbat(String(req.body?.posita || ""), {
+      const itsbat = abtUsulanService.dariPositaItsbat(String(req.body?.posita || ""), {
         // Sebutan pemohon = variabel 0046. Dahulu yang dipakai `pelaku`
         // (0047 = Termohon), sehingga labelnya "Status Termohon sebelum
         // nikah". `pelaku` tinggal cadangan bagi ekstensi yang belum
@@ -2368,6 +2368,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         pemohon: String(req.body?.pemohon || req.body?.pelaku || "").slice(0, 40),
         pemohon2: String(req.body?.pemohon2 || ""),
       });
+      // Variabel yang bawaan ABT-nya terukur lebih tepat (5178, 5105, 1046,
+      // 1002, 0007) dikirim sebagai tawaran ABT, bukan usulan ALETA - lihat
+      // GERBANG_ITSBAT di abtUsulanLainService.
+      jawaban.itsbat = abtUsulanLainService.saringUsulanItsbat(itsbat, String(req.body?.jenisPerkara || "").slice(0, 80));
     }
     // Perkara lain (dispensasi kawin, perwalian, asal usul, harta bersama) -
     // variabel blangko dari posita permohonan, hanya yang lulus gerbang ukur.

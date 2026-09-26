@@ -203,6 +203,14 @@ export type OpsiUsulanMedan = {
    * menjadi 2.
    */
   saringRujukan?: boolean;
+  /**
+   * Naskah PERTIMBANGAN HUKUM saja, bila pemanggil dapat memisahkannya dari
+   * duduk perkara (draf putusan ALETA: pecahNaskahPutusan). Medan temuan
+   * (nusyuz, keadaan isteri - PenandaMedan.hanyaPertimbangan) hanya dinilai
+   * atas naskah ini; medan lain tetap membaca naskah dasar seperti biasa.
+   * Tanpa ini perilakunya sama dengan sebelumnya.
+   */
+  pertimbangan?: string;
 };
 
 /** Kata yang terlalu umum untuk menjadi bukti apa pun. */
@@ -344,6 +352,32 @@ type PenandaMedan = {
   sebut: string;
   /** Verstek dinilai atas naskah penuh; sisanya atas naskah fakta. */
   naskahPenuh?: boolean;
+  /**
+   * Medan yang jawabannya lebih dari ya/tidak (keadaan isteri): pilihan yang
+   * dicari ditentukan kata yang tertangkap frasa, bukan selalu `ya`.
+   */
+  mauDari?: (cocok: RegExpExecArray) => RegExp;
+  /**
+   * Pernyataan TEGAS bahwa jawabannya `tidak` ("tidak terbukti nusyuz").
+   * Tanpa ini ketiadaan frasa hanya bawaan ("cukup"); dengan ini, sebutan
+   * tegasnya dijawab "pasti". Kalimat yang memuat `bukanTidak` diabaikan.
+   */
+  frasaTidak?: RegExp;
+  bukanTidak?: RegExp;
+  /**
+   * Pemeriksaan terakhir atas petikan yang lolos frasa, bukan, dan
+   * bukanKalimat - untuk syarat yang tidak dapat ditulis sebagai satu pola
+   * ("hamil" menuntut penanda waktu kini, "suci" cukup "dalam keadaan").
+   */
+  sahkan?: (cocok: RegExpExecArray) => boolean;
+  /**
+   * Medan TEMUAN majelis (nusyuz, keadaan isteri): bila pemanggil mengirim
+   * naskah pertimbangan tersendiri (OpsiUsulanMedan.pertimbangan), frasanya
+   * hanya dicari di situ - bukan di duduk perkara, tempat posita, jawaban,
+   * dan keterangan saksi menceritakan kehamilan yang sudah lewat, kehamilan
+   * orang lain, dan klaim para pihak.
+   */
+  hanyaPertimbangan?: boolean;
 };
 
 const PENANDA_MEDAN: PenandaMedan[] = [
@@ -380,6 +414,29 @@ const PENANDA_MEDAN: PenandaMedan[] = [
     ya: /^nusyuz$/i,
     tidak: /^tidak\s*nusyuz$/i,
     sebut: "temuan bahwa isteri nusyuz",
+    // 26 September 2026 (permintaan pengguna 2): bawaannya tetap Tidak
+    // Nusyuz ("cukup"), tetapi pertimbangan yang MENYATAKAN tegas isteri
+    // tidak nusyuz dijawab "pasti" - "tidak dalam keadaan nusyuz", "tidak
+    // terbukti sebagai istri yang nusyuz", "nusyuz Penggugat Rekonvensi
+    // tidak terbukti", "tidak dapat dikatakan sebagai isteri yang nusyuz".
+    // Pertanyaan ("apakah ... nusyuz atau tidak"), pengandaian, dan beban
+    // bukti ("tidak mampu membuktikan dirinya tidak nusyuz" - tersimpan
+    // Nusyuz) tidak dihitung.
+    frasaTidak:
+      /\btidak\s+(?:terbukti\s+)?(?:dalam\s+keadaan\s+|melakukan\s+(?:perbuatan\s+)?|sebagai\s+(?:isteri|istri)\s+yang\s+|bersikap\s+)?nusyuz\b|\bnusyuz\b[^.;]{0,50}?\btidak\s+terbukti\b|\b(?:tidak|bukan)\b[^.;]{0,40}?\b(?:menyatakan|menunjukkan|dikatakan|dikategorikan)\b[^.;]{0,40}?\bnusyuz\b/i,
+    // 26 September 2026 (pemeriksa): "tidak nusyuz" yang DIUCAPKAN PIHAK
+    // bukan temuan - "Termohon dalam jawabannya menyatakan dirinya tidak
+    // nusyuz", "Termohon membantah ... tidak nusyuz", "Majelis tidak
+    // sependapat dengan Termohon yang menyatakan dirinya tidak nusyuz", dan
+    // "dalil Termohon ... tidak nusyuz tidak terbukti, maka Termohon
+    // dinyatakan nusyuz" dahulu dijawab "pasti Tidak Nusyuz" - yang terakhir
+    // justru kebalikannya. Klaim pihak yang disusul penolakannya, dan kaidah
+    // umum tanpa sebutan pihak ("isteri yang tidak nusyuz berhak ..."),
+    // juga tidak dihitung. Dalil NUSYUZ yang tidak terbukti ("dalil nusyuz
+    // yang diajukan Tergugat telah dinyatakan tidak terbukti") tetap temuan.
+    bukanTidak:
+      /\bapakah\b|\batau\s+tidak\b|\bada\s+tidaknya\b|\bapabila\b|\bjika\b|\bkecuali\b|membuktikan\s+dirinya|\btidak\s+sependapat\b|\b(?:menyatakan\s+dirinya|mengaku|membantah|bantahan(?:nya)?|jawaban(?:nya)?|berdalih|dalih(?:nya)?|mendalilkan|dalil(?:nya)?)\b[^.;]{0,60}?\btidak\s+(?:\S+\s+){0,4}?nusyuz\b|\btidak\s+(?:\S+\s+){0,4}?nusyuz\b[^.;]{0,60}?\b(?:tidak\s+(?:terbukti|beralasan|berdasar)|ditolak|dikesampingkan)\b|^(?![^\n]*\b(?:penggugat|tergugat|pemohon|termohon)\b)[^\n]*\byang\s+tidak\s+nusyuz\b/i,
+    hanyaPertimbangan: true,
   },
   {
     // ────────────────────────────────────────────────────────────────────
@@ -412,11 +469,58 @@ const PENANDA_MEDAN: PenandaMedan[] = [
     // SALAH kesembilannya - "sejak Penggugat sedang hamil anak pertama",
     // "menutupi aib karena telah hamil diluar nikah", kutipan Pasal 149 KHI.
     medan: /keadaan\s*istri|keadaan\s*isteri/i,
-    frasa: /\b(?:sedang|saat\s+ini|sekarang|kini|masih)\b[^.;]{0,25}?\bhamil\b/i,
-    bukanKalimat: /\b(?:sejak|ketika|saat\s+itu|waktu\s+itu|dahulu|dulu|pernah|sebelum|kecuali)\b|luar\s+nikah/i,
+    // 26 September 2026 (permintaan pengguna 2): selain hamil, keadaan SUCI
+    // dan HAID yang disebut tegas ("Termohon dalam keadaan suci", "Penggugat
+    // sedang haid") kini diikuti dengan keyakinan "pasti". Tanpa sebutan,
+    // bawaan menurut jenis perkara tetap berlaku. Diukur atas 942 putusan
+    // cerai dikabulkan 2025-2026: tidak satu pun pertimbangan menyebut
+    // keadaan isteri sebagai fakta - "suci" hanya muncul di kutipan iddah
+    // ("tiga kali suci", 171 putusan), nama saksi ("Suci binti ..."), dan
+    // "tujuan suci perkawinan"; ketiganya tidak tertangkap frasa ini.
+    //
+    // 26 September 2026 (pemeriksa): bentuk pertama frasa ini ("dalam
+    // keadaan" atau "sedang" di depan hamil/mengandung, tanpa subjek) diukur
+    // atas pertimbangan, posita, dan keterangan saksi sipp_donggala: 11
+    // perkara baru "pasti Hamil", 9 salah - kehamilan yang sudah lewat
+    // ("meninggalkan Penggugat dalam keadaan hamil anak kedua" pada 2018),
+    // kehamilan orang lain ("menikah dengan wanita lain dan sedang
+    // mengandung"), anak para Pemohon dispensasi, dan "petitum masih
+    // mengandung kekaburan"; "tidak dalam keadaan hamil" dan "bukan dalam
+    // keadaan haid" pun terbaca sebaliknya. Kini petikannya harus:
+    //   - bersubjek isteri (Termohon/Penggugat), tanpa orang lain di antara
+    //     subjek dan keadaannya;
+    //   - untuk HAMIL, memuat penanda waktu kini (sedang, saat ini, sekarang,
+    //     kini, masih) - "dalam keadaan hamil" telanjang hampir selalu cerita
+    //     lampau; "mengandung" hanya bila disusul anak/janin/bayi;
+    //   - untuk SUCI/HAID, penanda waktu kini atau "dalam keadaan" tepat di
+    //     depannya ("Termohon dalam keadaan suci");
+    //   - tanpa pengingkaran di antara subjek dan keadaannya ("tidak dalam
+    //     keadaan hamil", "bukan dalam keadaan haid", "dalam keadaan tidak
+    //     hamil").
+    // Medan ini temuan majelis: bila naskah pertimbangan dikirim tersendiri,
+    // hanya itu yang dibaca (hanyaPertimbangan).
+    frasa:
+      /\b(termohon|penggugat)\b((?:(?!\b(?:pemohon|tergugat|suami|wanita|perempuan|laki-laki|pria|anak|calon|ibu|bayi|janin)\b)[^.;]){0,60}?)\b(hamil|mengandung\s+(?:anak|janin|bayi)|suci|haidh?|menstruasi)\b/i,
+    // Tahun, "saat"/"disaat"/"waktu" yang bukan "saat ini", keguguran, dan
+    // kepergian menandai CERITA: "sekitar bulan Januari 2022 saat Penggugat
+    // sedang hamil", "menendang punggung Penggugat yang sedang hamil ...
+    // mengalami keguguran", "meninggalkan Penggugat yang sedang hamil 6 bulan"
+    // (5 dari 7 "pasti Hamil" posita/saksi yang tersisa, diukur 26 September
+    // 2026; yang lolos "Pada saat ini, Penggugat sedang hamil 1 bulan").
+    bukanKalimat:
+      /\b(?:sejak|ketika|saat\s+itu|waktu\s+itu|dahulu|dulu|pernah|sebelum|kecuali|apabila|jika|bila)\b|luar\s+nikah|kali\s+suci|\bbagi\s+(?:yang|isteri|istri|janda)\b|waktu\s+tunggu|\biddah\b|\b(?:tidak|bukan|belum)\s+(?:sedang\s+)?(?:hamil|mengandung|suci|haid|haidh|menstruasi)\b|\b(?:19|20)\d{2}\b|\b(?:di)?saat\b(?!\s+ini)|\bwaktu\b(?!\s+(?:ini|sekarang))|keguguran|\bmeninggalkan\b|\bditinggal(?:kan)?\b/i,
+    sahkan: (cocok) => {
+      const antara = cocok[2] ?? "";
+      if (/\b(?:tidak|bukan|belum)\b/i.test(antara)) return false;
+      const kini = /\b(?:sedang|saat\s+ini|sekarang|kini|masih)\b/i.test(antara);
+      if (/^(?:hamil|mengandung)/i.test(cocok[3] ?? "")) return kini;
+      return kini || /\bdalam\s+keadaan\s*$/i.test(antara);
+    },
     ya: /hamil/i,
+    mauDari: (cocok) => (/^suci$/i.test(cocok[3]) ? /^suci$/i : /haid|menstruasi/i.test(cocok[3]) ? /^haid$/i : /hamil/i),
     tidak: /suci|tidak\s*diketahui/i,
-    sebut: "isteri sedang hamil",
+    sebut: "keadaan isteri (suci, haid, atau hamil)",
+    hanyaPertimbangan: true,
   },
 ];
 
@@ -440,11 +544,56 @@ const PENANDA_MEDAN: PenandaMedan[] = [
 const POLA_KALIMAT_RUJUKAN =
   /\bpasal\b|\bnomor\b|\bsema\b|\bkhi\b|kompilasi\s+hukum\s+islam|\bindikator\b|\bq[ao]bla\s+a[ld][\s-]*dukh/i;
 
-/** Naskah tanpa kalimat rujukan, dipisah per baris. */
+/**
+ * Potongan yang MEMBUKA kutipan: menyebut sumber hukum dan berakhir titik
+ * dua ("Pasal 122 Kompilasi Hukum Islam berbunyi:", "sabda Rasulullah SAW
+ * yang artinya:"). pecahKalimat memotong di ": ", sehingga isi kutipannya
+ * kehilangan kata Pasal/KHI dan dahulu terbaca fakta perkara - "Talak bid'i
+ * adalah talak yang dijatuhkan pada waktu isteri dalam keadaan haid" menjadi
+ * "pasti Haid" (pemeriksa, 26 September 2026). "fakta" SENGAJA menolak:
+ * "... Pasal 311 R.Bg., ditemukan fakta hukum sebagai berikut:" membuka
+ * fakta, bukan kutipan.
+ */
+const POLA_PEMBUKA_KUTIPAN =
+  /\bpasal\b|\bsema\b|\bkhi\b|kompilasi\s+hukum\s+islam|undang[\s-]*undang|peraturan\s+pemerintah|\bhadi(?:s|ts|th)\b|\bfirman\b|\bsabda\b|\bkaidah\b|\bqa?idah\b|\bkitab\b|\bdalil\s+syar/i;
+/** Paragraf yang memulai pertimbangan baru - kutipan lintas baris berhenti di sini. */
+const POLA_AWAL_PERTIMBANGAN =
+  /^\s*(?:(?:[-•*]|\d{1,2}[.)])\s*)?(?:menimbang|mengingat|memperhatikan|mengadili|menetapkan|bahwa|dengan\s+demikian|oleh\s+karena|berdasarkan|maka)\b/i;
+/** Batas baris kutipan sesudah pembuka yang berakhir di ujung baris. */
+const BATAS_BARIS_KUTIPAN = 12;
+
+/**
+ * Naskah tanpa kalimat rujukan, dipisah per baris.
+ *
+ * Kutipan yang dibuka POLA_PEMBUKA_KUTIPAN ikut dibuang bersama pembukanya:
+ * sisa barisnya, dan - bila titik duanya di ujung baris - baris-baris
+ * berikutnya sampai paragraf pertimbangan baru (paling banyak
+ * BATAS_BARIS_KUTIPAN baris).
+ */
 export function saringKalimatRujukan(naskah: string): string {
-  return pecahKalimat(naskah)
-    .filter((satu) => !POLA_KALIMAT_RUJUKAN.test(satu))
-    .join("\n");
+  const hasil: string[] = [];
+  let sisaBarisKutipan = 0;
+  for (const baris of String(naskah ?? "").split(/\n+/)) {
+    if (sisaBarisKutipan > 0) {
+      if (!POLA_AWAL_PERTIMBANGAN.test(baris)) {
+        sisaBarisKutipan--;
+        continue;
+      }
+      sisaBarisKutipan = 0;
+    }
+    const potongan = pecahKalimat(baris);
+    let kutipan = false;
+    potongan.forEach((satu, i) => {
+      if (kutipan) return;
+      if (/:\s*["'“”]?$/.test(satu) && POLA_PEMBUKA_KUTIPAN.test(satu) && !/\bfakta\b/i.test(satu)) {
+        kutipan = true;
+        if (i === potongan.length - 1) sisaBarisKutipan = BATAS_BARIS_KUTIPAN;
+        return;
+      }
+      if (!POLA_KALIMAT_RUJUKAN.test(satu)) hasil.push(satu);
+    });
+  }
+  return hasil.join("\n");
 }
 
 /**
@@ -489,23 +638,36 @@ const POLA_KALIMAT_PIHAK = /\b(?:penggugat|tergugat|pemohon|termohon|suami|ister
  * disebut, yang lebih dulu di sini yang diusulkan. Katanya bersumber dari
  * CIRI_ALASAN bot (abtUsulanService.js), ditambah "shabu" dan bentuk sehari-
  * hari yang terukur dipakai pertimbangan satker.
+ *
+ * 26 September 2026: bentuk yang dibaca tepat di BAS petugas ikut dipakai di
+ * sini - kekerasan pasif ("dipukul", "ditampar", "dicekik", "pemukulan",
+ * ancaman "senjata/benda tajam"), "obat-obat terlarang", "cap tikus", judi
+ * "slot", malas/tidak mau bekerja dan "pekerjaan/penghasilan tetap" (Ekonomi),
+ * dan "menikah siri"/"menikah dengan wanita lain" (Poligami). Diukur atas 960
+ * putusan cerai dikabulkan: pokok tetap 582 benar, tercentang salah 140 -> 138;
+ * sekunder 115 -> 116 benar dari 252, tercentang salah 59 -> 58; tanpa
+ * regresi. Selingkuh dan WIL SENGAJA tetap menunjuk "Zina": mencabutnya
+ * (hanya zina/berzina) menaikkan tercentang salah pokok 138 -> 150, sebab
+ * ciri itulah yang menahan bawaan perselisihan menjadi "pilih sendiri".
+ * SIPP tidak punya pilihan pihak ketiga; petugas memilih Zina hanya 3 kali
+ * dari 227 putusan yang menyebutnya.
  */
 const CIRI_FAKTOR: Array<{ ciri: string; label: RegExp; kata: RegExp }> = [
   {
     ciri: "madat",
     label: /madat|narkoba|narkotika/i,
-    kata: /\b(?:sabu|shabu|sabu-sabu|narkoba|narkotika|pemadat|madat|ganja|obat\s+terlarang|obat-obatan\s+terlarang|psikotropika)\b/i,
+    kata: /\b(?:sabu|shabu|sabu-sabu|narkoba|narkotika|pemadat|madat|ganja|obat\s+terlarang|obat-obatan\s+terlarang|obat-obat\s+terlarang|psikotropika)\b/i,
   },
   {
     ciri: "mabuk",
     label: /mabuk/i,
-    kata: /\b(?:mabuk|mabuk-mabukan|minuman\s+keras|miras|pemabuk|pemabok|minuman\s+beralkohol|minum-minuman)\b/i,
+    kata: /\b(?:mabuk|mabuk-mabukan|minuman\s+keras|miras|pemabuk|pemabok|minuman\s+beralkohol|minum-minuman|cap\s+tikus|memabukkan)\b/i,
   },
-  { ciri: "judi", label: /judi/i, kata: /\b(?:judi|berjudi|penjudi|togel|sabung\s+ayam)\b/i },
+  { ciri: "judi", label: /judi/i, kata: /\b(?:judi|berjudi|penjudi|togel|sabung\s+ayam|slot)\b/i },
   {
     ciri: "kekerasan",
     label: /kekerasan|kdrt|kekejaman|aniaya/i,
-    kata: /\b(?:kdrt|memukul|dipukul|menampar|menendang|mencekik|menganiaya|penganiayaan|kekejaman|kekerasan|main\s+tangan|ringan\s+tangan)\b/i,
+    kata: /\b(?:kdrt|memukul|dipukul|pemukulan|menampar|ditampar|menendang|ditendang|mencekik|dicekik|menjambak|menganiaya|penganiayaan|kekejaman|kekerasan|main\s+tangan|ringan\s+tangan|senjata\s+tajam|benda\s+tajam)\b/i,
   },
   {
     ciri: "zina",
@@ -515,7 +677,7 @@ const CIRI_FAKTOR: Array<{ ciri: string; label: RegExp; kata: RegExp }> = [
   {
     ciri: "ekonomi",
     label: /ekonomi/i,
-    kata: /\b(?:ekonomi|nafkah|menafkahi|tidak\s+bekerja|malas\s+bekerja|menelantarkan|tidak\s+bertanggung\s+jawab)\b/i,
+    kata: /\b(?:ekonomi|nafkah|menafkahi|tidak\s+bekerja|malas\s+bekerja|malas\s+kerja|malas\s+dalam\s+bekerja|tidak\s+mau\s+bekerja|pekerjaan\s+tetap|penghasilan\s+tetap|menelantarkan|tidak\s+bertanggung\s+jawab)\b/i,
   },
   {
     ciri: "meninggalkan",
@@ -532,7 +694,7 @@ const CIRI_FAKTOR: Array<{ ciri: string; label: RegExp; kata: RegExp }> = [
   {
     ciri: "poligami",
     label: /poligami/i,
-    kata: /\b(?:poligami|menikah\s+lagi|kawin\s+lagi|beristri\s+lagi|beristeri\s+lagi)\b/i,
+    kata: /\b(?:poligami|menikah\s+lagi|kawin\s+lagi|beristri\s+lagi|beristeri\s+lagi|menikah\s+siri|menikah\s+dengan\s+(?:wanita|perempuan|laki-laki|pria)\s+lain)\b/i,
   },
   { ciri: "kawin paksa", label: /paksa/i, kata: /\b(?:kawin\s+paksa|dijodohkan|dipaksa\s+menikah|perjodohan)\b/i },
 ];
@@ -1145,6 +1307,11 @@ export function usulkanMedanPutusan(
   const kalimatPenuh = pecahKalimat(teks);
   const teksFakta = opsi.saringRujukan === false ? teks : saringKalimatRujukan(teks);
   const kalimatFakta = pecahKalimat(teksFakta);
+  // Medan temuan membaca pertimbangan saja bila pemanggil mengirimnya.
+  const kalimatTemuan =
+    typeof opsi.pertimbangan === "string"
+      ? pecahKalimat(opsi.saringRujukan === false ? opsi.pertimbangan : saringKalimatRujukan(opsi.pertimbangan))
+      : kalimatFakta;
 
   const hasil: UsulanDalam[] = daftarMedan.map((satu): UsulanDalam => {
     const kandidat = (satu.pilihan ?? []).filter((x) => !pilihanKosong(x));
@@ -1191,7 +1358,11 @@ export function usulkanMedanPutusan(
     // MEDAN YA/TIDAK - DIKENALI DARI NAMA MEDANNYA
     // ────────────────────────────────────────────────────────────────────
     if (penanda) {
-      const kalimatDinilai = penanda.naskahPenuh ? kalimatPenuh : kalimatFakta;
+      const kalimatDinilai = penanda.naskahPenuh
+        ? kalimatPenuh
+        : penanda.hanyaPertimbangan
+        ? kalimatTemuan
+        : kalimatFakta;
       // Dicari per KALIMAT, bukan atas seluruh naskah sekaligus - sebuah
       // fakta dinyatakan dalam satu kalimat, dan petikan yang mengingkari
       // dirinya sendiri harus dapat dikenali beserta kalimatnya.
@@ -1212,15 +1383,30 @@ export function usulkanMedanPutusan(
           if (penanda.bukan.test(kal.slice(0, akhirPetikan))) continue;
           if (/\b(?:apabila|jika|bila|manakala|kalau)\b/i.test(kal.slice(akhirPetikan, akhirPetikan + 25))) continue;
         }
+        if (penanda.sahkan && !penanda.sahkan(uji)) continue;
         cocok = uji;
         kalimatCocok = kal;
         break;
       }
+      // Pernyataan tegas bahwa jawabannya "tidak" (nusyuz) - dicari hanya bila
+      // frasa "ya" tidak ada. Yang tegas mengalahkan bawaan, sama seperti
+      // frasa "ya".
+      let kalimatTidak = "";
+      if (!cocok && penanda.frasaTidak) {
+        for (const kal of kalimatDinilai) {
+          if (penanda.bukanTidak && penanda.bukanTidak.test(kal)) continue;
+          if (penanda.frasaTidak.test(kal)) {
+            kalimatTidak = kal;
+            break;
+          }
+        }
+      }
+      const tegas = Boolean(cocok) || Boolean(kalimatTidak);
       // Bawaan yang bergantung jenis perkara dipakai HANYA ketika naskahnya
       // memang tidak menyebut apa-apa. Yang tertulis selalu mengalahkan yang
       // disimpulkan dari jenis perkaranya.
-      const menurutBawaan = !cocok ? cariBawaan(bawaan, satu, jenisPerkara) : null;
-      const mau = cocok ? penanda.ya : penanda.tidak;
+      const menurutBawaan = !tegas ? cariBawaan(bawaan, satu, jenisPerkara) : null;
+      const mau = cocok ? (penanda.mauDari ? penanda.mauDari(cocok) : penanda.ya) : penanda.tidak;
       // Dicari pada pilihan YANG BELUM DISARING, dan itu perlu: pada medan
       // ya/tidak, "Tidak" bernilai 0 - dan pilihanKosong memang membuang
       // nilai 0 sebagai bukan-pilihan. Aturan itu benar pada daftar biasa,
@@ -1243,11 +1429,11 @@ export function usulkanMedanPutusan(
         // "pasti" hanya ketika frasanya benar-benar ada. Ketiadaan frasa
         // memang berarti Tidak, tetapi ia kesimpulan dari yang TIDAK tertulis
         // - dan itu tidak pernah sekuat yang tertulis.
-        keyakinan: cocok ? "pasti" : "cukup",
-        kutipan: cocok ? pangkas(kalimatCocok) : "",
+        keyakinan: tegas ? "pasti" : "cukup",
+        kutipan: cocok ? pangkas(kalimatCocok) : kalimatTidak ? pangkas(kalimatTidak) : "",
         sumberUsulan: menurutBawaan?.dariSatker ? "bawaan-satker" : "pertimbangan",
-        tegas: Boolean(cocok),
-        alasan: cocok
+        tegas,
+        alasan: tegas
           ? ""
           : menurutBawaan
           ? menurutBawaan.dariSatker

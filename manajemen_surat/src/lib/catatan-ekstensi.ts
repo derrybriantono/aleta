@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.169.0",
+    dirilis: "2026-09-26T17:45:00+08:00",
+    judul: "Putusan massal yang sungguh tersimpan di SIPP, tujuh alasan cerai baru untuk keterangan saksi, dan sumber isian ABT yang terukur",
+    butir: [
+      "PUTUSAN MASSAL SIPP TIDAK PERNAH DAPAT MENYIMPAN. Antrean hanya mengisi naskah (pertimbangan, amar, amar anonim) lalu menekan Simpan, sedangkan pilihan wajib - Status Putusan, Sumber Hukum, Faktor Perceraian, Nusyuz, Qobla/Ba'da, Keadaan Istri - tidak pernah diisi, sehingga SIPP selalu menolak dengan 'Sumber Hukum Belum Dipilih'. Kini pilihan itu diisi dari usulan ALETA dengan urutan pintu yang sama seperti panel satu perkara; pilihan wajib yang tidak dapat dipastikan menahan perkara beserta sebabnya, bukan dikirim untuk ditolak SIPP. Praperiksa kini memeriksa Status dan Verstek yang BENAR-BENAR akan disimpan - sebelumnya ia berjalan sebelum antrean memilihnya.",
+      "BORANG SIPP MEMILIH 'QOBLA DUKHUL' SENDIRI. Borang Putusan Akhir yang baru dibuka mencetak 'Qobla Dukhul' terpilih (kolomnya belum ada sebelum akta cerai, dan di PHP NULL == 0) serta Verstek 'Tidak'. Kedua nilai itu tidak lagi dianggap pilihan petugas - di antrean maupun di panel satu perkara - sehingga usulan ALETA tidak lagi membeonya dan perkara ba'da dukhul tidak lagi tersimpan sebagai qobla dukhul tanpa dipilih siapa pun.",
+      "Pilihan yang sudah dibuat petugas tidak ditimpa: faktor atau Status yang berbeda dari usulan menahan antrean dengan kedua nilainya disebut, dan di panel satu perkara kartu Status yang berbeda tidak lagi tercentang sendiri. Setiap pilihan yang diisikan ALETA dicatat per perkara (medan, nilai, asal), dan yang berasal dari bawaan ditandai 'diisi bawaan - periksa'.",
+      "Antrean bersama yang tidak lagi saling menimpa: tiap tulis antrean kini mengubah satu perkara sesudah memastikan antreannya masih yang sama, sehingga 'Akhiri antrean' benar-benar menghentikan, perkara yang tersimpan di tab lain tidak kembali 'menunggu', dan dua tab tidak menyimpan perkara yang sama dua kali. Menyusun antrean baru kini bertanya dulu bila antrean lama masih punya perkara yang belum dikerjakan. Tiap perkara yang tertahan menyebut sebabnya sendiri, bukan selalu 'ditahan praperiksa'.",
+      "Antrean dari berkas tidak lagi mengaku 'draf' sementara menekan Simpan sendiri: modusnya dipilih (otomatis atau manual) dan layar menyebut terang 'ALETA MENEKAN SIMPAN SIPP SENDIRI'. Tombol 'Lanjutkan ke SIPP' dari ABT kini membuka alamat SIPP tempat panel ALETA muncul.",
+      "KETERANGAN SAKSI (SDG): tujuh alasan baru dapat dipilih - temperamental, berkata kasar, bersikap kasar, malas bekerja, tidak memiliki pekerjaan tetap, masalah ekonomi, menikah lagi - masing-masing berbunyi kalimat dari BAS petugas PA Donggala. Penjaga uji menjalankan bot untuk tiap pilihan: yang tidak berbunyi, yang hanya untuk deteksi, dan label berkurung membuatnya merah.",
+      "ITSBAT NIKAH: 'Isi dari posita permohonan' tidak lagi mengusulkan 5178, 5105, 1046, 1002, dan 0007 - isian bawaan ABT dari kueri Anda terukur lebih tepat pada perkara yang sama (5178: ABT 0,939, ALETA 0). Kabar panel menyebut kelimanya sebagai tawaran ABT beserta nomor kuerinya, supaya kotaknya dibuka dan diperiksa. Sembilan variabel lainnya tetap diusulkan ALETA. Dispensasi kawin kini mengusulkan KUA yang menolak (5178, 17 benar dari 18), dan tombol perkara lain hanya muncul bila blangko memuat variabel yang siap.",
+    ],
+  },
+  {
     versi: "1.168.0",
     dirilis: "2026-09-26T13:30:00+08:00",
     judul: "Cetak relaas dari Antrian Sidang, unggah putusan yang membaca jawaban SIPP, dan daftar keluaran dari portal",

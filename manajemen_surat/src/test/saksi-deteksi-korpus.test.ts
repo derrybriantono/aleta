@@ -405,6 +405,16 @@ describe("8503 - huruf alasan blangko [01] menurut keputusan pengguna 11", () =>
  * Menambah baris ke CIRI_ALASAN tanpa hanyaDeteksi, membuang tandanya, atau
  * menyambung SDG ke seluruh CIRI_ALASAN membuat penjaga ini merah: kalimat
  * berita acara hanya boleh berubah dengan sengaja dan terukur.
+ *
+ * 26 September 2026 (permintaan pengguna 1 dan 7): baris yang kalimat BAS
+ * petugasnya dibaca satu per satu dan benar sedikitnya 9 dari 10 dibuka -
+ * empat kunci perilaku, "wanita lain", "perempuan lain", "shabu",
+ * "obat + terlarang", "pemukulan", "dipukul", "mengancam + tajam", bentuk
+ * pasif kekerasan, dan tiga kunci baru (menikah lagi, tidak memiliki
+ * pekerjaan tetap, masalah ekonomi). Atas 1.479 posita berketerangan saksi,
+ * alasan SDG berubah pada 805 perkara; bagian alasan SDG yang juga
+ * diterangkan saksi di BAS petugas 0,889 -> 0,828 (folder kerja
+ * penguatan-putusan/alasan-cerai, ukur-posita.js).
  */
 const BARIS_SDG: Record<string, string[]> = {
   "perselisihan terus-menerus": [
@@ -414,15 +424,40 @@ const BARIS_SDG: Record<string, string[]> = {
   "kekerasan dalam rumah tangga": [
     "kdrt", "memukul", "kekerasan", "menganiaya", "penganiayaan", "menampar",
     "menendang", "mencekik", "kekejaman", "main tangan", "mengancam + bunuh", "ancaman + senjata",
+    "pemukulan", "dipukul", "mengancam + tajam", "dicekik", "ditampar", "ditendang", "menjambak", "ringan tangan",
   ],
   "tidak memberi nafkah": [
     "nafkah", "menelantarkan", "terlantar", "tidak menafkahi", "tidak bertanggung jawab", "lalai + kewajiban",
   ],
-  "pihak lain (wanita/pria idaman lain)": ["idaman lain", "selingkuh", "perselingkuhan", "pihak ketiga"],
+  "pihak lain (wanita/pria idaman lain)": [
+    "idaman lain", "selingkuh", "perselingkuhan", "pihak ketiga", "wanita lain", "perempuan lain",
+  ],
+  "menikah lagi": [
+    "menikah lagi", "kawin lagi", "menikah dengan wanita", "menikah dengan perempuan",
+    "menikah dengan laki", "menikah dengan pria", "menikah siri",
+  ],
   cemburu: ["cemburu"],
-  "obat terlarang": ["sabu", "narkoba", "narkotika", "pemadat", "madat", "ganja"],
-  judi: ["judi", "togel"],
+  "obat terlarang": ["sabu", "shabu", "obat + terlarang", "narkoba", "narkotika", "pemadat", "madat", "ganja"],
+  judi: ["judi", "togel", "sabung ayam", "slot"],
   mabuk: ["mabuk", "minuman keras", "miras", "pemabuk", "pemabok"],
+  "malas bekerja": [
+    "malas bekerja", "malas dalam bekerja", "malasbekerja", "malas mencari pekerjaan",
+    "malas cari pekerjaan", "malas mencari kerja", "malas + kerja", "tidak mau bekerja",
+  ],
+  temperamental: [
+    "temperam", "tempram", "teperamen", "temparamen", "sering marah", "marah-marah", "marah marah",
+    // "emosional" dan "tersulut emosi" hanya dideteksi sejak pemeriksa 26
+    // September 2026: di posita benar 3/6 dan 0/2 (lihat CIRI_ALASAN).
+    "mudah marah", "pemarah", "suka marah", "cepat marah", "gampang marah", "mudah emosi",
+  ],
+  "berkata kasar": ["kata kasar", "kata-kata kasar", "bicara kasar", "ucapan kasar", "berucap kasar", "perkataan kasar"],
+  "bersikap kasar": ["sikap kasar", "berlaku kasar", "perlakuan kasar", "berbuat kasar", "bertindak kasar"],
+  "tidak memiliki pekerjaan tetap": [
+    "tidak memiliki pekerjaan tetap", "tidak mempunyai pekerjaan tetap", "tidak punya pekerjaan tetap",
+    "belum memiliki pekerjaan tetap", "belum mempunyai pekerjaan tetap", "tidak memiliki pekerjaan yang tetap",
+    "tidak memiliki penghasilan tetap", "tidak mempunyai penghasilan tetap",
+  ],
+  "masalah ekonomi": ["masalah ekonomi", "faktor ekonomi", "persoalan ekonomi", "permasalahan ekonomi", "alasan ekonomi"],
   zina: ["zina", "berzina"],
   "salah satu pihak menjalani pidana penjara": [
     "dipenjara", "dihukum + penjara", "menjalani + pidana", "lembaga pemasyarakatan",
@@ -439,12 +474,13 @@ type JawabSdg = { no: string; tanya: string; jawab: string };
 const sdg = layanan as unknown as {
   CIRI_ALASAN: BarisCiri[];
   alasanDariPosita: (posita: string) => string[];
-  susunKeteranganSaksiSdg: (o: { templat: JawabSdg[]; posita: string; pelaku: string; lawan: string }) => {
+  susunKeteranganSaksiSdg: (o: { templat: JawabSdg[]; posita?: string; alasan?: string[]; pelaku: string; lawan: string }) => {
     ok: boolean;
     saksi1: JawabSdg[];
     saksi2: JawabSdg[];
     alasan: string[];
     asalAlasan: string;
+    alasanDitolak?: { kunci: string; sebab: string }[];
   };
 };
 const idBaris = (b: BarisCiri) => `${b.kunci}|${b.kata.join(" + ")}`;
@@ -453,7 +489,22 @@ const BERLAKU = new Set(
 );
 /** Kalimat yang memuat seluruh kata satu baris ciri, dan tidak ada kata lain yang berarti. */
 const kalimatBaris = (b: BarisCiri) => `xxx ${b.kata.join(" xxx ")} xxx`;
-const KUNCI_BARU = ["temperamental", "malas bekerja", "berkata kasar", "bersikap kasar"];
+/** Bunyi yang boleh mengucapkan tiap kunci di keterangan saksi SDG (frasa + setara bot). */
+const BUNYI_SDG: Record<string, string[]> = {
+  "obat terlarang": ["menjadi pemakai obat terlarang", "mengkonsumsi obat-obatan terlarang", "mengonsumsi obat-obatan terlarang", "mengonsumsi narkoba"],
+  temperamental: ["bersikap temperamental", "suka marah", "mudah marah"],
+  "berkata kasar": ["berkata kasar"],
+  "bersikap kasar": ["bersikap kasar"],
+  "malas bekerja": ["malas bekerja", "tidak mau bekerja"],
+  "pihak lain (wanita/pria idaman lain)": ["menjalin hubungan dengan pihak lain", "berselingkuh", "selingkuh"],
+  "kekerasan dalam rumah tangga": ["melakukan Kekerasan Dalam Rumah Tangga", "melakukan kekerasan dalam rumah tangga", "melakukan KDRT"],
+  judi: ["menjadi penjudi", "bermain judi", "main judi"],
+  mabuk: ["menjadi pemabuk", "suka mabuk"],
+  "tidak memberi nafkah": ["melalaikan kewajiban nafkah lahir", "tidak memberikan nafkah", "tidak memberi nafkah", "tidak menafkahi"],
+  "menikah lagi": ["telah menikah lagi", "sudah menikah lagi"],
+  "tidak memiliki pekerjaan tetap": ["tidak memiliki pekerjaan tetap"],
+  "masalah ekonomi": ["masalah ekonomi"],
+};
 
 describe("SDG - baris deteksi 25 September tidak mengubah keterangan saksi", () => {
   it("tiap baris CIRI_ALASAN menyala di SDG tepat bila ia ada di BARIS_SDG", () => {
@@ -479,34 +530,220 @@ describe("SDG - baris deteksi 25 September tidak mengubah keterangan saksi", () 
     { no: "2", tanya: "Apakah saksi pernah melihat atau mendengar sendiri pertengkaran itu?", jawab: "..." },
   ];
 
-  // Harapan = keluaran kode sebelum 25 September atas posita yang sama
-  // (dihitung dengan salinan HEAD di folder kerja, emas-sdg.js). Bentuk
-  // kalimatnya dari posita sungguhan PA Donggala, pihak memakai sebutan.
+  // Harapan sampai 25 September = keluaran kode HEAD (emas-sdg.js); sejak 26
+  // September baris yang terukur dibuka, dan harapannya ditulis ulang dengan
+  // sengaja. Bentuk kalimatnya dari posita sungguhan PA Donggala, pihak
+  // memakai sebutan.
   it.each([
     [
       "Bahwa sejak tahun 2020 rumah tangga Penggugat dan Tergugat sering terjadi perselisihan dan pertengkaran disebabkan Tergugat sering mengkonsumsi obat-obatan terlarang jenis Shabu;",
-      ["perselisihan terus-menerus"],
+      ["perselisihan terus-menerus", "obat terlarang"],
     ],
-    ["Bahwa Tergugat memiliki sifat temperamental dan sering berkata kasar kepada Penggugat;", []],
-    ["Bahwa Tergugat malas bekerja sehingga kebutuhan rumah tangga tidak tercukupi;", []],
-    ["Bahwa Tergugat menjalin hubungan dengan wanita lain;", []],
+    ["Bahwa Tergugat memiliki sifat temperamental dan sering berkata kasar kepada Penggugat;", ["temperamental", "berkata kasar"]],
+    ["Bahwa Tergugat malas bekerja sehingga kebutuhan rumah tangga tidak tercukupi;", ["malas bekerja"]],
+    ["Bahwa Tergugat menjalin hubungan dengan wanita lain;", ["pihak lain (wanita/pria idaman lain)"]],
     [
       "Bahwa Tergugat pernah melakukan pemukulan terhadap Penggugat hingga Penggugat dipukul di bagian kepala;",
-      [],
+      ["kekerasan dalam rumah tangga"],
     ],
-    ["Bahwa Tergugat sering marah-marah dan bersikap kasar kepada Penggugat;", []],
+    ["Bahwa Tergugat sering marah-marah dan bersikap kasar kepada Penggugat;", ["temperamental", "bersikap kasar"]],
     ["Bahwa Tergugat suka berjudi dan mabuk-mabukan;", ["judi", "mabuk"]],
     [
       "Bahwa Tergugat tidak memberi nafkah;\nBahwa Tergugat bersifat tempramen dan malas mencari pekerjaan;",
-      ["tidak memberi nafkah"],
+      ["tidak memberi nafkah", "malas bekerja", "temperamental"],
     ],
-  ])("alasan SDG sama dengan sebelumnya: %s", (posita, harapan) => {
+    // Perkawinan baru BUKAN perselingkuhan: "wanita lain" di sini pasangan
+    // nikahnya, bukan tanda pihak lain.
+    ["Bahwa Tergugat telah menikah lagi dengan wanita lain tanpa sepengetahuan Penggugat;", ["menikah lagi"]],
+    [
+      "Bahwa Tergugat memiliki hubungan dengan wanita lain dan sudah menikah lagi;",
+      ["pihak lain (wanita/pria idaman lain)", "menikah lagi"],
+    ],
+    [
+      "Bahwa Tergugat tidak memiliki pekerjaan tetap karena masalah ekonomi keluarga;",
+      ["tidak memiliki pekerjaan tetap", "masalah ekonomi"],
+    ],
+    // Ciri yang hanya dideteksi tidak diucapkan saksi SDG.
+    ["Bahwa keluarga Tergugat sering ikut campur dan Tergugat sering keluar malam serta tidak menghargai Penggugat;", []],
+  ])("alasan SDG: %s", (posita, harapan) => {
     expect(sdg.alasanDariPosita(posita)).toEqual(harapan);
     const h = sdg.susunKeteranganSaksiSdg({ templat: TEMPLAT_SDG, posita, pelaku: "Tergugat", lawan: "Penggugat" });
     expect(h.ok).toBe(true);
     expect(h.alasan).toEqual(harapan);
-    // Label kunci baru tidak pernah tercetak mentah di jawaban penyebab.
-    const penyebab = [h.saksi1[0].jawab, h.saksi2[0].jawab].join(" ");
-    for (const label of KUNCI_BARU) expect(penyebab).not.toContain(label);
+    // Label kunci tidak pernah tercetak mentah: tiap kunci yang dibuka
+    // diucapkan dengan frasanya atau bunyi setaranya dari korpus (atau
+    // kuncinya memang bunyinya - "masalah ekonomi"), dan tidak ada kurung
+    // atau garis miring label ("pihak lain (wanita/pria idaman lain)").
+    for (const s of [h.saksi1[0].jawab, h.saksi2[0].jawab]) {
+      expect(s).not.toMatch(/[()/]/);
+      for (const kunci of harapan) {
+        if (kunci === "perselisihan terus-menerus") continue;
+        const bunyi = BUNYI_SDG[kunci];
+        expect(bunyi, `bunyi ${kunci}`).toBeDefined();
+        expect(bunyi.some((b) => s.includes(b)), `${kunci} diucapkan dengan bunyinya: ${s}`).toBe(true);
+      }
+    }
+  });
+});
+
+/**
+ * ============================================================================
+ * PEMERIKSA 26 SEPTEMBER 2026 - T3, T4, T9
+ * ============================================================================
+ *
+ * T3: kalimat 5227 dan SDG selalu berbunyi "{pelaku} telah menikah lagi"
+ * (pelaku = 0047 = Tergugat/Termohon). Kalimat BAS/posita sungguhan di bawah
+ * (sebutan pihak dipertahankan) menyatakan perkawinan pihak LAWAN, NIAT/izin/
+ * suruhan, atau perkawinan yang tidak jadi - tidak satu pun boleh menjadi
+ * "menikah lagi". Diukur atas 896 kalimat berkata nikah: 31 ditolak (30
+ * perkara), termasuk ke-16 perkara temuan pemeriksa.
+ */
+describe("T3 - menikah lagi hanya perkawinan pelaku yang sudah terjadi", () => {
+  const TEMPLAT: JawabSdg[] = [
+    { no: "1", tanya: "Apa penyebab pertengkaran Penggugat dan Tergugat?", jawab: "karena ..." },
+  ];
+
+  it.each([
+    ["Bahwa Pemohon telah menikah lagi dengan perempuan lain;"],
+    ["Bahwa awalnya Pemohon menikah lagi secara diam-diam;"],
+    ["Bahwa Tergugat ingin menikah lagi namun tidak mendapat restu dari Penggugat;"],
+    ["Bahwa Tergugat meminta izin kepada Penggugat untuk menikah lagi dengan wanita lain;"],
+    ["Bahwa Tergugat menyuruh Penggugat untuk menikah lagi dengan laki-laki lain;"],
+    ["Bahwa Tergugat hendak menikah lagi dengan perempuan lain;"],
+    ["Bahwa Termohon pernah mengatakan kalau cerai hari ini Pemohon harus menikah lagi;"],
+    ["Bahwa Termohon tidak jadi menikah dengan laki-laki tersebut;"],
+  ])("bukan menikah lagi: %s", (posita) => {
+    expect(sdg.alasanDariPosita(posita)).not.toContain("menikah lagi");
+  });
+
+  it.each([
+    ["Bahwa Tergugat ingin menikah lagi dengan wanita lain dan sekarang Tergugat sudah menikah dengan wanita tersebut;"],
+    ["Bahwa Tergugat pergi meninggalkan Penggugat dan menikah lagi dengan perempuan lain;"],
+    ["Bahwa Termohon telah menikah lagi dengan laki-laki lain;"],
+    ["Bahwa Tergugat sering memukul Penggugat dan Tergugat sudah menikah lagi;"],
+  ])("tetap menikah lagi: %s", (posita) => {
+    expect(sdg.alasanDariPosita(posita)).toContain("menikah lagi");
+  });
+
+  it("SDG cerai talak tidak menuduh Termohon atas perkawinan Pemohon", () => {
+    const h = sdg.susunKeteranganSaksiSdg({
+      templat: TEMPLAT,
+      posita: "Bahwa Pemohon telah menikah lagi dengan perempuan lain;",
+      pelaku: "Termohon",
+      lawan: "Pemohon",
+    });
+    expect(h.alasan).not.toContain("menikah lagi");
+    for (const s of [h.saksi1[0].jawab, h.saksi2[0].jawab]) expect(s).not.toMatch(/Termohon (?:telah|sudah) menikah lagi/);
+  });
+
+  it("5227 dari BAS: 'Ya, Pemohon telah menikah lagi' bukan ciri, kalimatnya tidak menuduh Termohon", () => {
+    const hasil = dua("Ya, Pemohon telah menikah lagi", TALAK, "Bahwa Pemohon telah menikah lagi;");
+    expect(hasil.ciri).not.toContain("menikah lagi");
+    expect(usulanDari(hasil, "5227").nilai).not.toContain("telah menikah lagi");
+  });
+
+  it("kalimat pemicu yang ditampilkan adalah kalimat yang menyalakannya", () => {
+    const hasil = layanan.dariKeteranganSaksi(
+      bas("Tergugat ingin menikah lagi", "Tergugat sudah menikah lagi dengan wanita lain"),
+      bas("Tergugat telah menikah lagi"),
+      "",
+      GUGAT
+    );
+    expect(hasil.ciri).toContain("menikah lagi");
+    const kalimat = hasil.usulan.find((u) => u.kode === "5227")?.sumber?.find((x) => x.saksi === 1)?.kalimat ?? "";
+    expect(kalimat).toContain("sudah menikah lagi");
+  });
+});
+
+describe("T4 - 'emosional' dan 'tersulut emosi' hanya dideteksi", () => {
+  it.each([
+    ["Bahwa sejak malam pertama tidak terbangun kedekatan emosional antara Penggugat dan Tergugat;"],
+    ["Bahwa suasana batin keduanya telah jauh dan hubungan emosional pun memudar;"],
+    ["Bahwa Penggugat tidak menjamin bisa tersulut emosi apabila Tergugat selalu ingin menyerang;"],
+  ])("posita tidak menjadi temperamental: %s", (posita) => {
+    expect(sdg.alasanDariPosita(posita)).not.toContain("temperamental");
+  });
+
+  it("BAS tetap membacanya untuk 5227", () => {
+    expect(dua("Tergugat orangnya sangat emosional kepada Penggugat").ciri).toContain("temperamental");
+    expect(dua("Tergugat mudah tersulut emosi").ciri).toContain("temperamental");
+  });
+});
+
+describe("T9 - kunci hanya-deteksi kiriman eksplisit ditolak, tidak diucapkan tanpa subjek", () => {
+  const TEMPLAT: JawabSdg[] = [
+    { no: "1", tanya: "Apa penyebab pertengkaran Penggugat dan Tergugat?", jawab: "karena ..." },
+  ];
+
+  it("ditolak dengan sebabnya; yang terbuka tetap diucapkan", () => {
+    const h = sdg.susunKeteranganSaksiSdg({
+      templat: TEMPLAT,
+      alasan: ["tidak menghargai", "keluar malam", "judi"],
+      pelaku: "Tergugat",
+      lawan: "Penggugat",
+    });
+    expect(h.alasan).toEqual(["judi"]);
+    expect(h.alasanDitolak).toEqual([
+      { kunci: "tidak menghargai", sebab: "hanya_deteksi" },
+      { kunci: "keluar malam", sebab: "hanya_deteksi" },
+    ]);
+    for (const s of [h.saksi1[0].jawab, h.saksi2[0].jawab]) {
+      expect(s).not.toContain("tidak menghargai");
+      expect(s).not.toContain("keluar malam");
+    }
+  });
+
+  it("pilihan yang seluruhnya ditolak tidak diam-diam menjadi 'sama dengan gugatan'", () => {
+    const h = sdg.susunKeteranganSaksiSdg({
+      templat: TEMPLAT,
+      alasan: ["keluar malam"],
+      posita: "Bahwa Tergugat suka berjudi;",
+      pelaku: "Tergugat",
+      lawan: "Penggugat",
+    });
+    expect(h.alasan).toEqual([]);
+    expect(h.asalAlasan).toBe("");
+    expect(h.alasanDitolak).toEqual([{ kunci: "keluar malam", sebab: "hanya_deteksi" }]);
+  });
+});
+
+/**
+ * T5 - dua saksi SDG memilih bunyinya dari [frasa, ...setara]. Ukuran "fakta
+ * sama 67.030/67.030" pembangun sebenarnya KUNCI sama (kuncinya diturunkan
+ * dari kosakata frasa yang sama, jadi pasti sama); yang menjamin fakta hukum
+ * kedua saksi sama adalah derajat setiap bunyi setara. Kelas derajat di bawah
+ * pasangan yang terbukti berbeda: lalai lawan tidak sama sekali, malas lawan
+ * menolak, kebiasaan lawan perbuatan.
+ */
+describe("T5 - setara satu derajat dengan frasanya", () => {
+  const DERAJAT: Array<[string, RegExp]> = [
+    ["lalai", /\b(?:melalaikan|lalai|kurang|jarang)\b/i],
+    ["tidak sama sekali", /\btidak\s+(?:pernah\s+)?(?:memberi|memberikan|menafkahi)\b/i],
+    ["malas", /\bmalas\b/i],
+    ["menolak", /\btidak\s+mau\b/i],
+    ["kebiasaan judi", /\bmenjadi\s+penjudi\b|\bsuka\s+(?:bermain\s+|main\s+)?judi\b/i],
+    ["perbuatan judi", /^(?:bermain|main)\s+judi$/i],
+  ];
+  const derajat = (bunyi: string) => DERAJAT.filter(([, pola]) => pola.test(bunyi.trim())).map(([nama]) => nama).join("+");
+  const baku = pustaka as unknown as { KALIMAT: { frasaCiri: Record<string, { frasa: string; setara?: string[] }> } };
+
+  it("tiap bunyi setara berderajat sama dengan frasanya", () => {
+    const beda = Object.entries(baku.KALIMAT.frasaCiri).flatMap(([kunci, aturan]) =>
+      (aturan.setara ?? [])
+        .filter((s) => derajat(s) !== derajat(aturan.frasa))
+        .map((s) => `${kunci}: "${aturan.frasa}" (${derajat(aturan.frasa) || "-"}) lawan "${s}" (${derajat(s) || "-"})`)
+    );
+    expect(beda).toEqual([]);
+  });
+
+  it("dua saksi SDG menyebut nafkah dengan derajat yang sama", () => {
+    const h = sdg.susunKeteranganSaksiSdg({
+      templat: [{ no: "1", tanya: "Apa penyebab pertengkaran Penggugat dan Tergugat?", jawab: "karena ..." }],
+      alasan: ["tidak memberi nafkah", "malas bekerja", "judi"],
+      pelaku: "Tergugat",
+      lawan: "Penggugat",
+    });
+    const [s1, s2] = [h.saksi1[0].jawab, h.saksi2[0].jawab];
+    for (const [nama, pola] of DERAJAT) expect(pola.test(s1), `${nama}: ${s1} || ${s2}`).toBe(pola.test(s2));
   });
 });

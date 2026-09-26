@@ -298,13 +298,18 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // (15 sejak usulan alasan perkara pada layar Data Umum, 14 sejak usulan
     // medan pilihan pada formulir putusan, 13 sejak "Isi formulir putusan dari
     // ALETA", 12 sejak "Tetapkan lewat ALETA".)
-    // 28 sejak 1.161.0: putusan massal dari BERKAS - tiap naskah dikirim lewat
+    // 29 sejak 26 September 2026: antrean putusan massal SIPP meminta usulan
+    // medan PILIHAN borang (Status Putusan, Sumber Hukum, Verstek, ...) -
+    // tanpanya SIPP menolak tiap Simpan antrean. Penolakan usulan itu
+    // menahan perkaranya dan tertulis di catatannya, jadi harus berbunyi
+    // sebagai kalimat.
+    // (28 sejak 1.161.0: putusan massal dari BERKAS - tiap naskah dikirim lewat
     // alatAmbil, supaya berkas yang gagal dibaca peladen berbunyi sebagai
     // kalimat, bukan kode status. Petugas yang mengunggah dua puluh berkas
     // sekaligus harus tahu berkas MANA yang gagal.
     // (27 sejak 1.144.0: daftar ruangan sidang ikut lewat alatAmbil, supaya
     // gagalnya berbunyi sama dengan permintaan lain yang dilihat petugas.
-    expect(lewatAlat).toBe(28);
+    expect(lewatAlat).toBe(29);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

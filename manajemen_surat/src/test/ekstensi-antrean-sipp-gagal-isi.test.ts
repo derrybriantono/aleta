@@ -121,6 +121,12 @@ function muatAntrean() {
       tersimpan = a ? JSON.stringify(a) : null;
       return true;
     },
+    // Penulis tanpa kunci yang dipakai baca-ubah-tulis per butir
+    // (alatUbahButirAntrean) - penyimpanan tiruan yang sama.
+    alatTulisAntreanLangsung: async (a: Antrean | null) => {
+      tersimpan = a ? JSON.stringify(a) : null;
+      return true;
+    },
     alatCatat: (jenis: string, ringkas: string) => void kotakHitam.push({ jenis, ringkas }),
     alatCatatTindakan: () => undefined,
     alatKeringNyala: () => false,
@@ -157,14 +163,23 @@ function muatAntrean() {
     },
   };
   vm.createContext(k);
+  // Lahir 26 September 2026 (antrean ditulis per butir, sebab tertahan
+  // bernama) - diambil bila ada, supaya kode yang lebih tua tetap termuat.
+  const ada = (isi: string, pola: string) => new RegExp(pola, "m").test(isi);
+  const tetapanAda = (isi: string, nama: string) => (ada(isi, `^const ${nama} = `) ? [tetapan(isi, nama)] : []);
+  const fungsiAda = (isi: string, nama: string) => (ada(isi, `^(?:async )?function ${nama}\\(`) ? [potongFungsi(isi, nama)] : []);
   vm.runInContext(
     [
       tetapan(konten, "ALETA_API_ISIAN_PUTUSAN"),
       tetapan(konten, "NAMA_KEADAAN_ANTREAN"),
+      ...tetapanAda(konten, "NAMA_SEBAB_TAHAN"),
+      ...fungsiAda(konten, "namaKeadaanButir"),
       ...["buatElemen", "ringkasHentikan", "kirimKeJembatan", "jalankanSatuAntreanSipp", "bagianAntreanSipp"].map((nama) =>
         potongFungsi(konten, nama)
       ),
       tetapan(alat, "ALAT_ANTREAN_MAKS"),
+      ...["ALAT_ANTREAN_NAMA_KUNCI", "ALAT_PENANDA_HALAMAN"].flatMap((nama) => tetapanAda(alat, nama)),
+      ...["alatDalamKunciAntrean", "alatUbahButirAntrean", "alatBacaButirAntrean"].flatMap((nama) => fungsiAda(alat, nama)),
       ...["alatBuatAntrean", "alatAntreanBerikutnya", "alatAntreanRingkas"].map((nama) => potongFungsi(alat, nama)),
       "this.__uji = { jalankanSatuAntreanSipp, bagianAntreanSipp, alatBuatAntrean, alatSimpanAntrean };",
     ].join("\n"),
@@ -303,7 +318,11 @@ describe("medan yang gagal terisi MENAHAN Simpan (blok 3b)", () => {
     expect(butir.keadaan).toBe("selesai");
   });
 
-  it("perkara yang ditahan praperiksa tidak diisi sama sekali, dan sebabnya praperiksa", async () => {
+  // Sejak 26 September 2026 praperiksa berjalan SESUDAH borang diisi dan
+  // sebelum Simpan - ia harus membaca Status dan verstek yang dipilih antrean
+  // sendiri (lihat 3p di jalankanSatuAntreanSipp). Yang ditahannya tetap
+  // tidak disimpan; isian borangnya dibiarkan untuk diperiksa petugas.
+  it("perkara yang ditahan praperiksa: borang terisi, Simpan TIDAK ditekan, dan sebabnya praperiksa", async () => {
     const u = muatAntrean();
     const antrean = await u.antreanBaru([N1]);
     u.aturPraperiksa(() => ({
@@ -314,7 +333,7 @@ describe("medan yang gagal terisi MENAHAN Simpan (blok 3b)", () => {
 
     const { butir } = await u.jalankan(antrean, N1);
 
-    expect(u.jembatan).toEqual([]);
+    expect(u.jembatan.filter((j) => j.jenis === "isi").map((j) => j.penunjuk)).toEqual(["#perhum", "#amar", "#amar_anonim"]);
     expect(u.simpanDitekan).toEqual([]);
     expect(butir.keadaan).toBe("tertahan");
     expect(butir.sebabTahan).toBe("praperiksa");
@@ -385,13 +404,15 @@ describe("ringkasan antrean memisahkan dua sebab tertahan", () => {
   it("sebab tahan yang belum bernama tetap dihitung dan disebut, tidak hilang dari ringkasan", async () => {
     const u = muatAntrean();
     const antrean = await u.antreanBaru([N1, N2]);
+    // "medan-tambahan" dan "pilihan" sudah bernama sejak 26 September 2026;
+    // yang diuji di sini sebab yang BELUM bernama - dari versi yang lebih baru.
     antrean.butir[0].keadaan = "tertahan";
-    antrean.butir[0].sebabTahan = "medan-tambahan";
+    antrean.butir[0].sebabTahan = "sebab-baru";
     antrean.butir[0].catatan = "Simpan diserahkan ke petugas";
     await u.uji.alatSimpanAntrean(antrean);
 
     const teks = ringkasan((await u.uji.bagianAntreanSipp(""))!);
-    expect(teks).toContain("0 selesai, 1 menunggu, 0 gagal, 0 ditahan praperiksa, 1 tertahan (medan-tambahan).");
+    expect(teks).toContain("0 selesai, 1 menunggu, 0 gagal, 0 ditahan praperiksa, 1 tertahan (sebab-baru).");
   });
 
   it("antrean tanpa yang tertahan: ringkasan tidak menyebut sebab gagal isi", async () => {

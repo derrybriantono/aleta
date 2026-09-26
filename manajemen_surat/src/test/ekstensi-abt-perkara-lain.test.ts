@@ -18,10 +18,14 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
  *
  * Yang dijaga:
  *   1. tombol perkara lain hanya tergambar pada blangko yang memuat variabel
- *      yang lulus gerbang ukur - variabel blangko di bawah BUKAN karangan,
- *      dibaca dari RTF blangko ABT satker (sama dengan
- *      ekstensi-tombol-saksi-blangko.test.ts);
+ *      siap MILIK JENIS PERKARANYA (0048) - variabel blangko di bawah BUKAN
+ *      karangan, dibaca dari RTF blangko ABT satker (sama dengan
+ *      ekstensi-tombol-saksi-blangko.test.ts). 5178 juga ada di blangko
+ *      itsbat, perwalian, asal usul, dan harta bersama; di sana tidak;
  *   2. cermin variabel siap di abt.js = abtUsulanLainService.VARIABEL_SIAP;
+ *   2a. kabar hanya menyebut variabel yang ADA di blangko yang dibuka, dan
+ *      bawaan ABT disebut sebagai TAWARAN yang wajib diperiksa - bukan
+ *      "diisi otomatis";
  *   3. muatannya membawa sumber 'posita-lain', id jenis perkara SIPP, dan
  *      alur; usulannya diterapkan lewat "Terapkan yang dicentang" yang sama -
  *      berurutan, satu edit_data dalam satu waktu, tanpa jeda tiruan (jeda
@@ -75,6 +79,30 @@ const BLANGKO: Array<[string, string, string]> = [
   ["6 Perwalian", "Perwalian Anak oleh ortu kandung Kabul", "5368 0001 0048 7047 0046 0053 0017 8008 0306 5125 1359 0690 5114 5115 0709 0098 1025 0101 0712 6331 8131 1197 1198 1199 1200 1201 1202 1241 2025 5197 5105 0007 8513 8514 1282 1230 1203 1204 1205 1206 1207 1208 1242 8171 1069 5110 8506 2224 5178 5116 0047 2026 8515 8505 0155 7095 8501 0033 8184 8502 8004 0279 6060 6074 0312 0281 5223 0143"],
   ["- BAS ASAL USUL ANAK -", "[01a] BAS 1 Asal Usul Anak - Kabul", "0364 0366 5197 5105 5178 7211 7212 1002 1003 1046 1217 8087 0650 0651 1001 1358 0007 0001 9003 8008 0048 5174 0032 0033 7047 7046 0015 6034 4004 0046 0141 0690 0053 0017 1061 9958 1197 1198 1199 1200 1201 1202 7029 5058 1203"],
 ];
+
+/** Jenis perkara (isi 0048 di halaman) menurut folder blangkonya - nama SIPP. */
+const JENIS_FOLDER: Record<string, string> = {
+  "1 Perceraian CG": "Cerai Gugat",
+  "2 Itsbat Nikah": "Pengesahan Perkawinan/Istbat Nikah",
+  "3 Dispensasi Kawin": "Dispensasi Kawin",
+  "4 Kebendaan": "Harta Bersama",
+  "6 Perwalian": "Perwalian",
+  "- BAS ASAL USUL ANAK -": "Asal Usul Anak",
+};
+const SIAP_BOT = require_("../services/abtUsulanLainService").VARIABEL_SIAP as Record<string, string[]>;
+const KUNCI_FOLDER: Record<string, string | null> = {
+  "1 Perceraian CG": null,
+  "2 Itsbat Nikah": null,
+  "3 Dispensasi Kawin": "dispensasi-kawin",
+  "4 Kebendaan": "harta-bersama",
+  "6 Perwalian": "perwalian",
+  "- BAS ASAL USUL ANAK -": "asal-usul",
+};
+/** Tombol perkara lain semestinya tampak: blangko memuat variabel siap milik jenisnya. */
+const semestinyaTampak = (folder: string, kode: string[]) => {
+  const kunci = KUNCI_FOLDER[folder];
+  return Boolean(kunci) && (SIAP_BOT[kunci as string] || []).some((v) => kode.includes(v));
+};
 
 // Posita berbentuk templat PA Donggala, disamarkan (sama dengan
 // abt-usulan-rute-sumber-cerita.test.ts): nama 'Xxxa', KUA/kecamatan 'Aaaa'.
@@ -189,7 +217,7 @@ function bukaBlangko(kode: string[], opsi: { nomor?: string; isi?: Record<string
     SUMBER_ALAT +
       "\n;\n" +
       SUMBER_ABT +
-      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, idJenisPerkaraSipp, idAlurPerkaraSipp };"
+      "\n;\nwindow.__uji = { VARIABEL_SIAP_POSITA_LAIN, blangkoMemuatVariabelSiapLain, kunciJenisLain, kabarPositaLain, idJenisPerkaraSipp, idAlurPerkaraSipp };"
   );
   return w;
 }
@@ -221,10 +249,10 @@ describe("tombol 'Isi dari posita permohonan' perkara lain - hanya pada blangko 
 
   for (const [folder, blangko, daftar] of BLANGKO) {
     const kode = daftar.split(" ");
-    const siap = ["0606", "0600", "0607", "0601", "3333"].some((v) => kode.includes(v));
+    const siap = semestinyaTampak(folder, kode);
     const itsbat = kode.includes("5197") || kode.includes("8087");
     it(`${siap ? "TAMPAK" : "tersembunyi"} - ${folder} / ${blangko}`, async () => {
-      const w = bukaBlangko(kode);
+      const w = bukaBlangko(kode, { isi: { "0048": JENIS_FOLDER[folder] } });
       await tunggu(() => panelDari(w), "panel");
       const tombol = tombolBertulis(w, /^Isi dari posita permohonan/);
       // Tombol itsbat dan tombol perkara lain: keduanya ada di panel, masing-
@@ -232,14 +260,40 @@ describe("tombol 'Isi dari posita permohonan' perkara lain - hanya pada blangko 
       expect(tombol).toHaveLength(2);
       const tampak = tombol.filter((t) => !t.hidden);
       expect(tampak).toHaveLength(Number(siap) + Number(itsbat));
-      expect(w.__uji.blangkoMemuatVariabelSiapLain(new Map(kode.map((k) => [k, {}])))).toBe(siap);
+      const peta = new Map(kode.map((k) => [k, {}]));
+      expect(w.__uji.blangkoMemuatVariabelSiapLain(peta, w.__uji.kunciJenisLain(JENIS_FOLDER[folder]))).toBe(siap);
     });
   }
 
   it("jumlah: 4 blangko DK tampak, 5 blangko lain tersembunyi", () => {
-    const hasil = BLANGKO.map(([, , d]) => ["0606", "0600", "0607", "0601", "3333"].some((v) => d.split(" ").includes(v)));
+    const hasil = BLANGKO.map(([folder, , d]) => semestinyaTampak(folder, d.split(" ")));
     expect(hasil.filter(Boolean)).toHaveLength(4);
     expect(hasil.filter((x) => !x)).toHaveLength(5);
+  });
+
+  it("GIGITAN: 5178 (siap untuk DK) di blangko itsbat, perwalian, dan asal usul TIDAK memunculkan tombol perkara lain", async () => {
+    const ber5178 = BLANGKO.filter(([folder, , d]) => folder !== "3 Dispensasi Kawin" && d.split(" ").includes("5178"));
+    expect(ber5178.map(([f]) => f).sort()).toEqual(["- BAS ASAL USUL ANAK -", "2 Itsbat Nikah", "6 Perwalian"].sort());
+    for (const [folder, , d] of ber5178) {
+      const w = bukaBlangko(d.split(" "), { isi: { "0048": JENIS_FOLDER[folder] } });
+      await tunggu(() => panelDari(w), "panel");
+      const lainTampak = tombolBertulis(w, /^Isi dari posita permohonan/).filter((t) => !t.hidden);
+      // Yang tampak hanya tombol itsbat (#5197#), satu.
+      expect(lainTampak, folder).toHaveLength(1);
+      expect(w.__uji.blangkoMemuatVariabelSiapLain(new Map(d.split(" ").map((k) => [k, {}])), w.__uji.kunciJenisLain(JENIS_FOLDER[folder]))).toBe(false);
+    }
+  });
+
+  it("jenis perkara tidak terbaca (0048 kosong, daftar sidang tidak kenal): tombol perkara lain tersembunyi", async () => {
+    const DK = BLANGKO.find((b) => b[1] === "[01] [Kabul] DK - (Anak P Cewek) Hamil")!;
+    const w = bukaBlangko(DK[2].split(" "), { isi: { "0048": "" } });
+    await tunggu(() => panelDari(w), "panel");
+    expect(tombolBertulis(w, /^Isi dari posita permohonan/).filter((t) => !t.hidden)).toHaveLength(0);
+    expect(w.__uji.kunciJenisLain("")).toBeNull();
+    expect(w.__uji.kunciJenisLain("Cerai Gugat")).toBeNull();
+    expect(w.__uji.kunciJenisLain("362")).toBe("dispensasi-kawin");
+    expect(w.__uji.kunciJenisLain("Asal Usul Anak")).toBe("asal-usul");
+    expect(w.__uji.kunciJenisLain("harta-bersama")).toBe("harta-bersama");
   });
 });
 
@@ -268,13 +322,55 @@ describe("posita-lain lewat panel dan bot sungguhan", () => {
     expect(hasil.jenis).toBe("dispensasi-kawin");
     const kode = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu .aleta-abt-kode")) as any[]).map((x) => x.textContent);
     expect(kode.sort()).toEqual(hasil.usulan.map((u: any) => u.kode).filter((k: string) => DK[2].split(" ").includes(k)).sort());
-    for (const k of kode) expect(["0606", "0600", "0607", "0601", "3333"]).toContain(k);
+    for (const k of kode) expect(SIAP_BOT["dispensasi-kawin"]).toContain(k);
     // Lencananya menyebut sumbernya - posita - bukan "satu saksi".
     const lencana = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu-kepala .aleta-tanda")) as any[]).map((x) => x.textContent);
     expect(lencana.length).toBe(kode.length);
     for (const l of lencana) expect(l).toBe("dari posita");
     const kabar = String(panelDari(w).querySelector(".aleta-abt-kabar").textContent);
     for (const b of hasil.belumSiap) expect(kabar).toContain(`${b.kode} (${b.alasan})`);
+    // 5178 (KUA yang menolak): ALETA terukur lebih tepat dari bawaan #10103#
+    // pada perkara yang sama - kartunya ada, dan tidak ada "diisi otomatis".
+    expect(DK[2].split(" ")).toContain("5178");
+    expect(hasil.bawaanAbt).toEqual([]);
+    expect(kode).toContain("5178");
+    expect(hasil.usulan.find((u: any) => u.kode === "5178")?.nilai).toBe("Kantor Urusan Agama Kecamatan Cccc, Kabupaten Dddd");
+    expect(kabar).not.toMatch(/otomatis/i);
+  });
+
+  it("GIGITAN: blangko [98] Cabut DK (0606/0600 saja) - kabar tidak menyebut variabel yang tidak ada di blangko itu", async () => {
+    const CABUT = BLANGKO.find((b) => b[1] === "[98] [Cabut] DK")!;
+    const kodeCabut = CABUT[2].split(" ");
+    for (const k of ["5178", "1666", "1551", "0999"]) expect(kodeCabut).not.toContain(k);
+    const j = jaringan();
+    const w = bukaBlangko(kodeCabut, { isi: { "5125": POSITA_DK, "0048": "Dispensasi Kawin", "0046": "Pemohon" }, fetch: j.fetch });
+    const tombol = await tunggu(() => tombolBertulis(w, /^Isi dari posita permohonan/).find((t) => !t.hidden), "tombol posita lain");
+    tombol.click();
+    await tunggu(() => panelDari(w).querySelector(".aleta-abt-kartu"), "kartu usulan");
+    const hasil = j.c.jawabanBot[0].positaLain;
+    // Bot tetap menjawab seluruh aturan DK - penyaringnya di panel.
+    expect(hasil.belumSiap.map((b: any) => b.kode)).toEqual(["1666", "1551", "0999"]);
+    const kabar = String(panelDari(w).querySelector(".aleta-abt-kabar").textContent);
+    for (const k of ["5178", "1666", "1551", "0999"]) expect(kabar).not.toContain(k);
+    const kode = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu .aleta-abt-kode")) as any[]).map((x) => x.textContent);
+    expect(kode.sort()).toEqual(["0600", "0606"]);
+  });
+
+  it("kabar bawaan ABT: TAWARAN yang wajib diperiksa, hanya variabel blangko ini (bot sungguhan, asal usul)", async () => {
+    const lain = require_("../services/abtUsulanLainService");
+    const hasil = lain.dariPositaLain("Bahwa Pemohon menikah pada tanggal 1 Mei 2010 dengan saksi nikah bernama Xxxc dan Xxxd;", { jenisPerkara: 358 });
+    expect(hasil.bawaanAbt.length).toBe(7);
+    const w = bukaBlangko(["0001"]);
+    const BAS = BLANGKO.find((b) => b[0] === "- BAS ASAL USUL ANAK -")!;
+    const kabar = String(w.__uji.kabarPositaLain(hasil, new Map(BAS[2].split(" ").map((k) => [k, {}]))));
+    expect(kabar).toMatch(/^ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: /);
+    for (const b of hasil.bawaanAbt) expect(kabar).toContain(`${b.kode} dari kueri #${b.acuan}#`);
+    expect(kabar).not.toMatch(/otomatis/i);
+    // Blangko yang hanya memuat 5197: hanya 5197 yang disebut.
+    const sempit = String(w.__uji.kabarPositaLain(hasil, new Map([["5197", {}]])));
+    expect(sempit).toBe("ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: 5197 dari kueri #10101#.");
+    // Tidak satu pun ada di blangko: kabar kosong, bukan daftar yang menyesatkan.
+    expect(w.__uji.kabarPositaLain(hasil, new Map([["0001", {}]]))).toBe("");
   });
 
   it("Terapkan yang dicentang: berurutan, satu edit_data dalam satu waktu, tanpa jeda tiruan", async () => {
@@ -318,9 +414,21 @@ describe("itsbat: sebutan pemohon (0046) dikirim, label 'Status Pemohon sebelum 
     tombol.click();
     await tunggu(() => panelDari(w).querySelector(".aleta-abt-kartu"), "kartu usulan");
     expect(j.c.usulan[0]).toMatchObject({ sumber: "itsbat", pemohon: "Pemohon" });
-    const kartu = (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu")) as any[]).find(
-      (k) => k.querySelector(".aleta-abt-kode")?.textContent === "1002"
-    );
-    expect(kartu.querySelector(".aleta-abt-nama").textContent).toBe("Status Pemohon sebelum nikah");
+    const kartuKode = (kode: string) =>
+      (Array.from(panelDari(w).querySelectorAll(".aleta-abt-kartu")) as any[]).find((k) => k.querySelector(".aleta-abt-kode")?.textContent === kode);
+    expect(kartuKode("7211").querySelector(".aleta-abt-nama").textContent).toBe("Umur Pemohon saat menikah");
+    // Sejak 26 September 2026 bawaan ABT yang terukur lebih tepat (5178,
+    // 5105, 1046, 1002, 0007) tidak lagi diusulkan ALETA: tanpa kartu, dan
+    // disebut di kabar sebagai tawaran ABT - hanya yang ada di blangko ini.
+    for (const kode of ["5178", "5105", "1046", "1002", "0007"]) expect(kartuKode(kode), kode).toBeUndefined();
+    const kabar = panelDari(w).querySelector(".aleta-abt-kabar").textContent as string;
+    expect(kabar).toMatch(/ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: /);
+    const diBlangko = new Set(IN[2].split(" "));
+    const acuan: Record<string, string> = { "5178": "10103", "5105": "10102", "1046": "10108", "1002": "10106", "0007": "8492" };
+    for (const [kode, kueri] of Object.entries(acuan)) {
+      if (diBlangko.has(kode)) expect(kabar).toContain(`${kode} dari kueri #${kueri}#`);
+      else expect(kabar).not.toContain(`${kode} dari kueri`);
+    }
+    expect([...diBlangko].some((k) => k in acuan), "blangko IN memuat sekurang-kurangnya satu variabel tawaran ABT").toBe(true);
   });
 });
