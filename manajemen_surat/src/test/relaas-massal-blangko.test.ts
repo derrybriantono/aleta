@@ -59,6 +59,7 @@ type JawabanKatalog = { ok: boolean; data?: unknown; error?: string };
 
 const keadaan = vi.hoisted(() => ({
   katalog: null as JawabanKatalog | null,
+  katalogPerFolder: null as Record<string, JawabanKatalog> | null,
   panggilan: [] as Array<{ operation: string; params: Record<string, unknown> }>,
 }));
 
@@ -82,7 +83,10 @@ vi.mock("@/lib/app-state", () => ({
 vi.mock("@/server/modules/aleta-sipp/aleta-sipp-datasource", () => ({
   callAletaBotSippBridge: async (operation: string, params: Record<string, unknown> = {}) => {
     keadaan.panggilan.push({ operation, params });
-    return keadaan.katalog ?? { ok: false, error: "jembatan belum disiapkan uji ini" };
+    // Jawaban per folder bila uji menyediakannya - sejak 26 Sep 2026 blangko
+    // ikrar berada di folder menu ABT 25, bukan di Relaas.
+    const perFolder = keadaan.katalogPerFolder?.[String(params.folder ?? "")];
+    return perFolder ?? keadaan.katalog ?? { ok: false, error: "jembatan belum disiapkan uji ini" };
   },
 }));
 
@@ -165,6 +169,7 @@ function katalogPalsu(namaBerkas: string[]): JawabanKatalog {
 
 beforeEach(() => {
   keadaan.katalog = null;
+  keadaan.katalogPerFolder = null;
   keadaan.panggilan = [];
   vi.resetModules();
 });
@@ -200,11 +205,12 @@ describe("rute katalog blangko relaas - daftarnya dari satu sumber", () => {
     expect(lanjutan!.jalur).toBe(`derry_briantono/Relaas/${lanjutan!.berkas}`);
   });
 
-  it("jalurnya menyebut folder relaas untuk keenamnya", async () => {
+  it("jalurnya menyebut folder blangko masing-masing: ikrar di menu 25, lima lainnya di Relaas", async () => {
     keadaan.katalog = { ok: false, error: "bot mati" };
     const { data } = await isiRute();
     for (const satu of data.blangko) {
-      expect(satu.jalur).toBe(`derry_briantono/Relaas/${satu.berkas}`);
+      const folder = satu.keadaan === "ikrar-talak" ? "_ikrar_talak/2 Relaas Ikrar Talak" : "derry_briantono/Relaas";
+      expect(satu.jalur).toBe(`${folder}/${satu.berkas}`);
     }
   });
 });
@@ -236,11 +242,15 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
   });
 
   it("folder terbaca: yang ada true, yang tidak ada false, dan yang tidak ada didaftar", async () => {
-    keadaan.katalog = katalogPalsu([BERKAS.sidangPertama, BERKAS.sidangDitunda, BERKAS.pemberitahuan]);
+    keadaan.katalogPerFolder = {
+      "derry_briantono/Relaas": katalogPalsu([BERKAS.sidangPertama, BERKAS.sidangDitunda, BERKAS.pemberitahuan]),
+      // Folder ikrar terbaca tetapi berkas ikrarnya tidak ada di sana.
+      "_ikrar_talak/2 Relaas Ikrar Talak": katalogPalsu(["blangko lain.rtf"]),
+    };
     const { data } = await isiRute();
 
     expect(data.abt.terbaca).toBe(true);
-    expect(data.abt.jumlahDiFolder).toBe(3);
+    expect(data.abt.jumlahDiFolder).toBe(4);
     expect(data.blangko.find((x) => x.keadaan === "sidang-pertama")!.adaDiAbt).toBe(true);
     expect(data.blangko.find((x) => x.keadaan === "sidang-ditunda")!.adaDiAbt).toBe(true);
     expect(data.blangko.find((x) => x.keadaan === "ikrar-talak")!.adaDiAbt).toBe(false);
@@ -270,12 +280,25 @@ describe("rute katalog blangko relaas - folder ABT punya TIGA jawaban", () => {
     for (const satu of data.blangko) expect(satu.adaDiAbt).toBeNull();
   });
 
-  it("foldernya yang diminta ke bot memang folder relaas", async () => {
+  it("folder yang diminta ke bot: Relaas dan folder ikrar menu 25, masing-masing sekali", async () => {
     keadaan.katalog = katalogPalsu([BERKAS.sidangPertama]);
     await isiRute();
-    expect(keadaan.panggilan).toHaveLength(1);
-    expect(keadaan.panggilan[0].operation).toBe("blangko.katalog");
-    expect(keadaan.panggilan[0].params.folder).toBe("derry_briantono/Relaas");
+    expect(keadaan.panggilan).toHaveLength(2);
+    expect(keadaan.panggilan.every((p) => p.operation === "blangko.katalog")).toBe(true);
+    expect(keadaan.panggilan.map((p) => p.params.folder)).toEqual([
+      "derry_briantono/Relaas",
+      "_ikrar_talak/2 Relaas Ikrar Talak",
+    ]);
+  });
+
+  it("berkas ikrar hanya dicari di FOLDERNYA SENDIRI - ada di Relaas pun tetap tidak ditemukan", async () => {
+    keadaan.katalogPerFolder = {
+      "derry_briantono/Relaas": katalogPalsu([BERKAS.sidangPertama, BERKAS.ikrarTalak]),
+      "_ikrar_talak/2 Relaas Ikrar Talak": katalogPalsu(["blangko lain.rtf"]),
+    };
+    const { data } = await isiRute();
+    expect(data.blangko.find((x) => x.keadaan === "ikrar-talak")!.adaDiAbt).toBe(false);
+    expect(data.blangko.find((x) => x.keadaan === "sidang-pertama")!.adaDiAbt).toBe(true);
   });
 });
 

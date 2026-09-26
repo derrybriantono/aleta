@@ -463,16 +463,28 @@ describe.skipIf(!adaAbtSetempat)("panen token atas ABT setempat yang ASLI (tanpa
   const k = nyalakan(new Dunia(abtPalsu())).konteks;
   const php = (...arg: string[]) => execFileSync(PHP56, arg, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 
-  it("keenam blangko relaas terpanen dari kelompok 'Relaas dan PBT' folder derry_briantono", () => {
+  it("keenam blangko relaas terpanen: lima dari 'Relaas dan PBT', ikrar dari 'Relaas Ikrar Talak' (menu 25)", () => {
     const beranda = php(PERENDER, "beranda");
     const kelompok = k.relaasUrutkanKelompok(k.relaasUraiKelompok(beranda));
     expect(kelompok[0].kelompok).toBe("Relaas dan PBT");
     expect(kelompok[0].alamat).toMatch(/^\/aps_badilag\/abt\/main\/beranda\?a=[A-Za-z0-9.~-]+&c=$/);
 
-    const halaman = php(PERENDER, "kelompok", kelompok[0].a);
-    const { token, hilang } = k.relaasPetakanToken(KATALOG, k.relaasUraiBerkas(halaman));
+    // Sejak 26 Sep 2026 blangko ikrar dipindah ke folder menu ABT 25
+    // (_ikrar_talak/2 Relaas Ikrar Talak): di menu Relaas perkara bertahap
+    // ikrar (proses 290+) selalu ditolak ABT. Pemanen mencari menurut NAMA
+    // berkas di seluruh kelompok, jadi keduanya harus ketemu.
+    const ikrarKelompok = kelompok.find((x: { kelompok: string }) => x.kelompok === "Relaas Ikrar Talak");
+    expect(ikrarKelompok, "kelompok Relaas Ikrar Talak tampil di beranda ABT").toBeTruthy();
+    const berkasDua = [
+      ...k.relaasUraiBerkas(php(PERENDER, "kelompok", kelompok[0].a)),
+      ...k.relaasUraiBerkas(php(PERENDER, "kelompok", ikrarKelompok.a)),
+    ];
+    const { token, hilang } = k.relaasPetakanToken(KATALOG, berkasDua);
     expect(hilang).toEqual([]);
     expect(Object.keys(token)).toHaveLength(6);
+    // Token ikrar mengurai (pustaka enkripsi ABT sendiri) ke folder menu 25.
+    const dirIkrar = php(PERENDER, "urai", token[BERKAS("ikrar-talak")].a);
+    expect(dirIkrar.replace(/\\/g, "/")).toMatch(/_ikrar_talak\/2 Relaas Ikrar Talak$/);
     // Tiap token mengurai (pustaka enkripsi ABT sendiri) ke berkas yang ADA di disk.
     for (const [nama, t] of Object.entries<any>(token)) {
       const dir = php(PERENDER, "urai", t.a);

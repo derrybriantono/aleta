@@ -243,9 +243,34 @@ export type BlangkoRelaas = {
   /** Pihak yang blangko ini tujukan; "keduanya" berarti satu berkas dua pihak. */
   pihak: PihakDipanggil;
   keterangan: string;
+  /**
+   * Folder ABT tempat berkasnya berada, relatif terhadap _blangko_abt.
+   *
+   * Tidak semua relaas satu folder. Sejak 26 September 2026 blangko ikrar
+   * dipindah ke menu ABT 25 "Relaas Ikrar Talak" (_ikrar_talak/2 Relaas
+   * Ikrar Talak): di menu Relaas (hak aksesnya dibaca dari menu 900, proses
+   * 80-220) perkara yang sudah sampai tahap ikrar - proses 290 ke atas -
+   * SELALU ditolak ABT.
+   */
+  folder: string;
+  /**
+   * Rentang proses_terakhir_id yang diterima menu ABT pemilik foldernya
+   * (abt_menu.proses_id_min/max). Di luar rentang itu ABT menolak mencetak.
+   */
+  menuAbt: { nama: string; prosesMin: number; prosesMax: number };
 };
 
 const FOLDER_RELAAS = `${AKAR}/Relaas`;
+/** Menu ABT 25 "Relaas Ikrar Talak" - folder dibuat di laptop 26 Sep 2026. */
+export const FOLDER_RELAAS_IKRAR = "_ikrar_talak/2 Relaas Ikrar Talak";
+/**
+ * Hak akses folder Relaas dibaca ABT dari menu 900 (derry_briantono), BUKAN
+ * menu 981 "Relaas dan PBT": hak_akses_menu mengambil baris pertama dari
+ * `direktori="Relaas" or direktori="derry_briantono"`, dan collation tanpa
+ * beda huruf besar-kecil menaruh 900 lebih dulu. Keduanya berentang 80-220.
+ */
+const MENU_RELAAS = { nama: "Relaas dan PBT (Blangko Derry)", prosesMin: 80, prosesMax: 220 } as const;
+const MENU_RELAAS_IKRAR = { nama: "Relaas Ikrar Talak", prosesMin: 290, prosesMax: 600 } as const;
 
 export const BLANGKO_RELAAS: BlangkoRelaas[] = [
   {
@@ -255,6 +280,8 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     pihak: "keduanya",
     keterangan:
       "Sidang pertama memanggil kedua pihak sekaligus - belum ada yang pernah hadir, jadi tidak ada yang dapat dikecualikan.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
   },
   {
     keadaan: "sidang-ditunda",
@@ -263,6 +290,8 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     pihak: "kedua",
     keterangan:
       "Sidang yang ditunda memanggil yang TIDAK hadir. Blangko ini untuk Pihak Kedua; bila yang tidak hadir Pihak Pertama, atau keduanya, blangko sidang pertama yang dipakai sebab ia memuat kedua pihak.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
   },
   {
     keadaan: "pemberitahuan-putusan",
@@ -271,6 +300,8 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     pihak: "tidak-diketahui",
     keterangan:
       "Pihaknya ditentukan baris pemberitahuannya sendiri (kolom pihak dan pihak_id), bukan oleh blangkonya.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
   },
   {
     keadaan: "ikrar-talak",
@@ -279,6 +310,8 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     pihak: "keduanya",
     keterangan:
       "Dipakai bila jadwal sidangnya berpenanda ikrar_talak = 'Y' - terukur 1.024 dari 20.109 baris jadwal.",
+    folder: FOLDER_RELAAS_IKRAR,
+    menuAbt: MENU_RELAAS_IKRAR,
   },
   {
     keadaan: "delegasi",
@@ -287,6 +320,8 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     pihak: "tidak-diketahui",
     keterangan:
       "Bukan relaas, melainkan surat ke pengadilan lain - dipakai bila pihaknya di luar wilayah. Yang menilai orang, bukan aturan: alamat di luar wilayah tidak selalu berarti delegasi.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
   },
   {
     keadaan: "amplop",
@@ -295,6 +330,8 @@ export const BLANGKO_RELAAS: BlangkoRelaas[] = [
     pihak: "tidak-diketahui",
     keterangan:
       "Pendamping panggilan yang dikirim lewat pos tercatat - terukur 3.104 baris relaas bersandi S pada 1.431 perkara.",
+    folder: FOLDER_RELAAS,
+    menuAbt: MENU_RELAAS,
   },
 ];
 
@@ -371,9 +408,15 @@ export function keadaanUntukGolongan(golongan: unknown): KeadaanRelaas | null {
   }
 }
 
-/** Jalur penuh blangko relaas di dalam folder ABT. */
+/** Jalur penuh blangko relaas di dalam folder ABT - menurut folder blangkonya sendiri. */
 export function jalurBlangkoRelaas(berkas: string): string {
-  return `${FOLDER_RELAAS}/${berkas}`;
+  const folder = BLANGKO_RELAAS.find((x) => x.berkas === berkas)?.folder ?? FOLDER_RELAAS;
+  return `${folder}/${berkas}`;
+}
+
+/** Folder-folder ABT yang memuat blangko relaas, tanpa ganda, dalam urutan katalog. */
+export function folderBlangkoRelaas(): string[] {
+  return [...new Set(BLANGKO_RELAAS.map((x) => x.folder))];
 }
 
 /** Set yang memang dijenjangkan - relaas tidak termasuk. */

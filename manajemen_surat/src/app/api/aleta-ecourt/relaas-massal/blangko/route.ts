@@ -11,6 +11,7 @@ import {
   BLANGKO_RELAAS,
   SET_BLANGKO,
   blangkoRelaas,
+  folderBlangkoRelaas,
   jalurBlangkoRelaas,
   pihakDipanggil,
   type KeadaanRelaas,
@@ -127,6 +128,10 @@ type BlangkoTerdaftar = {
   keterangan: string;
   /** Jalur relatif di dalam akar blangko, dari jalurBlangkoRelaas(). */
   jalur: string;
+  /** Folder ABT blangko ini - tidak semua relaas satu folder (ikrar di menu 25). */
+  folder: string;
+  /** Menu ABT pemilik foldernya beserta rentang proses yang diterimanya. */
+  menuAbt: { nama: string; prosesMin: number; prosesMax: number };
   /** true/false HANYA bila folder ABT terbaca; null bila belum terukur. */
   adaDiAbt: boolean | null;
 };
@@ -204,50 +209,78 @@ export async function GET(request: NextRequest) {
     const set = setRelaas();
     const folder = set?.folder ?? "";
 
-    // ---- Folder ABT: dibaca sekali, hasilnya dipakai seluruh baris ----------
-    let abtTerbaca = false;
-    let abtSebab = periksaAbt
-      ? ""
-      : "Tidak diperiksa - pemanggil meminta ?periksaAbt=0, jadi keberadaan berkasnya belum terukur.";
-    let berkasDiAbt: string[] | null = null;
-
-    if (periksaAbt && folder) {
-      const katalog = await callAletaBotSippBridge("blangko.katalog", { folder });
-      if (!katalog.ok) {
-        // Sebab dari jembatan apa adanya - "bot tidak merespons" dan "folder
-        // tidak ada" menuntut tindakan yang berbeda.
-        abtSebab = String(katalog.error ?? "Katalog blangko tidak terbaca.");
-      } else {
-        const data = (katalog.data ?? {}) as {
-          ada?: boolean;
-          sebab?: string;
-          blangko?: Array<{ berkas?: string }>;
-        };
-        const daftar = Array.isArray(data.blangko)
-          ? data.blangko.map((x) => String(x?.berkas ?? "")).filter(Boolean)
-          : [];
-        if (data.ada && daftar.length > 0) {
-          abtTerbaca = true;
-          berkasDiAbt = daftar;
+    // ---- Folder ABT: TIAP folder dibaca sekali ---------------------------
+    //
+    // Sejak 26 September 2026 blangko ikrar berada di folder menu ABT 25
+    // (_ikrar_talak/2 Relaas Ikrar Talak), bukan di Relaas. Satu folder yang
+    // tidak terbaca tidak membuat blangko di folder lain ikut "belum terukur".
+    type KeadaanFolder = { folder: string; terbaca: boolean; sebab: string; berkas: string[] | null };
+    const perFolder: KeadaanFolder[] = [];
+    for (const f of folderBlangkoRelaas()) {
+      const keadaan: KeadaanFolder = {
+        folder: f,
+        terbaca: false,
+        sebab: periksaAbt
+          ? ""
+          : "Tidak diperiksa - pemanggil meminta ?periksaAbt=0, jadi keberadaan berkasnya belum terukur.",
+        berkas: null,
+      };
+      if (periksaAbt) {
+        const katalog = await callAletaBotSippBridge("blangko.katalog", { folder: f });
+        if (!katalog.ok) {
+          // Sebab dari jembatan apa adanya - "bot tidak merespons" dan "folder
+          // tidak ada" menuntut tindakan yang berbeda.
+          keadaan.sebab = String(katalog.error ?? "Katalog blangko tidak terbaca.");
         } else {
-          abtSebab = String(data.sebab ?? "") || "Folder blangko relaas terbaca tetapi kosong.";
+          const data = (katalog.data ?? {}) as {
+            ada?: boolean;
+            sebab?: string;
+            blangko?: Array<{ berkas?: string }>;
+          };
+          const daftar = Array.isArray(data.blangko)
+            ? data.blangko.map((x) => String(x?.berkas ?? "")).filter(Boolean)
+            : [];
+          if (data.ada && daftar.length > 0) {
+            keadaan.terbaca = true;
+            keadaan.berkas = daftar;
+          } else {
+            keadaan.sebab = String(data.sebab ?? "") || "Folder blangko relaas terbaca tetapi kosong.";
+          }
         }
       }
-    } else if (periksaAbt && !folder) {
-      abtSebab = 'Set blangko berjenis "relaas" tidak ada di SET_BLANGKO - foldernya tidak diketahui.';
+      perFolder.push(keadaan);
     }
+    const isiFolder = new Map(perFolder.map((x) => [x.folder, x.berkas]));
+    const abtTerbaca = perFolder.length > 0 && perFolder.every((x) => x.terbaca);
+    // Sebab yang SAMA untuk semua folder (bot mati, folder akar tidak ada)
+    // disebut sekali apa adanya; yang berbeda-beda disebut per folder.
+    const gagalBaca = perFolder.filter((x) => !x.terbaca && x.sebab);
+    const sebabUnik = [...new Set(gagalBaca.map((x) => x.sebab))];
+    const abtSebab =
+      sebabUnik.length === 1 && gagalBaca.length === perFolder.length
+        ? sebabUnik[0]
+        : gagalBaca.map((x) => `${x.folder}: ${x.sebab}`).join(" | ");
+    const berkasDiAbt = perFolder.some((x) => x.terbaca)
+      ? perFolder.flatMap((x) => x.berkas ?? [])
+      : null;
 
-    const blangko: BlangkoTerdaftar[] = BLANGKO_RELAAS.map((x) => ({
-      keadaan: x.keadaan,
-      berkas: x.berkas,
-      label: x.label,
-      pihak: x.pihak,
-      keterangan: x.keterangan,
-      jalur: jalurBlangkoRelaas(x.berkas),
-      // Perbandingan PERSIS, termasuk spasinya. Menormalkan spasi di sini akan
-      // menyembunyikan justru selisih yang rute ini dibangun untuk menangkap.
-      adaDiAbt: berkasDiAbt ? berkasDiAbt.includes(x.berkas) : null,
-    }));
+    const blangko: BlangkoTerdaftar[] = BLANGKO_RELAAS.map((x) => {
+      const daftar = isiFolder.get(x.folder) ?? null;
+      return {
+        keadaan: x.keadaan,
+        berkas: x.berkas,
+        label: x.label,
+        pihak: x.pihak,
+        keterangan: x.keterangan,
+        jalur: jalurBlangkoRelaas(x.berkas),
+        folder: x.folder,
+        menuAbt: x.menuAbt,
+        // Perbandingan PERSIS, termasuk spasinya, dan HANYA di folder blangko
+        // itu sendiri. Menormalkan spasi di sini akan menyembunyikan justru
+        // selisih yang rute ini dibangun untuk menangkap.
+        adaDiAbt: daftar ? daftar.includes(x.berkas) : null,
+      };
+    });
 
     const tidakDitemukan = berkasDiAbt
       ? blangko.filter((x) => x.adaDiAbt === false).map((x) => x.berkas)
@@ -303,6 +336,12 @@ export async function GET(request: NextRequest) {
         sebab: abtSebab,
         jumlahDiFolder: berkasDiAbt ? berkasDiAbt.length : null,
         tidakDitemukan,
+        perFolder: perFolder.map((x) => ({
+          folder: x.folder,
+          terbaca: x.terbaca,
+          sebab: x.sebab,
+          jumlah: x.berkas ? x.berkas.length : null,
+        })),
       },
       pilihan,
       sandi,

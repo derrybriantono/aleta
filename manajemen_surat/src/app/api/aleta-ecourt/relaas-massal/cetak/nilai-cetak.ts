@@ -46,6 +46,7 @@
  */
 
 import {
+  BLANGKO_RELAAS,
   blangkoRelaas,
   keadaanUntukGolongan,
   type PihakDipanggil,
@@ -97,21 +98,37 @@ const PIHAK_DIKENAL = new Set<string>(["keduanya", "pertama", "kedua", "tidak-pe
  * Derry" (yang terbaca hak_akses_menu lebih dahulu) dan 981 "Relaas dan PBT"
  * sama-sama proses_id 80..220, diukur pada ABT setempat 25 September 2026.
  * Ini SETELAN ABT: bila pengguna mengubahnya di ABT, angka ini harus ikut.
+ *
+ * Sejak 26 September 2026 blangko IKRAR berada di menu 25 "Relaas Ikrar Talak"
+ * (proses 290..600) - rentangnya dibaca dari menuAbt blangko itu sendiri di
+ * pohon-blangko.ts, bukan dari konstanta ini.
  */
 export const RENTANG_PROSES_MENU_RELAAS = { min: 80, max: 220 } as const;
+
+/** Menu ABT yang menentukan dokumen ini: menurut folder blangko golongannya. */
+function menuUntukGolongan(golongan: unknown): { nama: string; prosesMin: number; prosesMax: number } {
+  const keadaan = keadaanUntukGolongan(golongan);
+  const b = keadaan ? BLANGKO_RELAAS.find((x) => x.keadaan === keadaan) : null;
+  return b
+    ? b.menuAbt
+    : { nama: "Relaas dan PBT", prosesMin: RENTANG_PROSES_MENU_RELAAS.min, prosesMax: RENTANG_PROSES_MENU_RELAAS.max };
+}
 
 /** Status putusan yang pemberitahuannya perlu dikonfirmasi dulu - dicabut atau gugur. */
 const POLA_STATUS_KONFIRMASI = /^\s*(dicabut|(dinyatakan\s+)?gugur|digugurkan)\s*$/i;
 
 /** Sebab "tidak dapat dicetak" bila proses perkara di luar rentang menu ABT; "" bila di dalamnya/tak diketahui. */
-export function sebabProsesDiLuarMenu(dokumen: Pick<DokumenDinilai, "prosesTerakhirId" | "prosesTerakhirNama">): string {
+export function sebabProsesDiLuarMenu(
+  dokumen: Pick<DokumenDinilai, "prosesTerakhirId" | "prosesTerakhirNama"> & { golongan?: unknown }
+): string {
   const proses = angkaAtauNull(dokumen.prosesTerakhirId);
   if (proses === null) return "";
-  if (proses >= RENTANG_PROSES_MENU_RELAAS.min && proses <= RENTANG_PROSES_MENU_RELAAS.max) return "";
+  const menu = menuUntukGolongan(dokumen.golongan);
+  if (proses >= menu.prosesMin && proses <= menu.prosesMax) return "";
   const nama = String(dokumen.prosesTerakhirNama ?? "").trim();
   return (
     `ABT akan menolaknya: proses perkara saat ini ${proses}${nama ? ` (${nama})` : ""} di luar rentang ` +
-    `proses menu ABT "Relaas dan PBT" (${RENTANG_PROSES_MENU_RELAAS.min}-${RENTANG_PROSES_MENU_RELAAS.max}), dan ` +
+    `proses menu ABT "${menu.nama}" (${menu.prosesMin}-${menu.prosesMax}), dan ` +
     `ABT hanya mengecualikan akun administrator (grup 1). Rentang itu setelan menu ABT (proses_id_min/max), ` +
     `bukan ALETA - ubah di ABT, atau cetak manual dari ABT dengan akun yang berhak.`
   );

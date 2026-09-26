@@ -840,8 +840,8 @@ function jawabanTelaah(): RelaasCetakGateway {
       golongan: "ikrar-talak",
       sebabMasuk: "jadwal-baru",
       d: 9,
-      prosesTerakhirId: 293,
-      prosesTerakhirNama: "Penetapan Hari Sidang Ikrar Talak",
+      prosesTerakhirId: 250,
+      prosesTerakhirNama: "Minutasi",
     }),
     dokumen({
       perkaraId: 303,
@@ -947,8 +947,10 @@ describe("telaah 25 September 2026 - penilaian K2 dan dialog", () => {
     const per = new Map(isi.data.dokumen.map((d) => [d.perkaraId, d]));
     const ikrar = per.get(302)!;
     expect(ikrar.bisaDicetak).toBe(false);
-    expect(ikrar.sebabTidakBisa).toContain("293 (Penetapan Hari Sidang Ikrar Talak)");
-    expect(ikrar.sebabTidakBisa).toContain("80-220");
+    expect(ikrar.sebabTidakBisa).toContain("250 (Minutasi)");
+    // Ikrar dinilai dengan rentang menu ABT 25 "Relaas Ikrar Talak", bukan 80-220.
+    expect(ikrar.sebabTidakBisa).toContain("Relaas Ikrar Talak");
+    expect(ikrar.sebabTidakBisa).toContain("290-600");
     expect(ikrar.sebabTidakBisa).toContain("grup 1");
     // Blangkonya tetap disebut - yang tidak ada izinnya, bukan blangkonya.
     expect(ikrar.blangko?.berkas).toBe(BERKAS.ikrar);
@@ -958,12 +960,24 @@ describe("telaah 25 September 2026 - penilaian K2 dan dialog", () => {
     expect(isi.data.hariKerjaSebelumnya.dokumen.map((d) => d.bisaDicetak)).toEqual([true, true]);
 
     const { nilaiCetakDokumen } = await import("@/app/api/aleta-ecourt/relaas-massal/cetak/nilai-cetak");
-    const dasar = jawabanTelaah().dokumen[1];
+    // Dokumen sidang pertama (menu Relaas 80-220); ikrar dinilai terpisah di bawah.
+    const dasar = jawabanTelaah().dokumen[0];
     expect(nilaiCetakDokumen({ ...dasar, prosesTerakhirId: null }).bisaDicetak).toBe(true); // bot lama
     expect(nilaiCetakDokumen({ ...dasar, prosesTerakhirId: 220 }).bisaDicetak).toBe(true);
     expect(nilaiCetakDokumen({ ...dasar, prosesTerakhirId: 221 }).bisaDicetak).toBe(false);
     expect(nilaiCetakDokumen({ ...dasar, prosesTerakhirId: 79 }).bisaDicetak).toBe(false);
     expect(nilaiCetakDokumen({ ...dasar, prosesTerakhirId: 250 }).sebabTidakBisa).toContain("250");
+
+    // Sejak 26 Sep 2026 blangko ikrar di menu 25 (proses 290-600): perkara yang
+    // sudah sampai tahap ikrar DAPAT dicetak, dan yang belum - atau lewat - tidak.
+    const ikrarDasar = jawabanTelaah().dokumen.find((d) => d.golongan === "ikrar-talak")!;
+    expect(nilaiCetakDokumen({ ...ikrarDasar, prosesTerakhirId: 293 }).bisaDicetak).toBe(true);
+    expect(nilaiCetakDokumen({ ...ikrarDasar, prosesTerakhirId: 290 }).bisaDicetak).toBe(true);
+    expect(nilaiCetakDokumen({ ...ikrarDasar, prosesTerakhirId: 600 }).bisaDicetak).toBe(true);
+    expect(nilaiCetakDokumen({ ...ikrarDasar, prosesTerakhirId: 289 }).bisaDicetak).toBe(false);
+    expect(nilaiCetakDokumen({ ...ikrarDasar, prosesTerakhirId: 601 }).bisaDicetak).toBe(false);
+    // Rentang ikrar tidak bocor ke golongan lain: sidang pertama berproses 293 tetap ditolak.
+    expect(nilaiCetakDokumen({ ...dasar, prosesTerakhirId: 293 }).bisaDicetak).toBe(false);
   });
 
   it("putusan dicabut/gugur: dapat dicetak tetapi PERLU KONFIRMASI dan tidak ikut Pilih semua; ikrar di luar rentang terkunci", async () => {
